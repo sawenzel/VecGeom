@@ -1,0 +1,282 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+//  A simple box defined by half-lengths on the three axis. The center of the
+//  box matches the origin of the local reference frame.  
+//
+////////////////////////////////////////////////////////////////////////////////
+#include "UBox.hh"
+
+#include <iostream>
+#include "UUtils.hh"
+
+//______________________________________________________________________________
+VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint)
+{
+// Classify point location with respect to solid:
+//  o eInside       - inside the solid
+//  o eSurface      - close to surface within tolerance
+//  o eOutside      - outside the solid
+   static const double delta = VUSolid::fgTolerance;
+   // Early returns on outside condition on any axis. Check Z first for faster
+   // exclusion in  phi symmetric geometries.
+   double ddz = UUtils::Abs(aPoint.z) - fDz;
+   if ( ddz > delta ) return eOutside;
+   double ddx = UUtils::Abs(aPoint.x) - fDx;
+   if ( ddx > delta ) return eOutside;
+   double ddy = UUtils::Abs(aPoint.y) - fDy;
+   if ( ddy > delta ) return eOutside;
+   if ( ddx >- delta || ddy > -delta || ddz > -delta ) return eSurface;
+   return eInside;
+}   
+  
+//______________________________________________________________________________
+double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection, 
+                          UVector3 &aNormal, double aPstep) const
+{
+// Computes distance from a point presumably outside the solid to the solid 
+// surface. Ignores first surface if the point is actually inside. Early return
+// infinity in case the safety to any surface is found greater than the proposed
+// step aPstep.
+// The normal vector to the crossed surface is filled only in case the box is 
+// crossed, otherwise aNormal.IsNull() is true.
+
+   // Compute safety to the closest surface on each axis. 
+   // Early exits if safety bigger than proposed step.
+   static const double delta = VUSolid::fgTolerance;
+   aNormal.SetNull();
+   double safx = UUtils::Abs(aPoint.x) - fDx;
+   if ( safx > aPstep ) return UUtils::kInfinity;
+   double safy = UUtils::Abs(aPoint.y) - fDy;
+   if ( safy > aPstep ) return UUtils::kInfinity;
+   double safz = UUtils::Abs(aPoint.z) - fDz;
+   if ( safz > aPstep ) return UUtils::kInfinity;
+   // Check numerical outside.
+   bool outside = (safx > 0) || (safy > 0) || (safz > 0);
+   if ( !outside ) {
+      // If point close to this surface, check against the normal
+      if ( safx > -delta ) {
+         aNormal.x = UUtils::Sign(1.0, aPoint.x);
+         return ( aPoint.x * aDirection.x > 0 ) ? UUtils::kInfinity : 0.0;
+      }   
+      if ( safy > -delta ) {
+         aNormal.y = UUtils::Sign(1.0, aPoint.y);
+         return ( aPoint.y * aDirection.y > 0 ) ? UUtils::kInfinity : 0.0;
+      }   
+      if ( safz > -delta ) {
+         aNormal.z = UUtils::Sign(1.0, aPoint.z);
+         return ( aPoint.z * aDirection.z > 0 ) ? UUtils::kInfinity : 0.0;
+      }   
+      // Point actually "deep" inside, return zero distance, normal un-defined
+      return 0.0;
+   }
+   // The point is really outside. Only axis with positive safety to be 
+   // considered. Early exit on each axis if point and direction components 
+   // have the same sign.
+   double dist = 0.0;
+   double coordinate = 0.0;
+   if ( safx > 0 ) {
+      if ( aPoint.x * aDirection.x >= 0 ) return UUtils::kInfinity;
+      dist = safx/UUtils::Abs(aDirection.x);
+      coordinate = aPoint.y + dist*aDirection.y;
+      if ( UUtils::Abs(coordinate) < fDy ) {
+         coordinate = aPoint.z + dist*aDirection.z;
+         if ( UUtils::Abs(coordinate) < fDz ) {
+            aNormal.x = UUtils::Sign(1.0, aPoint.x);
+            return dist;
+         }   
+      }
+   }
+   if ( safy > 0 ) {
+      if ( aPoint.y * aDirection.y >= 0 ) return UUtils::kInfinity;
+      dist = safy/UUtils::Abs(aDirection.y);
+      coordinate = aPoint.x + dist*aDirection.x;
+      if ( UUtils::Abs(coordinate) < fDx ) {
+         coordinate = aPoint.z + dist*aDirection.z;
+         if ( UUtils::Abs(coordinate) < fDz ) {
+            aNormal.y = UUtils::Sign(1.0, aPoint.y);
+            return dist;
+         }   
+      }
+   }
+   if ( safz > 0 ) {
+      if ( aPoint.z * aDirection.z >= 0 ) return UUtils::kInfinity;
+      dist = safz/UUtils::Abs(aDirection.z);
+      coordinate = aPoint.x + dist*aDirection.x;
+      if ( UUtils::Abs(coordinate) < fDx ) {
+         coordinate = aPoint.y + dist*aDirection.y;
+         if ( UUtils::Abs(coordinate) < fDy ) {
+            aNormal.z = UUtils::Sign(1.0, aPoint.z);
+            return dist;
+         }   
+      }
+   }
+   return UUtils::kInfinity;
+}
+
+//______________________________________________________________________________
+double UBox::DistanceToOut( const UVector3  &aPoint, const UVector3 &aDirection,
+			       UVector3 &aNormal,
+			       bool    &convex,
+                double /*aPstep*/) const
+{
+// Computes distance from a point presumably intside the solid to the solid 
+// surface. Ignores first surface along each axis systematically (for points
+// inside or outside. Early returns zero in case the second surface is behind
+// the starting point.
+// o The proposed step is ignored.
+// o The normal vector to the crossed surface is always filled.
+   double smin = UUtils::kInfinity;
+   double snxt, signDir;
+   convex = true;  //   Box is convex (even if the starting point is outside)
+   // Check always the "away" surface along direction on axis. This responds
+   // corectly even for points outside the solid (no need for tolerance check)
+   if ( aDirection.x != 0.0 ) {
+      signDir = UUtils::Sign(1.0, aDirection.x);
+      aNormal.Set(signDir, 0., 0.);
+      snxt = (-aPoint.x + signDir*fDx)/aDirection.x;
+      if ( snxt <= 0 ) return 0.0; // point outside moving outwards
+      smin = snxt;
+   }   
+
+   if ( aDirection.y != 0.0 ) {
+      signDir = UUtils::Sign(1.0, aDirection.y);
+      snxt = (-aPoint.y + signDir*fDy)/aDirection.y;
+      if ( snxt <= 0 ) {
+         aNormal.Set(0., signDir, 0.);
+         return 0.0; // point outside moving outwards
+      }   
+      if ( snxt < smin ) {
+         smin = snxt;
+         aNormal.Set(0., signDir, 0.);
+      }         
+   }
+   
+   if ( aDirection.z != 0.0 ) {
+      signDir = UUtils::Sign(1.0, aDirection.z);
+      snxt = (-aPoint.z + signDir*fDz)/aDirection.z;
+      if ( snxt <= 0 ) {
+         aNormal.Set(0., 0., signDir);
+         return 0.0; // point outside moving outwards
+      }   
+      if ( snxt < smin ) {
+         smin = snxt;
+         aNormal.Set(0., 0., signDir);
+      }
+   }
+   return smin;
+}
+
+//______________________________________________________________________________
+double UBox::SafetyFromInside ( const UVector3 aPoint, 
+                bool /*aAccurate*/) const
+{
+// Estimates the isotropic safety from a point inside the current solid to any 
+// of its surfaces. The algorithm may be accurate or should provide a fast 
+// underestimate.
+   double safe, safy, safz;
+   safe = fDx - UUtils::Abs(aPoint.x);
+   safy = fDy - UUtils::Abs(aPoint.y);
+   if ( safy < safe ) safe = safy;
+   safz = fDz - UUtils::Abs(aPoint.z);
+   if ( safz < safe ) safe = safz;
+   return UUtils::Max(0.0, safe);
+}   
+   
+//______________________________________________________________________________
+double UBox::SafetyFromOutside ( const UVector3 aPoint, 
+                bool aAccurate) const
+{
+// Estimates the isotropic safety from a point outside the current solid to any 
+// of its surfaces. The algorithm may be accurate or should provide a fast 
+// underestimate.
+   double safe, safx, safy, safz;
+   safe = safx = -fDx + UUtils::Abs(aPoint.x);
+   safy = -fDy + UUtils::Abs(aPoint.y);
+   if ( safy > safe ) safe = safy;
+   safz = -fDz + UUtils::Abs(aPoint.z);
+   if ( safz > safe ) safe = safz;
+   if (safe < 0.0) return 0.0; // point is inside
+   if (!aAccurate) return safe;
+   double safsq = 0.0;
+   if ( safx > 0 ) safsq += safx*safx;
+   if ( safy > 0 ) safsq += safy*safy;
+   if ( safz > 0 ) safsq += safz*safz;
+   return UUtils::Sqrt(safsq);
+}
+
+//______________________________________________________________________________
+bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
+{
+// Computes the normal on a surface and returns it as a unit vector
+//   In case a point is further than tolerance_normal from a surface, set validNormal=false
+//   Must return a valid vector. (even if the point is not on the surface.)
+//
+//   On an edge or corner, provide an average normal of all facets within tolerance
+   static const double delta = VUSolid::fgTolerance;
+   aNormal.SetNull();
+   UVector3 crt_normal, min_normal;
+   int nsurf = 0;
+   double safx = UUtils::Abs(UUtils::Abs(aPoint.x) - fDx);
+   double safmin = safx;
+   crt_normal.Set(UUtils::Sign(1.,aPoint.x), 0., 0.);
+   min_normal = crt_normal;
+   if ( safx < delta ) {
+      nsurf++;
+      aNormal += crt_normal;
+   }
+   double safy = UUtils::Abs(UUtils::Abs(aPoint.y) - fDy);
+   crt_normal.Set(0., UUtils::Sign(1.,aPoint.y), 0.);
+   if ( safy < delta ) {
+      nsurf++;
+      aNormal += crt_normal;
+   }
+   if ( safy < safmin ) {
+      min_normal = crt_normal;
+      safmin = safy;
+   }   
+   double safz = UUtils::Abs(UUtils::Abs(aPoint.z) - fDz);
+   crt_normal.Set(0., 0., UUtils::Sign(1.,aPoint.z));
+   if (safz < delta) {
+      nsurf++;
+      aNormal += crt_normal;
+   }
+   if ( safz < safmin ) {
+      min_normal = crt_normal;
+      safmin = safz;
+   }   
+   
+   if (nsurf>0) {
+      if (nsurf > 1) aNormal.Normalize();
+   } else {
+      aNormal = min_normal;
+   }   
+   return true;
+}
+   
+//______________________________________________________________________________
+void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax )
+{
+// Returns extent of the solid along a given cartesian axis
+   switch (aAxis) {
+      case eXaxis:
+         aMin = -fDx; aMax = fDx;
+         break;
+      case eYaxis:
+         aMin = -fDy; aMax = fDy;
+         break;
+      case eZaxis:
+         aMin = -fDz; aMax = fDz;
+         break;
+      default:
+         std::cout << "Extent: unknown axis" << aAxis << std::endl;
+   }      
+}            
+
+//______________________________________________________________________________
+void UBox::Extent ( double aMin[3], double aMax[3] )
+{
+// Returns the full 3D cartesian extent of the solid.
+   aMin[0] = -fDx; aMax[0] = fDx;
+   aMin[1] = -fDy; aMax[1] = fDy;
+   aMin[2] = -fDz; aMax[2] = fDz;
+}
