@@ -20,7 +20,7 @@ private:
 
 public:
    TGeoUShape() : TGeoBBox(), fUSolid(NULL) {}
-   TGeoUShape(const char *name, VUSolid *solid) : TGeoBBox(name), fUSolid(solid) {}   
+   TGeoUShape(const char *name, VUSolid *solid) : TGeoBBox(name,0,0,0), fUSolid(solid) {}   
    virtual ~TGeoUShape();
    
 // Navigation
@@ -34,8 +34,8 @@ public:
    virtual Double_t      Safety(Double_t *point, Bool_t in=kTRUE) const;
 // Visualization and overlap checking
    virtual Bool_t        GetPointsOnSegments(Int_t npoints, Double_t *array) const;
-   virtual void          SetPoints(Double_t *points) const;
-   virtual void          SetSegsAndPols(TBuffer3D &buffer) const;
+//   virtual void          SetPoints(Double_t *points) const;
+//   virtual void          SetSegsAndPols(TBuffer3D &buffer) const;
 
 // Auxiliary
    virtual Double_t      Capacity() const;
