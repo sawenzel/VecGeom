@@ -47,11 +47,10 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
    static const double delta = VUSolid::fgTolerance;
 //   aNormal.SetNull();
    double safx = UUtils::Abs(aPoint.x) - fDx;
-   if ( safx > aPstep ) return UUtils::kInfinity;
    double safy = UUtils::Abs(aPoint.y) - fDy;
-   if ( safy > aPstep ) return UUtils::kInfinity;
    double safz = UUtils::Abs(aPoint.z) - fDz;
-   if ( safz > aPstep ) return UUtils::kInfinity;
+   if ((safx > aPstep) || (safy > aPstep) || (safz > aPstep)) 
+      return UUtils::kInfinity;
    // Check numerical outside.
    bool outside = (safx > 0) || (safy > 0) || (safz > 0);
    if ( !outside ) {
@@ -200,9 +199,11 @@ double UBox::SafetyFromOutside ( const UVector3 aPoint,
    if (safe < 0.0) return 0.0; // point is inside
    if (!aAccurate) return safe;
    double safsq = 0.0;
-   if ( safx > 0 ) safsq += safx*safx;
-   if ( safy > 0 ) safsq += safy*safy;
-   if ( safz > 0 ) safsq += safz*safz;
+   int count = 0;
+   if ( safx > 0 ) { safsq += safx*safx; count++; }
+   if ( safy > 0 ) { safsq += safy*safy; count++; }
+   if ( safz > 0 ) { safsq += safz*safz; count++; }
+   if (count == 1) return safe;
    return UUtils::Sqrt(safsq);
 }
 
@@ -214,7 +215,11 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
 //   Must return a valid vector. (even if the point is not on the surface.)
 //
 //   On an edge or corner, provide an average normal of all facets within tolerance
-   static const double delta = VUSolid::fgTolerance;
+// NOTE: the tolerance value used in here is not yet the global surface
+//     tolerance - we will have to revise this value - TODO
+   static const double delta = 10.*VUSolid::fgTolerance;
+   static const double kInvSqrt2 = 1./UUtils::Sqrt(2.);
+   static const double kInvSqrt3 = 1./UUtils::Sqrt(3.);
    aNormal.SetNull();
    UVector3 crt_normal, min_normal;
    int nsurf = 0;
@@ -247,12 +252,21 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
       safmin = safz;
    }   
    
-   if (nsurf>0) {
-      if (nsurf > 1) aNormal.Normalize();
-   } else {
-      aNormal = min_normal;
-   }   
-   return true;
+   bool valid = true;
+   switch (nsurf) {
+      case 0:
+         aNormal = min_normal;
+         valid = false;
+         break;
+      case 1:
+         break;
+      case 2:
+         aNormal *= kInvSqrt2;
+         break;
+      case 3:
+         aNormal *= kInvSqrt3;
+   };
+   return valid;               
 }
    
 //______________________________________________________________________________
