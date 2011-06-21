@@ -30,6 +30,13 @@ void TGeoUShape::ComputeBBox()
 }   
 
 //_____________________________________________________________________________
+Double_t TGeoUShape::Capacity()
+{
+// Returns analytic capacity of the solid
+   return fUSolid->Capacity();
+}
+   
+//_____________________________________________________________________________
 void TGeoUShape::ComputeNormal(Double_t *point, Double_t *dir, Double_t *norm)
 {
 // Normal computation.
@@ -56,3 +63,26 @@ Bool_t TGeoUShape::Contains(Double_t *point) const
    return kTRUE;
 }
 
+//_____________________________________________________________________________
+Double_t TGeoUShape::DistFromInside(Double_t *point, Double_t *dir, Int_t /*iact*/, 
+                                   Double_t step, Double_t */*safe*/) const
+{
+   UVector3 normal;
+   Bool_t convex;   
+   return fUSolid->DistanceToOut(point, dir, normal, convex, step);
+}
+
+//_____________________________________________________________________________
+Double_t TGeoUShape::DistFromOutside(Double_t *point, Double_t *dir, Int_t /*iact*/, 
+                                   Double_t step, Double_t */*safe*/) const
+{
+   return fUSolid->DistanceToIn(point, dir, step);
+}
+
+//_____________________________________________________________________________
+Double_t TGeoUShape::Safety(Double_t *point, Bool_t in) const
+{
+   if (in) return fUSolid->SafetyFromInside(point, kTRUE);
+   return fUSolid->SafetyFromOutside(point, kTRUE);
+}
+   

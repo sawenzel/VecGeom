@@ -30,8 +30,10 @@ VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint)
 }   
   
 //______________________________________________________________________________
-double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection, 
-                          UVector3 &aNormal, double aPstep) const
+double UBox::DistanceToIn(const UVector3 &aPoint, 
+                          const UVector3 &aDirection, 
+//                          UVector3 &aNormal, 
+                          double aPstep) const
 {
 // Computes distance from a point presumably outside the solid to the solid 
 // surface. Ignores first surface if the point is actually inside. Early return
@@ -43,7 +45,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection,
    // Compute safety to the closest surface on each axis. 
    // Early exits if safety bigger than proposed step.
    static const double delta = VUSolid::fgTolerance;
-   aNormal.SetNull();
+//   aNormal.SetNull();
    double safx = UUtils::Abs(aPoint.x) - fDx;
    if ( safx > aPstep ) return UUtils::kInfinity;
    double safy = UUtils::Abs(aPoint.y) - fDy;
@@ -55,15 +57,15 @@ double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection,
    if ( !outside ) {
       // If point close to this surface, check against the normal
       if ( safx > -delta ) {
-         aNormal.x = UUtils::Sign(1.0, aPoint.x);
+//         aNormal.x = UUtils::Sign(1.0, aPoint.x);
          return ( aPoint.x * aDirection.x > 0 ) ? UUtils::kInfinity : 0.0;
       }   
       if ( safy > -delta ) {
-         aNormal.y = UUtils::Sign(1.0, aPoint.y);
+//         aNormal.y = UUtils::Sign(1.0, aPoint.y);
          return ( aPoint.y * aDirection.y > 0 ) ? UUtils::kInfinity : 0.0;
       }   
       if ( safz > -delta ) {
-         aNormal.z = UUtils::Sign(1.0, aPoint.z);
+//         aNormal.z = UUtils::Sign(1.0, aPoint.z);
          return ( aPoint.z * aDirection.z > 0 ) ? UUtils::kInfinity : 0.0;
       }   
       // Point actually "deep" inside, return zero distance, normal un-defined
@@ -81,7 +83,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection,
       if ( UUtils::Abs(coordinate) < fDy ) {
          coordinate = aPoint.z + dist*aDirection.z;
          if ( UUtils::Abs(coordinate) < fDz ) {
-            aNormal.x = UUtils::Sign(1.0, aPoint.x);
+//            aNormal.x = UUtils::Sign(1.0, aPoint.x);
             return dist;
          }   
       }
@@ -93,7 +95,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection,
       if ( UUtils::Abs(coordinate) < fDx ) {
          coordinate = aPoint.z + dist*aDirection.z;
          if ( UUtils::Abs(coordinate) < fDz ) {
-            aNormal.y = UUtils::Sign(1.0, aPoint.y);
+//            aNormal.y = UUtils::Sign(1.0, aPoint.y);
             return dist;
          }   
       }
@@ -105,7 +107,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint, const UVector3 &aDirection,
       if ( UUtils::Abs(coordinate) < fDx ) {
          coordinate = aPoint.y + dist*aDirection.y;
          if ( UUtils::Abs(coordinate) < fDy ) {
-            aNormal.z = UUtils::Sign(1.0, aPoint.z);
+//            aNormal.z = UUtils::Sign(1.0, aPoint.z);
             return dist;
          }   
       }

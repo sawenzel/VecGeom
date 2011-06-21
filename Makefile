@@ -27,7 +27,7 @@ USOLIDSL      = $(patsubst %.cc,$(SRCDIR)/%.o,$(SOURCES))
 USOLIDDEPS    = $(patsubst %.cc,$(INCDIR)/%.hh,$(SOURCES))
 
 USOLIDSSO     = libUSolids.$(DllSuf)
-UBRIDGESSO    = libUBrigdes.$(DllSuf)
+UBRIDGESSO    = libUBridges.$(DllSuf)
 USOLIDSLIB    = $(shell pwd)/$(USOLIDSSO)
 OBJS          = $(USOLIDSO)
 
