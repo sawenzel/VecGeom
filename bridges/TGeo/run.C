@@ -8,5 +8,6 @@ void run()
                gSystem->ExpandPathName("$FULLPATH"), gSystem->ExpandPathName("$FULLPATH"));
    gSystem->AddIncludePath(incpath);
    printf("Include path: %s\n", gSystem->GetIncludePath());
-   TGeoUShape::TestBox();
+   gROOT->LoadMacro("TestBox.C+g");
+//   TGeoUShape::TestBox();
 }   

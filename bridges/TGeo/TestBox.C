@@ -23,6 +23,9 @@ void TestBox() {
    TGeoVolume *vol = new TGeoVolume("UBox", shape, Al);
    top->AddNode(vol,1);
    geom->CloseGeometry();
+   shape->CheckShape(1);
+   shape->CheckShape(2);
+   shape->CheckShape(3);
 }
    
   
