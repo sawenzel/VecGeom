@@ -20,7 +20,7 @@ private:
 
 public:
    TGeoUShape() : TGeoBBox(), fUSolid(NULL) {}
-   TGeoUShape(const char *name, VUSolid *solid) : TGeoBBox(name,0,0,0), fUSolid(solid) {}   
+   TGeoUShape(const char *name, VUSolid *solid);
    virtual ~TGeoUShape();
    
 // Navigation
@@ -38,10 +38,10 @@ public:
 //   virtual void          SetSegsAndPols(TBuffer3D &buffer) const;
 
 // Auxiliary
-   virtual Double_t      Capacity();
+   virtual Double_t      Capacity() const;
 
 // Static creators for USolids
-//   static VUSolid       *CreateBox(Double_t dx, Double_t dy, Double_t dz);
+   static void           TestBox();
 //   static VUSolid       *CreateTube(Double_t dz, Double_t rmin, Double_t rmax, Double_t phi0, Double_t dphi);
 //   ...
 

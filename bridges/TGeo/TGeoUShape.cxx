@@ -6,7 +6,22 @@
 //                                                                        //
 ////////////////////////////////////////////////////////////////////////////
 
+#include "UBox.hh"
+#include "TGeoManager.h"
+#include "TGeoMaterial.h"
+#include "TGeoMedium.h"
+#include "TGeoVolume.h"
+
 ClassImp(TGeoUShape)
+
+//_____________________________________________________________________________
+TGeoUShape::TGeoUShape(const char *name, VUSolid *solid)
+           :TGeoBBox(name, 0.,0.,0.),
+            fUSolid(solid)
+{
+// Named constructor
+   ComputeBBox();
+}   
 
 //_____________________________________________________________________________
 TGeoUShape::~TGeoUShape()
@@ -30,7 +45,7 @@ void TGeoUShape::ComputeBBox()
 }   
 
 //_____________________________________________________________________________
-Double_t TGeoUShape::Capacity()
+Double_t TGeoUShape::Capacity() const
 {
 // Returns analytic capacity of the solid
    return fUSolid->Capacity();
@@ -85,4 +100,26 @@ Double_t TGeoUShape::Safety(Double_t *point, Bool_t in) const
    if (in) return fUSolid->SafetyFromInside(point, kTRUE);
    return fUSolid->SafetyFromOutside(point, kTRUE);
 }
+
+//_____________________________________________________________________________
+void  TGeoUShape::TestBox()
+{
+// Make a simple geometry containing a UBox and check it
+   TGeoManager *geom = new TGeoManager("UBox", "test of a UBox");
+   TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
+   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
+   TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
+   TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
+
+   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 200., 200., 200.);
+   geom->SetTopVolume(top);
    
+   UBox *box = new UBox("UBox", 50,50,50);
+   TGeoUShape *shape = new TGeoUShape(box->GetName(), box);
+   
+   TGeoVolume *vol = new TGeoVolume("UBox", shape, Al);
+   top->AddNode(vol,1);
+   geom->CloseGeometry();
+   shape->CheckShape(1);
+}
+

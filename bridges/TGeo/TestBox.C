@@ -22,7 +22,7 @@ void TestBox() {
    
    TGeoVolume *vol = new TGeoVolume("UBox", shape, Al);
    top->AddNode(vol,1);
-   geom->CheckOverlaps();
+   geom->CloseGeometry();
 }
    
   

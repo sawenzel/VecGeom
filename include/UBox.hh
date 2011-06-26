@@ -24,7 +24,7 @@ public:
    virtual ~UBox() {}
    
    // Navigation methods
-   EnumInside     Inside (const UVector3 &aPoint);   
+   EnumInside     Inside (const UVector3 &aPoint) const;   
 
    virtual double  SafetyFromInside ( const UVector3 aPoint, 
                                       bool aAccurate=false) const;

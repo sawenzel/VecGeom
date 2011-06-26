@@ -35,7 +35,7 @@ public:
   virtual ~VUSolid();
   
   // Navigation methods
-  EnumInside Inside (const UVector3 &aPoint);
+  virtual EnumInside Inside (const UVector3 &aPoint) const = 0;
   //
   // Evaluate if point is inside, outside or on the surface within the tolerance
   virtual double  SafetyFromInside ( const UVector3 aPoint, 

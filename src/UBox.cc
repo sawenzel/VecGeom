@@ -8,9 +8,18 @@
 
 #include <iostream>
 #include "UUtils.hh"
+//______________________________________________________________________________
+UBox::UBox(const char *name, double dx, double dy, double dz)
+     :VUSolid(name),
+      fDx(dx),
+      fDy(dy),
+      fDz(dz)
+{
+// Named constructor
+}
 
 //______________________________________________________________________________
-VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint)
+VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
 {
 // Classify point location with respect to solid:
 //  o eInside       - inside the solid
