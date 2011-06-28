@@ -46,6 +46,7 @@ public:
    virtual double Capacity() {return 8.*fDx*fDy*fDz;}
    virtual double SurfaceArea() {return 8.*(fDx*fDy+fDx*fDz+fDy*fDz);}
    virtual VUSolid* Clone() const {return 0;}
+   virtual UGeometryType GetEntityType() const { return "UBox";}
    virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) {}
    
 private:  
