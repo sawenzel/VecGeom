@@ -45,7 +45,7 @@ class G4USolid : public G4VSolid
 {
   public:  // with description 
 
-    G4USolid(VUSolid* shape);
+    G4USolid(const G4String& pName,VUSolid* shape);
       // Creates a new shape, with the supplied name. No provision is made
       // for sharing a common name amongst multiple classes.
     virtual ~G4USolid();
@@ -86,8 +86,8 @@ class G4USolid : public G4VSolid
     virtual G4double DistanceToOut(const G4ThreeVector& p,
 				   const G4ThreeVector& v,
 				   const G4bool calcNorm=false,
-				   G4bool *validNorm,
-				   G4ThreeVector *n) const;
+				   G4bool *validNorm=0,
+				   G4ThreeVector *n=0) const;
       // Return the distance along the normalised vector v to the shape,
       // from a point at an offset p inside or on the surface of the shape.
       // Intersections with surfaces, when the point is < Tolerance/2 from a
