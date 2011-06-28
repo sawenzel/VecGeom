@@ -84,6 +84,9 @@ public:
   // o Decision: whether to store the computed BBox (containing or representing 6 double values), 
   //     and whether to compute it at construction time.
   // Methods are *not* const to allow caching of the Bounding Box
+ virtual UGeometryType  GetEntityType() const =0;
+       // Provide identification of the class of an object.
+       // (required for persistency and STEP interface)
   
   const char     *GetName() const {return fName.c_str();}
   void            SetName(const char *aName) {fName = aName;} 
