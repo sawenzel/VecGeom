@@ -32,28 +32,137 @@
 //
 // --------------------------------------------------------------------
 
-G4USolid::G4USolid(VUSolid* s)
-  : fShape(s)
+
+#include "G4USolid.hh"
+#include "G4AffineTransform.hh"
+#include "G4VoxelLimits.hh"
+#include "G4VGraphicsScene.hh"
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// Constructor
+//  - Base class constructor 
+
+G4USolid::G4USolid(const G4String& name, VUSolid* s) :
+  G4VSolid(name),fShape(s)
 {
 }
 
-G4USolid::~G4USolid()
+//////////////////////////////////////////////////////////////////////////
+//
+// Fake default constructor - sets only member data and allocates memory
+//                            for usage restricted to object persistency.
+
+G4USolid::G4USolid( __void__& a )
+  : G4VSolid(a)
 {
+  ;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// Destructor
+//
+
+G4USolid::~G4USolid() 
+{
+ ;
+}
 G4bool G4USolid::operator==( const G4USolid& s) const
 {
   return (this==&s) ? true : false;
 }
 
+EInside G4USolid::Inside(const G4ThreeVector& p) const
+{
+  UVector3 pt; 
+  VUSolid::EnumInside in_temp;
+  EInside in = kOutside;
+  pt.x=p.x(); pt.y=p.y(); pt.z=p.z();
+  
+  in_temp = fShape->Inside(pt);
+  
+  if(in_temp == VUSolid::eSurface)return kSurface;
+  if(in_temp == VUSolid::eInside )return kInside;
+  
+  return in;
+}
+
+G4ThreeVector G4USolid::SurfaceNormal(const G4ThreeVector& pt) const
+{
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
+  UVector3 n;
+  fShape->Normal(p, n);
+  return G4ThreeVector(n.x, n.y, n.z);
+}
+
+G4double G4USolid::DistanceToIn(const G4ThreeVector& pt,
+                                 const G4ThreeVector& d)const
+{
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
+  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z();
+  G4double dist= fShape->DistanceToIn(p,v);
+  if( dist > kInfinity ) dist=kInfinity;
+  return dist;
+}
+
+G4double G4USolid::DistanceToIn(const G4ThreeVector& pt) const
+{
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
+  G4double dist= fShape->SafetyFromOutside(p);
+  if( dist > kInfinity ) dist = kInfinity;
+  return dist;
+}
+G4double G4USolid::DistanceToOut(const G4ThreeVector& pt,
+				  const G4ThreeVector& d,
+				  const G4bool calcNorm,
+				  G4bool *validNorm,
+				  G4ThreeVector *norm) const
+{
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
+  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z();
+  UVector3 n;
+  
+  G4double dist = fShape->DistanceToOut(p, v, n, *validNorm);
+  norm->setX(n.x); norm->setY(n.y); norm->setZ(n.z);
+  return dist;
+}
+
+G4double G4USolid::DistanceToOut(const G4ThreeVector& pt) const
+{
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
+  return fShape->SafetyFromInside(p);
+}
+
+G4double G4USolid::GetCubicVolume()
+{
+  return fShape->Capacity();
+}
+
+G4double G4USolid::GetSurfaceArea()
+{
+  return fShape->SurfaceArea();
+}
+G4ThreeVector G4USolid::GetPointOnSurface() const
+{
+  UVector3 *p=0;
+  fShape->SamplePointsOnSurface(1,p);
+  return G4ThreeVector((*p).x, (*p).y, (*p).z);
+}
+
 G4bool G4USolid::CalculateExtent(const EAxis pAxis,
 				  const G4VoxelLimits& pVoxelLimit,
 				  const G4AffineTransform& pTransform,
-				  G4double& pMin, G4double& pMax) const;
+				  G4double& pMin, G4double& pMax) const
 {
   if (!pTransform.IsRotated())
   {
-    fShape->Extent(pAxis,pMin,pMax);
+    VUSolid::EAxisType eAxis=VUSolid::eXaxis;
+    if(pAxis==kYAxis)eAxis=VUSolid::eYaxis;
+    if(pAxis==kZAxis)eAxis=VUSolid::eZaxis;
+    fShape->Extent(eAxis,pMin,pMax);
    
     if (pVoxelLimit.IsXLimited())
     {
@@ -153,99 +262,26 @@ G4bool G4USolid::CalculateExtent(const EAxis pAxis,
   }                           // end rotation
 }
 
-EInside G4USolid::Inside(const G4ThreeVector& p) const
+void G4USolid::DescribeYourselfTo (G4VGraphicsScene& scene) const
 {
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  return fShape->Inside(p);
+  scene.AddSolid (*this);
 }
-
-G4ThreeVector G4USolid::SurfaceNormal(const G4ThreeVector& pt) const
-{
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  UVector3 n;
-  fShape->Normal(p, n);
-  return G4ThreeVector(n.x, n.y, n.z);
-}
-
-G4double G4USolid::DistanceToIn(const G4ThreeVector& pt,
-                                 const G4ThreeVector& d)
-{
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z();
-  return fShape->DistanceToIn(p,v);
-}
-
-G4double G4USolid::DistanceToIn(const G4ThreeVector& pt) const
-{
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  return fShape->SafetyOut(p);
-}
-
-G4double G4USolid::DistanceToOut(const G4ThreeVector& pt,
-				  const G4ThreeVector& d,
-				  const G4bool calcNorm=false,
-				  G4bool *validNorm,
-				  G4ThreeVector *norm) const
-{
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z();
-  UVector3 n;
-  G4double dist = fShape->DistanceToOut(p, v, n, *validNorm);
-  norm->SetX(n.x); norm->SetY(n.y); norm->SetZ(n.z);
-  return dist;
-}
-
-G4double G4USolid::DistanceToOut(const G4ThreeVector& pt) const
-{
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  return fShape->SafetyIn(p);
-}
-
-G4double G4USolid::GetCubicVolume()
-{
-  return fShape->Capacity();
-}
-
-G4double G4USolid::GetSurfaceArea()
-{
-  return fShape->SurfaceArea();
-}
-
 G4GeometryType G4USolid::GetEntityType() const
 {
-  return fShape->GetEntityTyoe();
-}
-
-G4ThreeVector G4USolid::GetPointOnSurface() const
-{
-  UVector3 p = fShape->SamplePointOnSurface();
-  return G4ThreeVector(p.x, p.y, p.z);
-}
-
-G4VSolid* G4USolid::Clone() const
-{
-  return new G4USolid(fShape->Clone());
+  
+  G4String string= fShape->GetEntityType();
+  return "G4"+string;
 }
 
 std::ostream& G4USolid::StreamInfo(std::ostream& os) const
 {
   os << "-----------------------------------------------------------\n"
-     << "    *** Dump for solid - " << fShape->GetName() << " ***\n"
-     << "    ===================================================\n"
-     << " Solid type: " << fShape->GetEntityType() << "\n"
-     << "-----------------------------------------------------------\n";
+     << "    *** Dump for solid - " << fShape->GetName() << " ***\n";
+  //   << "    ===================================================\n"
+  //   << " Solid type: " << fShape->GetEntityType() << "\n"
+  //   << "-----------------------------------------------------------\n";
 
-  return fShape->StreamInfo(os);
-}
-
-void G4USolid::DescribeYourselfTo (G4VGraphicsScene& scene) const
-{
-  scene.AddSolid (*this);
-}
-
-G4USolid::G4USolid(__void__& a)
-  : G4VSolid(a), fShape(0)
-{
+  return os;//fShape->StreamInfo(os);
 }
 
 G4USolid::G4USolid(const G4USolid& rhs)
@@ -270,14 +306,18 @@ G4USolid& G4USolid::operator=(const G4USolid& rhs)
   return *this;
 }
 
+G4VSolid* G4USolid::Clone() const
+{
+  return new G4USolid(fShape->GetName(),fShape->Clone());
+}
 G4ThreeVectorList*
 G4USolid::CreateRotatedVertices(const G4AffineTransform& pTransform) const
 {
   G4double xMin,xMax,yMin,yMax,zMin,zMax;
   G4double xoffset,yoffset,zoffset;
-  fShape->Extent(kXAxis,xMin,xMax);  
-  fShape->Extent(kYAxis,yMin,yMax); 
-  fShape->Extent(kZAxis,zMin,zMax); 
+  fShape->Extent(VUSolid::eXaxis,xMin,xMax);  
+  fShape->Extent(VUSolid::eYaxis,yMin,yMax); 
+  fShape->Extent(VUSolid::eZaxis,zMin,zMax); 
 
   // Or new method Extend3D
   xoffset = pTransform.NetTranslation().x() ;
@@ -300,8 +340,8 @@ G4USolid::CreateRotatedVertices(const G4AffineTransform& pTransform) const
     G4ThreeVector vertex3(xMin,yMax,zMin);
     G4ThreeVector vertex4(xMin,yMin,zMax);
     G4ThreeVector vertex5(xMax,yMin,zMax);
-    G4ThreeVector vertex6(xMax,yMax,zMax));
-    G4ThreeVector vertex7(xMin,yMax,zMax));
+    G4ThreeVector vertex6(xMax,yMax,zMax);
+    G4ThreeVector vertex7(xMin,yMax,zMax);
 
     vertices->push_back(pTransform.TransformPoint(vertex0));
     vertices->push_back(pTransform.TransformPoint(vertex1));
@@ -319,3 +359,5 @@ G4USolid::CreateRotatedVertices(const G4AffineTransform& pTransform) const
   }
   return vertices;
 }
+
+
