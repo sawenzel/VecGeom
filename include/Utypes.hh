@@ -30,5 +30,6 @@ struct UBuffer3DStruct {
 typedef std::string UString;
 typedef UBBoxStruct UBBox;
 typedef UBuffer3DStruct UBuffer3D;
+typedef UString   UGeometryType;
 
 #endif
