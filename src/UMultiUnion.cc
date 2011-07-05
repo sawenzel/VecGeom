@@ -249,7 +249,7 @@ void UMultiUnion::Extent(double aMin[3],double aMax[3])
 }
 
 //______________________________________________________________________________
-bool UMultiUnion::Normal( const UVector3& /*aPoint*/, UVector3 &/*aNormal*/ )
+bool UMultiUnion::Normal( const UVector3& aPoint, UVector3 &aNormal)
 {
 // Computes the normal on a surface and returns it as a unit vector
 //   In case a point is further than tolerance_normal from a surface, set validNormal=false
@@ -258,8 +258,29 @@ bool UMultiUnion::Normal( const UVector3& /*aPoint*/, UVector3 &/*aNormal*/ )
 //   On an edge or corner, provide an average normal of all facets within tolerance
 // NOTE: the tolerance value used in here is not yet the global surface
 //     tolerance - we will have to revise this value - TODO
-   cout << "Normal - Not implemented" << endl;
-   return false;
+   int CarNodes = fNodes->size();
+   int iIndex = 0;
+   VUSolid *TempSolid = NULL;
+   double *TempTransform = NULL;
+   UVector3 result_normal;
+   UVector3 TempPoint;     
+   
+   for(iIndex = 0 ; iIndex < CarNodes ; iIndex++)
+   {
+      TempSolid = ((*fNodes)[iIndex])->fSolid;
+      TempTransform = ((*fNodes)[iIndex])->fTransform;
+      
+      TempPoint.x = aPoint.x - TempTransform[0];
+      TempPoint.y = aPoint.y - TempTransform[1];
+      TempPoint.z = aPoint.z - TempTransform[2];
+      
+      if(TempSolid->Normal(TempPoint,result_normal) == true)
+      {
+         aNormal = result_normal;
+         return true;
+      }
+   }
+   return false;      
 }
 
 //______________________________________________________________________________ 
@@ -306,15 +327,47 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint,bool aAccurate) const
 }
 
 //______________________________________________________________________________
-double UMultiUnion::SafetyFromOutside ( const UVector3 aPoint, 
-                bool aAccurate) const
+double UMultiUnion::SafetyFromOutside ( const UVector3 aPoint, bool aAccurate) const
 {
 // Estimates the isotropic safety from a point outside the current solid to any 
 // of its surfaces. The algorithm may be accurate or should provide a fast 
 // underestimate.
-   cout << "SafetyFromOutside - Not implemented" << endl;
-   return 0.;
-}   
+   int CarNodes = fNodes->size();
+   int iIndex = 0;
+   int jIndex = 0;
+   double current_safety = 0;
+   double safety = 0;
+   VUSolid *TempSolid = NULL;
+   double *TempTransform = NULL;
+   UVector3 TempPoint;   
+     
+   for(iIndex = 0 ; iIndex < CarNodes ; iIndex++)   
+   {   
+      TempSolid = ((*fNodes)[iIndex])->fSolid;   
+      TempTransform = ((*fNodes)[iIndex])->fTransform; 
+
+      TempPoint.x = aPoint.x - TempTransform[0];
+      TempPoint.y = aPoint.y - TempTransform[1];
+      TempPoint.z = aPoint.z - TempTransform[2];   
+
+      if(TempSolid->Inside(TempPoint) == eOutside)
+      {
+         current_safety = TempSolid->SafetyFromOutside(TempPoint,aAccurate);
+      
+         if(jIndex == 0)
+         {
+            safety = current_safety;
+         }
+      
+         if(current_safety < safety)
+         {
+            safety = current_safety;
+         }
+         jIndex++;
+      }
+   }
+   return safety;
+}
 
 //______________________________________________________________________________       
 double UMultiUnion::SurfaceArea()

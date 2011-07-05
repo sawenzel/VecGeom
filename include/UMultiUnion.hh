@@ -18,6 +18,10 @@
 #include "UUtils.hh"
 #endif
 
+#ifndef USOLIDS_UTRANSFORM3D
+#include "UTransform3D.hh"
+#endif
+
 #include <vector>
 using namespace std;
 

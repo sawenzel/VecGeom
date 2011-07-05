@@ -94,6 +94,36 @@ void TestMultiUnion()
    printf("[> SafetyFromInside:\n");
    printf("%f\n",result_safety);
    
+   // Test of method SafetyFromOutside:
+   UVector3 TestPoint2;    
+   TestPoint2.x = 90;
+   TestPoint2.y = 0;
+   TestPoint2.z = 0;   
+   double result_safety2 = multi_union->UMultiUnion::SafetyFromOutside(TestPoint2,false);
+   printf("[> SafetyFromOutside:\n");
+   printf("%f\n",result_safety2);
+   
+   // Test of method Normal:
+   printf("[> Normal:\n");   
+   UVector3 TestPoint3;
+   TestPoint3.x = 50;
+   TestPoint3.y = 50;
+   TestPoint3.z = 0;
+   
+   UVector3 normal;
+
+   bool outcome_normal = false;
+   outcome_normal = multi_union->Normal(TestPoint3,normal);
+   
+   if(outcome_normal == true)
+   {
+      printf("OK normal: [%f , %f , %f]\n",normal.x,normal.y,normal.z);
+   }
+   else
+   {
+      printf("KO normal\n");
+   }
+   
    // Program comes to an end:
    printf("[> END\n");
 }
