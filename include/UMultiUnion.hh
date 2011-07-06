@@ -32,10 +32,10 @@ public:
    class UNode {
    public:
       VUSolid          *fSolid;
-      double           *fTransform;   // Permits the placement of "fSolid"
+      UTransform3D     *fTransform;   // Permits the placement of "fSolid"
       
       UNode() : fSolid(0), fTransform(0) {}
-      UNode(VUSolid *solid, double *trans)
+      UNode(VUSolid *solid, UTransform3D *trans)
       {
          fSolid = solid;
          fTransform = trans;
@@ -82,8 +82,9 @@ public:
    virtual void      ComputeBBox(UBBox *aBox, bool aStore = false);
         
    // Other methods
-   void              AddNode(UNode *node);
+   void              AddNode(VUSolid *solid, UTransform3D *trans);
    void              Voxelize();   // Builds the voxels for the considered solid
+   virtual void SetVertices(double *vertices) const {}   
 
    protected:
 //    UVoxelFinder     *fVoxels;

@@ -1,5 +1,6 @@
 #include "UBox.hh"
 #include "UMultiUnion.hh"
+#include "UTransform3D.hh"
 #include "TGeoUShape.h"
 #include "TGeoManager.h"
 #include "TGeoMaterial.h"
@@ -9,6 +10,7 @@
 void TestMultiUnion()
 {
    // Initialization of ROOT environment:
+   // Test for a multiple union solid.
    TGeoManager *geom = new TGeoManager("UMultiUnion","Test of a UMultiUnion");
    TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
    TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
@@ -21,32 +23,22 @@ void TestMultiUnion()
 
    // Instance:
       // Creation of two nodes:
-   UBox *box1 = new UBox("UBox",50,50,50);
+   UBox *box1 = new UBox("UBox",10,10,80);
    UBox *box2 = new UBox("UBox",60,60,60);
-   double *transform1 = new double[3];
-   transform1[0] = 0;
-   transform1[1] = 0;
-   transform1[2] = 0;
-   double *transform2 = new double[3];
-   transform2[0] = 0;
-   transform2[1] = 200;
-   transform2[2] = 0; 
+   UTransform3D *transform1 = new UTransform3D(600,0,0,0,45,0);
+   UTransform3D *transform2 = new UTransform3D(0,200,0,0,0,0);
       // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");
-
-   UMultiUnion::UNode* node1 = new UMultiUnion::UNode(box1,transform1);   
-   UMultiUnion::UNode* node2 = new UMultiUnion::UNode(box2,transform2);
-   
-   multi_union->AddNode(node1);
-   multi_union->AddNode(node2);   
+   multi_union->AddNode(box1,transform1);
+   multi_union->AddNode(box2,transform2);     
    
    geom->CloseGeometry();   
    
    // Creation of a test point:
    UVector3 test_point;
-   test_point.x = 700;
-   test_point.y = 700;
-   test_point.z = 700;   
+   test_point.x = 600;
+   test_point.y = 0;
+   test_point.z = 0;   
    
    VUSolid::EnumInside resultat = multi_union->Inside(test_point);
 
@@ -80,49 +72,10 @@ void TestMultiUnion()
    // Test of method Extent (2nd version):
    double *table_mini = new double[3];
    double *table_maxi = new double[3];
-   
+ 
    multi_union->Extent(table_mini,table_maxi);
    printf("[> Extent - 2nd version:\n");
    printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",table_mini[0],table_maxi[0],table_mini[1],table_maxi[1],table_mini[2],table_maxi[2]);   
-
-   // Test of method SafetyFromInside:
-   UVector3 TestPoint;    
-   TestPoint.x = 0;
-   TestPoint.y = 200;
-   TestPoint.z = 0;   
-   double result_safety = multi_union->UMultiUnion::SafetyFromInside(TestPoint,false);
-   printf("[> SafetyFromInside:\n");
-   printf("%f\n",result_safety);
-   
-   // Test of method SafetyFromOutside:
-   UVector3 TestPoint2;    
-   TestPoint2.x = 90;
-   TestPoint2.y = 0;
-   TestPoint2.z = 0;   
-   double result_safety2 = multi_union->UMultiUnion::SafetyFromOutside(TestPoint2,false);
-   printf("[> SafetyFromOutside:\n");
-   printf("%f\n",result_safety2);
-   
-   // Test of method Normal:
-   printf("[> Normal:\n");   
-   UVector3 TestPoint3;
-   TestPoint3.x = 50;
-   TestPoint3.y = 50;
-   TestPoint3.z = 0;
-   
-   UVector3 normal;
-
-   bool outcome_normal = false;
-   outcome_normal = multi_union->Normal(TestPoint3,normal);
-   
-   if(outcome_normal == true)
-   {
-      printf("OK normal: [%f , %f , %f]\n",normal.x,normal.y,normal.z);
-   }
-   else
-   {
-      printf("KO normal\n");
-   }
    
    // Program comes to an end:
    printf("[> END\n");
