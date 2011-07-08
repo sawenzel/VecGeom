@@ -77,11 +77,36 @@ namespace UUtils {
   long  LocMax(long n, const double *a);
 
   // Sorting
-//  template <typename Element, typename Index>
-//  void Sort(Index n, const Element* a, Index* index, bool down=kTRUE);
-//  template <typename Iterator, typename IndexIterator>
-//  void SortItr(Iterator first, Iterator last, IndexIterator index, bool down=kTRUE);
+  template <typename Element, typename Index>
+  void Sort(Index n, const Element* a, Index* index, bool down=true);
+  template <typename Iterator, typename IndexIterator>
+  void SortItr(Iterator first, Iterator last, IndexIterator index, bool down=true);
 
+template<typename T>
+struct CompareDesc {
+
+   CompareDesc(T d) : fData(d) {}
+
+   template<typename Index>
+   bool operator()(Index i1, Index i2) {
+      return *(fData + i1) > *(fData + i2);
+   }
+
+   T fData;
+};
+
+template<typename T>
+struct CompareAsc {
+
+   CompareAsc(T d) : fData(d) {}
+
+   template<typename Index>
+   bool operator()(Index i1, Index i2) {
+      return *(fData + i1) < *(fData + i2);
+   }
+
+   T fData;
+};
   // Binary search
 //  template <typename T> long BinarySearch(long n, const T  *array, T value);
 //  template <typename T> long BinarySearch(long n, const T **array, T value);
