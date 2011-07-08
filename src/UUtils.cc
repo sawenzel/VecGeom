@@ -93,3 +93,22 @@ template <typename Element, typename Index> void UUtils::Sort(Index n, const Ele
    else
       std::sort(index, index + n, CompareAsc<const Element*>(a) );
 }
+
+//______________________________________________________________________________
+void UUtils::Sort(int n, const double* a, int* index, bool down)
+{
+   // Sort the n elements of the  array a of generic templated type Element.
+   // In output the array index of type Index contains the indices of the sorted array.
+   // If down is false sort in increasing order (default is decreasing order).
+
+   // NOTE that the array index must be created with a length >= n
+   // before calling this function.
+   // NOTE also that the size type for n must be the same type used for the index array
+   // (templated type Index)
+
+   for(int i = 0; i < n; i++) { index[i] = i; }
+   if ( down )
+      std::sort(index, index + n, CompareDesc<const double*>(a) );
+   else
+      std::sort(index, index + n, CompareAsc<const double*>(a) );
+}

@@ -78,11 +78,19 @@ void TestMultiUnion()
    printf("[> Extent - 2nd version:\n");
    printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",table_mini[0],table_maxi[0],table_mini[1],table_maxi[1],table_mini[2],table_maxi[2]);   
    
-   // Test of "UVoxelFinder":
-   printf("[> UVoxelFinder:\n");   
+   // Test of "BuildVoxelLimits":
+   printf("[> BuildVoxelLimits:\n");   
    UVoxelFinder voxfind(multi_union);
    voxfind.BuildVoxelLimits();
    voxfind.DisplayVoxelLimits();
+   
+   // "CreateBoundaries":
+   voxfind.CreateBoundaries();
+   
+   // Test of "SortBoundaries":
+   voxfind.SortBoundaries();
+   printf("[> SortBoundaries:\n");
+   voxfind.DisplayBoundaries();
    
    // Program comes to an end:
    printf("[> END\n");

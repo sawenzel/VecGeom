@@ -77,6 +77,7 @@ namespace UUtils {
   long  LocMax(long n, const double *a);
 
   // Sorting
+  void Sort(int n, const double* a, int* index, bool down = true);
   template <typename Element, typename Index>
   void Sort(Index n, const Element* a, Index* index, bool down=true);
   template <typename Iterator, typename IndexIterator>
