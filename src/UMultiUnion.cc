@@ -140,7 +140,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
       
       TempSolid->SetVertices(vertices);
       
-      for(jIndex = 0 ; jIndex < 7 ; jIndex++)
+      for(jIndex = 0 ; jIndex < 8 ; jIndex++)
       {
          kIndex = 3*jIndex;
          TempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
@@ -223,8 +223,21 @@ double UMultiUnion::SurfaceArea()
 }     
 
 //______________________________________________________________________________       
-void UMultiUnion::Voxelize()
+int UMultiUnion::GetNNodes()
 {
-// Build voxels structure.
-   cout << "Voxelize - Not implemented" << endl;
+   return(fNodes->size());
+}
+
+//______________________________________________________________________________       
+VUSolid* UMultiUnion::GetSolid(int index)
+{
+   return(((*fNodes)[index])->fSolid);
+}
+
+//______________________________________________________________________________       
+
+UTransform3D* UMultiUnion::GetTransform(int index)
+{
+   return(((*fNodes)[index])->fTransform);
+
 }

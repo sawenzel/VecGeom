@@ -16,7 +16,7 @@ SRCDIR        = src
 CXXFLAGS     += -I./$(INCDIR)
 
 
-SOURCES       = UUtils.cc UVector3.cc UTransform3D.cc VUSolid.cc UBox.cc UMultiUnion.cc
+SOURCES       = UUtils.cc UVector3.cc UTransform3D.cc VUSolid.cc UBox.cc UMultiUnion.cc UVoxelFinder.cc
 UBRIDGETGEO   = TGeoUShape.cxx
 UBRIDGEDICTS  = G__UBridges.cxx
 UBRIDGETGEOO  = TGeoUShape.o G__UBridges.o
@@ -55,6 +55,8 @@ UBox.o:
 		$(CXX)  $(CXXFLAGS) -o src/$@ -c src/UBox.cc   
 UMultiUnion.o:
 		$(CXX)  $(CXXFLAGS) -o src/$@ -c src/UMultiUnion.cc    
+UVoxelFinder.o:
+		$(CXX)  $(CXXFLAGS) -o src/$@ -c src/UVoxelFinder.cc                   
 TGeoUShape.o:
 		$(CXX)  $(CXXFLAGS) -I$(ROOTSYS)/include -o $(INCBRIDGE)/$@ -c $(INCBRIDGE)/$(UBRIDGETGEO)
 $(UBRIDGEDICTS):

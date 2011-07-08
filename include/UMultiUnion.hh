@@ -83,8 +83,10 @@ public:
         
    // Other methods
    void              AddNode(VUSolid *solid, UTransform3D *trans);
-   void              Voxelize();   // Builds the voxels for the considered solid
-   virtual void SetVertices(double *vertices) const {}   
+   virtual void      SetVertices(double *vertices) const {}     
+   int               GetNNodes();
+   VUSolid*          GetSolid(int index);
+   UTransform3D*     GetTransform(int index);   
 
    protected:
 //    UVoxelFinder     *fVoxels;

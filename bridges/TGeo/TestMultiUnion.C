@@ -1,6 +1,7 @@
 #include "UBox.hh"
 #include "UMultiUnion.hh"
 #include "UTransform3D.hh"
+#include "UVoxelFinder.hh"
 #include "TGeoUShape.h"
 #include "TGeoManager.h"
 #include "TGeoMaterial.h"
@@ -23,9 +24,9 @@ void TestMultiUnion()
 
    // Instance:
       // Creation of two nodes:
-   UBox *box1 = new UBox("UBox",10,10,80);
+   UBox *box1 = new UBox("UBox",100,100,100);
    UBox *box2 = new UBox("UBox",60,60,60);
-   UTransform3D *transform1 = new UTransform3D(600,0,0,0,45,0);
+   UTransform3D *transform1 = new UTransform3D(20,0,0,0,45,0);
    UTransform3D *transform2 = new UTransform3D(0,200,0,0,0,0);
       // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");
@@ -76,6 +77,12 @@ void TestMultiUnion()
    multi_union->Extent(table_mini,table_maxi);
    printf("[> Extent - 2nd version:\n");
    printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",table_mini[0],table_maxi[0],table_mini[1],table_maxi[1],table_mini[2],table_maxi[2]);   
+   
+   // Test of "UVoxelFinder":
+   printf("[> UVoxelFinder:\n");   
+   UVoxelFinder voxfind(multi_union);
+   voxfind.BuildVoxelLimits();
+   voxfind.DisplayVoxelLimits();
    
    // Program comes to an end:
    printf("[> END\n");
