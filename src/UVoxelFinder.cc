@@ -22,7 +22,9 @@ UVoxelFinder::UVoxelFinder(UMultiUnion* multi_union)
 void UVoxelFinder::BuildVoxelLimits()
 {
 // "BuildVoxelLimits"'s aim is to store the coordinates of the origin as well as
-// the half lengths related to the bounding box of each node
+// the half lengths related to the bounding box of each node.
+// These quantities are stored in the array "fBoxes" (6 different values per
+// node.
    int iIndex,jIndex,kIndex = 0;
    int CarNodes = fMultiUnion->GetNNodes(); // Number of nodes in "fMultiUnion"
    UVector3 TempPointConv,TempPoint;                                                  
@@ -92,6 +94,7 @@ void UVoxelFinder::BuildVoxelLimits()
 //______________________________________________________________________________   
 void UVoxelFinder::DisplayVoxelLimits()
 {
+// "DisplayVoxelLimits" displays the dX, dY, dZ, oX, oY and oZ for each node
    int CarNodes = fMultiUnion->GetNNodes();
    int iIndex = 0;
    
@@ -105,7 +108,7 @@ void UVoxelFinder::DisplayVoxelLimits()
 void UVoxelFinder::CreateBoundaries()
 {
 // "SortAll"'s aim is to determine the slices induced by the bounding boxes,
-// along each axis
+// along each axis. The created boundaries are stored in the array "fBoundaries"
    int iIndex = 0;
    int CarNodes = fMultiUnion->GetNNodes(); // Number of nodes in structure of
                                             // "UMultiUnion" type
@@ -137,13 +140,22 @@ void UVoxelFinder::CreateBoundaries()
 //______________________________________________________________________________   
 void UVoxelFinder::SortBoundaries()
 {
-// "SortBoundaries" orders the boundaries along each axis
+// "SortBoundaries" orders the boundaries along each axis (increasing order)
+// and also do not take into account redundant boundaries, ie if two boundaries
+// are separated by a distance strictly inferior to "DIST_INTER_BOUND".
+// The sorted boundaries are respectively stored in:
+//              * fXBoundaries
+//              * fYBoundaries
+//              * fZBoundaries
+// In addition, the number of elements contained in the three latter arrays are
+// precised thanks to variables: fXNumBound, fYNumBound and fZNumBound.
    int iIndex = 0;
    int CarNodes = fMultiUnion->GetNNodes();
    int *indexSortedBound = new int[2*CarNodes];
    double *tempBoundaries = new double[2*CarNodes];
    
    // x axis:
+   // -------
    int number_boundaries = 0; // Total number of boundaries after treatment:
    UUtils::Sort(2*CarNodes,&fBoundaries[0],&indexSortedBound[0],false);
    
@@ -155,20 +167,22 @@ void UVoxelFinder::SortBoundaries()
          number_boundaries++;
          continue;
       }
-      
-//      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]] > 1E-10))
+
+      // If two successive boundaries are too close from each other, only the first one is considered      
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
       {
          tempBoundaries[number_boundaries] = fBoundaries[indexSortedBound[iIndex]];
          number_boundaries++;         
       }
    }
    
-//   if(fXBoundaries) delete fXBoundaries;
+//   if(fXBoundaries) delete [] fXBoundaries;
    fXBoundaries = new double[number_boundaries];
    memcpy(fXBoundaries,&tempBoundaries[0],number_boundaries*sizeof(double));
    fXNumBound = number_boundaries;
    
    // y axis:
+   // -------
    number_boundaries = 0; // Total number of boundaries after treatment:
    UUtils::Sort(2*CarNodes,&fBoundaries[2*CarNodes],&indexSortedBound[0],false);
    
@@ -181,7 +195,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-//      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]] > 1E-10))
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
       {
          tempBoundaries[number_boundaries] = fBoundaries[2*CarNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -194,6 +208,7 @@ void UVoxelFinder::SortBoundaries()
    fYNumBound = number_boundaries;
    
    // z axis:
+   // -------
    number_boundaries = 0; // Total number of boundaries after treatment:
    UUtils::Sort(2*CarNodes,&fBoundaries[4*CarNodes],&indexSortedBound[0],false);
    
@@ -206,7 +221,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-//      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]] > 1E-10))
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
       {
          tempBoundaries[number_boundaries] = fBoundaries[4*CarNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -222,6 +237,7 @@ void UVoxelFinder::SortBoundaries()
 //______________________________________________________________________________   
 void UVoxelFinder::DisplayBoundaries()
 {
+// Prints the positions of the boundaries of the slices on the three axis:
    int iIndex = 0;
    
    printf(" * X axis:\n    ");
@@ -229,19 +245,196 @@ void UVoxelFinder::DisplayBoundaries()
    {
       printf("| %f ",fXBoundaries[iIndex]);
    }
-   printf("|\n");   
+   printf("|\n    Number of boundaries: %d\n",fXNumBound);  
    
    printf(" * Y axis:\n    ");
    for(iIndex = 0 ; iIndex < fYNumBound ; iIndex++)
    {
       printf("| %f ",fYBoundaries[iIndex]);
    }
-   printf("|\n");   
-   
+   printf("|\n    Number of boundaries: %d\n",fYNumBound);  
+      
    printf(" * Z axis:\n    ");
    for(iIndex = 0 ; iIndex < fZNumBound ; iIndex++)
    {
       printf("| %f ",fZBoundaries[iIndex]);
    }      
-   printf("|\n");
+   printf("|\n    Number of boundaries: %d\n",fZNumBound);  
+}
+
+//______________________________________________________________________________   
+void UVoxelFinder::BuildListNodes()
+{
+// "BuildListNodes" stores in the arrays "fIndcX", "fIndcY" and "fIndcZ" the
+// solids present in each slice aong the three axis.
+// In array "fNsliceX", "fNsliceY" and "fNsliceZ" are stored the number of
+// solids in the considered slice.
+   int iIndex, jIndex = 0;
+   int CarNodes = fMultiUnion->GetNNodes();   
+   int nmaxslices = 2*CarNodes+1;
+   int nperslice = 1+(CarNodes-1)/(8*sizeof(char));
+   int current = 0;
+   
+   // Number of slices per axis:
+   int xNumslices = fXNumBound-1;
+   int yNumslices = fYNumBound-1;
+   int zNumslices = fZNumBound-1;
+
+   double xbmin, xbmax, ybmin, ybmax, zbmin, zbmax = 0;
+   
+   // Memory:
+   char *storage = new char[nmaxslices*nperslice];
+   memset(storage,0,(nmaxslices*nperslice)*sizeof(double));
+   char *bits;
+   int number_byte;
+   char position;
+   
+   // Loop on x slices:
+   fNsliceX = new int[xNumslices];
+   
+   for(iIndex = 0 ; iIndex < xNumslices ; iIndex++)
+   {
+      bits = &storage[current];
+   
+      // Loop on the nodes:
+      for(jIndex = 0 ; jIndex < CarNodes ; jIndex++)
+      {
+         // Determination of the minimum and maximum position along x
+         // of the bounding boxe of each node:
+         xbmin = fBoxes[6*jIndex+3]-fBoxes[6*jIndex];
+         xbmax = fBoxes[6*jIndex+3]+fBoxes[6*jIndex];
+         
+         // Is the considered node inside slice?
+         if((xbmin - fXBoundaries[iIndex+1]) > -DIST_INTER_BOUND) continue;
+         if((xbmax - fXBoundaries[iIndex]) < DIST_INTER_BOUND) continue;
+         
+         // The considered node is contained in the current slice:
+         fNsliceX[iIndex]++;
+         
+         // Storage of the number of the node in the array:
+         number_byte = jIndex/8;
+         position = (char)(jIndex%8);
+         bits[number_byte] |= (1 << position);         
+      }
+      if(fNsliceX[iIndex]>0) current += nperslice;
+   }
+   fNx = current;
+   fIndcX = new char[fNx];
+   memcpy(fIndcX,storage,current*sizeof(char));
+   
+   // Loop on y slices:
+   fNsliceY = new int[yNumslices];
+   current = 0;
+   memset(storage,0,(nmaxslices*nperslice)*sizeof(double));
+      
+   for(iIndex = 0 ; iIndex < xNumslices ; iIndex++)
+   {
+      bits = &storage[current];
+   
+      // Loop on the nodes:
+      for(jIndex = 0 ; jIndex < CarNodes ; jIndex++)
+      {
+         // Determination of the minimum and maximum position along x
+         // of the bounding boxe of each node:
+         ybmin = fBoxes[6*jIndex+4]-fBoxes[6*jIndex+1];
+         ybmax = fBoxes[6*jIndex+4]+fBoxes[6*jIndex+1];
+         
+         // Is the considered node inside slice?
+         if((ybmin - fYBoundaries[iIndex+1]) > -DIST_INTER_BOUND) continue;
+         if((ybmax - fYBoundaries[iIndex]) < DIST_INTER_BOUND) continue;
+         
+         // The considered node is contained in the current slice:
+         fNsliceY[iIndex]++;
+         
+         // Storage of the number of the node in the array:
+         number_byte = jIndex/8;
+         position = (char)(jIndex%8);
+         bits[number_byte] |= (1 << position);         
+      }
+      if(fNsliceY[iIndex]>0) current += nperslice;
+   }
+   fNy = current;
+   fIndcY = new char[fNy];
+   memcpy(fIndcY,storage,current*sizeof(char));
+   
+   // Loop on z slices:
+   fNsliceZ = new int[zNumslices];
+   current = 0;
+   memset(storage,0,(nmaxslices*nperslice)*sizeof(double));
+   
+   for(iIndex = 0 ; iIndex < zNumslices ; iIndex++)
+   {
+      bits = &storage[current];
+   
+      // Loop on the nodes:
+      for(jIndex = 0 ; jIndex < CarNodes ; jIndex++)
+      {
+         // Determination of the minimum and maximum position along x
+         // of the bounding boxe of each node:
+         zbmin = fBoxes[6*jIndex+5]-fBoxes[6*jIndex+2];
+         zbmax = fBoxes[6*jIndex+5]+fBoxes[6*jIndex+2];
+         
+         // Is the considered node inside slice?
+         if((zbmin - fZBoundaries[iIndex+1]) > -DIST_INTER_BOUND) continue;
+         if((zbmax - fZBoundaries[iIndex]) < DIST_INTER_BOUND) continue;
+         
+         // The considered node is contained in the current slice:
+         fNsliceZ[iIndex]++;
+         
+         // Storage of the number of the node in the array:
+         number_byte = jIndex/8;
+         position = (char)(jIndex%8);
+         bits[number_byte] |= (1 << position);         
+      }
+      if(fNsliceZ[iIndex]>0) current += nperslice;
+   }
+   fNz = current;
+   fIndcZ = new char[fNz];
+   memcpy(fIndcZ,storage,current*sizeof(char));      
+}
+
+//______________________________________________________________________________   
+void UVoxelFinder::DisplayListNodes()
+{
+// Prints which solids are present in the slices previously elaborated.
+   int iIndex, jIndex = 0;
+   int CarNodes = fMultiUnion->GetNNodes();   
+//   int nmaxslices = 2*CarNodes+1;
+   int nperslice = 1+(CarNodes-1)/(8*sizeof(char));
+   
+   printf(" * X axis:\n");
+   for(iIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++)
+   {
+      printf("    Slice #%d: ",iIndex+1);
+   
+      for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
+      {
+         printf("%d ",(int)fIndcX[iIndex+jIndex]);
+      }
+      printf("\n");
+   }
+   
+   printf(" * Y axis:\n");
+   for(iIndex = 0 ; iIndex < fYNumBound-1 ; iIndex++)
+   {
+      printf("    Slice #%d: ",iIndex+1);
+   
+      for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
+      {
+         printf("%d ",(int)fIndcY[iIndex+jIndex]);
+      }
+      printf("\n");
+   }
+   
+   printf(" * Z axis:\n");
+   for(iIndex = 0 ; iIndex < fZNumBound-1 ; iIndex++)
+   {
+      printf("    Slice #%d: ",iIndex+1);
+   
+      for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
+      {
+         printf("%d ",(int)fIndcZ[iIndex+jIndex]);
+      }
+      printf("\n");
+   }       
 }

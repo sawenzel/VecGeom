@@ -24,17 +24,25 @@
 #endif
 
 #include <vector>
+
+#define DIST_INTER_BOUND 1E-10
+
 using namespace std;
 
 class UVoxelFinder
 {
 public:
    void Voxelize() {}
-   void SortBoundaries();
-   void CreateBoundaries();  
+
    void BuildVoxelLimits();
    void DisplayVoxelLimits();
+
+   void CreateBoundaries();    
+   void SortBoundaries(); 
    void DisplayBoundaries();
+
+   void BuildListNodes();
+   void DisplayListNodes();
    
    UVoxelFinder();
    UVoxelFinder(UMultiUnion* multi_union);
@@ -48,6 +56,13 @@ private:
    double *fYBoundaries;
    int fYNumBound;   
    double *fZBoundaries;      
-   int fZNumBound;   
+   int fZNumBound;
+   int* fNsliceX;
+   int* fNsliceY;
+   int* fNsliceZ;
+   char*	fIndcX;   
+   char*	fIndcY;
+   char*	fIndcZ;      
+   int fNx, fNy, fNz;
 };
 #endif

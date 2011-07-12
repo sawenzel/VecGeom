@@ -67,7 +67,7 @@ void TestMultiUnion()
    multi_union->Extent(x_axis,MinX,MaxX);
    multi_union->Extent(y_axis,MinY,MaxY);
    multi_union->Extent(z_axis,MinZ,MaxZ);
-   printf("[> Extent - 1st version:\n");
+   printf("[> Extent (multi union) - 1st version:\n");
    printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",MinX,MaxX,MinY,MaxY,MinZ,MaxZ);
    
    // Test of method Extent (2nd version):
@@ -75,7 +75,7 @@ void TestMultiUnion()
    double *table_maxi = new double[3];
  
    multi_union->Extent(table_mini,table_maxi);
-   printf("[> Extent - 2nd version:\n");
+   printf("[> Extent (multi union) - 2nd version:\n");
    printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",table_mini[0],table_maxi[0],table_mini[1],table_maxi[1],table_mini[2],table_maxi[2]);   
    
    // Test of "BuildVoxelLimits":
@@ -91,6 +91,12 @@ void TestMultiUnion()
    voxfind.SortBoundaries();
    printf("[> SortBoundaries:\n");
    voxfind.DisplayBoundaries();
+   
+   // Test of "BuildListNodes" along x axis:
+   printf("[> BuildListNodes:\n");   
+   voxfind.BuildListNodes();
+   voxfind.DisplayListNodes();
+   
    
    // Program comes to an end:
    printf("[> END\n");
