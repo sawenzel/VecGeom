@@ -1,20 +1,17 @@
 #include "UMultiUnion.hh"
-#include "UBox.hh"
+
 #include <iostream>
 #include "UUtils.hh"
+#include "UVoxelFinder.hh"
+
+using namespace std;
 
 //______________________________________________________________________________       
 UMultiUnion::UMultiUnion(const char *name)
 {
    SetName(name);
-   fNodes = NULL;   
-}
-
-//______________________________________________________________________________       
-UMultiUnion::UMultiUnion(const char *name, vector<UNode*> *nodes) 
-{
-   SetName(name);
-   fNodes = nodes;   
+   fNodes  = 0; 
+   fVoxels = 0;  
 }
 
 //______________________________________________________________________________       
@@ -22,7 +19,7 @@ void UMultiUnion::AddNode(VUSolid *solid, UTransform3D *trans)
 {
    UNode* node = new UNode(solid,trans);   
 
-   if(fNodes == NULL)
+   if (!fNodes)
    {
       fNodes = new vector<UNode*>;
    }
@@ -131,6 +128,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 
    VUSolid *TempSolid = NULL;
    UTransform3D *TempTransform = NULL; 
+   UVector3 min, max;
     
    // Loop on the nodes:
    for(iIndex = 0 ; iIndex < CarNodes ; iIndex++)
@@ -138,8 +136,15 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
       TempSolid = ((*fNodes)[iIndex])->fSolid;
       TempTransform = ((*fNodes)[iIndex])->fTransform;
       
-      TempSolid->SetVertices(vertices);
       
+     // TempSolid->SetVertices(vertices);
+     // TODO: Define a method: TransformVertices(UVector3 &min, UVector3 &max, const UTransform3D *transform)
+     //  that should take the min/max limits in the local frame and transform them
+//     UVector3 min, max;
+//     TempSolid->Extent(min, max);
+//       UUtils::TransformVertices(min, max, TempTransform)
+      
+      // Code below to be used to implement TransformVertices
       for(jIndex = 0 ; jIndex < 8 ; jIndex++)
       {
          kIndex = 3*jIndex;
@@ -223,20 +228,20 @@ double UMultiUnion::SurfaceArea()
 }     
 
 //______________________________________________________________________________       
-int UMultiUnion::GetNNodes()
+int UMultiUnion::GetNumNodes() const
 {
    return(fNodes->size());
 }
 
 //______________________________________________________________________________       
-VUSolid* UMultiUnion::GetSolid(int index)
+const VUSolid* UMultiUnion::GetSolid(int index) const
 {
    return(((*fNodes)[index])->fSolid);
 }
 
 //______________________________________________________________________________       
 
-UTransform3D* UMultiUnion::GetTransform(int index)
+const UTransform3D* UMultiUnion::GetTransform(int index) const
 {
    return(((*fNodes)[index])->fTransform);
 

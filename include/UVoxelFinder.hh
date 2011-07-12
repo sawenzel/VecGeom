@@ -27,8 +27,6 @@
 
 #define DIST_INTER_BOUND 1E-10
 
-using namespace std;
-
 class UVoxelFinder
 {
 public:
@@ -49,7 +47,7 @@ public:
 
 private:
    UMultiUnion *fMultiUnion; // Solid to be voxelized (it is a union of several sub-solids)
-   double *fBoxes;
+   double *fBoxes;           // Array of box limits on the 3 cartesian axis
    double *fBoundaries;
    double *fXBoundaries;
    int fXNumBound;

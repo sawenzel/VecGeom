@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "UUtils.hh"
-#include "UBox.hh"
 #include "UMultiUnion.hh"
+
+//using namespace std;
 
 //______________________________________________________________________________   
 UVoxelFinder::UVoxelFinder()
@@ -29,7 +30,7 @@ void UVoxelFinder::BuildVoxelLimits()
 // These quantities are stored in the array "fBoxes" (6 different values per
 // node.
    int iIndex,jIndex,kIndex = 0;
-   int CarNodes = fMultiUnion->GetNNodes(); // Number of nodes in "fMultiUnion"
+   int CarNodes = fMultiUnion->GetNumNodes(); // Number of nodes in "fMultiUnion"
    UVector3 TempPointConv,TempPoint;                                                  
    if(!CarNodes) return; // If no node, no need to carry on
    int fNBoxes = 6*CarNodes; // 6 different quantities are stored per node
@@ -38,8 +39,8 @@ void UVoxelFinder::BuildVoxelLimits()
                                  // related to a particular node, but also
                                  // the coordinates of its origin                                 
       
-   VUSolid *TempSolid = NULL;
-   UTransform3D *TempTransform = NULL;
+   const VUSolid *TempSolid = NULL;
+   const UTransform3D *TempTransform = NULL;
    double vertices[24];
    double minX,maxX,minY,maxY,minZ,maxZ;
    
@@ -98,7 +99,7 @@ void UVoxelFinder::BuildVoxelLimits()
 void UVoxelFinder::DisplayVoxelLimits()
 {
 // "DisplayVoxelLimits" displays the dX, dY, dZ, oX, oY and oZ for each node
-   int CarNodes = fMultiUnion->GetNNodes();
+   int CarNodes = fMultiUnion->GetNumNodes();
    int iIndex = 0;
    
    for(iIndex = 0 ; iIndex < CarNodes ; iIndex++)
@@ -113,7 +114,7 @@ void UVoxelFinder::CreateBoundaries()
 // "CreateBoundaries"'s aim is to determine the slices induced by the bounding boxes,
 // along each axis. The created boundaries are stored in the array "fBoundaries"
    int iIndex = 0;
-   int CarNodes = fMultiUnion->GetNNodes(); // Number of nodes in structure of
+   int CarNodes = fMultiUnion->GetNumNodes(); // Number of nodes in structure of
                                             // "UMultiUnion" type
    
    // Determination of the 3D extent of the "UMultIUnion" structure:
@@ -153,7 +154,7 @@ void UVoxelFinder::SortBoundaries()
 // In addition, the number of elements contained in the three latter arrays are
 // precised thanks to variables: fXNumBound, fYNumBound and fZNumBound.
    int iIndex = 0;
-   int CarNodes = fMultiUnion->GetNNodes();
+   int CarNodes = fMultiUnion->GetNumNodes();
    int *indexSortedBound = new int[2*CarNodes];
    double *tempBoundaries = new double[2*CarNodes];
    
@@ -273,7 +274,7 @@ void UVoxelFinder::BuildListNodes()
 // In array "fNsliceX", "fNsliceY" and "fNsliceZ" are stored the number of
 // solids in the considered slice.
    int iIndex, jIndex = 0;
-   int CarNodes = fMultiUnion->GetNNodes();   
+   int CarNodes = fMultiUnion->GetNumNodes();   
    int nmaxslices = 2*CarNodes+1;
    int nperslice = 1+(CarNodes-1)/(8*sizeof(char));
    int current = 0;
@@ -401,7 +402,7 @@ void UVoxelFinder::DisplayListNodes()
 {
 // Prints which solids are present in the slices previously elaborated.
    int iIndex, jIndex = 0;
-   int CarNodes = fMultiUnion->GetNNodes();   
+   int CarNodes = fMultiUnion->GetNumNodes();   
 //   int nmaxslices = 2*CarNodes+1;
    int nperslice = 1+(CarNodes-1)/(8*sizeof(char));
    
