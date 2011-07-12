@@ -107,7 +107,7 @@ void UVoxelFinder::DisplayVoxelLimits()
 //______________________________________________________________________________   
 void UVoxelFinder::CreateBoundaries()
 {
-// "SortAll"'s aim is to determine the slices induced by the bounding boxes,
+// "CreateBoundaries"'s aim is to determine the slices induced by the bounding boxes,
 // along each axis. The created boundaries are stored in the array "fBoundaries"
    int iIndex = 0;
    int CarNodes = fMultiUnion->GetNNodes(); // Number of nodes in structure of
@@ -141,7 +141,7 @@ void UVoxelFinder::CreateBoundaries()
 void UVoxelFinder::SortBoundaries()
 {
 // "SortBoundaries" orders the boundaries along each axis (increasing order)
-// and also do not take into account redundant boundaries, ie if two boundaries
+// and also does not take into account redundant boundaries, ie if two boundaries
 // are separated by a distance strictly inferior to "DIST_INTER_BOUND".
 // The sorted boundaries are respectively stored in:
 //              * fXBoundaries
