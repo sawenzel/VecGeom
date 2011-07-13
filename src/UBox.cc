@@ -305,28 +305,3 @@ void UBox::Extent ( double aMin[3], double aMax[3] )
    aMin[1] = -fDy; aMax[1] = fDy;
    aMin[2] = -fDz; aMax[2] = fDz;
 }
-
-//______________________________________________________________________________    
-void UBox::SetVertices(double *vertices) const
-{
-// Fill box points. Argument "vertices" shall store the 3 coordinates of each
-// of the boxe's 8 vertices (24 coordinates in total)
-   if(!vertices) return;
-   
-   double xmin,xmax,ymin,ymax,zmin,zmax;
-   xmin = -fDx; xmax = fDx;
-   ymin = -fDy; ymax = fDy;
-   zmin = -fDz; zmax = fDz;      
-   
-   // 1st vertice:
-   vertices[ 0] = xmin; vertices[ 1] = ymin; vertices[ 2] = zmin;
-   // 2nd vertice:
-   vertices[ 3] = xmin; vertices[ 4] = ymax; vertices[ 5] = zmin;   
-   // etc.:
-   vertices[ 6] = xmax; vertices[ 7] = ymax; vertices[ 8] = zmin;
-   vertices[ 9] = xmax; vertices[10] = ymin; vertices[11] = zmin;
-   vertices[12] = xmin; vertices[13] = ymin; vertices[14] = zmax;
-   vertices[15] = xmin; vertices[16] = ymax; vertices[17] = zmax;
-   vertices[18] = xmax; vertices[19] = ymax; vertices[20] = zmax;
-   vertices[21] = xmax; vertices[22] = ymin; vertices[23] = zmax;
-}

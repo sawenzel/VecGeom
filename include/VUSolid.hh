@@ -118,7 +118,6 @@ public:
   // o Fills the number of points, segments and polygons of the visualization
   // mesh of the solid
   static double   Tolerance() {return fgTolerance;}
-  virtual void SetVertices(double *vertices) const = 0;  
 
 protected:
   virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) = 0;

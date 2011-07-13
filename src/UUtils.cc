@@ -112,3 +112,19 @@ void UUtils::Sort(int n, const double* a, int* index, bool down)
    else
       std::sort(index, index + n, CompareAsc<const double*>(a) );
 }
+
+//______________________________________________________________________________
+void UUtils::BuildVertices(double *min, double *max, double *vertices)
+{
+   // 1st vertice:
+   vertices[ 0] = min[0]; vertices[ 1] = min[1]; vertices[ 2] = min[2];
+   // 2nd vertice:
+   vertices[ 3] = min[0]; vertices[ 4] = max[1]; vertices[ 5] = min[2];   
+   // etc.:
+   vertices[ 6] = max[0]; vertices[ 7] = max[1]; vertices[ 8] = min[2];
+   vertices[ 9] = max[0]; vertices[10] = min[1]; vertices[11] = min[2];
+   vertices[12] = min[0]; vertices[13] = min[1]; vertices[14] = max[2];
+   vertices[15] = min[0]; vertices[16] = max[1]; vertices[17] = max[2];
+   vertices[18] = max[0]; vertices[19] = max[1]; vertices[20] = max[2];
+   vertices[21] = max[0]; vertices[22] = min[1]; vertices[23] = max[2];   
+} 

@@ -7,6 +7,7 @@
 #include "TGeoMaterial.h"
 #include "TGeoMedium.h"
 #include "TGeoVolume.h"
+#include "TGeoMatrix.h"
 
 void TestMultiUnion()
 {
@@ -31,9 +32,25 @@ void TestMultiUnion()
       // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");
    multi_union->AddNode(box1,transform1);
-   multi_union->AddNode(box2,transform2);     
+   multi_union->AddNode(box2,transform2);
+  
+   // Preparing RayTracing of the created geometry:
+      // Using bridge class "TGeoUShape":
+	TGeoCombiTrans *combi1 = new TGeoCombiTrans(20,0,0,new TGeoRotation("rot1",0,45,0));
+	TGeoCombiTrans *combi2 = new TGeoCombiTrans(0,200,0,new TGeoRotation("rot2",0,0,0));
+      
+   TGeoUShape *Shape1 = new TGeoUShape("Shape1",box1);
+   TGeoVolume *Volume1 = new TGeoVolume("Volume1",Shape1);
+   Volume1->SetLineColor(2);
+         
+   TGeoUShape *Shape2 = new TGeoUShape("Shape2",box2);
+   TGeoVolume *Volume2 = new TGeoVolume("Volume2",Shape2);   
+   Volume2->SetLineColor(4);
    
-   geom->CloseGeometry();   
+   top->AddNode(Volume1,1,combi1);
+   top->AddNode(Volume2,2,combi2);        
+
+   geom->CloseGeometry();
    
    // Creation of a test point:
    UVector3 test_point;
@@ -97,7 +114,20 @@ void TestMultiUnion()
    voxfind.BuildListNodes();
    voxfind.DisplayListNodes();
    
+   // RayTracing:
+   int choice = 0;
+   printf("[> In order to trace the geometry, type: 1. To exit, press 0 and return:\n");
+   scanf("%d",&choice);
    
+   if(choice == 1)
+   {
+      top->Raytrace();    
+   }
+   else
+   {
+     // Do nothing
+   }
+  
    // Program comes to an end:
    printf("[> END\n");
 }

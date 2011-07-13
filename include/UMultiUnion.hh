@@ -47,7 +47,7 @@ public:
 public:
    UMultiUnion() : VUSolid(), fNodes(0), fVoxels(0) {}
    UMultiUnion(const char *name); 
-   ~UMultiUnion() {}
+   ~UMultiUnion();
    
    // Build the multiple union by adding nodes
    void              AddNode(VUSolid *solid, UTransform3D *trans);
@@ -86,13 +86,12 @@ public:
         
    // Other methods
    int               GetNumNodes() const;
-   const VUSolid*    GetSolid(int index) const;
-   const UTransform3D*
-                     GetTransform(int index) const;   
+   /*const*/ VUSolid*    GetSolid(int index) /*const*/;
+   /*const*/ UTransform3D*
+                     GetTransform(int index) /*const*/;                       
 
 private:
-   std::vector<UNode*>   
-                    *fNodes;   // Container of nodes
-   UVoxelFinder     *fVoxels;
+   std::vector<UNode*> *fNodes;   // Container of nodes
+   UVoxelFinder        *fVoxels;
 };
 #endif   

@@ -48,7 +48,6 @@ public:
    virtual VUSolid* Clone() const {return 0;}
    virtual UGeometryType GetEntityType() const { return "UBox";}
    virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) {}
-   virtual void SetVertices(double *vertices) const;
    
 private:  
    double                fDx;   // Half-length on X

@@ -15,6 +15,13 @@ UMultiUnion::UMultiUnion(const char *name)
 }
 
 //______________________________________________________________________________       
+UMultiUnion::~UMultiUnion()
+{
+   if(fNodes) delete fNodes;
+   if(fVoxels) delete fVoxels;
+}
+
+//______________________________________________________________________________       
 void UMultiUnion::AddNode(VUSolid *solid, UTransform3D *trans)
 {
    UNode* node = new UNode(solid,trans);   
@@ -86,30 +93,30 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 //        - only parallelepipedic nodes can be added to the container
 //        - the transformation matrix involves only three translation components
 
-   int CarNodes = fNodes->size(); // Total number of nodes contained in "fNodes".
+   int carNodes = fNodes->size(); // Total number of nodes contained in "fNodes".
    int iIndex = 0;
    
-   VUSolid *TempSolid = NULL;
-   UTransform3D *TempTransform = NULL;
-   UVector3 TempPoint;
-   VUSolid::EnumInside TempInside = eOutside;
+   VUSolid *tempSolid = NULL;
+   UTransform3D *tempTransform = NULL;
+   UVector3 tempPoint;
+   VUSolid::EnumInside tempInside = eOutside;
 
    // Loop on the nodes:
-   for(iIndex = 0 ; iIndex < CarNodes ; iIndex++)
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-      TempSolid = ((*fNodes)[iIndex])->fSolid;
-      TempTransform = ((*fNodes)[iIndex])->fTransform;
+      tempSolid = ((*fNodes)[iIndex])->fSolid;
+      tempTransform = ((*fNodes)[iIndex])->fTransform;
 
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      TempPoint.x = aPoint.x - TempTransform->fTr[0];
-      TempPoint.y = aPoint.y - TempTransform->fTr[1];
-      TempPoint.z = aPoint.z - TempTransform->fTr[2];            
+      tempPoint.x = aPoint.x - tempTransform->fTr[0];
+      tempPoint.y = aPoint.y - tempTransform->fTr[1];
+      tempPoint.z = aPoint.z - tempTransform->fTr[2];            
 
-      TempInside = TempSolid->Inside(TempPoint);
+      tempInside = tempSolid->Inside(tempPoint);
       
-      if((TempInside == eInside) || (TempInside == eSurface))
+      if((tempInside == eInside) || (tempInside == eSurface))
       {
-         return TempInside;
+         return tempInside;
       }      
    }
    return eOutside;
@@ -119,45 +126,41 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 {
 // Determines the bounding box for the considered instance of "UMultipleUnion"
-   int CarNodes = fNodes->size();
-   double *vertices = new double[24];
-   UVector3 TempPointConv,TempPoint;   
-   int iIndex,jIndex,kIndex = 0;
-   double mini,maxi = 0;
+   int carNodes = fNodes->size();  
+   int iIndex, jIndex, kIndex = 0;
+   double mini, maxi = 0;  
    double current = 0;
+   double *vertices = new double[24];   
 
-   VUSolid *TempSolid = NULL;
-   UTransform3D *TempTransform = NULL; 
-   UVector3 min, max;
+   VUSolid *tempSolid = NULL;
+   UTransform3D *tempTransform = NULL;
+   
+   UVector3 tempPointConv,tempPoint;  
+   double* min = new double[3];
+   double* max = new double[3];   
     
    // Loop on the nodes:
-   for(iIndex = 0 ; iIndex < CarNodes ; iIndex++)
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-      TempSolid = ((*fNodes)[iIndex])->fSolid;
-      TempTransform = ((*fNodes)[iIndex])->fTransform;
+      tempSolid = ((*fNodes)[iIndex])->fSolid;
+      tempTransform = ((*fNodes)[iIndex])->fTransform;
       
+      tempSolid->Extent(min, max);      
+      UUtils::BuildVertices(min, max, vertices); 
       
-     // TempSolid->SetVertices(vertices);
-     // TODO: Define a method: TransformVertices(UVector3 &min, UVector3 &max, const UTransform3D *transform)
-     //  that should take the min/max limits in the local frame and transform them
-//     UVector3 min, max;
-//     TempSolid->Extent(min, max);
-//       UUtils::TransformVertices(min, max, TempTransform)
-      
-      // Code below to be used to implement TransformVertices
       for(jIndex = 0 ; jIndex < 8 ; jIndex++)
       {
          kIndex = 3*jIndex;
-         TempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
-         TempPointConv = TempTransform->GlobalPoint(TempPoint);
+         tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
+         tempPointConv = tempTransform->GlobalPoint(tempPoint);
          
          // Current position on he considered axis (global frame):
          if(aAxis == eXaxis)         
-            current = TempPointConv.x;
+            current = tempPointConv.x;
          else if(aAxis == eYaxis)
-            current = TempPointConv.y;
+            current = tempPointConv.y;
          else
-            current = TempPointConv.z;
+            current = tempPointConv.z;
          
          // Initialization of extrema:
          if(iIndex == 0 && jIndex == 0)
@@ -234,15 +237,14 @@ int UMultiUnion::GetNumNodes() const
 }
 
 //______________________________________________________________________________       
-const VUSolid* UMultiUnion::GetSolid(int index) const
+/*const*/ VUSolid* UMultiUnion::GetSolid(int index) /*const*/
 {
    return(((*fNodes)[index])->fSolid);
 }
 
 //______________________________________________________________________________       
 
-const UTransform3D* UMultiUnion::GetTransform(int index) const
+/*const*/ UTransform3D* UMultiUnion::GetTransform(int index) /*const*/
 {
    return(((*fNodes)[index])->fTransform);
-
 }

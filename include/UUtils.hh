@@ -108,6 +108,10 @@ struct CompareAsc {
 
    T fData;
 };
+
+  // CreateVertices:
+  void BuildVertices(double *min, double *max, double *vertices);
+
   // Binary search
 //  template <typename T> long BinarySearch(long n, const T  *array, T value);
 //  template <typename T> long BinarySearch(long n, const T **array, T value);
