@@ -340,7 +340,7 @@ void UVoxelFinder::BuildListNodes()
    
    // Memory:
    char *storage = new char[nmaxslices*nperslice];
-   memset(storage,0,(nmaxslices*nperslice)*sizeof(double));
+   memset(storage,0,(nmaxslices*nperslice)*sizeof(char));
    char *bits;
    int number_byte;
    char position;
@@ -381,7 +381,7 @@ void UVoxelFinder::BuildListNodes()
    // Loop on y slices:
    fNumNodesSliceY = new int[yNumslices];
    current = 0;
-   memset(storage,0,(nmaxslices*nperslice)*sizeof(double));
+   memset(storage,0,(nmaxslices*nperslice)*sizeof(char));
       
    for(iIndex = 0 ; iIndex < xNumslices ; iIndex++)
    {
@@ -416,7 +416,7 @@ void UVoxelFinder::BuildListNodes()
    // Loop on z slices:
    fNumNodesSliceZ = new int[zNumslices];
    current = 0;
-   memset(storage,0,(nmaxslices*nperslice)*sizeof(double));
+   memset(storage,0,(nmaxslices*nperslice)*sizeof(char));
    
    for(iIndex = 0 ; iIndex < zNumslices ; iIndex++)
    {
@@ -448,7 +448,24 @@ void UVoxelFinder::BuildListNodes()
    fmemoryZ = new char[fNz];
    memcpy(fmemoryZ,storage,current*sizeof(char));      
 }
-
+//______________________________________________________________________________   
+void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
+{
+// Decode the candidates in mask as string.
+   static char buffer[30];
+   int carNodes = fMultiUnion->GetNumNodes();   
+   char mask1 = 1;
+   result = "";
+   for (int icand=0; icand<carNodes; icand++) {
+      int byte = icand/8;
+      int bit = icand - 8*byte;
+      if (mask1<<bit & mask[byte]) {
+         sprintf(buffer, "%d ", icand); 
+         result += buffer;
+      }   
+   }
+}      
+   
 //______________________________________________________________________________   
 void UVoxelFinder::DisplayListNodes()
 {
@@ -457,6 +474,7 @@ void UVoxelFinder::DisplayListNodes()
    int carNodes = fMultiUnion->GetNumNodes();   
 //   int nmaxslices = 2*carNodes+1;
    int nperslice = 1+(carNodes-1)/(8*sizeof(char));
+   std::string result;
    
    printf(" * X axis:\n");
    for(iIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++)
@@ -466,7 +484,9 @@ void UVoxelFinder::DisplayListNodes()
       for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
       {
 //         printf("%d ",(int)fmemoryX[iIndex+jIndex]);
-         ConversionDecBin((int)fmemoryX[iIndex+jIndex]);
+         GetCandidatesAsString(&fmemoryX[iIndex+jIndex], result);
+         printf("%s\n", result.c_str());
+//         ConversionDecBin((int)fmemoryX[iIndex+jIndex]);
       }
       printf("\n");
    }

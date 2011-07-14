@@ -49,6 +49,9 @@ public:
    ~UVoxelFinder();
 
 private:
+   void               GetCandidatesAsString(const char* mask, std::string &result);
+
+private:
    UMultiUnion *fMultiUnion;   // Solid to be voxelized (it is a union of several sub-solids)
    double *fBoxes;             // Array of box limits on the 3 cartesian axis
    double *fBoundaries;        // Array of boundaries induced by the bounding boxes contained
