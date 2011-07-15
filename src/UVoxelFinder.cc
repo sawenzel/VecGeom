@@ -251,7 +251,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
       {
          tempBoundaries[number_boundaries] = fBoundaries[2*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -277,7 +277,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
       {
          tempBoundaries[number_boundaries] = fBoundaries[4*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -296,24 +296,27 @@ void UVoxelFinder::DisplayBoundaries()
 // Prints the positions of the boundaries of the slices on the three axis:
    int iIndex = 0;
    
-   printf(" * X axis:\n    ");
+   printf(" * X axis:\n    | ");
    for(iIndex = 0 ; iIndex < fXNumBound ; iIndex++)
    {
-      printf("| %f ",fXSortedBoundaries[iIndex]);
+      printf("%f ",fXSortedBoundaries[iIndex]);
+      if(iIndex != fXNumBound-1) printf("-> ");
    }
    printf("|\n    Number of boundaries: %d\n",fXNumBound);  
    
-   printf(" * Y axis:\n    ");
+   printf(" * Y axis:\n    | ");
    for(iIndex = 0 ; iIndex < fYNumBound ; iIndex++)
    {
-      printf("| %f ",fYSortedBoundaries[iIndex]);
+      printf("%f ",fYSortedBoundaries[iIndex]);
+      if(iIndex != fYNumBound-1) printf("-> ");
    }
    printf("|\n    Number of boundaries: %d\n",fYNumBound);  
       
-   printf(" * Z axis:\n    ");
+   printf(" * Z axis:\n    | ");
    for(iIndex = 0 ; iIndex < fZNumBound ; iIndex++)
    {
-      printf("| %f ",fZSortedBoundaries[iIndex]);
+      printf("%f ",fZSortedBoundaries[iIndex]);
+      if(iIndex != fZNumBound-1) printf("-> ");
    }      
    printf("|\n    Number of boundaries: %d\n",fZNumBound);  
 }
@@ -343,7 +346,7 @@ void UVoxelFinder::BuildListNodes()
    memset(storage,0,(nmaxslices*nperslice)*sizeof(char));
    char *bits;
    int number_byte;
-   char position;
+   int position;
    
    // Loop on x slices:
    fNumNodesSliceX = new int[xNumslices];
@@ -370,8 +373,9 @@ void UVoxelFinder::BuildListNodes()
          // Storage of the number of the node in the array:
          number_byte = jIndex/8;
          position = (char)(jIndex%8);
-         bits[number_byte] |= (1 << position);         
+         bits[number_byte] |= (1 << position);                           
       }
+      
       if(fNumNodesSliceX[iIndex]>0) current += nperslice;
    }
    fNx = current;
@@ -382,8 +386,8 @@ void UVoxelFinder::BuildListNodes()
    fNumNodesSliceY = new int[yNumslices];
    current = 0;
    memset(storage,0,(nmaxslices*nperslice)*sizeof(char));
-      
-   for(iIndex = 0 ; iIndex < xNumslices ; iIndex++)
+   
+   for(iIndex = 0 ; iIndex < zNumslices ; iIndex++)
    {
       bits = &storage[current];
    
@@ -405,13 +409,14 @@ void UVoxelFinder::BuildListNodes()
          // Storage of the number of the node in the array:
          number_byte = jIndex/8;
          position = (char)(jIndex%8);
-         bits[number_byte] |= (1 << position);         
+         bits[number_byte] |= (1 << position);                  
       }
+      
       if(fNumNodesSliceY[iIndex]>0) current += nperslice;
    }
    fNy = current;
    fmemoryY = new char[fNy];
-   memcpy(fmemoryY,storage,current*sizeof(char));
+   memcpy(fmemoryY,storage,current*sizeof(char));    
    
    // Loop on z slices:
    fNumNodesSliceZ = new int[zNumslices];
@@ -440,14 +445,16 @@ void UVoxelFinder::BuildListNodes()
          // Storage of the number of the node in the array:
          number_byte = jIndex/8;
          position = (char)(jIndex%8);
-         bits[number_byte] |= (1 << position);         
+         bits[number_byte] |= (1 << position);                  
       }
+      
       if(fNumNodesSliceZ[iIndex]>0) current += nperslice;
    }
    fNz = current;
    fmemoryZ = new char[fNz];
    memcpy(fmemoryZ,storage,current*sizeof(char));      
 }
+
 //______________________________________________________________________________   
 void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
 {
@@ -456,11 +463,15 @@ void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
    int carNodes = fMultiUnion->GetNumNodes();   
    char mask1 = 1;
    result = "";
-   for (int icand=0; icand<carNodes; icand++) {
+   
+   for (int icand=0; icand<carNodes; icand++)
+   {
       int byte = icand/8;
       int bit = icand - 8*byte;
-      if (mask1<<bit & mask[byte]) {
-         sprintf(buffer, "%d ", icand); 
+   
+      if (mask1<<bit & mask[byte])
+      {
+         sprintf(buffer, "%d ", icand+1); 
          result += buffer;
       }   
    }
@@ -472,49 +483,49 @@ void UVoxelFinder::DisplayListNodes()
 // Prints which solids are present in the slices previously elaborated.
    int iIndex, jIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes();   
-//   int nmaxslices = 2*carNodes+1;
    int nperslice = 1+(carNodes-1)/(8*sizeof(char));
-   std::string result;
+   std::string result = "";
    
    printf(" * X axis:\n");
    for(iIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++)
    {
-      printf("    Slice #%d: ",iIndex+1);
+      printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fXSortedBoundaries[iIndex],fXSortedBoundaries[iIndex+1]);
    
       for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
       {
-//         printf("%d ",(int)fmemoryX[iIndex+jIndex]);
+//         printf("%d",(int)fmemoryX[iIndex+jIndex]);
+//         printf(" ; ");
          GetCandidatesAsString(&fmemoryX[iIndex+jIndex], result);
          printf("%s\n", result.c_str());
-//         ConversionDecBin((int)fmemoryX[iIndex+jIndex]);
       }
-      printf("\n");
    }
    
    printf(" * Y axis:\n");
    for(iIndex = 0 ; iIndex < fYNumBound-1 ; iIndex++)
    {
-      printf("    Slice #%d: ",iIndex+1);
+      printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fYSortedBoundaries[iIndex],fYSortedBoundaries[iIndex+1]);
    
       for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
       {
-//         printf("%d ",(int)fmemoryY[iIndex+jIndex]);
-         ConversionDecBin((int)fmemoryY[iIndex+jIndex]);
+//         printf("%d",(int)fmemoryY[iIndex+jIndex]);     
+//         printf(" ; ");              
+         GetCandidatesAsString(&fmemoryY[iIndex+jIndex], result);
+         printf("%s\n", result.c_str());    
       }
-      printf("\n");
    }
    
    printf(" * Z axis:\n");
    for(iIndex = 0 ; iIndex < fZNumBound-1 ; iIndex++)
    {
-      printf("    Slice #%d: ",iIndex+1);
+      printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fZSortedBoundaries[iIndex],fZSortedBoundaries[iIndex+1]);
    
       for(jIndex = 0 ; jIndex < nperslice ; jIndex++)
       {
-//         printf("%d ",(int)fmemoryZ[iIndex+jIndex]);
-         ConversionDecBin((int)fmemoryZ[iIndex+jIndex]);
+//         printf("%d",(int)fmemoryZ[iIndex+jIndex]);  
+//         printf(" ; ");        
+         GetCandidatesAsString(&fmemoryZ[iIndex+jIndex], result);
+         printf("%s\n", result.c_str());       
       }
-      printf("\n");
    }       
 }
 

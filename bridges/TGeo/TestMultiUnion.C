@@ -24,20 +24,24 @@ void TestMultiUnion()
    geom->SetTopVolume(top);
 
    // Instance:
-      // Creation of two nodes:
-   UBox *box1 = new UBox("UBox",100,100,100);
-   UBox *box2 = new UBox("UBox",60,60,60);
+      // Creation of several nodes:
+   UBox *box1 = new UBox("UBox",80,80,80);
+   UBox *box2 = new UBox("UBox",100,100,100);
+   UBox *box3 = new UBox("UBox",100,100,100);   
    UTransform3D *transform1 = new UTransform3D(20,0,0,0,45,0);
    UTransform3D *transform2 = new UTransform3D(0,200,0,0,0,0);
+   UTransform3D *transform3 = new UTransform3D(0,400,100,0,0,0);   
       // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");
    multi_union->AddNode(box1,transform1);
    multi_union->AddNode(box2,transform2);
+   multi_union->AddNode(box3,transform3);
   
    // Preparing RayTracing of the created geometry:
       // Using bridge class "TGeoUShape":
 	TGeoCombiTrans *combi1 = new TGeoCombiTrans(20,0,0,new TGeoRotation("rot1",0,45,0));
 	TGeoCombiTrans *combi2 = new TGeoCombiTrans(0,200,0,new TGeoRotation("rot2",0,0,0));
+	TGeoCombiTrans *combi3 = new TGeoCombiTrans(0,400,100,new TGeoRotation("rot3",0,0,0));   
       
    TGeoUShape *Shape1 = new TGeoUShape("Shape1",box1);
    TGeoVolume *Volume1 = new TGeoVolume("Volume1",Shape1);
@@ -47,32 +51,38 @@ void TestMultiUnion()
    TGeoVolume *Volume2 = new TGeoVolume("Volume2",Shape2);   
    Volume2->SetLineColor(4);
    
+   TGeoUShape *Shape3 = new TGeoUShape("Shape3",box3);
+   TGeoVolume *Volume3 = new TGeoVolume("Volume3",Shape3);   
+   Volume3->SetLineColor(3);   
+   
    top->AddNode(Volume1,1,combi1);
    top->AddNode(Volume2,2,combi2);        
+   top->AddNode(Volume3,3,combi3);        
 
    geom->CloseGeometry();
    
    // Creation of a test point:
    UVector3 test_point;
-   test_point.x = 600;
+   test_point.x = 20;
    test_point.y = 0;
    test_point.z = 0;   
    
    VUSolid::EnumInside resultat = multi_union->Inside(test_point);
 
    printf("[> Inside:\n");
+   printf("  Tested point: [%f,%f,%f]\n",test_point.x,test_point.y,test_point.z);
       
    if(resultat == 0)
    {
-      printf("test_point is INSIDE\n");
+      printf("  is INSIDE the defined solid\n");
    }
    else if(resultat == 1)
    {
-      printf("test_point is on a SURFACE\n");
+      printf("  is on a SURFACE of the defined solid\n");
    }
    else
    {
-      printf("test_point is OUTSIDE\n");      
+      printf("  is OUTSIDE the defined solid\n");      
    }
    
    // Test of method Extent (1st version):
@@ -121,7 +131,8 @@ void TestMultiUnion()
    
    if(choice == 1)
    {
-      top->Raytrace();    
+//      top->Raytrace();    
+      top->Draw();
    }
    else
    {
