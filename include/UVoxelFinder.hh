@@ -40,9 +40,7 @@ public:
    void DisplayBoundaries();
 
    void BuildListNodes();
-   void DisplayListNodes();
-   
-   void ConversionDecBin(int number);  
+   void DisplayListNodes(); 
    
    UVoxelFinder();
    UVoxelFinder(UMultiUnion* multi_union);
