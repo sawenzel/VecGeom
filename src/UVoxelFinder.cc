@@ -23,18 +23,19 @@ UVoxelFinder::UVoxelFinder()
    fNumNodesSliceX = 0;
    fNumNodesSliceY = 0;
    fNumNodesSliceZ = 0;
-   fmemoryX = 0;
-   fmemoryY = 0;
-   fmemoryZ = 0;      
+   fMemoryX = 0;
+   fMemoryY = 0;
+   fMemoryZ = 0;      
    fNx = 0;
    fNy = 0;
    fNz = 0;
 }
 
 //______________________________________________________________________________   
-UVoxelFinder::UVoxelFinder(UMultiUnion* multi_union)
+UVoxelFinder::UVoxelFinder(UMultiUnion* multi_union, double tolerance)
 {
    fMultiUnion = multi_union;
+   fTolerance = tolerance;
    fBoxes = 0;
    fBoundaries = 0;
    fXSortedBoundaries = 0;
@@ -46,9 +47,9 @@ UVoxelFinder::UVoxelFinder(UMultiUnion* multi_union)
    fNumNodesSliceX = 0;
    fNumNodesSliceY = 0;
    fNumNodesSliceZ = 0;
-   fmemoryX = 0;
-   fmemoryY = 0;
-   fmemoryZ = 0;      
+   fMemoryX = 0;
+   fMemoryY = 0;
+   fMemoryZ = 0;      
    fNx = 0;
    fNy = 0;
    fNz = 0;
@@ -66,9 +67,9 @@ UVoxelFinder::~UVoxelFinder()
    if(fNumNodesSliceX) delete fNumNodesSliceX;
    if(fNumNodesSliceY) delete fNumNodesSliceY;
    if(fNumNodesSliceZ) delete fNumNodesSliceZ;   
-   if(fmemoryX) delete fmemoryX;
-   if(fmemoryY) delete fmemoryY;
-   if(fmemoryZ) delete fmemoryZ;   
+   if(fMemoryX) delete fMemoryX;
+   if(fMemoryY) delete fMemoryY;
+   if(fMemoryZ) delete fMemoryZ;   
 }
 
 //______________________________________________________________________________   
@@ -198,7 +199,7 @@ void UVoxelFinder::SortBoundaries()
 {
 // "SortBoundaries" orders the boundaries along each axis (increasing order)
 // and also does not take into account redundant boundaries, ie if two boundaries
-// are separated by a distance strictly inferior to "DIST_INTER_BOUND".
+// are separated by a distance strictly inferior to "fTolerance".
 // The sorted boundaries are respectively stored in:
 //              * fXSortedBoundaries
 //              * fYSortedBoundaries
@@ -225,7 +226,7 @@ void UVoxelFinder::SortBoundaries()
       }
 
       // If two successive boundaries are too close from each other, only the first one is considered      
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > fTolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -251,7 +252,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > fTolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[2*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -277,7 +278,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > DIST_INTER_BOUND)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > fTolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[4*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -324,7 +325,7 @@ void UVoxelFinder::DisplayBoundaries()
 //______________________________________________________________________________   
 void UVoxelFinder::BuildListNodes()
 {
-// "BuildListNodes" stores in the arrays "fmemoryX", "fmemoryY" and "fmemoryZ" the
+// "BuildListNodes" stores in the arrays "fMemoryX", "fMemoryY" and "fMemoryZ" the
 // solids present in each slice aong the three axis.
 // In array "fNumNodesSliceX", "fNumNodesSliceY" and "fNumNodesSliceZ" are stored the number of
 // solids in the considered slice.
@@ -364,8 +365,8 @@ void UVoxelFinder::BuildListNodes()
          xbmax = fBoxes[6*jIndex+3]+fBoxes[6*jIndex];
          
          // Is the considered node inside slice?
-         if((xbmin - fXSortedBoundaries[iIndex+1]) > -DIST_INTER_BOUND) continue;
-         if((xbmax - fXSortedBoundaries[iIndex]) < DIST_INTER_BOUND) continue;
+         if((xbmin - fXSortedBoundaries[iIndex+1]) > -fTolerance) continue;
+         if((xbmax - fXSortedBoundaries[iIndex]) < fTolerance) continue;
          
          // The considered node is contained in the current slice:
          fNumNodesSliceX[iIndex]++;
@@ -380,8 +381,8 @@ void UVoxelFinder::BuildListNodes()
       current += nperslice;
    }
    fNx = current;
-   fmemoryX = new char[fNx];
-   memcpy(fmemoryX,storage,current*sizeof(char));
+   fMemoryX = new char[fNx];
+   memcpy(fMemoryX,storage,current*sizeof(char));
    
    // Loop on y slices:
    fNumNodesSliceY = new int[yNumslices];
@@ -401,8 +402,8 @@ void UVoxelFinder::BuildListNodes()
          ybmax = fBoxes[6*jIndex+4]+fBoxes[6*jIndex+1];
          
          // Is the considered node inside slice?
-         if((ybmin - fYSortedBoundaries[iIndex+1]) > -DIST_INTER_BOUND) continue;
-         if((ybmax - fYSortedBoundaries[iIndex]) < DIST_INTER_BOUND) continue;
+         if((ybmin - fYSortedBoundaries[iIndex+1]) > -fTolerance) continue;
+         if((ybmax - fYSortedBoundaries[iIndex]) < fTolerance) continue;
          
          // The considered node is contained in the current slice:
          fNumNodesSliceY[iIndex]++;
@@ -417,8 +418,8 @@ void UVoxelFinder::BuildListNodes()
       current += nperslice;
    }
    fNy = current;
-   fmemoryY = new char[fNy];
-   memcpy(fmemoryY,storage,current*sizeof(char));    
+   fMemoryY = new char[fNy];
+   memcpy(fMemoryY,storage,current*sizeof(char));    
    
    // Loop on z slices:
    fNumNodesSliceZ = new int[zNumslices];
@@ -438,8 +439,8 @@ void UVoxelFinder::BuildListNodes()
          zbmax = fBoxes[6*jIndex+5]+fBoxes[6*jIndex+2];
          
          // Is the considered node inside slice?
-         if((zbmin - fZSortedBoundaries[iIndex+1]) > -DIST_INTER_BOUND) continue;
-         if((zbmax - fZSortedBoundaries[iIndex]) < DIST_INTER_BOUND) continue;
+         if((zbmin - fZSortedBoundaries[iIndex+1]) > -fTolerance) continue;
+         if((zbmax - fZSortedBoundaries[iIndex]) < fTolerance) continue;
          
          // The considered node is contained in the current slice:
          fNumNodesSliceZ[iIndex]++;
@@ -454,8 +455,8 @@ void UVoxelFinder::BuildListNodes()
       current += nperslice;
    }
    fNz = current;
-   fmemoryZ = new char[fNz];
-   memcpy(fmemoryZ,storage,current*sizeof(char));      
+   fMemoryZ = new char[fNz];
+   memcpy(fMemoryZ,storage,current*sizeof(char));      
 }
 
 //______________________________________________________________________________   
@@ -494,7 +495,7 @@ void UVoxelFinder::DisplayListNodes()
    {
       printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fXSortedBoundaries[iIndex],fXSortedBoundaries[iIndex+1]);
       
-      GetCandidatesAsString(&fmemoryX[jIndex], result);
+      GetCandidatesAsString(&fMemoryX[jIndex], result);
       printf("[ %s]  ", result.c_str());
       printf("\n");
    }
@@ -504,7 +505,7 @@ void UVoxelFinder::DisplayListNodes()
    {
       printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fYSortedBoundaries[iIndex],fYSortedBoundaries[iIndex+1]);
       
-      GetCandidatesAsString(&fmemoryY[jIndex], result);
+      GetCandidatesAsString(&fMemoryY[jIndex], result);
       printf("[ %s]  ", result.c_str());
       printf("\n");
    }
@@ -514,7 +515,7 @@ void UVoxelFinder::DisplayListNodes()
    {
       printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fZSortedBoundaries[iIndex],fZSortedBoundaries[iIndex+1]);
       
-      GetCandidatesAsString(&fmemoryZ[jIndex], result);
+      GetCandidatesAsString(&fMemoryZ[jIndex], result);
       printf("[ %s]  ", result.c_str());
       printf("\n");
    }    

@@ -183,7 +183,7 @@ void TestMultiUnion()
 */
 
    // Test of "Voxelize"
-   UVoxelFinder voxfind(multi_union);   
+   UVoxelFinder voxfind(multi_union,1.);   
    printf("[> Voxelize:\n");   
    voxfind.Voxelize();
    voxfind.DisplayListNodes();   

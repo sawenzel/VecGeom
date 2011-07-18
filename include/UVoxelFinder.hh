@@ -25,8 +25,6 @@
 
 #include <vector>
 
-#define DIST_INTER_BOUND 1
-
 class UVoxelFinder
 {
 public:
@@ -43,7 +41,7 @@ public:
    void DisplayListNodes(); 
    
    UVoxelFinder();
-   UVoxelFinder(UMultiUnion* multi_union);
+   UVoxelFinder(UMultiUnion* multi_union, double tolerance = 1);
    ~UVoxelFinder();
 
 private:
@@ -63,9 +61,10 @@ private:
    int               *fNumNodesSliceX;       // Number of nodes in the considered slice along X axis
    int               *fNumNodesSliceY;       // Number of nodes in the considered slice along Y axis
    int               *fNumNodesSliceZ;       // Number of nodes in the considered slice along Z axis
-   char              *fmemoryX;              // Each character of "fmemory" contains the nodes present in the
-   char              *fmemoryY;              // considered slice
-   char              *fmemoryZ;      
+   char              *fMemoryX;              // Each character of "fmemory" contains the nodes present in the
+   char              *fMemoryY;              // considered slice
+   char              *fMemoryZ;      
    int                fNx, fNy, fNz;         // Number of bytes stored in "fmemory" for each axis
+   double             fTolerance;            // Minimal distance to discrminate two boundaries.
 };
 #endif
