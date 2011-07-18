@@ -519,3 +519,12 @@ void UVoxelFinder::DisplayListNodes()
       printf("\n");
    }    
 }
+
+//______________________________________________________________________________   
+void UVoxelFinder::Voxelize()
+{
+   BuildVoxelLimits();
+   CreateBoundaries();    
+   SortBoundaries(); 
+   BuildListNodes();  
+}

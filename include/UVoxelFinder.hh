@@ -30,7 +30,7 @@
 class UVoxelFinder
 {
 public:
-   void Voxelize() {}
+   void Voxelize();
 
    void BuildVoxelLimits();
    void DisplayVoxelLimits();

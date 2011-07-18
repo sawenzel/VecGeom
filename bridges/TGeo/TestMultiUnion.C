@@ -160,7 +160,8 @@ void TestMultiUnion()
    multi_union->Extent(table_mini,table_maxi);
    printf("[> Extent (multi union) - 2nd version:\n");
    printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",table_mini[0],table_maxi[0],table_mini[1],table_maxi[1],table_mini[2],table_maxi[2]);   
-   
+
+/*   
    // Test of "BuildVoxelLimits":
    printf("[> BuildVoxelLimits:\n");   
    UVoxelFinder voxfind(multi_union);
@@ -179,6 +180,13 @@ void TestMultiUnion()
    printf("[> BuildListNodes:\n");   
    voxfind.BuildListNodes();
    voxfind.DisplayListNodes();
+*/
+
+   // Test of "Voxelize"
+   UVoxelFinder voxfind(multi_union);   
+   printf("[> Voxelize:\n");   
+   voxfind.Voxelize();
+   voxfind.DisplayListNodes();   
    
    // RayTracing:
    int choice = 0;
