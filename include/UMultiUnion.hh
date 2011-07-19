@@ -50,48 +50,47 @@ public:
    ~UMultiUnion();
    
    // Build the multiple union by adding nodes
-   void              AddNode(VUSolid *solid, UTransform3D *trans);
+   void                         AddNode(VUSolid *solid, UTransform3D *trans);
    
    // Finalize and prepare for use. User MUST call it once before navigation use.
-   void              CloseSolid();
+   void                         CloseSolid();
    
    // Navigation methods
-   EnumInside        Inside (const UVector3 &aPoint) const;
+   EnumInside                   Inside (const UVector3 &aPoint) const;
 
-   double            SafetyFromInside (const UVector3 aPoint,
-                                       bool aAccurate=false) const;
+   double                       SafetyFromInside (const UVector3 aPoint,
+                                                  bool aAccurate=false) const;
                                       
-   double            SafetyFromOutside(const UVector3 aPoint,
-                                       bool aAccurate=false) const;
+   double                       SafetyFromOutside(const UVector3 aPoint,
+                                                  bool aAccurate=false) const;
                                       
-   double            DistanceToIn     (const UVector3 &aPoint,
-                                       const UVector3 &aDirection,
-                                       // UVector3       &aNormalVector,
-                                       double aPstep = UUtils::kInfinity) const;
+   double                       DistanceToIn     (const UVector3 &aPoint,
+                                                  const UVector3 &aDirection,
+                                                  // UVector3       &aNormalVector,
+                                                  double aPstep = UUtils::kInfinity) const;
  
-   double            DistanceToOut    (const UVector3 &aPoint,
-                                       const UVector3 &aDirection,
-                                       UVector3       &aNormalVector,
-                                       bool           &aConvex,
-                                       double aPstep = UUtils::kInfinity) const;
+   double                       DistanceToOut    (const UVector3 &aPoint,
+                                                  const UVector3 &aDirection,
+                                                  UVector3       &aNormalVector,
+                                                  bool           &aConvex,
+                                                  double aPstep = UUtils::kInfinity) const;
                                       
-   bool              Normal (const UVector3 &aPoint, UVector3 &aNormal);
-   void              Extent (EAxisType aAxis, double &aMin, double &aMax);
-   void              Extent (double aMin[3], double aMax[3]);
-   double            Capacity();
-   double            SurfaceArea();
-   VUSolid*          Clone() const {return 0;}
-   UGeometryType     GetEntityType() const {return "MultipleUnion";}
-   void              ComputeBBox(UBBox *aBox, bool aStore = false);
+   bool                         Normal (const UVector3 &aPoint, UVector3 &aNormal);
+   void                         Extent (EAxisType aAxis, double &aMin, double &aMax);
+   void                         Extent (double aMin[3], double aMax[3]);
+   double                       Capacity();
+   double                       SurfaceArea();
+   VUSolid*                     Clone() const {return 0;}
+   UGeometryType                GetEntityType() const {return "MultipleUnion";}
+   void                         ComputeBBox(UBBox *aBox, bool aStore = false);
         
    // Other methods
-   int               GetNumNodes() const;
-   /*const*/ VUSolid*    GetSolid(int index) /*const*/;
-   /*const*/ UTransform3D*
-                     GetTransform(int index) /*const*/;                       
+   int                          GetNumNodes() const;
+   /*const*/ VUSolid*           GetSolid(int index) /*const*/;
+   /*const*/ UTransform3D*      GetTransform(int index) /*const*/;                       
 
 private:
-   std::vector<UNode*> *fNodes;   // Container of nodes
-   UVoxelFinder        *fVoxels;
+   std::vector<UNode*>         *fNodes;   // Container of nodes
+   UVoxelFinder                *fVoxels;
 };
 #endif   
