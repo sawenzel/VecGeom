@@ -87,21 +87,24 @@ void UVoxelFinder::BuildVoxelLimits()
    /*const*/ VUSolid *tempSolid = NULL;
    /*const*/ UTransform3D *tempTransform = NULL;
    
-   double* min = new double[3];
-   double* max = new double[3];
+   double* arrMin = new double[3];
+   double* arrMax = new double[3];
+   UVector3 min, max;
    
    for(iIndex = 0 ; iIndex < carNodes ; iIndex++)   
    {
       tempSolid = fMultiUnion->GetSolid(iIndex);
       tempTransform = fMultiUnion->GetTransform(iIndex);
 
-      tempSolid->Extent(min, max);
-      /*UUtils::*/TransformLimits(min, max, tempTransform);                        
+      tempSolid->Extent(arrMin, arrMax);
+      min.Set(arrMin[0],arrMin[1],arrMin[2]);      
+      max.Set(arrMax[0],arrMax[1],arrMax[2]);           
+      UUtils::TransformLimits(min, max, tempTransform);                        
       
       // Storage of the positions:
-      fBoxes[6*iIndex]   = 0.5*(max[0]-min[0]); // dX
-      fBoxes[6*iIndex+1] = 0.5*(max[1]-min[1]); // dY
-      fBoxes[6*iIndex+2] = 0.5*(max[2]-min[2]); // dZ
+      fBoxes[6*iIndex]   = 0.5*(max.x-min.x); // dX
+      fBoxes[6*iIndex+1] = 0.5*(max.y-min.y); // dY
+      fBoxes[6*iIndex+2] = 0.5*(max.z-min.z); // dZ
       fBoxes[6*iIndex+3] = tempTransform->fTr[0]; // Ox
       fBoxes[6*iIndex+4] = tempTransform->fTr[1]; // Oy
       fBoxes[6*iIndex+5] = tempTransform->fTr[2]; // Oz
@@ -487,72 +490,3 @@ void UVoxelFinder::Voxelize()
    SortBoundaries(); 
    BuildListNodes();  
 }
-
-//______________________________________________________________________________
-void UVoxelFinder::TransformLimits(double *min, double *max, UTransform3D *transformation)
-{
-   int jIndex, kIndex = 0;
-   double *vertices = new double[24]; 
-   UVector3 tempPointConv,tempPoint;
-   double currentX, currentY, currentZ = 0;
-   double miniX, miniY, miniZ, maxiX, maxiY, maxiZ;          
-
-   // Detemination of the vertices thanks to the extension of each solid:
-      // 1st vertice:
-   vertices[ 0] = min[0]; vertices[ 1] = min[1]; vertices[ 2] = min[2];
-      // 2nd vertice:
-   vertices[ 3] = min[0]; vertices[ 4] = max[1]; vertices[ 5] = min[2];   
-      // etc.:
-   vertices[ 6] = max[0]; vertices[ 7] = max[1]; vertices[ 8] = min[2];
-   vertices[ 9] = max[0]; vertices[10] = min[1]; vertices[11] = min[2];
-   vertices[12] = min[0]; vertices[13] = min[1]; vertices[14] = max[2];
-   vertices[15] = min[0]; vertices[16] = max[1]; vertices[17] = max[2];
-   vertices[18] = max[0]; vertices[19] = max[1]; vertices[20] = max[2];
-   vertices[21] = max[0]; vertices[22] = min[1]; vertices[23] = max[2];   
-   
-   // Loop on th vertices
-   for(jIndex = 0 ; jIndex < 8 ; jIndex++)
-   {
-      kIndex = 3*jIndex;
-      tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
-      // From local frame to the gobal one:
-      tempPointConv = transformation->GlobalPoint(tempPoint);
-      
-      // Current positions on the three axis:         
-      currentX = tempPointConv.x;
-      currentY = tempPointConv.y;
-      currentZ = tempPointConv.z;
-      
-      // Initialization of extrema:
-      if(jIndex == 0)
-      {
-         miniX = maxiX = currentX;
-         miniY = maxiY = currentY;
-         miniZ = maxiZ = currentZ;
-         continue;                  
-      }
-         
-      // If need be, replacement of the min & max values:
-      if(currentX > maxiX)
-         maxiX = currentX;
-      if(currentX < miniX)
-         miniX = currentX;
-
-      if(currentY > maxiY)
-         maxiY = currentY;
-      if(currentY < miniY)
-         miniY = currentY;  
-
-      if(currentZ > maxiZ)
-         maxiZ = currentZ;
-      if(currentZ < miniZ)
-         miniZ = currentZ;                             
-   }
-   // Recopy of the extrema in the passed pointers:
-   min[0] = miniX;
-   min[1] = miniY;
-   min[2] = miniZ;
-   max[0] = maxiX;
-   max[1] = maxiY;
-   max[2] = maxiZ; 
-} 

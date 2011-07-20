@@ -43,8 +43,6 @@ public:
    UVoxelFinder();
    UVoxelFinder(UMultiUnion* multi_union);
    ~UVoxelFinder();
-   // TransformLimits:
-   void TransformLimits(double *min, double *max, UTransform3D *transformation);    
 
 private:
    void              GetCandidatesAsString(const char* mask, std::string &result);
