@@ -11,6 +11,9 @@
 #include <float.h>
 #include <math.h>
 
+struct UTransform3D;
+struct UVector3;
+
 namespace UUtils {
   
   // Mathematical constants
@@ -51,6 +54,7 @@ namespace UUtils {
   static const double kDegToRad = kPi / 180.0;
   static const double kSqrt2    = 1.4142135623730950488016887242097;
   static const double kInfinity = DBL_MAX;
+  static const double kTolerance = 10E-10; // Minimal distance to discrminate two boundaries.
 
   inline double Infinity();
   inline double Sin(double);
@@ -82,6 +86,9 @@ namespace UUtils {
   void Sort(Index n, const Element* a, Index* index, bool down=true);
   template <typename Iterator, typename IndexIterator>
   void SortItr(Iterator first, Iterator last, IndexIterator index, bool down=true);
+   // TransformLimits: Use the transformation to convert the local limits defined
+   // by min/max vectors to the master frame. Returns modified limits.
+   void TransformLimits(UVector3 &min, UVector3 &max, UTransform3D *transformation);    
 
 template<typename T>
 struct CompareDesc {
@@ -108,9 +115,6 @@ struct CompareAsc {
 
    T fData;
 };
-
-  // CreateVertices:
-  void BuildVertices(double *min, double *max, double *vertices);
 
   // Binary search
 //  template <typename T> long BinarySearch(long n, const T  *array, T value);

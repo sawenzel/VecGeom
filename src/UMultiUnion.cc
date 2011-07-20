@@ -127,15 +127,12 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 {
 // Determines the bounding box for the considered instance of "UMultipleUnion"
    int carNodes = fNodes->size();  
-   int iIndex, jIndex, kIndex = 0;
+   int iIndex = 0;
    double mini, maxi = 0;  
-   double current = 0;
-   double *vertices = new double[24];   
 
    VUSolid *tempSolid = NULL;
    UTransform3D *tempTransform = NULL;
-   
-   UVector3 tempPointConv,tempPoint;  
+  
    double* min = new double[3];
    double* max = new double[3];   
     
@@ -146,34 +143,62 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
       tempTransform = ((*fNodes)[iIndex])->fTransform;
       
       tempSolid->Extent(min, max);      
-      UUtils::BuildVertices(min, max, vertices); 
-      
-      for(jIndex = 0 ; jIndex < 8 ; jIndex++)
+      /*UUtils::*/TransformLimits(min, max, tempTransform);
+     
+      if(iIndex == 0)
       {
-         kIndex = 3*jIndex;
-         tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
-         tempPointConv = tempTransform->GlobalPoint(tempPoint);
-         
-         // Current position on he considered axis (global frame):
-         if(aAxis == eXaxis)         
-            current = tempPointConv.x;
-         else if(aAxis == eYaxis)
-            current = tempPointConv.y;
-         else
-            current = tempPointConv.z;
-         
-         // Initialization of extrema:
-         if(iIndex == 0 && jIndex == 0)
+         switch(aAxis)
          {
-            mini = maxi = current;
+            case eXaxis:
+            {
+               mini = min[0];
+               maxi = max[0];            
+               break;
+            }
+            case eYaxis:
+            {
+               mini = min[1];
+               maxi = max[1];            
+               break;
+            }
+            case eZaxis:
+            {
+               mini = min[2];
+               maxi = max[2];            
+               break;
+            }                       
          }
-         
-         // If need be, replacement of the min & max values:
-         if(current > maxi)
-            maxi = current;
-         if(current < mini)
-            mini = current;         
-      }
+         continue;
+      }            
+     
+      // Deternine the min/max on the considered axis:
+      switch(aAxis)
+      {
+         case eXaxis:
+         {
+            if(min[0] < mini)
+               mini = min[0];
+            if(max[0] > maxi)
+               maxi = max[0];
+            break;
+         }
+         case eYaxis:
+         {
+            if(min[1] < mini)
+               mini = min[1];
+            if(max[1] > maxi)
+               maxi = max[1];
+            break;
+         }
+         case eZaxis:
+         {
+            if(min[2] < mini)
+               mini = min[2];
+            if(max[2] > maxi)
+               maxi = max[2];
+            break;
+         }                        
+      }                 
    }
    aMin = mini;
    aMax = maxi;
@@ -248,3 +273,72 @@ int UMultiUnion::GetNumNodes() const
 {
    return(((*fNodes)[index])->fTransform);
 }
+
+//______________________________________________________________________________
+void UMultiUnion::TransformLimits(double *min, double *max, UTransform3D *transformation)
+{
+   int jIndex, kIndex = 0;
+   double *vertices = new double[24]; 
+   UVector3 tempPointConv,tempPoint;
+   double currentX, currentY, currentZ = 0;
+   double miniX, miniY, miniZ, maxiX, maxiY, maxiZ;          
+
+   // Detemination of the vertices thanks to the extension of each solid:
+      // 1st vertice:
+   vertices[ 0] = min[0]; vertices[ 1] = min[1]; vertices[ 2] = min[2];
+      // 2nd vertice:
+   vertices[ 3] = min[0]; vertices[ 4] = max[1]; vertices[ 5] = min[2];   
+      // etc.:
+   vertices[ 6] = max[0]; vertices[ 7] = max[1]; vertices[ 8] = min[2];
+   vertices[ 9] = max[0]; vertices[10] = min[1]; vertices[11] = min[2];
+   vertices[12] = min[0]; vertices[13] = min[1]; vertices[14] = max[2];
+   vertices[15] = min[0]; vertices[16] = max[1]; vertices[17] = max[2];
+   vertices[18] = max[0]; vertices[19] = max[1]; vertices[20] = max[2];
+   vertices[21] = max[0]; vertices[22] = min[1]; vertices[23] = max[2];   
+   
+   // Loop on th vertices
+   for(jIndex = 0 ; jIndex < 8 ; jIndex++)
+   {
+      kIndex = 3*jIndex;
+      tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
+      // From local frame to the gobal one:
+      tempPointConv = transformation->GlobalPoint(tempPoint);
+      
+      // Current positions on the three axis:         
+      currentX = tempPointConv.x;
+      currentY = tempPointConv.y;
+      currentZ = tempPointConv.z;
+      
+      // Initialization of extrema:
+      if(jIndex == 0)
+      {
+         miniX = maxiX = currentX;
+         miniY = maxiY = currentY;
+         miniZ = maxiZ = currentZ;
+         continue;                  
+      }
+         
+      // If need be, replacement of the min & max values:
+      if(currentX > maxiX)
+         maxiX = currentX;
+      if(currentX < miniX)
+         miniX = currentX;
+
+      if(currentY > maxiY)
+         maxiY = currentY;
+      if(currentY < miniY)
+         miniY = currentY;  
+
+      if(currentZ > maxiZ)
+         maxiZ = currentZ;
+      if(currentZ < miniZ)
+         miniZ = currentZ;                             
+   }
+   // Recopy of the extrema in the passed pointers:
+   min[0] = miniX;
+   min[1] = miniY;
+   min[2] = miniZ;
+   max[0] = maxiX;
+   max[1] = maxiY;
+   max[2] = maxiZ; 
+} 

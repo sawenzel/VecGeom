@@ -6,54 +6,49 @@
 #include "UUtils.hh"
 #include "UMultiUnion.hh"
 
-//using namespace std;
+using namespace std;
 
 //______________________________________________________________________________   
-UVoxelFinder::UVoxelFinder()
-{
-   fMultiUnion = 0;
-   fBoxes = 0;
-   fBoundaries = 0;
-   fXSortedBoundaries = 0;
-   fXNumBound = 0;
-   fYSortedBoundaries = 0;
-   fYNumBound = 0;
-   fZSortedBoundaries = 0;
-   fZNumBound = 0;
-   fNumNodesSliceX = 0;
-   fNumNodesSliceY = 0;
-   fNumNodesSliceZ = 0;
-   fMemoryX = 0;
-   fMemoryY = 0;
-   fMemoryZ = 0;      
-   fNx = 0;
-   fNy = 0;
-   fNz = 0;
-}
+UVoxelFinder::UVoxelFinder() : fMultiUnion(0),
+                               fBoxes(0),
+                               fBoundaries(0),
+                               fXSortedBoundaries(0),
+                               fXNumBound(0),
+                               fYSortedBoundaries(0),
+                               fYNumBound(0),
+                               fZSortedBoundaries(0),
+                               fZNumBound(0),
+                               fNumNodesSliceX(0),
+                               fNumNodesSliceY(0),
+                               fNumNodesSliceZ(0),
+                               fMemoryX(0),
+                               fMemoryY(0),
+                               fMemoryZ(0),      
+                               fNx(0),
+                               fNy(0),
+                               fNz(0)
+                               {}
 
 //______________________________________________________________________________   
-UVoxelFinder::UVoxelFinder(UMultiUnion* multi_union, double tolerance)
-{
-   fMultiUnion = multi_union;
-   fTolerance = tolerance;
-   fBoxes = 0;
-   fBoundaries = 0;
-   fXSortedBoundaries = 0;
-   fXNumBound = 0;
-   fYSortedBoundaries = 0;
-   fYNumBound = 0;
-   fZSortedBoundaries = 0;
-   fZNumBound = 0;
-   fNumNodesSliceX = 0;
-   fNumNodesSliceY = 0;
-   fNumNodesSliceZ = 0;
-   fMemoryX = 0;
-   fMemoryY = 0;
-   fMemoryZ = 0;      
-   fNx = 0;
-   fNy = 0;
-   fNz = 0;
-}
+UVoxelFinder::UVoxelFinder(UMultiUnion* multiUnion) : fMultiUnion(multiUnion),
+                                                       fBoxes(0),
+                                                       fBoundaries(0),
+                                                       fXSortedBoundaries(0),
+                                                       fXNumBound(0),
+                                                       fYSortedBoundaries(0),
+                                                       fYNumBound(0),
+                                                       fZSortedBoundaries(0),
+                                                       fZNumBound(0),
+                                                       fNumNodesSliceX(0),
+                                                       fNumNodesSliceY(0),
+                                                       fNumNodesSliceZ(0),
+                                                       fMemoryX(0),
+                                                       fMemoryY(0),
+                                                       fMemoryZ(0),      
+                                                       fNx(0),
+                                                       fNy(0),
+                                                       fNz(0)
+                                                       {}
 
 //______________________________________________________________________________   
 UVoxelFinder::~UVoxelFinder()
@@ -79,7 +74,7 @@ void UVoxelFinder::BuildVoxelLimits()
 // the half lengths related to the bounding box of each node.
 // These quantities are stored in the array "fBoxes" (6 different values per
 // node.
-   int iIndex,jIndex,kIndex = 0;
+   int iIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes(); // Number of nodes in "fMultiUnion"
    UVector3 tempPointConv,tempPoint;                                                  
    if(!carNodes) return; // If no node, no need to carry on
@@ -91,8 +86,6 @@ void UVoxelFinder::BuildVoxelLimits()
       
    /*const*/ VUSolid *tempSolid = NULL;
    /*const*/ UTransform3D *tempTransform = NULL;
-   double vertices[24];
-   double minX,maxX,minY,maxY,minZ,maxZ;  
    
    double* min = new double[3];
    double* max = new double[3];
@@ -103,45 +96,12 @@ void UVoxelFinder::BuildVoxelLimits()
       tempTransform = fMultiUnion->GetTransform(iIndex);
 
       tempSolid->Extent(min, max);
-      UUtils::BuildVertices(min, max, vertices); 
+      /*UUtils::*/TransformLimits(min, max, tempTransform);                        
       
-      for(jIndex = 0 ; jIndex < 8 ; jIndex++)
-      {
-         kIndex = 3*jIndex;
-         // Store the coordinate of each vertice in "tempPoint"
-         tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
-         // Conversion of the local frame "tempPoint" to the global frame
-         // "tempPointConv"
-         tempPointConv = tempTransform->GlobalPoint(tempPoint);
-         
-         // Initialization of extrema:
-         if(jIndex == 0)
-         {
-            minX = maxX = tempPointConv.x;
-            minY = maxY = tempPointConv.y;
-            minZ = maxZ = tempPointConv.z;                        
-         }
-         
-         // Extrema research:
-         if(tempPointConv.x > maxX)
-            maxX = tempPointConv.x;
-         if(tempPointConv.x < minX)
-            minY = tempPointConv.x;
-            
-         if(tempPointConv.y > maxY)
-            maxY = tempPointConv.y;
-         if(tempPointConv.y < minY)
-            minY = tempPointConv.y;
-            
-         if(tempPointConv.z > maxZ)
-            maxZ = tempPointConv.z;
-         if(tempPointConv.z < minZ)
-            minZ = tempPointConv.z;                       
-
-      }
-      fBoxes[6*iIndex]   = 0.5*(maxX-minX); // dX
-      fBoxes[6*iIndex+1] = 0.5*(maxY-minY); // dY
-      fBoxes[6*iIndex+2] = 0.5*(maxZ-minZ); // dZ
+      // Storage of the positions:
+      fBoxes[6*iIndex]   = 0.5*(max[0]-min[0]); // dX
+      fBoxes[6*iIndex+1] = 0.5*(max[1]-min[1]); // dY
+      fBoxes[6*iIndex+2] = 0.5*(max[2]-min[2]); // dZ
       fBoxes[6*iIndex+3] = tempTransform->fTr[0]; // Ox
       fBoxes[6*iIndex+4] = tempTransform->fTr[1]; // Oy
       fBoxes[6*iIndex+5] = tempTransform->fTr[2]; // Oz
@@ -157,7 +117,7 @@ void UVoxelFinder::DisplayVoxelLimits()
    
    for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-      printf("    -> Node %d:\n       * dX = %f ; * dY = %f ; * dZ = %f\n       * oX = %f ; * oY = %f ; * oZ = %f\n",iIndex+1,fBoxes[6*iIndex],fBoxes[6*iIndex+1],fBoxes[6*iIndex+2],fBoxes[6*iIndex+3],fBoxes[6*iIndex+4],fBoxes[6*iIndex+5]);
+      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << fBoxes[6*iIndex] << " ; * dY = " << fBoxes[6*iIndex+1] << " ; * dZ = " << fBoxes[6*iIndex+2] << "\n       * oX = " << fBoxes[6*iIndex+3] << " ; * oY = " << fBoxes[6*iIndex+4] << " ; * oZ = " << fBoxes[6*iIndex+5] << "\n";
    }
 }
 
@@ -199,7 +159,7 @@ void UVoxelFinder::SortBoundaries()
 {
 // "SortBoundaries" orders the boundaries along each axis (increasing order)
 // and also does not take into account redundant boundaries, ie if two boundaries
-// are separated by a distance strictly inferior to "fTolerance".
+// are separated by a distance strictly inferior to "UUtils::kTolerance".
 // The sorted boundaries are respectively stored in:
 //              * fXSortedBoundaries
 //              * fYSortedBoundaries
@@ -226,7 +186,7 @@ void UVoxelFinder::SortBoundaries()
       }
 
       // If two successive boundaries are too close from each other, only the first one is considered      
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > fTolerance)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > UUtils::kTolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -252,7 +212,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > fTolerance)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > UUtils::kTolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[2*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -278,7 +238,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > fTolerance)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > UUtils::kTolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[4*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -297,29 +257,29 @@ void UVoxelFinder::DisplayBoundaries()
 // Prints the positions of the boundaries of the slices on the three axis:
    int iIndex = 0;
    
-   printf(" * X axis:\n    | ");
+   cout << " * X axis:\n    | ";
    for(iIndex = 0 ; iIndex < fXNumBound ; iIndex++)
    {
-      printf("%f ",fXSortedBoundaries[iIndex]);
-      if(iIndex != fXNumBound-1) printf("-> ");
+      cout << fXSortedBoundaries[iIndex] << " ";
+      if(iIndex != fXNumBound-1) cout << "-> ";
    }
-   printf("|\n    Number of boundaries: %d\n",fXNumBound);  
+   cout << "|\n    Number of boundaries: " << fXNumBound << "\n";
    
-   printf(" * Y axis:\n    | ");
+   cout << " * Y axis:\n    | ";
    for(iIndex = 0 ; iIndex < fYNumBound ; iIndex++)
    {
-      printf("%f ",fYSortedBoundaries[iIndex]);
-      if(iIndex != fYNumBound-1) printf("-> ");
+      cout << fYSortedBoundaries[iIndex] << " ";
+      if(iIndex != fYNumBound-1) cout << "-> ";
    }
-   printf("|\n    Number of boundaries: %d\n",fYNumBound);  
+   cout << "|\n    Number of boundaries: " << fYNumBound << "\n"; 
       
-   printf(" * Z axis:\n    | ");
+   cout << " * Z axis:\n    | ";
    for(iIndex = 0 ; iIndex < fZNumBound ; iIndex++)
    {
-      printf("%f ",fZSortedBoundaries[iIndex]);
+      cout << fZSortedBoundaries[iIndex] << " ";
       if(iIndex != fZNumBound-1) printf("-> ");
    }      
-   printf("|\n    Number of boundaries: %d\n",fZNumBound);  
+   cout << "|\n    Number of boundaries: " << fZNumBound << "\n"; 
 }
 
 //______________________________________________________________________________   
@@ -329,6 +289,7 @@ void UVoxelFinder::BuildListNodes()
 // solids present in each slice aong the three axis.
 // In array "fNumNodesSliceX", "fNumNodesSliceY" and "fNumNodesSliceZ" are stored the number of
 // solids in the considered slice.
+   const double localTolerance = 10E-10;
    int iIndex, jIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes();   
    int nmaxslices = 2*carNodes+1;
@@ -365,8 +326,8 @@ void UVoxelFinder::BuildListNodes()
          xbmax = fBoxes[6*jIndex+3]+fBoxes[6*jIndex];
          
          // Is the considered node inside slice?
-         if((xbmin - fXSortedBoundaries[iIndex+1]) > -fTolerance) continue;
-         if((xbmax - fXSortedBoundaries[iIndex]) < fTolerance) continue;
+         if((xbmin - fXSortedBoundaries[iIndex+1]) > -localTolerance) continue;
+         if((xbmax - fXSortedBoundaries[iIndex]) < localTolerance) continue;
          
          // The considered node is contained in the current slice:
          fNumNodesSliceX[iIndex]++;
@@ -402,8 +363,8 @@ void UVoxelFinder::BuildListNodes()
          ybmax = fBoxes[6*jIndex+4]+fBoxes[6*jIndex+1];
          
          // Is the considered node inside slice?
-         if((ybmin - fYSortedBoundaries[iIndex+1]) > -fTolerance) continue;
-         if((ybmax - fYSortedBoundaries[iIndex]) < fTolerance) continue;
+         if((ybmin - fYSortedBoundaries[iIndex+1]) > -localTolerance) continue;
+         if((ybmax - fYSortedBoundaries[iIndex]) < localTolerance) continue;
          
          // The considered node is contained in the current slice:
          fNumNodesSliceY[iIndex]++;
@@ -439,8 +400,8 @@ void UVoxelFinder::BuildListNodes()
          zbmax = fBoxes[6*jIndex+5]+fBoxes[6*jIndex+2];
          
          // Is the considered node inside slice?
-         if((zbmin - fZSortedBoundaries[iIndex+1]) > -fTolerance) continue;
-         if((zbmax - fZSortedBoundaries[iIndex]) < fTolerance) continue;
+         if((zbmin - fZSortedBoundaries[iIndex+1]) > -localTolerance) continue;
+         if((zbmax - fZSortedBoundaries[iIndex]) < localTolerance) continue;
          
          // The considered node is contained in the current slice:
          fNumNodesSliceZ[iIndex]++;
@@ -488,36 +449,33 @@ void UVoxelFinder::DisplayListNodes()
    int iIndex, jIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes();   
    int nperslice = 1+(carNodes-1)/(8*sizeof(char));
-   std::string result = "";
+   string result = "";
    
-   printf(" * X axis:\n");
+   cout << " * X axis:\n";
    for(iIndex = 0 , jIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++ , jIndex += nperslice)
    {
-      printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fXSortedBoundaries[iIndex],fXSortedBoundaries[iIndex+1]);
+      cout << "    Slice #" << iIndex+1 << ": [" << fXSortedBoundaries[iIndex] << " ; " << fXSortedBoundaries[iIndex+1] << "] -> ";
       
       GetCandidatesAsString(&fMemoryX[jIndex], result);
-      printf("[ %s]  ", result.c_str());
-      printf("\n");
+      cout << "[ " << result.c_str() << "]  \n";
    }
    
-   printf(" * Y axis:\n");
+   cout << " * Y axis:\n";
    for(iIndex = 0 , jIndex = 0 ; iIndex < fYNumBound-1 ; iIndex++ , jIndex += nperslice)
    {
-      printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fYSortedBoundaries[iIndex],fYSortedBoundaries[iIndex+1]);
+      cout << "    Slice #" << iIndex+1 << ": [" << fYSortedBoundaries[iIndex] << " ; " << fYSortedBoundaries[iIndex+1] << "] -> ";
       
       GetCandidatesAsString(&fMemoryY[jIndex], result);
-      printf("[ %s]  ", result.c_str());
-      printf("\n");
+      cout << "[ " << result.c_str() << "]  \n";
    }
    
-   printf(" * Z axis:\n");
+   cout << " * Z axis:\n";
    for(iIndex = 0 , jIndex = 0 ; iIndex < fZNumBound-1 ; iIndex++ , jIndex += nperslice)
    {
-      printf("    Slice #%d: [%f ; %f] -> ",iIndex+1,fZSortedBoundaries[iIndex],fZSortedBoundaries[iIndex+1]);
+      cout << "    Slice #" << iIndex+1 << ": [" << fZSortedBoundaries[iIndex] << " ; " << fZSortedBoundaries[iIndex+1] << "] -> ";
       
       GetCandidatesAsString(&fMemoryZ[jIndex], result);
-      printf("[ %s]  ", result.c_str());
-      printf("\n");
+      cout << "[ " << result.c_str() << "]  \n";
    }    
 }
 
@@ -529,3 +487,72 @@ void UVoxelFinder::Voxelize()
    SortBoundaries(); 
    BuildListNodes();  
 }
+
+//______________________________________________________________________________
+void UVoxelFinder::TransformLimits(double *min, double *max, UTransform3D *transformation)
+{
+   int jIndex, kIndex = 0;
+   double *vertices = new double[24]; 
+   UVector3 tempPointConv,tempPoint;
+   double currentX, currentY, currentZ = 0;
+   double miniX, miniY, miniZ, maxiX, maxiY, maxiZ;          
+
+   // Detemination of the vertices thanks to the extension of each solid:
+      // 1st vertice:
+   vertices[ 0] = min[0]; vertices[ 1] = min[1]; vertices[ 2] = min[2];
+      // 2nd vertice:
+   vertices[ 3] = min[0]; vertices[ 4] = max[1]; vertices[ 5] = min[2];   
+      // etc.:
+   vertices[ 6] = max[0]; vertices[ 7] = max[1]; vertices[ 8] = min[2];
+   vertices[ 9] = max[0]; vertices[10] = min[1]; vertices[11] = min[2];
+   vertices[12] = min[0]; vertices[13] = min[1]; vertices[14] = max[2];
+   vertices[15] = min[0]; vertices[16] = max[1]; vertices[17] = max[2];
+   vertices[18] = max[0]; vertices[19] = max[1]; vertices[20] = max[2];
+   vertices[21] = max[0]; vertices[22] = min[1]; vertices[23] = max[2];   
+   
+   // Loop on th vertices
+   for(jIndex = 0 ; jIndex < 8 ; jIndex++)
+   {
+      kIndex = 3*jIndex;
+      tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
+      // From local frame to the gobal one:
+      tempPointConv = transformation->GlobalPoint(tempPoint);
+      
+      // Current positions on the three axis:         
+      currentX = tempPointConv.x;
+      currentY = tempPointConv.y;
+      currentZ = tempPointConv.z;
+      
+      // Initialization of extrema:
+      if(jIndex == 0)
+      {
+         miniX = maxiX = currentX;
+         miniY = maxiY = currentY;
+         miniZ = maxiZ = currentZ;
+         continue;                  
+      }
+         
+      // If need be, replacement of the min & max values:
+      if(currentX > maxiX)
+         maxiX = currentX;
+      if(currentX < miniX)
+         miniX = currentX;
+
+      if(currentY > maxiY)
+         maxiY = currentY;
+      if(currentY < miniY)
+         miniY = currentY;  
+
+      if(currentZ > maxiZ)
+         maxiZ = currentZ;
+      if(currentZ < miniZ)
+         miniZ = currentZ;                             
+   }
+   // Recopy of the extrema in the passed pointers:
+   min[0] = miniX;
+   min[1] = miniY;
+   min[2] = miniZ;
+   max[0] = maxiX;
+   max[1] = maxiY;
+   max[2] = maxiZ; 
+} 

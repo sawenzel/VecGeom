@@ -6,6 +6,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
+#include "UVector3.hh"
+#include "UTransform3D.hh"
 
 //______________________________________________________________________________
 long UUtils::LocMin(long n, const double *a) {
@@ -113,18 +115,57 @@ void UUtils::Sort(int n, const double* a, int* index, bool down)
       std::sort(index, index + n, CompareAsc<const double*>(a) );
 }
 
-//______________________________________________________________________________
-void UUtils::BuildVertices(double *min, double *max, double *vertices)
+void UUtils::TransformLimits(UVector3 &min, UVector3 &max, UTransform3D *transformation)
 {
-   // 1st vertice:
-   vertices[ 0] = min[0]; vertices[ 1] = min[1]; vertices[ 2] = min[2];
-   // 2nd vertice:
-   vertices[ 3] = min[0]; vertices[ 4] = max[1]; vertices[ 5] = min[2];   
-   // etc.:
-   vertices[ 6] = max[0]; vertices[ 7] = max[1]; vertices[ 8] = min[2];
-   vertices[ 9] = max[0]; vertices[10] = min[1]; vertices[11] = min[2];
-   vertices[12] = min[0]; vertices[13] = min[1]; vertices[14] = max[2];
-   vertices[15] = min[0]; vertices[16] = max[1]; vertices[17] = max[2];
-   vertices[18] = max[0]; vertices[19] = max[1]; vertices[20] = max[2];
-   vertices[21] = max[0]; vertices[22] = min[1]; vertices[23] = max[2];   
-} 
+// Comment here
+   int kIndex;
+   double vertices[24];
+   UVector3 tempPointConv,tempPoint;
+   double currentX, currentY, currentZ;
+   double miniX = kInfinity;
+   double miniY = kInfinity;
+   double miniZ = kInfinity;
+   double maxiX = -kInfinity;
+   double maxiY = -kInfinity;
+   double maxiZ = -kInfinity;
+
+   // Detemination of the vertices thanks to the extension of each solid:
+      // 1st vertice:
+   vertices[ 0] = min.x; vertices[ 1] = min.y; vertices[ 2] = min.z;
+      // 2nd vertice:
+   vertices[ 3] = min.x; vertices[ 4] = max.y; vertices[ 5] = min.z;   
+      // etc.:
+   vertices[ 6] = max.x; vertices[ 7] = max.y; vertices[ 8] = min.z;
+   vertices[ 9] = max.x; vertices[10] = min.y; vertices[11] = min.z;
+   vertices[12] = min.x; vertices[13] = min.y; vertices[14] = max.z;
+   vertices[15] = min.x; vertices[16] = max.y; vertices[17] = max.z;
+   vertices[18] = max.x; vertices[19] = max.y; vertices[20] = max.z;
+   vertices[21] = max.x; vertices[22] = min.y; vertices[23] = max.z;   
+   
+   // Loop on th vertices
+   for(int jIndex = 0 ; jIndex < 8 ; jIndex++)
+   {
+      kIndex = 3*jIndex;
+      tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
+      // From local frame to the gobal one:
+      tempPointConv = transformation->GlobalPoint(tempPoint);
+     
+      // Current positions on the three axis:         
+      currentX = tempPointConv.x;
+      currentY = tempPointConv.y;
+      currentZ = tempPointConv.z;
+      
+      // If need be, replacement of the min & max values:
+      if(currentX > maxiX) maxiX = currentX;
+      if(currentX < miniX) miniX = currentX;
+
+      if(currentY > maxiY) maxiY = currentY;
+      if(currentY < miniY) miniY = currentY;  
+
+      if(currentZ > maxiZ) maxiZ = currentZ;
+      if(currentZ < miniZ) miniZ = currentZ;                             
+   }
+   // Recopy of the extrema in the passed pointers:
+   min.Set(miniX, miniY, miniZ);
+   max.Set(maxiX, maxiY, maxiZ);
+}

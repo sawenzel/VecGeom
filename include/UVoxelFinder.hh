@@ -15,11 +15,11 @@
 #include "UUtils.hh"
 #endif
 
-#ifndef USOLIDS_UTRANSFORM3D
+#ifndef USOLIDS_UTransform3D
 #include "UTransform3D.hh"
 #endif
 
-#ifndef USOLIDS_UMULTIUNION
+#ifndef USOLIDS_UMultiUnion
 #include "UMultiUnion.hh"
 #endif
 
@@ -41,8 +41,10 @@ public:
    void DisplayListNodes(); 
    
    UVoxelFinder();
-   UVoxelFinder(UMultiUnion* multi_union, double tolerance = 1);
+   UVoxelFinder(UMultiUnion* multi_union);
    ~UVoxelFinder();
+   // TransformLimits:
+   void TransformLimits(double *min, double *max, UTransform3D *transformation);    
 
 private:
    void              GetCandidatesAsString(const char* mask, std::string &result);

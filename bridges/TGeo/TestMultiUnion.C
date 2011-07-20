@@ -125,8 +125,8 @@ void TestMultiUnion()
    
    VUSolid::EnumInside resultat = multi_union->Inside(test_point);
 
-   printf("[> Inside:\n");
-   printf("  Tested point: [%f,%f,%f]\n",test_point.x,test_point.y,test_point.z);
+   cout << "[> Inside:\n";
+   cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]\n";
       
    if(resultat == 0)
    {
@@ -150,16 +150,16 @@ void TestMultiUnion()
    multi_union->Extent(x_axis,MinX,MaxX);
    multi_union->Extent(y_axis,MinY,MaxY);
    multi_union->Extent(z_axis,MinZ,MaxZ);
-   printf("[> Extent (multi union) - 1st version:\n");
-   printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",MinX,MaxX,MinY,MaxY,MinZ,MaxZ);
+   cout << "[> Extent (multi union) - 1st version:\n";
+   cout << " * X: [" << MinX << " ; " << MaxX << "]\n * Y: [" << MinY << " ; " << MaxY << "]\n * Z: [" << MinZ << " ; " << MaxZ << "]\n";
    
    // Test of method Extent (2nd version):
    double *table_mini = new double[3];
    double *table_maxi = new double[3];
  
    multi_union->Extent(table_mini,table_maxi);
-   printf("[> Extent (multi union) - 2nd version:\n");
-   printf(" * X: [%f ; %f]\n * Y: [%f ; %f]\n * Z: [%f ; %f]\n",table_mini[0],table_maxi[0],table_mini[1],table_maxi[1],table_mini[2],table_maxi[2]);   
+   cout << "[> Extent (multi union) - 2nd version:\n";
+   cout << " * X: [" << table_mini[0] << " ; " << table_maxi[0] << "]\n * Y: [" << table_mini[1] << " ; " << table_maxi[1] << "]\n * Z: [" << table_mini[2] << " ; " << table_maxi[2] << "]\n";
 
 /**/  
    // Test of "BuildVoxelLimits":
