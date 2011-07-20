@@ -128,7 +128,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 // Determines the bounding box for the considered instance of "UMultipleUnion"
    int carNodes = fNodes->size();  
    int iIndex = 0;
-   double mini, maxi = 0;  
+   double mini = 0, maxi = 0;  
 
    VUSolid *tempSolid = NULL;
    UTransform3D *tempTransform = NULL;
@@ -211,7 +211,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 //______________________________________________________________________________ 
 void UMultiUnion::Extent(double aMin[3],double aMax[3])
 {
-   double min,max = 0;
+   double min = 0,max = 0;
    this->Extent(eXaxis,min,max);
    aMin[0] = min; aMax[0] = max;
    this->Extent(eYaxis,min,max);
@@ -272,8 +272,7 @@ int UMultiUnion::GetNumNodes() const
 }
 
 //______________________________________________________________________________       
-
-/*const*/ UTransform3D* UMultiUnion::GetTransform(int index) /*const*/
+const UTransform3D* UMultiUnion::GetTransform(int index) const
 {
    return(((*fNodes)[index])->fTransform);
 }

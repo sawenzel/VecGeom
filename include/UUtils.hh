@@ -88,7 +88,7 @@ namespace UUtils {
   void SortItr(Iterator first, Iterator last, IndexIterator index, bool down=true);
    // TransformLimits: Use the transformation to convert the local limits defined
    // by min/max vectors to the master frame. Returns modified limits.
-   void TransformLimits(UVector3 &min, UVector3 &max, UTransform3D *transformation);    
+   void TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *transformation);    
 
 template<typename T>
 struct CompareDesc {

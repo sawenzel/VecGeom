@@ -84,8 +84,8 @@ void UVoxelFinder::BuildVoxelLimits()
                                  // related to a particular node, but also
                                  // the coordinates of its origin                                 
       
-   /*const*/ VUSolid *tempSolid = NULL;
-   /*const*/ UTransform3D *tempTransform = NULL;
+   /*const*/ VUSolid *tempSolid;
+   const UTransform3D *tempTransform;
    
    double* arrMin = new double[3];
    double* arrMax = new double[3];
@@ -293,7 +293,7 @@ void UVoxelFinder::BuildListNodes()
 // In array "fNumNodesSliceX", "fNumNodesSliceY" and "fNumNodesSliceZ" are stored the number of
 // solids in the considered slice.
    const double localTolerance = 10E-10;
-   int iIndex, jIndex = 0;
+   int iIndex = 0, jIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes();   
    int nmaxslices = 2*carNodes+1;
    int nperslice = 1+(carNodes-1)/(8*sizeof(char));
@@ -449,7 +449,7 @@ void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
 void UVoxelFinder::DisplayListNodes()
 {
 // Prints which solids are present in the slices previously elaborated.
-   int iIndex, jIndex = 0;
+   int iIndex = 0, jIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes();   
    int nperslice = 1+(carNodes-1)/(8*sizeof(char));
    string result = "";

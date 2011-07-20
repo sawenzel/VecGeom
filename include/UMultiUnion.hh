@@ -87,7 +87,7 @@ public:
    // Other methods
    int                          GetNumNodes() const;
    /*const*/ VUSolid*           GetSolid(int index) /*const*/;
-   /*const*/ UTransform3D*      GetTransform(int index) /*const*/;                             
+   const UTransform3D*          GetTransform(int index) const;                             
 
 private:
    std::vector<UNode*>         *fNodes;   // Container of nodes

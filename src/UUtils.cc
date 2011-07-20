@@ -115,9 +115,12 @@ void UUtils::Sort(int n, const double* a, int* index, bool down)
       std::sort(index, index + n, CompareAsc<const double*>(a) );
 }
 
-void UUtils::TransformLimits(UVector3 &min, UVector3 &max, UTransform3D *transformation)
+//______________________________________________________________________________
+void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *transformation)
 {
-// Comment here
+   // The goal of this method is to convert the quantities min and max (representing the
+   // bounding box of a given solid in its local frame) to the main frame, using
+   // "transformation"
    int kIndex;
    double vertices[24];
    UVector3 tempPointConv,tempPoint;
