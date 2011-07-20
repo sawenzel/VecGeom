@@ -87,10 +87,13 @@ public:
    // Other methods
    int                          GetNumNodes() const;
    /*const*/ VUSolid*           GetSolid(int index) /*const*/;
-   const UTransform3D*          GetTransform(int index) const;                             
+   const UTransform3D*          GetTransform(int index) const;
+   void                         SetVoxelFinder(UVoxelFinder* finder);
+   void                         Voxelize();
+   void                         GetCandidates(int indexX, int indexY, int indexZ);
 
 private:
    std::vector<UNode*>         *fNodes;   // Container of nodes
-   UVoxelFinder                *fVoxels;
+   UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid
 };
 #endif   

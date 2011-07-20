@@ -54,7 +54,6 @@ namespace UUtils {
   static const double kDegToRad = kPi / 180.0;
   static const double kSqrt2    = 1.4142135623730950488016887242097;
   static const double kInfinity = DBL_MAX;
-  static const double kTolerance = 10E-10; // Minimal distance to discrminate two boundaries.
 
   inline double Infinity();
   inline double Sin(double);
@@ -86,35 +85,37 @@ namespace UUtils {
   void Sort(Index n, const Element* a, Index* index, bool down=true);
   template <typename Iterator, typename IndexIterator>
   void SortItr(Iterator first, Iterator last, IndexIterator index, bool down=true);
-   // TransformLimits: Use the transformation to convert the local limits defined
-   // by min/max vectors to the master frame. Returns modified limits.
-   void TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *transformation);    
 
-template<typename T>
-struct CompareDesc {
+  // TransformLimits: Use the transformation to convert the local limits defined
+  // by min/max vectors to the master frame. Returns modified limits.
+  void TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *transformation);    
 
-   CompareDesc(T d) : fData(d) {}
+  // Templates:
+  template<typename T>
+  struct CompareDesc {
 
-   template<typename Index>
-   bool operator()(Index i1, Index i2) {
-      return *(fData + i1) > *(fData + i2);
-   }
+     CompareDesc(T d) : fData(d) {}
 
-   T fData;
-};
+     template<typename Index>
+     bool operator()(Index i1, Index i2) {
+        return *(fData + i1) > *(fData + i2);
+     }
 
-template<typename T>
-struct CompareAsc {
+     T fData;
+  };
 
-   CompareAsc(T d) : fData(d) {}
+  template<typename T>
+  struct CompareAsc {
+  
+     CompareAsc(T d) : fData(d) {}
+  
+     template<typename Index>
+     bool operator()(Index i1, Index i2) {
+        return *(fData + i1) < *(fData + i2);
+     }
 
-   template<typename Index>
-   bool operator()(Index i1, Index i2) {
-      return *(fData + i1) < *(fData + i2);
-   }
-
-   T fData;
-};
+     T fData;
+  };
 
   // Binary search
 //  template <typename T> long BinarySearch(long n, const T  *array, T value);

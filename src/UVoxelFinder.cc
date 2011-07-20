@@ -162,13 +162,14 @@ void UVoxelFinder::SortBoundaries()
 {
 // "SortBoundaries" orders the boundaries along each axis (increasing order)
 // and also does not take into account redundant boundaries, ie if two boundaries
-// are separated by a distance strictly inferior to "UUtils::kTolerance".
+// are separated by a distance strictly inferior to "tolerance".
 // The sorted boundaries are respectively stored in:
 //              * fXSortedBoundaries
 //              * fYSortedBoundaries
 //              * fZSortedBoundaries
 // In addition, the number of elements contained in the three latter arrays are
 // precised thanks to variables: fXNumBound, fYNumBound and fZNumBound.
+   static const double tolerance = 10E-10; // Minimal distance to discrminate two boundaries.
    int iIndex = 0;
    int carNodes = fMultiUnion->GetNumNodes();
    int *indexSortedBound = new int[2*carNodes];
@@ -189,7 +190,7 @@ void UVoxelFinder::SortBoundaries()
       }
 
       // If two successive boundaries are too close from each other, only the first one is considered      
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > UUtils::kTolerance)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[indexSortedBound[iIndex]]) > tolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -215,7 +216,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > UUtils::kTolerance)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[2*carNodes+indexSortedBound[iIndex]]) > tolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[2*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         
@@ -241,7 +242,7 @@ void UVoxelFinder::SortBoundaries()
          continue;
       }
       
-      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > UUtils::kTolerance)
+      if(UUtils::Abs(tempBoundaries[number_boundaries-1]-fBoundaries[4*carNodes+indexSortedBound[iIndex]]) > tolerance)
       {
          tempBoundaries[number_boundaries] = fBoundaries[4*carNodes+indexSortedBound[iIndex]];
          number_boundaries++;         

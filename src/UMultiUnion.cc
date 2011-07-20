@@ -91,35 +91,49 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 
 // Hitherto, it is considered that:
 //        - only parallelepipedic nodes can be added to the container
-//        - the transformation matrix involves only three translation components
 
-   int carNodes = fNodes->size(); // Total number of nodes contained in "fNodes".
-   int iIndex = 0;
-   
-   VUSolid *tempSolid = NULL;
-   UTransform3D *tempTransform = NULL;
-   UVector3 tempPoint;
-   VUSolid::EnumInside tempInside = eOutside;
+   int choice = 0;
+   cout << "  [> Please choose mode -> Enter 0 for dummy implementation or 1 for voxelization techniques: ";
+   cin >> choice;
 
-   // Loop on the nodes:
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   if(choice == 0)
    {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
+      int carNodes = fNodes->size(); // Total number of nodes contained in "fNodes".
+      int iIndex = 0;
+   
+      VUSolid *tempSolid = NULL;
+      UTransform3D *tempTransform = NULL;
+      UVector3 tempPoint, tempPointConv;
+      VUSolid::EnumInside tempInside = eOutside;
 
-      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      tempPoint.x = aPoint.x - tempTransform->fTr[0];
-      tempPoint.y = aPoint.y - tempTransform->fTr[1];
-      tempPoint.z = aPoint.z - tempTransform->fTr[2];            
-
-      tempInside = tempSolid->Inside(tempPoint);
-      
-      if((tempInside == eInside) || (tempInside == eSurface))
+      // Loop on the nodes:
+      for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
       {
-         return tempInside;
-      }      
+         tempSolid = ((*fNodes)[iIndex])->fSolid;
+         tempTransform = ((*fNodes)[iIndex])->fTransform;
+   
+         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+         tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
+         tempPointConv = tempTransform->LocalPoint(tempPoint); 
+   
+         tempInside = tempSolid->Inside(tempPointConv);
+         
+         if((tempInside == eInside) || (tempInside == eSurface))
+         {
+            return tempInside;
+         }      
+      }
+      return eOutside;
    }
-   return eOutside;
+   
+   else
+   {
+      // Implementation using voxelisation techniques:
+      // ---------------------------------------------
+      // METHOD TO BE IMPLEMENTED:
+      cout << "!!! METHOD NOT IMPLEMENTED SO FAR...";      
+      return eOutside;
+   }
 }
 
 //______________________________________________________________________________ 
@@ -275,4 +289,66 @@ int UMultiUnion::GetNumNodes() const
 const UTransform3D* UMultiUnion::GetTransform(int index) const
 {
    return(((*fNodes)[index])->fTransform);
+}
+
+//______________________________________________________________________________       
+void UMultiUnion::SetVoxelFinder(UVoxelFinder* finder)
+{
+   fVoxels = finder;
+}
+
+//______________________________________________________________________________       
+void UMultiUnion::Voxelize()
+{
+   fVoxels = new UVoxelFinder(this);
+   fVoxels -> Voxelize();
+}
+
+//______________________________________________________________________________       
+void UMultiUnion::GetCandidates(int indexX, int indexY, int indexZ)
+{
+/*   // "GetCandidates" should compute which solids are possibly contained in
+   // the voxel defined by the three slices characterized by the passed indexes.
+   int iIndex;
+   
+   int carNodes = fNodes->size(); 
+   int nmaxslices = 2*carNodes+1;
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
+   
+   // Voxelized structure:   
+   char *memoryX = fVoxels -> fMemoryX;
+   char *memoryY = fVoxels -> fMemoryY;
+   char *memoryZ = fVoxels -> fMemoryZ;
+   
+   char* maskX = new char[nperslices];
+   char* maskY = new char[nperslices];
+   char* maskZ = new char[nperslices];
+   char *maskResult = new char[nperslices];
+   
+   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   {
+      maskX[iIndex] = memoryX[nperslices*indexX+iIndex];
+      maskY[iIndex] = memoryY[nperslices*indexY+iIndex];
+      maskZ[iIndex] = memoryZ[nperslices*indexZ+iIndex];
+      
+      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];
+   } 
+
+   static char buffer[30]; 
+   char mask1 = 1;
+   string result = "";
+   
+   for(int icand=0; icand<carNodes; icand++)
+   {
+      int byte = icand/8;
+      int bit = icand - 8*byte;
+   
+      if (mask1<<bit & result[byte])
+      {
+         sprintf(buffer, "%d ", icand+1); 
+         result += buffer;
+      }   
+   }
+   cout << "[ " << result.c_str() << "]  \n"; 
+   */  
 }

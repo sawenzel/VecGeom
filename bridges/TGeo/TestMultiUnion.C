@@ -116,16 +116,15 @@ void TestMultiUnion()
    top->AddNode(Volume9,9,combi9);    
 
    geom->CloseGeometry();
-   
+/*   
    // Creation of a test point:
    UVector3 test_point;
-   test_point.x = 20;
+   test_point.x = 80;
    test_point.y = 0;
    test_point.z = 0;   
    
+   cout << "[> Inside:\n";   
    VUSolid::EnumInside resultat = multi_union->Inside(test_point);
-
-   cout << "[> Inside:\n";
    cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]\n";
       
    if(resultat == 0)
@@ -161,7 +160,6 @@ void TestMultiUnion()
    cout << "[> Extent (multi union) - 2nd version:\n";
    cout << " * X: [" << table_mini[0] << " ; " << table_maxi[0] << "]\n * Y: [" << table_mini[1] << " ; " << table_maxi[1] << "]\n * Z: [" << table_mini[2] << " ; " << table_maxi[2] << "]\n";
 
-/**/  
    // Test of "BuildVoxelLimits":
    printf("[> BuildVoxelLimits:\n");   
    UVoxelFinder voxfind(multi_union);
@@ -180,14 +178,19 @@ void TestMultiUnion()
    printf("[> BuildListNodes:\n");   
    voxfind.BuildListNodes();
    voxfind.DisplayListNodes();
-/**/
+*/
 /*
    // Test of "Voxelize"
    UVoxelFinder voxfind(multi_union,1.);   
    printf("[> Voxelize:\n");   
    voxfind.Voxelize();
    voxfind.DisplayListNodes();   
-*/   
+*/
+
+   // Voxelize "multi_union"
+   multi_union -> Voxelize();
+   multi_union -> fVoxels -> DisplayListNodes();
+   
    // RayTracing:
    int choice = 0;
    printf("[> In order to trace the geometry, type: 1. To exit, press 0 and return:\n");
@@ -195,7 +198,6 @@ void TestMultiUnion()
    
    if(choice == 1)
    {
-//      top->Raytrace();    
       top->Draw();
    }
    else
