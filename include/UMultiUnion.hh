@@ -90,7 +90,6 @@ public:
    const UTransform3D*          GetTransform(int index) const;
    void                         SetVoxelFinder(UVoxelFinder* finder);
    void                         Voxelize();
-   void                         GetCandidates(int indexX, int indexY, int indexZ);
 
 private:
    std::vector<UNode*>         *fNodes;   // Container of nodes

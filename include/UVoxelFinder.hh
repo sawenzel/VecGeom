@@ -43,9 +43,11 @@ public:
    UVoxelFinder();
    UVoxelFinder(UMultiUnion* multi_union);
    ~UVoxelFinder();
+   
+   void               GetCandidatesVoxel(int indexX, int indexY, int indexZ); // Prints the nodes located in a voxel
 
 private:
-   void              GetCandidatesAsString(const char* mask, std::string &result);
+   void               GetCandidatesAsString(const char* mask, std::string &result);
 
 private:
    UMultiUnion       *fMultiUnion;           // Solid to be voxelized (it is a union of several sub-solids)

@@ -189,7 +189,25 @@ void TestMultiUnion()
 
    // Voxelize "multi_union"
    multi_union -> Voxelize();
+
+   cout << "[> BuildListNodes:" << endl;
    multi_union -> fVoxels -> DisplayListNodes();
+   
+   cout << "[> GetCandidates:" << endl;
+   int lIndex = 0;
+   int selection1, selection2, selection3 = 0;
+   cout << "Please enter the coordinates of the voxel to be tested, separated by commas." << endl;
+   cout << "Enter coordinate -1 for first coordinate to leave." << endl;
+   cout << "   [> ";
+   scanf("%d,%d,%d",&selection1,&selection2,&selection3);      
+   
+   do
+   {   
+      multi_union -> fVoxels -> GetCandidatesVoxel(selection1,selection2,selection3);   
+      cout << "   [> ";
+      scanf("%d,%d,%d",&selection1,&selection2,&selection3);
+   }
+   while(selection1 != -1);
    
    // RayTracing:
    int choice = 0;

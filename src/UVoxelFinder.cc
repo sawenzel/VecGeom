@@ -491,3 +491,32 @@ void UVoxelFinder::Voxelize()
    SortBoundaries(); 
    BuildListNodes();  
 }
+
+//______________________________________________________________________________       
+void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
+{
+   // "GetCandidates" should compute which solids are possibly contained in
+   // the voxel defined by the three slices characterized by the passed indexes.
+   int iIndex;
+   string result = "";  
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
+   
+   // Voxelized structure:      
+   char* maskX = new char[nperslices];
+   char* maskY = new char[nperslices];
+   char* maskZ = new char[nperslices];
+   char *maskResult = new char[nperslices];
+   
+   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   {
+      maskX[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex];
+      maskY[iIndex] = fMemoryY[nperslices*(indexY-1)+iIndex];
+      maskZ[iIndex] = fMemoryZ[nperslices*(indexZ-1)+iIndex];
+      
+      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];
+   } 
+   GetCandidatesAsString(&(maskResult[0]),result);
+   cout << "   Candidates in voxel [" << indexX << " ; " << indexY << " ; " << indexZ << "]: ";
+   cout << "[ " << result.c_str() << "]  " << endl;   
+}
