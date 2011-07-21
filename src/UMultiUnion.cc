@@ -3,6 +3,7 @@
 #include <iostream>
 #include "UUtils.hh"
 #include "UVoxelFinder.hh"
+#include <sstream>
 
 using namespace std;
 
@@ -130,9 +131,31 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    {
       // Implementation using voxelisation techniques:
       // ---------------------------------------------
-      // METHOD TO BE IMPLEMENTED:
-      cout << "!!! METHOD NOT IMPLEMENTED SO FAR...";      
-      return eOutside;
+      // METHOD BEING IMPLEMENTED:
+/*      
+//      int carNodes = fNodes->size();
+//      int nperslice = 1+(carNodes-1)/(8*sizeof(char));      
+      string stringOutcome;
+      string outcome;    
+      int currentIndex = -1;
+      
+      // Pre-computation:
+      UVector3 pointConvertedIndex = fVoxels -> ConvertPointToIndexes(aPoint);
+      
+      // Core of the method:
+      stringOutcome = fVoxels -> GetCandidatesVoxel2((int)pointConvertedIndex.x,(int)pointConvertedIndex.y,(int)pointConvertedIndex.z); 
+      outcome = stringOutcome.c_str();
+      
+      cout << outcome << endl;      
+      sscanf(outcome.c_str(),"%d ", &currentIndex);
+      printf("---> %d\n",currentIndex);
+      outcome.erase(0,3);
+      cout << outcome << endl;
+      currentIndex = -1;               
+      sscanf(outcome.c_str(),"%d ", &currentIndex);
+      printf("---> %d\n",currentIndex);
+            
+      return eOutside;*/
    }
 }
 
@@ -256,7 +279,7 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint,bool aAccurate) const
 }
 
 //______________________________________________________________________________
-double UMultiUnion::SafetyFromOutside ( const UVector3 aPoint, bool aAccurate) const
+double UMultiUnion::SafetyFromOutside (const UVector3 aPoint, bool aAccurate) const
 {
 // Estimates the isotropic safety from a point outside the current solid to any 
 // of its surfaces. The algorithm may be accurate or should provide a fast 

@@ -116,7 +116,7 @@ void TestMultiUnion()
    top->AddNode(Volume9,9,combi9);    
 
    geom->CloseGeometry();
-/*   
+/*    
    // Creation of a test point:
    UVector3 test_point;
    test_point.x = 80;
@@ -139,7 +139,7 @@ void TestMultiUnion()
    {
       printf("  is OUTSIDE the defined solid\n");      
    }
-   
+  
    // Test of method Extent (1st version):
    VUSolid::EAxisType x_axis = VUSolid::eXaxis;
    VUSolid::EAxisType y_axis = VUSolid::eYaxis;   
@@ -193,8 +193,19 @@ void TestMultiUnion()
    cout << "[> BuildListNodes:" << endl;
    multi_union -> fVoxels -> DisplayListNodes();
    
-   cout << "[> GetCandidates:" << endl;
-   int lIndex = 0;
+ /*  
+   // Test of ConvertPointToIndexes:
+   cout << "[> ConvertPointToIndexes:" << endl;   
+   UVector3 pointStart;
+   pointStart.Set(100,200,620);
+   
+   UVector3 pointEnd = multi_union -> fVoxels -> ConvertPointToIndexes(pointStart);
+   cout << "   Start (point): [" << pointStart.x << " ; " << pointStart.y << " ; " << pointStart.z << "]" << endl;
+   cout << "   End (indexes): [" << pointEnd.x + 1 << " ; " << pointEnd.y + 1 << " ; " << pointEnd.z + 1 << "]" << endl;   
+*/
+
+   // Test of GetCandidatesVoxel:
+   cout << "[> GetCandidatesVoxel:" << endl;
    int selection1, selection2, selection3 = 0;
    cout << "Please enter the coordinates of the voxel to be tested, separated by commas." << endl;
    cout << "Enter coordinate -1 for first coordinate to leave." << endl;
@@ -202,12 +213,38 @@ void TestMultiUnion()
    scanf("%d,%d,%d",&selection1,&selection2,&selection3);      
    
    do
-   {   
+   {  
+      if(selection1 == -1) continue;
       multi_union -> fVoxels -> GetCandidatesVoxel(selection1,selection2,selection3);   
       cout << "   [> ";
       scanf("%d,%d,%d",&selection1,&selection2,&selection3);
    }
    while(selection1 != -1);
+
+   // Test of Inside:
+   // Creation of a test point:
+   UVector3 test_point;
+   test_point.x = 80;
+   test_point.y = 0;
+   test_point.z = 0;   
+
+   cout << "[> Inside:\n";   
+   VUSolid::EnumInside resultat = multi_union->Inside(test_point);
+   cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]\n";
+      
+   if(resultat == 0)
+   {
+      printf("  is INSIDE the defined solid\n");
+   }
+   else if(resultat == 1)
+   {
+      printf("  is on a SURFACE of the defined solid\n");
+   }
+   else
+   {
+      printf("  is OUTSIDE the defined solid\n");      
+   }
+
    
    // RayTracing:
    int choice = 0;

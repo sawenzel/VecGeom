@@ -261,29 +261,29 @@ void UVoxelFinder::DisplayBoundaries()
 // Prints the positions of the boundaries of the slices on the three axis:
    int iIndex = 0;
    
-   cout << " * X axis:\n    | ";
+   cout << " * X axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fXNumBound ; iIndex++)
    {
       cout << fXSortedBoundaries[iIndex] << " ";
       if(iIndex != fXNumBound-1) cout << "-> ";
    }
-   cout << "|\n    Number of boundaries: " << fXNumBound << "\n";
+   cout << "|" << endl << "Number of boundaries: " << fXNumBound << endl;
    
-   cout << " * Y axis:\n    | ";
+   cout << " * Y axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fYNumBound ; iIndex++)
    {
       cout << fYSortedBoundaries[iIndex] << " ";
       if(iIndex != fYNumBound-1) cout << "-> ";
    }
-   cout << "|\n    Number of boundaries: " << fYNumBound << "\n"; 
+   cout << "|" << endl << "Number of boundaries: " << fYNumBound << endl;
       
-   cout << " * Z axis:\n    | ";
+   cout << " * Y axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fZNumBound ; iIndex++)
    {
       cout << fZSortedBoundaries[iIndex] << " ";
       if(iIndex != fZNumBound-1) printf("-> ");
    }      
-   cout << "|\n    Number of boundaries: " << fZNumBound << "\n"; 
+   cout << "|" << endl << "Number of boundaries: " << fZNumBound << endl;
 }
 
 //______________________________________________________________________________   
@@ -440,7 +440,7 @@ void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
    
       if (mask1<<bit & mask[byte])
       {
-         sprintf(buffer, "%d ", icand+1); 
+         sprintf(buffer, "%02d ", icand+1); 
          result += buffer;
       }   
    }
@@ -455,31 +455,31 @@ void UVoxelFinder::DisplayListNodes()
    int nperslice = 1+(carNodes-1)/(8*sizeof(char));
    string result = "";
    
-   cout << " * X axis:\n";
+   cout << " * X axis:" << endl;
    for(iIndex = 0 , jIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++ , jIndex += nperslice)
    {
       cout << "    Slice #" << iIndex+1 << ": [" << fXSortedBoundaries[iIndex] << " ; " << fXSortedBoundaries[iIndex+1] << "] -> ";
       
       GetCandidatesAsString(&fMemoryX[jIndex], result);
-      cout << "[ " << result.c_str() << "]  \n";
+      cout << "[ " << result.c_str() << "]  " << endl;
    }
    
-   cout << " * Y axis:\n";
+   cout << " * Y axis:" << endl;
    for(iIndex = 0 , jIndex = 0 ; iIndex < fYNumBound-1 ; iIndex++ , jIndex += nperslice)
    {
       cout << "    Slice #" << iIndex+1 << ": [" << fYSortedBoundaries[iIndex] << " ; " << fYSortedBoundaries[iIndex+1] << "] -> ";
       
       GetCandidatesAsString(&fMemoryY[jIndex], result);
-      cout << "[ " << result.c_str() << "]  \n";
+      cout << "[ " << result.c_str() << "]  " << endl;
    }
    
-   cout << " * Z axis:\n";
+   cout << " * Z axis:" << endl;
    for(iIndex = 0 , jIndex = 0 ; iIndex < fZNumBound-1 ; iIndex++ , jIndex += nperslice)
    {
       cout << "    Slice #" << iIndex+1 << ": [" << fZSortedBoundaries[iIndex] << " ; " << fZSortedBoundaries[iIndex+1] << "] -> ";
       
       GetCandidatesAsString(&fMemoryZ[jIndex], result);
-      cout << "[ " << result.c_str() << "]  \n";
+      cout << "[ " << result.c_str() << "]  " << endl;
    }    
 }
 
@@ -519,4 +519,75 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
    GetCandidatesAsString(&(maskResult[0]),result);
    cout << "   Candidates in voxel [" << indexX << " ; " << indexY << " ; " << indexZ << "]: ";
    cout << "[ " << result.c_str() << "]  " << endl;   
+}
+
+//______________________________________________________________________________       
+string UVoxelFinder::GetCandidatesVoxel2(int indexX, int indexY, int indexZ)
+{
+   // "GetCandidates" should compute which solids are possibly contained in
+   // the voxel defined by the three slices characterized by the passed indexes
+   // and return a table of the candidates contained in the voxel.
+   int iIndex;
+   string result = "";  
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
+   
+   // Voxelized structure:      
+   char* maskX = new char[nperslices];
+   char* maskY = new char[nperslices];
+   char* maskZ = new char[nperslices];
+   char *maskResult = new char[nperslices];
+   
+   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   {
+      maskX[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex];
+      maskY[iIndex] = fMemoryY[nperslices*(indexY-1)+iIndex];
+      maskZ[iIndex] = fMemoryZ[nperslices*(indexZ-1)+iIndex];
+      
+      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];
+   }
+   GetCandidatesAsString(&(maskResult[0]),result);
+   return result;
+}
+
+//______________________________________________________________________________       
+UVector3 UVoxelFinder::ConvertPointToIndexes(UVector3 point)
+{
+   int iIndex;
+   int resultX = -2, resultY = -2, resultZ = -2;
+  
+   // X axis:
+   for(iIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++)
+   {
+      if(point.x >= fXSortedBoundaries[iIndex] && point.x <= fXSortedBoundaries[iIndex+1])
+      {
+         resultX = iIndex;
+         break;
+      }
+   }
+   
+   // Y axis:
+   for(iIndex = 0 ; iIndex < fYNumBound-1 ; iIndex++)
+   {
+      if(point.y >= fYSortedBoundaries[iIndex] && point.y <= fYSortedBoundaries[iIndex+1])
+      {
+         resultY = iIndex;
+         break;
+      }
+   }
+   
+   // Z axis:
+   for(iIndex = 0 ; iIndex < fZNumBound-1 ; iIndex++)
+   {
+      if(point.z >= fZSortedBoundaries[iIndex] && point.z <= fZSortedBoundaries[iIndex+1])
+      {
+         resultZ = iIndex;
+         break;
+      }
+   }   
+   
+   // SetPoint:
+   UVector3 resultIndexes;
+   resultIndexes.Set(resultX,resultY,resultZ);
+   return resultIndexes;
 }
