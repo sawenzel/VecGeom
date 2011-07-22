@@ -117,76 +117,6 @@ void TestMultiUnion()
    top->AddNode(Volume9,9,combi9);    
 
    geom->CloseGeometry();
-/*    
-   // Creation of a test point:
-   UVector3 test_point;
-   test_point.x = 80;
-   test_point.y = 0;
-   test_point.z = 0;   
-   
-   cout << "[> Inside:\n";   
-   VUSolid::EnumInside resultat = multi_union->Inside(test_point);
-   cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]\n";
-      
-   if(resultat == 0)
-   {
-      printf("  is INSIDE the defined solid\n");
-   }
-   else if(resultat == 1)
-   {
-      printf("  is on a SURFACE of the defined solid\n");
-   }
-   else
-   {
-      printf("  is OUTSIDE the defined solid\n");      
-   }
-  
-   // Test of method Extent (1st version):
-   VUSolid::EAxisType x_axis = VUSolid::eXaxis;
-   VUSolid::EAxisType y_axis = VUSolid::eYaxis;   
-   VUSolid::EAxisType z_axis = VUSolid::eZaxis;   
-   
-   double MinX,MaxX,MinY,MaxY,MinZ,MaxZ = 0;
-   multi_union->Extent(x_axis,MinX,MaxX);
-   multi_union->Extent(y_axis,MinY,MaxY);
-   multi_union->Extent(z_axis,MinZ,MaxZ);
-   cout << "[> Extent (multi union) - 1st version:\n";
-   cout << " * X: [" << MinX << " ; " << MaxX << "]\n * Y: [" << MinY << " ; " << MaxY << "]\n * Z: [" << MinZ << " ; " << MaxZ << "]\n";
-   
-   // Test of method Extent (2nd version):
-   double *table_mini = new double[3];
-   double *table_maxi = new double[3];
- 
-   multi_union->Extent(table_mini,table_maxi);
-   cout << "[> Extent (multi union) - 2nd version:\n";
-   cout << " * X: [" << table_mini[0] << " ; " << table_maxi[0] << "]\n * Y: [" << table_mini[1] << " ; " << table_maxi[1] << "]\n * Z: [" << table_mini[2] << " ; " << table_maxi[2] << "]\n";
-
-   // Test of "BuildVoxelLimits":
-   printf("[> BuildVoxelLimits:\n");   
-   UVoxelFinder voxfind(multi_union);
-   voxfind.BuildVoxelLimits();
-   voxfind.DisplayVoxelLimits();
-   
-   // "CreateBoundaries":
-   voxfind.CreateBoundaries();
-   
-   // Test of "SortBoundaries":
-   voxfind.SortBoundaries();
-   printf("[> SortBoundaries:\n");
-   voxfind.DisplayBoundaries();
-   
-   // Test of "BuildListNodes" along x axis:
-   printf("[> BuildListNodes:\n");   
-   voxfind.BuildListNodes();
-   voxfind.DisplayListNodes();
-*/
-/*
-   // Test of "Voxelize"
-   UVoxelFinder voxfind(multi_union,1.);   
-   printf("[> Voxelize:\n");   
-   voxfind.Voxelize();
-   voxfind.DisplayListNodes();   
-*/
 
    // Voxelize "multi_union"
    multi_union -> Voxelize();
@@ -199,21 +129,10 @@ void TestMultiUnion()
 
    cout << "[> BuildListNodes:" << endl;      
    multi_union -> fVoxels -> DisplayListNodes();
-   
- /*  
-   // Test of ConvertPointToIndexes:
-   cout << "[> ConvertPointToIndexes:" << endl;   
-   UVector3 pointStart;
-   pointStart.Set(100,200,620);
-   
-   UVector3 pointEnd = multi_union -> fVoxels -> ConvertPointToIndexes(pointStart);
-   cout << "   Start (point): [" << pointStart.x << " ; " << pointStart.y << " ; " << pointStart.z << "]" << endl;
-   cout << "   End (indexes): [" << pointEnd.x + 1 << " ; " << pointEnd.y + 1 << " ; " << pointEnd.z + 1 << "]" << endl;   
-*/
 
    // Test of GetCandidatesVoxel:
    cout << "[> GetCandidatesVoxel:" << endl;
-   int selection1, selection2, selection3 = 0;
+   int selection1, selection2, selection3;
    cout << "Please enter the coordinates of the voxel to be tested, separated by commas." << endl;
    cout << "Enter coordinate -1 for first coordinate to leave." << endl;
    cout << "   [> ";
@@ -229,30 +148,31 @@ void TestMultiUnion()
    while(selection1 != -1);
 
    // Test of Inside:
-      // Definition of a timer in order to compare the scalability of the two methods:
+      // Definition of a timer in order to compare the scalability of the two methods:       
    TStopwatch *Chronometre;
-	Double_t timing = 0;   
-	Chronometre = new TStopwatch();         
+	Chronometre = new TStopwatch();     
    // Creation of a test point:   
+   double coX, coY, coZ;
    cout << "[> Inside:" << endl;
-   cout << "Please enter the coordinates of the point to be tested, separated by commas." << endl;
+   cout << "Please enter separately the coordinates of the point to be tested." << endl;
    cout << "Enter coordinate -1 for first coordinate to leave." << endl;
    cout << "   [> ";
-   scanf("%d,%d,%d",&selection1,&selection2,&selection3);         
+   cin >> coX;
+   cout << "   [> ";
+   cin >> coY;
+   cout << "   [> ";
+   cin >> coZ;        
    
    UVector3 test_point;
-   test_point.x = selection1;
-   test_point.y = selection2;
-   test_point.z = selection3;
+   test_point.Set(coX,coY,coZ);
   
    do
    {  
-      if(selection1 == -1) continue;
+      if(coX == -1) continue;
     	Chronometre->Reset();      
-      Chronometre->Start();      
+      Chronometre->Start();            
       VUSolid::EnumInside resultat = multi_union->Inside(test_point);
-   	Chronometre->Stop();
-    	timing=Chronometre->CpuTime();      
+   	Chronometre->Stop();      
 
       cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]" << endl;
 
@@ -268,18 +188,19 @@ void TestMultiUnion()
       {
          cout << "  is OUTSIDE the defined solid" << endl;
       }
-      
-      Chronometre->Print();
-      
+          
       cout << "   [> ";
-      scanf("%d,%d,%d",&selection1,&selection2,&selection3);
-      test_point.x = selection1;
-      test_point.y = selection2;
-      test_point.z = selection3;      
+      cin >> coX;
+      cout << "   [> ";
+      cin >> coY;
+      cout << "   [> ";
+      cin >> coZ; 
+   
+      test_point.Set(coX,coY,coZ);     
    }
-   while(selection1 != -1);  
+   while(coX != -1);  
 
-	delete Chronometre;
+	delete Chronometre;   
       
    // RayTracing:
    int choice = 0;
