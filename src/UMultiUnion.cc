@@ -102,8 +102,8 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
       int carNodes = fNodes->size(); // Total number of nodes contained in "fNodes".
       int iIndex = 0;
    
-      VUSolid *tempSolid = NULL;
-      UTransform3D *tempTransform = NULL;
+      VUSolid *tempSolid = 0;
+      UTransform3D *tempTransform = 0;
       UVector3 tempPoint, tempPointConv;
       VUSolid::EnumInside tempInside = eOutside;
 
@@ -131,31 +131,36 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    {
       // Implementation using voxelisation techniques:
       // ---------------------------------------------
-      // METHOD BEING IMPLEMENTED:
-/*      
-//      int carNodes = fNodes->size();
-//      int nperslice = 1+(carNodes-1)/(8*sizeof(char));      
+      int iIndex;
       string stringOutcome;
-      string outcome;    
-      int currentIndex = -1;
+      VUSolid *tempSolid = 0;
+      UTransform3D *tempTransform = 0;
+      UVector3 tempPoint, tempPointConv;
+      VUSolid::EnumInside tempInside = eOutside;          
       
       // Pre-computation:
       UVector3 pointConvertedIndex = fVoxels -> ConvertPointToIndexes(aPoint);
       
       // Core of the method:
-      stringOutcome = fVoxels -> GetCandidatesVoxel2((int)pointConvertedIndex.x,(int)pointConvertedIndex.y,(int)pointConvertedIndex.z); 
-      outcome = stringOutcome.c_str();
-      
-      cout << outcome << endl;      
-      sscanf(outcome.c_str(),"%d ", &currentIndex);
-      printf("---> %d\n",currentIndex);
-      outcome.erase(0,3);
-      cout << outcome << endl;
-      currentIndex = -1;               
-      sscanf(outcome.c_str(),"%d ", &currentIndex);
-      printf("---> %d\n",currentIndex);
-            
-      return eOutside;*/
+      stringOutcome = fVoxels -> GetCandidatesVoxelArray((int)pointConvertedIndex.x,(int)pointConvertedIndex.y,(int)pointConvertedIndex.z); 
+
+      for(iIndex = 0 ; iIndex < (int)stringOutcome.size() ; iIndex++)
+      {
+         tempSolid = ((*fNodes)[(int)(stringOutcome[iIndex])])->fSolid;
+         tempTransform = ((*fNodes)[(int)(stringOutcome[iIndex])])->fTransform;
+         
+         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+         tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
+         tempPointConv = tempTransform->LocalPoint(tempPoint); 
+   
+         tempInside = tempSolid->Inside(tempPointConv);
+         
+         if((tempInside == eInside) || (tempInside == eSurface))
+         {
+            return tempInside;
+         }       
+      }  
+      return eOutside;
    }
 }
 

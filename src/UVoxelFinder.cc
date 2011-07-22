@@ -440,7 +440,7 @@ void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
    
       if (mask1<<bit & mask[byte])
       {
-         sprintf(buffer, "%02d ", icand+1); 
+         sprintf(buffer, "%d ", icand+1); 
          result += buffer;
       }   
    }
@@ -522,7 +522,7 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
 }
 
 //______________________________________________________________________________       
-string UVoxelFinder::GetCandidatesVoxel2(int indexX, int indexY, int indexZ)
+string UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int indexZ)
 {
    // "GetCandidates" should compute which solids are possibly contained in
    // the voxel defined by the three slices characterized by the passed indexes
@@ -546,8 +546,21 @@ string UVoxelFinder::GetCandidatesVoxel2(int indexX, int indexY, int indexZ)
       
       maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];
    }
-   GetCandidatesAsString(&(maskResult[0]),result);
-   return result;
+     
+   char maskMove = 1;
+   string candidatesVoxel;
+   
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   {
+      int byte = iIndex/8;
+      int bit = iIndex - 8*byte;
+   
+      if (maskMove<<bit & maskResult[byte])
+      {
+         candidatesVoxel.push_back((char)(iIndex));
+      }   
+   }
+   return candidatesVoxel;
 }
 
 //______________________________________________________________________________       

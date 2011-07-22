@@ -8,6 +8,7 @@
 #include "TGeoMedium.h"
 #include "TGeoVolume.h"
 #include "TGeoMatrix.h"
+#include "TStopwatch.h"
 
 void TestMultiUnion()
 {
@@ -33,8 +34,8 @@ void TestMultiUnion()
    UBox *box6 = new UBox("UBox",60,60,60);
    UBox *box7 = new UBox("UBox",30,60,60);
    UBox *box8 = new UBox("UBox",90,10,10);
-   UBox *box9 = new UBox("UBox",40,40,40);   
-
+   UBox *box9 = new UBox("UBox",40,40,40);             
+   
    UTransform3D *transform1 = new UTransform3D(0,0,0,0,45,0);
    UTransform3D *transform2 = new UTransform3D(300,300,300,0,0,0);
    UTransform3D *transform3 = new UTransform3D(0,400,100,0,0,0);   
@@ -43,8 +44,8 @@ void TestMultiUnion()
    UTransform3D *transform6 = new UTransform3D(-200,25,100,0,90,0);   
    UTransform3D *transform7 = new UTransform3D(0,-150,-300,70,90,30);  
    UTransform3D *transform8 = new UTransform3D(600,0,0,0,45,0);            
-   UTransform3D *transform9 = new UTransform3D(0,0,0,0,20,63);     
-                  
+   UTransform3D *transform9 = new UTransform3D(0,0,0,0,20,63);                            
+                    
       // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");
    multi_union->AddNode(box1,transform1);
@@ -55,7 +56,7 @@ void TestMultiUnion()
    multi_union->AddNode(box6,transform6);
    multi_union->AddNode(box7,transform7);
    multi_union->AddNode(box8,transform8);                
-   multi_union->AddNode(box9,transform9);    
+   multi_union->AddNode(box9,transform9);                                     
   
    // Preparing RayTracing of the created geometry:
       // Using bridge class "TGeoUShape":
@@ -190,7 +191,13 @@ void TestMultiUnion()
    // Voxelize "multi_union"
    multi_union -> Voxelize();
 
-   cout << "[> BuildListNodes:" << endl;
+   cout << "[> DisplayVoxelLimits:" << endl;   
+   multi_union -> fVoxels -> DisplayVoxelLimits();   
+
+   cout << "[> DisplayBoundaries:" << endl;      
+   multi_union -> fVoxels -> DisplayBoundaries();   
+
+   cout << "[> BuildListNodes:" << endl;      
    multi_union -> fVoxels -> DisplayListNodes();
    
  /*  
@@ -222,30 +229,58 @@ void TestMultiUnion()
    while(selection1 != -1);
 
    // Test of Inside:
-   // Creation of a test point:
-   UVector3 test_point;
-   test_point.x = 80;
-   test_point.y = 0;
-   test_point.z = 0;   
-
-   cout << "[> Inside:\n";   
-   VUSolid::EnumInside resultat = multi_union->Inside(test_point);
-   cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]\n";
-      
-   if(resultat == 0)
-   {
-      printf("  is INSIDE the defined solid\n");
-   }
-   else if(resultat == 1)
-   {
-      printf("  is on a SURFACE of the defined solid\n");
-   }
-   else
-   {
-      printf("  is OUTSIDE the defined solid\n");      
-   }
-
+      // Definition of a timer in order to compare the scalability of the two methods:
+   TStopwatch *Chronometre;
+	Double_t timing = 0;   
+	Chronometre = new TStopwatch();         
+   // Creation of a test point:   
+   cout << "[> Inside:" << endl;
+   cout << "Please enter the coordinates of the point to be tested, separated by commas." << endl;
+   cout << "Enter coordinate -1 for first coordinate to leave." << endl;
+   cout << "   [> ";
+   scanf("%d,%d,%d",&selection1,&selection2,&selection3);         
    
+   UVector3 test_point;
+   test_point.x = selection1;
+   test_point.y = selection2;
+   test_point.z = selection3;
+  
+   do
+   {  
+      if(selection1 == -1) continue;
+    	Chronometre->Reset();      
+      Chronometre->Start();      
+      VUSolid::EnumInside resultat = multi_union->Inside(test_point);
+   	Chronometre->Stop();
+    	timing=Chronometre->CpuTime();      
+
+      cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]" << endl;
+
+      if(resultat == 0)
+      {
+         cout << "  is INSIDE the defined solid" << endl;
+      }
+      else if(resultat == 1)
+      {
+         cout << "  is on a SURFACE of the defined solid" << endl;
+      }
+      else
+      {
+         cout << "  is OUTSIDE the defined solid" << endl;
+      }
+      
+      Chronometre->Print();
+      
+      cout << "   [> ";
+      scanf("%d,%d,%d",&selection1,&selection2,&selection3);
+      test_point.x = selection1;
+      test_point.y = selection2;
+      test_point.z = selection3;      
+   }
+   while(selection1 != -1);  
+
+	delete Chronometre;
+      
    // RayTracing:
    int choice = 0;
    printf("[> In order to trace the geometry, type: 1. To exit, press 0 and return:\n");

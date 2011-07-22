@@ -48,7 +48,7 @@ public:
    ~UVoxelFinder();
    
    void               GetCandidatesVoxel(int indexX, int indexY, int indexZ); // Prints the nodes located in a voxel
-   string             GetCandidatesVoxel2(int indexX, int indexY, int indexZ);
+   string             GetCandidatesVoxelArray(int indexX, int indexY, int indexZ);
    UVector3           ConvertPointToIndexes(UVector3 point); // Method determining in which voxel is contained
                                                              // passed point
 
