@@ -1,6 +1,7 @@
 #include "UVoxelFinder.hh"
 
 #include <iostream>
+#include <iomanip>
 #include <stdio.h>
 #include <string.h>
 #include "UUtils.hh"
@@ -120,7 +121,9 @@ void UVoxelFinder::DisplayVoxelLimits()
    
    for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << fBoxes[6*iIndex] << " ; * dY = " << fBoxes[6*iIndex+1] << " ; * dZ = " << fBoxes[6*iIndex+2] << "\n       * oX = " << fBoxes[6*iIndex+3] << " ; * oY = " << fBoxes[6*iIndex+4] << " ; * oZ = " << fBoxes[6*iIndex+5] << "\n";
+//      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << fBoxes[6*iIndex] << " ; * dY = " << fBoxes[6*iIndex+1] << " ; * dZ = " << fBoxes[6*iIndex+2] << "\n       * oX = " << fBoxes[6*iIndex+3] << " ; * oY = " << fBoxes[6*iIndex+4] << " ; * oZ = " << fBoxes[6*iIndex+5] << "\n";
+      cout << fixed;
+      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << setprecision (6) << fBoxes[6*iIndex] << " ; * dY = " << setprecision (6) << fBoxes[6*iIndex+1] << " ; * dZ = " << setprecision (6) << fBoxes[6*iIndex+2] << "\n       * oX = " << setprecision (6) << fBoxes[6*iIndex+3] << " ; * oY = " << setprecision (6) << fBoxes[6*iIndex+4] << " ; * oZ = " << setprecision (6) << fBoxes[6*iIndex+5] << "\n";      
    }
 }
 
@@ -522,13 +525,12 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
 }
 
 //______________________________________________________________________________       
-string UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int indexZ)
+vector<int> UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int indexZ)
 {
    // "GetCandidates" should compute which solids are possibly contained in
    // the voxel defined by the three slices characterized by the passed indexes
    // and return a table of the candidates contained in the voxel.
-   int iIndex;
-   string result = "";  
+   int iIndex; 
    int carNodes = fMultiUnion->GetNumNodes();
    int nperslices = 1+(carNodes-1)/(8*sizeof(char));
    
@@ -548,7 +550,7 @@ string UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int indexZ)
    }
      
    char maskMove = 1;
-   string candidatesVoxel;
+   vector<int> candidatesVoxel;
    
    for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
@@ -557,50 +559,35 @@ string UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int indexZ)
    
       if (maskMove<<bit & maskResult[byte])
       {
-         candidatesVoxel.push_back((char)(iIndex));
+         candidatesVoxel.push_back(iIndex);
       }   
    }
    return candidatesVoxel;
 }
 
 //______________________________________________________________________________       
-UVector3 UVoxelFinder::ConvertPointToIndexes(UVector3 point)
+vector<UVector3> UVoxelFinder::ConvertPointToIndexes(UVector3 point)
 {
-   int iIndex;
-   int resultX = -2, resultY = -2, resultZ = -2;
+   int iIndex, jIndex, kIndex;
+   UVector3 tempPoint;
+   vector<UVector3> outcomePointToIndexes;
   
    // X axis:
    for(iIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++)
    {
-      if(point.x >= fXSortedBoundaries[iIndex] && point.x <= fXSortedBoundaries[iIndex+1])
+      for(jIndex = 0 ; jIndex < fYNumBound-1 ; jIndex++)
       {
-         resultX = iIndex;
-         break;
+         for(kIndex = 0 ; kIndex < fZNumBound-1 ; kIndex++)
+         {
+            if((point.x >= fXSortedBoundaries[iIndex] && point.x <= fXSortedBoundaries[iIndex+1])
+             &&(point.y >= fYSortedBoundaries[jIndex] && point.y <= fYSortedBoundaries[jIndex+1])
+             &&(point.z >= fZSortedBoundaries[kIndex] && point.z <= fZSortedBoundaries[kIndex+1]))
+             {
+                tempPoint.Set(iIndex,jIndex,kIndex);
+                outcomePointToIndexes.push_back(tempPoint);
+             }
+         }
       }
    }
-   
-   // Y axis:
-   for(iIndex = 0 ; iIndex < fYNumBound-1 ; iIndex++)
-   {
-      if(point.y >= fYSortedBoundaries[iIndex] && point.y <= fYSortedBoundaries[iIndex+1])
-      {
-         resultY = iIndex;
-         break;
-      }
-   }
-   
-   // Z axis:
-   for(iIndex = 0 ; iIndex < fZNumBound-1 ; iIndex++)
-   {
-      if(point.z >= fZSortedBoundaries[iIndex] && point.z <= fZSortedBoundaries[iIndex+1])
-      {
-         resultZ = iIndex;
-         break;
-      }
-   }   
-   
-   // SetPoint:
-   UVector3 resultIndexes;
-   resultIndexes.Set(resultX,resultY,resultZ);
-   return resultIndexes;
+   return outcomePointToIndexes;
 }

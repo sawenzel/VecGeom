@@ -131,35 +131,38 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    {
       // Implementation using voxelisation techniques:
       // ---------------------------------------------
-      int iIndex;
-      string stringOutcome;
+      int iIndex, jIndex;
+      vector<int> vectorOutcome;
       VUSolid *tempSolid = 0;
       UTransform3D *tempTransform = 0;
       UVector3 tempPoint, tempPointConv;
       VUSolid::EnumInside tempInside = eOutside;          
       
       // Pre-computation:
-      UVector3 pointConvertedIndex = fVoxels -> ConvertPointToIndexes(aPoint);
-      
+      vector<UVector3> pointConvertedIndex = fVoxels -> ConvertPointToIndexes(aPoint);
+         
       // Core of the method:
-      stringOutcome = fVoxels -> GetCandidatesVoxelArray((int)pointConvertedIndex.x,(int)pointConvertedIndex.y,(int)pointConvertedIndex.z); 
-
-      for(iIndex = 0 ; iIndex < (int)stringOutcome.size() ; iIndex++)
+      for(jIndex = 0 ; jIndex < (int)pointConvertedIndex.size() ; jIndex++)
       {
-         tempSolid = ((*fNodes)[(int)(stringOutcome[iIndex])])->fSolid;
-         tempTransform = ((*fNodes)[(int)(stringOutcome[iIndex])])->fTransform;
-         
-         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-         tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
-         tempPointConv = tempTransform->LocalPoint(tempPoint); 
-   
-         tempInside = tempSolid->Inside(tempPointConv);
-         
-         if((tempInside == eInside) || (tempInside == eSurface))
+         vectorOutcome = fVoxels -> GetCandidatesVoxelArray((int)pointConvertedIndex[jIndex].x + 1,(int)pointConvertedIndex[jIndex].y + 1,(int)pointConvertedIndex[jIndex].z + 1); 
+      
+         for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
          {
-            return tempInside;
-         }       
-      }  
+            tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+            tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
+            
+            // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+            tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
+            tempPointConv = tempTransform->LocalPoint(tempPoint); 
+      
+            tempInside = tempSolid->Inside(tempPointConv);      
+            
+            if((tempInside == eInside) || (tempInside == eSurface))
+            {
+               return tempInside;
+            }       
+         } 
+      }      
       return eOutside;
    }
 }

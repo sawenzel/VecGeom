@@ -188,6 +188,10 @@ void TestMultiUnion()
       {
          cout << "  is OUTSIDE the defined solid" << endl;
       }
+       
+      cout << "Timer: ";
+      Chronometre->Print();
+      cout << endl;
           
       cout << "   [> ";
       cin >> coX;
