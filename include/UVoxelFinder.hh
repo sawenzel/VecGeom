@@ -51,6 +51,7 @@ public:
    void               GetCandidatesVoxel(int indexX, int indexY, int indexZ);
    // Method returning in a vector container the nodes located in a voxel characterized by its three indexes:
    vector<int>        GetCandidatesVoxelArray(int indexX, int indexY, int indexZ);
+   vector<int>        GetCandidatesVoxelArray2(UVector3 point);
    // Method determining in which voxel(s) is located the passed point:
    vector<UVector3>   ConvertPointToIndexes(UVector3 point);
 

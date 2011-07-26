@@ -124,6 +124,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    // Implementation using voxelisation techniques:
    // ---------------------------------------------
 //   return InsideDummy(aPoint);
+/*
    int iIndex, jIndex;
    vector<int> vectorOutcome;
    VUSolid *tempSolid = 0;
@@ -152,6 +153,30 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
       } 
    }      
    return eOutside;
+*/
+
+   int iIndex;
+   vector<int> vectorOutcome;   
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;
+   UVector3 tempPoint, tempPointConv;
+   VUSolid::EnumInside tempInside = eOutside;          
+         
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray2(aPoint); 
+      
+   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++) {
+      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
+            
+      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
+      tempPointConv = tempTransform->LocalPoint(tempPoint); 
+     
+      tempInside = tempSolid->Inside(tempPointConv);      
+         
+      if((tempInside == eInside) || (tempInside == eSurface)) return tempInside;
+   }       
+   return eOutside;   
 }
 
 //______________________________________________________________________________ 

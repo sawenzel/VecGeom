@@ -550,6 +550,77 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int in
 }
 
 //______________________________________________________________________________       
+vector<int> UVoxelFinder::GetCandidatesVoxelArray2(UVector3 point)
+{
+   int iIndex; 
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
+   long resultBinSearchX, resultBinSearchY, resultBinSearchZ;
+   
+   // Binary search on each slice of the voxelized sructure:
+   resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x);
+   resultBinSearchY = UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, point.y);
+   resultBinSearchZ = UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, point.z);
+   
+   // Determination of the mask:
+   char *maskResult = new char[nperslices];
+   char *maskX = new char[nperslices];
+   char *maskY = new char[nperslices];
+   char *maskZ = new char[nperslices];         
+   
+   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   {
+      // Along X axis:
+      if((point.x - fXSortedBoundaries[resultBinSearchX] == 0) && (resultBinSearchX != 0))
+      {
+         maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex] | fMemoryX[nperslices*(resultBinSearchX - 1) + iIndex];      
+      }
+      else
+      {
+         maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex];     
+      }
+            
+      // Along Y axis:
+      if((point.y - fYSortedBoundaries[resultBinSearchY] == 0) && (resultBinSearchY != 0))
+      {
+         maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex] | fMemoryY[nperslices*(resultBinSearchY - 1) + iIndex];      
+      }
+      else
+      {
+         maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex];     
+      }
+      
+      // Along Z axis:
+      if((point.z - fZSortedBoundaries[resultBinSearchZ] == 0) && (resultBinSearchZ != 0))
+      {
+         maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex] | fMemoryZ[nperslices*(resultBinSearchZ - 1) + iIndex];      
+      }
+      else
+      {
+         maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex];     
+      }
+      
+      // Logic and of the masks along the 3 axes:
+      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];     
+   }
+   
+   char maskMove = 1;
+   vector<int> candidatesVoxel;
+   
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   {
+      int byte = iIndex/8;
+      int bit = iIndex - 8*byte;
+   
+      if (maskMove<<bit & maskResult[byte])
+      {
+         candidatesVoxel.push_back(iIndex);
+      }   
+   }
+   return candidatesVoxel;
+}
+
+//______________________________________________________________________________       
 vector<UVector3> UVoxelFinder::ConvertPointToIndexes(UVector3 point)
 {
    // ConvertPointToVertices is designed to determine the indexes of the

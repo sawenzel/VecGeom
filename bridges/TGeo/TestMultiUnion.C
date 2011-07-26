@@ -132,8 +132,7 @@ void TestMultiUnion()
    cout << "[> BuildListNodes:" << endl;      
    multi_union -> fVoxels -> DisplayListNodes();
 
-
-
+   cout << "[> Test:" << endl;   
    double bmin[3], bmax[3];
    UVector3 point;
    multi_union->Extent(bmin, bmax);
