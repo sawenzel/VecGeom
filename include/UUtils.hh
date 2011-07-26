@@ -118,9 +118,7 @@ namespace UUtils {
   };
 
   // Binary search
-//  template <typename T> long BinarySearch(long n, const T  *array, T value);
-//  template <typename T> long BinarySearch(long n, const T **array, T value);
-//  template <typename Iterator, typename Element> Iterator BinarySearch(Iterator first, Iterator last, Element value);
+  long BinarySearch(long n, const double *array, double value);
 
   // Equations
 //  bool         RootsQuadratic(const double coef[3], double xmin, double xmax);

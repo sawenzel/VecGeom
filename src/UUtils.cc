@@ -10,6 +10,25 @@
 #include "UTransform3D.hh"
 
 //______________________________________________________________________________
+long UUtils::BinarySearch(long n, const double *array, double value)
+{
+// Binary search in an array of doubles. If match is found, function returns
+   // position of element.  If no match found, function gives nearest
+   // element smaller than value.
+   
+   int nabove, nbelow, middle;
+   nabove = n+1;
+   nbelow = 0;
+   while(nabove-nbelow > 1) {
+      middle = (nabove+nbelow)/2;
+      if (value == array[middle-1]) return middle-1;
+      if (value  < array[middle-1]) nabove = middle;
+      else                          nbelow = middle;
+   }
+   return nbelow-1;
+}   
+   
+//______________________________________________________________________________
 long UUtils::LocMin(long n, const double *a) {
    // Return index of array with the minimum element.
    // If more than one element is minimum returns first found.
