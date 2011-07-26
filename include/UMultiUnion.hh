@@ -92,6 +92,8 @@ public:
    void                         Voxelize();
 
 private:
+   EnumInside                   InsideDummy (const UVector3 &aPoint) const;
+
    std::vector<UNode*>         *fNodes;   // Container of nodes
    UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid
 };

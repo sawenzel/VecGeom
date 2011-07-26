@@ -9,6 +9,8 @@
 #include "TGeoVolume.h"
 #include "TGeoMatrix.h"
 #include "TStopwatch.h"
+#include "TRandom.h"
+#include "TPolyMarker3D.h"
 
 void TestMultiUnion()
 {
@@ -130,6 +132,38 @@ void TestMultiUnion()
    cout << "[> BuildListNodes:" << endl;      
    multi_union -> fVoxels -> DisplayListNodes();
 
+
+
+   double bmin[3], bmax[3];
+   UVector3 point;
+   multi_union->Extent(bmin, bmax);
+   int npoints = 100000;
+   TPolyMarker3D *pminside = new TPolyMarker3D();
+   pminside->SetMarkerColor(kRed);
+   TPolyMarker3D *pmoutside = new TPolyMarker3D();
+   pmoutside->SetMarkerColor(kGreen);
+   TStopwatch timer;
+   timer.Start();
+   int n10 = npoints/10;
+   for (int ipoint = 0; ipoint<npoints; ipoint++) {
+      if (n10 && (ipoint%n10)==0) printf("test inside ... %d%%\n",int(100*ipoint/npoints));
+      point.x = gRandom->Uniform(bmin[0], bmax[0]);
+      point.y = gRandom->Uniform(bmin[1], bmax[1]);
+      point.z = gRandom->Uniform(bmin[2], bmax[2]);
+      VUSolid::EnumInside inside = multi_union->Inside(point);
+      if (inside==VUSolid::eInside || inside==VUSolid::eSurface) {
+         pminside->SetNextPoint(point.x, point.y, point.z);
+      } else {
+         pmoutside->SetNextPoint(point.x, point.y, point.z);
+      }   
+   }
+   timer.Stop();
+   timer.Print();
+   geom->GetTopVolume()->Draw();
+   pminside->Draw();
+//   pmoutside->Draw();
+   return;
+
    // Test of GetCandidatesVoxel:
    cout << "[> GetCandidatesVoxel:" << endl;
    int selection1, selection2, selection3;
@@ -137,6 +171,9 @@ void TestMultiUnion()
    cout << "Enter coordinate -1 for first coordinate to leave." << endl;
    cout << "   [> ";
    scanf("%d,%d,%d",&selection1,&selection2,&selection3);      
+
+
+   
    
    do
    {  
