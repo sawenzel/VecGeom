@@ -123,7 +123,7 @@ void UVoxelFinder::DisplayVoxelLimits()
    {
 //      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << fBoxes[6*iIndex] << " ; * dY = " << fBoxes[6*iIndex+1] << " ; * dZ = " << fBoxes[6*iIndex+2] << "\n       * oX = " << fBoxes[6*iIndex+3] << " ; * oY = " << fBoxes[6*iIndex+4] << " ; * oZ = " << fBoxes[6*iIndex+5] << "\n";
       cout << fixed;
-      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << setprecision (6) << fBoxes[6*iIndex] << " ; * dY = " << setprecision (6) << fBoxes[6*iIndex+1] << " ; * dZ = " << setprecision (6) << fBoxes[6*iIndex+2] << "\n       * oX = " << setprecision (6) << fBoxes[6*iIndex+3] << " ; * oY = " << setprecision (6) << fBoxes[6*iIndex+4] << " ; * oZ = " << setprecision (6) << fBoxes[6*iIndex+5] << "\n";      
+      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << setprecision (7) << fBoxes[6*iIndex] << " ; * dY = " << setprecision (7) << fBoxes[6*iIndex+1] << " ; * dZ = " << setprecision (7) << fBoxes[6*iIndex+2] << "\n       * oX = " << setprecision (7) << fBoxes[6*iIndex+3] << " ; * oY = " << setprecision (7) << fBoxes[6*iIndex+4] << " ; * oZ = " << setprecision (7) << fBoxes[6*iIndex+5] << "\n";      
    }
 }
 
@@ -344,8 +344,6 @@ void UVoxelFinder::BuildListNodes()
          position = jIndex%8;
          bits[number_byte] |= (1 << position);                  
       }
-      
-//      if(fNumNodesSliceX[iIndex]>0) current += nperslice;
       current += nperslice;
    }
    fNx = current;
@@ -381,8 +379,6 @@ void UVoxelFinder::BuildListNodes()
          position = jIndex%8;
          bits[number_byte] |= (1 << position);                  
       }
-      
-//      if(fNumNodesSliceY[iIndex]>0) current += nperslice;
       current += nperslice;
    }
    fNy = current;
@@ -418,8 +414,6 @@ void UVoxelFinder::BuildListNodes()
          position = jIndex%8;
          bits[number_byte] |= (1 << position);                  
       }
-      
-//      if(fNumNodesSliceZ[iIndex]>0) current += nperslice;
       current += nperslice;
    }
    fNz = current;
@@ -430,7 +424,7 @@ void UVoxelFinder::BuildListNodes()
 //______________________________________________________________________________   
 void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
 {
-// Decode the candidates in mask as string.
+   // Decodes the candidates in mask as string.
    static char buffer[30];
    int carNodes = fMultiUnion->GetNumNodes();   
    char mask1 = 1;
@@ -506,18 +500,13 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
    int nperslices = 1+(carNodes-1)/(8*sizeof(char));
    
    // Voxelized structure:      
-   char* maskX = new char[nperslices];
-   char* maskY = new char[nperslices];
-   char* maskZ = new char[nperslices];
    char *maskResult = new char[nperslices];
    
    for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
    {
-      maskX[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex];
-      maskY[iIndex] = fMemoryY[nperslices*(indexY-1)+iIndex];
-      maskZ[iIndex] = fMemoryZ[nperslices*(indexZ-1)+iIndex];
-      
-      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];
+      maskResult[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex]
+                         & fMemoryY[nperslices*(indexY-1)+iIndex]
+                         & fMemoryZ[nperslices*(indexZ-1)+iIndex];
    } 
    GetCandidatesAsString(&(maskResult[0]),result);
    cout << "   Candidates in voxel [" << indexX << " ; " << indexY << " ; " << indexZ << "]: ";
@@ -529,24 +518,19 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int in
 {
    // "GetCandidates" should compute which solids are possibly contained in
    // the voxel defined by the three slices characterized by the passed indexes
-   // and return a table of the candidates contained in the voxel.
+   // and return a vector of the candidates contained in the voxel.
    int iIndex; 
    int carNodes = fMultiUnion->GetNumNodes();
    int nperslices = 1+(carNodes-1)/(8*sizeof(char));
    
    // Voxelized structure:      
-   char* maskX = new char[nperslices];
-   char* maskY = new char[nperslices];
-   char* maskZ = new char[nperslices];
    char *maskResult = new char[nperslices];
    
    for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
-   {
-      maskX[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex];
-      maskY[iIndex] = fMemoryY[nperslices*(indexY-1)+iIndex];
-      maskZ[iIndex] = fMemoryZ[nperslices*(indexZ-1)+iIndex];
-      
-      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];
+   {      
+      maskResult[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex]
+                         & fMemoryY[nperslices*(indexY-1)+iIndex]
+                         & fMemoryZ[nperslices*(indexZ-1)+iIndex];
    }
      
    char maskMove = 1;
@@ -568,6 +552,9 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int in
 //______________________________________________________________________________       
 vector<UVector3> UVoxelFinder::ConvertPointToIndexes(UVector3 point)
 {
+   // ConvertPointToVertices is designed to determine the indexes of the
+   // voxel(s) containing a point. An array is needed because if the passed
+   // point is on a boundary, then the former belongs to more than one voxel.
    int iIndex, jIndex, kIndex;
    UVector3 tempPoint;
    vector<UVector3> outcomePointToIndexes;

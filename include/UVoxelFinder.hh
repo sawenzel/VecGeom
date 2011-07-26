@@ -46,11 +46,13 @@ public:
    UVoxelFinder();
    UVoxelFinder(UMultiUnion* multi_union);
    ~UVoxelFinder();
-   
-   void               GetCandidatesVoxel(int indexX, int indexY, int indexZ); // Prints the nodes located in a voxel
+
+   // Method displaying the nodes located in a voxel characterized by its three indexes:
+   void               GetCandidatesVoxel(int indexX, int indexY, int indexZ);
+   // Method returning in a vector container the nodes located in a voxel characterized by its three indexes:
    vector<int>        GetCandidatesVoxelArray(int indexX, int indexY, int indexZ);
-   vector<UVector3>   ConvertPointToIndexes(UVector3 point); // Method determining in which voxel is contained
-                                                             // passed point
+   // Method determining in which voxel(s) is located the passed point:
+   vector<UVector3>   ConvertPointToIndexes(UVector3 point);
 
 private:
    void               GetCandidatesAsString(const char* mask, std::string &result);
