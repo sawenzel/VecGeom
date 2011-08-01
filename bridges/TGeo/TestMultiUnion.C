@@ -22,7 +22,7 @@ void TestMultiUnion()
    TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
    TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
    
-   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 1000., 1000., 1000.);
+   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 2000., 2000., 2000.);
    TGeoShape *tgeobox = top->GetShape();
    geom->SetTopVolume(top);
 
@@ -35,11 +35,11 @@ void TestMultiUnion()
    Volume1->SetLineColor(1);
    
       // Number of nodes to implement:
-   int numNodesImpl = 10;
+   int numNodesImpl = 100;
    int mIndex = 0, nIndex = 0, oIndex = 0;
-	int carBoxesX = 10;
-	int carBoxesY = 10;
-	int carBoxesZ = 10;   
+	int carBoxesX = 20;
+	int carBoxesY = 20;
+	int carBoxesZ = 20;   
    UTransform3D* arrayTransformations[numNodesImpl];
 	TGeoCombiTrans* arrayCombiTrans[numNodesImpl];
   
@@ -49,10 +49,10 @@ void TestMultiUnion()
       // Transformation:
    for(mIndex = 0 ; (mIndex < numNodesImpl) && (mIndex < carBoxesX*carBoxesY*carBoxesZ) ; mIndex++)
    {
-      arrayTransformations[mIndex] = new UTransform3D(-1000+50+2*50*(mIndex%carBoxesX),-1000+50+2*50*nIndex,-1000+50+2*50*oIndex,0,0,0);
+      arrayTransformations[mIndex] = new UTransform3D(-2000+50+2*50*(mIndex%carBoxesX),-2000+50+2*50*nIndex,-2000+50+2*50*oIndex,0,0,0);
       multi_union->AddNode(box,arrayTransformations[mIndex]);
       
-      arrayCombiTrans[mIndex] = new TGeoCombiTrans(-1000+50+2*50*(mIndex%carBoxesX),-1000+50+2*50*nIndex,-1000+50+2*50*oIndex,new TGeoRotation("rot",0,0,0));      
+      arrayCombiTrans[mIndex] = new TGeoCombiTrans(-2000+50+2*50*(mIndex%carBoxesX),-2000+50+2*50*nIndex,-2000+50+2*50*oIndex,new TGeoRotation("rot",0,0,0));      
       top->AddNode(Volume1,mIndex+1,arrayCombiTrans[mIndex]);      
       
       // Preparing "Draw":
@@ -86,7 +86,7 @@ void TestMultiUnion()
    double bmin[3], bmax[3];
    UVector3 point;
    multi_union->Extent(bmin, bmax);
-   int npoints = 10000000;
+   int npoints = 1000000;
    TPolyMarker3D *pminside = new TPolyMarker3D();
    pminside->SetMarkerColor(kRed);
    TPolyMarker3D *pmoutside = new TPolyMarker3D();
@@ -111,101 +111,86 @@ void TestMultiUnion()
    geom->GetTopVolume()->Draw();
    pminside->Draw();
 //   pmoutside->Draw();
-   return;
 
-   // Test of GetCandidatesVoxel:
-   cout << "[> GetCandidatesVoxel:" << endl;
-   int selection1, selection2, selection3;
-   cout << "Please enter the coordinates of the voxel to be tested, separated by commas." << endl;
-   cout << "Enter coordinate -1 for first coordinate to leave." << endl;
-   cout << "   [> ";
-   scanf("%d,%d,%d",&selection1,&selection2,&selection3);      
-
-
-   
-   
-   do
-   {  
-      if(selection1 == -1) continue;
-      multi_union -> fVoxels -> GetCandidatesVoxel(selection1,selection2,selection3);   
-      cout << "   [> ";
-      scanf("%d,%d,%d",&selection1,&selection2,&selection3);
-   }
-   while(selection1 != -1);
-
-   // Test of Inside:
-      // Definition of a timer in order to compare the scalability of the two methods:       
-   TStopwatch *Chronometre;
-	Chronometre = new TStopwatch();     
-   // Creation of a test point:   
-   double coX, coY, coZ;
-   cout << "[> Inside:" << endl;
-   cout << "Please enter separately the coordinates of the point to be tested." << endl;
-   cout << "Enter coordinate -1 for first coordinate to leave." << endl;
-   cout << "   [> ";
-   cin >> coX;
-   cout << "   [> ";
-   cin >> coY;
-   cout << "   [> ";
-   cin >> coZ;        
-   
-   UVector3 test_point;
-   test_point.Set(coX,coY,coZ);
-  
-   do
-   {  
-      if(coX == -1) continue;
-    	Chronometre->Reset();      
-      Chronometre->Start();            
-      VUSolid::EnumInside resultat = multi_union->Inside(test_point);
-   	Chronometre->Stop();      
-
-      cout << "  Tested point: [" << test_point.x << "," << test_point.y << "," << test_point.z << "]" << endl;
-
-      if(resultat == 0)
-      {
-         cout << "  is INSIDE the defined solid" << endl;
-      }
-      else if(resultat == 1)
-      {
-         cout << "  is on a SURFACE of the defined solid" << endl;
-      }
-      else
-      {
-         cout << "  is OUTSIDE the defined solid" << endl;
-      }
-       
-      cout << "Timer: ";
-      Chronometre->Print();
-      cout << endl;
-          
-      cout << "   [> ";
-      cin >> coX;
-      cout << "   [> ";
-      cin >> coY;
-      cout << "   [> ";
-      cin >> coZ; 
-   
-      test_point.Set(coX,coY,coZ);     
-   }
-   while(coX != -1);  
-
-	delete Chronometre;   
-      
-   // RayTracing:
-   int choice = 0;
-   printf("[> In order to trace the geometry, type: 1. To exit, press 0 and return:\n");
-   scanf("%d",&choice);
-   
-   if(choice == 1)
-   {
-      top->Draw();
-   }
-   else
-   {
-     // Do nothing
-   }
-  
    // Program comes to an end:
    printf("[> END\n");
 }
+
+/* TO TEST THE METHODS SAFETY AND NORMAL
+void TestMultiUnion()
+{
+   // Initialization of ROOT environment:
+   // Test for a multiple union solid.
+   TGeoManager *geom = new TGeoManager("UMultiUnion","Test of a UMultiUnion");
+   TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
+   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
+   TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
+   TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
+   
+   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 1000., 1000., 1000.);
+   TGeoShape *tgeobox = top->GetShape();
+   geom->SetTopVolume(top);
+
+   // Instance:
+      // Creation of several nodes:
+   UBox *box = new UBox("UBox",200,200,200);
+  
+     // Constructor:
+   UMultiUnion *multi_union = new UMultiUnion("multi_union");     
+   UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
+   
+   multi_union->AddNode(box,trans);                                                                                                                                     
+
+   geom->CloseGeometry();
+
+   // Voxelize "multi_union"
+   multi_union -> Voxelize();
+
+   cout << "[> DisplayVoxelLimits:" << endl;   
+   multi_union -> fVoxels -> DisplayVoxelLimits();   
+
+   cout << "[> DisplayBoundaries:" << endl;      
+   multi_union -> fVoxels -> DisplayBoundaries();   
+
+   cout << "[> BuildListNodes:" << endl;      
+   multi_union -> fVoxels -> DisplayListNodes();
+
+   cout << "[> Test Safety:" << endl;   
+   UVector3 testPoint;
+   testPoint.Set(200,0,0);
+   
+   VUSolid::EnumInside isInside;
+   isInside = multi_union->Inside(testPoint);
+   
+   double resultSafety;
+   
+   if(isInside == VUSolid::eInside)
+   {
+      cout << "    INSIDE" << endl;
+      resultSafety = multi_union->SafetyFromInside(testPoint,true);
+   }
+   else if(isInside == VUSolid::eOutside)
+   {
+      cout << "    OUTSIDE" << endl;
+      resultSafety = multi_union->SafetyFromOutside(testPoint,true);  
+   }
+   cout << "    safety = " << resultSafety << endl;
+
+   cout << "[> Test Normal:" << endl;
+   UVector3 normalVector;
+   bool resultNormal = multi_union->Normal(testPoint,normalVector);
+   
+   if(resultNormal == true)
+   {
+      cout << "    OK:" << endl;
+      cout << "    [ " << normalVector.x << " ; " << normalVector.y << " ; " << normalVector.z << " ]" << endl;
+   }
+   else
+   {
+      cout << "    KO" << endl;
+   }
+
+   // Program comes to an end:
+   printf("[> END\n");
+}
+*/
