@@ -444,6 +444,1612 @@ void UVoxelFinder::GetCandidatesAsString(const char* mask, std::string &result)
 }
 
 //______________________________________________________________________________   
+vector<int> UVoxelFinder::GetCandidatesAsVector(const char* mask)
+{
+   int iIndex;
+   int carNodes = fMultiUnion->GetNumNodes();   
+   char maskMove = 1;
+   vector<int> candidatesVoxel;
+   
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   {
+      int byte = iIndex/8;
+      int bit = iIndex - 8*byte;
+   
+      if(maskMove<<bit & mask[byte])
+      {
+         candidatesVoxel.push_back(iIndex);
+      }   
+   }
+   return candidatesVoxel;
+}
+
+//______________________________________________________________________________   
+vector<int> UVoxelFinder::GetCandidatesAsVector2(const char* mask)
+{
+   int iIndex, jIndex;
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));   
+   char maskFixed = 1;
+   vector<int> candidatesVoxel;
+   char tempMask, temp;
+   
+   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   {
+      tempMask = mask[iIndex];
+   
+      for(jIndex = 0 ; jIndex < 8 ; jIndex++)
+      {
+         if((jIndex + 8*iIndex) >= carNodes)
+         {
+            return candidatesVoxel;
+         }
+      
+         if(tempMask & maskFixed)
+         {
+            candidatesVoxel.push_back(jIndex + 8*iIndex);            
+         }
+         temp = tempMask >> 1;
+         tempMask = temp;
+      }
+   }
+   return candidatesVoxel;
+}
+
+//______________________________________________________________________________   
+vector<int> UVoxelFinder::GetCandidatesAsVector3(const char* mask)
+{
+   int iIndex;
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));   
+   vector<int> candidatesVoxel;
+   
+   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   {
+      switch(mask[iIndex])
+      {
+         case(0):
+            break;
+         case(1):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            break;
+         case(2):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            break;
+         case(3):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            break;
+         case(4):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            break;
+         case(5):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            break;
+         case(6):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            break;
+         case(7):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            break;
+         case(8):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(9):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(10):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(11):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(12):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(13):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(14):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(15):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            break;
+         case(16):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(17):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(18):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(19):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(20):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(21):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(22):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(23):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(24):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(25):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(26):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(27):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(28):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(29):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(30):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(31):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            break;
+         case(32):
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(33):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(34):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(35):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(36):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(37):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(38):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(39):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(40):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(41):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(42):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(43):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(44):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(45):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(46):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(47):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(48):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(49):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(50):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(51):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(52):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(53):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(54):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(55):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(56):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(57):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(58):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(59):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(60):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(61):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(62):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(63):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            break;
+         case(64):
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(65):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(66):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(67):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(68):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(69):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(70):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(71):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(72):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(73):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(74):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(75):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(76):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(77):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(78):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(79):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(80):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(81):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(82):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(83):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(84):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(85):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(86):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(87):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(88):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(89):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(90):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(91):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(92):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(93):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(94):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(95):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(96):
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(97):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(98):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(99):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(100):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(101):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(102):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(103):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(104):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(105):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(106):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(107):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(108):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(109):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(110):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(111):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(112):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(113):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(114):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(115):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(116):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(117):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(118):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(119):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(120):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(121):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(122):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(123):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(124):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(125):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(126):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(127):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            break;
+         case(128):
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(129):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(130):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(131):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(132):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(133):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(134):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(135):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(136):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(137):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(138):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(139):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(140):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(141):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(142):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(143):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(144):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(145):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(146):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(147):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(148):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(149):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(150):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(151):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(152):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(153):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(154):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(155):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(156):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(157):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(158):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(159):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(160):
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(161):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(162):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(163):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(164):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(165):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(166):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(167):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(168):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(169):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(170):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(171):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(172):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(173):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(174):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(175):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(176):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(177):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(178):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(179):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(180):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(181):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(182):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(183):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(184):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(185):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(186):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(187):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(188):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(189):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(190):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(191):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(192):
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(193):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(194):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(195):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(196):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(197):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(198):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(199):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(200):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(201):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(202):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(203):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(204):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(205):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(206):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(207):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(208):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(209):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(210):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(211):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(212):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(213):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(214):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(215):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(216):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(217):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(218):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(219):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(220):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(221):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(222):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(223):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(224):
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(225):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(226):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(227):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(228):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(229):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(230):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(231):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(232):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(233):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(234):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(235):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(236):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(237):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(238):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(239):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(240):
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(241):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(242):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(243):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(244):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(245):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(246):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(247):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(248):
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(249):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(250):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(251):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(252):
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(253):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(254):
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;
+         case(255):
+            candidatesVoxel.push_back(0 + 8*iIndex);
+            candidatesVoxel.push_back(1 + 8*iIndex);
+            candidatesVoxel.push_back(2 + 8*iIndex);
+            candidatesVoxel.push_back(3 + 8*iIndex);
+            candidatesVoxel.push_back(4 + 8*iIndex);
+            candidatesVoxel.push_back(5 + 8*iIndex);
+            candidatesVoxel.push_back(6 + 8*iIndex);
+            candidatesVoxel.push_back(7 + 8*iIndex);
+            break;                                                                                   
+      }
+   }
+   return candidatesVoxel;
+}
+
+//______________________________________________________________________________   
 void UVoxelFinder::DisplayListNodes()
 {
 // Prints which solids are present in the slices previously elaborated.
@@ -514,44 +2120,9 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
 }
 
 //______________________________________________________________________________       
-vector<int> UVoxelFinder::GetCandidatesVoxelArray(int indexX, int indexY, int indexZ)
+vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
 {
-   // "GetCandidates" should compute which solids are possibly contained in
-   // the voxel defined by the three slices characterized by the passed indexes
-   // and return a vector of the candidates contained in the voxel.
-   int iIndex; 
-   int carNodes = fMultiUnion->GetNumNodes();
-   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
-   
-   // Voxelized structure:      
-   char *maskResult = new char[nperslices];
-   
-   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
-   {      
-      maskResult[iIndex] = fMemoryX[nperslices*(indexX-1)+iIndex]
-                         & fMemoryY[nperslices*(indexY-1)+iIndex]
-                         & fMemoryZ[nperslices*(indexZ-1)+iIndex];
-   }
-     
-   char maskMove = 1;
-   vector<int> candidatesVoxel;
-   
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
-   {
-      int byte = iIndex/8;
-      int bit = iIndex - 8*byte;
-   
-      if (maskMove<<bit & maskResult[byte])
-      {
-         candidatesVoxel.push_back(iIndex);
-      }   
-   }
-   return candidatesVoxel;
-}
-
-//______________________________________________________________________________       
-vector<int> UVoxelFinder::GetCandidatesVoxelArray2(UVector3 point)
-{
+// Method returning the candidates corresponding to the passed point
    int iIndex; 
    int carNodes = fMultiUnion->GetNumNodes();
    int nperslices = 1+(carNodes-1)/(8*sizeof(char));
@@ -600,24 +2171,11 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray2(UVector3 point)
          maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex];     
       }
       
-      // Logic and of the masks along the 3 axes:
+      // Logic "and" of the masks along the 3 axes:
       maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];     
    }
-   
-   char maskMove = 1;
-   vector<int> candidatesVoxel;
-   
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
-   {
-      int byte = iIndex/8;
-      int bit = iIndex - 8*byte;
-   
-      if (maskMove<<bit & maskResult[byte])
-      {
-         candidatesVoxel.push_back(iIndex);
-      }   
-   }
-   return candidatesVoxel;
+// Modify here to change scalability:   
+   return GetCandidatesAsVector3(maskResult);
 }
 
 //______________________________________________________________________________       

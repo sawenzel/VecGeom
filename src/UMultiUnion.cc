@@ -132,7 +132,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    UVector3 tempPoint, tempPointConv;
    VUSolid::EnumInside tempInside = eOutside;          
          
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray2(aPoint); 
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
       
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
@@ -289,10 +289,9 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 
 //   return NormalDummy(aPoint,aNormal);
 
-   int carNodes = fNodes->size();
    int iIndex = 0;
    vector<int> vectorOutcome;
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray2(aPoint);        
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint);        
 
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;  
@@ -351,7 +350,7 @@ double UMultiUnion::SafetyFromInsideDummy(const UVector3 aPoint, bool aAccurate)
 }
 
 //______________________________________________________________________________ 
-double UMultiUnion::SafetyFromInside(const UVector3 aPoint,bool aAccurate) const
+double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) const
 {
    // Estimates isotropic distance to the surface of the solid. This must
    // be either accurate or an underestimate. 
@@ -370,7 +369,7 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint,bool aAccurate) const
    double safety = UUtils::kInfinity;
    UVector3 tempPointConv;      
          
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray2(aPoint); 
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
       
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
