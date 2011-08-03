@@ -83,6 +83,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
    cout << "[> Test:" << endl;   
+   
    double bmin[3], bmax[3];
    UVector3 point;
    multi_union->Extent(bmin, bmax);
@@ -91,23 +92,37 @@ void TestMultiUnion()
    pminside->SetMarkerColor(kRed);
    TPolyMarker3D *pmoutside = new TPolyMarker3D();
    pmoutside->SetMarkerColor(kGreen);
+   
    TStopwatch timer;
-   timer.Start();
+   double chrono = 0.;
+      
    int n10 = npoints/10;
-   for (int ipoint = 0; ipoint<npoints; ipoint++) {
+   
+   for (int ipoint = 0; ipoint<npoints; ipoint++)
+   {
       if (n10 && (ipoint%n10)==0) printf("test inside ... %d%%\n",int(100*ipoint/npoints));
       point.x = gRandom->Uniform(bmin[0], bmax[0]);
       point.y = gRandom->Uniform(bmin[1], bmax[1]);
       point.z = gRandom->Uniform(bmin[2], bmax[2]);
+
+      timer.Start();      
       VUSolid::EnumInside inside = multi_union->Inside(point);
-      if (inside==VUSolid::eInside || inside==VUSolid::eSurface) {
+      timer.Stop();
+      chrono += timer.CpuTime();
+      timer.Reset();            
+
+      if (inside==VUSolid::eInside || inside==VUSolid::eSurface)
+      {
          pminside->SetNextPoint(point.x, point.y, point.z);
-      } else {
+      }
+      else
+      {
          pmoutside->SetNextPoint(point.x, point.y, point.z);
       }   
    }
-   timer.Stop();
-   timer.Print();
+
+//   timer.Print();
+   cout << "CPUTIME: " << chrono << endl;
    geom->GetTopVolume()->Draw();
    pminside->Draw();
 //   pmoutside->Draw();

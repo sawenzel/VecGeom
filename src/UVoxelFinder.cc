@@ -2138,7 +2138,8 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
    char *maskX = new char[nperslices];
    char *maskY = new char[nperslices];
    char *maskZ = new char[nperslices];         
-   
+
+// Algorithm to be optimized:   
    for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
    {
       // Along X axis:
@@ -2176,34 +2177,4 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
    }
 // Modify here to change scalability:   
    return GetCandidatesAsVector3(maskResult);
-}
-
-//______________________________________________________________________________       
-vector<UVector3> UVoxelFinder::ConvertPointToIndexes(UVector3 point)
-{
-   // ConvertPointToVertices is designed to determine the indexes of the
-   // voxel(s) containing a point. An array is needed because if the passed
-   // point is on a boundary, then the former belongs to more than one voxel.
-   int iIndex, jIndex, kIndex;
-   UVector3 tempPoint;
-   vector<UVector3> outcomePointToIndexes;
-  
-   // X axis:
-   for(iIndex = 0 ; iIndex < fXNumBound-1 ; iIndex++)
-   {
-      for(jIndex = 0 ; jIndex < fYNumBound-1 ; jIndex++)
-      {
-         for(kIndex = 0 ; kIndex < fZNumBound-1 ; kIndex++)
-         {
-            if((point.x >= fXSortedBoundaries[iIndex] && point.x <= fXSortedBoundaries[iIndex+1])
-             &&(point.y >= fYSortedBoundaries[jIndex] && point.y <= fYSortedBoundaries[jIndex+1])
-             &&(point.z >= fZSortedBoundaries[kIndex] && point.z <= fZSortedBoundaries[kIndex+1]))
-             {
-                tempPoint.Set(iIndex,jIndex,kIndex);
-                outcomePointToIndexes.push_back(tempPoint);
-             }
-         }
-      }
-   }
-   return outcomePointToIndexes;
 }
