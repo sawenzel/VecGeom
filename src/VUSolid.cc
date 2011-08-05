@@ -7,7 +7,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-double VUSolid::fgTolerance = 1.0E-8;  // to be changed
+//double VUSolid::fgTolerance = 1.0E-8;  // to be changed
+double VUSolid::fgTolerance = 1.0E-5;  // to be changed
 
 //______________________________________________________________________________
 VUSolid::VUSolid() :

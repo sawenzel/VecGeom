@@ -51,10 +51,10 @@ void UMultiUnion::ComputeBBox (UBBox */*aBox*/, bool /*aStore*/)
 }   
 
 //______________________________________________________________________________
-double UMultiUnion::DistanceToIn(const UVector3 &/*aPoint*/, 
-                          const UVector3 &/*aDirection*/, 
-//                          UVector3 &aNormal, 
-                          double /*aPstep*/) const
+double UMultiUnion::DistanceToIn(const UVector3 &aPoint, 
+                          const UVector3 &aDirection, 
+                       // UVector3 &aNormal, 
+                          double aPstep) const
 {
 // Computes distance from a point presumably outside the solid to the solid 
 // surface. Ignores first surface if the point is actually inside. Early return
@@ -67,10 +67,10 @@ double UMultiUnion::DistanceToIn(const UVector3 &/*aPoint*/,
 }     
 
 //______________________________________________________________________________
-double UMultiUnion::DistanceToOut( const UVector3  &aPoint, const UVector3 &aDirection,
+double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirection,
 			       UVector3 &aNormal,
-			       bool    &convex,
-                double /*aPstep*/) const
+			       bool     &convex,
+                double   aPstep) const
 {
 // Computes distance from a point presumably intside the solid to the solid 
 // surface. Ignores first surface along each axis systematically (for points
@@ -78,7 +78,8 @@ double UMultiUnion::DistanceToOut( const UVector3  &aPoint, const UVector3 &aDir
 // the starting point.
 // o The proposed step is ignored.
 // o The normal vector to the crossed surface is always filled.
-   cout << "DistanceToOut - Not implemented" << endl;
+
+   cout << "DistanceToout - Not implemented" << endl;
    return 0.;
 }
 
@@ -145,7 +146,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
      
       tempInside = tempSolid->Inside(tempPointConv);      
          
-      if((tempInside == eInside) || (tempInside == eSurface)) return tempInside;
+      if((tempInside == eInside) || (tempInside == eSurface)) return tempInside;   
    }       
    return eOutside;   
 }
@@ -296,19 +297,24 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;  
 
-   UVector3 resultNormal;
-   UVector3 tempPointConv;     
+   UVector3 resultNormal, tempPointConv;
+   UVector3 temp1, temp2, temp3;    
+   printf("%d\n",(int)vectorOutcome.size()) ;
    
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
       tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
       
-      tempPointConv = tempTransform->LocalPoint(aPoint);
+      tempPointConv = tempTransform->LocalPoint(aPoint);  
       
       if(tempSolid->Normal(tempPointConv,resultNormal) == true)
       {
-         aNormal = resultNormal;
+         temp1 = (tempTransform->GlobalPoint(resultNormal));
+         temp2 = (tempTransform->GlobalPoint(tempPointConv));    
+         temp3.Set(-temp1.x+temp2.x,-temp1.y+temp2.y,-temp1.z+temp2.z)  ;   
+              
+         aNormal = temp3.Unit();
          return true;
       }
    }
@@ -431,7 +437,7 @@ double UMultiUnion::SafetyFromOutside(const UVector3 aPoint, bool aAccurate) con
    // of its surfaces. The algorithm may be accurate or should provide a fast 
    // underestimate.
 
-   return SafetyFromOutsideDummy(aPoint,aAccurate);
+//   return SafetyFromOutsideDummy(aPoint,aAccurate);
    
    cout << "Not implemented" << endl;
    return 0.;

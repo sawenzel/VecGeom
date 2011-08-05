@@ -11,7 +11,7 @@
 #include "TStopwatch.h"
 #include "TRandom.h"
 #include "TPolyMarker3D.h"
-
+/*
 void TestMultiUnion()
 {
    // Initialization of ROOT environment:
@@ -130,8 +130,9 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
+*/
 
-/* TO TEST THE METHODS SAFETY AND NORMAL
+// TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
    // Initialization of ROOT environment:
@@ -153,10 +154,22 @@ void TestMultiUnion()
      // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
+   UTransform3D* trans2 = new UTransform3D(200,0,0,45,0,0);   
    
-   multi_union->AddNode(box,trans);                                                                                                                                     
+   multi_union->AddNode(box,trans);
+   multi_union->AddNode(box,trans2);                                                                                                                                       
 
    geom->CloseGeometry();
+   
+   TGeoUShape *Shape1 = new TGeoUShape("Shape1",box);
+   TGeoVolume *Volume1 = new TGeoVolume("Volume1",Shape1);
+   Volume1->SetLineColor(2);   
+      
+   TGeoCombiTrans* transf1 = new TGeoCombiTrans(0,0,0,new TGeoRotation("rot1",0,0,0));      
+   top->AddNode(Volume1,1,transf1);
+
+   TGeoCombiTrans* transf2 = new TGeoCombiTrans(200,0,0,new TGeoRotation("rot1",45,0,0));      
+   top->AddNode(Volume1,1,transf2);   
 
    // Voxelize "multi_union"
    multi_union -> Voxelize();
@@ -170,9 +183,9 @@ void TestMultiUnion()
    cout << "[> BuildListNodes:" << endl;      
    multi_union -> fVoxels -> DisplayListNodes();
 
-   cout << "[> Test Safety:" << endl;   
+   cout << "[> Test Inside:" << endl;   
    UVector3 testPoint;
-   testPoint.Set(200,0,0);
+   testPoint.Set(200,-282.8427125,0);
    
    VUSolid::EnumInside isInside;
    isInside = multi_union->Inside(testPoint);
@@ -189,11 +202,16 @@ void TestMultiUnion()
       cout << "    OUTSIDE" << endl;
       resultSafety = multi_union->SafetyFromOutside(testPoint,true);  
    }
+   else if(isInside == VUSolid::eSurface)
+   {
+      cout << "    SURFACE" << endl;
+      resultSafety = 0;  
+   }
    cout << "    safety = " << resultSafety << endl;
-
+/*
    cout << "[> Test Normal:" << endl;
    UVector3 normalVector;
-   bool resultNormal = multi_union->Normal(testPoint,normalVector);
+   bool resultNormal = multi_union -> Normal(testPoint,normalVector);
    
    if(resultNormal == true)
    {
@@ -204,8 +222,9 @@ void TestMultiUnion()
    {
       cout << "    KO" << endl;
    }
-
+*/
+   geom->GetTopVolume()->Draw();
    // Program comes to an end:
    printf("[> END\n");
 }
-*/
+

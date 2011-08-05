@@ -2175,6 +2175,8 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
       // Logic "and" of the masks along the 3 axes:
       maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];     
    }
+   
 // Modify here to change scalability:   
    return GetCandidatesAsVector3(maskResult);
 }
+
