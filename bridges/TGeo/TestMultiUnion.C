@@ -11,7 +11,7 @@
 #include "TStopwatch.h"
 #include "TRandom.h"
 #include "TPolyMarker3D.h"
-/*
+
 void TestMultiUnion()
 {
    // Initialization of ROOT environment:
@@ -35,7 +35,7 @@ void TestMultiUnion()
    Volume1->SetLineColor(1);
    
       // Number of nodes to implement:
-   int numNodesImpl = 100;
+   int numNodesImpl = 500;
    int mIndex = 0, nIndex = 0, oIndex = 0;
 	int carBoxesX = 20;
 	int carBoxesY = 20;
@@ -130,8 +130,9 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
-*/
 
+
+/*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -154,11 +155,11 @@ void TestMultiUnion()
      // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
-   UTransform3D* trans2 = new UTransform3D(200,0,0,45,0,0);   
+   UTransform3D* trans2 = new UTransform3D(200,0,0,45,0,0);      
    
    multi_union->AddNode(box,trans);
-   multi_union->AddNode(box,trans2);                                                                                                                                       
-
+   multi_union->AddNode(box,trans2); 
+                                                                                                                                         
    geom->CloseGeometry();
    
    TGeoUShape *Shape1 = new TGeoUShape("Shape1",box);
@@ -169,7 +170,7 @@ void TestMultiUnion()
    top->AddNode(Volume1,1,transf1);
 
    TGeoCombiTrans* transf2 = new TGeoCombiTrans(200,0,0,new TGeoRotation("rot1",45,0,0));      
-   top->AddNode(Volume1,1,transf2);   
+   top->AddNode(Volume1,1,transf2);      
 
    // Voxelize "multi_union"
    multi_union -> Voxelize();
@@ -208,23 +209,9 @@ void TestMultiUnion()
       resultSafety = 0;  
    }
    cout << "    safety = " << resultSafety << endl;
-/*
-   cout << "[> Test Normal:" << endl;
-   UVector3 normalVector;
-   bool resultNormal = multi_union -> Normal(testPoint,normalVector);
-   
-   if(resultNormal == true)
-   {
-      cout << "    OK:" << endl;
-      cout << "    [ " << normalVector.x << " ; " << normalVector.y << " ; " << normalVector.z << " ]" << endl;
-   }
-   else
-   {
-      cout << "    KO" << endl;
-   }
-*/
+
    geom->GetTopVolume()->Draw();
    // Program comes to an end:
    printf("[> END\n");
 }
-
+*/

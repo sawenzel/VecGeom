@@ -280,7 +280,7 @@ void UVoxelFinder::DisplayBoundaries()
    }
    cout << "|" << endl << "Number of boundaries: " << fYNumBound << endl;
       
-   cout << " * Y axis:" << endl << "    | ";
+   cout << " * Z axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fZNumBound ; iIndex++)
    {
       cout << fZSortedBoundaries[iIndex] << " ";
@@ -2123,29 +2123,38 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
 vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
 {
 // Method returning the candidates corresponding to the passed point
+   const double tolerance = 10E-6;
    int iIndex; 
    int carNodes = fMultiUnion->GetNumNodes();
    int nperslices = 1+(carNodes-1)/(8*sizeof(char));
    long resultBinSearchX, resultBinSearchY, resultBinSearchZ;
    
-   // Binary search on each slice of the voxelized sructure:
-   resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x);
-   resultBinSearchY = UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, point.y);
-   resultBinSearchZ = UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, point.z);
+   // Binary search on each slice of the voxelized structure:
+   resultBinSearchX = UUtils::BinarySearch(fXNumBound-1, fXSortedBoundaries, point.x);
+   resultBinSearchY = UUtils::BinarySearch(fYNumBound-1, fYSortedBoundaries, point.y);
+   resultBinSearchZ = UUtils::BinarySearch(fZNumBound-1, fZSortedBoundaries, point.z);
+   
+   if(resultBinSearchX < 0) resultBinSearchX = 0;
+   if(resultBinSearchY < 0) resultBinSearchY = 0;
+   if(resultBinSearchZ < 0) resultBinSearchZ = 0;      
    
    // Determination of the mask:
    char *maskResult = new char[nperslices];
    char *maskX = new char[nperslices];
    char *maskY = new char[nperslices];
-   char *maskZ = new char[nperslices];         
+   char *maskZ = new char[nperslices];            
 
 // Algorithm to be optimized:   
    for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
    {
       // Along X axis:
-      if((point.x - fXSortedBoundaries[resultBinSearchX] == 0) && (resultBinSearchX != 0))
+      if((point.x - fXSortedBoundaries[resultBinSearchX] < tolerance) && (resultBinSearchX != 0))
       {
          maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex] | fMemoryX[nperslices*(resultBinSearchX - 1) + iIndex];      
+      }
+      else if((fXSortedBoundaries[resultBinSearchX+1] - point.x < tolerance) && (resultBinSearchX != fXNumBound-1))
+      {
+         maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex] | fMemoryX[nperslices*(resultBinSearchX + 1) + iIndex];     
       }
       else
       {
@@ -2153,27 +2162,35 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
       }
             
       // Along Y axis:
-      if((point.y - fYSortedBoundaries[resultBinSearchY] == 0) && (resultBinSearchY != 0))
-      {
+      if((point.y - fYSortedBoundaries[resultBinSearchY] < tolerance) && (resultBinSearchY != 0))
+      {  
          maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex] | fMemoryY[nperslices*(resultBinSearchY - 1) + iIndex];      
       }
+      else if((fYSortedBoundaries[resultBinSearchY+1] - point.y < tolerance) && (resultBinSearchY != fYNumBound-1))
+      {
+         maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex] | fMemoryY[nperslices*(resultBinSearchY + 1) + iIndex];     
+      }      
       else
       {
          maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex];     
       }
       
       // Along Z axis:
-      if((point.z - fZSortedBoundaries[resultBinSearchZ] == 0) && (resultBinSearchZ != 0))
+      if((point.z - fZSortedBoundaries[resultBinSearchZ] < tolerance) && (resultBinSearchZ != 0))
       {
          maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex] | fMemoryZ[nperslices*(resultBinSearchZ - 1) + iIndex];      
       }
+      else if((fZSortedBoundaries[resultBinSearchZ+1] - point.z < tolerance) && (resultBinSearchZ != fZNumBound-1))
+      {
+         maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex] | fMemoryZ[nperslices*(resultBinSearchZ + 1) + iIndex];     
+      }        
       else
       {
          maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex];     
       }
       
       // Logic "and" of the masks along the 3 axes:
-      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];     
+      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];          
    }
    
 // Modify here to change scalability:   

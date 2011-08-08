@@ -134,7 +134,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    VUSolid::EnumInside tempInside = eOutside;          
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-      
+         
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
