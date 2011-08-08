@@ -25,7 +25,7 @@ VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
 //  o eInside       - inside the solid
 //  o eSurface      - close to surface within tolerance
 //  o eOutside      - outside the solid
-   static const double delta = 100*VUSolid::fgTolerance;
+   static const double delta = 10*VUSolid::fgTolerance;
    // Early returns on outside condition on any axis. Check Z first for faster
    // exclusion in  phi symmetric geometries.
    double ddz = UUtils::Abs(aPoint.z) - fDz;

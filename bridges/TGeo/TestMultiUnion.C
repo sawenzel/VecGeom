@@ -35,7 +35,7 @@ void TestMultiUnion()
    Volume1->SetLineColor(1);
    
       // Number of nodes to implement:
-   int numNodesImpl = 500;
+   int numNodesImpl = 5000;
    int mIndex = 0, nIndex = 0, oIndex = 0;
 	int carBoxesX = 20;
 	int carBoxesY = 20;
@@ -155,7 +155,7 @@ void TestMultiUnion()
      // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
-   UTransform3D* trans2 = new UTransform3D(200,0,0,45,0,0);      
+   UTransform3D* trans2 = new UTransform3D(200,0,0,0,0,0);      
    
    multi_union->AddNode(box,trans);
    multi_union->AddNode(box,trans2); 
@@ -169,7 +169,7 @@ void TestMultiUnion()
    TGeoCombiTrans* transf1 = new TGeoCombiTrans(0,0,0,new TGeoRotation("rot1",0,0,0));      
    top->AddNode(Volume1,1,transf1);
 
-   TGeoCombiTrans* transf2 = new TGeoCombiTrans(200,0,0,new TGeoRotation("rot1",45,0,0));      
+   TGeoCombiTrans* transf2 = new TGeoCombiTrans(200,0,0,new TGeoRotation("rot1",0,0,0));      
    top->AddNode(Volume1,1,transf2);      
 
    // Voxelize "multi_union"
@@ -186,7 +186,7 @@ void TestMultiUnion()
 
    cout << "[> Test Inside:" << endl;   
    UVector3 testPoint;
-   testPoint.Set(200,-282.8427125,0);
+   testPoint.Set(-200.00005,0,0);
    
    VUSolid::EnumInside isInside;
    isInside = multi_union->Inside(testPoint);

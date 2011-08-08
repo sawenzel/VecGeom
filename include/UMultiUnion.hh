@@ -92,10 +92,8 @@ public:
    void                         Voxelize();
 
 private:
-   EnumInside                   InsideDummy (const UVector3 &aPoint) const;
    double                       SafetyFromInsideDummy(const UVector3 aPoint, bool aAccurate) const;
    double                       SafetyFromOutsideDummy(const UVector3 aPoint, bool aAccurate) const;
-   bool                         NormalDummy(const UVector3 &aPoint, UVector3 &aNormal);
 
    std::vector<UNode*>         *fNodes;   // Container of nodes
    UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid

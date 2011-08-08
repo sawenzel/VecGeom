@@ -81,35 +81,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 
    cout << "DistanceToout - Not implemented" << endl;
    return 0.;
-}
-
-//______________________________________________________________________________
-VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
-{
-// Dummy loop on nodes to check inside status.
-   int carNodes = fNodes->size(); // Total number of nodes contained in "fNodes".
-   int iIndex = 0;
-   
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;
-   UVector3 tempPoint, tempPointConv;
-   VUSolid::EnumInside tempInside = eOutside;
-
-   // Loop on the nodes:
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++) {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
-   
-      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
-      tempPointConv = tempTransform->LocalPoint(tempPoint); 
-   
-      tempInside = tempSolid->Inside(tempPointConv);
-         
-      if((tempInside == eInside) || (tempInside == eSurface)) return tempInside;
-   }
-   return eOutside;
-}   
+}  
 
 //______________________________________________________________________________
 VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
@@ -124,17 +96,16 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 
    // Implementation using voxelisation techniques:
    // ---------------------------------------------
-//   return InsideDummy(aPoint);
-
    int iIndex;
    vector<int> vectorOutcome;   
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    UVector3 tempPoint, tempPointConv;
-   VUSolid::EnumInside tempInside = eOutside;          
+   VUSolid::EnumInside tempInside = eOutside;
+   int countSurface = 0, countInside = 0, countOutside = 0;
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-         
+
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
@@ -142,12 +113,17 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
-      tempPointConv = tempTransform->LocalPoint(tempPoint); 
+      tempPointConv = tempTransform->LocalPoint(tempPoint);
      
-      tempInside = tempSolid->Inside(tempPointConv);      
-         
-      if((tempInside == eInside) || (tempInside == eSurface)) return tempInside;   
+      tempInside = tempSolid->Inside(tempPointConv);        
+      
+      if(tempInside == eSurface) countSurface++;
+      if(tempInside == eInside) countInside++;     
+      if(tempInside == eOutside) countOutside++;       
    }       
+   
+   if((countOutside == 0) && (countInside > 0)) return eInside;
+   else if(countSurface != 0) return eSurface;
    return eOutside;   
 }
 
@@ -249,34 +225,6 @@ void UMultiUnion::Extent(double aMin[3],double aMax[3])
    aMin[2] = min; aMax[2] = max;      
 }
 
-//______________________________________________________________________________ 
-bool UMultiUnion::NormalDummy(const UVector3 &aPoint, UVector3 &aNormal)
-{
-   int carNodes = fNodes->size();
-   int iIndex = 0;
-
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;  
-
-   UVector3 resultNormal;
-   UVector3 tempPointConv;     
-   
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
-   {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
-      
-      tempPointConv = tempTransform->LocalPoint(aPoint);
-      
-      if(tempSolid->Normal(tempPointConv,resultNormal) == true)
-      {
-         aNormal = resultNormal;
-         return true;
-      }
-   }
-   return false;      
-}
-
 //______________________________________________________________________________
 bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 {
@@ -288,8 +236,6 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 // NOTE: the tolerance value used in here is not yet the global surface
 //     tolerance - we will have to revise this value - TODO
 
-//   return NormalDummy(aPoint,aNormal);
-
    int iIndex = 0;
    vector<int> vectorOutcome;
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint);        
@@ -299,7 +245,6 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 
    UVector3 resultNormal, tempPointConv;
    UVector3 temp1, temp2, temp3;    
-   printf("%d\n",(int)vectorOutcome.size()) ;
    
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
@@ -308,7 +253,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
       
       tempPointConv = tempTransform->LocalPoint(aPoint);  
       
-      if(tempSolid->Normal(tempPointConv,resultNormal) == true)
+      if((tempSolid->Normal(tempPointConv,resultNormal) == true))
       {
          temp1 = (tempTransform->GlobalPoint(resultNormal));
          temp2 = (tempTransform->GlobalPoint(tempPointConv));    
