@@ -340,7 +340,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	tesselArgs[5] = new G4UIcmdPargListDouble("p1in4", 100, m );
 	tesselArgs[6] = new G4UIcmdPargListDouble("p2in4", 100, m );
 	tesselArgs[7] = new G4UIcmdPargListDouble("p3in4", 100, m );
-	tesselArgs[8] = new G4UIcmdPar-gListDouble("p4in4", 100, m );
+	tesselArgs[8] = new G4UIcmdPargListDouble("p4in4", 100, m );
 	G4String tesselPath = prefix+"G4TessellatedSolid";
 	tesselCmd = new G4UIcmdWithPargs( tesselPath, this, tesselArgs, 9 );
 	tesselCmd->SetGuidance( "Declare a G4TessellatedSolid solid" );
