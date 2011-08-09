@@ -2144,7 +2144,7 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
    char *maskY = new char[nperslices];
    char *maskZ = new char[nperslices];            
 
-// Algorithm to be optimized:   
+   // Algorithm to be optimized:   
    for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
    {
       // Along X axis:

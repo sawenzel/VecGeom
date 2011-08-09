@@ -117,11 +117,12 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
      
       tempInside = tempSolid->Inside(tempPointConv);        
       
+      // Counters are used because it is not sufficient to know the result of Inside for a particular solid
+      // so as to know if the node is inside or on a surface.
       if(tempInside == eSurface) countSurface++;
       if(tempInside == eInside) countInside++;     
       if(tempInside == eOutside) countOutside++;       
    }       
-   
    if((countOutside == 0) && (countInside > 0)) return eInside;
    else if(countSurface != 0) return eSurface;
    return eOutside;   
@@ -236,68 +237,8 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 // NOTE: the tolerance value used in here is not yet the global surface
 //     tolerance - we will have to revise this value - TODO
 
-   int iIndex = 0;
-   vector<int> vectorOutcome;
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint);        
-
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;  
-
-   UVector3 resultNormal, tempPointConv;
-   UVector3 temp1, temp2, temp3;    
-   
-   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
-   {
-      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
-      
-      tempPointConv = tempTransform->LocalPoint(aPoint);  
-      
-      if((tempSolid->Normal(tempPointConv,resultNormal) == true))
-      {
-         temp1 = (tempTransform->GlobalPoint(resultNormal));
-         temp2 = (tempTransform->GlobalPoint(tempPointConv));    
-         temp3.Set(-temp1.x+temp2.x,-temp1.y+temp2.y,-temp1.z+temp2.z)  ;   
-              
-         aNormal = temp3.Unit();
-         return true;
-      }
-   }
-   return false;   
-}
-
-//______________________________________________________________________________ 
-double UMultiUnion::SafetyFromInsideDummy(const UVector3 aPoint, bool aAccurate) const
-{
-   int carNodes = fNodes->size();
-   int iIndex;
-   
-   double currentSafety = 0;
-   double safety = UUtils::kInfinity;
-   UVector3 tempPointConv;
-   
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;  
-     
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)   
-   {   
-      tempSolid = ((*fNodes)[iIndex])->fSolid;   
-      tempTransform = ((*fNodes)[iIndex])->fTransform; 
-
-      // Check if considered point is inside current slice:
-      tempPointConv = tempTransform->LocalPoint(aPoint);      
-
-      if(tempSolid->Inside(tempPointConv) == eInside)
-      {
-         currentSafety = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
-         
-         if(currentSafety < safety)
-         {
-            safety = currentSafety;
-         }
-      }
-   }
-   return safety;
+   cout << "Normal - Not implemented" << endl;
+   return 0.;
 }
 
 //______________________________________________________________________________ 
@@ -316,63 +257,23 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
-   double currentSafety = 0;
-   double safety = UUtils::kInfinity;
+//   double currentSafety = 0;
+//   double safety = UUtils::kInfinity;
    UVector3 tempPointConv;      
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+
+   cout << "Number of candidates: " << (int)vectorOutcome.size() << endl;
       
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
       tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
-      
-      tempPointConv = tempTransform->LocalPoint(aPoint);      
 
-      if(tempSolid->Inside(tempPointConv) == eInside)
-      {
-         currentSafety = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
-         
-         if(currentSafety < safety)
-         {
-            safety = currentSafety;
-         }
-      }
-   }       
-   return safety;
-}
 
-//______________________________________________________________________________ 
-double UMultiUnion::SafetyFromOutsideDummy(const UVector3 aPoint, bool aAccurate) const
-{
-   int carNodes = fNodes->size();
-   int iIndex;
-   
-   double currentSafety = 0;
-   double safety = UUtils::kInfinity;
-   UVector3 tempPointConv;
-   
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0; 
-     
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)   
-   {   
-      tempSolid = ((*fNodes)[iIndex])->fSolid;   
-      tempTransform = ((*fNodes)[iIndex])->fTransform; 
-
-      tempPointConv = tempTransform->LocalPoint(aPoint);    
-
-      if(tempSolid->Inside(tempPointConv) == eOutside)
-      {
-         currentSafety = tempSolid->SafetyFromOutside(tempPointConv,aAccurate);
-      
-         if(currentSafety < safety)
-         {
-            safety = currentSafety;
-         }
-      }
+         tempPointConv = tempTransform->LocalPoint(aPoint);
    }
-   return safety;
+   return 0;
 }
 
 //______________________________________________________________________________
@@ -381,10 +282,8 @@ double UMultiUnion::SafetyFromOutside(const UVector3 aPoint, bool aAccurate) con
    // Estimates the isotropic safety from a point outside the current solid to any 
    // of its surfaces. The algorithm may be accurate or should provide a fast 
    // underestimate.
-
-//   return SafetyFromOutsideDummy(aPoint,aAccurate);
    
-   cout << "Not implemented" << endl;
+   cout << "SafetyFromOutside - Not implemented" << endl;
    return 0.;
 }
 

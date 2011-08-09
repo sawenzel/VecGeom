@@ -91,10 +91,6 @@ public:
    void                         SetVoxelFinder(UVoxelFinder* finder);
    void                         Voxelize();
 
-private:
-   double                       SafetyFromInsideDummy(const UVector3 aPoint, bool aAccurate) const;
-   double                       SafetyFromOutsideDummy(const UVector3 aPoint, bool aAccurate) const;
-
    std::vector<UNode*>         *fNodes;   // Container of nodes
    UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid
 };
