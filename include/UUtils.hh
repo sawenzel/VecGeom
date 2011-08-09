@@ -123,7 +123,7 @@ namespace UUtils {
   // Equations
 //  bool         RootsQuadratic(const double coef[3], double xmin, double xmax);
 //  bool         RootsCubic(const double coef[4],double &x1, double &x2, double &x3);   
-};
+}
   
     
 //____________________________________________________________________________
