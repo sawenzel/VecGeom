@@ -1,0 +1,12 @@
+% SBT logged output Tue Aug 09 10:23:47 2011
+% /solid/UBox 1 1 1
+% target =    (0,0,0)
+% widths =    (1000,1000,1000)
+% grids  =    (0,0,0)
+% maxPoints = 10000
+% maxErrors = 100
+% End of test (maximum number points) Tue Aug 09 10:23:59 2011
+% Statistics: points=10000 errors=0 errors reported=0
+%             inside=3034 outside=6966 surface=0
+%             cpu time=34
+%(End of file)

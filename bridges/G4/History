@@ -1,0 +1,75 @@
+$Id: History,v 1.9 2008-03-27 16:47:21 gcosmo Exp $
+----------------------------------------------------------------
+
+           History file for geometry/solids/test/SBT
+	   -----------------------------------------
+This file should be used to briefly summarize all major modifications
+introduced in the code and keep track of all tags.
+It DOES NOT substitute the  CVS log-message one should put at every
+committal in the CVS repository !
+
+     ----------------------------------------------------------
+     * Reverse chronological order (last date on top), please *
+     ----------------------------------------------------------
+
+Feb 18, 2008 - I.Hrivnacova
+---------------------------
+- Added missing solids in specific: G4Ellipsoid, G4EllipticalCone,
+  G4EllipticalTube, G4ExtrudedSolid, G4Orb, G4TessellatedSolid, G4Tet,
+  G4TwistedBox, G4TwistedTrap, G4TwistedTrd, G4TwistedTubs.
+- Changed logger precision from 16 digits to 20, as 16 were not sufficient
+  to reproduce the errors in debug.
+- In DrawError():
+  o draw the solid first, otherwise the command vis/viewer/set/style
+    does not affect solid drawing.
+  o draw volume only, if errorIndex=0.
+- In TestOutsidePoint(): allow a difference within the surface tolerance
+  for the distance of a point on surface.
+- In DebugXX() methods: added printing of the tested values.
+- Added method DebugSurfNorm().
+- Corrected output of time string.
+
+Nov 9, 2005 - G.Cosmo
+---------------------
+- Implemented migration to <sstream> from deprecated <strstream>.
+
+Dec 1, 2003 - G.Cosmo
+---------------------
+- Updated vis-manager to recent visualisation drivers.
+- Cleared compilation warnings...
+
+Nov 18, 2003 - J.Apostolakis
+----------------------------
+- Attempted to update to changes in G4VisManager which require
+  the objectTransformation (a G4Transform3D) for all Draw methods.
+
+Jan 08, 2002 - G.Cosmo
+----------------------
+- Migrated SBTrun.cc and SBTvoxel.cc to Geant4 4.0.
+
+Apr 20, 2001 - G.Cosmo
+----------------------
+- Updates for migration to STL vector, modified SBTrun.cc.
+
+Jan 25, 2001 - E.Medernach
+--------------------------
+- Introduced program to process fatal execution error from Fred
+  (new directory "process").
+
+Dec 14, 2000 - E.Medernach
+--------------------------
+- Improved support for Boolean solids:
+  o Modified: SBTrun.cc, G4InteractiveSolid[.hh.cc]
+  o Updated "log" area.
+
+Nov 09, 2000 - G.Cosmo
+----------------------
+- Cleaned up files and moved to new directories.
+
+Aug 22, 2000 - E.Medernach
+--------------------------
+- Added parameter script support with automatic exit
+- Added a directory for geant4 script and for log files
+- Added a pause like fred/pause to be used for visualization
+- Added the current solid in the log file (second line in the log file) 
+  script to visualize errors with comment: ErrorView

@@ -1,0 +1,22 @@
+% SBT logged output Tue Aug 09 10:24:05 2011
+% /solid/UBox 1 1 1
+% target =    (0,0,0)
+% widths =    (1000,1000,1000)
+% grids  =    (200,200,200)
+% maxPoints = 10000
+% maxErrors = 100
+% T0: DistanceToIn(p,v) == kInfinity DistanceToIn = 0
+1 1200 0 1400 -0.44721359549995793 0 -0.89442719099991586
+% T0: DistanceToIn(p,v) == kInfinity DistanceToIn = 1.1368683772161603e-013
+2 2000 1200 -800 -0.88045090632562384 -0.17609018126512477 0.44022545316281192
+% T0: DistanceToIn(p,v) == kInfinity DistanceToIn = 0
+3 1400 1400 800 -0.51449575542752657 -0.51449575542752657 -0.68599434057003539
+% T0: DistanceToIn(p,v) == kInfinity DistanceToIn = 0
+4 1400 1400 800 -0.67671554233196451 -0.67671554233196451 -0.2900209467136991
+% T0: DistanceToIn(p,v) == kInfinity (any further such errors suppressed) DistanceToIn = 0
+5 -800 1200 1200 0.42640143271122088 -0.63960214906683133 -0.63960214906683133
+% End of test (maximum number points) Tue Aug 09 10:24:15 2011
+% Statistics: points=10000 errors=7173 errors reported=5
+%             inside=2924 outside=5658 surface=1418
+%             cpu time=49
+%(End of file)
