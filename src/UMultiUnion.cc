@@ -102,14 +102,14 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    UTransform3D *tempTransform = 0;
    UVector3 tempPoint, tempPointConv;
    VUSolid::EnumInside tempInside = eOutside;
-   int countSurface = 0, countInside = 0, countOutside = 0;
+   int countSurface = 0;//, countInside = 0, countOutside = 0;
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
 
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
+      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
@@ -117,14 +117,11 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
      
       tempInside = tempSolid->Inside(tempPointConv);        
       
-      // Counters are used because it is not sufficient to know the result of Inside for a particular solid
-      // so as to know if the node is inside or on a surface.
-      if(tempInside == eSurface) countSurface++;
-      if(tempInside == eInside) countInside++;     
-      if(tempInside == eOutside) countOutside++;       
+      if(tempInside == eSurface) countSurface++; 
+      
+      if(tempInside == eInside) return eInside;      
    }       
-   if((countOutside == 0) && (countInside > 0)) return eInside;
-   else if(countSurface != 0) return eSurface;
+   if(countSurface != 0) return eSurface;
    return eOutside;   
 }
 
@@ -249,8 +246,6 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    //  Two modes: - default/fast mode, sacrificing accuracy for speed
    //             - "precise" mode,  requests accurate value if available.   
 
-//   return SafetyFromInsideDummy(aPoint,aAccurate);
-
    int iIndex;
    vector<int> vectorOutcome; 
      
@@ -262,17 +257,15 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    UVector3 tempPointConv;      
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-
-   cout << "Number of candidates: " << (int)vectorOutcome.size() << endl;
       
    for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
       tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
-
-
-         tempPointConv = tempTransform->LocalPoint(aPoint);
+           
+      tempPointConv = tempTransform->LocalPoint(aPoint);
    }
+   
    return 0;
 }
 

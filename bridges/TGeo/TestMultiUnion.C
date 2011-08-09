@@ -191,7 +191,7 @@ void TestMultiUnion()
 
    cout << "[> Test Inside:" << endl;   
    UVector3 testPoint;
-   testPoint.Set(50,117.1572875,0);
+   testPoint.Set(51,120,0);
    
    VUSolid::EnumInside isInside;
    isInside = multi_union->Inside(testPoint);
