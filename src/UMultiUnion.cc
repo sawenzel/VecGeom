@@ -234,8 +234,44 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 // NOTE: the tolerance value used in here is not yet the global surface
 //     tolerance - we will have to revise this value - TODO
 
-   cout << "Normal - Not implemented" << endl;
-   return 0.;
+   int iIndex;
+   vector<int> vectorOutcome;   
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;
+   UVector3 tempPoint, tempPointConv, outcomeNormal;
+   UVector3 temp1, temp2, temp3;     
+       
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+
+   if(this->Inside(aPoint) != eSurface)
+   {
+      return false;
+   }
+   else
+   {
+      for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+      {
+         tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+         tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+               
+         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+         tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);
+         tempPointConv = tempTransform->LocalPoint(tempPoint);
+         
+         if(tempSolid->Inside(tempPointConv) == eSurface)
+         {
+            if(tempSolid->Normal(tempPointConv,outcomeNormal) != true) continue;
+            
+            temp1 = (tempTransform->GlobalPoint(outcomeNormal));
+            temp2 = (tempTransform->GlobalPoint(tempPointConv));    
+            temp3.Set(-temp1.x+temp2.x,-temp1.y+temp2.y,-temp1.z+temp2.z)  ;   
+              
+            aNormal = temp3.Unit();          
+            return true;  
+         }
+      } 
+      return false;
+   }
 }
 
 //______________________________________________________________________________ 
@@ -246,27 +282,37 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    //  Two modes: - default/fast mode, sacrificing accuracy for speed
    //             - "precise" mode,  requests accurate value if available.   
 
-   int iIndex;
-   vector<int> vectorOutcome; 
+//   int iIndex;
+   vector<int> vectorOutcome;
+   int numberCandidates;
      
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
-//   double currentSafety = 0;
-//   double safety = UUtils::kInfinity;
    UVector3 tempPointConv;      
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-      
-   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+   
+   // Determination of the number of candidates detected for the considered point:
+   numberCandidates = (int)vectorOutcome.size();
+
+   // If only one candidate is detected, a simple algorithm of "SafetyFromInside" is applied:
+   if(numberCandidates == 1)
    {
-      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;
+      tempSolid = ((*fNodes)[vectorOutcome[0]])->fSolid;
+      tempTransform = ((*fNodes)[vectorOutcome[0]])->fTransform;
            
       tempPointConv = tempTransform->LocalPoint(aPoint);
+      
+      return tempSolid->SafetyFromInside(tempPointConv,aAccurate);
    }
-   
-   return 0;
+   // If the number of candidates is greater than one, there is overlapping (or at least contact):
+   else if(numberCandidates > 1)
+   {
+      // Boolean union - TODO
+      return 0.;
+   }
+   return 0.;   
 }
 
 //______________________________________________________________________________

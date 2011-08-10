@@ -189,10 +189,15 @@ void TestMultiUnion()
    cout << "[> BuildListNodes:" << endl;      
    multi_union -> fVoxels -> DisplayListNodes();
 
-   cout << "[> Test Inside:" << endl;   
+
    UVector3 testPoint;
-   testPoint.Set(51,120,0);
-   
+   testPoint.Set(50+141.421356237,400.0000000+141.421356237,0);
+   cout << endl;
+   cout << "----------" << endl;
+   cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << " ]" << endl;
+   cout << "----------" << endl << endl;
+
+   cout << "[> Test Inside:" << endl;      
    VUSolid::EnumInside isInside;
    isInside = multi_union->Inside(testPoint);
    
@@ -213,10 +218,25 @@ void TestMultiUnion()
       cout << "    SURFACE" << endl;
       resultSafety = 0;  
    }
-//   cout << "    safety = " << resultSafety << endl;
 
+   cout << "[> Test Normal:" << endl;  
+   UVector3 resultNormal;
+   bool boolNormal;
+      
+   boolNormal = multi_union->Normal(testPoint,resultNormal);
+   
+   if(boolNormal == true)
+   {
+      cout << "Normal vector: [" << resultNormal.x << " , " << resultNormal.y << " , " << resultNormal.z << " ]" << endl;
+   }
+   else
+   {
+      cout << "Tested point is not located on a surface!!!" << endl;
+   }   
+   
+   // Draw structure:
    geom->GetTopVolume()->Draw();
-//   geom->GetTopVolume()->Raytrace();   
+  
    // Program comes to an end:
    printf("[> END\n");
 }
