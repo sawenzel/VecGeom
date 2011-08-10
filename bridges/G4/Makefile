@@ -53,7 +53,10 @@ else
 
 endif
 
-.PHONY: clean_all
+.PHONY: sbt clean_all
+
+sbt:
+	@cd SBT; $(MAKE)
 
 clean_all:
 	@for i in *.cc; do \
@@ -62,3 +65,6 @@ clean_all:
 	$(MAKE) clean G4SKIP_DEPEND=1 G4TARGET=$$target); done
 	@echo  "Wiping output file ... "
 	@$(RM) -rf test.out
+	@echo  "Clearing SBT test ..."
+	@cd SBT; $(MAKE) clean
+	@echo  "Cleanup done!"
