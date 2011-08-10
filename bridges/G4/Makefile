@@ -53,7 +53,14 @@ else
 
 endif
 
-.PHONY: sbt clean_all
+.PHONY: sbt tests clean_all
+
+tests: sbt
+	@for i in *.cc; do \
+	(target=`basename $$i .cc`; \
+	echo  "Building $$target ... "; \
+	$(MAKE) G4TARGET=$$target); done
+	@echo  "Build complete!"
 
 sbt:
 	@cd SBT; $(MAKE)
