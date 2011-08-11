@@ -38,9 +38,39 @@ void UMultiUnion::AddNode(VUSolid *solid, UTransform3D *trans)
 //______________________________________________________________________________       
 double UMultiUnion::Capacity()
 {
-// Computes analytically the capacity of the solid.
-   cout << "Capacity - Not implemented" << endl;
-   return 0.;
+   // Capacity computes the cubic volume of the "UMultiUnion" structure using random points:
+
+   // Random initialization:
+   srand(time(NULL));
+
+   double* extentMin = new double[3];
+   double* extentMax = new double[3];
+   UVector3 tempPoint;
+   double dX, dY, dZ, oX, oY, oZ;
+   int iGenerated = 0, iInside = 0;
+   
+   this->Extent(extentMin,extentMax);
+
+   dX = (extentMax[0] - extentMin[0])/2;
+   dY = (extentMax[1] - extentMin[1])/2;
+   dZ = (extentMax[2] - extentMin[2])/2;
+   
+   oX = (extentMax[0] + extentMin[0])/2;
+   oY = (extentMax[1] + extentMin[1])/2;
+   oZ = (extentMax[2] + extentMin[2])/2;     
+   
+   double vbox = (2*dX)*(2*dY)*(2*dZ);
+   
+   while(iInside < 100000)
+   {
+      tempPoint.Set(oX - dX + 2*dX*(rand()/(double)RAND_MAX),
+                    oY - dY + 2*dY*(rand()/(double)RAND_MAX),
+                    oZ - dZ + 2*dZ*(rand()/(double)RAND_MAX));
+      iGenerated++;
+      if(this->Inside(tempPoint) != eOutside) iInside++;
+   }
+   double capacity = iInside*vbox/iGenerated;
+   return capacity;      
 }     
 
 //______________________________________________________________________________
@@ -79,7 +109,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 // o The proposed step is ignored.
 // o The normal vector to the crossed surface is always filled.
 
-   cout << "DistanceToout - Not implemented" << endl;
+   cout << "DistanceToOut - Not implemented" << endl;
    return 0.;
 }  
 

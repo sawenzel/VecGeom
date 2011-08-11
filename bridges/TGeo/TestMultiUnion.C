@@ -234,6 +234,10 @@ void TestMultiUnion()
       cout << "Tested point is not located on a surface!!!" << endl;
    }   
    
+   cout << "[> Test Capacity:" << endl;
+   double outcomeCapacity = multi_union->Capacity();
+   cout << "Computed capacity: " << outcomeCapacity << endl;
+   
    // Draw structure:
    geom->GetTopVolume()->Draw();
   
