@@ -118,7 +118,7 @@ namespace UUtils {
   };
 
   // Binary search
-  long BinarySearch(long n, const double *array, double value);
+  int BinarySearch(int n, const double *array, double value);
 
   // Equations
 //  bool         RootsQuadratic(const double coef[3], double xmin, double xmax);

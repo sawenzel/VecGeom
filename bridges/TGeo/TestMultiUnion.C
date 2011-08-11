@@ -191,10 +191,10 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(50+141.421356237,400.0000000+141.421356237,0);
+   testPoint.Set(332.8427125,400,0);
    cout << endl;
    cout << "----------" << endl;
-   cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << " ]" << endl;
+   cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
    cout << "----------" << endl << endl;
 
    cout << "[> Test Inside:" << endl;      
@@ -211,7 +211,7 @@ void TestMultiUnion()
    else if(isInside == VUSolid::eOutside)
    {
       cout << "    OUTSIDE" << endl;
-      resultSafety = multi_union->SafetyFromOutside(testPoint,true);  
+      resultSafety = multi_union->SafetyFromOutside(testPoint,true);
    }
    else if(isInside == VUSolid::eSurface)
    {
@@ -233,7 +233,7 @@ void TestMultiUnion()
    {
       cout << "Tested point is not located on a surface!!!" << endl;
    }   
-   
+  
    cout << "[> Test Capacity:" << endl;
    double outcomeCapacity = multi_union->Capacity();
    cout << "Computed capacity: " << outcomeCapacity << endl;

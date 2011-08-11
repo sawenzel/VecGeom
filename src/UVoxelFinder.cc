@@ -2123,77 +2123,98 @@ void UVoxelFinder::GetCandidatesVoxel(int indexX, int indexY, int indexZ)
 vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
 {
 // Method returning the candidates corresponding to the passed point
-   const double tolerance = 10E-6;
-   int iIndex; 
    int carNodes = fMultiUnion->GetNumNodes();
-   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
-   long resultBinSearchX, resultBinSearchY, resultBinSearchZ;
-   
-   // Binary search on each slice of the voxelized structure:
-   resultBinSearchX = UUtils::BinarySearch(fXNumBound-1, fXSortedBoundaries, point.x);
-   resultBinSearchY = UUtils::BinarySearch(fYNumBound-1, fYSortedBoundaries, point.y);
-   resultBinSearchZ = UUtils::BinarySearch(fZNumBound-1, fZSortedBoundaries, point.z);
-   
-   if(resultBinSearchX < 0) resultBinSearchX = 0;
-   if(resultBinSearchY < 0) resultBinSearchY = 0;
-   if(resultBinSearchZ < 0) resultBinSearchZ = 0;      
-   
-   // Determination of the mask:
-   char *maskResult = new char[nperslices];
-   char *maskX = new char[nperslices];
-   char *maskY = new char[nperslices];
-   char *maskZ = new char[nperslices];            
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));   
+   vector<int> voidList, checkList;
 
-   // Algorithm to be optimized:   
-   for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+   if(carNodes == 1)
    {
-      // Along X axis:
-      if((point.x - fXSortedBoundaries[resultBinSearchX] < tolerance) && (resultBinSearchX != 0))
+      if(fXSortedBoundaries)
       {
-         maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex] | fMemoryX[nperslices*(resultBinSearchX - 1) + iIndex];      
+         if(point.x < fXSortedBoundaries[0] || point.x > fXSortedBoundaries[1]) return voidList;
       }
-      else if((fXSortedBoundaries[resultBinSearchX+1] - point.x < tolerance) && (resultBinSearchX != fXNumBound-1))
+      if(fYSortedBoundaries)
       {
-         maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex] | fMemoryX[nperslices*(resultBinSearchX + 1) + iIndex];     
+         if(point.y < fYSortedBoundaries[0] || point.y > fYSortedBoundaries[1]) return voidList;
       }
-      else
+      if(fZSortedBoundaries)
       {
-         maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex];     
+         if(point.z < fZSortedBoundaries[0] || point.z > fZSortedBoundaries[1]) return voidList;
       }
-            
-      // Along Y axis:
-      if((point.y - fYSortedBoundaries[resultBinSearchY] < tolerance) && (resultBinSearchY != 0))
-      {  
-         maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex] | fMemoryY[nperslices*(resultBinSearchY - 1) + iIndex];      
-      }
-      else if((fYSortedBoundaries[resultBinSearchY+1] - point.y < tolerance) && (resultBinSearchY != fYNumBound-1))
-      {
-         maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex] | fMemoryY[nperslices*(resultBinSearchY + 1) + iIndex];     
-      }      
-      else
-      {
-         maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex];     
-      }
-      
-      // Along Z axis:
-      if((point.z - fZSortedBoundaries[resultBinSearchZ] < tolerance) && (resultBinSearchZ != 0))
-      {
-         maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex] | fMemoryZ[nperslices*(resultBinSearchZ - 1) + iIndex];      
-      }
-      else if((fZSortedBoundaries[resultBinSearchZ+1] - point.z < tolerance) && (resultBinSearchZ != fZNumBound-1))
-      {
-         maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex] | fMemoryZ[nperslices*(resultBinSearchZ + 1) + iIndex];     
-      }        
-      else
-      {
-         maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex];     
-      }
-      
-      // Logic "and" of the masks along the 3 axes:
-      maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];          
+      checkList.push_back(0);
+      return checkList;
    }
-   
-// Modify here to change scalability:   
-   return GetCandidatesAsVector3(maskResult);
+   else
+   {
+      int resultBinSearchX, resultBinSearchY, resultBinSearchZ;
+      int numberNodes[3] = {0,0,0};
+      char* maskX;
+      char* maskY;
+      char* maskZ;            
+      
+      // Along x axis:
+      resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x);
+      
+      if((resultBinSearchX == -1) || (resultBinSearchX == fXNumBound-1)) return voidList;
+      
+      numberNodes[0] = fNumNodesSliceX[resultBinSearchX];
+      if(!numberNodes[0]) return voidList;
+      
+      maskX = &fMemoryX[nperslices*resultBinSearchX];
+      
+      // Along y axis:
+      resultBinSearchY = UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, point.y);    
+      
+      if((resultBinSearchY == -1) || (resultBinSearchY == fYNumBound-1)) return voidList;
+      
+      numberNodes[1] = fNumNodesSliceY[resultBinSearchY];
+      if(!numberNodes[1]) return voidList;
+      
+      maskY = &fMemoryY[nperslices*resultBinSearchY];
+      
+      // Along z axis:
+      resultBinSearchZ = UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, point.z);
+      
+      if((resultBinSearchZ == -1) || (resultBinSearchZ == fZNumBound-1)) return voidList;
+      
+      numberNodes[2] = fNumNodesSliceZ[resultBinSearchZ];
+      if(!numberNodes[2]) return voidList;
+      
+      maskZ = &fMemoryZ[nperslices*resultBinSearchZ];  
+      
+      // Using Intersect method:   
+      return Intersect(numberNodes[0],maskX,numberNodes[1],maskY,numberNodes[2],maskZ);      
+   }
 }
 
+//______________________________________________________________________________       
+vector<int> UVoxelFinder::Intersect(int numNodesX, char* maskX, int numNodesY, char* maskY, int numNodesZ, char* maskZ)
+{
+// Returns the list of nodes corresponding to the intersection of three arrays of bits
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char)); 
+
+   int currentByte;
+   int currentBit;
+   
+   char byte;
+   vector<int> checkList;
+   
+   for(currentByte = 0 ; currentByte < nperslices ; currentByte++)
+   {
+      byte = maskX[currentByte] & maskY[currentByte] & maskZ[currentByte];
+   
+      if (!byte) continue;
+   
+      for (currentBit = 0 ; currentBit < 8 ; currentBit++)
+      {
+         if (byte & (1<<currentBit))
+         {
+            checkList.push_back((currentByte<<3) + currentBit);
+         
+            if (((int)checkList.size() == numNodesX) || ((int)checkList.size() == numNodesY) || ((int)checkList.size() == numNodesZ)) break;   
+         }
+      }
+   }
+   return checkList;
+}

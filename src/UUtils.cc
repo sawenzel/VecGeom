@@ -10,7 +10,7 @@
 #include "UTransform3D.hh"
 
 //______________________________________________________________________________
-long UUtils::BinarySearch(long n, const double *array, double value)
+int UUtils::BinarySearch(int n, const double *array, double value)
 {
 // Binary search in an array of doubles. If match is found, function returns
    // position of element.  If no match found, function gives nearest

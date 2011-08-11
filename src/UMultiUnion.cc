@@ -38,7 +38,7 @@ void UMultiUnion::AddNode(VUSolid *solid, UTransform3D *trans)
 //______________________________________________________________________________       
 double UMultiUnion::Capacity()
 {
-   // Capacity computes the cubic volume of the "UMultiUnion" structure using random points:
+   // Capacity computes the cubic volume of the "UMultiUnion" structure using random points
 
    // Random initialization:
    srand(time(NULL));
@@ -71,7 +71,7 @@ double UMultiUnion::Capacity()
    }
    double capacity = iInside*vbox/iGenerated;
    return capacity;      
-}     
+}
 
 //______________________________________________________________________________
 void UMultiUnion::ComputeBBox (UBBox */*aBox*/, bool /*aStore*/)
