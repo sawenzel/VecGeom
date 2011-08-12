@@ -152,7 +152,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
       if(tempInside == eInside) return eInside;      
    }       
    if(countSurface != 0) return eSurface;
-   return eOutside;   
+   return eOutside;
 }
 
 //______________________________________________________________________________ 

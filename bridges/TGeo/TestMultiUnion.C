@@ -11,7 +11,7 @@
 #include "TStopwatch.h"
 #include "TRandom.h"
 #include "TPolyMarker3D.h"
-/*
+
 void TestMultiUnion()
 {
    // Initialization of ROOT environment:
@@ -35,7 +35,7 @@ void TestMultiUnion()
    Volume1->SetLineColor(1);
    
       // Number of nodes to implement:
-   int numNodesImpl = 100;
+   int numNodesImpl = 8000;
    int mIndex = 0, nIndex = 0, oIndex = 0;
 	int carBoxesX = 20;
 	int carBoxesY = 20;
@@ -130,9 +130,8 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
-*/
 
-
+/*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -191,7 +190,7 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(50,682.842712474619020,0);
+   testPoint.Set(332.8427124746190202,400,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -218,7 +217,7 @@ void TestMultiUnion()
       cout << "    SURFACE" << endl;
       resultSafety = 0;  
    }
-/*
+
    cout << "[> Test Normal:" << endl;  
    UVector3 resultNormal;
    bool boolNormal;
@@ -237,11 +236,11 @@ void TestMultiUnion()
    cout << "[> Test Capacity:" << endl;
    double outcomeCapacity = multi_union->Capacity();
    cout << "Computed capacity: " << outcomeCapacity << endl;
-*/   
+ 
    // Draw structure:
    geom->GetTopVolume()->Draw();
   
    // Program comes to an end:
    printf("[> END\n");
 }
-
+*/

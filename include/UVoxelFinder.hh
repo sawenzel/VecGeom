@@ -55,6 +55,8 @@ public:
    vector<int>        GetCandidatesAsVector(const char* mask);
    vector<int>        GetCandidatesAsVector2(const char* mask);
    vector<int>        GetCandidatesAsVector3(const char* mask);
+   
+   vector<int>        Intersect(char* mask);
 
 private:
    void               GetCandidatesAsString(const char* mask, std::string &result);

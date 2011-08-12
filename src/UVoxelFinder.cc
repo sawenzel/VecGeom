@@ -121,9 +121,7 @@ void UVoxelFinder::DisplayVoxelLimits()
    
    for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-//      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << fBoxes[6*iIndex] << " ; * dY = " << fBoxes[6*iIndex+1] << " ; * dZ = " << fBoxes[6*iIndex+2] << "\n       * oX = " << fBoxes[6*iIndex+3] << " ; * oY = " << fBoxes[6*iIndex+4] << " ; * oZ = " << fBoxes[6*iIndex+5] << "\n";
-      cout << fixed;
-      cout << "    -> Node " << iIndex+1 << ":\n       * dX = " << setprecision (7) << fBoxes[6*iIndex] << " ; * dY = " << setprecision (7) << fBoxes[6*iIndex+1] << " ; * dZ = " << setprecision (7) << fBoxes[6*iIndex+2] << "\n       * oX = " << setprecision (7) << fBoxes[6*iIndex+3] << " ; * oY = " << setprecision (7) << fBoxes[6*iIndex+4] << " ; * oZ = " << setprecision (7) << fBoxes[6*iIndex+5] << "\n";      
+      cout << setw(10) << setiosflags(ios::fixed) << setprecision(16) <<"    -> Node " << iIndex+1 << ":\n       * dX = " << fBoxes[6*iIndex] << " ; * dY = " << fBoxes[6*iIndex+1] << " ; * dZ = " << fBoxes[6*iIndex+2] << "\n       * oX = " << fBoxes[6*iIndex+3] << " ; * oY = " << fBoxes[6*iIndex+4] << " ; * oZ = " << fBoxes[6*iIndex+5] << "\n";
    }
 }
 
@@ -267,7 +265,8 @@ void UVoxelFinder::DisplayBoundaries()
    cout << " * X axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fXNumBound ; iIndex++)
    {
-      printf("%19.15f ",fXSortedBoundaries[iIndex]);
+      cout << setw(10) << setiosflags(ios::fixed) << setprecision(16) << fXSortedBoundaries[iIndex];
+//      printf("%19.15f ",fXSortedBoundaries[iIndex]);      
 //      cout << fXSortedBoundaries[iIndex] << " ";
       if(iIndex != fXNumBound-1) cout << "-> ";
    }
@@ -276,7 +275,8 @@ void UVoxelFinder::DisplayBoundaries()
    cout << " * Y axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fYNumBound ; iIndex++)
    {
-      printf("%19.15f ",fYSortedBoundaries[iIndex]);   
+      cout << setw(10) << setiosflags(ios::fixed) << setprecision(16) << fYSortedBoundaries[iIndex];   
+//      printf("%19.15f ",fYSortedBoundaries[iIndex]);   
 //      cout << fYSortedBoundaries[iIndex] << " ";
       if(iIndex != fYNumBound-1) cout << "-> ";
    }
@@ -285,7 +285,8 @@ void UVoxelFinder::DisplayBoundaries()
    cout << " * Z axis:" << endl << "    | ";
    for(iIndex = 0 ; iIndex < fZNumBound ; iIndex++)
    {
-      printf("%19.15f ",fXSortedBoundaries[iIndex]);
+      cout << setw(10) << setiosflags(ios::fixed) << setprecision(16) << fZSortedBoundaries[iIndex];   
+//      printf("%19.15f ",fXSortedBoundaries[iIndex]);
 //      cout << fZSortedBoundaries[iIndex] << " ";
       if(iIndex != fZNumBound-1) printf("-> ");
    }      
@@ -2150,12 +2151,18 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
       return checkList;
    }
    else
-   {
+   {   
       int resultBinSearchX, resultBinSearchY, resultBinSearchZ;
-      char *maskResult = new char[nperslices];      
-      char *maskX = new char[nperslices];
-      char *maskY = new char[nperslices];
-      char *maskZ = new char[nperslices];            
+      
+      int bytesCorrected = nperslices + (sizeof(unsigned int) - nperslices%sizeof(unsigned int));
+      
+      char *maskResult = new char[bytesCorrected];             
+      char *maskX = new char[bytesCorrected];
+      memset(maskX,0, bytesCorrected*sizeof(char));      
+      char *maskY = new char[bytesCorrected];
+      memset(maskY,0, bytesCorrected*sizeof(char));       
+      char *maskZ = new char[bytesCorrected];      
+      memset(maskZ,0, bytesCorrected*sizeof(char));             
       
       // Along x axis:
       resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x);
@@ -2187,41 +2194,77 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
          bitwiseOrZ = true;         
       }   
       
-      for(iIndex = 0 ; iIndex < nperslices ; iIndex++)
+      for(iIndex = 0 ; iIndex < (int)((bytesCorrected+1)/sizeof(unsigned int)) ; iIndex++)
       {
          // Along X axis:
          if(bitwiseOrX == true)
          {
-            maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex] | fMemoryX[nperslices*(resultBinSearchX - 1) + iIndex];            
+            ((unsigned int *)(maskX))[iIndex] = ((unsigned int *)(fMemoryX+nperslices*resultBinSearchX))[iIndex] | ((unsigned int *)(fMemoryX+nperslices*(resultBinSearchX-1)))[iIndex];            
          }
          else
          {
-            maskX[iIndex] = fMemoryX[nperslices*resultBinSearchX + iIndex];              
+            ((unsigned int *)(maskX))[iIndex] = ((unsigned int *)(fMemoryX+nperslices*resultBinSearchX))[iIndex];              
          }
          
          // Along Y axis:
          if(bitwiseOrY == true)
          {
-            maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex] | fMemoryY[nperslices*(resultBinSearchY - 1) + iIndex];            
+            ((unsigned int *)(maskY))[iIndex] = ((unsigned int *)(fMemoryY+nperslices*resultBinSearchY))[iIndex] | ((unsigned int *)(fMemoryY+nperslices*(resultBinSearchY-1)))[iIndex];            
          }
          else
          {
-            maskY[iIndex] = fMemoryY[nperslices*resultBinSearchY + iIndex];              
+            ((unsigned int *)(maskY))[iIndex] = ((unsigned int *)(fMemoryY+nperslices*resultBinSearchY))[iIndex];              
          }
          
          // Along Z axis:
          if(bitwiseOrZ == true)
          {
-            maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex] | fMemoryZ[nperslices*(resultBinSearchZ - 1) + iIndex];            
+            ((unsigned int *)(maskZ))[iIndex] = ((unsigned int *)(fMemoryZ+nperslices*resultBinSearchZ))[iIndex] | ((unsigned int *)(fMemoryZ+nperslices*(resultBinSearchZ-1)))[iIndex];            
          }
          else
          {
-            maskZ[iIndex] = fMemoryZ[nperslices*resultBinSearchZ + iIndex];              
-         }                  
+            ((unsigned int *)(maskZ))[iIndex] = ((unsigned int *)(fMemoryZ+nperslices*resultBinSearchZ))[iIndex];              
+         }                 
          
          // Logic "and" of the masks along the 3 axes:
-         maskResult[iIndex] = maskX[iIndex] & maskY[iIndex] & maskZ[iIndex];          
+         ((unsigned int *)(maskResult))[iIndex] = ((unsigned int *)(maskX))[iIndex] & ((unsigned int *)(maskY))[iIndex] & ((unsigned int *)(maskX))[iIndex];          
       }
-      return GetCandidatesAsVector3(maskResult);      
+//      return GetCandidatesAsVector3(maskResult); 
+      return Intersect(maskResult);     
    }
 }
+
+//______________________________________________________________________________       
+vector<int> UVoxelFinder::Intersect(char* mask)
+{
+// Return the list of nodes corresponding to one array of bits
+
+   int carNodes = fMultiUnion->GetNumNodes();
+   int nperslices = 1+(carNodes-1)/(8*sizeof(char));
+   int bytesCorrected = nperslices + (sizeof(unsigned int) - nperslices%sizeof(unsigned int));   
+
+   int current_byte;
+   int current_bit;
+   unsigned int byte;
+   
+   vector<int> outcomeIntersect;
+   int temp;   
+   
+   for(current_byte = 0 ; current_byte < (int)((bytesCorrected+1)/sizeof(unsigned int)) ; current_byte++)
+   {
+      byte = ((unsigned int *)(mask))[current_byte];
+      if (!byte) continue;
+ 
+      for(current_bit = 0 ; current_bit < (int)(8*sizeof(unsigned int)) ; current_bit++)
+      {
+         temp = (int)(8*sizeof(unsigned int)*current_byte+current_bit);
+         if(temp >= carNodes) return outcomeIntersect; 
+      
+         if (byte & (1<<current_bit))
+         {  
+            outcomeIntersect.push_back(temp);
+         }
+      }
+   }
+   return outcomeIntersect;   
+}   
