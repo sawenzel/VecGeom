@@ -21,10 +21,10 @@ int UUtils::BinarySearch(int n, const double *array, double value)
    nbelow = 0;
    while(nabove-nbelow > 1) {
       middle = (nabove+nbelow)/2;
-      if (value == array[middle-1]) return middle-1;
+      if(value == array[middle-1]) return middle-1;
       if (value  < array[middle-1]) nabove = middle;
       else                          nbelow = middle;
-   }
+   }    
    return nbelow-1;
 }   
    

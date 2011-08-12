@@ -191,7 +191,7 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(332.8427125,400,0);
+   testPoint.Set(50,682.842712474619020,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -218,7 +218,7 @@ void TestMultiUnion()
       cout << "    SURFACE" << endl;
       resultSafety = 0;  
    }
-
+/*
    cout << "[> Test Normal:" << endl;  
    UVector3 resultNormal;
    bool boolNormal;
@@ -237,7 +237,7 @@ void TestMultiUnion()
    cout << "[> Test Capacity:" << endl;
    double outcomeCapacity = multi_union->Capacity();
    cout << "Computed capacity: " << outcomeCapacity << endl;
-   
+*/   
    // Draw structure:
    geom->GetTopVolume()->Draw();
   
