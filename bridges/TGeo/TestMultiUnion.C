@@ -35,7 +35,7 @@ void TestMultiUnion()
    Volume1->SetLineColor(1);
    
       // Number of nodes to implement:
-   int numNodesImpl = 8000;
+   int numNodesImpl = 100;
    int mIndex = 0, nIndex = 0, oIndex = 0;
 	int carBoxesX = 20;
 	int carBoxesY = 20;
@@ -190,7 +190,7 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(332.8427124746190202,400,0);
+   testPoint.Set(-232.8427124746190202,400,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -199,8 +199,6 @@ void TestMultiUnion()
    cout << "[> Test Inside:" << endl;      
    VUSolid::EnumInside isInside;
    isInside = multi_union->Inside(testPoint);
-   
-   double resultSafety;
    
    if(isInside == VUSolid::eInside)
    {
@@ -243,4 +241,5 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
+
 */

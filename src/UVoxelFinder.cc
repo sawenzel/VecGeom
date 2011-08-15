@@ -2163,32 +2163,24 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
       memset(maskY,0, bytesCorrected*sizeof(char));       
       char *maskZ = new char[bytesCorrected];      
       memset(maskZ,0, bytesCorrected*sizeof(char));             
-      
-      // Along x axis:
-      resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x);
- 
+
+      resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x); 
       if((resultBinSearchX == -1) || (resultBinSearchX == fXNumBound)) return voidList;
-      
+
+      resultBinSearchY = UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, point.y);         
+      if((resultBinSearchY == -1) || (resultBinSearchY == fYNumBound)) return voidList;
+
+      resultBinSearchZ = UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, point.z);      
+      if((resultBinSearchZ == -1) || (resultBinSearchZ == fZNumBound)) return voidList;
+  
       if((point.x == fXSortedBoundaries[resultBinSearchX]) && (resultBinSearchX != 0))
       {
          bitwiseOrX = true;         
       }      
-      
-      // Along y axis:
-      resultBinSearchY = UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, point.y);    
-     
-      if((resultBinSearchY == -1) || (resultBinSearchY == fYNumBound)) return voidList;
-      
       if((point.y == fYSortedBoundaries[resultBinSearchY]) && (resultBinSearchY != 0))
       {
          bitwiseOrY = true;         
       } 
-      
-      // Along z axis:
-      resultBinSearchZ = UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, point.z);
-      
-      if((resultBinSearchZ == -1) || (resultBinSearchZ == fZNumBound)) return voidList;
-      
       if((point.z == fZSortedBoundaries[resultBinSearchZ]) && (resultBinSearchZ != 0))
       {
          bitwiseOrZ = true;         

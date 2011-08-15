@@ -126,13 +126,17 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 
    // Implementation using voxelisation techniques:
    // ---------------------------------------------
+   return InsideDummy(aPoint);
+   
    int iIndex;
    vector<int> vectorOutcome;   
+ 
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
+   
    UVector3 tempPoint, tempPointConv;
    VUSolid::EnumInside tempInside = eOutside;
-   int countSurface = 0;//, countInside = 0, countOutside = 0;
+   int countSurface = 0;
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
 
@@ -140,6 +144,38 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    {
       tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
       tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+            
+      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
+      tempPointConv = tempTransform->LocalPoint(tempPoint);
+     
+      tempInside = tempSolid->Inside(tempPointConv);        
+      
+      if(tempInside == eSurface) countSurface++; 
+      
+      if(tempInside == eInside) return eInside;      
+   }       
+   if(countSurface != 0) return eSurface;
+   return eOutside;
+}
+
+//______________________________________________________________________________
+VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
+{
+   int iIndex;
+   int carNodes = fNodes->size();
+     
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;
+   
+   UVector3 tempPoint, tempPointConv;
+   VUSolid::EnumInside tempInside = eOutside;
+   int countSurface = 0;
+         
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   {
+      tempSolid = ((*fNodes)[iIndex])->fSolid;
+      tempTransform = ((*fNodes)[iIndex])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   

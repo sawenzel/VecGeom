@@ -91,6 +91,8 @@ public:
    const UTransform3D*          GetTransform(int index) const;
    void                         SetVoxelFinder(UVoxelFinder* finder);
    void                         Voxelize();
+   EnumInside                   InsideDummy(const UVector3 &aPoint) const;
+   
 
    std::vector<UNode*>         *fNodes;   // Container of nodes
    UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid
