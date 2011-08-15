@@ -126,7 +126,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 
    // Implementation using voxelisation techniques:
    // ---------------------------------------------
-   return InsideDummy(aPoint);
+//   return InsideDummy(aPoint);
    
    int iIndex;
    vector<int> vectorOutcome;   
@@ -348,37 +348,36 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    //  Two modes: - default/fast mode, sacrificing accuracy for speed
    //             - "precise" mode,  requests accurate value if available.   
 
-//   int iIndex;
+   int iIndex;
    vector<int> vectorOutcome;
-   int numberCandidates;
      
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
-   UVector3 tempPointConv;      
+   UVector3 tempPoint,tempPointConv;      
+   double safetyTemp;
+   double safetyMax = 0;
          
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-   
-   // Determination of the number of candidates detected for the considered point:
-   numberCandidates = (int)vectorOutcome.size();
 
-   // If only one candidate is detected, a simple algorithm of "SafetyFromInside" is applied:
-   if(numberCandidates == 1)
+   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
-      tempSolid = ((*fNodes)[vectorOutcome[0]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[0]])->fTransform;
-           
-      tempPointConv = tempTransform->LocalPoint(aPoint);
+      cout << iIndex << " ; " << vectorOutcome[iIndex] << endl;
       
-      return tempSolid->SafetyFromInside(tempPointConv,aAccurate);
+      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+            
+      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);
+      tempPointConv = tempTransform->LocalPoint(tempPoint);
+         
+      if(tempSolid->Inside(tempPointConv) == eInside)
+      {
+         safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
+         if(safetyTemp > safetyMax) safetyMax = safetyTemp;         
+      }   
    }
-   // If the number of candidates is greater than one, there is overlapping (or at least contact):
-   else if(numberCandidates > 1)
-   {
-      // Boolean union - TODO
-      return 0.;
-   }
-   return 0.;   
+   return safetyMax;
 }
 
 //______________________________________________________________________________

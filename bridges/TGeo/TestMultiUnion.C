@@ -11,7 +11,7 @@
 #include "TStopwatch.h"
 #include "TRandom.h"
 #include "TPolyMarker3D.h"
-
+/*
 void TestMultiUnion()
 {
    // Initialization of ROOT environment:
@@ -35,7 +35,7 @@ void TestMultiUnion()
    Volume1->SetLineColor(1);
    
       // Number of nodes to implement:
-   int numNodesImpl = 100;
+   int numNodesImpl = 500;
    int mIndex = 0, nIndex = 0, oIndex = 0;
 	int carBoxesX = 20;
 	int carBoxesY = 20;
@@ -130,8 +130,8 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
+*/
 
-/*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -203,17 +203,14 @@ void TestMultiUnion()
    if(isInside == VUSolid::eInside)
    {
       cout << "    INSIDE" << endl;
-      resultSafety = multi_union->SafetyFromInside(testPoint,true);
    }
    else if(isInside == VUSolid::eOutside)
    {
       cout << "    OUTSIDE" << endl;
-      resultSafety = multi_union->SafetyFromOutside(testPoint,true);
    }
    else if(isInside == VUSolid::eSurface)
    {
       cout << "    SURFACE" << endl;
-      resultSafety = 0;  
    }
 
    cout << "[> Test Normal:" << endl;  
@@ -230,10 +227,16 @@ void TestMultiUnion()
    {
       cout << "Tested point is not located on a surface!!!" << endl;
    }   
-  
+     
    cout << "[> Test Capacity:" << endl;
    double outcomeCapacity = multi_union->Capacity();
    cout << "Computed capacity: " << outcomeCapacity << endl;
+ 
+   cout << "[> Test SafetyFromInside:" << endl;
+   UVector3 pointSafetyFromInside(50,117.1572875253809798,0);
+   double outcomeSafetyFromInside = multi_union->SafetyFromInside(pointSafetyFromInside,true);
+   cout << "Computed SafetyFromInside: " << outcomeSafetyFromInside << endl;    
+ 
  
    // Draw structure:
    geom->GetTopVolume()->Draw();
@@ -242,4 +245,3 @@ void TestMultiUnion()
    printf("[> END\n");
 }
 
-*/
