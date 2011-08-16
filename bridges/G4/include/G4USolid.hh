@@ -141,7 +141,13 @@ class G4USolid : public G4VSolid
     virtual void DescribeYourselfTo (G4VGraphicsScene& scene) const;
       // A "double dispatch" function which identifies the solid
       // to the graphics scene for visualization.
-
+   virtual G4VisExtent   GetExtent        ()  const;
+       // Provide extent (bounding box) as possible hint to the graphics view.
+    G4Polyhedron* CreatePolyhedron () const;
+       // Create Polyhedron used for Visualisation
+   virtual G4Polyhedron* GetPolyhedron () const;
+       // Smart access function - creates on request and stores for future
+       // access.  A null pointer means "not available".
   public:  // without description
 
     G4USolid(__void__&);
@@ -160,6 +166,7 @@ class G4USolid : public G4VSolid
   private:  // data
 
     VUSolid* fShape;
+    mutable G4Polyhedron* fPolyhedron;
 };
 
 #endif
