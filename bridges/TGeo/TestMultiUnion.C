@@ -232,11 +232,19 @@ void TestMultiUnion()
    double outcomeCapacity = multi_union->Capacity();
    cout << "Computed capacity: " << outcomeCapacity << endl;
  
-   cout << "[> Test SafetyFromInside:" << endl;
-   UVector3 pointSafetyFromInside(50,117.1572875253809798,0);
-   double outcomeSafetyFromInside = multi_union->SafetyFromInside(pointSafetyFromInside,true);
+   UVector3 pointSafety(-250,0,0);
+   cout << endl;
+   cout << "----------" << endl;
+   cout << "pointSafety: [" << pointSafety.x << " , " << pointSafety.y << " , " << pointSafety.z << "]" << endl;
+   cout << "----------" << endl << endl;    
+  
+   cout << "[> Test SafetyFromInside:" << endl;   
+   double outcomeSafetyFromInside = multi_union->SafetyFromInside(pointSafety,true);
    cout << "Computed SafetyFromInside: " << outcomeSafetyFromInside << endl;    
- 
+
+   cout << "[> Test SafetyFromOutside:" << endl;
+   double outcomeSafetyFromOutside = multi_union->SafetyFromOutside(pointSafety,true);
+   cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;       
  
    // Draw structure:
    geom->GetTopVolume()->Draw();

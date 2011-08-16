@@ -51,12 +51,10 @@ public:
    void               GetCandidatesVoxel(int indexX, int indexY, int indexZ);
    // Method returning in a vector container the nodes located in a voxel characterized by its three indexes:
    vector<int>        GetCandidatesVoxelArray(UVector3 point);
-   //
-   vector<int>        GetCandidatesAsVector(const char* mask);
-   vector<int>        GetCandidatesAsVector2(const char* mask);
-   vector<int>        GetCandidatesAsVector3(const char* mask);
-   
    vector<int>        Intersect(char* mask);
+
+   // Method returning the pointer to the array containing the characteristics of each box:
+   double*            GetBoxes();
 
 private:
    void               GetCandidatesAsString(const char* mask, std::string &result);

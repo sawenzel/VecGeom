@@ -134,7 +134,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
-   UVector3 tempPoint, tempPointConv;
+   UVector3 tempPointConv;
    VUSolid::EnumInside tempInside = eOutside;
    int countSurface = 0;
          
@@ -146,8 +146,7 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
       tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
-      tempPointConv = tempTransform->LocalPoint(tempPoint);
+      tempPointConv = tempTransform->LocalPoint(aPoint);
      
       tempInside = tempSolid->Inside(tempPointConv);        
       
@@ -168,7 +167,7 @@ VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
-   UVector3 tempPoint, tempPointConv;
+   UVector3 tempPointConv;
    VUSolid::EnumInside tempInside = eOutside;
    int countSurface = 0;
          
@@ -178,8 +177,7 @@ VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
       tempTransform = ((*fNodes)[iIndex])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);   
-      tempPointConv = tempTransform->LocalPoint(tempPoint);
+      tempPointConv = tempTransform->LocalPoint(aPoint);
      
       tempInside = tempSolid->Inside(tempPointConv);        
       
@@ -304,7 +302,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    vector<int> vectorOutcome;   
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
-   UVector3 tempPoint, tempPointConv, outcomeNormal;
+   UVector3 tempPointConv, outcomeNormal;
    UVector3 temp1, temp2, temp3;     
        
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
@@ -321,8 +319,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
          tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
                
          // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-         tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);
-         tempPointConv = tempTransform->LocalPoint(tempPoint);
+         tempPointConv = tempTransform->LocalPoint(aPoint);
          
          if(tempSolid->Inside(tempPointConv) == eSurface)
          {
@@ -354,30 +351,35 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
-   UVector3 tempPoint,tempPointConv;      
+   UVector3 tempPointConv;      
    double safetyTemp;
    double safetyMax = 0;
-         
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-
-   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+   
+   if(this->Inside(aPoint) != eInside)
    {
-      cout << iIndex << " ; " << vectorOutcome[iIndex] << endl;
-      
-      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
-            
-      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      tempPoint.Set(aPoint.x,aPoint.y,aPoint.z);
-      tempPointConv = tempTransform->LocalPoint(tempPoint);
-         
-      if(tempSolid->Inside(tempPointConv) == eInside)
-      {
-         safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
-         if(safetyTemp > safetyMax) safetyMax = safetyTemp;         
-      }   
+      cout << "Point is not Inside UMultiUnion... ERROR" << endl;
+      return -1;
    }
-   return safetyMax;
+   else
+   {         
+      vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   
+      for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+      {      
+         tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+         tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+               
+         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+         tempPointConv = tempTransform->LocalPoint(aPoint);
+         
+         if(tempSolid->Inside(tempPointConv) == eInside)
+         {
+            safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
+            if(safetyTemp > safetyMax) safetyMax = safetyTemp;         
+         }   
+      }
+      return safetyMax;
+   }   
 }
 
 //______________________________________________________________________________
@@ -387,8 +389,53 @@ double UMultiUnion::SafetyFromOutside(const UVector3 aPoint, bool aAccurate) con
    // of its surfaces. The algorithm may be accurate or should provide a fast 
    // underestimate.
    
-   cout << "SafetyFromOutside - Not implemented" << endl;
-   return 0.;
+   int iIndex;
+   int carNodes = fNodes->size();
+   
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;     
+      
+   double *boxes = fVoxels->GetBoxes();
+   double safety = UUtils::kInfinity;
+   double safetyTemp;
+   
+   UVector3 tempPointConv;    
+
+   if(this->Inside(aPoint) != eOutside)
+   {
+      cout << "Point is not Outside UMultiUnion... ERROR" << endl;
+      return -1;
+   }
+   else
+   {
+      for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+      {
+         tempSolid = ((*fNodes)[iIndex])->fSolid;
+         tempTransform = ((*fNodes)[iIndex])->fTransform;
+      
+         tempPointConv = tempTransform->LocalPoint(aPoint);      
+    
+         int ist = 6*iIndex;
+         double d2xyz = 0.;
+      
+         double dxyz0 = UUtils::Abs(aPoint.x-boxes[ist+3])-boxes[ist];
+         if (dxyz0 > safety) continue;
+         double dxyz1 = UUtils::Abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
+         if (dxyz1 > safety) continue;
+         double dxyz2 = UUtils::Abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
+         if (dxyz2 > safety) continue;
+      
+         if(dxyz0>0) d2xyz+=dxyz0*dxyz0;
+         if(dxyz1>0) d2xyz+=dxyz1*dxyz1;
+         if(dxyz2>0) d2xyz+=dxyz2*dxyz2;
+         if(d2xyz >= safety*safety) continue;
+      
+         safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
+      
+         if(safetyTemp < safety) safety = safetyTemp;
+      }
+      return safety;
+   }
 }
 
 //______________________________________________________________________________       
