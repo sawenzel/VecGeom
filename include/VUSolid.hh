@@ -108,6 +108,11 @@ public:
   // o provide a new object which is a clone of the solid
   
   // Visualization
+  //
+  //From G4Visualisation
+  virtual void GetParametersList(int aNumber,double *aArray) const =0;
+  virtual UPolyhedron* GetPolyhedron() const =0;
+
   virtual void    SetMeshPoints(double *aArray) const {}
   // o used in TGeo for visualization and overlap checking. 
   //   Implementation existing for all solids.
