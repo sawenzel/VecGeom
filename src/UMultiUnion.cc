@@ -360,6 +360,8 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
       cout << "Point is not Inside UMultiUnion... ERROR" << endl;
       return -1;
    }
+   // In general, the value return by SafetyFromInside will not be the exact
+   // but only an undervalue (cf. overlaps)
    else
    {         
       vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
