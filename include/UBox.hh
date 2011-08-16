@@ -46,8 +46,13 @@ public:
    virtual double Capacity() {return 8.*fDx*fDy*fDz;}
    virtual double SurfaceArea() {return 8.*(fDx*fDy+fDx*fDz+fDy*fDz);}
    virtual VUSolid* Clone() const {return 0;}
-   virtual UGeometryType GetEntityType() const { return "UBox";}
+   virtual UGeometryType GetEntityType() const { return "Box";}
    virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) {}
+
+  //G4Visualisation
+   virtual void GetParametersList(int aNumber,double *aArray) const{
+    aNumber=3;aArray[0]=fDx;aArray[1]=fDy;aArray[2]=fDz;} 
+   virtual UPolyhedron* GetPolyhedron() const{return 0;}
    
 private:  
    double                fDx;   // Half-length on X
