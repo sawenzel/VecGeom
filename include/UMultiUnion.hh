@@ -93,6 +93,8 @@ public:
    void                         Voxelize();
    EnumInside                   InsideDummy(const UVector3 &aPoint) const;
    
+   virtual void GetParametersList(int aNumber,double *aArray) const {}
+   virtual UPolyhedron* GetPolyhedron() const {}   
 
    std::vector<UNode*>         *fNodes;   // Container of nodes
    UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid

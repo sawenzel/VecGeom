@@ -153,8 +153,13 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
       if(tempInside == eSurface) countSurface++; 
       
       if(tempInside == eInside) return eInside;      
-   }       
+   }          
+///////////////////////////////////////////////////////////////////////////
+// Important comment: When solids A and B touch together along flat
+// surface, the surface points will be considered as eSurface, while points 
+// located around will correspond to eInside     
    if(countSurface != 0) return eSurface;
+
    return eOutside;
 }
 
@@ -327,7 +332,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
             
             temp1 = (tempTransform->GlobalPoint(outcomeNormal));
             temp2 = (tempTransform->GlobalPoint(tempPointConv));    
-            temp3.Set(-temp1.x+temp2.x,-temp1.y+temp2.y,-temp1.z+temp2.z)  ;   
+            temp3.Set(-temp1.x+temp2.x,-temp1.y+temp2.y,-temp1.z+temp2.z);   
               
             aNormal = temp3.Unit();          
             return true;  
