@@ -37,6 +37,9 @@
 #include "G4AffineTransform.hh"
 #include "G4VoxelLimits.hh"
 #include "G4VGraphicsScene.hh"
+#include "G4Polyhedron.hh"
+#include "G4PolyhedronArbitrary.hh"
+#include "G4VisExtent.hh"
 
 
 
@@ -46,7 +49,7 @@
 //  - Base class constructor 
 
 G4USolid::G4USolid(const G4String& name, VUSolid* s) :
-  G4VSolid(name),fShape(s)
+  G4VSolid(name),fShape(s),fPolyhedron(0)
 {
 }
 
@@ -285,7 +288,7 @@ std::ostream& G4USolid::StreamInfo(std::ostream& os) const
 }
 
 G4USolid::G4USolid(const G4USolid& rhs)
-  : G4VSolid(rhs), fShape(rhs.fShape)
+  : G4VSolid(rhs), fShape(rhs.fShape),fPolyhedron(rhs.fPolyhedron)
 {
 }
 
@@ -359,5 +362,87 @@ G4USolid::CreateRotatedVertices(const G4AffineTransform& pTransform) const
   }
   return vertices;
 }
+//Visualization methods
+G4Polyhedron* G4USolid::CreatePolyhedron() const{
+  G4int index=0;
+  if(fShape->GetEntityType()=="Box"){
+     double array[3];
+     fShape->GetParametersList(index,array);
+     return new G4PolyhedronBox(array[0],array[1],array[2]);
+  }
+  if(fShape->GetEntityType()=="Tubs"){
+     double array[5];
+     fShape->GetParametersList(index,array);
+     return new G4PolyhedronTubs(array[0],array[1],array[2],array[3],array[4]);
+  }
+  if(fShape->GetEntityType()=="Orb"){
+     double array[1];
+     fShape->GetParametersList(index,array);
+     return new G4PolyhedronSphere (0., array[0], 0., 2*pi, 0., pi);
+  }
+  if(fShape->GetEntityType()=="Sphere"){
+     double array[6];
+     fShape->GetParametersList(index,array);
+     return new G4PolyhedronSphere(array[0],array[1],array[2],array[3],array[4],array[5]);
+  }
+  if(fShape->GetEntityType()=="TessellatedSolid"){
+
+      UPolyhedron *uPolyhedron=fShape->GetPolyhedron();
+      std::size_t nVertices = (*uPolyhedron).vertices.size();
+      std::size_t nFacets   = (*uPolyhedron).facets.size();
+
+      G4PolyhedronArbitrary *polyhedron =
+      new G4PolyhedronArbitrary (nVertices, nFacets);
+      
+      for (std::vector<UVector3>::const_iterator v = (*uPolyhedron).vertices.begin();
+           v!=(*uPolyhedron).vertices.end(); v++)
+     {
+           UVector3 p=(*v);
+           G4ThreeVector pt(p.x,p.y,p.z);
+        
+           polyhedron->AddVertex(pt);
+      }    
+      for (std::vector<UFacets>::const_iterator f=(*uPolyhedron).facets.begin(); 
+          f != (*uPolyhedron).facets.end(); f++)
+      {
+	 polyhedron->AddFacet((*f).f1,(*f).f2,(*f).f3,(*f).f4);
+      }
+     
+     return (G4Polyhedron*) polyhedron;
+ }
+ 
+  
+
+
+  return 0;
+}
+
+G4Polyhedron* G4USolid::GetPolyhedron() const{
+
+  
+if(!fPolyhedron)fPolyhedron=CreatePolyhedron();
+ return fPolyhedron;
+
+}
+
+G4VisExtent G4USolid:: GetExtent () const{
+
+    G4VisExtent extent;
+   G4VoxelLimits voxelLimits;  // Defaults to "infinite" limits.
+   G4AffineTransform affineTransform;
+   G4double vmin, vmax;
+   CalculateExtent(kXAxis,voxelLimits,affineTransform,vmin,vmax);
+   extent.SetXmin (vmin);
+   extent.SetXmax (vmax);
+   CalculateExtent(kYAxis,voxelLimits,affineTransform,vmin,vmax);
+   extent.SetYmin (vmin);
+   extent.SetYmax (vmax);
+   CalculateExtent(kZAxis,voxelLimits,affineTransform,vmin,vmax);
+   extent.SetZmin (vmin);
+   extent.SetZmax (vmax);
+   return extent;
+
+}
+//
 
 
