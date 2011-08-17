@@ -314,7 +314,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    int countSurface, countOutside, countInside;
    VUSolid::EnumInside tempInside;   
        
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint);
 
    if(this->Inside(aPoint) != eSurface)
    {
@@ -344,6 +344,8 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
             countOutside = 0;
             countInside = 0;
             
+            // Test of two points on each axis so as to know the environment around the considered point and
+            // for a given shape
             tempPoint.Set(tempPointConv.x-localTolerance,tempPointConv.y,tempPointConv.z);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;

@@ -190,7 +190,7 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(50-141.421356237,400-141.421356237,0);
+   testPoint.Set(50,682.8427124746190202,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
