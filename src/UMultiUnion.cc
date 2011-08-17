@@ -311,7 +311,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    
    double localTolerance = 1E-6;   
    vector<UVector3> arrayNormals;
-   int countSurface, countOutside;
+   int countSurface, countOutside, countInside;
    VUSolid::EnumInside tempInside;   
        
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
@@ -333,7 +333,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
          if(tempSolid->Inside(tempPointConv) == eSurface)
          {
             if(tempSolid->Normal(tempPointConv,outcomeNormal) != true) continue;
-            
+                      
             tempRotPoint.x = outcomeNormal.x*tempTransform->fRot[0] + outcomeNormal.y*tempTransform->fRot[1] + outcomeNormal.z*tempTransform->fRot[2];
             tempRotPoint.y = outcomeNormal.x*tempTransform->fRot[3] + outcomeNormal.y*tempTransform->fRot[4] + outcomeNormal.z*tempTransform->fRot[5];
             tempRotPoint.z = outcomeNormal.x*tempTransform->fRot[6] + outcomeNormal.y*tempTransform->fRot[7] + outcomeNormal.z*tempTransform->fRot[8];
@@ -342,46 +342,53 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 
             countSurface = 0;
             countOutside = 0;
+            countInside = 0;
             
             tempPoint.Set(tempPointConv.x-localTolerance,tempPointConv.y,tempPointConv.z);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;
             else if(tempInside == eSurface) countSurface++;
+            else countInside++;
 
             tempPoint.Set(tempPointConv.x+localTolerance,tempPointConv.y,tempPointConv.z);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;
             else if(tempInside == eSurface) countSurface++;
+            else countInside++;            
             
             tempPoint.Set(tempPointConv.x,tempPointConv.y-localTolerance,tempPointConv.z);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;
             else if(tempInside == eSurface) countSurface++;
+            else countInside++;            
             
             tempPoint.Set(tempPointConv.x,tempPointConv.y+localTolerance,tempPointConv.z);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;
             else if(tempInside == eSurface) countSurface++;
+            else countInside++;            
             
             tempPoint.Set(tempPointConv.x,tempPointConv.y,tempPointConv.z-localTolerance);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;
             else if(tempInside == eSurface) countSurface++;
+            else countInside++;            
             
             tempPoint.Set(tempPointConv.x,tempPointConv.y,tempPointConv.z+localTolerance);
             tempInside = tempSolid->Inside(tempPoint);
             if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;  
+            else if(tempInside == eSurface) countSurface++;
+            else countInside++;              
             
-            // If the considered point is located on one edge or on one vertice of the solid, the unit
+            // If the considered point is located on one vertice or on one edge of the solid, the unit
             // normal is stored in an array for further treatments
-            if((countSurface == 3 && countOutside == 3) || (countSurface == 3 && countOutside == 2))
+            if((countSurface == 3 && countOutside == 3) || (countSurface == 4 && countOutside == 2))
             {
                arrayNormals.push_back(tempNormal);
             }
             // If the considered point is on a face
-            else if(countSurface == 4)
-            {
+            else if(countSurface == 4 && countInside == 1 && countOutside == 1)
+            {      
                aNormal = tempNormal;
                return true;                   
             }
