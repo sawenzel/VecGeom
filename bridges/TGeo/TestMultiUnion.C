@@ -155,13 +155,11 @@ void TestMultiUnion()
    UMultiUnion *multi_union = new UMultiUnion("multi_union");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
    UTransform3D* trans2 = new UTransform3D(200,0,0,0,0,0);      
-   UTransform3D* trans3 = new UTransform3D(50,400,0,0,0,45);    
-   UTransform3D* trans4 = new UTransform3D(600,0,0,0,0,0);   
+   UTransform3D* trans3 = new UTransform3D(50,400,0,0,0,45);       
    
    multi_union->AddNode(box,trans);
    multi_union->AddNode(box,trans2); 
-   multi_union->AddNode(box,trans3);    
-   multi_union->AddNode(box,trans4);     
+   multi_union->AddNode(box,trans3);       
                                                                                                                                          
    geom->CloseGeometry();
    
@@ -176,10 +174,7 @@ void TestMultiUnion()
    top->AddNode(Volume1,1,transf2);
 
    TGeoCombiTrans* transf3 = new TGeoCombiTrans(50,400,0,new TGeoRotation("rot1",0,0,45));      
-   top->AddNode(Volume1,1,transf3);            
-   
-   TGeoCombiTrans* transf4 = new TGeoCombiTrans(600,0,0,new TGeoRotation("rot1",0,0,0));      
-   top->AddNode(Volume1,1,transf4);     
+   top->AddNode(Volume1,1,transf3);              
 
    // Voxelize "multi_union"
    multi_union -> Voxelize();
@@ -195,7 +190,7 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(200,200,0);
+   testPoint.Set(50,682.8427124746190202,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
