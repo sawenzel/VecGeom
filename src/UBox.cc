@@ -88,9 +88,9 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
       if ( aPoint.x * aDirection.x >= 0 ) return UUtils::kInfinity;
       dist = safx/UUtils::Abs(aDirection.x);
       coordinate = aPoint.y + dist*aDirection.y;
-      if ( UUtils::Abs(coordinate) < fDy ) {
+      if ( UUtils::Abs(coordinate) < fDy+delta ) {
          coordinate = aPoint.z + dist*aDirection.z;
-         if ( UUtils::Abs(coordinate) < fDz ) {
+         if ( UUtils::Abs(coordinate) < fDz+delta ) {
 //            aNormal.x = UUtils::Sign(1.0, aPoint.x);
             return dist;
          }   
@@ -100,9 +100,9 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
       if ( aPoint.y * aDirection.y >= 0 ) return UUtils::kInfinity;
       dist = safy/UUtils::Abs(aDirection.y);
       coordinate = aPoint.x + dist*aDirection.x;
-      if ( UUtils::Abs(coordinate) < fDx ) {
+      if ( UUtils::Abs(coordinate) < fDx+delta ) {
          coordinate = aPoint.z + dist*aDirection.z;
-         if ( UUtils::Abs(coordinate) < fDz ) {
+         if ( UUtils::Abs(coordinate) < fDz+delta ) {
 //            aNormal.y = UUtils::Sign(1.0, aPoint.y);
             return dist;
          }   
@@ -112,9 +112,9 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
       if ( aPoint.z * aDirection.z >= 0 ) return UUtils::kInfinity;
       dist = safz/UUtils::Abs(aDirection.z);
       coordinate = aPoint.x + dist*aDirection.x;
-      if ( UUtils::Abs(coordinate) < fDx ) {
+      if ( UUtils::Abs(coordinate) < fDx+delta ) {
          coordinate = aPoint.y + dist*aDirection.y;
-         if ( UUtils::Abs(coordinate) < fDy ) {
+         if ( UUtils::Abs(coordinate) < fDy+delta ) {
 //            aNormal.z = UUtils::Sign(1.0, aPoint.z);
             return dist;
          }   
@@ -294,7 +294,8 @@ void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax )
          break;
       default:
          std::cout << "Extent: unknown axis" << aAxis << std::endl;
-   }      
+   }  
+  
 }            
 
 //______________________________________________________________________________
