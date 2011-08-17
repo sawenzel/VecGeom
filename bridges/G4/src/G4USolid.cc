@@ -162,12 +162,18 @@ G4bool G4USolid::CalculateExtent(const EAxis pAxis,
 {
   if (!pTransform.IsRotated())
   {
-    VUSolid::EAxisType eAxis=VUSolid::eXaxis;
-    if(pAxis==kYAxis)eAxis=VUSolid::eYaxis;
-    if(pAxis==kZAxis)eAxis=VUSolid::eZaxis;
+     VUSolid::EAxisType eAxis=VUSolid::eXaxis;
+    G4double offset=pTransform.NetTranslation().x();
+    if(pAxis==kYAxis){eAxis=VUSolid::eYaxis;
+       offset=pTransform.NetTranslation().y();}
+    if(pAxis==kZAxis){eAxis=VUSolid::eZaxis;
+       offset=pTransform.NetTranslation().z();}
     fShape->Extent(eAxis,pMin,pMax);
-   
-    if (pVoxelLimit.IsXLimited())
+
+    pMin += offset;
+    pMax += offset;   
+       
+    if (pVoxelLimit.IsLimited())
     {
       switch (pAxis)
       {
@@ -219,50 +225,83 @@ G4bool G4USolid::CalculateExtent(const EAxis pAxis,
   {
     // Rotate BoundingBox and Calculate Extent as for BREPS
 
-    G4bool existsAfterClip=false;
-    G4ThreeVectorList *vertices;
+    G4bool existsAfterClip = false ;
+    G4ThreeVectorList* vertices ;
 
-    pMin=+kInfinity;
-    pMax=-kInfinity;
+    pMin = +kInfinity ;
+    pMax = -kInfinity ;
 
     // Calculate rotated vertex coordinates
-    //
-    vertices=CreateRotatedVertices(pTransform);
-    ClipCrossSection(vertices,0,pVoxelLimit,pAxis,pMin,pMax);
-    ClipCrossSection(vertices,4,pVoxelLimit,pAxis,pMin,pMax);
-    ClipBetweenSections(vertices,0,pVoxelLimit,pAxis,pMin,pMax);
 
-    if ( (pMin!=kInfinity) || (pMax!=-kInfinity) )
-    {
-      existsAfterClip=true;
-    
-      // Add 2*tolerance to avoid precision troubles
-      //
-      pMin-=kCarTolerance;
-      pMax+=kCarTolerance;
-    }
+    vertices = CreateRotatedVertices(pTransform) ;
+    ClipCrossSection(vertices,0,pVoxelLimit,pAxis,pMin,pMax) ;
+    ClipCrossSection(vertices,4,pVoxelLimit,pAxis,pMin,pMax) ;
+    ClipBetweenSections(vertices,0,pVoxelLimit,pAxis,pMin,pMax) ;
+
+    if (pVoxelLimit.IsLimited(pAxis) == false) 
+    {  
+      if ( (pMin != kInfinity) || (pMax != -kInfinity) ) 
+      {
+        existsAfterClip = true ;
+
+        // Add 2*tolerance to avoid precision troubles
+
+        pMin -= kCarTolerance;
+        pMax += kCarTolerance;
+      }
+    }      
     else
     {
-      // Check for case where completely enveloping clipping volume.
+      G4ThreeVector clipCentre(
+       ( pVoxelLimit.GetMinXExtent()+pVoxelLimit.GetMaxXExtent())*0.5,
+       ( pVoxelLimit.GetMinYExtent()+pVoxelLimit.GetMaxYExtent())*0.5,
+       ( pVoxelLimit.GetMinZExtent()+pVoxelLimit.GetMaxZExtent())*0.5);
+
+      if ( (pMin != kInfinity) || (pMax != -kInfinity) )
+      {
+        existsAfterClip = true ;
+  
+
+        // Check to see if endpoints are in the solid
+
+        clipCentre(pAxis) = pVoxelLimit.GetMinExtent(pAxis);
+
+        if (Inside(pTransform.Inverse().TransformPoint(clipCentre)) != kOutside)
+        {
+          pMin = pVoxelLimit.GetMinExtent(pAxis);
+        }
+        else
+        {
+          pMin -= kCarTolerance;
+        }
+        clipCentre(pAxis) = pVoxelLimit.GetMaxExtent(pAxis);
+
+        if (Inside(pTransform.Inverse().TransformPoint(clipCentre)) != kOutside)
+        {
+          pMax = pVoxelLimit.GetMaxExtent(pAxis);
+        }
+        else
+        {
+          pMax += kCarTolerance;
+        }
+      }
+
+      // Check for case where completely enveloping clipping volume
       // If point inside then we are confident that the solid completely
       // envelopes the clipping volume. Hence set min/max extents according
       // to clipping volume extents along the specified axis.
-      //
-      G4ThreeVector clipCentre(
-                (pVoxelLimit.GetMinXExtent()+pVoxelLimit.GetMaxXExtent())*0.5,
-                (pVoxelLimit.GetMinYExtent()+pVoxelLimit.GetMaxYExtent())*0.5,
-                (pVoxelLimit.GetMinZExtent()+pVoxelLimit.GetMaxZExtent())*0.5);
-
-      if (Inside(pTransform.Inverse().TransformPoint(clipCentre))!=kOutside)
+        
+      else if (Inside(pTransform.Inverse().TransformPoint(clipCentre))
+                      != kOutside)
       {
-        existsAfterClip=true;
-        pMin=pVoxelLimit.GetMinExtent(pAxis);
-        pMax=pVoxelLimit.GetMaxExtent(pAxis);
+        existsAfterClip = true ;
+        pMin            = pVoxelLimit.GetMinExtent(pAxis) ;
+        pMax            = pVoxelLimit.GetMaxExtent(pAxis) ;
       }
-    }
+    } 
     delete vertices;
     return existsAfterClip;
-  }                           // end rotation
+  } 
 }
 
 void G4USolid::DescribeYourselfTo (G4VGraphicsScene& scene) const
@@ -317,19 +356,10 @@ G4ThreeVectorList*
 G4USolid::CreateRotatedVertices(const G4AffineTransform& pTransform) const
 {
   G4double xMin,xMax,yMin,yMax,zMin,zMax;
-  G4double xoffset,yoffset,zoffset;
+ 
   fShape->Extent(VUSolid::eXaxis,xMin,xMax);  
   fShape->Extent(VUSolid::eYaxis,yMin,yMax); 
   fShape->Extent(VUSolid::eZaxis,zMin,zMax); 
-
-  // Or new method Extend3D
-  xoffset = pTransform.NetTranslation().x() ;
-  yoffset = pTransform.NetTranslation().y() ;
-  zoffset = pTransform.NetTranslation().z() ;
-
-  xMin-=xoffset;xMax-=xoffset;
-  yMin-=yoffset;yMax-=yoffset;
-  zMin-=zoffset;zMax-=zoffset;
 
   G4ThreeVectorList *vertices;
   vertices=new G4ThreeVectorList();
