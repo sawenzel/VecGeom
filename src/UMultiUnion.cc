@@ -99,13 +99,12 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;     
    
-   const UVector3 normal; 
    double resultDistToIn = UUtils::kInfinity;
    double temp;  
 
    if(this->Inside(aPoint) != eOutside)
    {
-      cout << "Point is not Outside UMultiUnion... ERROR" << endl;
+      cout << "Point is not outside UMultiUnion... ERROR" << endl;
       return -1;
    }
    else
@@ -140,8 +139,55 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 // o The proposed step is ignored.
 // o The normal vector to the crossed surface is always filled.
 
-   cout << "DistanceToOut - Not implemented" << endl;
-   return 0.;
+   int iIndex;
+   vector<int> vectorOutcome;   
+ 
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;
+
+   if(this->Inside(aPoint) != eInside)
+   {
+      cout << "Point is not inside UMultiUnion... ERROR" << endl;
+      return -1;
+   }
+   else
+   {     
+      double dist = 0, tempDist = 0;
+   
+      vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+      UVector3 tempGlobal;
+
+      do
+      {      
+         for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+         {
+            UVector3 tempPointConv, tempDirConv;
+            UVector3 tempNormal;
+            bool dtobool = true;
+         
+            tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+            tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;             
+
+            cout << vectorOutcome[iIndex] << endl;
+            
+            // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+            tempPointConv = tempTransform->LocalPoint(aPoint);
+            tempDirConv = tempTransform->LocalVector(aDirection);            
+                       
+            if(tempSolid->Inside(tempPointConv+dist*tempDirConv) != eOutside)
+            {                       
+               tempDist = tempSolid->DistanceToOut(tempPointConv+dist*tempDirConv,tempDirConv,tempNormal,dtobool,0.); 
+               dist += tempDist;
+               tempGlobal = tempTransform->GlobalPoint(tempPointConv+dist*tempDirConv);
+               // Treatment of Normal - To Do
+            }
+         }
+         vectorOutcome.clear();   
+         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
+      }
+      while(this->Inside(tempGlobal) == eInside);
+      return dist;
+   }
 }  
 
 //______________________________________________________________________________
