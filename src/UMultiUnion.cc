@@ -155,11 +155,10 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
       if(tempInside == eInside) return eInside;      
    }          
 ///////////////////////////////////////////////////////////////////////////
-// Important comment: When solids A and B touch together along flat
+// Important comment: When two solids touch each other along a flat
 // surface, the surface points will be considered as eSurface, while points 
 // located around will correspond to eInside (cf. G4UnionSolid in GEANT4)
    if(boolSurface == true) return eSurface;
-
    return eOutside;
 }
 
@@ -307,108 +306,70 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    vector<int> vectorOutcome;   
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
-   UVector3 tempPointConv, outcomeNormal, tempRotPoint, tempPoint, tempNormal;
+   UVector3 tempPointConv, tempRotPoint, outcomeNormal;
+   double tempSafety = UUtils::kInfinity;
+   int tempNodeSafety = 0;
    
-   double localTolerance = 1E-6;   
-   vector<UVector3> arrayNormals;
-   int countSurface, countOutside, countInside;
-   VUSolid::EnumInside tempInside;   
+   double normalTolerance = 1E-6;
+
+///////////////////////////////////////////////////////////////////////////
+// Important comment: Cases for which the point is located on an edge or
+// on a vertice remain to be treated  
        
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint);
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
 
-   if(this->Inside(aPoint) != eSurface)
+   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
    {
-      return false;
-   }
-   else
-   {
-      for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
-      {
-         tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-         tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
                
-         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-         tempPointConv = tempTransform->LocalPoint(aPoint);
+      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+      tempPointConv = tempTransform->LocalPoint(aPoint);
          
-         if(tempSolid->Inside(tempPointConv) == eSurface)
-         {
-            if(tempSolid->Normal(tempPointConv,outcomeNormal) != true) continue;
-                      
-            tempRotPoint.x = outcomeNormal.x*tempTransform->fRot[0] + outcomeNormal.y*tempTransform->fRot[1] + outcomeNormal.z*tempTransform->fRot[2];
-            tempRotPoint.y = outcomeNormal.x*tempTransform->fRot[3] + outcomeNormal.y*tempTransform->fRot[4] + outcomeNormal.z*tempTransform->fRot[5];
-            tempRotPoint.z = outcomeNormal.x*tempTransform->fRot[6] + outcomeNormal.y*tempTransform->fRot[7] + outcomeNormal.z*tempTransform->fRot[8];
+      if(tempSolid->Inside(tempPointConv) == eSurface)
+      {
+         tempSolid->Normal(tempPointConv,outcomeNormal);
+      
+         tempRotPoint.x = outcomeNormal.x*tempTransform->fRot[0] + outcomeNormal.y*tempTransform->fRot[1] + outcomeNormal.z*tempTransform->fRot[2];
+         tempRotPoint.y = outcomeNormal.x*tempTransform->fRot[3] + outcomeNormal.y*tempTransform->fRot[4] + outcomeNormal.z*tempTransform->fRot[5];
+         tempRotPoint.z = outcomeNormal.x*tempTransform->fRot[6] + outcomeNormal.y*tempTransform->fRot[7] + outcomeNormal.z*tempTransform->fRot[8];
             
-            tempNormal = tempRotPoint.Unit();
-
-            countSurface = 0;
-            countOutside = 0;
-            countInside = 0;
-            
-            // Test of two points on each axis so as to know the environment around the considered point and
-            // for a given shape
-            tempPoint.Set(tempPointConv.x-localTolerance,tempPointConv.y,tempPointConv.z);
-            tempInside = tempSolid->Inside(tempPoint);
-            if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;
-            else countInside++;
-
-            tempPoint.Set(tempPointConv.x+localTolerance,tempPointConv.y,tempPointConv.z);
-            tempInside = tempSolid->Inside(tempPoint);
-            if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;
-            else countInside++;            
-            
-            tempPoint.Set(tempPointConv.x,tempPointConv.y-localTolerance,tempPointConv.z);
-            tempInside = tempSolid->Inside(tempPoint);
-            if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;
-            else countInside++;            
-            
-            tempPoint.Set(tempPointConv.x,tempPointConv.y+localTolerance,tempPointConv.z);
-            tempInside = tempSolid->Inside(tempPoint);
-            if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;
-            else countInside++;            
-            
-            tempPoint.Set(tempPointConv.x,tempPointConv.y,tempPointConv.z-localTolerance);
-            tempInside = tempSolid->Inside(tempPoint);
-            if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;
-            else countInside++;            
-            
-            tempPoint.Set(tempPointConv.x,tempPointConv.y,tempPointConv.z+localTolerance);
-            tempInside = tempSolid->Inside(tempPoint);
-            if(tempInside == eOutside) countOutside++;
-            else if(tempInside == eSurface) countSurface++;
-            else countInside++;              
-            
-            // If the considered point is located on one vertice or on one edge of the solid, the unit
-            // normal is stored in an array for further treatments
-            if((countSurface == 3 && countOutside == 3) || (countSurface == 4 && countOutside == 2))
-            {
-               arrayNormals.push_back(tempNormal);
-            }
-            // If the considered point is on a face
-            else if(countSurface == 4 && countInside == 1 && countOutside == 1)
-            {      
-               aNormal = tempNormal;
-               return true;                   
-            }
-         } 
+         aNormal = tempRotPoint.Unit();           
+         return true;  
       }
-      if((int)arrayNormals.size() == 0) return false;
       else
       {
-         tempNormal.SetNull();
-      
-         for(iIndex = 0 ; iIndex < (int)arrayNormals.size() ; iIndex++)
+         if(tempSolid->Inside(tempPointConv) == eInside)
          {
-            tempNormal += arrayNormals[iIndex];
+            if(tempSolid->SafetyFromInside(tempPointConv) < tempSafety)
+            {
+               tempSafety = tempSolid->SafetyFromInside(tempPointConv);
+               tempNodeSafety = vectorOutcome[iIndex];
+            }
          }
-         aNormal = tempNormal.Unit();
-         return true;
-      }
-   }
+         else // case eOutside
+         {
+            if(tempSolid->SafetyFromOutside(tempPointConv) < tempSafety)
+            {
+               tempSafety = tempSolid->SafetyFromOutside(tempPointConv);
+               tempNodeSafety = vectorOutcome[iIndex];
+            }    
+         }
+      }      
+   }   
+   tempSolid = ((*fNodes)[tempNodeSafety])->fSolid;
+   tempTransform = ((*fNodes)[tempNodeSafety])->fTransform;            
+   tempPointConv = tempTransform->LocalPoint(aPoint);
+
+   tempSolid->Normal(tempPointConv,outcomeNormal);
+   
+   tempRotPoint.x = outcomeNormal.x*tempTransform->fRot[0] + outcomeNormal.y*tempTransform->fRot[1] + outcomeNormal.z*tempTransform->fRot[2];
+   tempRotPoint.y = outcomeNormal.x*tempTransform->fRot[3] + outcomeNormal.y*tempTransform->fRot[4] + outcomeNormal.z*tempTransform->fRot[5];
+   tempRotPoint.z = outcomeNormal.x*tempTransform->fRot[6] + outcomeNormal.y*tempTransform->fRot[7] + outcomeNormal.z*tempTransform->fRot[8];
+            
+   aNormal = tempRotPoint.Unit();
+   if(tempSafety > normalTolerance) return false;
+   return true;     
 }
 
 //______________________________________________________________________________ 

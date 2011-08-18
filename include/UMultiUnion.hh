@@ -92,7 +92,7 @@ public:
    void                         SetVoxelFinder(UVoxelFinder* finder);
    void                         Voxelize();
    EnumInside                   InsideDummy(const UVector3 &aPoint) const;
-   
+      
    virtual void GetParametersList(int aNumber,double *aArray) const {}
    virtual UPolyhedron* GetPolyhedron() const {}   
 

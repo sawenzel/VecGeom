@@ -190,7 +190,7 @@ void TestMultiUnion()
 
 
    UVector3 testPoint;
-   testPoint.Set(50,682.8427124746190202,0);
+   testPoint.Set(49,401,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -219,14 +219,10 @@ void TestMultiUnion()
       
    boolNormal = multi_union->Normal(testPoint,resultNormal);
    
-   if(boolNormal == true)
+//   if(boolNormal == true)
    {
       cout << "Normal vector: [" << resultNormal.x << " , " << resultNormal.y << " , " << resultNormal.z << " ]" << endl;
-   }
-   else
-   {
-      cout << "Tested point is not located on a surface!!!" << endl;
-   }   
+   }  
      
    cout << "[> Test Capacity:" << endl;
    double outcomeCapacity = multi_union->Capacity();
