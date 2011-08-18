@@ -189,8 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   UVector3 testPoint;
-   testPoint.Set(49,401,0);
+   const UVector3 testPoint(0,-300,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -234,7 +233,15 @@ void TestMultiUnion()
 
    cout << "[> Test SafetyFromOutside:" << endl;
    double outcomeSafetyFromOutside = multi_union->SafetyFromOutside(testPoint,true);
-   cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;       
+   cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;
+   
+   cout << "[> Test DistanceToIn:" << endl;
+   const UVector3 testDirection(0,1,0);  
+   cout << "----------" << endl;
+   cout << "testDirection: [" << testDirection.x << " , " << testDirection.y << " , " << testDirection.z << "]" << endl;
+   cout << "----------" << endl;  
+   double outcomeDistanceToIn = multi_union->DistanceToIn(testPoint,testDirection.Unit(),500.);
+   cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;        
  
    // Draw structure:
    geom->GetTopVolume()->Draw();
