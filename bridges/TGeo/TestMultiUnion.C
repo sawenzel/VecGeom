@@ -236,7 +236,7 @@ void TestMultiUnion()
    cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;
    
    cout << "[> Test DistanceToIn:" << endl;
-   const UVector3 testDirection(0,1,0);  
+   const UVector3 testDirection(-1,0,0);  
    cout << "----------" << endl;
    cout << "testDirection: [" << testDirection.x << " , " << testDirection.y << " , " << testDirection.z << "]" << endl;
    cout << "----------" << endl;  
@@ -244,7 +244,7 @@ void TestMultiUnion()
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
    
    cout << "[> Test DistanceToOut:" << endl;
-   const UVector3 testDirectionOut(1,1,0);  
+   const UVector3 testDirectionOut(-1,0,0);  
    UVector3 dtoNormal;
    bool bool1 = true;
    cout << "----------" << endl;
