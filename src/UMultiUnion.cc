@@ -93,22 +93,23 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 // The normal vector to the crossed surface is filled only in case the box is 
 // crossed, otherwise aNormal.IsNull() is true.
 
-   int iIndex;
-   int carNodes = fNodes->size();
-   
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;     
-   
-   double resultDistToIn = UUtils::kInfinity;
-   double temp;  
-
    if(this->Inside(aPoint) != eOutside)
    {
       cout << "Point is not outside UMultiUnion... ERROR" << endl;
       return -1;
    }
+   // When the considered point is outside, the nearest surface is looked after
    else
    {
+      int iIndex;
+      int carNodes = fNodes->size();
+   
+      VUSolid *tempSolid = 0;
+      UTransform3D *tempTransform = 0;     
+   
+      double resultDistToIn = UUtils::kInfinity;
+      double temp;     
+   
       for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
       {
          UVector3 tempPointConv, tempDirConv;      
@@ -139,23 +140,28 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 // o The proposed step is ignored.
 // o The normal vector to the crossed surface is always filled.
 
-   int iIndex;
-   vector<int> vectorOutcome;   
- 
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;
-
    if(this->Inside(aPoint) != eInside)
    {
       cout << "Point is not inside UMultiUnion... ERROR" << endl;
       return -1;
    }
+   // In the case the considered point is located inside the UMultiUnion structure,
+   // the treatments are as follows:
+   //      - investigation of the candidates for the passed point
+   //      - progressive moving of the point towards the surface, along the passe direction
+   //      - processing of the normal
    else
    {     
+      int iIndex;
+      vector<int> vectorOutcome;   
+ 
+      VUSolid *tempSolid = 0;
+      UTransform3D *tempTransform = 0;   
+   
       double dist = 0, tempDist = 0;
    
       vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-      UVector3 tempGlobal;
+      UVector3 tempGlobal, tempRot;
 
       do
       {      
@@ -168,8 +174,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
             tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
             tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;             
 
-            cout << vectorOutcome[iIndex] << endl;
-            
             // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
             tempPointConv = tempTransform->LocalPoint(aPoint);
             tempDirConv = tempTransform->LocalVector(aDirection);            
@@ -179,13 +183,16 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                tempDist = tempSolid->DistanceToOut(tempPointConv+dist*tempDirConv,tempDirConv,tempNormal,dtobool,0.); 
                dist += tempDist;
                tempGlobal = tempTransform->GlobalPoint(tempPointConv+dist*tempDirConv);
+
                // Treatment of Normal - To Do
+               tempRot = tempTransform->GlobalVector(tempNormal);
             }
          }
          vectorOutcome.clear();   
          vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
       }
       while(this->Inside(tempGlobal) == eInside);
+      aNormal = tempRot;
       return dist;
    }
 }  
@@ -383,7 +390,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    vector<int> vectorOutcome;   
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
-   UVector3 tempPointConv, tempRotPoint, outcomeNormal;
+   UVector3 tempPointConv, tempRot, outcomeNormal;
    double tempSafety = UUtils::kInfinity;
    int tempNodeSafety = 0;
    
@@ -407,9 +414,9 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
       {
          tempSolid->Normal(tempPointConv,outcomeNormal);
       
-         tempRotPoint = tempTransform->GlobalVector(outcomeNormal);
+         tempRot = tempTransform->GlobalVector(outcomeNormal);
          
-         aNormal = tempRotPoint.Unit();           
+         aNormal = tempRot.Unit();           
          return true;  
       }
       else
@@ -438,9 +445,9 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 
    tempSolid->Normal(tempPointConv,outcomeNormal);
    
-   tempRotPoint = tempTransform->GlobalVector(outcomeNormal);
+   tempRot = tempTransform->GlobalVector(outcomeNormal);
    
-   aNormal = tempRotPoint.Unit();
+   aNormal = tempRot.Unit();
    if(tempSafety > normalTolerance) return false;
    return true;     
 }
