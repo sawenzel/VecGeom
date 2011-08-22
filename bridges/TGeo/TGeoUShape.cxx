@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "UBox.hh"
+#include "UMultiUnion.hh"
 #include "TGeoManager.h"
 #include "TGeoMaterial.h"
 #include "TGeoMedium.h"
@@ -102,7 +103,7 @@ Double_t TGeoUShape::Safety(Double_t *point, Bool_t in) const
 }
 
 //_____________________________________________________________________________
-void  TGeoUShape::TestBox()
+void TGeoUShape::TestBox()
 {
 // Make a simple geometry containing a UBox and check it
    TGeoManager *geom = new TGeoManager("UBox", "test of a UBox");
@@ -124,4 +125,3 @@ void  TGeoUShape::TestBox()
    shape->CheckShape(2);
    shape->CheckShape(3);
 }
-

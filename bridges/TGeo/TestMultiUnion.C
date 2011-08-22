@@ -131,7 +131,7 @@ void TestMultiUnion()
    printf("[> END\n");
 }
 */
-
+/*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -260,4 +260,57 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
+*/
 
+// Test through bridge classes:
+void TestMultiUnion()
+{
+// Make a simple geometry containing a UBox and check it
+   TGeoManager *geom = new TGeoManager("UBox", "test of a UMultiUnion");
+   TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
+   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
+   TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
+   TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
+
+   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 1000., 1000., 1000.);
+   TGeoShape *tgeobox = top->GetShape();   
+   geom->SetTopVolume(top);
+   
+   // Creation of several nodes
+   UBox *box = new UBox("UBox",200,200,200);
+  
+   // Creation of the multi union
+   UMultiUnion *multi_union = new UMultiUnion("multi_union");     
+   UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
+   UTransform3D* trans2 = new UTransform3D(200,0,0,0,0,0);      
+   UTransform3D* trans3 = new UTransform3D(50,400,0,0,0,45);       
+   
+   multi_union->AddNode(box,trans);
+   multi_union->AddNode(box,trans2); 
+   multi_union->AddNode(box,trans3);                                                                                                                                               
+
+   // Voxelize "multi_union"
+   multi_union -> Voxelize();
+
+   // "Conversion"
+   TGeoUShape *shape = new TGeoUShape("shape", multi_union);     
+   TGeoVolume *vol = new TGeoVolume("vol", shape, Al);
+   top->AddNode(vol,1);
+   geom->CloseGeometry();
+
+   printf("#### Test #1: distances ###");
+   printf("TGeoBBox:\n");
+   tgeobox->CheckShape(1);
+   printf("UBox:\n");
+   shape->CheckShape(1);
+   printf("#### Test #2: safety ###");
+   printf("TGeoBBox:\n");
+   tgeobox->CheckShape(2);
+   printf("UBox:\n");   
+   shape->CheckShape(2);
+   printf("#### Test #3: normals ###");
+   printf("TGeoBBox:\n");
+   tgeobox->CheckShape(3);
+   printf("UBox:\n");
+   shape->CheckShape(3);
+}
