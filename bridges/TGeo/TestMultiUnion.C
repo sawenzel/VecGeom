@@ -131,7 +131,7 @@ void TestMultiUnion()
    printf("[> END\n");
 }
 */
-/*
+
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -189,7 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   const UVector3 testPoint(-210,0,0);
+   const UVector3 testPoint(50,0,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -236,21 +236,21 @@ void TestMultiUnion()
    cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;
    
    cout << "[> Test DistanceToIn:" << endl;
-   const UVector3 testDirection(-1,0,0);  
+   const UVector3 testDirection(1,0,0);  
    cout << "----------" << endl;
    cout << "testDirection: [" << testDirection.x << " , " << testDirection.y << " , " << testDirection.z << "]" << endl;
    cout << "----------" << endl;  
-   double outcomeDistanceToIn = multi_union->DistanceToIn(testPoint,testDirection.Unit(),500.);
+   double outcomeDistanceToIn = multi_union->DistanceToIn(testPoint,testDirection,500.);
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
    
    cout << "[> Test DistanceToOut:" << endl;
-   const UVector3 testDirectionOut(-1,0,0);  
+   const UVector3 testDirectionOut(0,1,0);  
    UVector3 dtoNormal;
    bool bool1 = true;
    cout << "----------" << endl;
    cout << "testDirectionOut: [" << testDirectionOut.x << " , " << testDirectionOut.y << " , " << testDirectionOut.z << "]" << endl;
    cout << "----------" << endl;  
-   double outcomeDistanceToOut = multi_union->DistanceToOut(testPoint,testDirectionOut.Unit(),dtoNormal,bool1,500.);
+   double outcomeDistanceToOut = multi_union->DistanceToOut(testPoint,testDirectionOut,dtoNormal,bool1,500.);
    cout << "Computed DistanceToOut: " << outcomeDistanceToOut << endl;          
    cout << "NormalDistToOut: [" << dtoNormal.x << " , " << dtoNormal.y << " , " << dtoNormal.z << "]" << endl;
 
@@ -260,8 +260,8 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
-*/
 
+/*
 // Test through bridge classes:
 void TestMultiUnion()
 {
@@ -289,28 +289,30 @@ void TestMultiUnion()
    multi_union->AddNode(box,trans2); 
    multi_union->AddNode(box,trans3);                                                                                                                                               
 
-   // Voxelize "multi_union"
-   multi_union -> Voxelize();
-
    // "Conversion"
    TGeoUShape *shape = new TGeoUShape("shape", multi_union);     
    TGeoVolume *vol = new TGeoVolume("vol", shape, Al);
    top->AddNode(vol,1);
+   
+   // Voxelize "multi_union"
+   multi_union -> Voxelize();   
+   
    geom->CloseGeometry();
 
-   printf("#### Test #1: distances ###");
+   printf("#### Test #1: distances ###\n");
    printf("TGeoBBox:\n");
    tgeobox->CheckShape(1);
    printf("UBox:\n");
    shape->CheckShape(1);
-   printf("#### Test #2: safety ###");
+   printf("#### Test #2: safety ###\n");
    printf("TGeoBBox:\n");
    tgeobox->CheckShape(2);
    printf("UBox:\n");   
    shape->CheckShape(2);
-   printf("#### Test #3: normals ###");
+   printf("#### Test #3: normals ###\n");
    printf("TGeoBBox:\n");
    tgeobox->CheckShape(3);
    printf("UBox:\n");
    shape->CheckShape(3);
 }
+*/

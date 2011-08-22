@@ -95,12 +95,13 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 
    if(this->Inside(aPoint) != eOutside)
    {
-      cout << "Point is not outside UMultiUnion... ERROR" << endl;
-      return -1;
+      cout << "Point is not outside UMultiUnion..." << endl;
+      return 0;
    }
    // When the considered point is outside, the nearest surface is looked after
    else
    {
+      UVector3 direction = aDirection.Unit();   
       int iIndex;
       int carNodes = fNodes->size();
    
@@ -118,7 +119,7 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
          tempTransform = ((*fNodes)[iIndex])->fTransform;
       
          tempPointConv = tempTransform->LocalPoint(aPoint);
-         tempDirConv = tempTransform->LocalVector(aDirection);                 
+         tempDirConv = tempTransform->LocalVector(direction);                 
          
          temp = tempSolid->DistanceToIn(tempPointConv, tempDirConv, aPstep);         
          if(temp < resultDistToIn) resultDistToIn = temp;
@@ -142,8 +143,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 
    if(this->Inside(aPoint) != eInside)
    {
-      cout << "Point is not inside UMultiUnion... ERROR" << endl;
-      return -1;
+      cout << "Point is not inside UMultiUnion..." << endl;
+      return 0;
    }
    // In the case the considered point is located inside the UMultiUnion structure,
    // the treatments are as follows:
@@ -151,7 +152,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
    //      - progressive moving of the point towards the surface, along the passe direction
    //      - processing of the normal
    else
-   {     
+   {    
+      UVector3 direction = aDirection.Unit();       
       int iIndex;
       vector<int> vectorOutcome;   
  
@@ -176,7 +178,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 
             // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
             tempPointConv = tempTransform->LocalPoint(aPoint);
-            tempDirConv = tempTransform->LocalVector(aDirection);            
+            tempDirConv = tempTransform->LocalVector(direction);            
                        
             if(tempSolid->Inside(tempPointConv+dist*tempDirConv) != eOutside)
             {                       
@@ -184,7 +186,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                dist += tempDist;
                tempGlobal = tempTransform->GlobalPoint(tempPointConv+dist*tempDirConv);
 
-               // Treatment of Normal - To Do
+               // Treatment of Normal
                tempRot = tempTransform->GlobalVector(tempNormal);
             }
          }
