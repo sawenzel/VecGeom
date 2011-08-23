@@ -189,7 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   const UVector3 testPoint(50,0,0);
+   const UVector3 testPoint(50,50,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -244,7 +244,7 @@ void TestMultiUnion()
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
    
    cout << "[> Test DistanceToOut:" << endl;
-   const UVector3 testDirectionOut(0,1,0);  
+   const UVector3 testDirectionOut(-1,0,0);  
    UVector3 dtoNormal;
    bool bool1 = true;
    cout << "----------" << endl;
@@ -273,7 +273,6 @@ void TestMultiUnion()
    TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
 
    TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 1000., 1000., 1000.);
-   TGeoShape *tgeobox = top->GetShape();   
    geom->SetTopVolume(top);
    
    // Creation of several nodes
@@ -300,19 +299,15 @@ void TestMultiUnion()
    geom->CloseGeometry();
 
    printf("#### Test #1: distances ###\n");
-   printf("TGeoBBox:\n");
-   tgeobox->CheckShape(1);
-   printf("UBox:\n");
-   shape->CheckShape(1);
+   printf("MultiUnion:\n");
+   shape->CheckShape(1,10);
+
    printf("#### Test #2: safety ###\n");
-   printf("TGeoBBox:\n");
-   tgeobox->CheckShape(2);
-   printf("UBox:\n");   
+   printf("MultiUnion:\n");   
    shape->CheckShape(2);
+   
    printf("#### Test #3: normals ###\n");
-   printf("TGeoBBox:\n");
-   tgeobox->CheckShape(3);
-   printf("UBox:\n");
+   printf("MultiUnion:\n");
    shape->CheckShape(3);
 }
 */

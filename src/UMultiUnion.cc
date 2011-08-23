@@ -93,39 +93,30 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 // The normal vector to the crossed surface is filled only in case the box is 
 // crossed, otherwise aNormal.IsNull() is true.
 
-   if(this->Inside(aPoint) != eOutside)
+   UVector3 direction = aDirection.Unit();   
+   int iIndex;
+   int carNodes = fNodes->size();
+   
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;     
+ 
+   double resultDistToIn = UUtils::kInfinity;
+   double temp;     
+   
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-      cout << "Point is not outside UMultiUnion..." << endl;
-      return 0;
-   }
-   // When the considered point is outside, the nearest surface is looked after
-   else
-   {
-      UVector3 direction = aDirection.Unit();   
-      int iIndex;
-      int carNodes = fNodes->size();
+      UVector3 tempPointConv, tempDirConv;      
    
-      VUSolid *tempSolid = 0;
-      UTransform3D *tempTransform = 0;     
-   
-      double resultDistToIn = UUtils::kInfinity;
-      double temp;     
-   
-      for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
-      {
-         UVector3 tempPointConv, tempDirConv;      
+      tempSolid = ((*fNodes)[iIndex])->fSolid;
+      tempTransform = ((*fNodes)[iIndex])->fTransform;
       
-         tempSolid = ((*fNodes)[iIndex])->fSolid;
-         tempTransform = ((*fNodes)[iIndex])->fTransform;
-      
-         tempPointConv = tempTransform->LocalPoint(aPoint);
-         tempDirConv = tempTransform->LocalVector(direction);                 
+      tempPointConv = tempTransform->LocalPoint(aPoint);
+      tempDirConv = tempTransform->LocalVector(direction);                 
          
-         temp = tempSolid->DistanceToIn(tempPointConv, tempDirConv, aPstep);         
-         if(temp < resultDistToIn) resultDistToIn = temp;
-      }
-      return resultDistToIn;
+      temp = tempSolid->DistanceToIn(tempPointConv, tempDirConv, aPstep);         
+      if(temp < resultDistToIn) resultDistToIn = temp;
    }
+   return resultDistToIn;
 }     
 
 //______________________________________________________________________________
@@ -141,30 +132,30 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 // o The proposed step is ignored.
 // o The normal vector to the crossed surface is always filled.
 
-   if(this->Inside(aPoint) != eInside)
-   {
-      cout << "Point is not inside UMultiUnion..." << endl;
-      return 0;
-   }
    // In the case the considered point is located inside the UMultiUnion structure,
    // the treatments are as follows:
    //      - investigation of the candidates for the passed point
-   //      - progressive moving of the point towards the surface, along the passe direction
+   //      - progressive moving of the point towards the surface, along the passed direction
    //      - processing of the normal
-   else
-   {    
-      UVector3 direction = aDirection.Unit();       
-      int iIndex;
-      vector<int> vectorOutcome;   
+   
+   UVector3 direction = aDirection.Unit();       
+   int iIndex;
+   vector<int> vectorOutcome;   
  
-      VUSolid *tempSolid = 0;
-      UTransform3D *tempTransform = 0;   
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;   
    
-      double dist = 0, tempDist = 0;
-   
-      vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-      UVector3 tempGlobal, tempRot;
+   double dist = 0, tempDist = 0;
+  
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   UVector3 tempGlobal, tempRot;
 
+   if(this->Inside(aPoint) != eInside)
+   {
+      return 0;
+   }
+   else
+   {   
       do
       {      
          for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
@@ -179,7 +170,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
             // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
             tempPointConv = tempTransform->LocalPoint(aPoint);
             tempDirConv = tempTransform->LocalVector(direction);            
-                       
+                        
             if(tempSolid->Inside(tempPointConv+dist*tempDirConv) != eOutside)
             {                       
                tempDist = tempSolid->DistanceToOut(tempPointConv+dist*tempDirConv,tempDirConv,tempNormal,dtobool,0.); 
@@ -472,33 +463,25 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
    double safetyTemp;
    double safetyMax = 0;
    
-   if(this->Inside(aPoint) != eInside)
-   {
-      cout << "Point is not Inside UMultiUnion... ERROR" << endl;
-      return -1;
-   }
    // In general, the value return by SafetyFromInside will not be the exact
-   // but only an undervalue (cf. overlaps)
-   else
-   {         
-      vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-   
-      for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
-      {      
-         tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-         tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
-               
-         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-         tempPointConv = tempTransform->LocalPoint(aPoint);
+   // but only an undervalue (cf. overlaps)    
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+  
+   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+   {      
+      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+            
+      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+      tempPointConv = tempTransform->LocalPoint(aPoint);
          
-         if(tempSolid->Inside(tempPointConv) == eInside)
-         {
-            safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
-            if(safetyTemp > safetyMax) safetyMax = safetyTemp;         
-         }   
-      }
-      return safetyMax;
-   }   
+      if(tempSolid->Inside(tempPointConv) == eInside)
+      {
+         safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
+         if(safetyTemp > safetyMax) safetyMax = safetyTemp;         
+      }   
+   }
+   return safetyMax;   
 }
 
 //______________________________________________________________________________
@@ -520,41 +503,33 @@ double UMultiUnion::SafetyFromOutside(const UVector3 aPoint, bool aAccurate) con
    
    UVector3 tempPointConv;    
 
-   if(this->Inside(aPoint) != eOutside)
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
    {
-      cout << "Point is not Outside UMultiUnion... ERROR" << endl;
-      return -1;
-   }
-   else
-   {
-      for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
-      {
-         tempSolid = ((*fNodes)[iIndex])->fSolid;
-         tempTransform = ((*fNodes)[iIndex])->fTransform;
+      tempSolid = ((*fNodes)[iIndex])->fSolid;
+      tempTransform = ((*fNodes)[iIndex])->fTransform;
       
-         tempPointConv = tempTransform->LocalPoint(aPoint);      
+      tempPointConv = tempTransform->LocalPoint(aPoint);      
+  
+      int ist = 6*iIndex;
+      double d2xyz = 0.;
+      
+      double dxyz0 = UUtils::Abs(aPoint.x-boxes[ist+3])-boxes[ist];
+      if (dxyz0 > safety) continue;
+      double dxyz1 = UUtils::Abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
+      if (dxyz1 > safety) continue;
+      double dxyz2 = UUtils::Abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
+      if (dxyz2 > safety) continue;
+      
+      if(dxyz0>0) d2xyz+=dxyz0*dxyz0;
+      if(dxyz1>0) d2xyz+=dxyz1*dxyz1;
+      if(dxyz2>0) d2xyz+=dxyz2*dxyz2;
+      if(d2xyz >= safety*safety) continue;
+      
+      safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
     
-         int ist = 6*iIndex;
-         double d2xyz = 0.;
-      
-         double dxyz0 = UUtils::Abs(aPoint.x-boxes[ist+3])-boxes[ist];
-         if (dxyz0 > safety) continue;
-         double dxyz1 = UUtils::Abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
-         if (dxyz1 > safety) continue;
-         double dxyz2 = UUtils::Abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
-         if (dxyz2 > safety) continue;
-      
-         if(dxyz0>0) d2xyz+=dxyz0*dxyz0;
-         if(dxyz1>0) d2xyz+=dxyz1*dxyz1;
-         if(dxyz2>0) d2xyz+=dxyz2*dxyz2;
-         if(d2xyz >= safety*safety) continue;
-      
-         safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
-      
-         if(safetyTemp < safety) safety = safetyTemp;
-      }
-      return safety;
+      if(safetyTemp < safety) safety = safetyTemp;
    }
+   return safety;
 }
 
 //______________________________________________________________________________       
