@@ -55,6 +55,13 @@ public:
 
    // Method returning the pointer to the array containing the characteristics of each box:
    double*            GetBoxes();
+   
+   double*            GetXSortedBoundaries();
+   double*            GetYSortedBoundaries();
+   double*            GetZSortedBoundaries();      
+   
+   int                OutcomeBinarySearch(double position, VUSolid::EAxisType axis);
+   int                GetNumSlices(VUSolid::EAxisType axis);
 
 private:
    void               GetCandidatesAsString(const char* mask, std::string &result);

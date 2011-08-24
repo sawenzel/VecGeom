@@ -661,3 +661,37 @@ double* UVoxelFinder::GetBoxes()
 {
    return fBoxes;
 }
+
+//______________________________________________________________________________       
+int UVoxelFinder::OutcomeBinarySearch(double position, VUSolid::EAxisType axis)
+{
+   if(axis == VUSolid::eXaxis) return UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, position);
+   else if(axis == VUSolid::eYaxis) return UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, position);   
+   else return UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, position);            
+}
+
+//______________________________________________________________________________       
+int UVoxelFinder::GetNumSlices(VUSolid::EAxisType axis)
+{
+   if(axis == VUSolid::eXaxis) return fXNumBound;
+   else if(axis == VUSolid::eYaxis) return fYNumBound;   
+   else return fZNumBound;      
+}
+
+//______________________________________________________________________________       
+double* UVoxelFinder::GetXSortedBoundaries()
+{
+   return fXSortedBoundaries;
+}
+
+//______________________________________________________________________________       
+double* UVoxelFinder::GetYSortedBoundaries()
+{
+   return fYSortedBoundaries;
+}
+
+//______________________________________________________________________________       
+double* UVoxelFinder::GetZSortedBoundaries()
+{
+   return fZSortedBoundaries;
+}
