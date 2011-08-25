@@ -131,7 +131,7 @@ void TestMultiUnion()
    printf("[> END\n");
 }
 */
-
+/*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -189,7 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   const UVector3 testPoint(-400,-400,0);
+   const UVector3 testPoint(-100,-210,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -242,7 +242,7 @@ void TestMultiUnion()
    cout << "----------" << endl;  
    double outcomeDistanceToIn = multi_union->DistanceToIn(testPoint,testDirection,500.);
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
-*/
+
    cout << "[> Test DistanceToOut:" << endl;
    const UVector3 testDirectionOut(1,1,0);
    UVector3 dtoNormal;
@@ -260,8 +260,8 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
+*/
 
-/*
 // Test through bridge classes:
 void TestMultiUnion()
 {
@@ -310,4 +310,3 @@ void TestMultiUnion()
 //   printf("MultiUnion:\n");
 //   shape->CheckShape(3);
 }
-*/

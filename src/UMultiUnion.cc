@@ -167,6 +167,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
    double* zBound = fVoxels->GetZSortedBoundaries();
 
    currentPoint = aPoint;
+   cout << "currentPoint: [" << currentPoint.x << " , " << currentPoint.y << " , " << currentPoint.z << "]" << endl;
+   cout << "aDirection: [" << aDirection.x << " , " << aDirection.y << " , " << aDirection.z << "]" << endl;
 
    // X axis   
    invDir[0] = 1E30;
@@ -254,7 +256,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
          {
             distance[2] = (zBound[carZ - 1] - currentPoint.z)*invDir[2];         
          }                  
-   
+
+         maxDistance = 0;   
          // Computing the max
          for(iIndex = 0 ; iIndex < 3 ; iIndex++)
          {
@@ -326,7 +329,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
          {
             distance[2] = (xBound[outcomeBinarySearch[2]-1] - currentPoint.z)*invDir[2];         
          }
-   
+
+         minDistance = UUtils::kInfinity;
          // Computing the min
          for(iIndex = 0 ; iIndex < 3 ; iIndex++)
          {
