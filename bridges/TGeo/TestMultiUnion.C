@@ -154,8 +154,8 @@ void TestMultiUnion()
      // Constructor:
    UMultiUnion *multi_union = new UMultiUnion("multi_union");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
-   UTransform3D* trans2 = new UTransform3D(200,0,0,0,0,0);      
-   UTransform3D* trans3 = new UTransform3D(50,400,0,0,0,45);       
+   UTransform3D* trans2 = new UTransform3D(200,200,0,0,0,0);      
+   UTransform3D* trans3 = new UTransform3D(400,400,0,0,0,0);       
    
    multi_union->AddNode(box,trans);
    multi_union->AddNode(box,trans2); 
@@ -170,10 +170,10 @@ void TestMultiUnion()
    TGeoCombiTrans* transf1 = new TGeoCombiTrans(0,0,0,new TGeoRotation("rot1",0,0,0));      
    top->AddNode(Volume1,1,transf1);
 
-   TGeoCombiTrans* transf2 = new TGeoCombiTrans(200,0,0,new TGeoRotation("rot1",0,0,0));      
+   TGeoCombiTrans* transf2 = new TGeoCombiTrans(200,200,0,new TGeoRotation("rot1",0,0,0));      
    top->AddNode(Volume1,1,transf2);
 
-   TGeoCombiTrans* transf3 = new TGeoCombiTrans(50,400,0,new TGeoRotation("rot1",0,0,45));      
+   TGeoCombiTrans* transf3 = new TGeoCombiTrans(400,400,0,new TGeoRotation("rot1",0,0,0));      
    top->AddNode(Volume1,1,transf3);              
 
    // Voxelize "multi_union"
@@ -189,7 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   const UVector3 testPoint(50,-400,0);
+   const UVector3 testPoint(-400,-400,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -242,9 +242,9 @@ void TestMultiUnion()
    cout << "----------" << endl;  
    double outcomeDistanceToIn = multi_union->DistanceToIn(testPoint,testDirection,500.);
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
-*/  
+*/
    cout << "[> Test DistanceToOut:" << endl;
-   const UVector3 testDirectionOut(0,1,0);
+   const UVector3 testDirectionOut(1,1,0);
    UVector3 dtoNormal;
    bool bool1 = true;
    cout << "----------" << endl;
@@ -281,8 +281,8 @@ void TestMultiUnion()
    // Creation of the multi union
    UMultiUnion *multi_union = new UMultiUnion("multi_union");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
-   UTransform3D* trans2 = new UTransform3D(200,0,0,0,0,0);      
-   UTransform3D* trans3 = new UTransform3D(50,400,0,0,0,45);       
+   UTransform3D* trans2 = new UTransform3D(200,200,0,0,0,0);      
+   UTransform3D* trans3 = new UTransform3D(400,400,0,0,0,0);       
    
    multi_union->AddNode(box,trans);
    multi_union->AddNode(box,trans2); 
@@ -302,12 +302,12 @@ void TestMultiUnion()
    printf("MultiUnion:\n");
    shape->CheckShape(1,10);
 
-   printf("#### Test #2: safety ###\n");
-   printf("MultiUnion:\n");   
-   shape->CheckShape(2);
-   
-   printf("#### Test #3: normals ###\n");
-   printf("MultiUnion:\n");
-   shape->CheckShape(3);
+//   printf("#### Test #2: safety ###\n");
+//   printf("MultiUnion:\n");   
+//   shape->CheckShape(2);
+  
+//   printf("#### Test #3: normals ###\n");
+//   printf("MultiUnion:\n");
+//   shape->CheckShape(3);
 }
 */

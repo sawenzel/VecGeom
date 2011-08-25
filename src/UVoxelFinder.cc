@@ -560,13 +560,13 @@ vector<int> UVoxelFinder::GetCandidatesVoxelArray(UVector3 point)
       memset(maskZ,0, bytesCorrected*sizeof(char));             
 
       resultBinSearchX = UUtils::BinarySearch(fXNumBound, fXSortedBoundaries, point.x); 
-      if((resultBinSearchX == -1) || (resultBinSearchX == fXNumBound)) return voidList;
+      if((resultBinSearchX == -1) || (resultBinSearchX == fXNumBound-1)) return voidList;
 
       resultBinSearchY = UUtils::BinarySearch(fYNumBound, fYSortedBoundaries, point.y);         
-      if((resultBinSearchY == -1) || (resultBinSearchY == fYNumBound)) return voidList;
+      if((resultBinSearchY == -1) || (resultBinSearchY == fYNumBound-1)) return voidList;
 
       resultBinSearchZ = UUtils::BinarySearch(fZNumBound, fZSortedBoundaries, point.z);      
-      if((resultBinSearchZ == -1) || (resultBinSearchZ == fZNumBound)) return voidList;
+      if((resultBinSearchZ == -1) || (resultBinSearchZ == fZNumBound-1)) return voidList;
   
       if((point.x == fXSortedBoundaries[resultBinSearchX]) && (resultBinSearchX != 0))
       {

@@ -167,23 +167,42 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
    double* zBound = fVoxels->GetZSortedBoundaries();
 
    currentPoint = aPoint;
-      
+
+   // X axis   
+   invDir[0] = 1E30;
+   if(UUtils::Abs(direction.x) >= 1E-10)
+   {
+      incDir[0] = (direction.x > 0)?1:-1;
+      invDir[0] = 1/direction.x;
+   }        
+
+   // Y axis
+   invDir[1] = 1E30;
+   if(UUtils::Abs(direction.y) >= 1E-10)
+   {
+      incDir[1] = (direction.y > 0)?1:-1;
+      invDir[1] = 1/direction.y;
+   }
+
+   // Z axis      
+   invDir[2] = 1E30;
+   if(UUtils::Abs(direction.z) >= 1E-10)
+   {
+      incDir[2] = (direction.z > 0)?1:-1;
+      invDir[2] = 1/direction.z;
+   }           
+               
    while((int)vectorOutcome.size() == 0)
-   {  
+   {           
       if(currentPoint.x < xBound[0] || currentPoint.y < yBound[0] || currentPoint.z < zBound[0] ||
          currentPoint.x > xBound[carX - 1] || currentPoint.y > yBound[carY - 1] || currentPoint.z > zBound[carZ - 1])
-      {           
+      {       
+         cout << "HELLO1" << endl;
+          
          distance[0] = 0;
          distance[1] = 0;
          distance[2] = 0;
-             
-         // X axis   
-         invDir[0] = 1E30;
-         if(UUtils::Abs(direction.x) >= 1E-10)
-         {
-            incDir[0] = (direction.x > 0)?1:-1;
-            invDir[0] = 1/direction.x;
-         }         
+              
          outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);        
         
          if( ((outcomeBinarySearch[0] <= 0) && (incDir[0] < 0)) ||
@@ -192,13 +211,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
             return UUtils::kInfinity;
          }
 
-         // Y axis
-         invDir[1] = 1E30;
-         if(UUtils::Abs(direction.y) >= 1E-10)
-         {
-            incDir[1] = (direction.y > 0)?1:-1;
-            invDir[1] = 1/direction.y;
-         }
          outcomeBinarySearch[1] = fVoxels->OutcomeBinarySearch(currentPoint.y,eYaxis);
    
          if( ((outcomeBinarySearch[1] <= 0) && (incDir[1] < 0)) ||
@@ -206,14 +218,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
          {
             return UUtils::kInfinity;
          }
-
-         // Z axis      
-         invDir[2] = 1E30;
-         if(UUtils::Abs(direction.z) >= 1E-10)
-         {
-            incDir[2] = (direction.z > 0)?1:-1;
-            invDir[2] = 1/direction.z;
-         }      
+    
          outcomeBinarySearch[2] = fVoxels->OutcomeBinarySearch(currentPoint.z,eZaxis);            
 
          if( ((outcomeBinarySearch[2] <= 0) && (incDir[2] < 0)) ||
@@ -264,17 +269,36 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
          
          currentPoint = newPoint;
          distanceTemp += maxDistance;
+         vectorOutcome.clear();
          vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);                
       }
       else
-      {            
+      {        
+         cout << "HELLO2" << endl;      
+          
          outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);    
          outcomeBinarySearch[1] = fVoxels->OutcomeBinarySearch(currentPoint.y,eYaxis);    
          outcomeBinarySearch[2] = fVoxels->OutcomeBinarySearch(currentPoint.z,eZaxis);                     
+
+         if( ((outcomeBinarySearch[0] <= 0) && (incDir[0] < 0)) ||
+             ((outcomeBinarySearch[0] == (carX - 1)) && (incDir[0] > 0)))
+         {
+            return UUtils::kInfinity;
+         }
+         if( ((outcomeBinarySearch[1] <= 0) && (incDir[1] < 0)) ||
+             ((outcomeBinarySearch[1] == (carY - 1)) && (incDir[1] > 0)))
+         {
+            return UUtils::kInfinity;
+         }
+         if( ((outcomeBinarySearch[2] <= 0) && (incDir[2] < 0)) ||
+             ((outcomeBinarySearch[2] == (carZ - 1)) && (incDir[2] > 0)))
+         {
+            return UUtils::kInfinity;
+         }                 
    
          distance[0] = UUtils::kInfinity;
          distance[1] = UUtils::kInfinity;
-         distance[2] = UUtils::kInfinity;                  
+         distance[2] = UUtils::kInfinity;                                     
          
          if(incDir[0] == 1 && outcomeBinarySearch[0] != carX - 1)
          {
@@ -317,10 +341,12 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
          
          currentPoint = newPoint;
          distanceTemp += minDistance;         
-         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);                         
+         vectorOutcome.clear();         
+         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);  
+         cout << (int)vectorOutcome.size() << endl;    
       }                 
    }      
-   
+   cout << "HELLO3" << endl;   
    do
    {      
       for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
@@ -348,6 +374,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
       }
       vectorOutcome.clear();   
       vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
+      cout << "tempGlobal: [" << tempGlobal.x << " , " << tempGlobal.y << " , " << tempGlobal.z << "]" << endl; 
+      
    }
    while(this->Inside(tempGlobal) == eInside);
    aNormal = tempRot;
