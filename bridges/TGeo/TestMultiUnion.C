@@ -189,7 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   const UVector3 testPoint(-100,500,0);
+   const UVector3 testPoint(0,-200,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -211,7 +211,7 @@ void TestMultiUnion()
    {
       cout << "    SURFACE" << endl;
    }
-/*
+
    cout << "[> Test Normal:" << endl;  
    UVector3 resultNormal;
    bool boolNormal;
@@ -236,7 +236,7 @@ void TestMultiUnion()
    cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;
    
    cout << "[> Test DistanceToIn:" << endl;
-   const UVector3 testDirection(-1,0,0);  
+   const UVector3 testDirection(0,-1,0);  
    cout << "----------" << endl;
    cout << "testDirection: [" << testDirection.x << " , " << testDirection.y << " , " << testDirection.z << "]" << endl;
    cout << "----------" << endl;  
@@ -244,7 +244,7 @@ void TestMultiUnion()
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
 
    cout << "[> Test DistanceToOut:" << endl;
-   const UVector3 testDirectionOut(1,1,0);
+   const UVector3 testDirectionOut(0,-1,0);
    UVector3 dtoNormal;
    bool bool1 = true;
    cout << "----------" << endl;
@@ -252,7 +252,7 @@ void TestMultiUnion()
    cout << "----------" << endl;  
    double outcomeDistanceToOut = multi_union->DistanceToOut(testPoint,testDirectionOut,dtoNormal,bool1,10000.);
    cout << "Computed DistanceToOut: " << outcomeDistanceToOut << endl;          
-//   cout << "NormalDistToOut: [" << dtoNormal.x << " , " << dtoNormal.y << " , " << dtoNormal.z << "]" << endl;
+   cout << "NormalDistToOut: [" << dtoNormal.x << " , " << dtoNormal.y << " , " << dtoNormal.z << "]" << endl;
 
    // Draw structure:
    geom->GetTopVolume()->Draw();
@@ -306,8 +306,8 @@ void TestMultiUnion()
    printf("MultiUnion:\n");   
    shape->CheckShape(2,200);
   
-//   printf("#### Test #3: normals ###\n");
-//   printf("MultiUnion:\n");
-//   shape->CheckShape(3,200);
+   printf("#### Test #3: normals ###\n");
+   printf("MultiUnion:\n");
+   shape->CheckShape(3,200);
 }
 

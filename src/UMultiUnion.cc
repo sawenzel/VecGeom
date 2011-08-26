@@ -465,8 +465,9 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    UVector3 tempPointConv, tempRot, outcomeNormal;
    double tempSafety = UUtils::kInfinity;
    int tempNodeSafety = 0;
+   int searchNode;
    
-   double normalTolerance = 1E-6;
+   double normalTolerance = 1E-5;
 
 ///////////////////////////////////////////////////////////////////////////
 // Important comment: Cases for which the point is located on an edge or
@@ -474,54 +475,72 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
        
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
 
-   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+   if((int)vectorOutcome.size() != 0)
    {
-      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
-               
-      // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-      tempPointConv = tempTransform->LocalPoint(aPoint);
-         
-      if(tempSolid->Inside(tempPointConv) == eSurface)
+      for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
       {
-         tempSolid->Normal(tempPointConv,outcomeNormal);
-      
-         tempRot = tempTransform->GlobalVector(outcomeNormal);
-         
-         aNormal = tempRot.Unit();           
-         return true;  
-      }
-      else
-      {
-         if(tempSolid->Inside(tempPointConv) == eInside)
+         tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
+         tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+                  
+         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+         tempPointConv = tempTransform->LocalPoint(aPoint);
+            
+         if(tempSolid->Inside(tempPointConv) == eSurface)
          {
-            if(tempSolid->SafetyFromInside(tempPointConv) < tempSafety)
+            tempSolid->Normal(tempPointConv,outcomeNormal);
+         
+            tempRot = tempTransform->GlobalVector(outcomeNormal);
+            
+            aNormal = tempRot.Unit();           
+            return true;  
+         }
+         else
+         {
+            if(tempSolid->Inside(tempPointConv) == eInside)
             {
-               tempSafety = tempSolid->SafetyFromInside(tempPointConv);
-               tempNodeSafety = vectorOutcome[iIndex];
+               if(tempSolid->SafetyFromInside(tempPointConv) < tempSafety)
+               {
+                  tempSafety = tempSolid->SafetyFromInside(tempPointConv);
+                  tempNodeSafety = vectorOutcome[iIndex];
+               }
             }
-         }
-         else // case eOutside
-         {
-            if(tempSolid->SafetyFromOutside(tempPointConv) < tempSafety)
+            else // case eOutside
             {
-               tempSafety = tempSolid->SafetyFromOutside(tempPointConv);
-               tempNodeSafety = vectorOutcome[iIndex];
-            }    
-         }
-      }      
-   }   
-   tempSolid = ((*fNodes)[tempNodeSafety])->fSolid;
-   tempTransform = ((*fNodes)[tempNodeSafety])->fTransform;            
-   tempPointConv = tempTransform->LocalPoint(aPoint);
-
-   tempSolid->Normal(tempPointConv,outcomeNormal);
+               if(tempSolid->SafetyFromOutside(tempPointConv) < tempSafety)
+               {
+                  tempSafety = tempSolid->SafetyFromOutside(tempPointConv);
+                  tempNodeSafety = vectorOutcome[iIndex];
+               }    
+            }
+         }      
+      }   
+      tempSolid = ((*fNodes)[tempNodeSafety])->fSolid;
+      tempTransform = ((*fNodes)[tempNodeSafety])->fTransform;            
+      tempPointConv = tempTransform->LocalPoint(aPoint);
    
-   tempRot = tempTransform->GlobalVector(outcomeNormal);
+      tempSolid->Normal(tempPointConv,outcomeNormal);
+      
+      tempRot = tempTransform->GlobalVector(outcomeNormal);
+      
+      aNormal = tempRot.Unit();
+      if(tempSafety > normalTolerance) return false;
+      return true;
+   }
+   else
+   {
+      searchNode = SafetyFromOutsideNumberNode(aPoint,true);
+      tempSolid = ((*fNodes)[searchNode])->fSolid;
+      tempTransform = ((*fNodes)[searchNode])->fTransform;            
+      tempPointConv = tempTransform->LocalPoint(aPoint);
    
-   aNormal = tempRot.Unit();
-   if(tempSafety > normalTolerance) return false;
-   return true;     
+      tempSolid->Normal(tempPointConv,outcomeNormal);
+      
+      tempRot = tempTransform->GlobalVector(outcomeNormal);
+      
+      aNormal = tempRot.Unit();
+      if(tempSafety > normalTolerance) return false;
+      return true;     
+   }
 }
 
 //______________________________________________________________________________ 
@@ -648,4 +667,57 @@ void UMultiUnion::Voxelize()
 {
    fVoxels = new UVoxelFinder(this);
    fVoxels -> Voxelize();
+}
+
+//______________________________________________________________________________
+int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccurate) const
+{
+   // Estimates the isotropic safety from a point outside the current solid to any 
+   // of its surfaces. The algorithm may be accurate or should provide a fast 
+   // underestimate.
+   
+   int iIndex;
+   int carNodes = fNodes->size();
+   
+   VUSolid *tempSolid = 0;
+   UTransform3D *tempTransform = 0;     
+      
+   double *boxes = fVoxels->GetBoxes();
+   double safety = UUtils::kInfinity;
+   double safetyTemp;
+   int safetyNode = -1;
+   
+   UVector3 tempPointConv;    
+
+   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   {
+      tempSolid = ((*fNodes)[iIndex])->fSolid;
+      tempTransform = ((*fNodes)[iIndex])->fTransform;
+      
+      tempPointConv = tempTransform->LocalPoint(aPoint);      
+  
+      int ist = 6*iIndex;
+      double d2xyz = 0.;
+      
+      double dxyz0 = UUtils::Abs(aPoint.x-boxes[ist+3])-boxes[ist];
+      if (dxyz0 > safety) continue;
+      double dxyz1 = UUtils::Abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
+      if (dxyz1 > safety) continue;
+      double dxyz2 = UUtils::Abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
+      if (dxyz2 > safety) continue;
+      
+      if(dxyz0>0) d2xyz+=dxyz0*dxyz0;
+      if(dxyz1>0) d2xyz+=dxyz1*dxyz1;
+      if(dxyz2>0) d2xyz+=dxyz2*dxyz2;
+      if(d2xyz >= safety*safety) continue;
+      
+      safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
+    
+      if(safetyTemp < safety)
+      {
+         safety = safetyTemp;
+         safetyNode = iIndex;
+      }
+   }
+   return safetyNode;
 }
