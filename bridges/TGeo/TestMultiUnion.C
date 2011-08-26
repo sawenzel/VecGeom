@@ -189,7 +189,7 @@ void TestMultiUnion()
    multi_union -> fVoxels -> DisplayListNodes();
 
 
-   const UVector3 testPoint(-200.5,-200,0);
+   const UVector3 testPoint(-100,500,0);
    cout << endl;
    cout << "----------" << endl;
    cout << "testPoint: [" << testPoint.x << " , " << testPoint.y << " , " << testPoint.z << "]" << endl;
@@ -236,7 +236,7 @@ void TestMultiUnion()
    cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;
    
    cout << "[> Test DistanceToIn:" << endl;
-   const UVector3 testDirection(1,0,0);  
+   const UVector3 testDirection(-1,0,0);  
    cout << "----------" << endl;
    cout << "testDirection: [" << testDirection.x << " , " << testDirection.y << " , " << testDirection.z << "]" << endl;
    cout << "----------" << endl;  
@@ -306,8 +306,8 @@ void TestMultiUnion()
    printf("MultiUnion:\n");   
    shape->CheckShape(2,200);
   
-   printf("#### Test #3: normals ###\n");
-   printf("MultiUnion:\n");
-   shape->CheckShape(3,200);
+//   printf("#### Test #3: normals ###\n");
+//   printf("MultiUnion:\n");
+//   shape->CheckShape(3,200);
 }
 

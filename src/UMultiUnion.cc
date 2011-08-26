@@ -191,7 +191,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                         
                            tempDist = tempSolid->DistanceToOut(tempPointConv,tempDirConv,tempNormal,dtobool,0.);
                            dist += tempDist;
-   //                        cout << dist << endl;
                            tempGlobal = tempTransform->GlobalPoint(tempPointConv+tempDist*tempDirConv);                                          
             
                            // Treatment of Normal
@@ -205,16 +204,12 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                               aNormal = tempRot;
                               return dist;               
                            }
-            
-   //              cout << "tempGlobal: [" << tempGlobal.x << " , " << tempGlobal.y << " , " << tempGlobal.z << "]" << endl;
-            
+                        
                            vectorOutcome.clear();   
                            vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);                                     
                            break;
                         }
                      }
-         
-    //                 cout << "forbiddenNode: " << forbiddenNode << endl;                                                 
                   }
                   while(this->SafetyFromInside(tempGlobal,true) > 1E-5);     
                   aNormal = tempRot;
@@ -248,7 +243,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
             
                tempDist = tempSolid->DistanceToOut(tempPointConv,tempDirConv,tempNormal,dtobool,0.);
                dist += tempDist;
-     //          cout << dist << endl;
                tempGlobal = tempTransform->GlobalPoint(tempPointConv+tempDist*tempDirConv);                                          
 
                // Treatment of Normal
@@ -263,15 +257,11 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                   return dist;               
                }
 
- //    cout << "tempGlobal: [" << tempGlobal.x << " , " << tempGlobal.y << " , " << tempGlobal.z << "]" << endl;
-
                vectorOutcome.clear();   
                vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);                                     
                break;
             }
          }
-         
-   //      cout << "forbiddenNode: " << forbiddenNode << endl;                                                 
       }
       while(this->SafetyFromInside(tempGlobal,true) > 1E-5);     
       aNormal = tempRot;
