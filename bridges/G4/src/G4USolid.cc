@@ -130,6 +130,7 @@ G4double G4USolid::DistanceToOut(const G4ThreeVector& pt,
   
   G4double dist = fShape->DistanceToOut(p, v, n, *validNorm);
   norm->setX(n.x); norm->setY(n.y); norm->setZ(n.z);
+  if( dist > kInfinity ) dist = kInfinity;
   return dist;
 }
 
@@ -169,11 +170,16 @@ G4bool G4USolid::CalculateExtent(const EAxis pAxis,
     if(pAxis==kZAxis){eAxis=VUSolid::eZaxis;
        offset=pTransform.NetTranslation().z();}
     fShape->Extent(eAxis,pMin,pMax);
+<<<<<<< .mine
+   
+    if (pVoxelLimit.IsLimited())
+=======
 
     pMin += offset;
     pMax += offset;   
        
     if (pVoxelLimit.IsLimited())
+>>>>>>> .r193
     {
       switch (pAxis)
       {
