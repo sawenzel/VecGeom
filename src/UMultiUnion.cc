@@ -165,8 +165,8 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
             for(kIndex = -1 ; kIndex <= 1 ; kIndex +=2)
             {
                tempGlobal.Set(aPoint.x+iIndex*localTolerance,
-                             aPoint.y+jIndex*localTolerance,
-                             aPoint.z+kIndex*localTolerance);
+                              aPoint.y+jIndex*localTolerance,
+                              aPoint.z+kIndex*localTolerance);
                              
                vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
                
@@ -464,7 +464,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    UTransform3D *tempTransform = 0;
    UVector3 tempPointConv, tempRot, outcomeNormal;
    double tempSafety = UUtils::kInfinity;
-   int tempNodeSafety = 0;
+   int tempNodeSafety = -1;
    int searchNode;
    
    double normalTolerance = 1E-5;
@@ -529,6 +529,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    else
    {
       searchNode = SafetyFromOutsideNumberNode(aPoint,true);
+      cout << "searchNode: " << searchNode << endl;
       tempSolid = ((*fNodes)[searchNode])->fSolid;
       tempTransform = ((*fNodes)[searchNode])->fTransform;            
       tempPointConv = tempTransform->LocalPoint(aPoint);
@@ -672,9 +673,8 @@ void UMultiUnion::Voxelize()
 //______________________________________________________________________________
 int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccurate) const
 {
-   // Estimates the isotropic safety from a point outside the current solid to any 
-   // of its surfaces. The algorithm may be accurate or should provide a fast 
-   // underestimate.
+   // Method returning the closest node from a point located outside a UMultiUnion.
+   // This is used to compute the normal in the case no candidate has been found.
    
    int iIndex;
    int carNodes = fNodes->size();
