@@ -82,9 +82,9 @@ void UMultiUnion::ComputeBBox (UBBox */*aBox*/, bool /*aStore*/)
 
 //______________________________________________________________________________
 double UMultiUnion::DistanceToIn(const UVector3 &aPoint, 
-                          const UVector3 &aDirection, 
-                       // UVector3 &aNormal, 
-                          double aPstep) const
+                                 const UVector3 &aDirection, 
+                              // UVector3 &aNormal, 
+                                 double aPstep) const
 {
 // Computes distance from a point presumably outside the solid to the solid 
 // surface. Ignores first surface if the point is actually inside. Early return
@@ -117,7 +117,200 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
       if(temp < resultDistToIn) resultDistToIn = temp;
    }
    return resultDistToIn;
-}     
+}
+
+//______________________________________________________________________________
+double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint, 
+                                       const UVector3 &aDirection, 
+                                    // UVector3 &aNormal, 
+                                       double aPstep) const
+{
+   // This method should be the optimized method of "DistanceToIn". It uses
+   // voxelization techniques. Some tests have shown it works for many cases,
+   // but this method is not validated by ROOT bridge tests
+   // TO BE REVIEWED 
+
+   UVector3 direction = aDirection.Unit();       
+   int iIndex;
+   vector<int> vectorOutcome;     
+  
+   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   UVector3 tempGlobal, tempRot;
+   
+   int incDir[3], outcomeBinarySearch[3];
+   double invDir[3], distance[3];
+   double maxDistance = 0;
+   double minDistance = UUtils::kInfinity;
+   double distanceTemp = 0;
+   UVector3 newPoint, currentPoint;
+        
+   memset(incDir,0,3*sizeof(int));       
+   int carX = fVoxels->GetNumSlices(eXaxis);
+   int carY = fVoxels->GetNumSlices(eYaxis);
+   int carZ = fVoxels->GetNumSlices(eZaxis);   
+    
+   double* xBound = fVoxels->GetXSortedBoundaries();
+   double* yBound = fVoxels->GetYSortedBoundaries();
+   double* zBound = fVoxels->GetZSortedBoundaries();
+
+   currentPoint = aPoint;
+      
+   while((int)vectorOutcome.size() == 0)
+   {  
+      if(currentPoint.x < xBound[0] || currentPoint.y < yBound[0] || currentPoint.z < zBound[0] ||
+         currentPoint.x > xBound[carX - 1] || currentPoint.y > yBound[carY - 1] || currentPoint.z > zBound[carZ - 1])
+      {           
+         distance[0] = 0;
+         distance[1] = 0;
+         distance[2] = 0;
+             
+         // X axis   
+         invDir[0] = 1E30;
+         if(UUtils::Abs(direction.x) >= 1E-10)
+         {
+            incDir[0] = (direction.x > 0)?1:-1;
+            invDir[0] = 1/direction.x;
+         }         
+         outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);        
+        
+         if( ((outcomeBinarySearch[0] <= 0) && (incDir[0] < 0)) ||
+             ((outcomeBinarySearch[0] == (carX - 1)) && (incDir[0] > 0)))
+         {
+            return UUtils::kInfinity;
+         }
+
+         // Y axis
+         invDir[1] = 1E30;
+         if(UUtils::Abs(direction.y) >= 1E-10)
+         {
+            incDir[1] = (direction.y > 0)?1:-1;
+            invDir[1] = 1/direction.y;
+         }
+         outcomeBinarySearch[1] = fVoxels->OutcomeBinarySearch(currentPoint.y,eYaxis);
+   
+         if( ((outcomeBinarySearch[1] <= 0) && (incDir[1] < 0)) ||
+             ((outcomeBinarySearch[1] == (carY - 1)) && (incDir[1] > 0)) )
+         {
+            return UUtils::kInfinity;
+         }
+
+         // Z axis      
+         invDir[2] = 1E30;
+         if(UUtils::Abs(direction.z) >= 1E-10)
+         {
+            incDir[2] = (direction.z > 0)?1:-1;
+            invDir[2] = 1/direction.z;
+         }      
+         outcomeBinarySearch[2] = fVoxels->OutcomeBinarySearch(currentPoint.z,eZaxis);            
+
+         if( ((outcomeBinarySearch[2] <= 0) && (incDir[2] < 0)) ||
+             ((outcomeBinarySearch[2] == (carZ - 1)) && (incDir[2] > 0)) )
+         {
+            return UUtils::kInfinity;
+         }
+        
+         // Looking for the first voxel on the considered direction   
+         if((currentPoint.x < xBound[0]) && incDir[0] == 1)
+         {
+            distance[0] = (xBound[0] - currentPoint.x)*invDir[0];
+         }
+         else if((currentPoint.x > xBound[carX - 1]) && incDir[0] == -1)
+         {
+            distance[0] = (xBound[carX - 1] - currentPoint.x)*invDir[0];         
+         }
+            
+         if((currentPoint.y < yBound[0]) && incDir[1] == 1)
+         {
+            distance[1] = (yBound[0] - currentPoint.y)*invDir[1];
+         }
+         else if((currentPoint.y > yBound[carY - 1]) && incDir[1] == -1)
+         {
+            distance[1] = (yBound[carY - 1] - currentPoint.y)*invDir[1];         
+         }      
+      
+         if((currentPoint.z < zBound[0]) && incDir[2] == 1)
+         {
+            distance[2] = (zBound[0] - currentPoint.z)*invDir[2];
+         }
+         else if((currentPoint.z > zBound[carZ - 1]) && incDir[2] == -1)
+         {
+            distance[2] = (zBound[carZ - 1] - currentPoint.z)*invDir[2];         
+         }                  
+   
+         // Computing the max
+         for(iIndex = 0 ; iIndex < 3 ; iIndex++)
+         {
+            if(distance[iIndex] > maxDistance) maxDistance = distance[iIndex];
+         }                        
+            
+         newPoint.Set(currentPoint.x+direction.x*maxDistance,
+                      currentPoint.y+direction.y*maxDistance,
+                      currentPoint.z+direction.z*maxDistance);
+                       
+         cout << "newPoint: [" << newPoint.x << " , " << newPoint.y << " , " << newPoint.z << "]" << endl;
+         
+         currentPoint = newPoint;
+         distanceTemp += maxDistance;
+         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);                
+      }
+      else
+      {            
+         outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);    
+         outcomeBinarySearch[1] = fVoxels->OutcomeBinarySearch(currentPoint.y,eYaxis);    
+         outcomeBinarySearch[2] = fVoxels->OutcomeBinarySearch(currentPoint.z,eZaxis);                     
+   
+         distance[0] = UUtils::kInfinity;
+         distance[1] = UUtils::kInfinity;
+         distance[2] = UUtils::kInfinity;                  
+         
+         if(incDir[0] == 1 && outcomeBinarySearch[0] != carX - 1)
+         {
+            distance[0] = (xBound[outcomeBinarySearch[0]+1] - currentPoint.x)*invDir[0];
+         }
+         else if(incDir[0] == -1 && outcomeBinarySearch[0] != 0)
+         {
+            distance[0] = (xBound[outcomeBinarySearch[0]-1] - currentPoint.x)*invDir[0];         
+         }
+     
+         if(incDir[1] == 1 && outcomeBinarySearch[1] != carY - 1)
+         {
+            distance[1] = (yBound[outcomeBinarySearch[1]+1] - currentPoint.y)*invDir[1];
+         }
+         else if(incDir[1] == -1 && outcomeBinarySearch[1] != 0)
+         {
+            distance[1] = (yBound[outcomeBinarySearch[1]-1] - currentPoint.y)*invDir[1];         
+         }     
+         
+         if(incDir[2] == 1 && outcomeBinarySearch[2] != carZ - 1)
+         {
+            distance[2] = (yBound[outcomeBinarySearch[2]+1] - currentPoint.z)*invDir[2];
+         }
+         else if(incDir[2] == -1 && outcomeBinarySearch[2] != 0)
+         {
+            distance[2] = (xBound[outcomeBinarySearch[2]-1] - currentPoint.z)*invDir[2];         
+         }
+   
+         // Computing the min
+         for(iIndex = 0 ; iIndex < 3 ; iIndex++)
+         {
+            if(distance[iIndex] < minDistance) minDistance = distance[iIndex];
+         }
+    
+         newPoint.Set(currentPoint.x+direction.x*minDistance,
+                      currentPoint.y+direction.y*minDistance,
+                      currentPoint.z+direction.z*minDistance);
+                      
+         cout << "newPoint2: [" << newPoint.x << " , " << newPoint.y << " , " << newPoint.z << "]" << endl; 
+         
+         currentPoint = newPoint;
+         distanceTemp += minDistance;         
+         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);                         
+      }                           
+   }
+   while((int)vectorOutcome.size() == 0);   
+   return distanceTemp;      
+
+}
 
 //______________________________________________________________________________
 double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirection,
@@ -156,6 +349,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
    vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
    UVector3 tempGlobal, tempRot, pointTemp;
 
+   // For the normal case for which the point is inside, after "else if" statement
    if((int)vectorOutcome.size() == 0)
    {
       for(iIndex = -1 ; iIndex <= 1 ; iIndex +=2)
@@ -220,7 +414,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
       }
       return 0;     
    }
-   else if((int)vectorOutcome.size() != 0)
+   else
    { 
       tempGlobal = aPoint;
            

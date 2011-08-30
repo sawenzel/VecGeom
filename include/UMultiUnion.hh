@@ -93,6 +93,10 @@ public:
    void                         Voxelize();
    EnumInside                   InsideDummy(const UVector3 &aPoint) const;
    int                          SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccurate) const;
+   double                       DistanceToInVoxels(const UVector3 &aPoint, 
+                                                   const UVector3 &aDirection, 
+                                                // UVector3 &aNormal, 
+                                                   double aPstep) const;  
       
    virtual void GetParametersList(int aNumber,double *aArray) const {}
    virtual UPolyhedron* GetPolyhedron() const {}   
