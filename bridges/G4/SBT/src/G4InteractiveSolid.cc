@@ -39,6 +39,7 @@
 #include "G4UIcmdPargListDouble.hh"
 
 #include "UBox.hh"
+#include "UOrb.hh"
 #include "G4USolid.hh"
 #include "VUSolid.hh"
 #include "UVector3.hh"
@@ -114,6 +115,13 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	G4String uboxPath = prefix+"UBox";
 	uboxCmd = new G4UIcmdWithPargs( uboxPath, this, boxArgs, 3 );
 	uboxCmd->SetGuidance( "Declare a UBox solid" );
+
+	// Declare UOrb
+	//
+	uorbArgs[0] = new G4UIcmdPargDouble( "r", 1.0, m );
+	G4String uorbPath = prefix+"UOrb";
+	uorbCmd = new G4UIcmdWithPargs( uorbPath, this, uorbArgs, 1 );
+	uorbCmd->SetGuidance( "Declare a UOrb solid" );
 
 	//
 	// Declare G4Cons
@@ -477,6 +485,9 @@ G4InteractiveSolid::~G4InteractiveSolid()
        	delete uboxCmd;
 	DeleteArgArray( uboxArgs,       sizeof(      uboxArgs)/sizeof(G4UIcmdParg**) );
 
+       	delete uorbCmd;
+	DeleteArgArray( uorbArgs,       sizeof(      uorbArgs)/sizeof(G4UIcmdParg**) );
+
 	delete consCmd;
 	DeleteArgArray( consArgs,      sizeof(     consArgs)/sizeof(G4UIcmdParg**) );
 
@@ -602,6 +613,24 @@ void G4InteractiveSolid::MakeMeAUBox( G4String values )
 	else
 		G4cerr << "UBox not created" << G4endl;
 }
+
+// MakeMeAUOrb
+//
+void G4InteractiveSolid::MakeMeAUOrb( G4String values )
+{
+	if (uorbCmd->GetArguments( values )) {
+		delete solid;
+		
+		G4UIcmdPargDouble *rArg = (G4UIcmdPargDouble *)uorbArgs[0];
+	
+        VUSolid* tmp=new UOrb( "interactiveUOrb", rArg->GetValue()*1000);
+	
+		solid = new G4USolid("interactiveUOrb", tmp);
+	}
+	else
+		G4cerr << "UBox not created" << G4endl;
+}
+
 //
 // MakeMeACons
 //
@@ -1511,8 +1540,10 @@ void G4InteractiveSolid::SetNewValue( G4UIcommand *command, G4String newValues )
 
 	if (command == boxCmd) 
 		MakeMeABox( newValues );
-        else if (command == uboxCmd) 
+    else if (command == uboxCmd) 
 		MakeMeAUBox( newValues );
+    else if (command == uorbCmd) 
+		MakeMeAUOrb( newValues );
 	else if (command == consCmd) 
 		MakeMeACons( newValues );
 	else if (command == orbCmd) 
@@ -1582,8 +1613,10 @@ G4String G4InteractiveSolid::GetCurrentValue( G4UIcommand *command )
 {
 	if (command == boxCmd) 
 		return ConvertArgsToString( 	   boxArgs, sizeof(	 boxArgs)/sizeof(G4UIcmdParg**) );
-        else if (command == uboxCmd) 
+    else if (command == uboxCmd) 
 		return ConvertArgsToString( 	   uboxArgs, sizeof(	 uboxArgs)/sizeof(G4UIcmdParg**) );
+    else if (command == uorbCmd) 
+		return ConvertArgsToString( 	   uorbArgs, sizeof(	 uorbArgs)/sizeof(G4UIcmdParg**) );
 	else if (command == consCmd)
 		return ConvertArgsToString( 	  consArgs, sizeof(	consArgs)/sizeof(G4UIcmdParg**) );
 	else if (command == orbCmd)
