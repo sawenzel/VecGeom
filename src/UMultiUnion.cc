@@ -529,7 +529,6 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
    else
    {
       searchNode = SafetyFromOutsideNumberNode(aPoint,true);
-      cout << "searchNode: " << searchNode << endl;
       tempSolid = ((*fNodes)[searchNode])->fSolid;
       tempTransform = ((*fNodes)[searchNode])->fTransform;            
       tempPointConv = tempTransform->LocalPoint(aPoint);

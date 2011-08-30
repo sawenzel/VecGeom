@@ -131,7 +131,7 @@ void TestMultiUnion()
    printf("[> END\n");
 }
 */
-
+/*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
 {
@@ -260,8 +260,8 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
+*/
 
-/*
 // Test through bridge classes:
 void TestMultiUnion()
 {
@@ -310,4 +310,4 @@ void TestMultiUnion()
    printf("MultiUnion:\n");
    shape->CheckShape(3,200);
 }
-*/
+
