@@ -28,6 +28,7 @@ enum EAxisType { eXaxis, eYaxis, eZaxis };
 
 protected:
 static double     fgTolerance;
+static double     frTolerance;
 
 public:
   VUSolid();

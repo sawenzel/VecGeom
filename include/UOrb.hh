@@ -7,13 +7,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef USOLIDS_VUSolid
 #include "VUSolid.hh"
-#endif
-
-#ifndef USOLIDS_UUtils
 #include "UUtils.hh"
-#endif
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -52,6 +47,10 @@ public:
    virtual VUSolid* Clone() const {return 0;}
    virtual UGeometryType GetEntityType() const { return "UOrb";}
    virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) {}
+
+  //G4Visualisation
+   virtual void GetParametersList(int aNumber,double *aArray) const{} 
+   virtual UPolyhedron* GetPolyhedron() const{return 0;}
    
 private:  
     double fR;
