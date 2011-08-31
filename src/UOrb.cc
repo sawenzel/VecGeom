@@ -108,7 +108,7 @@ double UOrb::DistanceToIn(const UVector3 &p,
   if( rad > fR-fRTolerance ) // not inside in terms of Inside(p)
   {
 	  double fRTolerance2 = 2*fRTolerance;
-    if ( c > fRTolerance2*fR ) // TODO: check if two is really needed
+    if ( c > fRTolerance2*fR ) // TODO: check if 2* is really needed
     {
       // If outside tolerant boundary of outer G4Orb in terms of c
       // [ should be std::sqrt(rad2) - fR > fRTolerance*0.5 ]
@@ -136,7 +136,7 @@ double UOrb::DistanceToIn(const UVector3 &p,
     }
     else // not outside in terms of c
     {
-      if ( c > -fRTolerance2*fR )  // on surface   TODO: check if two is really needed
+      if ( c > -fRTolerance2*fR )  // on surface   TODO: check if 2* is really needed
       {
         d2 = pDotV3d*pDotV3d - c;             
         if ( (d2 < fRTolerance2*fR) || (pDotV3d >= 0) ) // pDotV3d = cos si >= 0
@@ -223,7 +223,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
                                                   // not re-entering
 												  // if (d2 < 0) => it means the point is already outside
       {
-        // if(calcNorm) // TODO: we do not have this variable, calcNorm is true always
+        // if(calcNorm) // NOTE: we do not have this variable, calcNorm is true always
         {
 //          *validNorm = true; // NOTE: we do not have this variable, probably always true
           n = UVector3(p.x/fR,p.y/fR,p.z/fR);
@@ -243,12 +243,9 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
   }
   else // p is outside ???
   {
-	  /****
-	  TODO: 
     std::cout.precision(16);
     std::cout << std::endl;
-    DumpInfo();
-	*/
+//    DumpInfo();
     std::cout << "Position:"  << std::endl << std::endl;
     std::cout << "p.x() = "   << p.x << std::endl;
     std::cout << "p.y() = "   << p.y << std::endl;
@@ -269,7 +266,6 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
   }
   
   // if (calcNorm)    // Output switch operator
-  // TODO: WHY IT WAS HERE, what does have calcNorm with switch operator???
   {
     if ( notOutside )
     {
@@ -280,24 +276,21 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 	}
 	else
 	{
-		  /****  TODO: rewrite
         std::cout.precision(16);
         std::cout << std::endl;
-        DumpInfo();
+//        DumpInfo();
         std::cout << "Position:"  << std::endl << std::endl;
-        std::cout << "p.x() = "   << p.x()/mm << " mm" << std::endl;
-        std::cout << "p.y() = "   << p.y()/mm << " mm" << std::endl;
-        std::cout << "p.z() = "   << p.z()/mm << " mm" << std::endl << std::endl;
+        std::cout << "p.x() = "   << p.x << " mm" << std::endl;
+        std::cout << "p.y() = "   << p.y << " mm" << std::endl;
+        std::cout << "p.z() = "   << p.z << " mm" << std::endl << std::endl;
         std::cout << "Direction:" << std::endl << std::endl;
-        std::cout << "v.x() = "   << v.x() << std::endl;
-        std::cout << "v.y() = "   << v.y() << std::endl;
-        std::cout << "v.z() = "   << v.z() << std::endl << std::endl;
+        std::cout << "v.x() = "   << v.x << std::endl;
+        std::cout << "v.y() = "   << v.y << std::endl;
+        std::cout << "v.z() = "   << v.z << std::endl << std::endl;
         std::cout << "Proposed distance :" << std::endl << std::endl;
-        std::cout << "snxt = "    << snxt/mm << " mm" << std::endl << std::endl;
+        std::cout << "snxt = "    << snxt << " mm" << std::endl << std::endl;
         std::cout.precision(6);
-        G4Exception("G4Orb::DistanceToOut(p,v,..)","Notification",JustWarning,
-                    "Undefined side for valid surface normal to solid.");
-		****/
+//        G4Exception("G4Orb::DistanceToOut(p,v,..)","Notification",JustWarning, "Undefined side for valid surface normal to solid.");
     }
   }
   return snxt;
@@ -390,7 +383,6 @@ bool UOrb::Normal( const UVector3& p, UVector3 &n)
 	double tolRMaxM = fR - fRTolerance;
 
 	// Check radial surface
-	// TODO: check if really to use rad2 instead of rad
 	bool result = (( rad2 <= tolRMaxP*tolRMaxP ) && ( rad2 >= tolRMaxM*tolRMaxM)); // means we are on surface
 	return result;
 }
