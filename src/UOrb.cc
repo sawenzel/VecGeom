@@ -12,20 +12,18 @@
 UOrb::UOrb(const char *name, double r)
      :VUSolid(name), fR(r)
 {
-  const double fEpsilon = 2.e-11;  // relative tolerance of fR
-  double fGTolerance = VUSolid::fgTolerance; // cartesian tolerance
-  // TODO: not use local vars as f*
+  const double epsilon = 2.e-11;  // relative tolerance of fR
 
   // Check radius
   //
-  if ( r < 10*fGTolerance )
+  if ( r < 10*VUSolid::fgTolerance ) // cartesian tolerance
   {
 	// TODO: introduce exceptions in library
 
     /// G4Exception("G4Orb::G4Orb()", "InvalidSetup", FatalException, "Invalid radius > 10*kCarTolerance.");
   }
   // fRTolerance is radial tolerance (note: half of G4 tolerance)
-  fRTolerance =  std::max( VUSolid::frTolerance, fEpsilon*r);
+  fRTolerance =  std::max( VUSolid::frTolerance, epsilon*r);
 }
 
 //______________________________________________________________________________
@@ -48,13 +46,13 @@ VUSolid::EnumInside UOrb::Inside(const UVector3 &p) const
   double tolRMax = fR - fRTolerance;
 
   // Check radial surface
-  // TODO: check if really to use rad2 instead of rad
-  if ( rad2 <= tolRMax*tolRMax )  
+  double tolRMax2 = tolRMax*tolRMax;
+  if ( rad2 <= tolRMax2)  
 	  return eInside; 
   else
   {
     tolRMax = fR + fRTolerance;
-    if ( rad2 <= tolRMax*tolRMax)
+    if ( rad2 <= tolRMax2)
 		return eSurface;
     else
 		return eOutside;
@@ -200,7 +198,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
   //
   // => s=-pDotV3d+-std::sqrt(pDotV3d^2-(rad2-R^2))
   
-  const double  rPlus = fR + fRTolerance;
+  const double rPlus = fR + fRTolerance;
   double rad = std::sqrt(rad2);
 
   if ( rad <= rPlus )
@@ -384,17 +382,17 @@ double UOrb::SafetyFromOutside ( const UVector3 p, bool aAccurate) const
 bool UOrb::Normal( const UVector3& p, UVector3 &n)
 {
 	double rad2 = p.x*p.x+p.y*p.y+p.z*p.z;
-  double rad = std::sqrt(rad2);
+	double rad = std::sqrt(rad2);
 
-  n = UVector3(p.x/rad,p.y/rad,p.z/rad);
+	n = UVector3(p.x/rad,p.y/rad,p.z/rad);
 
-  double tolRMaxP = fR + fRTolerance;
-  double tolRMaxM = fR - fRTolerance;
+	double tolRMaxP = fR + fRTolerance;
+	double tolRMaxM = fR - fRTolerance;
 
-  // Check radial surface
-  // TODO: check if really to use rad2 instead of rad
-  bool result = (( rad2 <= tolRMaxP*tolRMaxP ) && ( rad2 >= tolRMaxM*tolRMaxM)); // means we are on surface
-  return result;
+	// Check radial surface
+	// TODO: check if really to use rad2 instead of rad
+	bool result = (( rad2 <= tolRMaxP*tolRMaxP ) && ( rad2 >= tolRMaxM*tolRMaxM)); // means we are on surface
+	return result;
 }
 
    
