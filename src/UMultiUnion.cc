@@ -144,7 +144,9 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
    double distanceTemp = 0;
    UVector3 newPoint, currentPoint;
         
-   memset(incDir,0,3*sizeof(int));       
+   incDir[0] = 0;      
+   incDir[1] = 0;
+   incDir[2] = 0;      
    int carX = fVoxels->GetNumSlices(eXaxis);
    int carY = fVoxels->GetNumSlices(eYaxis);
    int carZ = fVoxels->GetNumSlices(eZaxis);   
