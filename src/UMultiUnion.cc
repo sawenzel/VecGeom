@@ -388,10 +388,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                            tempGlobal = tempTransform->GlobalPoint(tempPointConv+tempDist*tempDirConv);                                          
             
                            // Treatment of Normal
-                           tempRot = tempTransform->GlobalVector(tempNormal);
-            
-                           vectorOutcome.clear();   
-                           vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
+                           tempRot = tempTransform->GlobalVector(tempNormal);     
                
                            if(this->Inside(tempGlobal) != eInside)
                            {
@@ -441,9 +438,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 
                // Treatment of Normal
                tempRot = tempTransform->GlobalVector(tempNormal);
-
-               vectorOutcome.clear();   
-               vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
                
                if(this->Inside(tempGlobal) != eInside)
                {
