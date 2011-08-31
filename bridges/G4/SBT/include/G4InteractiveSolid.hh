@@ -78,7 +78,11 @@ protected:
   G4UIcmdParg		*uboxArgs[3];
   G4UIcmdWithPargs	*uboxCmd;
   void MakeMeAUBox( G4String values );
-	
+
+  G4UIcmdParg		*uorbArgs[3];
+  G4UIcmdWithPargs	*uorbCmd;
+  void MakeMeAUOrb( G4String values );
+
   G4UIcmdParg		*consArgs[7];
   G4UIcmdWithPargs	*consCmd;
   void MakeMeACons( G4String values );
