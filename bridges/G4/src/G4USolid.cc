@@ -169,17 +169,12 @@ G4bool G4USolid::CalculateExtent(const EAxis pAxis,
        offset=pTransform.NetTranslation().y();}
     if(pAxis==kZAxis){eAxis=VUSolid::eZaxis;
        offset=pTransform.NetTranslation().z();}
-    fShape->Extent(eAxis,pMin,pMax);
-<<<<<<< .mine
-   
-    if (pVoxelLimit.IsLimited())
-=======
+    fShape->Extent(eAxis,pMin,pMax);  
 
     pMin += offset;
     pMax += offset;   
        
     if (pVoxelLimit.IsLimited())
->>>>>>> .r193
     {
       switch (pAxis)
       {
