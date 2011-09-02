@@ -1,13 +1,23 @@
-////////////////////////////////////////////////////////////////////////////////
-//
-//  A simple Orb defined by half-lengths on the three axis. The center of the
-//  Orb matches the origin of the local reference frame.  
-//
-////////////////////////////////////////////////////////////////////////////////
+/**
+* @file
+* @author  John Doe <jdoe@example.com>
+* @version 0.1
+*
+* @section LICENSE
+*
+* @section DESCRIPTION
+*
+* A simple Orb defined by half-lengths on the three axis. The center of the Orb matches the origin of the local reference frame.
+*/
+
 #include "UOrb.hh"
 
 #include <iostream>
 #include "UUtils.hh"
+
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 //______________________________________________________________________________
 UOrb::UOrb(const char *name, double r)
      :VUSolid(name), fR(r)
@@ -22,21 +32,21 @@ UOrb::UOrb(const char *name, double r)
 
     /// G4Exception("G4Orb::G4Orb()", "InvalidSetup", FatalException, "Invalid radius > 10*kCarTolerance.");
   }
-  // fRTolerance is radial tolerance (note: half of G4 tolerance)
+  // VUSolid::fRTolerance is radial tolerance (note: half of G4 tolerance)
   fRTolerance =  std::max( VUSolid::frTolerance, epsilon*r);
 }
 
 //______________________________________________________________________________
-///////////////////////////////////////////////////////////////////////////
-//
-// Return whether point inside/outside/on surface
-// Split into radius checks
-// 
-// Classify point location with respect to solid:
-//  o eInside       - inside the solid
-//  o eSurface      - close to surface within tolerance
-//  o eOutside      - outside the solid
-
+/**
+*
+* Return whether point inside/outside/on surface
+* Split into radius checks
+* 
+* Classify point location with respect to solid:
+*  o eInside       - inside the solid
+*  o eSurface      - close to surface within tolerance
+*  o eOutside      - outside the solid
+*/
 // ok
 VUSolid::EnumInside UOrb::Inside(const UVector3 &p) const
 {
@@ -60,13 +70,14 @@ VUSolid::EnumInside UOrb::Inside(const UVector3 &p) const
 }
 
 
-// Computes distance from a point presumably outside the solid to the solid 
-// surface. Ignores first surface if the point is actually inside. Early return
-// infinity in case the safety to any surface is found greater than the proposed
-// step aPstep.
-// The normal vector to the crossed surface is filled only in case the Orb is 
-// crossed, otherwise aNormal.IsNull() is true.
-//______________________________________________________________________________
+/*
+* Computes distance from a point presumably outside the solid to the solid 
+* surface. Ignores first surface if the point is actually inside. Early return
+* infinity in case the safety to any surface is found greater than the proposed
+* step aPstep.
+* The normal vector to the crossed surface is filled only in case the Orb is 
+* crossed, otherwise aNormal.IsNull() is true.
+*/
 double UOrb::DistanceToIn(const UVector3 &p, 
                           const UVector3 &v, 
 //                          UVector3 &aNormal, 
@@ -160,17 +171,18 @@ double UOrb::DistanceToIn(const UVector3 &p,
   return snxt;
 }
 
-//______________________________________________________________________________
+/*
+* Computes distance from a point presumably intside the solid to the solid 
+* surface. Ignores first surface along each axis systematically (for points
+* inside or outside. Early returns zero in case the second surface is behind
+* the starting point.
+* o The proposed step is ignored.
+* o The normal vector to the crossed surface is always filled.
+* ______________________________________________________________________________
+*/
 double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			       UVector3 &n, bool &convex, double /*aPstep*/) const
 {
-// Computes distance from a point presumably intside the solid to the solid 
-// surface. Ignores first surface along each axis systematically (for points
-// inside or outside. Early returns zero in case the second surface is behind
-// the starting point.
-// o The proposed step is ignored.
-// o The normal vector to the crossed surface is always filled.
-
   double snxt = 0;     // snxt: distance to next surface, is default return value 
   bool notOutside = false;
   convex = true; // orb is always convex, if we leave surface of Orb, we will neber bump on the orb again ...
@@ -296,13 +308,15 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
   return snxt;
 }
 
-// Estimates the isotropic safety from a point inside the current solid to any 
-// of its surfaces. The algorithm may be accurate or should provide a fast 
-// underestimate.
-//______________________________________________________________________________
-// Note: In geant4, these methods are DistanceToOut, without given direction
-// Note: ??? Should not Return 0 anymore if point outside, just the value
-// OK
+/*
+* Estimates the isotropic safety from a point inside the current solid to any 
+* of its surfaces. The algorithm may be accurate or should provide a fast 
+* underestimate.
+* ______________________________________________________________________________
+* Note: In geant4, these methods are DistanceToOut, without given direction
+* Note: ??? Should not Return 0 anymore if point outside, just the value
+* OK
+*/
 double UOrb::SafetyFromInside ( const UVector3 p, bool /*aAccurate*/) const
 {
 
@@ -334,17 +348,18 @@ double UOrb::SafetyFromInside ( const UVector3 p, bool /*aAccurate*/) const
 }
 
 
-// Estimates the isotropic safety from a point outside the current solid to any 
-// of its surfaces. The algorithm may be accurate or should provide a fast 
-// underestimate.
-// Note: In geant4, this method is equivalent to DistanceToIn, without given direction
-//______________________________________________________________________________
-//////////////////////////////////////////////////////////////////////
-//
-// Calculate distance (<= actual) to closest surface of shape from outside
-// - Calculate distance to radial plane
-// - Return 0 if point inside
-// OK
+/*
+* Estimates the isotropic safety from a point outside the current solid to any 
+* of its surfaces. The algorithm may be accurate or should provide a fast 
+* underestimate.
+* Note: In geant4, this method is equivalent to DistanceToIn, without given direction
+* ______________________________________________________________________________
+*
+* Calculate distance (<= actual) to closest surface of shape from outside
+* - Calculate distance to radial plane
+* - Return 0 if point inside
+* OK
+*/
 double UOrb::SafetyFromOutside ( const UVector3 p, bool aAccurate) const
 {
     double safe = 0.0;
@@ -355,23 +370,21 @@ double UOrb::SafetyFromOutside ( const UVector3 p, bool aAccurate) const
 }
 
 
-/////////////////////////////////////////////////////////////////////
-//
-// Return unit normal of surface closest to p
-//______________________________________________________________________________
-// 
-// From http://lists.trolltech.com/qt-interest/2002-09/thread01124-0.html :
-//> does anybody here have an algorithm to calculate the normal vector in a
-//> given point in space (x, y, z) in a sphere? I know that it's not about qt
-//> but i'll like very mutch the help.
-// It's simply the connecting vector from the centre of the sphere to the point 
-// (other way around for inward normals) obtained through vector subtraction, 
-// normalized to unity.
-//
-// You really should get an algebra book though, as you are bound to encounter 
-// more of these problems in a 3d application.
-//
-// OK
+/**
+*
+* Return unit normal of surface closest to p
+* 
+* From http://lists.trolltech.com/qt-interest/2002-09/thread01124-0.html :
+* > does anybody here have an algorithm to calculate the normal vector in a
+* > given point in space (x, y, z) in a sphere? I know that it's not about qt
+* > but i'll like very mutch the help.
+*  It's simply the connecting vector from the centre of the sphere to the point 
+*  (other way around for inward normals) obtained through vector subtraction, 
+*  normalized to unity.
+* 
+*  You really should get an algebra book though, as you are bound to encounter 
+*  more of these problems in a 3d application.
+*/
 bool UOrb::Normal( const UVector3& p, UVector3 &n)
 {
 	double rad2 = p.x*p.x+p.y*p.y+p.z*p.z;
@@ -388,9 +401,10 @@ bool UOrb::Normal( const UVector3& p, UVector3 &n)
 }
 
    
-// Returns extent of the solid along a given cartesian axis
-// OK
-//______________________________________________________________________________
+/**
+* Returns extent of the solid along a given cartesian axis
+* OK
+*/
 void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax )
 {
 	switch (aAxis)
@@ -405,11 +419,22 @@ void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax )
    }      
 }            
 
-// Returns the full 3D cartesian extent of the solid.
-// OK
-//______________________________________________________________________________
+/**
+* Returns the full 3D cartesian extent of the solid.
+* OK
+*/
 void UOrb::Extent ( double aMin[3], double aMax[3] )
 {
    aMin[0] = aMin[1] = aMin[2] = -fR;
    aMax[0] = aMax[1] = aMax[2] = fR;
+}
+
+double UOrb::Capacity() 
+{
+	return (4*M_PI/3)*fR*fR*fR;
+}
+
+double UOrb::SurfaceArea()
+{
+	return (4*M_PI)*fR*fR;
 }
