@@ -79,9 +79,13 @@ protected:
   G4UIcmdWithPargs	*uboxCmd;
   void MakeMeAUBox( G4String values );
 
-  G4UIcmdParg		*uorbArgs[3];
+  G4UIcmdParg		*uorbArgs[1];
   G4UIcmdWithPargs	*uorbCmd;
   void MakeMeAUOrb( G4String values );
+
+  G4UIcmdParg		*utrdArgs[5];
+  G4UIcmdWithPargs	*utrdCmd;
+  void MakeMeAUTrd( G4String values );
 
   G4UIcmdParg		*consArgs[7];
   G4UIcmdWithPargs	*consCmd;
@@ -131,7 +135,8 @@ protected:
   G4UIcmdWithPargs	*elConeCmd;
   void MakeMeAnEllipticalCone( G4String values );
 	
-  G4UIcmdParg		*elTubeArgs[6];
+  // NEW: *elTubeArgs[6] was causing crash, changed to *elTubeArgs[3]
+  G4UIcmdParg		*elTubeArgs[3];
   G4UIcmdWithPargs	*elTubeCmd;
   void MakeMeAnEllipticalTube( G4String values );
 
