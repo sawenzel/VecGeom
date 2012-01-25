@@ -41,15 +41,14 @@ double UMultiUnion::Capacity()
    // Capacity computes the cubic volume of the "UMultiUnion" structure using random points
 
    // Random initialization:
-   srand(time(NULL));
+   srand((unsigned int)time(NULL));
 
-   double* extentMin = new double[3];
-   double* extentMax = new double[3];
+   double extentMin[3], extentMax[3];
    UVector3 tempPoint;
    double dX, dY, dZ, oX, oY, oZ;
    int iGenerated = 0, iInside = 0;
    
-   this->Extent(extentMin,extentMax);
+   Extent(extentMin,extentMax);
 
    dX = (extentMax[0] - extentMin[0])/2;
    dY = (extentMax[1] - extentMin[1])/2;
@@ -61,20 +60,20 @@ double UMultiUnion::Capacity()
    
    double vbox = (2*dX)*(2*dY)*(2*dZ);
    
-   while(iInside < 100000)
+   while (iInside < 100000)
    {
       tempPoint.Set(oX - dX + 2*dX*(rand()/(double)RAND_MAX),
                     oY - dY + 2*dY*(rand()/(double)RAND_MAX),
                     oZ - dZ + 2*dZ*(rand()/(double)RAND_MAX));
       iGenerated++;
-      if(this->Inside(tempPoint) != eOutside) iInside++;
+      if(Inside(tempPoint) != eOutside) iInside++;
    }
    double capacity = iInside*vbox/iGenerated;
    return capacity;      
 }
 
 //______________________________________________________________________________
-void UMultiUnion::ComputeBBox (UBBox */*aBox*/, bool /*aStore*/)
+void UMultiUnion::ComputeBBox (UBBox * /*aBox*/, bool /*aStore*/)
 {
 // Computes bounding box.
    cout << "ComputeBBox - Not implemented" << endl;
@@ -94,26 +93,23 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 // crossed, otherwise aNormal.IsNull() is true.
 
    UVector3 direction = aDirection.Unit();   
-   int iIndex;
    int carNodes = fNodes->size();
    
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;     
  
-   double resultDistToIn = UUtils::kInfinity;
-   double temp;     
-   
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   double resultDistToIn = UUtils::kInfinity;   
+   for(int i = 0 ; i < carNodes ; i++)
    {
       UVector3 tempPointConv, tempDirConv;      
    
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
+      tempSolid = ((*fNodes)[i])->fSolid;
+      tempTransform = ((*fNodes)[i])->fTransform;
       
       tempPointConv = tempTransform->LocalPoint(aPoint);
       tempDirConv = tempTransform->LocalVector(direction);                 
          
-      temp = tempSolid->DistanceToIn(tempPointConv, tempDirConv, aPstep);         
+      double temp = tempSolid->DistanceToIn(tempPointConv, tempDirConv, aPstep);         
       if(temp < resultDistToIn) resultDistToIn = temp;
    }
    return resultDistToIn;
@@ -131,10 +127,9 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
    // TO BE REVIEWED 
 
    UVector3 direction = aDirection.Unit();       
-   int iIndex;
    vector<int> vectorOutcome;     
   
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   fVoxels->GetCandidatesVoxelArray(aPoint, vectorOutcome);
    UVector3 tempGlobal, tempRot;
    
    int incDir[3], outcomeBinarySearch[3];
@@ -144,9 +139,7 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
    double distanceTemp = 0;
    UVector3 newPoint, currentPoint;
         
-   incDir[0] = 0;      
-   incDir[1] = 0;
-   incDir[2] = 0;      
+   incDir[0] = incDir[1] = incDir[2] = 0;      
    int carX = fVoxels->GetNumSlices(eXaxis);
    int carY = fVoxels->GetNumSlices(eYaxis);
    int carZ = fVoxels->GetNumSlices(eZaxis);   
@@ -156,24 +149,21 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
    double* zBound = fVoxels->GetZSortedBoundaries();
 
    currentPoint = aPoint;
-      
-   while((int)vectorOutcome.size() == 0)
+	while(vectorOutcome.size() == 0)
    {  
       if(currentPoint.x < xBound[0] || currentPoint.y < yBound[0] || currentPoint.z < zBound[0] ||
          currentPoint.x > xBound[carX - 1] || currentPoint.y > yBound[carY - 1] || currentPoint.z > zBound[carZ - 1])
       {           
-         distance[0] = 0;
-         distance[1] = 0;
-         distance[2] = 0;
+         distance[0] = distance[1] = distance[2] = 0;
              
          // X axis   
-         invDir[0] = 1E30;
-         if(UUtils::Abs(direction.x) >= 1E-10)
+         invDir[0] = 1e30;
+         if(std::abs(direction.x) >= 1e-10)
          {
-            incDir[0] = (direction.x > 0)?1:-1;
+            incDir[0] = (direction.x > 0) ? 1 : -1;
             invDir[0] = 1/direction.x;
          }         
-         outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);        
+         outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);
         
          if( ((outcomeBinarySearch[0] <= 0) && (incDir[0] < 0)) ||
              ((outcomeBinarySearch[0] == (carX - 1)) && (incDir[0] > 0)))
@@ -182,8 +172,8 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
          }
 
          // Y axis
-         invDir[1] = 1E30;
-         if(UUtils::Abs(direction.y) >= 1E-10)
+         invDir[1] = 1e30;
+         if(std::abs(direction.y) >= 1e-10)
          {
             incDir[1] = (direction.y > 0)?1:-1;
             invDir[1] = 1/direction.y;
@@ -197,8 +187,8 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
          }
 
          // Z axis      
-         invDir[2] = 1E30;
-         if(UUtils::Abs(direction.z) >= 1E-10)
+         invDir[2] = 1e30;
+         if(std::abs(direction.z) >= 1e-10)
          {
             incDir[2] = (direction.z > 0)?1:-1;
             invDir[2] = 1/direction.z;
@@ -240,9 +230,9 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
          }                  
    
          // Computing the max
-         for(iIndex = 0 ; iIndex < 3 ; iIndex++)
+         for(int i = 0 ; i < 3 ; i++)
          {
-            if(distance[iIndex] > maxDistance) maxDistance = distance[iIndex];
+            if(distance[i] > maxDistance) maxDistance = distance[i];
          }                        
             
          newPoint.Set(currentPoint.x+direction.x*maxDistance,
@@ -253,17 +243,15 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
          
          currentPoint = newPoint;
          distanceTemp += maxDistance;
-         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);                
+         fVoxels->GetCandidatesVoxelArray(currentPoint, vectorOutcome);
       }
       else
       {            
          outcomeBinarySearch[0] = fVoxels->OutcomeBinarySearch(currentPoint.x,eXaxis);    
          outcomeBinarySearch[1] = fVoxels->OutcomeBinarySearch(currentPoint.y,eYaxis);    
-         outcomeBinarySearch[2] = fVoxels->OutcomeBinarySearch(currentPoint.z,eZaxis);                     
-   
-         distance[0] = UUtils::kInfinity;
-         distance[1] = UUtils::kInfinity;
-         distance[2] = UUtils::kInfinity;                  
+         outcomeBinarySearch[2] = fVoxels->OutcomeBinarySearch(currentPoint.z,eZaxis);
+
+         distance[0] = distance[1] = distance[2] = UUtils::kInfinity;
          
          if(incDir[0] == 1 && outcomeBinarySearch[0] != carX - 1)
          {
@@ -293,9 +281,9 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
          }
    
          // Computing the min
-         for(iIndex = 0 ; iIndex < 3 ; iIndex++)
+         for(int i = 0 ; i < 3 ; i++)
          {
-            if(distance[iIndex] < minDistance) minDistance = distance[iIndex];
+            if(distance[i] < minDistance) minDistance = distance[i];
          }
     
          newPoint.Set(currentPoint.x+direction.x*minDistance,
@@ -306,10 +294,10 @@ double UMultiUnion::DistanceToInVoxels(const UVector3 &aPoint,
          
          currentPoint = newPoint;
          distanceTemp += minDistance;         
-         vectorOutcome = fVoxels -> GetCandidatesVoxelArray(currentPoint);                         
+         fVoxels->GetCandidatesVoxelArray(currentPoint, vectorOutcome);
       }                           
    }
-   while((int)vectorOutcome.size() == 0);   
+   while(vectorOutcome.size() == 0);   
    return distanceTemp;      
 
 }
@@ -334,7 +322,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
    //      - processing of the normal
    
    UVector3 direction = aDirection.Unit();       
-   int iIndex, jIndex, kIndex;
    vector<int> vectorOutcome;
    double localTolerance = 1E-5;       
  
@@ -343,39 +330,38 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
    
    double dist = 0, tempDist = 0;
    
-   UVector3 tempPointConv, tempDirConv;
-   UVector3 tempNormal;
+   UVector3 tempPointConv, tempDirConv, tempNormal;
    int forbiddenNode = -1;
    bool dtobool = true;   
   
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   fVoxels->GetCandidatesVoxelArray(aPoint, vectorOutcome); 
    UVector3 tempGlobal, tempRot, pointTemp;
 
    // For the normal case for which the point is inside, after "else if" statement
-   if((int)vectorOutcome.size() == 0)
+   if(vectorOutcome.size() == 0)
    {
-      for(iIndex = -1 ; iIndex <= 1 ; iIndex +=2)
+      for(int i = -1 ; i <= 1 ; i +=2)
       {
-         for(jIndex = -1 ; jIndex <= 1 ; jIndex +=2)
+         for(int j = -1 ; j <= 1 ; j +=2)
          {
-            for(kIndex = -1 ; kIndex <= 1 ; kIndex +=2)
+            for(int k = -1 ; k <= 1 ; k +=2)
             {
-               tempGlobal.Set(aPoint.x+iIndex*localTolerance,
-                              aPoint.y+jIndex*localTolerance,
-                              aPoint.z+kIndex*localTolerance);
+               tempGlobal.Set(aPoint.x+i*localTolerance, aPoint.y+j*localTolerance,
+                              aPoint.z+k*localTolerance);
                              
-               vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);
+               fVoxels->GetCandidatesVoxelArray(tempGlobal, vectorOutcome);
                
-               if((int)vectorOutcome.size() != 0)
+               if(vectorOutcome.size() != 0)
                {
                   do
-                  {                             
-                     for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+                  {                     
+					  int limit = vectorOutcome.size();
+                     for(i = 0 ; i < limit ; i++)
                      {     
-                        if(vectorOutcome[iIndex] == forbiddenNode) continue;         
+                        if(vectorOutcome[i] == forbiddenNode) continue;         
                                 
-                        tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-                        tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;             
+                        tempSolid = ((*fNodes)[vectorOutcome[i]])->fSolid;
+                        tempTransform = ((*fNodes)[vectorOutcome[i]])->fTransform;             
             
                         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
                         tempPointConv = tempTransform->LocalPoint(tempGlobal);
@@ -383,7 +369,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
             
                         if(tempSolid->Inside(tempPointConv) != eOutside)
                         {
-                           forbiddenNode = vectorOutcome[iIndex];            
+                           forbiddenNode = vectorOutcome[i];            
                         
                            tempDist = tempSolid->DistanceToOut(tempPointConv,tempDirConv,tempNormal,dtobool,0.);
                            dist += tempDist;
@@ -392,19 +378,19 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                            // Treatment of Normal
                            tempRot = tempTransform->GlobalVector(tempNormal);     
                
-                           if(this->Inside(tempGlobal) != eInside)
+                           if(Inside(tempGlobal) != eInside)
                            {
                               aNormal = tempRot;
                               return dist;               
                            }
                         
                            vectorOutcome.clear();   
-                           vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);                                     
+                           fVoxels->GetCandidatesVoxelArray(tempGlobal, vectorOutcome);                   
                            break;
                         }
                      }
                   }
-                  while(this->SafetyFromInside(tempGlobal,true) > 1E-5);     
+                  while(SafetyFromInside(tempGlobal,true) > 1E-5);     
                   aNormal = tempRot;
                   return dist;                                           
                }      
@@ -418,13 +404,14 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
       tempGlobal = aPoint;
            
       do
-      {                             
-         for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+      {
+		  int limit = vectorOutcome.size();
+         for(int i = 0 ; i < limit ; i++)
          {     
-            if(vectorOutcome[iIndex] == forbiddenNode) continue;         
+            if(vectorOutcome[i] == forbiddenNode) continue;         
                     
-            tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-            tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;             
+            tempSolid = ((*fNodes)[vectorOutcome[i]])->fSolid;
+            tempTransform = ((*fNodes)[vectorOutcome[i]])->fTransform;             
 
             // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
             tempPointConv = tempTransform->LocalPoint(tempGlobal);
@@ -432,7 +419,7 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 
             if(tempSolid->Inside(tempPointConv) != eOutside)
             {
-               forbiddenNode = vectorOutcome[iIndex];            
+               forbiddenNode = vectorOutcome[i];            
             
                tempDist = tempSolid->DistanceToOut(tempPointConv,tempDirConv,tempNormal,dtobool,0.);
                dist += tempDist;
@@ -441,19 +428,18 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
                // Treatment of Normal
                tempRot = tempTransform->GlobalVector(tempNormal);
                
-               if(this->Inside(tempGlobal) != eInside)
+               if(Inside(tempGlobal) != eInside)
                {
                   aNormal = tempRot;
                   return dist;               
                }
-
                vectorOutcome.clear();   
-               vectorOutcome = fVoxels -> GetCandidatesVoxelArray(tempGlobal);                                     
+			   fVoxels->GetCandidatesVoxelArray(tempGlobal, vectorOutcome);                       
                break;
             }
          }
       }
-      while(this->SafetyFromInside(tempGlobal,true) > 1E-5);     
+      while(SafetyFromInside(tempGlobal,true) > 1E-5);     
       aNormal = tempRot;
       return dist;
    }
@@ -472,46 +458,60 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3 &aPoint) const
 
    // Implementation using voxelisation techniques:
    // ---------------------------------------------
-//   return InsideDummy(aPoint);
-   
-   int iIndex;
-   vector<int> vectorOutcome;   
- 
-   VUSolid *tempSolid = 0;
-   UTransform3D *tempTransform = 0;
-   
+
+//	return InsideDummy(aPoint);
+	
+	#ifdef DEBUG
+		VUSolid::EnumInside insideDummy = InsideDummy(aPoint);
+	#endif
+      
    UVector3 tempPointConv;
    VUSolid::EnumInside tempInside = eOutside;
    bool boolSurface = false;
-         
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   
+   vector<int> vectorOutcome;
+   vectorOutcome = fVoxels->GetCandidatesVoxelArrayOld(aPoint); 
+   fVoxels->GetCandidatesVoxelArray(aPoint, vectorOutcome);
 
-   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+   int limit = vectorOutcome.size();
+   for(int i = 0 ; i < limit ; i++)
    {
-      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+      VUSolid *tempSolid = ((*fNodes)[vectorOutcome[i]])->fSolid;
+      UTransform3D *tempTransform = ((*fNodes)[vectorOutcome[i]])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       tempPointConv = tempTransform->LocalPoint(aPoint);
-     
+
       tempInside = tempSolid->Inside(tempPointConv);        
       
       if(tempInside == eSurface) boolSurface = true; 
       
-      if(tempInside == eInside) return eInside;      
+      if(tempInside == eInside) 
+	  {
+		   #ifdef DEBUG 
+			if (insideDummy != tempInside)
+				insideDummy = tempInside; // you can place a breakpoint here
+			#endif
+
+		  return eInside;      
+	  }
    }          
 ///////////////////////////////////////////////////////////////////////////
 // Important comment: When two solids touch each other along a flat
 // surface, the surface points will be considered as eSurface, while points 
 // located around will correspond to eInside (cf. G4UnionSolid in GEANT4)
-   if(boolSurface == true) return eSurface;
-   return eOutside;
+   tempInside = boolSurface ? eSurface : eOutside;
+
+#ifdef DEBUG
+   if (insideDummy != tempInside)
+	   insideDummy = tempInside; // you can place a breakpoint here
+#endif
+   return tempInside;
 }
 
 //______________________________________________________________________________
 VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
 {
-   int iIndex;
    int carNodes = fNodes->size();
      
    VUSolid *tempSolid = 0;
@@ -521,10 +521,10 @@ VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
    VUSolid::EnumInside tempInside = eOutside;
    int countSurface = 0;
          
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   for(int i = 0 ; i < carNodes ; i++)
    {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;  
+      tempSolid = ((*fNodes)[i])->fSolid;
+      tempTransform = ((*fNodes)[i])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       tempPointConv = tempTransform->LocalPoint(aPoint);
@@ -544,29 +544,26 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 {
 // Determines the bounding box for the considered instance of "UMultipleUnion"
    int carNodes = fNodes->size();  
-   int iIndex = 0;
    double mini = 0, maxi = 0;  
 
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
   
-   double* arrMin = new double[3];
-   double* arrMax = new double[3];
-   
+   double arrMin[3], arrMax[3];
    UVector3 min, max;
     
    // Loop on the nodes:
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   for(int i = 0 ; i < carNodes ; i++)
    {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
+      tempSolid = ((*fNodes)[i])->fSolid;
+      tempTransform = ((*fNodes)[i])->fTransform;
       
       tempSolid->Extent(arrMin, arrMax);
       min.Set(arrMin[0],arrMin[1],arrMin[2]);      
       max.Set(arrMax[0],arrMax[1],arrMax[2]);           
       UUtils::TransformLimits(min, max, tempTransform);
      
-      if(iIndex == 0)
+      if(i == 0)
       {
          switch(aAxis)
          {
@@ -629,11 +626,11 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax)
 void UMultiUnion::Extent(double aMin[3],double aMax[3])
 {
    double min = 0,max = 0;
-   this->Extent(eXaxis,min,max);
+   Extent(eXaxis,min,max);
    aMin[0] = min; aMax[0] = max;
-   this->Extent(eYaxis,min,max);
+   Extent(eYaxis,min,max);
    aMin[1] = min; aMax[1] = max;
-   this->Extent(eZaxis,min,max);
+   Extent(eZaxis,min,max);
    aMin[2] = min; aMax[2] = max;      
 }
 
@@ -641,14 +638,13 @@ void UMultiUnion::Extent(double aMin[3],double aMax[3])
 bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 {
 // Computes the normal on a surface and returns it as a unit vector
-//   In case a point is further than tolerance_normal from a surface, set validNormal=false
+//   In case a point is further than toleranceNormal from a surface, set validNormal=false
 //   Must return a valid vector. (even if the point is not on the surface.)
 //
 //   On an edge or corner, provide an average normal of all facets within tolerance
 // NOTE: the tolerance value used in here is not yet the global surface
 //     tolerance - we will have to revise this value - TODO
 
-   int iIndex;
    vector<int> vectorOutcome;   
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
@@ -663,19 +659,21 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
 // Important comment: Cases for which the point is located on an edge or
 // on a vertice remain to be treated  
        
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
+   fVoxels->GetCandidatesVoxelArray(aPoint, vectorOutcome); 
 
-   if((int)vectorOutcome.size() != 0)
+   if(vectorOutcome.size() > 0)
    {
-      for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+	   int limit = vectorOutcome.size();
+      for(int i = 0 ; i < limit ; i++)
       {
-         tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-         tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+         tempSolid = ((*fNodes)[vectorOutcome[i]])->fSolid;
+         tempTransform = ((*fNodes)[vectorOutcome[i]])->fTransform;  
                   
          // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
          tempPointConv = tempTransform->LocalPoint(aPoint);
-            
-         if(tempSolid->Inside(tempPointConv) == eSurface)
+   
+		 VUSolid::EnumInside location = tempSolid->Inside(tempPointConv);
+         if(location == eSurface)
          {
             tempSolid->Normal(tempPointConv,outcomeNormal);
          
@@ -686,12 +684,12 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
          }
          else
          {
-            if(tempSolid->Inside(tempPointConv) == eInside)
+            if(location == eInside)
             {
                if(tempSolid->SafetyFromInside(tempPointConv) < tempSafety)
                {
                   tempSafety = tempSolid->SafetyFromInside(tempPointConv);
-                  tempNodeSafety = vectorOutcome[iIndex];
+                  tempNodeSafety = vectorOutcome[i];
                }
             }
             else // case eOutside
@@ -699,7 +697,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
                if(tempSolid->SafetyFromOutside(tempPointConv) < tempSafety)
                {
                   tempSafety = tempSolid->SafetyFromOutside(tempPointConv);
-                  tempNodeSafety = vectorOutcome[iIndex];
+                  tempNodeSafety = vectorOutcome[i];
                }    
             }
          }      
@@ -728,44 +726,42 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal)
       tempRot = tempTransform->GlobalVector(outcomeNormal);
       
       aNormal = tempRot.Unit();
-      if(tempSafety > normalTolerance) return false;
+      if (tempSafety > normalTolerance) return false;
       return true;     
    }
 }
 
 //______________________________________________________________________________ 
-double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) const
+double UMultiUnion::SafetyFromInside(const UVector3 &aPoint, bool aAccurate) const
 {
    // Estimates isotropic distance to the surface of the solid. This must
    // be either accurate or an underestimate. 
    //  Two modes: - default/fast mode, sacrificing accuracy for speed
    //             - "precise" mode,  requests accurate value if available.   
 
-   int iIndex;
-   vector<int> vectorOutcome;
-     
+   vector<int> vectorOutcome;     
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;
    
    UVector3 tempPointConv;
-   double safetyTemp;
-   double safetyMax = 0;
+   double safetyMax = 0.;
    
    // In general, the value return by SafetyFromInside will not be the exact
    // but only an undervalue (cf. overlaps)    
-   vectorOutcome = fVoxels -> GetCandidatesVoxelArray(aPoint); 
-  
-   for(iIndex = 0 ; iIndex < (int)vectorOutcome.size() ; iIndex++)
+   fVoxels->GetCandidatesVoxelArray(aPoint, vectorOutcome);
+   
+   int limit = vectorOutcome.size();
+   for(int i = 0 ; i < limit ; i++)
    {      
-      tempSolid = ((*fNodes)[vectorOutcome[iIndex]])->fSolid;
-      tempTransform = ((*fNodes)[vectorOutcome[iIndex]])->fTransform;  
+      tempSolid = ((*fNodes)[vectorOutcome[i]])->fSolid;
+      tempTransform = ((*fNodes)[vectorOutcome[i]])->fTransform;  
             
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       tempPointConv = tempTransform->LocalPoint(aPoint);
          
       if(tempSolid->Inside(tempPointConv) == eInside)
       {
-         safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
+         double safetyTemp = tempSolid->SafetyFromInside(tempPointConv,aAccurate);
          if(safetyTemp > safetyMax) safetyMax = safetyTemp;         
       }   
    }
@@ -773,49 +769,42 @@ double UMultiUnion::SafetyFromInside(const UVector3 aPoint, bool aAccurate) cons
 }
 
 //______________________________________________________________________________
-double UMultiUnion::SafetyFromOutside(const UVector3 aPoint, bool aAccurate) const
+double UMultiUnion::SafetyFromOutside(const UVector3 &aPoint, bool aAccurate) const
 {
    // Estimates the isotropic safety from a point outside the current solid to any 
    // of its surfaces. The algorithm may be accurate or should provide a fast 
    // underestimate.
    
-   int iIndex;
    int carNodes = fNodes->size();
-   
    VUSolid *tempSolid = 0;
    UTransform3D *tempTransform = 0;     
       
    double *boxes = fVoxels->GetBoxes();
-   double safety = UUtils::kInfinity;
-   double safetyTemp;
-   
-   UVector3 tempPointConv;    
-
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   double safety = UUtils::kInfinity;   
+   UVector3 tempPointConv;
+   for(int i = 0 ; i < carNodes ; i++)
    {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
-      
+      tempSolid = ((*fNodes)[i])->fSolid;
+      tempTransform = ((*fNodes)[i])->fTransform;
       tempPointConv = tempTransform->LocalPoint(aPoint);      
   
-      int ist = 6*iIndex;
-      double d2xyz = 0.;
-      
-      double dxyz0 = UUtils::Abs(aPoint.x-boxes[ist+3])-boxes[ist];
+      int ist = 6*i;
+      double dxyz0 = std::abs(aPoint.x-boxes[ist+3])-boxes[ist];
       if (dxyz0 > safety) continue;
-      double dxyz1 = UUtils::Abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
+      double dxyz1 = std::abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
       if (dxyz1 > safety) continue;
-      double dxyz2 = UUtils::Abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
+      double dxyz2 = std::abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
       if (dxyz2 > safety) continue;
-      
+
+      double d2xyz = 0.;
       if(dxyz0>0) d2xyz+=dxyz0*dxyz0;
       if(dxyz1>0) d2xyz+=dxyz1*dxyz1;
       if(dxyz2>0) d2xyz+=dxyz2*dxyz2;
       if(d2xyz >= safety*safety) continue;
       
-      safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
+      double safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
     
-      if(safetyTemp < safety) safety = safetyTemp;
+      if (safetyTemp < safety) safety = safetyTemp;
    }
    return safety;
 }
@@ -856,16 +845,15 @@ void UMultiUnion::SetVoxelFinder(UVoxelFinder* finder)
 void UMultiUnion::Voxelize()
 {
    fVoxels = new UVoxelFinder(this);
-   fVoxels -> Voxelize();
+   fVoxels->Voxelize();
 }
 
 //______________________________________________________________________________
-int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccurate) const
+int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccurate) const
 {
    // Method returning the closest node from a point located outside a UMultiUnion.
    // This is used to compute the normal in the case no candidate has been found.
    
-   int iIndex;
    int carNodes = fNodes->size();
    
    VUSolid *tempSolid = 0;
@@ -873,26 +861,24 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccura
       
    double *boxes = fVoxels->GetBoxes();
    double safety = UUtils::kInfinity;
-   double safetyTemp;
    int safetyNode = -1;
-   
    UVector3 tempPointConv;    
 
-   for(iIndex = 0 ; iIndex < carNodes ; iIndex++)
+   for(int i = 0; i < carNodes; i++)
    {
-      tempSolid = ((*fNodes)[iIndex])->fSolid;
-      tempTransform = ((*fNodes)[iIndex])->fTransform;
+      tempSolid = ((*fNodes)[i])->fSolid;
+      tempTransform = ((*fNodes)[i])->fTransform;
       
       tempPointConv = tempTransform->LocalPoint(aPoint);      
   
-      int ist = 6*iIndex;
+      int ist = 6*i;
       double d2xyz = 0.;
       
-      double dxyz0 = UUtils::Abs(aPoint.x-boxes[ist+3])-boxes[ist];
+      double dxyz0 = std::abs(aPoint.x-boxes[ist+3])-boxes[ist];
       if (dxyz0 > safety) continue;
-      double dxyz1 = UUtils::Abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
+      double dxyz1 = std::abs(aPoint.y-boxes[ist+4])-boxes[ist+1];
       if (dxyz1 > safety) continue;
-      double dxyz2 = UUtils::Abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
+      double dxyz2 = std::abs(aPoint.z-boxes[ist+5])-boxes[ist+2];      
       if (dxyz2 > safety) continue;
       
       if(dxyz0>0) d2xyz+=dxyz0*dxyz0;
@@ -900,12 +886,12 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccura
       if(dxyz2>0) d2xyz+=dxyz2*dxyz2;
       if(d2xyz >= safety*safety) continue;
       
-      safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
+      double safetyTemp = tempSolid->SafetyFromOutside(tempPointConv,true);
     
       if(safetyTemp < safety)
       {
          safety = safetyTemp;
-         safetyNode = iIndex;
+         safetyNode = i;
       }
    }
    return safetyNode;
