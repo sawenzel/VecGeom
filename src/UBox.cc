@@ -20,7 +20,7 @@ UBox::UBox(const char *name, double dx, double dy, double dz)
 
 //______________________________________________________________________________
 VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
-{
+{ 
 // Classify point location with respect to solid:
 //  o eInside       - inside the solid
 //  o eSurface      - close to surface within tolerance
@@ -28,15 +28,46 @@ VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
    static const double delta = 10*VUSolid::fgTolerance;
    // Early returns on outside condition on any axis. Check Z first for faster
    // exclusion in  phi symmetric geometries.
-   double ddz = UUtils::Abs(aPoint.z) - fDz;
+   double ddz = std::abs(aPoint.z) - fDz;
    if ( ddz > delta ) return eOutside;
-   double ddx = UUtils::Abs(aPoint.x) - fDx;
+   double ddx = std::abs(aPoint.x) - fDx;
    if ( ddx > delta ) return eOutside;
-   double ddy = UUtils::Abs(aPoint.y) - fDy;
+   double ddy = std::abs(aPoint.y) - fDy;
    if ( ddy > delta ) return eOutside;
    if ( ddx >- delta || ddy > -delta || ddz > -delta ) return eSurface;
    return eInside;
-}   
+}
+
+
+/*
+VUSolid::EnumInside UBox::Inside(const UVector3 &p) const
+{ 
+  static const double delta=0.5*VUSolid::fgTolerance;
+  EnumInside in = eOutside ;
+  UVector3 q(std::abs(p.x), std::abs(p.y), std::abs(p.z));
+
+  if ( q.x <= (fDx - delta) )
+  {
+    if (q.y <= (fDy - delta) )
+    {
+      if      ( q.z <= (fDz - delta) ) { in = eInside ;  }
+      else if ( q.z <= (fDz + delta) ) { in = eSurface ; }
+    }
+    else if ( q.y <= (fDy + delta) )
+    {
+      if ( q.z <= (fDz + delta) ) { in = eSurface ; }
+    }
+  }
+  else if ( q.x <= (fDx + delta) )
+  {
+    if ( q.y <= (fDy + delta) )
+    {
+      if ( q.z <= (fDz + delta) ) { in = eSurface ; }
+    }
+  }
+  return in ;
+}
+*/
   
 //______________________________________________________________________________
 double UBox::DistanceToIn(const UVector3 &aPoint, 
@@ -55,9 +86,9 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
    // Early exits if safety bigger than proposed step.
    static const double delta = VUSolid::fgTolerance;
 //   aNormal.SetNull();
-   double safx = UUtils::Abs(aPoint.x) - fDx;
-   double safy = UUtils::Abs(aPoint.y) - fDy;
-   double safz = UUtils::Abs(aPoint.z) - fDz;
+   double safx = std::abs(aPoint.x) - fDx;
+   double safy = std::abs(aPoint.y) - fDy;
+   double safz = std::abs(aPoint.z) - fDz;
    if ((safx > aPstep) || (safy > aPstep) || (safz > aPstep)) 
       return UUtils::kInfinity;
    // Check numerical outside.
@@ -86,11 +117,11 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
    double coordinate = 0.0;
    if ( safx > 0 ) {
       if ( aPoint.x * aDirection.x >= 0 ) return UUtils::kInfinity;
-      dist = safx/UUtils::Abs(aDirection.x);
+      dist = safx/std::abs(aDirection.x);
       coordinate = aPoint.y + dist*aDirection.y;
-      if ( UUtils::Abs(coordinate) < fDy+delta ) {
+      if ( std::abs(coordinate) < fDy ) {
          coordinate = aPoint.z + dist*aDirection.z;
-         if ( UUtils::Abs(coordinate) < fDz+delta ) {
+         if ( std::abs(coordinate) < fDz ) {
 //            aNormal.x = UUtils::Sign(1.0, aPoint.x);
             return dist;
          }   
@@ -98,11 +129,11 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
    }
    if ( safy > 0 ) {
       if ( aPoint.y * aDirection.y >= 0 ) return UUtils::kInfinity;
-      dist = safy/UUtils::Abs(aDirection.y);
+      dist = safy/std::abs(aDirection.y);
       coordinate = aPoint.x + dist*aDirection.x;
-      if ( UUtils::Abs(coordinate) < fDx+delta ) {
+      if ( std::abs(coordinate) < fDx ) {
          coordinate = aPoint.z + dist*aDirection.z;
-         if ( UUtils::Abs(coordinate) < fDz+delta ) {
+         if ( std::abs(coordinate) < fDz ) {
 //            aNormal.y = UUtils::Sign(1.0, aPoint.y);
             return dist;
          }   
@@ -110,11 +141,11 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
    }
    if ( safz > 0 ) {
       if ( aPoint.z * aDirection.z >= 0 ) return UUtils::kInfinity;
-      dist = safz/UUtils::Abs(aDirection.z);
+      dist = safz/std::abs(aDirection.z);
       coordinate = aPoint.x + dist*aDirection.x;
-      if ( UUtils::Abs(coordinate) < fDx+delta ) {
+      if ( std::abs(coordinate) < fDx ) {
          coordinate = aPoint.y + dist*aDirection.y;
-         if ( UUtils::Abs(coordinate) < fDy+delta ) {
+         if ( std::abs(coordinate) < fDy ) {
 //            aNormal.z = UUtils::Sign(1.0, aPoint.z);
             return dist;
          }   
@@ -177,33 +208,33 @@ double UBox::DistanceToOut( const UVector3  &aPoint, const UVector3 &aDirection,
 }
 
 //______________________________________________________________________________
-double UBox::SafetyFromInside ( const UVector3 aPoint, 
+double UBox::SafetyFromInside ( const UVector3 &aPoint, 
                 bool /*aAccurate*/) const
 {
 // Estimates the isotropic safety from a point inside the current solid to any 
 // of its surfaces. The algorithm may be accurate or should provide a fast 
 // underestimate.
    double safe, safy, safz;
-   safe = fDx - UUtils::Abs(aPoint.x);
-   safy = fDy - UUtils::Abs(aPoint.y);
+   safe = fDx - std::abs(aPoint.x);
+   safy = fDy - std::abs(aPoint.y);
    if ( safy < safe ) safe = safy;
-   safz = fDz - UUtils::Abs(aPoint.z);
+   safz = fDz - std::abs(aPoint.z);
    if ( safz < safe ) safe = safz;
-   return UUtils::Max(0.0, safe);
+   return std::max(0.0, safe);
 }   
    
 //______________________________________________________________________________
-double UBox::SafetyFromOutside ( const UVector3 aPoint, 
+double UBox::SafetyFromOutside ( const UVector3 &aPoint, 
                 bool aAccurate) const
 {
 // Estimates the isotropic safety from a point outside the current solid to any 
 // of its surfaces. The algorithm may be accurate or should provide a fast 
 // underestimate.
    double safe, safx, safy, safz;
-   safe = safx = -fDx + UUtils::Abs(aPoint.x);
-   safy = -fDy + UUtils::Abs(aPoint.y);
+   safe = safx = -fDx + std::abs(aPoint.x);
+   safy = -fDy + std::abs(aPoint.y);
    if ( safy > safe ) safe = safy;
-   safz = -fDz + UUtils::Abs(aPoint.z);
+   safz = -fDz + std::abs(aPoint.z);
    if ( safz > safe ) safe = safz;
    if (safe < 0.0) return 0.0; // point is inside
    if (!aAccurate) return safe;
@@ -213,7 +244,7 @@ double UBox::SafetyFromOutside ( const UVector3 aPoint,
    if ( safy > 0 ) { safsq += safy*safy; count++; }
    if ( safz > 0 ) { safsq += safz*safz; count++; }
    if (count == 1) return safe;
-   return UUtils::Sqrt(safsq);
+   return std::sqrt(safsq);
 }
 
 //______________________________________________________________________________
@@ -227,12 +258,12 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
 // NOTE: the tolerance value used in here is not yet the global surface
 //     tolerance - we will have to revise this value - TODO
    static const double delta = 100.*VUSolid::fgTolerance;
-   static const double kInvSqrt2 = 1./UUtils::Sqrt(2.);
-   static const double kInvSqrt3 = 1./UUtils::Sqrt(3.);
+   static const double kInvSqrt2 = 1./std::sqrt(2.);
+   static const double kInvSqrt3 = 1./std::sqrt(3.);
    aNormal.SetNull();
    UVector3 crt_normal, min_normal;
    int nsurf = 0;
-   double safx = UUtils::Abs(UUtils::Abs(aPoint.x) - fDx);
+   double safx = std::abs(std::abs(aPoint.x) - fDx);
    double safmin = safx;
    crt_normal.Set(UUtils::Sign(1.,aPoint.x), 0., 0.);
    min_normal = crt_normal;
@@ -240,7 +271,7 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
       nsurf++;
       aNormal += crt_normal;
    }
-   double safy = UUtils::Abs(UUtils::Abs(aPoint.y) - fDy);
+   double safy = std::abs(std::abs(aPoint.y) - fDy);
    crt_normal.Set(0., UUtils::Sign(1.,aPoint.y), 0.);
    if ( safy < delta ) {
       nsurf++;
@@ -250,7 +281,7 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
       min_normal = crt_normal;
       safmin = safy;
    }   
-   double safz = UUtils::Abs(UUtils::Abs(aPoint.z) - fDz);
+   double safz = std::abs(std::abs(aPoint.z) - fDz);
    crt_normal.Set(0., 0., UUtils::Sign(1.,aPoint.z));
    if (safz < delta) {
       nsurf++;
@@ -294,8 +325,7 @@ void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax )
          break;
       default:
          std::cout << "Extent: unknown axis" << aAxis << std::endl;
-   }  
-  
+   }      
 }            
 
 //______________________________________________________________________________
