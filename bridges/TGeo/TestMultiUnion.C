@@ -1,3 +1,4 @@
+
 #include "UBox.hh"
 #include "UMultiUnion.hh"
 #include "UTransform3D.hh"
@@ -11,49 +12,46 @@
 #include "TStopwatch.h"
 #include "TRandom.h"
 #include "TPolyMarker3D.h"
-/*
-void TestMultiUnion()
+
+#include <fstream>
+#include "UUtils.hh"
+
+using namespace std;
+
+UMultiUnion *CreateMultiUnion(int numNodesImpl, TGeoVolume *top=NULL) // Number of nodes to implement
 {
-   // Initialization of ROOT environment:
-   // Test for a multiple union solid.
-   TGeoManager *geom = new TGeoManager("UMultiUnion","Test of a UMultiUnion");
-   TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
-   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
-   TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
-   TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
-   
-   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 2000., 2000., 2000.);
-   TGeoShape *tgeobox = top->GetShape();
-   geom->SetTopVolume(top);
+	int carBoxesX = 20;
+	int carBoxesY = 20;
+	int carBoxesZ = 20;   
 
    // Instance:
       // Creation of several nodes:
    UBox *box = new UBox("UBox",40,40,40);
 
-   TGeoUShape *Shape1 = new TGeoUShape("Shape1",box);
-   TGeoVolume *Volume1 = new TGeoVolume("Volume1",Shape1);
-   Volume1->SetLineColor(1);
-   
-      // Number of nodes to implement:
-   int numNodesImpl = 500;
-   int mIndex = 0, nIndex = 0, oIndex = 0;
-	int carBoxesX = 20;
-	int carBoxesY = 20;
-	int carBoxesZ = 20;   
-   UTransform3D* arrayTransformations[numNodesImpl];
-	TGeoCombiTrans* arrayCombiTrans[numNodesImpl];
+   TGeoVolume *Volume1;
+
+   if (top)
+   {
+		TGeoUShape *Shape1 = new TGeoUShape("Shape1",box);
+		Volume1 = new TGeoVolume("Volume1",Shape1);
+		Volume1->SetLineColor(1);
+   }
+
+   UTransform3D** arrayTransformations = new UTransform3D *[numNodesImpl];
+	TGeoCombiTrans** arrayCombiTrans = new TGeoCombiTrans *[numNodesImpl];
   
      // Constructor:
-   UMultiUnion *multi_union = new UMultiUnion("multi_union");     
-   
+   UMultiUnion *multiUnion = new UMultiUnion("multiUnion");     
+
+   int nIndex = 0, oIndex = 0;
       // Transformation:
-   for(mIndex = 0 ; (mIndex < numNodesImpl) && (mIndex < carBoxesX*carBoxesY*carBoxesZ) ; mIndex++)
+   for(int mIndex = 0 ; (mIndex < numNodesImpl) && (mIndex < carBoxesX*carBoxesY*carBoxesZ) ; mIndex++)
    {
       arrayTransformations[mIndex] = new UTransform3D(-2000+50+2*50*(mIndex%carBoxesX),-2000+50+2*50*nIndex,-2000+50+2*50*oIndex,0,0,0);
-      multi_union->AddNode(box,arrayTransformations[mIndex]);
+      multiUnion->AddNode(box,arrayTransformations[mIndex]);
       
       arrayCombiTrans[mIndex] = new TGeoCombiTrans(-2000+50+2*50*(mIndex%carBoxesX),-2000+50+2*50*nIndex,-2000+50+2*50*oIndex,new TGeoRotation("rot",0,0,0));      
-      top->AddNode(Volume1,mIndex+1,arrayCombiTrans[mIndex]);      
+      if (top) top->AddNode(Volume1,mIndex+1,arrayCombiTrans[mIndex]);      
       
       // Preparing "Draw":
       if((nIndex%carBoxesY)==(carBoxesY-1) && (mIndex%carBoxesX)==(carBoxesX-1))         
@@ -66,27 +64,52 @@ void TestMultiUnion()
 		{
 			nIndex++;
 		}
-   }                                                                                                                                   
+   }
+
+   return multiUnion;
+}
+
+
+void DisplayMultiUnionInfo(UMultiUnion *multiUnion)
+{
+	cout << "[> DisplayVoxelLimits:" << endl;   
+	multiUnion->fVoxels -> DisplayVoxelLimits();   
+
+	cout << "[> DisplayBoundaries:" << endl;      
+	multiUnion->fVoxels -> DisplayBoundaries();   
+
+	cout << "[> BuildListNodes:" << endl;      
+	multiUnion->fVoxels -> DisplayListNodes();
+}
+
+
+void TestMultiUnionWithGraphics()
+{
+   // Initialization of ROOT environment:
+   // Test for a multiple union solid.
+   TGeoManager *geom = new TGeoManager("UMultiUnion","Test of a UMultiUnion");
+   TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
+   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
+   TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
+   TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
+   
+   TGeoVolume *top = geom->MakeBox("TOP", Vacuum, 2000., 2000., 2000.);
+   TGeoShape *tgeobox = top->GetShape();
+   geom->SetTopVolume(top);
+   
+   UMultiUnion *multiUnion = CreateMultiUnion(21, top);
 
    geom->CloseGeometry();
 
-   // Voxelize "multi_union"
-   multi_union -> Voxelize();
+   multiUnion->Voxelize();
 
-   cout << "[> DisplayVoxelLimits:" << endl;   
-   multi_union -> fVoxels -> DisplayVoxelLimits();   
-
-   cout << "[> DisplayBoundaries:" << endl;      
-   multi_union -> fVoxels -> DisplayBoundaries();   
-
-   cout << "[> BuildListNodes:" << endl;      
-   multi_union -> fVoxels -> DisplayListNodes();
+   DisplayMultiUnionInfo(multiUnion);
 
    cout << "[> Test:" << endl;   
    
    double bmin[3], bmax[3];
    UVector3 point;
-   multi_union->Extent(bmin, bmax);
+   multiUnion->Extent(bmin, bmax);
    int npoints = 1000000;
    TPolyMarker3D *pminside = new TPolyMarker3D();
    pminside->SetMarkerColor(kRed);
@@ -106,7 +129,7 @@ void TestMultiUnion()
       point.z = gRandom->Uniform(bmin[2], bmax[2]);
 
       timer.Start();      
-      VUSolid::EnumInside inside = multi_union->Inside(point);
+      VUSolid::EnumInside inside = multiUnion->Inside(point);
       timer.Stop();
       chrono += timer.CpuTime();
       timer.Reset();            
@@ -130,7 +153,83 @@ void TestMultiUnion()
    // Program comes to an end:
    printf("[> END\n");
 }
-*/
+
+double TestMultiUnionOneStep(int numNodesImpl)
+{
+    cout << "Testing with " << numNodesImpl << " nodes" << endl;
+    UMultiUnion *multiUnion = CreateMultiUnion(numNodesImpl);
+
+    multiUnion->Voxelize();
+
+    DisplayMultiUnionInfo(multiUnion);
+
+    cout << "[> Test:" << endl;   
+   
+    double bmin[3], bmax[3];
+    multiUnion->Extent(bmin, bmax);
+
+    int npoints = 10000000;
+    #ifdef DEBUG
+        npoints = 10000;
+    #endif
+
+    int n10 = npoints/10;
+    UVector3 point;
+
+    TStopwatch timer;
+    timer.Start();
+
+#ifdef DEBUG
+    int inside = 0, outside = 0, surface = 0;
+#endif
+
+    for (int i = 0; i < npoints; i++)
+    {
+        if (numNodesImpl > 100)
+            if (n10 && (i % n10)==0) printf("test inside ... %d%%\n",int(100*i/npoints));
+        point.x = gRandom->Uniform(-2000, 2000);
+        point.y = gRandom->Uniform(-2000, 2000);
+        point.z = gRandom->Uniform(-2000, 2000);
+
+        VUSolid::EnumInside result = multiUnion->Inside(point);
+        
+#ifdef DEBUG
+        switch (result)
+        {
+            case VUSolid::eInside: inside++; break;
+            case VUSolid::eOutside: outside++; break;
+            case VUSolid::eSurface: surface++; break;
+        }
+#endif
+    }
+
+    timer.Stop();
+    double chrono = timer.CpuTime();
+
+    cout << "CPUTIME: " << chrono << endl;
+    return chrono;
+}
+
+void TestMultiUnion()
+{
+    // TestMultiUnionWithGraphics(); return;
+
+    int numNodes[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 34, 36, 38, 40, 45, 50, 60, 70, 80, 90, 100, 500, 1000, 5000, 8000};
+    int numNodesCount = sizeof (numNodes) / sizeof (int);
+    // numNodesCount -= 3;
+
+    ofstream nodes("nodes.dat"), times("times.dat");
+    for (int i = 0; i < numNodesCount; i++)
+    {
+        int numNodesImpl = numNodes[i];
+        double chrono = TestMultiUnionOneStep(numNodesImpl);
+        nodes << numNodesImpl << endl;
+        times << chrono << endl;
+    }
+    nodes.close(), times.close();
+    printf("[> END\n");
+}
+
 /*
 // TO TEST THE METHODS SAFETY AND NORMAL
 void TestMultiUnion()
@@ -152,14 +251,14 @@ void TestMultiUnion()
    UBox *box = new UBox("UBox",200,200,200);
   
      // Constructor:
-   UMultiUnion *multi_union = new UMultiUnion("multi_union");     
+   UMultiUnion *multiUnion = new UMultiUnion("multiUnion");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
    UTransform3D* trans2 = new UTransform3D(200,200,0,0,0,0);      
    UTransform3D* trans3 = new UTransform3D(400,400,0,0,0,0);       
    
-   multi_union->AddNode(box,trans);
-   multi_union->AddNode(box,trans2); 
-   multi_union->AddNode(box,trans3);       
+   multiUnion->AddNode(box,trans);
+   multiUnion->AddNode(box,trans2); 
+   multiUnion->AddNode(box,trans3);       
                                                                                                                                          
    geom->CloseGeometry();
    
@@ -176,17 +275,17 @@ void TestMultiUnion()
    TGeoCombiTrans* transf3 = new TGeoCombiTrans(400,400,0,new TGeoRotation("rot1",0,0,0));      
    top->AddNode(Volume1,1,transf3);              
 
-   // Voxelize "multi_union"
-   multi_union -> Voxelize();
+   // Voxelize "multiUnion"
+   multiUnion->Voxelize();
 
    cout << "[> DisplayVoxelLimits:" << endl;   
-   multi_union -> fVoxels -> DisplayVoxelLimits();   
+   multiUnion->fVoxels -> DisplayVoxelLimits();   
 
    cout << "[> DisplayBoundaries:" << endl;      
-   multi_union -> fVoxels -> DisplayBoundaries();   
+   multiUnion->fVoxels -> DisplayBoundaries();   
 
    cout << "[> BuildListNodes:" << endl;      
-   multi_union -> fVoxels -> DisplayListNodes();
+   multiUnion->fVoxels -> DisplayListNodes();
 
 
    const UVector3 testPoint(-220,300,0);
@@ -197,7 +296,7 @@ void TestMultiUnion()
 
    cout << "[> Test Inside:" << endl;      
    VUSolid::EnumInside isInside;
-   isInside = multi_union->Inside(testPoint);
+   isInside = multiUnion->Inside(testPoint);
    
    if(isInside == VUSolid::eInside)
    {
@@ -216,7 +315,7 @@ void TestMultiUnion()
    UVector3 resultNormal;
    bool boolNormal;
       
-   boolNormal = multi_union->Normal(testPoint,resultNormal);
+   boolNormal = multiUnion->Normal(testPoint,resultNormal);
    
 //   if(boolNormal == true)
    {
@@ -224,15 +323,15 @@ void TestMultiUnion()
    }  
      
    cout << "[> Test Capacity:" << endl;
-   double outcomeCapacity = multi_union->Capacity();
+   double outcomeCapacity = multiUnion->Capacity();
    cout << "Computed capacity: " << outcomeCapacity << endl;
   
    cout << "[> Test SafetyFromInside:" << endl;   
-   double outcomeSafetyFromInside = multi_union->SafetyFromInside(testPoint,true);
+   double outcomeSafetyFromInside = multiUnion->SafetyFromInside(testPoint,true);
    cout << "Computed SafetyFromInside: " << outcomeSafetyFromInside << endl;    
 
    cout << "[> Test SafetyFromOutside:" << endl;
-   double outcomeSafetyFromOutside = multi_union->SafetyFromOutside(testPoint,true);
+   double outcomeSafetyFromOutside = multiUnion->SafetyFromOutside(testPoint,true);
    cout << "Computed SafetyFromOutside: " << outcomeSafetyFromOutside << endl;
    
    cout << "[> Test DistanceToIn:" << endl;
@@ -240,7 +339,7 @@ void TestMultiUnion()
    cout << "----------" << endl;
    cout << "testDirection: [" << testDirection.x << " , " << testDirection.y << " , " << testDirection.z << "]" << endl;
    cout << "----------" << endl;  
-   double outcomeDistanceToIn = multi_union->DistanceToIn(testPoint,testDirection,500.);
+   double outcomeDistanceToIn = multiUnion->DistanceToIn(testPoint,testDirection,500.);
    cout << "Computed DistanceToIn: " << outcomeDistanceToIn << endl;
 
    cout << "[> Test DistanceToOut:" << endl;
@@ -250,7 +349,7 @@ void TestMultiUnion()
    cout << "----------" << endl;
    cout << "testDirectionOut: [" << testDirectionOut.x << " , " << testDirectionOut.y << " , " << testDirectionOut.z << "]" << endl;
    cout << "----------" << endl;  
-   double outcomeDistanceToOut = multi_union->DistanceToOut(testPoint,testDirectionOut,dtoNormal,bool1,10000.);
+   double outcomeDistanceToOut = multiUnion->DistanceToOut(testPoint,testDirectionOut,dtoNormal,bool1,10000.);
    cout << "Computed DistanceToOut: " << outcomeDistanceToOut << endl;          
    cout << "NormalDistToOut: [" << dtoNormal.x << " , " << dtoNormal.y << " , " << dtoNormal.z << "]" << endl;
 
@@ -262,6 +361,7 @@ void TestMultiUnion()
 }
 */
 
+/*
 // Test through bridge classes:
 void TestMultiUnion()
 {
@@ -279,22 +379,22 @@ void TestMultiUnion()
    UBox *box = new UBox("UBox",200,200,200);
   
    // Creation of the multi union
-   UMultiUnion *multi_union = new UMultiUnion("multi_union");     
+   UMultiUnion *multiUnion = new UMultiUnion("multiUnion");     
    UTransform3D* trans = new UTransform3D(0,0,0,0,0,0);
    UTransform3D* trans2 = new UTransform3D(200,200,0,0,0,0);      
    UTransform3D* trans3 = new UTransform3D(400,400,0,0,0,0);       
    
-   multi_union->AddNode(box,trans);
-   multi_union->AddNode(box,trans2); 
-   multi_union->AddNode(box,trans3);                                                                                                                                               
+   multiUnion->AddNode(box,trans);
+   multiUnion->AddNode(box,trans2); 
+   multiUnion->AddNode(box,trans3);                                                                                                                                               
 
    // "Conversion"
-   TGeoUShape *shape = new TGeoUShape("shape", multi_union);     
+   TGeoUShape *shape = new TGeoUShape("shape", multiUnion);     
    TGeoVolume *vol = new TGeoVolume("vol", shape, Al);
    top->AddNode(vol,1);
    
-   // Voxelize "multi_union"
-   multi_union -> Voxelize();   
+   // Voxelize "multiUnion"
+   multiUnion->Voxelize();   
    
    geom->CloseGeometry();
 
@@ -310,4 +410,5 @@ void TestMultiUnion()
    printf("MultiUnion:\n");
    shape->CheckShape(3,200);
 }
+*/
 
