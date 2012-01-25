@@ -26,8 +26,6 @@
 #include <vector>
 #include <string>
 
-using namespace std;
-
 class UVoxelFinder
 {
 public:
@@ -50,8 +48,11 @@ public:
    // Method displaying the nodes located in a voxel characterized by its three indexes:
    void               GetCandidatesVoxel(int indexX, int indexY, int indexZ);
    // Method returning in a vector container the nodes located in a voxel characterized by its three indexes:
-   vector<int>        GetCandidatesVoxelArray(UVector3 point);
-   vector<int>        Intersect(char* mask);
+   void GetCandidatesVoxelArray(const UVector3 &point, std::vector<int> &list);
+
+   // deprecated
+   std::vector<int>        GetCandidatesVoxelArrayOld(const UVector3 point);
+   std::vector<int> Intersect(char* mask);
 
    // Method returning the pointer to the array containing the characteristics of each box:
    double*            GetBoxes();
@@ -85,5 +86,7 @@ private:
    char              *fMemoryZ;      
    int                fNx, fNy, fNz;         // Number of bytes stored in "fmemory" for each axis
    double             fTolerance;            // Minimal distance to discrminate two boundaries.
+
+   int nPer;
 };
 #endif

@@ -10,6 +10,8 @@
 #include "UUtils.hh"
 #endif
 
+#include <cmath>
+
 struct UVector3 {
 public:
    UVector3() {x=y=z=0.0;}
@@ -163,7 +165,7 @@ inline UVector3& UVector3::operator *= (double a) {
 }
 
 inline bool UVector3::IsNull() const {
-   return ((UUtils::Abs(x) + UUtils::Abs(y) + UUtils::Abs(z)) == 0.0) ? true : false;
+   return ((std::abs(x) + std::abs(y) + std::abs(z)) == 0.0) ? true : false;
 }   
 
 inline void UVector3::SetNull() {

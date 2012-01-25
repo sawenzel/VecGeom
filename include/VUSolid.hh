@@ -39,9 +39,9 @@ public:
   virtual EnumInside Inside (const UVector3 &aPoint) const = 0;
   //
   // Evaluate if point is inside, outside or on the surface within the tolerance
-  virtual double  SafetyFromInside ( const UVector3 aPoint, 
+  virtual double  SafetyFromInside ( const UVector3 &aPoint, 
                                      bool aAccurate=false) const = 0;
-  virtual double  SafetyFromOutside( const UVector3 aPoint, 
+  virtual double  SafetyFromOutside( const UVector3 &aPoint, 
                                      bool aAccurate=false) const = 0;
   // 
   // Estimates isotropic distance to the surface of the solid. This must

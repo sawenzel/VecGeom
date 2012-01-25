@@ -26,9 +26,9 @@ public:
    // Navigation methods
    EnumInside     Inside (const UVector3 &aPoint) const;   
 
-   virtual double  SafetyFromInside ( const UVector3 aPoint, 
+   virtual double  SafetyFromInside ( const UVector3 &aPoint, 
                                       bool aAccurate=false) const;
-   virtual double  SafetyFromOutside( const UVector3 aPoint, 
+   virtual double  SafetyFromOutside( const UVector3 &aPoint, 
                                       bool aAccurate=false) const;
    virtual double  DistanceToIn     ( const UVector3 &aPoint, 
                                       const UVector3 &aDirection,

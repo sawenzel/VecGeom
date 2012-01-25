@@ -27,9 +27,9 @@ public:
    // Navigation methods
    EnumInside     Inside (const UVector3 &aPo6int) const;   
 
-   virtual double  SafetyFromInside ( const UVector3 aPoint, 
+   virtual double  SafetyFromInside ( const UVector3 &aPoint, 
                                       bool aAccurate=false) const;
-   virtual double  SafetyFromOutside( const UVector3 aPoint, 
+   virtual double  SafetyFromOutside( const UVector3 &aPoint, 
                                       bool aAccurate=false) const;
    virtual double  DistanceToIn     ( const UVector3 &aPoint, 
                                       const UVector3 &aDirection,
@@ -41,6 +41,7 @@ public:
                                       UVector3       &aNormalVector, 
                                       bool           &aConvex,
                                       double aPstep = UUtils::kInfinity) const;
+
    virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ); 
    virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax );
    virtual void Extent ( double aMin[3], double aMax[3] ); 
@@ -57,6 +58,8 @@ public:
 private:  
     double fR;
     double fRTolerance;
+
+	virtual double DistanceToOutForOutsidePoints(const UVector3 &p, const UVector3 &v, UVector3 &n) const;
 
 };
 #endif

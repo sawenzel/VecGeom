@@ -60,12 +60,12 @@ public:
    // Navigation methods
    EnumInside                   Inside (const UVector3 &aPoint) const;
 
-   double                       SafetyFromInside (const UVector3 aPoint,
+   double                       SafetyFromInside (const UVector3 &aPoint,
                                                   bool aAccurate=false) const;
                                       
-   double                       SafetyFromOutside(const UVector3 aPoint,
+   double                       SafetyFromOutside(const UVector3 &aPoint,
                                                   bool aAccurate=false) const;
-                                      
+                                     
    double                       DistanceToIn     (const UVector3 &aPoint,
                                                   const UVector3 &aDirection,
                                                   // UVector3       &aNormalVector,
@@ -93,14 +93,14 @@ public:
    void                         SetVoxelFinder(UVoxelFinder* finder);
    void                         Voxelize();
    EnumInside                   InsideDummy(const UVector3 &aPoint) const;
-   int                          SafetyFromOutsideNumberNode(const UVector3 aPoint, bool aAccurate) const;
+   int                          SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccurate) const;
    double                       DistanceToInVoxels(const UVector3 &aPoint, 
                                                    const UVector3 &aDirection, 
                                                 // UVector3 &aNormal, 
                                                    double aPstep) const;  
       
    virtual void GetParametersList(int aNumber,double *aArray) const {}
-   virtual UPolyhedron* GetPolyhedron() const {}   
+   virtual UPolyhedron* GetPolyhedron() const {return 0;}   
 
    std::vector<UNode*>         *fNodes;   // Container of nodes
    UVoxelFinder                *fVoxels;  // Pointer to the vozelized solid

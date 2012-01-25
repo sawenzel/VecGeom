@@ -8,21 +8,29 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <limits>
-#include <float.h>
-#include <math.h>
+
+//#include <float.h>
+//#include <math.h>
 
 struct UTransform3D;
 struct UVector3;
+
+#include <cmath>
+#include <cfloat>
 
 namespace UUtils {
   
   // Mathematical constants
    // Abs
+
+	/*
   inline short  Abs(short d);
   inline int    Abs(int d);
   inline long   Abs(long d);
   inline float  Abs(float d);
   inline double Abs(double d);
+  */
+
   // Sign
   inline short  Sign(short a, short b);
   inline int    Sign(int a, int b);
@@ -30,6 +38,7 @@ namespace UUtils {
   inline float  Sign(float a, float b);
   inline double Sign(double a, double b);
 
+  /*
    // Min, Max of two scalars
   inline short  Min(short a, short b);
   inline int    Min(int a, int b);
@@ -46,6 +55,7 @@ namespace UUtils {
   inline unsigned long   Max(unsigned long a, unsigned long b);
   inline float  Max(float a, float b);
   inline double Max(double a, double b);
+  */
 
   // Trigonometric
   static const double kPi       = 3.14159265358979323846;
@@ -56,23 +66,28 @@ namespace UUtils {
   static const double kInfinity = DBL_MAX;
 
   inline double Infinity();
+
+  /*
   inline double Sin(double);
   inline double Cos(double);
   inline double Tan(double);
+    */
+
   inline double ASin(double);
   inline double ACos(double);
   inline double ATan(double);
   inline double ATan2(double, double);
-  inline double Sqrt(double x);
+
+//  inline double Sqrt(double x);
 
   // Comparing floating points
   inline bool AreEqualAbs(double af, double bf, double epsilon) {
     //return true if absolute difference between af and bf is less than epsilon
-    return UUtils::Abs(af-bf) < epsilon;
+    return std::abs(af-bf) < epsilon;
   }
   inline bool AreEqualRel(double af, double bf, double relPrec) {
     //return true if relative difference between af and bf is less than relPrec
-    return UUtils::Abs(af-bf) <= 0.5*relPrec*(UUtils::Abs(af)+UUtils::Abs(bf));
+    return std::abs(af-bf) <= 0.5*relPrec*(std::abs(af)+std::abs(bf));
   }   
 
   // Locate Min, Max element number in an array
@@ -132,6 +147,9 @@ inline double UUtils::Infinity() {
    return std::numeric_limits<double>::infinity();
 }
 //---- Abs ---------------------------------------------------------------------
+
+
+/*
 inline short UUtils::Abs(short d)
    { return (d >= 0) ? d : -d; }
 
@@ -141,105 +159,121 @@ inline int UUtils::Abs(int d)
 inline long UUtils::Abs(long d)
    { return (d >= 0) ? d : -d; }
 
-inline float UUtils::Abs(float d)
-   { return (d >= 0) ? d : -d; }
 
 inline double UUtils::Abs(double d)
-   { return (d >= 0) ? d : -d; }
+   {
+		return (d >= 0) ? d : -d;
+	   return fabs(d); //return (d >= 0) ? d : -d; 
+}
+
+inline float UUtils::Abs(float d)
+   {
+	   return fabs(d); // return (d >= 0) ? d : -d; 
+	}
+*/
   
 //---- Sign --------------------------------------------------------------------
 inline short UUtils::Sign(short a, short b)
-   { return (b >= 0) ? Abs(a) : -Abs(a); }
+{ return (b >= 0) ? std::abs(a) : -std::abs(a); }
 
 inline int UUtils::Sign(int a, int b)
-   { return (b >= 0) ? Abs(a) : -Abs(a); }
+{ return (b >= 0) ? std::abs(a) : -std::abs(a); }
 
 inline long UUtils::Sign(long a, long b)
-   { return (b >= 0) ? Abs(a) : -Abs(a); }
+{ return (b >= 0) ? std::abs(a) : -std::abs(a); }
 
 inline float UUtils::Sign(float a, float b)
-   { return (b >= 0) ? Abs(a) : -Abs(a); }
+{ return (b >= 0) ? std::abs(a) : -std::abs(a); }
 
 inline double UUtils::Sign(double a, double b)
-   { return (b >= 0) ? Abs(a) : -Abs(a); }
+{ return (b >= 0) ? std::abs(a) : -std::abs(a); }
 
+/*
 //---- Min ---------------------------------------------------------------------
-inline short UUtils::Min(short a, short b)
+inline short std::min(short a, short b)
    { return a <= b ? a : b; }
 
-inline int UUtils::Min(int a, int b)
+inline int std::min(int a, int b)
    { return a <= b ? a : b; }
 
-inline unsigned int UUtils::Min(unsigned int a, unsigned int b)
+inline unsigned int std::min(unsigned int a, unsigned int b)
    { return a <= b ? a : b; }
 
-inline long UUtils::Min(long a, long b)
+inline long std::min(long a, long b)
    { return a <= b ? a : b; }
 
-inline unsigned long UUtils::Min(unsigned long a, unsigned long b)
+inline unsigned long std::min(unsigned long a, unsigned long b)
    { return a <= b ? a : b; }
 
-inline float UUtils::Min(float a, float b)
+inline float std::min(float a, float b)
    { return a <= b ? a : b; }
 
-inline double UUtils::Min(double a, double b)
+inline double std::min(double a, double b)
    { return a <= b ? a : b; }
 
 //---- Max ---------------------------------------------------------------------
-inline short UUtils::Max(short a, short b)
+inline short std::max(short a, short b)
    { return a >= b ? a : b; }
 
-inline int UUtils::Max(int a, int b)
+inline int std::max(int a, int b)
    { return a >= b ? a : b; }
 
-inline unsigned int UUtils::Max(unsigned int a, unsigned int b)
+inline unsigned int std::max(unsigned int a, unsigned int b)
    { return a >= b ? a : b; }
 
-inline long UUtils::Max(long a, long b)
+inline long std::max(long a, long b)
    { return a >= b ? a : b; }
 
-inline unsigned long UUtils::Max(unsigned long a, unsigned long b)
+inline unsigned long std::max(unsigned long a, unsigned long b)
    { return a >= b ? a : b; }
 
-inline float UUtils::Max(float a, float b)
+inline float std::max(float a, float b)
    { return a >= b ? a : b; }
 
-inline double UUtils::Max(double a, double b)
+inline double std::max(double a, double b)
    { return a >= b ? a : b; }
+*/
 
+/*
 //---- Trigonometric------------------------------------------------------------
-inline double UUtils::Sin(double x)
+inline double std::sin(double x)
    { return sin(x); }
 
-inline double UUtils::Cos(double x)
+inline double std::cos(double x)
    { return cos(x); }
 
 inline double UUtils::Tan(double x)
    { return tan(x); }
 
+   inline double UUtils::ATan(double x)
+   { return atan(x); }
+
+   */
+
 inline double UUtils::ASin(double x)
    { if (x < -1.) return -kPi/2;
      if (x >  1.) return  kPi/2;
-     return asin(x);
+     return std::asin(x);
    }
 
 inline double UUtils::ACos(double x)
    { if (x < -1.) return kPi;
      if (x >  1.) return 0;
-     return acos(x);
+     return std::acos(x);
    }
 
-inline double UUtils::ATan(double x)
-   { return atan(x); }
 
 inline double UUtils::ATan2(double y, double x)
-   { if (x != 0) return  atan2(y, x);
+   { if (x != 0) return  std::atan2(y, x);
      if (y == 0) return  0;
      if (y >  0) return  kPi/2;
      else        return -kPi/2;
    }
 
-inline double UUtils::Sqrt(double x)
+
+	   /*
+inline double std::sqrt(double x)
    { return sqrt(x); }
+*/
 
 #endif
