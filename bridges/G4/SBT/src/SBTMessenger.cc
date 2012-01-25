@@ -201,7 +201,7 @@ void SBTMessenger::InvokeTest3()
 	}
 
 	//
-	// Open output file
+	// Open output file 
 	//
 	std::ofstream logFile( errorFile );
 	

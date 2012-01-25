@@ -40,6 +40,7 @@
 
 #include "UBox.hh"
 #include "UOrb.hh"
+#include "UTrd.hh"
 #include "G4USolid.hh"
 #include "VUSolid.hh"
 #include "UVector3.hh"
@@ -87,7 +88,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	// Hmmm... well, how about a reasonable default?
 	//
-	solid = new G4Box( "InteractiveBox", 1.0*m, 1.0*m, 1.0*m );
+	solid = new G4Box( "interactiveBox", 1.0*m, 1.0*m, 1.0*m );
 	
 	//
 	// Declare messenger directory
@@ -95,7 +96,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	volumeDirectory = new G4UIdirectory( prefix );
 	volumeDirectory->SetGuidance( "Solid construction using parameters from the command line" );
 
-
+	 
 	//
 	// Declare G4Box
 	//
@@ -122,6 +123,17 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	G4String uorbPath = prefix+"UOrb";
 	uorbCmd = new G4UIcmdWithPargs( uorbPath, this, uorbArgs, 1 );
 	uorbCmd->SetGuidance( "Declare a UOrb solid" );
+
+	// Declare UTrd
+	//
+	utrdArgs[0] = new G4UIcmdPargDouble( "dx1", 30.0, m );
+	utrdArgs[1] = new G4UIcmdPargDouble( "dx2", 10.0, m );
+	utrdArgs[2] = new G4UIcmdPargDouble( "dy1", 40.0, m );
+	utrdArgs[3] = new G4UIcmdPargDouble( "dy2", 15.0, m );
+	utrdArgs[4] = new G4UIcmdPargDouble( "dz", 60.0, m );
+	G4String utrdPath = prefix+"UTrd";
+	utrdCmd = new G4UIcmdWithPargs( utrdPath, this, utrdArgs, 5 );
+	utrdCmd->SetGuidance( "Declare a UTrd solid" );
 
 	//
 	// Declare G4Cons
@@ -488,6 +500,9 @@ G4InteractiveSolid::~G4InteractiveSolid()
        	delete uorbCmd;
 	DeleteArgArray( uorbArgs,       sizeof(      uorbArgs)/sizeof(G4UIcmdParg**) );
 
+       	delete utrdCmd;
+	DeleteArgArray( utrdArgs,       sizeof(      utrdArgs)/sizeof(G4UIcmdParg**) );
+
 	delete consCmd;
 	DeleteArgArray( consArgs,      sizeof(     consArgs)/sizeof(G4UIcmdParg**) );
 
@@ -578,7 +593,8 @@ void G4InteractiveSolid::DeleteArgArray( G4UIcmdParg **array, const G4int nItem 
 void G4InteractiveSolid::MakeMeABox( G4String values )
 {
 	if (boxCmd->GetArguments( values )) {
-		delete solid;
+	//NOTE: At VS2010 it used to crash, although currently it is OK
+	delete solid;
 		
 		G4UIcmdPargDouble *dxArg = (G4UIcmdPargDouble *)boxArgs[0],
 				  *dyArg = (G4UIcmdPargDouble *)boxArgs[1],
@@ -598,8 +614,8 @@ void G4InteractiveSolid::MakeMeABox( G4String values )
 void G4InteractiveSolid::MakeMeAUBox( G4String values )
 {
 	if (uboxCmd->GetArguments( values )) {
-		delete solid;
-		
+		delete solid; //NOTE: At VS2010 it used to crash, although currently it is OK
+
 		G4UIcmdPargDouble *dxArg = (G4UIcmdPargDouble *)uboxArgs[0],
 				  *dyArg = (G4UIcmdPargDouble *)uboxArgs[1],
 				  *dzArg = (G4UIcmdPargDouble *)uboxArgs[2];
@@ -619,16 +635,37 @@ void G4InteractiveSolid::MakeMeAUBox( G4String values )
 void G4InteractiveSolid::MakeMeAUOrb( G4String values )
 {
 	if (uorbCmd->GetArguments( values )) {
-		delete solid;
-		
+			delete solid; //NOTE: At VS2010 it used to crash, although currently it is OK
+
 		G4UIcmdPargDouble *rArg = (G4UIcmdPargDouble *)uorbArgs[0];
 	
         VUSolid* tmp=new UOrb( "interactiveUOrb", rArg->GetValue()*1000);
-	
+
 		solid = new G4USolid("interactiveUOrb", tmp);
 	}
 	else
-		G4cerr << "UBox not created" << G4endl;
+		G4cerr << "UOrb not created" << G4endl;
+}
+
+// MakeMeAUTrd
+//
+void G4InteractiveSolid::MakeMeAUTrd( G4String values )
+{
+	if (utrdCmd->GetArguments( values )) {
+		delete solid; //NOTE: At VS2010 it used to crash, although currently it is OK
+		
+		G4UIcmdPargDouble *fDx1 = (G4UIcmdPargDouble *)utrdArgs[0];
+		G4UIcmdPargDouble *fDx2 = (G4UIcmdPargDouble *)utrdArgs[1];
+		G4UIcmdPargDouble *fDy1 = (G4UIcmdPargDouble *)utrdArgs[2];
+		G4UIcmdPargDouble *fDy2 = (G4UIcmdPargDouble *)utrdArgs[3];
+		G4UIcmdPargDouble *fDz = (G4UIcmdPargDouble *)utrdArgs[4];
+	
+        VUSolid* tmp=new UTrd( "interactiveUTrd", fDx1->GetValue(), fDx2->GetValue(), fDy1->GetValue(), fDy2->GetValue(), fDz->GetValue());
+		
+		solid = new G4USolid("interactiveUTrd", tmp);
+	}
+	else
+		G4cerr << "UTrd not created" << G4endl;
 }
 
 //
@@ -1544,6 +1581,8 @@ void G4InteractiveSolid::SetNewValue( G4UIcommand *command, G4String newValues )
 		MakeMeAUBox( newValues );
     else if (command == uorbCmd) 
 		MakeMeAUOrb( newValues );
+    else if (command == utrdCmd) 
+		MakeMeAUTrd( newValues );
 	else if (command == consCmd) 
 		MakeMeACons( newValues );
 	else if (command == orbCmd) 
@@ -1617,6 +1656,8 @@ G4String G4InteractiveSolid::GetCurrentValue( G4UIcommand *command )
 		return ConvertArgsToString( 	   uboxArgs, sizeof(	 uboxArgs)/sizeof(G4UIcmdParg**) );
     else if (command == uorbCmd) 
 		return ConvertArgsToString( 	   uorbArgs, sizeof(	 uorbArgs)/sizeof(G4UIcmdParg**) );
+    else if (command == utrdCmd) 
+		return ConvertArgsToString( 	   utrdArgs, sizeof(	 utrdArgs)/sizeof(G4UIcmdParg**) );
 	else if (command == consCmd)
 		return ConvertArgsToString( 	  consArgs, sizeof(	consArgs)/sizeof(G4UIcmdParg**) );
 	else if (command == orbCmd)

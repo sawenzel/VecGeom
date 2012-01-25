@@ -87,7 +87,7 @@ void SBTrun::SetDefaults()
   widths = G4ThreeVector( 1*m, 1*m, 1*m );
   grids  = G4ThreeVector( 0, 0, 0 );
 
-  maxPoints = 10000;
+//  maxPoints = 10000;
   maxErrors = 100;
 }
 
@@ -166,7 +166,7 @@ void SBTrun::RunTest( const G4VSolid *testVolume, std::ostream &logger )
     */
 
     G4SolidStore* SolidStore = G4SolidStore::GetInstance();
-    G4cout << ((*SolidStore)[0])->GetName() << G4endl ;
+    G4cout << (SolidStore->back())->GetName() << G4endl ; // ((*SolidStore)[0])
   }
 
 
