@@ -3,6 +3,8 @@
 #include <string.h>
 #include "UTransform3D.hh"
 
+#include <cmath>
+
 const int kN3 = 3*sizeof(double);
 const int kN9 = 9*sizeof(double);
 const double kIdRot[9] = {1.0, 0.0, 0.0,
@@ -61,12 +63,12 @@ void UTransform3D::SetAngles(double phi, double theta, double psi)
 
 // NOTE: angles are in degrees
    double degrad = UUtils::kDegToRad;
-   double sinphi = UUtils::Sin(degrad*phi);
-   double cosphi = UUtils::Cos(degrad*phi);
-   double sinthe = UUtils::Sin(degrad*theta);
-   double costhe = UUtils::Cos(degrad*theta);
-   double sinpsi = UUtils::Sin(degrad*psi);
-   double cospsi = UUtils::Cos(degrad*psi);
+   double sinphi = std::sin(degrad*phi);
+   double cosphi = std::cos(degrad*phi);
+   double sinthe = std::sin(degrad*theta);
+   double costhe = std::cos(degrad*theta);
+   double sinpsi = std::sin(degrad*psi);
+   double cospsi = std::cos(degrad*psi);
 
    fRot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
    fRot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
@@ -84,8 +86,8 @@ void UTransform3D::RotateX(double angle)
 {
 // Rotate the transformation about the X axis with a given angle (in degrees).
    double phi = angle*UUtils::kDegToRad;
-   double c = UUtils::Cos(phi);
-   double s = UUtils::Sin(phi);
+   double c = std::cos(phi);
+   double s = std::sin(phi);
    double v[9];
    v[0] = fRot[0];
    v[1] = fRot[1];
@@ -109,8 +111,8 @@ void UTransform3D::RotateY(double angle)
 {
 // Rotate the transformation about the Y axis with a given angle (in degrees).
    double phi = angle*UUtils::kDegToRad;
-   double c = UUtils::Cos(phi);
-   double s = UUtils::Sin(phi);
+   double c = std::cos(phi);
+   double s = std::sin(phi);
    double v[9];
    v[0] = c*fRot[0]+s*fRot[6];
    v[1] = c*fRot[1]+s*fRot[7];
@@ -134,8 +136,8 @@ void UTransform3D::RotateZ(double angle)
 {
 // Rotate the transformation about the Z axis with a given angle (in degrees).
    double phi = angle*UUtils::kDegToRad;
-   double c = UUtils::Cos(phi);
-   double s = UUtils::Sin(phi);
+   double c = std::cos(phi);
+   double s = std::sin(phi);
    double v[9];
    v[0] = c*fRot[0]-s*fRot[3];
    v[1] = c*fRot[1]-s*fRot[4];
