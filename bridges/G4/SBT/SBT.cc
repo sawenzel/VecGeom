@@ -35,6 +35,7 @@
 #include "G4InteractiveSolid.hh"
 #include "SBTMessenger.hh"
 #include "SBTvoxelMessenger.hh"
+#include "SBTperformanceMessenger.hh"
 #include "SBTVisManager.hh"
 
 /*
@@ -65,7 +66,11 @@ int main(int argc,char *argv[])
 	//
 	// Build our voxel test messenger
 	SBTvoxelMessenger *voxelMessenger = new SBTvoxelMessenger( "/voxel/", (G4SolidQuery *)interactiveSolid, visManager );
-		
+
+	//
+	// Build our voxel test messenger
+	SBTperformanceMessenger *performanceMessenger = new SBTperformanceMessenger( "/performance/", (G4SolidQuery *)interactiveSolid, visManager );
+
 	// Give control to interactive terminal
   G4UIsession *session;
   
