@@ -33,7 +33,7 @@
 #/run/beamOn 1
 
 #if you want to change the detector
-/mydet/SelectDetector UOrb
+/mydet/SelectDetector UTrd
 /run/beamOn 1
 
 ###/mydet/SelectDetector Sphere
