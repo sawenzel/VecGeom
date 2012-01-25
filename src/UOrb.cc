@@ -134,7 +134,7 @@ double UOrb::DistanceToIn(const UVector3 &p,
         {
           if ( s > dRmax ) // Avoid rounding errors due to precision issues seen on
           {                // 64 bits systems. Split long distances and recompute
-            double fTerm = s - std::fmod(s,dRmax);
+            double fTerm = s - fmod(s,dRmax);
             s = fTerm + DistanceToIn(p+fTerm*v,v);
           } 
           return snxt = s;
@@ -171,6 +171,23 @@ double UOrb::DistanceToIn(const UVector3 &p,
   return snxt;
 }
 
+double UOrb::DistanceToOutForOutsidePoints( const UVector3  &p, const UVector3 &v, UVector3 &n) const
+{
+    double distanceIn = DistanceToIn(p, v);
+    UVector3 shift = distanceIn * v;
+    UVector3 surfacePoint = p + shift;
+    UVector3 normal;
+    ((UOrb &)*this).Normal(surfacePoint, normal);
+    double dot = normal.Dot(v); 
+    if (dot > 0) return 0;
+    else
+    {
+        bool convex;
+        double distanceOut = DistanceToOut(surfacePoint, v, n, convex);
+        return distanceIn + distanceOut;
+    }
+}
+
 /*
 * Computes distance from a point presumably intside the solid to the solid 
 * surface. Ignores first surface along each axis systematically (for points
@@ -181,7 +198,7 @@ double UOrb::DistanceToIn(const UVector3 &p,
 * ______________________________________________________________________________
 */
 double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
-			       UVector3 &n, bool &convex, double /*aPstep*/) const
+			       UVector3 &n, bool &convex, double aPstep) const
 {
   double snxt = 0;     // snxt: distance to next surface, is default return value 
   bool notOutside = false;
@@ -238,7 +255,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
         // if(calcNorm) // NOTE: we do not have this variable, calcNorm is true always
         {
 //          *validNorm = true; // NOTE: we do not have this variable, probably always true
-          n = UVector3(p.x/fR,p.y/fR,p.z/fR);
+          n = UVector3(p.x/fR,p.y/fR,p.z/fR); 
         }
         return snxt = 0;
       }
@@ -255,6 +272,14 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
   }
   else // p is outside ???
   {
+	  // Rule 2: DistanceToOut
+		// Surface points = 0
+		// Outside points: If pointing outwards (dot product with normal positive) return 0, otherwise ignore first surface, another surface should always be on the direction line, use instead distance to this one.
+
+	  double res = DistanceToOutForOutsidePoints(p, v, n); 
+
+	  if (0)
+	  {
     std::cout.precision(16);
     std::cout << std::endl;
 //    DumpInfo();
@@ -269,6 +294,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
     std::cout << "v.z() = "   << v.z << std::endl << std::endl;
     std::cout << "Proposed distance :" << std::endl << std::endl;
     std::cout << "snxt = "    << snxt << std::endl << std::endl;
+	  }
 
 	/*
     std::cout.precision(6);
@@ -288,6 +314,8 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 	}
 	else
 	{
+		if (0)
+		{
         std::cout.precision(16);
         std::cout << std::endl;
 //        DumpInfo();
@@ -302,6 +330,8 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
         std::cout << "Proposed distance :" << std::endl << std::endl;
         std::cout << "snxt = "    << snxt << " mm" << std::endl << std::endl;
         std::cout.precision(6);
+		}
+
 //        G4Exception("G4Orb::DistanceToOut(p,v,..)","Notification",JustWarning, "Undefined side for valid surface normal to solid.");
     }
   }
@@ -317,7 +347,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 * Note: ??? Should not Return 0 anymore if point outside, just the value
 * OK
 */
-double UOrb::SafetyFromInside ( const UVector3 p, bool /*aAccurate*/) const
+double UOrb::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) const
 {
 
 /////////////////////////////////////////////////////////////////////////
@@ -360,7 +390,7 @@ double UOrb::SafetyFromInside ( const UVector3 p, bool /*aAccurate*/) const
 * - Return 0 if point inside
 * OK
 */
-double UOrb::SafetyFromOutside ( const UVector3 p, bool aAccurate) const
+double UOrb::SafetyFromOutside ( const UVector3 &p, bool aAccurate) const
 {
     double safe = 0.0;
     double rad  = std::sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
