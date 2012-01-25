@@ -96,6 +96,9 @@ void AXPETSteppingAction::UserSteppingAction(const G4Step* aStep)
     //
     if(std::sqrt(x*x+y*y)>(detector->GetExtend()*2.)){
       G4cerr.precision(16);
+//	  double sq = std::sqrt(x*x+y*y);
+//	  double extend = detector->GetExtend();
+//	  std::cout << "sq: " << sq << "; extend: " << extend << std::endl;
       G4cerr << "ERROR - UserSteppingAction::OpticalPhoton is out of Crystal Solid" << G4endl
 	     <<" Wrong Point is "<<xStep<<"  "<<yStep<<"  "<<zStep << G4endl
              <<" Wrong Direction is "<<xDirection<<"  "<<yDirection<<"  "<<zDirection<< G4endl;

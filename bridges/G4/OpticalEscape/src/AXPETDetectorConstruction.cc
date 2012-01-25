@@ -80,6 +80,7 @@
 #include "G4USolid.hh"
 #include "UBox.hh"
 #include "UOrb.hh"
+#include "UTrd.hh"
 //
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
@@ -557,6 +558,12 @@ else if(val == "TessellatedSolid")
     { 
       VUSolid* tmp=new UOrb( "interactiveUOrb",1);
       aVolume = new G4USolid("interactiveUOrb",tmp );
+    }
+
+  else if (val == "UTrd")
+    { 
+      VUSolid* tmp=new UTrd( "interactiveUTrd", 3, 1, 4, 1.5, 6);
+      aVolume = new G4USolid("interactiveUTrd",tmp );
     }
 
   else
