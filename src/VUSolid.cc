@@ -7,8 +7,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-double VUSolid::fgTolerance = 1.0E-8;  // cartesian tolerance; to be changed
-//double VUSolid::frTolerance = 1.0E-9;  // radial tolerance; to be changed
+double VUSolid::fgTolerance = 1.0E-9;  // cartesian tolerance; to be changed (for U was 1e-8, but we keep Geant4)
+double VUSolid::frTolerance = 1.0E-9;  // radial tolerance; to be changed
 
 //______________________________________________________________________________
 VUSolid::VUSolid() :
