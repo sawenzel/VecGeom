@@ -42,9 +42,9 @@ public:
                                       bool           &aConvex,
                                       double aPstep = UUtils::kInfinity) const;
 
-   virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ); 
-   virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax );
-   virtual void Extent ( double aMin[3], double aMax[3] ); 
+   virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
+   virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
+   virtual void Extent ( double aMin[3], double aMax[3] ) const; 
    virtual double Capacity();
    virtual double SurfaceArea();
    virtual VUSolid* Clone() const {return 0;}

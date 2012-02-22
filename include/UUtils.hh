@@ -18,6 +18,8 @@ struct UVector3;
 #include <cmath>
 #include <cfloat>
 
+#include <vector>
+
 namespace UUtils {
   
   // Mathematical constants
@@ -103,7 +105,7 @@ namespace UUtils {
 
   // TransformLimits: Use the transformation to convert the local limits defined
   // by min/max vectors to the master frame. Returns modified limits.
-  void TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *transformation);    
+  void TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D &transformation);    
 
   // Templates:
   template<typename T>
@@ -133,6 +135,8 @@ namespace UUtils {
   };
 
   // Binary search
+  int BinarySearch(int n, const std::vector<double> &array, double value);
+
   int BinarySearch(int n, const double *array, double value);
 
   // Equations

@@ -7,86 +7,106 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef USOLIDS_VUSolid
 #include "VUSolid.hh"
-#endif
 
-#ifndef USOLIDS_UUtils
 #include "UUtils.hh"
-#endif
 
-#ifndef USOLIDS_UTransform3D
 #include "UTransform3D.hh"
-#endif
 
-#ifndef USOLIDS_UMultiUnion
-#include "UMultiUnion.hh"
-#endif
+//#include "UMultiUnion.hh"
 
 #include <vector>
 #include <string>
 
+#include "UBits.h"
+
+
+struct UVoxelBox
+{
+   UVector3 d; // half length of the box
+   UVector3 p; // position of the box
+};
+
 class UVoxelFinder
 {
+	friend class UVoxelCandidatesIterator;
+
 public:
-   void Voxelize();
+   void Voxelize(std::vector<VUSolid *> &solids, std::vector<UTransform3D *> &transforms);
 
-   void BuildVoxelLimits();
    void DisplayVoxelLimits();
-
-   void CreateBoundaries();    
-   void SortBoundaries(); 
    void DisplayBoundaries();
-
-   void BuildListNodes();
-   void DisplayListNodes(); 
+   void DisplayListNodes();
    
    UVoxelFinder();
-   UVoxelFinder(UMultiUnion* multi_union);
    ~UVoxelFinder();
 
    // Method displaying the nodes located in a voxel characterized by its three indexes:
    void               GetCandidatesVoxel(int indexX, int indexY, int indexZ);
    // Method returning in a vector container the nodes located in a voxel characterized by its three indexes:
-   void GetCandidatesVoxelArray(const UVector3 &point, std::vector<int> &list);
+   int GetCandidatesVoxelArray(const UVector3 &point, std::vector<int> &list, UBits *crossed=NULL) const;
 
-   // deprecated
-   std::vector<int>        GetCandidatesVoxelArrayOld(const UVector3 point);
-   std::vector<int> Intersect(char* mask);
+   int GetCandidatesVoxelBits(const UVector3 &point, UBits &bits) const;
 
    // Method returning the pointer to the array containing the characteristics of each box:
-   double*            GetBoxes();
+   const std::vector<UVoxelBox> &GetBoxes() const;
+  
+   inline int GetBitsPerSlice () const { return nPerSlice*8*sizeof(unsigned int); }
+
+   bool Contains(const UVector3 &point) const;
    
-   double*            GetXSortedBoundaries();
-   double*            GetYSortedBoundaries();
-   double*            GetZSortedBoundaries();      
-   
-   int                OutcomeBinarySearch(double position, VUSolid::EAxisType axis);
-   int                GetNumSlices(VUSolid::EAxisType axis);
+   int                BinarySearch(const UVector3 &vector, int axis) const;
+
+   double             DistanceToNext(const UVector3 &point, const UVector3 &direction) const;
+
+   double             DistanceToFirst(const UVector3 &point, const UVector3 &direction) const;
 
 private:
-   void               GetCandidatesAsString(const char* mask, std::string &result);
+   void               GetCandidatesAsString(const UBits &bits, std::string &result);
+
+   void CreateBoundary(std::vector<double> &boundaryRaw, int axis);
+   
+   void BuildSortedBoundaries();
+
+   void BuildVoxelLimits(std::vector<VUSolid *> &solids, std::vector<UTransform3D *> &transforms);
+
+   void DisplayBoundaries(std::vector<double> &boundaries, int boundariesCount);
+
+   void BuildListNodes();
+
+   void DisplayListNodes(std::vector<double> &boundaries, int boundariesCount, UBits &bitmask);
 
 private:
-   UMultiUnion       *fMultiUnion;           // Solid to be voxelized (it is a union of several sub-solids)
-   double            *fBoxes;                // Array of box limits on the 3 cartesian axis
-   double            *fBoundaries;           // Array of boundaries induced by the bounding boxes contained
-                                             // in "fBoxes"
-   double            *fXSortedBoundaries;    // Sorted and, if need be, skimmed boundaries along X axis
-   int                fXNumBound;            // Total number of boundaries for X axis
-   double            *fYSortedBoundaries;    // Sorted and, if need be, skimmed boundaries along Y axis
-   int                fYNumBound;            // Total number of boundaries for Y axis
-   double            *fZSortedBoundaries;    // Sorted and, if need be, skimmed boundaries along Z axis 
-   int                fZNumBound;            // Total number of boundaries for Z axis
-   int               *fNumNodesSliceX;       // Number of nodes in the considered slice along X axis
-   int               *fNumNodesSliceY;       // Number of nodes in the considered slice along Y axis
-   int               *fNumNodesSliceZ;       // Number of nodes in the considered slice along Z axis
-   char              *fMemoryX;              // Each character of "fmemory" contains the nodes present in the
-   char              *fMemoryY;              // considered slice
-   char              *fMemoryZ;      
-   int                fNx, fNy, fNz;         // Number of bytes stored in "fmemory" for each axis
-   double             fTolerance;            // Minimal distance to discrminate two boundaries.
 
-   int nPer;
+   int nPerSlice;
+
+   std::vector<UVoxelBox> boxes;                // Array of box limits on the 3 cartesian axis
+
+   std::vector<double> boundaries[3]; // Sorted and, if need be, skimmed boundaries along X,Y,Z axis
+   int boundariesCounts[3];            // Total number of boundaries for X,Y,Z axis
+   // although, we could use instead calling to boundaries[3].size(), we have
+   // found that it would very much affect performance in negative way (up to 15%)
+   // therefore we keep this variable
+
+   UBits bitmasks[3];
 };
+
+
+
+class UVoxelCandidatesIterator
+{
+	private:
+		unsigned int mask;
+		int curInt, curBit, carNodes, n, sliceX, sliceY, sliceZ;
+		unsigned int *maskX, *maskY, *maskZ;
+		unsigned int *maskXLeft, *maskYLeft, *maskZLeft;
+		bool nextAvailable;
+
+	public:
+		UVoxelCandidatesIterator(const UVoxelFinder &f, const UVector3 &point);
+
+		int Next();
+};
+
 #endif
+

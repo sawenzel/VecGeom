@@ -67,7 +67,7 @@ public:
   //    If normal cannot be computed (or shape is not convex), set 'convex' to 'false'.
   // o for DistanceToIn(), the normal-vector could be added as optional
 
-  virtual bool Normal( const UVector3& aPoint, UVector3 &aNormal ) =0; 
+  virtual bool Normal( const UVector3& aPoint, UVector3 &aNormal ) const = 0; 
   // Computes the normal on a surface and returns it as a unit vector
   //   In case a point is further than tolerance_normal from a surface, set validNormal=false
   //   Must return a valid vector. (even if the point is not on the surface.)
@@ -76,9 +76,9 @@ public:
 
   // Decision: provide or not the Boolean 'validNormal' argument for returning validity 
 
-  virtual void Extent(EAxisType aAxis, double &aMin, double &aMax) = 0;
+  virtual void Extent(EAxisType aAxis, double &aMin, double &aMax) const = 0;
   // Returns the minimum and maximum extent along the specified Cartesian axis
-  virtual void Extent( double aMin[3], double aMax[3] ) = 0;
+  virtual void Extent( double aMin[3], double aMax[3] ) const = 0;
   // Return the minimum and maximum extent along all Cartesian axes
   // For both the Extent methods
   // o Expect mostly to use a GetBBox()/CalculateBBox() method internally to compute the extent
