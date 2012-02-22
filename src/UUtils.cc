@@ -15,6 +15,8 @@ int UUtils::BinarySearch(int n, const double *array, double value)
 // Binary search in an array of doubles. If match is found, function returns
    // position of element.  If no match found, function gives nearest
    // element smaller than value.
+
+//	if (array[n-1] == value) return n - 2; // patch, let us discuss it
    
    int nabove, nbelow, middle;
    nabove = n+1;
@@ -23,6 +25,29 @@ int UUtils::BinarySearch(int n, const double *array, double value)
       middle = (nabove+nbelow)/2;
       if(value == array[middle-1]) return middle-1;
       if (value  < array[middle-1]) nabove = middle;
+      else                          nbelow = middle;
+   }    
+   return nbelow-1;
+}   
+
+//______________________________________________________________________________
+int UUtils::BinarySearch(int n, const std::vector<double> &array, double value)
+{
+// Binary search in an array of doubles. If match is found, function returns
+   // position of element.  If no match found, function gives nearest
+   // element smaller than value.
+
+//	if (array[n-1] == value) return n - 2; // patch, let us discuss it
+
+	const double *a = array.data();
+
+   int nabove, nbelow, middle;
+   nabove = n+1;
+   nbelow = 0;
+   while(nabove-nbelow > 1) {
+      middle = (nabove+nbelow)/2;
+      if(value == a[middle-1]) return middle-1;
+      if (value  < a[middle-1]) nabove = middle;
       else                          nbelow = middle;
    }    
    return nbelow-1;
@@ -135,7 +160,7 @@ void UUtils::Sort(int n, const double* a, int* index, bool down)
 }
 
 //______________________________________________________________________________
-void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *transformation)
+void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D &transformation)
 {
    // The goal of this method is to convert the quantities min and max (representing the
    // bounding box of a given solid in its local frame) to the main frame, using
@@ -170,7 +195,7 @@ void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D *t
       kIndex = 3*jIndex;
       tempPoint.Set(vertices[kIndex],vertices[kIndex+1],vertices[kIndex+2]);
       // From local frame to the gobal one:
-      tempPointConv = transformation->GlobalPoint(tempPoint);
+      tempPointConv = transformation.GlobalPoint(tempPoint);
      
       // Current positions on the three axis:         
       currentX = tempPointConv.x;

@@ -1216,7 +1216,7 @@ inline double UTrd::DistanceToOutRoot( const UVector3  &p, const UVector3 &v,
 
 
 // double *point, double *dir, double *norm;
-inline bool UTrd::NormalRoot(const UVector3& point, UVector3 &norm)
+inline bool UTrd::NormalRoot(const UVector3& point, UVector3 &norm) const
 {
 	// Compute normal to closest surface from POINT. 
    double safe, safemin;
@@ -1280,12 +1280,12 @@ inline bool UTrd::NormalRoot(const UVector3& point, UVector3 &norm)
 * ???
 */
 
-bool UTrd::Normal( const UVector3& p, UVector3 &n)
+bool UTrd::Normal( const UVector3& p, UVector3 &n) const
 {
 	return NormalGeant4(p,n);
 }
 
-bool UTrd::NormalGeant4( const UVector3& p, UVector3 &norm)
+bool UTrd::NormalGeant4( const UVector3& p, UVector3 &norm) const
 {
   UVector3 sumnorm(0.,0.,0.);
   int noSurfaces = 0; 
@@ -1478,7 +1478,7 @@ inline UVector3 UTrd::ApproxSurfaceNormal( const UVector3& p ) const
 * Returns extent of the solid along a given cartesian axis
 * OK
 */
-void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax )
+void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 {
 	switch (aAxis)
 	{
@@ -1500,7 +1500,7 @@ void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax )
 * Returns the full 3D cartesian extent of the solid.
 * OK
 */
-void UTrd::Extent ( double aMin[3], double aMax[3] )
+void UTrd::Extent ( double aMin[3], double aMax[3] ) const
 {
 	aMin[0] = std::min (fDx1, fDx2);
 	aMin[1] = std::min (fDy1, fDy2);

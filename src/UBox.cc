@@ -248,7 +248,7 @@ double UBox::SafetyFromOutside ( const UVector3 &aPoint,
 }
 
 //______________________________________________________________________________
-bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
+bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal ) const
 {
 // Computes the normal on a surface and returns it as a unit vector
 //   In case a point is further than tolerance_normal from a surface, set validNormal=false
@@ -310,7 +310,7 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal )
 }
    
 //______________________________________________________________________________
-void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax )
+void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 {
 // Returns extent of the solid along a given cartesian axis
    switch (aAxis) {
@@ -326,10 +326,10 @@ void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax )
       default:
          std::cout << "Extent: unknown axis" << aAxis << std::endl;
    }      
-}            
+}             
 
 //______________________________________________________________________________
-void UBox::Extent ( double aMin[3], double aMax[3] )
+void UBox::Extent ( double aMin[3], double aMax[3] ) const
 {
 // Returns the full 3D cartesian extent of the solid.
    aMin[0] = -fDx; aMax[0] = fDx;

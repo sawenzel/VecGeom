@@ -62,6 +62,7 @@ VUSolid::EnumInside UOrb::Inside(const UVector3 &p) const
   else
   {
     tolRMax = fR + fRTolerance;
+	tolRMax2 = tolRMax*tolRMax;
     if ( rad2 <= tolRMax2)
 		return eSurface;
     else
@@ -415,7 +416,7 @@ double UOrb::SafetyFromOutside ( const UVector3 &p, bool aAccurate) const
 *  You really should get an algebra book though, as you are bound to encounter 
 *  more of these problems in a 3d application.
 */
-bool UOrb::Normal( const UVector3& p, UVector3 &n)
+bool UOrb::Normal( const UVector3& p, UVector3 &n) const
 {
 	double rad2 = p.x*p.x+p.y*p.y+p.z*p.z;
 	double rad = std::sqrt(rad2);
@@ -435,7 +436,7 @@ bool UOrb::Normal( const UVector3& p, UVector3 &n)
 * Returns extent of the solid along a given cartesian axis
 * OK
 */
-void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax )
+void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 {
 	switch (aAxis)
 	{
@@ -453,7 +454,7 @@ void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax )
 * Returns the full 3D cartesian extent of the solid.
 * OK
 */
-void UOrb::Extent ( double aMin[3], double aMax[3] )
+void UOrb::Extent ( double aMin[3], double aMax[3] ) const
 {
    aMin[0] = aMin[1] = aMin[2] = -fR;
    aMax[0] = aMax[1] = aMax[2] = fR;
