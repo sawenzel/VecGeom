@@ -20,11 +20,12 @@
 
 #include "UBits.h"
 
+#include "UBox.hh"
 
 struct UVoxelBox
 {
-   UVector3 d; // half length of the box
-   UVector3 p; // position of the box
+   UVector3 hlen; // half length of the box
+   UVector3 pos; // position of the box
 };
 
 class UVoxelFinder
@@ -55,26 +56,24 @@ public:
 
    bool Contains(const UVector3 &point) const;
    
-   int                BinarySearch(const UVector3 &vector, int axis) const;
+   double             DistanceToNext(UVector3 &point, const UVector3 &direction) const;
 
-   double             DistanceToNext(const UVector3 &point, const UVector3 &direction) const;
-
-   double             DistanceToFirst(const UVector3 &point, const UVector3 &direction) const;
+   double             DistanceToFirst(UVector3 &point, const UVector3 &direction) const;
 
 private:
    void               GetCandidatesAsString(const UBits &bits, std::string &result);
 
-   void CreateBoundary(std::vector<double> &boundaryRaw, int axis);
+   void CreateSortedBoundary(std::vector<double> &boundaryRaw, int axis);
    
-   void BuildSortedBoundaries();
+   void BuildOptimizedBoundaries();
 
    void BuildVoxelLimits(std::vector<VUSolid *> &solids, std::vector<UTransform3D *> &transforms);
 
-   void DisplayBoundaries(std::vector<double> &boundaries, int boundariesCount);
+   void DisplayBoundaries(std::vector<double> &boundaries);
 
    void BuildListNodes();
 
-   void DisplayListNodes(std::vector<double> &boundaries, int boundariesCount, UBits &bitmask);
+   void DisplayListNodes(std::vector<double> &boundaries, UBits &bitmask);
 
 private:
 
@@ -89,6 +88,9 @@ private:
    // therefore we keep this variable
 
    UBits bitmasks[3];
+
+   UBox *boundingBox;
+   UVector3 boundingBoxCenter;
 };
 
 

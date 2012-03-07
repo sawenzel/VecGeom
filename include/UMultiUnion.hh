@@ -88,7 +88,7 @@ public:
 
    bool                         Normal (const UVector3 &aPoint, UVector3 &aNormal) const;
    void                         Extent (EAxisType aAxis, double &aMin, double &aMax) const;
-   void                         Extent (double aMin[3], double aMax[3]) const;
+   void							Extent (UVector3 &aMin, UVector3 &aMax) const;
    double                       Capacity();
    double                       SurfaceArea();
    VUSolid*                     Clone() const {return 0;}
@@ -108,6 +108,8 @@ public:
    {
 	   return (UVoxelFinder &)voxels;
    }
+
+   static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
 
 private:
 

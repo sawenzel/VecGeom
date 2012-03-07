@@ -12,7 +12,7 @@
 
 struct UTransform3D {
 
-   double            fTr[3];    // Translation
+   UVector3            fTr;    // Translation
    double            fRot[9];   // Rotation
 
 

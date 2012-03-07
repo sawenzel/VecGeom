@@ -35,9 +35,16 @@ public:
 
    inline UVector3 & operator -= (const UVector3 &);
    // Subtraction.
-   
+
+   inline double &operator[] (int index);
+
+   inline double operator[]( int index) const;
+  
    inline UVector3 & operator *= (double);
    // Scaling with real numbers.
+
+   inline UVector3 & operator /= (double);
+   // Dividing with real numbers.
    
    inline double Dot(const UVector3 &) const;
    // Scalar product.
@@ -59,7 +66,10 @@ public:
 
    inline void Set(double xx, double yy, double zz);
    // Assign values to components
-   
+
+   inline void Set(double xx);
+   // Assign value to all components
+
    double Normalize();
    // Normalize to unit this vector
    
@@ -92,6 +102,8 @@ public:
 
    void RotateZ(double);
    // Rotates the vector around the z-axis.
+
+   inline UVector3 & MultiplyByComponents (const UVector3 &p);
    
 public:
    double x;
@@ -109,8 +121,20 @@ double operator * (const UVector3 &, const UVector3 &);
 // Scalar product of 3-vectors.
 
 UVector3 operator * (const UVector3 &, double a);
+UVector3 operator / (const UVector3 &, double a);
 UVector3 operator * (double a, const UVector3 &);
+
 // Scaling of 3-vectors with a real number
+
+//______________________________________________________________________________
+inline UVector3 & UVector3::MultiplyByComponents (const UVector3 &p) 
+{
+// Assignment of a UVector3
+   x *= p.x;
+   y *= p.y;
+   z *= p.z;
+   return *this;
+}
 
 //______________________________________________________________________________
 inline UVector3 & UVector3::operator = (const UVector3 & p) 
@@ -164,6 +188,14 @@ inline UVector3& UVector3::operator *= (double a) {
    return *this;
 }
 
+inline UVector3& UVector3::operator /= (double a) {
+   a = 1./a;
+   x *= a;
+   y *= a;
+   z *= a;
+   return *this;
+}
+
 inline bool UVector3::IsNull() const {
    return ((std::abs(x) + std::abs(y) + std::abs(z)) == 0.0) ? true : false;
 }   
@@ -176,6 +208,10 @@ inline void UVector3::Set(double xx, double yy, double zz) {
    x = xx;
    y = yy;
    z = zz;
+}   
+
+inline void UVector3::Set(double xx) {
+   x = y = z = xx;
 }   
 
 inline double UVector3::Dot(const UVector3 & p) const {
@@ -194,4 +230,35 @@ inline double UVector3::CosTheta() const {
    double ptot = Mag();
    return ptot == 0.0 ? 1.0 : z/ptot;
 }
+
+
+inline double &UVector3::operator[] (int index)
+{
+    switch (index)
+    {
+        case 0: return x;
+        case 1: return y;
+        case 2: return z;
+        default: return x;
+    }
+}
+
+inline double UVector3::operator[] (int index) const
+{
+    // TODO: test performance of both versions on Linux
+    if (true)
+    {
+        double vec[3] = {x, y, z};
+        return vec[index];
+    }
+
+    switch (index)
+    {
+        case 0: return x;
+        case 1: return y;
+        case 2: return z;
+        default: return 0;
+    }
+}
+
 #endif

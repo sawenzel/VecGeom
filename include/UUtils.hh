@@ -107,6 +107,8 @@ namespace UUtils {
   // by min/max vectors to the master frame. Returns modified limits.
   void TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D &transformation);    
 
+  double RandomUniform(double min, double max);
+
   // Templates:
   template<typename T>
   struct CompareDesc {
@@ -135,7 +137,9 @@ namespace UUtils {
   };
 
   // Binary search
-  int BinarySearch(int n, const std::vector<double> &array, double value);
+  int BinarySearch(const std::vector<double> &array, double value);
+
+  int BinarySearchLower(const std::vector<double> &array, double value);
 
   int BinarySearch(int n, const double *array, double value);
 
