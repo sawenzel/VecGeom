@@ -78,11 +78,13 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "G4Orb.hh"
 #include "G4Polycone.hh"
 #include "G4Polyhedra.hh"
+#include "G4UnionSolid.hh"
 
 #include "VUSolid.hh"
 #include "UBox.hh"
 #include "UOrb.hh"
 #include "UTrd.hh"
+#include "UMultiUnion.hh"
 
 #include "TGeoTrd2.h" 
 #include "TGeoBBox.h"
@@ -118,6 +120,9 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 
 #include "G4Polyhedron.hh"
 #include "HepPolyhedron.h"
+
+#include "TGeoCompositeShape.h"
+#include "TGeoMatrix.h"
 
 //#define _USE_MATH_DEFINES
 //#include <math.h>
@@ -517,6 +522,7 @@ void SBTperformance::TestDistanceToInUSolids(int iteration)
 		GetVectorUSolids(direction, directions, i);
 		double res = volumeUSolids->DistanceToIn(point, direction);
 
+
 		if (!iteration) 
 		{
 			resultDoubleUSolids[i] = ConvertInfinities (res);
@@ -667,19 +673,78 @@ double SBTperformance::MeasureTest (void (SBTperformance::*funcPtr)(int), string
 	return realTime;
 }
 
+
+// Number of nodes to implement
+void SBTperformance::ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4UnionSolid &solid, string &rootString)
+{
+	if (G4UnionSolid *leaf = (G4UnionSolid *) solid.GetConstituentSolid(0)) 
+	{
+		ConvertMultiUnionFromGeant4(multiUnion, *leaf, rootString);
+		leaf = (G4UnionSolid *) solid.GetConstituentSolid(1);
+		ConvertMultiUnionFromGeant4(multiUnion, *leaf, rootString);
+	}
+	else
+	{
+		// updating USolids multi-union
+		G4DisplacedSolid &node = *(G4DisplacedSolid *) &solid;
+		G4AffineTransform at = node.GetTransform();
+		G4ThreeVector t = at.NetTranslation();
+		G4RotationMatrix r = at.NetRotation();
+		t *= -1;
+
+		UTransform3D *transformation = new UTransform3D(t.x(), t.y(), t.z(), r.phi(), r.theta(), r.psi());
+		setupSolids(node.GetConstituentMovedSolid()); // fills volumeUSolids and volumeROOT
+		multiUnion.AddNode(*volumeUSolids, *transformation);
+
+		// updating ROOT composite
+		std::stringstream count; count << compositeCounter;
+
+		string solidName = string("CS")+count.str();
+		string transName = string("t")+count.str();
+		volumeROOT->SetName(solidName.c_str());
+
+		TGeoRotation *rotationRoot = new TGeoRotation("", r.phi(), r.theta(), r.psi()); // transformations need names
+		TGeoCombiTrans *transformationRoot = new TGeoCombiTrans(transName.c_str(), t.x(), t.y(), t.z(), rotationRoot);
+		transformationRoot->RegisterYourself();
+		if (rootString != "") rootString += "+";
+		rootString += solidName+":"+transName; // "(A:t1+B:t2)"
+		compositeCounter++;
+	}
+}
+
+
 void SBTperformance::setupSolids(G4VSolid *testVolume)
 {
 	string type(testVolume->GetEntityType());
 
-	volumeGeant4 = testVolume;
 	volumeUSolids = NULL;
 	volumeROOT = NULL;
 	stringstream ss;
 
 	double capacity = testVolume->GetCubicVolume();
-	double area = testVolume->GetSurfaceArea();
+	// double area = testVolume->GetSurfaceArea();
 
 	// DONE: box and other USolidss are not slow anymore (it linking issue at VS2010)
+	if (type == "G4UnionSolid")
+	{
+		G4UnionSolid &unionSolid = *(G4UnionSolid *) testVolume;
+
+		UMultiUnion *multiUnion = new UMultiUnion("multiUnion");
+		
+		string rootComposite = ""; // "(A:t1+B:t2)"
+		compositeCounter = 1;
+		ConvertMultiUnionFromGeant4(*multiUnion, unionSolid, rootComposite);
+		volumeUSolids = multiUnion;
+		rootComposite = "("+rootComposite+")";
+		volumeROOT = new TGeoCompositeShape("CS", rootComposite.c_str());
+//		volumeROOT = NULL;
+    
+		multiUnion->Voxelize();
+		multiUnion->GetVoxels().DisplayListNodes();
+		multiUnion->Capacity();
+
+		ss << "UMultiUnion()";
+	}
 	if (type == "G4Box")
 	{
 		G4Box *box = (G4Box *) testVolume;
@@ -689,7 +754,6 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 		volumeROOT = new TGeoBBox("UBox", x, y, z);
 		volumeUSolids = new UBox("UBox", x, y, z);
 		ss << "Ubox("<<x<<","<<y<<","<<z<<")";
-
 	}
 	if (type == "G4Orb")
 	{
@@ -868,7 +932,7 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 		while (volumeGeant4->Inside(pointTest) == kSurface);
 
 //		if (i == 0) point.Set(0, 0, -1000.001);
-		points[i] = point;
+		points[i+offsetSurface] = point;
 	}
 }
 
@@ -973,9 +1037,9 @@ void SBTperformance::CreatePointsAndDirections()
 	maxPointsOutside = (int) (maxPoints * (outsidePercent/100));
 	maxPointsSurface = maxPoints - maxPointsInside - maxPointsOutside;
 
-	offsetSurface = 0;
-	offsetInside = maxPointsSurface;
-	offsetOutside = maxPointsSurface + maxPointsInside;
+	offsetOutside = 0;
+	offsetSurface = maxPointsOutside;
+	offsetInside = offsetSurface + maxPointsSurface;
 
 	points.resize(maxPoints);
 	directions.resize(maxPoints);
@@ -990,9 +1054,9 @@ void SBTperformance::CreatePointsAndDirections()
 	resultVectorRoot.resize(maxPoints);
 	resultVectorUSolids.resize(maxPoints);
 
-	CreatePointsAndDirectionsSurface();
-	CreatePointsAndDirectionsInside();
 	CreatePointsAndDirectionsOutside();
+	CreatePointsAndDirectionsInside();
+	CreatePointsAndDirectionsSurface();
 }
 
 
@@ -1007,7 +1071,7 @@ void SBTperformance::CreatePointsAndDirections()
 int directoryExists (string s)
 {
 	#ifdef WIN32
-		if (access(s.c_str(), 0) == 0)
+		if (_access(s.c_str(), 0) == 0)
 	#endif
 		{
 			struct stat status;
@@ -1093,9 +1157,9 @@ int SBTperformance::SaveVectorToMatlabFile(vector<UVector3> &vector, string file
 int SBTperformance::SaveLegend(string filename)
 {
 	vector<double> offsets(3);
-	offsets[0] = maxPointsSurface;
-	offsets[1] = maxPointsInside;
-	offsets[2] = maxPointsOutside;
+	offsets[0] = maxPointsOutside;
+	offsets[1] = maxPointsSurface;
+	offsets[2] = maxPointsInside;
 	return SaveVectorToMatlabFile(offsets, filename);
 }
 
@@ -1337,7 +1401,11 @@ void SBTperformance::CompareAndSaveResults(string method, double resG, double re
 	SaveVectorToMatlabFile(points, folder+method+"Points.dat");
 	SaveVectorToMatlabFile(directions, folder+method+"Directions.dat");
 
-	CountDoubleDifferences(resultDoubleDifference, resultDoubleGeant4, resultDoubleRoot);
+	if (volumeROOT)
+	{
+		Flush("Differences betweeen Geant4 and ROOT\n");
+		CountDoubleDifferences(resultDoubleDifference, resultDoubleGeant4, resultDoubleRoot);
+	}
 
 	*perflabels << method << "\n";
 	perflabels->flush();
@@ -1506,6 +1574,7 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 
 	void (SBTperformance::*funcPtr)()=NULL;
 
+	volumeGeant4 = testVolume;
 	setupSolids(testVolume);
 	log = &logger;
 

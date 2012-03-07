@@ -39,6 +39,7 @@
 #include "G4UIcmdPargListDouble.hh"
 
 #include "UBox.hh"
+#include "UMultiUnion.hh"
 #include "UOrb.hh"
 #include "UTrd.hh"
 #include "G4USolid.hh"
@@ -107,15 +108,25 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	boxCmd = new G4UIcmdWithPargs( boxPath, this, boxArgs, 3 );
 	boxCmd->SetGuidance( "Declare a G4Box solid" );
 
-       	//
+	//
 	// Declare UBox
 	//
 	uboxArgs[0] = new G4UIcmdPargDouble( "dx", 1.0, m );
 	uboxArgs[1] = new G4UIcmdPargDouble( "dy", 1.0, m );
 	uboxArgs[2] = new G4UIcmdPargDouble( "dz", 1.0, m );
 	G4String uboxPath = prefix+"UBox";
-	uboxCmd = new G4UIcmdWithPargs( uboxPath, this, boxArgs, 3 );
-	uboxCmd->SetGuidance( "Declare a UBox solid" );
+	uboxCmd = new G4UIcmdWithPargs( uboxPath, this, uboxArgs, 3 );
+	uboxCmd->SetGuidance( "Declare a G4Box solid" );
+
+   	//
+	// Declare UMultiUnion
+	//
+	umultiunionArgs[0] = new G4UIcmdPargDouble( "dx", 1.0, m );
+	umultiunionArgs[1] = new G4UIcmdPargDouble( "dy", 1.0, m );
+	umultiunionArgs[2] = new G4UIcmdPargDouble( "dz", 1.0, m );
+	G4String umultiunionPath = prefix+"UMultiUnion";
+	umultiunionboxCmd = new G4UIcmdWithPargs( umultiunionPath, this, umultiunionArgs, 3 );
+	umultiunionboxCmd->SetGuidance( "Declare a UMultiUnion solid" );
 
 	// Declare UOrb
 	//
@@ -477,6 +488,10 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	BooleanSolid1Cmd = new G4UIcmdWithPargs( BooleanSolid1Path, this, 0, 0 );
 	BooleanSolid1Cmd->SetGuidance( "Declare a Boolean solid #1" );
 
+	G4String MultiUnionPath = prefix+"MultiUnion";
+	MultiUnionCmd = new G4UIcmdWithPargs( MultiUnionPath, this, 0, 0 );
+	MultiUnionCmd->SetGuidance( "Declare a Boolean solid #1" );
+
        	//
 
 
@@ -608,6 +623,118 @@ void G4InteractiveSolid::MakeMeABox( G4String values )
 		G4cerr << "G4Box not created" << G4endl;
 }
 
+/*
+G4RotationMatrix rotation;
+rotation.rotateY(0);
+G4ThreeVector translation(x,y,z);
+
+G4UnionSolid  boxUnionCyl1(“box union cylinder”, &box1,&cylinder1,&roation,translation);
+
+// the same solid with the active method
+
+
+G4Transform3D transform(rotation,translation);
+G4UnionSolid   boxUnionCyl2(“box union cylinder”,
+			&box1,&cylinder1,transform)
+*/
+
+const double unionMaxX = 1.; // putting it larger can cause particles to escape
+const double unionMaxY = 1.;
+const double unionMaxZ = 1.;
+
+const double extentBorder = 1.1;
+
+const int carBoxesX = 20;
+const int carBoxesY = 20;
+const int carBoxesZ = 20;
+
+G4VSolid *CreateTestMultiUnion(int numNodes) // Number of nodes to implement
+{
+   // Instance:
+      // Creation of several nodes:
+
+   double extentVolume = extentBorder * 2 * unionMaxX * extentBorder * 2 * unionMaxY * extentBorder * 2 * unionMaxZ;
+   double ratio = 1.0/3.0; // ratio of inside points vs (inside + outside points)   
+   double length = pow (ratio * extentVolume / numNodes, 1./3.) / 2;
+	
+   G4Box *box = new G4Box("G4Box", length, length, length);
+   G4VSolid *previousSolid = NULL;
+
+//   UOrb *box = new UOrb("UOrb", length);
+
+//   double capacity = box->Capacity();
+ 
+     // Constructor:
+	for(int i = 0; i < numNodes; i++)
+	{
+		double x = UUtils::RandomUniform(-unionMaxX + length, unionMaxX - length);
+		double y = UUtils::RandomUniform(-unionMaxY + length, unionMaxY - length);
+		double z = UUtils::RandomUniform(-unionMaxZ + length, unionMaxZ - length);
+//		y = z = 0;
+
+		G4RotationMatrix rotation;
+		G4ThreeVector translation(x,y,z);
+		G4AffineTransform transformation(rotation, translation);
+		G4Transform3D *transform = new G4Transform3D(rotation,translation);
+
+		if (i == 0)
+			previousSolid = new G4DisplacedSolid ("Displaced Solid", box, transformation);
+		else
+			previousSolid = new G4UnionSolid ("Box union cylinder", previousSolid, box, *transform /*&rotation, translation*/);
+	}
+
+   /*
+   else 
+   {   
+	   // Transformation:
+	   for(int n = 0, o = 0, m = 0; m < numNodes ; m++)
+	   {
+		   if (m >= carBoxesX*carBoxesY*carBoxesZ) break;
+		   double spacing = 50;
+		   double x = -unionMaxX+spacing+2*spacing*(m%carBoxesX);
+		   double y = -unionMaxY+spacing+2*spacing*n;
+		   double z = -unionMaxZ+spacing+2*spacing*o;
+
+		  arrayTransformations[m] = new UTransform3D(x,y,z,0,0,0);
+		  multiUnion->AddNode(*box,arrayTransformations[m]);
+           
+		  // Preparing "Draw":
+		  if (m % carBoxesX == carBoxesX-1)
+		  {
+			  if (n % carBoxesY == carBoxesY-1)
+			  {
+				 n = 0;
+				 o++;
+			  }      
+			  else n++;
+		  }
+	   }
+   }
+   */
+
+   return previousSolid;
+}
+
+//
+// MakeMeAUMultiUnion
+//
+void G4InteractiveSolid::MakeMeAUMultiUnion( G4String values )
+{
+	if (uboxCmd->GetArguments( values )) {
+		delete solid; //NOTE: At VS2010 it used to crash, although currently it is OK
+
+		G4UIcmdPargDouble *dxArg = (G4UIcmdPargDouble *)uboxArgs[0],
+				  *dyArg = (G4UIcmdPargDouble *)uboxArgs[1],
+				  *dzArg = (G4UIcmdPargDouble *)uboxArgs[2];
+	
+		VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(10);
+	
+		solid = new G4USolid("interactiveUMultiUnion",tmp);
+	}
+	else
+		G4cerr << "UMultiUnion not created" << G4endl;
+}
+
 //
 // MakeMeAUBox
 //
@@ -620,9 +747,7 @@ void G4InteractiveSolid::MakeMeAUBox( G4String values )
 				  *dyArg = (G4UIcmdPargDouble *)uboxArgs[1],
 				  *dzArg = (G4UIcmdPargDouble *)uboxArgs[2];
 	
-                VUSolid* tmp=new UBox( "interactiveUBox", dxArg->GetValue()*1000.,
-					   	     dyArg->GetValue()*1000.,
-					  	     dzArg->GetValue()*1000. );
+		VUSolid* tmp= new UBox("interactiveBox", dxArg->GetValue(), dyArg->GetValue(), dzArg->GetValue());
 	
 		solid = new G4USolid("interactiveUBox",tmp );
 	}
@@ -1556,6 +1681,19 @@ void G4InteractiveSolid::MakeMeBooleanSolid1(G4String)
 }
 
 
+void G4InteractiveSolid::MakeMeMultiUnion(G4String)
+{
+  /*
+    G4IntersectionSolid.hh  G4SubtractionSolid.hh  G4UnionSolid.hh
+    all CSGs : Box Tubs Sphere Cons Torus
+    So: Boolean type operation and 2 CSG Objects with parameters for each (..)
+    plus a transformation to apply to the second solid
+   */
+	delete solid;
+	solid = CreateTestMultiUnion(10);
+}
+
+
 // G4VPhysicalVolume* ExN03DetectorConstruction::MakeMeDircTest()
   
 //
@@ -1637,6 +1775,8 @@ void G4InteractiveSolid::SetNewValue( G4UIcommand *command, G4String newValues )
 		MakeMeATwistedTubs( newValues );
 	else if (command == BooleanSolid1Cmd) 
 		MakeMeBooleanSolid1(newValues);
+	else if (command == MultiUnionCmd) 
+		MakeMeMultiUnion(newValues);
 
 	/* Here to add new boolean solids */
 

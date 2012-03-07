@@ -37,13 +37,14 @@ UMultiUnion *CreateMultiUnion(int numNodes, TGeoVolume *top=NULL) // Number of n
 
    double extentVolume = extentBorder * 2 * unionMaxX * extentBorder * 2 * unionMaxY * extentBorder * 2 * unionMaxZ;
    double ratio = 1.0/3.0; // ratio of inside points vs (inside + outside points)
-   double length = 40;
-   
-   if (true) length = pow (ratio * extentVolume / numNodes, 1./3.) / 2;
-	
-//   UBox *box = new UBox("UBox", length, length, length);
 
-   UOrb *box = new UOrb("UOrb", length);
+   bool randomBoxes = false;
+
+   double length = randomBoxes ? length = pow (ratio * extentVolume / numNodes, 1./3.) / 2 : 40;
+
+   UBox *box = new UBox("UBox", length, length, length);
+
+//   UOrb *box = new UOrb("UOrb", length);
 
    TGeoVolume *volume1;
    double capacity = box->Capacity();
@@ -61,8 +62,9 @@ UMultiUnion *CreateMultiUnion(int numNodes, TGeoVolume *top=NULL) // Number of n
      // Constructor:
    UMultiUnion *multiUnion = new UMultiUnion("multiUnion");
 
-   if (true)
+   if (randomBoxes)
    {
+
 	   for(int i = 0; i < numNodes ; i++)
 	   {
 		   double x = gRandom->Uniform(-unionMaxX + length, unionMaxX - length);
@@ -80,7 +82,7 @@ UMultiUnion *CreateMultiUnion(int numNodes, TGeoVolume *top=NULL) // Number of n
 	   for(int n = 0, o = 0, m = 0; m < numNodes ; m++)
 	   {
 		   if (m >= carBoxesX*carBoxesY*carBoxesZ) break;
-		   double spacing = 50;
+		   double spacing = length;
 		   double x = -unionMaxX+spacing+2*spacing*(m%carBoxesX);
 		   double y = -unionMaxX+spacing+2*spacing*n;
 		   double z = -unionMaxX+spacing+2*spacing*o;
@@ -146,8 +148,7 @@ void TestMultiUnionWithGraphics()
 
    cout << "[> Test:" << endl;   
    
-   double bmin[3], bmax[3];
-   UVector3 point;
+   UVector3 bmin, bmax, point;
    multiUnion->Extent(bmin, bmax);
    int npoints = 1000000;
    TPolyMarker3D *pminside = new TPolyMarker3D();
@@ -163,9 +164,9 @@ void TestMultiUnionWithGraphics()
    for (int ipoint = 0; ipoint<npoints; ipoint++)
    {
       if (n10 && (ipoint%n10)==0) printf("test inside ... %d%%\n",int(100*ipoint/npoints));
-      point.x = gRandom->Uniform(bmin[0], bmax[0]);
-      point.y = gRandom->Uniform(bmin[1], bmax[1]);
-      point.z = gRandom->Uniform(bmin[2], bmax[2]);
+	  point.x = gRandom->Uniform(bmin.x, bmax.x);
+      point.y = gRandom->Uniform(bmin.y, bmax.y);
+      point.z = gRandom->Uniform(bmin.z, bmax.z);
 
       timer.Start();      
       VUSolid::EnumInside inside = multiUnion->Inside(point);

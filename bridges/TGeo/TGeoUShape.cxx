@@ -35,14 +35,14 @@ TGeoUShape::~TGeoUShape()
 void TGeoUShape::ComputeBBox()
 {
 // Compute bounding box - nothing to do in this case.
-   Double_t min[3], max[3];
+	UVector3 min, max;
    fUSolid->Extent(min,max);
-   fDX = 0.5*(max[0]-min[0]);
-   fDY = 0.5*(max[1]-min[1]);
-   fDZ = 0.5*(max[2]-min[2]);
-   fOrigin[0] = 0.5*(min[0]+max[0]);
-   fOrigin[1] = 0.5*(min[1]+max[1]);
-   fOrigin[2] = 0.5*(min[2]+max[2]);
+   fDX = 0.5*(max.x-min.x);
+   fDY = 0.5*(max.y-min.y);
+   fDZ = 0.5*(max.z-min.z);
+   fOrigin[0] = 0.5*(min.x+max.x);
+   fOrigin[1] = 0.5*(min.y+max.y);
+   fOrigin[2] = 0.5*(min.z+max.z);
 }   
 
 //_____________________________________________________________________________
