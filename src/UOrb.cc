@@ -454,10 +454,10 @@ void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 * Returns the full 3D cartesian extent of the solid.
 * OK
 */
-void UOrb::Extent ( double aMin[3], double aMax[3] ) const
+void UOrb::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
-   aMin[0] = aMin[1] = aMin[2] = -fR;
-   aMax[0] = aMax[1] = aMax[2] = fR;
+	aMin.x = aMin.y = aMin.z = -fR;
+	aMax.x = aMax.y = aMax.z = fR;
 }
 
 double UOrb::Capacity() 

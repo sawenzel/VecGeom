@@ -7,6 +7,7 @@
 #include <string.h>
 #include "UUtils.hh"
 #include <sstream>
+#include <algorithm>
 
 #include "VUSolid.hh" 
 
@@ -28,11 +29,17 @@ using namespace std;
 UVoxelFinder::UVoxelFinder()
 {
 	boundariesCountX = boundariesCountY = boundariesCountZ = 0;
+	boundingBox = NULL;
 }
 
 //______________________________________________________________________________   
 UVoxelFinder::~UVoxelFinder()
 {
+	if (boundingBox)
+	{
+		delete boundingBox;
+		boundingBox = NULL;
+	}
 }
 
 //______________________________________________________________________________   
@@ -49,29 +56,21 @@ void UVoxelFinder::BuildVoxelLimits(std::vector<VUSolid *> &solids, std::vector<
 
 		// related to a particular node, but also
 		// the coordinates of its origin
-		double arrMin[3], arrMax[3];
-		UVector3 min, max;
-		double tolerance = VUSolid::Tolerance();
+
+		UVector3 toleranceVector;
+		toleranceVector.Set(VUSolid::Tolerance());
 
 		for (int i = 0; i < numNodes; i++)   
 		{
 			VUSolid &solid = *solids[i];
 			UTransform3D &transform = *transforms[i];
-
-			solid.Extent(arrMin, arrMax);
-			min.Set(arrMin[0],arrMin[1],arrMin[2]);
-			UVector3 toleranceVector(tolerance, tolerance, tolerance);
-			min -= toleranceVector;
-			max.Set(arrMax[0],arrMax[1],arrMax[2]);
-			max += toleranceVector;
+			UVector3 min, max;
+			solid.Extent(min, max);
+			min -= toleranceVector; max += toleranceVector;
 			UUtils::TransformLimits(min, max, transform);
 
-			boxes[i].d.x = 0.5*(max.x-min.x); // dX
-			boxes[i].d.y = 0.5*(max.y-min.y); // dY
-			boxes[i].d.z = 0.5*(max.z-min.z); // dZ
-			boxes[i].p.x = transform.fTr[0]; // px
-			boxes[i].p.y = transform.fTr[1]; // pY
-			boxes[i].p.z = transform.fTr[2]; // pZ
+			boxes[i].hlen = (max - min) / 2;
+			boxes[i].pos = transform.fTr;
 		}
 	}
 }
@@ -82,18 +81,22 @@ void UVoxelFinder::DisplayVoxelLimits()
 	// "DisplayVoxelLimits" displays the dX, dY, dZ, pX, pY and pZ for each node
 	int numNodes = boxes.size();
 	for(int i = 0; i < numNodes; i++)
+	{
+		UVector3 &hlen = boxes[i].hlen;
+		UVector3 &pos = boxes[i].pos;
 		cout << setw(10) << setiosflags(ios::fixed) << setprecision(16) <<
 		"    -> Node " << i+1 <<  ":\n" << 
-		"\t * dX = " << boxes[i].d.x << 
-		" ; * dY = " << boxes[i].d.y << 
-		" ; * dZ = " << boxes[i].d.z << "\n" << 
-		"\t * pX = " << boxes[i].p.x << 
-		" ; * pY = " << boxes[i].p.y << 
-		" ; * pZ = " << boxes[i].p.z << "\n";
+		"\t * dX = " << hlen.x << 
+		" ; * dY = " << hlen.y << 
+		" ; * dZ = " << hlen.z << "\n" << 
+		"\t * pX = " << pos.x << 
+		" ; * pY = " << pos.y << 
+		" ; * pZ = " << pos.z << "\n";
+	}
 }
 
 //______________________________________________________________________________   
-void UVoxelFinder::CreateBoundary(vector<double> &boundary, int axis)
+void UVoxelFinder::CreateSortedBoundary(vector<double> &boundary, int axis)
 {
 	// "CreateBoundaries"'s aim is to determine the slices induced by the bounding boxes,
 	// along each axis. The created boundaries are stored in the array "boundariesRaw"
@@ -103,19 +106,15 @@ void UVoxelFinder::CreateBoundary(vector<double> &boundary, int axis)
 	{
 		// For each node, the boundaries are created by using the array "boxes"
 		// built in method "BuildVoxelLimits":
-
-		double p,d;
-		if (axis == 0) p = boxes[i].p.x, d = boxes[i].d.x;
-		if (axis == 1) p = boxes[i].p.y, d = boxes[i].d.y;
-		if (axis == 2) p = boxes[i].p.z, d = boxes[i].d.z;
-
+		double p = boxes[i].pos[axis], d = boxes[i].hlen[axis];
 		// x boundaries
 		boundary[2*i] = p - d;
 		boundary[2*i+1] = p + d;
 	}
+	std::sort(boundary.begin(), boundary.end());
 }
 
-void UVoxelFinder::BuildSortedBoundaries()
+void UVoxelFinder::BuildOptimizedBoundaries()
 {
 	// "SortBoundaries" orders the boundaries along each axis (increasing order)
 	// and also does not take into account redundant boundaries, ie if two boundaries
@@ -130,47 +129,44 @@ void UVoxelFinder::BuildSortedBoundaries()
 	if (int numNodes = boxes.size())
 	{
 		const double tolerance = VUSolid::Tolerance() / 100.0; // Minimal distance to discrminate two boundaries.
-		vector<int> indexSortedBound(2*numNodes);
-		vector<double> boundary(2*numNodes);
+		vector<double> sortedBoundary(2*numNodes);
 
 		for (int j = 0; j < 3; j++) 
 		{
-			vector<double> &optimizedBoundary = boundaries[j];
-			optimizedBoundary.clear();
-			CreateBoundary(boundary, j);
-			UUtils::Sort(2*numNodes, &boundary[0], &indexSortedBound[0], false);
+			CreateSortedBoundary(sortedBoundary, j);
+			vector<double> &boundary = boundaries[j];
+			boundary.clear();
 
 			for(int i = 0 ; i < 2*numNodes; i++)
 			{
-				double newBoundary = boundary[indexSortedBound[i]];
-
-				int size = optimizedBoundary.size();
-				if(!size || std::abs(optimizedBoundary[size-1] - newBoundary) > tolerance)
-					optimizedBoundary.push_back(newBoundary);
-				else 
-					// If two successive boundaries are too close from each other, only the first one is considered
+				double newBoundary = sortedBoundary[i];
+				int size = boundary.size();
+				if(!size || std::abs(boundary[size-1] - newBoundary) > tolerance)
+					boundary.push_back(newBoundary);
+				else // If two successive boundaries are too close from each other, only the first one is considered 	
 					cout << "Skipping boundary [" << j << "] : " << i << endl;
 			}
-			boundariesCounts[j] = optimizedBoundary.size();
+			boundariesCounts[j] = boundary.size();
 		}
 	}
 }
 
 void UVoxelFinder::DisplayBoundaries()
 {
-	cout << " * X axis:" << endl << "    | ";
-	DisplayBoundaries(boundariesX, boundariesCountX);
-	cout << " * Y axis:" << endl << "    | ";
-	DisplayBoundaries(boundariesY, boundariesCountY);
-	cout << " * Z axis:" << endl << "    | ";
-	DisplayBoundaries(boundariesZ, boundariesCountZ);
+	char axis[3] = {'X', 'Y', 'Z'};
+	for (int i = 0; i < 3; i++)
+	{
+		cout << " * " << axis[i] << " axis:" << endl << "    | ";
+		DisplayBoundaries(boundaries[i]);
+	}
 }
 
 //______________________________________________________________________________   
-void UVoxelFinder::DisplayBoundaries(vector<double> &boundaries, int count)
+void UVoxelFinder::DisplayBoundaries(vector<double> &boundaries)
 {
 	// Prints the positions of the boundaries of the slices on the three axis:
 
+	int count = boundaries.size();
 	for(int i = 0; i < count; i++)
 	{
 		cout << setw(10) << setiosflags(ios::fixed) << setprecision(16) << boundaries[i];
@@ -181,10 +177,12 @@ void UVoxelFinder::DisplayBoundaries(vector<double> &boundaries, int count)
 	cout << "|" << endl << "Number of boundaries: " << count << endl;
 }
 
+/*
 inline bool between(double what, double min, double max)
 {
 	return what >= min && what <= max;
 }
+*/
 
 void UVoxelFinder::BuildListNodes()
 {
@@ -205,29 +203,21 @@ void UVoxelFinder::BuildListNodes()
 			// Loop on the nodes, number of slices per axis
 			for(int j = 0 ; j < numNodes; j++)
 			{
-				if (i == 98 && j == 43) 
-					j = j;
-
 				// Determination of the minimum and maximum position along x
 				// of the bounding boxe of each node:
-				double p, d;
-				if (k == 0) p = boxes[j].p.x, d = boxes[j].d.x;
-				if (k == 1) p = boxes[j].p.y, d = boxes[j].d.y;
-				if (k == 2) p = boxes[j].p.z, d = boxes[j].d.z;
-
+				double p = boxes[j].pos[k], d = boxes[j].hlen[k];
 				double leftBoundary = boundaries[k][i];
 				double rightBoundary = boundaries[k][i+1];
 //				double rightBoundary = (i < boundariesCount) - 1 ? boundaries[k][i+1] : leftBoundary;
 
-				// Is the considered node inside slice?
-//				if (p - d  > rightBoundary + localTolerance) ||
-//				   (p + d < leftBoundary - localTolerance) continue;
-
 				double min = p - d; // - localTolerance;
 				double max = p + d; // + localTolerance;
 
-				if (between (rightBoundary, min, max) ||
-					between (leftBoundary, min, max))
+				// Is the considered node inside slice?
+//				if (min > rightBoundary + localTolerance) ||
+//				   (max < leftBoundary - localTolerance) continue;
+
+				if (min < rightBoundary && max > leftBoundary)
 					// Storage of the number of the node in the array:
 					bitmask.SetBitNumber(i*bitsPerSlice+j);
 			}
@@ -247,7 +237,7 @@ void UVoxelFinder::GetCandidatesAsString(const UBits &bits, string &result)
 	result = ss.str();
 }
 
-void UVoxelFinder::DisplayListNodes(vector<double> &boundaries, int boundariesCount, UBits &bitmask)
+void UVoxelFinder::DisplayListNodes(vector<double> &boundaries, UBits &bitmask)
 {
 	// Prints which solids are present in the slices previously elaborated.
 	int numNodes = boxes.size();
@@ -255,10 +245,11 @@ void UVoxelFinder::DisplayListNodes(vector<double> &boundaries, int boundariesCo
 	int size=8*sizeof(int)*nPerSlice;
 	UBits bits(size);
 
-	for(int i=0; i < boundariesCount-1; i++)
+	int count = boundaries.size();
+	for(int i=0; i < count-1; i++)
 	{
 		cout << "    Slice #" << i+1 << ": [" << boundaries[i] << " ; " << boundaries[i+1] << "] -> ";
-		bits.Set(size,(const char *)bitmask.allBits+i*nPerSlice);
+		bits.Set(size,(const char *)bitmask.allBits+i*nPerSlice*sizeof(int));
 		GetCandidatesAsString(bits, result);
 		cout << "[ " << result.c_str() << "]  " << endl;
 	}
@@ -268,12 +259,12 @@ void UVoxelFinder::DisplayListNodes(vector<double> &boundaries, int boundariesCo
 //______________________________________________________________________________   
 void UVoxelFinder::DisplayListNodes()
 {
-	cout << " * X axis:" << endl;
-	DisplayListNodes(boundariesX, boundariesCountX, bitmaskX);
-	cout << " * Y axis:" << endl;
-	DisplayListNodes(boundariesY, boundariesCountY, bitmaskY);
-	cout << " * Z axis:" << endl;
-	DisplayListNodes(boundariesZ, boundariesCountZ, bitmaskZ);
+	char axis[3] = {'X', 'Y', 'Z'};
+	for (int i = 0; i < 3; i++)
+	{
+		cout << " * " << axis[i] << " axis:" << endl;
+		DisplayListNodes(boundaries[i], bitmasks[i]);
+	}
 }
 
 //______________________________________________________________________________   
@@ -281,9 +272,28 @@ void UVoxelFinder::Voxelize(std::vector<VUSolid *> &solids, std::vector<UTransfo
 {
 	BuildVoxelLimits(solids, transforms);
 
-	BuildSortedBoundaries();
+	BuildOptimizedBoundaries();
 
 	BuildListNodes();
+
+	if (boundingBox)
+	{
+		delete boundingBox;
+		boundingBox = NULL;
+	}
+
+	UVector3 min, max, sizes;
+	UVector3 toleranceVector;
+	toleranceVector.Set(VUSolid::Tolerance()/100);
+	for (int i = 0; i < 3; i++)
+	{
+		min[i] = boundaries[i][0];
+		max[i] = boundaries[i][boundariesCounts[i]-1];
+		sizes[i] = (max[i]-min[i])/2;
+		boundingBoxCenter[i] = min[i] + sizes[i];
+	}
+//	sizes -= toleranceVector;
+	boundingBox = new UBox("VoxelBoundingBox", sizes.x, sizes.y, sizes.z);
 }
 
 //______________________________________________________________________________       
@@ -324,13 +334,13 @@ int UVoxelFinder::GetCandidatesVoxelBits(const UVector3 &point, UBits &bits) con
 	}
 	else
 	{
-		int sliceX = UUtils::BinarySearch(boundariesCountX, boundariesX, point.x); 
+		int sliceX = UUtils::BinarySearch(boundariesX, point.x); 
 		if (sliceX == -1 || sliceX == boundariesCountX-1) return 0;
 
-		int sliceY = UUtils::BinarySearch(boundariesCountY, boundariesY, point.y);
+		int sliceY = UUtils::BinarySearch(boundariesY, point.y);
 		if (sliceY == -1 || sliceY == boundariesCountY-1) return 0;
 
-		int sliceZ = UUtils::BinarySearch(boundariesCountZ, boundariesZ, point.z);     
+		int sliceZ = UUtils::BinarySearch(boundariesZ, point.z);     
 		if (sliceZ == -1 || sliceZ == boundariesCountZ-1) return 0;
 
 		bits = (sliceX && point.x == boundariesX[sliceX]) ? bitmaskX[sliceX] |  bitmaskX[sliceX-1] : bitmaskX[sliceX];
@@ -365,19 +375,19 @@ int UVoxelFinder::GetCandidatesVoxelArray(const UVector3 &point, vector<int> &li
 	}
 	else
 	{
-		int sliceX = UUtils::BinarySearch(boundariesCountX, boundariesX, point.x); 
+		int sliceX = UUtils::BinarySearch(boundariesX, point.x); 
 		if (sliceX < 0 || sliceX == boundariesCountX-1) return 0;
 
 		unsigned int *maskX = ((unsigned int *) bitmaskX.allBits) + sliceX*nPerSlice;
 		if (nPerSlice == 1 && !maskX[0]) return 0;
 
-		int sliceY = UUtils::BinarySearch(boundariesCountY, boundariesY, point.y);
+		int sliceY = UUtils::BinarySearch(boundariesY, point.y);
 		if (sliceY < 0 || sliceY == boundariesCountY-1) return 0;
 
 		unsigned int *maskY = ((unsigned int *) bitmaskY.allBits) + sliceY*nPerSlice;
-		if (nPerSlice == 1 && !maskY[1]) return 0;
+		if (nPerSlice == 1 && !maskY[0]) return 0;
 
-		int sliceZ = UUtils::BinarySearch(boundariesCountZ, boundariesZ, point.z);
+		int sliceZ = UUtils::BinarySearch(boundariesZ, point.z);
 		if (sliceZ < 0 || sliceZ == boundariesCountZ-1) return 0;
 
 		unsigned int *maskZ = ((unsigned int *) bitmaskZ.allBits) + sliceZ*nPerSlice;
@@ -392,7 +402,7 @@ int UVoxelFinder::GetCandidatesVoxelArray(const UVector3 &point, vector<int> &li
 			if (!(mask = maskZ[i])) continue;
 			if (!(mask &= maskY[i])) continue;
 			if (!(mask &= maskX[i])) continue;
-			if (maskCrossed && !(mask &= maskCrossed[i])) continue;
+			if (maskCrossed && !(mask &= ~maskCrossed[i])) continue;
 
 			/*
             if (false)
@@ -402,9 +412,8 @@ int UVoxelFinder::GetCandidatesVoxelArray(const UVector3 &point, vector<int> &li
                     if (mask & 1)
                     {
                         list.push_back(8*sizeof(unsigned int)*i+bit);
-                        if (!(mask >>= 1)) break; // new
                     }
-                    else mask >>= 1;
+                    if (!(mask >>= 1)) break; // new
                 }
             }
             else
@@ -464,12 +473,8 @@ int UVoxelFinder::GetCandidatesVoxelArray(const UVector3 &point, vector<int> &li
                         {
                             for (int bit = 0; bit < 8; bit++)
                             {
-                                if (maskByte & 1)
-                                {
-                                    list.push_back(8*(sizeof(unsigned int)*i+ byte) + bit);
-                                    if (!(maskByte >>= 1)) break; // new
-                                }
-                                else maskByte >>= 1;
+                                if (maskByte & 1) list.push_back(8*(sizeof(unsigned int)*i+ byte) + bit);
+                                if (!(maskByte >>= 1)) break;
                             }
                         }
                         mask >>= 8;
@@ -635,12 +640,6 @@ const vector<UVoxelBox> &UVoxelFinder::GetBoxes() const
 
 //______________________________________________________________________________     
 
-int UVoxelFinder::BinarySearch(const UVector3 &position, int axis) const
-{
-	if(axis == 0) return UUtils::BinarySearch(boundariesCountX, boundariesX, position.x);
-	if(axis == 1) return UUtils::BinarySearch(boundariesCountY, boundariesY, position.y);
-	return UUtils::BinarySearch(boundariesCountZ, boundariesZ, position.z);  
-}
 
 
 bool UVoxelFinder::Contains(const UVector3 &point) const
@@ -664,73 +663,124 @@ bool UVoxelFinder::Contains(const UVector3 &point) const
 
 
 
-double UVoxelFinder::DistanceToFirst(const UVector3 &point, const UVector3 &direction) const
+double UVoxelFinder::DistanceToFirst(UVector3 &point, const UVector3 &direction) const
 {
-	// check weather point is outside the voxelized area
-	if (!Contains(point))
-	{
-		double distance, shift = UUtils::kInfinity;
-		double points[3] = {point.x, point.y, point.z};
-		double directions[3] = {direction.x, direction.y, direction.z};
-		int incDir[3];
+    UVector3 pointShifted = point - boundingBoxCenter;
+    double shift = boundingBox->DistanceToIn(pointShifted, direction);
 
-		// X,Y,Z axis
-		for (int i = 0; i < 3; i++)
-		{
-			if(std::abs(directions[i]) >= 1e-10) incDir[i] = (directions[i] > 0) ? 1 : -1;
-			else incDir[i] = 0;
+    /*
+    for (int i = 0; i < 3; i++)
+    {
+        double last = boundaries[i][boundariesCounts[i]-1];
+        double rounding = last - point[i];
+        if (rounding > 0 && rounding < VUSolid::Tolerance()/100)
+            point[i] = last;
+    }
+    */
 
-			if( (points[i] < boundaries[i][0] && incDir[i] < 0) || points[i] > boundaries[i][boundariesCounts[i]-1] && incDir[i] > 0)
-				// we have found that direction will never reach voxel area
-				return UUtils::kInfinity;
-		}
+    return shift;
 
-		shift = -UUtils::kInfinity;
-		for (int i = 0; i < 3; i++)
-		{
-			// Looking for the first voxel on the considered direction
-			if (points[i] < boundaries[i][0] && incDir[i] == 1)
-			{
-				distance = (boundaries[i][0] - points[i])/directions[i];
-			}
-			else if (points[i] > boundaries[i][boundariesCounts[i] - 1] && incDir[i] == -1)
-			{
-				distance = (boundariesX[boundariesCounts[i] - 1] - points[i])/directions[i];         
-			}
-			else distance = 0;
+    /*
+    // check weather point is outside the voxelized area
+    if (!Contains(point))
+    {
+        int incDir[3];
 
-			if (shift < distance) shift = distance;
-		}
-		return shift;
-	}
-	else return 0;
+        // X,Y,Z axis
+        for (int i = 0; i < 3; i++)
+        {
+            if(std::abs(direction[i]) >= 1e-10) incDir[i] = (direction[i] > 0) ? 1 : -1;
+            else incDir[i] = 0;
+
+            if( (point[i] < boundaries[i][0] && incDir[i] < 0) || point[i] > boundaries[i][boundariesCounts[i]-1] && incDir[i] > 0)
+                // we have found that with given direction will never reach voxel area
+                return UUtils::kInfinity;
+        }
+
+        double distance, shift = UUtils::kInfinity;
+        for (int i = 0; i < 3; i++)
+        {
+            // Looking for the first voxel on the considered direction
+            if (point[i] < boundaries[i][0] && incDir[i] > 0)
+            {
+                distance = (boundaries[i][0] - point[i])/direction[i];
+            }
+            else if (point[i] > boundaries[i][boundariesCounts[i] - 1] && incDir[i] < 0)
+            {
+                distance = (boundaries[i][boundariesCounts[i] - 1] - point[i])/direction[i];
+            }
+//			else distance = UUtils::kInfinity;
+
+            if (shift > distance) shift = distance;
+        }
+        return shift + VUSolid::Tolerance();
+    }
+    else return 0;
+    */
 }
 
-double UVoxelFinder::DistanceToNext(const UVector3 &point, const UVector3 &direction) const
+double UVoxelFinder::DistanceToNext(UVector3 &point, const UVector3 &direction) const
 {
 	double distance, shift = UUtils::kInfinity;
-	double points[3] = {point.x, point.y, point.z};
-	double directions[3] = {direction.x, direction.y, direction.z};
 	
 	// Looking for the next voxels on the considered direction
 	// X,Y,Z axis
 	distance = UUtils::kInfinity;
+//	int index = -1;
+//	double boundary;
 	for (int i = 0; i < 3; i++)
 	{
 		int incDir;
-		if(std::abs(directions[i]) >= 1e-10) incDir = (directions[i] > 0) ? 1 : -1;
+		if(std::abs(direction[i]) >= 1e-10) incDir = (direction[i] > 0) ? 1 : -1;
 		else incDir = 0;
-		int binarySearch = BinarySearch(point, i);
-		if(incDir == 1 && binarySearch != boundariesCounts[i] - 1)
+		int binarySearch = UUtils::BinarySearch(boundaries[i], point[i]);
+		if (point[i] > boundaries[i][boundariesCounts[i] - 1] || point[i] < boundaries[i][0])
+			return UUtils::kInfinity;
+
+		if(incDir > 0)
 		{
-			distance = (boundaries[i][binarySearch+1] - points[i])/directions[i];
+			// if (point[i] != boundaries[i][binarySearch]) 
+			binarySearch++;
 		}
-		else if(incDir == -1 && binarySearch > 0)
+		else if(incDir < 0 && point[i] == boundaries[i][binarySearch]) binarySearch--;
+
+		if (incDir != 0) distance = (boundaries[i][binarySearch] - point[i])/direction[i];
+
+		if (shift > distance) 
 		{
-			distance = (boundaries[i][binarySearch-1] - points[i])/directions[i];
+			shift = distance;
+//			boundary = boundaries[i][binarySearch];
+//			index = i;
 		}
-		if (shift > distance) shift = distance;
 	}
+
+	if (shift)
+	{
+		double bonus = VUSolid::Tolerance()/10;
+		shift += bonus;
+
+		/*
+		if (index == 0)
+		{
+			point.x = boundary;
+			point.y += shift * direction.y;
+			point.z += shift * direction.z;
+		}
+		if (index == 1)
+		{
+			point.y = boundary;
+			point.x += shift * direction.x;
+			point.z += shift * direction.z;
+		}
+		if (index == 2)
+		{
+			point.z = boundary;
+			point.x += shift * direction.x;
+			point.y += shift * direction.y;
+		}
+		*/
+	}
+
 	return shift;
 }
 
@@ -740,9 +790,9 @@ UVoxelCandidatesIterator::UVoxelCandidatesIterator(const UVoxelFinder &f, const 
 	if (carNodes > 1)
 	{
 		n = 1+(carNodes-1)/(8*sizeof(unsigned int));
-		int sliceX = UUtils::BinarySearch(f.boundariesCounts[0], f.boundariesX, point.x); 
-		int sliceY = UUtils::BinarySearch(f.boundariesCounts[1], f.boundariesY, point.y);
-		int sliceZ = UUtils::BinarySearch(f.boundariesCounts[2], f.boundariesZ, point.z);
+		int sliceX = UUtils::BinarySearch(f.boundariesX, point.x); 
+		int sliceY = UUtils::BinarySearch(f.boundariesY, point.y);
+		int sliceZ = UUtils::BinarySearch(f.boundariesZ, point.z);
 
 		unsigned int *maskX = ((unsigned int *) f.bitmaskX.allBits) + sliceX*n;
 		unsigned int *maskXLeft = (sliceX && point.x == f.boundariesX[sliceX]) ? maskX - n : NULL;

@@ -5,7 +5,6 @@
 
 #include <cmath>
 
-const int kN3 = 3*sizeof(double);
 const int kN9 = 9*sizeof(double);
 const double kIdRot[9] = {1.0, 0.0, 0.0,
                           0.0, 1.0, 0.0,
@@ -15,7 +14,7 @@ const double kIdRot[9] = {1.0, 0.0, 0.0,
 UTransform3D::UTransform3D()
 {
 // Dummy constructor
-   memset(fTr, 0, kN3);
+	fTr.Set(0);
    memcpy(fRot, kIdRot, kN9);
 }
 
@@ -29,7 +28,7 @@ UTransform3D::UTransform3D(double tx, double ty, double tz,
 // angle phi, then a rotation with theta about the rotated X axis, and
 // finally a rotation with psi about the new Z axis.
 
-   fTr[0] = tx; fTr[1] = ty; fTr[2] = tz;
+	fTr.Set (tx, ty, tz);
    SetAngles(phi, theta, psi);
 }
 
@@ -38,7 +37,7 @@ UTransform3D::UTransform3D(const UTransform3D &other)
 {
 // Copy constructor.
    if (&other != this) {
-      memcpy(fTr, other.fTr, kN3);
+      fTr = other.fTr;
       memcpy(fRot, other.fRot, kN9);
    }
 }
@@ -47,7 +46,7 @@ UTransform3D::UTransform3D(const UTransform3D &other)
 UTransform3D & UTransform3D::operator = (const UTransform3D& other)
 {
    if (&other == this) return *this;
-   memcpy(fTr, other.fTr, kN3);
+   fTr = other.fTr;
    memcpy(fRot, other.fRot, kN9);
    return *this;
 }   
@@ -100,10 +99,7 @@ void UTransform3D::RotateX(double angle)
    v[8] = s*fRot[5]+c*fRot[8];
    memcpy(fRot, v, kN9);
 
-   v[0] = fTr[0];
-   v[1] = c*fTr[1]-s*fTr[2];
-   v[2] = s*fTr[1]+c*fTr[2];
-   memcpy(fTr,v,kN3);
+   fTr.Set(fTr.x, c*fTr.y-s*fTr.z, s*fTr.y+c*fTr.z);
 }
 
 //______________________________________________________________________________
@@ -125,10 +121,7 @@ void UTransform3D::RotateY(double angle)
    v[8] = -s*fRot[2]+c*fRot[8];
    memcpy(fRot, v, kN9);
 
-   v[0] = c*fTr[0]+s*fTr[2];
-   v[1] = fTr[1];
-   v[2] = -s*fTr[0]+c*fTr[2];
-   memcpy(fTr,v,kN3);
+   fTr.Set(c*fTr.x+s*fTr.z, fTr.y, -s*fTr.x+c*fTr.z);
 }
 
 //______________________________________________________________________________
@@ -150,10 +143,7 @@ void UTransform3D::RotateZ(double angle)
    v[8] = fRot[8];
    memcpy(&fRot[0],v,kN9);
 
-   v[0] = c*fTr[0]-s*fTr[1];
-   v[1] = s*fTr[0]+c*fTr[1];
-   v[2] = fTr[2];
-   memcpy(fTr,v,kN3);
+   fTr.Set(c*fTr.x-s*fTr.y, s*fTr.x+c*fTr.y, fTr.z);
 }
 
 //______________________________________________________________________________
@@ -163,9 +153,9 @@ UVector3 UTransform3D::GlobalPoint(const UVector3 &local) const
 // by the transformation. This is defined by multiplying this transformation 
 // with the local vector.
    UVector3 global;
-   global.x = fTr[0] + local.x*fRot[0] + local.y*fRot[1] + local.z*fRot[2];
-   global.y = fTr[1] + local.x*fRot[3] + local.y*fRot[4] + local.z*fRot[5];
-   global.z = fTr[2] + local.x*fRot[6] + local.y*fRot[7] + local.z*fRot[8];
+   global.x = fTr.x + local.x*fRot[0] + local.y*fRot[1] + local.z*fRot[2];
+   global.y = fTr.y + local.x*fRot[3] + local.y*fRot[4] + local.z*fRot[5];
+   global.z = fTr.z + local.x*fRot[6] + local.y*fRot[7] + local.z*fRot[8];
    return global;
 }
 
@@ -189,12 +179,10 @@ UVector3 UTransform3D::LocalPoint(const UVector3 &global) const
 // by the transformation. This is defined by multiplying the inverse 
 // transformation with the global vector.
    UVector3 local;
-   double mt0  = global.x-fTr[0];
-   double mt1  = global.y-fTr[1];
-   double mt2  = global.z-fTr[2];
-   local.x = mt0*fRot[0] + mt1*fRot[3] + mt2*fRot[6];
-   local.y = mt0*fRot[1] + mt1*fRot[4] + mt2*fRot[7];
-   local.z = mt0*fRot[2] + mt1*fRot[5] + mt2*fRot[8];
+   UVector3 mt = global - fTr;
+   local.x = mt.x*fRot[0] + mt.y*fRot[3] + mt.z*fRot[6];
+   local.y = mt.x*fRot[1] + mt.y*fRot[4] + mt.z*fRot[7];
+   local.z = mt.x*fRot[2] + mt.y*fRot[5] + mt.z*fRot[8];
    return local;
 }
 
@@ -215,19 +203,19 @@ UVector3 UTransform3D::LocalVector(const UVector3 &global) const
 UTransform3D& UTransform3D::operator *= (const UTransform3D& other)
 {
 // Multiply with other transformation.
-   fTr[0] = fRot[0]*other.fTr[0] + fRot[1]*other.fTr[1] + fRot[2]*other.fTr[2];
-   fTr[1] = fRot[3]*other.fTr[0] + fRot[4]*other.fTr[1] + fRot[5]*other.fTr[2];
-   fTr[2] = fRot[6]*other.fTr[0] + fRot[7]*other.fTr[1] + fRot[8]*other.fTr[2];
+   fTr.x = fRot[0]*other.fTr[0] + fRot[1]*other.fTr[1] + fRot[2]*other.fTr[2];
+   fTr.y = fRot[3]*other.fTr[0] + fRot[4]*other.fTr[1] + fRot[5]*other.fTr[2];
+   fTr.z = fRot[6]*other.fTr[0] + fRot[7]*other.fTr[1] + fRot[8]*other.fTr[2];
 
-   double new_rot[9];
+   double newrot[9];
    for (int i=0; i<3; i++) {
       for (int j=0; j<3; j++) {
-         new_rot[3*i+j] = fRot[3*i]*other.fRot[j] + 
+         newrot[3*i+j] = fRot[3*i]*other.fRot[j] + 
                           fRot[3*i+1]*other.fRot[3+j] + 
                           fRot[3*i+2]*other.fRot[6+j];
       }                    
    }
-   memcpy(fRot, new_rot, kN9);
+   memcpy(fRot, newrot, kN9);
    return *this;
 }
 
@@ -235,9 +223,9 @@ UTransform3D& UTransform3D::operator *= (const UTransform3D& other)
 UTransform3D& UTransform3D::operator *= (const UVector3& vect)
 {
 // Multiply with a vector.
-   fTr[0] = fRot[0]*vect.x + fRot[1]*vect.y + fRot[2]*vect.z;
-   fTr[1] = fRot[3]*vect.x + fRot[4]*vect.y + fRot[5]*vect.z;
-   fTr[2] = fRot[6]*vect.x + fRot[7]*vect.y + fRot[8]*vect.z;
+   fTr.x = fRot[0]*vect.x + fRot[1]*vect.y + fRot[2]*vect.z;
+   fTr.y = fRot[3]*vect.x + fRot[4]*vect.y + fRot[5]*vect.z;
+   fTr.z = fRot[6]*vect.x + fRot[7]*vect.y + fRot[8]*vect.z;
    return *this;
 }
 

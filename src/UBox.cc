@@ -25,7 +25,7 @@ VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
 //  o eInside       - inside the solid
 //  o eSurface      - close to surface within tolerance
 //  o eOutside      - outside the solid
-   static const double delta = 10*VUSolid::fgTolerance;
+   static const double delta = VUSolid::fgTolerance;
    // Early returns on outside condition on any axis. Check Z first for faster
    // exclusion in  phi symmetric geometries.
    double ddz = std::abs(aPoint.z) - fDz;
@@ -329,10 +329,10 @@ void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 }             
 
 //______________________________________________________________________________
-void UBox::Extent ( double aMin[3], double aMax[3] ) const
+void UBox::Extent ( UVector3 &aMin, UVector3 &aMax) const
 {
 // Returns the full 3D cartesian extent of the solid.
-   aMin[0] = -fDx; aMax[0] = fDx;
-   aMin[1] = -fDy; aMax[1] = fDy;
-   aMin[2] = -fDz; aMax[2] = fDz;
+   aMin.x = -fDx; aMax.x = fDx;
+   aMin.y = -fDy; aMax.y = fDy;
+   aMin.z = -fDz; aMax.z = fDz;
 }

@@ -7,6 +7,34 @@
 
 using namespace std;
 
+// test with boolean union in geant4 in SBT
+// measure performance of DistanceToIn vs. DistanceToOut
+// in distancetoin/out benchmark, try what influence has adding Ubits
+
+// Is it possible to make .q in root in a script?
+// (root -b -q run.C)
+//
+// DONE
+// struct UVoxelBox
+// {
+//    UVector3 hlen; // half length of the box
+//    UVector3 pos; // position of the box
+// 
+// VUSolid::Extent. Why not use UVector3 instead of double[3]
+// Maybe make [] operator for UVector3?
+
+// if (maskByte & 1)
+// {
+//   list.push_back(8*(sizeof(unsigned int)*i+ byte) + bit);
+//   if (!(maskByte >>= 1)) break; // new
+// }
+// else maskByte >>= 1;
+// invert bitmasks
+
+// predelat algoritmus plneni masek >= a <
+
+// test with boxes which lie to each other, inside will be slower, but how much?
+
 //______________________________________________________________________________       
 UMultiUnion::UMultiUnion(const char *name)
 {
@@ -35,31 +63,20 @@ double UMultiUnion::Capacity()
 	// Random initialization:
 //	srand((unsigned int)time(NULL));
 
-	double extentMin[3], extentMax[3];
-	UVector3 point;
-	double dX, dY, dZ, pX, pY, pZ;
-	int generated = 0, inside = 0;
-
+	UVector3 extentMin, extentMax, d, p, point;
+	int inside = 0, generated;
 	Extent(extentMin,extentMax);
-
-	dX = (extentMax[0] - extentMin[0])/2;
-	dY = (extentMax[1] - extentMin[1])/2;
-	dZ = (extentMax[2] - extentMin[2])/2;
-
-	pX = (extentMax[0] + extentMin[0])/2;
-	pY = (extentMax[1] + extentMin[1])/2;
-	pZ = (extentMax[2] + extentMin[2])/2;     
-
-	double vbox = (2*dX)*(2*dY)*(2*dZ);
-
-	while (inside < 100000)
+	d = (extentMax - extentMin) / 2.;
+	p = (extentMax + extentMin) / 2.;
+	UVector3 left = p - d;
+	UVector3 length = d * 2;
+	for (generated = 0; generated < 10000; generated++)
 	{
-		point.Set(pX - dX + 2*dX*(rand()/(double)RAND_MAX),
-			pY - dY + 2*dY*(rand()/(double)RAND_MAX),
-			pZ - dZ + 2*dZ*(rand()/(double)RAND_MAX));
-		generated++;
-		if(Inside(point) != eOutside) inside++;
+		UVector3 random(rand(), rand(), rand());
+		point = left + length.MultiplyByComponents(random / RAND_MAX);
+		if (Inside(point) != eOutside) inside++;
 	}
+	double vbox = (2*d.x)*(2*d.y)*(2*d.z);
 	double capacity = inside*vbox/generated;
 	return capacity;      
 }
@@ -112,10 +129,88 @@ double UMultiUnion::DistanceToInCandidates(const UVector3 &aPoint, const UVector
 		localDirection = transform.LocalVector(direction);                
 		double distance = solid.DistanceToIn(localPoint, localDirection, aPstep);
 		if (minDistance > distance) minDistance = distance;
-		bits.ResetBitNumber(candidate);
+		bits.SetBitNumber(candidate);
 	}
 	return minDistance;
 }
+
+/*
+// we have to look also for all other objects in next voxels, if the distance is not shorter ... we have to do it because,
+// for example for objects which starts in first voxel in which they
+// do not collide with direction line, but in second it collides...
+// The idea of crossing voxels would be still applicable,
+// because this way we could exclude from the testing such solids,
+// which were found that obviously are not good candidates, because
+// they would return infinity
+// But if distance is smaller than the shift to next voxel, we can return it immediately
+
+double UMultiUnion::DistanceToIn(const UVector3 &aPoint, 
+	const UVector3 &aDirection, double aPstep) const
+{
+//	return DistanceToInDummy(aPoint, aDirection, aPstep);
+
+	UVector3 direction = aDirection.Unit();
+	double shift;
+	vector<int> candidates;
+
+#ifdef DEBUG
+	double distanceToInDummy = DistanceToInDummy(aPoint, aDirection, aPstep);
+#endif
+
+	double minDistance = UUtils::kInfinity;
+
+	UVector3 currentPoint = aPoint;
+	shift = voxels.DistanceToFirst(currentPoint, direction);
+	UVector3 controlPoint = currentPoint + direction * shift;
+
+	double totalShift = shift;
+	UBits exclusion(voxels.GetBitsPerSlice());
+
+	while (shift < UUtils::kInfinity)
+	{
+		if (shift)
+		{
+			totalShift += shift;
+
+#ifdef DEBUG
+			if (!voxels.Contains(controlPoint)) 
+				shift = shift; // put a breakpoint here
+#endif
+		}
+
+//		cout << "New point: [" << currentPoint.x << " , " << currentPoint.y << " , " << currentPoint.z << "]" << endl; 
+
+		// we have to calculate the distance to next in any case because of condition before break below
+
+		// we try to find a non-empty voxel
+		if (voxels.GetCandidatesVoxelArray(controlPoint, candidates, &exclusion))
+		{
+			double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
+			if (minDistance > distance) 
+			{
+				minDistance = distance;
+				if (distance < totalShift) 
+					break;
+			}
+		}
+
+		currentPoint += direction * shift;
+		shift = voxels.DistanceToNext(currentPoint, direction);
+		if (!shift) 
+			break;
+		controlPoint = currentPoint + direction * shift/2;
+	}
+#ifdef DEBUG
+	if (fabs(minDistance - distanceToInDummy) > VUSolid::Tolerance())
+	{
+		VUSolid::EnumInside location = Inside(aPoint);
+		minDistance = distanceToInDummy; // you can place a breakpoint here
+	}
+#endif
+
+	return minDistance;
+}
+*/
 
 
 // we have to look also for all other objects in next voxels, if the distance is not shorter ... we have to do it because,
@@ -144,15 +239,17 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 
 	UVector3 currentPoint = aPoint;
 	shift = voxels.DistanceToFirst(currentPoint, direction);
-	double totalShift = shift;
+	double totalShift = 0;
 	UBits exclusion(voxels.GetBitsPerSlice());
-	exclusion.ResetAllBits(true);
 
 	while (shift < UUtils::kInfinity)
 	{
 		if (shift)
 		{
-			currentPoint += direction * shift;
+			currentPoint += direction * (shift + VUSolid::Tolerance()/10);
+			totalShift += shift;
+			if (minDistance < totalShift) break;
+
 #ifdef DEBUG
 			if (!voxels.Contains(currentPoint)) 
 				shift = shift; // put a breakpoint here
@@ -161,10 +258,7 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 
 //		cout << "New point: [" << currentPoint.x << " , " << currentPoint.y << " , " << currentPoint.z << "]" << endl; 
 
-		shift = voxels.DistanceToNext(currentPoint, direction);
-		totalShift += shift;
-		if (!shift) 
-			break;
+		// we have to calculate the distance to next in any case because of condition before break below
 
 		// we try to find a non-empty voxel
 		if (voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion))
@@ -173,14 +267,21 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 			if (minDistance > distance) 
 			{
 				minDistance = distance;
-				if (distance < totalShift) 
-					break;
+				if (minDistance < totalShift) break;
 			}
 		}
+
+		shift = voxels.DistanceToNext(currentPoint, direction);
+
+		if (shift == 0) 
+			break;
 	}
 #ifdef DEBUG
 	if (fabs(minDistance - distanceToInDummy) > VUSolid::Tolerance())
+	{
+		VUSolid::EnumInside location = Inside(aPoint);
 		minDistance = distanceToInDummy; // you can place a breakpoint here
+	}
 #endif
 
 	return minDistance;
@@ -203,7 +304,7 @@ double UMultiUnion::DistanceToOutDummy(const UVector3 &aPoint, const UVector3 &a
 	UVector3 direction = aDirection.Unit();   
 	UVector3 localPoint, localDirection;
 	int ignoredSolid = -1;
-	double resultDistToOut = UUtils::kInfinity;
+	double resultDistToOut = 0; // UUtils::kInfinity;
 	UVector3 currentPoint = aPoint;
 
 	int numNodes = solids.size();
@@ -245,7 +346,9 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 {
 //	return DistanceToOutDummy(aPoint, aDirection, aNormal, convex, aPstep);
 
+#ifdef DEBUG
 	double distanceToOutDummy = DistanceToOutDummy(aPoint, aDirection, aNormal, convex, aPstep);
+#endif
 
 	double distanceToOutVoxels = DistanceToOutVoxels(aPoint, aDirection, aNormal, convex, aPstep);
 
@@ -266,7 +369,6 @@ double UMultiUnion::DistanceToOutVoxelsCoreNew(const UVector3 &point, const UVec
 	UVector3 localPoint, localDirection, localNormal;
 	UVector3 currentPoint = point;
 	UBits exclusion(voxels.GetBitsPerSlice());
-	exclusion.ResetAllBits(true);
 	bool notOutside;
 	UVector3 maxNormal;
 
@@ -322,9 +424,9 @@ double UMultiUnion::DistanceToOutVoxelsCoreNew(const UVector3 &point, const UVec
 			// convert from local normal
 			normal = transform.GlobalVector(maxNormal);
 
-			exclusion.ResetBitNumber(maxCandidate);
-			VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
 			exclusion.SetBitNumber(maxCandidate);
+			VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
+			exclusion.ResetBitNumber(maxCandidate);
 
 			// perform a Inside 
 			// it should be excluded current solid from checking
@@ -339,9 +441,9 @@ double UMultiUnion::DistanceToOutVoxelsCoreNew(const UVector3 &point, const UVec
 			// and fill the candidates for the corresponding voxel (just exiting current component along direction)
 			candidates.clear();
 			// the current component will be ignored
-			exclusion.ResetBitNumber(maxCandidate);
-			voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);
 			exclusion.SetBitNumber(maxCandidate);
+			voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);
+			exclusion.ResetBitNumber(maxCandidate);
 		}
 	}
 	while (notOutside);
@@ -356,7 +458,6 @@ double UMultiUnion::DistanceToOutVoxelsCore(const UVector3 &point, const UVector
 	UVector3 localPoint, localDirection, localNormal;
 	UVector3 currentPoint = point;
 	UBits exclusion(voxels.GetBitsPerSlice());
-	exclusion.ResetAllBits(true);
 
 	do
 	{
@@ -389,9 +490,9 @@ double UMultiUnion::DistanceToOutVoxelsCore(const UVector3 &point, const UVector
 				// convert from local normal
 				normal = transform.GlobalVector(localNormal);
 
-				exclusion.ResetBitNumber(candidate);
-				VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
 				exclusion.SetBitNumber(candidate);
+				VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
+				exclusion.ResetBitNumber(candidate);
 
 				// perform a Inside 
 				// it should be excluded current solid from checking
@@ -406,9 +507,9 @@ double UMultiUnion::DistanceToOutVoxelsCore(const UVector3 &point, const UVector
 				// and fill the candidates for the corresponding voxel (just exiting current component along direction)
 				candidates.clear();
 				// the current component will be ignored
-				exclusion.ResetBitNumber(candidate);
-				voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);            
 				exclusion.SetBitNumber(candidate);
+				voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);            
+				exclusion.ResetBitNumber(candidate);
 				break;
 			}
 		}
@@ -499,7 +600,7 @@ VUSolid::EnumInside UMultiUnion::InsideBits(const UVector3 &aPoint) const
 	for(int i = 0 ; i < limit ; i++)
 	{
 		int candidate = bits.FirstSetBit();
-		bits.SetBitNumber(candidate, false);
+		bits.SetBitNumber(candidate);
 
 		VUSolid &solid = *solids[candidate];
 		UTransform3D &transform = *transforms[candidate];  
@@ -701,8 +802,6 @@ VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
 void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax) const
 {
 	// Determines the bounding box for the considered instance of "UMultipleUnion"
-	double mini, maxi;
-	double arrMin[3], arrMax[3];
 	UVector3 min, max;
 
 	int numNodes = solids.size();
@@ -710,10 +809,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax) const
 	{
 		VUSolid &solid = *solids[i];
 		UTransform3D &transform = *transforms[i];
-
-		solid.Extent(arrMin, arrMax);
-		min.Set(arrMin[0],arrMin[1],arrMin[2]);      
-		max.Set(arrMax[0],arrMax[1],arrMax[2]);           
+		solid.Extent(min, max);
 		UUtils::TransformLimits(min, max, transform);
 
 		if (i == 0)
@@ -721,16 +817,16 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax) const
 			switch(aAxis)
 			{
 				case eXaxis:
-					mini = min.x;
-					maxi = max.x;            
+					aMin = min.x;
+					aMax = max.x;            
 					break;
 				case eYaxis:
-					mini = min.y;
-					maxi = max.y;            
+					aMin = min.y;
+					aMax = max.y;            
 					break;
 				case eZaxis:
-					mini = min.z;
-					maxi = max.z;            
+					aMin = min.z;
+					aMax = max.z;            
 					break;
 			}
 		}
@@ -740,40 +836,38 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax) const
 			switch(aAxis)
 			{
 				case eXaxis:
-					if(min.x < mini)
-						mini = min.x;
-					if(max.x > maxi)
-						maxi = max.x;
+					if(min.x < aMin)
+						aMin = min.x;
+					if(max.x > aMax)
+						aMax = max.x;
 					break;
 				case eYaxis:
-					if(min.y < mini)
-						mini = min.y;
-					if(max.y > maxi)
-						maxi = max.y;
+					if(min.y < aMin)
+						aMin = min.y;
+					if(max.y > aMax)
+						aMax = max.y;
 					break;
 				case eZaxis:
-					if(min.z < mini)
-						mini = min.z;
-					if(max.z > maxi)
-						maxi = max.z;
+					if(min.z < aMin)
+						aMin = min.z;
+					if(max.z > aMax)
+						aMax = max.z;
 					break;
 			}                 
 		}
 	}
-	aMin = mini;
-	aMax = maxi;
 }
 
 //______________________________________________________________________________ 
-void UMultiUnion::Extent(double aMin[3],double aMax[3]) const
+void UMultiUnion::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
 	double min = 0,max = 0;
 	Extent(eXaxis,min,max);
-	aMin[0] = min; aMax[0] = max;
+	aMin.x = min; aMax.x = max;
 	Extent(eYaxis,min,max);
-	aMin[1] = min; aMax[1] = max;
+	aMin.y = min; aMax.y = max;
 	Extent(eZaxis,min,max);
-	aMin[2] = min; aMax[2] = max;      
+	aMin.z = min; aMax.z = max;      
 }
 
 //______________________________________________________________________________
@@ -925,11 +1019,11 @@ double UMultiUnion::SafetyFromOutside(const UVector3 &point, bool aAccurate) con
 		if (i > 0)
 		{
 			// quick checks which help to speed up the things a bit
-			double dxyz0 = std::abs(point.x-boxes[i].p.x)-boxes[i].d.x;
+			double dxyz0 = std::abs(point.x-boxes[i].pos.x)-boxes[i].hlen.x;
 			if (dxyz0 > safetyMin) continue;
-			double dxyz1 = std::abs(point.y-boxes[i].p.y)-boxes[i].d.y;
+			double dxyz1 = std::abs(point.y-boxes[i].pos.y)-boxes[i].hlen.y;
 			if (dxyz1 > safetyMin) continue;
-			double dxyz2 = std::abs(point.z-boxes[i].p.z)-boxes[i].d.z;      
+			double dxyz2 = std::abs(point.z-boxes[i].pos.z)-boxes[i].hlen.z;      
 			if (dxyz2 > safetyMin) continue;
 
 			double d2xyz = 0.;
@@ -981,11 +1075,11 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccur
 	for(int i = 0; i < numNodes; i++)
 	{  
 		double d2xyz = 0.;
-		double dxyz0 = std::abs(aPoint.x-boxes[i].p.x)-boxes[i].d.x;
+		double dxyz0 = std::abs(aPoint.x-boxes[i].pos.x)-boxes[i].hlen.x;
 		if (dxyz0 > safetyMin) continue;
-		double dxyz1 = std::abs(aPoint.y-boxes[i].p.y)-boxes[i].d.y;
+		double dxyz1 = std::abs(aPoint.y-boxes[i].pos.y)-boxes[i].hlen.y;
 		if (dxyz1 > safetyMin) continue;
-		double dxyz2 = std::abs(aPoint.z-boxes[i].p.z)-boxes[i].d.z;
+		double dxyz2 = std::abs(aPoint.z-boxes[i].pos.z)-boxes[i].hlen.z;
 		if (dxyz2 > safetyMin) continue;
 
 		if(dxyz0 > 0) d2xyz += dxyz0*dxyz0;
@@ -1004,4 +1098,84 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccur
 		}
 	}
 	return safetyNode;
+}
+
+#include "UBox.hh"
+
+const double unionMaxX = 1.; // putting it larger can cause particles to escape
+const double unionMaxY = 1.;
+const double unionMaxZ = 1.;
+
+const double extentBorder = 1.1;
+
+const int carBoxesX = 20;
+const int carBoxesY = 20;
+const int carBoxesZ = 20;
+
+
+UMultiUnion *UMultiUnion::CreateTestMultiUnion(int numNodes) // Number of nodes to implement
+{
+   // Instance:
+      // Creation of several nodes:
+
+   double extentVolume = extentBorder * 2 * unionMaxX * extentBorder * 2 * unionMaxY * extentBorder * 2 * unionMaxZ;
+   double ratio = 1.0/3.0; // ratio of inside points vs (inside + outside points)
+   double length = 40;
+   
+   if (true) length = pow (ratio * extentVolume / numNodes, 1./3.) / 2;
+	
+   UBox *box = new UBox("UBox", length, length, length);
+
+//   UOrb *box = new UOrb("UOrb", length);
+
+   double capacity = box->Capacity();
+
+   UTransform3D* arrayTransformations = new UTransform3D[numNodes];
+  
+     // Constructor:
+   UMultiUnion *multiUnion = new UMultiUnion("multiUnion");
+
+   if (true)
+   {
+	   for(int i = 0; i < numNodes ; i++)
+	   {
+		   double x = UUtils::RandomUniform(-unionMaxX + length, unionMaxX - length);
+		   double y = UUtils::RandomUniform(-unionMaxY + length, unionMaxY - length);
+		   double z = UUtils::RandomUniform(-unionMaxZ + length, unionMaxZ - length);
+
+		   arrayTransformations[i] = UTransform3D(x,y,z,0,0,0);
+		   multiUnion->AddNode(*box,arrayTransformations[i]);
+	   }
+   }
+   else 
+   {   
+	   // Transformation:
+	   for(int n = 0, o = 0, m = 0; m < numNodes ; m++)
+	   {
+		   if (m >= carBoxesX*carBoxesY*carBoxesZ) break;
+		   double spacing = 50;
+		   double x = -unionMaxX+spacing+2*spacing*(m%carBoxesX);
+		   double y = -unionMaxY+spacing+2*spacing*n;
+		   double z = -unionMaxZ+spacing+2*spacing*o;
+
+		  arrayTransformations[m] = UTransform3D(x,y,z,0,0,0);
+		  multiUnion->AddNode(*box,arrayTransformations[m]);
+           
+		  // Preparing "Draw":
+		  if (m % carBoxesX == carBoxesX-1)
+		  {
+			  if (n % carBoxesY == carBoxesY-1)
+			  {
+				 n = 0;
+				 o++;
+			  }      
+			  else n++;
+		  }
+	   }
+   }
+
+   multiUnion->Voxelize();
+   multiUnion->Capacity();
+
+   return multiUnion;
 }

@@ -9,6 +9,10 @@
 #include "UVector3.hh"
 #include "UTransform3D.hh"
 
+#include "VUSolid.hh"
+
+using namespace std;
+
 //______________________________________________________________________________
 int UUtils::BinarySearch(int n, const double *array, double value)
 {
@@ -23,7 +27,11 @@ int UUtils::BinarySearch(int n, const double *array, double value)
    nbelow = 0;
    while(nabove-nbelow > 1) {
       middle = (nabove+nbelow)/2;
-      if(value == array[middle-1]) return middle-1;
+      if(value == array[middle-1]) 
+      {
+          nbelow = middle;
+          break;
+      }
       if (value  < array[middle-1]) nabove = middle;
       else                          nbelow = middle;
    }    
@@ -31,7 +39,7 @@ int UUtils::BinarySearch(int n, const double *array, double value)
 }   
 
 //______________________________________________________________________________
-int UUtils::BinarySearch(int n, const std::vector<double> &array, double value)
+int UUtils::BinarySearch(const std::vector<double> &vec, double value)
 {
 // Binary search in an array of doubles. If match is found, function returns
    // position of element.  If no match found, function gives nearest
@@ -39,19 +47,67 @@ int UUtils::BinarySearch(int n, const std::vector<double> &array, double value)
 
 //	if (array[n-1] == value) return n - 2; // patch, let us discuss it
 
-	const double *a = array.data();
+	/*
+	double myints[] = {1,2,3,4};
+  vector<double> v(myints,myints+4);           // 10 20 30 30 20 10 10 20
+  vector<double>::iterator low,up;
 
-   int nabove, nbelow, middle;
-   nabove = n+1;
-   nbelow = 0;
-   while(nabove-nbelow > 1) {
-      middle = (nabove+nbelow)/2;
-      if(value == a[middle-1]) return middle-1;
-      if (value  < a[middle-1]) nabove = middle;
-      else                          nbelow = middle;
-   }    
-   return nbelow-1;
+  sort (v.begin(), v.end());                // 10 10 10 20 20 20 30 30
+
+  double val = 1;
+  low=lower_bound (v.begin(), v.end(), val); //          ^
+  up= upper_bound (v.begin(), v.end(), val); //                   ^
+
+  cout << "lower_bound at position " << int(low- v.begin()) << endl;
+  cout << "upper_bound at position " << int(up - v.begin()) << endl;
+  */
+
+//	return UUtils::BinarySearch(vec.size(), &vec[0], value);
+
+	vector<double>::const_iterator begin=vec.begin(), end=vec.end();
+    int res = upper_bound(begin, end, value) - begin - 1;
+
+#ifdef DEBUG
+	int resold = UUtils::BinarySearch(vec.size(), &vec[0], value);
+   if (res != resold)
+	   res = resold;
+#endif
+   
+   return res;
+}
+
+
+//______________________________________________________________________________
+int UUtils::BinarySearchLower(const std::vector<double> &vec, double value)
+{
+// Binary search in an array of doubles. If match is found, function returns
+   // position of element.  If no match found, function gives nearest
+   // element smaller than value.
+
+//	if (array[n-1] == value) return n - 2; // patch, let us discuss it
+
+	/*
+	double myints[] = {1,2,3,4};
+  vector<double> v(myints,myints+4);           // 10 20 30 30 20 10 10 20
+  vector<double>::iterator low,up;
+
+  sort (v.begin(), v.end());                // 10 10 10 20 20 20 30 30
+
+  double val = 1;
+  low=lower_bound (v.begin(), v.end(), val); //          ^
+  up= upper_bound (v.begin(), v.end(), val); //                   ^
+
+  cout << "lower_bound at position " << int(low- v.begin()) << endl;
+  cout << "upper_bound at position " << int(up - v.begin()) << endl;
+  */
+
+//	return UUtils::BinarySearch(vec.size(), &vec[0], value);
+
+	vector<double>::const_iterator begin=vec.begin(), end=vec.end();
+    int res = lower_bound(begin, end, value) - begin - 1;  
+   return res;
 }   
+
    
 //______________________________________________________________________________
 long UUtils::LocMin(long n, const double *a) {
@@ -121,6 +177,7 @@ void UUtils::SortItr(Iterator first, Iterator last, IndexIterator index, bool do
       std::sort(index, cindex, CompareAsc<Iterator>(first) );
 }
 
+/*
 //______________________________________________________________________________
 template <typename Element, typename Index> void UUtils::Sort(Index n, const Element* a, Index* index, bool down)
 {
@@ -158,7 +215,46 @@ void UUtils::Sort(int n, const double* a, int* index, bool down)
    else
       std::sort(index, index + n, CompareAsc<const double*>(a) );
 }
+*/
 
+//______________________________________________________________________________
+void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D &transformation)
+{
+   // The goal of this method is to convert the quantities min and max (representing the
+   // bounding box of a given solid in its local frame) to the main frame, using
+   // "transformation"
+	UVector3 vertices[8] = {   // Detemination of the vertices thanks to the extension of each solid:
+    UVector3(min.x, min.y, min.z), // 1st vertice:
+    UVector3(min.x, max.y, min.z), // 2nd vertice:
+    UVector3(max.x, max.y, min.z),
+    UVector3(max.x, min.y, min.z),
+    UVector3(min.x, min.y, max.z),
+    UVector3(min.x, max.y, max.z),
+    UVector3(max.x, max.y, max.z),
+    UVector3(max.x, min.y, max.z)};
+
+   min.Set (kInfinity); max.Set (-kInfinity);
+
+   // Loop on th vertices
+   for(int i = 0 ; i < sizeof(vertices) / sizeof(UVector3) ; i++)
+   {
+      // From local frame to the gobal one:
+      // Current positions on the three axis:         
+      UVector3 current = transformation.GlobalPoint(vertices[i]);
+           
+      // If need be, replacement of the min & max values:
+	  if (current.x > max.x) max.x = current.x;
+      if (current.x < min.x) min.x = current.x;
+
+      if (current.y > max.y) max.y = current.y;
+      if (current.y < min.y) min.y = current.y;  
+
+      if (current.z > max.z) max.z = current.z;
+      if (current.z < min.z) min.z = current.z;                             
+   }
+}
+
+/*
 //______________________________________________________________________________
 void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D &transformation)
 {
@@ -215,4 +311,14 @@ void UUtils::TransformLimits(UVector3 &min, UVector3 &max, const UTransform3D &t
    // Recopy of the extrema in the passed pointers:
    min.Set(miniX, miniY, miniZ);
    max.Set(maxiX, maxiY, maxiZ);
+}
+*/
+
+
+double UUtils::RandomUniform(double min, double max)
+{
+	// srand((unsigned)time(NULL));
+    double number = (double) rand() / RAND_MAX;
+    double res = min + number * (max - min);
+    return res;
 }

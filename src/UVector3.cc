@@ -123,6 +123,11 @@ UVector3 operator * (const UVector3 & p, double a) {
    return UVector3(a*p.x, a*p.y, a*p.z);
 }
 
+UVector3 operator / (const UVector3 & p, double a) {
+	a = 1./a;
+   return UVector3(a*p.x, a*p.y, a*p.z);
+}
+
 UVector3 operator * (double a, const UVector3 & p) {
    return UVector3(a*p.x, a*p.y, a*p.z);
 }
@@ -130,3 +135,4 @@ UVector3 operator * (double a, const UVector3 & p) {
 double operator * (const UVector3 & a, const UVector3 & b) {
    return a.Dot(b);
 }
+

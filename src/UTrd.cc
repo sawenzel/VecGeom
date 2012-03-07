@@ -1500,14 +1500,14 @@ void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 * Returns the full 3D cartesian extent of the solid.
 * OK
 */
-void UTrd::Extent ( double aMin[3], double aMax[3] ) const
+void UTrd::Extent ( UVector3 &aMin, UVector3 &aMax) const
 {
-	aMin[0] = std::min (fDx1, fDx2);
-	aMin[1] = std::min (fDy1, fDy2);
-	aMin[2] = -fDz;
-	aMax[0] = std::max (fDx1, fDx2);
-	aMax[1] = std::max (fDy1, fDy2);
-	aMax[2] = fDz;
+	aMin.x = std::min (fDx1, fDx2);
+	aMin.y = std::min (fDy1, fDy2);
+	aMin.z = -fDz;
+	aMax.x = std::max (fDx1, fDx2);
+	aMax.y = std::max (fDy1, fDy2);
+	aMax.z = fDz;
 }
 
 double UTrd::Capacity() 
