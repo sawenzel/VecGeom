@@ -81,6 +81,8 @@
 #include "UBox.hh"
 #include "UOrb.hh"
 #include "UTrd.hh"
+#include "UMultiUnion.hh"
+#include "UVoxelFinder.hh"
 //
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
@@ -104,6 +106,9 @@
 #include "G4Colour.hh"
 
 #include "globals.hh"
+
+using namespace std;
+
 
 AXPETDetectorConstruction::AXPETDetectorConstruction():
 WorldVolume(0),LogWorldVolume(0),PhysWorldVolume(0), 
@@ -564,6 +569,14 @@ else if(val == "TessellatedSolid")
     { 
       VUSolid* tmp=new UTrd( "interactiveUTrd", 3, 1, 4, 1.5, 6);
       aVolume = new G4USolid("interactiveUTrd",tmp );
+    }
+
+    else if (val == "UMultiUnion")
+    {
+		int count = 1; // 16 works for boxes
+      UMultiUnion* multiUnion = UMultiUnion::CreateTestMultiUnion(count);
+
+      aVolume = new G4USolid("interactiveUMultiUnion", multiUnion);
     }
 
   else
