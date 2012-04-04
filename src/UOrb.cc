@@ -10,13 +10,13 @@
 * A simple Orb defined by half-lengths on the three axis. The center of the Orb matches the origin of the local reference frame.
 */
 
-#include "UOrb.hh"
-
+#include <cmath>
 #include <iostream>
+
+#include "UOrb.hh"
 #include "UUtils.hh"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
+using namespace std;
 
 //______________________________________________________________________________
 UOrb::UOrb(const char *name, double r)
@@ -33,7 +33,7 @@ UOrb::UOrb(const char *name, double r)
     /// G4Exception("G4Orb::G4Orb()", "InvalidSetup", FatalException, "Invalid radius > 10*kCarTolerance.");
   }
   // VUSolid::fRTolerance is radial tolerance (note: half of G4 tolerance)
-  fRTolerance =  std::max( VUSolid::frTolerance, epsilon*r);
+  fRTolerance =  max( VUSolid::frTolerance, epsilon*r);
 }
 
 //______________________________________________________________________________
@@ -51,9 +51,9 @@ UOrb::UOrb(const char *name, double r)
 VUSolid::EnumInside UOrb::Inside(const UVector3 &p) const
 {
   double rad2 = p.x*p.x+p.y*p.y+p.z*p.z;
-//  if (false) double rad = std::sqrt(rad2);
+//  if (false) double rad = sqrt(rad2);
 
-  double tolRMax = fR - fRTolerance;
+  double tolRMax = fR - fRTolerance * 0.5;
 
   // Check radial surface
   double tolRMax2 = tolRMax*tolRMax;
@@ -61,7 +61,7 @@ VUSolid::EnumInside UOrb::Inside(const UVector3 &p) const
 	  return eInside; 
   else
   {
-    tolRMax = fR + fRTolerance;
+    tolRMax = fR + fRTolerance * 0.5;
 	tolRMax2 = tolRMax*tolRMax;
     if ( rad2 <= tolRMax2)
 		return eSurface;
@@ -93,7 +93,7 @@ double UOrb::DistanceToIn(const UVector3 &p,
 
   // General Precalcs
 
-  rad    = std::sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+  rad    = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
   pDotV3d = p.x*v.x + p.y*v.y + p.z*v.z;
 
   // Radial Precalcs
@@ -113,23 +113,22 @@ double UOrb::DistanceToIn(const UVector3 &p,
   // => (px^2+py^2+pz^2) +2s(pxvx+pyvy+pzvz)+s^2(vx^2+vy^2+vz^2)=R^2
   // =>      rad2        +2s(pDotV3d)       +s^2                =R^2
   //
-  // => s=-pDotV3d+-std::sqrt(pDotV3d^2-(rad2-R^2))
+  // => s=-pDotV3d+-sqrt(pDotV3d^2-(rad2-R^2))
 
   c = (rad - fR)*(rad + fR); // c = (rad2-R^2))
 
-  if( rad > fR-fRTolerance ) // not inside in terms of Inside(p)
+  if( rad > fR-fRTolerance*0.5 ) // not inside in terms of Inside(p)
   {
-	  double fRTolerance2 = 2*fRTolerance;
-    if ( c > fRTolerance2*fR ) // TODO: check if 2* is really needed
+    if ( c > fRTolerance*fR ) 
     {
       // If outside tolerant boundary of outer G4Orb in terms of c
-      // [ should be std::sqrt(rad2) - fR > fRTolerance*0.5 ]
+      // [ should be sqrt(rad2) - fR > fRTolerance*0.5 ]
 
       d2 = pDotV3d*pDotV3d - c;
 
       if ( d2 >= 0 )
       {
-        s = -pDotV3d - std::sqrt(d2); // ok! = [ ( -2 p dot v) +- sqrt [(-2p dot v)2 - 4*(rad - fR)*(rad + fR)] ] /  2
+        s = -pDotV3d - sqrt(d2); // ok! = [ ( -2 p dot v) +- sqrt [(-2p dot v)2 - 4*(rad - fR)*(rad + fR)] ] /  2
 		// pDotV3d must be positive always, if not use alternative http://en.wikipedia.org/wiki/Quadratic_equation#Alternative_quadratic_formula
         if ( s >= 0 )
         {
@@ -148,10 +147,10 @@ double UOrb::DistanceToIn(const UVector3 &p,
     }
     else // not outside in terms of c
     {
-      if ( c > -fRTolerance2*fR )  // on surface   TODO: check if 2* is really needed
+      if ( c > -fRTolerance*fR )  // on surface   
       {
         d2 = pDotV3d*pDotV3d - c;             
-        if ( (d2 < fRTolerance2*fR) || (pDotV3d >= 0) ) // pDotV3d = cos si >= 0
+        if ( (d2 < fRTolerance*fR) || (pDotV3d >= 0) ) // pDotV3d = cos si >= 0
         {
           return snxt = UUtils::kInfinity;
         }
@@ -226,10 +225,10 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
   // => (px^2+py^2+pz^2) +2s(pxvx+pyvy+pzvz)+s^2(vx^2+vy^2+vz^2)=R^2
   // =>      rad2        +2s(pDotV3d)       +s^2                =R^2
   //
-  // => s=-pDotV3d+-std::sqrt(pDotV3d^2-(rad2-R^2))
+  // => s=-pDotV3d+-sqrt(pDotV3d^2-(rad2-R^2))
   
   const double rPlus = fR + fRTolerance;
-  double rad = std::sqrt(rad2);
+  double rad = sqrt(rad2);
 
   if ( rad <= rPlus )
   {
@@ -263,7 +262,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
       else 
       {
 		 // we are inside, with + version of quadratic eq. solution we calculate solution for distance
-        snxt = -pDotV3d + std::sqrt(d2);    // second root since inside Rmax
+        snxt = -pDotV3d + sqrt(d2);    // second root since inside Rmax
 											// the solution is safe because pDotV3d is negative
 											// c alternative formula, see http://en.wikipedia.org/wiki/Quadratic_equation#Alternative_quadratic_formula
 											// is not neccessary in this case
@@ -277,28 +276,28 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		// Surface points = 0
 		// Outside points: If pointing outwards (dot product with normal positive) return 0, otherwise ignore first surface, another surface should always be on the direction line, use instead distance to this one.
 
-	  double res = DistanceToOutForOutsidePoints(p, v, n); 
+//	  double res = DistanceToOutForOutsidePoints(p, v, n); 
 
 	  if (0)
 	  {
-    std::cout.precision(16);
-    std::cout << std::endl;
+    cout.precision(16);
+    cout << endl;
 //    DumpInfo();
-    std::cout << "Position:"  << std::endl << std::endl;
-    std::cout << "p.x() = "   << p.x << std::endl;
-    std::cout << "p.y() = "   << p.y << std::endl;
-    std::cout << "p.z() = "   << p.z << std::endl << std::endl;
-    std::cout << "Rp = "<< std::sqrt( p.x*p.x+p.y*p.y+p.z*p.z) << std::endl << std::endl;
-    std::cout << "Direction:" << std::endl << std::endl;
-    std::cout << "v.x() = "   << v.x << std::endl;
-    std::cout << "v.y() = "   << v.y << std::endl;
-    std::cout << "v.z() = "   << v.z << std::endl << std::endl;
-    std::cout << "Proposed distance :" << std::endl << std::endl;
-    std::cout << "snxt = "    << snxt << std::endl << std::endl;
+    cout << "Position:"  << endl << endl;
+    cout << "p.x() = "   << p.x << endl;
+    cout << "p.y() = "   << p.y << endl;
+    cout << "p.z() = "   << p.z << endl << endl;
+    cout << "Rp = "<< sqrt( p.x*p.x+p.y*p.y+p.z*p.z) << endl << endl;
+    cout << "Direction:" << endl << endl;
+    cout << "v.x() = "   << v.x << endl;
+    cout << "v.y() = "   << v.y << endl;
+    cout << "v.z() = "   << v.z << endl << endl;
+    cout << "Proposed distance :" << endl << endl;
+    cout << "snxt = "    << snxt << endl << endl;
 	  }
 
 	/*
-    std::cout.precision(6);
+    cout.precision(6);
     G4Exception("G4Orb::DistanceToOut(p,v,..)", "Notification",
                 JustWarning, "Logic error: snxt = kInfinity ???");
 	****/
@@ -317,20 +316,20 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 	{
 		if (0)
 		{
-        std::cout.precision(16);
-        std::cout << std::endl;
+        cout.precision(16);
+        cout << endl;
 //        DumpInfo();
-        std::cout << "Position:"  << std::endl << std::endl;
-        std::cout << "p.x() = "   << p.x << " mm" << std::endl;
-        std::cout << "p.y() = "   << p.y << " mm" << std::endl;
-        std::cout << "p.z() = "   << p.z << " mm" << std::endl << std::endl;
-        std::cout << "Direction:" << std::endl << std::endl;
-        std::cout << "v.x() = "   << v.x << std::endl;
-        std::cout << "v.y() = "   << v.y << std::endl;
-        std::cout << "v.z() = "   << v.z << std::endl << std::endl;
-        std::cout << "Proposed distance :" << std::endl << std::endl;
-        std::cout << "snxt = "    << snxt << " mm" << std::endl << std::endl;
-        std::cout.precision(6);
+        cout << "Position:"  << endl << endl;
+        cout << "p.x() = "   << p.x << " mm" << endl;
+        cout << "p.y() = "   << p.y << " mm" << endl;
+        cout << "p.z() = "   << p.z << " mm" << endl << endl;
+        cout << "Direction:" << endl << endl;
+        cout << "v.x() = "   << v.x << endl;
+        cout << "v.y() = "   << v.y << endl;
+        cout << "v.z() = "   << v.z << endl << endl;
+        cout << "Proposed distance :" << endl << endl;
+        cout << "snxt = "    << snxt << " mm" << endl << endl;
+        cout.precision(6);
 		}
 
 //        G4Exception("G4Orb::DistanceToOut(p,v,..)","Notification",JustWarning, "Undefined side for valid surface normal to solid.");
@@ -355,19 +354,19 @@ double UOrb::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) const
 //
 // Calculate distance (<=actual) to closest surface of shape from inside
 
-  double safe=0.0,rad = std::sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
+  double safe=0.0,rad = sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
 
 #ifdef UDEBUG
   if( Inside(p) == kOutside )
   {
-//     int oldprc = std::cout.precision(16);
-     std::cout << std::endl;
+//     int oldprc = cout.precision(16);
+     cout << endl;
 //     DumpInfo();
-     std::cout << "Position:"  << std::endl << std::endl;
-     std::cout << "p.x = "   << p.x << std::endl;
-     std::cout << "p.y = "   << p.y << std::endl;
-     std::cout << "p.z = "   << p.z << std::endl << std::endl;
-//     std::cout.precision(oldprc);
+     cout << "Position:"  << endl << endl;
+     cout << "p.x = "   << p.x << endl;
+     cout << "p.y = "   << p.y << endl;
+     cout << "p.z = "   << p.z << endl << endl;
+//     cout.precision(oldprc);
      G4Exception("G4Orb::DistanceToOut(p)", "Notification", JustWarning, 
                  "Point p is outside !?" );
   }
@@ -394,7 +393,7 @@ double UOrb::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) const
 double UOrb::SafetyFromOutside ( const UVector3 &p, bool aAccurate) const
 {
     double safe = 0.0;
-    double rad  = std::sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
+    double rad  = sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
 	safe = rad - fR;
 	if( safe < 0 ) { safe = 0.; }
 	return safe;
@@ -419,7 +418,7 @@ double UOrb::SafetyFromOutside ( const UVector3 &p, bool aAccurate) const
 bool UOrb::Normal( const UVector3& p, UVector3 &n) const
 {
 	double rad2 = p.x*p.x+p.y*p.y+p.z*p.z;
-	double rad = std::sqrt(rad2);
+	double rad = sqrt(rad2);
 
 	n = UVector3(p.x/rad,p.y/rad,p.z/rad);
 
@@ -446,7 +445,7 @@ void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 		 aMin = -fR; aMax = fR;
          break;
       default:
-         std::cout << "Extent: unknown axis" << aAxis << std::endl;
+         cout << "Extent: unknown axis" << aAxis << endl;
    }      
 }            
 
@@ -456,16 +455,16 @@ void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 */
 void UOrb::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
-	aMin.x = aMin.y = aMin.z = -fR;
-	aMax.x = aMax.y = aMax.z = fR;
+	aMin.Set(-fR);
+	aMax.Set(fR);
 }
 
 double UOrb::Capacity() 
 {
-	return (4*M_PI/3)*fR*fR*fR;
+	return (4*UUtils::kPi/3)*fR*fR*fR;
 }
 
 double UOrb::SurfaceArea()
 {
-	return (4*M_PI)*fR*fR;
+	return (4*UUtils::kPi)*fR*fR;
 }

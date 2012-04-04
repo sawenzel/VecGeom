@@ -4,10 +4,12 @@
 //  box matches the origin of the local reference frame.  
 //
 ////////////////////////////////////////////////////////////////////////////////
-#include "UBox.hh"
 
 #include <iostream>
+
 #include "UUtils.hh"
+#include "UBox.hh"
+
 //______________________________________________________________________________
 UBox::UBox(const char *name, double dx, double dy, double dz)
      :VUSolid(name),
@@ -260,7 +262,7 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal ) const
    static const double delta = 100.*VUSolid::fgTolerance;
    static const double kInvSqrt2 = 1./std::sqrt(2.);
    static const double kInvSqrt3 = 1./std::sqrt(3.);
-   aNormal.SetNull();
+   aNormal.Set(0.);
    UVector3 crt_normal, min_normal;
    int nsurf = 0;
    double safx = std::abs(std::abs(aPoint.x) - fDx);

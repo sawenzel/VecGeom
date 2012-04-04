@@ -11,13 +11,11 @@
 * A simple Orb defined by half-lengths on the three axis. The center of the Orb matches the origin of the local reference frame.
 */
 
-#include "UTrd.hh"
-
 #include <iostream>
-#include "UUtils.hh"
-
-//#define _USE_MATH_DEFINES
 #include <cmath>
+
+#include "UTrd.hh"
+#include "UUtils.hh"
 
 
 // OK: inside => use geant4
@@ -346,7 +344,7 @@ VUSolid::EnumInside UTrd::Inside(const UVector3 &p) const
 * The normal vector to the crossed surface is filled only in case the Orb is 
 * crossed, otherwise aNormal.IsNull() is true.
 */
-double UTrd::DistanceToInGeant4(const UVector3 &p, 
+double UTrd::DistanceToIn(const UVector3 &p, 
                           const UVector3 &v, 
 //                          UVector3 &aNormal, 
                           double) const
@@ -570,7 +568,10 @@ double UTrd::DistanceToInGeant4(const UVector3 &p,
 //_____________________________________________________________________________
 // double TGeoTrd2::DistFromOutside(double *point, double *dir, int iact, double step, double *safe) const
 
-inline double UTrd::DistanceToIn(const UVector3 &point, const UVector3 &dir, double) const
+// root routine is faster, but it gives wrong results on surface points. therefore, we use currently
+// Geant4 version
+
+inline double UTrd::DistanceToInRoot(const UVector3 &point, const UVector3 &dir, double) const
 {
 // Compute distance from outside point to surface of the trd2
 // Boundary safe algorithm
@@ -1483,10 +1484,12 @@ void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 	switch (aAxis)
 	{
       case eXaxis:
-		  aMin = std::min (fDx1, fDx2); std::max (fDx1, fDx2);
+		  aMin = -std::max (fDx1, fDx2); 
+		  aMax = std::max (fDx1, fDx2);
 		  break;
       case eYaxis:
-		  aMin = std::min (fDy1, fDy2); std::max (fDy1, fDy2);
+		  aMin = -std::max (fDy1, fDy2); 
+		  aMax = std::max (fDy1, fDy2);
 		  break;
       case eZaxis:
 		 aMin = -fDz; aMax = fDz;
@@ -1502,12 +1505,8 @@ void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 */
 void UTrd::Extent ( UVector3 &aMin, UVector3 &aMax) const
 {
-	aMin.x = std::min (fDx1, fDx2);
-	aMin.y = std::min (fDy1, fDy2);
-	aMin.z = -fDz;
-	aMax.x = std::max (fDx1, fDx2);
-	aMax.y = std::max (fDy1, fDy2);
-	aMax.z = fDz;
+	aMin.Set(-std::max (fDx1, fDx2), -std::max (fDy1, fDy2), -fDz);
+	aMax.Set(std::max (fDx1, fDx2), std::max (fDy1, fDy2), fDz);
 }
 
 double UTrd::Capacity() 

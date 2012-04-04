@@ -20,8 +20,9 @@
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
+#include <string>
+
 #include "UBits.h"
-#include "string.h"
 
 //#include "Ristd::ostream.h"
 

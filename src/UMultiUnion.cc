@@ -1,9 +1,10 @@
-#include "UVoxelFinder.hh"
-#include "UMultiUnion.hh"
 
 #include <iostream>
-#include "UUtils.hh"
 #include <sstream>
+
+#include "UVoxelFinder.hh"
+#include "UMultiUnion.hh"
+#include "UUtils.hh"
 
 using namespace std;
 
@@ -11,17 +12,12 @@ using namespace std;
 // measure performance of DistanceToIn vs. DistanceToOut
 // in distancetoin/out benchmark, try what influence has adding Ubits
 
-// Is it possible to make .q in root in a script?
-// (root -b -q run.C)
-//
 // DONE
 // struct UVoxelBox
 // {
 //    UVector3 hlen; // half length of the box
 //    UVector3 pos; // position of the box
 // 
-// VUSolid::Extent. Why not use UVector3 instead of double[3]
-// Maybe make [] operator for UVector3?
 
 // if (maskByte & 1)
 // {
@@ -30,10 +26,6 @@ using namespace std;
 // }
 // else maskByte >>= 1;
 // invert bitmasks
-
-// predelat algoritmus plneni masek >= a <
-
-// test with boxes which lie to each other, inside will be slower, but how much?
 
 //______________________________________________________________________________       
 UMultiUnion::UMultiUnion(const char *name)
@@ -97,7 +89,7 @@ double UMultiUnion::DistanceToInDummy(const UVector3 &aPoint, const UVector3 &aD
 	double minDistance = UUtils::kInfinity;
 
 	int numNodes = solids.size();
-	for (int i = 0 ; i < numNodes ; i++)
+	for (int i = 0 ; i < numNodes ; ++i)
 	{
 		VUSolid &solid = *solids[i];
 		UTransform3D &transform = *transforms[i];
@@ -119,7 +111,7 @@ double UMultiUnion::DistanceToInCandidates(const UVector3 &aPoint, const UVector
 	UVector3 localPoint, localDirection;
 
 	double minDistance = UUtils::kInfinity;   
-	for (int i = 0 ; i < candidatesCount; i++)
+	for (int i = 0 ; i < candidatesCount; ++i)
 	{
 		int candidate = candidates[i];
 		VUSolid &solid = *solids[candidate];
@@ -134,83 +126,6 @@ double UMultiUnion::DistanceToInCandidates(const UVector3 &aPoint, const UVector
 	return minDistance;
 }
 
-/*
-// we have to look also for all other objects in next voxels, if the distance is not shorter ... we have to do it because,
-// for example for objects which starts in first voxel in which they
-// do not collide with direction line, but in second it collides...
-// The idea of crossing voxels would be still applicable,
-// because this way we could exclude from the testing such solids,
-// which were found that obviously are not good candidates, because
-// they would return infinity
-// But if distance is smaller than the shift to next voxel, we can return it immediately
-
-double UMultiUnion::DistanceToIn(const UVector3 &aPoint, 
-	const UVector3 &aDirection, double aPstep) const
-{
-//	return DistanceToInDummy(aPoint, aDirection, aPstep);
-
-	UVector3 direction = aDirection.Unit();
-	double shift;
-	vector<int> candidates;
-
-#ifdef DEBUG
-	double distanceToInDummy = DistanceToInDummy(aPoint, aDirection, aPstep);
-#endif
-
-	double minDistance = UUtils::kInfinity;
-
-	UVector3 currentPoint = aPoint;
-	shift = voxels.DistanceToFirst(currentPoint, direction);
-	UVector3 controlPoint = currentPoint + direction * shift;
-
-	double totalShift = shift;
-	UBits exclusion(voxels.GetBitsPerSlice());
-
-	while (shift < UUtils::kInfinity)
-	{
-		if (shift)
-		{
-			totalShift += shift;
-
-#ifdef DEBUG
-			if (!voxels.Contains(controlPoint)) 
-				shift = shift; // put a breakpoint here
-#endif
-		}
-
-//		cout << "New point: [" << currentPoint.x << " , " << currentPoint.y << " , " << currentPoint.z << "]" << endl; 
-
-		// we have to calculate the distance to next in any case because of condition before break below
-
-		// we try to find a non-empty voxel
-		if (voxels.GetCandidatesVoxelArray(controlPoint, candidates, &exclusion))
-		{
-			double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
-			if (minDistance > distance) 
-			{
-				minDistance = distance;
-				if (distance < totalShift) 
-					break;
-			}
-		}
-
-		currentPoint += direction * shift;
-		shift = voxels.DistanceToNext(currentPoint, direction);
-		if (!shift) 
-			break;
-		controlPoint = currentPoint + direction * shift/2;
-	}
-#ifdef DEBUG
-	if (fabs(minDistance - distanceToInDummy) > VUSolid::Tolerance())
-	{
-		VUSolid::EnumInside location = Inside(aPoint);
-		minDistance = distanceToInDummy; // you can place a breakpoint here
-	}
-#endif
-
-	return minDistance;
-}
-*/
 
 
 // we have to look also for all other objects in next voxels, if the distance is not shorter ... we have to do it because,
@@ -227,55 +142,45 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 {
 //	return DistanceToInDummy(aPoint, aDirection, aPstep);
 
-	UVector3 direction = aDirection.Unit();
-	double shift;
-	vector<int> candidates;
-
 #ifdef DEBUG
 	double distanceToInDummy = DistanceToInDummy(aPoint, aDirection, aPstep);
 #endif
 
 	double minDistance = UUtils::kInfinity;
-
 	UVector3 currentPoint = aPoint;
-	shift = voxels.DistanceToFirst(currentPoint, direction);
-	double totalShift = 0;
+	UVector3 direction = aDirection.Unit();
+	double shift = voxels.DistanceToFirst(currentPoint, direction);
+	if (shift == UUtils::kInfinity) return shift;
+	double shiftBonus = VUSolid::Tolerance()/10;
+	if (shift) 
+		currentPoint += direction * (shift + shiftBonus);
+//		if (!voxels.Contains(currentPoint)) 
+//			return minDistance;
+	double totalShift = shift;
+
 	UBits exclusion(voxels.GetBitsPerSlice());
+	vector<int> candidates, curVoxel(3);
+	for (int i = 0; i <= 2; ++i) curVoxel[i] = UUtils::BinarySearch(voxels.GetBoundary(i), currentPoint[i]);
 
-	while (shift < UUtils::kInfinity)
+	do
 	{
-		if (shift)
-		{
-			currentPoint += direction * (shift + VUSolid::Tolerance()/10);
-			totalShift += shift;
-			if (minDistance < totalShift) break;
-
-#ifdef DEBUG
-			if (!voxels.Contains(currentPoint)) 
-				shift = shift; // put a breakpoint here
-#endif
-		}
-
-//		cout << "New point: [" << currentPoint.x << " , " << currentPoint.y << " , " << currentPoint.z << "]" << endl; 
-
-		// we have to calculate the distance to next in any case because of condition before break below
-
-		// we try to find a non-empty voxel
-		if (voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion))
+		if (voxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
 		{
 			double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
 			if (minDistance > distance) 
-			{
-				minDistance = distance;
-				if (minDistance < totalShift) break;
-			}
+				if (distance < totalShift) break; else minDistance = distance;
 		}
 
-		shift = voxels.DistanceToNext(currentPoint, direction);
+		shift = voxels.DistanceToNext(currentPoint, direction, curVoxel);
+		if (shift == UUtils::kInfinity /*|| shift == 0*/) break;
 
-		if (shift == 0) 
-			break;
+		totalShift += shift;
+		if (minDistance < totalShift) break;
+
+		currentPoint += direction * (shift + shiftBonus);
 	}
+	while (voxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
+
 #ifdef DEBUG
 	if (fabs(minDistance - distanceToInDummy) > VUSolid::Tolerance())
 	{
@@ -308,7 +213,7 @@ double UMultiUnion::DistanceToOutDummy(const UVector3 &aPoint, const UVector3 &a
 	UVector3 currentPoint = aPoint;
 
 	int numNodes = solids.size();
-	for(int i = 0; i < numNodes; i++)
+	for(int i = 0; i < numNodes; ++i)
 	{
 		if (i != ignoredSolid)
 		{
@@ -381,7 +286,7 @@ double UMultiUnion::DistanceToOutVoxelsCoreNew(const UVector3 &point, const UVec
 		UVector3 maxLocalPoint;
 
 		int limit = candidates.size();
-		for(int i = 0 ; i < limit ; i++)
+		for(int i = 0 ; i < limit ; ++i)
 		{
 			int candidate = candidates[i];
 			// ignore the current component (that you just got out of) since numerically the propagated point will be on its surface
@@ -462,7 +367,7 @@ double UMultiUnion::DistanceToOutVoxelsCore(const UVector3 &point, const UVector
 	do
 	{
 		int limit = candidates.size();
-		for(int i = 0 ; i < limit ; i++)
+		for(int i = 0 ; i < limit ; ++i)
 		{
 			int candidate = candidates[i];
 			// ignore the current component (that you just got out of) since numerically the propagated point will be on its surface
@@ -581,59 +486,6 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &
 }    
 
 
-//TODO: delete this method, does not work anyway anymore, because we changes bits format
-//______________________________________________________________________________
-VUSolid::EnumInside UMultiUnion::InsideBits(const UVector3 &aPoint) const
-{
-#ifdef DEBUG
-	VUSolid::EnumInside insideDummy = InsideDummy(aPoint);
-#endif
-
-	UVector3 localPoint;
-	VUSolid::EnumInside location = eOutside;
-	bool boolSurface = false;
-
-	UBits bits;
-	voxels.GetCandidatesVoxelBits(aPoint, bits);
-
-	int limit = bits.CounUBits();
-	for(int i = 0 ; i < limit ; i++)
-	{
-		int candidate = bits.FirstSetBit();
-		bits.SetBitNumber(candidate);
-
-		VUSolid &solid = *solids[candidate];
-		UTransform3D &transform = *transforms[candidate];  
-
-		// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-		localPoint = transform.LocalPoint(aPoint);
-		location = solid.Inside(localPoint);
-		if(location == eSurface) boolSurface = true; 
-
-		if(location == eInside) 
-		{
-#ifdef DEBUG 
-			if (location != insideDummy)
-				location = insideDummy; // you can place a breakpoint here
-#endif
-
-			return eInside;      
-		}
-	}          
-	///////////////////////////////////////////////////////////////////////////
-	// Important comment: When two solids touch each other along a flat
-	// surface, the surface points will be considered as eSurface, while points 
-	// located around will correspond to eInside (cf. G4UnionSolid in GEANT4)
-	location = boolSurface ? eSurface : eOutside;
-
-#ifdef DEBUG
-	if (location != insideDummy)
-		location = insideDummy; // you can place a breakpoint here
-#endif
-	return location;
-}
-
-
 
 
 //______________________________________________________________________________
@@ -656,7 +508,7 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
 
 	vector<int> candidates;
 	int limit = voxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
-	for(int i = 0 ; i < limit ; i++)
+	for(int i = 0 ; i < limit ; ++i)
 	{
 		int candidate = candidates[i];
 		VUSolid &solid = *solids[candidate];
@@ -779,7 +631,7 @@ VUSolid::EnumInside UMultiUnion::InsideDummy(const UVector3 &aPoint) const
 	int countSurface = 0;
 
 	int numNodes = solids.size();
-	for(int i = 0 ; i < numNodes ; i++)
+	for(int i = 0 ; i < numNodes ; ++i)
 	{
 		VUSolid &solid = *solids[i];
 		UTransform3D &transform = *transforms[i];  
@@ -805,7 +657,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax) const
 	UVector3 min, max;
 
 	int numNodes = solids.size();
-	for(int i = 0 ; i < numNodes ; i++)
+	for(int i = 0 ; i < numNodes ; ++i)
 	{
 		VUSolid &solid = *solids[i];
 		UTransform3D &transform = *transforms[i];
@@ -861,13 +713,7 @@ void UMultiUnion::Extent(EAxisType aAxis,double &aMin,double &aMax) const
 //______________________________________________________________________________ 
 void UMultiUnion::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
-	double min = 0,max = 0;
-	Extent(eXaxis,min,max);
-	aMin.x = min; aMax.x = max;
-	Extent(eYaxis,min,max);
-	aMin.y = min; aMax.y = max;
-	Extent(eZaxis,min,max);
-	aMin.z = min; aMax.z = max;      
+	for (int i = 0; i <= 2; ++i) Extent(eXaxis,aMin[i],aMax[i]);
 }
 
 //______________________________________________________________________________
@@ -895,7 +741,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal) const
 	if(voxels.GetCandidatesVoxelArray(aPoint, candidates))
 	{
 		int limit = candidates.size();
-		for(int i = 0 ; i < limit ; i++)
+		for(int i = 0 ; i < limit ; ++i)
 		{
 			int candidate = candidates[i];
 			UTransform3D &transform = *transforms[candidate];
@@ -985,7 +831,7 @@ double UMultiUnion::SafetyFromInside(const UVector3 &point, bool aAccurate) cons
 	voxels.GetCandidatesVoxelArray(point, candidates);
 
 	int limit = candidates.size();
-	for(int i = 0; i < limit; i++)
+	for(int i = 0; i < limit; ++i)
 	{
 		int candidate = candidates[i];
 		// The coordinates of the point are modified so as to fit the intrinsic solid local frame:      
@@ -1014,28 +860,41 @@ double UMultiUnion::SafetyFromOutside(const UVector3 &point, bool aAccurate) con
 	UVector3 localPoint;
 
 	int numNodes = solids.size();
-	for(int i = 0; i < numNodes; i++)
+	for(int j = 0; j < numNodes; j++)
 	{
-		if (i > 0)
+		UVector3 dxyz;
+		if (j > 0)
 		{
-			// quick checks which help to speed up the things a bit
-			double dxyz0 = std::abs(point.x-boxes[i].pos.x)-boxes[i].hlen.x;
-			if (dxyz0 > safetyMin) continue;
-			double dxyz1 = std::abs(point.y-boxes[i].pos.y)-boxes[i].hlen.y;
-			if (dxyz1 > safetyMin) continue;
-			double dxyz2 = std::abs(point.z-boxes[i].pos.z)-boxes[i].hlen.z;      
-			if (dxyz2 > safetyMin) continue;
-
+			UVector3 pos = boxes[j].pos;
+			UVector3 hlen = boxes[j].hlen;
+			for (int i = 0; i <= 2; ++i)
+				// distance to middle point - hlength => distance from point to border of x,y,z
+				if ((dxyz[i] = std::abs(point[i]-pos[i])-hlen[i]) > safetyMin) 
+					continue;
+			
 			double d2xyz = 0.;
-			if (dxyz0 > 0) d2xyz += dxyz0*dxyz0;
-			if (dxyz1 > 0) d2xyz += dxyz1*dxyz1;
-			if (dxyz2 > 0) d2xyz += dxyz2*dxyz2;
-			if (d2xyz >= safetyMin*safetyMin) continue;
+			for (int i = 0; i <= 2; ++i)
+				if (dxyz[i] > 0) d2xyz += dxyz[i]*dxyz[i];
+			
+			// minimal distance is at least this, but could be even higher. therefore, we can stop if previous was already lower
+			if (d2xyz >= safetyMin*safetyMin) 
+			{
+#ifdef DEBUG
+				UTransform3D &transform = *transforms[j];
+				localPoint = transform.LocalPoint(point); // NOTE: ROOT does not make this transformation, although it does it at SafetyFromInside
+				VUSolid &solid = *solids[j];
+				double safety = solid.SafetyFromOutside(localPoint, true);
+				if (safetyMin > safety)
+					safety = safety;
+#endif		
+				continue;
+			}
 		}
-		UTransform3D &transform = *transforms[i];
+		UTransform3D &transform = *transforms[j];
 		localPoint = transform.LocalPoint(point); // NOTE: ROOT does not make this transformation, although it does it at SafetyFromInside
-		VUSolid &solid = *solids[i];
-		double safety = solid.SafetyFromOutside(localPoint, aAccurate);
+		VUSolid &solid = *solids[j];
+
+		double safety = solid.SafetyFromOutside(localPoint, aAccurate); // careful, with aAcurate it can return underestimate, than the condition d2xyz >= safetyMin*safetyMin does not return same result as Geant4 or Root boolean union, it actually return better values, more close to surface
 		if (safety <= 0) return safety; // it was detected, that the point is not located outside
 		if (safetyMin > safety) safetyMin = safety;
 	}
@@ -1072,7 +931,7 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccur
 	UVector3 localPoint;    
 
 	int numNodes = solids.size();
-	for(int i = 0; i < numNodes; i++)
+	for(int i = 0; i < numNodes; ++i)
 	{  
 		double d2xyz = 0.;
 		double dxyz0 = std::abs(aPoint.x-boxes[i].pos.x)-boxes[i].hlen.x;
@@ -1137,7 +996,7 @@ UMultiUnion *UMultiUnion::CreateTestMultiUnion(int numNodes) // Number of nodes 
 
    if (true)
    {
-	   for(int i = 0; i < numNodes ; i++)
+	   for(int i = 0; i < numNodes ; ++i)
 	   {
 		   double x = UUtils::RandomUniform(-unionMaxX + length, unionMaxX - length);
 		   double y = UUtils::RandomUniform(-unionMaxY + length, unionMaxY - length);

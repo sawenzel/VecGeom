@@ -1,9 +1,9 @@
 //  UTransform3D = General transformation made by rotation + translation
 // 
-#include <string.h>
-#include "UTransform3D.hh"
 
 #include <cmath>
+
+#include "UTransform3D.hh"
 
 const int kN9 = 9*sizeof(double);
 const double kIdRot[9] = {1.0, 0.0, 0.0,

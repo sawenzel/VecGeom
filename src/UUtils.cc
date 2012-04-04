@@ -1,4 +1,3 @@
-#include "UUtils.hh"
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  UUtils - Utility namespace providing common constants and mathematical
@@ -6,9 +5,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
+
 #include "UVector3.hh"
 #include "UTransform3D.hh"
-
+#include "UUtils.hh"
 #include "VUSolid.hh"
 
 using namespace std;
@@ -77,38 +77,6 @@ int UUtils::BinarySearch(const std::vector<double> &vec, double value)
 }
 
 
-//______________________________________________________________________________
-int UUtils::BinarySearchLower(const std::vector<double> &vec, double value)
-{
-// Binary search in an array of doubles. If match is found, function returns
-   // position of element.  If no match found, function gives nearest
-   // element smaller than value.
-
-//	if (array[n-1] == value) return n - 2; // patch, let us discuss it
-
-	/*
-	double myints[] = {1,2,3,4};
-  vector<double> v(myints,myints+4);           // 10 20 30 30 20 10 10 20
-  vector<double>::iterator low,up;
-
-  sort (v.begin(), v.end());                // 10 10 10 20 20 20 30 30
-
-  double val = 1;
-  low=lower_bound (v.begin(), v.end(), val); //          ^
-  up= upper_bound (v.begin(), v.end(), val); //                   ^
-
-  cout << "lower_bound at position " << int(low- v.begin()) << endl;
-  cout << "upper_bound at position " << int(up - v.begin()) << endl;
-  */
-
-//	return UUtils::BinarySearch(vec.size(), &vec[0], value);
-
-	vector<double>::const_iterator begin=vec.begin(), end=vec.end();
-    int res = lower_bound(begin, end, value) - begin - 1;  
-   return res;
-}   
-
-   
 //______________________________________________________________________________
 long UUtils::LocMin(long n, const double *a) {
    // Return index of array with the minimum element.
