@@ -60,6 +60,15 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 
 //TODO: why are points near surface of polyhedra different in geant4 and root. which one is right?
 
+#include <iomanip>
+#include <sstream>
+#include <time.h>
+#include <vector>
+
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+
 #include "SBTperformance.hh"
 
 #include "Randomize.hh"
@@ -79,12 +88,17 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "G4Polycone.hh"
 #include "G4Polyhedra.hh"
 #include "G4UnionSolid.hh"
+#include "G4TessellatedSolid.hh"
+#include "G4VFacet.hh"
 
 #include "VUSolid.hh"
 #include "UBox.hh"
 #include "UOrb.hh"
 #include "UTrd.hh"
 #include "UMultiUnion.hh"
+#include "UTessellatedSolid.hh"
+#include "UTriangularFacet.hh"
+#include "UQuadrangularFacet.hh"
 
 #include "TGeoTrd2.h" 
 #include "TGeoBBox.h"
@@ -92,15 +106,6 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "TGeoSphere.h"
 #include "TGeoPcon.h"
 #include "TGeoPgon.h"
-
-#include <iomanip>
-#include <sstream>
-#include <time.h>
-#include <vector>
-
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 
 #include "G4ThreeVector.hh"
 #include "G4RotationMatrix.hh"
@@ -117,6 +122,7 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "G4Para.hh"
 #include "G4Torus.hh"
 #include "G4Trd.hh"
+#include "G4Tools.hh"
 
 #include "G4Polyhedron.hh"
 #include "HepPolyhedron.h"
@@ -435,7 +441,7 @@ void SBTperformance::TestSafetyFromInsideUSolids(int iteration)
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorUSolids(point, points, i);
-		double res = volumeUSolids->SafetyFromInside(point);
+		double res = volumeUSolids->SafetyFromInside(point, true);
 
 		if (!iteration)
 		{
@@ -573,6 +579,7 @@ void SBTperformance::TestDistanceToOutGeant4(int iteration)
 
 		if (!iteration)
 		{
+			EInside inside = volumeGeant4->Inside(point);
 			resultDoubleGeant4[i] = ConvertInfinities (res);
 
 //			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kOutside);
@@ -639,7 +646,7 @@ void SBTperformance::Flush(string s)
 // NEW: results written normalized to nano seconds per operation
 double SBTperformance::normalizeToNanoseconds(double time)
 {
-	double res = time * (1e+9 / repeat / maxPoints);
+	double res = time * ((double) 1e+9 / (double) (repeat * maxPoints));
 	return res;
 }
 
@@ -721,11 +728,8 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 	volumeROOT = NULL;
 	stringstream ss;
 
-	double capacity = testVolume->GetCubicVolume();
-	// double area = testVolume->GetSurfaceArea();
-
 	// DONE: box and other USolidss are not slow anymore (it linking issue at VS2010)
-	if (type == "G4UnionSolid")
+	if (type == "G4UnionSolid" || type == "G4DisplacedSolid")
 	{
 		G4UnionSolid &unionSolid = *(G4UnionSolid *) testVolume;
 
@@ -741,11 +745,48 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
     
 		multiUnion->Voxelize();
 		multiUnion->GetVoxels().DisplayListNodes();
+
+		// double capacity = testVolume->GetCubicVolume();
+		// double area = testVolume->GetSurfaceArea();
+
 		multiUnion->Capacity();
 
 		ss << "UMultiUnion()";
 	}
-	if (type == "G4Box")
+    if (type == "G4TessellatedSolid")
+    {
+        UTessellatedSolid &utessel = *new UTessellatedSolid("ts");
+
+        G4TessellatedSolid &tessel = *(G4TessellatedSolid *) testVolume;
+        int n = tessel.GetNumberOfFacets();
+        for (int i = 0; i < n; i++)
+        {
+            G4VFacet &facet = *tessel.GetFacet(i);
+            int verticesCount = facet.GetNumberOfVertices();
+            vector<UVector3> v(verticesCount);
+            for (int j = 0; j < verticesCount; j++) 
+            {
+                G4ThreeVector vec = facet.GetVertex(j);
+                v[j].Set(vec.x(), vec.y(), vec.z());
+            }
+            UFacet *ufacet;
+            switch (verticesCount)
+            {
+                case 3:
+                    ufacet = new UTriangularFacet(v[0], v[1], v[2], UABSOLUTE);
+                    break;
+                case 4:
+                    ufacet = new UQuadrangularFacet(v[0], v[1], v[2], v[3], UABSOLUTE);
+                    break;
+                default:
+                    break;
+            }
+            utessel.AddFacet(ufacet);
+        }
+        utessel.SetSolidClosed(true);
+        volumeUSolids = &utessel;
+    }
+    if (type == "G4Box")
 	{
 		G4Box *box = (G4Box *) testVolume;
 		double x = box->GetXHalfLength();
@@ -886,7 +927,7 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 
 		double capacityRoot = conRoot->Capacity();
 		double areaRoot = conRoot->GetFacetArea();
-		double difCapacity = (capacityRoot - capacity) / capacity;
+//		double difCapacity = (capacityRoot - capacity) / capacity;
 //		double phiTotal = polycone->GetTolerance
 	}
 	volumeString = ss.str();
@@ -974,6 +1015,7 @@ void SBTperformance::CreatePointsAndDirectionsOutside()
 		}
 		while (volumeGeant4->Inside(pointG4));
 
+		/*
 		// NEW: outside points randomly generated on the surface of box 1.5 times bounding box
 		pointG4 = box->GetPointOnSurface();
 		pointG4 += centerG4;
@@ -984,6 +1026,7 @@ void SBTperformance::CreatePointsAndDirectionsOutside()
 			cout << "Outside point is detected as inside!";
 			exit(1);
 		}
+		*/
 
 		double random = G4UniformRand();
 		if (random <= outsideRandomDirectionPercent/100.) // NEW: made parametrization using macro file - 0 - 100%
@@ -1037,9 +1080,9 @@ void SBTperformance::CreatePointsAndDirections()
 	maxPointsOutside = (int) (maxPoints * (outsidePercent/100));
 	maxPointsSurface = maxPoints - maxPointsInside - maxPointsOutside;
 
-	offsetOutside = 0;
-	offsetSurface = maxPointsOutside;
-	offsetInside = offsetSurface + maxPointsSurface;
+	offsetInside = 0;
+	offsetSurface = maxPointsInside;
+	offsetOutside = offsetSurface + maxPointsSurface;
 
 	points.resize(maxPoints);
 	directions.resize(maxPoints);
@@ -1157,9 +1200,7 @@ int SBTperformance::SaveVectorToMatlabFile(vector<UVector3> &vector, string file
 int SBTperformance::SaveLegend(string filename)
 {
 	vector<double> offsets(3);
-	offsets[0] = maxPointsOutside;
-	offsets[1] = maxPointsSurface;
-	offsets[2] = maxPointsInside;
+	offsets[0] = maxPointsInside, offsets[1] = maxPointsSurface, offsets[2] = maxPointsOutside;
 	return SaveVectorToMatlabFile(offsets, filename);
 }
 
@@ -1313,36 +1354,25 @@ void SBTperformance::VectorToDouble(vector<UVector3> &vectorUVector, vector<doub
 
 void SBTperformance::SavePolyhedra(string method)
 {
-	G4Polyhedron *p = volumeGeant4->GetPolyhedron();
-	int noVertices = p->GetNoVertices();
-	int noFaces = p->GetNoFacets();
-	vector<UVector3> vertices(noVertices);
-
-	UVector3 vertex;
-	for (int i = 1; i <= noVertices; i++)
+	vector<UVector3> vertices;
+	vector<vector<int> > nodes;
+	if (G4Tools::GetPolyhedra(*volumeGeant4, vertices, nodes))
 	{
-		HepGeom::Point3D<double> point = p->GetVertex(i);
-		vertex.Set (point.x(), point.y(), point.z());
-		vertices[i-1] = vertex;
-	}
+		SaveVectorToMatlabFile(vertices, folder+method+"Vertices.dat");
 
-	SaveVectorToMatlabFile(vertices, folder+method+"Vertices.dat");
-
-	ofstream fileQuads((folder+method+"Quads.dat").c_str());
-	ofstream fileTriangles((folder+method+"Triangles.dat").c_str());
-	for (int i = 1; i <= noFaces; i++)
-	{
-		int n, iNodes[4];
-		p->GetFacet(i, n, iNodes);
-		if (n == 3) 
+		ofstream fileQuads((folder+method+"Quads.dat").c_str());
+		ofstream fileTriangles((folder+method+"Triangles.dat").c_str());
+	
+		for (int i = 1; i <= nodes.size(); i++)
 		{
-			for (int j = 0; j < n; j++) fileTriangles << setprecision(16) << iNodes[j] << "\t";
-			fileTriangles << "\n";
-		}
-		if (n == 4) 
-		{
-			for (int j = 0; j < n; j++) fileQuads << setprecision(16) << iNodes[j] << "\t";
-			fileQuads << "\n";
+			int n = nodes[i].size();
+			if (n == 3 || n == 4)
+			{
+				ofstream &file = (n == 3) ? fileTriangles : fileQuads;
+				vector<int> node = nodes[i];
+				for (int j = 0; j < n; j++) file << setprecision(16) << node[j] << "\t";
+				file << endl;
+			}
 		}
 	}
 }
@@ -1397,7 +1427,14 @@ void SBTperformance::CompareAndSaveResults(string method, double resG, double re
 	}
 	SaveLegend(folder+method+"Legend.dat");
 	SaveResultsToFile(method);
+
+	string name = volumeGeant4->GetName();
+	// if (name != "MultiUnion") 
+
+//#ifdef DEBUG
+	Flush("Saving polyhedra for visualization\n");
 	SavePolyhedra(method);
+//#endif
 	SaveVectorToMatlabFile(points, folder+method+"Points.dat");
 	SaveVectorToMatlabFile(directions, folder+method+"Directions.dat");
 
@@ -1575,6 +1612,9 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 	void (SBTperformance::*funcPtr)()=NULL;
 
 	volumeGeant4 = testVolume;
+
+//	SavePolyhedra(method);
+
 	setupSolids(testVolume);
 	log = &logger;
 
@@ -1585,7 +1625,7 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 	string name = testVolume->GetName();
 	ss << "\n\n";
 	ss << "===============================================================================\n";
-	ss << "Invoking performance test for method " << method << " on " << name << " ..." << "\nFolder is" << folder << std::endl;
+	ss << "Invoking performance test for method " << method << " on " << name << " ..." << "\nFolder is " << folder << std::endl;
 	ss << "===============================================================================\n";
 	ss << "\n";
 	FlushSS(ss);
@@ -1594,8 +1634,8 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 	if (method == "Normal") funcPtr = &SBTperformance::CompareNormal;
 	if (method == "SafetyFromInside") funcPtr = &SBTperformance::CompareSafetyFromInside;
 	if (method == "SafetyFromOutside") funcPtr = &SBTperformance::CompareSafetyFromOutside;
-	if (method == "CompareDistanceToIn") funcPtr = &SBTperformance::CompareDistanceToIn;
-	if (method == "CompareDistanceToOut") funcPtr = &SBTperformance::CompareDistanceToOut;
+	if (method == "DistanceToIn") funcPtr = &SBTperformance::CompareDistanceToIn;
+	if (method == "DistanceToOut") funcPtr = &SBTperformance::CompareDistanceToOut;
 
 	if (method == "*") TestMethodAll();
 	else if (funcPtr) TestMethod(funcPtr);

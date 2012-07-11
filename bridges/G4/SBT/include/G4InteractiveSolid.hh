@@ -48,6 +48,8 @@
 #include "G4UImessenger.hh"
 #include "G4SolidQuery.hh"
 
+#include "UVector3.hh"
+
 class G4UIdirectory;
 class G4UIcommand;
 class G4UIcmdWithPargs;
@@ -78,6 +80,10 @@ protected:
   G4UIcmdParg		*uboxArgs[3];
   G4UIcmdWithPargs	*uboxCmd;
   void MakeMeAUBox( G4String values );
+
+  G4UIcmdParg		*umultiunionArgs[3];
+  G4UIcmdWithPargs	*umultiunionboxCmd;
+  void MakeMeAUMultiUnion( G4String values );
 
   G4UIcmdParg		*uorbArgs[1];
   G4UIcmdWithPargs	*uorbCmd;
@@ -207,11 +213,33 @@ protected:
     UNION
   } BooleanOp;
 
-  G4UIcmdWithPargs	*BooleanSolid1Cmd;
+  G4UIcmdWithPargs	*booleanSolid1Cmd;
   void MakeMeBooleanSolid1(G4String values);
 
-  /* Here add new commands and functions to create solids */
+  G4UIcmdWithPargs	*multiUnionCmd;
+  G4UIcmdParg		*multiunionArgs[1];
+  void MakeMeMultiUnion(G4String values);
 
+  G4UIcmdWithPargs	*tessellatedSolidCmd;
+  G4UIcmdParg		*tessellatedSolidArgs[1];
+
+  G4UIcmdWithPargs	*tessellatedSolidTransformCmd;
+  G4UIcmdParg		*tessellatedSolidTransformArgs[1];
+
+  G4UIcmdWithPargs	*tessellatedSolidPlainCmd;
+  G4UIcmdParg		*tessellatedSolidPlainArgs[1];
+
+  G4UIcmdWithPargs	*tessellatedSolidGdmlCmd;
+  G4UIcmdParg		*tessellatedSolidGdmlArgs[1];
+
+  void MakeMeATessellatedSolidFromPlainFile(G4String values);
+
+  void MakeMeATessellatedSolidFromTransform(G4String values);
+
+  void MakeMeATessellatedSolidFromGDMLFile(G4String values);
+
+  void MakeMeATessellatedSolid(const std::vector<UVector3> &vertices, const std::vector<std::vector<int> > &nodes);
+  /* Here add new commands and functions to create solids */
 };
 
 

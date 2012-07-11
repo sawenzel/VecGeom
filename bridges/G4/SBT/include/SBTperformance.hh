@@ -39,6 +39,9 @@
 #include "VUSolid.hh"
 #include "TGeoShape.h"
 
+#include "UMultiUnion.hh"
+#include "G4UnionSolid.hh"
+
 class SBTVisManager;
 
 class SBTperformance {
@@ -117,6 +120,8 @@ protected:
 private:
 	int numCheckPoints;
 
+	int compositeCounter;
+
 	void FlushSS(std::stringstream &ss);
 	void Flush(std::string s);
 
@@ -126,6 +131,8 @@ private:
 	std::string volumeString;
 
 	void setupSolids(G4VSolid *testVolume);
+
+	void ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4UnionSolid &solid, std::string &rootComposite);
 
 	std::vector<UVector3> points, directions;
 	std::vector<UVector3> resultVectorGeant4;

@@ -31,12 +31,15 @@
 
 #include "SBTrun.hh"
 
+#include "G4GDMLParser.hh"
+
 #include "G4InteractiveSolid.hh"
 #include "G4UIdirectory.hh"
 #include "G4UIcmdWithPargs.hh"
 #include "G4UIcmdPargDouble.hh"
 #include "G4UIcmdPargInteger.hh"
 #include "G4UIcmdPargListDouble.hh"
+#include "G4UIcmdWithAString.hh"
 
 #include "UBox.hh"
 #include "UMultiUnion.hh"
@@ -47,7 +50,6 @@
 #include "UVector3.hh"
 #include "Utypes.hh"
 #include "UUtils.hh"
-
 
 #include "G4Box.hh"
 #include "G4Cons.hh"
@@ -65,9 +67,9 @@
 #include "G4Hype.hh"
 #include "G4Polycone.hh"
 #include "G4Polyhedra.hh"
-#include "G4TessellatedSolid.hh"
 #include "G4TriangularFacet.hh"
 #include "G4QuadrangularFacet.hh"
+#include "G4TessellatedSolid.hh"
 #include "G4Tet.hh"
 #include "G4TwistedBox.hh"
 #include "G4TwistedTrap.hh"
@@ -81,6 +83,9 @@
 #include "G4BREPSolidBox.hh"
 #include "G4Point3D.hh"
 
+#include "G4Tools.hh"
+
+using namespace std;
 //
 // Constructor
 // 
@@ -485,17 +490,29 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	// Declare BooleanSolid1
 	//
 	G4String BooleanSolid1Path = prefix+"BooleanSolid";
-	BooleanSolid1Cmd = new G4UIcmdWithPargs( BooleanSolid1Path, this, 0, 0 );
-	BooleanSolid1Cmd->SetGuidance( "Declare a Boolean solid #1" );
+	booleanSolid1Cmd = new G4UIcmdWithPargs( BooleanSolid1Path, this, 0, 0 );
+	booleanSolid1Cmd->SetGuidance( "Declare a Boolean solid #1" );
 
-	G4String MultiUnionPath = prefix+"MultiUnion";
-	MultiUnionCmd = new G4UIcmdWithPargs( MultiUnionPath, this, 0, 0 );
-	MultiUnionCmd->SetGuidance( "Declare a Boolean solid #1" );
+	G4String MultiUnionPath = prefix+"G4MultiUnion";
+	multiunionArgs[0] = new G4UIcmdPargInteger( "n", 1);
+	multiUnionCmd = new G4UIcmdWithPargs( MultiUnionPath, this, multiunionArgs, 1);
+	multiUnionCmd->SetGuidance( "Declare a Boolean solid #1" );
+	//
 
-       	//
+	G4String TessellatedSolidTransformPath = prefix+"G4TessellatedSolidTransform";
+	tessellatedSolidTransformArgs[0] = new G4UIcmdPargInteger("n", 1); // G4UIcmdWithAString
+	tessellatedSolidTransformCmd = new G4UIcmdWithPargs(TessellatedSolidTransformPath, this, tessellatedSolidTransformArgs, 1);
+	tessellatedSolidTransformCmd->SetGuidance("Declare a Tessellated Solid, by using transformation from already declated solid" );
 
+	G4String TessellatedSolidPlainPath = prefix+"G4TessellatedSolidFromPlainFile";
+	tessellatedSolidPlainArgs[0] = new G4UIcmdPargInteger("n", 1); // G4UIcmdWithAString
+	tessellatedSolidPlainCmd = new G4UIcmdWithPargs(TessellatedSolidPlainPath, this, tessellatedSolidPlainArgs, 1);
+	tessellatedSolidPlainCmd->SetGuidance("Declare a Tessellated Solid From Plain File" );
 
-
+	G4String TessellatedSolidGdmlPath = prefix+"G4TessellatedSolidFromGDMLFile";
+	tessellatedSolidGdmlArgs[0] = new G4UIcmdPargInteger("n", 1); // G4UIcmdWithAString
+	tessellatedSolidGdmlCmd = new G4UIcmdWithPargs(TessellatedSolidGdmlPath, this, tessellatedSolidGdmlArgs, 1);
+	tessellatedSolidGdmlCmd->SetGuidance("Declare a Tessellated Solid From GDML File" );
 }
 
 
@@ -638,32 +655,31 @@ G4UnionSolid   boxUnionCyl2(“box union cylinder”,
 			&box1,&cylinder1,transform)
 */
 
-const double unionMaxX = 1.; // putting it larger can cause particles to escape
-const double unionMaxY = 1.;
-const double unionMaxZ = 1.;
-
-const double extentBorder = 1.1;
-
-const int carBoxesX = 20;
-const int carBoxesY = 20;
-const int carBoxesZ = 20;
-
 G4VSolid *CreateTestMultiUnion(int numNodes) // Number of nodes to implement
 {
    // Instance:
       // Creation of several nodes:
+   const double unionMaxX = 1.; // putting it larger can cause particles to escape
+   const double unionMaxY = 1.;
+   const double unionMaxZ = 1.;
 
-   double extentVolume = extentBorder * 2 * unionMaxX * extentBorder * 2 * unionMaxY * extentBorder * 2 * unionMaxZ;
+   double extentVolume = 8 * unionMaxX * unionMaxY * unionMaxZ;
    double ratio = 1.0/3.0; // ratio of inside points vs (inside + outside points)   
    double length = pow (ratio * extentVolume / numNodes, 1./3.) / 2;
-	
+
    G4Box *box = new G4Box("G4Box", length, length, length);
+   double capacity = box->GetCubicVolume();
+
+   double r = pow (ratio * extentVolume *3./(4 * UUtils::kPi * numNodes), 1./3.);
+   G4Orb *orb = new G4Orb("G4Orb", r);
+
+   G4Trd *trd = new G4Trd("G4Trd", length * 1.2, length * 0.9, length * 0.8, length * 1.1, length);
+
+   G4VSolid *solids[] = {box, trd, orb};
+   int solidsCount = sizeof(solids) / sizeof(G4VSolid *);
+
    G4VSolid *previousSolid = NULL;
 
-//   UOrb *box = new UOrb("UOrb", length);
-
-//   double capacity = box->Capacity();
- 
      // Constructor:
 	for(int i = 0; i < numNodes; i++)
 	{
@@ -671,21 +687,30 @@ G4VSolid *CreateTestMultiUnion(int numNodes) // Number of nodes to implement
 		double y = UUtils::RandomUniform(-unionMaxY + length, unionMaxY - length);
 		double z = UUtils::RandomUniform(-unionMaxZ + length, unionMaxZ - length);
 //		y = z = 0;
+//		if (i == 0) x = 2, y = 3, z = 0; 
+//		else x = 3, y = 2, z = 0;
 
 		G4RotationMatrix rotation;
 		G4ThreeVector translation(x,y,z);
 		G4AffineTransform transformation(rotation, translation);
 		G4Transform3D *transform = new G4Transform3D(rotation,translation);
 
+		G4VSolid *solid;
+		solid = solids[i % solidsCount];
+
 		if (i == 0)
-			previousSolid = new G4DisplacedSolid ("Displaced Solid", box, transformation);
+			previousSolid = new G4DisplacedSolid ("MultiUnion", solid, transformation);
 		else
-			previousSolid = new G4UnionSolid ("Box union cylinder", previousSolid, box, *transform /*&rotation, translation*/);
+			previousSolid = new G4UnionSolid ("MultiUnion", previousSolid, solid, *transform /*&rotation, translation*/);
 	}
 
    /*
    else 
-   {   
+   {
+		const int carBoxesX = 20;
+		const int carBoxesY = 20;
+		const int carBoxesZ = 20;
+
 	   // Transformation:
 	   for(int n = 0, o = 0, m = 0; m < numNodes ; m++)
 	   {
@@ -723,11 +748,13 @@ void G4InteractiveSolid::MakeMeAUMultiUnion( G4String values )
 	if (uboxCmd->GetArguments( values )) {
 		delete solid; //NOTE: At VS2010 it used to crash, although currently it is OK
 
-		G4UIcmdPargDouble *dxArg = (G4UIcmdPargDouble *)uboxArgs[0],
-				  *dyArg = (G4UIcmdPargDouble *)uboxArgs[1],
-				  *dzArg = (G4UIcmdPargDouble *)uboxArgs[2];
+		G4UIcmdPargInteger *nArg = (G4UIcmdPargInteger *)umultiunionArgs[0];
+		int n = nArg->GetValue();
 	
-		VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(10);
+		// CODE FOR TESTS WITH THREE SOLIDS IS AT OTHER PLACE
+		// !!!!!!!!!!!!!!!!!!!!!
+		VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(n);
+		// !!!!!!!!!!!!!!!!!!!!!
 	
 		solid = new G4USolid("interactiveUMultiUnion",tmp);
 	}
@@ -1316,7 +1343,8 @@ void G4InteractiveSolid::MakeMeATessellatedSolid( G4String values )
                   G4ThreeVector p1(p1in3Arg->GetValues()[3*i+0], p1in3Arg->GetValues()[3*i+1], p1in3Arg->GetValues()[3*i+2]);
                   G4ThreeVector p2(p2in3Arg->GetValues()[3*i+0], p2in3Arg->GetValues()[3*i+1], p2in3Arg->GetValues()[3*i+2]);
                   G4ThreeVector p3(p3in3Arg->GetValues()[3*i+0], p3in3Arg->GetValues()[3*i+1], p3in3Arg->GetValues()[3*i+2]);
-                  tessel->AddFacet(new G4TriangularFacet(p1, p2, p3, ABSOLUTE));
+				  G4VFacet *facet = new G4TriangularFacet(p1, p2, p3, ABSOLUTE); 
+                  tessel->AddFacet(facet);
                 }  
                 
                 for ( G4int i=0; i<num4; ++i) {
@@ -1681,7 +1709,8 @@ void G4InteractiveSolid::MakeMeBooleanSolid1(G4String)
 }
 
 
-void G4InteractiveSolid::MakeMeMultiUnion(G4String)
+
+void G4InteractiveSolid::MakeMeMultiUnion(G4String values)
 {
   /*
     G4IntersectionSolid.hh  G4SubtractionSolid.hh  G4UnionSolid.hh
@@ -1689,10 +1718,110 @@ void G4InteractiveSolid::MakeMeMultiUnion(G4String)
     So: Boolean type operation and 2 CSG Objects with parameters for each (..)
     plus a transformation to apply to the second solid
    */
-	delete solid;
-	solid = CreateTestMultiUnion(10);
+	if (multiUnionCmd->GetArguments( values )) {
+		delete solid; 
+
+		G4UIcmdPargInteger *nArg = (G4UIcmdPargInteger *)multiunionArgs[0];
+		int n = nArg->GetValue();	
+		solid = CreateTestMultiUnion(n);
+	}
+	else
+		G4cerr << "MultiUnion not created" << G4endl;
 }
 
+void G4InteractiveSolid::MakeMeATessellatedSolid(const vector<UVector3> &vertices, const vector<vector<int> > &nodes)
+{
+    G4TessellatedSolid &tessel = *new G4TessellatedSolid("interactiveTessellatedSolid");
+    for (int i = 0; i < (int) nodes.size(); i++)
+    {
+        const vector<int> &node = nodes[i];
+        G4VFacet *facet;
+        int n = node.size();
+        vector<G4ThreeVector> v(n);
+        for (int j = 0; j < n; j++)
+        {
+            const UVector3 &vertice = vertices[node[j]-1];
+            v[j].set(vertice.x, vertice.y, vertice.z);
+        }
+        switch (n)
+        {
+            case 3:
+                facet = new G4TriangularFacet(v[0], v[1], v[2], ABSOLUTE);
+                break;
+            case 4:
+                facet = new G4QuadrangularFacet(v[0], v[1], v[2], v[3], ABSOLUTE);
+                break;
+        }
+        tessel.AddFacet(facet);
+    }
+    tessel.SetSolidClosed(true);
+    solid = &tessel;
+}
+
+void G4InteractiveSolid::MakeMeATessellatedSolidFromTransform(G4String values)
+{
+//	MakeMeMultiUnion(values);
+
+    vector<UVector3> vertices;
+    vector<vector<int> > nodes;
+    G4Tools::GetPolyhedra(*solid, vertices, nodes);
+	MakeMeATessellatedSolid(vertices, nodes);
+}
+
+
+#include <iostream>
+#include <fstream>
+
+void G4InteractiveSolid::MakeMeATessellatedSolidFromPlainFile(G4String values)
+{
+	vector<UVector3> vertices;
+	vector<vector<int> > nodes;
+
+	ifstream fvertices("ts-2k.vertices");
+	ifstream ftriangles("ts-2k.triangles");
+
+	while (!fvertices.eof())
+	{
+		UVector3 v;
+		fvertices >> v.x >> v.y >> v.z;
+		vertices.push_back(v);
+	}
+	vector<int> node(3);
+	while (!ftriangles.eof())
+	{
+		ftriangles >> --node[0] >> --node[1] >> --node[2];
+		nodes.push_back(node);
+	}
+
+	cout << "Read " << vertices.size() << " vertices and " << nodes.size() << " nodes\n";
+
+//	exit(0);
+
+	MakeMeATessellatedSolid(vertices, nodes);
+}
+
+void G4InteractiveSolid::MakeMeATessellatedSolidFromGDMLFile(G4String values)
+{
+	G4GDMLParser parser;
+
+   parser.Read("ts-100k.gdml", false);
+   
+   G4VPhysicalVolume *pvolume = parser.GetWorldVolume();
+   G4LogicalVolume *root = pvolume->GetLogicalVolume();
+   int n = root->GetNoDaughters();
+   for (int i = 0; i < n; i++)
+   {
+	   G4VPhysicalVolume *pvolume = root->GetDaughter(i);
+	   G4LogicalVolume *lvolume = pvolume->GetLogicalVolume();
+	   G4VSolid *lsolid = lvolume->GetSolid();
+	   if (lsolid->GetEntityType() == "G4TessellatedSolid")
+	   {
+			solid = lsolid;
+			break;
+	   }
+   }
+   MakeMeATessellatedSolidFromPlainFile(values);
+}
 
 // G4VPhysicalVolume* ExN03DetectorConstruction::MakeMeDircTest()
   
@@ -1773,10 +1902,16 @@ void G4InteractiveSolid::SetNewValue( G4UIcommand *command, G4String newValues )
 		MakeMeDircTest();
 	else if (command == twistedTubsCmd) 
 		MakeMeATwistedTubs( newValues );
-	else if (command == BooleanSolid1Cmd) 
+	else if (command == booleanSolid1Cmd) 
 		MakeMeBooleanSolid1(newValues);
-	else if (command == MultiUnionCmd) 
+	else if (command == multiUnionCmd) 
 		MakeMeMultiUnion(newValues);
+	else if (command == tessellatedSolidTransformCmd) 
+		MakeMeATessellatedSolidFromTransform(newValues);
+	else if (command == tessellatedSolidPlainCmd) 
+		MakeMeATessellatedSolidFromPlainFile(newValues);
+	else if (command == tessellatedSolidGdmlCmd)
+		MakeMeATessellatedSolidFromGDMLFile(newValues);
 
 	/* Here to add new boolean solids */
 

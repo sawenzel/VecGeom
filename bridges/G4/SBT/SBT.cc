@@ -56,7 +56,7 @@ int main(int argc,char *argv[])
 	// a volume that is also a messenger
 	G4InteractiveSolid *interactiveSolid = new G4InteractiveSolid( "/solid/" );
 	
-	// Build our batch test messenger.
+	// Build our batch test messenger.Z
 	// A new batch test will be created by it.
 	// The test messenger gets the target solid
 	// from a solid query class G4QuerySolid, as specified in the
