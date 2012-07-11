@@ -20,6 +20,20 @@ UBox::UBox(const char *name, double dx, double dy, double dz)
 // Named constructor
 }
 
+void UBox::Set(double dx, double dy, double dz)
+{
+	fDx = dx;
+	fDy = dy;
+	fDz = dz;
+}
+
+void UBox::Set(const UVector3 &vec)
+{
+	fDx = vec.x;
+	fDy = vec.y;
+	fDz = vec.z;
+}
+
 //______________________________________________________________________________
 VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
 { 

@@ -24,7 +24,7 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// 
+//
 // $Id: UTessellatedGeometryAlgorithms.cc,v 1.6 2008-12-18 12:57:36 gunter Exp $
 // GEANT4 tag $Name: not supported by cvs2svn $
 //

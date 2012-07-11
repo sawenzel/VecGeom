@@ -33,8 +33,8 @@ UBits::UBits(unsigned int nBits) : nBits(nBits)
 {
    // UBits constructor.  All bits set to 0
 
-   if (nBits <= 0) nBits = 8;
-   nBytes  = ((nBits-1)/8) + 1;
+   if (nBits <= 0) nBits = 0;
+   nBytes  = nBits ? ((nBits-1)/8) + 1 : 1;
    allBits = new unsigned char[nBytes];
    // this is redundant only with libNew
    memset(allBits,0,nBytes);

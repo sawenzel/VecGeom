@@ -121,11 +121,11 @@ bool UFacet::operator== (const UFacet &right) const
     { return false; }
 
   bool coincident  = true;
-  size_t i           = 0;
+  int i           = 0;
   do
   {
     coincident = false;
-    size_t j   = 0;
+    int j   = 0;
     do
     {
 		coincident = (GetVertex(i)-right.GetVertex(j)).Mag2() < tolerance;
@@ -196,4 +196,3 @@ bool UFacet::Intersect (const UVector3&, const UVector3 &,
                             const bool , double &, double &,
                                   UVector3 &)
   {return false;}
- 

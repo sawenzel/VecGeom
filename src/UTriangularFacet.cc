@@ -152,7 +152,7 @@ UTriangularFacet::UTriangularFacet (const UVector3 Pt0,
 	radiusSqr        = (circumcentre-P0).Mag2();
     radius           = std::sqrt(radiusSqr);
   
-    for (size_t i=0; i<3; i++) { I.push_back(0); }
+    for (int i=0; i<3; i++) { I.push_back(0); }
   }
 }
 
@@ -452,7 +452,7 @@ double UTriangularFacet::Distance (const UVector3 &p,
 
   return dist;
 }
- 
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Distance (UVector3, double, bool)

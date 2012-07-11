@@ -6,6 +6,8 @@
 #include "UMultiUnion.hh"
 #include "UUtils.hh"
 
+#include "UBox.hh"
+
 using namespace std;
 
 // test with boolean union in geant4 in SBT
@@ -122,6 +124,7 @@ double UMultiUnion::DistanceToInCandidates(const UVector3 &aPoint, const UVector
 		double distance = solid.DistanceToIn(localPoint, localDirection, aPstep);
 		if (minDistance > distance) minDistance = distance;
 		bits.SetBitNumber(candidate);
+		if (minDistance == 0) break;
 	}
 	return minDistance;
 }
@@ -138,7 +141,7 @@ double UMultiUnion::DistanceToInCandidates(const UVector3 &aPoint, const UVector
 // But if distance is smaller than the shift to next voxel, we can return it immediately
 
 double UMultiUnion::DistanceToIn(const UVector3 &aPoint, 
-	const UVector3 &aDirection, /*UVector3 &aNormal,*/ double aPstep) const
+	const UVector3 &aDirection, double aPstep) const
 {
 //	return DistanceToInDummy(aPoint, aDirection, aPstep);
 
@@ -164,13 +167,15 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 
 	do
 	{
-		if (voxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
+		if (!voxels.empty.GetNbits() || !voxels.empty[voxels.GetVoxelsIndex(curVoxel)])
 		{
-			double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
-			if (minDistance > distance) 
-				if (distance < totalShift) break; else minDistance = distance;
+			if (voxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
+			{
+				double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
+				if (minDistance > distance) 
+					if (distance < totalShift) break; else minDistance = distance;
+			}
 		}
-
 		shift = voxels.DistanceToNext(currentPoint, direction, curVoxel);
 		if (shift == UUtils::kInfinity /*|| shift == 0*/) break;
 
@@ -268,164 +273,6 @@ double UMultiUnion::DistanceToOut(const UVector3 &aPoint, const UVector3 &aDirec
 	return distanceToOutVoxels;
 }
 
-double UMultiUnion::DistanceToOutVoxelsCoreNew(const UVector3 &point, const UVector3 &direction, UVector3 &normal, bool &convex, vector<int> &candidates) const
-{
-	double distance = -1;
-	UVector3 localPoint, localDirection, localNormal;
-	UVector3 currentPoint = point;
-	UBits exclusion(voxels.GetBitsPerSlice());
-	bool notOutside;
-	UVector3 maxNormal;
-
-	do
-	{
-		notOutside = false;
-
-		double maxDistance = -UUtils::kInfinity;
-		int maxCandidate;
-		UVector3 maxLocalPoint;
-
-		int limit = candidates.size();
-		for(int i = 0 ; i < limit ; ++i)
-		{
-			int candidate = candidates[i];
-			// ignore the current component (that you just got out of) since numerically the propagated point will be on its surface
-
-			VUSolid &solid = *solids[candidate];
-			UTransform3D &transform = *transforms[candidate];
-
-			// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-			localPoint = transform.LocalPoint(currentPoint);
-
-			// identify the current component via a version of UMultiUnion::Inside that gives it back (discussed with John and Jean-Marie)
-
-			if(solid.Inside(localPoint) != eOutside)
-			{
-				notOutside = true;
-
-				localDirection = transform.LocalVector(direction);
-				// propagate with solid.DistanceToOut
-				bool convex;
-				double shift = solid.DistanceToOut(localPoint, localDirection, localNormal, convex);
-				if (maxDistance < shift) 
-				{
-					maxDistance = shift;
-					maxCandidate = candidate;
-					maxNormal = localNormal;
-				}
-			}
-		}
-
-		if (notOutside)
-		{
-			UTransform3D &transform = *transforms[maxCandidate];
-			localPoint = transform.LocalPoint(currentPoint);
-
-			if (distance < 0) distance = 0;
-
-			distance += maxDistance;
-			currentPoint = transform.GlobalPoint(localPoint+maxDistance*localDirection);
-
-			// convert from local normal
-			normal = transform.GlobalVector(maxNormal);
-
-			exclusion.SetBitNumber(maxCandidate);
-			VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
-			exclusion.ResetBitNumber(maxCandidate);
-
-			// perform a Inside 
-			// it should be excluded current solid from checking
-			// we have to collect the maximum distance from all given candidates. such "maximum" candidate should be then used for finding next candidates
-			if(location != eInside)
-			{
-				// else return cumulated distances to outside of the traversed components
-				return distance;               
-			}
-			// if inside another component, redo 1 to 3 but add the next DistanceToOut on top of the previous.
-
-			// and fill the candidates for the corresponding voxel (just exiting current component along direction)
-			candidates.clear();
-			// the current component will be ignored
-			exclusion.SetBitNumber(maxCandidate);
-			voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);
-			exclusion.ResetBitNumber(maxCandidate);
-		}
-	}
-	while (notOutside);
-
-	return distance;
-}
-
-double UMultiUnion::DistanceToOutVoxelsCore(const UVector3 &point, const UVector3 &direction, UVector3 &normal, bool &convex, vector<int> &candidates) const
-{
-	bool notOutside = false;
-	double distance = 0;
-	UVector3 localPoint, localDirection, localNormal;
-	UVector3 currentPoint = point;
-	UBits exclusion(voxels.GetBitsPerSlice());
-
-	do
-	{
-		int limit = candidates.size();
-		for(int i = 0 ; i < limit ; ++i)
-		{
-			int candidate = candidates[i];
-			// ignore the current component (that you just got out of) since numerically the propagated point will be on its surface
-
-			VUSolid &solid = *solids[candidate];
-			UTransform3D &transform = *transforms[candidate];
-
-			// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-			localPoint = transform.LocalPoint(currentPoint);
-
-			// identify the current component via a version of UMultiUnion::Inside that gives it back (discussed with John and Jean-Marie)
-
-			if(solid.Inside(localPoint) != eOutside)
-			{
-				notOutside = true;
-
-				localDirection = transform.LocalVector(direction);
-				// propagate with solid.DistanceToOut
-				bool convex;
-				double shift = solid.DistanceToOut(localPoint, localDirection, localNormal, convex);
-
-				distance += shift;
-				currentPoint = transform.GlobalPoint(localPoint+shift*localDirection);
-
-				// convert from local normal
-				normal = transform.GlobalVector(localNormal);
-
-				exclusion.SetBitNumber(candidate);
-				VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
-				exclusion.ResetBitNumber(candidate);
-
-				// perform a Inside 
-				// it should be excluded current solid from checking
-				// we have to collect the maximum distance from all given candidates. such "maximum" candidate should be then used for finding next candidates
-				if(location != eInside)
-				{
-					// else return cumulated distances to outside of the traversed components
-					return distance;               
-				}
-				// if inside another component, redo 1 to 3 but add the next DistanceToOut on top of the previous.
-
-				// and fill the candidates for the corresponding voxel (just exiting current component along direction)
-				candidates.clear();
-				// the current component will be ignored
-				exclusion.SetBitNumber(candidate);
-				voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);            
-				exclusion.ResetBitNumber(candidate);
-				break;
-			}
-		}
-	}
-	while (notOutside);
-
-	if (notOutside)
-		return distance;
-
-	return -UUtils::kInfinity;
-}
 
 //______________________________________________________________________________
 double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &aDirection,
@@ -452,35 +299,92 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &
 	if(voxels.GetCandidatesVoxelArray(aPoint, candidates))
 	{
 		// For normal case for which we presume the point is inside
-		double distance = DistanceToOutVoxelsCoreNew(aPoint, direction, aNormal, convex, candidates);
+		double distance = -1;
+		UVector3 localPoint, localDirection, localNormal;
+		UVector3 currentPoint = aPoint;
+		UBits exclusion(voxels.GetBitsPerSlice());
+		bool notOutside;
+		UVector3 maxNormal;
+
+		do
+		{
+			notOutside = false;
+
+			double maxDistance = -UUtils::kInfinity;
+			int maxCandidate;
+			UVector3 maxLocalPoint;
+
+			int limit = candidates.size();
+			for(int i = 0 ; i < limit ; ++i)
+			{
+				int candidate = candidates[i];
+				// ignore the current component (that you just got out of) since numerically the propagated point will be on its surface
+
+				VUSolid &solid = *solids[candidate];
+				UTransform3D &transform = *transforms[candidate];
+
+				// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+				localPoint = transform.LocalPoint(currentPoint);
+
+				// identify the current component via a version of UMultiUnion::Inside that gives it back (discussed with John and Jean-Marie)
+
+				if(solid.Inside(localPoint) != eOutside)
+				{
+					notOutside = true;
+
+					localDirection = transform.LocalVector(direction);
+					// propagate with solid.DistanceToOut
+					bool convex;
+					double shift = solid.DistanceToOut(localPoint, localDirection, localNormal, convex);
+					if (maxDistance < shift) 
+					{
+						maxDistance = shift;
+						maxCandidate = candidate;
+						maxNormal = localNormal;
+					}
+				}
+			}
+
+			if (notOutside)
+			{
+				UTransform3D &transform = *transforms[maxCandidate];
+				localPoint = transform.LocalPoint(currentPoint);
+
+				if (distance < 0) distance = 0;
+
+				distance += maxDistance;
+				currentPoint = transform.GlobalPoint(localPoint+maxDistance*localDirection);
+
+				// convert from local normal
+				aNormal = transform.GlobalVector(maxNormal);
+
+				exclusion.SetBitNumber(maxCandidate);
+				VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
+				exclusion.ResetBitNumber(maxCandidate);
+
+				// perform a Inside 
+				// it should be excluded current solid from checking
+				// we have to collect the maximum distance from all given candidates. such "maximum" candidate should be then used for finding next candidates
+				if(location != eInside)
+				{
+					// else return cumulated distances to outside of the traversed components
+					break;               
+				}
+				// if inside another component, redo 1 to 3 but add the next DistanceToOut on top of the previous.
+
+				// and fill the candidates for the corresponding voxel (just exiting current component along direction)
+				candidates.clear();
+				// the current component will be ignored
+				exclusion.SetBitNumber(maxCandidate);
+				voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);
+				exclusion.ResetBitNumber(maxCandidate);
+			}
+		}
+		while (notOutside);
+
 		if (distance != -UUtils::kInfinity)
 			return distance;
 	}
-
-	/*
-	UVector3 currentPoint;
-	const double localTolerance = 1E-5;
-
-	// we will try to include in our estimations also neighbouring voxels within tolerance
-	for(int i = -1 ; i <= 1 ; i +=2)
-	{
-		for(int j = -1 ; j <= 1 ; j +=2)
-		{
-			for(int k = -1 ; k <= 1 ; k +=2)
-			{
-				currentPoint.Set(aPoint.x+i*localTolerance, aPoint.y+j*localTolerance, aPoint.z+k*localTolerance);
-
-				if(voxels.GetCandidatesVoxelArray(currentPoint, &candidates))
-				{
-					double distance = DistanceToOutVoxelsCoreNew(aPoint, direction, aNormal, convex, candidates);
-					if (distance != -UUtils::kInfinity)
-						return distance;
-
-				}      
-			}
-		}
-	}
-	*/
 
 	return 0;
 }    
@@ -507,20 +411,25 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
 	bool surface = false;
 
 	vector<int> candidates;
-	int limit = voxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
-	for(int i = 0 ; i < limit ; ++i)
+
+	// TODO: test if it works well and if so measure performance
+//	if (!voxels.empty.GetNbits() || !voxels.empty[voxels.GetPointIndex(aPoint)])
 	{
-		int candidate = candidates[i];
-		VUSolid &solid = *solids[candidate];
-		UTransform3D &transform = *transforms[candidate];  
+		int limit = voxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
+		for(int i = 0 ; i < limit ; ++i)
+		{
+			int candidate = candidates[i];
+			VUSolid &solid = *solids[candidate];
+			UTransform3D &transform = *transforms[candidate];  
 
-		// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-		localPoint = transform.LocalPoint(aPoint);
-		location = solid.Inside(localPoint);
-		if(location == eSurface) surface = true; 
+			// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
+			localPoint = transform.LocalPoint(aPoint);
+			location = solid.Inside(localPoint);
+			if(location == eSurface) surface = true; 
 
-		if(location == eInside) return eInside;      
-	}          
+			if(location == eInside) return eInside;      
+		}
+	}
 	///////////////////////////////////////////////////////////////////////////
 	// Important comment: When two solids touch each other along a flat
 	// surface, the surface points will be considered as eSurface, while points 
@@ -854,7 +763,6 @@ double UMultiUnion::SafetyFromOutside(const UVector3 &point, bool aAccurate) con
 	// Estimates the isotropic safety from a point outside the current solid to any 
 	// of its surfaces. The algorithm may be accurate or should provide a fast 
 	// underestimate.
-
 	const std::vector<UVoxelBox> &boxes = voxels.GetBoxes();
 	double safetyMin = UUtils::kInfinity;   
 	UVector3 localPoint;
@@ -912,11 +820,9 @@ double UMultiUnion::SurfaceArea()
  
 
 //______________________________________________________________________________       
-
-//______________________________________________________________________________       
 void UMultiUnion::Voxelize()
 {
-	((UVoxelFinder &)voxels).Voxelize(solids, transforms);
+	voxels.Voxelize(solids, transforms);
 }
 
 //______________________________________________________________________________
@@ -958,8 +864,6 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccur
 	}
 	return safetyNode;
 }
-
-#include "UBox.hh"
 
 const double unionMaxX = 1.; // putting it larger can cause particles to escape
 const double unionMaxY = 1.;

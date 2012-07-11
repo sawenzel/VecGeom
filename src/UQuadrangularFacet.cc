@@ -23,7 +23,7 @@
 // * use  in  resulting  scientific  publications,  and indicate your *
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
-// 
+//
 //
 // $Id: UQuadrangularFacet.cc,v 1.9 2010-09-23 10:27:25 gcosmo Exp $
 // GEANT4 tag $Name: not supported by cvs2svn $
@@ -130,7 +130,7 @@ UQuadrangularFacet::UQuadrangularFacet (const UVector3 Pt0,
 	radiusSqr          = vtmp.Mag2();
     radius             = std::sqrt(radiusSqr);
   
-    for (size_t i=0; i<4; i++) I.push_back(0);
+    for (int i=0; i<4; i++) I.push_back(0);
   }
 }
 
@@ -212,7 +212,7 @@ double UQuadrangularFacet::Distance (const UVector3 &p,
   
   /*if (s+t > 1.0 || s < 0.0 || t < 0.0)
   {
-    UVector3 D0 = P0 - p;
+    UVector3 D0 = P0 - p; 
     UVector3 D1 = P[0] - p;
     UVector3 D2 = P[1] - p;
     
