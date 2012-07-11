@@ -42,7 +42,7 @@ public:
                                       // UVector3       &aNormalVector,
                                       double aPstep = UUtils::kInfinity) const;          
 
-   inline double  DistanceToInGeant4     ( const UVector3 &aPoint, 
+   inline double  DistanceToInRoot     ( const UVector3 &aPoint, 
                                       const UVector3 &aDirection,
                                       // UVector3       &aNormalVector,
                                       double aPstep = UUtils::kInfinity) const;          
@@ -70,7 +70,7 @@ public:
    virtual double Capacity();
    virtual double SurfaceArea();
    virtual VUSolid* Clone() const {return 0;}
-   virtual UGeometryType GetEntityType() const { return "UTrd";}
+   virtual UGeometryType GetEntityType() const { return "Trd";}
    virtual void ComputeBBox(UBBox *aBox, bool aStore = false) {}
 
   //G4Visualisation

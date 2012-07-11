@@ -48,12 +48,17 @@ public:
    virtual double Capacity();
    virtual double SurfaceArea();
    virtual VUSolid* Clone() const {return 0;}
-   virtual UGeometryType GetEntityType() const { return "UOrb";}
+   virtual UGeometryType GetEntityType() const { return "Orb";}
    virtual void ComputeBBox(UBBox *aBox, bool aStore = false) {}
 
   //G4Visualisation
    virtual void GetParametersList(int aNumber,double *aArray) const{} 
-   virtual UPolyhedron* GetPolyhedron() const{return 0;}
+   virtual UPolyhedron* GetPolyhedron() const{return 0; }
+
+   double GetRadialTolerance()
+   {
+	   return fRTolerance;
+   }
    
 private:  
     double fR;

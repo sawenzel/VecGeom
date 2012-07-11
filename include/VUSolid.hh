@@ -24,7 +24,7 @@ enum EnumInside { eInside=0, eSurface=1, eOutside=2 };
    // Use eInside < eSurface < eOutside: allows "max(,)" to combine Inside of surfaces
    // Potentially replace eSurface with eInSurface, eOutSurface 
 
-enum EAxisType { eXaxis, eYaxis, eZaxis };
+enum EAxisType { eXaxis=0, eYaxis=1, eZaxis=2};
 
 protected:
 static double     fgTolerance;

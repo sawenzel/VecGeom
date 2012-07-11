@@ -22,6 +22,10 @@ public:
    UBox() : VUSolid(), fDx(0), fDy(0), fDz(0) {}
    UBox(const char *name, double dx, double dy, double dz);
    virtual ~UBox() {}
+
+   void Set(double dx, double dy, double dz);
+
+   void Set(const UVector3 &vec);
    
    // Navigation methods
    EnumInside     Inside (const UVector3 &aPoint) const;   

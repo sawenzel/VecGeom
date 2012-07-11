@@ -200,9 +200,11 @@ inline bool UVector3::IsNull() const {
    return ((std::abs(x) + std::abs(y) + std::abs(z)) == 0.0) ? true : false;
 }   
 
+/*
 inline void UVector3::SetNull() {
    x = y = z = 0.0;
 }
+*/
 
 inline void UVector3::Set(double xx, double yy, double zz) {
    x = xx;
@@ -245,7 +247,10 @@ inline double &UVector3::operator[] (int index)
 
 inline double UVector3::operator[] (int index) const
 {
+//	return operator()(index);
+
     // TODO: test performance of both versions on Linux
+	// => first version is slightly faster
     if (true)
     {
         double vec[3] = {x, y, z};
@@ -259,6 +264,10 @@ inline double UVector3::operator[] (int index) const
         case 2: return z;
         default: return 0;
     }
+}
+
+inline std::ostream & operator<< (std::ostream & os, const UVector3 & v) {
+  return os << "(" << v.x << "," << v.y << "," << v.z << ")";
 }
 
 #endif

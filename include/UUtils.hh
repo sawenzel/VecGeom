@@ -139,8 +139,6 @@ namespace UUtils {
   // Binary search
   int BinarySearch(const std::vector<double> &array, double value);
 
-  int BinarySearchLower(const std::vector<double> &array, double value);
-
   int BinarySearch(int n, const double *array, double value);
 
   // Equations

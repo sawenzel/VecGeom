@@ -42,8 +42,6 @@ public:
 
    EnumInside                   InsideIterator (const UVector3 &aPoint) const;
 
-   EnumInside                   InsideBits (const UVector3 &aPoint) const;
-
    double                       SafetyFromInside (const UVector3 &aPoint,
                                                   bool aAccurate=false) const;
                                       
@@ -68,12 +66,6 @@ public:
                                                   double aPstep = UUtils::kInfinity) const;
 
    double                       DistanceToOutVoxelsCore    (const UVector3 &aPoint,
-                                                  const UVector3 &aDirection,
-                                                  UVector3       &aNormalVector,
-                                                  bool           &aConvex,
-                                                  std::vector<int> &candidates) const;
-
-   double                       DistanceToOutVoxelsCoreNew    (const UVector3 &aPoint,
                                                   const UVector3 &aDirection,
                                                   UVector3       &aNormalVector,
                                                   bool           &aConvex,
