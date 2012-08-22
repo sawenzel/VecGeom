@@ -1,0 +1,17 @@
+function dot = dot(filename1, filename2)
+    dif = load (filename1);
+    var2 = load (filename2);
+    len = length(var2);
+    res = zeros(len, 1);
+            for i=1:len
+                d1 = dif(i,:);
+                d2 = var2(i,:);
+                d = dot (d1, d2);
+                res(i) = d;         
+            end
+            dot = res;
+        end
+    else
+        dot = [];
+    end
+end

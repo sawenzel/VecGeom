@@ -1,0 +1,18 @@
+function xyzdisplay ( filename , filename1, filename2)
+    points = load (filename);
+    if (nargin > 2)
+       d = dif(filename1, filename2);
+       newpoints = points;
+       current = 1;
+       for i = 1:length(points)
+           if d(i) > 1e-5
+               newpoints(current) = points(i);
+           end;
+       end
+    end
+    x = points(:,1);
+    y = points(:,2);
+    z = points(:,3);    
+    scatter3 (x, y, z); % , 'filled' , 'b'
+end
+
