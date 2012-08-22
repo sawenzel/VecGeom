@@ -56,6 +56,7 @@ public:
 	G4int DrawError( const G4VSolid *testVolume, std::istream &logger, const G4int errorIndex,
 		SBTVisManager *visManager ) const;
 
+	inline void SetFilename( const G4String newFilename ) { filename = newFilename; }
 	inline void SetMaxPoints( const G4int newMaxPoints ) { maxPoints = newMaxPoints; }
 	inline void SetRepeat( const G4int newRepeat ) { repeat = newRepeat; }
 	inline void SetMethod( const G4String newMethod ) { method = newMethod; }
@@ -144,6 +145,7 @@ private:
 	int maxPointsInside, maxPointsOutside, maxPointsSurface;
 	std::ostream *log, *perftab, *perflabels;
 	std::string folder;
+	std::string filename;
 
 	UVector3 GetVectorOnOrb(G4Orb& orb, UVector3& norm);
 	UVector3 GetRandomDirection();

@@ -96,7 +96,7 @@ private:
 	const G4SolidQuery *solidQuery;
 	SBTVisManager	*visManager;
 
-	G4String	errorFile;
+	G4String	errorFile, file;
 	std::ofstream logger;
 
 	G4UIdirectory			*test3Directory;

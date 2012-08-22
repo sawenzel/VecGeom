@@ -134,6 +134,7 @@ class SBTMessenger : public G4UImessenger
 	G4UIcmdWithAnInteger		*maxPointsCmd;
 	G4UIcmdWithAnInteger		*maxErrorsCmd;
 	G4UIcmdWithAString		*errorFileCmd;
+	G4UIcmdWithAString		*fileCmd;
 	G4UIcmdWithoutParameter		*runCmd;
 	G4UIcmdWithAnInteger		*drawCmd;
 	G4UIcmdWithAnInteger		*debugInsideCmd;

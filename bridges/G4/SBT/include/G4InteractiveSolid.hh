@@ -48,12 +48,47 @@
 #include "G4UImessenger.hh"
 #include "G4SolidQuery.hh"
 
+#include "G4UIcmdPargInteger.hh"
+#include "G4UIcmdPargDouble.hh"
+#include "G4UIcmdPargListDouble.hh"
+#include "G4UIcmdWithAString.hh"
+
 #include "UVector3.hh"
 
 class G4UIdirectory;
 class G4UIcommand;
 class G4UIcmdWithPargs;
 class G4UIcmdParg;
+
+struct G4InteractiveSolid;
+
+class G4SBTSolid
+{
+    public:
+  
+		std::vector<G4UIcmdParg *> Args;
+        G4UIcmdWithPargs *Cmd;
+        void (G4InteractiveSolid::*MakeMe)(G4String values);
+
+        inline double GetDouble(int i)
+        {
+            G4UIcmdPargDouble &dArg = *(G4UIcmdPargDouble *)Args[i];
+            return dArg.GetValue();
+        }
+
+        inline G4UIcmdPargListDouble &GetArgListDouble(int i)
+        {
+            G4UIcmdPargListDouble *dArg = (G4UIcmdPargListDouble *)&Args[i];
+            return *dArg;
+        }
+
+        inline double GetInteger(int i)
+        {
+            G4UIcmdPargInteger &dArg = *(G4UIcmdPargInteger *)Args[i];
+            return dArg.GetValue();
+        }
+};
+
 
 class G4InteractiveSolid : public G4UImessenger, public G4SolidQuery {
 public:
@@ -66,179 +101,73 @@ public:
   G4String GetCurrentValue( G4UIcommand *command );
 	
 protected:
-  void DeleteArgArray( G4UIcmdParg **array, const G4int nItem );
-  G4String ConvertArgsToString( G4UIcmdParg **array, const G4int nItem );
+	void DeleteArgArray( std::vector<G4UIcmdParg *> &args);
+  G4String ConvertArgsToString(std::vector<G4UIcmdParg *> &args);
 	
   G4VSolid	*solid;
 	
   G4UIdirectory	*volumeDirectory;
-	
-  G4UIcmdParg		*boxArgs[3];
-  G4UIcmdWithPargs	*boxCmd;
-  void MakeMeABox( G4String values );
 
-  G4UIcmdParg		*uboxArgs[3];
-  G4UIcmdWithPargs	*uboxCmd;
-  void MakeMeAUBox( G4String values );
+  G4String prefix;
+  std::vector<G4SBTSolid *> commands;
 
-  G4UIcmdParg		*umultiunionArgs[3];
-  G4UIcmdWithPargs	*umultiunionboxCmd;
-  void MakeMeAUMultiUnion( G4String values );
+  G4UIcmdWithAString		*fileCmd;
 
-  G4UIcmdParg		*uorbArgs[1];
-  G4UIcmdWithPargs	*uorbCmd;
-  void MakeMeAUOrb( G4String values );
+  G4SBTSolid box, ubox, umultiunion,  uorb, utrd, cons, orb, para, sphere, torus, 
+trap, trd, generics, paraboloid, tubs, ellipsoid, elCone, elTube,
+extruded, hype, polycone, polycone2, polyhedra, polyhedra2, tessel,
+tessel2, tet, twistedBox, twistedTrap, twistedTrap2, twistedTrd, twistedTubs,
+  dircTest, booleanSolid1, multiUnion, tessellatedSolidTransform, tessellatedSolidPlain, tessellatedSolidGdml;
 
-  G4UIcmdParg		*utrdArgs[5];
-  G4UIcmdWithPargs	*utrdCmd;
-  void MakeMeAUTrd( G4String values );
-
-  G4UIcmdParg		*consArgs[7];
-  G4UIcmdWithPargs	*consCmd;
-  void MakeMeACons( G4String values );
-	
-  G4UIcmdParg		*orbArgs[1];
-  G4UIcmdWithPargs	*orbCmd;
-  void MakeMeAnOrb( G4String values );
-	
-  G4UIcmdParg		*paraArgs[6];
-  G4UIcmdWithPargs	*paraCmd;
-  void MakeMeAPara( G4String values );
-	
-  G4UIcmdParg		*sphereArgs[6];
-  G4UIcmdWithPargs	*sphereCmd;
-  void MakeMeASphere( G4String values );
-	
-  G4UIcmdParg		*torusArgs[5];
-  G4UIcmdWithPargs	*torusCmd;
-  void MakeMeATorus( G4String values );
-	
-  G4UIcmdParg		*trapArgs[11];
-  G4UIcmdWithPargs	*trapCmd;
-  void MakeMeATrap( G4String values );
-	
-  G4UIcmdParg		*trdArgs[5];
-  G4UIcmdWithPargs	*trdCmd;
-  void MakeMeATrd( G4String values );
- 
-  G4UIcmdParg		*gentrapArgs[3];
-  G4UIcmdWithPargs	*gentrapCmd;
-  void MakeMeAGenericTrap( G4String values );
-
-  G4UIcmdParg		*parabolArgs[3];
-  G4UIcmdWithPargs	*parabolCmd;
-  void MakeMeAParaboloid( G4String values );
-	
-  G4UIcmdParg		*tubsArgs[5];
-  G4UIcmdWithPargs	*tubsCmd;
-  void MakeMeATubs( G4String values );
-	
-  G4UIcmdParg		*ellipsoidArgs[5];
-  G4UIcmdWithPargs	*ellipsoidCmd;
-  void MakeMeAnEllipsoid( G4String values );
-	
-  G4UIcmdParg		*elConeArgs[4];
-  G4UIcmdWithPargs	*elConeCmd;
-  void MakeMeAnEllipticalCone( G4String values );
-	
-  // NEW: *elTubeArgs[6] was causing crash, changed to *elTubeArgs[3]
-  G4UIcmdParg		*elTubeArgs[3];
-  G4UIcmdWithPargs	*elTubeCmd;
-  void MakeMeAnEllipticalTube( G4String values );
-
-  G4UIcmdParg		*extrudedArgs[8];
-  G4UIcmdWithPargs	*extrudedCmd;
-  void MakeMeAnExtrudedSolid( G4String values );
-
-  G4UIcmdParg		*hypeArgs[5];
-  G4UIcmdWithPargs	*hypeCmd;
-  void MakeMeAHype( G4String values );
-	
-  G4UIcmdParg		*polyconeArgs[5];
-  G4UIcmdWithPargs	*polyconeCmd;
-  void MakeMeAPolycone( G4String values );
-	
-  G4UIcmdParg		*polycone2Args[6];
-  G4UIcmdWithPargs	*polycone2Cmd;
-  void MakeMeAPolycone2( G4String values );
-	
-  G4UIcmdParg		*polyhedraArgs[6];
-  G4UIcmdWithPargs	*polyhedraCmd;
-  void MakeMeAPolyhedra( G4String values );
-	
-  G4UIcmdParg		*polyhedra2Args[7];
-  G4UIcmdWithPargs	*polyhedra2Cmd;
-  void MakeMeAPolyhedra2( G4String values );
-	
-  G4UIcmdParg		*tesselArgs[9];
-  G4UIcmdWithPargs	*tesselCmd;
-  void MakeMeATessellatedSolid( G4String values );
-	
-  G4UIcmdParg		*tessel2Args[8];
-  G4UIcmdWithPargs	*tessel2Cmd;
-  void MakeMeATessellatedSolid2( G4String values );
-
-  G4UIcmdParg		*tetArgs[4];
-  G4UIcmdWithPargs	*tetCmd;
-  void MakeMeATet( G4String values );
-	
-  G4UIcmdParg		*twistedBoxArgs[4];
-  G4UIcmdWithPargs	*twistedBoxCmd;
-  void MakeMeATwistedBox( G4String values );
-	
-  G4UIcmdParg		*twistedTrapArgs[5];
-  G4UIcmdWithPargs	*twistedTrapCmd;
-  void MakeMeATwistedTrap( G4String values );
-	
-  G4UIcmdParg		*twistedTrap2Args[11];
-  G4UIcmdWithPargs	*twistedTrap2Cmd;
-  void MakeMeATwistedTrap2( G4String values );
-	
-  G4UIcmdParg		*twistedTrdArgs[6];
-  G4UIcmdWithPargs	*twistedTrdCmd;
-  void MakeMeATwistedTrd( G4String values );
-	
-  G4UIcmdParg		*twistedTubsArgs[7];
-  G4UIcmdWithPargs	*twistedTubsCmd;
-  void MakeMeATwistedTubs( G4String values );
-	
-  G4UIcmdWithPargs	*dircTestCmd;
-  void MakeMeDircTest();
-
-
+  void MakeMeBox( G4String values );
+  void MakeMeUBox( G4String values );
+  void MakeMeUMultiUnion( G4String values );
+  void MakeMeUOrb( G4String values );
+  void MakeMeUTrd( G4String values );
+  void MakeMeCons( G4String values );
+  void MakeMeOrb( G4String values );
+  void MakeMePara( G4String values );
+  void MakeMeSphere( G4String values );	
+  void MakeMeTorus( G4String values );
+  void MakeMeTrap( G4String values );
+  void MakeMeTrd( G4String values );
+  void MakeMeGenericTrap( G4String values );
+  void MakeMeParaboloid( G4String values );
+  void MakeMeTubs( G4String values );
+  void MakeMeEllipsoid( G4String values );
+  void MakeMeEllipticalCone( G4String values );
+  void MakeMeEllipticalTube( G4String values );
+  void MakeMeExtrudedSolid( G4String values );
+  void MakeMeHype( G4String values );
+  void MakeMePolycone( G4String values );
+  void MakeMePolycone2( G4String values );
+  void MakeMePolyhedra( G4String values );
+  void MakeMePolyhedra2( G4String values );
+  void MakeMeTessellatedSolid( G4String values );
+  void MakeMeTessellatedSolid2( G4String values );
+  void MakeMeTet( G4String values );
+  void MakeMeTwistedBox( G4String values );
+  void MakeMeTwistedTrap( G4String values );
+  void MakeMeTwistedTrap2( G4String values );
+  void MakeMeTwistedTrd( G4String values );
+  void MakeMeTwistedTubs( G4String values );
+  void MakeMeDircTest(G4String values);
+  void MakeMeTessellatedSolidFromTransform(G4String values);
+  void MakeMeMultiUnion(G4String values);
+  void MakeMeBooleanSolid1(G4String values);
+  void MakeMeTessellatedSolidFromPlainFile(G4String values);
+  void MakeMeTessellatedSolidFromGDMLFile(G4String values);
   
+  void TraverseGDML(G4LogicalVolume *root);
+
+  void CreateTessellatedSolid(const std::vector<UVector3> &vertices, const std::vector<std::vector<int> > &nodes);
+
   typedef enum BooleanOp {
     INTERSECTION,
     SUBTRACTION,
     UNION
   } BooleanOp;
 
-  G4UIcmdWithPargs	*booleanSolid1Cmd;
-  void MakeMeBooleanSolid1(G4String values);
-
-  G4UIcmdWithPargs	*multiUnionCmd;
-  G4UIcmdParg		*multiunionArgs[1];
-  void MakeMeMultiUnion(G4String values);
-
-  G4UIcmdWithPargs	*tessellatedSolidCmd;
-  G4UIcmdParg		*tessellatedSolidArgs[1];
-
-  G4UIcmdWithPargs	*tessellatedSolidTransformCmd;
-  G4UIcmdParg		*tessellatedSolidTransformArgs[1];
-
-  G4UIcmdWithPargs	*tessellatedSolidPlainCmd;
-  G4UIcmdParg		*tessellatedSolidPlainArgs[1];
-
-  G4UIcmdWithPargs	*tessellatedSolidGdmlCmd;
-  G4UIcmdParg		*tessellatedSolidGdmlArgs[1];
-
-  void MakeMeATessellatedSolidFromPlainFile(G4String values);
-
-  void MakeMeATessellatedSolidFromTransform(G4String values);
-
-  void MakeMeATessellatedSolidFromGDMLFile(G4String values);
-
-  void MakeMeATessellatedSolid(const std::vector<UVector3> &vertices, const std::vector<std::vector<int> > &nodes);
   /* Here add new commands and functions to create solids */
 };
 

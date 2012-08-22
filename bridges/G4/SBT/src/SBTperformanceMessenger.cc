@@ -43,6 +43,8 @@
 #include "G4UIcmdWithAString.hh"
 #include "G4UIcmdWithoutParameter.hh"
 
+#include "SBTrun.hh"
+ 
 #include <fstream>
 
 //
@@ -319,7 +321,7 @@ void SBTperformanceMessenger::SetNewValue( G4UIcommand *command, G4String newVal
 	  G4cin.get(c);
 	}
 	else {
-		G4Exception( "Unrecognized command" );
+		G4Exception("SBTperformanceMessenger::SetNewValue", "", FatalException, "Unrecognized command");
 	}
 }
 
@@ -339,7 +341,8 @@ G4String SBTperformanceMessenger::GetCurrentValue( G4UIcommand *command )
 		return "";
 	}
 	
-	G4Exception( "Unrecognized command" );
+    G4Exception("SBTperformanceMessenger::GetCurrentValue", "", FatalException, "Unrecognized command");
+
 	return "foo!";
 }
 	

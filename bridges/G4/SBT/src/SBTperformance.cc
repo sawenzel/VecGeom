@@ -84,6 +84,8 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "G4Timer.hh"
 
 #include "G4Box.hh"
+#include "G4Tubs.hh"
+#include "G4Cons.hh"
 #include "G4Orb.hh"
 #include "G4Polycone.hh"
 #include "G4Polyhedra.hh"
@@ -106,6 +108,8 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "TGeoSphere.h"
 #include "TGeoPcon.h"
 #include "TGeoPgon.h"
+#include "TGeoTube.h"
+#include "TGeoCone.h"
 
 #include "G4ThreeVector.hh"
 #include "G4RotationMatrix.hh"
@@ -129,6 +133,8 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 
 #include "TGeoCompositeShape.h"
 #include "TGeoMatrix.h"
+
+#include "SBTrun.hh"
 
 //#define _USE_MATH_DEFINES
 //#include <math.h>
@@ -399,11 +405,11 @@ void SBTperformance::CheckPointsOnSurfaceOfOrb(G4ThreeVector &point, double radi
 {
 	if (radius < kInfinity && radius > 10*VUSolid::Tolerance())
 	{
-		G4Orb *orb = new G4Orb("CheckPointsOnSurfaceOfOrb", radius);
+		G4Orb &orb = *new G4Orb("CheckPointsOnSurfaceOfOrb", radius);
 		G4ThreeVector p;
 		for (int i = 0; i < count; i++)
 		{
-			p = orb->GetPointOnSurface() + point;
+			p = orb.GetPointOnSurface() + point;
 			EInside e = volumeGeant4->Inside(p);
 			if (e == location)
 			{
@@ -584,7 +590,7 @@ void SBTperformance::TestDistanceToOutGeant4(int iteration)
 
 //			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kOutside);
 		}
-	}
+	} 
 }
 
 void SBTperformance::TestDistanceToOutROOT(int iteration)
@@ -631,8 +637,9 @@ void SBTperformance::TestDistanceToOutUSolids(int iteration)
 
 void SBTperformance::FlushSS(stringstream &ss)
 {
-	cout << ss.str();
-	*log << ss.str();
+	string s = ss.str();
+	cout << s;
+	*log << s;
 	ss.str("");
 }
 
@@ -646,7 +653,7 @@ void SBTperformance::Flush(string s)
 // NEW: results written normalized to nano seconds per operation
 double SBTperformance::normalizeToNanoseconds(double time)
 {
-	double res = time * ((double) 1e+9 / (double) (repeat * maxPoints));
+	double res = ((time * (double) 1e+9) / (double) (repeat * maxPoints));
 	return res;
 }
 
@@ -733,23 +740,23 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 	{
 		G4UnionSolid &unionSolid = *(G4UnionSolid *) testVolume;
 
-		UMultiUnion *multiUnion = new UMultiUnion("multiUnion");
+		UMultiUnion &multiUnion = *new UMultiUnion("multiUnion");
 		
 		string rootComposite = ""; // "(A:t1+B:t2)"
 		compositeCounter = 1;
-		ConvertMultiUnionFromGeant4(*multiUnion, unionSolid, rootComposite);
-		volumeUSolids = multiUnion;
+		ConvertMultiUnionFromGeant4(multiUnion, unionSolid, rootComposite);
+		volumeUSolids = &multiUnion;
 		rootComposite = "("+rootComposite+")";
 		volumeROOT = new TGeoCompositeShape("CS", rootComposite.c_str());
 //		volumeROOT = NULL;
     
-		multiUnion->Voxelize();
-		multiUnion->GetVoxels().DisplayListNodes();
+		multiUnion.Voxelize();
+		multiUnion.GetVoxels().DisplayListNodes();
 
 		// double capacity = testVolume->GetCubicVolume();
 		// double area = testVolume->GetSurfaceArea();
 
-		multiUnion->Capacity();
+		multiUnion.Capacity();
 
 		ss << "UMultiUnion()";
 	}
@@ -783,47 +790,75 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
             }
             utessel.AddFacet(ufacet);
         }
+		utessel.GetVoxels().SetMaxVoxels(SBTrun::maxVoxels);
         utessel.SetSolidClosed(true);
         volumeUSolids = &utessel;
     }
     if (type == "G4Box")
 	{
-		G4Box *box = (G4Box *) testVolume;
-		double x = box->GetXHalfLength();
-		double y = box->GetYHalfLength();
-		double z = box->GetZHalfLength();
+		G4Box &box = *(G4Box *) testVolume;
+		double x = box.GetXHalfLength();
+		double y = box.GetYHalfLength();
+		double z = box.GetZHalfLength();
 		volumeROOT = new TGeoBBox("UBox", x, y, z);
 		volumeUSolids = new UBox("UBox", x, y, z);
 		ss << "Ubox("<<x<<","<<y<<","<<z<<")";
 	}
 	if (type == "G4Orb")
 	{
-		G4Orb *orb = (G4Orb *) testVolume;
-		double radius = orb->GetRadius();
+		G4Orb &orb = *(G4Orb *) testVolume;
+		double radius = orb.GetRadius();
 		volumeROOT = new TGeoSphere("UOrb", 0, radius);
 		volumeUSolids = new UOrb("UOrb", radius);
 		ss << "UOrb("<<radius<<")";
 	}
 	if (type == "G4Trd")
 	{
-		G4Trd *trd = (G4Trd *) testVolume;
-		double x1 = trd->GetXHalfLength1();
-		double x2 = trd->GetXHalfLength2();
-		double y1 = trd->GetYHalfLength1();
-		double y2 = trd->GetYHalfLength2();
-		double z = trd->GetZHalfLength();
+		G4Trd &trd = *(G4Trd *) testVolume;
+		double x1 = trd.GetXHalfLength1();
+		double x2 = trd.GetXHalfLength2();
+		double y1 = trd.GetYHalfLength1();
+		double y2 = trd.GetYHalfLength2();
+		double z = trd.GetZHalfLength();
 		volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
 		volumeROOT = new TGeoTrd2(x1, x2, y1, y2, z);
 		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
 	}
+	if (type == "G4Tubs")
+	{
+		G4Tubs &tubs = *(G4Tubs *) testVolume;
+//		double deltaPhiAngle = tubs.GetDeltaPhiAngle();
+		double rMin = tubs.GetRMin();
+		double rMax = tubs.GetRMax();
+		double dZ = tubs.GetDz();
+		double sPhi = 180 * tubs.GetSPhi() / UUtils::kPi;
+		double dPhi = 180 * tubs.GetDPhi() / UUtils::kPi;
+		dPhi += sPhi;
+		if (dPhi > 360) dPhi -= 360;
+		volumeROOT = (sPhi == 0 && dPhi ==  360) ? new TGeoTube(rMin, rMax, dZ) : new TGeoTubeSeg(rMin, rMax, dZ, sPhi, dPhi);
+	}
+	if (type == "G4Cons")
+	{
+		G4Cons &cons = *(G4Cons *) testVolume;
+		double rmin1 = cons.GetRmin1();
+		double rmax1 = cons.GetRmax1();
+		double rmin2 = cons.GetRmin2();
+		double rmax2 = cons.GetRmax2();
+		double dz = cons.GetDz();
+		double sPhi = 180 * cons.GetSPhi() / UUtils::kPi;
+		double dPhi = 180 * cons.GetDPhi() / UUtils::kPi;
+		dPhi += sPhi;
+		if (dPhi > 360) dPhi -= 360;
+		volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rmin1, rmax1, rmin2, rmax2) : new TGeoConeSeg(dz, rmin1, rmax1, rmin2, rmax2, sPhi, dPhi);
+	}
 	if (type == "G4Polyhedra")
 	{
-		G4Polyhedra *polyhedra = (G4Polyhedra *) testVolume;
+		G4Polyhedra &polyhedra = *(G4Polyhedra *) testVolume;
 
-		double startPhi = 180*polyhedra->GetStartPhi()/UUtils::kPi;
-		double endPhi = 180*polyhedra->GetEndPhi()/UUtils::kPi;
-		int numRZCorner = polyhedra->GetNumRZCorner();
-		int numSide = polyhedra->GetNumSide();
+		double startPhi = 180*polyhedra.GetStartPhi()/UUtils::kPi;
+		double endPhi = 180*polyhedra.GetEndPhi()/UUtils::kPi;
+		int numRZCorner = polyhedra.GetNumRZCorner();
+		int numSide = polyhedra.GetNumSide();
 
 		vector<double> rmin(numRZCorner);
 		vector<double> rmax(numRZCorner);
@@ -832,7 +867,7 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 		TGeoPgon *gonRoot = new TGeoPgon(startPhi, endPhi, numSide, numRZCorner);
 		for (int i = 0; i < numRZCorner; i++)
 		{
-			G4PolyhedraSideRZ sideRZ = polyhedra->GetCorner(i);
+			G4PolyhedraSideRZ sideRZ = polyhedra.GetCorner(i);
 			gonRoot->DefineSection(i, sideRZ.z, 0, sideRZ.r);
 			cout << sideRZ.r << ":" << sideRZ.z << endl;
 		}
@@ -843,7 +878,7 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 			double rootR[] = {0,1.2,1.4, 0};
 			double rootZ[] = {-1.0,0,1.0, 2.0};
 			int len = sizeof(rootZ)/sizeof(double);
-			TGeoPgon *gonRoot = new TGeoPgon(startPhi, endPhi, numSide, len);
+			gonRoot = new TGeoPgon(startPhi, endPhi, numSide, len);
 			for (int i = 0; i < len; i++) gonRoot->DefineSection(i, 1000*rootZ[i], 0, 1000*rootR[i]);
 		}
 
@@ -851,22 +886,22 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 	}
 	if (type == "G4Polycone")
 	{
-		G4Polycone *polycone = (G4Polycone *) testVolume;
-		double startPhi = 180*polycone->GetStartPhi()/UUtils::kPi;
-		double endPhi = 180*polycone->GetEndPhi()/UUtils::kPi;
-		int numRZCorner = polycone->GetNumRZCorner();
+		G4Polycone &polycone = *(G4Polycone *) testVolume;
+		double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
+		double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
+		int numRZCorner = polycone.GetNumRZCorner();
 
 		vector<double> rmin(numRZCorner);
 		vector<double> rmax(numRZCorner);
 		vector<double> z(numRZCorner);
 
-		G4PolyconeHistorical *parameter = polycone->GetOriginalParameters();
+		G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
 
 		int back = 0;
 
 		for (int i = 0; i < numRZCorner; i++)
 		{
-			G4PolyconeSideRZ sideRZ = polycone->GetCorner(i);
+			G4PolyconeSideRZ sideRZ = polycone.GetCorner(i);
 			// we disabled putting back stream, because it actually never worked for general cases
 			if (false && i == numRZCorner/2 && z[i-1] == sideRZ.z) back = i;
 			if (back)
@@ -970,7 +1005,7 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 			point.z += randomIncrease();
 			pointTest.set(point.x, point.y, point.z);
 		}
-		while (volumeGeant4->Inside(pointTest) == kSurface);
+		while (volumeGeant4->Inside(pointTest) == kSurface && attempt < 10);
 
 //		if (i == 0) point.Set(0, 0, -1000.001);
 		points[i+offsetSurface] = point;
@@ -985,7 +1020,7 @@ void SBTperformance::CreatePointsAndDirectionsOutside()
 	G4ThreeVector centerG4(center.x(), center.y(), center.z());
 
 	int maxOrbsOutside = 10; // do not make parametrization using macro file
-	G4Orb *orbOut = new G4Orb("OrbOut", 1);
+	G4Orb &orbOut = *new G4Orb("OrbOut", 1);
 
 	double rb = 1.5 * rOut;
 	G4Box *box = new G4Box("BoxOut", rb, rb, rb);
@@ -997,11 +1032,11 @@ void SBTperformance::CreatePointsAndDirectionsOutside()
 
 		// 10 times radius outside sphere will be max
 		double radiusRatio = 1 + outsideMaxRadiusMultiple * (pow(2.0, stage) - 1) / pow(2.0, maxOrbsOutside); // NEW: made  parametrization using macro file (default = 10)
-		orbOut->SetRadius(rOut * radiusRatio);
+		orbOut.SetRadius(rOut * radiusRatio);
 
 		UVector3 vec, point;
 
-		G4ThreeVector pointG4 = orbOut->GetPointOnSurface();
+		G4ThreeVector pointG4 = orbOut.GetPointOnSurface();
 		pointG4 += centerG4;
 
 		// NEW: outside points randomly generated inside 10 times bounding box, but not inside solids
@@ -1615,8 +1650,12 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 
 //	SavePolyhedra(method);
 
-	setupSolids(testVolume);
 	log = &logger;
+
+	cout << "Converting solid" << "\n";
+	FlushSS(ss);
+
+	setupSolids(testVolume);
 
 	if (perftab == NULL) perftab = new ofstream((folder+"Performance.dat").c_str());
 	if (perflabels == NULL) perflabels = new ofstream((folder+"PerformanceLabels.txt").c_str());
@@ -1645,6 +1684,9 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 	perflabels->flush();
 
 	FlushSS(ss);
+
+	if (volumeUSolids) delete volumeUSolids;
+	if (volumeROOT) delete volumeROOT;
 }
 
 // NEW: *elTubeArgs[6] was causing crash, changed to *elTubeArgs[3]

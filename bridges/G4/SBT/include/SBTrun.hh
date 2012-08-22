@@ -97,6 +97,11 @@ class SBTrun {
   static G4String GetCurrentSolid(void) ; 
   static void SetCurrentSolid(G4String SolidName) ;
 
+  static G4String GetCurrentFilename(void); 
+  static void SetCurrentFilename(G4String filename);
+
+    static int maxVoxels;
+
 	protected:
 	G4ThreeVector	GetRandomPoint() const;
 	G4double	GaussianRandom(const G4double cutoff) const;
@@ -115,7 +120,7 @@ class SBTrun {
 	
 	G4int	GetLoggedPV( std::istream &logger, const G4int errorIndex,
 			     G4ThreeVector &p, G4ThreeVector &v        ) const;
-	
+
 	protected:
 	G4ThreeVector	target,
 			widths,
@@ -135,6 +140,7 @@ class SBTrun {
 
         private:
   static G4String CurrentSolid; /* Solid to be tested, used to visualize */
+  static G4String CurrentFilename; /* Solid to be tested, used to visualize */
     
 
 };

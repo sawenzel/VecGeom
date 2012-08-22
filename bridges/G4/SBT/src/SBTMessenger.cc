@@ -119,7 +119,7 @@ SBTMessenger::SBTMessenger( const G4String prefix, const G4SolidQuery *theSolidQ
 	com = prefix+"errorFileName";
 	errorFileCmd = new G4UIcmdWithAString( com, this );
 	errorFileCmd->SetGuidance( "Filename in which to send error listings" );
-	
+
 	//
 	// Run command
 	//
@@ -364,7 +364,7 @@ void SBTMessenger::SetNewValue( G4UIcommand *command, G4String newValues )
 	  G4cin.get(c);
 	}
 	else {
-		G4Exception( "Unrecognized command" );
+		G4Exception("SBTMessenger::SetNewValue", "", FatalException, "Unrecognized command");
 	}
 }
 
@@ -405,7 +405,8 @@ G4String SBTMessenger::GetCurrentValue( G4UIcommand *command )
 		return "";
 	}
 	
-	G4Exception( "Unrecognized command" );
+    G4Exception("SBTMessenger::GetCurrentValue", "", FatalException, "Unrecognized command");
+
 	return "foo!";
 }
 	

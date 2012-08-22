@@ -123,7 +123,7 @@ G4ThreeVector SBTrun::GetRandomPoint() const {
 // enough for our purposes.
 //
 G4double SBTrun::GaussianRandom(const G4double cutoff) const {
-  if (cutoff <= 0) G4Exception( "Illegal cutoff" );
+  if (cutoff <= 0) G4Exception("SBTrun::GaussianRandom", "", FatalException, "Illegal cutoff");
 
   G4double answer;
   do {
@@ -913,6 +913,8 @@ G4int SBTrun::GetLoggedPV( std::istream &logger, const G4int errorIndex,
 
 G4String SBTrun::CurrentSolid = "" ;
 
+int SBTrun::maxVoxels = 0;
+
 G4String SBTrun::GetCurrentSolid(void) 
 {
   return CurrentSolid; 
@@ -921,6 +923,20 @@ G4String SBTrun::GetCurrentSolid(void)
 void SBTrun::SetCurrentSolid(G4String SolidName)
 {
   CurrentSolid = SolidName;
+}
+
+/////
+
+G4String SBTrun::CurrentFilename = "" ;
+
+G4String SBTrun::GetCurrentFilename(void) 
+{
+  return CurrentFilename; 
+}
+
+void SBTrun::SetCurrentFilename(G4String filename)
+{
+  CurrentFilename = filename;
 }
 
 //

@@ -407,7 +407,7 @@ void SBTvoxelMessenger::SetNewValue( G4UIcommand *command, G4String newValues )
 		Debug();
 	}
 	else {
-		G4Exception( "Unrecognized command" );
+      G4Exception("SBTvoxelMessenger::SetNewValue", "", FatalException, "Unrecognized command");
 	}
 }
 
@@ -458,6 +458,7 @@ G4String SBTvoxelMessenger::GetCurrentValue( G4UIcommand *command )
 		return "";
 	}
 	
-	G4Exception( "Unrecognized command" );
+    G4Exception("SBTvoxelMessenger::GetCurrentValue", "", FatalException, "Unrecognized command");
+
 	return "foo!";
 }
