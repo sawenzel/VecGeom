@@ -210,6 +210,8 @@ class UTessellatedSolid : public VUSolid
     virtual double SafetyFromInside (const UVector3 &p, bool aAccurate=false) const;
     virtual UGeometryType GetEntityType () const;
     
+	void BuildBoundingBox();
+
     void SetSolidClosed (const bool t);
 
 	void CreateVertexList ();
@@ -245,6 +247,11 @@ class UTessellatedSolid : public VUSolid
 
    void                         Extent (EAxisType aAxis, double &aMin, double &aMax) const;
    void							Extent (UVector3 &aMin, UVector3 &aMax) const;
+
+   inline UVoxelFinder &GetVoxels()
+   {
+	   return voxels;
+   }
 
    /*
     double      GetMinXExtent () const;
@@ -295,7 +302,7 @@ class UTessellatedSolid : public VUSolid
 	UBits insides;
 
 	std::vector<UVoxelBox> voxelBoxes;
-	std::vector<std::vector<int>> voxelBoxesFaces;
+	std::vector<std::vector<int> > voxelBoxesFaces;
 };
 
 #endif
