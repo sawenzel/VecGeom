@@ -211,7 +211,7 @@ void AXPETPhysicsList::ConstructOp()
 
 //  G4OpticalSurfaceModel themodel = glisur;
   G4OpticalSurfaceModel themodel = unified;
-  theBoundaryProcess->SetModel(themodel);
+//theBoundaryProcess->SetModel(themodel);
 //  theBoundaryProcess->SetVerboseLevel(1);
 
   // Selects the time profile generator

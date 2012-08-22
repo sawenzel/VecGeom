@@ -581,7 +581,7 @@ else if(val == "TessellatedSolid")
 
   else
     { G4cout <<"DetectorConstruction tried to select "<<val<<G4endl;
-    G4Exception("DetectorConstruction::SelectDetector() - Invalid shape!");
+	G4Exception("AXPETDetectorConstruction::SelectDetector", "", JustWarning, "DetectorConstruction::SelectDetector() - Invalid shape!");
   }
 
   return aVolume;
