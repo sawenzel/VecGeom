@@ -13,6 +13,7 @@
 
 using namespace std;
 
+/*
 //______________________________________________________________________________
 int UUtils::BinarySearch(int n, const double *array, double value)
 {
@@ -36,7 +37,8 @@ int UUtils::BinarySearch(int n, const double *array, double value)
       else                          nbelow = middle;
    }    
    return nbelow-1;
-}   
+}
+*/
 
 //______________________________________________________________________________
 int UUtils::BinarySearch(const std::vector<double> &vec, double value)
@@ -76,7 +78,7 @@ int UUtils::BinarySearch(const std::vector<double> &vec, double value)
    return res;
 }
 
-
+/*
 //______________________________________________________________________________
 long UUtils::LocMin(long n, const double *a) {
    // Return index of array with the minimum element.
@@ -117,7 +119,9 @@ long UUtils::LocMax(long n, const double *a) {
    }
    return loc;
 }
+*/
 
+/*
 //______________________________________________________________________________
 template <typename Iterator, typename IndexIterator>
 void UUtils::SortItr(Iterator first, Iterator last, IndexIterator index, bool down)
@@ -144,7 +148,7 @@ void UUtils::SortItr(Iterator first, Iterator last, IndexIterator index, bool do
    else
       std::sort(index, cindex, CompareAsc<Iterator>(first) );
 }
-
+*/
 /*
 //______________________________________________________________________________
 template <typename Element, typename Index> void UUtils::Sort(Index n, const Element* a, Index* index, bool down)

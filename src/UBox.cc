@@ -128,7 +128,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
    }
    // The point is really outside. Only axis with positive safety to be 
    // considered. Early exit on each axis if point and direction components 
-   // have the same sign.
+   // have the same .sign.
    double dist = 0.0;
    double coordinate = 0.0;
    if ( safx > 0 ) {

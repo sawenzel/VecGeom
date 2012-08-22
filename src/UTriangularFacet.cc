@@ -124,9 +124,7 @@ UTriangularFacet::UTriangularFacet (const UVector3 Pt0,
     isDefined     = false;
     geometryType  = "UTriangularFacet";
     surfaceNormal = UVector3(0.0,0.0,0.0);
-    a   = 0.0;
-    b   = 0.0;
-    c   = 0.0;
+    a   = b   = c = 0.0;
     det = 0.0;
   }
   else
@@ -250,14 +248,14 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
   double d       = E[0].Dot(D);
   double e       = E[1].Dot(D);
   double f       = D.Mag2();
-  double s       = b*e - c*d;
+  double q       = b*e - c*d;
   double t       = b*d - a*e;
 
   sqrDist          = 0.0;
 
-  if (s+t <= det)
+  if (q+t <= det)
   {
-    if (s < 0.0)
+    if (q < 0.0)
     {
       if (t < 0.0)
       {
@@ -267,12 +265,12 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
         if (d < 0.0)
         {
           t = 0.0;
-          if (-d >= a) {s = 1.0; sqrDist = a + 2.0*d + f;}
-          else         {s = -d/a; sqrDist = d*s + f;}
+          if (-d >= a) {q = 1.0; sqrDist = a + 2.0*d + f;}
+          else         {q = -d/a; sqrDist = d*q + f;}
         }
         else
         {
-          s = 0.0;
+          q = 0.0;
           if       (e >= 0.0) {t = 0.0; sqrDist = f;}
           else if (-e >= c)   {t = 1.0; sqrDist = c + 2.0*e + f;}
           else                {t = -e/c; sqrDist = e*t + f;}
@@ -283,7 +281,7 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
    //
    // We are in region 3.
    //
-        s = 0.0;
+        q = 0.0;
         if      (e >= 0.0) {t = 0.0; sqrDist = f;}
         else if (-e >= c)  {t = 1.0; sqrDist = c + 2.0*e + f;}
         else               {t = -e/c; sqrDist = e*t + f;}
@@ -295,23 +293,23 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
    // We are in region 5.
    //
       t = 0.0;
-      if      (d >= 0.0) {s = 0.0; sqrDist = f;}
-      else if (-d >= a)  {s = 1.0; sqrDist = a + 2.0*d + f;}
-      else               {s = -d/a; sqrDist = d*s + f;}
+      if      (d >= 0.0) {q = 0.0; sqrDist = f;}
+      else if (-d >= a)  {q = 1.0; sqrDist = a + 2.0*d + f;}
+      else               {q = -d/a; sqrDist = d*q + f;}
     }
     else
     {
    //
    // We are in region 0.
    //
-      s       = s / det;
+      q       = q / det;
       t       = t / det;
-      sqrDist = s*(a*s + b*t + 2.0*d) + t*(b*s + c*t + 2.0*e) + f;
+      sqrDist = q*(a*q + b*t + 2.0*d) + t*(b*q + c*t + 2.0*e) + f;
     }
   }
   else
   {
-    if (s < 0.0)
+    if (q < 0.0)
     {
    //
    // We are in region 2.
@@ -322,17 +320,17 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
       {
         double numer = tmp1 - tmp0;
         double denom = a - 2.0*b + c;
-        if (numer >= denom) {s = 1.0; t = 0.0; sqrDist = a + 2.0*d + f;}
+        if (numer >= denom) {q = 1.0; t = 0.0; sqrDist = a + 2.0*d + f;}
         else
         {
-          s       = numer/denom;
-          t       = 1.0 - s;
-          sqrDist = s*(a*s + b*t +2.0*d) + t*(b*s + c*t + 2.0*e) + f;
+          q       = numer/denom;
+          t       = 1.0 - q;
+          sqrDist = q*(a*q + b*t +2.0*d) + t*(b*q + c*t + 2.0*e) + f;
         }
       }
       else
       {
-        s = 0.0;
+        q = 0.0;
         if      (tmp1 <= 0.0) {t = 1.0; sqrDist = c + 2.0*e + f;}
         else if (e >= 0.0)    {t = 0.0; sqrDist = f;}
         else                  {t = -e/c; sqrDist = e*t + f;}
@@ -349,20 +347,20 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
       {
         double numer = tmp1 - tmp0;
         double denom = a - 2.0*b + c;
-        if (numer >= denom) {t = 1.0; s = 0.0; sqrDist = c + 2.0*e + f;}
+        if (numer >= denom) {t = 1.0; q = 0.0; sqrDist = c + 2.0*e + f;}
         else
         {
           t       = numer/denom;
-          s       = 1.0 - t;
-          sqrDist = s*(a*s + b*t +2.0*d) + t*(b*s + c*t + 2.0*e) + f;
+          q       = 1.0 - t;
+          sqrDist = q*(a*q + b*t +2.0*d) + t*(b*q + c*t + 2.0*e) + f;
         }
       }
       else
       {
         t = 0.0;
-        if      (tmp1 <= 0.0) {s = 1.0; sqrDist = a + 2.0*d + f;}
-        else if (d >= 0.0)    {s = 0.0; sqrDist = f;}
-        else                  {s = -d/a; sqrDist = d*s + f;}
+        if      (tmp1 <= 0.0) {q = 1.0; sqrDist = a + 2.0*d + f;}
+        else if (d >= 0.0)    {q = 0.0; sqrDist = f;}
+        else                  {q = -d/a; sqrDist = d*q + f;}
       }
     }
     else
@@ -373,23 +371,23 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
       double numer = c + e - b - d;
       if (numer <= 0.0)
       {
-        s       = 0.0;
+        q       = 0.0;
         t       = 1.0;
         sqrDist = c + 2.0*e + f;
       }
       else
       {
         double denom = a - 2.0*b + c;
-        if (numer >= denom) {s = 1.0; t = 0.0; sqrDist = a + 2.0*d + f;}
+        if (numer >= denom) {q = 1.0; t = 0.0; sqrDist = a + 2.0*d + f;}
         else
         {
-          s       = numer/denom;
-          t       = 1.0 - s;
-          sqrDist = s*(a*s + b*t + 2.0*d) + t*(b*s + c*t + 2.0*e) + f;
+          q       = numer/denom;
+          t       = 1.0 - q;
+          sqrDist = q*(a*q + b*t + 2.0*d) + t*(b*q + c*t + 2.0*e) + f;
         }
       }
     }
-  }
+  } 
 //
 //
 // Do a check for rounding errors in the distance-squared.  It appears that
@@ -398,20 +396,20 @@ UVector3 UTriangularFacet::Distance (const UVector3 &p)
 // the magnitude-squared of the vector displacement.  (Note that I've also
 // tried to get around this problem by using the existing equations for
 //
-//    sqrDist = function(a,b,c,d,s,t)
+//    sqrDist = function(a,b,c,d,q,t)
 //
 // and use a more accurate addition process which minimises errors and
 // breakdown of cummutitivity [where (A+B)+C != A+(B+C)] but this still
 // doesn't work.
-// Calculation from u = D + s*E[0] + t*E[1] is less efficient, but appears
+// Calculation from u = D + q*E[0] + t*E[1] is less efficient, but appears
 // more robust.
 //
   if (sqrDist < 0.0) { sqrDist = 0.0; }
-  UVector3 u = D + s*E[0] + t*E[1];
+  UVector3 u = D + q*E[0] + t*E[1];
   double u2     = u.Mag2();
 //
 //
-// The following (part of the roundoff error check) is from Oliver Merle's
+// The following (part of the roundoff error check) is from Oliver Merle'q
 // updates.
 //
   if ( sqrDist > u2 ) sqrDist = u2;

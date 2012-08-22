@@ -91,7 +91,7 @@
 using namespace std;
 
 /// TODO: make a benchmark for automatic selection of number of voxels. random voxels will be selected,
-/// than for them methods distancetoin/out and inside will be launched. 
+/// than for them methods distancetoin/out and inside will be launched. eventually, find out from Geant4 how it is done
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -221,6 +221,8 @@ void UTessellatedSolid::DeleteObjects ()
   facetList.clear();
   vertexList.clear();
   voxelBoxes.clear();
+
+//  voxels.DeleteObjects();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -437,6 +439,7 @@ void UTessellatedSolid::PrecalculateInsides()
 
 void UTessellatedSolid::Voxelize ()
 {
+	cout << "Voxelizing...\n";
 	voxels.Voxelize(facets);
 
 	if (voxels.empty.GetNbits())
@@ -615,15 +618,16 @@ void UTessellatedSolid::CreateVertexList()
 	*/
 }
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 void UTessellatedSolid::SetSolidClosed (const bool t)
 {
-   // TODO: this is very slow, must be rewritten. maybe is not neccessary
   if (t)
   {
 	  CreateVertexList();
-	  
+  
 	  SetExtremeFacets();
 	  
 	  Voxelize();
@@ -1250,11 +1254,6 @@ double UTessellatedSolid::DistanceToOutDummy (const UVector3 &p,
 
 
 
-
-
-
-
-
 void UTessellatedSolid::DistanceToOutCandidates(const UVector3 &aPoint,
                     const UVector3 &direction, double &minDist, UVector3 &minNormal, bool &aConvex, double aPstep, vector<int > &candidates, UBits &bits) const
 {
@@ -1329,15 +1328,6 @@ double UTessellatedSolid::DistanceToOut(const UVector3 &aPoint, const UVector3 &
 
 	return minDistance;
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1456,7 +1446,7 @@ bool compare( const VoxelBoxInfo &l, const VoxelBoxInfo &r)
 	return l.distance < r.distance;
 }
 
-double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool) const
+double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool aAccurate) const
 {
   double minDist = UUtils::kInfinity;
   double dist    = 0.0;
@@ -1478,6 +1468,9 @@ double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool) const
   }
 #endif
 
+  if (!aAccurate)
+		return voxels.SafetyFromOutside(p);
+
   if ( p.x < minExtent.x - fgTolerance ||
        p.x > maxExtent.x + fgTolerance ||
        p.y < minExtent.y - fgTolerance ||
@@ -1498,44 +1491,47 @@ double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool) const
     }
   }
 
-  int size = voxelBoxes.size();
-  vector<VoxelBoxInfo> voxelsSorted(size);
-
-  UBox safetyBox;
-
-  for (int i = 0; i < size; i++)
+  if (false)
   {
-	  const UVoxelBox &voxelBox = voxelBoxes[i];
+	  int size = voxelBoxes.size();
+	  vector<VoxelBoxInfo> voxelsSorted(size);
 
-	  UVector3 pointShifted = p - voxelBox.pos;
-	  const UVector3 &vec = voxelBox.hlen;
-	  safetyBox.Set(vec);
-	  double safety = safetyBox.SafetyFromOutside(pointShifted, true);
-	  VoxelBoxInfo info;
-	  info.distance = safety;
-	  info.id = i;
-	  voxelsSorted[i] = info;
+	  UBox safetyBox;
+
+	  for (int i = 0; i < size; i++)
+	  {
+		  const UVoxelBox &voxelBox = voxelBoxes[i];
+
+		  UVector3 pointShifted = p - voxelBox.pos;
+		  const UVector3 &vec = voxelBox.hlen;
+		  safetyBox.Set(vec);
+		  double safety = safetyBox.SafetyFromOutside(pointShifted, true);
+		  VoxelBoxInfo info;
+		  info.distance = safety;
+		  info.id = i;
+		  voxelsSorted[i] = info;
+	  }
+	  std::sort(voxelsSorted.begin(), voxelsSorted.end(), compare);
+
+	  for (int i = 0; i < size; i++)
+	  {
+		  const VoxelBoxInfo &info = voxelsSorted[i];
+		  const UVoxelBox &voxelBox = voxelBoxes[info.id];
+		  double dist = info.distance;
+		  if (dist > minDist) break;
+
+		  const vector<int> &candidates = voxelBoxesFaces[info.id];
+		  int csize = candidates.size();
+		  for (int i = 0; i < csize; i++)
+		  {
+			  int candidate = candidates[i];
+			 UFacet &facet = *facets[candidate];
+			 dist = facet.Distance(p,minDist,false);
+			 if (dist < minDist) minDist  = dist;
+		  }
+	  }
+	  return minDist;
   }
-  std::sort(voxelsSorted.begin(), voxelsSorted.end(), compare);
-
-  for (int i = 0; i < size; i++)
-  {
-	  const VoxelBoxInfo &info = voxelsSorted[i];
-	  const UVoxelBox &voxelBox = voxelBoxes[info.id];
-	  double dist = info.distance;
-	  if (dist > minDist) break;
-
-	  const vector<int> &candidates = voxelBoxesFaces[info.id];
-	  int csize = candidates.size();
-	  for (int i = 0; i < csize; i++)
-      {
-		  int candidate = candidates[i];
-		 UFacet &facet = *facets[candidate];
-         dist = facet.Distance(p,minDist,false);
-         if (dist < minDist) minDist  = dist;
-      }
-  }
-  return minDist;
 
   for (UFacetCI f=facets.begin(); f!=facets.end(); ++f)
   {
@@ -1631,12 +1627,14 @@ double UTessellatedSolid::SafetyFromInside (const UVector3 &p, bool) const
        p.z > maxExtent.z + fgTolerance )
   {
     return 0.0;
-  }  
+  }
 
-  for (UFacetCI f=facets.begin(); f!=facets.end(); f++)
+  UFacetCI end = facets.end();
+
+  for (UFacetCI f=facets.begin(); f != end; f++)
   {
-	  UFacet &facet = *(*f);
-    dist = facet.Distance(p,minDist,true);
+    UFacet &facet = *(*f);
+    dist = facet.Distance(p,minDist);
     if (dist < minDist) minDist  = dist;
   }
 
@@ -1694,7 +1692,7 @@ std::ostream &UTessellatedSolid::StreamInfo(std::ostream &os) const
 	UFacet &facet = *(*f);
     facet.StreamInfo(os);
   }
-  os <<endl;
+  os << endl;
   
   return os;
 }

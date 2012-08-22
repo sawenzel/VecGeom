@@ -165,10 +165,11 @@ UVector3 UTransform3D::GlobalVector(const UVector3 &local) const
 // Returns vector components converted from the local frame defined by the
 // transformation to the global one. This is defined by multiplying this
 // transformation with the local vector while ignoring the translation.
-   UVector3 global;
-   global.x = local.x*fRot[0] + local.y*fRot[1] + local.z*fRot[2];
-   global.y = local.x*fRot[3] + local.y*fRot[4] + local.z*fRot[5];
-   global.z = local.x*fRot[6] + local.y*fRot[7] + local.z*fRot[8];
+   UVector3 global(
+	   local.x*fRot[0] + local.y*fRot[1] + local.z*fRot[2],
+       local.x*fRot[3] + local.y*fRot[4] + local.z*fRot[5],
+       local.x*fRot[6] + local.y*fRot[7] + local.z*fRot[8]);
+
    return global;
 }
 
@@ -178,11 +179,11 @@ UVector3 UTransform3D::LocalPoint(const UVector3 &global) const
 // Returns local point coordinates converted from the global frame defined 
 // by the transformation. This is defined by multiplying the inverse 
 // transformation with the global vector.
-   UVector3 local;
    UVector3 mt = global - fTr;
-   local.x = mt.x*fRot[0] + mt.y*fRot[3] + mt.z*fRot[6];
-   local.y = mt.x*fRot[1] + mt.y*fRot[4] + mt.z*fRot[7];
-   local.z = mt.x*fRot[2] + mt.y*fRot[5] + mt.z*fRot[8];
+   UVector3 local(
+   mt.x*fRot[0] + mt.y*fRot[3] + mt.z*fRot[6],
+   mt.x*fRot[1] + mt.y*fRot[4] + mt.z*fRot[7],
+   mt.x*fRot[2] + mt.y*fRot[5] + mt.z*fRot[8]);
    return local;
 }
 
@@ -192,10 +193,11 @@ UVector3 UTransform3D::LocalVector(const UVector3 &global) const
 // Returns local point coordinates converted from the global frame defined 
 // by the transformation. This is defined by multiplying the inverse 
 // transformation with the global vector.
-   UVector3 local;
-   local.x = global.x*fRot[0] + global.y*fRot[3] + global.z*fRot[6];
-   local.y = global.x*fRot[1] + global.y*fRot[4] + global.z*fRot[7];
-   local.z = global.x*fRot[2] + global.y*fRot[5] + global.z*fRot[8];
+   UVector3 local(
+   global.x*fRot[0] + global.y*fRot[3] + global.z*fRot[6],
+   global.x*fRot[1] + global.y*fRot[4] + global.z*fRot[7],
+   global.x*fRot[2] + global.y*fRot[5] + global.z*fRot[8]);
+
    return local;
 }
 

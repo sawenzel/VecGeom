@@ -4,6 +4,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include <set>
+
 #include "VUSolid.hh" 
 #include "UVoxelFinder.hh"
 #include "UUtils.hh"
@@ -14,13 +16,12 @@ using namespace std;
 //______________________________________________________________________________   
 UVoxelFinder::UVoxelFinder()
 {
-	boundingBox = NULL;
+	SetMaxVoxels(0);
 }
 
 //______________________________________________________________________________   
 UVoxelFinder::~UVoxelFinder()
 {
-	if (boundingBox) delete boundingBox;
 }
 
 //______________________________________________________________________________   
@@ -65,6 +66,37 @@ void UVoxelFinder::BuildVoxelLimits(vector<VUSolid *> &solids, vector<UTransform
 		}
 	}
 }
+
+void UVoxelFinder::BuildVoxelLimits(vector<UFacet *> &facets)
+{
+	// "BuildVoxelLimits"'s aim is to store the coordinates of the origin as well as
+	// the half lengths related to the bounding box of each node.
+	// These quantities are stored in the array "boxes" (6 different values per
+	// node.
+	if (int numNodes = facets.size()) // Number of nodes in "multiUnion"
+	{
+		boxes.resize(numNodes); // Array which will store the half lengths
+		nPerSlice = 1+(boxes.size()-1)/(8*sizeof(unsigned int));
+
+		UVector3 toleranceVector;
+		toleranceVector.Set(100 * VUSolid::Tolerance());
+
+		for (int i = 0; i < numNodes; ++i)
+		{
+			UFacet &facet = *facets[i];
+			UVector3 min, max;
+			UVector3 x(1,0,0), y(0,1,0), z(0,0,1);
+			UVector3 extent;
+			max.Set (facet.Extent(x), facet.Extent(y), facet.Extent(z));
+			min.Set (-facet.Extent(-x), -facet.Extent(-y), -facet.Extent(-z));
+			min -= toleranceVector; max += toleranceVector;
+			UVector3 hlen = (max - min) / 2;
+			boxes[i].hlen = hlen;
+			boxes[i].pos = min + hlen;
+		}
+	}
+}
+
 
 //______________________________________________________________________________   
 void UVoxelFinder::DisplayVoxelLimits()
@@ -114,20 +146,47 @@ void UVoxelFinder::BuildBoundaries()
 		const double tolerance = VUSolid::Tolerance() / 100.0; // Minimal distance to discrminate two boundaries.
 		vector<double> sortedBoundary(2*numNodes);
 
+		int added, considered;
+
 		for (int j = 0; j <= 2; ++j)
 		{
 			CreateSortedBoundary(sortedBoundary, j);
 			vector<double> &boundary = boundaries[j];
 			boundary.clear();
 
+			added = considered = 0;
+
 			for(int i = 0 ; i < 2*numNodes; ++i)
 			{
 				double newBoundary = sortedBoundary[i];
 				int size = boundary.size();
 				if(!size || abs(boundary[size-1] - newBoundary) > tolerance)
-					boundary.push_back(newBoundary);
-				else // If two successive boundaries are too close from each other, only the first one is considered 	
-					cout << "Skipping boundary [" << j << "] : " << i << endl;
+				{
+					considered++;
+					{
+						boundary.push_back(newBoundary);
+						continue;
+					}
+				}
+				// If two successive boundaries are too close from each other, only the first one is considered 	
+				{
+					// cout << "Skipping boundary [" << j << "] : " << i << endl;
+				}
+			}
+
+			int n = boundary.size();
+			int max = 100000;
+			if (n > max/2)
+			{
+				int skip = n / (max /2); // n has to be 2x bigger then 50.000. therefore only from 100.000 re
+				vector<double> reduced;
+				for (int i = 0; i < n; i++)
+				{
+					// 50 ok for 2k, 1000, 2000
+					if (i % skip == 0 || i == 0 || i == boundary.size() - 1) // this condition of merging boundaries was wrong, it did not count with right part, which can be completely ommited and not included in final consideration. Now should be OK
+						reduced.push_back(boundary[i]);
+				}
+				boundary = reduced;
 			}
 		}
 	}
@@ -159,7 +218,9 @@ void UVoxelFinder::DisplayBoundaries(vector<double> &boundaries)
 	cout << "|" << endl << "Number of boundaries: " << count << endl;
 }
 
-void UVoxelFinder::BuildListNodes()
+// TODO: needs to be rewrittten to make it much faster, using std::set
+
+void UVoxelFinder::BuildListNodes(bool countsOnly)
 {
 	// "BuildListNodes" stores in the bitmasks solids present in each slice along an axis.
 //	const double localTolerance = 0;
@@ -168,29 +229,81 @@ void UVoxelFinder::BuildListNodes()
 
 	for (int k = 0; k < 3; k++)
 	{
-		int boundariesCount = boundaries[k].size();
+		int total = 0;
+		vector<double> &boundary = boundaries[k];
+		int voxelsCount = boundary.size() - 1;
 		UBits &bitmask = bitmasks[k];
-		bitmask.Clear();
-		bitmask.SetBitNumber((boundariesCount-1)*bitsPerSlice-1, false); // it is here so we can set the maximum number of bits. this line will rellocate the memory and set all to zero
 
-		for(int i = 0 ; i < boundariesCount-1; ++i)
+		if (!countsOnly)
 		{
-			// Loop on the nodes, number of slices per axis
-			for(int j = 0 ; j < numNodes; j++)
-			{
-				// Determination of the minimum and maximum position along x
-				// of the bounding boxe of each node:
-				double p = boxes[j].pos[k], d = boxes[j].hlen[k];
-				double leftBoundary = boundaries[k][i];
-				double rightBoundary = boundaries[k][i+1];
-				double min = p - d; // - localTolerance;
-				double max = p + d; // + localTolerance;
-				if (min < rightBoundary && max > leftBoundary)
-					// Storage of the number of the node in the array:
-					bitmask.SetBitNumber(i*bitsPerSlice+j);
-			}
+			bitmask.Clear();
+			bitmask.SetBitNumber(voxelsCount*bitsPerSlice-1, false); // it is here so we can set the maximum number of bits. this line will rellocate the memory and set all to zero
 		}
+		vector<int> &candidatesCount = candidatesCounts[k];
+		candidatesCount.resize(voxelsCount);
+
+		for(int i = 0 ; i < voxelsCount; ++i) 
+			candidatesCount[i] = 0;
+			
+		// Loop on the nodes, number of slices per axis
+		for(int j = 0 ; j < numNodes; j++)
+		{
+			// Determination of the minimum and maximum position along x
+			// of the bounding boxe of each node:
+			double p = boxes[j].pos[k], d = boxes[j].hlen[k];
+
+			double min = p - d; // - localTolerance;
+			double max = p + d; // + localTolerance;
+
+			int i = UUtils::BinarySearch(boundary, min);
+
+			if (i < 0 || i >= voxelsCount)
+				i = i;
+
+			do
+			{
+				if (!countsOnly) 
+					bitmask.SetBitNumber(i*bitsPerSlice+j);
+
+				candidatesCount[i]++;
+				total++;
+				i++;
+			}
+			while (max > boundary[i] && i < voxelsCount);
+		}
+
+		/*
+		if (voxelsCount < 20000)
+		{
+			int total2 = 0;
+			for(int i = 0 ; i < voxelsCount; ++i)
+			{
+				candidatesCount[i] = 0;
+				// Loop on the nodes, number of slices per axis
+				for(int j = 0 ; j < numNodes; j++)
+				{
+					// Determination of the minimum and maximum position along x
+					// of the bounding boxe of each node:
+					double p = boxes[j].pos[k], d = boxes[j].hlen[k];
+					double leftBoundary = boundary[i];
+					double rightBoundary = boundary[i+1];
+					double min = p - d; // - localTolerance;
+					double max = p + d; // + localTolerance;
+					if (min < rightBoundary && max > leftBoundary)
+					{
+						// Storage of the number of the node in the array:
+						bitmask.SetBitNumber(i*bitsPerSlice+j);
+						candidatesCount[i]++;
+						total2++;
+					}
+				}
+			}
+			if (total2 != total)
+				total2 = total;
+		}
+		*/
 	}
+	cout << "Build list nodes completed" << endl;
 }
 
 //______________________________________________________________________________   
@@ -232,8 +345,6 @@ void UVoxelFinder::DisplayListNodes()
 
 void UVoxelFinder::BuildBoundingBox()
 {
-	if (boundingBox) delete boundingBox;
-
 	UVector3 sizes, toleranceVector;
 	toleranceVector.Set(VUSolid::Tolerance()/100);
 	for (int i = 0; i <= 2; ++i)
@@ -244,17 +355,180 @@ void UVoxelFinder::BuildBoundingBox()
 		boundingBoxCenter[i] = min + sizes[i];
 	}
 //	sizes -= toleranceVector;
-	boundingBox = new UBox("VoxelBoundingBox", sizes.x, sizes.y, sizes.z);
+	boundingBox.Set(sizes.x, sizes.y, sizes.z);
+}
+
+// algorithm - 
+
+// in order to get balanced voxels, merge should always unite those regions, where the number of voxels is least
+// the number
+
+// we will keep sorted list (std::set) with all voxels. there will be comparator function between two voxels,
+// which will tell if voxel is less by looking at his right neighbor.
+// first, we will add all the voxels into the tree.
+// we will be pick the first item in the tree, merging it, adding the right merged voxel into the a list for
+// future reduction (bitmasks will be rebuilded later, therefore they need not to be updated).
+// the merged voxel need to be added to the tree again, so it's position would be updated
+
+struct VoxelInfo
+{
+	int count;
+	int previous;
+	int next;
+};
+
+class VoxelComparator
+{
+public:
+
+	vector<VoxelInfo> &voxels;
+
+	VoxelComparator(vector<VoxelInfo> &_voxels) : voxels(_voxels)
+	{
+
+	}
+
+    bool operator()(int l, int r)
+	{
+		VoxelInfo &lv = voxels[l], &rv = voxels[r];
+		int left = lv.count +  voxels[lv.next].count;
+		int right = rv.count + voxels[rv.next].count;;
+		return (left == right) ? l < r : left < right;
+    }
+};
+
+void UVoxelFinder::BuildReduceVoxels()
+{
+	double maxTotal = (double) candidatesCounts[0].size() * candidatesCounts[1].size() * candidatesCounts[2].size();
+
+	if (maxVoxels > 0 && maxVoxels < maxTotal)
+	{
+		double ratio = (double) maxVoxels / maxTotal;
+		ratio = std::pow(ratio, 1./3.);
+		if (ratio > 1) ratio = 1;
+		reductionRatio.Set(ratio);
+	}
+
+	for (int k = 0; k <= 2; ++k)
+	{
+		vector<int> &candidatesCount = candidatesCounts[k];
+		int max = candidatesCount.size();
+		vector<VoxelInfo> voxels(max);
+		VoxelComparator comp(voxels);
+		set<int, VoxelComparator> voxelSet(comp);
+//		set<int, VoxelComparator>::iterator it;
+		vector<int> mergings;
+
+		for (int j = 0; j < max; ++j)
+		{
+			VoxelInfo &voxel = voxels[j];
+			voxel.count = candidatesCount[j];
+			voxel.previous = j - 1;
+			voxel.next = j + 1;
+			voxels[j] = voxel;
+		}
+//		voxels[max - 1].count = 99999999999;
+
+		for (int j = 0; j < max - 1; ++j) voxelSet.insert(j); // we go to size-1 to make sure we will not merge the last element
+
+		bool goodEnough = false;
+		int count = 0;
+		while (true)
+		{
+			double reduction = reductionRatio[k];
+			if (reduction == 0)
+				break;
+			double currentRatio = 1 - (double) count / max;
+			if (currentRatio <= reduction)
+				break;
+			const int pos = *voxelSet.begin();
+			mergings.push_back(pos);
+
+			VoxelInfo &voxel = voxels[pos];
+			VoxelInfo &nextVoxel = voxels[voxel.next];
+
+			if (voxelSet.erase(pos) != 1)
+				k = k;
+
+			if (voxel.next != max - 1)
+				if (voxelSet.erase(voxel.next) != 1)
+					k = k;
+
+			if (voxel.previous != -1)
+				if (voxelSet.erase(voxel.previous) != 1)
+					k = k;
+
+			nextVoxel.count += voxel.count;
+			voxel.count = 0;
+			nextVoxel.previous = voxel.previous;
+
+			if (voxel.next != max - 1)
+				voxelSet.insert(voxel.next);
+
+			if (voxel.previous != -1)
+			{
+				voxels[voxel.previous].next = voxel.next;
+				voxelSet.insert(voxel.previous);
+			}
+			count++;
+		}
+
+//		for (int i = 0; i < max; i++) cout << voxels[i].count << ", ";
+
+		if (mergings.size())
+		{
+			sort(mergings.begin(), mergings.end());
+
+			vector<double> &boundary = boundaries[k];
+			vector<double> reducedBoundary(boundary.size() - mergings.size());
+			int skip = mergings[0] + 1, cur = 0, i = 0;
+			max = boundary.size();
+			for (int j = 0; j < max; ++j)
+			{
+				if (j != skip)
+					reducedBoundary[cur++] = boundary[j];
+				else 
+					skip = mergings[++i] + 1;
+			}
+	//		boundaries[k].resize(reducedBoundary.size());
+			boundaries[k] = reducedBoundary;
+		}
+	}
+	int total = boundaries[0].size() * boundaries[1].size() * boundaries[2].size();
+	cout << "Total number of voxels: " << total << endl;
 }
 
 //______________________________________________________________________________   
 void UVoxelFinder::Voxelize(vector<VUSolid *> &solids, vector<UTransform3D *> &transforms)
 {
 	BuildVoxelLimits(solids, transforms);
+
 	BuildBoundaries();
+
 	BuildListNodes();
+
 	BuildBoundingBox();
+
+//	BuildEmpty(); // these does not work well for multi-union, actually only makes performance slower
 }
+
+void UVoxelFinder::Voxelize(std::vector<UFacet *> &facets)
+{
+	BuildVoxelLimits(facets);
+
+	BuildBoundaries();
+
+	BuildListNodes(true);
+
+	BuildReduceVoxels();
+
+	BuildListNodes();
+
+	BuildBoundingBox();
+
+	BuildEmpty();
+}
+
 
 //______________________________________________________________________________       
 // "GetCandidates" should compute which solids are possibly contained in
@@ -473,7 +747,14 @@ bool UVoxelFinder::Contains(const UVector3 &point) const
 double UVoxelFinder::DistanceToFirst(const UVector3 &point, const UVector3 &direction) const
 {
     UVector3 pointShifted = point - boundingBoxCenter;
-    double shift = boundingBox->DistanceToIn(pointShifted, direction);
+    double shift = boundingBox.DistanceToIn(pointShifted, direction);
+    return shift;
+}
+
+double UVoxelFinder::SafetyFromOutside(const UVector3 &point) const
+{
+    UVector3 pointShifted = point - boundingBoxCenter;
+	double shift = boundingBox.SafetyFromOutside(pointShifted);
     return shift;
 }
 
@@ -485,28 +766,28 @@ double UVoxelFinder::DistanceToNext(const UVector3 &point, const UVector3 &direc
 	{
 		// Looking for the next voxels on the considered direction X,Y,Z axis
 		const vector<double> &boundary = boundaries[i];
-		int binarySearch = curVoxel[i];
+		int cur = curVoxel[i];
 		if(direction[i] >= 1e-10)
 		{
 			// if (point[i] != boundaries[i][binarySearch]) 
-			binarySearch++;
-			if (binarySearch >= (int) boundary.size())
+			cur++;
+			if (cur >= (int) boundary.size())
 				continue;
 		}
 		else 
 		{
 			if(direction[i] <= 1e-10) 
 			{
-				if (point[i] == boundary[binarySearch]) 
-					if (binarySearch > 0)
-						binarySearch--;
+				if (point[i] == boundary[cur]) 
+					if (cur > 0)
+						cur--;
 					else
 						continue;
 			}
 			else continue;
 		}
 
-		double distance = (boundary[binarySearch] - point[i])/direction[i];
+		double distance = (boundary[cur] - point[i])/direction[i];
 
 		if (shift > distance) 
 			shift = distance;
@@ -646,4 +927,16 @@ int UVoxelCandidatesIterator::Next()
 		while (nextAvailable);
 		return -1;
 	}
+}
+
+void UVoxelFinder::SetMaxVoxels(int max)
+{
+	maxVoxels = max;
+	reductionRatio.Set(0);
+}
+
+void UVoxelFinder::SetMaxVoxels(UVector3 &ratioOfReduction)
+{
+	maxVoxels = -1;
+	reductionRatio = ratioOfReduction;
 }
