@@ -20,49 +20,59 @@ class UOrb : public VUSolid
 {
 
 public:
-   UOrb() : VUSolid(), fR(0), fRTolerance(0) {}
-   UOrb(const char *name, double pRmax);
-   virtual ~UOrb() {}
-   
-   // Navigation methods
-   EnumInside     Inside (const UVector3 &aPo6int) const;   
+	UOrb() : VUSolid(), fR(0), fRTolerance(0) {}
+	UOrb(const char *name, double pRmax);
+	virtual ~UOrb() {}
 
-   virtual double  SafetyFromInside ( const UVector3 &aPoint, 
-                                      bool aAccurate=false) const;
-   virtual double  SafetyFromOutside( const UVector3 &aPoint, 
-                                      bool aAccurate=false) const;
-   virtual double  DistanceToIn     ( const UVector3 &aPoint, 
-                                      const UVector3 &aDirection,
-                                      // UVector3       &aNormalVector,
-                                      double aPstep = UUtils::kInfinity) const;                               
+	// Navigation methods
+	EnumInside     Inside (const UVector3 &aPo6int) const;   
 
-   virtual double DistanceToOut     ( const UVector3 &aPoint,
-                                      const UVector3 &aDirection,
-                                      UVector3       &aNormalVector, 
-                                      bool           &aConvex,
-                                      double aPstep = UUtils::kInfinity) const;
+	virtual double  SafetyFromInside ( const UVector3 &aPoint, 
+		bool aAccurate=false) const;
+	virtual double  SafetyFromOutside( const UVector3 &aPoint, 
+		bool aAccurate=false) const;
+	virtual double  DistanceToIn     ( const UVector3 &aPoint, 
+		const UVector3 &aDirection,
+		// UVector3       &aNormalVector,
+		double aPstep = UUtils::kInfinity) const;                               
 
-   virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
-   virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
-   virtual void Extent (UVector3 &aMin, UVector3 &aMax) const; 
-   virtual double Capacity();
-   virtual double SurfaceArea();
-   virtual VUSolid* Clone() const {return 0;}
-   virtual UGeometryType GetEntityType() const { return "Orb";}
-   virtual void ComputeBBox(UBBox *aBox, bool aStore = false) {}
+	virtual double DistanceToOut     ( const UVector3 &aPoint,
+		const UVector3 &aDirection,
+		UVector3       &aNormalVector, 
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity) const;
 
-  //G4Visualisation
-   virtual void GetParametersList(int aNumber,double *aArray) const{} 
-   virtual UPolyhedron* GetPolyhedron() const{return 0; }
+	virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
+	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
+	virtual void Extent (UVector3 &aMin, UVector3 &aMax) const; 
+	virtual double Capacity();
+	virtual double SurfaceArea();
+	virtual UGeometryType GetEntityType() const { return "Orb";}
+	virtual void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
-   double GetRadialTolerance()
-   {
-	   return fRTolerance;
-   }
-   
+	//G4Visualisation
+	virtual void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
+	virtual UPolyhedron* GetPolyhedron() const{return CreatePolyhedron(); }
+
+	inline VUSolid* Clone() const
+	{
+		return new UOrb(GetName(), fR);
+	}
+
+	double GetRadialTolerance()
+	{
+		return fRTolerance;
+	}
+
+	UVector3 GetPointOnSurface() const;
+
+	std::ostream& StreamInfo(std::ostream& os) const;
+
+	UPolyhedron* CreatePolyhedron () const;
+
 private:  
-    double fR;
-    double fRTolerance;
+	double fR;
+	double fRTolerance;
 
 	virtual double DistanceToOutForOutsidePoints(const UVector3 &p, const UVector3 &v, UVector3 &n) const;
 

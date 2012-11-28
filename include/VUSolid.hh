@@ -8,13 +8,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef USOLIDS_Utypes
 #include "Utypes.hh"
-#endif
-
-#ifndef USOLIDS_UVector3
 #include "UVector3.hh"
-#endif
+
+#include "UUtils.hh"
+#include "UPolyhedron.hh"
+
+#define USOLIDS
+#define USOLIDSONLY
 
 class VUSolid
 {
@@ -29,6 +30,9 @@ enum EAxisType { eXaxis=0, eYaxis=1, eZaxis=2};
 protected:
 static double     fgTolerance;
 static double     frTolerance;
+static double     faTolerance;
+
+// =>10 degrees/wedge for complete tube
 
 public:
   VUSolid();
@@ -98,9 +102,9 @@ public:
   //  Expect the solids to cache the values of Capacity and Surface Area 
   
   // Sampling
-  virtual void    SamplePointsInside(int aNpoints, UVector3 *aArray) const {}
-  virtual void    SamplePointsOnSurface(int aNpoints, UVector3 *aArray) const {}
-  virtual void    SamplePointsOnEdge(int aNpoints, UVector3 *aArray) const {}
+  virtual void    SamplePointsInside(int /*aNpoints*/, UVector3 * /*aArray*/) const {}
+  virtual void    SamplePointsOnSurface(int /*aNpoints*/, UVector3 * /*aArray*/) const {}
+  virtual void    SamplePointsOnEdge(int /*aNpoints*/, UVector3 * /*aArray*/) const {}
   // o generates points on the edges of a solid - primarily for testing purposes
   // o for solids composed only of curved surfaces(like full spheres or toruses) or 
   //        where an implementation is not available, it defaults to PointOnSurface.
@@ -114,10 +118,10 @@ public:
   virtual void GetParametersList(int aNumber,double *aArray) const =0;
   virtual UPolyhedron* GetPolyhedron() const =0;
 
-  virtual void    SetMeshPoints(double *aArray) const {}
+  virtual void    SetMeshPoints(double * /*aArray*/) const {}
   // o used in TGeo for visualization and overlap checking. 
   //   Implementation existing for all solids.
-  virtual void    FillMesh(UBuffer3D &aBuffer) const {}
+  virtual void    FillMesh(UBuffer3D &/*aBuffer*/) const {}
   // o An internal buffer to be filled, converted to TBuffer3D in TGeo bridge
   // class and fed into GL for visualization. Algorithms existing.   
   virtual void    GetMeshNumbers( int &/*nvertices*/, int &/*nsegments*/, int &/*npolygons*/) const {}
@@ -125,12 +129,16 @@ public:
   // mesh of the solid
   static double   Tolerance() {return fgTolerance;}
 
+  inline virtual std::ostream& StreamInfo( std::ostream& os ) const = 0;
+
+  virtual UVector3 GetPointOnSurface() const = 0;
+
 protected:
   virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) = 0;
   // o Compute the bounding box for the solid. Called automatically and stored ? 
   // o Can throw an exception if the solid is invalid
 private:
-  UString         fName;  // Name of the solid
+  std::string fName;  // Name of the solid
   UBBox          *fBBox;   // Bounding box
 };
 #endif

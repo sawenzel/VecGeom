@@ -27,25 +27,7 @@
 // $Id: UTessellatedSolid.hh,v 1.11 2010-10-20 08:54:18 gcosmo Exp $
 // GEANT4 tag $Name: not supported by cvs2svn $
 //
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// MODULE:              UTessellatedSolid.hh
-//
-// Date:                15/06/2005
-// Author:              P R Truscott
-// Organisation:        QinetiQ Ltd, UK
-// Customer:            UK Ministry of Defence : RAO CRP TD Electronic Systems
-// Contract:            C/MAT/N03517
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// CHANGE HISTORY
-// --------------
-// 22 November 2005, F Lei, 
-//  - Added GetPolyhedron()
-//
-// 31 October 2004, P R Truscott, QinetiQ Ltd, UK
-//  - Created.
+// Author: Marek Gayer, created from original implementation by P R Truscott, 2004
 //
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //
@@ -109,200 +91,284 @@
 #ifndef UTessellatedSolid_hh
 #define UTessellatedSolid_hh 1
 
-#include "VUSolid.hh"
-#include "UFacet.hh"
-
-#include "UVoxelFinder.hh"
-
-//#include "UVGraphicsScene.hh"
-//#include "UVPVParameterisation.hh"
-//#include "UVPhysicalVolume.hh"
-
-//#include "UVoxelLimits.hh"
-//#include "UAffineTransform.hh"
-//#include "UVisExtent.hh"
-
 #include <iostream>
 #include <vector>
 #include <set>
 #include <map>
 
+#include "VUSolid.hh"
+#include "VUFacet.hh"
+#include "UVoxelizer.hh"
+#include "UTessellatedSolid.hh"
 
-struct VertexInfo
+#ifndef USOLIDSONLY
+#include "G4VGraphicsScene.hh"
+#include "G4VPVParameterisation.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4VoxelLimits.hh"
+#include "G4AffineTransform.hh"
+#include "G4VisExtent.hh"
+#include "G4PolyhedronArbitrary.hh"
+#endif // USOLIDSONLY
+
+struct UVertexInfo
 {
 	int id;
 	double mag2;
 };
 
 
-class VertexComparator
+class UVertexComparator
 {
 public:
-    bool operator()( const VertexInfo &l, const VertexInfo &r)
-    {
+	bool operator() (const UVertexInfo &l, const UVertexInfo &r)
+	{
 		return l.mag2 == r.mag2 ? l.id < r.id : l.mag2 < r.mag2;
-    }
+	}
 };
 
 class UTessellatedSolid : public VUSolid
 {
-  public:  // with description
+public:  // with description
 
-    UTessellatedSolid ();
-    UTessellatedSolid (const char *name);
-    virtual ~UTessellatedSolid ();
-    
-    UTessellatedSolid (const UTessellatedSolid &s);
-    const UTessellatedSolid &operator= (const UTessellatedSolid &s);
-    const UTessellatedSolid &operator+= (const UTessellatedSolid &right);
-   
-    bool AddFacet (UFacet *aFacet);
-    UFacet *GetFacet (int i) const;
-    int GetNumberOfFacets () const;
-    
-//    virtual double GetCubicVolume ();
-    virtual double GetSurfaceArea ();
+	UTessellatedSolid ();
+	virtual ~UTessellatedSolid ();
 
+#ifndef USOLIDSONLY
+	UTessellatedSolid (const std::string &name);
 
-//
-//  virtual void ComputeDimensions (UVPVParameterisation* p, const int n,
-//                                  const UVPhysicalVolume* pRep) const;
-    
+	UTessellatedSolid(__void__&);
+       // Fake default constructor for usage restricted to direct object
+		// persistency for clients requiring preallocation of memory for
+		// persistifiable objects.
+#endif // USOLIDSONLY
+
+	UTessellatedSolid (const UTessellatedSolid &s);
+	UTessellatedSolid &operator= (const UTessellatedSolid &s);
+	UTessellatedSolid &operator+= (const UTessellatedSolid &right);
+
+	bool AddFacet (VUFacet *aFacet);
+	inline VUFacet *GetFacet (int i) const
+	{
+		return fFacets[i];
+	}
+	int GetNumberOfFacets () const;
+
+	virtual double GetSurfaceArea();
+
 	virtual VUSolid::EnumInside Inside (const UVector3 &p) const;
 
-	VUSolid::EnumInside InsideDummy (const UVector3 &p) const;
+	virtual bool Normal (const UVector3 &p, UVector3 &aNormal) const;
 
-	VUSolid::EnumInside InsideWithExclusion(const UVector3 &aPoint, UBits *exclusion) const;
+	virtual double SafetyFromOutside(const UVector3 &p, bool aAccurate=false) const;
 
-	void Voxelize();
+	virtual double SafetyFromInside (const UVector3 &p, bool aAccurate=false) const;
+	virtual UGeometryType GetEntityType () const;
 
-	void PrecalculateInsides();
+	void SetSolidClosed (const bool t);
 
-    void SetRandomVectorSet ();
-    virtual bool Normal (const UVector3 &p, UVector3 &aNormal) const;
+	bool GetSolidClosed () const;
 
-   double DistanceToInCandidates(const UVector3 &aPoint, const UVector3 &aDirection, double aPstep, std::vector<int> &candidates, UBits &bits) const;
+	virtual UVector3 GetPointOnSurface() const;
 
-    void DistanceToOutCandidates(const UVector3 &aPoint, const UVector3 &direction, double &minDist, UVector3 &minNormal, bool &aConvex, double aPstep, std::vector<int > &candidates, UBits &bits) const;
+	virtual std::ostream &StreamInfo(std::ostream &os) const;
 
-	virtual double DistanceToIn(const UVector3 &p, const UVector3 &v, double aPstep = UUtils::kInfinity) const;
+#ifdef USOLIDSONLY
 
-	double DistanceToInDummy(const UVector3 &p, const UVector3 &v, double aPstep = UUtils::kInfinity) const;
-
-    virtual double SafetyFromOutside(const UVector3 &p, bool aAccurate=false) const;
-    virtual double DistanceToOut(const UVector3 &p,
-                                   const UVector3 &v,
-                                UVector3       &aNormalVector,
-                                bool           &aConvex,
-                                double aPstep = UUtils::kInfinity						   
-
-						   ) const;
-
-
-    double DistanceToOutDummy(const UVector3 &p,
-                                   const UVector3 &v,
-                                UVector3       &aNormalVector,
-                                bool           &aConvex,
-                                double aPstep = UUtils::kInfinity						   
-
-						   ) const;
-
-    virtual double SafetyFromInside (const UVector3 &p, bool aAccurate=false) const;
-    virtual UGeometryType GetEntityType () const;
-    
-	void BuildBoundingBox();
-
-    void SetSolidClosed (const bool t);
-
-	void CreateVertexList ();
-
-    bool GetSolidClosed () const;
-
-	virtual VUSolid* Clone() const { return 0; }
-
-	int SetAllUsingStack(const std::vector<int> &voxel, const std::vector<int> &max, bool status, UBits &checked);
-       
-    virtual UVector3 GetPointOnSurface() const;
-
-//    virtual bool CalculateExtent(const EAxis pAxis, const UVoxelLimits& pVoxelLimit, const UAffineTransform& pTransform, double& pMin, double& pMax) const;
-
-    virtual std::ostream &StreamInfo(std::ostream &os) const;
+	UTessellatedSolid (const char *name);
 
 	virtual double Capacity() {return 0;}
 
-	void SetExtremeFacets();
+	virtual double SurfaceArea() {return GetSurfaceArea(); }
 
-    virtual double SurfaceArea() {return 0; }
+	inline virtual void GetParametersList(int /*aNumber*/,double * /*aArray*/) const{} 
 
-   virtual void GetParametersList(int aNumber,double *aArray) const{} 
+	inline virtual UPolyhedron* GetPolyhedron() const{return 0;}
 
-   virtual UPolyhedron* GetPolyhedron() const{return 0;}
+	inline virtual void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
-   virtual void ComputeBBox(UBBox *aBox, bool aStore = false) {}
+#endif // USOLIDSONLY
 
-  // Functions for visualization
- 
-//    virtual void  DescribeYourselfTo (UVGraphicsScene& scene) const;
-//    virtual UVisExtent   GetExtent () const;
+	inline void SetMaxVoxels(int max)
+	{
+		fVoxels.SetMaxVoxels(max);
+	}
 
-   void                         Extent (EAxisType aAxis, double &aMin, double &aMax) const;
-   void							Extent (UVector3 &aMin, UVector3 &aMax) const;
-
-   inline UVoxelFinder &GetVoxels()
-   {
-	   return voxels;
-   }
-
-   /*
-    double      GetMinXExtent () const;
-    double      GetMaxXExtent () const;
-    double      GetMinYExtent () const;
-    double      GetMaxYExtent () const;
-    double      GetMinZExtent () const;
-    double      GetMaxZExtent () const;
+	/*
+	inline void SetMaxVoxels(const UVector3 &reductionRatio)
+	{
+		fVoxels.SetMaxVoxels(reductionRatio);
+	}
 	*/
 
+	inline UVoxelizer &GetVoxels()
+	{
+		return fVoxels;
+	}
+
+	virtual VUSolid* Clone() const;
+
+#ifndef USOLIDSONLY
+
+	virtual G4ThreeVector SurfaceNormal(const G4ThreeVector& p) const;
+
+	virtual G4double DistanceToIn(const G4ThreeVector& p, const G4ThreeVector& v)const;
+
+	virtual G4double DistanceToIn(const G4ThreeVector& p) const;
+
+	virtual G4double DistanceToOut(const G4ThreeVector& p) const;
+
+	virtual G4double DistanceToOut(const G4ThreeVector& p,
+				  const G4ThreeVector& v,
+				  const G4bool calcNorm,
+				  G4bool *validNorm,
+				  G4ThreeVector *norm) const;
+
+	virtual double GetCubicVolume ();
+
+//	virtual void ComputeDimensions (UVPVParameterisation* p, const int n, const UVPhysicalVolume* pRep) const;
+
+	virtual bool CalculateExtent(const EAxis pAxis, const UVoxelLimits& pVoxelLimit, const UAffineTransform& pTransform, double& pMin, double& pMax) const;
+
+	double      GetMinXExtent () const;
+	double      GetMaxXExtent () const;
+	double      GetMinYExtent () const;
+	double      GetMaxYExtent () const;
+	double      GetMinZExtent () const;
+	double      GetMaxZExtent () const;
+
 	// when we would have visualization, these routines would be enabled
-//    virtual UPolyhedron* CreatePolyhedron () const;
-//    virtual UPolyhedron* GetPolyhedron    () const;
-//    virtual UNURBS*      CreateNURBS      () const;
- 
-  protected:  // with description
- 
-    void DeleteObjects ();
-    void CopyObjects (const UTessellatedSolid &s);
+	virtual UPolyhedron* CreatePolyhedron () const;
+	virtual UPolyhedron* GetPolyhedron    () const;
+	virtual UNURBS*      CreateNURBS      () const;
 
-//     UVector3List* CreateRotatedVertices(const UAffineTransform& pTransform) const;
-      // Create the List of transformed vertices in the format required
-      // for VUSolid:: ClipCrossSection and ClipBetweenSections.
+	UVector3List* CreateRotatedVertices(const UAffineTransform& pTransform) const;
+	// Create the List of transformed vertices in the format required
+	// for VUSolid:: ClipCrossSection and ClipBetweenSections.
 
-  private:
+	// Functions for visualization
+	virtual void  DescribeYourselfTo (UVGraphicsScene& scene) const;
+	virtual UVisExtent   GetExtent () const;
 
-    mutable UPolyhedron* fpPolyhedron;
+#endif // USOLIDSONLY
 
-    std::vector<UFacet *>  facets;
-	std::multiset<UFacet *>     extremeFacets; // Does all other facets lie
-                                            // on or behind this surface?
-    UGeometryType           geometryType;
-    double                 cubicVolume;
-    double                 surfaceArea;
-    std::vector<UVector3>  vertexList;
-	std::set<VertexInfo,VertexComparator> facetList;
-	UVector3 minExtent, maxExtent;
+#ifdef USOLIDSONLY
+	virtual inline double DistanceToIn(const UVector3 &p, const UVector3 &v, double aPstep = UUtils::kInfinity) const
+	{
+		return DistanceToInCore(p, v, aPstep);
+	}
 
-    bool                   solidClosed;
+	virtual inline double DistanceToOut(const UVector3 &p,
+		const UVector3 &v,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity						   
 
-    double          dirTolerance;
-    std::vector<UVector3>     randir;
+		) const
+	{
+		return DistanceToOutCore(p, v, aNormalVector, aConvex, aPstep);
+	}
 
-    int             maxTries;
+	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
+	void Extent (UVector3 &aMin, UVector3 &aMax) const;
 
-	UVoxelFinder        voxels;  // Pointer to the vozelized solid
+#endif // USOLIDSONLY
 
-	UBits insides;
+	int AllocatedMemoryWithoutVoxels();
 
-	std::vector<UVoxelBox> voxelBoxes;
-	std::vector<std::vector<int> > voxelBoxesFaces;
+	int AllocatedMemory();
+
+	void DisplayAllocatedMemory();
+
+private: // without description
+
+	double DistanceToOutNoVoxels(const UVector3 &p,
+		const UVector3 &v,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity						   
+
+		) const;
+
+	double DistanceToInCandidates(const std::vector<int> &candidates, const UVector3 &aPoint, const UVector3 &aDirection /*, double aPstep, const UBits &bits*/) const;
+
+	void DistanceToOutCandidates(const std::vector<int > &candidates, const UVector3 &aPoint, const UVector3 &direction, double &minDist, UVector3 &minNormal, int &minCandidate/*, double aPstep*/ /*,  UBits &bits*/) const;
+
+	double DistanceToInNoVoxels(const UVector3 &p, const UVector3 &v, double aPstep = UUtils::kInfinity) const;
+
+	void SetExtremeFacets();
+
+	VUSolid::EnumInside InsideNoVoxels (const UVector3 &p) const;
+
+	VUSolid::EnumInside InsideVoxels(const UVector3 &aPoint) const;
+
+	void Voxelize();
+
+	void CreateVertexList ();
+
+	void PrecalculateInsides();
+
+	void SetRandomVectors ();
+
+	double DistanceToInCore(const UVector3 &p, const UVector3 &v, double aPstep = UUtils::kInfinity) const;
+
+	double DistanceToOutCore(const UVector3 &p,
+		const UVector3 &v,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity						   
+
+		) const;
+
+	int SetAllUsingStack(const std::vector<int> &voxel, const std::vector<int> &max, bool status, UBits &checked);
+
+	void DeleteObjects ();
+	void CopyObjects (const UTessellatedSolid &s);
+
+	static bool CompareSortedVoxel(const std::pair<int, double> &l, const std::pair<int, double> &r)
+	{
+		return l.second < r.second;
+	}
+
+	double MinDistanceFacet(const UVector3 &p, bool simple, VUFacet * &facet) const;
+
+	mutable UPolyhedron* fpPolyhedron;
+
+	std::vector<VUFacet *>  fFacets;
+	std::set<VUFacet *> fExtremeFacets; // Does all other facets lie on or behind this surface?
+//	std::vector<int> fExtremeFacets2; // Does all other facets lie on or behind this surface?
+	UGeometryType           fGeometryType;
+	double                 fCubicVolume;
+	double                 fSurfaceArea;
+
+	std::vector<UVector3>  fVertexList;
+
+	std::set<UVertexInfo,UVertexComparator> fFacetList;
+
+	UVector3 fMinExtent, fMaxExtent;
+
+	inline bool OutsideOfExtent(const UVector3 &p, double tolerance=0) const
+	{
+		return ( p.x < fMinExtent.x - tolerance || p.x > fMaxExtent.x + tolerance ||
+			p.y < fMinExtent.y - tolerance || p.y > fMaxExtent.y + tolerance ||
+			p.z < fMinExtent.z - tolerance || p.z > fMaxExtent.z + tolerance);
+	}
+
+	bool fSolidClosed;
+
+	static const double dirTolerance;
+	std::vector<UVector3> fRandir;
+
+	double fgToleranceHalf;
+
+	int fMaxTries;
+
+	UVoxelizer fVoxels;  // Pointer to the voxelized solid
+
+	UBits fInsides;
+
+	void Initialize();
+
 };
 
 #endif

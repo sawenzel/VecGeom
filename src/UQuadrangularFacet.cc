@@ -28,29 +28,15 @@
 // $Id: UQuadrangularFacet.cc,v 1.9 2010-09-23 10:27:25 gcosmo Exp $
 // GEANT4 tag $Name: not supported by cvs2svn $
 //
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// History:
+// 17.10.12 Marek Gayer, created from original implementation by P R Truscott, 2004
+// --------------------------------------------------------------------
 //
-// MODULE:              UQuadrangularFacet.cc
-//
-// Date:                15/06/2005
-// Author:              P R Truscott
-// Organisation:        QinetiQ Ltd, UK
-// Customer:            UK Ministry of Defence : RAO CRP TD Electronic Systems
-// Contract:            C/MAT/N03517
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// CHANGE HISTORY
-// --------------
-//
-// 31 October 2004, P R Truscott, QinetiQ Ltd, UK - Created.
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-#include "UQuadrangularFacet.hh"
 
 #include "UUtils.hh"
-
+#include "VUSolid.hh"
+#include "UQuadrangularFacet.hh"
+ 
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,282 +44,199 @@ using namespace std;
 // !!!THIS IS A FUDGE!!!  IT'S TWO ADJACENT G4TRIANGULARFACETS
 // --- NOT EFFICIENT BUT PRACTICAL.
 //
-UQuadrangularFacet::UQuadrangularFacet (const UVector3 Pt0,
-                 const UVector3 vt1, const UVector3 vt2,
-                 const UVector3 vt3, UFacetVertexType vertexType)
-  : UFacet(), facet1(0), facet2(0)
+UQuadrangularFacet::UQuadrangularFacet (const UVector3 &vt0,
+	const UVector3 &vt1, const UVector3 &vt2,
+	const UVector3 &vt3, UFacetVertexType vertexType)
 {
-  P0        = Pt0;
-  nVertices = 4;
-  if (vertexType == UABSOLUTE)
-  {
-    P.push_back(vt1);
-    P.push_back(vt2);
-    P.push_back(vt3);
-  
-    E.push_back(vt1 - P0);
-    E.push_back(vt2 - P0);
-    E.push_back(vt3 - P0);
-  }
-  else
-  {
-    P.push_back(P0 + vt1);
-    P.push_back(P0 + vt2);
-    P.push_back(P0 + vt3);
-  
-    E.push_back(vt1);
-    E.push_back(vt2);
-    E.push_back(vt3);
-  }
+	UVector3 e1, e2, e3;
 
-  double length1 = E[0].Mag();
-  double length2 = (P[1]-P[0]).Mag();
-  double length3 = (P[2]-P[1]).Mag();
-  double length4 = E[2].Mag();
-  
-  UVector3 normal1 = E[0].Cross(E[1]).Unit();
-  UVector3 normal2 = E[1].Cross(E[2]).Unit(); 
-  
-  if (length1 <= kCarTolerance || length2 <= kCarTolerance ||
-      length3 <= kCarTolerance || length4 <= kCarTolerance ||
-	  normal1.Dot(normal2) < 0.9999999999)
-  {
-//    G4Exception("UQuadrangularFacet::UQuadrangularFacet()", "InvalidSetup", JustWarning, "Length of sides of facet are too small or sides not planar.");
+	SetVertex(0, vt0);
+	if (vertexType == UABSOLUTE)
+	{
+		SetVertex(1, vt1);
+		SetVertex(2, vt2);
+		SetVertex(3, vt3);
 
+		e1 = vt1 - vt0;
+		e2 = vt2 - vt0;
+		e3 = vt3 - vt0;
+	}
+	else
+	{
+		SetVertex(1, vt0 + vt1);
+		SetVertex(2, vt0 + vt2);
+		SetVertex(3, vt0 + vt3);
 
-    cerr << endl;
-    cerr << "P0 = " << P0   << endl;
-    cerr << "P1 = " << P[0] << endl;
-    cerr << "P2 = " << P[1] << endl;
-    cerr << "P3 = " << P[2] << endl;
-    cerr << "Side lengths = P0->P1" << length1 << endl;    
-    cerr << "Side lengths = P1->P2" << length2 << endl;    
-    cerr << "Side lengths = P2->P3" << length3 << endl;    
-    cerr << "Side lengths = P3->P0" << length4 << endl;    
-    cerr << endl;
-    
-    isDefined     = false;
-    geometryType  = "UQuadragularFacet";
-    surfaceNormal = UVector3(0.0,0.0,0.0);
-  }
-  else
-  {
-    isDefined     = true;
-    geometryType  = "UQuadrangularFacet";
-    
-    facet1 = new UTriangularFacet(P0,P[0],P[1],UABSOLUTE);
-    facet2 = new UTriangularFacet(P0,P[1],P[2],UABSOLUTE);
-    surfaceNormal = normal1;
-    
-    UVector3 vtmp = 0.5 * (E[0] + E[1]);
-    circumcentre       = P0 + vtmp;
-	radiusSqr          = vtmp.Mag2();
-    radius             = std::sqrt(radiusSqr);
-  
-    for (int i=0; i<4; i++) I.push_back(0);
-  }
+		e1 = vt1;
+		e2 = vt2;
+		e3 = vt3;
+	}
+	double length1 = e1.Mag();
+	double length2 = (GetVertex(2)-GetVertex(1)).Mag();
+	double length3 = (GetVertex(3)-GetVertex(2)).Mag();
+	double length4 = e3.Mag();
+
+	UVector3 normal1 = e1.Cross(e2).Unit();
+	UVector3 normal2 = e2.Cross(e3).Unit(); 
+
+	bool isDefined = (length1 > VUSolid::Tolerance() && length2 > VUSolid::Tolerance() &&
+		length3 > VUSolid::Tolerance() && length4 > VUSolid::Tolerance() &&
+		normal1.Dot(normal2) >= 0.9999999999);
+
+	if (isDefined)
+	{
+		fFacet1 = UTriangularFacet (GetVertex(0),GetVertex(1),GetVertex(2),UABSOLUTE);
+		fFacet2 = UTriangularFacet (GetVertex(0),GetVertex(2),GetVertex(3),UABSOLUTE);
+
+		UTriangularFacet facet3 (GetVertex(0),GetVertex(1),GetVertex(3),UABSOLUTE);
+		UTriangularFacet facet4 (GetVertex(1),GetVertex(2),GetVertex(3),UABSOLUTE);
+
+		UVector3 normal12 = fFacet1.GetSurfaceNormal() + fFacet2.GetSurfaceNormal();
+		UVector3 normal34 = facet3.GetSurfaceNormal() + facet4.GetSurfaceNormal();
+		UVector3 normal = 0.25 * (normal12 + normal34);
+
+		fFacet1.SetSurfaceNormal (normal);
+		fFacet2.SetSurfaceNormal (normal);
+
+		UVector3 vtmp = 0.5 * (e1 + e2);
+		fCircumcentre = GetVertex(0) + vtmp;
+		double radiusSqr = vtmp.Mag2();
+		fRadius = std::sqrt(radiusSqr);
+	}
+	else
+	{
+		// UException("UQuadrangularFacet::UQuadrangularFacet()", "InvalidSetup", JustWarning, "Length of sides of facet are too small or sides not planar.");
+		cerr << endl;
+		cerr << "P0 = " << GetVertex(0) << endl;
+		cerr << "P1 = " << GetVertex(1) << endl;
+		cerr << "P2 = " << GetVertex(2) << endl;
+		cerr << "P3 = " << GetVertex(3) << endl;
+		cerr << "Side lengths = P0->P1" << length1 << endl;    
+		cerr << "Side lengths = P1->P2" << length2 << endl;    
+		cerr << "Side lengths = P2->P3" << length3 << endl;    
+		cerr << "Side lengths = P3->P0" << length4 << endl;    
+		cerr << endl;
+	    fRadius = 0;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 UQuadrangularFacet::~UQuadrangularFacet ()
 {
-  delete facet1;
-  delete facet2;
-  
-  P.clear();
-  E.clear();
-  I.clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-UQuadrangularFacet::UQuadrangularFacet (const UQuadrangularFacet &rhs)
-  : UFacet(rhs)
+UQuadrangularFacet::UQuadrangularFacet (const UQuadrangularFacet &rhs) : VUFacet(rhs)
 {
-  facet1 = new UTriangularFacet(*(rhs.facet1));
-  facet2 = new UTriangularFacet(*(rhs.facet2));
+	fFacet1 = rhs.fFacet1;
+	fFacet2 = rhs.fFacet2;
+	fRadius = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-const UQuadrangularFacet &
-UQuadrangularFacet::operator=(UQuadrangularFacet &rhs)
+UQuadrangularFacet &UQuadrangularFacet::operator=(const UQuadrangularFacet &rhs)
 {
-   // Check assignment to self
-   //
-   if (this == &rhs)  { return *this; }
+	if (this == &rhs)
+		return *this;
 
-   // Copy base class data
-   //
-   UFacet::operator=(rhs);
+	fFacet1 = rhs.fFacet1;
+	fFacet2 = rhs.fFacet2;
 
-   // Copy data
-   //
-   delete facet1; facet1 = new UTriangularFacet(*(rhs.facet1));
-   delete facet2; facet2 = new UTriangularFacet(*(rhs.facet2));
+	fRadius = 0;
 
-   return *this;
+	return *this;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-UFacet *UQuadrangularFacet::GetClone ()
+VUFacet *UQuadrangularFacet::GetClone ()
 {
-  UQuadrangularFacet *c =
-    new UQuadrangularFacet (P0, P[0], P[1], P[2], UABSOLUTE);
-  UFacet *cc         = 0;
-  cc                   = c;
-  return cc;
+	UQuadrangularFacet *c = new UQuadrangularFacet (GetVertex(0), GetVertex(1), GetVertex(2), GetVertex(3), UABSOLUTE);
+	return c;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 UVector3 UQuadrangularFacet::Distance (const UVector3 &p)
 {
-  UVector3 v1 = facet1->Distance(p);
-  UVector3 v2 = facet2->Distance(p);
-  
-  if (v1.Mag2() < v2.Mag2()) return v1;
-  else return v2;
+	UVector3 v1 = fFacet1.Distance(p);
+	UVector3 v2 = fFacet2.Distance(p);
+
+	if (v1.Mag2() < v2.Mag2()) return v1;
+	else return v2;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UQuadrangularFacet::Distance (const UVector3 &p,
-  const double)
-{
-  /*UVector3 D  = P0 - p;
-  double d       = E[0].dot(D);
-  double e       = E[1].dot(D);
-  double s       = b*e - c*d;
-  double t       = b*d - a*e;*/
-  double dist = UUtils::kInfinity;
-  
-  /*if (s+t > 1.0 || s < 0.0 || t < 0.0)
-  {
-    UVector3 D0 = P0 - p; 
-    UVector3 D1 = P[0] - p;
-    UVector3 D2 = P[1] - p;
-    
-    double d0 = D0.mag();
-    double d1 = D1.mag();
-    double d2 = D2.mag();
-    
-    dist = min(d0, min(d1, d2));
-    if (dist > minDist) return kInfinity;
-  }*/
-  
-  dist = Distance(p).Mag();
-  
-  return dist;
+	const double)
+{  
+	double dist = Distance(p).Mag();
+	return dist;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-double UQuadrangularFacet::Distance (const UVector3 &p,
-                                        const double, const bool outgoing)
+double UQuadrangularFacet::Distance (const UVector3 &p, const double, const bool outgoing)
 {
-  /*UVector3 D  = P0 - p;
-  double d       = E[0].dot(D);
-  double e       = E[1].dot(D);
-  double s       = b*e - c*d;
-  double t       = b*d - a*e;*/
-  double dist = UUtils::kInfinity;
-  
-  /*if (s+t > 1.0 || s < 0.0 || t < 0.0)
-  {
-    UVector3 D0 = P0 - p;
-    UVector3 D1 = P[0] - p;
-    UVector3 D2 = P[1] - p;
-    
-    double d0 = D0.mag();
-    double d1 = D1.mag();
-    double d2 = D2.mag();
-    
-    dist = min(d0, min(d1, d2));
-    if (dist > minDist ||
-      (D0.dot(surfaceNormal) > 0.0 && !outgoing) ||
-      (D0.dot(surfaceNormal) < 0.0 && outgoing)) return kInfinity;
-  }*/
-  
-  UVector3 v = Distance(p);
-  double dir    = v.Dot(surfaceNormal);
-  if ((dir > dirTolerance && !outgoing) ||
-      (dir <-dirTolerance && outgoing)) dist = UUtils::kInfinity;
-  else dist = v.Mag();
-  
-  return dist;
+	double dist;
+
+	UVector3 v = Distance(p);
+	double dir = v.Dot(GetSurfaceNormal());
+	if (dir > dirTolerance && !outgoing || dir < -dirTolerance && outgoing)
+		dist = UUtils::kInfinity;
+	else 
+		dist = v.Mag();
+	return dist;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
 double UQuadrangularFacet::Extent (const UVector3 axis)
 {
-	double s  = P0.Dot(axis);
-  for (vector<UVector3>::iterator it=P.begin(); it!=P.end(); it++)
-  {
-    double sp = it->Dot(axis);
-    if (sp > s) s = sp;
-  }
+	double ss  = 0;
 
-  return s;
+	for (int i = 0; i <= 3; ++i)
+	{
+		double sp = GetVertex(i).Dot(axis);
+		if (sp > ss) ss = sp;
+	}
+	return ss;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-bool UQuadrangularFacet::Intersect (const UVector3 &p,
-  const UVector3 &v, bool outgoing, double &distance,
-  double &distFromSurface, UVector3 &normal)
+bool UQuadrangularFacet::Intersect (const UVector3 &p, const UVector3 &v, bool outgoing, double &distance, double &distFromSurface, UVector3 &normal)
 {
-  bool intersect =
-    facet1->Intersect(p,v,outgoing,distance,distFromSurface,normal);
-  if (!intersect)
-  {
-    intersect = facet2->Intersect(p,v,outgoing,distance,distFromSurface,normal);
-  }
-  
-  if (!intersect)
-  {
-    distance        = UUtils::kInfinity;
-    distFromSurface = UUtils::kInfinity;
-    normal          = UVector3(0.0,0.0,0.0);
-  }
-  
-  return intersect;
+	bool intersect = fFacet1.Intersect(p,v,outgoing,distance,distFromSurface,normal);
+	if (!intersect) intersect = fFacet2.Intersect(p,v,outgoing,distance,distFromSurface,normal);
+	if (!intersect)
+	{
+		distance = distFromSurface = UUtils::kInfinity;
+		normal.Set(0);
+	}
+	return intersect;
 }
 
-////////////////////////////////////////////////////////////////////////
-//
-// GetPointOnFace
-//
 // Auxiliary method for get a random point on surface
-
 UVector3 UQuadrangularFacet::GetPointOnFace() const
 {
-  UVector3 pr;
-
-  if ( UUtils::RandomUniform(0,1) < 0.5 )
-  {
-    pr = facet1->GetPointOnFace();
-  }
-  else
-  {
-    pr = facet2->GetPointOnFace();
-  }
-
-  return pr;
+	UVector3 pr = (UUtils::Random(0.,1.) < 0.5) ? fFacet1.GetPointOnFace() : fFacet2.GetPointOnFace();
+	return pr;
 }
 
-////////////////////////////////////////////////////////////////////////
-//
-// GetArea
-//
 // Auxiliary method for returning the surface area
-
 double UQuadrangularFacet::GetArea()
 {
-  if (!area)  { area = facet1->GetArea() + facet2->GetArea(); }
+	double area = fFacet1.GetArea() + fFacet2.GetArea();
+	return area;
+}
 
-  return area;
+std::string UQuadrangularFacet::GetEntityType () const
+{
+	return "UQuadrangularFacet";
+}
+
+UVector3 UQuadrangularFacet::GetSurfaceNormal () const
+{
+	return fFacet1.GetSurfaceNormal();
 }

@@ -27,23 +27,8 @@
 // $Id:
 // GEANT4 tag $Name: not supported by cvs2svn $
 //
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// Author: Marek Gayer, started from original implementation by P R Truscott, 2007
 //
-// MODULE:              G4TessellatedGeometryAlgorithms.hh
-//
-// Date:                07/08/2005
-// Author:              Rickard Holmberg & Pete Truscott
-// Organisation:        QinetiQ Ltd, UK (PT)
-// Customer:            ESA-ESTEC / TEC-EES
-// Contract:            
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// CHANGE HISTORY
-// --------------
-//
-// 07 August 2007, P R Truscott, QinetiQ Ltd, UK - Created, with member
-//                 functions based on the work of Rickard Holmberg.
 //
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //
@@ -86,31 +71,23 @@
 
 class UTessellatedGeometryAlgorithms
 {
-  public:  // with description
+public:
 
-    static UTessellatedGeometryAlgorithms* GetInstance();
-    bool IntersectLineAndTriangle2D (const UVector2 p,
-                                       const UVector2 v,
-                                       const UVector2 P0, 
-                                       const UVector2 E0,
-                                       const UVector2 E1,
-                                             UVector2 location[2]);
+	static bool IntersectLineAndTriangle2D (const UVector2 &p,
+		const UVector2 &v,
+		const UVector2 &p0, 
+		const UVector2 &e0,
+		const UVector2 &e1,
+		UVector2 location[2]);
 
-    int IntersectLineAndLineSegment2D (const UVector2 P0,
-                                         const UVector2 D0,
-                                         const UVector2 P1,
-                                         const UVector2 D1,
-                                               UVector2 location[2]);
+	static int IntersectLineAndLineSegment2D (const UVector2 &p0,
+		const UVector2 &d0,
+		const UVector2 &p1,
+		const UVector2 &d1,
+		UVector2 location[2]);
 
-    inline double cross(const UVector2 v1, const UVector2 v2) const;
+	static double Cross(const UVector2 &v1, const UVector2 &v2);
 
-  protected:
-
-    UTessellatedGeometryAlgorithms();
-
-  private:
-
-    static UTessellatedGeometryAlgorithms *fInstance;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,11 +98,5 @@ class UTessellatedGeometryAlgorithms
 // "ficticious" because such an operation is not relevant to 2D space compared
 // with 3D space.
 //
-inline double
-UTessellatedGeometryAlgorithms::cross(const UVector2 v1,
-                                       const UVector2 v2) const
-{
-  return v1.x()*v2.y() - v1.y()*v2.x();
-}
 
 #endif

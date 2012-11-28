@@ -29,21 +29,19 @@ struct UBuffer3DStruct {
    int      *fPols;              // c0, n0, s0, s1, ... sn, c1, n1, s0, ... sn
 };
 
-struct UFacets{
+struct UFacet2{
   UInt_t f1;//number of vertices from verticesList forming a facet
   UInt_t f2;
   UInt_t f3;
   UInt_t f4;
 };
-struct UPolyhedron{
+struct UPolyhedron2{
   std::vector<UVector3>  vertices;//List of Vertices for Polyhedron used in G4Vis
-  std::vector<UFacets>   facets;//List of Facets;
-
+  std::vector<UFacet2>   facets;//List of Facets;
 };
 
-typedef std::string UString;
 typedef UBBoxStruct UBBox;
 typedef UBuffer3DStruct UBuffer3D;
-typedef UString   UGeometryType;
+typedef std::string UGeometryType;
 
 #endif

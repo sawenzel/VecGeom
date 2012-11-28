@@ -10,120 +10,123 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "VUSolid.hh"
-
-#include "UUtils.hh"
-
-#include "UTransform3D.hh"
-
 #include <vector>
-#include <time.h>
-#include <stdlib.h>
+//#include <time.h>
 
-#include "UBits.h"
-
-#include <UVoxelFinder.hh>
+#include "VUSolid.hh"
+#include "UUtils.hh"
+#include "UTransform3D.hh"
+#include "UBits.hh"
+#include "UVoxelizer.hh"
 
 class UMultiUnion : public VUSolid
 {
-	friend class UVoxelFinder;
+	friend class UVoxelizer;
 	friend class UVoxelCandidatesIterator;
 
-   // Internal structure for storing the association solid-placement
+	// Internal structure for storing the association solid-placement
 public:   
-   
+
 public:
-   UMultiUnion() : VUSolid() {}
-   UMultiUnion(const char *name); 
-   ~UMultiUnion();
-      
-   // Navigation methods
-   EnumInside                   Inside (const UVector3 &aPoint) const;
+	UMultiUnion() : VUSolid() {}
+	UMultiUnion(const char *name); 
+	~UMultiUnion();
 
-   EnumInside                   InsideIterator (const UVector3 &aPoint) const;
+	// Navigation methods
+	EnumInside                   Inside (const UVector3 &aPoint) const;
 
-   double                       SafetyFromInside (const UVector3 &aPoint,
-                                                  bool aAccurate=false) const;
-                                      
-   double                       SafetyFromOutside(const UVector3 &aPoint,
-                                                  bool aAccurate=false) const;
-                                     
-   double                       DistanceToInDummy     (const UVector3 &aPoint,
-                                                  const UVector3 &aDirection,
-                                                  // UVector3       &aNormalVector,
-                                                  double aPstep = UUtils::kInfinity) const;
- 
-   double                       DistanceToOut    (const UVector3 &aPoint,
-                                                  const UVector3 &aDirection,
-                                                  UVector3       &aNormalVector,
-                                                  bool           &aConvex,
-                                                  double aPstep = UUtils::kInfinity) const;
+	EnumInside                   InsideIterator (const UVector3 &aPoint) const;
 
-   double                       DistanceToOutVoxels    (const UVector3 &aPoint,
-                                                  const UVector3 &aDirection,
-                                                  UVector3       &aNormalVector,
-                                                  bool           &aConvex,
-                                                  double aPstep = UUtils::kInfinity) const;
+	double                       SafetyFromInside (const UVector3 &aPoint,
+		bool aAccurate=false) const;
 
-   double                       DistanceToOutVoxelsCore    (const UVector3 &aPoint,
-                                                  const UVector3 &aDirection,
-                                                  UVector3       &aNormalVector,
-                                                  bool           &aConvex,
-                                                  std::vector<int> &candidates) const;
+	double                       SafetyFromOutside(const UVector3 &aPoint,
+		bool aAccurate=false) const;
 
-   double                       DistanceToOutDummy    (const UVector3 &aPoint,
-                                                  const UVector3 &aDirection,
-                                                  UVector3       &aNormalVector,
-                                                  bool           &aConvex,
-                                                  double aPstep = UUtils::kInfinity) 
-												  const;
+	double                       DistanceToInDummy     (const UVector3 &aPoint,
+		const UVector3 &aDirection,
+		// UVector3       &aNormalVector,
+		double aPstep = UUtils::kInfinity) const;
 
-   bool                         Normal (const UVector3 &aPoint, UVector3 &aNormal) const;
-   void                         Extent (EAxisType aAxis, double &aMin, double &aMax) const;
-   void							Extent (UVector3 &aMin, UVector3 &aMax) const;
-   double                       Capacity();
-   double                       SurfaceArea();
-   VUSolid*                     Clone() const {return 0;}
-   UGeometryType                GetEntityType() const {return "MultipleUnion";}
-   void                         ComputeBBox(UBBox *aBox, bool aStore = false);
+	double                       DistanceToOut    (const UVector3 &aPoint,
+		const UVector3 &aDirection,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity) const;
 
-   virtual void GetParametersList(int aNumber,double *aArray) const {}
-   virtual UPolyhedron* GetPolyhedron() const {return 0;}   
-   
-     // Build the multiple union by adding nodes
-   void                         AddNode(VUSolid &solid, UTransform3D &trans);
+	double                       DistanceToOutVoxels    (const UVector3 &aPoint,
+		const UVector3 &aDirection,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity) const;
 
-   void                         Voxelize();
-   EnumInside                   InsideDummy(const UVector3 &aPoint) const;
+	double                       DistanceToOutVoxelsCore    (const UVector3 &aPoint,
+		const UVector3 &aDirection,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		std::vector<int> &candidates) const;
 
-   inline UVoxelFinder &GetVoxels() const
-   {
-	   return (UVoxelFinder &)voxels;
-   }
+	double                       DistanceToOutDummy    (const UVector3 &aPoint,
+		const UVector3 &aDirection,
+		UVector3       &aNormalVector,
+		bool           &aConvex,
+		double aPstep = UUtils::kInfinity) 
+		const;
 
-   static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
+	bool                         Normal (const UVector3 &aPoint, UVector3 &aNormal) const;
+	void                         Extent (EAxisType aAxis, double &aMin, double &aMax) const;
+	void							Extent (UVector3 &aMin, UVector3 &aMax) const;
+	double                       Capacity();
+	double                       SurfaceArea();
+	
+	inline VUSolid*                     Clone() const 
+	{
+		return 0;
+	}
+
+	UGeometryType                GetEntityType() const {return "MultipleUnion";}
+	void                         ComputeBBox(UBBox *aBox, bool aStore = false);
+
+	virtual void GetParametersList(int /*aNumber*/,double * /*aArray*/) const {}
+	virtual UPolyhedron* GetPolyhedron() const {return 0;}   
+
+	// Build the multiple union by adding nodes
+	void                         AddNode(VUSolid &solid, UTransform3D &trans);
+
+	void                         Voxelize();
+	EnumInside                   InsideDummy(const UVector3 &aPoint) const;
+
+	inline UVoxelizer &GetVoxels() const
+	{
+		return (UVoxelizer &)voxels;
+	}
+
+	static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
+
+	std::ostream& StreamInfo( std::ostream& os ) const;
+
+	UVector3 GetPointOnSurface() const;
 
 private:
 
-   void                         SetVoxelFinder(const UVoxelFinder& finder);
-   
-   EnumInside                   InsideWithExclusion(const UVector3 &aPoint, UBits *bits=NULL) const;
+	void                         SetVoxelFinder(const UVoxelizer& finder);
 
-   int                          SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccurate, double &safety) const;
-   double                       DistanceToIn(const UVector3 &aPoint, 
-                                                   const UVector3 &aDirection, 
-                                                // UVector3 &aNormal, 
-                                                   double aPstep) const;  
+	EnumInside                   InsideWithExclusion(const UVector3 &aPoint, UBits *bits=NULL) const;
 
-   double                       DistanceToInCandidates(const UVector3 &aPoint, const UVector3 &aDirection, double aPstep, std::vector<int> &candidates, UBits &bits) const;  
+	int                          SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccurate, double &safety) const;
+	double                       DistanceToIn(const UVector3 &aPoint, 
+		const UVector3 &aDirection, 
+		// UVector3 &aNormal, 
+		double aPstep) const;  
 
-	  std::vector<VUSolid *> solids;
-	  std::vector<UTransform3D *> transforms;
-	  UVoxelFinder        voxels;  // Pointer to the vozelized solid
+	double                       DistanceToInCandidates(const UVector3 &aPoint, const UVector3 &aDirection, double aPstep, std::vector<int> &candidates, UBits &bits) const;  
 
-  
-   // Finalize and prepare for use. User MUST call it once before navigation use.
-   void                         CloseSolid();
+	std::vector<VUSolid *> fSolids;
+	std::vector<UTransform3D *> fTransforms;
+	UVoxelizer voxels;  // Pointer to the vozelized solid
+
+	// Finalize and prepare for use. User MUST call it once before navigation use.
+	void CloseSolid();
 
 };
-#endif   
+#endif
