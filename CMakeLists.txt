@@ -20,12 +20,12 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/G4 G4Usolids/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/G4/OpticalEscape OpticalEscape/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/G4/SBT SBT/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/TGeo TGeo/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4ExtrudedSolid testG4ExtrudedSolid/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Cad testG4Tess_Cad/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Mixed testG4Tess_Mixed/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Quadr testG4Tess_Quadr/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Tria testG4Tess_Triar/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/G01 G01/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4ExtrudedSolid testG4ExtrudedSolid/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Cad testG4Tess_Cad/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Mixed testG4Tess_Mixed/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Quadr testG4Tess_Quadr/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Tria testG4Tess_Triar/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/G01 G01/)
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include 
