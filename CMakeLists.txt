@@ -15,7 +15,7 @@ set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 #
 include(${Geant4_USE_FILE})
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS G4TS/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS G4TS/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/G4 G4Usolids/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/G4/OpticalEscape OpticalEscape/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bridges/G4/SBT SBT/)
