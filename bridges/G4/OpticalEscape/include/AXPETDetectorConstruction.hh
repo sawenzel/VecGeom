@@ -66,6 +66,7 @@ class AXPETDetectorConstruction: public G4VUserDetectorConstruction
   G4VSolid* SelectDetector (const G4String& val);
   inline G4double GetExtend(){return lysoR;}
   inline void SetDetectorName(G4String Value){fval=Value;}
+  inline void SetDetectorFileName(G4String Value){fFilename=Value;}
   // Rotation 
   inline void SetRotationInX(G4double value){xRot=value;}
   inline void SetRotationInY(G4double value){yRot=value;}
@@ -106,6 +107,7 @@ class AXPETDetectorConstruction: public G4VUserDetectorConstruction
   AXPETDetectorMessenger* detectorMessenger;  // pointer to the Messenger
   
   G4String fval ;  
+  G4String fFilename;  
   G4VSolid* aVolume;
   G4double xRot;
   G4double yRot;

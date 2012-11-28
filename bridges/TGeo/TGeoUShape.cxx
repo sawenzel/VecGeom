@@ -81,7 +81,7 @@ Bool_t TGeoUShape::Contains(Double_t *point) const
 
 //_____________________________________________________________________________
 Double_t TGeoUShape::DistFromInside(Double_t *point, Double_t *dir, Int_t /*iact*/, 
-                                   Double_t step, Double_t */*safe*/) const
+                                   Double_t step, Double_t * /*safe*/) const
 {
    UVector3 normal;
    Bool_t convex;   
@@ -90,7 +90,7 @@ Double_t TGeoUShape::DistFromInside(Double_t *point, Double_t *dir, Int_t /*iact
 
 //_____________________________________________________________________________
 Double_t TGeoUShape::DistFromOutside(Double_t *point, Double_t *dir, Int_t /*iact*/, 
-                                   Double_t step, Double_t */*safe*/) const
+                                   Double_t step, Double_t * /*safe*/) const
 {
    return fUSolid->DistanceToIn(point, dir, step);
 }

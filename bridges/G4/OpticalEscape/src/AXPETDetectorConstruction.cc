@@ -82,8 +82,9 @@
 #include "UOrb.hh"
 #include "UTrd.hh"
 #include "UMultiUnion.hh"
-#include "UVoxelFinder.hh"
-//
+#include "UVoxelizer.hh"
+#include "USTL.hh"
+
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
 #include "G4PVReplica.hh"
@@ -106,6 +107,9 @@
 #include "G4Colour.hh"
 
 #include "globals.hh"
+
+#include <string>
+#include <iostream>
 
 using namespace std;
 
@@ -491,48 +495,56 @@ AXPETDetectorConstruction::SelectDetector( const G4String& val )
    aVolume = new G4GenericTrap("aGenTrd",4.,vertices);
   }
 else if(val == "TessellatedSolid")
-  { 
-    G4double targetSize = 2.;
-    G4TessellatedSolid* aVolume1 = new G4TessellatedSolid("aTessellatedSolid");
-    G4TriangularFacet *facet1 = new
-    G4TriangularFacet (G4ThreeVector(-targetSize,-targetSize,        0.0),
-                     G4ThreeVector(+targetSize,-targetSize,        0.0),
-                     G4ThreeVector(        0.0,        0.0,+targetSize),
-                     ABSOLUTE);
-    G4TriangularFacet *facet2 = new
-    G4TriangularFacet (G4ThreeVector(+targetSize,-targetSize,        0.0),
-                     G4ThreeVector(+targetSize,+targetSize,        0.0),
-                     G4ThreeVector(        0.0,        0.0,+targetSize),
-                     ABSOLUTE);
-    G4TriangularFacet *facet3 = new
-    G4TriangularFacet (G4ThreeVector(+targetSize,+targetSize,        0.0),
-                     G4ThreeVector(-targetSize,+targetSize,        0.0),
-                     G4ThreeVector(        0.0,        0.0,+targetSize),
-                     ABSOLUTE);
-    G4TriangularFacet *facet4 = new
-    G4TriangularFacet (G4ThreeVector(-targetSize,+targetSize,        0.0),
-                     G4ThreeVector(-targetSize,-targetSize,        0.0),
-                     G4ThreeVector(        0.0,        0.0,+targetSize),
-                     ABSOLUTE);
-    G4QuadrangularFacet *facet5 = new
-    G4QuadrangularFacet (G4ThreeVector(-targetSize,-targetSize,        0.0),
-                     G4ThreeVector(-targetSize,+targetSize,        0.0),
-                     G4ThreeVector(+targetSize,+targetSize,        0.0),
-                     G4ThreeVector(+targetSize,-targetSize,        0.0),
-                     ABSOLUTE);
+  {
+	  if (UUtils::StrPos(fFilename, ".stl") >= 0)
+		  aVolume = USTL::ReadFromSTLBinaryFile(fFilename);
+	  else if (UUtils::StrPos(fFilename, ".gdml") >= 0)
+		  aVolume = USTL::ReadGDML(fFilename);
+	  else
+	  {
+		G4double targetSize = 2.;
+		G4TessellatedSolid* aVolume1 = new G4TessellatedSolid("aTessellatedSolid");
+		G4TriangularFacet *facet1 = new
+		G4TriangularFacet (G4ThreeVector(-targetSize,-targetSize,        0.0),
+							G4ThreeVector(+targetSize,-targetSize,        0.0),
+							G4ThreeVector(        0.0,        0.0,+targetSize),
+							ABSOLUTE);
+		G4TriangularFacet *facet2 = new
+		G4TriangularFacet (G4ThreeVector(+targetSize,-targetSize,        0.0),
+							G4ThreeVector(+targetSize,+targetSize,        0.0),
+							G4ThreeVector(        0.0,        0.0,+targetSize),
+							ABSOLUTE);
+		G4TriangularFacet *facet3 = new
+		G4TriangularFacet (G4ThreeVector(+targetSize,+targetSize,        0.0),
+							G4ThreeVector(-targetSize,+targetSize,        0.0),
+							G4ThreeVector(        0.0,        0.0,+targetSize),
+							ABSOLUTE);
+		G4TriangularFacet *facet4 = new
+		G4TriangularFacet (G4ThreeVector(-targetSize,+targetSize,        0.0),
+							G4ThreeVector(-targetSize,-targetSize,        0.0),
+							G4ThreeVector(        0.0,        0.0,+targetSize),
+							ABSOLUTE);
+		G4QuadrangularFacet *facet5 = new
+		G4QuadrangularFacet (G4ThreeVector(-targetSize,-targetSize,        0.0),
+							G4ThreeVector(-targetSize,+targetSize,        0.0),
+							G4ThreeVector(+targetSize,+targetSize,        0.0),
+							G4ThreeVector(+targetSize,-targetSize,        0.0),
+							ABSOLUTE);
 
-    aVolume1->AddFacet((G4VFacet*) facet1);
-    aVolume1->AddFacet((G4VFacet*) facet2);
-    aVolume1->AddFacet((G4VFacet*) facet3);
-    aVolume1->AddFacet((G4VFacet*) facet4);
-    aVolume1->AddFacet((G4VFacet*) facet5);
+		aVolume1->AddFacet((G4VFacet*) facet1);
+		aVolume1->AddFacet((G4VFacet*) facet2);
+		aVolume1->AddFacet((G4VFacet*) facet3);
+		aVolume1->AddFacet((G4VFacet*) facet4);
+		aVolume1->AddFacet((G4VFacet*) facet5);
   
-    aVolume1->SetSolidClosed(true);
-
-    aVolume = aVolume1;
-
+		aVolume1->SetSolidClosed(true);
+		aVolume = aVolume1;
+	  }
   }
-  else if (val == "ExtrudedSolid")
+else if(val == "UTessellatedSolid")
+  {
+  }
+else if (val == "ExtrudedSolid")
   {
    std::vector<G4TwoVector> polygon;
    polygon.push_back(G4TwoVector(-3., -3.0));

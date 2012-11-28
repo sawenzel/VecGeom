@@ -304,6 +304,11 @@ void SBTperformanceMessenger::SetNewValue( G4UIcommand *command, G4String newVal
 			errorFile = newValues;
 			tester->SetFolder(dirname (errorFile));
 			logger.open(errorFile);
+			if (!logger.is_open())
+			{
+				std::cout << "Cannot open log file " << errorFile << std::endl;
+				exit(1);
+			}
 		}
 	}
 	else if (command == methodCmd) {

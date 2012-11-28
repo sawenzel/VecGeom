@@ -69,6 +69,29 @@ public:
         }
         return totalNodes;
     }
+
+	static inline int GetPolyhedra(const VUSolid &solid, std::vector<UVector3> &vertices, std::vector<std::vector<int> > &nodes)
+	{
+		UPolyhedron &p = *solid.GetPolyhedron();
+		if (&p == NULL) return 0;
+
+		int noVertices = p.GetNoVertices();
+		vertices.resize(noVertices);
+		for (int i = 1; i <= noVertices; i++) vertices[i-1] = p.GetVertex(i);
+
+		int totalNodes = 0;
+		int noFaces = p.GetNoFacets();
+		nodes.resize(noFaces);
+
+		for (int i = 1; i <= noFaces; i++)
+		{
+			std::vector<int> iNodes;
+			p.GetFacet(i, iNodes);
+			nodes[i-1] = iNodes;
+			totalNodes += iNodes.size();
+		}
+		return totalNodes;
+	}
 };
 
 #endif

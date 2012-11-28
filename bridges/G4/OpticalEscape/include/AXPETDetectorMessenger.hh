@@ -51,6 +51,7 @@ class AXPETDetectorMessenger: public G4UImessenger
   private:
     AXPETDetectorConstruction * myDetector;
     G4UIdirectory *      mydetDir;
+	G4UIcmdWithAString * filenameCmd;
     G4UIcmdWithAString * selDetCmd;
     G4UIcmdWithADouble * rotXCmd;
     G4UIcmdWithADouble * rotYCmd;

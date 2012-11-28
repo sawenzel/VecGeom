@@ -83,7 +83,7 @@ EInside G4USolid::Inside(const G4ThreeVector& p) const
   UVector3 pt; 
   VUSolid::EnumInside in_temp;
   EInside in = kOutside;
-  pt.x=p.x(); pt.y=p.y(); pt.z=p.z();
+  pt.x=p.x(); pt.y=p.y(); pt.z=p.z(); // better assign at construction
   
   in_temp = fShape->Inside(pt);
   
@@ -95,17 +95,17 @@ EInside G4USolid::Inside(const G4ThreeVector& p) const
 
 G4ThreeVector G4USolid::SurfaceNormal(const G4ThreeVector& pt) const
 {
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z(); 
   UVector3 n;
-  fShape->Normal(p, n);
-  return G4ThreeVector(n.x, n.y, n.z);
+  fShape->Normal(p, n); 
+  return G4ThreeVector(n.x, n.y, n.z); 
 }
 
 G4double G4USolid::DistanceToIn(const G4ThreeVector& pt,
                                  const G4ThreeVector& d)const
 {
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z();
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z(); // better assign at construction
+  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z(); // better assign at construction
   G4double dist= fShape->DistanceToIn(p,v);
   if( dist > kInfinity ) dist=kInfinity;
   return dist;
@@ -113,31 +113,31 @@ G4double G4USolid::DistanceToIn(const G4ThreeVector& pt,
 
 G4double G4USolid::DistanceToIn(const G4ThreeVector& pt) const
 {
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  G4double dist= fShape->SafetyFromOutside(p);
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z(); // better assign at construction
+  G4double dist= fShape->SafetyFromOutside(p); // true?
   if( dist > kInfinity ) dist = kInfinity;
   return dist;
 }
 G4double G4USolid::DistanceToOut(const G4ThreeVector& pt,
 				  const G4ThreeVector& d,
-				  const G4bool calcNorm,
+				  const G4bool /*calcNorm*/,
 				  G4bool *validNorm,
 				  G4ThreeVector *norm) const
 {
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z();
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z(); // better assign at construction
+  UVector3 v; v.x=d.x(); v.y=d.y(); v.z=d.z(); // better assign at construction
   UVector3 n;
   
-  G4double dist = fShape->DistanceToOut(p, v, n, *validNorm);
-  norm->setX(n.x); norm->setY(n.y); norm->setZ(n.z);
+  G4double dist = fShape->DistanceToOut(p, v, n, *validNorm); // should use local variable
+  norm->setX(n.x); norm->setY(n.y); norm->setZ(n.z); // *norm = n, but only after calcNorm check
   if( dist > kInfinity ) dist = kInfinity;
   return dist;
 }
 
 G4double G4USolid::DistanceToOut(const G4ThreeVector& pt) const
 {
-  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z();
-  return fShape->SafetyFromInside(p);
+  UVector3 p; p.x=pt.x(); p.y=pt.y(); p.z=pt.z(); // better assign at construction
+  return fShape->SafetyFromInside(p); // true?
 }
 
 G4double G4USolid::GetCubicVolume()
@@ -416,6 +416,7 @@ G4Polyhedron* G4USolid::CreatePolyhedron() const{
      fShape->GetParametersList(index,array);
      return new G4PolyhedronSphere(array[0],array[1],array[2],array[3],array[4],array[5]);
   }
+  /*
   if(fShape->GetEntityType()=="TessellatedSolid"){
 
       UPolyhedron *uPolyhedron=fShape->GetPolyhedron();
@@ -433,7 +434,7 @@ G4Polyhedron* G4USolid::CreatePolyhedron() const{
         
            polyhedron->AddVertex(pt);
       }    
-      for (std::vector<UFacets>::const_iterator f=(*uPolyhedron).facets.begin(); 
+      for (std::vector<UFacet>::const_iterator f=(*uPolyhedron).facets.begin(); 
           f != (*uPolyhedron).facets.end(); f++)
       {
 	 polyhedron->AddFacet((*f).f1,(*f).f2,(*f).f3,(*f).f4);
@@ -441,9 +442,7 @@ G4Polyhedron* G4USolid::CreatePolyhedron() const{
      
      return (G4Polyhedron*) polyhedron;
  }
- 
-  
-
+  */
 
   return 0;
 }

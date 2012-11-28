@@ -62,7 +62,7 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 
 #include <iomanip>
 #include <sstream>
-#include <time.h>
+#include <ctime>
 #include <vector>
 
 #include <iostream>
@@ -98,9 +98,11 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "UOrb.hh"
 #include "UTrd.hh"
 #include "UMultiUnion.hh"
-#include "UTessellatedSolid.hh"
 #include "UTriangularFacet.hh"
 #include "UQuadrangularFacet.hh"
+#include "UTessellatedSolid.hh"
+#include "UTubs.hh"
+#include "UCons.hh"
 
 #include "TGeoTrd2.h" 
 #include "TGeoBBox.h"
@@ -355,7 +357,7 @@ void SBTperformance::TestSafetyFromOutsideGeant4(int iteration)
 		{
 			resultDoubleGeant4[i] = ConvertInfinities (res);
 
-			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kInside);
+//			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kInside);
 		}
 	}
 }
@@ -376,7 +378,7 @@ void SBTperformance::TestSafetyFromOutsideUSolids(int iteration)
 
 			G4ThreeVector p (point.x, point.y, point.z);
 
-			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);
+//			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);
 		}
 	}
 }
@@ -396,7 +398,7 @@ void SBTperformance::TestSafetyFromOutsideROOT(int iteration)
 
 			G4ThreeVector p (point[0], point[1], point[2]);
 
-			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);
+//			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);
 		}
 	}
 }
@@ -435,7 +437,7 @@ void SBTperformance::TestSafetyFromInsideGeant4(int iteration)
 		{
 			resultDoubleGeant4[i] = ConvertInfinities (res);
 
-			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kOutside);
+//			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kOutside);
 		}
 	}
 }
@@ -447,7 +449,7 @@ void SBTperformance::TestSafetyFromInsideUSolids(int iteration)
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorUSolids(point, points, i);
-		double res = volumeUSolids->SafetyFromInside(point, true);
+		double res = volumeUSolids->SafetyFromInside(point);
 
 		if (!iteration)
 		{
@@ -455,7 +457,7 @@ void SBTperformance::TestSafetyFromInsideUSolids(int iteration)
 
 			G4ThreeVector p (point.x, point.y, point.z);
 
-			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kOutside);
+//			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kOutside);
 		}
 	}
 }
@@ -540,7 +542,7 @@ void SBTperformance::TestDistanceToInUSolids(int iteration)
 			resultDoubleUSolids[i] = ConvertInfinities (res);
 
 			G4ThreeVector p (point.x, point.y, point.z);
-			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);	
+//			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);	
 		}
 	}
 }
@@ -585,7 +587,7 @@ void SBTperformance::TestDistanceToOutGeant4(int iteration)
 
 		if (!iteration)
 		{
-			EInside inside = volumeGeant4->Inside(point);
+//			EInside inside = volumeGeant4->Inside(point);
 			resultDoubleGeant4[i] = ConvertInfinities (res);
 
 //			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kOutside);
@@ -776,7 +778,7 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
                 G4ThreeVector vec = facet.GetVertex(j);
                 v[j].Set(vec.x(), vec.y(), vec.z());
             }
-            UFacet *ufacet;
+            VUFacet *ufacet;
             switch (verticesCount)
             {
                 case 3:
@@ -790,7 +792,7 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
             }
             utessel.AddFacet(ufacet);
         }
-		utessel.GetVoxels().SetMaxVoxels(SBTrun::maxVoxels);
+		utessel.SetMaxVoxels(SBTrun::maxVoxels);
         utessel.SetSolidClosed(true);
         volumeUSolids = &utessel;
     }
@@ -831,8 +833,13 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 		double rMin = tubs.GetRMin();
 		double rMax = tubs.GetRMax();
 		double dZ = tubs.GetDz();
-		double sPhi = 180 * tubs.GetSPhi() / UUtils::kPi;
-		double dPhi = 180 * tubs.GetDPhi() / UUtils::kPi;
+		double sPhi = tubs.GetSPhi();
+		double dPhi = tubs.GetDPhi();
+		
+		volumeUSolids = new UTubs("UTubs", rMin, rMax, dZ, sPhi, dPhi);
+		
+		sPhi = 180 * sPhi / UUtils::kPi;
+		dPhi = 180 * dPhi / UUtils::kPi;
 		dPhi += sPhi;
 		if (dPhi > 360) dPhi -= 360;
 		volumeROOT = (sPhi == 0 && dPhi ==  360) ? new TGeoTube(rMin, rMax, dZ) : new TGeoTubeSeg(rMin, rMax, dZ, sPhi, dPhi);
@@ -840,16 +847,22 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 	if (type == "G4Cons")
 	{
 		G4Cons &cons = *(G4Cons *) testVolume;
-		double rmin1 = cons.GetRmin1();
-		double rmax1 = cons.GetRmax1();
-		double rmin2 = cons.GetRmin2();
-		double rmax2 = cons.GetRmax2();
+		double rMin1 = cons.GetRmin1();
+		double rMax1 = cons.GetRmax1();
+		double rMin2 = cons.GetRmin2();
+		double rMax2 = cons.GetRmax2();
 		double dz = cons.GetDz();
-		double sPhi = 180 * cons.GetSPhi() / UUtils::kPi;
-		double dPhi = 180 * cons.GetDPhi() / UUtils::kPi;
+		double sPhi = cons.GetSPhi();
+		double dPhi = cons.GetDPhi();
+
+		volumeUSolids = new UCons("UCons", rMin1, rMax1, rMin2, rMax2, dz, sPhi, dPhi);
+
+		sPhi = 180 * sPhi / UUtils::kPi;
+		dPhi = 180 * dPhi / UUtils::kPi;
+
 		dPhi += sPhi;
 		if (dPhi > 360) dPhi -= 360;
-		volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rmin1, rmax1, rmin2, rmax2) : new TGeoConeSeg(dz, rmin1, rmax1, rmin2, rmax2, sPhi, dPhi);
+		volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rMin1, rMax1, rMin2, rMax2) : new TGeoConeSeg(dz, rMin1, rMax1, rMin2, rMax2, sPhi, dPhi);
 	}
 	if (type == "G4Polyhedra")
 	{
@@ -973,7 +986,7 @@ inline double randomIncrease()
 	double tolerance = VUSolid::Tolerance();
 	double rand = -1 + 2 * G4UniformRand();
 	double sign = rand > 0 ? 1 : -1;
-	double dif = tolerance * (sign + 9 * rand); // 19000000000
+	double dif = tolerance * 0.1 * rand; // 19000000000
 //	if (abs(dif) < 9 * tolerance) dif = dif;
 	return dif;
 }
@@ -1189,46 +1202,27 @@ void SBTperformance::CompareResults(double resG, double resR, double resU)
 
 int SBTperformance::SaveVectorToMatlabFile(vector<double> &vector, string filename)
 {
-	ofstream file(filename.c_str());
-
 	Flush("Saving vector<double> to "+filename+"\n");
 
-	// NEW: set precision, use exponential, precision 4 digits
-	if (file.is_open())
-	{
-		int size = vector.size();
-		file.precision(16);
-		for (int i = 0; i < size; i++)
-		{
-			double value = vector[i];
-			file << value << "\n";
-		}
-		return 0;
-	}
-	Flush ("Unable to create file"+filename+"\n");
-	return 1;
+	int res = UUtils::SaveVectorToMatlabFile(vector, filename);
+
+	if (res) 
+		Flush ("Unable to create file"+filename+"\n");
+	
+	return res;
 }
 
 
 int SBTperformance::SaveVectorToMatlabFile(vector<UVector3> &vector, string filename)
 {
-	ofstream file(filename.c_str());
-
 	Flush("Saving vector<UVector3> to "+filename+"\n");
 
-	if (file.is_open())
-	{
-		int size = vector.size();
-		for (int i = 0; i < size; i++) 
-		{
-			UVector3 &vec = vector[i];
-			file << vec.x << "\t" << vec.y << "\t" << vec.z << "\n";
-		}
-		return 0;
-	}
-	stringstream ss;
-	Flush("Unable to create file"+filename+"\n");
-	return 1;
+	int res = UUtils::SaveVectorToMatlabFile(vector, filename);
+
+	if (res) 
+		Flush ("Unable to create file"+filename+"\n");
+
+	return res;
 }
 
 
@@ -1391,14 +1385,22 @@ void SBTperformance::SavePolyhedra(string method)
 {
 	vector<UVector3> vertices;
 	vector<vector<int> > nodes;
-	if (G4Tools::GetPolyhedra(*volumeGeant4, vertices, nodes))
+
+	int res = 0;
+	if (volumeUSolids)
+	res = G4Tools::GetPolyhedra(*volumeUSolids, vertices, nodes);
+
+	if (!res) res = G4Tools::GetPolyhedra(*volumeGeant4, vertices, nodes);
+
+	if (res)
 	{
 		SaveVectorToMatlabFile(vertices, folder+method+"Vertices.dat");
 
 		ofstream fileQuads((folder+method+"Quads.dat").c_str());
 		ofstream fileTriangles((folder+method+"Triangles.dat").c_str());
 	
-		for (int i = 1; i <= nodes.size(); i++)
+		int size = nodes.size();
+		for (int i = 1; i <= size; i++)
 		{
 			int n = nodes[i].size();
 			if (n == 3 || n == 4)
@@ -1578,9 +1580,6 @@ void SBTperformance::TestMethod(void (SBTperformance::*funcPtr)())
 	CreatePointsAndDirections();
 
 	(*this.*funcPtr)();
-
-	time(&now);
-	G4String dateTime2(ctime(&now));
 
 	ss << setprecision(20);
 	setprecision(20);

@@ -55,7 +55,13 @@ AXPETDetectorMessenger::AXPETDetectorMessenger(AXPETDetectorConstruction * myDC)
   selDetCmd->SetParameterName("choice",true);
   selDetCmd->SetDefaultValue("Tubs");
 
- selDetCmd->SetCandidates("Trap Trd Tet Sphere HalfSphere HollowSphere HalfHollowSphere  Ring Shell Orb Box Cons manyCons Tubs Hype Torus Para Paraboloid Polycone PolyconeGen PolyconeGenComplex Polyhedra PolyhedraGen PolyhedraGenComplex BREPBox Trd b1Ib2 b1Ub2 b1Sb2 b1Ub1 b1Ib1 b1Sb1 Ellipsoid EllipticalCone EllipticalTube Tet GenericTrap TwistedBox TwistedTrd TwistedTrap TwistedTubs TessellatedSolid ExtrudedSolid UBox UOrb UTrd UMultiUnion");
+  filenameCmd = new G4UIcmdWithAString("/mydet/Filename",this);
+  filenameCmd->SetGuidance("Select filename (optional e.g. for tessellated solid.");
+  filenameCmd->SetGuidance("  Choice : filename ");
+  filenameCmd->SetParameterName("choice",true);
+  filenameCmd->SetDefaultValue("");
+
+ selDetCmd->SetCandidates("Trap Trd Tet Sphere HalfSphere HollowSphere HalfHollowSphere  Ring Shell Orb Box Cons manyCons Tubs Hype Torus Para Paraboloid Polycone PolyconeGen PolyconeGenComplex Polyhedra PolyhedraGen PolyhedraGenComplex BREPBox Trd b1Ib2 b1Ub2 b1Sb2 b1Ub1 b1Ib1 b1Sb1 Ellipsoid EllipticalCone EllipticalTube Tet GenericTrap TwistedBox TwistedTrd TwistedTrap TwistedTubs TessellatedSolid ExtrudedSolid UBox UOrb UTrd UMultiUnion UTessellatedSolid");
   selDetCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
 
   rotXCmd = new G4UIcmdWithADouble("/mydet/RotateX",this);
@@ -110,6 +116,10 @@ void AXPETDetectorMessenger::SetNewValue(G4UIcommand * command,
     myDetector->SetDetectorName(newValues);
     myDetector->Construct();
     myDetector->SwitchDetector();
+  }
+  if( command == filenameCmd )
+  {
+    myDetector->SetDetectorFileName(newValues);
   }
   if( command == rotXCmd)
   {

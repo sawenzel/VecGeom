@@ -97,6 +97,7 @@ int main(int argc,char *argv[])
 	delete session;
 	delete testMessenger;
 	delete voxelMessenger;
+	delete performanceMessenger;
 	delete interactiveSolid;
 	return 0;
 }

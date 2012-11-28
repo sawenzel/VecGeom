@@ -68,7 +68,7 @@ class G4SBTSolid
   
 		std::vector<G4UIcmdParg *> Args;
         G4UIcmdWithPargs *Cmd;
-        void (G4InteractiveSolid::*MakeMe)(G4String values);
+        void (G4InteractiveSolid::*Make)(G4String values);
 
         inline double GetDouble(int i)
         {
@@ -78,11 +78,12 @@ class G4SBTSolid
 
         inline G4UIcmdPargListDouble &GetArgListDouble(int i)
         {
-            G4UIcmdPargListDouble *dArg = (G4UIcmdPargListDouble *)&Args[i];
+			G4UIcmdParg *arg = Args[i];
+            G4UIcmdPargListDouble *dArg = (G4UIcmdPargListDouble *) arg;
             return *dArg;
         }
 
-        inline double GetInteger(int i)
+        inline int GetInteger(int i)
         {
             G4UIcmdPargInteger &dArg = *(G4UIcmdPargInteger *)Args[i];
             return dArg.GetValue();
@@ -117,49 +118,48 @@ protected:
 trap, trd, generics, paraboloid, tubs, ellipsoid, elCone, elTube,
 extruded, hype, polycone, polycone2, polyhedra, polyhedra2, tessel,
 tessel2, tet, twistedBox, twistedTrap, twistedTrap2, twistedTrd, twistedTubs,
-  dircTest, booleanSolid1, multiUnion, tessellatedSolidTransform, tessellatedSolidPlain, tessellatedSolidGdml;
+  dircTest, booleanSolid1, multiUnion, tessellatedSolidTransform, tessellatedSolidPlain, tessellatedSolidSTL, tessellatedSolidGdml;
 
-  void MakeMeBox( G4String values );
-  void MakeMeUBox( G4String values );
-  void MakeMeUMultiUnion( G4String values );
-  void MakeMeUOrb( G4String values );
-  void MakeMeUTrd( G4String values );
-  void MakeMeCons( G4String values );
-  void MakeMeOrb( G4String values );
-  void MakeMePara( G4String values );
-  void MakeMeSphere( G4String values );	
-  void MakeMeTorus( G4String values );
-  void MakeMeTrap( G4String values );
-  void MakeMeTrd( G4String values );
-  void MakeMeGenericTrap( G4String values );
-  void MakeMeParaboloid( G4String values );
-  void MakeMeTubs( G4String values );
-  void MakeMeEllipsoid( G4String values );
-  void MakeMeEllipticalCone( G4String values );
-  void MakeMeEllipticalTube( G4String values );
-  void MakeMeExtrudedSolid( G4String values );
-  void MakeMeHype( G4String values );
-  void MakeMePolycone( G4String values );
-  void MakeMePolycone2( G4String values );
-  void MakeMePolyhedra( G4String values );
-  void MakeMePolyhedra2( G4String values );
-  void MakeMeTessellatedSolid( G4String values );
-  void MakeMeTessellatedSolid2( G4String values );
-  void MakeMeTet( G4String values );
-  void MakeMeTwistedBox( G4String values );
-  void MakeMeTwistedTrap( G4String values );
-  void MakeMeTwistedTrap2( G4String values );
-  void MakeMeTwistedTrd( G4String values );
-  void MakeMeTwistedTubs( G4String values );
-  void MakeMeDircTest(G4String values);
-  void MakeMeTessellatedSolidFromTransform(G4String values);
-  void MakeMeMultiUnion(G4String values);
-  void MakeMeBooleanSolid1(G4String values);
-  void MakeMeTessellatedSolidFromPlainFile(G4String values);
-  void MakeMeTessellatedSolidFromGDMLFile(G4String values);
+  void MakeBox( G4String values );
+  void MakeUBox( G4String values );
+  void MakeUMultiUnion( G4String values );
+  void MakeUOrb( G4String values );
+  void MakeUTrd( G4String values );
+  void MakeCons( G4String values );
+  void MakeOrb( G4String values );
+  void MakePara( G4String values );
+  void MakeSphere( G4String values );	
+  void MakeTorus( G4String values );
+  void MakeTrap( G4String values );
+  void MakeTrd( G4String values );
+  void MakeGenericTrap( G4String values );
+  void MakeParaboloid( G4String values );
+  void MakeTubs( G4String values );
+  void MakeEllipsoid( G4String values );
+  void MakeEllipticalCone( G4String values );
+  void MakeEllipticalTube( G4String values );
+  void MakeExtrudedSolid( G4String values );
+  void MakeHype( G4String values );
+  void MakePolycone( G4String values );
+  void MakePolycone2( G4String values );
+  void MakePolyhedra( G4String values );
+  void MakePolyhedra2( G4String values );
+  void MakeTessellatedSolid( G4String values );
+  void MakeTessellatedSolid2( G4String values );
+  void MakeTet( G4String values );
+  void MakeTwistedBox( G4String values );
+  void MakeTwistedTrap( G4String values );
+  void MakeTwistedTrap2( G4String values );
+  void MakeTwistedTrd( G4String values );
+  void MakeTwistedTubs( G4String values );
+  void MakeDircTest(G4String values);
+  void MakeTessellatedSolidFromTransform(G4String values);
+  void MakeMultiUnion(G4String values);
+  void MakeBooleanSolid1(G4String values);
+  void MakeTessellatedSolidFromPlainFile(G4String values);
+  void MakeTessellatedSolidFromSTLFile(G4String values);
+  void MakeTessellatedSolidFromGDMLFile(G4String values);
   
-  void TraverseGDML(G4LogicalVolume *root);
-
   void CreateTessellatedSolid(const std::vector<UVector3> &vertices, const std::vector<std::vector<int> > &nodes);
 
   typedef enum BooleanOp {
