@@ -47,6 +47,9 @@
 #include <sstream>
 #include <time.h>
 
+using namespace CLHEP;
+
+
 #define DEBUG 0
 
 //

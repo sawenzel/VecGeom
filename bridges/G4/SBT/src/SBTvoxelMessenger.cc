@@ -52,6 +52,7 @@
 
 #include <fstream>
 
+using namespace CLHEP;
 //
 // Constructor
 //

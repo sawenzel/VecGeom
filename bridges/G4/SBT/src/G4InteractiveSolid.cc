@@ -48,7 +48,7 @@
 #include "G4USolid.hh"
 #include "VUSolid.hh"
 #include "UVector3.hh"
-#include "Utypes.hh"
+#include "UTypes.hh"
 #include "UUtils.hh"
 
 #include "G4Box.hh"
@@ -75,6 +75,7 @@
 #include "G4TwistedTrap.hh"
 #include "G4TwistedTrd.hh"
 #include "G4TwistedTubs.hh"
+#include "G4PhysicalConstants.hh"
 
 #include "G4IntersectionSolid.hh"
 #include "G4SubtractionSolid.hh"
@@ -88,6 +89,8 @@
 #include "USTL.hh"
 
 using namespace std;
+using namespace CLHEP;
+
 //
 // Constructor
 // 
@@ -238,7 +241,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	trap.Args.push_back(new G4UIcmdPargDouble( "dz",    1.0, m ));
 	trap.Args.push_back(new G4UIcmdPargDouble( "theta",  90, deg ));
-	trap.Args.push_back(new G4UIcmdPargDouble( "phi",   1.0, m ));
+	trap.Args.push_back(new G4UIcmdPargDouble( "phi",   90, deg ));
 	trap.Args.push_back(new G4UIcmdPargDouble( "dy1",   1.0, m ));
 	trap.Args.push_back(new G4UIcmdPargDouble( "dx1",   1.0, m ));
 	trap.Args.push_back(new G4UIcmdPargDouble( "dx2",   1.0, m ));

@@ -100,4 +100,5 @@ int main(int argc,char *argv[])
 	delete performanceMessenger;
 	delete interactiveSolid;
 	return 0;
+
 }

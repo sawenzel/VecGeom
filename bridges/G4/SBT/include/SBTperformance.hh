@@ -42,6 +42,8 @@
 #include "UMultiUnion.hh"
 #include "G4UnionSolid.hh"
 
+#include "Randomize.hh"
+
 class SBTVisManager;
 
 class SBTperformance {
@@ -56,40 +58,40 @@ public:
 	G4int DrawError( const G4VSolid *testVolume, std::istream &logger, const G4int errorIndex,
 		SBTVisManager *visManager ) const;
 
-	inline void SetFilename( const G4String newFilename ) { filename = newFilename; }
+	inline void SetFilename( const std::string &newFilename ) { filename = newFilename; }
 	inline void SetMaxPoints( const G4int newMaxPoints ) { maxPoints = newMaxPoints; }
 	inline void SetRepeat( const G4int newRepeat ) { repeat = newRepeat; }
-	inline void SetMethod( const G4String newMethod ) { method = newMethod; }
+	inline void SetMethod( const std::string &newMethod ) { method = newMethod; }
 	inline void SetInsidePercent( const G4double percent ) { insidePercent = percent; }
 	inline void SetOutsidePercent( const G4double percent ) { outsidePercent = percent; }
 
 	inline void SetOutsideMaxRadiusMultiple( const G4double percent ) { outsideMaxRadiusMultiple = percent; }
 	inline void SetOutsideRandomDirectionPercent( const G4double percent ) { outsideRandomDirectionPercent = percent; }
 	inline void SetDifferenceTolerance( const G4double tolerance ) { differenceTolerance = tolerance; }
-	void SetFolder( std::string newFolder );
+	void SetFolder( const std::string &newFolder );
 
 	inline G4int GetMaxPoints() const { return maxPoints; }
 	inline G4int GetRepeat() const { return repeat; }
 
-	int SaveVectorToMatlabFile(std::vector<double> &vector, std::string filename);
-	int SaveVectorToMatlabFile(std::vector<UVector3> &vector, std::string filename);
-	int SaveLegend(std::string filename);
-	int SaveDoubleResults(std::string filename);
-	int SaveVectorResults(std::string filename);
+	int SaveVectorToMatlabFile(const std::vector<double> &vector, const std::string &filename);
+	int SaveVectorToMatlabFile(const std::vector<UVector3> &vector, const std::string &filename);
+	int SaveLegend(const std::string &filename);
+	int SaveDoubleResults(const std::string &filename);
+	int SaveVectorResults(const std::string &filename);
 
-	std::string printCoordinates (UVector3 &vec, std::string &delimiter, int precision=4);
-	std::string printCoordinates (UVector3 &vec, const char *delimiter, int precision=4);
-	void printCoordinates (std::stringstream &ss, UVector3 &vec, std::string &delimiter, int precision=4);
-	void printCoordinates (std::stringstream &ss, UVector3 &vec, const char *delimiter, int precision=4);
+	std::string PrintCoordinates (const UVector3 &vec, const std::string &delimiter, int precision=4);
+	std::string PrintCoordinates (const UVector3 &vec, const char *delimiter, int precision=4);
+	void PrintCoordinates (std::stringstream &ss, const UVector3 &vec, const std::string &delimiter, int precision=4);
+	void PrintCoordinates (std::stringstream &ss, const UVector3 &vec, const char *delimiter, int precision=4);
 
-	template <class T> 
-
-	void VectorDifference(std::vector<T> &first, std::vector<T> &second, std::vector<T> &result);
+	template <class T> void VectorDifference(const std::vector<T> &first, const std::vector<T> &second, std::vector<T> &result);
 	
-	void VectorToDouble(std::vector<UVector3> &vectorUVector, std::vector<double> &vectorDouble);
+	void VectorToDouble(const std::vector<UVector3> &vectorUVector, std::vector<double> &vectorDouble);
+
+  void BoolToDouble(const std::vector<bool> &vectorBool, std::vector<double> &vectorDouble);
 	
-	int CountDoubleDifferences(std::vector<double> &differences);
-	int CountDoubleDifferences(std::vector<double> &differences, std::vector<double> &values1, std::vector<double> &values2);
+	int CountDoubleDifferences(const std::vector<double> &differences);
+	int CountDoubleDifferences(const std::vector<double> &differences, const std::vector<double> &values1, const std::vector<double> &values2);
 
 //	int CompareVectorDifference(std::string filename);
 
@@ -124,14 +126,14 @@ private:
 	int compositeCounter;
 
 	void FlushSS(std::stringstream &ss);
-	void Flush(std::string s);
+	void Flush(const std::string &s);
 
 	G4VSolid *volumeGeant4;
 	VUSolid *volumeUSolids;
 	TGeoShape *volumeROOT;
 	std::string volumeString;
 
-	void setupSolids(G4VSolid *testVolume);
+	void SetupSolids(G4VSolid *testVolume);
 
 	void ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4UnionSolid &solid, std::string &rootComposite);
 
@@ -140,6 +142,7 @@ private:
 	std::vector<UVector3> resultVectorRoot;
 	std::vector<UVector3> resultVectorUSolids, resultVectorDifference;
 	std::vector<double> resultDoubleGeant4, resultDoubleRoot, resultDoubleUSolids, resultDoubleDifference;
+  std::vector<bool> resultBoolGeant4, resultBoolUSolids, resultBoolDifference;
 
 	int offsetSurface, offsetInside, offsetOutside;
 	int maxPointsInside, maxPointsOutside, maxPointsSurface;
@@ -147,16 +150,8 @@ private:
 	std::string folder;
 	std::string filename;
 
-	UVector3 GetVectorOnOrb(G4Orb& orb, UVector3& norm);
+//	UVector3 GetVectorOnOrb(G4Orb& orb, UVector3& norm);
 	UVector3 GetRandomDirection();
-
-	inline void GetVectorGeant4(G4ThreeVector &point, std::vector<UVector3> &points, int index);
-	inline void GetVectorUSolids(UVector3 &point, std::vector<UVector3> &points, int index);
-	inline void GetVectorRoot(double *point, std::vector<UVector3> &points, int index);
-
-	inline void SetVectorGeant4(G4ThreeVector &point, std::vector<UVector3> &points, int index);
-	inline void SetVectorUSolids(UVector3 &point, std::vector<UVector3> &points, int index);
-	inline void SetVectorRoot(double *point, std::vector<UVector3> &points, int index);
 
 	void TestInsideGeant4(int iteration);
 	void TestInsideUSolids(int iteration);
@@ -174,7 +169,7 @@ private:
 	void TestSafetyFromOutsideUSolids(int iteration);
 	void TestSafetyFromOutsideROOT(int iteration);
 
-	void PropagatedNormal(G4ThreeVector &point, G4ThreeVector &direction, double distance, G4ThreeVector &normal);
+	void PropagatedNormal(const G4ThreeVector &point, const G4ThreeVector &direction, double distance, G4ThreeVector &normal);
 
 	void TestDistanceToInUSolids(int iteration);
 	void TestDistanceToInGeant4(int iteration);
@@ -190,11 +185,11 @@ private:
 	void CreatePointsAndDirectionsOutside();
 
 	void CompareResults(double resG, double resR, double resU);
-	void CompareAndSaveResults(std::string method, double resG, double resR, double resU);
+	void CompareAndSaveResults(const std::string &method, double resG, double resR, double resU);
 
-	int SaveResultsToFile(std::string method);
+	int SaveResultsToFile(const std::string &method);
 
-	void SavePolyhedra(std::string method);
+	void SavePolyhedra(const std::string &method);
 
 	void CompareInside();
 	void CompareNormal();
@@ -203,16 +198,68 @@ private:
 	void CompareDistanceToIn();
 	void CompareDistanceToOut();
 
-	double MeasureTest (void (SBTperformance::*funcPtr)(int), std::string method);
+	double MeasureTest (void (SBTperformance::*funcPtr)(int), const std::string &method);
 
-	double normalizeToNanoseconds(double time);
+	double NormalizeToNanoseconds(double time);
 
 	void TestMethod(void (SBTperformance::*funcPtr)());
 	void TestMethodAll();
 
 	double ConvertInfinities(double value);
 
-	void CheckPointsOnSurfaceOfOrb(G4ThreeVector &point, double res, int count, EInside location);
+	void CheckPointsOnSurfaceOfOrb(const G4ThreeVector &point, double res, int count, EInside location);
+
+  inline double RandomRange(double min, double max)
+  {
+    double rand = min + (max - min) * G4UniformRand();
+    return rand;
+  }
+
+  inline void GetVectorGeant4(G4ThreeVector &point, const std::vector<UVector3> &points, int index)
+  {
+    const UVector3 &p = points[index];
+    point.set(p.x, p.y, p.z);
+  }
+
+  inline void GetVectorUSolids(UVector3 &point, const std::vector<UVector3> &points, int index)
+  {
+    const UVector3 &p = points[index];
+    point.Set(p.x, p.y, p.z);
+  }
+
+  inline void GetVectorRoot(double *point, const std::vector<UVector3> &points, int index)
+  {
+    const UVector3 &p = points[index];
+    point[0] = p.x; point[1] = p.y; point[2] = p.z;
+  }
+
+  inline void SetVectorGeant4(const G4ThreeVector &point, std::vector<UVector3> &points, int index)
+  {
+    UVector3 &p = points[index];
+    p.Set(point.getX(), point.getY(), point.getZ());
+  }
+
+  inline void SetVectorUSolids(const UVector3 &point, std::vector<UVector3> &points, int index)
+  {
+    UVector3 &p = points[index];
+    p.Set(point.x, point.y, point.z);
+  }
+
+  inline void SetVectorRoot(const double *point, std::vector<UVector3> &points, int index)
+  {
+    UVector3 &p = points[index];
+    p.Set (point[0], point[1], point[2]);
+  }
+
+  inline double RandomIncrease()
+  {
+    double tolerance = VUSolid::Tolerance();
+    double rand = -1 + 2 * G4UniformRand();
+    double sign = rand > 0 ? 1 : -1;
+    double dif = tolerance * 0.1 * rand; // 19000000000
+    //	if (abs(dif) < 9 * tolerance) dif = dif;
+    return dif;
+  }
 };
 
 #endif

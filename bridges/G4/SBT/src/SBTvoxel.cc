@@ -49,6 +49,9 @@
 
 #include <time.h>
 
+using namespace CLHEP;
+
+
 //
 // Constructor
 //

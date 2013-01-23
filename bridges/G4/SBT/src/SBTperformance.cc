@@ -1,32 +1,3 @@
-
-// safetyfrominside for outside points: 0
-// safetyfrominside for outside points: 0
-
-// o: make sphere of points based on distance to in, for safety's, all points on surface must be inside
-
-// DONE: make sphere in matlab for safety's, if one point is specified
-
-/*
-
-Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
-
-    A goal: Make a standalone program for testing solids performance:
-
-    Based on precomputed random points. Points can be located randomly on spheres with different radius, with base point 0,0,0 i.e. usually the "center" of the solid. after finishing the calculation of random points, these can be stored to file...
-
-    Using outside/inside of the solid extent - 50/50 ratio; 
-
-    SBT code can be used for inspiration, vectors 50/50 pointing to collision direction to solid surface, or pointing away
-
-    Would work for usolid and geant4 solids, later also with root solids. Root seem to support also Visual Studio 2010, such can be seen on http://root.cern.ch/drupal/content/production-version-530 . Bernard (Andrieu?) from the root team might know more details how to use it.
-
-    Test DistanceToIn and other methods for each of all the random points
-
-    Use timer to measure routines performance
-
-    For points needed to be on surface, in Geant4 there is usefull method GetPointOnSurface()
-*/
-
 //
 // ********************************************************************
 // * License and Disclaimer                                           *
@@ -64,14 +35,12 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include <sstream>
 #include <ctime>
 #include <vector>
-
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 
 #include "SBTperformance.hh"
 
-#include "Randomize.hh"
 #include "G4VSolid.hh"
 
 #include "SBTVisManager.hh"
@@ -87,10 +56,12 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "G4Tubs.hh"
 #include "G4Cons.hh"
 #include "G4Orb.hh"
+#include "G4Sphere.hh"
 #include "G4Polycone.hh"
 #include "G4Polyhedra.hh"
 #include "G4UnionSolid.hh"
 #include "G4TessellatedSolid.hh"
+#include "G4Trap.hh"
 #include "G4VFacet.hh"
 
 #include "VUSolid.hh"
@@ -103,7 +74,10 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 #include "UTessellatedSolid.hh"
 #include "UTubs.hh"
 #include "UCons.hh"
+#include "USphere.hh"
+#include "UTrap.hh"
 
+#include "TGeoArb8.h"
 #include "TGeoTrd2.h" 
 #include "TGeoBBox.h"
 #include "TGeoShape.h"
@@ -135,21 +109,10 @@ Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
 
 #include "TGeoCompositeShape.h"
 #include "TGeoMatrix.h"
-
+ 
 #include "SBTrun.hh"
 
-//#define _USE_MATH_DEFINES
-//#include <math.h>
-
 using namespace std;
-
-// NEW2: for each method, graph which shows times in all available solids, for 3 software
-// NEW2: vectors of both software in one graph
-// NEW3: configure folder for storing in .geant4, where log and results will be found
-
-// DONE: size of the circles of bad points proportional to value of error - the error 
-// TODO: length of vectors proportional to values
-// NEW2: for different points, print also the values
 
 SBTperformance::SBTperformance()
 {
@@ -158,16 +121,12 @@ SBTperformance::SBTperformance()
 	volumeGeant4 = NULL;
 	volumeUSolids = NULL;
 	volumeROOT = NULL;
-
-//	CurrentSolid = "";
 }
-
 
 SBTperformance::~SBTperformance()
 {
 
 }
-
 
 void SBTperformance::SetDefaults()
 {
@@ -183,7 +142,6 @@ void SBTperformance::SetDefaults()
 	method = "*";
 	perftab = perflabels = NULL;
 }
-
 
 // DONE: better random direction distribution
 UVector3 SBTperformance::GetRandomDirection() 
@@ -201,42 +159,6 @@ UVector3 SBTperformance::GetRandomDirection()
 } 
 
 // DONE: all set point methods are performance equivalent
-
-inline void SBTperformance::GetVectorGeant4(G4ThreeVector &point, vector<UVector3> &points, int index)
-{
-	UVector3 &p = points[index];
-	point.set(p.x, p.y, p.z);
-}
-
-inline void SBTperformance::GetVectorUSolids(UVector3 &point, vector<UVector3> &points, int index)
-{
-	UVector3 &p = points[index];
-	point.Set(p.x, p.y, p.z);
-}
-
-inline void SBTperformance::GetVectorRoot(double *point, vector<UVector3> &points, int index)
-{
-	UVector3 &p = points[index];
-	point[0] = p.x; point[1] = p.y; point[2] = p.z;
-}
-
-inline void SBTperformance::SetVectorGeant4(G4ThreeVector &point, vector<UVector3> &points, int index)
-{
-	UVector3 &p = points[index];
-	p.Set(point.getX(), point.getY(), point.getZ());
-}
-
-inline void SBTperformance::SetVectorUSolids(UVector3 &point, vector<UVector3> &points, int index)
-{
-	UVector3 &p = points[index];
-	p.Set(point.x, point.y, point.z);
-}
-
-inline void SBTperformance::SetVectorRoot(double *point, vector<UVector3> &points, int index)
-{
-	UVector3 &p = points[index];
-	p.Set (point[0], point[1], point[2]);
-}
 
 
 void SBTperformance::TestInsideGeant4(int iteration)
@@ -265,9 +187,9 @@ void SBTperformance::TestInsideUSolids(int iteration)
 }
 
 void SBTperformance::TestInsideROOT(int iteration)
-{
+{ 
 	double point[3];
-
+   
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorRoot(point, points, i);
@@ -403,7 +325,7 @@ void SBTperformance::TestSafetyFromOutsideROOT(int iteration)
 	}
 }
 
-void SBTperformance::CheckPointsOnSurfaceOfOrb(G4ThreeVector &point, double radius, int count, EInside location)
+void SBTperformance::CheckPointsOnSurfaceOfOrb(const G4ThreeVector &point, double radius, int count, EInside location)
 {
 	if (radius < kInfinity && radius > 10*VUSolid::Tolerance())
 	{
@@ -489,7 +411,7 @@ void SBTperformance::TestSafetyFromInsideROOT(int iteration)
 
 // problem only if the dot product is larger than 1e-8, only for "scratching" points
 
-void SBTperformance::PropagatedNormal(G4ThreeVector &point, G4ThreeVector &direction, double distance, G4ThreeVector &normal)
+void SBTperformance::PropagatedNormal(const G4ThreeVector &point, const G4ThreeVector &direction, double distance, G4ThreeVector &normal)
 {
 	normal.set(0,0,0);
 	if (distance < kInfinity)
@@ -589,6 +511,8 @@ void SBTperformance::TestDistanceToOutGeant4(int iteration)
 		{
 //			EInside inside = volumeGeant4->Inside(point);
 			resultDoubleGeant4[i] = ConvertInfinities (res);
+      resultBoolGeant4[i] = validNorm;
+      SetVectorGeant4(normal, resultVectorGeant4, i);
 
 //			CheckPointsOnSurfaceOfOrb(point, res, numCheckPoints, kOutside);
 		}
@@ -629,6 +553,8 @@ void SBTperformance::TestDistanceToOutUSolids(int iteration)
 		if (!iteration)
 		{
 			resultDoubleUSolids[i] = ConvertInfinities (res);
+      resultBoolUSolids[i] = convex;
+      SetVectorUSolids(normal, resultVectorUSolids, i);
 
 			G4ThreeVector p (point.x, point.y, point.z);
 
@@ -645,7 +571,7 @@ void SBTperformance::FlushSS(stringstream &ss)
 	ss.str("");
 }
 
-void SBTperformance::Flush(string s)
+void SBTperformance::Flush(const string &s)
 {
 	cout << s;
 	*log << s;
@@ -653,13 +579,13 @@ void SBTperformance::Flush(string s)
 
 
 // NEW: results written normalized to nano seconds per operation
-double SBTperformance::normalizeToNanoseconds(double time)
+double SBTperformance::NormalizeToNanoseconds(double time)
 {
-	double res = ((time * (double) 1e+9) / (double) (repeat * maxPoints));
+	double res = ((time * (double) 1e+9) / ((double)repeat * (double)maxPoints));
 	return res;
 }
 
-double SBTperformance::MeasureTest (void (SBTperformance::*funcPtr)(int), string method)
+double SBTperformance::MeasureTest (void (SBTperformance::*funcPtr)(int), const string &method)
 {
 	Flush("Measuring performance of method "+method+"\n");
 
@@ -683,7 +609,7 @@ double SBTperformance::MeasureTest (void (SBTperformance::*funcPtr)(int), string
 	// NEW: write time per operation / bunch of operations
 	ss << "Time elapsed: " << realTime << "s\n";
 	ss << "Time per one repeat: " << realTime / repeat << "s\n";
-	ss << "Nanoseconds per one method call: " << normalizeToNanoseconds(realTime) << "\n";
+	ss << "Nanoseconds per one method call: " << NormalizeToNanoseconds(realTime) << "\n";
 	FlushSS(ss);
 
 	return realTime;
@@ -709,7 +635,7 @@ void SBTperformance::ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4Unio
 		t *= -1;
 
 		UTransform3D *transformation = new UTransform3D(t.x(), t.y(), t.z(), r.phi(), r.theta(), r.psi());
-		setupSolids(node.GetConstituentMovedSolid()); // fills volumeUSolids and volumeROOT
+		SetupSolids(node.GetConstituentMovedSolid()); // fills volumeUSolids and volumeROOT
 		multiUnion.AddNode(*volumeUSolids, *transformation);
 
 		// updating ROOT composite
@@ -729,7 +655,7 @@ void SBTperformance::ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4Unio
 }
 
 
-void SBTperformance::setupSolids(G4VSolid *testVolume)
+void SBTperformance::SetupSolids(G4VSolid *testVolume)
 {
 	string type(testVolume->GetEntityType());
 
@@ -814,6 +740,31 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 		volumeUSolids = new UOrb("UOrb", radius);
 		ss << "UOrb("<<radius<<")";
 	}
+	if (type == "G4Sphere")
+	{
+		G4Sphere &sphere = *(G4Sphere *) testVolume;
+		double innerRadius = sphere.GetInnerRadius();
+		double outerRadius = sphere.GetOuterRadius();
+		double sTheta = sphere.GetSTheta();
+		double dTheta = sphere.GetDTheta();
+		double sPhi  = sphere.GetSPhi();
+		double dPhi = sphere.GetDPhi();
+
+		volumeUSolids = new USphere("USphere", innerRadius, outerRadius, sPhi, dPhi, sTheta, dTheta);
+
+		sPhi = 180 * sPhi / UUtils::kPi;
+		dPhi = 180 * dPhi / UUtils::kPi;
+		dPhi += sPhi;
+		if (dPhi > 360) dPhi -= 360; 
+
+		sTheta = 180 * sTheta / UUtils::kPi;
+		dTheta = 180 * dTheta / UUtils::kPi;
+		dTheta += sTheta;
+		if (dTheta > 360) dTheta -= 360;
+
+		volumeROOT = new TGeoSphere("USphere", innerRadius, outerRadius, sTheta, dTheta, sPhi, dPhi);
+		ss << "USphere("<<innerRadius<<")";
+	}
 	if (type == "G4Trd")
 	{
 		G4Trd &trd = *(G4Trd *) testVolume;
@@ -821,11 +772,67 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 		double x2 = trd.GetXHalfLength2();
 		double y1 = trd.GetYHalfLength1();
 		double y2 = trd.GetYHalfLength2();
-		double z = trd.GetZHalfLength();
+		double z = trd.GetZHalfLength(); 
 		volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
 		volumeROOT = new TGeoTrd2(x1, x2, y1, y2, z);
 		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
 	}
+	if (type == "G4Trap")
+	{
+		G4Trap &trap = *(G4Trap *) testVolume;
+		double x1 = trap.GetXHalfLength1();
+		double x2 = trap.GetXHalfLength2();
+		double x3 = trap.GetXHalfLength3();
+		double x4 = trap.GetXHalfLength4();
+		double y1 = trap.GetYHalfLength1();
+		double y2 = trap.GetYHalfLength2();
+		double z = trap.GetZHalfLength();
+		double talpha1 = atan (trap.GetTanAlpha1());
+		double talpha2 = atan (trap.GetTanAlpha2());
+    double theta = 0; // geant4 does not have method GetTheta???
+    double phi = 0; // geant4 does not have phi???
+//		volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                                                                        //
+    // TGeoTrap                                                               //
+    //                                                                        //
+    // Trap is a general trapezoid, i.e. one for which the faces perpendicular//
+    // to z are trapezia and their centres are not the same x, y. It has 11   //
+    // parameters: the half length in z, the polar angles from the centre of  //
+    // the face at low z to that at high z, H1 the half length in y at low z, //
+    // LB1 the half length in x at low z and y low edge, LB2 the half length  //
+    // in x at low z and y high edge, TH1 the angle w.r.t. the y axis from the//
+    // centre of low y edge to the centre of the high y edge, and H2, LB2,    //
+    // LH2, TH2, the corresponding quantities at high z.                      //
+    //                                                                        //
+    ////////////////////////////////////////////////////////////////////////////
+
+//    TGeoTrap("", dz=z, theta=theta, phi=phi, h1=y1, bl1=x1, tl1=x2, alpha1=talpha1, h2=y2, bl2=x3, tl2=x4, alpha2=talpha2);
+
+    // fTheta; // theta angle
+    // fPhi;   // phi angle
+    // fH1;    // half length in y at low z
+    // fBl1;   // half length in x at low z and y low edge
+    // fTl1;   // half length in x at low z and y high edge
+    // fAlpha1;// angle between centers of x edges an y axis at low z
+    // fH2;    // half length in y at high z
+    // fBl2;   // half length in x at high z and y low edge
+    // fTl2;   // half length in x at high z and y high edge
+    // fAlpha2;// angle between centers of x edges an y axis at low z
+
+    if (z == 60000.0) theta = 20, phi = 5;
+
+    volumeUSolids = new UTrap("Trap", z, UUtils::kPi * theta / 180, UUtils::kPi * phi / 180, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
+
+//    theta = 180 * theta / UUtils::kPi;
+//    phi = 180 * phi / UUtils::kPi;
+      talpha1 = 180 * talpha1 / UUtils::kPi;
+      talpha2 = 180 * talpha2 / UUtils::kPi;
+
+		volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
+//		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
+	} 
 	if (type == "G4Tubs")
 	{
 		G4Tubs &tubs = *(G4Tubs *) testVolume;
@@ -981,15 +988,6 @@ void SBTperformance::setupSolids(G4VSolid *testVolume)
 	volumeString = ss.str();
 }
 
-inline double randomIncrease()
-{
-	double tolerance = VUSolid::Tolerance();
-	double rand = -1 + 2 * G4UniformRand();
-	double sign = rand > 0 ? 1 : -1;
-	double dif = tolerance * 0.1 * rand; // 19000000000
-//	if (abs(dif) < 9 * tolerance) dif = dif;
-	return dif;
-}
 
 void SBTperformance::CreatePointsAndDirectionsSurface()
 {
@@ -1013,9 +1011,9 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 				attempt = attempt;
 			point.Set(pointG4.getX(), pointG4.getY(), pointG4.getZ());
 			// NEW: points will not be exactly on surface, but near the surface +- (default) 10 tolerance, configurable for BOTH
-			point.x += randomIncrease();
-			point.y += randomIncrease();
-			point.z += randomIncrease();
+			point.x += RandomIncrease();
+			point.y += RandomIncrease();
+			point.z += RandomIncrease();
 			pointTest.set(point.x, point.y, point.z);
 		}
 		while (volumeGeant4->Inside(pointTest) == kSurface && attempt < 10);
@@ -1093,12 +1091,6 @@ void SBTperformance::CreatePointsAndDirectionsOutside()
 	}
 }
 
-inline double randomRange(double min, double max)
-{
-	double rand = min + (max - min) * G4UniformRand();
-	return rand;
-}
-
 // DONE: inside points generation uses random points inside bounding box
 void SBTperformance::CreatePointsAndDirectionsInside()
 {
@@ -1107,9 +1099,9 @@ void SBTperformance::CreatePointsAndDirectionsInside()
 	int i = 0; 
 	while (i < maxPointsInside)
 	{
-		double x = randomRange(extent.GetXmin(), extent.GetXmax());
-		double y = randomRange(extent.GetYmin(), extent.GetYmax());
-		double z = randomRange(extent.GetZmin(), extent.GetZmax());
+		double x = RandomRange(extent.GetXmin(), extent.GetXmax());
+		double y = RandomRange(extent.GetYmin(), extent.GetYmax());
+		double z = RandomRange(extent.GetZmin(), extent.GetZmax());
 		G4ThreeVector pointG4(x, y, z);
 		if (volumeGeant4->Inside(pointG4))
 		{
@@ -1123,7 +1115,7 @@ void SBTperformance::CreatePointsAndDirectionsInside()
 }
 
 void SBTperformance::CreatePointsAndDirections()
-{
+{ 
 	maxPointsInside = (int) (maxPoints * (insidePercent/100));
 	maxPointsOutside = (int) (maxPoints * (outsidePercent/100));
 	maxPointsSurface = maxPoints - maxPointsInside - maxPointsOutside;
@@ -1138,7 +1130,9 @@ void SBTperformance::CreatePointsAndDirections()
 	resultDoubleDifference.resize(maxPoints);
 	resultDoubleGeant4.resize(maxPoints);
 	resultDoubleRoot.resize(maxPoints);
-	resultDoubleUSolids.resize(maxPoints);
+  resultBoolGeant4.resize(maxPoints);
+  resultBoolUSolids.resize(maxPoints);
+  resultDoubleUSolids.resize(maxPoints);
 
 	resultVectorDifference.resize(maxPoints);
 	resultVectorGeant4.resize(maxPoints);
@@ -1184,23 +1178,23 @@ void SBTperformance::CompareResults(double resG, double resR, double resU)
 		if (resR <= resG)
 		{
 			faster = "ROOT";
-			ratio = 1 - resR/resG;
+			ratio = resG/resR;
 		}
 		else
 		{
 			faster = "Geant4";
-			ratio = 1 - resG/resR;
+			ratio = resR/resG;
 		}
 		if (ratio > 0.01)
 		{
-			ss << "\nFaster is " << faster << " (" << 100*ratio << "%)\n";
+			ss << "\nFaster is " << faster << " (" << ratio << "x)\n";
 		}
 	} 
 	ss << "====================================\n\n"; 
 	FlushSS(ss);
 }
 
-int SBTperformance::SaveVectorToMatlabFile(vector<double> &vector, string filename)
+int SBTperformance::SaveVectorToMatlabFile(const vector<double> &vector, const string &filename)
 {
 	Flush("Saving vector<double> to "+filename+"\n");
 
@@ -1213,7 +1207,7 @@ int SBTperformance::SaveVectorToMatlabFile(vector<double> &vector, string filena
 }
 
 
-int SBTperformance::SaveVectorToMatlabFile(vector<UVector3> &vector, string filename)
+int SBTperformance::SaveVectorToMatlabFile(const vector<UVector3> &vector, const string &filename)
 {
 	Flush("Saving vector<UVector3> to "+filename+"\n");
 
@@ -1226,7 +1220,7 @@ int SBTperformance::SaveVectorToMatlabFile(vector<UVector3> &vector, string file
 }
 
 
-int SBTperformance::SaveLegend(string filename)
+int SBTperformance::SaveLegend(const string &filename)
 {
 	vector<double> offsets(3);
 	offsets[0] = maxPointsInside, offsets[1] = maxPointsSurface, offsets[2] = maxPointsOutside;
@@ -1236,7 +1230,7 @@ int SBTperformance::SaveLegend(string filename)
 // NEW: put results to a file which could be visualized
 // NEW: matlab scripts created to visualize the results
 
-int SBTperformance::SaveDoubleResults(string filename)
+int SBTperformance::SaveDoubleResults(const string &filename)
 {
 	int result = 0;
 	
@@ -1247,7 +1241,7 @@ int SBTperformance::SaveDoubleResults(string filename)
 	return result;
 }
 
-int SBTperformance::SaveVectorResults(string filename)
+int SBTperformance::SaveVectorResults(const string &filename)
 {
 	int result = 0;
 	
@@ -1259,9 +1253,7 @@ int SBTperformance::SaveVectorResults(string filename)
 }
 
 
-template <class T>
-
-void SBTperformance::VectorDifference(vector<T> &first, vector<T> &second, vector<T> &result)
+template <class T> void SBTperformance::VectorDifference(const vector<T> &first, const vector<T> &second, vector<T> &result)
 {
 	int size = result.size();
 	for (int i = 0; i < size; i++) 
@@ -1291,35 +1283,35 @@ void VectorDifference(vector<double> &first, vector<double> &second, vector<doub
 // NEW: tolerance(s) which will be used for determining number of differences
 // NEW: difference tolerance(s) was moved to macro
 
-void SBTperformance::printCoordinates (stringstream &ss, UVector3 &vec, string &delimiter, int precision)
-{
+void SBTperformance::PrintCoordinates (stringstream &ss, const UVector3 &vec, const string &delimiter, int precision)
+{ 
 	ss.precision(precision);
 	ss << vec.x << delimiter << vec.y << delimiter << vec.z;
 }
 
-string SBTperformance::printCoordinates (UVector3 &vec, string &delimiter, int precision)
+string SBTperformance::PrintCoordinates (const UVector3 &vec, const string &delimiter, int precision)
 {
 	static stringstream ss;
-	printCoordinates(ss, vec, delimiter, precision);
+	PrintCoordinates(ss, vec, delimiter, precision);
 	string res(ss.str());
 	ss.str("");
 	return res;
 }
 
-string SBTperformance::printCoordinates (UVector3 &vec, const char *delimiter, int precision)
+string SBTperformance::PrintCoordinates (const UVector3 &vec, const char *delimiter, int precision)
 {
 	string d(delimiter);
-	return printCoordinates(vec, d, precision);
+	return PrintCoordinates(vec, d, precision);
 }
 
-void SBTperformance::printCoordinates (stringstream &ss, UVector3 &vec, const char *delimiter, int precision)
+void SBTperformance::PrintCoordinates (stringstream &ss, const UVector3 &vec, const char *delimiter, int precision)
 {
 	string d(delimiter);
-	return printCoordinates(ss, vec, d, precision);
+	return PrintCoordinates(ss, vec, d, precision);
 }
 
 
-int SBTperformance::CountDoubleDifferences(vector<double> &differences, vector<double> &values1, vector<double> &values2)	 
+int SBTperformance::CountDoubleDifferences(const vector<double> &differences, const vector<double> &values1, const vector<double> &values2)	 
 {
 	int countOfDifferences = 0;
 	stringstream ss;
@@ -1333,8 +1325,8 @@ int SBTperformance::CountDoubleDifferences(vector<double> &differences, vector<d
 		if (difference > std::abs (differenceTolerance*value1))
 		{
 			if (++countOfDifferences <= 10) ss << "Different point found: index " << i << 
-				"; point coordinates:" << printCoordinates(points[i], ",") << 
-				"; direction coordinates:" << printCoordinates(directions[i], ",") <<
+				"; point coordinates:" << PrintCoordinates(points[i], ",") << 
+				"; direction coordinates:" << PrintCoordinates(directions[i], ",") <<
 				"; difference=" << difference << ")" << 
 				"; value2 =" << value2 <<
 				"; value1 = " << value1 << "\n";
@@ -1346,7 +1338,7 @@ int SBTperformance::CountDoubleDifferences(vector<double> &differences, vector<d
 	return countOfDifferences;
 }
 
-int SBTperformance::CountDoubleDifferences(vector<double> &differences)
+int SBTperformance::CountDoubleDifferences(const vector<double> &differences)
 {
 	int countOfDifferences = 0;
 
@@ -1366,7 +1358,7 @@ int SBTperformance::CountDoubleDifferences(vector<double> &differences)
 
 // NEW: print also different point coordinates
 
-void SBTperformance::VectorToDouble(vector<UVector3> &vectorUVector, vector<double> &vectorDouble)
+void SBTperformance::VectorToDouble(const vector<UVector3> &vectorUVector, vector<double> &vectorDouble)
 {
 	UVector3 vec;
 
@@ -1381,7 +1373,14 @@ void SBTperformance::VectorToDouble(vector<UVector3> &vectorUVector, vector<doub
 	}
 }
 
-void SBTperformance::SavePolyhedra(string method)
+void SBTperformance::BoolToDouble(const std::vector<bool> &vectorBool, std::vector<double> &vectorDouble)
+{
+  int size = vectorBool.size();
+  for (int i = 0; i < size; i++)
+    vectorDouble[i] = (double) vectorBool[i];
+}
+
+void SBTperformance::SavePolyhedra(const string &method)
 {
 	vector<UVector3> vertices;
 	vector<vector<int> > nodes;
@@ -1400,7 +1399,7 @@ void SBTperformance::SavePolyhedra(string method)
 		ofstream fileTriangles((folder+method+"Triangles.dat").c_str());
 	
 		int size = nodes.size();
-		for (int i = 1; i <= size; i++)
+		for (int i = 0; i < size; i++)
 		{
 			int n = nodes[i].size();
 			if (n == 3 || n == 4)
@@ -1414,7 +1413,7 @@ void SBTperformance::SavePolyhedra(string method)
 	}
 }
 
-int SBTperformance::SaveResultsToFile(string method)
+int SBTperformance::SaveResultsToFile(const string &method)
 {
 	string filename(folder+method+"All.dat");
 	Flush("Saving all results to "+filename+"\n");
@@ -1429,8 +1428,8 @@ int SBTperformance::SaveResultsToFile(string method)
 		for (int i = 0; i < maxPoints; i++)
 		{
 			// NEW: point coordinates, vector coordinates to separate file: e.g. trd + parameters \n x, y, z, xp, yp, zp, safetyfromoutside, all the values		
-			file << printCoordinates(points[i], spacer, prec) << spacer << printCoordinates(directions[i], spacer, prec) << spacer; 
-			if (saveVectors) file << printCoordinates(resultVectorGeant4[i], spacer, prec) << spacer << printCoordinates(resultVectorRoot[i], spacer, prec) << spacer << printCoordinates(resultVectorUSolids[i], spacer, prec) << "\n";
+			file << PrintCoordinates(points[i], spacer, prec) << spacer << PrintCoordinates(directions[i], spacer, prec) << spacer; 
+			if (saveVectors) file << PrintCoordinates(resultVectorGeant4[i], spacer, prec) << spacer << PrintCoordinates(resultVectorRoot[i], spacer, prec) << spacer << PrintCoordinates(resultVectorUSolids[i], spacer, prec) << "\n";
 			else file << resultDoubleGeant4[i] << spacer << resultDoubleRoot[i] << spacer << resultDoubleUSolids[i] << "\n";
 		}
 		return 0;
@@ -1439,7 +1438,7 @@ int SBTperformance::SaveResultsToFile(string method)
 	return 1;
 }
 
-void SBTperformance::CompareAndSaveResults(string method, double resG, double resR, double resU)
+void SBTperformance::CompareAndSaveResults(const string &method, double resG, double resR, double resU)
 {
 	CompareResults (resG, resR, resU);		
 
@@ -1455,15 +1454,28 @@ void SBTperformance::CompareAndSaveResults(string method, double resG, double re
 	}
 	else
 	{
-		VectorDifference(resultDoubleGeant4, resultDoubleRoot, resultDoubleDifference);
-		SaveDoubleResults(method);
-	}
+    if (method == "DistanceToOut")
+    {
+      SaveDoubleResults(method);
+      VectorDifference(resultDoubleGeant4, resultDoubleRoot, resultDoubleDifference);
+      SaveVectorResults(method+"Normal");
+      BoolToDouble(resultBoolGeant4, resultDoubleGeant4);
+      BoolToDouble(resultBoolUSolids, resultDoubleUSolids);
+      for (int i = 0; i < resultDoubleRoot.size(); ++i) resultDoubleRoot[i] = 0;
+      SaveDoubleResults(method+"Convex");
+    }
+    else
+    {
+      VectorDifference(resultDoubleGeant4, resultDoubleRoot, resultDoubleDifference);
+      SaveDoubleResults(method);
+    }
+  }
 	if (method == "DistanceToIn")
 	{
 		SaveVectorResults("DistanceToInSurfaceNormal");
 	}
 	SaveLegend(folder+method+"Legend.dat");
-	SaveResultsToFile(method);
+//	SaveResultsToFile(method);
 
 	string name = volumeGeant4->GetName();
 	// if (name != "MultiUnion") 
@@ -1483,7 +1495,7 @@ void SBTperformance::CompareAndSaveResults(string method, double resG, double re
 
 	*perflabels << method << "\n";
 	perflabels->flush();
-	*perftab << normalizeToNanoseconds(resG) << "\t" << normalizeToNanoseconds(resR) << "\t" << normalizeToNanoseconds(resU) << "\n";
+	*perftab << NormalizeToNanoseconds(resG) << "\t" << NormalizeToNanoseconds(resR) << "\t" << NormalizeToNanoseconds(resU) << "\n";
 	perftab->flush();
 }
 
@@ -1606,7 +1618,7 @@ void SBTperformance::TestMethodAll()
 	TestMethod(&SBTperformance::CompareDistanceToOut);
 }
 
-void SBTperformance::SetFolder(string newFolder)
+void SBTperformance::SetFolder(const string &newFolder)
 {
 	if (perftab)
 	{
@@ -1620,6 +1632,7 @@ void SBTperformance::SetFolder(string newFolder)
 		delete perflabels;
 		perflabels = NULL;
 	}
+	cout << "Checking for existance of " << newFolder << endl;
 	if (!directoryExists(newFolder))
 	{
 		string command;
@@ -1654,7 +1667,7 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 	cout << "Converting solid" << "\n";
 	FlushSS(ss);
 
-	setupSolids(testVolume);
+	SetupSolids(testVolume);
 
 	if (perftab == NULL) perftab = new ofstream((folder+"Performance.dat").c_str());
 	if (perflabels == NULL) perflabels = new ofstream((folder+"PerformanceLabels.txt").c_str());
@@ -1689,3 +1702,35 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 }
 
 // NEW: *elTubeArgs[6] was causing crash, changed to *elTubeArgs[3]
+
+// safetyfrominside for outside points: 0
+// safetyfrominside for outside points: 0
+
+// o: make sphere of points based on distance to in, for safety's, all points on surface must be inside
+
+// DONE: make sphere in matlab for safety's, if one point is specified
+
+/*
+
+Notes for the meeting of September 13 (John, Andrei, Gabiele, Tatiana, Marek)
+
+    A goal: Make a standalone program for testing solids performance:
+
+    Based on precomputed random points. Points can be located randomly on spheres with different radius, with base point 0,0,0 i.e. usually the "center" of the solid. after finishing the calculation of random points, these can be stored to file...
+
+    Using outside/inside of the solid extent - 50/50 ratio; 
+
+    SBT code can be used for inspiration, vectors 50/50 pointing to collision direction to solid surface, or pointing away
+
+    Use timer to measure routines performance
+
+    For points needed to be on surface, in Geant4 there is usefull method GetPointOnSurface()
+*/
+
+// NEW2: for each method, graph which shows times in all available solids, for 3 software
+// NEW2: vectors of both software in one graph
+// NEW3: configure folder for storing in .geant4, where log and results will be found
+
+// DONE: size of the circles of bad points proportional to value of error - the error 
+// TODO: length of vectors proportional to values
+// NEW2: for different points, print also the values
