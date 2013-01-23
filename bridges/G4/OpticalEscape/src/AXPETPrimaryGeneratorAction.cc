@@ -40,6 +40,8 @@
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
 
+using namespace CLHEP;
+
 AXPETPrimaryGeneratorAction::AXPETPrimaryGeneratorAction()
 {
 

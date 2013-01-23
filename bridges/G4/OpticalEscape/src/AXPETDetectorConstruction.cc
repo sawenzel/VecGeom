@@ -112,7 +112,7 @@
 #include <iostream>
 
 using namespace std;
-
+using namespace CLHEP;
 
 AXPETDetectorConstruction::AXPETDetectorConstruction():
 WorldVolume(0),LogWorldVolume(0),PhysWorldVolume(0), 

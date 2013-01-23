@@ -51,6 +51,9 @@
 #include "G4VSolid.hh"
 #include "G4RotationMatrix.hh"
 #include "G4AffineTransform.hh"
+
+using namespace CLHEP;
+
 AXPETSteppingAction::AXPETSteppingAction(AXPETDetectorConstruction* DET,
                                          AXPETRunAction* RA)
 :detector (DET), runaction (RA)

@@ -38,6 +38,8 @@
 
 #include "AXPETMaterial.hh"
 
+using namespace CLHEP;
+
 AXPETMaterial::AXPETMaterial ():
 aluminum(0),matAir(0), LYSO(0), EJ280(0),Vacuum(0)
 {;}

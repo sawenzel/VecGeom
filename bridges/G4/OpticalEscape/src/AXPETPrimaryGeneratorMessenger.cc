@@ -36,6 +36,10 @@
 #include "G4UIdirectory.hh"
 #include "G4UIcmdWithADoubleAndUnit.hh"
 
+#include "CLHEP/Units/SystemOfUnits.h"
+
+using namespace CLHEP;
+
 AXPETPrimaryGeneratorMessenger::AXPETPrimaryGeneratorMessenger(
                                           AXPETPrimaryGeneratorAction* AXPETGun)
 :AXPETAction(AXPETGun)
