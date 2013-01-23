@@ -63,7 +63,7 @@ double UUtils::Random(double min, double max)
 	return res;
 }
  
-int UUtils::SaveVectorToMatlabFile(vector<double> &vector, string filename)
+int UUtils::SaveVectorToMatlabFile(const vector<double> &vector, const string &filename)
 {
 	ofstream file(filename.c_str());
 
@@ -83,7 +83,7 @@ int UUtils::SaveVectorToMatlabFile(vector<double> &vector, string filename)
 }
 
 
-int UUtils::SaveVectorToMatlabFile(vector<int> &vector, string filename)
+int UUtils::SaveVectorToMatlabFile(const vector<int> &vector, const string &filename)
 {
 	ofstream file(filename.c_str());
 
@@ -100,7 +100,7 @@ int UUtils::SaveVectorToMatlabFile(vector<int> &vector, string filename)
 	return 1;
 }
 
-int UUtils::SaveVectorToMatlabFile(vector<UVector3> &vector, string filename)
+int UUtils::SaveVectorToMatlabFile(const vector<UVector3> &vector, const string &filename)
 {
 	ofstream file(filename.c_str());
 
@@ -109,7 +109,7 @@ int UUtils::SaveVectorToMatlabFile(vector<UVector3> &vector, string filename)
 		int size = vector.size();
 		for (int i = 0; i < size; i++) 
 		{
-			UVector3 &vec = vector[i];
+			const UVector3 &vec = vector[i];
 			file << vec.x << "\t" << vec.y << "\t" << vec.z << "\n";
 		}
 		return 0;
@@ -131,7 +131,7 @@ string UUtils::ToString(double number)
 	return ss.str();
 }
 
-int UUtils::FileSize(std::string filePath)
+int UUtils::FileSize(const std::string &filePath)
 {
 	std::streampos fsize = 0;
 	std::ifstream file(filePath.c_str(), std::ios::binary);

@@ -29,7 +29,7 @@ public:
 
 public:
 	UMultiUnion() : VUSolid() {}
-	UMultiUnion(const char *name); 
+	UMultiUnion(const std::string &name); 
 	~UMultiUnion();
 
 	// Navigation methods

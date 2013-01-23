@@ -310,9 +310,7 @@ void UVoxelizer::BuildBitmasks(std::vector<double> boundaries[], UBits bitmasks[
 			double max = p + d; // + localTolerance;
 
 			int i = BinarySearch(boundary, min);
-
-			if (i < 0 || i >= voxelsCount)
-				i = i;
+			if (i < 0) i = 0;
 
 			do
 			{
@@ -1074,7 +1072,7 @@ bool UVoxelizer::UpdateCurrentVoxel(const UVector3 &point, const UVector3 &direc
 		if (direction[i] > 0) 
 		{
 			if (point[i] >= boundary[++index])
-				if (++curVoxel[i] >= (int) boundary.size())
+				if (++curVoxel[i] >= (int) boundary.size() - 1)
 					return false;
 		}
 		else

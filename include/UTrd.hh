@@ -23,7 +23,7 @@ class UTrd : public VUSolid
 	enum ESide {kUndefined,kPX,kMX,kPY,kMY,kPZ,kMZ};
 public:
 	UTrd() : VUSolid(), fDx1(0), fDx2(0), fDy1(0), fDy2(0), fDz(0) {}
-	UTrd(const char* pName, double pdx1, double pdx2, double pdy1, double pdy2, double pdz);
+	UTrd(const std::string &pName, double pdx1, double pdx2, double pdy1, double pdy2, double pdz);
 	virtual ~UTrd() {}
 
 	// Navigation methods
@@ -65,7 +65,7 @@ public:
 	inline bool NormalRoot ( const UVector3& aPoint, UVector3 &aNormal ) const; 
 	inline bool NormalGeant4 ( const UVector3& aPoint, UVector3 &aNormal ) const; 
 
-	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
+//	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
 	virtual void Extent (UVector3 &aMin, UVector3 &aMax) const; 
 	virtual double Capacity();
 	virtual double SurfaceArea();
@@ -80,11 +80,11 @@ public:
 	virtual void GetParametersList(int /*aNumber*/,double * /*aArray*/) const{} 
 	virtual UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
 
-	std::ostream& UTrd::StreamInfo( std::ostream& os ) const;
+	std::ostream& StreamInfo( std::ostream& os ) const;
 
 	UVector3 GetPointOnSurface() const;
 
-	UPolyhedron* UTrd::CreatePolyhedron () const;
+	UPolyhedron* CreatePolyhedron () const;
 
 private:  
 	inline UVector3 ApproxSurfaceNormal( const UVector3& p ) const;

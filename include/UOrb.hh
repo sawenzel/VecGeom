@@ -21,38 +21,38 @@ class UOrb : public VUSolid
 
 public:
 	UOrb() : VUSolid(), fR(0), fRTolerance(0) {}
-	UOrb(const char *name, double pRmax);
-	virtual ~UOrb() {}
+	UOrb(const std::string &name, double pRmax);
+	~UOrb() {}
 
 	// Navigation methods
 	EnumInside     Inside (const UVector3 &aPo6int) const;   
 
-	virtual double  SafetyFromInside ( const UVector3 &aPoint, 
+	double  SafetyFromInside ( const UVector3 &aPoint, 
 		bool aAccurate=false) const;
-	virtual double  SafetyFromOutside( const UVector3 &aPoint, 
+	double  SafetyFromOutside( const UVector3 &aPoint, 
 		bool aAccurate=false) const;
-	virtual double  DistanceToIn     ( const UVector3 &aPoint, 
+	double  DistanceToIn     ( const UVector3 &aPoint, 
 		const UVector3 &aDirection,
 		// UVector3       &aNormalVector,
 		double aPstep = UUtils::kInfinity) const;                               
 
-	virtual double DistanceToOut     ( const UVector3 &aPoint,
+	double DistanceToOut     ( const UVector3 &aPoint,
 		const UVector3 &aDirection,
 		UVector3       &aNormalVector, 
 		bool           &aConvex,
 		double aPstep = UUtils::kInfinity) const;
 
-	virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
-	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
-	virtual void Extent (UVector3 &aMin, UVector3 &aMax) const; 
-	virtual double Capacity();
-	virtual double SurfaceArea();
-	virtual UGeometryType GetEntityType() const { return "Orb";}
-	virtual void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
+	bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
+//	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
+	void Extent (UVector3 &aMin, UVector3 &aMax) const; 
+	double Capacity();
+	double SurfaceArea();
+	UGeometryType GetEntityType() const { return "Orb";}
+	void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
 	//G4Visualisation
-	virtual void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
-	virtual UPolyhedron* GetPolyhedron() const{return CreatePolyhedron(); }
+	void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
+	UPolyhedron* GetPolyhedron() const{return CreatePolyhedron(); }
 
 	inline VUSolid* Clone() const
 	{
@@ -74,7 +74,7 @@ private:
 	double fR;
 	double fRTolerance;
 
-	virtual double DistanceToOutForOutsidePoints(const UVector3 &p, const UVector3 &v, UVector3 &n) const;
+	double DistanceToOutForOutsidePoints(const UVector3 &p, const UVector3 &v, UVector3 &n) const;
 
 };
 #endif

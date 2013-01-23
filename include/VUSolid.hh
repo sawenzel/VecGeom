@@ -8,7 +8,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Utypes.hh"
+#include "UTypes.hh"
 #include "UVector3.hh"
 
 #include "UUtils.hh"
@@ -36,7 +36,7 @@ static double     faTolerance;
 
 public:
   VUSolid();
-  VUSolid(const char *name);
+  VUSolid(const std::string &name);
   virtual ~VUSolid();
   
   // Navigation methods
@@ -80,8 +80,22 @@ public:
 
   // Decision: provide or not the Boolean 'validNormal' argument for returning validity 
 
-  virtual void Extent(EAxisType aAxis, double &aMin, double &aMax) const = 0;
+  inline virtual void Extent(EAxisType aAxis, double &aMin, double &aMax)
   // Returns the minimum and maximum extent along the specified Cartesian axis
+  {
+	  // Returns extent of the solid along a given cartesian axis
+	  if (aAxis >= 0 && aAxis <= 2)
+	  {
+		  UVector3 min, max;
+		  Extent(min,max);
+		  aMin = min[aAxis]; aMax = max[aAxis];
+	  }
+#ifdef USPECSDEBUG
+	  else
+		  cout << "Extent: unknown axis" << aAxis << std::endl;
+#endif
+  }
+  
   virtual void Extent( UVector3 &aMin, UVector3 &aMax ) const = 0;
   // Return the minimum and maximum extent along all Cartesian axes
   // For both the Extent methods
@@ -89,12 +103,12 @@ public:
   // o Decision: whether to store the computed BBox (containing or representing 6 double values), 
   //     and whether to compute it at construction time.
   // Methods are *not* const to allow caching of the Bounding Box
- virtual UGeometryType  GetEntityType() const =0;
+ virtual UGeometryType  GetEntityType() const = 0;
        // Provide identification of the class of an object.
        // (required for persistency and STEP interface)
   
-  const char     *GetName() const {return fName.c_str();}
-  void            SetName(const char *aName) {fName = aName;} 
+  const std::string &GetName() const {return fName;}
+  void            SetName(const std::string &aName) {fName = aName;}
 
   // Auxiliary methods
   virtual double Capacity()    = 0 ;   //  like  CubicVolume() 

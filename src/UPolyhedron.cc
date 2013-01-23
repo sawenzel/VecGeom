@@ -672,6 +672,13 @@ void UPolyhedron::RotateAroundZ(int nstep, double phi, double dphi,
 	}
 }
 
+struct edgeListMember {
+	edgeListMember *next;
+	int v2;
+	int iface;
+	int iedge;
+};
+
 void UPolyhedron::SetReferences()
 /***********************************************************************
  *																																		 *
@@ -685,20 +692,12 @@ void UPolyhedron::SetReferences()
 	int nface = GetNoFacets();
 	if (nface <= 0) return;
 
-	struct edgeListMember {
-		edgeListMember *next;
-		int v2;
-		int iface;
-		int iedge;
-	};
-	
 	//	 A L L O C A T E	 A N D	 I N I T I A T E	 L I S T S
 	std::vector<edgeListMember> edgeList(2*nface);
 	std::vector<edgeListMember *> headList(GetNoVertices());
 	
 	int i;
 	edgeListMember *freeList = &edgeList[0];
-	int nFace = GetNoFacets();
 	for (i=0; i<2*nface-1; i++) {
 		edgeList[i].next = &edgeList[i+1];
 	}
@@ -1095,7 +1094,7 @@ void UPolyhedron::GetFacet(int iFace, int &n, int *iNodes,
 			<< std::endl;
 		n = 0;
 	}else{
-		int i, k;
+		int i;
 		for (i=0; i<4; i++) { 
 			const UFacet &facet = fFacets[iFace];
 			const UEdge &edge = facet.edge[i];

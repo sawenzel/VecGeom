@@ -1940,21 +1940,6 @@ UPolyhedron* UTubs::CreatePolyhedron () const
 	return new UPolyhedronTubs (fRMin, fRMax, fDz, fSPhi, fDPhi);
 }
 
-void UTubs::Extent (EAxisType aAxis, double &aMin, double &aMax) const
-{
-    // Returns extent of the solid along a given cartesian axis
-    if (aAxis >= 0 && aAxis <= 2)
-    {
-        UVector3 min, max;
-        Extent(min,max);
-        aMin = min[aAxis]; aMax = max[aAxis];
-    }
-#ifdef USPECSDEBUG
-    else
-        cout << "Extent: unknown axis" << aAxis << std::endl;
-#endif
-}
-
 void UTubs::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
 	aMin = UVector3(-fRMax, -fRMax, -fDz);

@@ -219,7 +219,7 @@ inline double UTrd::SafetyFromOutsideAccurate ( const UVector3 &p) const
 //dy2 	Half-length along y at the surface positioned at +dz
 //dz 	Half-length along z axis 
 //______________________________________________________________________________
-UTrd::UTrd(const char* pName,
+UTrd::UTrd(const std::string &pName,
 	double pdx1, double pdx2,
 	double pdy1, double pdy2,
 	double pdz)
@@ -1478,6 +1478,8 @@ inline UVector3 UTrd::ApproxSurfaceNormal( const UVector3& p ) const
 * Returns extent of the solid along a given cartesian axis
 * OK
 */
+
+/*
 void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 {
 	switch (aAxis)
@@ -1497,6 +1499,7 @@ void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 		std::cout << "Extent: unknown axis" << aAxis << std::endl;
 	}      
 }            
+*/
 
 /**
 * Returns the full 3D cartesian extent of the solid.

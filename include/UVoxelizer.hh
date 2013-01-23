@@ -154,7 +154,7 @@ public:
 	inline bool GetPointVoxel(const UVector3 &p, std::vector<int> &voxels) const
 	{
 		for (int i = 0; i <= 2; ++i)
-			if (p[i] < *fBoundaries[i].begin() || p[i] > *fBoundaries[i].end()) false;
+			if (p[i] < *fBoundaries[i].begin() || p[i] > *fBoundaries[i].end()) return false;
 
 		for (int i = 0; i <= 2; ++i)
 			voxels[i] = BinarySearch(fBoundaries[i], p[i]);

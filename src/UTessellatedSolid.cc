@@ -121,7 +121,7 @@ UTessellatedSolid::UTessellatedSolid () : VUSolid("dummy")
 //
 
 #ifdef USOLIDSONLY
-UTessellatedSolid::UTessellatedSolid (const char *name)
+UTessellatedSolid::UTessellatedSolid (const std::string &name)
 	: VUSolid(name)
 {
 	Initialize();
@@ -240,22 +240,23 @@ bool UTessellatedSolid::AddFacet (VUFacet *aFacet)
 		UVector3 p = aFacet->GetCircumcentre();
 		UVertexInfo value;
 		value.id = fFacetList.size();
-		value.mag2 = p.Mag2();
+		value.mag2 = p.x + p.y + p.z;
 
 		bool found = false;
 		if (!OutsideOfExtent(p, fgTolerance))
 		{
-			double fgTolerance24 = fgTolerance * fgTolerance / 4.0;
+			double fgTolerance3 = 3 *fgTolerance;
 			pos = fFacetList.lower_bound(value);
 
 			it = pos;
 			while (!found && it != end)
 			{
 				int id = (*it).id;
-				UVector3 q = fFacets[id]->GetCircumcentre();
-				if (found = (fFacets[id] == aFacet)) break;
-				double dif = q.Mag2() - value.mag2;
-				if (dif > fgTolerance24) break;
+				VUFacet *facet = fFacets[id];
+				UVector3 q = facet->GetCircumcentre();
+				if (found = (facet == aFacet)) break;
+				double dif = q.x + q.y + q.z - value.mag2;
+				if (dif > fgTolerance3) break;
 				it++;
 			}
 
@@ -266,10 +267,11 @@ bool UTessellatedSolid::AddFacet (VUFacet *aFacet)
 				{
 					--it;
 					int id = (*it).id;
-					UVector3 q = fFacets[id]->GetCircumcentre();
-					if (found = (fFacets[id] == aFacet)) break;
-					double dif = value.mag2 - q.Mag2();
-					if (dif > fgTolerance24) break;
+					VUFacet *facet = fFacets[id];
+					UVector3 q = facet->GetCircumcentre();
+					if (found = (facet == aFacet)) break;
+					double dif = q.x + q.y + q.z - q.Mag2();
+					if (dif > fgTolerance3) break;
 				}
 			}
 		}
@@ -490,8 +492,10 @@ void UTessellatedSolid::CreateVertexList()
 
 	fVertexList.clear();
 	int size = fFacets.size();
+	vector<int> newIndex(100);
 
 	double fgTolerance24 = fgTolerance * fgTolerance / 4.0;
+	double fgTolerance3 = 3 * fgTolerance;
 	for (int k = 0; k < size; ++k)
 	{
 		VUFacet &facet = *fFacets[k];
@@ -501,9 +505,10 @@ void UTessellatedSolid::CreateVertexList()
 		{
 			p = facet.GetVertex(i);
 			value.id = fVertexList.size();
-			value.mag2 = p.Mag2();
+			value.mag2 = p.x + p.y + p.z;
 
 			bool found = false;
+			int id = 0;
 			if (!OutsideOfExtent(p, fgTolerance))
 			{
 				pos = vertexListSorted.lower_bound(value);
@@ -511,27 +516,27 @@ void UTessellatedSolid::CreateVertexList()
 				it = pos;
 				while (it != end)
 				{
-					int id = (*it).id;
+					id = (*it).id;
 					UVector3 q = fVertexList[id];
 					double dif = (q-p).Mag2();
 					if (found = (dif < fgTolerance24)) break;
-					dif = q.Mag2() - value.mag2;
-					if (dif > fgTolerance24) break;
+					dif = q.x + q.y + q.z - value.mag2;
+					if (dif > fgTolerance3) break;
 					it++;
 				}
 
-				if (fVertexList.size() > 1)
+				if (!found && fVertexList.size() > 1)
 				{
 					it = pos;
-					while (!found && it != begin)
+					while (it != begin)
 					{
 						--it;
-						int id = (*it).id;
+						id = (*it).id;
 						UVector3 q = fVertexList[id];
 						double dif = (q-p).Mag2();
 						if (found = (dif < fgTolerance24)) break;
-						dif = value.mag2 - q.Mag2();
-						if (dif > fgTolerance24) break;
+						dif = value.mag2 - (q.x + q.y + q.z);
+						if (dif > fgTolerance) break;
 					}
 				}
 			}
@@ -540,11 +545,16 @@ void UTessellatedSolid::CreateVertexList()
 
 			if (!found)
 			{
+#ifdef G4SPECSDEBUG	
+				G4cout << p.x() << ":" << p.y() << ":" << p.z() << endl;	
+				G4cout << "Adding new vertex #" << i << " of facet " << k << " id " << value.id << endl;	
+				G4cout << "===" << endl;	
+#endif
 				fVertexList.push_back(p);
 				vertexListSorted.insert(value);
 				begin = vertexListSorted.begin();
 				end = vertexListSorted.end();
-				facet.SetVertexIndex(i, value.id);
+				newIndex[i] = value.id;
 
 				//
 				// Now update the maximum x, y and z limits of the volume.
@@ -562,12 +572,19 @@ void UTessellatedSolid::CreateVertexList()
 			}
 			else
 			{
-				int index = (*it).id;
-				facet.SetVertexIndex(i,index);
+				#ifdef G4SPECSDEBUG	
+								G4cout << p.x() << ":" << p.y() << ":" << p.z() << endl;	
+								G4cout << "Vertex #" << i << " of facet " << k << " found, redirecting to " << id << endl;
+								G4cout << "===" << endl;
+				#endif
+				newIndex[i] = id;
 			}
 		}
 		// only now it is possible to change vertices pointer
 		facet.SetVertices(&fVertexList);
+		for (int i = 0; i < max; i++)
+			facet.SetVertexIndex(i,newIndex[i]);
+
 	}
 	vector<UVector3>(fVertexList).swap(fVertexList);
 
@@ -1943,18 +1960,6 @@ double UTessellatedSolid::GetCubicVolume ()
 
 
 #ifdef USOLIDSONLY
-void UTessellatedSolid::Extent (EAxisType aAxis, double &aMin, double &aMax) const
-{
-	// Returns extent of the solid along a given cartesian axis
-	if (aAxis >= 0 && aAxis <= 2)
-	{
-		aMin = fMinExtent[aAxis]; aMax = fMaxExtent[aAxis];
-	}
-#ifdef USPECSDEBUG
-	else
-		cout << "Extent: unknown axis" << aAxis << std::endl;
-#endif
-}
 
 void UTessellatedSolid::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
@@ -2036,7 +2041,7 @@ inline int UTessellatedSolid::AllocatedMemoryWithoutVoxels()
 	for (int i = 0; i < limit; ++i)
 	{
 		VUFacet &facet = *fFacets[i];
-		base += facet.AllocatedMemory();
+		base += facet.AllocatedMemory() + sizeof(VUFacet *);
 	}
 
 	std::set<VUFacet *>::const_iterator beg, end, it;

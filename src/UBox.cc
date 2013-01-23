@@ -30,7 +30,7 @@ UBox::~UBox()
 }
 
 //______________________________________________________________________________
-UBox::UBox(const char *name, double dx, double dy, double dz)
+UBox::UBox(const std::string &name, double dx, double dy, double dz)
 	:VUSolid(name),
 	fDx(dx),
 	fDy(dy),
@@ -373,6 +373,7 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal ) const
 	return valid;               
 }
 
+/*
 //______________________________________________________________________________
 void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 {
@@ -390,7 +391,8 @@ void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 	default:
 		std::cout << "Extent: unknown axis" << aAxis << std::endl;
 	}      
-}             
+}
+*/
 
 //______________________________________________________________________________
 void UBox::Extent ( UVector3 &aMin, UVector3 &aMax) const

@@ -175,7 +175,7 @@ public:  // with description
 
 #ifdef USOLIDSONLY
 
-	UTessellatedSolid (const char *name);
+	UTessellatedSolid (const std::string &name);
 
 	virtual double Capacity() {return 0;}
 

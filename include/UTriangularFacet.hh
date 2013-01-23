@@ -124,7 +124,7 @@ public:
 	{
 		int size = sizeof(*this);
 		//		size += geometryType.length();
-		size += GetNumberOfVertices() * sizeof(UVector3);
+		// size += GetNumberOfVertices() * sizeof(UVector3);
 		//7		size += E.size() * sizeof(UVector3);
 		return size;
 	}
@@ -141,11 +141,7 @@ public:
 
 	inline void SetVertices(std::vector<UVector3> *v)
 	{
-		if (fIndices[0] < 0 && fVertices)
-		{
-			delete fVertices;
-			fVertices = NULL;
-		}
+		if (fIndices[0] < 0 && fVertices) delete fVertices;
 		fVertices = v;
 	}
 

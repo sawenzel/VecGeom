@@ -30,7 +30,7 @@ using namespace std;
 // invert bitmasks
 
 //______________________________________________________________________________       
-UMultiUnion::UMultiUnion(const char *name)
+UMultiUnion::UMultiUnion(const std::string &name)
 {
 	SetName(name);
 	fSolids.clear();

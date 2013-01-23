@@ -19,7 +19,7 @@
 using namespace std;
 
 //______________________________________________________________________________
-UOrb::UOrb(const char *name, double r)
+UOrb::UOrb(const std::string &name, double r)
 	:VUSolid(name), fR(r)
 {
 	const double epsilon = 2.e-11;  // relative tolerance of fR
@@ -435,6 +435,8 @@ bool UOrb::Normal( const UVector3& p, UVector3 &n) const
 * Returns extent of the solid along a given cartesian axis
 * OK
 */
+
+/*
 void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 {
 	switch (aAxis)
@@ -447,7 +449,8 @@ void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
 	default:
 		cout << "Extent: unknown axis" << aAxis << endl;
 	}      
-}            
+}
+*/
 
 /**
 * Returns the full 3D cartesian extent of the solid.

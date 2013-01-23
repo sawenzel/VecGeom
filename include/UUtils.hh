@@ -142,9 +142,9 @@ namespace UUtils {
 		T fData;
 	};
 
-	int SaveVectorToMatlabFile(std::vector<double> &vector, std::string filename);
-	int SaveVectorToMatlabFile(std::vector<UVector3> &vector, std::string filename);
-	int SaveVectorToMatlabFile(std::vector<int> &vector, std::string filename);
+	int SaveVectorToMatlabFile(const std::vector<double> &vector, const std::string &filename);
+	int SaveVectorToMatlabFile(const std::vector<UVector3> &vector, const std::string &filename);
+	int SaveVectorToMatlabFile(const std::vector<int> &vector, const std::string &filename);
 
 	std::string ToString(int number);
 	std::string ToString(double number);
@@ -153,7 +153,7 @@ namespace UUtils {
 	//  bool         RootsQuadratic(const double coef[3], double xmin, double xmax);
 	//  bool         RootsCubic(const double coef[4],double &x1, double &x2, double &x3);   
 
-	int FileSize(std::string filePath);
+	int FileSize(const std::string &filePath);
 
 	int StrPos(const std::string &haystack, const std::string &needle);
 

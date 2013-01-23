@@ -44,7 +44,7 @@
 #include <vector>
 
 #include "UVector3.hh"
-#include "Utypes.hh"
+#include "UTypes.hh"
 #include "VUFacet.hh"
 
 enum UFacetVertexType {UABSOLUTE, URELATIVE};

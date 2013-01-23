@@ -1532,7 +1532,6 @@ double UCons::DistanceToOut( const UVector3 &p,
 	secRMax = std::sqrt(1.0 + tanRMax*tanRMax);
 	rMaxAv	= (fRmax1 + fRmax2)*0.5;
 
-
 	t1	 = 1.0 - v.z*v.z;			// since v normalised
 	t2	 = p.x*v.x + p.y*v.y;
 	t3	 = p.x*p.x + p.y*p.y;
@@ -2365,20 +2364,6 @@ UPolyhedron* UCons::CreatePolyhedron () const
 }
 
 
-void UCons::Extent (EAxisType aAxis, double &aMin, double &aMax) const
-{
-    // Returns extent of the solid along a given cartesian axis
-    if (aAxis >= 0 && aAxis <= 2)
-    {
-        UVector3 min, max;
-        Extent(min,max);
-        aMin = min[aAxis]; aMax = max[aAxis];
-    }
-#ifdef USPECSDEBUG
-    else
-        cout << "Extent: unknown axis" << aAxis << std::endl;
-#endif
-}
 
 void UCons::Extent (UVector3 &aMin, UVector3 &aMax) const
 {

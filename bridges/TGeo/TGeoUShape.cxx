@@ -116,7 +116,7 @@ void TGeoUShape::TestBox()
    geom->SetTopVolume(top);
    
    UBox *box = new UBox("UBox", 50,50,50);
-   TGeoUShape *shape = new TGeoUShape(box->GetName(), box);
+   TGeoUShape *shape = new TGeoUShape(box->GetName().c_str(), box);
    
    TGeoVolume *vol = new TGeoVolume("UBox", shape, Al);
    top->AddNode(vol,1);
