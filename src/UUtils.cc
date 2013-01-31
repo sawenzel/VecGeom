@@ -107,6 +107,7 @@ int UUtils::SaveVectorToMatlabFile(const vector<UVector3> &vector, const string 
 	if (file.is_open())
 	{
 		int size = vector.size();
+    file.precision(16);
 		for (int i = 0; i < size; i++) 
 		{
 			const UVector3 &vec = vector[i];

@@ -1,3 +1,4 @@
+
 //
 // ********************************************************************
 // * License and Disclaimer                                           *
@@ -62,6 +63,7 @@
 #include "G4UnionSolid.hh"
 #include "G4TessellatedSolid.hh"
 #include "G4Trap.hh"
+#include "G4GenericTrap.hh"
 #include "G4VFacet.hh"
 
 #include "VUSolid.hh"
@@ -431,9 +433,16 @@ void SBTperformance::TestDistanceToInGeant4(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
-		GetVectorGeant4(point, points, i);
+    /*
+    points[0] = UVector3(-3980913.296893585, -21552269.41233081, -21552269.41233081);
+    directions[0] = UVector3(0.1908906498134092, 0.7127580504382666, 0.7127580504382666);
+    points[1] = UVector3(7341580.738867766, 20654134.81170427, 20654134.81170427) ;
+    directions[1] = UVector3(-0.1759615598226392, -0.6548197707145482, -0.6548197707145482);
+    */
+    
+    GetVectorGeant4(point, points, i);
 		GetVectorGeant4(direction, directions, i);
-		double res = volumeGeant4->DistanceToIn(point, direction);
+    double res = volumeGeant4->DistanceToIn(point, direction);
 
 		if (!iteration) 
 		{
@@ -475,6 +484,13 @@ void SBTperformance::TestDistanceToInROOT(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
+    /*
+    points[0] = UVector3(-3980913.296893585, -21552269.41233081, -21552269.41233081);
+    directions[0] = UVector3(0.1908906498134092, 0.7127580504382666, 0.7127580504382666);
+    points[1] = UVector3(7341580.738867766, 20654134.81170427, 20654134.81170427) ;
+    directions[1] = UVector3(-0.1759615598226392, -0.6548197707145482, -0.6548197707145482);
+    */
+
 		GetVectorRoot(point, points, i);
 		GetVectorRoot(direction, directions, i);
 		double res = volumeROOT->DistFromOutside(point, direction);
@@ -486,15 +502,14 @@ void SBTperformance::TestDistanceToInROOT(int iteration)
 
 //			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);
 
-			G4ThreeVector p (point[0], point[1], point[2]);
-			G4ThreeVector d (direction[0], direction[1], direction[2]);
+			G4ThreeVector p(point[0], point[1], point[2]);
+			G4ThreeVector d(direction[0], direction[1], direction[2]);
 			G4ThreeVector normal;
 			PropagatedNormal(p, d, res, normal);
 			SetVectorGeant4(normal, resultVectorRoot, i);
 		}
 	}
 }
-
 
 void SBTperformance::TestDistanceToOutGeant4(int iteration)
 {
@@ -691,6 +706,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
     if (type == "G4TessellatedSolid")
     {
         UTessellatedSolid &utessel = *new UTessellatedSolid("ts");
+        utessel.SetMaxVoxels(1);
 
         G4TessellatedSolid &tessel = *(G4TessellatedSolid *) testVolume;
         int n = tessel.GetNumberOfFacets();
@@ -718,7 +734,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
             }
             utessel.AddFacet(ufacet);
         }
-		utessel.SetMaxVoxels(SBTrun::maxVoxels);
+		    utessel.SetMaxVoxels(SBTrun::maxVoxels);
         utessel.SetSolidClosed(true);
         volumeUSolids = &utessel;
     }
@@ -777,6 +793,21 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 		volumeROOT = new TGeoTrd2(x1, x2, y1, y2, z);
 		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
 	}
+  if (type == "G4GenericTrap")
+  {
+    G4GenericTrap &trap = *(G4GenericTrap *) testVolume;
+    double z = trap.GetZHalfLength();
+    std::vector<G4TwoVector> vertices = trap.GetVertices();
+    double tVertices[16];
+    for (int i = 0; i < vertices.size(); i++)
+    {
+       G4TwoVector &vec = vertices[i];
+       tVertices[2*i] = vec.x();
+       tVertices[2*i+1] = vec.y();
+    }
+    volumeROOT = new TGeoArb8("Trap", z, tVertices);
+  }
+
 	if (type == "G4Trap")
 	{
 		G4Trap &trap = *(G4Trap *) testVolume;
@@ -1100,7 +1131,9 @@ void SBTperformance::CreatePointsAndDirectionsInside()
 	while (i < maxPointsInside)
 	{
 		double x = RandomRange(extent.GetXmin(), extent.GetXmax());
-		double y = RandomRange(extent.GetYmin(), extent.GetYmax());
+    double y = RandomRange(extent.GetYmin(), extent.GetYmax());
+    if (extent.GetYmin() == extent.GetYmax())
+      y = RandomRange(-1000, +1000);
 		double z = RandomRange(extent.GetZmin(), extent.GetZmax());
 		G4ThreeVector pointG4(x, y, z);
 		if (volumeGeant4->Inside(pointG4))

@@ -58,8 +58,11 @@
 #include "G4Sphere.hh"
 #include "G4Torus.hh"
 #include "G4Trap.hh"
+#include "G4Paraboloid.hh"
+#include "G4GenericTrap.hh"
 #include "G4Trd.hh"
 #include "G4Tubs.hh"
+#include "G4CutTubs.hh"
 #include "G4Ellipsoid.hh"
 #include "G4EllipticalCone.hh"
 #include "G4EllipticalTube.hh"
@@ -207,6 +210,20 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	para.Make = &G4InteractiveSolid::MakePara;
 	commands.push_back(&para);
 
+  // Declare G4CutTubs
+  //
+  cuttubs.Args.push_back(new G4UIcmdPargDouble( "rmin", 1.0, m ));
+  cuttubs.Args.push_back(new G4UIcmdPargDouble( "rmax", 1.0, m ));
+  cuttubs.Args.push_back(new G4UIcmdPargDouble( "dz",   1.0, m ));
+  cuttubs.Args.push_back(new G4UIcmdPargDouble( "startPhi",  1.0, deg ));
+  cuttubs.Args.push_back(new G4UIcmdPargDouble( "deltaPhi",  1.0, deg ));
+  cuttubs.Args.push_back(new G4UIcmdPargListDouble( "lowNorm", 3, mm ));
+  cuttubs.Args.push_back(new G4UIcmdPargListDouble( "highNorm", 3, mm ));
+  G4String cuttubsPath = prefix+"G4CutTubs";
+  cuttubs.Cmd = new G4UIcmdWithPargs( cuttubsPath, this, &cuttubs.Args[0], cuttubs.Args.size());
+  cuttubs.Cmd->SetGuidance("Declare a G4CutTubs solid");
+  cuttubs.Make = &G4InteractiveSolid::MakeCutTubs;
+  commands.push_back(&cuttubs);
 	//
 	// Declare G4Sphere
 	//
@@ -255,6 +272,28 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	trap.Cmd->SetGuidance( "Declare a G4Trap solid" );
 	trap.Make = &G4InteractiveSolid::MakeTrap;
 	commands.push_back(&trap);
+
+  // Declare G4GenericTrap
+  //
+  gentrap.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
+  gentrap.Args.push_back(new G4UIcmdPargListDouble("pgonX", 100, m ));
+  gentrap.Args.push_back(new G4UIcmdPargListDouble("pgonY", 100, m ));
+  G4String gentrapPath = prefix+"G4GenericTrap";
+  gentrap.Cmd = new G4UIcmdWithPargs( gentrapPath, this, &gentrap.Args[0], gentrap.Args.size());
+  gentrap.Cmd->SetGuidance( "Declare a G4GenericTrap solid" );
+  gentrap.Make = &G4InteractiveSolid::MakeGenericTrap;
+  commands.push_back(&gentrap);
+
+  // Declare G4Paraboloid
+  //
+  parabol.Args.push_back(new G4UIcmdPargDouble( "dz" , 1.0, m ));
+  parabol.Args.push_back(new G4UIcmdPargDouble( "dr1", 1.0, m ));
+  parabol.Args.push_back(new G4UIcmdPargDouble( "dr2", 1.0, m ));
+  G4String parabolPath = prefix+"G4Paraboloid";
+  parabol.Cmd = new G4UIcmdWithPargs( parabolPath, this, &parabol.Args[0], parabol.Args.size());
+  parabol.Cmd->SetGuidance( "Declare a G4Paraboloid solid" );
+  parabol.Make = &G4InteractiveSolid::MakeParaboloid;
+  commands.push_back(&parabol);
 
 	//
 	// Declare G4Trd
@@ -905,6 +944,39 @@ void G4InteractiveSolid::MakeTrap( G4String values )
 }
 
 
+void G4InteractiveSolid::MakeGenericTrap( G4String values )
+{
+  if (gentrap.Cmd->GetArguments( values )) {
+    delete solid;
+
+    double dzArg = gentrap.GetDouble(0);
+    G4UIcmdPargListDouble &pgonxArg = gentrap.GetArgListDouble(1), 
+      &pgonyArg = gentrap.GetArgListDouble(2);
+
+    std::vector<G4TwoVector> polygon;
+    for ( G4int i=0; i<8; ++i ) {
+      polygon.push_back(G4TwoVector(pgonxArg.GetValues()[i], pgonyArg.GetValues()[i]));
+      //G4cout<<pgonxArg->GetValues()[i]<<G4endl;
+    }
+
+    solid = new G4GenericTrap("interactiveGenericTrap",dzArg, polygon);                                        
+  }
+  else
+    G4cerr << "G4GenericTrap not created" << G4endl;
+}
+
+void G4InteractiveSolid::MakeParaboloid( G4String values )
+{
+  if (parabol.Cmd->GetArguments( values )) {
+    delete solid;
+
+    solid = new G4Paraboloid( "interactiveParaboloid", 
+      gentrap.GetDouble(0), gentrap.GetDouble(1), gentrap.GetDouble(2));
+  }
+  else
+    G4cerr << "G4Paraboloid not created" << G4endl;
+} 
+
 //
 // MakeTrd
 //
@@ -939,6 +1011,23 @@ void G4InteractiveSolid::MakeTubs( G4String values )
 		G4cerr << "G4Tubs not created" << G4endl;
 }
 
+void G4InteractiveSolid::MakeCutTubs(G4String values)
+{
+  if (cuttubs.Cmd->GetArguments( values )) {
+    delete solid;
+
+    G4UIcmdPargListDouble &lArg = extruded.GetArgListDouble(5);
+    G4UIcmdPargListDouble &hArg = extruded.GetArgListDouble(6);
+    G4ThreeVector lowNorm (lArg.GetValues()[0], lArg.GetValues()[1], lArg.GetValues()[2]);
+    G4ThreeVector highNorm (hArg.GetValues()[0], hArg.GetValues()[1], hArg.GetValues()[2]);
+
+    solid = new G4CutTubs( "interactiveCutTubs", tubs.GetDouble(0),
+      tubs.GetDouble(1), tubs.GetDouble(2),
+      tubs.GetDouble(3), tubs.GetDouble(4), lowNorm, highNorm);
+  }
+  else
+    G4cerr << "G4Tubs not created" << G4endl;
+}
 
 //
 // MakeEllipsoid
@@ -1059,7 +1148,7 @@ void G4InteractiveSolid::MakePolycone( G4String values )
 {
 	if (polycone.Cmd->GetArguments( values )) {
 		double phiStart = polycone.GetDouble(0), phiTotal = polycone.GetDouble(1),
-				numRZ    = polycone.GetDouble(2);
+				numRZ    = polycone.GetInteger(2);
 
 		G4UIcmdPargListDouble &rArg = polycone.GetArgListDouble(3);
 		G4UIcmdPargListDouble &zArg = polycone.GetArgListDouble(4);
@@ -1090,7 +1179,7 @@ void G4InteractiveSolid::MakePolycone2( G4String values )
 {
 	if (polycone2.Cmd->GetArguments( values )) {
 		double phiStart = polycone2.GetDouble(0), phiTotal = polycone2.GetDouble(1);
-		int numRZ = (int) polycone2.GetDouble(2);
+		int numRZ = (int) polycone2.GetInteger(2);
 
 		G4UIcmdPargListDouble &zArg = polycone2.GetArgListDouble(3);
 		G4UIcmdPargListDouble &rInArg = polycone2.GetArgListDouble(4);
@@ -1743,7 +1832,9 @@ G4String G4InteractiveSolid::GetCurrentValue( G4UIcommand *command )
 			return ConvertArgsToString(cmd.Args);
 	}
 
-	G4Exception("G4InteractiveSolid::GetCurrentValue", "", FatalException, "Unrecognized command" );
+  G4Exception("G4InteractiveSolid","SBT008", FatalErrorInArgument,
+    "Unrecognized command");
+
 	return "foo!";
 }
 

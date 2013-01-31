@@ -115,7 +115,7 @@ protected:
   G4UIcmdWithAString		*fileCmd;
 
   G4SBTSolid box, ubox, umultiunion,  uorb, utrd, cons, orb, para, sphere, torus, 
-trap, trd, generics, paraboloid, tubs, ellipsoid, elCone, elTube,
+trap, gentrap, trd, generics, parabol, tubs, ellipsoid, elCone, elTube, cuttubs,
 extruded, hype, polycone, polycone2, polyhedra, polyhedra2, tessel,
 tessel2, tet, twistedBox, twistedTrap, twistedTrap2, twistedTrd, twistedTubs,
   dircTest, booleanSolid1, multiUnion, tessellatedSolidTransform, tessellatedSolidPlain, tessellatedSolidSTL, tessellatedSolidGdml;
@@ -131,10 +131,11 @@ tessel2, tet, twistedBox, twistedTrap, twistedTrap2, twistedTrd, twistedTubs,
   void MakeSphere( G4String values );	
   void MakeTorus( G4String values );
   void MakeTrap( G4String values );
-  void MakeTrd( G4String values );
   void MakeGenericTrap( G4String values );
+  void MakeTrd( G4String values );
   void MakeParaboloid( G4String values );
   void MakeTubs( G4String values );
+  void MakeCutTubs( G4String values );
   void MakeEllipsoid( G4String values );
   void MakeEllipticalCone( G4String values );
   void MakeEllipticalTube( G4String values );
