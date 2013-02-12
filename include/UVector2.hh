@@ -61,8 +61,8 @@ public:
 	inline ~UVector2();
 	// The destructor.
 
-	inline double x() const;
-	inline double y() const;
+//	inline double x() const;
+//	inline double y() const;
 	// The components in cartesian coordinate system.
 
 	double operator () (int i) const;
@@ -189,11 +189,11 @@ public:
 
 	enum { ZMpvToleranceTicks = 100 };
 
-private:
+  double x;
+  double y;
+  // The components.
 
-	double dx;
-	double dy;
-	// The components.
+private:
 
 	static double tolerance;
 	// default tolerance criterion for isNear() to return true.
@@ -204,83 +204,85 @@ static const UVector2 X_HAT2(1.0, 0.0);
 static const UVector2 Y_HAT2(0.0, 1.0);
 
 
+/*
 inline double UVector2::x() const {
-	return dx;
+	return x;
 }
 
 inline double UVector2::y() const {
-	return dy;
+	return y;
 }
+*/
 
 inline UVector2::UVector2(double x1, double y1)
-	: dx(x1), dy(y1) {}
+	: x(x1), y(y1) {}
 
 inline UVector2::UVector2( const UVector3 & s)
-	: dx(s.x), dy(s.y) {}
+	: x(s.x), y(s.y) {}
 
 inline void UVector2::setX(double x1) {
-	dx = x1;
+	x = x1;
 }
 
 inline void UVector2::setY(double y1) {
-	dy = y1;
+	y = y1;
 }
 
 inline void UVector2::set(double x1, double y1) {
-	dx = x1;
-	dy = y1;
+	x = x1;
+	y = y1;
 }
 
 double & UVector2::operator[] (int i)       { return operator()(i); }
 double   UVector2::operator[] (int i) const { return operator()(i); }
 
 inline UVector2::UVector2(const UVector2 & p)
-	: dx(p.x()), dy(p.y()) {}
+	: x(p.x), y(p.y) {}
 
 inline UVector2::~UVector2() {}
 
 inline UVector2 & UVector2::operator = (const UVector2 & p) {
-	dx = p.x();
-	dy = p.y();
+	x = p.x;
+	y = p.y;
 	return *this;
 }
 
 inline bool UVector2::operator == (const UVector2& v) const {
-	return (v.x()==x() && v.y()==y()) ? true : false;
+	return (v.x==x && v.y==y) ? true : false;
 }
 
 inline bool UVector2::operator != (const UVector2& v) const {
-	return (v.x()!=x() || v.y()!=y()) ? true : false;
+	return (v.x!=x || v.y!=y) ? true : false;
 }
 
 inline UVector2& UVector2::operator += (const UVector2 & p) {
-	dx += p.x();
-	dy += p.y();
+	x += p.x;
+	y += p.y;
 	return *this;
 }
 
 inline UVector2& UVector2::operator -= (const UVector2 & p) {
-	dx -= p.x();
-	dy -= p.y();
+	x -= p.x;
+	y -= p.y;
 	return *this;
 }
 
 inline UVector2 UVector2::operator - () const {
-	return UVector2(-dx, -dy);
+	return UVector2(-x, -y);
 }
 
 inline UVector2& UVector2::operator *= (double a) {
-	dx *= a;
-	dy *= a;
+	x *= a;
+	y *= a;
 	return *this;
 }
 
 inline double UVector2::dot(const UVector2 & p) const {
-	return dx*p.x() + dy*p.y();
+	return x*p.x + y*p.y;
 }
 
 inline double UVector2::mag2() const {
-	return dx*dx + dy*dy;
+	return x*x + y*y;
 }
 
 inline double UVector2::mag() const {
@@ -298,16 +300,16 @@ inline UVector2 UVector2::unit() const {
 }
 
 inline UVector2 UVector2::orthogonal() const {
-	double x1 = std::fabs(dx), y1 = std::fabs(dy);
+	double x1 = std::fabs(x), y1 = std::fabs(y);
 	if (x1 < y1) {
-		return UVector2(dy,-dx);
+		return UVector2(y,-x);
 	}else{
-		return UVector2(-dy,dx);
+		return UVector2(-y,x);
 	}
 }
 
 inline double UVector2::phi() const {
-	return dx == 0.0 && dy == 0.0 ? 0.0 : std::atan2(dy,dx);
+	return x == 0.0 && y == 0.0 ? 0.0 : std::atan2(y,x);
 }
 
 inline double UVector2::angle(const UVector2 & q) const {
@@ -337,19 +339,19 @@ inline void UVector2::setPolar(double r1, double phi1){
 }
 
 inline UVector2 operator + (const UVector2 & a, const UVector2 & b) {
-	return UVector2(a.x() + b.x(), a.y() + b.y());
+	return UVector2(a.x + b.x, a.y + b.y);
 }
 
 inline UVector2 operator - (const UVector2 & a, const UVector2 & b) {
-	return UVector2(a.x() - b.x(), a.y() - b.y());
+	return UVector2(a.x - b.x, a.y - b.y);
 }
 
 inline UVector2 operator * (const UVector2 & p, double a) {
-	return UVector2(a*p.x(), a*p.y());
+	return UVector2(a*p.x, a*p.y);
 }
 
 inline UVector2 operator * (double a, const UVector2 & p) {
-	return UVector2(a*p.x(), a*p.y());
+	return UVector2(a*p.x, a*p.y);
 }
 
 inline double operator * (const UVector2 & a, const UVector2 & b) {

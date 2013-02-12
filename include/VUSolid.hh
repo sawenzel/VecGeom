@@ -2,7 +2,7 @@
 #define USOLIDS_VUSolid
 ////////////////////////////////////////////////////////////////////////////////
 //  "Universal" Solid Interface
-//  Authors: J. Apostolakis, G. Cosmo, A. Gheata, A. Munnich, T. Nikitina (CERN)
+//  Authors: J. Apostolakis, G. Cosmo, M. Gayer, A. Gheata, A. Munnich, T. Nikitina (CERN)
 //
 //  Created: 25 May 2011
 //
@@ -146,6 +146,16 @@ public:
   inline virtual std::ostream& StreamInfo( std::ostream& os ) const = 0;
 
   virtual UVector3 GetPointOnSurface() const = 0;
+
+  double EstimateCubicVolume(int nStat, double epsilon) const;
+  // Calculate cubic volume based on Inside() method.
+  // Accuracy is limited by the second argument or the statistics
+  // expressed by the first argument.
+
+  double EstimateSurfaceArea(int nStat, double ell) const;
+  // Calculate surface area only based on Inside() method.
+  // Accuracy is limited by the second argument or the statistics
+  // expressed by the first argument.
 
 protected:
   virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) = 0;
