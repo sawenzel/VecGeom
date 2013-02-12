@@ -187,3 +187,50 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 	}
 }
 */
+
+////////////////////////////////////////////////////////////////
+//
+// Calculate cubic volume based on Inside() method.
+// Accuracy is limited by the second argument or the statistics
+// expressed by the first argument.
+// Implementation is courtesy of Vasiliki Despoina Mitsou,
+// University of Athens.
+
+/*
+double VUSolid::EstimateCubicVolume(int nStat, double epsilon) const
+{
+  int iInside=0;
+  double px,py,pz,minX,maxX,minY,maxY,minZ,maxZ,volume;
+  UVector3 p;
+  VUSolid::EnumInside in;
+
+  // values needed for CalculateExtent signature
+
+  UVoxelLimits limit;								// Unlimited
+  UAffineTransform origin;
+
+  // min max extents of pSolid along X,Y,Z
+
+  UVector3 min, max;
+  this->Extent(eXaxis,limit,origin,minX,maxX);
+  this->CalculateExtent(eYaxis,limit,origin,minY,maxY);
+  this->CalculateExtent(eZaxis,limit,origin,minZ,maxZ);
+
+  // limits
+
+  if(nStat < 100)		nStat	 = 100;
+  if(epsilon > 0.01) epsilon = 0.01;
+
+  for(int i = 0; i < nStat; i++ )
+  {
+    px = minX+(maxX-minX)*UUtils::Random();
+    py = minY+(maxY-minY)*UUtils::Random();
+    pz = minZ+(maxZ-minZ)*UUtils::Random();
+    p	= UVector3(px,py,pz);
+    in = this->Inside(p);
+    if(in != eOutside) iInside++;		
+  }
+  volume = (maxX-minX)*(maxY-minY)*(maxZ-minZ)*iInside/nStat;
+  return volume;
+} 
+*/
