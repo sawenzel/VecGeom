@@ -235,5 +235,5 @@ int UTessellatedGeometryAlgorithms::IntersectLineAndLineSegment2D (
 double UTessellatedGeometryAlgorithms::Cross(const UVector2 &v1,
 	const UVector2 &v2)
 {
-	return v1.x()*v2.y() - v1.y()*v2.x();
+	return v1.x*v2.y - v1.y*v2.x;
 }
