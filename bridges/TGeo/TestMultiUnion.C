@@ -4,7 +4,7 @@
 
 #include "UMultiUnion.hh"
 #include "UTransform3D.hh"
-#include "UVoxelFinder.hh"
+#include "UVoxelizer.hh"
 #include "TGeoUShape.h"
 #include "TGeoManager.h"
 #include "TGeoMaterial.h"
