@@ -169,7 +169,10 @@ void SBTperformance::TestInsideGeant4(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
-		GetVectorGeant4(point, points, i);
+//    points[0] = UVector3(46403.38739730667, -18973.09192006442, -59999.9999999999);
+//    points[0] = UVector3(-41374.68053161167,      16708.86204374595      ,59999.9999999999 );
+
+    GetVectorGeant4(point, points, i);
 		EInside inside = volumeGeant4->Inside(point);
 		if (!iteration) resultDoubleGeant4[i] = 2 - (double) inside;
 	}
@@ -194,7 +197,11 @@ void SBTperformance::TestInsideROOT(int iteration)
    
 	for (int i = 0; i < maxPoints; i++)
 	{
-		GetVectorRoot(point, points, i);
+//    points[0] = UVector3(46403.38739730667, -18973.09192006442, -59999.9999999999);
+//    points[0] = UVector3(-41374.68053161167 ,     16708.86204374595      ,-59999.9999999999 );
+
+    GetVectorRoot(point, points, i);
+
 		bool contains = volumeROOT->Contains(point);
 
 		if (!iteration) resultDoubleRoot[i] = contains ? 0 : 2;
@@ -860,6 +867,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 //    phi = 180 * phi / UUtils::kPi;
       talpha1 = 180 * talpha1 / UUtils::kPi;
       talpha2 = 180 * talpha2 / UUtils::kPi;
+//		volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, ,       z = 60000.000000000000, theta = 20.000000000000000, phi = 5.0000000000000000,      y1 = 40000.000000000000, x1 = 30000.000000000000, x2 = 40000.000000000000,       talpha1 = 10.000000000000000, y2 = 16000.000000000000, x3 = 10000.000000000000, x4 = 14000.000000000000, talpha2 = 10.000000000000000
 
 		volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
 //		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
