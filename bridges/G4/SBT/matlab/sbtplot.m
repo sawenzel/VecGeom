@@ -1,7 +1,7 @@
 function var = sbtplot(method, software1, software2, first, count, color)
 if nargin < 2
-    disp('Syntax is sbtplot(method,software1, [software2] [color])');
-    disp('Example: sbtplot(''Inside'', ''Geant4'', ''Root'');');
+    disp('Syntax is sbtplot(method, software1, [software2] [color])');
+    disp('Example: sbtplot(Inside, Geant4, Root);');
     return;
 end
 if nargin < 3
@@ -16,5 +16,14 @@ end
 if nargin < 6
     color = 'b';
 end
-figure;
-sbtplotpart(method, software1, software2, first, count, color);
+cell = {'', 'Normal', 'Convex', 'SurfaceNormal'};
+len = length(cell);
+for i=1:len
+  submethod = cell{i};
+  filename = [method submethod software1 '.dat'];
+  exists = exist(filename, 'file');
+  if exists
+    figure;
+    sbtplotpart(method, software1, software2, first, count, color, submethod);
+  end
+end

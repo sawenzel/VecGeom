@@ -1,5 +1,5 @@
-function sbtpoints (method, name1, name2, first, count)    
-    maxPoints = 100000;
+function sbtpoints (method, name1, name2, first, count, submethod)
+    maxPoints = 1000000;
     numargin = nargin;
     filename2 = '';    
     if (nargin < 3)
@@ -14,6 +14,9 @@ function sbtpoints (method, name1, name2, first, count)
     end
     if (nargin < 5)
         count = -1;
+    end
+    if (nargin < 6)
+        submethod = '';
     end
     realcount = count;
     if count==1
@@ -33,14 +36,16 @@ function sbtpoints (method, name1, name2, first, count)
        tit = [tit name1 '-' name2 ';' 'Total number of different points: ' int2str(length(indexes))];
        bp = arrayfilter(points,indexes);
        bpvalues = arrayfilter(values,indexes);
-        if count==1
-            bp(2,:) = bp(1,:);
-            bpvalues(2) = bpvalues(1);
-            bpvalues(1) = 0;
-        end       
-       if len <= maxPoints
-%            scatter3 (bp(:,1), bp(:,2), bp(:,3), 200, 'r');
-%           scatter3 (bp(:,1), bp(:,2), bp(:,3), 100, bpvalues, 'filled');
+       if (length(bp) > 0)
+            if count==1
+                bp(2,:) = bp(1,:);
+                bpvalues(2) = bpvalues(1);
+                bpvalues(1) = 0;
+            end       
+           if len <= maxPoints
+    %            scatter3 (bp(:,1), bp(:,2), bp(:,3), 200, 'r');
+    %           scatter3 (bp(:,1), bp(:,2), bp(:,3), 100, bpvalues, 'filled');
+           end
        end
     else
         tit = [tit name1];

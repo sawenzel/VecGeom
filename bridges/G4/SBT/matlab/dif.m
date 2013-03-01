@@ -19,6 +19,9 @@ function dif = dif(filename1, filename2)
            if (val > 1e99) 
                dif(i,j) = 1e21;
            end
+           if (val < -1e99) 
+               dif(i,j) = -1e21;
+           end    
        end
     end
 end

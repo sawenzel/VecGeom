@@ -1,4 +1,5 @@
-function res = sbtdifferences(values, first, count)
+
+function res = sbtdifferences(values, first, count, points, directions)
    current = 0;
    if count < 0
       loopcount = length(values);
@@ -14,10 +15,22 @@ function res = sbtdifferences(values, first, count)
        if abs(difference) > 1e-6
            current = current+1;          
            res(current) = i;
-           if (current < 1000)
-                disp (['Different point found, index ' int2str(i+first-1) ' difference is ' num2str(difference)]);
+           if (current < 100)
+                index = i+first-1;
+                disp ([int2str(current) '. Different point found, index ' int2str(index) ' difference is ' num2str(difference)]);
+                if (nargin > 4)
+                    point = points(index,:);
+                    direction = directions(index,:);
+                    disp (['    point = Vector(' printvec(point) ');']);
+                    disp (['    direction = Vector(' printvec(direction) ');']);
+                end
            end
        end;
    end    
    res = res(1:current,:);
 end
+
+function res=printvec(p)
+    prec = 16;
+    res = [num2str(p(1),prec),', ' num2str(p(2),prec),', ' num2str(p(3),prec)];
+end    

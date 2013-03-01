@@ -11,4 +11,5 @@ function res = sbtpolyhedra(method)
     h = patch('vertices',vertices,'faces',triangles,'facecolor','c','edgecolor','b'); % draw faces in green
     alpha(h,.1);
     view(3), grid on;% default view with grid
+    axis equal;
 end

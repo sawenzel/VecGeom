@@ -51,8 +51,9 @@ function res = sbtvectors(method, name, nameValues1, nameValues2, first, count, 
     end
     
     if (~isempty(values))
-        values = 10 + 200*normalize(values);    
-        values = values ./ max(values);
+        values = 10 + 200*normalize(values);
+        m = max(values);
+        values = values ./ m;
         values = values .* 3000;
         u = u .* values;
         v = v .* values;
