@@ -1,8 +1,0 @@
-function dif = dif(filename1, filename2)
-
-dif = load (filename1);
-if ~isempty(filename2)
-    var2 = load (filename2);
-    dif = dif - var2;
-end
-end

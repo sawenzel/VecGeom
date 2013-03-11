@@ -1,7 +1,0 @@
-function res = normalize(a)
-    normA = max(A) - min(A);               % this is a vector
-    normA = repmat(normA, [length(a) 1]);  % this makes it a matrix
-                                           % of the same size as A
-    res = A./normA;  % your normalized matrix
-end
-
