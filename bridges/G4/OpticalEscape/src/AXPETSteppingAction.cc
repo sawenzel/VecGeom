@@ -51,6 +51,7 @@
 #include "G4VSolid.hh"
 #include "G4RotationMatrix.hh"
 #include "G4AffineTransform.hh"
+#include "Randomize.hh"
 
 using namespace CLHEP;
 
@@ -73,8 +74,8 @@ void AXPETSteppingAction::UserSteppingAction(const G4Step* aStep)
 
   // track informations
   //
-  // const G4StepPoint* prePoint = aStep->GetPreStepPoint();   
-  const G4StepPoint* endPoint = aStep->GetPostStepPoint();
+    const G4StepPoint* prePoint = aStep->GetPreStepPoint();   
+  G4StepPoint* endPoint = aStep->GetPostStepPoint();
   const G4ParticleDefinition* particle = aStep->GetTrack()->GetDefinition(); 
 
   G4String partName  = particle->GetParticleName();
@@ -88,20 +89,60 @@ void AXPETSteppingAction::UserSteppingAction(const G4Step* aStep)
   {
     // Additional Printing on each Step
     //
-    // G4cout<<aStep->GetTrack()->GetCurrentStepNumber()<<" StartPoint="<<prePoint->GetPosition()
-    // <<" EndPoint="<<endPoint->GetPosition()<<" NextSolid= "<<solidName<<G4endl;
-    // G4cout<<aStep->GetTrack()->GetCurrentStepNumber()<<" StartDirection="<<prePoint->GetMomentumDirection()
+    //  G4cout<<aStep->GetTrack()->GetCurrentStepNumber()<<" StartPoint="<<prePoint->GetPosition()
+    //<<" EndPoint="<<endPoint->GetPosition()<<" NextSolid= "<<solidName<<G4endl;
+    //G4cout<<aStep->GetTrack()->GetCurrentStepNumber()<<" StartDirection="<<prePoint->GetMomentumDirection()
     // <<" EndDirection="<<endPoint->GetMomentumDirection()<<" NextSolid= "<<solidName<<G4endl;
+    // End Additional Printing
+    ////////////////////////////////////////////
+    //Set New isotropicly distributed Direction
+    /*if(detector->IfIsotropic()==true){
+      G4VSolid *solid=detector->GetSolid();
+      G4ThreeVector point1 = G4ThreeVector(endPoint->GetPosition());
+      G4ThreeVector dir1 = G4ThreeVector(endPoint->GetMomentumDirection()); 
+      G4ThreeVector norm1=G4ThreeVector(1,0,0);
+
+
+      G4Navigator* theNavigator =
+                      G4TransportationManager::GetTransportationManager()->
+                                               GetNavigatorForTracking();
+ 
+         G4bool valid;
+         //  Use the new method for Exit Normal in global coordinates,
+         //    which provides the normal more reliably. 
+         G4ThreeVector theGlobalNormal = 
+                      theNavigator->GetGlobalExitNormal(point1,&valid);
+
+      if(valid){
+	//norm1=solid->SurfaceNormal(point1);
+        // norm1=-norm1;
+         G4ThreeVector tmp;
+         G4double phi =2* pi*G4UniformRand();
+         G4double theta= std::acos(1.-2.*G4UniformRand());
+	 tmp.setX(std::sin(theta)*std::cos(phi));
+         tmp.setY(std::sin(theta)*std::sin(phi));
+         tmp.setZ(std::cos(theta));
+	 theGlobalNormal=- theGlobalNormal;
+	    //  if((norm1.dot(tmp)>0.)&(norm1.dot(tmp)<0.2)){G4cout<<"InRange"<<" point="<<point1<<" dot="<<norm1.dot(tmp)<<G4endl;norm1=tmp.unit();}
+	    //G4cout<<"Norm  new="<<norm1<<" Name of Solid="<<solid->GetName()<<" tmp="<<tmp<<G4endl;         
+      }else{
+       G4cout<<"WrongSurface::: point is Not on the Surface, can not set New Normal"<<G4endl;
+      }
+    
+      //endPoint->SetMomentumDirection(norm1);
+      endPoint->SetMomentumDirection(theGlobalNormal);
+    }
+    */
+    //End  set New isotropicly distributed Direction
+    ///////////////////////////////////////////
+   
     G4double x=endPoint->GetPosition().x()/mm;
     G4double y=endPoint->GetPosition().y()/mm;
     //
     // Condition to detect Escaping Optical Photon: 
     //
-    if(std::sqrt(x*x+y*y)>(detector->GetExtend()*2.)){
+    if(std::sqrt(x*x+y*y)>(detector->GetExtent()*2.)){
       G4cerr.precision(16);
-//	  double sq = std::sqrt(x*x+y*y);
-//	  double extend = detector->GetExtend();
-//	  std::cout << "sq: " << sq << "; extend: " << extend << std::endl;
       G4cerr << "ERROR - UserSteppingAction::OpticalPhoton is out of Crystal Solid" << G4endl
 	     <<" Wrong Point is "<<xStep<<"  "<<yStep<<"  "<<zStep << G4endl
              <<" Wrong Direction is "<<xDirection<<"  "<<yDirection<<"  "<<zDirection<< G4endl;
