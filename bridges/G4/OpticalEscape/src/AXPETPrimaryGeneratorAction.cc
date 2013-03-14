@@ -32,6 +32,7 @@
 
 #include "AXPETPrimaryGeneratorAction.hh"
 #include "AXPETPrimaryGeneratorMessenger.hh"
+#include "AXPETDetectorConstruction.hh"
 
 #include "Randomize.hh"
 
@@ -42,9 +43,9 @@
 
 using namespace CLHEP;
 
-AXPETPrimaryGeneratorAction::AXPETPrimaryGeneratorAction()
+AXPETPrimaryGeneratorAction::AXPETPrimaryGeneratorAction(AXPETDetectorConstruction* DET):detector(DET)
 {
-
+  G4double dimMax=detector->GetExtent();
   G4int n_particle = 1;
   particleGun = new G4ParticleGun(n_particle);
   
@@ -59,7 +60,7 @@ AXPETPrimaryGeneratorAction::AXPETPrimaryGeneratorAction()
   particleGun->SetParticleDefinition(particle);
   particleGun->SetParticleTime(0.0*ns);
 
-  particleGun->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*mm,15.0*cm));
+  particleGun->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*mm,dimMax*2.));
   particleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,-1.));
   particleGun->SetParticleEnergy(10.0*keV);
 }
@@ -72,8 +73,7 @@ AXPETPrimaryGeneratorAction::~AXPETPrimaryGeneratorAction()
 
 void AXPETPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-
-  G4double sigma_xy = 10.*mm;//2.5;// ~6 mm (FWHM)
+  G4double sigma_xy =2.*detector->GetExtent(); //10.*mm;//2.5;// ~6 mm (FWHM)
   G4double x = G4RandGauss::shoot(0.,sigma_xy);
   G4double y = G4RandGauss::shoot(0.,sigma_xy);
   G4double z = G4RandGauss::shoot(0.,sigma_xy);//15.0*mm;
