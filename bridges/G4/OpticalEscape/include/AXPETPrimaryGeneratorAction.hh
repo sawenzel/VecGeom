@@ -39,12 +39,13 @@
 
 class G4ParticleGun;
 class G4Event;
+class AXPETDetectorConstruction;
 class AXPETPrimaryGeneratorMessenger;
 
 class AXPETPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
-    AXPETPrimaryGeneratorAction();
+    AXPETPrimaryGeneratorAction(AXPETDetectorConstruction*);
    ~AXPETPrimaryGeneratorAction();
 
   public:
@@ -55,6 +56,7 @@ class AXPETPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
   private:
     G4ParticleGun* particleGun;
+    AXPETDetectorConstruction* detector;
     AXPETPrimaryGeneratorMessenger* gunMessenger;
 };
 
