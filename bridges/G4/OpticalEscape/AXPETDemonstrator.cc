@@ -78,7 +78,7 @@ int main(int argc,char** argv)
   AXPETPhysicsList* physics = new AXPETPhysicsList;
   runManager-> SetUserInitialization(physics);
   //
-  AXPETPrimaryGeneratorAction* gen_action = new AXPETPrimaryGeneratorAction;
+  AXPETPrimaryGeneratorAction* gen_action = new AXPETPrimaryGeneratorAction(detector);
   runManager->SetUserAction(gen_action);
 
 #ifdef G4VIS_USE
