@@ -57,6 +57,7 @@ class AXPETDetectorMessenger: public G4UImessenger
     G4UIcmdWithADouble * rotYCmd;
     G4UIcmdWithADouble * rotZCmd;
     G4UIcmdWithAnInteger* AbortCmd;
+    G4UIcmdWithAnInteger* IsotropicCmd;
 };
 
 #endif
