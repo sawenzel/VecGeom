@@ -132,6 +132,8 @@ WorldVolume(0),LogWorldVolume(0),PhysWorldVolume(0),
  lysoDz   =  0.1 *mm;
  lysoR    =  6.0 *mm;
 
+ fMaxDim=0.0;
+
  detectorMessenger = new AXPETDetectorMessenger(this);
  fval="Tubs";
 
@@ -140,7 +142,6 @@ WorldVolume(0),LogWorldVolume(0),PhysWorldVolume(0),
  zRot=0.0;
  fAbort=0;
  fIsotropic=false;
- fMaxDim=0.0;
 }
 
 AXPETDetectorConstruction::~AXPETDetectorConstruction()
