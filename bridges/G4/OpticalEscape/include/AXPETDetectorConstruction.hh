@@ -64,7 +64,8 @@ class AXPETDetectorConstruction: public G4VUserDetectorConstruction
   G4VSolid * GetSolid()  { return aVolume ; }
   void  SwitchDetector();
   G4VSolid* SelectDetector (const G4String& val);
-  inline G4double GetExtend(){return lysoR;}
+  G4double GetExtent();
+  //
   inline void SetDetectorName(G4String Value){fval=Value;}
   inline void SetDetectorFileName(G4String Value){fFilename=Value;}
   // Rotation 
@@ -77,6 +78,8 @@ class AXPETDetectorConstruction: public G4VUserDetectorConstruction
   // Abortion of Run(for large statistics)
   inline void SetAbortAction(G4bool bval){fAbort=bval;}
   inline G4bool GetAbortAction(){return fAbort;}
+  inline G4bool IfIsotropic(){return fIsotropic ;}
+  inline void SetIsotropic(G4bool bval){fIsotropic=bval;}
  private: 
  G4Material* air;
  G4Material* lyso;
@@ -113,6 +116,8 @@ class AXPETDetectorConstruction: public G4VUserDetectorConstruction
   G4double yRot;
   G4double zRot;
   G4double fAbort;
+  G4double fMaxDim;
+  G4bool fIsotropic;
 };  
 
 #endif
