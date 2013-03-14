@@ -90,6 +90,8 @@
 #include "G4PVReplica.hh"
 #include "G4ThreeVector.hh"
 #include "G4RotationMatrix.hh"
+#include "G4VoxelLimits.hh"   
+#include "G4AffineTransform.hh" 
 
 #include "G4RunManager.hh"
 #include "G4GeometryManager.hh"
@@ -137,6 +139,8 @@ WorldVolume(0),LogWorldVolume(0),PhysWorldVolume(0),
  yRot=0.0;
  zRot=0.0;
  fAbort=0;
+ fIsotropic=false;
+ fMaxDim=0.0;
 }
 
 AXPETDetectorConstruction::~AXPETDetectorConstruction()
@@ -620,8 +624,17 @@ G4VPhysicalVolume* AXPETDetectorConstruction::Construct()
   //***********************************************
   // Defining the world volume
   //***********************************************
-
- WorldVolume = new G4Box("World",worldXsize,worldYsize,worldZsize);
+  LYSOVolume=SelectDetector(fval);
+  //  values needed for CalculateExtent signature
+ 
+   G4VoxelLimits limit;                // Unlimited
+   G4AffineTransform origin;
+ 
+   // min max extents of pSolid along X,Y,Z
+  
+   G4double dmax;
+   dmax=GetExtent();
+ WorldVolume = new G4Box("World",10.*dmax,10.*dmax,10.*dmax);
 
  LogWorldVolume = new G4LogicalVolume(WorldVolume, 
                                            vacuum, 
@@ -639,7 +652,7 @@ G4VPhysicalVolume* AXPETDetectorConstruction::Construct()
   //***********************************************
 
  
- LYSOVolume=SelectDetector(fval);
+ //LYSOVolume=SelectDetector(fval);
  LogLYSOVolume = new G4LogicalVolume(LYSOVolume, 
                                         lyso, 
                                         "logicLYSO", 
@@ -720,4 +733,30 @@ G4VPhysicalVolume* AXPETDetectorConstruction::Construct()
   return PhysWorldVolume;
  
  }
+
+G4double AXPETDetectorConstruction::GetExtent()
+{
+  if(fMaxDim==0.0){
+    G4double dmax=0;
+
+    G4VoxelLimits limit;                // Unlimited
+    G4AffineTransform origin;
+ 
+    // min max extents of pSolid along X,Y,Z
+    G4double minX,maxX,minY,maxY,minZ,maxZ;
+    LYSOVolume->CalculateExtent(kXAxis,limit,origin,minX,maxX);
+    LYSOVolume->CalculateExtent(kYAxis,limit,origin,minY,maxY);
+    LYSOVolume->CalculateExtent(kZAxis,limit,origin,minZ,maxZ);
+    G4double dimX, dimY,dimZ;
+    dimX=std::max(std::fabs(minX),maxX);
+    dimY=std::max(std::fabs(minY),maxY);
+    dimZ=std::max(std::fabs(minZ),maxZ);
+    dmax=std::max(dimX,dimY); dmax=std::max(dmax,dimZ);
+    fMaxDim=0.5*dmax;
+    return fMaxDim;
+
+  }else{
+    return fMaxDim;
+  }
+}
 
