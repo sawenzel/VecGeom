@@ -92,6 +92,13 @@ AXPETDetectorMessenger::AXPETDetectorMessenger(AXPETDetectorConstruction * myDC)
   AbortCmd->SetDefaultValue(0);
   AbortCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
 
+  IsotropicCmd = new G4UIcmdWithAnInteger("/mydet/Isotropic",this);
+  IsotropicCmd->SetGuidance("Isotrpic instead of Reflection for Optical Photons  ");
+  IsotropicCmd->SetGuidance("  Choice : 0/1");
+  IsotropicCmd->SetParameterName("choice",true);
+  IsotropicCmd->SetDefaultValue(0);
+  IsotropicCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+
   // myDetector->SelectDetector(defParam="Tubs");
    myDetector->SetDetectorName(defParam="Tubs");
    myDetector->Construct();
@@ -105,6 +112,7 @@ AXPETDetectorMessenger::~AXPETDetectorMessenger() {
   delete rotYCmd;
   delete rotZCmd;
   delete AbortCmd;
+  delete IsotropicCmd;
   delete selDetCmd;
 }
 void AXPETDetectorMessenger::SetNewValue(G4UIcommand * command,
@@ -137,6 +145,10 @@ void AXPETDetectorMessenger::SetNewValue(G4UIcommand * command,
  if( command == AbortCmd)
   {
     myDetector->SetAbortAction(AbortCmd->GetNewIntValue(newValues));
+  }
+ if( command == IsotropicCmd)
+  {
+    myDetector->SetIsotropic(IsotropicCmd->GetNewIntValue(newValues));
   }
 
   return;
