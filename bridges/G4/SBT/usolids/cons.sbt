@@ -9,8 +9,26 @@
 # Here is a tube with no inner radius and no phi segmentation
 #
 
+
+### this test case does not work, error!
+/solid/G4Cons 0 0 0 1 1 0 180
+/performance/errorFileName log/cons-test9-p10k/sbt.log
+/control/execute usolids/performance.sbt
+exit
+
 /performance/maxPoints 10000
 /performance/repeat 100
+
+# rMin1, rMax1, rMin2, rMax2, dz, sPhi, dPhi
+
+/solid/G4Cons 1 2 1 2 1 0 180
+/performance/errorFileName log/cons-test10-p10k/sbt.log
+/control/execute usolids/performance.sbt
+
+exit
+
+
+
 
 /solid/G4Cons 0 1 0 1 1 20 181
 /performance/errorFileName log/cons-test5-p10k/sbt.log
@@ -49,9 +67,6 @@
 /performance/errorFileName log/cons-test8-p10k/sbt.log
 /control/execute usolids/performance.sbt
 
-/solid/G4Cons 0 0 0 1 1 0 360
-/performance/errorFileName log/cons-test9-p10k/sbt.log
-/control/execute usolids/performance.sbt
 
 exit
 

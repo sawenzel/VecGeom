@@ -6,6 +6,18 @@
 /performance/method Inside
 /performance/run
 
+/performance/maxInsidePercent 10 # john: 10
+/performance/maxOutsidePercent 60 # john: 60
+/performance/method DistanceToIn
+/performance/run
+
+/performance/maxInsidePercent 60 # john 60
+# maxOutsidePercent must be 0, otherwise errors are produced in Geant4
+/performance/maxOutsidePercent 0 # john 10
+/performance/method DistanceToOut
+/performance/run 
+
+
 /performance/maxInsidePercent 0
 /performance/maxOutsidePercent 0
 /performance/method Normal
@@ -22,15 +34,4 @@
 /performance/maxOutsidePercent 80 # john: 80
 /performance/method SafetyFromOutside
 /performance/run
-
-/performance/maxInsidePercent 10 # john: 10
-/performance/maxOutsidePercent 60 # john: 60
-/performance/method DistanceToIn
-/performance/run
-
-/performance/maxInsidePercent 60 # john 60
-# maxOutsidePercent must be 0, otherwise errors are produced in Geant4
-/performance/maxOutsidePercent 0 # john 10
-/performance/method DistanceToOut
-/performance/run 
 

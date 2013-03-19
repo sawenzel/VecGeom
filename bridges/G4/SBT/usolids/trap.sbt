@@ -9,17 +9,38 @@
 # Here is a trap,  used and getting problems in CMS    May 28, 1999
 #
 
-
-/performance/maxPoints 1000000
+/performance/maxPoints 10000
 
 /solid/G4Trap   60	20	5	40	30	40	10	16	10	14	10
 
-/performance/errorFileName log/trap2-1m-values/trapp.a1.log
-/performance/repeat 100
+/performance/errorFileName log/trap2-1m-values-test/trapp.a1.log
+/performance/repeat 1
 
 /control/execute usolids/values.sbt
 
 exit
+
+/performance/maxPoints 10
+
+/solid/G4Trap   1268.  0 0 295.  1712.2 1870.29 0 295.  1712.2 1870.29 0
+
+/performance/errorFileName log/trap-1m-values-check/trapp.a1.log
+/performance/repeat 1
+
+/performance/maxInsidePercent 10 # john: 10
+/performance/maxOutsidePercent 60 # john: 60
+/performance/method DistanceToIn
+/performance/run 
+
+/control/execute usolids/values.sbt
+
+exit
+
+/performance/maxPoints 1000000
+
+
+
+
 
 
 #4Trap(const G4String& pName,
@@ -58,16 +79,6 @@ exit
 
 exit
 
-/performance/maxPoints 1000000
-
-/solid/G4Trap   1268.  0 0 295.  1712.2 1870.29 0 295.  1712.2 1870.29 0
-
-/performance/errorFileName log/trap-1m/trapp.a1.log
-/performance/repeat 100
-
-/control/execute usolids/performance.sbt
-
-exit
 
 
 
