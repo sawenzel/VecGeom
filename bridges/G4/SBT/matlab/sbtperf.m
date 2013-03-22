@@ -8,15 +8,20 @@ function res = sbtperf(scale)
   names = {};
   perftabreduced = perftab;
   perftabreduced( :, ~any(perftabreduced,1) ) = [];  %columns
+  perftab1st3 = perftab(1:3, :);
+  s2 = sum(perftab1st3);
   if s(1,1) > 0
       names{end+1} = 'Geant4';
 %       names{end} = 'G4TessellatedSolid';
+      disp(['Total for Geant4: ' num2str(s(1,1)) ' | 1st 3 methods: ' num2str(s2(1,1))]);
   end
   if s(1,2) > 0
       names{end+1} = 'ROOT';
+      disp(['Total for ROOT: ' num2str(s(1,2)) ' | 1st 3 methods: ' num2str(s2(1,2))]);
   end
   if s(1,3) > 0
-      names{end+1} = 'USolid';
+      names{end+1} = 'USolids';
+      disp(['Total for USolids: ' num2str(s(1,3)) ' | 1st 3 methods: ' num2str(s2(1,3))]);
 %       names{end} = 'New G4TessellatedSolid';
   end
   bar(perftabreduced);

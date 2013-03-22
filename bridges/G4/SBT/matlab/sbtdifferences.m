@@ -1,4 +1,9 @@
 
+% evaluates from vector and plots differences 
+%
+% this function is used internally by sbtplot and sbtplot3d, users do not
+% have to run it by their own ...
+
 function res = sbtdifferences(values, first, count, points, directions)
    current = 0;
    if count < 0
