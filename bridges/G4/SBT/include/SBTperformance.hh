@@ -51,7 +51,6 @@ class SBTperformance {
 public:
 	SBTperformance();
 	~SBTperformance();
-	void SetDefaults();
 
 	void Run(G4VSolid *testVolume, std::ofstream &logger);
 
@@ -69,9 +68,11 @@ public:
 	inline void SetOutsideRandomDirectionPercent( const G4double percent ) { outsideRandomDirectionPercent = percent; }
 	inline void SetDifferenceTolerance( const G4double tolerance ) { differenceTolerance = tolerance; }
 	void SetFolder( const std::string &newFolder );
+  inline G4int GetMaxPoints() const { return maxPoints; }
+  inline G4int GetRepeat() const { return repeat; }
 
-	inline G4int GetMaxPoints() const { return maxPoints; }
-	inline G4int GetRepeat() const { return repeat; }
+private:
+	void SetDefaults();
 
 	int SaveVectorToMatlabFile(const std::vector<double> &vector, const std::string &filename);
 	int SaveVectorToMatlabFile(const std::vector<UVector3> &vector, const std::string &filename);
@@ -170,6 +171,7 @@ private:
 	void TestSafetyFromOutsideROOT(int iteration);
 
 	void PropagatedNormal(const G4ThreeVector &point, const G4ThreeVector &direction, double distance, G4ThreeVector &normal);
+  void PropagatedNormalU(const UVector3 &point, const UVector3 &direction, double distance, UVector3 &normal);
 
 	void TestDistanceToInUSolids(int iteration);
 	void TestDistanceToInGeant4(int iteration);
