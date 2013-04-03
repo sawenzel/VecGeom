@@ -78,6 +78,8 @@
 #include "UCons.hh"
 #include "USphere.hh"
 #include "UTrap.hh"
+#include "UPolycone.hh"
+#include "UPolycone3.hh"
 
 #include "TGeoArb8.h"
 #include "TGeoTrd2.h" 
@@ -119,10 +121,6 @@ using namespace std;
 SBTperformance::SBTperformance()
 {
 	SetDefaults();
-
-	volumeGeant4 = NULL;
-	volumeUSolids = NULL;
-	volumeROOT = NULL;
 }
 
 SBTperformance::~SBTperformance()
@@ -143,6 +141,10 @@ void SBTperformance::SetDefaults()
 
 	method = "*";
 	perftab = perflabels = NULL;
+
+  volumeGeant4 = NULL;
+  volumeUSolids = NULL;
+  volumeROOT = NULL;
 }
 
 // DONE: better random direction distribution
@@ -172,6 +174,8 @@ void SBTperformance::TestInsideGeant4(int iteration)
 //    points[0] = UVector3(46403.38739730667, -18973.09192006442, -59999.9999999999);
 //    points[0] = UVector3(-41374.68053161167,      16708.86204374595      ,59999.9999999999 );
 
+    points[0].Set(0);
+
     GetVectorGeant4(point, points, i);
 		EInside inside = volumeGeant4->Inside(point);
 		if (!iteration) resultDoubleGeant4[i] = 2 - (double) inside;
@@ -184,7 +188,12 @@ void SBTperformance::TestInsideUSolids(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
+    points[0].Set(0);
+
 		GetVectorUSolids(point, points, i);
+    if (i == 4992)
+      i = i;
+
 		VUSolid::EnumInside inside = volumeUSolids->Inside(point);
 
 		if (!iteration) resultDoubleUSolids[i] = (double) inside;
@@ -218,7 +227,10 @@ void SBTperformance::TestNormalGeant4(int iteration)
 		GetVectorGeant4(point, points, i);
 		normal = volumeGeant4->SurfaceNormal(point);
 
-		if (!iteration) SetVectorGeant4(normal, resultVectorGeant4, i);
+		if (!iteration) 
+    {
+      SetVectorGeant4(normal, resultVectorGeant4, i);
+    }
 	}
 }
 
@@ -229,9 +241,12 @@ void SBTperformance::TestNormalUSolids(int iteration)
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorUSolids(point, points, i);
-		volumeUSolids->Normal(point, normal);
+		bool valid = volumeUSolids->Normal(point, normal);
 
-		if (!iteration) SetVectorUSolids(normal, resultVectorUSolids, i);
+		if (!iteration) 
+    {
+      SetVectorUSolids(normal, resultVectorUSolids, i);
+    }
 	}
 }
 
@@ -281,6 +296,8 @@ void SBTperformance::TestSafetyFromOutsideGeant4(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
+    points[0] = UVector3(2.981820718641945, -1.608431647524929, -2.547022407577875);
+
 		GetVectorGeant4(point, points, i);
 		double res = volumeGeant4->DistanceToIn(point);
 
@@ -299,9 +316,14 @@ void SBTperformance::TestSafetyFromOutsideUSolids(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
+    points[0] = UVector3(2.981820718641945, -1.608431647524929, -2.547022407577875);
+
 		GetVectorUSolids(point, points, i);
 		// NEW: detected significant performance drop at USolidss DistanceToIn , DistanceToOut was fixed by rewriting of USolidss interface
 		double res = volumeUSolids->SafetyFromOutside(point);
+
+    if (i == 31173)
+      i = i;
 
 		if (!iteration)
 		{
@@ -434,6 +456,20 @@ void SBTperformance::PropagatedNormal(const G4ThreeVector &point, const G4ThreeV
 	}
 }
 
+void SBTperformance::PropagatedNormalU(const UVector3 &point, const UVector3 &direction, double distance, UVector3 &normal)
+{
+  normal.Set(0);
+  if (distance < kInfinity)
+  {
+    UVector3 shift = distance * direction;
+    UVector3 surfacePoint = point + shift;
+    volumeUSolids->Normal(surfacePoint, normal);
+    VUSolid::EnumInside e = volumeUSolids->Inside(surfacePoint);
+    if (e != VUSolid::eSurface)
+      e = e;
+  }
+}
+
 void SBTperformance::TestDistanceToInGeant4(int iteration)
 {
 	G4ThreeVector point, direction;
@@ -446,10 +482,12 @@ void SBTperformance::TestDistanceToInGeant4(int iteration)
     points[1] = UVector3(7341580.738867766, 20654134.81170427, 20654134.81170427) ;
     directions[1] = UVector3(-0.1759615598226392, -0.6548197707145482, -0.6548197707145482);
     */
-    
-    GetVectorGeant4(point, points, i);
+        GetVectorGeant4(point, points, i);
 		GetVectorGeant4(direction, directions, i);
     double res = volumeGeant4->DistanceToIn(point, direction);
+
+    if (i == 157)
+      i = i;
 
 		if (!iteration) 
 		{
@@ -470,10 +508,14 @@ void SBTperformance::TestDistanceToInUSolids(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
+//    points[0] = UVector3(-4.5, 0, 0);
+//    directions[0] = UVector3(1, 0, 0);
+
 		GetVectorUSolids(point, points, i);
 		GetVectorUSolids(direction, directions, i);
 		double res = volumeUSolids->DistanceToIn(point, direction);
-
+    if (i == 157) 
+      i = i;
 
 		if (!iteration) 
 		{
@@ -481,6 +523,10 @@ void SBTperformance::TestDistanceToInUSolids(int iteration)
 
 			G4ThreeVector p (point.x, point.y, point.z);
 //			CheckPointsOnSurfaceOfOrb(p, res, numCheckPoints, kInside);	
+
+      UVector3 normal;
+      PropagatedNormalU(point, direction, res, normal);
+      SetVectorUSolids(normal, resultVectorUSolids, i);
 		}
 	}
 }
@@ -525,12 +571,17 @@ void SBTperformance::TestDistanceToOutGeant4(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
+//    points[0] = UVector3(-5, 0, 0);
+//    directions[0] = UVector3(1, 0, 0);
+
 		GetVectorGeant4(point, points, i);
 		GetVectorGeant4(direction, directions, i);
+//    normal.set(0,0,0);
 		double res = volumeGeant4->DistanceToOut(point, direction, true, &validNorm, &normal);
 
 		if (!iteration)
 		{
+      if (!validNorm) normal.set(0, 0, 0);
 //			EInside inside = volumeGeant4->Inside(point);
 			resultDoubleGeant4[i] = ConvertInfinities (res);
       resultBoolGeant4[i] = validNorm;
@@ -549,7 +600,11 @@ void SBTperformance::TestDistanceToOutROOT(int iteration)
 	{
 		GetVectorRoot(point, points, i);
 		GetVectorRoot(direction, directions, i);
-		double res = volumeROOT->DistFromInside(point, direction);
+
+    if (i == 3) 
+      i = i;
+
+    double res = volumeROOT->DistFromInside(point, direction);
 
 		if (!iteration)
 		{
@@ -568,12 +623,22 @@ void SBTperformance::TestDistanceToOutUSolids(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
-		GetVectorUSolids(point, points, i);
+//    points[0] = UVector3(-5, 0, 0);
+//    directions[0] = UVector3(1, 0, 0);
+
+    GetVectorUSolids(point, points, i);
 		GetVectorUSolids(direction, directions, i);
-		double res = volumeUSolids->DistanceToOut(point, direction, normal, convex);
+
+    if (i == 3) 
+      i = i;
+
+//    normal.Set(0);
+    double res = volumeUSolids->DistanceToOut(point, direction, normal, convex);
 
 		if (!iteration)
 		{
+      if (convex == false) normal.Set(0);
+
 			resultDoubleUSolids[i] = ConvertInfinities (res);
       resultBoolUSolids[i] = convex;
       SetVectorUSolids(normal, resultVectorUSolids, i);
@@ -713,7 +778,6 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
     if (type == "G4TessellatedSolid")
     {
         UTessellatedSolid &utessel = *new UTessellatedSolid("ts");
-        utessel.SetMaxVoxels(1);
 
         G4TessellatedSolid &tessel = *(G4TessellatedSolid *) testVolume;
         int n = tessel.GetNumberOfFacets();
@@ -742,6 +806,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
             utessel.AddFacet(ufacet);
         }
 		    utessel.SetMaxVoxels(SBTrun::maxVoxels);
+        utessel.SetMaxVoxels(1);
         utessel.SetSolidClosed(true);
         volumeUSolids = &utessel;
     }
@@ -948,6 +1013,32 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 		G4Polycone &polycone = *(G4Polycone *) testVolume;
 		double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
 		double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
+
+		G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
+    int numPlanes = parameter->Num_z_planes;
+
+    G4double *rmin = parameter->Rmin;
+    G4double *rmax = parameter->Rmax;
+    G4double *z = parameter->Z_values;
+
+		TGeoPcon *conRoot;
+    VUSolid *conUSolid = NULL;
+
+		conRoot = new TGeoPcon(startPhi, endPhi, numPlanes);
+    for (int i = 0; i < numPlanes; i++) 
+      conRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
+
+    conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
+
+		volumeROOT = conRoot;
+    volumeUSolids = conUSolid;
+	}
+
+	if (type == "G4Polycone2")
+	{
+		G4Polycone &polycone = *(G4Polycone *) testVolume;
+		double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
+		double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
 		int numRZCorner = polycone.GetNumRZCorner();
 
 		vector<double> rmin(numRZCorner);
@@ -979,6 +1070,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 		}
 
 		TGeoPcon *conRoot;
+    VUSolid *conUSolid = NULL;
 
 		if (numRZCorner == 15)
 		{
@@ -1003,6 +1095,9 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 		{
 			int len = numRZCorner - back;
 			conRoot = new TGeoPcon(startPhi, endPhi, len);
+      conUSolid = new UPolycone("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &rmax[0], &z[0]);
+      conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &z[0], &rmin[0], &rmax[0]);
+
 			for (int i = 0; i < len; i++) 
 			{
 				conRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
@@ -1010,6 +1105,8 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 		}
 
 		volumeROOT = conRoot;
+    volumeUSolids = conUSolid;
+
 /*
 		for (int i = 0; i < parameter->Num_z_planes; i++) 
 		{
@@ -1024,6 +1121,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 //		double difCapacity = (capacityRoot - capacity) / capacity;
 //		double phiTotal = polycone->GetTolerance
 	}
+
 	volumeString = ss.str();
 }
 
@@ -1035,7 +1133,13 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 	for (int i = 0; i < maxPointsSurface; i++)
 	{
 		double random = G4UniformRand();
-		G4ThreeVector pointG4 = volumeGeant4->GetPointOnSurface();
+
+    G4ThreeVector pointG4;
+    do 
+    {
+      pointG4 = volumeGeant4->GetPointOnSurface();
+    }
+    while (volumeGeant4->Inside(pointG4) != kSurface);
 
 		UVector3 vec = GetRandomDirection();
 		directions[i] = vec;
@@ -1043,19 +1147,34 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 		UVector3 point;
 		G4ThreeVector pointTest;
 		int attempt = 0;
+    EInside position;
+
 		do
 		{
+      point.Set(pointG4.getX(), pointG4.getY(), pointG4.getZ());
+      if (0) 
+      {
+        position = volumeGeant4->Inside(pointG4);
+        break;
+      }
+
 			attempt++;
 			if (attempt > 2) 
 				attempt = attempt;
-			point.Set(pointG4.getX(), pointG4.getY(), pointG4.getZ());
+
 			// NEW: points will not be exactly on surface, but near the surface +- (default) 10 tolerance, configurable for BOTH
-			point.x += RandomIncrease();
-			point.y += RandomIncrease();
-			point.z += RandomIncrease();
+
+//			point.x += RandomIncrease();
+//			point.y += RandomIncrease();
+//			point.z += RandomIncrease();
+
 			pointTest.set(point.x, point.y, point.z);
+      position = volumeGeant4->Inside(pointTest);
 		}
-		while (volumeGeant4->Inside(pointTest) == kSurface && attempt < 10);
+		while (position != kSurface && attempt < 100);
+
+    if (position != kSurface)
+      cout << "Warning, point " << i << " is still on surface" << endl;
 
 //		if (i == 0) point.Set(0, 0, -1000.001);
 		points[i+offsetSurface] = point;
@@ -1492,6 +1611,11 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 		VectorToDouble(resultVectorRoot, resultDoubleRoot);
 		VectorToDouble(resultVectorDifference, resultDoubleDifference);
 		SaveVectorResults(method);
+
+    BoolToDouble(resultBoolUSolids, resultDoubleUSolids);
+    resultDoubleRoot.assign(resultDoubleRoot.size(), 0);
+    resultDoubleGeant4.assign(resultDoubleGeant4.size(), 0);
+    SaveDoubleResults(method+"Valid");
 	}
 	else
 	{
@@ -1502,7 +1626,7 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
       SaveVectorResults(method+"Normal");
       BoolToDouble(resultBoolGeant4, resultDoubleGeant4);
       BoolToDouble(resultBoolUSolids, resultDoubleUSolids);
-      for (int i = 0; i < resultDoubleRoot.size(); ++i) resultDoubleRoot[i] = 0;
+      resultDoubleRoot.assign(resultDoubleRoot.size(), 0);
       SaveDoubleResults(method+"Convex");
     }
     else
