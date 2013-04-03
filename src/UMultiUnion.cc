@@ -365,7 +365,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &
 				// perform a Inside 
 				// it should be excluded current solid from checking
 				// we have to collect the maximum distance from all given candidates. such "maximum" candidate should be then used for finding next candidates
-				if(location != eInside)
+				if(location == eOutside)
 				{
 					// else return cumulated distances to outside of the traversed components
 					break;               

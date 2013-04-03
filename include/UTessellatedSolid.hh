@@ -248,7 +248,7 @@ public:  // with description
 
 	// Functions for visualization
 	virtual void  DescribeYourselfTo (UVGraphicsScene& scene) const;
-	virtual UVisExtent   GetExtent () const;
+//	virtual UVisExtent   GetExtent () const;
 
 #endif // USOLIDSONLY
 
@@ -269,7 +269,7 @@ public:  // with description
 		return DistanceToOutCore(p, v, aNormalVector, aConvex, aPstep);
 	}
 
-	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
+//	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
 	void Extent (UVector3 &aMin, UVector3 &aMax) const;
 
 #endif // USOLIDSONLY

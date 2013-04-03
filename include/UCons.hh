@@ -123,7 +123,7 @@ class UCons : public VUSolid
 		//												const UAffineTransform& pTransform,
 		//															double& pmin, double& pmax ) const;				 
 
-		VUSolid::EnumInside Inside( const UVector3& p ) const;
+//		inline VUSolid::EnumInside Inside( const UVector3& p ) const;
 
 		bool Normal( const UVector3& p, UVector3 &n) const;
 
@@ -149,7 +149,7 @@ class UCons : public VUSolid
 
 		std::ostream& StreamInfo(std::ostream& os) const;
 
-    	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
+//    	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
 	    void Extent (UVector3 &aMin, UVector3 &aMax) const;
 
 		virtual void GetParametersList(int /*aNumber*/,double * /*aArray*/) const{} 
@@ -163,6 +163,59 @@ class UCons : public VUSolid
 		// void					DescribeYourselfTo( UVGraphicsScene& scene ) const;
 		UPolyhedron* CreatePolyhedron() const;
 		// UNURBS*			CreateNURBS() const;
+
+    inline VUSolid::EnumInside Inside(const UVector3& p) const
+    {
+      double r2, rl, rh, pPhi, tolRMin, tolRMax; // rh2, rl2;
+      VUSolid::EnumInside in;
+      static const double halfCarTolerance=VUSolid::Tolerance()*0.5;
+      static const double halfRadTolerance=kRadTolerance*0.5;
+      static const double halfAngTolerance=kAngTolerance*0.5;
+
+      if (std::fabs(p.z) > fDz + halfCarTolerance )	{ return in = eOutside; }
+      else if(std::fabs(p.z) >= fDz - halfCarTolerance )		{ in = eSurface; }
+      else																										{ in = eInside;	}
+
+      r2 = p.x*p.x + p.y*p.y;
+      rl = 0.5*(fRmin2*(p.z + fDz) + fRmin1*(fDz - p.z))/fDz;
+      rh = 0.5*(fRmax2*(p.z+fDz)+fRmax1*(fDz-p.z))/fDz;
+
+      // rh2 = rh*rh;
+
+      tolRMin = rl - halfRadTolerance;
+      if ( tolRMin < 0 )	{ tolRMin = 0; }
+      tolRMax = rh + halfRadTolerance;
+
+      if ( (r2<tolRMin*tolRMin) || (r2>tolRMax*tolRMax) ) { return in = eOutside; }
+
+      if (rl) { tolRMin = rl + halfRadTolerance; }
+      else		{ tolRMin = 0.0; }
+      tolRMax = rh - halfRadTolerance;
+
+      if (in == eInside) // else it's eSurface already
+      {
+        if ( (r2 < tolRMin*tolRMin) || (r2 >= tolRMax*tolRMax) ) { in = eSurface; }
+      }
+      if ( !fPhiFullCone && ((p.x != 0.0) || (p.y != 0.0)) )
+      {
+        pPhi = std::atan2(p.y,p.x);
+
+        if ( pPhi < fSPhi - halfAngTolerance	)						 { pPhi += 2*UUtils::kPi; }
+        else if ( pPhi > fSPhi + fDPhi + halfAngTolerance ) { pPhi -= 2*UUtils::kPi; }
+
+        if ( (pPhi < fSPhi - halfAngTolerance) ||					
+          (pPhi > fSPhi + fDPhi + halfAngTolerance) )	{ return in = eOutside; }
+
+        else if (in == eInside)	// else it's eSurface anyway already
+        {
+          if ( (pPhi < fSPhi + halfAngTolerance) || 
+            (pPhi > fSPhi + fDPhi - halfAngTolerance) )	{ in = eSurface; }
+        }
+      }
+      else if ( !fPhiFullCone )	{ in = eSurface; }
+
+      return in;
+    }
 
 	public:	// without description
 			 
@@ -240,6 +293,11 @@ class UCons : public VUSolid
 			// Cached trigonometric values
 
 		bool fPhiFullCone;
+
+    double secRMin, tanRMin, tanRMax, secRMax;
+
+//    double fSinPhi;
+
 			//
 			// Flag for identification of section or full cone
 };

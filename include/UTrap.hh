@@ -262,7 +262,7 @@ class UTrap : public VUSolid
 
     void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
-    void Extent (UVector3 &aMin, UVector3 &aMax) const;
+    virtual void Extent (UVector3 &aMin, UVector3 &aMax) const;
 
 	private:
 

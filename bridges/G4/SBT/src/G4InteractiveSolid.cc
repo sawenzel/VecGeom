@@ -1196,9 +1196,8 @@ void G4InteractiveSolid::MakePolycone2( G4String values )
 		}
 		
 		delete solid;
-		solid = new G4Polycone( "interactivePolycone", 
-					phiStart, phiTotal, numRZ,
-					zArg.GetValues(), rInArg.GetValues(), rOutArg.GetValues() );
+
+		solid = new G4Polycone("interactivePolycone", phiStart, phiTotal, numRZ, zArg.GetValues(), rInArg.GetValues(), rOutArg.GetValues() );
 	}
 	else
 		G4cerr << "G4Polycone not created" << G4endl;

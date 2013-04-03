@@ -607,7 +607,8 @@ void UVoxelizer::Voxelize(vector<VUSolid *> &solids, vector<UTransform3D *> &tra
 
 	BuildEmpty(); // these does not work well for multi-union, actually only makes performance slower
 	
-	fBoxes.resize(0);
+//	fBoxes.resize(0); // for multiunion, fBoxes are actually needed
+
 	for (int i = 0; i < 3; ++i) fCandidatesCounts[i].resize(0);
 }
 #endif // USOLIDSONLY
@@ -732,6 +733,7 @@ void UVoxelizer::Voxelize(vector<VUFacet *> &facets)
 
 		// deallocate fields unnessesary during runtime
 		fBoxes.resize(0);
+
 		for (int i = 0; i < 3; ++i)
 		{
 			fCandidatesCounts[i].resize(0);
@@ -849,16 +851,25 @@ int UVoxelizer::GetCandidatesVoxelArray(const UVector3 &point, vector<int> &list
 	{
 		if (fNPerSlice == 1)
 		{
-			unsigned int mask;
-			int slice = BinarySearch(fBoundaries[0], point.x); 
-			if (!(mask = ((unsigned int *) fBitmasks[0].fAllBits)[slice]
-			)) return 0;
-			slice = BinarySearch(fBoundaries[1], point.y);
-			if (!(mask &= ((unsigned int *) fBitmasks[1].fAllBits)[slice]
-			)) return 0;
-			slice = BinarySearch(fBoundaries[2], point.z);
-			if (!(mask &= ((unsigned int *) fBitmasks[2].fAllBits)[slice]
-			)) return 0;
+			unsigned int mask = 0xFFffFFff;
+			int slice;
+      if (fBoundaries[0].size() > 2)
+      {
+        slice = BinarySearch(fBoundaries[0], point.x);
+			  if (!(mask = ((unsigned int *) fBitmasks[0].fAllBits)[slice])) return 0;
+      }
+      if (fBoundaries[1].size() > 2)
+      {
+			  slice = BinarySearch(fBoundaries[1], point.y);
+			  if (!(mask &= ((unsigned int *) fBitmasks[1].fAllBits)[slice]
+			  )) return 0;
+      }
+      if (fBoundaries[2].size() > 2)
+      {
+			  slice = BinarySearch(fBoundaries[2], point.z);
+			  if (!(mask &= ((unsigned int *) fBitmasks[2].fAllBits)[slice]
+			  )) return 0;
+      }
 			if (crossed && (!(mask &= ~((unsigned int *)crossed->fAllBits)[0]))) return 0;
 
 			findComponentsFastest(mask, list, 0);

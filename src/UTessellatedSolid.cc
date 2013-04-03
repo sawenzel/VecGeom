@@ -365,7 +365,7 @@ void UTessellatedSolid::PrecalculateInsides()
 {
 	vector<int> voxel(3), maxVoxels(3);
 	for (int i = 0; i <= 2; ++i) maxVoxels[i] = fVoxels.GetBoundary(i).size();
-	unsigned int size = maxVoxels[0] * maxVoxels[1] * maxVoxels[2];
+	int size = maxVoxels[0] * maxVoxels[1] * maxVoxels[2];
 
 	UBits checked(size-1);
 	fInsides.Clear();
@@ -458,13 +458,14 @@ void UTessellatedSolid::SetExtremeFacets()
 	// (Notes from PT 13/08/2007).
 	//
 	int size = fFacets.size();
+  int vsize = fVertexList.size();
+
 	for (int j = 0; j < size; ++j)
 	{
 		VUFacet &facet = *fFacets[j];
 
 		bool isExtreme = true;
-		int vsize = fVertexList.size();
-		for (int i=0; i < vsize; ++i)
+		for (int i = 0; i < vsize; ++i)
 		{
 			if (!facet.IsInside(fVertexList[i]))
 			{
@@ -1304,14 +1305,14 @@ void UTessellatedSolid::DistanceToOutCandidates(const vector<int> &candidates, c
 //					nnormal = nnormal;
 				minDist = 0.0;
 				minNormal = normal;
-				minCandidate = i;
+				minCandidate = candidate;
 				break;
 			}
 			if (dist >= 0.0 && dist < minDist)
 			{
 				minDist = dist;
 				minNormal = normal;
-				minCandidate = i;
+				minCandidate = candidate;
 			}
 		}
 	}
@@ -1335,7 +1336,7 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 
 		double shiftBonus = VUSolid::Tolerance();
 
-		const vector<int> *old = NULL;
+//		const vector<int> *old = NULL;
 
 //		UBits exclusion (1+0*fVoxels.GetBitsPerSlice());
 
@@ -1343,9 +1344,10 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 		do
 		{
 			const vector<int> &candidates = fVoxels.GetCandidates(curVoxel);
-			if (old == &candidates)
-				old++;
-			if (old != &candidates && candidates.size())
+//			if (old == &candidates)
+//				old++;
+
+			if (/*old != &candidates &&*/ candidates.size())
 			{
 				DistanceToOutCandidates(candidates, aPoint, direction, minDistance, aNormalVector, minCandidate); 
 				if (minDistance <= totalShift) break; 
@@ -1359,7 +1361,7 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 
 			currentPoint += direction * (shift + shiftBonus);
 			
-			old = &candidates;
+//			old = &candidates;
 		}
 		while (fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
 
@@ -1551,11 +1553,11 @@ double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool aAccurate) 
 
 	double minDist;
 
-	if (!aAccurate)
-		return fVoxels.DistanceToBoundingBox(p);
-
 	if (fVoxels.GetCountOfVoxels() > 1)
 	{
+    if (!aAccurate)
+      return fVoxels.DistanceToBoundingBox(p);
+
 		if (!OutsideOfExtent(p, fgTolerance))
 		{
 			vector<int> startingVoxel(3);

@@ -48,6 +48,11 @@ public:
 		// UVector3       &aNormalVector,
 		double aPstep = UUtils::kInfinity) const;
 
+  double                       DistanceToIn(const UVector3 &aPoint, 
+    const UVector3 &aDirection, 
+    // UVector3 &aNormal, 
+    double aPstep) const;  
+
 	double                       DistanceToOut    (const UVector3 &aPoint,
 		const UVector3 &aDirection,
 		UVector3       &aNormalVector,
@@ -93,6 +98,7 @@ public:
 	// Build the multiple union by adding nodes
 	void                         AddNode(VUSolid &solid, UTransform3D &trans);
 
+  // Finalize and prepare for use. User MUST call it once before navigation use.
 	void                         Voxelize();
 	EnumInside                   InsideDummy(const UVector3 &aPoint) const;
 
@@ -114,19 +120,12 @@ private:
 	EnumInside                   InsideWithExclusion(const UVector3 &aPoint, UBits *bits=NULL) const;
 
 	int                          SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool aAccurate, double &safety) const;
-	double                       DistanceToIn(const UVector3 &aPoint, 
-		const UVector3 &aDirection, 
-		// UVector3 &aNormal, 
-		double aPstep) const;  
 
 	double                       DistanceToInCandidates(const UVector3 &aPoint, const UVector3 &aDirection, double aPstep, std::vector<int> &candidates, UBits &bits) const;  
 
 	std::vector<VUSolid *> fSolids;
 	std::vector<UTransform3D *> fTransforms;
 	UVoxelizer voxels;  // Pointer to the vozelized solid
-
-	// Finalize and prepare for use. User MUST call it once before navigation use.
-	void CloseSolid();
 
 };
 #endif

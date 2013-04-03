@@ -80,21 +80,7 @@ public:
 
   // Decision: provide or not the Boolean 'validNormal' argument for returning validity 
 
-  inline virtual void Extent(EAxisType aAxis, double &aMin, double &aMax)
-  // Returns the minimum and maximum extent along the specified Cartesian axis
-  {
-	  // Returns extent of the solid along a given cartesian axis
-	  if (aAxis >= 0 && aAxis <= 2)
-	  {
-		  UVector3 min, max;
-		  Extent(min,max);
-		  aMin = min[aAxis]; aMax = max[aAxis];
-	  }
-#ifdef USPECSDEBUG
-	  else
-		  cout << "Extent: unknown axis" << aAxis << std::endl;
-#endif
-  }
+  virtual void ExtentAxis(EAxisType aAxis, double &aMin, double &aMax) const;
   
   virtual void Extent( UVector3 &aMin, UVector3 &aMax ) const = 0;
   // Return the minimum and maximum extent along all Cartesian axes

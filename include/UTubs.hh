@@ -122,7 +122,7 @@ public:	// with description
 	//														const UAffineTransform& pTransform,
 	//																	double& pmin, double& pmax ) const;
 
-	VUSolid::EnumInside Inside( const UVector3& p ) const;
+	inline VUSolid::EnumInside Inside( const UVector3& p ) const;
 
 	bool Normal( const UVector3& p, UVector3 &normal) const;
 
@@ -139,7 +139,7 @@ public:	// with description
 
 	std::ostream& StreamInfo( std::ostream& os ) const;
 
-	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
+//	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
 	void Extent (UVector3 &aMin, UVector3 &aMax) const;
 
 	// Visualisation functions
@@ -223,7 +223,7 @@ protected:
 	// Radial and angular dimensions
 
 	double fSinCPhi, fCosCPhi, fCosHDPhiOT, fCosHDPhiIT,
-		fSinSPhi, fCosSPhi, fSinEPhi, fCosEPhi;
+		fSinSPhi, fCosSPhi, fSinEPhi, fCosEPhi, fSinSPhiDPhi, fCosSPhiDPhi;
 	//
 	// Cached trigonometric values
 

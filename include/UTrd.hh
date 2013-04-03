@@ -66,7 +66,7 @@ public:
 	inline bool NormalGeant4 ( const UVector3& aPoint, UVector3 &aNormal ) const; 
 
 //	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
-	virtual void Extent (UVector3 &aMin, UVector3 &aMax) const; 
+	void Extent (UVector3 &aMin, UVector3 &aMax) const; 
 	virtual double Capacity();
 	virtual double SurfaceArea();
 	inline VUSolid* Clone() const

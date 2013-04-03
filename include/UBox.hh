@@ -50,7 +50,7 @@ public:
 		bool           &aConvex,
 		double aPstep = UUtils::kInfinity) const;
 	bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
-//	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
+//	void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
 	void Extent (UVector3 &aMin, UVector3 &aMax) const;
 	double Capacity() {return 8.*fDx*fDy*fDz;}
 	double SurfaceArea() {return 8.*(fDx*fDy+fDx*fDz+fDy*fDz);}
@@ -72,6 +72,16 @@ public:
 	UPolyhedron* CreatePolyhedron () const;
 
 	UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
+
+  inline double GetDz()
+  {
+    return fDz;
+  }
+
+  inline void SetDz(double v)
+  {
+    fDz = v;
+  }
 
 private:  
 	double                fDx;   // Half-length on X

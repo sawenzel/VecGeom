@@ -190,31 +190,41 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 
 ////////////////////////////////////////////////////////////////
 //
+// Returns an estimation of the solid volume in internal units.
+// The number of statistics and error accuracy is fixed.
+// This method may be overloaded by derived classes to compute the
+// exact geometrical quantity for solids where this is possible.
+// or anyway to cache the computed value.
+// This implementation does NOT cache the computed value.
+
+double VUSolid::Capacity()
+{
+  int cubVolStatistics = 1000000;
+  double cubVolEpsilon = 0.001;
+  return EstimateCubicVolume(cubVolStatistics, cubVolEpsilon);
+}
+
+////////////////////////////////////////////////////////////////
+//
 // Calculate cubic volume based on Inside() method.
 // Accuracy is limited by the second argument or the statistics
 // expressed by the first argument.
 // Implementation is courtesy of Vasiliki Despoina Mitsou,
 // University of Athens.
 
-/*
 double VUSolid::EstimateCubicVolume(int nStat, double epsilon) const
 {
   int iInside=0;
-  double px,py,pz,minX,maxX,minY,maxY,minZ,maxZ,volume;
+  double px,py,pz,volume;
+  UVector3 min,max;
   UVector3 p;
   VUSolid::EnumInside in;
 
   // values needed for CalculateExtent signature
 
-  UVoxelLimits limit;								// Unlimited
-  UAffineTransform origin;
-
   // min max extents of pSolid along X,Y,Z
 
-  UVector3 min, max;
-  this->Extent(eXaxis,limit,origin,minX,maxX);
-  this->CalculateExtent(eYaxis,limit,origin,minY,maxY);
-  this->CalculateExtent(eZaxis,limit,origin,minZ,maxZ);
+  this->Extent(min,max);
 
   // limits
 
@@ -223,14 +233,101 @@ double VUSolid::EstimateCubicVolume(int nStat, double epsilon) const
 
   for(int i = 0; i < nStat; i++ )
   {
-    px = minX+(maxX-minX)*UUtils::Random();
-    py = minY+(maxY-minY)*UUtils::Random();
-    pz = minZ+(maxZ-minZ)*UUtils::Random();
+    px = min.x+(max.x-min.x)*UUtils::Random();
+    py = min.y+(max.y-min.y)*UUtils::Random();
+    pz = min.z+(max.z-min.z)*UUtils::Random();
     p	= UVector3(px,py,pz);
     in = this->Inside(p);
     if(in != eOutside) iInside++;		
   }
-  volume = (maxX-minX)*(maxY-minY)*(maxZ-minZ)*iInside/nStat;
+  volume = (max.x-min.x)*(max.y-min.y)*(max.z-min.z)*iInside/nStat;
   return volume;
+}
+
+////////////////////////////////////////////////////////////////
+//
+// Returns an estimation of the solid surface area in internal units.
+// The number of statistics and error accuracy is fixed.
+// This method may be overloaded by derived classes to compute the
+// exact geometrical quantity for solids where this is possible.
+// or anyway to cache the computed value.
+// This implementation does NOT cache the computed value.
+
+double VUSolid::SurfaceArea()
+{
+  int stat = 1000000;
+  double ell = -1.;
+  return EstimateSurfaceArea(stat,ell);
+}
+
+////////////////////////////////////////////////////////////////
+//
+// Estimate surface area based on Inside(), DistanceToIn(), and
+// DistanceToOut() methods. Accuracy is limited by the statistics
+// defined by the first argument. Implemented by Mikhail Kosov.
+
+double VUSolid::EstimateSurfaceArea(int nStat, double ell) const
+{
+  int inside=0;
+  double px,py,pz,surf;
+  UVector3 min,max;
+  UVector3 p;
+  VUSolid::EnumInside in;
+
+  // values needed for CalculateExtent signature
+
+  // min max extents of pSolid along X,Y,Z
+
+  this->Extent(min,max);
+
+  // limits
+
+  if(nStat < 100) { nStat = 100; }
+
+  double dX=max.x-min.x;
+  double dY=max.y-min.y;
+  double dZ=max.z-min.z;
+  if(ell<=0.)					// Automatic definition of skin thickness
+  {
+    double minval=dX;
+    if(dY<dX) { minval=dY; }
+    if(dZ<minval) { minval=dZ; }
+    ell=.01*minval;
+  }
+
+  double dd=2*ell;
+  min.x-=ell; min.y-=ell; min.z-=ell; dX+=dd; dY+=dd; dZ+=dd;
+
+  for(int i = 0; i < nStat; i++ )
+  {
+    px = min.x+dX*UUtils::Random();
+    py = min.y+dY*UUtils::Random();
+    pz = min.z+dZ*UUtils::Random();
+    p	= UVector3(px,py,pz);
+    in = this->Inside(p);
+    if(in != eOutside)
+    {
+      if	(SafetyFromInside(p)<ell) { inside++; }
+    }
+    else if(SafetyFromOutside(p)<ell) { inside++; }
+  }
+  // @@ The conformal correction can be upgraded
+  surf = dX*dY*dZ*inside/dd/nStat;
+  return surf;
 } 
-*/
+
+void VUSolid::ExtentAxis(EAxisType aAxis, double &aMin, double &aMax) const
+// Returns the minimum and maximum extent along the specified Cartesian axis
+{
+  // Returns extent of the solid along a given cartesian axis
+  if (aAxis >= 0 && aAxis <= 2)
+  {
+    UVector3 min, max;
+    Extent(min,max);
+    aMin = min[aAxis]; aMax = max[aAxis];
+  }
+#ifdef USPECSDEBUG
+  else
+    cout << "Extent: unknown axis" << aAxis << std::endl;
+#endif
+}

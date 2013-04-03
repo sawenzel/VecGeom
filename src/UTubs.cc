@@ -8,7 +8,7 @@ std::ostream& StreamInfo (std::ostream& os) const;
 * Not yet implemented:
 UPolyhedron* CreatePolyhedron () const;
 
-UPolyhedron* GetPolyhedron()
+UPolyhedron* GetPolyhedron() m 
 
 ??? VUSolid* UTubs::Clone() const
 
@@ -134,6 +134,7 @@ UTubs::UTubs()
 	fRMin(0.), fRMax(0.), fDz(0.), fSPhi(0.), fDPhi(0.),
 	fSinCPhi(0.), fCosCPhi(0.), fCosHDPhiOT(0.), fCosHDPhiIT(0.),
 	fSinSPhi(0.), fCosSPhi(0.), fSinEPhi(0.), fCosEPhi(0.),
+  fSinSPhiDPhi(0.), fCosSPhiDPhi(0.),
 	fPhiFullTube(false)
 {
 }
@@ -158,6 +159,7 @@ UTubs::UTubs(const UTubs& rhs)
 	fSinCPhi(rhs.fSinCPhi), fCosCPhi(rhs.fSinCPhi),
 	fCosHDPhiOT(rhs.fCosHDPhiOT), fCosHDPhiIT(rhs.fCosHDPhiOT),
 	fSinSPhi(rhs.fSinSPhi), fCosSPhi(rhs.fCosSPhi),
+  fSinSPhiDPhi(rhs.fSinSPhiDPhi), fCosSPhiDPhi(rhs.fCosSPhiDPhi),
 	fSinEPhi(rhs.fSinEPhi), fCosEPhi(rhs.fCosEPhi), fPhiFullTube(rhs.fPhiFullTube)
 {
 }
@@ -185,6 +187,9 @@ UTubs& UTubs::operator = (const UTubs& rhs)
 	fCosHDPhiOT = rhs.fCosHDPhiOT; fCosHDPhiIT = rhs.fCosHDPhiOT;
 	fSinSPhi = rhs.fSinSPhi; fCosSPhi = rhs.fCosSPhi;
 	fSinEPhi = rhs.fSinEPhi; fCosEPhi = rhs.fCosEPhi;
+  fSinSPhiDPhi = rhs.fSinSPhiDPhi;
+  fCosSPhiDPhi = rhs.fCosSPhiDPhi;
+
 	fPhiFullTube = rhs.fPhiFullTube;
 
 	return *this;
@@ -423,7 +428,7 @@ return existsAfterClip;
 //
 // Return whether point inside/outside/on surface
 
-VUSolid::EnumInside UTubs::Inside( const UVector3& p ) const
+inline VUSolid::EnumInside UTubs::Inside( const UVector3& p ) const
 {
 	double r2,pPhi,tolRMin,tolRMax;
 	VUSolid::EnumInside in = eOutside;
@@ -630,8 +635,8 @@ bool UTubs::Normal( const UVector3& p, UVector3& n) const
 			distSPhi = 0.; 
 			distEPhi = 0.; 
 		}
-		nPs = UVector3(std::sin(fSPhi),-std::cos(fSPhi),0);
-		nPe = UVector3(-std::sin(fSPhi+fDPhi),std::cos(fSPhi+fDPhi),0);
+		nPs = UVector3(fSinSPhi,-fCosSPhi,0);
+		nPe = UVector3(-fSinSPhiDPhi /* std::sin(fSPhi+fDPhi)*/,fCosSPhiDPhi,0);
 	}
 	if ( rho > halfCarTolerance ) { nR = UVector3(p.x/rho,p.y/rho,0); }
 
@@ -779,12 +784,12 @@ UVector3 UTubs::ApproxSurfaceNormal( const UVector3& p ) const
 		}
 	case kNSPhi:
 		{
-			norm = UVector3(std::sin(fSPhi), -std::cos(fSPhi), 0);
+			norm = UVector3(fSinSPhi, -fCosSPhi, 0);
 			break;
 		}
 	case kNEPhi:
 		{
-			norm = UVector3(-std::sin(fSPhi+fDPhi), std::cos(fSPhi+fDPhi), 0);
+			norm = UVector3(-fSinSPhiDPhi, fCosSPhiDPhi, 0);
 			break;
 		}
 	default:			// Should never reach this case ...
@@ -1910,15 +1915,15 @@ UVector3 UTubs::GetPointOnSurface() const
 	else if( (chose >= aOne + aTwo + 2.*aThr)
 		&& (chose < aOne + aTwo + 2.*aThr + aFou) )
 	{
-		xRand = rRand*std::cos(fSPhi);
-		yRand = rRand*std::sin(fSPhi);
+		xRand = rRand*fCosSPhi;
+		yRand = rRand*fSinSPhi;
 		zRand = UUtils::Random(-1.*fDz,fDz);
 		return UVector3	(xRand, yRand, zRand);
 	}
 	else
 	{
-		xRand = rRand*std::cos(fSPhi+fDPhi);
-		yRand = rRand*std::sin(fSPhi+fDPhi);
+		xRand = rRand*fCosSPhiDPhi;
+		yRand = rRand*fSinSPhiDPhi;
 		zRand = UUtils::Random(-1.*fDz,fDz);
 		return UVector3	(xRand, yRand, zRand);
 	}
