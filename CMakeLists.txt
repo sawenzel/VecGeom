@@ -5,7 +5,17 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 project(USolids)
 
-find_package(Geant4 REQUIRED)
+#----------------------------------------------------------------------------
+# Find Geant4 package, activating all available UI and Vis drivers by default
+# You can set WITH_GEANT4_UIVIS to OFF via the command line or ccmake/cmake-gui
+# to build a batch mode only executable
+#
+option(WITH_GEANT4_UIVIS "Build example with Geant4 UI and Vis drivers" ON)
+if(WITH_GEANT4_UIVIS)
+  find_package(Geant4 REQUIRED ui_all vis_all)
+else()
+  find_package(Geant4 REQUIRED)
+endif()
 
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
@@ -27,6 +37,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4ExtrudedSolid2 testG4ExtrudedS
 # add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Quadr testG4Tess_Quadr/)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Tria testG4Tess_Triar/)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/G01 G01/)
+add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/N01 N01/)
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include 
