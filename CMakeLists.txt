@@ -37,7 +37,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4ExtrudedSolid2 testG4ExtrudedS
 # add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Quadr testG4Tess_Quadr/)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/testG4Tess_Tria testG4Tess_Triar/)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/G01 G01/)
-add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/N01 N01/)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/G4TS/N01 N01/)
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include 
