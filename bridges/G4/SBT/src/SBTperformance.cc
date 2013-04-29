@@ -79,6 +79,7 @@
 #include "USphere.hh"
 #include "UTrap.hh"
 #include "UPolycone.hh"
+#include "UPolycone2.hh"
 #include "UPolycone3.hh"
 
 #include "TGeoArb8.h"
@@ -169,12 +170,18 @@ void SBTperformance::TestInsideGeant4(int iteration)
 {
 	G4ThreeVector point;
 
+  points[0].Set(1000, 1000, 1000);
+
 	for (int i = 0; i < maxPoints; i++)
 	{
+
 //    points[0] = UVector3(46403.38739730667, -18973.09192006442, -59999.9999999999);
 //    points[0] = UVector3(-41374.68053161167,      16708.86204374595      ,59999.9999999999 );
 
-    points[0].Set(0);
+//    points[0].Set(0);
+
+    if (i == 0)
+      i = i;
 
     GetVectorGeant4(point, points, i);
 		EInside inside = volumeGeant4->Inside(point);
@@ -186,12 +193,12 @@ void SBTperformance::TestInsideUSolids(int iteration)
 {
 	UVector3 point;
 
+  points[0].Set(1000, 1000, 1000);
+
 	for (int i = 0; i < maxPoints; i++)
 	{
-    points[0].Set(0);
-
 		GetVectorUSolids(point, points, i);
-    if (i == 4992)
+    if (i == 0)
       i = i;
 
 		VUSolid::EnumInside inside = volumeUSolids->Inside(point);
@@ -245,6 +252,7 @@ void SBTperformance::TestNormalUSolids(int iteration)
 
 		if (!iteration) 
     {
+      resultBoolUSolids[i] = valid;
       SetVectorUSolids(normal, resultVectorUSolids, i);
     }
 	}
@@ -296,7 +304,7 @@ void SBTperformance::TestSafetyFromOutsideGeant4(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
-    points[0] = UVector3(2.981820718641945, -1.608431647524929, -2.547022407577875);
+//    points[0] = UVector3(2.981820718641945, -1.608431647524929, -2.547022407577875);
 
 		GetVectorGeant4(point, points, i);
 		double res = volumeGeant4->DistanceToIn(point);
@@ -316,7 +324,7 @@ void SBTperformance::TestSafetyFromOutsideUSolids(int iteration)
 
 	for (int i = 0; i < maxPoints; i++)
 	{
-    points[0] = UVector3(2.981820718641945, -1.608431647524929, -2.547022407577875);
+//    points[0] = UVector3(2.981820718641945, -1.608431647524929, -2.547022407577875);
 
 		GetVectorUSolids(point, points, i);
 		// NEW: detected significant performance drop at USolidss DistanceToIn , DistanceToOut was fixed by rewriting of USolidss interface
@@ -514,7 +522,7 @@ void SBTperformance::TestDistanceToInUSolids(int iteration)
 		GetVectorUSolids(point, points, i);
 		GetVectorUSolids(direction, directions, i);
 		double res = volumeUSolids->DistanceToIn(point, direction);
-    if (i == 157) 
+    if (i == 18950) 
       i = i;
 
 		if (!iteration) 
@@ -1030,11 +1038,13 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 
     conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
 
+//    conUSolid = new UPolycone2("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
+
 		volumeROOT = conRoot;
     volumeUSolids = conUSolid;
 	}
 
-	if (type == "G4Polycone2")
+	if (type == "G4PolyconeG") // THis code tests generic polycone!!!
 	{
 		G4Polycone &polycone = *(G4Polycone *) testVolume;
 		double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
@@ -1096,7 +1106,7 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 			int len = numRZCorner - back;
 			conRoot = new TGeoPcon(startPhi, endPhi, len);
       conUSolid = new UPolycone("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &rmax[0], &z[0]);
-      conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &z[0], &rmin[0], &rmax[0]);
+//      conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &z[0], &rmin[0], &rmax[0]);
 
 			for (int i = 0; i < len; i++) 
 			{

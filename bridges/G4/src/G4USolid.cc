@@ -169,7 +169,7 @@ G4bool G4USolid::CalculateExtent(const EAxis pAxis,
        offset=pTransform.NetTranslation().y();}
     if(pAxis==kZAxis){eAxis=VUSolid::eZaxis;
        offset=pTransform.NetTranslation().z();}
-    fShape->Extent(eAxis,pMin,pMax);  
+    fShape->ExtentAxis(eAxis,pMin,pMax);  
 
     pMin += offset;
     pMax += offset;   
@@ -358,9 +358,9 @@ G4USolid::CreateRotatedVertices(const G4AffineTransform& pTransform) const
 {
   G4double xMin,xMax,yMin,yMax,zMin,zMax;
  
-  fShape->Extent(VUSolid::eXaxis,xMin,xMax);  
-  fShape->Extent(VUSolid::eYaxis,yMin,yMax); 
-  fShape->Extent(VUSolid::eZaxis,zMin,zMax); 
+  fShape->ExtentAxis(VUSolid::eXaxis,xMin,xMax);  
+  fShape->ExtentAxis(VUSolid::eYaxis,yMin,yMax); 
+  fShape->ExtentAxis(VUSolid::eZaxis,zMin,zMax); 
 
   G4ThreeVectorList *vertices;
   vertices=new G4ThreeVectorList();

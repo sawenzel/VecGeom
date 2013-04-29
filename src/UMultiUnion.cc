@@ -390,6 +390,12 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &
 }    
 
 
+struct USurface
+{
+  UVector3 point;
+  VUSolid *solid;
+};
+
 //______________________________________________________________________________
 VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBits *exclusion) const
 {
@@ -406,9 +412,9 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
 
 	UVector3 localPoint;
 	VUSolid::EnumInside location = eOutside;
-	bool surface = false;
 
 	vector<int> candidates;
+  vector<USurface> surfaces;
 
 	// TODO: test if it works well and if so measure performance
 	// TODO: getPointIndex should not be used, instead GetVoxel + GetVoxelsIndex should be used
@@ -422,22 +428,43 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
 		for(int i = 0 ; i < limit ; ++i)
 		{
 			int candidate = candidates[i];
-			const VUSolid &solid = *fSolids[candidate];
-			const UTransform3D &transform = *fTransforms[candidate];  
+			VUSolid &solid = *fSolids[candidate];
+			UTransform3D &transform = *fTransforms[candidate];
 
 			// The coordinates of the point are modified so as to fit the intrinsic solid local frame:
 			localPoint = transform.LocalPoint(aPoint);
 			location = solid.Inside(localPoint);
-			if(location == eSurface) surface = true; 
+			if(location == eSurface)
+      {
+        USurface surface;
+        surface.point = localPoint; surface.solid = &solid;
+        surfaces.push_back(surface);
+      }
 
-			if(location == eInside) return eInside;      
+			if(location == eInside) return eInside;
 		}
 	}
 	///////////////////////////////////////////////////////////////////////////
 	// Important comment: When two solids touch each other along a flat
 	// surface, the surface points will be considered as eSurface, while points 
 	// located around will correspond to eInside (cf. G4UnionSolid in GEANT4)
-	location = surface ? eSurface : eOutside;
+
+  int size = surfaces.size();
+  for (int i = 0; i < size - 1; ++i)
+  {
+    USurface &left = surfaces[i];
+    for (int j = i + 1; j < size; ++j)
+    {
+      USurface &right = surfaces[j];
+      UVector3 n, n2;
+      left.solid->Normal(left.point, n);
+      right.solid->Normal(right.point, n2);
+      if ((n +  n2).Mag2() < 1000*frTolerance)
+        return eInside;
+    }
+  }
+
+	location = size ? eSurface : eOutside;
 
 	return location;
 }
