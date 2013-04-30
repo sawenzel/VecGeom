@@ -701,7 +701,7 @@ double UPolycone3::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) con
     if (safety < minSafety) minSafety = safety;
   }
 
-  double zbase = fZs[index-1];
+  zbase = fZs[index-1];
   for (int i = index-1; i >= 0; --i)
   {
     double dz = zbase - fZs[i];
