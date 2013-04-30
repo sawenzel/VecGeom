@@ -1179,7 +1179,7 @@ void G4InteractiveSolid::MakePolycone2( G4String values )
 {
 	if (polycone2.Cmd->GetArguments( values )) {
 		double phiStart = polycone2.GetDouble(0), phiTotal = polycone2.GetDouble(1);
-		int numRZ = (int) polycone2.GetInteger(2);
+		int numRZ = polycone2.GetInteger(2);
 
 		G4UIcmdPargListDouble &zArg = polycone2.GetArgListDouble(3);
 		G4UIcmdPargListDouble &rInArg = polycone2.GetArgListDouble(4);
@@ -1211,7 +1211,7 @@ void G4InteractiveSolid::MakePolyhedra( G4String values )
 {
 	if (polyhedra.Cmd->GetArguments( values )) {
 		double phiStart = polyhedra.GetDouble(0), phiTotal = polyhedra.GetDouble(1);
-		int numSides = (int) polyhedra.GetDouble(2), numRZ = polyhedra.GetInteger(3);
+		int numSides = polyhedra.GetInteger(2), numRZ = polyhedra.GetInteger(3);
 		G4UIcmdPargListDouble &rArg = polyhedra.GetArgListDouble(4);
 		G4UIcmdPargListDouble &zArg = polyhedra.GetArgListDouble(5);
 		//

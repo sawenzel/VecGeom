@@ -1,4 +1,7 @@
 
+//10:30 - 17:30
+//12:30 - 14:30
+
 //
 // ********************************************************************
 // * License and Disclaimer                                           *
@@ -170,7 +173,7 @@ void SBTperformance::TestInsideGeant4(int iteration)
 {
 	G4ThreeVector point;
 
-  points[0].Set(1000, 1000, 1000);
+//  points[0].Set(1000, 1000, 1000);
 
 	for (int i = 0; i < maxPoints; i++)
 	{
@@ -193,7 +196,7 @@ void SBTperformance::TestInsideUSolids(int iteration)
 {
 	UVector3 point;
 
-  points[0].Set(1000, 1000, 1000);
+//  points[0].Set(1000, 1000, 1000);
 
 	for (int i = 0; i < maxPoints; i++)
 	{
@@ -1655,10 +1658,10 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 	string name = volumeGeant4->GetName();
 	// if (name != "MultiUnion") 
 
-//#ifdef DEBUG
+#ifdef DEBUG
 	Flush("Saving polyhedra for visualization\n");
 	SavePolyhedra(method);
-//#endif
+#endif
 	SaveVectorToMatlabFile(points, folder+method+"Points.dat");
 	SaveVectorToMatlabFile(directions, folder+method+"Directions.dat");
 
