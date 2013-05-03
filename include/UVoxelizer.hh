@@ -70,7 +70,7 @@ struct UVoxelInfo
 
 class UVoxelizer
 {
-	friend class UVoxelCandidatesIterator;
+//	friend class UVoxelCandidatesIterator;
 
 public:
 
@@ -336,6 +336,7 @@ private:
 
 #ifdef USOLIDSONLY
 
+/*
 class UVoxelCandidatesIterator
 {
 private:
@@ -350,6 +351,7 @@ public:
 
 	int Next();
 };
+*/
 
 #endif // USOLIDSONLY
 

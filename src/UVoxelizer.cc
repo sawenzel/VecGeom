@@ -605,7 +605,7 @@ void UVoxelizer::Voxelize(vector<VUSolid *> &solids, vector<UTransform3D *> &tra
 
 	BuildBoundingBox();
 
-	BuildEmpty(); // these does not work well for multi-union, actually only makes performance slower
+	BuildEmpty(); // these does not work well for multi-union, actually only makes performance slower, these are only pre-calculated but not used by multi-union
 	
 //	fBoxes.resize(0); // for multiunion, fBoxes are actually needed
 
@@ -1047,7 +1047,7 @@ double UVoxelizer::DistanceToNext(const UVector3 &point, const UVector3 &directi
 	if (shift)
 	{
 	double bonus = fTolerance/10;
-	shift += bonus;
+	shift += bonus;---
 
 	if (index == 0)
 	{
@@ -1160,6 +1160,7 @@ bitmask.SetBitNumber(1, false); // it is here so we can set the maximum
 }
 */
 
+/*
 UVoxelCandidatesIterator::UVoxelCandidatesIterator(const UVoxelizer &f, const UVector3 &point) : curInt(-1), curBit((int) (8*sizeof(unsigned int))), nextAvailable(true)
 {
 	carNodes = f.fBoxes.size();
@@ -1235,5 +1236,6 @@ int UVoxelCandidatesIterator::Next()
 		return -1;
 	}
 }
+*/
 
 #endif // USOLIDSONLY

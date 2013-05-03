@@ -22,7 +22,6 @@
 class UMultiUnion : public VUSolid
 {
 	friend class UVoxelizer;
-	friend class UVoxelCandidatesIterator;
 
 	// Internal structure for storing the association solid-placement
 public:   
@@ -43,7 +42,7 @@ public:
 	double                       SafetyFromOutside(const UVector3 &aPoint,
 		bool aAccurate=false) const;
 
-	double                       DistanceToInDummy     (const UVector3 &aPoint,
+	double                       DistanceToInNoVoxels     (const UVector3 &aPoint,
 		const UVector3 &aDirection,
 		// UVector3       &aNormalVector,
 		double aPstep = UUtils::kInfinity) const;
@@ -71,7 +70,7 @@ public:
 		bool           &aConvex,
 		std::vector<int> &candidates) const;
 
-	double                       DistanceToOutDummy    (const UVector3 &aPoint,
+	double                       DistanceToOutNoVoxels    (const UVector3 &aPoint,
 		const UVector3 &aDirection,
 		UVector3       &aNormalVector,
 		bool           &aConvex,
@@ -100,7 +99,7 @@ public:
 
   // Finalize and prepare for use. User MUST call it once before navigation use.
 	void                         Voxelize();
-	EnumInside                   InsideDummy(const UVector3 &aPoint) const;
+	EnumInside                   InsideNoVoxels(const UVector3 &aPoint) const;
 
 	inline UVoxelizer &GetVoxels() const
 	{
