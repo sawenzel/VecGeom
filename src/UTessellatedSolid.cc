@@ -711,7 +711,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3 &p) const
 //	int limit = fVoxels.GetCandidatesVoxelArray(p, candidates, NULL);
 	if (limit == 0 && fInsides.GetNbits())
 	{
-		int index = fVoxels.GetPointIndex(p);
+//		int index = fVoxels.GetPointIndex(p);
+    int index = fVoxels.GetVoxelsIndex(startingVoxel);
 		EnumInside location = fInsides[index] ? eInside : eOutside;
 		return location;
 	}
@@ -1566,7 +1567,8 @@ double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool aAccurate) 
 //			int limit = fVoxels.GetCandidatesVoxelArray(p, candidates, NULL);
 			if (candidates.size() == 0 && fInsides.GetNbits())
 			{
-				int index = fVoxels.GetPointIndex(p);
+//				int index = fVoxels.GetPointIndex(p);
+        int index = fVoxels.GetVoxelsIndex(startingVoxel);
 				if (fInsides[index]) return 0.;
 			}
 		}

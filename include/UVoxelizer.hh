@@ -300,7 +300,7 @@ private:
 
 	void DisplayBoundaries(std::vector<double> &fBoundaries);
 
-	void BuildBitmasks(std::vector<double> fBoundaries[], UBits bitmasks[], bool countsOnly=false);
+	void BuildBitmasks(std::vector<double> fBoundaries[], UBits bitmasks[]);
 
 	void BuildBoundingBox();
 

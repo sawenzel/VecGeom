@@ -275,7 +275,7 @@ void UVoxelizer::DisplayBoundaries(vector<double> &boundaries)
 	cout << "|" << endl << "Number of boundaries: " << count << endl;
 }
 
-void UVoxelizer::BuildBitmasks(std::vector<double> boundaries[], UBits bitmasks[], bool countsOnly)
+void UVoxelizer::BuildBitmasks(std::vector<double> boundaries[], UBits bitmasks[])
 {
 	// "BuildListNodes" stores in the bitmasks solids present in each slice along an axis.
 	//	const double localTolerance = 0;
@@ -289,7 +289,7 @@ void UVoxelizer::BuildBitmasks(std::vector<double> boundaries[], UBits bitmasks[
 		int voxelsCount = boundary.size() - 1;
 		UBits &bitmask = bitmasks[k];
 
-		if (!countsOnly)
+		if (bitmasks != NULL)
 		{
 			bitmask.Clear();
 			bitmask.SetBitNumber(voxelsCount*bitsPerSlice-1, false); // it is here so we can set the maximum number of bits. this line will rellocate the memory and set all to zero
@@ -314,7 +314,7 @@ void UVoxelizer::BuildBitmasks(std::vector<double> boundaries[], UBits bitmasks[
 
 			do
 			{
-				if (!countsOnly) 
+				if (bitmasks != NULL) 
 					bitmask.SetBitNumber(i*bitsPerSlice+j);
 
 				candidatesCount[i]++;
@@ -663,7 +663,7 @@ void UVoxelizer::Voxelize(vector<VUFacet *> &facets)
 
 		BuildBoundaries();
 
-		BuildBitmasks(fBoundaries, NULL, true);
+		BuildBitmasks(fBoundaries, NULL);
 
 		if (maxVoxels < 0 && reductionRatio == UVector3())
 		{
