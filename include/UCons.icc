@@ -83,6 +83,12 @@ void UCons::Initialize()
 	fCubicVolume = 0.;
 	fSurfaceArea = 0.;
 	fpPolyhedron = 0;
+
+    tanRMin = (fRmin2 - fRmin1)*0.5/fDz;
+	secRMin = std::sqrt(1.0 + tanRMin*tanRMin);
+
+	tanRMax = (fRmax2 - fRmax1)*0.5/fDz;
+	secRMax = std::sqrt(1.0 + tanRMax*tanRMax);
 }
 
 inline 

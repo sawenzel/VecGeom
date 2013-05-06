@@ -88,6 +88,9 @@ void UTubs::InitializeTrigonometry()
 	fCosSPhi = std::cos(fSPhi);
 	fSinEPhi = std::sin(ePhi);
 	fCosEPhi = std::cos(ePhi);
+
+	fSinSPhiDPhi = std::sin(fSPhi+fDPhi);
+	fCosSPhiDPhi = std::cos(fSPhi+fDPhi);
 }
 
 inline void UTubs::CheckSPhiAngle(double sPhi)
