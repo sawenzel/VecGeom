@@ -9,6 +9,12 @@
 # Here is a tube with no inner radius and no phi segmentation
 #
 
+/solid/G4Cons 1 2 1 3 1 0 360
+/performance/errorFileName log/cons-test10-p10k/sbt.log
+/control/execute usolids/performance.sbt
+
+exit
+
 
 ### this test case does not work, error!
 /solid/G4Cons 0 0 0 1 1 0 180
@@ -20,12 +26,6 @@ exit
 /performance/repeat 100
 
 # rMin1, rMax1, rMin2, rMax2, dz, sPhi, dPhi
-
-/solid/G4Cons 1 2 1 2 1 0 180
-/performance/errorFileName log/cons-test10-p10k/sbt.log
-/control/execute usolids/performance.sbt
-
-exit
 
 
 

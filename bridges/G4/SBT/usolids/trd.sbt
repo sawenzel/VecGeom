@@ -10,8 +10,8 @@
 /solid/G4Trd 0.5 1.5 1 1 1
 
 /performance/errorFileName log/trd-5-t10k/trdp.a1.log
-/performance/maxPoints 100000
-/performance/repeat 10
+/performance/maxPoints 100
+/performance/repeat 1
 /control/execute usolids/performance.sbt
 
 exit

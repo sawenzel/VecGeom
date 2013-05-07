@@ -6,11 +6,13 @@
 /performance/method Inside
 /performance/run
 
-/performance/maxInsidePercent 100
+/performance/maxInsidePercent 90
 # maxOutsidePercent must be 0, otherwise errors are produced in Geant4
-/performance/maxOutsidePercent 0
+/performance/maxOutsidePercent 10
 /performance/method DistanceToOut
 /performance/run 
+
+exit
 
 /performance/maxInsidePercent 0
 /performance/maxOutsidePercent 100
