@@ -151,32 +151,32 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 
 	double minDistance = UUtils::kInfinity;
 	UVector3 direction = aDirection.Unit();
-	double shift = voxels.DistanceToFirst(aPoint, direction);
+	double shift = fVoxels.DistanceToFirst(aPoint, direction);
 	if (shift == UUtils::kInfinity) return shift;
   UVector3 currentPoint = aPoint;
 	double shiftBonus = VUSolid::Tolerance()/10.0;
 	if (shift) 
 		currentPoint += direction * (shift + shiftBonus);
-	//		if (!voxels.Contains(currentPoint)) 
+	//		if (!fVoxels.Contains(currentPoint)) 
 	//			return minDistance;
 	double totalShift = shift;
 
-	UBits exclusion(voxels.GetBitsPerSlice());
+	UBits exclusion(fVoxels.GetBitsPerSlice());
 	vector<int> candidates, curVoxel(3);
-	for (int i = 0; i <= 2; ++i) curVoxel[i] = UVoxelizer::BinarySearch(voxels.GetBoundary(i), currentPoint[i]);
+	for (int i = 0; i <= 2; ++i) curVoxel[i] = UVoxelizer::BinarySearch(fVoxels.GetBoundary(i), currentPoint[i]);
 
 	do
 	{
-//		if (!voxels.Empty().GetNbits() || !voxels.IsEmpty(voxels.GetVoxelsIndex(curVoxel)))
+//		if (!fVoxels.Empty().GetNbits() || !fVoxels.IsEmpty(fVoxels.GetVoxelsIndex(curVoxel)))
 		{
-			if (voxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
+			if (fVoxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
 			{
 				double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
 				if (minDistance > distance) minDistance = distance;
 				if (distance < totalShift) break; 
 			}
 		}
-		shift = voxels.DistanceToNext(currentPoint, direction, curVoxel);
+		shift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
 		if (shift == UUtils::kInfinity /*|| shift == 0*/) break;
 
 		totalShift += shift;
@@ -184,7 +184,7 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 
 		currentPoint += direction * (shift + shiftBonus);
 	}
-	while (voxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
+	while (fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
 
 #ifdef DEBUG
 	if (fabs(minDistance - distanceToInNoVoxels) > VUSolid::Tolerance())
@@ -297,12 +297,12 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &
 	vector<int> candidates;
   double distance = 0;
 
-	if(voxels.GetCandidatesVoxelArray(aPoint, candidates))
+	if(fVoxels.GetCandidatesVoxelArray(aPoint, candidates))
 	{
 		// For normal case for which we presume the point is inside
 		UVector3 localPoint, localDirection, localNormal;
 		UVector3 currentPoint = aPoint;
-		UBits exclusion(voxels.GetBitsPerSlice());
+		UBits exclusion(fVoxels.GetBitsPerSlice());
 		bool notOutside;
 		UVector3 maxNormal;
 
@@ -383,7 +383,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3 &aPoint, const UVector3 &
 				// and fill the candidates for the corresponding voxel (just exiting current component along direction)
 				candidates.clear();
 
-				voxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);
+				fVoxels.GetCandidatesVoxelArray(currentPoint, candidates, &exclusion);
 				exclusion.ResetBitNumber(maxCandidate);
 			}
 		}
@@ -429,9 +429,9 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
 	// TODO: eventually GetVoxel should be inlined here, early exit if any binary search is -1
 
 	// the code bellow makes it currently only slower
-	//	if (!voxels.empty.GetNbits() || !voxels.empty[voxels.GetPointIndex(aPoint)])
+	//	if (!fVoxels.empty.GetNbits() || !fVoxels.empty[fVoxels.GetPointIndex(aPoint)])
 	{
-		int limit = voxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
+		int limit = fVoxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
 		for(int i = 0 ; i < limit ; ++i)
 		{
 			int candidate = candidates[i];
@@ -500,16 +500,16 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
 	// TODO: eventually GetVoxel should be inlined here, early exit if any binary search is -1
 
 	// the code bellow makes it currently only slower
-	//	if (!voxels.empty.GetNbits() || !voxels.empty[voxels.GetPointIndex(aPoint)])
+	//	if (!fVoxels.empty.GetNbits() || !fVoxels.empty[fVoxels.GetPointIndex(aPoint)])
 	{
 		vector<int> curVoxel(3);
-		if (voxels.GetPointVoxel(aPoint, curVoxel))
+		if (fVoxels.GetPointVoxel(aPoint, curVoxel))
 		{
-			int index = voxels.GetVoxelsIndex(curVoxel);
-			if (!voxels.Empty()[index])
+			int index = fVoxels.GetVoxelsIndex(curVoxel);
+			if (!fVoxels.Empty()[index])
 			{
-		//		int limit = voxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
-				const vector<int> &candidates = voxels.GetCandidates(curVoxel);
+		//		int limit = fVoxels.GetCandidatesVoxelArray(aPoint, candidates, exclusion);
+				const vector<int> &candidates = fVoxels.GetCandidates(curVoxel);
 				int limit = candidates.size();
 				for(int i = 0 ; i < limit ; ++i)
 				{
@@ -594,8 +594,8 @@ VUSolid::EnumInside UMultiUnion::InsideIterator(const UVector3 &aPoint) const
 	bool boolSurface = false;
 
 	vector<int> candidates;
-	//   candidates = voxels.GetCandidatesVoxelArrayOld(aPoint); 
-	voxels.GetCandidatesVoxelArray(aPoint, candidates);
+	//   candidates = fVoxels.GetCandidatesVoxelArrayOld(aPoint); 
+	fVoxels.GetCandidatesVoxelArray(aPoint, candidates);
 
 	UVoxelCandidatesIterator iterator(voxels, aPoint);
 	int candidate;
@@ -748,7 +748,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3 &aNormal) const
 	// on a vertice remain to be treated  
 
 	// determine weather we are in voxel area
-	if(voxels.GetCandidatesVoxelArray(aPoint, candidates))
+	if(fVoxels.GetCandidatesVoxelArray(aPoint, candidates))
 	{
 		int limit = candidates.size();
 		for(int i = 0 ; i < limit ; ++i)
@@ -828,7 +828,7 @@ double UMultiUnion::SafetyFromInside(const UVector3 &point, bool aAccurate) cons
 
 	// In general, the value return by SafetyFromInside will not be the exact
 	// but only an undervalue (cf. overlaps)    
-	voxels.GetCandidatesVoxelArray(point, candidates);
+	fVoxels.GetCandidatesVoxelArray(point, candidates);
 
 	int limit = candidates.size();
 	for(int i = 0; i < limit; ++i)
@@ -856,7 +856,10 @@ double UMultiUnion::SafetyFromOutside(const UVector3 &point, bool aAccurate) con
 	// Estimates the isotropic safety from a point outside the current solid to any 
 	// of its surfaces. The algorithm may be accurate or should provide a fast 
 	// underestimate.
-	const std::vector<UVoxelBox> &boxes = voxels.GetBoxes();
+
+  if (!aAccurate) return fVoxels.SafetyToBoundingBox(point);
+
+	const std::vector<UVoxelBox> &boxes = fVoxels.GetBoxes();
 	double safetyMin = UUtils::kInfinity;   
 	UVector3 localPoint;
 
@@ -913,7 +916,7 @@ double UMultiUnion::SurfaceArea()
 //______________________________________________________________________________       
 void UMultiUnion::Voxelize()
 {
-	voxels.Voxelize(fSolids, fTransforms);
+	fVoxels.Voxelize(fSolids, fTransforms);
 }
 
 //______________________________________________________________________________
@@ -922,7 +925,7 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3 &aPoint, bool /*aAcc
 	// Method returning the closest node from a point located outside a UMultiUnion.
 	// This is used to compute the normal in the case no candidate has been found.
 
-	const std::vector<UVoxelBox> &boxes = voxels.GetBoxes();
+	const std::vector<UVoxelBox> &boxes = fVoxels.GetBoxes();
 	safetyMin = UUtils::kInfinity;
 	int safetyNode = -1;
 	UVector3 localPoint;    

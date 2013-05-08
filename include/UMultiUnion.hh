@@ -103,7 +103,7 @@ public:
 
 	inline UVoxelizer &GetVoxels() const
 	{
-		return (UVoxelizer &)voxels;
+		return (UVoxelizer &)fVoxels;
 	}
 
 	static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
@@ -124,7 +124,7 @@ private:
 
 	std::vector<VUSolid *> fSolids;
 	std::vector<UTransform3D *> fTransforms;
-	UVoxelizer voxels;  // Pointer to the vozelized solid
+	UVoxelizer fVoxels;  // Pointer to the vozelized solid
 
 };
 #endif

@@ -135,7 +135,7 @@ public:
 
 	double DistanceToFirst(const UVector3 &point, const UVector3 &direction) const;
 
-	double DistanceToBoundingBox(const UVector3 &point) const;
+	double SafetyToBoundingBox(const UVector3 &point) const;
 
 	inline int GetVoxelsIndex(int x, int y, int z) const
 	{
@@ -266,6 +266,10 @@ public:
 
 	static int GetDefaultVoxelsCount();
 
+  void BuildBoundingBox();
+
+  void BuildBoundingBox(UVector3 &amin, UVector3 &amax, double tolerance=0);
+
 private:
 
     static int fDefaultVoxelsCount;
@@ -301,8 +305,6 @@ private:
 	void DisplayBoundaries(std::vector<double> &fBoundaries);
 
 	void BuildBitmasks(std::vector<double> fBoundaries[], UBits bitmasks[]);
-
-	void BuildBoundingBox();
 
 	void SetReductionRatio(int maxVoxels, UVector3 &reductionRatio);
 

@@ -363,7 +363,7 @@ private: // without description
 
 	int fMaxTries;
 
-	UVoxelizer fVoxels;  // Pointer to the voxelized solid
+	UVoxelizer fVoxels;  // voxelized solid
 
 	UBits fInsides;
 

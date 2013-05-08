@@ -441,6 +441,7 @@ void UTessellatedSolid::Voxelize ()
 #endif
 		PrecalculateInsides();
 	}
+  fVoxels.BuildBoundingBox(fMinExtent, fMaxExtent, fgTolerance);
 }
 
 
@@ -1554,11 +1555,10 @@ double UTessellatedSolid::SafetyFromOutside (const UVector3 &p, bool aAccurate) 
 
 	double minDist;
 
+  if (!aAccurate) return fVoxels.SafetyToBoundingBox(p);
+
 	if (fVoxels.GetCountOfVoxels() > 1)
 	{
-    if (!aAccurate)
-      return fVoxels.DistanceToBoundingBox(p);
-
 		if (!OutsideOfExtent(p, fgTolerance))
 		{
 			vector<int> startingVoxel(3);

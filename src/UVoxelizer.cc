@@ -403,18 +403,23 @@ void UVoxelizer::DisplayListNodes()
 
 void UVoxelizer::BuildBoundingBox()
 {
-	UVector3 toleranceVector;
-	toleranceVector.Set(fTolerance/100);
-	for (int i = 0; i <= 2; ++i)
-	{
-		double min = fBoundaries[i].front();
-		double max = fBoundaries[i].back();
-		fBoundingBoxSize[i] = (max-min)/2;
-		fBoundingBoxCenter[i] = min + fBoundingBoxSize[i];
-	}
-	//	sizes -= toleranceVector;
-	fBoundingBox = UBox("", fBoundingBoxSize.x, fBoundingBoxSize.y, fBoundingBoxSize.z);
+  UVector3 min(fBoundaries[0].front(), fBoundaries[1].front(), fBoundaries[2].front());
+  UVector3 max(fBoundaries[0].back(), fBoundaries[1].back(), fBoundaries[2].back());
+  BuildBoundingBox(min, max);
 }
+
+void UVoxelizer::BuildBoundingBox(UVector3 &amin, UVector3 &amax, double tolerance)
+{
+  for (int i = 0; i <= 2; ++i)
+  {
+    double min = amin[i];
+    double max = amax[i];
+    fBoundingBoxSize[i] = (max-min)/2 + tolerance*0.5;
+    fBoundingBoxCenter[i] = min + fBoundingBoxSize[i];
+  }
+  fBoundingBox = UBox("", fBoundingBoxSize.x, fBoundingBoxSize.y, fBoundingBoxSize.z);
+}
+
 
 // algorithm - 
 
@@ -727,8 +732,6 @@ void UVoxelizer::Voxelize(vector<VUFacet *> &facets)
 
 		CreateMiniVoxels(miniBoundaries, bitmasksMini);
 
-		BuildBoundingBox();
-
 		BuildEmpty();
 
 		// deallocate fields unnessesary during runtime
@@ -981,7 +984,7 @@ double UVoxelizer::DistanceToFirst(const UVector3 &point, const UVector3 &direct
 	return shift;
 }
 
-double UVoxelizer::DistanceToBoundingBox(const UVector3 &point) const
+double UVoxelizer::SafetyToBoundingBox(const UVector3 &point) const
 {
 	UVector3 pointShifted = point - fBoundingBoxCenter;
 	double shift = MinDistanceToBox(pointShifted, fBoundingBoxSize);
