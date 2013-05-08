@@ -2,11 +2,12 @@ function res=sbtscale()
     figure;
     hold on;
 %    plotone('Voxel', 'm');
-    plotone('VoxelOriginal', 'r');
-    plotone('Voxel2', 'g');    
+%     plotone('VoxelOriginal', 'g');
+     plotone('Voxel2', 'r');
     plotone('Base', 'b');
     legend('New Voxels Implementation', 'New Voxels Implementation Test', 'Old Voxels implementation', 'Base implementation');
-    legend('Multi-Union 1st version', 'Multi-Union 2nd version', 'Boolean solid');
+%     legend('Multi-Union 1st version', 'Multi-Union 2nd version', 'Boolean solid');
+    legend('Multi-Union', 'Boolean solid');
     xlabel('Number of nodes');
     ylabel('Time of execution [s]');
     title('Scaling of Multi-Union inside method with boxes');

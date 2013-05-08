@@ -1,7 +1,7 @@
 function var = sbtplot(method, software1, software2, first, count, color)
 if nargin < 2
-    disp('Syntax is sbtplot(method, software1, [software2] [color])');
-    disp('Example: sbtplot(Inside, Geant4, Root);');
+    disp('Syntax is sbtplot(method, software1, [software2] [first] [count] [color])');
+    disp('Example: sbtplot(Inside, Geant4, Root, 1);');
     return;
 end
 if nargin < 3
@@ -16,7 +16,7 @@ end
 if nargin < 6
     color = 'b';
 end
-cell = {'', 'Normal', 'Convex', 'SurfaceNormal'};
+cell = {'', 'Normal', 'Convex', 'SurfaceNormal', 'Valid'};
 len = length(cell);
 for i=1:len
   submethod = cell{i};

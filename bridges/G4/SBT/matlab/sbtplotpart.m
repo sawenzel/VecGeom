@@ -36,7 +36,8 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
       color = 'b';
     end
     grid on;
-    if (strcmp( method, 'Normal') || strcmp( submethod, 'Normal') || strcmp( submethod, 'SurfaceNormal'))
+    valid = strcmp( submethod, 'Valid');
+    if ((strcmp( method, 'Normal') || strcmp( submethod, 'Normal') || strcmp( submethod, 'SurfaceNormal')) && valid == 0)
         if iscell(color)
             h = plot (values(1));
             set(h,'Color', rgb(color{1}));

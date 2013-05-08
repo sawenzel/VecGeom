@@ -1,9 +1,9 @@
-function res = sbtplot3d(method, software1, software2, first, max)
+function res = sbtplot3d(method, software1, software2, first, count)
     if (nargin < 4)
         first = 1;
     end
     if (nargin < 5)
-        max = -1;
+        count = -1;
     end
 if nargin < 2
     disp('Syntax is sbtplot3d(method,software1, [software2])');
@@ -11,9 +11,9 @@ if nargin < 2
     return;
 end
 if nargin < 3
-    sbtpoints(method, software1, '', first, max);
+    sbtpoints(method, software1, '', first, count);
 else
-    sbtpoints(method, software1, software2, first, max);
+    sbtpoints(method, software1, software2, first, count);
 end
 sbtpolyhedra(method);
 xlabel('X axis');
