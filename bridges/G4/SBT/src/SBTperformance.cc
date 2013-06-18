@@ -68,6 +68,7 @@
 #include "G4Trap.hh"
 #include "G4GenericTrap.hh"
 #include "G4VFacet.hh"
+#include "G4ExtrudedSolid.hh"
 
 #include "VUSolid.hh"
 #include "UBox.hh"
@@ -94,6 +95,7 @@
 #include "TGeoPgon.h"
 #include "TGeoTube.h"
 #include "TGeoCone.h"
+#include "TGeoXtru.h"
 
 #include "G4ThreeVector.hh"
 #include "G4RotationMatrix.hh"
@@ -986,6 +988,37 @@ void SBTperformance::SetupSolids(G4VSolid *testVolume)
 		if (dPhi > 360) dPhi -= 360;
 		volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rMin1, rMax1, rMin2, rMax2) : new TGeoConeSeg(dz, rMin1, rMax1, rMin2, rMax2, sPhi, dPhi);
 	}
+        if (type == "G4ExtrudedSolid")
+        {
+		G4ExtrudedSolid &extru = *(G4ExtrudedSolid *) testVolume;
+                int nV = extru.GetNofVertices();
+                //G4TwoVector GetVertex(G4int index) const;
+		std::vector<G4TwoVector> poly=extru.GetPolygon();
+                int nZ=extru.GetNofZSections();
+                //ZSection    GetZSection(G4int index) const;
+		//vector<ZSection> GetZSections() const;
+                double vx[100],vy[100];
+                //extru.DumpInfo();
+                
+
+         for ( G4int i=0; i<nV; ++i )
+         {
+          vx[i]=poly[i].x();
+          vy[i]=poly[i].y();
+          }
+	 //volumeRoot      
+         TGeoXtru *xr =new TGeoXtru( nZ);
+	 xr->DefinePolygon(nV,vx,vy);
+
+         for ( int iz=0; iz<nZ; ++iz ) 
+         {
+         xr->DefineSection(iz,extru.GetZSection(iz).fZ,extru.GetZSection(iz).fOffset.x(),extru.GetZSection(iz).fOffset.y(),extru.GetZSection(iz).fScale);
+         }     
+
+         volumeROOT=xr;
+  
+        }
+
 	if (type == "G4Polyhedra")
 	{
 		G4Polyhedra &polyhedra = *(G4Polyhedra *) testVolume;
