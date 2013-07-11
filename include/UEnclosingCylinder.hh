@@ -45,7 +45,6 @@
 #define UEnclosingCylinder_hh
 
 #include "UTypes.hh"
-#include "geomdefs.hh"
 #include "UTubs.hh"
 
 class UReduciblePolygon;
@@ -72,11 +71,6 @@ class UEnclosingCylinder
     double SafetyFromOutside( const UVector3 &p) const;
 
 	public:	// without description
-
-		UEnclosingCylinder(__void__&);
-			// Fake default constructor for usage restricted to direct object
-			// persistency for clients requiring preallocation of memory for
-			// persistifiable objects.
 
     void Extent( UVector3 &aMin, UVector3 &aMax ) const;
 
