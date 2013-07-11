@@ -97,16 +97,6 @@ UEnclosingCylinder::UEnclosingCylinder( const UReduciblePolygon *rz,
 	zHi		+= 10*fTolerance;
 }
 
-//
-// Fake default constructor - sets only member data and allocates memory
-//														for usage restricted to object persistency.
-//
-UEnclosingCylinder::UEnclosingCylinder( __void__& )
-: radius(0.), zLo(0.), zHi(0.), phiIsOpen(0.), startPhi(0.), totalPhi(0.),
-	rx1(0.), ry1(0.), dx1(0.), dy1(0.), rx2(0.), ry2(0.), dx2(0.), dy2(0.),
-	concave(false)
-{
-}
 
 //
 // Destructor
