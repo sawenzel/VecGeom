@@ -65,15 +65,17 @@ std::ostream & operator << (std::ostream & os, const UVector2 & q) {
 	return os;
 }
 
-void ZMinput2doubles ( std::istream & is, const char * type,
-	double & x, double & y );
+//void ZMinput2doubles ( std::istream & is, const char * type,
+//	double & x, double & y );
 
+/*
 std::istream & operator>>(std::istream & is, UVector2 & p) {
 	double x, y;
 	ZMinput2doubles ( is, "UVector2", x, y );
 	p.set(x, y);
 	return  is;
 }  // operator>>()
+*/
 
 UVector2::operator UVector3 () const {
 	return UVector3 ( x, y, 0.0 );

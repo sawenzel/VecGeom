@@ -97,7 +97,9 @@ void UTessellatedSolid::Initialize()
 {
 	fgToleranceHalf = 0.5*fgTolerance;
 
-	fpPolyhedron = NULL; fCubicVolume = 0.; fSurfaceArea = 0.;
+  // I recommend keeping NULL here instead of 0. c++11 provides nullptr, than it could be easily replaced everywhere using simple case sensitive, whole words replacement in all files
+	fpPolyhedron = NULL; 
+  fCubicVolume = 0.; fSurfaceArea = 0.;
 
 	fGeometryType = "UTessellatedSolid";
 	fSolidClosed  = false;
@@ -783,16 +785,15 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3 &p) const
 		// and was not checked before.
 
 		//	double minDistance = UUtils::kInfinity;
-		UVector3 currentPoint = p;
+//		UVector3 currentPoint = p;
 		UVector3 direction = v.Unit();
 //		UBits exclusion(fVoxels.GetBitsPerSlice());
 		vector<int> curVoxel(3);
 		curVoxel = startingVoxel;
-		double shiftBonus = VUSolid::Tolerance();
+//		double shiftBonus = VUSolid::Tolerance();
 
 		bool crossed = false;
 		bool started = true;
-
 //		set<int> already;
 
 		do
@@ -842,12 +843,12 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3 &p) const
 				}
 			}
 
-			double shift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
+			double shift = fVoxels.DistanceToNext(p, direction, curVoxel);
 			if (shift == UUtils::kInfinity) break;
 
-			currentPoint += direction * (shift + shiftBonus);
+			// currentPoint += direction * (shift /*+ shiftBonus*/);
 		}
-		while (fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
+		while (true/*fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel)*/);
 
 	}
 	while (nearParallel && sm!=fMaxTries);
@@ -1328,15 +1329,15 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 	{
 		minDistance = UUtils::kInfinity;
 
-		UVector3 currentPoint = aPoint;
+//		UVector3 currentPoint = aPoint;
 		UVector3 direction = aDirection.Unit();
-		double totalShift = 0;
+		double shift = 0;
 		vector<int> curVoxel(3);
 		if (!fVoxels.Contains(aPoint)) return 0;
 
-		fVoxels.GetVoxel(curVoxel, currentPoint);
+		fVoxels.GetVoxel(curVoxel, aPoint /*currentPoint*/);
 
-		double shiftBonus = VUSolid::Tolerance();
+//		double shiftBonus = VUSolid::Tolerance();
 
 //		const vector<int> *old = NULL;
 
@@ -1352,20 +1353,20 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 			if (/*old != &candidates &&*/ candidates.size())
 			{
 				DistanceToOutCandidates(candidates, aPoint, direction, minDistance, aNormalVector, minCandidate); 
-				if (minDistance <= totalShift) break; 
+				if (minDistance <= shift) break; 
 			}
 
-			double shift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
+			double shift = fVoxels.DistanceToNext(aPoint /*currentPoint*/, direction, curVoxel);
 			if (shift == UUtils::kInfinity) break;
 
-			totalShift += shift;
-			if (minDistance <= totalShift) break;
+//			totalShift += shift;
+			if (minDistance <= shift) break;
 
-			currentPoint += direction * (shift + shiftBonus);
+//			currentPoint += direction * (shift /*+ shiftBonus*/);
 			
 //			old = &candidates;
 		}
-		while (fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
+		while (true/*fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel)*/);
 
 		if (minCandidate < 0)
 		{
@@ -1424,7 +1425,7 @@ double UTessellatedSolid::DistanceToInCandidates(const std::vector<int> &candida
 
 double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector3 &aDirection, double aPstep) const
 {
-	double minDistance;
+	double minDistance, distance;
 
 	if (fVoxels.GetCountOfVoxels() > 1)
 	{
@@ -1433,15 +1434,14 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 		UVector3 direction = aDirection.Unit();
 		double shift = fVoxels.DistanceToFirst(currentPoint, direction);
 		if (shift == UUtils::kInfinity) return shift;
-		double shiftBonus = VUSolid::Tolerance();
 		if (shift) 
-			currentPoint += direction * (shift + shiftBonus);
+			currentPoint += direction * shift;
 		//		if (!fVoxels.Contains(currentPoint)) 
 		//			return minDistance;
-		double totalShift = shift;
 
 //		UBits exclusion; // (1/*fVoxels.GetBitsPerSlice()*/);
 		vector<int> curVoxel(3);
+    double curShift = 0;
 
 		fVoxels.GetVoxel(curVoxel, currentPoint);
 		do
@@ -1449,20 +1449,13 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 			const vector<int> &candidates = fVoxels.GetCandidates(curVoxel);
 			if (candidates.size())
 			{
-				double distance = DistanceToInCandidates(candidates, aPoint, direction); 
+				distance = DistanceToInCandidates(candidates, currentPoint, direction); 
 				if (minDistance > distance) minDistance = distance;
-				if (distance < totalShift) break;
+				if (distance < curShift) break;
 			}
-
-			shift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
-			if (shift == UUtils::kInfinity /*|| shift == 0*/) break;
-
-			totalShift += shift;
-			if (minDistance < totalShift) break;
-
-			currentPoint += direction * (shift + shiftBonus);
+			curShift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
 		}
-		while (fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
+		while (minDistance > curShift);
 
 #ifdef DEBUG
 		if (fabs(minDistance - distanceToInNoVoxels) > VUSolid::Tolerance())
@@ -1471,6 +1464,7 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 			minDistance = distanceToInNoVoxels; // you can place a breakpoint here
 		}
 #endif
+    if (minDistance != UUtils::kInfinity) minDistance += shift;
 	}
 	else
 	{

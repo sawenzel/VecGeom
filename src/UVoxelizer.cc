@@ -12,8 +12,6 @@
 
 using namespace std;
 
-// http://blogs.msdn.com/b/piyush/archive/2007/03/16/useful-visual-studio-shortcut-keys.aspx
-
 //______________________________________________________________________________   
 UVoxelizer::UVoxelizer() : fBoundingBox("TessBBox", 1, 1, 1)
 {
@@ -173,7 +171,7 @@ void UVoxelizer::CreateSortedBoundary(vector<double> &boundary, int axis)
 	// "CreateBoundaries"'s aim is to determine the slices induced by the bounding fBoxes,
 	// along each axis. The created boundaries are stored in the array "boundariesRaw"
 	int numNodes = fBoxes.size(); // Number of nodes in structure of "UMultiUnion" type
-	// Determination of the boundries along x, y and z axis:
+	// Determination of the boundaries along x, y and z axis:
 	for(int i = 0 ; i < numNodes; ++i)   
 	{
 		// For each node, the boundaries are created by using the array "fBoxes"
@@ -195,11 +193,11 @@ void UVoxelizer::BuildBoundaries()
 	//              * boundaries[0..2]
 
 	// In addition, the number of elements contained in the three latter arrays are
-	// precised thanks to variables: boundariesCountX, boundariesCountY and boundariesCountZ.
+	// precise thanks to variables: boundariesCountX, boundariesCountY and boundariesCountZ.
 
 	if (int numNodes = fBoxes.size())
 	{
-		const double tolerance = fTolerance / 100.0; // Minimal distance to discrminate two boundaries.
+		const double tolerance = fTolerance / 100.0; // Minimal distance to discriminate two boundaries.
 		vector<double> sortedBoundary(2*numNodes);
 
 		int considered;
@@ -734,7 +732,7 @@ void UVoxelizer::Voxelize(vector<VUFacet *> &facets)
 
 		BuildEmpty();
 
-		// deallocate fields unnessesary during runtime
+		// deallocate fields unnecessary during runtime
 		fBoxes.resize(0);
 
 		for (int i = 0; i < 3; ++i)
@@ -1013,96 +1011,73 @@ double UVoxelizer::MinDistanceToBox ( const UVector3 &aPoint, const UVector3 &f)
 	return std::sqrt(safsq);
 }
 
-double UVoxelizer::DistanceToNext(const UVector3 &point, const UVector3 &direction, const vector<int> &curVoxel) const
+
+double UVoxelizer::DistanceToNext(const UVector3 &point, const UVector3 &direction, vector<int> &curVoxel) const
 {
 	double shift = UUtils::kInfinity;
+  int cur; // the smallest index, which would be than increased
 
 	for (int i = 0; i <= 2; ++i)
 	{
 		// Looking for the next voxels on the considered direction X,Y,Z axis
 		const vector<double> &boundary = fBoundaries[i];
-		int cur = curVoxel[i];
+		int index = curVoxel[i];
 		if(direction[i] >= 1e-10)
 		{
-			if (boundary[++cur] - point[i] < fTolerance) // make sure shift would be non-zero
-				if (++cur >= (int) boundary.size())
-					continue;
+      ++index;
+//      if (boundary[++index] - point[i] < fTolerance) 
+  
+//        if (++index >= (int) boundary.size() - 1)
+//          exit = true;
+
+// make sure shift would be non-zero => not needed anymore
+
+//				if (++index >= (int) boundary.size()) // the shift is not important, only is important to increase the boundary index, even if it would be zero, than we would in next steps always increase another dimension, so it would continue alright
+//					continue;
 		}
 		else 
 		{
 			if(direction[i] <= -1e-10) 
 			{
-				if (point[i] - boundary[cur] < fTolerance) // make sure shift would be non-zero 
-					if (--cur < 0)
-						continue;
+//        if (point[i] - boundary[index] < fTolerance) // make sure shift would be non-zero 
+//          if (--index < 0)
+//            continue;
+
+//          if (--index < 0) 
+//            exit = true;
 			}
-			else 
+			else
 				continue;
 		}
-		double dif = boundary[cur] - point[i];
+		double dif = boundary[index] - point[i];
 		double distance = dif /direction[i];
 
-		if (shift > distance) 
-			shift = distance;
+		if (shift > distance)
+    {
+      shift = distance;
+      cur = i;
+    }
 	}
 
-	/*
-	if (shift)
-	{
-	double bonus = fTolerance/10;
-	shift += bonus;---
-
-	if (index == 0)
-	{
-	point.x = boundary;
-	point.y += shift * direction.y;
-	point.z += shift * direction.z;
-	}
-	if (index == 1)
-	{
-	point.y = boundary;
-	point.x += shift * direction.x;
-	point.z += shift * direction.z;
-	}
-	if (index == 2)
-	{
-	point.z = boundary;
-	point.x += shift * direction.x;
-	point.y += shift * direction.y;
-	}
-	}
-	*/
+  if (shift != UUtils::kInfinity)
+  {
+    // updating current voxel using the index corresponding to the closest voxel boundary on the ray
+    if (direction[cur] > 0)
+    {
+      if (++curVoxel[cur] >= (int) fBoundaries[cur].size() - 1)
+        shift = UUtils::kInfinity;
+    }
+    else
+    {
+      if (--curVoxel[cur] < 0)
+        shift = UUtils::kInfinity;
+    }
+  }
 
 	return shift;
 }
 
-bool UVoxelizer::UpdateCurrentVoxel(const UVector3 &point, const UVector3 &direction, vector<int> &curVoxel) const
-{
-	for (int i = 0; i <= 2; ++i)
-	{
-		int index = curVoxel[i];
-		const vector<double> &boundary = fBoundaries[i];
 
-		if (direction[i] > 0) 
-		{
-			if (point[i] >= boundary[++index])
-				if (++curVoxel[i] >= (int) boundary.size() - 1)
-					return false;
-		}
-		else
-		{
-			if (point[i] < boundary[index])
-				if (--curVoxel[i] < 0) 
-					return false;
-		}
-#ifdef DEBUG
-		int indexOK = BinarySearch(boundary, point[i]);
-		if (curVoxel[i] != indexOK)
-			curVoxel[i] = indexOK; // put breakpoint here
-#endif
-	}
-	return true;
-}
 
 
 void UVoxelizer::SetMaxVoxels(int max)
