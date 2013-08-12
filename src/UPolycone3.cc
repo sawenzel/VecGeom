@@ -49,7 +49,7 @@
 
 #include "UTubs.hh"
 #include "UCons.hh"
-#include "UHedra.hh"
+//#include "UHedra.hh"
 #include "UTransform3D.hh"
 
 using namespace std;
@@ -144,7 +144,7 @@ void UPolycone3::Init(double phiStart,
         }
         else
         {
-          solid = new UHedra("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal, fNumSides);
+//          solid = new UHedra("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal, fNumSides);
         }
 
         fZs.push_back(z);
