@@ -14,7 +14,7 @@ if nargin < 5
     count = -1;
 end
 if nargin < 6
-    color = 'b';
+    color = '';
 end
 cell = {'', 'Normal', 'Convex', 'SurfaceNormal', 'Valid'};
 len = length(cell);

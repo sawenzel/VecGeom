@@ -33,9 +33,6 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
             disp(difstr);
         end
     end
-    if nargin < 6
-      color = 'b';
-    end
     filenameLegend = [method 'Legend.dat'];
     counts = load (filenameLegend);
     maxPointsInside = counts(1);
@@ -59,46 +56,48 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
         end;
         legend([method submethod ' X'], [method submethod ' Y'], [method submethod ' Z']);
     else
-        len = length(values);
-        range = first:1:first+len-1;        
         if (realcount == 1)
 %             range(2) = range(1);
             values(2) = values(1);
-        end
-        
-%         h = plot (range, values, color); original was like this
-%        set(h,'Color', color);
+        end        
+        len = length(values);
+        range = first:1:first+len-1;        
+        if ~strcmp(color, '')
+          h = plot (range, values, color);
+          set(h,'Color', color);
+          legend([method submethod]);
+        else
+    %         if (count < 0)
+    %           count = length(valuesall) - (first - 1);
+    %         end
+            name = {};  
 
-%         if (count < 0)
-%           count = length(valuesall) - (first - 1);
-%         end
-        name = {};  
-        
-         hold on;
-         if maxPointsInside
-           h = subplot(valuesall, first, count, 1 + offsetInside, maxPointsInside);
-           if h
-            set(h,'Color', 'r');
-            name = [name; {[method submethod ' (Inside)']}];         
-           end
-         end
-         hold on;
-         if maxPointsSurface
-           h = subplot(valuesall, first, count, 1 + offsetSurface, maxPointsSurface);
-           if h
-             set(h,'Color', 'm');
-             name = [name; {[method submethod ' (Surface)']}];         
-           end
-         end
-         hold on;
-          if maxPointsOutside
-            h = subplot(valuesall, first, count, 1 + offsetOutside, maxPointsOutside);
-            if h          
-              set(h,'Color', 'b');
-              name = [name; {[method submethod ' (Outside)']}];         
-            end
-          end
-        legend(name);
+             hold on;
+             if maxPointsInside
+               h = subplot(valuesall, first, count, 1 + offsetInside, maxPointsInside);
+               if h
+                set(h,'Color', 'r');
+                name = [name; {[method submethod ' (Inside)']}];         
+               end
+             end
+             hold on;
+             if maxPointsSurface
+               h = subplot(valuesall, first, count, 1 + offsetSurface, maxPointsSurface);
+               if h
+                 set(h,'Color', 'm');
+                 name = [name; {[method submethod ' (Surface)']}];         
+               end
+             end
+             hold on;
+              if maxPointsOutside
+                h = subplot(valuesall, first, count, 1 + offsetOutside, maxPointsOutside);
+                if h          
+                  set(h,'Color', 'b');
+                  name = [name; {[method submethod ' (Outside)']}];         
+                end
+              end
+            legend(name);
+        end
     end
     label = '';
     if maxPointsInside
