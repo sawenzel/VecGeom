@@ -11,6 +11,8 @@ datasets = {'polyhedra-8-4-p10k', 'polyhedra-8-9-p10k', 'polyhedra-8-12-p10k', '
 
 datasets = {'polycone-3s-360-perf','polycone-10s-360-perf','polycone-100s-360-perf'};
 
+datasets = {'polyhedra2-3-2-p10k', 'polyhedra2-5-4-p10k', 'polyhedra2-7-6-p10k', 'polyhedra2-9-8-p10k', 'polyhedra2-11-10-p10k', 'polyhedra2-21-20-p10k', 'polyhedra2-51-50-p10k'};
+
 n = length(datasets);
 
 sbtperfall('Inside', datasets(:,1:n));

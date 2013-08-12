@@ -10,6 +10,12 @@ function dif=subarray(dif, first, count)
             count = length(dif) - (first - 1);
         end
         last = count + (first - 1);
+        if (last > length(dif))
+            last = length(dif);
+        end
+        if (first < 0) 
+            first = 1;
+        end
         dif = dif(first:last,:);
     end
 end
