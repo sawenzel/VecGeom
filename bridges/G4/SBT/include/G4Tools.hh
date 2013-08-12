@@ -73,7 +73,8 @@ public:
 	static inline int GetPolyhedra(const VUSolid &solid, std::vector<UVector3> &vertices, std::vector<std::vector<int> > &nodes)
 	{
 		UPolyhedron &p = *solid.GetPolyhedron();
-		if (&p == NULL) return 0;
+    std::cout << "Checking the polyhedra result\n";
+		if (&p == NULL) return NULL;
 
 		int noVertices = p.GetNoVertices();
 		vertices.resize(noVertices);

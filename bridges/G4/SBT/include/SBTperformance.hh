@@ -35,12 +35,22 @@
 #include <iostream>
 #include "G4VSolid.hh"
 #include "G4Orb.hh"
+#include "G4Sphere.hh"
+#include "G4Trd.hh"
 #include "G4ThreeVector.hh"
+#include "G4GenericTrap.hh"
+#include "G4Tubs.hh"
+#include "G4Cons.hh"
+#include "G4ExtrudedSolid.hh"
+#include "G4Polyhedra.hh"
+#include "G4Polycone.hh"
+#include "G4Trap.hh"
 #include "VUSolid.hh"
 #include "TGeoShape.h"
 
 #include "UMultiUnion.hh"
 #include "G4UnionSolid.hh"
+#include "G4TessellatedSolid.hh"
 
 #include "Randomize.hh"
 
@@ -132,9 +142,40 @@ private:
 	G4VSolid *volumeGeant4;
 	VUSolid *volumeUSolids;
 	TGeoShape *volumeROOT;
+  std::stringstream volumeSS;
 	std::string volumeString;
 
 	void SetupSolids(G4VSolid *testVolume);
+
+  void SetupTrap( G4Trap &trap );
+
+  void SetupPolyconeGeneric( G4Polycone &polycone );
+
+  void SetupPolycone( G4Polycone &polycone );
+
+  void SetupPolyhedra( G4Polyhedra &polyhedra );
+
+  void SetupPolyhedraGeneric( G4Polyhedra &polyhedra );
+
+  void SetupExtrudedSolid( G4ExtrudedSolid &extru );
+
+  void SetupCons( G4Cons &cons );
+
+  void SetupTubs( G4Tubs &tubs );
+
+  void SetupGenericTrap(G4GenericTrap &trap);
+
+  void SetupTrd( G4Trd &trd );
+
+  void SetupSphere( G4Sphere &sphere );
+
+  void SetupOrb( G4Orb &orb );
+
+  void SetupBox( G4Box &box );
+
+  void SetupMultiUnion(G4UnionSolid &unionSolid);
+
+  void SetupTessellatedSolid(G4TessellatedSolid &tessel);
 
 	void ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4UnionSolid &solid, std::string &rootComposite);
 
