@@ -245,8 +245,10 @@ class UPolyhedron {
 	void InvertFacets();
 
  public:
-	// Constructor
-	UPolyhedron() : fVertices(0), fFacets(0) {}
+
+   UPolyhedron() {}
+
+   inline virtual ~UPolyhedron() {}
 
 	// Copy constructor
 	UPolyhedron(const UPolyhedron &from);
@@ -470,9 +472,9 @@ class UPolyhedronPgon : public UPolyhedron
 {
  public:
 	UPolyhedronPgon(double phi, double dphi, int npdv, int nz,
-					const double *z,
-					const double *rmin,
-					const double *rmax);
+					const std::vector<double> &z,
+					const std::vector<double> &rmin,
+					const std::vector<double> &rmax);
 	virtual ~UPolyhedronPgon();
 };
 
@@ -480,9 +482,9 @@ class UPolyhedronPcon : public UPolyhedronPgon
 {
  public:
 	UPolyhedronPcon(double phi, double dphi, int nz,
-					const double *z,
-					const double *rmin,
-					const double *rmax);
+        const std::vector<double> &z,
+        const std::vector<double> &rmin,
+        const std::vector<double> &rmax);
 	virtual ~UPolyhedronPcon();
 };
 

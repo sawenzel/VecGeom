@@ -74,12 +74,12 @@ class UPolyconeHistorical
 		UPolyconeHistorical( const UPolyconeHistorical& source );
 		UPolyconeHistorical& operator=( const UPolyconeHistorical& right );
 
-		double Start_angle;
-		double Opening_angle;
-		int	 Num_z_planes;
-		double *Z_values;
-		double *Rmin;
-		double *Rmax;
+		double fStartAngle;
+		double fOpeningAngle;
+		int	 fNumZPlanes;
+		std::vector<double> fZValues;
+		std::vector<double> Rmin;
+		std::vector<double> Rmax;
 };
 
 class UPolycone : public UVCSGfaceted 
@@ -202,7 +202,7 @@ class UPolycone : public UVCSGfaceted
 	bool	 genericPcon; // true if created through the 2nd generic constructor
 	int	 numCorner;		// number RZ points
 	UPolyconeSideRZ *corners;	// corner r,z points
-	UPolyconeHistorical	*original_parameters;	// original input parameters
+	UPolyconeHistorical	*fOriginalParameters;	// original input parameters
 
 	// Our quick test
 

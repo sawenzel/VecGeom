@@ -53,7 +53,7 @@ class UEnclosingCylinder
 {
 	public:	// with description
 
-		UEnclosingCylinder( const UReduciblePolygon *rz,
+		UEnclosingCylinder( /*const UReduciblePolygon *rz*/  double r, double lo, double hi,
 															 bool phiIsOpen, 
 															 double startPhi, double totalPhi );
 		~UEnclosingCylinder();

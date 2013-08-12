@@ -74,7 +74,7 @@
 //														 false, to consider only outside surfaces
 //
 //			return value = distance to closest surface satisifying requirements
-//												 or UUtils::Infinity() if no such surface exists
+//												 or UUtils::kInfinity if no such surface exists
 //
 //	 Determine the distance of a point from either the inside or outside
 //	 surfaces of the face.
@@ -216,7 +216,7 @@
 //
 //	VUSolid::EnumInside answer;
 //	UVCSGface *face = faces;
-//	double best = UUtils::Infinity();
+//	double best = UUtils::kInfinity;
 //	do {
 //		double distance;
 //		VUSolid::EnumInside result = (*face)->Inside( p, VUSolid::Tolerance()/2, distance );

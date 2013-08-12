@@ -73,7 +73,7 @@ UPolyconeSideRZ UPolycone::GetCorner(int index) const
 inline
 UPolyconeHistorical* UPolycone::GetOriginalParameters() const
 {
-	return original_parameters;
+	return fOriginalParameters;
 }
 
 inline
@@ -82,7 +82,7 @@ void UPolycone::SetOriginalParameters(UPolyconeHistorical* pars)
 	if (!pars)
 		// UException("UPolycone::SetOriginalParameters()", "GeomSolids0002",
 		//						FatalException, "NULL pointer to parameters!");
-	*original_parameters = *pars;
+	*fOriginalParameters = *pars;
 	fCubicVolume = 0.;
 	fpPolyhedron = 0;
 }
@@ -92,21 +92,21 @@ void UPolycone::SetOriginalParameters()
 {
 	int numPlanes = (int)numCorner/2; 
 
-	original_parameters = new UPolyconeHistorical;
+	fOriginalParameters = new UPolyconeHistorical;
 
-	original_parameters->Z_values = new double[numPlanes];
-	original_parameters->Rmin = new double[numPlanes];
-	original_parameters->Rmax = new double[numPlanes];
+	fOriginalParameters->fZValues.resize(numPlanes);
+	fOriginalParameters->Rmin.resize(numPlanes);
+	fOriginalParameters->Rmax.resize(numPlanes);
 	
 	for(int j=0; j < numPlanes; j++)
 	{
-		original_parameters->Z_values[j] = corners[numPlanes+j].z;
-		original_parameters->Rmax[j] = corners[numPlanes+j].r;
-		original_parameters->Rmin[j] = corners[numPlanes-1-j].r;
+		fOriginalParameters->fZValues[j] = corners[numPlanes+j].z;
+		fOriginalParameters->Rmax[j] = corners[numPlanes+j].r;
+		fOriginalParameters->Rmin[j] = corners[numPlanes-1-j].r;
 	}
 
-	original_parameters->Start_angle = startPhi;
-	original_parameters->Opening_angle = endPhi-startPhi;
-	original_parameters->Num_z_planes = numPlanes;
+	fOriginalParameters->fStartAngle = startPhi;
+	fOriginalParameters->fOpeningAngle = endPhi-startPhi;
+	fOriginalParameters->fNumZPlanes = numPlanes;
 }
 

@@ -46,6 +46,9 @@
 #define UVCSGfaceted_hh
 
 #include "VUSolid.hh"
+#include "UVoxelizer.hh"
+#include "UBox.hh"
+#include "UReduciblePolygon.hh"
 
 class UVCSGface;
 class UVisExtent;
@@ -67,11 +70,14 @@ class UVCSGfaceted : public VUSolid
 																					double& pmin,double& pmax ) const;
                                           */
 	
-		virtual VUSolid::EnumInside Inside( const UVector3& p ) const;
+		VUSolid::EnumInside InsideNoVoxels( const UVector3& p ) const;
 
-    VUSolid::EnumInside InsideOptimized( const UVector3& p ) const;
+    virtual VUSolid::EnumInside Inside( const UVector3& p ) const;
 
 		virtual bool Normal( const UVector3 &p, UVector3 &n) const;
+
+    double DistanceToInNoVoxels( const UVector3& p,
+      const UVector3& v, double aPstep = UUtils::kInfinity) const;
 
 		virtual double DistanceToIn( const UVector3& p,
 																	 const UVector3& v, double aPstep = UUtils::kInfinity) const;
@@ -89,6 +95,12 @@ class UVCSGfaceted : public VUSolid
 																					bool *validNorm=0,
 																					UVector3 *n=0 ) const;
                                           */
+
+    double DistanceToOutNoVoxels( const UVector3 &p,
+      const UVector3  &v,
+      UVector3       &n,
+      bool           &aConvex,
+      double aPstep = UUtils::kInfinity) const;
 
     virtual double DistanceToOut( const UVector3 &p,
       const UVector3  &v,
@@ -131,8 +143,15 @@ class UVCSGfaceted : public VUSolid
 
 	public:	// without description
 
+protected:	// without description
 
-	protected:	// without description
+  inline int GetSection(double z) const
+  {
+    int section = UVoxelizer::BinarySearch(fZs, z);
+    if (section < 0) section = 0;
+    else if (section > fMaxSection) section = fMaxSection;
+    return section;
+  }
 
 		int		numFace;
 		UVCSGface **faces;
@@ -140,12 +159,23 @@ class UVCSGfaceted : public VUSolid
 		double fSurfaceArea;
 		mutable UPolyhedron* fpPolyhedron;
 
+    std::vector<double> fZs; // z coordinates of given sections
+    std::vector<std::vector<int> > fCandidates;
+    int fMaxSection;
+    mutable UBox fBox;
+    int fBoxShift;
+    bool fNoVoxels;
+
 		UVector3 GetPointOnSurfaceGeneric()const;
 			// Returns a random point located on the surface of the solid 
 			// in case of generic Polycone or generic Polyhedra.
 
 		void CopyStuff( const UVCSGfaceted &source );
 		void DeleteStuff();
+
+    void FindCandidates(double z, std::vector <int> &candidates, bool sides=false);
+
+    void InitVoxels(UReduciblePolygon &z, double radius);
 
 	private:
 
