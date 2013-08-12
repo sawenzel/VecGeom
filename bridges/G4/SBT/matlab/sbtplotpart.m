@@ -76,7 +76,7 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
         
          hold on;
          if maxPointsInside
-           h = subplot(valuesall, first, count, offsetInside, maxPointsInside);
+           h = subplot(valuesall, first, count, 1 + offsetInside, maxPointsInside);
            if h
             set(h,'Color', 'r');
             name = [name; {[method submethod ' (Inside)']}];         
@@ -84,7 +84,7 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
          end
          hold on;
          if maxPointsSurface
-           h = subplot(valuesall, first, count, offsetSurface, maxPointsSurface);
+           h = subplot(valuesall, first, count, 1 + offsetSurface, maxPointsSurface);
            if h
              set(h,'Color', 'm');
              name = [name; {[method submethod ' (Surface)']}];         
@@ -92,7 +92,7 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
          end
          hold on;
           if maxPointsOutside
-            h = subplot(valuesall, first, count, offsetOutside, maxPointsOutside);
+            h = subplot(valuesall, first, count, 1 + offsetOutside, maxPointsOutside);
             if h          
               set(h,'Color', 'b');
               name = [name; {[method submethod ' (Outside)']}];         
@@ -115,16 +115,16 @@ function res = sbtplotpart(method, software1, software2, first, count, color, su
     xlabel(label);
 end
 
-function h = subplot(valuesall, first, count, o, max)
-           xlabels = 1:length(valuesall);
-           xlabels = xlabels';
-           vals = subarray(valuesall, 1 + o, max);
-           labels = subarray(xlabels, 1 + o, max);
-           offset = 1 + first - o;
-           vals2 = subarray(vals, offset, count);
-           labels2 = subarray(labels, offset, count);
-           if (~isempty(vals2))
-                h = plot(labels2, vals2);
+function h = subplot(values, first, count, offset, max)
+           labels = 1:length(values);
+           labels = labels';
+           values = subarray(values, offset, max);
+           labels = subarray(labels, offset, max);
+           offset = first - offset + 2;
+           values = subarray(values, offset, count);
+           labels = subarray(labels, offset, count);
+           if (~isempty(values))
+                h = plot(labels, values);
            else
                h = 0;
            end
