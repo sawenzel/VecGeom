@@ -61,6 +61,19 @@ class UPolycone3 : public VUSolid
 
 public:	// with description
 
+  void Init(
+    double phiStart,		 // initial phi starting angle
+    double phiTotal,		 // total phi angle
+    int numZPlanes,			// number of z planes
+    const double zPlane[],		 // position of z planes
+    const double rInner[],		 // tangent distance to inner surface
+    const double rOuter[]);
+
+  UPolycone3( const std::string& name) : VUSolid(name)
+  {
+
+  }
+
   UPolycone3( const std::string& name, 
     double phiStart,		 // initial phi starting angle
     double phiTotal,		 // total phi angle
@@ -69,19 +82,16 @@ public:	// with description
     const double rInner[],		 // tangent distance to inner surface
     const double rOuter[]	);	// tangent distance to outer surface
 
+  /*
   UPolycone3( const std::string& name, 
     double phiStart,		// initial phi starting angle
     double phiTotal,		// total phi angle
     int		numRZ,			 // number corners in r,z space
     const double r[],				 // r coordinate of these corners
     const double z[]			 ); // z coordinate of these corners
+    */
 
   virtual ~UPolycone3();
-
-  void Create( double phiStart,				// initial phi starting angle
-    double phiTotal,				// total phi angle
-    UReduciblePolygon *rz ); // r/z coordinate of these corners
-
 
 //  inline void SetOriginalParameters(UPolyconeHistorical* pars);
 
@@ -127,6 +137,8 @@ public:	// with description
 
 protected:	// without description
 
+  int fNumSides;
+
   // Here are our parameters
 
   double startPhi;		// Starting phi value (0 < phiStart < 2pi)
@@ -135,7 +147,7 @@ protected:	// without description
   bool	 genericPcon; // true if created through the 2nd generic constructor
   int	 numCorner;		// number RZ points
   UPolyconeSideRZ *corners;	// corner r,z points
-  UPolyconeHistorical	*original_parameters;	// original input parameters
+  UPolyconeHistorical	*fOriginalParameters;	// original input parameters
 
   inline double GetStartPhi() const
   {
@@ -169,7 +181,7 @@ protected:	// without description
 
   inline UPolyconeHistorical* GetOriginalParameters() const
   {
-    return original_parameters;
+    return fOriginalParameters;
   }
 
   inline void SetOriginalParameters(UPolyconeHistorical* pars)
@@ -177,29 +189,29 @@ protected:	// without description
     if (!pars)
       // UException("UPolycone3::SetOriginalParameters()", "GeomSolids0002",
       //						FatalException, "NULL pointer to parameters!");
-      *original_parameters = *pars;
+      *fOriginalParameters = *pars;
   }
 
   inline void SetOriginalParameters()
   {
     int numPlanes = (int)numCorner/2; 
 
-    original_parameters = new UPolyconeHistorical;
+    fOriginalParameters = new UPolyconeHistorical;
 
-    original_parameters->Z_values = new double[numPlanes];
-    original_parameters->Rmin = new double[numPlanes];
-    original_parameters->Rmax = new double[numPlanes];
+    fOriginalParameters->fZValues.resize(numPlanes);
+    fOriginalParameters->Rmin.resize(numPlanes);
+    fOriginalParameters->Rmax.resize(numPlanes);
 
     for(int j=0; j < numPlanes; j++)
     {
-      original_parameters->Z_values[j] = corners[numPlanes+j].z;
-      original_parameters->Rmax[j] = corners[numPlanes+j].r;
-      original_parameters->Rmin[j] = corners[numPlanes-1-j].r;
+      fOriginalParameters->fZValues[j] = corners[numPlanes+j].z;
+      fOriginalParameters->Rmax[j] = corners[numPlanes+j].r;
+      fOriginalParameters->Rmin[j] = corners[numPlanes-1-j].r;
     }
 
-    original_parameters->Start_angle = startPhi;
-    original_parameters->Opening_angle = endPhi-startPhi;
-    original_parameters->Num_z_planes = numPlanes;
+    fOriginalParameters->fStartAngle = startPhi;
+    fOriginalParameters->fOpeningAngle = endPhi-startPhi;
+    fOriginalParameters->fNumZPlanes = numPlanes;
   }
 
   UEnclosingCylinder *enclosingCylinder;
