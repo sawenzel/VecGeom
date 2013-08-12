@@ -52,7 +52,7 @@
 //
 // Constructor
 //
-UEnclosingCylinder::UEnclosingCylinder( const UReduciblePolygon *rz,
+UEnclosingCylinder::UEnclosingCylinder( /*const UReduciblePolygon *rz*/double r, double hi, double lo,
 																								bool thePhiIsOpen, 
 																								double theStartPhi,
 																								double theTotalPhi )
@@ -64,9 +64,16 @@ UEnclosingCylinder::UEnclosingCylinder( const UReduciblePolygon *rz,
 	//
 	// Obtain largest r and smallest and largest z
 	//
-	radius = rz->Amax();
+
+  /*
+  radius = rz->Amax();
 	zHi = rz->Bmax();
 	zLo = rz->Bmin();
+  */
+
+  radius = r;
+  zHi = hi;
+  zLo = lo;
 
 	double fTolerance = VUSolid::Tolerance();
 
@@ -153,18 +160,19 @@ bool UEnclosingCylinder::ShouldMiss( const UVector3 &p,
 //  if (p.z < zLo - VUSolid::Tolerance() && v.z <= 0) return true;
 //  if (p.z > zHi + VUSolid::Tolerance() && v.z >= 0) return true;
 
+  double cross = p.x*v.y - p.y*v.x;
+  if (cross > radius) return true;
+
   double r2 = p.Perp2();
   if (r2 > radius * radius)
   {
-    double Dot = -p.x*v.x - p.y*v.y;
-    if (Dot < 0) return true;
+    double dot = p.x*v.x + p.y*v.y;
+    if (dot > 0) return true;
 
 //    double n = v.Perp2();
 //    if (Dot < std::sqrt(r2 - radius * radius) * n) return true;
   }
 
-	double Cross = p.x*v.y - p.y*v.x;
-	if (Cross > radius) return true;
 	
   /*
   if (phiIsOpen)

@@ -524,9 +524,10 @@ void UPolyhedron::RotateAroundZ(int nstep, double phi, double dphi,
 		k += ifClosed ? 2*absNp1 : 2*(absNp1-1);
 	}
 
-	//	 A L L O C A T E	 M E M O R Y
+//	 A L L O C A T E	 M E M O R Y
 
 	AllocateMemory(j, k);
+
 
 	//	 G E N E R A T E	 V E R T E C E S
 
@@ -1805,9 +1806,9 @@ UPolyhedronPgon::UPolyhedronPgon(double phi,
 																		 double dphi,
 																		 int		npdv,
 																		 int		nz,
-																		 const double *z,
-																		 const double *rmin,
-																		 const double *rmax)
+                                     const std::vector<double> &z,
+                                     const std::vector<double> &rmin,
+                                     const std::vector<double> &rmax)
 /***********************************************************************
  *																																		 *
  * Name: UPolyhedronPgon													 Date:		09.12.96 *
@@ -1888,9 +1889,9 @@ UPolyhedronPgon::UPolyhedronPgon(double phi,
 UPolyhedronPgon::~UPolyhedronPgon() {}
 
 UPolyhedronPcon::UPolyhedronPcon(double phi, double dphi, int nz,
-																		 const double *z,
-																		 const double *rmin,
-																		 const double *rmax)
+  const std::vector<double> &z,
+  const std::vector<double> &rmin,
+  const std::vector<double> &rmax)
 	: UPolyhedronPgon(phi, dphi, 0, nz, z, rmin, rmax) {}
 
 UPolyhedronPcon::~UPolyhedronPcon() {}

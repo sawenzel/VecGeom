@@ -47,7 +47,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 	//
 	if (B==0)
 	{
-		if (std::fabs(tz) < 1/UUtils::Infinity())	{ return 0; }
+		if (std::fabs(tz) < 1/UUtils::kInfinity)	{ return 0; }
 
 		s1 = (A-z0)/tz;
 		return 1;
@@ -68,7 +68,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		//
 		// The radical is roughly zero: check for special, very rare, cases
 		//
-		if (std::fabs(a) > 1/UUtils::Infinity())
+		if (std::fabs(a) > 1/UUtils::kInfinity)
 		{
 			if ( std::fabs(x0*ty - y0*tx) < std::fabs(1E-6/B) )
 			{
@@ -83,7 +83,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		radical = std::sqrt(radical);
 	}
 
-	if (a < -1/UUtils::Infinity())
+	if (a < -1/UUtils::kInfinity)
 	{
 		double sa, sb, q = -0.5*( b + (b < 0 ? -radical : +radical) );
 		sa = q/a;
@@ -92,7 +92,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		if ((z0 + (s1)*tz - A)/B < 0)	{ return 0; }
 		return 2;
 	}
-	else if (a > 1/UUtils::Infinity())
+	else if (a > 1/UUtils::kInfinity)
 	{
 		double sa, sb, q = -0.5*( b + (b < 0 ? -radical : +radical) );
 		sa = q/a;
@@ -100,7 +100,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		s1 = (tz*B > 0)^(sa > sb) ? sb : sa;
 		return 1;
 	}
-	else if (std::fabs(b) < 1/UUtils::Infinity())
+	else if (std::fabs(b) < 1/UUtils::kInfinity)
 	{
 		return 0;
 	}
@@ -122,7 +122,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 	//
 	if (B==0)
 	{
-		if (std::fabs(tz) < 1/UUtils::Infinity())	{ return 0; }
+		if (std::fabs(tz) < 1/UUtils::kInfinity)	{ return 0; }
 
 		s1 = (A-z0)/tz;
 		return 1;
@@ -143,7 +143,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		//
 		// The radical is roughly zero: check for special, very rare, cases
 		//
-		if (std::fabs(a) > 1/UUtils::Infinity())
+		if (std::fabs(a) > 1/UUtils::kInfinity)
 		{
 			if ( std::fabs(x0*ty - y0*tx) < std::fabs(1E-6/B) )
 			{
@@ -158,7 +158,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		radical = std::sqrt(radical);
 	}
 
-	if (a < -1/UUtils::Infinity())
+	if (a < -1/UUtils::kInfinity)
 	{
 		double sa, sb, q = -0.5*( b + (b < 0 ? -radical : +radical) );
 		sa = q/a;
@@ -167,7 +167,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		if ((z0 + (s1)*tz - A)/B < 0)	{ return 0; }
 		return 2;
 	}
-	else if (a > 1/UUtils::Infinity())
+	else if (a > 1/UUtils::kInfinity)
 	{
 		double sa, sb, q = -0.5*( b + (b < 0 ? -radical : +radical) );
 		sa = q/a;
@@ -175,7 +175,7 @@ int UIntersectingCone::LineHitsCone2( const UVector3 &p,
 		s1 = (tz*B > 0)^(sa > sb) ? sb : sa;
 		return 1;
 	}
-	else if (std::fabs(b) < 1/UUtils::Infinity())
+	else if (std::fabs(b) < 1/UUtils::kInfinity)
 	{
 		return 0;
 	}

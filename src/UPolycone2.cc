@@ -69,14 +69,14 @@ UPolycone2::UPolycone2( const std::string& name,
 	//
 	// Some historical ugliness
 	//
-	original_parameters = new UPolyconeHistorical();
+	fOriginalParameters = new UPolyconeHistorical();
 	
-	original_parameters->Start_angle = phiStart;
-	original_parameters->Opening_angle = phiTotal;
-	original_parameters->Num_z_planes = numZPlanes;
-	original_parameters->Z_values = new double[numZPlanes];
-	original_parameters->Rmin = new double[numZPlanes];
-	original_parameters->Rmax = new double[numZPlanes];
+	fOriginalParameters->fStartAngle = phiStart;
+	fOriginalParameters->fOpeningAngle = phiTotal;
+	fOriginalParameters->fNumZPlanes = numZPlanes;
+	fOriginalParameters->fZValues.resize(numZPlanes);
+	fOriginalParameters->Rmin.resize(numZPlanes);
+	fOriginalParameters->Rmax.resize(numZPlanes);
 
   double prevZ, prevRmax, prevRmin;
 
@@ -125,9 +125,9 @@ UPolycone2::UPolycone2( const std::string& name,
       }
     }
 
-		original_parameters->Z_values[i] = zPlane[i];
-		original_parameters->Rmin[i] = rInner[i];
-		original_parameters->Rmax[i] = rOuter[i];
+		fOriginalParameters->fZValues[i] = zPlane[i];
+		fOriginalParameters->Rmin[i] = rInner[i];
+		fOriginalParameters->Rmax[i] = rOuter[i];
 
     prevZ = z;
     prevRmin = rMin;
@@ -166,7 +166,7 @@ UPolycone2::UPolycone2( const std::string& name,
 	
 	Create( phiStart, phiTotal, rz );
 	
-	// Set original_parameters struct for consistency
+	// Set fOriginalParameters struct for consistency
 	//
 	SetOriginalParameters();
 	
@@ -195,7 +195,7 @@ void UPolycone2::Create( double phiStart,
 UPolycone2::~UPolycone2()
 {
 	//delete [] corners;
-	//delete original_parameters;
+	//delete fOriginalParameters;
 }
 
 //
@@ -214,25 +214,25 @@ std::ostream& UPolycone2::StreamInfo( std::ostream& os ) const
 	int i=0;
 	if (!genericPcon)
 	{
-		int numPlanes = original_parameters->Num_z_planes;
+		int numPlanes = fOriginalParameters->fNumZPlanes;
 		os << "		number of Z planes: " << numPlanes << "\n"
 			 << "							Z values: \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Z_values[i] << "\n";
+				 << fOriginalParameters->fZValues[i] << "\n";
 		}
 		os << "							Tangent distances to inner surface (Rmin): \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Rmin[i] << "\n";
+				 << fOriginalParameters->Rmin[i] << "\n";
 		}
 		os << "							Tangent distances to outer surface (Rmax): \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Rmax[i] << "\n";
+				 << fOriginalParameters->Rmax[i] << "\n";
 		}
 	}
 	os << "		number of RZ points: " << numCorner << "\n"

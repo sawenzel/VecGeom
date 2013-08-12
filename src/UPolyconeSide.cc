@@ -440,7 +440,7 @@ double UPolyconeSide::Safety( const UVector3 &p, bool outgoing )
 			return std::fabs(distFrom);
 	}
 	
-	return UUtils::Infinity();
+	return UUtils::kInfinity;
 }
 
 

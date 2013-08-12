@@ -1,7 +1,3 @@
-// concentrate on new solids: ts, polycone, some others which were converted
-// shorten already presented matters
-// future, what can be done, what others will do
-
 //
 // ********************************************************************
 // * License and Disclaimer																					 *
@@ -53,35 +49,47 @@
 
 #include "UTubs.hh"
 #include "UCons.hh"
+#include "UHedra.hh"
 #include "UTransform3D.hh"
 
 using namespace std;
 
 UBox box;
+ 
+
+UPolycone3::UPolycone3( const std::string& name, 
+  double phiStart,
+  double phiTotal,
+  int numZPlanes,
+  const double zPlane[],
+  const double rInner[],
+  const double rOuter[]	)
+  : VUSolid( name ), fNumSides(0)
+{
+  Init(phiStart, phiTotal, numZPlanes, zPlane, rInner, rOuter);
+}
 
 //
 // Constructor (GEANT3 style parameters)
 //	
-UPolycone3::UPolycone3( const std::string& name, 
-															double phiStart,
+void UPolycone3::Init(double phiStart,
 															double phiTotal,
 															int numZPlanes,
 												const double zPlane[],
 												const double rInner[],
-												const double rOuter[]	)
-	: VUSolid( name )
+												const double rOuter[])
 {
 	//
 	// Some historical ugliness
 	//
-	original_parameters = new UPolyconeHistorical();
+	fOriginalParameters = new UPolyconeHistorical();
 	
-	original_parameters->Start_angle = phiStart;
-	original_parameters->Opening_angle = phiTotal;
-	original_parameters->Num_z_planes = numZPlanes;
-	original_parameters->Z_values = new double[numZPlanes];
-	original_parameters->Rmin = new double[numZPlanes];
-	original_parameters->Rmax = new double[numZPlanes];
+	fOriginalParameters->fStartAngle = phiStart;
+	fOriginalParameters->fOpeningAngle = phiTotal;
+	fOriginalParameters->fNumZPlanes = numZPlanes;
+	fOriginalParameters->fZValues.resize(numZPlanes);
+	fOriginalParameters->Rmin.resize(numZPlanes);
+	fOriginalParameters->Rmax.resize(numZPlanes);
 
   double prevZ, prevRmax, prevRmin;
 
@@ -122,17 +130,24 @@ UPolycone3::UPolycone3( const std::string& name,
         UTransform3D *trans = new UTransform3D(0, 0, prevZ + dz);
 
         bool tubular = (rMin == prevRmin && prevRmax == rMax);
-        if (tubular)
+
+        if (fNumSides == 0)
         {
-          solid = new UTubs("", rMin, rMax, dz, phiStart, phiTotal);
+          if (tubular)
+          {
+            solid = new UTubs("", rMin, rMax, dz, phiStart, phiTotal);
+          }
+          else
+          {
+            solid = new UCons("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
+          }
         }
         else
         {
-          solid = new UCons("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
+          solid = new UHedra("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal, fNumSides);
         }
 
         fZs.push_back(z);
-
 
         int zi = fZs.size() - 1;
         double shift = fZs[zi-1] + 0.5 * (fZs[zi] - fZs[zi-1]);
@@ -151,9 +166,9 @@ UPolycone3::UPolycone3( const std::string& name,
     }
     else fZs.push_back(z);
 
-		original_parameters->Z_values[i] = zPlane[i];
-		original_parameters->Rmin[i] = rInner[i];
-		original_parameters->Rmax[i] = rOuter[i];
+		fOriginalParameters->fZValues[i] = zPlane[i];
+		fOriginalParameters->Rmin[i] = rInner[i];
+		fOriginalParameters->Rmax[i] = rOuter[i];
 
     prevZ = z;
     prevRmin = rMin;
@@ -167,26 +182,39 @@ UPolycone3::UPolycone3( const std::string& name,
 	//
 	UReduciblePolygon *rz = new UReduciblePolygon( rInner, rOuter, zPlane, numZPlanes);
 
-  box.Set(rz->Amax(), rz->Amax(), (rz->Bmax() - rz->Bmin()) /2);
+  double mxy = rz->Amax(); 
+  double alfa = UUtils::kPi / fNumSides;
+
+  double r= rz->Amax();
+
+  if (fNumSides != 0) 
+  {
+    // mxy *= std::sqrt(2.0); // this is old and wrong, works only for n = 4
+    double k = std::tan(alfa) * mxy;
+    double l = mxy / std::cos(alfa);
+    mxy = l;
+    r = l;
+  }
+
+  mxy += fgTolerance;
+
+  box.Set(mxy, mxy, (rz->Bmax() - rz->Bmin()) /2);
 
   phiIsOpen = (phiTotal > 0 && phiTotal <= 2*UUtils::kPi-1E-10);
   startPhi = phiStart;
   endPhi = phiTotal;
 
-	//
-	// Do the real work
-	//
-	Create( phiStart, phiTotal, rz );
-
   //
   // Make enclosingCylinder
   //
-  enclosingCylinder = new UEnclosingCylinder(rz, phiIsOpen, phiStart, phiTotal);
+  
+  enclosingCylinder = new UEnclosingCylinder(r, rz->Bmax(), rz->Bmin(), phiIsOpen, phiStart, phiTotal);
 	
 	delete rz;
 }
 
 
+/*
 //
 // Constructor (generic parameters)
 //
@@ -202,195 +230,11 @@ UPolycone3::UPolycone3( const std::string& name,
 
   box.Set(rz->Amax(), rz->Amax(), (rz->Bmax() - rz->Bmin()) /2);
 	
-	Create( phiStart, phiTotal, rz );
-	
-	// Set original_parameters struct for consistency
+	// Set fOriginalParameters struct for consistency
 	//
 	SetOriginalParameters();
 	
 	delete rz;
-}
-
-
-//
-// Create
-//
-// Generic create routine, called by each constructor after
-// conversion of arguments
-//
-void UPolycone3::Create( double phiStart,
-												 double phiTotal,
-												 UReduciblePolygon *rz		)
-{
-  return;
-
-  /*
-	//
-	// Perform checks of rz values
-	//
-	if (rz->Amin() < 0.0)
-	{
-		std::ostringstream message;
-		message << "Illegal input parameters - " << GetName() << std::endl
-						<< "				All R values must be >= 0 !";
-		// UException("UPolycone3::Create()", "GeomSolids0002",
-		//						FatalErrorInArgument, message);
-	}
-		
-	double rzArea = rz->Area();
-	if (rzArea < -VUSolid::Tolerance())
-		rz->ReverseOrder();
-
-	else if (rzArea < -VUSolid::Tolerance())
-	{
-		std::ostringstream message;
-		message << "Illegal input parameters - " << GetName() << std::endl
-						<< "				R/Z Cross section is zero or near zero: " << rzArea;
-		// UException("UPolycone3::Create()", "GeomSolids0002",
-		//						FatalErrorInArgument, message);
-	}
-		
-	if ( (!rz->RemoveDuplicateVertices( VUSolid::Tolerance() ))
-		|| (!rz->RemoveRedundantVertices( VUSolid::Tolerance() ))		 ) 
-	{
-		std::ostringstream message;
-		message << "Illegal input parameters - " << GetName() << std::endl
-						<< "				Too few unique R/Z values !";
-		// UException("UPolycone3::Create()", "GeomSolids0002",
-		//						FatalErrorInArgument, message);
-	}
-
-	if (rz->CrossesItself(1/UUtils::Infinity())) 
-	{
-		std::ostringstream message;
-		message << "Illegal input parameters - " << GetName() << std::endl
-						<< "				R/Z segments Cross !";
-		// UException("UPolycone3::Create()", "GeomSolids0002",
-		//						FatalErrorInArgument, message);
-	}
-
-	numCorner = rz->NumVertices();
-
-	//
-	// Phi opening? Account for some possible roundoff, and interpret
-	// nonsense value as representing no phi opening
-	//
-	if (phiTotal <= 0 || phiTotal > 2*UUtils::kPi-1E-10)
-	{
-		phiIsOpen = false;
-		startPhi = 0;
-		endPhi = 2*UUtils::kPi;
-	}
-	else
-	{
-		phiIsOpen = true;
-		
-		//
-		// Convert phi into our convention
-		//
-		startPhi = phiStart;
-		while( startPhi < 0 ) startPhi += 2*UUtils::kPi;
-		
-		endPhi = phiStart+phiTotal;
-		while( endPhi < startPhi ) endPhi += 2*UUtils::kPi;
-	}
-	
-	//
-	// Allocate corner array. 
-	//
-	corners = new UPolyconeSideRZ[numCorner];
-
-	//
-	// Copy corners
-	//
-	UReduciblePolygonIterator iterRZ(rz);
-	
-	UPolyconeSideRZ *next = corners;
-	iterRZ.Begin();
-	do
-	{
-		next->r = iterRZ.GetA();
-		next->z = iterRZ.GetB();
-	} while( ++next, iterRZ.Next() );
-	
-	//
-	// Allocate face pointer array
-	//
-	numFace = phiIsOpen ? numCorner+2 : numCorner;
-	faces = new UVCSGface*[numFace];
-	
-	//
-	// Construct conical faces
-	//
-	// But! Don't construct a face if both points are at zero radius!
-	//
-	UPolyconeSideRZ *corner = corners,
-									 *prev = corners + numCorner-1,
-									 *nextNext;
-	UVCSGface	**face = faces;
-	do
-	{
-		next = corner+1;
-		if (next >= corners+numCorner) next = corners;
-		nextNext = next+1;
-		if (nextNext >= corners+numCorner) nextNext = corners;
-		
-		if (corner->r < 1/UUtils::Infinity() && next->r < 1/UUtils::Infinity()) continue;
-		
-		//
-		// We must decide here if we can dare declare one of our faces
-		// as having a "valid" normal (i.e. allBehind = true). This
-		// is never possible if the face faces "inward" in r.
-		//
-		bool allBehind;
-		if (corner->z > next->z)
-		{
-			allBehind = false;
-		}
-		else
-		{
-			//
-			// Otherwise, it is only true if the line passing
-			// through the two points of the segment do not
-			// split the r/z Cross section
-			//
-			allBehind = !rz->BisectedBy( corner->r, corner->z,
-								 next->r, next->z, VUSolid::Tolerance() );
-		}
-		
-		*face++ = new UPolycone3Side( prev, corner, next, nextNext,
-								startPhi, endPhi-startPhi, phiIsOpen, allBehind );
-	} while( prev=corner, corner=next, corner > corners );
-	
-	if (phiIsOpen)
-	{
-		//
-		// Construct phi open edges
-		//
-		*face++ = 0; // new UPolyPhiFace( rz, startPhi, 0, endPhi	);
-		*face++ = 0; // new UPolyPhiFace( rz, endPhi,	 0, startPhi );
-	}
-	
-	//
-	// We might have dropped a face or two: recalculate numFace
-	//
-	numFace = face-faces;
-	
-  */
-}
-
-
-//
-// Fake default constructor - sets only member data and allocates memory
-//														for usage restricted to object persistency.
-//
-
-/*
-UPolycone3::UPolycone3( __void__& a )
-	: UVCSGfaceted(a), startPhi(0.),	endPhi(0.), phiIsOpen(false),
-		genericPcon(false), numCorner(0), corners(0),
-		original_parameters(0), enclosingCylinder(0)
-{
 }
 */
 
@@ -401,23 +245,8 @@ UPolycone3::UPolycone3( __void__& a )
 UPolycone3::~UPolycone3()
 {
 	//delete [] corners;
-	//delete original_parameters;
+	//delete fOriginalParameters;
 }
-
-
-
-
-/*
-//
-// ComputeDimensions
-//
-void UPolycone3::ComputeDimensions(			 UVPVParameterisation* p,
-																		const int n,
-																		const UVPhysicalVolume* pRep )
-{
-	p->ComputeDimensions(*this,n,pRep);
-}
-*/
 
 
 
@@ -437,25 +266,25 @@ std::ostream& UPolycone3::StreamInfo( std::ostream& os ) const
 	int i=0;
 	if (!genericPcon)
 	{
-		int numPlanes = original_parameters->Num_z_planes;
+		int numPlanes = fOriginalParameters->fNumZPlanes;
 		os << "		number of Z planes: " << numPlanes << "\n"
 			 << "							Z values: \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Z_values[i] << "\n";
+				 << fOriginalParameters->fZValues[i] << "\n";
 		}
 		os << "							Tangent distances to inner surface (Rmin): \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Rmin[i] << "\n";
+				 << fOriginalParameters->Rmin[i] << "\n";
 		}
 		os << "							Tangent distances to outer surface (Rmax): \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Rmax[i] << "\n";
+				 << fOriginalParameters->Rmax[i] << "\n";
 		}
 	}
 	os << "		number of RZ points: " << numCorner << "\n"
@@ -477,7 +306,8 @@ VUSolid::EnumInside UPolycone3::InsideSection(int index, const UVector3 &p) cons
   const UPolyconeSection &section = fSections[index];
   UVector3 ps(p.x, p.y, p.z - section.shift);
 
-  double r2 = p.x*p.x + p.y*p.y;
+  if (fNumSides) return section.solid->Inside(ps);
+
   double rMinPlus, rMaxPlus; //, rMinMinus, rMaxMinus;
   double dz;
   static double halfTolerance = fgTolerance * 0.5;
@@ -506,6 +336,8 @@ VUSolid::EnumInside UPolycone3::InsideSection(int index, const UVector3 &p) cons
 
   double rMinMinus = rMinPlus - fgTolerance;
   double rMaxMinus = rMaxPlus - fgTolerance;
+
+  double r2 = p.x*p.x + p.y*p.y;
 
   if (r2 < rMinMinus * rMinMinus || r2 > rMaxPlus*rMaxPlus) return eOutside;
   if (r2 < rMinPlus * rMinPlus || r2 > rMaxMinus*rMaxMinus) return eSurface;
@@ -597,50 +429,72 @@ double UPolycone3::DistanceToIn( const UVector3 &p,
 {
   double shift = fZs[0] + box.GetDz();
   UVector3 pb(p.x, p.y, p.z - shift);
-  double idistance = box.DistanceToIn(pb, v); // using only box, this appears 
+  
+  double idistance;
+  
+  idistance = box.DistanceToIn(pb, v); // using only box, this appears 
   // to be faster than: idistance = enclosingCylinder->DistanceTo(pb, v);
   if (idistance >= UUtils::kInfinity) return idistance;
 
   // this line can be here or not. not a big difference in performance
-  if (enclosingCylinder->ShouldMiss(p, v)) return UUtils::kInfinity;
+  // TODO: fix enclosingCylinder for polyhedra!!! - the current radius appears to be too small
+//  if (enclosingCylinder->ShouldMiss(p, v)) return UUtils::kInfinity;
+
+  // this just takes too much time
+//  idistance = enclosingCylinder->DistanceTo(pb, v);
+//  if (idistance == UUtils::kInfinity) return idistance;
 
   pb = p + idistance * v;
   int index = GetSection(pb.z);
+  pb = p;
   int increment = (v.z > 0) ? 1 : -1;
   if (std::fabs(v.z) < fgTolerance) increment = 0;
-  double baseZ = pb.z;
 
-  double distance;
+  double distance = UUtils::kInfinity;
   do
   {
     const UPolyconeSection &section = fSections[index];
-    pb.z = baseZ - section.shift;
+    pb.z -= section.shift;
     distance = section.solid->DistanceToIn(pb,v);
-    if (distance < UUtils::kInfinity)
-      return idistance + distance;
-    if (!increment) break;
+    if (distance < UUtils::kInfinity || !increment)
+      break;
     index += increment;
+    pb.z += section.shift;
   }
   while (index >= 0 && index <= fMaxSection);
 
-  return UUtils::kInfinity;
+  return distance;
 }
 
 double UPolycone3::DistanceToOut( const UVector3  &p, const UVector3 &v,
   UVector3 &n, bool &convex, double /*aPstep*/) const
 {
-  int index = GetSection(p.z);
-  double totalDistance = 0;
   UVector3 pn(p);
+  if (fOriginalParameters->fNumZPlanes == 2)
+  {
+    const UPolyconeSection &section = fSections[0];
+    pn.z -= section.shift;
+    return section.solid->DistanceToOut(pn, v, n, convex);
+  }
+  int index =  GetSection(p.z);
+  double totalDistance = 0;
   int increment = (v.z > 0) ? 1 : -1;
 
-  UVector3 normal;
+//  UVector3 normal;
   do
   {
     const UPolyconeSection &section = fSections[index];
-    pn.z -= section.shift;
-    if (section.solid->Inside(pn) == eOutside)
-      break;
+    if (totalDistance != 0)
+    {
+      pn = p + (totalDistance /*+ 0 * 1e-8*/) * v; // point must be shifted, so it could eventually get into another solid
+      pn.z -= section.shift;
+      if (section.solid->Inside(pn) == eOutside)
+      {
+        index = index;
+        break;
+      }
+    }
+    else pn.z -= section.shift;
 
 //    if (totalDistance > 0) totalDistance += 1e-8;
     double distance = section.solid->DistanceToOut(pn, v, n, convex);
@@ -661,12 +515,15 @@ double UPolycone3::DistanceToOut( const UVector3  &p, const UVector3 &v,
       n = n;
       */
 
-    if (distance == 0) break;
+    if (distance == 0) 
+    {
+      distance = distance;
+      break;
+    }
 //    n = normal;
 
     totalDistance += distance;
 
-    pn = p + (totalDistance /*+ 0 * 1e-8*/) * v; // point must be shifted, so it could eventually get into another solid
     index += increment;
 
     // pn.z check whether it still relevant
@@ -701,14 +558,17 @@ double UPolycone3::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) con
     if (safety < minSafety) minSafety = safety;
   }
 
-  zbase = fZs[index-1];
-  for (int i = index-1; i >= 0; --i)
+  if (index > 0)
   {
-    double dz = zbase - fZs[i];
-    if (dz >= minSafety) break;
-    double safety = SafetyFromOutsideSection(i, p);
-    if (safety < minSafety) minSafety = safety;
-  }   
+    zbase = fZs[index-1];
+    for (int i = index-1; i >= 0; --i)
+    {
+      double dz = zbase - fZs[i];
+      if (dz >= minSafety) break;
+      double safety = SafetyFromOutsideSection(i, p);
+      if (safety < minSafety) minSafety = safety;
+    }
+  }
   return minSafety;
 }
 

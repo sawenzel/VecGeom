@@ -379,8 +379,8 @@ int i, noEntries, noBetweenSections4;
 bool existsAfterClip = false;
 UVector3List* vertices = CreateRotatedVertices(pTransform);
 
-pMin =	UUtils::Infinity();
-pMax = -UUtils::Infinity();
+pMin =	UUtils::kInfinity;
+pMax = -UUtils::kInfinity;
 
 noEntries = vertices->size();
 noBetweenSections4 = noEntries - 4;
@@ -393,7 +393,7 @@ for ( i = 0; i < noBetweenSections4; i += 4 )
 {
 ClipBetweenSections(vertices, i, pVoxelLimit, pAxis, pMin, pMax);
 }
-if ( (pMin != UUtils::Infinity()) || (pMax != -UUtils::Infinity()) )
+if ( (pMin != UUtils::kInfinity) || (pMax != -UUtils::kInfinity) )
 {
 existsAfterClip = true;
 pMin -= VUSolid::Tolerance(); // Add 2*tolerance to avoid precision troubles
@@ -603,7 +603,7 @@ bool UTubs::Normal( const UVector3& p, UVector3& n) const
 	int noSurfaces = 0;
 	double rho, pPhi;
 	double distZ, distRMin, distRMax;
-	double distSPhi = UUtils::Infinity(), distEPhi = UUtils::Infinity();
+	double distSPhi = UUtils::kInfinity, distEPhi = UUtils::kInfinity;
 
 	static const double halfCarTolerance = 0.5*VUSolid::Tolerance();
 	static const double halfAngTolerance = 0.5*kAngTolerance;
@@ -808,7 +808,7 @@ UVector3 UTubs::ApproxSurfaceNormal( const UVector3& p ) const
 //
 //
 // Calculate distance to shape from outside, along normalised vector
-// - return UUtils::Infinity() if no intersection, or intersection distance <= tolerance
+// - return UUtils::kInfinity if no intersection, or intersection distance <= tolerance
 //
 // - Compute the intersection with the z planes 
 //				- if at valid r, phi, return
@@ -828,7 +828,7 @@ UVector3 UTubs::ApproxSurfaceNormal( const UVector3& p ) const
 
 double UTubs::DistanceToIn( const UVector3& p, const UVector3& v, double) const
 {
-	double snxt = UUtils::Infinity();			// snxt = default return value
+	double snxt = UUtils::kInfinity;			// snxt = default return value
 	double tolORMin2, tolIRMax2;	// 'generous' radii squared
 	double tolORMax2, tolIRMin2, tolODz, tolIDz;
 	const double dRmax = 100.*fRMax;
@@ -978,7 +978,7 @@ double UTubs::DistanceToIn( const UVector3& p, const UVector3& v, double) const
 						// In the old version, the small negative tangent for the point
 						// on surface was not taken in account, and returning 0.0 ...
 						// New version: check the tangent for the point on surface and 
-						// if no intersection, return UUtils::Infinity(), if intersection instead
+						// if no intersection, return UUtils::kInfinity, if intersection instead
 						// return sd.
 						//
 						c = t3-fRMax*fRMax; 
@@ -999,7 +999,7 @@ double UTubs::DistanceToIn( const UVector3& p, const UVector3& v, double) const
 							}			
 							else
 							{
-								return UUtils::Infinity();
+								return UUtils::kInfinity;
 							}
 						}
 					} 
@@ -1009,7 +1009,7 @@ double UTubs::DistanceToIn( const UVector3& p, const UVector3& v, double) const
 					// In the old version, the small negative tangent for the point
 					// on surface was not taken in account, and returning 0.0 ...
 					// New version: check the tangent for the point on surface and 
-					// if no intersection, return UUtils::Infinity(), if intersection instead
+					// if no intersection, return UUtils::kInfinity, if intersection instead
 					// return sd.
 					//
 					c = t3 - fRMax*fRMax; 
@@ -1030,7 +1030,7 @@ double UTubs::DistanceToIn( const UVector3& p, const UVector3& v, double) const
 						}			
 						else
 						{
-							return UUtils::Infinity();
+							return UUtils::kInfinity;
 						}
 					}
 				} // end if	 (!fPhiFullTube)
@@ -1181,7 +1181,7 @@ double UTubs::DistanceToIn( const UVector3& p, const UVector3& v, double) const
 //////////////////////////////////////////////////////////////////
 //
 // Calculate distance to shape from outside, along normalised vector
-// - return UUtils::Infinity() if no intersection, or intersection distance <= tolerance
+// - return UUtils::kInfinity if no intersection, or intersection distance <= tolerance
 //
 // - Compute the intersection with the z planes 
 //				- if at valid r, phi, return
@@ -1252,7 +1252,7 @@ double UTubs::SafetyFromOutside( const UVector3& p, bool) const
 double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, bool &validNorm, double) const
 {	
 	ESide side=kNull , sider=kNull, sidephi=kNull;
-	double snxt, srd=UUtils::Infinity(), sphi=UUtils::Infinity(), pdist;
+	double snxt, srd=UUtils::kInfinity, sphi=UUtils::kInfinity, pdist;
 	double deltaR, t1, t2, t3, b, c, d2, roMin2;
 
 	static const double halfCarTolerance = VUSolid::Tolerance()*0.5;
@@ -1303,7 +1303,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 	}
 	else
 	{
-		snxt = UUtils::Infinity();		// Travel perpendicular to z axis
+		snxt = UUtils::kInfinity;		// Travel perpendicular to z axis
 		side = kNull;
 	}
 
@@ -1487,12 +1487,12 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 								if (((fSPhi-halfAngTolerance)<=vphi)
 									&&((fSPhi+fDPhi+halfAngTolerance)>=vphi))
 								{
-									sphi = UUtils::Infinity();
+									sphi = UUtils::kInfinity;
 								}
 							}
 							else if ( yi*fCosCPhi-xi*fSinCPhi >=0 )
 							{
-								sphi = UUtils::Infinity();
+								sphi = UUtils::kInfinity;
 							}
 							else
 							{
@@ -1505,12 +1505,12 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 						}
 						else
 						{
-							sphi = UUtils::Infinity();
+							sphi = UUtils::kInfinity;
 						}
 					}
 					else
 					{
-						sphi = UUtils::Infinity();
+						sphi = UUtils::kInfinity;
 					}
 
 					if ( compE < 0 )
@@ -1551,7 +1551,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 				}
 				else
 				{
-					sphi = UUtils::Infinity();
+					sphi = UUtils::kInfinity;
 				}
 			}
 			else
@@ -1562,7 +1562,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 				if ( (fSPhi - halfAngTolerance <= vphi)
 					&& (vphi <= fSPhi + fDPhi + halfAngTolerance ) )
 				{
-					sphi = UUtils::Infinity();
+					sphi = UUtils::kInfinity;
 				}
 				else
 				{

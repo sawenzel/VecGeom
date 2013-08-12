@@ -70,14 +70,14 @@ UPolycone::UPolycone( const std::string& name,
 	//
 	// Some historical ugliness
 	//
-	original_parameters = new UPolyconeHistorical();
+	fOriginalParameters = new UPolyconeHistorical();
 	
-	original_parameters->Start_angle = phiStart;
-	original_parameters->Opening_angle = phiTotal;
-	original_parameters->Num_z_planes = numZPlanes;
-	original_parameters->Z_values = new double[numZPlanes];
-	original_parameters->Rmin = new double[numZPlanes];
-	original_parameters->Rmax = new double[numZPlanes];
+	fOriginalParameters->fStartAngle = phiStart;
+	fOriginalParameters->fOpeningAngle = phiTotal;
+	fOriginalParameters->fNumZPlanes = numZPlanes;
+	fOriginalParameters->fZValues.resize(numZPlanes);
+	fOriginalParameters->Rmin.resize(numZPlanes);
+	fOriginalParameters->Rmax.resize(numZPlanes);
 
 	int i;
 	for (i=0; i<numZPlanes; i++)
@@ -100,9 +100,9 @@ UPolycone::UPolycone( const std::string& name,
 				//						FatalErrorInArgument, message);
 			}
 		} 
-		original_parameters->Z_values[i] = zPlane[i];
-		original_parameters->Rmin[i] = rInner[i];
-		original_parameters->Rmax[i] = rOuter[i];
+		fOriginalParameters->fZValues[i] = zPlane[i];
+		fOriginalParameters->Rmin[i] = rInner[i];
+		fOriginalParameters->Rmax[i] = rOuter[i];
 	}
 
 	//
@@ -135,7 +135,7 @@ UPolycone::UPolycone( const std::string& name,
 	
 	Create( phiStart, phiTotal, rz );
 	
-	// Set original_parameters struct for consistency
+	// Set fOriginalParameters struct for consistency
 	//
 	SetOriginalParameters();
 	
@@ -188,7 +188,7 @@ void UPolycone::Create( double phiStart,
 		//						FatalErrorInArgument, message);
 	}
 
-	if (rz->CrossesItself(1/UUtils::Infinity())) 
+	if (rz->CrossesItself(1/UUtils::kInfinity)) 
 	{
 		std::ostringstream message;
 		message << "Illegal input parameters - " << GetName() << std::endl
@@ -263,7 +263,7 @@ void UPolycone::Create( double phiStart,
 		nextNext = next+1;
 		if (nextNext >= corners+numCorner) nextNext = corners;
 		
-		if (corner->r < 1/UUtils::Infinity() && next->r < 1/UUtils::Infinity()) continue;
+		if (corner->r < 1/UUtils::kInfinity && next->r < 1/UUtils::kInfinity) continue;
 		
 		//
 		// We must decide here if we can dare declare one of our faces
@@ -308,7 +308,12 @@ void UPolycone::Create( double phiStart,
 	// Make enclosingCylinder
 	//
 	enclosingCylinder =
-		new UEnclosingCylinder( rz, phiIsOpen, phiStart, phiTotal );
+		new UEnclosingCylinder(rz->Amax(), rz->Bmax(), rz->Bmin(), phiIsOpen, phiStart, phiTotal );
+
+  InitVoxels(*rz, enclosingCylinder->radius);
+
+  fNoVoxels = fMaxSection < 2;
+
 }
 
 
@@ -321,7 +326,7 @@ void UPolycone::Create( double phiStart,
 UPolycone::UPolycone( __void__& a )
 	: UVCSGfaceted(a), startPhi(0.),	endPhi(0.), phiIsOpen(false),
 		genericPcon(false), numCorner(0), corners(0),
-		original_parameters(0), enclosingCylinder(0)
+		fOriginalParameters(0), enclosingCylinder(0)
 {
 }
 */
@@ -333,7 +338,7 @@ UPolycone::UPolycone( __void__& a )
 UPolycone::~UPolycone()
 {
 	delete [] corners;
-	delete original_parameters;
+	delete fOriginalParameters;
 	delete enclosingCylinder;
 }
 
@@ -358,7 +363,7 @@ const UPolycone &UPolycone::operator=( const UPolycone &source )
 	UVCSGfaceted::operator=( source );
 	
 	delete [] corners;
-	if (original_parameters) delete original_parameters;
+	if (fOriginalParameters) delete fOriginalParameters;
 	
 	delete enclosingCylinder;
 	
@@ -397,10 +402,10 @@ void UPolycone::CopyStuff( const UPolycone &source )
 	//
 	// Original parameters
 	//
-	if (source.original_parameters)
+	if (source.fOriginalParameters)
 	{
-		original_parameters =
-			new UPolyconeHistorical( *source.original_parameters );
+		fOriginalParameters =
+			new UPolyconeHistorical( *source.fOriginalParameters );
 	}
 	
 	//
@@ -436,12 +441,12 @@ bool UPolycone::Reset()
 	// Rebuild polycone
 	//
 	UReduciblePolygon *rz =
-		new UReduciblePolygon( original_parameters->Rmin,
-														original_parameters->Rmax,
-														original_parameters->Z_values,
-														original_parameters->Num_z_planes );
-	Create( original_parameters->Start_angle,
-					original_parameters->Opening_angle, rz );
+		new UReduciblePolygon( &fOriginalParameters->Rmin[0],
+														&fOriginalParameters->Rmax[0],
+														&fOriginalParameters->fZValues[0],
+														fOriginalParameters->fNumZPlanes);
+	Create( fOriginalParameters->fStartAngle,
+					fOriginalParameters->fOpeningAngle, rz );
 	delete rz;
 
 	return 0;
@@ -481,7 +486,7 @@ double UPolycone::DistanceToIn( const UVector3 &p,
 	// Quick test
 	//
 	if (enclosingCylinder->ShouldMiss(p,v))
-		return UUtils::Infinity();
+		return UUtils::kInfinity;
 	
 	//
 	// Long answer
@@ -543,25 +548,25 @@ std::ostream& UPolycone::StreamInfo( std::ostream& os ) const
 	int i=0;
 	if (!genericPcon)
 	{
-		int numPlanes = original_parameters->Num_z_planes;
+		int numPlanes = fOriginalParameters->fNumZPlanes;
 		os << "		number of Z planes: " << numPlanes << "\n"
 			 << "							Z values: \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Z_values[i] << "\n";
+				 << fOriginalParameters->fZValues[i] << "\n";
 		}
 		os << "							Tangent distances to inner surface (Rmin): \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Rmin[i] << "\n";
+				 << fOriginalParameters->Rmin[i] << "\n";
 		}
 		os << "							Tangent distances to outer surface (Rmax): \n";
 		for (i=0; i<numPlanes; i++)
 		{
 			os << "							Z plane " << i << ": "
-				 << original_parameters->Rmax[i] << "\n";
+				 << fOriginalParameters->Rmax[i] << "\n";
 		}
 	}
 	os << "		number of RZ points: " << numCorner << "\n"
@@ -807,53 +812,53 @@ UVector3 UPolycone::GetPointOnSurface() const
 	{
 		double Area=0,totArea=0,Achose1=0,Achose2=0,phi,cosphi,sinphi,rRand;
 		int i=0;
-		int numPlanes = original_parameters->Num_z_planes;
+		int numPlanes = fOriginalParameters->fNumZPlanes;
 	
 		phi = UUtils::Random(startPhi,endPhi);
 		cosphi = std::cos(phi);
 		sinphi = std::sin(phi);
 
-		rRand = original_parameters->Rmin[0] +
-			( (original_parameters->Rmax[0]-original_parameters->Rmin[0])
+		rRand = fOriginalParameters->Rmin[0] +
+			( (fOriginalParameters->Rmax[0]-fOriginalParameters->Rmin[0])
 	* std::sqrt(UUtils::Random()) );
 
 		std::vector<double> areas;			 // (numPlanes+1);
 		std::vector<UVector3> points; // (numPlanes-1);
 	
-		areas.push_back(UUtils::kPi*(UUtils::sqr(original_parameters->Rmax[0])
-											 -UUtils::sqr(original_parameters->Rmin[0])));
+		areas.push_back(UUtils::kPi*(UUtils::sqr(fOriginalParameters->Rmax[0])
+											 -UUtils::sqr(fOriginalParameters->Rmin[0])));
 
 		for(i=0; i<numPlanes-1; i++)
 		{
-			Area = (original_parameters->Rmin[i]+original_parameters->Rmin[i+1])
-					 * std::sqrt(UUtils::sqr(original_parameters->Rmin[i]
-											-original_parameters->Rmin[i+1])+
-											 UUtils::sqr(original_parameters->Z_values[i+1]
-											-original_parameters->Z_values[i]));
+			Area = (fOriginalParameters->Rmin[i]+fOriginalParameters->Rmin[i+1])
+					 * std::sqrt(UUtils::sqr(fOriginalParameters->Rmin[i]
+											-fOriginalParameters->Rmin[i+1])+
+											 UUtils::sqr(fOriginalParameters->fZValues[i+1]
+											-fOriginalParameters->fZValues[i]));
 
-			Area += (original_parameters->Rmax[i]+original_parameters->Rmax[i+1])
-						* std::sqrt(UUtils::sqr(original_parameters->Rmax[i]
-											 -original_parameters->Rmax[i+1])+
-												UUtils::sqr(original_parameters->Z_values[i+1]
-											 -original_parameters->Z_values[i]));
+			Area += (fOriginalParameters->Rmax[i]+fOriginalParameters->Rmax[i+1])
+						* std::sqrt(UUtils::sqr(fOriginalParameters->Rmax[i]
+											 -fOriginalParameters->Rmax[i+1])+
+												UUtils::sqr(fOriginalParameters->fZValues[i+1]
+											 -fOriginalParameters->fZValues[i]));
 
 			Area *= 0.5*(endPhi-startPhi);
 		
 			if(startPhi==0.&& endPhi == 2*UUtils::kPi)
 			{
-				Area += std::fabs(original_parameters->Z_values[i+1]
-												 -original_parameters->Z_values[i])*
-												 (original_parameters->Rmax[i]
-												 +original_parameters->Rmax[i+1]
-												 -original_parameters->Rmin[i]
-												 -original_parameters->Rmin[i+1]);
+				Area += std::fabs(fOriginalParameters->fZValues[i+1]
+												 -fOriginalParameters->fZValues[i])*
+												 (fOriginalParameters->Rmax[i]
+												 +fOriginalParameters->Rmax[i+1]
+												 -fOriginalParameters->Rmin[i]
+												 -fOriginalParameters->Rmin[i+1]);
 			}
 			areas.push_back(Area);
 			totArea += Area;
 		}
 	
-		areas.push_back(UUtils::kPi*(UUtils::sqr(original_parameters->Rmax[numPlanes-1])-
-												UUtils::sqr(original_parameters->Rmin[numPlanes-1])));
+		areas.push_back(UUtils::kPi*(UUtils::sqr(fOriginalParameters->Rmax[numPlanes-1])-
+												UUtils::sqr(fOriginalParameters->Rmin[numPlanes-1])));
 	
 		totArea += (areas[0]+areas[numPlanes]);
 		double chose = UUtils::Random(0.,totArea);
@@ -861,7 +866,7 @@ UVector3 UPolycone::GetPointOnSurface() const
 		if( (chose>=0.) && (chose<areas[0]) )
 		{
 			return UVector3(rRand*cosphi, rRand*sinphi,
-													 original_parameters->Z_values[0]);
+													 fOriginalParameters->fZValues[0]);
 		}
 	
 		for (i=0; i<numPlanes-1; i++)
@@ -870,22 +875,22 @@ UVector3 UPolycone::GetPointOnSurface() const
 			Achose2 = (Achose1+areas[i+1]);
 			if(chose>=Achose1 && chose<Achose2)
 			{
-				return GetPointOnCut(original_parameters->Rmin[i],
-														 original_parameters->Rmax[i],
-														 original_parameters->Rmin[i+1],
-														 original_parameters->Rmax[i+1],
-														 original_parameters->Z_values[i],
-														 original_parameters->Z_values[i+1], Area);
+				return GetPointOnCut(fOriginalParameters->Rmin[i],
+														 fOriginalParameters->Rmax[i],
+														 fOriginalParameters->Rmin[i+1],
+														 fOriginalParameters->Rmax[i+1],
+														 fOriginalParameters->fZValues[i],
+														 fOriginalParameters->fZValues[i+1], Area);
 			}
 		}
 
-		rRand = original_parameters->Rmin[numPlanes-1] +
-			( (original_parameters->Rmax[numPlanes-1]-original_parameters->Rmin[numPlanes-1])
+		rRand = fOriginalParameters->Rmin[numPlanes-1] +
+			( (fOriginalParameters->Rmax[numPlanes-1]-fOriginalParameters->Rmin[numPlanes-1])
 	* std::sqrt(UUtils::Random()) );
 
 	
 		return UVector3(rRand*cosphi,rRand*sinphi,
-												 original_parameters->Z_values[numPlanes-1]);	
+												 fOriginalParameters->fZValues[numPlanes-1]);	
 
 	}
 	else	// Generic Polycone
@@ -904,12 +909,12 @@ UPolyhedron* UPolycone::CreatePolyhedron() const
 	// 
 	if (!genericPcon)
 	{
-		return new UPolyhedronPcon( original_parameters->Start_angle,
-																 original_parameters->Opening_angle,
-																 original_parameters->Num_z_planes,
-																 original_parameters->Z_values,
-																 original_parameters->Rmin,
-																 original_parameters->Rmax );
+		return new UPolyhedronPcon( fOriginalParameters->fStartAngle,
+																 fOriginalParameters->fOpeningAngle,
+																 fOriginalParameters->fNumZPlanes,
+																 fOriginalParameters->fZValues,
+																 fOriginalParameters->Rmin,
+																 fOriginalParameters->Rmax );
 	}
 	else
 	{
@@ -1199,32 +1204,29 @@ UPolyhedron* UPolycone::CreatePolyhedron() const
 //
 
 UPolyconeHistorical::UPolyconeHistorical()
-	: Start_angle(0.), Opening_angle(0.), Num_z_planes(0),
-		Z_values(0), Rmin(0), Rmax(0)
+	: fStartAngle(0.), fOpeningAngle(0.), fNumZPlanes(0),
+		fZValues(0), Rmin(0), Rmax(0)
 {
 }
 
 UPolyconeHistorical::~UPolyconeHistorical()
 {
-	delete [] Z_values;
-	delete [] Rmin;
-	delete [] Rmax;
 }
 
 UPolyconeHistorical::
 UPolyconeHistorical( const UPolyconeHistorical &source )
 {
-	Start_angle	 = source.Start_angle;
-	Opening_angle = source.Opening_angle;
-	Num_z_planes	= source.Num_z_planes;
+	fStartAngle	 = source.fStartAngle;
+	fOpeningAngle = source.fOpeningAngle;
+	fNumZPlanes	= source.fNumZPlanes;
 	
-	Z_values	= new double[Num_z_planes];
-	Rmin			= new double[Num_z_planes];
-	Rmax			= new double[Num_z_planes];
+	fZValues.resize(fNumZPlanes);
+	Rmin.resize(fNumZPlanes);
+	Rmax.resize(fNumZPlanes);
 	
-	for( int i = 0; i < Num_z_planes; i++)
+	for( int i = 0; i < fNumZPlanes; i++)
 	{
-		Z_values[i] = source.Z_values[i];
+		fZValues[i] = source.fZValues[i];
 		Rmin[i]		 = source.Rmin[i];
 		Rmax[i]		 = source.Rmax[i];
 	}
@@ -1237,20 +1239,17 @@ UPolyconeHistorical::operator=( const UPolyconeHistorical& right )
 
 	if (&right)
 	{
-		Start_angle	 = right.Start_angle;
-		Opening_angle = right.Opening_angle;
-		Num_z_planes	= right.Num_z_planes;
+		fStartAngle	 = right.fStartAngle;
+		fOpeningAngle = right.fOpeningAngle;
+		fNumZPlanes	= right.fNumZPlanes;
 	
-		delete [] Z_values;
-		delete [] Rmin;
-		delete [] Rmax;
-		Z_values	= new double[Num_z_planes];
-		Rmin			= new double[Num_z_planes];
-		Rmax			= new double[Num_z_planes];
+		fZValues.resize(fNumZPlanes);
+		Rmin.resize(fNumZPlanes);
+		Rmax.resize(fNumZPlanes);
 	
-		for( int i = 0; i < Num_z_planes; i++)
+		for( int i = 0; i < fNumZPlanes; i++)
 		{
-			Z_values[i] = right.Z_values[i];
+			fZValues[i] = right.fZValues[i];
 			Rmin[i]		 = right.Rmin[i];
 			Rmax[i]		 = right.Rmax[i];
 		}

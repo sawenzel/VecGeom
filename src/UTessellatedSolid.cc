@@ -1282,13 +1282,6 @@ void UTessellatedSolid::DistanceToOutCandidates(const vector<int> &candidates, c
 	{
 		int candidate = candidates[i];
 
-		/*
-		if (bits[candidate])
-			continue;
-		else 
-			bits.SetBitNumber(candidate);
-		*/
-
 		VUFacet &facet = *fFacets[candidate];
 		if (facet.Intersect(aPoint,direction,true,dist,distFromSurface,normal))
 		{
@@ -1296,13 +1289,6 @@ void UTessellatedSolid::DistanceToOutCandidates(const vector<int> &candidates, c
 				facet.Distance(aPoint,fgTolerance) <= fgToleranceHalf)
 			{
 				// We are on a surface
-//				UVector3 nnormal;
-//				Normal(aPoint, nnormal);
-//				minNormal = facet.GetSurfaceNormal();
-//				if (nnormal != minNormal)
-//					nnormal = nnormal;
-//				if (nnormal != normal)
-//					nnormal = nnormal;
 				minDist = 0.0;
 				minNormal = normal;
 				minCandidate = candidate;
