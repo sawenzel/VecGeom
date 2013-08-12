@@ -154,37 +154,34 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 	double shift = fVoxels.DistanceToFirst(aPoint, direction);
 	if (shift == UUtils::kInfinity) return shift;
   UVector3 currentPoint = aPoint;
-	double shiftBonus = VUSolid::Tolerance()/10.0;
+//	double shiftBonus = VUSolid::Tolerance()/10.0;
 	if (shift) 
-		currentPoint += direction * (shift + shiftBonus);
+		currentPoint += direction * (shift /*+ shiftBonus*/);
 	//		if (!fVoxels.Contains(currentPoint)) 
 	//			return minDistance;
-	double totalShift = shift;
+//	double totalShift = shift;
 
 	UBits exclusion(fVoxels.GetBitsPerSlice());
 	vector<int> candidates, curVoxel(3);
-	for (int i = 0; i <= 2; ++i) curVoxel[i] = UVoxelizer::BinarySearch(fVoxels.GetBoundary(i), currentPoint[i]);
+  fVoxels.GetVoxel(curVoxel, currentPoint);
+  double curShift = 0;
 
 	do
 	{
 //		if (!fVoxels.Empty().GetNbits() || !fVoxels.IsEmpty(fVoxels.GetVoxelsIndex(curVoxel)))
 		{
 			if (fVoxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
-			{
-				double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
+			{ 
+				double distance = DistanceToInCandidates(currentPoint, direction, aPstep, candidates, exclusion); 
 				if (minDistance > distance) minDistance = distance;
-				if (distance < totalShift) break; 
+				if (distance < curShift) break; 
 			}
 		}
-		shift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
-		if (shift == UUtils::kInfinity /*|| shift == 0*/) break;
-
-		totalShift += shift;
-		if (minDistance < totalShift) break;
-
-		currentPoint += direction * (shift + shiftBonus);
+		curShift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
 	}
-	while (fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel));
+	while (minDistance > curShift);
+
+  if (minDistance != UUtils::kInfinity) minDistance += shift;
 
 #ifdef DEBUG
 	if (fabs(minDistance - distanceToInNoVoxels) > VUSolid::Tolerance())
@@ -1065,10 +1062,12 @@ UVector3 UMultiUnion::GetPointOnSurface() const
 	do
 	{
 		int random = (int) UUtils::Random(0, size);
+    /*
 		for (int i = 0; i < size; i++)
 		{
 			VUSolid &solid = *fSolids[i];
 		}
+    */
 		VUSolid &solid = *fSolids[random];
 		point = solid.GetPointOnSurface();
 		UTransform3D &transform = *fTransforms[random];

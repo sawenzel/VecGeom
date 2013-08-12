@@ -1015,7 +1015,7 @@ double UVoxelizer::MinDistanceToBox ( const UVector3 &aPoint, const UVector3 &f)
 double UVoxelizer::DistanceToNext(const UVector3 &point, const UVector3 &direction, vector<int> &curVoxel) const
 {
 	double shift = UUtils::kInfinity;
-  int cur; // the smallest index, which would be than increased
+  int cur = 0; // the smallest index, which would be than increased
 
 	for (int i = 0; i <= 2; ++i)
 	{

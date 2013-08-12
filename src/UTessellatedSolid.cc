@@ -763,6 +763,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3 &p) const
 	VUSolid::EnumInside location          = VUSolid::eOutside;
 //	VUSolid::EnumInside locationprime     = VUSolid::eOutside;
 	int sm                   = 0;
+  double shift;
 
 	//  for (int i=0; i<nTry; ++i)
 	//  {
@@ -842,13 +843,9 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3 &p) const
 					return location;
 				}
 			}
-
-			double shift = fVoxels.DistanceToNext(p, direction, curVoxel);
-			if (shift == UUtils::kInfinity) break;
-
-			// currentPoint += direction * (shift /*+ shiftBonus*/);
+			shift = fVoxels.DistanceToNext(p, direction, curVoxel);
 		}
-		while (true/*fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel)*/);
+		while (shift != UUtils::kInfinity);
 
 	}
 	while (nearParallel && sm!=fMaxTries);
@@ -1329,15 +1326,12 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 	{
 		minDistance = UUtils::kInfinity;
 
-//		UVector3 currentPoint = aPoint;
 		UVector3 direction = aDirection.Unit();
 		double shift = 0;
 		vector<int> curVoxel(3);
 		if (!fVoxels.Contains(aPoint)) return 0;
 
-		fVoxels.GetVoxel(curVoxel, aPoint /*currentPoint*/);
-
-//		double shiftBonus = VUSolid::Tolerance();
+		fVoxels.GetVoxel(curVoxel, aPoint);
 
 //		const vector<int> *old = NULL;
 
@@ -1356,17 +1350,12 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3 &aPoint, const UVecto
 				if (minDistance <= shift) break; 
 			}
 
-			double shift = fVoxels.DistanceToNext(aPoint /*currentPoint*/, direction, curVoxel);
+			shift = fVoxels.DistanceToNext(aPoint, direction, curVoxel);
 			if (shift == UUtils::kInfinity) break;
-
-//			totalShift += shift;
-			if (minDistance <= shift) break;
-
-//			currentPoint += direction * (shift /*+ shiftBonus*/);
 			
 //			old = &candidates;
 		}
-		while (true/*fVoxels.UpdateCurrentVoxel(currentPoint, direction, curVoxel)*/);
+		while (minDistance > shift);
 
 		if (minCandidate < 0)
 		{
