@@ -1,7 +1,4 @@
 
-//10:30 - 17:30
-//12:30 - 14:30
-
 //
 // ********************************************************************
 // * License and Disclaimer                                           *
@@ -85,6 +82,12 @@
 #include "UPolycone.hh"
 #include "UPolycone2.hh"
 #include "UPolycone3.hh"
+
+/*
+#include "UPolyhedra.hh"
+#include "UPolyhedra3.hh"
+#include "UPolyhedra4.hh"
+*/
 
 #include "TGeoArb8.h"
 #include "TGeoTrd2.h" 
@@ -175,6 +178,7 @@ void SBTperformance::TestInsideGeant4(int iteration)
 {
 	G4ThreeVector point;
 
+  points[0].Set(-707.10678118654752440084436210485/2, -707.10678118654752440084436210485/2, -500);
 //  points[0].Set(1000, 1000, 1000);
 
 	for (int i = 0; i < maxPoints; i++)
@@ -185,7 +189,7 @@ void SBTperformance::TestInsideGeant4(int iteration)
 
 //    points[0].Set(0);
 
-    if (i == 0)
+    if (i == 141)
       i = i;
 
     GetVectorGeant4(point, points, i);
@@ -198,12 +202,12 @@ void SBTperformance::TestInsideUSolids(int iteration)
 {
 	UVector3 point;
 
-//  points[0].Set(1000, 1000, 1000);
+  points[0].Set(-707.10678118654752440084436210485/2, -707.10678118654752440084436210485/2, -500);
 
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorUSolids(point, points, i);
-    if (i == 0)
+    if (i == 444)
       i = i;
 
 		VUSolid::EnumInside inside = volumeUSolids->Inside(point);
@@ -215,13 +219,18 @@ void SBTperformance::TestInsideUSolids(int iteration)
 void SBTperformance::TestInsideROOT(int iteration)
 { 
 	double point[3];
-   
+
+  points[0].Set(-707.10678118654752440084436210485/2, -707.10678118654752440084436210485/2, -500);
+
 	for (int i = 0; i < maxPoints; i++)
 	{
 //    points[0] = UVector3(46403.38739730667, -18973.09192006442, -59999.9999999999);
 //    points[0] = UVector3(-41374.68053161167 ,     16708.86204374595      ,-59999.9999999999 );
 
     GetVectorRoot(point, points, i);
+
+    if (i == 444)
+      i = i;
 
 		bool contains = volumeROOT->Contains(point);
 
@@ -234,9 +243,15 @@ void SBTperformance::TestNormalGeant4(int iteration)
 {
 	G4ThreeVector point, normal;
 
+  points[0].Set(-707.10678118654752440084436210485/2, 707.10678118654752440084436210485/2, -500);
+
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorGeant4(point, points, i);
+
+    if (i == 957)
+      i = i;
+
 		normal = volumeGeant4->SurfaceNormal(point);
 
 		if (!iteration) 
@@ -253,6 +268,10 @@ void SBTperformance::TestNormalUSolids(int iteration)
 	for (int i = 0; i < maxPoints; i++)
 	{
 		GetVectorUSolids(point, points, i);
+
+    if (i == 957)
+      i = i;
+
 		bool valid = volumeUSolids->Normal(point, normal);
 
 		if (!iteration) 
@@ -472,7 +491,7 @@ void SBTperformance::PropagatedNormal(const G4ThreeVector &point, const G4ThreeV
 void SBTperformance::PropagatedNormalU(const UVector3 &point, const UVector3 &direction, double distance, UVector3 &normal)
 {
   normal.Set(0);
-  if (distance < kInfinity)
+  if (distance < UUtils::kInfinity)
   {
     UVector3 shift = distance * direction;
     UVector3 surfacePoint = point + shift;
@@ -495,12 +514,17 @@ void SBTperformance::TestDistanceToInGeant4(int iteration)
     points[1] = UVector3(7341580.738867766, 20654134.81170427, 20654134.81170427) ;
     directions[1] = UVector3(-0.1759615598226392, -0.6548197707145482, -0.6548197707145482);
     */
+
+    points[0]= UVector3(-1539123.192022907, -306709.7478957756, -1070994.365215302);
+    directions[0]= UVector3(0.8100648379067933, 0.1614261831030398, 0.5636812448501587);
+
         GetVectorGeant4(point, points, i);
 		GetVectorGeant4(direction, directions, i);
-    double res = volumeGeant4->DistanceToIn(point, direction);
 
-    if (i == 157)
+    if (i == 79)
       i = i;
+
+    double res = volumeGeant4->DistanceToIn(point, direction);
 
 		if (!iteration) 
 		{
@@ -527,7 +551,7 @@ void SBTperformance::TestDistanceToInUSolids(int iteration)
 		GetVectorUSolids(point, points, i);
 		GetVectorUSolids(direction, directions, i);
 		double res = volumeUSolids->DistanceToIn(point, direction);
-    if (i == 18950) 
+    if (i == 79) 
       i = i;
 
 		if (!iteration) 
@@ -556,6 +580,9 @@ void SBTperformance::TestDistanceToInROOT(int iteration)
     points[1] = UVector3(7341580.738867766, 20654134.81170427, 20654134.81170427) ;
     directions[1] = UVector3(-0.1759615598226392, -0.6548197707145482, -0.6548197707145482);
     */
+
+    points[0]= UVector3(-1539123.192022907, -306709.7478957756, -1070994.365215302);
+    directions[0]= UVector3(0.8100648379067933, 0.1614261831030398, 0.5636812448501587);
 
 		GetVectorRoot(point, points, i);
 		GetVectorRoot(direction, directions, i);
@@ -591,6 +618,9 @@ void SBTperformance::TestDistanceToOutGeant4(int iteration)
 		GetVectorGeant4(direction, directions, i);
 //    normal.set(0,0,0);
 		double res = volumeGeant4->DistanceToOut(point, direction, true, &validNorm, &normal);
+
+    if (i == 5)
+      i = i;
 
 		if (!iteration)
 		{
@@ -641,8 +671,8 @@ void SBTperformance::TestDistanceToOutUSolids(int iteration)
 
     GetVectorUSolids(point, points, i);
 		GetVectorUSolids(direction, directions, i);
-
-    if (i == 3) 
+     
+    if (i == 5) 
       i = i;
 
 //    normal.Set(0);
@@ -755,420 +785,162 @@ void SBTperformance::ConvertMultiUnionFromGeant4(UMultiUnion &multiUnion, G4Unio
 }
 
 
+void SBTperformance::SetupMultiUnion(G4UnionSolid &unionSolid)
+{
+    UMultiUnion &multiUnion = *new UMultiUnion("multiUnion");
+
+    string rootComposite = ""; // "(A:t1+B:t2)"
+    compositeCounter = 1;
+    ConvertMultiUnionFromGeant4(multiUnion, unionSolid, rootComposite);
+    volumeUSolids = &multiUnion;
+    rootComposite = "("+rootComposite+")";
+    volumeROOT = new TGeoCompositeShape("CS", rootComposite.c_str());
+    //		volumeROOT = NULL;
+
+    multiUnion.Voxelize();
+//    multiUnion.GetVoxels().DisplayListNodes();
+
+    // double capacity = testVolume->GetCubicVolume();
+    // double area = testVolume->GetSurfaceArea();
+
+    multiUnion.Capacity();
+
+    volumeSS << "UMultiUnion()";
+}
+
+void SBTperformance::SetupTessellatedSolid(G4TessellatedSolid &tessel)
+{
+  UTessellatedSolid &utessel = *new UTessellatedSolid("ts");
+
+  int n = tessel.GetNumberOfFacets();
+  for (int i = 0; i < n; i++)
+  {
+    G4VFacet &facet = *tessel.GetFacet(i);
+    int verticesCount = facet.GetNumberOfVertices();
+    vector<UVector3> v(verticesCount);
+    for (int j = 0; j < verticesCount; j++) 
+    {
+      G4ThreeVector vec = facet.GetVertex(j);
+      v[j].Set(vec.x(), vec.y(), vec.z());
+    }
+    VUFacet *ufacet;
+    switch (verticesCount)
+    {
+    case 3:
+      ufacet = new UTriangularFacet(v[0], v[1], v[2], UABSOLUTE);
+      break;
+    case 4:
+      ufacet = new UQuadrangularFacet(v[0], v[1], v[2], v[3], UABSOLUTE);
+      break;
+    default:
+      break;
+    }
+    utessel.AddFacet(ufacet);
+  }
+  utessel.SetMaxVoxels(SBTrun::maxVoxels);
+  utessel.SetSolidClosed(true);
+  volumeUSolids = &utessel;
+}
+
+void SBTperformance::SetupBox( G4Box &box ) 
+{
+  double x = box.GetXHalfLength();
+  double y = box.GetYHalfLength();
+  double z = box.GetZHalfLength();
+  volumeROOT = new TGeoBBox("UBox", x, y, z);
+  volumeUSolids = new UBox("UBox", x, y, z);
+  volumeSS << "Ubox("<<x<<","<<y<<","<<z<<")";
+}
+
+void SBTperformance::SetupOrb( G4Orb &orb )
+{
+  double radius = orb.GetRadius();
+  volumeROOT = new TGeoSphere("UOrb", 0, radius);
+  volumeUSolids = new UOrb("UOrb", radius);
+  volumeSS << "UOrb("<<radius<<")";
+}
+
+void SBTperformance::SetupSphere( G4Sphere &sphere )
+{
+  double innerRadius = sphere.GetInnerRadius();
+  double outerRadius = sphere.GetOuterRadius();
+  double sTheta = sphere.GetSTheta();
+  double dTheta = sphere.GetDTheta();
+  double sPhi  = sphere.GetSPhi();
+  double dPhi = sphere.GetDPhi();
+
+  volumeUSolids = new USphere("USphere", innerRadius, outerRadius, sPhi, dPhi, sTheta, dTheta);
+
+  sPhi = 180 * sPhi / UUtils::kPi;
+  dPhi = 180 * dPhi / UUtils::kPi;
+  dPhi += sPhi;
+  if (dPhi > 360) dPhi -= 360; 
+
+  sTheta = 180 * sTheta / UUtils::kPi;
+  dTheta = 180 * dTheta / UUtils::kPi;
+  dTheta += sTheta;
+  if (dTheta > 360) dTheta -= 360;
+
+  volumeROOT = new TGeoSphere("USphere", innerRadius, outerRadius, sTheta, dTheta, sPhi, dPhi);
+  volumeSS << "USphere("<<innerRadius<<")";
+}
+
 void SBTperformance::SetupSolids(G4VSolid *testVolume)
 {
-	string type(testVolume->GetEntityType());
+//	string type(testVolume->GetEntityType());
+  string name(testVolume->GetName()); // get the name which was filled in G4InteractiveSolid
 
 	volumeUSolids = NULL;
 	volumeROOT = NULL;
-	stringstream ss;
+	volumeSS.clear();
 
-	// DONE: box and other USolidss are not slow anymore (it linking issue at VS2010)
-	if (type == "G4UnionSolid" || type == "G4DisplacedSolid")
-	{
-		G4UnionSolid &unionSolid = *(G4UnionSolid *) testVolume;
-
-		UMultiUnion &multiUnion = *new UMultiUnion("multiUnion");
-		
-		string rootComposite = ""; // "(A:t1+B:t2)"
-		compositeCounter = 1;
-		ConvertMultiUnionFromGeant4(multiUnion, unionSolid, rootComposite);
-		volumeUSolids = &multiUnion;
-		rootComposite = "("+rootComposite+")";
-		volumeROOT = new TGeoCompositeShape("CS", rootComposite.c_str());
-//		volumeROOT = NULL;
+  // DONE: box and other USolidss are not slow anymore (it linking issue at VS2010)
+  if (name == "G4UnionSolid" || name == "G4DisplacedSolid" || name == "G4MultiUnion")
+    SetupMultiUnion(*(G4UnionSolid *) testVolume);
     
-		multiUnion.Voxelize();
-		multiUnion.GetVoxels().DisplayListNodes();
+    if (name == "G4TessellatedSolid")
+      SetupTessellatedSolid(*(G4TessellatedSolid *) testVolume);
 
-		// double capacity = testVolume->GetCubicVolume();
-		// double area = testVolume->GetSurfaceArea();
+    if (name == "G4Box")
+      SetupBox(*(G4Box *) testVolume);
 
-		multiUnion.Capacity();
+	if (name == "G4Orb")
+    SetupOrb(*(G4Orb *) testVolume);
 
-		ss << "UMultiUnion()";
-	}
-    if (type == "G4TessellatedSolid")
-    {
-        UTessellatedSolid &utessel = *new UTessellatedSolid("ts");
+	if (name == "G4Sphere")
+    SetupSphere(*(G4Sphere *) testVolume);
 
-        G4TessellatedSolid &tessel = *(G4TessellatedSolid *) testVolume;
-        int n = tessel.GetNumberOfFacets();
-        for (int i = 0; i < n; i++)
-        {
-            G4VFacet &facet = *tessel.GetFacet(i);
-            int verticesCount = facet.GetNumberOfVertices();
-            vector<UVector3> v(verticesCount);
-            for (int j = 0; j < verticesCount; j++) 
-            {
-                G4ThreeVector vec = facet.GetVertex(j);
-                v[j].Set(vec.x(), vec.y(), vec.z());
-            }
-            VUFacet *ufacet;
-            switch (verticesCount)
-            {
-                case 3:
-                    ufacet = new UTriangularFacet(v[0], v[1], v[2], UABSOLUTE);
-                    break;
-                case 4:
-                    ufacet = new UQuadrangularFacet(v[0], v[1], v[2], v[3], UABSOLUTE);
-                    break;
-                default:
-                    break;
-            }
-            utessel.AddFacet(ufacet);
-        }
-		    utessel.SetMaxVoxels(SBTrun::maxVoxels);
-        utessel.SetMaxVoxels(1);
-        utessel.SetSolidClosed(true);
-        volumeUSolids = &utessel;
-    }
-    if (type == "G4Box")
-	{
-		G4Box &box = *(G4Box *) testVolume;
-		double x = box.GetXHalfLength();
-		double y = box.GetYHalfLength();
-		double z = box.GetZHalfLength();
-		volumeROOT = new TGeoBBox("UBox", x, y, z);
-		volumeUSolids = new UBox("UBox", x, y, z);
-		ss << "Ubox("<<x<<","<<y<<","<<z<<")";
-	}
-	if (type == "G4Orb")
-	{
-		G4Orb &orb = *(G4Orb *) testVolume;
-		double radius = orb.GetRadius();
-		volumeROOT = new TGeoSphere("UOrb", 0, radius);
-		volumeUSolids = new UOrb("UOrb", radius);
-		ss << "UOrb("<<radius<<")";
-	}
-	if (type == "G4Sphere")
-	{
-		G4Sphere &sphere = *(G4Sphere *) testVolume;
-		double innerRadius = sphere.GetInnerRadius();
-		double outerRadius = sphere.GetOuterRadius();
-		double sTheta = sphere.GetSTheta();
-		double dTheta = sphere.GetDTheta();
-		double sPhi  = sphere.GetSPhi();
-		double dPhi = sphere.GetDPhi();
+  if (name == "G4Trd")
+    SetupTrd(*(G4Trd *) testVolume);
 
-		volumeUSolids = new USphere("USphere", innerRadius, outerRadius, sPhi, dPhi, sTheta, dTheta);
+  if (name == "G4GenericTrap")
+    SetupGenericTrap(*(G4GenericTrap *) testVolume);
 
-		sPhi = 180 * sPhi / UUtils::kPi;
-		dPhi = 180 * dPhi / UUtils::kPi;
-		dPhi += sPhi;
-		if (dPhi > 360) dPhi -= 360; 
+	if (name == "G4Trap")
+    SetupTrap(*(G4Trap *) testVolume);
 
-		sTheta = 180 * sTheta / UUtils::kPi;
-		dTheta = 180 * dTheta / UUtils::kPi;
-		dTheta += sTheta;
-		if (dTheta > 360) dTheta -= 360;
+  if (name == "G4Tubs")
+    SetupTubs(*(G4Tubs *) testVolume);
 
-		volumeROOT = new TGeoSphere("USphere", innerRadius, outerRadius, sTheta, dTheta, sPhi, dPhi);
-		ss << "USphere("<<innerRadius<<")";
-	}
-	if (type == "G4Trd")
-	{
-		G4Trd &trd = *(G4Trd *) testVolume;
-		double x1 = trd.GetXHalfLength1();
-		double x2 = trd.GetXHalfLength2();
-		double y1 = trd.GetYHalfLength1();
-		double y2 = trd.GetYHalfLength2();
-		double z = trd.GetZHalfLength(); 
-		volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
-		volumeROOT = new TGeoTrd2(x1, x2, y1, y2, z);
-		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
-	}
-  if (type == "G4GenericTrap")
-  {
-    G4GenericTrap &trap = *(G4GenericTrap *) testVolume;
-    double z = trap.GetZHalfLength();
-    std::vector<G4TwoVector> vertices = trap.GetVertices();
-    double tVertices[16];
-    for (int i = 0; i < vertices.size(); i++)
-    {
-       G4TwoVector &vec = vertices[i];
-       tVertices[2*i] = vec.x();
-       tVertices[2*i+1] = vec.y();
-    }
-    volumeROOT = new TGeoArb8("Trap", z, tVertices);
-  }
+  if (name == "G4Cons")
+    SetupCons(*(G4Cons *) testVolume);
 
-	if (type == "G4Trap")
-	{
-		G4Trap &trap = *(G4Trap *) testVolume;
-		double x1 = trap.GetXHalfLength1();
-		double x2 = trap.GetXHalfLength2();
-		double x3 = trap.GetXHalfLength3();
-		double x4 = trap.GetXHalfLength4();
-		double y1 = trap.GetYHalfLength1();
-		double y2 = trap.GetYHalfLength2();
-		double z = trap.GetZHalfLength();
-		double talpha1 = atan (trap.GetTanAlpha1());
-		double talpha2 = atan (trap.GetTanAlpha2());
-    double theta = 0; // geant4 does not have method GetTheta???
-    double phi = 0; // geant4 does not have phi???
-//		volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
+  if (name == "G4ExtrudedSolid")
+    SetupExtrudedSolid(*(G4ExtrudedSolid *) testVolume);
 
-    ////////////////////////////////////////////////////////////////////////////
-    //                                                                        //
-    // TGeoTrap                                                               //
-    //                                                                        //
-    // Trap is a general trapezoid, i.e. one for which the faces perpendicular//
-    // to z are trapezia and their centres are not the same x, y. It has 11   //
-    // parameters: the half length in z, the polar angles from the centre of  //
-    // the face at low z to that at high z, H1 the half length in y at low z, //
-    // LB1 the half length in x at low z and y low edge, LB2 the half length  //
-    // in x at low z and y high edge, TH1 the angle w.r.t. the y axis from the//
-    // centre of low y edge to the centre of the high y edge, and H2, LB2,    //
-    // LH2, TH2, the corresponding quantities at high z.                      //
-    //                                                                        //
-    ////////////////////////////////////////////////////////////////////////////
+	if (name == "G4Polyhedra")
+    SetupPolyhedraGeneric(*(G4Polyhedra *) testVolume);
 
-//    TGeoTrap("", dz=z, theta=theta, phi=phi, h1=y1, bl1=x1, tl1=x2, alpha1=talpha1, h2=y2, bl2=x3, tl2=x4, alpha2=talpha2);
+  if (name == "G4Polyhedra2")
+    SetupPolyhedra(*(G4Polyhedra *) testVolume);
 
-    // fTheta; // theta angle
-    // fPhi;   // phi angle
-    // fH1;    // half length in y at low z
-    // fBl1;   // half length in x at low z and y low edge
-    // fTl1;   // half length in x at low z and y high edge
-    // fAlpha1;// angle between centers of x edges an y axis at low z
-    // fH2;    // half length in y at high z
-    // fBl2;   // half length in x at high z and y low edge
-    // fTl2;   // half length in x at high z and y high edge
-    // fAlpha2;// angle between centers of x edges an y axis at low z
+	if (name == "G4Polycone2")
+    SetupPolycone(*(G4Polycone *) testVolume);
 
-    if (z == 60000.0) theta = 20, phi = 5;
+	if (name == "G4Polycone")
+    SetupPolyconeGeneric(*(G4Polycone *) testVolume);
 
-    volumeUSolids = new UTrap("Trap", z, UUtils::kPi * theta / 180, UUtils::kPi * phi / 180, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
-
-//    theta = 180 * theta / UUtils::kPi;
-//    phi = 180 * phi / UUtils::kPi;
-      talpha1 = 180 * talpha1 / UUtils::kPi;
-      talpha2 = 180 * talpha2 / UUtils::kPi;
-//		volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, ,       z = 60000.000000000000, theta = 20.000000000000000, phi = 5.0000000000000000,      y1 = 40000.000000000000, x1 = 30000.000000000000, x2 = 40000.000000000000,       talpha1 = 10.000000000000000, y2 = 16000.000000000000, x3 = 10000.000000000000, x4 = 14000.000000000000, talpha2 = 10.000000000000000
-
-		volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
-//		ss << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
-	} 
-	if (type == "G4Tubs")
-	{
-		G4Tubs &tubs = *(G4Tubs *) testVolume;
-//		double deltaPhiAngle = tubs.GetDeltaPhiAngle();
-		double rMin = tubs.GetRMin();
-		double rMax = tubs.GetRMax();
-		double dZ = tubs.GetDz();
-		double sPhi = tubs.GetSPhi();
-		double dPhi = tubs.GetDPhi();
-		
-		volumeUSolids = new UTubs("UTubs", rMin, rMax, dZ, sPhi, dPhi);
-		
-		sPhi = 180 * sPhi / UUtils::kPi;
-		dPhi = 180 * dPhi / UUtils::kPi;
-		dPhi += sPhi;
-		if (dPhi > 360) dPhi -= 360;
-		volumeROOT = (sPhi == 0 && dPhi ==  360) ? new TGeoTube(rMin, rMax, dZ) : new TGeoTubeSeg(rMin, rMax, dZ, sPhi, dPhi);
-	}
-	if (type == "G4Cons")
-	{
-		G4Cons &cons = *(G4Cons *) testVolume;
-		double rMin1 = cons.GetRmin1();
-		double rMax1 = cons.GetRmax1();
-		double rMin2 = cons.GetRmin2();
-		double rMax2 = cons.GetRmax2();
-		double dz = cons.GetDz();
-		double sPhi = cons.GetSPhi();
-		double dPhi = cons.GetDPhi();
-
-		volumeUSolids = new UCons("UCons", rMin1, rMax1, rMin2, rMax2, dz, sPhi, dPhi);
-
-		sPhi = 180 * sPhi / UUtils::kPi;
-		dPhi = 180 * dPhi / UUtils::kPi;
-
-		dPhi += sPhi;
-		if (dPhi > 360) dPhi -= 360;
-		volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rMin1, rMax1, rMin2, rMax2) : new TGeoConeSeg(dz, rMin1, rMax1, rMin2, rMax2, sPhi, dPhi);
-	}
-        if (type == "G4ExtrudedSolid")
-        {
-		G4ExtrudedSolid &extru = *(G4ExtrudedSolid *) testVolume;
-                int nV = extru.GetNofVertices();
-                //G4TwoVector GetVertex(G4int index) const;
-		std::vector<G4TwoVector> poly=extru.GetPolygon();
-                int nZ=extru.GetNofZSections();
-                //ZSection    GetZSection(G4int index) const;
-		//vector<ZSection> GetZSections() const;
-                double vx[100],vy[100];
-                //extru.DumpInfo();
-                
-
-         for ( G4int i=0; i<nV; ++i )
-         {
-          vx[i]=poly[i].x();
-          vy[i]=poly[i].y();
-          }
-	 //volumeRoot      
-         TGeoXtru *xr =new TGeoXtru( nZ);
-	 xr->DefinePolygon(nV,vx,vy);
-
-         for ( int iz=0; iz<nZ; ++iz ) 
-         {
-         xr->DefineSection(iz,extru.GetZSection(iz).fZ,extru.GetZSection(iz).fOffset.x(),extru.GetZSection(iz).fOffset.y(),extru.GetZSection(iz).fScale);
-         }     
-
-         volumeROOT=xr;
-  
-        }
-
-	if (type == "G4Polyhedra")
-	{
-		G4Polyhedra &polyhedra = *(G4Polyhedra *) testVolume;
-
-		double startPhi = 180*polyhedra.GetStartPhi()/UUtils::kPi;
-		double endPhi = 180*polyhedra.GetEndPhi()/UUtils::kPi;
-		int numRZCorner = polyhedra.GetNumRZCorner();
-		int numSide = polyhedra.GetNumSide();
-
-		vector<double> rmin(numRZCorner);
-		vector<double> rmax(numRZCorner);
-		vector<double> z(numRZCorner);
-
-		TGeoPgon *gonRoot = new TGeoPgon(startPhi, endPhi, numSide, numRZCorner);
-		for (int i = 0; i < numRZCorner; i++)
-		{
-			G4PolyhedraSideRZ sideRZ = polyhedra.GetCorner(i);
-			gonRoot->DefineSection(i, sideRZ.z, 0, sideRZ.r);
-			cout << sideRZ.r << ":" << sideRZ.z << endl;
-		}
-
-		if (false)
-		{
-			// /solid/G4Polyhedra 0 360 8 4 (1.0,1.2,1.4, 1.2) (-1.0,0,1.0,2.0)
-			double rootR[] = {0,1.2,1.4, 0};
-			double rootZ[] = {-1.0,0,1.0, 2.0};
-			int len = sizeof(rootZ)/sizeof(double);
-			gonRoot = new TGeoPgon(startPhi, endPhi, numSide, len);
-			for (int i = 0; i < len; i++) gonRoot->DefineSection(i, 1000*rootZ[i], 0, 1000*rootR[i]);
-		}
-
-		volumeROOT = gonRoot;
-	}
-	if (type == "G4Polycone")
-	{
-		G4Polycone &polycone = *(G4Polycone *) testVolume;
-		double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
-		double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
-
-		G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
-    int numPlanes = parameter->Num_z_planes;
-
-    G4double *rmin = parameter->Rmin;
-    G4double *rmax = parameter->Rmax;
-    G4double *z = parameter->Z_values;
-
-		TGeoPcon *conRoot;
-    VUSolid *conUSolid = NULL;
-
-		conRoot = new TGeoPcon(startPhi, endPhi, numPlanes);
-    for (int i = 0; i < numPlanes; i++) 
-      conRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
-
-    conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
-
-//    conUSolid = new UPolycone2("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
-
-		volumeROOT = conRoot;
-    volumeUSolids = conUSolid;
-	}
-
-	if (type == "G4PolyconeG") // THis code tests generic polycone!!!
-	{
-		G4Polycone &polycone = *(G4Polycone *) testVolume;
-		double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
-		double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
-		int numRZCorner = polycone.GetNumRZCorner();
-
-		vector<double> rmin(numRZCorner);
-		vector<double> rmax(numRZCorner);
-		vector<double> z(numRZCorner);
-
-		G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
-
-		int back = 0;
-
-		for (int i = 0; i < numRZCorner; i++)
-		{
-			G4PolyconeSideRZ sideRZ = polycone.GetCorner(i);
-			// we disabled putting back stream, because it actually never worked for general cases
-			if (false && i == numRZCorner/2 && z[i-1] == sideRZ.z) back = i;
-			if (back)
-			{
-				int j = back - 1 - (i - back);
-				double r = rmax[j];	
-				rmin[j] = std::min(r, sideRZ.r);
-				rmax[j] = std::max(r, sideRZ.r);
-			}
-			else
-			{
-				rmin[i] = 0;
-				rmax[i] = sideRZ.r;
-				z[i] = sideRZ.z;
-			}
-		}
-
-		TGeoPcon *conRoot;
-    VUSolid *conUSolid = NULL;
-
-		if (numRZCorner == 15)
-		{
-			double rootR[] = {1, 1, 2, 2, 3, 3, 1, 4, 1, 1.2};
-			double rootZ[] = {1, 2, 2, 3, 3, 4, 10, 15, 15, 18};
-			int len = sizeof(rootZ)/sizeof(double);
-			conRoot = new TGeoPcon(startPhi, endPhi, len);
-			for (int i = 0; i < len; i++) conRoot->DefineSection(i, 1000*rootZ[i], 0, 1000*rootR[i]);
-		}
-		else if (numRZCorner == 6)
-		{
-			// /solid/G4Polycone 0 360 8 (1, 1, 1, 0, 0, 1.5,1.5, 1.2) (1,2,3,4,4,3,2,1) 
-
-			double rootRmax[] = {1.2, 1.5,1.5, 0};
-			double rootRmin[] = {1, 1, 1, 0};
-			double rootZ[] = {1,2,3,4};
-			int len = sizeof(rootZ)/sizeof(double);
-			conRoot = new TGeoPcon(startPhi, endPhi, len);
-			for (int i = 0; i < len; i++) conRoot->DefineSection(i, 1000*rootZ[i], 1000*rootRmin[i], 1000*rootRmax[i]);
-		}
-		else
-		{
-			int len = numRZCorner - back;
-			conRoot = new TGeoPcon(startPhi, endPhi, len);
-      conUSolid = new UPolycone("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &rmax[0], &z[0]);
-//      conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &z[0], &rmin[0], &rmax[0]);
-
-			for (int i = 0; i < len; i++) 
-			{
-				conRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
-			}
-		}
-
-		volumeROOT = conRoot;
-    volumeUSolids = conUSolid;
-
-/*
-		for (int i = 0; i < parameter->Num_z_planes; i++) 
-		{
-			double rmin = std::min(parameter->Rmin[i], parameter->Rmax[i]);
-			double rmax = std::max(parameter->Rmin[i], parameter->Rmax[i]);
-			conRoot->DefineSection(i, parameter->Z_values[i], rmin, rmax);
-		}
-		*/
-
-		double capacityRoot = conRoot->Capacity();
-		double areaRoot = conRoot->GetFacetArea();
-//		double difCapacity = (capacityRoot - capacity) / capacity;
-//		double phiTotal = polycone->GetTolerance
-	}
-
-	volumeString = ss.str();
+	volumeString = volumeSS.str();
 }
 
 
@@ -1181,9 +953,11 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 		double random = G4UniformRand();
 
     G4ThreeVector pointG4;
+    int retry = 100;
     do 
     {
       pointG4 = volumeGeant4->GetPointOnSurface();
+      if (retry-- == 0) break;
     }
     while (volumeGeant4->Inside(pointG4) != kSurface);
 
@@ -1220,7 +994,7 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 		while (position != kSurface && attempt < 100);
 
     if (position != kSurface)
-      cout << "Warning, point " << i << " is still on surface" << endl;
+      cout << "Warning, point " << i << " is still not on surface" << endl;
 
 //		if (i == 0) point.Set(0, 0, -1000.001);
 		points[i+offsetSurface] = point;
@@ -1593,9 +1367,13 @@ void SBTperformance::SavePolyhedra(const string &method)
 
 	int res = 0;
 	if (volumeUSolids)
-	res = G4Tools::GetPolyhedra(*volumeUSolids, vertices, nodes);
+	  res = G4Tools::GetPolyhedra(*volumeUSolids, vertices, nodes);
 
-	if (!res) res = G4Tools::GetPolyhedra(*volumeGeant4, vertices, nodes);
+	if (!res) 
+  {
+    std::cout << "Getting Geant4 polyhedra\n";
+    res = G4Tools::GetPolyhedra(*volumeGeant4, vertices, nodes);
+  }
 
 	if (res)
 	{
@@ -1611,7 +1389,7 @@ void SBTperformance::SavePolyhedra(const string &method)
 			if (n == 3 || n == 4)
 			{
 				ofstream &file = (n == 3) ? fileTriangles : fileQuads;
-				vector<int> node = nodes[i];
+				vector<int> &node = nodes[i];
 				for (int j = 0; j < n; j++) file << setprecision(16) << node[j] << "\t";
 				file << endl;
 			}
@@ -1691,10 +1469,10 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 	string name = volumeGeant4->GetName();
 	// if (name != "MultiUnion") 
 
-#ifdef DEBUG
+//#ifdef DEBUG
 	Flush("Saving polyhedra for visualization\n");
 	SavePolyhedra(method);
-#endif
+//#endif
 	SaveVectorToMatlabFile(points, folder+method+"Points.dat");
 	SaveVectorToMatlabFile(directions, folder+method+"Directions.dat");
 
@@ -1910,6 +1688,354 @@ void SBTperformance::Run(G4VSolid *testVolume, ofstream &logger)
 
 	if (volumeUSolids) delete volumeUSolids;
 	if (volumeROOT) delete volumeROOT;
+}
+
+void SBTperformance::SetupTrd(G4Trd &trd)
+{
+  double x1 = trd.GetXHalfLength1();
+  double x2 = trd.GetXHalfLength2();
+  double y1 = trd.GetYHalfLength1();
+  double y2 = trd.GetYHalfLength2();
+  double z = trd.GetZHalfLength(); 
+  volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
+  volumeROOT = new TGeoTrd2(x1, x2, y1, y2, z);
+  volumeSS << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
+}
+
+void SBTperformance::SetupGenericTrap(G4GenericTrap &trap)
+{
+  double z = trap.GetZHalfLength();
+  std::vector<G4TwoVector> vertices = trap.GetVertices();
+  double tVertices[16];
+  for (int i = 0; i < vertices.size(); i++)
+  {
+    G4TwoVector &vec = vertices[i];
+    tVertices[2*i] = vec.x();
+    tVertices[2*i+1] = vec.y();
+  }
+  volumeROOT = new TGeoArb8("Trap", z, tVertices);
+}
+
+void SBTperformance::SetupTubs( G4Tubs &tubs )
+{
+  //		double deltaPhiAngle = tubs.GetDeltaPhiAngle();
+  double rMin = tubs.GetRMin();
+  double rMax = tubs.GetRMax();
+  double dZ = tubs.GetDz();
+  double sPhi = tubs.GetSPhi();
+  double dPhi = tubs.GetDPhi();
+
+  volumeUSolids = new UTubs("UTubs", rMin, rMax, dZ, sPhi, dPhi);
+
+  sPhi = 180 * sPhi / UUtils::kPi;
+  dPhi = 180 * dPhi / UUtils::kPi;
+  dPhi += sPhi;
+  if (dPhi > 360) dPhi -= 360;
+  volumeROOT = (sPhi == 0 && dPhi ==  360) ? new TGeoTube(rMin, rMax, dZ) : new TGeoTubeSeg(rMin, rMax, dZ, sPhi, dPhi);
+}
+
+void SBTperformance::SetupCons( G4Cons &cons )
+{
+  double rMin1 = cons.GetRmin1();
+  double rMax1 = cons.GetRmax1();
+  double rMin2 = cons.GetRmin2();
+  double rMax2 = cons.GetRmax2();
+  double dz = cons.GetDz();
+  double sPhi = cons.GetSPhi();
+  double dPhi = cons.GetDPhi();
+
+  volumeUSolids = new UCons("UCons", rMin1, rMax1, rMin2, rMax2, dz, sPhi, dPhi);
+
+  sPhi = 180 * sPhi / UUtils::kPi;
+  dPhi = 180 * dPhi / UUtils::kPi;
+
+  dPhi += sPhi;
+  if (dPhi > 360) dPhi -= 360;
+  volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rMin1, rMax1, rMin2, rMax2) : new TGeoConeSeg(dz, rMin1, rMax1, rMin2, rMax2, sPhi, dPhi);
+}
+
+void SBTperformance::SetupExtrudedSolid( G4ExtrudedSolid &extru )
+{
+  int nV = extru.GetNofVertices();
+  //G4TwoVector GetVertex(G4int index) const;
+  std::vector<G4TwoVector> poly=extru.GetPolygon();
+  int nZ=extru.GetNofZSections();
+  //ZSection    GetZSection(G4int index) const;
+  //vector<ZSection> GetZSections() const;
+  double vx[100],vy[100];
+  //extru.DumpInfo();
+
+
+  for ( G4int i=0; i<nV; ++i )
+  {
+    vx[i]=poly[i].x();
+    vy[i]=poly[i].y();
+  }
+  //volumeRoot      
+  TGeoXtru *xr =new TGeoXtru( nZ);
+  xr->DefinePolygon(nV,vx,vy);
+
+  for ( int iz=0; iz<nZ; ++iz ) 
+  {
+    xr->DefineSection(iz,extru.GetZSection(iz).fZ,extru.GetZSection(iz).fOffset.x(),extru.GetZSection(iz).fOffset.y(),extru.GetZSection(iz).fScale);
+  }     
+
+  volumeROOT=xr;
+}
+
+void SBTperformance::SetupPolyhedraGeneric( G4Polyhedra &polyhedra )
+{
+  double startPhi = 180*polyhedra.GetStartPhi()/UUtils::kPi;
+  double endPhi = 180*polyhedra.GetEndPhi()/UUtils::kPi;
+  int numRZCorner = polyhedra.GetNumRZCorner();
+  int numSide = polyhedra.GetNumSide();
+
+  vector<double> rmin(numRZCorner);
+  vector<double> rmax(numRZCorner);
+  vector<double> z(numRZCorner);
+
+  TGeoPgon *gonRoot = new TGeoPgon(startPhi, endPhi, numSide, numRZCorner);
+  for (int i = 0; i < numRZCorner; i++)
+  {
+    G4PolyhedraSideRZ sideRZ = polyhedra.GetCorner(i);
+    gonRoot->DefineSection(i, sideRZ.z, 0, sideRZ.r);
+    cout << sideRZ.r << ":" << sideRZ.z << endl;
+  }
+
+  if (false)
+  {
+    // /solid/G4Polyhedra 0 360 8 4 (1.0,1.2,1.4, 1.2) (-1.0,0,1.0,2.0)
+    double rootR[] = {0,1.2,1.4, 0};
+    double rootZ[] = {-1.0,0,1.0, 2.0};
+    int len = sizeof(rootZ)/sizeof(double);
+    gonRoot = new TGeoPgon(startPhi, endPhi, numSide, len);
+    for (int i = 0; i < len; i++) gonRoot->DefineSection(i, 1000*rootZ[i], 0, 1000*rootR[i]);
+  }
+
+  volumeROOT = gonRoot;
+}
+
+void SBTperformance::SetupPolyhedra( G4Polyhedra &polyhedra )
+{
+  double startPhi = 180*polyhedra.GetStartPhi()/UUtils::kPi;
+  double endPhi = 180*polyhedra.GetEndPhi()/UUtils::kPi;
+  int numSide = polyhedra.GetNumSide();
+
+  G4PolyhedraHistorical *parameter = polyhedra.GetOriginalParameters();
+
+  G4double *rmin = parameter->Rmin;
+  G4double *rmax = parameter->Rmax;
+  G4double *z = parameter->Z_values;
+  int numZPlanes = parameter->Num_z_planes;
+
+  double convert = std::cos(0.5*polyhedra.GetEndPhi()/numSide);
+
+  bool root = true;
+  for (int i = 0; i < numZPlanes; i++)
+  {
+    rmin[i] *= convert; // /= std::sqrt(2.0);
+    rmax[i] *= convert; ///= std::sqrt(2.0);
+    if (i > 0 && z[i] < z[i-1])
+      root = false;
+  }
+
+  TGeoPgon *gonRoot = NULL;
+  if (root)
+  {
+    TGeoPgon *gonRoot = new TGeoPgon("", startPhi, endPhi, numSide, numZPlanes);
+    for (int i = 0; i < numZPlanes; i++)
+    {
+      gonRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
+    }
+  }
+
+  std::cout << "Constructing polyhedra4\n";
+
+//*  VUSolid *polyhedraUSolid = new UPolyhedra("", polyhedra.GetStartPhi(), polyhedra.GetEndPhi(), numSide, numZPlanes, &z[0], &rmin[0], &rmax[0]);
+
+//*  polyhedraUSolid = NULL;
+
+  for (int i = 0; i < numZPlanes; i++)
+  {
+    rmin[i] /= convert; // std::sqrt(2.0);
+    rmax[i] /= convert; // *= std::sqrt(2.0);
+  }
+
+  volumeROOT = gonRoot;
+  
+//*  volumeUSolids = polyhedraUSolid;
+  volumeUSolids = NULL;
+}
+
+void SBTperformance::SetupPolycone( G4Polycone &polycone )
+{
+  double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
+  double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
+
+  G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
+  int numPlanes = parameter->Num_z_planes;
+
+  G4double *rmin = parameter->Rmin;
+  G4double *rmax = parameter->Rmax;
+  G4double *z = parameter->Z_values;
+
+  TGeoPcon *conRoot;
+
+  conRoot = new TGeoPcon(startPhi, endPhi, numPlanes);
+  for (int i = 0; i < numPlanes; i++) 
+    conRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
+
+  VUSolid *conUSolid = new UPolycone("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
+
+  //    conUSolid = new UPolycone2("", polycone.GetStartPhi(), polycone.GetEndPhi(), numPlanes, &z[0], &rmin[0], &rmax[0]);
+
+  volumeROOT = conRoot;
+  volumeUSolids = conUSolid;
+//  volumeUSolids = NULL;
+}
+
+void SBTperformance::SetupPolyconeGeneric( G4Polycone &polycone )
+{
+  double startPhi = 180*polycone.GetStartPhi()/UUtils::kPi;
+  double endPhi = 180*polycone.GetEndPhi()/UUtils::kPi;
+  int numRZCorner = polycone.GetNumRZCorner();
+
+  vector<double> rmin(numRZCorner);
+  vector<double> rmax(numRZCorner);
+  vector<double> z(numRZCorner);
+
+  G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
+
+  int back = 0;
+
+  for (int i = 0; i < numRZCorner; i++)
+  {
+    G4PolyconeSideRZ sideRZ = polycone.GetCorner(i);
+    // we disabled putting back stream, because it actually never worked for general cases
+    if (false && i == numRZCorner/2 && z[i-1] == sideRZ.z) back = i;
+    if (back)
+    {
+      int j = back - 1 - (i - back);
+      double r = rmax[j];	
+      rmin[j] = std::min(r, sideRZ.r);
+      rmax[j] = std::max(r, sideRZ.r);
+    }
+    else
+    {
+      rmin[i] = 0;
+      rmax[i] = sideRZ.r;
+      z[i] = sideRZ.z;
+    }
+  }
+
+  TGeoPcon *conRoot;
+  VUSolid *conUSolid = NULL;
+
+  if (numRZCorner == 15)
+  {
+    double rootR[] = {1, 1, 2, 2, 3, 3, 1, 4, 1, 1.2};
+    double rootZ[] = {1, 2, 2, 3, 3, 4, 10, 15, 15, 18};
+    int len = sizeof(rootZ)/sizeof(double);
+    conRoot = new TGeoPcon(startPhi, endPhi, len);
+    for (int i = 0; i < len; i++) conRoot->DefineSection(i, 1000*rootZ[i], 0, 1000*rootR[i]);
+  }
+  else if (numRZCorner == 6)
+  {
+    // /solid/G4Polycone 0 360 8 (1, 1, 1, 0, 0, 1.5,1.5, 1.2) (1,2,3,4,4,3,2,1) 
+
+    double rootRmax[] = {1.2, 1.5,1.5, 0};
+    double rootRmin[] = {1, 1, 1, 0};
+    double rootZ[] = {1,2,3,4};
+    int len = sizeof(rootZ)/sizeof(double);
+    conRoot = new TGeoPcon(startPhi, endPhi, len);
+    for (int i = 0; i < len; i++) conRoot->DefineSection(i, 1000*rootZ[i], 1000*rootRmin[i], 1000*rootRmax[i]);
+  }
+  else
+  {
+    int len = numRZCorner - back;
+    conRoot = new TGeoPcon(startPhi, endPhi, len);
+    conUSolid = new UPolycone("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &rmax[0], &z[0]);
+    //      conUSolid = new UPolycone3("", polycone.GetStartPhi(), polycone.GetEndPhi(), numRZCorner, &z[0], &rmin[0], &rmax[0]);
+
+    for (int i = 0; i < len; i++) 
+    {
+      conRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
+    }
+  }
+
+  volumeROOT = conRoot;
+  volumeUSolids = conUSolid;
+
+  /*
+  for (int i = 0; i < parameter->Num_z_planes; i++) 
+  {
+  double rmin = std::min(parameter->Rmin[i], parameter->Rmax[i]);
+  double rmax = std::max(parameter->Rmin[i], parameter->Rmax[i]);
+  conRoot->DefineSection(i, parameter->fZValues[i], rmin, rmax);
+  }
+  */
+
+  double capacityRoot = conRoot->Capacity();
+  double areaRoot = conRoot->GetFacetArea();
+  //		double difCapacity = (capacityRoot - capacity) / capacity;
+  //		double phiTotal = polycone->GetTolerance
+}
+
+void SBTperformance::SetupTrap( G4Trap &trap )
+{
+  double x1 = trap.GetXHalfLength1();
+  double x2 = trap.GetXHalfLength2();
+  double x3 = trap.GetXHalfLength3();
+  double x4 = trap.GetXHalfLength4();
+  double y1 = trap.GetYHalfLength1();
+  double y2 = trap.GetYHalfLength2();
+  double z = trap.GetZHalfLength();
+  double talpha1 = atan (trap.GetTanAlpha1());
+  double talpha2 = atan (trap.GetTanAlpha2());
+  double theta = 0; // geant4 does not have method GetTheta???
+  double phi = 0; // geant4 does not have phi???
+  //		volumeUSolids = new UTrd("UTrd", x1, x2, y1, y2, z);
+
+  ////////////////////////////////////////////////////////////////////////////
+  //                                                                        //
+  // TGeoTrap                                                               //
+  //                                                                        //
+  // Trap is a general trapezoid, i.e. one for which the faces perpendicular//
+  // to z are trapezia and their centres are not the same x, y. It has 11   //
+  // parameters: the half length in z, the polar angles from the centre of  //
+  // the face at low z to that at high z, H1 the half length in y at low z, //
+  // LB1 the half length in x at low z and y low edge, LB2 the half length  //
+  // in x at low z and y high edge, TH1 the angle w.r.t. the y axis from the//
+  // centre of low y edge to the centre of the high y edge, and H2, LB2,    //
+  // LH2, TH2, the corresponding quantities at high z.                      //
+  //                                                                        //
+  ////////////////////////////////////////////////////////////////////////////
+
+  //    TGeoTrap("", dz=z, theta=theta, phi=phi, h1=y1, bl1=x1, tl1=x2, alpha1=talpha1, h2=y2, bl2=x3, tl2=x4, alpha2=talpha2);
+
+  // fTheta; // theta angle
+  // fPhi;   // phi angle
+  // fH1;    // half length in y at low z
+  // fBl1;   // half length in x at low z and y low edge
+  // fTl1;   // half length in x at low z and y high edge
+  // fAlpha1;// angle between centers of x edges an y axis at low z
+  // fH2;    // half length in y at high z
+  // fBl2;   // half length in x at high z and y low edge
+  // fTl2;   // half length in x at high z and y high edge
+  // fAlpha2;// angle between centers of x edges an y axis at low z
+
+  if (z == 60000.0) theta = 20, phi = 5;
+
+  volumeUSolids = new UTrap("Trap", z, UUtils::kPi * theta / 180, UUtils::kPi * phi / 180, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
+
+  //    theta = 180 * theta / UUtils::kPi;
+  //    phi = 180 * phi / UUtils::kPi;
+  talpha1 = 180 * talpha1 / UUtils::kPi;
+  talpha2 = 180 * talpha2 / UUtils::kPi;
+  //		volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, ,       z = 60000.000000000000, theta = 20.000000000000000, phi = 5.0000000000000000,      y1 = 40000.000000000000, x1 = 30000.000000000000, x2 = 40000.000000000000,       talpha1 = 10.000000000000000, y2 = 16000.000000000000, x3 = 10000.000000000000, x4 = 14000.000000000000, talpha2 = 10.000000000000000
+
+  volumeROOT = new TGeoTrap("Trap", z, theta, phi, y1, x1, x2, talpha1, y2, x3, x4, talpha2);
+  //		volumeSS << "UTrd("<<x1<<","<<x2<<","<<y1<<","<<y2<<","<<z<<")";
 }
 
 // NEW: *elTubeArgs[6] was causing crash, changed to *elTubeArgs[3]

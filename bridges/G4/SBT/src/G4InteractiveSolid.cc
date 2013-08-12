@@ -102,7 +102,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	// Hmmm... well, how about a reasonable default?
 	//
-	solid = new G4Box( "interactiveBox", 1.0*m, 1.0*m, 1.0*m );
+	solid = new G4Box( "G4Box", 1.0*m, 1.0*m, 1.0*m );
 
 	//
 	// Declare messenger directory
@@ -660,7 +660,7 @@ void G4InteractiveSolid::MakeBox( G4String values )
 		delete solid;
 		
 		double dx = box.GetDouble(0), dy = box.GetDouble(1), dz = box.GetDouble(2);
-		solid = new G4Box( "interactiveBox", dx, dy, dz);
+		solid = new G4Box( "G4Box", dx, dy, dz);
 	}
 	else
 		G4cerr << "G4Box not created" << G4endl;
@@ -726,9 +726,9 @@ G4VSolid *CreateTestMultiUnion(int numNodes) // Number of nodes to implement
 		solid = solids[i % solidsCount];
 
 		if (i == 0)
-			previousSolid = new G4DisplacedSolid ("MultiUnion", solid, transformation);
+			previousSolid = new G4DisplacedSolid ("G4MultiUnion", solid, transformation);
 		else
-			previousSolid = new G4UnionSolid ("MultiUnion", previousSolid, solid, *transform /*&rotation, translation*/);
+			previousSolid = new G4UnionSolid ("G4MultiUnion", previousSolid, solid, *transform /*&rotation, translation*/);
 	}
 
    /*
@@ -781,7 +781,7 @@ void G4InteractiveSolid::MakeUMultiUnion( G4String values )
 		VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(n);
 		// !!!!!!!!!!!!!!!!!!!!!
 	
-		solid = new G4USolid("interactiveUMultiUnion",tmp);
+		solid = new G4USolid("G4MultiUnion",tmp);
 	}
 	else
 		G4cerr << "UMultiUnion not created" << G4endl;
@@ -797,9 +797,9 @@ void G4InteractiveSolid::MakeUBox( G4String values )
 
 		double dx = ubox.GetDouble(0), dy = ubox.GetDouble(1), dz = ubox.GetDouble(2);
 
-		VUSolid* tmp = new UBox("interactiveBox", dx, dy, dz);
+		VUSolid* tmp = new UBox("UBox", dx, dy, dz);
 
-		solid = new G4USolid("interactiveUBox",tmp );
+		solid = new G4USolid("G4Box",tmp );
 	}
 	else
 		G4cerr << "UBox not created" << G4endl;
@@ -813,9 +813,9 @@ void G4InteractiveSolid::MakeUOrb( G4String values )
 			delete solid;
 			
 		double r = uorb.GetDouble(0);
-        VUSolid* tmp = new UOrb( "interactiveUOrb", r*1000);
+        VUSolid* tmp = new UOrb( "UOrb", r*1000);
 
-		solid = new G4USolid("interactiveUOrb", tmp);
+		solid = new G4USolid("G4Orb", tmp);
 	}
 	else
 		G4cerr << "UOrb not created" << G4endl;
@@ -831,9 +831,9 @@ void G4InteractiveSolid::MakeUTrd( G4String values )
 		double fDx1 = utrd.GetDouble(0), fDx2 = utrd.GetDouble(1);
 		double fDy1 = utrd.GetDouble(2), fDy2 = utrd.GetDouble(3), fDz = utrd.GetDouble(4);
 	
-        VUSolid* tmp=new UTrd( "interactiveUTrd", fDx1, fDx2, fDy1, fDy2, fDz);
+        VUSolid* tmp=new UTrd( "UTrd", fDx1, fDx2, fDy1, fDy2, fDz);
 		
-		solid = new G4USolid("interactiveUTrd", tmp);
+		solid = new G4USolid("G4Trd", tmp);
 	}
 	else
 		G4cerr << "UTrd not created" << G4endl;
@@ -847,7 +847,7 @@ void G4InteractiveSolid::MakeCons( G4String values )
 	if (cons.Cmd->GetArguments( values )) {
 		delete solid;
 		
-		solid = new G4Cons( "interactiveCons", cons.GetDouble(0),
+		solid = new G4Cons( "G4Cons", cons.GetDouble(0),
 						       cons.GetDouble(1), cons.GetDouble(2),
 						       cons.GetDouble(3), cons.GetDouble(4),
 						       cons.GetDouble(5), cons.GetDouble(6));
@@ -864,7 +864,7 @@ void G4InteractiveSolid::MakeOrb( G4String values )
 {
 	if (orb.Cmd->GetArguments( values )) {
 		delete solid;
-		solid = new G4Orb( "interactiveOrb", orb.GetDouble(0));
+		solid = new G4Orb( "G4Orb", orb.GetDouble(0));
 	}
 	else
 		G4cerr << "G4Orb not created" << G4endl;
@@ -882,7 +882,7 @@ void G4InteractiveSolid::MakePara( G4String values )
 		double dx = para.GetDouble(0), dy = para.GetDouble(1), dz = para.GetDouble(2);
 		double alpha = para.GetDouble(3), theta = para.GetDouble(4), phi = para.GetDouble(5);
 		
-		solid = new G4Para( "interactivePara", dx, dy, dz, alpha, theta, phi);
+		solid = new G4Para( "G4Para", dx, dy, dz, alpha, theta, phi);
 	}
 	else
 		G4cerr << "G4Para not created" << G4endl;
@@ -897,7 +897,7 @@ void G4InteractiveSolid::MakeSphere( G4String values )
 	if (sphere.Cmd->GetArguments( values )) {
 		delete solid;
 			
-		solid = new G4Sphere( "interactiveSphere", sphere.GetDouble(0),
+		solid = new G4Sphere( "G4Sphere", sphere.GetDouble(0),
 						           sphere.GetDouble(1), sphere.GetDouble(2),
 						           sphere.GetDouble(3), sphere.GetDouble(4),
 						           sphere.GetDouble(5));
@@ -915,7 +915,7 @@ void G4InteractiveSolid::MakeTorus( G4String values )
 	if (torus.Cmd->GetArguments( values )) {
 		delete solid;
 				
-		solid = new G4Torus( "interactiveTorus", torus.GetDouble(0),
+		solid = new G4Torus( "G4Torus", torus.GetDouble(0),
 						         torus.GetDouble(1), torus.GetDouble(2),
 						         torus.GetDouble(3), torus.GetDouble(4));
 	}
@@ -932,7 +932,7 @@ void G4InteractiveSolid::MakeTrap( G4String values )
 	if (trap.Cmd->GetArguments( values )) {
 		delete solid;
 			
-		solid = new G4Trap( "interactiveTrap", trap.GetDouble(0),
+		solid = new G4Trap( "G4Trap", trap.GetDouble(0),
 						       trap.GetDouble(1), trap.GetDouble(2),
 						       trap.GetDouble(3), trap.GetDouble(4),
 						       trap.GetDouble(5), trap.GetDouble(6),
@@ -959,7 +959,7 @@ void G4InteractiveSolid::MakeGenericTrap( G4String values )
       //G4cout<<pgonxArg->GetValues()[i]<<G4endl;
     }
 
-    solid = new G4GenericTrap("interactiveGenericTrap",dzArg, polygon);                                        
+    solid = new G4GenericTrap("G4GenericTrap",dzArg, polygon);                                        
   }
   else
     G4cerr << "G4GenericTrap not created" << G4endl;
@@ -970,7 +970,7 @@ void G4InteractiveSolid::MakeParaboloid( G4String values )
   if (parabol.Cmd->GetArguments( values )) {
     delete solid;
 
-    solid = new G4Paraboloid( "interactiveParaboloid", 
+    solid = new G4Paraboloid( "G4Paraboloid", 
       gentrap.GetDouble(0), gentrap.GetDouble(1), gentrap.GetDouble(2));
   }
   else
@@ -988,7 +988,7 @@ void G4InteractiveSolid::MakeTrd( G4String values )
 		double dx1 = trd.GetDouble(0), dx2 = trd.GetDouble(1), dy1 = trd.GetDouble(2),
 			   dy2 = trd.GetDouble(3), dz = trd.GetDouble(4);
 		
-		solid = new G4Trd( "interactiveTrd", dx1, dx2, dy1, dy2, dz);
+		solid = new G4Trd( "G4Trd", dx1, dx2, dy1, dy2, dz);
 	}
 	else
 		G4cerr << "G4Trd not created" << G4endl;
@@ -1003,7 +1003,7 @@ void G4InteractiveSolid::MakeTubs( G4String values )
 	if (tubs.Cmd->GetArguments( values )) {
 		delete solid;
 			
-		solid = new G4Tubs( "interactiveTubs", tubs.GetDouble(0),
+		solid = new G4Tubs( "G4Tubs", tubs.GetDouble(0),
 						       tubs.GetDouble(1), tubs.GetDouble(2),
 						       tubs.GetDouble(3), tubs.GetDouble(4));
 	}
@@ -1021,7 +1021,7 @@ void G4InteractiveSolid::MakeCutTubs(G4String values)
     G4ThreeVector lowNorm (lArg.GetValues()[0], lArg.GetValues()[1], lArg.GetValues()[2]);
     G4ThreeVector highNorm (hArg.GetValues()[0], hArg.GetValues()[1], hArg.GetValues()[2]);
 
-    solid = new G4CutTubs( "interactiveCutTubs", tubs.GetDouble(0),
+    solid = new G4CutTubs( "G4CutTubs", tubs.GetDouble(0),
       tubs.GetDouble(1), tubs.GetDouble(2),
       tubs.GetDouble(3), tubs.GetDouble(4), lowNorm, highNorm);
   }
@@ -1040,7 +1040,7 @@ void G4InteractiveSolid::MakeEllipsoid( G4String values )
 		double dx = ellipsoid.GetDouble(0), dy = ellipsoid.GetDouble(1), dz = ellipsoid.GetDouble(2),
 			   pzBottomCut = ellipsoid.GetDouble(3), pzTopCut = ellipsoid.GetDouble(4);
 		
-		solid = new G4Ellipsoid( "interactiveEllipsoid", dx, dy, dz, pzBottomCut, pzTopCut);
+		solid = new G4Ellipsoid( "G4Ellipsoid", dx, dy, dz, pzBottomCut, pzTopCut);
 	}
 	else
 		G4cerr << "G4Ellipsoid not created" << G4endl;
@@ -1060,7 +1060,7 @@ void G4InteractiveSolid::MakeEllipticalCone( G4String values )
                                   
         G4cout << "Making G4EllipticalCone: " <<  dx << " " <<  dy << " " <<  dz << " " <<  pzTopCut << G4endl;
 		
-		solid = new G4EllipticalCone( "interactiveEllipticalCone",  dx, dy, dz, pzTopCut);
+		solid = new G4EllipticalCone( "G4EllipticalCone",  dx, dy, dz, pzTopCut);
 	}
 	else
 		G4cerr << "G4EllipticalCone not created" << G4endl;
@@ -1076,7 +1076,7 @@ void G4InteractiveSolid::MakeEllipticalTube( G4String values )
 		
 		double dx = elTube.GetDouble(0), dy = elTube.GetDouble(1), dz = elTube.GetDouble(2);
 		
-		solid = new G4EllipticalTube( "interactiveEllipticalTube", dx, dy, dz);
+		solid = new G4EllipticalTube( "G4EllipticalTube", dx, dy, dz);
 	}
 	else
 		G4cerr << "G4EllipticalTube not created" << G4endl;
@@ -1118,7 +1118,7 @@ void G4InteractiveSolid::MakeExtrudedSolid( G4String values )
 				G4TwoVector(offxArg.GetValues()[i], offyArg.GetValues()[i]), scale));
 		}
                 
-        solid = new G4ExtrudedSolid("interactiveExtrudedSolid", polygon, zsections);                                        
+        solid = new G4ExtrudedSolid("G4ExtrudedSolid", polygon, zsections);                                        
 	}
 	else
 		G4cerr << "G4ExtrudedSolid not created" << G4endl;
@@ -1132,7 +1132,7 @@ void G4InteractiveSolid::MakeHype( G4String values )
 	if (hype.Cmd->GetArguments( values )) {
 		delete solid;
 				
-		solid = new G4Hype( "interactiveHype", hype.GetDouble(0), hype.GetDouble(1),
+		solid = new G4Hype( "G4Hype", hype.GetDouble(0), hype.GetDouble(1),
 						       hype.GetDouble(2), hype.GetDouble(3), hype.GetDouble(4));
         G4cout << *solid << G4endl;                                                       
 	}
@@ -1164,7 +1164,7 @@ void G4InteractiveSolid::MakePolycone( G4String values )
 		
 		delete solid;
 
-		solid = new G4Polycone( "interactivePolycone", 
+		solid = new G4Polycone( "G4Polycone", 
 					phiStart, phiTotal, (int) numRZ, rArg.GetValues(), zArg.GetValues() );
 	}
 	else
@@ -1197,7 +1197,7 @@ void G4InteractiveSolid::MakePolycone2( G4String values )
 		
 		delete solid;
 
-		solid = new G4Polycone("interactivePolycone", phiStart, phiTotal, numRZ, zArg.GetValues(), rInArg.GetValues(), rOutArg.GetValues() );
+		solid = new G4Polycone("G4Polycone2", phiStart, phiTotal, numRZ, zArg.GetValues(), rInArg.GetValues(), rOutArg.GetValues() );
 	}
 	else
 		G4cerr << "G4Polycone not created" << G4endl;
@@ -1225,7 +1225,7 @@ void G4InteractiveSolid::MakePolyhedra( G4String values )
 		}
 		
 		delete solid;
-		solid = new G4Polyhedra( "interactivePolyhedra", 
+		solid = new G4Polyhedra( "G4Polyhedra", 
 					phiStart, phiTotal, numSides, numRZ,
 					rArg.GetValues(), zArg.GetValues());
 	}
@@ -1241,7 +1241,7 @@ void G4InteractiveSolid::MakePolyhedra2( G4String values )
 {
 	if (polyhedra2.Cmd->GetArguments( values )) {
 		double phiStart = polyhedra2.GetDouble(0), phiTotal = polyhedra2.GetDouble(1),
-			numSides = polyhedra2.GetDouble(2);
+			numSides = polyhedra2.GetInteger(2);
 		int numRZ = polyhedra2.GetInteger(3);
 		G4UIcmdPargListDouble &zArg = polyhedra2.GetArgListDouble(4);
 		G4UIcmdPargListDouble &rinArg = polyhedra2.GetArgListDouble(5);
@@ -1258,7 +1258,7 @@ void G4InteractiveSolid::MakePolyhedra2( G4String values )
 		}
 		
 		delete solid;
-		solid = new G4Polyhedra( "interactivePolyhedra", 
+		solid = new G4Polyhedra( "G4Polyhedra2", 
 					phiStart, phiTotal, (int) numSides, numRZ,
 					zArg.GetValues(), rinArg.GetValues(), routArg.GetValues() );
 	}
@@ -1310,7 +1310,7 @@ void G4InteractiveSolid::MakeTessellatedSolid( G4String values )
 		delete solid;
                                    
 		G4TessellatedSolid* tessel 
-                  = new G4TessellatedSolid( "interactiveTessellatedSolid");
+                  = new G4TessellatedSolid( "G4TessellatedSolid");
                   
                 for ( G4int i=0; i<num3; ++i) {
                   G4ThreeVector p1(p1in3Arg.GetValues()[3*i+0], p1in3Arg.GetValues()[3*i+1], p1in3Arg.GetValues()[3*i+2]);
@@ -1368,7 +1368,7 @@ void G4InteractiveSolid::MakeTessellatedSolid2( G4String values )
                 }
                 
                 G4ExtrudedSolid* xtru
-                  = new G4ExtrudedSolid("interactiveTessellatedSolid", polygon, zsections); 
+                  = new G4ExtrudedSolid("G4TessellatedSolid2", polygon, zsections); 
                 solid = new G4TessellatedSolid(*xtru);
                 delete xtru;
                                                        
@@ -1405,7 +1405,7 @@ void G4InteractiveSolid::MakeTet( G4String values )
                 G4ThreeVector p3(p3Arg.GetValues()[0], p3Arg.GetValues()[1], p3Arg.GetValues()[2]);
                 G4ThreeVector p4(p4Arg.GetValues()[0], p4Arg.GetValues()[1], p4Arg.GetValues()[2]);
                                    
-		solid = new G4Tet( "interactiveTet", p1, p2, p3, p4 );
+		solid = new G4Tet( "G4Tet", p1, p2, p3, p4 );
 	}
 	else
 		G4cerr << "G4Tet not created" << G4endl;
@@ -1423,7 +1423,7 @@ void G4InteractiveSolid::MakeTwistedBox( G4String values )
 		double phi = twistedBox.GetDouble(0),
 		dx = twistedBox.GetDouble(1), dy = twistedBox.GetDouble(2), dz = twistedBox.GetDouble(3);
 		
-		solid = new G4TwistedBox( "interactiveTwistedBox", phi, dx, dy, dz);                                     G4cout << *solid << G4endl;                                          
+		solid = new G4TwistedBox( "G4TwistedBox", phi, dx, dy, dz);                                     G4cout << *solid << G4endl;                                          
 	}
 	else
 		G4cerr << "G4TwistedBox not created" << G4endl;
@@ -1441,7 +1441,7 @@ void G4InteractiveSolid::MakeTwistedTrap( G4String values )
 		double dx1 = twistedTrap.GetDouble(1), dx2 = twistedTrap.GetDouble(2);
 		double dy  = twistedTrap.GetDouble(3), dz = twistedTrap.GetDouble(4);
 		
-		solid = new G4TwistedTrap( "interactiveTwistedTrap", phi, dx1, dx2, dy, dz);
+		solid = new G4TwistedTrap( "G4TwistedTrap", phi, dx1, dx2, dy, dz);
 	}
 	else
 		G4cerr << "G4TwistedTrap not created" << G4endl;
@@ -1456,7 +1456,7 @@ void G4InteractiveSolid::MakeTwistedTrap2( G4String values )
 	if (twistedTrap2.Cmd->GetArguments( values )) {
 		delete solid;
 			
-		solid = new G4TwistedTrap( "interactiveTwistedTrap2", 
+		solid = new G4TwistedTrap( "G4TwistedTrap2", 
 					   twistedTrap2.GetDouble(0), twistedTrap2.GetDouble(1),
 					   twistedTrap2.GetDouble(2), twistedTrap2.GetDouble(3),
 					   twistedTrap2.GetDouble(4), twistedTrap2.GetDouble(5),
@@ -1480,7 +1480,7 @@ void G4InteractiveSolid::MakeTwistedTrd( G4String values )
 			dy1 = twistedTrd.GetDouble(2), dy2 = twistedTrd.GetDouble(3),
 			dz  = twistedTrd.GetDouble(4), phi = twistedTrd.GetDouble(5);
 				  
-		solid = new G4TwistedTrd( "interactiveTwistedTrd", dx1, dx2, dy1, dy2, dz, phi);
+		solid = new G4TwistedTrd( "G4TwistedTrd", dx1, dx2, dy1, dy2, dz, phi);
 	} 
 	else
 		G4cerr << "G4TwistedTrd not created" << G4endl;
@@ -1500,7 +1500,7 @@ void G4InteractiveSolid::MakeTwistedTubs( G4String values )
 		zpos = twistedTubs.GetDouble(4), nseg = twistedTubs.GetDouble(5),
 		totphi = twistedTubs.GetDouble(6);
 		
-		solid = new G4TwistedTubs( "interactiveTwistedTubs", phi, rmin, rmax, zneg, zpos, (int) nseg, totphi);
+		solid = new G4TwistedTubs( "G4TwistedTubs", phi, rmin, rmax, zneg, zpos, (int) nseg, totphi);
                                            
         G4cout << *solid << G4endl;                                    
 	}
@@ -1560,7 +1560,7 @@ void G4InteractiveSolid::MakeBooleanSolid1(G4String)
 				      180*deg ));		// total angle
 	*/
 	/*
-	G4Torus *outside = new G4Torus( "interactiveTorus",
+	G4Torus *outside = new G4Torus( "G4Torus",
 					0.2*m,
 				        0.8*m,
 				        1.4*m,
@@ -1605,7 +1605,7 @@ void G4InteractiveSolid::MakeBooleanSolid1(G4String)
 				      180*deg );
 	
 	/*
-	G4Torus *cutout = new G4Torus( "interactiveTorus",
+	G4Torus *cutout = new G4Torus( "G4Torus",
 					0.2*m,
 				        0.8*m,
 				        1.4*m,
@@ -1658,7 +1658,7 @@ void G4InteractiveSolid::MakeMultiUnion(G4String values)
 
 void G4InteractiveSolid::CreateTessellatedSolid(const vector<UVector3> &vertices, const vector<vector<int> > &nodes)
 {
-    G4TessellatedSolid &tessel = *new G4TessellatedSolid("interactiveTessellatedSolid");
+    G4TessellatedSolid &tessel = *new G4TessellatedSolid("G4TessellatedSolid");
     for (int i = 0; i < (int) nodes.size(); i++)
     {
         const vector<int> &node = nodes[i];
@@ -1756,6 +1756,7 @@ void G4InteractiveSolid::MakeTessellatedSolidFromSTLFile(G4String values)
 		G4String filename = SBTrun::GetCurrentFilename();
 		
 		solid = USTL::ReadFromSTLBinaryFile(filename, maxVoxels);
+    solid->SetName("G4TessellatedSolid");
 	}
 }
 
@@ -1771,6 +1772,8 @@ void G4InteractiveSolid::MakeTessellatedSolidFromGDMLFile(G4String values)
 		G4String filename = SBTrun::GetCurrentFilename();
 
 		solid = USTL::ReadGDML(filename);
+
+    solid->SetName("G4TessellatedSolid");
    }
 //   MakeTessellatedSolidFromPlainFile(values);
 }
