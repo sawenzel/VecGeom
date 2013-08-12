@@ -28,7 +28,7 @@
 // Declarations of classes and global methods
 class UVector2;
 std::ostream & operator << (std::ostream &, const UVector2 &);
-std::istream & operator >> (std::istream &, UVector2 &);
+//std::istream & operator >> (std::istream &, UVector2 &);
 inline double operator * (const UVector2 & a,const UVector2 & b);
 inline UVector2 operator * (const UVector2 & p, double a);
 inline UVector2 operator * (double a, const UVector2 & p);

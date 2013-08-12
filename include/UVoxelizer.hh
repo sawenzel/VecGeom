@@ -124,14 +124,21 @@ public:
 
 	inline void GetVoxel(std::vector<int> &curVoxel, const UVector3 &point) const
 	{
-		for (int i = 0; i <= 2; ++i) curVoxel[i] = BinarySearch(GetBoundary(i), point[i]);
+    for (int i=0; i<=2; ++i)
+    {
+      const std::vector<double> &boundary = GetBoundary(i);
+      int n = BinarySearch(boundary, point[i]);
+      if (n == -1) n = 0;
+      else if (n == (int) boundary.size() - 1) n--;
+      curVoxel[i] = n;
+    }
 	}
 
 	inline int GetBitsPerSlice () const { return fNPerSlice*8*sizeof(unsigned int); }
 
 	bool Contains(const UVector3 &point) const;
 
-	double DistanceToNext(const UVector3 &point, const UVector3 &direction, const std::vector<int> &curVoxel) const;
+	double DistanceToNext(const UVector3 &point, const UVector3 &direction, std::vector<int> &curVoxel) const;
 
 	double DistanceToFirst(const UVector3 &point, const UVector3 &direction) const;
 
