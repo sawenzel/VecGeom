@@ -23,7 +23,9 @@ for i=1:len
   filename = [method submethod software1 '.dat'];
   exists = exist(filename, 'file');
   if exists
-    figure;
-    sbtplotpart(method, software1, software2, first, count, color, submethod);
+    if (strcmp(software2, '') || ~strcmp(submethod, 'Valid'))
+        figure;
+        sbtplotpart(method, software1, software2, first, count, color, submethod);
+    end
   end
 end
