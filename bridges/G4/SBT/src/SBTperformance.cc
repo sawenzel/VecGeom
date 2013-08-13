@@ -66,6 +66,7 @@
 #include "G4GenericTrap.hh"
 #include "G4VFacet.hh"
 #include "G4ExtrudedSolid.hh"
+#include "G4Tet.hh"
 
 #include "VUSolid.hh"
 #include "UBox.hh"
@@ -82,6 +83,8 @@
 #include "UPolycone.hh"
 #include "UPolycone2.hh"
 #include "UPolycone3.hh"
+#include "UTet.hh"
+#include "UExtrudedSolid.hh"
 
 /*
 #include "UPolyhedra.hh"
@@ -883,6 +886,55 @@ void SBTperformance::SetupSphere( G4Sphere &sphere )
 
   volumeROOT = new TGeoSphere("USphere", innerRadius, outerRadius, sTheta, dTheta, sPhi, dPhi);
   volumeSS << "USphere("<<innerRadius<<")";
+}
+void SBTperformance::SetupExtrudedSolid( G4ExtrudedSolid &extru )
+{
+   int nV = extru.GetNofVertices();
+   std::vector<G4TwoVector> poly=extru.GetPolygon();
+   int nZ=extru.GetNofZSections();
+   std::vector<G4ExtrudedSolid::ZSection> zsections=extru.GetZSections() ;
+   double vx[100],vy[100];
+   //extru.DumpInfo();
+   for ( G4int i=0; i<nV; ++i )
+   {
+    vx[i]=poly[i].x();
+    vy[i]=poly[i].y();
+   }
+  //volumeRoot      
+  TGeoXtru *xr =new TGeoXtru( nZ);
+  xr->DefinePolygon(nV,vx,vy);
+  for ( int iz=0; iz<nZ; ++iz ) 
+   {
+    xr->DefineSection(iz,extru.GetZSection(iz).fZ,extru.GetZSection(iz).fOffset.x(),extru.GetZSection(iz).fOffset.y(),extru.GetZSection(iz).fScale);
+   }     
+  volumeROOT=xr;
+
+  //volumeUSolids
+  std::vector<UVector2> uvertices ;
+  for (int i = 0; i < nV; i++)
+  {
+   uvertices.push_back(UVector2(poly[i].x(),poly[i].y()));
+  }
+  std::vector<UExtrudedSolid::ZSection> uzsections;
+         
+  for (int iz = 0; iz < nZ; iz++)
+  {
+   uzsections.push_back(UExtrudedSolid::ZSection(extru.GetZSection(iz).fZ, UVector2(extru.GetZSection(iz).fOffset.x(), extru.GetZSection(iz).fOffset.y()),extru.GetZSection(iz).fScale ));
+  //G4cout<<"Usolids::Extru fZ="<<extru.GetZSection(iz).fZ<<G4endl;
+  }
+  volumeUSolids= new UExtrudedSolid("UExtru",uvertices,uzsections);
+
+
+ G4cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<G4endl;
+ G4cout<<"!!!!!!4 U "<<volumeUSolids->DistanceToIn(UVector3(6940414.209349061, 10496709.35426305, 11815647.54451264),UVector3(-0.441254181677442, -0.5972313821689055, -0.6697831166167072))<<G4endl; 
+ G4cout<<"!!!!!!4 G4 "<<extru.DistanceToIn(G4ThreeVector(6940414.209349061, 10496709.35426305, 11815647.54451264),G4ThreeVector(-0.441254181677442, -0.5972313821689055, -0.6697831166167072))<<G4endl; 
+ G4cout<<"!!!!!!5 U "<<volumeUSolids->DistanceToIn(UVector3(-3412212.24047316, 5936634.308864733, -7599121.407105368),UVector3(0.3661722092125498, -0.5441985406664652, 0.7548283656149192))<<G4endl; 
+ G4cout<<"!!!!!!5 G4 "<<extru.DistanceToIn(G4ThreeVector(-3412212.24047316, 5936634.308864733, -7599121.407105368),G4ThreeVector(0.3661722092125498, -0.5441985406664652, 0.7548283656149192))<<G4endl; 
+ G4cout<<"!!!!!!6 U "<<volumeUSolids->DistanceToIn(UVector3(12313261.96213163, -11418982.14231846, -11539431.91293673),UVector3(-0.5903725410766447, 0.5757594858080937, 0.5656511975101839))<<G4endl; 
+ G4cout<<"!!!!!!6 G4 "<<extru.DistanceToIn(G4ThreeVector(12313261.96213163, -11418982.14231846, -11539431.91293673),G4ThreeVector(-0.5903725410766447, 0.5757594858080937, 0.5656511975101839))<<G4endl; 
+ G4cout<<"!!!!!!7 U "<<volumeUSolids->DistanceToIn(UVector3(8253296.985649098, 11851.56010982732, -12691597.29068393),UVector3(-0.5566617548073434, -0.0007770378676815959, 0.8307388801223652))<<G4endl; 
+ G4cout<<"!!!!!!7 G4 "<<extru.DistanceToIn(G4ThreeVector(8253296.985649098, 11851.56010982732, -12691597.29068393),G4ThreeVector(-0.5566617548073434, -0.0007770378676815959, 0.8307388801223652))<<G4endl;
+
 }
 
 void SBTperformance::SetupSolids(G4VSolid *testVolume)
@@ -1754,34 +1806,6 @@ void SBTperformance::SetupCons( G4Cons &cons )
   volumeROOT = (sPhi == 0 && dPhi == 360) ? new TGeoCone(dz, rMin1, rMax1, rMin2, rMax2) : new TGeoConeSeg(dz, rMin1, rMax1, rMin2, rMax2, sPhi, dPhi);
 }
 
-void SBTperformance::SetupExtrudedSolid( G4ExtrudedSolid &extru )
-{
-  int nV = extru.GetNofVertices();
-  //G4TwoVector GetVertex(G4int index) const;
-  std::vector<G4TwoVector> poly=extru.GetPolygon();
-  int nZ=extru.GetNofZSections();
-  //ZSection    GetZSection(G4int index) const;
-  //vector<ZSection> GetZSections() const;
-  double vx[100],vy[100];
-  //extru.DumpInfo();
-
-
-  for ( G4int i=0; i<nV; ++i )
-  {
-    vx[i]=poly[i].x();
-    vy[i]=poly[i].y();
-  }
-  //volumeRoot      
-  TGeoXtru *xr =new TGeoXtru( nZ);
-  xr->DefinePolygon(nV,vx,vy);
-
-  for ( int iz=0; iz<nZ; ++iz ) 
-  {
-    xr->DefineSection(iz,extru.GetZSection(iz).fZ,extru.GetZSection(iz).fOffset.x(),extru.GetZSection(iz).fOffset.y(),extru.GetZSection(iz).fScale);
-  }     
-
-  volumeROOT=xr;
-}
 
 void SBTperformance::SetupPolyhedraGeneric( G4Polyhedra &polyhedra )
 {
