@@ -1409,8 +1409,7 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 		UVector3 direction = aDirection.Unit();
 		double shift = fVoxels.DistanceToFirst(currentPoint, direction);
 		if (shift == UUtils::kInfinity) return shift;
-		if (shift) 
-			currentPoint += direction * shift;
+		if (shift) currentPoint += direction * shift;
 		//		if (!fVoxels.Contains(currentPoint)) 
 		//			return minDistance;
 
@@ -1424,11 +1423,11 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 			const vector<int> &candidates = fVoxels.GetCandidates(curVoxel);
 			if (candidates.size())
 			{
-				distance = DistanceToInCandidates(candidates, currentPoint, direction); 
+				distance = DistanceToInCandidates(candidates, aPoint, direction); 
 				if (minDistance > distance) minDistance = distance;
 				if (distance < curShift) break;
 			}
-			curShift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
+			curShift = fVoxels.DistanceToNext(aPoint, direction, curVoxel);
 		}
 		while (minDistance > curShift);
 
@@ -1439,7 +1438,7 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 			minDistance = distanceToInNoVoxels; // you can place a breakpoint here
 		}
 #endif
-    if (minDistance != UUtils::kInfinity) minDistance += shift;
+//    if (minDistance != UUtils::kInfinity) minDistance += shift;
 	}
 	else
 	{
@@ -1882,18 +1881,27 @@ bool
 }
 
 
+double UTessellatedSolid::GetCubicVolume ()
+{
+	if(fCubicVolume != 0.) {;}
+	else   { fCubicVolume = VUSolid::GetCubicVolume(); }
+	return fCubicVolume;
+}
+
+#endif // USOLIDSONLY
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMinXExtent () const
 {
-	return fMinExtent.x;
+  return fMinExtent.x;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxXExtent () const
 {
-	return fMaxExtent.x;
+  return fMaxExtent.x;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1917,19 +1925,12 @@ double UTessellatedSolid::GetMaxZExtent () const
 {return fMaxExtent.z;}
 
 
+/*
 UVisExtent UTessellatedSolid::GetExtent () const
 {
-	return UVisExtent (fMinExtent.x, fMaxExtent.x, fMinExtent.y, fMaxExtent.y, fMinExtent.z, fMaxExtent.z);
+  return UVisExtent (fMinExtent.x, fMaxExtent.x, fMinExtent.y, fMaxExtent.y, fMinExtent.z, fMaxExtent.z);
 }
-
-double UTessellatedSolid::GetCubicVolume ()
-{
-	if(fCubicVolume != 0.) {;}
-	else   { fCubicVolume = VUSolid::GetCubicVolume(); }
-	return fCubicVolume;
-}
-
-#endif // USOLIDSONLY
+*/
 
 
 #ifdef USOLIDSONLY
