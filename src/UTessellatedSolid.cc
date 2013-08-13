@@ -1193,10 +1193,13 @@ double UTessellatedSolid::DistanceToInNoVoxels (const UVector3 &p,
 			{
 				minDist  = dist;
 			}
-			else 
-				if (-fgToleranceHalf <= dist && dist <= fgToleranceHalf)
-					return 0.0;
+                       	if (-fgToleranceHalf <= dist && dist <= fgToleranceHalf)
+			  {return 0.0;}
+                        else
+	                if (distFromSurface > - fgToleranceHalf && distFromSurface < fgToleranceHalf) minDist = dist;
+                                
 		}
+		
 	}
 	return minDist;
 }
@@ -1388,10 +1391,14 @@ double UTessellatedSolid::DistanceToInCandidates(const std::vector<int> &candida
 			{
 				minDistance  = dist;
 			}
-			else if (-fgToleranceHalf <= dist && dist <= fgToleranceHalf)
-			{
-				return 0.0;
+                        if (-fgToleranceHalf <= dist && dist <= fgToleranceHalf)
+			  {return 0.0;}
+			else
+			{ 
+                        if (distFromSurface > - fgToleranceHalf && distFromSurface < fgToleranceHalf) minDistance = dist;
+		           
 			}
+			
 		}
 	}
 	return minDistance;
@@ -1892,7 +1899,7 @@ double UTessellatedSolid::GetCubicVolume ()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-double UTessellatedSolid::GetMinXExtent () const
+/*double UTessellatedSolid::GetMinXExtent () const
 {
   return fMinExtent.x;
 }
@@ -1924,7 +1931,7 @@ double UTessellatedSolid::GetMinZExtent () const
 double UTessellatedSolid::GetMaxZExtent () const
 {return fMaxExtent.z;}
 
-
+*/
 /*
 UVisExtent UTessellatedSolid::GetExtent () const
 {
@@ -1940,6 +1947,40 @@ void UTessellatedSolid::Extent (UVector3 &aMin, UVector3 &aMax) const
 	aMin = fMinExtent;
 	aMax = fMaxExtent;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//
+double UTessellatedSolid::GetMinXExtent () const
+{
+	return fMinExtent.x;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+double UTessellatedSolid::GetMaxXExtent () const
+{
+	return fMaxExtent.x;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+double UTessellatedSolid::GetMinYExtent () const
+{return fMinExtent.y;}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+double UTessellatedSolid::GetMaxYExtent () const
+{return fMaxExtent.y;}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+double UTessellatedSolid::GetMinZExtent () const
+{return fMinExtent.z;}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+double UTessellatedSolid::GetMaxZExtent () const
+{return fMaxExtent.z;}
 #endif // USOLIDSONLY
 
 ///////////////////////////////////////////////////////////////////////////////
