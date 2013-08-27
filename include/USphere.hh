@@ -173,7 +173,7 @@ class USphere : public VUSolid
 	 
 		void Extent (UVector3 &aMin, UVector3 &aMax) const;
 
-		inline void GetParametersList(int aNumber,double *aArray) const
+		inline void GetParametersList(int /*aNumber*/,double * /*aArray*/) const
 		{
 			
 		}

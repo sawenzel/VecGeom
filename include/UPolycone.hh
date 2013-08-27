@@ -107,8 +107,8 @@ class UPolycone : public UVCSGfaceted
 	// Methods for solid
 
 	VUSolid::EnumInside Inside( const UVector3 &p ) const;
-	double DistanceToIn( const UVector3 &p, const UVector3 &v ) const;
-	double SafetyFromOutside( const UVector3 &p, bool aAccurate=false) const;
+	double DistanceToIn( const UVector3 &p, const UVector3 &v, double aPstep=UUtils::kInfinity) const;
+	// double SafetyFromOutside( const UVector3 &p, bool aAccurate=false) const;
 
 	UVector3 GetPointOnSurface() const;
 

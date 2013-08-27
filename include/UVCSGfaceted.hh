@@ -77,7 +77,7 @@ class UVCSGfaceted : public VUSolid
 		virtual bool Normal( const UVector3 &p, UVector3 &n) const;
 
     double DistanceToInNoVoxels( const UVector3& p,
-      const UVector3& v, double aPstep = UUtils::kInfinity) const;
+      const UVector3& v) const;
 
 		virtual double DistanceToIn( const UVector3& p,
 																	 const UVector3& v, double aPstep = UUtils::kInfinity) const;
@@ -99,8 +99,7 @@ class UVCSGfaceted : public VUSolid
     double DistanceToOutNoVoxels( const UVector3 &p,
       const UVector3  &v,
       UVector3       &n,
-      bool           &aConvex,
-      double aPstep = UUtils::kInfinity) const;
+      bool           &aConvex) const;
 
     virtual double DistanceToOut( const UVector3 &p,
       const UVector3  &v,
@@ -112,6 +111,8 @@ class UVCSGfaceted : public VUSolid
 //		virtual double DistanceToOut( const UVector3& p ) const;
 
     virtual double SafetyFromInside ( const UVector3 &aPoint, bool aAccurate=false) const;
+
+    virtual double SafetyFromInsideNoVoxels ( const UVector3 &aPoint, bool aAccurate=false) const;
 
 		virtual UGeometryType GetEntityType() const;
 
@@ -145,6 +146,8 @@ class UVCSGfaceted : public VUSolid
 
 protected:	// without description
 
+  double SafetyFromInsideSection(int index, const UVector3 &p, UBits &bits) const;
+
   inline int GetSection(double z) const
   {
     int section = UVoxelizer::BinarySearch(fZs, z);
@@ -160,11 +163,11 @@ protected:	// without description
 		mutable UPolyhedron* fpPolyhedron;
 
     std::vector<double> fZs; // z coordinates of given sections
-    std::vector<std::vector<int> > fCandidates;
-    int fMaxSection;
-    mutable UBox fBox;
-    int fBoxShift;
-    bool fNoVoxels;
+    std::vector<std::vector<int> > fCandidates; // precalculated candidates for each of the section
+    int fMaxSection; // maximum index number of sections of the solid (i.e. their number - 1). regular polyhedra with z = 1,2,3 section has 2 sections numbered 0 and 1, therefore the fMaxSection will be 1 (that is 2 - 1 = 1)
+    mutable UBox fBox; // bounding box of the polyhedra, used in some methods
+    double fBoxShift; // z-shift which is added during evaluation, because bounding box center does not have to be at (0,0,0)
+    bool fNoVoxels; // if set to true, no voxelized algorithms will be used
 
 		UVector3 GetPointOnSurfaceGeneric()const;
 			// Returns a random point located on the surface of the solid 

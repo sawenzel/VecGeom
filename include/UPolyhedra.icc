@@ -1,0 +1,114 @@
+//
+// ********************************************************************
+// * License and Disclaimer                                           *
+// *                                                                  *
+// * The  Geant4 software  is  copyright of the Copyright Holders  of *
+// * the Geant4 Collaboration.  It is provided  under  the terms  and *
+// * conditions of the Geant4 Software License,  included in the file *
+// * LICENSE and available at  http://cern.ch/geant4/license .  These *
+// * include a list of copyright holders.                             *
+// *                                                                  *
+// * Neither the authors of this software system, nor their employing *
+// * institutes,nor the agencies providing financial support for this *
+// * work  make  any representation or  warranty, express or implied, *
+// * regarding  this  software system or assume any liability for its *
+// * use.  Please see the license in the file  LICENSE  and URL above *
+// * for the full disclaimer and the limitation of liability.         *
+// *                                                                  *
+// * This  code  implementation is the result of  the  scientific and *
+// * technical work of the GEANT4 collaboration.                      *
+// * By using,  copying,  modifying or  distributing the software (or *
+// * any work based  on the software)  you  agree  to acknowledge its *
+// * use  in  resulting  scientific  publications,  and indicate your *
+// * acceptance of all terms of the Geant4 Software license.          *
+// ********************************************************************
+//
+//
+// $Id$
+//
+// --------------------------------------------------------------------
+// GEANT 4 inline definitions file
+//
+// UPolyhedra.icc
+//
+// Implementation of inline methods of UPolyhedra
+// --------------------------------------------------------------------
+
+inline
+int UPolyhedra::GetNumSide() const
+{
+  return fNumSides;
+}
+
+inline
+double UPolyhedra::GetStartPhi() const
+{
+  return fStartPhi;
+}
+
+inline
+double UPolyhedra::GetEndPhi() const
+{
+  return fEndPhi;
+}
+
+inline
+bool UPolyhedra::IsOpen() const
+{
+  return fPhiIsOpen;
+}
+
+inline
+bool UPolyhedra::IsGeneric() const
+{
+  return fGenericPgon;
+}
+
+inline
+int UPolyhedra::GetNumRZCorner() const
+{
+  return fNumCorner;
+}
+
+inline
+UPolyhedraSideRZ UPolyhedra::GetCorner( const int index ) const
+{
+  return fCorners[index];
+}
+
+inline
+UPolyhedraHistorical* UPolyhedra::GetOriginalParameters() 
+{
+  return &fOriginalParameters;
+}
+
+inline
+void UPolyhedra::SetOriginalParameters(UPolyhedraHistorical& pars)
+{
+  fOriginalParameters = pars;
+  fCubicVolume = 0.;
+  fpPolyhedron = 0;
+}
+
+inline
+void UPolyhedra::SetOriginalParameters()
+{
+  int fNumPlanes = (int) fNumCorner/2; 
+
+  fOriginalParameters.fZValues.resize(fNumPlanes);
+  fOriginalParameters.Rmin.resize(fNumPlanes);
+  fOriginalParameters.Rmax.resize(fNumPlanes);
+  
+  for(int j=0; j < fNumPlanes; j++)
+  {
+    fOriginalParameters.fZValues[j] = fCorners[fNumPlanes+j].z;
+    fOriginalParameters.Rmax[j] = fCorners[fNumPlanes+j].r;
+    fOriginalParameters.Rmin[j] = fCorners[fNumPlanes-1-j].r;
+  }
+
+  fOriginalParameters.fStartAngle = fStartPhi;
+  fOriginalParameters.fOpeningAngle = fEndPhi-fStartPhi;
+  fOriginalParameters.fNumZPlanes = fNumPlanes;
+  fOriginalParameters.fNumSide = fNumSides;
+
+}

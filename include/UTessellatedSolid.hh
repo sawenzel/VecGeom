@@ -230,13 +230,6 @@ public:  // with description
 
 	virtual bool CalculateExtent(const EAxis pAxis, const UVoxelLimits& pVoxelLimit, const UAffineTransform& pTransform, double& pMin, double& pMax) const;
 
-	double      GetMinXExtent () const;
-	double      GetMaxXExtent () const;
-	double      GetMinYExtent () const;
-	double      GetMaxYExtent () const;
-	double      GetMinZExtent () const;
-	double      GetMaxZExtent () const;
-
 	// when we would have visualization, these routines would be enabled
 	virtual UPolyhedron* CreatePolyhedron () const;
 	virtual UPolyhedron* GetPolyhedron    () const;
@@ -252,7 +245,15 @@ public:  // with description
 
 #endif // USOLIDSONLY
 
+  double      GetMinXExtent () const;
+  double      GetMaxXExtent () const;
+  double      GetMinYExtent () const;
+  double      GetMaxYExtent () const;
+  double      GetMinZExtent () const;
+  double      GetMaxZExtent () const;
+
 #ifdef USOLIDSONLY
+
 	virtual inline double DistanceToIn(const UVector3 &p, const UVector3 &v, double aPstep = UUtils::kInfinity) const
 	{
 		return DistanceToInCore(p, v, aPstep);

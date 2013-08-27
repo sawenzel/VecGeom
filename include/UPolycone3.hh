@@ -137,7 +137,7 @@ public:	// with description
 
 protected:	// without description
 
-  int fNumSides;
+//  int fNumSides;
 
   // Here are our parameters
 

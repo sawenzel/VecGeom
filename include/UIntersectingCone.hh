@@ -86,7 +86,7 @@ class UIntersectingCone
 											 //	type 1: r = A + B*z
 											 //	type 2: z = A + B*r
 
-		int Solution (const UVector3 &p, const UVector3 &v, double a, double b, double c, double &s1, double &s2);
+		// int Solution (const UVector3 &p, const UVector3 &v, double a, double b, double c, double &s1, double &s2);
 
 		int LineHitsCone1( const UVector3 &p, const UVector3 &v,
                            double &s1, double &s2 );
