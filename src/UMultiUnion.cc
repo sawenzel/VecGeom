@@ -154,17 +154,13 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 	double shift = fVoxels.DistanceToFirst(aPoint, direction);
 	if (shift == UUtils::kInfinity) return shift;
   UVector3 currentPoint = aPoint;
-//	double shiftBonus = VUSolid::Tolerance()/10.0;
-	if (shift) 
-		currentPoint += direction * (shift /*+ shiftBonus*/);
+	if (shift) currentPoint += direction * shift;
 	//		if (!fVoxels.Contains(currentPoint)) 
 	//			return minDistance;
-//	double totalShift = shift;
 
 	UBits exclusion(fVoxels.GetBitsPerSlice());
 	vector<int> candidates, curVoxel(3);
   fVoxels.GetVoxel(curVoxel, currentPoint);
-  double curShift = 0;
 
 	do
 	{
@@ -172,16 +168,14 @@ double UMultiUnion::DistanceToIn(const UVector3 &aPoint,
 		{
 			if (fVoxels.GetCandidatesVoxelArray(curVoxel, candidates, &exclusion))
 			{ 
-				double distance = DistanceToInCandidates(currentPoint, direction, aPstep, candidates, exclusion); 
+				double distance = DistanceToInCandidates(aPoint, direction, aPstep, candidates, exclusion); 
 				if (minDistance > distance) minDistance = distance;
-				if (distance < curShift) break; 
+				if (distance < shift) break; 
 			}
 		}
-		curShift = fVoxels.DistanceToNext(currentPoint, direction, curVoxel);
+		shift = fVoxels.DistanceToNext(aPoint, direction, curVoxel);
 	}
-	while (minDistance > curShift);
-
-  if (minDistance != UUtils::kInfinity) minDistance += shift;
+	while (minDistance > shift);
 
 #ifdef DEBUG
 	if (fabs(minDistance - distanceToInNoVoxels) > VUSolid::Tolerance())

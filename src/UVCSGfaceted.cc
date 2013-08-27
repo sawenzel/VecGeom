@@ -63,8 +63,8 @@ using namespace std;
 UVCSGfaceted::UVCSGfaceted( const std::string& name )
 	: VUSolid(name),
 		numFace(0), faces(0), fCubicVolume(0.), fSurfaceArea(0.), fpPolyhedron(0),
-		fStatistics(1000000), fCubVolEpsilon(0.001), fAreaAccuracy(-1.), fNoVoxels(true)
-{
+		fNoVoxels(true), fStatistics(1000000), fCubVolEpsilon(0.001), fAreaAccuracy(-1.)
+{ 
 }
 
 //
@@ -323,7 +323,7 @@ bool UVCSGfaceted::Normal( const UVector3 &p, UVector3 &n) const
 //
 
 inline double UVCSGfaceted::DistanceToInNoVoxels( const UVector3& p,
-  const UVector3& v, double aPstep) const
+  const UVector3& v) const
 {
 	double distance = UUtils::kInfinity;
 	double distFromSurface = UUtils::kInfinity;
@@ -368,7 +368,7 @@ inline double UVCSGfaceted::DistanceToInNoVoxels( const UVector3& p,
 // DistanceToOut(p,v)
 //
 
-inline double UVCSGfaceted::DistanceToOutNoVoxels( const UVector3 &p, const UVector3  &v, UVector3 &n, bool &aConvex, double aPstep) const
+inline double UVCSGfaceted::DistanceToOutNoVoxels( const UVector3 &p, const UVector3  &v, UVector3 &n, bool &aConvex) const
 {
 	bool allBehind = true;
 	double distance = UUtils::kInfinity;
@@ -689,10 +689,11 @@ double UVCSGfaceted::SafetyFromOutside( const UVector3 &p, bool accurate) const
   return DistanceTo( p, false );
 }
 
-double UVCSGfaceted::SafetyFromInside( const UVector3 &p, bool ) const
+double UVCSGfaceted::SafetyFromInsideNoVoxels( const UVector3 &p, bool ) const
 {
   return DistanceTo( p, true );
 }
+
 
 void  UVCSGfaceted::InitVoxels(UReduciblePolygon &rz, double radius)
 {
@@ -749,10 +750,9 @@ void UVCSGfaceted::FindCandidates(double z, vector <int> &candidates, bool sides
 }
 
 
-double UVCSGfaceted::DistanceToIn( const UVector3& p,
-  const UVector3& v, double aPstep) const
+double UVCSGfaceted::DistanceToIn( const UVector3& p, const UVector3& v, double /*aPstep*/) const
 {
-  if (fNoVoxels) return DistanceToInNoVoxels(p, v, aPstep);
+  if (fNoVoxels) return DistanceToInNoVoxels(p, v);
 
   UVector3 pb(p.x, p.y, p.z - fBoxShift);
 
@@ -832,12 +832,11 @@ double UVCSGfaceted::DistanceToIn( const UVector3& p,
 
 
 
-double UVCSGfaceted::DistanceToOut( const UVector3 &p, const UVector3  &v, UVector3 &n, bool &aConvex, double aPstep) const
+double UVCSGfaceted::DistanceToOut( const UVector3 &p, const UVector3  &v, UVector3 &n, bool &aConvex, double /*aPstep*/) const
 {
-  if (fNoVoxels) return DistanceToOutNoVoxels(p, v, n, aConvex, aPstep);
+  if (fNoVoxels) return DistanceToOutNoVoxels(p, v, n, aConvex);
 
   int index =  GetSection(p.z);
-  double totalDistance = 0;
   int increment = (v.z > 0) ? 1 : -1;
 
   bool allBehind = true;
@@ -846,7 +845,7 @@ double UVCSGfaceted::DistanceToOut( const UVector3 &p, const UVector3  &v, UVect
   UVector3 normal, faceNormal;
   double shift;
 
-  UVCSGface *bestFace;
+  UVCSGface *bestFace = NULL;
   UBits bits(numFace);
 
   do
@@ -917,14 +916,13 @@ double UVCSGfaceted::DistanceToOut( const UVector3 &p, const UVector3  &v, UVect
 
 VUSolid::EnumInside UVCSGfaceted::Inside( const UVector3& p) const
 {
-  if (fMaxSection == 0) return InsideNoVoxels(p);
+  if (fNoVoxels) return InsideNoVoxels(p);
 
 //  if (fEnclosingCylinder->MustBeOutside(p)) return eOutside;
 
   int index =  GetSection(p.z);
   double shift;
 
-  UVCSGface **face = faces;
   UBits bits(numFace);
   double best = kInfinity;
   VUSolid::EnumInside answer=eOutside;
@@ -939,7 +937,6 @@ VUSolid::EnumInside UVCSGfaceted::Inside( const UVector3& p) const
       int candidate = candidates[i];
       if (!bits[candidate])
       {
-        bits.SetBitNumber(candidate);
         UVCSGface &face = *faces[candidate];
 
         double distance;
@@ -950,6 +947,7 @@ VUSolid::EnumInside UVCSGfaceted::Inside( const UVector3& p) const
           best = distance;
           answer = result;
         }
+        bits.SetBitNumber(candidate);
       }
     }
 
@@ -968,4 +966,61 @@ VUSolid::EnumInside UVCSGfaceted::Inside( const UVector3& p) const
   while (shift > best);
 
   return answer;
+}
+
+double UVCSGfaceted::SafetyFromInsideSection(int index, const UVector3 &p, UBits &bits) const
+{
+  double best = UUtils::kInfinity;
+
+  const vector<int> &candidates = fCandidates[index];
+  int size = candidates.size();
+  for (int i = 0; i < size; ++i)
+  {
+    int candidate = candidates[i];
+    if (!bits[candidate])
+    {
+      bits.SetBitNumber(candidate);
+      UVCSGface &face = *faces[candidate];
+
+      double distance = face.Safety( p, true);
+      if (distance < best)	best = distance;
+    }
+  }
+  return best;
+}
+
+double UVCSGfaceted::SafetyFromInside ( const UVector3 &p, bool) const
+{
+  if (fNoVoxels) return SafetyFromInsideNoVoxels(p);
+
+  int index = UVoxelizer::BinarySearch(fZs, p.z);
+  if (index < 0 || index > fMaxSection) return 0;
+
+  UBits bits(numFace);
+  double minSafety = SafetyFromInsideSection(index, p, bits);
+
+  if (minSafety > UUtils::kInfinity) return 0;
+  if (minSafety < 1e-6) return 0;
+
+  double zbase = fZs[index+1];
+  for (int i = index+1; i <= fMaxSection; ++i)
+  {
+    double dz = fZs[i] - zbase;
+    if (dz >= minSafety) break;
+    double safety = SafetyFromInsideSection(i, p, bits);
+    if (safety < minSafety) minSafety = safety;
+  }
+
+  if (index > 0)
+  {
+    zbase = fZs[index-1];
+    for (int i = index-1; i >= 0; --i)
+    {
+      double dz = zbase - fZs[i];
+      if (dz >= minSafety) break;
+      double safety = SafetyFromInsideSection(i, p, bits);
+      if (safety < minSafety) minSafety = safety;
+    }
+  }
+  return (minSafety < 0.5*fgTolerance) ? 0 : minSafety;
 }

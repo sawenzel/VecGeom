@@ -857,7 +857,7 @@ UVector3 USphere::ApproxSurfaceNormal(const UVector3& p) const
 // not required for most cases.
 // Avoid atan2 for non theta cut USphere.
 
-double USphere::DistanceToIn(const UVector3& p, const UVector3& v, double aPstep) const
+double USphere::DistanceToIn(const UVector3& p, const UVector3& v, double /*aPstep*/) const
 {
 	double snxt = UUtils::Infinity();			// snxt = default return value
 	double rho2, rad2, pDotV2d, pDotV3d, pTheta;
@@ -1790,7 +1790,7 @@ double USphere::DistanceToIn(const UVector3& p, const UVector3& v, double aPstep
 // - Only to theta planes if outside theta extent
 // - Return 0 if point inside
 
-double USphere::SafetyFromOutside(const UVector3& p, bool aAccurate) const
+double USphere::SafetyFromOutside(const UVector3& p, bool /*aAccurate*/) const
 {
 	double safe=0.0,safeRMin,safeRMax,safePhi,safeTheta;
 	double rho2,rds,rho;
@@ -2742,7 +2742,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n,
 //
 // Calculate distance (<=actual) to closest surface of shape from inside
 
-double USphere::SafetyFromInside (const UVector3& p, bool aAccurate) const
+double USphere::SafetyFromInside (const UVector3& p, bool /*aAccurate*/) const
 {
 	double safe=0.0,safeRMin,safeRMax,safePhi,safeTheta;
 	double rho2,rds,rho;

@@ -458,7 +458,7 @@ double UPolyPhiFace::Safety( const UVector3 &p, bool outgoing )
 	double distPhi = -normSign*normal.Dot(ps);
 	
 	if (distPhi < -0.5*VUSolid::Tolerance()) 
-		return UUtils::Infinity();
+		return UUtils::kInfinity;
 	else if (distPhi < 0)
 		distPhi = 0.0;
 	
@@ -611,7 +611,7 @@ UVector3 UPolyPhiFace::Normal( const UVector3 &p,
 //
 double UPolyPhiFace::Extent( const UVector3 axis )
 {
-	double max = -UUtils::Infinity();
+	double max = -UUtils::kInfinity;
 	
 	UPolyPhiFaceVertex *corner = corners;
 	do
@@ -853,7 +853,7 @@ bool UPolyPhiFace::InsideEdges( double r, double z,
 																	 UPolyPhiFaceVertex **base3Dnorm, 
 																	 UVector3 **head3Dnorm )
 {
-	double bestDistance2 = UUtils::Infinity();
+	double bestDistance2 = UUtils::kInfinity;
 	bool	 answer = 0;
 	
 	UPolyPhiFaceEdge *edge = edges;
@@ -1080,8 +1080,8 @@ bool UPolyPhiFace::Diagonalie( UPolyPhiFaceVertex *a,
 
 		// Skip edges incident to a of b
 		//
-		if( (corner!=a)&&(corner_next!=a)
-			&&(corner!=b)&&(corner_next!=b) )
+		if( (corner!=a) && (corner_next!=a)
+			&& (corner!=b) && (corner_next!=b) )
 		{
 			 UVector2 rz1,rz2,rz3,rz4;
 			 rz1 = UVector2(a->r,a->z);
@@ -1110,17 +1110,17 @@ bool UPolyPhiFace::InCone( UPolyPhiFaceVertex *a, UPolyPhiFaceVertex *b )
 	a0=a->prev;
 
 	UVector2 arz,arz0,arz1,brz;
-	arz=UVector2(a->r,a->z);arz0=UVector2(a0->r,a0->z);
-	arz1=UVector2(a1->r,a1->z);brz=UVector2(b->r,b->z);
+	arz = UVector2(a->r,a->z);arz0=UVector2(a0->r,a0->z);
+	arz1 = UVector2(a1->r,a1->z);brz=UVector2(b->r,b->z);
 		
 	
 	if(LeftOn(arz,arz1,arz0))	// If a is convex vertex
 	{
-		return Left(arz,brz,arz0)&&Left(brz,arz,arz1);
+		return Left(arz,brz,arz0) && Left(brz,arz,arz1);
 	}
 	else											 // Else a is reflex
 	{
-		return !( LeftOn(arz,brz,arz1)&&LeftOn(brz,arz,arz0));
+		return !( LeftOn(arz,brz,arz1) && LeftOn(brz,arz,arz0));
 	}
 }
 
@@ -1154,7 +1154,8 @@ void UPolyPhiFace::EarInit()
 		 corner->ear=Diagonal(c_prev,c_next);	 
 		 corner=corner->next;
 
-	} while( corner!=triangles );
+	}
+  while( corner!=triangles );
 }
 
 //

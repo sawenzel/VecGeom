@@ -1347,7 +1347,7 @@ double UTrap::DistanceToOut( const UVector3 &p, const UVector3  &v, UVector3    
 // Calculate exact shortest distance to any boundary from inside
 // - Returns 0 is ThreeVector outside
 
-double UTrap::SafetyFromOutside(const UVector3& p, bool precise) const
+double UTrap::SafetyFromOutside(const UVector3& p, bool /*precise*/) const
 {
 	double safe=0.0,Dist;
 	int i;
@@ -1556,13 +1556,12 @@ void UTrap::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
   aMin.z = -fDz;
   aMax.z = fDz;
-  double min12, max12, min34, max34;
+  double min12 = 0, max12, min34 = 0, max34;
   if (fDx1 > fDx2)
-    min12 =  fDx2, max12 = fDx1;
+    min12 = fDx2, max12 = fDx1;
   if (fDx3 > fDx4)
-    min34 =  fDx3, max34 = fDx4;
+    min34 = fDx3, max34 = fDx4;
   aMax.x = (min12 < min34) ? min12 : min34;
   aMin.x = -aMax.x;
   aMax.y = (fDy1 > fDy2) ? fDy1 : fDy2;
 }
- 

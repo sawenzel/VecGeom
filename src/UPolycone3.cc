@@ -64,7 +64,7 @@ UPolycone3::UPolycone3( const std::string& name,
   const double zPlane[],
   const double rInner[],
   const double rOuter[]	)
-  : VUSolid( name ), fNumSides(0)
+  : VUSolid( name )//, fNumSides(0)
 {
   Init(phiStart, phiTotal, numZPlanes, zPlane, rInner, rOuter);
 }
@@ -91,7 +91,7 @@ void UPolycone3::Init(double phiStart,
 	fOriginalParameters->Rmin.resize(numZPlanes);
 	fOriginalParameters->Rmax.resize(numZPlanes);
 
-  double prevZ, prevRmax, prevRmin;
+  double prevZ = 0, prevRmax = 0, prevRmin = 0;
 
 //  int curSolid = 0;
 
@@ -127,11 +127,10 @@ void UPolycone3::Init(double phiStart,
       {
         VUSolid *solid;
         double dz = (z - prevZ)/2;
-        UTransform3D *trans = new UTransform3D(0, 0, prevZ + dz);
 
         bool tubular = (rMin == prevRmin && prevRmax == rMax);
 
-        if (fNumSides == 0)
+//        if (fNumSides == 0)
         {
           if (tubular)
           {
@@ -142,10 +141,10 @@ void UPolycone3::Init(double phiStart,
             solid = new UCons("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
           }
         }
-        else
-        {
+//        else
+//        {
 //          solid = new UHedra("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal, fNumSides);
-        }
+//        }
 
         fZs.push_back(z);
 
@@ -183,18 +182,20 @@ void UPolycone3::Init(double phiStart,
 	UReduciblePolygon *rz = new UReduciblePolygon( rInner, rOuter, zPlane, numZPlanes);
 
   double mxy = rz->Amax(); 
-  double alfa = UUtils::kPi / fNumSides;
+//  double alfa = UUtils::kPi / fNumSides;
 
   double r= rz->Amax();
 
+  /*
   if (fNumSides != 0) 
   {
     // mxy *= std::sqrt(2.0); // this is old and wrong, works only for n = 4
-    double k = std::tan(alfa) * mxy;
+    // double k = std::tan(alfa) * mxy;
     double l = mxy / std::cos(alfa);
     mxy = l;
     r = l;
   }
+  */
 
   mxy += fgTolerance;
 
@@ -306,7 +307,7 @@ VUSolid::EnumInside UPolycone3::InsideSection(int index, const UVector3 &p) cons
   const UPolyconeSection &section = fSections[index];
   UVector3 ps(p.x, p.y, p.z - section.shift);
 
-  if (fNumSides) return section.solid->Inside(ps);
+//  if (fNumSides) return section.solid->Inside(ps);
 
   double rMinPlus, rMaxPlus; //, rMinMinus, rMaxMinus;
   double dz;
@@ -540,13 +541,13 @@ double UPolycone3::DistanceToOut( const UVector3  &p, const UVector3 &v,
   return totalDistance;
 }
 
-double UPolycone3::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) const
+double UPolycone3::SafetyFromInside ( const UVector3 &p, bool) const
 {
   int index = UVoxelizer::BinarySearch(fZs, p.z);
   if (index < 0 || index > fMaxSection) return 0;
 
   double minSafety = SafetyFromInsideSection(index, p);
-  if (minSafety > UUtils::kInfinity) return 0;
+  if (minSafety == UUtils::kInfinity) return 0;
   if (minSafety < 1e-6) return 0;
 
   double zbase = fZs[index+1];
@@ -637,11 +638,10 @@ bool UPolycone3::Normal( const UVector3& p, UVector3 &n) const
     }
     else
     {
-      int i = 0;
-      // "TODO: here should be implementation for case point was not on surface. We would have to look also at other sections. It is not clear if it is possible to solve this problem at all, since we would need precise safety... If it is outside, than it might be OK, but if it is inside..., than I beleive we do not have precise safety";
+      //TODO: here should be implementation for case point was not on surface. We would have to look also at other sections. It is not clear if it is possible to solve this problem at all, since we would need precise safety... If it is outside, than it might be OK, but if it is inside..., than I beleive we do not have precise safety
 
-      // "... or we should at least warn that this case is not supported. actually",
-      //  "i do not see any algorithm which would obtain right normal of point closest to surface.";
+      // ... or we should at least warn that this case is not supported. actually,
+      //  i do not see any algorithm which would obtain right normal of point closest to surface.;
 
       return false;
     }

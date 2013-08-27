@@ -220,10 +220,12 @@ int UIntersectingCone::LineHitsCone( const UVector3 &p, const UVector3 &v, doubl
 //						 Delta = epsilon/2/B
 // 
 
+/*
 int UIntersectingCone::Solution (const UVector3 &p, const UVector3 &v, double a, double b, double c, double &s1, double &s2)
 {
 	return 0 || 1 || 2;
 }
+*/
 
 int UIntersectingCone::LineHitsCone1( const UVector3 &p, const UVector3 &v, double &s1, double &s2)
 {

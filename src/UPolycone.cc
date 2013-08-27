@@ -480,7 +480,7 @@ VUSolid::EnumInside UPolycone::Inside( const UVector3 &p ) const
 // to speed things up by first checking with UEnclosingCylinder.
 //
 double UPolycone::DistanceToIn( const UVector3 &p,
-																	 const UVector3 &v ) const
+																	 const UVector3 &v, double aPstep) const
 {
 	//
 	// Quick test
@@ -491,17 +491,10 @@ double UPolycone::DistanceToIn( const UVector3 &p,
 	//
 	// Long answer
 	//
-	return UVCSGfaceted::DistanceToIn( p, v );
+	return UVCSGfaceted::DistanceToIn( p, v, aPstep);
 }
 
 
-//
-// DistanceToIn
-//
-double UPolycone::SafetyFromOutside( const UVector3 &p, bool aAccurate) const
-{
-	return UVCSGfaceted::SafetyFromOutside(p);
-}
 
 
 /*

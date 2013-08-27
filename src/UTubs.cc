@@ -159,8 +159,9 @@ UTubs::UTubs(const UTubs& rhs)
 	fSinCPhi(rhs.fSinCPhi), fCosCPhi(rhs.fSinCPhi),
 	fCosHDPhiOT(rhs.fCosHDPhiOT), fCosHDPhiIT(rhs.fCosHDPhiOT),
 	fSinSPhi(rhs.fSinSPhi), fCosSPhi(rhs.fCosSPhi),
+	fSinEPhi(rhs.fSinEPhi), fCosEPhi(rhs.fCosEPhi), 
   fSinSPhiDPhi(rhs.fSinSPhiDPhi), fCosSPhiDPhi(rhs.fCosSPhiDPhi),
-	fSinEPhi(rhs.fSinEPhi), fCosEPhi(rhs.fCosEPhi), fPhiFullTube(rhs.fPhiFullTube)
+  fPhiFullTube(rhs.fPhiFullTube)
 {
 }
 

@@ -1422,7 +1422,6 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 
 //		UBits exclusion; // (1/*fVoxels.GetBitsPerSlice()*/);
 		vector<int> curVoxel(3);
-    double curShift = 0;
 
 		fVoxels.GetVoxel(curVoxel, currentPoint);
 		do
@@ -1432,11 +1431,11 @@ double UTessellatedSolid::DistanceToInCore(const UVector3 &aPoint, const UVector
 			{
 				distance = DistanceToInCandidates(candidates, aPoint, direction); 
 				if (minDistance > distance) minDistance = distance;
-				if (distance < curShift) break;
+				if (distance < shift) break;
 			}
-			curShift = fVoxels.DistanceToNext(aPoint, direction, curVoxel);
+			shift = fVoxels.DistanceToNext(aPoint, direction, curVoxel);
 		}
-		while (minDistance > curShift);
+		while (minDistance > shift);
 
 #ifdef DEBUG
 		if (fabs(minDistance - distanceToInNoVoxels) > VUSolid::Tolerance())
