@@ -6,14 +6,17 @@
 # Increment the numbers below to **really** consume CPU time
 #
 
-/performance/maxPoints 10000
-/performance/repeat 100
+/performance/maxPoints 1000
+/performance/repeat 1
+
 
 #/solid/G4Polyhedra 0 360 6 4 (1.0,1.2,1.4, 1.2) (-1.0,0,1.0,2.0)
 /solid/G4Polyhedra 0 360 6 4 (0,1.2,1.4, 0) (-1.0,0,1.0,2.0)
 
 /performance/errorFileName log/polyhedra-6-4-p10k/polyhedrap.a1.log
 /control/execute usolids/performance.sbt
+
+exit
 
 /solid/G4Polyhedra 0 360 6 6 (0,1.2,1.4, 1.2,1.4, 0) (-1.0,0,1.0,2.0, 3, 4)
 

@@ -39,29 +39,33 @@
 
 #/solid/G4TessellatedSolidFromSTLFile			1000000
 
-/solid/file ts/orb-497k.gdml # OK
 /solid/file ts/foil-2.5k.gdml # OK
 
 /solid/file ts/foil-72.9k.gdml # OK
 /solid/file ts/foil-37.2k.gdml # OK
 /solid/file ts/foil-112k.gdml # OK
-/solid/file ts/foil-164k.gdml # OK
-/solid/file ts/key-1.1k.gdml # OK
 
 /solid/file ts/hollow.gdml
 
+/solid/file ts/foil-164k.gdml # OK
+
+/solid/file ts/orb-497k.gdml # OK
+/solid/file ts/key-1.1k.gdml # OK
+
 /solid/G4TessellatedSolidFromGDMLFile -1
 
-
-/performance/errorFileName log/hollow2/sbt.log
+/performance/errorFileName log/orb-497k/sbt.log
+/performance/errorFileName log/key-1.1k/sbt.log
 
 /control/execute usolids/performance.sbt
 
 exit
 
+/performance/errorFileName log/orb-497k/sbt.log
 
-/performance/maxPoints 1000
-/performance/repeat 1000
+
+/performance/maxPoints 100000
+/performance/repeat 10
 
 #/solid/G4MultiUnion 3
 #/solid/G4TessellatedSolidTransform 1

@@ -12,8 +12,6 @@
 /performance/method DistanceToOut
 /performance/run 
 
-exit
-
 /performance/maxInsidePercent 0
 /performance/maxOutsidePercent 100
 /performance/method DistanceToIn
