@@ -13,16 +13,23 @@ datasets = {'polycone-3s-360-perf','polycone-10s-360-perf','polycone-100s-360-pe
 
 datasets = {'polyhedra2-3-2-p10k', 'polyhedra2-5-4-p10k', 'polyhedra2-7-6-p10k', 'polyhedra2-9-8-p10k', 'polyhedra2-11-10-p10k', 'polyhedra2-21-20-p10k', 'polyhedra2-51-50-p10k'};
 
+pos = 3;
+
 n = length(datasets);
 
-sbtperfall('Inside', datasets(:,1:n));
+sbtperfall('Inside', datasets(:,1:n), pos);
 % sbtperfall('Normal', datasets(:,1:n-3));
 
 % sbtperfall('SafetyFromInside', datasets(:,1:n-2));
 % sbtperfall('SafetyFromOutside', datasets(:,1:n-2));
 
-sbtperfall('DistanceToIn', datasets(:,1:n));
-sbtperfall('DistanceToOut', datasets(:,1:n));
+sbtperfall('DistanceToIn', datasets(:,1:n), pos);
+sbtperfall('DistanceToOut', datasets(:,1:n), pos);
+
+sbtperfall('Normal', datasets(:,1:n));
+sbtperfall('SafetyFromInside', datasets(:,1:n), pos);
+sbtperfall('SafetyFromOutside', datasets(:,1:n), pos);
+
 
 % cd polyconep10k-1; sbtperf; cd ..
 % cd polyconep10k-2; sbtperf; cd ..

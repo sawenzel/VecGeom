@@ -1,5 +1,7 @@
-function res = sbtperfall(method, folders)
-
+function res = sbtperfall(method, folders, pos)
+if nargin < 3
+    pos = 3;
+end
 folder = folders{1};
 filenameLabels = [folder '/PerformanceLabels.txt'];
 disp(['Method ' method ' ...']);
@@ -27,7 +29,7 @@ for i = 1:foldersCount
     perf(i,:) = perftab(index,:);
     [~,tick] = strtok(folder, '-');
     a = strsplit(folder, '-');
-    count = a{3};
+    count = a{pos};
 %     tick = strrep(folder, '-', ' ');
     ticks{i} = tick(2:length(tick));
     ticks{i} = count;
