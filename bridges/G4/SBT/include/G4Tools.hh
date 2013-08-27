@@ -74,7 +74,7 @@ public:
 	{
 		UPolyhedron &p = *solid.GetPolyhedron();
     std::cout << "Checking the polyhedra result\n";
-		if (&p == NULL) return NULL;
+		if (&p == NULL) return 0;
 
 		int noVertices = p.GetNoVertices();
 		vertices.resize(noVertices);
