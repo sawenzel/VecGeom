@@ -656,14 +656,15 @@ bool UPolycone3::Normal( const UVector3& p, UVector3 &n) const
 
   if (nextPos == eInside) 
   {
-    UVector3 n;
+    //UVector3 n;
     NormalSection(index, p, n);
     return false;
   }
 
   if( pos == eSurface && nextPos == eSurface)
   {
-    UVector3 n, n2;
+    //UVector3 n, n2;
+    UVector3 n2;
     NormalSection(index, p, n);
     NormalSection(nextSection, p, n2);
     if ( (n + n2).Mag2() < 1000*frTolerance)
