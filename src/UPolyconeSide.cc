@@ -448,7 +448,7 @@ double UPolyconeSide::Safety( const UVector3 &p, bool outgoing )
 // Inside
 //
 VUSolid::EnumInside UPolyconeSide::Inside( const UVector3 &p,
-																			double tolerance, 
+																			double atolerance, 
 																			double *bestDistance )
 {
 	//
@@ -473,8 +473,8 @@ VUSolid::EnumInside UPolyconeSide::Inside( const UVector3 &p,
 	//
 	// Okay then, inside or out?
 	//
-	if ( (std::fabs(edgeRZnorm[i]) < tolerance)
-		&& (distOut2[i] < tolerance*tolerance) )
+	if ( (std::fabs(edgeRZnorm[i]) < atolerance)
+		&& (distOut2[i] < atolerance*atolerance) )
 		return VUSolid::eSurface;
 	else if (edgeRZnorm[i] < 0)
   		return VUSolid::eInside;
