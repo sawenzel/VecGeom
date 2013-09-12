@@ -670,7 +670,7 @@ double UCons::DistanceToIn( const UVector3& p,
 	double nt1,nt2,nt3;
 	double Comp;
 
-	UVector3 Normal;
+	UVector3 norm;
 
 	// Cone Precalcs
 	rMinAv	= (fRmin1 + fRmin2)*0.5;
@@ -871,18 +871,18 @@ double UCons::DistanceToIn( const UVector3& p,
 				xi		 = p.x;
 				yi		 = p.y	;
 				risec	= std::sqrt(xi*xi + yi*yi)*secRMax;
-				Normal = UVector3(xi/risec,yi/risec,-tanRMax/secRMax);
+				norm = UVector3(xi/risec,yi/risec,-tanRMax/secRMax);
 				if ( !fPhiFullCone )
 				{
 					cosPsi = (p.x*cosCPhi + p.y*sinCPhi)/std::sqrt(t3);
 					if ( cosPsi >= cosHDPhiIT )
 					{
-						if ( Normal.Dot(v) <= 0 )	{ return 0.0; }
+						if ( norm.Dot(v) <= 0 )	{ return 0.0; }
 					}
 				}
 				else
 				{						 
-					if ( Normal.Dot(v) <= 0 )	{ return 0.0; }
+					if ( norm.Dot(v) <= 0 )	{ return 0.0; }
 				}
 			}
 		}
@@ -977,8 +977,8 @@ double UCons::DistanceToIn( const UVector3& p,
 										// Calculate a normal vector in order to check Direction
 
 										risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-										Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
-										if ( Normal.Dot(v) <= 0 )	{ snxt = sd; }
+										norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+										if ( norm.Dot(v) <= 0 )	{ snxt = sd; }
 									} 
 								}
 							}
@@ -992,8 +992,8 @@ double UCons::DistanceToIn( const UVector3& p,
 									xi		 = p.x + sd*v.x;
 									yi		 = p.y + sd*v.y;
 									risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-									Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
-									if ( Normal.Dot(v) <= 0 )	{ return sd; }
+									norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+									if ( norm.Dot(v) <= 0 )	{ return sd; }
 								}
 							}
 						}
@@ -1041,8 +1041,8 @@ double UCons::DistanceToIn( const UVector3& p,
 										// Calculate a normal vector in order to check Direction
 
 										risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-										Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
-										if ( Normal.Dot(v) <= 0 )	{ snxt = sd; } 
+										norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+										if ( norm.Dot(v) <= 0 )	{ snxt = sd; } 
 									}
 								}
 							}
@@ -1056,8 +1056,8 @@ double UCons::DistanceToIn( const UVector3& p,
 									xi		 = p.x + sd*v.x;
 									yi		 = p.y + sd*v.y;
 									risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-									Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
-									if ( Normal.Dot(v) <= 0 )	{ return sd; }
+									norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+									if ( norm.Dot(v) <= 0 )	{ return sd; }
 								} 
 							}
 						}
@@ -1090,8 +1090,8 @@ double UCons::DistanceToIn( const UVector3& p,
 										// Calculate a normal vector in order to check Direction
 
 										risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-										Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
-										if ( Normal.Dot(v) <= 0 )	{ snxt = sd; } 
+										norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+										if ( norm.Dot(v) <= 0 )	{ snxt = sd; } 
 									}
 								}
 							}
@@ -1105,8 +1105,8 @@ double UCons::DistanceToIn( const UVector3& p,
 									xi		 = p.x + sd*v.x;
 									yi		 = p.y + sd*v.y;
 									risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-									Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
-									if ( Normal.Dot(v) <= 0 )	{ return sd; }
+									norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+									if ( norm.Dot(v) <= 0 )	{ return sd; }
 								} 
 							}
 						}
@@ -1598,11 +1598,11 @@ double UCons::DistanceToOut( const UVector3 &p,
 		xi		= p.x + slentol*v.x;
 		yi		= p.y + slentol*v.y;
 		risec = std::sqrt(xi*xi + yi*yi)*secRMax;
-		UVector3 Normal = UVector3(xi/risec,yi/risec,-tanRMax/secRMax);
+		UVector3 norm = UVector3(xi/risec,yi/risec,-tanRMax/secRMax);
 
-		if ( Normal.Dot(v) > 0 )		// We will leave the Cone immediatelly
+		if ( norm.Dot(v) > 0 )		// We will leave the Cone immediatelly
 		{
-			aNormalVector				 = Normal.Unit();
+			aNormalVector				 = norm.Unit();
 			aConvex = true;
 			return snxt = 0.0;
 		}
@@ -1706,7 +1706,7 @@ double UCons::DistanceToOut( const UVector3 &p,
 						// An intersection within the tolerance was found. 
 						// We must accept it only if	the momentum points outwards. 
 
-						UVector3 Normal; 
+						UVector3 norm; 
 						
 						// Calculate a normal vector,	as below
 
@@ -1715,18 +1715,18 @@ double UCons::DistanceToOut( const UVector3 &p,
 						if( sidetol==kRMax )
 						{
 							risec	= std::sqrt(xi*xi + yi*yi)*secRMax;
-							Normal = UVector3(xi/risec,yi/risec,-tanRMax/secRMax);
+							norm = UVector3(xi/risec,yi/risec,-tanRMax/secRMax);
 						}
 						else
 						{
 							risec	= std::sqrt(xi*xi + yi*yi)*secRMin;
-							Normal = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
+							norm = UVector3(-xi/risec,-yi/risec,tanRMin/secRMin);
 						}
-						if( Normal.Dot(v) > 0 )
+						if( norm.Dot(v) > 0 )
 						{
 							// We will leave the cone immediately
 
-							aNormalVector				 = Normal.Unit();
+							aNormalVector				 = norm.Unit();
 							aConvex = true;
 							return snxt = 0.0;
 						}
