@@ -6,37 +6,29 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
-
+#include <sstream>
 #include "UUtils.hh"
 #include "UBox.hh"
-
-/*
-~UBox(); {}
-
-00076     inline G4double GetXHalfLength() const;
-00077     inline G4double GetYHalfLength() const;
-00078     inline G4double GetZHalfLength() const;
-00079 
-00080     void SetXHalfLength(G4double dx) ;
-00081     void SetYHalfLength(G4double dy) ;
-00082     void SetZHalfLength(G4double dz) ;
-
-streaminfo + more ...
-*/
-
-UBox::~UBox()
-{
-
-}
 
 //______________________________________________________________________________
 UBox::UBox(const std::string &name, double dx, double dy, double dz)
 	:VUSolid(name),
 	fDx(dx),
 	fDy(dy),
-	fDz(dz)
+	 fDz(dz),fCubicVolume(0.),fSurfaceArea(0.)
 {
 	// Named constructor
+
+    if ( (dx < 2* VUSolid::fgTolerance)
+    || (dy < 2* VUSolid::fgTolerance)
+    || (dz < 2* VUSolid::fgTolerance) )  // limit to thickness of surfaces
+  {
+    //std::ostringstream message;
+    std::ostringstream message; 
+    message << "Dimensions too small for Solid: " << GetName() << "!" << std::endl
+            << "     dx, dy, dz = " << dx << ", " << dy << ", " << dz;
+    UUtils::Exception("UBox::UBox()", "UGeomSolids", FatalErrorInArguments,1,message.str().c_str());
+  }
 } 
 
 void UBox::Set(double dx, double dy, double dz)
@@ -52,11 +44,16 @@ void UBox::Set(const UVector3 &vec)
 	fDy = vec.y;
 	fDz = vec.z;
 }
+//Destructor
+UBox::~UBox()
+{
 
+}
 // Copy constructor
 
 UBox::UBox(const UBox& rhs)
-	: VUSolid(rhs), fDx(rhs.fDx), fDy(rhs.fDy), fDz(rhs.fDz)
+  : VUSolid(rhs), fDx(rhs.fDx), fDy(rhs.fDy), fDz(rhs.fDz),
+    fCubicVolume(rhs.fCubicVolume),fSurfaceArea(rhs.fSurfaceArea)
 {
 }
 
@@ -78,6 +75,8 @@ UBox& UBox::operator = (const UBox& rhs)
 	fDx = rhs.fDx;
 	fDy = rhs.fDy;
 	fDz = rhs.fDz;
+        fCubicVolume = rhs.fCubicVolume;
+        fSurfaceArea = rhs.fSurfaceArea;
 
 	return *this;
 }
@@ -101,37 +100,6 @@ VUSolid::EnumInside UBox::Inside(const UVector3 &aPoint) const
 	if ( ddx >- delta || ddy > -delta || ddz > -delta ) return eSurface;
 	return eInside;
 }
-
-
-/*
-VUSolid::EnumInside UBox::Inside(const UVector3 &p) const
-{ 
-static const double delta=0.5*VUSolid::fgTolerance;
-EnumInside in = eOutside ;
-UVector3 q(std::abs(p.x), std::abs(p.y), std::abs(p.z));
-
-if ( q.x <= (fDx - delta) )
-{
-if (q.y <= (fDy - delta) )
-{
-if      ( q.z <= (fDz - delta) ) { in = eInside ;  }
-else if ( q.z <= (fDz + delta) ) { in = eSurface ; }
-}
-else if ( q.y <= (fDy + delta) )
-{
-if ( q.z <= (fDz + delta) ) { in = eSurface ; }
-}
-}
-else if ( q.x <= (fDx + delta) )
-{
-if ( q.y <= (fDy + delta) )
-{
-if ( q.z <= (fDz + delta) ) { in = eSurface ; }
-}
-}
-return in ;
-}
-*/
 
 //______________________________________________________________________________
 double UBox::DistanceToIn(const UVector3 &aPoint, 
@@ -373,26 +341,6 @@ bool UBox::Normal( const UVector3& aPoint, UVector3 &aNormal ) const
 	return valid;               
 }
 
-/*
-//______________________________________________________________________________
-void UBox::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
-{
-	// Returns extent of the solid along a given cartesian axis
-	switch (aAxis) {
-	case eXaxis:
-		aMin = -fDx; aMax = fDx;
-		break;
-	case eYaxis:
-		aMin = -fDy; aMax = fDy;
-		break;
-	case eZaxis:
-		aMin = -fDz; aMax = fDz;
-		break;
-	default:
-		std::cout << "Extent: unknown axis" << aAxis << std::endl;
-	}      
-}
-*/
 
 //______________________________________________________________________________
 void UBox::Extent ( UVector3 &aMin, UVector3 &aMax) const
@@ -424,7 +372,7 @@ UVector3 UBox::GetPointOnSurface() const
 		py = -fDy +2*fDy*UUtils::Random();
 
 		if(UUtils::Random() > 0.5) { pz =	fDz; }
-		else											{ pz = -fDz; }
+		else { pz = -fDz; }
 	}
 	else if ( ( select - Sxy ) < Sxz ) 
 	{
@@ -432,7 +380,7 @@ UVector3 UBox::GetPointOnSurface() const
 		pz = -fDz +2*fDz*UUtils::Random();
 
 		if(UUtils::Random() > 0.5) { py =	fDy; }
-		else											{ py = -fDy; }
+		else{ py = -fDy; }
 	}
 	else	
 	{
@@ -440,7 +388,7 @@ UVector3 UBox::GetPointOnSurface() const
 		pz = -fDz +2*fDz*UUtils::Random();
 
 		if(UUtils::Random() > 0.5) { px =	fDx; }
-		else											{ px = -fDx; }
+		else { px = -fDx; }
 	} 
 	return UVector3(px,py,pz);
 }
@@ -466,3 +414,63 @@ UPolyhedron* UBox::CreatePolyhedron () const
 {
 	return new UPolyhedronBox (fDx, fDy, fDz);
 }
+
+void UBox::SetXHalfLength(double dx)
+{
+   if(dx > 2*VUSolid::fgTolerance )  // limit to thickness of surfaces
+   {
+     fDx = dx;
+   }
+   else
+   {
+     std::ostringstream message;
+     message << "Dimension X too small for solid: " << GetName() << "!"
+             << std::endl
+             << "       hX = " << dx;
+     UUtils::Exception("UBox::SetXHalfLength()", "GeomSolids0002",
+		       FatalErrorInArguments,1, message.str().c_str());
+   }
+   fCubicVolume= 0.;
+   fSurfaceArea= 0.;
+ 
+} 
+ 
+ void UBox::SetYHalfLength(double dy) 
+ {
+   if(dy > 2*VUSolid::fgTolerance )  // limit to thickness of surfaces
+   {
+     fDy = dy;
+   }
+   else
+   {
+     std::ostringstream message;
+     message << "Dimension Y too small for solid: " << GetName() << "!"
+             << std::endl
+             << "       hY = " << dy;
+     UUtils::Exception("UBox::SetYHalfLength()", "GeomSolids0002",
+		       FatalErrorInArguments,1, message.str().c_str());
+  }
+   fCubicVolume= 0.;
+   fSurfaceArea= 0.;
+  
+ } 
+ 
+ void UBox::SetZHalfLength(double dz) 
+ {
+   if(dz > 2*VUSolid::fgTolerance )  // limit to thickness of surfaces
+   {
+     fDz = dz;
+   }
+   else
+   {
+     std::ostringstream message;
+     message << "Dimension Z too small for solid: " << GetName() << "!"
+             << std::endl
+             << "       hZ = " << dz;
+     UUtils::Exception("G4Box::SetZHalfLength()", "GeomSolids0002",
+		       FatalErrorInArguments,1, message.str().c_str());
+   }
+   fCubicVolume= 0.;
+   fSurfaceArea= 0.;
+   
+ } 
