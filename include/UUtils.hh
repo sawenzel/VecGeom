@@ -20,6 +20,9 @@
 //class UVector3;
 class UTransform3D;
 
+enum ExceptionSeverity 
+  { FatalError,FatalErrorInArguments,Error,Warning,Info };
+
 namespace UUtils {
 
 	// Mathematical constants
@@ -84,6 +87,14 @@ namespace UUtils {
 	inline double ATan(double);
 	inline double ATan2(double, double);
 
+        //Warnings and Errors Messages
+        void Exception(const char* originOfException,
+                       const char* exceptionCode,
+                       ExceptionSeverity severity,
+                       int level,
+		       const char* description);
+
+
 	//  inline double Sqrt(double x);
 
 	// Comparing floating points
@@ -142,9 +153,9 @@ namespace UUtils {
 		T fData;
 	};
 
-	int SaveVectorToMatlabFile(const std::vector<double> &vector, const std::string &filename);
-	int SaveVectorToMatlabFile(const std::vector<UVector3> &vector, const std::string &filename);
-	int SaveVectorToMatlabFile(const std::vector<int> &vector, const std::string &filename);
+	int SaveVectorToExternalFile(const std::vector<double> &vector, const std::string &filename);
+	int SaveVectorToExternalFile(const std::vector<UVector3> &vector, const std::string &filename);
+	int SaveVectorToExternalFile(const std::vector<int> &vector, const std::string &filename);
 
 	std::string ToString(int number);
 	std::string ToString(double number);
