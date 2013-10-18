@@ -109,24 +109,15 @@ public:
   // o for solids composed only of curved surfaces(like full spheres or toruses) or 
   //        where an implementation is not available, it defaults to PointOnSurface.
 
+  // Visualisation
+   virtual void GetParametersList(int aNumber,double *aArray) const =0;
+   virtual UPolyhedron* GetPolyhedron() const =0;
+
   virtual VUSolid* Clone() const =0; 
   // o provide a new object which is a clone of the solid
   
   // Visualization
-  //
-  //From G4Visualisation
-  virtual void GetParametersList(int aNumber,double *aArray) const =0;
-  virtual UPolyhedron* GetPolyhedron() const =0;
-
-  virtual void    SetMeshPoints(double * /*aArray*/) const {}
-  // o used in TGeo for visualization and overlap checking. 
-  //   Implementation existing for all solids.
-  virtual void    FillMesh(UBuffer3D &/*aBuffer*/) const {}
-  // o An internal buffer to be filled, converted to TBuffer3D in TGeo bridge
-  // class and fed into GL for visualization. Algorithms existing.   
-  virtual void    GetMeshNumbers( int &/*nvertices*/, int &/*nsegments*/, int &/*npolygons*/) const {}
-  // o Fills the number of points, segments and polygons of the visualization
-  // mesh of the solid
+   
   static double   Tolerance() {return fgTolerance;}
 
   inline virtual std::ostream& StreamInfo( std::ostream& os ) const = 0;
@@ -146,7 +137,7 @@ public:
 protected:
   virtual void    ComputeBBox(UBBox *aBox, bool aStore = false) = 0;
   // o Compute the bounding box for the solid. Called automatically and stored ? 
-  // o Can throw an exception if the solid is invalid
+   // o Can throw an exception if the solid is invalid
 private:
   std::string fName;  // Name of the solid
   UBBox          *fBBox;   // Bounding box
