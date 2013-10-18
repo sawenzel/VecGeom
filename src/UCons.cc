@@ -1,45 +1,4 @@
-//
-// ********************************************************************
-// * License and Disclaimer																					 *
-// *																																	*
-// * The	Geant4 software	is	copyright of the Copyright Holders	of *
-// * the Geant4 Collaboration.	It is provided	under	the terms	and *
-// * conditions of the Geant4 Software License,	included in the file *
-// * LICENSE and available at	http://cern.ch/geant4/license .	These *
-// * include a list of copyright holders.														 *
-// *																																	*
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work	make	any representation or	warranty, express or implied, *
-// * regarding	this	software system or assume any liability for its *
-// * use.	Please see the license in the file	LICENSE	and URL above *
-// * for the full disclaimer and the limitation of liability.				 *
-// *																																	*
-// * This	code	implementation is the result of	the	scientific and *
-// * technical work of the GEANT4 collaboration.											*
-// * By using,	copying,	modifying or	distributing the software (or *
-// * any work based	on the software)	you	agree	to acknowledge its *
-// * use	in	resulting	scientific	publications,	and indicate your *
-// * acceptance of all terms of the Geant4 Software license.					*
-// ********************************************************************
-//
-//
-// $Id: UCons.cc,v 1.74 2011-01-07 10:01:09 tnikitin Exp $
-// GEANT4 tag $Name: $
-//
-//
-// class UCons
-//
-// Implementation for UCons class
-//
-// History:
-//
-// 05.04.12 M.Kelsey:	 GetPointOnSurface() throw flat in sqrt(r)
-// 12.10.09 T.Nikitina: Added to DistanceToIn(p,v) check on the direction in
-//											case of point on surface
-// 03.05.05 V.Grichine: SurfaceNormal(p) according to J. Apostolakis proposal
-// 13.09.96 V.Grichine: Review and final modifications
-// ~1994		P.Kent: Created, as main part of the geometry prototype
+
 // --------------------------------------------------------------------
 
 #include "UUtils.hh"
@@ -84,8 +43,8 @@ UCons::UCons( const std::string& pName,
 		std::ostringstream message;
 		message << "Invalid Z half-length for Solid: " << GetName() << std::endl
 						<< "				hZ = " << pDz;
-		// UException("UCons::UCons()", "GeomSolids0002",
-		//						FatalException, message);
+                 UUtils::Exception("UCons::UCons()", "UGeomSolids", FatalErrorInArguments,1,message.str().c_str());
+		
 	}
 	 
 	// Check radii
@@ -96,8 +55,8 @@ UCons::UCons( const std::string& pName,
 		message << "Invalid values of radii for Solid: " << GetName() << std::endl
 						<< "				pRmin1 = " << pRmin1 << ", pRmin2 = " << pRmin2
 						<< ", pRmax1 = " << pRmax1 << ", pRmax2 = " << pRmax2;
-		// UException("UCons::UCons()", "GeomSolids0002",
-		//						FatalException, message);
+                UUtils::Exception("UCons::UCons()", "UGeomSolids", FatalErrorInArguments,1,message.str().c_str());
+	
 	}
 	if( (pRmin1 == 0.0) && (pRmin2 > 0.0) ) { fRmin1 = 1e3*kRadTolerance; }
 	if( (pRmin2 == 0.0) && (pRmin1 > 0.0) ) { fRmin2 = 1e3*kRadTolerance; }
@@ -178,242 +137,6 @@ UCons& UCons::operator = (const UCons& rhs)
    Initialize();
 	 return *this;
 }
-
-/////////////////////////////////////////////////////////////////////
-//
-// Return whether point inside/outside/on surface
-
-
-/////////////////////////////////////////////////////////////////////////
-//
-// Dispatch to parameterisation for replication mechanism dimension
-// computation & modification.
-
-/*
-void UCons::ComputeDimensions(			UVPVParameterisation* p,
-															 const int									n,
-															 const UVPhysicalVolume*		 pRep		)
-{
-	p->ComputeDimensions(*this,n,pRep);
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-//
-// Calculate extent under transform and specified limit
-
-bool UCons::CalculateExtent( const EAxisType							pAxis,
-							const UVoxelLimits&		 pVoxelLimit,
-							const UAffineTransform& pTransform,
-										double&					pMin,
-										double&					pMax	) const
-{
-	if ( !pTransform.IsRotated() && (fDPhi == 2*UUtils::kPi)
-		&& (fRmin1 == 0) && (fRmin2 == 0) )
-	{
-		// Special case handling for unrotated solid cones
-		// Compute z/x/y mins and maxs for bounding box respecting limits,
-		// with early returns if outside limits. Then switch() on pAxis,
-		// and compute exact x and y limit for x/y case
-			
-		double xoffset, xMin, xMax;
-		double yoffset, yMin, yMax;
-		double zoffset, zMin, zMax;
-
-		double diff1, diff2, delta, maxDiff, newMin, newMax, RMax;
-		double xoff1, xoff2, yoff1, yoff2;
-			
-		zoffset = pTransform.NetTranslation().z;
-		zMin		= zoffset - fDz;
-		zMax		= zoffset + fDz;
-
-		if (pVoxelLimit.IsZLimited())
-		{
-			if( (zMin > pVoxelLimit.GetMaxZExtent() + VUSolid::Tolerance()) || 
-					(zMax < pVoxelLimit.GetMinZExtent() - VUSolid::Tolerance())	)
-			{
-				return false;
-			}
-			else
-			{
-				if ( zMin < pVoxelLimit.GetMinZExtent() )
-				{
-					zMin = pVoxelLimit.GetMinZExtent();
-				}
-				if ( zMax > pVoxelLimit.GetMaxZExtent() )
-				{
-					zMax = pVoxelLimit.GetMaxZExtent();
-				}
-			}
-		}
-		xoffset = pTransform.NetTranslation().x;
-		RMax		= (fRmax2 >= fRmax1) ?	zMax : zMin	;									
-		xMax		= xoffset + (fRmax1 + fRmax2)*0.5 + 
-							(RMax - zoffset)*(fRmax2 - fRmax1)/(2*fDz);
-		xMin		= 2*xoffset-xMax;
-
-		if (pVoxelLimit.IsXLimited())
-		{
-			if ( (xMin > pVoxelLimit.GetMaxXExtent() + VUSolid::Tolerance()) || 
-					 (xMax < pVoxelLimit.GetMinXExtent() - VUSolid::Tolerance())	)
-			{
-				return false;
-			}
-			else
-			{
-				if ( xMin < pVoxelLimit.GetMinXExtent() )
-				{
-					xMin = pVoxelLimit.GetMinXExtent();
-				}
-				if ( xMax > pVoxelLimit.GetMaxXExtent() )
-				{
-					xMax=pVoxelLimit.GetMaxXExtent();
-				}
-			}
-		}
-		yoffset = pTransform.NetTranslation().y;
-		yMax		= yoffset + (fRmax1 + fRmax2)*0.5 + 
-							(RMax - zoffset)*(fRmax2 - fRmax1)/(2*fDz);
-		yMin		= 2*yoffset-yMax;
-		RMax		= yMax - yoffset;	// = max radius due to Zmax/Zmin cuttings
-
-		if (pVoxelLimit.IsYLimited())
-		{
-			if ( (yMin > pVoxelLimit.GetMaxYExtent() + VUSolid::Tolerance()) || 
-					 (yMax < pVoxelLimit.GetMinYExtent() - VUSolid::Tolerance())	)
-			{
-				return false;
-			}
-			else
-			{
-				if ( yMin < pVoxelLimit.GetMinYExtent() )
-				{
-					yMin = pVoxelLimit.GetMinYExtent();
-				}
-				if ( yMax > pVoxelLimit.GetMaxYExtent() )
-				{
-					yMax = pVoxelLimit.GetMaxYExtent();
-				}
-			}
-		}		
-		switch (pAxis) // Known to cut cones
-		{
-			case eXaxis:
-				yoff1 = yoffset - yMin;
-				yoff2 = yMax - yoffset;
-
-				if ((yoff1 >= 0) && (yoff2 >= 0)) // Y limits Cross max/min x
-				{																 // => no change
-					pMin = xMin;
-					pMax = xMax;
-				}
-				else
-				{
-					// Y limits don't Cross max/min x => compute max delta x,
-					// hence new mins/maxs
-					delta=RMax*RMax-yoff1*yoff1;
-					diff1=(delta>0.) ? std::sqrt(delta) : 0.;
-					delta=RMax*RMax-yoff2*yoff2;
-					diff2=(delta>0.) ? std::sqrt(delta) : 0.;
-					maxDiff = (diff1>diff2) ? diff1:diff2;
-					newMin	= xoffset - maxDiff;
-					newMax	= xoffset + maxDiff;
-					pMin		= ( newMin < xMin ) ? xMin : newMin	;
-					pMax		= ( newMax > xMax) ? xMax : newMax;
-				} 
-			break;
-
-			case eYaxis:
-				xoff1 = xoffset - xMin;
-				xoff2 = xMax - xoffset;
-
-				if ((xoff1 >= 0) && (xoff2 >= 0) ) // X limits Cross max/min y
-				{																	// => no change
-					pMin = yMin;
-					pMax = yMax;
-				}
-				else
-				{
-					// X limits don't Cross max/min y => compute max delta y,
-					// hence new mins/maxs
-					delta=RMax*RMax-xoff1*xoff1;
-					diff1=(delta>0.) ? std::sqrt(delta) : 0.;
-					delta=RMax*RMax-xoff2*xoff2;
-					diff2=(delta>0.) ? std::sqrt(delta) : 0.;
-					maxDiff = (diff1 > diff2) ? diff1:diff2;
-					newMin	= yoffset - maxDiff;
-					newMax	= yoffset + maxDiff;
-					pMin		= (newMin < yMin) ? yMin : newMin;
-					pMax		= (newMax > yMax) ? yMax : newMax;
-				}
-			break;
-
-			case eZaxis:
-				pMin = zMin;
-				pMax = zMax;
-			break;
-			
-			default:
-			break;
-		}
-		pMin -= VUSolid::Tolerance();
-		pMax += VUSolid::Tolerance();
-
-		return true;
-	}
-	else	 // Calculate rotated vertex coordinates
-	{
-		int i, noEntries, noBetweenSections4;
-		bool existsAfterClip = false;
-		UVector3List* vertices = CreateRotatedVertices(pTransform);
-
-		pMin = +UUtils::kInfinity;
-		pMax = -UUtils::kInfinity;
-
-		noEntries					= vertices->size();
-		noBetweenSections4 = noEntries-4;
-			
-		for ( i = 0; i < noEntries; i += 4 )
-		{
-			ClipCrossSection(vertices, i, pVoxelLimit, pAxis, pMin, pMax);
-		}
-		for ( i = 0; i < noBetweenSections4; i += 4 )
-		{
-			ClipBetweenSections(vertices, i, pVoxelLimit, pAxis, pMin, pMax);
-		}		
-		if ( (pMin != UUtils::kInfinity) || (pMax != -UUtils::kInfinity) )
-		{
-			existsAfterClip = true;
-				
-			// Add 2*tolerance to avoid precision troubles
-
-			pMin -= VUSolid::Tolerance();
-			pMax += VUSolid::Tolerance();
-		}
-		else
-		{
-			// Check for case where completely enveloUUtils::kPing clipUUtils::kPing volume
-			// If point inside then we are confident that the solid completely
-			// envelopes the clipUUtils::kPing volume. Hence Set min/max extents according
-			// to clipUUtils::kPing volume extents along the specified axis.
-			 
-			UVector3 clipCentre(
-			(pVoxelLimit.GetMinXExtent() + pVoxelLimit.GetMaxXExtent())*0.5,
-			(pVoxelLimit.GetMinYExtent() + pVoxelLimit.GetMaxYExtent())*0.5,
-			(pVoxelLimit.GetMinZExtent() + pVoxelLimit.GetMaxZExtent())*0.5	);
-				
-			if (Inside(pTransform.Inverse().TransformPoint(clipCentre)) != eOutside)
-			{
-				existsAfterClip = true;
-				pMin						= pVoxelLimit.GetMinExtent(pAxis);
-				pMax						= pVoxelLimit.GetMaxExtent(pAxis);
-			}
-		}
-		delete vertices;
-		return existsAfterClip;
-	}
-}
-*/
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -507,9 +230,10 @@ bool UCons::Normal( const UVector3& p, UVector3 &n) const
 	}
 	if ( noSurfaces == 0 )
 	{
-#ifdef UCSGDEBUG
-		// UException("UCons::SurfaceNormal(p)", "GeomSolids1002",
-								JustWarning, "Point p is not on surface !?" );
+#ifdef UDEBUG
+                 
+	  UUtils::Exception("UCons::SurfaceNormal(p)", "GeomSolids1002",
+			    Warning,1, "Point p is not on surface !?" );
 #endif 
 		 norm = ApproxSurfaceNormal(p);
 	}
@@ -615,10 +339,9 @@ UVector3 UCons::ApproxSurfaceNormal( const UVector3& p ) const
 			norm=UVector3(-std::sin(fSPhi+fDPhi), std::cos(fSPhi+fDPhi), 0);
 			break;
 		default:					// Should never reach this case...
-			// DumpInfo();
-			// UException("UCons::ApproxSurfaceNormal()",
-			//						"GeomSolids1002", JustWarning,
-			//						"Undefined side for valid surface normal to solid.");
+		       UUtils::Exception("UCons::ApproxSurfaceNormal()",
+					 "GeomSolids1002", Warning,1,
+		       "Undefined side for valid surface normal to solid.");
 			break;		
 	}
 	return norm;
@@ -1960,8 +1683,7 @@ double UCons::DistanceToOut( const UVector3 &p,
 								<< "Proposed distance :" << std::endl<< std::endl
 								<< "snxt = "		<< snxt << " mm" << std::endl;
 				message.precision(oldprc);
-				// UException("UCons::DistanceToOut(p,v,..)","GeomSolids1002",
-				//						JustWarning, message);
+                                UUtils::Exception("UCons::DistanceToOut()", "UGeomSolids", Warning,1,message.str().c_str());
 				break;
 	}
 	if (snxt < halfCarTolerance)	{ snxt = 0.; }
@@ -1997,8 +1719,8 @@ double UCons::SafetyFromInside(const UVector3& p, bool) const
 						 << " degree" << std::endl << std::endl; 
 		}
 		cout.precision(oldprc);
-		// UException("UCons::DistanceToOut(p)", "GeomSolids1002",
-								JustWarning, "Point p is outside !?" );
+                UUtils::Exception("UCons::UCons()", "UGeomSolids", Warning,1,message.str().c_str());
+	
 	}
 #endif
 
@@ -2043,101 +1765,6 @@ double UCons::SafetyFromInside(const UVector3& p, bool) const
 	return safe;
 }
 
-////////////////////////////////////////////////////////////////////////////
-//
-// Create a List containing the transformed vertices
-// Ordering [0-3] -fDz Cross section
-//					[4-7] +fDz Cross section such that [0] is below [4],
-//																						 [1] below [5] etc.
-// Note:
-//	Caller has deletion resposibility
-//	Potential improvement: For last slice, use actual ending angle
-//												 to avoid rounding error problems.
-
-/*
-UVector3List*
-UCons::CreateRotatedVertices(const UAffineTransform& pTransform) const
-{
-	UVector3List* vertices;
-	UVector3 vertex0, vertex1, vertex2, vertex3;
-	double meshAngle, meshRMax1, meshRMax2, crossAngle;
-	double cosCrossAngle, sinCrossAngle, sAngle;
-	double rMaxX1, rMaxX2, rMaxY1, rMaxY2, rMinX1, rMinX2, rMinY1, rMinY2;
-	int crossSection, noCrossSections;
-
-	// Compute no of Cross-sections necessary to mesh cone
-		
-	noCrossSections = int(fDPhi/kMeshAngleDefault) + 1;
-
-	if (noCrossSections < kMinMeshSections)
-	{
-		noCrossSections = kMinMeshSections;
-	}
-	else if (noCrossSections > kMaxMeshSections)
-	{
-		noCrossSections = kMaxMeshSections;
-	}
-	meshAngle = fDPhi/(noCrossSections - 1);
-
-	meshRMax1 = fRmax1/std::cos(meshAngle*0.5);
-	meshRMax2 = fRmax2/std::cos(meshAngle*0.5);
-
-	// If complete in phi, Set start angle such that mesh will be at RMax
-	// on the x axis. Will give better extent calculations when not rotated.
-
-	if ( fPhiFullCone && (fSPhi == 0.0) )
-	{
-		sAngle = -meshAngle*0.5;
-	}
-	else
-	{
-		sAngle = fSPhi;
-	} 
-	vertices = new UVector3List();
-
-	if (vertices)
-	{
-		vertices->reserve(noCrossSections*4);
-		for (crossSection = 0; crossSection < noCrossSections; crossSection++)
-		{
-			// Compute coordinates of Cross section at section crossSection
-
-			crossAngle		= sAngle + crossSection*meshAngle;
-			cosCrossAngle = std::cos(crossAngle);
-			sinCrossAngle = std::sin(crossAngle);
-
-			rMaxX1 = meshRMax1*cosCrossAngle;
-			rMaxY1 = meshRMax1*sinCrossAngle;
-			rMaxX2 = meshRMax2*cosCrossAngle;
-			rMaxY2 = meshRMax2*sinCrossAngle;
-				
-			rMinX1 = fRmin1*cosCrossAngle;
-			rMinY1 = fRmin1*sinCrossAngle;
-			rMinX2 = fRmin2*cosCrossAngle;
-			rMinY2 = fRmin2*sinCrossAngle;
-				
-			vertex0 = UVector3(rMinX1,rMinY1,-fDz);
-			vertex1 = UVector3(rMaxX1,rMaxY1,-fDz);
-			vertex2 = UVector3(rMaxX2,rMaxY2,+fDz);
-			vertex3 = UVector3(rMinX2,rMinY2,+fDz);
-
-			vertices->push_back(pTransform.TransformPoint(vertex0));
-			vertices->push_back(pTransform.TransformPoint(vertex1));
-			vertices->push_back(pTransform.TransformPoint(vertex2));
-			vertices->push_back(pTransform.TransformPoint(vertex3));
-		}
-	}
-	else
-	{
-		DumpInfo();
-		// UException("UCons::CreateRotatedVertices()",
-								"GeomSolids0003", FatalException,
-								"Error in allocation of vertices. Out of memory !");
-	}
-
-	return vertices;
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////
 //
