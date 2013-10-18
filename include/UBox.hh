@@ -24,13 +24,26 @@ public:
 	virtual ~UBox();
 
 	UBox(const UBox& rhs);
-    UBox& operator=(const UBox& rhs); 
-    // Copy constructor and assignment operator
+        UBox& operator=(const UBox& rhs);
+ 
+        // Copy constructor and assignment operator
 
-	void Set(double dx, double dy, double dz);
+        void Set(double dx, double dy, double dz);
+        void Set(const UVector3 &vec);
 
-	void Set(const UVector3 &vec);
+       // Accessors and modifiers
 
+ 
+
+        inline double GetXHalfLength() const;
+        inline double GetYHalfLength() const;
+        inline double GetZHalfLength() const;
+ 
+        void SetXHalfLength(double dx);
+        void SetYHalfLength(double dy);
+        void SetZHalfLength(double dz);
+        
+  
 	// Navigation methods
 	EnumInside     Inside (const UVector3 &aPoint) const;   
 
@@ -52,8 +65,8 @@ public:
 	bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
 //	void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
 	void Extent (UVector3 &aMin, UVector3 &aMax) const;
-	double Capacity() {return 8.*fDx*fDy*fDz;}
-	double SurfaceArea() {return 8.*(fDx*fDy+fDx*fDz+fDy*fDz);}
+        inline double Capacity(); 
+        inline double SurfaceArea(); 
 	VUSolid* Clone() const 
 	{
 		return new UBox(GetName(), fDx, fDy, fDz);
@@ -72,20 +85,34 @@ public:
 	UPolyhedron* CreatePolyhedron () const;
 
 	UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
-
-  inline double GetDz()
-  {
-    return fDz;
-  }
-
-  inline void SetDz(double v)
-  {
-    fDz = v;
-  }
-
+ 
 private:  
 	double                fDx;   // Half-length on X
 	double                fDy;   // Half-length on Y
 	double                fDz;   // Half-length on Z
+        double       fCubicVolume;   // Cubic Volume
+        double       fSurfaceArea;   // Surface Area
+       
 };
+
+
+inline double UBox::GetXHalfLength() const { return fDx;}
+inline double UBox::GetYHalfLength() const { return fDy;}
+inline double UBox::GetZHalfLength() const { return fDz;}
+
+inline double UBox::Capacity()
+{
+  if(fCubicVolume != 0.) {;}
+  else   { fCubicVolume = 8*fDx*fDy*fDz; }
+  return fCubicVolume;
+}
+
+inline double UBox::SurfaceArea()
+{
+  if(fSurfaceArea != 0.) {;}
+  else   { fSurfaceArea = 8*(fDx*fDy+fDx*fDz+fDy*fDz); }
+  return fSurfaceArea;
+}
+
+
 #endif
