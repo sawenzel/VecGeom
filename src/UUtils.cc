@@ -63,7 +63,7 @@ double UUtils::Random(double min, double max)
 	return res;
 }
  
-int UUtils::SaveVectorToMatlabFile(const vector<double> &vector, const string &filename)
+int UUtils::SaveVectorToExternalFile(const vector<double> &vector, const string &filename)
 {
 	ofstream file(filename.c_str());
 
@@ -83,7 +83,7 @@ int UUtils::SaveVectorToMatlabFile(const vector<double> &vector, const string &f
 }
 
 
-int UUtils::SaveVectorToMatlabFile(const vector<int> &vector, const string &filename)
+int UUtils::SaveVectorToExternalFile(const vector<int> &vector, const string &filename)
 {
 	ofstream file(filename.c_str());
 
@@ -100,7 +100,7 @@ int UUtils::SaveVectorToMatlabFile(const vector<int> &vector, const string &file
 	return 1;
 }
 
-int UUtils::SaveVectorToMatlabFile(const vector<UVector3> &vector, const string &filename)
+int UUtils::SaveVectorToExternalFile(const vector<UVector3> &vector, const string &filename)
 {
 	ofstream file(filename.c_str());
 
@@ -163,6 +163,64 @@ int UUtils::StrPos(const string &haystack, const string &needle)
     }
     return -1;
 }
+void UUtils:: Exception(const char* originOfException,
+                       const char* exceptionCode,
+                       ExceptionSeverity severity,
+		       int level,
+			const char* description)
+
+{
+  bool toBeAborted = true;
+  static const std::string es_banner
+       = "\n-------- EEEE ------- UException-START -------- EEEE -------\n";
+  static const std::string ee_banner
+        = "\n-------- EEEE ------- UException-END --------- EEEE -------\n";
+  static const std::string ws_banner
+        = "\n-------- WWWW ------- UException-START -------- WWWW -------\n";
+  static const std::string we_banner
+        = "\n-------- WWWW -------- UException-END --------- WWWW -------\n";
+      std::ostringstream message;
+      message << "\n*** ExceptionHandler is not defined ***\n"
+              << "*** Exception : " << exceptionCode << std::endl
+              << "      issued by : " << originOfException << std::endl
+              << description << std::endl;
+      switch(severity)
+      {
+       case FatalError:
+	 std::cerr << es_banner << message.str() << "*** Fatal Exception ***"
+		   << ee_banner << std::endl;
+        break;
+       case FatalErrorInArguments:
+	 std::cerr << es_banner << message.str() << "*** Fatal Error In Argument ***"
+		   << ee_banner << std::endl;
+        break;
+       case Error:
+	 std::cerr << es_banner << message.str() << "*** Error ***"<<level
+		   << ee_banner << std::endl;
+        break;
+       case Warning:
+	 std::cerr << ws_banner << message.str() << "*** This is just a warning message ***"
+		   << we_banner << std::endl;
+         toBeAborted = false;
+        break;
+       default:
+	 std::cout << ws_banner << message.str()
+               << "*** This is just a message for your information. ***"
+		   << we_banner << std::endl;
+        toBeAborted = false;
+        break;
+      }
+    
+    if(toBeAborted)
+    {
+     
+      std::cerr << std::endl << "*** GException: Aborting execution ***" << std::endl;
+      abort();
+    }
+   
+   
+}
+
 
 /*
 void UTessellatedSolid::ImportFromSTLFile(std::string filename)
