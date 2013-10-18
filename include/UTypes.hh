@@ -13,7 +13,7 @@ struct UBBoxStruct {
   double orig[3];    // center coordinates
 };
 
-struct UBuffer3DStruct {
+/*struct UBuffer3DStruct {
    const int fType;          // Primitive type - predefined ones in TBuffer3DTypes.h
                                 
    UInt_t    fNbPnts;        // Number of points describing the shape
@@ -29,7 +29,7 @@ struct UBuffer3DStruct {
    int      *fSegs;              // c0, p0, q0, c1, p1, q1, ..... ..... ....  
    int      *fPols;              // c0, n0, s0, s1, ... sn, c1, n1, s0, ... sn
 };
-
+*/
 /*
 struct UFacet2{
   UInt_t f1;//number of vertices from verticesList forming a facet
@@ -44,7 +44,7 @@ struct UPolyhedron2{
 */
 
 typedef UBBoxStruct UBBox;
-typedef UBuffer3DStruct UBuffer3D;
+//typedef UBuffer3DStruct UBuffer3D;
 typedef std::string UGeometryType;
 
 #endif
