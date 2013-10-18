@@ -1,36 +1,4 @@
-//
-// ********************************************************************
-// * License and Disclaimer																					 *
-// *																																	*
-// * The	Geant4 software	is	copyright of the Copyright Holders	of *
-// * the Geant4 Collaboration.	It is provided	under	the terms	and *
-// * conditions of the Geant4 Software License,	included in the file *
-// * LICENSE and available at	http://cern.ch/geant4/license .	These *
-// * include a list of copyright holders.														 *
-// *																																	*
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work	make	any representation or	warranty, express or implied, *
-// * regarding	this	software system or assume any liability for its *
-// * use.	Please see the license in the file	LICENSE	and URL above *
-// * for the full disclaimer and the limitation of liability.				 *
-// *																																	*
-// * This	code	implementation is the result of	the	scientific and *
-// * technical work of the GEANT4 collaboration.											*
-// * By using,	copying,	modifying or	distributing the software (or *
-// * any work based	on the software)	you	agree	to acknowledge its *
-// * use	in	resulting	scientific	publications,	and indicate your *
-// * acceptance of all terms of the Geant4 Software license.					*
-// ********************************************************************
-//
-//
-// $Id: UCons.hh,v 1.24 2010-10-19 15:42:09 gcosmo Exp $
-// GEANT4 tag $Name: not supported by cvs2svn $
-//
-//
-// --------------------------------------------------------------------
-// GEANT 4 class header file
-//
+
 // UCons
 //
 // Class description:
@@ -60,9 +28,7 @@
 //			and fDPhi+fSPhi<=2PI. This enables simpler comparisons to be
 //			made with (say) Phi of a point.
 
-// History:
-// 19.3.94 P.Kent: Old C++ code converted to tolerant geometry
-// 13.9.96 V.Grichine: Final modifications to commit
+
 // --------------------------------------------------------------------
 
 #ifndef UCons_HH
@@ -112,17 +78,8 @@ class UCons : public VUSolid
 
 		inline double GetCubicVolume();
 		inline double GetSurfaceArea();
-
 		
-		//void ComputeDimensions(			 UVPVParameterisation* p,
-		//												const int n,
-		//												const UVPhysicalVolume* pRep );
-
-		// bool CalculateExtent( const EAxisType pAxis,
-		//												const UVoxelLimits& pVoxelLimit,
-		//												const UAffineTransform& pTransform,
-		//															double& pmin, double& pmax ) const;				 
-
+		
 //		inline VUSolid::EnumInside Inside( const UVector3& p ) const;
 
 		bool Normal( const UVector3& p, UVector3 &n) const;
