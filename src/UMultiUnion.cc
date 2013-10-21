@@ -35,12 +35,15 @@ UMultiUnion::UMultiUnion(const std::string &name)
 	SetName(name);
 	fSolids.clear();
 	fTransforms.clear();
+        fCubicVolume=0;   
+        fSurfaceArea=0;   
 }
  
 //______________________________________________________________________________       
 UMultiUnion::~UMultiUnion()
 {
 }
+
 
 //______________________________________________________________________________       
 void UMultiUnion::AddNode(VUSolid &solid, UTransform3D &trans)
@@ -49,14 +52,43 @@ void UMultiUnion::AddNode(VUSolid &solid, UTransform3D &trans)
 	fTransforms.push_back(&trans);
 }
 
+//______________________________________________________________________________
+VUSolid* UMultiUnion:: Clone() const 
+{
+  return new UMultiUnion(*this);
+}
+//
+// Copy constructor
+//______________________________________________________________________________ 
+UMultiUnion::UMultiUnion(const UMultiUnion& rhs)
+   : VUSolid (rhs)
+ {
+ }
+ 
+//
+// Assignment operator
+//______________________________________________________________________________
+ UMultiUnion& UMultiUnion::operator = (const UMultiUnion& rhs) 
+ {
+   // Check assignment to self
+   //
+   if (this == &rhs)  { return *this; }
+ 
+   // Copy base class data
+   //
+   VUSolid::operator=(rhs);
+ 
+   return *this;
+ }  
+
 //______________________________________________________________________________       
 double UMultiUnion::Capacity()
-{
-	// Capacity computes the cubic volume of the "UMultiUnion" structure using random points
+{ 	// Capacity computes the cubic volume of the "UMultiUnion" structure using random points
 
 	// Random initialization:
 	//	srand((unsigned int)time(NULL));
-
+        if(fCubicVolume != 0.) {;}
+        else{
 	UVector3 extentMin, extentMax, d, p, point;
 	int inside = 0, generated;
 	Extent(extentMin,extentMax);
@@ -71,8 +103,9 @@ double UMultiUnion::Capacity()
 		if (Inside(point) != eOutside) inside++;
 	}
 	double vbox = (2*d.x)*(2*d.y)*(2*d.z);
-	double capacity = inside*vbox/generated;
-	return capacity;      
+	fCubicVolume = inside*vbox/generated;
+	}
+	return fCubicVolume;      
 }
 
 //______________________________________________________________________________
@@ -899,9 +932,10 @@ double UMultiUnion::SafetyFromOutside(const UVector3 &point, bool aAccurate) con
 //______________________________________________________________________________       
 double UMultiUnion::SurfaceArea()
 {
-	// Computes analytically the surface area.
-	cout << "SurfaceArea - Not implemented" << endl;
-	return 0.;
+  if(fSurfaceArea != 0.) {;}
+  else   { fSurfaceArea = EstimateSurfaceArea(1000000, 0.001); }
+  return fSurfaceArea;
+ 
 }     
 
 //______________________________________________________________________________       
