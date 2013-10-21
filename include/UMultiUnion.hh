@@ -29,7 +29,10 @@ public:
 public:
 	UMultiUnion() : VUSolid() {}
 	UMultiUnion(const std::string &name); 
-	~UMultiUnion();
+        ~UMultiUnion();
+
+        UMultiUnion(const UMultiUnion& rhs);
+        UMultiUnion& operator=(const UMultiUnion& rhs);
 
 	// Navigation methods
 	EnumInside                   Inside (const UVector3 &aPoint) const;
@@ -47,10 +50,10 @@ public:
 		// UVector3       &aNormalVector,
 		double aPstep = UUtils::kInfinity) const;
 
-  double                       DistanceToIn(const UVector3 &aPoint, 
-    const UVector3 &aDirection, 
-    // UVector3 &aNormal, 
-    double aPstep) const;  
+       double                       DistanceToIn(const UVector3 &aPoint, 
+                const UVector3 &aDirection, 
+                // UVector3 &aNormal, 
+                double aPstep) const;  
 
 	double                       DistanceToOut    (const UVector3 &aPoint,
 		const UVector3 &aDirection,
@@ -83,10 +86,7 @@ public:
 	double                       Capacity();
 	double                       SurfaceArea();
 	
-	inline VUSolid*                     Clone() const 
-	{
-		return 0;
-	}
+        VUSolid*                     Clone() const ;
 
 	UGeometryType                GetEntityType() const {return "MultipleUnion";}
 	void                         ComputeBBox(UBBox *aBox, bool aStore = false);
@@ -101,12 +101,9 @@ public:
 	void                         Voxelize();
 	EnumInside                   InsideNoVoxels(const UVector3 &aPoint) const;
 
-	inline UVoxelizer &GetVoxels() const
-	{
-		return (UVoxelizer &)fVoxels;
-	}
-
-	static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
+  inline UVoxelizer &GetVoxels() const;
+  
+static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
 
 	std::ostream& StreamInfo( std::ostream& os ) const;
 
@@ -125,6 +122,14 @@ private:
 	std::vector<VUSolid *> fSolids;
 	std::vector<UTransform3D *> fTransforms;
 	UVoxelizer fVoxels;  // Pointer to the vozelized solid
+        double       fCubicVolume;   // Cubic Volume
+        double       fSurfaceArea;   // Surface Area
+        
 
 };
+
+inline UVoxelizer&  UMultiUnion:: GetVoxels() const
+ {
+  return (UVoxelizer &)fVoxels;
+ }
 #endif
