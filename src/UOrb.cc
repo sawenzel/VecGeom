@@ -20,7 +20,7 @@ using namespace std;
 
 //______________________________________________________________________________
 UOrb::UOrb(const std::string &name, double r)
-	:VUSolid(name), fR(r)
+  :VUSolid(name), fR(r),fCubicVolume(0),fSurfaceArea(0)
 {
 	const double epsilon = 2.e-11;  // relative tolerance of fR
 
@@ -28,9 +28,7 @@ UOrb::UOrb(const std::string &name, double r)
 	//
 	if ( r < 10*VUSolid::fgTolerance ) // cartesian tolerance
 	{
-		// TODO: introduce exceptions in library
-
-		/// G4Exception("G4Orb::G4Orb()", "InvalidSetup", FatalException, "Invalid radius > 10*kCarTolerance.");
+	  UUtils::Exception("G4Orb::G4Orb()", "InvalidSetup", FatalErrorInArguments,1, "Invalid radius > 10*kCarTolerance.");
 	}
 	// VUSolid::fRTolerance is radial tolerance (note: half of G4 tolerance)
 	fRTolerance =  max( VUSolid::frTolerance, epsilon*r);
@@ -164,7 +162,7 @@ double UOrb::DistanceToIn(const UVector3 &p,
 #ifdef UDEBUG
 	else // inside ???
 	{
-		G4Exception("G4Orb::DistanceToIn(p,v)", "Notification", JustWarning, "Point p is inside !?");
+	  UUtils::Exception("UOrb::DistanceToIn(p,v)", "Notification", Warning,1, "Point p is inside !?");
 	}
 #endif
 
@@ -278,9 +276,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 
 		//	  double res = DistanceToOutForOutsidePoints(p, v, n); 
 
-		if (0)
-		{
-			cout.precision(16);
+	        	cout.precision(16);
 			cout << endl;
 			//    DumpInfo();
 			cout << "Position:"  << endl << endl;
@@ -294,13 +290,13 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			cout << "v.z() = "   << v.z << endl << endl;
 			cout << "Proposed distance :" << endl << endl;
 			cout << "snxt = "    << snxt << endl << endl;
-		}
+		
 
-		/*
+		
 		cout.precision(6);
-		G4Exception("G4Orb::DistanceToOut(p,v,..)", "Notification",
-		JustWarning, "Logic error: snxt = kInfinity ???");
-		****/
+		UUtils::Exception("UOrb::DistanceToOut(p,v,..)", "Notification",
+			    Warning,1, "Logic error: snxt = kInfinity ???");
+	       
 	}
 
 	// if (calcNorm)    // Output switch operator
@@ -314,8 +310,7 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		}
 		else
 		{
-			if (0)
-			{
+		
 				cout.precision(16);
 				cout << endl;
 				//        DumpInfo();
@@ -330,9 +325,9 @@ double UOrb::DistanceToOut( const UVector3  &p, const UVector3 &v,
 				cout << "Proposed distance :" << endl << endl;
 				cout << "snxt = "    << snxt << " mm" << endl << endl;
 				cout.precision(6);
-			}
+			
 
-			//        G4Exception("G4Orb::DistanceToOut(p,v,..)","Notification",JustWarning, "Undefined side for valid surface normal to solid.");
+			UUtils::Exception("UOrb::DistanceToOut(p,v,..)","Notification",Warning,1, "Undefined side for valid surface normal to solid.");
 		}
 	}
 	return snxt;
@@ -367,7 +362,7 @@ double UOrb::SafetyFromInside ( const UVector3 &p, bool /*aAccurate*/) const
 		cout << "p.y = "   << p.y << endl;
 		cout << "p.z = "   << p.z << endl << endl;
 		//     cout.precision(oldprc);
-		G4Exception("G4Orb::DistanceToOut(p)", "Notification", JustWarning, 
+		UUtils::Exception("UOrb::DistanceToOut(p)", "Notification", Warning,1, 
 			"Point p is outside !?" );
 	}
 #endif
@@ -436,41 +431,13 @@ bool UOrb::Normal( const UVector3& p, UVector3 &n) const
 * OK
 */
 
-/*
-void UOrb::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
-{
-	switch (aAxis)
-	{
-	case eXaxis:
-	case eYaxis:
-	case eZaxis:
-		aMin = -fR; aMax = fR;
-		break;
-	default:
-		cout << "Extent: unknown axis" << aAxis << endl;
-	}      
-}
-*/
 
-/**
-* Returns the full 3D cartesian extent of the solid.
-* OK
-*/
 void UOrb::Extent (UVector3 &aMin, UVector3 &aMax) const
 {
 	aMin.Set(-fR);
 	aMax.Set(fR);
 }
 
-double UOrb::Capacity() 
-{
-	return (4*UUtils::kPi/3)*fR*fR*fR;
-}
-
-double UOrb::SurfaceArea()
-{
-	return (4*UUtils::kPi)*fR*fR;
-}
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -515,3 +482,37 @@ UPolyhedron* UOrb::CreatePolyhedron () const
 {
 	return new UPolyhedronSphere (0., fR, 0., 2*UUtils::kPi, 0., UUtils::kPi);
 } 
+VUSolid* UOrb:: Clone() const
+{
+  return new UOrb(GetName(), fR);
+}
+
+ // Copy constructor
+ 
+ UOrb::UOrb(const UOrb& rhs)
+   : VUSolid(rhs), fR(rhs.fR), fRTolerance(rhs.fRTolerance),fCubicVolume(rhs.fCubicVolume),fSurfaceArea(rhs.fSurfaceArea)
+ {
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////
+ //
+ // Assignment operator
+ 
+ UOrb& UOrb::operator = (const UOrb& rhs) 
+ {
+    // Check assignment to self
+    //
+    if (this == &rhs)  { return *this; }
+ 
+    // Copy base class data
+    //
+    VUSolid::operator=(rhs);
+ 
+    // Copy data
+    //
+    fR = rhs.fR;
+    fRTolerance = rhs.fRTolerance;
+    fCubicVolume = rhs.fCubicVolume;
+    fSurfaceArea = rhs.fSurfaceArea;
+    return *this;
+ }
