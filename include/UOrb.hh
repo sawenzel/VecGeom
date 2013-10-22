@@ -24,6 +24,14 @@ public:
 	UOrb(const std::string &name, double pRmax);
 	~UOrb() {}
 
+       	UOrb(const UOrb& rhs);
+        UOrb& operator=(const UOrb& rhs);
+
+        // Accessors
+         inline double GetRadius() const;
+        // Modifiers
+         inline void SetRadius(double newRmax);
+
 	// Navigation methods
 	EnumInside     Inside (const UVector3 &aPo6int) const;   
 
@@ -45,20 +53,18 @@ public:
 	bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
 //	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
 	void Extent (UVector3 &aMin, UVector3 &aMax) const; 
-	double Capacity();
-	double SurfaceArea();
+	inline double Capacity();
+	inline double SurfaceArea();
 	UGeometryType GetEntityType() const { return "Orb";}
 	void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
 	//G4Visualisation
 	void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
-	UPolyhedron* GetPolyhedron() const{return CreatePolyhedron(); }
+	UPolyhedron* CreatePolyhedron () const;
+       	UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
 
-	inline VUSolid* Clone() const
-	{
-		return new UOrb(GetName(), fR);
-	}
-
+        VUSolid* Clone() const;
+	
 	double GetRadialTolerance()
 	{
 		return fRTolerance;
@@ -67,14 +73,31 @@ public:
 	UVector3 GetPointOnSurface() const;
 
 	std::ostream& StreamInfo(std::ostream& os) const;
-
-	UPolyhedron* CreatePolyhedron () const;
-
 private:  
 	double fR;
 	double fRTolerance;
+        double       fCubicVolume;   // Cubic Volume
+        double       fSurfaceArea;   // Surface Area
 
 	double DistanceToOutForOutsidePoints(const UVector3 &p, const UVector3 &v, UVector3 &n) const;
 
 };
+
+inline double UOrb::GetRadius() const{ return fR;}
+inline void UOrb::SetRadius(double newRmax){fR=newRmax;}
+
+inline double UOrb::Capacity()
+{
+  if(fCubicVolume != 0.) {;}
+  else   { fCubicVolume = (4*UUtils::kPi/3)*fR*fR*fR; }
+  return fCubicVolume;
+}
+
+inline double UOrb::SurfaceArea()
+{
+  if(fSurfaceArea != 0.) {;}
+  else   { fSurfaceArea = (4*UUtils::kPi)*fR*fR; }
+  return fSurfaceArea;
+}
+
 #endif
