@@ -133,8 +133,8 @@ class UPolyhedra : public UVCSGfaceted
 
   VUSolid::EnumInside Inside( const UVector3 &p ) const;
   
-  double DistanceToInDelete( const UVector3 &p,
-                         const UVector3 &v ) const;
+  // double DistanceToInDelete( const UVector3 &p,
+  //                      const UVector3 &v ) const;
 
   double SafetyFromOutside( const UVector3 &aPoint, bool aAccurate=false) const;
   
