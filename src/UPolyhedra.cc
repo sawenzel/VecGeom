@@ -108,8 +108,8 @@ void UPolyhedra::Init(
     std::ostringstream message;
     message << "Solid must have at least one side - " << GetName() << std::endl
             << "        No sides specified !";
-    // UException("UPolyhedra::UPolyhedra()", "GeomSolids0002",
-    //            FatalErrorInArgument, message);
+    UUtils::Exception("UPolyhedra::UPolyhedra()", "GeomSolids0002",
+		      FatalErrorInArguments,1, message.str().c_str());
   }
 
   //
@@ -150,8 +150,8 @@ void UPolyhedra::Init(
                 << " -- rMax[" << i+1 << "] = " << rOuter[i+1] << std::endl
                 << "        rMin[" << i+1 << "] = " << rInner[i+1]
                 << " -- rMax[" << i << "] = " << rOuter[i];
-        // UException("UPolyhedra::UPolyhedra()", "GeomSolids0002",
-        //            FatalErrorInArgument, message);
+	UUtils::Exception("UPolyhedra::UPolyhedra()", "GeomSolids0002",
+			  FatalErrorInArguments,1, message.str().c_str());
       }
     }
     fOriginalParameters.fZValues[i] = zPlane[i];
@@ -219,8 +219,8 @@ void UPolyhedra::Create( double phiStart,
     std::ostringstream message;
     message << "Illegal input parameters - " << GetName() << std::endl
             << "        All R values must be >= 0 !";
-    // UException("UPolyhedra::Create()", "GeomSolids0002",
-    //            FatalErrorInArgument, message);
+    UUtils::Exception("UPolyhedra::Create()", "GeomSolids0002",
+		      FatalErrorInArguments,1, message.str().c_str());
   }
 
   double rzArea = rz->Area();
@@ -232,8 +232,8 @@ void UPolyhedra::Create( double phiStart,
     std::ostringstream message;
     message << "Illegal input parameters - " << GetName() << std::endl
             << "        R/Z Cross section is zero or near zero: " << rzArea;
-    // UException("UPolyhedra::Create()", "GeomSolids0002",
-    //            FatalErrorInArgument, message);
+    UUtils::Exception("UPolyhedra::Create()", "GeomSolids0002",
+		      FatalErrorInArguments,1, message.str().c_str());
   }
     
   if ( (!rz->RemoveDuplicateVertices( VUSolid::Tolerance() ))
@@ -242,8 +242,8 @@ void UPolyhedra::Create( double phiStart,
     std::ostringstream message;
     message << "Illegal input parameters - " << GetName() << std::endl
             << "        Too few unique R/Z values !";
-    // UException("UPolyhedra::Create()", "GeomSolids0002",
-    //            FatalErrorInArgument, message);
+    UUtils::Exception("UPolyhedra::Create()", "GeomSolids0002",
+		      FatalErrorInArguments,1, message.str().c_str());
   }
 
   if (rz->CrossesItself( 1/UUtils::kInfinity )) 
@@ -251,8 +251,8 @@ void UPolyhedra::Create( double phiStart,
     std::ostringstream message;
     message << "Illegal input parameters - " << GetName() << std::endl
             << "        R/Z segments Cross !";
-    // UException("UPolyhedra::Create()", "GeomSolids0002",
-    //            FatalErrorInArgument, message);
+    UUtils::Exception("UPolyhedra::Create()", "GeomSolids0002",
+		      FatalErrorInArguments,1, message.str().c_str());
   }
 
   fNumCorner = rz->NumVertices();
@@ -491,8 +491,8 @@ bool UPolyhedra::Reset()
     std::ostringstream message;
     message << "Solid " << GetName() << " built using generic construct."
             << std::endl << "Not applicable to the generic construct !";
-    // UException("UPolyhedra::Reset(,,)", "GeomSolids1001",
-    //            JustWarning, message, "Parameters NOT resetted.");
+    UUtils::Exception("UPolyhedra::Reset(,,)", "GeomSolids1001",
+               Warning,1,  message.str().c_str());
     return 1;
   }
 
@@ -546,7 +546,7 @@ VUSolid::EnumInside UPolyhedra::Inside( const UVector3 &p ) const
 // This is an override of UVCSGfaceted::Inside, created in order
 // to speed things up by first checking with UEnclosingCylinder.
 //
-double UPolyhedra::DistanceToInDelete( const UVector3 &p,
+/*double UPolyhedra::DistanceToInDelete( const UVector3 &p,
                                     const UVector3 &v ) const
 {
   //
@@ -565,6 +565,7 @@ double UPolyhedra::DistanceToInDelete( const UVector3 &p,
   // block is not used
   if (fOriginalParameters.fNumZPlanes == 2)
   {
+*/
     /*
     if (numFace == 3)
     {
@@ -605,6 +606,7 @@ double UPolyhedra::DistanceToInDelete( const UVector3 &p,
   }
   else
   */
+/*
   }
 
   {
@@ -612,7 +614,7 @@ double UPolyhedra::DistanceToInDelete( const UVector3 &p,
   }
 }
 
-
+*/
 //
 // DistanceToIn
 //
