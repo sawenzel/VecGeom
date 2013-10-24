@@ -26,6 +26,26 @@ public:
 	UTrd(const std::string &pName, double pdx1, double pdx2, double pdy1, double pdy2, double pdz);
 	virtual ~UTrd() {}
 
+       	UTrd(const UTrd& rhs);
+        UTrd& operator=(const UTrd& rhs);
+ 
+        // Copy constructor and assignment operator
+
+        // Accessors
+
+    inline double GetXHalfLength1() const;
+    inline double GetXHalfLength2() const;
+    inline double GetYHalfLength1() const;
+    inline double GetYHalfLength2() const;
+    inline double GetZHalfLength()  const;
+
+    // Modifiers
+
+    inline void SetXHalfLength1(double val);
+    inline void SetXHalfLength2(double val);
+    inline void SetYHalfLength1(double val);
+    inline void SetYHalfLength2(double val);
+    inline void SetZHalfLength(double val);
 	// Navigation methods
 	EnumInside     Inside (const UVector3 &aPoint) const;   
 
@@ -40,12 +60,7 @@ public:
 	virtual double DistanceToIn     ( const UVector3 &aPoint, 
 		const UVector3 &aDirection,
 		// UVector3       &aNormalVector,
-		double aPstep = UUtils::kInfinity) const;          
-
-	inline double  DistanceToInRoot     ( const UVector3 &aPoint, 
-		const UVector3 &aDirection,
-		// UVector3       &aNormalVector,
-		double aPstep = UUtils::kInfinity) const;          
+		double aPstep = UUtils::kInfinity) const;                
 
 
 	virtual double DistanceToOut     ( const UVector3 &aPoint,
@@ -54,16 +69,7 @@ public:
 		bool           &aConvex,
 		double aPstep = UUtils::kInfinity) const;
 
-	inline double DistanceToOutRoot     ( const UVector3 &aPoint,
-		const UVector3 &aDirection,
-		UVector3       &aNormalVector, 
-		bool           &aConvex,
-		double aPstep = UUtils::kInfinity) const;
-
 	virtual bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
-
-	inline bool NormalRoot ( const UVector3& aPoint, UVector3 &aNormal ) const; 
-	inline bool NormalGeant4 ( const UVector3& aPoint, UVector3 &aNormal ) const; 
 
 //	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
 	void Extent (UVector3 &aMin, UVector3 &aMax) const; 
@@ -88,6 +94,13 @@ public:
 
 private:  
 	inline UVector3 ApproxSurfaceNormal( const UVector3& p ) const;
+        inline double amin(int n, const double *a) const;
+        inline double amax(int n, const double *a)const; 
 	double fDx1,fDx2,fDy1,fDy2,fDz;
+        double       fCubicVolume;   // Cubic Volume
+        double       fSurfaceArea;   // Surface Area
 };
+
+#include "UTrd.icc"
+
 #endif
