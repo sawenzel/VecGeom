@@ -108,7 +108,7 @@ UTubs::UTubs( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Negative Z half-length (" << pDz << ") in solid: " << GetName();
-		// UException("UTubs::UTubs()", "GeomSolids0002", FatalException, message);
+		UUtils::Exception("UTubs::UTubs()", "GeomSolids0002", FatalErrorInArguments,1, message.str().c_str());
 	}
 	if ( (pRMin >= pRMax) || (pRMin < 0) ) // Check radii
 	{
@@ -116,7 +116,7 @@ UTubs::UTubs( const std::string &pName,
 		message << "Invalid values for radii in solid: " << GetName()
 			<< std::endl
 			<< "				pRMin = " << pRMin << ", pRMax = " << pRMax;
-		// UException("UTubs::UTubs()", "GeomSolids0002", FatalException, message);
+		UUtils::Exception("UTubs::UTubs()", "GeomSolids0002", FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Check angles
@@ -196,234 +196,6 @@ UTubs& UTubs::operator = (const UTubs& rhs)
 	return *this;
 }
 
-/////////////////////////////////////////////////////////////////////////
-//
-// Dispatch to parameterisation for replication mechanism dimension
-// computation & modification.
-
-/*
-void UTubs::ComputeDimensions(			 UVPVParameterisation* p,
-const int n,
-const UVPhysicalVolume* pRep )
-{
-p->ComputeDimensions(*this,n,pRep);
-}
-*/
-
-////////////////////////////////////////////////////////////////////////
-//
-// Calculate extent under transform and specified limit
-
-/*
-bool UTubs::CalculateExtent( const EAxisType							pAxis,
-const UVoxelLimits&		 pVoxelLimit,
-const UAffineTransform& pTransform,
-double&					pMin, 
-double&					pMax		) const
-{
-
-if ( (!pTransform.IsRotated()) && (fDPhi == 2*UUtils::kPi) && (fRMin == 0) )
-{
-// Special case handling for unrotated solid tubes
-// Compute x/y/z mins and maxs fro bounding box respecting limits,
-// with early returns if outside limits. Then switch() on pAxis,
-// and compute exact x and y limit for x/y case
-
-double xoffset, xMin, xMax;
-double yoffset, yMin, yMax;
-double zoffset, zMin, zMax;
-
-double diff1, diff2, maxDiff, newMin, newMax;
-double xoff1, xoff2, yoff1, yoff2, delta;
-
-xoffset = pTransform.NetTranslation().x;
-xMin = xoffset - fRMax;
-xMax = xoffset + fRMax;
-
-if (pVoxelLimit.IsXLimited())
-{
-if ( (xMin > pVoxelLimit.GetMaxXExtent())
-|| (xMax < pVoxelLimit.GetMinXExtent()) )
-{
-return false;
-}
-else
-{
-if (xMin < pVoxelLimit.GetMinXExtent())
-{
-xMin = pVoxelLimit.GetMinXExtent();
-}
-if (xMax > pVoxelLimit.GetMaxXExtent())
-{
-xMax = pVoxelLimit.GetMaxXExtent();
-}
-}
-}
-yoffset = pTransform.NetTranslation().y;
-yMin		= yoffset - fRMax;
-yMax		= yoffset + fRMax;
-
-if ( pVoxelLimit.IsYLimited() )
-{
-if ( (yMin > pVoxelLimit.GetMaxYExtent())
-|| (yMax < pVoxelLimit.GetMinYExtent()) )
-{
-return false;
-}
-else
-{
-if (yMin < pVoxelLimit.GetMinYExtent())
-{
-yMin = pVoxelLimit.GetMinYExtent();
-}
-if (yMax > pVoxelLimit.GetMaxYExtent())
-{
-yMax=pVoxelLimit.GetMaxYExtent();
-}
-}
-}
-zoffset = pTransform.NetTranslation().z;
-zMin		= zoffset - fDz;
-zMax		= zoffset + fDz;
-
-if ( pVoxelLimit.IsZLimited() )
-{
-if ( (zMin > pVoxelLimit.GetMaxZExtent())
-|| (zMax < pVoxelLimit.GetMinZExtent()) )
-{
-return false;
-}
-else
-{
-if (zMin < pVoxelLimit.GetMinZExtent())
-{
-zMin = pVoxelLimit.GetMinZExtent();
-}
-if (zMax > pVoxelLimit.GetMaxZExtent())
-{
-zMax = pVoxelLimit.GetMaxZExtent();
-}
-}
-}
-switch ( pAxis )	// Known to cut cylinder
-{
-case eXaxis :
-{
-yoff1 = yoffset - yMin;
-yoff2 = yMax		- yoffset;
-
-if ( (yoff1 >= 0) && (yoff2 >= 0) ) // Y limits Cross max/min x
-{																	 // => no change
-pMin = xMin;
-pMax = xMax;
-}
-else
-{
-// Y limits don't Cross max/min x => compute max delta x,
-// hence new mins/maxs
-
-delta	 = fRMax*fRMax - yoff1*yoff1;
-diff1	 = (delta>0.) ? std::sqrt(delta) : 0.;
-delta	 = fRMax*fRMax - yoff2*yoff2;
-diff2	 = (delta>0.) ? std::sqrt(delta) : 0.;
-maxDiff = (diff1 > diff2) ? diff1:diff2;
-newMin	= xoffset - maxDiff;
-newMax	= xoffset + maxDiff;
-pMin		= (newMin < xMin) ? xMin : newMin;
-pMax		= (newMax > xMax) ? xMax : newMax;
-}		
-break;
-}
-case eYaxis :
-{
-xoff1 = xoffset - xMin;
-xoff2 = xMax - xoffset;
-
-if ( (xoff1 >= 0) && (xoff2 >= 0) ) // X limits Cross max/min y
-{																	 // => no change
-pMin = yMin;
-pMax = yMax;
-}
-else
-{
-// X limits don't Cross max/min y => compute max delta y,
-// hence new mins/maxs
-
-delta	 = fRMax*fRMax - xoff1*xoff1;
-diff1	 = (delta>0.) ? std::sqrt(delta) : 0.;
-delta	 = fRMax*fRMax - xoff2*xoff2;
-diff2	 = (delta>0.) ? std::sqrt(delta) : 0.;
-maxDiff = (diff1 > diff2) ? diff1 : diff2;
-newMin	= yoffset - maxDiff;
-newMax	= yoffset + maxDiff;
-pMin		= (newMin < yMin) ? yMin : newMin;
-pMax		= (newMax > yMax) ? yMax : newMax;
-}
-break;
-}
-case eZaxis:
-{
-pMin = zMin;
-pMax = zMax;
-break;
-}
-default:
-break;
-}
-pMin -= VUSolid::Tolerance();
-pMax += VUSolid::Tolerance();
-return true;
-}
-else // Calculate rotated vertex coordinates
-{
-int i, noEntries, noBetweenSections4;
-bool existsAfterClip = false;
-UVector3List* vertices = CreateRotatedVertices(pTransform);
-
-pMin =	UUtils::kInfinity;
-pMax = -UUtils::kInfinity;
-
-noEntries = vertices->size();
-noBetweenSections4 = noEntries - 4;
-
-for ( i = 0; i < noEntries; i += 4 )
-{
-ClipCrossSection(vertices, i, pVoxelLimit, pAxis, pMin, pMax);
-}
-for ( i = 0; i < noBetweenSections4; i += 4 )
-{
-ClipBetweenSections(vertices, i, pVoxelLimit, pAxis, pMin, pMax);
-}
-if ( (pMin != UUtils::kInfinity) || (pMax != -UUtils::kInfinity) )
-{
-existsAfterClip = true;
-pMin -= VUSolid::Tolerance(); // Add 2*tolerance to avoid precision troubles
-pMax += VUSolid::Tolerance();
-}
-else
-{
-// Check for case where completely enveloUUtils::kPing clipUUtils::kPing volume
-// If point inside then we are confident that the solid completely
-// envelopes the clipUUtils::kPing volume. Hence Set min/max extents according
-// to clipUUtils::kPing volume extents along the specified axis.
-
-UVector3 clipCentre(
-(pVoxelLimit.GetMinXExtent()+pVoxelLimit.GetMaxXExtent())*0.5,
-(pVoxelLimit.GetMinYExtent()+pVoxelLimit.GetMaxYExtent())*0.5,
-(pVoxelLimit.GetMinZExtent()+pVoxelLimit.GetMaxZExtent())*0.5 );
-
-if ( Inside(pTransform.Inverse().TransformPoint(clipCentre)) != eOutside )
-{
-existsAfterClip = true;
-pMin						= pVoxelLimit.GetMinExtent(pAxis);
-pMax						= pVoxelLimit.GetMaxExtent(pAxis);
-}
-}
-delete vertices;
-return existsAfterClip;
-}
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -672,9 +444,9 @@ bool UTubs::Normal( const UVector3& p, UVector3& n) const
 	}
 	if ( noSurfaces == 0 )
 	{
-#ifdef UCSGDEBUG
-		// UException("UTubs::SurfaceNormal(p)", "GeomSolids1002",
-		JustWarning, "Point p is not on surface !?" );
+#ifdef UDEBUG
+	  UUtils::Exception("UTubs::SurfaceNormal(p)", "GeomSolids1002",
+			    Warning,1, "Point p is not on surface !?" );
 		int oldprc = cout.precision(20);
 		cout<< "UTubs::SN ( "<<p.x<<", "<<p.y<<", "<<p.z<<" ); "
 			<< std::endl << std::endl;
@@ -796,9 +568,9 @@ UVector3 UTubs::ApproxSurfaceNormal( const UVector3& p ) const
 	default:			// Should never reach this case ...
 		{
 			// DumpInfo();
-			// UException("UTubs::ApproxSurfaceNormal()",
-			//						"GeomSolids1002", JustWarning,
-			//						"Undefined side for valid surface normal to solid.");
+		  UUtils::Exception("UTubs::ApproxSurfaceNormal()",
+				    "GeomSolids1002", Warning,1,
+									"Undefined side for valid surface normal to solid.");
 			break;
 		}		
 	}								
@@ -1653,8 +1425,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 				<< "Proposed distance :" << std::endl << std::endl
 				<< "snxt = "		<< snxt << " mm" << std::endl;
 			message.precision(oldprc);
-			// UException("UTubs::DistanceToOut(p,v,..)", "GeomSolids1002",
-			//						JustWarning, message);
+			UUtils::Exception("UTubs::DistanceToOut(p,v,..)", "GeomSolids1002",
+					  Warning,1, message.str().c_str());
 			break;
 		}
 	}
@@ -1662,6 +1434,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, b
 
 	return snxt;
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -1672,7 +1445,7 @@ double UTubs::SafetyFromInside( const UVector3& p, bool) const
 	double safe=0.0, rho, safeR1, safeR2, safeZ, safePhi;
 	rho = std::sqrt(p.x*p.x + p.y*p.y);
 
-#ifdef UCSGDEBUG
+#ifdef UDEBUG
 	if( Inside(p) == eOutside )
 	{
 		int oldprc = cout.precision(16);
@@ -1683,8 +1456,8 @@ double UTubs::SafetyFromInside( const UVector3& p, bool) const
 		cout << "p.y = "	 << p.y << " mm" << std::endl;
 		cout << "p.z = "	 << p.z << " mm" << std::endl << std::endl;
 		cout.precision(oldprc);
-		// UException("UTubs::DistanceToOut(p)", "GeomSolids1002",
-		JustWarning, "Point p is outside !?");
+		UUtils::Exception("UTubs::DistanceToOut(p)", "GeomSolids1002",
+				  Warning,1, "Point p is outside !?");
 	}
 #endif
 
@@ -1723,101 +1496,6 @@ double UTubs::SafetyFromInside( const UVector3& p, bool) const
 	return safe;	
 }
 
-/////////////////////////////////////////////////////////////////////////
-//
-// Create a List containing the transformed vertices
-// Ordering [0-3] -fDz Cross section
-//					[4-7] +fDz Cross section such that [0] is below [4],
-//																						 [1] below [5] etc.
-// Note:
-//	Caller has deletion resposibility
-//	Potential improvement: For last slice, use actual ending angle
-//												 to avoid rounding error problems.
-
-/*
-UVector3List*
-UTubs::CreateRotatedVertices( const UAffineTransform& pTransform ) const
-{
-UVector3List* vertices;
-UVector3 vertex0, vertex1, vertex2, vertex3;
-double meshAngle, meshRMax, crossAngle,
-cosCrossAngle, sinCrossAngle, sAngle;
-double rMaxX, rMaxY, rMinX, rMinY, meshRMin;
-int crossSection, noCrossSections;
-
-// Compute no of Cross-sections necessary to mesh tube
-//
-noCrossSections = int(fDPhi/kMeshAngleDefault) + 1;
-
-if ( noCrossSections < kMinMeshSections )
-{
-noCrossSections = kMinMeshSections;
-}
-else if (noCrossSections>kMaxMeshSections)
-{
-noCrossSections = kMaxMeshSections;
-}
-// noCrossSections = 4;
-
-meshAngle = fDPhi/(noCrossSections - 1);
-// meshAngle = fDPhi/(noCrossSections);
-
-meshRMax	= (fRMax+100*VUSolid::Tolerance())/std::cos(meshAngle*0.5);
-meshRMin = fRMin - 100*VUSolid::Tolerance(); 
-
-// If complete in phi, Set start angle such that mesh will be at fRMax
-// on the x axis. Will give better extent calculations when not rotated.
-
-if (fPhiFullTube && (fSPhi == 0) )	{ sAngle = -meshAngle*0.5; }
-else																{ sAngle =	fSPhi; }
-
-vertices = new UVector3List();
-
-if ( vertices )
-{
-vertices->reserve(noCrossSections*4);
-for (crossSection = 0; crossSection < noCrossSections; crossSection++ )
-{
-// Compute coordinates of Cross section at section crossSection
-
-crossAngle		= sAngle + crossSection*meshAngle;
-cosCrossAngle = std::cos(crossAngle);
-sinCrossAngle = std::sin(crossAngle);
-
-rMaxX = meshRMax*cosCrossAngle;
-rMaxY = meshRMax*sinCrossAngle;
-
-if(meshRMin <= 0.0)
-{
-rMinX = 0.0;
-rMinY = 0.0;
-}
-else
-{
-rMinX = meshRMin*cosCrossAngle;
-rMinY = meshRMin*sinCrossAngle;
-}
-vertex0 = UVector3(rMinX,rMinY,-fDz);
-vertex1 = UVector3(rMaxX,rMaxY,-fDz);
-vertex2 = UVector3(rMaxX,rMaxY,+fDz);
-vertex3 = UVector3(rMinX,rMinY,+fDz);
-
-vertices->push_back(pTransform.TransformPoint(vertex0));
-vertices->push_back(pTransform.TransformPoint(vertex1));
-vertices->push_back(pTransform.TransformPoint(vertex2));
-vertices->push_back(pTransform.TransformPoint(vertex3));
-}
-}
-else
-{
-// DumpInfo();
-// UException("UTubs::CreateRotatedVertices()",
-//						"GeomSolids0003", FatalException,
-//						"Error in allocation of vertices. Out of memory !");
-}
-return vertices;
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////
 //
