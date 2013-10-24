@@ -90,8 +90,8 @@ USphere::USphere(const std::string &pName,
 		std::ostringstream message;
 		message << "Invalid radii for Solid: " << GetName() << std::endl
 						<< "				pRmin = " << pRmin << ", pRmax = " << pRmax;
-		// UException("USphere::USphere()", "GeomSolids0002",
-	    // FatalException, message);
+		UUtils::Exception("USphere::USphere()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 	fRmin=pRmin; fRmax=pRmax;
 	fRminTolerance = (fRmin) ? std::max(kRadTolerance, fEpsilon*fRmin) : 0;
@@ -667,9 +667,9 @@ bool USphere::Normal(const UVector3& p, UVector3 &n) const
 	}
 	if (noSurfaces == 0)
 	{
-#ifdef UCSGDEBUG
-		// UException("USphere::SurfaceNormal(p)", "GeomSolids1002",
-		// JustWarning, "Point p is not on surface !?"); 
+#ifdef UDEBUG
+	  UUtils::Exception("USphere::SurfaceNormal(p)", "GeomSolids1002",
+			    Warning,1, "Point p is not on surface !?"); 
 #endif
 		 norm = ApproxSurfaceNormal(p);
 	}
@@ -819,9 +819,9 @@ UVector3 USphere::ApproxSurfaceNormal(const UVector3& p) const
 			break;
 		default:					// Should never reach this case ...
 			
-			// UException("USphere::ApproxSurfaceNormal()",
-			//						"GeomSolids1002", JustWarning,
-			//						"Undefined side for valid surface normal to solid.");
+		  UUtils::Exception("USphere::ApproxSurfaceNormal()",
+				    "GeomSolids1002", Warning,1,
+									"Undefined side for valid surface normal to solid.");
 			break;		
 	}
 
@@ -2707,8 +2707,8 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n,
 							<< "Proposed distance :" << std::endl << std::endl
 							<< "snxt = "		<< snxt << " mm" << std::endl;
 			message.precision(oldprc);
-			// UException("USphere::DistanceToOut(p,v,..)",
-			//						"GeomSolids1002", JustWarning, message);
+			UUtils::Exception("USphere::DistanceToOut(p,v,..)",
+					  "GeomSolids1002", Warning,1, message.str().c_str());
 			break;
 	}
 	if (snxt == UUtils::Infinity())
@@ -2731,8 +2731,8 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n,
 						<< "Proposed distance :" << std::endl << std::endl
 						<< "snxt = "		<< snxt << " mm" << std::endl;
 		message.precision(oldprc);
-		// UException("USphere::DistanceToOut(p,v,..)",
-		//						"GeomSolids1002", JustWarning, message);
+		UUtils::Exception("USphere::DistanceToOut(p,v,..)",
+				  "GeomSolids1002", Warning,1, message.str().c_str());
 	}
 
 	return snxt;
@@ -2751,7 +2751,7 @@ double USphere::SafetyFromInside (const UVector3& p, bool /*aAccurate*/) const
 	rds=std::sqrt(rho2+p.z*p.z);
 	rho=std::sqrt(rho2);
 
-#ifdef UCSGDEBUG
+#ifdef UDEBUG
 	if(Inside(p) == eOutside)
 	{
 		 int old_prc = cout.precision(16);
@@ -2762,8 +2762,8 @@ double USphere::SafetyFromInside (const UVector3& p, bool /*aAccurate*/) const
 		 cout << "p.y = "	 << p.y << " mm" << std::endl;
 		 cout << "p.z = "	 << p.z << " mm" << std::endl << std::endl;
 		 cout.precision(old_prc);
-		 // UException("USphere::DistanceToOut(p)",
-								 "GeomSolids1002", JustWarning, "Point p is outside !?");
+		 UUtils::Exception("USphere::DistanceToOut(p)",
+				   "GeomSolids1002", Warning,1, "Point p is outside !?");
 	}
 #endif
 
@@ -2947,8 +2947,8 @@ USphere::CreateRotatedVertices(const UAffineTransform& pTransform,
 	else
 	{
 		
-		// UException("USphere::CreateRotatedVertices()",
-								"GeomSolids0003", FatalException,
+	UUtils::Exception("USphere::CreateRotatedVertices()",
+								"GeomSolids0003", FatalError,1,
 								"Error in allocation of vertices. Out of memory !");
 	}
 
