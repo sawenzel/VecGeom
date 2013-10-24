@@ -439,7 +439,8 @@ inline
 	void USphere::CheckPhiAngles(double sPhi, double dPhi)
 {
 	CheckDPhiAngle(dPhi);
-	if (!fFullPhiSphere && sPhi) { CheckSPhiAngle(sPhi); }
+	//if (!fFullPhiSphere && sPhi) { CheckSPhiAngle(sPhi); }
+        if (!fFullPhiSphere) { CheckSPhiAngle(sPhi); }
 	fFullSphere = fFullPhiSphere && fFullThetaSphere;
 
 	InitializePhiTrigonometry();
