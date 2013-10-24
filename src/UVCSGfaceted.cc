@@ -730,7 +730,7 @@ void  UVCSGfaceted::InitVoxels(UReduciblePolygon &rz, double radius)
   }
 
   fBox.Set(radius, radius, (fZs.back() - fZs.front()) /2);
-  fBoxShift = fZs[0] + fBox.GetDz();
+  fBoxShift = fZs[0] + fBox.GetZHalfLength();
 }
 
 void UVCSGfaceted::FindCandidates(double z, vector <int> &candidates, bool sides)
