@@ -331,3 +331,5 @@ void VUSolid::ExtentAxis(EAxisType aAxis, double &aMin, double &aMax) const
     cout << "Extent: unknown axis" << aAxis << std::endl;
 #endif
 }
+
+
