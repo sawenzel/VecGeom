@@ -91,8 +91,8 @@ UTrap::UTrap( const std::string &pName,
 						<< pDx1 << ", " << pDx2 << ", " << pDx3 << ", " << pDx4 << std::endl
 						<< "					Y - " << pDy1 << ", " << pDy2 << std::endl
 						<< "					Z - " << pDz;
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	fDz=pDz;
@@ -142,8 +142,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Invalid vertice coordinates for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 		
 	// Bottom side with normal approx. -Y
@@ -153,8 +153,8 @@ UTrap::UTrap( const std::string &pName,
 	if (!good)
 	{
 		
-		// UException("UTrap::UTrap()", "GeomSolids0002", FatalException,
-		// "Face at ~-Y not planar.");
+	  UUtils::Exception("UTrap::UTrap()", "GeomSolids0002", FatalError,1,
+		 "Face at ~-Y not planar.");
 	}
 
 	// Top side with normal approx. +Y
@@ -165,8 +165,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Front side with normal approx. -X
@@ -177,8 +177,7 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",FatalErrorInArguments,1,message.str().c_str());
 	}
 
 	// Back side iwth normal approx. +X
@@ -188,8 +187,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 	fDz = (pt[7]).z ;
 			
@@ -223,8 +222,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Invalid length parameters for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	fDz = 0.5*pZ ;
@@ -267,8 +266,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Top side with normal approx. +Y
@@ -278,8 +277,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Front side with normal approx. -X
@@ -289,8 +288,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Back side iwth normal approx. +X
@@ -300,8 +299,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalError,1, message.str().c_str());
 	}
 }
 
@@ -321,8 +320,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Invalid length parameters for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	fDz = pDz;
@@ -365,8 +364,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Top side with normal approx. +Y
@@ -376,8 +375,7 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Front side with normal approx. -X
@@ -387,8 +385,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Back side iwth normal approx. +X
@@ -398,8 +396,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 }
 
@@ -420,8 +418,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Invalid length parameters for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	fDz = pDz ;
@@ -464,8 +462,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Top side with normal approx. +Y
@@ -475,8 +473,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+Y not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Front side with normal approx. -X
@@ -486,8 +484,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~-X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 
 	// Back side iwth normal approx. +X
@@ -497,8 +495,8 @@ UTrap::UTrap( const std::string &pName,
 	{
 		std::ostringstream message;
 		message << "Face at ~+X not planar for Solid: " << GetName();
-		// UException("UTrap::UTrap()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 }
 
@@ -600,8 +598,8 @@ void UTrap::SetAllParameters ( double pDz,
 						<< pDx1 << ", " << pDx2 << ", " << pDx3 << ", " << pDx4 << std::endl
 						<< "					Y - " << pDy1 << ", " << pDy2 << std::endl
 						<< "					Z - " << pDz;
-		// UException("UTrap::SetAllParameters()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::SetAllParameters()", "GeomSolids0002",
+				  FatalErrorInArguments,1, message.str().c_str());
 	}
 	fCubicVolume= 0.;
 	fSurfaceArea= 0.;
@@ -657,8 +655,8 @@ bool UTrap::MakePlanes()
 	{
 		std::ostringstream message;
 		message << "Face at ~-Y not planar for Solid: " << GetName();
-		// UException("UTrap::MakePlanes()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::MakePlanes()", "GeomSolids0002",
+				  FatalError,1, message.str().c_str());
 	}
 
 	// Top side with normal approx. +Y
@@ -668,8 +666,8 @@ bool UTrap::MakePlanes()
 	{
 		std::ostringstream message;
 		message << "Face at ~+Y not planar for Solid: " << GetName();
-		// UException("UTrap::MakePlanes()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::MakePlanes()", "GeomSolids0002",
+				  FatalError,1, message.str().c_str());
 	}
 
 	// Front side with normal approx. -X
@@ -679,8 +677,8 @@ bool UTrap::MakePlanes()
 	{
 		std::ostringstream message;
 		message << "Face at ~-X not planar for Solid: " << GetName();
-		// UException("UTrap::MakePlanes()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::MakePlanes()", "GeomSolids0002",
+				  FatalError,1, message.str().c_str());
 	}
 	 
 	// Back side iwth normal approx. +X
@@ -690,8 +688,8 @@ bool UTrap::MakePlanes()
 	{
 		std::ostringstream message;
 		message << "Face at ~+X not planar for Solid: " << GetName();
-		// UException("UTrap::MakePlanes()", "GeomSolids0002",
-		//						FatalException, message);
+		UUtils::Exception("UTrap::MakePlanes()", "GeomSolids0002",
+				  FatalError,1, message.str().c_str());
 	}
 
 	return good;
@@ -764,8 +762,8 @@ bool UTrap::MakePlane( const UVector3& p1,
 			std::ostringstream message;
 			message << "Invalid parameters: norm.mod() <= 0, for Solid: "
 							<< GetName();
-			// UException("UTrap::MakePlanes()", "GeomSolids0002",
-			//						FatalException, message) ;
+			UUtils::Exception("UTrap::MakePlanes()", "GeomSolids0002",
+					  FatalError,1, message.str().c_str()) ;
 		}
 		// Calculate D: p1 in in plane so D=-n.p1.Vect()
 		
@@ -888,9 +886,9 @@ bool UTrap::Normal( const UVector3& p, UVector3 &aNormal ) const
 	}
 	if ( noSurfaces == 0 )
 	{
-#ifdef UCSGDEBUG
-		// UException("UTrap::SurfaceNormal(p)", "GeomSolids1002",
-								JustWarning, "Point p is not on surface !?" );
+#ifdef UDEBUG
+	  UUtils::Exception("UTrap::SurfaceNormal(p)", "GeomSolids1002",
+			    Warning,1, "Point p is not on surface !?" );
 #endif 
 		 norm = ApproxSurfaceNormal(p);
 	}
@@ -1335,8 +1333,8 @@ double UTrap::DistanceToOut( const UVector3 &p, const UVector3  &v, UVector3    
 								<< "Proposed distance :" << std::endl << std::endl
 								<< "snxt = "		<< snxt << " mm" << std::endl;
 				message.precision(oldprc);
-				// UException("UTrap::DistanceToOut(p,v,..)","GeomSolids1002",
-				//						JustWarning, message);
+				UUtils::Exception("UTrap::DistanceToOut(p,v,..)","GeomSolids1002",
+						  Warning,1, message.str().c_str());
 				break;
 	}
 	return snxt;
@@ -1352,7 +1350,7 @@ double UTrap::SafetyFromOutside(const UVector3& p, bool /*precise*/) const
 	double safe=0.0,Dist;
 	int i;
 
-#ifdef UCSGDEBUG
+#ifdef UDEBUG
 	if( Inside(p) == eOutside )
 	{
 		 int oldprc = cout.precision(16) ;
@@ -1363,8 +1361,8 @@ double UTrap::SafetyFromOutside(const UVector3& p, bool /*precise*/) const
 		 cout << "p.y = "	 << p.y << " mm" << std::endl ;
 		 cout << "p.z = "	 << p.z << " mm" << std::endl << std::endl ;
 		 cout.precision(oldprc) ;
-		 // UException("UTrap::DistanceToOut(p)",
-								 "GeomSolids1002", JustWarning, "Point p is outside !?" );
+		 UUtils::Exception("UTrap::DistanceToOut(p)",
+				   "GeomSolids1002", Warning,1, "Point p is outside !?" );
 	}
 #endif
 
