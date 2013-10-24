@@ -324,7 +324,7 @@ void UVoxelizer::BuildBitmasks(std::vector<double> boundaries[], UBits bitmasks[
 
 #ifdef DEBUG
 		string fileName = "reduced"+UUtils::ToString(k);
-		UUtils::SaveVectorToMatlabFile(candidatesCount, fileName);
+		UUtils::SaveVectorToExternalFile(candidatesCount, fileName);
 #endif
 
 		/*
