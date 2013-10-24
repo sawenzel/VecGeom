@@ -1,15 +1,5 @@
 
-/**
-* @file
-* @author  John Doe <jdoe@example.com>
-* @version 0.1
-*
-* @section LICENSE
-*
-* @section DESCRIPTION
-*
-* A simple Orb defined by half-lengths on the three axis. The center of the Orb matches the origin of the local reference frame.
-*/
+///
  
 #include <iostream>
 #include <cmath>
@@ -17,44 +7,50 @@
 #include "UTrd.hh"
 #include "UUtils.hh"
 
-// OK: inside => use geant4
-// normal => integrate root which is slightly faster, if it is possible to do easily
-// OK: safety*, integrate root for accurate case, for start we can use two versions
-// use distances from root
-
-inline double amin(int n, const double *a) {
-	// Return value from array with the minimum element.
-	double xmin = a[0];
-	for  (int i = 1; i < n; i++) 
+//dx1 	Half-length along x at the surface positioned at -dz
+//dx2 	Half-length along x at the surface positioned at +dz
+//dy1 	Half-length along y at the surface positioned at -dz
+//dy2 	Half-length along y at the surface positioned at +dz
+//dz 	Half-length along z axis 
+//______________________________________________________________________________
+UTrd::UTrd(const std::string &pName,
+	double pdx1, double pdx2,
+	double pdy1, double pdy2,
+	double pdz)
+  : VUSolid(pName),fCubicVolume(0),fSurfaceArea(0)
+{
+	if ( pdx1>0&&pdx2>0&&pdy1>0&&pdy2>0&&pdz>0 )
 	{
-		if (xmin > a[i]) xmin = a[i];
+		fDx1=pdx1; fDx2=pdx2;
+		fDy1=pdy1; fDy2=pdy2;
+		fDz=pdz;
 	}
-	return xmin;
-}
-
-inline double amax(int n, const double *a) {
-	// Return value from array with the maximum element.
-	double xmax = a[0];
-	for  (int i = 1; i < n; i++)
+	else
 	{
-		if (xmax < a[i]) xmax = a[i];
+		if ( pdx1>=0 && pdx2>=0 && pdy1>=0 && pdy2>=0 && pdz>=0 )
+		{
+			// double  Minimum_length= (1+per_thousand) * VUSolid::fgTolerance/2.;
+			// FIX-ME : temporary solution for ZERO or very-small parameters
+			//
+			double  Minimum_length= fgTolerance;
+			fDx1=std::max(pdx1,Minimum_length); 
+			fDx2=std::max(pdx2,Minimum_length); 
+			fDy1=std::max(pdy1,Minimum_length); 
+			fDy2=std::max(pdy2,Minimum_length); 
+			fDz=std::max(pdz,Minimum_length);
+		}
+		else
+		{
+			std::cout << "ERROR - G4Trd()::CheckAndSetAllParameters(): " << GetName()
+				<< std::endl
+				<< "        Invalid dimensions, some are < 0 !" << std::endl
+				<< "          X - " << pdx1 << ", " << pdx2 << std::endl
+				<< "          Y - " << pdy1 << ", " << pdy2 << std::endl
+				<< "          Z - " << pdz << std::endl;
+			UUtils::Exception("G4Trd::CheckAndSetAllParameters()", "InvalidSetup",FatalErrorInArguments, 1,"Invalid parameters.");
+		}
 	}
-	return xmax;
 }
-
-
-
-/*
-* Estimates the isotropic safety from a point inside the current solid to any 
-* of its surfaces. The algorithm may be accurate or should provide a fast 
-* underestimate.
-* ______________________________________________________________________________
-* Note: In geant4, these methods are DistanceToOut, without given direction
-* Note: ??? Should not Return 0 anymore if point outside, just the value
-* OK
-*/
-
-// Geant4 version is faster according to the profiler
 
 
 double UTrd::SafetyFromInside ( const UVector3 &p, bool aAccurate) const
@@ -63,18 +59,18 @@ double UTrd::SafetyFromInside ( const UVector3 &p, bool aAccurate) const
 
 	double safe, zbase, tanxz, xdist, saf1, tanyz, ydist, saf2;
 
-#ifdef G4CSGDEBUG
+#ifdef UDEBUG
 	if( Inside(p) == kOutside )
 	{
-		G4int oldprc = G4cout.precision(16) ;
-		G4cout << G4endl ;
+	  int oldprc = std::cout.precision(16) ;
+	  std::cout << std::endl ;
 		DumpInfo();
-		G4cout << "Position:"  << G4endl << G4endl ;
-		G4cout << "p.x() = "   << p.x()/mm << " mm" << G4endl ;
-		G4cout << "p.y() = "   << p.y()/mm << " mm" << G4endl ;
-		G4cout << "p.z() = "   << p.z()/mm << " mm" << G4endl << G4endl ;
-		G4cout.precision(oldprc) ;
-		G4Exception("G4Trd::DistanceToOut(p)", "Notification", JustWarning, 
+		std::cout << "Position:"  << std::endl << std::endl ;
+		std::cout << "p.x() = "   << p.x()/mm << " mm" << std::endl ;
+		std::cout << "p.y() = "   << p.y()/mm << " mm" << std::endl ;
+		std::cout << "p.z() = "   << p.z()/mm << " mm" << std::endl << std::endl ;
+		std::cout.precision(oldprc) ;
+		UUtils::Exception("G4Trd::DistanceToOut(p)", "Notification", Warning, 1,
 			"Point p is outside !?" );
 	}
 #endif
@@ -208,54 +204,6 @@ inline double UTrd::SafetyFromOutsideAccurate ( const UVector3 &p) const
 
 	for (int i=0; i<3; i++) saf[i]=-saf[i];
 	return amax(3,saf);
-}
-
-
-
-
-//dx1 	Half-length along x at the surface positioned at -dz
-//dx2 	Half-length along x at the surface positioned at +dz
-//dy1 	Half-length along y at the surface positioned at -dz
-//dy2 	Half-length along y at the surface positioned at +dz
-//dz 	Half-length along z axis 
-//______________________________________________________________________________
-UTrd::UTrd(const std::string &pName,
-	double pdx1, double pdx2,
-	double pdy1, double pdy2,
-	double pdz)
-	: VUSolid(pName)
-{
-	if ( pdx1>0&&pdx2>0&&pdy1>0&&pdy2>0&&pdz>0 )
-	{
-		fDx1=pdx1; fDx2=pdx2;
-		fDy1=pdy1; fDy2=pdy2;
-		fDz=pdz;
-	}
-	else
-	{
-		if ( pdx1>=0 && pdx2>=0 && pdy1>=0 && pdy2>=0 && pdz>=0 )
-		{
-			// double  Minimum_length= (1+per_thousand) * VUSolid::fgTolerance/2.;
-			// FIX-ME : temporary solution for ZERO or very-small parameters
-			//
-			double  Minimum_length= fgTolerance;
-			fDx1=std::max(pdx1,Minimum_length); 
-			fDx2=std::max(pdx2,Minimum_length); 
-			fDy1=std::max(pdy1,Minimum_length); 
-			fDy2=std::max(pdy2,Minimum_length); 
-			fDz=std::max(pdz,Minimum_length);
-		}
-		else
-		{
-			std::cout << "ERROR - G4Trd()::CheckAndSetAllParameters(): " << GetName()
-				<< std::endl
-				<< "        Invalid dimensions, some are < 0 !" << std::endl
-				<< "          X - " << pdx1 << ", " << pdx2 << std::endl
-				<< "          Y - " << pdy1 << ", " << pdy2 << std::endl
-				<< "          Z - " << pdz << std::endl;
-			// G4Exception("G4Trd::CheckAndSetAllParameters()", "InvalidSetup", FatalException, "Invalid parameters.");
-		}
-	}
 }
 
 //______________________________________________________________________________
@@ -565,137 +513,6 @@ double UTrd::DistanceToIn(const UVector3 &p,
 
 
 //_____________________________________________________________________________
-// double TGeoTrd2::DistFromOutside(double *point, double *dir, int iact, double step, double *safe) const
-
-// root routine is faster, but it gives wrong results on surface points. therefore, we use currently
-// Geant4 version
-
-inline double UTrd::DistanceToInRoot(const UVector3 &point, const UVector3 &dir, double) const
-{
-	// Compute distance from outside point to surface of the trd2
-	// Boundary safe algorithm
-	double snxt = UUtils::kInfinity;
-
-	/*
-	if (iact<3 && safe) {
-	// compute safe distance
-	*safe = SafetyFromOutside(point);
-	if (iact==0) return UUtils::kInfinity;
-	if (iact==1 && step<*safe) return UUtils::kInfinity;
-	}
-	*/
-
-	// find a visible face
-	double xnew,ynew,znew;
-	double fx = 0.5*(fDx1-fDx2)/fDz;
-	double fy = 0.5*(fDy1-fDy2)/fDz;
-	double cn;
-	// check visibility of X faces
-	double distx = 0.5*(fDx1+fDx2)-fx*point.z;
-	double disty = 0.5*(fDy1+fDy2)-fy*point.z;
-	bool in = true;
-	double safx = distx-std::abs(point.x);
-	double safy = disty-std::abs(point.y);
-	double safz = fDz-std::abs(point.z);
-	//--- Compute distance to this shape
-	// first check if Z facettes are crossed
-	if (point.z<=-fDz) {
-		cn = -dir.z;
-		if (cn>=0) return UUtils::kInfinity;
-		in = false;
-		snxt = (fDz+point.z)/cn;	
-		// find extrapolated X and Y
-		xnew = point.x+snxt*dir.x;
-		if (std::abs(xnew) < fDx1) {
-			ynew = point.y+snxt*dir.y;
-			if (std::abs(ynew) < fDy1) return snxt;
-		}
-	} else if (point.z>=fDz) {
-		cn = dir.z;
-		if (cn>=0) return UUtils::kInfinity;
-		in = false;
-		snxt = (fDz-point.z)/cn;
-		// find extrapolated X and Y
-		xnew = point.x+snxt*dir.x;
-		if (std::abs(xnew) < fDx2) {
-			ynew = point.y+snxt*dir.y;
-			if (std::abs(ynew) < fDy2) return snxt;
-		}
-	}
-	// check if X facettes are crossed
-	if (point.x<=-distx) {
-		cn = -dir.x+fx*dir.z;
-		if (cn>=0) return UUtils::kInfinity;
-		in = false;
-		snxt = (point.x+distx)/cn;
-		// find extrapolated Y and Z
-		znew = point.z+snxt*dir.z;
-		if (std::abs(znew) < fDz) {
-			double dy = 0.5*(fDy1+fDy2)-fy*znew;
-			ynew = point.y+snxt*dir.y;
-			if (std::abs(ynew) < dy) return snxt;
-		}
-	}            
-	if (point.x>=distx) {
-		cn = dir.x+fx*dir.z;
-		if (cn>=0) return UUtils::kInfinity;
-		in = false;
-		snxt = (distx-point.x)/cn;
-		// find extrapolated Y and Z
-		znew = point.z+snxt*dir.z;
-		if (std::abs(znew) < fDz) {
-			double dy = 0.5*(fDy1+fDy2)-fy*znew;
-			ynew = point.y+snxt*dir.y;
-			if (std::abs(ynew) < dy) return snxt;
-		}
-	}
-	// finally check Y facettes
-	if (point.y<=-disty) {
-		cn = -dir.y+fy*dir.z;
-		in = false;
-		if (cn>=0) return UUtils::kInfinity;
-		snxt = (point.y+disty)/cn;
-		// find extrapolated X and Z
-		znew = point.z+snxt*dir.z;
-		if (std::abs(znew) < fDz) {
-			double dx = 0.5*(fDx1+fDx2)-fx*znew;
-			xnew = point.x+snxt*dir.x;
-			if (std::abs(xnew) < dx) return snxt;
-		}
-	}            
-	if (point.y>=disty) {
-		cn = dir.y+fy*dir.z;
-		if (cn>=0) return UUtils::kInfinity;
-		in = false;
-		snxt = (disty-point.y)/cn;
-		// find extrapolated X and Z
-		znew = point.z+snxt*dir.z;
-		if (std::abs(znew) < fDz) {
-			double dx = 0.5*(fDx1+fDx2)-fx*znew;
-			xnew = point.x+snxt*dir.x;
-			if (std::abs(xnew) < dx) return snxt;
-		}
-	}
-	if (!in) return UUtils::kInfinity;
-
-	//   TODO: Inside points:  If a point direction dot normal of surface is negative return 0, if outwards (dot product positive), check another surface
-
-	// Point actually inside
-	if (safz<safx && safz<safy) {
-		if (point.z*dir.z>=0) return UUtils::kInfinity;
-		return 0.0;
-	}
-	if (safy<safx) {
-		cn = UUtils::Sign(1.0,point.y)*dir.y+fy*dir.z;     
-		if (cn>=0) return UUtils::kInfinity;
-		return 0.0;
-	}   
-	cn = UUtils::Sign(1.0,point.x)*dir.x+fx*dir.z;     
-	if (cn>=0) return UUtils::kInfinity;
-
-	return 0.0;      
-}
-
 
 /*
 * Computes distance from a point presumably intside the solid to the solid 
@@ -707,15 +524,12 @@ inline double UTrd::DistanceToInRoot(const UVector3 &point, const UVector3 &dir,
 * ______________________________________________________________________________
 */
 
-#define normal
 
 inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
-	UVector3 &n, bool & /*convex*/ /* not used */, double /*aPstep*/) const
+	UVector3 &n, bool & aConvex, double /*aPstep*/) const
 {
-#ifdef normal
 	ESide side = kUndefined, snside = kUndefined;
-#endif
-
+        aConvex=true;
 	double snxt,pdist;
 	double central,ss1,ss2,ds1,ds2,sn=0.,sn2=0.;
 	double tanxz=0.,cosxz=0.,tanyz=0.,cosyz=0.;
@@ -727,9 +541,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		if (pdist>VUSolid::fgTolerance/2)
 		{
 			snxt=pdist/v.z;
-#ifdef normal
 			side=kPZ;
-#endif
 		}
 		else
 		{
@@ -743,9 +555,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		if (pdist>VUSolid::fgTolerance/2)
 		{
 			snxt=-pdist/v.z;
-#ifdef normal
 			side=kMZ;
-#endif
 		}
 		else
 		{
@@ -787,16 +597,12 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			if (ss2<-VUSolid::fgTolerance/2)
 			{
 				sn=ss2/ds2;  // Leave by -ve side
-#ifdef normal
 				snside=kMX;
-#endif
 			}
 			else
 			{
 				sn=0; // Leave immediately by -ve side
-#ifdef normal
 				snside=kMX;
-#endif
 			}
 		}
 		else if (ds1>0&&ds2>=0)
@@ -804,16 +610,12 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			if (ss1>VUSolid::fgTolerance/2)
 			{
 				sn=ss1/ds1;  // Leave by +ve side
-#ifdef normal
 				snside=kPX;
-#endif
 			}
 			else
 			{
 				sn=0; // Leave immediately by +ve side
-#ifdef normal
 				snside=kPX;
-#endif // normal
 			}
 		}
 		else if (ds1>0&&ds2<0)
@@ -828,31 +630,23 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 					if (sn2<sn)
 					{
 						sn=sn2;
-#ifdef normal
 						snside=kMX;
-#endif
 					}
 					else
 					{
-#ifdef normal
 						snside=kPX;
-#endif
 					}
 				}
 				else
 				{
 					sn=0; // Leave immediately by -ve
-#ifdef normal
 					snside=kMX;
-#endif
 				}      
 			}
 			else
 			{
 				sn=0; // Leave immediately by +ve side
-#ifdef normal
 				snside=kPX;
-#endif
 			}
 		}
 		else
@@ -870,9 +664,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		{
 			sn=0;       // Away from shape
 			// Left by +ve side
-#ifdef normal
 			snside=kPX;
-#endif
 		}
 		else
 		{
@@ -881,9 +673,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 				// Ignore +ve plane and use -ve plane intersect
 				//
 				sn=ss2/ds2; // Leave by -ve side
-#ifdef normal
 				snside=kMX;
-#endif
 			}
 			else
 			{
@@ -901,9 +691,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		{
 			sn=0;       // away from shape
 			// Left by -ve side
-#ifdef normal
 			snside=kMX;
-#endif
 		}
 		else
 		{
@@ -912,9 +700,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 				// Ignore +ve plane and use -ve plane intersect
 				//
 				sn=ss1/ds1; // Leave by +ve side
-#ifdef normal
 				snside=kPX;
-#endif
 			}
 			else
 			{
@@ -930,9 +716,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 	if (sn<snxt)
 	{
 		snxt=sn;
-#ifdef normal
 		side=snside;
-#endif
 	}
 	if (snxt>0)
 	{
@@ -961,16 +745,12 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 				if (ss2<-VUSolid::fgTolerance/2)
 				{
 					sn=ss2/ds2;  // Leave by -ve side
-#ifdef normal
 					snside=kMY;
-#endif
 				}
 				else
 				{
 					sn=0; // Leave immediately by -ve side
-#ifdef normal
 					snside=kMY;
-#endif
 				}
 			}
 			else if (ds1>0&&ds2>=0)
@@ -978,16 +758,12 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 				if (ss1>VUSolid::fgTolerance/2)
 				{
 					sn=ss1/ds1;  // Leave by +ve side
-#ifdef normal
 					snside=kPY;
-#endif
 				}
 				else
 				{
 					sn=0; // Leave immediately by +ve side
-#ifdef normal
 					snside=kPY;
-#endif
 				}
 			}
 			else if (ds1>0&&ds2<0)
@@ -1002,31 +778,23 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 						if (sn2<sn)
 						{
 							sn=sn2;
-#ifdef normal
 							snside=kMY;
-#endif
 						}
 						else
 						{
-#ifdef normal
 							snside=kPY;
-#endif
 						}
 					}
 					else
 					{
 						sn=0; // Leave immediately by -ve
-#ifdef normal
 						snside=kMY;
-#endif
 					}
 				}
 				else
 				{
 					sn=0; // Leave immediately by +ve side
-#ifdef normal
 					snside=kPY;
-#endif
 				}
 			}
 			else
@@ -1044,9 +812,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			{
 				sn=0;       // Away from shape
 				// Left by +ve side
-#ifdef normal
 				snside=kPY;
-#endif
 			}
 			else
 			{
@@ -1055,9 +821,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 					// Ignore +ve plane and use -ve plane intersect
 					//
 					sn=ss2/ds2; // Leave by -ve side
-#ifdef normal
 					snside=kMY;
-#endif
 				}
 				else
 				{
@@ -1074,9 +838,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			{
 				sn=0;       // away from shape
 				// Left by -ve side
-#ifdef normal
 				snside=kMY;
-#endif
 			}
 			else
 			{
@@ -1085,9 +847,7 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 					// Ignore +ve plane and use -ve plane intersect
 					//
 					sn=ss1/ds1; // Leave by +ve side
-#ifdef normal
 					snside=kPY;
-#endif
 				}
 				else
 				{
@@ -1103,13 +863,10 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 		if (sn<snxt)
 		{
 			snxt=sn;
-#ifdef normal
 			side=snside;
-#endif
 		}
 	}
 
-#ifdef normal
 	{
 		switch (side)
 		{
@@ -1136,156 +893,16 @@ inline double UTrd::DistanceToOut( const UVector3  &p, const UVector3 &v,
 			n.Set(0,0,-1);
 			break;
 		default:
-			//        DumpInfo();
-			// G4Exception("G4Trd::DistanceToOut(p,v,..)","Notification",JustWarning, "Undefined side for valid surface normal to solid.");
+		  UUtils::Exception("G4Trd::DistanceToOut(p,v,..)","Notification",Warning,1, "Undefined side for valid surface normal to solid.");
 			break;
 		}
 	}
-#endif
+	
 	return snxt; 
 }
 
-//NOTE: Root does not fill vector n on return. Maybe that is the reason it is slightly faster. It also does not count with tolerances
 
-inline double UTrd::DistanceToOutRoot( const UVector3  &p, const UVector3 &v,
-	UVector3 & /*nRootDoesNotFillTh*/, bool & /*convex*/ /* not used */, double /*aPstep*/) const
-{
-	// Compute distance from inside point to surface of the trd2
-	// Boundary safe algorithm
-	double snxt = UUtils::kInfinity;
-
-	/*
-	if (iact<3 && safe) {
-	// compute safe distance
-	*safe = Safety(point, kTRUE);
-	if (iact==0) return UUtils::kInfinity;
-	if (iact==1 && step<*safe) return UUtils::kInfinity;
-	}
-	*/
-
-	double fx = 0.5*(fDx1-fDx2)/fDz;
-	double fy = 0.5*(fDy1-fDy2)/fDz;
-	double cn;
-
-	double distx = 0.5*(fDx1+fDx2)-fx*p.z;
-	double disty = 0.5*(fDy1+fDy2)-fy*p.z;
-
-	//--- Compute distance to this shape
-	// first check if Z facettes are crossed
-	double dist[3];
-	for (int i=0; i<3; i++) dist[i]=UUtils::kInfinity;
-	if (v.z<0) {
-		dist[0]=-(p.z+fDz)/v.z;
-	} else if (v.z>0) {
-		dist[0]=(fDz-p.z)/v.z;
-	}      
-	if (dist[0]<=0) return 0.0;     
-	// now check X facettes
-	cn = -v.x+fx*v.z;
-	if (cn>0) {
-		dist[1] = p.x+distx;
-		if (dist[1]<=0) return 0.0;
-		dist[1] /= cn;
-	}   
-	cn = v.x+fx*v.z;
-	if (cn>0) {
-		double s = distx-p.x;
-		if (s<=0) return 0.0;
-		s /= cn;
-		if (s<dist[1]) dist[1] = s;
-	}
-	// now check Y facettes
-	cn = -v.y+fy*v.z;
-	if (cn>0) {
-		dist[2] = p.y+disty;
-		if (dist[2]<=0) return 0.0;
-		dist[2] /= cn;
-	}
-	cn = v.y+fy*v.z;
-	if (cn>0) {
-		double s = disty-p.y;
-		if (s<=0) return 0.0;
-		s /= cn;
-		if (s<dist[2]) dist[2] = s;
-	}
-	snxt = amin(3,dist);
-	return snxt;
-}
-
-
-
-
-// double *point, double *dir, double *norm;
-inline bool UTrd::NormalRoot(const UVector3& point, UVector3 &norm) const
-{
-	// Compute normal to closest surface from POINT. 
-	double safe, safemin;
-	double fx = 0.5*(fDx1-fDx2)/fDz;
-	double calf = 1./std::sqrt(1.0+fx*fx);
-
-	// check Z facettes
-	safe = safemin = std::abs(fDz-std::abs(point.z));
-	norm.x = norm.y = 0;
-	norm.z = 1;
-	if (safe<1E-6) return true;
-
-	// check X facettes
-	double distx = 0.5*(fDx1+fDx2)-fx*point.z;
-	if (distx>=0) {
-		safe=std::abs(distx-std::abs(point.x))*calf;
-		if (safe<safemin) {
-			safemin = safe;
-			norm.x = (point.x>0)?calf:(-calf);
-			norm.y = 0;
-			norm.z = calf*fx;
-			/*
-			double dot = norm.x*dir.x+norm.y*dir.y+norm.z*dir.z;
-			if (dot<0) {
-			norm.x=-norm.x;
-			norm.z=-norm.z;
-			}
-			*/
-			if (safe<1E-6) return true;
-		}
-	}
-
-	double fy = 0.5*(fDy1-fDy2)/fDz;
-	calf = 1./std::sqrt(1.0+fy*fy);
-
-	// check Y facettes
-	distx = 0.5*(fDy1+fDy2)-fy*point.z;
-	if (distx>=0) {
-		safe=std::abs(distx-std::abs(point.y))*calf;
-		if (safe<safemin) {
-			norm.x = 0;
-			norm.y = (point.y>0)?calf:(-calf);
-			norm.z = calf*fx;
-			/*
-			double dot = norm.x*dir.x+norm.y*dir.y+norm.z*dir.z;
-			if (dot<0) {
-			norm.y=-norm.y;
-			norm.z=-norm.z;
-			}
-			*/
-		}
-	}
-	return true;
-}
-
-/**
-*
-* Return unit normal of surface closest to p
-* TODO: why root has this routine: 
-* void TGeoTrd2::ComputeNormal(double *point, double *dir, double *norm)
-* ???
-*/
-
-bool UTrd::Normal( const UVector3& p, UVector3 &n) const
-{
-	return NormalGeant4(p,n);
-}
-
-bool UTrd::NormalGeant4( const UVector3& p, UVector3 &norm) const
+bool UTrd::Normal( const UVector3& p, UVector3 &norm) const
 {
 	UVector3 sumnorm(0.,0.,0.);
 	int noSurfaces = 0; 
@@ -1329,8 +946,8 @@ bool UTrd::NormalGeant4( const UVector3& p, UVector3 &norm) const
 	}
 	if ( noSurfaces == 0 )
 	{
-#ifdef G4CSGDEBUG
-		// G4Exception("G4Trd::SurfaceNormal(p)", "Notification", JustWarning, "Point p is not on surface !?" );
+#ifdef UDEBUG
+	  UUtils::Exception("G4Trd::SurfaceNormal(p)", "Notification", Warning, 1,"Point p is not on surface !?" );
 #endif 
 		// point is not on surface, calculate normal closest to surface. this is not likely to be used too often..., normally the user gives point on surface...
 		//     norm = ApproxSurfaceNormal(p);
@@ -1474,32 +1091,6 @@ inline UVector3 UTrd::ApproxSurfaceNormal( const UVector3& p ) const
 }
 
 
-/**
-* Returns extent of the solid along a given cartesian axis
-* OK
-*/
-
-/*
-void UTrd::Extent( EAxisType aAxis, double &aMin, double &aMax ) const
-{
-	switch (aAxis)
-	{
-	case eXaxis:
-		aMin = -std::max (fDx1, fDx2); 
-		aMax = std::max (fDx1, fDx2);
-		break;
-	case eYaxis:
-		aMin = -std::max (fDy1, fDy2); 
-		aMax = std::max (fDy1, fDy2);
-		break;
-	case eZaxis:
-		aMin = -fDz; aMax = fDz;
-		break;
-	default:
-		std::cout << "Extent: unknown axis" << aAxis << std::endl;
-	}      
-}            
-*/
 
 /**
 * Returns the full 3D cartesian extent of the solid.
@@ -1511,15 +1102,6 @@ void UTrd::Extent ( UVector3 &aMin, UVector3 &aMax) const
 	aMax.Set(std::max (fDx1, fDx2), std::max (fDy1, fDy2), fDz);
 }
 
-double UTrd::Capacity() 
-{
-	return 0;
-}
-
-double UTrd::SurfaceArea()
-{
-	return 0;
-}
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -1614,3 +1196,37 @@ UPolyhedron* UTrd::CreatePolyhedron () const
 {
 	return new UPolyhedronTrd2 (fDx1, fDx2, fDy1, fDy2, fDz);
 }
+//////////////////////////////////////////////////////////////////////////
+ //
+ // Copy constructor
+ 
+ UTrd::UTrd(const UTrd& rhs)
+   : VUSolid(rhs), fDx1(rhs.fDx1), fDx2(rhs.fDx2),
+     fDy1(rhs.fDy1), fDy2(rhs.fDy2), fDz(rhs.fDz),
+     fCubicVolume(rhs.fCubicVolume),fSurfaceArea(rhs.fSurfaceArea)
+ {
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////
+ //
+ // Assignment operator
+ 
+ UTrd& UTrd::operator = (const UTrd& rhs) 
+ {
+    // Check assignment to self
+    //
+    if (this == &rhs)  { return *this; }
+ 
+     
+    // Copy data
+    //
+    fDx1 = rhs.fDx1; fDx2 = rhs.fDx2;
+    fDy1 = rhs.fDy1; fDy2 = rhs.fDy2;
+    fDz = rhs.fDz;
+    fCubicVolume = rhs.fCubicVolume;
+    fSurfaceArea = rhs.fSurfaceArea;
+ 
+    return *this;
+
+ }
+ 
