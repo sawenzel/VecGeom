@@ -105,7 +105,7 @@ UQuadrangularFacet::UQuadrangularFacet (const UVector3 &vt0,
 	}
 	else
 	{
-		// UException("UQuadrangularFacet::UQuadrangularFacet()", "InvalidSetup", JustWarning, "Length of sides of facet are too small or sides not planar.");
+	  UUtils::Exception("UQuadrangularFacet::UQuadrangularFacet()", "InvalidSetup", Warning,1, "Length of sides of facet are too small or sides not planar.");
 		cerr << endl;
 		cerr << "P0 = " << GetVertex(0) << endl;
 		cerr << "P1 = " << GetVertex(1) << endl;
@@ -186,7 +186,7 @@ double UQuadrangularFacet::Distance (const UVector3 &p, const double, const bool
 
 	UVector3 v = Distance(p);
 	double dir = v.Dot(GetSurfaceNormal());
-	if (dir > dirTolerance && !outgoing || dir < -dirTolerance && outgoing)
+	if ((dir > dirTolerance && !outgoing) || (dir < -dirTolerance && outgoing))
 		dist = UUtils::kInfinity;
 	else 
 		dist = v.Mag();
