@@ -1,215 +1,279 @@
-//
-// ********************************************************************
-// * License and Disclaimer																					 *
-// *																																	*
-// * The	Geant4 software	is	copyright of the Copyright Holders	of *
-// * the Geant4 Collaboration.	It is provided	under	the terms	and *
-// * conditions of the Geant4 Software License,	included in the file *
-// * LICENSE and available at	http://cern.ch/geant4/license .	These *
-// * include a list of copyright holders.														 *
-// *																																	*
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work	make	any representation or	warranty, express or implied, *
-// * regarding	this	software system or assume any liability for its *
-// * use.	Please see the license in the file	LICENSE	and URL above *
-// * for the full disclaimer and the limitation of liability.				 *
-// *																																	*
-// * This	code	implementation is the result of	the	scientific and *
-// * technical work of the GEANT4 collaboration.											*
-// * By using,	copying,	modifying or	distributing the software (or *
-// * any work based	on the software)	you	agree	to acknowledge its *
-// * use	in	resulting	scientific	publications,	and indicate your *
-// * acceptance of all terms of the Geant4 Software license.					*
-// ********************************************************************
-//
-//
-// $Id: UPolycone.hh 66241 2012-12-13 18:34:42Z gunter $
-//
-// 
-// --------------------------------------------------------------------
-// GEANT 4 class header file
-//
-//
-// UPolycone
+
+// UVCSGfaceted
 //
 // Class description:
 //
-//	 Class implementing a CSG-like type "PCON" Geant 3.21 volume,
-//	 inherited from	class UVCSGfaceted:
-//
-//	 UPolycone( const std::string& name, 
-//							 double phiStart,		 // initial phi starting angle
-//							 double phiTotal,		 // total phi angle
-//							 int numZPlanes,		 // number of z planes
-//							 const double zPlane[],	// position of z planes
-//							 const double rInner[],	// tangent distance to inner surface
-//							 const double rOuter[])	// tangent distance to outer surface
-//
-//	 UPolycone( const std::string& name, 
-//							 double phiStart,	 // initial phi starting angle
-//							 double phiTotal,	 // total phi angle
-//							 int		numRZ,			// number corners in r,z space
-//							 const double r[],	// r coordinate of these corners
-//							 const double z[])	// z coordinate of these corners
+//	 Virtual class defining CSG-like type shape that is built entire
+//	 of UCSGface faces.
 
-// Author: 
+// Author:
 //	 David C. Williams (davidw@scipp.ucsc.edu)
 // --------------------------------------------------------------------
 
 #ifndef UPolycone_hh
 #define UPolycone_hh
 
-#include "UVCSGfaceted.hh"
-#include "UPolyconeSide.hh"
+#include "VUSolid.hh"
 
+#include "UMultiUnion.hh"
+#include "UPolyconeSide.hh"
+#include "UVCSGfaceted.hh"
+//#include "UPolycone.hh"
+
+#include "UVoxelizer.hh"
+
+#include "UCons.hh"
+#include "UTubs.hh"
 class UEnclosingCylinder;
 class UReduciblePolygon;
-class UVCSGface;
 class UPolyconeHistorical
 {
-	public:
-		UPolyconeHistorical();
-		~UPolyconeHistorical();
-		UPolyconeHistorical( const UPolyconeHistorical& source );
-		UPolyconeHistorical& operator=( const UPolyconeHistorical& right );
+  public:
+    UPolyconeHistorical();
+    ~UPolyconeHistorical();
+    UPolyconeHistorical( const UPolyconeHistorical& source );
+    UPolyconeHistorical& operator=( const UPolyconeHistorical& right );
 
-		double fStartAngle;
-		double fOpeningAngle;
-		int	 fNumZPlanes;
-		std::vector<double> fZValues;
-		std::vector<double> Rmin;
-		std::vector<double> Rmax;
+  	double fStartAngle;
+	double fOpeningAngle;
+	int	 fNumZPlanes;
+	std::vector<double> fZValues;
+	std::vector<double> Rmin;
+	std::vector<double> Rmax;
 };
 
-class UPolycone : public UVCSGfaceted 
+
+
+
+class UPolycone : public VUSolid
 {
 
- public:	// with description
+public:	// with description
 
-	UPolycone( const std::string& name, 
-										double phiStart,		 // initial phi starting angle
-										double phiTotal,		 // total phi angle
-										int numZPlanes,			// number of z planes
-							const double zPlane[],		 // position of z planes
-							const double rInner[],		 // tangent distance to inner surface
-							const double rOuter[]	);	// tangent distance to outer surface
+  void Init(
+    double phiStart,		 // initial phi starting angle
+    double phiTotal,		 // total phi angle
+    int numZPlanes,			// number of z planes
+    const double zPlane[],		 // position of z planes
+    const double rInner[],		 // tangent distance to inner surface
+    const double rOuter[]);
 
-	UPolycone( const std::string& name, 
-										double phiStart,		// initial phi starting angle
-										double phiTotal,		// total phi angle
-										int		numRZ,			 // number corners in r,z space
-							const double r[],				 // r coordinate of these corners
-							const double z[]			 ); // z coordinate of these corners
-
-	virtual ~UPolycone();
-	
-	// Methods for solid
-
-	VUSolid::EnumInside Inside( const UVector3 &p ) const;
-	double DistanceToIn( const UVector3 &p, const UVector3 &v, double aPstep=UUtils::kInfinity) const;
-	// double SafetyFromOutside( const UVector3 &p, bool aAccurate=false) const;
-
-	UVector3 GetPointOnSurface() const;
-
-  /*
-	void ComputeDimensions(			 UVPVParameterisation* p,
-													const int n,
-													const UVPhysicalVolume* pRep );
-                          */
-
-	UGeometryType GetEntityType() const;
-
-	VUSolid* Clone() const;
-
-	std::ostream& StreamInfo(std::ostream& os) const;
-
-	UPolyhedron* CreatePolyhedron() const;
-
-	bool Reset();
-
-	// Accessors
-
-	inline double GetStartPhi()	const;
-	inline double GetEndPhi()		const;
-	inline bool IsOpen()				 const;
-	inline bool IsGeneric()			const;
-	inline int	GetNumRZCorner() const;
-	inline UPolyconeSideRZ GetCorner(int index) const;
-	inline UPolyconeHistorical* GetOriginalParameters() const;
-	inline void SetOriginalParameters(UPolyconeHistorical* pars);
-
- public:	// without description
-
-	//UPolycone(__void__&);
-		// Fake default constructor for usage restricted to direct object
-		// persistency for clients requiring preallocation of memory for
-		// persistifiable objects.
-
-	UPolycone( const UPolycone &source );
-	const UPolycone &operator=( const UPolycone &source );
-		// Copy constructor and assignment operator.
-
- protected:	// without description
-
-	// Generic initializer, called by all constructors
-
-	inline void SetOriginalParameters();
-
-	void Create( double phiStart,				// initial phi starting angle
-							 double phiTotal,				// total phi angle
-							 UReduciblePolygon *rz ); // r/z coordinate of these corners
-
-	void CopyStuff( const UPolycone &source );
-
-	// Methods for random point generation
-
-	UVector3 GetPointOnCone(double fRmin1, double fRmax1,
-															 double fRmin2, double fRmax2,
-															 double zOne,	 double zTwo,
-															 double& totArea) const;
-	
-	UVector3 GetPointOnTubs(double fRMin, double fRMax,
-															 double zOne,	double zTwo,
-															 double& totArea) const;
-	
-	UVector3 GetPointOnCut(double fRMin1, double fRMax1,
-															double fRMin2, double fRMax2,
-															double zOne,	 double zTwo,
-															double& totArea) const;
-
-	UVector3 GetPointOnRing(double fRMin, double fRMax,
-															 double fRMin2, double fRMax2,
-															 double zOne) const;
-
-  void GetParametersList(int /*aNumber*/,double * /*aArray*/) const {}
-
-  void ComputeBBox (UBBox * /*aBox*/, bool /*aStore*/)
+  UPolycone( const std::string& name) : VUSolid(name)
   {
-    // Computes bounding box.
-    std::cout << "ComputeBBox - Not implemented" << std::endl;
+
   }
 
-  void Extent (UVector3 &aMin, UVector3 &aMax) const;
+  UPolycone( const std::string& name, 
+    double phiStart,		 // initial phi starting angle
+    double phiTotal,		 // total phi angle
+    int numZPlanes,			// number of z planes
+    const double zPlane[],		 // position of z planes
+    const double rInner[],		 // tangent distance to inner surface
+    const double rOuter[]	);	// tangent distance to outer surface
 
- protected:	// without description
+  /*
+  UPolycone3( const std::string& name, 
+    double phiStart,		// initial phi starting angle
+    double phiTotal,		// total phi angle
+    int		numRZ,			 // number corners in r,z space
+    const double r[],				 // r coordinate of these corners
+    const double z[]			 ); // z coordinate of these corners
+    */
 
-	// Here are our parameters
+  virtual ~UPolycone();
 
-	double startPhi;		// Starting phi value (0 < phiStart < 2pi)
-	double endPhi;			// end phi value (0 < endPhi-phiStart < 2pi)
-	bool	 phiIsOpen;	 // true if there is a phi segment
-	bool	 genericPcon; // true if created through the 2nd generic constructor
-	int	 numCorner;		// number RZ points
-	UPolyconeSideRZ *corners;	// corner r,z points
-	UPolyconeHistorical	*fOriginalParameters;	// original input parameters
+//  inline void SetOriginalParameters(UPolyconeHistorical* pars);
 
-	// Our quick test
+//  inline void SetOriginalParameters();
 
-	UEnclosingCylinder *enclosingCylinder;
-	
+  std::ostream& StreamInfo( std::ostream& os ) const;
+
+  VUSolid::EnumInside Inside( const UVector3 &p ) const;
+
+  double DistanceToIn( const UVector3 &p, const UVector3 &v, double aPstep=UUtils::kInfinity) const;
+
+  double  SafetyFromInside ( const UVector3 &aPoint, 
+    bool aAccurate=false) const;
+  double  SafetyFromOutside( const UVector3 &aPoint, 
+    bool aAccurate=false) const;
+
+  double DistanceToOut     ( const UVector3 &aPoint,
+    const UVector3 &aDirection,
+    UVector3       &aNormalVector, 
+    bool           &aConvex,
+    double aPstep = UUtils::kInfinity) const;
+
+  bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
+  //	virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
+  void Extent (UVector3 &aMin, UVector3 &aMax) const; 
+  double Capacity();
+  double SurfaceArea();
+  UGeometryType GetEntityType() const { return "Polycone";}
+  void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
+
+  //G4Visualisation
+  void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
+  UPolyhedron* GetPolyhedron() const{return CreatePolyhedron(); }
+
+  VUSolid* Clone() const;
+ 
+  UPolycone( const UPolycone&source );
+	const UPolycone&operator=( const UPolycone&source );
+		// Copy constructor and assignment operator.
+ void CopyStuff( const UPolycone&source );
+  UVector3 GetPointOnSurface() const;
+
+  UPolyhedron* CreatePolyhedron () const;
+ 
+ // Methods for random point generation
+
+  UVector3 GetPointOnCone(double fRmin1, double fRmax1,
+                               double fRmin2, double fRmax2,
+                               double zOne,   double zTwo,
+                               double& totArea) const;
+  
+  UVector3 GetPointOnTubs(double fRMin, double fRMax,
+                               double zOne,  double zTwo,
+                               double& totArea) const;
+  
+  UVector3 GetPointOnCut(double fRMin1, double fRMax1,
+                              double fRMin2, double fRMax2,
+                              double zOne,   double zTwo,
+                              double& totArea) const;
+
+  UVector3 GetPointOnRing(double fRMin, double fRMax,
+                               double fRMin2, double fRMax2,
+                               double zOne) const;
+
+protected:	// without description
+
+//  int fNumSides;
+
+  // Here are our parameters
+
+  double startPhi;		// Starting phi value (0 < phiStart < 2pi)
+  double endPhi;			// end phi value (0 < endPhi-phiStart < 2pi)
+  bool	 phiIsOpen;	 // true if there is a phi segment
+  bool	 genericPcon; // true if created through the 2nd generic constructor
+  int	 numCorner;		// number RZ points
+  UPolyconeSideRZ *corners;	// corner r,z points
+  UPolyconeHistorical	*fOriginalParameters;	// original input parameters
+  double       fCubicVolume;   // Cubic Volume
+  double       fSurfaceArea;   // Surface Area
+
+  inline double GetStartPhi() const
+  {
+    return startPhi;
+  }
+
+  inline double GetEndPhi() const
+  {
+    return endPhi;
+  }
+
+  inline bool IsOpen() const
+  {
+    return phiIsOpen;
+  }
+
+  inline bool IsGeneric() const
+  {
+    return genericPcon;
+  }
+
+  inline int GetNumRZCorner() const
+  {
+    return numCorner;
+  }
+
+  inline UPolyconeSideRZ GetCorner(int index) const
+  {
+    return corners[index];
+  }
+
+  inline UPolyconeHistorical* GetOriginalParameters() const
+  {
+    return fOriginalParameters;
+  }
+
+  inline void SetOriginalParameters(UPolyconeHistorical* pars)
+  {
+    if (!pars)
+      // UException("UPolycone3::SetOriginalParameters()", "GeomSolids0002",
+      //						FatalException, "NULL pointer to parameters!");
+      *fOriginalParameters = *pars;
+  }
+
+   inline void SetOriginalParameters()
+  {
+    int numPlanes = (int)numCorner/2; 
+
+    fOriginalParameters = new UPolyconeHistorical;
+
+    fOriginalParameters->fZValues.resize(numPlanes);
+    fOriginalParameters->Rmin.resize(numPlanes);
+    fOriginalParameters->Rmax.resize(numPlanes);
+
+    for(int j=0; j < numPlanes; j++)
+    {
+      fOriginalParameters->fZValues[j] = corners[numPlanes+j].z;
+      fOriginalParameters->Rmax[j] = corners[numPlanes+j].r;
+      fOriginalParameters->Rmin[j] = corners[numPlanes-1-j].r;
+    }
+
+    fOriginalParameters->fStartAngle = startPhi;
+    fOriginalParameters->fOpeningAngle = endPhi-startPhi;
+    fOriginalParameters->fNumZPlanes = numPlanes;
+  }
+
+  UEnclosingCylinder *enclosingCylinder;
+
+  struct UPolyconeSection
+  {
+    VUSolid *solid;// true if all points in section are concave in regards to whole polycone, will be determined
+    double shift;
+    bool tubular;
+//    double left, right;
+    bool convex; // TURE if all points in section are concave in regards to whole polycone, will be determined, currently not implemented
+  };
+
+  std::vector<double> fZs; // z coordinates of given sections
+  std::vector<UPolyconeSection> fSections;
+  int fMaxSection;
+
+  inline VUSolid::EnumInside InsideSection(int index, const UVector3 &p) const;
+
+  inline double SafetyFromInsideSection(int index, const UVector3 &p) const
+  {
+    const UPolyconeSection &section = fSections[index];
+    UVector3 ps(p.x, p.y, p.z - section.shift);
+    double res = section.solid->SafetyFromInside(ps, true);
+    return res;
+  }
+
+  inline double SafetyFromOutsideSection(int index, const UVector3 &p) const
+  {
+    const UPolyconeSection &section = fSections[index];
+    UVector3 ps(p.x, p.y, p.z - section.shift);
+    double res = section.solid->SafetyFromOutside(ps, true);
+    return res;
+  }
+
+  bool NormalSection(int index, const UVector3 &p, UVector3 &n) const
+  {
+    const UPolyconeSection &section = fSections[index];
+    UVector3 ps(p.x, p.y, p.z - section.shift);
+    bool res = section.solid->Normal(ps, n);
+    return res;
+  }
+
+  inline int GetSection(double z) const
+  {
+    int section = UVoxelizer::BinarySearch(fZs, z);
+    if (section < 0) section = 0;
+    else if (section > fMaxSection) section = fMaxSection;
+    return section;
+  }
 };
-
-#include "UPolycone.icc"
 
 #endif
