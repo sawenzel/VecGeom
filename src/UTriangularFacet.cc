@@ -576,7 +576,7 @@ bool UTriangularFacet::Intersect (const UVector3 &p, const UVector3 &v, bool out
 		// We're slightly on the wrong side of the surface.  Check if we're close
 		// enough using fA precise distance calculation.
 		//
-		UVector3 u = Distance(p);
+		//UVector3 u = Distance(p);
 		if (fSqrDist <= kCarTolerance*kCarTolerance)
 		{
 			//
