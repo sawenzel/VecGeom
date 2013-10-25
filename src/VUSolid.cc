@@ -332,4 +332,17 @@ void VUSolid::ExtentAxis(EAxisType aAxis, double &aMin, double &aMax) const
 #endif
 }
 
+void VUSolid::SetCarTolerance(double eps)
+{
+  fgTolerance=eps;
+}
+void VUSolid::SetRadTolerance(double eps)
+{
+  frTolerance=eps;
+}
+void VUSolid::SetAngTolerance(double eps)
+{
+ faTolerance=eps;
+}
+
 
