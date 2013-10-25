@@ -256,7 +256,8 @@ bool UTessellatedSolid::AddFacet (VUFacet *aFacet)
 				int id = (*it).id;
 				VUFacet *facet = fFacets[id];
 				UVector3 q = facet->GetCircumcentre();
-				if (found = (facet == aFacet)) break;
+                                found = (facet == aFacet);
+				if (found ) break;
 				double dif = q.x + q.y + q.z - value.mag2;
 				if (dif > fgTolerance3) break;
 				it++;
@@ -271,7 +272,8 @@ bool UTessellatedSolid::AddFacet (VUFacet *aFacet)
 					int id = (*it).id;
 					VUFacet *facet = fFacets[id];
 					UVector3 q = facet->GetCircumcentre();
-					if (found = (facet == aFacet)) break;
+                                        found = (facet == aFacet);
+					if (found ) break;
 					double dif = q.x + q.y + q.z - q.Mag2();
 					if (dif > fgTolerance3) break;
 				}
@@ -523,7 +525,8 @@ void UTessellatedSolid::CreateVertexList()
 					id = (*it).id;
 					UVector3 q = fVertexList[id];
 					double dif = (q-p).Mag2();
-					if (found = (dif < fgTolerance24)) break;
+                                        found = (dif < fgTolerance24);
+					if (found) break;
 					dif = q.x + q.y + q.z - value.mag2;
 					if (dif > fgTolerance3) break;
 					it++;
@@ -538,7 +541,8 @@ void UTessellatedSolid::CreateVertexList()
 						id = (*it).id;
 						UVector3 q = fVertexList[id];
 						double dif = (q-p).Mag2();
-						if (found = (dif < fgTolerance24)) break;
+                                                found = (dif < fgTolerance24);
+						if (found ) break;
 						dif = value.mag2 - (q.x + q.y + q.z);
 						if (dif > fgTolerance) break;
 					}
