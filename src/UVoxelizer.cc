@@ -504,16 +504,16 @@ void UVoxelizer::BuildReduceVoxels(vector<double> boundaries[], UVector3 reducti
 				UVoxelInfo &nextVoxel = voxels[voxel.next];
 
 				if (voxelSet.erase(pos) != 1)
-					k = k;
-
+				  {;//	k = k;
+                                  }
 				if (voxel.next != max - 1)
 					if (voxelSet.erase(voxel.next) != 1)
-						k = k;
-
+					  {//	k = k;
+                                          }
 				if (voxel.previous != -1)
 					if (voxelSet.erase(voxel.previous) != 1)
-						k = k;
-
+					  {//	k = k;
+                                          }
 				nextVoxel.count += voxel.count;
 				voxel.count = 0;
 				nextVoxel.previous = voxel.previous;
