@@ -76,7 +76,7 @@ public:
 
 	//G4Visualisation
 	void GetParametersList(int aNumber,double *aArray) const{
-		aNumber=3;aArray[0]=fDx;aArray[1]=fDy;aArray[2]=fDz;} 
+	  aNumber=3;aArray[0]=GetXHalfLength();aArray[1]=GetYHalfLength();aArray[2]=GetZHalfLength();} 
 
 	UVector3 GetPointOnSurface() const;
 
