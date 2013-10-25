@@ -38,6 +38,14 @@ public:
   VUSolid();
   VUSolid(const std::string &name);
   virtual ~VUSolid();
+
+  // Accessors and modifiers for Tolerance
+  inline double GetCarTolerance() const;
+  inline double GetRadTolerance() const;
+  inline double GetAngTolerance() const;
+  void SetCarTolerance(double eps);
+  void SetRadTolerance(double eps);
+  void SetAngTolerance(double eps);
   
   // Navigation methods
   virtual EnumInside Inside (const UVector3 &aPoint) const = 0;
@@ -142,5 +150,9 @@ private:
   std::string fName;  // Name of the solid
   UBBox          *fBBox;   // Bounding box
 };
+inline double VUSolid::GetCarTolerance() const { return fgTolerance;}
+inline double VUSolid::GetRadTolerance() const { return frTolerance;}
+inline double VUSolid::GetAngTolerance() const { return faTolerance;}
+
 #endif
 
