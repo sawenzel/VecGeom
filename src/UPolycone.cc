@@ -93,7 +93,7 @@ void UPolycone::Init(double phiStart,
     if (i > 0)
     {
       if (z > prevZ)
-	{ if(dirZ<0){
+	 { if(dirZ<0){
            std::ostringstream message;
 	   message << "Cannot create a Polycone with different Z directions.Use GenericPolycone."
 	           << std::endl
@@ -114,16 +114,16 @@ void UPolycone::Init(double phiStart,
         bool tubular = (rMin == prevRmin && prevRmax == rMax);
 
 //        if (fNumSides == 0)
-        {
+          {
           if (tubular)
-          {
+            {
             solid = new UTubs("", rMin, rMax, dz, phiStart, phiTotal);
-          }
+            }
           else
-          {
+            {
             solid = new UCons("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
+            }
           }
-        }
 //        else
 //        {
 //          solid = new UHedra("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal, fNumSides);
@@ -144,7 +144,8 @@ void UPolycone::Init(double phiStart,
         fSections.push_back(section);
       }
       else
-        i = i;
+	{;// i = i;
+        }
     }
     else fZs.push_back(z);
 
@@ -474,7 +475,7 @@ double UPolycone::DistanceToOut( const UVector3  &p, const UVector3 &v,
       pn.z -= section.shift;
       if (section.solid->Inside(pn) == eOutside)
       {
-        index = index;
+        //index = index;
         break;
       }
     }
@@ -501,7 +502,7 @@ double UPolycone::DistanceToOut( const UVector3  &p, const UVector3 &v,
 
     if (distance == 0) 
     {
-      distance = distance;
+      distance = 0;//distance;
       break;
     }
 //    n = normal;
