@@ -15,15 +15,14 @@ double VUSolid::frTolerance = 1.0E-9;  // radial tolerance; to be changed
 double VUSolid::faTolerance = 1.0E-9;  // angular tolerance; to be changed
 
 //______________________________________________________________________________
-VUSolid::VUSolid() : fName(), fBBox(0)
+VUSolid::VUSolid() : fName()
 {
 
 }
 
 //______________________________________________________________________________
 VUSolid::VUSolid(const std::string &name) :
-fName(name),
-	fBBox(0)
+fName(name)
 {
 	// Named constructor
 	SetName(name);
