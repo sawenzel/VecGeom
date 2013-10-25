@@ -95,10 +95,10 @@ class UTet : public VUSolid
     double Capacity(){return fCubicVolume;}
     double SurfaceArea(){return fSurfaceArea;}
 	UGeometryType GetEntityType() const { return "Tet";}
-	void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
+  void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
 	//G4Visualisation
-	void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
+        void GetParametersList(int aNumber, double * aArray) const; 
 	UPolyhedron* CreatePolyhedron () const;
      UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
 
