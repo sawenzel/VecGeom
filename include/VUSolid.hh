@@ -148,7 +148,7 @@ protected:
    // o Can throw an exception if the solid is invalid
 private:
   std::string fName;  // Name of the solid
-  UBBox          *fBBox;   // Bounding box
+  //UBBox          *fBBox;   // Bounding box
 };
 inline double VUSolid::GetCarTolerance() const { return fgTolerance;}
 inline double VUSolid::GetRadTolerance() const { return frTolerance;}
