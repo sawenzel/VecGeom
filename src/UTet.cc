@@ -102,7 +102,7 @@ UTet::UTet(const std::string& name,
   }
   fCubicVolume = std::fabs(signed_vol) / 6.;
 
-  UVector3 fV24=p2-p4;
+  //UVector3 fV24=p2-p4;
   UVector3 fV43=p4-p3;
   UVector3 fV32=p3-p2;
 
@@ -624,7 +624,7 @@ UPolyhedron* UTet::CreatePolyhedron () const
 
   ph->createPolyhedron(4,4,xyz,faces);
 
-  return ph;
+  return ph;    
 }
 //______________________________________________________________________________
 void UTet::Extent ( UVector3 &aMin, UVector3 &aMax) const
@@ -634,6 +634,15 @@ void UTet::Extent ( UVector3 &aMin, UVector3 &aMax) const
 	aMin.y = -fDy; aMax.y = fDy;
 	aMin.z = -fDz; aMax.z = fDz;
 }
+void UTet::GetParametersList(int aNumber, double* aArray) const
+{
+  aNumber = 12;
+  aArray[0]=fAnchor.x;aArray[1]=fAnchor.y;aArray[2]=fAnchor.z;
+  aArray[3]=fP2.x;aArray[4]=fP2.y;aArray[5]=fP2.z;
+  aArray[6]=fP3.x;aArray[7]=fP3.y;aArray[8]=fP3.z;
+  aArray[9]=fP4.x;aArray[10]=fP4.y;aArray[11]=fP4.z;
+} 
+
 
 
 
