@@ -155,6 +155,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
 			coordinate = aPoint.z + dist*aDirection.z;
 			if ( std::abs(coordinate) < fDz ) {
 				//            aNormal.x = UUtils::Sign(1.0, aPoint.x);
+                                 if(dist < 0.5*delta) dist=0.;
 				return dist;
 			}   
 		}
@@ -167,6 +168,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
 			coordinate = aPoint.z + dist*aDirection.z;
 			if ( std::abs(coordinate) < fDz ) {
 				//            aNormal.y = UUtils::Sign(1.0, aPoint.y);
+                                 if(dist < 0.5*delta) dist=0.;
 				return dist;
 			}   
 		}
@@ -179,6 +181,7 @@ double UBox::DistanceToIn(const UVector3 &aPoint,
 			coordinate = aPoint.y + dist*aDirection.y;
 			if ( std::abs(coordinate) < fDy ) {
 				//            aNormal.z = UUtils::Sign(1.0, aPoint.z);
+                                 if(dist < 0.5*delta) dist=0.;
 				return dist;
 			}   
 		}
@@ -236,6 +239,7 @@ double UBox::DistanceToOut( const UVector3  &aPoint, const UVector3 &aDirection,
 			aNormal.Set(0., 0., signDir);
 		}
 	}
+        if(smin < 0.5*VUSolid::fgTolerance) smin=0.;
 	return smin;
 }
 
