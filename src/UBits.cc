@@ -1,6 +1,6 @@
 
 #include "UBits.hh"
-
+#include <stdio.h>
 //______________________________________________________________________________
 UBits::UBits(unsigned int nBits) : fNBits(nBits)
 {
