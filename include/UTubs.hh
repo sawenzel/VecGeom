@@ -1,235 +1,184 @@
 //
 // ********************************************************************
-// * License and Disclaimer																					 *
-// *																																	*
-// * The	Geant4 software	is	copyright of the Copyright Holders	of *
-// * the Geant4 Collaboration.	It is provided	under	the terms	and *
-// * conditions of the Geant4 Software License,	included in the file *
-// * LICENSE and available at	http://cern.ch/geant4/license .	These *
-// * include a list of copyright holders.														 *
-// *																																	*
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work	make	any representation or	warranty, express or implied, *
-// * regarding	this	software system or assume any liability for its *
-// * use.	Please see the license in the file	LICENSE	and URL above *
-// * for the full disclaimer and the limitation of liability.				 *
-// *																																	*
-// * This	code	implementation is the result of	the	scientific and *
-// * technical work of the GEANT4 collaboration.											*
-// * By using,	copying,	modifying or	distributing the software (or *
-// * any work based	on the software)	you	agree	to acknowledge its *
-// * use	in	resulting	scientific	publications,	and indicate your *
-// * acceptance of all terms of the Geant4 Software license.					*
+// * This Software is part of the AIDA Unified Solids Library package *
+// * See: https://aidasoft.web.cern.ch/USolids                        *
 // ********************************************************************
 //
+// $Id:$
 //
-// $Id: UTubs.hh,v 1.24 2010-10-19 15:42:09 gcosmo Exp $
-// GEANT4 tag $Name: not supported by cvs2svn $
-//
-// 
 // --------------------------------------------------------------------
-// GEANT 4 class header file
 //
-// 
 // UTubs
 //
 // Class description:
 //
-//	 A tube or tube segment with curved sides parallel to
-//	 the z-axis. The tube has a specified half-length along
-//	 the z-axis, about which it is centered, and a given
-//	 minimum and maximum radius. A minimum radius of 0
-//	 corresponds to filled tube /cylinder. The tube segment is
-//	 specified by starting and delta angles for phi, with 0
-//	 being the +x axis, PI/2 the +y axis.
-//	 A delta angle of 2PI signifies a complete, unsegmented
-//	 tube/cylinder.
+//   A tube or tube segment with curved sides parallel to
+//   the z-axis. The tube has a specified half-length along
+//   the z-axis, about which it is centered, and a given
+//   minimum and maximum radius. A minimum radius of 0
+//   corresponds to filled tube /cylinder. The tube segment is
+//   specified by starting and delta angles for phi, with 0
+//   being the +x axis, PI/2 the +y axis.
+//   A delta angle of 2PI signifies a complete, unsegmented
+//   tube/cylinder.
 //
-//	 Member Data:
+//   Member Data:
 //
-//	 fRMin	Inner radius
-//	 fRMax	Outer radius
-//	 fDz	half length in z
+//   fRMin  Inner radius
+//   fRMax  Outer radius
+//   fDz  half length in z
 //
-//	 fSPhi	The starting phi angle in radians,
-//					adjusted such that fSPhi+fDPhi<=2PI, fSPhi>-2PI
+//   fSPhi  The starting phi angle in radians,
+//          adjusted such that fSPhi+fDPhi<=2PI, fSPhi>-2PI
 //
-//	 fDPhi	Delta angle of the segment.
+//   fDPhi  Delta angle of the segment.
 //
-//	 fPhiFullTube	 Boolean variable used for indicate the Phi Section
-
-// History:
-// 10.08.95 P.Kent: General cleanup, use VUSolid extent helper functions
-//									to CalculateExtent()
-// 23.01.94 P.Kent: Converted to `tolerant' geometry
-// 19.07.96 J.Allison: UGraphicsScene - see UBox
-// 22.07.96 J.Allison: Changed SendPolyhedronTo to CreatePolyhedron
+//   fPhiFullTube  Boolean variable used for indicate the Phi Section
+//
+// 19.10.12 Marek Gayer
+//          Created from original implementation in Geant4
 // --------------------------------------------------------------------
 
 #ifndef UTUBS_HH
 #define UTUBS_HH
 
-
-
 #include "VUSolid.hh"
-#include "UPolyhedron.hh"
 
 class UTubs : public VUSolid
 {
-public:	// with description
+  public: // with description
 
-	UTubs( const std::string& pName, 
-		double pRMin,
-		double pRMax,
-		double pDz,
-		double pSPhi,
-		double pDPhi );
-	//
-	// Constructs a tubs with the given name and dimensions
+    UTubs(const std::string& pName,
+          double pRMin,
+          double pRMax,
+          double pDz,
+          double pSPhi,
+          double pDPhi);
+    //
+    // Constructs a tubs with the given name and dimensions
 
-	virtual ~UTubs();
-	//
-	// Destructor
+    virtual ~UTubs();
+    //
+    // Destructor
 
-	// Accessors
+    // Accessors
 
-	inline double GetInnerRadius	 () const;
-	inline double GetOuterRadius	 () const;
-	inline double GetZHalfLength	 () const;
-	inline double GetStartPhiAngle () const;
-	inline double GetDeltaPhiAngle () const;
+    inline double GetInnerRadius() const;
+    inline double GetOuterRadius() const;
+    inline double GetZHalfLength() const;
+    inline double GetStartPhiAngle() const;
+    inline double GetDeltaPhiAngle() const;
 
-	// Modifiers
+    // Modifiers
 
-	inline void SetInnerRadius	 (double newRMin);
-	inline void SetOuterRadius	 (double newRMax);
-	inline void SetZHalfLength	 (double newDz);
-	inline void SetStartPhiAngle (double newSPhi, bool trig=true);
-	inline void SetDeltaPhiAngle (double newDPhi);
+    inline void SetInnerRadius(double newRMin);
+    inline void SetOuterRadius(double newRMax);
+    inline void SetZHalfLength(double newDz);
+    inline void SetStartPhiAngle(double newSPhi, bool trig = true);
+    inline void SetDeltaPhiAngle(double newDPhi);
 
-	// Methods for solid
+    // Methods for solid
 
-	inline double Capacity();
-	inline double SurfaceArea();
+    inline double Capacity();
+    inline double SurfaceArea();
 
-	//		void ComputeDimensions(			 UVPVParameterisation* p,
-	//														const int n,
-	//														const UVPhysicalVolume* pRep );
+    inline VUSolid::EnumInside Inside(const UVector3& p) const;
 
-	//		bool CalculateExtent( const EAxisType pAxis,
-	//														const UVoxelLimits& pVoxelLimit,
-	//														const UAffineTransform& pTransform,
-	//																	double& pmin, double& pmax ) const;
+    bool Normal(const UVector3& p, UVector3& normal) const;
 
-	inline VUSolid::EnumInside Inside( const UVector3& p ) const;
+    double DistanceToIn(const UVector3& p, const UVector3& v, double aPstep = UUtils::kInfinity) const;
+    double SafetyFromInside(const UVector3& p, bool precise = false) const;
+    double DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, bool& validNorm, double aPstep = UUtils::kInfinity) const;
+    double SafetyFromOutside(const UVector3& p, bool precise = false) const;
 
-	bool Normal( const UVector3& p, UVector3 &normal) const;
+    UGeometryType GetEntityType() const;
 
-	double DistanceToIn(const UVector3& p, const UVector3& v, double aPstep = UUtils::kInfinity) const;
-	double SafetyFromInside(const UVector3& p, bool precise=false) const;
-	double DistanceToOut(const UVector3& p, const UVector3& v, UVector3 &n, bool &validNorm, double aPstep=UUtils::kInfinity) const;
-	double SafetyFromOutside(const UVector3& p, bool precise=false) const;
+    UVector3 GetPointOnSurface() const;
 
-	UGeometryType GetEntityType() const;
+    VUSolid* Clone() const;
 
-	UVector3 GetPointOnSurface() const;
+    std::ostream& StreamInfo(std::ostream& os) const;
 
-	VUSolid* Clone() const;
+//  void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
+    void Extent(UVector3& aMin, UVector3& aMax) const;
 
-	std::ostream& StreamInfo( std::ostream& os ) const;
+    virtual void GetParametersList(int /*aNumber*/, double* /*aArray*/) const;
+    virtual void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-//	void Extent (EAxisType aAxis, double &aMin, double &aMax) const;
-	void Extent (UVector3 &aMin, UVector3 &aMax) const;
+  public: // without description
 
-	// Visualisation functions
+    UTubs();
+    //
+    // Fake default constructor for usage restricted to direct object
+    // persistency for clients requiring preallocation of memory for
+    // persistifiable objects.
 
-	//		void								DescribeYourselfTo ( UVGraphicsScene& scene ) const;
-	UPolyhedron*			 CreatePolyhedron	 () const;
-	//		UNURBS*						CreateNURBS				() const;
+    UTubs(const UTubs& rhs);
+    UTubs& operator=(const UTubs& rhs);
+    // Copy constructor and assignment operator.
 
-	virtual void GetParametersList(int /*aNumber*/,double * /*aArray*/) const{} 
+    //  Older names for access functions
 
-	virtual UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
+    inline double GetRMin() const;
+    inline double GetRMax() const;
+    inline double GetDz() const;
+    inline double GetSPhi() const;
+    inline double GetDPhi() const;
 
-	virtual void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
+  protected:
 
-public:	// without description
+    //    UVector3List*
+    //    CreateRotatedVertices( const UAffineTransform& pTransform ) const;
+    //
+    // Creates the List of transformed vertices in the format required
+    // for VUSolid:: ClipCrossSection and ClipBetweenSections
 
-	UTubs();
-	//
-	// Fake default constructor for usage restricted to direct object
-	// persistency for clients requiring preallocation of memory for
-	// persistifiable objects.
+    inline void Initialize();
+    //
+    // Reset relevant values to zero
 
-	UTubs(const UTubs& rhs);
-	UTubs& operator=(const UTubs& rhs); 
-	// Copy constructor and assignment operator.
+    inline void CheckSPhiAngle(double sPhi);
+    inline void CheckDPhiAngle(double dPhi);
+    inline void CheckPhiAngles(double sPhi, double dPhi);
+    //
+    // Reset relevant flags and angle values
 
-	//	Older names for access functions
+    inline void InitializeTrigonometry();
+    //
+    // Recompute relevant trigonometric values and cache them
 
-	inline double GetRMin() const;
-	inline double GetRMax() const;
-	inline double GetDz	() const;
-	inline double GetSPhi() const;
-	inline double GetDPhi() const;
+    virtual UVector3 ApproxSurfaceNormal(const UVector3& p) const;
+    //
+    // Algorithm for SurfaceNormal() following the original
+    // specification for points not on the surface
 
-protected:
+  protected:
 
-	//		UVector3List*
-	//		CreateRotatedVertices( const UAffineTransform& pTransform ) const;
-	//
-	// Creates the List of transformed vertices in the format required
-	// for VUSolid:: ClipCrossSection and ClipBetweenSections
+    double fCubicVolume, fSurfaceArea;
+    // Used by distanceToOut
+    //
+    enum ESide {kNull, kRMin, kRMax, kSPhi, kEPhi, kPZ, kMZ};
 
-	inline void Initialize();
-	//
-	// Reset relevant values to zero
+    // Used by normal
+    //
+    enum ENorm {kNRMin, kNRMax, kNSPhi, kNEPhi, kNZ};
 
-	inline void CheckSPhiAngle(double sPhi);
-	inline void CheckDPhiAngle(double dPhi);
-	inline void CheckPhiAngles(double sPhi, double dPhi);
-	//
-	// Reset relevant flags and angle values
+    double kRadTolerance, kAngTolerance;
+    //
+    // Radial and angular tolerances
 
-	inline void InitializeTrigonometry();
-	//
-	// Recompute relevant trigonometric values and cache them
+    double fRMin, fRMax, fDz, fSPhi, fDPhi;
+    //
+    // Radial and angular dimensions
 
-	virtual UVector3 ApproxSurfaceNormal( const UVector3& p ) const;
-	//
-	// Algorithm for SurfaceNormal() following the original
-	// specification for points not on the surface
+    double fSinCPhi, fCosCPhi, fCosHDPhiOT, fCosHDPhiIT,
+           fSinSPhi, fCosSPhi, fSinEPhi, fCosEPhi, fSinSPhiDPhi, fCosSPhiDPhi;
+    //
+    // Cached trigonometric values
 
-protected:
-
-	double fCubicVolume, fSurfaceArea;
-	UPolyhedron *fpPolyhedron;
-
-	// Used by distanceToOut
-	//
-	enum ESide {kNull,kRMin,kRMax,kSPhi,kEPhi,kPZ,kMZ};
-
-	// Used by normal
-	//
-	enum ENorm {kNRMin,kNRMax,kNSPhi,kNEPhi,kNZ};
-
-	double kRadTolerance, kAngTolerance;
-	//
-	// Radial and angular tolerances
-
-	double fRMin, fRMax, fDz, fSPhi, fDPhi;
-	//
-	// Radial and angular dimensions
-
-	double fSinCPhi, fCosCPhi, fCosHDPhiOT, fCosHDPhiIT,
-		fSinSPhi, fCosSPhi, fSinEPhi, fCosEPhi, fSinSPhiDPhi, fCosSPhiDPhi;
-	//
-	// Cached trigonometric values
-
-	bool fPhiFullTube;
-	//
-	// Flag for identification of section or full tube
+    bool fPhiFullTube;
+    //
+    // Flag for identification of section or full tube
 };
 
 #include "UTubs.icc"

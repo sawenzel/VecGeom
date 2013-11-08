@@ -12,7 +12,6 @@
 #include "UVector3.hh"
 
 #include "UUtils.hh"
-#include "UPolyhedron.hh"
 
 #define USOLIDS
 #define USOLIDSONLY
@@ -119,8 +118,7 @@ public:
 
   // Visualisation
    virtual void GetParametersList(int aNumber,double *aArray) const =0;
-   virtual UPolyhedron* GetPolyhedron() const =0;
-
+ 
   virtual VUSolid* Clone() const =0; 
   // o provide a new object which is a clone of the solid
   
