@@ -28,6 +28,21 @@ private:
 
 
 public:
+	static
+	inline
+	RotationIdType
+	getfootprint(double const *r){
+		int footprint=0;
+		// count zero entries and give back footprint which classifies them
+		for(int i=0;i<9;i++)
+		{
+			if( r[i]==0. )
+				footprint+=i*i*i; // cubic power identifies cases uniquely
+		}
+		return footprint;
+	}
+
+
 	// constructor
 	TransformationMatrix(double const *t, double const *r)
 	{
@@ -47,6 +62,8 @@ public:
 		else
 			return 1;
 	}
+
+
 
 	inline
 	static RotationIdType GetRotationIdType(double const *r)
@@ -104,24 +121,15 @@ TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) c
 	}
 	else if( tid == 0 && rid!=0 ) // pure rotation
 	{
-		double mt0, mt1, mt2;
-		mt0 = master.x;
-		mt1 = master.y;
-		mt2 = master.z;
-		// try to inline code for rotations ( don't repeat yourself )
-		local.x = mt0*rot[0] + mt1*rot[3] + mt2*rot[6];
-		local.y = mt0*rot[1] + mt1*rot[4] + mt2*rot[7];
-		local.z = mt0*rot[2] + mt1*rot[5] + mt2*rot[8];
+		emitrotationcode<rid>(master,local);
 	}
 	else( tid != 0 && rid!=0 ) // both rotation and translation
 	{
-		double mt0, mt1, mt2;
-		mt0 = master.x + trans[0];
-		mt1 = master.y + trans[1];
-		mt2 = master.z + trans[2];
-		local.x = mt0*rot[0] + mt1*rot[3] + mt2*rot[6];
-		local.y = mt0*rot[1] + mt1*rot[4] + mt2*rot[7];
-		local.z = mt0*rot[2] + mt1*rot[5] + mt2*rot[8];
+		Vector3D mt;
+		mt.x = master.x + trans[0];
+		mt.y=  master.y + trans[1];
+		mt.z = master.z + trans[2];
+		emitrotationcode<rid>(mt, local);
 	}
 }
 
@@ -132,6 +140,105 @@ TransformationMatrix::MasterToLocalVec(Vector3D const & master, Vector3D & local
 	MasterToLocal<0, rid>(master, local);
 }
 
+template <RotationIdType rid=-1>
+inline
+void
+TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) const
+{
+	if(rid==252){
+	     local.x = mt.x*rot[0];
+	     local.y = mt.y*rot[4]+mt.y*rot[7];
+	     local.z = mt.z*rot[5]+mt.z*rot[8];
+	     return;
+	}
+	if(rid==405){
+	     local.x = mt.x*rot[3];
+	     local.y = mt.y*rot[1]+mt.y*rot[7];
+	     local.z = mt.z*rot[2]+mt.z*rot[8];
+	     return;
+	}
+	if(rid==882){
+	     local.x = mt.x*rot[6];
+	     local.y = mt.y*rot[1]+mt.y*rot[4];
+	     local.z = mt.z*rot[2]+mt.z*rot[5];
+	     return;
+	}
+	if(rid==415){
+	     local.x = mt.x*rot[3]+mt.x*rot[6];
+	     local.y = mt.y*rot[1];
+	     local.z = mt.z*rot[5]+mt.z*rot[8];
+	     return;
+	}
+	if(rid==496){
+	     local.x = mt.x*rot[0]+mt.x*rot[6];
+	     local.y = mt.y*rot[4];
+	     local.z = mt.z*rot[2]+mt.z*rot[8];
+	     return;
+	}
+	if(rid==793){
+	     local.x = mt.x*rot[0]+mt.x*rot[3];
+	     local.y = mt.y*rot[7];
+	     local.z = mt.z*rot[2]+mt.z*rot[5];
+	     return;
+	}
+	if(rid==638){
+	     local.x = mt.x*rot[3]+mt.x*rot[6];
+	     local.y = mt.y*rot[4]+mt.y*rot[7];
+	     local.z = mt.z*rot[2];
+	     return;
+	}
+	if(rid==611){
+	     local.x = mt.x*rot[0]+mt.x*rot[6];
+	     local.y = mt.y*rot[1]+mt.y*rot[7];
+	     local.z = mt.z*rot[5];
+	     return;
+	}
+	if(rid==692){
+	     local.x = mt.x*rot[0]+mt.x*rot[3];
+	     local.y = mt.y*rot[1]+mt.y*rot[4];
+	     local.z = mt.z*rot[8];
+	     return;
+	}
+	if(rid==720){
+	     local.x = mt.x*rot[0];
+	     local.y = mt.y*rot[4];
+	     local.z = mt.z*rot[8];
+	     return;
+	}
+	if(rid==828){
+	     local.x = mt.x*rot[0];
+	     local.y = mt.y*rot[7];
+	     local.z = mt.z*rot[5];
+	     return;
+	}
+	if(rid==756){
+	     local.x = mt.x*rot[3];
+	     local.y = mt.y*rot[1];
+	     local.z = mt.z*rot[8];
+	     return;
+	}
+	if(rid==918){
+	     local.x = mt.x*rot[3];
+	     local.y = mt.y*rot[7];
+	     local.z = mt.z*rot[2];
+	     return;
+	}
+	if(rid==954){
+	     local.x = mt.x*rot[6];
+	     local.y = mt.y*rot[1];
+	     local.z = mt.z*rot[5];
+	     return;
+	}
+	if(rid==1008){
+	     local.x = mt.x*rot[6];
+	     local.y = mt.y*rot[4];
+	     local.z = mt.z*rot[2];
+	     return;
+	}
+	local.x = mt.x*rot[0]+mt.x*rot[3]+mt.x*rot[6];
+	local.y = mt.y*rot[1]+mt.y*rot[4]+mt.y*rot[7];
+	local.z = mt.z*rot[2]+mt.z*rot[5]+mt.z*rot[8];
+}
 
 
 #endif /* TRANSFORMATIONMATRIX_H_ */
