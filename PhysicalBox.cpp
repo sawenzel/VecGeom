@@ -17,17 +17,3 @@ void BoxParameters::inspect() const
 	std::cout << " dY : " << dY << std::endl;
 	std::cout << " dZ : " << dZ << std::endl;
 }
-
-
-//template <PlacementIdType id>
-double
-PhysicalBox::DistanceToIn(Vector3D const &x, Vector3D const &y) const
-{
-	// this is just playing around
-	double m = boxparams->dX * matrix->foo<1>(); // foo can be called because Box is a friend
-
-	// inline transformations can easily be placed like this
-	matrix->foo<2>();
-
-	return 1.;
-}

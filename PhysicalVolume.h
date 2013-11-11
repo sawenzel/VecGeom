@@ -10,7 +10,7 @@
 
 #include <list>
 #include "TransformationMatrix.h"
-
+#include "LogicalVolume.h"
 
 // pure abstract class
 class PhysicalVolume
@@ -18,16 +18,18 @@ class PhysicalVolume
 	protected:
 
 		TransformationMatrix *matrix; // placement matrix with respect to containing volume
-		std::list<PhysicalVolume> daughterVolumes; // list or vector?
+		//std::list<PhysicalVolume> daughterVolumes; // list or vector?
 
 		// something like a logical volume id
 
 		// I am not sure that this is appropriate
 		// maybe we should do PhysicalShape and PhysicalVolume as different classes
-		LogicalVolume const *logicalvol;
+		LogicalVolume  *logicalvol;
 
 
 	public:
+		PhysicalVolume(TransformationMatrix *m) : matrix(m), logicalvol(0) {};
+
 
 		virtual double DistanceToIn(Vector3D const &, Vector3D const &) const = 0;
 		virtual double DistanceToOut(Vector3D const &, Vector3D const &) const = 0;
@@ -36,10 +38,10 @@ class PhysicalVolume
 		
 		
 		//
-		virtual ~PhysicalVolume();
+		virtual ~PhysicalVolume(){};
 
 		// add factory methods
-		void AddDaughter( PhysicalVolume const * vol );
+		void AddDaughter( PhysicalVolume const * vol ){ } ;
 		LogicalVolume const * getLogicalVolume(){return logicalvol;}
 };
 

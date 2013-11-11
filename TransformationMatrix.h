@@ -21,7 +21,7 @@ private:
 	double trans[3];
 	double rot[9];
 
-	template<RotationIdType rid=-1>
+	template<RotationIdType rid>
 	inline
 	void
 	emitrotationcode(Vector3D const &, Vector3D &) const;
@@ -80,13 +80,13 @@ public:
 	}
 
 
-	template <TranslationIdType tid=-1, RotationIdType rid=-1>
+	template <TranslationIdType tid, RotationIdType rid>
 	inline
 	void
 	MasterToLocal(Vector3D const &, Vector3D &) const;
 
 	// to transform real vectors, we don't care about translation
-	template <RotationIdType rid=-1>
+	template <RotationIdType rid>
 	inline
 	void
 	MasterToLocalVec(Vector3D const &, Vector3D &) const;
@@ -103,7 +103,7 @@ public:
 };
 
 
-template <TranslationIdType tid=-1, RotationIdType rid=-1>
+template <TranslationIdType tid, RotationIdType rid>
 void
 TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) const
 {
@@ -123,7 +123,7 @@ TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) c
 	{
 		emitrotationcode<rid>(master,local);
 	}
-	else( tid != 0 && rid!=0 ) // both rotation and translation
+	else if ( tid != 0 && rid!=0 ) // both rotation and translation
 	{
 		Vector3D mt;
 		mt.x = master.x + trans[0];
@@ -133,14 +133,14 @@ TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) c
 	}
 }
 
-template <RotationIdType rid=-1>
+template <RotationIdType rid>
 void
 TransformationMatrix::MasterToLocalVec(Vector3D const & master, Vector3D & local ) const
 {
 	MasterToLocal<0, rid>(master, local);
 }
 
-template <RotationIdType rid=-1>
+template <RotationIdType rid>
 inline
 void
 TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) const

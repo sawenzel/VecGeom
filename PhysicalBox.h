@@ -11,6 +11,7 @@
 #include "PhysicalVolume.h"
 #include "LogicalVolume.h"
 #include "Vector3D.h"
+#include "TransformationMatrix.h"
 
 class BoxParameters : ShapeParameters
 {
@@ -29,23 +30,59 @@ public:
 	double GetDZ() const {return dZ;}
 
 	// The placed boxed can easily access the private members
-	friend class PhysicalBox;
+	// friend class PhysicalBox;
 };
 
-
-//template <PlacementIdType id>
-class PhysicalBox : PhysicalVolume
+template<int tid, int rid>
+class A : public PhysicalVolume
 {
+public:
+	A(TransformationMatrix *m) : PhysicalVolume(m) {};
+	virtual double DistanceToIn( Vector3D const &, Vector3D const &) const { return 0.; }
+	virtual double DistanceToOut( Vector3D const &, Vector3D const &) const { return 0.; }
+	virtual ~A(){};
+};
+
+//template<TranslationIdType tid, RotationIdType rid>
+
+template<int tid, int rid>
+class B : public PhysicalVolume
+{
+
 private:
 	BoxParameters const * boxparams;
-
-	// will provide a private constructor
+//	friend class GeoManager;
 
 public:
+	// will provide a private constructor
+	B(BoxParameters * bp, TransformationMatrix *m) : boxparams(bp), PhysicalVolume(m) {};
+
+
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &) const;
-	virtual double DistanceToOut( Vector3D const &, Vector3D const &) const;
+	virtual double DistanceToOut( Vector3D const &, Vector3D const &) const {return 0;}
+
+	virtual ~B(){};
 
 // a factory method that produces a specialized box based on params and transformations
-	static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );
+//	static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );
 };
+
+
+template <TranslationIdType tid, RotationIdType rid>
+double
+B<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y) const
+{
+	// this is just playing around
+	//double m = boxparams->dX * matrix->foo<1>(); // foo can be called because Box is a friend
+
+	// inline transformations can easily be placed like this
+	//matrix->foo<2>();
+	Vector3D yp;
+	// inline the correct stuff
+	matrix->MasterToLocal<tid,rid>(x, yp);
+	return boxparams->GetDX()*yp.z;
+}
+
+
+
 #endif /* PHYSICALBOX_H_ */
