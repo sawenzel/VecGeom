@@ -10,29 +10,32 @@
 #include "../PhysicalBox.h"
 #include "../GeoManager.h"
 #include <cstdlib>
+#include <iostream>
 
 int main()
 {
-	Vector3D x,y;
-	double r[9]={1,2,3,4,5,6,7,8,9};
-	double t[3]={1,2,3};
+	Vector3D x,dir;
+	//double r[9]={1,2,3,4,5,6,7,8,9};
 
-	TransformationMatrix m(t,r);
+	double r[9]={0,0,0,0,0,0,0,0,0};
 
-	x.x=rand();
-	x.y=rand();
-	x.z=rand();
+	double t[3]={100,1,1};
 
-	PhysicalVolume * box = new A<1,1>( new TransformationMatrix(t,r) );//new BoxParameters(10,10,10), new TransformationMatrix(t,r));
-	//PhysicalVolume * box2 = new PlacedBox<1,1>( new BoxParameters(10,10,10), new TransformationMatrix(t,r) );
+	x.x=20;//+rand();
+	x.y=0; //rand();
+	x.z=0; //rand();
+
+	dir.x=-1.;
+	dir.y=0.;
+	dir.z=0.;
+
+
 	PhysicalVolume * box2 = GeoManager::MakePlacedBox(new BoxParameters(10,10,10), new TransformationMatrix(t,r));
 
-	volatile double c=box2->DistanceToIn(x,x);
+	volatile double c=box2->DistanceToIn(x,dir,1E30);
+	std::cerr << c << std::endl;
 
-	m.MasterToLocal<1,1008>(x,y);
-
-	volatile double d=y.x+y.y+y.z;
-	return d;
+	return 1;
 }
 
 

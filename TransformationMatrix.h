@@ -72,7 +72,7 @@ public:
 	}
 
 	inline
-	const TranslationIdType GetTranslationIdType() const
+	TranslationIdType GetTranslationIdType() const
 	{
 		return GetTranslationIdTypeS(trans);
 

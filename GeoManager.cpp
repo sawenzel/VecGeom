@@ -71,16 +71,15 @@ public:
 };
 */
 
-PhysicalVolume * MakePlacedBox(BoxParameters const * bp, TransformationMatrix const * tm)
+PhysicalVolume * GeoManager::MakePlacedBox(BoxParameters const * bp, TransformationMatrix const * tm)
 {
 	// get footprint of TransformationMatrix
 	int rid = tm->getRotationFootprint();
 	int tid = tm->GetTranslationIdType();
 
 	// the following piece of code is script generated
-
-	if(tid == 0 && rid == 0 ) return new PlacedBox<0,0>(bp,tm); // identity
-	if(tid == 1 && rid == 0 ) return new PlacedBox<1,0>(bp,tm); // identity
+	if(tid == 0 && rid == 1296 ) return new PlacedBox<0,0>(bp,tm); // identity
+	if(tid == 1 && rid == 1296 ) return new PlacedBox<1,0>(bp,tm); // identity
 	if(tid == 0 && rid == 252 ) return new PlacedBox<0,252>(bp,tm);
 	if(tid == 1 && rid == 252 ) return new PlacedBox<1,252>(bp,tm);
 	if(tid == 0 && rid == 405 ) return new PlacedBox<0,405>(bp,tm);

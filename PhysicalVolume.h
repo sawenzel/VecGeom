@@ -31,8 +31,8 @@ class PhysicalVolume
 		PhysicalVolume(TransformationMatrix const *m) : matrix(m), logicalvol(0) {};
 
 
-		virtual double DistanceToIn(Vector3D const &, Vector3D const &) const = 0;
-		virtual double DistanceToOut(Vector3D const &, Vector3D const &) const = 0;
+		virtual double DistanceToIn(Vector3D const &, Vector3D const &, double ) const = 0;
+		virtual double DistanceToOut(Vector3D const &, Vector3D const &, double ) const = 0;
 
 		// delete all explicit constructors etc...
 		
