@@ -98,6 +98,20 @@ public:
 	void
 	MasterToLocal(Vector3D const &, Vector3D &) const;
 
+	/*
+	 *  we should provide the versions for a Vc vector
+	 */
+	template <TranslationIdType tid, RotationIdType rid>
+	inline
+	void
+	MasterToLocal( Vc::double_v const & /*masterx_v*/,
+				   Vc::double_v const & /*mastery_v*/,
+				   Vc::double_v const & /*masterz_v*/,
+				   Vc::double_v & /*localx_v*/,
+				   Vc::double_v & /*localy_v*/,
+				   Vc::double_v & /*localz_v*/ ) const;
+
+
 	// to transform real vectors, we don't care about translation
 	template <RotationIdType rid>
 	inline

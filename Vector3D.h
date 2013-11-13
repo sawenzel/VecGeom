@@ -14,4 +14,11 @@ struct Vector3D
 };
 
 
+struct Vectors3DSOA
+{
+	double *x,*y,*z;
+	int size;
+};
+
+
 #endif /* VECTOR3D_H_ */
