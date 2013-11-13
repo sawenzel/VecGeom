@@ -45,8 +45,8 @@ public:
 
 //template<TranslationIdType tid, RotationIdType rid>
 
-template<int tid, int rid>
-class B : public PhysicalVolume
+template<TranslationIdType tid, RotationIdType rid>
+class PlacedBox : public PhysicalVolume
 {
 
 private:
@@ -55,13 +55,13 @@ private:
 
 public:
 	// will provide a private constructor
-	B(BoxParameters * bp, TransformationMatrix *m) : boxparams(bp), PhysicalVolume(m) {};
+	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {};
 
 
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &) const;
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &) const {return 0;}
 
-	virtual ~B(){};
+	virtual ~PlacedBox(){};
 
 // a factory method that produces a specialized box based on params and transformations
 //	static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );
@@ -70,7 +70,7 @@ public:
 
 template <TranslationIdType tid, RotationIdType rid>
 double
-B<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y) const
+PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y) const
 {
 	// this is just playing around
 	//double m = boxparams->dX * matrix->foo<1>(); // foo can be called because Box is a friend

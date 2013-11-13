@@ -8,6 +8,7 @@
 #include "../TransformationMatrix.h"
 #include "../Vector3D.h"
 #include "../PhysicalBox.h"
+#include "../GeoManager.h"
 #include <cstdlib>
 
 int main()
@@ -23,8 +24,8 @@ int main()
 	x.z=rand();
 
 	PhysicalVolume * box = new A<1,1>( new TransformationMatrix(t,r) );//new BoxParameters(10,10,10), new TransformationMatrix(t,r));
-	PhysicalVolume * box2 = new B<1,1>( new BoxParameters(10,10,10), new TransformationMatrix(t,r) );
-
+	//PhysicalVolume * box2 = new PlacedBox<1,1>( new BoxParameters(10,10,10), new TransformationMatrix(t,r) );
+	PhysicalVolume * box2 = GeoManager::MakePlacedBox(new BoxParameters(10,10,10), new TransformationMatrix(t,r));
 
 	volatile double c=box2->DistanceToIn(x,x);
 

@@ -40,6 +40,8 @@ def printgeneralrotation():
     print printoneline(1,zeroentries)
     print printoneline(2,zeroentries)
 
+def printinstantiationcode(tid,rid,classname):
+    print "if(tid == " + str(tid) + " && rid == " + str(rid) + " ) return new " + str(classname) + "<" + str(tid) + "," + str(rid) + ">(bp,tmp)"
 
 def emitheader():
     print "template<RotationIdType rid> void emitrotationcode(Vector3D const & mt, Vector3D & local) const {"
@@ -82,6 +84,8 @@ def getfourzeros(i,j):
             #print C
             #print "## id of this pattern (" + str(i) + ";" + str(j) + ") = " + str(id)
     printspecializedrotation(id,C)
+    printinstantiationcode(0,id,"PlacedBox")
+    printinstantiationcode(1,id,"PlacedBox")
 
 def getsixzeros():
     id=0
@@ -99,6 +103,8 @@ def getsixzeros():
            zeros=zeros.difference(set([i+3*x[i]]))
 #print id-s
         printspecializedrotation(id-s,zeros)
+        printinstantiationcode(0,id-s,"PlacedBox")
+        printinstantiationcode(1,id-s,"PlacedBox")
 
 def main():
     #for i in range(0,3):

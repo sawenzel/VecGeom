@@ -9,6 +9,7 @@
 #define GEOMANAGER_H_
 
 #include "PhysicalVolume.h"
+#include "PhysicalBox.h"
 #include <list>
 
 // the GeoManager manages the geometry hierarchy. It keeps a pointer to the top volume
@@ -35,6 +36,14 @@ public:
 
 	// it would be nice to have something like an SQL query here
 	//
+
+
+	// static factory methods
+	static
+	PhysicalVolume * MakePlacedBox( BoxParameters const *, TransformationMatrix const * );
+
+
+	// we need to solve problem of pointer ownership --> let's use smart pointers and move semantics
 
 };
 

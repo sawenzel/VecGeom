@@ -17,7 +17,7 @@ class PhysicalVolume
 {
 	protected:
 
-		TransformationMatrix *matrix; // placement matrix with respect to containing volume
+		TransformationMatrix const *matrix; // placement matrix with respect to containing volume
 		//std::list<PhysicalVolume> daughterVolumes; // list or vector?
 
 		// something like a logical volume id
@@ -28,7 +28,7 @@ class PhysicalVolume
 
 
 	public:
-		PhysicalVolume(TransformationMatrix *m) : matrix(m), logicalvol(0) {};
+		PhysicalVolume(TransformationMatrix const *m) : matrix(m), logicalvol(0) {};
 
 
 		virtual double DistanceToIn(Vector3D const &, Vector3D const &) const = 0;

@@ -31,7 +31,7 @@ public:
 	static
 	inline
 	RotationIdType
-	getfootprint(double const *r){
+	getRotationFootprintS(double const *r){
 		int footprint=0;
 		// count zero entries and give back footprint which classifies them
 		for(int i=0;i<9;i++)
@@ -42,6 +42,14 @@ public:
 		return footprint;
 	}
 
+
+	// same as a member
+	inline
+	RotationIdType
+	getRotationFootprint() const
+	{
+		return getRotationFootprintS(this->rot);
+	}
 
 	// constructor
 	TransformationMatrix(double const *t, double const *r)
@@ -55,7 +63,7 @@ public:
 	}
 
 	inline
-	static TranslationIdType GetTranslationIdType(double const *t)
+	static TranslationIdType GetTranslationIdTypeS(double const *t)
 	{
 		if( t[0]==0 && t[1]==0 && t[2]==0 )
 			return 0;
@@ -63,7 +71,12 @@ public:
 			return 1;
 	}
 
+	inline
+	const TranslationIdType GetTranslationIdType() const
+	{
+		return GetTranslationIdTypeS(trans);
 
+	}
 
 	inline
 	static RotationIdType GetRotationIdType(double const *r)
@@ -99,7 +112,8 @@ public:
 
 
 	friend class PhysicalVolume;
-	friend class PhysicalBox;
+	friend class PhysicalBox; // this is a problem because Box is templated ( how do we do it here ? )
+	friend class GeoManager;
 };
 
 
