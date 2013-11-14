@@ -16,6 +16,7 @@ struct Vector3D
 
 struct Vectors3DSOA
 {
+	// this needs to be aligned
 	double *x,*y,*z;
 	int size;
 };

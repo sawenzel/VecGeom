@@ -26,18 +26,6 @@ private:
 	void
 	emitrotationcode(Vector3D const &, Vector3D &) const;
 
-#ifdef __HAVE_VC__
-	template<RotationIdType rid>
-	inline
-	void
-	emitrotationcodeVc(  Vc::double_v const & masterx_v,
-			   	   	   	 Vc::double_v const & mastery_v,
-			   	   	   	 Vc::double_v const & masterz_v,
-			   	   	   	 Vc::double_v & localx_v,
-			   	   	   	 Vc::double_v & localy_v,
-			   	   	   	 Vc::double_v & localz_v ) const;
-#endif // __HAVE_VC__
-
 // the idea is to provide one general engine which works for both scale ( T = double ) as well as vector backends ( T = Vc::double_v )
 	template<RotationIdType rid, typename T>
 	inline
@@ -112,21 +100,17 @@ public:
 	void
 	MasterToLocal(Vector3D const &, Vector3D &) const;
 
+
+	// T is the internal type to be used ( can be scalar or vector )
+	template <TranslationIdType tid, RotationIdType rid, typename T>
+	inline
+	void
+	MasterToLocal(Vectors3DSOA const &, Vectors3DSOA &) const;
+
+
 	/*
 	 *  we should provide the versions for a Vc vector
 	 */
-
-#ifdef __HAVE_VC__
-	template <TranslationIdType tid, RotationIdType rid>
-	inline
-	void
-	MasterToLocal( Vc::double_v const & masterx_v,
-				   Vc::double_v const & mastery_v,
-				   Vc::double_v const & masterz_v,
-				   Vc::double_v & localx_v,
-				   Vc::double_v & localy_v,
-				   Vc::double_v & localz_v ) const;
-#endif // __HAVE_VC__
 	template<TranslationIdType tid, RotationIdType rid, typename T>
 	inline
 	void
@@ -315,6 +299,30 @@ TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) co
 }
 
 
+template <TranslationIdType tid, RotationIdType rid, typename T>
+inline
+void
+TransformationMatrix<tid,rid>::MasterToLocal(Vectors3DSOA const & master_v, Vector3DSOA & local_v) const
+{
+	// here we are getting a vector of points in SOA form and need to return a vector of points in SOA form
+	// this code is specific to Vc but we could use type traits (is_same or something)
+	for( int i=0; i < master_v.size; i += T::Size )
+	{
+		T x( &master_v.x[i] );
+		T y( &master_v.y[i] );
+		T z( &master_v.z[i] );
+		T lx, ly, lz;
+		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz);
+		// store back result
+		lx.store(&local_v.x[i]);
+		ly.store(&local_v.y[i]);
+		lz.store(&local_v.x[i]);
+	}
+	// need to treat tail part still
+
+}
+
+
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // now we define subclasses to TransformationMatrix as specialized classes
@@ -330,6 +338,7 @@ public:
 	void
 	MasterToLocalVec(Vector3D const &, Vector3D &) const;
 };
+
 
 template <int tid, int rid>
 void

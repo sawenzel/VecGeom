@@ -21,13 +21,13 @@ int main()
 	double r[9] = {0,0,0,0,0,0,0,0,0};
 	double t[3] = {100,1,1};
 
-	x.x=20;//+rand();
-	x.y=0; //rand();
-	x.z=0; //rand();
+	x.x = 20;//+rand();
+	x.y = 0; //rand();
+	x.z = 0; //rand();
 
-	dir.x=-1.;
-	dir.y=0.;
-	dir.z=0.;
+	dir.x = -1.;
+	dir.y = 0.;
+	dir.z = 0.;
 
 	// a box placed and rotated 45 degree around z-axis
 	TransformationMatrix *tm = new TransformationMatrix(t[0],t[1],t[2],-45.,0.,0.);
