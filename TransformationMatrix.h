@@ -101,15 +101,18 @@ public:
 	/*
 	 *  we should provide the versions for a Vc vector
 	 */
+
+/*
 	template <TranslationIdType tid, RotationIdType rid>
 	inline
 	void
-	MasterToLocal( Vc::double_v const & /*masterx_v*/,
-				   Vc::double_v const & /*mastery_v*/,
-				   Vc::double_v const & /*masterz_v*/,
-				   Vc::double_v & /*localx_v*/,
-				   Vc::double_v & /*localy_v*/,
-				   Vc::double_v & /*localz_v*/ ) const;
+	MasterToLocal( Vc::double_v const & masterx_v,
+				   Vc::double_v const & mastery_v,
+				   Vc::double_v const & masterz_v,
+				   Vc::double_v & localx_v,
+				   Vc::double_v & localy_v,
+				   Vc::double_v & localz_v ) const;
+*/
 
 
 	// to transform real vectors, we don't care about translation
@@ -123,6 +126,21 @@ public:
 
 	// for a Vc vector: not so easy
 	// inline MasterToLocal(Vc::double) const;
+
+
+	// define some virtual functions (which should dispatch to specialized templated functions)
+	virtual
+		void
+		MasterToLocal(Vector3D const & master, Vector3D & local) const {
+		// inline general case here
+		MasterToLocal<-1,-1>(master,local);
+	};
+
+	virtual
+		void
+		MasterToLocalVec(Vector3D const & master, Vector3D & local) const {
+		MasterToLocalVec<-1>(master,local);
+	};
 
 
 	friend class PhysicalVolume;
@@ -267,6 +285,36 @@ TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) co
 	local.y = mt.y*rot[1]+mt.y*rot[4]+mt.y*rot[7];
 	local.z = mt.z*rot[2]+mt.z*rot[5]+mt.z*rot[8];
 }
+
+
+// now we define subclasses to TransformationMatrix as specialized classes
+template <int tid, int rid>
+class SpecializedTransformation : TransformationMatrix
+{
+public:
+	virtual
+	void
+	MasterToLocal(Vector3D const &, Vector3D &) const;
+
+	virtual
+	void
+	MasterToLocalVec(Vector3D const &, Vector3D &) const;
+};
+
+template <int tid, int rid>
+void
+SpecializedTransformation<tid,rid>::MasterToLocal(Vector3D const & master, Vector3D & local) const
+{
+	this->MasterToLocal<tid,rid>(master,local);
+}
+
+template <int tid, int rid>
+void
+SpecializedTransformation<tid,rid>::MasterToLocalVec(Vector3D const & master, Vector3D & local) const
+{
+	this->MasterToLocalVec<rid>(master,local);
+}
+
 
 
 #endif /* TRANSFORMATIONMATRIX_H_ */
