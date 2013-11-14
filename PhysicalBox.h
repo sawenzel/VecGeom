@@ -12,6 +12,7 @@
 #include "LogicalVolume.h"
 #include "Vector3D.h"
 #include "TransformationMatrix.h"
+#include <iostream>
 
 class BoxParameters : ShapeParameters
 {
@@ -45,6 +46,8 @@ private:
 	//friend class GeoManager;
 
 public:
+	void foo() const;
+
 	//will provide a private constructor
 	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {};
 
@@ -59,8 +62,9 @@ public:
 
 struct UUtils
 {
-	static const double kInfinity=1E30;
+	static constexpr double kInfinity=1E30;
 };
+
 
 template <TranslationIdType tid, RotationIdType rid>
 double

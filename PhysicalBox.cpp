@@ -17,3 +17,4 @@ void BoxParameters::inspect() const
 	std::cout << " dY : " << dY << std::endl;
 	std::cout << " dZ : " << dZ << std::endl;
 }
+

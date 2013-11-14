@@ -1,25 +1,18 @@
 import itertools
 allpos=set([0,1,2,3,4,5,6,7,8])
+conversiontable={0:"x", 1:"y", 2: "z"}
 
 def printoneline(x, zeroentries):
-    if(x==0):
-        code="local.x = "
-        component="x"
-    if(x==1):
-        code="local.y = "
-        component="y"
-    if(x==2):
-        code="local.z = "
-        component="z"
+    code="local"+conversiontable[x]+"="
     first=True
     for j in range(0,3):
-        pos = x+3*j;
+	pos = x+3*j;
         if not pos in zeroentries:
             if first:
-                code=code + "mt." + component + "*rot[" + str(pos) + "]";
+                code=code + "mt" + conversiontable[j] + "*rot[" + str(pos) + "]";
                 first=False
             else:
-                code=code + "+mt." + component + "*rot[" + str(pos) + "]";
+                code=code + "+mt" + conversiontable[j] + "*rot[" + str(pos) + "]";
     code=code+";"
     return code       
 
@@ -46,8 +39,11 @@ def printinstantiationcode(tid,rid,classname):
 def emitheader():
     print "template<RotationIdType rid> void emitrotationcode(Vector3D const & mt, Vector3D & local) const {"
 
+def emitheaderT():
+    print "template<RotationIdType rid, typename T> void emitrotationcode(T const & mx, T const & mx, T const & mx, T & localx, T & localy, T & localz) const {"
+
 def emitspecializedrotationcode():
-    emitheader()
+    emitheaderT()
     #do the cases with four zeros
     for i in range(0,3):
         for j in range(0,3):
@@ -84,8 +80,8 @@ def getfourzeros(i,j):
             #print C
             #print "## id of this pattern (" + str(i) + ";" + str(j) + ") = " + str(id)
     printspecializedrotation(id,C)
-    printinstantiationcode(0,id,"PlacedBox")
-    printinstantiationcode(1,id,"PlacedBox")
+  # printinstantiationcode(0,id,"PlacedBox")
+  # printinstantiationcode(1,id,"PlacedBox")
 
 def getsixzeros():
     id=0
@@ -103,8 +99,8 @@ def getsixzeros():
            zeros=zeros.difference(set([i+3*x[i]]))
 #print id-s
         printspecializedrotation(id-s,zeros)
-        printinstantiationcode(0,id-s,"PlacedBox")
-        printinstantiationcode(1,id-s,"PlacedBox")
+   #    printinstantiationcode(0,id-s,"PlacedBox")
+   #    printinstantiationcode(1,id-s,"PlacedBox")
 
 def main():
     #for i in range(0,3):

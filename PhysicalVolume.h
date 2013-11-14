@@ -34,9 +34,8 @@ class PhysicalVolume
 		virtual double DistanceToIn(Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual double DistanceToOut(Vector3D const &, Vector3D const &, double ) const = 0;
 
-
 		// this is
-		virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;
+		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;
 		// delete all explicit constructors etc...
 		
 		
