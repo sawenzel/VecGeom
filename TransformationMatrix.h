@@ -156,9 +156,9 @@ TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T cons
 		}
 	else if( tid != 0 && rid == 0 ) // tid == 1 means we have
 		{
-			localx = masterx + trans[0];
-			localy = mastery + trans[1];
-			localz = masterz + trans[2];
+			localx = masterx - trans[0];
+			localy = mastery - trans[1];
+			localz = masterz - trans[2];
 		}
 	else if( tid == 0 && rid!=0 ) // pure rotation
 		{
@@ -167,9 +167,9 @@ TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T cons
 	else if ( tid != 0 && rid!=0 ) // both rotation and translation
 		{
 			T mtx, mty, mtz;
-			mtx = masterx + trans[0];
-			mty=  mastery + trans[1];
-			mtz = masterz + trans[2];
+			mtx = masterx - trans[0];
+			mty=  mastery - trans[1];
+			mtz = masterz - trans[2];
 			emitrotationcodeT<rid,T>(mtx, mty, mtz, localx, localy, localz);
 		}
 }
@@ -302,7 +302,7 @@ TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) co
 template <TranslationIdType tid, RotationIdType rid, typename T>
 inline
 void
-TransformationMatrix<tid,rid>::MasterToLocal(Vectors3DSOA const & master_v, Vector3DSOA & local_v) const
+TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA & local_v) const
 {
 	// here we are getting a vector of points in SOA form and need to return a vector of points in SOA form
 	// this code is specific to Vc but we could use type traits (is_same or something)
@@ -319,7 +319,6 @@ TransformationMatrix<tid,rid>::MasterToLocal(Vectors3DSOA const & master_v, Vect
 		lz.store(&local_v.x[i]);
 	}
 	// need to treat tail part still
-
 }
 
 
