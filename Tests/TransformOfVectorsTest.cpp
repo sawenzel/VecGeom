@@ -34,6 +34,9 @@ int main()
 	transformedpoints.alloc(1024);
 	transformedpoints2.alloc(1024);
 
+	double * oldstylepoints = new double[3*1024];
+	double * oldstyletransforms = new double[3*1024];
+
 	for(int i=0;i<1024;++i)
 	{
 		points.x[i]=i;
@@ -42,6 +45,9 @@ int main()
 		rpoints.x[i]=i;
 		rpoints.y[i]=i/10;
 		rpoints.z[i]=-i;
+		oldstylepoints[3*i+0]=i;
+		oldstylepoints[3*i+1]=i/10;
+		oldstylepoints[3*i+2]=-i;
 	}
 
 
@@ -54,13 +60,22 @@ int main()
 			tm->MasterToLocal(points,transformedpoints);
 			delete tm;
 
-
 			TGeoMatrix *tmr = new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],
 														new TGeoRotation("rot1",EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]));
 
 			tmr->MasterToLocal_v(rpoints, transformedpoints2, 1024);
 			delete tmr;
 
-			std::cerr << transformedpoints.x[345] << " " << transformedpoints2.x[345] << std::endl;
+			// third choice using the really old interface
+			for(int i=0;i<1024;i++)
+			{
+				tmr->MasterToLocal(&oldstylepoints[3*i], &oldstyletransforms[3*i]);
+			}
+
+			// printout of results to compare
+			std::cerr << transformedpoints.x[345] << " " << transformedpoints2.x[345] << " " << oldstyletransforms[3*345] << std::endl;
 		}
+
+	delete oldstylepoints;
+	delete oldstyletransforms;
 }

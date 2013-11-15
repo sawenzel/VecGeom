@@ -128,10 +128,19 @@ public:
 
 
 	// T is the internal type to be used ( can be scalar or vector )
+	// these interfaces are for the vector treatments
 	template <TranslationIdType tid, RotationIdType rid, typename T>
-	inline
-	void
-	MasterToLocal(Vectors3DSOA const &, Vectors3DSOA &) const;
+		inline
+		void
+		MasterToLocal(Vectors3DSOA const &, Vectors3DSOA &) const;
+	template <TranslationIdType tid, RotationIdType rid, typename T>
+		inline
+		void
+		MasterToLocalVec(Vectors3DSOA const &, Vectors3DSOA &) const;
+	template <TranslationIdType tid, RotationIdType rid, typename T>
+		inline
+		void
+		MasterToLocalCombined(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
 
 
 	/*
@@ -350,9 +359,50 @@ TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA 
 		T lx, ly, lz;
 		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz);
 		// store back result
-		lx.store(&local_v.x[i]);
-		ly.store(&local_v.y[i]);
-		lz.store(&local_v.x[i]);
+		lx.store( &local_v.x[i] );
+		ly.store( &local_v.y[i] );
+		lz.store( &local_v.z[i] );
+	}
+	// need to treat tail part still
+}
+
+template <TranslationIdType tid, RotationIdType rid, typename T>
+inline
+void
+TransformationMatrix<tid,rid>::MasterToLocalVec(Vectors3DSOA const & master_v, Vector3DSOA & local_v) const
+{
+	MasterToLocal<0,tid,T>(master_v, local_v);
+}
+
+
+template <TranslationIdType tid, RotationIdType rid, typename T>
+inline
+void
+TransformationMatrix<tid,rid>::MasterToLocalCombined(Vectors3DSOA const & master_v, Vector3DSOA & local_v
+		Vectors3DSOA const & masterd_v, Vector3DSOA & locald_v ) const
+{
+	// here we are getting a vector of points in SOA form and need to return a vector of points in SOA form
+	// this code is specific to Vc but we could use type traits (is_same or something)
+	for( int i=0; i < master_v.size; i += T::Size )
+	{
+		T x( &master_v.x[i] );
+		T y( &master_v.y[i] );
+		T z( &master_v.z[i] );
+		T lx, ly, lz;
+		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz);
+		// store back result
+		lx.store( &local_v.x[i] );
+		ly.store( &local_v.y[i] );
+		lz.store( &local_v.z[i] );
+		T xd( &masterd_v.x[i] );
+		T yd( &masterd_v.y[i] );
+		T zd( &masterd_v.z[i] );
+		T lxd, lyd, lzd;
+		MasterToLocal<0,rid,T>(xd,yd,zd,lxd,lyd,lzd);
+		// store back result
+		lxd.store( &locald_v.x[i] );
+		lyd.store( &locald_v.y[i] );
+	    lzd.store( &locald_v.z[i] );
 	}
 	// need to treat tail part still
 }
