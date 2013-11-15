@@ -35,8 +35,8 @@ const std::vector<std::vector<double>> EulerAngles  {{0.,0.,0.},
 
 const std::vector<std::vector<double>> TransCases  {{0,0,0},
 			   				   {10, 0, 0},
-								{10, -10, 0}
-							   };
+								{10, -10, 0},
+								{10,-100,100}};
 
 
 int main()
@@ -57,8 +57,8 @@ int main()
 	// testparticle is in universe (in some corner and flies towards the origin)
 
 	// create root shape and placement
-	for(int r=0; r< EulerAngles.size(); ++r) // rotation cases
-		for(int t=0; t<TransCases.size(); ++t) // translation cases
+	for( int r=0; r< EulerAngles.size(); ++r ) // rotation cases
+		for( int t=0; t<TransCases.size(); ++t ) // translation cases
 		{
 			// also try the other approach with a Node placement
 			TGeoMatrix * matrix = new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],

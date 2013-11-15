@@ -10,6 +10,8 @@
 
 #include "Vector3D.h"
 #include <cmath>
+#include <type_traits>
+#include "Vc/vector.h"
 
 typedef int TranslationIdType;
 typedef int RotationIdType;
@@ -35,6 +37,17 @@ private:
 	void setAngles(double phi, double theta, double psi);
 
 public:
+	// a factory method
+	static
+	TransformationMatrix const *
+	createSpecializedMatrix( double, double, double, double, double, double );
+
+
+	// a static matrix classification method
+	static
+	void
+	classifyMatrix( double, double, double, double, double, double, int &, int &);
+
 	static
 	inline
 	RotationIdType
@@ -45,6 +58,17 @@ public:
 		{
 			if(r[i]==0.)
 				footprint+=i*i*i; // cubic power identifies cases uniquely
+		}
+
+		// that's a diagonal matrix.
+		// have to check if this is trivial case
+		if( footprint == 720 )
+		{
+			if( r[0]==1 && r[4]==1 && r[8]== 1)
+			{
+				return 1296; // this will be trivial rotation
+			}
+
 		}
 		return footprint;
 	}
@@ -77,6 +101,8 @@ public:
 		setAngles(phi, theta, psi);
 	}
 
+	virtual
+	~TransformationMatrix(){}
 
 	inline
 	static TranslationIdType GetTranslationIdTypeS(double const *t)
@@ -139,6 +165,15 @@ public:
 	};
 
 
+	virtual
+	void
+	MasterToLocal(Vectors3DSOA const & master, Vectors3DSOA & local) const
+	{
+// this is not nice: we bind ourselfs to Vc here
+		MasterToLocal<-1,-1, Vc::double_v>(master, local);
+	}
+
+
 	friend class PhysicalVolume;
 	friend class GeoManager;
 };
@@ -181,6 +216,7 @@ TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) c
 {
 	MasterToLocal<tid, rid, double>(master.x, master.y, master.z, local.x, local.y, local.z );
 }
+
 
 template <RotationIdType rid>
 void
@@ -306,7 +342,7 @@ TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA 
 {
 	// here we are getting a vector of points in SOA form and need to return a vector of points in SOA form
 	// this code is specific to Vc but we could use type traits (is_same or something)
-	for( int i=0; i < master_v.size; i += T::Size )
+	for( int i=0; i < master_v.size ; i += T::Size )
 	{
 		T x( &master_v.x[i] );
 		T y( &master_v.y[i] );
@@ -326,9 +362,15 @@ TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA 
 
 // now we define subclasses to TransformationMatrix as specialized classes
 template <int tid, int rid>
-class SpecializedTransformation : TransformationMatrix
+class SpecializedTransformation : public TransformationMatrix
 {
 public:
+	SpecializedTransformation(double tx, double ty, double tz, double phi, double theta, double psi) : TransformationMatrix(tx, ty, tz, phi, theta, psi) {};
+
+	// check this more carefully
+	virtual
+	~SpecializedTransformation(){};
+
 	virtual
 	void
 	MasterToLocal(Vector3D const &, Vector3D &) const;
@@ -336,6 +378,11 @@ public:
 	virtual
 	void
 	MasterToLocalVec(Vector3D const &, Vector3D &) const;
+
+	virtual
+	void
+	MasterToLocal(Vectors3DSOA const &, Vectors3DSOA & ) const;
+
 };
 
 
@@ -353,6 +400,13 @@ SpecializedTransformation<tid,rid>::MasterToLocalVec(Vector3D const & master, Ve
 	TransformationMatrix::MasterToLocalVec<rid>(master,local);
 }
 
+
+template <int tid, int rid>
+void
+SpecializedTransformation<tid,rid>::MasterToLocal(Vectors3DSOA const & master, Vectors3DSOA & local) const
+{
+	TransformationMatrix::MasterToLocal<tid, rid, Vc::double_v>(master,local);
+}
 
 
 #endif /* TRANSFORMATIONMATRIX_H_ */

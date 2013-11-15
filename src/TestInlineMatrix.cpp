@@ -30,7 +30,7 @@ int main()
 	dir.z = 0.;
 
 	// a box placed and rotated 45 degree around z-axis
-	TransformationMatrix *tm = new TransformationMatrix(t[0],t[1],t[2],-45.,0.,0.);
+	TransformationMatrix *tm = new TransformationMatrix(t[0],t[1],t[2],45.,0.,0.);
 	PhysicalVolume * box2 = GeoManager::MakePlacedBox(new BoxParameters(10,10,10), tm);
 
 	volatile double c=box2->DistanceToIn(x,dir,1E30);
