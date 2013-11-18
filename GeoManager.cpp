@@ -79,6 +79,7 @@ PhysicalVolume * GeoManager::MakePlacedBox(BoxParameters const * bp, Transformat
 
 	// the following piece of code is script generated
 	if(tid == 0 && rid == 1296 ) return new PlacedBox<0,0>(bp,tm); // identity
+/*
 	if(tid == 1 && rid == 1296 ) return new PlacedBox<1,0>(bp,tm); // identity
 	if(tid == 0 && rid == 252 ) return new PlacedBox<0,252>(bp,tm);
 	if(tid == 1 && rid == 252 ) return new PlacedBox<1,252>(bp,tm);
@@ -110,6 +111,7 @@ PhysicalVolume * GeoManager::MakePlacedBox(BoxParameters const * bp, Transformat
 	if(tid == 1 && rid == 954 ) return new PlacedBox<1,954>(bp,tm);
 	if(tid == 0 && rid == 1008 ) return new PlacedBox<0,1008>(bp,tm);
 	if(tid == 1 && rid == 1008 ) return new PlacedBox<1,1008>(bp,tm);
+*/
 	// fallback case
 	return new PlacedBox<-1,-1>(bp,tm);
 }
