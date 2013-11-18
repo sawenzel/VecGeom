@@ -52,6 +52,7 @@ int main()
 	//Vector3D pPos( -90 , 0 , 0 );
 	//Vector3D pDir(1,0,0); // fly towards origin
 	Vector3D pPos( -90 , -90 , -90 );
+	Vector3D zeroPos(0.,0.,0.);
 	Vector3D pDir(1./sqrt(3), 1./sqrt(3), 1./sqrt(3)); // fly towards origin
 
 	// testparticle is in universe (in some corner and flies towards the origin)
@@ -79,6 +80,7 @@ int main()
 			double dFastGeom = fastbox->DistanceToIn(pPos, pDir,1E30);
 
 			std::cout << r << "\t" << t << "\t" << dRoot << "\t" << dFastGeom << std::endl;
+			std::cout << fastbox->Contains(zeroPos) << " " << fastbox->Contains(pPos) << std::endl;
 
 			// delete pointer
 			delete matrix;
