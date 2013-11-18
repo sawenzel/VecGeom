@@ -14,7 +14,7 @@
 #include "TransformationMatrix.h"
 #include <iostream>
 
-class BoxParameters : ShapeParameters
+class BoxParameters // : ShapeParameters
 {
 private:
 	double dX; // half distances in x-y-z direction
