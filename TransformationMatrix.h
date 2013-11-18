@@ -144,12 +144,20 @@ public:
 
 
 	/*
-	 *  we should provide the versions for a Vc vector
+	 *  we should provide the versions for a Vc vector or more general for a T vector
 	 */
 	template<TranslationIdType tid, RotationIdType rid, typename T>
-	inline
-	void
-	MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const;
+		inline
+		void
+		MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const;
+
+	template<TranslationIdType tid, RotationIdType rid, typename T>
+		inline
+		void
+		MasterToLocalVec(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const
+		{
+			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz);
+		}
 
 
 	// to transform real vectors, we don't care about translation

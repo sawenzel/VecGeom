@@ -13,6 +13,7 @@
 #include "Vector3D.h"
 #include "TransformationMatrix.h"
 #include <iostream>
+#include "Vc/vector.h"
 
 class BoxParameters : ShapeParameters
 {
@@ -53,6 +54,20 @@ public:
 
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
+
+	// for the basket treatment
+	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
+
+	template<typename T, typename TNameSpace>
+	inline
+	void DistanceToInT(Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
+
+	// a template version for T = Vc or T = Boost.SIMD or T= double
+	template<typename T, typename TNameSpace>
+	inline
+	void DistanceToIn( T const & /*x-vec*/, T const & /*y-vec*/, T const & /*z-vec*/,
+					   T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, double step, T & /*result*/ ) const;
+
 
 	virtual ~PlacedBox(){};
 
@@ -155,6 +170,95 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 	return UUtils::kInfinity;
 }
 
+// a template version for T = Vc or T = Boost.SIMD or T= double
+// this is the kernel operating on type T
+template<int tid, int rid>
+template<typename T, typename TNameSpace>
+inline
+void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
+					   T const & dirx, T const & diry, T const & dirz, double stepmax, T & distance ) const
+{
+	   T in(1.);
+	   T saf[3];
+	   T newpt[3];
+	   T tiny(1e-20);
+	   T big(UUtils::kInfinity);
+	   T faraway(0.); // initializing all components to zero
+	   T par[3]={ boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
+
+	   // new thing: do coordinate transformation in place here
+	   T localx, localy, localz;
+	   matrix->MasterToLocal<tid,rid,T>(x,y,z,newpt[0],newpt[1],newpt[2]);
+	   //
+	   saf[0] = TNameSpace::abs(newpt[0])-par[0];
+	   saf[1] = TNameSpace::abs(newpt[1])-par[1];
+	   saf[2] = TNameSpace::abs(newpt[2])-par[2];
+	   faraway(saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax)=1;
+	   in(saf[0]<0. && saf[1]<0. && saf[2]<0.)=0;
+	   distance=big;
+
+	   if( faraway > T(0.) )
+	       return; // return big
+
+	   // new thing:  do coordinate transformation for directions here
+	   T localdirx, localdiry, localdirz;
+	   matrix->MasterToLocalVec<tid,rid,T>(dirx, diry, dirz, localdirx, localdiry, localdirz);
+	   //
+
+	   // proceed to analysis of hits
+	   T snxt[3];
+	   T hit0=T(0.);
+	   snxt[0] = saf[0]/(TNameSpace::abs(localdirx)+tiny); // distance to y-z face
+	   T coord1=newpt[1]+snxt[0]*localdiry; // calculate new y and z coordinate
+	   T coord2=newpt[2]+snxt[0]*localdirz;
+	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( TNameSpace::abs(coord1)<= par[1] && TNameSpace::abs(coord2)<= par[2] ) ) = 1; // if out and right direction
+
+	   T hit1=T(0.);
+	   snxt[1] = saf[1]/(TNameSpace::abs(localdiry)+tiny); // distance to x-z face
+	   coord1=newpt[0]+snxt[1]*localdirx; // calculate new x and z coordinate
+	   coord2=newpt[2]+snxt[1]*localdirz;
+	   hit1( saf[1] > 0 && newpt[1]*localdiry < 0 && ( TNameSpace::abs(coord1)<= par[0] && TNameSpace::abs(coord2)<= par[2] ) ) = 1; // if out and right direction
+
+	   T hit2=T(0.);
+	   snxt[2] = saf[2]/(TNameSpace::abs(localdirz)+tiny); // distance to x-y face
+	   coord1=newpt[0]+snxt[2]*localdirx; // calculate new x and y coordinate
+	   coord2=newpt[1]+snxt[2]*localdiry;
+	   hit2( saf[2] > 0 && newpt[2]*localdirz < 0 && ( TNameSpace::abs(coord1)<= par[0] && TNameSpace::abs(coord2)<= par[1] ) ) = 1; // if out and right direction
+
+	   distance( hit0>0 || hit1>0 || hit2>0 ) = (hit0*snxt[0] + hit1*snxt[1] + hit2*snxt[2]);
+	   distance=in*distance;
+	   return;
+}
+
+
+// for the basket treatment
+template<int tid, int rid>
+template<typename T, typename TNameSpace>
+inline
+void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double step, double * distance ) const
+{
+	for( int i=0; i < points_v.size; i += T::Size )
+		{
+			T x( &points_v.x[i] );
+			T y( &points_v.y[i] );
+			T z( &points_v.z[i] );
+			T xd( &dirs_v.x[i] );
+			T yd( &dirs_v.y[i] );
+			T zd( &dirs_v.z[i] );
+			T dist;
+			DistanceToIn<T, TNameSpace>(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+			dist.store( &distance[i] );
+		}
+}
+
+// dispatching the virtual method to some concrete method
+template<int tid, int rid>
+void PlacedBox<tid,rid>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double step, double * distance ) const
+{
+	DistanceToInT<Vc::double_v, Vc>(points_v, dirs_v, step, distance);
+}
 
 
 #endif /* PHYSICALBOX_H_ */
