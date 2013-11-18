@@ -48,22 +48,27 @@ private:
 
 public:
 	void foo() const;
+	double GetDX() const {return boxparams->GetDX();}
+	double GetDY() const {return boxparams->GetDY();}
+	double GetDZ() const {return boxparams->GetDZ();}
 
 	//will provide a private constructor
 	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {};
 
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
+	virtual bool Contains( Vector3D const & ) const;
+	virtual bool UnplacedContains( Vector3D const & ) const;
 
 	// for the basket treatment
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
 
-	template<typename T, typename TNameSpace>
+	template<typename T>
 	inline
 	void DistanceToInT(Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
 
 	// a template version for T = Vc or T = Boost.SIMD or T= double
-	template<typename T, typename TNameSpace>
+	template<typename T>
 	inline
 	void DistanceToIn( T const & /*x-vec*/, T const & /*y-vec*/, T const & /*z-vec*/,
 					   T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, double step, T & /*result*/ ) const;
@@ -74,6 +79,7 @@ public:
 	//a factory method that produces a specialized box based on params and transformations
 	//static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );
 };
+
 
 struct UUtils
 {
@@ -173,7 +179,7 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 // a template version for T = Vc or T = Boost.SIMD or T= double
 // this is the kernel operating on type T
 template<int tid, int rid>
-template<typename T, typename TNameSpace>
+template<typename T>
 inline
 void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 					   T const & dirx, T const & diry, T const & dirz, double stepmax, T & distance ) const
@@ -190,9 +196,9 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   T localx, localy, localz;
 	   matrix->MasterToLocal<tid,rid,T>(x,y,z,newpt[0],newpt[1],newpt[2]);
 	   //
-	   saf[0] = TNameSpace::abs(newpt[0])-par[0];
-	   saf[1] = TNameSpace::abs(newpt[1])-par[1];
-	   saf[2] = TNameSpace::abs(newpt[2])-par[2];
+	   saf[0] = Vc::abs(newpt[0])-par[0];
+	   saf[1] = Vc::abs(newpt[1])-par[1];
+	   saf[2] = Vc::abs(newpt[2])-par[2];
 	   faraway(saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax)=1;
 	   in(saf[0]<0. && saf[1]<0. && saf[2]<0.)=0;
 	   distance=big;
@@ -208,22 +214,22 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   // proceed to analysis of hits
 	   T snxt[3];
 	   T hit0=T(0.);
-	   snxt[0] = saf[0]/(TNameSpace::abs(localdirx)+tiny); // distance to y-z face
+	   snxt[0] = saf[0]/(Vc::abs(localdirx)+tiny); // distance to y-z face
 	   T coord1=newpt[1]+snxt[0]*localdiry; // calculate new y and z coordinate
 	   T coord2=newpt[2]+snxt[0]*localdirz;
-	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( TNameSpace::abs(coord1)<= par[1] && TNameSpace::abs(coord2)<= par[2] ) ) = 1; // if out and right direction
+	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
 
 	   T hit1=T(0.);
-	   snxt[1] = saf[1]/(TNameSpace::abs(localdiry)+tiny); // distance to x-z face
+	   snxt[1] = saf[1]/(Vc::abs(localdiry)+tiny); // distance to x-z face
 	   coord1=newpt[0]+snxt[1]*localdirx; // calculate new x and z coordinate
 	   coord2=newpt[2]+snxt[1]*localdirz;
-	   hit1( saf[1] > 0 && newpt[1]*localdiry < 0 && ( TNameSpace::abs(coord1)<= par[0] && TNameSpace::abs(coord2)<= par[2] ) ) = 1; // if out and right direction
+	   hit1( saf[1] > 0 && newpt[1]*localdiry < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
 
 	   T hit2=T(0.);
-	   snxt[2] = saf[2]/(TNameSpace::abs(localdirz)+tiny); // distance to x-y face
+	   snxt[2] = saf[2]/(Vc::abs(localdirz)+tiny); // distance to x-y face
 	   coord1=newpt[0]+snxt[2]*localdirx; // calculate new x and y coordinate
 	   coord2=newpt[1]+snxt[2]*localdiry;
-	   hit2( saf[2] > 0 && newpt[2]*localdirz < 0 && ( TNameSpace::abs(coord1)<= par[0] && TNameSpace::abs(coord2)<= par[1] ) ) = 1; // if out and right direction
+	   hit2( saf[2] > 0 && newpt[2]*localdirz < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[1] ) ) = 1; // if out and right direction
 
 	   distance( hit0>0 || hit1>0 || hit2>0 ) = (hit0*snxt[0] + hit1*snxt[1] + hit2*snxt[2]);
 	   distance=in*distance;
@@ -233,7 +239,7 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 
 // for the basket treatment
 template<int tid, int rid>
-template<typename T, typename TNameSpace>
+template<typename T>
 inline
 void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double step, double * distance ) const
 {
@@ -246,7 +252,7 @@ void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3D
 			T yd( &dirs_v.y[i] );
 			T zd( &dirs_v.z[i] );
 			T dist;
-			DistanceToIn<T, TNameSpace>(x, y, z, xd, yd, zd, step, dist);
+			DistanceToIn<T>(x, y, z, xd, yd, zd, step, dist);
 
 			// store back result
 			dist.store( &distance[i] );
@@ -257,7 +263,38 @@ void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3D
 template<int tid, int rid>
 void PlacedBox<tid,rid>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double step, double * distance ) const
 {
-	DistanceToInT<Vc::double_v, Vc>(points_v, dirs_v, step, distance);
+	// PlacedBox<tid,rid>::DistanceToInT< Vc::double_v, Vc >(points_v, dirs_v, step, distance);
+	this->template DistanceToInT<Vc::double_v>( points_v, dirs_v, step, distance);
+}
+
+
+template<int tid, int rid>
+bool PlacedBox<tid,rid>::Contains( Vector3D const & point ) const
+{
+	// here we do the point transformation
+	Vector3D localPoint;
+	matrix->MasterToLocal<tid,rid>(point, localPoint);
+
+	// this could be vectorized also
+	if ( std::abs(localPoint.x) > boxparams->dX ) return false;
+	if ( std::abs(localPoint.y) > boxparams->dY ) return false;
+	if ( std::abs(localPoint.z) > boxparams->dZ ) return false;
+	return true;
+}
+
+
+template<int tid, int rid>
+bool PlacedBox<tid,rid>::UnplacedContains( Vector3D const & point ) const
+{
+	// here we do the point transformation
+	Vector3D localPoint;
+	matrix->MasterToLocal<0,0>(point, localPoint);
+
+	// this could be vectorized also
+	if ( std::abs(localPoint.x) > boxparams->dX ) return false;
+	if ( std::abs(localPoint.y) > boxparams->dY ) return false;
+	if ( std::abs(localPoint.z) > boxparams->dZ ) return false;
+	return true;
 }
 
 
