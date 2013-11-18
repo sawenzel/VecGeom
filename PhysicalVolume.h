@@ -34,7 +34,6 @@ class PhysicalVolume
 
 		bool ExclusiveContains( Vector3D const & ) const;
 
-
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m), logicalvol(0), daughters(0) { };
 		virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const = 0;
@@ -56,9 +55,20 @@ class PhysicalVolume
 		// this function fills the physical volume with random points and directions such that the points are
 		// contained within the volume but not within the daughters
 		// it returns the points in points and the directions in dirs
-		void fillWithRandomPoints( Vectors3DSOA &points, Vectors3DSOA & dirs, int number ) const;
+		// this will be in the local reference frame
+		void fillWithRandomPoints( Vectors3DSOA & points, int number ) const;
 
+		// random directions
+		static
+		void fillWithRandomDirections( Vectors3DSOA & dirs, int number );
 
+		// give random directions satisfying the constraint that fraction of them hits a daughter boundary
+		// needs the positions as inputs
+		// we consider fraction as the LOWER BOUND
+		void fillWithBiasedDirections( Vectors3DSOA const & points, Vectors3DSOA & dirs, int number, double fraction ) const;
+
+		// to access information about Matrix
+		TransformationMatrix const * getMatrix(){return matrix;}
 
 		LogicalVolume const * getLogicalVolume(){ return logicalvol; }
 };

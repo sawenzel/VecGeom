@@ -217,19 +217,19 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   snxt[0] = saf[0]/(Vc::abs(localdirx)+tiny); // distance to y-z face
 	   T coord1=newpt[1]+snxt[0]*localdiry; // calculate new y and z coordinate
 	   T coord2=newpt[2]+snxt[0]*localdirz;
-	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1)<= par[1] && Vc::abs(coord2)<= par[2] ) ) = 1; // if out and right direction
+	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
 
 	   T hit1=T(0.);
 	   snxt[1] = saf[1]/(Vc::abs(localdiry)+tiny); // distance to x-z face
 	   coord1=newpt[0]+snxt[1]*localdirx; // calculate new x and z coordinate
 	   coord2=newpt[2]+snxt[1]*localdirz;
-	   hit1( saf[1] > 0 && newpt[1]*localdiry < 0 && ( Vc::abs(coord1)<= par[0] && Vc::abs(coord2)<= par[2] ) ) = 1; // if out and right direction
+	   hit1( saf[1] > 0 && newpt[1]*localdiry < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
 
 	   T hit2=T(0.);
 	   snxt[2] = saf[2]/(Vc::abs(localdirz)+tiny); // distance to x-y face
 	   coord1=newpt[0]+snxt[2]*localdirx; // calculate new x and y coordinate
 	   coord2=newpt[1]+snxt[2]*localdiry;
-	   hit2( saf[2] > 0 && newpt[2]*localdirz < 0 && ( Vc::abs(coord1)<= par[0] && Vc::abs(coord2)<= par[1] ) ) = 1; // if out and right direction
+	   hit2( saf[2] > 0 && newpt[2]*localdirz < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[1] ) ) = 1; // if out and right direction
 
 	   distance( hit0>0 || hit1>0 || hit2>0 ) = (hit0*snxt[0] + hit1*snxt[1] + hit2*snxt[2]);
 	   distance=in*distance;

@@ -16,6 +16,11 @@ struct Vector3D
 	double x,y,z;
 	Vector3D(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {};
 	Vector3D() {};
+
+	double operator[](int i) const
+	{
+		return &x+i;
+	}
 };
 
 struct Vectors3DSOA

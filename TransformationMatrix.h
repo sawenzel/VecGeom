@@ -37,6 +37,11 @@ private:
 	void setAngles(double phi, double theta, double psi);
 
 public:
+	Vector3D getTrans() const;
+	{
+		return Vector3D(trans[0], trans[1], trans[2]);
+	}
+
 	// a factory method
 	static
 	TransformationMatrix const *
