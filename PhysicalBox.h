@@ -15,7 +15,7 @@
 #include <iostream>
 #include "Vc/vector.h"
 
-class BoxParameters : ShapeParameters
+class BoxParameters // : ShapeParameters
 {
 private:
 	double dX; // half distances in x-y-z direction

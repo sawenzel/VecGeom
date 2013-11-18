@@ -352,7 +352,7 @@ TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) co
 }
 
 
-template <TranslationIdType tid, RotationIdType rid, typename T>
+template <TranslationIdType tid, RotationIdType rid, typename T >
 inline
 void
 TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA & local_v) const
@@ -374,10 +374,11 @@ TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA 
 	// need to treat tail part still
 }
 
+/*
 template <TranslationIdType tid, RotationIdType rid, typename T>
 inline
 void
-TransformationMatrix<tid,rid>::MasterToLocalVec(Vectors3DSOA const & master_v, Vector3DSOA & local_v) const
+  TransformationMatrix;<tid,rid>::MasterToLocalVec(Vectors3DSOA const & master_v, Vector3DSOA & local_v) const
 {
 	MasterToLocal<0,tid,T>(master_v, local_v);
 }
@@ -410,11 +411,11 @@ TransformationMatrix<tid,rid>::MasterToLocalCombined(Vectors3DSOA const & master
 		// store back result
 		lxd.store( &locald_v.x[i] );
 		lyd.store( &locald_v.y[i] );
-	    lzd.store( &locald_v.z[i] );
+		lzd.store( &locald_v.z[i] );
 	}
 	// need to treat tail part still
 }
-
+*/
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -463,7 +464,7 @@ template <int tid, int rid>
 void
 SpecializedTransformation<tid,rid>::MasterToLocal(Vectors3DSOA const & master, Vectors3DSOA & local) const
 {
-	TransformationMatrix::MasterToLocal<tid, rid, Vc::double_v>(master,local);
+	TransformationMatrix::MasterToLocal<tid, rid, Vc::double_v >(master,local);
 }
 
 
