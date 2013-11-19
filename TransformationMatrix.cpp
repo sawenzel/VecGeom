@@ -6,6 +6,7 @@
  */
 #include "TransformationMatrix.h"
 #include <cmath>
+#include <cstdio>
 
 void TransformationMatrix::setAngles( double phi, double theta, double psi )
 {
@@ -63,6 +64,35 @@ TransformationMatrix::classifyMatrix( double tx, double ty, double tz, double ph
 }
 
 
+void TransformationMatrix::setProperties()
+{
+	hasTranslation = (this->GetTranslationIdType() == 0)? false : true;
+	hasRotation = (this->getRotationFootprint() == 1296)? false : true;
+	identity = !hasTranslation && !hasRotation;
+}
+
+
+void TransformationMatrix::print() const
+{
+// print the matrix in 4x4 format
+   printf("matrix %p - tr=%d  rot=%d \n", this, (int)hasTranslation, (int)hasRotation);
+   printf("number of rotation zeros: %d and type %d\n", this->getNumberOfZeroEntries(), this->getRotationFootprint());
+   printf("%12.11f\t%12.11f\t%12.11f    Tx = %10.6f\n", rot[0], rot[1], rot[2], trans[0]);
+   printf("%12.11f\t%12.11f\t%12.11f    Ty = %10.6f\n", rot[3], rot[4], rot[5], trans[1]);
+   printf("%12.11f\t%12.11f\t%12.11f    Tz = %10.6f\n", rot[6], rot[7], rot[8], trans[2]);
+ }
+
+unsigned int TransformationMatrix::getNumberOfZeroEntries() const
+	{
+		unsigned int count=0;
+		for(auto i=0;i<9;++i)
+			{
+				if(std::fabs(rot[i]) < 1E-12)	count++;
+			}
+		return count;
+	}
+
+
 TransformationMatrix const *
 TransformationMatrix::createSpecializedMatrix( double tx, double ty, double tz, double phi, double theta, double psi  )
 {
@@ -70,8 +100,8 @@ TransformationMatrix::createSpecializedMatrix( double tx, double ty, double tz, 
 	TransformationMatrix::classifyMatrix(tx,ty,tz,phi,theta,psi,tid,rid);
 
 	// following piece of code is script generated
-	if(tid == 0 && rid == 1296) return new SpecializedTransformation<0,0>(tx,ty,tz,phi, theta,psi); // identity
-	if(tid == 1 && rid == 1296) return new SpecializedTransformation<1,0>(tx,ty,tz,phi,theta,psi); // identity
+	if(tid == 0 && rid == 1296) return new SpecializedTransformation<0,1296>(tx,ty,tz,phi, theta,psi); // identity
+	if(tid == 1 && rid == 1296) return new SpecializedTransformation<1,1296>(tx,ty,tz,phi,theta,psi); // identity
 	if(tid == 0 && rid == 252) return new SpecializedTransformation<0,252>(tx,ty,tz,phi,theta,psi);
 	if(tid == 1 && rid == 252) return new SpecializedTransformation<1,252>(tx,ty,tz,phi,theta,psi);
 	if(tid == 0 && rid == 405) return new SpecializedTransformation<0,405>(tx,ty,tz,phi,theta,psi);

@@ -53,7 +53,12 @@ public:
 	double GetDZ() const {return boxparams->GetDZ();}
 
 	//will provide a private constructor
-	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {};
+	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
+		// the bounding box of this volume is just the box itself
+		// just forget about translation and rotation
+		this->bbox = dynamic_cast<PlacedBox<0,0> *>(this);
+	}
+
 
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}

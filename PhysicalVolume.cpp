@@ -8,12 +8,14 @@
 #include "PhysicalVolume.h"
 #include "Vector3D.h"
 #include <cassert>
+#include "PhysicalBox.h"
+
+//template <TranslationIdType, RotationIdType> class PlacedBox;
 
 #include <random>
+
 typedef std::mt19937 MyRNG;  // the Mersenne Twister with a popular choice of parameters
-
 static MyRNG rng(1);                   // e.g. keep one global instance (per thread)
-
 std::uniform_real_distribution<> udouble_dist(0,1);
 
 
@@ -45,12 +47,12 @@ static void sampleDir( Vector3D & dir )
     dir.x*=inversenorm;
     dir.y*=inversenorm;
     dir.z*=inversenorm;
-  }
+}
 
 // this is a static method
- void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
-  {
-    for(auto k=0;k<np;++k)
+void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
+{
+	for(auto k=0;k<np;++k)
       {
     	Vector3D tmp;
     	sampleDir(tmp);
@@ -58,7 +60,7 @@ static void sampleDir( Vector3D & dir )
     	dirs.y[k]=tmp.y;
     	dirs.z[k]=tmp.z;
       }
-  }
+}
 
 
  void PhysicalVolume::fillWithBiasedDirections( Vectors3DSOA const & points, Vectors3DSOA &dirs, int np, double fraction ) const
@@ -100,7 +102,7 @@ static void sampleDir( Vector3D & dir )
 			 do
 			 {
 				Vector3D point;
-				points.getAsVector( index, point );
+				points.getAsVector( i, point );
 				sampleDir( dir );
 
 				hit[i]=false;
@@ -111,14 +113,14 @@ static void sampleDir( Vector3D & dir )
 					PhysicalVolume const * vol = (*j);
 					if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
 					{
-						hit[index]=false;
+						hit[i]=false;
 						break;
 					}
 				}
 			 }
 			while(hit[i]);
 			// write back the dir
-			dirs.setFromVector(index,dir);
+			dirs.setFromVector(i,dir);
 		 }
 	 }
 
@@ -167,7 +169,7 @@ PhysicalVolume::ExclusiveContains( Vector3D const & point ) const
 		// C++11 type iteration over containers
 		for(auto i=this->daughters->begin(); i!=daughters->end(); ++i)
 		{
-		  PhysicalVolume * vol= (*i);
+		  PhysicalVolume const * vol= (*i);
 		  if( vol->Contains( point ) ) return false;
 		}
 	}
@@ -176,14 +178,18 @@ PhysicalVolume::ExclusiveContains( Vector3D const & point ) const
 
 
 void
-PhysicalVolume::fillWithRandomPoints( Vectors3DSOA &points, int number) const
+PhysicalVolume::fillWithRandomPoints( Vectors3DSOA &points, int number ) const
 {
 	int counter=0;
-	double dx=bbox->GetDX();
-	double dy=bbox->GetDY();
-	double dz=bbox->GetDZ();
 
-	Vector3D origin(bbox->getMatrix()->getTrans());
+	//PlacedBox<1,0> const * box = (PlacedBox<1,0> const *) bbox ;
+	PlacedBox<1,0> const * box = static_cast<PlacedBox<1,0> const * >(bbox);
+
+	double dx=box->GetDX();
+	double dy=box->GetDY();
+	double dz=box->GetDZ();
+
+	Vector3D origin(box->getMatrix()->getTrans());
 	Vector3D point;
 	for( auto i=0; i<number; ++i )
 	{
