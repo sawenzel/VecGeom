@@ -7,6 +7,7 @@
 
 #include "PhysicalVolume.h"
 #include "Vector3D.h"
+#include <cassert>
 
 #include <random>
 typedef std::mt19937 MyRNG;  // the Mersenne Twister with a popular choice of parameters
@@ -62,6 +63,8 @@ static void sampleDir( Vector3D & dir )
 
  void PhysicalVolume::fillWithBiasedDirections( Vectors3DSOA const & points, Vectors3DSOA &dirs, int np, double fraction ) const
  {
+	 assert(0.<=fraction<=1.);
+
 	 // idea let's do an importance sampling Monte Carlo method; starting from some initial configuration
 	 fillWithRandomDirections( dirs, np );
 
@@ -87,36 +90,69 @@ static void sampleDir( Vector3D & dir )
 		 }
 	 }
 
-	 while(hitcounter < np*fraction)
+
+	 // now first of all remove all directions that hit a daughter
+	 for(auto i=0;i<np;++i)
 	 {
-		 // pick a point randomly
-		 int index = udouble_dist(rng)*np;
-		 if( ! hit[index] )
+		 if ( hit[i] )
 		 {
+			 Vector3D dir;
 			 do
-			  {
-				 Vector3D point,dir;
-				 points.getAsVector( index, point );
-				 sampleDir( dir );
+			 {
+				Vector3D point;
+				points.getAsVector( index, point );
+				sampleDir( dir );
 
-				 // loop over daughters
-				 for(auto j=daughters->begin();j!=daughters->end();++j)
-				 {
-					 PhysicalVolume const * vol = (*j);
-					 if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
-					 {
-						hit[index]=true;
+				hit[i]=false;
+
+				// loop over daughters
+				for(auto j=daughters->begin();j!=daughters->end();++j)
+				{
+					PhysicalVolume const * vol = (*j);
+					if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
+					{
+						hit[index]=false;
 						break;
-
-					    // write back the dir
-						dirs.setFromVector(index,dir);
-					 }
-				 }
-			  }
-			 while( hit[index]==false );
-			 hitcounter++;
+					}
+				}
+			 }
+			while(hit[i]);
+			// write back the dir
+			dirs.setFromVector(index,dir);
 		 }
 	 }
+
+
+	 // now gradually reintroduce hitting directions until threshold reached
+	 while(hitcounter < np*fraction)
+		 {
+			 // pick a point randomly
+			 int index = udouble_dist(rng)*np;
+			 if( ! hit[index] )
+			 {
+				 do
+				  {
+					 Vector3D point,dir;
+					 points.getAsVector( index, point );
+					 sampleDir( dir );
+
+					 // loop over daughters
+					 for(auto j=daughters->begin();j!=daughters->end();++j)
+					 {
+						 PhysicalVolume const * vol = (*j);
+						 if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
+						 {
+							hit[index]=true;
+						    // write back the dir
+							dirs.setFromVector(index,dir);
+							break;
+						 }
+					 }
+				  }
+				 while( hit[index]==false );
+				 hitcounter++;
+			 }
+		 }
 	 std::cerr << " have " << hitcounter << " points hitting " << std::endl;
 }
 
