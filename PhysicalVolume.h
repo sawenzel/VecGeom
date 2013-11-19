@@ -11,15 +11,20 @@
 #include <list>
 #include "TransformationMatrix.h"
 #include "LogicalVolume.h"
+#include <iostream>
+
+
+
 
 // pure abstract class
 class PhysicalVolume
 {
-	private:
-		PlacedBox<1,0> * bbox; // this is the bounding box, it is placed
-			// only translation necessary with respect to the local coordinate system of the PhysicalVolume
-
 	protected:
+		PhysicalVolume * bbox;
+		// this is the bounding box, it is placed
+		// only translation necessary with respect to the local coordinate system of the PhysicalVolume
+		// this is a bit nasty because we need to cast bbox to PlacedBox<1,0>
+
 		TransformationMatrix const *matrix; // placement matrix with respect to containing volume
 		//std::list<PhysicalVolume> daughterVolumes; // list or vector?
 
@@ -30,12 +35,13 @@ class PhysicalVolume
 		LogicalVolume  *logicalvol;
 
 		// crucial thing: we keep a POINTER to a list of volumes ( and not a list )
+		// is this a protected member ??? NO!!
 		std::list<PhysicalVolume const *> * daughters;
 
 		bool ExclusiveContains( Vector3D const & ) const;
 
 	public:
-		PhysicalVolume( TransformationMatrix const *m ) : matrix(m), logicalvol(0), daughters(0) { };
+		PhysicalVolume( TransformationMatrix const *m ) : matrix(m), logicalvol(0), daughters(0), bbox(0) { };
 		virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual bool   Contains( Vector3D const & ) const = 0;
@@ -52,7 +58,27 @@ class PhysicalVolume
 		//
 		virtual ~PhysicalVolume( ){ };
 
-		void AddDaughter( PhysicalVolume const * vol ){ daughters->push_back(vol); }
+		void AddDaughter( PhysicalVolume const * vol )
+		{
+			// this is a delicate issue
+			// since the daughter list will be shared between multiple placed volumes
+			// we should have a reference counter on the daughters list
+
+			// if reference > 1 we should either refuse addition or at least issue a warning
+
+			if( ! daughters )
+			{
+				daughters = new std::list<PhysicalVolume const *>;
+			}
+			if( daughters )
+			{
+				daughters->push_back(vol);
+			}
+			else
+			{
+				std::cerr << "WARNING: no daughter list found" << std::endl;
+			}
+		}
 
 		// this function fills the physical volume with random points and directions such that the points are
 		// contained within the volume but not within the daughters

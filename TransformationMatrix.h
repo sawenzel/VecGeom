@@ -22,6 +22,9 @@ private:
     // this can be varied depending on template specialization
 	double trans[3];
 	double rot[9];
+	bool identity;
+	bool hasRotation;
+	bool hasTranslation;
 
 	template<RotationIdType rid>
 	inline
@@ -35,9 +38,15 @@ private:
 	emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz ) const;
 
 	void setAngles(double phi, double theta, double psi);
+	void setProperties();
 
 public:
-	Vector3D getTrans() const;
+	bool isIdentity() const {return identity;}
+	bool isRotation() const {return hasRotation;}
+	bool isTranslation() const {return hasTranslation;}
+	void print() const;
+
+	Vector3D getTrans() const
 	{
 		return Vector3D(trans[0], trans[1], trans[2]);
 	}
@@ -61,7 +70,7 @@ public:
 		// count zero entries and give back footprint which classifies them
 		for(int i=0;i<9;i++)
 		{
-			if(r[i]==0.)
+			if( std::abs(r[i]) < 1E-12 )
 				footprint+=i*i*i; // cubic power identifies cases uniquely
 		}
 
@@ -69,11 +78,10 @@ public:
 		// have to check if this is trivial case
 		if( footprint == 720 )
 		{
-			if( r[0]==1 && r[4]==1 && r[8]== 1)
+			if( r[0]==1. && r[4]==1. && r[8]== 1. )
 			{
-				return 1296; // this will be trivial rotation
+				return 1296; // this will be trivial rotation == no rotation
 			}
-
 		}
 		return footprint;
 	}
@@ -86,15 +94,18 @@ public:
 		return getRotationFootprintS(this->rot);
 	}
 
+	unsigned int getNumberOfZeroEntries() const;
+
 	// constructor
 	TransformationMatrix(double const *t, double const *r)
 	{
 	    trans[0]=t[0];
 	    trans[1]=t[1];
 		trans[2]=t[2];
-		for(int i=0;i<9;i++)
+		for(auto i=0;i<9;i++)
 			rot[i]=r[i];
 		// we need to check more stuff ( for instance that product along diagonal is +1)
+		setProperties();
 	}
 
 	// more general constructor ala ROOT ( with Euler Angles )
@@ -104,6 +115,7 @@ public:
 		trans[1]=ty;
 		trans[2]=tz;
 		setAngles(phi, theta, psi);
+		setProperties();
 	}
 
 	virtual
@@ -195,6 +207,13 @@ public:
 		MasterToLocal<-1,-1, Vc::double_v>(master, local);
 	}
 
+	virtual
+	void
+	MasterToLocalVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
+	{
+// this is not nice: we bind ourselfs to Vc here
+		MasterToLocal<0,-1, Vc::double_v>(master, local);
+	}
 
 	friend class PhysicalVolume;
 	friend class GeoManager;
@@ -342,6 +361,12 @@ TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const &
 	     localz=mtx*rot[2];
 	     return;
 	}
+	if(rid==1296){
+		localx=mtx;
+		localy=mty;
+		localz=mtz;
+		return;
+	}
 	localx=mtx*rot[0]+mty*rot[3]+mtz*rot[6];
 	localy=mtx*rot[1]+mty*rot[4]+mtz*rot[7];
 	localz=mtx*rot[2]+mty*rot[5]+mtz*rot[8];
@@ -447,6 +472,10 @@ public:
 	void
 	MasterToLocal(Vectors3DSOA const &, Vectors3DSOA & ) const;
 
+	virtual
+	void
+	MasterToLocalVec(Vectors3DSOA const &, Vectors3DSOA & ) const;
+
 };
 
 
@@ -472,5 +501,12 @@ SpecializedTransformation<tid,rid>::MasterToLocal(Vectors3DSOA const & master, V
 	TransformationMatrix::MasterToLocal<tid, rid, Vc::double_v >(master,local);
 }
 
+
+template <int tid, int rid>
+void
+SpecializedTransformation<tid,rid>::MasterToLocalVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
+{
+	TransformationMatrix::MasterToLocal<0, rid, Vc::double_v >(master,local);
+}
 
 #endif /* TRANSFORMATIONMATRIX_H_ */

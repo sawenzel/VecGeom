@@ -10,6 +10,7 @@
 
 #include "GlobalDefs.h"
 #include "mm_malloc.h"
+#include <vector>
 
 struct Vector3D
 {
@@ -17,10 +18,12 @@ struct Vector3D
 	Vector3D(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {};
 	Vector3D() : x(0), y(0), z(0) {};
 
+	/*
 	double operator[](int i) const
 	{
 		return &x+i;
 	}
+*/
 
 	Vector3D & operator=(Vector3D const & rhs)
 	{
@@ -54,6 +57,14 @@ public:
 	  v.x=x[index];
   	  v.y=y[index];
   	  v.z=z[index];
+  }
+
+  void toStructureOfVector3D( std::vector<Vector3D> & v )
+  {
+	  for(auto i=0;i<size;i++)
+	  {
+		  getAsVector(i, v[i]);
+	  }
   }
 
   void setFromVector(int index, Vector3D const &v) const
