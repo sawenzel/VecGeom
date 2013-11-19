@@ -45,6 +45,8 @@ class PlacedBox : public PhysicalVolume
 private:
 	BoxParameters const * boxparams;
 	//friend class GeoManager;
+	template<bool in>
+	double Safety( Vector3D const &) const;
 
 public:
 	void foo() const;
@@ -59,6 +61,8 @@ public:
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
 	virtual bool Contains( Vector3D const & ) const;
 	virtual bool UnplacedContains( Vector3D const & ) const;
+	virtual double SafetyToIn( Vector3D const & ) const;
+	virtual double SafetyToOut( Vector3D const &) const;
 
 	// for the basket treatment
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
@@ -295,6 +299,45 @@ bool PlacedBox<tid,rid>::UnplacedContains( Vector3D const & point ) const
 	if ( std::abs(localPoint.y) > boxparams->dY ) return false;
 	if ( std::abs(localPoint.z) > boxparams->dZ ) return false;
 	return true;
+}
+
+template<int tid, int rid>
+template<bool in>
+double PlacedBox<tid, rid>::Safety( Vector3D const & point ) const
+{
+
+   double safe, safy, safz;
+   if (in) {
+	   Vector3D localPoint;
+	   matrix->MasterToLocal<tid,rid>(point, localPoint);
+	   safe = boxparams->dX - std::fabs(localPoint.x);
+	   safy = boxparams->dY - std::fabs(localPoint.y);
+	   safz = boxparams->dZ - std::fabs(localPoint.z);
+	   if (safy < safe) safe = safy;
+	   if (safz < safe) safe = safz;
+	   }
+   else {
+	   Vector3D localPoint;
+	   matrix->MasterToLocal<tid,rid>(point, localPoint);
+	   safe = -boxparams->dX + std::fabs(localPoint.x);
+	   safy = -boxparams->dY + std::fabs(localPoint.y);
+	   safz = -boxparams->dZ + std::fabs(localPoint.z);
+	   if (safy > safe) safe = safy;
+	   if (safz > safe) safe = safz;
+   }
+   return safe;
+}
+
+template<int tid, int rid>
+double PlacedBox<tid,rid>::SafetyToIn( Vector3D const & point ) const
+{
+	return Safety<false>( point );
+}
+
+template<int tid, int rid>
+double PlacedBox<tid,rid>::SafetyToOut( Vector3D const & point ) const
+{
+	return Safety<true>( point );
 }
 
 

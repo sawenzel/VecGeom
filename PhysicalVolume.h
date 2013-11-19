@@ -40,6 +40,8 @@ class PhysicalVolume
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual bool   Contains( Vector3D const & ) const = 0;
 		virtual bool   UnplacedContains( Vector3D const & ) const = 0;
+		virtual double SafetyToIn( Vector3D const & ) const = 0;
+		virtual double SafetyToOut( Vector3D const & ) const = 0;
 
 		// for basket treatment
 		virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double, double * /*result*/ ) const = 0;
