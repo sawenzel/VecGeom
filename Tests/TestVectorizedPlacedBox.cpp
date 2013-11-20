@@ -147,7 +147,6 @@ int main()
     		    	for(auto j=0;j<np;++j)
     		    		{
     		    			Vector3D localp, localdir;
-    		    			// this inlines I think
     		    			tm->MasterToLocal(conventionalpoints[j], localp);
     		    			tm->MasterToLocalVec(conventionaldirs[j], localdir);
     		    			distances2[j]=unplaceddaughter->DistanceToIn( localp, localdir, 1E30);
@@ -159,36 +158,68 @@ int main()
     		    // now unplaced version
     		    timer.Start();
     		    for(int r=0;r<1000;r++)
-    		       {
+    		    {
     		       	for(auto j=0;j<np;++j)
     		      		{
     		       			Vector3D localp, localdir;
-    		       			// this inlines I think
     		       			sm->MasterToLocal(conventionalpoints[j], localp);
     		       			sm->MasterToLocalVec(conventionaldirs[j], localdir);
     		       			distances2[j]=unplaceddaughter->DistanceToIn( localp, localdir, 1E30);
     		      		}
-    		        }
-    		        timer.Stop();
-    		        double t5 = timer.getDeltaSecs();
+    		     }
+    		     timer.Stop();
+    		     double t5 = timer.getDeltaSecs();
 
-    		        // now unplaced version but inlined matrices
-    		        timer.Start();
-    		         for(int r=0;r<1000;r++)
+    		     // now unplaced version but inlined matrices
+    		     timer.Start();
+    		     for(int r=0;r<1000;r++)
+    		     {
+    		         for(auto j=0;j<np;++j)
     		            {
-    		              	for(auto j=0;j<np;++j)
-    		             		{
-    		        	       		Vector3D localp, localdir;
-    		           		       	// this inlines I think
-    		           		       	tm->MasterToLocal<-1,-1>(conventionalpoints[j], localp);
-    		           		       	tm->MasterToLocalVec<-1>(conventionaldirs[j], localdir);
-    		           		       	distances2[j]=unplaceddaughter->DistanceToIn( localp, localdir, 1E30);
-    		              		}
-    		              }
-    		         timer.Stop();
-    		         double t6 = timer.getDeltaSecs();
+    		        	     Vector3D localp, localdir;
+    		           		 // this inlines I think
+    		           		 tm->MasterToLocal<-1,-1>(conventionalpoints[j], localp);
+    		           		 tm->MasterToLocalVec<-1>(conventionaldirs[j], localdir);
+    		           		 distances2[j]=unplaceddaughter->DistanceToIn( localp, localdir, 1E30);
+    		            }
+    		     }
+    		     timer.Stop();
+    		     double t6 = timer.getDeltaSecs();
 
-    		    	std::cerr << "SCALAR " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t3 <<  " " << t4 << " " << t5 << " " << t6 << std::endl;
+    		     std::cerr << "SCALAR " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t3 <<  " " << t4 << " " << t5 << " " << t6 << std::endl;
+
+    		     TGeoMatrix * rootmatrix= new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],
+						   new TGeoRotation("rot1",EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]));
+    		     TGeoManager *geom = new TGeoManager("","");
+    		     TGeoVolume * vol = geom->MakeBox("abox",0,10,15,20);
+    		     TGeoShape *  rootbox=vol->GetShape();
+
+    		     // now the scalar version from ROOTGeantV
+    		     timer.Start();
+    		     for(int r=0;r<1000;r++)
+    		     {
+    		    	 for(auto j=0;j<np;++j)
+    		    	 {
+    		    		 Vector3D localp, localdir;
+    		    		 // this inlines I think
+    		    		 rootmatrix->MasterToLocal( &conventionalpoints[j], &localp);
+    		        	 rootmatrix->MasterToLocalVect( &conventionaldirs[j], &localdir);
+    		             distances[j]=box->DistFromOutside( localp, localdir, 3, 0, 1e30);
+    		         }
+    		     }
+    		     timer.Stop();
+    		     double t7 = timer.getDeltaSecs();
+
+    		     // now the VECTOR version from ROOT
+    		     // now the scalar version from ROOTGeantV
+    		     timer.Start();
+    		     for(int r=0;r<1000;r++)
+    		     {
+    		    	 rootmatrix->MasterToLocalCombined_v( points, intermediatepoints, dirs, intermediatedirs );
+    		         box->DistFromOutside_v( intermediatepoints, intermediatedirs, 1e30, distances2, np);
+    		     }
+    		     timer.Stop();
+    		     double t7 = timer.getDeltaSecs();
 
     		    delete tm;
     			delete sm;
