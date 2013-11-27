@@ -101,7 +101,7 @@ TransformationMatrix::createSpecializedMatrix( double tx, double ty, double tz, 
 
 	// following piece of code is script generated
 	if(tid == 0 && rid == 1296) return new SpecializedTransformation<0,1296>(tx,ty,tz,phi, theta,psi); // identity
-	if(tid == 1 && rid == 1296) return new SpecializedTransformation<1,1296>(tx,ty,tz,phi,theta,psi); // identity
+	if(tid == 1 && rid == 1296) return new SpecializedTransformation<1,1296>(tx,ty,tz,phi,theta,psi); // only translation
 	if(tid == 0 && rid == 252) return new SpecializedTransformation<0,252>(tx,ty,tz,phi,theta,psi);
 	if(tid == 1 && rid == 252) return new SpecializedTransformation<1,252>(tx,ty,tz,phi,theta,psi);
 	if(tid == 0 && rid == 405) return new SpecializedTransformation<0,405>(tx,ty,tz,phi,theta,psi);
@@ -134,6 +134,6 @@ TransformationMatrix::createSpecializedMatrix( double tx, double ty, double tz, 
 	if(tid == 1 && rid == 1008) return new SpecializedTransformation<1,1008>(tx,ty,tz,phi,theta,psi);
 
 	// fallback case
-	return new SpecializedTransformation<-1,-1>(tx,ty,tz,phi,theta,psi);
+	return new SpecializedTransformation<1,-1>(tx,ty,tz,phi,theta,psi);
 }
 

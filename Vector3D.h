@@ -67,6 +67,14 @@ public:
 	  }
   }
 
+  void toStructureOfVector3D( Vector3D * v )
+    {
+  	  for(auto i=0;i<size;i++)
+  	  {
+  		  getAsVector(i, v[i]);
+  	  }
+    }
+
   void setFromVector(int index, Vector3D const &v) const
   {
   	  x[index]=v.x;

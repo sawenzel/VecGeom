@@ -58,29 +58,35 @@ public:
 	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
 		// the bounding box of this volume is just the box itself
 		// just forget about translation and rotation
-		this->bbox = dynamic_cast<PlacedBox<0,0> *>(this);
+		this->bbox = reinterpret_cast<PlacedBox<0,0> *>(this);
 	}
 
+	__attribute__((always_inline))
+	virtual inline double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 
-	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
 	virtual bool Contains( Vector3D const & ) const;
 	virtual bool UnplacedContains( Vector3D const & ) const;
 	virtual double SafetyToIn( Vector3D const & ) const;
 	virtual double SafetyToOut( Vector3D const &) const;
+	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
+	//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
+	virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /**/ ) const;
+
 
 	// for the basket treatment
-	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
+	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
 
 	template<typename T>
 	inline
-	void DistanceToInT(Vectors3DSOA const &, Vectors3DSOA const &, double, double * ) const;
+	void DistanceToInT(Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
 
 	// a template version for T = Vc or T = Boost.SIMD or T= double
 	template<typename T>
 	inline
+	__attribute__((always_inline))
 	void DistanceToIn( T const & /*x-vec*/, T const & /*y-vec*/, T const & /*z-vec*/,
-					   T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, double step, T & /*result*/ ) const;
+					   T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, T const & /*step*/, T & /*result*/ ) const;
 
 
 	virtual ~PlacedBox(){};
@@ -97,6 +103,7 @@ struct UUtils
 
 
 template <TranslationIdType tid, RotationIdType rid>
+inline
 double
 PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cPstep ) const
 {
@@ -191,7 +198,7 @@ template<int tid, int rid>
 template<typename T>
 inline
 void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
-					   T const & dirx, T const & diry, T const & dirz, double stepmax, T & distance ) const
+					   T const & dirx, T const & diry, T const & dirz, T const & stepmax, T & distance ) const
 {
 	   T in(1.);
 	   T saf[3];
@@ -228,6 +235,8 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   T coord2=newpt[2]+snxt[0]*localdirz;
 	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
 
+
+
 	   T hit1=T(0.);
 	   snxt[1] = saf[1]/(Vc::abs(localdiry)+tiny); // distance to x-z face
 	   coord1=newpt[0]+snxt[1]*localdirx; // calculate new x and z coordinate
@@ -250,7 +259,7 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 template<int tid, int rid>
 template<typename T>
 inline
-void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double step, double * distance ) const
+void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
 {
 	for( int i=0; i < points_v.size; i += T::Size )
 		{
@@ -260,6 +269,7 @@ void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3D
 			T xd( &dirs_v.x[i] );
 			T yd( &dirs_v.y[i] );
 			T zd( &dirs_v.z[i] );
+			T step( &steps[i] );
 			T dist;
 			DistanceToIn<T>(x, y, z, xd, yd, zd, step, dist);
 
@@ -270,10 +280,31 @@ void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3D
 
 // dispatching the virtual method to some concrete method
 template<int tid, int rid>
-void PlacedBox<tid,rid>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double step, double * distance ) const
+void PlacedBox<tid,rid>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
 {
 	// PlacedBox<tid,rid>::DistanceToInT< Vc::double_v, Vc >(points_v, dirs_v, step, distance);
-	this->template DistanceToInT<Vc::double_v>( points_v, dirs_v, step, distance);
+	this->template DistanceToInT<Vc::double_v>( points_v, dirs_v, steps, distance);
+}
+
+
+template<int tid, int rid>
+void PlacedBox<tid,rid>::DistanceToInIL( Vectors3DSOA const & points, Vectors3DSOA const & dirs, const double * steps, double * distances ) const
+{
+	for(auto i=0;i<points.size;i++)
+	{
+		distances[i]=this->PlacedBox<tid,rid>::DistanceToIn(points.getAsVector(i),dirs.getAsVector(i),steps[i]);
+	}
+}
+
+
+template<int tid, int rid>
+void PlacedBox<tid,rid>::DistanceToInIL( Vector3D const * points, Vector3D const * dirs, const double * steps, double * distances, int np ) const
+{
+	for(auto i=0;i<np;i++)
+	{
+		// this inlined successfully
+		distances[i]=this->PlacedBox<tid,rid>::DistanceToIn(points[i],dirs[i],steps[i]);
+	}
 }
 
 

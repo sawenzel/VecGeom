@@ -16,6 +16,8 @@
 typedef int TranslationIdType;
 typedef int RotationIdType;
 
+// the idea is to have StorageClass being a
+//template <typename StorageClass>
 class TransformationMatrix
 {
 private:
@@ -36,6 +38,12 @@ private:
 	inline
 	void
 	emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz ) const;
+
+	template<RotationIdType rid, typename T>
+	static
+	inline
+	void
+	  emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz, double const *rot );
 
 	void setAngles(double phi, double theta, double psi);
 	void setProperties();
@@ -153,6 +161,7 @@ public:
 	template <TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
+		__attribute__((always_inline))
 		MasterToLocalVec(Vectors3DSOA const &, Vectors3DSOA &) const;
 	template <TranslationIdType tid, RotationIdType rid, typename T>
 		inline
@@ -171,6 +180,7 @@ public:
 	template<TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
+		__attribute__((always_inline))
 		MasterToLocalVec(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const
 		{
 			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz);
@@ -181,6 +191,7 @@ public:
 	template <RotationIdType rid>
 	inline
 	void
+	__attribute__((always_inline))
 	MasterToLocalVec(Vector3D const &, Vector3D &) const;
 
 
@@ -222,37 +233,39 @@ public:
 template <TranslationIdType tid, RotationIdType rid, typename T>
 inline
 void
+__attribute__((always_inline))
 TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const
 {
-	if( tid==0 && rid ==0 ) // this means identity
-		{
-			localx = masterx;
-			localy = mastery;
-			localz = masterz;
-		}
-	else if( tid != 0 && rid == 0 ) // tid == 1 means we have
-		{
-			localx = masterx - trans[0];
-			localy = mastery - trans[1];
-			localz = masterz - trans[2];
-		}
-	else if( tid == 0 && rid!=0 ) // pure rotation
-		{
-			emitrotationcodeT<rid,T>(masterx, mastery, masterz, localx, localy, localz);
-		}
-	else if ( tid != 0 && rid!=0 ) // both rotation and translation
-		{
-			T mtx, mty, mtz;
-			mtx = masterx - trans[0];
-			mty=  mastery - trans[1];
-			mtz = masterz - trans[2];
-			emitrotationcodeT<rid,T>(mtx, mty, mtz, localx, localy, localz);
-		}
+  if( tid==0 && rid == 1296 ) // this means identity
+  {
+	  localx = masterx;
+	  localy = mastery;
+	  localz = masterz;
+  }
+ else if( tid == 1 && rid == 1296 ) // tid == 1 means we have only translation
+  {
+	  localx = masterx - trans[0];
+	  localy = mastery - trans[1];
+	  localz = masterz - trans[2];
+  }
+ else if( tid == 0 && rid!=0 ) // pure rotation
+  {
+	  emitrotationcodeT<rid,T>(masterx, mastery, masterz, localx, localy, localz);
+  }
+ else if ( tid == 1 && rid!=0 ) // both rotation and translation
+ {
+	  //	 T mtx, mty, mtz;
+	  //	 mtx = masterx - trans[0];
+	  // mty=  mastery - trans[1];
+	  // mtz = masterz - trans[2];
+	 emitrotationcodeT<rid,T>(masterx-trans[0], mastery-trans[1], masterz-trans[2], localx, localy, localz);
+ }
 }
 
 template <TranslationIdType tid, RotationIdType rid>
 inline
 void
+__attribute__((always_inline))
 TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) const
 {
 	MasterToLocal<tid, rid, double>(master.x, master.y, master.z, local.x, local.y, local.z );
@@ -271,7 +284,7 @@ inline
 void
 TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const & mtz, T & localx, T & localy, T & localz ) const
 {
-	if(rid==252){
+  	if(rid==252){
 	     localx=mtx*rot[0];
 	     localy=mty*rot[4]+mtz*rot[7];
 	     localz=mty*rot[5]+mtz*rot[8];
@@ -367,10 +380,22 @@ TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const &
 		localz=mtz;
 		return;
 	}
-	localx=mtx*rot[0]+mty*rot[3]+mtz*rot[6];
-	localy=mtx*rot[1]+mty*rot[4]+mtz*rot[7];
-	localz=mtx*rot[2]+mty*rot[5]+mtz*rot[8];
+ // localx=mtx*rot[0]+mty*rot[3]+mtz*rot[6];
+  //localy=mtx*rot[1]+mty*rot[4]+mtz*rot[7];
+  //localz=mtx*rot[2]+mty*rot[5]+mtz*rot[8];
+	// this is better for inlining purposes
+	localx=mtx*rot[0];
+	localy=mtx*rot[1];
+	localz=mtx*rot[2];
+	localx+=mty*rot[3];
+	localy+=mty*rot[4];
+	localz+=mty*rot[5];
+	localx+=mtz*rot[6];
+	localy+=mtz*rot[7];
+	localz+=mtz*rot[8];
+	return;
 }
+
 
 
 template <RotationIdType rid>
@@ -378,7 +403,7 @@ inline
 void
 TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) const
 {
-	emitrotationcode<rid, double>( mt.x, mt.y, mt.z, local.x, local.y, local.z );
+  emitrotationcode<rid, double>( mt.x, mt.y, mt.z, local.x, local.y, local.z );
 }
 
 

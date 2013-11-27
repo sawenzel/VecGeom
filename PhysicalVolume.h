@@ -12,8 +12,7 @@
 #include "TransformationMatrix.h"
 #include "LogicalVolume.h"
 #include <iostream>
-
-
+#include <vector>
 
 
 // pure abstract class
@@ -49,8 +48,13 @@ class PhysicalVolume
 		virtual double SafetyToIn( Vector3D const & ) const = 0;
 		virtual double SafetyToOut( Vector3D const & ) const = 0;
 
-		// for basket treatment
-		virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double, double * /*result*/ ) const = 0;
+		// for basket treatment (supposed to be dispatched to particle parallel case)
+		virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;
+
+		// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
+		virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;
+		//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
+		virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /*size*/ ) const =0;
 
 		// this is
 		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;
@@ -96,9 +100,9 @@ class PhysicalVolume
 		void fillWithBiasedDirections( Vectors3DSOA const & points, Vectors3DSOA & dirs, int number, double fraction ) const;
 
 		// to access information about Matrix
-		TransformationMatrix const * getMatrix(){return matrix;}
+		TransformationMatrix const * getMatrix() const {return matrix;}
 
-		LogicalVolume const * getLogicalVolume(){ return logicalvol; }
+		LogicalVolume const * getLogicalVolume() const { return logicalvol; }
 };
 
 
