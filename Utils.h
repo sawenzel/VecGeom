@@ -23,5 +23,13 @@ struct StopWatch
 
 
 
+struct QuadraticSolver
+{
+
+
+
+
+};
+
 
 #endif /* UTILS_H_ */

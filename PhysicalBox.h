@@ -96,10 +96,6 @@ public:
 };
 
 
-struct UUtils
-{
-	static constexpr double kInfinity=1E30;
-};
 
 
 template <TranslationIdType tid, RotationIdType rid>
