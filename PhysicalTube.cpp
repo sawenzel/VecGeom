@@ -8,7 +8,9 @@
 #include "PhysicalTube.h"
 #include <iostream>
 
-template<typename T> void TubeParameters<T>::inspect() const
+template<typename T>
+void
+TubeParameters<T>::inspect() const
 {
 		std::cout << " This is a tube " << std::endl;
 		std::cout << " Rmin : " << dRmin << std::endl;

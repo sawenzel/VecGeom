@@ -5,12 +5,13 @@
  *      Author: swenzel
  */
 
+
 #ifndef UTILS_H_
 #define UTILS_H_
 
 
 #include "tbb/tick_count.h" // timing from Intel TBB
-
+#include "cmath"
 
 struct StopWatch
 {
@@ -29,6 +30,29 @@ struct QuadraticSolver
 
 
 
+};
+
+
+struct PhiToPlane
+{
+	template <typename T>
+	static
+	inline
+	void GetNormalVectorToPhiPlane( T phi , Vector3D & v, bool inverse )
+	{
+		if( ! inverse )
+		{
+			v.x=-std::sin( phi );
+			v.y=+std::cos( phi );
+			v.z=T(0);
+		}
+		else
+		{
+			v.x=std::sin( phi );
+			v.y=-std::cos( phi );
+			v.z=T(0);
+		}
+	}
 };
 
 

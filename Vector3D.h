@@ -11,6 +11,7 @@
 #include "GlobalDefs.h"
 #include "mm_malloc.h"
 #include <vector>
+#include <iostream>
 
 struct Vector3D
 {
@@ -32,6 +33,22 @@ struct Vector3D
 		this->z=rhs.z;
 		return *this;
 	}
+
+	static
+	inline
+	double scalarProduct( Vector3D const & left, Vector3D const & right)
+	{
+		return left.x*right.x + left.y*right.y + left.z*right.z;
+	}
+
+	void print()
+	{
+		std::cout << " 3DVector " << this << std::endl;
+		std::cout << " x : " << x << std::endl;
+		std::cout << " y : " << y << std::endl;
+		std::cout << " z : " << z << std::endl;
+	}
+
 };
 
 struct Vectors3DSOA

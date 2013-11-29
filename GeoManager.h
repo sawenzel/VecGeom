@@ -10,6 +10,7 @@
 
 #include "PhysicalVolume.h"
 #include "PhysicalBox.h"
+#include "PhysicalTube.h"
 #include "TransformationMatrix.h"
 #include <list>
 
@@ -46,6 +47,9 @@ public:
 	// static factory methods
 	static
 	PhysicalVolume * MakePlacedBox( BoxParameters const *, TransformationMatrix const * );
+
+	static
+	PhysicalVolume * MakePlacedTube( TubeParameters<> const *, TransformationMatrix const * );
 
 	// we need to solve problem of pointer ownership --> let's use smart pointers and move semantics
 };
