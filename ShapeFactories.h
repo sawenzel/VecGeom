@@ -12,42 +12,71 @@
 #include "TubeTraits.h"
 #include "PhysicalTube.h"
 #include "GlobalDefs.h"
+#include "PhysicalCone.h"
 
-struct ShapeFactories
+struct TubeFactory
 {
 	template<int tid, int rid>
 	static
-	PhysicalVolume * CreateTube( TubeParameters<> const * tb, TransformationMatrix const * tm )
+	PhysicalVolume * Create( TubeParameters<> const * tp, TransformationMatrix const * tm )
 	{
-		if( tb->GetRmin() == 0. )
+		if( tp->GetRmin() == 0. )
 		{
-			if ( tb->dDPhi < UUtils::kTwoPi )
+			if ( tp->GetDPhi() < UUtils::kTwoPi )
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhi>(tb, tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhi>(tp, tm);
 			}
 			else
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTube>(tb, tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTube>(tp, tm);
 			}
 		}
 		else
 		{
-			if ( tb->dDPhi < UUtils::kTwoPi )
+			if ( tp->GetDPhi() < UUtils::kTwoPi )
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhi>(tb,tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhi>(tp,tm);
 			}
 			else
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTube>(tb,tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTube>(tp,tm);
 			}
 		}
 	}
 };
 
 
-
+struct
+ConeFactory
+{
+	template<int tid, int rid>
+	static
+	PhysicalVolume * Create( ConeParameters<> const * cp, TransformationMatrix const * tm )
+	{
+		if( cp->GetRmin1() == 0. && cp->GetRmin2() == 0. )
+			{
+				if ( cp->GetDPhi() < UUtils::kTwoPi )
+				{
+					return new PlacedCone<tid,rid,ConeTraits::NonHollowConeWithPhi>( cp, tm );
+				}
+				else
+				{
+					return new PlacedCone<tid,rid,ConeTraits::NonHollowCone>( cp, tm );
+				}
+			}
+		else
+			{
+				if ( cp->GetDPhi() < UUtils::kTwoPi )
+				{
+					return new PlacedCone<tid,rid,ConeTraits::HollowConeWithPhi>( cp, tm );
+				}
+				else
+				{
+					return new PlacedCone<tid,rid,ConeTraits::HollowCone>( cp, tm );
+				}
+			}
+	}
 };
-
 
 
 #endif /* SHAPEFACTORIES_H_ */

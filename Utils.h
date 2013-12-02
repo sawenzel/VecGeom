@@ -12,6 +12,7 @@
 
 #include "tbb/tick_count.h" // timing from Intel TBB
 #include "cmath"
+#include "Vc/vector.h"
 
 struct StopWatch
 {
@@ -31,6 +32,29 @@ struct QuadraticSolver
 
 
 };
+
+
+// a kernel function solving a quadratic equation
+/*
+struct DistanceFunctions
+{
+	// calculates/
+	template <typename T>
+	static void DistToTube( T const & r2, T const & n2, T const & rdotn, T const & radius2, T & b, T & delta )
+	{
+		// r2 is the scalar product of position vector
+		// n2 is the norm of norm vector
+		T t1=T(1)/n2;
+		T t3=r2-radius2;
+		b=t1*rdotn;
+		T cv=t1*t3;
+		delta=b*b-c;
+		delta=sqrt(delta);
+	}
+
+
+};
+*/
 
 
 struct PhiToPlane

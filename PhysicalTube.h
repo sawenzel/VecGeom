@@ -15,6 +15,7 @@
 #include <type_traits>
 #include "Utils.h"
 #include "TubeTraits.h"
+#include "Vc/vector.h"
 
 
 
@@ -82,8 +83,8 @@ public:
 	inline T GetRmin() const {return dRmin;}
 	inline T GetRmax() const {return dRmax;}
 	inline T GetDZ() const {return dZ;}
-	inline T GetPhiMin() const {return dSPhi;}
-	inline T GetPhiMax() const {return dDPhi;}
+	inline T GetSPhi() const {return dSPhi;}
+	inline T GetDPhi() const {return dDPhi;}
 
 	virtual ~TubeParameters(){};
 	// The placed boxed can easily access the private members
@@ -123,6 +124,14 @@ public:
 	// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 	virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /*size*/ ) const;
+
+	// a template version for T = Vc or T = Boost.SIMD or T= double
+	template<typename VectorType>
+	inline
+	__attribute__((always_inline))
+	void DistanceToIn( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
+					   VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const;
+
 };
 
 
@@ -285,6 +294,85 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
   } // end check t1 != 0
   return ( snxt < UUtils::GetCarHalfTolerance()) ? 0 : snxt;
 }
+
+
+// a template version targeted at T = Vc or T = Boost.SIMD or T= double
+// this is the kernel operating on type T
+template<int tid, int rid, typename TubeType, typename ValueType>
+template<typename VectorType>
+inline
+void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType const & x, VectorType const & y, VectorType const & z,
+					   VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & stepmax, VectorType & distance ) const
+{
+	// Static method to compute distance from outside point to a set of tubes with given parameters
+/*
+	VectorTraits<T>::MaskType done_m(false); // which particles are ready to be returned
+	T s_v(1.E30); // distance to each segment
+
+	// check Z planes
+	T zi_v = dz_v - Vc::abs(z_v);
+	vdm inz_m = zi_v >= 0;
+
+	done_m = !inz_m && (z_v*dir[2] >= 0); // particle outside the z-range and moving away
+	if( done_m.isFull() ) return s_v;
+
+	s_v(!done_m) = -zi_v/TMath::Abs(dir[2]);
+	vd xi_v = x + s_v*dir[0];
+	  vd yi_v = y + s_v*dir[1];
+	  vd ri2_v = xi_v*xi_v + yi_v*yi_v;
+	  vd rmin2_v = rmin_v*rmin_v;
+	  vd rmax2_v = rmax_v*rmax_v;
+
+	  done_m |= !inz_m && (rmin2_v <= ri2_v) && (ri2_v <= rmax2_v);
+	  if( done_m.isFull() ) return s_v;
+
+	  // check outer cyl. surface
+	  Double_t r2  = x*x + y*y;
+	  vd b_v(0.);
+	  vd d_v(0.);
+	  vdm inrmax_m = (r2 - rmax2_v) <= tol_v;
+	  vdm inrmin_m = (rmin2_v - r2) <= tol_v;
+
+	  // TO DO: CHECK IF IT'S INSIDE (BOUNDARY WITHIN MACHINE PRECISION, TOO SPECIFIC)
+
+	  // check outer cylinder (consider only rmax)
+	  Double_t n2 = dir[0]*dir[0] + dir[1]*dir[1];
+	  Double_t rdotn = x*dir[0] + y*dir[1];
+
+	  if (TMath::Abs(n2)<TGeoShape::Tolerance())
+	    {
+	      s_v(!done_m) = 1.E30;
+	      return s_v;
+	    }
+
+	  TGeoTube_v::DistToTubes_v4(r2, n2, rdotn, rmax2_v, b_v, d_v);
+
+	  vdm d_m = d_v > 0;
+	  s_v(!done_m && !inrmax_m && d_m) = -b_v - d_v;
+	  zi_v = z_v + s_v*dir[2];
+	  done_m |= !inrmax_m && d_m && (s_v > 0) && (Vc::abs(zi_v) <= dz_v);
+
+	  s_v(!done_m) = 1.E30;
+	  done_m |= (rmin_v <=0);
+	  if ( done_m.isFull() ) return s_v;
+
+	  // Check inner cylinder (MAYBE SOME OPERATIONS CAN BE DONE ONCE AND REPEATED ONLY IF ONE OF THE PARTICULAR CASES HAPPENS)
+
+	  TGeoTube_v::DistToTubes_v4(r2, n2, rdotn, rmin2_v, b_v, d_v);
+	  d_m = d_v > 0;
+	  s_v(!done_m && d_m) = -b_v + d_v;
+	  zi_v = z_v + s_v*dir[2];
+	  done_m |= d_m && (s_v > 0) && (Vc::abs(zi_v) <= dz_v);
+	  if ( done_m.isFull() ) return s_v;
+
+	  s_v(!done_m) = 1.E30;
+	  return s_v;
+	}
+*/
+
+}
+
+
 
 template<int tid, int rid, typename TubeType, typename T>
 void PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToInIL( Vectors3DSOA const & points, Vectors3DSOA const & dirs, const double * steps, double * distances ) const

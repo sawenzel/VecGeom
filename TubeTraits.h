@@ -58,6 +58,7 @@ struct NeedsRminTreatment<NonHollowTube>
 {
 	static const bool value=false;
 };
+template <>
 struct NeedsRminTreatment<NonHollowTubeWithPhi>
 {
 	static const bool value=false;

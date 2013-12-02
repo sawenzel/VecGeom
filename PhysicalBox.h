@@ -65,8 +65,8 @@ public:
 	virtual inline double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
-	virtual bool Contains( Vector3D const & ) const;
-	virtual bool UnplacedContains( Vector3D const & ) const;
+	virtual inline bool Contains( Vector3D const & ) const;
+	virtual inline bool UnplacedContains( Vector3D const & ) const;
 	virtual double SafetyToIn( Vector3D const & ) const;
 	virtual double SafetyToOut( Vector3D const &) const;
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
@@ -252,6 +252,10 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 
 
 // for the basket treatment
+// this is actually a very general theme valid for any shape so it should become
+// a template method !!
+// like a for_each over chunks of vectors and some functor
+
 template<int tid, int rid>
 template<typename T>
 inline
@@ -305,21 +309,18 @@ void PlacedBox<tid,rid>::DistanceToInIL( Vector3D const * points, Vector3D const
 
 
 template<int tid, int rid>
+inline
 bool PlacedBox<tid,rid>::Contains( Vector3D const & point ) const
 {
 	// here we do the point transformation
 	Vector3D localPoint;
 	matrix->MasterToLocal<tid,rid>(point, localPoint);
-
-	// this could be vectorized also
-	if ( std::abs(localPoint.x) > boxparams->dX ) return false;
-	if ( std::abs(localPoint.y) > boxparams->dY ) return false;
-	if ( std::abs(localPoint.z) > boxparams->dZ ) return false;
-	return true;
+	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
 }
 
 
 template<int tid, int rid>
+inline
 bool PlacedBox<tid,rid>::UnplacedContains( Vector3D const & point ) const
 {
 	// here we do the point transformation

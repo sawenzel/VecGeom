@@ -21,6 +21,7 @@
 #define GEOM_SURFACE_MODE false
 #endif
 
+/*
 struct SurfaceEnumType
 {
 	enum { Outside, OnSurface, Inside };
@@ -36,6 +37,7 @@ struct SurfaceReturnType<true>
 {
 	typedef typename SurfaceEnumType type;
 };
+*/
 
 struct UUtils
 {

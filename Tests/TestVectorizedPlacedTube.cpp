@@ -88,10 +88,17 @@ int main()
     											EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
 
-    				PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>(10,20,30,M_PI/2.,M_PI), tm );
+    				PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>(0,20,30,M_PI/4.,3*M_PI/2.), tm );
 
     				std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
     				std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
+    				// testing UnplacedContains
+    			//	for(auto k=0;k<100;k++)
+    			//	{
+    			//		Vector3D x( cos(k/(100.)*2*M_PI), sin(k/(100.)*2*M_PI), 0 );
+    			//		std::cerr << "## " << k/100.*2*M_PI << " "  << daughter->UnplacedContains( x ) << std::endl;
+
+    			//	}
 
     				world->AddDaughter(daughter);
 

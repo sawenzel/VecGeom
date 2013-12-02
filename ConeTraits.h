@@ -60,6 +60,7 @@ struct NeedsRminTreatment<NonHollowCone>
 {
 	static const bool value=false;
 };
+template <>
 struct NeedsRminTreatment<NonHollowConeWithPhi>
 {
 	static const bool value=false;
