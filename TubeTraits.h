@@ -16,6 +16,7 @@ namespace TubeTraits
 
 // a tube not having rmin nor phi section
 struct NonHollowTube {};
+// a tube not having rmin but a non-2pi phi section
 struct NonHollowTubeWithPhi {};
 
 // a tube having rmin but no phi section

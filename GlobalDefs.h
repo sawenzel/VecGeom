@@ -13,6 +13,29 @@
 #define	ALIGNMENT_BOUNDARY 32
 #endif
 
+// Other ideas: we should be able to configure the library for different purposes
+// For example: the question whether we treat the surface or not should be configurable
+// Could solve this via template type construction or via simple ifdefs
+
+#ifndef GEOM_SURFACE_MODE
+#define GEOM_SURFACE_MODE false
+#endif
+
+struct SurfaceEnumType
+{
+	enum { Outside, OnSurface, Inside };
+};
+
+template <bool B>
+struct SurfaceReturnType
+{
+	typedef bool type;
+};
+template <>
+struct SurfaceReturnType<true>
+{
+	typedef typename SurfaceEnumType type;
+};
 
 struct UUtils
 {
