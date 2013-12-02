@@ -60,7 +60,7 @@ template <typename Shape>
 struct
 ShapeToFactoryMap
 {
-	typedef ConeFactory type;
+	typedef NullFactory type;
 };
 
 template <>
@@ -75,6 +75,13 @@ struct
 ShapeToFactoryMap<Tube>
 {
 	typedef TubeFactory type;
+};
+
+template <>
+struct
+ShapeToFactoryMap<Box>
+{
+	typedef BoxFactory type;
 };
 
 
@@ -106,7 +113,11 @@ public:
 
 	// static factory methods
 	static
-	PhysicalVolume * MakePlacedBox( BoxParameters const *, TransformationMatrix const * );
+	PhysicalVolume * MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm)
+	{
+		return MakePlacedShape<Box>( bp, tm);
+
+	}
 
 	static
 	PhysicalVolume * MakePlacedTube( TubeParameters<> const * tp, TransformationMatrix const * tm)

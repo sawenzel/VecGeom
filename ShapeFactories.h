@@ -13,6 +13,7 @@
 #include "PhysicalTube.h"
 #include "GlobalDefs.h"
 #include "PhysicalCone.h"
+#include "PhysicalBox.h"
 
 struct TubeFactory
 {
@@ -77,6 +78,30 @@ ConeFactory
 			}
 	}
 };
+
+
+struct
+BoxFactory
+{
+	template<int tid, int rid>
+	static
+	PhysicalVolume * Create( BoxParameters const * cp, TransformationMatrix const * tm )
+	{
+		return new PlacedBox<tid,rid>( cp, tm );
+	}
+};
+
+struct
+NullFactory
+{
+	template<int tid, int rid>
+	static
+	PhysicalVolume * Create( BoxParameters const * cp, TransformationMatrix const * tm )
+	{
+		return NULL;
+	}
+};
+
 
 
 #endif /* SHAPEFACTORIES_H_ */

@@ -73,7 +73,7 @@ public:
   }
 };
 */
-
+/*
 PhysicalVolume * GeoManager::MakePlacedBox(BoxParameters const * bp, TransformationMatrix const * tm)
 {
 	// get footprint of TransformationMatrix
@@ -163,5 +163,5 @@ PhysicalVolume * GeoManager::MakePlacedBox(BoxParameters const * bp, Transformat
 	// fallback case
 	return new PlacedBox<1,-1>(bp,tm);
 }
-
+*/
 
