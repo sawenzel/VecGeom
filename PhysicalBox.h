@@ -202,6 +202,8 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   T tiny(1e-20);
 	   T big(UUtils::kInfinity);
 	   T faraway(0.); // initializing all components to zero
+
+	   // should be done in the box
 	   T par[3]={ boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
 
 	   // new thing: do coordinate transformation in place here
@@ -215,7 +217,7 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   in(saf[0]<0. && saf[1]<0. && saf[2]<0.)=0;
 	   distance=big;
 
-	   if( faraway > T(0.) )
+	   if( faraway > Vc::Zero )
 	       return; // return big
 
 	   // new thing:  do coordinate transformation for directions here
@@ -230,8 +232,6 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   T coord1=newpt[1]+snxt[0]*localdiry; // calculate new y and z coordinate
 	   T coord2=newpt[2]+snxt[0]*localdirz;
 	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
-
-
 
 	   T hit1=T(0.);
 	   snxt[1] = saf[1]/(Vc::abs(localdiry)+tiny); // distance to x-z face
