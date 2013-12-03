@@ -61,8 +61,7 @@ struct DistanceFunctions
 	}
 
 	// special version for Vc
-	template <>
-	static Vc::double_m & DistToTube( Vc::double_v const & rxy2, Vc::double_v const & dirxy2,
+	static void DistToTubeVc( Vc::double_v const & rxy2, Vc::double_v const & dirxy2,
 							Vc::double_v const & rdotdirxy, Vc::double_v const & radius2, Vc::double_v & b, Vc::double_v & delta )
 	{
 		// r2 is the norm squared of position vector in x-y plane only
@@ -72,7 +71,7 @@ struct DistanceFunctions
 
 		// return vale:
 		// the distance will be b +- delta or infinity if delta==-1
-		Vc::double_v t1 = Vc::double_v(1)/dirxy2;
+		Vc::double_v t1 = Vc::One/dirxy2;
 		Vc::double_v t3 = rxy2-radius2;
 		b = t1*rdotdirxy;
 		delta = b*b-t1*t3;

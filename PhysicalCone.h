@@ -49,11 +49,11 @@ public:
 			cacheRminSqr=dRmin1*dRmin1;
 			cacheRmaxSqr=dRmax1*dRmax1;
 
-			if ( dRmin1 > UUtils::GetRadHalfTolerance() )
+			if ( dRmin1 > UUtils<>::GetRadHalfTolerance() )
 			{
 				// CHECK IF THIS CORRECT ( this seems to be inversed with tolerance for ORmax
-				cacheTolORminSqr = (dRmin1 - UUtils::GetRadHalfTolerance()) * (dRmin1 - UUtils::GetRadHalfTolerance());
-				cacheTolIRminSqr = (dRmin1 + UUtils::GetRadHalfTolerance()) * (dRmin1 + UUtils::GetRadHalfTolerance());
+				cacheTolORminSqr = (dRmin1 - UUtils<>::GetRadHalfTolerance()) * (dRmin1 - UUtils<>::GetRadHalfTolerance());
+				cacheTolIRminSqr = (dRmin1 + UUtils<>::GetRadHalfTolerance()) * (dRmin1 + UUtils<>::GetRadHalfTolerance());
 			}
 			else
 			{
@@ -61,8 +61,8 @@ public:
 				cacheTolIRminSqr = 0.0;
 			}
 
-			cacheTolORmaxSqr = (dRmax1 + UUtils::GetRadHalfTolerance()) * (dRmax1 + UUtils::GetRadHalfTolerance());
-			cacheTolIRmaxSqr = (dRmax1 - UUtils::GetRadHalfTolerance()) * (dRmax1 - UUtils::GetRadHalfTolerance());
+			cacheTolORmaxSqr = (dRmax1 + UUtils<>::GetRadHalfTolerance()) * (dRmax1 + UUtils<>::GetRadHalfTolerance());
+			cacheTolIRmaxSqr = (dRmax1 - UUtils<>::GetRadHalfTolerance()) * (dRmax1 - UUtils<>::GetRadHalfTolerance());
 
 			// calculate normals
 			PhiToPlane::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);

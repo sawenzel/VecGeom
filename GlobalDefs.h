@@ -39,35 +39,38 @@ struct SurfaceReturnType<true>
 };
 */
 
+template<typename ValueType=double>
 struct UUtils
 {
-	static constexpr double kInfinity=1E30;
-	static constexpr double kPi       = 3.14159265358979323846;
-	static constexpr double kTwoPi    = 2.0 * kPi;
-	static constexpr double kRadToDeg = 180.0 / kPi;
-	static constexpr double kDegToRad = kPi / 180.0;
-	static constexpr double kSqrt2    = 1.4142135623730950488016887242097;
+	static constexpr ValueType kInfinity=1E30;
+	static constexpr ValueType kPi       = 3.14159265358979323846;
+	static constexpr ValueType kTwoPi    = 2.0 * kPi;
+	static constexpr ValueType kRadToDeg = 180.0 / kPi;
+	static constexpr ValueType kDegToRad = kPi / 180.0;
+	static constexpr ValueType kSqrt2    = 1.4142135623730950488016887242097;
 
-	static constexpr double fgTolerance = 1E-9;
-	static constexpr double frTolerance = 1E-9;
-	static constexpr double faTolerance = 1E-9;
-	static constexpr double fgHalfTolerance = fgTolerance*0.5;
-	static constexpr double frHalfTolerance = frTolerance*0.5;
-	static constexpr double faHalfTolerance = faTolerance*0.5;
-
-	static
-	inline double GetCarTolerance()  {return fgTolerance;}
-	static
-	inline double GetRadTolerance()  {return frTolerance;}
-	static
-	inline double GetAngTolerance()  {return faTolerance;}
+	static constexpr ValueType fgTolerance = 1E-9;
+	static constexpr ValueType frTolerance = 1E-9;
+	static constexpr ValueType faTolerance = 1E-9;
+	static constexpr ValueType fgHalfTolerance = fgTolerance*0.5;
+	static constexpr ValueType frHalfTolerance = frTolerance*0.5;
+	static constexpr ValueType faHalfTolerance = faTolerance*0.5;
 
 	static
-	inline double GetCarHalfTolerance()  {return fgHalfTolerance;}
+	inline ValueType GetCarTolerance()  {return fgTolerance;}
 	static
-	inline double GetRadHalfTolerance()  {return frHalfTolerance;}
+	inline ValueType GetRadTolerance()  {return frTolerance;}
 	static
-	inline double GetAngHalfTolerance()  {return faHalfTolerance;}
+	inline ValueType GetAngTolerance()  {return faTolerance;}
+
+	static
+	inline ValueType GetCarHalfTolerance()  {return fgHalfTolerance;}
+	static
+	inline ValueType GetRadHalfTolerance()  {return frHalfTolerance;}
+	static
+	inline ValueType GetAngHalfTolerance()  {return faHalfTolerance;}
+
+	// static vd tol_v = 1.E-10;
 };
 
 

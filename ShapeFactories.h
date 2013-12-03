@@ -23,7 +23,7 @@ struct TubeFactory
 	{
 		if( tp->GetRmin() == 0. )
 		{
-			if ( tp->GetDPhi() < UUtils::kTwoPi )
+			if ( tp->GetDPhi() < UUtils<>::kTwoPi )
 			{
 				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhi>(tp, tm);
 			}
@@ -34,7 +34,7 @@ struct TubeFactory
 		}
 		else
 		{
-			if ( tp->GetDPhi() < UUtils::kTwoPi )
+			if ( tp->GetDPhi() < UUtils<>::kTwoPi )
 			{
 				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhi>(tp,tm);
 			}
@@ -56,7 +56,7 @@ ConeFactory
 	{
 		if( cp->GetRmin1() == 0. && cp->GetRmin2() == 0. )
 			{
-				if ( cp->GetDPhi() < UUtils::kTwoPi )
+				if ( cp->GetDPhi() < UUtils<>::kTwoPi )
 				{
 					return new PlacedCone<tid,rid,ConeTraits::NonHollowConeWithPhi>( cp, tm );
 				}
@@ -67,7 +67,7 @@ ConeFactory
 			}
 		else
 			{
-				if ( cp->GetDPhi() < UUtils::kTwoPi )
+				if ( cp->GetDPhi() < UUtils<>::kTwoPi )
 				{
 					return new PlacedCone<tid,rid,ConeTraits::HollowConeWithPhi>( cp, tm );
 				}

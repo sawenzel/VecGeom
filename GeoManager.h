@@ -142,6 +142,7 @@ public:
 		typedef typename ShapeToFactoryMap<Shape>::type ShapeFactory;
 
 		// the following piece of code is script generated
+/*
 		if( tid == 0 && rid == 1296 ) return ShapeFactory::template Create<0,1296>( param,tm ); // identity
 		if( tid == 1 && rid == 1296 ) return ShapeFactory::template Create<1,1296>( param,tm ); // identity
 		if( tid == 0 && rid == 252 ) return  ShapeFactory::template Create<0,252>( param,tm );
@@ -174,7 +175,7 @@ public:
 		if( tid == 1 && rid == 954 ) return  ShapeFactory::template Create<1,954>( param,tm );
 		if( tid == 0 && rid == 1008 ) return ShapeFactory::template Create<0,1008>( param,tm );
 		if( tid == 1 && rid == 1008 ) return ShapeFactory::template Create<1,1008>( param,tm );
-
+*/
 		// fallback case
 		return ShapeFactory::template Create<1,-1>(param,tm);
 	}

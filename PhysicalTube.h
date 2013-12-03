@@ -16,6 +16,7 @@
 #include "Utils.h"
 #include "TubeTraits.h"
 #include "Vc/vector.h"
+#include "Vc/common/types.h"
 
 
 
@@ -44,22 +45,31 @@ private:
 	Vector3D normalPhi1;
 	Vector3D normalPhi2;
 
+	//**** members as Vc vectors ******//
+	Vc::Vector<T> vcRminSqr;
+	Vc::Vector<T> vcRmaxSqr;
+	Vc::Vector<T> vcZ;
+
 public:
 	TubeParameters(T pRmin, T pRmax, T pDZ, T pPhiMin, T pPhiMax) :
 		dRmin(pRmin),
 		dRmax(pRmax),
 		dZ(pDZ),
 		dSPhi(pPhiMin),
-		dDPhi(pPhiMax) {
+		dDPhi(pPhiMax),
+		vcRminSqr(pRmin*pRmin),
+		vcRmaxSqr(pRmax*pRmax),
+		vcZ(pDZ)
+{
 			// calculate caches
 			cacheRminSqr=dRmin*dRmin;
 			cacheRmaxSqr=dRmax*dRmax;
 
-			if ( dRmin > UUtils::GetRadHalfTolerance() )
+			if ( dRmin > UUtils<>::GetRadHalfTolerance() )
 			{
 				// CHECK IF THIS CORRECT ( this seems to be inversed with tolerance for ORmax
-				cacheTolORminSqr = (dRmin - UUtils::GetRadHalfTolerance()) * (dRmin - UUtils::GetRadHalfTolerance());
-				cacheTolIRminSqr = (dRmin + UUtils::GetRadHalfTolerance()) * (dRmin + UUtils::GetRadHalfTolerance());
+				cacheTolORminSqr = (dRmin - UUtils<>::GetRadHalfTolerance()) * (dRmin - UUtils<>::GetRadHalfTolerance());
+				cacheTolIRminSqr = (dRmin + UUtils<>::GetRadHalfTolerance()) * (dRmin + UUtils<>::GetRadHalfTolerance());
 			}
 			else
 			{
@@ -67,8 +77,8 @@ public:
 				cacheTolIRminSqr = 0.0;
 			}
 
-			cacheTolORmaxSqr = (dRmax + UUtils::GetRadHalfTolerance()) * (dRmax + UUtils::GetRadHalfTolerance());
-			cacheTolIRmaxSqr = (dRmax - UUtils::GetRadHalfTolerance()) * (dRmax - UUtils::GetRadHalfTolerance());
+			cacheTolORmaxSqr = (dRmax + UUtils<>::GetRadHalfTolerance()) * (dRmax + UUtils<>::GetRadHalfTolerance());
+			cacheTolIRmaxSqr = (dRmax - UUtils<>::GetRadHalfTolerance()) * (dRmax - UUtils<>::GetRadHalfTolerance());
 
 			// calculate normals
 			PhiToPlane::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
@@ -119,14 +129,14 @@ public:
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
 
 	// for basket treatment (supposed to be dispatched to particle parallel case)
-	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const {};
+	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 
 	// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 	virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /*size*/ ) const;
 
 	// a template version for T = Vc or T = Boost.SIMD or T= double
-	template<typename VectorType>
+	template<typename VectorType = Vc::Vector<T> >
 	inline
 	__attribute__((always_inline))
 	void DistanceToIn( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
@@ -147,8 +157,8 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
 
   // Intersection with Z surfaces
   T tolODz, tolIDz;
-  tolIDz = tubeparams->dZ - UUtils::GetCarHalfTolerance();
-  tolODz = tubeparams->dZ + UUtils::GetCarHalfTolerance();
+  tolIDz = tubeparams->dZ - UUtils<>::GetCarHalfTolerance();
+  tolODz = tubeparams->dZ + UUtils<>::GetCarHalfTolerance();
 
   Vector3D x,v;
   // do coordinate transformation
@@ -181,7 +191,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     }
     else // going away
     {
-    	return UUtils::kInfinity;  // On/outside extent, and heading away
+    	return UUtils<>::kInfinity;  // On/outside extent, and heading away
     }
   }
 
@@ -196,7 +206,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
   t2 = x.x * v.x + x.y * v.y;
   t3 = x.x * x.x + x.y * x.y;
 
-  T snxt = UUtils::kInfinity;
+  T snxt = UUtils<>::kInfinity;
 
   if ( t1 > 0 )          // Check not || to z axis
   {
@@ -237,7 +247,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     			// In the old version, the small negative tangent for the point
     			// on surface was not taken in account, and returning 0.0 ...
     			// New version: check the tangent for the point on surface and
-    			// if no intersection, return UUtils::kInfinity, if intersection instead
+    			// if no intersection, return UUtils<>::kInfinity, if intersection instead
     			// return sd.
     			c = t3 - tubeparams->cacheRmaxSqr;
     			if (c <= 0.0)
@@ -252,11 +262,11 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     					{
     						snxt = c / (-b + std::sqrt(d)); // using safe solution
     						// for quadratic equation
-    						return ( snxt < UUtils::GetCarHalfTolerance() )? 0 : snxt;
+    						return ( snxt < UUtils<>::GetCarHalfTolerance() )? 0 : snxt;
     					}
     					else
     					{
-    						return UUtils::kInfinity;
+    						return UUtils<>::kInfinity;
     					}
     				}
             }  // end if   (t3>tolIRMin2)
@@ -273,7 +283,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     			// - If on surface of rmin also need farthest root
 
     			sd = (b > 0.) ? c / (-b - std::sqrt(d)) : (-b + std::sqrt(d));
-    			if (sd >= -UUtils::GetCarHalfTolerance())  // check forwards
+    			if (sd >= -UUtils<>::GetCarHalfTolerance())  // check forwards
     			{
     				// Check z intersection
     				//
@@ -292,7 +302,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     		}           //    end if (d>=0)
      	}             //    end if (fRMin)
   } // end check t1 != 0
-  return ( snxt < UUtils::GetCarHalfTolerance()) ? 0 : snxt;
+  return ( snxt < UUtils<>::GetCarHalfTolerance()) ? 0 : snxt;
 }
 
 
@@ -304,74 +314,88 @@ inline
 void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType const & x, VectorType const & y, VectorType const & z,
 					   VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & stepmax, VectorType & distance ) const
 {
-	// Static method to compute distance from outside point to a set of tubes with given parameters
-/*
-	VectorTraits<T>::MaskType done_m(false); // which particles are ready to be returned
-	T s_v(1.E30); // distance to each segment
+	typedef typename VectorType::Mask MaskType;
 
-	// check Z planes
-	T zi_v = dz_v - Vc::abs(z_v);
-	vdm inz_m = zi_v >= 0;
+	MaskType done_m(false); // which particles in the vector are ready to be returned == aka have been treated
+	distance = UUtils<VectorType>::kInfinity;
 
-	done_m = !inz_m && (z_v*dir[2] >= 0); // particle outside the z-range and moving away
-	if( done_m.isFull() ) return s_v;
+	// do some inside checks
+	VectorType safez = tubeparams->dZ - Vc::abs(z);
+	MaskType inz_m = safez <= UUtils<VectorType>::fgTolerance;
 
-	s_v(!done_m) = -zi_v/TMath::Abs(dir[2]);
-	vd xi_v = x + s_v*dir[0];
-	  vd yi_v = y + s_v*dir[1];
-	  vd ri2_v = xi_v*xi_v + yi_v*yi_v;
-	  vd rmin2_v = rmin_v*rmin_v;
-	  vd rmax2_v = rmax_v*rmax_v;
+	done_m = !inz_m && ( z*dirz >= Vc::Zero); // particle outside the z-range and moving away
+	VectorType r2 = x*x + y*y;
+	VectorType n2 = Vc::One-dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
+	VectorType rdotn = x*dirx + y*diry;
+	MaskType inrmax_m = (r2 - tubeparams->vcRmaxSqr ) <= UUtils<VectorType>::frTolerance;
+	MaskType inrmin_m = (tubeparams->vcRminSqr - r2) <= UUtils<VectorType>::frTolerance;
 
-	  done_m |= !inz_m && (rmin2_v <= ri2_v) && (ri2_v <= rmax2_v);
-	  if( done_m.isFull() ) return s_v;
+	done_m |= (r2 - 2*rdotn + rdotn*rdotn/n2) <= tubeparams->vcRmaxSqr;
 
-	  // check outer cyl. surface
-	  Double_t r2  = x*x + y*y;
-	  vd b_v(0.);
-	  vd d_v(0.);
-	  vdm inrmax_m = (r2 - rmax2_v) <= tol_v;
-	  vdm inrmin_m = (rmin2_v - r2) <= tol_v;
-
-	  // TO DO: CHECK IF IT'S INSIDE (BOUNDARY WITHIN MACHINE PRECISION, TOO SPECIFIC)
-
-	  // check outer cylinder (consider only rmax)
-	  Double_t n2 = dir[0]*dir[0] + dir[1]*dir[1];
-	  Double_t rdotn = x*dir[0] + y*dir[1];
-
-	  if (TMath::Abs(n2)<TGeoShape::Tolerance())
-	    {
-	      s_v(!done_m) = 1.E30;
-	      return s_v;
-	    }
-
-	  TGeoTube_v::DistToTubes_v4(r2, n2, rdotn, rmax2_v, b_v, d_v);
-
-	  vdm d_m = d_v > 0;
-	  s_v(!done_m && !inrmax_m && d_m) = -b_v - d_v;
-	  zi_v = z_v + s_v*dir[2];
-	  done_m |= !inrmax_m && d_m && (s_v > 0) && (Vc::abs(zi_v) <= dz_v);
-
-	  s_v(!done_m) = 1.E30;
-	  done_m |= (rmin_v <=0);
-	  if ( done_m.isFull() ) return s_v;
-
-	  // Check inner cylinder (MAYBE SOME OPERATIONS CAN BE DONE ONCE AND REPEATED ONLY IF ONE OF THE PARTICULAR CASES HAPPENS)
-
-	  TGeoTube_v::DistToTubes_v4(r2, n2, rdotn, rmin2_v, b_v, d_v);
-	  d_m = d_v > 0;
-	  s_v(!done_m && d_m) = -b_v + d_v;
-	  zi_v = z_v + s_v*dir[2];
-	  done_m |= d_m && (s_v > 0) && (Vc::abs(zi_v) <= dz_v);
-	  if ( done_m.isFull() ) return s_v;
-
-	  s_v(!done_m) = 1.E30;
-	  return s_v;
+	if( done_m.isFull() )
+	{
+		// goint away or no change to hit
+		return;
 	}
-*/
 
+	// Check outer cylinder (only r>rmax has to be considered)
+	//VectorType::Mask still_m = Vc::abs(n2_v) < UUtils<VectorType>::fgTolerance;
+	//distance(!done_m && still_m) = UUtils<VectorType>::kInfinity;
+	//done_m |= still_m;
+
+	// treating outer cylinder
+	VectorType b;
+	VectorType delta;
+	DistanceFunctions::DistToTubeVc( r2, n2, rdotn, tubeparams->vcRmaxSqr, b, delta );
+
+	distance( !done_m ) = -b - delta;
+
+	// calculate outer radius hit coordinates
+	VectorType zi = z + distance*dirz;
+	done_m |= !inrmax_m && (delta > 0) && (distance > 0) && (Vc::abs(zi) <= tubeparams->vcZ);
+
+
+	// **** inner tube ***** only compiled in for tubes having inner tube ******/
+	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		DistanceFunctions::DistToTubeVc( r2, n2, rdotn, tubeparams->vcRminSqr, b, delta);
+		distance( ! done_m ) = -b + delta;
+		zi = z + distance*dirz;
+		done_m |= (delta > 0) && (distance > 0) && ( Vc::abs(zi) <= tubeparams->vcZ );
+	}
+
+	// now do Z-Face
+	VectorType distancez = -safez/Vc::abs(dirz);
+	VectorType xhitzface = x + distancez*dirx;
+	VectorType yhitzface = y + distancez*diry;
+	VectorType rhit2zface = xhitzface*xhitzface + yhitzface*yhitzface;
+	MaskType hitz = ( tubeparams->vcRminSqr <= rhit2zface ) && ( rhit2zface <= tubeparams->vcRmaxSqr );
+
+	//  done_m |= !inz_m && (rmin2 <= ri2_v) && (ri2_v <= rmax2);
 }
 
+
+template<int tid, int rid, typename TubeType, typename ValueType>
+inline
+void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
+{
+	typedef typename Vc::Vector<ValueType> VectorType;
+	for( int i=0; i < points_v.size; i += Vc::Vector<ValueType>::Size )
+		{
+			VectorType x( &points_v.x[i] );
+			VectorType y( &points_v.y[i] );
+			VectorType z( &points_v.z[i] );
+			VectorType xd( &dirs_v.x[i] );
+			VectorType yd( &dirs_v.y[i] );
+			VectorType zd( &dirs_v.z[i] );
+			VectorType step( &steps[i] );
+			VectorType dist;
+			DistanceToIn< VectorType >(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+			dist.store( &distance[i] );
+		}
+}
 
 
 template<int tid, int rid, typename TubeType, typename T>

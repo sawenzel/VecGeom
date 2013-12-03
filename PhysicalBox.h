@@ -135,13 +135,13 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 	if ( !outside ) {
 		// If point close to this surface, check against the normal
 		if ( safx > -delta ) {
-			return ( aPoint.x * aDirection.x > 0 ) ? UUtils::kInfinity : 0.0;
+			return ( aPoint.x * aDirection.x > 0 ) ? UUtils<>::kInfinity : 0.0;
 		}
 		if ( safy > -delta ) {
-			return ( aPoint.y * aDirection.y > 0 ) ? UUtils::kInfinity : 0.0;
+			return ( aPoint.y * aDirection.y > 0 ) ? UUtils<>::kInfinity : 0.0;
 		}
 		if ( safz > -delta ) {
-			return ( aPoint.z * aDirection.z > 0 ) ? UUtils::kInfinity : 0.0;
+			return ( aPoint.z * aDirection.z > 0 ) ? UUtils<>::kInfinity : 0.0;
 		}
 		// Point actually "deep" inside, return zero distance, normal un-defined
 		return 0.0;
@@ -153,7 +153,7 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 	double dist = 0.0;
 	double coordinate = 0.0;
 	if ( safx > 0 ) {
-		if ( aPoint.x * aDirection.x >= 0 ) return UUtils::kInfinity;
+		if ( aPoint.x * aDirection.x >= 0 ) return UUtils<>::kInfinity;
 		dist = safx/std::abs(aDirection.x);
 		coordinate = aPoint.y + dist*aDirection.y;
 		if ( std::abs(coordinate) < boxparams->dY ) {
@@ -164,7 +164,7 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 		}
 	}
 	if ( safy > 0 ) {
-		if ( aPoint.y * aDirection.y >= 0 ) return UUtils::kInfinity;
+		if ( aPoint.y * aDirection.y >= 0 ) return UUtils<>::kInfinity;
 		dist = safy/std::abs(aDirection.y);
 		coordinate = aPoint.x + dist*aDirection.x;
 		if ( std::abs(coordinate) < boxparams->dX ) {
@@ -175,7 +175,7 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 		}
 	}
 	if ( safz > 0 ) {
-		if ( aPoint.z * aDirection.z >= 0 ) return UUtils::kInfinity;
+		if ( aPoint.z * aDirection.z >= 0 ) return UUtils<>::kInfinity;
 		dist = safz/std::abs(aDirection.z);
 		coordinate = aPoint.x + dist*aDirection.x;
 		if ( std::abs(coordinate) < boxparams->dX ) {
@@ -185,7 +185,7 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 			}
 		}
 	}
-	return UUtils::kInfinity;
+	return UUtils<>::kInfinity;
 }
 
 // a template version for T = Vc or T = Boost.SIMD or T= double
@@ -200,7 +200,7 @@ void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
 	   T saf[3];
 	   T newpt[3];
 	   T tiny(1e-20);
-	   T big(UUtils::kInfinity);
+	   T big(UUtils<>::kInfinity);
 	   T faraway(0.); // initializing all components to zero
 
 	   // should be done in the box
