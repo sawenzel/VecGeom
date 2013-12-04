@@ -350,14 +350,16 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// THIS CONDITION DOES NOT NEED ANY EXPENSIVE OPERATION !!
 	//
 	// then the solutions will be given by
-	// t = (-b +- SQRT(DISCRIMINANT)) / a
-	// b = 2*(dirx + diry)  -- independent of shape
-	// c = dirx*dirx + diry*diry -- independent of shape
-	// a = x*x + y*y - R^2 = r2 - R^2 -- dependent on shape
-	VectorType a = r2 - tubeparams->cacheRmaxSqr;
-	VectorType c = 4*n2;
+	//
+	// t = (-b +- SQRT(DISCRIMINANT)) / (2a)
+	//
+	// b = 2*(dirx*x + diry*y)  -- independent of shape
+	// a = dirx*dirx + diry*diry -- independent of shape
+	// c = x*x + y*y - R^2 = r2 - R^2 -- dependent on shape
+	VectorType c = r2 - tubeparams->cacheRmaxSqr;
+	VectorType a = n2;
 	VectorType b = 2*rdotn;
-	VectorType discriminant = b*b-a*c;
+	VectorType discriminant = b*b-4*a*c;
 	MaskType   canhitrmax = ( discriminant >= Vc::Zero );
 
 	done_m |= ! canhitrmax;
@@ -378,7 +380,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// distance(!done_m && still_m) = UUtils<VectorType>::kInfinity;
 	// done_m |= still_m;
 	VectorType distanceRmax( UUtils::kInfinityVc );
-	distanceRmax( canhitrmax ) = (-b - Vc::sqrt( discriminant ))/a;
+	distanceRmax( canhitrmax ) = (-b - Vc::sqrt( discriminant ))/(2.*a);
 
 	// calculate outer radius hit coordinates
 	VectorType zi = z + distanceRmax*dirz;
@@ -394,7 +396,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 		MaskType canhitrmin = ( discriminant >= Vc::Zero );
 		VectorType distanceRmin ( UUtils::kInfinityVc );
 		// this is always + solution
-		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))/a;
+		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))/(2.*a);
 		zi = z + distanceRmin*dirz;
 		distanceRmin ( ( Vc::abs(zi) > tubeparams->dZ ) || distanceRmin < 0 ) = UUtils::kInfinityVc;
 
@@ -426,8 +428,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	{
 		hitz = ( rhit2zface <= tubeparams->cacheRmaxSqr );
 	}
-	hitz |= (distancez > 0);
-	distancez ( !hitz ) = UUtils::kInfinityVc;
+	distancez ( !hitz || distancez < 0 ) = UUtils::kInfinityVc;
 	distance = Vc::min(distanceRmax, distancez);
 
 	//  done_m |= !inz_m && (rmin2 <= ri2_v) && (ri2_v <= rmax2);
