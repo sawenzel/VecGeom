@@ -18,7 +18,7 @@
 #include "../GeoManager.h"
 #include "../PhysicalTube.h"
 
-const std::vector<std::vector<double>> TransCases {{0,0,0},
+const std::vector<std::vector<double> > TransCases {{0,0,0},
     {10, 10, 0}};
 
 
@@ -37,7 +37,13 @@ static void cmpresults(double * a1, double * a2, int np)
 	int counter=0;
 	for(auto i=0;i<np;++i)
 	{
-		if( a1[i] != a2[i] ) counter++;
+		if( a1[i] != a2[i] )
+		{
+			counter++;
+		}
+#ifdef SHOWDIFFERENCES
+		std::cerr << i << " " << a1[i] << " " << a2[i] << std::endl;
+#endif
 	}
 	std::cerr << " have " << counter << " differences " << std::endl;
 }
@@ -62,6 +68,7 @@ int main()
 	rintermediatedirs.alloc(np);
 
 	double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *distancesROOTSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i]=1E30;
@@ -74,7 +81,7 @@ int main()
 	StopWatch timer;
 
     // generate benchmark cases
-    for( int r=0; r< EulerAngles.size(); ++r ) // rotation cases
+    for( int r=0; r<EulerAngles.size(); ++r ) // rotation cases
     		for( int t=0; t<TransCases.size(); ++t ) // translation cases
     		  {
     				TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
@@ -87,8 +94,12 @@ int main()
     				TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
     											EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
-
-    				PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>(0,20,30,M_PI/4.,3*M_PI/2.), tm );
+    				double rmin = 0.;
+    				double rmax = 20.;
+    				double dz = 30.;
+    				double phis  =0.;
+    				double dphi = 2*M_PI;
+    				PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
     				std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
     				std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
@@ -97,34 +108,33 @@ int main()
     			//	{
     			//		Vector3D x( cos(k/(100.)*2*M_PI), sin(k/(100.)*2*M_PI), 0 );
     			//		std::cerr << "## " << k/100.*2*M_PI << " "  << daughter->UnplacedContains( x ) << std::endl;
-
     			//	}
 
     				world->AddDaughter(daughter);
 
     				world->fillWithRandomPoints(points,np);
-    				world->fillWithBiasedDirections(points, dirs, np, 1./10);
+    				world->fillWithBiasedDirections(points, dirs, np, 1./3);
 
     				points.toStructureOfVector3D( conventionalpoints );
     				dirs.toStructureOfVector3D( conventionaldirs );
     				points.toStructureOfVector3D( conventionalpoints2 );
     				dirs.toStructureOfVector3D( conventionaldirs2 );
-    		  }
-}
 
 //// time performance for this placement ( we should probably include some random physical steps )
-//    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
-//    				{
-//    					daughter->DistanceToIn(points,dirs,steps,distances);
-//    				}
-//    				timer.Stop();
-//    				double t0 = timer.getDeltaSecs();
-//
+
+    				timer.Start();
+    				for(int reps=0;reps<1000;reps++)
+    				{
+    					daughter->DistanceToIn(points,dirs,steps,distances);
+    				}
+    				timer.Stop();
+    				double t0 = timer.getDeltaSecs();
+
+    				//
 //    			// std::cerr << tm->GetTranslationIdType() << " " << tm->getNumberOfZeroEntries() << " " << timer.getDeltaSecs() << std::endl;
 //
 //    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
+//					for(int reps=0;reps<1000;reps++)
 //    				{
 //    					daughter->DistanceToInIL(points,dirs,steps,distances);
 //    				}
@@ -140,40 +150,43 @@ int main()
 //    				double til2 = timer.getDeltaSecs();
 //
 //
-//    				// compare with case that uses external unspecialized transformation
-//    				PhysicalVolume * unplaceddaughter = GeoManager::MakePlacedBox(new BoxParameters(10,15,20), identity);
-//    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
-//    				{
-//    					if(! tm->isIdentity() )
-//    					{
-//    						tm->MasterToLocal(points, intermediatepoints );
-//    						tm->MasterToLocalVec( dirs, intermediatedirs );
-//    						unplaceddaughter->DistanceToIn( intermediatepoints, intermediatedirs, steps, distances2);
-//    					}
-//    					else
-//    					{
-//    						unplaceddaughter->DistanceToIn( points, dirs, steps, distances2);
-//    					}
-//    				}
-//    				timer.Stop();
-//    				double t1 = timer.getDeltaSecs();
-//
+    				// compare with case that uses external unspecialized transformation
+    				//0, 20, 30, M_PI
+
+    				PhysicalVolume * unplaceddaughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax ,dz, phis, dphi ), identity );
+    				timer.Start();
+    				for(int reps=0;reps<1000;reps++)
+    				{
+    					if(! tm->isIdentity() )
+    					{
+    						tm->MasterToLocal(points, intermediatepoints );
+    						tm->MasterToLocalVec( dirs, intermediatedirs );
+    						unplaceddaughter->DistanceToIn( intermediatepoints, intermediatedirs, steps, distances2);
+    					}
+    					else
+    					{
+    						unplaceddaughter->DistanceToIn( points, dirs, steps, distances2);
+    					}
+    				}
+    				timer.Stop();
+    				double t1 = timer.getDeltaSecs();
+
+    				//
 //
 //    				// compare with external specialized transformation ( sm )
 //    				sm->print();
-//    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
-//    				{
-//    					sm->MasterToLocal(points, intermediatepoints );
-//    					sm->MasterToLocalVec( dirs, intermediatedirs );
-//    					unplaceddaughter->DistanceToIn( intermediatepoints, intermediatedirs, steps, distances2);
-//    				}
-//    				timer.Stop();
-//    				double t2 = timer.getDeltaSecs();
-//
+    				timer.Start();
+    				for(int reps=0;reps<1000;reps++)
+    				{
+    					sm->MasterToLocal(points, intermediatepoints );
+    					sm->MasterToLocalVec( dirs, intermediatedirs );
+    					unplaceddaughter->DistanceToIn( intermediatepoints, intermediatedirs, steps, distances2);
+    				}
+    				timer.Stop();
+    				double t2 = timer.getDeltaSecs();
+
+
 //    				std::cerr << "VECTOR " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t0 <<  " " << t1 << " " << t2 << " " << til << " " << til2 << std::endl;
-//
 //    				cmpresults( distances, distances2, np );
 //
 //
@@ -237,47 +250,53 @@ int main()
 //
 //    				std::cerr << "SCALAR " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t3 <<  " " << t4 << " " << t5 << " " << t6 << std::endl;
 //
-//    				TGeoMatrix * rootmatrix= new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],
-//						   new TGeoRotation("rot1",EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]));
-//    				TGeoManager *geom = new TGeoManager("","");
-//    		     TGeoVolume * vol = geom->MakeBox("abox",0,10,15,20);
-//    		     TGeoShape *  rootbox=vol->GetShape();
+    			 TGeoMatrix * rootmatrix= new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],
+						   new TGeoRotation("rot1",EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]));
+    			 TGeoManager *geom = new TGeoManager("","");
+    		     TGeoVolume * vol = geom->MakeTube("atube",0,rmin,rmax,dz);
+    		     TGeoShape *  roottube=vol->GetShape();
+
+    		     // now the scalar version from ROOTGeantV
+    		     timer.Start();
+    		     for(int reps=0;reps<1000;reps++)
+    		     {
+    		    	 for(auto j=0;j<np;++j)
+    		    	 {
+    		    		 Vector3D localp, localdir;
+    		    		 // this inlines I think
+    		    		 rootmatrix->MasterToLocal( &conventionalpoints[j].x, &localp.x );
+    		        	 rootmatrix->MasterToLocalVect( &conventionaldirs[j].x, &localdir.x );
+    		             distancesROOTSCALAR[j]=roottube->DistFromOutside( &localp.x, &localdir.x, 3,1e30, 0);
+    		         }
+    		     }
+    		     timer.Stop();
+    		     double t7 = timer.getDeltaSecs();
+
+    		     // now the VECTOR version from ROOT
+    		     // now the scalar version from ROOTGeantV
+    		     timer.Start();
+    		     for(int reps=0;reps<1000;reps++)
+    		     {
+    		    	 rootmatrix->MasterToLocalCombined_v( reinterpret_cast<StructOfCoord const &>(points), reinterpret_cast<StructOfCoord &>(intermediatepoints),
+    		    			     		    			 reinterpret_cast<StructOfCoord const &>(dirs), reinterpret_cast<StructOfCoord &>(intermediatedirs), np );
+    		         roottube->DistFromOutsideSOA_v( reinterpret_cast<StructOfCoord const &>(intermediatepoints),
+    		        		 	 reinterpret_cast<StructOfCoord const &>(intermediatedirs), 3, steps, 0, distances2, np);
+    		     }
+    		     timer.Stop();
+    		     double t8 = timer.getDeltaSecs();
+
+    		     cmpresults( distancesROOTSCALAR, distances, np );
+
+    		     std::cerr << "new vec (placed)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t0 << std::endl;
+    		     std::cerr << "new vec (old matrix)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t1 << std::endl;
+    		     std::cerr << "new vec (unplaced)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t2 << std::endl;
+    		     std::cerr << "RSCAL " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t7 << std::endl;
+    		     std::cerr << "RVEC " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t8 << std::endl;
+
+    		    delete tm;
+    			delete sm;
+    		  }
 //
-//    		     // now the scalar version from ROOTGeantV
-//    		     timer.Start();
-//    		     for(int reps=0;reps<1000;reps++)
-//    		     {
-//    		    	 for(auto j=0;j<np;++j)
-//    		    	 {
-//    		    		 Vector3D localp, localdir;
-//    		    		 // this inlines I think
-//    		    		 rootmatrix->MasterToLocal( &conventionalpoints[j].x, &localp.x );
-//    		        	 rootmatrix->MasterToLocalVect( &conventionaldirs[j].x, &localdir.x );
-//    		             distances[j]=rootbox->DistFromOutside( &localp.x, &localdir.x, 3,1e30, 0);
-//    		         }
-//    		     }
-//    		     timer.Stop();
-//    		     double t7 = timer.getDeltaSecs();
-//
-//    		     // now the VECTOR version from ROOT
-//    		     // now the scalar version from ROOTGeantV
-//    		     timer.Start();
-//    		     for(int reps=0;reps<1000;reps++)
-//    		     {
-//    		    	 rootmatrix->MasterToLocalCombined_v( reinterpret_cast<StructOfCoord const &>(points), reinterpret_cast<StructOfCoord &>(intermediatepoints),
-//    		    			     		    			 reinterpret_cast<StructOfCoord const &>(rdirs), reinterpret_cast<StructOfCoord &>(intermediatedirs), np );
-//    		         rootbox->DistFromOutsideSOA_v( reinterpret_cast<StructOfCoord const &>(intermediatepoints),
-//    		        		 	 reinterpret_cast<StructOfCoord const &>(intermediatedirs), 3, steps, 0, distances2, np);
-//    		     }
-//    		     timer.Stop();
-//    		     double t8 = timer.getDeltaSecs();
-//    		     std::cerr << "RSCAL " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t7 << std::endl;
-//    		     std::cerr << "RVEC " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t8 << std::endl;
-//
-//    		    delete tm;
-//    			delete sm;
-//    		  }
-//
-//    _mm_free(distances);
-//    return 1;
-//}
+    _mm_free(distances);
+    return 1;
+}

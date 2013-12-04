@@ -37,8 +37,10 @@ static void cmpresults(double * a1, double * a2, int np)
 	for(auto i=0;i<np;++i)
 	{
 		if( a1[i] != a2[i] ) counter++;
+#ifdef SHOWDIFFERENCES
+		std::cerr << i << " " << a1[i] << " " << a2[i] << std::endl;
+#endif
 	}
-	std::cerr << " have " << counter << " differences " << std::endl;
 }
 
 
@@ -253,7 +255,7 @@ int main()
     		     for(int reps=0;reps<1000;reps++)
     		     {
     		    	 rootmatrix->MasterToLocalCombined_v( reinterpret_cast<StructOfCoord const &>(points), reinterpret_cast<StructOfCoord &>(intermediatepoints),
-    		    			     		    			 reinterpret_cast<StructOfCoord const &>(rdirs), reinterpret_cast<StructOfCoord &>(intermediatedirs), np );
+    		    			     		    			 reinterpret_cast<StructOfCoord const &>(dirs), reinterpret_cast<StructOfCoord &>(intermediatedirs), np );
     		         rootbox->DistFromOutsideSOA_v( reinterpret_cast<StructOfCoord const &>(intermediatepoints),
     		        		 	 reinterpret_cast<StructOfCoord const &>(intermediatedirs), 3, steps, 0, distances2, np);
     		     }
@@ -261,6 +263,8 @@ int main()
     		     double t8 = timer.getDeltaSecs();
     		     std::cerr << "RSCAL " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t7 << std::endl;
     		     std::cerr << "RVEC " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t8 << std::endl;
+
+    		     cmpresults( distances, distances2, np );
 
     		    delete tm;
     			delete sm;

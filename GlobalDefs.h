@@ -39,38 +39,76 @@ struct SurfaceReturnType<true>
 };
 */
 
-template<typename ValueType=double>
-struct UUtils
+#include "Vc/vector.h"
+
+//template<typename ValueType=double>
+//struct UUtils
+namespace UUtils
 {
-	static constexpr ValueType kInfinity=1E30;
-	static constexpr ValueType kPi       = 3.14159265358979323846;
-	static constexpr ValueType kTwoPi    = 2.0 * kPi;
-	static constexpr ValueType kRadToDeg = 180.0 / kPi;
-	static constexpr ValueType kDegToRad = kPi / 180.0;
-	static constexpr ValueType kSqrt2    = 1.4142135623730950488016887242097;
+	static const double kInfinity=1E30;
+	static const double kPi=3.14159265358979323846;
+	static const double kTwoPi=2.0 * kPi;
+	static const double kRadToDeg=180.0 / kPi;
+	static const double kDegToRad=kPi / 180.0;
+	static const double kSqrt2=1.4142135623730950488016887242097;
 
-	static constexpr ValueType fgTolerance = 1E-9;
-	static constexpr ValueType frTolerance = 1E-9;
-	static constexpr ValueType faTolerance = 1E-9;
-	static constexpr ValueType fgHalfTolerance = fgTolerance*0.5;
-	static constexpr ValueType frHalfTolerance = frTolerance*0.5;
-	static constexpr ValueType faHalfTolerance = faTolerance*0.5;
+	static const double fgTolerance=1E-9;
+	static const double frTolerance=1E-9;
+	static const double faTolerance=1E-9;
+	static const double fgHalfTolerance = fgTolerance*0.5;
+	static const double frHalfTolerance = frTolerance*0.5;
+	static const double faHalfTolerance = faTolerance*0.5;
+
+	typedef Vc::double_v ValueType;
+
+	static const ValueType kInfinityVc=1E30;
+	static const ValueType kPiVc=3.14159265358979323846;
+	static const ValueType kTwoPiVc=2.0 * kPi;
+	static const ValueType kRadToDegVc=180.0 / kPi;
+	static const ValueType kDegToRadVc=kPi / 180.0;
+	static const ValueType kSqrt2Vc=1.4142135623730950488016887242097;
+
+	static const ValueType fgToleranceVc=1E-9;
+	static const ValueType frToleranceVc=1E-9;
+	static const ValueType faToleranceVc=1E-9;
+	static const ValueType fgHalfToleranceVc = fgTolerance*0.5;
+	static const ValueType frHalfToleranceVc = frTolerance*0.5;
+	static const ValueType faHalfToleranceVc = faTolerance*0.5;
+
+
+	/*
+	static void init()
+	{
+		kInfinity=1E30;
+		kPi       = 3.14159265358979323846;
+		kTwoPi = 2.0 * kPi;
+		kRadToDeg = 180.0 / kPi;
+		kDegToRad = kPi / 180.0;
+		kSqrt2    = 1.4142135623730950488016887242097;
+
+		fgTolerance = 1E-9;
+		frTolerance = 1E-9;
+		faTolerance = 1E-9;
+		fgHalfTolerance = fgTolerance*0.5;
+		frHalfTolerance = frTolerance*0.5;
+		faHalfTolerance = faTolerance*0.5;
+	}
+*/
 
 	static
-	inline ValueType GetCarTolerance()  {return fgTolerance;}
+	inline double GetCarTolerance()  {return fgTolerance;}
 	static
-	inline ValueType GetRadTolerance()  {return frTolerance;}
+	inline double GetRadTolerance()  {return frTolerance;}
 	static
-	inline ValueType GetAngTolerance()  {return faTolerance;}
+	inline double GetAngTolerance()  {return faTolerance;}
 
 	static
-	inline ValueType GetCarHalfTolerance()  {return fgHalfTolerance;}
+	inline double GetCarHalfTolerance()  {return fgHalfTolerance;}
 	static
-	inline ValueType GetRadHalfTolerance()  {return frHalfTolerance;}
+	inline double GetRadHalfTolerance()  {return frHalfTolerance;}
 	static
-	inline ValueType GetAngHalfTolerance()  {return faHalfTolerance;}
+	inline double GetAngHalfTolerance()  {return faHalfTolerance;}
 
-	// static vd tol_v = 1.E-10;
 };
 
 
