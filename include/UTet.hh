@@ -29,12 +29,13 @@ class UTet : public VUSolid
 
   public:  // with description
 
-    UTet(const std::string& name,
+  UTet(const std::string& name,
          UVector3 anchor,
          UVector3 p2,
          UVector3 p3,
          UVector3 p4,
          bool* degeneracyFlag = 0);
+
 
     virtual ~UTet();
 
@@ -61,22 +62,17 @@ class UTet : public VUSolid
                          double aPstep = UUtils::kInfinity) const;
 
     void Extent(UVector3& aMin, UVector3& aMax) const;
-    double Capacity()
-    {
-      return fCubicVolume;
-    }
-    double SurfaceArea()
-    {
-      return fSurfaceArea;
-    }
-    UGeometryType GetEntityType() const
-    {
-      return "Tet";
-    }
+
+    double Capacity();
+    double SurfaceArea();
+    
+    UGeometryType GetEntityType() const;
+  
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
     //G4Visualisation
     void GetParametersList(int aNumber, double* aArray) const;
+
 
     VUSolid* Clone() const
     {
@@ -130,8 +126,14 @@ class UTet : public VUSolid
 
     double fCubicVolume, fSurfaceArea;
 
+
+
+    UVector3 GetPointOnFace(UVector3 p1, UVector3 p2, 
+                                 UVector3 p3, double& area) const;
+
     UVector3 GetPointOnFace(UVector3 p1, UVector3 p2,
                             UVector3 p3, double& area) const;
+
     static const char CVSVers[];
 
   private:

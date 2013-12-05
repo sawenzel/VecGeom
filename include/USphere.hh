@@ -49,6 +49,7 @@
 #include <sstream>
 
 #include "VUSolid.hh"
+#include "UUtils.hh"
 
 class UVisExtent;
 
@@ -111,14 +112,13 @@ class USphere : public VUSolid
 
     VUSolid* Clone() const;
 
-    std::ostream& StreamInfo(std::ostream& os) const;
 
+    std::ostream& StreamInfo(std::ostream& os) const;
+  */
     // Visualisation functions
 
-    UVisExtent   GetExtent() const;
-
-
-
+     inline void GetParametersList(int aNumber,double * aArray) const;
+	   
   public: // without description
 
     void Extent(UVector3& aMin, UVector3& aMax) const;
@@ -292,6 +292,7 @@ void USphere::InitializeThetaTrigonometry()
 inline
 void USphere::CheckThetaAngles(double sTheta, double dTheta)
 {
+
   if ((sTheta < 0) || (sTheta > UUtils::kPi))
   {
     std::ostringstream message;
@@ -356,6 +357,7 @@ void USphere::CheckSPhiAngle(double sPhi)
 inline
 void USphere::CheckDPhiAngle(double dPhi)
 {
+
   fFullPhiSphere = true;
   if (dPhi >= 2 * UUtils::kPi - kAngTolerance * 0.5)
   {
@@ -379,6 +381,7 @@ void USphere::CheckDPhiAngle(double dPhi)
                         FatalError, 1, message.str().c_str());
     }
   }
+
 }
 
 inline

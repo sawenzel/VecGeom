@@ -113,17 +113,20 @@ class UTubs : public VUSolid
     // persistency for clients requiring preallocation of memory for
     // persistifiable objects.
 
+
     UTubs(const UTubs& rhs);
     UTubs& operator=(const UTubs& rhs);
     // Copy constructor and assignment operator.
 
-    //  Older names for access functions
 
+
+        void GetParametersList(int aNumber,double *aArray) const;
     inline double GetRMin() const;
     inline double GetRMax() const;
     inline double GetDz() const;
     inline double GetSPhi() const;
     inline double GetDPhi() const;
+
 
   protected:
 

@@ -101,6 +101,8 @@ class UPolycone : public VUSolid
 
     virtual ~UPolycone();
 
+    void Reset();
+
 //  inline void SetOriginalParameters(UPolyconeHistorical* pars);
 
 //  inline void SetOriginalParameters();
@@ -127,18 +129,17 @@ class UPolycone : public VUSolid
     void Extent(UVector3& aMin, UVector3& aMax) const;
     double Capacity();
     double SurfaceArea();
-    UGeometryType GetEntityType() const
-    {
-      return "Polycone";
-    }
+    UGeometryType GetEntityType() const;
+   
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-    //G4Visualisation
-    void GetParametersList(int /*aNumber*/, double* /*aArray*/) const {}
+  //G4Visualisation
+  void GetParametersList(int aNumber, double * aArray) const;
+ 
     VUSolid* Clone() const;
 
     UPolycone(const UPolycone& source);
-    const UPolycone& operator=(const UPolycone& source);
+    UPolycone& operator=(const UPolycone& source);
     // Copy constructor and assignment operator.
     void CopyStuff(const UPolycone& source);
     UVector3 GetPointOnSurface() const;
@@ -180,7 +181,7 @@ class UPolycone : public VUSolid
 
     inline bool IsGeneric() const
     {
-      return genericPcon;
+      return false;
     }
 
     inline int GetNumRZCorner() const

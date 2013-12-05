@@ -62,7 +62,7 @@ class UBits
   public:
     UBits(unsigned int nbits = 0);
     UBits(const UBits&);
-//  UBits& operator=(const UBits&);
+    UBits& operator=(const UBits& rhs);
     virtual ~UBits();
 
     //----- bit manipulation

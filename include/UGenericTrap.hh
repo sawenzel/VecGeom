@@ -108,11 +108,6 @@ class UGenericTrap : public VUSolid
 
 	std::ostream& StreamInfo(std::ostream& os) const;
 
-	UPolyhedron* CreatePolyhedron () const;
-    
-        UPolyhedron* GetPolyhedron() const;
-
-  //	UPolyhedron* GetPolyhedron() const{return CreatePolyhedron();}
 
   private:
 
@@ -160,10 +155,6 @@ class UGenericTrap : public VUSolid
                                 const UVector3& p1,
                                 const UVector3& p2,
                                 const UVector3& p3) const;
-  protected:
-
-     mutable UPolyhedron*   fpPolyhedron;
-
   private:
 
     // static data members

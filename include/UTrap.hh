@@ -256,10 +256,7 @@ class UTrap : public VUSolid
 
     void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
 
-    UPolyhedron* CreatePolyhedron	() const;
-
-    UPolyhedron* GetPolyhedron() const{return CreatePolyhedron(); }
-
+   
     void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
     virtual void Extent (UVector3 &aMin, UVector3 &aMax) const;
@@ -273,7 +270,7 @@ class UTrap : public VUSolid
 
     double fCubicVolume;
     double fSurfaceArea;
-		UPolyhedron *fpPolyhedron;
+	
 };
 
 #include "UTrap.icc"

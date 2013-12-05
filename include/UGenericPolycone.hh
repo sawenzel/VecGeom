@@ -77,8 +77,6 @@ class UGenericPolycone: public UVCSGfaceted
     VUSolid* Clone() const;
 
     std::ostream& StreamInfo(std::ostream& os) const;
-
-
     bool Reset();
 
     // Accessors
@@ -98,7 +96,7 @@ class UGenericPolycone: public UVCSGfaceted
     // persistifiable objects.
 
     UGenericPolycone(const UGenericPolycone& source);
-    const UGenericPolycone& operator=(const UGenericPolycone& source);
+    UGenericPolycone& operator=(const UGenericPolycone& source);
     // Copy constructor and assignment operator.
 
   protected: // without description

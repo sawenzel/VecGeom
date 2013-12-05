@@ -45,6 +45,7 @@ class UMultiUnion : public VUSolid
 
     // Build the multiple union by adding nodes
     void AddNode(VUSolid& solid, UTransform3D& trans);
+    inline void SetSolidClosed();
 
     UMultiUnion(const UMultiUnion& rhs);
     UMultiUnion& operator=(const UMultiUnion& rhs);
@@ -102,10 +103,15 @@ class UMultiUnion : public VUSolid
     void Extent(EAxisType aAxis, double& aMin, double& aMax) const;
     void Extent(UVector3& aMin, UVector3& aMax) const;
 
+	EnumInside                   InsideNoVoxels(const UVector3 &aPoint) const;
     double Capacity();
     double SurfaceArea();
 
+  inline UVoxelizer &GetVoxels() const;
+  
+  //static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
     VUSolid* Clone() const ;
+
 
     UGeometryType GetEntityType() const { return "MultipleUnion"; }
     void ComputeBBox(UBBox* aBox, bool aStore = false);
@@ -116,7 +122,7 @@ class UMultiUnion : public VUSolid
     // navigation use.
     void Voxelize();
     EnumInside InsideNoVoxels(const UVector3& aPoint) const;
-
+        	void                         Voxelize();
     inline UVoxelizer& GetVoxels() const;
 
 
@@ -137,6 +143,13 @@ class UMultiUnion : public VUSolid
     double       fCubicVolume;   // Cubic Volume
     double       fSurfaceArea;   // Surface Area
 };
+
+inline void  UMultiUnion::SetSolidClosed()
+{
+ Voxelize();
+  // std::cout<<"Umulti afterVoxels Get transformX "<<(*fTransforms[0]).fRot[0]<<std::endl;
+
+}
 
 inline UVoxelizer&  UMultiUnion:: GetVoxels() const
 {

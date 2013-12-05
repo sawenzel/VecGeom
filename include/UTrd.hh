@@ -86,7 +86,6 @@ class UTrd : public VUSolid
                             double pdy1, double pdy2,
                             double pdz );
 
-//  virtual void Extent ( EAxisType aAxis, double &aMin, double &aMax ) const;
     void Extent(UVector3& aMin, UVector3& aMax) const;
     virtual double Capacity();
     virtual double SurfaceArea();
@@ -94,10 +93,7 @@ class UTrd : public VUSolid
     {
       return new UTrd(GetName(), fDx1, fDx2, fDy1, fDy2, fDz);
     }
-    virtual UGeometryType GetEntityType() const
-    {
-      return "Trd";
-    }
+    virtual UGeometryType GetEntityType() const;
     virtual void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
     //G4Visualisation

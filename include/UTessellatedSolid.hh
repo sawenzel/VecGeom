@@ -108,7 +108,7 @@
 #include "G4VoxelLimits.hh"
 #include "G4AffineTransform.hh"
 #include "G4VisExtent.hh"
-#include "G4PolyhedronArbitrary.hh"
+
 #endif // USOLIDSONLY
 
 struct UVertexInfo
@@ -183,7 +183,7 @@ public:  // with description
 
 	inline virtual void GetParametersList(int /*aNumber*/,double * /*aArray*/) const{} 
 
-	inline virtual UPolyhedron* GetPolyhedron() const{return 0;}
+
 
 	inline virtual void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
 
@@ -231,9 +231,6 @@ public:  // with description
 	virtual bool CalculateExtent(const EAxis pAxis, const UVoxelLimits& pVoxelLimit, const UAffineTransform& pTransform, double& pMin, double& pMax) const;
 
 	// when we would have visualization, these routines would be enabled
-	virtual UPolyhedron* CreatePolyhedron () const;
-	virtual UPolyhedron* GetPolyhedron    () const;
-	virtual UNURBS*      CreateNURBS      () const;
 
 	UVector3List* CreateRotatedVertices(const UAffineTransform& pTransform) const;
 	// Create the List of transformed vertices in the format required
@@ -333,7 +330,6 @@ private: // without description
 
 	double MinDistanceFacet(const UVector3 &p, bool simple, VUFacet * &facet) const;
 
-	mutable UPolyhedron* fpPolyhedron;
 
 	std::vector<VUFacet *>  fFacets;
 	std::set<VUFacet *> fExtremeFacets; // Does all other facets lie on or behind this surface?

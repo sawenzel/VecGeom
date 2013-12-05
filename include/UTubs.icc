@@ -15,6 +15,8 @@
 // 19.10.12 Marek Gayer
 //          Created from original implementation in Geant4
 // --------------------------------------------------------------------
+#include <iostream>
+#include <sstream>
 
 inline
 double UTubs::GetInnerRadius() const
@@ -116,6 +118,7 @@ inline void UTubs::CheckDPhiAngle(double dPhi)
                         FatalError, 1, message.str().c_str());
     }
   }
+
 }
 
 inline void UTubs::CheckPhiAngles(double sPhi, double dPhi)
@@ -144,6 +147,7 @@ void UTubs::SetInnerRadius(double newRMin)
   }
   fRMin = newRMin;
   Initialize();
+
 }
 
 inline
@@ -162,6 +166,7 @@ void UTubs::SetOuterRadius(double newRMax)
   }
   fRMax = newRMax;
   Initialize();
+
 }
 
 inline
@@ -178,6 +183,7 @@ void UTubs::SetZHalfLength(double newDz)
   }
   fDz = newDz;
   Initialize();
+
 }
 
 inline

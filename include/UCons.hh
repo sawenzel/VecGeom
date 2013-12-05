@@ -104,11 +104,14 @@ class UCons : public VUSolid
                          bool&           aConvex,
                          double aPstep = UUtils::kInfinity) const;
 
+
     double SafetyFromInside(const UVector3& p, bool precise) const;
 
     UGeometryType GetEntityType() const;
 
     UVector3 GetPointOnSurface() const;
+
+
 
     VUSolid* Clone() const;
 
