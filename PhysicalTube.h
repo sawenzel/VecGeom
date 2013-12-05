@@ -329,8 +329,10 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	matrix->MasterToLocalVec<tid,rid,VectorType>(dirxm,dirym,dirzm,dirx,diry,dirz);
 
 	// do some inside checks
+	// if safez is > 0 it means that particle is within z range
+	// if safez is < 0 it means that particle is outside z range
 	VectorType safez = tubeparams->dZ - Vc::abs(z);
-	MaskType inz_m = safez <= UUtils::fgToleranceVc;
+	MaskType inz_m = safez > UUtils::fgToleranceVc;
 
 	done_m = !inz_m && ( z*dirz >= Vc::Zero ); // particle outside the z-range and moving away
 
@@ -429,7 +431,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 		hitz = ( rhit2zface <= tubeparams->cacheRmaxSqr );
 	}
 	distancez ( !hitz || distancez < 0 ) = UUtils::kInfinityVc;
-	distance = Vc::min(distanceRmax, distancez);
+	distance ( ! done_m ) = Vc::min(distanceRmax, distancez);
 
 	//  done_m |= !inz_m && (rmin2 <= ri2_v) && (ri2_v <= rmax2);
 }
