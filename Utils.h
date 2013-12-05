@@ -85,7 +85,7 @@ struct DistanceFunctions
 };
 
 
-struct PhiToPlane
+struct PhiUtils
 {
 	template <typename T>
 	static
@@ -104,6 +104,63 @@ struct PhiToPlane
 			v.y=-std::cos( phi );
 			v.z=T(0);
 		}
+	}
+
+	template <typename T>
+	static
+	inline
+	void PointIsInPhiSector( T const & phi1normalx, T const & phi1normaly,
+							 T const & phi2normalx, T const & phi2normaly,
+							 Vc::Vector<T> const & xcoord, Vc::Vector<T> const & ycoord,
+							 typename Vc::Vector<T>::Mask & isinphi )
+	{
+		// method based on calculating the scalar product of position vectors with the normals of the (empty) phi sektor
+		// avoids taking the atan2
+
+		// this method could be template specialized in case DeltaPhi = 180^o
+		Vc::Vector<T> scalarproduct1 = phi1normalx*xcoord + phi1normaly*ycoord;
+		Vc::Vector<T> scalarproduct2 = phi2normalx*xcoord + phi2normaly*ycoord;
+		isinphi = (scalarproduct1 > Vc::Zero && scalarproduct2 > Vc::Zero);
+	}
+
+
+	template <typename T>
+	static
+	inline
+	void DistanceToPhiPlanes( T const & dz, T const & radius2, T const & phi1normalx, T const & phi1normaly,
+							 T const & phi2normalx, T const & phi2normaly,
+							 Vc::Vector<T> const & xcoord, Vc::Vector<T> const & ycoord, Vc::Vector<T> const & zcoord,
+							 Vc::Vector<T> const & xdir, Vc::Vector<T> const & ydir, Vc::Vector<T> const & zdir,
+							 Vc::Vector<T> & distToPlane )
+	{
+		// method based on calculating the scalar product of position vectors with the normals of the (empty) phi sektor
+		// avoids taking the atan2
+
+		// this method could be template specialized in case DeltaPhi = 180^o
+		Vc::Vector<T> scalarproduct1 = phi1normalx*xcoord + phi1normaly*ycoord;
+		Vc::Vector<T> scalarproduct2 = phi2normalx*xcoord + phi2normaly*ycoord;
+		Vc::Vector<T> N1dotDir = phi1normalx*xdir + phi1normaly*ydir;
+		Vc::Vector<T> N2dotDir = phi2normalx*xdir + phi2normaly*ydir;
+		Vc::Vector<T> distToPlane1 = UUtils::kInfinityVc;
+		distToPlane = UUtils::kInfinityVc;
+
+		Vc::Vector<T> temp = -scalarproduct1/N1dotDir;
+		Vc::Vector<T> zi = zcoord + temp*zdir;
+		Vc::Vector<T> xi = xcoord + temp*xdir;
+		Vc::Vector<T> yi = ycoord + temp*ydir;
+
+		// check the conditions -- tolerance is coming later
+		distToPlane1 ( Vc::abs(zi) < dz && xi*xi + yi*yi < radius2 ) = temp;
+
+		temp = -scalarproduct2/N2dotDir;
+		zi = zcoord + temp*zdir;
+		xi = xcoord + temp*xdir;
+		yi = ycoord + temp*ydir;
+
+		// check the conditions -- tolerance is coming later
+		distToPlane ( Vc::abs(zi) < dz && xi*xi + yi*yi < radius2 ) = temp;
+
+		distToPlane = Vc::min(distToPlane1, distToPlane);
 	}
 };
 

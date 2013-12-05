@@ -37,13 +37,13 @@ static void cmpresults(double * a1, double * a2, int np)
 	int counter=0;
 	for(auto i=0;i<np;++i)
 	{
-		if( a1[i] != a2[i] )
+		if( std::abs( a1[i] - a2[i] ) > UUtils::GetCarTolerance() )
 		{
 			counter++;
-		}
 #ifdef SHOWDIFFERENCES
-		std::cerr << i << " " << a1[i] << " " << a2[i] << std::endl;
+			std::cerr << i << " " << a1[i] << " " << a2[i] << std::endl;
 #endif
+		}
 	}
 	std::cerr << " have " << counter << " differences " << std::endl;
 }
@@ -81,54 +81,54 @@ int main()
 	StopWatch timer;
 
     // generate benchmark cases
-    for( int r=0; r<EulerAngles.size(); ++r ) // rotation cases
-    		for( int t=0; t<TransCases.size(); ++t ) // translation cases
+    for( int r=0; r< EulerAngles.size(); ++r ) // rotation cases
+    		for( int t=0; t< TransCases.size(); ++t ) // translation cases
     		  {
-    				TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
-    				PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(100,100,100), identity );
+    			TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
+    			PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(100,100,100), identity );
 
-    				TransformationMatrix * tm = new TransformationMatrix(TransCases[t][0], TransCases[t][1], TransCases[t][2],
-    						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]);
+    			TransformationMatrix * tm = new TransformationMatrix(TransCases[t][0], TransCases[t][1], TransCases[t][2],
+    					EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]);
 
-    				// these dispatch to specialized matrices
-    				TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
-    											EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
+    			// these dispatch to specialized matrices
+    			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
+    					EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
-    				double rmin = 0.;
-    				double rmax = 20.;
-    				double dz = 30.;
-    				double phis  =0.;
-    				double dphi = 2*M_PI;
-    				PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
+    			double rmin = 0.;
+    			double rmax = 20.;
+    			double dz = 30.;
+    			double phis  =0.;
+    			double dphi = 3.*M_PI/2.;
+    			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
-    				std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
-    				std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
-    				// testing UnplacedContains
+    			std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
+    			std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
+    			// testing UnplacedContains
     			//	for(auto k=0;k<100;k++)
     			//	{
     			//		Vector3D x( cos(k/(100.)*2*M_PI), sin(k/(100.)*2*M_PI), 0 );
     			//		std::cerr << "## " << k/100.*2*M_PI << " "  << daughter->UnplacedContains( x ) << std::endl;
     			//	}
 
-    				world->AddDaughter(daughter);
+    			world->AddDaughter(daughter);
 
-    				world->fillWithRandomPoints(points,np);
-    				world->fillWithBiasedDirections(points, dirs, np, 1./3);
+    			world->fillWithRandomPoints(points,np);
+    			world->fillWithBiasedDirections(points, dirs, np, 1./3);
 
-    				points.toStructureOfVector3D( conventionalpoints );
-    				dirs.toStructureOfVector3D( conventionaldirs );
-    				points.toStructureOfVector3D( conventionalpoints2 );
-    				dirs.toStructureOfVector3D( conventionaldirs2 );
+    			points.toStructureOfVector3D( conventionalpoints );
+    			dirs.toStructureOfVector3D( conventionaldirs );
+    			points.toStructureOfVector3D( conventionalpoints2 );
+    			dirs.toStructureOfVector3D( conventionaldirs2 );
 
 //// time performance for this placement ( we should probably include some random physical steps )
 
-    				timer.Start();
-    				for(int reps=0;reps<1000;reps++)
-    				{
-    					daughter->DistanceToIn(points,dirs,steps,distances);
-    				}
-    				timer.Stop();
-    				double t0 = timer.getDeltaSecs();
+    			timer.Start();
+    			for(int reps=0;reps<1000;reps++)
+    			{
+    				daughter->DistanceToIn(points,dirs,steps,distances);
+    			}
+    			timer.Stop();
+    			double t0 = timer.getDeltaSecs();
 
     				//
 //    			// std::cerr << tm->GetTranslationIdType() << " " << tm->getNumberOfZeroEntries() << " " << timer.getDeltaSecs() << std::endl;
@@ -253,7 +253,7 @@ int main()
     			 TGeoMatrix * rootmatrix= new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],
 						   new TGeoRotation("rot1",EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]));
     			 TGeoManager *geom = new TGeoManager("","");
-    		     TGeoVolume * vol = geom->MakeTube("atube",0,rmin,rmax,dz);
+    		     TGeoVolume * vol = geom->MakeTubs("atube",0,rmin,rmax,dz, phis *360/(2.*M_PI), phis+360*dphi/(2.*M_PI));
     		     TGeoShape *  roottube=vol->GetShape();
 
     		     // now the scalar version from ROOTGeantV

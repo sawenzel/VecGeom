@@ -85,8 +85,8 @@ public:
 			cacheTolIRmaxSqr = (dRmax - UUtils::GetRadHalfTolerance()) * (dRmax - UUtils::GetRadHalfTolerance());
 
 			// calculate normals
-			PhiToPlane::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
-			PhiToPlane::GetNormalVectorToPhiPlane(dSPhi + dDPhi, normalPhi2, false);
+			PhiUtils::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
+			PhiUtils::GetNormalVectorToPhiPlane(dSPhi + dDPhi, normalPhi2, false);
 
 			normalPhi1.print();
 			normalPhi2.print();
@@ -339,10 +339,10 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	VectorType r2 = x*x + y*y;
 	VectorType n2 = Vc::One-dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
 	VectorType rdotn = x*dirx + y*diry;
-//	MaskType inrmax_m = (r2 - tubeparams->cacheRmaxSqr ) <= UUtils::frToleranceVc;
+	MaskType inrmax_m = (r2 - tubeparams->cacheRmaxSqr ) <= UUtils::frToleranceVc;
 //	MaskType inrmin_m = (tubeparams->cacheRminSqr - r2) <= UUtils::frToleranceVc;
 
-	// quick check if outer radius can be hit at all
+	// QUICK CHECK IF OUTER RADIUS CAN BE HIT AT ALL
 	// BELOW WE WILL SOLVE A QUADRATIC EQUATION OF THE TYPE
 	// a * t^2 + b * t + c = 0
 	// if this equation has a solution at all ( == hit )
@@ -360,6 +360,8 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// c = x*x + y*y - R^2 = r2 - R^2 -- dependent on shape
 	VectorType c = r2 - tubeparams->cacheRmaxSqr;
 	VectorType a = n2;
+	VectorType inverse2a = 1./(2*a);
+
 	VectorType b = 2*rdotn;
 	VectorType discriminant = b*b-4*a*c;
 	MaskType   canhitrmax = ( discriminant >= Vc::Zero );
@@ -377,41 +379,69 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	}
 
 	// Check outer cylinder (only r>rmax has to be considered)
-	// this IS ALWAYS the - solution
-	// VectorType::Mask still_m = Vc::abs(n2_v) < UUtils<VectorType>::fgTolerance;
-	// distance(!done_m && still_m) = UUtils<VectorType>::kInfinity;
-	// done_m |= still_m;
+	// this IS ALWAYS the MINUS (-) solution
 	VectorType distanceRmax( UUtils::kInfinityVc );
-	distanceRmax( canhitrmax ) = (-b - Vc::sqrt( discriminant ))/(2.*a);
+	distanceRmax( canhitrmax ) = (-b - Vc::sqrt( discriminant ))*inverse2a;
 
 	// calculate outer radius hit coordinates
 	VectorType zi = z + distanceRmax*dirz;
 	distanceRmax ( ( Vc::abs(zi) > tubeparams->dZ ) || distanceRmax < 0 ) = UUtils::kInfinityVc;
-	// done_m |= !inrmax_m && (delta > 0) && (distance > 0) && (Vc::abs(zi) <= tubeparams->vcZ);
 
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
 	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
 	{
 		// only parameter "a" changes
-		a = r2 - tubeparams->cacheRminSqr;
-		discriminant =  b*b-a*c;
+		// c = r2 - tubeparams->cacheRminSqr;
+		discriminant =  discriminant - 4*a*( tubeparams->cacheRmaxSqr - tubeparams->cacheRminSqr);
 		MaskType canhitrmin = ( discriminant >= Vc::Zero );
 		VectorType distanceRmin ( UUtils::kInfinityVc );
 		// this is always + solution
-		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))/(2.*a);
+		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))*inverse2a;
+
 		zi = z + distanceRmin*dirz;
 		distanceRmin ( ( Vc::abs(zi) > tubeparams->dZ ) || distanceRmin < 0 ) = UUtils::kInfinityVc;
-
-		//DistanceFunctions::DistToTubeVc( r2, n2, rdotn, tubeparams->vcRminSqr, b, delta);
-		// this is always + solution
-
-		// distance( ! done_m ) = -b + delta;
-		// zi = z + distance*dirz;
-		// done_m |= (delta > 0) && (distance > 0) && ( Vc::abs(zi) <= tubeparams->vcZ );
 
 		// reduction of distances
 		distanceRmax = Vc::min( distanceRmax, distanceRmin );
 	}
+
+	// **** PHI TREATMENT FOR CASE OF HAVING RMAX ONLY ***** only compiled in for tubes having phi sektion ***** //
+	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value && ! ( TubeTraits::NeedsRminTreatment<TubeType>::value ) )
+	{
+		// study the logic for this case
+		// ** for points starting in phi sektor all distances are replaced by distance to planes
+
+		// the following cases need to be considered :
+		// case 1: particle inside  Rmax  AND  inside   PhiSector  AND  RMAXHITpoint  OUTSIDE  PhiSector
+		// case 2: particle outside Rmax  AND  outside  PhiSector  AND  RMAXHITpoint  INSIDE   PhiSector
+		// case 3: particle outside Rmax  AND  inside   PhiSector  AND  RMAXHITpoint  INSIDE   PhiSector
+
+		// calculate RMAXHITpoint
+		MaskType ParticleInPhi;
+		// checks for particle in PhiSector
+		PhiUtils::PointIsInPhiSector<ValueType>(tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, x, y, ParticleInPhi);
+
+		// calculate hitpoint at rmax
+		VectorType xhitrmax = x + distanceRmax*dirx;
+		VectorType yhitrmax = y + distanceRmax*diry;
+		MaskType rmaxhitpointInPhiSektor;
+		PhiUtils::PointIsInPhiSector<ValueType>(tubeparams->normalPhi1.x, tubeparams->normalPhi1.y,
+												tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhitrmax, yhitrmax, rmaxhitpointInPhiSektor);
+
+		// the miminal form (DNF) of the above cases can be translated into the following boolean expression
+		MaskType needphitreatment = ( inrmax_m && ParticleInPhi && ! rmaxhitpointInPhiSektor ) || ( ! inrmax_m && rmaxhitpointInPhiSektor );
+
+		if( ! needphitreatment.isEmpty() )
+		{
+			VectorType distphi;
+			//	std::cerr << " FOUND CASE TO TREAT IN PHI; PLEASE IMPLEMENT " << std::endl;
+			PhiUtils::DistanceToPhiPlanes<ValueType>(tubeparams->dZ, tubeparams->cacheRmaxSqr,
+										  tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
+										  x,y,z,dirx,diry,dirz, distphi);
+			distanceRmax ( needphitreatment ) = distphi;
+		}
+	}
+
 
 	// might be only necessary in case distanceRmax is not yet complete
 	// ** possible early return here
@@ -507,7 +537,7 @@ bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x
 	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
 	{
 		if ( ( Vector3D::scalarProduct(x, tubeparams->normalPhi1 ) > 0 )
-				&& Vector3D::scalarProduct(x, tubeparams->normalPhi2 ) > 0 ) return false;
+				&& Vector3D::scalarProductInXYPlane(x, tubeparams->normalPhi2 ) > 0 ) return false;
 	}
 	return true;
 }

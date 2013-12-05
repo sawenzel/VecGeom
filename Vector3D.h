@@ -41,6 +41,13 @@ struct Vector3D
 		return left.x*right.x + left.y*right.y + left.z*right.z;
 	}
 
+	static
+	inline
+	double scalarProductInXYPlane( Vector3D const & left, Vector3D const & right)
+	{
+		return left.x*right.x + left.y*right.y;
+	}
+
 	void print()
 	{
 		std::cout << " 3DVector " << this << std::endl;
