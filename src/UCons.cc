@@ -48,7 +48,6 @@ UCons::UCons(const std::string& pName,
 {
   kRadTolerance = frTolerance;
   kAngTolerance = faTolerance;
-
   // Check z-len
   //
   if (pDz < 0)
@@ -1951,7 +1950,7 @@ double UCons::DistanceToOut(const UVector3& p,
               << "p.z = "  << p.z << " mm" << std::endl << std::endl
               << "pho at z = "   << std::sqrt(p.x * p.x + p.y * p.y)
               << " mm" << std::endl << std::endl;
-      if (p.x != 0. || p.x != 0.)
+      if (p.x != 0. || p.y != 0.)
       {
         message << "point phi = "   << std::atan2(p.y, p.x) / (UUtils::kPi / 180.0)
                 << " degree" << std::endl << std::endl;
@@ -2070,7 +2069,7 @@ double UCons::SafetyFromInside(const UVector3& p, bool) const
 
 UGeometryType UCons::GetEntityType() const
 {
-  return std::string("UCons");
+  return std::string("Cons");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -2225,5 +2224,5 @@ void UCons::GetParametersList(int, double* aArray) const
   aArray[4] = GetZHalfLength();
   aArray[5] = GetStartPhiAngle();
   aArray[6] = GetDeltaPhiAngle();
-
+ 
 }

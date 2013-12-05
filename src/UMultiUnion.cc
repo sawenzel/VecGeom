@@ -64,8 +64,17 @@ void UMultiUnion::AddNode(VUSolid& solid, UTransform3D& trans)
 {
   fSolids.push_back(&solid);
   fTransforms.push_back(&trans);
+  std::cout<<"Umulti afterVoxels Get transformX "<<(*fTransforms[0]).fRot[0]<<std::endl;
 }
 
+//______________________________________________________________________________ 
+/*void  UMultiUnion::SetSolidClosed()
+{
+ Voxelize();
+  // std::cout<<"Umulti afterVoxels Get transformX "<<(*fTransforms[0]).fRot[0]<<std::endl;
+
+}
+*/
 //______________________________________________________________________________
 VUSolid* UMultiUnion:: Clone() const
 {
@@ -1023,8 +1032,7 @@ const int carBoxesX = 20;
 const int carBoxesY = 20;
 const int carBoxesZ = 20;
 
-//////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////
 // Stream object contents to an output stream
 
 std::ostream& UMultiUnion::StreamInfo(std::ostream& os) const

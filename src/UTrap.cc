@@ -603,7 +603,6 @@ void UTrap::SetAllParameters ( double pDz,
 	}
 	fCubicVolume= 0.;
 	fSurfaceArea= 0.;
-	fpPolyhedron = 0;
 	fDz=pDz;
 	fTthetaCphi=std::tan(pTheta)*std::cos(pPhi);
 	fTthetaSphi=std::tan(pTheta)*std::sin(pPhi);
@@ -1536,18 +1535,6 @@ UVector3 UTrap::GetPointOnSurface() const
 				&& (chose<aOne+aTwo+aThree+aFour+aFive) )
 		{ return Five; }
 	return Six;
-}
-
-UPolyhedron* UTrap::CreatePolyhedron () const
-{
-	double phi = std::atan2(fTthetaSphi, fTthetaCphi);
-	double alpha1 = std::atan(fTalpha1);
-	double alpha2 = std::atan(fTalpha2);
-	double theta = std::atan(std::sqrt(fTthetaCphi*fTthetaCphi+fTthetaSphi*fTthetaSphi));
-
-	return new UPolyhedronTrap(fDz, theta, phi,
-															fDy1, fDx1, fDx2, alpha1,
-															fDy2, fDx3, fDx4, alpha2);
 }
 
 void UTrap::Extent (UVector3 &aMin, UVector3 &aMax) const

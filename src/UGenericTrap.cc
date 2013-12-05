@@ -25,7 +25,6 @@
 #include "UTriangularFacet.hh"
 #include "UQuadrangularFacet.hh"
 
-
 const int    UGenericTrap::fgkNofVertices = 8;
 const double UGenericTrap::fgkTolerance = 1E-3;
 
@@ -34,7 +33,6 @@ const double UGenericTrap::fgkTolerance = 1E-3;
 UGenericTrap::UGenericTrap( const std::string& name, double halfZ,
                               const std::vector<UVector2>&  vertices )
   : VUSolid(name),
-    fpPolyhedron(0),
     fDz(halfZ),
     fVertices(),
     fIsTwisted(false),
@@ -1912,124 +1910,3 @@ void UGenericTrap::ComputeBBox()
   fBoundBox= new UBox("BBoxGenericTrap",std::max(std::fabs(minX),std::fabs(maxX)),std::max(std::fabs(minY),std::fabs(maxY)),fDz); 
 }
 
-// --------------------------------------------------------------------
-
-UPolyhedron* UGenericTrap::GetPolyhedron () const
-{
-
-#ifdef G4TESS_TEST
-  if ( fTessellatedSolid )
-  { 
-    return fTessellatedSolid->GetPolyhedron();
-  }
-#endif  
-  
-  /*  if ( (!fpPolyhedron)
-    || (fpPolyhedron->GetNumberOfRotationStepsAtTimeOfCreation() !=
-        fpPolyhedron->GetNumberOfRotationSteps()) )
-  {
-    delete fpPolyhedron;
-    fpPolyhedron = CreatePolyhedron();
-  }
-  return fpPolyhedron;
-  */
-  return 0;
-}    
-
-// --------------------------------------------------------------------
-
-/*G4Polyhedron* UGenericTrap::CreatePolyhedron() const
-{
-
-#ifdef G4TESS_TEST
-  if ( fTessellatedSolid )
-  { 
-    return fTessellatedSolid->CreatePolyhedron();
-  }  
-#endif 
-  
-  // Approximation of Twisted Side
-  // Construct extra Points, if Twisted Side
-  //
-    G4PolyhedronArbitrary* polyhedron;
-  size_t nVertices, nFacets;
-
-  int  subdivisions=0;
-  int  i;
-  if(fIsTwisted)
-  {
-    if ( GetVisSubdivisions()!= 0 )
-    {
-      subdivisions=GetVisSubdivisions();
-    }
-    else
-    {
-      // Estimation of Number of Subdivisions for smooth visualisation
-      //
-      double  maxTwist=0.;
-      for(i=0; i<4; i++)
-      {
-        if(GetTwistAngle(i)>maxTwist) { maxTwist=GetTwistAngle(i); }
-      }
-
-      // Computes bounding vectors for the shape
-      //
-      double  Dx,Dy;
-      UVector3 minVec = GetMinimumBBox();
-      UVector3 maxVec = GetMaximumBBox();
-      Dx = 0.5*(maxVec.x- minVec.y);
-      Dy = 0.5*(maxVec.y- minVec.y);
-      if (Dy > Dx)  { Dx=Dy; }
-    
-      subdivisions=8*int (maxTwist/(Dx*Dx*Dx)*fDz);
-      if (subdivisions<4)  { subdivisions=4; }
-      if (subdivisions>30) { subdivisions=30; }
-    }
-  }
-  int  sub4=4*subdivisions;
-  nVertices = 8+subdivisions*4;
-  nFacets = 6+subdivisions*4;
-  double  cf=1./(subdivisions+1);
-  polyhedron = new G4PolyhedronArbitrary (nVertices, nFacets);
-
-  // Add Vertex
-  //
-  for (i=0;i<4;i++)
-  {
-    polyhedron->AddVertex(UVector3(fVertices[i].x(),
-                                        fVertices[i].y(),-fDz));
-  }
-  for( i=0;i<subdivisions;i++)
-  {
-    for(int  j=0;j<4;j++)
-    {
-      UVector2 u=fVertices[j]+cf*(i+1)*( fVertices[j+4]-fVertices[j]);
-      polyhedron->AddVertex(UVector3(u.x(),u.y(),-fDz+cf*2*fDz*(i+1)));
-    }    
-  }
-  for (i=4;i<8;i++)
-  {
-    polyhedron->AddVertex(UVector3(fVertices[i].x(),
-                                        fVertices[i].y(),fDz));
-  }
-
-  // Add Facets
-  //
-  polyhedron->AddFacet(1,4,3,2);  //Z-plane
-  for (i=0;i<subdivisions+1;i++)
-  {
-    int  is=i*4;
-    polyhedron->AddFacet(5+is,8+is,4+is,1+is);
-    polyhedron->AddFacet(8+is,7+is,3+is,4+is);
-    polyhedron->AddFacet(7+is,6+is,2+is,3+is);
-    polyhedron->AddFacet(6+is,5+is,1+is,2+is); 
-  }
-  polyhedron->AddFacet(5+sub4,6+sub4,7+sub4,8+sub4);  //Z-plane
-
-  polyhedron->SetReferences();
-  polyhedron->InvertFacets();
-
-  return (G4Polyhedron*) polyhedron;
-}
-*/
-// --------------------------------------------------------------------

@@ -98,7 +98,7 @@ void UTessellatedSolid::Initialize()
 	fgToleranceHalf = 0.5*fgTolerance;
 
   // I recommend keeping NULL here instead of 0. c++11 provides nullptr, than it could be easily replaced everywhere using simple case sensitive, whole words replacement in all files
-	fpPolyhedron = NULL; 
+
   fCubicVolume = 0.; fSurfaceArea = 0.;
 
 	fGeometryType = "UTessellatedSolid";
@@ -165,7 +165,7 @@ UTessellatedSolid::~UTessellatedSolid ()
 // Define copy constructor.
 //
 UTessellatedSolid::UTessellatedSolid (const UTessellatedSolid &ss)
-	: VUSolid(ss), fpPolyhedron(0)
+	: VUSolid(ss)
 {
 	Initialize();
 
@@ -1741,63 +1741,6 @@ void UTessellatedSolid::DescribeYourselfTo (UVGraphicsScene& scene) const
 	scene.AddSolid (*this);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-UPolyhedron *UTessellatedSolid::CreatePolyhedron () const
-{
-	int nVertices = fVertexList.size();
-	int nFacets   = fFacets.size();
-	UPolyhedronArbitrary *polyhedron = new UPolyhedronArbitrary (nVertices, nFacets);
-	for (UVector3List::const_iterator v = fVertexList.begin();
-		v!=fVertexList.end(); ++v) polyhedron->AddVertex(*v);
-
-	for (int i = 0; i < nFacets; ++i)
-	{
-		VUFacet &facet = *fFacets[i];
-		int v[4];
-		for (int j=0; j<4; ++j)
-		{
-			int k = facet.GetVertexIndex(j);
-			if (k == 999999999) v[j] = 0;
-			else                v[j] = k+1;
-		}
-		/*
-		if (facet.GetEntityType() == "G4QuadrangularFacet")
-		{
-			int k = v[3];
-			v[3]     = v[2];
-			v[2]     = k;
-		}
-		*/
-		polyhedron->AddFacet(v[0],v[1],v[2],v[3]);
-	}
-	polyhedron->SetReferences();  
-
-	return (UPolyhedron*) polyhedron;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-UNURBS *UTessellatedSolid::CreateNURBS () const
-{
-	return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// GetPolyhedron
-//
-UPolyhedron* UTessellatedSolid::GetPolyhedron () const
-{
-	if (!fpPolyhedron ||
-		fpPolyhedron->GetNumberOfRotationStepsAtTimeOfCreation() !=
-		fpPolyhedron->GetNumberOfRotationSteps())
-	{
-		delete fpPolyhedron;
-		fpPolyhedron = CreatePolyhedron();
-	}
-	return fpPolyhedron;
-}
 
 // NOTE: USolid uses method with different arguments
 //

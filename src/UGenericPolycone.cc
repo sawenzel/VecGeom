@@ -264,7 +264,7 @@ UGenericPolycone::UGenericPolycone(const UGenericPolycone& source)
 //
 // Assignment operator
 //
-const UGenericPolycone& UGenericPolycone::operator=(const UGenericPolycone& source)
+UGenericPolycone& UGenericPolycone::operator=(const UGenericPolycone& source)
 {
   if (this == &source) return *this;
 
@@ -375,7 +375,7 @@ double UGenericPolycone::DistanceToIn(const UVector3& p,
 //
 UGeometryType UGenericPolycone::GetEntityType() const
 {
-  return std::string("UGenericPolycone");
+  return std::string("GenericPolycone");
 }
 
 //
