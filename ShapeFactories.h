@@ -23,24 +23,32 @@ struct TubeFactory
 	{
 		if( tp->GetRmin() == 0. )
 		{
-			if ( tp->GetDPhi() < UUtils::kTwoPi )
+			if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kTwoPi ) )
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhi>(tp, tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTube>(tp, tm);
+			}
+			else if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kPi ) )
+			{
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhiEqualsPi>(tp, tm);
 			}
 			else
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTube>(tp, tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhi>(tp, tm);
 			}
 		}
 		else
 		{
-			if ( tp->GetDPhi() < UUtils::kTwoPi )
+			if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kTwoPi ) )
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhi>(tp,tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTube>(tp, tm);
+			}
+			else if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kPi ) )
+			{
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhiEqualsPi>(tp, tm);
 			}
 			else
 			{
-				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTube>(tp,tm);
+				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhi>(tp,tm);
 			}
 		}
 	}

@@ -32,16 +32,18 @@ const std::vector<std::vector<double> > EulerAngles  {{0.,0.,0.},
 	{78.2, 81.0, -10.}};
 //const std::vector<std::vector<double> > EulerAngles {{180,0,0}};
 
-static void cmpresults(double * a1, double * a2, int np)
+static void cmpresults(double * a1, double * a2, int np,
+		PhysicalVolume const * vol, std::vector<Vector3D> const & points, std::vector<Vector3D> const & dirs)
 {
 	int counter=0;
-	for(auto i=0;i<np;++i)
+	for( auto i=0; i<np; ++i )
 	{
 		if( std::abs( a1[i] - a2[i] ) > UUtils::GetCarTolerance() )
 		{
 			counter++;
 #ifdef SHOWDIFFERENCES
 			std::cerr << i << " " << a1[i] << " " << a2[i] << std::endl;
+			vol->DebugPointAndDirDistanceToIn( points[i], dirs[i] );
 #endif
 		}
 	}
@@ -56,6 +58,7 @@ int main()
 
 
 	int np=1024;
+	int NREPS = 1000;
 
 	points.alloc(np);
 	dirs.alloc(np);
@@ -92,17 +95,17 @@ int main()
 
     			// these dispatch to specialized matrices
     			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
-    					EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
+    						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
     			double rmin = 0.;
     			double rmax = 20.;
     			double dz = 30.;
     			double phis  =0.;
-    			double dphi = 3.*M_PI/2.;
+    			double dphi = 3*M_PI/2.;
     			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
-    			std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
-    			std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
+    			//std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
+    			//std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
     			// testing UnplacedContains
     			//	for(auto k=0;k<100;k++)
     			//	{
@@ -113,7 +116,7 @@ int main()
     			world->AddDaughter(daughter);
 
     			world->fillWithRandomPoints(points,np);
-    			world->fillWithBiasedDirections(points, dirs, np, 1./3);
+    			world->fillWithBiasedDirections(points, dirs, np, 8/10.);
 
     			points.toStructureOfVector3D( conventionalpoints );
     			dirs.toStructureOfVector3D( conventionaldirs );
@@ -122,8 +125,9 @@ int main()
 
 //// time performance for this placement ( we should probably include some random physical steps )
 
+
     			timer.Start();
-    			for(int reps=0;reps<1000;reps++)
+    			for(int reps=0;reps< NREPS ;reps++)
     			{
     				daughter->DistanceToIn(points,dirs,steps,distances);
     			}
@@ -134,7 +138,7 @@ int main()
 //    			// std::cerr << tm->GetTranslationIdType() << " " << tm->getNumberOfZeroEntries() << " " << timer.getDeltaSecs() << std::endl;
 //
 //    				timer.Start();
-//					for(int reps=0;reps<1000;reps++)
+//					for(int reps=0;reps<NREPS;reps++)
 //    				{
 //    					daughter->DistanceToInIL(points,dirs,steps,distances);
 //    				}
@@ -142,7 +146,7 @@ int main()
 //    				double til = timer.getDeltaSecs();
 //
 //    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
+//    				for(int reps=0;reps<NREPS;reps++)
 //    				{
 //    					daughter->DistanceToInIL( conventionalpoints2, conventionaldirs2, steps, distances, np );
 //    				}
@@ -155,7 +159,7 @@ int main()
 
     				PhysicalVolume * unplaceddaughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax ,dz, phis, dphi ), identity );
     				timer.Start();
-    				for(int reps=0;reps<1000;reps++)
+    				for(int reps=0;reps<NREPS;reps++)
     				{
     					if(! tm->isIdentity() )
     					{
@@ -176,7 +180,7 @@ int main()
 //    				// compare with external specialized transformation ( sm )
 //    				sm->print();
     				timer.Start();
-    				for(int reps=0;reps<1000;reps++)
+    				for(int reps=0;reps<NREPS;reps++)
     				{
     					sm->MasterToLocal(points, intermediatepoints );
     					sm->MasterToLocalVec( dirs, intermediatedirs );
@@ -192,7 +196,7 @@ int main()
 //
 //    				// now we do the scalar interface: first of all placed version
 //    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
+//    				for(int reps=0;reps<NREPS;reps++)
 //    				{
 //    					for(auto j=0;j<np;++j)
 //    					{
@@ -204,7 +208,7 @@ int main()
 //
 //    				// now unplaced version
 //    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
+//    				for(int reps=0;reps<NREPS;reps++)
 //    				{
 //    					for(auto j=0;j<np;++j)
 //    		    			{
@@ -219,7 +223,7 @@ int main()
 //
 //    				// now unplaced version
 //    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
+//    				for(int reps=0;reps<NREPS;reps++)
 //    				{
 //    					for(auto j=0;j<np;++j)
 //    		      			{
@@ -234,7 +238,7 @@ int main()
 //
 //    				// now unplaced version but inlined matrices
 //    				timer.Start();
-//    				for(int reps=0;reps<1000;reps++)
+//    				for(int reps=0;reps<NREPS;reps++)
 //    				{
 //    					for(auto j=0;j<np;++j)
 //    					{
@@ -258,7 +262,7 @@ int main()
 
     		     // now the scalar version from ROOTGeantV
     		     timer.Start();
-    		     for(int reps=0;reps<1000;reps++)
+    		     for(int reps=0;reps<NREPS;reps++)
     		     {
     		    	 for(auto j=0;j<np;++j)
     		    	 {
@@ -275,7 +279,7 @@ int main()
     		     // now the VECTOR version from ROOT
     		     // now the scalar version from ROOTGeantV
     		     timer.Start();
-    		     for(int reps=0;reps<1000;reps++)
+    		     for(int reps=0;reps<NREPS;reps++)
     		     {
     		    	 rootmatrix->MasterToLocalCombined_v( reinterpret_cast<StructOfCoord const &>(points), reinterpret_cast<StructOfCoord &>(intermediatepoints),
     		    			     		    			 reinterpret_cast<StructOfCoord const &>(dirs), reinterpret_cast<StructOfCoord &>(intermediatedirs), np );
@@ -285,7 +289,7 @@ int main()
     		     timer.Stop();
     		     double t8 = timer.getDeltaSecs();
 
-    		     cmpresults( distancesROOTSCALAR, distances, np );
+    		     cmpresults( distancesROOTSCALAR, distances, np, daughter, conventionalpoints, conventionaldirs );
 
     		     std::cerr << "new vec (placed)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t0 << std::endl;
     		     std::cerr << "new vec (old matrix)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t1 << std::endl;

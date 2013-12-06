@@ -18,11 +18,15 @@ namespace TubeTraits
 struct NonHollowTube {};
 // a tube not having rmin but a non-2pi phi section
 struct NonHollowTubeWithPhi {};
+// a tube not having rmin and special case phi = 180^\circ = PI section
+struct NonHollowTubeWithPhiEqualsPi {};
 
 // a tube having rmin but no phi section
 struct HollowTube {};
 // a tube having rmin and phi section
 struct HollowTubeWithPhi {};
+// a tube not having rmin and special case phi = 180^\circ = PI section
+struct HollowTubeWithPhiEqualsPi {};
 
 
 // give a traits template
@@ -63,6 +67,32 @@ struct NeedsRminTreatment<NonHollowTubeWithPhi>
 {
 	static const bool value=false;
 };
+template <>
+struct NeedsRminTreatment<NonHollowTubeWithPhiEqualsPi>
+{
+	static const bool value=false;
+};
+
+
+template <typename T>
+struct IsPhiEqualsPiCase
+{
+	static const bool value = false;
+};
+
+template <>
+struct IsPhiEqualsPiCase<NonHollowTubeWithPhiEqualsPi>
+{
+	static const bool value = true;
+};
+
+template <>
+struct IsPhiEqualsPiCase<HollowTubeWithPhiEqualsPi>
+{
+	static const bool value = true;
+};
+
+
 
 };
 #endif /* TUBETRAITS_H_ */

@@ -49,7 +49,9 @@ private:
 	//**** we save normals to phi - planes *****//
 	Vector3D normalPhi1; // ( probably need to worry about alignment )
 	Vector3D normalPhi2; // ( probably need to worry about alignment
-
+	//**** vectors along radial direction of phi-planes
+	Vector3D alongPhi1;
+	Vector3D alongPhi2;
 
 public:
 	TubeParameters(T pRmin, T pRmax, T pDZ, T pPhiMin, T pPhiMax) :
@@ -87,6 +89,9 @@ public:
 			// calculate normals
 			PhiUtils::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
 			PhiUtils::GetNormalVectorToPhiPlane(dSPhi + dDPhi, normalPhi2, false);
+			// get alongs
+			PhiUtils::GetAlongVectorToPhiPlane(dSPhi, alongPhi1);
+			PhiUtils::GetAlongVectorToPhiPlane(dSPhi + dDPhi, alongPhi2);
 
 			normalPhi1.print();
 			normalPhi2.print();
@@ -146,8 +151,147 @@ public:
 	void DistanceToIn( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
 					   VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const;
 
+
+// some helper functions ( mainly for debugging )
+	Vector3D RHit( Vector3D const &x, Vector3D const &y, double & distance, double radius, bool wantMinusSolution ) const;
+	Vector3D PhiHit ( Vector3D const &x, Vector3D const &y, double & distance, bool isPhi1Solution ) const;
+	Vector3D ZHit ( Vector3D const &x, Vector3D const &y, double & distance) const;
+	bool isInRRange( Vector3D const & x ) const;
+	bool isInPhiRange( Vector3D const & x) const;
+	bool isInZRange( Vector3D const & x ) const;
+	virtual void DebugPointAndDirDistanceToIn( Vector3D const & x, Vector3D const & y) const;
+	void printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const;
+	//
+
+	template<typename VectorType = Vc::Vector<T> >
+	inline
+	__attribute__((always_inline))
+	typename VectorType::Mask determineRmaxHit( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
+												VectorType const & /*dirx-vec*/, VectorType const & /*diry-vec*/, VectorType const & /*dirz-vec*/, VectorType const & /**/ ) const;
+
+	template<typename VectorType = Vc::Vector<T> >
+	inline
+	__attribute__((always_inline))
+	typename VectorType::Mask determineZHit( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
+													VectorType const & /*dirx-vec*/, VectorType const & /*diry-vec*/, VectorType const & /*dirz-vec*/, VectorType const & /**/ ) const;
+
 };
 
+template<int tid, int rid, class TubeType, typename T>
+Vector3D
+PlacedUSolidsTube<tid,rid, TubeType, T>::ZHit( Vector3D const & pos, Vector3D const & dir, double & distance ) const
+{
+	distance = - (tubeparams->dZ - std::abs(pos.z))/std::abs(dir.z);
+	Vector3D vec( pos.x + distance*dir.x, pos.y + distance*dir.y, pos.z + distance*dir.z );
+	return vec;
+}
+
+template<int tid, int rid, class TubeType, typename T>
+Vector3D
+PlacedUSolidsTube<tid,rid, TubeType,T>::PhiHit ( Vector3D const & pos, Vector3D const & dir, double & distance, bool isPhi1Solution ) const
+{
+	Vector3D const & normal = ( isPhi1Solution ) ? tubeparams->normalPhi1 : tubeparams->normalPhi2;
+	T scalarproduct1 = normal.x*pos.x + normal.y*pos.y;
+	T N1dotDir = normal.x*dir.x + normal.y*dir.y;
+
+	distance = -scalarproduct1/N1dotDir;
+	Vector3D vec( pos.x + distance*dir.x, pos.y + distance*dir.y, pos.z + distance*dir.z );
+	return vec;
+}
+
+template<int tid, int rid, class TubeType, typename T>
+bool
+PlacedUSolidsTube<tid,rid, TubeType,T>::isInRRange( Vector3D const & pos) const
+{
+	double d = Vector3D::scalarProductInXYPlane(pos, pos);
+	return ( tubeparams->cacheRminSqr <= d && d <= tubeparams->cacheRmaxSqr );
+}
+
+template<int tid, int rid, class TubeType, typename T>
+bool
+PlacedUSolidsTube<tid,rid, TubeType,T>::isInZRange( Vector3D const & pos) const
+{
+	return ( std::abs(pos.z) <= tubeparams->dZ + UUtils::GetCarHalfTolerance() );
+}
+
+template<int tid, int rid, class TubeType, typename T>
+bool
+PlacedUSolidsTube<tid,rid, TubeType,T>::isInPhiRange( Vector3D const & pos) const
+{
+	return PhiUtils::PointIsInPhiSector<T>( tubeparams->normalPhi1, tubeparams->normalPhi2, pos );
+}
+
+template<int tid, int rid, class TubeType, typename T>
+Vector3D
+PlacedUSolidsTube<tid,rid,TubeType,T>::RHit( Vector3D const & pos, Vector3D const & dir, double & distance, double radius, bool wantMinusSolution ) const
+{
+	T rdotr = pos.x * pos.x + pos.y*pos.y;
+	T dirdotdir = 1 - dir.z * dir.z;
+	T rdotn = pos.x * dir.x + pos.y* dir.y;
+
+	T c = rdotr - radius*radius;
+	T a = dirdotdir;
+	T b = 2 * rdotn;
+	T discriminant = b*b - 4*a*c;
+
+	if ( discriminant >= 0)
+	{
+		if(wantMinusSolution) distance = ( -b - sqrt(discriminant) ) / (2*a);
+		if(!wantMinusSolution) distance = ( -b + sqrt(discriminant) ) / (2*a);
+	}
+	else
+	{
+		distance = UUtils::kInfinity;
+	}
+	Vector3D vec( pos.x + distance*dir.x, pos.y + distance*dir.y, pos.z + distance*dir.z );
+	return vec;
+}
+
+template<int tid, int rid, class TubeType, typename T>
+void
+PlacedUSolidsTube<tid,rid,TubeType,T>::printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const
+{
+	std::cout << c << " " << vec << "\t\t at dist " << distance << " in z " << isInZRange(vec)
+					<< " inPhi " << isInPhiRange( vec )
+					<< " inR " << isInRRange( vec )
+					<< std::endl;
+}
+
+
+template<int tid, int rid, class TubeType, typename T>
+void
+PlacedUSolidsTube<tid,rid,TubeType,T>::DebugPointAndDirDistanceToIn( Vector3D const & x, Vector3D const & y ) const
+{
+	std::cout << "INSPECTING POINT - TUBE INTERACTION ALONG FLIGHT-PATH " << std::endl;
+	std::cout << "PARTICLE POSITION " << std::endl;
+	double distance=0;
+	printInfoHitPoint("ParticlePos", x, distance );
+	std::cout << "PARTICLE DIRECTION " << std::endl;
+	std::cout << y << std::endl;
+	std::cout << "RMAX INTERACTION " << std::endl;
+	Vector3D vmax = this->RHit( x, y, distance, tubeparams->dRmax, true);
+	printInfoHitPoint("hitpointrmax", vmax, distance);
+
+	if( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		std::cout << "RMIN INTERACTION " << std::endl;
+		Vector3D vmin = this->RHit( x, y, distance, tubeparams->dRmin, false);
+		printInfoHitPoint("hitpointrmin", vmin, distance);
+	}
+
+	if( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		std::cout << "PHI INTERACTION " << std::endl;
+		Vector3D vphi1 = this->PhiHit( x, y, distance, true);
+		printInfoHitPoint("hitpointphi1", vphi1, distance);
+		Vector3D vphi2 = this->PhiHit( x, y, distance, false);
+		printInfoHitPoint("hitpointphi2", vphi2, distance);
+	}
+
+	std::cout << "Z INTERACTION " << std::endl;
+	Vector3D vZ = this->ZHit( x, y, distance );
+	printInfoHitPoint("hitpointZ", vZ, distance);
+}
 
 
 template<int tid, int rid, class TubeType, typename T>
@@ -309,6 +453,75 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
   return ( snxt < UUtils::GetCarHalfTolerance()) ? 0 : snxt;
 }
 
+template<int tid, int rid, typename TubeType, typename ValueType>
+template<typename VectorType>
+inline
+__attribute__((always_inline))
+typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determineRmaxHit( VectorType const & x, VectorType const & y, VectorType const & z,
+											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distanceRmax ) const
+{
+	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		return distanceRmax > 0 && Vc::abs(z+distanceRmax*dirz) < tubeparams->dZ;
+	}
+
+	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		// need to have additional look if hitting point on zylinder is not in empty phi range
+		VectorType xhit = x + distanceRmax*dirx;
+		VectorType yhit = y + distanceRmax*diry;
+		return distanceRmax > 0 && Vc::abs(z+distanceRmax*dirz) < tubeparams->dZ && ! PhiUtils::PointIsInPhiSector<ValueType>(
+					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
+	}
+	else
+	{
+		return typename VectorType::Mask(false);
+	}
+}
+
+
+template<int tid, int rid, typename TubeType, typename ValueType>
+template<typename VectorType>
+inline
+__attribute__((always_inline))
+typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determineZHit( VectorType const & x, VectorType const & y, VectorType const & z,
+											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distancez ) const
+{
+	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		VectorType xhit = x + distancez*dirx;
+		VectorType yhit = y + distancez*diry;
+		return distancez > 0 && ((xhit*xhit + yhit*yhit) < tubeparams->cacheRmaxSqr);
+	}
+
+	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		// need to have additional look if hitting point on zylinder is not in empty phi range
+		VectorType xhit = x + distancez*dirx;
+		VectorType yhit = y + distancez*diry;
+		return distancez > 0 && ((xhit*xhit + yhit*yhit) < tubeparams->cacheRmaxSqr) && ! PhiUtils::PointIsInPhiSector<ValueType>(
+					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
+	}
+
+	if( TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		VectorType xhit = x + distancez*dirx;
+		VectorType yhit = y + distancez*diry;
+		VectorType hitradiussquared = xhit*xhit + yhit*yhit;
+		return distancez > 0 && hitradiussquared <= tubeparams->cacheRmaxSqr && hitradiussquared >= tubeparams->cacheRminSqr;
+	}
+	else // this should be totally general case ( Rmin and Rmax and general phi )
+	{
+		VectorType xhit = x + distancez*dirx;
+		VectorType yhit = y + distancez*diry;
+		VectorType hitradiussquared = xhit*xhit + yhit*yhit;
+		return distancez > 0 && hitradiussquared <= tubeparams->cacheRmaxSqr
+							 && hitradiussquared >= tubeparams->cacheRminSqr
+							 && ( ! PhiUtils::PointIsInPhiSector<ValueType>(
+									tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit ) );
+	}
+}
+
 
 // a template version targeted at T = Vc or T = Boost.SIMD or T= double
 // this is the kernel operating on type T
@@ -331,15 +544,15 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// do some inside checks
 	// if safez is > 0 it means that particle is within z range
 	// if safez is < 0 it means that particle is outside z range
+
 	VectorType safez = tubeparams->dZ - Vc::abs(z);
 	MaskType inz_m = safez > UUtils::fgToleranceVc;
-
 	done_m = !inz_m && ( z*dirz >= Vc::Zero ); // particle outside the z-range and moving away
 
 	VectorType r2 = x*x + y*y;
 	VectorType n2 = Vc::One-dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
 	VectorType rdotn = x*dirx + y*diry;
-	MaskType inrmax_m = (r2 - tubeparams->cacheRmaxSqr ) <= UUtils::frToleranceVc;
+//	MaskType inrmax_m = (r2 - tubeparams->cacheRmaxSqr ) <= UUtils::frToleranceVc;
 //	MaskType inrmin_m = (tubeparams->cacheRminSqr - r2) <= UUtils::frToleranceVc;
 
 	// QUICK CHECK IF OUTER RADIUS CAN BE HIT AT ALL
@@ -383,9 +596,11 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	VectorType distanceRmax( UUtils::kInfinityVc );
 	distanceRmax( canhitrmax ) = (-b - Vc::sqrt( discriminant ))*inverse2a;
 
-	// calculate outer radius hit coordinates
-	VectorType zi = z + distanceRmax*dirz;
-	distanceRmax ( ( Vc::abs(zi) > tubeparams->dZ ) || distanceRmax < 0 ) = UUtils::kInfinityVc;
+	// this determines which vectors are done here already
+	MaskType rmaxdone = determineRmaxHit( x, y, z, dirx, diry, dirz, distanceRmax );
+	distanceRmax( ! rmaxdone ) = UUtils::kInfinityVc;
+	distance( ! done_m && rmaxdone ) = distanceRmax;
+	done_m |= rmaxdone;
 
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
 	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
@@ -398,72 +613,37 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 		// this is always + solution
 		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))*inverse2a;
 
-		zi = z + distanceRmin*dirz;
-		distanceRmin ( ( Vc::abs(zi) > tubeparams->dZ ) || distanceRmin < 0 ) = UUtils::kInfinityVc;
+		VectorType zRmin = z + distanceRmin*dirz;
+		distanceRmin ( ( Vc::abs(zRmin) > tubeparams->dZ ) || distanceRmin < 0 ) = UUtils::kInfinityVc;
 
 		// reduction of distances
 		distanceRmax = Vc::min( distanceRmax, distanceRmin );
 	}
 
+	// now do Z-Face
+	VectorType distancez = -safez/Vc::abs(dirz);
+	MaskType zdone = determineZHit(x,y,z,dirx,diry,dirz,distancez);
+	distance ( ! done_m && zdone ) = distancez;
+	done_m |= zdone;
+
+	// now PHI
+
 	// **** PHI TREATMENT FOR CASE OF HAVING RMAX ONLY ***** only compiled in for tubes having phi sektion ***** //
 	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value && ! ( TubeTraits::NeedsRminTreatment<TubeType>::value ) )
 	{
-		// study the logic for this case
-		// ** for points starting in phi sektor all distances are replaced by distance to planes
+		// all particles not done until here have the potential to hit a phi surface
+		// phi surfaces require divisions so it might be useful to check before continuing
 
-		// the following cases need to be considered :
-		// case 1: particle inside  Rmax  AND  inside   PhiSector  AND  RMAXHITpoint  OUTSIDE  PhiSector
-		// case 2: particle outside Rmax  AND  outside  PhiSector  AND  RMAXHITpoint  INSIDE   PhiSector
-		// case 3: particle outside Rmax  AND  inside   PhiSector  AND  RMAXHITpoint  INSIDE   PhiSector
-
-		// calculate RMAXHITpoint
-		MaskType ParticleInPhi;
-		// checks for particle in PhiSector
-		PhiUtils::PointIsInPhiSector<ValueType>(tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, x, y, ParticleInPhi);
-
-		// calculate hitpoint at rmax
-		VectorType xhitrmax = x + distanceRmax*dirx;
-		VectorType yhitrmax = y + distanceRmax*diry;
-		MaskType rmaxhitpointInPhiSektor;
-		PhiUtils::PointIsInPhiSector<ValueType>(tubeparams->normalPhi1.x, tubeparams->normalPhi1.y,
-												tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhitrmax, yhitrmax, rmaxhitpointInPhiSektor);
-
-		// the miminal form (DNF) of the above cases can be translated into the following boolean expression
-		MaskType needphitreatment = ( inrmax_m && ParticleInPhi && ! rmaxhitpointInPhiSektor ) || ( ! inrmax_m && rmaxhitpointInPhiSektor );
-
-		if( ! needphitreatment.isEmpty() )
+		if( ! done_m.isFull() )
 		{
 			VectorType distphi;
-			//	std::cerr << " FOUND CASE TO TREAT IN PHI; PLEASE IMPLEMENT " << std::endl;
 			PhiUtils::DistanceToPhiPlanes<ValueType>(tubeparams->dZ, tubeparams->cacheRmaxSqr,
-										  tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
-										  x,y,z,dirx,diry,dirz, distphi);
-			distanceRmax ( needphitreatment ) = distphi;
+					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
+					tubeparams->alongPhi1, tubeparams->alongPhi2,
+					x, y, z, dirx, diry, dirz, distphi);
+			distance ( ! done_m ) = distphi;
 		}
 	}
-
-
-	// might be only necessary in case distanceRmax is not yet complete
-	// ** possible early return here
-
-	// now do Z-Face
-	VectorType distancez = -safez/Vc::abs(dirz);
-	VectorType xhitzface = x + distancez*dirx;
-	VectorType yhitzface = y + distancez*diry;
-	VectorType rhit2zface = xhitzface*xhitzface + yhitzface*yhitzface;
-	MaskType hitz;
-	if( TubeTraits::NeedsRminTreatment<TubeType>::value )
-	{
-		hitz = ( tubeparams->cacheRminSqr <= rhit2zface ) && ( rhit2zface <= tubeparams->cacheRmaxSqr );
-	}
-	else
-	{
-		hitz = ( rhit2zface <= tubeparams->cacheRmaxSqr );
-	}
-	distancez ( !hitz || distancez < 0 ) = UUtils::kInfinityVc;
-	distance ( ! done_m ) = Vc::min(distanceRmax, distancez);
-
-	//  done_m |= !inz_m && (rmin2 <= ri2_v) && (ri2_v <= rmax2);
 }
 
 
@@ -471,8 +651,9 @@ template<int tid, int rid, typename TubeType, typename ValueType>
 inline
 void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
 {
+	int i=0;
 	typedef typename Vc::Vector<ValueType> VectorType;
-	for( int i=0; i < points_v.size; i += Vc::Vector<ValueType>::Size )
+	for( i=0; i < points_v.size; i += Vc::Vector<ValueType>::Size )
 		{
 			VectorType x( &points_v.x[i] );
 			VectorType y( &points_v.y[i] );

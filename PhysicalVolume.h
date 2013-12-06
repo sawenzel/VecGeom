@@ -103,6 +103,13 @@ class PhysicalVolume
 		TransformationMatrix const * getMatrix() const {return matrix;}
 
 		LogicalVolume const * getLogicalVolume() const { return logicalvol; }
+
+		// for debugging purposes ( can be overridden by concrete shapes )
+		virtual
+		void
+		DebugPointAndDirDistanceToIn( Vector3D const & x, Vector3D const & y ) const
+		{}
+
 };
 
 

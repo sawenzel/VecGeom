@@ -75,6 +75,11 @@ namespace UUtils
 	static const ValueType frHalfToleranceVc = frTolerance*0.5;
 	static const ValueType faHalfToleranceVc = faTolerance*0.5;
 
+	static
+	bool IsSameWithinTolerance( double x, double y )
+	{
+		return std::abs(x-y) < fgHalfTolerance;
+	}
 
 	/*
 	static void init()

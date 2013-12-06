@@ -48,15 +48,28 @@ struct Vector3D
 		return left.x*right.x + left.y*right.y;
 	}
 
-	void print()
+	/*
+	void print() const
 	{
 		std::cout << " 3DVector " << this << std::endl;
 		std::cout << " x : " << x << std::endl;
 		std::cout << " y : " << y << std::endl;
 		std::cout << " z : " << z << std::endl;
 	}
+*/
+	void print() const
+	{
+	//	std::cout << "3DVector (instance ) " << (*this) << std::endl;
+	}
 
 };
+
+static
+std::ostream& operator<<( std::ostream& stream, Vector3D const & vec )
+{
+	stream << "{ " << vec.x << " , " << vec.y << " , " << vec.z << " } ";
+	return stream;
+}
 
 struct Vectors3DSOA
 {
