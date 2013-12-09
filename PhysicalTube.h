@@ -664,7 +664,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// this determines which vectors are done here already
 	MaskType Rdone = determineRHit( x, y, z, dirx, diry, dirz, distanceRmax );
 	distanceRmax( ! Rdone ) = UUtils::kInfinityVc;
-
+	MaskType rmindone;
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
 	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
 	{
@@ -675,7 +675,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 		VectorType distanceRmin ( UUtils::kInfinityVc );
 		// this is always + solution
 		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))*inverse2a;
-		MaskType rmindone = determineRHit( x, y, z, dirx, diry, dirz, distanceRmin );
+		rmindone = determineRHit( x, y, z, dirx, diry, dirz, distanceRmin );
 		distanceRmin ( ! rmindone ) = UUtils::kInfinity;
 
 		// reduction of distances
@@ -702,14 +702,23 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 		// all particles not done until here have the potential to hit a phi surface
 		// phi surfaces require divisions so it might be useful to check before continuing
 
-		if( ! done_m.isFull() )
+		if( TubeTraits::NeedsRminTreatment<TubeType>::value || ! done_m.isFull() )
 		{
 			VectorType distphi;
 			TubeUtils::DistanceToPhiPlanes<ValueType,TubeTraits::IsPhiEqualsPiCase<TubeType>::value,TubeTraits::NeedsRminTreatment<TubeType>::value>(tubeparams->dZ, tubeparams->cacheRmaxSqr, tubeparams->cacheRminSqr,
 					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
 					tubeparams->alongPhi1, tubeparams->alongPhi2,
 					x, y, z, dirx, diry, dirz, distphi);
-			distance ( ! done_m ) = distphi;
+			if(TubeTraits::NeedsRminTreatment<TubeType>::value)
+			{
+				// distance(! done_m || (rmindone && ! inrmin_m ) || (rmaxdone && ) ) = distphi;
+				// distance ( ! done_m ) = distphi;
+				distance = Vc::min(distance, distphi);
+			}
+			else
+			{
+				distance ( ! done_m ) = distphi;
+			}
 		}
 	}
 }
