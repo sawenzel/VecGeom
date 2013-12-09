@@ -101,23 +101,7 @@ class UVCSGfaceted : public VUSolid
 
   protected:  // without description
 
- double SafetyFromInsideSection(int index, const UVector3& p, UBits& bits) const;
-
-    inline int GetSection(double z) const
-    {
-      int section = UVoxelizer::BinarySearch(fZs, z);
-      if (section < 0) section = 0;
-      else if (section > fMaxSection) section = fMaxSection;
-      return section;
-    }
-
-    int   numFace;
-    UVCSGface** faces;
-    double fCubicVolume;
-    double fSurfaceArea;
-
-
-  double SafetyFromInsideSection(int index, const UVector3 &p, UBits &bits) const;
+   double SafetyFromInsideSection(int index, const UVector3 &p, UBits &bits) const;
 
   inline int GetSection(double z) const
   {
