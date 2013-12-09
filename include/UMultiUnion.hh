@@ -107,8 +107,7 @@ class UMultiUnion : public VUSolid
     double Capacity();
     double SurfaceArea();
 
-  inline UVoxelizer &GetVoxels() const;
-  
+ 
   //static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
     VUSolid* Clone() const ;
 
@@ -122,7 +121,6 @@ class UMultiUnion : public VUSolid
     // navigation use.
     void Voxelize();
     EnumInside InsideNoVoxels(const UVector3& aPoint) const;
-        	void                         Voxelize();
     inline UVoxelizer& GetVoxels() const;
 
 
