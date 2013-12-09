@@ -179,7 +179,7 @@ struct GeneralPhiUtils
 		typename Vc::Vector<T>::Mask IsOnRightPhiBranch( Vc::Vector<T> const & xcoord, Vc::Vector<T> const & ycoord,
 														 Vector3D const & alongPhiVector1, Vector3D const & alongPhiVector2 )
 		{
-			return ( xcoord * alongPhiVector1.x + ycoord* alongPhiVector1.y >= 0 ) || ( xcoord * alongPhiVector2.x + ycoord*alongPhiVector2.y);
+			return (( xcoord * alongPhiVector1.x + ycoord* alongPhiVector1.y >= 0 ) || ( xcoord * alongPhiVector2.x + ycoord*alongPhiVector2.y >= 0));
 		}
 };
 
@@ -245,7 +245,7 @@ struct TubeUtils
 			distToPlane ( temp > 0
 					&& IsInRightZInterval<T>( zi, dz )
 					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
-					&& IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
+					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 		}
 		else
 		{
@@ -262,10 +262,10 @@ struct TubeUtils
 			Vc::Vector<T> yi = ycoord + temp*ydir;
 
 			Vc::Vector<T> planarnorm = xi*xi + yi*yi;
-			distToPlane1 ( temp > 0
+			distToPlane ( temp > 0
 					&& IsInRightZInterval<T>( zi, dz )
 					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
-					&& IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
+					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 
 			temp = -scalarproduct2/N2dotDir;
 			zi = zcoord + temp*zdir;
@@ -275,13 +275,14 @@ struct TubeUtils
 			distToPlane1 ( temp > 0
 					&& IsInRightZInterval<T>( zi, dz )
 					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
-					&& IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
+					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 
 			distToPlane = Vc::min(distToPlane1, distToPlane);
 		}
 	}
 };
 
+/*
 // things specific to a cone
 struct ConeUtils
 {
@@ -376,7 +377,7 @@ struct ConeUtils
 		}
 	}
 };
-
+*/
 
 
 

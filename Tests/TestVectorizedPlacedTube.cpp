@@ -84,8 +84,8 @@ int main()
 	StopWatch timer;
 
     // generate benchmark cases
-    for( int r=0; r< EulerAngles.size(); ++r ) // rotation cases
-    		for( int t=0; t< TransCases.size(); ++t ) // translation cases
+    for( int r=0; r< 1 /* EulerAngles.size() */; ++r ) // rotation cases
+    		for( int t=0; t< 1/* TransCases.size() */; ++t ) // translation cases
     		  {
     			TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
     			PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(100,100,100), identity );
@@ -97,11 +97,12 @@ int main()
     			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
     						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
-    			double rmin = 0.;
+    			double rmin = 10.;
     			double rmax = 20.;
     			double dz = 30.;
     			double phis  =0.;
-    			double dphi = 3*M_PI/2.;
+    			// double dphi = 2.*M_PI;
+    			double dphi = M_PI;
     			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
     			//std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;

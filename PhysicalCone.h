@@ -65,8 +65,8 @@ public:
 			cacheTolIRmaxSqr = (dRmax1 - UUtils::GetRadHalfTolerance()) * (dRmax1 - UUtils::GetRadHalfTolerance());
 
 			// calculate normals
-			PhiUtils::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
-			PhiUtils::GetNormalVectorToPhiPlane(dSPhi + dDPhi, normalPhi2, false);
+			GeneralPhiUtils::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
+			GeneralPhiUtils::GetNormalVectorToPhiPlane(dSPhi + dDPhi, normalPhi2, false);
 
 			normalPhi1.print();
 			normalPhi2.print();
