@@ -118,9 +118,6 @@ class UTubs : public VUSolid
     UTubs& operator=(const UTubs& rhs);
     // Copy constructor and assignment operator.
 
-
-
-        void GetParametersList(int aNumber,double *aArray) const;
     inline double GetRMin() const;
     inline double GetRMax() const;
     inline double GetDz() const;
