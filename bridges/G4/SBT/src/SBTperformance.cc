@@ -1228,11 +1228,11 @@ void SBTperformance::CompareResults(double resG, double resR, double resU)
 	FlushSS(ss);
 }
 
-int SBTperformance::SaveVectorToMatlabFile(const vector<double> &vector, const string &filename)
+int SBTperformance::SaveVectorToExternalFile(const vector<double> &vector, const string &filename)
 {
 	Flush("Saving vector<double> to "+filename+"\n");
 
-	int res = UUtils::SaveVectorToMatlabFile(vector, filename);
+	int res = UUtils::SaveVectorToExternalFile(vector, filename);
 
 	if (res) 
 		Flush ("Unable to create file"+filename+"\n");
@@ -1241,11 +1241,11 @@ int SBTperformance::SaveVectorToMatlabFile(const vector<double> &vector, const s
 }
 
 
-int SBTperformance::SaveVectorToMatlabFile(const vector<UVector3> &vector, const string &filename)
+int SBTperformance::SaveVectorToExternalFile(const vector<UVector3> &vector, const string &filename)
 {
 	Flush("Saving vector<UVector3> to "+filename+"\n");
 
-	int res = UUtils::SaveVectorToMatlabFile(vector, filename);
+	int res = UUtils::SaveVectorToExternalFile(vector, filename);
 
 	if (res) 
 		Flush ("Unable to create file"+filename+"\n");
@@ -1258,7 +1258,7 @@ int SBTperformance::SaveLegend(const string &filename)
 {
 	vector<double> offsets(3);
 	offsets[0] = maxPointsInside, offsets[1] = maxPointsSurface, offsets[2] = maxPointsOutside;
-	return SaveVectorToMatlabFile(offsets, filename);
+	return SaveVectorToExternalFile(offsets, filename);
 }
 
 // NEW: put results to a file which could be visualized
@@ -1268,10 +1268,10 @@ int SBTperformance::SaveDoubleResults(const string &filename)
 {
 	int result = 0;
 	
-	result += SaveVectorToMatlabFile(resultDoubleGeant4, folder+filename+"Geant4.dat");
-	result += SaveVectorToMatlabFile(resultDoubleRoot, folder+filename+"Root.dat");
-	result += SaveVectorToMatlabFile(resultDoubleUSolids, folder+filename+"USolids.dat");
-//	result += SaveVectorToMatlabFile(resultDoubleDifference, folder+filename+"Dif.dat");
+	result += SaveVectorToExternalFile(resultDoubleGeant4, folder+filename+"Geant4.dat");
+	result += SaveVectorToExternalFile(resultDoubleRoot, folder+filename+"Root.dat");
+	result += SaveVectorToExternalFile(resultDoubleUSolids, folder+filename+"USolids.dat");
+//	result += SaveVectorToExternalFile(resultDoubleDifference, folder+filename+"Dif.dat");
 	return result;
 }
 
@@ -1279,10 +1279,10 @@ int SBTperformance::SaveVectorResults(const string &filename)
 {
 	int result = 0;
 	
-	result += SaveVectorToMatlabFile(resultVectorGeant4, folder+filename+"Geant4.dat");
-	result += SaveVectorToMatlabFile(resultVectorRoot, folder+filename+"Root.dat");
-	result += SaveVectorToMatlabFile(resultVectorUSolids, folder+filename+"USolids.dat");
-//	result += SaveVectorToMatlabFile(resultVectorDifference, folder+filename+"Dif.dat");
+	result += SaveVectorToExternalFile(resultVectorGeant4, folder+filename+"Geant4.dat");
+	result += SaveVectorToExternalFile(resultVectorRoot, folder+filename+"Root.dat");
+	result += SaveVectorToExternalFile(resultVectorUSolids, folder+filename+"USolids.dat");
+//	result += SaveVectorToExternalFile(resultVectorDifference, folder+filename+"Dif.dat");
 	return result;
 }
 
@@ -1421,8 +1421,8 @@ void SBTperformance::SavePolyhedra(const string &method)
 
 	int res = 0;
 	if (volumeUSolids)
-	  res = G4Tools::GetPolyhedra(*volumeUSolids, vertices, nodes);
-
+	  // res = G4Tools::GetPolyhedra(*volumeUSolids, vertices, nodes);
+          res =  G4Tools::GetPolyhedra(*volumeGeant4, vertices, nodes);  
 	if (!res) 
   {
     std::cout << "Getting Geant4 polyhedra\n";
@@ -1431,7 +1431,7 @@ void SBTperformance::SavePolyhedra(const string &method)
 
 	if (res)
 	{
-		SaveVectorToMatlabFile(vertices, folder+method+"Vertices.dat");
+		SaveVectorToExternalFile(vertices, folder+method+"Vertices.dat");
 
 		ofstream fileQuads((folder+method+"Quads.dat").c_str());
 		ofstream fileTriangles((folder+method+"Triangles.dat").c_str());
@@ -1527,8 +1527,8 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 	Flush("Saving polyhedra for visualization\n");
 	SavePolyhedra(method);
 //#endif
-	SaveVectorToMatlabFile(points, folder+method+"Points.dat");
-	SaveVectorToMatlabFile(directions, folder+method+"Directions.dat");
+	SaveVectorToExternalFile(points, folder+method+"Points.dat");
+	SaveVectorToExternalFile(directions, folder+method+"Directions.dat");
 
 	if (volumeROOT)
 	{
