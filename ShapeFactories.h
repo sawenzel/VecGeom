@@ -23,11 +23,11 @@ struct TubeFactory
 	{
 		if( tp->GetRmin() == 0. )
 		{
-			if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kTwoPi ) )
+			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
 			{
 				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTube>(tp, tm);
 			}
-			else if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kPi ) )
+			else if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kPi ) )
 			{
 				return new PlacedUSolidsTube<tid,rid,TubeTraits::NonHollowTubeWithPhiEqualsPi>(tp, tm);
 			}
@@ -38,11 +38,11 @@ struct TubeFactory
 		}
 		else
 		{
-			if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kTwoPi ) )
+			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
 			{
 				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTube>(tp, tm);
 			}
-			else if ( UUtils::IsSameWithinTolerance ( tp->GetDPhi(), UUtils::kPi ) )
+			else if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kPi ) )
 			{
 				return new PlacedUSolidsTube<tid,rid,TubeTraits::HollowTubeWithPhiEqualsPi>(tp, tm);
 			}
@@ -64,7 +64,7 @@ ConeFactory
 	{
 		if( cp->GetRmin1() == 0. && cp->GetRmin2() == 0. )
 			{
-				if ( cp->GetDPhi() < UUtils::kTwoPi )
+				if ( cp->GetDPhi() < Utils::kTwoPi )
 				{
 					return new PlacedCone<tid,rid,ConeTraits::NonHollowConeWithPhi>( cp, tm );
 				}
@@ -75,7 +75,7 @@ ConeFactory
 			}
 		else
 			{
-				if ( cp->GetDPhi() < UUtils::kTwoPi )
+				if ( cp->GetDPhi() < Utils::kTwoPi )
 				{
 					return new PlacedCone<tid,rid,ConeTraits::HollowConeWithPhi>( cp, tm );
 				}

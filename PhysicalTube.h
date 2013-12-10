@@ -71,11 +71,11 @@ public:
 			cacheRminSqr=dRmin*dRmin;
 			cacheRmaxSqr=dRmax*dRmax;
 
-			if ( dRmin > UUtils::GetRadHalfTolerance() )
+			if ( dRmin > Utils::GetRadHalfTolerance() )
 			{
 				// CHECK IF THIS CORRECT ( this seems to be inversed with tolerance for ORmax
-				cacheTolORminSqr = (dRmin - UUtils::GetRadHalfTolerance()) * (dRmin - UUtils::GetRadHalfTolerance());
-				cacheTolIRminSqr = (dRmin + UUtils::GetRadHalfTolerance()) * (dRmin + UUtils::GetRadHalfTolerance());
+				cacheTolORminSqr = (dRmin - Utils::GetRadHalfTolerance()) * (dRmin - Utils::GetRadHalfTolerance());
+				cacheTolIRminSqr = (dRmin + Utils::GetRadHalfTolerance()) * (dRmin + Utils::GetRadHalfTolerance());
 			}
 			else
 			{
@@ -83,8 +83,8 @@ public:
 				cacheTolIRminSqr = 0.0;
 			}
 
-			cacheTolORmaxSqr = (dRmax + UUtils::GetRadHalfTolerance()) * (dRmax + UUtils::GetRadHalfTolerance());
-			cacheTolIRmaxSqr = (dRmax - UUtils::GetRadHalfTolerance()) * (dRmax - UUtils::GetRadHalfTolerance());
+			cacheTolORmaxSqr = (dRmax + Utils::GetRadHalfTolerance()) * (dRmax + Utils::GetRadHalfTolerance());
+			cacheTolIRmaxSqr = (dRmax - Utils::GetRadHalfTolerance()) * (dRmax - Utils::GetRadHalfTolerance());
 
 			// calculate normals
 			GeneralPhiUtils::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
@@ -211,7 +211,7 @@ template<int tid, int rid, class TubeType, typename T>
 bool
 PlacedUSolidsTube<tid,rid, TubeType,T>::isInZRange( Vector3D const & pos) const
 {
-	return ( std::abs(pos.z) <= tubeparams->dZ + UUtils::GetCarHalfTolerance() );
+	return ( std::abs(pos.z) <= tubeparams->dZ + Utils::GetCarHalfTolerance() );
 }
 
 template<int tid, int rid, class TubeType, typename T>
@@ -241,7 +241,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::RHit( Vector3D const & pos, Vector3D cons
 	}
 	else
 	{
-		distance = UUtils::kInfinity;
+		distance = Utils::kInfinity;
 	}
 	Vector3D vec( pos.x + distance*dir.x, pos.y + distance*dir.y, pos.z + distance*dir.z );
 	return vec;
@@ -305,8 +305,8 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
 
   // Intersection with Z surfaces
   T tolODz, tolIDz;
-  tolIDz = tubeparams->dZ - UUtils::GetCarHalfTolerance();
-  tolODz = tubeparams->dZ + UUtils::GetCarHalfTolerance();
+  tolIDz = tubeparams->dZ - Utils::GetCarHalfTolerance();
+  tolODz = tubeparams->dZ + Utils::GetCarHalfTolerance();
 
   Vector3D x,v;
   // do coordinate transformation
@@ -339,7 +339,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     }
     else // going away
     {
-    	return UUtils::kInfinity;  // On/outside extent, and heading away
+    	return Utils::kInfinity;  // On/outside extent, and heading away
     }
   }
 
@@ -354,7 +354,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
   t2 = x.x * v.x + x.y * v.y;
   t3 = x.x * x.x + x.y * x.y;
 
-  T snxt = UUtils::kInfinity;
+  T snxt = Utils::kInfinity;
 
   if ( t1 > 0 )          // Check not || to z axis
   {
@@ -410,11 +410,11 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     					{
     						snxt = c / (-b + std::sqrt(d)); // using safe solution
     						// for quadratic equation
-    						return ( snxt < UUtils::GetCarHalfTolerance() )? 0 : snxt;
+    						return ( snxt < Utils::GetCarHalfTolerance() )? 0 : snxt;
     					}
     					else
     					{
-    						return UUtils::kInfinity;
+    						return Utils::kInfinity;
     					}
     				}
             }  // end if   (t3>tolIRMin2)
@@ -431,7 +431,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     			// - If on surface of rmin also need farthest root
 
     			sd = (b > 0.) ? c / (-b - std::sqrt(d)) : (-b + std::sqrt(d));
-    			if (sd >= -UUtils::GetCarHalfTolerance())  // check forwards
+    			if (sd >= -Utils::GetCarHalfTolerance())  // check forwards
     			{
     				// Check z intersection
     				//
@@ -450,7 +450,7 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3D const &xm, Vector3
     		}           //    end if (d>=0)
      	}             //    end if (fRMin)
   } // end check t1 != 0
-  return ( snxt < UUtils::GetCarHalfTolerance()) ? 0 : snxt;
+  return ( snxt < Utils::GetCarHalfTolerance()) ? 0 : snxt;
 }
 
 template<int tid, int rid, typename TubeType, typename ValueType>
@@ -599,7 +599,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	typedef typename VectorType::Mask MaskType;
 
 	MaskType done_m(false); // which particles in the vector are ready to be returned == aka have been treated
-	distance = UUtils::kInfinityVc; // initialize distance to infinity
+	distance = Utils::kInfinityVc; // initialize distance to infinity
 
 	VectorType x,y,z;
 	matrix->MasterToLocal<tid,rid,VectorType>(xm,ym,zm,x,y,z);
@@ -611,14 +611,14 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// if safez is < 0 it means that particle is outside z range
 
 	VectorType safez = tubeparams->dZ - Vc::abs(z);
-	MaskType inz_m = safez > UUtils::fgToleranceVc;
+	MaskType inz_m = safez > Utils::fgToleranceVc;
 	done_m = !inz_m && ( z*dirz >= Vc::Zero ); // particle outside the z-range and moving away
 
 	VectorType r2 = x*x + y*y;
 	VectorType n2 = Vc::One-dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
 	VectorType rdotn = x*dirx + y*diry;
-//	MaskType inrmax_m = (r2 - tubeparams->cacheRmaxSqr ) <= UUtils::frToleranceVc;
-//	MaskType inrmin_m = (tubeparams->cacheRminSqr - r2) <= UUtils::frToleranceVc;
+//	MaskType inrmax_m = (r2 - tubeparams->cacheRmaxSqr ) <= Utils::frToleranceVc;
+//	MaskType inrmin_m = (tubeparams->cacheRminSqr - r2) <= Utils::frToleranceVc;
 
 	// QUICK CHECK IF OUTER RADIUS CAN BE HIT AT ALL
 	// BELOW WE WILL SOLVE A QUADRATIC EQUATION OF THE TYPE
@@ -658,12 +658,12 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 
 	// Check outer cylinder (only r>rmax has to be considered)
 	// this IS ALWAYS the MINUS (-) solution
-	VectorType distanceRmax( UUtils::kInfinityVc );
+	VectorType distanceRmax( Utils::kInfinityVc );
 	distanceRmax( canhitrmax ) = (-b - Vc::sqrt( discriminant ))*inverse2a;
 
 	// this determines which vectors are done here already
 	MaskType Rdone = determineRHit( x, y, z, dirx, diry, dirz, distanceRmax );
-	distanceRmax( ! Rdone ) = UUtils::kInfinityVc;
+	distanceRmax( ! Rdone ) = Utils::kInfinityVc;
 	MaskType rmindone;
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
 	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
@@ -672,11 +672,11 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 		// c = r2 - tubeparams->cacheRminSqr;
 		discriminant =  discriminant - 4*a*( tubeparams->cacheRmaxSqr - tubeparams->cacheRminSqr);
 		MaskType canhitrmin = ( discriminant >= Vc::Zero );
-		VectorType distanceRmin ( UUtils::kInfinityVc );
+		VectorType distanceRmin ( Utils::kInfinityVc );
 		// this is always + solution
 		distanceRmin ( canhitrmin ) = (-b + Vc::sqrt( discriminant ))*inverse2a;
 		rmindone = determineRHit( x, y, z, dirx, diry, dirz, distanceRmin );
-		distanceRmin ( ! rmindone ) = UUtils::kInfinity;
+		distanceRmin ( ! rmindone ) = Utils::kInfinity;
 
 		// reduction of distances
 		distanceRmax = Vc::min( distanceRmax, distanceRmin );

@@ -43,7 +43,7 @@ struct SurfaceReturnType<true>
 
 //template<typename ValueType=double>
 //struct UUtils
-namespace UUtils
+namespace Utils
 {
 	static const double kInfinity=1E30;
 	static const double kPi=3.14159265358979323846;

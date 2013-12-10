@@ -144,7 +144,8 @@ struct GeneralPhiUtils
 				// method based on calculating the scalar product of position vectors with the normals of the (empty) phi sektor
 				// avoids taking the atan2
 
-				// this method could be template specialized in case DeltaPhi = 180^o
+				// TODO: this method could be template specialized in case DeltaPhi = 180^o
+				// TODO: this method could also template specialize on case DeltaPho < 180 degree and DeltaPhi > 180 degree
 				if( phi1normalx*phi2normalx + phi1normaly*phi2normaly >= 0)
 				{
 					Vc::Vector<T> scalarproduct1 = phi1normalx*xcoord + phi1normaly*ycoord;
@@ -235,7 +236,7 @@ struct TubeUtils
 			Vc::Vector<T> scalarproduct1 = phi1normalx*xcoord + phi1normaly*ycoord;
 			Vc::Vector<T> N1dotDir = phi1normalx*xdir + phi1normaly*ydir;
 
-			distToPlane = UUtils::kInfinityVc;
+			distToPlane = Utils::kInfinityVc;
 			Vc::Vector<T> temp = -scalarproduct1/N1dotDir;
 			Vc::Vector<T> zi = zcoord + temp*zdir;
 			Vc::Vector<T> xi = xcoord + temp*xdir;
@@ -254,8 +255,8 @@ struct TubeUtils
 			Vc::Vector<T> N1dotDir = phi1normalx*xdir + phi1normaly*ydir;
 			Vc::Vector<T> N2dotDir = phi2normalx*xdir + phi2normaly*ydir;
 
-			Vc::Vector<T> distToPlane1 = UUtils::kInfinityVc;
-			distToPlane = UUtils::kInfinityVc;
+			Vc::Vector<T> distToPlane1 = Utils::kInfinityVc;
+			distToPlane = Utils::kInfinityVc;
 			Vc::Vector<T> temp = -scalarproduct1/N1dotDir;
 			Vc::Vector<T> zi = zcoord + temp*zdir;
 			Vc::Vector<T> xi = xcoord + temp*xdir;
@@ -328,7 +329,7 @@ struct ConeUtils
 			Vc::Vector<T> scalarproduct1 = phi1normalx*xcoord + phi1normaly*ycoord;
 			Vc::Vector<T> N1dotDir = phi1normalx*xdir + phi1normaly*ydir;
 
-			distToPlane = UUtils::kInfinityVc;
+			distToPlane = Utils::kInfinityVc;
 			Vc::Vector<T> temp = -scalarproduct1/N1dotDir;
 			Vc::Vector<T> zi = zcoord + temp*zdir;
 			Vc::Vector<T> xi = xcoord + temp*xdir;
@@ -347,8 +348,8 @@ struct ConeUtils
 			Vc::Vector<T> N1dotDir = phi1normalx*xdir + phi1normaly*ydir;
 			Vc::Vector<T> N2dotDir = phi2normalx*xdir + phi2normaly*ydir;
 
-			Vc::Vector<T> distToPlane1 = UUtils::kInfinityVc;
-			distToPlane = UUtils::kInfinityVc;
+			Vc::Vector<T> distToPlane1 = Utils::kInfinityVc;
+			distToPlane = Utils::kInfinityVc;
 			Vc::Vector<T> temp = -scalarproduct1/N1dotDir;
 
 			// TODO: IT WOULD BE NICE TO HAVE A KIND OF "HYPER" VECTOR STATEMENT HERE

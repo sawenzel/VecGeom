@@ -18,6 +18,11 @@
 #include "../GeoManager.h"
 #include "../PhysicalTube.h"
 
+// in order to compare to USolids
+#include "VUSolid.hh"
+#include "UTubs.hh"
+
+
 const std::vector<std::vector<double> > TransCases {{0,0,0},
     {10, 10, 0}};
 
@@ -38,7 +43,7 @@ static void cmpresults(double * a1, double * a2, int np,
 	int counter=0;
 	for( auto i=0; i<np; ++i )
 	{
-		if( std::abs( a1[i] - a2[i] ) > UUtils::GetCarTolerance() )
+		if( std::abs( a1[i] - a2[i] ) > Utils::GetCarTolerance() )
 		{
 			counter++;
 #ifdef SHOWDIFFERENCES
@@ -72,6 +77,7 @@ int main()
 
 	double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *distancesROOTSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *distancesUSOLIDSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i]=1E30;
@@ -84,8 +90,8 @@ int main()
 	StopWatch timer;
 
     // generate benchmark cases
-    for( int r=0; r< 1 /* EulerAngles.size() */; ++r ) // rotation cases
-    		for( int t=0; t< 1/* TransCases.size() */; ++t ) // translation cases
+    for( int r=0; r< EulerAngles.size(); ++r ) // rotation cases
+    		for( int t=0; t< TransCases.size(); ++t ) // translation cases
     		  {
     			TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
     			PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(100,100,100), identity );
@@ -101,7 +107,7 @@ int main()
     			double rmax = 20.;
     			double dz = 30.;
     			double phis  =0.;
-    			// double dphi = 2.*M_PI;
+    			//double dphi = 2.*M_PI;
     			double dphi = M_PI;
     			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
@@ -268,7 +274,6 @@ int main()
     		    	 for(auto j=0;j<np;++j)
     		    	 {
     		    		 Vector3D localp, localdir;
-    		    		 // this inlines I think
     		    		 rootmatrix->MasterToLocal( &conventionalpoints[j].x, &localp.x );
     		        	 rootmatrix->MasterToLocalVect( &conventionaldirs[j].x, &localdir.x );
     		             distancesROOTSCALAR[j]=roottube->DistFromOutside( &localp.x, &localdir.x, 3,1e30, 0);
@@ -292,14 +297,32 @@ int main()
 
     		     cmpresults( distancesROOTSCALAR, distances, np, daughter, conventionalpoints, conventionaldirs );
 
+    		     // now we compare with loop over USolids version (scalar; trying to inline matrices as done in Geant4 typically)
+    		     VUSolid * utub =  new UTubs("utubs1",rmin,rmax,dz, phis, dphi);
+    		     timer.Start();
+    		     for(int reps=0;reps<NREPS;reps++)
+    		     {
+    		        	 for(auto j=0;j<np;++j)
+    		     	     {
+    		        		 Vector3D localp, localdir;
+    		        		  // this inlines I think
+    		        		 tm->MasterToLocal<1,-1>( conventionalpoints[j], localp );
+    		        		 tm->MasterToLocalVec<-1>( conventionaldirs[j], localdir );
+    		        		 distancesUSOLIDSCALAR[j]=utub->DistanceToIn( reinterpret_cast<UVector3 const & > (localp), reinterpret_cast<UVector3 &> ( localdir ), 1e30);
+    		     	     }
+    		      }
+    		     timer.Stop();
+    		     double t9 = timer.getDeltaSecs();
+
     		     std::cerr << "new vec (placed)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t0 << std::endl;
     		     std::cerr << "new vec (old matrix)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t1 << std::endl;
     		     std::cerr << "new vec (unplaced)" << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t2 << std::endl;
     		     std::cerr << "RSCAL " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t7 << std::endl;
     		     std::cerr << "RVEC " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t8 << std::endl;
+    		     std::cerr << "USOLIDS SCAL " << tm->isTranslation() << " " << tm->isRotation() << "("<<tm->getNumberOfZeroEntries()<<")" << " " << t9 << std::endl;
 
-    		    delete tm;
-    			delete sm;
+    		     delete tm;
+    		     delete sm;
     		  }
 //
     _mm_free(distances);
