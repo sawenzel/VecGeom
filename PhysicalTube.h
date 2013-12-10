@@ -153,7 +153,7 @@ public:
 
 
 // some helper functions ( mainly for debugging )
-	Vector3D RHit( Vector3D const &x, Vector3D const &y, double & distance, double radius, bool wantMinusSolution ) const;
+	Vector3D RHit( Vector3D const &x, Vector3D const &y, T & distance, T radius, bool wantMinusSolution ) const;
 	Vector3D PhiHit ( Vector3D const &x, Vector3D const &y, double & distance, bool isPhi1Solution ) const;
 	Vector3D ZHit ( Vector3D const &x, Vector3D const &y, double & distance) const;
 	bool isInRRange( Vector3D const & x ) const;
@@ -223,7 +223,7 @@ PlacedUSolidsTube<tid,rid, TubeType,T>::isInPhiRange( Vector3D const & pos) cons
 
 template<int tid, int rid, class TubeType, typename T>
 Vector3D
-PlacedUSolidsTube<tid,rid,TubeType,T>::RHit( Vector3D const & pos, Vector3D const & dir, double & distance, double radius, bool wantMinusSolution ) const
+PlacedUSolidsTube<tid,rid,TubeType,T>::RHit( Vector3D const & pos, Vector3D const & dir, T & distance, T radius, bool wantMinusSolution ) const
 {
 	T rdotr = pos.x * pos.x + pos.y*pos.y;
 	T dirdotdir = 1 - dir.z * dir.z;

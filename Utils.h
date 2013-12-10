@@ -182,18 +182,20 @@ struct GeneralPhiUtils
 		{
 			return (( xcoord * alongPhiVector1.x + ycoord* alongPhiVector1.y >= 0 ) || ( xcoord * alongPhiVector2.x + ycoord*alongPhiVector2.y >= 0));
 		}
+
+		template <typename T>
+		static
+		inline
+		typename Vc::Vector<T>::Mask IsInRightZInterval( Vc::Vector<T> const & z, T const & dz )
+		{
+			return Vc::abs(z) <= dz;
+		}
 };
 
 struct TubeUtils
 {
 
-	template <typename T>
-	static
-	inline
-	typename Vc::Vector<T>::Mask IsInRightZInterval( Vc::Vector<T> const & z, T const & dz )
-	{
-		return Vc::abs(z) <= dz;
-	}
+
 
 	// specific to a tube
 	template <typename T, bool needRmin=true>

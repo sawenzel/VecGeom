@@ -132,9 +132,110 @@ public:
 					   VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const {};
 
 
+	// some helper function (mainly useful to debug)
+	Vector3D RHit( Vector3D const & /*pos*/,
+				   Vector3D const & /*dir*/,
+				   T & /* distance */,
+				   T /* radiusatminusz */,
+				   T /* radiusatplusz */,
+				   bool /* wantMinusSolution */ ) const ;
+
+	bool isInRRange( Vector3D const & x ) const;
+	bool isInPhiRange( Vector3D const & x) const;
+	bool isInZRange( Vector3D const & x ) const;
+	void printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const;
 };
 
 
+template<int tid, int rid, class TubeType, typename T>
+void
+PlacedCone<tid,rid,TubeType,T>::printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const
+{
+	std::cout << c << " " << vec << "\t\t at dist " << distance << " in z " << GeneralPhiUtils::IsInRightZInterval( vec, coneparams->dZ )
+					<< " inPhi " << isInPhiRange( vec )
+					<< " inR " << isInRRange( vec )
+					<< std::endl;
+}
+
+template<int tid, int rid, class TubeType, typename T>
+bool
+PlacedCone<tid,rid, TubeType,T>::isInRRange( Vector3D const & pos) const
+{
+	double d = Vector3D::scalarProductInXYPlane(pos, pos);
+	return ( tubeparams->cacheRminSqr <= d && d <= tubeparams->cacheRmaxSqr );
+}
+
+template <int tid, int rid, class ConeType, typename T>
+Vector3D PlacedCone<tid,rid, ConeType, T>::RHit( Vector3D const & pos, Vector3D const & dir,
+												 T & distance,
+												 T radiusatminusz,
+												 T radiusatplusz,
+												 bool wantMinusSolution ) const
+{
+	// "slope" of conic surface
+	T m = -( radiusatminusz - radiusatplusz )/(2*coneparams->dZ);
+	T n = radiusatplusz - m*coneparams->dZ;
+
+	T a = 1 - dir.z*dir.z*(1-m*m);
+	T b = 2 * ( pos.x*dir.x + pos.y*dir.y - pos.z*dir.z*m*m - 2*m*n * dir.z);
+	T c = (pos.x*pos.x + pos.y*pos.y - m*m*pos.z*pos.z - 2*m*n*pos.z + n*n);
+
+	T discriminat = b*b - 4*a*c;
+
+	if(discriminat >= 0)
+	{
+		if( wantMinusSolution ) distance = ( -b - sqrt(discriminat) );
+		if( ! wantMinusSolution ) distance = (-b + sqrt(discriminat) );
+	}
+	else
+	{
+		distance = Utils::kInfinity;
+	}
+	Vector3D vec( pos.x + distance*dir.x, pos.y + distance*dir.y, pos.z + distance*dir.z );
+	return vec;
+}
+
+template<int tid, int rid, class TubeType, typename T>
+bool
+PlacedCone<tid,rid, TubeType,T>::isInPhiRange( Vector3D const & pos) const
+{
+	return GeneralPhiUtils::PointIsInPhiSector<T>( coneparams->normalPhi1, coneparams->normalPhi2, pos );
+}
+
+template<int tid, int rid, class TubeType, typename T>
+void
+PlacedCone<tid,rid,TubeType,T>::DebugPointAndDirDistanceToIn( Vector3D const & x, Vector3D const & y ) const
+{
+	std::cout << "INSPECTING POINT - TUBE INTERACTION ALONG FLIGHT-PATH " << std::endl;
+	std::cout << "PARTICLE POSITION " << std::endl;
+	double distance=0;
+	printInfoHitPoint("ParticlePos", x, distance );
+	std::cout << "PARTICLE DIRECTION " << std::endl;
+	std::cout << y << std::endl;
+	std::cout << "RMAX INTERACTION " << std::endl;
+	Vector3D vmax = this->RHit( x, y, distance, coneparams->dRmax2, coneparams->dRmax1, true);
+	printInfoHitPoint("hitpointrmax", vmax, distance);
+
+	if( ConeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		std::cout << "RMIN INTERACTION " << std::endl;
+		Vector3D vmin = this->RHit( x, y, distance, tubeparams->dRmin, false);
+		printInfoHitPoint("hitpointrmin", vmin, distance);
+	}
+
+	if( ConeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		std::cout << "PHI INTERACTION " << std::endl;
+		Vector3D vphi1 = this->PhiHit( x, y, distance, true);
+		printInfoHitPoint("hitpointphi1", vphi1, distance);
+		Vector3D vphi2 = this->PhiHit( x, y, distance, false);
+		printInfoHitPoint("hitpointphi2", vphi2, distance);
+	}
+
+	std::cout << "Z INTERACTION " << std::endl;
+	Vector3D vZ = this->ZHit( x, y, distance );
+	printInfoHitPoint("hitpointZ", vZ, distance);
+}
 
 
 #endif /* PHYSICALCONE_H_ */
