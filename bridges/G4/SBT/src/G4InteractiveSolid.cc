@@ -84,7 +84,7 @@
 #include "G4SubtractionSolid.hh"
 #include "G4UnionSolid.hh"
 
-#include "G4BREPSolidBox.hh"
+//#include "G4BREPSolidBox.hh"
 #include "G4Point3D.hh"
 
 #include "G4Tools.hh"
@@ -778,10 +778,10 @@ void G4InteractiveSolid::MakeUMultiUnion( G4String values )
 		int n = umultiunion.GetInteger(0);	
 		// CODE FOR TESTS WITH THREE SOLIDS IS AT OTHER PLACE
 		// !!!!!!!!!!!!!!!!!!!!!
-		VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(n);
+		//VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(n);
 		// !!!!!!!!!!!!!!!!!!!!!
 	
-		solid = new G4USolid("G4MultiUnion",tmp);
+		//solid = new G4USolid("G4MultiUnion",tmp);
 	}
 	else
 		G4cerr << "UMultiUnion not created" << G4endl;
