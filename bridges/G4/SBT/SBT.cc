@@ -73,11 +73,11 @@ int main(int argc,char *argv[])
 	// Give control to interactive terminal
   G4UIsession *session;
   
-#ifdef G4UI_USE_TCSH
-  session = new G4UIterminal(new G4UItcsh);      
-#else
+  //#ifdef G4UI_USE_TCSH
+  //session = new G4UIterminal(new G4UItcsh);      
+  //#else
 	session = new G4UIterminal;
-#endif
+  //#endif
 	   
 	if (argc > 1)  // when run with an argument, run each scripts and exit
 	  {

@@ -52,7 +52,6 @@
 #include <cmath>
 #include <sstream>
 #include "UTrap.hh"
-#include "globals.hh"
 
 using namespace std;
 

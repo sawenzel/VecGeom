@@ -49,7 +49,6 @@
 #include <sstream>
 
 #include "VUSolid.hh"
-#include "UUtils.hh"
 
 class UVisExtent;
 
@@ -112,13 +111,14 @@ class USphere : public VUSolid
 
     VUSolid* Clone() const;
 
-
     std::ostream& StreamInfo(std::ostream& os) const;
-  */
+
     // Visualisation functions
 
-     inline void GetParametersList(int aNumber,double * aArray) const;
-	   
+    UVisExtent   GetExtent() const;
+
+
+
   public: // without description
 
     void Extent(UVector3& aMin, UVector3& aMax) const;
@@ -127,12 +127,6 @@ class USphere : public VUSolid
 
 
     virtual void    ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
-
-//    USphere(__void__&);
-    //
-    // Fake default constructor for usage restricted to direct object
-    // persistency for clients requiring preallocation of memory for
-    // persistifiable objects.
 
     USphere(const USphere& rhs);
     USphere& operator=(const USphere& rhs);
@@ -292,7 +286,6 @@ void USphere::InitializeThetaTrigonometry()
 inline
 void USphere::CheckThetaAngles(double sTheta, double dTheta)
 {
-
   if ((sTheta < 0) || (sTheta > UUtils::kPi))
   {
     std::ostringstream message;
@@ -357,7 +350,6 @@ void USphere::CheckSPhiAngle(double sPhi)
 inline
 void USphere::CheckDPhiAngle(double dPhi)
 {
-
   fFullPhiSphere = true;
   if (dPhi >= 2 * UUtils::kPi - kAngTolerance * 0.5)
   {
@@ -381,7 +373,6 @@ void USphere::CheckDPhiAngle(double dPhi)
                         FatalError, 1, message.str().c_str());
     }
   }
-
 }
 
 inline

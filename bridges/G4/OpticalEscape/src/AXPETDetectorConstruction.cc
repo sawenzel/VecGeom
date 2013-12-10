@@ -74,7 +74,6 @@
 #include "G4SubtractionSolid.hh"
 #include "G4ReflectedSolid.hh"
 #include "G4RotationMatrix.hh"
-#include "G4BREPSolidBox.hh"
 
 #include "VUSolid.hh"
 #include "G4USolid.hh"
@@ -588,13 +587,14 @@ else if (val == "ExtrudedSolid")
       aVolume = new G4USolid("interactiveUTrd",tmp );
     }
 
-    else if (val == "UMultiUnion")
+  /*  else if (val == "UMultiUnion")
     {
 		int count = 1; // 16 works for boxes
       UMultiUnion* multiUnion = UMultiUnion::CreateTestMultiUnion(count);
 
       aVolume = new G4USolid("interactiveUMultiUnion", multiUnion);
     }
+  */
 
   else
     { G4cout <<"DetectorConstruction tried to select "<<val<<G4endl;

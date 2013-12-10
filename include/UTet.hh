@@ -131,9 +131,6 @@ class UTet : public VUSolid
     UVector3 GetPointOnFace(UVector3 p1, UVector3 p2, 
                                  UVector3 p3, double& area) const;
 
-    UVector3 GetPointOnFace(UVector3 p1, UVector3 p2,
-                            UVector3 p3, double& area) const;
-
     static const char CVSVers[];
 
   private:

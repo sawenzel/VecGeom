@@ -97,10 +97,6 @@ inline double UOrb::GetRadius() const
 }
 inline void UOrb::SetRadius(double newRmax)
 {
-  fR = newRmax;
-}
-
-
   if ( newRmax < 10*VUSolid::frTolerance )
    {
      UUtils::Exception("UOrb::SetRadius()", "GeomSolids0002", FatalError,1,
@@ -109,9 +105,7 @@ inline void UOrb::SetRadius(double newRmax)
   fR=newRmax;
   fCubicVolume= 0.;
   fSurfaceArea = 0.;
-
 }
-
 inline double UOrb::Capacity()
 {
   if (fCubicVolume != 0.)

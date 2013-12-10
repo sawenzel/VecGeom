@@ -17,7 +17,7 @@
 #include <string>
 #include <cmath>
 
-#include "globals.hh"
+//#include "globals.hh"
 #include "UGenericTrap.hh"
 #include "UUtils.hh"
 
@@ -354,7 +354,7 @@ bool UGenericTrap::Normal( const UVector3& p, UVector3 &aNormal ) const
                 p0, p1, p2, r1, r2, r3, r4;
   int  noSurfaces = 0; 
   double  distxy,distz;
-  G4bool zPlusSide=false;
+  bool zPlusSide=false;
 
   distz = fDz-std::fabs(p.z);
   if (distz < halfCarTolerance)
@@ -968,7 +968,7 @@ double UGenericTrap::DistanceToOut( const UVector3 &p, const UVector3  &v,
 #endif
   static const double  halfCarTolerance=VUSolid::fgTolerance*0.5;
   double  distmin;
-  G4bool lateral_cross = false;
+  bool lateral_cross = false;
   ESide side = kUndefined;
   aConvex=true;
   //   *validNorm=true;  // All normals are valid
@@ -1443,12 +1443,12 @@ double  UGenericTrap::GetFaceSurfaceArea(const UVector3& p0,
 
 // --------------------------------------------------------------------
 
-G4bool UGenericTrap::ComputeIsTwisted() 
+bool UGenericTrap::ComputeIsTwisted() 
 {
   // Computes tangents of twist angles (angles between projections on XY plane 
   // of corresponding -dz +dz edges). 
 
-  G4bool twisted = false;
+  bool twisted = false;
   double  dx1, dy1, dx2, dy2;
   int  nv = fgkNofVertices/2;
 
@@ -1491,12 +1491,12 @@ G4bool UGenericTrap::ComputeIsTwisted()
 
 // --------------------------------------------------------------------
 
-G4bool UGenericTrap::CheckOrder(const std::vector<UVector2>& vertices) const
+bool UGenericTrap::CheckOrder(const std::vector<UVector2>& vertices) const
 {
   // Test if the vertices are in a clockwise order, if not reorder them.
   // Also test if they're well defined without crossing opposite segments
 
-  G4bool clockwise_order=true;
+  bool clockwise_order=true;
   double  sum1 = 0.;
   double  sum2 = 0.;
   int  j;
@@ -1529,7 +1529,7 @@ G4bool UGenericTrap::CheckOrder(const std::vector<UVector2>& vertices) const
 
    // Check for illegal crossings
    //
-   G4bool illegal_cross = false;
+   bool illegal_cross = false;
    illegal_cross = IsSegCrossingZ(vertices[0],vertices[4],
                                   vertices[1],vertices[5]);
      
@@ -1586,14 +1586,14 @@ void UGenericTrap::ReorderVertices(std::vector<UVector3>& vertices) const
  
 // --------------------------------------------------------------------
 
-G4bool
+bool
 UGenericTrap::IsSegCrossing(const UVector2& a, const UVector2& b, 
                              const UVector2& c, const UVector2& d) const
 { 
   // Check if segments [A,B] and [C,D] are crossing
 
-  G4bool stand1 = false;
-  G4bool stand2 = false;
+  bool stand1 = false;
+  bool stand2 = false;
   double  dx1,dx2,xm=0.,ym=0.,a1=0.,a2=0.,b1=0.,b2=0.;
   dx1=(b-a).x;
   dx2=(d-c).x;
@@ -1676,7 +1676,7 @@ UGenericTrap::IsSegCrossing(const UVector2& a, const UVector2& b,
 
 // --------------------------------------------------------------------
 
-G4bool
+bool
 UGenericTrap::IsSegCrossingZ(const UVector2& a, const UVector2& b, 
                               const UVector2& c, const UVector2& d) const
 { 

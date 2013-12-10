@@ -103,7 +103,6 @@ class UMultiUnion : public VUSolid
     void Extent(EAxisType aAxis, double& aMin, double& aMax) const;
     void Extent(UVector3& aMin, UVector3& aMax) const;
 
-	EnumInside                   InsideNoVoxels(const UVector3 &aPoint) const;
     double Capacity();
     double SurfaceArea();
 
