@@ -84,8 +84,8 @@ public:
 private:
 	void SetDefaults();
 
-	int SaveVectorToMatlabFile(const std::vector<double> &vector, const std::string &filename);
-	int SaveVectorToMatlabFile(const std::vector<UVector3> &vector, const std::string &filename);
+	int SaveVectorToExternalFile(const std::vector<double> &vector, const std::string &filename);
+	int SaveVectorToExternalFile(const std::vector<UVector3> &vector, const std::string &filename);
 	int SaveLegend(const std::string &filename);
 	int SaveDoubleResults(const std::string &filename);
 	int SaveVectorResults(const std::string &filename);
