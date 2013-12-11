@@ -39,12 +39,12 @@ private:
 
 	// for caching
 	T cacheRminSqr; // rminsquared
-	T cacheRmaxSqr; // rmaxsquared
-	T cacheTolORminSqr; // tolerant outer radius of rmin
+	T cacheRmslORminSqr; // tolerant outer radius of rmin
 	T cacheTolORmaxSqr; // tolerant outer radius of rmax
 
 	T cacheTolIRminSqr; // tolerant inner radius of rmin
 	T cacheTolIRmaxSqr; // tolerant inner radius of rmax
+
 
 	// some cone specific stuff
 	T innerslope; // "gradient" of inner surface in z direction
@@ -77,7 +77,8 @@ public:
 
 		// calculate caches
 		// the possible caches are one major difference between tube and cone
-
+		{
+			// calculate caches
 			cacheRminSqr=dRmin1*dRmin1;
 			cacheRmaxSqr=dRmax1*dRmax1;
 
@@ -143,8 +144,7 @@ public:
 
 
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const {return 0.;}
-	virtual bool   Contains( Vector3D const & ) const {return false;}
-
+	virtual bool   Contains( Vector3D const & ) const;
 	__attribute__((always_inline))
 	inline
 	virtual bool   UnplacedContains( Vector3D const & ) const;
@@ -196,7 +196,7 @@ PlacedCone<tid,rid,TubeType,T>::printInfoHitPoint( char const * c, Vector3D cons
 					<< " inPhi " << isInPhiRange( vec )
 					<< " inR " << isInRRange( vec )
 					<< std::endl;
-}
+
 
 template<int tid, int rid, class TubeType, typename T>
 bool
@@ -304,6 +304,47 @@ PlacedCone<tid,rid,TubeType,T>::DebugPointAndDirDistanceToIn( Vector3D const & x
 	std::cout << "Z INTERACTION " << std::endl;
 	Vector3D vZ = this->ZHit( x, y, distance );
 	printInfoHitPoint("hitpointZ", vZ, distance);
+
+
+template<int tid, int rid, typename ConeType, typename ValueType>
+inline
+bool PlacedCone<tid,rid,ConeType,ValueType>::UnplacedContains( Vector3D const & point ) const
+{
+	ValueType fDz = coneparams->dZ;
+	// test if point is inside this cone
+	if ( std::abs(point[2]) > coneparams->dZ ) return false;
+
+	ValueType r2 = point[0]*point[0]+point[1]*point[1];
+
+	// calculate cone stuff at the height of
+	ValueType fRmax2=coneparams->dRmax2;
+	ValueType fRmax1=coneparams->dRmax1;
+	ValueType rh = ( fRmax2*(point[2]+fDz)+fRmax1*(fDz-point[2]) ) * coneparams->OneHalfInversedZ;
+	if( r2>rh*rh ) return false;
+
+	if( ConeTraits::NeedsRminTreatment<ConeType>::value )
+	{
+		ValueType fRmin2=coneparams->dRmin2;
+		ValueType fRmin1=coneparams->dRmin1;
+		ValueType rl = (fRmin2*(point[2]+fDz)+fRmin1*(fDz-point[2])) * coneparams->OneHalfInversedZ;
+		if( r2 < rl*rl ) return false;
+	}
+	if ( ConeTraits::NeedsPhiTreatment<ConeType>::value )
+	{
+		// I am within empty phi sektor
+		if ( ( Vector3D::scalarProduct(point, coneparams->normalPhi1 ) > 0 )
+						&& Vector3D::scalarProduct(point, coneparams->normalPhi2 ) > 0 ) return false;
+	}
+	return true;
+}
+
+template<int tid, int rid, typename ConeType, typename ValueType>
+inline
+bool PlacedCone<tid,rid,ConeType,ValueType>::Contains( Vector3D const & pointmaster ) const
+{
+	Vector3D pointlocal;
+	matrix->MasterToLocal<tid,rid>( pointmaster, pointlocal );
+	return this->template UnplacedContains( pointlocal );
 }
 
 

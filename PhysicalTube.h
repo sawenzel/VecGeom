@@ -134,6 +134,11 @@ public:
 	inline
 	virtual bool   UnplacedContains( Vector3D const & ) const;
 
+	__attribute__((always_inline))
+	inline
+	virtual GlobalTypes::SurfaceEnumType  UnplacedContains( Vector3D const & ) const;
+
+
 	virtual double SafetyToIn( Vector3D const & ) const {return 0.;}
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
 
@@ -174,6 +179,13 @@ public:
 	__attribute__((always_inline))
 	typename VectorType::Mask determineZHit( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
 													VectorType const & /*dirx-vec*/, VectorType const & /*diry-vec*/, VectorType const & /*dirz-vec*/, VectorType const & /**/ ) const;
+
+	template<typename VectorType = Vc::Vector<T> >
+	inline
+	__attribute__((always_inline))
+	void DistanceToOut( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
+			VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const;
+
 
 };
 
@@ -587,6 +599,75 @@ typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determ
 	}
 }
 
+template<int tid, int rid, typename TubeType, typename ValueType>
+template<typename VectorType>
+inline
+void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType const & x, VectorType const & y, VectorType const & z,
+					   VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & stepmax, VectorType & distance ) const
+{
+	 // Compute distance from inside point to surface of the tube (static)
+	  // Boundary safe algorithm.
+	  // compute distance to surface
+	  // Do Z
+	  VectorType dist_v(1.E30); // vector with the results
+
+// this checks Z ( should be moved further down )
+	  VectorType dirzsign_v(1.);
+	  dirzsign(dirz_v < 0) = -1.;
+	  VectorType sz_v = (tubeparams->dZ * dirzsign - z)/dirz;
+	  dist_v(sz_v < 0) = 0.;
+	  MaskType done_m = sz_v < 0;
+
+//	  if ( done_m.isFull() ) return s_v;
+
+	  // Distance to R
+	  VectorType n2 = dirx*dirx + diry*diry;
+
+	  // this means that particle is only in z direction ?? ( is this necessary ?? )
+	  distz_v(Vc::abs(n2) < tol_v) = sz_v;
+	  done_m |= Vc::abs(n2) < tol_v;
+
+	  VectorType r2 = x*x + y*y;
+	  VectorType rdotn = x*dirx + y*diry;
+
+	  // is this condition useful?
+	  MaskType rdotn_m = rdotn_v > 0.;
+	  VectorType const rmax2 = tubeparams->cacheRmaxSqr;
+
+	  VectorType b(0.);
+	  VectorType Delta(0.);
+	  VectorType distr = UUtils::kInfinity;
+
+	  // distance to the outer cylinder
+	  // check first of all safety
+	  MaskType r2_m = r2 >= ( rmax2 - tol_v );
+	  dist_v(!done_m && r2_m && rdotn_m) = 0.;
+	  done_m |= r2_m && rdotn_m;
+
+	  DistToTube_Vc<NeedCheckOrNot>(r2, n2, rdotn, rmax2, b, d);
+	  distr = -b + d;
+
+	  MaskType sr_m = (sr > 0.) && (d > 0.);
+	  dist_v(!done_m && sr_m) = Vc::min(dist_v, distr);
+	  done_m |= sr_m;
+
+	  if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	  {
+		  std::cerr << "WARNING: PHI TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
+	  }
+
+	  if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	  {
+		  std::cerr << "WARNING: RMIN TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
+
+	  }
+
+	  // do we need this?? ( maybe because of boundary )
+	  s_v(!done_m) = 0.;
+	  distance=dist_v;
+}
+
+
 
 // a template version targeted at T = Vc or T = Boost.SIMD or T= double
 // this is the kernel operating on type T
@@ -798,6 +879,39 @@ bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x
 				&& Vector3D::scalarProductInXYPlane(x, tubeparams->normalPhi2 ) > 0 ) return false;
 	}
 	return true;
+}
+
+
+template<int tid, int rid, typename TubeType, typename T>
+inline
+GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x) const
+{
+	// checkContainedZ
+	if( std::abs(x.z) > tubeparams->dZ + tolerance ) return GlobalTypes::Outside;
+// something is missing here ( an abs ?? )
+	if( (std::abs(x.z) - tubeparams->dZ) < tolerance ) return GlobalTypes::OnSurface;
+
+	// checkContainmentRmax
+	T r2 = x.x*x.x + x.y*x.y;
+	if( r2 > tubeparams->cacheRmaxSqr + tolerancesqr ) return GlobalTypes::Outside;
+	if( (r2 - tubeparams->cacheRmaxSqr) < tolerancesqr ) return GlobalTypes::OnSurface;
+
+
+	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		if( r2 < tubeparams->cacheRminSqr - tolerancesqr ) return GlobalTypes::Outside;
+		if( (r2 - tubeparams->cacheRminSqr) < tolerancesqr ) return GlobalTypes::OnSurface;
+	}
+
+	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		T sP1 = Vect
+		if ( ( Vector3D::scalarProduct(x, tubeparams->normalPhi1 ) > 0 )
+				&& Vector3D::scalarProduct(x, tubeparams->normalPhi2 ) > 0 ) return GlobalTypes::Outside;
+		// the scalar product is also the safe distance to phi plane, just check if smaller than tolerance
+		if ( ) return GlobalTypes::OnSurface;
+	}
+	return GlobalTypes::Inside;
 }
 
 
