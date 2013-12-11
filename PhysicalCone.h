@@ -184,7 +184,7 @@ public:
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
 
 	// for basket treatment (supposed to be dispatched to particle parallel case)
-	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const {};
+	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 
 	// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const {} ;
@@ -254,7 +254,7 @@ PlacedCone<tid,rid, TubeType,T>::isInRRange( Vector3D const & pos) const
 	T innerradius = coneparams->innerslope*pos.z+coneparams->inneroffset;
 	// we need rad
 
-	return ( innerradius <= d && d <= outerradius );
+	return ( innerradius*innerradius <= d && d <= outerradius*outerradius );
 }
 
 template <int tid, int rid, class ConeType, typename T>
@@ -427,7 +427,7 @@ typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineZHit
 		// this is big difference to tube
 		VectorType zhit = z + distancez*dirz;
 
-		ValueType outerr =  coneparams->outerslope*zhit + coneparams->outeroffset; // actually this should just be Rmax1 or Rmax2
+		VectorType outerr =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset; // actually this should just be Rmax1 or Rmax2
         // we only need a way to find this out
 
 		return distancez > 0 && ((xhit*xhit + yhit*yhit) < outerr*outerr);
@@ -440,7 +440,7 @@ typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineZHit
 		VectorType yhit = y + distancez*diry;
 
 		VectorType zhit = z + distancez*dirz;
-		ValueType outerr =  coneparams->outerslope*zhit + coneparams->outeroffset;
+		VectorType outerr =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset;
 
 		return distancez > 0 && ((xhit*xhit + yhit*yhit) < outerr*outerr) && ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
 					coneparams->normalPhi1.x, coneparams->normalPhi1.y, coneparams->normalPhi2.x, coneparams->normalPhi2.y, xhit, yhit );
@@ -453,8 +453,8 @@ typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineZHit
 		VectorType hitradiussquared = xhit*xhit + yhit*yhit;
 
 		VectorType zhit = z + distancez*dirz;
-		ValueType ro =  coneparams->outerslope*zhit + coneparams->outeroffset;
-		ValueType ri =  coneparams->innerslope*zhit + coneparams->inneroffset;
+		VectorType ro =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset;
+		VectorType ri =  coneparams->innerslope*zhit + Vc::One*coneparams->inneroffset;
 
 		return distancez > 0 && hitradiussquared <= ri*ri && hitradiussquared >= ro*ro;
 	}
@@ -465,8 +465,8 @@ typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineZHit
 		VectorType yhit = y + distancez*diry;
 		VectorType hitradiussquared = xhit*xhit + yhit*yhit;
 		VectorType zhit = z + distancez*dirz;
-		ValueType ro =  coneparams->outerslope*zhit + coneparams->outeroffset;
-		ValueType ri =  coneparams->innerslope*zhit + coneparams->inneroffset;
+		VectorType ro =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset;
+		VectorType ri =  coneparams->innerslope*zhit + Vc::One*coneparams->inneroffset;
 
 		return distancez > 0 && hitradiussquared <= ro*ro
 							 && hitradiussquared >= ri*ri
@@ -502,8 +502,8 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 	done_m = !inz_m && ( z*dirz >= Vc::Zero ); // particle outside the z-range and moving away
 
 	VectorType r2 = x*x + y*y;
-	VectorType n2 = Vc::One-(coneparams->outerslopesquare) *dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
-	VectorType rdotn = x*dirx + y*diry - z*dirz*coneparams->outerslopesquare - coneparams->outeroffset* coneparams->outeroffset*dirz;
+	VectorType n2 = Vc::One-(coneparams->outerslopesquare + 1) *dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
+	VectorType rdotn = x*dirx + y*diry - z*dirz*coneparams->outerslopesquare - coneparams->outeroffset* coneparams->outerslope*dirz;
 
 	//	T a = 1 - dir.z*dir.z*(1+m*m);
 	//	T b = 2 * ( pos.x*dir.x + pos.y*dir.y - m*m*pos.z*dir.z - m*n*dir.z);
@@ -525,7 +525,7 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 	// b = 2*(dirx*x + diry*y)  -- independent of shape
 	// a = dirx*dirx + diry*diry -- independent of shape
 	// c = x*x + y*y - R^2 = r2 - R^2 -- dependent on shape
-	VectorType c = r2 - coneparams->outerslopesquare*z*z - 2*coneparams->outerslope*coneparams->offset * z - coneparams->outeroffsetsquare;
+	VectorType c = r2 - coneparams->outerslopesquare*z*z - 2*coneparams->outerslope*coneparams->outeroffset * z - coneparams->outeroffsetsquare;
 
 	VectorType a = n2;
 
@@ -597,7 +597,7 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 		if( ConeTraits::NeedsRminTreatment<ConeType>::value || ! done_m.isFull() )
 		{
 			VectorType distphi;
-			ConeUtils::DistanceToPhiPlanes<ValueType,TubeTraits::IsPhiEqualsPiCase<ConeType>::value,TubeTraits::NeedsRminTreatment<ConeType>::value>(coneparams->dZ,
+			ConeUtils::DistanceToPhiPlanes<ValueType,ConeTraits::IsPhiEqualsPiCase<ConeType>::value,ConeTraits::NeedsRminTreatment<ConeType>::value>(coneparams->dZ,
 					coneparams->outerslope, coneparams->outeroffset,
 					coneparams->innerslope, coneparams->inneroffset,
 					coneparams->normalPhi1.x, coneparams->normalPhi1.y, coneparams->normalPhi2.x, coneparams->normalPhi2.y,
@@ -617,5 +617,28 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 	}
 }
 
+
+template<int tid, int rid, typename TubeType, typename ValueType>
+inline
+void PlacedCone<tid,rid,TubeType,ValueType>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
+{
+	int i=0;
+	typedef typename Vc::Vector<ValueType> VectorType;
+	for( i=0; i < points_v.size; i += Vc::Vector<ValueType>::Size )
+		{
+			VectorType x( &points_v.x[i] );
+			VectorType y( &points_v.y[i] );
+			VectorType z( &points_v.z[i] );
+			VectorType xd( &dirs_v.x[i] );
+			VectorType yd( &dirs_v.y[i] );
+			VectorType zd( &dirs_v.z[i] );
+			VectorType step( &steps[i] );
+			VectorType dist;
+			DistanceToIn< VectorType >(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+			dist.store( &distance[i] );
+		}
+}
 
 #endif /* PHYSICALCONE_H_ */

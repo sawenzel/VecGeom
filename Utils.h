@@ -318,13 +318,13 @@ struct ConeUtils
 		// to be done
 		if( ! needRmin )
 		{
-			T outerradiusatz = outerslope*zvec + outeroffset;
+			Vc::Vector<T> outerradiusatz = outerslope*zvec + outeroffset;
 			return planarnormofvec <= outerradiusatz*outerradiusatz;
 		}
 		else
 		{
-			T outerradiusatz = outerslope*zvec + outeroffset;
-			T innerradiusatz = innerslope*zvec + inneroffset;
+			Vc::Vector<T> outerradiusatz = outerslope*zvec + outeroffset;
+			Vc::Vector<T> innerradiusatz = innerslope*zvec + inneroffset;
 			return planarnormofvec >= innerradiusatz*innerradiusatz && planarnormofvec <= outerradiusatz*outerradiusatz;
 		}
 	}
