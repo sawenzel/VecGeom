@@ -21,10 +21,10 @@
 #define GEOM_SURFACE_MODE false
 #endif
 
-/*
-struct SurfaceEnumType
+
+namespace GlobalTypes
 {
-	enum { Outside, OnSurface, Inside };
+	typedef enum {  Outside, OnSurface, Inside } SurfaceEnumType;
 };
 
 template <bool B>
@@ -35,9 +35,9 @@ struct SurfaceReturnType
 template <>
 struct SurfaceReturnType<true>
 {
-	typedef typename SurfaceEnumType type;
+	typedef typename GlobalTypes::SurfaceEnumType type;
 };
-*/
+
 
 #include "Vc/vector.h"
 
