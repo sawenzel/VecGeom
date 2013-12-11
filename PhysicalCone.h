@@ -10,7 +10,7 @@
 #include "PhysicalVolume.h"
 #include "ConeTraits.h"
 #include "GlobalDefs.h"
-
+#include "Vector3D.h"
 
 //Member Data:
 //
@@ -25,8 +25,8 @@
 
 
 template <typename T=double>
-// T is a floating point type
-class ConeParameters // : ShapeParameters
+class
+ConeParameters
 {
 private:
 	T dRmin1; // inner radius at z=-dz
@@ -39,8 +39,10 @@ private:
 
 	// for caching
 	T cacheRminSqr; // rminsquared
+	T cacheRmaxSqr;
 	T cacheRmslORminSqr; // tolerant outer radius of rmin
 	T cacheTolORmaxSqr; // tolerant outer radius of rmax
+	T cacheTolORminSqr;
 
 	T cacheTolIRminSqr; // tolerant inner radius of rmin
 	T cacheTolIRmaxSqr; // tolerant inner radius of rmax
@@ -75,9 +77,9 @@ public:
 			inneroffset = dRmin2 - innerslope*dZ;
 			outeroffset = dRmax2 - outerslope*dZ;
 
-		// calculate caches
-		// the possible caches are one major difference between tube and cone
-		{
+			// calculate caches
+			// the possible caches are one major difference between tube and cone
+
 			// calculate caches
 			cacheRminSqr=dRmin1*dRmin1;
 			cacheRmaxSqr=dRmax1*dRmax1;
@@ -107,7 +109,7 @@ public:
 
 			normalPhi1.print();
 			normalPhi2.print();
-	};
+		};
 
 	//	virtual void inspect() const;
 	inline T GetRmin1() const {return dRmin1;}
@@ -127,14 +129,14 @@ public:
 
 
 
-template<TranslationIdType tid, RotationIdType rid, class ConeType=ConeTraits::HollowConeWithPhi, class T=double>
+template<TranslationIdType tid, RotationIdType rid, typename ConeType=ConeTraits::HollowConeWithPhi, typename PrecType=double>
 class
 PlacedCone : public PhysicalVolume
 {
-	ConeParameters<T> const * coneparams;
+	ConeParameters<PrecType> const * coneparams;
 
 public:
-	PlacedCone( ConeParameters<T> const * _cp, TransformationMatrix const *m ) : PhysicalVolume(m), coneparams(_cp) {
+	PlacedCone( ConeParameters<PrecType> const * _cp, TransformationMatrix const *m ) : PhysicalVolume(m), coneparams(_cp) {
 		this->bbox = new PlacedBox<1,0>( new BoxParameters( coneparams->dRmax2, coneparams->dRmax2, coneparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
 	};
 
@@ -171,9 +173,9 @@ public:
 	// some helper function (mainly useful to debug)
 	Vector3D RHit( Vector3D const & /*pos*/,
 				   Vector3D const & /*dir*/,
-				   T & /* distance */,
-				   T /* radiusatminusz */,
-				   T /* radiusatplusz */,
+				   PrecType & /* distance */,
+				   PrecType /* radiusatminusz */,
+				   PrecType /* radiusatplusz */,
 				   bool /* wantMinusSolution */ ) const ;
 
 	bool isInRRange( Vector3D const & x ) const;
@@ -182,21 +184,21 @@ public:
 	Vector3D PhiHit( Vector3D const &x, Vector3D const &y, double & distance, bool isPhi1Solution ) const;
 	Vector3D ZHit( Vector3D const &x, Vector3D const &y, double & distance ) const;
 
-	Vector3D RHit( Vector3D const &x, Vector3D const &y, T & distance, T radius, bool wantMinusSolution ) const;
+	Vector3D RHit( Vector3D const &x, Vector3D const &y, PrecType & distance, PrecType radius, bool wantMinusSolution ) const;
 	void printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const;
 	virtual void DebugPointAndDirDistanceToIn( Vector3D const & x, Vector3D const & y) const;
 };
 
 
-template<int tid, int rid, class TubeType, typename T>
+template<int tid, int rid, class ConeType, typename T>
 void
-PlacedCone<tid,rid,TubeType,T>::printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const
+PlacedCone<tid,rid,ConeType,T>::printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const
 {
 	std::cout << c << " " << vec << "\t\t at dist " << distance << " in z " << GeneralPhiUtils::IsInRightZInterval<T>( vec, coneparams->dZ )
 					<< " inPhi " << isInPhiRange( vec )
 					<< " inR " << isInRRange( vec )
 					<< std::endl;
-
+}
 
 template<int tid, int rid, class TubeType, typename T>
 bool
@@ -304,7 +306,7 @@ PlacedCone<tid,rid,TubeType,T>::DebugPointAndDirDistanceToIn( Vector3D const & x
 	std::cout << "Z INTERACTION " << std::endl;
 	Vector3D vZ = this->ZHit( x, y, distance );
 	printInfoHitPoint("hitpointZ", vZ, distance);
-
+}
 
 template<int tid, int rid, typename ConeType, typename ValueType>
 inline
@@ -312,21 +314,17 @@ bool PlacedCone<tid,rid,ConeType,ValueType>::UnplacedContains( Vector3D const & 
 {
 	ValueType fDz = coneparams->dZ;
 	// test if point is inside this cone
-	if ( std::abs(point[2]) > coneparams->dZ ) return false;
+	if ( std::abs(point.z) > coneparams->dZ ) return false;
 
-	ValueType r2 = point[0]*point[0]+point[1]*point[1];
+	ValueType r2 = point.x*point.x+point.y*point.y;
 
 	// calculate cone stuff at the height of
-	ValueType fRmax2=coneparams->dRmax2;
-	ValueType fRmax1=coneparams->dRmax1;
-	ValueType rh = ( fRmax2*(point[2]+fDz)+fRmax1*(fDz-point[2]) ) * coneparams->OneHalfInversedZ;
-	if( r2>rh*rh ) return false;
+	ValueType rh = coneparams->outerslope*point.z + coneparams->outeroffset;
+	if( r2 > rh*rh ) return false;
 
 	if( ConeTraits::NeedsRminTreatment<ConeType>::value )
 	{
-		ValueType fRmin2=coneparams->dRmin2;
-		ValueType fRmin1=coneparams->dRmin1;
-		ValueType rl = (fRmin2*(point[2]+fDz)+fRmin1*(fDz-point[2])) * coneparams->OneHalfInversedZ;
+		ValueType rl = coneparams->innerslope*point.z + coneparams->inneroffset;
 		if( r2 < rl*rl ) return false;
 	}
 	if ( ConeTraits::NeedsPhiTreatment<ConeType>::value )

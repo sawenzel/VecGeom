@@ -134,10 +134,11 @@ public:
 	inline
 	virtual bool   UnplacedContains( Vector3D const & ) const;
 
+	/*
 	__attribute__((always_inline))
 	inline
 	virtual GlobalTypes::SurfaceEnumType  UnplacedContains( Vector3D const & ) const;
-
+*/
 
 	virtual double SafetyToIn( Vector3D const & ) const {return 0.;}
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
@@ -599,6 +600,7 @@ typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determ
 	}
 }
 
+/*
 template<int tid, int rid, typename TubeType, typename ValueType>
 template<typename VectorType>
 inline
@@ -666,7 +668,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType co
 	  s_v(!done_m) = 0.;
 	  distance=dist_v;
 }
-
+*/
 
 
 // a template version targeted at T = Vc or T = Boost.SIMD or T= double
@@ -881,7 +883,7 @@ bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x
 	return true;
 }
 
-
+/*
 template<int tid, int rid, typename TubeType, typename T>
 inline
 GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x) const
@@ -913,6 +915,6 @@ GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedCont
 	}
 	return GlobalTypes::Inside;
 }
-
+*/
 
 #endif /* PHYSICALTUBE_H_ */
