@@ -14,6 +14,8 @@
 #include <iostream>
 #include <vector>
 
+#include "VUSolid.hh"
+#include "TGeoShape.h"
 
 // pure abstract class
 class PhysicalVolume
@@ -39,8 +41,16 @@ class PhysicalVolume
 
 		bool ExclusiveContains( Vector3D const & ) const;
 
+		//** this is for benchmarking and conversion purposes **//
+		VUSolid * analogoususolid;
+		TGeoShape * analogousrootsolid;
+
 	public:
-		PhysicalVolume( TransformationMatrix const *m ) : matrix(m), logicalvol(0), daughters(0), bbox(0) { };
+		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
+			logicalvol(0), daughters(0), bbox(0), analogoususolid(0), analogousrootsolid(0) { };
+
+
+
 		virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual bool   Contains( Vector3D const & ) const = 0;
@@ -56,6 +66,16 @@ class PhysicalVolume
 		virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;
 		//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
 		virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /*size*/ ) const =0;
+
+		VUSolid const * GetAsUnplacedUSolid() const
+		{
+			return analogoususolid;
+		}
+		void SetUnplacedUSolid( VUSolid *  solid ) { analogoususolid = solid ;}
+		TGeoShape const * GetAsUnplacedROOTSolid() const
+		{
+			return analogousrootsolid;
+		}
 
 		// this is
 		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;

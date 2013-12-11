@@ -12,6 +12,10 @@
 #include "GlobalDefs.h"
 #include "Vector3D.h"
 
+// for stuff from USolids
+#include "VUSolid.hh"
+#include "UCons.hh"
+
 //Member Data:
 //
 //   fRmin1  inside radius at  -fDz
@@ -133,16 +137,32 @@ template<TranslationIdType tid, RotationIdType rid, typename ConeType=ConeTraits
 class
 PlacedCone : public PhysicalVolume
 {
+private:
 	ConeParameters<PrecType> const * coneparams;
+
 
 public:
 	PlacedCone( ConeParameters<PrecType> const * _cp, TransformationMatrix const *m ) : PhysicalVolume(m), coneparams(_cp) {
 		this->bbox = new PlacedBox<1,0>( new BoxParameters( coneparams->dRmax2, coneparams->dRmax2, coneparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+
+	    // initialize the equivalent usolid shape
+		VUSolid * s = new UCons("internalucons",coneparams->dRmin1,
+				coneparams->dRmax1, coneparams->dRmin2, coneparams->dRmax2,
+				coneparams->dZ, coneparams->dSPhi, coneparams->dDPhi);
+		this->SetUnplacedUSolid( s );
 	};
 
 	// ** functions to implement
 	__attribute__((always_inline))
-	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const {return 0.;}
+	virtual double DistanceToIn( Vector3D const & aPoint, Vector3D const & aDir, PrecType step ) const
+	{
+		// do coordinate trafo
+		Vector3D tPoint;
+		Vector3D tDir;
+		matrix->MasterToLocal<tid,rid>(aPoint, tPoint);
+		matrix->MasterToLocalVec<rid>(aDir, tDir);
+		return analogoususolid->DistanceToIn( reinterpret_cast<UVector3 const &>(tPoint), reinterpret_cast<UVector3 const &> (tDir), step );
+	}
 
 
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const {return 0.;}
@@ -226,15 +246,15 @@ Vector3D PlacedCone<tid,rid, ConeType, T>::RHit( Vector3D const & pos, Vector3D 
 	// T n = radiusatplusz - m*coneparams->dZ;
 
 	T a = 1 - dir.z*dir.z*(1-m*m);
-	T b = 2 * ( pos.x*dir.x + pos.y*dir.y - pos.z*dir.z*m*m - 2*m*n * dir.z);
-	T c = (pos.x*pos.x + pos.y*pos.y - m*m*pos.z*pos.z - 2*m*n*pos.z + n*n);
+	T b = 2 * ( pos.x*dir.x + pos.y*dir.y - pos.z*dir.z*m*m - 2*m*n * dir.z );
+	T c = ( pos.x*pos.x + pos.y*pos.y - m*m*pos.z*pos.z - 2*m*n*pos.z - n*n );
 
 	T discriminant = b*b - 4*a*c;
 
 	if(discriminant >= 0)
 	{
-		if( wantMinusSolution ) distance = ( -b - sqrt(discriminant) );
-		if( ! wantMinusSolution ) distance = (-b + sqrt(discriminant) );
+		if( wantMinusSolution ) distance = ( -b - sqrt(discriminant) )/(2.*a);
+		if( ! wantMinusSolution ) distance = (-b + sqrt(discriminant) )/(2.*a);
 	}
 	else
 	{
