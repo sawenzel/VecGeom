@@ -13,6 +13,7 @@
 #include "tbb/tick_count.h" // timing from Intel TBB
 #include "cmath"
 #include "Vc/vector.h"
+#include "GlobalDefs.h"
 
 struct StopWatch
 {
@@ -190,6 +191,15 @@ struct GeneralPhiUtils
 		{
 			return Vc::abs(z) <= dz;
 		}
+
+		template <typename T>
+		static
+		inline
+		bool IsInRightZInterval( Vector3D const & vec, T const & dz )
+		{
+			return vec.z <= dz;
+		}
+
 };
 
 struct TubeUtils
@@ -246,7 +256,7 @@ struct TubeUtils
 			Vc::Vector<T> planarnorm = xi*xi + yi*yi;
 
 			distToPlane ( temp > 0
-					&& IsInRightZInterval<T>( zi, dz )
+					&& GeneralPhiUtils::IsInRightZInterval<T>( zi, dz )
 					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
 					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 		}
@@ -266,7 +276,7 @@ struct TubeUtils
 
 			Vc::Vector<T> planarnorm = xi*xi + yi*yi;
 			distToPlane ( temp > 0
-					&& IsInRightZInterval<T>( zi, dz )
+					&& GeneralPhiUtils::IsInRightZInterval<T>( zi, dz )
 					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
 					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 
@@ -276,7 +286,7 @@ struct TubeUtils
 			yi = ycoord + temp*ydir;
 			planarnorm = xi*xi + yi*yi;
 			distToPlane1 ( temp > 0
-					&& IsInRightZInterval<T>( zi, dz )
+					&& GeneralPhiUtils::IsInRightZInterval<T>( zi, dz )
 					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
 					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 

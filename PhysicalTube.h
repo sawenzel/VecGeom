@@ -462,14 +462,14 @@ typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determ
 {
 	if( ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
 	{
-		return distanceR > 0 && TubeUtils::IsInRightZInterval( z+distanceR*dirz, tubeparams->dZ );
+		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z+distanceR*dirz, tubeparams->dZ );
 	}
 	else
 	{
 		// need to have additional look if hitting point on zylinder is not in empty phi range
 		VectorType xhit = x + distanceR*dirx;
 		VectorType yhit = y + distanceR*diry;
-		return distanceR > 0 && TubeUtils::IsInRightZInterval( z + distanceR*dirz, tubeparams->dZ)
+		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z + distanceR*dirz, tubeparams->dZ)
 								&& ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
 					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
 	}
