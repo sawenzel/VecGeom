@@ -9,6 +9,20 @@
 
 #include "PhysicalVolume.h"
 #include "ConeTraits.h"
+#include "GlobalDefs.h"
+
+
+//Member Data:
+//
+//   fRmin1  inside radius at  -fDz
+//   fRmin2  inside radius at  +fDz
+//   fRmax1  outside radius at -fDz
+//   fRmax2  outside radius at +fDz
+//   fDz half length in z
+//
+//   fSPhi starting angle of the segment in radians
+//   fDPhi delta angle of the segment in radians
+
 
 template <typename T=double>
 // T is a floating point type
@@ -41,6 +55,9 @@ private:
 	//**** we save normals to phi - planes *****//
 	Vector3D normalPhi1;
 	Vector3D normalPhi2;
+	//**** vectors along radial direction of phi-planes
+	Vector3D alongPhi1;
+	Vector3D alongPhi2;
 
 public:
 	ConeParameters(T pRmin1, T pRmax1, T pRmin2, T pRmax2, T pDZ, T pPhiMin, T pPhiMax) :
@@ -51,6 +68,12 @@ public:
 		dZ(pDZ),
 		dSPhi(pPhiMin),
 		dDPhi(pPhiMax) {
+
+			// check this very carefully
+			innerslope = -(dRmin1 - dRmin2)/(2.*dZ);
+			outerslope = -(dRmax1 - dRmax2)/(2.*dZ);
+			inneroffset = dRmin2 - innerslope*dZ;
+			outeroffset = dRmax2 - outerslope*dZ;
 
 		// calculate caches
 		// the possible caches are one major difference between tube and cone
@@ -76,6 +99,10 @@ public:
 			// calculate normals
 			GeneralPhiUtils::GetNormalVectorToPhiPlane(dSPhi, normalPhi1, true);
 			GeneralPhiUtils::GetNormalVectorToPhiPlane(dSPhi + dDPhi, normalPhi2, false);
+
+			// get alongs
+			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi, alongPhi1);
+			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi + dDPhi, alongPhi2);
 
 			normalPhi1.print();
 			normalPhi2.print();
@@ -120,7 +147,7 @@ public:
 
 	__attribute__((always_inline))
 	inline
-	virtual bool   UnplacedContains( Vector3D const & ) const {return false;}
+	virtual bool   UnplacedContains( Vector3D const & ) const;
 
 	virtual double SafetyToIn( Vector3D const & ) const {return 0.;}
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
@@ -157,6 +184,7 @@ public:
 
 	Vector3D RHit( Vector3D const &x, Vector3D const &y, T & distance, T radius, bool wantMinusSolution ) const;
 	void printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const;
+	virtual void DebugPointAndDirDistanceToIn( Vector3D const & x, Vector3D const & y) const;
 };
 
 
@@ -164,7 +192,7 @@ template<int tid, int rid, class TubeType, typename T>
 void
 PlacedCone<tid,rid,TubeType,T>::printInfoHitPoint( char const * c, Vector3D const & vec, double distance ) const
 {
-	std::cout << c << " " << vec << "\t\t at dist " << distance << " in z " << GeneralPhiUtils::IsInRightZInterval( vec, coneparams->dZ )
+	std::cout << c << " " << vec << "\t\t at dist " << distance << " in z " << GeneralPhiUtils::IsInRightZInterval<T>( vec, coneparams->dZ )
 					<< " inPhi " << isInPhiRange( vec )
 					<< " inR " << isInRRange( vec )
 					<< std::endl;
@@ -277,6 +305,8 @@ PlacedCone<tid,rid,TubeType,T>::DebugPointAndDirDistanceToIn( Vector3D const & x
 	Vector3D vZ = this->ZHit( x, y, distance );
 	printInfoHitPoint("hitpointZ", vZ, distance);
 }
+
+
 
 
 #endif /* PHYSICALCONE_H_ */
