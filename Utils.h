@@ -172,7 +172,14 @@ struct GeneralPhiUtils
 				// this method could be template specialized in case DeltaPhi = 180^o
 				T scalarproduct1 = Vector3D::scalarProductInXYPlane( phi1normal, pos);
 				T scalarproduct2 = Vector3D::scalarProductInXYPlane( phi2normal, pos);
-				return (scalarproduct1 > 0 && scalarproduct2 > 0);
+				if( phi1normal.x*phi2normal.x + phi1normal.y*phi2normal.y >= 0)
+				{
+					return (scalarproduct1 > 0 && scalarproduct2 > 0);
+				}
+				else
+				{
+					return (scalarproduct1 > 0 || scalarproduct2 > 0);
+				}
 			}
 
 		template <typename T>
@@ -295,8 +302,7 @@ struct TubeUtils
 	}
 };
 
-/*
-// things specific to a cone
+// things specific to a cone ( difference is that sometimes we need the z coordinate ( for the radial check )
 struct ConeUtils
 {
 	template <typename T, bool needRmin=true>
@@ -304,16 +310,23 @@ struct ConeUtils
 	inline
 	typename Vc::Vector<T>::Mask IsInRightRadialInterval( Vc::Vector<T> const & zvec,
 														  Vc::Vector<T> const & planarnormofvec,
-														  T const & radiusmin2_squared,
-														  T const & radiusmax2_squared,
-														  T const & radiusmin1_squared,
-														  T const & radiusmax1_squared,
-														  T const & inversez,
-														  T const & dZ
-	)
+														  T const & outerslope,
+														  T const & outeroffset,
+														  T const & innerslope,
+														  T const & inneroffset	)
 	{
 		// to be done
-
+		if( ! needRmin )
+		{
+			Vc::Vector<T> outerradiusatz = outerslope*zvec + outeroffset;
+			return planarnormofvec <= outerradiusatz*outerradiusatz;
+		}
+		else
+		{
+			Vc::Vector<T> outerradiusatz = outerslope*zvec + outeroffset;
+			Vc::Vector<T> innerradiusatz = innerslope*zvec + inneroffset;
+			return planarnormofvec >= innerradiusatz*innerradiusatz && planarnormofvec <= outerradiusatz*outerradiusatz;
+		}
 	}
 
 
@@ -322,7 +335,7 @@ struct ConeUtils
 	static
 	inline
 	__attribute__((always_inline))
-	void DistanceToPhiPlanes( T const & dz, T const & radiusmax2, T const & radiusmin2, T const & phi1normalx, T const & phi1normaly,
+	void DistanceToPhiPlanes( T const & dz, T const & outerslope, T const & outeroffset, T const & innerslope, T const & inneroffset, T const & phi1normalx, T const & phi1normaly,
 							  T const & phi2normalx, T const & phi2normaly,
 							  Vector3D const & phiAlong1, Vector3D const & phiAlong2,
 							  Vc::Vector<T> const & xcoord, Vc::Vector<T> const & ycoord, Vc::Vector<T> const & zcoord,
@@ -349,9 +362,9 @@ struct ConeUtils
 			Vc::Vector<T> planarnorm = xi*xi + yi*yi;
 
 			distToPlane ( temp > 0
-					&& IsInRightZInterval<T>( zi, dz )
-					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
-					&& IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
+					&& GeneralPhiUtils::IsInRightZInterval<T>( zi, dz )
+					&& IsInRightRadialInterval<T,needRmin>( zi, planarnorm, outerslope, outeroffset, innerslope, inneroffset )
+					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 		}
 		else
 		{
@@ -372,9 +385,9 @@ struct ConeUtils
 
 			Vc::Vector<T> planarnorm = xi*xi + yi*yi;
 			distToPlane1 ( temp > 0
-					&& IsInRightZInterval<T>( zi, dz )
-					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
-					&& IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
+					&& GeneralPhiUtils::IsInRightZInterval<T>( zi, dz )
+					&& IsInRightRadialInterval<T,needRmin>( zi, planarnorm, outerslope, outeroffset, innerslope, inneroffset )
+					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 
 			temp = -scalarproduct2/N2dotDir;
 			zi = zcoord + temp*zdir;
@@ -382,16 +395,14 @@ struct ConeUtils
 			yi = ycoord + temp*ydir;
 			planarnorm = xi*xi + yi*yi;
 			distToPlane1 ( temp > 0
-					&& IsInRightZInterval<T>( zi, dz )
-					&& IsInRightRadialInterval<T,needRmin>( planarnorm, radiusmin2, radiusmax2 )
-					&& IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
+					&& GeneralPhiUtils::IsInRightZInterval<T>( zi, dz )
+					&& IsInRightRadialInterval<T,needRmin>( zi, planarnorm, outerslope, outeroffset, innerslope, inneroffset )
+					&& GeneralPhiUtils::IsOnRightPhiBranch<T>( xi, yi, phiAlong1, phiAlong2 ) ) = temp;
 
 			distToPlane = Vc::min(distToPlane1, distToPlane);
 		}
 	}
 };
-*/
-
 
 
 #endif /* UTILS_H_ */

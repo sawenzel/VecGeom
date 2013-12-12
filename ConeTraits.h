@@ -14,24 +14,25 @@ namespace ConeTraits
 {
 
 // define here different kinds of cones
-// for the moment take same specialization as tube
+// for the moment take same specialization as Cone
 
-
-	// a tube not having rmin nor phi section
+	// a Cone not having rmin nor phi section
 	struct NonHollowCone {};
-	// a tube not having at least one rmin but a non-2pi phi section
+	// a Cone not having at least one rmin but a non-2pi phi section
 	struct NonHollowConeWithPhi {};
+	// a Cone not having rmin and special case phi = 180^\circ = PI section
+	struct NonHollowConeWithPhiEqualsPi {};
 
-	// a tube having rmin but no phi section
+	// a Cone having rmin but no phi section
 	struct HollowCone {};
-	// a tube having rmin and phi section
+	// a Cone having rmin and phi section
 	struct HollowConeWithPhi {};
 
+	struct HollowConeWithPhiEqualsPi {};
 
 	// give a traits template
 	// this maps cone types to certain characteristics
 
-	// *** asking for Phi treatment **** //
 template <typename T>
 struct NeedsPhiTreatment
 {
@@ -65,6 +66,31 @@ struct NeedsRminTreatment<NonHollowConeWithPhi>
 {
 	static const bool value=false;
 };
+template <>
+struct NeedsRminTreatment<NonHollowConeWithPhiEqualsPi>
+{
+	static const bool value=false;
+};
+
+
+template <typename T>
+struct IsPhiEqualsPiCase
+{
+	static const bool value = false;
+};
+
+template <>
+struct IsPhiEqualsPiCase<NonHollowConeWithPhiEqualsPi>
+{
+	static const bool value = true;
+};
+
+template <>
+struct IsPhiEqualsPiCase<HollowConeWithPhiEqualsPi>
+{
+	static const bool value = true;
+};
+
 
 };
 #endif /* CONETRAITS_H_ */

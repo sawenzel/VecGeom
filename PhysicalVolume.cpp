@@ -9,6 +9,7 @@
 #include "Vector3D.h"
 #include <cassert>
 #include "PhysicalBox.h"
+#include "GlobalDefs.h"
 
 //template <TranslationIdType, RotationIdType> class PlacedBox;
 
@@ -83,7 +84,8 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 		 for(auto j=daughters->begin();j!=daughters->end();++j)
 		 {
 			 PhysicalVolume const * vol = (*j);
-			 if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
+			 double d = vol->DistanceToIn( point, dir, Utils::kInfinity );
+			 if( d < Utils::kInfinity )
 			 {
 				 hitcounter++;
 				 hit[i]=true;
@@ -111,7 +113,7 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 				for(auto j=daughters->begin();j!=daughters->end();++j)
 				{
 					PhysicalVolume const * vol = (*j);
-					if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
+					if( vol->DistanceToIn( point, dir, Utils::kInfinity ) < Utils::kInfinity )
 					{
 						hit[i]=false;
 						break;
@@ -142,7 +144,7 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 					 for(auto j=daughters->begin();j!=daughters->end();++j)
 					 {
 						 PhysicalVolume const * vol = (*j);
-						 if( vol->DistanceToIn( point, dir, 1E30 ) < 1E30 )
+						 if( vol->DistanceToIn( point, dir, Utils::kInfinity ) < Utils::kInfinity )
 						 {
 							hit[index]=true;
 						    // write back the dir

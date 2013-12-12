@@ -40,6 +40,8 @@ struct SurfaceReturnType<true>
 
 
 #include "Vc/vector.h"
+#include <cfloat>
+
 
 //template<typename ValueType=double>
 //struct UUtils
@@ -61,7 +63,7 @@ namespace Utils
 
 	typedef Vc::double_v ValueType;
 
-	static const ValueType kInfinityVc=1E30;
+	static const ValueType kInfinityVc = DBL_MAX;
 	static const ValueType kPiVc=3.14159265358979323846;
 	static const ValueType kTwoPiVc=2.0 * kPi;
 	static const ValueType kRadToDegVc=180.0 / kPi;
