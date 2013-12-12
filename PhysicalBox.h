@@ -8,12 +8,16 @@
 #ifndef PHYSICALBOX_H_
 #define PHYSICALBOX_H_
 
+#include <iostream>
+#include "Vc/vector.h"
+
 #include "PhysicalVolume.h"
 #include "LogicalVolume.h"
 #include "Vector3D.h"
 #include "TransformationMatrix.h"
-#include <iostream>
-#include "Vc/vector.h"
+
+#include "UBox.hh"
+#include "TGeoBBox.h"
 
 class BoxParameters // : ShapeParameters
 {
@@ -58,7 +62,9 @@ public:
 	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
 		// the bounding box of this volume is just the box itself
 		// just forget about translation and rotation
-		this->bbox = reinterpret_cast<PlacedBox<0,0> *>(this);
+		this->bbox = reinterpret_cast<PlacedBox<0,0>*>(this);
+		analogoususolid = new UBox("internal_ubox", GetDX(), GetDY(), GetDZ());
+		analogousrootsolid = new TGeoBBox("internal_tgeobbox", GetDX(), GetDY(), GetDZ());
 	}
 
 	__attribute__((always_inline))
