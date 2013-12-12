@@ -81,15 +81,18 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 		 dirs.getAsVector(i, dir);
 
 		 // loop over daughters
-		 for(auto j=daughters->begin();j!=daughters->end();++j)
+		 if( daughters != NULL )
 		 {
-			 PhysicalVolume const * vol = (*j);
-			 double d = vol->DistanceToIn( point, dir, Utils::kInfinity );
-			 if( d < Utils::kInfinity )
+			 for(auto j=daughters->begin();j!=daughters->end();++j)
 			 {
-				 hitcounter++;
-				 hit[i]=true;
-				 break;
+				 PhysicalVolume const * vol = (*j);
+				 double d = vol->DistanceToIn( point, dir, Utils::kInfinity );
+				 if( d < Utils::kInfinity )
+				 {
+					 hitcounter++;
+					 hit[i]=true;
+					 break;
+				 }
 			 }
 		 }
 	 }
@@ -110,18 +113,22 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 				hit[i]=false;
 
 				// loop over daughters
-				for(auto j=daughters->begin();j!=daughters->end();++j)
+				if( daughters != NULL )
 				{
-					PhysicalVolume const * vol = (*j);
-					if( vol->DistanceToIn( point, dir, Utils::kInfinity ) < Utils::kInfinity )
+					for(auto j=daughters->begin();j!=daughters->end();++j)
 					{
-						hit[i]=false;
-						break;
+						PhysicalVolume const * vol = (*j);
+						if( vol->DistanceToIn( point, dir, Utils::kInfinity ) < Utils::kInfinity )
+						{
+							hit[i]=false;
+							break;
+						}
 					}
 				}
-			 }
+			}
 			while(hit[i]);
-			// write back the dir
+			hitcounter--;
+			 // write back the dir
 			dirs.setFromVector(i,dir);
 		 }
 	 }
@@ -141,6 +148,8 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 					 sampleDir( dir );
 
 					 // loop over daughters
+					 if( daughters!=NULL )
+					 {
 					 for(auto j=daughters->begin();j!=daughters->end();++j)
 					 {
 						 PhysicalVolume const * vol = (*j);
@@ -151,7 +160,7 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 							dirs.setFromVector(index,dir);
 							break;
 						 }
-					 }
+					 }}
 				  }
 				 while( hit[index]==false );
 				 hitcounter++;
@@ -169,11 +178,14 @@ PhysicalVolume::ExclusiveContains( Vector3D const & point ) const
 	if( contains )
 	{
 		// C++11 type iteration over containers
+		if( daughters!=NULL )
+							 {
+
 		for(auto i=this->daughters->begin(); i!=daughters->end(); ++i)
 		{
 		  PhysicalVolume const * vol= (*i);
 		  if( vol->Contains( point ) ) return false;
-		}
+		}}
 	}
 	return contains;
 }

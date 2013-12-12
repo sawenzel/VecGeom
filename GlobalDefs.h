@@ -47,7 +47,7 @@ struct SurfaceReturnType<true>
 //struct UUtils
 namespace Utils
 {
-	static const double kInfinity=1E30;
+	static const double kInfinity = DBL_MAX;
 	static const double kPi=3.14159265358979323846;
 	static const double kTwoPi=2.0 * kPi;
 	static const double kRadToDeg=180.0 / kPi;
@@ -63,7 +63,7 @@ namespace Utils
 
 	typedef Vc::double_v ValueType;
 
-	static const ValueType kInfinityVc = DBL_MAX;
+	static const ValueType kInfinityVc = kInfinity;
 	static const ValueType kPiVc=3.14159265358979323846;
 	static const ValueType kTwoPiVc=2.0 * kPi;
 	static const ValueType kRadToDegVc=180.0 / kPi;
