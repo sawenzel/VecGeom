@@ -54,9 +54,10 @@ private:
 
 public:
 	void foo() const;
-	double GetDX() const {return boxparams->GetDX();}
-	double GetDY() const {return boxparams->GetDY();}
-	double GetDZ() const {return boxparams->GetDZ();}
+
+	double GetDX() const { return boxparams->GetDX(); }
+	double GetDY() const { return boxparams->GetDY(); }
+	double GetDZ() const { return boxparams->GetDZ(); }
 
 	//will provide a private constructor
 	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
@@ -64,7 +65,8 @@ public:
 		// just forget about translation and rotation
 		this->bbox = reinterpret_cast<PlacedBox<0,0>*>(this);
 		analogoususolid = new UBox("internal_ubox", GetDX(), GetDY(), GetDZ());
-		analogousrootsolid = new TGeoBBox("internal_tgeobbox", GetDX(), GetDY(), GetDZ());
+		analogousrootsolid = new TGeoBBox("internal_tgeobbox",
+																			GetDX(), GetDY(), GetDZ());
 	}
 
 	__attribute__((always_inline))

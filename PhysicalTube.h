@@ -130,8 +130,9 @@ public:
 		this->bbox = new PlacedBox<1,0>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
     analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
-    // analogousrootsolid = new TGeoTube("internal_tgeotube",
-    //                                   GetRmin(), GetRmax(), GetDZ());
+    analogousrootsolid = new TGeoTubeSeg("internal_tgeotubeseg", GetRmin(),
+                                         GetRmax(), GetDZ(), GetSPhi(),
+                                         GetDPhi());
 	};
 
 	// ** functions to implement

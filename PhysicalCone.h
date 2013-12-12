@@ -14,9 +14,9 @@
 #include "Utils.h"
 #include "PhysicalBox.h"
 
-// for stuff from USolids
-#include "VUSolid.hh"
+// For benchmarking against USolids and ROOT geometry
 #include "UCons.hh"
+#include "TGeoCone.h"
 
 //Member Data:
 //
@@ -152,14 +152,25 @@ private:
 
 
 public:
+
+	PrecType GetRmin1() const { return coneparams->GetRmin1(); } 
+	PrecType GetRmax1() const { return coneparams->GetRmax1(); }
+	PrecType GetRmin2() const { return coneparams->GetRmin2(); }
+	PrecType GetRmax2() const { return coneparams->GetRmax2(); }
+	PrecType GetDZ()    const { return coneparams->GetDZ();    }
+	PrecType GetSPhi()  const { return coneparams->GetSPhi();  }
+	PrecType GetDPhi()  const { return coneparams->GetDPhi();  }
+
 	PlacedCone( ConeParameters<PrecType> const * _cp, TransformationMatrix const *m ) : PhysicalVolume(m), coneparams(_cp) {
 		this->bbox = new PlacedBox<1,0>( new BoxParameters( coneparams->dRmax2, coneparams->dRmax2, coneparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
 
-	    // initialize the equivalent usolid shape
-		VUSolid * s = new UCons("internalucons",coneparams->dRmin1,
-				coneparams->dRmax1, coneparams->dRmin2, coneparams->dRmax2,
-				coneparams->dZ, coneparams->dSPhi, coneparams->dDPhi);
-		this->SetUnplacedUSolid( s );
+	  // Initialize USolid and ROOT representations
+		analogoususolid = new UCons("internal_ucons", GetRmin1(), GetRmax1(),
+												        GetRmin2(), GetRmax2(), GetDZ(), GetSPhi(),
+												        GetDPhi());
+		analogousrootsolid = new TGeoConeSeg("internal_tgeocone", GetRmin1(),
+																		     GetRmax1(), GetRmin2(), GetRmax2(),
+																		     GetDZ(), GetSPhi(), GetDPhi());
 	};
 
 	// ** functions to implement
