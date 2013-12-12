@@ -14,11 +14,14 @@
 #include <iostream>
 #include <vector>
 
+class ShapeTester;
 
 // pure abstract class
 class PhysicalVolume
 {
 	protected:
+		friend class ShapeTester;
+
 		PhysicalVolume * bbox;
 		// this is the bounding box, it is placed
 		// only translation necessary with respect to the local coordinate system of the PhysicalVolume

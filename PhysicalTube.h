@@ -97,7 +97,7 @@ public:
 			normalPhi2.print();
 	};
 
-//	virtual void inspect() const;
+  // virtual void inspect() const;
 
 	inline T GetRmin() const {return dRmin;}
 	inline T GetRmax() const {return dRmax;}
