@@ -16,7 +16,6 @@
 
 class ShapeTester;
 
-//#include "TGeoShape.h"
 class VUSolid;
 class TGeoShape;
 
@@ -47,8 +46,8 @@ class PhysicalVolume
 		bool ExclusiveContains( Vector3D const & ) const;
 
 		//** this is for benchmarking and conversion purposes **//
-		VUSolid * analogoususolid;
-		TGeoShape * analogousrootsolid;
+		VUSolid const *analogoususolid;
+		TGeoShape const *analogousrootsolid;
 
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
@@ -72,15 +71,10 @@ class PhysicalVolume
 		//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
 		virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /*size*/ ) const =0;
 
-		VUSolid const * GetAsUnplacedUSolid() const
-		{
-			return analogoususolid;
-		}
-		void SetUnplacedUSolid( VUSolid *  solid ) { analogoususolid = solid ;}
-		TGeoShape const * GetAsUnplacedROOTSolid() const
-		{
-			return analogousrootsolid;
-		}
+		VUSolid const *GetAsUnplacedUSolid() const { return analogoususolid; }
+		TGeoShape const *GetAsUnplacedROOTSolid() const { return analogousrootsolid; }
+		void SetUnplacedUSolid(VUSolid const *solid) { analogoususolid = solid; }
+		void SetUnplacedROOTSolid(TGeoShape const *solid) { analogousrootsolid = solid; }
 
 		// this is
 		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;

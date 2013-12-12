@@ -7,20 +7,29 @@
 #include "GeoManager.h"
 
 typedef struct {
-  double fast_geom;
+  double fastgeom;
+  double usolids;
+  double root;
   void Print() const {
     std::cout << "Benchmark:\n"
-              << std::setw(2) << fast_geom
+              << std::setw(2) << fastgeom
               << std::endl;
   }
 } ShapeBenchmark;
+
+
+typedef struct {
+  PhysicalVolume const *fastgeom;
+  VUSolid const *usolids;
+  TGeoShape const *root;
+} VolumePointers;
 
 class ShapeTester {
 
 private:
 
   PhysicalVolume const *world;
-  // std::vector<PhysicalVolume const*> volumes;
+  std::vector<VolumePointers> volumes;
   unsigned n_points = 1<<10;
   unsigned reps = 1e3;
   double bias = 0.8;
@@ -36,14 +45,6 @@ public:
   ShapeTester(PhysicalVolume const *world_) {
     SetWorld(world_);
   }
-
-  ~ShapeTester() {
-    // ClearVolumes();
-  }
-
-  // void ClearVolumes() {
-  //   volumes.clear();
-  // }
 
   void SetWorld(PhysicalVolume const *world_) {
     world = world_;
@@ -61,34 +62,13 @@ public:
     bias = bias_;
   }
 
-  // void AddShape(PhysicalVolume const *volume) {
-  //   volumes.push_back(volume);
-  // }
-
   std::vector<ShapeBenchmark> Results() const {
     return results;
   }
 
-  // template <typename Shape, typename Parameters = ShapeParametersMap<Shape>>
-  // void SetWorld(Parameters const *params, TransformationMatrix const *tm) {
-  //   delete world;
-  //   world = GeoManager::MakePlacedShape<Shape>(params, tm);
-  // }
-
-  // template <typename Shape, typename Parameters = ShapeParametersMap<Shape>>
-  // void PlaceShape(Parameters const *params, TransformationMatrix const *tm) {
-  //   PhysicalVolume *volume = GeoManager::MakePlacedShape<Shape>(params, tm);
-  //   volumes.push_back(volume);
-  //   world->AddDaughter(volume);
-  // }
-
 private:
-
-  void DistanceToIn(PhysicalVolume const* /*vol*/,
-                    Vectors3DSOA const& /*points*/,
-                    Vectors3DSOA const& /*dirs*/,
-                    double const* /*steps*/,
-                    double* /*distances*/) const;
+    
+  void GenerateVolumePointers(PhysicalVolume const* /*vol*/);
 
 };
 
