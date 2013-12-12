@@ -18,8 +18,8 @@
 #include "Vc/vector.h"
 #include "Vc/common/types.h"
 
-
-
+#include "UTubs.hh"
+#include "TGeoTube.h"
 
 template <typename T=double>
 // T is a floating point type
@@ -119,8 +119,19 @@ private:
 	TubeParameters<T> const * tubeparams;
 
 public:
+
+  T GetRmin() const { return tubeparams->GetRmin(); }
+  T GetRmax() const { return tubeparams->GetRmax(); }
+  T GetDZ()   const { return tubeparams->GetDZ();   }
+  T GetSPhi() const { return tubeparams->GetSPhi(); }
+  T GetDPhi() const { return tubeparams->GetDPhi(); }
+
 	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb) {
 		this->bbox = new PlacedBox<1,0>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+    analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
+                                GetSPhi(), GetDPhi());
+    // analogousrootsolid = new TGeoTube("internal_tgeotube",
+    //                                   GetRmin(), GetRmax(), GetDZ());
 	};
 
 	// ** functions to implement
