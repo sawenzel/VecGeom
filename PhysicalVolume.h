@@ -14,8 +14,10 @@
 #include <iostream>
 #include <vector>
 
-#include "VUSolid.hh"
-#include "TGeoShape.h"
+
+//#include "TGeoShape.h"
+class VUSolid;
+class TGeoShape;
 
 // pure abstract class
 class PhysicalVolume

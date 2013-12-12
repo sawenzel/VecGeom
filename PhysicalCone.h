@@ -11,7 +11,8 @@
 #include "ConeTraits.h"
 #include "GlobalDefs.h"
 #include "Vector3D.h"
-#include "ConeTraits.h"
+#include "Utils.h"
+#include "PhysicalBox.h"
 
 // for stuff from USolids
 #include "VUSolid.hh"
@@ -403,50 +404,50 @@ typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineRHit
 		// need to have additional look if hitting point on zylinder is not in empty phi range
 		VectorType xhit = x + distanceR*dirx;
 		VectorType yhit = y + distanceR*diry;
-		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z + distanceR*dirz, coneparams->dZ)
-								&& ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
-					coneparams->normalPhi1.x, coneparams->normalPhi1.y, coneparams->normalPhi2.x, coneparams->normalPhi2.y, xhit, yhit );
+		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z + distanceR*dirz, coneparams->dZ )
+							 && ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
+								 coneparams->normalPhi1.x, coneparams->normalPhi1.y, coneparams->normalPhi2.x, coneparams->normalPhi2.y, xhit, yhit );
 	}
 }
 
 
-template<int tid, int rid, typename TubeType, typename ValueType>
+template<int tid, int rid, typename ConeType, typename ValueType>
 template<typename VectorType>
 inline
 __attribute__((always_inline))
-typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineZHit( VectorType const & x, VectorType const & y, VectorType const & z,
+typename VectorType::Mask PlacedCone<tid,rid,ConeType, ValueType>::determineZHit( VectorType const & x, VectorType const & y, VectorType const & z,
 											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distancez ) const
 {
 	//TODO: THIS IMPLEMENTATION IS ONLY TEMPORAY; WE CAN MAKE THIS MUCHER NICER
 
 
-	if( ! ConeTraits::NeedsRminTreatment<TubeType>::value &&  ! ConeTraits::NeedsPhiTreatment<TubeType>::value )
+	if( ! ConeTraits::NeedsRminTreatment<ConeType>::value &&  ! ConeTraits::NeedsPhiTreatment<ConeType>::value )
 	{
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
 		// this is big difference to tube
 		VectorType zhit = z + distancez*dirz;
 
-		VectorType outerr =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset; // actually this should just be Rmax1 or Rmax2
+		VectorType ro =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset; // actually this should just be Rmax1 or Rmax2
         // we only need a way to find this out
 
-		return distancez > 0 && ((xhit*xhit + yhit*yhit) < outerr*outerr);
+		return distancez > 0 && ((xhit*xhit + yhit*yhit) <= ro*ro);
 	}
 
-	if( ! ConeTraits::NeedsRminTreatment<TubeType>::value &&  ConeTraits::NeedsPhiTreatment<TubeType>::value )
+	if( ! ConeTraits::NeedsRminTreatment<ConeType>::value &&  ConeTraits::NeedsPhiTreatment<ConeType>::value )
 	{
 		// need to have additional look if hitting point on zylinder is not in empty phi range
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
 
 		VectorType zhit = z + distancez*dirz;
-		VectorType outerr =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset;
+		VectorType ro =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset;
 
-		return distancez > 0 && ((xhit*xhit + yhit*yhit) < outerr*outerr) && ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
+		return distancez > 0 && ((xhit*xhit + yhit*yhit) <= ro*ro) && ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
 					coneparams->normalPhi1.x, coneparams->normalPhi1.y, coneparams->normalPhi2.x, coneparams->normalPhi2.y, xhit, yhit );
 	}
 
-	if( ConeTraits::NeedsRminTreatment<TubeType>::value &&  ! ConeTraits::NeedsPhiTreatment<TubeType>::value )
+	if( ConeTraits::NeedsRminTreatment<ConeType>::value &&  ! ConeTraits::NeedsPhiTreatment<ConeType>::value )
 	{
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
@@ -456,7 +457,7 @@ typename VectorType::Mask PlacedCone<tid,rid,TubeType, ValueType>::determineZHit
 		VectorType ro =  coneparams->outerslope*zhit + Vc::One*coneparams->outeroffset;
 		VectorType ri =  coneparams->innerslope*zhit + Vc::One*coneparams->inneroffset;
 
-		return distancez > 0 && hitradiussquared <= ri*ri && hitradiussquared >= ro*ro;
+		return distancez > 0 && hitradiussquared <= ro*ro && hitradiussquared >= ri*ri;
 	}
 
 	else // this should be totally general case ( Rmin and Rmax and general phi )
@@ -503,7 +504,7 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 
 	VectorType r2 = x*x + y*y;
 	VectorType n2 = Vc::One-(coneparams->outerslopesquare + 1) *dirz*dirz; // dirx_v*dirx_v + diry_v*diry_v; ( dir is normalized !! )
-	VectorType rdotn = x*dirx + y*diry - z*dirz*coneparams->outerslopesquare - coneparams->outeroffset* coneparams->outerslope*dirz;
+	VectorType rdotnplanar = x*dirx + y*diry;
 
 	//	T a = 1 - dir.z*dir.z*(1+m*m);
 	//	T b = 2 * ( pos.x*dir.x + pos.y*dir.y - m*m*pos.z*dir.z - m*n*dir.z);
@@ -529,7 +530,7 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 
 	VectorType a = n2;
 
-	VectorType b = 2*rdotn;
+	VectorType b = 2*(rdotnplanar - z*dirz*coneparams->outerslopesquare - coneparams->outeroffset* coneparams->outerslope*dirz);
 	VectorType discriminant = b*b-4*a*c;
 	MaskType   canhitrmax = ( discriminant >= Vc::Zero );
 
@@ -557,12 +558,11 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
 	if ( ConeTraits::NeedsRminTreatment<ConeType>::value )
 	{
-		// only parameter "a" changes
-		// c = r2 - tubeparams->cacheRminSqr;
-
-		// in this case a changes !!
-
-		discriminant =  discriminant - 4*a*( coneparams->cacheRmaxSqr - coneparams->cacheRminSqr);
+		// case of the Cone, generally all coefficients a, b, and c change
+		a = Vc::One-(coneparams->innerslopesquare + 1) *dirz*dirz;
+		c = r2 -  coneparams->innerslopesquare*z*z - 2*coneparams->innerslope*coneparams->inneroffset * z - coneparams->inneroffsetsquare;
+		b = 2*(rdotnplanar - dirz*(z*coneparams->innerslopesquare + coneparams->inneroffset* coneparams->innerslope));
+		discriminant =  b*b-4*a*c;
 		MaskType canhitrmin = ( discriminant >= Vc::Zero );
 		VectorType distanceRmin ( Utils::kInfinityVc );
 		// this is always + solution
@@ -574,8 +574,8 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 		distanceRmax = Vc::min( distanceRmax, distanceRmin );
 		Rdone |= rmindone;
 	}
-	distance( ! done_m && Rdone ) = distanceRmax;
-	done_m |= Rdone;
+	//distance( ! done_m && Rdone ) = distanceRmax;
+	//done_m |= Rdone;
 
 	/* might check early here */
 
