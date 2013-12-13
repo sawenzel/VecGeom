@@ -8,10 +8,10 @@
 #ifndef GEOMANAGER_H_
 #define GEOMANAGER_H_
 
-#include "PhysicalVolume.h"
-#include "PhysicalBox.h"
-#include "PhysicalTube.h"
-#include "PhysicalCone.h"
+
+//#include "PhysicalBox.h"
+//#include "PhysicalTube.h"
+//#include "PhysicalCone.h"
 #include "TransformationMatrix.h"
 #include "ShapeFactories.h"
 #include <list>
@@ -111,22 +111,17 @@ public:
 	// it would be nice to have something like an SQL query here
 	//
 
-	// static factory methods
+	// static factory methods ( they will be implemented in separate source files to parallize the compilation process )
 	static
-	PhysicalVolume * MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm)
-	{
-		return MakePlacedShape<Box>( bp, tm);
-
-	}
+	PhysicalVolume * MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm);
 
 	static
-	PhysicalVolume * MakePlacedTube( TubeParameters<> const * tp, TransformationMatrix const * tm)
-	{
-		return MakePlacedShape<Tube> (tp, tm);
-	}
+	PhysicalVolume * MakePlacedTube( TubeParameters<> const * tp, TransformationMatrix const * tm);
+
+	static
+	PhysicalVolume * MakePlacedCone( ConeParameters<> const * cp, TransformationMatrix const * tm);
 
 	// we need to solve problem of pointer ownership --> let's use smart pointers and move semantics
-
 
 
 
@@ -181,11 +176,6 @@ public:
 		return ShapeFactory::template Create<1,-1>(param,tm);
 	}
 
-	static
-	PhysicalVolume * MakePlacedCone( ConeParameters<> const * cp, TransformationMatrix const * tm)
-	{
-		return MakePlacedShape<Cone> (cp, tm);
-	}
 
 };
 

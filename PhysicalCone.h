@@ -242,6 +242,11 @@ public:
 	typename VectorType::Mask determineZHit( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
 													VectorType const & /*dirx-vec*/, VectorType const & /*diry-vec*/, VectorType const & /*dirz-vec*/, VectorType const & /**/ ) const;
 
+	virtual PhysicalVolume const * GetAsUnplacedVolume() const
+	{
+		return reinterpret_cast< PlacedCone<0,1296, ConeType, PrecType> const * >(this);
+	}
+
 };
 
 

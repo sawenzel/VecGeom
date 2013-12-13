@@ -54,7 +54,7 @@ private:
 	Vector3D alongPhi2;
 
 public:
-	TubeParameters(T pRmin, T pRmax, T pDZ, T pPhiMin, T pPhiMax) :
+	TubeParameters(T pRmin, T pRmax, T pDZ, T pPhiMin=0, T pPhiMax=2*M_PI) :
 		dRmin(pRmin),
 		dRmax(pRmax),
 		dZ(pDZ),
@@ -110,7 +110,7 @@ public:
 	template<int,int,class,class> friend class PlacedUSolidsTube;
 
 	// template<int,int,int> friend class PlacedRootTube;
-} __attribute__((aligned(ALIGNMENT_BOUNDARY)));
+}; // __attribute__((aligned(ALIGNMENT_BOUNDARY)));
 
 template<TranslationIdType tid, RotationIdType rid, class TubeType=TubeTraits::HollowTubeWithPhi, class T=double>
 class PlacedUSolidsTube : public PhysicalVolume
@@ -127,12 +127,20 @@ public:
   T GetDPhi() const { return tubeparams->GetDPhi(); }
 
 	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb) {
+<<<<<<< HEAD
 		this->bbox = new PlacedBox<1,0>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
     analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
     analogousrootsolid = new TGeoTubeSeg("internal_tgeotubeseg", GetRmin(),
                                          GetRmax(), GetDZ(), GetSPhi(),
                                          GetDPhi());
+=======
+		this->bbox = new PlacedBox<1,1296>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+    analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
+                                GetSPhi(), GetDPhi());
+    // analogousrootsolid = new TGeoTube("internal_tgeotube",
+    //                                   GetRmin(), GetRmax(), GetDZ());
+>>>>>>> e7d17a0cb61b61b988b88f941191258001da001a
 	};
 
 	// ** functions to implement
@@ -157,6 +165,9 @@ public:
 
 	// for basket treatment (supposed to be dispatched to particle parallel case)
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
+	// for basket treatment (supposed to be dispatched to particle parallel case)
+	virtual void DistanceToOut( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
+
 
 	// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
@@ -199,6 +210,11 @@ public:
 	void DistanceToOut( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
 			VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const;
 
+
+	virtual PhysicalVolume const * GetAsUnplacedVolume() const
+	{
+		return reinterpret_cast< PlacedUSolidsTube<0,1296, TubeType, T> const * >(this);
+	}
 
 };
 
@@ -612,75 +628,67 @@ typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determ
 	}
 }
 
-/*
 template<int tid, int rid, typename TubeType, typename ValueType>
 template<typename VectorType>
 inline
-void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType const & x, VectorType const & y, VectorType const & z,
-					   VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & stepmax, VectorType & distance ) const
+void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType const & xm, VectorType const & ym, VectorType const & zm,
+					   VectorType const & dirxm, VectorType const & dirym, VectorType const & dirzm,
+					   VectorType const & stepmax, VectorType & distance) const
 {
-	 // Compute distance from inside point to surface of the tube (static)
-	  // Boundary safe algorithm.
-	  // compute distance to surface
-	  // Do Z
-	  VectorType dist_v(1.E30); // vector with the results
+	typedef typename VectorType::Mask MaskType;
+	// here we don't need any coordinate transform !!
 
-// this checks Z ( should be moved further down )
-	  VectorType dirzsign_v(1.);
-	  dirzsign(dirz_v < 0) = -1.;
-	  VectorType sz_v = (tubeparams->dZ * dirzsign - z)/dirz;
-	  dist_v(sz_v < 0) = 0.;
-	  MaskType done_m = sz_v < 0;
+	distance=Utils::kInfinityVc;
 
-//	  if ( done_m.isFull() ) return s_v;
+	// this checks Z ( should be moved further down )
+	VectorType dirzsign(1.);
+	dirzsign(dirzm < 0) = -1.;
+	distance = (tubeparams->dZ * dirzsign - zm)/dirzm; // no protection here??
+	distance(distance < 0) = 0.;
 
-	  // Distance to R
-	  VectorType n2 = dirx*dirx + diry*diry;
+	// MaskType done_m = sz < 0;
+	// if ( done_m.isFull() ) return s_v;
 
-	  // this means that particle is only in z direction ?? ( is this necessary ?? )
-	  distz_v(Vc::abs(n2) < tol_v) = sz_v;
-	  done_m |= Vc::abs(n2) < tol_v;
+	// Distance to R
+	VectorType n2 = Vc::One - dirzm*dirzm; // dirxm*dirxm + dirym*dirym;
 
-	  VectorType r2 = x*x + y*y;
-	  VectorType rdotn = x*dirx + y*diry;
+	// this means that particle is moving only in z direction ?? ( is this necessary ?? )
 
-	  // is this condition useful?
-	  MaskType rdotn_m = rdotn_v > 0.;
-	  VectorType const rmax2 = tubeparams->cacheRmaxSqr;
+	//distz_v(Vc::abs(n2) < tol_v) = sz_v;
+	//done_m |= Vc::abs(n2) < tol_v;
 
-	  VectorType b(0.);
-	  VectorType Delta(0.);
-	  VectorType distr = UUtils::kInfinity;
+	VectorType r2 = xm*xm + ym*ym;
+	VectorType rdotn = xm*dirxm + ym*dirym;
 
-	  // distance to the outer cylinder
-	  // check first of all safety
-	  MaskType r2_m = r2 >= ( rmax2 - tol_v );
-	  dist_v(!done_m && r2_m && rdotn_m) = 0.;
-	  done_m |= r2_m && rdotn_m;
+	// is this condition useful?
+	VectorType const rmax2 = tubeparams->cacheRmaxSqr;
+	VectorType distr = UUtils::kInfinity;
 
-	  DistToTube_Vc<NeedCheckOrNot>(r2, n2, rdotn, rmax2, b, d);
-	  distr = -b + d;
+	// distance to the outer cylinder
+	// check first of all safety
+	VectorType c = r2 - rmax2; // we can do a check on r2 !!
+	VectorType a = n2;
+	VectorType b = 2*rdotn;
+	VectorType discriminant = b*b-4*a*c;
 
-	  MaskType sr_m = (sr > 0.) && (d > 0.);
-	  dist_v(!done_m && sr_m) = Vc::min(dist_v, distr);
-	  done_m |= sr_m;
+	// this IS ALWAYS the MINUS (+) solution ?
+	VectorType distanceRmax;
+	distanceRmax = (-b + Vc::sqrt( discriminant ))/(2.*a);
+	distanceRmax ( distanceRmax < 0) = Utils::kInfinityVc;
 
-	  if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	  {
-		  std::cerr << "WARNING: PHI TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
-	  }
+	// do final reduction
+	distance  = Vc::min(distance, distanceRmax);
 
-	  if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
-	  {
-		  std::cerr << "WARNING: RMIN TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
+	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		std::cerr << "WARNING: PHI TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
+	}
 
-	  }
-
-	  // do we need this?? ( maybe because of boundary )
-	  s_v(!done_m) = 0.;
-	  distance=dist_v;
+	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		std::cerr << "WARNING: RMIN TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
+	}
 }
-*/
 
 
 // a template version targeted at T = Vc or T = Boost.SIMD or T= double
@@ -841,6 +849,31 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( Vectors3DSOA c
 			dist.store( &distance[i] );
 		}
 }
+
+
+template<int tid, int rid, typename TubeType, typename ValueType>
+inline
+void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
+{
+	int i=0;
+	typedef typename Vc::Vector<ValueType> VectorType;
+	for( i=0; i < points_v.size; i += Vc::Vector<ValueType>::Size )
+		{
+			VectorType x( &points_v.x[i] );
+			VectorType y( &points_v.y[i] );
+			VectorType z( &points_v.z[i] );
+			VectorType xd( &dirs_v.x[i] );
+			VectorType yd( &dirs_v.y[i] );
+			VectorType zd( &dirs_v.z[i] );
+			VectorType step( &steps[i] );
+			VectorType dist;
+			DistanceToOut< VectorType >(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+			dist.store( &distance[i] );
+		}
+}
+
 
 
 template<int tid, int rid, typename TubeType, typename T>

@@ -11,12 +11,10 @@
 #define TESTSHAPECONTAINER_H_
 
 
-class TubeParameters;
-class BoxParameters;
-
 #include <vector>
 #include <cmath>
 #include "PhysicalCone.h"
+#include "PhysicalTube.h"
 
 class TestShapeContainer
 {
@@ -33,13 +31,23 @@ private:
 											{ 8., 7., 10., 15., 30., 0, 3.21*M_PI/2.} // some weird angle phi
 										 };
 
+	const std::vector<std::vector<double> > tubeparams { /* rmin, rmax, dz, phistart, deltaphi */
+												{ 0., 15., 30., 0, 2.*M_PI}, // a full tube without inner radius
+												{ 10., 15., 30., 0, M_PI/2.}, // with inner radius and phi < PI section
+												{ 10., 15., 30., 0, M_PI}, // with inner radius no phi = PI section
+												{ 0., 15., 30., 0, M_PI}, // no inner radius no phi = PI section
+												{ 10., 15., 30., 0, 3*M_PI/2.}, // with inner tube and phi > PI
+												{ 10., 15., 30., 0, 3.21*M_PI/2.}, // with inner tube and weird angle
+										};
+
+
 public:
-	int GetNumberOfConeTestShapes()
+	int GetNumberOfConeTestShapes() const
 	{
 		return coneparams.size();
 	}
 
-	ConeParameters<double> const * GetConeParams(int i)
+	ConeParameters<double> const * GetConeParams(int i) const
 	{
 		return new ConeParameters<double>( coneparams[i][0],
 										   coneparams[i][2],
@@ -50,7 +58,23 @@ public:
 										   coneparams[i][6] );
 	}
 
+
+	int GetNumberOfTubeTestShapes()
+	{
+		return tubeparams.size();
+	}
+
+
+	TubeParameters<double> const * GetTubeParams(int i) const
+	{
+		return new TubeParameters<double>( tubeparams[i][0],
+										   tubeparams[i][1],
+										   tubeparams[i][2],
+										   tubeparams[i][3],
+										   tubeparams[i][4] );
+	}
 };
 
+extern TestShapeContainer gTestShapeContainer;
 
 #endif /* TESTSHAPECONTAINER_H_ */

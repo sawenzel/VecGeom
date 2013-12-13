@@ -51,7 +51,7 @@ class PhysicalVolume
 
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
-			logicalvol(0), daughters(0), bbox(0), analogoususolid(0), analogousrootsolid(0) { };
+			logicalvol(0), daughters(), bbox(0), analogoususolid(0), analogousrootsolid(0) { };
 
 
 
@@ -65,6 +65,8 @@ class PhysicalVolume
 
 		// for basket treatment (supposed to be dispatched to particle parallel case)
 		virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;
+		virtual void DistanceToOut( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const {};
+
 
 		// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 		virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;
@@ -75,6 +77,11 @@ class PhysicalVolume
 		TGeoShape const *GetAsUnplacedROOTSolid() const { return analogousrootsolid; }
 		void SetUnplacedUSolid(VUSolid const *solid) { analogoususolid = solid; }
 		void SetUnplacedROOTSolid(TGeoShape const *solid) { analogousrootsolid = solid; }
+
+
+		// providing an interface to an UNPLACED version of this shape
+		// this should return a pointer to a shape with identity transformation = stripping any matrix information from it
+		virtual PhysicalVolume const * GetAsUnplacedVolume() const = 0;
 
 		// this is
 		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;
@@ -102,6 +109,16 @@ class PhysicalVolume
 			{
 				std::cerr << "WARNING: no daughter list found" << std::endl;
 			}
+		}
+
+		int GetNumberOfDaughters() const
+		{
+			return daughters->size();
+		}
+
+		std::list<PhysicalVolume const *> const * GetDaughterList() const
+		{
+			return daughters;
 		}
 
 		// this function fills the physical volume with random points and directions such that the points are
