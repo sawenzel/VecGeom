@@ -12,8 +12,9 @@ typedef struct {
   double root;
   void Print() const {
     std::cout << "Benchmark:\n"
-              << std::setw(2) << fastgeom
-              << std::endl;
+              << "  FastGeom: " << fastgeom << "s\n"
+              << "  USolids:  " << usolids  << "s\n"
+              << "  ROOT:     " << root     << "s\n";
   }
 } ShapeBenchmark;
 
@@ -34,6 +35,7 @@ private:
   unsigned reps = 1e3;
   double bias = 0.8;
   std::vector<ShapeBenchmark> results;
+  bool verbose = false;
 
 public:
 
@@ -60,6 +62,10 @@ public:
 
   void SetBias(const double bias_) {
     bias = bias_;
+  }
+
+  void SetVerbose(const bool verbose_) {
+    verbose = verbose_;
   }
 
   std::vector<ShapeBenchmark> Results() const {

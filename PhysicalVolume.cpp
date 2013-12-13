@@ -157,7 +157,7 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 				 hitcounter++;
 			 }
 		 }
-	 std::cerr << " have " << hitcounter << " points hitting " << std::endl;
+	 // std::cerr << " have " << hitcounter << " points hitting " << std::endl;
 }
 
 
@@ -203,6 +203,6 @@ PhysicalVolume::fillWithRandomPoints( Vectors3DSOA &points, int number ) const
 		while ( ! ExclusiveContains(point) );
 		points.setFromVector(i, point);
 	}
-	std::cerr << "needed " << counter << " steps to fill the volume " << std::endl;
+	// std::cerr << "needed " << counter << " steps to fill the volume " << std::endl;
 	//return counter;
 }

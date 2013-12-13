@@ -20,6 +20,8 @@ const std::vector<std::vector<double>> trans_cases {
 int main(void) {
 
   ShapeTester *tester = new ShapeTester();
+  tester->SetRepetitions(1024);
+  tester->SetVerbose(true);
 
   TransformationMatrix const *identity =
       new TransformationMatrix(0, 0, 0, 0, 0, 0);
@@ -36,13 +38,13 @@ int main(void) {
   const int n_rotcases = rot_cases.size();
   const int n_transcases = trans_cases.size();
   const int n_totalcases = n_rotcases * n_transcases;
+      
+  // Initialize empty world
+  PhysicalVolume *world = GeoManager::MakePlacedBox(world_params, identity);
+  tester->SetWorld(world);
 
   for (int r = 0; r < n_rotcases; ++r) {
     for (int t = 0; t < n_transcases; ++t) {
-      
-      // Initialize empty world
-      PhysicalVolume *world = GeoManager::MakePlacedBox(world_params, identity);
-      tester->SetWorld(world);
 
       // Generate specialized transformation matrix for case
       TransformationMatrix const *sm =
@@ -53,15 +55,16 @@ int main(void) {
       world->AddDaughter(tube);
 
       // Run benchmark and do cleanup
-      tester->Run();
-      delete sm;
-      delete tube;
-      delete world;
+      // tester->Run();
+      // delete sm;
+      // delete tube;
+      // delete world;
     }
   }
+  tester->Run();
 
   std::vector<ShapeBenchmark> results = tester->Results();
-  for (int i = 0; i < n_totalcases; ++i) results[i].Print();
+  // for (int i = 0; i < results.size(); ++i) results[i].Print();
 
   // Clean
   delete identity;
