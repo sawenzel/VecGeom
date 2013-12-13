@@ -166,7 +166,7 @@ public:
 	template <TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
-		MasterToLocalCombined(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
+		MasterToLocalCombinedT(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
 
 
 	/*
@@ -224,6 +224,15 @@ public:
 	{
 // this is not nice: we bind ourselfs to Vc here
 		MasterToLocal<0,-1, Vc::double_v>(master, local);
+	}
+
+	virtual
+	void
+	MasterToLocalCombined( Vectors3DSOA const & masterpoint, Vectors3DSOA & localpoint,
+			Vectors3DSOA const & mastervec, Vectors3DSOA & localvec ) const
+	{
+		//mapping v
+		MasterToLocalCombinedT<0,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
 	}
 
 	friend class PhysicalVolume;
@@ -437,13 +446,13 @@ void
 {
 	MasterToLocal<0,tid,T>(master_v, local_v);
 }
-
+*/
 
 template <TranslationIdType tid, RotationIdType rid, typename T>
 inline
 void
-TransformationMatrix<tid,rid>::MasterToLocalCombined(Vectors3DSOA const & master_v, Vector3DSOA & local_v
-		Vectors3DSOA const & masterd_v, Vector3DSOA & locald_v ) const
+TransformationMatrix::MasterToLocalCombinedT( Vectors3DSOA const & master_v, Vectors3DSOA & local_v,
+		Vectors3DSOA const & masterd_v, Vectors3DSOA & locald_v ) const
 {
 	// here we are getting a vector of points in SOA form and need to return a vector of points in SOA form
 	// this code is specific to Vc but we could use type traits (is_same or something)
@@ -470,7 +479,7 @@ TransformationMatrix<tid,rid>::MasterToLocalCombined(Vectors3DSOA const & master
 	}
 	// need to treat tail part still
 }
-*/
+
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
