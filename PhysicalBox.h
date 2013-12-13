@@ -62,7 +62,7 @@ public:
 	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
 		// the bounding box of this volume is just the box itself
 		// just forget about translation and rotation
-		this->bbox = reinterpret_cast<PlacedBox<0,0>*>(this);
+		this->bbox = reinterpret_cast<PlacedBox<0, 1296>*>(this);
 		analogoususolid = new UBox("internal_ubox", GetDX(), GetDY(), GetDZ());
 		analogousrootsolid = new TGeoBBox("internal_tgeobbox", GetDX(), GetDY(), GetDZ());
 	}
@@ -96,6 +96,11 @@ public:
 
 
 	virtual ~PlacedBox(){};
+
+	virtual PhysicalVolume const * GetAsUnplacedVolume() const
+	{
+		return reinterpret_cast<PlacedBox<0, 1296> const * >(this);
+	}
 
 	//a factory method that produces a specialized box based on params and transformations
 	//static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );

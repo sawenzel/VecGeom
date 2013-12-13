@@ -7,8 +7,6 @@
 
 #include <iostream>
 #include "PhysicalBox.h"
-#include "TransformationMatrix.h"
-
 
 void BoxParameters::inspect() const
 {

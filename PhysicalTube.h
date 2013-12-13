@@ -110,7 +110,7 @@ public:
 	template<int,int,class,class> friend class PlacedUSolidsTube;
 
 	// template<int,int,int> friend class PlacedRootTube;
-} __attribute__((aligned(ALIGNMENT_BOUNDARY)));
+}; // __attribute__((aligned(ALIGNMENT_BOUNDARY)));
 
 template<TranslationIdType tid, RotationIdType rid, class TubeType=TubeTraits::HollowTubeWithPhi, class T=double>
 class PlacedUSolidsTube : public PhysicalVolume
@@ -127,7 +127,7 @@ public:
   T GetDPhi() const { return tubeparams->GetDPhi(); }
 
 	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb) {
-		this->bbox = new PlacedBox<1,0>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+		this->bbox = new PlacedBox<1,1296>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
     analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
     // analogousrootsolid = new TGeoTube("internal_tgeotube",
@@ -201,6 +201,11 @@ public:
 	void DistanceToOut( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
 			VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const;
 
+
+	virtual PhysicalVolume const * GetAsUnplacedVolume() const
+	{
+		return reinterpret_cast< PlacedUSolidsTube<0,1296, TubeType, T> const * >(this);
+	}
 
 };
 
