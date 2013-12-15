@@ -67,7 +67,7 @@ int main()
 	double *distancesUSOLIDSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	for(auto i=0;i<np;++i) steps[i]=1E30;
+	for(auto i=0;i<np;++i) steps[i] = Utils::kInfinity;
 
 	std::vector<Vector3D> conventionalpoints(np);
 	std::vector<Vector3D> conventionaldirs(np);
@@ -92,6 +92,12 @@ int main()
 	PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(-50, 0, 0, 35, 0, 10) );
 	PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, 50, 0, -35, 0, 10) );
 	PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, -50, 0, -35, 0, 10) );
+	//PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(50, 0, 0, 35, 0, 10) );
+	//PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(-50, 0, 0, 35, 0, 10) );
+	//PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, 50, 0, -35, 0, 10) );
+	//PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, -50, 0, -35, 0, 10) );
+
+
 	world->AddDaughter( plate1 );
 	world->AddDaughter( plate2 );
 	world->AddDaughter( plate3 );
@@ -108,7 +114,7 @@ int main()
 	world->AddDaughter( endcap2 );
 
 	world->fillWithRandomPoints(points,np);
-	world->fillWithBiasedDirections(points, dirs, np, 5/10.);
+	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
 
 	points.toStructureOfVector3D( conventionalpoints );
 	dirs.toStructureOfVector3D( conventionaldirs );
@@ -124,15 +130,55 @@ int main()
 	PhysicalVolume ** nextvolumes  = ( PhysicalVolume ** ) _mm_malloc(sizeof(PhysicalVolume *)*np, ALIGNMENT_BOUNDARY);
 
 	timer.Start();
-	for(int reps=0;reps < NREPS;reps++)
+	for(int reps=0 ;reps < NREPS; reps++ )
 	{
 		vecnav.DistToNextBoundary( world, points, dirs, steps, distances, nextvolumes , np );
-		//( world, points, dirs,  );
 	}
 	timer.Stop();
 	double t0 = timer.getDeltaSecs();
 	std::cerr << t0 << std::endl;
+	// give out hit pointers
+	double d0=0.;
+	for(auto k=0;k<np;k++)
+	{
+		d0+=distances[k];
+	}
 
+
+	timer.Start();
+	for(int reps=0 ;reps < NREPS; reps++ )
+	{
+		vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
+	}
+	timer.Stop();
+	double t1 = timer.getDeltaSecs();
+	std::cerr << t1 << std::endl;
+	double d1;
+	for(auto k=0;k<np;k++)
+		{
+			d1+=distances[k];
+		}
+	std::cerr << d0 << " " << d1 << std::endl;
+
+
+	//vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
+	//( world, points, dirs,  );
+
+
+	// give out hit pointers
+	/*
+	for(auto k=0;k<np;k++)
+	{
+		if( nextvolumes[k] !=0 )
+		{
+			nextvolumes[k]->printInfo();
+		}
+		else
+		{
+			std::cerr << "hitting boundary of world"  << std::endl;
+		}
+	}
+*/
     _mm_free(distances);
     return 1;
 }

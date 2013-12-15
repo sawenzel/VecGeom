@@ -28,6 +28,7 @@ private:
 	bool hasRotation;
 	bool hasTranslation;
 
+
 	template<RotationIdType rid>
 	inline
 	void
@@ -232,7 +233,7 @@ public:
 			Vectors3DSOA const & mastervec, Vectors3DSOA & localvec ) const
 	{
 		//mapping v
-		MasterToLocalCombinedT<0,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
+		MasterToLocalCombinedT<1,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
 	}
 
 	friend class PhysicalVolume;
@@ -510,6 +511,10 @@ public:
 	void
 	MasterToLocalVec(Vectors3DSOA const &, Vectors3DSOA & ) const;
 
+	virtual
+	void
+	MasterToLocalCombined(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
+
 };
 
 
@@ -541,6 +546,13 @@ void
 SpecializedTransformation<tid,rid>::MasterToLocalVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
 {
 	TransformationMatrix::MasterToLocal<0, rid, Vc::double_v >(master,local);
+}
+
+template <int tid, int rid>
+void
+SpecializedTransformation<tid,rid>::MasterToLocalCombined(Vectors3DSOA const & masterp, Vectors3DSOA & localp, Vectors3DSOA const & masterd, Vectors3DSOA & locald) const
+{
+	TransformationMatrix::MasterToLocalCombinedT<tid,rid, Vc::double_v>( masterp, localp, masterd, locald);
 }
 
 #endif /* TRANSFORMATIONMATRIX_H_ */

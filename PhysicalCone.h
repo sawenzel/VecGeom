@@ -149,17 +149,19 @@ PlacedCone : public PhysicalVolume
 {
 private:
 	ConeParameters<PrecType> const * coneparams;
-
+	PlacedCone<0,1296,ConeType,PrecType> * unplacedcone;
 
 public:
 	PlacedCone( ConeParameters<PrecType> const * _cp, TransformationMatrix const *m ) : PhysicalVolume(m), coneparams(_cp) {
-		this->bbox = new PlacedBox<1,0>( new BoxParameters( coneparams->dRmax2, coneparams->dRmax2, coneparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+		this->bbox = new PlacedBox<1,1296>( new BoxParameters( coneparams->dRmax2, coneparams->dRmax2, coneparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
 
 	    // initialize the equivalent usolid shape
 		VUSolid * s = new UCons("internalucons",coneparams->dRmin1,
 				coneparams->dRmax1, coneparams->dRmin2, coneparams->dRmax2,
 				coneparams->dZ, coneparams->dSPhi, coneparams->dDPhi);
 		this->SetUnplacedUSolid( s );
+		if( ! (tid==0 && rid==1296) )
+			unplacedcone = new  PlacedCone<0,1296,ConeType,PrecType>(_cp,m);
 	};
 
 	// ** functions to implement
@@ -232,10 +234,12 @@ public:
 													VectorType const & /*dirx-vec*/, VectorType const & /*diry-vec*/, VectorType const & /*dirz-vec*/, VectorType const & /**/ ) const;
 
 	virtual PhysicalVolume const * GetAsUnplacedVolume() const
-	{
-		return reinterpret_cast< PlacedCone<0,1296, ConeType, PrecType> const * >(this);
-	}
-
+		{
+			if (! ( tid==0 && rid==1296) )
+				{ return unplacedcone;}
+			else
+				return this;
+		}
 };
 
 

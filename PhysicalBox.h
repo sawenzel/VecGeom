@@ -51,6 +51,7 @@ private:
 	//friend class GeoManager;
 	template<bool in>
 	double Safety( Vector3D const &) const;
+	PlacedBox<0,1296> * unplacedbox;
 
 public:
 	void foo() const;
@@ -59,12 +60,17 @@ public:
 	double GetDZ() const {return boxparams->GetDZ();}
 
 	//will provide a private constructor
-	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
+	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp)
+	{
 		// the bounding box of this volume is just the box itself
 		// just forget about translation and rotation
 		this->bbox = reinterpret_cast<PlacedBox<0, 1296>*>(this);
 		analogoususolid = new UBox("internal_ubox", GetDX(), GetDY(), GetDZ());
 		analogousrootsolid = new TGeoBBox("internal_tgeobbox", GetDX(), GetDY(), GetDZ());
+		if(! ( tid==0 && rid==1296 ) )
+		{
+			unplacedbox = new PlacedBox<0,1296>( bp, m );
+		}
 	}
 
 	__attribute__((always_inline))
@@ -99,9 +105,15 @@ public:
 
 	virtual PhysicalVolume const * GetAsUnplacedVolume() const
 	{
-		return reinterpret_cast<PlacedBox<0, 1296> const * >(this);
+		if( tid ==0 && rid == 1296 )
+		{
+			return this;
+		}
+		else
+		{
+			return unplacedbox;
+		}
 	}
-
 	//a factory method that produces a specialized box based on params and transformations
 	//static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );
 };

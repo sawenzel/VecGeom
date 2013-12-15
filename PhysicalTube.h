@@ -117,6 +117,7 @@ class PlacedUSolidsTube : public PhysicalVolume
 {
 private:
 	TubeParameters<T> const * tubeparams;
+	PlacedUSolidsTube<0,1296,TubeType,T> * unplacedtube;
 
 public:
 
@@ -126,12 +127,17 @@ public:
   T GetSPhi() const { return tubeparams->GetSPhi(); }
   T GetDPhi() const { return tubeparams->GetDPhi(); }
 
-	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb) {
+	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb)
+	{
 		this->bbox = new PlacedBox<1,1296>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
-    analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
+		analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
-    // analogousrootsolid = new TGeoTube("internal_tgeotube",
-    //                                   GetRmin(), GetRmax(), GetDZ());
+		// analogousrootsolid = new TGeoTube("internal_tgeotube",
+		//                                 GetRmin(), GetRmax(), GetDZ());
+		if(! ( tid==0 && rid==1296 ) )
+		{
+			unplacedtube = new PlacedUSolidsTube<0,1296,TubeType,T>( _tb, m );
+		}
 	};
 
 	// ** functions to implement
@@ -204,7 +210,10 @@ public:
 
 	virtual PhysicalVolume const * GetAsUnplacedVolume() const
 	{
-		return reinterpret_cast< PlacedUSolidsTube<0,1296, TubeType, T> const * >(this);
+		if (! ( tid==0 && rid==1296) )
+			{ return unplacedtube;}
+		else
+			return this;
 	}
 
 };

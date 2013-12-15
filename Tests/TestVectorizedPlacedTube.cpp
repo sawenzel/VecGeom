@@ -17,25 +17,13 @@
 #include "../GlobalDefs.h"
 #include "../GeoManager.h"
 #include "../PhysicalTube.h"
+#include "../TestShapeContainer.h"
 
 // in order to compare to USolids
 #include "VUSolid.hh"
 #include "UTubs.hh"
 
 
-const std::vector<std::vector<double> > TransCases {{0,0,0},
-    {10, 10, 0}};
-
-
-// for the rotations ( C++11 feature )
-const std::vector<std::vector<double> > EulerAngles  {{0.,0.,0.},
-    {30.,0, 0.},
-   //  {0, 45., 0.},
-    //	{0, 0, 67.5}};
-    {180, 0, 0},
-	//{30, 48, 0.},
-	{78.2, 81.0, -10.}};
-//const std::vector<std::vector<double> > EulerAngles {{180,0,0}};
 
 static void cmpresults(double * a1, double * a2, int np,
 		PhysicalVolume const * vol, std::vector<Vector3D> const & points, std::vector<Vector3D> const & dirs)
@@ -90,18 +78,32 @@ int main()
 	StopWatch timer;
 
     // generate benchmark cases
-    for( int r=0; r< EulerAngles.size(); ++r ) // rotation cases
-    		for( int t=0; t< TransCases.size(); ++t ) // translation cases
-    		  {
-    			TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
-    			PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(100,100,100), identity );
+	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
 
-    			TransformationMatrix * tm = new TransformationMatrix(TransCases[t][0], TransCases[t][1], TransCases[t][2],
-    					EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]);
+	// the world volume is a tube
+	double worldrmax = 100.;
+	double worldrmin = 0.;
+	double worldz = 200.;
+	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, 2.*M_PI), identity );
+	PhysicalVolume * beampipe = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmax/40., worldrmax/20., worldz), identity );
+	world->AddDaughter( beampipe );
+	BoxParameters * plateparams = new BoxParameters(30,5.,2.*worldz/3.);
+
+	PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(50, 0, 0, 35, 0, 10)  );
+	PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(-50, 0, 0, 35, 0, 10)  );
+	PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, 50, 0, -35, 0, 10)  );
+	PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, -50, 0, -35, 0, 10)  );
+	world->AddDaughter( plate1 );
+	world->AddDaughter( plate2 );
+	world->AddDaughter( plate3 );
+	world->AddDaughter( plate4 );
+
+    //			TransformationMatrix * tm = new TransformationMatrix(TransCases[t][0], TransCases[t][1], TransCases[t][2],
+    //					EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]);
 
     			// these dispatch to specialized matrices
-    			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
-    						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
+    //			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
+    //						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
     			double rmin = 10.;
     			double rmax = 20.;
@@ -109,7 +111,9 @@ int main()
     			double phis  =0.;
     			//double dphi = 2.*M_PI;
     			double dphi = M_PI;
-    			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
+
+    			TubeParameters<double> const *tp = gTestShapeContainer.GetTubeParams(0);
+    			PhysicalVolume * daughter = GeoManager::MakePlacedTube( tp, tm );
 
     			//std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
     			//std::cerr << daughter->UnplacedContains( Vector3D(-15, 1, 15) ) << std::endl;
@@ -119,11 +123,12 @@ int main()
     			//		Vector3D x( cos(k/(100.)*2*M_PI), sin(k/(100.)*2*M_PI), 0 );
     			//		std::cerr << "## " << k/100.*2*M_PI << " "  << daughter->UnplacedContains( x ) << std::endl;
     			//	}
-
     			world->AddDaughter(daughter);
-
     			world->fillWithRandomPoints(points,np);
     			world->fillWithBiasedDirections(points, dirs, np, 8/10.);
+
+    			daughter->fillWithRandomPoints(points,np);
+
 
     			points.toStructureOfVector3D( conventionalpoints );
     			dirs.toStructureOfVector3D( conventionaldirs );
@@ -132,11 +137,10 @@ int main()
 
 //// time performance for this placement ( we should probably include some random physical steps )
 
-
     			timer.Start();
     			for(int reps=0;reps< NREPS ;reps++)
     			{
-    				daughter->DistanceToIn(points,dirs,steps,distances);
+    				daughter->DistanceToOut(points,dirs,steps,distances);
     			}
     			timer.Stop();
     			double t0 = timer.getDeltaSecs();
@@ -264,8 +268,23 @@ int main()
     			 TGeoMatrix * rootmatrix= new TGeoCombiTrans(TransCases[t][0], TransCases[t][1], TransCases[t][2],
 						   new TGeoRotation("rot1",EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2]));
     			 TGeoManager *geom = new TGeoManager("","");
-    		     TGeoVolume * vol = geom->MakeTubs("atube",0,rmin,rmax,dz, phis *360/(2.*M_PI), phis+360*dphi/(2.*M_PI));
+    		     TGeoVolume * vol = geom->MakeTubs("atube",0, tp->GetRmin(), tp->GetRmax(), tp->GetDZ(),tp->GetSPhi() *360/(2.*M_PI), tp->GetSPhi()+360*tp->GetDPhi()/(2.*M_PI));
     		     TGeoShape *  roottube=vol->GetShape();
+
+    		     // now the scalar version from ROOTGeantV
+    		 //    timer.Start();
+    		 //    for(int reps=0;reps<NREPS;reps++)
+    		 //    {
+    		 //   	 for(auto j=0;j<np;++j)
+    		 //   	 {
+    		 //   		 Vector3D localp, localdir;
+    		 //   		 rootmatrix->MasterToLocal( &conventionalpoints[j].x, &localp.x );
+    		 //       	 rootmatrix->MasterToLocalVect( &conventionaldirs[j].x, &localdir.x );
+    		 //            distancesROOTSCALAR[j]=roottube->DistFromOutside( &localp.x, &localdir.x, 3, Utils::kInfinity, 0);
+    		 //        }
+    		 //    }
+    		 //    timer.Stop();
+    		 //    double t7 = timer.getDeltaSecs();
 
     		     // now the scalar version from ROOTGeantV
     		     timer.Start();
@@ -276,8 +295,8 @@ int main()
     		    		 Vector3D localp, localdir;
     		    		 rootmatrix->MasterToLocal( &conventionalpoints[j].x, &localp.x );
     		        	 rootmatrix->MasterToLocalVect( &conventionaldirs[j].x, &localdir.x );
-    		             distancesROOTSCALAR[j]=roottube->DistFromOutside( &localp.x, &localdir.x, 3,1e30, 0);
-    		         }
+    		        	 distancesROOTSCALAR[j]=roottube->DistFromInside( &conventionalpoints[j].x, &conventionaldirs[j].x, 3, Utils::kInfinity, 0);
+    		    	 }
     		     }
     		     timer.Stop();
     		     double t7 = timer.getDeltaSecs();
