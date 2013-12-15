@@ -8,6 +8,34 @@
 #include <cmath>
 #include <cstdio>
 
+#include "TGeoMatrix.h"
+
+// constructor
+TransformationMatrix::TransformationMatrix(double const *t, double const *r) : rootmatrix(0)
+{
+	trans[0]=t[0];
+	trans[1]=t[1];
+	trans[2]=t[2];
+	for(auto i=0;i<9;i++)
+		rot[i]=r[i];
+	// we need to check more stuff ( for instance that product along diagonal is +1)
+	setProperties();
+
+}
+
+// more general constructor ala ROOT ( with Euler Angles )
+TransformationMatrix::TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
+{
+	trans[0]=tx;
+	trans[1]=ty;
+	trans[2]=tz;
+	setAngles(phi, theta, psi);
+	setProperties();
+
+	InitEquivalentTGeoMatrix(phi, theta, psi);
+}
+
+
 void TransformationMatrix::setAngles( double phi, double theta, double psi )
 {
 	//	Set matrix elements according to Euler angles
@@ -91,6 +119,27 @@ unsigned int TransformationMatrix::getNumberOfZeroEntries() const
 			}
 		return count;
 	}
+
+void TransformationMatrix::InitEquivalentTGeoMatrix(double phi, double theta, double psi)
+{
+	if( identity ){
+		rootmatrix = new TGeoIdentity();
+	}
+	else if ( hasRotation && ! hasTranslation )
+	{
+		rootmatrix = new TGeoRotation("internalrot",phi, theta, psi);
+	}
+	else if ( hasTranslation && ! hasRotation )
+	{
+		rootmatrix = new TGeoTranslation(trans[0],trans[1],trans[2]);
+	}
+	else
+	{
+		rootmatrix = new TGeoCombiTrans(trans[0],trans[1],trans[2], new TGeoRotation("internalrot",phi,theta,psi));
+	}
+	// for the moment we are not treating the case of a scale matrix
+
+}
 
 
 TransformationMatrix const *

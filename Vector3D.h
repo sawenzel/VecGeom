@@ -104,6 +104,17 @@ public:
 	  }
   }
 
+
+  void toPlainArray( double * v, int np )
+  {
+	  for(auto i=0;i<np;i++)
+	  {
+		  v[3*i]=x[i];
+		  v[3*i+1]=y[i];
+		  v[3*i+2]=z[i];
+	  }
+  }
+
   void toStructureOfVector3D( Vector3D * v )
     {
   	  for(auto i=0;i<size;i++)

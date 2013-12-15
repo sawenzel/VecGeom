@@ -49,7 +49,7 @@ int main()
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
 
-	int np=1024;
+	int np=116;
 	int NREPS = 1000;
 
 	points.alloc(np);
@@ -69,10 +69,9 @@ int main()
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i] = Utils::kInfinity;
 
-	std::vector<Vector3D> conventionalpoints(np);
-	std::vector<Vector3D> conventionaldirs(np);
-	Vector3D * conventionalpoints2 = (Vector3D *) new Vector3D[np];
-	Vector3D * conventionaldirs2 = (Vector3D *) new Vector3D[np];
+	double *plainpointarray = (double *) _mm_malloc(3*np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *plaindirtarray = (double *) _mm_malloc(3*np*sizeof(double), ALIGNMENT_BOUNDARY);
+
 
 	StopWatch timer;
 
@@ -116,10 +115,8 @@ int main()
 	world->fillWithRandomPoints(points,np);
 	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
 
-	points.toStructureOfVector3D( conventionalpoints );
-	dirs.toStructureOfVector3D( conventionaldirs );
-	points.toStructureOfVector3D( conventionalpoints2 );
-	dirs.toStructureOfVector3D( conventionaldirs2 );
+	points.toPlainArray(plainpointarray,np);
+	dirs.toPlainArray(plaindirtarray,np);
 
 	std::cerr << " Number of daughters " << world->GetNumberOfDaughters() << std::endl;
 
@@ -142,6 +139,7 @@ int main()
 	for(auto k=0;k<np;k++)
 	{
 		d0+=distances[k];
+		distances[k]=Utils::kInfinity;
 	}
 
 
@@ -151,14 +149,34 @@ int main()
 		vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
 	}
 	timer.Stop();
-	double t1 = timer.getDeltaSecs();
+	double t1= timer.getDeltaSecs();
+
 	std::cerr << t1 << std::endl;
+
 	double d1;
 	for(auto k=0;k<np;k++)
+	{
+		d1+=distances[k];
+		distances[k]=Utils::kInfinity;
+
+	}
+
+	// now using the ROOT Geometry library (scalar version)
+	timer.Start();
+	for(int reps=0;reps < NREPS; reps ++ )
+	{
+		vecnav.DistToNextBoundaryUsingROOT( world, plainpointarray, plaindirtarray, steps, distances, nextvolumes, np );
+	}
+	timer.Stop();
+	double t3 = timer.getDeltaSecs();
+
+	std::cerr << t3 << std::endl;
+	double d3;
+	for(auto k=0;k<np;k++)
 		{
-			d1+=distances[k];
+			d3+=distances[k];
 		}
-	std::cerr << d0 << " " << d1 << std::endl;
+	std::cerr << d0 << " " << d1 << " " << d3 << std::endl;
 
 
 	//vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );

@@ -17,6 +17,7 @@
 // for stuff from USolids
 #include "VUSolid.hh"
 #include "UCons.hh"
+#include "TGeoCone.h"
 
 //Member Data:
 //
@@ -160,6 +161,10 @@ public:
 				coneparams->dRmax1, coneparams->dRmin2, coneparams->dRmax2,
 				coneparams->dZ, coneparams->dSPhi, coneparams->dDPhi);
 		this->SetUnplacedUSolid( s );
+		analogousrootsolid = new TGeoCone(coneparams->dZ,coneparams->dRmin1,
+				coneparams->dRmax1, coneparams->dRmin2, coneparams->dRmax2 );
+
+
 		if( ! (tid==0 && rid==1296) )
 			unplacedcone = new  PlacedCone<0,1296,ConeType,PrecType>(_cp,m);
 	};

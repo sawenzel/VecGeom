@@ -132,8 +132,9 @@ public:
 		this->bbox = new PlacedBox<1,1296>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
 		analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
-		// analogousrootsolid = new TGeoTube("internal_tgeotube",
-		//                                 GetRmin(), GetRmax(), GetDZ());
+
+		// we need to distinguish here whether phi or not!!!!
+		analogousrootsolid = new TGeoTube("internal_tgeotube", GetRmin(), GetRmax(), GetDZ());
 		if(! ( tid==0 && rid==1296 ) )
 		{
 			unplacedtube = new PlacedUSolidsTube<0,1296,TubeType,T>( _tb, m );

@@ -16,6 +16,8 @@
 typedef int TranslationIdType;
 typedef int RotationIdType;
 
+class TGeoMatrix;
+
 // the idea is to have StorageClass being a
 //template <typename StorageClass>
 class TransformationMatrix
@@ -28,6 +30,8 @@ private:
 	bool hasRotation;
 	bool hasTranslation;
 
+	// the equivalent ROOT matrix (for convenience)
+	TGeoMatrix * rootmatrix;
 
 	template<RotationIdType rid>
 	inline
@@ -48,12 +52,15 @@ private:
 
 	void setAngles(double phi, double theta, double psi);
 	void setProperties();
+	void InitEquivalentTGeoMatrix(double, double, double);
 
 public:
 	bool isIdentity() const {return identity;}
 	bool isRotation() const {return hasRotation;}
 	bool isTranslation() const {return hasTranslation;}
 	void print() const;
+
+	TGeoMatrix const * GetAsTGeoMatrix() const { return rootmatrix;}
 
 	Vector3D getTrans() const
 	{
@@ -106,26 +113,10 @@ public:
 	unsigned int getNumberOfZeroEntries() const;
 
 	// constructor
-	TransformationMatrix(double const *t, double const *r)
-	{
-	    trans[0]=t[0];
-	    trans[1]=t[1];
-		trans[2]=t[2];
-		for(auto i=0;i<9;i++)
-			rot[i]=r[i];
-		// we need to check more stuff ( for instance that product along diagonal is +1)
-		setProperties();
-	}
+	TransformationMatrix(double const *t, double const *r);
 
 	// more general constructor ala ROOT ( with Euler Angles )
-	TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
-	{
-		trans[0]=tx;
-		trans[1]=ty;
-		trans[2]=tz;
-		setAngles(phi, theta, psi);
-		setProperties();
-	}
+	TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi);
 
 	virtual
 	~TransformationMatrix(){}

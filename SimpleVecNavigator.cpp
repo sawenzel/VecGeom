@@ -173,8 +173,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 
 		distance[k]=(volume->GetAsUnplacedROOTSolid())->DistFromInside(const_cast<double *>( &points[3*k] ),
 																	const_cast<double *>(&dirs[3*k]),
-																		3,
-																		steps[k], 0 );
+																		3,	steps[k], 0 );
 
 		std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
 		for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
@@ -185,7 +184,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 				// previous distance become step estimate, distance to daughter returned in workspace
 
 				// now need to do matrix transformations outside
-				TGeoMatrix const * rm; // = daughter->getMatrix()->getAsROOTMatrix();
+				TGeoMatrix const * rm = daughter->getMatrix()->GetAsTGeoMatrix();
 
 				double localpoint[3];
 				double localdir[3];
