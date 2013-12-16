@@ -133,8 +133,17 @@ public:
 		analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
 
-		// we need to distinguish here whether phi or not!!!!
-		analogousrootsolid = new TGeoTube("internal_tgeotube", GetRmin(), GetRmax(), GetDZ());
+		// to get a pointer to the ROOT instancw, we need to distinguish here whether phi or not!!!!
+		if( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+		{
+			analogousrootsolid = new TGeoTubeSeg("internal_tgeotube", GetRmin(), GetRmax(), GetDZ(),
+					GetSPhi() *360/(2.*M_PI), GetSPhi()+360*GetDPhi()/(2.*M_PI));
+		}
+		else
+		{
+			analogousrootsolid = new TGeoTube("internal_tgeotube", GetRmin(), GetRmax(), GetDZ());
+		}
+
 		if(! ( tid==0 && rid==1296 ) )
 		{
 			unplacedtube = new PlacedUSolidsTube<0,1296,TubeType,T>( _tb, m );
