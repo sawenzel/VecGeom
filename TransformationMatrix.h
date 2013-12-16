@@ -13,6 +13,8 @@
 #include <type_traits>
 #include "Vc/vector.h"
 
+#include "TGeoMatrix.h"
+
 typedef int TranslationIdType;
 typedef int RotationIdType;
 
@@ -27,6 +29,8 @@ private:
 	bool identity;
 	bool hasRotation;
 	bool hasTranslation;
+
+	TGeoMatrix *root_representation;
 
 	template<RotationIdType rid>
 	inline
@@ -124,6 +128,12 @@ public:
 		trans[2]=tz;
 		setAngles(phi, theta, psi);
 		setProperties();
+		TGeoRotation *rot = new TGeoRotation("internal_tm", phi, theta, psi);
+		if (!tx && !ty && !tz) {
+			root_representation = rot;
+		} else {
+			root_representation = new TGeoCombiTrans(tx, ty, tz, rot);
+		}
 	}
 
 	virtual

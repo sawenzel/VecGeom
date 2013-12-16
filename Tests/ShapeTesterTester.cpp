@@ -56,8 +56,8 @@ int main(void) {
 
       // Run benchmark and do cleanup
       // tester->Run();
-      // delete sm;
-      // delete tube;
+      delete sm;
+      delete tube;
       // delete world;
     }
   }

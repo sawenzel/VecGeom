@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <iostream>
-#include <iomanip>
 #include "GeoManager.h"
 
 typedef struct {

@@ -127,20 +127,12 @@ public:
   T GetDPhi() const { return tubeparams->GetDPhi(); }
 
 	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb) {
-<<<<<<< HEAD
 		this->bbox = new PlacedBox<1,0>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
     analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
     analogousrootsolid = new TGeoTubeSeg("internal_tgeotubeseg", GetRmin(),
                                          GetRmax(), GetDZ(), GetSPhi(),
                                          GetDPhi());
-=======
-		this->bbox = new PlacedBox<1,1296>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
-    analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
-                                GetSPhi(), GetDPhi());
-    // analogousrootsolid = new TGeoTube("internal_tgeotube",
-    //                                   GetRmin(), GetRmax(), GetDZ());
->>>>>>> e7d17a0cb61b61b988b88f941191258001da001a
 	};
 
 	// ** functions to implement
