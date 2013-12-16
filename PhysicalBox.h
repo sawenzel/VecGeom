@@ -67,8 +67,7 @@ public:
 		// just forget about translation and rotation
 		this->bbox = reinterpret_cast<PlacedBox<0, 1296>*>(this);
 		analogoususolid = new UBox("internal_ubox", GetDX(), GetDY(), GetDZ());
-		analogousrootsolid = new TGeoBBox("internal_tgeobbox",
-																		  GetDX(), GetDY(), GetDZ());
+		analogousrootsolid = new TGeoBBox("internal_tgeobbox", GetDX(), GetDY(), GetDZ());
 		if(! ( tid==0 && rid==1296 ) )
 		{
 			unplacedbox = new PlacedBox<0,1296>( bp, m );

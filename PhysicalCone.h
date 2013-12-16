@@ -165,7 +165,6 @@ public:
 		this->bbox = new PlacedBox<1,1296>( new BoxParameters( std::max(GetRmax2(), GetRmax1() ),
 				std::max(GetRmax2(), GetRmax1()), GetDZ()), new TransformationMatrix(0,0,0,0,0,0) );
 
-<<<<<<< .merge_file_2Kss7t
 	  // Initialize USolid and ROOT representations
 		analogoususolid = new UCons("internal_ucons", GetRmin1(), GetRmax1(),
 												        GetRmin2(), GetRmax2(), GetDZ(), GetSPhi(),
@@ -193,7 +192,10 @@ public:
 
 		if( ! (tid==0 && rid==1296) )
 			unplacedcone = new  PlacedCone<0,1296,ConeType,PrecType>(_cp,m);
+<<<<<<< .merge_file_be4CeK
 >>>>>>> .merge_file_GZyudu
+=======
+>>>>>>> .merge_file_91psKJ
 	};
 
 	// ** functions to implement
