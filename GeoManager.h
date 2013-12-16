@@ -113,13 +113,13 @@ public:
 
 	// static factory methods ( they will be implemented in separate source files to parallize the compilation process )
 	static
-	PhysicalVolume * MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm);
+	PhysicalVolume * MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm, bool=true);
 
 	static
-	PhysicalVolume * MakePlacedTube( TubeParameters<> const * tp, TransformationMatrix const * tm);
+	PhysicalVolume * MakePlacedTube( TubeParameters<> const * tp, TransformationMatrix const * tm, bool=true);
 
 	static
-	PhysicalVolume * MakePlacedCone( ConeParameters<> const * cp, TransformationMatrix const * tm);
+	PhysicalVolume * MakePlacedCone( ConeParameters<> const * cp, TransformationMatrix const * tm, bool=true);
 
 	// we need to solve problem of pointer ownership --> let's use smart pointers and move semantics
 

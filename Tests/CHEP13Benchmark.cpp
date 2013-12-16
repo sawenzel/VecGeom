@@ -85,8 +85,8 @@ int main()
 	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, 2.*M_PI), identity );
 	PhysicalVolume * beampipe = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmax/40., worldrmax/20., worldz), identity );
 	world->AddDaughter( beampipe );
-	BoxParameters * plateparams = new BoxParameters(30,5.,2.*worldz/3.);
 
+	BoxParameters * plateparams = new BoxParameters(30,5.,2.*worldz/3.);
 	PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(50, 0, 0, 35, 0, 10) );
 	PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(-50, 0, 0, 35, 0, 10) );
 	PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, 50, 0, -35, 0, 10) );
@@ -95,8 +95,6 @@ int main()
 	//PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(-50, 0, 0, 35, 0, 10) );
 	//PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, 50, 0, -35, 0, 10) );
 	//PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, -50, 0, -35, 0, 10) );
-
-
 	world->AddDaughter( plate1 );
 	world->AddDaughter( plate2 );
 	world->AddDaughter( plate3 );

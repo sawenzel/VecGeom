@@ -1,5 +1,5 @@
 CXX=g++
-CXX_OPT=-O2 -fpermissive -ffast-math  -finline-limit=10000000 -mavx -ftree-vectorize
+CXX_OPT=-O2 -fpermissive -ffast-math  -finline-limit=10000000 -msse4.2 -ftree-vectorize
 CXX_FLAGS=-fabi-version=6 -m64 -std=c++11 #`root-config --cflags`
 CXX_FLAGS+=${CXX_OPT}
 CXX_INCLUDE=-I./ -I./Tests/ -I ${VCROOT}/include
@@ -8,7 +8,7 @@ CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp P
 CXX_HDR=PhysicalBox.h PhysicalTube.h PhysicalCone.h
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 
-all: CHEP13Benchmark CHEP13BenchmarkSpec
+all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement
 
 %.cpp.o: %.cpp 
 	$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@ 
@@ -20,8 +20,8 @@ CHEP13Benchmark: objs Tests/CHEP13Benchmark.cpp
 
 CHEP13BenchmarkSpec: objs Tests/CHEP13BenchmarkSpecialMatrices.cpp 
 	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13BenchmarkSpecialMatrices.cpp $(CXX_LIBS) -o bin/CHEP13BenchmarkSpec
-
-CHEP13BenchmarkSpec: objs Tests/CHEP13Benchmark_unspecializedplacements.cpp 
+:
+CHEP13Benchmark_unspecplacement: objs Tests/CHEP13Benchmark_unspecializedplacements.cpp 
 	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13Benchmark_unspecializedplacements.cpp $(CXX_LIBS) -o bin/CHEP13Benchmark_unspecplacement
 
 clean:

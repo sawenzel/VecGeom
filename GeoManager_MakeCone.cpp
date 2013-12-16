@@ -8,7 +8,7 @@
 #include "GeoManager.h"
 
 
-PhysicalVolume * GeoManager::MakePlacedCone( ConeParameters<> const * bp, TransformationMatrix const * tm)
+PhysicalVolume * GeoManager::MakePlacedCone( ConeParameters<> const * bp, TransformationMatrix const * tm, bool specialize_placement)
 {
-		return MakePlacedShape<Cone>( bp, tm);
+		return MakePlacedShape<Cone>( bp, tm, specialize_placement);
 }

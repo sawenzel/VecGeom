@@ -49,7 +49,7 @@ int main()
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
 
-	int np=116;
+	int np=1024;
 	int NREPS = 1000;
 
 	points.alloc(np);
@@ -62,10 +62,10 @@ int main()
 	rintermediatepoints.alloc(np);
 	rintermediatedirs.alloc(np);
 
-	double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *distancesROOTSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *distancesUSOLIDSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *distances1 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *distances3 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *distances4 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i] = Utils::kInfinity;
 
@@ -109,8 +109,8 @@ int main()
 					worldrmax/20., worldrmax/10., worldz/10., 0, 2.*M_PI );
 	PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,-9.*worldz/10., 0, 0, 0), false );
 	PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,9*worldz/10, 0, 180, 0), false );
-	world->AddDaughter( endcap1 );
-	world->AddDaughter( endcap2 );
+	//world->AddDaughter( endcap1 );
+	//world->AddDaughter( endcap2 );
 
 	world->fillWithRandomPoints(points,np);
 	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
@@ -129,7 +129,7 @@ int main()
 	timer.Start();
 	for(int reps=0 ;reps < NREPS; reps++ )
 	{
-		vecnav.DistToNextBoundary( world, points, dirs, steps, distances, nextvolumes , np );
+		vecnav.DistToNextBoundary( world, points, dirs, steps, distances1, nextvolumes , np );
 	}
 	timer.Stop();
 	double t0 = timer.getDeltaSecs();
@@ -138,45 +138,69 @@ int main()
 	double d0=0.;
 	for(auto k=0;k<np;k++)
 	{
-		d0+=distances[k];
-		distances[k]=Utils::kInfinity;
+		d0+=distances1[k];
 	}
 
 
 	timer.Start();
 	for(int reps=0 ;reps < NREPS; reps++ )
 	{
-		vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
+		vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances2, nextvolumes , np );
 	}
 	timer.Stop();
 	double t1= timer.getDeltaSecs();
 
 	std::cerr << t1 << std::endl;
 
-	double d1;
+	double d1=0.;
 	for(auto k=0;k<np;k++)
 	{
-		d1+=distances[k];
-		distances[k]=Utils::kInfinity;
-
+		d1+=distances2[k];
 	}
 
 	// now using the ROOT Geometry library (scalar version)
 	timer.Start();
 	for(int reps=0;reps < NREPS; reps ++ )
 	{
-		vecnav.DistToNextBoundaryUsingROOT( world, plainpointarray, plaindirtarray, steps, distances, nextvolumes, np );
+		vecnav.DistToNextBoundaryUsingROOT( world, plainpointarray, plaindirtarray, steps, distances3, nextvolumes, np );
 	}
 	timer.Stop();
 	double t3 = timer.getDeltaSecs();
 
 	std::cerr << t3 << std::endl;
-	double d3;
+	double d3=0.;
 	for(auto k=0;k<np;k++)
 		{
-			d3+=distances[k];
+			d3+=distances3[k];
 		}
-	std::cerr << d0 << " " << d1 << " " << d3 << std::endl;
+
+	timer.Start();
+	for(int reps=0;reps < NREPS; reps ++ )
+	{
+		vecnav.DistToNextBoundaryUsingUSOLIDS( world, points, dirs, steps, distances4, nextvolumes, np );
+	}
+	timer.Stop();
+	double t4 = timer.getDeltaSecs();
+
+	std::cerr << t4 << std::endl;
+	double d4=0.;
+	for(auto k=0;k<np;k++)
+	{
+		d4+=distances4[k];
+	}
+
+	std::cerr << d0 << " " << d1 << " " << d3 << " " << d4 << std::endl;
+
+	for(auto k=0;k<np;k++)
+	{
+//		if(std::abs(distances3[k]-distances2[k])>1e-9)
+		{
+			std::cerr << k << " " << distances1[k] << " " << distances2[k] << " " << distances3[k] << " " << " " << distances4[k] << " " << nextvolumes << std::endl;
+			world->PrintDistToEachDaughter( points.getAsVector(k), dirs.getAsVector(k) );
+			world->PrintDistToEachDaughterROOT( points.getAsVector(k), dirs.getAsVector(k) );
+			world->PrintDistToEachDaughterUSOLID( points.getAsVector(k), dirs.getAsVector(k) );
+		}
+	}
 
 
 	//vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
@@ -197,6 +221,8 @@ int main()
 		}
 	}
 */
-    _mm_free(distances);
-    return 1;
+	_mm_free(distances1);
+	_mm_free(distances2);
+	_mm_free(distances3);
+	return 1;
 }

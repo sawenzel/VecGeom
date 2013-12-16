@@ -11,6 +11,8 @@
 #include <list>
 #include "TGeoShape.h"
 #include "TGeoMatrix.h"
+#include "UVector3.hh"
+#include "VUSolid.hh"
 
 SimpleVecNavigator::SimpleVecNavigator(int np) {
 	// TODO Auto-generated constructor stub
@@ -185,7 +187,6 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 
 				// now need to do matrix transformations outside
 				TGeoMatrix const * rm = daughter->getMatrix()->GetAsTGeoMatrix();
-
 				double localpoint[3];
 				double localdir[3];
 				rm->MasterToLocal( &points[3*k], localpoint );
@@ -202,6 +203,52 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 	}
 }
 
+
+
+void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * volume, Vectors3DSOA const & points,
+		 	 	 	 	 	 	 	 	 	 	 	 	 Vectors3DSOA const & dirs,
+		 	 	 	 	 	 	 	 	 	 	 	 	 double const * steps,
+		 	 	 	 	 	 	 	 	 	 	 	 	 double * distance,
+		 	 	 	 	 	 	 	 	 	 	 	 	 PhysicalVolume ** nextnode, int np ) const
+{
+	for(auto k=0;k<np;k++)
+	{
+		nextnode[k]=0;
+		UVector3 normal;
+		Vector3D p = points.getAsVector(k);
+		Vector3D d = points.getAsVector(k);
+		bool conv;
+
+		distance[k]=(volume->GetAsUnplacedUSolid())->DistanceToOut( reinterpret_cast<UVector3 const &>( p ),
+																	reinterpret_cast<UVector3 const &>( d ),
+																	normal,
+																	conv,
+																	steps[k] );
+
+		std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
+		for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
+			{
+				PhysicalVolume const * daughter = (*iter);
+				VUSolid const * unplacedvolume = daughter->GetAsUnplacedUSolid();
+
+				// previous distance become step estimate, distance to daughter returned in workspace
+
+				// now need to do matrix transformations outside / here we inline them
+				Vector3D localpoint, localdir;
+				(*iter)->getMatrix()->MasterToLocal<1,-1>( p, localpoint );
+				(*iter)->getMatrix()->MasterToLocalVec<-1>( d, localdir );
+
+				double distd = unplacedvolume->DistanceToIn( reinterpret_cast<UVector3 const &> (localpoint),
+															 reinterpret_cast<UVector3 const &>(localdir), distance[k] );
+
+				if( distd < distance[k] )
+				{
+					distance[k] = distd;
+					nextnode[k] = const_cast<PhysicalVolume *>(daughter);
+				}
+			}
+	}
+}
 
 
 

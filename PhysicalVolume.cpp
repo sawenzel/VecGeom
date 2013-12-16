@@ -12,6 +12,8 @@
 #include "GlobalDefs.h"
 
 //template <TranslationIdType, RotationIdType> class PlacedBox;
+#include "TGeoMatrix.h"
+#include "TGeoShape.h"
 
 #include <random>
 
@@ -70,6 +72,9 @@ void PhysicalVolume::fillWithRandomDirections( Vectors3DSOA &dirs, int np )
 
 	 // idea let's do an importance sampling Monte Carlo method; starting from some initial configuration
 	 fillWithRandomDirections( dirs, np );
+
+	 // nothing to do in case no daughter volumes
+	 if( ! daughters || daughters->size() == 0 ) return;
 
 	 std::vector<bool> hit(np,false); // to keep track which particle already hits something
 
@@ -219,6 +224,59 @@ PhysicalVolume::fillWithRandomPoints( Vectors3DSOA &points, int number ) const
 	//return counter;
 }
 
+void PhysicalVolume::PrintDistToEachDaughter( Vector3D const & point, Vector3D const & dir ) const
+{
+	// calculate distance to Boundary of current volume
+//	volume->DistanceToOut( points, dirs, steps, distance );
+
+	// iterate over all the daughter
+	std::list<PhysicalVolume const *> const * daughters = GetDaughterList();
+	int counter = 0;
+	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
+	{
+		PhysicalVolume const * daughter = (*iter);
+		double dist = daughter->DistanceToIn( point, dir, Utils::kInfinity );
+		std::cerr << "\t distance to daughter " << counter << " is " << dist << std::endl;
+		counter++;
+	}
+
+}
+
+void PhysicalVolume::PrintDistToEachDaughterROOT( Vector3D const & point, Vector3D const & dir ) const
+{
+	// iterate over all the daughter
+	std::list<PhysicalVolume const *> const * daughters = GetDaughterList();
+	int counter = 0;
+	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
+	{
+		TGeoShape const * daughter = (*iter)->GetAsUnplacedROOTSolid();
+		TGeoMatrix const * rm = (*iter)->getMatrix()->GetAsTGeoMatrix();
+		double p[3], d[3];
+		rm->MasterToLocal( &point.x, p );
+		rm->MasterToLocalVect( &dir.x, d );
+		double dist=daughter->DistFromOutside( p, d, 3, Utils::kInfinity, 0 );
+		std::cerr << "\t distance to daughter (ROOT) " << counter << " is " << dist << std::endl;
+		counter++;
+	}
+}
+
+void PhysicalVolume::PrintDistToEachDaughterUSOLID( Vector3D const & point, Vector3D const & dir ) const
+{
+	// iterate over all the daughter
+	std::list<PhysicalVolume const *> const * daughters = GetDaughterList();
+	int counter = 0;
+	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
+	{
+		VUSolid const * daughter = (*iter)->GetAsUnplacedUSolid();
+
+		Vector3D p, d;
+		(*iter)->getMatrix()->MasterToLocal<1,-1>( point, p );
+		(*iter)->getMatrix()->MasterToLocalVec<-1>( dir, d );
+		double dist=daughter->DistanceToIn( reinterpret_cast<UVector3 const &>(p), reinterpret_cast<UVector3 const &>(d), Utils::kInfinity );
+		std::cerr << "\t distance to daughter (USOLID) " << counter << " is " << dist << std::endl;
+		counter++;
+	}
+}
 
 void PhysicalVolume::printInfo() const
 {

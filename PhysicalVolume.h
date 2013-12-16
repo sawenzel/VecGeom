@@ -49,7 +49,7 @@ class PhysicalVolume
 
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
-			logicalvol(0), daughters(), bbox(0), analogoususolid(0), analogousrootsolid(0) { };
+			logicalvol(0), daughters(new std::list<PhysicalVolume const *>), bbox(0), analogoususolid(0), analogousrootsolid(0) {};
 
 
 
@@ -87,10 +87,14 @@ class PhysicalVolume
 		virtual PhysicalVolume const * GetAsUnplacedVolume() const = 0;
 		void printInfo() const;
 
+		void PrintDistToEachDaughter( Vector3D const &, Vector3D const &) const;
+		void PrintDistToEachDaughterROOT( Vector3D const &, Vector3D const &) const;
+		void PrintDistToEachDaughterUSOLID( Vector3D const &, Vector3D const &) const;
 		// this is
 		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;
 		// delete all explicit constructors etc...
 		//
+
 		virtual ~PhysicalVolume( ){ };
 
 		void AddDaughter( PhysicalVolume const * vol )
@@ -117,7 +121,11 @@ class PhysicalVolume
 
 		int GetNumberOfDaughters() const
 		{
-			return daughters->size();
+			if( daughters )
+			{
+				return daughters->size();
+			}
+			return 0;
 		}
 
 		std::list<PhysicalVolume const *> const * GetDaughterList() const

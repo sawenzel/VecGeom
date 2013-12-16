@@ -8,7 +8,7 @@
 #include "GeoManager.h"
 
 
-PhysicalVolume * GeoManager::MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm)
+PhysicalVolume * GeoManager::MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm, bool specialize_placement)
 {
-		return MakePlacedShape<Box>( bp, tm);
+		return MakePlacedShape<Box>( bp, tm, specialize_placement);
 }

@@ -53,6 +53,13 @@ public:
 								 double * /*distance*/,
 								 PhysicalVolume ** nextnode, int np ) const;
 
+	void
+	DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const *, Vectors3DSOA const & /*points*/,
+									Vectors3DSOA const & /*dirs*/,
+									double const * /*steps*/,
+									double * /*distance*/,
+									PhysicalVolume ** nextnode, int np ) const;
+
 };
 
 #endif /* SIMPLEVECNAVIGATOR_H_ */
