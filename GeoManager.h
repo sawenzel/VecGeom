@@ -128,7 +128,7 @@ public:
 	// this would be general ( could give in an a reference to a static template function )
 	template <typename Shape, typename Parameter = ShapeParametersMap<Shape> >
 	static
-	PhysicalVolume * MakePlacedShape( Parameter const * param, TransformationMatrix const * tm)
+	PhysicalVolume * MakePlacedShape( Parameter const * param, TransformationMatrix const * tm, bool specialize_placement=true)
 	{
 		// get footprint of TransformationMatrix
 		int rid = tm->getRotationFootprint();
@@ -139,40 +139,42 @@ public:
 		// the following piece of code is script generated
 
 #ifndef AVOIDSPECIALIZATION
-		if( tid == 0 && rid == 1296 ) return ShapeFactory::template Create<0,1296>( param,tm ); // identity
-		if( tid == 1 && rid == 1296 ) return ShapeFactory::template Create<1,1296>( param,tm ); // identity
-		if( tid == 0 && rid == 252 ) return  ShapeFactory::template Create<0,252>( param,tm );
-		if( tid == 1 && rid == 252 ) return  ShapeFactory::template Create<1,252>( param,tm );
-		if( tid == 0 && rid == 405 ) return  ShapeFactory::template Create<0,405>( param,tm );
-		if( tid == 1 && rid == 405 ) return  ShapeFactory::template Create<1,405>( param,tm );
-		if( tid == 0 && rid == 882 ) return  ShapeFactory::template Create<0,882>( param,tm );
-		if( tid == 1 && rid == 882 ) return  ShapeFactory::template Create<1,882>( param,tm );
-		if( tid == 0 && rid == 415 ) return  ShapeFactory::template Create<0,415>( param,tm );
-		if( tid == 1 && rid == 415 ) return  ShapeFactory::template Create<1,415>( param,tm );
-		if( tid == 0 && rid == 496 ) return  ShapeFactory::template Create<0,496>( param,tm );
-		if( tid == 1 && rid == 496 ) return  ShapeFactory::template Create<1,496>( param,tm );
-		if( tid == 0 && rid == 793 ) return  ShapeFactory::template Create<0,793>( param,tm );
-		if( tid == 1 && rid == 793 ) return  ShapeFactory::template Create<1,793>( param,tm );
-		if( tid == 0 && rid == 638 ) return  ShapeFactory::template Create<0,638>( param,tm );
-		if( tid == 1 && rid == 638 ) return  ShapeFactory::template Create<1,638>( param,tm );
-		if( tid == 0 && rid == 611 ) return  ShapeFactory::template Create<0,611>( param,tm );
-		if( tid == 1 && rid == 611 ) return  ShapeFactory::template Create<1,611>( param,tm );
-		if( tid == 0 && rid == 692 ) return  ShapeFactory::template Create<0,692>( param,tm );
-		if( tid == 1 && rid == 692 ) return  ShapeFactory::template Create<1,692>( param,tm );
-		if( tid == 0 && rid == 720 ) return  ShapeFactory::template Create<0,720>( param,tm );
-		if( tid == 1 && rid == 720 ) return  ShapeFactory::template Create<1,720>( param,tm );
-		if( tid == 0 && rid == 828 ) return  ShapeFactory::template Create<0,828>( param,tm );
-		if( tid == 1 && rid == 828 ) return  ShapeFactory::template Create<1,828>( param,tm );
-		if( tid == 0 && rid == 756 ) return  ShapeFactory::template Create<0,756>( param,tm );
-		if( tid == 1 && rid == 756 ) return  ShapeFactory::template Create<1,756>( param,tm );
-		if( tid == 0 && rid == 918 ) return  ShapeFactory::template Create<0,918>( param,tm );
-		if( tid == 1 && rid == 918 ) return  ShapeFactory::template Create<1,918>( param,tm );
-		if( tid == 0 && rid == 954 ) return  ShapeFactory::template Create<0,954>( param,tm );
-		if( tid == 1 && rid == 954 ) return  ShapeFactory::template Create<1,954>( param,tm );
-		if( tid == 0 && rid == 1008 ) return ShapeFactory::template Create<0,1008>( param,tm );
-		if( tid == 1 && rid == 1008 ) return ShapeFactory::template Create<1,1008>( param,tm );
+		if( specialize_placement ){
+			if( tid == 0 && rid == 1296 ) return ShapeFactory::template Create<0,1296>( param,tm ); // identity
+			if( tid == 1 && rid == 1296 ) return ShapeFactory::template Create<1,1296>( param,tm ); // identity
+			if( tid == 0 && rid == 252 ) return  ShapeFactory::template Create<0,252>( param,tm );
+			if( tid == 1 && rid == 252 ) return  ShapeFactory::template Create<1,252>( param,tm );
+			if( tid == 0 && rid == 405 ) return  ShapeFactory::template Create<0,405>( param,tm );
+			if( tid == 1 && rid == 405 ) return  ShapeFactory::template Create<1,405>( param,tm );
+			if( tid == 0 && rid == 882 ) return  ShapeFactory::template Create<0,882>( param,tm );
+			if( tid == 1 && rid == 882 ) return  ShapeFactory::template Create<1,882>( param,tm );
+			if( tid == 0 && rid == 415 ) return  ShapeFactory::template Create<0,415>( param,tm );
+			if( tid == 1 && rid == 415 ) return  ShapeFactory::template Create<1,415>( param,tm );
+			if( tid == 0 && rid == 496 ) return  ShapeFactory::template Create<0,496>( param,tm );
+			if( tid == 1 && rid == 496 ) return  ShapeFactory::template Create<1,496>( param,tm );
+			if( tid == 0 && rid == 793 ) return  ShapeFactory::template Create<0,793>( param,tm );
+			if( tid == 1 && rid == 793 ) return  ShapeFactory::template Create<1,793>( param,tm );
+			if( tid == 0 && rid == 638 ) return  ShapeFactory::template Create<0,638>( param,tm );
+			if( tid == 1 && rid == 638 ) return  ShapeFactory::template Create<1,638>( param,tm );
+			if( tid == 0 && rid == 611 ) return  ShapeFactory::template Create<0,611>( param,tm );
+			if( tid == 1 && rid == 611 ) return  ShapeFactory::template Create<1,611>( param,tm );
+			if( tid == 0 && rid == 692 ) return  ShapeFactory::template Create<0,692>( param,tm );
+			if( tid == 1 && rid == 692 ) return  ShapeFactory::template Create<1,692>( param,tm );
+			if( tid == 0 && rid == 720 ) return  ShapeFactory::template Create<0,720>( param,tm );
+			if( tid == 1 && rid == 720 ) return  ShapeFactory::template Create<1,720>( param,tm );
+			if( tid == 0 && rid == 828 ) return  ShapeFactory::template Create<0,828>( param,tm );
+			if( tid == 1 && rid == 828 ) return  ShapeFactory::template Create<1,828>( param,tm );
+			if( tid == 0 && rid == 756 ) return  ShapeFactory::template Create<0,756>( param,tm );
+			if( tid == 1 && rid == 756 ) return  ShapeFactory::template Create<1,756>( param,tm );
+			if( tid == 0 && rid == 918 ) return  ShapeFactory::template Create<0,918>( param,tm );
+			if( tid == 1 && rid == 918 ) return  ShapeFactory::template Create<1,918>( param,tm );
+			if( tid == 0 && rid == 954 ) return  ShapeFactory::template Create<0,954>( param,tm );
+			if( tid == 1 && rid == 954 ) return  ShapeFactory::template Create<1,954>( param,tm );
+			if( tid == 0 && rid == 1008 ) return ShapeFactory::template Create<0,1008>( param,tm );
+			if( tid == 1 && rid == 1008 ) return ShapeFactory::template Create<1,1008>( param,tm );
+		}
 #endif
-		// fallback case
+		// fallback case: place shape with unspecialized translation and rotation matrix
 		return ShapeFactory::template Create<1,-1>(param,tm);
 	}
 

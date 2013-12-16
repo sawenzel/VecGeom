@@ -51,6 +51,7 @@ private:
 	//friend class GeoManager;
 	template<bool in>
 	double Safety( Vector3D const &) const;
+	PlacedBox<0,1296> * unplacedbox;
 
 public:
 	void foo() const;
@@ -60,13 +61,18 @@ public:
 	double GetDZ() const { return boxparams->GetDZ(); }
 
 	//will provide a private constructor
-	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp) {
+	PlacedBox(BoxParameters const * bp, TransformationMatrix const *m) : PhysicalVolume(m), boxparams(bp)
+	{
 		// the bounding box of this volume is just the box itself
 		// just forget about translation and rotation
 		this->bbox = reinterpret_cast<PlacedBox<0, 1296>*>(this);
 		analogoususolid = new UBox("internal_ubox", GetDX(), GetDY(), GetDZ());
 		analogousrootsolid = new TGeoBBox("internal_tgeobbox",
 																		  GetDX(), GetDY(), GetDZ());
+		if(! ( tid==0 && rid==1296 ) )
+		{
+			unplacedbox = new PlacedBox<0,1296>( bp, m );
+		}
 	}
 
 	__attribute__((always_inline))
@@ -101,9 +107,15 @@ public:
 
 	virtual PhysicalVolume const * GetAsUnplacedVolume() const
 	{
-		return reinterpret_cast<PlacedBox<0, 1296> const * >(this);
+		if( tid ==0 && rid == 1296 )
+		{
+			return this;
+		}
+		else
+		{
+			return unplacedbox;
+		}
 	}
-
 	//a factory method that produces a specialized box based on params and transformations
 	//static PhysicalBox* MakeBox( BoxParameters *param, TransformationMatrix *m );
 };
@@ -204,62 +216,76 @@ PlacedBox<tid,rid>::DistanceToIn(Vector3D const &x, Vector3D const &y, double cP
 // a template version for T = Vc or T = Boost.SIMD or T= double
 // this is the kernel operating on type T
 template<int tid, int rid>
-template<typename T>
+template<typename VecType>
 inline
-void PlacedBox<tid,rid>::DistanceToIn( T const & x, T const & y, T const & z,
-					   T const & dirx, T const & diry, T const & dirz, T const & stepmax, T & distance ) const
+void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, VecType const & z,
+					   VecType const & dirx, VecType const & diry, VecType const & dirz, VecType const & stepmax, VecType & distance ) const
 {
-	   T in(1.);
-	   T saf[3];
-	   T newpt[3];
-	   T tiny(1e-20);
-	   T big(Utils::kInfinity);
-	   T faraway(0.); // initializing all components to zero
+	typedef typename VecType::Mask MaskType;
+	MaskType in;
+	   VecType saf[3];
+	   VecType newpt[3];
+	   VecType tiny(1e-20);
+	   VecType big(Utils::kInfinity);
 
 	   // should be done in the box
-	   T par[3]={ boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
+	   VecType par[3]={ boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
 
 	   // new thing: do coordinate transformation in place here
-	   T localx, localy, localz;
-	   matrix->MasterToLocal<tid,rid,T>(x,y,z,newpt[0],newpt[1],newpt[2]);
+	   VecType localx, localy, localz;
+	   matrix->MasterToLocal<tid,rid,VecType>(x,y,z,newpt[0],newpt[1],newpt[2]);
 	   //
 	   saf[0] = Vc::abs(newpt[0])-par[0];
 	   saf[1] = Vc::abs(newpt[1])-par[1];
 	   saf[2] = Vc::abs(newpt[2])-par[2];
-	   faraway(saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax)=1;
-	   in(saf[0]<0. && saf[1]<0. && saf[2]<0.)=0;
+	   MaskType faraway; // initializing all components to zero
+	   faraway = saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax;
+
+	   in = saf[0]<0. && saf[1]<0. && saf[2]<0.;
 	   distance=big;
 
-	   if( faraway > Vc::Zero )
+	   if( faraway == Vc::One )
 	       return; // return big
 
 	   // new thing:  do coordinate transformation for directions here
-	   T localdirx, localdiry, localdirz;
-	   matrix->MasterToLocalVec<tid,rid,T>(dirx, diry, dirz, localdirx, localdiry, localdirz);
+	   VecType localdirx, localdiry, localdirz;
+	   matrix->MasterToLocalVec<tid,rid,VecType>(dirx, diry, dirz, localdirx, localdiry, localdirz);
 	   //
 
 	   // proceed to analysis of hits
-	   T snxt[3];
-	   T hit0=T(0.);
-	   snxt[0] = saf[0]/(Vc::abs(localdirx)+tiny); // distance to y-z face
-	   T coord1=newpt[1]+snxt[0]*localdiry; // calculate new y and z coordinate
-	   T coord2=newpt[2]+snxt[0]*localdirz;
-	   hit0( saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
+	   // might still be optimized a bit
+	   VecType snxt[3];
+	   snxt[0] = saf[0]/(Vc::abs(localdirx+tiny)); // distance to y-z face
+	   VecType coord1=newpt[1]+snxt[0]*localdiry; // calculate new y and z coordinate
+	   VecType coord2=newpt[2]+snxt[0]*localdirz;
+	   MaskType hit0 =  saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ); // if out and right direction
+	   distance(hit0) = snxt[0];
+	   MaskType done=hit0;
+	   if( done.isFull() ) return;
 
-	   T hit1=T(0.);
-	   snxt[1] = saf[1]/(Vc::abs(localdiry)+tiny); // distance to x-z face
+	   snxt[1] = saf[1]/(Vc::abs(localdiry+tiny)); // distance to x-z face
 	   coord1=newpt[0]+snxt[1]*localdirx; // calculate new x and z coordinate
 	   coord2=newpt[2]+snxt[1]*localdirz;
-	   hit1( saf[1] > 0 && newpt[1]*localdiry < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[2] ) ) = 1; // if out and right direction
+	   MaskType hit1 = saf[1] > 0 && newpt[1]*localdiry < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[2] ); // if out and right direction
+	   distance(!done && hit1) = snxt[1];
+	   done|=hit1;
+	   if( done.isFull() ) return;
 
-	   T hit2=T(0.);
-	   snxt[2] = saf[2]/(Vc::abs(localdirz)+tiny); // distance to x-y face
+	   snxt[2] = saf[2]/(Vc::abs(localdirz+tiny)); // distance to x-y face
 	   coord1=newpt[0]+snxt[2]*localdirx; // calculate new x and y coordinate
 	   coord2=newpt[1]+snxt[2]*localdiry;
-	   hit2( saf[2] > 0 && newpt[2]*localdirz < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[1] ) ) = 1; // if out and right direction
+	   MaskType hit2 = saf[2] > 0 && newpt[2]*localdirz < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[1] ); // if out and right direction
+	   distance(!done && hit2 ) = snxt[2];
 
-	   distance( hit0>0 || hit1>0 || hit2>0 ) = (hit0*snxt[0] + hit1*snxt[1] + hit2*snxt[2]);
-	   distance=in*distance;
+	   /* this is Georgios solution: very fast ! but seems to produce wrong results
+	   snxt[0].setZero(!hit0);
+	   snxt[1].setZero(!hit1);
+	   snxt[2].setZero(!hit2);
+
+	   distance = snxt[0]+snxt[1]+snxt[2];
+	    */
+
+//	   distance(in)=Vc::Zero;
 	   return;
 }
 

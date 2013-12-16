@@ -149,21 +149,23 @@ PlacedCone : public PhysicalVolume
 {
 private:
 	ConeParameters<PrecType> const * coneparams;
-
+	PlacedCone<0,1296,ConeType,PrecType> * unplacedcone;
 
 public:
 
-	PrecType GetRmin1() const { return coneparams->GetRmin1(); } 
-	PrecType GetRmax1() const { return coneparams->GetRmax1(); }
-	PrecType GetRmin2() const { return coneparams->GetRmin2(); }
-	PrecType GetRmax2() const { return coneparams->GetRmax2(); }
-	PrecType GetDZ()    const { return coneparams->GetDZ();    }
-	PrecType GetSPhi()  const { return coneparams->GetSPhi();  }
-	PrecType GetDPhi()  const { return coneparams->GetDPhi();  }
+	inline PrecType GetRmin1() const { return coneparams->GetRmin2(); }
+	inline PrecType GetRmax1() const { return coneparams->GetRmax2(); }
+	inline PrecType GetRmin2() const { return coneparams->GetRmin2(); }
+	inline PrecType GetRmax2() const { return coneparams->GetRmax2(); }
+	inline PrecType GetDZ()    const { return coneparams->GetDZ();    }
+	inline PrecType GetSPhi()  const { return coneparams->GetSPhi();  }
+	inline PrecType GetDPhi()  const { return coneparams->GetDPhi();  }
 
 	PlacedCone( ConeParameters<PrecType> const * _cp, TransformationMatrix const *m ) : PhysicalVolume(m), coneparams(_cp) {
-		this->bbox = new PlacedBox<1,0>( new BoxParameters( coneparams->dRmax2, coneparams->dRmax2, coneparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+		this->bbox = new PlacedBox<1,1296>( new BoxParameters( std::max(GetRmax2(), GetRmax1() ),
+				std::max(GetRmax2(), GetRmax1()), GetDZ()), new TransformationMatrix(0,0,0,0,0,0) );
 
+<<<<<<< .merge_file_2Kss7t
 	  // Initialize USolid and ROOT representations
 		analogoususolid = new UCons("internal_ucons", GetRmin1(), GetRmax1(),
 												        GetRmin2(), GetRmax2(), GetDZ(), GetSPhi(),
@@ -171,6 +173,27 @@ public:
 		analogousrootsolid = new TGeoConeSeg("internal_tgeocone", GetRmin1(),
 																		     GetRmax1(), GetRmin2(), GetRmax2(),
 																		     GetDZ(), GetSPhi(), GetDPhi());
+=======
+	    // initialize the equivalent usolid shape
+		VUSolid * s = new UCons("internalucons", GetRmin1(), GetRmax2(),
+				GetRmin2(), GetRmax2(), GetDZ(), GetSPhi(), GetDPhi());
+
+		this->SetUnplacedUSolid( s );
+
+		if( ConeTraits::NeedsPhiTreatment<ConeType>::value )
+		{
+			analogousrootsolid = new TGeoConeSeg(
+									GetDZ(), GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(),
+									GetSPhi()*360/(2.*M_PI), GetSPhi()+360*GetDPhi()/(2.*M_PI) );
+		}
+		else
+		{
+			analogousrootsolid = new TGeoCone( GetDZ(), GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2() );
+		}
+
+		if( ! (tid==0 && rid==1296) )
+			unplacedcone = new  PlacedCone<0,1296,ConeType,PrecType>(_cp,m);
+>>>>>>> .merge_file_GZyudu
 	};
 
 	// ** functions to implement
@@ -182,7 +205,8 @@ public:
 		Vector3D tDir;
 		matrix->MasterToLocal<tid,rid>(aPoint, tPoint);
 		matrix->MasterToLocalVec<rid>(aDir, tDir);
-		return analogoususolid->DistanceToIn( reinterpret_cast<UVector3 const &>(tPoint), reinterpret_cast<UVector3 const &> (tDir), step );
+		return analogoususolid->DistanceToIn( reinterpret_cast<UVector3 const &>(tPoint),
+											  reinterpret_cast<UVector3 const &>(tDir), step );
 	}
 
 
@@ -243,10 +267,12 @@ public:
 													VectorType const & /*dirx-vec*/, VectorType const & /*diry-vec*/, VectorType const & /*dirz-vec*/, VectorType const & /**/ ) const;
 
 	virtual PhysicalVolume const * GetAsUnplacedVolume() const
-	{
-		return reinterpret_cast< PlacedCone<0,1296, ConeType, PrecType> const * >(this);
-	}
-
+		{
+			if (! ( tid==0 && rid==1296) )
+				{ return unplacedcone;}
+			else
+				return this;
+		}
 };
 
 

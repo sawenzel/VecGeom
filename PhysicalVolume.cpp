@@ -218,3 +218,9 @@ PhysicalVolume::fillWithRandomPoints( Vectors3DSOA &points, int number ) const
 	// std::cerr << "needed " << counter << " steps to fill the volume " << std::endl;
 	//return counter;
 }
+
+
+void PhysicalVolume::printInfo() const
+{
+	std::cerr << "PhysicalVolume with matrix " << matrix << std::endl ;// s " with matrix << std::endl;
+}

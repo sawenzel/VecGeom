@@ -117,22 +117,37 @@ class PlacedUSolidsTube : public PhysicalVolume
 {
 private:
 	TubeParameters<T> const * tubeparams;
+	PlacedUSolidsTube<0,1296,TubeType,T> * unplacedtube;
 
 public:
 
-  T GetRmin() const { return tubeparams->GetRmin(); }
-  T GetRmax() const { return tubeparams->GetRmax(); }
-  T GetDZ()   const { return tubeparams->GetDZ();   }
-  T GetSPhi() const { return tubeparams->GetSPhi(); }
-  T GetDPhi() const { return tubeparams->GetDPhi(); }
+  inline T GetRmin() const { return tubeparams->GetRmin(); }
+  inline T GetRmax() const { return tubeparams->GetRmax(); }
+  inline T GetDZ()   const { return tubeparams->GetDZ();   }
+  inline T GetSPhi() const { return tubeparams->GetSPhi(); }
+  inline T GetDPhi() const { return tubeparams->GetDPhi(); }
 
-	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb) {
-		this->bbox = new PlacedBox<1,0>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
-    analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
+	PlacedUSolidsTube( TubeParameters<T> const * _tb, TransformationMatrix const *m ) : PhysicalVolume(m), tubeparams(_tb)
+	{
+		this->bbox = new PlacedBox<1,1296>( new BoxParameters(tubeparams->dRmax, tubeparams->dRmax, tubeparams->dZ), new TransformationMatrix(0,0,0,0,0,0) );
+		analogoususolid = new UTubs("internal_utubs", GetRmin(), GetRmax(), GetDZ(),
                                 GetSPhi(), GetDPhi());
-    analogousrootsolid = new TGeoTubeSeg("internal_tgeotubeseg", GetRmin(),
-                                         GetRmax(), GetDZ(), GetSPhi(),
-                                         GetDPhi());
+
+		// to get a pointer to the ROOT instancw, we need to distinguish here whether phi or not!!!!
+		if( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+		{
+			analogousrootsolid = new TGeoTubeSeg("internal_tgeotube", GetRmin(), GetRmax(), GetDZ(),
+					GetSPhi() *360/(2.*M_PI), GetSPhi()+360*GetDPhi()/(2.*M_PI));
+		}
+		else
+		{
+			analogousrootsolid = new TGeoTube("internal_tgeotube", GetRmin(), GetRmax(), GetDZ());
+		}
+
+		if(! ( tid==0 && rid==1296 ) )
+		{
+			unplacedtube = new PlacedUSolidsTube<0,1296,TubeType,T>( _tb, m );
+		}
 	};
 
 	// ** functions to implement
@@ -205,7 +220,10 @@ public:
 
 	virtual PhysicalVolume const * GetAsUnplacedVolume() const
 	{
-		return reinterpret_cast< PlacedUSolidsTube<0,1296, TubeType, T> const * >(this);
+		if (! ( tid==0 && rid==1296) )
+			{ return unplacedtube;}
+		else
+			return this;
 	}
 
 };

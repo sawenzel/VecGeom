@@ -18,6 +18,8 @@
 typedef int TranslationIdType;
 typedef int RotationIdType;
 
+class TGeoMatrix;
+
 // the idea is to have StorageClass being a
 //template <typename StorageClass>
 class TransformationMatrix
@@ -30,7 +32,8 @@ private:
 	bool hasRotation;
 	bool hasTranslation;
 
-	TGeoMatrix *root_representation;
+	// the equivalent ROOT matrix (for convenience)
+	TGeoMatrix * rootmatrix;
 
 	template<RotationIdType rid>
 	inline
@@ -51,12 +54,15 @@ private:
 
 	void setAngles(double phi, double theta, double psi);
 	void setProperties();
+	void InitEquivalentTGeoMatrix(double, double, double);
 
 public:
 	bool isIdentity() const {return identity;}
 	bool isRotation() const {return hasRotation;}
 	bool isTranslation() const {return hasTranslation;}
 	void print() const;
+
+	TGeoMatrix const * GetAsTGeoMatrix() const { return rootmatrix;}
 
 	Vector3D getTrans() const
 	{
@@ -109,32 +115,10 @@ public:
 	unsigned int getNumberOfZeroEntries() const;
 
 	// constructor
-	TransformationMatrix(double const *t, double const *r)
-	{
-	    trans[0]=t[0];
-	    trans[1]=t[1];
-		trans[2]=t[2];
-		for(auto i=0;i<9;i++)
-			rot[i]=r[i];
-		// we need to check more stuff ( for instance that product along diagonal is +1)
-		setProperties();
-	}
+	TransformationMatrix(double const *t, double const *r);
 
 	// more general constructor ala ROOT ( with Euler Angles )
-	TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
-	{
-		trans[0]=tx;
-		trans[1]=ty;
-		trans[2]=tz;
-		setAngles(phi, theta, psi);
-		setProperties();
-		TGeoRotation *rot = new TGeoRotation("internal_tm", phi, theta, psi);
-		if (!tx && !ty && !tz) {
-			root_representation = rot;
-		} else {
-			root_representation = new TGeoCombiTrans(tx, ty, tz, rot);
-		}
-	}
+	TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi);
 
 	virtual
 	~TransformationMatrix(){}
@@ -242,7 +226,7 @@ public:
 			Vectors3DSOA const & mastervec, Vectors3DSOA & localvec ) const
 	{
 		//mapping v
-		MasterToLocalCombinedT<0,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
+		MasterToLocalCombinedT<1,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
 	}
 
 	friend class PhysicalVolume;
@@ -520,6 +504,10 @@ public:
 	void
 	MasterToLocalVec(Vectors3DSOA const &, Vectors3DSOA & ) const;
 
+	virtual
+	void
+	MasterToLocalCombined(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
+
 };
 
 
@@ -551,6 +539,13 @@ void
 SpecializedTransformation<tid,rid>::MasterToLocalVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
 {
 	TransformationMatrix::MasterToLocal<0, rid, Vc::double_v >(master,local);
+}
+
+template <int tid, int rid>
+void
+SpecializedTransformation<tid,rid>::MasterToLocalCombined(Vectors3DSOA const & masterp, Vectors3DSOA & localp, Vectors3DSOA const & masterd, Vectors3DSOA & locald) const
+{
+	TransformationMatrix::MasterToLocalCombinedT<tid,rid, Vc::double_v>( masterp, localp, masterd, locald);
 }
 
 #endif /* TRANSFORMATIONMATRIX_H_ */

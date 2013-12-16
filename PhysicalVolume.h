@@ -82,6 +82,7 @@ class PhysicalVolume
 		// providing an interface to an UNPLACED version of this shape
 		// this should return a pointer to a shape with identity transformation = stripping any matrix information from it
 		virtual PhysicalVolume const * GetAsUnplacedVolume() const = 0;
+		void printInfo() const;
 
 		// this is
 		// virtual void DistanceToOut(Vectors3DSOA const &, Vectors3DSOA const &, double , int, double * /*result*/) const = 0;

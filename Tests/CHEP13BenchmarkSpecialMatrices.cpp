@@ -49,7 +49,7 @@ int main()
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
 
-	int np=116;
+	int np=1024;
 	int NREPS = 1000;
 
 	points.alloc(np);
@@ -69,14 +69,15 @@ int main()
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i] = Utils::kInfinity;
 
-	double *plainpointarray = (double *) _mm_malloc(3*np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *plaindirtarray = (double *) _mm_malloc(3*np*sizeof(double), ALIGNMENT_BOUNDARY);
-
+	std::vector<Vector3D> conventionalpoints(np);
+	std::vector<Vector3D> conventionaldirs(np);
+	Vector3D * conventionalpoints2 = (Vector3D *) new Vector3D[np];
+	Vector3D * conventionaldirs2 = (Vector3D *) new Vector3D[np];
 
 	StopWatch timer;
 
     // generate benchmark cases
-	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
+	TransformationMatrix const * identity = TransformationMatrix::createSpecializedMatrix(0,0,0,0,0,0);
 
 	// the world volume is a tube
 	double worldrmax = 100.;
@@ -87,14 +88,14 @@ int main()
 	world->AddDaughter( beampipe );
 	BoxParameters * plateparams = new BoxParameters(30,5.,2.*worldz/3.);
 
-	PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(50, 0, 0, 35, 0, 10) );
-	PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(-50, 0, 0, 35, 0, 10) );
-	PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, 50, 0, -35, 0, 10) );
-	PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, -50, 0, -35, 0, 10) );
-	//PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(50, 0, 0, 35, 0, 10) );
-	//PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(-50, 0, 0, 35, 0, 10) );
-	//PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, 50, 0, -35, 0, 10) );
-	//PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, -50, 0, -35, 0, 10) );
+	//PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(50, 0, 0, 35, 0, 10) );
+	//PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(-50, 0, 0, 35, 0, 10) );
+	//PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, 50, 0, -35, 0, 10) );
+	//PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, -50, 0, -35, 0, 10) );
+	PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(50, 0, 0, 35, 0, 10) );
+	PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(-50, 0, 0, 35, 0, 10) );
+	PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, 50, 0, -35, 0, 10) );
+	PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, -50, 0, -35, 0, 10) );
 
 
 	world->AddDaughter( plate1 );
@@ -107,16 +108,18 @@ int main()
 
 	ConeParameters<double> * endcapparams = new ConeParameters<double>( worldrmax/20., worldrmax,
 					worldrmax/20., worldrmax/10., worldz/10., 0, 2.*M_PI );
-	PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,-9.*worldz/10., 0, 0, 0) );
-	PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,9*worldz/10, 0, 180, 0) );
+	PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, TransformationMatrix::createSpecializedMatrix(0,0,-9.*worldz/10., 0, 0, 0) );
+	PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, TransformationMatrix::createSpecializedMatrix( 0,0,9*worldz/10, 0, 180, 0) );
 	world->AddDaughter( endcap1 );
 	world->AddDaughter( endcap2 );
 
 	world->fillWithRandomPoints(points,np);
 	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
 
-	points.toPlainArray(plainpointarray,np);
-	dirs.toPlainArray(plaindirtarray,np);
+	points.toStructureOfVector3D( conventionalpoints );
+	dirs.toStructureOfVector3D( conventionaldirs );
+	points.toStructureOfVector3D( conventionalpoints2 );
+	dirs.toStructureOfVector3D( conventionaldirs2 );
 
 	std::cerr << " Number of daughters " << world->GetNumberOfDaughters() << std::endl;
 
@@ -139,7 +142,6 @@ int main()
 	for(auto k=0;k<np;k++)
 	{
 		d0+=distances[k];
-		distances[k]=Utils::kInfinity;
 	}
 
 
@@ -149,34 +151,14 @@ int main()
 		vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
 	}
 	timer.Stop();
-	double t1= timer.getDeltaSecs();
-
+	double t1 = timer.getDeltaSecs();
 	std::cerr << t1 << std::endl;
-
 	double d1;
 	for(auto k=0;k<np;k++)
-	{
-		d1+=distances[k];
-		distances[k]=Utils::kInfinity;
-
-	}
-
-	// now using the ROOT Geometry library (scalar version)
-	timer.Start();
-	for(int reps=0;reps < NREPS; reps ++ )
-	{
-		vecnav.DistToNextBoundaryUsingROOT( world, plainpointarray, plaindirtarray, steps, distances, nextvolumes, np );
-	}
-	timer.Stop();
-	double t3 = timer.getDeltaSecs();
-
-	std::cerr << t3 << std::endl;
-	double d3;
-	for(auto k=0;k<np;k++)
 		{
-			d3+=distances[k];
+			d1+=distances[k];
 		}
-	std::cerr << d0 << " " << d1 << " " << d3 << std::endl;
+	std::cerr << d0 << " " << d1 << std::endl;
 
 
 	//vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
