@@ -172,7 +172,6 @@ public:
 		analogousrootsolid = new TGeoConeSeg("internal_tgeocone", GetRmin1(),
 																		     GetRmax1(), GetRmin2(), GetRmax2(),
 																		     GetDZ(), GetSPhi(), GetDPhi());
-=======
 	    // initialize the equivalent usolid shape
 		VUSolid * s = new UCons("internalucons", GetRmin1(), GetRmax2(),
 				GetRmin2(), GetRmax2(), GetDZ(), GetSPhi(), GetDPhi());
@@ -192,10 +191,6 @@ public:
 
 		if( ! (tid==0 && rid==1296) )
 			unplacedcone = new  PlacedCone<0,1296,ConeType,PrecType>(_cp,m);
-<<<<<<< .merge_file_be4CeK
->>>>>>> .merge_file_GZyudu
-=======
->>>>>>> .merge_file_91psKJ
 	};
 
 	// ** functions to implement

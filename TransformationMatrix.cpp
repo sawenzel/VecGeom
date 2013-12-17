@@ -10,42 +10,70 @@
 
 #include "TGeoMatrix.h"
 
+const double TransformationMatrix::kDegToRad = M_PI/180.;
+const double TransformationMatrix::kRadToDeg = 180./M_PI;
+
 // constructor
-TransformationMatrix::TransformationMatrix(double const *t, double const *r) : rootmatrix(0)
-{
+TransformationMatrix::TransformationMatrix(double const *t, double const *r) {
 	trans[0]=t[0];
 	trans[1]=t[1];
 	trans[2]=t[2];
 	for(auto i=0;i<9;i++)
 		rot[i]=r[i];
 	// we need to check more stuff ( for instance that product along diagonal is +1)
-	setProperties();
+	SetProperties();
 
+	const Vector3D euler = GetEulerAngles();
+	InitEquivalentTGeoMatrix(euler.x, euler.y, euler.z);
 }
 
 // more general constructor ala ROOT ( with Euler Angles )
 TransformationMatrix::TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
 {
-	trans[0]=tx;
-	trans[1]=ty;
-	trans[2]=tz;
-	setAngles(phi, theta, psi);
-	setProperties();
+	SetTrans(tx, ty, tz);
+	SetAngles(phi, theta, psi);
+	SetProperties();
 
 	InitEquivalentTGeoMatrix(phi, theta, psi);
 }
 
+TransformationMatrix::~TransformationMatrix() {
+	delete rootmatrix;
+}
 
-void TransformationMatrix::setAngles( double phi, double theta, double psi )
+TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
+	const Vector3D euler = other.GetEulerAngles();
+	SetAngles(euler);
+	SetTrans(other.getTrans());
+	SetProperties();
+
+	InitEquivalentTGeoMatrix(euler.x, euler.y, euler.z);
+}
+
+void TransformationMatrix::SetTrans(const Vector3D trans_) {
+	SetTrans(trans_.x, trans_.y, trans_.z);
+}
+
+void TransformationMatrix::SetTrans(const double tx, const double ty,
+															      const double tz) {
+	trans[0] = tx;
+	trans[1] = ty;
+	trans[2] = tz;
+}
+
+void TransformationMatrix::SetAngles(const Vector3D euler) {
+	SetAngles(euler.x, euler.y, euler.z);
+}
+
+void TransformationMatrix::SetAngles( double phi, double theta, double psi )
 {
 	//	Set matrix elements according to Euler angles
-	double degrad = M_PI/180.;
-	double sinphi = sin(degrad*phi);
-	double cosphi = cos(degrad*phi);
-	double sinthe = sin(degrad*theta);
-	double costhe = cos(degrad*theta);
-	double sinpsi = sin(degrad*psi);
-	double cospsi = cos(degrad*psi);
+	double sinphi = sin(kDegToRad*phi);
+	double cosphi = cos(kDegToRad*phi);
+	double sinthe = sin(kDegToRad*theta);
+	double costhe = cos(kDegToRad*theta);
+	double sinpsi = sin(kDegToRad*psi);
+	double cospsi = cos(kDegToRad*psi);
 
 	rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
 	rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
@@ -58,18 +86,45 @@ void TransformationMatrix::setAngles( double phi, double theta, double psi )
 	rot[8] =  costhe;
 }
 
+Vector3D TransformationMatrix::GetEulerAngles() const {
+
+  // Implementation borrowed from ROOT
+  // http://root.cern.ch/root/htmldoc/src/TGeoRotation.cxx.html#ZXD4tB
+
+	double phi, theta, psi;
+
+  // Check if theta is 0 or 180.
+  if (abs(1. - abs(rot[8])) < 1.e-9) {      
+    theta = acos(rot[8]) * kRadToDeg;
+    phi = atan2(-rot[8] * rot[1], rot[0]) * kRadToDeg;
+    psi = 0.; // convention, phi+psi matters
+    return Vector3D(phi, theta, psi);
+  }
+  // sin(theta) != 0
+  phi = atan2(rot[2], -rot[5]);
+  const double sphi = sin(phi);
+  if (abs(sphi) < 1.e-9) {
+  	theta = -asin(rot[5] / cos(phi)) * kRadToDeg;
+  } else {
+    theta = asin(rot[2] / sphi) * kRadToDeg;
+  }
+  phi *= kRadToDeg;      
+  psi = atan2(rot[6], rot[7]) * kRadToDeg;
+
+  return Vector3D(phi, theta, psi);
+}
+
 // function that returns the translation and rotation type of a transformation specified by tx,ty,tz and Euler angles
 void
 TransformationMatrix::classifyMatrix( double tx, double ty, double tz, double phi, double theta, double psi, int & tid, int & rid)
 {
 	//	Set matrix elements according to Euler angles
-		double degrad = M_PI/180.;
-		double sinphi = sin(degrad*phi);
-		double cosphi = cos(degrad*phi);
-		double sinthe = sin(degrad*theta);
-		double costhe = cos(degrad*theta);
-		double sinpsi = sin(degrad*psi);
-		double cospsi = cos(degrad*psi);
+		double sinphi = sin(kDegToRad*phi);
+		double cosphi = cos(kDegToRad*phi);
+		double sinthe = sin(kDegToRad*theta);
+		double costhe = cos(kDegToRad*theta);
+		double sinpsi = sin(kDegToRad*psi);
+		double cospsi = cos(kDegToRad*psi);
 
 		double rotm[9];
 		rotm[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
@@ -92,7 +147,7 @@ TransformationMatrix::classifyMatrix( double tx, double ty, double tz, double ph
 }
 
 
-void TransformationMatrix::setProperties()
+void TransformationMatrix::SetProperties()
 {
 	hasTranslation = (this->GetTranslationIdType() == 0)? false : true;
 	hasRotation = (this->getRotationFootprint() == 1296)? false : true;
@@ -139,6 +194,25 @@ void TransformationMatrix::InitEquivalentTGeoMatrix(double phi, double theta, do
 	}
 	// for the moment we are not treating the case of a scale matrix
 
+}
+
+void TransformationMatrix::InitEquivalentTGeoMatrix() {
+	if (identity) {
+		rootmatrix = new TGeoIdentity();
+	} else if (hasRotation && !hasTranslation) {
+		const Vector3D euler = GetEulerAngles();
+		rootmatrix = new TGeoRotation("internalrot", euler.x, euler.y, euler.z);
+	}
+	else if (hasTranslation && !hasRotation) {
+		rootmatrix = new TGeoTranslation(trans[0], trans[1], trans[2]);
+	} else {
+		const Vector3D euler = GetEulerAngles();
+		rootmatrix =
+		    new TGeoCombiTrans(trans[0], trans[1], trans[2],
+			                     new TGeoRotation("internalrot", euler.x,
+			                     									euler.y, euler.z));
+	}
+	// for the moment we are not treating the case of a scale matrix
 }
 
 

@@ -1,7 +1,27 @@
+#include <cstdlib>
 #include "mm_malloc.h"
 #include "ShapeTester.h"
 #include "GlobalDefs.h"
 #include "Utils.h"
+
+const char * const ShapeBenchmark::benchmark_labels[] = {
+  "Placed",
+  "Unplaced",
+  "USolids",
+  "ROOT"
+};
+
+ShapeTester::~ShapeTester() {
+  _mm_free(steps);
+}
+
+void ShapeTester::SetPoolMultiplier(const unsigned pool_multiplier_) {
+  if (pool_multiplier_ < 1) {
+    std::cerr << "Pool multiplier must be an integral number >= 1.\n";
+    return;
+  }
+  pool_multiplier = pool_multiplier_;
+}
 
 void ShapeTester::GenerateVolumePointers(PhysicalVolume const *vol) {
 
@@ -13,109 +33,239 @@ void ShapeTester::GenerateVolumePointers(PhysicalVolume const *vol) {
     volumes.push_back(pointers);
   }
 
-  if (!vol->daughters || !vol->daughters->size()) return;
-  for (auto d = vol->daughters->begin(); d != vol->daughters->end(); ++d) {
-    GenerateVolumePointers(*d);
+  std::list<PhysicalVolume const*> const *daughters = vol->GetDaughterList();
+  if (!daughters || !daughters->size()) return;
+  for (auto d : *daughters) {
+    GenerateVolumePointers(d);
   }
+
+  n_vols = volumes.size();
 
 }
 
-void ShapeTester::Run() {
+ShapeBenchmark ShapeTester::GenerateBenchmark(const double elapsed,
+                                              const BenchmarkType type) const {
+  const ShapeBenchmark benchmark = {
+    .elapsed = elapsed,
+    .type = type,
+    .repetitions = reps,
+    .volumes = (const unsigned) volumes.size(),
+    .points = n_points,
+    .bias = bias
+  };
+  return benchmark;
+}
 
-  ShapeBenchmark benchmark;
-
-  // Allocate "particles" and output memory
-  Vectors3DSOA points, dirs, interm_points, interm_dirs;
-  points.alloc(n_points);
-  dirs.alloc(n_points);
-  // interm_points.alloc(n_points);
-  // interm_dirs.alloc(n_points);
-  double *steps = (double*) _mm_malloc(n_points*sizeof(double),
-                                       ALIGNMENT_BOUNDARY);
-  double *distances = (double*) _mm_malloc(n_points*sizeof(double),
-                                           ALIGNMENT_BOUNDARY);
-  for (int i = 0; i < n_points; ++i) steps[i] = Utils::kInfinity;
-
-  // Extract shape representations and generate particles
-  volumes.clear();
-  GenerateVolumePointers(world);
-  const int n_vols = volumes.size();
-  world->fillWithRandomPoints(points, n_points);
-  world->fillWithBiasedDirections(points, dirs, n_points, bias);
-
-  // Convert to USolids and ROOT representations
-  std::vector<Vector3D> points_vec(n_points);
-  std::vector<Vector3D> dirs_vec(n_points);
-  points.toStructureOfVector3D(points_vec);
-  dirs.toStructureOfVector3D(dirs_vec);
-
-  if (verbose) std::cout << "Running benchmark for " << n_vols
-                         << " volume(s) with " << reps << " repetitions... ";
-
-  // Benchmark fastgeom
+ShapeBenchmark ShapeTester::RunPlaced(double* distances) const {
+  if (verbose) std::cout << "Running Placed benchmark...";
   StopWatch timer;
   timer.Start();
   for (int r = 0; r < reps; ++r) {
+    const int index = (rand() % pool_multiplier) * n_points;
+    Vectors3DSOA points(point_pool, index, n_points);
+    Vectors3DSOA dirs(dir_pool, index, n_points);
     for (int v = 0; v < n_vols; ++v) {
-      volumes[v].fastgeom->DistanceToIn(points, dirs, steps, distances);
+      volumes[v].fastgeom->DistanceToIn(points, dirs, steps, &distances[index]);
     }
   }
   timer.Stop();
-  benchmark.fastgeom = timer.getDeltaSecs();
+  const double elapsed = timer.getDeltaSecs();
+  if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kPlaced);
+}
 
-  // Benchmark USolids
+ShapeBenchmark ShapeTester::RunUnplaced(double *distances) const {
+  if (verbose) std::cout << "Running Unplaced benchmark...";
+  Vectors3DSOA point_pool_transform(point_pool);
+  Vectors3DSOA dir_pool_transform(dir_pool);
+  StopWatch timer;
   timer.Start();
   for (int r = 0; r < reps; ++r) {
+    const int index = (rand() % pool_multiplier) * n_points;
+    Vectors3DSOA points(point_pool, index, n_points);
+    Vectors3DSOA dirs(dir_pool, index, n_points);
+    Vectors3DSOA points_transform(point_pool_transform, index, n_points);
+    Vectors3DSOA dirs_transform(dir_pool_transform, index, n_points);
+    for (int v = 0; v < n_vols; ++v) {
+      PhysicalVolume const *unplaced =
+          volumes[v].fastgeom->GetAsUnplacedVolume();
+      TransformationMatrix const *matrix = volumes[v].fastgeom->getMatrix();
+      matrix->MasterToLocal(points, points_transform);
+      matrix->MasterToLocalVec(dirs, dirs_transform);
+      unplaced->DistanceToIn(
+        points_transform, dirs_transform, steps, &distances[index]
+      );
+    }
+  }
+  timer.Stop();
+  const double elapsed = timer.getDeltaSecs();
+  if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kUnplaced);
+}
+
+ShapeBenchmark ShapeTester::RunUSolids(double* distances) const {
+  std::vector<Vector3D> point_pool_vec(n_points * pool_multiplier);
+  std::vector<Vector3D> dir_pool_vec(n_points * pool_multiplier);
+  point_pool.toStructureOfVector3D(point_pool_vec);
+  dir_pool.toStructureOfVector3D(dir_pool_vec);
+  if (verbose) std::cout << "Running USolids benchmark...";
+  StopWatch timer;
+  timer.Start();
+  for (int r = 0; r < reps; ++r) {
+    const int index = (rand() % pool_multiplier) * n_points;
     for (int v = 0; v < n_vols; ++v) {
       TransformationMatrix const *matrix = volumes[v].fastgeom->getMatrix();
       for (int p = 0; p < n_points; ++p) {
         Vector3D point_local, dir_local;
-        matrix->MasterToLocal<1,-1>(points_vec[p], point_local);
-        matrix->MasterToLocalVec<-1>(dirs_vec[p], dir_local);
-        volumes[v].usolids->DistanceToIn(
-            reinterpret_cast<UVector3 const&>(point_local),
-            reinterpret_cast<UVector3 const&>(dir_local), steps[p]);
+        matrix->MasterToLocal<1,-1>(point_pool_vec[index+p], point_local);
+        matrix->MasterToLocalVec<-1>(dir_pool_vec[index+p], dir_local);
+        distances[index+p] = volumes[v].usolids->DistanceToIn(
+          reinterpret_cast<UVector3 const&>(point_local),
+          reinterpret_cast<UVector3 const&>(dir_local), steps[p]
+        );
       }
     }
   }
   timer.Stop();
-  benchmark.usolids = timer.getDeltaSecs();
+  const double elapsed = timer.getDeltaSecs();
+  if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kUSolids);
+}
 
-  // Benchmark ROOT
+ShapeBenchmark ShapeTester::RunROOT(double *distances) const {
+  std::vector<Vector3D> point_pool_vec(n_points * pool_multiplier);
+  std::vector<Vector3D> dir_pool_vec(n_points * pool_multiplier);
+  point_pool.toStructureOfVector3D(point_pool_vec);
+  dir_pool.toStructureOfVector3D(dir_pool_vec);
+  if (verbose) std::cout << "Running ROOT benchmark...";
+  StopWatch timer;
   timer.Start();
   for (int r = 0; r < reps; ++r) {
+    const int index = (rand() % pool_multiplier) * n_points;
     for (int v = 0; v < n_vols; ++v) {
-      TransformationMatrix const *matrix = volumes[v].fastgeom->getMatrix();
+      TGeoMatrix const *matrix =
+          volumes[v].fastgeom->getMatrix()->GetAsTGeoMatrix();
       for (int p = 0; p < n_points; ++p) {
         Vector3D point_local, dir_local;
-        matrix->MasterToLocal<1,-1>(points_vec[p], point_local);
-        matrix->MasterToLocalVec<-1>(dirs_vec[p], dir_local);
-        volumes[v].root->DistFromOutside(&point_local.x, &dir_local.x,
-                                         3, steps[p], 0);
+        matrix->MasterToLocal(&point_pool_vec[index+p].x, &point_local.x);
+        matrix->MasterToLocalVect(&dir_pool_vec[index+p].x, &dir_local.x);
+        distances[index+p] =
+            volumes[v].root->DistFromOutside(&point_local.x, &dir_local.x,
+                                             3, steps[p], 0);
       }
     }
   }
   timer.Stop();
-  benchmark.root = timer.getDeltaSecs();
+  const double elapsed = timer.getDeltaSecs();
+  if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kROOT);
+}
 
+void ShapeTester::PrepareBenchmark() {
+
+  // Allocate memory
+  if (steps) _mm_free(steps);
+  point_pool.dealloc();
+  dir_pool.dealloc();
+  point_pool.alloc(n_points * pool_multiplier);
+  dir_pool.alloc(n_points * pool_multiplier);
+  steps = (double*) _mm_malloc(n_points*sizeof(double),
+                               ALIGNMENT_BOUNDARY);
+  for (int i = 0; i < n_points; ++i) steps[i] = Utils::kInfinity;
+
+  // Generate pointers to volume objects
+  volumes.clear();
+  GenerateVolumePointers(world);
+  world->fillWithRandomPoints(point_pool, n_points * pool_multiplier);
+  world->fillWithBiasedDirections(point_pool, dir_pool,
+                                  n_points * pool_multiplier, bias);
+
+}
+
+void ShapeTester::BenchmarkAll() {
+
+  PrepareBenchmark();
+
+  // Allocate output memory
+  double *distances_placed   = AllocateDistance();
+  double *distances_unplaced = AllocateDistance();
+  double *distances_usolids  = AllocateDistance();
+  double *distances_root     = AllocateDistance();
+
+  // Run all four benchmarks
+  results.push_back(RunPlaced(distances_placed));
+  results.push_back(RunUnplaced(distances_unplaced));
+  results.push_back(RunUSolids(distances_usolids));
+  results.push_back(RunROOT(distances_root));
+
+  // Compare results
+  unsigned mismatches = 0;
+  const double precision = 1e-12;
+  for (int i = 0; i < n_points * pool_multiplier; ++i) {
+    const bool root_mismatch =
+        abs(distances_placed[i] - distances_root[i]) > precision &&
+        !(distances_placed[i] == Utils::kInfinity && distances_root[i] == 1e30);
+    const bool usolids_mismatch =
+        abs(distances_placed[i] - distances_usolids[i]) > precision &&
+        !(distances_placed[i] == Utils::kInfinity &&
+          distances_usolids[i] == UUtils::kInfinity);
+    if (root_mismatch || usolids_mismatch) {
+      if (!mismatches) std::cout << "Placed / USolids / ROOT\n";
+      std::cout << distances_placed[i]  << " / "
+                << distances_usolids[i] << " / "
+                << distances_root[i]    << std::endl;
+      mismatches++;
+    }
+  }
   if (verbose) {
-    std::cout << "Done." << std::endl;
-    benchmark.Print();
+    std::cout << mismatches << " / " << n_points * pool_multiplier
+              << " mismatches detected.\n";
   }
 
   // Clean up memory
-  points.dealloc();
-  dirs.dealloc();
-  // interm_points.dealloc();
-  // interm_dirs.dealloc();
-  _mm_free(distances);
-  _mm_free(steps);
+  FreeDistance(distances_placed);
+  FreeDistance(distances_unplaced);
+  FreeDistance(distances_usolids);
+  FreeDistance(distances_root);
+}
 
-  results.push_back(benchmark);
+void ShapeTester::BenchmarkPlaced() {
+  PrepareBenchmark();
+  double *distances = AllocateDistance();
+  results.push_back(RunPlaced(distances));
+  FreeDistance(distances);
+}
+
+void ShapeTester::BenchmarkUnplaced() {
+  PrepareBenchmark();
+  double *distances = AllocateDistance();
+  results.push_back(RunUnplaced(distances));
+  FreeDistance(distances);
+}
+
+void ShapeTester::BenchmarkUSolids() {
+  PrepareBenchmark();
+  double *distances = AllocateDistance();
+  results.push_back(RunUnplaced(distances));
+  FreeDistance(distances);
+}
+
+
+void ShapeTester::BenchmarkROOT() {
+  PrepareBenchmark();
+  double *distances = AllocateDistance();
+  results.push_back(RunROOT(distances));
+  FreeDistance(distances);
 }
 
 ShapeBenchmark ShapeTester::PopResult() {
   ShapeBenchmark result = results.back();
   results.pop_back();
   return result;
+}
+
+std::vector<ShapeBenchmark> ShapeTester::PopResults() {
+  std::vector<ShapeBenchmark> results_ = results;
+  results.clear();
+  return results_;
 }

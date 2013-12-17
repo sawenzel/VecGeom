@@ -32,6 +32,9 @@ private:
 	bool hasRotation;
 	bool hasTranslation;
 
+	static const double kDegToRad;
+	static const double kRadToDeg;
+
 	// the equivalent ROOT matrix (for convenience)
 	TGeoMatrix * rootmatrix;
 
@@ -52,9 +55,13 @@ private:
 	void
 	  emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz, double const *rot );
 
-	void setAngles(double phi, double theta, double psi);
-	void setProperties();
+	void SetTrans(const Vector3D /*trans_*/);
+	void SetTrans(const double tx, const double ty, const double tz);
+	void SetAngles(const Vector3D /*euler*/);
+	void SetAngles(const double phi, const double theta, const double psi);
+	void SetProperties();
 	void InitEquivalentTGeoMatrix(double, double, double);
+	void InitEquivalentTGeoMatrix();
 
 public:
 	bool isIdentity() const {return identity;}
@@ -68,6 +75,8 @@ public:
 	{
 		return Vector3D(trans[0], trans[1], trans[2]);
 	}
+
+	Vector3D GetEulerAngles() const;
 
 	// a factory method
 	static
@@ -121,7 +130,9 @@ public:
 	TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi);
 
 	virtual
-	~TransformationMatrix(){}
+	~TransformationMatrix();
+
+	TransformationMatrix(TransformationMatrix const &other);
 
 	inline
 	static TranslationIdType GetTranslationIdTypeS(double const *t)

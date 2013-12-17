@@ -1,5 +1,6 @@
 #include <iostream>
 #include "ShapeTester.h"
+#include "TGeoManager.h"
 
 const std::vector<std::vector<double>> rot_cases {
   { 0,  0,   0},
@@ -19,9 +20,12 @@ const std::vector<std::vector<double>> trans_cases {
 
 int main(void) {
 
+  // TGeoManager *tgeom = new TGeoManager();
+
   ShapeTester *tester = new ShapeTester();
   tester->SetRepetitions(1024);
   tester->SetVerbose(true);
+  tester->SetPoolMultiplier(4);
 
   TransformationMatrix const *identity =
       new TransformationMatrix(0, 0, 0, 0, 0, 0);
@@ -56,21 +60,20 @@ int main(void) {
 
       // Run benchmark and do cleanup
       // tester->Run();
-      delete sm;
-      delete tube;
+      // delete sm;
       // delete world;
     }
   }
-  tester->Run();
+  tester->BenchmarkAll();
 
-  std::vector<ShapeBenchmark> results = tester->Results();
+  std::vector<ShapeBenchmark> results = tester->PopResults();
   // for (int i = 0; i < results.size(); ++i) results[i].Print();
 
   // Clean
-  delete identity;
-  delete world_params;
-  delete tube_params;
-  delete tester;
+  // delete identity;
+  // delete world_params;
+  // delete tube_params;
+  // delete tester;
 
   return 0;
 }

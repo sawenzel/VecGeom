@@ -84,6 +84,33 @@ public:
   double *y;
   double *z;
 
+  Vectors3DSOA() : size(0), xvec(nullptr), yvec(nullptr), zvec(nullptr),
+                   x(nullptr), y(nullptr), z(nullptr) {}
+
+  Vectors3DSOA(Vectors3DSOA const &other) {
+    const int size = other.size;
+    alloc(size);
+    for (int i = 0; i < size; ++i) {
+      xvec[i] = other.xvec[i];
+      yvec[i] = other.yvec[i];
+      zvec[i] = other.zvec[i];
+    }
+  }
+
+  // Creates the SOA Vector as a view into another SOA Vector
+  Vectors3DSOA(Vectors3DSOA const &other, const unsigned index,
+               const unsigned size_) {
+    size = size_;
+    xvec = other.xvec;
+    yvec = other.yvec;
+    zvec = other.zvec;
+    setstartindex(index);
+  }
+
+  ~Vectors3DSOA() {
+    // dealloc();
+  }
+
   Vector3D getAsVector(int index) const
   {
 	  return Vector3D(x[index],y[index],z[index]);
@@ -96,7 +123,7 @@ public:
   	  v.z=z[index];
   }
 
-  void toStructureOfVector3D( std::vector<Vector3D> & v )
+  void toStructureOfVector3D( std::vector<Vector3D> & v ) const
   {
 	  for(auto i=0;i<size;i++)
 	  {
@@ -164,9 +191,9 @@ public:
 
   void dealloc()
   {
-    _mm_free(xvec);
-    _mm_free(yvec);
-    _mm_free(zvec);
+    if (xvec) _mm_free(xvec);
+    if (yvec) _mm_free(yvec);
+    if (zvec) _mm_free(zvec);
     x=0;y=0;z=0;
   }
 };

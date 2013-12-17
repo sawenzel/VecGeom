@@ -14,8 +14,6 @@
 #include <iostream>
 #include <vector>
 
-class ShapeTester;
-
 class VUSolid;
 class TGeoShape;
 
@@ -23,7 +21,6 @@ class TGeoShape;
 class PhysicalVolume
 {
 	protected:
-		friend class ShapeTester;
 
 		PhysicalVolume * bbox;
 		// this is the bounding box, it is placed
