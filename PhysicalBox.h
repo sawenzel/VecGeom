@@ -220,7 +220,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 					   VecType const & dirx, VecType const & diry, VecType const & dirz, VecType const & stepmax, VecType & distance ) const
 {
 	typedef typename VecType::Mask MaskType;
-	MaskType in;
+	//MaskType in;
 	   VecType saf[3];
 	   VecType newpt[3];
 	   VecType tiny(1e-20);

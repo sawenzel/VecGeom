@@ -216,7 +216,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 		nextnode[k]=0;
 		UVector3 normal;
 		Vector3D p = points.getAsVector(k);
-		Vector3D d = points.getAsVector(k);
+		Vector3D d = dirs.getAsVector(k);
 		bool conv;
 
 		distance[k]=(volume->GetAsUnplacedUSolid())->DistanceToOut( reinterpret_cast<UVector3 const &>( p ),

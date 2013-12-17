@@ -109,8 +109,8 @@ int main()
 					worldrmax/20., worldrmax/10., worldz/10., 0, 2.*M_PI );
 	PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,-9.*worldz/10., 0, 0, 0), false );
 	PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,9*worldz/10, 0, 180, 0), false );
-	//world->AddDaughter( endcap1 );
-	//world->AddDaughter( endcap2 );
+	world->AddDaughter( endcap1 );
+	world->AddDaughter( endcap2 );
 
 	world->fillWithRandomPoints(points,np);
 	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
@@ -193,7 +193,7 @@ int main()
 
 	for(auto k=0;k<np;k++)
 	{
-//		if(std::abs(distances3[k]-distances2[k])>1e-9)
+		if(std::abs(distances3[k]-distances2[k])>1e-9)
 		{
 			std::cerr << k << " " << distances1[k] << " " << distances2[k] << " " << distances3[k] << " " << " " << distances4[k] << " " << nextvolumes << std::endl;
 			world->PrintDistToEachDaughter( points.getAsVector(k), dirs.getAsVector(k) );
