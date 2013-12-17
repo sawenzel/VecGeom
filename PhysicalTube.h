@@ -21,6 +21,43 @@
 #include "UTubs.hh"
 #include "TGeoTube.h"
 
+extern bool needsphi;
+extern bool needsrmin;
+extern bool isphiequalspi;
+
+#ifdef USETEMPLIF
+#define TEMPLEIF_RMIN if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+#else
+#define TEMPLEIF_RMIN if ( needsphi )
+#endif
+
+#ifdef USETEMPLIF
+#define TEMPLEIF_PHI if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+#else
+#define TEMPLEIF_PHI if ( needsphi )
+#endif
+
+
+#ifdef USETEMPLIF
+#define TEMPLEIF_NOTRMIN_NOTPHI if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+#else
+#define TEMPLEIF_NOTRMIN_NOTPHI if( ! needsrmin &&  ! needsphi )
+#endif
+
+
+#ifdef USETEMPLIF
+#define TEMPLEIF_NOTRMIN_PHI if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
+#else
+#define TEMPLEIF_NOTRMIN_PHI if( ! needsrmin &&   needsphi )
+#endif
+
+#ifdef USETEMPLIF
+#define TEMPLEIF_RMIN_NOTPHI if(  TubeTraits::NeedsRminTreatment<TubeType>::value && ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+#else
+#define TEMPLEIF_RMIN_NOTPHI if(  needsrmin &&   ! needsphi )
+#endif
+
+
 template <typename T=double>
 // T is a floating point type
 class TubeParameters // : ShapeParameters
@@ -511,18 +548,19 @@ __attribute__((always_inline))
 typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determineRHit( VectorType const & x, VectorType const & y, VectorType const & z,
 											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distanceR ) const
 {
-	if( ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	TEMPLEIF_PHI
+	// if(  TubeTraits::NeedsPhiTreatment<TubeType>::value )
 	{
-		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z+distanceR*dirz, tubeparams->dZ );
+		// need to have additional look if hitting point on zylinder is not in empty phi range
+			VectorType xhit = x + distanceR*dirx;
+			VectorType yhit = y + distanceR*diry;
+			return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z + distanceR*dirz, tubeparams->dZ)
+									&& ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
+						tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
 	}
 	else
 	{
-		// need to have additional look if hitting point on zylinder is not in empty phi range
-		VectorType xhit = x + distanceR*dirx;
-		VectorType yhit = y + distanceR*diry;
-		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z + distanceR*dirz, tubeparams->dZ)
-								&& ! GeneralPhiUtils::PointIsInPhiSector<ValueType>(
-					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
+		return distanceR > 0 && GeneralPhiUtils::IsInRightZInterval<ValueType>( z+distanceR*dirz, tubeparams->dZ );
 	}
 }
 
@@ -603,14 +641,16 @@ __attribute__((always_inline))
 typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determineZHit( VectorType const & x, VectorType const & y, VectorType const & z,
 											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distancez ) const
 {
-	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	//if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	TEMPLEIF_NOTRMIN_NOTPHI
 	{
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
 		return distancez > 0 && ((xhit*xhit + yhit*yhit) < tubeparams->cacheRmaxSqr);
 	}
 
-	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	// if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	TEMPLEIF_NOTRMIN_PHI
 	{
 		// need to have additional look if hitting point on zylinder is not in empty phi range
 		VectorType xhit = x + distancez*dirx;
@@ -619,13 +659,15 @@ typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determ
 					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
 	}
 
-	if( TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	//if( TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	TEMPLEIF_RMIN_NOTPHI
 	{
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
 		VectorType hitradiussquared = xhit*xhit + yhit*yhit;
 		return distancez > 0 && hitradiussquared <= tubeparams->cacheRmaxSqr && hitradiussquared >= tubeparams->cacheRminSqr;
 	}
+
 	else // this should be totally general case ( Rmin and Rmax and general phi )
 	{
 		VectorType xhit = x + distancez*dirx;
@@ -672,7 +714,6 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType co
 
 	// is this condition useful?
 	VectorType const rmax2 = tubeparams->cacheRmaxSqr;
-	VectorType distr = UUtils::kInfinity;
 
 	// distance to the outer cylinder
 	// check first of all safety
@@ -699,6 +740,7 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType co
 		std::cerr << "WARNING: RMIN TREATMENT IN DISTANCEOUT TUBE NOT IMPLEMENTED " << std::endl;
 	}
 }
+
 
 
 // a template version targeted at T = Vc or T = Boost.SIMD or T= double
@@ -779,7 +821,8 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	distanceRmax( ! Rdone ) = Utils::kInfinityVc;
 	MaskType rmindone;
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
-	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	TEMPLEIF_RMIN
+//	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
 	{
 		// only parameter "a" changes
 		// c = r2 - tubeparams->cacheRminSqr;
@@ -810,19 +853,27 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// now PHI
 
 	// **** PHI TREATMENT FOR CASE OF HAVING RMAX ONLY ***** only compiled in for tubes having phi sektion ***** //
-	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+//	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	TEMPLEIF_PHI
 	{
 		// all particles not done until here have the potential to hit a phi surface
 		// phi surfaces require divisions so it might be useful to check before continuing
 
-		if( TubeTraits::NeedsRminTreatment<TubeType>::value || ! done_m.isFull() )
+		TEMPLEIF_RMIN
+		// if( TubeTraits::NeedsRminTreatment<TubeType>::value || ! done_m.isFull() )
 		{
 			VectorType distphi;
-			TubeUtils::DistanceToPhiPlanes<ValueType,TubeTraits::IsPhiEqualsPiCase<TubeType>::value,TubeTraits::NeedsRminTreatment<TubeType>::value>(tubeparams->dZ, tubeparams->cacheRmaxSqr, tubeparams->cacheRminSqr,
-					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
-					tubeparams->alongPhi1, tubeparams->alongPhi2,
-					x, y, z, dirx, diry, dirz, distphi);
-			if(TubeTraits::NeedsRminTreatment<TubeType>::value)
+
+			// here we are passing down tube properties as template arguments to other kernels
+			TubeUtils::DistanceToPhiPlanes<ValueType,
+					TubeTraits::IsPhiEqualsPiCase<TubeType>::value,
+					TubeTraits::NeedsRminTreatment<TubeType>::value>
+						(tubeparams->dZ, tubeparams->cacheRmaxSqr, tubeparams->cacheRminSqr,
+						 tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
+						 tubeparams->alongPhi1, tubeparams->alongPhi2, x, y, z, dirx, diry, dirz, distphi);
+
+			TEMPLEIF_RMIN
+//			if(TubeTraits::NeedsRminTreatment<TubeType>::value)
 			{
 				// distance(! done_m || (rmindone && ! inrmin_m ) || (rmaxdone && ) ) = distphi;
 				// distance ( ! done_m ) = distphi;

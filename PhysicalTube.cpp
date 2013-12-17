@@ -19,3 +19,8 @@ TubeParameters<T>::inspect() const
 		std::cout << " dSPhi :" << dSPhi << std::endl;
 		std::cout << " dDeltaPhi :" << dDPhi << std::endl;
 }
+
+
+bool needsphi;
+bool needsrmin;
+bool isphiequalspi;
