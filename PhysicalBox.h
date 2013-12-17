@@ -220,7 +220,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 					   VecType const & dirx, VecType const & diry, VecType const & dirz, VecType const & stepmax, VecType & distance ) const
 {
 	typedef typename VecType::Mask MaskType;
-	MaskType in;
+	//MaskType in;
 	   VecType saf[3];
 	   VecType newpt[3];
 	   VecType tiny(1e-20);
@@ -236,14 +236,14 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 	   saf[0] = Vc::abs(newpt[0])-par[0];
 	   saf[1] = Vc::abs(newpt[1])-par[1];
 	   saf[2] = Vc::abs(newpt[2])-par[2];
-	   MaskType faraway; // initializing all components to zero
-	   faraway = saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax;
+//	   MaskType faraway; // initializing all components to zero
+	   //faraway = saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax;
 
-	   in = saf[0]<0. && saf[1]<0. && saf[2]<0.;
+	 //  in = saf[0]<0. && saf[1]<0. && saf[2]<0.;
 	   distance=big;
 
-	   if( faraway == Vc::One )
-	       return; // return big
+//	   if( faraway == Vc::One )
+	       //return; // return big
 
 	   // new thing:  do coordinate transformation for directions here
 	   VecType localdirx, localdiry, localdirz;
@@ -259,7 +259,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 	   MaskType hit0 =  saf[0] > 0 && newpt[0]*localdirx < 0 && ( Vc::abs(coord1) <= par[1] && Vc::abs(coord2) <= par[2] ); // if out and right direction
 	   distance(hit0) = snxt[0];
 	   MaskType done=hit0;
-	   if( done.isFull() ) return;
+//	   if( done.isFull() ) return;
 
 	   snxt[1] = saf[1]/(Vc::abs(localdiry+tiny)); // distance to x-z face
 	   coord1=newpt[0]+snxt[1]*localdirx; // calculate new x and z coordinate
@@ -267,7 +267,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 	   MaskType hit1 = saf[1] > 0 && newpt[1]*localdiry < 0 && ( Vc::abs(coord1) <= par[0] && Vc::abs(coord2) <= par[2] ); // if out and right direction
 	   distance(!done && hit1) = snxt[1];
 	   done|=hit1;
-	   if( done.isFull() ) return;
+	   // if( done.isFull() ) return;
 
 	   snxt[2] = saf[2]/(Vc::abs(localdirz+tiny)); // distance to x-y face
 	   coord1=newpt[0]+snxt[2]*localdirx; // calculate new x and y coordinate

@@ -49,8 +49,11 @@ int main()
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
 
-	int np=116;
+//	int np=64;
+//	int NREPS = 16000;
+	int np=1024;
 	int NREPS = 1000;
+
 
 	points.alloc(np);
 	dirs.alloc(np);

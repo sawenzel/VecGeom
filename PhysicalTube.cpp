@@ -8,6 +8,7 @@
 #include "PhysicalTube.h"
 #include <iostream>
 
+/*
 template<typename T>
 void
 TubeParameters<T>::inspect() const
@@ -19,8 +20,8 @@ TubeParameters<T>::inspect() const
 		std::cout << " dSPhi :" << dSPhi << std::endl;
 		std::cout << " dDeltaPhi :" << dDPhi << std::endl;
 }
+*/
 
-
-bool needsphi;
-bool needsrmin;
-bool isphiequalspi;
+bool tube_needsphi;
+bool tube_needsrmin;
+bool tube_isphiequalspi;

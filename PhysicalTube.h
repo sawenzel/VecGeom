@@ -21,40 +21,22 @@
 #include "UTubs.hh"
 #include "TGeoTube.h"
 
-extern bool needsphi;
-extern bool needsrmin;
-extern bool isphiequalspi;
+extern bool tube_needsphi;
+extern bool tube_needsrmin;
+extern bool tube_isphiequalspi;
 
-#ifdef USETEMPLIF
-#define TEMPLEIF_RMIN if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+// with this we can switch between compile-time and runtime-if statements to study performance
+// difference
+#ifdef USETEMPLATETUBEIF
+#define RMINCONDITION TubeTraits::NeedsRminTreatment<TubeType>::value
 #else
-#define TEMPLEIF_RMIN if ( needsphi )
+#define RMINCONDITION tube_needsrmin
 #endif
 
-#ifdef USETEMPLIF
-#define TEMPLEIF_PHI if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+#ifdef USETEMPLATETUBEIF
+#define PHICONDITION TubeTraits::NeedsPhiTreatment<TubeType>::value
 #else
-#define TEMPLEIF_PHI if ( needsphi )
-#endif
-
-
-#ifdef USETEMPLIF
-#define TEMPLEIF_NOTRMIN_NOTPHI if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
-#else
-#define TEMPLEIF_NOTRMIN_NOTPHI if( ! needsrmin &&  ! needsphi )
-#endif
-
-
-#ifdef USETEMPLIF
-#define TEMPLEIF_NOTRMIN_PHI if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
-#else
-#define TEMPLEIF_NOTRMIN_PHI if( ! needsrmin &&   needsphi )
-#endif
-
-#ifdef USETEMPLIF
-#define TEMPLEIF_RMIN_NOTPHI if(  TubeTraits::NeedsRminTreatment<TubeType>::value && ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
-#else
-#define TEMPLEIF_RMIN_NOTPHI if(  needsrmin &&   ! needsphi )
+#define PHICONDITION tube_needsphi
 #endif
 
 
@@ -185,6 +167,12 @@ public:
 		{
 			unplacedtube = new PlacedUSolidsTube<0,1296,TubeType,T>( _tb, m );
 		}
+
+#ifndef USETEMPLATETUBEIF
+		tube_needsphi = TubeTraits::NeedsPhiTreatment<TubeType>::value;
+		tube_needsrmin = TubeTraits::NeedsRminTreatment<TubeType>::value;
+#endif
+
 	};
 
 	// ** functions to implement
@@ -548,8 +536,7 @@ __attribute__((always_inline))
 typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determineRHit( VectorType const & x, VectorType const & y, VectorType const & z,
 											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distanceR ) const
 {
-	TEMPLEIF_PHI
-	// if(  TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	if(  PHICONDITION )
 	{
 		// need to have additional look if hitting point on zylinder is not in empty phi range
 			VectorType xhit = x + distanceR*dirx;
@@ -641,16 +628,14 @@ __attribute__((always_inline))
 typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determineZHit( VectorType const & x, VectorType const & y, VectorType const & z,
 											VectorType const & dirx, VectorType const & diry, VectorType const & dirz, VectorType const & distancez ) const
 {
-	//if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	TEMPLEIF_NOTRMIN_NOTPHI
+	if( ! RMINCONDITION &&  ! PHICONDITION )
 	{
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
 		return distancez > 0 && ((xhit*xhit + yhit*yhit) < tubeparams->cacheRmaxSqr);
 	}
 
-	// if( ! TubeTraits::NeedsRminTreatment<TubeType>::value &&  TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	TEMPLEIF_NOTRMIN_PHI
+	if( ! RMINCONDITION &&  PHICONDITION )
 	{
 		// need to have additional look if hitting point on zylinder is not in empty phi range
 		VectorType xhit = x + distancez*dirx;
@@ -659,8 +644,7 @@ typename VectorType::Mask PlacedUSolidsTube<tid,rid,TubeType, ValueType>::determ
 					tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y, xhit, yhit );
 	}
 
-	//if( TubeTraits::NeedsRminTreatment<TubeType>::value &&  ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	TEMPLEIF_RMIN_NOTPHI
+	if( RMINCONDITION &&  ! PHICONDITION )
 	{
 		VectorType xhit = x + distancez*dirx;
 		VectorType yhit = y + distancez*diry;
@@ -821,8 +805,8 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	distanceRmax( ! Rdone ) = Utils::kInfinityVc;
 	MaskType rmindone;
 	// **** inner tube ***** only compiled in for tubes having inner hollow tube ******/
-	TEMPLEIF_RMIN
-//	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+
+	if ( RMINCONDITION )
 	{
 		// only parameter "a" changes
 		// c = r2 - tubeparams->cacheRminSqr;
@@ -853,14 +837,13 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	// now PHI
 
 	// **** PHI TREATMENT FOR CASE OF HAVING RMAX ONLY ***** only compiled in for tubes having phi sektion ***** //
-//	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	TEMPLEIF_PHI
+	if ( PHICONDITION )
 	{
 		// all particles not done until here have the potential to hit a phi surface
 		// phi surfaces require divisions so it might be useful to check before continuing
 
-		TEMPLEIF_RMIN
-		// if( TubeTraits::NeedsRminTreatment<TubeType>::value || ! done_m.isFull() )
+
+		if( RMINCONDITION || ! done_m.isFull() )
 		{
 			VectorType distphi;
 
@@ -872,8 +855,8 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 						 tubeparams->normalPhi1.x, tubeparams->normalPhi1.y, tubeparams->normalPhi2.x, tubeparams->normalPhi2.y,
 						 tubeparams->alongPhi1, tubeparams->alongPhi2, x, y, z, dirx, diry, dirz, distphi);
 
-			TEMPLEIF_RMIN
-//			if(TubeTraits::NeedsRminTreatment<TubeType>::value)
+
+			if( RMINCONDITION )
 			{
 				// distance(! done_m || (rmindone && ! inrmin_m ) || (rmaxdone && ) ) = distphi;
 				// distance ( ! done_m ) = distphi;

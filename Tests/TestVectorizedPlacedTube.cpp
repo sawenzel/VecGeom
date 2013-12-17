@@ -43,7 +43,7 @@ static void cmpresults(double * a1, double * a2, int np,
 	int counter=0;
 	for( auto i=0; i<np; ++i )
 	{
-		if( std::abs( a1[i] - a2[i] ) > Utils::GetCarTolerance() )
+		if( std::abs( a1[i] - a2[i] ) > Utils::GetCarTolerance() && (a1[i] < 1E30 | a2[i] < 1E30) )
 		{
 			counter++;
 #ifdef SHOWDIFFERENCES
@@ -103,12 +103,12 @@ int main()
     			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
     						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
-    			double rmin = 10.;
+    			double rmin = 0.;
     			double rmax = 20.;
     			double dz = 30.;
     			double phis  =0.;
-    			//double dphi = 2.*M_PI;
-    			double dphi = M_PI;
+    			double dphi = 2.*M_PI;
+    			// double dphi = M_PI;
     			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
     			//std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
