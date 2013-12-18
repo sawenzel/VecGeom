@@ -1,17 +1,25 @@
-///////////////////////////////////////////////////////////////////////////////
+//
+// ********************************************************************
+// * This Software is part of the AIDA Unified Solids Library package *
+// * See: https://aidasoft.web.cern.ch/USolids                        *
+// ********************************************************************
+//
+// $Id:$
+//
+// --------------------------------------------------------------------
 //
 // UGenericTrap
 //
 // Class description:
 //
-// UGenericTrap is a solid which represents an arbitrary trapezoid with 
+// UGenericTrap is a solid which represents an arbitrary trapezoid with
 // up to 8 vertices standing on two parallel planes perpendicular to Z axis.
-// 
+//
 // Parameters in the constructor:
 // - name               - solid name
 // - halfZ              - the solid half length in Z
 // - vertices           - the (x,y) coordinates of vertices:
-//                        o first four points: vertices[i], i<4 
+//                        o first four points: vertices[i], i<4
 //                          are the vertices sitting on the -halfZ plane;
 //                        o last four points: vertices[i], i>=4
 //                          are the vertices sitting on the +halfZ plane.
@@ -27,13 +35,12 @@
 //      - point 7 is connected with points 3,4,6
 // Points can be identical in order to create shapes with less than
 // 8 vertices.
+//
+// 21.10.13 Tatiana Nikitina, CERN; Ivana Hrivnacova, IPN Orsay
+//          Adapted from Root Arb8 implementation
+// --------------------------------------------------------------------
 
-// Authors:
-//   Tatiana Nikitina, CERN; Ivana Hrivnacova, IPN Orsay
-//   Adapted from Root Arb8 implementation, author Andrea Gheata, CERN
-///////////////////////////////////////////////////////////////////////
-
-#ifndef USOLIDS_UGenericTrap
+#ifndef USOLIDS_UGenericTrap_HH
 #define USOLIDS_UGenericTrap_HH
 
 #ifndef USOLIDS_VUSolid
@@ -56,57 +63,62 @@ class UGenericTrap : public VUSolid
 {
   public:  // with description
 
-  UGenericTrap( const std::string &name, double halfZ,
-                    const std::vector<UVector2> &vertices );
-       // Constructor
+    UGenericTrap(const std::string& name, double halfZ,
+                 const std::vector<UVector2>& vertices);
+    // Constructor
 
-     ~UGenericTrap();
-       // Destructor
-
+    ~UGenericTrap();
+    // Destructor
 
     // Accessors
 
     inline double    GetZHalfLength() const;
     inline int       GetNofVertices() const;
-    inline UVector2 GetVertex(int index) const;
+    inline UVector2  GetVertex(int index) const;
     inline const std::vector<UVector2>& GetVertices() const;
     inline double    GetTwistAngle(int index) const;
     inline bool      IsTwisted() const;
     inline int       GetVisSubdivisions() const;
-    inline void        SetVisSubdivisions(int subdiv);
+    inline void      SetVisSubdivisions(int subdiv);
 
-    // Solid methods                                
+    // Solid methods
 
-    EnumInside Inside(const UVector3 &aPoint) const;
-    bool Normal ( const UVector3& aPoint, UVector3 &aNormal ) const; 
-    	double  SafetyFromInside ( const UVector3 &aPoint, 
-		bool aAccurate=false) const;
-	double  SafetyFromOutside( const UVector3 &aPoint, 
-		bool aAccurate=false) const;
-	double  DistanceToIn     ( const UVector3 &aPoint, 
-		const UVector3 &aDirection,
-		// UVector3       &aNormalVector,
+    EnumInside Inside(const UVector3& aPoint) const;
+    bool Normal(const UVector3& aPoint, UVector3& aNormal) const;
+    double  SafetyFromInside(const UVector3& aPoint,
+                             bool aAccurate = false) const;
+    double  SafetyFromOutside(const UVector3& aPoint,
+                              bool aAccurate = false) const;
+    double  DistanceToIn(const UVector3& aPoint,
+                         const UVector3& aDirection,
+                         double aPstep = UUtils::kInfinity) const;
 
-		double aPstep = UUtils::kInfinity) const;                               
+    double DistanceToOut(const UVector3& aPoint,
+                         const UVector3& aDirection,
+                         UVector3&       aNormalVector,
+                         bool&           aConvex,
+                         double aPstep = UUtils::kInfinity) const;
+    void Extent(UVector3& aMin, UVector3& aMax) const;
+    double Capacity() ;
+    double SurfaceArea() ;
+    VUSolid* Clone() const ;
 
-	double DistanceToOut     ( const UVector3 &aPoint,
-		const UVector3 &aDirection,
-		UVector3       &aNormalVector, 
-		bool           &aConvex,
-		double aPstep = UUtils::kInfinity) const;
-    void Extent (UVector3 &aMin, UVector3 &aMax) const;
-	double Capacity() ;
-	double SurfaceArea() ;
-	VUSolid* Clone() const ;
-	UGeometryType GetEntityType() const { return "GenericTrap";}
-	void    ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
+    UGeometryType GetEntityType() const
+    {
+      return "GenericTrap";
+    }
+    void    ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-	//G4Visualisation
-  void GetParametersList(int aNumber,double *aArray) const{aNumber=0;aArray=0;}
+    //G4Visualisation
+    void GetParametersList(int aNumber, double* aArray) const
+    {
+      aNumber = 0;
+      aArray = 0;
+    }
 
-	UVector3 GetPointOnSurface() const;
+    UVector3 GetPointOnSurface() const;
 
-	std::ostream& StreamInfo(std::ostream& os) const;
+    std::ostream& StreamInfo(std::ostream& os) const;
 
 
   private:
@@ -116,45 +128,45 @@ class UGenericTrap : public VUSolid
     inline void SetTwistAngle(int index, double twist);
     bool  ComputeIsTwisted() ;
     bool  CheckOrder(const std::vector<UVector2>& vertices) const;
-    bool  IsSegCrossing(const UVector2& a, const UVector2& b, 
-                          const UVector2& c, const UVector2& d) const;
-    bool  IsSegCrossingZ(const UVector2& a, const UVector2& b, 
-                           const UVector2& c, const UVector2& d) const;
-     bool IsSameLineSegment(const UVector2& p,
-                      const UVector2& l1, const UVector2& l2) const;
-     bool IsSameLine(const UVector2& p,
-                      const UVector2& l1, const UVector2& l2) const;
-    
-  //    G4ThreeVectorList* CreateRotatedVertices(const 
-  //                     G4AffineTransform& pTransform) const;
+    bool  IsSegCrossing(const UVector2& a, const UVector2& b,
+                        const UVector2& c, const UVector2& d) const;
+    bool  IsSegCrossingZ(const UVector2& a, const UVector2& b,
+                         const UVector2& c, const UVector2& d) const;
+    bool IsSameLineSegment(const UVector2& p,
+                           const UVector2& l1, const UVector2& l2) const;
+    bool IsSameLine(const UVector2& p,
+                    const UVector2& l1, const UVector2& l2) const;
+
+    //    G4ThreeVectorList* CreateRotatedVertices(const
+    //                     G4AffineTransform& pTransform) const;
     void ReorderVertices(std::vector<UVector3>& vertices) const;
     void ComputeBBox();
     inline UVector3 GetMinimumBBox() const;
     inline UVector3 GetMaximumBBox() const;
-      
-    VUFacet* MakeDownFacet(const std::vector<UVector3>& fromVertices, 
-                            int ind1, int ind2, int ind3) const;
-    VUFacet* MakeUpFacet(const std::vector<UVector3>& fromVertices, 
-                            int ind1, int ind2, int ind3) const;      
-    VUFacet* MakeSideFacet(const UVector3& downVertex0, 
-                            const UVector3& downVertex1,
-                            const UVector3& upVertex1,
-                            const UVector3& upVertex0) const;
+
+    VUFacet* MakeDownFacet(const std::vector<UVector3>& fromVertices,
+                           int ind1, int ind2, int ind3) const;
+    VUFacet* MakeUpFacet(const std::vector<UVector3>& fromVertices,
+                         int ind1, int ind2, int ind3) const;
+    VUFacet* MakeSideFacet(const UVector3& downVertex0,
+                           const UVector3& downVertex1,
+                           const UVector3& upVertex1,
+                           const UVector3& upVertex0) const;
     UTessellatedSolid* CreateTessellatedSolid() const;
-     
+
     EnumInside InsidePolygone(const UVector3& p,
-			      const UVector2 *poly)const;
+                              const UVector2* poly)const;
     double DistToPlane(const UVector3& p,
-                         const UVector3& v, const int ipl) const ;
+                       const UVector3& v, const int ipl) const ;
     double DistToTriangle(const UVector3& p,
-                            const UVector3& v, const int ipl) const;
+                          const UVector3& v, const int ipl) const;
     UVector3 NormalToPlane(const UVector3& p,
-                                const int ipl) const;
+                           const int ipl) const;
     double SafetyToFace(const UVector3& p, const int iseg) const;
     double GetFaceSurfaceArea(const UVector3& p0,
-                                const UVector3& p1,
-                                const UVector3& p2,
-                                const UVector3& p3) const;
+                              const UVector3& p1,
+                              const UVector3& p2,
+                              const UVector3& p3) const;
   private:
 
     // static data members
@@ -172,15 +184,15 @@ class UGenericTrap : public VUSolid
     UVector3            fMinBBoxVector;
     UVector3            fMaxBBoxVector;
     int                    fVisSubdivisions;
-  UBox*                  fBoundBox;
+    UBox*                  fBoundBox;
 
-    enum ESide {kUndefined,kXY0,kXY1,kXY2,kXY3,kMZ,kPZ};
-      // Codes for faces (kXY[num]=num of lateral face,kMZ= minus z face etc)
+    enum ESide {kUndefined, kXY0, kXY1, kXY2, kXY3, kMZ, kPZ};
+    // Codes for faces (kXY[num]=num of lateral face,kMZ= minus z face etc)
 
     double                 fSurfaceArea;
     double                 fCubicVolume;
-      // Surface and Volume
-};    
+    // Surface and Volume
+};
 
 #include "UGenericTrap.icc"
 

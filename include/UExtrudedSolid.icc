@@ -1,12 +1,22 @@
-
-//////////////////////////////////////////////////////////////////
+//
+// ********************************************************************
+// * This Software is part of the AIDA Unified Solids Library package *
+// * See: https://aidasoft.web.cern.ch/USolids                        *
+// ********************************************************************
+//
+// $Id:$
+//
+// --------------------------------------------------------------------
 //
 // UExtrudedSolid.icc
 //
 // Implementation of inline methods of UExtrudedSolid
-/////////////////////////////////////////////////////////////////
+//
+// 13.08.13 Tatiana Nikitina
+//          Created from original implementation in Geant4
+// --------------------------------------------------------------------
 
-inline 
+inline
 int UExtrudedSolid::GetNofVertices() const
 {
   return fNv;
@@ -14,31 +24,31 @@ int UExtrudedSolid::GetNofVertices() const
 
 inline UVector2 UExtrudedSolid::GetVertex(int index) const
 {
-  if ( index<0 || index >= fNv )
+  if (index < 0 || index >= fNv)
   {
     //G4Exception ("UExtrudedSolid::GetVertex()", "GeomSolids0003",
-      //           FatalException, "Index outside range.");
+    //           FatalException, "Index outside range.");
     return UVector2();
   }
   return fPolygon[index];
-}  
+}
 
-inline 
+inline
 std::vector<UVector2> UExtrudedSolid::GetPolygon() const
 {
   return fPolygon;
-}  
+}
 
-inline 
+inline
 int  UExtrudedSolid::GetNofZSections() const
 {
   return fNz;
 }
-  
-inline 
+
+inline
 UExtrudedSolid::ZSection UExtrudedSolid::GetZSection(int index) const
 {
-  if ( index<0 || index >= fNz )
+  if (index < 0 || index >= fNz)
   {
     //G4Exception ("UExtrudedSolid::GetZSection()", "GeomSolids0003",
     //             FatalException, "Index outside range.");
@@ -47,8 +57,8 @@ UExtrudedSolid::ZSection UExtrudedSolid::GetZSection(int index) const
   return fZSections[index];
 }
 
-inline 
+inline
 std::vector<UExtrudedSolid::ZSection> UExtrudedSolid::GetZSections() const
 {
   return fZSections;
-}  
+}

@@ -1,7 +1,12 @@
-
-/////////////////////////////////////////////////////////////////////////////
-//  class header file
 //
+// ********************************************************************
+// * This Software is part of the AIDA Unified Solids Library package *
+// * See: https://aidasoft.web.cern.ch/USolids                        *
+// ********************************************************************
+//
+// $Id:$
+//
+// --------------------------------------------------------------------
 //
 // UExtrudedSolid
 //
@@ -11,37 +16,35 @@
 // polygon with fixed outline in the defined Z sections.
 // The z-sides of the solid are the scaled versions of the same polygon.
 // The solid is implemented as a specification of UTessellatedSolid.
-//  
+//
 // Parameters in the constructor:
 // const std::tring& pName             - solid name
-// std::vector<UVector2> polygon  - the vertices of the outlined polygon
-//                                     defined in clockwise or anti-clockwise order     
-// std::vector<ZSection>             - the z-sections defined by
-//                                     z position, offset and scale
-//                                     in increasing z-position order
+// std::vector<UVector2> polygon       - the vertices of the outlined polygon
+//                                       defined in clockwise or anti-clockwise
+//                                       order
+// std::vector<ZSection>               - the z-sections defined by
+//                                       z position, offset and scale
+//                                       in increasing z-position order
 //
 // Parameters in the special constructor (for solid with 2 z-sections:
 // double halfZ                    - the solid half length in Z
-// UVector2 off1                  - offset of the side in -halfZ
+// UVector2 off1                   - offset of the side in -halfZ
 // double scale1                   - scale of the side in -halfZ
-// UVector2 off2                  - offset of the side in +halfZ
+// UVector2 off2                   - offset of the side in +halfZ
 // double scale2                   - scale of the side in -halfZ
-
-// Adapted from G4ExtrudedSolid by Author:
-//   Ivana Hrivnacova, IPN Orsay
+//
+// 13.08.13 Tatiana Nikitina
+//          Created from original implementation in Geant4
 // --------------------------------------------------------------------
-#ifndef USOLIDS_UExtrudedSolid
+
+#ifndef USOLIDS_UExtrudedSolid_HH
 #define USOLIDS_UExtrudedSolid_HH
-
-#include "VUSolid.hh"
-
-#include "UUtils.hh"
-
 
 #include <vector>
 
+#include "VUSolid.hh"
+#include "UUtils.hh"
 #include "UVector2.hh"
-
 #include "UTessellatedSolid.hh"
 
 class VUFacet;
@@ -63,20 +66,20 @@ class UExtrudedSolid : public UTessellatedSolid
 
   public:  // with description
 
-  UExtrudedSolid( const std::string&                 pName,
-                            std::vector<UVector2>  polygon,
-                            std::vector<ZSection>     zsections);
-       // General constructor
+    UExtrudedSolid(const std::string&     pName,
+                   std::vector<UVector2>  polygon,
+                   std::vector<ZSection>  zsections);
+    // General constructor
 
-  UExtrudedSolid( const std::string&                 pName,
-                            std::vector<UVector2>  polygon,
-                            double                  halfZ,
-                            UVector2 off1, double scale1,
-                            UVector2 off2, double scale2 );
-       // Special constructor for solid with 2 z-sections
+    UExtrudedSolid(const std::string&     pName,
+                   std::vector<UVector2>  polygon,
+                   double                 halfZ,
+                   UVector2 off1, double scale1,
+                   UVector2 off2, double scale2);
+    // Special constructor for solid with 2 z-sections
 
-     virtual ~UExtrudedSolid();
-       // Destructor
+    virtual ~UExtrudedSolid();
+    // Destructor
 
     // Accessors
 
@@ -88,51 +91,54 @@ class UExtrudedSolid : public UTessellatedSolid
     inline ZSection    GetZSection(int index) const;
     inline std::vector<ZSection> GetZSections() const;
 
-    // Solid methods                                
+    // Solid methods
 
-     EnumInside Inside(const UVector3 &aPoint) const;
-     double DistanceToOut     ( const UVector3 &aPoint,
-		const UVector3 &aDirection,
-		UVector3       &aNormalVector, 
-		bool           &aConvex,
-		double aPstep = UUtils::kInfinity) const;
-    	double  SafetyFromInside ( const UVector3 &aPoint, 
-		bool aAccurate=false) const;
-	UGeometryType GetEntityType() const { return "ExtrudedSolid";}
+    EnumInside Inside(const UVector3& aPoint) const;
+    double DistanceToOut(const UVector3& aPoint,
+                         const UVector3& aDirection,
+                         UVector3&       aNormalVector,
+                         bool&           aConvex,
+                         double aPstep = UUtils::kInfinity) const;
+    double  SafetyFromInside(const UVector3& aPoint,
+                             bool aAccurate = false) const;
+    UGeometryType GetEntityType() const
+    {
+      return "ExtrudedSolid";
+    }
     VUSolid* Clone() const;
 
-    std::ostream& StreamInfo(std::ostream &os) const;
+    std::ostream& StreamInfo(std::ostream& os) const;
 
   public:  // without description
 
-  //    UExtrudedSolid(__void__&);
-      // Fake default constructor for usage restricted to direct object
-      // persistency for clients requiring preallocation of memory for
-      // persistifiable objects.
+    //    UExtrudedSolid(__void__&);
+    // Fake default constructor for usage restricted to direct object
+    // persistency for clients requiring preallocation of memory for
+    // persistifiable objects.
 
     UExtrudedSolid(const UExtrudedSolid& rhs);
-    UExtrudedSolid& operator=(const UExtrudedSolid& rhs); 
-      // Copy constructor and assignment operator.
+    UExtrudedSolid& operator=(const UExtrudedSolid& rhs);
+    // Copy constructor and assignment operator.
 
   private:
 
     void ComputeProjectionParameters();
-    
+
     UVector3 GetVertex(int iz, int ind) const;
     UVector2 ProjectPoint(const UVector3& point) const;
 
     bool IsSameLine(UVector2 p,
-                      UVector2 l1, UVector2 l2) const;
+                    UVector2 l1, UVector2 l2) const;
     bool IsSameLineSegment(UVector2 p,
-                      UVector2 l1, UVector2 l2) const;
-    bool IsSameSide(UVector2 p1, UVector2 p2, 
-                      UVector2 l1, UVector2 l2) const;
-    bool IsPointInside(UVector2 a, UVector2 b, UVector2 c, 
-                      UVector2 p) const;
-    double GetAngle(UVector2 p0, UVector2 pa, UVector2 pb) const;                      
-      
-    VUFacet* MakeDownFacet(int ind1, int ind2, int ind3) const;      
-    VUFacet* MakeUpFacet(int ind1, int ind2, int ind3) const;      
+                           UVector2 l1, UVector2 l2) const;
+    bool IsSameSide(UVector2 p1, UVector2 p2,
+                    UVector2 l1, UVector2 l2) const;
+    bool IsPointInside(UVector2 a, UVector2 b, UVector2 c,
+                       UVector2 p) const;
+    double GetAngle(UVector2 p0, UVector2 pa, UVector2 pb) const;
+
+    VUFacet* MakeDownFacet(int ind1, int ind2, int ind3) const;
+    VUFacet* MakeUpFacet(int ind1, int ind2, int ind3) const;
 
     bool AddGeneralPolygonFacets();
     bool MakeFacets();
@@ -144,16 +150,16 @@ class UExtrudedSolid : public UTessellatedSolid
     int       fNv;
     int       fNz;
     std::vector<UVector2> fPolygon;
-    std::vector<ZSection>    fZSections;
+    std::vector<ZSection> fZSections;
     std::vector< std::vector<int> > fTriangles;
     bool          fIsConvex;
-    UGeometryType  fGeometryType;
+    UGeometryType fGeometryType;
 
     std::vector<double>      fKScales;
     std::vector<double>      fScale0s;
     std::vector<UVector2>   fKOffsets;
     std::vector<UVector2>   fOffset0s;
-};    
+};
 
 #include "UExtrudedSolid.icc"
 

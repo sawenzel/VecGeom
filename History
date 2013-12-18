@@ -1,0 +1,20 @@
+$Id:$
+-------------------------------------------------------------------
+
+     =========================================================
+     Geant4 - an Object-Oriented Toolkit for Simulation in HEP
+     =========================================================
+
+                            History file
+                      -------------------------
+This file should be used by developers to briefly summarize all major
+modifications introduced in the code and keep track of all tags.
+It DOES NOT substitute the SVN log-message one should put at every
+committal in the SVN repository !
+
+     ----------------------------------------------------------
+     * Reverse chronological order (last date on top), please *
+     ----------------------------------------------------------
+
+December, 6th, 2013,  T.Nikitina - usolids-V00-00-01
+- First stamp.

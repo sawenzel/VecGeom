@@ -1,96 +1,69 @@
 //
 // ********************************************************************
-// * License and Disclaimer																					 *
-// *																																	*
-// * The	Geant4 software	is	copyright of the Copyright Holders	of *
-// * the Geant4 Collaboration.	It is provided	under	the terms	and *
-// * conditions of the Geant4 Software License,	included in the file *
-// * LICENSE and available at	http://cern.ch/geant4/license .	These *
-// * include a list of copyright holders.														 *
-// *																																	*
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work	make	any representation or	warranty, express or implied, *
-// * regarding	this	software system or assume any liability for its *
-// * use.	Please see the license in the file	LICENSE	and URL above *
-// * for the full disclaimer and the limitation of liability.				 *
-// *																																	*
-// * This	code	implementation is the result of	the	scientific and *
-// * technical work of the GEANT4 collaboration.											*
-// * By using,	copying,	modifying or	distributing the software (or *
-// * any work based	on the software)	you	agree	to acknowledge its *
-// * use	in	resulting	scientific	publications,	and indicate your *
-// * acceptance of all terms of the Geant4 Software license.					*
+// * This Software is part of the AIDA Unified Solids Library package *
+// * See: https://aidasoft.web.cern.ch/USolids                        *
 // ********************************************************************
 //
+// $Id:$
 //
-// $Id: UTrap.hh 66241 2012-12-13 18:34:42Z gunter $
-//
-// 
 // --------------------------------------------------------------------
-// GEANT 4 class header file
 //
 // UTrap
 //
 // Class description:
 //
-//	 A UTrap is a general trapezoid: The faces perpendicular to the
-//	 z planes are trapezia, and their centres are not necessarily on
-//	 a line parallel to the z axis.
+// A UTrap is a general trapezoid: The faces perpendicular to the
+// z planes are trapezia, and their centres are not necessarily on
+// a line parallel to the z axis.
 //
-//	 Note that of the 11 parameters described below, only 9 are really
-//	 independent - a check for planarity is made in the calculation of the
-//	 equation for each plane. If the planes are not parallel, a call to
-//	 // UException is made.
+// Note that of the 11 parameters described below, only 9 are really
+// independent - a check for planarity is made in the calculation of the
+// equation for each plane. If the planes are not parallel, a call to
+// UException is made.
 //
-//			pDz		 Half-length along the z-axis
-//			pTheta	Polar angle of the line joining the centres of the faces
-//							at -/+pDz
-//			pPhi		Azimuthal angle of the line joing the centre of the face at
-//							-pDz to the centre of the face at +pDz
-//			pDy1		Half-length along y of the face at -pDz
-//			pDx1		Half-length along x of the side at y=-pDy1 of the face at -pDz
-//			pDx2		Half-length along x of the side at y=+pDy1 of the face at -pDz
-//			pAlp1	 Angle with respect to the y axis from the centre of the side
-//							at y=-pDy1 to the centre at y=+pDy1 of the face at -pDz
+//      pDz    Half-length along the z-axis
+//      pTheta  Polar angle of the line joining the centres of the faces
+//              at -/+pDz
+//      pPhi    Azimuthal angle of the line joing the centre of the face at
+//              -pDz to the centre of the face at +pDz
+//      pDy1    Half-length along y of the face at -pDz
+//      pDx1    Half-length along x of the side at y=-pDy1 of the face at -pDz
+//      pDx2    Half-length along x of the side at y=+pDy1 of the face at -pDz
+//      pAlp1  Angle with respect to the y axis from the centre of the side
+//              at y=-pDy1 to the centre at y=+pDy1 of the face at -pDz
 //
-//			pDy2		Half-length along y of the face at +pDz
-//			pDx3		Half-length along x of the side at y=-pDy2 of the face at +pDz
-//			pDx4		Half-length along x of the side at y=+pDy2 of the face at +pDz
-//			pAlp2	 Angle with respect to the y axis from the centre of the side
-//							at y=-pDy2 to the centre at y=+pDy2 of the face at +pDz
+//      pDy2    Half-length along y of the face at +pDz
+//      pDx3    Half-length along x of the side at y=-pDy2 of the face at +pDz
+//      pDx4    Half-length along x of the side at y=+pDy2 of the face at +pDz
+//      pAlp2  Angle with respect to the y axis from the centre of the side
+//              at y=-pDy2 to the centre at y=+pDy2 of the face at +pDz
 //
+//   Member Data:
 //
-//	 Member Data:
+//      fDz    Half-length along the z axis
+//      fTthetaCphi = std::tan(pTheta)*std::cos(pPhi)
+//      fTthetaSphi = std::tan(pTheta)*std::sin(pPhi)
+//      These combinations are suitable for creation of the trapezoid corners
 //
-//			fDz		 Half-length along the z axis
-//			fTthetaCphi = std::tan(pTheta)*std::cos(pPhi)
-//			fTthetaSphi = std::tan(pTheta)*std::sin(pPhi)
-//			These combinations are suitable for creation of the trapezoid corners
+//      fDy1    Half-length along y of the face at -fDz
+//      fDx1    Half-length along x of the side at y=-fDy1 of the face at -fDz
+//      fDx2    Half-length along x of the side at y=+fDy1 of the face at -fDz
+//      fTalpha1   Tan of Angle with respect to the y axis from the centre of
+//                 the side at y=-fDy1 to the centre at y=+fDy1 of the face
+//                 at -fDz
 //
-//			fDy1		Half-length along y of the face at -fDz
-//			fDx1		Half-length along x of the side at y=-fDy1 of the face at -fDz
-//			fDx2		Half-length along x of the side at y=+fDy1 of the face at -fDz
-//			fTalpha1	 Tan of Angle with respect to the y axis from the centre of
-//								 the side at y=-fDy1 to the centre at y=+fDy1 of the face
-//								 at -fDz
+//      fDy2    Half-length along y of the face at +fDz
+//      fDx3    Half-length along x of the side at y=-fDy2 of the face at +fDz
+//      fDx4    Half-length along x of the side at y=+fDy2 of the face at +fDz
+//      fTalpha2   Tan of Angle with respect to the y axis from the centre of
+//                 the side at y=-fDy2 to the centre at y=+fDy2 of the face
+//                 at +fDz
 //
-//			fDy2		Half-length along y of the face at +fDz
-//			fDx3		Half-length along x of the side at y=-fDy2 of the face at +fDz
-//			fDx4		Half-length along x of the side at y=+fDy2 of the face at +fDz
-//			fTalpha2	 Tan of Angle with respect to the y axis from the centre of
-//								 the side at y=-fDy2 to the centre at y=+fDy2 of the face
-//								 at +fDz
+//      UTrapSidePlane fPlanes[4]  Plane equations of the faces not at +/-fDz
+//                                 NOTE: order is important !!!
 //
-//			UTrapSidePlane fPlanes[4]	 Plane equations of the faces not at +/-fDz
-//																 NOTE: order is important !!!
-
-// History:
-//
-// 23.3.94 P.Kent: Old C++ code converted to tolerant geometry
-// 9.9.96	V.Grichine: Final modifications before to commit 
-// 1.11.96 V.Grichine: Costructors for Right Angular Wedge from STEP, UTrd/Para
-// 8.12.97 J.Allison: Added "nominal" contructor and method SetAllParameters.
+// 12.02.13 Marek Gayer
+//          Created from original implementation in Geant4
 // --------------------------------------------------------------------
 
 #ifndef UTrap_HH
@@ -100,177 +73,177 @@
 
 struct UTrapSidePlane
 {
-		double a,b,c,d;		// Normal Unit vector (a,b,c)	and offset (d)
-				// => Ax+By+Cz+D=0	
+  double a, b, c, d; // Normal Unit vector (a,b,c) and offset (d)
+  // => Ax+By+Cz+D=0
 };
 
 class UTrap : public VUSolid
 {
 
-	public:	// with description
+  public: // with description
 
-		UTrap( const std::string &pName,
-									double pDz,
-									double pTheta, double pPhi,
-									double pDy1, double pDx1, double pDx2,
-									double pAlp1,
-									double pDy2, double pDx3, double pDx4,
-									double pAlp2);
-			//
-			// The most general constructor for UTrap which prepares plane
-			// equations and corner coordinates from parameters
+    UTrap(const std::string& pName,
+          double pDz,
+          double pTheta, double pPhi,
+          double pDy1, double pDx1, double pDx2,
+          double pAlp1,
+          double pDy2, double pDx3, double pDx4,
+          double pAlp2);
+    //
+    // The most general constructor for UTrap which prepares plane
+    // equations and corner coordinates from parameters
 
-		UTrap( const std::string &pName,
-						const UVector3 pt[8] ) ;
-			//
-			// Prepares plane equations and parameters from corner coordinates
+    UTrap(const std::string& pName,
+          const UVector3 pt[8]) ;
+    //
+    // Prepares plane equations and parameters from corner coordinates
 
-		UTrap( const std::string &pName,
-									double pZ,
-									double pY,
-									double pX, double pLTX );
-			//
-			// Constructor for Right Angular Wedge from STEP (assumes pLTX<=pX)
+    UTrap(const std::string& pName,
+          double pZ,
+          double pY,
+          double pX, double pLTX);
+    //
+    // Constructor for Right Angular Wedge from STEP (assumes pLTX<=pX)
 
-		UTrap( const std::string &pName,
-									double pDx1,	double pDx2,
-									double pDy1,	double pDy2,
-									double pDz );
-			//
-			// Constructor for UTrd			 
+    UTrap(const std::string& pName,
+          double pDx1,  double pDx2,
+          double pDy1,  double pDy2,
+          double pDz);
+    //
+    // Constructor for UTrd
 
-		 UTrap(const std::string &pName,
-									double pDx, double pDy, double pDz,
-									double pAlpha, double pTheta, double pPhi );
-			//
-			// Constructor for UPara
+    UTrap(const std::string& pName,
+          double pDx, double pDy, double pDz,
+          double pAlpha, double pTheta, double pPhi);
+    //
+    // Constructor for UPara
 
-		 UTrap(const std::string &pName);
-			 //
-			 // Constructor for "nominal" UTrap whose parameters are to be Set
-			 // by a UVPVParamaterisation later
+    UTrap(const std::string& pName);
+    //
+    // Constructor for "nominal" UTrap whose parameters are to be Set
+    // by a UVPVParamaterisation later
 
-		 virtual ~UTrap() ;
-			 //
-			 // Destructor
+    virtual ~UTrap() ;
+    //
+    // Destructor
 
-	// Accessors
+    // Accessors
 
-		inline double GetZHalfLength()	const;
-		inline double GetYHalfLength1() const;
-		inline double GetXHalfLength1() const;
-		inline double GetXHalfLength2() const;
-		inline double GetTanAlpha1()		const;
-		inline double GetYHalfLength2() const;
-		inline double GetXHalfLength3() const;
-		inline double GetXHalfLength4() const;
-		inline double GetTanAlpha2()		const;
-			//
-			// Returns coordinates of Unit vector along straight
-			// line joining centers of -/+fDz planes	 
+    inline double GetZHalfLength()  const;
+    inline double GetYHalfLength1() const;
+    inline double GetXHalfLength1() const;
+    inline double GetXHalfLength2() const;
+    inline double GetTanAlpha1()    const;
+    inline double GetYHalfLength2() const;
+    inline double GetXHalfLength3() const;
+    inline double GetXHalfLength4() const;
+    inline double GetTanAlpha2()    const;
+    //
+    // Returns coordinates of Unit vector along straight
+    // line joining centers of -/+fDz planes
 
-		inline UTrapSidePlane GetSidePlane( int n ) const;
-		inline UVector3 GetSymAxis() const;
+    inline UTrapSidePlane GetSidePlane(int n) const;
+    inline UVector3 GetSymAxis() const;
 
-	// Modifiers
+    // Modifiers
 
-		void SetAllParameters ( double pDz,
-														double pTheta,
-														double pPhi,
-														double pDy1,
-														double pDx1,
-														double pDx2,
-														double pAlp1,
-														double pDy2,
-														double pDx3,
-														double pDx4,
-														double pAlp2 );
-																
-	// Methods for solid
-		
-		inline double Capacity();
-		inline double SurfaceArea();
+    void SetAllParameters(double pDz,
+                          double pTheta,
+                          double pPhi,
+                          double pDy1,
+                          double pDx1,
+                          double pDx2,
+                          double pAlp1,
+                          double pDy2,
+                          double pDx3,
+                          double pDx4,
+                          double pAlp2);
 
-		VUSolid::EnumInside Inside( const UVector3& p ) const;
-		
-		UVector3 SurfaceNormal( const UVector3& p ) const;
+    // Methods for solid
 
-    bool Normal( const UVector3& aPoint, UVector3 &aNormal ) const;
+    inline double Capacity();
+    inline double SurfaceArea();
 
-		double DistanceToIn(const UVector3& p, const UVector3& v,double) const;
-		
-		double SafetyFromOutside( const UVector3& p, bool precise) const;
-		
-    double DistanceToOut( const UVector3 &p,
-      const UVector3  &v,
-      UVector3       &aNormalVector,
-      bool           &aConvex,
-      double aPstep = UUtils::kInfinity) const;
+    VUSolid::EnumInside Inside(const UVector3& p) const;
 
-		double SafetyFromInside(const UVector3& p, bool precise) const;
+    UVector3 SurfaceNormal(const UVector3& p) const;
 
-		UGeometryType GetEntityType() const;
+    bool Normal(const UVector3& aPoint, UVector3& aNormal) const;
 
-		UVector3 GetPointOnSurface() const;
+    double DistanceToIn(const UVector3& p, const UVector3& v, double) const;
 
-		VUSolid* Clone() const;
+    double SafetyFromOutside(const UVector3& p, bool precise) const;
 
-		std::ostream& StreamInfo( std::ostream& os ) const;
+    double DistanceToOut(const UVector3& p,
+                         const UVector3&  v,
+                         UVector3&       aNormalVector,
+                         bool&           aConvex,
+                         double aPstep = UUtils::kInfinity) const;
 
-	// Visualisation functions
+    double SafetyFromInside(const UVector3& p, bool precise) const;
 
-	public:	// without description
+    UGeometryType GetEntityType() const;
 
-		UTrap(const UTrap& rhs);
-		UTrap& operator=(const UTrap& rhs); 
-			// Copy constructor and assignment operator.
+    UVector3 GetPointOnSurface() const;
 
-	protected:	// with description
+    VUSolid* Clone() const;
 
-		bool MakePlanes();
-		bool MakePlane( const UVector3& p1,
-											const UVector3& p2,
-											const UVector3& p3, 
-											const UVector3& p4,
-														UTrapSidePlane& plane ) ;
+    std::ostream& StreamInfo(std::ostream& os) const;
 
-	private:
+    // Visualisation functions
 
-		UVector3 ApproxSurfaceNormal( const UVector3& p ) const;
-			// Algorithm for SurfaceNormal() following the original
-			// specification for points not on the surface
+  public: // without description
 
-		inline double GetFaceArea(const UVector3& p1,
-																const UVector3& p2, 
-																const UVector3& p3,
-																const UVector3& p4);
-			//
-			// Provided four corners of plane in clockwise fashion,
-			// it returns the area of finite face
+    UTrap(const UTrap& rhs);
+    UTrap& operator=(const UTrap& rhs);
+    // Copy constructor and assignment operator.
 
-		UVector3 GetPointOnPlane(UVector3 p0, UVector3 p1, 
-																	UVector3 p2, UVector3 p3, 
-																	double& area) const;
-			//
-			// Returns a random point on the surface of one of the faces
+  protected:  // with description
 
-    void GetParametersList(int /*aNumber*/, double * /*aArray*/) const{} 
+    bool MakePlanes();
+    bool MakePlane(const UVector3& p1,
+                   const UVector3& p2,
+                   const UVector3& p3,
+                   const UVector3& p4,
+                   UTrapSidePlane& plane) ;
 
-   
-    void ComputeBBox(UBBox * /*aBox*/, bool /*aStore = false*/) {}
+  private:
 
-    virtual void Extent (UVector3 &aMin, UVector3 &aMax) const;
+    UVector3 ApproxSurfaceNormal(const UVector3& p) const;
+    // Algorithm for SurfaceNormal() following the original
+    // specification for points not on the surface
 
-	private:
+    inline double GetFaceArea(const UVector3& p1,
+                              const UVector3& p2,
+                              const UVector3& p3,
+                              const UVector3& p4);
+    //
+    // Provided four corners of plane in clockwise fashion,
+    // it returns the area of finite face
 
-		double fDz,fTthetaCphi,fTthetaSphi;
-		double fDy1,fDx1,fDx2,fTalpha1;
-		double fDy2,fDx3,fDx4,fTalpha2;
-		UTrapSidePlane fPlanes[4];
+    UVector3 GetPointOnPlane(UVector3 p0, UVector3 p1,
+                             UVector3 p2, UVector3 p3,
+                             double& area) const;
+    //
+    // Returns a random point on the surface of one of the faces
+
+    void GetParametersList(int /*aNumber*/, double* /*aArray*/) const {}
+
+
+    void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
+
+    virtual void Extent(UVector3& aMin, UVector3& aMax) const;
+
+  private:
+
+    double fDz, fTthetaCphi, fTthetaSphi;
+    double fDy1, fDx1, fDx2, fTalpha1;
+    double fDy2, fDx3, fDx4, fTalpha2;
+    UTrapSidePlane fPlanes[4];
 
     double fCubicVolume;
     double fSurfaceArea;
-	
+
 };
 
 #include "UTrap.icc"
