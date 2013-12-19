@@ -4,7 +4,7 @@
 
 int main(void) {
   
-  const int n_points = 1<<20;
+  const int n_points = 1<<19;
 
   // Populate some points
   SOA3D_Vc_Float points(n_points);
@@ -39,7 +39,8 @@ int main(void) {
     }
   }
 
-  std::cout << inside << " / " << n_points << " were inside the box.\n";
+  std::cout << double(inside)/double(n_points)
+            << " were inside the box.\n";
 
   return 0;
 }

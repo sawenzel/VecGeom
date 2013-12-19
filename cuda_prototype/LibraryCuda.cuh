@@ -104,8 +104,8 @@ public:
     cudaMalloc((void**)&b_, memsize);
     cudaMalloc((void**)&c_, memsize);
     cudaMemcpy(a_, a, memsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(b_, a, memsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(c_, a, memsize, cudaMemcpyHostToDevice);
+    cudaMemcpy(b_, b, memsize, cudaMemcpyHostToDevice);
+    cudaMemcpy(c_, c, memsize, cudaMemcpyHostToDevice);
     return SOA3D<kCuda, Type>(a_, b_, c_, count);
   }
 
@@ -136,6 +136,8 @@ public:
     if (index == 2) return c;
     #ifndef NVCC
     throw new std::out_of_range("");
+    #else
+    return NULL;
     #endif /* NVCC */
   }
 

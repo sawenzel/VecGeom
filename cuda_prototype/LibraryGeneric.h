@@ -1,6 +1,8 @@
 #ifndef LIBRARYGENERIC_H
 #define LIBRARYGENERIC_H
 
+#include <iostream>
+#include <stdio.h>
 #include <stdexcept>
 #include "tbb/tick_count.h"
 
@@ -18,6 +20,8 @@
 #endif /* __CUDACC__ */
 
 const int kAlignmentBoundary = 32;
+const double kDegToRad = M_PI/180.;
+const double kRadToDeg = 180./M_PI;
 
 enum Ct { kVc, kCuda };
 
@@ -124,7 +128,115 @@ struct Stopwatch {
   tbb::tick_count t2;
   void Start() { t1 = tbb::tick_count::now(); }
   void Stop() { t2 = tbb::tick_count::now(); }
-  double Elapsed() { return (t2-t1).seconds(); }
+  double Elapsed() const { return (t2-t1).seconds(); }
+};
+
+template<Ct ct, typename Type>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Type IfThenElse(const typename CtTraits<ct>::bool_v &cond,
+                const Type &thenval, const Type &elseval);
+
+enum RotationType { kDiagonal = 720, kNone = 1296 };
+
+template<Ct ct>
+struct TransMatrix {
+
+private:
+
+  typename CtTraits<ct>::float_t trans[3];
+  typename CtTraits<ct>::float_t rot[9];
+  bool identity;
+  bool has_rotation;
+  bool has_translation;
+
+public:
+
+  TransMatrix(const typename CtTraits<ct>::float_t tx,
+              const typename CtTraits<ct>::float_t ty,
+              const typename CtTraits<ct>::float_t tz,
+              const typename CtTraits<ct>::float_t phi,
+              const typename CtTraits<ct>::float_t theta,
+              const typename CtTraits<ct>::float_t psi) {
+    SetTranslation(tx, ty, tz);
+    SetRotation(phi, theta, psi);
+  }
+
+  inline __attribute__((always_inline))
+  bool IsIdentity() const { return identity; }
+
+  inline __attribute__((always_inline))
+  bool HasRotation() const { return has_rotation; }
+
+  inline __attribute__((always_inline))
+  bool HasTranslation() const { return has_translation; }
+
+  inline __attribute__((always_inline))
+  void SetTranslation(const typename CtTraits<ct>::float_t tx,
+                      const typename CtTraits<ct>::float_t ty,
+                      const typename CtTraits<ct>::float_t tz) {
+    trans[0] = tx;
+    trans[1] = ty;
+    trans[2] = tz;
+    SetProperties();
+  }
+
+  inline __attribute__((always_inline))
+  void SetProperties() {
+    has_translation = (trans[0] || trans[1] || trans[2]) ? true : false;
+    has_rotation = (RotationFootprint(rot) == kNone) ? false : true;
+    identity = !has_translation && !has_rotation;
+  }
+
+  inline __attribute__((always_inline))
+  void SetRotation(const typename CtTraits<ct>::float_t phi,
+                   const typename CtTraits<ct>::float_t theta,
+                   const typename CtTraits<ct>::float_t psi) {
+
+    typename CtTraits<ct>::float_t sinphi = sin(kDegToRad*phi);
+    typename CtTraits<ct>::float_t cosphi = cos(kDegToRad*phi);
+    typename CtTraits<ct>::float_t sinthe = sin(kDegToRad*theta);
+    typename CtTraits<ct>::float_t costhe = cos(kDegToRad*theta);
+    typename CtTraits<ct>::float_t sinpsi = sin(kDegToRad*psi);
+    typename CtTraits<ct>::float_t cospsi = cos(kDegToRad*psi);
+
+    rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
+    rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
+    rot[2] =  sinthe*sinphi;
+    rot[3] =  cospsi*sinphi + costhe*cosphi*sinpsi;
+    rot[4] = -sinpsi*sinphi + costhe*cosphi*cospsi;
+    rot[5] = -sinthe*cosphi;
+    rot[6] =  sinpsi*sinthe;
+    rot[7] =  cospsi*sinthe;
+    rot[8] =  costhe;
+
+    SetProperties();
+  }
+
+  static inline __attribute__((always_inline))
+  typename CtTraits<ct>::int_t RotationFootprint(
+      typename CtTraits<ct>::float_t const *rot) {
+
+    int footprint = 0;
+
+    // Count zero-entries and give back a footprint that classifies them
+    for (int i = 0; i < 9; ++i) {
+      if(abs(rot[i]) < 1e-12) {
+        footprint += i*i*i; // Cubic power identifies cases uniquely
+      }
+    }
+
+    // Diagonal matrix. Check if this is the trivial case.
+    if (footprint == 720) {
+      if (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.) {
+        // Trivial rotation (none)
+        return 1296;
+      }
+    }
+
+    return footprint;
+  }
+
 };
 
 #endif /* LIBRARY_H */

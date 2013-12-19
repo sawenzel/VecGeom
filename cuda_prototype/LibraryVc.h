@@ -53,4 +53,15 @@ public:
 
 typedef SOA3D<kVc, VcFloat> SOA3D_Vc_Float;
 
+template <typename Type>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Type IfThenElse(const VcBool &cond,
+                const Type &thenval, const Type &elseval) {
+  Type ret;
+  ret(cond) = thenval;
+  ret(!cond) = elseval;
+  return ret;
+}
+
 #endif /* LIBRARYVC_H */

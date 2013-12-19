@@ -10,7 +10,7 @@ CudaFloat random(const CudaFloat low, const CudaFloat high) {
 
 int main(void) {
 
-  const int n_points = 1<<20;
+  const int n_points = 1<<19;
 
   // Populate some points
   SOA3D_CUDA_Float points(n_points);
@@ -42,5 +42,6 @@ int main(void) {
     if (output[i]) inside++;
   }
 
-  std::cout << inside << " / " << n_points << " were inside the box.\n";
+  std::cout << double(inside)/double(n_points)
+            << " were inside the box.\n";
 }
