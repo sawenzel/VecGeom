@@ -23,13 +23,10 @@ const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
 
-enum Ct { kVc, kCuda };
+enum ImplType { kVc, kCuda, kScalar };
 
-template <Ct ct>
-struct CtTraits {};
-
-template <Ct ct, typename Type>
-struct SOA3D {};
+template <ImplType it>
+struct ImplTraits {};
 
 template <typename Type>
 struct Vector3D {
@@ -42,6 +39,12 @@ public:
 
   #ifdef STD_CXX11
   Vector3D() : vec{0, 0, 0} {};
+  #else
+  Vector3D() {
+    vec[0] = 0;
+    vec[1] = 0;
+    vec[2] = 0;
+  }
   #endif /* STD_CXX11 */
 
   CUDA_HEADER_BOTH
@@ -59,6 +62,12 @@ public:
     vec[1] = other[1];
     vec[2] = other[2];
   }
+
+  CUDA_HEADER_HOST
+  Vector3D<float> ToFloatHost() const;
+
+  CUDA_HEADER_DEVICE
+  Vector3D<float> ToFloatDevice() const;
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
@@ -104,7 +113,7 @@ template <typename Type>
 CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
 Vector3D<Type> operator+(Vector3D<Type> const &lhs,
-                                Vector3D<Type> const &rhs) {
+                         Vector3D<Type> const &rhs) {
   return Vector3D<Type>(lhs[0]+rhs[0], lhs[1]+rhs[1], lhs[2]+rhs[2]);
 }
 
@@ -112,7 +121,7 @@ template <typename Type>
 CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
 Vector3D<Type> operator-(Vector3D<Type> const &lhs,
-                                Vector3D<Type> const &rhs) {
+                         Vector3D<Type> const &rhs) {
   return Vector3D<Type>(lhs[0]-rhs[0], lhs[1]-rhs[1], lhs[2]-rhs[2]);
 }
 
@@ -123,6 +132,146 @@ Vector3D<Type> abs(Vector3D<Type> const &in) {
   return Vector3D<Type>(abs(in[0]), abs(in[1]), abs(in[2]));
 }
 
+
+template <typename Type>
+struct SOA3D {
+
+private:
+
+  int size_;
+  Type *a, *b, *c;
+
+public:
+
+  #ifdef STD_CXX11
+
+  SOA3D() : a(nullptr), b(nullptr), c(nullptr), size_(0) {}
+
+  SOA3D(const int size__) : size_(size__) {
+    a = (Type*)
+        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
+    b = (Type*)
+        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
+    c = (Type*)
+        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
+  }
+
+  SOA3D(SOA3D const &other) : SOA3D(other.size_) {
+    const int count = other.size_;
+    for (int i = 0; i < count; ++i) {
+      a[i] = other.a[i];
+      b[i] = other.b[i];
+      c[i] = other.c[i];
+    }
+    size_ = count;
+  }
+
+  #else
+
+  SOA3D() {
+    a = NULL;
+    b = NULL;
+    c = NULL;
+    size_ = 0;
+  }
+
+  SOA3D(const int size__) {
+    size_ = size__;
+    a = (Type*)
+        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
+    b = (Type*)
+        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
+    c = (Type*)
+        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
+  }
+
+  #endif /* STD_CXX11 */
+
+  #ifndef NVCC
+
+  ~SOA3D() {
+    Deallocate();
+  }
+
+  #endif /* NVCC */
+
+  SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size__) {
+    a = a_;
+    b = b_;
+    c = c_;
+    size_ = size__;
+  }
+
+  inline __attribute__((always_inline))
+  void Deallocate() {
+    if (a) _mm_free(a);
+    if (b) _mm_free(b);
+    if (c) _mm_free(c);
+  }
+
+  #ifdef NVCC
+
+  inline __attribute__((always_inline))
+  SOA3D<Type> CopyToGPU() const {
+    const int count = size();
+    const int memsize = count*sizeof(Type);
+    Type *a_, *b_, *c_;
+    cudaMalloc((void**)&a_, memsize);
+    cudaMalloc((void**)&b_, memsize);
+    cudaMalloc((void**)&c_, memsize);
+    cudaMemcpy(a_, a, memsize, cudaMemcpyHostToDevice);
+    cudaMemcpy(b_, b, memsize, cudaMemcpyHostToDevice);
+    cudaMemcpy(c_, c, memsize, cudaMemcpyHostToDevice);
+    return SOA3D<Type>(a_, b_, c_, count);
+  }
+
+  inline __attribute__((always_inline))
+  void FreeFromGPU() {
+    cudaFree(a);
+    cudaFree(b);
+    cudaFree(c);
+  }
+
+  #endif /* NVCC */
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  int size() const { return size_; }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D<Type> operator[](const int index) const {
+    return Vector3D<Type>(a[index], b[index], c[index]);
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type* Memory(const int index) {
+    if (index == 0) return a;
+    if (index == 1) return b;
+    if (index == 2) return c;
+    #ifndef NVCC
+    throw new std::out_of_range("");
+    #else
+    return NULL;
+    #endif /* NVCC */
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type const* Memory(const int index) const {
+    if (index == 0) return a;
+    if (index == 1) return b;
+    if (index == 2) return c;
+    #ifndef NVCC
+    throw new std::out_of_range("");
+    #else
+    return NULL;
+    #endif /* NVCC */
+  }
+
+};
+
 struct Stopwatch {
   tbb::tick_count t1;
   tbb::tick_count t2;
@@ -131,36 +280,52 @@ struct Stopwatch {
   double Elapsed() const { return (t2-t1).seconds(); }
 };
 
-template<Ct ct, typename Type>
-CUDA_HEADER_BOTH
-inline __attribute__((always_inline))
-Type IfThenElse(const typename CtTraits<ct>::bool_v &cond,
-                const Type &thenval, const Type &elseval);
+// Solve with overloading instead
+// template<ImplType it, typename Type>
+// CUDA_HEADER_BOTH
+// inline __attribute__((always_inline))
+// Type CondAssign(const typename ImplTraits<it>::bool_v &cond,
+//                 const Type &thenval, const Type &elseval);
 
 enum RotationType { kDiagonal = 720, kNone = 1296 };
 
-template<Ct ct>
 struct TransMatrix {
 
 private:
 
-  typename CtTraits<ct>::float_t trans[3];
-  typename CtTraits<ct>::float_t rot[9];
+  double trans[3];
+  double rot[9];
   bool identity;
   bool has_rotation;
   bool has_translation;
 
 public:
 
-  TransMatrix(const typename CtTraits<ct>::float_t tx,
-              const typename CtTraits<ct>::float_t ty,
-              const typename CtTraits<ct>::float_t tz,
-              const typename CtTraits<ct>::float_t phi,
-              const typename CtTraits<ct>::float_t theta,
-              const typename CtTraits<ct>::float_t psi) {
+  TransMatrix() {
+    SetTranslation(0, 0, 0);
+    SetRotation(0, 0, 0);
+  }
+
+  TransMatrix(const double tx, const double ty, const double tz,
+              const double phi, const double theta,
+              const double psi) {
     SetTranslation(tx, ty, tz);
     SetRotation(phi, theta, psi);
   }
+
+  inline __attribute__((always_inline))
+  Vector3D<double> Translation() const {
+    return Vector3D<double>(trans[0], trans[1], trans[2]);
+  }
+
+  inline __attribute__((always_inline))
+  double Translation(const int index) const { return trans[index]; }
+
+  inline __attribute__((always_inline))
+  const double* Rotation() const { return rot; }
+
+  inline __attribute__((always_inline))
+  double Rotation(const int index) const { return rot[index]; }
 
   inline __attribute__((always_inline))
   bool IsIdentity() const { return identity; }
@@ -172,9 +337,8 @@ public:
   bool HasTranslation() const { return has_translation; }
 
   inline __attribute__((always_inline))
-  void SetTranslation(const typename CtTraits<ct>::float_t tx,
-                      const typename CtTraits<ct>::float_t ty,
-                      const typename CtTraits<ct>::float_t tz) {
+  void SetTranslation(const double tx, const double ty,
+                      const double tz) {
     trans[0] = tx;
     trans[1] = ty;
     trans[2] = tz;
@@ -184,21 +348,20 @@ public:
   inline __attribute__((always_inline))
   void SetProperties() {
     has_translation = (trans[0] || trans[1] || trans[2]) ? true : false;
-    has_rotation = (RotationFootprint(rot) == kNone) ? false : true;
+    has_rotation = (RotationFootprint(rot) == 1296) ? false : true;
     identity = !has_translation && !has_rotation;
   }
 
   inline __attribute__((always_inline))
-  void SetRotation(const typename CtTraits<ct>::float_t phi,
-                   const typename CtTraits<ct>::float_t theta,
-                   const typename CtTraits<ct>::float_t psi) {
+  void SetRotation(const double phi, const double theta,
+                   const double psi) {
 
-    typename CtTraits<ct>::float_t sinphi = sin(kDegToRad*phi);
-    typename CtTraits<ct>::float_t cosphi = cos(kDegToRad*phi);
-    typename CtTraits<ct>::float_t sinthe = sin(kDegToRad*theta);
-    typename CtTraits<ct>::float_t costhe = cos(kDegToRad*theta);
-    typename CtTraits<ct>::float_t sinpsi = sin(kDegToRad*psi);
-    typename CtTraits<ct>::float_t cospsi = cos(kDegToRad*psi);
+    const double sinphi = sin(kDegToRad*phi);
+    const double cosphi = cos(kDegToRad*phi);
+    const double sinthe = sin(kDegToRad*theta);
+    const double costhe = cos(kDegToRad*theta);
+    const double sinpsi = sin(kDegToRad*psi);
+    const double cospsi = cos(kDegToRad*psi);
 
     rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
     rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
@@ -214,14 +377,13 @@ public:
   }
 
   static inline __attribute__((always_inline))
-  typename CtTraits<ct>::int_t RotationFootprint(
-      typename CtTraits<ct>::float_t const *rot) {
+  int RotationFootprint(double const *rot) {
 
     int footprint = 0;
 
     // Count zero-entries and give back a footprint that classifies them
     for (int i = 0; i < 9; ++i) {
-      if(abs(rot[i]) < 1e-12) {
+      if (abs(rot[i]) < 1e-12) {
         footprint += i*i*i; // Cubic power identifies cases uniquely
       }
     }

@@ -4,13 +4,13 @@ CXX_FLAGS=-m64 -std=c++11
 CXX_FLAGS+=${CXX_OPT}
 CXX_INCLUDE=-I ./ -I ${VCROOT}/include -I$ {TBBROOT}/include
 CXX_LIBS=-L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib -ltbb -lrt
-CXX_SRC=LauncherVc.cpp
+CXX_SRC=WrappersVc.cpp
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 
 NVCC=nvcc
 NVCC_FLAGS=-O2 -arch=sm_30
 NVCC_INCLUDE=-I ./ -I ${TBBROOT}/include
-NVCC_SRC=LauncherCuda.cu
+NVCC_SRC=WrappersCuda.cu
 NVCC_OBJS=$(addsuffix .cu.o, $(basename $(NVCC_SRC)))
 NVCC_LIBS=-L ${TBBROOT}/lib -ltbb
 

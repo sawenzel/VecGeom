@@ -4,20 +4,23 @@
 #include "LibraryGeneric.h"
 
 template <>
-struct CtTraits<kVc> {
+struct ImplTraits<kVc> {
   typedef double       float_t;
   typedef Vc::int_v    int_v;
   typedef Vc::double_v float_v;
   typedef Vc::double_m bool_v;
+  const static bool early_return = false;
 };
 
-typedef CtTraits<kVc>::int_v   VcInt;
-typedef CtTraits<kVc>::float_v VcFloat;
-typedef CtTraits<kVc>::bool_v  VcBool;
-typedef CtTraits<kVc>::float_t VcScalar;
+const int kVectorSize = ImplTraits<kVc>::float_v::Size;
+
+typedef ImplTraits<kVc>::int_v   VcInt;
+typedef ImplTraits<kVc>::float_v VcFloat;
+typedef ImplTraits<kVc>::bool_v  VcBool;
+typedef ImplTraits<kVc>::float_t VcScalarFloat;
 
 template <typename Type>
-struct SOA3D<kVc, Type> {
+struct VcSOA3D {
 
 private:
 
@@ -26,9 +29,9 @@ private:
 
 public:
 
-  SOA3D(const int size__) : size_(size__), a(size__), b(size__), c(size__) {}
+  VcSOA3D(const int size__) : size_(size__), a(size__), b(size__), c(size__) {}
 
-  SOA3D(SOA3D const &other) : a(other.a), b(other.b), c(other.c) {}
+  VcSOA3D(VcSOA3D const &other) : a(other.a), b(other.b), c(other.c) {}
 
   inline __attribute__((always_inline))
   int size() const { return size_; }
@@ -51,12 +54,12 @@ public:
 
 };
 
-typedef SOA3D<kVc, VcFloat> SOA3D_Vc_Float;
+typedef VcSOA3D<VcFloat> VcSOA3D_Float;
 
 template <typename Type>
 CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
-Type IfThenElse(const VcBool &cond,
+Type CondAssign(const VcBool &cond,
                 const Type &thenval, const Type &elseval) {
   Type ret;
   ret(cond) = thenval;

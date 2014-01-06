@@ -4,151 +4,72 @@
 #include "mm_malloc.h"
 #include "LibraryGeneric.h"
 
+static const int threads_per_block = 512;
+
 template <>
-struct CtTraits<kCuda> {
+struct ImplTraits<kCuda> {
   typedef float float_t;
   typedef int   int_v;
   typedef float float_v;
   typedef bool  bool_v;
+  const static bool early_return = true;
 };
 
-typedef CtTraits<kCuda>::int_v   CudaInt;
-typedef CtTraits<kCuda>::float_v CudaFloat;
-typedef CtTraits<kCuda>::bool_v  CudaBool;
-typedef CtTraits<kCuda>::float_t CudaScalar;
+typedef ImplTraits<kCuda>::int_v   CudaInt;
+typedef ImplTraits<kCuda>::float_v CudaFloat;
+typedef ImplTraits<kCuda>::bool_v  CudaBool;
+typedef ImplTraits<kCuda>::float_t CudaScalarFloat;
 
 template <typename Type>
-struct SOA3D<kCuda, Type> {
+__host__
+Vector3D<float> Vector3D<Type>::ToFloatHost() const {
+  return Vector3D<float>(float(vec[0]),
+                         float(vec[1]),
+                         float(vec[2]));
+}
 
-private:
+template <>
+__device__
+Vector3D<float> Vector3D<double>::ToFloatDevice() const {
+  return Vector3D<float>(__double2float_rd(vec[0]),
+                         __double2float_rd(vec[1]),
+                         __double2float_rd(vec[2]));
+}
 
-  int size_;
-  Type *a, *b, *c;
-
-public:
-
-  #ifdef STD_CXX11
-
-  SOA3D() : a(nullptr), b(nullptr), c(nullptr), size_(0) {}
-
-  SOA3D(const int size__) : size_(size__) {
-    a = (Type*)
-        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
-    b = (Type*)
-        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
-    c = (Type*)
-        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
-  }
-
-  SOA3D(SOA3D const &other) : SOA3D(other.size_) {
-    const int count = other.size_;
-    for (int i = 0; i < count; ++i) {
-      a[i] = other.a[i];
-      b[i] = other.b[i];
-      c[i] = other.c[i];
-    }
-    size_ = count;
-  }
-
-  #else
-
-  SOA3D() {
-    a = NULL;
-    b = NULL;
-    c = NULL;
-    size_ = 0;
-  }
-
-  SOA3D(const int size__) {
-    size_ = size__;
-    a = (Type*)
-        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
-    b = (Type*)
-        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
-    c = (Type*)
-        _mm_malloc(sizeof(Type)*size_, kAlignmentBoundary);
-  }
-
-  #endif /* STD_CXX11 */
-
-  #ifndef NVCC
-
-  ~SOA3D() {
-    Deallocate();
-  }
-
-  #endif /* NVCC */
-
-  SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size__) {
-    a = a_;
-    b = b_;
-    c = c_;
-    size_ = size__;
-  }
-
-  inline __attribute__((always_inline))
-  void Deallocate() {
-    if (a) _mm_free(a);
-    if (b) _mm_free(b);
-    if (c) _mm_free(c);
-  }
-
-  #ifdef NVCC
-
-  inline __attribute__((always_inline))
-  SOA3D<kCuda, Type> CopyToGPU() const {
-    const int count = size();
-    const int memsize = count*sizeof(Type);
-    Type *a_, *b_, *c_;
-    cudaMalloc((void**)&a_, memsize);
-    cudaMalloc((void**)&b_, memsize);
-    cudaMalloc((void**)&c_, memsize);
-    cudaMemcpy(a_, a, memsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(b_, b, memsize, cudaMemcpyHostToDevice);
-    cudaMemcpy(c_, c, memsize, cudaMemcpyHostToDevice);
-    return SOA3D<kCuda, Type>(a_, b_, c_, count);
-  }
-
-  inline __attribute__((always_inline))
-  void FreeFromGPU() {
-    cudaFree(a);
-    cudaFree(b);
-    cudaFree(c);
-  }
-
-  #endif /* NVCC */
-
-  CUDA_HEADER_BOTH
-  inline __attribute__((always_inline))
-  int size() const { return size_; }
-
-  CUDA_HEADER_BOTH
-  inline __attribute__((always_inline))
-  Vector3D<Type> operator[](const int index) const {
-    return Vector3D<Type>(a[index], b[index], c[index]);
-  }
-
-  CUDA_HEADER_BOTH
-  inline __attribute__((always_inline))
-  Type* Memory(const int index) {
-    if (index == 0) return a;
-    if (index == 1) return b;
-    if (index == 2) return c;
-    #ifndef NVCC
-    throw new std::out_of_range("");
-    #else
-    return NULL;
-    #endif /* NVCC */
-  }
-
-};
-
-typedef SOA3D<kCuda, CtTraits<kCuda>::float_v> SOA3D_CUDA_Float;
+template <>
+__host__
+Vector3D<float> Vector3D<double>::ToFloatHost() const {
+  return Vector3D<float>(float(vec[0]),
+                         float(vec[1]),
+                         float(vec[2]));
+}
 
 __device__
 inline __attribute__((always_inline))
 int ThreadIndex() {
   return blockIdx.x * blockDim.x + threadIdx.x;
+}
+
+__host__
+inline __attribute__((always_inline))
+int BlocksPerGrid(const int threads) {
+  return (threads - 1) / threads_per_block + 1;
+}
+
+template <typename Type>
+__host__
+inline __attribute__((always_inline))
+static Type* AllocateOnGPU(const int count) {
+  Type *ptr;
+  cudaMalloc((void**)&ptr, count*sizeof(Type));
+  return ptr;
+}
+
+template <typename Type>
+__host__
+inline __attribute__((always_inline))
+void CopyFromGPU(Type *const src, Type *const tgt, const int count) {
+  cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost);
 }
 
 #endif /* LIBRARYCUDA_H */
