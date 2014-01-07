@@ -24,17 +24,6 @@ struct StopWatch
   double getDeltaSecs() { return (t2-t1).seconds(); }
 };
 
-
-
-struct QuadraticSolver
-{
-
-
-
-
-};
-
-
 // a kernel function solving a quadratic equation
 
 struct DistanceFunctions
@@ -167,12 +156,12 @@ struct GeneralPhiUtils
 				Vector3D const & pos )
 			{
 				// method based on calculating the scalar product of position vectors with the normals of the (empty) phi sektor
-				// a	voids taking the atan2
+				// avoids taking the atan2
 
 				// this method could be template specialized in case DeltaPhi = 180^o
-				T scalarproduct1 = Vector3D::scalarProductInXYPlane( phi1normal, pos);
-				T scalarproduct2 = Vector3D::scalarProductInXYPlane( phi2normal, pos);
-				if( phi1normal.x*phi2normal.x + phi1normal.y*phi2normal.y >= 0)
+				T scalarproduct1 = Vector3D::scalarProductInXYPlane( phi1normal, pos );
+				T scalarproduct2 = Vector3D::scalarProductInXYPlane( phi2normal, pos );
+				if ( phi1normal.x*phi2normal.x + phi1normal.y*phi2normal.y >= 0 )
 				{
 					return (scalarproduct1 > 0 && scalarproduct2 > 0);
 				}
@@ -211,9 +200,6 @@ struct GeneralPhiUtils
 
 struct TubeUtils
 {
-
-
-
 	// specific to a tube
 	template <typename T, bool needRmin=true>
 	static
@@ -300,6 +286,8 @@ struct TubeUtils
 			distToPlane = Vc::min(distToPlane1, distToPlane);
 		}
 	}
+
+
 };
 
 // things specific to a cone ( difference is that sometimes we need the z coordinate ( for the radial check )

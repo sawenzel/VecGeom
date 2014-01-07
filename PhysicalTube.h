@@ -21,6 +21,8 @@
 #include "UTubs.hh"
 #include "TGeoTube.h"
 
+
+
 template <typename T=double>
 // T is a floating point type
 class TubeParameters // : ShapeParameters
@@ -46,12 +48,6 @@ private:
 	T cacheTolIRminSqr; // tolerant inner radius of rmin
 	T cacheTolIRmaxSqr; // tolerant inner radius of rmax
 
-	//**** we save normals to phi - planes *****//
-	Vector3D normalPhi1; // ( probably need to worry about alignment )
-	Vector3D normalPhi2; // ( probably need to worry about alignment
-	//**** vectors along radial direction of phi-planes
-	Vector3D alongPhi1;
-	Vector3D alongPhi2;
 
 public:
 	TubeParameters(T pRmin, T pRmax, T pDZ, T pPhiMin=0, T pPhiMax=2*M_PI) :
@@ -62,7 +58,7 @@ public:
 		dDPhi(pPhiMax)
 
 		// vcZ( )
-{
+	{
 		//vcZ = Vc::One*dZ;
 		//vcRminSqr = Vc::One*dRmin*dRmin;
 		//vcRmaxSqr = Vc::One*dRmax*dRmax;
@@ -97,6 +93,13 @@ public:
 			normalPhi2.print();
 	};
 
+	//**** we save normals to phi - planes *****//
+		Vector3D normalPhi1; // ( probably need to worry about alignment )
+		Vector3D normalPhi2; // ( probably need to worry about alignment
+		//**** vectors along radial direction of phi-planes
+		Vector3D alongPhi1;
+		Vector3D alongPhi2;
+
 //	virtual void inspect() const;
 
 	inline T GetRmin() const {return dRmin;}
@@ -104,6 +107,8 @@ public:
 	inline T GetDZ() const {return dZ;}
 	inline T GetSPhi() const {return dSPhi;}
 	inline T GetDPhi() const {return dDPhi;}
+	inline T GetRmaxSqr() const {return this->cacheRmaxSqr;}
+	inline T GetRminSqr() const {return this->cacheRminSqr;}
 
 	virtual ~TubeParameters(){};
 	// The placed boxed can easily access the private members
@@ -111,6 +116,121 @@ public:
 
 	// template<int,int,int> friend class PlacedRootTube;
 }; // __attribute__((aligned(ALIGNMENT_BOUNDARY)));
+
+
+
+struct Tools
+{
+__attribute__((always_inline))
+inline
+static
+GlobalTypes::SurfaceEnumType
+InsideZ( TubeParameters<> const * tp, Vector3D const & x )
+{
+	// could introduce early returns if necessary
+	if( std::abs(x.z) - tp->GetDZ() > Utils::frHalfTolerance )
+		return GlobalTypes::kOutside;
+
+	if( std::abs(x.z) - tp->GetDZ() < -Utils::frHalfTolerance )
+		return GlobalTypes::kInside;
+
+	return GlobalTypes::kOnSurface;
+}
+
+template<typename TubeType, typename Float_t=double>
+__attribute__((always_inline))
+inline
+static
+GlobalTypes::SurfaceEnumType
+InsideR( TubeParameters<Float_t> const * tp, Vector3D const & x )
+{
+	Float_t r2 = x.x*x.x + x.y*x.y;
+
+	if( ! TubeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		if( r2 > tp->GetRmaxSqr() + Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kOutside;
+		}
+		if( r2 < tp->GetRmaxSqr() - Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kInside;
+		}
+		return GlobalTypes::kOnSurface;
+	}
+	else
+	{
+		if( r2 > tp->GetRmaxSqr() + Utils::frHalfTolerance || r2 < tp->GetRminSqr() - Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kOutside;
+		}
+		if( r2 < tp->GetRmaxSqr() - Utils::frHalfTolerance && r2 > tp->GetRminSqr() + Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kInside;
+		}
+		return GlobalTypes::kOnSurface;
+	}
+}
+
+template<typename TubeType, typename Float_t=double>
+__attribute__((always_inline))
+inline
+static
+GlobalTypes::SurfaceEnumType
+InsidePhi( TubeParameters<Float_t> const * tp, Vector3D const & x )
+{
+	// we should catch here the case when we do not need phi treatment at all ( or assert on it )
+	if( ! TubeTraits::NeedsPhiTreatment<TubeType>::value )
+		return GlobalTypes::kInside;
+
+	// a bit tricky; how can we
+	// method based on calculating the scalar product of position vectors with the normals of the (empty) phi sektor
+	// avoids taking the atan2
+
+	// this method could be template specialized in case DeltaPhi = 180^o
+	Float_t scalarproduct1 = Vector3D::scalarProductInXYPlane( tp->normalPhi1, x );
+
+	// template specialize on some interesting cases
+	if( TubeTraits::IsPhiEqualsPiCase<TubeType>::value )
+	{
+		// here we only have one plane
+		if( scalarproduct1 > Utils::frHalfTolerance )
+			return GlobalTypes::kOutside;
+
+		// we are on the side of the plane where we might find a tube
+		if ( scalarproduct1 < -Utils::frHalfTolerance )
+			return GlobalTypes::kInside;
+
+		return GlobalTypes::kOnSurface;
+	}
+	else // more general case for which we need to treat a second plane
+	{
+		Float_t scalarproduct2 = Vector3D::scalarProductInXYPlane( tp->normalPhi2, x );
+		if ( tp->normalPhi1.x*tp->normalPhi2.x + tp->normalPhi1.y*tp->normalPhi2.y >= 0 )
+		{
+			// here angle between planes is < 180 degree
+			if (scalarproduct1 > Utils::frHalfTolerance && scalarproduct2 > Utils::frHalfTolerance )
+				return GlobalTypes::kOutside;
+			if (scalarproduct1 < -Utils::frHalfTolerance && scalarproduct2 < -Utils::frHalfTolerance )
+				return GlobalTypes::kInside;
+			return GlobalTypes::kOnSurface;
+		}
+		else
+		{
+			// here angle between planes is > 180 degree
+			if (scalarproduct1 > Utils::frHalfTolerance || scalarproduct2 > Utils::frHalfTolerance )
+				return GlobalTypes::kOutside;
+			if (scalarproduct1 < -Utils::frHalfTolerance || scalarproduct2 < -Utils::frHalfTolerance )
+				return GlobalTypes::kOutside;
+
+			return GlobalTypes::kOnSurface;
+		}
+	}
+}
+
+
+};
+
 
 template<TranslationIdType tid, RotationIdType rid, class TubeType=TubeTraits::HollowTubeWithPhi, class T=double>
 class PlacedUSolidsTube : public PhysicalVolume
@@ -162,10 +282,14 @@ public:
 	virtual bool   UnplacedContains( Vector3D const & ) const;
 
 	/*
+		virtual GlobalTypes::SurfaceEnumType  UnplacedContains( Vector3D const & ) const;
+	 */
+
 	__attribute__((always_inline))
 	inline
-	virtual GlobalTypes::SurfaceEnumType  UnplacedContains( Vector3D const & ) const;
-*/
+	virtual GlobalTypes::SurfaceEnumType  UnplacedContains_WithSurface( Vector3D const & ) const;
+	virtual GlobalTypes::SurfaceEnumType  Contains_WithSurface( Vector3D const & ) const;
+
 
 	virtual double SafetyToIn( Vector3D const & ) const {return 0.;}
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
@@ -174,7 +298,6 @@ public:
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 	// for basket treatment (supposed to be dispatched to particle parallel case)
 	virtual void DistanceToOut( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
-
 
 	// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
@@ -225,6 +348,8 @@ public:
 		else
 			return this;
 	}
+
+
 
 };
 
@@ -938,38 +1063,41 @@ bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x
 	return true;
 }
 
-/*
+
 template<int tid, int rid, typename TubeType, typename T>
 inline
-GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x) const
+GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains_WithSurface( Vector3D const & x ) const
 {
-	// checkContainedZ
-	if( std::abs(x.z) > tubeparams->dZ + tolerance ) return GlobalTypes::Outside;
-// something is missing here ( an abs ?? )
-	if( (std::abs(x.z) - tubeparams->dZ) < tolerance ) return GlobalTypes::OnSurface;
+	GlobalTypes::SurfaceEnumType inside_z;
+	GlobalTypes::SurfaceEnumType inside_r;
+	GlobalTypes::SurfaceEnumType inside_phi;
 
-	// checkContainmentRmax
-	T r2 = x.x*x.x + x.y*x.y;
-	if( r2 > tubeparams->cacheRmaxSqr + tolerancesqr ) return GlobalTypes::Outside;
-	if( (r2 - tubeparams->cacheRmaxSqr) < tolerancesqr ) return GlobalTypes::OnSurface;
+	inside_z = Tools::InsideZ( tubeparams, x );
+	if ( inside_z == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
 
+	inside_r = Tools::InsideR<TubeType>( tubeparams, x );
+	if ( inside_r == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
 
-	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
-	{
-		if( r2 < tubeparams->cacheRminSqr - tolerancesqr ) return GlobalTypes::Outside;
-		if( (r2 - tubeparams->cacheRminSqr) < tolerancesqr ) return GlobalTypes::OnSurface;
-	}
+	inside_phi = Tools::InsidePhi<TubeType>( tubeparams, x );
+	if ( inside_phi == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
 
-	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	{
-		T sP1 = Vect
-		if ( ( Vector3D::scalarProduct(x, tubeparams->normalPhi1 ) > 0 )
-				&& Vector3D::scalarProduct(x, tubeparams->normalPhi2 ) > 0 ) return GlobalTypes::Outside;
-		// the scalar product is also the safe distance to phi plane, just check if smaller than tolerance
-		if ( ) return GlobalTypes::OnSurface;
-	}
-	return GlobalTypes::Inside;
+	// at this point we are either inside or on the surface
+    // we are on surface if at least one of the surfaces is touched
+	if( inside_z == GlobalTypes::kOnSurface || inside_r == GlobalTypes::kOnSurface || inside_phi == GlobalTypes::kOnSurface )
+		return GlobalTypes::kOnSurface;
+
+	// we are inside
+	return GlobalTypes::kInside;
 }
-*/
+
+template<int tid, int rid, typename TubeType, typename T>
+inline
+GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::Contains_WithSurface( Vector3D const & x ) const
+{
+	Vector3D xp;
+	matrix->MasterToLocal<tid,rid>(x,xp);
+	return this->PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains_WithSurface( xp );
+}
+
 
 #endif /* PHYSICALTUBE_H_ */

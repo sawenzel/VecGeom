@@ -24,7 +24,7 @@
 
 namespace GlobalTypes
 {
-	typedef enum {  Outside, OnSurface, Inside } SurfaceEnumType;
+	typedef enum {  kInside, kOnSurface, kOutside } SurfaceEnumType;
 };
 
 template <bool B>

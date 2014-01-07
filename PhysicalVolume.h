@@ -13,7 +13,7 @@
 #include "LogicalVolume.h"
 #include <iostream>
 #include <vector>
-
+#include "GlobalDefs.h"
 
 //#include "TGeoShape.h"
 class VUSolid;
@@ -57,7 +57,11 @@ class PhysicalVolume
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual bool   Contains( Vector3D const & ) const = 0;
 		virtual bool   UnplacedContains( Vector3D const & ) const = 0;
-	//	virtual GlobalTypes::SurfaceEnumType   UnplacedContains( Vector3D const & ) const {};
+
+		// the contains function knowing about the surface
+		virtual GlobalTypes::SurfaceEnumType   UnplacedContains_WithSurface( Vector3D const & ) const { return GlobalTypes::kOutside; };
+		virtual GlobalTypes::SurfaceEnumType   Contains_WithSurface( Vector3D const & ) const { return GlobalTypes::kOutside; };
+
 		virtual double SafetyToIn( Vector3D const & ) const = 0;
 		virtual double SafetyToOut( Vector3D const & ) const = 0;
 
