@@ -13,6 +13,8 @@ struct ImplTraits<kCuda> {
   typedef float float_v;
   typedef bool  bool_v;
   const static bool early_return = true;
+  const static bool_v kZero = 0;
+  const static bool_v kFalse = false;
 };
 
 typedef ImplTraits<kCuda>::int_v   CudaInt;
@@ -20,25 +22,17 @@ typedef ImplTraits<kCuda>::float_v CudaFloat;
 typedef ImplTraits<kCuda>::bool_v  CudaBool;
 typedef ImplTraits<kCuda>::float_t CudaScalarFloat;
 
-template <typename Type>
-__host__
-Vector3D<float> Vector3D<Type>::ToFloatHost() const {
-  return Vector3D<float>(float(vec[0]),
-                         float(vec[1]),
-                         float(vec[2]));
-}
-
-template <>
 __device__
-Vector3D<float> Vector3D<double>::ToFloatDevice() const {
+inline __attribute__((always_inline))
+Vector3D<float> VectorAsFloatDevice(Vector3D<double> const &vec) {
   return Vector3D<float>(__double2float_rd(vec[0]),
                          __double2float_rd(vec[1]),
                          __double2float_rd(vec[2]));
 }
 
-template <>
 __host__
-Vector3D<float> Vector3D<double>::ToFloatHost() const {
+inline __attribute__((always_inline))
+Vector3D<float> VectorAsFloatHost(Vector3D<double> const &vec) {
   return Vector3D<float>(float(vec[0]),
                          float(vec[1]),
                          float(vec[2]));
@@ -70,6 +64,22 @@ __host__
 inline __attribute__((always_inline))
 void CopyFromGPU(Type *const src, Type *const tgt, const int count) {
   cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost);
+}
+
+template <typename Type>
+__host__ __device__
+inline __attribute__((always_inline))
+Type CondAssign(const CudaBool &cond,
+                const Type &thenval, const Type &elseval) {
+  return (cond) ? thenval : elseval;
+}
+
+template <typename Type>
+__host__ __device__
+inline __attribute__((always_inline))
+void MaskedAssign(const CudaBool &cond,
+                  const Type &thenval, Type &output) {
+  output = (cond) ? thenval : output;
 }
 
 #endif /* LIBRARYCUDA_H */

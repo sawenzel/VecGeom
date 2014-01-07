@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdexcept>
+#include <cfloat>
 #include "tbb/tick_count.h"
 
 #ifndef __CUDACC__
@@ -19,6 +20,7 @@
 #define CUDA_HEADER_BOTH __host__ __device__
 #endif /* __CUDACC__ */
 
+const double kInfinity = DBL_MAX;
 const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
@@ -27,6 +29,23 @@ enum ImplType { kVc, kCuda, kScalar };
 
 template <ImplType it>
 struct ImplTraits {};
+
+template <>
+struct ImplTraits<kScalar> {
+  typedef double float_t;
+  typedef int    int_v;
+  typedef double float_v;
+  typedef bool   bool_v;
+  #ifdef STD_CXX11
+  constexpr static bool early_return = true;
+  constexpr static float_v kZero = 0;
+  constexpr static bool_v kFalse = false;
+  #else
+  const static bool early_return = true;
+  const static float_v kZero = 0;
+  const static bool_v kFalse = false;
+  #endif /* STD_CXX11 */
+};
 
 template <typename Type>
 struct Vector3D {
@@ -40,6 +59,7 @@ public:
   #ifdef STD_CXX11
   Vector3D() : vec{0, 0, 0} {};
   #else
+  CUDA_HEADER_BOTH
   Vector3D() {
     vec[0] = 0;
     vec[1] = 0;
@@ -62,12 +82,6 @@ public:
     vec[1] = other[1];
     vec[2] = other[2];
   }
-
-  CUDA_HEADER_HOST
-  Vector3D<float> ToFloatHost() const;
-
-  CUDA_HEADER_DEVICE
-  Vector3D<float> ToFloatDevice() const;
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
@@ -109,20 +123,28 @@ public:
 
 };
 
-template <typename Type>
+template <typename Type1, typename Type2, typename Type3>
 CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
-Vector3D<Type> operator+(Vector3D<Type> const &lhs,
-                         Vector3D<Type> const &rhs) {
-  return Vector3D<Type>(lhs[0]+rhs[0], lhs[1]+rhs[1], lhs[2]+rhs[2]);
+Vector3D<Type3> operator+(Vector3D<Type1> const &lhs,
+                          Vector3D<Type2> const &rhs) {
+  return Vector3D<Type3>(lhs[0]+rhs[0], lhs[1]+rhs[1], lhs[2]+rhs[2]);
 }
 
-template <typename Type>
+template <typename Type1, typename Type2, typename Type3>
 CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
-Vector3D<Type> operator-(Vector3D<Type> const &lhs,
-                         Vector3D<Type> const &rhs) {
-  return Vector3D<Type>(lhs[0]-rhs[0], lhs[1]-rhs[1], lhs[2]-rhs[2]);
+Vector3D<Type3> operator-(Vector3D<Type1> const &lhs,
+                          Vector3D<Type2> const &rhs) {
+  return Vector3D<Type3>(lhs[0]-rhs[0], lhs[1]-rhs[1], lhs[2]-rhs[2]);
+}
+
+template <typename Type1, typename Type2>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Vector3D<Type1> operator-(Vector3D<Type1> const &lhs,
+                          Vector3D<Type2> const &rhs) {
+  return Vector3D<Type1>(lhs[0]-rhs[0], lhs[1]-rhs[1], lhs[2]-rhs[2]);
 }
 
 template<typename Type>
@@ -289,62 +311,85 @@ struct Stopwatch {
 
 enum RotationType { kDiagonal = 720, kNone = 1296 };
 
+template <typename Float>
 struct TransMatrix {
 
 private:
 
-  double trans[3];
-  double rot[9];
+  Float trans[3];
+  Float rot[9];
   bool identity;
   bool has_rotation;
   bool has_translation;
 
 public:
 
+  CUDA_HEADER_BOTH
   TransMatrix() {
     SetTranslation(0, 0, 0);
     SetRotation(0, 0, 0);
   }
 
-  TransMatrix(const double tx, const double ty, const double tz,
-              const double phi, const double theta,
-              const double psi) {
+  CUDA_HEADER_BOTH
+  TransMatrix(const Float tx, const Float ty, const Float tz,
+              const Float phi, const Float theta,
+              const Float psi) {
     SetTranslation(tx, ty, tz);
     SetRotation(phi, theta, psi);
   }
 
-  inline __attribute__((always_inline))
-  Vector3D<double> Translation() const {
-    return Vector3D<double>(trans[0], trans[1], trans[2]);
+  template <typename other_t>
+  CUDA_HEADER_BOTH
+  TransMatrix(TransMatrix<other_t> const &other) {
+    SetTranslation(Float(other.trans[0]), Float(other.trans[1]),
+                   Float(other.trans[2]));
+    SetRotation(Float(other.rot[0]), Float(other.rot[1]), Float(other.rot[2]), 
+                Float(other.rot[3]), Float(other.rot[4]), Float(other.rot[5]),
+                Float(other.rot[6]), Float(other.rot[7]), Float(other.rot[8]));
+
   }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  double Translation(const int index) const { return trans[index]; }
+  Vector3D<Float> Translation() const {
+    return Vector3D<Float>(trans[0], trans[1], trans[2]);
+  }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  const double* Rotation() const { return rot; }
+  Float Translation(const int index) const { return trans[index]; }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  double Rotation(const int index) const { return rot[index]; }
+  const Float* Rotation() const { return rot; }
 
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Float Rotation(const int index) const { return rot[index]; }
+
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
   bool IsIdentity() const { return identity; }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
   bool HasRotation() const { return has_rotation; }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
   bool HasTranslation() const { return has_translation; }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  void SetTranslation(const double tx, const double ty,
-                      const double tz) {
+  void SetTranslation(const Float tx, const Float ty,
+                      const Float tz) {
     trans[0] = tx;
     trans[1] = ty;
     trans[2] = tz;
     SetProperties();
   }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
   void SetProperties() {
     has_translation = (trans[0] || trans[1] || trans[2]) ? true : false;
@@ -352,16 +397,17 @@ public:
     identity = !has_translation && !has_rotation;
   }
 
+  CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  void SetRotation(const double phi, const double theta,
-                   const double psi) {
+  void SetRotation(const Float phi, const Float theta,
+                   const Float psi) {
 
-    const double sinphi = sin(kDegToRad*phi);
-    const double cosphi = cos(kDegToRad*phi);
-    const double sinthe = sin(kDegToRad*theta);
-    const double costhe = cos(kDegToRad*theta);
-    const double sinpsi = sin(kDegToRad*psi);
-    const double cospsi = cos(kDegToRad*psi);
+    const Float sinphi = sin(kDegToRad*phi);
+    const Float cosphi = cos(kDegToRad*phi);
+    const Float sinthe = sin(kDegToRad*theta);
+    const Float costhe = cos(kDegToRad*theta);
+    const Float sinpsi = sin(kDegToRad*psi);
+    const Float cospsi = cos(kDegToRad*psi);
 
     rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
     rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
@@ -376,8 +422,26 @@ public:
     SetProperties();
   }
 
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void SetRotation(const Float *rot_) {
+
+    rot[0] = rot_[0];
+    rot[1] = rot_[1];
+    rot[2] = rot_[2];
+    rot[3] = rot_[3];
+    rot[4] = rot_[4];
+    rot[5] = rot_[5];
+    rot[6] = rot_[6];
+    rot[7] = rot_[7];
+    rot[8] = rot_[8];
+
+    SetProperties();
+  }
+
+  CUDA_HEADER_BOTH
   static inline __attribute__((always_inline))
-  int RotationFootprint(double const *rot) {
+  int RotationFootprint(Float const *rot) {
 
     int footprint = 0;
 
@@ -397,6 +461,38 @@ public:
     }
 
     return footprint;
+  }
+
+  // Currently only very simple checks are performed.
+  template <typename Type>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void MasterToLocal(Vector3D<Type> const &master,
+                     Vector3D<Type> &local) const {
+
+    // Vc can do early returns here as they are only dependent on the matrix
+    if (IsIdentity()) {
+      local = master;
+      return;
+    }
+    if (!HasRotation()) {
+      local = master - Translation();
+      return;
+    }
+
+    // General case
+    const Vector3D<Type> t =
+        master - Translation();
+    local[0] =  t[0]*rot[0];
+    local[1] =  t[0]*rot[1];
+    local[2] =  t[0]*rot[2];
+    local[0] += t[1]*rot[3];
+    local[1] += t[1]*rot[4];
+    local[2] += t[1]*rot[5];
+    local[0] += t[2]*rot[6];
+    local[1] += t[2]*rot[7];
+    local[2] += t[2]*rot[8];
+
   }
 
 };

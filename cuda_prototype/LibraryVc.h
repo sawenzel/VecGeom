@@ -10,6 +10,8 @@ struct ImplTraits<kVc> {
   typedef Vc::double_v float_v;
   typedef Vc::double_m bool_v;
   const static bool early_return = false;
+  const static float_v kZero;
+  const static bool_v kFalse;
 };
 
 const int kVectorSize = ImplTraits<kVc>::float_v::Size;
@@ -57,7 +59,6 @@ public:
 typedef VcSOA3D<VcFloat> VcSOA3D_Float;
 
 template <typename Type>
-CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
 Type CondAssign(const VcBool &cond,
                 const Type &thenval, const Type &elseval) {
@@ -65,6 +66,13 @@ Type CondAssign(const VcBool &cond,
   ret(cond) = thenval;
   ret(!cond) = elseval;
   return ret;
+}
+
+template <typename Type1, typename Type2>
+inline __attribute__((always_inline))
+void MaskedAssign(const VcBool &cond,
+                  const Type1 &thenval, Type2 &output) {
+  output(cond) = thenval;
 }
 
 #endif /* LIBRARYVC_H */

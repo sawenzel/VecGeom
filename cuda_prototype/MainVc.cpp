@@ -28,7 +28,7 @@ int main(void) {
 
   // Create a box
   const Vector3D<double> box_dim(5., 5., 5.);
-  const TransMatrix *box_pos = new TransMatrix();
+  const TransMatrix<double> *box_pos = new TransMatrix<double>();
   const Box box(box_dim, box_pos);
 
   // Output vector

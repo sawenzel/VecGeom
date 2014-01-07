@@ -4,7 +4,6 @@
 #include "LibraryGeneric.h"
 
 namespace kernel {
-
 namespace box {
 
 template <ImplType it>
@@ -18,30 +17,80 @@ typename ImplTraits<it>::bool_v Contains(
   typename ImplTraits<it>::bool_v inside[3];
   for (int i = 0; i < 3; ++i) {
     inside[i] = abs(point[i] - box_pos[i]) < box_dim[i];
+    if (ImplTraits<it>::early_return) {
+      if (!inside[i]) return ImplTraits<it>::kFalse;
+    }
   }
   return inside[0] && inside[1] && inside[2];
 }
 
-// template <Ct ct>
-// inline __attribute__((always_inline))
-// CUDA_HEADER_BOTH
-// Vector3D<typename ImplTraits<it>::float_t> DistanceToIn(
-//     Vector3D<typename ImplTraits<it>::float_t> const &box_pos,
-//     Vector3D<typename ImplTraits<it>::float_t> const &box_dim,
-//     Vector3D<typename ImplTraits<it>::float_t> const &point,
-//     Vector3D<typename ImplTraits<it>::float_t> const &dir, const double step) {
+template <ImplType it>
+inline __attribute__((always_inline))
+CUDA_HEADER_BOTH
+typename ImplTraits<it>::float_v DistanceToIn(
+    Vector3D<typename ImplTraits<it>::float_t> const &dim,
+    TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
+    Vector3D<typename ImplTraits<it>::float_v> const &pos,
+    Vector3D<typename ImplTraits<it>::float_v> const &dir) {
 
-//   typedef typename CtTraits<it>::float_t Float;
+  // Typedef templated types for readability
+  typedef typename ImplTraits<it>::float_v Float;
+  typedef typename ImplTraits<it>::bool_v Bool;
+  typedef typename ImplTraits<it>::float_t ScalarFloat;
 
-//   const Float delta = 1e-9;
+  const ScalarFloat kTiny(1e-20);
+  const ScalarFloat kBig(kInfinity);
+  Vector3D<Float> safety;
+  Vector3D<Float> pos_local;
+  Vector3D<Float> dir_local;
+  Float distance;
 
-//   Vector3D<Float> point_trans;
-//   matrix->MasterToLocal<tid,rid>(x, aPoint);
+  matrix->MasterToLocal(pos, pos_local);
+  matrix->MasterToLocal(dir, dir_local);
 
-// }
+  safety[0] = abs(pos_local[0]) - dim[0];
+  safety[1] = abs(pos_local[1]) - dim[1];
+  safety[2] = abs(pos_local[2]) - dim[2];
 
-} // End namespace box
+  distance = kBig;
+  Vector3D<Float> next;
+  Bool hit = ImplTraits<it>::kFalse;
+  Bool done = hit;
+  Float coord1, coord2;
 
+  // x
+  next[0] = safety[0] / (abs(dir_local[0]) + kTiny);
+  coord1 = pos_local[1] + next[0] * dir_local[1];
+  coord2 = pos_local[2] + next[0] * dir_local[2];
+  hit = safety[0] > 0 &&
+        pos_local[0] * dir_local[0] < 0 &&
+        (abs(coord1) <= dim[1] && abs(coord2) <= dim[2]);
+  MaskedAssign(!done && hit, next[0], distance);
+  done |= hit;
+
+  // y
+  next[1] = safety[1] / (abs(dir_local[1]) + kTiny);
+  coord1 = pos_local[0] + next[1] * dir_local[0];
+  coord2 = pos_local[2] + next[1] * dir_local[2];
+  hit = safety[1] > 0 &&
+        pos_local[1] * dir_local[1] < 0 &&
+        (abs(coord1) <= dim[0] && abs(coord2) <= dim[2]);
+  MaskedAssign(!done && hit, next[1], distance);
+  done |= hit;
+
+  // z
+  next[2] = safety[2] / (abs(dir_local[2]) + kTiny);
+  coord1 = pos_local[0] + next[2] * dir_local[0];
+  coord2 = pos_local[1] + next[2] * dir_local[1];
+  hit = safety[2] > 0 &&
+        pos_local[2] * dir_local[2] < 0 &&
+        (abs(coord1) <= dim[0] && abs(coord2) <= dim[1]);
+  MaskedAssign(!done && hit, next[1], distance);
+
+  return distance;
+}
+
+} // End namespace box 
 } // End namespace kernel
 
 #endif /* KERNEL_H */
