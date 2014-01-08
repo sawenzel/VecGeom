@@ -6,18 +6,18 @@ namespace kernel {
 namespace box {
 
 __global__
-void ContainsWrapper(const Vector3D<CudaFloat> box_pos,
-                     const Vector3D<CudaFloat> box_dim,
+void ContainsWrapper(const Vector3D<float> dimensions,
+                     TransMatrix<float> const * const trans_matrix,
                      SOA3D<double> const points, bool *output) {
 
   const int index = ThreadIndex();
   if (index >= points.size()) return;
-  output[index] = Contains<kCuda>(box_pos, box_dim,
+  output[index] = Contains<kCuda>(dimensions, trans_matrix,
                                   VectorAsFloatDevice(points[index]));
 }
 
 __global__
-void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
+void DistanceToInWrapper(const Vector3D<float> dimensions,
                          TransMatrix<float> const * const trans_matrix,
                          SOA3D<double> const pos, SOA3D<double> const dir,
                          double *distance) {
@@ -33,12 +33,13 @@ void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
 } // End namespace kernel
 
 template <>
-void Box::Contains<kCuda>(SOA3D<double> const &points, bool *output) const {
+void Shape::Contains<Box, kCuda>(SOA3D<double> const &points,
+                                 bool *output) const {
 
   const int blocks_per_grid = BlocksPerGrid(points.size());
   kernel::box::ContainsWrapper<<<threads_per_block, blocks_per_grid>>>(
-    VectorAsFloatHost(trans_matrix->Translation()),
-    VectorAsFloatHost(dimensions),
+    VectorAsFloatHost(((BoxParameters*)parameters)->dimensions),
+    trans_matrix_cuda,
     points,
     output
   );
@@ -46,12 +47,13 @@ void Box::Contains<kCuda>(SOA3D<double> const &points, bool *output) const {
 }
 
 template <>
-void Box::DistanceToIn<kVc>(SOA3D<double> const &pos, SOA3D<double> const &dir,
-                            double *distance) const {
+void Shape::DistanceToIn<Box, kCuda>(SOA3D<double> const &pos,
+                                     SOA3D<double> const &dir,
+                                     double *distance) const {
 
   const int blocks_per_grid = BlocksPerGrid(pos.size());
   kernel::box::DistanceToInWrapper<<<threads_per_block, blocks_per_grid>>>(
-    VectorAsFloatHost(dimensions),
+    VectorAsFloatHost(((BoxParameters*)parameters)->dimensions),
     trans_matrix_cuda,
     pos,
     dir,

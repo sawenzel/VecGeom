@@ -1,37 +1,35 @@
 #ifndef BOX_H
 #define BOX_H
 
+#include "Shape.h"
 #include "LibraryGeneric.h"
 
-class Box {
-
-private:
-
+struct BoxParameters : public ShapeParameters {
+  BoxParameters(Vector3D<double> const &dim) : dimensions(dim) {}
   Vector3D<double> dimensions;
-  TransMatrix<double> const *trans_matrix;
-  TransMatrix<float> const *trans_matrix_cuda;
+};
+
+class Box : public Shape {
 
 public:
 
-  #ifdef STD_CXX11
-  Box(const Vector3D<double> dim, TransMatrix<double> const * const trans)
-      : dimensions(dim), trans_matrix(trans) {}
-  #else
+  typedef BoxParameters ParameterType;
+
   Box(const Vector3D<double> dim, TransMatrix<double> const * const trans) {
-    dimensions = dim;
+    parameters = new BoxParameters(dim);
     trans_matrix = trans;
+    bounding_box = this;
   }
-  #endif /* STD_CXX11 */
 
-  template <ImplType it>
-  void Contains(SOA3D<double> const& /*points*/,
-                bool* /*output*/) const;
+  ~Box() {
+    delete parameters;
+  }
 
-  template <ImplType it>
-  void DistanceToIn(SOA3D<double> const& /*pos*/, SOA3D<double> const& /*dir*/,
-                    double* /*distance*/) const;
+  Vector3D<double> const& Dimensions() const {
+    return ((BoxParameters*)parameters)->dimensions;
+  }
 
-  void SetCudaMatrix(TransMatrix<float> const * const trans_cuda) {
+  inline void SetCudaMatrix(TransMatrix<float> const * const trans_cuda) {
     trans_matrix_cuda = trans_cuda;
   }
 

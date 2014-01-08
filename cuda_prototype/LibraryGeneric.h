@@ -268,6 +268,58 @@ public:
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
+  Type& x(const int index) {
+    return a[index];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type const& x(const int index) const {
+    return a[index];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type& y(const int index) {
+    return b[index];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type const& y(const int index) const {
+    return b[index];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type& z(const int index) {
+    return c[index];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type const& z(const int index) const {
+    return c[index];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void Set(const int index, const Type a_, const Type b_, const Type c_) {
+    a[index] = a_;
+    b[index] = b_;
+    c[index] = c_;
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void Set(const int index, Vector3D<Type> const &vec) {
+    a[index] = vec[0];
+    b[index] = vec[1];
+    c[index] = vec[2];
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
   Type* Memory(const int index) {
     if (index == 0) return a;
     if (index == 1) return b;
@@ -493,6 +545,15 @@ public:
     local[1] += t[2]*rot[7];
     local[2] += t[2]*rot[8];
 
+  }
+
+  template <typename Type>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D<Type> MasterToLocal(Vector3D<Type> const &master) const {
+    Vector3D<Type> local;
+    MasterToLocal(master, local);
+    return local;
   }
 
 };
