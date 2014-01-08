@@ -14,14 +14,15 @@
 #include "GlobalDefs.h"
 #include "PhysicalCone.h"
 #include "PhysicalBox.h"
+#include "PhysicalPolycone.h"
 
 struct TubeFactory
 {
 	template<int tid, int rid>
 	static
-	PhysicalVolume * Create( TubeParameters<> const * tp, TransformationMatrix const * tm )
+	PhysicalVolume * Create( TubeParameters<> const * tp, TransformationMatrix const * tm, bool specializeonRmin = true )
 	{
-		if( tp->GetRmin() == 0. )
+		if( specializeonRmin && tp->GetRmin() == 0. )
 		{
 			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
 			{
@@ -54,15 +55,56 @@ struct TubeFactory
 	}
 };
 
+// I am not quite sure if I need this stuff
+//
+struct PolyconeFactory
+{
+	template<int tid, int rid>
+	static
+	PhysicalVolume * Create( PolyconeParameters<> const * tp, TransformationMatrix const * tm )
+	{
+		if( !tp->HasRmin() )
+		{
+			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
+			{
+				return new PlacedPolycone<tid,rid,ConeTraits::NonHollowCone>(tp, tm);
+			}
+			else if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kPi ) )
+			{
+				return new PlacedPolycone<tid,rid,ConeTraits::NonHollowConeWithPhiEqualsPi>(tp, tm);
+			}
+			else
+			{
+				return new PlacedPolycone<tid,rid,ConeTraits::NonHollowConeWithPhi>(tp, tm);
+			}
+		}
+		else
+		{
+			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
+			{
+				return new PlacedPolycone<tid,rid,ConeTraits::HollowCone>(tp, tm);
+			}
+			else if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kPi ) )
+			{
+				return new PlacedPolycone<tid,rid,ConeTraits::HollowConeWithPhiEqualsPi>(tp, tm);
+			}
+			else
+			{
+				return new PlacedPolycone<tid,rid,ConeTraits::HollowConeWithPhi>(tp,tm);
+			}
+		}
+	}
+};
+
 
 struct
 ConeFactory
 {
 	template<int tid, int rid>
 	static
-	PhysicalVolume * Create( ConeParameters<> const * cp, TransformationMatrix const * tm )
+	PhysicalVolume * Create( ConeParameters<> const * cp, TransformationMatrix const * tm, bool specializeonRmin = true )
 	{
-		if( cp->GetRmin1() == 0. && cp->GetRmin2() == 0. )
+		if( specializeonRmin && cp->GetRmin1() == 0. && cp->GetRmin2() == 0. )
 			{
 				if ( cp->GetDPhi() < Utils::kTwoPi )
 				{

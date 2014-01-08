@@ -12,6 +12,8 @@
 #include "PhysicalVolume.h"
 #include "ShapeFactories.h"
 
+TransformationMatrix const * IdentityTransformationMatrix=new TransformationMatrix(0,0,0,0,0,0);
+
 /*
 template<int tid, int rid>
 PhysicalVolume * dosomething(int i, int j, BoxParameters *bp, TransformationMatrix *tm)

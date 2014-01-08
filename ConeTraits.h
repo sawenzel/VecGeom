@@ -8,14 +8,12 @@
 #ifndef CONETRAITS_H_
 #define CONETRAITS_H_
 
-// CONE FACTORY CAN BE COPIED
+#include "TubeTraits.h"
 
 namespace ConeTraits
 {
-
-// define here different kinds of cones
-// for the moment take same specialization as Cone
-
+	// define here different kinds of cones
+	// for the moment take same specialization as Tube
 	// a Cone not having rmin nor phi section
 	struct NonHollowCone {};
 	// a Cone not having at least one rmin but a non-2pi phi section
@@ -90,6 +88,40 @@ struct IsPhiEqualsPiCase<HollowConeWithPhiEqualsPi>
 {
 	static const bool value = true;
 };
+
+// for conversion between cone and corresponding tube types
+// this is handy for the Polycone
+template<typename ConeType>
+struct ConeTypeToTubeType
+{
+	typedef TubeTraits::HollowTubeWithPhi type;
+};
+template<>
+struct ConeTypeToTubeType<HollowCone>
+{
+	typedef TubeTraits::HollowTube type;
+};
+template<>
+struct ConeTypeToTubeType<HollowConeWithPhiEqualsPi>
+{
+	typedef TubeTraits::HollowTubeWithPhiEqualsPi type;
+};
+template<>
+struct ConeTypeToTubeType<NonHollowConeWithPhiEqualsPi>
+{
+	typedef TubeTraits::NonHollowTubeWithPhiEqualsPi type;
+};
+template<>
+struct ConeTypeToTubeType<NonHollowCone>
+{
+	typedef TubeTraits::NonHollowTube type;
+};
+template<>
+struct ConeTypeToTubeType<NonHollowConeWithPhi>
+{
+	typedef TubeTraits::NonHollowTubeWithPhi type;
+};
+
 
 
 };

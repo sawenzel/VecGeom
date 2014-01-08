@@ -56,6 +56,14 @@ ShapeParametersMap<Tube>
 	typedef TubeParameters<> type;
 };
 
+struct Polycone {};
+template <>
+struct
+ShapeParametersMap<Polycone>
+{
+	typedef PolyconeParameters<> type;
+};
+
 template <typename Shape>
 struct
 ShapeToFactoryMap
@@ -82,6 +90,14 @@ struct
 ShapeToFactoryMap<Box>
 {
 	typedef BoxFactory type;
+};
+
+
+template <>
+struct
+ShapeToFactoryMap<Polycone>
+{
+	typedef PolyconeFactory type;
 };
 
 
@@ -121,9 +137,11 @@ public:
 	static
 	PhysicalVolume * MakePlacedCone( ConeParameters<> const * cp, TransformationMatrix const * tm, bool=true);
 
+	static
+	PhysicalVolume * MakePlacedPolycone( PolyconeParameters<> const * cp, TransformationMatrix const * tm, bool=true);
+
+
 	// we need to solve problem of pointer ownership --> let's use smart pointers and move semantics
-
-
 
 	// this would be general ( could give in an a reference to a static template function )
 	template <typename Shape, typename Parameter = ShapeParametersMap<Shape> >
@@ -181,7 +199,8 @@ public:
 
 };
 
-// static const GeoManager::IdentityTransformationMatrix=new TransformationMatrix(0,0,0,0,0,0);
+extern TransformationMatrix const * IdentityTransformationMatrix;
+
 
 
 #endif /* GEOMANAGER_H_ */

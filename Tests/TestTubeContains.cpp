@@ -1,24 +1,12 @@
-/*
- * TestVectorizedPlacedTube.cpp
- *
- *  Created on: Nov 18, 2013
- *      Author: swenzel
- */
-
 // testing matrix transformations on vectors
 #include "../TransformationMatrix.h"
-#include "TGeoMatrix.h"
-#include "TGeoManager.h"
-#include "TGeoVolume.h"
-#include "TGeoShape.h"
 #include "../Utils.h"
 #include <iostream>
 #include "mm_malloc.h"
 #include "../GlobalDefs.h"
 #include "../GeoManager.h"
-#include "../PhysicalTube.h"
+#include "../PhysicalPolycone.h"
 #include "../TestShapeContainer.h"
-#include "../SimpleVecNavigator.h"
 
 // in order to compare to USolids
 #include "VUSolid.hh"
@@ -65,21 +53,24 @@ int main()
 
 	StopWatch timer;
 
-    // generate benchmark cases
-	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
 
 	// the world volume is a tube
 	double worldrmax = 100.;
 	double worldrmin = 0.;
 	double worldz = 200.;
-	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, 2.*M_PI), identity );
+	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, 2.*M_PI), IdentityTransformationMatrix );
 
-	PhysicalVolume * shield = GeoManager::MakePlacedTube( new TubeParameters<>(0, 5*worldrmax/10, 8*worldz/10, 0, 2. * M_PI ), identity );
+	double zplanes[] = {-80, -20, 20, 80};
+	double rinner[] = { 10, 10, 10, 10};
+	double router[] = { 50, 50, 100, 100};
+	PolyconeParameters<> pconp = new PolyconeParameters( 0, 2.*M_PI, 4, zplanes, rinner, router );
+
+	PhysicalVolume * pcon = GeoManager::MakePlacedPolycone(pconp, IdentityTransformationMatrix, true );
 
 	// fill points with no daughter inside; then place daughter
 	world->fillWithRandomPoints(points,np);
 
-	world->AddDaughter( shield );
+	world->AddDaughter( pcon );
 
 	points.toPlainArray(plainpointarray,np);
 
