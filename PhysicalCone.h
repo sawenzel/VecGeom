@@ -134,6 +134,11 @@ public:
 	inline T GetDZ() const {return dZ;}
 	inline T GetSPhi() const {return dSPhi;}
 	inline T GetDPhi() const {return dDPhi;}
+	inline T GetInnerSlope() const {return innerslope;}
+	inline T GetOuterSlope() const {return outerslope;}
+	inline T GetInnerOffset() const {return inneroffset;}
+	inline T GetOuterOffset() const {return outeroffset;}
+
 
 	virtual ~ConeParameters(){};
 	// The placed boxed can easily access the private members
@@ -143,6 +148,167 @@ public:
 };
 
 
+// TODO: this is currently almost a one to one copy from the tube
+// should be ideally the same kernels ( requiring some more template techniques )
+struct ConeKernels
+{
+
+// this kernel could be used for the Cone two
+__attribute__((always_inline))
+inline
+static
+GlobalTypes::SurfaceEnumType
+InsideZ( ConeParameters<> const * tp, Vector3D const & x ) const
+{
+	if( std::abs(x.z) - tp->GetDZ() > Utils::frHalfTolerance )
+		return GlobalTypes::kOutside;
+
+	if( std::abs(x.z) - tp->GetDZ() < -Utils::frHalfTolerance )
+		return GlobalTypes::kInside;
+
+	return GlobalTypes::kOnSurface;
+}
+
+template<typename Float_t=double>
+__attribute__((always_inline))
+inline
+Float_t
+GetInnerRAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+{
+	return cp->GetInnerSlope() *z + cp->GetInnerOffset();
+}
+
+template<typename Float_t=double>
+__attribute__((always_inline))
+inline
+Float_t
+GetOuterRAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+{
+	return cp->GetOuterSlope() *z + cp->GetOuterOffset();
+}
+
+template<typename Float_t=double>
+__attribute__((always_inline))
+inline
+static
+Float_t
+GetRminSqrAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+{
+	Float_t t = GetInnerRAtZ( cp, z);
+	return t*t;
+}
+
+
+template<typename Float_t=double>
+__attribute__((always_inline))
+inline
+static
+Float_t
+GetRmaxSqrAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+{
+	Float_t t = GetOuterRAtZ( cp, z);
+	return t*t;
+}
+
+// TODO: tolerances are likely wrong because we are treating squared variables
+template<typename ConeType, typename Float_t=double>
+__attribute__((always_inline))
+inline
+static
+GlobalTypes::SurfaceEnumType
+InsideR( ConeParameters<Float_t> const * tp, Vector3D const & x ) const
+{
+	Float_t r2 = x.x*x.x + x.y*x.y;
+
+	Float_t rmaxsqr = GetRmaxSqrAtZ( tp, x.z );
+
+	if( ! ConeTraits::NeedsRminTreatment<ConeType>::value )
+	{
+		if( r2 > rmaxsqr + Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kOutside;
+		}
+		if( r2 < rmaxsqr - Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kInside;
+		}
+		return GlobalTypes::kOnSurface;
+	}
+	else
+	{
+		Float_t rminsqr = GetRminSqrAtZ( tp, x.z );
+
+		if( r2 > rmaxsqr + Utils::frHalfTolerance || r2 < rminsqr - Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kOutside;
+		}
+		if( r2 < rmaxsqr - Utils::frHalfTolerance && r2 > rminsqr + Utils::frHalfTolerance )
+		{
+			return GlobalTypes::kInside;
+		}
+		return GlobalTypes::kOnSurface;
+	}
+}
+
+template<typename ConeType, typename Float_t=double>
+__attribute__((always_inline))
+inline
+static
+GlobalTypes::SurfaceEnumType
+// this kernel could be used for the cone two
+InsidePhi( ConeParameters<Float_t> const * tp, Vector3D const & x )
+{
+	// we should catch here the case when we do not need phi treatment at all ( or assert on it )
+	if( ! ConeTraits::NeedsPhiTreatment<ConeType>::value )
+		return GlobalTypes::kInside;
+
+	// a bit tricky; how can we
+	// method based on calculating the scalar product of position vectors with the normals of the (empty) phi sektor
+	// avoids taking the atan2
+
+	// this method could be template specialized in case DeltaPhi = 180^o
+	Float_t scalarproduct1 = Vector3D::scalarProductInXYPlane( tp->normalPhi1, x );
+
+	// template specialize on some interesting cases
+	if( ConeTraits::IsPhiEqualsPiCase<ConeType>::value )
+	{
+		// here we only have one plane
+		if( scalarproduct1 > Utils::frHalfTolerance )
+			return GlobalTypes::kOutside;
+
+		// we are on the side of the plane where we might find a tube
+		if ( scalarproduct1 < -Utils::frHalfTolerance )
+			return GlobalTypes::kInside;
+
+		return GlobalTypes::kOnSurface;
+	}
+	else // more general case for which we need to treat a second plane
+	{
+		Float_t scalarproduct2 = Vector3D::scalarProductInXYPlane( tp->normalPhi2, x );
+		if ( tp->normalPhi1.x*tp->normalPhi2.x + tp->normalPhi1.y*tp->normalPhi2.y >= 0 )
+		{
+			// here angle between planes is < 180 degree
+			if (scalarproduct1 > Utils::frHalfTolerance && scalarproduct2 > Utils::frHalfTolerance )
+				return GlobalTypes::kOutside;
+			if (scalarproduct1 < -Utils::frHalfTolerance && scalarproduct2 < -Utils::frHalfTolerance )
+				return GlobalTypes::kInside;
+			return GlobalTypes::kOnSurface;
+		}
+		else
+		{
+			// here angle between planes is > 180 degree
+			if (scalarproduct1 > Utils::frHalfTolerance || scalarproduct2 > Utils::frHalfTolerance )
+				return GlobalTypes::kOutside;
+			if (scalarproduct1 < -Utils::frHalfTolerance || scalarproduct2 < -Utils::frHalfTolerance )
+				return GlobalTypes::kOutside;
+
+			return GlobalTypes::kOnSurface;
+		}
+	}
+}
+
+
+};
 
 template<TranslationIdType tid, RotationIdType rid, typename ConeType=ConeTraits::HollowConeWithPhi, typename PrecType=double>
 class
@@ -205,6 +371,14 @@ public:
 	__attribute__((always_inline))
 	inline
 	virtual bool   UnplacedContains( Vector3D const & ) const;
+
+	__attribute__((always_inline))
+	inline
+	virtual
+	GlobalTypes::SurfaceEnumType UnplacedContains_WithSurface( Vector3D const & x ) const;
+	virtual
+	GlobalTypes::SurfaceEnumType Contains_WithSurface( Vector3D const & x ) const;
+
 
 	virtual double SafetyToIn( Vector3D const & ) const {return 0.;}
 	virtual double SafetyToOut( Vector3D const & ) const {return 0.;}
@@ -672,5 +846,44 @@ void PlacedCone<tid,rid,TubeType,ValueType>::DistanceToIn( Vectors3DSOA const & 
 			dist.store( &distance[i] );
 		}
 }
+
+// this is now just the same high-level implementation as the one for the Tube --> potential further code reduction
+template<int tid, int rid, typename ConeType, typename T>
+inline
+GlobalTypes::SurfaceEnumType PlacedCone<tid,rid,ConeType,T>::UnplacedContains_WithSurface( Vector3D const & x ) const
+{
+	GlobalTypes::SurfaceEnumType inside_z;
+	GlobalTypes::SurfaceEnumType inside_r;
+	GlobalTypes::SurfaceEnumType inside_phi;
+
+	inside_z = ConeKernels::InsideZ( coneparams, x );
+	if ( inside_z == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
+
+	inside_r = ConeKernels::InsideR<ConeType>( coneparams, x );
+	if ( inside_r == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
+
+	inside_phi = ConeKernels::InsidePhi<ConeType>( coneparams, x );
+	if ( inside_phi == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
+
+	// at this point we are either inside or on the surface
+    // we are on surface if at least one of the surfaces is touched
+	if( inside_z == GlobalTypes::kOnSurface || inside_r == GlobalTypes::kOnSurface || inside_phi == GlobalTypes::kOnSurface )
+		return GlobalTypes::kOnSurface;
+
+	// we are inside
+	return GlobalTypes::kInside;
+}
+
+template<int tid, int rid, typename ConeType, typename T>
+inline
+GlobalTypes::SurfaceEnumType PlacedCone<tid,rid,ConeType,T>::Contains_WithSurface( Vector3D const & x ) const
+{
+	// same pattern over and over again ...
+	Vector3D xp;
+	matrix->MasterToLocal<tid,rid>(x,xp);
+	return this->PlacedCone<tid,rid,ConeType,T>::UnplacedContains_WithSurface(xp);
+}
+
+
 
 #endif /* PHYSICALCONE_H_ */

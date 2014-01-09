@@ -119,15 +119,16 @@ public:
 
 
 
-struct Tools
+struct TubeKernels
 {
+
+// this kernel could be used for the Cone two
 __attribute__((always_inline))
 inline
 static
 GlobalTypes::SurfaceEnumType
 InsideZ( TubeParameters<> const * tp, Vector3D const & x )
 {
-	// could introduce early returns if necessary
 	if( std::abs(x.z) - tp->GetDZ() > Utils::frHalfTolerance )
 		return GlobalTypes::kOutside;
 
@@ -177,6 +178,7 @@ __attribute__((always_inline))
 inline
 static
 GlobalTypes::SurfaceEnumType
+// this kernel could be used for the cone two
 InsidePhi( TubeParameters<Float_t> const * tp, Vector3D const & x )
 {
 	// we should catch here the case when we do not need phi treatment at all ( or assert on it )
@@ -1072,13 +1074,13 @@ GlobalTypes::SurfaceEnumType PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedCont
 	GlobalTypes::SurfaceEnumType inside_r;
 	GlobalTypes::SurfaceEnumType inside_phi;
 
-	inside_z = Tools::InsideZ( tubeparams, x );
+	inside_z = TubeKernels::InsideZ( tubeparams, x );
 	if ( inside_z == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
 
-	inside_r = Tools::InsideR<TubeType>( tubeparams, x );
+	inside_r = TubeKernels::InsideR<TubeType>( tubeparams, x );
 	if ( inside_r == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
 
-	inside_phi = Tools::InsidePhi<TubeType>( tubeparams, x );
+	inside_phi = TubeKernels::InsidePhi<TubeType>( tubeparams, x );
 	if ( inside_phi == GlobalTypes::kOutside ) return GlobalTypes::kOutside;
 
 	// at this point we are either inside or on the surface
