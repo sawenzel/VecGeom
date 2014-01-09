@@ -123,6 +123,6 @@ struct ConeTypeToTubeType<NonHollowConeWithPhi>
 };
 
 
+}; // end of conetraits
 
-};
 #endif /* CONETRAITS_H_ */

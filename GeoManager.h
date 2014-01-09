@@ -15,8 +15,11 @@
 #include "TransformationMatrix.h"
 #include "ShapeFactories.h"
 #include <list>
+#include "PhysicalPolycone.h"
+
 
 class PhysicalVolume;
+
 // the GeoManager manages the geometry hierarchy. It keeps a pointer to the top volume
 // etc.
 
@@ -199,7 +202,6 @@ public:
 
 };
 
-extern TransformationMatrix const * IdentityTransformationMatrix;
 
 
 

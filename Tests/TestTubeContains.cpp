@@ -37,8 +37,8 @@ int main()
 	Vectors3DSOA points, intermediatepoints;
 	StructOfCoord rpoints, rintermediatepoints;
 
-	int np = 1024;
-	int NREPS = 1000;
+	int np = 1024000;
+	int NREPS = 10;
 
 	points.alloc(np);
 	intermediatepoints.alloc(np);
@@ -58,12 +58,19 @@ int main()
 	double worldrmax = 100.;
 	double worldrmin = 0.;
 	double worldz = 200.;
-	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, 2.*M_PI), IdentityTransformationMatrix );
+	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, M_PI ), IdentityTransformationMatrix );
 
-	double zplanes[] = {-80, -20, 20, 80};
-	double rinner[] = { 10, 10, 10, 10};
-	double router[] = { 50, 50, 100, 100};
-	PolyconeParameters<> pconp = new PolyconeParameters( 0, 2.*M_PI, 4, zplanes, rinner, router );
+	double zplanes[] = {-80, -20, 20, 80 };
+	double rinner[] = { 0, 0, 0, 0 };
+	double router[] = { 70, 70, 100, 100 };
+
+/*
+	double zplanes[] = {-80, 80 };
+	double rinner[] = { 0, 10, };
+	double router[] = { 50, 80, };
+*/
+
+	PolyconeParameters<> * pconp = new PolyconeParameters<>( 0, 2.*M_PI, 4, zplanes, rinner, router );
 
 	PhysicalVolume * pcon = GeoManager::MakePlacedPolycone(pconp, IdentityTransformationMatrix, true );
 
@@ -79,7 +86,7 @@ int main()
 	for(int reps=0 ;reps < NREPS; reps++ )
 	{
 		for(auto particle = 0; particle < np; ++particle )
-			results[particle] = shield->Contains_WithSurface( points.getAsVector(particle) );
+			results[particle] = pcon->Contains_WithSurface( points.getAsVector(particle) );
 	}
 	timer.Stop();
 	double t0 = timer.getDeltaSecs();
@@ -91,16 +98,24 @@ int main()
 		for( auto particle = 0; particle < np; ++particle )
 			{
 				Vector3D pos = points.getAsVector(particle);
-				resultsUsolid[particle] = shield->GetAsUnplacedUSolid()->Inside( reinterpret_cast<UVector3 const &>( pos  ) );
+				resultsUsolid[particle] = pcon->GetAsUnplacedUSolid()->Inside( reinterpret_cast<UVector3 const &>( pos  ) );
 			}
 		}
 	timer.Stop();
 	double t1 = timer.getDeltaSecs();
 	std::cerr << t1 << std::endl;
 
+	int counter[3]={0,0,0};
+	int counterUSolid[3]={0,0,0};
 	for( auto particle = 0; particle < np; ++particle )
 	{
-		std::cerr << results[particle] << " " << resultsUsolid[particle] << std::endl;
+		counter[results[particle]]++;
+		counterUSolid[resultsUsolid[particle]]++;
+	}
+	for( auto j=0; j < 3; j++)
+	{
+		std::cerr << counter[j] << " " << counterUSolid[j] << std::endl;
+
 	}
 
     return 1;

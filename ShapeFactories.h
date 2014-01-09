@@ -14,7 +14,6 @@
 #include "GlobalDefs.h"
 #include "PhysicalCone.h"
 #include "PhysicalBox.h"
-#include "PhysicalPolycone.h"
 
 struct TubeFactory
 {
@@ -55,46 +54,7 @@ struct TubeFactory
 	}
 };
 
-// I am not quite sure if I need this stuff
-//
-struct PolyconeFactory
-{
-	template<int tid, int rid>
-	static
-	PhysicalVolume * Create( PolyconeParameters<> const * tp, TransformationMatrix const * tm )
-	{
-		if( !tp->HasRmin() )
-		{
-			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
-			{
-				return new PlacedPolycone<tid,rid,ConeTraits::NonHollowCone>(tp, tm);
-			}
-			else if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kPi ) )
-			{
-				return new PlacedPolycone<tid,rid,ConeTraits::NonHollowConeWithPhiEqualsPi>(tp, tm);
-			}
-			else
-			{
-				return new PlacedPolycone<tid,rid,ConeTraits::NonHollowConeWithPhi>(tp, tm);
-			}
-		}
-		else
-		{
-			if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kTwoPi ) )
-			{
-				return new PlacedPolycone<tid,rid,ConeTraits::HollowCone>(tp, tm);
-			}
-			else if ( Utils::IsSameWithinTolerance ( tp->GetDPhi(), Utils::kPi ) )
-			{
-				return new PlacedPolycone<tid,rid,ConeTraits::HollowConeWithPhiEqualsPi>(tp, tm);
-			}
-			else
-			{
-				return new PlacedPolycone<tid,rid,ConeTraits::HollowConeWithPhi>(tp,tm);
-			}
-		}
-	}
-};
+
 
 
 struct

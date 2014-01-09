@@ -118,5 +118,7 @@ namespace Utils
 
 };
 
+class TransformationMatrix;
+extern TransformationMatrix const * IdentityTransformationMatrix;
 
 #endif /* GLOBALDEFS_H_ */

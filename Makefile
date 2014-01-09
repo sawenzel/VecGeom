@@ -4,7 +4,7 @@ CXX_FLAGS=-fabi-version=6 -m64 -std=c++11 #`root-config --cflags`
 CXX_FLAGS+=${CXX_OPT}
 CXX_INCLUDE=-I./ -I./Tests/ -I ${VCROOT}/include
 CXX_LIBS=-lGeom -L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib -ltbb -lrt -L ${USOLIDSROOT}/build -lusolids -L ${ROOTSYS}/lib -lGeom 
-CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp GeoManager_MakePolycone.cpp PhysicalBox.cpp PhysicalVolume.cpp TransformationMatrix.cpp SimpleVecNavigator.cpp
+CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp GeoManager_MakePolycone.cpp GeoManager.cpp PhysicalBox.cpp PhysicalVolume.cpp TransformationMatrix.cpp SimpleVecNavigator.cpp
 CXX_HDR=PhysicalBox.h PhysicalTube.h PhysicalCone.h
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 

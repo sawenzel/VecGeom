@@ -277,6 +277,9 @@ public:
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const;
 
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const {return 0.;}
+
+	__attribute__((always_inline))
+	inline
 	virtual bool   Contains( Vector3D const & ) const;
 
 	__attribute__((always_inline))

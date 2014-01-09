@@ -65,6 +65,8 @@ private:
 	T outeroffsetsquare;
 	T inneroffsetsquare;
 
+
+public:
 	//**** we save normals to phi - planes *****//
 	Vector3D normalPhi1;
 	Vector3D normalPhi2;
@@ -72,7 +74,6 @@ private:
 	Vector3D alongPhi1;
 	Vector3D alongPhi2;
 
-public:
 	ConeParameters(T pRmin1, T pRmax1, T pRmin2, T pRmax2, T pDZ, T pPhiMin, T pPhiMax) :
 		dRmin1(pRmin1),
 		dRmax1(pRmax1),
@@ -158,7 +159,7 @@ __attribute__((always_inline))
 inline
 static
 GlobalTypes::SurfaceEnumType
-InsideZ( ConeParameters<> const * tp, Vector3D const & x ) const
+InsideZ( ConeParameters<> const * tp, Vector3D const & x )
 {
 	if( std::abs(x.z) - tp->GetDZ() > Utils::frHalfTolerance )
 		return GlobalTypes::kOutside;
@@ -172,8 +173,9 @@ InsideZ( ConeParameters<> const * tp, Vector3D const & x ) const
 template<typename Float_t=double>
 __attribute__((always_inline))
 inline
+static
 Float_t
-GetInnerRAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+GetInnerRAtZ(ConeParameters<Float_t> const * cp, Float_t z)
 {
 	return cp->GetInnerSlope() *z + cp->GetInnerOffset();
 }
@@ -181,8 +183,9 @@ GetInnerRAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
 template<typename Float_t=double>
 __attribute__((always_inline))
 inline
+static
 Float_t
-GetOuterRAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+GetOuterRAtZ(ConeParameters<Float_t> const * cp, Float_t z)
 {
 	return cp->GetOuterSlope() *z + cp->GetOuterOffset();
 }
@@ -192,9 +195,9 @@ __attribute__((always_inline))
 inline
 static
 Float_t
-GetRminSqrAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+GetRminSqrAtZ(ConeParameters<Float_t> const * cp, Float_t z)
 {
-	Float_t t = GetInnerRAtZ( cp, z);
+	Float_t t = GetInnerRAtZ(cp, z);
 	return t*t;
 }
 
@@ -204,9 +207,9 @@ __attribute__((always_inline))
 inline
 static
 Float_t
-GetRmaxSqrAtZ( ConeParameters<Float_t> const & cp, Float_t z) const
+GetRmaxSqrAtZ(ConeParameters<Float_t> const * cp, Float_t z)
 {
-	Float_t t = GetOuterRAtZ( cp, z);
+	Float_t t = GetOuterRAtZ(cp, z);
 	return t*t;
 }
 
@@ -216,11 +219,11 @@ __attribute__((always_inline))
 inline
 static
 GlobalTypes::SurfaceEnumType
-InsideR( ConeParameters<Float_t> const * tp, Vector3D const & x ) const
+InsideR(ConeParameters<Float_t> const * tp, Vector3D const & x)
 {
 	Float_t r2 = x.x*x.x + x.y*x.y;
 
-	Float_t rmaxsqr = GetRmaxSqrAtZ( tp, x.z );
+	Float_t rmaxsqr = GetRmaxSqrAtZ(tp, x.z);
 
 	if( ! ConeTraits::NeedsRminTreatment<ConeType>::value )
 	{
@@ -236,7 +239,7 @@ InsideR( ConeParameters<Float_t> const * tp, Vector3D const & x ) const
 	}
 	else
 	{
-		Float_t rminsqr = GetRminSqrAtZ( tp, x.z );
+		Float_t rminsqr = GetRminSqrAtZ<Float_t>( tp, x.z );
 
 		if( r2 > rmaxsqr + Utils::frHalfTolerance || r2 < rminsqr - Utils::frHalfTolerance )
 		{
