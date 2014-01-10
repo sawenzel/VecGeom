@@ -1,6 +1,7 @@
 #ifndef LIBRARYVC_H
 #define LIBRARYVC_H
 
+#include <Vc/Vc>
 #include "LibraryGeneric.h"
 
 template <>

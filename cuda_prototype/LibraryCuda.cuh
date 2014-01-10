@@ -66,20 +66,22 @@ void CopyFromGPU(Type *const src, Type *const tgt, const int count) {
   cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost);
 }
 
-template <typename Type>
-__host__ __device__
-inline __attribute__((always_inline))
-Type CondAssign(const CudaBool &cond,
-                const Type &thenval, const Type &elseval) {
-  return (cond) ? thenval : elseval;
-}
+// Use scalar implementation
 
-template <typename Type>
-__host__ __device__
-inline __attribute__((always_inline))
-void MaskedAssign(const CudaBool &cond,
-                  const Type &thenval, Type &output) {
-  output = (cond) ? thenval : output;
-}
+// template <typename Type>
+// __host__ __device__
+// inline __attribute__((always_inline))
+// Type CondAssign(const CudaBool &cond,
+//                 const Type &thenval, const Type &elseval) {
+//   return (cond) ? thenval : elseval;
+// }
+
+// template <typename Type>
+// __host__ __device__
+// inline __attribute__((always_inline))
+// void MaskedAssign(const CudaBool &cond,
+//                   const Type &thenval, Type &output) {
+//   output = (cond) ? thenval : output;
+// }
 
 #endif /* LIBRARYCUDA_H */

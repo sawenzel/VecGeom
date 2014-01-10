@@ -6,13 +6,15 @@
 #include <stdexcept>
 #include <cfloat>
 #include "tbb/tick_count.h"
+#include "mm_malloc.h"
+#include <math.h>
+#include <cassert>
 
 #ifndef __CUDACC__
 #define STD_CXX11
 #define CUDA_HEADER_DEVICE
 #define CUDA_HEADER_HOST
 #define CUDA_HEADER_BOTH
-#include <Vc/Vc>
 #else
 #define NVCC
 #define CUDA_HEADER_DEVICE __device__
@@ -354,12 +356,21 @@ struct Stopwatch {
   double Elapsed() const { return (t2-t1).seconds(); }
 };
 
-// Solve with overloading instead
-// template<ImplType it, typename Type>
-// CUDA_HEADER_BOTH
-// inline __attribute__((always_inline))
-// Type CondAssign(const typename ImplTraits<it>::bool_v &cond,
-//                 const Type &thenval, const Type &elseval);
+template <typename Type>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Type CondAssign(const bool &cond,
+                const Type &thenval, const Type &elseval) {
+  return (cond) ? thenval : elseval;
+}
+
+template <typename Type1, typename Type2>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+void MaskedAssign(const bool &cond,
+                  const Type1 &thenval, Type2 &output) {
+  output = (cond) ? thenval : output;
+}
 
 enum RotationType { kDiagonal = 720, kNone = 1296 };
 

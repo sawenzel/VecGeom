@@ -33,12 +33,12 @@ void DistanceToInWrapper(const Vector3D<float> dimensions,
 } // End namespace kernel
 
 template <>
-void Shape::Contains<Box, kCuda>(SOA3D<double> const &points,
-                                 bool *output) const {
+void Box::Contains<kCuda>(SOA3D<double> const &points,
+                          bool *output) const {
 
   const int blocks_per_grid = BlocksPerGrid(points.size());
   kernel::box::ContainsWrapper<<<threads_per_block, blocks_per_grid>>>(
-    VectorAsFloatHost(((BoxParameters*)parameters)->dimensions),
+    VectorAsFloatHost(dimensions),
     trans_matrix_cuda,
     points,
     output
@@ -47,13 +47,13 @@ void Shape::Contains<Box, kCuda>(SOA3D<double> const &points,
 }
 
 template <>
-void Shape::DistanceToIn<Box, kCuda>(SOA3D<double> const &pos,
-                                     SOA3D<double> const &dir,
-                                     double *distance) const {
+void Box::DistanceToIn<kCuda>(SOA3D<double> const &pos,
+                              SOA3D<double> const &dir,
+                              double *distance) const {
 
   const int blocks_per_grid = BlocksPerGrid(pos.size());
   kernel::box::DistanceToInWrapper<<<threads_per_block, blocks_per_grid>>>(
-    VectorAsFloatHost(((BoxParameters*)parameters)->dimensions),
+    VectorAsFloatHost(dimensions),
     trans_matrix_cuda,
     pos,
     dir,

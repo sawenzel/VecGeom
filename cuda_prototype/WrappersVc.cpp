@@ -6,15 +6,15 @@ const VcBool ImplTraits<kVc>::kFalse = VcBool(false);
 const VcFloat ImplTraits<kVc>::kZero = Vc::Zero;
 
 template <>
-void Shape::Contains<Box, kVc>(SOA3D<double> const &points,
-                               bool *output) const {
+void Box::Contains<kVc>(SOA3D<double> const &points,
+                        bool *output) const {
 
   const int size = points.size();
   for (int i = 0; i < size; i += kVectorSize) {
     const Vector3D<VcFloat> point((points.Memory(0))[i], (points.Memory(1))[i],
                                   (points.Memory(2))[i]);
     const VcBool res = kernel::box::Contains<kVc>(
-      ((BoxParameters*)parameters)->dimensions, trans_matrix, point
+      dimensions, trans_matrix, point
     );
     res.store(&output[i]);
   }
@@ -22,9 +22,9 @@ void Shape::Contains<Box, kVc>(SOA3D<double> const &points,
 }
 
 template <>
-void Shape::DistanceToIn<Box, kVc>(SOA3D<double> const &pos,
-                                   SOA3D<double> const &dir,
-                                   double *distance) const {
+void Box::DistanceToIn<kVc>(SOA3D<double> const &pos,
+                            SOA3D<double> const &dir,
+                            double *distance) const {
 
   const int size = pos.size();
   for (int i = 0; i < size; i += kVectorSize) {
@@ -33,7 +33,7 @@ void Shape::DistanceToIn<Box, kVc>(SOA3D<double> const &pos,
     const Vector3D<VcFloat> d((dir.Memory(0))[i], (dir.Memory(1))[i],
                               (dir.Memory(2))[i]);
     const VcFloat res = kernel::box::DistanceToIn<kVc>(
-      ((BoxParameters*)parameters)->dimensions, trans_matrix, p, d
+      dimensions, trans_matrix, p, d
     );
     res.store(&distance[i]);
   }
