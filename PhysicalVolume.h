@@ -26,7 +26,7 @@ class PhysicalVolume
 		PhysicalVolume * bbox;
 		// this is the bounding box, it is placed
 		// only translation necessary with respect to the local coordinate system of the PhysicalVolume
-		// this is a bit nasty because we need to cast bbox to PlacedBox<1,0>
+		// this is a bit nasty because we need to cast bbox to PlacedBox<1,1296>
 
 		TransformationMatrix const *matrix; // placement matrix with respect to containing volume
 		//std::list<PhysicalVolume> daughterVolumes; // list or vector?

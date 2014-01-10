@@ -18,6 +18,7 @@
 #include "ShapeFactories.h"
 #include "GlobalDefs.h"
 
+#include "UVoxelizer.hh"
 
 // class encapsulating the defining properties of a Polycone
 template<typename Float_t=double>
@@ -25,7 +26,7 @@ class
 PolyconeParameters
 {
 public:
-	enum PconSectionType { kTube, kCone };
+	enum PconSectionType {kTube, kCone};
 
 private:
 	bool has_rmin; // this is true if a least one section has an inner radius
@@ -33,7 +34,10 @@ private:
 
 	Float_t fSPhi; // start angle
 	Float_t fDPhi; // total phi angle
+	Float_t fMaxR; //
+	Float_t fMaxRSqr; //
 	int numZPlanes; // number of z planes ( minimum 2 )
+	int halfnumZPlanes;
 	std::vector<Float_t> zPlanes; // position of z planes
 	std::vector<Float_t> rInner; // inner radii at position of z planes
 	std::vector<Float_t> rOuter; // outer radii at position of z planes
@@ -46,29 +50,31 @@ private:
 
 public:
 	// a constructor
-	PolyconeParameters( Float_t sphi,
-						Float_t dphi,
-						int numzplanes,
-						Float_t const zplanes[],
-						Float_t const rinner[],
-						Float_t const router[] ) : zPlanes(numZPlanes), rInner(numZPlanes), rOuter(numZPlanes),
-						numZPlanes(numzplanes), pconsectype(numzplanes-1), pconsection(numzplanes-1), fSPhi(sphi), fDPhi(dphi) {
+	PolyconeParameters(Float_t sphi,
+					   Float_t dphi,
+					   int numzplanes,
+					   Float_t const zplanes[],
+					   Float_t const rinner[],
+					   Float_t const router[] ) : zPlanes(numZPlanes), rInner(numZPlanes), rOuter(numZPlanes),
+					   halfnumZPlanes(numzplanes/2), numZPlanes(numzplanes), pconsectype(numzplanes-1), pconsection(numzplanes-1), fSPhi(sphi), fDPhi(dphi) {
 		Init(sphi, dphi, numzplanes, zplanes, rinner, router);
 	}
 
 	// the following methods will be used by the factory to determine the polyconetype
-	bool HasRmin() const { return has_rmin; }
-	bool IsFullPhi() const { return is_full_phi; }
-	Float_t GetDPhi() const { return fDPhi; }
-	Float_t GetSPhi() const { return fSPhi; }
-	Float_t GetDZ() const { return (zPlanes[numZPlanes-1] - zPlanes[0])/2.; }
-	Float_t GetMaxR() const { return *std::max_element(rOuter.begin(), rOuter.end()); }
+	bool HasRmin() const {return has_rmin;}
+	bool IsFullPhi() const {return is_full_phi;}
+	Float_t GetDPhi() const {return fDPhi;}
+	Float_t GetSPhi() const {return fSPhi;}
+	Float_t GetDZ() const {return (zPlanes[numZPlanes-1] - zPlanes[0])/2.;}
+	Float_t GetMaxR() const { return fMaxR; }
+	Float_t GetMaxRSqr() const { return fMaxRSqr; }
 
-
-	std::vector<Float_t> const & GetZPlanes() const { return zPlanes; }
-	std::vector<Float_t> const & GetInnerRs() const { return rInner; }
-	std::vector<Float_t> const & GetOuterRs() const { return rOuter; }
-	Float_t GetZPlane( int i ) const { return zPlanes[i]; }
+	std::vector<Float_t> const & GetZPlanes() const {return zPlanes;}
+	std::vector<Float_t> const & GetInnerRs() const {return rInner;}
+	std::vector<Float_t> const & GetOuterRs() const {return rOuter;}
+	Float_t GetZPlane(int i) const {return zPlanes[i];}
+	Float_t GetInnerR(int i) const {return rInner[i];}
+	Float_t GetOuterR(int i) const {return rOuter[i];}
 
 	PconSectionType GetPConSectionType( int i ) const { return pconsectype[i]; }
 
@@ -79,10 +85,37 @@ public:
 	inline
 	int FindZSection( Float_t zcoord ) const {
 		for(auto i=0;i<numZPlanes;i++){
-			if( zPlanes[i] <= zcoord && zcoord <= zPlanes[i+1] ) return i;
+			if( zPlanes[i] <= zcoord && zcoord < zPlanes[i+1] ) return i;
 		}
 		return -1;
 	};
+
+	__attribute__((always_inline))
+	inline
+	int FindZSectionDaniel( Float_t zcoord ) const
+	{
+		// we can get rid of this divison;
+		// int l = zPlanes.size()/2;
+		int l = halfnumZPlanes;
+
+		int p = l;
+		while(! (zPlanes[p] <= zcoord && zcoord < zPlanes[p+1]) && l > 0 )
+		{
+			l = l/2; // >> 2;
+			p+=(1 - 2*(zPlanes[p] >= zcoord)) * l; // this determines direction to go for p
+		}
+
+		std::cerr << ((zPlanes[p] <= zcoord && zcoord < zPlanes[p+1]) ? "FOUND" : "NOT FOUND") << std::endl;
+
+		return p;
+	}
+
+	inline
+	int FindZSectionBS( Float_t zcoord ) const
+	{
+		return UVoxelizer::BinarySearch( zPlanes, zcoord );
+	}
+
 
 	void Print() const {};
 
@@ -115,7 +148,7 @@ void PolyconeParameters<Float_t>::Init(  Float_t sphi, Float_t dphi, int numZPla
 			// creates a tube as part of the polycone which is correctly placed ( translated )
 			pconsection[i] = TubeFactory::template Create<1, 1296>(
 					new TubeParameters<Float_t>(rinner[i], router[i], (zplanes[i+1] - zplanes[i])/2., sphi, dphi),
-					new TransformationMatrix( 0,0, (zplanes[i+1] + zplanes[i])/2., 0, 0, 0),
+					new TransformationMatrix(0,0, (zplanes[i+1] + zplanes[i])/2., 0, 0, 0),
 					!has_rmin);
 		}
 		if( pconsectype[i] == kCone )
@@ -127,6 +160,9 @@ void PolyconeParameters<Float_t>::Init(  Float_t sphi, Float_t dphi, int numZPla
 					!has_rmin);
 		}
 	}
+
+	fMaxR = *std::max_element(rOuter.begin(), rOuter.end());
+	fMaxRSqr = fMaxR*fMaxR;
 }
 
 template<typename Float_t>
@@ -161,7 +197,7 @@ public:
 	PlacedPolycone( PolyconeParameters<Float_t> const * pcp, TransformationMatrix const * tm ) : PhysicalVolume(tm), pconparams(pcp)
 	{
 		this->bbox = new PlacedBox<1,1296>(
-				new BoxParameters( pconparams->GetMaxR(), pconparams->GetMaxR(), pconparams->GetDZ()),
+				new BoxParameters( pconparams->GetMaxR(), pconparams->GetMaxR(), pconparams->GetDZ() ),
 				IdentityTransformationMatrix );
 
 		analogoususolid = new UPolycone( "internal_usolid", pconparams->GetSPhi(),
@@ -171,7 +207,18 @@ public:
 				&pconparams->GetInnerRs()[0],
 				&pconparams->GetOuterRs()[0]);
 
-		analogousrootsolid = 0; // new TGeoPcon("internal_tgeopcon", GetRmin(), GetRmax(), GetDZ());
+		analogousrootsolid = new TGeoPcon("internal_tgeopcon",
+											pconparams->GetSPhi()*360/(2.*M_PI),
+											pconparams->GetSPhi()+360*pconparams->GetDPhi()/(2.*M_PI),
+											pconparams->GetNZ());
+		// have to fill information for ROOT Polycone
+		for( auto j=0; j < pconparams->GetNZ(); j++ )
+		{
+			((TGeoPcon *) analogousrootsolid)->DefineSection(j,
+						pconparams->GetZPlane(j),
+						pconparams->GetInnerR(j),
+						pconparams->GetOuterR(j));
+		}
 
 		/*
 		if(! (tid==0 && rid==1296) )
@@ -217,7 +264,7 @@ public:
 
 
 template<TranslationIdType tid, RotationIdType rid, typename ConeType, typename Float_t>
-GlobalTypes::SurfaceEnumType PlacedPolycone<tid,rid,ConeType,Float_t>::Contains_WithSurface(Vector3D const & x ) const
+GlobalTypes::SurfaceEnumType PlacedPolycone<tid,rid,ConeType,Float_t>::Contains_WithSurface(Vector3D const & x) const
 {
 	Vector3D xp;
 	matrix->MasterToLocal<tid,rid>(x,xp);
@@ -226,16 +273,25 @@ GlobalTypes::SurfaceEnumType PlacedPolycone<tid,rid,ConeType,Float_t>::Contains_
 
 
 template<TranslationIdType tid, RotationIdType rid, typename ConeType, typename Float_t>
-GlobalTypes::SurfaceEnumType PlacedPolycone<tid,rid,ConeType,Float_t>::UnplacedContains_WithSurface(Vector3D const & x ) const
+GlobalTypes::SurfaceEnumType PlacedPolycone<tid,rid,ConeType,Float_t>::UnplacedContains_WithSurface(Vector3D const & x) const
 {
 	// algorithm:
     // check if point is outsize z range
 	// find z section of point
 	// call Contains function of that section ( no virtual call!! will be inlined )
 	// if point found on z-surface of that section, need to check neighbouring sections as well
+
+	// this should be replaced by bounding box ( or bounding tube check )
+	// if( reinterpret_cast<PlacedBox<1,1296> const *>(bbox)->PlacedBox<1,1296>::Contains(x) == false )
+	//	return GlobalTypes::kOutside;
+
 	if( x.z < pconparams->GetZPlane(0)-Utils::frHalfTolerance
 			|| x.z > pconparams->GetZPlane(pconparams->GetNZ()-1) + Utils::frHalfTolerance )
 		return GlobalTypes::kOutside;
+
+	if ( x.x*x.x + x.y*x.y > pconparams->GetMaxRSqr() )
+		return GlobalTypes::kOutside;
+
 
 	// TODO: this should do a binary search or linear search as a function of the number of segments
 	// may achieve this by template-classifying a polycone as large or small

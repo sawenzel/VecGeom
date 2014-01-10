@@ -379,6 +379,8 @@ public:
 	inline
 	virtual
 	GlobalTypes::SurfaceEnumType UnplacedContains_WithSurface( Vector3D const & x ) const;
+	__attribute__((always_inline))
+	inline
 	virtual
 	GlobalTypes::SurfaceEnumType Contains_WithSurface( Vector3D const & x ) const;
 
@@ -797,7 +799,7 @@ void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( VectorType const & xm
 
 	// now PHI
 
-	// **** PHI TREATMENT FOR CASE OF HAVING RMAX ONLY ***** only compiled in for tubes having phi sektion ***** //
+	// **** PHI TREATMENT FOR CASE OF HAVING RMAX ONLY ***** only compiled in for cones having phi sektion ***** //
 	if ( ConeTraits::NeedsPhiTreatment<ConeType>::value )
 	{
 		// all particles not done until here have the potential to hit a phi surface

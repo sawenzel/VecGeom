@@ -293,6 +293,8 @@ public:
 	__attribute__((always_inline))
 	inline
 	virtual GlobalTypes::SurfaceEnumType  UnplacedContains_WithSurface( Vector3D const & ) const;
+	__attribute__((always_inline))
+	inline
 	virtual GlobalTypes::SurfaceEnumType  Contains_WithSurface( Vector3D const & ) const;
 
 
