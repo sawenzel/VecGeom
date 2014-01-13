@@ -39,11 +39,13 @@ public:
 
   template <ImplType it>
   double DistanceToIn(Vector3D<double> const& /*point*/,
-                      Vector3D<double> const& /*dir*/) const;
+                      Vector3D<double> const& /*dir*/,
+                      double const step_max) const;
 
   template <ImplType it>
   void DistanceToIn(SOA3D<double> const& /*pos*/,
                     SOA3D<double> const& /*dir*/,
+                    double const *step_max,
                     double* distance) const;
 
 };

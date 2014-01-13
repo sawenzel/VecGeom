@@ -14,6 +14,7 @@ struct ImplTraits<kCuda> {
   typedef bool  bool_v;
   const static bool early_return = true;
   const static bool_v kZero = 0;
+  const static bool_v kTrue = true;
   const static bool_v kFalse = false;
 };
 

@@ -41,10 +41,12 @@ struct ImplTraits<kScalar> {
   #ifdef STD_CXX11
   constexpr static bool early_return = true;
   constexpr static float_v kZero = 0;
+  constexpr static bool_v kTrue = true;
   constexpr static bool_v kFalse = false;
   #else
   const static bool early_return = true;
   const static float_v kZero = 0;
+  const static bool_v kTrue = true;
   const static bool_v kFalse = false;
   #endif /* STD_CXX11 */
 };

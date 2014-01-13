@@ -47,14 +47,15 @@ void Shape::FillRandomDirections(SOA3D<double> &dirs) {
 inline bool IsFacingShape(Vector3D<double> const &point,
                           Vector3D<double> const &dir,
                           Shape const * const shape) {
-  // Dirty hack until a better architecture is implemented
-  return ((Box*)shape)->DistanceToIn<kScalar>(point, dir) < kInfinity;
+  // Dirty hack until a better architecture is invented/implemented
+  return ((Box*)shape)->DistanceToIn<kScalar>(point, dir,
+                                              kInfinity) < kInfinity;
 }
 
 void Shape::FillBiasedDirections(SOA3D<double> const &points,
                                  const double bias, SOA3D<double> &dirs) const {
   const int size = dirs.size();
-  assert(0. <= bias <= 1.);
+  assert(bias >= 0. && bias <= 1.);
 
   // Randomize points
   FillRandomDirections(dirs);

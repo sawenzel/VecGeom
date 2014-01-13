@@ -1,6 +1,6 @@
 CXX=g++
 CXX_OPT=-fabi-version=6 -ffast-math -finline-limit=10000000 -mavx -ftree-vectorize -O2
-CXX_FLAGS=-m64 -std=c++11
+CXX_FLAGS=-m64 -std=c++11 -Wall
 CXX_FLAGS+=${CXX_OPT}
 CXX_INCLUDE=-I ./ -I ${VCROOT}/include -I$ ${TBBROOT}/include
 CXX_LIBS=-L ${TBBROOT}/lib -ltbb -lrt
@@ -32,7 +32,7 @@ all: objs
 objs: $(CXX_OBJS) $(VC_OBJS) $(NVCC_OBJS)
 
 MainVc: MainVc.cpp $(CXX_OBJS) $(VC_OBJS)
-	$(CXX) $(CXX_FLAGS) $(VC_OPT) $(CXX_INCLUDE) $(CXX_OBJS) $(VC_OBJS) MainVc.cpp -o bin/MainVc $(CXX_LIBS)
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $(VC_OBJS) MainVc.cpp -o bin/MainVc $(VC_OPT) $(CXX_LIBS)
 
 MainCuda: MainCuda.cu $(CXX_OBJS) $(NVCC_OBJS)
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_INCLUDE) $(CXX_OBJS) $(NVCC_OBJS) MainCuda.cu -o bin/MainCuda $(NVCC_LIBS)

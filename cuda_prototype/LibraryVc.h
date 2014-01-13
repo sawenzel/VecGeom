@@ -12,6 +12,7 @@ struct ImplTraits<kVc> {
   typedef Vc::double_m bool_v;
   const static bool early_return = false;
   const static float_v kZero;
+  const static bool_v kTrue;
   const static bool_v kFalse;
 };
 

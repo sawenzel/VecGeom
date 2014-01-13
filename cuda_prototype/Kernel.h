@@ -14,8 +14,10 @@ typename ImplTraits<it>::bool_v Contains(
     TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
     Vector3D<typename ImplTraits<it>::float_v> const &point) {
 
-  const Vector3D<typename ImplTraits<it>::float_v> local =
-      matrix->MasterToLocal(point);
+  Vector3D<typename ImplTraits<it>::float_v> local = point;
+  if (!matrix->IsIdentity()) {
+    local = matrix->MasterToLocal(point);
+  }
 
   typename ImplTraits<it>::bool_v inside[3];
   for (int i = 0; i < 3; ++i) {
@@ -24,7 +26,12 @@ typename ImplTraits<it>::bool_v Contains(
       if (!inside[i]) return ImplTraits<it>::kFalse;
     }
   }
-  return inside[0] && inside[1] && inside[2];
+
+  if (ImplTraits<it>::early_return) {
+    return ImplTraits<it>::kTrue;
+  } else {
+    return inside[0] && inside[1] && inside[2];
+  }
 }
 
 template <ImplType it>
@@ -34,7 +41,8 @@ typename ImplTraits<it>::float_v DistanceToIn(
     Vector3D<typename ImplTraits<it>::float_t> const &dimensions,
     TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
     Vector3D<typename ImplTraits<it>::float_v> const &pos,
-    Vector3D<typename ImplTraits<it>::float_v> const &dir) {
+    Vector3D<typename ImplTraits<it>::float_v> const &dir,
+    typename ImplTraits<it>::float_v const &step_max) {
 
   // Typedef templated types for readability
   typedef typename ImplTraits<it>::float_v Float;
@@ -42,11 +50,12 @@ typename ImplTraits<it>::float_v DistanceToIn(
   typedef typename ImplTraits<it>::float_t ScalarFloat;
 
   const ScalarFloat kTiny(1e-20);
-  const ScalarFloat kBig(kInfinity);
   Vector3D<Float> safety;
   Vector3D<Float> pos_local;
   Vector3D<Float> dir_local;
-  Float distance;
+  Bool hit = ImplTraits<it>::kFalse;
+  Bool done = ImplTraits<it>::kFalse;
+  Float distance(kInfinity);
 
   matrix->MasterToLocal(pos, pos_local);
   matrix->MasterToLocal(dir, dir_local);
@@ -55,10 +64,12 @@ typename ImplTraits<it>::float_v DistanceToIn(
   safety[1] = abs(pos_local[1]) - dimensions[1];
   safety[2] = abs(pos_local[2]) - dimensions[2];
 
-  distance = kBig;
+  done |= (safety[0] >= step_max ||
+           safety[1] >= step_max ||
+           safety[2] >= step_max);
+  if (done == ImplTraits<it>::kTrue) return distance;
+
   Vector3D<Float> next;
-  Bool hit = ImplTraits<it>::kFalse;
-  Bool done = hit;
   Float coord1, coord2;
 
   // x
@@ -70,6 +81,7 @@ typename ImplTraits<it>::float_v DistanceToIn(
         (abs(coord1) <= dimensions[1] && abs(coord2) <= dimensions[2]);
   MaskedAssign(!done && hit, next[0], distance);
   done |= hit;
+  if (done == ImplTraits<it>::kTrue) return distance;
 
   // y
   next[1] = safety[1] / (abs(dir_local[1]) + kTiny);
@@ -80,6 +92,7 @@ typename ImplTraits<it>::float_v DistanceToIn(
         (abs(coord1) <= dimensions[0] && abs(coord2) <= dimensions[2]);
   MaskedAssign(!done && hit, next[1], distance);
   done |= hit;
+  if (done == ImplTraits<it>::kTrue) return distance;
 
   // z
   next[2] = safety[2] / (abs(dir_local[2]) + kTiny);

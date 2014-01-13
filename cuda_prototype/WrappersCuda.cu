@@ -20,13 +20,14 @@ __global__
 void DistanceToInWrapper(const Vector3D<float> dimensions,
                          TransMatrix<float> const * const trans_matrix,
                          SOA3D<double> const pos, SOA3D<double> const dir,
-                         double *distance) {
+                         double const *step_max, double *distance) {
 
   const int index = ThreadIndex();
   if (index >= pos.size()) return;
   distance[index] = DistanceToIn<kCuda>(dimensions, trans_matrix,
                                         VectorAsFloatDevice(pos[index]),
-                                        VectorAsFloatDevice(dir[index]));
+                                        VectorAsFloatDevice(dir[index]),
+                                        step_max[index]);
 }
 
 } // End namespace box
@@ -49,6 +50,7 @@ void Box::Contains<kCuda>(SOA3D<double> const &points,
 template <>
 void Box::DistanceToIn<kCuda>(SOA3D<double> const &pos,
                               SOA3D<double> const &dir,
+                              double const *step_max,
                               double *distance) const {
 
   const int blocks_per_grid = BlocksPerGrid(pos.size());
@@ -57,6 +59,7 @@ void Box::DistanceToIn<kCuda>(SOA3D<double> const &pos,
     trans_matrix_cuda,
     pos,
     dir,
+    step_max,
     distance
   );
 
