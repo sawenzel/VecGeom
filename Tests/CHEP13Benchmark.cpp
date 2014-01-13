@@ -49,11 +49,10 @@ int main()
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
 
-//	int np=64;
-//	int NREPS = 16000;
-	int np=1024;
-	int NREPS = 1000;
-
+	int np=64;
+	int NREPS = 16000;
+	//int np=1024;
+	//int NREPS = 1000;
 
 	points.alloc(np);
 	dirs.alloc(np);
@@ -70,6 +69,7 @@ int main()
 	double *distancesUSOLIDSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *nextnodesasdouble = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i] = Utils::kInfinity;
 
 	double *plainpointarray = (double *) _mm_malloc(3*np*sizeof(double), ALIGNMENT_BOUNDARY);
@@ -132,7 +132,7 @@ int main()
 	timer.Start();
 	for(int reps=0 ;reps < NREPS; reps++ )
 	{
-		vecnav.DistToNextBoundary( world, points, dirs, steps, distances, nextvolumes , np );
+		vecnav.DistToNextBoundary( world, points, dirs, steps, distances, nextnodesasdouble , np );
 	}
 	timer.Stop();
 	double t0 = timer.getDeltaSecs();

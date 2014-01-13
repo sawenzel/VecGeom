@@ -28,7 +28,8 @@ public:
 												Vectors3DSOA const & /*dirs*/,
 												double const * /*steps*/,
 												double * /*distance*/,
-												PhysicalVolume ** nextnode, int np ) const;
+												double * nextnode,
+												int np ) const;
 
 	void
 	DistToNextBoundaryUsingUnplacedVolumes( PhysicalVolume const *, Vectors3DSOA const & /*points*/,

@@ -9,7 +9,8 @@ CXX_LIBS=-lGeom -L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib -ltbb -lrt -L ${USOLIDSR
 CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp PhysicalBox.cpp PhysicalVolume.cpp TransformationMatrix.cpp SimpleVecNavigator.cpp PhysicalTube.cpp
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 
-all: CHEP13Benchmark CHEP13BenchmarkSpec TestVectorizedPlacedTube
+#all: CHEP13Benchmark CHEP13BenchmarkSpec TestVectorizedPlacedTube
+all: CHEP13Benchmark  TestVectorizedPlacedTube
 
 %.cpp.o: %.cpp 
 	$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@ 
@@ -20,8 +21,8 @@ CHEP13Benchmark: objs Tests/CHEP13Benchmark.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13Benchmark.cpp $(CXX_LIBS) -o bin/CHEP13Benchmark
 
 
-CHEP13BenchmarkSpec: objs Tests/CHEP13BenchmarkSpecialMatrices.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13BenchmarkSpecialMatrices.cpp $(CXX_LIBS) -o bin/CHEP13BenchmarkSpec
+#CHEP13BenchmarkSpec: objs Tests/CHEP13BenchmarkSpecialMatrices.cpp
+#	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13BenchmarkSpecialMatrices.cpp $(CXX_LIBS) -o bin/CHEP13BenchmarkSpec
 
 
 TestVectorizedPlacedTube: objs Tests/TestVectorizedPlacedTube.cpp

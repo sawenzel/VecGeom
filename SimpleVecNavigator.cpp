@@ -27,16 +27,16 @@ static
 inline
 void
 __attribute__((always_inline))
-MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, uint64_t * __restrict__ nextnodepointersasints,
-		uint64_t __restrict__ curcandidateVolumePointerasint, unsigned int np )
+MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, double * __restrict__ nextnodepointersasints,
+		double curcandidateVolumePointerasint, unsigned int np )
 {
 	// this is not vectorizing !
 	for(auto k=0;k<np;++k)
-    {
-      step[k] = (workspace[k]<step[k]) ? workspace[k] : step[k];
-      nextnodepointersasints[k] = (workspace[k]< step[k]) ?  curcandidateVolumePointerasint : nextnodepointersasints[k];
+	  {
+	    step[k] = (workspace[k]<step[k]) ? workspace[k] : step[k];
+	    nextnodepointersasints[k] = (workspace[k]< step[k]) ?  curcandidateVolumePointerasint : nextnodepointersasints[k];
     	  //	  std::cout << " hit some node " << curcandidateNode << std::endl;
-    }
+	  }
 }
 
 static
@@ -59,8 +59,8 @@ static
 inline
 void
 __attribute__((always_inline))
-MINVc_v ( double * __restrict__ step, double const * __restrict__ workspace, uint64_t * __restrict__ nextnodepointersasints,
-		uint64_t  __restrict__ curcandidateVolumePointerasint, unsigned int np )
+MINVc_v ( double * __restrict__ step, double const * __restrict__ workspace, double * __restrict__ nextnodepointersasints,
+		double  curcandidateVolumePointerasint, unsigned int np )
 {
 
 	// this is not vectorizing !
@@ -79,7 +79,7 @@ MINVc_v ( double * __restrict__ step, double const * __restrict__ workspace, uin
 		stepvec( m ) = workspacevec;
 		pointervec( m ) = curcandidateVolumePointerasint;
 		stepvec.store(&step[k]);
-		pointervec.store((double *) (&nextnodepointersasints[k]));
+		pointervec.store( &nextnodepointersasints[k] );
 	}
 }
 
@@ -87,7 +87,7 @@ void SimpleVecNavigator::DistToNextBoundary( PhysicalVolume const * volume, Vect
 											 Vectors3DSOA const & dirs,
 											 double const * steps,
 											 double * distance,
-											 PhysicalVolume ** nextnode, int np ) const
+											 double * nextnode, int np ) const
 {
 // init nextnode ( maybe do a memcpy )
 	for(auto k=0;k<np;++k)
@@ -100,17 +100,20 @@ void SimpleVecNavigator::DistToNextBoundary( PhysicalVolume const * volume, Vect
 
 	// iterate over all the daughter
 	std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
+	int counter=1;
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{
 		PhysicalVolume const * daughter = (*iter);
 		// previous distance become step estimate, distance to daughter returned in workspace
-		daughter->DistanceToIn( points, dirs, distance, workspace );
+		daughter->DistanceToIn( points,dirs,distance,workspace, nextnode, counter);
+		// daughter->DistanceToIn( points, dirs, distance, workspace );
 
 		// update dist and current nextnode candidate
 		// maybe needs to be vectorized manually with Vc
 		// MINVc_v(distance, workspace, reinterpret_cast<uint64_t *>(nextnode), reinterpret_cast<uint64_t> (daughter), np);
 		// MIN_v(distance, workspace, reinterpret_cast<uint64_t *>(nextnode), reinterpret_cast<uint64_t> (daughter), np);
-		MIN_v(distance, workspace, nextnode, daughter, np);
+
+		// MIN_v(distance, workspace, nextnode, daughter, np);
 	}
 }
 

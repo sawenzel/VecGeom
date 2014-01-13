@@ -88,6 +88,8 @@ public:
 
 	// for the basket treatment
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
+	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double * /*steps*/, double * /*result*/, double *, double ) const;
+
 
 	template<typename T>
 	inline
@@ -312,6 +314,42 @@ void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3D
 
 			// store back result
 			dist.store( &distance[i] );
+		}
+}
+
+
+template<int tid, int rid>
+inline
+void PlacedBox<tid,rid>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v,
+		double * steps, double * distance, double * candidatenode, double cand ) const
+{
+	int i=0;
+	typedef typename Vc::Vector<double> VectorType;
+	for( i=0; i < points_v.size; i += VectorType::Size )
+		{
+			VectorType x( &points_v.x[i] );
+			VectorType y( &points_v.y[i] );
+			VectorType z( &points_v.z[i] );
+			VectorType xd( &dirs_v.x[i] );
+			VectorType yd( &dirs_v.y[i] );
+			VectorType zd( &dirs_v.z[i] );
+			VectorType step( &steps[i] );
+			VectorType dist;
+			DistanceToIn< VectorType >(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+			// dist.store( &distance[i] );
+
+		    // update of step and candidatenode
+			typename VectorType::Mask cond=dist<step;
+			if( ! cond.isEmpty() )
+			{
+				step(cond) = dist;
+				step.store( &steps[i]);
+				VectorType node( &candidatenode[i]);
+				node(cond) = cand;
+				node.store( &candidatenode[i]);
+			}
 		}
 }
 

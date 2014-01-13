@@ -211,6 +211,8 @@ public:
 
 	// for basket treatment (supposed to be dispatched to particle parallel case)
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
+	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double * /*steps*/, double * /*result*/, double *, double ) const;
+
 
 	// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const {} ;
@@ -672,5 +674,41 @@ void PlacedCone<tid,rid,TubeType,ValueType>::DistanceToIn( Vectors3DSOA const & 
 			dist.store( &distance[i] );
 		}
 }
+
+template<int tid, int rid, typename ConeType, typename ValueType>
+inline
+void PlacedCone<tid,rid,ConeType,ValueType>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v,
+		double * steps, double * distance, double * candidatenode, double cand ) const
+{
+	int i=0;
+	typedef typename Vc::Vector<ValueType> VectorType;
+	for( i=0; i < points_v.size; i += Vc::Vector<ValueType>::Size )
+		{
+			VectorType x( &points_v.x[i] );
+			VectorType y( &points_v.y[i] );
+			VectorType z( &points_v.z[i] );
+			VectorType xd( &dirs_v.x[i] );
+			VectorType yd( &dirs_v.y[i] );
+			VectorType zd( &dirs_v.z[i] );
+			VectorType step( &steps[i] );
+			VectorType dist;
+			DistanceToIn< VectorType >(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+		//	dist.store( &distance[i] );
+
+		    // update of step and candidatenode
+			typename VectorType::Mask cond=dist<step;
+						if( ! cond.isEmpty() )
+						{
+							step(cond) = dist;
+							step.store( &steps[i]);
+							VectorType node( &candidatenode[i]);
+							node(cond) = cand;
+							node.store( &candidatenode[i]);
+						}
+				}
+}
+
 
 #endif /* PHYSICALCONE_H_ */

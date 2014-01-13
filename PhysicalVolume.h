@@ -65,6 +65,9 @@ class PhysicalVolume
 		virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;
 		virtual void DistanceToOut( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const {};
 
+		// for basket treatment with additional update of current best candidate and step
+		virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double * /*steps*/, double * /*result*/, double *,  double ) const = 0;
+		virtual void DistanceToOut( Vectors3DSOA const &, Vectors3DSOA const &, double * /*steps*/, double * /*result*/, PhysicalVolume ** ) const {};
 
 		// for basket treatment (supposed to be dispatched to loop case over (SIMD) optimized 1-particle function)
 		virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const = 0;

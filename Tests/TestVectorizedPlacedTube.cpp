@@ -103,12 +103,12 @@ int main()
     			TransformationMatrix const * sm = TransformationMatrix::createSpecializedMatrix( TransCases[t][0], TransCases[t][1], TransCases[t][2],
     						EulerAngles[r][0], EulerAngles[r][1], EulerAngles[r][2] );
 
-    			double rmin = 0.;
+    			double rmin = 10.;
     			double rmax = 20.;
     			double dz = 30.;
     			double phis  =0.;
-    			double dphi = 2.*M_PI;
-    			// double dphi = M_PI;
+    			//double dphi = 2.*M_PI;
+    			double dphi = 3.*M_PI/2.;
     			PhysicalVolume * daughter = GeoManager::MakePlacedTube( new TubeParameters<>( rmin, rmax, dz, phis, dphi), tm );
 
     			//std::cerr << daughter->UnplacedContains( Vector3D(15, 1, 15) ) << std::endl;
@@ -123,7 +123,7 @@ int main()
     			world->AddDaughter(daughter);
 
     			world->fillWithRandomPoints(points,np);
-    			world->fillWithBiasedDirections(points, dirs, np, 8/10.);
+    			world->fillWithBiasedDirections(points, dirs, np, 2/10.);
 
     			points.toStructureOfVector3D( conventionalpoints );
     			dirs.toStructureOfVector3D( conventionaldirs );
