@@ -26,6 +26,7 @@ private:
     // this can be varied depending on template specialization
 	double trans[3];
 	double rot[9];
+	Vc::double_v * rotVc;
 	bool identity;
 	bool hasRotation;
 	bool hasTranslation;
@@ -33,22 +34,24 @@ private:
 	// the equivalent ROOT matrix (for convenience)
 	TGeoMatrix * rootmatrix;
 
+/*
 	template<RotationIdType rid>
 	inline
 	void
 	emitrotationcode(Vector3D const &, Vector3D &) const;
+*/
 
 // the idea is to provide one general engine which works for both scale ( T = double ) as well as vector backends ( T = Vc::double_v )
 	template<RotationIdType rid, typename T>
 	inline
 	void
-	emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz ) const;
+	emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz, T const * ) const;
 
 	template<RotationIdType rid, typename T>
 	static
 	inline
 	void
-	  emitrotationcodeT( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz, double const *rot );
+	  emitrotationcodeTS( T const & mx, T const & my, T const & mz, T & lx, T & ly, T & lz, double const *rot );
 
 	void setAngles(double phi, double theta, double psi);
 	void setProperties();
@@ -167,15 +170,36 @@ public:
 	template<TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
-		MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const;
+		MasterToLocal(T const & masterx, T const & mastery, T const & masterz,
+				T  & localx , T & localy , T & localz, T const * ) const;
+
+		template<TranslationIdType tid, RotationIdType rid, typename T>
+		inline
+		void
+		__attribute__((always_inline))
+		MasterToLocalVec(T const & masterx, T const & mastery, T const & masterz,
+				T  & localx , T & localy , T & localz, T * const r) const
+		{
+			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz, r);
+		}
 
 	template<TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
-		__attribute__((always_inline))
-		MasterToLocalVec(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const
+		MasterToLocalVc(T const & masterx, T const & mastery, T const & masterz,
+					T  & localx , T & localy , T & localz ) const
 		{
-			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz);
+		MasterToLocal<tid,rid,T>(masterx, mastery,masterz,localx,localy,localz, rotVc);
+		}
+
+		template<TranslationIdType tid, RotationIdType rid, typename T>
+		inline
+		void
+		__attribute__((always_inline))
+		MasterToLocalVecVc(T const & masterx, T const & mastery, T const & masterz,
+				T  & localx , T & localy , T & localz) const
+		{
+			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz, rotVc);
 		}
 
 
@@ -235,7 +259,8 @@ template <TranslationIdType tid, RotationIdType rid, typename T>
 inline
 void
 __attribute__((always_inline))
-TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const
+TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T const & masterz,
+		T  & localx , T & localy , T & localz, T const * r ) const
 {
   if( tid==0 && rid == 1296 ) // this means identity
   {
@@ -251,7 +276,7 @@ TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T cons
   }
  else if( tid == 0 && rid!=0 ) // pure rotation
   {
-	  emitrotationcodeT<rid,T>(masterx, mastery, masterz, localx, localy, localz);
+	 emitrotationcodeT<rid,T>(masterx, mastery, masterz, localx, localy, localz, r);
   }
  else if ( tid == 1 && rid!=0 ) // both rotation and translation
  {
@@ -259,7 +284,7 @@ TransformationMatrix::MasterToLocal(T const & masterx, T const & mastery, T cons
 	  //	 mtx = masterx - trans[0];
 	  // mty=  mastery - trans[1];
 	  // mtz = masterz - trans[2];
-	 emitrotationcodeT<rid,T>(masterx-trans[0], mastery-trans[1], masterz-trans[2], localx, localy, localz);
+	 emitrotationcodeT<rid,T>(masterx-trans[0], mastery-trans[1], masterz-trans[2], localx, localy, localz, r);
  }
 }
 
@@ -269,7 +294,7 @@ void
 __attribute__((always_inline))
 TransformationMatrix::MasterToLocal(Vector3D const & master, Vector3D & local) const
 {
-	MasterToLocal<tid, rid, double>(master.x, master.y, master.z, local.x, local.y, local.z );
+	MasterToLocal<tid, rid, double>(master.x, master.y, master.z, local.x, local.y, local.z, rot );
 }
 
 
@@ -283,96 +308,96 @@ TransformationMatrix::MasterToLocalVec(Vector3D const & master, Vector3D & local
 template <RotationIdType rid, typename T>
 inline
 void
-TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const & mtz, T & localx, T & localy, T & localz ) const
+TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const & mtz, T & localx, T & localy, T & localz, T const * coeff ) const
 {
   	if(rid==252){
-	     localx=mtx*rot[0];
-	     localy=mty*rot[4]+mtz*rot[7];
-	     localz=mty*rot[5]+mtz*rot[8];
+	     localx=mtx*coeff[0];
+	     localy=mty*coeff[4]+mtz*coeff[7];
+	     localz=mty*coeff[5]+mtz*coeff[8];
 	     return;
 	}
 	if(rid==405){
-	     localx=mty*rot[3];
-	     localy=mtx*rot[1]+mtz*rot[7];
-	     localz=mtx*rot[2]+mtz*rot[8];
+	     localx=mty*coeff[3];
+	     localy=mtx*coeff[1]+mtz*coeff[7];
+	     localz=mtx*coeff[2]+mtz*coeff[8];
 	     return;
 	}
 	if(rid==882){
-	     localx=mtz*rot[6];
-	     localy=mtx*rot[1]+mty*rot[4];
-	     localz=mtx*rot[2]+mty*rot[5];
+	     localx=mtz*coeff[6];
+	     localy=mtx*coeff[1]+mty*coeff[4];
+	     localz=mtx*coeff[2]+mty*coeff[5];
 	     return;
 	}
 	if(rid==415){
-	     localx=mty*rot[3]+mtz*rot[6];
-	     localy=mtx*rot[1];
-	     localz=mty*rot[5]+mtz*rot[8];
+	     localx=mty*coeff[3]+mtz*coeff[6];
+	     localy=mtx*coeff[1];
+	     localz=mty*coeff[5]+mtz*coeff[8];
 	     return;
 	}
 	if(rid==496){
-	     localx=mtx*rot[0]+mtz*rot[6];
-	     localy=mty*rot[4];
-	     localz=mtx*rot[2]+mtz*rot[8];
+	     localx=mtx*coeff[0]+mtz*coeff[6];
+	     localy=mty*coeff[4];
+	     localz=mtx*coeff[2]+mtz*coeff[8];
 	     return;
 	}
 	if(rid==793){
-	     localx=mtx*rot[0]+mty*rot[3];
-	     localy=mtz*rot[7];
-	     localz=mtx*rot[2]+mty*rot[5];
+	     localx=mtx*coeff[0]+mty*coeff[3];
+	     localy=mtz*coeff[7];
+	     localz=mtx*coeff[2]+mty*coeff[5];
 	     return;
 	}
 	if(rid==638){
-	     localx=mty*rot[3]+mtz*rot[6];
-	     localy=mty*rot[4]+mtz*rot[7];
-	     localz=mtx*rot[2];
+	     localx=mty*coeff[3]+mtz*coeff[6];
+	     localy=mty*coeff[4]+mtz*coeff[7];
+	     localz=mtx*coeff[2];
 	     return;
 	}
 	if(rid==611){
-	     localx=mtx*rot[0]+mtz*rot[6];
-	     localy=mtx*rot[1]+mtz*rot[7];
-	     localz=mty*rot[5];
+	     localx=mtx*coeff[0]+mtz*coeff[6];
+	     localy=mtx*coeff[1]+mtz*coeff[7];
+	     localz=mty*coeff[5];
 	     return;
 	}
 	if(rid==692){
-	     localx=mtx*rot[0]+mty*rot[3];
-	     localy=mtx*rot[1]+mty*rot[4];
-	     localz=mtz*rot[8];
+	     localx=mtx*coeff[0]+mty*coeff[3];
+	     localy=mtx*coeff[1]+mty*coeff[4];
+	     localz=mtz*coeff[8];
 	     return;
 	}
 	if(rid==720){
-	     localx=mtx*rot[0];
-	     localy=mty*rot[4];
-	     localz=mtz*rot[8];
+	     localx=mtx*coeff[0];
+	     localy=mty*coeff[4];
+	     localz=mtz*coeff[8];
 	     return;
 	}
 	if(rid==828){
-	     localx=mtx*rot[0];
-	     localy=mtz*rot[7];
-	     localz=mty*rot[5];
+	     localx=mtx*coeff[0];
+	     localy=mtz*coeff[7];
+	     localz=mty*coeff[5];
 	     return;
 	}
 	if(rid==756){
-	     localx=mty*rot[3];
-	     localy=mtx*rot[1];
-	     localz=mtz*rot[8];
+	     localx=mty*coeff[3];
+	     localy=mtx*coeff[1];
+	     localz=mtz*coeff[8];
 	     return;
 	}
 	if(rid==918){
-	     localx=mty*rot[3];
-	     localy=mtz*rot[7];
-	     localz=mtx*rot[2];
+	     localx=mty*coeff[3];
+	     localy=mtz*coeff[7];
+	     localz=mtx*coeff[2];
 	     return;
 	}
 	if(rid==954){
-	     localx=mtz*rot[6];
-	     localy=mtx*rot[1];
-	     localz=mty*rot[5];
+	     localx=mtz*coeff[6];
+	     localy=mtx*coeff[1];
+	     localz=mty*coeff[5];
 	     return;
 	}
 	if(rid==1008){
-	     localx=mtz*rot[6];
-	     localy=mty*rot[4];
-	     localz=mtx*rot[2];
+	     localx=mtz*coeff[6];
+	     localy=mty*coeff[4];
+	     localz=mtx*coeff[2];
 	     return;
 	}
 	if(rid==1296){
@@ -381,31 +406,32 @@ TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const &
 		localz=mtz;
 		return;
 	}
- // localx=mtx*rot[0]+mty*rot[3]+mtz*rot[6];
-  //localy=mtx*rot[1]+mty*rot[4]+mtz*rot[7];
-  //localz=mtx*rot[2]+mty*rot[5]+mtz*rot[8];
+ // localx=mtx*coeff[0]+mty*coeff[3]+mtz*coeff[6];
+  //localy=mtx*coeff[1]+mty*coeff[4]+mtz*coeff[7];
+  //localz=mtx*coeff[2]+mty*coeff[5]+mtz*coeff[8];
 	// this is better for inlining purposes
-	localx=mtx*rot[0];
-	localy=mtx*rot[1];
-	localz=mtx*rot[2];
-	localx+=mty*rot[3];
-	localy+=mty*rot[4];
-	localz+=mty*rot[5];
-	localx+=mtz*rot[6];
-	localy+=mtz*rot[7];
-	localz+=mtz*rot[8];
+	localx=mtx*coeff[0];
+	localy=mtx*coeff[1];
+	localz=mtx*coeff[2];
+	localx+=mty*coeff[3];
+	localy+=mty*coeff[4];
+	localz+=mty*coeff[5];
+	localx+=mtz*coeff[6];
+	localy+=mtz*coeff[7];
+	localz+=mtz*coeff[8];
 	return;
 }
 
 
-
+/*
 template <RotationIdType rid>
 inline
 void
 TransformationMatrix::emitrotationcode(Vector3D const & mt, Vector3D & local) const
 {
-  emitrotationcode<rid, double>( mt.x, mt.y, mt.z, local.x, local.y, local.z );
+  emitrotationcode<rid, double>( mt.x, mt.y, mt.z, local.x, local.y, local.z, rot );
 }
+*/
 
 
 template <TranslationIdType tid, RotationIdType rid, typename T >
@@ -421,7 +447,7 @@ TransformationMatrix::MasterToLocal(Vectors3DSOA const & master_v, Vectors3DSOA 
 		T y( &master_v.y[i] );
 		T z( &master_v.z[i] );
 		T lx, ly, lz;
-		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz);
+		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz,rotVc);
 		// store back result
 		lx.store( &local_v.x[i] );
 		ly.store( &local_v.y[i] );
@@ -454,7 +480,7 @@ TransformationMatrix::MasterToLocalCombinedT( Vectors3DSOA const & master_v, Vec
 		T y( &master_v.y[i] );
 		T z( &master_v.z[i] );
 		T lx, ly, lz;
-		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz);
+		MasterToLocal<tid,rid,T>(x,y,z,lx,ly,lz,rotVc);
 		// store back result
 		lx.store( &local_v.x[i] );
 		ly.store( &local_v.y[i] );
@@ -463,7 +489,7 @@ TransformationMatrix::MasterToLocalCombinedT( Vectors3DSOA const & master_v, Vec
 		T yd( &masterd_v.y[i] );
 		T zd( &masterd_v.z[i] );
 		T lxd, lyd, lzd;
-		MasterToLocal<0,rid,T>(xd,yd,zd,lxd,lyd,lzd);
+		MasterToLocal<0,rid,T>(xd,yd,zd,lxd,lyd,lzd,rotVc);
 		// store back result
 		lxd.store( &locald_v.x[i] );
 		lyd.store( &locald_v.y[i] );

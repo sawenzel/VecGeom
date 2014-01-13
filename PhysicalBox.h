@@ -233,7 +233,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 
 	   // new thing: do coordinate transformation in place here
 	   VecType localx, localy, localz;
-	   matrix->MasterToLocal<tid,rid,VecType>(x,y,z,newpt[0],newpt[1],newpt[2]);
+	   matrix->MasterToLocalVc<tid,rid,VecType>(x,y,z,newpt[0],newpt[1],newpt[2]);
 	   //
 	   saf[0] = Vc::abs(newpt[0])-par[0];
 	   saf[1] = Vc::abs(newpt[1])-par[1];
@@ -249,7 +249,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 
 	   // new thing:  do coordinate transformation for directions here
 	   VecType localdirx, localdiry, localdirz;
-	   matrix->MasterToLocalVec<tid,rid,VecType>(dirx, diry, dirz, localdirx, localdiry, localdirz);
+	   matrix->MasterToLocalVecVc<tid,rid,VecType>(dirx, diry, dirz, localdirx, localdiry, localdirz);
 	   //
 
 	   // proceed to analysis of hits

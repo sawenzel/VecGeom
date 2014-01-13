@@ -13,12 +13,16 @@
 // constructor
 TransformationMatrix::TransformationMatrix(double const *t, double const *r) : rootmatrix(0)
 {
+	rotVc = new Vc::double_v[9];
 	trans[0]=t[0];
 	trans[1]=t[1];
 	trans[2]=t[2];
 	for(auto i=0;i<9;i++)
-		rot[i]=r[i];
-	// we need to check more stuff ( for instance that product along diagonal is +1)
+		{
+			rot[i]=r[i];
+			rotVc[i]=Vc::One*rot[i];
+		}
+		// we need to check more stuff ( for instance that product along diagonal is +1)
 	setProperties();
 
 }
@@ -26,6 +30,7 @@ TransformationMatrix::TransformationMatrix(double const *t, double const *r) : r
 // more general constructor ala ROOT ( with Euler Angles )
 TransformationMatrix::TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
 {
+	rotVc = new Vc::double_v[9];
 	trans[0]=tx;
 	trans[1]=ty;
 	trans[2]=tz;
@@ -33,6 +38,11 @@ TransformationMatrix::TransformationMatrix(double tx, double ty, double tz, doub
 	setProperties();
 
 	InitEquivalentTGeoMatrix(phi, theta, psi);
+
+	for(auto i=0;i<9;i++)
+	{
+		rotVc[i]=Vc::One*rot[i];
+	}
 }
 
 

@@ -742,9 +742,9 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToIn( VectorType con
 	distance = Utils::kInfinityVc; // initialize distance to infinity
 
 	VectorType x,y,z;
-	matrix->MasterToLocal<tid,rid,VectorType>(xm,ym,zm,x,y,z);
+	matrix->MasterToLocalVc<tid,rid,VectorType>(xm,ym,zm,x,y,z);
 	VectorType dirx, diry, dirz;
-	matrix->MasterToLocalVec<tid,rid,VectorType>(dirxm,dirym,dirzm,dirx,diry,dirz);
+	matrix->MasterToLocalVecVc<tid,rid,VectorType>(dirxm,dirym,dirzm,dirx,diry,dirz);
 
 	// do some inside checks
 	// if safez is > 0 it means that particle is within z range
