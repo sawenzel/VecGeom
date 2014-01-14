@@ -1,4 +1,4 @@
-#ifndef SHAPE_H
+  #ifndef SHAPE_H
 #define SHAPE_H
 
 #include "LibraryGeneric.h"
@@ -16,9 +16,22 @@ protected:
 
   Box const *bounding_box;
   TransMatrix<double> const *trans_matrix;
-  TransMatrix<float> const *trans_matrix_cuda;
+  TransMatrix<CudaFloat> const *trans_matrix_cuda;
 
 public:
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  TransMatrix<double> const* TransformationMatrix() const {
+    return trans_matrix;
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  TransMatrix<CudaFloat> const*
+  TransformationMatrixCuda() const {
+    return trans_matrix_cuda;
+  }
 
   void AddDaughter(Shape const * const daughter) {
     daughters.push_back(daughter);
@@ -31,6 +44,10 @@ public:
   void FillBiasedDirections(SOA3D<double> const& /*points*/,
                             const double /*bias*/,
                             SOA3D<double>& /*dirs*/) const;
+
+  void SetCudaMatrix(TransMatrix<float> const * const trans_cuda) {
+    trans_matrix_cuda = trans_cuda;
+  }
 
   // // Contains
 

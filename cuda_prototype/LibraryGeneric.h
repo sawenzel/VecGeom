@@ -7,7 +7,7 @@
 #include <cfloat>
 #include "tbb/tick_count.h"
 #include "mm_malloc.h"
-#include <math.h>
+#include <cmath>
 #include <cassert>
 
 #ifndef __CUDACC__
@@ -22,15 +22,29 @@
 #define CUDA_HEADER_BOTH __host__ __device__
 #endif /* __CUDACC__ */
 
-const double kInfinity = DBL_MAX;
+template <typename Type>
+struct Vector3D;
+
+template <typename Type>
+struct SOA3D;
+
+template <typename Float>
+struct TransMatrix;
+
+enum RotationType { kDiagonal = 720, kNone = 1296 };
+
 const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
+const double kInfinity = INFINITY;
 
 enum ImplType { kVc, kCuda, kScalar };
 
 template <ImplType it>
 struct ImplTraits {};
+
+// Possibility to switch to doubles
+typedef float CudaFloat;
 
 template <>
 struct ImplTraits<kScalar> {
@@ -49,6 +63,49 @@ struct ImplTraits<kScalar> {
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
   #endif /* STD_CXX11 */
+};
+
+template <typename Type>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Type CondAssign(const bool &cond,
+                const Type &thenval, const Type &elseval) {
+  return (cond) ? thenval : elseval;
+}
+
+template <typename Type1, typename Type2>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+void MaskedAssign(const bool &cond,
+                  const Type1 &thenval, Type2 &output) {
+  output = (cond) ? thenval : output;
+}
+
+template <ImplType it, typename Type>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Type Abs(const Type&);
+
+template <>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+double Abs<kScalar, double>(double const &val) {
+  return std::fabs(val);
+}
+
+template <>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+float Abs<kScalar, float>(float const &val) {
+  return std::fabs(val);
+}
+
+struct Stopwatch {
+  tbb::tick_count t1;
+  tbb::tick_count t2;
+  void Start() { t1 = tbb::tick_count::now(); }
+  void Stop() { t2 = tbb::tick_count::now(); }
+  double Elapsed() const { return (t2-t1).seconds(); }
 };
 
 template <typename Type>
@@ -99,21 +156,84 @@ public:
     return vec[index];
   }
 
+  template <typename TypeOther>
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  Vector3D& operator+=(Vector3D const &rhs) {
+  Vector3D& operator+=(Vector3D<TypeOther> const &rhs) {
     this->vec[0] += rhs[0];
     this->vec[1] += rhs[1];
     this->vec[2] += rhs[2];
     return this;
   }
 
+  template <typename TypeOther>
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  Vector3D& operator-=(Vector3D const &rhs) {
+  Vector3D& operator+=(TypeOther const &rhs) {
+    this->vec[0] += rhs;
+    this->vec[1] += rhs;
+    this->vec[2] += rhs;
+    return this;
+  }
+
+  template <typename TypeOther>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D& operator-=(Vector3D<TypeOther> const &rhs) {
     this->vec[0] -= rhs[0];
     this->vec[1] -= rhs[1];
     this->vec[2] -= rhs[2];
+    return this;
+  }
+
+  template <typename TypeOther>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D& operator-=(TypeOther const &rhs) {
+    this->vec[0] -= rhs;
+    this->vec[1] -= rhs;
+    this->vec[2] -= rhs;
+    return this;
+  }
+
+  template <typename TypeOther>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D& operator*=(Vector3D<TypeOther> const &rhs) {
+    this->vec[0] *= rhs[0];
+    this->vec[1] *= rhs[1];
+    this->vec[2] *= rhs[2];
+    return this;
+  }
+
+  template <typename TypeOther>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D& operator*=(TypeOther const &rhs) {
+    this->vec[0] *= rhs;
+    this->vec[1] *= rhs;
+    this->vec[2] *= rhs;
+    return this;
+  }
+
+  template <typename TypeOther>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D& operator/=(Vector3D<TypeOther> const &rhs) {
+    this->vec[0] /= rhs[0];
+    this->vec[1] /= rhs[1];
+    this->vec[2] /= rhs[2];
+    return this;
+  }
+
+  template <typename TypeOther>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D& operator/=(TypeOther const &rhs) {
+    const TypeOther inverse = TypeOther(1) / rhs;
+    this->vec[0] *= inverse;
+    this->vec[1] *= inverse;
+    this->vec[2] *= inverse;
     return this;
   }
 
@@ -125,6 +245,28 @@ public:
   }
   #endif /* STD_CXX11 */
 
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Type Length() const {
+    return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void Normalize() {
+    const Type inverse = Type(1) / Length();
+    vec[0] *= inverse;
+    vec[1] *= inverse;
+    vec[2] *= inverse;
+  }
+
+  template <ImplType it>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D<Type> Abs() const {
+    return Vector3D<Type>(Abs<it>(vec[0]), Abs<it>(vec[1]), Abs<it>(vec[2]));
+  }
+
 };
 
 template <typename Type1, typename Type2, typename Type3>
@@ -133,6 +275,14 @@ inline __attribute__((always_inline))
 Vector3D<Type3> operator+(Vector3D<Type1> const &lhs,
                           Vector3D<Type2> const &rhs) {
   return Vector3D<Type3>(lhs[0]+rhs[0], lhs[1]+rhs[1], lhs[2]+rhs[2]);
+}
+
+template <typename Type1, typename Type2>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Vector3D<Type1> operator+(Vector3D<Type1> const &lhs,
+                          Vector3D<Type2> const &rhs) {
+  return Vector3D<Type1>(lhs[0]+rhs[0], lhs[1]+rhs[1], lhs[2]+rhs[2]);
 }
 
 template <typename Type1, typename Type2, typename Type3>
@@ -150,14 +300,6 @@ Vector3D<Type1> operator-(Vector3D<Type1> const &lhs,
                           Vector3D<Type2> const &rhs) {
   return Vector3D<Type1>(lhs[0]-rhs[0], lhs[1]-rhs[1], lhs[2]-rhs[2]);
 }
-
-template<typename Type>
-CUDA_HEADER_BOTH
-inline __attribute__((always_inline))
-Vector3D<Type> abs(Vector3D<Type> const &in) {
-  return Vector3D<Type>(abs(in[0]), abs(in[1]), abs(in[2]));
-}
-
 
 template <typename Type>
 struct SOA3D {
@@ -350,32 +492,6 @@ public:
 
 };
 
-struct Stopwatch {
-  tbb::tick_count t1;
-  tbb::tick_count t2;
-  void Start() { t1 = tbb::tick_count::now(); }
-  void Stop() { t2 = tbb::tick_count::now(); }
-  double Elapsed() const { return (t2-t1).seconds(); }
-};
-
-template <typename Type>
-CUDA_HEADER_BOTH
-inline __attribute__((always_inline))
-Type CondAssign(const bool &cond,
-                const Type &thenval, const Type &elseval) {
-  return (cond) ? thenval : elseval;
-}
-
-template <typename Type1, typename Type2>
-CUDA_HEADER_BOTH
-inline __attribute__((always_inline))
-void MaskedAssign(const bool &cond,
-                  const Type1 &thenval, Type2 &output) {
-  output = (cond) ? thenval : output;
-}
-
-enum RotationType { kDiagonal = 720, kNone = 1296 };
-
 template <typename Float>
 struct TransMatrix {
 
@@ -403,14 +519,16 @@ public:
     SetRotation(phi, theta, psi);
   }
 
-  template <typename other_t>
+  template <typename OtherType>
   CUDA_HEADER_BOTH
-  TransMatrix(TransMatrix<other_t> const &other) {
-    SetTranslation(Float(other.trans[0]), Float(other.trans[1]),
-                   Float(other.trans[2]));
-    SetRotation(Float(other.rot[0]), Float(other.rot[1]), Float(other.rot[2]), 
-                Float(other.rot[3]), Float(other.rot[4]), Float(other.rot[5]),
-                Float(other.rot[6]), Float(other.rot[7]), Float(other.rot[8]));
+  TransMatrix(TransMatrix<OtherType> const &other) {
+    SetTranslation(Float(other.Translation(1)), Float(other.Translation(2)),
+                   Float(other.Translation(3)));
+    SetRotation(Float(other.Rotation(0)), Float(other.Rotation(1)),
+                Float(other.Rotation(2)), Float(other.Rotation(3)),
+                Float(other.Rotation(4)), Float(other.Rotation(5)),
+                Float(other.Rotation(6)), Float(other.Rotation(7)),
+                Float(other.Rotation(8)));
 
   }
 
@@ -426,7 +544,7 @@ public:
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  const Float* Rotation() const { return rot; }
+  Float const* Rotation() const { return rot; }
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
@@ -452,6 +570,12 @@ public:
     trans[1] = ty;
     trans[2] = tz;
     SetProperties();
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void SetTranslation(Vector3D<Float> const &vec) {
+    SetTranslation(vec[0], vec[1], vec[2]);
   }
 
   CUDA_HEADER_BOTH
@@ -489,19 +613,34 @@ public:
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  void SetRotation(const Float *rot_) {
+  void SetRotation(Vector3D<Float> const &vec) {
+    SetRotation(vec[0], vec[1], vec[2]);
+  }
 
-    rot[0] = rot_[0];
-    rot[1] = rot_[1];
-    rot[2] = rot_[2];
-    rot[3] = rot_[3];
-    rot[4] = rot_[4];
-    rot[5] = rot_[5];
-    rot[6] = rot_[6];
-    rot[7] = rot_[7];
-    rot[8] = rot_[8];
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void SetRotation(const Float rot0, const Float rot1, const Float rot2,
+                   const Float rot3, const Float rot4, const Float rot5,
+                   const Float rot6, const Float rot7, const Float rot8) {
+
+    rot[0] = rot0;
+    rot[1] = rot1;
+    rot[2] = rot2;
+    rot[3] = rot3;
+    rot[4] = rot4;
+    rot[5] = rot5;
+    rot[6] = rot6;
+    rot[7] = rot7;
+    rot[8] = rot8;
 
     SetProperties();
+  }
+
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void SetRotation(const Float *rot_) {
+    SetRotation(rot_[0], rot_[1], rot_[2], rot_[3], rot_[4], rot_[5],
+                rot_[6], rot_[7], rot_[8]);
   }
 
   CUDA_HEADER_BOTH
@@ -512,7 +651,7 @@ public:
 
     // Count zero-entries and give back a footprint that classifies them
     for (int i = 0; i < 9; ++i) {
-      if (abs(rot[i]) < 1e-12) {
+      if (Abs<kScalar>(rot[i]) < 1e-12) {
         footprint += i*i*i; // Cubic power identifies cases uniquely
       }
     }
@@ -528,47 +667,82 @@ public:
     return footprint;
   }
 
+private:
+
+  template <typename Type>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void DoRotation(Vector3D<Type> const &master, Vector3D<Type> &local) const {
+    local[0] =  master[0]*rot[0];
+    local[1] =  master[0]*rot[1];
+    local[2] =  master[0]*rot[2];
+    local[0] += master[1]*rot[3];
+    local[1] += master[1]*rot[4];
+    local[2] += master[1]*rot[5];
+    local[0] += master[2]*rot[6];
+    local[1] += master[2]*rot[7];
+    local[2] += master[2]*rot[8];
+  }
+
+public:
+
   // Currently only very simple checks are performed.
   template <typename Type>
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  void MasterToLocal(Vector3D<Type> const &master,
-                     Vector3D<Type> &local) const {
+  void Transform(Vector3D<Type> const &master,
+                 Vector3D<Type> &local) const {
 
     // Vc can do early returns here as they are only dependent on the matrix
     if (IsIdentity()) {
       local = master;
       return;
     }
-    if (!HasRotation()) {
-      local = master - Translation();
-      return;
-    }
+
+    local = master - Translation();
+
+    if (!HasRotation()) return;
 
     // General case
-    const Vector3D<Type> t =
-        master - Translation();
-    local[0] =  t[0]*rot[0];
-    local[1] =  t[0]*rot[1];
-    local[2] =  t[0]*rot[2];
-    local[0] += t[1]*rot[3];
-    local[1] += t[1]*rot[4];
-    local[2] += t[1]*rot[5];
-    local[0] += t[2]*rot[6];
-    local[1] += t[2]*rot[7];
-    local[2] += t[2]*rot[8];
+    DoRotation(master, local);
 
   }
 
   template <typename Type>
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  Vector3D<Type> MasterToLocal(Vector3D<Type> const &master) const {
+  Vector3D<Type> Transform(Vector3D<Type> const &master) const {
     Vector3D<Type> local;
-    MasterToLocal(master, local);
+    Transform(master, local);
+    return local;
+  }
+
+  template <typename Type>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  void TransformRotation(Vector3D<Type> const &master,
+                         Vector3D<Type> &local) const {
+
+    // Vc can do early returns here as they are only dependent on the matrix
+    if (!HasRotation()) {
+      local = master;
+      return;
+    }
+
+    DoRotation(master, local);
+
+  }
+
+  template <typename Type>
+  CUDA_HEADER_BOTH
+  inline __attribute__((always_inline))
+  Vector3D<Type> TransformRotation(Vector3D<Type> const &master) const {
+    Vector3D<Type> local;
+    TransformRotation(master, local);
     return local;
   }
 
 };
+
 
 #endif /* LIBRARY_H */

@@ -1,4 +1,4 @@
-#include <iostream>
+#include <iostream> 
 #include "LibraryVc.h"
 #include "Box.h"
 
@@ -11,44 +11,41 @@ int main(void) {
   
   const int n_points = 1<<19;
 
-  // Populate some points
+  const TransMatrix<double> *origin = new TransMatrix<double>();
+  TransMatrix<double> *pos = new TransMatrix<double>();
+  pos->SetTranslation(2.93, 1.30, -4.05);
+  Box world(Vector3D<double>(10., 10., 10.), origin);
+  const Box box(Vector3D<double>(2., 2., 2.), pos);
+  world.AddDaughter(&box);
+
   SOA3D<double> points(n_points);
+  SOA3D<double> directions(n_points);
+  world.FillUncontainedPoints(points);
+  world.FillBiasedDirections(points, 0.8, directions);
+
+  double *step_max = (double*) _mm_malloc(sizeof(double)*n_points,
+                                          kAlignmentBoundary);
+  double *output = (double*) _mm_malloc(sizeof(double)*n_points,
+                                        kAlignmentBoundary);
   for (int i = 0; i < n_points; ++i) {
-    (points.Memory(0))[i] = random(-10, 10);
-    (points.Memory(1))[i] = random(-10, 10);
-    (points.Memory(2))[i] = random(-10, 10);
+    step_max[i] = kInfinity;
   }
 
-  // SOA3D_Vc_Float points(n_points);
-  // for (int i = 0; i < points.vectors(); ++i) {
-  //   points.Memory(0).vector(i) = VcFloat::Random() * 20. - 10.;
-  //   points.Memory(1).vector(i) = VcFloat::Random() * 20. - 10.;
-  //   points.Memory(2).vector(i) = VcFloat::Random() * 20. - 10.;
-  // }
-
-  // Create a box
-  const Vector3D<double> box_dim(5., 5., 5.);
-  const TransMatrix<double> *box_pos = new TransMatrix<double>();
-  const Box box(box_dim, box_pos);
-
-  // Output vector
-  bool *output = (bool*) _mm_malloc(sizeof(bool)*n_points,
-                                    kAlignmentBoundary);
-
-  // Launch kernel
   Stopwatch timer;
   timer.Start();
-  box.Contains<kVc>(points, output);
+  box.DistanceToIn<kVc>(points, directions, step_max, output);
   timer.Stop();
   
   std::cout << "Vc benchmark for " << n_points << " points finished in "
             << timer.Elapsed() << "s.\n";
 
-  int inside = 0;
-  for (int i = 0; i < n_points; ++i) if (output[i]) inside++;
+  int hit = 0;
+  for (int i = 0; i < n_points; ++i) {
+    if (output[i] < kInfinity) hit++;
+  }
 
-  std::cout << double(inside)/double(n_points)
-            << " were inside the box.\n";
+  std::cout << double(hit)/double(n_points)
+            << " hit something.\n";
 
   return 0;
 }

@@ -8,11 +8,12 @@ std::uniform_real_distribution<> uniform_dist(0,1);
 
 Vector3D<double> Shape::SamplePoint(Vector3D<double> const &size,
                                     const double scale) {
-  return Vector3D<double>(
+  const Vector3D<double> ret(
     scale * (1. - 2. * uniform_dist(rng)) * size[0],
     scale * (1. - 2. * uniform_dist(rng)) * size[1],
     scale * (1. - 2. * uniform_dist(rng)) * size[2]
   );
+  return ret;
 }
 
 Vector3D<double> Shape::SampleDirection() {
@@ -48,21 +49,25 @@ inline bool IsFacingShape(Vector3D<double> const &point,
                           Vector3D<double> const &dir,
                           Shape const * const shape) {
   // Dirty hack until a better architecture is invented/implemented
-  return ((Box*)shape)->DistanceToIn<kScalar>(point, dir,
-                                              kInfinity) < kInfinity;
+  return ((Box*)shape)->DistanceToIn<kScalar>(
+    point, dir, kInfinity
+  ) < kInfinity;
 }
 
 void Shape::FillBiasedDirections(SOA3D<double> const &points,
                                  const double bias, SOA3D<double> &dirs) const {
-  const int size = dirs.size();
+
   assert(bias >= 0. && bias <= 1.);
+
+  const int size = dirs.size();
+  int n_hits = 0;
+  std::vector<bool> hit(size, false);
+  int h;
 
   // Randomize points
   FillRandomDirections(dirs);
 
   // Check hits
-  int n_hits = 0;
-  std::vector<bool> hit(size, false);
   for (int i = 0; i < size; ++i) {
     for (auto j = daughters.begin(); j != daughters.end(); ++j) {
       if (IsFacingShape(points[i], dirs[i], *j)) {
@@ -72,14 +77,10 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
     }
   }
 
-  // Remove hits until threshold
-  int h = 0;
-  while (n_hits / size > bias) {
-    if (!hit[h]) {
-      h++;
-      continue;
-    }
-    do {
+  // Add hits until threshold
+  h = 0;
+  while (double(n_hits) / double(size) >= bias) {
+    while (hit[h]) {
       dirs.Set(h, SampleDirection());
       for (auto i = daughters.begin(); i != daughters.end(); ++i) {
         if (!IsFacingShape(points[h], dirs[h], *i)) {
@@ -88,18 +89,15 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
           break;
         }
       }
-    } while (hit[h]);
+    }
     h++;
   }
 
+
   // Add hits until threshold
   h = 0;
-  while (n_hits / size < bias) {
-    if (hit[h]) {
-      h++;
-      continue;
-    }
-    do {
+  while (double(n_hits) / double(size) < bias) {
+    while (!hit[h]) {
       dirs.Set(h, SampleDirection());
       for (auto i = daughters.begin(); i != daughters.end(); ++i) {
         if (IsFacingShape(points[h], dirs[h], *i)) {
@@ -108,7 +106,7 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
           break;
         }
       }
-    } while (!hit[h]);
+    }
     h++;
   }
 
@@ -116,10 +114,12 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
 
 void Shape::FillUncontainedPoints(SOA3D<double> &points) const {
   const int size = points.size();
-  for (int i = 0; i < size; i++) {
-    bool contained = false;
+  const Vector3D<double> dim = bounding_box->Dimensions();
+  for (int i = 0; i < size; ++i) {
+    bool contained;
     do {
-      points.Set(i, SamplePoint(bounding_box->Dimensions()));
+      points.Set(i, SamplePoint(dim));
+      contained = false;
       for (auto j = daughters.begin(); j != daughters.end(); ++j) {
         // Dirty hack until better architecture is implemented
         if (((Box*)(*j))->Contains<kScalar>(points[i])) {

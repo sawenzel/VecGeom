@@ -6,8 +6,8 @@ namespace kernel {
 namespace box {
 
 __global__
-void ContainsWrapper(const Vector3D<float> dimensions,
-                     TransMatrix<float> const * const trans_matrix,
+void ContainsWrapper(const Vector3D<CudaFloat> dimensions,
+                     TransMatrix<CudaFloat> const * const trans_matrix,
                      SOA3D<double> const points, bool *output) {
 
   const int index = ThreadIndex();
@@ -17,17 +17,17 @@ void ContainsWrapper(const Vector3D<float> dimensions,
 }
 
 __global__
-void DistanceToInWrapper(const Vector3D<float> dimensions,
-                         TransMatrix<float> const * const trans_matrix,
+void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
+                         TransMatrix<CudaFloat> const * const trans_matrix,
                          SOA3D<double> const pos, SOA3D<double> const dir,
                          double const *step_max, double *distance) {
 
   const int index = ThreadIndex();
   if (index >= pos.size()) return;
-  distance[index] = DistanceToIn<kCuda>(dimensions, trans_matrix,
-                                        VectorAsFloatDevice(pos[index]),
-                                        VectorAsFloatDevice(dir[index]),
-                                        step_max[index]);
+  distance[index] = double(DistanceToIn<kCuda>(dimensions, trans_matrix,
+                                               VectorAsFloatDevice(pos[index]),
+                                               VectorAsFloatDevice(dir[index]),
+                                               CudaFloat(step_max[index])));
 }
 
 } // End namespace box
@@ -62,5 +62,5 @@ void Box::DistanceToIn<kCuda>(SOA3D<double> const &pos,
     step_max,
     distance
   );
-
+  CheckCudaError();
 }

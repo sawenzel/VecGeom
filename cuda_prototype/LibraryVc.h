@@ -77,4 +77,10 @@ void MaskedAssign(const VcBool &cond,
   output(cond) = thenval;
 }
 
+template <>
+inline __attribute__((always_inline))
+VcFloat Abs<kVc, VcFloat>(VcFloat const &val) {
+  return Vc::abs(val);
+}
+
 #endif /* LIBRARYVC_H */

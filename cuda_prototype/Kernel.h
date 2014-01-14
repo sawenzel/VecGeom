@@ -14,14 +14,12 @@ typename ImplTraits<it>::bool_v Contains(
     TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
     Vector3D<typename ImplTraits<it>::float_v> const &point) {
 
-  Vector3D<typename ImplTraits<it>::float_v> local = point;
-  if (!matrix->IsIdentity()) {
-    local = matrix->MasterToLocal(point);
-  }
+  const Vector3D<typename ImplTraits<it>::float_v> local =
+      matrix->Transform(point);
 
   typename ImplTraits<it>::bool_v inside[3];
   for (int i = 0; i < 3; ++i) {
-    inside[i] = abs(local[i]) < dimensions[i];
+    inside[i] = Abs<it>(local[i]) < dimensions[i];
     if (ImplTraits<it>::early_return) {
       if (!inside[i]) return ImplTraits<it>::kFalse;
     }
@@ -57,51 +55,53 @@ typename ImplTraits<it>::float_v DistanceToIn(
   Bool done = ImplTraits<it>::kFalse;
   Float distance(kInfinity);
 
-  matrix->MasterToLocal(pos, pos_local);
-  matrix->MasterToLocal(dir, dir_local);
+  matrix->Transform(pos, pos_local);
+  matrix->TransformRotation(dir, dir_local);
 
-  safety[0] = abs(pos_local[0]) - dimensions[0];
-  safety[1] = abs(pos_local[1]) - dimensions[1];
-  safety[2] = abs(pos_local[2]) - dimensions[2];
+  safety[0] = Abs<it>(pos_local[0]) - dimensions[0];
+  safety[1] = Abs<it>(pos_local[1]) - dimensions[1];
+  safety[2] = Abs<it>(pos_local[2]) - dimensions[2];
 
   done |= (safety[0] >= step_max ||
            safety[1] >= step_max ||
            safety[2] >= step_max);
   if (done == ImplTraits<it>::kTrue) return distance;
 
-  Vector3D<Float> next;
-  Float coord1, coord2;
+  Float next, coord1, coord2;
 
   // x
-  next[0] = safety[0] / (abs(dir_local[0]) + kTiny);
-  coord1 = pos_local[1] + next[0] * dir_local[1];
-  coord2 = pos_local[2] + next[0] * dir_local[2];
+  next = safety[0] / Abs<it>(dir_local[0] + kTiny);
+  coord1 = pos_local[1] + next * dir_local[1];
+  coord2 = pos_local[2] + next * dir_local[2];
   hit = safety[0] > 0 &&
         pos_local[0] * dir_local[0] < 0 &&
-        (abs(coord1) <= dimensions[1] && abs(coord2) <= dimensions[2]);
-  MaskedAssign(!done && hit, next[0], distance);
+        Abs<it>(coord1) <= dimensions[1] &&
+        Abs<it>(coord2) <= dimensions[2];
+  MaskedAssign(!done && hit, next, distance);
   done |= hit;
   if (done == ImplTraits<it>::kTrue) return distance;
 
   // y
-  next[1] = safety[1] / (abs(dir_local[1]) + kTiny);
-  coord1 = pos_local[0] + next[1] * dir_local[0];
-  coord2 = pos_local[2] + next[1] * dir_local[2];
+  next = safety[1] / Abs<it>(dir_local[1] + kTiny);
+  coord1 = pos_local[0] + next * dir_local[0];
+  coord2 = pos_local[2] + next * dir_local[2];
   hit = safety[1] > 0 &&
         pos_local[1] * dir_local[1] < 0 &&
-        (abs(coord1) <= dimensions[0] && abs(coord2) <= dimensions[2]);
-  MaskedAssign(!done && hit, next[1], distance);
+        Abs<it>(coord1) <= dimensions[0] &&
+        Abs<it>(coord2) <= dimensions[2];
+  MaskedAssign(!done && hit, next, distance);
   done |= hit;
   if (done == ImplTraits<it>::kTrue) return distance;
 
   // z
-  next[2] = safety[2] / (abs(dir_local[2]) + kTiny);
-  coord1 = pos_local[0] + next[2] * dir_local[0];
-  coord2 = pos_local[1] + next[2] * dir_local[1];
+  next = safety[2] / Abs<it>(dir_local[2] + kTiny);
+  coord1 = pos_local[0] + next * dir_local[0];
+  coord2 = pos_local[1] + next * dir_local[1];
   hit = safety[2] > 0 &&
         pos_local[2] * dir_local[2] < 0 &&
-        (abs(coord1) <= dimensions[0] && abs(coord2) <= dimensions[1]);
-  MaskedAssign(!done && hit, next[1], distance);
+        Abs<it>(coord1) <= dimensions[0] &&
+        Abs<it>(coord2) <= dimensions[1];
+  MaskedAssign(!done && hit, next, distance);
 
   return distance;
 }

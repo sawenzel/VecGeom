@@ -22,10 +22,6 @@ public:
     return dimensions;
   }
 
-  inline void SetCudaMatrix(TransMatrix<float> const * const trans_cuda) {
-    trans_matrix_cuda = trans_cuda;
-  }
-
   // Contains
 
   template <ImplType it>
