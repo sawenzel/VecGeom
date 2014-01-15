@@ -109,6 +109,27 @@ struct Stopwatch {
 };
 
 template <typename Type>
+void PrintArray(Type const &arr, const int size) {
+  #ifdef NVCC
+  if (size <= 0) {
+    printf("[]\n");
+    return;
+  }
+  printf("[%f", arr[0]);
+  for (int i = 1; i < size; ++i) printf(", %f", arr[i]);
+  printf("]\n");
+  #else
+  if (size <= 0) {
+    std::cout << "[]\n";
+    return;
+  }
+  std::cout << "[" << arr[0];
+  for (int i = 1; i < size; ++i) std::cout << ", " << arr[i];
+  std::cout << "]";
+  #endif
+}
+
+template <typename Type>
 struct Vector3D {
 
 private:
@@ -522,8 +543,8 @@ public:
   template <typename OtherType>
   CUDA_HEADER_BOTH
   TransMatrix(TransMatrix<OtherType> const &other) {
-    SetTranslation(Float(other.Translation(1)), Float(other.Translation(2)),
-                   Float(other.Translation(3)));
+    SetTranslation(Float(other.Translation(0)), Float(other.Translation(1)),
+                   Float(other.Translation(2)));
     SetRotation(Float(other.Rotation(0)), Float(other.Rotation(1)),
                 Float(other.Rotation(2)), Float(other.Rotation(3)),
                 Float(other.Rotation(4)), Float(other.Rotation(5)),

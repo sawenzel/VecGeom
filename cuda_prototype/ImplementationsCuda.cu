@@ -24,10 +24,11 @@ void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
 
   const int index = ThreadIndex();
   if (index >= pos.size()) return;
-  distance[index] = double(DistanceToIn<kCuda>(dimensions, trans_matrix,
-                                               VectorAsFloatDevice(pos[index]),
-                                               VectorAsFloatDevice(dir[index]),
-                                               CudaFloat(step_max[index])));
+  const CudaFloat dist = DistanceToIn<kCuda>(dimensions, trans_matrix,
+                                              VectorAsFloatDevice(pos[index]),
+                                              VectorAsFloatDevice(dir[index]),
+                                              CudaFloat(step_max[index]));
+  distance[index] = double(dist);
 }
 
 } // End namespace box

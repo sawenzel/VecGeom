@@ -78,8 +78,8 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
   }
 
   // Add hits until threshold
-  h = 0;
   while (double(n_hits) / double(size) >= bias) {
+    h = int(double(size) * uniform_dist(rng));
     while (hit[h]) {
       dirs.Set(h, SampleDirection());
       for (auto i = daughters.begin(); i != daughters.end(); ++i) {
@@ -90,13 +90,12 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
         }
       }
     }
-    h++;
   }
 
 
   // Add hits until threshold
-  h = 0;
   while (double(n_hits) / double(size) < bias) {
+    h = int(double(size) * uniform_dist(rng));
     while (!hit[h]) {
       dirs.Set(h, SampleDirection());
       for (auto i = daughters.begin(); i != daughters.end(); ++i) {
@@ -107,7 +106,6 @@ void Shape::FillBiasedDirections(SOA3D<double> const &points,
         }
       }
     }
-    h++;
   }
 
 }

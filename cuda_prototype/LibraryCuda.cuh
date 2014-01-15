@@ -87,7 +87,7 @@ template <>
 CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
 CudaFloat Abs<kCuda, CudaFloat>(CudaFloat const &val) {
-  return abs(val);
+  return fabs(val);
 }
 
 // Use scalar implementation

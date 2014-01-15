@@ -15,7 +15,7 @@ int main(void) {
   TransMatrix<double> *pos = new TransMatrix<double>();
   pos->SetTranslation(2.93, 1.30, -4.05);
   Box world(Vector3D<double>(10., 10., 10.), origin);
-  const Box box(Vector3D<double>(2., 2., 2.), pos);
+  Box box(Vector3D<double>(2., 2., 2.), pos);
   world.AddDaughter(&box);
 
   SOA3D<double> points(n_points);
@@ -41,7 +41,9 @@ int main(void) {
 
   int hit = 0;
   for (int i = 0; i < n_points; ++i) {
-    if (output[i] < kInfinity) hit++;
+    if (output[i] < kInfinity) {
+      hit++;
+    }
   }
 
   std::cout << double(hit)/double(n_points)

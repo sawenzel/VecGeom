@@ -13,12 +13,13 @@ double LaunchCuda(Box * const box, SOA3D<double> const &points,
                   double *output) {
 
   SOA3D<double> points_dev = points.CopyToGPU();
-  SOA3D<double> directions_dev = points.CopyToGPU();
+  SOA3D<double> directions_dev = directions.CopyToGPU();
   double *output_dev = AllocateOnGPU<double>(points.size());
   double *step_max_dev = AllocateOnGPU<double>(points.size());
   CopyToGPU(step_max, step_max_dev, points.size());
   TransMatrix<float> *trans_matrix_dev = AllocateOnGPU<TransMatrix<float> >(1);
   TransMatrix<float> converted(*box->TransformationMatrix());
+
   CopyToGPU(&converted, trans_matrix_dev, 1);
   box->SetCudaMatrix(trans_matrix_dev);
 
@@ -43,7 +44,7 @@ double LaunchCuda(Box * const box, SOA3D<double> const &points,
 }
 
 int main(void) {
-
+  
   const int n_points = 1<<19;
 
   const TransMatrix<double> *origin = new TransMatrix<double>();
@@ -66,15 +67,21 @@ int main(void) {
     step_max[i] = kInfinity;
   }
 
+  Stopwatch timer;
+  timer.Start();
   const double elapsed = LaunchCuda(&box, points, directions, step_max, output);
-  
+  timer.Stop();
+
   std::cout << "CUDA benchmark for " << n_points << " points finished in "
-            << elapsed << "s.\n";
+            << elapsed << "s (" << timer.Elapsed() << "s including overhead).\n";
 
   int hit = 0;
   for (int i = 0; i < n_points; ++i) {
-    if (output[i] < kInfinity) hit++;
+    if (output[i] < kInfinity) {
+      hit++;
+    }
   }
+
 
   std::cout << double(hit)/double(n_points)
             << " hit something.\n";
