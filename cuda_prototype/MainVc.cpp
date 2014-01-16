@@ -8,8 +8,11 @@ double random(const double low, const double high) {
 }
 
 int main(void) {
+
+  Stopwatch timer_total;
+  timer_total.Start();
   
-  const int n_points = 1<<19;
+  const int n_points = 1<<21;
 
   const TransMatrix<double> *origin = new TransMatrix<double>();
   TransMatrix<double> *pos = new TransMatrix<double>();
@@ -33,7 +36,7 @@ int main(void) {
 
   Stopwatch timer;
   timer.Start();
-  box.DistanceToIn<kVc>(points, directions, step_max, output);
+  box.DistanceToIn(points, directions, step_max, output);
   timer.Stop();
   
   std::cout << "Vc benchmark for " << n_points << " points finished in "
@@ -48,6 +51,9 @@ int main(void) {
 
   std::cout << double(hit)/double(n_points)
             << " hit something.\n";
+
+  timer_total.Stop();
+  std::cout << "Total binary execution time: " << timer.Elapsed() << "s.\n";
 
   return 0;
 }

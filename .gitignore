@@ -3,4 +3,5 @@ CMakeCache.txt
 bin/
 build/
 doc/
+profiling/
 *.o

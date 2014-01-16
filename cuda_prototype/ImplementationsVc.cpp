@@ -6,9 +6,8 @@ const VcBool ImplTraits<kVc>::kTrue = VcBool(true);
 const VcBool ImplTraits<kVc>::kFalse = VcBool(false);
 const VcFloat ImplTraits<kVc>::kZero = Vc::Zero;
 
-template <>
-void Box::Contains<kVc>(SOA3D<double> const &points,
-                        bool *output) const {
+void Box::Contains(SOA3D<double> const &points,
+                   bool *output) const {
 
   const int size = points.size();
   for (int i = 0; i < size; i += kVectorSize) {
@@ -22,11 +21,10 @@ void Box::Contains<kVc>(SOA3D<double> const &points,
 
 }
 
-template <>
-void Box::DistanceToIn<kVc>(SOA3D<double> const &pos,
-                            SOA3D<double> const &dir,
-                            double const *steps_max,
-                            double *distance) const {
+void Box::DistanceToIn(SOA3D<double> const &pos,
+                       SOA3D<double> const &dir,
+                       double const *steps_max,
+                       double *distance) const {
 
   const int size = pos.size();
   for (int i = 0; i < size; i += kVectorSize) {

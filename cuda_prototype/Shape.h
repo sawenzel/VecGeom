@@ -37,7 +37,7 @@ public:
     daughters.push_back(daughter);
   }
 
-  static void FillRandomDirections(SOA3D<double>& /*dirs*/);
+  static void FillRandomDirections(SOA3D<double>& /*dirs*/)  ;
 
   void FillUncontainedPoints(SOA3D<double>& /*points*/) const;
 
@@ -45,39 +45,27 @@ public:
                             const double /*bias*/,
                             SOA3D<double>& /*dirs*/) const;
 
-  void SetCudaMatrix(TransMatrix<float> const * const trans_cuda) {
+  void SetCudaMatrix(TransMatrix<CudaFloat> const * const trans_cuda) {
     trans_matrix_cuda = trans_cuda;
   }
 
-  // // Contains
+  // Contains
 
-  // virtual bool Contains(Vector3D<double> const& /*point*/) const =0;
+  virtual bool Contains(Vector3D<double> const& /*point*/) const =0;
 
-  // virtual void Contains(SOA3D<double> const& /*points*/,
-  //                       bool* /*output*/) const =0;
+  virtual void Contains(SOA3D<double> const& /*points*/,
+                        bool* /*output*/) const =0;
 
-  // virtual void Contains_Vc(SOA3D<double> const& /*points*/,
-  //                          bool* /*output*/) const =0;
+  // DistanceToIn
 
-  // virtual void Contains_CUDA(SOA3D<double> const& /*points*/,
-  //                            bool* /*output*/) const =0;
+  virtual double DistanceToIn(Vector3D<double> const& /*point*/,
+                              Vector3D<double> const& /*dir*/,
+                              double const step_max) const =0;
 
-  // // DistanceToIn
-
-  // virtual double DistanceToIn(Vector3D<double> const& /*point*/,
-  //                             Vector3D<double> const& /*dir*/) const =0;
-
-  // virtual void DistanceToIn(SOA3D<double> const& /*pos*/,
-  //                           SOA3D<double> const& /*dir*/,
-  //                           double* distance) const =0;
-
-  // virtual void DistanceToIn_Vc(SOA3D<double> const& /*pos*/,
-  //                              SOA3D<double> const& /*dir*/,
-  //                              double* distance) const =0;
-
-  // virtual void DistanceToIn_CUDA(SOA3D<double> const& /*pos*/,
-  //                                SOA3D<double> const& /*dir*/,
-  //                                double* distance) const =0;
+  virtual void DistanceToIn(SOA3D<double> const& /*pos*/,
+                            SOA3D<double> const& /*dir*/,
+                            double const *step_max,
+                            double* distance) const =0;
 
 private:
 

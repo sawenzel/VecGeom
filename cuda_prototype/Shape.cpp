@@ -49,9 +49,7 @@ inline bool IsFacingShape(Vector3D<double> const &point,
                           Vector3D<double> const &dir,
                           Shape const * const shape) {
   // Dirty hack until a better architecture is invented/implemented
-  return ((Box*)shape)->DistanceToIn<kScalar>(
-    point, dir, kInfinity
-  ) < kInfinity;
+  return shape->DistanceToIn(point, dir, kInfinity) < kInfinity;
 }
 
 void Shape::FillBiasedDirections(SOA3D<double> const &points,
@@ -120,7 +118,7 @@ void Shape::FillUncontainedPoints(SOA3D<double> &points) const {
       contained = false;
       for (auto j = daughters.begin(); j != daughters.end(); ++j) {
         // Dirty hack until better architecture is implemented
-        if (((Box*)(*j))->Contains<kScalar>(points[i])) {
+        if ((*j)->Contains(points[i])) {
           contained = true;
           break;
         }

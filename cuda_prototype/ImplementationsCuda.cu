@@ -12,8 +12,9 @@ void ContainsWrapper(const Vector3D<CudaFloat> dimensions,
 
   const int index = ThreadIndex();
   if (index >= points.size()) return;
+  Vector3D<double> point = points[index];
   output[index] = Contains<kCuda>(dimensions, trans_matrix,
-                                  VectorAsFloatDevice(points[index]));
+                                  DeviceVector(point));
 }
 
 __global__
@@ -25,8 +26,8 @@ void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
   const int index = ThreadIndex();
   if (index >= pos.size()) return;
   const CudaFloat dist = DistanceToIn<kCuda>(dimensions, trans_matrix,
-                                              VectorAsFloatDevice(pos[index]),
-                                              VectorAsFloatDevice(dir[index]),
+                                              DeviceVector(pos[index]),
+                                              DeviceVector(dir[index]),
                                               CudaFloat(step_max[index]));
   distance[index] = double(dist);
 }
@@ -34,13 +35,12 @@ void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
 } // End namespace box
 } // End namespace kernel
 
-template <>
-void Box::Contains<kCuda>(SOA3D<double> const &points,
-                          bool *output) const {
+void Box::Contains(SOA3D<double> const &points,
+                   bool *output) const {
 
-  const int blocks_per_grid = BlocksPerGrid(points.size());
-  kernel::box::ContainsWrapper<<<threads_per_block, blocks_per_grid>>>(
-    VectorAsFloatHost(dimensions),
+  const LaunchParameters launch(points.size());
+  kernel::box::ContainsWrapper<<<launch.grid_size, launch.block_size>>>(
+    DeviceVector(dimensions),
     trans_matrix_cuda,
     points,
     output
@@ -48,15 +48,14 @@ void Box::Contains<kCuda>(SOA3D<double> const &points,
 
 }
 
-template <>
-void Box::DistanceToIn<kCuda>(SOA3D<double> const &pos,
-                              SOA3D<double> const &dir,
-                              double const *step_max,
-                              double *distance) const {
+void Box::DistanceToIn(SOA3D<double> const &pos,
+                       SOA3D<double> const &dir,
+                       double const *step_max,
+                       double *distance) const {
 
-  const int blocks_per_grid = BlocksPerGrid(pos.size());
-  kernel::box::DistanceToInWrapper<<<threads_per_block, blocks_per_grid>>>(
-    VectorAsFloatHost(dimensions),
+  const LaunchParameters launch(pos.size());
+  kernel::box::DistanceToInWrapper<<<launch.grid_size, launch.block_size>>>(
+    DeviceVector(dimensions),
     trans_matrix_cuda,
     pos,
     dir,

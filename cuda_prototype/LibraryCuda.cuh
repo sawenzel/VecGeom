@@ -21,6 +21,28 @@ struct ImplTraits<kCuda> {
 typedef ImplTraits<kCuda>::int_v  CudaInt;
 typedef ImplTraits<kCuda>::bool_v CudaBool;
 
+struct LaunchParameters {
+  dim3 block_size;
+  dim3 grid_size;
+  LaunchParameters(const int threads) {
+    // Blocks always one dimensional
+    block_size.x = threads_per_block;
+    block_size.y = 1;
+    block_size.z = 1;
+    // Grid becomes two dimensions at large sizes
+    const int blocks = 1 + (threads - 1) / threads_per_block;
+    grid_size.z = 1;
+    if (blocks <= 1<<16) {
+      grid_size.x = blocks;
+      grid_size.y = 1;
+    } else {
+      int dim = int(sqrt(double(blocks)) + 0.5);
+      grid_size.x = dim;
+      grid_size.y = dim;
+    }
+  }
+};
+
 __host__
 inline __attribute__((always_inline))
 void CheckCudaError() {
@@ -31,33 +53,21 @@ void CheckCudaError() {
     assert(err != cudaSuccess);
   }
 }
-
-__device__
+__host__ __device__
 inline __attribute__((always_inline))
-Vector3D<float> VectorAsFloatDevice(Vector3D<double> const &vec) {
-  return Vector3D<float>(__double2float_rd(vec[0]),
-                         __double2float_rd(vec[1]),
-                         __double2float_rd(vec[2]));
-}
-
-__host__
-inline __attribute__((always_inline))
-Vector3D<float> VectorAsFloatHost(Vector3D<double> const &vec) {
-  return Vector3D<float>(float(vec[0]),
-                         float(vec[1]),
-                         float(vec[2]));
+Vector3D<CudaFloat> DeviceVector(
+    Vector3D<double> const &vec) {
+  return Vector3D<CudaFloat>(CudaFloat(vec[0]),
+                             CudaFloat(vec[1]),
+                             CudaFloat(vec[2]));
 }
 
 __device__
 inline __attribute__((always_inline))
 int ThreadIndex() {
-  return blockIdx.x * blockDim.x + threadIdx.x;
-}
-
-__host__
-inline __attribute__((always_inline))
-int BlocksPerGrid(const int threads) {
-  return (threads - 1) / threads_per_block + 1;
+  return blockDim.x * gridDim.x * blockIdx.y
+         + blockDim.x * blockIdx.x
+         + threadIdx.x;
 }
 
 template <typename Type>

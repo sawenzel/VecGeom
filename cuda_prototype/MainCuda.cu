@@ -17,8 +17,9 @@ double LaunchCuda(Box * const box, SOA3D<double> const &points,
   double *output_dev = AllocateOnGPU<double>(points.size());
   double *step_max_dev = AllocateOnGPU<double>(points.size());
   CopyToGPU(step_max, step_max_dev, points.size());
-  TransMatrix<float> *trans_matrix_dev = AllocateOnGPU<TransMatrix<float> >(1);
-  TransMatrix<float> converted(*box->TransformationMatrix());
+  TransMatrix<CudaFloat> *trans_matrix_dev =
+      AllocateOnGPU<TransMatrix<CudaFloat> >(1);
+  TransMatrix<CudaFloat> converted(*box->TransformationMatrix());
 
   CopyToGPU(&converted, trans_matrix_dev, 1);
   box->SetCudaMatrix(trans_matrix_dev);
@@ -27,8 +28,7 @@ double LaunchCuda(Box * const box, SOA3D<double> const &points,
 
   Stopwatch timer;
   timer.Start();
-  box->DistanceToIn<kCuda>(points_dev, directions_dev, step_max_dev,
-                           output_dev);
+  box->DistanceToIn(points_dev, directions_dev, step_max_dev, output_dev);
   timer.Stop();
 
   CopyFromGPU(output_dev, output, points.size());
@@ -45,7 +45,7 @@ double LaunchCuda(Box * const box, SOA3D<double> const &points,
 
 int main(void) {
   
-  const int n_points = 1<<19;
+  const int n_points = 1<<21;
 
   const TransMatrix<double> *origin = new TransMatrix<double>();
   TransMatrix<double> *pos = new TransMatrix<double>();
