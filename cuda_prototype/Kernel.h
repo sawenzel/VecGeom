@@ -9,10 +9,11 @@ namespace box {
 template <ImplType it>
 inline __attribute__((always_inline))
 CUDA_HEADER_BOTH
-typename ImplTraits<it>::bool_v Contains(
-    Vector3D<typename ImplTraits<it>::float_t> const &dimensions,
+void Contains(
+    Vector3D   <typename ImplTraits<it>::float_t> const &dimensions,
     TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
-    Vector3D<typename ImplTraits<it>::float_v> const &point) {
+    Vector3D   <typename ImplTraits<it>::float_v> const &point,
+    typename ImplTraits<it>::bool_v               &output) {
 
   const Vector3D<typename ImplTraits<it>::float_v> local =
       matrix->Transform(point);
@@ -21,26 +22,30 @@ typename ImplTraits<it>::bool_v Contains(
   for (int i = 0; i < 3; ++i) {
     inside[i] = Abs<it>(local[i]) < dimensions[i];
     if (ImplTraits<it>::early_return) {
-      if (!inside[i]) return ImplTraits<it>::kFalse;
+      if (!inside[i]) {
+        output = ImplTraits<it>::kFalse;
+        return;
+      }
     }
   }
 
   if (ImplTraits<it>::early_return) {
-    return ImplTraits<it>::kTrue;
+    output = ImplTraits<it>::kTrue;
   } else {
-    return inside[0] && inside[1] && inside[2];
+    output = inside[0] && inside[1] && inside[2];
   }
 }
 
 template <ImplType it>
 inline __attribute__((always_inline))
 CUDA_HEADER_BOTH
-typename ImplTraits<it>::float_v DistanceToIn(
-    Vector3D<typename ImplTraits<it>::float_t> const &dimensions,
+void DistanceToIn(
+    Vector3D   <typename ImplTraits<it>::float_t> const &dimensions,
     TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
-    Vector3D<typename ImplTraits<it>::float_v> const &pos,
-    Vector3D<typename ImplTraits<it>::float_v> const &dir,
-    typename ImplTraits<it>::float_v const &step_max) {
+    Vector3D   <typename ImplTraits<it>::float_v> const &pos,
+    Vector3D   <typename ImplTraits<it>::float_v> const &dir,
+    typename ImplTraits<it>::float_v              const &step_max,
+    typename ImplTraits<it>::float_v              &distance) {
 
   // Typedef templated types for readability
   typedef typename ImplTraits<it>::float_v Float;
@@ -53,7 +58,7 @@ typename ImplTraits<it>::float_v DistanceToIn(
   Vector3D<Float> dir_local;
   Bool hit = ImplTraits<it>::kFalse;
   Bool done = ImplTraits<it>::kFalse;
-  Float distance(kInfinity);
+  distance = kInfinity;
 
   matrix->Transform(pos, pos_local);
   matrix->TransformRotation(dir, dir_local);
@@ -65,7 +70,7 @@ typename ImplTraits<it>::float_v DistanceToIn(
   done |= (safety[0] >= step_max ||
            safety[1] >= step_max ||
            safety[2] >= step_max);
-  if (done == ImplTraits<it>::kTrue) return distance;
+  if (done == ImplTraits<it>::kTrue) return;
 
   Float next, coord1, coord2;
 
@@ -79,7 +84,7 @@ typename ImplTraits<it>::float_v DistanceToIn(
         Abs<it>(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, distance);
   done |= hit;
-  if (done == ImplTraits<it>::kTrue) return distance;
+  if (done == ImplTraits<it>::kTrue) return;
 
   // y
   next = safety[1] / Abs<it>(dir_local[1] + kTiny);
@@ -91,7 +96,7 @@ typename ImplTraits<it>::float_v DistanceToIn(
         Abs<it>(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, distance);
   done |= hit;
-  if (done == ImplTraits<it>::kTrue) return distance;
+  if (done == ImplTraits<it>::kTrue) return;
 
   // z
   next = safety[2] / Abs<it>(dir_local[2] + kTiny);
@@ -103,7 +108,6 @@ typename ImplTraits<it>::float_v DistanceToIn(
         Abs<it>(coord2) <= dimensions[1];
   MaskedAssign(!done && hit, next, distance);
 
-  return distance;
 }
 
 } // End namespace box 

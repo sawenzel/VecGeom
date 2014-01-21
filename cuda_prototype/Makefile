@@ -4,12 +4,19 @@ CXX_FLAGS=-m64 -std=c++11 -Wall # -lprofiler
 CXX_FLAGS+=${CXX_OPT}
 CXX_INCLUDE=-I ./ -I ${VCROOT}/include -I$ ${TBBROOT}/include
 CXX_LIBS=-L ${TBBROOT}/lib -ltbb -lrt
-CXX_SRC=ImplementationsScalar.cpp Shape.cpp
+CXX_SRC=Box.cpp Shape.cpp
 CXX_OBJS=$(addprefix obj/, $(addsuffix .o, $(CXX_SRC)))
 
 VC_SRC=ImplementationsVc.cpp
 VC_OBJS=$(addprefix obj/, $(addsuffix .vc.o, $(VC_SRC)))
 VC_OPT=-L ${VCROOT}/lib -lVc
+
+CILK=icc
+CILK_SRC=ImplementationsCilk.cpp
+CILK_OBJS=$(addprefix obj/, $(addsuffix .cilk.o, $(CILK_SRC)))
+CILK_FLAGS=$(CXX_FLAGS)
+CILK_OPT=-ffast-math -finline-limit=10000000 -mavx -ftree-vectorize -O2
+CILK_INCLUDE=$(CXX_INCLUDE)
 
 NVCC=nvcc
 NVCC_FLAGS=-O2 -arch=sm_30 
@@ -23,19 +30,31 @@ all: objs
 %.cpp.vc.o: ../%.cpp
 	$(CXX) -c $(CXX_FLAGS) $(VC_OPT) $(CXX_INCLUDE) $< -o $@
 
+%.cpp.cilk.o: ../%.cpp
+	$(CILK) -c $(CILK_FLAGS) $(CILK_OPT) $(CILK_INCLUDE) $< -o $@
+
 %.cpp.o: ../%.cpp
 	$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@
 
 %.cu.o: ../%.cu
 	$(NVCC) -c $(NVCC_FLAGS) $(NVCC_INCLUDE) $< -o $@ 
 
-objs: $(CXX_OBJS) $(VC_OBJS) $(NVCC_OBJS)
+objs: $(CXX_OBJS) $(VC_OBJS) $(NVCC_OBJS) $(CILK_OBJS)
 
 MainVc: MainVc.cpp $(CXX_OBJS) $(VC_OBJS)
 	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $(VC_OBJS) MainVc.cpp -o bin/MainVc $(VC_OPT) $(CXX_LIBS)
 
 MainCuda: MainCuda.cu $(CXX_OBJS) $(NVCC_OBJS)
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_INCLUDE) $(CXX_OBJS) $(NVCC_OBJS) MainCuda.cu -o bin/MainCuda $(NVCC_LIBS)
+
+MainCilk: MainCilk.cpp $(CXX_OBJS) $(CILK_OBJS)
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $(CILK_OBJS) MainCilk.cpp -o bin/MainCilk $(CILK_OPT) $(CXX_LIBS)
+
+TestCase: TestCase.cpp $(CXX_OBJS) $(VC_OBJS)
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $(VC_OBJS) TestCase.cpp -o bin/TestCase $(VC_OPT) $(CXX_LIBS)
+
+CompareOutput: CompareOutput.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) CompareOutput.cpp -o bin/CompareOutput $(CXX_LIBS)
 
 clean:
 	@rm obj/*.o

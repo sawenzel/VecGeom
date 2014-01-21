@@ -9,6 +9,7 @@
 #include "mm_malloc.h"
 #include <cmath>
 #include <cassert>
+#include <cstdlib>
 
 #ifndef __CUDACC__
 #define STD_CXX11
@@ -38,13 +39,13 @@ const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
 const double kInfinity = INFINITY;
 
-enum ImplType { kVc, kCuda, kScalar };
+enum ImplType { kVc, kCuda, kScalar, kCilk };
 
 template <ImplType it>
 struct ImplTraits {};
 
 // Possibility to switch to doubles
-typedef float CudaFloat;
+typedef double CudaFloat;
 
 template <>
 struct ImplTraits<kScalar> {
@@ -104,7 +105,10 @@ struct Stopwatch {
   tbb::tick_count t1;
   tbb::tick_count t2;
   void Start() { t1 = tbb::tick_count::now(); }
-  void Stop() { t2 = tbb::tick_count::now(); }
+  double Stop() {
+    t2 = tbb::tick_count::now();
+    return Elapsed();
+  }
   double Elapsed() const { return (t2-t1).seconds(); }
 };
 
@@ -163,6 +167,18 @@ public:
     vec[0] = other[0];
     vec[1] = other[1];
     vec[2] = other[2];
+  }
+
+  CUDA_HEADER_HOST
+  Vector3D(std::string const &str) {
+    int begin = 1, end = str.find(",");
+    vec[0] = std::atof(str.substr(begin, end-begin).c_str());
+    begin = end + 2;
+    end = str.find(",", begin);
+    vec[1] = std::atof(str.substr(begin, end-begin).c_str());
+    begin = end + 2;
+    end = str.find(")", begin);
+    vec[2] = std::atof(str.substr(begin, end-begin).c_str());
   }
 
   CUDA_HEADER_BOTH
@@ -259,11 +275,13 @@ public:
   }
 
   #ifdef STD_CXX11
+
   friend inline __attribute__((always_inline))
   std::ostream& operator<<(std::ostream& os, Vector3D<Type> const &v) {
     os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
     return os;
   }
+
   #endif /* STD_CXX11 */
 
   CUDA_HEADER_BOTH

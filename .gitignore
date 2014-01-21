@@ -4,4 +4,5 @@ bin/
 build/
 doc/
 profiling/
+io/
 *.o

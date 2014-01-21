@@ -3,7 +3,7 @@
 #include <vector>
 #include <random>
 
-static std::mt19937 rng(1);
+static std::mt19937 rng(0);
 std::uniform_real_distribution<> uniform_dist(0,1);
 
 Vector3D<double> Shape::SamplePoint(Vector3D<double> const &size,

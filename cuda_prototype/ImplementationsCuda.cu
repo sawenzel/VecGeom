@@ -13,8 +13,7 @@ void ContainsWrapper(const Vector3D<CudaFloat> dimensions,
   const int index = ThreadIndex();
   if (index >= points.size()) return;
   Vector3D<double> point = points[index];
-  output[index] = Contains<kCuda>(dimensions, trans_matrix,
-                                  DeviceVector(point));
+  Contains<kCuda>(dimensions, trans_matrix, DeviceVector(point), output[index]);
 }
 
 __global__
@@ -25,10 +24,10 @@ void DistanceToInWrapper(const Vector3D<CudaFloat> dimensions,
 
   const int index = ThreadIndex();
   if (index >= pos.size()) return;
-  const CudaFloat dist = DistanceToIn<kCuda>(dimensions, trans_matrix,
-                                              DeviceVector(pos[index]),
-                                              DeviceVector(dir[index]),
-                                              CudaFloat(step_max[index]));
+  CudaFloat dist;
+  DistanceToIn<kCuda>(dimensions, trans_matrix, DeviceVector(pos[index]),
+                      DeviceVector(dir[index]), CudaFloat(step_max[index]),
+                      dist);
   distance[index] = double(dist);
 }
 
@@ -45,7 +44,7 @@ void Box::Contains(SOA3D<double> const &points,
     points,
     output
   );
-
+  CheckCudaError();
 }
 
 void Box::DistanceToIn(SOA3D<double> const &pos,

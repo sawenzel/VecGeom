@@ -11,11 +11,13 @@ void Box::Contains(SOA3D<double> const &points,
 
   const int size = points.size();
   for (int i = 0; i < size; i += kVectorSize) {
-    const Vector3D<VcFloat> point((points.Memory(0))[i], (points.Memory(1))[i],
-                                  (points.Memory(2))[i]);
-    const VcBool res = kernel::box::Contains<kVc>(
-      dimensions, trans_matrix, point
+    const Vector3D<VcFloat> point(
+      VcFloat(&points.x(i)),
+      VcFloat(&points.y(i)),
+      VcFloat(&points.z(i))
     );
+    VcBool res;
+    kernel::box::Contains<kVc>(dimensions, trans_matrix, point, res);
     res.store(&output[i]);
   }
 
@@ -28,11 +30,20 @@ void Box::DistanceToIn(SOA3D<double> const &pos,
 
   const int size = pos.size();
   for (int i = 0; i < size; i += kVectorSize) {
-    const Vector3D<VcFloat> p(pos.x(i), pos.y(i), pos.z(i));
-    const Vector3D<VcFloat> d(dir.x(i), dir.y(i), dir.z(i));
-    const VcFloat step_max(steps_max[i]);
-    const VcFloat res = kernel::box::DistanceToIn<kVc>(
-      dimensions, trans_matrix, p, d, step_max
+    const Vector3D<VcFloat> position(
+      VcFloat(&pos.x(i)),
+      VcFloat(&pos.y(i)),
+      VcFloat(&pos.z(i))
+    );
+    const Vector3D<VcFloat> direction(
+      VcFloat(&dir.x(i)),
+      VcFloat(&dir.y(i)),
+      VcFloat(&dir.z(i))
+    );
+    const VcFloat step_max(&steps_max[i]);
+    VcFloat res;
+    kernel::box::DistanceToIn<kVc>(
+      dimensions, trans_matrix, position, direction, step_max, res
     );
     res.store(&distance[i]);
   }
