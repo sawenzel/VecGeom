@@ -1,10 +1,11 @@
 #include "LibraryVc.h"
-#include "Kernel.h"
+#include "KernelBox.h"
 #include "Box.h"
+#include "Tube.h"
 
-const VcBool ImplTraits<kVc>::kTrue = VcBool(true);
-const VcBool ImplTraits<kVc>::kFalse = VcBool(false);
-const VcFloat ImplTraits<kVc>::kZero = Vc::Zero;
+const VcBool Impl<kVc>::kTrue = VcBool(true);
+const VcBool Impl<kVc>::kFalse = VcBool(false);
+const VcFloat Impl<kVc>::kZero = Vc::Zero;
 
 void Box::Contains(SOA3D<double> const &points,
                    bool *output) const {
@@ -17,7 +18,8 @@ void Box::Contains(SOA3D<double> const &points,
       VcFloat(&points.z(i))
     );
     VcBool res;
-    kernel::box::Contains<kVc>(dimensions, trans_matrix, point, res);
+    kernel::box::Contains<kVc>(parameters->dimensions, trans_matrix, point,
+                               res);
     res.store(&output[i]);
   }
 
@@ -43,9 +45,21 @@ void Box::DistanceToIn(SOA3D<double> const &pos,
     const VcFloat step_max(&steps_max[i]);
     VcFloat res;
     kernel::box::DistanceToIn<kVc>(
-      dimensions, trans_matrix, position, direction, step_max, res
+      parameters->dimensions, trans_matrix, position, direction, step_max, res
     );
     res.store(&distance[i]);
   }
 
+}
+
+void Tube::Contains(SOA3D<double> const &points,
+                    bool *output) const {
+  // NYI
+}
+
+void Tube::DistanceToIn(SOA3D<double> const &pos,
+                        SOA3D<double> const &dir,
+                        double const *steps_max,
+                        double *distance) const {
+  // NYI
 }

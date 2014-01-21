@@ -1,10 +1,11 @@
 #include "LibraryCilk.h"
-#include "Kernel.h"
+#include "KernelBox.h"
 #include "Box.h"
+#include "Tube.h"
 
-const CilkBool ImplTraits<kCilk>::kTrue = CilkBool(true);
-const CilkBool ImplTraits<kCilk>::kFalse = CilkBool(false);
-const CilkFloat ImplTraits<kCilk>::kZero = CilkFloat(0);
+const CilkBool Impl<kCilk>::kTrue = CilkBool(true);
+const CilkBool Impl<kCilk>::kFalse = CilkBool(false);
+const CilkFloat Impl<kCilk>::kZero = CilkFloat(0);
 
 void Box::DistanceToIn(SOA3D<double> const &pos,
                        SOA3D<double> const &dir,

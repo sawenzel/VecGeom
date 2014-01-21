@@ -14,23 +14,25 @@ private:
 
 protected:
 
-  Box const *bounding_box;
   TransMatrix<double> const *trans_matrix;
-  TransMatrix<CudaFloat> const *trans_matrix_cuda;
+  Box const *bounding_box;
 
 public:
+
+  #ifdef STD_CXX11
+  Shape(TransMatrix<double> const * const trans, Box const * const bounds)
+      : trans_matrix(trans), bounding_box(bounds) {}
+  #else
+  Shape(TransMatrix<double> const * const trans, Box const * const bounds) {
+    trans_matrix = trans;
+    bounding_box = bounds;
+  }
+  #endif
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
   TransMatrix<double> const* TransformationMatrix() const {
     return trans_matrix;
-  }
-
-  CUDA_HEADER_BOTH
-  inline __attribute__((always_inline))
-  TransMatrix<CudaFloat> const*
-  TransformationMatrixCuda() const {
-    return trans_matrix_cuda;
   }
 
   void AddDaughter(Shape const * const daughter) {
@@ -44,10 +46,6 @@ public:
   void FillBiasedDirections(SOA3D<double> const& /*points*/,
                             const double /*bias*/,
                             SOA3D<double>& /*dirs*/) const;
-
-  void SetCudaMatrix(TransMatrix<CudaFloat> const * const trans_cuda) {
-    trans_matrix_cuda = trans_cuda;
-  }
 
   // Contains
 

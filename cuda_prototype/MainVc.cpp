@@ -15,11 +15,11 @@ int main(void) {
   
   const int n_points = 1<<21;
 
-  const TransMatrix<double> *origin = new TransMatrix<double>();
-  TransMatrix<double> *pos = new TransMatrix<double>();
-  pos->SetTranslation(2.93, 1.30, -4.05);
-  Box world(Vector3D<double>(10., 10., 10.), origin);
-  Box box(Vector3D<double>(2., 1., 4.), pos);
+  const TransMatrix<double> origin;
+  TransMatrix<double> pos;
+  pos.SetTranslation(2.93, 1.30, -4.05);
+  Box world(new BoxParameters(Vector3D<double>(10., 10., 10.)), &origin);
+  Box box(new BoxParameters(Vector3D<double>(2., 1., 4.)), &pos);
   world.AddDaughter(&box);
 
   SOA3D<double> points(n_points);

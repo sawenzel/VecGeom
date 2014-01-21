@@ -119,7 +119,7 @@ public:
 };
 
 template <>
-struct ImplTraits<kCilk> {
+struct Impl<kCilk> {
   typedef double             float_t;
   typedef CilkVector<int>    int_v;
   typedef CilkVector<double> float_v;
@@ -130,8 +130,8 @@ struct ImplTraits<kCilk> {
   const static bool_v kFalse;
 };
 
-typedef ImplTraits<kCilk>::float_v CilkFloat;
-typedef ImplTraits<kCilk>::bool_v  CilkBool;
-typedef ImplTraits<kCilk>::float_t CilkScalarFloat;
+typedef Impl<kCilk>::float_v CilkFloat;
+typedef Impl<kCilk>::bool_v  CilkBool;
+typedef Impl<kCilk>::float_t CilkScalarFloat;
 
 #endif /* LIBRARYCILK_H */

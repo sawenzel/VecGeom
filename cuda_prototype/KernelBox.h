@@ -1,36 +1,37 @@
-#ifndef KERNEL_H
-#define KERNEL_H
+#ifndef KERNELBOX_H
+#define KERNELBOX_H
 
 #include "LibraryGeneric.h"
 
 namespace kernel {
+
 namespace box {
 
 template <ImplType it>
 inline __attribute__((always_inline))
 CUDA_HEADER_BOTH
 void Contains(
-    Vector3D   <typename ImplTraits<it>::float_t> const &dimensions,
-    TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
-    Vector3D   <typename ImplTraits<it>::float_v> const &point,
-    typename ImplTraits<it>::bool_v               &output) {
+    Vector3D   <typename Impl<it>::float_t> const &dimensions,
+    TransMatrix<typename Impl<it>::float_t> const * const matrix,
+    Vector3D   <typename Impl<it>::float_v> const &point,
+    typename Impl<it>::bool_v               &output) {
 
-  const Vector3D<typename ImplTraits<it>::float_v> local =
+  const Vector3D<typename Impl<it>::float_v> local =
       matrix->Transform(point);
 
-  typename ImplTraits<it>::bool_v inside[3];
+  typename Impl<it>::bool_v inside[3];
   for (int i = 0; i < 3; ++i) {
     inside[i] = Abs<it>(local[i]) < dimensions[i];
-    if (ImplTraits<it>::early_return) {
+    if (Impl<it>::early_return) {
       if (!inside[i]) {
-        output = ImplTraits<it>::kFalse;
+        output = Impl<it>::kFalse;
         return;
       }
     }
   }
 
-  if (ImplTraits<it>::early_return) {
-    output = ImplTraits<it>::kTrue;
+  if (Impl<it>::early_return) {
+    output = Impl<it>::kTrue;
   } else {
     output = inside[0] && inside[1] && inside[2];
   }
@@ -40,24 +41,21 @@ template <ImplType it>
 inline __attribute__((always_inline))
 CUDA_HEADER_BOTH
 void DistanceToIn(
-    Vector3D   <typename ImplTraits<it>::float_t> const &dimensions,
-    TransMatrix<typename ImplTraits<it>::float_t> const * const matrix,
-    Vector3D   <typename ImplTraits<it>::float_v> const &pos,
-    Vector3D   <typename ImplTraits<it>::float_v> const &dir,
-    typename ImplTraits<it>::float_v              const &step_max,
-    typename ImplTraits<it>::float_v              &distance) {
+    Vector3D   <typename Impl<it>::float_t> const &dimensions,
+    TransMatrix<typename Impl<it>::float_t> const * const matrix,
+    Vector3D   <typename Impl<it>::float_v> const &pos,
+    Vector3D   <typename Impl<it>::float_v> const &dir,
+    typename Impl<it>::float_v              const &step_max,
+    typename Impl<it>::float_v              &distance) {
 
-  // Typedef templated types for readability
-  typedef typename ImplTraits<it>::float_v Float;
-  typedef typename ImplTraits<it>::bool_v Bool;
-  typedef typename ImplTraits<it>::float_t ScalarFloat;
+  typedef typename Impl<it>::float_v Float;
+  typedef typename Impl<it>::bool_v Bool;
 
-  const ScalarFloat kTiny(1e-20);
   Vector3D<Float> safety;
   Vector3D<Float> pos_local;
   Vector3D<Float> dir_local;
-  Bool hit = ImplTraits<it>::kFalse;
-  Bool done = ImplTraits<it>::kFalse;
+  Bool hit = Impl<it>::kFalse;
+  Bool done = Impl<it>::kFalse;
   distance = kInfinity;
 
   matrix->Transform(pos, pos_local);
@@ -70,7 +68,7 @@ void DistanceToIn(
   done |= (safety[0] >= step_max ||
            safety[1] >= step_max ||
            safety[2] >= step_max);
-  if (done == ImplTraits<it>::kTrue) return;
+  if (done == Impl<it>::kTrue) return;
 
   Float next, coord1, coord2;
 
@@ -84,7 +82,7 @@ void DistanceToIn(
         Abs<it>(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, distance);
   done |= hit;
-  if (done == ImplTraits<it>::kTrue) return;
+  if (done == Impl<it>::kTrue) return;
 
   // y
   next = safety[1] / Abs<it>(dir_local[1] + kTiny);
@@ -96,7 +94,7 @@ void DistanceToIn(
         Abs<it>(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, distance);
   done |= hit;
-  if (done == ImplTraits<it>::kTrue) return;
+  if (done == Impl<it>::kTrue) return;
 
   // z
   next = safety[2] / Abs<it>(dir_local[2] + kTiny);
@@ -110,7 +108,8 @@ void DistanceToIn(
 
 }
 
-} // End namespace box 
+} // End namespace box
+
 } // End namespace kernel
 
-#endif /* KERNEL_H */
+#endif /* KERNELBOX_H */

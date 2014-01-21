@@ -5,7 +5,7 @@
 #include "LibraryGeneric.h"
 
 template <>
-struct ImplTraits<kVc> {
+struct Impl<kVc> {
   typedef double       float_t;
   typedef Vc::int_v    int_v;
   typedef Vc::double_v float_v;
@@ -16,12 +16,12 @@ struct ImplTraits<kVc> {
   const static bool_v kFalse;
 };
 
-const int kVectorSize = ImplTraits<kVc>::float_v::Size;
+const int kVectorSize = Impl<kVc>::float_v::Size;
 
-typedef ImplTraits<kVc>::int_v   VcInt;
-typedef ImplTraits<kVc>::float_v VcFloat;
-typedef ImplTraits<kVc>::bool_v  VcBool;
-typedef ImplTraits<kVc>::float_t VcScalarFloat;
+typedef Impl<kVc>::int_v   VcInt;
+typedef Impl<kVc>::float_v VcFloat;
+typedef Impl<kVc>::bool_v  VcBool;
+typedef Impl<kVc>::float_t VcScalarFloat;
 
 template <typename Type>
 struct VcSOA3D {
@@ -81,6 +81,12 @@ template <>
 inline __attribute__((always_inline))
 VcFloat Abs<kVc, VcFloat>(VcFloat const &val) {
   return Vc::abs(val);
+}
+
+template <>
+inline __attribute__((always_inline))
+VcFloat Sqrt<kVc, VcFloat>(VcFloat const &val) {
+  return Vc::sqrt(val);
 }
 
 #endif /* LIBRARYVC_H */

@@ -8,7 +8,9 @@ double random(const double low, const double high) {
                static_cast<double>(RAND_MAX / (high - low));
 }
 
-double LaunchCuda(Box * const box, SOA3D<double> const &points,
+double LaunchCuda(BoxParameters const * const box,
+                  TransMatrix<double> const * const matrix,
+                  SOA3D<double> const &points,
                   SOA3D<double> const &directions, double const *step_max,
                   double *output) {
 
@@ -19,16 +21,15 @@ double LaunchCuda(Box * const box, SOA3D<double> const &points,
   CopyToGPU(step_max, step_max_dev, points.size());
   TransMatrix<CudaFloat> *trans_matrix_dev =
       AllocateOnGPU<TransMatrix<CudaFloat> >(1);
-  TransMatrix<CudaFloat> converted(*box->TransformationMatrix());
-
+  TransMatrix<CudaFloat> converted(*matrix);
   CopyToGPU(&converted, trans_matrix_dev, 1);
-  box->SetCudaMatrix(trans_matrix_dev);
+  const Box box_cuda(box, trans_matrix_dev);
 
   CheckCudaError();
 
   Stopwatch timer;
   timer.Start();
-  box->DistanceToIn(points_dev, directions_dev, step_max_dev, output_dev);
+  box_cuda.DistanceToIn(points_dev, directions_dev, step_max_dev, output_dev);
   timer.Stop();
 
   CopyFromGPU(output_dev, output, points.size());
@@ -50,11 +51,12 @@ int main(void) {
   
   const int n_points = 1<<21;
 
-  const TransMatrix<double> *origin = new TransMatrix<double>();
-  TransMatrix<double> *pos = new TransMatrix<double>();
-  pos->SetTranslation(2.93, 1.30, -4.05);
-  Box world(Vector3D<double>(10., 10., 10.), origin);
-  Box box(Vector3D<double>(2., 1., 4.), pos);
+  const TransMatrix<double> origin;
+  TransMatrix<double> pos;
+  pos.SetTranslation(2.93, 1.30, -4.05);
+  Box world(new BoxParameters(Vector3D<double>(10., 10., 10.)), &origin);
+  BoxParameters box_params(Vector3D<double>(2., 1., 4.));
+  Box box(&box_params, &pos);
   world.AddDaughter(&box);
 
   SOA3D<double> points(n_points);
@@ -85,7 +87,8 @@ int main(void) {
   std::cout << "Max step array initialized in " << timer.Stop() << "s.\n";
 
   timer.Start();
-  double inner = LaunchCuda(&box, points, directions, step_max, output);
+  double inner = LaunchCuda(&box_params, &pos, points, directions, step_max,
+                            output);
   
   std::cout << "CUDA benchmark for " << n_points << " points finished in "
             << inner << "s (" << timer.Stop() << "s with memory overhead)\n";

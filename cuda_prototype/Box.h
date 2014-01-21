@@ -4,23 +4,39 @@
 #include "Shape.h"
 #include "LibraryGeneric.h"
 
+struct BoxParameters {
+  Vector3D<double> dimensions;
+  #ifdef STD_CXX11
+  BoxParameters(Vector3D<double> const& dim) : dimensions(dim) {}
+  #else
+  BoxParameters(Vector3D<double> const& dim) { dimensions = dim; }
+  #endif
+};
+
 class Box : public Shape {
 
 private:
 
-  Vector3D<double> dimensions;
+  BoxParameters const *parameters;
 
 public:
 
-  Box(const Vector3D<double> dim, TransMatrix<double> const * const trans) {
-    dimensions = dim;
-    trans_matrix = trans;
-    bounding_box = this;
+  #ifdef STD_CXX11
+  Box(BoxParameters const * const params,
+      TransMatrix<double> const * const trans)
+      : Shape(trans, this), parameters(params) {}
+  #else
+  Box(BoxParameters const * const params,
+      TransMatrix<double> const * const trans)
+      : Shape(trans, this) {
+    parameters = params;
   }
+  #endif
 
-  Vector3D<double> const& Dimensions() const {
-    return dimensions;
-  }
+  Vector3D<double> const& Dimensions() const { return parameters->dimensions; }
+  double const& X() const { return parameters->dimensions[0]; }
+  double const& Y() const { return parameters->dimensions[1]; }
+  double const& Z() const { return parameters->dimensions[2]; }
 
   // Contains
 

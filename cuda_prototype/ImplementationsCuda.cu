@@ -1,6 +1,7 @@
 #include "LibraryCuda.cuh"
-#include "Kernel.h"
+#include "KernelBox.h"
 #include "Box.h"
+#include "Tube.h"
 
 namespace kernel {
 namespace box {
@@ -39,8 +40,8 @@ void Box::Contains(SOA3D<double> const &points,
 
   const LaunchParameters launch(points.size());
   kernel::box::ContainsWrapper<<<launch.grid_size, launch.block_size>>>(
-    DeviceVector(dimensions),
-    trans_matrix_cuda,
+    DeviceVector(parameters->dimensions),
+    trans_matrix,
     points,
     output
   );
@@ -54,12 +55,24 @@ void Box::DistanceToIn(SOA3D<double> const &pos,
 
   const LaunchParameters launch(pos.size());
   kernel::box::DistanceToInWrapper<<<launch.grid_size, launch.block_size>>>(
-    DeviceVector(dimensions),
-    trans_matrix_cuda,
+    DeviceVector(parameters->dimensions),
+    trans_matrix,
     pos,
     dir,
     step_max,
     distance
   );
   CheckCudaError();
+}
+
+void Tube::Contains(SOA3D<double> const &points,
+                    bool *output) const {
+  // NYI
+}
+
+void Tube::DistanceToIn(SOA3D<double> const &pos,
+                        SOA3D<double> const &dir,
+                        double const *steps_max,
+                        double *distance) const {
+  // NYI
 }

@@ -38,17 +38,19 @@ const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
 const double kInfinity = INFINITY;
+const double kTiny = 1e-20;
+const double kGTolerance = 1e-9;
 
 enum ImplType { kVc, kCuda, kScalar, kCilk };
 
 template <ImplType it>
-struct ImplTraits {};
+struct Impl {};
 
 // Possibility to switch to doubles
 typedef double CudaFloat;
 
 template <>
-struct ImplTraits<kScalar> {
+struct Impl<kScalar> {
   typedef double float_t;
   typedef int    int_v;
   typedef double float_v;
@@ -99,6 +101,18 @@ CUDA_HEADER_BOTH
 inline __attribute__((always_inline))
 float Abs<kScalar, float>(float const &val) {
   return std::fabs(val);
+}
+
+template <ImplType it, typename Type>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+Type Sqrt(const Type&);
+
+template <>
+CUDA_HEADER_BOTH
+inline __attribute__((always_inline))
+float Sqrt<kScalar, float>(float const &val) {
+  return std::sqrt(val);
 }
 
 struct Stopwatch {
@@ -189,7 +203,7 @@ public:
 
   CUDA_HEADER_BOTH
   inline __attribute__((always_inline))
-  Type operator[](const int index) const {
+  Type const& operator[](const int index) const {
     return vec[index];
   }
 

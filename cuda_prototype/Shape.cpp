@@ -48,7 +48,6 @@ void Shape::FillRandomDirections(SOA3D<double> &dirs) {
 inline bool IsFacingShape(Vector3D<double> const &point,
                           Vector3D<double> const &dir,
                           Shape const * const shape) {
-  // Dirty hack until a better architecture is invented/implemented
   return shape->DistanceToIn(point, dir, kInfinity) < kInfinity;
 }
 
@@ -117,7 +116,6 @@ void Shape::FillUncontainedPoints(SOA3D<double> &points) const {
       points.Set(i, SamplePoint(dim));
       contained = false;
       for (auto j = daughters.begin(); j != daughters.end(); ++j) {
-        // Dirty hack until better architecture is implemented
         if ((*j)->Contains(points[i])) {
           contained = true;
           break;

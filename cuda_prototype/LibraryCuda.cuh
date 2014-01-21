@@ -7,7 +7,7 @@
 static const int threads_per_block = 512;
 
 template <>
-struct ImplTraits<kCuda> {
+struct Impl<kCuda> {
   typedef CudaFloat float_t;
   typedef int       int_v;
   typedef CudaFloat float_v;
@@ -18,8 +18,8 @@ struct ImplTraits<kCuda> {
   const static bool_v kFalse = false;
 };
 
-typedef ImplTraits<kCuda>::int_v  CudaInt;
-typedef ImplTraits<kCuda>::bool_v CudaBool;
+typedef Impl<kCuda>::int_v  CudaInt;
+typedef Impl<kCuda>::bool_v CudaBool;
 
 struct LaunchParameters {
   dim3 block_size;
