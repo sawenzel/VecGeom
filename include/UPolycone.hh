@@ -134,7 +134,7 @@ class UPolycone : public VUSolid
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
   //G4Visualisation
-  void GetParametersList(int aNumber, double * aArray) const;
+  void GetParametersList(int aNumber, double * aArray) const{}
  
     VUSolid* Clone() const;
 
