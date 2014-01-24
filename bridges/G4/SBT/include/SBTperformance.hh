@@ -258,39 +258,39 @@ private:
     return rand;
   }
 
-  inline void GetVectorGeant4(G4ThreeVector &point, const std::vector<UVector3> &points, int index)
+  inline void GetVectorGeant4(G4ThreeVector &point, const std::vector<UVector3> &apoints, int index)
   {
-    const UVector3 &p = points[index];
+    const UVector3 &p = apoints[index];
     point.set(p.x, p.y, p.z);
   }
 
-  inline void GetVectorUSolids(UVector3 &point, const std::vector<UVector3> &points, int index)
+  inline void GetVectorUSolids(UVector3 &point, const std::vector<UVector3> &apoints, int index)
   {
-    const UVector3 &p = points[index];
+    const UVector3 &p = apoints[index];
     point.Set(p.x, p.y, p.z);
   }
 
-  inline void GetVectorRoot(double *point, const std::vector<UVector3> &points, int index)
+  inline void GetVectorRoot(double *point, const std::vector<UVector3> &apoints, int index)
   {
-    const UVector3 &p = points[index];
+    const UVector3 &p = apoints[index];
     point[0] = p.x; point[1] = p.y; point[2] = p.z;
   }
 
-  inline void SetVectorGeant4(const G4ThreeVector &point, std::vector<UVector3> &points, int index)
+  inline void SetVectorGeant4(const G4ThreeVector &point, std::vector<UVector3> &apoints, int index)
   {
-    UVector3 &p = points[index];
+    UVector3 &p = apoints[index];
     p.Set(point.getX(), point.getY(), point.getZ());
   }
 
-  inline void SetVectorUSolids(const UVector3 &point, std::vector<UVector3> &points, int index)
+  inline void SetVectorUSolids(const UVector3 &point, std::vector<UVector3> &apoints, int index)
   {
-    UVector3 &p = points[index];
+    UVector3 &p = apoints[index];
     p.Set(point.x, point.y, point.z);
   }
 
-  inline void SetVectorRoot(const double *point, std::vector<UVector3> &points, int index)
+  inline void SetVectorRoot(const double *point, std::vector<UVector3> &apoints, int index)
   {
-    UVector3 &p = points[index];
+    UVector3 &p = apoints[index];
     p.Set (point[0], point[1], point[2]);
   }
 
@@ -298,7 +298,7 @@ private:
   {
     double tolerance = VUSolid::Tolerance();
     double rand = -1 + 2 * G4UniformRand();
-    double sign = rand > 0 ? 1 : -1;
+    // double sign = rand > 0 ? 1 : -1;
     double dif = tolerance * 0.1 * rand; // 19000000000
     //	if (abs(dif) < 9 * tolerance) dif = dif;
     return dif;

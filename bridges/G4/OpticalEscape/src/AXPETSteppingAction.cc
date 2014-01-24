@@ -74,7 +74,7 @@ void AXPETSteppingAction::UserSteppingAction(const G4Step* aStep)
 
   // track informations
   //
-    const G4StepPoint* prePoint = aStep->GetPreStepPoint();   
+  // const G4StepPoint* prePoint = aStep->GetPreStepPoint();   
   G4StepPoint* endPoint = aStep->GetPostStepPoint();
   const G4ParticleDefinition* particle = aStep->GetTrack()->GetDefinition(); 
 

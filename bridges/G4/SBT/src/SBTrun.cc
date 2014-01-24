@@ -457,7 +457,7 @@ G4int SBTrun::DebugToOutPV( const G4VSolid *testVolume, std::istream &logger, co
   //
   G4bool validNorm;
   G4ThreeVector norm;
-  G4double answer = testVolume->DistanceToOut( p, v );
+  G4double answer = testVolume->DistanceToOut(p, v, true, &validNorm, &norm);
   G4cout << "testVolume->DistanceToOut( p, v ): " << answer << " validNorm: " << validNorm << G4endl; 
 
   p += answer*v;

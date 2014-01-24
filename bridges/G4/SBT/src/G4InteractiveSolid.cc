@@ -97,7 +97,7 @@ using namespace CLHEP;
 //
 // Constructor
 // 
-G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
+G4InteractiveSolid::G4InteractiveSolid( const G4String &prefixloc )
 {
 	//
 	// Hmmm... well, how about a reasonable default?
@@ -107,13 +107,13 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	// Declare messenger directory
 	//
-	volumeDirectory = new G4UIdirectory( prefix );
+	volumeDirectory = new G4UIdirectory( prefixloc );
 	volumeDirectory->SetGuidance( "Solid construction using parameters from the command line" );
 
 	box.Args.push_back(new G4UIcmdPargDouble( "dx", 1.0, m));
 	box.Args.push_back(new G4UIcmdPargDouble( "dy", 1.0, m ));
 	box.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
-	box.Cmd = new G4UIcmdWithPargs(G4String(prefix+"G4Box"), this, &box.Args[0], box.Args.size());
+	box.Cmd = new G4UIcmdWithPargs(G4String(prefixloc+"G4Box"), this, &box.Args[0], box.Args.size());
 	box.Cmd->SetGuidance( "Declare a G4Box solid" );
 	box.Make = &G4InteractiveSolid::MakeBox;
 	commands.push_back(&box);
@@ -121,7 +121,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	// filename command
 	//
-	G4String com = prefix+"file";
+	G4String com = prefixloc+"file";
 	fileCmd = new G4UIcmdWithAString( com, this );
 	fileCmd->SetGuidance( "Filename which is used for solids which needs it (such as tessellated solid)" );
 
@@ -131,7 +131,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	ubox.Args.push_back(new G4UIcmdPargDouble( "dx", 1.0, m ));
 	ubox.Args.push_back(new G4UIcmdPargDouble( "dy", 1.0, m ));
 	ubox.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
-	ubox.Cmd = new G4UIcmdWithPargs(G4String(prefix+"UBox"), this, &ubox.Args[0], ubox.Args.size());
+	ubox.Cmd = new G4UIcmdWithPargs(G4String(prefixloc+"UBox"), this, &ubox.Args[0], ubox.Args.size());
 	ubox.Cmd->SetGuidance( "Declare a U4Box solid" );
 	ubox.Make = &G4InteractiveSolid::MakeUBox;
 	commands.push_back(&ubox);
@@ -142,7 +142,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	umultiunion.Args.push_back(new G4UIcmdPargDouble( "dx", 1.0, m ));
 	umultiunion.Args.push_back(new G4UIcmdPargDouble( "dy", 1.0, m ));
 	umultiunion.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
-	umultiunion.Cmd = new G4UIcmdWithPargs(G4String (prefix+"UMultiUnion"), this, &umultiunion.Args[0],		umultiunion.Args.size());
+	umultiunion.Cmd = new G4UIcmdWithPargs(G4String (prefixloc+"UMultiUnion"), this, &umultiunion.Args[0],		umultiunion.Args.size());
 	umultiunion.Cmd->SetGuidance( "Declare a UMultiUnion solid" );
 	umultiunion.Make = &G4InteractiveSolid::MakeUMultiUnion;
 	commands.push_back(&umultiunion);
@@ -150,7 +150,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	// Declare UOrb
 	//
 	uorb.Args.push_back(new G4UIcmdPargDouble( "r", 1.0, m ));
-	G4String uorbPath = prefix+"UOrb";
+	G4String uorbPath = prefixloc+"UOrb";
 	uorb.Cmd = new G4UIcmdWithPargs( uorbPath, this, &uorb.Args[0], 1 );
 	uorb.Cmd->SetGuidance( "Declare a UOrb solid" );
 	uorb.Make = &G4InteractiveSolid::MakeUOrb;
@@ -163,7 +163,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	utrd.Args.push_back(new G4UIcmdPargDouble( "dy1", 40.0, m ));
 	utrd.Args.push_back(new G4UIcmdPargDouble( "dy2", 15.0, m ));
 	utrd.Args.push_back(new G4UIcmdPargDouble( "dz", 60.0, m ));
-	G4String utrdPath = prefix+"UTrd";
+	G4String utrdPath = prefixloc+"UTrd";
 	utrd.Cmd = new G4UIcmdWithPargs( utrdPath, this, &utrd.Args[0], utrd.Args.size() );
 	utrd.Cmd->SetGuidance( "Declare a UTrd solid" );
 	utrd.Make = &G4InteractiveSolid::MakeUTrd;
@@ -179,7 +179,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	cons.Args.push_back(new G4UIcmdPargDouble( "dz",    1.0, m ));
 	cons.Args.push_back(new G4UIcmdPargDouble( "startPhi",  1.0, deg ));
 	cons.Args.push_back(new G4UIcmdPargDouble( "deltaPhi",  1.0, deg ));
-	G4String consPath = prefix+"G4Cons";
+	G4String consPath = prefixloc+"G4Cons";
 	cons.Cmd = new G4UIcmdWithPargs( consPath, this, &cons.Args[0], cons.Args.size() );
 	cons.Cmd->SetGuidance( "Declare a G4Cons solid" );
 	cons.Make = &G4InteractiveSolid::MakeCons;
@@ -189,7 +189,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	// Declare G4Orb
 	//
 	orb.Args.push_back(new G4UIcmdPargDouble( "r", 1.0, m ));
-	G4String orbPath = prefix+"G4Orb";
+	G4String orbPath = prefixloc+"G4Orb";
 	orb.Cmd = new G4UIcmdWithPargs( orbPath, this, &orb.Args[0], orb.Args.size() );
 	orb.Cmd->SetGuidance( "Declare a G4Orb solid" );
 	orb.Make = &G4InteractiveSolid::MakeOrb;
@@ -204,7 +204,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	para.Args.push_back(new G4UIcmdPargDouble( "alpha", 90, deg ));
 	para.Args.push_back(new G4UIcmdPargDouble( "theta", 90, deg ));
 	para.Args.push_back(new G4UIcmdPargDouble( "phi", 90, deg ));
-	G4String paraPath = prefix+"G4Para";
+	G4String paraPath = prefixloc+"G4Para";
 	para.Cmd = new G4UIcmdWithPargs( paraPath, this, &para.Args[0], para.Args.size() );
 	para.Cmd->SetGuidance( "Declare a G4Para solid" );
 	para.Make = &G4InteractiveSolid::MakePara;
@@ -219,7 +219,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
   cuttubs.Args.push_back(new G4UIcmdPargDouble( "deltaPhi",  1.0, deg ));
   cuttubs.Args.push_back(new G4UIcmdPargListDouble( "lowNorm", 3, mm ));
   cuttubs.Args.push_back(new G4UIcmdPargListDouble( "highNorm", 3, mm ));
-  G4String cuttubsPath = prefix+"G4CutTubs";
+  G4String cuttubsPath = prefixloc+"G4CutTubs";
   cuttubs.Cmd = new G4UIcmdWithPargs( cuttubsPath, this, &cuttubs.Args[0], cuttubs.Args.size());
   cuttubs.Cmd->SetGuidance("Declare a G4CutTubs solid");
   cuttubs.Make = &G4InteractiveSolid::MakeCutTubs;
@@ -233,7 +233,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	sphere.Args.push_back(new G4UIcmdPargDouble( "deltaPhi", 1.0, deg ));
 	sphere.Args.push_back(new G4UIcmdPargDouble( "startTheta",  1.0, deg ));
 	sphere.Args.push_back(new G4UIcmdPargDouble( "deltaTheta",  1.0, deg ));
-	G4String spherePath = prefix+"G4Sphere";
+	G4String spherePath = prefixloc+"G4Sphere";
 	sphere.Cmd = new G4UIcmdWithPargs( spherePath, this, &sphere.Args[0], sphere.Args.size() );
 	sphere.Cmd->SetGuidance( "Declare a G4Sphere solid" );
 	sphere.Make = &G4InteractiveSolid::MakeSphere;
@@ -247,7 +247,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	torus.Args.push_back(new G4UIcmdPargDouble( "rtorus", 1.0, m ));
 	torus.Args.push_back(new G4UIcmdPargDouble( "startPhi",  1.0, deg ));
 	torus.Args.push_back(new G4UIcmdPargDouble( "deltaPhi",  1.0, deg ));
-	G4String torusPath = prefix+"G4Torus";
+	G4String torusPath = prefixloc+"G4Torus";
 	torus.Cmd = new G4UIcmdWithPargs( torusPath, this, &torus.Args[0], torus.Args.size() );
 	torus.Cmd->SetGuidance( "Declare a G4Torus solid" );
 	torus.Make = &G4InteractiveSolid::MakeTorus;
@@ -267,7 +267,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	trap.Args.push_back(new G4UIcmdPargDouble( "dx3",   1.0, m ));
 	trap.Args.push_back(new G4UIcmdPargDouble( "dx4",   1.0, m ));
 	trap.Args.push_back(new G4UIcmdPargDouble( "alpha2", 90, deg ));
-	G4String trapPath = prefix+"G4Trap";
+	G4String trapPath = prefixloc+"G4Trap";
 	trap.Cmd = new G4UIcmdWithPargs( trapPath, this, &trap.Args[0], trap.Args.size() );
 	trap.Cmd->SetGuidance( "Declare a G4Trap solid" );
 	trap.Make = &G4InteractiveSolid::MakeTrap;
@@ -278,7 +278,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
   gentrap.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
   gentrap.Args.push_back(new G4UIcmdPargListDouble("pgonX", 100, m ));
   gentrap.Args.push_back(new G4UIcmdPargListDouble("pgonY", 100, m ));
-  G4String gentrapPath = prefix+"G4GenericTrap";
+  G4String gentrapPath = prefixloc+"G4GenericTrap";
   gentrap.Cmd = new G4UIcmdWithPargs( gentrapPath, this, &gentrap.Args[0], gentrap.Args.size());
   gentrap.Cmd->SetGuidance( "Declare a G4GenericTrap solid" );
   gentrap.Make = &G4InteractiveSolid::MakeGenericTrap;
@@ -289,7 +289,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
   parabol.Args.push_back(new G4UIcmdPargDouble( "dz" , 1.0, m ));
   parabol.Args.push_back(new G4UIcmdPargDouble( "dr1", 1.0, m ));
   parabol.Args.push_back(new G4UIcmdPargDouble( "dr2", 1.0, m ));
-  G4String parabolPath = prefix+"G4Paraboloid";
+  G4String parabolPath = prefixloc+"G4Paraboloid";
   parabol.Cmd = new G4UIcmdWithPargs( parabolPath, this, &parabol.Args[0], parabol.Args.size());
   parabol.Cmd->SetGuidance( "Declare a G4Paraboloid solid" );
   parabol.Make = &G4InteractiveSolid::MakeParaboloid;
@@ -303,7 +303,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	trd.Args.push_back(new G4UIcmdPargDouble( "dy1", 1.0, m ));
 	trd.Args.push_back(new G4UIcmdPargDouble( "dy2", 1.0, m ));
 	trd.Args.push_back(new G4UIcmdPargDouble( "dz",  1.0, m ));
-	G4String trdPath = prefix+"G4Trd";
+	G4String trdPath = prefixloc+"G4Trd";
 	trd.Cmd = new G4UIcmdWithPargs( trdPath, this, &trd.Args[0], trd.Args.size() );
 	trd.Cmd->SetGuidance( "Declare a G4Trd solid" );
 	trd.Make = &G4InteractiveSolid::MakeTrd;
@@ -317,7 +317,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	tubs.Args.push_back(new G4UIcmdPargDouble( "dz",   1.0, m ));
 	tubs.Args.push_back(new G4UIcmdPargDouble( "startPhi",  1.0, deg ));
 	tubs.Args.push_back(new G4UIcmdPargDouble( "deltaPhi",  1.0, deg ));
-	G4String tubsPath = prefix+"G4Tubs";
+	G4String tubsPath = prefixloc+"G4Tubs";
 	tubs.Cmd = new G4UIcmdWithPargs( tubsPath, this, &tubs.Args[0], tubs.Args.size() );
 	tubs.Cmd->SetGuidance( "Declare a G4Tubs solid" );
 	tubs.Make = &G4InteractiveSolid::MakeTubs;
@@ -331,7 +331,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	ellipsoid.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
 	ellipsoid.Args.push_back(new G4UIcmdPargDouble( "zBottomCut", 0, m ));
 	ellipsoid.Args.push_back(new G4UIcmdPargDouble( "zTopCut", 0, m ));
-	G4String ellipsoidPath = prefix+"G4Ellipsoid";
+	G4String ellipsoidPath = prefixloc+"G4Ellipsoid";
 	ellipsoid.Cmd = new G4UIcmdWithPargs( ellipsoidPath, this, &ellipsoid.Args[0], ellipsoid.Args.size() );
 	ellipsoid.Cmd->SetGuidance( "Declare a G4Ellipsoid solid" );
 	ellipsoid.Make = &G4InteractiveSolid::MakeEllipsoid;
@@ -344,7 +344,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	elCone.Args.push_back(new G4UIcmdPargDouble( "dy", 1.0, 1 ));
 	elCone.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
 	elCone.Args.push_back(new G4UIcmdPargDouble( "zTopCut", 1.0, m ));
-	G4String elConePath = prefix+"G4EllipticalCone";
+	G4String elConePath = prefixloc+"G4EllipticalCone";
 	elCone.Cmd = new G4UIcmdWithPargs( elConePath, this, &elCone.Args[0], elCone.Args.size() );
 	elCone.Cmd->SetGuidance( "Declare a G4EllipticalCone solid" );
 	elCone.Make = &G4InteractiveSolid::MakeEllipticalCone;
@@ -356,7 +356,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	elTube.Args.push_back(new G4UIcmdPargDouble( "dx", 1.0, m ));
 	elTube.Args.push_back(new G4UIcmdPargDouble( "dy", 1.0, m ));
 	elTube.Args.push_back(new G4UIcmdPargDouble( "dz", 1.0, m ));
-	G4String elTubePath = prefix+"G4EllipticalTube";
+	G4String elTubePath = prefixloc+"G4EllipticalTube";
 	elTube.Cmd = new G4UIcmdWithPargs( elTubePath, this, &elTube.Args[0], elTube.Args.size() );
 	elTube.Cmd->SetGuidance( "Declare a G4EllipticalTube solid" );
 	elTube.Make = &G4InteractiveSolid::MakeEllipticalTube;
@@ -373,7 +373,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	extruded.Args.push_back(new G4UIcmdPargListDouble(  "offx", 100, m ));
 	extruded.Args.push_back(new G4UIcmdPargListDouble(  "offy", 100, m ));
 	extruded.Args.push_back(new G4UIcmdPargListDouble( "scale", 100, 1 ));
-	G4String extrudedPath = prefix+"G4ExtrudedSolid";
+	G4String extrudedPath = prefixloc+"G4ExtrudedSolid";
 	extruded.Cmd = new G4UIcmdWithPargs( extrudedPath, this, &extruded.Args[0], extruded.Args.size() );
 	extruded.Cmd->SetGuidance( "Declare a G4ExtrudedSolid solid" );
 	extruded.Make = &G4InteractiveSolid::MakeExtrudedSolid;
@@ -387,7 +387,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	hype.Args.push_back(new G4UIcmdPargDouble( "innerStereo", 1.0, rad ));
 	hype.Args.push_back(new G4UIcmdPargDouble( "outerStereo", 1.0, rad ));
 	hype.Args.push_back(new G4UIcmdPargDouble( "dz",  1.0, m ));
-	G4String hypePath = prefix+"G4Hype";
+	G4String hypePath = prefixloc+"G4Hype";
 	hype.Cmd = new G4UIcmdWithPargs( hypePath, this, &hype.Args[0], hype.Args.size() );
 	hype.Cmd->SetGuidance( "Declare a G4Hype solid" );
 	hype.Make = &G4InteractiveSolid::MakeHype;
@@ -400,7 +400,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	polycone.Args.push_back(new G4UIcmdPargInteger( "numRZ", 1 ));
 	polycone.Args.push_back(new G4UIcmdPargListDouble( "r", 100, m ));
 	polycone.Args.push_back(new G4UIcmdPargListDouble( "z", 100, m ));
-	G4String polyconePath = prefix+"G4Polycone";
+	G4String polyconePath = prefixloc+"G4Polycone";
 	polycone.Cmd = new G4UIcmdWithPargs( polyconePath, this, &polycone.Args[0], polycone.Args.size() );
 	polycone.Cmd->SetGuidance( "Declare a G4Polycone solid" );
 	polycone.Make = &G4InteractiveSolid::MakePolycone;
@@ -414,7 +414,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	polycone2.Args.push_back(new G4UIcmdPargListDouble( "z", 100, m ));
 	polycone2.Args.push_back(new G4UIcmdPargListDouble( "rin", 100, m ));
 	polycone2.Args.push_back(new G4UIcmdPargListDouble( "rout", 100, m ));
-	G4String polycone2Path = prefix+"G4Polycone2";
+	G4String polycone2Path = prefixloc+"G4Polycone2";
 	polycone2.Cmd = new G4UIcmdWithPargs( polycone2Path, this, &polycone2.Args[0], polycone2.Args.size() );
 	polycone2.Cmd->SetGuidance( "Declare a G4Polycone solid (PCON style)" );
 	polycone2.Make = &G4InteractiveSolid::MakePolycone2;
@@ -428,7 +428,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	polyhedra.Args.push_back(new G4UIcmdPargInteger( "numRZ", 1 ));
 	polyhedra.Args.push_back(new G4UIcmdPargListDouble( "r", 100, m ));
 	polyhedra.Args.push_back(new G4UIcmdPargListDouble( "z", 100, m ));
-	G4String polyhedraPath = prefix+"G4Polyhedra";
+	G4String polyhedraPath = prefixloc+"G4Polyhedra";
 	polyhedra.Cmd = new G4UIcmdWithPargs( polyhedraPath, this, &polyhedra.Args[0], polyhedra.Args.size() );
 	polyhedra.Cmd->SetGuidance( "Declare a G4Polyhedra solid" );
 	polyhedra.Make = &G4InteractiveSolid::MakePolyhedra;
@@ -443,7 +443,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	polyhedra2.Args.push_back(new G4UIcmdPargListDouble( "z", 100, m ));
 	polyhedra2.Args.push_back(new G4UIcmdPargListDouble( "rin", 100, m ));
 	polyhedra2.Args.push_back(new G4UIcmdPargListDouble( "rout", 100, m ));
-	G4String polyhedra2Path = prefix+"G4Polyhedra2";
+	G4String polyhedra2Path = prefixloc+"G4Polyhedra2";
 	polyhedra2.Make = &G4InteractiveSolid::MakePolyhedra2;
 	polyhedra2.Cmd = new G4UIcmdWithPargs( polyhedra2Path, this, &polyhedra2.Args[0], polyhedra2.Args.size() );
 	polyhedra2.Cmd->SetGuidance( "Declare a G4Polyhedra solid (PGON style)" );
@@ -460,7 +460,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	tessel.Args.push_back(new G4UIcmdPargListDouble("p2in4", 100, m ));
 	tessel.Args.push_back(new G4UIcmdPargListDouble("p3in4", 100, m ));
 	tessel.Args.push_back(new G4UIcmdPargListDouble("p4in4", 100, m ));
-	G4String tesselPath = prefix+"G4TessellatedSolid";
+	G4String tesselPath = prefixloc+"G4TessellatedSolid";
 	tessel.Cmd = new G4UIcmdWithPargs( tesselPath, this, &tessel.Args[0], tessel.Args.size() );
 	tessel.Cmd->SetGuidance( "Declare a G4TessellatedSolid solid" );
 	tessel.Make = &G4InteractiveSolid::MakeTessellatedSolid;
@@ -476,7 +476,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	tessel2.Args.push_back(new G4UIcmdPargListDouble(  "offx", 100, m ));
 	tessel2.Args.push_back(new G4UIcmdPargListDouble(  "offy", 100, m ));
 	tessel2.Args.push_back(new G4UIcmdPargListDouble( "scale", 100, 1 ));
-	G4String tessel2Path = prefix+"G4TessellatedSolid2";
+	G4String tessel2Path = prefixloc+"G4TessellatedSolid2";
 	tessel2.Cmd = new G4UIcmdWithPargs( tessel2Path, this, &tessel2.Args[0], tessel2.Args.size() );
 	tessel2.Cmd->SetGuidance( "Declare a G4TessellatedSolid solid as an extruded solid" );
 	tessel2.Make = &G4InteractiveSolid::MakeTessellatedSolid2;
@@ -488,7 +488,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	tet.Args.push_back(new G4UIcmdPargListDouble( "p2", 3, m ));
 	tet.Args.push_back(new G4UIcmdPargListDouble( "p3", 3, m ));
 	tet.Args.push_back(new G4UIcmdPargListDouble( "p4", 3, m ));
-	G4String tetPath = prefix+"G4Tet";
+	G4String tetPath = prefixloc+"G4Tet";
 	tet.Cmd = new G4UIcmdWithPargs( tetPath, this, &tet.Args[0], tet.Args.size() );
 	tet.Cmd->SetGuidance( "Declare a G4Tet solid" );
 	tet.Make = &G4InteractiveSolid::MakeTet;
@@ -500,7 +500,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	twistedBox.Args.push_back(new G4UIcmdPargDouble( "dx",  1.0, m ));
 	twistedBox.Args.push_back(new G4UIcmdPargDouble( "dy",  1.0, m ));
 	twistedBox.Args.push_back(new G4UIcmdPargDouble( "dz",  1.0, m ));
-	G4String twistedBoxPath = prefix+"G4TwistedBox";
+	G4String twistedBoxPath = prefixloc+"G4TwistedBox";
 	twistedBox.Cmd = new G4UIcmdWithPargs( twistedBoxPath, this, &twistedBox.Args[0], twistedBox.Args.size() );
 	twistedBox.Cmd->SetGuidance( "Declare a G4TwistedBox solid" );
 	twistedBox.Make = &G4InteractiveSolid::MakeTwistedBox;
@@ -514,7 +514,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	twistedTrap.Args.push_back(new G4UIcmdPargDouble( "dx2", 1.0, m ));
 	twistedTrap.Args.push_back(new G4UIcmdPargDouble( "dy",  1.0, m ));
 	twistedTrap.Args.push_back(new G4UIcmdPargDouble( "dz",  1.0, m ));
-	G4String twistedTrapPath = prefix+"G4TwistedTrap";
+	G4String twistedTrapPath = prefixloc+"G4TwistedTrap";
 	twistedTrap.Cmd = new G4UIcmdWithPargs( twistedTrapPath, this, &twistedTrap.Args[0], twistedTrap.Args.size() );
 	twistedTrap.Cmd->SetGuidance( "Declare a regular G4TwistedTrap solid" );
 	twistedTrap.Make = &G4InteractiveSolid::MakeTwistedTrap;
@@ -534,7 +534,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	twistedTrap2.Args.push_back(new G4UIcmdPargDouble( "dx3",   1.0, m ));
 	twistedTrap2.Args.push_back(new G4UIcmdPargDouble( "dx4",   1.0, m ));
 	twistedTrap2.Args.push_back(new G4UIcmdPargDouble( "alpha", 0.0, deg ));
-	G4String twistedTrap2Path = prefix+"G4TwistedTrap2";
+	G4String twistedTrap2Path = prefixloc+"G4TwistedTrap2";
 	twistedTrap2.Cmd = new G4UIcmdWithPargs( twistedTrap2Path, this, &twistedTrap2.Args[0], twistedTrap2.Args.size() );
 	twistedTrap2.Cmd->SetGuidance( "Declare a general G4TwistedTrap solid" );
 	twistedTrap2.Make = &G4InteractiveSolid::MakeTwistedTrap2;
@@ -549,7 +549,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	twistedTrd.Args.push_back(new G4UIcmdPargDouble( "dy2",  1.0, m ));
 	twistedTrd.Args.push_back(new G4UIcmdPargDouble( "dz",  1.0, m ));
 	twistedTrd.Args.push_back(new G4UIcmdPargDouble( "phi", 0.0, deg ));
-	G4String twistedTrdPath = prefix+"G4TwistedTrd";
+	G4String twistedTrdPath = prefixloc+"G4TwistedTrd";
 	twistedTrd.Cmd = new G4UIcmdWithPargs( twistedTrdPath, this, &twistedTrd.Args[0], twistedTrd.Args.size() );
 	twistedTrd.Cmd->SetGuidance( "Declare a regular G4TwistedTrd solid" );
 	twistedTrd.Make = &G4InteractiveSolid::MakeTwistedTrd;
@@ -565,7 +565,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	twistedTubs.Args.push_back(new G4UIcmdPargDouble( "zpos", 1.0, m ));
 	twistedTubs.Args.push_back(new G4UIcmdPargInteger( "nseg", 1 ));
 	twistedTubs.Args.push_back(new G4UIcmdPargDouble( "totphi", 360.0, deg ));
-	G4String twistedTubsPath = prefix+"G4TwistedTubs";
+	G4String twistedTubsPath = prefixloc+"G4TwistedTubs";
 	twistedTubs.Cmd = new G4UIcmdWithPargs( twistedTubsPath, this, &twistedTubs.Args[0], twistedTubs.Args.size() );
 	twistedTubs.Cmd->SetGuidance( "Declare a G4TwistedTubs solid" );
 	twistedTubs.Make = &G4InteractiveSolid::MakeTwistedTubs;
@@ -573,7 +573,7 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	// Declare DircTest
 	//
-	G4String dircTestPath = prefix+"DircTest";
+	G4String dircTestPath = prefixloc+"DircTest";
 	dircTest.Cmd = new G4UIcmdWithPargs( dircTestPath, this, 0, 0 );
 	dircTest.Cmd->SetGuidance( "Declare a DircTest solid" );
 	dircTest.Make = &G4InteractiveSolid::MakeDircTest;
@@ -581,41 +581,41 @@ G4InteractiveSolid::G4InteractiveSolid( const G4String &prefix )
 	//
 	// Declare BooleanSolid1
 	//
-	G4String BooleanSolid1Path = prefix+"BooleanSolid";
+	G4String BooleanSolid1Path = prefixloc+"BooleanSolid";
 	booleanSolid1.Cmd = new G4UIcmdWithPargs( BooleanSolid1Path, this, 0, 0 );
 	booleanSolid1.Cmd->SetGuidance( "Declare a Boolean solid #1" );
 	booleanSolid1.Make = &G4InteractiveSolid::MakeBooleanSolid1;
 	commands.push_back(&booleanSolid1);
 
-	G4String MultiUnionPath = prefix+"G4MultiUnion";
+	G4String MultiUnionPath = prefixloc+"G4MultiUnion";
 	multiUnion.Args.push_back(new G4UIcmdPargInteger( "n", 1));
 	multiUnion.Cmd = new G4UIcmdWithPargs( MultiUnionPath, this, &multiUnion.Args[0], multiUnion.Args.size());
 	multiUnion.Cmd->SetGuidance( "Declare a Boolean solid #1" );
 	multiUnion.Make = &G4InteractiveSolid::MakeMultiUnion;
 	commands.push_back(&multiUnion);
 	//
-	G4String TessellatedSolidTransformPath = prefix+"G4TessellatedSolidTransform";
+	G4String TessellatedSolidTransformPath = prefixloc+"G4TessellatedSolidTransform";
 	tessellatedSolidTransform.Args.push_back(new G4UIcmdPargInteger("n", 1)); // G4UIcmdWithAString
 	tessellatedSolidTransform.Cmd = new G4UIcmdWithPargs(TessellatedSolidTransformPath, this, &tessellatedSolidTransform.Args[0], tessellatedSolidTransform.Args.size());
 	tessellatedSolidTransform.Cmd->SetGuidance("Declare a Tessellated Solid, by using transformation from already declated solid" );
 	tessellatedSolidTransform.Make = &G4InteractiveSolid::MakeTessellatedSolidFromTransform;
 	commands.push_back(&tessellatedSolidTransform);
 
-	G4String TessellatedSolidPlainPath = prefix+"G4TessellatedSolidFromPlainFile";
+	G4String TessellatedSolidPlainPath = prefixloc+"G4TessellatedSolidFromPlainFile";
 	tessellatedSolidPlain.Args.push_back(new G4UIcmdPargInteger("n", 1)); // G4UIcmdWithAString
 	tessellatedSolidPlain.Cmd = new G4UIcmdWithPargs(TessellatedSolidPlainPath, this, &tessellatedSolidPlain.Args[0], tessellatedSolidPlain.Args.size());
 	tessellatedSolidPlain.Cmd->SetGuidance("Declare a Tessellated Solid From Plain File");
 	tessellatedSolidPlain.Make = &G4InteractiveSolid::MakeTessellatedSolidFromPlainFile;
 	commands.push_back(&tessellatedSolidPlain);
 
-	G4String TessellatedSolidSTLPath = prefix+"G4TessellatedSolidFromSTLFile";
+	G4String TessellatedSolidSTLPath = prefixloc+"G4TessellatedSolidFromSTLFile";
 	tessellatedSolidSTL.Args.push_back(new G4UIcmdPargInteger("n", 1)); // G4UIcmdWithAString
 	tessellatedSolidSTL.Cmd = new G4UIcmdWithPargs(TessellatedSolidSTLPath, this, &tessellatedSolidSTL.Args[0], tessellatedSolidSTL.Args.size());
 	tessellatedSolidSTL.Cmd->SetGuidance("Declare a Tessellated Solid From STL File");
 	tessellatedSolidSTL.Make = &G4InteractiveSolid::MakeTessellatedSolidFromSTLFile;
 	commands.push_back(&tessellatedSolidSTL);
 
-	G4String TessellatedSolidGdmlPath = prefix+"G4TessellatedSolidFromGDMLFile";
+	G4String TessellatedSolidGdmlPath = prefixloc+"G4TessellatedSolidFromGDMLFile";
 	tessellatedSolidGdml.Args.push_back(new G4UIcmdPargInteger("n", 0));
 	tessellatedSolidGdml.Cmd = new G4UIcmdWithPargs(TessellatedSolidGdmlPath, this, &tessellatedSolidGdml.Args[0], tessellatedSolidGdml.Args.size());
 	tessellatedSolidGdml.Cmd->SetGuidance("Declare a Tessellated Solid From GDML File" );
@@ -775,7 +775,7 @@ void G4InteractiveSolid::MakeUMultiUnion( G4String values )
 	if (umultiunion.Cmd->GetArguments( values )) {
 		delete solid; //NOTE: At VS2010 it used to crash, although currently it is OK
 
-		int n = umultiunion.GetInteger(0);	
+		//int n = umultiunion.GetInteger(0);	
 		// CODE FOR TESTS WITH THREE SOLIDS IS AT OTHER PLACE
 		// !!!!!!!!!!!!!!!!!!!!!
 		//VUSolid* tmp = UMultiUnion::CreateTestMultiUnion(n);
@@ -1309,7 +1309,7 @@ void G4InteractiveSolid::MakeTessellatedSolid( G4String values )
 		
 		delete solid;
                                    
-		G4TessellatedSolid* tessel 
+		G4TessellatedSolid* tesselSolid 
                   = new G4TessellatedSolid( "G4TessellatedSolid");
                   
                 for ( G4int i=0; i<num3; ++i) {
@@ -1317,7 +1317,7 @@ void G4InteractiveSolid::MakeTessellatedSolid( G4String values )
                   G4ThreeVector p2(p2in3Arg.GetValues()[3*i+0], p2in3Arg.GetValues()[3*i+1], p2in3Arg.GetValues()[3*i+2]);
                   G4ThreeVector p3(p3in3Arg.GetValues()[3*i+0], p3in3Arg.GetValues()[3*i+1], p3in3Arg.GetValues()[3*i+2]);
 				  G4VFacet *facet = new G4TriangularFacet(p1, p2, p3, ABSOLUTE); 
-                  tessel->AddFacet(facet);
+                  tesselSolid->AddFacet(facet);
                 }  
                 
                 for ( G4int i=0; i<num4; ++i) {
@@ -1325,11 +1325,11 @@ void G4InteractiveSolid::MakeTessellatedSolid( G4String values )
                   G4ThreeVector p2(p2in4Arg.GetValues()[3*i+0], p2in4Arg.GetValues()[3*i+1], p2in4Arg.GetValues()[3*i+2]);
                   G4ThreeVector p3(p3in4Arg.GetValues()[3*i+0], p3in4Arg.GetValues()[3*i+1], p3in4Arg.GetValues()[3*i+2]);
                   G4ThreeVector p4(p4in4Arg.GetValues()[3*i+0], p4in4Arg.GetValues()[3*i+1], p4in4Arg.GetValues()[3*i+2]);
-                  tessel->AddFacet(new G4QuadrangularFacet(p1, p2, p3, p4, ABSOLUTE));
+                  tesselSolid->AddFacet(new G4QuadrangularFacet(p1, p2, p3, p4, ABSOLUTE));
                 }
-                tessel->SetSolidClosed(true);
-                G4cout << *tessel << G4endl;
-                solid = tessel;  
+                tesselSolid->SetSolidClosed(true);
+                G4cout << *tesselSolid << G4endl;
+                solid = tesselSolid;  
                
 	}
 	else
@@ -1658,11 +1658,11 @@ void G4InteractiveSolid::MakeMultiUnion(G4String values)
 
 void G4InteractiveSolid::CreateTessellatedSolid(const vector<UVector3> &vertices, const vector<vector<int> > &nodes)
 {
-    G4TessellatedSolid &tessel = *new G4TessellatedSolid("G4TessellatedSolid");
+    G4TessellatedSolid &tesselSolid = *new G4TessellatedSolid("G4TessellatedSolid");
     for (int i = 0; i < (int) nodes.size(); i++)
     {
         const vector<int> &node = nodes[i];
-        G4VFacet *facet;
+        G4VFacet *facet=NULL;
         int n = node.size();
         vector<G4ThreeVector> v(n);
         for (int j = 0; j < n; j++)
@@ -1679,10 +1679,10 @@ void G4InteractiveSolid::CreateTessellatedSolid(const vector<UVector3> &vertices
                 facet = new G4QuadrangularFacet(v[0], v[1], v[2], v[3], ABSOLUTE);
                 break;
         }
-        tessel.AddFacet(facet);
+        tesselSolid.AddFacet(facet);
     }
-    tessel.SetSolidClosed(true);
-    solid = &tessel;
+    tesselSolid.SetSolidClosed(true);
+    solid = &tesselSolid;
 }
 
 void G4InteractiveSolid::MakeTessellatedSolidFromTransform(G4String /*values*/)

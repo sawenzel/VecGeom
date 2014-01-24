@@ -720,9 +720,9 @@ double SBTperformance::NormalizeToNanoseconds(double time)
 	return res;
 }
 
-double SBTperformance::MeasureTest (void (SBTperformance::*funcPtr)(int), const string &method)
+double SBTperformance::MeasureTest (void (SBTperformance::*funcPtr)(int), const string &amethod)
 {
-	Flush("Measuring performance of method "+method+"\n");
+	Flush("Measuring performance of method "+amethod+"\n");
 
 	// NEW: storing data phase, timer is off
 	// See: http://www.newty.de/fpt/fpt.html , The Function Pointer Tutorials
@@ -828,7 +828,7 @@ void SBTperformance::SetupTessellatedSolid(G4TessellatedSolid &tessel)
       G4ThreeVector vec = facet.GetVertex(j);
       v[j].Set(vec.x(), vec.y(), vec.z());
     }
-    VUFacet *ufacet;
+    VUFacet *ufacet=NULL;
     switch (verticesCount)
     {
     case 3:
@@ -1004,7 +1004,7 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 
 	for (int i = 0; i < maxPointsSurface; i++)
 	{
-		double random = G4UniformRand();
+	  //	double random = G4UniformRand();
 
     G4ThreeVector pointG4;
     int retry = 100;
@@ -1018,14 +1018,14 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 		UVector3 vec = GetRandomDirection();
 		directions[i] = vec;
 
-		UVector3 point;
+		UVector3 lpoint;
 		G4ThreeVector pointTest;
 		int attempt = 0;
     EInside position;
 
 		do
 		{
-      point.Set(pointG4.getX(), pointG4.getY(), pointG4.getZ());
+      lpoint.Set(pointG4.getX(), pointG4.getY(), pointG4.getZ());
       if (0) 
       {
         position = volumeGeant4->Inside(pointG4);
@@ -1038,11 +1038,11 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
 
 			// NEW: points will not be exactly on surface, but near the surface +- (default) 10 tolerance, configurable for BOTH
 
-//			point.x += RandomIncrease();
-//			point.y += RandomIncrease();
-//			point.z += RandomIncrease();
+//			lpoint.x += RandomIncrease();
+//			lpoint.y += RandomIncrease();
+//			lpoint.z += RandomIncrease();
 
-			pointTest.set(point.x, point.y, point.z);
+			pointTest.set(lpoint.x, lpoint.y, lpoint.z);
       position = volumeGeant4->Inside(pointTest);
 		}
 		while (position != kSurface && attempt < 100);
@@ -1051,7 +1051,7 @@ void SBTperformance::CreatePointsAndDirectionsSurface()
       cout << "Warning, point " << i << " is still not on surface" << endl;
 
 //		if (i == 0) point.Set(0, 0, -1000.001);
-		points[i+offsetSurface] = point;
+		points[i+offsetSurface] = lpoint;
 	}
 }
 
@@ -1065,8 +1065,8 @@ void SBTperformance::CreatePointsAndDirectionsOutside()
 	int maxOrbsOutside = 10; // do not make parametrization using macro file
 	G4Orb &orbOut = *new G4Orb("OrbOut", 1);
 
-	double rb = 1.5 * rOut;
-	G4Box *box = new G4Box("BoxOut", rb, rb, rb);
+	//double rb = 1.5 * rOut;
+	//G4Box *box = new G4Box("BoxOut", rb, rb, rb);
 
 	for (int i = 0; i < maxPointsOutside; i++)
 	{
@@ -1226,62 +1226,63 @@ void SBTperformance::CompareResults(double resG, double resR, double resU)
 	} 
 	ss << "====================================\n\n"; 
 	FlushSS(ss);
+        resU=0;
 }
 
-int SBTperformance::SaveVectorToExternalFile(const vector<double> &vector, const string &filename)
+int SBTperformance::SaveVectorToExternalFile(const vector<double> &vector, const string &afilename)
 {
-	Flush("Saving vector<double> to "+filename+"\n");
+	Flush("Saving vector<double> to "+afilename+"\n");
 
-	int res = UUtils::SaveVectorToExternalFile(vector, filename);
+	int res = UUtils::SaveVectorToExternalFile(vector, afilename);
 
 	if (res) 
-		Flush ("Unable to create file"+filename+"\n");
+		Flush ("Unable to create file"+afilename+"\n");
 	
 	return res;
 }
 
 
-int SBTperformance::SaveVectorToExternalFile(const vector<UVector3> &vector, const string &filename)
+int SBTperformance::SaveVectorToExternalFile(const vector<UVector3> &vector, const string &afilename)
 {
-	Flush("Saving vector<UVector3> to "+filename+"\n");
+	Flush("Saving vector<UVector3> to "+afilename+"\n");
 
-	int res = UUtils::SaveVectorToExternalFile(vector, filename);
+	int res = UUtils::SaveVectorToExternalFile(vector, afilename);
 
 	if (res) 
-		Flush ("Unable to create file"+filename+"\n");
+		Flush ("Unable to create file"+afilename+"\n");
 
 	return res;
 }
 
 
-int SBTperformance::SaveLegend(const string &filename)
+int SBTperformance::SaveLegend(const string &afilename)
 {
 	vector<double> offsets(3);
 	offsets[0] = maxPointsInside, offsets[1] = maxPointsSurface, offsets[2] = maxPointsOutside;
-	return SaveVectorToExternalFile(offsets, filename);
+	return SaveVectorToExternalFile(offsets, afilename);
 }
 
 // NEW: put results to a file which could be visualized
 // NEW: matlab scripts created to visualize the results
 
-int SBTperformance::SaveDoubleResults(const string &filename)
+int SBTperformance::SaveDoubleResults(const string &afilename)
 {
 	int result = 0;
 	
-	result += SaveVectorToExternalFile(resultDoubleGeant4, folder+filename+"Geant4.dat");
-	result += SaveVectorToExternalFile(resultDoubleRoot, folder+filename+"Root.dat");
-	result += SaveVectorToExternalFile(resultDoubleUSolids, folder+filename+"USolids.dat");
+	result += SaveVectorToExternalFile(resultDoubleGeant4, folder+afilename+"Geant4.dat");
+	result += SaveVectorToExternalFile(resultDoubleRoot, folder+afilename+"Root.dat");
+	result += SaveVectorToExternalFile(resultDoubleUSolids, folder+afilename+"USolids.dat");
 //	result += SaveVectorToExternalFile(resultDoubleDifference, folder+filename+"Dif.dat");
 	return result;
 }
 
-int SBTperformance::SaveVectorResults(const string &filename)
+int SBTperformance::SaveVectorResults(const string &afilename)
 {
 	int result = 0;
 	
-	result += SaveVectorToExternalFile(resultVectorGeant4, folder+filename+"Geant4.dat");
-	result += SaveVectorToExternalFile(resultVectorRoot, folder+filename+"Root.dat");
-	result += SaveVectorToExternalFile(resultVectorUSolids, folder+filename+"USolids.dat");
+	result += SaveVectorToExternalFile(resultVectorGeant4, folder+afilename+"Geant4.dat");
+	result += SaveVectorToExternalFile(resultVectorRoot, folder+afilename+"Root.dat");
+	result += SaveVectorToExternalFile(resultVectorUSolids, folder+afilename+"USolids.dat");
 //	result += SaveVectorToExternalFile(resultVectorDifference, folder+filename+"Dif.dat");
 	return result;
 }
@@ -1414,7 +1415,7 @@ void SBTperformance::BoolToDouble(const std::vector<bool> &vectorBool, std::vect
     vectorDouble[i] = (double) vectorBool[i];
 }
 
-void SBTperformance::SavePolyhedra(const string &method)
+void SBTperformance::SavePolyhedra(const string &amethod)
 {
 	vector<UVector3> vertices;
 	vector<vector<int> > nodes;
@@ -1431,10 +1432,10 @@ void SBTperformance::SavePolyhedra(const string &method)
 
 	if (res)
 	{
-		SaveVectorToExternalFile(vertices, folder+method+"Vertices.dat");
+		SaveVectorToExternalFile(vertices, folder+amethod+"Vertices.dat");
 
-		ofstream fileQuads((folder+method+"Quads.dat").c_str());
-		ofstream fileTriangles((folder+method+"Triangles.dat").c_str());
+		ofstream fileQuads((folder+amethod+"Quads.dat").c_str());
+		ofstream fileTriangles((folder+amethod+"Triangles.dat").c_str());
 	
 		int size = nodes.size();
 		for (int i = 0; i < size; i++)
@@ -1451,12 +1452,12 @@ void SBTperformance::SavePolyhedra(const string &method)
 	}
 }
 
-int SBTperformance::SaveResultsToFile(const string &method)
+int SBTperformance::SaveResultsToFile(const string &amethod)
 {
-	string filename(folder+method+"All.dat");
-	Flush("Saving all results to "+filename+"\n");
-	ofstream file(filename.c_str());
-	bool saveVectors = (method == "Normal");
+	string lfilename(folder+amethod+"All.dat");
+	Flush("Saving all results to "+lfilename+"\n");
+	ofstream file(lfilename.c_str());
+	bool saveVectors = (amethod == "Normal");
 	int prec = 16;
 	if (file.is_open())
 	{
@@ -1472,15 +1473,15 @@ int SBTperformance::SaveResultsToFile(const string &method)
 		}
 		return 0;
 	}
-	Flush("Unable to create file"+filename+"\n");
+	Flush("Unable to create file"+lfilename+"\n");
 	return 1;
 }
 
-void SBTperformance::CompareAndSaveResults(const string &method, double resG, double resR, double resU)
+void SBTperformance::CompareAndSaveResults(const string &amethod, double resG, double resR, double resU)
 {
 	CompareResults (resG, resR, resU);		
 
-	if (method == "Normal")
+	if (amethod == "Normal")
 	{
 		VectorDifference(resultVectorGeant4, resultVectorRoot, resultVectorDifference);
 		// convert vector x,y,z values to their magnitudes
@@ -1488,36 +1489,36 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 		VectorToDouble(resultVectorUSolids, resultDoubleUSolids);
 		VectorToDouble(resultVectorRoot, resultDoubleRoot);
 		VectorToDouble(resultVectorDifference, resultDoubleDifference);
-		SaveVectorResults(method);
+		SaveVectorResults(amethod);
 
     BoolToDouble(resultBoolUSolids, resultDoubleUSolids);
     resultDoubleRoot.assign(resultDoubleRoot.size(), 0);
     resultDoubleGeant4.assign(resultDoubleGeant4.size(), 0);
-    SaveDoubleResults(method+"Valid");
+    SaveDoubleResults(amethod+"Valid");
 	}
 	else
 	{
-    if (method == "DistanceToOut")
+    if (amethod == "DistanceToOut")
     {
-      SaveDoubleResults(method);
+      SaveDoubleResults(amethod);
       VectorDifference(resultDoubleGeant4, resultDoubleRoot, resultDoubleDifference);
-      SaveVectorResults(method+"Normal");
+      SaveVectorResults(amethod+"Normal");
       BoolToDouble(resultBoolGeant4, resultDoubleGeant4);
       BoolToDouble(resultBoolUSolids, resultDoubleUSolids);
       resultDoubleRoot.assign(resultDoubleRoot.size(), 0);
-      SaveDoubleResults(method+"Convex");
+      SaveDoubleResults(amethod+"Convex");
     }
     else
     {
       VectorDifference(resultDoubleGeant4, resultDoubleRoot, resultDoubleDifference);
-      SaveDoubleResults(method);
+      SaveDoubleResults(amethod);
     }
   }
-	if (method == "DistanceToIn")
+	if (amethod == "DistanceToIn")
 	{
 		SaveVectorResults("DistanceToInSurfaceNormal");
 	}
-	SaveLegend(folder+method+"Legend.dat");
+	SaveLegend(folder+amethod+"Legend.dat");
 //	SaveResultsToFile(method);
 
 	string name = volumeGeant4->GetName();
@@ -1525,10 +1526,10 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 
 //#ifdef DEBUG
 	Flush("Saving polyhedra for visualization\n");
-	SavePolyhedra(method);
+	SavePolyhedra(amethod);
 //#endif
-	SaveVectorToExternalFile(points, folder+method+"Points.dat");
-	SaveVectorToExternalFile(directions, folder+method+"Directions.dat");
+	SaveVectorToExternalFile(points, folder+amethod+"Points.dat");
+	SaveVectorToExternalFile(directions, folder+amethod+"Directions.dat");
 
 	if (volumeROOT)
 	{
@@ -1536,7 +1537,7 @@ void SBTperformance::CompareAndSaveResults(const string &method, double resG, do
 		CountDoubleDifferences(resultDoubleDifference, resultDoubleGeant4, resultDoubleRoot);
 	}
 
-	*perflabels << method << "\n";
+	*perflabels << amethod << "\n";
 	perflabels->flush();
 	*perftab << NormalizeToNanoseconds(resG) << "\t" << NormalizeToNanoseconds(resR) << "\t" << NormalizeToNanoseconds(resU) << "\n";
 	perftab->flush();
@@ -1761,7 +1762,7 @@ void SBTperformance::SetupGenericTrap(G4GenericTrap &trap)
   double z = trap.GetZHalfLength();
   std::vector<G4TwoVector> vertices = trap.GetVertices();
   double tVertices[16];
-  for (int i = 0; i < vertices.size(); i++)
+  for (unsigned int i = 0; i < vertices.size(); i++)
   {
     G4TwoVector &vec = vertices[i];
     tVertices[2*i] = vec.x();
@@ -1868,7 +1869,7 @@ void SBTperformance::SetupPolyhedra( G4Polyhedra &polyhedra )
   TGeoPgon *gonRoot = NULL;
   if (root)
   {
-    TGeoPgon *gonRoot = new TGeoPgon("", startPhi, endPhi, numSide, numZPlanes);
+    gonRoot = new TGeoPgon("", startPhi, endPhi, numSide, numZPlanes);
     for (int i = 0; i < numZPlanes; i++)
     {
       gonRoot->DefineSection(i, z[i], rmin[i], rmax[i]);
@@ -1930,7 +1931,7 @@ void SBTperformance::SetupPolyconeGeneric( G4Polycone &polycone )
   vector<double> rmax(numRZCorner);
   vector<double> z(numRZCorner);
 
-  G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
+  //  G4PolyconeHistorical *parameter = polycone.GetOriginalParameters();
 
   int back = 0;
 
@@ -2001,8 +2002,8 @@ void SBTperformance::SetupPolyconeGeneric( G4Polycone &polycone )
   }
   */
 
-  double capacityRoot = conRoot->Capacity();
-  double areaRoot = conRoot->GetFacetArea();
+  //double capacityRoot = conRoot->Capacity();
+  //double areaRoot = conRoot->GetFacetArea();
   //		double difCapacity = (capacityRoot - capacity) / capacity;
   //		double phiTotal = polycone->GetTolerance
 }

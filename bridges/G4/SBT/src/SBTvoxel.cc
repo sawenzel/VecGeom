@@ -192,13 +192,13 @@ void SBTvoxel::Draw( const G4VSolid *testVolume,
       visManager->Draw( polyline, objectTransformation);
       
       if (drawLimits && axes[i]!=axis) {
-        G4Polyline polyline;
-        polyline.SetVisAttributes( yuckStuff );
+        G4Polyline polyline1;
+        polyline1.SetVisAttributes( yuckStuff );
         inverseTransform.ApplyPointTransform( c );
         inverseTransform.ApplyPointTransform( d );
-        polyline.push_back( c );
-        polyline.push_back( d );
-        visManager->Draw( polyline, objectTransformation );
+        polyline1.push_back( c );
+        polyline1.push_back( d );
+        visManager->Draw( polyline1, objectTransformation );
       }
     }
   }

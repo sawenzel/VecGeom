@@ -40,14 +40,14 @@ UMultiUnion *CreateMultiUnion(int numNodes, TGeoVolume *top=NULL) // Number of n
 
    bool randomBoxes = true;
 
-   double length = randomBoxes ? length = pow (ratio * extentVolume / numNodes, 1./3.) / 2 : 40;
+   double length = pow (ratio * extentVolume / numNodes, 1./3.) / 2 ;
 
    UBox *box = new UBox("UBox", length, length, length);
 
 //   UOrb *box = new UOrb("UOrb", length);
 
    TGeoVolume *volume1;
-   double capacity = box->Capacity();
+   //double capacity = box->Capacity();
 
    if (top)
    {
@@ -132,12 +132,12 @@ void TestMultiUnionWithGraphics()
    // Test for a multiple union solid.
    TGeoManager *geom = new TGeoManager("UMultiUnion","Test of a UMultiUnion");
    TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
-   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
+   //   TGeoMaterial *matAl = new TGeoMaterial("Al", 26.98,13,2.7);
    TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum);
-   TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
+   //TGeoMedium *Al = new TGeoMedium("Root Material",2, matAl);
    
    TGeoVolume *top = geom->MakeBox("TOP", Vacuum, unionMaxX, unionMaxY, unionMaxZ);
-   TGeoShape *tgeobox = top->GetShape();
+   //TGeoShape *tgeobox = top->GetShape();
    geom->SetTopVolume(top);
    
    UMultiUnion *multiUnion = CreateMultiUnion(21, top);
@@ -196,7 +196,7 @@ void TestMultiUnionWithGraphics()
 
 double TestMultiUnionOneStep(int n)
 {
-	UMultiUnion *multiUnion = CreateMultiUnion(n);
+  //	UMultiUnion *multiUnion = CreateMultiUnion(n);
 //    DisplayMultiUnionInfo(multiUnion);
 
     cout << "Testing with " << n << " nodes" << endl;
@@ -224,9 +224,10 @@ double TestMultiUnionOneStep(int n)
         point.y = gRandom->Uniform(-unionMaxY * extentBorder, unionMaxY * extentBorder);
         point.z = gRandom->Uniform(-unionMaxZ * extentBorder, unionMaxZ * extentBorder);
 
-        VUSolid::EnumInside result = multiUnion->Inside(point);
+	// VUSolid::EnumInside result = multiUnion->Inside(point);
         
 #ifdef DEBUG
+         VUSolid::EnumInside result = multiUnion->Inside(point);
         switch (result)
         {
             case VUSolid::eInside: inside++; break;

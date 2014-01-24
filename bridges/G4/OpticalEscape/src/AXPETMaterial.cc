@@ -88,9 +88,9 @@ void AXPETMaterial::DefineMaterials()
   // AIR
   d = 1.290*mg/cm3;
   nComponents = 2;
-  G4Material* matAir = new G4Material("AIR", d, nComponents);
-  matAir -> AddElement(elN,0.7);
-  matAir -> AddElement(elO,0.3);
+  G4Material* matAirloc = new G4Material("AIR", d, nComponents);
+  matAirloc -> AddElement(elN,0.7);
+  matAirloc -> AddElement(elO,0.3);
 
   // LYSO
   d = 7.1*g/cm3;
@@ -123,7 +123,7 @@ void AXPETMaterial::DefineMaterials()
   G4double RIAir[nEntries] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0}; // Is Isotropic
   G4MaterialPropertiesTable* MPTAir = new G4MaterialPropertiesTable();
   MPTAir->AddProperty("RINDEX", PhotonEnergy, RIAir, nEntries);
-  matAir->SetMaterialPropertiesTable(MPTAir);
+  matAirloc->SetMaterialPropertiesTable(MPTAir);
   Vacuum->SetMaterialPropertiesTable(MPTAir);
 
   // LYSO properties

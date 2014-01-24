@@ -210,7 +210,7 @@ void AXPETPhysicsList::ConstructOp()
   theScintillationProcess->SetTrackSecondariesFirst(true);
 
 //  G4OpticalSurfaceModel themodel = glisur;
-  G4OpticalSurfaceModel themodel = unified;
+//  G4OpticalSurfaceModel themodel = unified;
 //theBoundaryProcess->SetModel(themodel);
 //  theBoundaryProcess->SetVerboseLevel(1);
 
