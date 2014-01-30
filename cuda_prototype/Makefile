@@ -2,7 +2,7 @@ CXX=g++
 GNU_OPT=-fabi-version=6 -ffast-math -finline-limit=10000000 -mavx -ftree-vectorize -O2
 CLANG_OPT=-ffast-math -mavx -ftree-vectorize -O2
 CXX_OPT=$(GNU_OPT)
-CXX_FLAGS=-m64 -std=c++11 -Wall# -lprofiler
+CXX_FLAGS=-m64 -std=c++11 -Wall -lprofiler
 CXX_FLAGS+=${CXX_OPT}
 CXX_INCLUDE=-I ./ -I ${VCROOT}/include -I$ ${TBBROOT}/include
 GNU_LIBS=
@@ -12,6 +12,9 @@ CXX_HEADERS=LibraryGeneric.h Shape.h Box.h KernelBox.h Tube.h KernelTube.h
 CXX_SRC=Box.cpp Tube.cpp Shape.cpp
 CXX_OBJS=$(addprefix obj/, $(addsuffix .o, $(CXX_SRC)))
 
+SCALAR_SRC=ImplementationsScalar.cpp
+SCALAR_OBJS=$(addprefix obj/, $(addsuffix .scalar.o, $(SCALAR_SRC)))
+
 VC_SRC=ImplementationsVc.cpp
 VC_OBJS=$(addprefix obj/, $(addsuffix .vc.o, $(VC_SRC)))
 VC_OPT=-L ${VCROOT}/lib -lVc
@@ -19,7 +22,7 @@ VC_OPT=-L ${VCROOT}/lib -lVc
 CILK=icc
 CILK_SRC=ImplementationsCilk.cpp
 CILK_OBJS=$(addprefix obj/, $(addsuffix .cilk.o, $(CILK_SRC)))
-CILK_OPT=-vec -m64 -std=c++11 -Wall -xHost -finline-limit=10000000 -ftree-vectorize -O2
+CILK_OPT=-m64 -std=c++11 -Wall -xHost -finline-limit=10000000 -ftree-vectorize -O2
 CILK_INCLUDE=$(CXX_INCLUDE)
 
 NVCC=nvcc
@@ -34,6 +37,9 @@ all: objs
 %.cpp.vc.o: ../%.cpp LibraryVc.h
 	$(CXX) -c $(CXX_FLAGS) $(VC_OPT) $(CXX_INCLUDE) $< -o $@
 
+%.cpp.scalar.o: ../%.cpp LibraryGeneric.h
+	$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@
+
 %.cpp.cilk.o: ../%.cpp LibraryCilk.h
 	$(CILK) -c $(CILK_OPT) $(CILK_INCLUDE) $< -o $@
 
@@ -44,6 +50,9 @@ all: objs
 	$(NVCC) -c $(NVCC_FLAGS) $(NVCC_INCLUDE) $< -o $@ 
 
 objs: $(CXX_OBJS) $(VC_OBJS) $(NVCC_OBJS) $(CILK_OBJS)
+
+MainScalar: LibraryGeneric.h $(CXX_HEADERS) MainScalar.cpp $(SCALAR_OBJS) $(CXX_OBJS)
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $(SCALAR_OBJS) MainScalar.cpp -o bin/MainScalar $(CXX_LIBS)
 
 MainVc: LibraryVc.h $(CXX_HEADERS) MainVc.cpp $(CXX_OBJS) $(VC_OBJS)
 	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $(VC_OBJS) MainVc.cpp -o bin/MainVc $(VC_OPT) $(CXX_LIBS)

@@ -1,6 +1,6 @@
-#include <iostream>
+#include <iostream> 
 #include <fstream>
-#include <google/profiler.h>
+#include "LibraryGeneric.h"
 #include "Box.h"
 
 double random(const double low, const double high) {
@@ -50,16 +50,13 @@ int main(void) {
   std::cout << "Max step array initialized in " << timer.Stop() << "s.\n";
 
   timer.Start();
-  ProfilerStart("/tmp/cilk.prof");
   box.DistanceToIn(points, directions, step_max, output);
-  ProfilerStop();
   
-  std::cout << "Cilk benchmark for " << n_points << " points finished in "
+  std::cout << "Scalar benchmark for " << n_points << " points finished in "
             << timer.Stop() << "s.\n";
 
-
   int hit = 0;
-  filename = "io/single_box.out.cilk";
+  filename = "io/single_box.out.scalar";
   std::ofstream outstream;
   outstream.open(filename);
   for (int i = 0; i < n_points; ++i) {

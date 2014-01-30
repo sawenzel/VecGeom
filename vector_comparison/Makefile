@@ -1,12 +1,12 @@
-CXX=clang++
-VC=clang++
+CXX=icc
+VC=icc
 CILK=icc
 
 CXX_OPT=-m64 -std=c++11 -O2
-VC_OPT=$(CXX_OPT) -mavx
+VC_OPT=$(CXX_OPT) -xHost
 CILK_OPT=$(CXX_OPT) -xHost
 
-CXX_SRC=VectorTester.cpp
+CXX_SRC=VectorTester.cpp Scalar.cpp
 CXX_OBJ=$(addprefix obj/, $(addsuffix .o, $(CXX_SRC)))
 
 VC_SRC=Vc.cpp
@@ -20,7 +20,7 @@ LIBS=-L ${VCROOT}/lib -lVc -ltbb -lrt -lirc
 all: objs
 
 %.cpp.o: ../%.cpp
-	$(CXX) -c $(CXX_OPT) $< -o $@
+	$(CXX) -c -no-vec $(CXX_OPT) $< -o $@
 
 %.cpp.vc.o: ../%.cpp
 	$(VC) -c $(VC_OPT) $< -o $@

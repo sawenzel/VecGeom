@@ -1,3 +1,6 @@
+#ifndef VECTORTESTER_H
+#define VECTORTESTER_H
+
 #include <Vc/Vc>
 #include "tbb/tick_count.h"
 
@@ -19,6 +22,10 @@ private:
                     double * const out, const int size);
   static void RunCilk(double const * const a, double const * const b,
                       double * const out, const int size);
+  static void RunCilkWrapped(double const * const a, double const * const b,
+                             double * const out, const int size);
+  static void RunScalar(double const * const a, double const * const b,
+                        double * const out, const int size);
 
 };
 
@@ -32,3 +39,5 @@ struct Stopwatch {
   }
   double Elapsed() const { return (t2-t1).seconds(); }
 };
+
+#endif /* VECTORTESTER_H */

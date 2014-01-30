@@ -94,7 +94,25 @@ void DistanceToIn(
 
   Float inv_2a = 1.0 / (2.0*a);
   Float distance_r_max(kInfinity);
-  MaskedAssign(can_hit_r_max, (-b - inv_2a*Sqrt<it>(d)), distance_r_max);
+  MaskedAssign(can_hit_r_max, (-b - Sqrt<it>(d))*inv_2a, distance_r_max);
+
+  Bool done_r(Impl<it>::kFalse);
+  DetermineRHit(pos_local, dir_local, distance_r_max, done_r);
+  MaskedAssign(!done_r, kInfinity, distance_r_max);
+
+  // Check inner cylinder
+
+  d = d - 4.0*a*(tube.r_max*tube.r_max - tube.r_min*tube.r_min);
+
+  Bool can_hit_r_min = (d >= 0.0);
+  Float distance_r_min(kInfinity);
+  MaskedAssign(can_hit_r_min, (-b + Sqrt<it>(d))*inv_2a, distance_r_min);
+
+  Bool done_r_min;
+  DetermineRHit(pos_local, dir_local, distance_r_min, done_r_min);
+  MaskedAssign(!done_r_min, kInfinity, distance_r_min);
+
+  // distance_r_max = Min<it>(distance_r_min, distance_r_max);
 
 }
 
