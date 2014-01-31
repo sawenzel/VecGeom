@@ -2,7 +2,7 @@ CXX=g++
 CXX_OPT=-O2 -fpermissive -ffast-math  -finline-limit=10000000 -mavx -ftree-vectorize
 CXX_FLAGS=-fabi-version=6 -m64 -std=c++11 #`root-config --cflags`
 CXX_FLAGS+=${CXX_OPT}
-#CXX_FLAGS+=-DUSETEMPLATETUBEIF
+CXX_FLAGS+=-DUSETEMPLATETUBEIF
 CXX_FLAGS+=-DSHOWDIFFERENCES
 CXX_INCLUDE=-I./ -I./Tests/ -I ${VCROOT}/include
 CXX_LIBS=-lGeom -L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib -ltbb -lrt -L ${USOLIDSROOT}/build -lusolids -L ${ROOTSYS}/lib -lGeom 
@@ -10,7 +10,7 @@ CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp P
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 
 #all: CHEP13Benchmark CHEP13BenchmarkSpec TestVectorizedPlacedTube
-all: CHEP13Benchmark  TestVectorizedPlacedTube
+all: CHEP13Benchmark  TestVectorizedPlacedTube_fullphi TestVectorizedPlacedTube_hollowphi TestVectorizedPlacedTube_hollow TestVectorizedPlacedTube_full TestVectorizedPlacedTube_fullpi 
 
 %.cpp.o: %.cpp 
 	$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@ 
@@ -25,9 +25,24 @@ CHEP13Benchmark: objs Tests/CHEP13Benchmark.cpp
 #	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13BenchmarkSpecialMatrices.cpp $(CXX_LIBS) -o bin/CHEP13BenchmarkSpec
 
 
-TestVectorizedPlacedTube: objs Tests/TestVectorizedPlacedTube.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestVectorizedPlacedTube.cpp $(CXX_LIBS) -o bin/TestVectorizedPlacedTube
+TestVectorizedPlacedTube_fullphi: objs Tests/TestVectorizedPlacedTube_fullphi.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestVectorizedPlacedTube_fullphi.cpp $(CXX_LIBS) -o bin/TestVectorizedPlacedTube_fullphi
 
+
+TestVectorizedPlacedTube_hollowphi: objs Tests/TestVectorizedPlacedTube_hollowphi.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestVectorizedPlacedTube_hollowphi.cpp $(CXX_LIBS) -o bin/TestVectorizedPlacedTube_hollowphi
+
+
+TestVectorizedPlacedTube_hollow: objs Tests/TestVectorizedPlacedTube_hollow.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestVectorizedPlacedTube_hollow.cpp $(CXX_LIBS) -o bin/TestVectorizedPlacedTube_hollow
+
+
+TestVectorizedPlacedTube_full: objs Tests/TestVectorizedPlacedTube_full.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestVectorizedPlacedTube_full.cpp $(CXX_LIBS) -o bin/TestVectorizedPlacedTube_full
+
+
+TestVectorizedPlacedTube_fullpi: objs Tests/TestVectorizedPlacedTube_fullpi.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestVectorizedPlacedTube_fullpi.cpp $(CXX_LIBS) -o bin/TestVectorizedPlacedTube_fullpi
 
 
 clean:
