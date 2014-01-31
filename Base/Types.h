@@ -4,7 +4,7 @@
 enum ImplType { kVc, kCuda, kScalar, kCilk };
 
 template <ImplType it>
-struct Impl {};
+struct Impl;
 
 template <typename Type>
 struct Vector3D;
