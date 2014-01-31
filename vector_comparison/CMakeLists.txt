@@ -8,7 +8,7 @@ if (NOT UNIX)
 endif()
 
 find_package(Vc REQUIRED)
-include_directories(${Vc_INCLUDE_DIRS})
+include_directories(${Vc_LIBRARIES}/../include/)
 set(LIBS ${LIBS} ${Vc_LIBRARIES})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -m64 -std=c++11 -O2")
