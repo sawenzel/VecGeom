@@ -49,3 +49,4 @@ message(STATUS "Will compile with flags: ${CMAKE_CXX_FLAGS}")
 message(STATUS "Libraries included: ${LIBS}")
 
 add_executable(compile_test ${CMAKE_SOURCE_DIR}/test/compile_test.cpp ${COMPILETEST_SRC})
+target_link_libraries(compile_test ${LIBS})
