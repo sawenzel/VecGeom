@@ -47,6 +47,20 @@ class PhysicalVolume
 		VUSolid * analogoususolid;
 		TGeoShape * analogousrootsolid;
 
+		// setting the daughter list
+		void SetDaughterList( std::list<PhysicalVolume const *> const * l)
+		{
+			if( daughters->size() > 0 )
+			{
+				std::cerr << " trying to set a new daughterlist while old one is already set " << std::endl;
+				std::cerr << " THIS IS LIKELY AN ERROR AND I AM REFUSING " << std::endl;
+			}
+			else
+			{
+			daughters=l;
+			}
+		}
+
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
 			logicalvol(0), daughters(new std::list<PhysicalVolume const *>), bbox(0), analogoususolid(0), analogousrootsolid(0) {};
@@ -123,6 +137,26 @@ class PhysicalVolume
 			}
 		}
 
+		// method which places a placed(or unplaced) box inside this volume
+		// this method is going to analyse the box and matrix combination ( using the existing
+		// shape factory functionality to add an appropriate specialised list of
+		// TODO: ideally we should give in an "abstract placed box" and not boxparameters
+		void PlaceDaughter( BoxParameters const * b, TransformationMatrix const * m, std::list<PhysicalVolume const * > const * d = 0)
+		{
+			if( ! daughters ){
+				daughters = new std::list<PhysicalVolume const *>;
+			}
+			if( daughters ){
+				PhysicalVolume * newdaughter = GeoManager::MakePlacedBox(b,m);
+				newdaughter->SetDaughterList( d );
+				daughters->push_back( newdaughter );
+			}
+			else{
+				std::cerr << "WARNING: no daughter list found" << std::endl;
+			}
+		}
+
+
 		int GetNumberOfDaughters() const
 		{
 			if( daughters )
@@ -136,6 +170,8 @@ class PhysicalVolume
 		{
 			return daughters;
 		}
+
+
 
 		// this function fills the physical volume with random points and directions such that the points are
 		// contained within the volume but not within the daughters
