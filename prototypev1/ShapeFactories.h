@@ -13,7 +13,8 @@
 #include "PhysicalTube.h"
 #include "GlobalDefs.h"
 #include "PhysicalCone.h"
-#include "PhysicalBox.h"
+
+class BoxParameters;
 
 struct TubeFactory
 {

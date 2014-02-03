@@ -8,7 +8,7 @@ CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp G
 CXX_HDR=PhysicalBox.h PhysicalTube.h PhysicalCone.h
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 
-all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement TestPolyconeContains
+all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement TestPolyconeContains BuildBoxDetector
 
 %.cpp.o: %.cpp 
 	$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@ 
@@ -26,6 +26,9 @@ CHEP13BenchmarkSpec: objs Tests/CHEP13BenchmarkSpecialMatrices.cpp
 :
 CHEP13Benchmark_unspecplacement: objs Tests/CHEP13Benchmark_unspecializedplacements.cpp 
 	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13Benchmark_unspecializedplacements.cpp $(CXX_LIBS) -o bin/CHEP13Benchmark_unspecplacement
+
+BuildBoxDetector: objs Tests/BuildBoxDetector.cpp 
+	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/BuildBoxDetector.cpp $(CXX_LIBS) -o bin/BuildBoxDetector
 
 clean:
 	@rm *.o

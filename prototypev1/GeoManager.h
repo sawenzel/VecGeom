@@ -9,9 +9,6 @@
 #define GEOMANAGER_H_
 
 
-//#include "PhysicalBox.h"
-//#include "PhysicalTube.h"
-//#include "PhysicalCone.h"
 #include "TransformationMatrix.h"
 #include "ShapeFactories.h"
 #include <list>

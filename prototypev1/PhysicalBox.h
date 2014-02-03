@@ -35,6 +35,8 @@ public:
 	double GetDY() const {return dY;}
 	double GetDZ() const {return dZ;}
 
+	double GetVolume() const {return 4*dX*dY*dZ;}
+
 	virtual ~BoxParameters(){};
 	// The placed boxed can easily access the private members
 	template<int,int> friend class PlacedBox;
@@ -79,6 +81,7 @@ public:
 	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
 	virtual inline bool Contains( Vector3D const & ) const;
 	virtual inline bool UnplacedContains( Vector3D const & ) const;
+	virtual inline bool Contains( Vector3D const &, Vector3D & ) const;
 	virtual double SafetyToIn( Vector3D const & ) const;
 	virtual double SafetyToOut( Vector3D const &) const;
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
@@ -350,6 +353,15 @@ bool PlacedBox<tid,rid>::Contains( Vector3D const & point ) const
 {
 	// here we do the point transformation
 	Vector3D localPoint;
+	matrix->MasterToLocal<tid,rid>(point, localPoint);
+	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
+}
+
+template<int tid, int rid>
+inline
+bool PlacedBox<tid,rid>::Contains( Vector3D const & point, Vector3D & localPoint ) const
+{
+	// here we do the point transformation
 	matrix->MasterToLocal<tid,rid>(point, localPoint);
 	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
 }

@@ -19,6 +19,8 @@
 class VUSolid;
 class TGeoShape;
 
+class BoxParameters;
+
 // pure abstract class
 class PhysicalVolume
 {
@@ -47,6 +49,20 @@ class PhysicalVolume
 		VUSolid * analogoususolid;
 		TGeoShape * analogousrootsolid;
 
+		// setting the daughter list
+		void SetDaughterList( std::list<PhysicalVolume const *> const * l)
+		{
+			if( daughters->size() > 0 )
+			{
+				std::cerr << " trying to set a new daughterlist while old one is already set " << std::endl;
+				std::cerr << " THIS IS LIKELY AN ERROR AND I AM REFUSING " << std::endl;
+			}
+			else
+			{
+			daughters=l;
+			}
+		}
+
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
 			logicalvol(0), daughters(new std::list<PhysicalVolume const *>), bbox(0), analogoususolid(0), analogousrootsolid(0) {};
@@ -57,6 +73,10 @@ class PhysicalVolume
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual bool   Contains( Vector3D const & ) const = 0;
 		virtual bool   UnplacedContains( Vector3D const & ) const = 0;
+
+		// same as Contains but returning the transformed point for further processing
+		virtual bool   Contains( Vector3D const &, Vector3D & ) const { return false; }
+
 
 		// the contains function knowing about the surface
 		virtual GlobalTypes::SurfaceEnumType   UnplacedContains_WithSurface( Vector3D const & ) const { return GlobalTypes::kOutside; };
@@ -123,6 +143,27 @@ class PhysicalVolume
 			}
 		}
 
+		// method which places a placed(or unplaced) box inside this volume
+		// this method is going to analyse the box and matrix combination ( using the existing
+		// shape factory functionality to add an appropriate specialised list of
+		// TODO: ideally we should give in an "abstract placed box" and not boxparameters
+
+		void PlaceDaughter( PhysicalVolume * newdaughter, std::list<PhysicalVolume const * > const * const d = 0)
+		{
+			if( ! daughters ){
+				daughters = new std::list<PhysicalVolume const *>;
+			}
+			if( daughters ){
+				// does not compile here; cyclic dependency
+				// PhysicalVolume * newdaughter = GeoManager::MakePlacedBox(b,m);
+				newdaughter->SetDaughterList( d );
+				daughters->push_back( newdaughter );
+			}
+			else{
+				std::cerr << "WARNING: no daughter list found" << std::endl;
+			}
+		}
+
 		int GetNumberOfDaughters() const
 		{
 			if( daughters )
@@ -137,6 +178,7 @@ class PhysicalVolume
 			return daughters;
 		}
 
+
 		// this function fills the physical volume with random points and directions such that the points are
 		// contained within the volume but not within the daughters
 		// it returns the points in points and the directions in dirs
@@ -146,6 +188,9 @@ class PhysicalVolume
 		// random directions
 		static
 		void fillWithRandomDirections( Vectors3DSOA & dirs, int number );
+
+		static
+		void samplePoint( Vector3D & point, double dx, double dy, double dz, double scale );
 
 		// give random directions satisfying the constraint that fraction of them hits a daughter boundary
 		// needs the positions as inputs
