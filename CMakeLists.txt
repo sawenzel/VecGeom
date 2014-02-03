@@ -17,8 +17,9 @@ endif()
 
 if (BACKEND STREQUAL Cilk)
 
-  set(COMPILETEST_SRC ${COMPILETEST_SRC} ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
+  set(SRC_COMPILETEST ${SRC_COMPILETEST} ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
+  set(SRC_GENERAL ${CMAKE_SOURCE_DIR}/source/cilk_backend.cpp)
 
 else()
 
@@ -30,6 +31,7 @@ else()
   endif()
 
   if (VECTOR)
+    message(STATUS "Compiling with vector instruction set ${VECTOR}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${VECTOR}")
   endif()
 
@@ -40,7 +42,8 @@ if (BACKEND STREQUAL "Vc")
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
   get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)
   include_directories(${Vc_LIBPATH}/../include/)
-  set(COMPILETEST_SRC ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
+  set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
+  set(SRC_GENERAL ${CMAKE_SOURCE_DIR}/source/vc_backend.cpp)
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -48,5 +51,5 @@ include_directories(${CMAKE_SOURCE_DIR})
 message(STATUS "Will compile with flags: ${CMAKE_CXX_FLAGS}")
 message(STATUS "Libraries included: ${LIBS}")
 
-add_executable(compile_test ${CMAKE_SOURCE_DIR}/test/compile_test.cpp ${COMPILETEST_SRC})
+add_executable(compile_test ${CMAKE_SOURCE_DIR}/test/compile_test.cpp ${SRC_COMPILETEST} ${SRC_GENERAL})
 target_link_libraries(compile_test ${LIBS})

@@ -4,6 +4,9 @@
 #include <iostream>
 #include "base/utilities.h"
 #include "base/types.h"
+#include "backend/backend.h"
+
+namespace vecgeom {
 
 // Need a way to detect this... Don't want to include Vc just for this!
 constexpr int kVectorSize = 4;
@@ -16,7 +19,11 @@ struct Impl<kCilk> {
   typedef CilkVector<int>    int_v;
   typedef CilkVector<double> double_v;
   typedef CilkVector<bool>   bool_v;
-  const static bool early_returns = false;
+  constexpr static bool early_returns = false;
+  const static double_v kOne;
+  const static double_v kZero;
+  const static bool_v kTrue;
+  const static bool_v kFalse;
 };
 
 typedef Impl<kCilk>::int_v    CilkInt;
@@ -62,6 +69,32 @@ public:
   VECGEOM_INLINE
   void Store(Type *destination) const {
     destination[0:vec_size] = vec[:];
+  }
+
+  VECGEOM_INLINE
+  void Map(Type (*f)(const Type&)) {
+    vec[:] = f(vec[:]);
+  }
+
+  VECGEOM_INLINE
+  void Map(Type (*f)(const Type)) {
+    vec[:] = f(vec[:]);
+  }
+
+  explicit operator bool() {
+    return __sec_reduce_all_nonzero(vec[:]);
+  }
+
+  friend inline
+  std::ostream& operator<<(std::ostream& os, VecType const &v) {
+    if (vec_size <= 0) {
+      os << "[]\n";
+      return os;
+    }
+    os << "[" << v.vec[0];
+    for (int i = 1; i < vec_size; ++i) os << ", " << v.vec[i];
+    os << "]";
+    return os;
   }
 
   VECGEOM_INLINE
@@ -313,22 +346,52 @@ public:
     return result;
   }
 
-  explicit operator bool() {
-    return __sec_reduce_all_nonzero(vec[:]);
-  }
-
-  friend inline
-  std::ostream& operator<<(std::ostream& os, VecType const &v) {
-    if (vec_size <= 0) {
-      os << "[]\n";
-      return os;
-    }
-    os << "[" << v.vec[0];
-    for (int i = 1; i < vec_size; ++i) os << ", " << v.vec[i];
-    os << "]";
-    return os;
-  }
-
 };
+
+/**
+ * Currently only implemented for then/else-values which are Cilk vectors.
+ * Should probably support scalar assignments as well.
+ */
+template <ImplType it = kCilk, typename Type>
+VECGEOM_INLINE
+void CondAssign(typename Impl<it>::bool_v const &cond,
+                Type const &thenval, Type const &elseval, Type *const output) {
+  if (cond.vec[:]) {
+    output->vec[:] = thenval.vec[:];
+  } else {
+    output->vec[:] = elseval.vec[:];
+  }
+}
+
+/**
+ * Currently only implemented for then/else-values which are Cilk vectors.
+ * Should probably support scalar assignments as well.
+ */
+template <ImplType it = kCilk, typename Type1, typename Type2>
+VECGEOM_INLINE
+void MaskedAssign(typename Impl<it>::bool_v const &cond,
+                  Type1 const &thenval, Type2 *const output) {
+  if (cond.vec[:]) {
+    output->vec[:] = thenval.vec[:];
+  }
+}
+
+template <>
+VECGEOM_INLINE
+CilkDouble Abs<kCilk, CilkDouble>(CilkDouble const &val) {
+  CilkDouble result;
+  result.Map(std::fabs);
+  return result;
+}
+
+template <>
+VECGEOM_INLINE
+CilkDouble Sqrt<kCilk, CilkDouble>(CilkDouble const &val) {
+  CilkDouble result;
+  result.Map(std::sqrt);
+  return result;
+}
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BACKEND_CILKBACKEND_H_

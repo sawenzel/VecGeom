@@ -6,6 +6,8 @@
 #include "base/types.h"
 #include "base/utilities.h"
 
+namespace vecgeom {
+
 template <typename Type>
 struct Vector3D {
 
@@ -17,25 +19,22 @@ private:
 
 public:
 
-  #ifdef VECGEOM_STD_CXX11
-  Vector3D() : vec{0, 0, 0} {};
-  #else
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D() {
     vec[0] = 0;
     vec[1] = 0;
     vec[2] = 0;
   }
-  #endif /* VECGEOM_STD_CXX11 */
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector3D(const Type a,
-              const Type b,
-              const Type c) {
+  Vector3D(const Type a, const Type b, const Type c) {
     vec[0] = a;
     vec[1] = b;
     vec[2] = c;
   }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D(const Type a) : Vector3D(a, a, a) {}
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D(Vector3D const &other) {
@@ -83,11 +82,36 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType& operator+=(VecType const &rhs) {
+  Type& x() { return vec[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const& x() const { return vec[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type& y() { return vec[1]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const& y() const { return vec[1]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type& z() { return vec[2]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const& z() const { return vec[2]; }
+
+  template <typename TypeOther>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType& operator+=(Vector3D<TypeOther> const &rhs) {
     this->vec[0] += rhs[0];
     this->vec[1] += rhs[1];
     this->vec[2] += rhs[2];
-    return this;
+    return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -96,16 +120,17 @@ public:
     this->vec[0] += scalar;
     this->vec[1] += scalar;
     this->vec[2] += scalar;
-    return this;
+    return *this;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType& operator-=(VecType const &rhs) {
+  VecType& operator-=(Vector3D<TypeOther> const &rhs) {
     this->vec[0] -= rhs[0];
     this->vec[1] -= rhs[1];
     this->vec[2] -= rhs[2];
-    return this;
+    return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -114,16 +139,17 @@ public:
     this->vec[0] -= scalar;
     this->vec[1] -= scalar;
     this->vec[2] -= scalar;
-    return this;
+    return *this;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType& operator*=(VecType const &rhs) {
+  VecType& operator*=(Vector3D<TypeOther> const &rhs) {
     this->vec[0] *= rhs[0];
     this->vec[1] *= rhs[1];
     this->vec[2] *= rhs[2];
-    return this;
+    return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -132,16 +158,17 @@ public:
     this->vec[0] *= scalar;
     this->vec[1] *= scalar;
     this->vec[2] *= scalar;
-    return this;
+    return *this;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType& operator/=(VecType const &rhs) {
+  VecType& operator/=(Vector3D<TypeOther> const &rhs) {
     this->vec[0] /= rhs[0];
     this->vec[1] /= rhs[1];
     this->vec[2] /= rhs[2];
-    return this;
+    return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -149,12 +176,13 @@ public:
   VecType& operator/=(Type const &scalar) {
     const Type inverse = Type(1) / scalar;
     *this *= inverse;
-    return this;
+    return *this;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType operator+(VecType const &other) const {
+  VecType operator+(Vector3D<TypeOther> const &other) const {
     VecType result(*this);
     result += other;
     return result;
@@ -168,9 +196,10 @@ public:
     return result;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType operator-(VecType const &other) const {
+  VecType operator-(Vector3D<TypeOther> const &other) const {
     VecType result(*this);
     result -= other;
     return result;
@@ -184,9 +213,10 @@ public:
     return result;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType operator*(VecType const &other) const {
+  VecType operator*(Vector3D<TypeOther> const &other) const {
     VecType result(*this);
     result *= other;
     return result;
@@ -200,9 +230,10 @@ public:
     return result;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType operator/(VecType const &other) const {
+  VecType operator/(Vector3D<TypeOther> const &other) const {
     VecType result(*this);
     result /= other;
     return result;
@@ -237,15 +268,16 @@ public:
     *this /= Length();
   }
 
-  template <ImplType it>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType Map(double (*f)(const double)) {
+  void Map(double (*f)(const double&)) {
     vec[0] = f(vec[0]);
     vec[1] = f(vec[1]);
     vec[2] = f(vec[2]);
   }
 
 };
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BASE_VECTOR3D_H_
