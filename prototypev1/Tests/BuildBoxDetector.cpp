@@ -28,9 +28,6 @@ int main()
 	points.alloc(np);
 	dirs.alloc(np);
 
-
-	StopWatch timer;
-
     // generate benchmark cases
 	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
 
@@ -57,6 +54,7 @@ int main()
 	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( -waiverparams->GetDX()/2., -waiverparams->GetDY()/2., 0, 0, 0, 45)));
 
 	// at this moment the waiver is not yet placed into the world; this will be done now with the new interface
+	// we are basically replacing the waiver by using its existing parameters and daughterlist
 	// TODO: the future interface will hide much of the details here
 	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( worlddx/2., worlddy/2., 0, 0, 0, 45 )), waiver->GetDaughterList());
 	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( -worlddx/2., worlddy/2., 0, 0, 0, 0  )), waiver->GetDaughterList());
@@ -71,13 +69,17 @@ int main()
 
 	// try to locate a global point
 
+	StopWatch timer;
+	timer.Start();
+	VolumePath path(4);
 	std::map<PhysicalVolume const *, int> volcounter;
 	int total=0;
 	for(int i=0;i<1000000;i++)
 	{
 		Vector3D point;
 		PhysicalVolume::samplePoint( point, worlddx, worlddy, worlddz, 1 );
-		PhysicalVolume const * deepestnode = SimpleVecNavigator::LocateGlobalPoint( world, point);
+		PhysicalVolume const * deepestnode = SimpleVecNavigator::LocateGlobalPoint( world, point, path);
+		/*
 		if( volcounter.find(deepestnode) == volcounter.end() )
 		  {
 		    volcounter[deepestnode]=1;
@@ -86,10 +88,13 @@ int main()
 		  {
 		    volcounter[deepestnode]++;
 		  }
-
+*/
+		// path.Print();
+		path.Clear();
 		//		deepestnode->printInfo();
 	}
-
+	timer.Stop();
+	std::cerr << " step took " << timer.getDeltaSecs() << " seconds " << std::endl;
 	
 	for(auto k=volcounter.begin();k!=volcounter.end();k++)
 	  {
