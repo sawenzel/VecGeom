@@ -2,8 +2,8 @@
 #define VECGEOM_BACKEND_CILKBACKEND_H_
 
 #include <iostream>
-#include "Base/Utilities.h"
-#include "Base/Types.h"
+#include "base/utilities.h"
+#include "base/types.h"
 
 // Need a way to detect this... Don't want to include Vc just for this!
 constexpr int kVectorSize = 4;

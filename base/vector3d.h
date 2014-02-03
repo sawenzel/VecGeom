@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <string>
-#include "Base/Types.h"
-#include "Base/Utilities.h"
+#include "base/types.h"
+#include "base/utilities.h"
 
 template <typename Type>
 struct Vector3D {

@@ -2,8 +2,8 @@
 #define VECGEOM_BACKEND_VCBACKEND_H_
 
 #include <Vc/Vc>
-#include "Base/Utilities.h"
-#include "Base/Types.h"
+#include "base/utilities.h"
+#include "base/types.h"
 
 template <>
 struct Impl<kVc> {

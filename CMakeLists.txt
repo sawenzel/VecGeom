@@ -17,7 +17,7 @@ endif()
 
 if (BACKEND STREQUAL Cilk)
 
-  set(COMPILETEST_SRC ${COMPILETEST_SRC} ${CMAKE_SOURCE_DIR}/Test/CompileCilk.cpp)
+  set(COMPILETEST_SRC ${COMPILETEST_SRC} ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
 
 else()
@@ -40,7 +40,7 @@ if (BACKEND STREQUAL "Vc")
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
   get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)
   include_directories(${Vc_LIBPATH}/../include/)
-  set(COMPILETEST_SRC ${CMAKE_SOURCE_DIR}/Test/CompileVc.cpp)
+  set(COMPILETEST_SRC ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -48,4 +48,4 @@ include_directories(${CMAKE_SOURCE_DIR})
 message(STATUS "Will compile with flags: ${CMAKE_CXX_FLAGS}")
 message(STATUS "Libraries included: ${LIBS}")
 
-add_executable(CompileTest ${CMAKE_SOURCE_DIR}/Test/CompileTest.cpp ${COMPILETEST_SRC})
+add_executable(compile_test ${CMAKE_SOURCE_DIR}/test/compile_test.cpp ${COMPILETEST_SRC})

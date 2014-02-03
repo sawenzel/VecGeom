@@ -2,8 +2,8 @@
 #define VECGEOM_BASE_SOA3D_H_
 
 #include "mm_malloc.h"
-#include "Base/Utilities.h"
-#include "Base/Types.h"
+#include "base/utilities.h"
+#include "base/types.h"
 
 template <typename Type>
 struct SOA3D {

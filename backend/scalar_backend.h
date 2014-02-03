@@ -1,8 +1,8 @@
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
-#include "Base/Utilities.h"
-#include "Base/Types.h"
+#include "base/utilities.h"
+#include "base/types.h"
 
 template <>
 struct Impl<kScalar> {
