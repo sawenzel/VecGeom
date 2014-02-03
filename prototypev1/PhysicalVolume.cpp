@@ -22,7 +22,7 @@ static MyRNG rng(1);                   // e.g. keep one global instance (per thr
 std::uniform_real_distribution<> udouble_dist(0,1);
 
 
-static void samplePoint( Vector3D & point, double dx, double dy, double dz, double scale )
+void PhysicalVolume::samplePoint( Vector3D & point, double dx, double dy, double dz, double scale )
 {
 	point.x=scale*(1-2.*udouble_dist(rng))*dx;
     point.y=scale*(1-2.*udouble_dist(rng))*dy;
@@ -30,10 +30,10 @@ static void samplePoint( Vector3D & point, double dx, double dy, double dz, doub
 }
 
 
-static void samplePoint( Vector3D & point, double dx, double dy, double dz, Vector3D const & origin, double scale )
+static void samplePointO( Vector3D & point, double dx, double dy, double dz, Vector3D const & origin, double scale )
 {
 	Vector3D tmp;
-	samplePoint(tmp, dx, dy, dz, scale);
+	PhysicalVolume::samplePoint(tmp, dx, dy, dz, scale);
 	point.x=origin.x + tmp.x;
     point.y=origin.y + tmp.y;
     point.z=origin.z + tmp.z;
@@ -215,7 +215,7 @@ PhysicalVolume::fillWithRandomPoints( Vectors3DSOA &points, int number ) const
 		do
 		  {
 		    counter++;
-		    samplePoint(point, dx, dy, dz, origin, 1);
+		    samplePointO(point, dx, dy, dz, origin, 1);
 		  }
 		while ( ! ExclusiveContains(point) );
 		points.setFromVector(i, point);

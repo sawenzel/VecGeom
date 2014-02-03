@@ -19,6 +19,8 @@
 class VUSolid;
 class TGeoShape;
 
+class BoxParameters;
+
 // pure abstract class
 class PhysicalVolume
 {
@@ -71,6 +73,10 @@ class PhysicalVolume
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual bool   Contains( Vector3D const & ) const = 0;
 		virtual bool   UnplacedContains( Vector3D const & ) const = 0;
+
+		// same as Contains but returning the transformed point for further processing
+		virtual bool   Contains( Vector3D const &, Vector3D & ) const { return false; }
+
 
 		// the contains function knowing about the surface
 		virtual GlobalTypes::SurfaceEnumType   UnplacedContains_WithSurface( Vector3D const & ) const { return GlobalTypes::kOutside; };
@@ -141,13 +147,15 @@ class PhysicalVolume
 		// this method is going to analyse the box and matrix combination ( using the existing
 		// shape factory functionality to add an appropriate specialised list of
 		// TODO: ideally we should give in an "abstract placed box" and not boxparameters
-		void PlaceDaughter( BoxParameters const * b, TransformationMatrix const * m, std::list<PhysicalVolume const * > const * d = 0)
+
+		void PlaceDaughter( PhysicalVolume * newdaughter, std::list<PhysicalVolume const * > const * const d = 0)
 		{
 			if( ! daughters ){
 				daughters = new std::list<PhysicalVolume const *>;
 			}
 			if( daughters ){
-				PhysicalVolume * newdaughter = GeoManager::MakePlacedBox(b,m);
+				// does not compile here; cyclic dependency
+				// PhysicalVolume * newdaughter = GeoManager::MakePlacedBox(b,m);
 				newdaughter->SetDaughterList( d );
 				daughters->push_back( newdaughter );
 			}
@@ -155,7 +163,6 @@ class PhysicalVolume
 				std::cerr << "WARNING: no daughter list found" << std::endl;
 			}
 		}
-
 
 		int GetNumberOfDaughters() const
 		{
@@ -172,7 +179,6 @@ class PhysicalVolume
 		}
 
 
-
 		// this function fills the physical volume with random points and directions such that the points are
 		// contained within the volume but not within the daughters
 		// it returns the points in points and the directions in dirs
@@ -182,6 +188,9 @@ class PhysicalVolume
 		// random directions
 		static
 		void fillWithRandomDirections( Vectors3DSOA & dirs, int number );
+
+		static
+		void samplePoint( Vector3D & point, double dx, double dy, double dz, double scale );
 
 		// give random directions satisfying the constraint that fraction of them hits a daughter boundary
 		// needs the positions as inputs

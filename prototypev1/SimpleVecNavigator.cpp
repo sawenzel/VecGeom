@@ -250,6 +250,38 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 	}
 }
 
+// assumptions:
+// global point is given in coordinates of the frame of reference of vol ( normally vol will be the world )
+
+// we could specialize this function on whether top or not
+// this is very special at the moment; no treatment of boundary information
+// we might have to pass the directions as well -- but then we would have to transform them as well ( bugger )
+PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume const * vol, Vector3D const & globalpoint, bool top=true)
+{
+	PhysicalVolume const * candvolume = vol;
+	if( top ) candvolume = ( vol->UnplacedContains( globalpoint ) )? vol : 0;
+	if( candvolume )
+	{
+		std::list< PhysicalVolume const * > * dlist = vol->GetDaughterList();
+		std::list< PhysicalVolume const * >::iterator iter;
+		for(iter=dlist->begin(); iter!=dlist->end(); iter++ )
+		{
+			PhysicalVolume const * nextvol=(*iter);
+			Vector3D transformedpoint;
+			if( nextvol->Contains( globalpoint, transformedpoint ) )
+			{
+				// this is no longer the top ( so setting top to false )
+				candvolume = LocateGlobalPoint( nextvol, transformedpoint, false );
+				break;
+			}
+		}
+	}
+	return candvolume;
+
+	// TODO: fill the path while going down
+	// at the very end: do the matrix multiplications and caching of global matrices -- doing this in a loop will be cache friendly
+}
+
 
 
 

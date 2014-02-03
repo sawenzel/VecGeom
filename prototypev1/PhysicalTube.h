@@ -20,7 +20,7 @@
 
 #include "UTubs.hh"
 #include "TGeoTube.h"
-
+#include "PhysicalVolume.h"
 
 
 template <typename T=double>

@@ -60,6 +60,11 @@ public:
 									double * /*distance*/,
 									PhysicalVolume ** nextnode, int np ) const;
 
+
+	static
+	PhysicalVolume const *
+	LocateGlobalPoint( PhysicalVolume const *, Vector3D const & globalpoint, bool top=true );
+
 };
 
 #endif /* SIMPLEVECNAVIGATOR_H_ */

@@ -6,8 +6,29 @@
  */
 
 
+#include "../TransformationMatrix.h"
+#include "../Utils.h"
+#include <iostream>
+#include "mm_malloc.h"
+#include "../GlobalDefs.h"
+#include "../GeoManager.h"
+#include "../PhysicalBox.h"
+#include "../SimpleVecNavigator.h"
+#include <map>
+
 int main()
 {
+	Vectors3DSOA points, dirs, intermediatepoints, intermediatedirs;
+	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
+
+
+	int np=1024;
+	int NREPS = 1000;
+
+	points.alloc(np);
+	dirs.alloc(np);
+
+
 	StopWatch timer;
 
     // generate benchmark cases
@@ -17,115 +38,71 @@ int main()
 	double worlddx = 100.;
 	double worlddy = 100;
 	double worlddz = 10.;
-	PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(worlddx, worlddy, worlddz), identity );
+	BoxParameters *	worldp =  new BoxParameters(worlddx, worlddy, worlddz);
+	PhysicalVolume * world = GeoManager::MakePlacedBox( worldp , identity );
+	double volworld = worldp->GetVolume();
 
-	BoxParameters * cellparams = new BoxParameters( worlddx/20., worlddy/20., worlddz/4);
 
+	BoxParameters * cellparams = new BoxParameters( worlddx/20., worlddy/20., worlddz/4 );
+	BoxParameters * waiverparams = new BoxParameters( worlddx/3., worlddy/3., worlddz/2 );
+	double volcell = cellparams->GetVolume();
+	double volwaiver = waiverparams->GetVolume();
 
-	BoxParameters * waiverparams = new BoxParameters( worlddx/5., worlddy/5., worlddz/2);
 	PhysicalVolume *waiver = GeoManager::MakePlacedBox( waiverparams, identity);
-	waiver->AddDaughter( GeoManager::MakePlacedBox(cellparams, new TransformationMatrix() ) );
-	waiver->AddDaughter( GeoManager::MakePlacedBox(cellparams, new TransformationMatrix() ) );
-	waiver->AddDaughter( GeoManager::MakePlacedBox(cellparams, new TransformationMatrix() ) );
-	waiver->AddDaughter( GeoManager::MakePlacedBox(cellparams, new TransformationMatrix() ) );
 
-	PhysicalVolume * shield = GeoManager::MakePlacedTube( new TubeParameters<>(9*worldrmax/11, 9*worldrmax/10, 8*worldz/10), identity );
-	world->AddDaughter( shield );
+	// this just adds daughters which have been created in a placed way
+	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( -waiverparams->GetDX()/2., waiverparams->GetDY()/2., 0, 0, 0, 0) ));
+	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( waiverparams->GetDX()/2., waiverparams->GetDY()/2., 0, 0, 0, 45) ));
+	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( waiverparams->GetDX()/2., -waiverparams->GetDY()/2., 0, 0, 0, 0) ));
+	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( -waiverparams->GetDX()/2., -waiverparams->GetDY()/2., 0, 0, 0, 45)));
 
-	ConeParameters<double> * endcapparams = new ConeParameters<double>( worldrmax/20., worldrmax,
-					worldrmax/20., worldrmax/10., worldz/10., 0, 2.*M_PI );
-	PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,-9.*worldz/10., 0, 0, 0) );
-	PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,9*worldz/10, 0, 180, 0) );
-	world->AddDaughter( endcap1 );
-	world->AddDaughter( endcap2 );
+	// at this moment the waiver is not yet placed into the world; this will be done now with the new interface
+	// TODO: the future interface will hide much of the details here
+	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( worlddx/2., worlddy/2., 0, 0, 0, 45 )), waiver->GetDaughterList());
+	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( -worlddx/2., worlddy/2., 0, 0, 0, 0  )), waiver->GetDaughterList());
+	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( -worlddx/2., -worlddy/2., 0, 0, 0, 45 )), waiver->GetDaughterList());
+	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( worlddx/2., -worlddy/2., 0, 0, 0, 0 )), waiver->GetDaughterList());
+
 
 	world->fillWithRandomPoints(points,np);
 	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
 
-	points.toPlainArray(plainpointarray,np);
-	dirs.toPlainArray(plaindirtarray,np);
-
 	std::cerr << " Number of daughters " << world->GetNumberOfDaughters() << std::endl;
 
-	// time performance for this placement ( we should probably include some random physical steps )
+	// try to locate a global point
 
-	// do some navigation with a simple Navigator
-	SimpleVecNavigator vecnav(np);
-	PhysicalVolume ** nextvolumes  = ( PhysicalVolume ** ) _mm_malloc(sizeof(PhysicalVolume *)*np, ALIGNMENT_BOUNDARY);
-
-	timer.Start();
-	for(int reps=0 ;reps < NREPS; reps++ )
+	std::map<PhysicalVolume const *, int> volcounter;
+	int total=0;
+	for(int i=0;i<1000000;i++)
 	{
-		vecnav.DistToNextBoundary( world, points, dirs, steps, distances, nextvolumes , np );
-	}
-	timer.Stop();
-	double t0 = timer.getDeltaSecs();
-	std::cerr << t0 << std::endl;
-	// give out hit pointers
-	double d0=0.;
-	for(auto k=0;k<np;k++)
-	{
-		d0+=distances[k];
-		distances[k]=Utils::kInfinity;
-	}
-
-
-	timer.Start();
-	for(int reps=0 ;reps < NREPS; reps++ )
-	{
-		vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
-	}
-	timer.Stop();
-	double t1= timer.getDeltaSecs();
-
-	std::cerr << t1 << std::endl;
-
-	double d1;
-	for(auto k=0;k<np;k++)
-	{
-		d1+=distances[k];
-		distances[k]=Utils::kInfinity;
-
-	}
-
-	// now using the ROOT Geometry library (scalar version)
-	timer.Start();
-	for(int reps=0;reps < NREPS; reps ++ )
-	{
-		vecnav.DistToNextBoundaryUsingROOT( world, plainpointarray, plaindirtarray, steps, distances, nextvolumes, np );
-	}
-	timer.Stop();
-	double t3 = timer.getDeltaSecs();
-
-	std::cerr << t3 << std::endl;
-	double d3;
-	for(auto k=0;k<np;k++)
-		{
-			d3+=distances[k];
-		}
-	std::cerr << d0 << " " << d1 << " " << d3 << std::endl;
-
-
-	//vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
-	//( world, points, dirs,  );
-
-
-	// give out hit pointers
-	/*
-	for(auto k=0;k<np;k++)
-	{
-		if( nextvolumes[k] !=0 )
-		{
-			nextvolumes[k]->printInfo();
-		}
+		Vector3D point;
+		PhysicalVolume::samplePoint( point, worlddx, worlddy, worlddz, 1 );
+		PhysicalVolume const * deepestnode = SimpleVecNavigator::LocateGlobalPoint( world, point);
+		if( volcounter.find(deepestnode) == volcounter.end() )
+		  {
+		    volcounter[deepestnode]=1;
+		  }
 		else
-		{
-			std::cerr << "hitting boundary of world"  << std::endl;
-		}
+		  {
+		    volcounter[deepestnode]++;
+		  }
+
+		//		deepestnode->printInfo();
 	}
-*/
-    _mm_free(distances);
-    return 1;
+
+	
+	for(auto k=volcounter.begin();k!=volcounter.end();k++)
+	  {
+	    total+=k->second;
+	  }
+	
+	for(auto k=volcounter.begin();k!=volcounter.end();k++)
+	  {
+	    std::cerr << k->first << " " << k->second << " " << k->second/(1.*total) << std::endl; 
+	  }
+	std::cerr << 4*volcell/volworld << std::endl;
+	std::cerr << volwaiver/volworld << std::endl;
+	std::cerr << (volworld-4*volwaiver)/volworld << std::endl;
 }
 
 
