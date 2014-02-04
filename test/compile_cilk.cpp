@@ -6,7 +6,7 @@
 
 using namespace vecgeom;
 
-void foo() {
+void compile_cilk() {
   CilkDouble scalar;
   Vector3D<double> scalar_v;
   Vector3D<CilkDouble> vector_v;

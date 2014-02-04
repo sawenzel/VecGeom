@@ -20,19 +20,23 @@ public:
 
   #ifdef VECGEOM_STD_CXX11
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size_)
       :  size(size_), allocated(false), a(a_), b(b_), c(c_) {};
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(const int size_) : size(size_), allocated(true) {
     a = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
     b = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
     c = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D() : SOA3D(nullptr, nullptr, nullptr, 0) {};
 
   #else // VECGEOM_STD_CXX11
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size_) {
     size = size_;
     allocated = false;
@@ -41,6 +45,7 @@ public:
     c = c_;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(const int size_) {
     size = size_;
     allocated = true;
@@ -49,11 +54,16 @@ public:
     c = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
   }
 
-  SOA3D() : SOA3D(NULL, NULL, NULL, 0) {}
+  VECGEOM_CUDA_HEADER_BOTH
+  SOA3D() {
+    SOA3D(NULL, NULL, NULL, 0);
+  }
 
   #endif /* VECGEOM_STD_CXX11 */
 
-  SOA3D(SOA3D const &other) : SOA3D(other.size) {
+  VECGEOM_CUDA_HEADER_BOTH
+  SOA3D(SOA3D const &other) {
+    SOA3D(other.size);
     const int count = other.size;
     for (int i = 0; i < count; ++i) {
       a[i] = other.a[i];
@@ -63,10 +73,14 @@ public:
     size = count;
   }
 
+  #ifndef VECGEOM_NVCC
+
+  VECGEOM_CUDA_HEADER_HOST
   ~SOA3D() {
     Deallocate();
   }
 
+  VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
   void Deallocate() {
     if (allocated) {
@@ -76,15 +90,18 @@ public:
     }
   }
 
+  #endif // VECGEOM_NVCC
+
   #ifdef VECGEOM_NVCC
 
   /**
    * Allocates and copies the data of this SOA to the GPU, then creates and
    * returns a new SOA object that points to GPU memory.
    */
+  VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
   SOA3D<Type> CopyToGPU() const {
-    const int count = size();
+    const int count = size;
     const int mem_size = count*sizeof(Type);
     Type *a_, *b_, *c_;
     cudaMalloc(static_cast<void**>(&a_), mem_size);
@@ -100,6 +117,7 @@ public:
    * Only works for SOA pointing to the GPU, but will fail silently if this is
    * not the case.
    */
+  VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
   void FreeFromGPU() {
     cudaFree(a);

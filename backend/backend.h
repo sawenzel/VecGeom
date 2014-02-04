@@ -15,12 +15,12 @@ VECGEOM_INLINE
 void MaskedAssign(typename Impl<it>::bool_v const &cond,
                   Type1 const &thenval, Type2 *const output);
 
-template <ImplType it, typename Type = typename Impl<it>::double_v>
+template <ImplType it, typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Abs(const Type&);
 
-template <ImplType it, typename Type = typename Impl<it>::double_v>
+template <ImplType it, typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Sqrt(const Type&);

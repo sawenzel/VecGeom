@@ -5,16 +5,16 @@
 
 namespace vecgeom {
 
-#ifndef __CUDACC__
-  #define VECGEOM_STD_CXX11
-  #define VECGEOM_CUDA_HEADER_DEVICE
-  #define VECGEOM_CUDA_HEADER_HOST
-  #define VECGEOM_CUDA_HEADER_BOTH
-#else // __CUDACC__
+#if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
+#else // __CUDACC__ || __NVCC__
+  #define VECGEOM_STD_CXX11
+  #define VECGEOM_CUDA_HEADER_DEVICE
+  #define VECGEOM_CUDA_HEADER_HOST
+  #define VECGEOM_CUDA_HEADER_BOTH
 #endif // __CUDACC__
 
 #ifdef __INTEL_COMPILER

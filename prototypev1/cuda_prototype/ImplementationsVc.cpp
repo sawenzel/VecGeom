@@ -21,14 +21,6 @@ void Box::Contains(SOA3D<double> const &points,
     kernel::box::Contains<kVc>(parameters->dimensions, trans_matrix, point,
                                res);
     res.store(&output[i]);
-    const int index_pad = i + kVectorSize - size; 
-    if (index_pad < 0) {
-      res.store(&output[i]);
-    } else {
-      for (int j = 0; j < index_pad+1; ++j) {
-        output[i+j] = res[j];
-      }
-    }
   }
 
 }
@@ -57,12 +49,6 @@ void Box::DistanceToIn(SOA3D<double> const &pos,
       parameters->dimensions, trans_matrix, position, direction, step_max, res
     );
     res.store(&distance[i]);
-  }
-  for (int i = i_max; i < size; ++i) {
-    kernel::box::DistanceToIn<kScalar>(
-        parameters->dimensions, trans_matrix, pos[i], dir[i],
-        steps_max[i], distance[i]
-    );
   }
 
 }
