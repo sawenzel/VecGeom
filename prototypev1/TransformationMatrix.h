@@ -159,8 +159,6 @@ public:
 		inline
 		void
 		MasterToLocalCombinedT(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
-
-
 	/*
 	 *  we should provide the versions for a Vc vector or more general for a T vector
 	 */
@@ -168,7 +166,6 @@ public:
 		inline
 		void
 		MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const;
-
 	template<TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
@@ -177,16 +174,12 @@ public:
 		{
 			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz);
 		}
-
-
 	// to transform real vectors, we don't care about translation
 	template <RotationIdType rid>
 	inline
 	void
 	__attribute__((always_inline))
 	MasterToLocalVec(Vector3D const &, Vector3D &) const;
-
-
 	// define some virtual functions (which should dispatch to specialized templated functions)
 	virtual
 		void
@@ -194,14 +187,11 @@ public:
 		// inline general case here
 		MasterToLocal<-1,-1>(master,local);
 	};
-
 	virtual
 		void
 		MasterToLocalVec(Vector3D const & master, Vector3D & local) const {
 		MasterToLocalVec<-1>(master,local);
 	};
-
-
 	virtual
 	void
 	MasterToLocal(Vectors3DSOA const & master, Vectors3DSOA & local) const
@@ -209,7 +199,6 @@ public:
 // this is not nice: we bind ourselfs to Vc here
 		MasterToLocal<-1,-1, Vc::double_v>(master, local);
 	}
-
 	virtual
 	void
 	MasterToLocalVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
@@ -217,7 +206,6 @@ public:
 // this is not nice: we bind ourselfs to Vc here
 		MasterToLocal<0,-1, Vc::double_v>(master, local);
 	}
-
 	virtual
 	void
 	MasterToLocalCombined( Vectors3DSOA const & masterpoint, Vectors3DSOA & localpoint,
@@ -226,6 +214,96 @@ public:
 		//mapping v
 		MasterToLocalCombinedT<1,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
 	}
+
+    // ---------------------------------------------
+	// for the other way around: LocalToMaster
+	template <TranslationIdType tid, RotationIdType rid>
+		inline
+		void
+		LocalToMaster(Vector3D const &, Vector3D &) const;
+
+
+		// T is the internal type to be used ( can be scalar or vector )
+		// these interfaces are for the vector treatments
+		template <TranslationIdType tid, RotationIdType rid, typename T>
+			inline
+			void
+			LocalToMaster(Vectors3DSOA const &, Vectors3DSOA &) const;
+		template <TranslationIdType tid, RotationIdType rid, typename T>
+			inline
+			void
+			__attribute__((always_inline))
+			LocalToMasterVec(Vectors3DSOA const &, Vectors3DSOA &) const;
+		template <TranslationIdType tid, RotationIdType rid, typename T>
+			inline
+			void
+			LocalToMasterCombinedT(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
+		/*
+		 *  we should provide the versions for a Vc vector or more general for a T vector
+		 */
+		template<TranslationIdType tid, RotationIdType rid, typename T>
+			inline
+			void
+			LocalToMaster(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const;
+		template<TranslationIdType tid, RotationIdType rid, typename T>
+			inline
+			void
+			__attribute__((always_inline))
+			LocalToMasterVec(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const
+			{
+				LocalToMaster<0,rid,T>(masterx, mastery,masterz,localx,localy,localz);
+			}
+		// to transform real vectors, we don't care about translation
+		template <RotationIdType rid>
+		inline
+		void
+		__attribute__((always_inline))
+		LocalToMasterVec(Vector3D const &, Vector3D &) const;
+		// define some virtual functions (which should dispatch to specialized templated functions)
+		virtual
+			void
+			LocalToMaster(Vector3D const & master, Vector3D & local) const {
+			// inline general case here
+			LocalToMaster<-1,-1>(master,local);
+		};
+
+		virtual
+			void
+			LocalToMasterVec(Vector3D const & master, Vector3D & local) const {
+			LocalToMasterVec<-1>(master,local);
+		};
+
+		virtual
+		void
+		LocalToMaster(Vectors3DSOA const & master, Vectors3DSOA & local) const
+		{
+	// this is not nice: we bind ourselfs to Vc here
+			LocalToMaster<-1,-1, Vc::double_v>(master, local);
+		}
+
+		virtual
+		void
+		LocalToMasterVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
+		{
+	// this is not nice: we bind ourselfs to Vc here
+			LocalToMaster<0,-1, Vc::double_v>(master, local);
+		}
+
+		virtual
+		void
+		LocalToMasterCombined( Vectors3DSOA const & masterpoint, Vectors3DSOA & localpoint,
+				Vectors3DSOA const & mastervec, Vectors3DSOA & localvec ) const
+		{
+			//mapping v
+			LocalToMasterCombinedT<1,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
+		}
+// END LOCAL TO MASTER
+
+
+	template<TranslationIdType tid, RotationIdType rid, typename T>
+	void
+	// multiplication of a matrix from the right; storing of result in left-hand matrix
+	Multiply( TransformationMatrix & rhs );
 
 	friend class PhysicalVolume;
 	friend class GeoManager;
