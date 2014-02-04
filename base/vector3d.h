@@ -34,7 +34,9 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector3D(const Type a) : Vector3D(a, a, a) {}
+  Vector3D(const Type a) {
+    Vector3D(a, a, a);
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D(Vector3D const &other) {
