@@ -12,6 +12,7 @@
 #include <cmath>
 #include <type_traits>
 #include "Vc/vector.h"
+#include <cstring>
 
 typedef int TranslationIdType;
 typedef int RotationIdType;
@@ -159,8 +160,6 @@ public:
 		inline
 		void
 		MasterToLocalCombinedT(Vectors3DSOA const &, Vectors3DSOA &, Vectors3DSOA const &, Vectors3DSOA &) const;
-
-
 	/*
 	 *  we should provide the versions for a Vc vector or more general for a T vector
 	 */
@@ -168,7 +167,6 @@ public:
 		inline
 		void
 		MasterToLocal(T const & masterx, T const & mastery, T const & masterz, T  & localx , T & localy , T & localz ) const;
-
 	template<TranslationIdType tid, RotationIdType rid, typename T>
 		inline
 		void
@@ -177,16 +175,12 @@ public:
 		{
 			MasterToLocal<0,rid,T>(masterx, mastery,masterz,localx,localy,localz);
 		}
-
-
 	// to transform real vectors, we don't care about translation
 	template <RotationIdType rid>
 	inline
 	void
 	__attribute__((always_inline))
 	MasterToLocalVec(Vector3D const &, Vector3D &) const;
-
-
 	// define some virtual functions (which should dispatch to specialized templated functions)
 	virtual
 		void
@@ -194,14 +188,11 @@ public:
 		// inline general case here
 		MasterToLocal<-1,-1>(master,local);
 	};
-
 	virtual
 		void
 		MasterToLocalVec(Vector3D const & master, Vector3D & local) const {
 		MasterToLocalVec<-1>(master,local);
 	};
-
-
 	virtual
 	void
 	MasterToLocal(Vectors3DSOA const & master, Vectors3DSOA & local) const
@@ -209,7 +200,6 @@ public:
 // this is not nice: we bind ourselfs to Vc here
 		MasterToLocal<-1,-1, Vc::double_v>(master, local);
 	}
-
 	virtual
 	void
 	MasterToLocalVec(Vectors3DSOA const & master, Vectors3DSOA & local) const
@@ -217,7 +207,6 @@ public:
 // this is not nice: we bind ourselfs to Vc here
 		MasterToLocal<0,-1, Vc::double_v>(master, local);
 	}
-
 	virtual
 	void
 	MasterToLocalCombined( Vectors3DSOA const & masterpoint, Vectors3DSOA & localpoint,
@@ -226,6 +215,49 @@ public:
 		//mapping v
 		MasterToLocalCombinedT<1,-1,Vc::double_v>( masterpoint, localpoint, mastervec, localvec );
 	}
+
+    // ---------------------------------------------
+	// for the other way around: LocalToMaster
+
+	inline
+	void
+	__attribute__((always_inline))
+	LocalToMaster(Vector3D const &, Vector3D &) const;
+
+
+
+	/*
+	 *  we should provide the versions for a Vc vector or more general for a T vector
+	 */
+	template<TranslationIdType tid, typename T>
+	inline
+	void
+	LocalToMaster(T const & masterx, T const & mastery, T const & masterz, T  & localx, T & localy, T & localz) const;
+
+	template<typename T>
+	inline
+	void
+	__attribute__((always_inline))
+	LocalToMasterVec(T const & masterx, T const & mastery, T const & masterz, T  & localx, T & localy, T & localz) const
+	{
+		LocalToMaster<0,T>(masterx,mastery,masterz,localx,localy,localz);
+	}
+
+	// to transform real vectors, we don't care about translation
+	inline
+	void
+	__attribute__((always_inline))
+	LocalToMasterVec(Vector3D const & local, Vector3D & master) const
+	{
+		LocalToMasterVec<double>(local.x,local.y,local.z,master.x,master.y,master.z);
+	}
+	// END LOCAL TO MASTER
+
+
+	inline
+	void
+	// multiplication of a matrix from the right; storing of result in left-hand matrix
+	Multiply( TransformationMatrix const * rhs );
 
 	friend class PhysicalVolume;
 	friend class GeoManager;
@@ -470,6 +502,79 @@ TransformationMatrix::MasterToLocalCombinedT( Vectors3DSOA const & master_v, Vec
 		lzd.store( &locald_v.z[i] );
 	}
 	// need to treat tail part still
+}
+
+
+inline
+void
+TransformationMatrix::LocalToMaster(Vector3D const & local, Vector3D & master) const
+{
+	// this is treated totally unspecialized for the moment
+	LocalToMaster<1, double>( local.x, local.y, local.z, master.x, master.y, master.z );
+}
+
+template<TranslationIdType tid, typename T>
+inline
+__attribute__((always_inline))
+void
+TransformationMatrix::LocalToMaster(T const & local_x, T const & local_y, T const & local_z, T & master_x, T & master_y, T & master_z ) const
+{
+	// we are just doing the full stuff here ( LocalToMaster is less critical than other way round )
+	if(tid == 0)
+	{
+		master_x = local_x*rot[0];
+		master_x += local_y*rot[1];
+		master_x += local_z*rot[2];
+		master_y = local_x*rot[3];
+		master_y += local_y*rot[4];
+		master_y += local_z*rot[5];
+		master_z = local_x*rot[6];
+		master_z += local_y*rot[7];
+		master_z += local_z*rot[8];
+	}
+	else
+	{
+		master_x = trans[0];
+		master_x += local_x*rot[0];
+		master_x += local_y*rot[1];
+		master_x += local_z*rot[2];
+		master_y =  trans[1];
+		master_y += local_x*rot[3];
+		master_y += local_y*rot[4];
+		master_y += local_z*rot[5];
+		master_z =  trans[2];
+		master_z += local_x*rot[6];
+		master_z += local_y*rot[7];
+		master_z += local_z*rot[8];
+	}
+}
+
+// this function will likely be template specialized
+inline
+__attribute__((always_inline))
+void
+TransformationMatrix::Multiply( TransformationMatrix const * rhs )
+{
+	// brute force multiplication of matrices just to get started
+
+	// do nothing if identity
+	if(rhs->identity) return;
+
+	// transform translation part ( not correct yet )
+	trans[0] += rot[0]*rhs->trans[0] + rot[1]*rhs->trans[1] + rot[2]*rhs->trans[2];
+	trans[1] += rot[3]*rhs->trans[1] + rot[4]*rhs->trans[1] + rot[5]*rhs->trans[2];
+	trans[2] += rot[6]*rhs->trans[2] + rot[7]*rhs->trans[1] + rot[8]*rhs->trans[2];
+
+	// transform rotation part
+	double newrot[9];
+	// this can certainly be optimized
+	for(int i=0;i<3;i++)
+	{
+		newrot[3*i] = rot[3*i]*rhs->rot[0] + rot[3*i+1]*rhs->rot[3]+rot[3*i+2]*rot[6];
+		newrot[3*i+1] = rot[3*i]*rhs->rot[1] + rot[3*i+1]*rhs->rot[4]+rot[3*i+2]*rot[7];
+		newrot[3*i+2] = rot[3*i]*rhs->rot[2] + rot[3*i+1]*rhs->rot[5]+rot[3*i+2]*rot[8];
+	}
+	memcpy(rot,newrot,sizeof(double)*9);
 }
 
 
