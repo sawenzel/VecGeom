@@ -9,9 +9,7 @@ void Box::DistanceToIn(SOA3D<double> const &pos,
                        double *distance) const {
 
   const int size = pos.size();
-  constexpr int vec_size = CilkFloat::VecSize();
-  const int i_max = size - (size % vec_size);
-  for (int i = 0; i < i_max; i += vec_size) {
+  for (int i = 0; i < size; i += kVectorSize) {
     const Vector3D<CilkFloat> pos_cilk(
       CilkFloat(&pos.x(i)),
       CilkFloat(&pos.y(i)),
@@ -28,12 +26,6 @@ void Box::DistanceToIn(SOA3D<double> const &pos,
       parameters->dimensions, trans_matrix, pos_cilk, dir_cilk, step_max, output
     );
     output.Store(&distance[i]);
-  }
-  for (int i = i_max; i < size; ++i) {
-    kernel::box::DistanceToIn<kScalar>(
-      parameters->dimensions, trans_matrix, pos[i], dir[i], steps_max[i],
-      distance[i]
-    );
   }
 
 }

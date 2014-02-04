@@ -3,7 +3,9 @@
 
 #include "LibraryGeneric.h"
 
-template <int vec_size = 8, typename Type = double>
+const int kVectorSize = 4;
+
+template <int vec_size = kVectorSize, typename Type = double>
 struct CilkVector {
 
   typedef CilkVector<vec_size, Type> VecType;

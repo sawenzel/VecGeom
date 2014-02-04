@@ -19,7 +19,7 @@ VC_OPT=-L ${VCROOT}/lib -lVc
 CILK=icc
 CILK_SRC=ImplementationsCilk.cpp
 CILK_OBJS=$(addprefix obj/, $(addsuffix .cilk.o, $(CILK_SRC)))
-CILK_OPT=-vec -m64 -std=c++11 -Wall -xHost -finline-limit=10000000 -ftree-vectorize -O2
+CILK_OPT=-m64 -std=c++11 -Wall -xHost -finline-limit=10000000 -ftree-vectorize -O2
 CILK_INCLUDE=$(CXX_INCLUDE)
 
 NVCC=nvcc

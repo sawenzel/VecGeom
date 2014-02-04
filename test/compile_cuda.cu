@@ -7,7 +7,7 @@
 using namespace vecgeom;
 
 __device__
-void foo() {
+void compile_cuda() {
   CudaDouble scalar;
   Vector3D<double> scalar_v;
   Vector3D<CudaDouble > vector_v;
