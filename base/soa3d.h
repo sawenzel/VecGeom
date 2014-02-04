@@ -5,6 +5,8 @@
 #include "base/utilities.h"
 #include "base/types.h"
 
+namespace vecgeom {
+
 template <typename Type>
 struct SOA3D {
 
@@ -19,7 +21,7 @@ public:
   #ifdef VECGEOM_STD_CXX11
 
   SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size_)
-      : a(a_), b(b_), c(c_), size(size_), allocated(false) {};
+      :  size(size_), allocated(false), a(a_), b(b_), c(c_) {};
 
   SOA3D(const int size_) : size(size_), allocated(true) {
     a = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
@@ -32,11 +34,11 @@ public:
   #else // VECGEOM_STD_CXX11
 
   SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size_) {
+    size = size_;
+    allocated = false;
     a = a_;
     b = b_;
     c = c_;
-    size = size_;
-    allocated = false;
   }
 
   SOA3D(const int size_) {
@@ -125,39 +127,27 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& X(const int index) {
-    return a[index];
-  }
+  Type& x(const int index) { return a[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& X(const int index) const {
-    return a[index];
-  }
+  Type const& x(const int index) const { return a[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& Y(const int index) {
-    return b[index];
-  }
+  Type& y(const int index) { return b[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& Y(const int index) const {
-    return b[index];
-  }
+  Type const& y(const int index) const { return b[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& Z(const int index) {
-    return c[index];
-  }
+  Type& z(const int index) { return c[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& Z(const int index) const {
-    return c[index];
-  }
+  Type const& z(const int index) const { return c[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -176,5 +166,7 @@ public:
   }
 
 };
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BASE_SOA3D_H_

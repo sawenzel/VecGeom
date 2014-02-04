@@ -1,32 +1,39 @@
 #ifndef VECGEOM_BASE_UTILITIES_H_
 #define VECGEOM_BASE_UTILITIES_H_
 
+#include <cmath>
+
+namespace vecgeom {
+
 #ifndef __CUDACC__
-#define VECGEOM_STD_CXX11
-#define VECGEOM_CUDA_HEADER_DEVICE
-#define VECGEOM_CUDA_HEADER_HOST
-#define VECGEOM_CUDA_HEADER_BOTH
+  #define VECGEOM_STD_CXX11
+  #define VECGEOM_CUDA_HEADER_DEVICE
+  #define VECGEOM_CUDA_HEADER_HOST
+  #define VECGEOM_CUDA_HEADER_BOTH
 #else // __CUDACC__
-#define VECGEOM_NVCC
-#define VECGEOM_CUDA_HEADER_DEVICE __device__
-#define VECGEOM_CUDA_HEADER_HOST __host__
-#define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
+  #define VECGEOM_NVCC
+  #define VECGEOM_CUDA_HEADER_DEVICE __device__
+  #define VECGEOM_CUDA_HEADER_HOST __host__
+  #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
 #endif // __CUDACC__
 
 #ifdef __INTEL_COMPILER
-#define VECGEOM_INLINE inline
+  #define VECGEOM_INLINE inline
 #else // __INTEL_COMPILER
-#ifdef __GNUC__
-#define VECGEOM_INLINE inline __attribute__((always_inline))
-#else // __GNUC__
-#define VECGEOM_INLINE inline
-#endif // __GNUC__
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
+    #define VECGEOM_INLINE inline __attribute__((always_inline))
+  #else // __GNUC__
+    #define VECGEOM_INLINE inline
+  #endif // __GNUC__
 #endif // __INTEL_COMPILER
 
-#ifdef VECGEOM_STD_CXX11
-constexpr int kAlignmentBoundary = 32;
-#else // VECGEOM_STD_CXX11
 const int kAlignmentBoundary = 32;
-#endif // VECGEOM_STD_CXX11
+const double kDegToRad = M_PI/180.;
+const double kRadToDeg = 180./M_PI;
+const double kInfinity = INFINITY;
+const double kTiny = 1e-20;
+const double kGTolerance = 1e-9;
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BASE_UTILITIES_H_
