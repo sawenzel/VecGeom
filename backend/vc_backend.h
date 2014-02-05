@@ -10,6 +10,7 @@ namespace vecgeom {
 
 template <>
 struct Impl<kVc> {
+  typedef double       precision;
   typedef Vc::int_v    int_v;
   typedef Vc::double_v double_v;
   typedef Vc::double_m bool_v;

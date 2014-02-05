@@ -11,7 +11,7 @@ void compile_cilk() {
   Vector3D<double> scalar_v;
   Vector3D<CilkDouble> vector_v;
   SOA3D<CilkDouble> soa;
-  TransMatrix matrix;
+  TransMatrix<double> matrix;
   CilkBool output_inside;
   CilkDouble output_distance;
   BoxInside<kCilk>(scalar_v, matrix, vector_v, &output_inside);

@@ -16,6 +16,7 @@ struct CilkVector;
 
 template <>
 struct Impl<kCilk> {
+  typedef double             precision;
   typedef CilkVector<int>    int_v;
   typedef CilkVector<double> double_v;
   typedef CilkVector<bool>   bool_v;

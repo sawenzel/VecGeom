@@ -14,6 +14,21 @@ struct Vector3D;
 template <typename Type>
 struct SOA3D;
 
+template <typename Precision>
+class VLogicalVolume;
+
+template <typename Precision>
+class VPlacedVolume;
+
+#ifdef VECGEOM_STD_CXX11
+template<typename Precision>
+using VUSolid = VPlacedVolume<Precision>;
+#endif
+
+template <typename Precision>
+class VUnplacedVolume;
+
+template <typename Type>
 class TransMatrix;
 
 } // End namespace vecgeom

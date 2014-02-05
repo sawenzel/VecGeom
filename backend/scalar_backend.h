@@ -9,6 +9,7 @@ namespace vecgeom {
 
 template <>
 struct Impl<kScalar> {
+  typedef double precision;
   typedef int    int_v;
   typedef double double_v;
   typedef bool   bool_v;

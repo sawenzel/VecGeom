@@ -11,7 +11,8 @@ namespace vecgeom {
 template <ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void BoxInside(Vector3D<double> const &dimensions, TransMatrix const &matrix,
+void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
+               TransMatrix<typename Impl<it>::precision> const &matrix,
                Vector3D<typename Impl<it>::double_v> const &point,
                typename Impl<it>::bool_v *const inside) {
 
@@ -35,8 +36,8 @@ void BoxInside(Vector3D<double> const &dimensions, TransMatrix const &matrix,
 template <ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void BoxDistanceToIn(Vector3D<double> const &dimensions,
-                     TransMatrix const &matrix,
+void BoxDistanceToIn(Vector3D<typename Impl<it>::precision> const &dimensions,
+                     TransMatrix<typename Impl<it>::precision> const &matrix,
                      Vector3D<typename Impl<it>::double_v> const &pos,
                      Vector3D<typename Impl<it>::double_v> const &dir,
                      typename Impl<it>::double_v const &step_max,
