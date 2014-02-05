@@ -263,6 +263,14 @@ public:
 	// multiplication of a matrix from the right; storing of result in left-hand matrix
 	Multiply( TransformationMatrix const * rhs );
 
+	// multiplication of a right matrix where we template specialize on the properties of the right hand matrix
+	template<TranslationIdType tid, RotationIdType rid>
+	inline
+	void
+	__attribute__((always_inline))
+	MultiplyT( TransformationMatrix const * rhs );
+
+
 	friend class PhysicalVolume;
 	friend class GeoManager;
 };
@@ -321,102 +329,102 @@ inline
 void
 TransformationMatrix::emitrotationcodeT( T const & mtx, T const & mty, T const & mtz, T & localx, T & localy, T & localz ) const
 {
-  	if(rid==252){
-	     localx=mtx*rot[0];
-	     localy=mty*rot[4]+mtz*rot[7];
-	     localz=mty*rot[5]+mtz*rot[8];
-	     return;
-	}
-	if(rid==405){
-	     localx=mty*rot[3];
-	     localy=mtx*rot[1]+mtz*rot[7];
-	     localz=mtx*rot[2]+mtz*rot[8];
-	     return;
-	}
-	if(rid==882){
-	     localx=mtz*rot[6];
-	     localy=mtx*rot[1]+mty*rot[4];
-	     localz=mtx*rot[2]+mty*rot[5];
-	     return;
-	}
-	if(rid==415){
-	     localx=mty*rot[3]+mtz*rot[6];
-	     localy=mtx*rot[1];
-	     localz=mty*rot[5]+mtz*rot[8];
-	     return;
-	}
-	if(rid==496){
-	     localx=mtx*rot[0]+mtz*rot[6];
-	     localy=mty*rot[4];
-	     localz=mtx*rot[2]+mtz*rot[8];
-	     return;
-	}
-	if(rid==793){
-	     localx=mtx*rot[0]+mty*rot[3];
-	     localy=mtz*rot[7];
-	     localz=mtx*rot[2]+mty*rot[5];
-	     return;
-	}
-	if(rid==638){
-	     localx=mty*rot[3]+mtz*rot[6];
-	     localy=mty*rot[4]+mtz*rot[7];
-	     localz=mtx*rot[2];
-	     return;
-	}
-	if(rid==611){
-	     localx=mtx*rot[0]+mtz*rot[6];
-	     localy=mtx*rot[1]+mtz*rot[7];
-	     localz=mty*rot[5];
-	     return;
-	}
-	if(rid==692){
-	     localx=mtx*rot[0]+mty*rot[3];
-	     localy=mtx*rot[1]+mty*rot[4];
-	     localz=mtz*rot[8];
-	     return;
-	}
-	if(rid==720){
-	     localx=mtx*rot[0];
-	     localy=mty*rot[4];
-	     localz=mtz*rot[8];
-	     return;
-	}
-	if(rid==828){
-	     localx=mtx*rot[0];
-	     localy=mtz*rot[7];
-	     localz=mty*rot[5];
-	     return;
-	}
-	if(rid==756){
-	     localx=mty*rot[3];
-	     localy=mtx*rot[1];
-	     localz=mtz*rot[8];
-	     return;
-	}
-	if(rid==918){
-	     localx=mty*rot[3];
-	     localy=mtz*rot[7];
-	     localz=mtx*rot[2];
-	     return;
-	}
-	if(rid==954){
-	     localx=mtz*rot[6];
-	     localy=mtx*rot[1];
-	     localz=mty*rot[5];
-	     return;
-	}
-	if(rid==1008){
-	     localx=mtz*rot[6];
-	     localy=mty*rot[4];
-	     localz=mtx*rot[2];
-	     return;
-	}
-	if(rid==1296){
-		localx=mtx;
-		localy=mty;
-		localz=mtz;
-		return;
-	}
+	if(rid==252){
+		     localx=mtx*rot[0];
+		     localy=mty*rot[4]+mtz*rot[7];
+		     localz=mty*rot[5]+mtz*rot[8];
+		     return;
+		}
+		if(rid==405){
+		     localx=mty*rot[3];
+		     localy=mtx*rot[1]+mtz*rot[7];
+		     localz=mtx*rot[2]+mtz*rot[8];
+		     return;
+		}
+		if(rid==882){
+		     localx=mtz*rot[6];
+		     localy=mtx*rot[1]+mty*rot[4];
+		     localz=mtx*rot[2]+mty*rot[5];
+		     return;
+		}
+		if(rid==415){
+		     localx=mty*rot[3]+mtz*rot[6];
+		     localy=mtx*rot[1];
+		     localz=mty*rot[5]+mtz*rot[8];
+		     return;
+		}
+		if(rid==496){
+		     localx=mtx*rot[0]+mtz*rot[6];
+		     localy=mty*rot[4];
+		     localz=mtx*rot[2]+mtz*rot[8];
+		     return;
+		}
+		if(rid==793){
+		     localx=mtx*rot[0]+mty*rot[3];
+		     localy=mtz*rot[7];
+		     localz=mtx*rot[2]+mty*rot[5];
+		     return;
+		}
+		if(rid==638){
+		     localx=mty*rot[3]+mtz*rot[6];
+		     localy=mty*rot[4]+mtz*rot[7];
+		     localz=mtx*rot[2];
+		     return;
+		}
+		if(rid==611){
+		     localx=mtx*rot[0]+mtz*rot[6];
+		     localy=mtx*rot[1]+mtz*rot[7];
+		     localz=mty*rot[5];
+		     return;
+		}
+		if(rid==692){
+		     localx=mtx*rot[0]+mty*rot[3];
+		     localy=mtx*rot[1]+mty*rot[4];
+		     localz=mtz*rot[8];
+		     return;
+		}
+		if(rid==720){
+		     localx=mtx*rot[0];
+		     localy=mty*rot[4];
+		     localz=mtz*rot[8];
+		     return;
+		}
+		if(rid==828){
+		     localx=mtx*rot[0];
+		     localy=mtz*rot[7];
+		     localz=mty*rot[5];
+		     return;
+		}
+		if(rid==756){
+		     localx=mty*rot[3];
+		     localy=mtx*rot[1];
+		     localz=mtz*rot[8];
+		     return;
+		}
+		if(rid==918){
+		     localx=mty*rot[3];
+		     localy=mtz*rot[7];
+		     localz=mtx*rot[2];
+		     return;
+		}
+		if(rid==954){
+		     localx=mtz*rot[6];
+		     localy=mtx*rot[1];
+		     localz=mty*rot[5];
+		     return;
+		}
+		if(rid==1008){
+		     localx=mtz*rot[6];
+		     localy=mty*rot[4];
+		     localz=mtx*rot[2];
+		     return;
+		}
+		if(rid==1296){
+			localx=mtx;
+			localy=mty;
+			localz=mtz;
+			return;
+		}
  // localx=mtx*rot[0]+mty*rot[3]+mtz*rot[6];
   //localy=mtx*rot[1]+mty*rot[4]+mtz*rot[7];
   //localz=mtx*rot[2]+mty*rot[5]+mtz*rot[8];
@@ -564,10 +572,10 @@ TransformationMatrix::Multiply( TransformationMatrix const * rhs )
 	// do nothing if identity
 	if(rhs->identity) return;
 
-	// transform translation part ( not correct yet )
+	// transform translation part ( should reuse a mastertolocal transformation here )
 	trans[0] += rot[0]*rhs->trans[0] + rot[1]*rhs->trans[1] + rot[2]*rhs->trans[2];
-	trans[1] += rot[3]*rhs->trans[1] + rot[4]*rhs->trans[1] + rot[5]*rhs->trans[2];
-	trans[2] += rot[6]*rhs->trans[2] + rot[7]*rhs->trans[1] + rot[8]*rhs->trans[2];
+	trans[1] += rot[3]*rhs->trans[0] + rot[4]*rhs->trans[1] + rot[5]*rhs->trans[2];
+	trans[2] += rot[6]*rhs->trans[0] + rot[7]*rhs->trans[1] + rot[8]*rhs->trans[2];
 
 	// transform rotation part
 	double newrot[9];
@@ -579,6 +587,200 @@ TransformationMatrix::Multiply( TransformationMatrix const * rhs )
 		newrot[3*i+2] = rot[3*i]*rhs->rot[2] + rot[3*i+1]*rhs->rot[5]+rot[3*i+2]*rot[8];
 	}
 	memcpy(rot,newrot,sizeof(double)*9);
+}
+
+template<RotationIdType rid>
+inline
+__attribute__((always_inline))
+void
+multiplyrotationpart( double * __restrict__ lhsm, double const * __restrict__ rhsm )
+{
+	if(rid==252){
+		double rm[9];
+		for(int i=0;i<3;i++)
+				{
+					rm[3*i]   = lhsm[3*i] * rhsm[0];
+					rm[3*i+1] = lhsm[3*i+1] * rhsm[4]  +  lhsm[3*i+2] * rhsm[7];
+					rm[3*i+2] = lhsm[3*i+1] * rhsm[5]  +  lhsm[3*i+2] * rhsm[8];
+				}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==405){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i+1] * rhsm[3];
+						rm[3*i+1] = lhsm[3*i] * rhsm[1] + lhsm[3*i+2] * rhsm[7];
+						rm[3*i+2] = lhsm[3*i] * rhsm[2] + lhsm[3*i+2] * rhsm[8];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==882){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i+2] * rhsm[6];
+						rm[3*i+1] = lhsm[3*i] * rhsm[1] + lhsm[3*i+1] * rhsm[4];
+						rm[3*i+2] = lhsm[3*i] * rhsm[2] + lhsm[3*i+1] * rhsm[5];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==415){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i+1] * rhsm[3]  +  lhsm[3*i+2] * rhsm[6];
+						rm[3*i+1] = lhsm[3*i] * rhsm[1];
+						rm[3*i+2] = lhsm[3*i+1] * rhsm[5]  +  lhsm[3*i+2] * rhsm[8];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==496){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i] * rhsm[0] + lhsm[3*i+2] * rhsm[6];
+						rm[3*i+1] = lhsm[3*i+1] * rhsm[4];
+						rm[3*i+2] = lhsm[3*i] * rhsm[2] + lhsm[3*i+2] * rhsm[8];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==793){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i] * rhsm[0] + lhsm[3*i+1] * rhsm[3];
+						rm[3*i+1] = lhsm[3*i+2] * rhsm[7];
+						rm[3*i+2] = lhsm[3*i] * rhsm[2] + lhsm[3*i+1] * rhsm[5];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==638){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i+1] * rhsm[3]  +  lhsm[3*i+2] * rhsm[6];
+						rm[3*i+1] = lhsm[3*i+1] * rhsm[4]  +  lhsm[3*i+2] * rhsm[7];
+						rm[3*i+2] = lhsm[3*i] * rhsm[2];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==611){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i] * rhsm[0] + lhsm[3*i+2] * rhsm[6];
+						rm[3*i+1] = lhsm[3*i] * rhsm[1] + lhsm[3*i+2] * rhsm[7];
+						rm[3*i+2] = lhsm[3*i+1] * rhsm[5];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==692){
+			double rm[9];
+			for(int i=0;i<3;i++)
+					{
+						rm[3*i]   = lhsm[3*i] * rhsm[0] + lhsm[3*i+1] * rhsm[3];
+						rm[3*i+1] = lhsm[3*i] * rhsm[1] + lhsm[3*i+1] * rhsm[4];
+						rm[3*i+2] = lhsm[3*i+2] * rhsm[8];
+					}
+			memcpy(lhsm, rm, sizeof(double)*9);
+			return;
+		}
+		if(rid==720){
+			for(int i=0;i<3;i++)
+					{
+						lhsm[3*i]   = lhsm[3*i] * rhsm[0];
+						lhsm[3*i+1] = lhsm[3*i+1] * rhsm[4];
+						lhsm[3*i+2] = lhsm[3*i+2] * rhsm[8];
+					}
+			return;
+		}
+		if(rid==828){
+			for(int i=0;i<3;i++)
+					{
+						lhsm[3*i]   = lhsm[3*i] * rhsm[0];
+						lhsm[3*i+1] = lhsm[3*i+2] * rhsm[7];
+						lhsm[3*i+2] = lhsm[3*i+1] * rhsm[5];
+					}
+		     return;
+		}
+		if(rid==756){
+			for(int i=0;i<3;i++)
+					{
+						lhsm[3*i]   = lhsm[3*i+1] * rhsm[3] ;
+					    lhsm[3*i+1] = lhsm[3*i] * rhsm[1];
+						lhsm[3*i+2] = lhsm[3*i+2] * rhsm[8];
+					}
+			 return;
+		}
+		if(rid==918){
+			for(int i=0;i<3;i++)
+					{
+						lhsm[3*i]   = lhsm[3*i+1] * rhsm[3];
+						lhsm[3*i+1] = lhsm[3*i+2] * rhsm[7];
+						lhsm[3*i+2] = lhsm[3*i] * rhsm[2];
+					}
+			 return;
+		}
+		if(rid==954){
+			for(int i=0;i<3;i++)
+					{
+						lhsm[3*i]   = lhsm[3*i+2] * rhsm[6];
+						lhsm[3*i+1] = lhsm[3*i] * rhsm[1];
+						lhsm[3*i+2] = lhsm[3*i+1] * rhsm[5];
+					}
+		     return;
+		}
+		if(rid==1008){
+			for(int i=0;i<3;i++)
+					{
+						lhsm[3*i]   = lhsm[3*i+2] * rhsm[6];
+						lhsm[3*i+1] = lhsm[3*i+1] * rhsm[4];
+						lhsm[3*i+2] = lhsm[3*i] * rhsm[2];
+					}
+		     return;
+		}
+		if(rid==1296){
+			// diagonal case ( nothing to do )
+			return;
+		}
+	// generic case
+		else
+		{
+			double rm[9];
+			for(int i=0;i<3;i++)
+			{
+				rm[3*i]   = lhsm[3*i] * rhsm[0] + lhsm[3*i+1] * rhsm[3]  +  lhsm[3*i+2] * rhsm[6];
+				rm[3*i+1] = lhsm[3*i] * rhsm[1] + lhsm[3*i+1] * rhsm[4]  +  lhsm[3*i+2] * rhsm[7];
+				rm[3*i+2] = lhsm[3*i] * rhsm[2] + lhsm[3*i+1] * rhsm[5]  +  lhsm[3*i+2] * rhsm[8];
+			}
+			memcpy(lhsm, rm, sizeof(double)*9);
+		}
+}
+
+// the tid and rid are properties of the right hand matrix
+template<TranslationIdType tid, RotationIdType rid>
+inline
+__attribute__((always_inline))
+void
+TransformationMatrix::MultiplyT( TransformationMatrix const * rhs )
+{
+	// transform translation part ( should reuse a mastertolocal transformation here )
+	if( tid != 0)
+	{
+		trans[0] += rot[0] * rhs->trans[0] + rot[1] * rhs->trans[1] + rot[2] * rhs->trans[2];
+		trans[1] += rot[3] * rhs->trans[0] + rot[4] * rhs->trans[1] + rot[5] * rhs->trans[2];
+		trans[2] += rot[6] * rhs->trans[0] + rot[7] * rhs->trans[1] + rot[8] * rhs->trans[2];
+	}
+	multiplyrotationpart<rid>( rot, &rhs->rot[0] );
 }
 
 
