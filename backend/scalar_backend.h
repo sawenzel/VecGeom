@@ -12,7 +12,7 @@ struct Impl<kScalar> {
   typedef int    int_v;
   typedef double double_v;
   typedef bool   bool_v;
-  const static bool early_returns = true;
+  constexpr static bool early_returns = true;
   constexpr static double_v kOne = 1.0;
   constexpr static double_v kZero = 0.0;
   constexpr static bool_v kTrue = true;

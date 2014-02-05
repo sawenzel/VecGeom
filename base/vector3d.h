@@ -53,13 +53,13 @@ public:
   VECGEOM_CUDA_HEADER_HOST
   Vector3D(std::string const &str) {
     int begin = 1, end = str.find(",");
-    vec[0] = std::atof(str.substr(begin, end-begin).c_str());
+    vec[0] = atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
     end = str.find(",", begin);
-    vec[1] = std::atof(str.substr(begin, end-begin).c_str());
+    vec[1] = atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
     end = str.find(")", begin);
-    vec[2] = std::atof(str.substr(begin, end-begin).c_str());
+    vec[2] = atof(str.substr(begin, end-begin).c_str());
   }
 
   /**
