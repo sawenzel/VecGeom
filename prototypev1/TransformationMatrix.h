@@ -56,6 +56,7 @@ private:
 	void InitEquivalentTGeoMatrix(double, double, double);
 
 public:
+	void SetToIdentity();
 	bool isIdentity() const {return identity;}
 	bool isRotation() const {return hasRotation;}
 	bool isTranslation() const {return hasTranslation;}
@@ -115,6 +116,9 @@ public:
 
 	// constructor
 	TransformationMatrix(double const *t, double const *r);
+
+	// will create identity matrix
+	TransformationMatrix();
 
 	// more general constructor ala ROOT ( with Euler Angles )
 	TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi);
@@ -186,7 +190,7 @@ public:
 		void
 		MasterToLocal(Vector3D const & master, Vector3D & local) const {
 		// inline general case here
-		MasterToLocal<-1,-1>(master,local);
+		MasterToLocal<1,-1>(master,local);
 	};
 	virtual
 		void
@@ -198,7 +202,7 @@ public:
 	MasterToLocal(Vectors3DSOA const & master, Vectors3DSOA & local) const
 	{
 // this is not nice: we bind ourselfs to Vc here
-		MasterToLocal<-1,-1, Vc::double_v>(master, local);
+		MasterToLocal<1,-1, Vc::double_v>(master, local);
 	}
 	virtual
 	void
