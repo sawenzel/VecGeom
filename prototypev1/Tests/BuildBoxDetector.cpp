@@ -15,6 +15,7 @@
 #include "../PhysicalBox.h"
 #include "../SimpleVecNavigator.h"
 #include <map>
+#include <cassert>
 
 int main()
 {
@@ -71,16 +72,30 @@ int main()
 
 	StopWatch timer;
 	timer.Start();
-	VolumePath path(4);
+	VolumePath path(4), newpath(4);
 	std::map<PhysicalVolume const *, int> volcounter;
 	int total=0;
+	TransformationMatrix * globalm=new TransformationMatrix();
+	TransformationMatrix * globalm2 = new TransformationMatrix();
+	SimpleVecNavigator nav(1, world);
+	Vector3D displacementvector( worlddx/20, 0., 0. );
+	int counter[2]={0,0};
 	for(int i=0;i<1000000;i++)
 	{
+		globalm->SetToIdentity();
+		globalm2->SetToIdentity();
 		Vector3D point;
+		Vector3D localpoint;
+		Vector3D newlocalpoint;
+		Vector3D cmppoint;
 		PhysicalVolume::samplePoint( point, worlddx, worlddy, worlddz, 1 );
-		PhysicalVolume const * deepestnode = SimpleVecNavigator::LocateGlobalPoint( world, point, path);
+		//	PhysicalVolume const * deepestnode = nav.LocateGlobalPoint( world, point, localpoint, path, globalm2 );
+		localpoint.x = point.x;
+		localpoint.y = point.y;
+		localpoint.z = point.z;
+		PhysicalVolume const * deepestnode = nav.LocateGlobalPoint( world, point, localpoint, path );
 		/*
-		if( volcounter.find(deepestnode) == volcounter.end() )
+		if(volcounter.find(deepestnode) == volcounter.end())
 		  {
 		    volcounter[deepestnode]=1;
 		  }
@@ -88,13 +103,57 @@ int main()
 		  {
 		    volcounter[deepestnode]++;
 		  }
+		*/
+
+		// do the cross check
+
+//		Vector3D localpoint;
+
+		// check one thing
+		localpoint.x = localpoint.x + displacementvector.x;
+		localpoint.y = localpoint.y + displacementvector.y;
+		localpoint.z = localpoint.z + displacementvector.z;
+		PhysicalVolume const * newnode = nav.LocateLocalPointFromPath( localpoint, path, newpath, globalm2 );
+		if( newnode == deepestnode )
+		{
+			counter[0]++;
+		}
+		else
+		{
+			counter[1]++;
+		}
+
+
+	//	path.GetGlobalMatrixFromPath(globalm);
+    //	globalm->LocalToMaster(localpoint, cmppoint);
+	//  std::cerr << " ######################## " << std::endl;
+	//	point.print();
+	//	globalm->print();
+	//	cmppoint.print();
+	//	std::cerr << " ------------------------ " << std::endl;
+
+		/*
+		std::cerr << " ######################## " << std::endl;
+		globalm->print();
+		std::cerr << " ;;;;;;; " << std::endl;
+		globalm2->print();
+		std::cerr << " ------------------- " << std::endl;
+
+		//globalm2->MasterToLocal<1,-1>( point, localpoint );
+		PhysicalVolume const * cmpnode = nav.LocateLocalPointFromPath( localpoint, path, newpath );
+
+		//assert( cmpnode == deepestnode );
+
 */
 		// path.Print();
 		path.Clear();
+		newpath.Clear();
 		//		deepestnode->printInfo();
 	}
 	timer.Stop();
 	std::cerr << " step took " << timer.getDeltaSecs() << " seconds " << std::endl;
+	std::cerr << counter[0] << std::endl;
+	std::cerr << counter[1] << std::endl;
 	
 	for(auto k=volcounter.begin();k!=volcounter.end();k++)
 	  {

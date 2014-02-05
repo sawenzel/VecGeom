@@ -48,7 +48,7 @@ struct Vector3D
 		return left.x*right.x + left.y*right.y;
 	}
 
-	/*
+
 	void print() const
 	{
 		std::cout << " 3DVector " << this << std::endl;
@@ -56,11 +56,11 @@ struct Vector3D
 		std::cout << " y : " << y << std::endl;
 		std::cout << " z : " << z << std::endl;
 	}
-*/
-	void print() const
-	{
+
+	//void print() const
+	//{
 	//	std::cout << "3DVector (instance ) " << (*this) << std::endl;
-	}
+	//}
 
 };
 
