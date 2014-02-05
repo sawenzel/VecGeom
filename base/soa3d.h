@@ -31,8 +31,15 @@ public:
     c = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
   }
 
+  #ifndef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D() : SOA3D(nullptr, nullptr, nullptr, 0) {};
+  #else // VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_BOTH
+  SOA3D() {
+    SOA3D(NULL, NULL, NULL, 0)
+  };
+  #endif // VECGEOM_NVCC
 
   #else // VECGEOM_STD_CXX11
 

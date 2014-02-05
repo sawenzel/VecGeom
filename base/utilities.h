@@ -11,11 +11,14 @@ namespace vecgeom {
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
 #else // __CUDACC__ || __NVCC__
-  #define VECGEOM_STD_CXX11
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
-#endif // __CUDACC__
+#endif // __CUDACC__ || __NVCC__
+
+#ifndef VECGEOM_CUDA // Set by compiler
+  #define VECGEOM_STD_CXX11
+#endif // VECGEOM_CUDA
 
 #ifdef __INTEL_COMPILER
   #define VECGEOM_INLINE inline
