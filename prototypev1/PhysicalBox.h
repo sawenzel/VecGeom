@@ -82,6 +82,7 @@ public:
 	virtual inline bool Contains( Vector3D const & ) const;
 	virtual inline bool UnplacedContains( Vector3D const & ) const;
 	virtual inline bool Contains( Vector3D const &, Vector3D & ) const;
+	virtual inline bool Contains( Vector3D const &, Vector3D &, TransformationMatrix * ) const;
 	virtual double SafetyToIn( Vector3D const & ) const;
 	virtual double SafetyToOut( Vector3D const &) const;
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
@@ -364,6 +365,21 @@ bool PlacedBox<tid,rid>::Contains( Vector3D const & point, Vector3D & localPoint
 	// here we do the point transformation
 	matrix->MasterToLocal<tid,rid>(point, localPoint);
 	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
+}
+
+
+template<int tid, int rid>
+inline
+bool PlacedBox<tid,rid>::Contains( Vector3D const & point, Vector3D & localPoint, TransformationMatrix * globalm ) const
+{
+	// here we do the point transformation
+	matrix->MasterToLocal<tid,rid>(point, localPoint);
+	bool in = this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
+	if( in )
+	{
+		globalm->MultiplyT<tid,rid>( matrix );
+	}
+	return in;
 }
 
 

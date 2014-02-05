@@ -75,7 +75,12 @@ class PhysicalVolume
 		virtual bool   UnplacedContains( Vector3D const & ) const = 0;
 
 		// same as Contains but returning the transformed point for further processing
+		// this function is a "specific" version for locating points in a volume hierarchy
+		// it also modifies the global matrix
 		virtual bool   Contains( Vector3D const &, Vector3D & ) const { return false; }
+
+		// this version modifies the global matrix additionally
+		virtual bool   Contains( Vector3D const &, Vector3D &, TransformationMatrix * ) const { return false; }
 
 
 		// the contains function knowing about the surface

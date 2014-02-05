@@ -35,7 +35,18 @@ class VolumePath
 		void Clear();
 
 		void Print() const;
+
+		void GetGlobalMatrixFromPath( TransformationMatrix * m ) const;
 };
+
+inline
+void VolumePath::GetGlobalMatrixFromPath( TransformationMatrix * m ) const
+{
+	for(int i=0; i<fcurrentlevel; i++ )
+	{
+		m->Multiply( path[i]->getMatrix() );
+	}
+}
 
 inline
 PhysicalVolume const * VolumePath::At(int i) const
@@ -89,7 +100,10 @@ private:
 	Vectors3DSOA transformedpoints;
 	Vectors3DSOA transformeddirs;
 
+	PhysicalVolume const * top;
+
 public:
+	SimpleVecNavigator(int, PhysicalVolume const *);
 	SimpleVecNavigator(int);
 	virtual ~SimpleVecNavigator();
 
@@ -132,16 +146,24 @@ public:
 									PhysicalVolume ** nextnode, int np ) const;
 
 
-	static
+
 	PhysicalVolume const *
-	LocateGlobalPoint( PhysicalVolume const *, Vector3D const & globalpoint, VolumePath &path, bool top=true );
+	LocateGlobalPoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
+
+	PhysicalVolume const *
+	LocateGlobalPoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, bool top=true) const;
 
 
-	static
 	PhysicalVolume const *
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
 	// we might need some more input here ( like the direction )
-	LocateLocalPointFromPath( Vector3D const & localpoint, VolumePath const & inpath, VolumePath & newpath );
+	LocateLocalPointFromPath(Vector3D const & localpoint, VolumePath const & inpath, VolumePath & newpath, TransformationMatrix * ) const;
+
+	PhysicalVolume const *
+	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
+	// we might need some more input here ( like the direction )
+	LocateLocalPointFromPath_Relative(Vector3D const & localpoint, VolumePath & path, TransformationMatrix * ) const;
+
 
 };
 

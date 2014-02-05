@@ -15,6 +15,8 @@
 #include "VUSolid.hh"
 #include "mm_malloc.h"
 #include <iostream>
+#include "TransformationMatrix.h"
+
 
 VolumePath::VolumePath(int maxlevel) : fmaxlevel(maxlevel), fcurrentlevel(0)
 {
@@ -31,12 +33,21 @@ void VolumePath::Print() const
 }
 
 
-SimpleVecNavigator::SimpleVecNavigator(int np) {
+SimpleVecNavigator::SimpleVecNavigator(int np, PhysicalVolume const * t) : top(t)  {
 	// TODO Auto-generated constructor stub
 	workspace = (double * ) _mm_malloc( sizeof(double)*np, ALIGNMENT_BOUNDARY );
 	transformeddirs.alloc(np);
 	transformedpoints.alloc(np);
 }
+
+
+SimpleVecNavigator::SimpleVecNavigator(int np)  {
+	// TODO Auto-generated constructor stub
+	workspace = (double * ) _mm_malloc( sizeof(double)*np, ALIGNMENT_BOUNDARY );
+	transformeddirs.alloc(np);
+	transformedpoints.alloc(np);
+}
+
 
 SimpleVecNavigator::~SimpleVecNavigator() {
 	// TODO Auto-generated destructor stub
@@ -273,7 +284,39 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 // we could specialize this function on whether top or not
 // this is very special at the moment; no treatment of boundary information
 // we might have to pass the directions as well -- but then we would have to transform them as well ( bugger )
-PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume const * vol, Vector3D const & globalpoint, VolumePath & path, bool top=true)
+PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume const * vol,
+		Vector3D const & globalpoint, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
+{
+	PhysicalVolume const * candvolume = vol;
+	if( top ) candvolume = ( vol->UnplacedContains( globalpoint ) )? vol : 0;
+	if( candvolume )
+	{
+		path.Push( candvolume );
+		std::list< PhysicalVolume const * > * dlist = vol->GetDaughterList();
+		std::list< PhysicalVolume const * >::iterator iter;
+		for(iter=dlist->begin(); iter!=dlist->end(); iter++)
+		{
+			PhysicalVolume const * nextvol=(*iter);
+			Vector3D transformedpoint;
+			if(nextvol->Contains(globalpoint, transformedpoint, globalm))
+			{
+				// this is no longer the top ( so setting top to false )
+				localpoint.x = transformedpoint.x;
+				localpoint.y = transformedpoint.y;
+				localpoint.z = transformedpoint.z;
+				candvolume = LocateGlobalPoint(nextvol, transformedpoint, localpoint, path, globalm, false);
+				break;
+			}
+		}
+	}
+	return candvolume;
+
+	// TODO: fill the path while going down
+	// at the very end: do the matrix multiplications and caching of global matrices -- doing this in a loop will be icache friendly
+}
+
+PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume const * vol,
+		Vector3D const & globalpoint, Vector3D & localpoint, VolumePath & path, bool top=true) const
 {
 	PhysicalVolume const * candvolume = vol;
 	if( top ) candvolume = ( vol->UnplacedContains( globalpoint ) )? vol : 0;
@@ -286,10 +329,13 @@ PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume cons
 		{
 			PhysicalVolume const * nextvol=(*iter);
 			Vector3D transformedpoint;
-			if( nextvol->Contains( globalpoint, transformedpoint ) )
+			if( nextvol->Contains( globalpoint, transformedpoint ))
 			{
 				// this is no longer the top ( so setting top to false )
-				candvolume = LocateGlobalPoint( nextvol, transformedpoint, path, false );
+				localpoint.x = transformedpoint.x;
+				localpoint.y = transformedpoint.y;
+				localpoint.z = transformedpoint.z;
+				candvolume = LocateGlobalPoint(nextvol, transformedpoint, localpoint, path, false);
 				break;
 			}
 		}
@@ -301,29 +347,48 @@ PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume cons
 }
 
 
-PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath( Vector3D & localpoint, VolumePath const & oldpath, VolumePath & newpath )
+PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath(
+		Vector3D const & localpoint, VolumePath const & oldpath, VolumePath & newpath, TransformationMatrix * globalm ) const
 {
-	// strategy: check if point in current old volume
-	// if not have to go up until in some volume that contains that point then go down again
-	PhysicalVolume const * curvol = oldpath.Top();
-	if( curvol->UnplacedContains( localpoint ) )
+ // very simple at the moment
+	TransformationMatrix globalmatrix;
+	oldpath.GetGlobalMatrixFromPath( &globalmatrix );
+	Vector3D globalpoint;
+	globalmatrix.LocalToMaster( localpoint, globalpoint );
+	Vector3D newlocalpoint;
+	return LocateGlobalPoint( top, globalpoint, newlocalpoint, newpath, globalm );
+}
+
+
+PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
+		Vector3D const & localpoint, VolumePath & path, TransformationMatrix * globalm) const
+{
+	// idea: do the following:
+	// ----- is localpoint still in current mother ? : then go down
+	// if not: have to go up until we reach a volume that contains the localpoint and then go down again (neglecting the volumes currently stored in the path)
+	PhysicalVolume const * currentmother = path.Top();
+	if( currentmother->UnplacedContains(localpoint) )
 	{
-			// copy over oldpath to newpath
+		// go further down -- can use LocateGlobalPoint function for this
+		Vector3D newlocalpoint;
+
+		// at this moment would have to retrieve global matrix from path
+		path.GetGlobalMatrixFromPath( globalm );
+
+		return LocateGlobalPoint(currentmother, localpoint, newlocalpoint, path, globalm, false);
 	}
 	else
 	{
-		while( /*  ... */ )
-		{
-			oldpath.Pop();
-			curvol = oldpath.Top();
+		// convert localpoint to reference frame of mother
 
-			// get coordinate in for next frame
-			Vector3D higherpoint;
-		}
-		// going down can be achieved using the function LocateGlobalPoint ...
+		// get rid of current volume in path
+		path.Pop();
+
+		Vector3D pointhigherup;
+		currentmother->getMatrix()->LocalToMaster(localpoint, pointhigherup);
+		return LocateLocalPointFromPath_Relative(pointhigherup, path, globalm);
 	}
 }
-
 
 
 
