@@ -1,6 +1,6 @@
 #include "base/vector3d.h"
 #include "base/soa3d.h"
-#include "base/trans_matrix.h"
+#include "base/transformation_matrix.h"
 #include "backend/cuda_backend.cuh"
 #include "volumes/kernel/box_kernel.h"
 
@@ -12,7 +12,7 @@ void compile_cuda() {
   Vector3D<double> scalar_v;
   Vector3D<CudaDouble > vector_v;
   SOA3D<CudaDouble> soa;
-  TransMatrix<double> matrix;
+  TransformationMatrix<double> matrix;
   CudaBool output_inside;
   CudaDouble output_distance;
   BoxInside<kCuda>(scalar_v, matrix, vector_v, &output_inside);

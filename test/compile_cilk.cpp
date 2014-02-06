@@ -1,6 +1,6 @@
 #include "base/vector3d.h"
 #include "base/soa3d.h"
-#include "base/trans_matrix.h"
+#include "base/transformation_matrix.h"
 #include "backend/cilk_backend.h"
 #include "volumes/kernel/box_kernel.h"
 
@@ -11,7 +11,7 @@ void compile_cilk() {
   Vector3D<double> scalar_v;
   Vector3D<CilkDouble> vector_v;
   SOA3D<CilkDouble> soa;
-  TransMatrix<double> matrix;
+  TransformationMatrix<double> matrix;
   CilkBool output_inside;
   CilkDouble output_distance;
   BoxInside<kCilk>(scalar_v, matrix, vector_v, &output_inside);

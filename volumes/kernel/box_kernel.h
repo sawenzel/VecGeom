@@ -3,7 +3,7 @@
 
 #include "base/types.h"
 #include "base/vector3d.h"
-#include "base/trans_matrix.h"
+#include "base/transformation_matrix.h"
 #include "base/utilities.h"
 
 namespace vecgeom {
@@ -12,7 +12,7 @@ template <ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
-               TransMatrix<typename Impl<it>::precision> const &matrix,
+               TransformationMatrix<typename Impl<it>::precision> const &matrix,
                Vector3D<typename Impl<it>::double_v> const &point,
                typename Impl<it>::bool_v *const inside) {
 
@@ -37,7 +37,7 @@ template <ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxDistanceToIn(Vector3D<typename Impl<it>::precision> const &dimensions,
-                     TransMatrix<typename Impl<it>::precision> const &matrix,
+                     TransformationMatrix<typename Impl<it>::precision> const &matrix,
                      Vector3D<typename Impl<it>::double_v> const &pos,
                      Vector3D<typename Impl<it>::double_v> const &dir,
                      typename Impl<it>::double_v const &step_max,
