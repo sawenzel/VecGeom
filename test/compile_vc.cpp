@@ -11,7 +11,7 @@ void foo() {
   Vector3D<double> scalar_v;
   Vector3D<VcDouble> vector_v;
   SOA3D<VcDouble> soa;
-  TransMatrix matrix;
+  TransMatrix<double> matrix;
   VcBool output_inside;
   VcDouble output_distance;
   BoxInside<kVc>(scalar_v, matrix, vector_v, &output_inside);

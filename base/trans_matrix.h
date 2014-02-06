@@ -7,12 +7,13 @@
 
 namespace vecgeom {
 
+template <typename Type>
 class TransMatrix {
 
 private:
 
-  double trans[3];
-  double rot[9];
+  Type trans[3];
+  Type rot[9];
   bool identity;
   bool has_rotation;
   bool has_translation;
@@ -26,9 +27,9 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  TransMatrix(const double tx, const double ty, const double tz,
-              const double phi, const double theta,
-              const double psi) {
+  TransMatrix(const Type tx, const Type ty, const Type tz,
+              const Type phi, const Type theta,
+              const Type psi) {
     SetTranslation(tx, ty, tz);
     SetRotation(phi, theta, psi);
   }
@@ -44,8 +45,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<double> Translation() const {
-    return Vector3D<double>(trans[0], trans[1], trans[2]);
+  Vector3D<Type> Translation() const {
+    return Vector3D<Type>(trans[0], trans[1], trans[2]);
   }
 
   /**
@@ -54,11 +55,11 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  double Translation(const int index) const { return trans[index]; }
+  Type Translation(const int index) const { return trans[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  double const* Rotation() const { return rot; }
+  Type const* Rotation() const { return rot; }
 
   /**
    * No safety against faulty indexing.
@@ -66,7 +67,7 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  double Rotation(const int index) const { return rot[index]; }
+  Type Rotation(const int index) const { return rot[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -82,8 +83,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetTranslation(const double tx, const double ty,
-                      const double tz) {
+  void SetTranslation(const Type tx, const Type ty,
+                      const Type tz) {
     trans[0] = tx;
     trans[1] = ty;
     trans[2] = tz;
@@ -92,7 +93,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetTranslation(Vector3D<double> const &vec) {
+  void SetTranslation(Vector3D<Type> const &vec) {
     SetTranslation(vec[0], vec[1], vec[2]);
   }
 
@@ -106,15 +107,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(const double phi, const double theta,
-                   const double psi) {
+  void SetRotation(const Type phi, const Type theta,
+                   const Type psi) {
 
-    const double sinphi = sin(kDegToRad*phi);
-    const double cosphi = cos(kDegToRad*phi);
-    const double sinthe = sin(kDegToRad*theta);
-    const double costhe = cos(kDegToRad*theta);
-    const double sinpsi = sin(kDegToRad*psi);
-    const double cospsi = cos(kDegToRad*psi);
+    const Type sinphi = sin(kDegToRad*phi);
+    const Type cosphi = cos(kDegToRad*phi);
+    const Type sinthe = sin(kDegToRad*theta);
+    const Type costhe = cos(kDegToRad*theta);
+    const Type sinpsi = sin(kDegToRad*psi);
+    const Type cospsi = cos(kDegToRad*psi);
 
     rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
     rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
@@ -131,15 +132,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(Vector3D<double> const &vec) {
+  void SetRotation(Vector3D<Type> const &vec) {
     SetRotation(vec[0], vec[1], vec[2]);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(const double rot0, const double rot1, const double rot2,
-                   const double rot3, const double rot4, const double rot5,
-                   const double rot6, const double rot7, const double rot8) {
+  void SetRotation(const Type rot0, const Type rot1, const Type rot2,
+                   const Type rot3, const Type rot4, const Type rot5,
+                   const Type rot6, const Type rot7, const Type rot8) {
 
     rot[0] = rot0;
     rot[1] = rot1;
@@ -156,7 +157,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(const double *rot_) {
+  void SetRotation(const Type *rot_) {
     SetRotation(rot_[0], rot_[1], rot_[2], rot_[3], rot_[4], rot_[5],
                 rot_[6], rot_[7], rot_[8]);
   }
@@ -172,7 +173,7 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static int RotationFootprint(double const *rot) {
+  static int RotationFootprint(Type const *rot) {
 
     int footprint = 0;
 
@@ -196,7 +197,7 @@ public:
 
   /**
    * Computes the rotation footprint for this matrix.
-   * \sa TransMatrix::RotationFootprint(double const *rot)
+   * \sa TransMatrix::RotationFootprint(Type const *rot)
    * \return Unique id to identify different types of rotation, determining the
    *         necessary steps to compute transformations.
    */
@@ -212,11 +213,11 @@ private:
    * General case rotation transformation. Implemented separately to allow
    * inclusion in both regular and rotation-only transforms.
    */
-  template <typename Type>
+  template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void DoRotation(Vector3D<Type> const &master,
-                  Vector3D<Type> *const local) const {
+  void DoRotation(Vector3D<InputType> const &master,
+                  Vector3D<InputType> *const local) const {
     (*local)[0] =  master[0]*rot[0];
     (*local)[1] =  master[0]*rot[1];
     (*local)[2] =  master[0]*rot[2];
@@ -238,11 +239,11 @@ public:
    * \param local Output destination. Should never be the same as the input
    *              vector!
    */
-  template <typename Type>
+  template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Transform(Vector3D<Type> const &master,
-                 Vector3D<Type> *const local) const {
+  void Transform(Vector3D<InputType> const &master,
+                 Vector3D<InputType> *const local) const {
 
     // Vc can do early returns here as they are only dependent on the matrix
     if (IsIdentity()) {
@@ -265,11 +266,11 @@ public:
    * \param master Point to be transformed.
    * \return Newly constructed Vector3D with the transformed coordinates.
    */
-  template <typename Type>
+  template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> Transform(Vector3D<Type> const &master) const {
-    Vector3D<Type> local;
+  Vector3D<InputType> Transform(Vector3D<InputType> const &master) const {
+    Vector3D<InputType> local;
     Transform(master, &local);
     return local;
   }
@@ -280,11 +281,11 @@ public:
    * \param master Point to be transformed.
    * \param local Output destination of transformation.
    */
-  template <typename Type>
+  template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void TransformRotation(Vector3D<Type> const &master,
-                         Vector3D<Type> *const local) const {
+  void TransformRotation(Vector3D<InputType> const &master,
+                         Vector3D<InputType> *const local) const {
 
     // Vector backends can do early returns here as this is only dependent on
     // the matrix
@@ -303,11 +304,12 @@ public:
    * \param master Point to be transformed.
    * \return Newly constructed Vector3D with the transformed coordinates.
    */
-  template <typename Type>
+  template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> TransformRotation(Vector3D<Type> const &master) const {
-    Vector3D<Type> local;
+  Vector3D<InputType> TransformRotation(
+      Vector3D<InputType> const &master) const {
+    Vector3D<InputType> local;
     TransformRotation(master, &local);
     return local;
   }

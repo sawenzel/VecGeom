@@ -12,7 +12,7 @@ void compile_cuda() {
   Vector3D<double> scalar_v;
   Vector3D<CudaDouble > vector_v;
   SOA3D<CudaDouble> soa;
-  TransMatrix matrix;
+  TransMatrix<double> matrix;
   CudaBool output_inside;
   CudaDouble output_distance;
   BoxInside<kCuda>(scalar_v, matrix, vector_v, &output_inside);

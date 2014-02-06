@@ -53,13 +53,13 @@ public:
   VECGEOM_CUDA_HEADER_HOST
   Vector3D(std::string const &str) {
     int begin = 1, end = str.find(",");
-    vec[0] = std::atof(str.substr(begin, end-begin).c_str());
+    vec[0] = atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
     end = str.find(",", begin);
-    vec[1] = std::atof(str.substr(begin, end-begin).c_str());
+    vec[1] = atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
     end = str.find(")", begin);
-    vec[2] = std::atof(str.substr(begin, end-begin).c_str());
+    vec[2] = atof(str.substr(begin, end-begin).c_str());
   }
 
   /**
@@ -258,21 +258,32 @@ public:
   }
   #endif /* VECGEOM_STD_CXX11 */
 
+  /**
+   * \return Length of the vector as sqrt(x^2 + y^2 + z^2).
+   */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Type Length() const {
     return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
   }
 
+  /**
+   * Normalizes the vector by dividing each entry by the length.
+   * \sa Vector3D::Length()
+   */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Normalize() {
     *this /= Length();
   }
 
+  /**
+   * Maps each vector entry to a function that manipulates the entry type.
+   * \param f A function of type "Type f(const Type&)" to map over entries.
+   */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Map(double (*f)(const double&)) {
+  void Map(Type (*f)(const Type&)) {
     vec[0] = f(vec[0]);
     vec[1] = f(vec[1]);
     vec[2] = f(vec[2]);
