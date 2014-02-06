@@ -24,13 +24,31 @@ struct Vector3D
 	{
 		return &x+i;
 	}
-*/
+	*/
 
 	Vector3D & operator=(Vector3D const & rhs)
 	{
 		this->x=rhs.x;
 		this->y=rhs.y;
 		this->z=rhs.z;
+		return *this;
+	}
+
+
+	Vector3D & operator+=(Vector3D const & rhs)
+	{
+		this->x+=rhs.x;
+		this->y+=rhs.y;
+		this->z+=rhs.z;
+		return *this;
+	}
+
+
+	Vector3D & operator*=(Vector3D const & rhs)
+	{
+		this->x*=rhs.x;
+		this->y*=rhs.y;
+		this->z*=rhs.z;
 		return *this;
 	}
 
