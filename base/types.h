@@ -29,7 +29,10 @@ template <typename Precision>
 class VUnplacedVolume;
 
 template <typename Type>
-class TransMatrix;
+class TransformationMatrix;
+
+template <typename Precision>
+class GeoManager;
 
 } // End namespace vecgeom
 

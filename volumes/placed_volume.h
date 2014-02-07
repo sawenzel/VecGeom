@@ -1,8 +1,10 @@
 #ifndef VECGEOM_VOLUMES_PLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
+#include "base/types.h"
+#include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
-#include "base/trans_matrix.h"
+#include "base/transformation_matrix.h"
 
 namespace vecgeom {
 
@@ -11,20 +13,26 @@ class VPlacedVolume {
 
 protected:
 
+  const int id;
   VLogicalVolume<Precision> const &volume;
-  TransMatrix<Precision> const &matrix;
+  TransformationMatrix<Precision> const &matrix;
 
 public:
 
   VPlacedVolume(VLogicalVolume<Precision> const &volume_,
-                TransMatrix<Precision> const &matrix_) {
+                TransformationMatrix<Precision> const &matrix_) {
+    id = GeoManager<Precision>::template RegisterVolume(this);
     volume = volume_;
     matrix = matrix_;
   }
 
+  ~VPlacedVolume() {
+    GeoManager<Precision>::template DeregisterVolume(this);
+  }
+
   VLogicalVolume<Precision> const& Volume() const { return volume; }
 
-  TransMatrix<Precision> const& Matrix() const { return matrix; }
+  TransformationMatrix<Precision> const& Matrix() const { return matrix; }
 
 };
 
