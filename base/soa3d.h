@@ -1,14 +1,13 @@
 #ifndef VECGEOM_BASE_SOA3D_H_
 #define VECGEOM_BASE_SOA3D_H_
 
-#include "mm_malloc.h"
 #include "base/utilities.h"
 #include "base/types.h"
 
 namespace vecgeom {
 
 template <typename Type>
-struct SOA3D {
+class SOA3D {
 
 private:
 
@@ -34,14 +33,14 @@ public:
   #ifndef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D() : SOA3D(nullptr, nullptr, nullptr, 0) {};
-  #else // VECGEOM_NVCC
+  #else
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D() {
     SOA3D(NULL, NULL, NULL, 0)
   };
-  #endif // VECGEOM_NVCC
+  #endif
 
-  #else // VECGEOM_STD_CXX11
+  #else // NOT VECGEOM_STD_CXX11
 
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D(Type *const a_, Type *const b_, Type *const c_, const int size_) {
@@ -53,6 +52,13 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  SOA3D() {
+    SOA3D(NULL, NULL, NULL, 0);
+  }
+
+  #ifndef VECGEOM_CUDA
+
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(const int size_) {
     size = size_;
     allocated = true;
@@ -60,27 +66,6 @@ public:
     b = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
     c = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
   }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  SOA3D() {
-    SOA3D(NULL, NULL, NULL, 0);
-  }
-
-  #endif /* VECGEOM_STD_CXX11 */
-
-  VECGEOM_CUDA_HEADER_BOTH
-  SOA3D(SOA3D const &other) {
-    SOA3D(other.size);
-    const int count = other.size;
-    for (int i = 0; i < count; ++i) {
-      a[i] = other.a[i];
-      b[i] = other.b[i];
-      c[i] = other.c[i];
-    }
-    size = count;
-  }
-
-  #ifndef VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_HOST
   ~SOA3D() {
@@ -97,7 +82,21 @@ public:
     }
   }
 
-  #endif // VECGEOM_NVCC
+  #endif
+
+  #endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  SOA3D(SOA3D const &other) {
+    SOA3D(other.size);
+    const int count = other.size;
+    for (int i = 0; i < count; ++i) {
+      a[i] = other.a[i];
+      b[i] = other.b[i];
+      c[i] = other.c[i];
+    }
+    size = count;
+  }
 
   #ifdef VECGEOM_NVCC
 

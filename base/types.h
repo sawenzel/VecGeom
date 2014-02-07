@@ -9,10 +9,10 @@ template <ImplType it>
 struct Impl;
 
 template <typename Type>
-struct Vector3D;
+class Vector3D;
 
 template <typename Type>
-struct SOA3D;
+class SOA3D;
 
 template <typename Precision>
 class VLogicalVolume;

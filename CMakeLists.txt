@@ -6,6 +6,8 @@ if (NOT BACKEND)
   set(BACKEND Vc)
 endif ()
 
+option(VC_ACCELERATION "Internal vectorization using Vc." ON)
+
 if (BACKEND STREQUAL "Vc")
   set(Vc TRUE)
 endif()
@@ -14,6 +16,10 @@ if (BACKEND STREQUAL "CUDA")
 endif()
 if (BACKEND STREQUAL "Cilk")
   set(Cilk TRUE)
+endif()
+
+if (CUDA)
+  set(VC_ACCELERATION OFF)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -45,17 +51,26 @@ if (CUDA)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
 endif()
 if (Intel)
-  set(CMAKE_CXX_OPT "${CMAKE_CXX_FLAGS} -xHost")
+  set(CMAKE_CXX_OPT "${CMAKE_CXX_OPT} -xHost")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
 
-if (Vc)
+if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
   get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)
   include_directories(${Vc_LIBPATH}/../include/)
+
+endif()
+
+if (VC_ACCELERATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
+endif()
+
+if (Vc)
+
   if (GNU)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()

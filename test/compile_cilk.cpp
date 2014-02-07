@@ -3,6 +3,7 @@
 #include "base/transformation_matrix.h"
 #include "backend/cilk_backend.h"
 #include "volumes/kernel/box_kernel.h"
+#include "base/vc_vector3d.h"
 
 using namespace vecgeom;
 
