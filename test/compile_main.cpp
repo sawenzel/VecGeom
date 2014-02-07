@@ -15,8 +15,11 @@ int main() {
   TransformationMatrix<double> matrix;
   ScalarBool output_inside;
   double output_distance;
-  BoxInside<kScalar>(scalar_v, matrix, vector_v, &output_inside);
-  BoxDistanceToIn<kScalar>(scalar_v, matrix, vector_v, vector_v, scalar,
-                           &output_distance);
+  BoxInside<kScalar, translation::kOrigin, rotation::kIdentity>(
+    scalar_v, matrix, vector_v, &output_inside
+  );
+  BoxDistanceToIn<kScalar, translation::kOrigin, rotation::kIdentity>(
+    scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
+  );
   return 0;
 }

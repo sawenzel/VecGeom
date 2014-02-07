@@ -31,6 +31,9 @@ class VUnplacedVolume;
 template <typename Type>
 class TransformationMatrix;
 
+template <typename Precision>
+class GeoManager;
+
 } // End namespace vecgeom
 
 #endif // VECGEOM_BASE_TYPES_H_

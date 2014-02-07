@@ -7,18 +7,20 @@
 
 namespace vecgeom {
 
-// /**
-//  * Binary mask to access two bits for each matrix element determining the sign.
-//  */
 // enum MatrixEntry {
 //   k00 = 0x001, k01 = 0x002, k02 = 0x004,
 //   k10 = 0x008, k11 = 0x010, k12 = 0x020,
 //   k20 = 0x040, k21 = 0x080, k22 = 0x100
 // };
 
-enum RotationCodes { kDiagonal = 0x111, kIdentity = 0x200 };
 typedef int RotationCode;
 typedef int TranslationCode;
+namespace rotation {
+  enum RotationId { kDiagonal = 0x111, kIdentity = 0x200 };
+}
+namespace translation {
+  enum TranslationId { kOrigin = 0, kTranslation = 1 };
+}
 
 template <typename Type>
 class TransformationMatrix {
@@ -114,7 +116,8 @@ public:
   VECGEOM_INLINE
   void SetProperties() {
     has_translation = (trans[0] || trans[1] || trans[2]) ? true : false;
-    has_rotation = (GenerateRotationCode() == kIdentity) ? false : true;
+    has_rotation = (GenerateRotationCode() == rotation::kIdentity) ? false
+                                                                   : true;
     identity = !has_translation && !has_rotation;
   }
 
@@ -181,8 +184,9 @@ public:
       // Assign each set of two bits
       code |= (1<<i) * (rot[i] != 0);
     }
-    if (code == kDiagonal && (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.)) {
-      code = kIdentity;
+    if (code == rotation::kDiagonal
+        && (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.)) {
+      code = rotation::kIdentity;
     }
     return code;
   }
@@ -196,7 +200,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   TranslationCode GenerateTranslationCode() const {
-    return static_cast<int>(has_translation);
+    return (has_translation) ? translation::kTranslation : translation::kOrigin;
   }
 
 private:
@@ -301,7 +305,7 @@ private:
     }
 
     // code = 0x111;
-    if (code == kDiagonal) {
+    if (code == rotation::kDiagonal) {
       local[0] = master[0]*rot[0];
       local[1] = master[1]*rot[4];
       local[2] = master[2]*rot[8];
@@ -309,8 +313,8 @@ private:
     }
 
     // code = 0x200;
-    if (code == kIdentity){
-      local = master;
+    if (code == rotation::kIdentity){
+      *local = master;
       return;
     }
 
@@ -353,19 +357,19 @@ public:
                  Vector3D<InputType> *const local) const {
 
     // Identity
-    if (trans_code == 0 && rot_code == kIdentity) {
+    if (trans_code == 0 && rot_code == rotation::kIdentity) {
       *local = master;
       return;
     }
 
     // Only translation
-    if (trans_code == 1 && rot_code == kIdentity) {
+    if (trans_code == 1 && rot_code == rotation::kIdentity) {
       DoTranslation(master, local);
       return;
     }
 
     // Only rotation
-    if (trans_code == 0 && rot_code != kIdentity) {
+    if (trans_code == 0 && rot_code != rotation::kIdentity) {
       DoRotation<rot_code>(master, local);
       return;
     }
@@ -405,13 +409,13 @@ public:
                          Vector3D<InputType> *const local) const {
 
     // Rotational identity
-    if (code == kIdentity) {
+    if (code == rotation::kIdentity) {
       *local = master;
       return;
     }
 
     // General case
-    DoRotation(master, local);
+    DoRotation<code>(master, local);
 
   }
 

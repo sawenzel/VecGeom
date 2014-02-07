@@ -8,7 +8,7 @@
 
 namespace vecgeom {
 
-template <ImplType it>
+template <ImplType it, TranslationCode trans_code, RotationCode rot_code>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
@@ -17,7 +17,7 @@ void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
                typename Impl<it>::bool_v *const inside) {
 
   const Vector3D<typename Impl<it>::double_v> local =
-      matrix.Transform(point);
+      matrix.template Transform<trans_code, rot_code>(point);
 
   Vector3D<typename Impl<it>::bool_v> inside_dim(Impl<it>::kFalse);
   for (int i = 0; i < 3; ++i) {
@@ -30,18 +30,23 @@ void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
     }
   }
 
-  *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
+  if (Impl<it>::early_returns) {
+    *inside = Impl<it>::kTrue;
+  } else {
+    *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
+  }
 }
 
-template <ImplType it>
+template <ImplType it, TranslationCode trans_code, RotationCode rot_code>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void BoxDistanceToIn(Vector3D<typename Impl<it>::precision> const &dimensions,
-                     TransformationMatrix<typename Impl<it>::precision> const &matrix,
-                     Vector3D<typename Impl<it>::double_v> const &pos,
-                     Vector3D<typename Impl<it>::double_v> const &dir,
-                     typename Impl<it>::double_v const &step_max,
-                     typename Impl<it>::double_v *const distance) {
+void BoxDistanceToIn(
+    Vector3D<typename Impl<it>::precision> const &dimensions,
+    TransformationMatrix<typename Impl<it>::precision> const &matrix,
+    Vector3D<typename Impl<it>::double_v> const &pos,
+    Vector3D<typename Impl<it>::double_v> const &dir,
+    typename Impl<it>::double_v const &step_max,
+    typename Impl<it>::double_v *const distance) {
 
   typedef typename Impl<it>::double_v Float;
   typedef typename Impl<it>::bool_v Bool;
@@ -53,8 +58,8 @@ void BoxDistanceToIn(Vector3D<typename Impl<it>::precision> const &dimensions,
   Bool done(false);
   *distance = kInfinity;
 
-  matrix.Transform(pos, &pos_local);
-  matrix.TransformRotation(dir, &dir_local);
+  matrix.template Transform<trans_code, rot_code>(pos, &pos_local);
+  matrix.template TransformRotation<rot_code>(dir, &dir_local);
 
   safety[0] = Abs<it>(pos_local[0]) - dimensions[0];
   safety[1] = Abs<it>(pos_local[1]) - dimensions[1];

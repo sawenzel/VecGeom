@@ -15,7 +15,10 @@ void compile_cuda() {
   TransformationMatrix<double> matrix;
   CudaBool output_inside;
   CudaDouble output_distance;
-  BoxInside<kCuda>(scalar_v, matrix, vector_v, &output_inside);
-  BoxDistanceToIn<kCuda>(scalar_v, matrix, vector_v, vector_v, scalar,
-                         &output_distance);
+  BoxInside<kCuda, translation::kOrigin, rotation::kIdentity>(
+    scalar_v, matrix, vector_v, &output_inside
+  );
+  BoxDistanceToIn<kCuda, translation::kOrigin, rotation::kIdentity>(
+    scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
+  );
 }

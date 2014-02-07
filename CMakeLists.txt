@@ -28,7 +28,7 @@ endif()
 
 message(STATUS "Configuring with backend ${BACKEND}.")
 
-if ((NOT Cilk) AND VECTOR)
+if ((NOT Intel) AND VECTOR)
   message(STATUS "Compiling with vector instruction set ${VECTOR}")
   set(CMAKE_CXX_OPT "${CMAKE_CXX_OPT} -m${VECTOR}")
 endif()
@@ -43,6 +43,11 @@ if (Clang)
 endif()
 if (CUDA)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
+endif()
+if (Intel)
+  set(CMAKE_CXX_OPT "${CMAKE_CXX_FLAGS} -xHost")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
 
 if (Vc)
@@ -67,17 +72,14 @@ if (Cilk)
 
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/cilk_backend.cpp)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
 
-else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
 
 if (CUDA)
 
   find_package(CUDA REQUIRED)
   include(FindCUDA)
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_30 -O2 --use_fast_math)
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_30 -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
 
 endif()
@@ -85,12 +87,17 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR})
 
 if (CUDA)
+  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
+  message(STATUS "Compiling for CUDA with C++ flags: ${CMAKE_CXX_FLAGS}")
   cuda_compile(COMPILE_O ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
   cuda_add_library(vecgeomcuda ${COMPILE_O})
   set(LIBS ${LIBS} vecgeomcuda)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_OPT}")
+message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
+
+set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/geo_manager.cpp)
 
 if (SRC_CPP)
   add_library(vecgeomcpp STATIC ${SRC_CPP})
