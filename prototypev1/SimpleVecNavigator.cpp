@@ -17,21 +17,50 @@
 #include <iostream>
 #include "TransformationMatrix.h"
 
-
+class PhysicalVolume;
 VolumePath::VolumePath(int maxlevel) : fmaxlevel(maxlevel), fcurrentlevel(0)
 {
 	fmaxlevel = maxlevel;
 
 	path= (PhysicalVolume const * *) _mm_malloc( sizeof(PhysicalVolume const *) * maxlevel, ALIGNMENT_BOUNDARY );
 	cache_of_globalmatrices = ( TransformationMatrix const * *) _mm_malloc( sizeof(TransformationMatrix) * maxlevel, ALIGNMENT_BOUNDARY );
+	Clear();
 }
 
 
 void VolumePath::Print() const
 {
 	std::cerr << "level" << fcurrentlevel << std::endl;
+	for( int i=0;i<fcurrentlevel;i++ )
+	{
+		std::cerr << " " << i << " " << path[i] << std::endl;
+	}
+
+
 }
 
+// function compares two paths and calculated distance along shortest path connecting them on the tree
+int VolumePath::Distance( VolumePath const & other ) const
+{
+    int lastcommonlevel;
+    int maxlevel = std::max( GetCurrentLevel(), other.GetCurrentLevel() );
+
+    //  algorithm: start on top and go down until paths split
+    for(int i=0; i< maxlevel; i++)
+	{
+    	PhysicalVolume const *v1=this->At(i);
+		PhysicalVolume const *v2=other.At(i);
+		if( v1 == v2 )
+		{
+			lastcommonlevel = i;
+		}
+		else
+		{
+			break;
+		}
+	}
+	return (GetCurrentLevel()-lastcommonlevel) + ( other.GetCurrentLevel() - lastcommonlevel ) - 2;
+}
 
 SimpleVecNavigator::SimpleVecNavigator(int np, PhysicalVolume const * t) : top(t)  {
 	// TODO Auto-generated constructor stub
@@ -284,11 +313,11 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 // we could specialize this function on whether top or not
 // this is very special at the moment; no treatment of boundary information
 // we might have to pass the directions as well -- but then we would have to transform them as well ( bugger )
-PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume const * vol,
-		Vector3D const & globalpoint, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
+PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vol,
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
 {
 	PhysicalVolume const * candvolume = vol;
-	if( top ) candvolume = ( vol->UnplacedContains( globalpoint ) )? vol : 0;
+	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
 	if( candvolume )
 	{
 		path.Push( candvolume );
@@ -298,13 +327,11 @@ PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume cons
 		{
 			PhysicalVolume const * nextvol=(*iter);
 			Vector3D transformedpoint;
-			if(nextvol->Contains(globalpoint, transformedpoint, globalm))
+			if(nextvol->Contains(point, transformedpoint, globalm))
 			{
 				// this is no longer the top ( so setting top to false )
-				localpoint.x = transformedpoint.x;
-				localpoint.y = transformedpoint.y;
-				localpoint.z = transformedpoint.z;
-				candvolume = LocateGlobalPoint(nextvol, transformedpoint, localpoint, path, globalm, false);
+				localpoint = transformedpoint;
+				candvolume = LocatePoint(nextvol, transformedpoint, localpoint, path, globalm, false);
 				break;
 			}
 		}
@@ -315,11 +342,11 @@ PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume cons
 	// at the very end: do the matrix multiplications and caching of global matrices -- doing this in a loop will be icache friendly
 }
 
-PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume const * vol,
-		Vector3D const & globalpoint, Vector3D & localpoint, VolumePath & path, bool top=true) const
+PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vol,
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, bool top=true) const
 {
 	PhysicalVolume const * candvolume = vol;
-	if( top ) candvolume = ( vol->UnplacedContains( globalpoint ) )? vol : 0;
+	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
 	if( candvolume )
 	{
 		path.Push( candvolume );
@@ -329,13 +356,11 @@ PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume cons
 		{
 			PhysicalVolume const * nextvol=(*iter);
 			Vector3D transformedpoint;
-			if( nextvol->Contains( globalpoint, transformedpoint ))
+			if( nextvol->Contains( point, transformedpoint ))
 			{
 				// this is no longer the top ( so setting top to false )
-				localpoint.x = transformedpoint.x;
-				localpoint.y = transformedpoint.y;
-				localpoint.z = transformedpoint.z;
-				candvolume = LocateGlobalPoint(nextvol, transformedpoint, localpoint, path, false);
+				localpoint = transformedpoint;
+				candvolume = LocatePoint(nextvol, transformedpoint, localpoint, path, false);
 				break;
 			}
 		}
@@ -348,47 +373,54 @@ PhysicalVolume const * SimpleVecNavigator::LocateGlobalPoint(PhysicalVolume cons
 
 
 PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath(
-		Vector3D const & localpoint, VolumePath const & oldpath, VolumePath & newpath, TransformationMatrix * globalm ) const
+		Vector3D const & point, Vector3D & localpoint, VolumePath const & oldpath, VolumePath & newpath, TransformationMatrix * globalm ) const
 {
  // very simple at the moment
+	newpath.Clear();
 	TransformationMatrix globalmatrix;
 	oldpath.GetGlobalMatrixFromPath( &globalmatrix );
 	Vector3D globalpoint;
-	globalmatrix.LocalToMaster( localpoint, globalpoint );
-	Vector3D newlocalpoint;
-	return LocateGlobalPoint( top, globalpoint, newlocalpoint, newpath, globalm );
+	globalmatrix.LocalToMaster( point, globalpoint );
+	localpoint = globalpoint;
+	return LocatePoint( top, globalpoint, localpoint, newpath, globalm );
 }
 
 
+
 PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
-		Vector3D const & localpoint, VolumePath & path, TransformationMatrix * globalm) const
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm) const
 {
 	// idea: do the following:
 	// ----- is localpoint still in current mother ? : then go down
 	// if not: have to go up until we reach a volume that contains the localpoint and then go down again (neglecting the volumes currently stored in the path)
 	PhysicalVolume const * currentmother = path.Top();
-	if( currentmother->UnplacedContains(localpoint) )
+	if ( currentmother != NULL )
 	{
-		// go further down -- can use LocateGlobalPoint function for this
-		Vector3D newlocalpoint;
+		localpoint = point;
+		path.Pop();
+		if( currentmother->UnplacedContains(point) )
+		{
+			// go further down -- can use LocatePoint function for this
+			// at this moment would have to retrieve global matrix from path
+			path.GetGlobalMatrixFromPath( globalm );
 
-		// at this moment would have to retrieve global matrix from path
-		path.GetGlobalMatrixFromPath( globalm );
+			//std::cerr << "going further down " << std::endl;
+			return LocatePoint(currentmother, point, localpoint, path, globalm, false);
+		}
+		else
+		{
+			// convert localpoint to reference frame of mother
 
-		return LocateGlobalPoint(currentmother, localpoint, newlocalpoint, path, globalm, false);
+			Vector3D pointhigherup;
+			currentmother->getMatrix()->LocalToMaster(point, pointhigherup);
+			return LocateLocalPointFromPath_Relative(pointhigherup, localpoint, path, globalm);
+		}
 	}
 	else
 	{
-		// convert localpoint to reference frame of mother
-
-		// get rid of current volume in path
-		path.Pop();
-
-		Vector3D pointhigherup;
-		currentmother->getMatrix()->LocalToMaster(localpoint, pointhigherup);
-		return LocateLocalPointFromPath_Relative(pointhigherup, path, globalm);
+		// particle is not even within world volume
+		return 0;
 	}
 }
-
 
 

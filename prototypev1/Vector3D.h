@@ -18,6 +18,14 @@ struct Vector3D
 	double x,y,z;
 	Vector3D(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {};
 	Vector3D() : x(0), y(0), z(0) {};
+	Vector3D( Vector3D const & rhs ) : x(rhs.x), y(rhs.y), z(rhs.z) {};
+
+
+
+	inline double GetX() const {return x;}
+	inline double GetY() const {return y;}
+	inline double GetZ() const {return z;}
+
 
 	/*
 	double operator[](int i) const
@@ -26,6 +34,7 @@ struct Vector3D
 	}
 	*/
 
+	inline
 	Vector3D & operator=(Vector3D const & rhs)
 	{
 		this->x=rhs.x;
@@ -34,7 +43,7 @@ struct Vector3D
 		return *this;
 	}
 
-
+	inline
 	Vector3D & operator+=(Vector3D const & rhs)
 	{
 		this->x+=rhs.x;
@@ -44,12 +53,39 @@ struct Vector3D
 	}
 
 
+	inline
+	Vector3D & operator-=(Vector3D const & rhs)
+	{
+		this->x-=rhs.x;
+		this->y-=rhs.y;
+		this->z-=rhs.z;
+		return *this;
+	}
+
+	inline
 	Vector3D & operator*=(Vector3D const & rhs)
 	{
 		this->x*=rhs.x;
 		this->y*=rhs.y;
 		this->z*=rhs.z;
 		return *this;
+	}
+
+	inline
+	Vector3D & operator/=(Vector3D const & rhs)
+	{
+		this->x/=rhs.x;
+		this->y/=rhs.y;
+		this->z/=rhs.z;
+		return *this;
+	}
+
+
+
+	inline
+	double norm() const
+	{
+		return std::sqrt(this->x*this->x + this->y*this->y + this->z*this->z);
 	}
 
 	static
@@ -75,13 +111,33 @@ struct Vector3D
 		std::cout << " z : " << z << std::endl;
 	}
 
+	inline
+	bool operator==(Vector3D const & rhs) const;
 	//void print() const
 	//{
 	//	std::cout << "3DVector (instance ) " << (*this) << std::endl;
 	//}
-
+//	friend bool operator==( Vector3D const & lhs, Vector3D const & rhs );
 };
 
+inline
+Vector3D const operator-(Vector3D const & lhs, Vector3D const & rhs)
+{
+	Vector3D tmp(lhs);
+	tmp-=rhs;
+	return tmp;
+}
+
+inline
+bool
+Vector3D::operator==( Vector3D const & rhs ) const
+{
+	//	if( this->GetX() == rhs.GetX() && this->GetY()==rhs.GetY() && this->GetZ() == rhs.GetZ() ) return true;
+	if( std::abs(this->GetX() - rhs.GetX()) < 1E-12 && std::abs(this->GetY()-rhs.GetY())<1E-15 && std::abs(this->GetZ()-rhs.GetZ())<1E-15 ) return true;
+	return false;
+}
+
+inline
 static
 std::ostream& operator<<( std::ostream& stream, Vector3D const & vec )
 {

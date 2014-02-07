@@ -23,21 +23,54 @@ class VolumePath
 	public:
 		VolumePath(int);
 
-		PhysicalVolume const * At(int i) const;
-		void SetAt(int i, PhysicalVolume const *);
+		inline int GetMaxLevel() const {return fmaxlevel;}
+		inline int GetCurrentLevel() const {return fcurrentlevel;}
+
+		inline PhysicalVolume const * At(int i) const;
+		inline void SetAt(int i, PhysicalVolume const *);
 
 		// better to use pop and push
-		void Push( PhysicalVolume const *);
-		PhysicalVolume const * Top() const;
-		void Pop();
+		inline void Push( PhysicalVolume const *);
+		inline PhysicalVolume const * Top() const;
+		inline void Pop();
+
+		int Distance( VolumePath const & ) const;
 
 		// clear all information
 		void Clear();
-
+		inline int Size() const { return fcurrentlevel; }
 		void Print() const;
 
 		void GetGlobalMatrixFromPath( TransformationMatrix * m ) const;
+		inline VolumePath & operator=( VolumePath const & rhs );
 };
+
+static
+inline
+bool
+operator==( VolumePath const & lhs, VolumePath const & rhs )
+{
+	if( lhs.GetMaxLevel()!=rhs.GetMaxLevel() ) return false;
+	if( lhs.GetCurrentLevel()!=rhs.GetCurrentLevel() ) return false;
+	for(int i=0;i<lhs.GetCurrentLevel();i++){
+		if (lhs.At(i) != rhs.At(i)) return false;
+	}
+	return true;
+}
+
+inline
+VolumePath & VolumePath::operator=(VolumePath const & rhs)
+{
+	if( this->fmaxlevel == rhs.fmaxlevel)
+	{
+		this->fcurrentlevel=rhs.fcurrentlevel;
+		for( int i=0; i<this->fmaxlevel; i++ )
+		{
+			this->path[i]=rhs.path[i];
+		}
+	}
+	return *this;
+}
 
 inline
 void VolumePath::GetGlobalMatrixFromPath( TransformationMatrix * m ) const
@@ -55,6 +88,8 @@ PhysicalVolume const * VolumePath::At(int i) const
 }
 
 
+
+
 inline
 void
 VolumePath::SetAt(int i, PhysicalVolume const * v)
@@ -66,14 +101,18 @@ inline
 void
 VolumePath::Pop()
 {
-	path[fcurrentlevel--]=0;
+	if( fcurrentlevel > 0 ) path[fcurrentlevel-1]=0;
+	fcurrentlevel--;
 }
 
 inline
 void
 VolumePath::Push( PhysicalVolume const * v)
 {
-	path[fcurrentlevel++]=v;
+	assert( fcurrentlevel < fmaxlevel );
+
+	path[fcurrentlevel]=v;
+	fcurrentlevel++;
 }
 
 
@@ -81,14 +120,14 @@ inline
 PhysicalVolume const *
 VolumePath::Top() const
 {
-	return path[fcurrentlevel];
+	return ( fcurrentlevel > 0 )? path[fcurrentlevel-1] : 0;
 }
 
 inline
 void
 VolumePath::Clear()
 {
-	for(int i=0;i<fcurrentlevel;i++) path[0]=0;
+	for(int i=0;i<fmaxlevel;i++) path[0]=0;
 	fcurrentlevel=0;
 }
 
@@ -148,21 +187,21 @@ public:
 
 
 	PhysicalVolume const *
-	LocateGlobalPoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
+	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
 
 	PhysicalVolume const *
-	LocateGlobalPoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, bool top=true) const;
+	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, bool top=true) const;
 
-
-	PhysicalVolume const *
-	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
-	// we might need some more input here ( like the direction )
-	LocateLocalPointFromPath(Vector3D const & localpoint, VolumePath const & inpath, VolumePath & newpath, TransformationMatrix * ) const;
 
 	PhysicalVolume const *
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
 	// we might need some more input here ( like the direction )
-	LocateLocalPointFromPath_Relative(Vector3D const & localpoint, VolumePath & path, TransformationMatrix * ) const;
+	LocateLocalPointFromPath(Vector3D const & point, Vector3D &,  VolumePath const & inpath, VolumePath & newpath, TransformationMatrix * ) const;
+
+	PhysicalVolume const *
+	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
+	// we might need some more input here ( like the direction )
+	LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 
 
 };
