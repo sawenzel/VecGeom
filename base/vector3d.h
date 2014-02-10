@@ -6,7 +6,7 @@
 #include "base/types.h"
 #include "base/utilities.h"
 #ifdef VECGEOM_VC_ACCELERATION
-  #include <Vc/Vc>
+#include <Vc/Vc>
 #endif
 
 namespace vecgeom {

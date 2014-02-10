@@ -74,14 +74,14 @@ static Type* AllocateOnGPU(const int count) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
 VECGEOM_INLINE
-void CopyToGPU(Type const * const src, Type * const tgt, const int count) {
+void CopyToGPU(Type const *const src, Type *const tgt, const int count) {
   cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyHostToDevice);
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
 VECGEOM_INLINE
-void CopyFromGPU(Type const * const src, Type * const tgt, const int count) {
+void CopyFromGPU(Type const * const src, Type *const tgt, const int count) {
   cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost);
 }
 
