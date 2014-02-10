@@ -5,11 +5,14 @@
 #include <string>
 #include "base/types.h"
 #include "base/utilities.h"
+#ifdef VECGEOM_VC_ACCELERATION
+#include <Vc/Vc>
+#endif
 
 namespace vecgeom {
 
 template <typename Type>
-struct Vector3D {
+class Vector3D {
 
   typedef Vector3D<Type> VecType;
 
@@ -290,6 +293,217 @@ public:
   }
 
 };
+
+#ifdef VECGEOM_VC_ACCELERATION // Activated as a compiler flag
+
+template <>
+class Vector3D<double> {
+
+  typedef Vector3D<double> VecType;
+
+private:
+
+  Vc::Memory<Vc::double_v, 3> mem;
+
+public:
+
+  Vector3D(const double a, const double b, const double c) {
+    mem[0] = a;
+    mem[1] = b;
+    mem[2] = c;
+  }
+
+  Vector3D(const double a) {
+    mem = a;
+  }
+
+  Vector3D() : Vector3D(0) {}
+
+  Vector3D(Vector3D const &other) {
+    this->mem = other.mem;
+  }
+
+  Vector3D(std::string const &str) {
+    int begin = 1, end = str.find(",");
+    mem[0] = atof(str.substr(begin, end-begin).c_str());
+    begin = end + 2;
+    end = str.find(",", begin);
+    mem[1] = atof(str.substr(begin, end-begin).c_str());
+    begin = end + 2;
+    end = str.find(")", begin);
+    mem[2] = atof(str.substr(begin, end-begin).c_str());
+  }
+
+  VECGEOM_INLINE
+  double& operator[](const int index) {
+    return mem[index];
+  }
+
+  VECGEOM_INLINE
+  double const& operator[](const int index) const {
+    return mem[index];
+  }
+
+  VECGEOM_INLINE
+  double& x() { return mem[0]; }
+
+  VECGEOM_INLINE
+  double const& x() const { return mem[0]; }
+
+  VECGEOM_INLINE
+  double& y() { return mem[1]; }
+
+  VECGEOM_INLINE
+  double const& y() const { return mem[1]; }
+
+  VECGEOM_INLINE
+  double& z() { return mem[2]; }
+
+  VECGEOM_INLINE
+  double const& z() const { return mem[2]; }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType& operator+=(Vector3D<TypeOther> const &rhs) {
+    this->mem += rhs.mem;
+    return *this;
+  }
+
+  VECGEOM_INLINE
+  VecType& operator+=(double const &scalar) {
+    this->mem += scalar;
+    return *this;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType& operator-=(Vector3D<TypeOther> const &rhs) {
+    this->mem -= rhs.mem;
+    return *this;
+  }
+
+  VECGEOM_INLINE
+  VecType& operator-=(double const &scalar) {
+    this->mem -= scalar;
+    return *this;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType& operator*=(Vector3D<TypeOther> const &rhs) {
+    this->mem *= rhs.mem;
+    return *this;
+  }
+
+  VECGEOM_INLINE
+  VecType& operator*=(double const &scalar) {
+    this->mem *= scalar;
+    return *this;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType& operator/=(Vector3D<TypeOther> const &rhs) {
+    this->mem /= rhs.mem;
+    return *this;
+  }
+
+  VECGEOM_INLINE
+  VecType& operator/=(double const &scalar) {
+    const double inverse = 1.0 / scalar;
+    *this *= inverse;
+    return *this;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType operator+(Vector3D<TypeOther> const &other) const {
+    VecType result(*this);
+    result += other;
+    return result;
+  }
+
+  VECGEOM_INLINE
+  VecType operator+(double const &scalar) const {
+    VecType result(*this);
+    result += scalar;
+    return result;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType operator-(Vector3D<TypeOther> const &other) const {
+    VecType result(*this);
+    result -= other;
+    return result;
+  }
+
+  VECGEOM_INLINE
+  VecType operator-(double const &scalar) const {
+    VecType result(*this);
+    result -= scalar;
+    return result;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType operator*(Vector3D<TypeOther> const &other) const {
+    VecType result(*this);
+    result *= other;
+    return result;
+  }
+
+  VECGEOM_INLINE
+  VecType operator*(double const &scalar) const {
+    VecType result(*this);
+    result *= scalar;
+    return result;
+  }
+
+  template <typename TypeOther>
+  VECGEOM_INLINE
+  VecType operator/(Vector3D<TypeOther> const &other) const {
+    VecType result(*this);
+    result /= other;
+    return result;
+  }
+
+  VECGEOM_INLINE
+  VecType operator/(double const &scalar) const {
+    VecType result(*this);
+    result /= scalar;
+    return result;
+  }
+
+  #ifdef VECGEOM_STD_CXX11
+  friend
+  VECGEOM_INLINE
+  std::ostream& operator<<(std::ostream& os, VecType const &v) {
+    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
+    return os;
+  }
+  #endif /* VECGEOM_STD_CXX11 */
+
+  VECGEOM_INLINE
+  double Length() const {
+    return sqrt(mem[0]*mem[0] + mem[1]*mem[1] + mem[2]*mem[2]);
+  }
+
+  VECGEOM_INLINE
+  void Normalize() {
+    *this /= Length();
+  }
+
+  VECGEOM_INLINE
+  void Map(double (*f)(const double&)) {
+    mem[0] = f(mem[0]);
+    mem[1] = f(mem[1]);
+    mem[2] = f(mem[2]);
+  }
+
+};
+
+#endif // Vc acceleration enabled
 
 } // End namespace vecgeom
 

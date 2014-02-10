@@ -3,32 +3,39 @@
 
 #include <cmath>
 
-namespace vecgeom {
-
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
-#else // __CUDACC__ || __NVCC__
+#else // Not compiling for CUDA
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
-#endif // __CUDACC__ || __NVCC__
+#endif
 
 #ifndef VECGEOM_CUDA // Set by compiler
   #define VECGEOM_STD_CXX11
-#endif // VECGEOM_CUDA
+#endif
 
 #ifdef __INTEL_COMPILER
   #define VECGEOM_INLINE inline
-#else // __INTEL_COMPILER
+#else
+  #ifndef VECGEOM_CUDA
+    #include <mm_malloc.h>
+  #endif
   #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
     #define VECGEOM_INLINE inline __attribute__((always_inline))
-  #else // __GNUC__
+  #else // Clang
     #define VECGEOM_INLINE inline
-  #endif // __GNUC__
-#endif // __INTEL_COMPILER
+  #endif
+#endif
+
+#ifndef NULL
+  #define NULL 0
+#endif
+
+namespace vecgeom {
 
 const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;

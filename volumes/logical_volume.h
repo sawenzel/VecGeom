@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "base/types.h"
+#include "base/list.h"
 
 namespace vecgeom {
 
@@ -12,17 +13,26 @@ class VLogicalVolume {
 private:
 
   VUnplacedVolume<Precision> const &volume;
-  // Will potentially be a custom container class
-  std::vector<VPlacedVolume<Precision> const*> daughters;
+  Container<VPlacedVolume<Precision> const*> *daughters;
 
 public:
 
+  VECGEOM_CUDA_HEADER_HOST
   VLogicalVolume(VUnplacedVolume<Precision> const &volume_) {
     volume = volume_;
+    daughters = new List<VPlacedVolume<Precision> const*>();
   }
 
+  VECGEOM_CUDA_HEADER_HOST
+  ~VLogicalVolume() {
+    delete daughters;
+  }
+
+  VECGEOM_CUDA_HEADER_HOST
   void PlaceDaughter(VPlacedVolume<Precision> const *const daughter) {
-    daughters.push_back(daughter);
+    dynamic_cast<List<VPlacedVolume<Precision> const*> >(daughters)->push_back(
+      daughter
+    );
   }
 
 };
