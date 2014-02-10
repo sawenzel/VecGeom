@@ -19,8 +19,6 @@
 int main()
 {
 	Vectors3DSOA points, dirs, intermediatepoints, intermediatedirs;
-	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
-
 
 	int np=1024;
 	int NREPS = 1000;
@@ -28,119 +26,208 @@ int main()
 	points.alloc(np);
 	dirs.alloc(np);
 
-    // generate benchmark cases
+	// generate benchmark cases
 	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
 
-	// the world volume is a tube
-	double worlddx = 100.;
-	double worlddy = 100;
-	double worlddz = 10.;
-	BoxParameters *	worldp =  new BoxParameters(worlddx, worlddy, worlddz);
+	double L = 10.;
+	double Lz = 10.;
+	const double Sqrt2 = sqrt(2.);
+
+	BoxParameters *	worldp =  new BoxParameters(L, L, Lz );
 	PhysicalVolume * world = GeoManager::MakePlacedBox( worldp , identity );
 	double volworld = worldp->GetVolume();
 
+	BoxParameters * boxlevel2 = new BoxParameters( Sqrt2*L/2./2., Sqrt2*L/2./2., Lz );
+	BoxParameters * boxlevel3 = new BoxParameters( L/2./2. ,L/2./2., Lz);
+	BoxParameters * boxlevel1 = new BoxParameters( L/2., L/2., Lz );
 
-	BoxParameters * cellparams = new BoxParameters( worlddx/20., worlddy/20., worlddz/4 );
-	BoxParameters * waiverparams = new BoxParameters( worlddx/3., worlddy/3., worlddz/2 );
-	double volcell = cellparams->GetVolume();
-	double volwaiver = waiverparams->GetVolume();
+	PhysicalVolume * box2 = GeoManager::MakePlacedBox(boxlevel2, new TransformationMatrix(0,0,0,0,0,45));
+	PhysicalVolume * box3 = GeoManager::MakePlacedBox( boxlevel3, new TransformationMatrix(0,0,0,0,0,45));
+	box2->AddDaughter( box3 ); // rotated 45 degree around z axis
 
-	PhysicalVolume *waiver = GeoManager::MakePlacedBox( waiverparams, identity);
+	PhysicalVolume * box1 = GeoManager::MakePlacedBox(boxlevel1, identity);
+	box1->AddDaughter( box2 );
 
-	// this just adds daughters which have been created in a placed way
-	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( -waiverparams->GetDX()/2., waiverparams->GetDY()/2., 0, 0, 0, 0) ));
-	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( waiverparams->GetDX()/2., waiverparams->GetDY()/2., 0, 0, 0, 45) ));
-	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( waiverparams->GetDX()/2., -waiverparams->GetDY()/2., 0, 0, 0, 0) ));
-	waiver->AddDaughter(GeoManager::MakePlacedBox( cellparams, new TransformationMatrix( -waiverparams->GetDX()/2., -waiverparams->GetDY()/2., 0, 0, 0, 45)));
-
-	// at this moment the waiver is not yet placed into the world; this will be done now with the new interface
-	// we are basically replacing the waiver by using its existing parameters and daughterlist
-	// TODO: the future interface will hide much of the details here
-	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( worlddx/2., worlddy/2., 0, 0, 0, 45 )), waiver->GetDaughterList());
-	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( -worlddx/2., worlddy/2., 0, 0, 0, 0  )), waiver->GetDaughterList());
-	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( -worlddx/2., -worlddy/2., 0, 0, 0, 45 )), waiver->GetDaughterList());
-	world->PlaceDaughter(GeoManager::MakePlacedBox(waiverparams, new TransformationMatrix( worlddx/2., -worlddy/2., 0, 0, 0, 0 )), waiver->GetDaughterList());
-
-
-	world->fillWithRandomPoints(points,np);
-	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
+	PhysicalVolume * box1left  = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(-L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
+	PhysicalVolume * box1right = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(+L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
 
 	std::cerr << " Number of daughters " << world->GetNumberOfDaughters() << std::endl;
 
-	// try to locate a global point
-
-	StopWatch timer;
-	timer.Start();
-	VolumePath path(4), newpath(4);
-	std::map<PhysicalVolume const *, int> volcounter;
-	int total=0;
-	TransformationMatrix * globalm=new TransformationMatrix();
-	TransformationMatrix * globalm2 = new TransformationMatrix();
+    // perform basic tests
 	SimpleVecNavigator nav(1, world);
-	Vector3D displacementvector( worlddx/40, 0., 0. );
-	int counter[2]={0,0};
+	Vector3D result;
+	VolumePath path(4);
+	PhysicalVolume const * vol;
 
-	// shoot random positions in detector
-	// task: determine last global point in detector before exiting it
-
-	// we use: initial localization of point ( without existing path )
-	// start loop
-	// 		then displacement of particle locally
-	// 		then relocalization until exiting the detector
-
-	// this should be compared with a ROOT Geometry for a couple of ( deterministically chosen points )
-
-	for(int i=0;i<1000000;i++)
 	{
-		globalm->SetToIdentity();
-		globalm2->SetToIdentity();
-		Vector3D point;
-		Vector3D localpoint;
-		Vector3D newlocalpoint;
-		Vector3D oldpoint;
-		Vector3D finalglobalpoint;
-		PhysicalVolume::samplePoint( point, worlddx, worlddy, worlddz, 1 );
-
-		localpoint = point;
-		PhysicalVolume const * deepestnode = nav.LocateGlobalPoint( world, point, localpoint, path );
-
-		while(deepestnode != NULL)
-		{
-			// move particle
-			localpoint += displacementvector;
-
-			// determine new location / new path for particle
-			deepestnode = nav.LocateLocalPointFromPath_Relative( localpoint, newlocalpoint, path );
-
-			oldpoint = localpoint;
-			localpoint = newlocalpoint;
-
-			//	deepestnode->printInfo();
-		}
-		// now we know last point in detector
-
-		// get global matrix from path but still have to transform it back to reference frame of detector
-		path.GetGlobalMatrixFromPath( globalm );
-		globalm->LocalToMaster( oldpoint, finalglobalpoint );
-		finalglobalpoint.print();
-		path.Clear();
+	// point should be in world
+	Vector3D p1(0, 9*L/10., 0); path.Clear();
+	vol=nav.LocatePoint( world, p1, result, path );
+	assert(vol==world);
 	}
-	timer.Stop();
-	std::cerr << " step took " << timer.getDeltaSecs() << " seconds " << std::endl;
-	std::cerr << counter[0] << std::endl;
-	std::cerr << counter[1] << std::endl;
-	
-	for(auto k=volcounter.begin();k!=volcounter.end();k++)
-	  {
-	    total+=k->second;
-	  }
-	
-	for(auto k=volcounter.begin();k!=volcounter.end();k++)
-	  {
-	    std::cerr << k->first << " " << k->second << " " << k->second/(1.*total) << std::endl; 
-	  }
-	std::cerr << 4*volcell/volworld << std::endl;
-	std::cerr << volwaiver/volworld << std::endl;
-	std::cerr << (volworld-4*volwaiver)/volworld << std::endl;
+
+	{
+	// outside world check
+	Vector3D p2(-2*L, 9*L/10., 0); path.Clear();
+	vol=nav.LocatePoint( world, p2, result, path );
+	assert(vol==NULL);
+	}
+
+	{
+	// inside box3 check
+	Vector3D p3(-L/2., 0., 0.); path.Clear();
+	vol=nav.LocatePoint( world, p3, result, path );
+	assert(vol==box3);
+	std::cerr << path.GetCurrentLevel() << std::endl;
+	assert(path.GetCurrentLevel( ) == 4);
+	assert(result == Vector3D(0.,0.,0));
+	}
+
+	{
+	// inside box3 check ( but second box )
+	Vector3D p3(L/2., 0., 0.); path.Clear();
+	vol=nav.LocatePoint( world, p3, result, path );
+	assert(vol==box3);
+	std::cerr << path.GetCurrentLevel() << std::endl;
+	assert(path.GetCurrentLevel( ) == 4);
+	assert(result == Vector3D(0.,0.,0));
+	}
+
+	{
+	// inside box2 check
+	Vector3D p4(-L/2., 9*L/2./10., 0.); path.Clear();
+	vol=nav.LocatePoint( world, p4, result, path );
+	assert(vol==box2);
+	}
+
+	{
+	// inside box2 check ( on other side )
+	Vector3D p4(L/2., 9*L/2./10., 0.); path.Clear();
+	vol=nav.LocatePoint( world, p4, result, path );
+	assert(vol==box2);
+	}
+
+	{
+	// inside box1 check
+	Vector3D p5(-9.*L/10., 9*L/2./10., 0.); path.Clear();
+	vol=nav.LocatePoint( world, p5, result, path );
+	assert(vol == box1left );
+	}
+
+	{
+	// inside box1 check
+	Vector3D p6(9.*L/10., 9*L/2./10., 0.); path.Clear();
+	vol=nav.LocatePoint( world, p6, result, path );
+	assert(vol == box1right );
+	assert(path.GetCurrentLevel( ) == 2); // this means actuall "next" free level
+	}
+
+
+	// now do location and transportation
+	{
+	  Vector3D p3(-L/2., 0., 0.); path.Clear();
+	  Vector3D newpoint;
+	  Vector3D d(9*L/2./10.,0,0);
+	  TransformationMatrix * m=new TransformationMatrix();
+
+	  vol=nav.LocatePoint( world, p3, result, path );
+	  // move point in local reference frame
+	  Vector3D p = result+d;
+	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+	  assert( vol==box2 );
+	  assert( path.GetCurrentLevel() == 3 );
+	}
+
+
+
+	// now do location and transportation
+	{
+		Vector3D p3(-L/2., 0., 0.); path.Clear();
+		Vector3D newpoint;
+		Vector3D d(0.1,0.,0.);
+		TransformationMatrix * m=new TransformationMatrix();
+		vol=nav.LocatePoint( world, p3, result, path );
+		// move point in local reference frame
+		Vector3D p = result+d;
+		vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+		assert( vol==box3 );
+		assert( path.GetCurrentLevel() == 4 );
+	}
+
+
+	// now do location and transportation
+	{
+		Vector3D p3(-L/2., 0., 0.); path.Clear();
+		Vector3D newpoint;
+		Vector3D d(Sqrt2*L/4.+0.1,Sqrt2*L/4.+0.1,0);
+		TransformationMatrix * m=new TransformationMatrix();
+		vol=nav.LocatePoint( world, p3, result, path );
+		// move point in local reference frame
+		Vector3D p = result+d;
+		vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+		assert( vol==box1left );
+		assert( path.GetCurrentLevel() == 2 );
+	}
+
+
+	// now do location and transportation
+/*
+	{
+		Vector3D p3(-L/2., 0., 0.); path.Clear();
+		Vector3D newpoint;
+		Vector3D d(Sqrt2*L/2.+0.1,Sqrt2*L/2.+0.1,0);
+		TransformationMatrix * m=new TransformationMatrix();
+		vol=nav.LocatePoint( world, p3, result, path );
+		// move point in local reference frame
+		Vector3D p = result+d;
+		vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+
+		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+		path.Print();
+		assert( vol==world );
+		assert( path.GetCurrentLevel() == 1 );
+	}
+*/
+
+	// now do location and transportation
+	{
+			Vector3D p3(-L/2., 0., 0.); path.Clear();
+			Vector3D newpoint;
+			Vector3D d(4*L,4*L,0);
+			TransformationMatrix * m=new TransformationMatrix();
+			vol=nav.LocatePoint( world, p3, result, path );
+			// move point in local reference frame
+			Vector3D p = result+d;
+			vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+			// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+			assert( vol==NULL );
+	}
+
+
+	// now do location and transportation
+	{
+	  Vector3D p3(-L/2., 0., 0.); path.Clear();
+	  Vector3D newpoint;
+	  Vector3D d(L,0,0);
+	  TransformationMatrix * m=new TransformationMatrix();
+
+	  vol=nav.LocatePoint( world, p3, result, path );
+	  assert( vol==box3 );
+
+	  // move point in local reference frame
+	  Vector3D p = result-d;
+	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+	  newpoint.print();
+	  path.Print();
+	  assert( vol==box3 );
+	  assert( path.GetCurrentLevel() == 4 );
+	}
+
+
 }
+
 

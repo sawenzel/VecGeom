@@ -129,6 +129,14 @@ Vector3D const operator-(Vector3D const & lhs, Vector3D const & rhs)
 }
 
 inline
+Vector3D const operator+(Vector3D const & lhs, Vector3D const & rhs)
+{
+	Vector3D tmp(lhs);
+	tmp+=rhs;
+	return tmp;
+}
+
+inline
 bool
 Vector3D::operator==( Vector3D const & rhs ) const
 {
