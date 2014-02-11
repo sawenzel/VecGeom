@@ -342,6 +342,49 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 	// at the very end: do the matrix multiplications and caching of global matrices -- doing this in a loop will be icache friendly
 }
 
+
+
+PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume const * vol,
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
+{
+	PhysicalVolume const * candvolume = vol;
+	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
+
+	if( candvolume )
+	{
+		path.Push( candvolume );
+		std::list< PhysicalVolume const * > * dlist = candvolume->GetDaughterList();
+		std::list< PhysicalVolume const * >::iterator iter;
+
+		bool godeeper=true;
+		while( godeeper && dlist->size() > 0 )
+		{
+			godeeper=false;
+			for(iter=dlist->begin(); iter!=dlist->end(); iter++)
+			{
+				PhysicalVolume const * nextvol=(*iter);
+				Vector3D transformedpoint;
+				if(nextvol->Contains(point, transformedpoint, globalm))
+				{
+					path.Push( nextvol );
+					// this is no longer the top ( so setting top to false )
+					point = transformedpoint;
+					candvolume = nextvol;
+					// we have found volume in this hierarchy, can go deeper and override daughterlist
+					dlist = candvolume->GetDaughterList();
+					godeeper=true;
+					break;
+				}
+			}
+		}
+	}
+	// set localpoint
+	localpoint=point;
+	return candvolume;
+}
+
+
+
 PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vol,
 		Vector3D const & point, Vector3D & localpoint, VolumePath & path, bool top=true) const
 {
@@ -406,7 +449,9 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
 			globalm->Multiply( currentmother->getMatrix() );
 
 			//std::cerr << "going further down " << std::endl;
-			return LocatePoint(currentmother, point, localpoint, path, globalm, false);
+
+			// return LocatePoint(currentmother, point, localpoint, path, globalm, false);
+			return LocatePoint_iterative(currentmother, point, localpoint, path, globalm, false);
 		}
 		else
 		{

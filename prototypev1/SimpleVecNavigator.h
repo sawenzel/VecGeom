@@ -190,9 +190,13 @@ public:
 	PhysicalVolume const *
 	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
 
+	/* a non-recursive version */
+	PhysicalVolume const *
+	LocatePoint_iterative(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
+
+
 	PhysicalVolume const *
 	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, bool top=true) const;
-
 
 	PhysicalVolume const *
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )

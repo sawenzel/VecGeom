@@ -73,14 +73,27 @@ int main()
 	}
 
 	{
-	// inside box3 check
-	Vector3D p3(-L/2., 0., 0.); path.Clear();
-	vol=nav.LocatePoint( world, p3, result, path );
-	assert(vol==box3);
-	std::cerr << path.GetCurrentLevel() << std::endl;
-	assert(path.GetCurrentLevel( ) == 4);
-	assert(result == Vector3D(0.,0.,0));
+		// inside box3 check
+		Vector3D p3(-L/2., 0., 0.); path.Clear();
+		vol=nav.LocatePoint( world, p3, result, path );
+		assert(vol==box3);
+		std::cerr << path.GetCurrentLevel() << std::endl;
+		assert(path.GetCurrentLevel( ) == 4);
+		assert(result == Vector3D(0.,0.,0));
+		}
+
+	{
+		// inside box3 check iterative
+		Vector3D p3(-L/2., 0., 0.); path.Clear();
+		TransformationMatrix * m = new TransformationMatrix();
+		vol=nav.LocatePoint_iterative( world, p3, result, path, m );
+		path.Print();
+		assert(vol==box3);
+		std::cerr << path.GetCurrentLevel() << std::endl;
+		assert(path.GetCurrentLevel( ) == 4);
+		assert(result == Vector3D(0.,0.,0));
 	}
+
 
 	{
 	// inside box3 check ( but second box )
