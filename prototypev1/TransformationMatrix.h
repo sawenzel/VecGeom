@@ -270,10 +270,26 @@ public:
 	__attribute__((always_inline))
 	MultiplyT( TransformationMatrix const * rhs );
 
+// used for comparision, we avoid == because this should be reserved for pointer comparison
+	bool Equals(TransformationMatrix const * rhs) const;
 
 	friend class PhysicalVolume;
 	friend class GeoManager;
 };
+
+bool TransformationMatrix::Equals(TransformationMatrix const * rhs) const
+{
+	for(int i=0;i<3;i++)
+	{
+		if (!Utils::IsSameWithinTolerance(trans[i], rhs->trans[i])) return false;
+	}
+
+	for(int i=0;i<9;i++)
+	{
+		if (!Utils::IsSameWithinTolerance(rot[i], rhs->rot[i])) return false;
+	}
+	return true;
+}
 
 template <TranslationIdType tid, RotationIdType rid, typename T>
 inline

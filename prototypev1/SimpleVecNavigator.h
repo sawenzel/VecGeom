@@ -203,6 +203,36 @@ public:
 	// we might need some more input here ( like the direction )
 	LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 
+	// PhysicalVolume const *
+	// this variant applies if we know already that we are going down ( because next boundary is daughter volume )
+	// LocatePointFromPath_RelativeDown( ... );
+
+	// PhysicalVolume const *
+	// this variant applies if we know already that we are going up ( because next boundary is current volume itself )
+	// NOTE: HERE WE COULD SPECIALIZE FOR DIVISIONS OR REGULAR CELLS
+	// LocatePointFromPath_RelativeUp( ... );
+
+	// scalar interface
+	void FindNextBoundaryAndStep(
+			Vector3D const & /*point*/,
+			Vector3D const & /*dir*/,
+			VolumePath const & /*inpath*/,
+			VolumePath & /*outpath*/,
+			double /* pstep */,
+			double & /* safety */,
+			double & /* distance */
+	) const {};
+
+	// vector interface
+	void FindNextBoundaryAndStep(
+			Vectors3DSOA const & /*point*/,
+			Vectors3DSOA const & /*dir*/,
+			VolumePath const & /*inpath*/,
+			VolumePath & /*outpath*/,
+			double /* pstep */,
+			double & /* safety */,
+			double & /* distance */
+	) const {};
 
 };
 

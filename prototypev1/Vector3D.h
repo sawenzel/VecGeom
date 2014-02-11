@@ -140,8 +140,9 @@ inline
 bool
 Vector3D::operator==( Vector3D const & rhs ) const
 {
-	//	if( this->GetX() == rhs.GetX() && this->GetY()==rhs.GetY() && this->GetZ() == rhs.GetZ() ) return true;
-	if( std::abs(this->GetX() - rhs.GetX()) < 1E-12 && std::abs(this->GetY()-rhs.GetY())<1E-15 && std::abs(this->GetZ()-rhs.GetZ())<1E-15 ) return true;
+	if( Utils::IsSameWithinTolerance( this->GetX(), rhs.GetX() )
+		&& Utils::IsSameWithinTolerance( this->GetY(), rhs.GetY() )
+		&& Utils::IsSameWithinTolerance( this->GetZ(), rhs.GetZ() ) ) return true;
 	return false;
 }
 
