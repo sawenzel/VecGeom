@@ -42,7 +42,7 @@ int main()
 	BoxParameters * boxlevel1 = new BoxParameters( L/2., L/2., Lz );
 
 	PhysicalVolume * box2 = GeoManager::MakePlacedBox(boxlevel2, new TransformationMatrix(0,0,0,0,0,45));
-	PhysicalVolume * box3 = GeoManager::MakePlacedBox( boxlevel3, new TransformationMatrix(0,0,0,0,0,45));
+	PhysicalVolume * box3 = GeoManager::MakePlacedBox( boxlevel3, new TransformationMatrix(0,0,0,0,0,-45));
 	box2->AddDaughter( box3 ); // rotated 45 degree around z axis
 
 	PhysicalVolume * box1 = GeoManager::MakePlacedBox(boxlevel1, identity);
@@ -174,7 +174,7 @@ int main()
 
 
 	// now do location and transportation
-/*
+
 	{
 		Vector3D p3(-L/2., 0., 0.); path.Clear();
 		Vector3D newpoint;
@@ -190,7 +190,7 @@ int main()
 		assert( vol==world );
 		assert( path.GetCurrentLevel() == 1 );
 	}
-*/
+
 
 	// now do location and transportation
 	{
@@ -218,11 +218,45 @@ int main()
 	  assert( vol==box3 );
 
 	  // move point in local reference frame
-	  Vector3D p = result-d;
+	  Vector3D p = result+d;
 	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
-	  newpoint.print();
-	  path.Print();
+	  assert( vol==box3 );
+	  assert( path.GetCurrentLevel() == 4 );
+	}
+
+	// now do location and transportation
+	{
+	  Vector3D p3(-L/2., 0., 0.); path.Clear();
+	  Vector3D newpoint;
+	  Vector3D d(L+9*L/20.,0,0);
+	  TransformationMatrix * m=new TransformationMatrix();
+
+	  vol=nav.LocatePoint( world, p3, result, path );
+	  assert( vol==box3 );
+
+	  // move point in local reference frame
+	  Vector3D p = result+d;
+	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+	  assert( vol==box2 );
+	  assert( path.GetCurrentLevel() == 3 );
+	}
+
+	// now do location and transportation
+	{
+	  Vector3D p3(-9*L/10., -9*L/20., 0.); path.Clear();
+	  Vector3D newpoint;
+	  Vector3D d(L/2.,L/2.,0);
+	  TransformationMatrix * m=new TransformationMatrix();
+
+	  vol=nav.LocatePoint( world, p3, result, path );
+	  assert( vol==box1left );
+
+	  // move point in local reference frame
+	  Vector3D p = result+d;
+	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box3 );
 	  assert( path.GetCurrentLevel() == 4 );
 	}

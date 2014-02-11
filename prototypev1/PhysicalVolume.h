@@ -153,7 +153,7 @@ class PhysicalVolume
 		// shape factory functionality to add an appropriate specialised list of
 		// TODO: ideally we should give in an "abstract placed box" and not boxparameters
 
-		void PlaceDaughter( PhysicalVolume * newdaughter, std::list<PhysicalVolume const * > const * const d = 0)
+		PhysicalVolume const * PlaceDaughter( PhysicalVolume * newdaughter, std::list<PhysicalVolume const * > const * const d = 0)
 		{
 			if( ! daughters ){
 				daughters = new std::list<PhysicalVolume const *>;
@@ -167,6 +167,7 @@ class PhysicalVolume
 			else{
 				std::cerr << "WARNING: no daughter list found" << std::endl;
 			}
+			return newdaughter;
 		}
 
 		int GetNumberOfDaughters() const
