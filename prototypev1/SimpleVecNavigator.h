@@ -203,10 +203,18 @@ public:
 	// we might need some more input here ( like the direction )
 	LocateLocalPointFromPath(Vector3D const & point, Vector3D &,  VolumePath const & inpath, VolumePath & newpath, TransformationMatrix * ) const;
 
+
 	PhysicalVolume const *
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
 	// we might need some more input here ( like the direction )
 	LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+
+
+	PhysicalVolume const *
+	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
+	// we might need some more input here ( like the direction )
+	LocateLocalPointFromPath_Relative_Iterative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+
 
 	// PhysicalVolume const *
 	// this variant applies if we know already that we are going down ( because next boundary is daughter volume )

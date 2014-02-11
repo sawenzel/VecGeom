@@ -384,7 +384,6 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 }
 
 
-
 PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vol,
 		Vector3D const & point, Vector3D & localpoint, VolumePath & path, bool top=true) const
 {
@@ -451,7 +450,7 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
 			//std::cerr << "going further down " << std::endl;
 
 			// return LocatePoint(currentmother, point, localpoint, path, globalm, false);
-			return LocatePoint_iterative(currentmother, point, localpoint, path, globalm, false);
+			return LocatePoint(currentmother, point, localpoint, path, globalm, false);
 		}
 		else
 		{
@@ -467,6 +466,44 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
 		// particle is not even within world volume
 		return 0;
 	}
+}
+
+// this function tries to locate a point relative to a current geometry path
+// the point is given in the reference frame of the last volume in that path
+// this function should be called when we know that we are not entering a daughter
+PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative_Iterative(
+		Vector3D const & point,
+		Vector3D & localpoint,
+		VolumePath & path,
+		TransformationMatrix * globalm) const
+{
+	// idea: do the following:
+	// ----- is localpoint still in current mother ? : then go down
+	// if not: have to go up until we reach a volume that contains the localpoint and then go down again (neglecting the volumes currently stored in the path)
+	PhysicalVolume const * currentmother = path.Top();
+	if( currentmother != NULL )
+	{
+        // go up iteratively
+		while( currentmother && ! currentmother->UnplacedContains( point) )
+		{
+			path.Pop();
+			Vector3D pointhigherup;
+			currentmother->getMatrix()->LocalToMaster( point, pointhigherup );
+			point=pointhigherup;
+			currentmother=path.Top();
+		}
+
+		if(currentmother)
+		{
+			// then go down
+			path.GetGlobalMatrixFromPath( globalm );
+			globalm->Multiply( currentmother->getMatrix() );
+
+			// may inline this
+			return LocatePoint_iterative(currentmother, point, localpoint, path, globalm, false);
+		}
+	}
+	return currentmother;
 }
 
 
@@ -515,5 +552,21 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
   // this step is only necessary if nexthitvolume daughter or mother;
   LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
   globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+
+  // ideas for improvement: improve
+  /*
+  if( nexthitvolume == -1 ) // not mother
+  {
+	  // retrieve daughter candidate
+	  daughtercandidant
+	  // continue directly further down
+	  LocatePoint( )
+  }
+  else
+  {
+
+  }
+  */
+
 }
 
