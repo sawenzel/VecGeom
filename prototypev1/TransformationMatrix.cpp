@@ -10,6 +10,20 @@
 
 #include "TGeoMatrix.h"
 
+bool TransformationMatrix::Equals(TransformationMatrix const * rhs) const
+{
+	for(int i=0;i<3;i++)
+	{
+		if (!Utils::IsSameWithinTolerance(trans[i], rhs->trans[i])) return false;
+	}
+
+	for(int i=0;i<9;i++)
+	{
+		if (!Utils::IsSameWithinTolerance(rot[i], rhs->rot[i])) return false;
+	}
+	return true;
+}
+
 // constructor
 TransformationMatrix::TransformationMatrix(double const *t, double const *r) : rootmatrix(0)
 {

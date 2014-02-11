@@ -78,12 +78,21 @@ public:
 	__attribute__((always_inline))
 	virtual inline double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 
-	virtual double DistanceToOut( Vector3D const &, Vector3D const &, double cPstep ) const {return 0;}
+	__attribute__((always_inline))
+	virtual double DistanceToOut(
+				  Vector3D const & point, 
+	  Vector3D const & dir, double cPstep ) const {
+	  bool convex;
+	  UVector3 normal;
+	  double s = analogoususolid->DistanceToOut(reinterpret_cast<UVector3 const &>(point), reinterpret_cast<UVector3 const &>(dir), normal, convex);
+	    return s; 
+	}
+
 	virtual inline bool Contains( Vector3D const & ) const;
 	virtual inline bool UnplacedContains( Vector3D const & ) const;
 	virtual inline bool Contains( Vector3D const &, Vector3D & ) const;
 	virtual inline bool Contains( Vector3D const &, Vector3D &, TransformationMatrix * ) const;
-	virtual double SafetyToIn( Vector3D const & ) const;
+	virtual double SafetyToIn( Vector3D const &) const;
 	virtual double SafetyToOut( Vector3D const &) const;
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 	//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
@@ -97,7 +106,7 @@ public:
 	inline
 	void DistanceToInT(Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
 
-	// a template version for T = Vc or T = Boost.SIMD or T= double
+// a template version for T = Vc or T = Boost.SIMD or T= double
 	template<typename T>
 	inline
 	__attribute__((always_inline))

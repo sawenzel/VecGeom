@@ -394,7 +394,7 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
 	// ----- is localpoint still in current mother ? : then go down
 	// if not: have to go up until we reach a volume that contains the localpoint and then go down again (neglecting the volumes currently stored in the path)
 	PhysicalVolume const * currentmother = path.Top();
-	if ( currentmother != NULL )
+	if( currentmother != NULL )
 	{
 		localpoint = point;
 		path.Pop();
@@ -403,6 +403,7 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
 			// go further down -- can use LocatePoint function for this
 			// at this moment would have to retrieve global matrix from path
 			path.GetGlobalMatrixFromPath( globalm );
+			globalm->Multiply( currentmother->getMatrix() );
 
 			//std::cerr << "going further down " << std::endl;
 			return LocatePoint(currentmother, point, localpoint, path, globalm, false);
@@ -423,4 +424,51 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(
 	}
 }
 
+
+void SimpleVecNavigator::FindNextBoundaryAndStep(
+		TransformationMatrix * globalm,
+		Vector3D const & point,
+		Vector3D const & dir,
+		VolumePath const & inpath,
+		VolumePath & outpath,
+		Vector3D & newpoint,
+		double &step ) const
+{
+  // question: in what coordinate system do we have the point? global or local
+  // same for direction?
+  Vector3D localpoint;
+  globalm->MasterToLocal<1,-1>(point, localpoint);
+  Vector3D localdir;
+  globalm->MasterToLocalVec<-1>(dir, localdir);
+  
+  PhysicalVolume const * currentvolume = inpath.Top();
+  int nexthitvolume = -1; // means mother
+  
+  step = currentvolume->DistanceToOut(localpoint, localdir, Utils::kInfinity);
+  
+  // iterate over all the daughter
+  std::list<PhysicalVolume const *> const * daughters = currentvolume->GetDaughterList();
+  int counter=0;
+  for(auto iter = daughters->begin(); iter!=daughters->end(); ++iter)
+    {
+      double ddistance;
+      PhysicalVolume const * daughter = (*iter);
+      // previous distance become step estimate, distance to daughter returned in workspace
+      ddistance = daughter->DistanceToIn( localpoint, localdir, step );
+      
+      step 	  = (ddistance < step) ? ddistance  : step;
+      nexthitvolume = (ddistance < step) ? counter : nexthitvolume;
+      counter++;
+    }
+  
+  // now we have the candidates
+  // try
+  outpath=inpath;
+  Vector3D newpointafterboundary = localpoint + (step + Utils::frTolerance)*localdir;
+  Vector3D newpointafterboundaryinnewframe;
+  
+  // this step is only necessary if nexthitvolume daughter or mother;
+  LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
+  globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+}
 

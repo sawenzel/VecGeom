@@ -51,7 +51,6 @@ int main()
 	PhysicalVolume * box1left  = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(-L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
 	PhysicalVolume * box1right = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(+L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
 
-	std::cerr << " Number of daughters " << world->GetNumberOfDaughters() << std::endl;
 
     // perform basic tests
 	SimpleVecNavigator nav(1, world);
@@ -86,11 +85,18 @@ int main()
 	{
 	// inside box3 check ( but second box )
 	Vector3D p3(L/2., 0., 0.); path.Clear();
-	vol=nav.LocatePoint( world, p3, result, path );
+	TransformationMatrix * m1, * m2;
+	m1=new TransformationMatrix();
+	m2=new TransformationMatrix();
+
+	vol=nav.LocatePoint( world, p3, result, path, m1 );
 	assert(vol==box3);
 	std::cerr << path.GetCurrentLevel() << std::endl;
 	assert(path.GetCurrentLevel( ) == 4);
 	assert(result == Vector3D(0.,0.,0));
+	path.GetGlobalMatrixFromPath( m2 );
+	assert( m1->Equals(m2) );
+	delete m1; delete m2;
 	}
 
 	{
@@ -129,6 +135,7 @@ int main()
 	  Vector3D newpoint;
 	  Vector3D d(9*L/2./10.,0,0);
 	  TransformationMatrix * m=new TransformationMatrix();
+	  TransformationMatrix * m2=new TransformationMatrix();
 
 	  vol=nav.LocatePoint( world, p3, result, path );
 	  // move point in local reference frame
@@ -137,6 +144,13 @@ int main()
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box2 );
 	  assert( path.GetCurrentLevel() == 3 );
+
+	  // check the global transformation matrix
+	  path.GetGlobalMatrixFromPath( m2 );
+	  assert( m->Equals( m2 ) );
+
+	  delete m;
+	  delete m2;
 	}
 
 
@@ -154,6 +168,8 @@ int main()
 		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 		assert( vol==box3 );
 		assert( path.GetCurrentLevel() == 4 );
+
+		delete m;
 	}
 
 
@@ -170,6 +186,8 @@ int main()
 		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 		assert( vol==box1left );
 		assert( path.GetCurrentLevel() == 2 );
+
+		delete m;
 	}
 
 
@@ -189,6 +207,8 @@ int main()
 		path.Print();
 		assert( vol==world );
 		assert( path.GetCurrentLevel() == 1 );
+
+		delete m;
 	}
 
 
@@ -204,6 +224,8 @@ int main()
 			vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
 			// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 			assert( vol==NULL );
+
+			delete m;
 	}
 
 
@@ -213,6 +235,7 @@ int main()
 	  Vector3D newpoint;
 	  Vector3D d(L,0,0);
 	  TransformationMatrix * m=new TransformationMatrix();
+	  TransformationMatrix * m2=new TransformationMatrix();
 
 	  vol=nav.LocatePoint( world, p3, result, path );
 	  assert( vol==box3 );
@@ -223,6 +246,13 @@ int main()
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box3 );
 	  assert( path.GetCurrentLevel() == 4 );
+
+	  path.GetGlobalMatrixFromPath( m2 );
+
+	  assert( m2->Equals(m) );
+
+	  delete m;
+	  delete m2;
 	}
 
 	// now do location and transportation
@@ -241,6 +271,7 @@ int main()
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box2 );
 	  assert( path.GetCurrentLevel() == 3 );
+	  delete m;
 	}
 
 	// now do location and transportation
@@ -259,8 +290,73 @@ int main()
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box3 );
 	  assert( path.GetCurrentLevel() == 4 );
+	  delete m;
 	}
 
+
+	// testing the NavigationAndStepInterface
+	{
+		// setup point in world
+		Vector3D p(-L/2, 9*L/10., 0 );
+		Vector3D d(0,-1,0);
+		Vector3D resultpoint;
+		VolumePath path(4), newpath(4);
+		TransformationMatrix *m = new TransformationMatrix();
+		TransformationMatrix *m2 = new TransformationMatrix();
+		vol = nav.LocatePoint( world, p, resultpoint, path, m );
+		assert(vol==world);
+
+		// do one step
+		double step;
+		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		newpath.Print();
+		resultpoint.print();
+		std::cerr << " step "  << step << std::endl;
+		std::cerr << " current global point " << resultpoint << std::endl;
+		// at this moment we can do some tests
+		assert( newpath.Top() == box2 );
+		newpath.GetGlobalMatrixFromPath(m2);
+		assert( m2->Equals(m) );
+
+		// go on with navigation
+		p = resultpoint;
+		path=newpath;
+		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		std::cerr << " step "  << step << std::endl;
+		std::cerr << " current global point " << resultpoint << std::endl;
+		newpath.Print();
+		newpath.GetGlobalMatrixFromPath(m2);
+		assert( m2->Equals(m) );
+		assert( newpath.Top() == box3 );
+
+		// go on with navigation
+		p = resultpoint;
+		path=newpath;
+		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		std::cerr << " step "  << step << std::endl;
+		std::cerr << " current global point " << resultpoint << std::endl;
+		assert( newpath.Top() == box2 );
+
+		// go on with navigation
+		p = resultpoint;
+		path=newpath;
+		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		std::cerr << " step "  << step << std::endl;
+		std::cerr << " current global point " << resultpoint << std::endl;
+		assert( newpath.Top() == world );
+
+		// go on with navigation ( particle should now leave the world )
+		p = resultpoint;
+		path=newpath;
+		newpath.Clear();
+		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		std::cerr << " step "  << step << std::endl;
+		std::cerr << " current global point " << resultpoint << std::endl;
+		assert( newpath.Top() == NULL );
+	}
+
+
+	std::cout << " ALL tests passed " << std::endl;
 
 }
 

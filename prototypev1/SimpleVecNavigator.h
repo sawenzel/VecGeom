@@ -75,6 +75,7 @@ VolumePath & VolumePath::operator=(VolumePath const & rhs)
 inline
 void VolumePath::GetGlobalMatrixFromPath( TransformationMatrix * m ) const
 {
+	m->SetToIdentity();
 	for(int i=0; i<fcurrentlevel; i++ )
 	{
 		m->Multiply( path[i]->getMatrix() );
@@ -205,23 +206,22 @@ public:
 
 	// PhysicalVolume const *
 	// this variant applies if we know already that we are going down ( because next boundary is daughter volume )
-	// LocatePointFromPath_RelativeDown( ... );
+	// LocatePointFromPath_RelativeDown(...);
 
 	// PhysicalVolume const *
 	// this variant applies if we know already that we are going up ( because next boundary is current volume itself )
 	// NOTE: HERE WE COULD SPECIALIZE FOR DIVISIONS OR REGULAR CELLS
-	// LocatePointFromPath_RelativeUp( ... );
+	// LocatePointFromPath_RelativeUp(...);
 
 	// scalar interface
 	void FindNextBoundaryAndStep(
+			TransformationMatrix * /* globalm */,
 			Vector3D const & /*point*/,
 			Vector3D const & /*dir*/,
 			VolumePath const & /*inpath*/,
 			VolumePath & /*outpath*/,
-			double /* pstep */,
-			double & /* safety */,
-			double & /* distance */
-	) const {};
+			Vector3D & /*newpoint*/,
+			double & ) const;
 
 	// vector interface
 	void FindNextBoundaryAndStep(
@@ -231,8 +231,7 @@ public:
 			VolumePath & /*outpath*/,
 			double /* pstep */,
 			double & /* safety */,
-			double & /* distance */
-	) const {};
+			double & /* distance */) const {};
 
 };
 
