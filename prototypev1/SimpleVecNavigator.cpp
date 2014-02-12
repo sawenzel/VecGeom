@@ -348,6 +348,8 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
 {
 	PhysicalVolume const * candvolume = vol;
+	Vector3D tmp=point;
+
 	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
 
 	if( candvolume )
@@ -364,11 +366,11 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 			{
 				PhysicalVolume const * nextvol=(*iter);
 				Vector3D transformedpoint;
-				if(nextvol->Contains(point, transformedpoint, globalm))
+				if(nextvol->Contains(tmp, transformedpoint, globalm))
 				{
 					path.Push( nextvol );
 					// this is no longer the top ( so setting top to false )
-					point = transformedpoint;
+					tmp = transformedpoint;
 					candvolume = nextvol;
 					// we have found volume in this hierarchy, can go deeper and override daughterlist
 					dlist = candvolume->GetDaughterList();
@@ -379,7 +381,7 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 		}
 	}
 	// set localpoint
-	localpoint=point;
+	localpoint=tmp;
 	return candvolume;
 }
 
@@ -495,6 +497,7 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative_Ite
 
 		if(currentmother)
 		{
+			path.Pop();
 			// then go down
 			path.GetGlobalMatrixFromPath( globalm );
 			globalm->Multiply( currentmother->getMatrix() );
@@ -551,6 +554,70 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
   
   // this step is only necessary if nexthitvolume daughter or mother;
   LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
+  globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+
+  // ideas for improvement: improve
+  /*
+  if( nexthitvolume == -1 ) // not mother
+  {
+	  // retrieve daughter candidate
+	  daughtercandidant
+	  // continue directly further down
+	  LocatePoint( )
+  }
+  else
+  {
+
+  }
+  */
+
+}
+
+
+void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
+		TransformationMatrix * globalm,
+		Vector3D const & point,
+		Vector3D const & dir,
+		VolumePath const & inpath,
+		VolumePath & outpath,
+		Vector3D & newpoint,
+		double &step ) const
+{
+  // question: in what coordinate system do we have the point? global or local
+  // same for direction?
+  Vector3D localpoint;
+  globalm->MasterToLocal<1,-1>(point, localpoint);
+  Vector3D localdir;
+  globalm->MasterToLocalVec<-1>(dir, localdir);
+
+  PhysicalVolume const * currentvolume = inpath.Top();
+  int nexthitvolume = -1; // means mother
+
+  step = currentvolume->DistanceToOut(localpoint, localdir, Utils::kInfinity);
+
+  // iterate over all the daughter
+  std::list<PhysicalVolume const *> const * daughters = currentvolume->GetDaughterList();
+  int counter=0;
+  for(auto iter = daughters->begin(); iter!=daughters->end(); ++iter)
+    {
+      double ddistance;
+      PhysicalVolume const * daughter = (*iter);
+      // previous distance becomes step estimate, distance to daughter returned in workspace
+      ddistance = daughter->DistanceToIn( localpoint, localdir, step );
+
+      step 	  = (ddistance < step) ? ddistance  : step;
+      nexthitvolume = (ddistance < step) ? counter : nexthitvolume;
+      counter++;
+    }
+
+  // now we have the candidates
+  // try
+  outpath=inpath;
+  Vector3D newpointafterboundary = localpoint + (step + Utils::frTolerance)*localdir;
+  Vector3D newpointafterboundaryinnewframe;
+
+  // this step is only necessary if nexthitvolume daughter or mother;
+  LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
   globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
 
   // ideas for improvement: improve
