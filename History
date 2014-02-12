@@ -16,5 +16,12 @@ committal in the SVN repository !
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
 
-December, 6th, 2013,  T.Nikitina - usolids-V00-00-01
+February 12th, 2014 - G.Cosmo
+- Corrected implementation of Clone() method in UBox, UTet, UTrd.
+- Corrected copy constructor in G4USolid bridge.
+
+January 10th, 2014 - T.Nikitina
+- Fix in UTubs::SafetyFromInside() for correct calculation of 'safePhi'.
+
+December 6th, 2013 - T.Nikitina - usolids-V00-00-01
 - First stamp.
