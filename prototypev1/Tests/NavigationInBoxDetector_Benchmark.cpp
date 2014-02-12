@@ -16,14 +16,17 @@
 #include <map>
 #include <cassert>
 
+//#define ITERATIVE
 
 void foo( double s, Vector3D const &a, Vector3D const &b, Vector3D &c )
 {
 	c=a+s*b;
 }
 
-int main()
+int main(int argc, char * argv[])
 {
+	bool iterative=true;
+	if(argc>1) iterative=false;
 	Vectors3DSOA points, dirs, intermediatepoints, intermediatedirs;
 
 	int np=1024;
@@ -72,30 +75,48 @@ int main()
 	for(int i=0;i<100000;i++)
 	// testing the NavigationAndStepInterface
 	{
+		int localstepsdone=0;
+		double distancetravelled=0.;
 		Vector3D p;
 		PhysicalVolume::samplePoint( p, worldp->GetDX(), worldp->GetDY(), worldp->GetDZ(), 1. );
+	//	std::cerr << p << " " << worldp->GetDX()-p.GetX() << " ";
+
 		// setup point in world
 		Vector3D d(1,0,0);
 		Vector3D resultpoint;
 
 		m->SetToIdentity();
 		PhysicalVolume const * vol;
-		vol = nav.LocatePoint( world, p, resultpoint, path, m );
-		while( vol!=NULL )
+#ifdef ITERATIVE
+			vol = nav.LocatePoint_iterative( world, p, resultpoint, path, m );
+#else
+			vol = nav.LocatePoint( world, p, resultpoint, path, m );
+#endif
+			while( vol!=NULL )
 		{
-			stepsdone++;
+			localstepsdone++;
 			// do one step
 			double step;
+#ifdef ITERATIVE
+			nav.FindNextBoundaryAndStep_iterative(m, p, d, path, newpath, resultpoint, step);
+#else
 			nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+#endif
+			distancetravelled+=step;
+
 			// go on with navigation
 			p = resultpoint;
 			path=newpath;
 			vol=path.Top();
 		}
+	//	std::cerr << localstepsdone << " " << distancetravelled << std::endl;
+		stepsdone+=localstepsdone;
 	}
 	timer.Stop();
 	std::cout << " time for 100000 particles " << timer.getDeltaSecs( ) << std::endl;
 	std::cout << " average steps done " << stepsdone / 100000. << std::endl;
+	std::cout << " time per step " << timer.getDeltaSecs()/stepsdone << std::endl;
+
 	delete m;
 }
 
