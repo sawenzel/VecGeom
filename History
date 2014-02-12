@@ -18,7 +18,8 @@ committal in the SVN repository !
 
 February 12th, 2014 - G.Cosmo
 - Corrected implementation of Clone() method in UBox, UTet, UTrd.
-- Corrected copy constructor in G4USolid bridge.
+- Corrected copy constructor in G4USolid bridge; removed ResetPolyhedron()
+  method; moved 'fPolyhedron' pointer from private to protected.
 
 January 10th, 2014 - T.Nikitina
 - Fix in UTubs::SafetyFromInside() for correct calculation of 'safePhi'.
