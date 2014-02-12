@@ -235,6 +235,16 @@ public:
 			Vector3D & /*newpoint*/,
 			double & ) const;
 
+	void FindNextBoundaryAndStep_iterative(
+				TransformationMatrix * /* globalm */,
+				Vector3D const & /*point*/,
+				Vector3D const & /*dir*/,
+				VolumePath const & /*inpath*/,
+				VolumePath & /*outpath*/,
+				Vector3D & /*newpoint*/,
+				double & ) const;
+
+
 	// vector interface
 	void FindNextBoundaryAndStep(
 			Vectors3DSOA const & /*point*/,

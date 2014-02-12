@@ -129,6 +129,29 @@ Vector3D const operator-(Vector3D const & lhs, Vector3D const & rhs)
 }
 
 inline
+// for scalar multiplication from left
+Vector3D const operator*(double s, Vector3D const & rhs)
+{
+	Vector3D tmp(rhs);
+	tmp.x*=s;
+	tmp.y*=s;
+	tmp.z*=s;
+	return tmp;
+}
+
+inline
+// for scalar multiplication from right
+Vector3D const operator*(Vector3D const & lhs, double s)
+{
+	Vector3D tmp(lhs);
+	tmp.x*=s;
+	tmp.y*=s;
+	tmp.z*=s;
+	return tmp;
+}
+
+
+inline
 Vector3D const operator+(Vector3D const & lhs, Vector3D const & rhs)
 {
 	Vector3D tmp(lhs);
