@@ -3,6 +3,8 @@
 #include "base/transformation_matrix.h"
 #include "backend/cuda_backend.cuh"
 #include "volumes/kernel/box_kernel.h"
+#include "volumes/logical_volume.h"
+#include "volumes/box.h"
 
 using namespace vecgeom;
 
@@ -15,10 +17,10 @@ void compile_cuda() {
   TransformationMatrix<double> matrix;
   CudaBool output_inside;
   CudaDouble output_distance;
-  BoxInside<kCuda, translation::kOrigin, rotation::kIdentity>(
+  BoxInside<translation::kOrigin, rotation::kIdentity, kCuda>(
     scalar_v, matrix, vector_v, &output_inside
   );
-  BoxDistanceToIn<kCuda, translation::kOrigin, rotation::kIdentity>(
+  BoxDistanceToIn<translation::kOrigin, rotation::kIdentity, kCuda>(
     scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
   );
 }

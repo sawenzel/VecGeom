@@ -8,7 +8,7 @@
 
 namespace vecgeom {
 
-template <ImplType it, TranslationCode trans_code, RotationCode rot_code>
+template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
@@ -37,7 +37,7 @@ void BoxInside(Vector3D<typename Impl<it>::precision> const &dimensions,
   }
 }
 
-template <ImplType it, TranslationCode trans_code, RotationCode rot_code>
+template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxDistanceToIn(
