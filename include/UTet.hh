@@ -29,13 +29,12 @@ class UTet : public VUSolid
 
   public:  // with description
 
-  UTet(const std::string& name,
+    UTet(const std::string& name,
          UVector3 anchor,
          UVector3 p2,
          UVector3 p3,
          UVector3 p4,
          bool* degeneracyFlag = 0);
-
 
     virtual ~UTet();
 
@@ -62,7 +61,7 @@ class UTet : public VUSolid
                          double aPstep = UUtils::kInfinity) const;
 
     void Extent(UVector3& aMin, UVector3& aMax) const;
-
+    
     double Capacity();
     double SurfaceArea();
     
@@ -73,14 +72,7 @@ class UTet : public VUSolid
     //G4Visualisation
     void GetParametersList(int aNumber, double* aArray) const;
 
-
-    VUSolid* Clone() const
-    {
-      std::vector<UVector3> v = GetVertices();
-      return new UTet(GetName(), v[0], v[1], v[2], v[3]);
-    }
-
-
+    VUSolid* Clone() const;
 
     UVector3 GetPointOnSurface() const;
     std::ostream& StreamInfo(std::ostream& os) const;
@@ -126,11 +118,8 @@ class UTet : public VUSolid
 
     double fCubicVolume, fSurfaceArea;
 
-
-
-    UVector3 GetPointOnFace(UVector3 p1, UVector3 p2, 
-                                 UVector3 p3, double& area) const;
-
+    UVector3 GetPointOnFace(UVector3 p1, UVector3 p2,
+                            UVector3 p3, double& area) const;
     static const char CVSVers[];
 
   private:

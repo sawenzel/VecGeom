@@ -1495,7 +1495,7 @@ void UPolycone::Reset()
    // Clear old setup
    //
    delete enclosingCylinder;
-   //std::cout<<"Enter Reset Polycone "<<GetName()<<" "<<fOriginalParameters->fNumZPlanes<<std::endl;
+ 
   fCubicVolume = 0;
   fSurfaceArea = 0;
   double phiStart=fOriginalParameters->fStartAngle;

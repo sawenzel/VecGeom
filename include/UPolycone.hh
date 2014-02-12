@@ -130,12 +130,11 @@ class UPolycone : public VUSolid
     double Capacity();
     double SurfaceArea();
     UGeometryType GetEntityType() const;
-   
+
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-  //G4Visualisation
-  void GetParametersList(int aNumber, double * aArray) const{}
- 
+    //G4Visualisation
+    void GetParametersList(int /*aNumber*/, double* /*aArray*/) const {}
     VUSolid* Clone() const;
 
     UPolycone(const UPolycone& source);
@@ -216,7 +215,6 @@ class UPolycone : public VUSolid
     double startPhi;    // Starting phi value (0 < phiStart < 2pi)
     double endPhi;      // end phi value (0 < endPhi-phiStart < 2pi)
     bool   phiIsOpen;  // true if there is a phi segment
-    bool   genericPcon; // true if created through the 2nd generic constructor
     int  numCorner;   // number RZ points
     UPolyconeSideRZ* corners; // corner r,z points
     UPolyconeHistorical* fOriginalParameters; // original input parameters
