@@ -8,7 +8,7 @@
 #ifndef PHYSICALVOLUME_H_
 #define PHYSICALVOLUME_H_
 
-#include <list>
+#include <vector>
 #include "TransformationMatrix.h"
 #include "LogicalVolume.h"
 #include <iostream>
@@ -24,15 +24,17 @@ class BoxParameters;
 // pure abstract class
 class PhysicalVolume
 {
-	protected:
+public:
+		typedef std::vector< PhysicalVolume const *> DaughterContainer_t;
+		typedef std::vector< PhysicalVolume const *>::iterator DaughterContainerIterator_t;
+
+protected:
 		PhysicalVolume * bbox;
 		// this is the bounding box, it is placed
 		// only translation necessary with respect to the local coordinate system of the PhysicalVolume
 		// this is a bit nasty because we need to cast bbox to PlacedBox<1,1296>
 
 		TransformationMatrix const *matrix; // placement matrix with respect to containing volume
-		//std::list<PhysicalVolume> daughterVolumes; // list or vector?
-
 		// something like a logical volume id
 
 		// I am not sure that this is appropriate
@@ -41,7 +43,7 @@ class PhysicalVolume
 
 		// crucial thing: we keep a POINTER to a list of volumes ( and not a list )
 		// is this a protected member ??? NO!!
-		std::list<PhysicalVolume const *> * daughters;
+		DaughterContainer_t * daughters;
 
 		bool ExclusiveContains( Vector3D const & ) const;
 
@@ -50,7 +52,7 @@ class PhysicalVolume
 		TGeoShape * analogousrootsolid;
 
 		// setting the daughter list
-		void SetDaughterList( std::list<PhysicalVolume const *> const * l)
+		void SetDaughterList( DaughterContainer_t const * l)
 		{
 			if( daughters->size() > 0 )
 			{
@@ -65,9 +67,7 @@ class PhysicalVolume
 
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
-			logicalvol(0), daughters(new std::list<PhysicalVolume const *>), bbox(0), analogoususolid(0), analogousrootsolid(0) {};
-
-
+			logicalvol(0), daughters(new DaughterContainer_t), bbox(0), analogoususolid(0), analogousrootsolid(0) {};
 
 		virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
@@ -136,7 +136,7 @@ class PhysicalVolume
 
 			if( ! daughters )
 			{
-				daughters = new std::list<PhysicalVolume const *>;
+				daughters = new DaughterContainer_t;
 			}
 			if( daughters )
 			{
@@ -153,10 +153,10 @@ class PhysicalVolume
 		// shape factory functionality to add an appropriate specialised list of
 		// TODO: ideally we should give in an "abstract placed box" and not boxparameters
 
-		PhysicalVolume const * PlaceDaughter( PhysicalVolume * newdaughter, std::list<PhysicalVolume const * > const * const d = 0)
+		PhysicalVolume const * PlaceDaughter( PhysicalVolume * newdaughter, DaughterContainer_t const * const d = 0)
 		{
 			if( ! daughters ){
-				daughters = new std::list<PhysicalVolume const *>;
+				daughters = new DaughterContainer_t;
 			}
 			if( daughters ){
 				// does not compile here; cyclic dependency
@@ -170,6 +170,7 @@ class PhysicalVolume
 			return newdaughter;
 		}
 
+		inline
 		int GetNumberOfDaughters() const
 		{
 			if( daughters )
@@ -179,11 +180,18 @@ class PhysicalVolume
 			return 0;
 		}
 
-		std::list<PhysicalVolume const *> const * GetDaughterList() const
+		inline
+		DaughterContainer_t const * GetDaughters() const
 		{
 			return daughters;
 		}
 
+		inline
+		PhysicalVolume const * GetNthDaughter( int n ) const
+		{
+			// will not work with lists
+			return daughters[n];
+		}
 
 		// this function fills the physical volume with random points and directions such that the points are
 		// contained within the volume but not within the daughters

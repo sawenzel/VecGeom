@@ -230,7 +230,7 @@ void PhysicalVolume::PrintDistToEachDaughter( Vector3D const & point, Vector3D c
 //	volume->DistanceToOut( points, dirs, steps, distance );
 
 	// iterate over all the daughter
-	std::list<PhysicalVolume const *> const * daughters = GetDaughterList();
+	PhysicalVolume::DaughterContainer_t const * daughters = GetDaughters();
 	int counter = 0;
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{
@@ -245,7 +245,9 @@ void PhysicalVolume::PrintDistToEachDaughter( Vector3D const & point, Vector3D c
 void PhysicalVolume::PrintDistToEachDaughterROOT( Vector3D const & point, Vector3D const & dir ) const
 {
 	// iterate over all the daughter
-	std::list<PhysicalVolume const *> const * daughters = GetDaughterList();
+
+	PhysicalVolume::DaughterContainer_t const * daughters = GetDaughters();
+
 	int counter = 0;
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{
@@ -263,7 +265,7 @@ void PhysicalVolume::PrintDistToEachDaughterROOT( Vector3D const & point, Vector
 void PhysicalVolume::PrintDistToEachDaughterUSOLID( Vector3D const & point, Vector3D const & dir ) const
 {
 	// iterate over all the daughter
-	std::list<PhysicalVolume const *> const * daughters = GetDaughterList();
+	PhysicalVolume::DaughterContainer_t const * daughters = GetDaughters();
 	int counter = 0;
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{

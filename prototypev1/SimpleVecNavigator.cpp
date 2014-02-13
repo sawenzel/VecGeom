@@ -158,7 +158,7 @@ void SimpleVecNavigator::DistToNextBoundary( PhysicalVolume const * volume, Vect
 	volume->DistanceToOut( points, dirs, steps, distance );
 
 	// iterate over all the daughter
-	std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
+	PhysicalVolume::DaughterContainer_t const * daughters = volume->GetDaughters();
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{
 		PhysicalVolume const * daughter = (*iter);
@@ -190,7 +190,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUnplacedVolumes( PhysicalVolume 
 	volume->DistanceToOut( points, dirs, steps, distance );
 
 	// iterate over all the daughter
-	std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
+	PhysicalVolume::DaughterContainer_t const * daughters = volume->GetDaughters();
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{
 		PhysicalVolume const * daughter = (*iter);
@@ -234,7 +234,8 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 																	const_cast<double *>(&dirs[3*k]),
 																		3,	steps[k], 0 );
 
-		std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
+
+		PhysicalVolume::DaughterContainer_t const * daughters = volume->GetDaughters();
 		for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 			{
 				PhysicalVolume const * daughter = (*iter);
@@ -282,7 +283,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 																	conv,
 																	steps[k] );
 
-		std::list<PhysicalVolume const *> const * daughters = volume->GetDaughterList();
+		PhysicalVolume::DaughterContainer_t const * daughters = volume->GetDaughters();
 		for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 			{
 				PhysicalVolume const * daughter = (*iter);
@@ -321,8 +322,8 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 	if( candvolume )
 	{
 		path.Push( candvolume );
-		std::list< PhysicalVolume const * > * dlist = vol->GetDaughterList();
-		std::list< PhysicalVolume const * >::iterator iter;
+		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
+		PhysicalVolume::DaughterContainerIterator_t iter;
 		for(iter=dlist->begin(); iter!=dlist->end(); iter++)
 		{
 			PhysicalVolume const * nextvol=(*iter);
@@ -355,8 +356,8 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 	if( candvolume )
 	{
 		path.Push( candvolume );
-		std::list< PhysicalVolume const * > * dlist = candvolume->GetDaughterList();
-		std::list< PhysicalVolume const * >::iterator iter;
+		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
+		PhysicalVolume::DaughterContainerIterator_t iter;
 
 		bool godeeper=true;
 		while( godeeper && dlist->size() > 0 )
@@ -373,7 +374,7 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 					tmp = transformedpoint;
 					candvolume = nextvol;
 					// we have found volume in this hierarchy, can go deeper and override daughterlist
-					dlist = candvolume->GetDaughterList();
+					dlist = candvolume->GetDaughters();
 					godeeper=true;
 					break;
 				}
@@ -394,8 +395,8 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 	if( candvolume )
 	{
 		path.Push( candvolume );
-		std::list< PhysicalVolume const * > * dlist = vol->GetDaughterList();
-		std::list< PhysicalVolume const * >::iterator iter;
+		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
+		PhysicalVolume::DaughterContainerIterator_t const * iter;
 		for(iter=dlist->begin(); iter!=dlist->end(); iter++ )
 		{
 			PhysicalVolume const * nextvol=(*iter);
@@ -531,14 +532,14 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
   
   step = currentvolume->DistanceToOut(localpoint, localdir, Utils::kInfinity);
   
-  // iterate over all the daughter
-  std::list<PhysicalVolume const *> const * daughters = currentvolume->GetDaughterList();
+  // iterate over all the daughters
+  PhysicalVolume::DaughterContainer_t const * daughters = currentvolume->GetDaughters();
+  PhysicalVolume::DaughterContainerIterator_t const * iter;
   int counter=0;
-  for(auto iter = daughters->begin(); iter!=daughters->end(); ++iter)
+  for(iter = daughters->begin(); iter!=daughters->end(); ++iter)
     {
       double ddistance;
       PhysicalVolume const * daughter = (*iter);
-      // previous distance become step estimate, distance to daughter returned in workspace
       ddistance = daughter->DistanceToIn( localpoint, localdir, step );
       
       step 	  = (ddistance < step) ? ddistance  : step;
@@ -554,20 +555,21 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
   
   // this step is only necessary if nexthitvolume daughter or mother;
   LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
+
+  // this step is not necessary ( this should be anyway: point + step*dir; )
   globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
 
   // ideas for improvement: improve
-  /*
+
   if( nexthitvolume == -1 ) // not mother
   {
-	  // retrieve daughter candidate
-	  daughtercandidant
 	  // continue directly further down
-	  LocatePoint( )
+	  LocatePoint_iterative( currentvolume->GetNthDaughter( nexthitvolume ), newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
   }
   else
   {
-
+	  // continue directly further up
+	  LocateLocalPointFromPath_Relative_Iterative( ); ...
   }
   */
 
@@ -585,10 +587,12 @@ void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
 {
   // question: in what coordinate system do we have the point? global or local
   // same for direction?
-  Vector3D localpoint;
-  globalm->MasterToLocal<1,-1>(point, localpoint);
-  Vector3D localdir;
-  globalm->MasterToLocalVec<-1>(dir, localdir);
+
+	// this information might have been cached in previous navigators??
+	Vector3D localpoint;
+	globalm->MasterToLocal<1,-1>(point, localpoint);
+	Vector3D localdir;
+	globalm->MasterToLocalVec<-1>(dir, localdir);
 
   PhysicalVolume const * currentvolume = inpath.Top();
   int nexthitvolume = -1; // means mother
@@ -596,7 +600,7 @@ void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
   step = currentvolume->DistanceToOut(localpoint, localdir, Utils::kInfinity);
 
   // iterate over all the daughter
-  std::list<PhysicalVolume const *> const * daughters = currentvolume->GetDaughterList();
+  PhysicalVolume::DaughterContainer_t const * daughters = currentvolume->GetDaughters();
   int counter=0;
   for(auto iter = daughters->begin(); iter!=daughters->end(); ++iter)
     {
