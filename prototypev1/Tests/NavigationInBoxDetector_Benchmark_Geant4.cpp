@@ -91,11 +91,11 @@ int main(int argc, char * argv[])
 	double L=10.;
 		double Lz=10.;
 
-	G4VPhysicalVolume *top = BuildGeometry();
+	G4VPhysicalVolume const *top = BuildGeometry();
 	G4GeometryManager::GetInstance()->CloseGeometry(true);
 
 	G4Navigator * nav = new G4Navigator();
-	nav->SetWorldVolume( top );
+	nav->SetWorldVolume( const_cast<G4VPhysicalVolume *>(top) );
 
     StopWatch timer;
 	timer.Start();
@@ -113,7 +113,6 @@ int main(int argc, char * argv[])
 		G4ThreeVector d(1,0,0);
 		G4ThreeVector g4p(p.x,p.y,p.z);
 
-		std:
 
 		G4VPhysicalVolume *vol;
 		vol = nav->LocateGlobalPointAndSetup( g4p, &d, false); // false because we search from top

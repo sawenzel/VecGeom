@@ -48,8 +48,8 @@ int main()
 	PhysicalVolume * box1 = GeoManager::MakePlacedBox(boxlevel1, identity);
 	box1->AddDaughter( box2 );
 
-	PhysicalVolume * box1left  = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(-L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
-	PhysicalVolume * box1right = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(+L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
+	PhysicalVolume const * box1left  = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(-L/2.,0.,0.,0.,0.,0)), box1->GetDaughters());
+	PhysicalVolume const * box1right = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(+L/2.,0.,0.,0.,0.,0)), box1->GetDaughters());
 
 
     // perform basic tests
@@ -150,12 +150,14 @@ int main()
 	  TransformationMatrix * m=new TransformationMatrix();
 	  TransformationMatrix * m2=new TransformationMatrix();
 
-	  vol=nav.LocatePoint( world, p3, result, path );
+	  vol=nav.LocatePoint_iterative( world, p3, result, path, m );
+	  assert(vol==box3);
 	  // move point in local reference frame
 	  Vector3D p = result+d;
-	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+	  vol=nav.LocateLocalPointFromPath_Relative_Iterative( p, newpoint, path, m );
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box2 );
+	  path.Print();
 	  assert( path.GetCurrentLevel() == 3 );
 
 	  // check the global transformation matrix
@@ -174,15 +176,22 @@ int main()
 		Vector3D newpoint;
 		Vector3D d(0.1,0.,0.);
 		TransformationMatrix * m=new TransformationMatrix();
-		vol=nav.LocatePoint( world, p3, result, path );
+		TransformationMatrix * m2=new TransformationMatrix();
+
+		vol=nav.LocatePoint_iterative( world, p3, result, path, m );
 		// move point in local reference frame
 		Vector3D p = result+d;
-		vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+		vol=nav.LocateLocalPointFromPath_Relative_Iterative( p, newpoint, path, m );
 		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 		assert( vol==box3 );
 		assert( path.GetCurrentLevel() == 4 );
+		path.GetGlobalMatrixFromPath( m2 );
+		assert(m2->Equals(m));
+// testing new point also
+		assert(newpoint == d);
 
 		delete m;
+		delete m2;
 	}
 
 
@@ -192,10 +201,10 @@ int main()
 		Vector3D newpoint;
 		Vector3D d(Sqrt2*L/4.+0.1,Sqrt2*L/4.+0.1,0);
 		TransformationMatrix * m=new TransformationMatrix();
-		vol=nav.LocatePoint( world, p3, result, path );
+		vol=nav.LocatePoint_iterative( world, p3, result, path, m );
 		// move point in local reference frame
 		Vector3D p = result+d;
-		vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+		vol=nav.LocateLocalPointFromPath_Relative_Iterative( p, newpoint, path, m );
 		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 		assert( vol==box1left );
 		assert( path.GetCurrentLevel() == 2 );
@@ -211,15 +220,19 @@ int main()
 		Vector3D newpoint;
 		Vector3D d(Sqrt2*L/2.+0.1,Sqrt2*L/2.+0.1,0);
 		TransformationMatrix * m=new TransformationMatrix();
-		vol=nav.LocatePoint( world, p3, result, path );
+		TransformationMatrix * m2=new TransformationMatrix();
+
+		vol=nav.LocatePoint_iterative( world, p3, result, path, m );
 		// move point in local reference frame
 		Vector3D p = result+d;
-		vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+		vol=nav.LocateLocalPointFromPath_Relative_Iterative( p, newpoint, path, m );
 
 		// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 		path.Print();
 		assert( vol==world );
 		assert( path.GetCurrentLevel() == 1 );
+		path.GetGlobalMatrixFromPath( m2 );
+		assert( m2->Equals( m ) );
 
 		delete m;
 	}
@@ -231,10 +244,10 @@ int main()
 			Vector3D newpoint;
 			Vector3D d(4*L,4*L,0);
 			TransformationMatrix * m=new TransformationMatrix();
-			vol=nav.LocatePoint( world, p3, result, path );
+			vol=nav.LocatePoint_iterative( world, p3, result, path, m );
 			// move point in local reference frame
 			Vector3D p = result+d;
-			vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+			vol=nav.LocateLocalPointFromPath_Relative_Iterative( p, newpoint, path, m );
 			// LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 			assert( vol==NULL );
 
@@ -250,19 +263,19 @@ int main()
 	  TransformationMatrix * m=new TransformationMatrix();
 	  TransformationMatrix * m2=new TransformationMatrix();
 
-	  vol=nav.LocatePoint( world, p3, result, path );
+	  vol=nav.LocatePoint_iterative( world, p3, result, path, m );
 	  assert( vol==box3 );
 
 	  // move point in local reference frame
 	  Vector3D p = result+d;
-	  vol=nav.LocateLocalPointFromPath_Relative( p, newpoint, path, m );
+	  vol=nav.LocateLocalPointFromPath_Relative_Iterative( p, newpoint, path, m );
 	  // LocateLocalPointFromPath_Relative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
 	  assert( vol==box3 );
 	  assert( path.GetCurrentLevel() == 4 );
 
 	  path.GetGlobalMatrixFromPath( m2 );
-
 	  assert( m2->Equals(m) );
+	  assert(newpoint==Vector3D(0,0,0));
 
 	  delete m;
 	  delete m2;
@@ -316,12 +329,12 @@ int main()
 		VolumePath path(4), newpath(4);
 		TransformationMatrix *m = new TransformationMatrix();
 		TransformationMatrix *m2 = new TransformationMatrix();
-		vol = nav.LocatePoint( world, p, resultpoint, path, m );
+		vol = nav.LocatePoint_iterative( world, p, resultpoint, path, m );
 		assert(vol==world);
 
 		// do one step
 		double step;
-		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		nav.FindNextBoundaryAndStep_iterative(m, p, d, path, newpath, resultpoint, step);
 		newpath.Print();
 		resultpoint.print();
 		std::cerr << " step "  << step << std::endl;
@@ -331,10 +344,10 @@ int main()
 		newpath.GetGlobalMatrixFromPath(m2);
 		assert( m2->Equals(m) );
 
-		// go on with navigation
-		p = resultpoint;
+		// go on with navigation ( enter daughter here ( from box2 to box3 ) )
+		p=resultpoint;
 		path=newpath;
-		nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
+		nav.FindNextBoundaryAndStep_iterative(m, p, d, path, newpath, resultpoint, step);
 		std::cerr << " step "  << step << std::endl;
 		std::cerr << " current global point " << resultpoint << std::endl;
 		newpath.Print();

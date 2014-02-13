@@ -42,22 +42,6 @@ TransformationMatrix::TransformationMatrix() : rootmatrix(0)
 	SetToIdentity();
 }
 
-void TransformationMatrix::SetToIdentity()
-{
-	trans[0]=0;
-	trans[1]=0;
-	trans[2]=0;
-	rot[0]=1.;
-	rot[1]=0.;
-	rot[2]=0.;
-	rot[3]=0.;
-	rot[4]=1.;
-	rot[5]=0.;
-	rot[6]=0.;
-	rot[7]=0.;
-	rot[8]=1.;
-	identity=true;
-}
 
 // more general constructor ala ROOT ( with Euler Angles )
 TransformationMatrix::TransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)

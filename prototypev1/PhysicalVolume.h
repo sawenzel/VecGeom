@@ -26,7 +26,8 @@ class PhysicalVolume
 {
 public:
 		typedef std::vector< PhysicalVolume const *> DaughterContainer_t;
-		typedef std::vector< PhysicalVolume const *>::iterator DaughterContainerIterator_t;
+		typedef DaughterContainer_t::iterator DaughterContainerIterator_t;
+		typedef DaughterContainer_t::const_iterator DaughterContainerConstIterator_t;
 
 protected:
 		PhysicalVolume * bbox;
@@ -52,7 +53,7 @@ protected:
 		TGeoShape * analogousrootsolid;
 
 		// setting the daughter list
-		void SetDaughterList( DaughterContainer_t const * l)
+		void SetDaughterList( DaughterContainer_t * l)
 		{
 			if( daughters->size() > 0 )
 			{
@@ -61,7 +62,7 @@ protected:
 			}
 			else
 			{
-			daughters=l;
+				daughters= l;
 			}
 		}
 
@@ -131,9 +132,7 @@ protected:
 			// this is a delicate issue
 			// since the daughter list will be shared between multiple placed volumes
 			// we should have a reference counter on the daughters list
-
 			// if reference > 1 we should either refuse addition or at least issue a warning
-
 			if( ! daughters )
 			{
 				daughters = new DaughterContainer_t;
@@ -161,7 +160,7 @@ protected:
 			if( daughters ){
 				// does not compile here; cyclic dependency
 				// PhysicalVolume * newdaughter = GeoManager::MakePlacedBox(b,m);
-				newdaughter->SetDaughterList( d );
+				newdaughter->SetDaughterList( const_cast< DaughterContainer_t *> (d) );
 				daughters->push_back( newdaughter );
 			}
 			else{
@@ -190,7 +189,7 @@ protected:
 		PhysicalVolume const * GetNthDaughter( int n ) const
 		{
 			// will not work with lists
-			return daughters[n];
+			return daughters->operator[](n);
 		}
 
 		// this function fills the physical volume with random points and directions such that the points are

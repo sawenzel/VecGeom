@@ -9,6 +9,7 @@
 #define TRANSFORMATIONMATRIX_H_
 
 #include "Vector3D.h"
+#include "Vector3DFast.h"
 #include <cmath>
 #include <type_traits>
 #include "Vc/vector.h"
@@ -18,6 +19,8 @@ typedef int TranslationIdType;
 typedef int RotationIdType;
 
 class TGeoMatrix;
+
+
 
 // the idea is to have StorageClass being a
 //template <typename StorageClass>
@@ -56,7 +59,21 @@ private:
 	void InitEquivalentTGeoMatrix(double, double, double);
 
 public:
-	void SetToIdentity();
+	inline
+	void SetToIdentity(){ 	trans[0]=0;
+	trans[1]=0;
+	trans[2]=0;
+	rot[0]=1.;
+	rot[1]=0.;
+	rot[2]=0.;
+	rot[3]=0.;
+	rot[4]=1.;
+	rot[5]=0.;
+	rot[6]=0.;
+	rot[7]=0.;
+	rot[8]=1.;
+	identity=true; }
+
 	bool isIdentity() const {return identity;}
 	bool isRotation() const {return hasRotation;}
 	bool isTranslation() const {return hasTranslation;}
@@ -276,7 +293,6 @@ public:
 	friend class PhysicalVolume;
 	friend class GeoManager;
 };
-
 
 
 template <TranslationIdType tid, RotationIdType rid, typename T>

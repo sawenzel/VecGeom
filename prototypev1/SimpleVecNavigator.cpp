@@ -82,21 +82,6 @@ SimpleVecNavigator::~SimpleVecNavigator() {
 	// TODO Auto-generated destructor stub
 }
 
-static
-inline
-void
-__attribute__((always_inline))
-MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, uint64_t * __restrict__ nextnodepointersasints,
-		uint64_t __restrict__ curcandidateVolumePointerasint, unsigned int np )
-{
-	// this is not vectorizing !
-	for(auto k=0;k<np;++k)
-    {
-      step[k] = (workspace[k]<step[k]) ? workspace[k] : step[k];
-      nextnodepointersasints[k] = (workspace[k]< step[k]) ?  curcandidateVolumePointerasint : nextnodepointersasints[k];
-    	  //	  std::cout << " hit some node " << curcandidateNode << std::endl;
-    }
-}
 
 static
 inline
@@ -110,37 +95,11 @@ MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, Physi
     {
 		bool cond = workspace[k]<step[k];
 		step[k] = (cond)? workspace[k] : step[k];
-		nextnodepointersasints[k] = (cond)? curcandidateVolumePointerasint : nextnodepointersasints[k];
+		nextnodepointersasints[k] = (cond)? const_cast<PhysicalVolume *>(curcandidateVolumePointerasint) : nextnodepointersasints[k];
     }
 }
 
-static
-inline
-void
-__attribute__((always_inline))
-MINVc_v ( double * __restrict__ step, double const * __restrict__ workspace, uint64_t * __restrict__ nextnodepointersasints,
-		uint64_t  __restrict__ curcandidateVolumePointerasint, unsigned int np )
-{
 
-	// this is not vectorizing !
-	//for(auto k=0;k<np;++k)
-    //{
-//      step[k] = (workspace[k]<step[k]) ? workspace[k] : step[k];
-      //nextnodepointersasints[k] = (workspace[k]< step[k]) ?  curcandidateVolumePointerasint : nextnodepointersasints[k];
-    	  //	  std::cout << " hit some node " << curcandidateNode << std::endl;
-    //}
-	for(auto k=0;k<np;k+=Vc::double_v::Size)
-	{
-		Vc::double_v stepvec(&step[k]);
-		Vc::double_v pointervec((double *) (&nextnodepointersasints[k]));
-		Vc::double_v workspacevec(&workspace[k]);
-		Vc::double_m m = stepvec < workspacevec;
-		stepvec( m ) = workspacevec;
-		pointervec( m ) = curcandidateVolumePointerasint;
-		stepvec.store(&step[k]);
-		pointervec.store((double *) (&nextnodepointersasints[k]));
-	}
-}
 
 void SimpleVecNavigator::DistToNextBoundary( PhysicalVolume const * volume, Vectors3DSOA const & points,
 											 Vectors3DSOA const & dirs,
@@ -315,7 +274,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 // this is very special at the moment; no treatment of boundary information
 // we might have to pass the directions as well -- but then we would have to transform them as well ( bugger )
 PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vol,
-		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top) const
 {
 	PhysicalVolume const * candvolume = vol;
 	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
@@ -323,8 +282,8 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 	{
 		path.Push( candvolume );
 		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
-		PhysicalVolume::DaughterContainerIterator_t iter;
-		for(iter=dlist->begin(); iter!=dlist->end(); iter++)
+		PhysicalVolume::DaughterContainerConstIterator_t iter;
+		for(auto iter=dlist->begin(); iter!=dlist->end(); iter++)
 		{
 			PhysicalVolume const * nextvol=(*iter);
 			Vector3D transformedpoint;
@@ -345,50 +304,11 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 
 
 
-PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume const * vol,
-		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top=true) const
-{
-	PhysicalVolume const * candvolume = vol;
-	Vector3D tmp=point;
 
-	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
-
-	if( candvolume )
-	{
-		path.Push( candvolume );
-		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
-		PhysicalVolume::DaughterContainerIterator_t iter;
-
-		bool godeeper=true;
-		while( godeeper && dlist->size() > 0 )
-		{
-			godeeper=false;
-			for(iter=dlist->begin(); iter!=dlist->end(); iter++)
-			{
-				PhysicalVolume const * nextvol=(*iter);
-				Vector3D transformedpoint;
-				if(nextvol->Contains(tmp, transformedpoint, globalm))
-				{
-					path.Push( nextvol );
-					// this is no longer the top ( so setting top to false )
-					tmp = transformedpoint;
-					candvolume = nextvol;
-					// we have found volume in this hierarchy, can go deeper and override daughterlist
-					dlist = candvolume->GetDaughters();
-					godeeper=true;
-					break;
-				}
-			}
-		}
-	}
-	// set localpoint
-	localpoint=tmp;
-	return candvolume;
-}
 
 
 PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vol,
-		Vector3D const & point, Vector3D & localpoint, VolumePath & path, bool top=true) const
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, bool top) const
 {
 	PhysicalVolume const * candvolume = vol;
 	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
@@ -396,7 +316,7 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 	{
 		path.Push( candvolume );
 		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
-		PhysicalVolume::DaughterContainerIterator_t const * iter;
+		PhysicalVolume::DaughterContainerConstIterator_t iter;
 		for(iter=dlist->begin(); iter!=dlist->end(); iter++ )
 		{
 			PhysicalVolume const * nextvol=(*iter);
@@ -486,13 +406,14 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative_Ite
 	PhysicalVolume const * currentmother = path.Top();
 	if( currentmother != NULL )
 	{
-        // go up iteratively
-		while( currentmother && ! currentmother->UnplacedContains( point) )
+        Vector3D tmp = point;
+		// go up iteratively
+		while( currentmother && ! currentmother->UnplacedContains( tmp ) )
 		{
 			path.Pop();
 			Vector3D pointhigherup;
-			currentmother->getMatrix()->LocalToMaster( point, pointhigherup );
-			point=pointhigherup;
+			currentmother->getMatrix()->LocalToMaster( tmp, pointhigherup );
+			tmp=pointhigherup;
 			currentmother=path.Top();
 		}
 
@@ -504,7 +425,7 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative_Ite
 			globalm->Multiply( currentmother->getMatrix() );
 
 			// may inline this
-			return LocatePoint_iterative(currentmother, point, localpoint, path, globalm, false);
+			return LocatePoint_iterative(currentmother, tmp, localpoint, path, globalm, false);
 		}
 	}
 	return currentmother;
@@ -534,7 +455,7 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
   
   // iterate over all the daughters
   PhysicalVolume::DaughterContainer_t const * daughters = currentvolume->GetDaughters();
-  PhysicalVolume::DaughterContainerIterator_t const * iter;
+  PhysicalVolume::DaughterContainerConstIterator_t iter;
   int counter=0;
   for(iter = daughters->begin(); iter!=daughters->end(); ++iter)
     {
@@ -542,8 +463,8 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
       PhysicalVolume const * daughter = (*iter);
       ddistance = daughter->DistanceToIn( localpoint, localdir, step );
       
-      step 	  = (ddistance < step) ? ddistance  : step;
       nexthitvolume = (ddistance < step) ? counter : nexthitvolume;
+      step 	  = (ddistance < step) ? ddistance  : step;
       counter++;
     }
   
@@ -553,25 +474,30 @@ void SimpleVecNavigator::FindNextBoundaryAndStep(
   Vector3D newpointafterboundary = localpoint + (step + Utils::frTolerance)*localdir;
   Vector3D newpointafterboundaryinnewframe;
   
+
   // this step is only necessary if nexthitvolume daughter or mother;
-  LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
-
+  // LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
   // this step is not necessary ( this should be anyway: point + step*dir; )
-  globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
-
   // ideas for improvement: improve
 
-  if( nexthitvolume == -1 ) // not mother
+  if( nexthitvolume != -1 ) // not mother
   {
 	  // continue directly further down
-	  LocatePoint_iterative( currentvolume->GetNthDaughter( nexthitvolume ), newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
+	  Vector3D tmp;
+	  TransformationMatrix const *m;
+	  PhysicalVolume const * nextvol = currentvolume->GetNthDaughter( nexthitvolume );
+	  m = nextvol->getMatrix();
+	  m->MasterToLocal<1,-1>( newpointafterboundary, tmp );
+	  LocatePoint( nextvol, tmp, newpointafterboundaryinnewframe, outpath, globalm );
   }
   else
   {
 	  // continue directly further up
-	  LocateLocalPointFromPath_Relative_Iterative( ); ...
+	  LocateLocalPointFromPath_Relative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
   }
-  */
+
+  globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+  //newpoint = point + ( step + Utils::frHalfTolerance )*localdir;
 
 }
 
@@ -609,8 +535,8 @@ void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
       // previous distance becomes step estimate, distance to daughter returned in workspace
       ddistance = daughter->DistanceToIn( localpoint, localdir, step );
 
-      step 	  = (ddistance < step) ? ddistance  : step;
       nexthitvolume = (ddistance < step) ? counter : nexthitvolume;
+      step 	  = (ddistance < step) ? ddistance  : step;
       counter++;
     }
 
@@ -621,23 +547,30 @@ void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
   Vector3D newpointafterboundaryinnewframe;
 
   // this step is only necessary if nexthitvolume daughter or mother;
-  LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
-  globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+  // LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
+  // globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
 
-  // ideas for improvement: improve
-  /*
-  if( nexthitvolume == -1 ) // not mother
+
+  if( nexthitvolume != -1 ) // not hitting mother
   {
-	  // retrieve daughter candidate
-	  daughtercandidant
-	  // continue directly further down
-	  LocatePoint( )
+	 // continue directly further down
+	 // continue directly further down
+	 Vector3D tmp;
+	 TransformationMatrix const *m;
+	 PhysicalVolume const * nextvol = currentvolume->GetNthDaughter( nexthitvolume );
+	 m = nextvol->getMatrix();
+	 m->MasterToLocal<1,-1>( newpointafterboundary, tmp );
+	 globalm->Multiply( m );
+	 LocatePoint_iterative( nextvol, tmp, newpointafterboundaryinnewframe, outpath, globalm );
   }
   else
   {
-
+	 // continue directly further up
+  	 LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
   }
-  */
 
+
+  //globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+  newpoint = point + (step+Utils::frTolerance)*dir;
 }
 

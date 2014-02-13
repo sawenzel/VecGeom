@@ -191,6 +191,8 @@ public:
 	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
 
 	/* a non-recursive version */
+	inline
+	__attribute__((always_inline))
 	PhysicalVolume const *
 	LocatePoint_iterative(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
 
@@ -256,5 +258,46 @@ public:
 			double & /* distance */) const {};
 
 };
+
+inline
+PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume const * vol,
+		Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * globalm, bool top) const
+{
+	PhysicalVolume const * candvolume = vol;
+	Vector3D tmp=point;
+
+	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
+
+	if( candvolume )
+	{
+		path.Push( candvolume );
+		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
+		PhysicalVolume::DaughterContainerConstIterator_t iter;
+		bool godeeper=true;
+		while( godeeper && dlist->size() > 0 )
+		{
+			godeeper=false;
+			for(iter=dlist->begin(); iter!=dlist->end(); iter++)
+			{
+				PhysicalVolume const * nextvol=(*iter);
+				Vector3D transformedpoint;
+				if(nextvol->Contains(tmp, transformedpoint, globalm))
+				{
+					path.Push( nextvol );
+					// this is no longer the top ( so setting top to false )
+					tmp = transformedpoint;
+					candvolume = nextvol;
+					// we have found volume in this hierarchy, can go deeper and override daughterlist
+					dlist = candvolume->GetDaughters();
+					godeeper=true;
+					break;
+				}
+			}
+		}
+	}
+	// set localpoint
+	localpoint=tmp;
+	return candvolume;
+}
 
 #endif /* SIMPLEVECNAVIGATOR_H_ */

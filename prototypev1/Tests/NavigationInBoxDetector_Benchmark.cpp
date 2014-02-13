@@ -16,7 +16,8 @@
 #include <map>
 #include <cassert>
 
-//#define ITERATIVE
+#define ITERATIVE
+//#define DEBUG
 
 void foo( double s, Vector3D const &a, Vector3D const &b, Vector3D &c )
 {
@@ -57,8 +58,8 @@ int main(int argc, char * argv[])
 	PhysicalVolume * box1 = GeoManager::MakePlacedBox(boxlevel1, identity);
 	box1->AddDaughter( box2 );
 
-	PhysicalVolume * box1left  = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(-L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
-	PhysicalVolume * box1right = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(+L/2.,0.,0.,0.,0.,0)), box1->GetDaughterList());
+	PhysicalVolume const * box1left  = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(-L/2.,0.,0.,0.,0.,0)), box1->GetDaughters());
+	PhysicalVolume const * box1right = world->PlaceDaughter(GeoManager::MakePlacedBox(boxlevel1, new TransformationMatrix(+L/2.,0.,0.,0.,0.,0)), box1->GetDaughters());
 
 
     // perform basic tests
@@ -79,7 +80,9 @@ int main(int argc, char * argv[])
 		double distancetravelled=0.;
 		Vector3D p;
 		PhysicalVolume::samplePoint( p, worldp->GetDX(), worldp->GetDY(), worldp->GetDZ(), 1. );
-	//	std::cerr << p << " " << worldp->GetDX()-p.GetX() << " ";
+#ifdef DEBUG
+		std::cerr << p << " " << worldp->GetDX()-p.GetX() << " ";
+#endif
 
 		// setup point in world
 		Vector3D d(1,0,0);
@@ -103,14 +106,21 @@ int main(int argc, char * argv[])
 			nav.FindNextBoundaryAndStep(m, p, d, path, newpath, resultpoint, step);
 #endif
 			distancetravelled+=step;
+#ifdef DEBUG
+			std::cerr << "  proposed step: " << step << std::endl;
+			std::cerr << "  next point " << resultpoint << std::endl;
+			std::cerr << "  in vol " << newpath.Top() << std::endl;
+#endif
 
 			// go on with navigation
 			p = resultpoint;
 			path=newpath;
 			vol=path.Top();
 		}
-	//	std::cerr << localstepsdone << " " << distancetravelled << std::endl;
-		stepsdone+=localstepsdone;
+#ifdef DEBUG
+			std::cerr << localstepsdone << " " << distancetravelled << std::endl;
+#endif
+			stepsdone+=localstepsdone;
 	}
 	timer.Stop();
 	std::cout << " time for 100000 particles " << timer.getDeltaSecs( ) << std::endl;
