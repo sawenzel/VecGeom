@@ -22,13 +22,13 @@ namespace translation {
   enum TranslationId { kOrigin = 0, kTranslation = 1 };
 }
 
-template <typename Type>
+template <typename Precision>
 class TransformationMatrix {
 
 private:
 
-  Type trans[3];
-  Type rot[9];
+  Precision trans[3];
+  Precision rot[9];
   bool identity;
   bool has_rotation;
   bool has_translation;
@@ -42,9 +42,9 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  TransformationMatrix(const Type tx, const Type ty, const Type tz,
-              const Type phi, const Type theta,
-              const Type psi) {
+  TransformationMatrix(const Precision tx, const Precision ty,
+                       const Precision tz, const Precision phi,
+                       const Precision theta, const Precision psi) {
     SetTranslation(tx, ty, tz);
     SetRotation(phi, theta, psi);
   }
@@ -60,8 +60,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> Translation() const {
-    return Vector3D<Type>(trans[0], trans[1], trans[2]);
+  Vector3D<Precision> Translation() const {
+    return Vector3D<Precision>(trans[0], trans[1], trans[2]);
   }
 
   /**
@@ -70,11 +70,11 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type Translation(const int index) const { return trans[index]; }
+  Precision Translation(const int index) const { return trans[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const* Rotation() const { return rot; }
+  Precision const* Rotation() const { return rot; }
 
   /**
    * No safety against faulty indexing.
@@ -82,7 +82,7 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type Rotation(const int index) const { return rot[index]; }
+  Precision Rotation(const int index) const { return rot[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -98,8 +98,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetTranslation(const Type tx, const Type ty,
-                      const Type tz) {
+  void SetTranslation(const Precision tx, const Precision ty,
+                      const Precision tz) {
     trans[0] = tx;
     trans[1] = ty;
     trans[2] = tz;
@@ -108,7 +108,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetTranslation(Vector3D<Type> const &vec) {
+  void SetTranslation(Vector3D<Precision> const &vec) {
     SetTranslation(vec[0], vec[1], vec[2]);
   }
 
@@ -123,15 +123,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(const Type phi, const Type theta,
-                   const Type psi) {
+  void SetRotation(const Precision phi, const Precision theta,
+                   const Precision psi) {
 
-    const Type sinphi = sin(kDegToRad*phi);
-    const Type cosphi = cos(kDegToRad*phi);
-    const Type sinthe = sin(kDegToRad*theta);
-    const Type costhe = cos(kDegToRad*theta);
-    const Type sinpsi = sin(kDegToRad*psi);
-    const Type cospsi = cos(kDegToRad*psi);
+    const Precision sinphi = sin(kDegToRad*phi);
+    const Precision cosphi = cos(kDegToRad*phi);
+    const Precision sinthe = sin(kDegToRad*theta);
+    const Precision costhe = cos(kDegToRad*theta);
+    const Precision sinpsi = sin(kDegToRad*psi);
+    const Precision cospsi = cos(kDegToRad*psi);
 
     rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
     rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
@@ -148,15 +148,17 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(Vector3D<Type> const &vec) {
+  void SetRotation(Vector3D<Precision> const &vec) {
     SetRotation(vec[0], vec[1], vec[2]);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void SetRotation(const Type rot0, const Type rot1, const Type rot2,
-                   const Type rot3, const Type rot4, const Type rot5,
-                   const Type rot6, const Type rot7, const Type rot8) {
+  void SetRotation(const Precision rot0, const Precision rot1,
+                   const Precision rot2, const Precision rot3,
+                   const Precision rot4, const Precision rot5,
+                   const Precision rot6, const Precision rot7,
+                   const Precision rot8) {
 
     rot[0] = rot0;
     rot[1] = rot1;
@@ -171,17 +173,12 @@ public:
     SetProperties();
   }
 
-  /**
-   * Generates a bit-sequence of whether entries in the rotation matrix are
-   * non-zero. Each entry uses two bits which is 00 for 0, 01 for positive
-   * values and 11 for negative values. 10 has no meaning.
-   */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   RotationCode GenerateRotationCode() const {
     int code = 0;
     for (int i = 0; i < 9; ++i) {
-      // Assign each set of two bits
+      // Assign each bit
       code |= (1<<i) * (rot[i] != 0);
     }
     if (code == rotation::kDiagonal
@@ -436,11 +433,10 @@ public:
   }
 
 }; // End class TransformationMatrix
+template <TranslationCode trans_code, RotationCode rot_code, typename Precision>
+class SpecializedMatrix : public TransformationMatrix<Precision> {
 
-template <TranslationCode trans_code, RotationCode rot_code, typename Type>
-class SpecializedMatrix : public TransformationMatrix<Type> {
-
-  typedef TransformationMatrix<Type> GeneralMatrix;
+  typedef TransformationMatrix<Precision> GeneralMatrix;
 
   /**
    * \sa TransformationMatrix::Transform(Vector3D<InputType> const &,

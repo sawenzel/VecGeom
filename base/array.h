@@ -8,20 +8,14 @@
 
 namespace vecgeom {
 
-template <typename Type>
+template <int arr_size, typename Type>
 class Array : public Container<Type> {
 
 private:
 
-  Type *arr;
-  const int size_;
+  Type arr[size];
 
 public:
-
-  VECGEOM_CUDA_HEADER_BOTH
-  Array(Type const *data, const int size_) {
-    size = size_;
-  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -37,8 +31,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  int Size() const {
-    return size;
+  int size() const {
+    return arr_size;
   }
 
   #ifdef VECGEOM_NVCC
@@ -46,13 +40,13 @@ public:
   VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
   void CopyToGPU(Type *const target) const {
-    vecgeom::CopyToGPU(arr, &target, size);
+    vecgeom::CopyToGPU(arr, &target, arr_size);
   }
 
   VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
   void CopyFromGPU(Type *const target) const {
-    vecgeom::CopyFromGPU(arr, &target, size);
+    vecgeom::CopyFromGPU(arr, &target, arr_size);
   }
 
   #endif

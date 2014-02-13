@@ -1,9 +1,7 @@
 #include "base/soa3d.h"
-#include "base/vector3d.h"
-#include "base/transformation_matrix.h"
 #include "backend/scalar_backend.h"
 #include "volumes/box.h"
-#include "volumes/kernel/box_kernel.h"
+#include "volumes/logical_volume.h"
 
 using namespace vecgeom;
 
@@ -15,10 +13,14 @@ int main() {
   TransformationMatrix<double> matrix;
   ScalarBool output_inside;
   double output_distance;
-  BoxInside<kScalar, translation::kOrigin, rotation::kIdentity>(
+  UnplacedBox<double> world_box = UnplacedBox<double>(scalar_v);
+  UnplacedBox<double> box = UnplacedBox<double>(scalar_v);
+  VLogicalVolume<double> world = VLogicalVolume<double>(world_box);
+  world.PlaceDaughter(box, matrix);
+  BoxInside<translation::kOrigin, rotation::kIdentity, kScalar>(
     scalar_v, matrix, vector_v, &output_inside
   );
-  BoxDistanceToIn<kScalar, translation::kOrigin, rotation::kIdentity>(
+  BoxDistanceToIn<translation::kOrigin, rotation::kIdentity, kScalar>(
     scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
   );
   return 0;

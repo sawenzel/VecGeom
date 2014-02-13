@@ -16,13 +16,18 @@ class GeoManager {
 
 private:
 
-  static int counter;
-  static std::list<VPlacedVolume<Precision> const*> volumes;
+  int counter;
+  std::list<VPlacedVolume<Precision> const*> volumes_;
 
 public:
 
-  static std::list<VPlacedVolume<Precision> const*> const& VolumeList() {
-    return volumes;
+  static GeoManager<Precision>& Instance() {
+    static GeoManager<Precision> instance;
+    return instance;
+  }
+
+  std::list<VPlacedVolume<Precision> const*> const& volumes() {
+    return volumes_;
   }
 
 private:
@@ -31,8 +36,11 @@ private:
     counter = 0;
   }
 
-  static int RegisterVolume(VPlacedVolume<Precision> const *const volume) {
-    volumes.push_back(volume);
+  GeoManager(GeoManager const&);
+  GeoManager& operator=(GeoManager const&);
+
+  int RegisterVolume(VPlacedVolume<Precision> const *const volume) {
+    volumes_.push_back(volume);
     return counter++;
   }
 
@@ -40,8 +48,8 @@ private:
    * Deregistering will not change the counter, as gaps in the id don't have any
    * practical consequence.
    */
-  static void DeregisterVolume(VPlacedVolume<Precision> const *const volume) {
-    volumes.remove(volume);
+  void DeregisterVolume(VPlacedVolume<Precision> const *const volume) {
+    volumes_.remove(volume);
   }
 
   friend VPlacedVolume<Precision>;

@@ -2,37 +2,42 @@
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
 #include "base/types.h"
-#include "management/geo_manager.h"
-#include "volumes/logical_volume.h"
 #include "base/transformation_matrix.h"
+#include "management/geo_manager.h"
 
 namespace vecgeom {
 
 template <typename Precision>
 class VPlacedVolume {
 
+private:
+
+  int id;
+
 protected:
 
-  const int id;
-  VLogicalVolume<Precision> const &volume;
-  TransformationMatrix<Precision> const &matrix;
+  VUnplacedVolume<Precision> const &unplaced_volume_;
+  TransformationMatrix<Precision> const &matrix_;
 
 public:
 
-  VPlacedVolume(VLogicalVolume<Precision> const &volume_,
-                TransformationMatrix<Precision> const &matrix_) {
-    id = GeoManager<Precision>::template RegisterVolume(this);
-    volume = volume_;
-    matrix = matrix_;
+  VPlacedVolume(VUnplacedVolume<Precision> const &unplaced_volume__,
+                TransformationMatrix<Precision> const &matrix__)
+      : unplaced_volume_(unplaced_volume__), matrix_(matrix__) {
+    id = GeoManager<Precision>::Instance().RegisterVolume(this);
   }
 
   ~VPlacedVolume() {
-    GeoManager<Precision>::template DeregisterVolume(this);
+    GeoManager<Precision>::Instance().DeregisterVolume(this);
   }
 
-  VLogicalVolume<Precision> const& Volume() const { return volume; }
+  VLogicalVolume<Precision> const& unplaced_volume() const {
+    return unplaced_volume_;
+  }
 
-  TransformationMatrix<Precision> const& Matrix() const { return matrix; }
+  TransformationMatrix<Precision> const& matrix() const {
+    return matrix_;
+  }
 
 };
 
