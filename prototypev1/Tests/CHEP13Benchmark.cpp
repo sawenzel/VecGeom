@@ -16,6 +16,7 @@
 #include "mm_malloc.h"
 #include "../GlobalDefs.h"
 #include "../GeoManager.h"
+#include "../PhysicalVolume.h"
 #include "../PhysicalTube.h"
 #include "../TestShapeContainer.h"
 #include "../SimpleVecNavigator.h"
@@ -122,7 +123,7 @@ int main()
 
 	// do some navigation with a simple Navigator
 	SimpleVecNavigator vecnav(np);
-	PhysicalVolume ** nextvolumes  = ( PhysicalVolume ** ) _mm_malloc(sizeof(PhysicalVolume *)*np, ALIGNMENT_BOUNDARY);
+	const PhysicalVolume ** nextvolumes  = (const PhysicalVolume ** ) _mm_malloc(sizeof(PhysicalVolume *)*np, ALIGNMENT_BOUNDARY);
 
 	timer.Start();
 	for(int reps=0 ;reps < NREPS; reps++ )
@@ -131,7 +132,7 @@ int main()
 	}
 	timer.Stop();
 	double t0 = timer.getDeltaSecs();
-	std::cerr << t0 << std::endl;
+	std::cerr << t0 <<" <-- Time for vecnav.DistToNextBoundary()"<< std::endl;
 	// give out hit pointers
 	double d0=0.;
 	for(auto k=0;k<np;k++)
@@ -149,14 +150,13 @@ int main()
 	timer.Stop();
 	double t1= timer.getDeltaSecs();
 
-	std::cerr << t1 << std::endl;
+	std::cerr << t1 <<" <-- Time for vecnac.DistToNextBoundayUsingUnplacedVolumes"<< std::endl;
 
 	double d1;
 	for(auto k=0;k<np;k++)
 	{
 		d1+=distances[k];
 		distances[k]=Utils::kInfinity;
-
 	}
 
 	// now using the ROOT Geometry library (scalar version)
@@ -168,7 +168,7 @@ int main()
 	timer.Stop();
 	double t3 = timer.getDeltaSecs();
 
-	std::cerr << t3 << std::endl;
+	std::cerr << t3 <<" <-- Time for vecnav.DistToNextBoundaryUsingROOT"<< std::endl;
 	double d3;
 	for(auto k=0;k<np;k++)
 		{

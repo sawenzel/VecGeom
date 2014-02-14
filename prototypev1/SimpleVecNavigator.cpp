@@ -88,7 +88,7 @@ static
 inline
 void
 __attribute__((always_inline))
-MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, PhysicalVolume ** __restrict__ nextnodepointersasints,
+MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, const PhysicalVolume ** __restrict__ nextnodepointersasints,
 		PhysicalVolume const * __restrict__ curcandidateVolumePointerasint, unsigned int np )
 {
 	// this is not vectorizing !
@@ -106,7 +106,7 @@ void SimpleVecNavigator::DistToNextBoundary( PhysicalVolume const * volume, Vect
 											 Vectors3DSOA const & dirs,
 											 double const * steps,
 											 double * distance,
-											 PhysicalVolume ** nextnode, int np ) const
+											 const PhysicalVolume ** nextnode, int np )
 {
 // init nextnode ( maybe do a memcpy )
 	for(auto k=0;k<np;++k)
@@ -138,7 +138,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUnplacedVolumes( PhysicalVolume 
 											 Vectors3DSOA const & dirs,
 											 double const * steps,
 											 double * distance,
-											 PhysicalVolume ** nextnode, int np ) const
+											 const PhysicalVolume ** nextnode, int np )
 {
 // init nextnode ( maybe do a memcpy )
 	for(auto k=0;k<np;++k)
@@ -184,7 +184,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 		 	 	 	 	 	 	 	 	 	 	 	   double const * dirs,
 		 	 	 	 	 	 	 	 	 	 	 	   double const * steps,
 		 	 	 	 	 	 	 	 	 	 	 	   double * distance,
-		 	 	 	 	 	 	 	 	 	 	 	   PhysicalVolume ** nextnode, int np ) const
+		 	 	 	 	 	 	 	 	 	 	 	   const PhysicalVolume ** nextnode, int np )
 {
 	for(auto k=0;k<np;k++)
 	{
@@ -227,7 +227,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 		 	 	 	 	 	 	 	 	 	 	 	 	 Vectors3DSOA const & dirs,
 		 	 	 	 	 	 	 	 	 	 	 	 	 double const * steps,
 		 	 	 	 	 	 	 	 	 	 	 	 	 double * distance,
-		 	 	 	 	 	 	 	 	 	 	 	 	 PhysicalVolume ** nextnode, int np ) const
+		 	 	 	 	 	 	 	 	 	 	 	 	 const PhysicalVolume ** nextnode, int np )
 {
 	for(auto k=0;k<np;k++)
 	{
