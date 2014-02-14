@@ -12,6 +12,17 @@ bool containsold( Vector3D const & point, Vector3D const & p )
 }
 
 
+void test1( Vector3DFast const & point, Vector3DFast & x ) 
+{
+  x+=point;
+}
+
+
+void test2( Vector3DFast const & point, Vector3DFast & x ) 
+{
+  x=point + point;
+}
+
 bool containsnew( Vector3DFast const & point, Vector3DFast const & p ) 
 {
   Vector3DFast tmp = point.Abs();
@@ -22,6 +33,12 @@ bool containsnew( Vector3DFast const & point, Vector3DFast const & p )
 bool transform( FastTransformationMatrix const & m, Vector3DFast const & master, Vector3DFast & local )
 {
   m.MasterToLocal( master,local );
+}
+
+
+bool transform2( FastTransformationMatrix const & m, Vector3DFast const & master, Vector3DFast & local )
+{
+  m.LocalToMaster( master,local );
 }
 
 
@@ -103,9 +120,9 @@ int main()
   std::cerr << containsold(p1o, parao)  << " " << containsnew(p1, para) << std::endl;
   std::cerr << containsold(p2o, parao)  << " " << containsnew(p2, para) << std::endl;
 
-  FastTransformationMatrix m(0,0,0,0,30,45);
+  FastTransformationMatrix m(10,0,-10,34,0,45);
   m.print();
-  Vector3DFast a(1,0,0);
+  Vector3DFast a(1,1,1);
   Vector3DFast b(1,0,0);
   Vector3DFast tmp;
 
@@ -115,6 +132,14 @@ int main()
   m.MasterToLocal(b, tmp);
   std::cerr << tmp << std::endl;  
 
+  para.print();
+
+  test2( a, b );
+  std::cerr << a << std::endl;
+  std::cerr << b << std::endl;
+  Vector3DFast v=a;
+  std::cerr << v << std::endl;
+ 
 
   return 1;
 }

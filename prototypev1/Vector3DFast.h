@@ -51,7 +51,18 @@ public:
 	__attribute__((always_inline))
 	Vector3DFast & operator+=( Vector3DFast const & rhs )
 	{
-		this->internalVcmemory+=rhs.internalVcmemory;
+		for( int i=0; i< 1 + 3/Vc::Vector<double>::Size; i++ )
+		//for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+		{
+		    base_t v1,v2;
+		    v1 = rhs.internalVcmemory.vector(i);
+		    v2 = this->internalVcmemory.vector(i);
+#ifdef VECTORDEBUG
+		    std::cerr << "adding " << v1 << " " << v2 << std::endl;
+#endif
+		    v2 += v1;
+		    this->internalVcmemory.vector(i)=v2;
+		}
 		return *this;
 	}
 
@@ -82,9 +93,13 @@ public:
 	{
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 		{
+			base_t v1 = rhs.internalVcmemory.vector(i);
+#ifdef VECTORDEBUG
+			std::cerr << "assigning " << v1 << std::endl;
+#endif
 			this->internalVcmemory.vector(i)=rhs.internalVcmemory.vector(i);
-			return *this;
 		}
+		return *this;
 	}
 
 
@@ -165,6 +180,18 @@ public:
 		}
 		return tmp;
 	}
+
+	inline
+	void
+	print() const
+	{
+		Vector3DFast tmp;
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+		{
+			std::cerr << "vector " << i << std::endl;
+		}
+	}
+
 
 	inline
 	__attribute__((always_inline))
@@ -266,6 +293,9 @@ std::ostream& operator<<( std::ostream& stream, Vector3DFast const & vec )
 }
 
 // to try something with Vc memory
+// note: this is a class which should work optimally with vector instructions sets >= AVX
+// at the moment this might produce worse performance on SSE
+// this might be solved with some more template magic or fallback to the old code
 class FastTransformationMatrix
 {
 // storage
@@ -318,8 +348,8 @@ public:
 	void
 	LocalToMaster(Vector3DFast const & local, Vector3DFast & master) const
 	{
-		Vector3DFast tmp = local+trans;
-		master = tmp.GetX()*rotcol1 + tmp.GetY()*rotcol2 + tmp.GetZ()*rotcol3;
+	//	Vector3DFast tmp = local+trans;
+		master = trans + local.GetX()*rotcol1 + local.GetY()*rotcol2 + local.GetZ()*rotcol3;
 	}
 
 	void setAngles(double phi, double theta, double psi)
@@ -366,6 +396,35 @@ public:
 		printf("%12.11f\t%12.11f\t%12.11f    Tx = %10.6f\n", rotcol1.GetX(), rotcol2.GetX(), rotcol3.GetX(), trans.GetX());
 		printf("%12.11f\t%12.11f\t%12.11f    Ty = %10.6f\n", rotcol1.GetY(), rotcol2.GetY(), rotcol3.GetY(), trans.GetY());
 		printf("%12.11f\t%12.11f\t%12.11f    Tz = %10.6f\n", rotcol1.GetZ(), rotcol2.GetZ(), rotcol3.GetZ(), trans.GetZ());
+	}
+
+	void Multiply( FastTransformationMatrix const * rhs )
+	{
+		// do nothing if identity
+	    // if(rhs->identity) return;
+
+		// transform translation part ( should reuse a mastertolocal transformation here )
+		trans += rotcol1*rhs->trans.GetX();
+		trans += rotcol2*rhs->trans.GetY();
+		trans += rotcol3*rhs->trans.GetZ();
+
+		double tmpx = rotrow1.GetX();
+		double tmpy = rotrow1.GetY();
+		double tmpz = rotrow1.GetZ();
+		rotrow1 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
+
+		tmpx = rotrow2.GetX();
+		tmpy = rotrow2.GetY();
+		tmpz = rotrow2.GetZ();
+		rotrow2 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
+
+		tmpx = rotrow3.GetX();
+		tmpy = rotrow3.GetY();
+		tmpz = rotrow3.GetZ();
+		rotrow3 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
+
+		// update rotcols
+		// TOBE DONE
 	}
 };
 
