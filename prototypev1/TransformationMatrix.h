@@ -28,8 +28,7 @@ class TransformationMatrix
 {
 private:
     // this can be varied depending on template specialization
-	double trans[3];
-	double rot[9];
+
 	bool identity;
 	bool hasRotation;
 	bool hasTranslation;
@@ -59,6 +58,9 @@ private:
 	void InitEquivalentTGeoMatrix(double, double, double);
 
 public:
+	double trans[3];
+	double rot[9];
+
 	inline
 	void SetToIdentity(){ 	trans[0]=0;
 	trans[1]=0;

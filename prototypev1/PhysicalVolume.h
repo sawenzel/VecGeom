@@ -15,6 +15,7 @@
 #include <vector>
 #include "GlobalDefs.h"
 
+
 //#include "TGeoShape.h"
 class VUSolid;
 class TGeoShape;
@@ -36,6 +37,10 @@ protected:
 		// this is a bit nasty because we need to cast bbox to PlacedBox<1,1296>
 
 		TransformationMatrix const *matrix; // placement matrix with respect to containing volume
+
+		// just for comparision, we also keep a fastmatrix
+		FastTransformationMatrix *fastmatrix;
+
 		// something like a logical volume id
 
 		// I am not sure that this is appropriate
@@ -68,7 +73,12 @@ protected:
 
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
-			logicalvol(0), daughters(new DaughterContainer_t), bbox(0), analogoususolid(0), analogousrootsolid(0) {};
+			logicalvol(0), daughters(new DaughterContainer_t), bbox(0), analogoususolid(0), analogousrootsolid(0),
+			fastmatrix(new FastTransformationMatrix())
+			{
+				fastmatrix->SetTrans( &matrix->trans[0] );
+				fastmatrix->SetRotation( &matrix->rot[0] );
+			};
 
 		virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const = 0;
 		virtual double DistanceToOut( Vector3D const &, Vector3D const &, double ) const = 0;
@@ -83,6 +93,23 @@ protected:
 		// this version modifies the global matrix additionally
 		virtual bool   Contains( Vector3D const &, Vector3D &, TransformationMatrix * ) const { return false; }
 
+		//** ------------------------------------------------------------------------------------------------------------------------------**//
+		//*****  the following methods are introduced temporirly to study speed/ influence of the new fast ThreeVector (Vector3DFast) *****//
+		virtual double DistanceToIn( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const {return 0.;}
+		virtual double DistanceToOut( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const {return 0.;}
+		virtual double DistanceToInAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {return 0.;}
+		virtual double DistanceToOutAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {return 0.;}
+
+		virtual bool   Contains( Vector3DFast const & ) const {return 0.;}
+		virtual bool   UnplacedContains( Vector3DFast const & ) const {return 0.;}
+
+		// same as Contains but returning the transformed point for further processing
+		// this function is a "specific" version for locating points in a volume hierarchy
+		// it also modifies the global matrix
+		virtual bool   Contains( Vector3DFast const &, Vector3DFast & ) const { return false; }
+		// this version modifies the global matrix additionally
+		virtual bool   Contains( Vector3DFast const &, Vector3DFast &, FastTransformationMatrix * ) const { return false; }
+		// ** -------------------------------------------------------------------------------------------------------------------------------//
 
 		// the contains function knowing about the surface
 		virtual GlobalTypes::SurfaceEnumType   UnplacedContains_WithSurface( Vector3D const & ) const { return GlobalTypes::kOutside; };
@@ -151,7 +178,6 @@ protected:
 		// this method is going to analyse the box and matrix combination ( using the existing
 		// shape factory functionality to add an appropriate specialised list of
 		// TODO: ideally we should give in an "abstract placed box" and not boxparameters
-
 		PhysicalVolume const * PlaceDaughter( PhysicalVolume * newdaughter, DaughterContainer_t const * const d = 0)
 		{
 			if( ! daughters ){
@@ -212,6 +238,7 @@ protected:
 
 		// to access information about Matrix
 		TransformationMatrix const * getMatrix() const {return matrix;}
+		FastTransformationMatrix const * getFastMatrix() const {return fastmatrix;}
 
 		LogicalVolume const * getLogicalVolume() const { return logicalvol; }
 

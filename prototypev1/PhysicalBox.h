@@ -14,6 +14,7 @@
 #include "PhysicalVolume.h"
 #include "LogicalVolume.h"
 #include "Vector3D.h"
+#include "Vector3DFast.h"
 #include "TransformationMatrix.h"
 
 #include "UBox.hh"
@@ -26,14 +27,23 @@ private:
 	double dY;
 	double dZ;
 
+	// internal representation as a 3D vector
+	Vector3DFast internalvector;
+
 public:
-	BoxParameters(double x,double y, double z) : dX(x), dY(y), dZ(z) {}
+	BoxParameters(double x,double y, double z) : dX(x), dY(y), dZ(z), internalvector() {
+		internalvector.SetX(dX);
+		internalvector.SetY(dY);
+		internalvector.SetZ(dZ);
+	}
 
 	virtual void inspect() const;
 
 	double GetDX() const {return dX;}
 	double GetDY() const {return dY;}
 	double GetDZ() const {return dZ;}
+
+	Vector3DFast const & GetAsVector3DFast() const { return internalvector; }
 
 	double GetVolume() const {return 4*dX*dY*dZ;}
 
@@ -94,6 +104,23 @@ public:
 	virtual inline bool Contains( Vector3D const &, Vector3D &, TransformationMatrix * ) const;
 	virtual double SafetyToIn( Vector3D const &) const;
 	virtual double SafetyToOut( Vector3D const &) const;
+
+	// for fast vectors
+	virtual double DistanceToIn( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const; // done
+	virtual double DistanceToOut( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const; // done
+	virtual double DistanceToInAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {};
+	virtual double DistanceToOutAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {};
+	virtual bool   Contains( Vector3DFast const & ) const; // done
+	virtual bool   UnplacedContains( Vector3DFast const & ) const; // done
+	// same as Contains but returning the transformed point for further processing
+	// this function is a "specific" version for locating points in a volume hierarchy
+	// it also modifies the global matrix
+	virtual bool   Contains( Vector3DFast const &, Vector3DFast & ) const; // done
+	// this version modifies the global matrix additionally
+	virtual bool   Contains( Vector3DFast const &, Vector3DFast &, FastTransformationMatrix * ) const; // done
+
+
+
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 	//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
 	virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /**/ ) const;
@@ -376,7 +403,6 @@ bool PlacedBox<tid,rid>::Contains( Vector3D const & point, Vector3D & localPoint
 	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
 }
 
-
 template<int tid, int rid>
 inline
 bool PlacedBox<tid,rid>::Contains( Vector3D const & point, Vector3D & localPoint, TransformationMatrix * globalm ) const
@@ -394,6 +420,39 @@ bool PlacedBox<tid,rid>::Contains( Vector3D const & point, Vector3D & localPoint
 
 template<int tid, int rid>
 inline
+bool PlacedBox<tid,rid>::Contains( Vector3DFast const & point ) const
+{
+	// here we do the point transformation
+	Vector3DFast localPoint;
+	fastmatrix->MasterToLocal<tid,rid>(point, localPoint);
+	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
+}
+
+template<int tid, int rid>
+inline
+bool PlacedBox<tid,rid>::Contains( Vector3DFast const & point, Vector3DFast & localPoint ) const
+{
+	// here we do the point transformation
+	fastmatrix->MasterToLocal<tid,rid>(point, localPoint);
+	return this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
+}
+
+template<int tid, int rid>
+inline
+bool PlacedBox<tid,rid>::Contains( Vector3DFast const & point, Vector3DFast & localPoint, FastTransformationMatrix * globalm ) const
+{
+	// here we do the point transformation
+	fastmatrix->MasterToLocal<tid,rid>(point, localPoint);
+	bool in = this->PlacedBox<tid,rid>::UnplacedContains( localPoint );
+	if( in )
+	{
+		globalm->Multiply<tid,rid>( fastmatrix );
+	}
+	return in;
+}
+
+template<int tid, int rid>
+inline
 bool PlacedBox<tid,rid>::UnplacedContains( Vector3D const & point ) const
 {
 	// this could be vectorized also
@@ -402,6 +461,86 @@ bool PlacedBox<tid,rid>::UnplacedContains( Vector3D const & point ) const
 	if ( std::abs(point.z) > boxparams->dZ ) return false;
 	return true;
 }
+
+
+template<int tid, int rid>
+inline
+bool PlacedBox<tid,rid>::UnplacedContains( Vector3DFast const & point ) const
+{
+	 Vector3DFast tmp = point.Abs();
+	 return ! tmp.IsAnyLargerThan( boxparams->GetAsVector3DFast() );
+}
+
+
+template<int tid, int rid>
+inline
+double PlacedBox<tid,rid>::DistanceToOut( Vector3DFast const & point, Vector3DFast const & dir, double step ) const
+{
+	Vector3DFast safetyPlus = boxparams->GetAsVector3DFast() + point;
+	std::cerr << safetyPlus << std::endl;
+	Vector3DFast safetyMinus = boxparams->GetAsVector3DFast() - point;
+	std::cerr << safetyMinus << std::endl;
+
+	// gather right safeties
+	Vector3DFast rightSafeties = Vector3DFast::ChooseComponentsBasedOnConditionFast( safetyPlus, safetyMinus, dir );
+	std::cerr << rightSafeties << std::endl;
+
+	Vector3DFast distances = rightSafeties / dir;
+	std::cerr << distances << std::endl;
+	return distances.MinButNotNegative();
+}
+
+
+
+template<int tid, int rid>
+inline
+double PlacedBox<tid,rid>::DistanceToIn( Vector3DFast const & point, Vector3DFast const & dir, double cPstep ) const
+{
+	const double delta = 1E-9;
+	// here we do the point transformation
+	Vector3DFast localPoint;
+    fastmatrix->MasterToLocal<tid,rid>(point, localPoint);
+	//   aNormal.SetNull();
+	Vector3DFast safety = localPoint.Abs() - boxparams->GetAsVector3DFast();
+	// check this::
+	if(safety.IsAnyLargerThan(cPstep))
+		return Utils::kInfinity;
+
+	// here we do the directional transformation
+	Vector3DFast localDirection;
+	fastmatrix->MasterToLocalVec<rid>(dir, localDirection);
+	// Check if numerical inside
+
+	bool outside = safety.IsAnyLargerThan( 0 );
+	if ( !outside )
+	{
+		std::cerr << "particle actually outside; not implemented " << std::endl;
+	}
+	// check any early return stuff ( because going away ) here:
+	Vector3DFast pointtimesdirection = point*dir;
+	if( Vector3DFast::ExistsIndexWhereBothComponentsPositive(safety, pointtimesdirection)) return Utils::kInfinity;
+
+	// compute distance to surfaces
+	Vector3DFast distv = safety/dir.Abs();
+
+	// compute target points ( needs some reshuffling )
+	// might be suboptimal for SSE or really scalar
+	Vector3DFast hitxyplane = point + distv.GetZ()*dir;
+	// the following could be made faster ( maybe ) by calculating the abs on the whole vector
+	if(    std::abs(hitxyplane.GetX()) < boxparams->GetDX()
+		&& std::abs(hitxyplane.GetY()) < boxparams->GetDY())
+		return distv.GetZ();
+	Vector3DFast hitxzplane = point + distv.GetY()*dir;
+	if(    std::abs(hitxzplane.GetX()) < boxparams->GetDX()
+		&& std::abs(hitxzplane.GetZ()) < boxparams->GetDZ())
+		return distv.GetY();
+	Vector3DFast hityzplane = point + distv.GetX()*dir;
+	if(	   std::abs(hityzplane.GetY()) < boxparams->GetDY()
+		&& std::abs(hityzplane.GetZ()) < boxparams->GetDZ())
+		return distv.GetX();
+	return Utils::kInfinity;
+}
+
 
 template<int tid, int rid>
 template<bool in>

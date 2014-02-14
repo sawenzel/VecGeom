@@ -24,6 +24,13 @@ void test2( Vector3DFast const & point, Vector3DFast & x )
   x=point + point;
 }
 
+
+void test3( Vector3DFast const & point, Vector3DFast & x, double d )
+{
+  x=point + (d + 0.2) * point;
+}
+
+
 bool containsnew( Vector3DFast const & point, Vector3DFast const & p ) 
 {
   Vector3DFast tmp = point.Abs();
@@ -142,17 +149,19 @@ double distancetoinnew( Vector3DFast const & boxp, Vector3DFast const & point, V
 
 	//   aNormal.SetNull();
 	Vector3DFast safety = point.Abs() - boxp;
-	if ((safety.GetX() > cPstep) || (safety.GetY() > cPstep) || (safety.GetZ() > cPstep))
-			return 1E30;
+
+	// check this::
+	if( safety.IsAnyLargerThan(cPstep) )
+		return 1E30;
 
 	// only here we do the directional transformation
-	Vector3D aDirection;
-	matrix->MasterToLocalVec<rid>(y, aDirection);
+	//Vector3D aDirection;
+	//matrix->MasterToLocalVec<rid>(y, aDirection);
 
 	// Check if numerical inside
 
 	// not yet vectorized
-	bool outside = (safety.GetX() > 0) || (safety.GetY() > 0) || (safety.GetZ() > 0);
+	bool outside = safety.IsAnyLargerThan( 0 );
 
 	if ( !outside )
 	{
@@ -174,10 +183,6 @@ double distancetoinnew( Vector3DFast const & boxp, Vector3DFast const & point, V
  */
 	}
 
-	// The point is really outside. Only axis with positive safety to be
-	// considered. Early exit on each axis if point and direction components
-	// have the same .sign.
-	double dist = 0.0;
 
 	// check any early return stuff ( because going away ) here:
 	Vector3DFast pointtimesdirection = point*dir;
@@ -209,13 +214,13 @@ double distancetoinnew( Vector3DFast const & boxp, Vector3DFast const & point, V
 }
 
 
-bool transform( FastTransformationMatrix const & m, Vector3DFast const & master, Vector3DFast & local )
+void transform( FastTransformationMatrix const & m, Vector3DFast const & master, Vector3DFast & local )
 {
   m.MasterToLocal( master,local );
+
 }
 
-
-bool transform2( FastTransformationMatrix const & m, Vector3DFast const & master, Vector3DFast & local )
+void transform2( FastTransformationMatrix const & m, Vector3DFast const & master, Vector3DFast & local )
 {
   m.LocalToMaster( master,local );
 }

@@ -215,8 +215,8 @@ public:
 				d = (d > m) ? m : d;
 			}
 	*/
-		d = (internalVcmemory[1] < d )? internalVcmemory[1] : d;
-		d = (internalVcmemory[2] < d )? internalVcmemory[2] : d;
+		d = ( internalVcmemory[1]<d )? internalVcmemory[1] : d;
+		d = ( internalVcmemory[2]<d )? internalVcmemory[2] : d;
 		return (d < 0)? 0 : d;
 	}
 
@@ -319,6 +319,22 @@ public:
 
 	inline
 	__attribute__((always_inline))
+	bool IsAnyLargerThan( double x ) const
+	{
+		bool result = false;
+		Vector3DFast tmp;
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+		{
+			base_t vec(x); // broadcast double to vec
+			mask_t m = this->internalVcmemory.vector(i) > vec;
+			if( !m.isEmpty() ) return true;
+		}
+		return result;
+	}
+
+
+	inline
+	__attribute__((always_inline))
 	// a starting comparison operator
 	bool IsAnySmallerThan( Vector3DFast const & rhs ) const
 	{
@@ -375,12 +391,29 @@ Vector3DFast const operator+(Vector3DFast const & lhs, Vector3DFast const & rhs)
 	return tmp;
 }
 
+inline
+Vector3DFast const operator*(Vector3DFast const & lhs, Vector3DFast const & rhs)
+{
+	Vector3DFast tmp(lhs);
+	tmp*=rhs;
+	return tmp;
+}
+
 
 inline
 Vector3DFast const operator*(double lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(rhs);
 	tmp*=lhs;
+	return tmp;
+}
+
+
+inline
+Vector3DFast const operator*(Vector3DFast const & lhs, double rhs)
+{
+	Vector3DFast tmp(lhs);
+	tmp*=rhs;
 	return tmp;
 }
 
@@ -393,13 +426,6 @@ Vector3DFast const operator/(Vector3DFast const & lhs, Vector3DFast const & rhs)
 	return tmp;
 }
 
-inline
-Vector3DFast const operator*(Vector3DFast const & lhs, double rhs)
-{
-	Vector3DFast tmp(lhs);
-	tmp*=rhs;
-	return tmp;
-}
 
 
 inline
@@ -431,44 +457,151 @@ private:
 	Vector3DFast rotrow2;
 	Vector3DFast rotrow3;
 
-public:
-	FastTransformationMatrix() : trans(), rotcol1(), rotcol2(), rotcol3(),
-		rotrow1(), rotrow2(), rotrow3()
-	{};
+	bool identity;
 
-	/*
-	inline
-		void SetToIdentity(){ 	trans[0]=0;
-		trans[1]=0;
-		trans[2]=0;
-		rot[0]=1.;
-		rot[1]=0.;
-		rot[2]=0.;
-		rot[3]=0.;
-		rot[4]=1.;
-		rot[5]=0.;
-		rot[6]=0.;
-		rot[7]=0.;
-		rot[8]=1.;
-		identity=true; };
-	*/
-
-		//template <TranslationIdType tid, RotationIdType rid>
 	inline
 	void
-	MasterToLocal(Vector3DFast const & master, Vector3DFast & local) const
+	columnupdate( )
 	{
-		Vector3DFast tmp = master-trans;
-		local = tmp.GetX()*rotrow1 + tmp.GetY()*rotrow2 + tmp.GetZ()*rotrow3;
+		rotcol1.SetX( rotrow1.GetX() ); rotcol1.SetY( rotrow2.GetX() ); rotcol1.SetZ( rotrow3.GetX() );
+		rotcol2.SetX( rotrow1.GetY() ); rotcol2.SetY( rotrow2.GetY() ); rotcol2.SetZ( rotrow3.GetY() );
+		rotcol3.SetX( rotrow1.GetZ() ); rotcol3.SetY( rotrow2.GetZ() ); rotcol3.SetZ( rotrow3.GetZ() );
 	}
 
+
+public:
+	FastTransformationMatrix() : trans(), rotcol1(), rotcol2(), rotcol3(),
+		rotrow1(), rotrow2(), rotrow3(), identity(false)
+	{};
+
+
+	FastTransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
+	{
+		trans.SetX(tx);
+		trans.SetY(ty);
+		trans.SetZ(tz);
+
+		setAngles(phi, theta, psi);
+	}
+
+	FastTransformationMatrix(double tx, double ty, double tz,
+			double r0, double r1, double r2, double r3, double r4, double r5, double r6, double r7,
+			double r8 )
+	{
+		trans.SetX(tx);
+		trans.SetY(ty);
+		trans.SetZ(tz);
+		rotrow1.SetX(r0);
+		rotrow1.SetY(r1);
+		rotrow1.SetZ(r2);
+		rotrow2.SetX(r3);
+		rotrow2.SetY(r4);
+		rotrow2.SetZ(r5);
+		rotrow3.SetX(r6);
+		rotrow3.SetY(r7);
+		rotrow3.SetZ(r8);
+		columnupdate();
+	}
+
+	void SetTrans( double const * t)
+	{
+		trans.SetX(t[0]);
+		trans.SetY(t[1]);
+		trans.SetZ(t[2]);
+	}
+	void SetRotation( double const * r)
+	{
+		rotrow1.SetX(r[0]);
+		rotrow1.SetY(r[1]);
+		rotrow1.SetZ(r[2]);
+		rotrow2.SetX(r[3]);
+		rotrow2.SetY(r[4]);
+		rotrow2.SetZ(r[5]);
+		rotrow3.SetX(r[6]);
+		rotrow3.SetY(r[7]);
+		rotrow3.SetZ(r[8]);
+		columnupdate();
+	}
+
+
 	inline
+	void SetToIdentity(){
+		// this has to be done eventually with some global const vectors to reduce the number of moves
+		trans.SetX(0);
+		trans.SetY(0);
+		trans.SetZ(0);
+
+		rotrow1.SetX(1.);
+		rotrow1.SetY(0.);
+		rotrow1.SetZ(0.);
+
+		rotrow2.SetX(0.);
+		rotrow2.SetY(1.);
+		rotrow2.SetZ(0.);
+
+		rotrow3.SetX(0.);
+		rotrow3.SetY(0.);
+		rotrow3.SetZ(1.);
+
+		columnupdate();
+
+		identity=true;
+	};
+
+
+
+
+	// we have far less specializations here ( since optimized for 1particle case )
+	template <int tid, int rid>
+	inline
+	void
+	__attribute__((always_inline))
+	MasterToLocal(Vector3DFast const & master, Vector3DFast & local) const
+	{
+		if(tid == 0) // no translation
+		{
+			if(rid==1296) // identity
+			{
+				local=master;
+			}
+			else // rotation
+			{
+				local=master.GetX()*rotrow1 + master.GetY()*rotrow2 + master.GetZ()*rotrow3;
+			}
+		}
+		else // with translation
+		{
+			if(rid==1296)
+			{
+				local = master-trans;
+			}
+			else
+			{
+				Vector3DFast tmp=master-trans;
+				local = tmp.GetX()*rotrow1 + tmp.GetY()*rotrow2 + tmp.GetZ()*rotrow3;
+			}
+		}
+	}
+
+	template <int rid>
+	inline
+	void
+	__attribute__((always_inline))
+	MasterToLocalVec(Vector3DFast const & master, Vector3DFast & local) const
+	{
+		return MasterToLocal<0,rid>(master,local);
+	}
+
+
+    // not templated since less important
+	inline
+	__attribute__((always_inline))
 	void
 	LocalToMaster(Vector3DFast const & local, Vector3DFast & master) const
 	{
-	//	Vector3DFast tmp = local+trans;
 		master = trans + local.GetX()*rotcol1 + local.GetY()*rotcol2 + local.GetZ()*rotcol3;
 	}
+
 
 	void setAngles(double phi, double theta, double psi)
 	{
@@ -493,20 +626,11 @@ public:
 		rotrow3.SetY( cospsi*sinthe );
 		rotrow3.SetZ( costhe );
 
-		rotcol1.SetX( rotrow1.GetX() ); rotcol1.SetY( rotrow2.GetX() ); rotcol1.SetZ( rotrow3.GetX() );
-		rotcol2.SetX( rotrow1.GetY() ); rotcol2.SetY( rotrow2.GetY() ); rotcol2.SetZ( rotrow3.GetY() );
-		rotcol3.SetX( rotrow1.GetZ() ); rotcol3.SetY( rotrow2.GetZ() ); rotcol3.SetZ( rotrow3.GetZ() );
+		columnupdate();
 	}
 
 
-	FastTransformationMatrix(double tx, double ty, double tz, double phi, double theta, double psi)
-	{
-		trans.SetX(tx);
-		trans.SetY(ty);
-		trans.SetZ(tz);
 
-		setAngles(phi, theta, psi);
-	}
 
 	void print() const
 	{
@@ -516,33 +640,42 @@ public:
 		printf("%12.11f\t%12.11f\t%12.11f    Tz = %10.6f\n", rotcol1.GetZ(), rotcol2.GetZ(), rotcol3.GetZ(), trans.GetZ());
 	}
 
+	// the tid and rid are properties of the right hand matrix
+	template<int tid, int rid>
+	inline
+	__attribute__((always_inline))
 	void Multiply( FastTransformationMatrix const * rhs )
 	{
 		// do nothing if identity
 	    // if(rhs->identity) return;
-
 		// transform translation part ( should reuse a mastertolocal transformation here )
-		trans += rotcol1*rhs->trans.GetX();
-		trans += rotcol2*rhs->trans.GetY();
-		trans += rotcol3*rhs->trans.GetZ();
+		if(tid>0)
+		{
+			trans += rotcol1*rhs->trans.GetX();
+			trans += rotcol2*rhs->trans.GetY();
+			trans += rotcol3*rhs->trans.GetZ();
+		}
 
-		double tmpx = rotrow1.GetX();
-		double tmpy = rotrow1.GetY();
-		double tmpz = rotrow1.GetZ();
-		rotrow1 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
+		if(rid!=1296) // if not identity
+		{
+			double tmpx = rotrow1.GetX();
+			double tmpy = rotrow1.GetY();
+			double tmpz = rotrow1.GetZ();
+			rotrow1 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
 
-		tmpx = rotrow2.GetX();
-		tmpy = rotrow2.GetY();
-		tmpz = rotrow2.GetZ();
-		rotrow2 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
+			tmpx = rotrow2.GetX();
+			tmpy = rotrow2.GetY();
+			tmpz = rotrow2.GetZ();
+			rotrow2 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
 
-		tmpx = rotrow3.GetX();
-		tmpy = rotrow3.GetY();
-		tmpz = rotrow3.GetZ();
-		rotrow3 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
+			tmpx = rotrow3.GetX();
+			tmpy = rotrow3.GetY();
+			tmpz = rotrow3.GetZ();
+			rotrow3 = tmpx*rhs->rotrow1 + tmpy*rhs->rotrow2 + tmpz*rhs->rotrow3;
 
-		// update rotcols
-		// TOBE DONE
+			// update rotcols
+			// TOBE DONE BUT WE COULD ALSO JUST FORBID TO USE LOCALTOMASTER ON A GLOBAL MATRIX
+		}
 	}
 };
 

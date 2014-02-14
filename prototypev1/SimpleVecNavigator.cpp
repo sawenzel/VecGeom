@@ -16,6 +16,7 @@
 #include "mm_malloc.h"
 #include <iostream>
 #include "TransformationMatrix.h"
+#include "Vector3DFast.h"
 
 class PhysicalVolume;
 VolumePath::VolumePath(int maxlevel) : fmaxlevel(maxlevel), fcurrentlevel(0)
@@ -432,6 +433,48 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative_Ite
 }
 
 
+// this function tries to locate a point relative to a current geometry path
+// the point is given in the reference frame of the last volume in that path
+// this function should be called when we know that we are not entering a daughter
+PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative_Iterative(
+		Vector3DFast const & point,
+		Vector3DFast & localpoint,
+		VolumePath & path,
+		FastTransformationMatrix * globalm) const
+{
+	// idea: do the following:
+	// ----- is localpoint still in current mother ? : then go down
+	// if not: have to go up until we reach a volume that contains the localpoint and then go down again (neglecting the volumes currently stored in the path)
+	PhysicalVolume const * currentmother = path.Top();
+	if( currentmother != NULL )
+	{
+        Vector3DFast tmp = point;
+		// go up iteratively
+		while( currentmother && ! currentmother->UnplacedContains( tmp ) )
+		{
+			path.Pop();
+			Vector3DFast pointhigherup;
+			currentmother->getFastMatrix()->LocalToMaster( tmp, pointhigherup );
+			tmp=pointhigherup;
+			currentmother=path.Top();
+		}
+
+		if(currentmother)
+		{
+			path.Pop();
+			// then go down
+			path.GetGlobalMatrixFromPath( globalm );
+			globalm->Multiply<1,-1>( currentmother->getFastMatrix() );
+
+			// may inline this
+			return LocatePoint_iterative(currentmother, tmp, localpoint, path, globalm, false);
+		}
+	}
+	return currentmother;
+}
+
+
+
 void SimpleVecNavigator::FindNextBoundaryAndStep(
 		TransformationMatrix * globalm,
 		Vector3D const & point,
@@ -572,5 +615,73 @@ void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
 
   //globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
   newpoint = point + (step+Utils::frTolerance)*dir;
+}
+
+
+
+void SimpleVecNavigator::FindNextBoundaryAndStep_iterative(
+		FastTransformationMatrix * globalm,
+		Vector3DFast const & point,
+		Vector3DFast const & dir,
+		VolumePath const & inpath,
+		VolumePath & outpath,
+		Vector3DFast & newpoint,
+		double &step ) const
+{
+  // question: in what coordinate system do we have the point? global or local
+  // same for direction?
+
+	// this information might have been cached in previous navigators??
+	Vector3DFast localpoint;
+	globalm->MasterToLocal<1,-1>(point, localpoint);
+	Vector3DFast localdir;
+	globalm->MasterToLocalVec<-1>(dir, localdir);
+
+	PhysicalVolume const * currentvolume = inpath.Top();
+	int nexthitvolume = -1; // means mother
+
+	step = currentvolume->DistanceToOut(localpoint, localdir, Utils::kInfinity);
+
+	// iterate over all the daughter
+	PhysicalVolume::DaughterContainer_t const * daughters = currentvolume->GetDaughters();
+	int counter=0;
+	for(auto iter = daughters->begin(); iter!=daughters->end(); ++iter)
+	{
+      double ddistance;
+      PhysicalVolume const * daughter = (*iter);
+      // previous distance becomes step estimate, distance to daughter returned in workspace
+      ddistance = daughter->DistanceToIn( localpoint, localdir, step );
+
+      nexthitvolume = (ddistance < step) ? counter : nexthitvolume;
+      step 	  = (ddistance < step) ? ddistance  : step;
+      counter++;
+    }
+
+	// now we have the candidates
+	// try
+	outpath=inpath;
+	Vector3DFast newpointafterboundary = localpoint + (step + Utils::frTolerance)*localdir;
+	Vector3DFast newpointafterboundaryinnewframe;
+
+	if( nexthitvolume != -1 ) // not hitting mother
+	{
+		// continue directly further down
+		// continue directly further down
+		Vector3DFast tmp;
+		FastTransformationMatrix const *m;
+		PhysicalVolume const * nextvol = currentvolume->GetNthDaughter( nexthitvolume );
+		m = nextvol->getFastMatrix();
+		m->MasterToLocal<1,-1>( newpointafterboundary, tmp );
+		globalm->Multiply<1,-1>( m );
+		LocatePoint_iterative( nextvol, tmp, newpointafterboundaryinnewframe, outpath, globalm );
+	}
+	else
+	{
+		// continue directly further up
+		LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
+	}
+
+	//globalm->LocalToMaster( newpointafterboundaryinnewframe, newpoint );
+	newpoint = point + (step+Utils::frTolerance)*dir;
 }
 

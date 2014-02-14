@@ -10,6 +10,7 @@
 
 #include "PhysicalVolume.h"
 #include "Vector3D.h"
+#include "Vector3DFast.h"
 
 // the volume path class caches some important properties about where particles are in the geometry hierarchy
 class VolumePath
@@ -42,6 +43,8 @@ class VolumePath
 		void Print() const;
 
 		void GetGlobalMatrixFromPath( TransformationMatrix * m ) const;
+		void GetGlobalMatrixFromPath( FastTransformationMatrix * m ) const;
+
 		inline VolumePath & operator=( VolumePath const & rhs );
 };
 
@@ -81,6 +84,17 @@ void VolumePath::GetGlobalMatrixFromPath( TransformationMatrix * m ) const
 		m->Multiply( path[i]->getMatrix() );
 	}
 }
+
+inline
+void VolumePath::GetGlobalMatrixFromPath( FastTransformationMatrix * m ) const
+{
+	m->SetToIdentity();
+	for(int i=0; i<fcurrentlevel; i++ )
+	{
+		m->Multiply<1,-1>( path[i]->getFastMatrix() );
+	}
+}
+
 
 inline
 PhysicalVolume const * VolumePath::At(int i) const
@@ -196,6 +210,12 @@ public:
 	PhysicalVolume const *
 	LocatePoint_iterative(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, TransformationMatrix *, bool top=true) const;
 
+	/* a non-recursive version */
+	inline
+	__attribute__((always_inline))
+	PhysicalVolume const *
+	LocatePoint_iterative(PhysicalVolume const *, Vector3DFast const & globalpoint, Vector3DFast & localpoint, VolumePath &path, FastTransformationMatrix *, bool top=true) const;
+
 
 	PhysicalVolume const *
 	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, bool top=true) const;
@@ -216,6 +236,13 @@ public:
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
 	// we might need some more input here ( like the direction )
 	LocateLocalPointFromPath_Relative_Iterative(Vector3D const & point, Vector3D & localpoint, VolumePath & path, TransformationMatrix * ) const;
+
+
+	PhysicalVolume const *
+	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
+	// we might need some more input here ( like the direction )
+	LocateLocalPointFromPath_Relative_Iterative(Vector3DFast const & point, Vector3DFast & localpoint,
+			VolumePath & path, FastTransformationMatrix *) const;
 
 
 	// PhysicalVolume const *
@@ -245,6 +272,16 @@ public:
 				VolumePath & /*outpath*/,
 				Vector3D & /*newpoint*/,
 				double & ) const;
+
+	// new version using fast vectors
+	void FindNextBoundaryAndStep_iterative(
+					FastTransformationMatrix * /* globalm */,
+					Vector3DFast const & /*point*/,
+					Vector3DFast const & /*dir*/,
+					VolumePath const & /*inpath*/,
+					VolumePath & /*outpath*/,
+					Vector3DFast & /*newpoint*/,
+					double & ) const;
 
 
 	// vector interface
@@ -281,6 +318,47 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume 
 			{
 				PhysicalVolume const * nextvol=(*iter);
 				Vector3D transformedpoint;
+				if(nextvol->Contains(tmp, transformedpoint, globalm))
+				{
+					path.Push( nextvol );
+					// this is no longer the top ( so setting top to false )
+					tmp = transformedpoint;
+					candvolume = nextvol;
+					// we have found volume in this hierarchy, can go deeper and override daughterlist
+					dlist = candvolume->GetDaughters();
+					godeeper=true;
+					break;
+				}
+			}
+		}
+	}
+	// set localpoint
+	localpoint=tmp;
+	return candvolume;
+}
+
+inline
+PhysicalVolume const * SimpleVecNavigator::LocatePoint_iterative(PhysicalVolume const * vol,
+		Vector3DFast const & point, Vector3DFast & localpoint, VolumePath & path, FastTransformationMatrix * globalm, bool top) const
+{
+	PhysicalVolume const * candvolume = vol;
+	Vector3DFast tmp=point;
+
+	if( top ) candvolume = ( vol->UnplacedContains( point ) )? vol : 0;
+
+	if( candvolume )
+	{
+		path.Push( candvolume );
+		PhysicalVolume::DaughterContainer_t const * dlist = candvolume->GetDaughters();
+		PhysicalVolume::DaughterContainerConstIterator_t iter;
+		bool godeeper=true;
+		while( godeeper && dlist->size() > 0 )
+		{
+			godeeper=false;
+			for(iter=dlist->begin(); iter!=dlist->end(); iter++)
+			{
+				PhysicalVolume const * nextvol=(*iter);
+				Vector3DFast transformedpoint;
 				if(nextvol->Contains(tmp, transformedpoint, globalm))
 				{
 					path.Push( nextvol );
