@@ -10,7 +10,7 @@ CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp G
 CXX_HDR=PhysicalBox.h PhysicalTube.h PhysicalCone.h TransformationMatrix.h
 CXX_OBJS=$(addsuffix .cpp.o, $(basename $(CXX_SRC)))
 
-all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement TestPolyconeContains NavigationInBoxDetector TestTransformations
+all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement TestPolyconeContains NavigationInBoxDetector TestTransformations transTest
 
 %.cpp.o: %.cpp $(CXX_HDR)
 	@echo Compiling $<
@@ -27,8 +27,8 @@ TestPolyconeContains: objs Tests/TestPolyconeContains.cpp
 	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestPolyconeContains.cpp $(CXX_LIBS) -o bin/TestPolyconeContains
 
 TestTransformations: objs Tests/TestTransformations.cpp 
-	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestTransformations.cpp $(CXX_LIBS) -o bin/TestTransformations
-
+	@echo Building $@
+	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/TestTransformations.cpp $(CXX_LIBS) -o bin/TestTransformations
 
 CHEP13BenchmarkSpec: objs Tests/CHEP13BenchmarkSpecialMatrices.cpp 
 	@echo Building $@
@@ -39,7 +39,12 @@ CHEP13Benchmark_unspecplacement: objs Tests/CHEP13Benchmark_unspecializedplaceme
 	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/CHEP13Benchmark_unspecializedplacements.cpp $(CXX_LIBS) -o bin/CHEP13Benchmark_unspecplacement
 
 NavigationInBoxDetector: objs Tests/NavigationInBoxDetector.cpp 
-	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/NavigationInBoxDetector.cpp $(CXX_LIBS) -o bin/NavigationInBoxDetector
+	@echo Building $@
+	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/NavigationInBoxDetector.cpp $(CXX_LIBS) -o bin/NavigationInBoxDetector
+
+transTest: objs Tests/transTest.cpp
+	@echo Building $@
+	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.cpp.o Tests/transTest.cpp $(CXX_LIBS) -o bin/transTest
 
 clean:
 	@rm *.o

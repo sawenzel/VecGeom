@@ -64,9 +64,9 @@ int main()
 	rintermediatedirs.alloc(np);
 
 	double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *distancesROOTSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *distancesUSOLIDSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	// double *distancesROOTSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	// double *distancesUSOLIDSCALAR = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+	double *distances2 = (double *) _mm_malloc(3*np*sizeof(double), ALIGNMENT_BOUNDARY);
 	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
 	for(auto i=0;i<np;++i) steps[i] = Utils::kInfinity;
 
@@ -118,6 +118,17 @@ int main()
 	dirs.toPlainArray(plaindirtarray,np);
 
 	std::cerr << " Number of daughters " << world->GetNumberOfDaughters() << std::endl;
+	{
+	  Vector3D pos,dir;
+	  for(int ipt=0; ipt<np; ++ipt) {
+	    points.getAsVector(ipt,pos);
+	    dirs.getAsVector(ipt,dir);
+	    printf("Point %i: pos=(%f; %f; %f) dir=(%f; %f; %f)\n", ipt, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
+	    world->PrintDistToEachDaughter(pos,dir);
+	    world->PrintDistToEachDaughterROOT(pos,dir);
+	  }
+	}
+
 
 	// time performance for this placement ( we should probably include some random physical steps )
 
@@ -138,6 +149,7 @@ int main()
 	for(auto k=0;k<np;k++)
 	{
 		d0+=distances[k];
+		distances2[3*k] = distances[k];
 		distances[k]=Utils::kInfinity;
 	}
 
@@ -156,6 +168,7 @@ int main()
 	for(auto k=0;k<np;k++)
 	{
 		d1+=distances[k];
+		distances2[3*k+1] = distances[k];
 		distances[k]=Utils::kInfinity;
 	}
 
@@ -171,11 +184,22 @@ int main()
 	std::cerr << t3 <<" <-- Time for vecnav.DistToNextBoundaryUsingROOT"<< std::endl;
 	double d3;
 	for(auto k=0;k<np;k++)
-		{
-			d3+=distances[k];
-		}
-	std::cerr << d0 << " " << d1 << " " << d3 << std::endl;
+	{
+ 	    d3+=distances[k];
+	    distances2[3*k+2] = distances[k];
+	}
+	std::cerr <<"Comparing results: "<< d0 << " " << d1 << " " << d3 << std::endl;
 
+	std::cerr<<"Comparing individual measurements: Point#  distances(Vec,VecUnplVol,ROOT):\n";
+	for(auto k=0;k<np;++k) {
+	  if( fabs(distances2[3*k+2]-distances2[3*k]) > 0.1 ) {
+	    std::cerr <<"Point# "<< k <<':'
+		      <<' '<< distances2[3*k]
+		      <<' '<< distances2[3*k+1]
+		      <<' '<< distances2[3*k+2]
+		      << std::endl;
+	  }
+	}
 
 	//vecnav.DistToNextBoundaryUsingUnplacedVolumes( world, points, dirs, steps, distances, nextvolumes , np );
 	//( world, points, dirs,  );
