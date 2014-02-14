@@ -3,3 +3,6 @@ doc/
 io/
 obj/
 bin/
+*~
+*.o
+setmeup.sh
