@@ -182,6 +182,115 @@ public:
 	}
 
 	inline
+	__attribute__((always_inline))
+	// tricky operation since we have to care for the padded component
+	double Min() const
+	{
+		double d = internalVcmemory[0];
+/*
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+		{
+			base_t v = this->internalVcmemory.vector(i);
+			double m = v.min();
+			d = (d > m) ? m : d;
+		}
+*/
+		d = (internalVcmemory[1] < d )? internalVcmemory[1] : d;
+		d = (internalVcmemory[2] < d )? internalVcmemory[2] : d;
+		return d;
+	}
+
+
+	inline
+	__attribute__((always_inline))
+	// tricky operation since we have to care for the padded component
+	double MinButNotNegative() const
+	{
+		double d = internalVcmemory[0];
+	/*
+			for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+			{
+					base_t v = this->internalVcmemory.vector(i);
+				double m = v.min();
+				d = (d > m) ? m : d;
+			}
+	*/
+		d = (internalVcmemory[1] < d )? internalVcmemory[1] : d;
+		d = (internalVcmemory[2] < d )? internalVcmemory[2] : d;
+		return (d < 0)? 0 : d;
+	}
+
+	inline
+	static
+	__attribute__((always_inline))
+	// this should be made faster ( possibly with a vector multiplication and addition and using a mask vector )
+	Vector3DFast ChooseComponentsBasedOnCondition( Vector3DFast const & v1,
+			Vector3DFast const & v2, Vector3DFast const & conditionvector )
+	{
+		Vector3DFast tmp;
+		tmp.internalVcmemory[0] = (conditionvector.internalVcmemory[0] < 0)? v1.internalVcmemory[0] : v2.internalVcmemory[0];
+		tmp.internalVcmemory[1] = (conditionvector.internalVcmemory[1] < 0)? v1.internalVcmemory[1] : v2.internalVcmemory[1];
+		tmp.internalVcmemory[2] = (conditionvector.internalVcmemory[2] < 0)? v1.internalVcmemory[2] : v2.internalVcmemory[2];
+		return tmp;
+	}
+
+	inline
+	static
+	__attribute__((always_inline))
+	// this should be made faster ( possibly with a vector multiplication and addition and using a mask vector )
+	Vector3DFast ChooseComponentsBasedOnConditionFast( Vector3DFast const & v1,
+			Vector3DFast const & v2, Vector3DFast const & conditionvector )
+		{
+			Vector3DFast tmp;
+			for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+			{
+				base_t targetv = tmp.internalVcmemory.vector(i);
+				base_t v1c = v1.internalVcmemory.vector(i);
+				base_t v2c = v2.internalVcmemory.vector(i);
+
+				base_t condv = conditionvector.internalVcmemory.vector(i);
+				targetv = v2c;
+				targetv( condv < 0 ) = v1c;
+				tmp.internalVcmemory.vector(i)=targetv;
+			}
+			return tmp;
+		}
+
+
+	inline
+	static
+	__attribute__((always_inline))
+	Vector3DFast Min( Vector3DFast const & v1, Vector3DFast const & v2)
+	{
+		Vector3DFast tmp;
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+			{
+				base_t v1c = v1.internalVcmemory.vector(i);
+				base_t v2c = v2.internalVcmemory.vector(i);
+				tmp.internalVcmemory.vector(i)=Vc::min(v1c,v2c);
+			}
+		return tmp;
+	}
+
+	inline
+	static
+	__attribute__((always_inline))
+	// this should be templated and made more general ( for instance generalizing on condition )
+	bool ExistsIndexWhereBothComponentsPositive( Vector3DFast const & v1, Vector3DFast const & v2 )
+	{
+		// returns true of there exists an index i such that v1(i)>0 and v2(i)>0
+		// used for instance in box distancetoin
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+			{
+				base_t v1c = v1.internalVcmemory.vector(i);
+				base_t v2c = v2.internalVcmemory.vector(i);
+				mask_t m = v1c>0 && v2c>0;
+				if( ! m.isEmpty( ) ) return true;
+			}
+		return false;
+	}
+
+	inline
 	void
 	print() const
 	{
@@ -272,6 +381,15 @@ Vector3DFast const operator*(double lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(rhs);
 	tmp*=lhs;
+	return tmp;
+}
+
+
+inline
+Vector3DFast const operator/(Vector3DFast const & lhs, Vector3DFast const & rhs)
+{
+	Vector3DFast tmp(lhs);
+	tmp/=rhs;
 	return tmp;
 }
 

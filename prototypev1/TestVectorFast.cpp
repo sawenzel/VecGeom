@@ -2,6 +2,7 @@
 #include "Vector3D.h"
 #include <iostream>
 #include "Vc/vector.h"
+#include "TransformationMatrix.h"
 
 bool containsold( Vector3D const & point, Vector3D const & p ) 
 {
@@ -27,6 +28,184 @@ bool containsnew( Vector3DFast const & point, Vector3DFast const & p )
 {
   Vector3DFast tmp = point.Abs();
   return ! tmp.IsAnyLargerThan( p ); 
+}
+
+// these are some box things
+double safetyold( TransformationMatrix const * m, Vector3D const & boxp, Vector3D const & point )
+{
+	 double safe, safy, safz;
+	 Vector3D localPoint;
+	 m->MasterToLocal<1,-1>(point, localPoint);
+	 safe = boxp.x - std::fabs(localPoint.x);
+	 safy = boxp.y - std::fabs(localPoint.y);
+	 safz = boxp.z - std::fabs(localPoint.z);
+	 if (safy < safe) safe = safy;
+	 if (safz < safe) safe = safz;
+	 return safe;
+}
+
+
+double safetynew( FastTransformationMatrix const *m, Vector3DFast const & boxp, Vector3DFast const & point )
+{
+	 Vector3DFast localPoint;
+	 m->MasterToLocal(point, localPoint);
+	 Vector3DFast safe;
+	 safe = boxp - localPoint;
+	 return safe.Min();
+}
+
+double distancetooutold( Vector3D const & boxp, Vector3D const & point, Vector3D const & dir )
+{
+	 double s,smin,saf[6];
+	 double newpt[3];
+	 int i;
+	 saf[0] = boxp.x+newpt[0];
+	 saf[1] = boxp.x-newpt[0];
+	 saf[2] = boxp.y+newpt[1];
+	 saf[3] = boxp.y-newpt[1];
+	 saf[4] = boxp.z+newpt[2];
+	 saf[5] = boxp.z-newpt[2];
+
+	 // compute distance to surface
+	 smin=1E30;
+	 // loop over directions
+	 if (dir.x!=0)
+	 {
+		 // calculating with correct face of box
+		 s = (dir.x>0)? (saf[1]/dir.x) : (-saf[0]/dir.x);
+		 if (s < 0) return 0.0; // this is detecting pint outside?
+		 if (s < smin) smin = s;
+	 }
+
+	 if (dir.y!=0)
+	 {
+		 // calculating with correct face of box
+		 s = (dir.y>0)? (saf[3]/dir.y) : (-saf[2]/dir.y);
+		 if (s < 0) return 0.0; // this is detecting pint outside?
+		 if (s < smin) smin = s;
+	 }
+
+	 if (dir.y!=0)
+	 {
+		 // calculating with correct face of box
+		 s = (dir.z>0)? (saf[5]/dir.z) : (-saf[4]/dir.z);
+		 if (s < 0) return 0.0; // this is detecting pint outside?
+		 if (s < smin) smin = s;
+	 }
+	return smin;
+}
+
+
+double distancetooutnew( Vector3DFast const & boxp, Vector3DFast const & point, Vector3DFast const & dir )
+{
+	Vector3DFast safetyPlus = boxp + point;
+	Vector3DFast safetyMinus = boxp - point;
+	// gather right safeties
+	Vector3DFast rightSafeties = Vector3DFast::ChooseComponentsBasedOnCondition( safetyPlus, safetyMinus, dir );
+
+	Vector3DFast distances = rightSafeties / dir;
+	return distances.MinButNotNegative();
+}
+
+double distancetooutnew2( Vector3DFast const & boxp, Vector3DFast const & point, Vector3DFast const & dir )
+{
+	Vector3DFast safetyPlus = boxp + point;
+	Vector3DFast safetyMinus = boxp - point;
+	// gather right safeties
+	Vector3DFast rightSafeties = Vector3DFast::ChooseComponentsBasedOnConditionFast( safetyPlus, safetyMinus, dir );
+
+	Vector3DFast distances = rightSafeties / dir;
+	return distances.MinButNotNegative();
+}
+
+
+double distancetooutnew2WithSafety( Vector3DFast const & boxp, Vector3DFast const & point, Vector3DFast const & dir, double & safety )
+{
+	Vector3DFast safetyPlus = boxp + point;
+	Vector3DFast safetyMinus = boxp - point;
+	// gather right safeties
+	Vector3DFast rightSafeties = Vector3DFast::ChooseComponentsBasedOnConditionFast( safetyPlus, safetyMinus, dir );
+
+	Vector3DFast distances = rightSafeties / dir;
+	Vector3DFast safe = Vector3DFast::Min( safetyMinus, safetyPlus );
+	safety=safe.Min();
+	return distances.MinButNotNegative();
+}
+
+
+double distancetoinnew( Vector3DFast const & boxp, Vector3DFast const & point, Vector3DFast const & dir, double cPstep )
+{
+	const double delta = 1E-9;
+	// here we do the point transformation
+	//	Vector3D aPoint;
+    //	matrix->MasterToLocal<tid,rid>(x, aPoint);
+
+	//   aNormal.SetNull();
+	Vector3DFast safety = point.Abs() - boxp;
+	if ((safety.GetX() > cPstep) || (safety.GetY() > cPstep) || (safety.GetZ() > cPstep))
+			return 1E30;
+
+	// only here we do the directional transformation
+	Vector3D aDirection;
+	matrix->MasterToLocalVec<rid>(y, aDirection);
+
+	// Check if numerical inside
+
+	// not yet vectorized
+	bool outside = (safety.GetX() > 0) || (safety.GetY() > 0) || (safety.GetZ() > 0);
+
+	if ( !outside )
+	{
+/*
+		// this check has to be done again
+
+		// If point close to this surface, check against the normal
+			if ( safx > -delta ) {
+				return ( aPoint.x * aDirection.x > 0 ) ? Utils::kInfinity : 0.0;
+			}
+			if ( safy > -delta ) {
+				return ( aPoint.y * aDirection.y > 0 ) ? Utils::kInfinity : 0.0;
+			}
+			if ( safz > -delta ) {
+				return ( aPoint.z * aDirection.z > 0 ) ? Utils::kInfinity : 0.0;
+			}
+			// Point actually "deep" inside, return zero distance, normal un-defined
+			return 0.0;
+ */
+	}
+
+	// The point is really outside. Only axis with positive safety to be
+	// considered. Early exit on each axis if point and direction components
+	// have the same .sign.
+	double dist = 0.0;
+
+	// check any early return stuff ( because going away ) here:
+	Vector3DFast pointtimesdirection = point*dir;
+	if( Vector3DFast::ExistsIndexWhereBothComponentsPositive(safety, pointtimesdirection)) return Utils::kInfinity;
+
+	// compute distance to surfaces
+	Vector3DFast distv = safety/dir.Abs();
+
+	// compute target points ( needs some reshuffling )
+	// might be suboptimal for SSE or really scalar
+	Vector3DFast hitxyplane = point + distv.GetZ()*dir;
+
+	// the following could be made faster ( maybe ) by calculating the abs on the whole vector
+	if(    std::abs(hitxyplane.GetX()) < boxp.GetX()
+		&& std::abs(hitxyplane.GetY()) < boxp.GetY())
+		return distv.GetZ();
+
+	Vector3DFast hitxzplane = point + distv.GetY()*dir;
+	if(    std::abs(hitxzplane.GetX()) < boxp.GetX()
+		&& std::abs(hitxzplane.GetZ()) < boxp.GetZ())
+		return distv.GetY();
+
+	Vector3DFast hityzplane = point + distv.GetX()*dir;
+	if(	   std::abs(hityzplane.GetY()) < boxp.GetY()
+		&& std::abs(hityzplane.GetZ()) < boxp.GetZ())
+		return distv.GetX();
+
+	return Utils::kInfinity;
 }
 
 
@@ -122,7 +301,7 @@ int main()
 
   FastTransformationMatrix m(10,0,-10,34,0,45);
   m.print();
-  Vector3DFast a(1,1,1);
+  Vector3DFast a(10,2,1);
   Vector3DFast b(1,0,0);
   Vector3DFast tmp;
 
@@ -140,6 +319,8 @@ int main()
   Vector3DFast v=a;
   std::cerr << v << std::endl;
  
+  std::cerr << "min test:" << std::endl;
+  std::cerr << a.Min() << std::endl;
 
   return 1;
 }
