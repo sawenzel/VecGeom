@@ -236,7 +236,7 @@ void PhysicalVolume::PrintDistToEachDaughter( Vector3D const & point, Vector3D c
 	{
 		PhysicalVolume const * daughter = (*iter);
 		double dist = daughter->DistanceToIn( point, dir, Utils::kInfinity );
-		std::cerr << "\t distance to daughter " << counter << " is " << dist << std::endl;
+		if(dist<1.e29) std::cerr << "\t distance to daughter " << counter << " is " << dist << std::endl;
 		counter++;
 	}
 
@@ -257,7 +257,7 @@ void PhysicalVolume::PrintDistToEachDaughterROOT( Vector3D const & point, Vector
 		rm->MasterToLocal( &point.x, p );
 		rm->MasterToLocalVect( &dir.x, d );
 		double dist=daughter->DistFromOutside( p, d, 3, Utils::kInfinity, 0 );
-		std::cerr << "\t distance to daughter (ROOT) " << counter << " is " << dist << std::endl;
+		if(dist<1.e29) std::cerr << "\t distance to daughter (ROOT) " << counter << " is " << dist << std::endl;
 		counter++;
 	}
 }
@@ -275,7 +275,7 @@ void PhysicalVolume::PrintDistToEachDaughterUSOLID( Vector3D const & point, Vect
 		(*iter)->getMatrix()->MasterToLocal<1,-1>( point, p );
 		(*iter)->getMatrix()->MasterToLocalVec<-1>( dir, d );
 		double dist=daughter->DistanceToIn( reinterpret_cast<UVector3 const &>(p), reinterpret_cast<UVector3 const &>(d), Utils::kInfinity );
-		std::cerr << "\t distance to daughter (USOLID) " << counter << " is " << dist << std::endl;
+		if(dist<1.e29) std::cerr << "\t distance to daughter (USOLID) " << counter << " is " << dist << std::endl;
 		counter++;
 	}
 }

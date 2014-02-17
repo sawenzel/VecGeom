@@ -89,8 +89,8 @@ public:
 			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi, alongPhi1);
 			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi + dDPhi, alongPhi2);
 
-			normalPhi1.print();
-			normalPhi2.print();
+			// normalPhi1.print();
+			// normalPhi2.print();
 	};
 
 	//**** we save normals to phi - planes *****//

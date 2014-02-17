@@ -6,3 +6,5 @@ bin/
 *~
 *.o
 setmeup.sh
+makefile
+*.disable

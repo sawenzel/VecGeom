@@ -1,5 +1,5 @@
 /*
- * GeoManager_MakeTube.cpp
+ * GeoManager_MakeCone.cpp
  *
  *  Created on: Dec 13, 2013
  *      Author: swenzel
