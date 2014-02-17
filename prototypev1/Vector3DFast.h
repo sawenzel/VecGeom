@@ -27,13 +27,18 @@ private:
 	}
 
 public:
-	inline
-	Vector3DFast( ) : internalVcmemory() {
+	// references to the real memory
+	double & x;
+	double & y;
+	double & z;
 
-		}
+	inline
+	Vector3DFast( ) : internalVcmemory() , x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2])
+ {
+		 		}
 
 	inline
-	Vector3DFast( Vector3DFast const & rhs ) : internalVcmemory() {
+	Vector3DFast( Vector3DFast const & rhs ) : internalVcmemory(), x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2]) {
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 			{
 				this->internalVcmemory.vector(i)=rhs.internalVcmemory.vector(i);
@@ -42,7 +47,7 @@ public:
 
 
 	inline
-	Vector3DFast( double x,  double y,  double z) : internalVcmemory() {
+	Vector3DFast( double x,  double y,  double z) : internalVcmemory(), x(internalVcmemory[0]),	y(internalVcmemory[1]), z(internalVcmemory[2]) {
 			SetX(x);SetY(y);SetZ(z);
 		}
 
@@ -167,6 +172,28 @@ public:
 	inline void SetZ(double z)  {
 		internalVcmemory[2]=z;}
 
+
+	// operator[] in an unchecked option ( checked in debug mode )
+	inline
+	double & operator[](int index)
+	{
+#ifdef DEBUG
+		assert(index >0 );
+		assert(index <3 );
+#endif
+		return internalVcmemory[index];
+	}
+
+
+	inline
+	double const operator[](int index) const
+	{
+#ifdef DEBUG
+		assert(index >0 );
+		assert(index <3 );
+#endif
+		return internalVcmemory[index];
+	}
 
 	inline
 	__attribute__((always_inline))
