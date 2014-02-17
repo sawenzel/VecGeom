@@ -17,17 +17,9 @@
 
 #include <random>
 
-typedef std::mt19937 MyRNG;  // the Mersenne Twister with a popular choice of parameters
-static MyRNG rng(1);                   // e.g. keep one global instance (per thread)
+MyRNG rng(1);                   // e.g. keep one global instance (per thread)
 std::uniform_real_distribution<> udouble_dist(0,1);
 
-
-void PhysicalVolume::samplePoint( Vector3D & point, double dx, double dy, double dz, double scale )
-{
-	point.x=scale*(1-2.*udouble_dist(rng))*dx;
-    point.y=scale*(1-2.*udouble_dist(rng))*dy;
-    point.z=scale*(1-2.*udouble_dist(rng))*dz;
-}
 
 
 static void samplePointO( Vector3D & point, double dx, double dy, double dz, Vector3D const & origin, double scale )

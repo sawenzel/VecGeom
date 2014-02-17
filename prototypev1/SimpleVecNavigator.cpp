@@ -337,7 +337,7 @@ PhysicalVolume const * SimpleVecNavigator::LocatePoint(PhysicalVolume const * vo
 	// at the very end: do the matrix multiplications and caching of global matrices -- doing this in a loop will be icache friendly
 }
 
-
+/*
 PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath(
 		Vector3D const & point, Vector3D & localpoint, VolumePath const & oldpath, VolumePath & newpath, TransformationMatrix * globalm ) const
 {
@@ -350,7 +350,7 @@ PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath(
 	localpoint = globalpoint;
 	return LocatePoint( top, globalpoint, localpoint, newpath, globalm );
 }
-
+*/
 
 
 PhysicalVolume const * SimpleVecNavigator::LocateLocalPointFromPath_Relative(

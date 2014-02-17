@@ -220,11 +220,12 @@ public:
 	PhysicalVolume const *
 	LocatePoint(PhysicalVolume const *, Vector3D const & globalpoint, Vector3D & localpoint, VolumePath &path, bool top=true) const;
 
+	/*
 	PhysicalVolume const *
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )
 	// we might need some more input here ( like the direction )
-	LocateLocalPointFromPath(Vector3D const & point, Vector3D &,  VolumePath const & inpath, VolumePath & newpath, TransformationMatrix * ) const;
-
+	LocateLocatePointFromPath(Vector3D const & point, Vector3D &,  VolumePath const & inpath, VolumePath & newpath, TransformationMatrix * ) const;
+	*/
 
 	PhysicalVolume const *
 	// this location starts from the a localpoint in the reference frame of inpath.Top() to find the new location ( if any )

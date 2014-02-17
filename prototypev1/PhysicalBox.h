@@ -31,6 +31,23 @@ private:
 	Vector3DFast internalvector;
 
 public:
+	// for proper memory allocation on the heap
+	static 
+	void * operator new(std::size_t sz)
+	{
+	  std::cerr  << "overloaded new called for Boxparams" << std::endl; 
+	  void *aligned_buffer=_mm_malloc( sizeof(BoxParameters), 32 );
+	  return ::operator new(sz, aligned_buffer);
+	}
+
+	static
+	  void operator delete(void * ptr)
+	{
+	  _mm_free(ptr);
+	}
+
+
+
 	BoxParameters(double x,double y, double z) : dX(x), dY(y), dZ(z), internalvector() {
 		internalvector.SetX(dX);
 		internalvector.SetY(dY);
@@ -477,16 +494,12 @@ inline
 double PlacedBox<tid,rid>::DistanceToOut( Vector3DFast const & point, Vector3DFast const & dir, double step ) const
 {
 	Vector3DFast safetyPlus = boxparams->GetAsVector3DFast() + point;
-	std::cerr << safetyPlus << std::endl;
 	Vector3DFast safetyMinus = boxparams->GetAsVector3DFast() - point;
-	std::cerr << safetyMinus << std::endl;
 
 	// gather right safeties
 	Vector3DFast rightSafeties = Vector3DFast::ChooseComponentsBasedOnConditionFast( safetyPlus, safetyMinus, dir );
-	std::cerr << rightSafeties << std::endl;
 
-	Vector3DFast distances = rightSafeties / dir;
-	std::cerr << distances << std::endl;
+	Vector3DFast distances = rightSafeties / dir.Abs();
 	return distances.MinButNotNegative();
 }
 

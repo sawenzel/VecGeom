@@ -12,6 +12,8 @@
 #include "Vc/vector.h"
 #include "Vc/Memory"
 #include <iostream>
+#include <cassert>
+#include "mm_malloc.h"
 
 class Vector3DFast
 {
@@ -27,18 +29,45 @@ private:
 	}
 
 public:
-	// references to the real memory
+	// references providing a "view" to the real memory ( just for convenience and compatibility with old vector usage )
 	double & x;
 	double & y;
 	double & z;
 
+	// for proper memory allocation on the heap
+	static 
+	void * operator new(std::size_t sz)
+	{
+//	  std::cerr  << "overloaded new called" << std::endl;
+	  void *aligned_buffer=_mm_malloc( sizeof(Vector3DFast), 32 );
+	  return ::operator new(sz, aligned_buffer);
+	}
+
+	static
+	  void operator delete(void * ptr)
+	{
+	  // std::cerr << "overloaded delete" << std::endl;
+	  _mm_free(ptr);
+	}
+
+
 	inline
 	Vector3DFast( ) : internalVcmemory() , x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2])
- {
-		 		}
+	{
+		// assert alignment
+		void * a =  &internalVcmemory[0];
+	//	std::cerr << a << " " << ((long long) a) % 32L << std::endl;
+		assert( ((long long) a) % 32L == 0 );
+	}
 
 	inline
 	Vector3DFast( Vector3DFast const & rhs ) : internalVcmemory(), x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2]) {
+		//long long a = (long long) &internalVcmemory[0];
+		//std::cerr << a << a/32. << std::endl;
+		//	assert( a / 32. == 0 );
+		void * a =  &internalVcmemory[0];
+		//		std::cerr << a << " " << ((long long) a) % 32L << std::endl;
+		assert( ((long long) a) % 32L == 0 );
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 			{
 				this->internalVcmemory.vector(i)=rhs.internalVcmemory.vector(i);
@@ -48,6 +77,12 @@ public:
 
 	inline
 	Vector3DFast( double x,  double y,  double z) : internalVcmemory(), x(internalVcmemory[0]),	y(internalVcmemory[1]), z(internalVcmemory[2]) {
+		void * a =  &internalVcmemory[0];
+	//	std::cerr << a << " " << ((long long) a) % 32L << std::endl;
+		assert( ((long long) a) % 32L == 0 );
+		//long long a = (long long) &internalVcmemory[0];
+			//std::cerr << a/32. << std::endl;
+			//assert( a / 32. == 0 );
 			SetX(x);SetY(y);SetZ(z);
 		}
 
@@ -206,6 +241,19 @@ public:
 			tmp.internalVcmemory.vector(i) = Vc::abs( v );
 		}
 		return tmp;
+	}
+
+	inline
+	__attribute__((always_inline))
+	double Sum() const
+	{
+		double s=0.;
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+		{
+			base_t v = this->internalVcmemory.vector(i);
+			s+= v.sum( );
+		}
+		return s;
 	}
 
 	inline
@@ -497,6 +545,23 @@ private:
 
 
 public:
+	// for proper memory allocation on the heap
+	static 
+	void * operator new(std::size_t sz)
+	{
+	  std::cerr  << "overloaded new called for matrix" << std::endl; 
+	  void *aligned_buffer=_mm_malloc( sizeof(FastTransformationMatrix), 32 );
+	  return ::operator new(sz, aligned_buffer);
+	}
+
+	static
+	  void operator delete(void * ptr)
+	{
+	  // std::cerr << "overloaded delete" << std::endl;
+	  _mm_free(ptr);
+	}
+
+
 	FastTransformationMatrix() : trans(), rotcol1(), rotcol2(), rotcol3(),
 		rotrow1(), rotrow2(), rotrow3(), identity(false)
 	{};
@@ -587,7 +652,7 @@ public:
 	{
 		if(tid == 0) // no translation
 		{
-			if(rid==1296) // identity
+			if(rid == 1296) // identity
 			{
 				local=master;
 			}
@@ -600,11 +665,11 @@ public:
 		{
 			if(rid==1296)
 			{
-				local = master-trans;
+				local = master - trans;
 			}
 			else
 			{
-				Vector3DFast tmp=master-trans;
+				Vector3DFast tmp=master - trans;
 				local = tmp.GetX()*rotrow1 + tmp.GetY()*rotrow2 + tmp.GetZ()*rotrow3;
 			}
 		}

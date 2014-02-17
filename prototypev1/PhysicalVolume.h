@@ -22,6 +22,12 @@ class TGeoShape;
 
 class BoxParameters;
 
+#include <random>
+typedef std::mt19937 MyRNG;  // the Mersenne Twister with a popular choice of parameters
+
+extern MyRNG rng;
+extern std::uniform_real_distribution<> udouble_dist;
+
 // pure abstract class
 class PhysicalVolume
 {
@@ -39,7 +45,7 @@ protected:
 		TransformationMatrix const *matrix; // placement matrix with respect to containing volume
 
 		// just for comparision, we also keep a fastmatrix
-		FastTransformationMatrix *fastmatrix;
+		FastTransformationMatrix * fastmatrix;
 
 		// something like a logical volume id
 
@@ -60,21 +66,23 @@ protected:
 		// setting the daughter list
 		void SetDaughterList( DaughterContainer_t * l)
 		{
+			/*
 			if( daughters->size() > 0 )
 			{
 				std::cerr << " trying to set a new daughterlist while old one is already set " << std::endl;
 				std::cerr << " THIS IS LIKELY AN ERROR AND I AM REFUSING " << std::endl;
 			}
-			else
-			{
+			*/
+			//else
+			//{
 				daughters= l;
-			}
+			//}
 		}
 
 	public:
 		PhysicalVolume( TransformationMatrix const *m ) : matrix(m),
 			logicalvol(0), daughters(new DaughterContainer_t), bbox(0), analogoususolid(0), analogousrootsolid(0),
-			fastmatrix(new FastTransformationMatrix())
+			fastmatrix( new FastTransformationMatrix() )
 			{
 				fastmatrix->SetTrans( &matrix->trans[0] );
 				fastmatrix->SetRotation( &matrix->rot[0] );
@@ -228,8 +236,9 @@ protected:
 		static
 		void fillWithRandomDirections( Vectors3DSOA & dirs, int number );
 
+		template<typename VectorType>
 		static
-		void samplePoint( Vector3D & point, double dx, double dy, double dz, double scale );
+		void samplePoint( VectorType & point, double dx, double dy, double dz, double scale );
 
 		// give random directions satisfying the constraint that fraction of them hits a daughter boundary
 		// needs the positions as inputs
@@ -250,5 +259,13 @@ protected:
 
 };
 
+
+template<typename VectorType>
+void PhysicalVolume::samplePoint( VectorType & point, double dx, double dy, double dz, double scale )
+{
+	point.x=scale*(1-2.*udouble_dist(rng))*dx;
+    point.y=scale*(1-2.*udouble_dist(rng))*dy;
+    point.z=scale*(1-2.*udouble_dist(rng))*dz;
+}
 
 #endif /* PHYSICALVOLUME_H_ */
