@@ -319,8 +319,7 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 	   coord1=newpt[0]+snxt[2]*localdirx; // calculate new x and y coordinate
 	   coord2=newpt[1]+snxt[2]*localdiry;
 	   MaskType miss2 = saf[2] <= 0 | newpt[2]*localdirz >= 0 | ( Vc::abs(coord1) > par[0] | Vc::abs(coord2) > par[1] ); // if out and right direction
-	   // distance(!done && hit2 ) = snxt[2];
-
+	   distance(!done && !miss2 ) = snxt[2];
 
 	   distance(in)=Vc::Zero;
 	   return;
