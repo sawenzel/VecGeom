@@ -512,9 +512,10 @@ double PlacedBox<tid,rid>::DistanceToIn( Vector3DFast const & point, Vector3DFas
 	const double delta = 1E-9;
 	// here we do the point transformation
 	Vector3DFast localPoint;
-    fastmatrix->MasterToLocal<tid,rid>(point, localPoint);
+	fastmatrix->MasterToLocal<tid,rid>(point, localPoint);
 	//   aNormal.SetNull();
 	Vector3DFast safety = localPoint.Abs() - boxparams->GetAsVector3DFast();
+	
 	// check this::
 	if(safety.IsAnyLargerThan(cPstep))
 		return Utils::kInfinity;
@@ -530,24 +531,24 @@ double PlacedBox<tid,rid>::DistanceToIn( Vector3DFast const & point, Vector3DFas
 		std::cerr << "particle actually outside; not implemented " << std::endl;
 	}
 	// check any early return stuff ( because going away ) here:
-	Vector3DFast pointtimesdirection = point*dir;
+	Vector3DFast pointtimesdirection = localPoint*localDirection;
 	if( Vector3DFast::ExistsIndexWhereBothComponentsPositive(safety, pointtimesdirection)) return Utils::kInfinity;
 
 	// compute distance to surfaces
-	Vector3DFast distv = safety/dir.Abs();
+	Vector3DFast distv = safety/localDirection.Abs();
 
 	// compute target points ( needs some reshuffling )
 	// might be suboptimal for SSE or really scalar
-	Vector3DFast hitxyplane = point + distv.GetZ()*dir;
+	Vector3DFast hitxyplane = localPoint + distv.GetZ()*localDirection;
 	// the following could be made faster ( maybe ) by calculating the abs on the whole vector
 	if(    std::abs(hitxyplane.GetX()) < boxparams->GetDX()
 		&& std::abs(hitxyplane.GetY()) < boxparams->GetDY())
 		return distv.GetZ();
-	Vector3DFast hitxzplane = point + distv.GetY()*dir;
+	Vector3DFast hitxzplane = localPoint + distv.GetY()*localDirection;
 	if(    std::abs(hitxzplane.GetX()) < boxparams->GetDX()
 		&& std::abs(hitxzplane.GetZ()) < boxparams->GetDZ())
 		return distv.GetY();
-	Vector3DFast hityzplane = point + distv.GetX()*dir;
+	Vector3DFast hityzplane = localPoint + distv.GetX()*localDirection;
 	if(	   std::abs(hityzplane.GetY()) < boxparams->GetDY()
 		&& std::abs(hityzplane.GetZ()) < boxparams->GetDZ())
 		return distv.GetX();
