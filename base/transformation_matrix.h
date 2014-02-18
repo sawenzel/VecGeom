@@ -22,7 +22,6 @@ namespace translation {
   enum TranslationId { kOrigin = 0, kTranslation = 1 };
 }
 
-template <typename Precision>
 class TransformationMatrix {
 
 private:
@@ -433,10 +432,8 @@ public:
   }
 
 }; // End class TransformationMatrix
-template <TranslationCode trans_code, RotationCode rot_code, typename Precision>
-class SpecializedMatrix : public TransformationMatrix<Precision> {
-
-  typedef TransformationMatrix<Precision> GeneralMatrix;
+template <TranslationCode trans_code, RotationCode rot_code>
+class SpecializedMatrix : public TransformationMatrix {
 
   /**
    * \sa TransformationMatrix::Transform(Vector3D<InputType> const &,
@@ -447,9 +444,7 @@ class SpecializedMatrix : public TransformationMatrix<Precision> {
   VECGEOM_INLINE
   void Transform(Vector3D<InputType> const &master,
                  Vector3D<InputType> *const local) const {
-    GeneralMatrix::template Transform<trans_code, rot_code, InputType>(
-      master, local
-    );
+    this->Transform<trans_code, rot_code, InputType>(master, local);
   }
 
   /**
@@ -459,8 +454,7 @@ class SpecializedMatrix : public TransformationMatrix<Precision> {
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<InputType> Transform(Vector3D<InputType> const &master) const {
-    return GeneralMatrix::template Transform<trans_code, rot_code,
-                                             InputType>(master);
+    return this->Transform<trans_code, rot_code, InputType>(master);
   }
 
   /**
@@ -472,9 +466,7 @@ class SpecializedMatrix : public TransformationMatrix<Precision> {
   VECGEOM_INLINE
   void TransformRotation(Vector3D<InputType> const &master,
                          Vector3D<InputType> *const local) const {
-    GeneralMatrix::template TransformRotation<code, InputType>(
-      master, local
-    );
+    this->TransformRotation<code, InputType>(master, local);
   }
 
   /**
@@ -485,9 +477,7 @@ class SpecializedMatrix : public TransformationMatrix<Precision> {
   VECGEOM_INLINE
   Vector3D<InputType> TransformRotation(
       Vector3D<InputType> const &master) const {
-    return GeneralMatrix::template TransformRotation<code, InputType>(
-             master
-           );
+    return this->TransformRotation<code, InputType>(master);
   }
 
 };

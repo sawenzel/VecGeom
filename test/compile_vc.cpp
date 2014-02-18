@@ -9,21 +9,16 @@
 using namespace vecgeom;
 
 void foo() {
-  VcDouble scalar;
+  VcPrecision scalar;
   Vector3D<double> scalar_v;
-  Vector3D<VcDouble> vector_v;
-  SOA3D<VcDouble> soa;
-  TransformationMatrix<double> matrix;
+  Vector3D<VcPrecision> vector_v;
+  SOA3D<VcPrecision> soa;
+  TransformationMatrix matrix;
   VcBool output_inside;
-  VcDouble output_distance;
-  UnplacedBox<double> world_box = UnplacedBox<double>(scalar_v);
-  UnplacedBox<double> box = UnplacedBox<double>(scalar_v);
-  VLogicalVolume<double> world = VLogicalVolume<double>(world_box);
+  VcPrecision output_distance;
+  UnplacedBox world_unplaced = UnplacedBox(scalar_v);
+  UnplacedBox box_unplaced = UnplacedBox(scalar_v);
+  VLogicalVolume world = VLogicalVolume(world_unplaced);
+  VLogicalVolume box = VLogicalVolume(box_unplaced);
   world.PlaceDaughter(box, matrix);
-  BoxInside<translation::kOrigin, rotation::kIdentity, kVc>(
-    scalar_v, matrix, vector_v, &output_inside
-  );
-  BoxDistanceToIn<translation::kOrigin, rotation::kIdentity, kVc>(
-    scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
-  );
 }

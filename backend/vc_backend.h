@@ -10,47 +10,44 @@ namespace vecgeom {
 
 template <>
 struct Impl<kVc> {
-  typedef double       precision;
-  typedef Vc::int_v    int_v;
-  typedef Vc::double_v double_v;
-  typedef Vc::double_m bool_v;
+  typedef Vc::int_v                   int_v;
+  typedef Vc::Vector<Precision>       precision_v;
+  typedef Vc::Vector<Precision>::Mask bool_v;
   constexpr static bool early_returns = false;
-  const static double_v kOne;
-  const static double_v kZero;
+  const static precision_v kOne;
+  const static precision_v kZero;
   const static bool_v kTrue;
   const static bool_v kFalse;
 };
 
-constexpr int kVectorSize = Impl<kVc>::double_v::Size;
+constexpr int kVectorSize = Impl<kVc>::precision_v::Size;
 
-typedef Impl<kVc>::int_v    VcInt;
-typedef Impl<kVc>::double_v VcDouble;
-typedef Impl<kVc>::bool_v   VcBool;
+typedef Impl<kVc>::int_v       VcInt;
+typedef Impl<kVc>::precision_v VcPrecision;
+typedef Impl<kVc>::bool_v      VcBool;
 
-template <ImplType it = kVc, typename Type>
+template <typename Type>
 VECGEOM_INLINE
-void CondAssign(typename Impl<it>::bool_v const &cond,
+void CondAssign(VcBool const &cond,
                 Type const &thenval, Type const &elseval, Type *const output) {
   (*output)(cond) = thenval;
   (*output)(!cond) = elseval;
 }
 
-template <ImplType it = kVc, typename Type1, typename Type2>
+template <typename Type1, typename Type2>
 VECGEOM_INLINE
-void MaskedAssign(typename Impl<it>::bool_v const &cond,
+void MaskedAssign(VcBool const &cond,
                   Type1 const &thenval, Type2 *const output) {
   (*output)(cond) = thenval;
 }
 
-template <>
 VECGEOM_INLINE
-VcDouble Abs<kVc, VcDouble>(VcDouble const &val) {
+VcPrecision Abs(VcPrecision const &val) {
   return Vc::abs(val);
 }
 
-template <>
 VECGEOM_INLINE
-VcDouble Sqrt<kVc, VcDouble>(VcDouble const &val) {
+VcPrecision Sqrt(VcPrecision const &val) {
   return Vc::sqrt(val);
 }
 

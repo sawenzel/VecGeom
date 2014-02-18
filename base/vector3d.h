@@ -109,6 +109,63 @@ public:
   VECGEOM_INLINE
   Type const& z() const { return vec[2]; }
 
+  /**
+   * \return Length of the vector as sqrt(x^2 + y^2 + z^2).
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Length() const {
+    return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+  }
+
+  /**
+   * Normalizes the vector by dividing each entry by the length.
+   * \sa Vector3D::Length()
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void Normalize() {
+    *this /= Length();
+  }
+
+  /**
+   * Maps each vector entry to a function that manipulates the entry type.
+   * \param f A function of type "Type f(const Type&)" to map over entries.
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void Map(Type (*f)(const Type&)) {
+    vec[0] = f(vec[0]);
+    vec[1] = f(vec[1]);
+    vec[2] = f(vec[2]);
+  }
+
+  template <typename BoolType>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void MaskedAssign(Vector3D<BoolType> const &condition,
+                    Vector3D<Type> const &value) {
+    vec[0] = (condition[0]) ? value[0] : vec[0];
+    vec[1] = (condition[1]) ? value[1] : vec[1];
+    vec[2] = (condition[2]) ? value[2] : vec[2];
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Min() const {
+    Type min = (vec[1] < vec[0]) ? vec[1] : vec[0];
+    min = (vec[2] < min) ? vec[2] : min;
+    return min;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Max() const {
+    Type max = (vec[1] > vec[0]) ? vec[1] : vec[0];
+    max = (vec[2] > max) ? vec[2] : max;
+    return max;
+  }
+
   template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -252,6 +309,27 @@ public:
     return result;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<bool> operator<(VecType const &other) const {
+    Vector3D<bool> result;
+    result[0] = this->vec[0] < other.vec[0];
+    result[1] = this->vec[1] < other.vec[1];
+    result[2] = this->vec[2] < other.vec[2];
+    return result;
+  }
+
+  template <typename BoolType>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<bool> operator<(const Type other) const {
+    Vector3D<bool> result;
+    result[0] = this->vec[0] < other;
+    result[1] = this->vec[1] < other;
+    result[2] = this->vec[2] < other;
+    return result;
+  }
+
   #ifdef VECGEOM_STD_CXX11
   friend
   VECGEOM_INLINE
@@ -261,59 +339,29 @@ public:
   }
   #endif /* VECGEOM_STD_CXX11 */
 
-  /**
-   * \return Length of the vector as sqrt(x^2 + y^2 + z^2).
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Type Length() const {
-    return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
-  }
-
-  /**
-   * Normalizes the vector by dividing each entry by the length.
-   * \sa Vector3D::Length()
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void Normalize() {
-    *this /= Length();
-  }
-
-  /**
-   * Maps each vector entry to a function that manipulates the entry type.
-   * \param f A function of type "Type f(const Type&)" to map over entries.
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void Map(Type (*f)(const Type&)) {
-    vec[0] = f(vec[0]);
-    vec[1] = f(vec[1]);
-    vec[2] = f(vec[2]);
-  }
-
 };
 
 #ifdef VECGEOM_VC_ACCELERATION // Activated as a compiler flag
 
 template <>
-class Vector3D<double> {
+class Vector3D<Precision> {
 
-  typedef Vector3D<double> VecType;
+  typedef Vector3D<Precision> VecType;
+  typedef Vector3D<bool> BoolType;
 
 private:
 
-  Vc::Memory<Vc::double_v, 3> mem;
+  Vc::Memory<Vc::Vector<Precision>, 3> mem;
 
 public:
 
-  Vector3D(const double a, const double b, const double c) {
+  Vector3D(const Precision a, const Precision b, const Precision c) {
     mem[0] = a;
     mem[1] = b;
     mem[2] = c;
   }
 
-  Vector3D(const double a) {
+  Vector3D(const Precision a) {
     mem = a;
   }
 
@@ -335,32 +383,70 @@ public:
   }
 
   VECGEOM_INLINE
-  double& operator[](const int index) {
+  Precision& operator[](const int index) {
     return mem[index];
   }
 
   VECGEOM_INLINE
-  double const& operator[](const int index) const {
+  const Precision& operator[](const int index) const {
     return mem[index];
   }
 
   VECGEOM_INLINE
-  double& x() { return mem[0]; }
+  Precision& x() { return mem[0]; }
 
   VECGEOM_INLINE
-  double const& x() const { return mem[0]; }
+  const Precision& x() const { return mem[0]; }
 
   VECGEOM_INLINE
-  double& y() { return mem[1]; }
+  Precision& y() { return mem[1]; }
 
   VECGEOM_INLINE
-  double const& y() const { return mem[1]; }
+  const Precision& y() const { return mem[1]; }
 
   VECGEOM_INLINE
-  double& z() { return mem[2]; }
+  Precision& z() { return mem[2]; }
 
   VECGEOM_INLINE
-  double const& z() const { return mem[2]; }
+  const Precision& z() const { return mem[2]; }
+
+  VECGEOM_INLINE
+  Precision Length() const {
+    return sqrt(mem[0]*mem[0] + mem[1]*mem[1] + mem[2]*mem[2]);
+  }
+
+  VECGEOM_INLINE
+  void Normalize() {
+    *this /= Length();
+  }
+
+  VECGEOM_INLINE
+  void Map(Precision (*f)(const Precision&)) {
+    mem[0] = f(mem[0]);
+    mem[1] = f(mem[1]);
+    mem[2] = f(mem[2]);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void MaskedAssign(Vector3D<bool> const &condition,
+                    Vector3D<Precision> const &value) {
+    mem[0] = (condition[0]) ? value[0] : mem[0];
+    mem[1] = (condition[1]) ? value[1] : mem[1];
+    mem[2] = (condition[2]) ? value[2] : mem[2];
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision Min() const {
+    return std::min(std::min(mem[0], mem[1]), mem[2]);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision Max() const {
+    return std::max(std::max(mem[0], mem[1]), mem[2]);
+  }
 
   template <typename TypeOther>
   VECGEOM_INLINE
@@ -370,7 +456,7 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType& operator+=(double const &scalar) {
+  VecType& operator+=(const Precision scalar) {
     this->mem += scalar;
     return *this;
   }
@@ -383,7 +469,7 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType& operator-=(double const &scalar) {
+  VecType& operator-=(const Precision scalar) {
     this->mem -= scalar;
     return *this;
   }
@@ -396,7 +482,7 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType& operator*=(double const &scalar) {
+  VecType& operator*=(const Precision scalar) {
     this->mem *= scalar;
     return *this;
   }
@@ -409,8 +495,8 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType& operator/=(double const &scalar) {
-    const double inverse = 1.0 / scalar;
+  VecType& operator/=(const Precision scalar) {
+    const Precision inverse = 1.0 / scalar;
     *this *= inverse;
     return *this;
   }
@@ -424,7 +510,7 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType operator+(double const &scalar) const {
+  VecType operator+(const Precision scalar) const {
     VecType result(*this);
     result += scalar;
     return result;
@@ -439,7 +525,7 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType operator-(double const &scalar) const {
+  VecType operator-(const Precision scalar) const {
     VecType result(*this);
     result -= scalar;
     return result;
@@ -454,7 +540,7 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType operator*(double const &scalar) const {
+  VecType operator*(const Precision scalar) const {
     VecType result(*this);
     result *= scalar;
     return result;
@@ -469,10 +555,81 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType operator/(double const &scalar) const {
+  VecType operator/(const Precision scalar) const {
     VecType result(*this);
     result /= scalar;
     return result;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator<(VecType const &rhs) const {
+    return this->mem < rhs.mem;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator<(const Precision scalar) const {
+    Vector3D<Precision> rhs(scalar);
+    return this->mem < rhs.mem;
+  }
+
+
+  VECGEOM_INLINE
+  BoolType operator>(VecType const &rhs) const {
+    return this->mem > rhs.mem;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator>(const Precision scalar) const {
+    Vector3D<Precision> rhs(scalar);
+    return this->mem > rhs.mem;
+  }
+
+
+  VECGEOM_INLINE
+  BoolType operator<=(VecType const &rhs) const {
+    return this->mem <= rhs.mem;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator<=(const Precision scalar) const {
+    Vector3D<Precision> rhs(scalar);
+    return this->mem <= rhs.mem;
+  }
+
+
+  VECGEOM_INLINE
+  BoolType operator>=(VecType const &rhs) const {
+    return this->mem >= rhs.mem;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator>=(const Precision scalar) const {
+    Vector3D<Precision> rhs(scalar);
+    return this->mem >= rhs.mem;
+  }
+
+
+  VECGEOM_INLINE
+  BoolType operator==(VecType const &rhs) const {
+    return this->mem == rhs.mem;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator==(const Precision scalar) const {
+    Vector3D<Precision> rhs(scalar);
+    return this->mem == rhs.mem;
+  }
+
+
+  VECGEOM_INLINE
+  BoolType operator!=(VecType const &rhs) const {
+    return this->mem != rhs.mem;
+  }
+
+  VECGEOM_INLINE
+  BoolType operator!=(const Precision scalar) const {
+    Vector3D<Precision> rhs(scalar);
+    return this->mem != rhs.mem;
   }
 
   #ifdef VECGEOM_STD_CXX11
@@ -483,23 +640,6 @@ public:
     return os;
   }
   #endif /* VECGEOM_STD_CXX11 */
-
-  VECGEOM_INLINE
-  double Length() const {
-    return sqrt(mem[0]*mem[0] + mem[1]*mem[1] + mem[2]*mem[2]);
-  }
-
-  VECGEOM_INLINE
-  void Normalize() {
-    *this /= Length();
-  }
-
-  VECGEOM_INLINE
-  void Map(double (*f)(const double&)) {
-    mem[0] = f(mem[0]);
-    mem[1] = f(mem[1]);
-    mem[2] = f(mem[2]);
-  }
 
 };
 

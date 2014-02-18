@@ -6,22 +6,13 @@
 using namespace vecgeom;
 
 int main() {
-  double scalar = 0;
   Vector3D<double> scalar_v;
-  Vector3D<double> vector_v;
   SOA3D<double> soa;
-  TransformationMatrix<double> matrix;
-  ScalarBool output_inside;
-  double output_distance;
-  UnplacedBox<double> world_box = UnplacedBox<double>(scalar_v);
-  UnplacedBox<double> box = UnplacedBox<double>(scalar_v);
-  VLogicalVolume<double> world = VLogicalVolume<double>(world_box);
+  TransformationMatrix matrix;
+  UnplacedBox world_unplaced = UnplacedBox(scalar_v);
+  UnplacedBox box_unplaced = UnplacedBox(scalar_v);
+  VLogicalVolume world = VLogicalVolume(world_unplaced);
+  VLogicalVolume box = VLogicalVolume(box_unplaced);
   world.PlaceDaughter(box, matrix);
-  BoxInside<translation::kOrigin, rotation::kIdentity, kScalar>(
-    scalar_v, matrix, vector_v, &output_inside
-  );
-  BoxDistanceToIn<translation::kOrigin, rotation::kIdentity, kScalar>(
-    scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
-  );
   return 0;
 }

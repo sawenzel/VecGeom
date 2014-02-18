@@ -14,24 +14,16 @@ class Vector3D;
 template <typename Type>
 class SOA3D;
 
-template <typename Precision>
 class VLogicalVolume;
 
-template <typename Precision>
 class VPlacedVolume;
 
-#ifdef VECGEOM_STD_CXX11
-template<typename Precision>
-using VUSolid = VPlacedVolume<Precision>;
-#endif
+typedef VPlacedVolume VUSolid;
 
-template <typename Precision>
 class VUnplacedVolume;
 
-template <typename Type>
 class TransformationMatrix;
 
-template <typename Precision>
 class GeoManager;
 
 } // End namespace vecgeom

@@ -3,7 +3,6 @@
 
 namespace vecgeom {
 
-template <typename Precision>
 class VUnplacedVolume {};
 
 } // End namespace vecgeom

@@ -9,20 +9,19 @@ namespace vecgeom {
 
 template <>
 struct Impl<kCuda> {
-  typedef double precision;
-  typedef int    int_v;
-  typedef double double_v;
-  typedef bool bool_v;
+  typedef int       int_v;
+  typedef Precision precision_v;
+  typedef bool      bool_v;
   const static bool early_returns = false;
-  const static double_v kOne = 1.0;
-  const static double_v kZero = 0.0;
+  const static precision_v kOne = 1.0;
+  const static precision_v kZero = 0.0;
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
 };
 
-typedef Impl<kCuda>::int_v    CudaInt;
-typedef Impl<kCuda>::double_v CudaDouble;
-typedef Impl<kCuda>::bool_v   CudaBool;
+typedef Impl<kCuda>::int_v       CudaInt;
+typedef Impl<kCuda>::precision_v CudaPrecision;
+typedef Impl<kCuda>::bool_v      CudaBool;
 
 static const int kThreadsPerBlock = 256;
 
@@ -87,33 +86,33 @@ void CopyFromGPU(Type const * const src, Type *const tgt, const int count) {
 
 // Microkernels
 
-template <ImplType it, typename Type>
-VECGEOM_CUDA_HEADER_DEVICE
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void CondAssign(typename Impl<it>::bool_v const &cond,
+void CondAssign(const bool cond,
                 Type const &thenval, Type const &elseval, Type *const output) {
   *output = (cond) ? thenval : elseval;
 }
 
-template <ImplType it, typename Type1, typename Type2>
-VECGEOM_CUDA_HEADER_DEVICE
+template <typename Type1, typename Type2>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void MaskedAssign(typename Impl<it>::bool_v const &cond,
+void MaskedAssign(const bool cond,
                   Type1 const &thenval, Type2 *const output) {
   *output = (cond) ? thenval : *output;
 }
 
-template <>
-VECGEOM_CUDA_HEADER_DEVICE
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-CudaDouble Abs<kCuda, CudaDouble>(CudaDouble const &val) {
+Type Abs(Type const &val) {
   return fabs(val);
 }
 
-template <>
-VECGEOM_CUDA_HEADER_DEVICE
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-CudaDouble Sqrt<kCuda, CudaDouble>(CudaDouble const &val) {
+Type Sqrt(Type const &val) {
   return sqrt(val);
 }
 

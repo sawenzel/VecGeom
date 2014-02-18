@@ -110,6 +110,8 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_OPT}")
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
+set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp)
+
 if (SRC_CPP)
   add_library(vecgeom_cpp STATIC ${SRC_CPP})
   set(LIBS ${LIBS} vecgeom_cpp)

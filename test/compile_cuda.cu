@@ -10,13 +10,13 @@ using namespace vecgeom;
 
 __device__
 void compile_cuda() {
-  CudaDouble scalar;
+  CudaPrecision scalar;
   Vector3D<double> scalar_v;
-  Vector3D<CudaDouble > vector_v;
-  SOA3D<CudaDouble> soa;
-  TransformationMatrix<double> matrix;
+  Vector3D<CudaPrecision> vector_v;
+  SOA3D<CudaPrecision> soa;
+  TransformationMatrix matrix;
   CudaBool output_inside;
-  CudaDouble output_distance;
+  CudaPrecision output_distance;
   BoxInside<translation::kOrigin, rotation::kIdentity, kCuda>(
     scalar_v, matrix, vector_v, &output_inside
   );

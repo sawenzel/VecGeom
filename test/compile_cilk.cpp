@@ -9,21 +9,16 @@
 using namespace vecgeom;
 
 void compile_cilk() {
-  CilkDouble scalar;
+  CilkPrecision scalar;
   Vector3D<double> scalar_v;
-  Vector3D<CilkDouble> vector_v;
-  SOA3D<CilkDouble> soa;
-  TransformationMatrix<double> matrix;
+  Vector3D<CilkPrecision> vector_v;
+  SOA3D<CilkPrecision> soa;
+  TransformationMatrix matrix;
   CilkBool output_inside;
-  CilkDouble output_distance;
-  UnplacedBox<double> world_box = UnplacedBox<double>(scalar_v);
-  UnplacedBox<double> box = UnplacedBox<double>(scalar_v);
-  VLogicalVolume<double> world = VLogicalVolume<double>(world_box);
+  CilkPrecision output_distance;
+  UnplacedBox world_unplaced = UnplacedBox(scalar_v);
+  UnplacedBox box_unplaced = UnplacedBox(scalar_v);
+  VLogicalVolume world = VLogicalVolume(world_unplaced);
+  VLogicalVolume box = VLogicalVolume(box_unplaced);
   world.PlaceDaughter(box, matrix);
-  BoxInside<translation::kOrigin, rotation::kIdentity, kCilk>(
-    scalar_v, matrix, vector_v, &output_inside
-  );
-  BoxDistanceToIn<translation::kOrigin, rotation::kIdentity, kCilk>(
-    scalar_v, matrix, vector_v, vector_v, scalar, &output_distance
-  );
 }

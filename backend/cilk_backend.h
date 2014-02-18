@@ -11,25 +11,24 @@ namespace vecgeom {
 // Need a way to detect this... Don't want to include Vc just for this!
 constexpr int kVectorSize = 4;
 
-template <typename Type = double, int vec_size = kVectorSize>
+template <typename Type = Precision, int vec_size = kVectorSize>
 struct CilkVector;
 
 template <>
 struct Impl<kCilk> {
-  typedef double             precision;
-  typedef CilkVector<int>    int_v;
-  typedef CilkVector<double> double_v;
-  typedef CilkVector<bool>   bool_v;
+  typedef CilkVector<int>       int_v;
+  typedef CilkVector<Precision> precision_v;
+  typedef CilkVector<bool>      bool_v;
   constexpr static bool early_returns = false;
-  const static double_v kOne;
-  const static double_v kZero;
+  const static precision_v kOne;
+  const static precision_v kZero;
   const static bool_v kTrue;
   const static bool_v kFalse;
 };
 
-typedef Impl<kCilk>::int_v    CilkInt;
-typedef Impl<kCilk>::double_v CilkDouble;
-typedef Impl<kCilk>::bool_v   CilkBool;
+typedef Impl<kCilk>::int_v       CilkInt;
+typedef Impl<kCilk>::precision_v CilkPrecision;
+typedef Impl<kCilk>::bool_v      CilkBool;
 
 /**
  * Wrapper struct to allow arithmetic operations to be performed using the Cilk
@@ -353,9 +352,9 @@ public:
  * Currently only implemented for then/else-values which are Cilk vectors.
  * Should probably support scalar assignments as well.
  */
-template <ImplType it = kCilk, typename Type>
+template <typename Type>
 VECGEOM_INLINE
-void CondAssign(typename Impl<it>::bool_v const &cond,
+void CondAssign(CilkBool const &cond,
                 Type const &thenval, Type const &elseval, Type *const output) {
   if (cond.vec[:]) {
     output->vec[:] = thenval.vec[:];
@@ -368,27 +367,25 @@ void CondAssign(typename Impl<it>::bool_v const &cond,
  * Currently only implemented for then/else-values which are Cilk vectors.
  * Should probably support scalar assignments as well.
  */
-template <ImplType it = kCilk, typename Type1, typename Type2>
+template <typename Type1, typename Type2>
 VECGEOM_INLINE
-void MaskedAssign(typename Impl<it>::bool_v const &cond,
+void MaskedAssign(CilkBool const &cond,
                   Type1 const &thenval, Type2 *const output) {
   if (cond.vec[:]) {
     output->vec[:] = thenval.vec[:];
   }
 }
 
-template <>
 VECGEOM_INLINE
-CilkDouble Abs<kCilk, CilkDouble>(CilkDouble const &val) {
-  CilkDouble result;
+CilkPrecision Abs(CilkPrecision const &val) {
+  CilkPrecision result;
   result.Map(std::fabs);
   return result;
 }
 
-template <>
 VECGEOM_INLINE
-CilkDouble Sqrt<kCilk, CilkDouble>(CilkDouble const &val) {
-  CilkDouble result;
+CilkPrecision Sqrt(CilkPrecision const &val) {
+  CilkPrecision result;
   result.Map(std::sqrt);
   return result;
 }

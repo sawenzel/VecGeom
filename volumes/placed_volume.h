@@ -4,10 +4,10 @@
 #include "base/types.h"
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
+#include "volumes/logical_volume.h"
 
 namespace vecgeom {
 
-template <typename Precision>
 class VPlacedVolume {
 
 private:
@@ -16,26 +16,36 @@ private:
 
 protected:
 
-  VUnplacedVolume<Precision> const &unplaced_volume_;
-  TransformationMatrix<Precision> const &matrix_;
+  VLogicalVolume const &logical_volume_;
+  TransformationMatrix const &matrix_;
 
 public:
 
-  VPlacedVolume(VUnplacedVolume<Precision> const &unplaced_volume__,
-                TransformationMatrix<Precision> const &matrix__)
-      : unplaced_volume_(unplaced_volume__), matrix_(matrix__) {
-    id = GeoManager<Precision>::Instance().RegisterVolume(this);
+  VPlacedVolume(VLogicalVolume const &logical_volume__,
+                TransformationMatrix const &matrix__)
+      : logical_volume_(logical_volume__), matrix_(matrix__) {
+    id = GeoManager::Instance().RegisterVolume(this);
   }
 
   ~VPlacedVolume() {
-    GeoManager<Precision>::Instance().DeregisterVolume(this);
+    GeoManager::Instance().DeregisterVolume(this);
   }
 
-  VLogicalVolume<Precision> const& unplaced_volume() const {
-    return unplaced_volume_;
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VLogicalVolume const &logical_volume() const {
+    return logical_volume_;
   }
 
-  TransformationMatrix<Precision> const& matrix() const {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VUnplacedVolume const& unplaced_volume() const {
+    return logical_volume().unplaced_volume();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  TransformationMatrix const& matrix() const {
     return matrix_;
   }
 

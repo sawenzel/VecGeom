@@ -19,6 +19,7 @@
 #endif
 
 #ifdef __INTEL_COMPILER
+  #define VECGEOM_INTEL
   #define VECGEOM_INLINE inline
 #else
   #ifndef VECGEOM_CUDA
@@ -36,6 +37,12 @@
 #endif
 
 namespace vecgeom {
+
+#ifdef VECGEOM_FLOAT_PRECISION
+typedef float Precision;
+#else
+typedef double Precision;
+#endif
 
 const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;
