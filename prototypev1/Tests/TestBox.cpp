@@ -41,6 +41,38 @@ static void cmpresults(double * a1, double * a2, int np)
 	}
 }
 
+double test1( PhysicalVolume const *v, Vectors3DSOA const & p )
+{
+	double s=0.;
+	Vector3D told;
+	for(int n=0;n<10000;n++)
+		{
+			for(int i=0;i<1024;i++)
+			{
+				Vector3D tmp = p.getAsVector(i);
+				v->getMatrix()->MasterToLocal<1,-1>(tmp, told);
+				s+=told[0];
+			}
+		}
+	return s;
+}
+
+double test2( PhysicalVolume const *v, Vectors3DSOA const & p )
+{
+	Vector3DFast t;
+	double s=0.;
+	for(int n=0;n<10000;n++)
+		{
+		for(int i=0;i<1024;i++)
+			   {
+			    Vector3D tmp = p.getAsVector(i);
+			    Vector3DFast x(tmp.x, tmp.y, tmp.z);
+			    v->getFastMatrix()->MasterToLocal<1,-1>(x, t);
+			    s+=t[0];
+			   }
+		}
+	return s;
+}
 
 int main()
 {
@@ -50,6 +82,8 @@ int main()
   points.alloc(np);
   dirs.alloc(np);
   pointsforcontains.alloc(np);
+
+  Vector3DFast * fastpoints = new Vector3DFast[np];
 
   double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
   double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
@@ -64,7 +98,7 @@ int main()
   TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
   PhysicalVolume * world = GeoManager::MakePlacedBox(new BoxParameters(30,30,30), identity);
 
-  PhysicalVolume * daughter = GeoManager::MakePlacedBox(new BoxParameters(10,15,20), new TransformationMatrix(0,0,0,0,0,0));
+  PhysicalVolume * daughter = GeoManager::MakePlacedBox(new BoxParameters(10,15,20), new TransformationMatrix(0,0,0,0,0,45.));
   world->AddDaughter(daughter);
   
   world->fillWithRandomPoints(points,np);
@@ -219,7 +253,6 @@ int main()
 	std::cerr << "old time contains " << timer.getDeltaSecs() << std::endl;
 
 
-
 	s=0.;
 	timer.Start();
 	for(int n=0;n<10000;n++)
@@ -233,6 +266,38 @@ int main()
 	  }
 	timer.Stop();
 	std::cerr << "new time " << timer.getDeltaSecs() << std::endl;
+
+	Vector3D told;
+	s=0.;
+	timer.Start();
+	for(int n=0;n<10000;n++)
+	{
+		for(int i=0;i<np;i++)
+		{
+			Vector3D tmp = pointsforcontains.getAsVector(i);
+			daughter->getMatrix()->MasterToLocal<1,-1>(tmp, told);
+			s+=told[0];
+		}
+	}
+	timer.Stop();
+	std::cerr << "old time matrix" << timer.getDeltaSecs() << " " << s << std::endl;
+
+
+	Vector3DFast t;
+	s=0.;
+	timer.Start();
+	for(int n=0;n<10000;n++)
+	{
+	for(int i=0;i<np;i++)
+		   {
+		    Vector3D tmp = pointsforcontains.getAsVector(i);
+		    Vector3DFast x(tmp.x, tmp.y, tmp.z);
+		    daughter->getFastMatrix()->MasterToLocal<1,-1>(x, t);
+		    s+=t[0];
+		   }
+	}
+	timer.Stop();
+	std::cerr << "new time matrix" << timer.getDeltaSecs() << " " << s << std::endl;
 
 	_mm_free(distances);
 	return 1;

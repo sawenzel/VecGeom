@@ -142,8 +142,8 @@ public:
 	{
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 		{
-			base_t v1 = rhs.internalVcmemory.vector(i);
 #ifdef VECTORDEBUG
+			base_t v1 = rhs.internalVcmemory.vector(i);
 			std::cerr << "assigning " << v1 << std::endl;
 #endif
 			this->internalVcmemory.vector(i)=rhs.internalVcmemory.vector(i);
@@ -199,7 +199,7 @@ public:
 
 	inline 
 	__attribute__((always_inline))
-double GetY() const {
+	double GetY() const {
 		return internalVcmemory[ 1 ];
 	}
 
@@ -538,6 +538,14 @@ std::ostream& operator<<( std::ostream& stream, Vector3DFast const & vec )
 	return stream;
 }
 
+
+
+extern Vector3DFast gZeroVector3DFast;
+extern Vector3DFast gXVector3DFast;
+extern Vector3DFast gYVector3DFast;
+extern Vector3DFast gZVector3DFast;
+
+
 // to try something with Vc memory
 // note: this is a class which should work optimally with vector instructions sets >= AVX
 // at the moment this might produce worse performance on SSE
@@ -646,24 +654,13 @@ public:
 	inline
 	void SetToIdentity(){
 		// this has to be done eventually with some global const vectors to reduce the number of moves
-		trans.SetX(0);
-		trans.SetY(0);
-		trans.SetZ(0);
-
-		rotrow1.SetX(1.);
-		rotrow1.SetY(0.);
-		rotrow1.SetZ(0.);
-
-		rotrow2.SetX(0.);
-		rotrow2.SetY(1.);
-		rotrow2.SetZ(0.);
-
-		rotrow3.SetX(0.);
-		rotrow3.SetY(0.);
-		rotrow3.SetZ(1.);
-
-		columnupdate();
-
+		trans = gZeroVector3DFast;
+		rotrow1 = gXVector3DFast;
+		rotcol1 = gXVector3DFast;
+		rotrow2 = gYVector3DFast;
+		rotcol2 = gYVector3DFast;
+		rotrow3 = gZVector3DFast;
+		rotcol3 = gZVector3DFast;
 		identity=true;
 	};
 
@@ -797,5 +794,6 @@ public:
 		}
 	}
 };
+
 
 #endif /* VECTOR3DFAST_H_ */
