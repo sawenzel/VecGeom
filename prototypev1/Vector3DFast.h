@@ -23,6 +23,7 @@ private:
 	Vc::Memory<base_t, 3 > internalVcmemory;
 
 	inline
+	__attribute__((always_inline))
 	void SetVector(int i, Vc::Vector<double > const & v)
 	{
 		internalVcmemory.vector(i)=v;
@@ -52,22 +53,24 @@ public:
 
 
 	inline
+	__attribute__((always_inline))
 	Vector3DFast( ) : internalVcmemory() , x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2])
 	{
 		// assert alignment
-		void * a =  &internalVcmemory[0];
+	  //	void * a =  &internalVcmemory[0];
 	//	std::cerr << a << " " << ((long long) a) % 32L << std::endl;
-		assert( ((long long) a) % 32L == 0 );
+	//	assert( ((long long) a) % 32L == 0 );
 	}
 
 	inline
+	__attribute__((always_inline))
 	Vector3DFast( Vector3DFast const & rhs ) : internalVcmemory(), x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2]) {
 		//long long a = (long long) &internalVcmemory[0];
 		//std::cerr << a << a/32. << std::endl;
 		//	assert( a / 32. == 0 );
-		void * a =  &internalVcmemory[0];
+	  //	void * a =  &internalVcmemory[0];
 		//		std::cerr << a << " " << ((long long) a) % 32L << std::endl;
-		assert( ((long long) a) % 32L == 0 );
+		//	assert( ((long long) a) % 32L == 0 );
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 			{
 				this->internalVcmemory.vector(i)=rhs.internalVcmemory.vector(i);
@@ -76,10 +79,11 @@ public:
 
 
 	inline
+	__attribute__((always_inline))
 	Vector3DFast( double x,  double y,  double z) : internalVcmemory(), x(internalVcmemory[0]),	y(internalVcmemory[1]), z(internalVcmemory[2]) {
-		void * a =  &internalVcmemory[0];
+	  //	void * a =  &internalVcmemory[0];
 	//	std::cerr << a << " " << ((long long) a) % 32L << std::endl;
-		assert( ((long long) a) % 32L == 0 );
+		//		assert( ((long long) a) % 32L == 0 );
 		//long long a = (long long) &internalVcmemory[0];
 			//std::cerr << a/32. << std::endl;
 			//assert( a / 32. == 0 );
@@ -183,33 +187,44 @@ public:
 		return s.sum();
 	}
 
-
+	__attribute__((always_inline))
 	inline double GetX() const {
 		return internalVcmemory[ 0 ];
 	}
 
-	inline double GetY() const {
+	inline 
+	__attribute__((always_inline))
+double GetY() const {
 		return internalVcmemory[ 1 ];
 	}
 
-	inline double GetZ() const {
+	inline 
+	__attribute__((always_inline))	 
+ double GetZ() const {
 		return internalVcmemory[ 2 ];
 
 		//return internalVcmemory.vector( 2 / Vc::Vector<double>::Size  )[ 2 % Vc::Vector<double>::Size ];
 	}
 
-	inline void SetX(double x)  {
+	inline 
+	__attribute__((always_inline))	  
+void SetX(double x)  {
 		internalVcmemory[0]=x;}
 
-	inline void SetY(double y)  {
+	inline 
+	__attribute__((always_inline))
+void SetY(double y)  {
 		internalVcmemory[1]=y;}
 
-	inline void SetZ(double z)  {
+	inline 
+	__attribute__((always_inline))
+void SetZ(double z)  {
 		internalVcmemory[2]=z;}
 
 
 	// operator[] in an unchecked option ( checked in debug mode )
 	inline
+	__attribute__((always_inline))
 	double & operator[](int index)
 	{
 #ifdef DEBUG
@@ -221,6 +236,7 @@ public:
 
 
 	inline
+	__attribute__((always_inline))
 	double const operator[](int index) const
 	{
 #ifdef DEBUG
@@ -450,6 +466,7 @@ public:
 
 
 inline
+	__attribute__((always_inline))
 Vector3DFast const operator-(Vector3DFast const & lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(lhs);
@@ -459,6 +476,7 @@ Vector3DFast const operator-(Vector3DFast const & lhs, Vector3DFast const & rhs)
 
 
 inline
+	__attribute__((always_inline))
 Vector3DFast const operator+(Vector3DFast const & lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(lhs);
@@ -467,6 +485,7 @@ Vector3DFast const operator+(Vector3DFast const & lhs, Vector3DFast const & rhs)
 }
 
 inline
+	__attribute__((always_inline))
 Vector3DFast const operator*(Vector3DFast const & lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(lhs);
@@ -476,6 +495,7 @@ Vector3DFast const operator*(Vector3DFast const & lhs, Vector3DFast const & rhs)
 
 
 inline
+	__attribute__((always_inline))
 Vector3DFast const operator*(double lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(rhs);
@@ -485,6 +505,7 @@ Vector3DFast const operator*(double lhs, Vector3DFast const & rhs)
 
 
 inline
+	__attribute__((always_inline))
 Vector3DFast const operator*(Vector3DFast const & lhs, double rhs)
 {
 	Vector3DFast tmp(lhs);
@@ -494,6 +515,7 @@ Vector3DFast const operator*(Vector3DFast const & lhs, double rhs)
 
 
 inline
+	__attribute__((always_inline))
 Vector3DFast const operator/(Vector3DFast const & lhs, Vector3DFast const & rhs)
 {
 	Vector3DFast tmp(lhs);

@@ -229,11 +229,19 @@ public:
   	  }
     }
 
-  void setFromVector(int index, Vector3D const &v) const
+  void setFromVector(int index, Vector3D const &v)
   {
   	  x[index]=v.x;
   	  y[index]=v.y;
   	  z[index]=v.z;
+  }
+
+
+  void set(int index, double a, double b, double c)
+  {
+  	  x[index]=a;
+  	  y[index]=b;
+  	  z[index]=c;
   }
 
   void setstartindex(int index)

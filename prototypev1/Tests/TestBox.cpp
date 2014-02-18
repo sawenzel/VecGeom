@@ -44,58 +44,65 @@ static void cmpresults(double * a1, double * a2, int np)
 
 int main()
 {
-	Vectors3DSOA points, dirs;
-	int np=1024;
+  Vectors3DSOA points, pointsforcontains, dirs;
+  int np=1024;
 
-	points.alloc(np);
-	dirs.alloc(np);
+  points.alloc(np);
+  dirs.alloc(np);
+  pointsforcontains.alloc(np);
 
-	double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
-	for(auto i=0;i<np;++i) steps[i]=1E30;
+  double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+  double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+  double *steps = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
+  for(auto i=0;i<np;++i) steps[i]=1E30;
 
-	std::vector<Vector3D> conventionalpoints(np);
-	std::vector<Vector3D> conventionaldirs(np);
-	Vector3D * conventionalpoints2 = (Vector3D *) new Vector3D[np];
-	Vector3D * conventionaldirs2 = (Vector3D *) new Vector3D[np];
+  std::vector<Vector3D> conventionalpoints(np);
+  std::vector<Vector3D> conventionaldirs(np);
+  Vector3D * conventionalpoints2 = (Vector3D *) new Vector3D[np];
+  Vector3D * conventionaldirs2 = (Vector3D *) new Vector3D[np];
 
-	StopWatch timer;
+  TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
+  PhysicalVolume * world = GeoManager::MakePlacedBox(new BoxParameters(30,30,30), identity);
 
-	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
-	PhysicalVolume * world = GeoManager::MakePlacedBox( new BoxParameters(30,30,30), identity );
-
-	PhysicalVolume * daughter = GeoManager::MakePlacedBox( new BoxParameters(10,15,20), new TransformationMatrix(0,0,0,0,0,45) );
-	world->AddDaughter(daughter);
-
-	world->fillWithRandomPoints(points,np);
-	world->fillWithBiasedDirections(points, dirs, np, 4./10);
-
+  PhysicalVolume * daughter = GeoManager::MakePlacedBox(new BoxParameters(10,15,20), new TransformationMatrix(0,0,0,0,0,0));
+  world->AddDaughter(daughter);
+  
+  world->fillWithRandomPoints(points,np);
+  world->fillWithBiasedDirections(points, dirs, np, 4./10);
 
 
-	int counter=0;
-	for(int i=0;i<np;i++)
-	{
-		Vector3D tmp = points.getAsVector(i);
-		PhysicalVolume::samplePoint( tmp, 30, 30, 30, 1);
-		bool containsold = daughter->Contains( tmp );
-		bool containsnew = daughter->Contains( Vector3DFast(tmp.x, tmp.y, tmp.z) );
-		assert( containsold == containsnew );
-		counter+=containsold;
-	}
-	std::cerr << " contains test passed; actually inside: " << counter << std::endl;
+  // sample points for contains function
+  for(int i=0;i<np;i++)
+    {
+      Vector3D tmp; 
+      PhysicalVolume::samplePoint( tmp, 30, 30, 30, 1);
+      pointsforcontains.set(i, tmp.x, tmp.y, tmp.z );
+    }
 
 
-	for(int i=0;i<np;i++)
-	{
-		Vector3D tmp = points.getAsVector(i);
-		Vector3D tmpdir = dirs.getAsVector(i);
-		double old = world->DistanceToOut( tmp, tmpdir, 1E30 );
-		double n = world->DistanceToOut( Vector3DFast(tmp.x, tmp.y, tmp.z), Vector3DFast(tmpdir.x, tmpdir.y, tmpdir.z), 1E30 );
-		assert( Utils::IsSameWithinTolerance(old,n) );
-	}
-	std::cerr << " distancetoout test passed " << std::endl;
+  int counter=0;
+  for(int i=0;i<np;i++)
+    {
+      Vector3D tmp = points.getAsVector(i);
+      PhysicalVolume::samplePoint( tmp, 30, 30, 30, 1);
+      bool containsold = daughter->Contains( tmp );
+      bool containsnew = daughter->Contains( Vector3DFast(tmp.x, tmp.y, tmp.z) );
+      assert( containsold == containsnew );
+      counter+=containsold;
+    }
+  std::cerr << " contains test passed; actually inside: " << counter << std::endl;
+  
 
+  for(int i=0;i<np;i++)
+    {
+      Vector3D tmp = points.getAsVector(i);
+      Vector3D tmpdir = dirs.getAsVector(i);
+      double old = world->DistanceToOut( tmp, tmpdir, 1E30 );
+      double n = world->DistanceToOut( Vector3DFast(tmp.x, tmp.y, tmp.z), Vector3DFast(tmpdir.x, tmpdir.y, tmpdir.z), 1E30 );
+      assert( Utils::IsSameWithinTolerance(old,n) );
+    }
+  std::cerr << " distancetoout test passed " << std::endl;
+  
 
 	// now testing some matrix stuff;
 	for(int i=0;i<np;i++)
@@ -129,6 +136,84 @@ int main()
 	std::cerr << " distancetoin test passed; actually hit " << counter << std::endl;
 
 
-    _mm_free(distances);
-    return 1;
+	// timing results
+	StopWatch timer;
+
+	// distance to in method
+	double s=0.;
+	timer.Start();
+	for(int n=0;n<100;n++)
+	  {
+	    for(int i=0;i<np;i++)
+	      {
+		Vector3D tmp = points.getAsVector(i);
+		Vector3D tmpdir = dirs.getAsVector(i);
+		s+=daughter->DistanceToIn( tmp, tmpdir, 1E30 );
+	      }
+	  }
+	timer.Stop();
+	std::cerr << "old time " << timer.getDeltaSecs() << std::endl;
+
+	s=0.;
+	timer.Start();
+	for(int n=0;n<100;n++)
+	  {	
+	    for(int i=0;i<np;i++)
+	      {
+		Vector3D tmp = points.getAsVector(i);
+		Vector3D tmpdir = dirs.getAsVector(i);
+		Vector3DFast x(tmp.x, tmp.y, tmp.z);
+		Vector3DFast y(tmpdir.x, tmpdir.y, tmpdir.z);
+		s+= daughter->DistanceToIn(x, y, 1E30 );
+	      }
+	  }
+	timer.Stop();
+	std::cerr << "new time " << timer.getDeltaSecs() << std::endl;
+
+	// distance to in method
+	s=0.;
+	timer.Start();
+	for(int n=0;n<100;n++)
+	  {
+	    for(int i=0;i<np;i++)
+	      {
+		Vector3D tmp = points.getAsVector(i);
+		Vector3D tmpdir = dirs.getAsVector(i);
+		s+=world->DistanceToOut( tmp, tmpdir, 1E30 );
+	      }
+	  }
+	timer.Stop();
+	std::cerr << "old time " << timer.getDeltaSecs() << std::endl;
+
+	s=0.;
+	timer.Start();
+	for(int n=0;n<100;n++)
+	  {	
+	    for(int i=0;i<np;i++)
+	      {
+		Vector3D tmp = pointsforcontains.getAsVector(i);
+		s+= daughter->Contains(tmp);
+	      }
+	  }
+	timer.Stop();
+	std::cerr << "old time " << timer.getDeltaSecs() << std::endl;
+
+
+
+	s=0.;
+	timer.Start();
+	for(int n=0;n<100;n++)
+	  {	
+	    for(int i=0;i<np;i++)
+	      {
+		Vector3D tmp = pointsforcontains.getAsVector(i);
+		Vector3DFast x(tmp.x, tmp.y, tmp.z);
+		s+= daughter->Contains(x);
+	      }
+	  }
+	timer.Stop();
+	std::cerr << "new time " << timer.getDeltaSecs() << std::endl;
+
+	_mm_free(distances);
+	return 1;
 }
