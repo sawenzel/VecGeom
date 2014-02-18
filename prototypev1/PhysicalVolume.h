@@ -263,9 +263,10 @@ protected:
 template<typename VectorType>
 void PhysicalVolume::samplePoint( VectorType & point, double dx, double dy, double dz, double scale )
 {
-	point.x=scale*(1-2.*udouble_dist(rng))*dx;
-    point.y=scale*(1-2.*udouble_dist(rng))*dy;
-    point.z=scale*(1-2.*udouble_dist(rng))*dz;
+   point[0]=scale*(1-2.*udouble_dist(rng))*dx;
+   point[1]=scale*(1-2.*udouble_dist(rng))*dy;
+   point[2]=scale*(1-2.*udouble_dist(rng))*dz;
 }
 
 #endif /* PHYSICALVOLUME_H_ */
+

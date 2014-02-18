@@ -79,7 +79,7 @@ int main()
       pointsforcontains.set(i, tmp.x, tmp.y, tmp.z );
     }
 
-
+  /*
   int counter=0;
   for(int i=0;i<np;i++)
     {
@@ -115,7 +115,7 @@ int main()
 		daughter->getMatrix()->print();
 		daughter->getFastMatrix()->print();
 
-		Vector3D cmp(tmpfnew.x, tmpfnew.y, tmpfnew.z);
+		Vector3D cmp(tmpfnew[0], tmpfnew[1], tmpfnew[2]);
 		//	std::cerr << cmp << std::endl;
 		// std::cerr << tmpnew << std::endl;
 		//	assert(cmp==tmpnew);
@@ -135,6 +135,7 @@ int main()
 	}
 	std::cerr << " distancetoin test passed; actually hit " << counter << std::endl;
 
+  */
 
 	// timing results
 	StopWatch timer;
@@ -142,7 +143,7 @@ int main()
 	// distance to in method
 	double s=0.;
 	timer.Start();
-	for(int n=0;n<100;n++)
+	for(int n=0;n<10000;n++)
 	  {
 	    for(int i=0;i<np;i++)
 	      {
@@ -156,7 +157,7 @@ int main()
 
 	s=0.;
 	timer.Start();
-	for(int n=0;n<100;n++)
+	for(int n=0;n<10000;n++)
 	  {	
 	    for(int i=0;i<np;i++)
 	      {
@@ -173,7 +174,7 @@ int main()
 	// distance to in method
 	s=0.;
 	timer.Start();
-	for(int n=0;n<100;n++)
+	for(int n=0;n<10000;n++)
 	  {
 	    for(int i=0;i<np;i++)
 	      {
@@ -185,9 +186,28 @@ int main()
 	timer.Stop();
 	std::cerr << "old time " << timer.getDeltaSecs() << std::endl;
 
+	// distance to in method
 	s=0.;
 	timer.Start();
-	for(int n=0;n<100;n++)
+	for(int n=0;n<10000;n++)
+	  {
+	    for(int i=0;i<np;i++)
+	      {
+		Vector3D tmp = points.getAsVector(i);
+		Vector3D tmpdir = dirs.getAsVector(i);
+
+		Vector3DFast tmpf(tmp.x,tmp.y,tmp.z);
+		Vector3DFast tmpfdir(tmpdir.x,tmpdir.y,tmpdir.z);
+		s+=world->DistanceToOut( tmpf, tmpfdir, 1E30 );
+	      }
+	  }
+	timer.Stop();
+	std::cerr << "new time disttoout " << timer.getDeltaSecs() << std::endl;
+
+
+	s=0.;
+	timer.Start();
+	for(int n=0;n<10000;n++)
 	  {	
 	    for(int i=0;i<np;i++)
 	      {
@@ -196,13 +216,13 @@ int main()
 	      }
 	  }
 	timer.Stop();
-	std::cerr << "old time " << timer.getDeltaSecs() << std::endl;
+	std::cerr << "old time contains " << timer.getDeltaSecs() << std::endl;
 
 
 
 	s=0.;
 	timer.Start();
-	for(int n=0;n<100;n++)
+	for(int n=0;n<10000;n++)
 	  {	
 	    for(int i=0;i<np;i++)
 	      {

@@ -22,17 +22,35 @@ struct Vector3D
 
 
 
+	// operator[] in an unchecked option ( checked in debug mode )
+	inline
+	__attribute__((always_inline))
+	double & operator[](int index)
+	{
+#ifdef DEBUG
+		assert(index >0 );
+		assert(index <3 );
+#endif
+		return *(&x+index);
+	}
+
+
+	inline
+	__attribute__((always_inline))
+	double const operator[](int index) const
+	{
+#ifdef DEBUG
+		assert(index >0 );
+		assert(index <3 );
+#endif
+		return *(&x+index);
+	}
+
+
 	inline double GetX() const {return x;}
 	inline double GetY() const {return y;}
 	inline double GetZ() const {return z;}
 
-
-	/*
-	double operator[](int i) const
-	{
-		return &x+i;
-	}
-	*/
 
 	inline
 	Vector3D & operator=(Vector3D const & rhs)

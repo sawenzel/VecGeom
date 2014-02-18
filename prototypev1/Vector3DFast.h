@@ -31,9 +31,9 @@ private:
 
 public:
 	// references providing a "view" to the real memory ( just for convenience and compatibility with old vector usage )
-	double & x;
-	double & y;
-	double & z;
+	//	double & x;
+	//	double & y;
+	//	double & z;
 
 	// for proper memory allocation on the heap
 	static 
@@ -54,7 +54,8 @@ public:
 
 	inline
 	__attribute__((always_inline))
-	Vector3DFast( ) : internalVcmemory() , x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2])
+	Vector3DFast( ) : internalVcmemory()
+// , x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2])
 	{
 		// assert alignment
 	  //	void * a =  &internalVcmemory[0];
@@ -64,7 +65,9 @@ public:
 
 	inline
 	__attribute__((always_inline))
-	Vector3DFast( Vector3DFast const & rhs ) : internalVcmemory(), x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2]) {
+	Vector3DFast( Vector3DFast const & rhs ) : internalVcmemory()
+	  //, x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2]) 
+	{
 		//long long a = (long long) &internalVcmemory[0];
 		//std::cerr << a << a/32. << std::endl;
 		//	assert( a / 32. == 0 );
@@ -80,7 +83,9 @@ public:
 
 	inline
 	__attribute__((always_inline))
-	Vector3DFast( double x,  double y,  double z) : internalVcmemory(), x(internalVcmemory[0]),	y(internalVcmemory[1]), z(internalVcmemory[2]) {
+	Vector3DFast( double x,  double y,  double z) : internalVcmemory()
+							//, x(internalVcmemory[0]),	y(internalVcmemory[1]), z(internalVcmemory[2]) 
+	{
 	  //	void * a =  &internalVcmemory[0];
 	//	std::cerr << a << " " << ((long long) a) % 32L << std::endl;
 		//		assert( ((long long) a) % 32L == 0 );

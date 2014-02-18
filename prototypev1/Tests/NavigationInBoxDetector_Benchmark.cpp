@@ -73,6 +73,8 @@ int main(int argc, char * argv[])
 
 	timer.Start();
 	int stepsdone=0;
+	for(int n=0;n<1000;n++)
+	  {
 	for(int i=0;i<100000;i++)
 	// testing the NavigationAndStepInterface
 	{
@@ -122,6 +124,7 @@ int main(int argc, char * argv[])
 #endif
 			stepsdone+=localstepsdone;
 	}
+	  }
 	timer.Stop();
 	std::cout << " time for 100000 particles " << timer.getDeltaSecs( ) << std::endl;
 	std::cout << " average steps done " << stepsdone / 100000. << std::endl;
