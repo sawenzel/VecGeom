@@ -1,5 +1,5 @@
-#ifndef VECGEOM_MANAGEMENT_GEOMANAGER_BOXKERNEL_H_
-#define VECGEOM_MANAGEMENT_GEOMANAGER_BOXKERNEL_H_
+#ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
+#define VECGEOM_MANAGEMENT_GEOMANAGER_H_
 
 #include <iostream>
 #include <list>
@@ -13,7 +13,7 @@ namespace vecgeom {
  */
 class GeoManager {
 
-private:
+protected:
 
   int counter;
   std::list<VPlacedVolume const*> volumes_;
@@ -57,4 +57,4 @@ private:
 
 } // End namespace vecgeom
 
-#endif // VECGEOM_MANAGEMENT_GEOMANAGER_BOXKERNEL_H_
+#endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_

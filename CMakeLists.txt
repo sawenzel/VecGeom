@@ -104,6 +104,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 if (CUDA)
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
   message(STATUS "Compiling for CUDA with C++ flags: ${CMAKE_CXX_FLAGS}")
+  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
   cuda_compile(CUDA_COMPILETEST_O ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
 endif()
 

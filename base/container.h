@@ -6,7 +6,10 @@
 namespace vecgeom {
 
 template <typename Type>
-class Container {};
+class Container {
+
+
+};
 
 } // End namespace vecgeom
 
