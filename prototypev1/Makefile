@@ -8,48 +8,34 @@ CXX_LIBS=-lGeom -L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib/intel64/gcc4.4 -ltbb -lr
 
 CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp GeoManager_MakePolycone.cpp GeoManager.cpp PhysicalBox.cpp PhysicalVolume.cpp TransformationMatrix.cpp SimpleVecNavigator.cpp
 
+#CXX_TESTS=$(wildcard Tests/*.cpp)
+CXX_TESTS=Tests/CHEP13Benchmark.cpp Tests/transTest.cpp
+
 CXX_OBJS=$(addsuffix .o, $(basename $(CXX_SRC)))
+CXX_BINS=$(patsubst Tests/%,bin/%,$(basename $(CXX_TESTS)))
+CXX_BASE=$(basename $(CXX_TESTS))
 
-all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement TestPolyconeContains NavigationInBoxDetector TestTransformations transTest
+#all: CHEP13Benchmark CHEP13BenchmarkSpec CHEP13Benchmark_unspecplacement TestPolyconeContains NavigationInBoxDetector TestTransformations transTest
+all: $(CXX_OBJS) $(CXX_BINS)
 
-.cpp.o: %.cpp
+check:
+	@echo CXX_TESTS=$(CXX_TESTS)
+	@echo CXX_OBJS=$(CXX_OBJS)
+	@echo CXX_BINS=$(CXX_BINS)
+	@echo CXX_BASE=$(CXX_BASE)
+
+%.o : %.cpp
 	@echo Compiling $<
 	@$(CXX) -c $(CXX_FLAGS) $(CXX_INCLUDE) $< -o $@ 
 	@echo "    done:" $<
 
-objs: $(CXX_OBJS)
-
-CHEP13Benchmark: $(CXX_OBJS) Tests/CHEP13Benchmark.cpp 
+bin/% : Tests/%.cpp $(CXX_OBJS)
 	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) Tests/CHEP13Benchmark.cpp $(CXX_LIBS) -o bin/CHEP13Benchmark
-
-TestPolyconeContains: $(CXX_OBJS) Tests/TestPolyconeContains.cpp 
-	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.o Tests/TestPolyconeContains.cpp $(CXX_LIBS) -o bin/TestPolyconeContains
-
-TestTransformations: $(CXX_OBJS) Tests/TestTransformations.cpp 
-	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.o Tests/TestTransformations.cpp $(CXX_LIBS) -o bin/TestTransformations
-
-CHEP13BenchmarkSpec: $(CXX_OBJS) Tests/CHEP13BenchmarkSpecialMatrices.cpp 
-	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.o Tests/CHEP13BenchmarkSpecialMatrices.cpp $(CXX_LIBS) -o bin/CHEP13BenchmarkSpec
-
-CHEP13Benchmark_unspecplacement: $(CXX_OBJS) Tests/CHEP13Benchmark_unspecializedplacements.cpp 
-	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.o Tests/CHEP13Benchmark_unspecializedplacements.cpp $(CXX_LIBS) -o bin/CHEP13Benchmark_unspecplacement
-
-NavigationInBoxDetector: $(CXX_OBJS) Tests/NavigationInBoxDetector.cpp 
-	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.o Tests/NavigationInBoxDetector.cpp $(CXX_LIBS) -o bin/NavigationInBoxDetector
-
-transTest: $(CXX_OBJS) Tests/transTest.cpp
-	@echo Building $@
-	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) *.o Tests/transTest.cpp $(CXX_LIBS) -o bin/transTest
+	@$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE) $(CXX_OBJS) $< $(CXX_LIBS) -o $@
 
 depend:
 	@makedepend -- $(CXX_FLAGS) $(CXX_INCLUDE) -- $(CXX_SRC)
 
 clean:
-	@rm *.o
+	@rm *.o bin/*
 # DO NOT DELETE
