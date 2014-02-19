@@ -14,6 +14,7 @@
 #include "../GeoManager.h"
 #include "../Vector3DFast.h"
 #include <cassert>
+//#include "../PFMWatch.h"
 
 const std::vector<std::vector<double>> TransCases {{0,0,0},
     {10, 10, 0}};
@@ -50,7 +51,7 @@ double test1( PhysicalVolume const *v, Vectors3DSOA const & p )
 			for(int i=0;i<1024;i++)
 			{
 				Vector3D tmp = p.getAsVector(i);
-				v->getMatrix()->MasterToLocal<1,-1>(tmp, told);
+				v->getMatrix()->MasterToLocal(tmp, told);
 				s+=told[0];
 			}
 		}
@@ -67,7 +68,10 @@ double test2( PhysicalVolume const *v, Vectors3DSOA const & p )
 			   {
 			    Vector3D tmp = p.getAsVector(i);
 			    Vector3DFast x(tmp.x, tmp.y, tmp.z);
-			    v->getFastMatrix()->MasterToLocal<1,-1>(x, t);
+//			    s+=x[0];
+			 //   if(  n == 0 && i % 10 == 0) std::cerr << x << std::endl;
+			    v->getFastMatrix()->MasterToLocal<1,1296>(x, t);
+			  //  if(  n == 0 && i % 10 == 0) std::cerr << t << std::endl;
 			    s+=t[0];
 			   }
 		}
@@ -83,7 +87,7 @@ int main()
   dirs.alloc(np);
   pointsforcontains.alloc(np);
 
-  Vector3DFast * fastpoints = new Vector3DFast[np];
+  // Vector3DFast * fastpoints = new Vector3DFast[np];
 
   double *distances = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
   double *distances2 = (double *) _mm_malloc(np*sizeof(double), ALIGNMENT_BOUNDARY);
@@ -98,7 +102,7 @@ int main()
   TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
   PhysicalVolume * world = GeoManager::MakePlacedBox(new BoxParameters(30,30,30), identity);
 
-  PhysicalVolume * daughter = GeoManager::MakePlacedBox(new BoxParameters(10,15,20), new TransformationMatrix(0,0,0,0,0,45.));
+  PhysicalVolume * daughter = GeoManager::MakePlacedBox(new BoxParameters(10,15,20), new TransformationMatrix(-10,0,0,0,0,0.));
   world->AddDaughter(daughter);
   
   world->fillWithRandomPoints(points,np);
@@ -110,6 +114,7 @@ int main()
     {
       Vector3D tmp; 
       PhysicalVolume::samplePoint( tmp, 30, 30, 30, 1);
+      tmp.x = 1.;
       pointsforcontains.set(i, tmp.x, tmp.y, tmp.z );
     }
 
@@ -267,37 +272,27 @@ int main()
 	timer.Stop();
 	std::cerr << "new time " << timer.getDeltaSecs() << std::endl;
 
-	Vector3D told;
-	s=0.;
-	timer.Start();
-	for(int n=0;n<10000;n++)
 	{
-		for(int i=0;i<np;i++)
-		{
-			Vector3D tmp = pointsforcontains.getAsVector(i);
-			daughter->getMatrix()->MasterToLocal<1,-1>(tmp, told);
-			s+=told[0];
-		}
-	}
+//	PFMWatch pfmtimer;
+//	pfmtimer.Start();
+	timer.Start();
+	double s = test1( daughter, pointsforcontains );
 	timer.Stop();
+	//	pfmtimer.Stop();
+//	pfmtimer.printSummary();
 	std::cerr << "old time matrix" << timer.getDeltaSecs() << " " << s << std::endl;
-
-
-	Vector3DFast t;
-	s=0.;
-	timer.Start();
-	for(int n=0;n<10000;n++)
-	{
-	for(int i=0;i<np;i++)
-		   {
-		    Vector3D tmp = pointsforcontains.getAsVector(i);
-		    Vector3DFast x(tmp.x, tmp.y, tmp.z);
-		    daughter->getFastMatrix()->MasterToLocal<1,-1>(x, t);
-		    s+=t[0];
-		   }
 	}
+
+	{
+//	PFMWatch pfmtimer
+//	pfmtimer.Start();
+	timer.Start();
+	double s = test2( daughter, pointsforcontains );
 	timer.Stop();
+		//	pfmtimer.Stop();
+//	pfmtimer.printSummary();
 	std::cerr << "new time matrix" << timer.getDeltaSecs() << " " << s << std::endl;
+	}
 
 	_mm_free(distances);
 	return 1;
