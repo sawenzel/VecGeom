@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include "base/types.h"
 #include "base/utilities.h"
 #ifdef VECGEOM_VC_ACCELERATION
@@ -56,13 +57,13 @@ public:
   VECGEOM_CUDA_HEADER_HOST
   Vector3D(std::string const &str) {
     int begin = 1, end = str.find(",");
-    vec[0] = atof(str.substr(begin, end-begin).c_str());
+    vec[0] = std::atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
     end = str.find(",", begin);
-    vec[1] = atof(str.substr(begin, end-begin).c_str());
+    vec[1] = std::atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
     end = str.find(")", begin);
-    vec[2] = atof(str.substr(begin, end-begin).c_str());
+    vec[2] = std::atof(str.substr(begin, end-begin).c_str());
   }
 
   /**
@@ -330,14 +331,12 @@ public:
     return result;
   }
 
-  #ifdef VECGEOM_STD_CXX11
-  friend
+  VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
-  std::ostream& operator<<(std::ostream& os, VecType const &v) {
+  friend std::ostream& operator<<(std::ostream& os, VecType const &v) {
     os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
     return os;
   }
-  #endif /* VECGEOM_STD_CXX11 */
 
 };
 

@@ -15,6 +15,9 @@ private:
 
 public:
 
+  Vector() {}
+  ~Vector() {}
+
   VECGEOM_INLINE
   Type& operator[](const int index) {
     return vec[index];
@@ -30,9 +33,33 @@ public:
     return vec.size();
   }
 
-  VECGEOM_INLINE
   void push_back(Type const &item) {
     vec.push_back(item);
+  }
+
+private:
+
+  class VectorIterator : public Iterator<Type> {
+
+  public:
+
+    VectorIterator(Type const *const e) : Iterator<Type>(e) {}
+
+    Iterator<Type>& operator++() {
+      this->element_++;
+      return *this;
+    }
+
+  };
+
+public:
+
+  Iterator<Type> begin() const {
+    return VectorIterator(&vec[0]);
+  }
+
+  Iterator<Type> end() const {
+    return VectorIterator(&vec[size()]);
   }
 
 };

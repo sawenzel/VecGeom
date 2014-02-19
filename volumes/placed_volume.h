@@ -49,6 +49,9 @@ public:
     return matrix_;
   }
 
+  VECGEOM_CUDA_HEADER_HOST
+  friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
+
 };
 
 } // End namespace vecgeom

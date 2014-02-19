@@ -22,4 +22,14 @@ void VLogicalVolume::PlaceDaughter(VLogicalVolume const &volume,
   )->push_back(placed);
 }
 
+VECGEOM_CUDA_HEADER_HOST
+std::ostream& operator<<(std::ostream& os, VLogicalVolume const &vol) {
+  os << vol.unplaced_volume() << std::endl;
+  for (Iterator<VPlacedVolume const*> i = vol.daughters().begin();
+       i != vol.daughters().end(); ++i) {
+    os << "  " << (**i) << std::endl;
+  }
+  return os;
+}
+
 } // End namespace vecgeom

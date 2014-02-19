@@ -9,15 +9,15 @@ namespace vecgeom {
 
 template <>
 struct Impl<kScalar> {
-  typedef double precision;
-  typedef int    int_v;
-  typedef double precision_v;
-  typedef bool   bool_v;
-  constexpr static bool early_returns = true;
-  constexpr static precision_v kOne = 1.0;
-  constexpr static precision_v kZero = 0.0;
-  constexpr static bool_v kTrue = true;
-  constexpr static bool_v kFalse = false;
+  typedef Precision precision;
+  typedef int       int_v;
+  typedef Precision precision_v;
+  typedef bool      bool_v;
+  const static bool early_returns = true;
+  const static precision_v kOne;
+  const static precision_v kZero;
+  const static bool_v kTrue = true;
+  const static bool_v kFalse = false;
 };
 
 typedef Impl<kScalar>::int_v    ScalarInt;

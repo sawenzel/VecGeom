@@ -51,7 +51,7 @@ private:
     volumes_.remove(volume);
   }
 
-  friend VPlacedVolume;
+  friend class VPlacedVolume;
 
 };
 

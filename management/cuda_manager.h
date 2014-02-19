@@ -23,13 +23,19 @@ public:
 
   VLogicalVolume const* CopyToGPU(VLogicalVolume const &top_volume);
 
+  void PrintContent() const;
+
 private:
 
   CUDAManager() {}
   CUDAManager(CUDAManager const&);
   CUDAManager& operator=(CUDAManager const&);
 
-  void ScanGeometry(VLogicalVolume const *const volumes);
+  void ScanGeometry(VLogicalVolume const *const volume);
+
+  template <typename VectorType>
+  bool VectorContains(std::vector<VectorType> const &vec,
+                      const VectorType element);
 
 };
 

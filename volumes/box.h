@@ -43,6 +43,12 @@ public:
     return 4.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
   }
 
+private:
+
+  virtual void print(std::ostream &os) const {
+    os << "Box {" << dimensions_ << "}";
+  }
+
 };
 
 class PlacedBox : public VPlacedVolume {

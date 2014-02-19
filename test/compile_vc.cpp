@@ -8,7 +8,7 @@
 
 using namespace vecgeom;
 
-void foo() {
+void compile_vc() {
   VcPrecision scalar;
   Vector3D<double> scalar_v;
   Vector3D<VcPrecision> vector_v;

@@ -51,6 +51,31 @@ public:
 
   #endif
 
+private:
+
+  class ArrayIterator : public Iterator<Type> {
+
+  public:
+
+    ArrayIterator(Type const *const e) : Iterator<Type>(e) {}
+
+    Iterator<Type>& operator++() {
+      this->element_++;
+      return *this;
+    }
+
+  };
+
+public:
+
+  Iterator<Type> begin() const {
+    return ArrayIterator(&arr[0]);
+  }
+
+  Iterator<Type> end() const {
+    return ArrayIterator(&arr[size()]);
+  }
+
 };
 
 } // End namespace vecgeom

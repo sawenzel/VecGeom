@@ -1,6 +1,7 @@
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
+#include <iostream>
 #include "base/types.h"
 #include "base/vector.h"
 #include "volumes/unplaced_volume.h"
@@ -14,7 +15,7 @@ private:
   VUnplacedVolume const &unplaced_volume_;
   Container<VPlacedVolume const*> *daughters_;
 
-  friend VPlacedVolume;
+  friend class VPlacedVolume;
 
 public:
 
@@ -40,6 +41,9 @@ public:
   VECGEOM_CUDA_HEADER_HOST
   void PlaceDaughter(VLogicalVolume const &volume,
                      TransformationMatrix const &matrix);
+
+  VECGEOM_CUDA_HEADER_HOST
+  friend std::ostream& operator<<(std::ostream& os, VLogicalVolume const &vol);
 
 };
 
