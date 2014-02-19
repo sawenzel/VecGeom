@@ -44,14 +44,17 @@ static void cmpresults(double * a1, double * a2, int np,
 }
 
 
-int main()
+int main(int argc, char** argv)
 {
 	Vectors3DSOA points, dirs, intermediatepoints, intermediatedirs;
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
-
-	int np=1024;
-	int NREPS = 1000;
+	// int np=1024;
+	// int NREPS = 1000;
+	int np    = atoi(argv[1]);
+	int NREPS = atoi(argv[2]);
+	std::cout<<"# points used: NP="<< np
+	    <<" / # repetitions: NREPS="<< NREPS << std::endl;
 
 	points.alloc(np);
 	dirs.alloc(np);
@@ -111,6 +114,8 @@ int main()
 	world->AddDaughter( endcap1 );
 	world->AddDaughter( endcap2 );
 
+	//********  Testing starts here  ***************
+
 	world->fillWithRandomPoints(points,np);
 	world->fillWithBiasedDirections(points, dirs, np, 9/10.);
 
@@ -123,9 +128,9 @@ int main()
 	  for(int ipt=0; ipt<np; ++ipt) {
 	    points.getAsVector(ipt,pos);
 	    dirs.getAsVector(ipt,dir);
-	    printf("Point %i: pos=(%f; %f; %f) dir=(%f; %f; %f)\n", ipt, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
-	    world->PrintDistToEachDaughter(pos,dir);
-	    world->PrintDistToEachDaughterROOT(pos,dir);
+	    // printf("Point %i: pos=(%f; %f; %f) dir=(%f; %f; %f)\n", ipt, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
+	    // world->PrintDistToEachDaughter(pos,dir);
+	    // world->PrintDistToEachDaughterROOT(pos,dir);
 	  }
 	}
 
@@ -190,9 +195,13 @@ int main()
 	}
 	std::cerr <<"Comparing results: "<< d0 << " " << d1 << " " << d3 << std::endl;
 
-	std::cerr<<"Comparing individual measurements: Point#  distances(Vec,VecUnplVol,ROOT):\n";
+	bool first=true;
 	for(auto k=0;k<np;++k) {
 	  if( fabs(distances2[3*k+2]-distances2[3*k]) > 0.1 ) {
+	    if(first) {
+	      std::cerr<<"Comparing individual measurements: Point#  distances(Vec,VecUnplVol,ROOT)...\n";
+	      first = false;
+	    }
 	    std::cerr <<"Point# "<< k <<':'
 		      <<' '<< distances2[3*k]
 		      <<' '<< distances2[3*k+1]
