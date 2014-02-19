@@ -124,7 +124,7 @@ int main()
 
 	// do some navigation with a simple Navigator
 	SimpleVecNavigator vecnav(np);
-	PhysicalVolume ** nextvolumes  = ( PhysicalVolume ** ) _mm_malloc(sizeof(PhysicalVolume *)*np, ALIGNMENT_BOUNDARY);
+	const PhysicalVolume ** nextvolumes  = (const PhysicalVolume ** ) _mm_malloc(sizeof(PhysicalVolume *)*np, ALIGNMENT_BOUNDARY);
 
 	timer.Start();
 	for(int reps=0 ;reps < NREPS; reps++ )

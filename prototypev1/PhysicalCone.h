@@ -123,8 +123,8 @@ public:
 			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi, alongPhi1);
 			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi + dDPhi, alongPhi2);
 
-			normalPhi1.print();
-			normalPhi2.print();
+			// normalPhi1.print();
+			// normalPhi2.print();
 		};
 
 	//	virtual void inspect() const;
@@ -322,8 +322,8 @@ private:
 	PlacedCone<0,1296,ConeType,PrecType> * unplacedcone;
 
 public:
-	inline PrecType GetRmin1() const { return coneparams->GetRmin2(); }
-	inline PrecType GetRmax1() const { return coneparams->GetRmax2(); }
+	inline PrecType GetRmin1() const { return coneparams->GetRmin1(); }
+	inline PrecType GetRmax1() const { return coneparams->GetRmax1(); }
 	inline PrecType GetRmin2() const { return coneparams->GetRmin2(); }
 	inline PrecType GetRmax2() const { return coneparams->GetRmax2(); }
 	inline PrecType GetDZ()   const { return coneparams->GetDZ();   }
@@ -335,7 +335,7 @@ public:
 				std::max(GetRmax2(), GetRmax1()), GetDZ()), new TransformationMatrix(0,0,0,0,0,0) );
 
 	    // initialize the equivalent usolid shape
-		VUSolid * s = new UCons("internalucons", GetRmin1(), GetRmax2(),
+		VUSolid * s = new UCons("internalucons", GetRmin1(), GetRmax1(),
 				GetRmin2(), GetRmax2(), GetDZ(), GetSPhi(), GetDPhi());
 
 		this->SetUnplacedUSolid( s );
