@@ -96,7 +96,7 @@ MIN_v ( double * __restrict__ step, double const * __restrict__ workspace, const
     {
 		bool cond = workspace[k]<step[k];
 		step[k] = (cond)? workspace[k] : step[k];
-		nextnodepointersasints[k] = (cond)? const_cast<PhysicalVolume *>(curcandidateVolumePointerasint) : nextnodepointersasints[k];
+		nextnodepointersasints[k] = (cond)? curcandidateVolumePointerasint : nextnodepointersasints[k];
     }
 }
 
@@ -106,7 +106,7 @@ void SimpleVecNavigator::DistToNextBoundary( PhysicalVolume const * volume, Vect
 											 Vectors3DSOA const & dirs,
 											 double const * steps,
 											 double * distance,
-											 const PhysicalVolume ** nextnode, int np )
+											 const PhysicalVolume ** nextnode, int np ) const
 {
 // init nextnode ( maybe do a memcpy )
 	for(auto k=0;k<np;++k)
@@ -154,15 +154,13 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUnplacedVolumes( PhysicalVolume 
 	for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
 	{
 		PhysicalVolume const * daughter = (*iter);
-
 		PhysicalVolume const * unplacedvolume = daughter->GetAsUnplacedVolume();
 
 		// previous distance become step estimate, distance to daughter returned in workspace
 
 		// now need to do matrix transformations outside
 		TransformationMatrix const * tm = unplacedvolume->getMatrix();
-		tm->MasterToLocalCombined( points, const_cast<Vectors3DSOA &>(transformedpoints),
-				dirs, const_cast<Vectors3DSOA &>(transformeddirs ));
+		tm->MasterToLocalCombined( points, transformedpoints, dirs, transformeddirs );
 
 		unplacedvolume->DistanceToIn( transformedpoints, transformeddirs, distance, workspace );
 
@@ -173,7 +171,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUnplacedVolumes( PhysicalVolume 
 			if( workspace[k] < distance[k] )
 			{
 				distance[k]=workspace[k];
-				nextnode[k]=const_cast<PhysicalVolume *>(daughter);
+				nextnode[k] = daughter;
 			}
 		}
 	}
@@ -184,16 +182,15 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 		 	 	 	 	 	 	 	 	 	 	 	   double const * dirs,
 		 	 	 	 	 	 	 	 	 	 	 	   double const * steps,
 		 	 	 	 	 	 	 	 	 	 	 	   double * distance,
-		 	 	 	 	 	 	 	 	 	 	 	   const PhysicalVolume ** nextnode, int np )
+		 	 	 	 	 	 	 	 	 	 	 	   const PhysicalVolume ** nextnode, int np ) const
 {
 	for(auto k=0;k<np;k++)
 	{
 		nextnode[k]=0;
 
 		distance[k]=(volume->GetAsUnplacedROOTSolid())->DistFromInside(const_cast<double *>( &points[3*k] ),
-																	const_cast<double *>(&dirs[3*k]),
-																		3,	steps[k], 0 );
-
+									       const_cast<double *>(&dirs[3*k]),
+									       3,	steps[k], 0 );
 
 		PhysicalVolume::DaughterContainer_t const * daughters = volume->GetDaughters();
 		for( auto iter = daughters->begin(); iter!=daughters->end(); ++iter )
@@ -215,7 +212,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingROOT(  PhysicalVolume const * vo
 				if( distd < distance[k] )
 				{
 					distance[k] = distd;
-					nextnode[k] = const_cast<PhysicalVolume *>(daughter);
+					nextnode[k] = daughter;
 				}
 			}
 	}
@@ -227,7 +224,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 		 	 	 	 	 	 	 	 	 	 	 	 	 Vectors3DSOA const & dirs,
 		 	 	 	 	 	 	 	 	 	 	 	 	 double const * steps,
 		 	 	 	 	 	 	 	 	 	 	 	 	 double * distance,
-		 	 	 	 	 	 	 	 	 	 	 	 	 const PhysicalVolume ** nextnode, int np )
+		 	 	 	 	 	 	 	 	 	 	 	 	 const PhysicalVolume ** nextnode, int np ) const
 {
 	for(auto k=0;k<np;k++)
 	{
@@ -262,7 +259,7 @@ void SimpleVecNavigator::DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const * 
 				if( distd < distance[k] )
 				{
 					distance[k] = distd;
-					nextnode[k] = const_cast<PhysicalVolume *>(daughter);
+					nextnode[k] = daughter;
 				}
 			}
 	}
