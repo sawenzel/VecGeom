@@ -167,21 +167,21 @@ public:
 												Vectors3DSOA const & /*dirs*/,
 												double const * /*steps*/,
 												double * /*distance*/,
-												PhysicalVolume ** nextnode, int np ) const;
+			    			    			    			const PhysicalVolume ** nextnode, int np ) const;
 
 	void
 	DistToNextBoundaryUsingUnplacedVolumes( PhysicalVolume const *, Vectors3DSOA const & /*points*/,
 												Vectors3DSOA const & /*dirs*/,
 												double const * /*steps*/,
 												double * /*distance*/,
-												PhysicalVolume ** nextnode, int np ) const;
+												const PhysicalVolume ** nextnode, int np );
 
 	void
 	DistToNextBoundaryUsingUnplacedVolumesButSpecializedMatrices( PhysicalVolume const *, Vectors3DSOA const & /*points*/,
 													Vectors3DSOA const & /*dirs*/,
 													double const * /*steps*/,
 													double * /*distance*/,
-													PhysicalVolume ** nextnode, int np ) const;
+													const PhysicalVolume ** nextnode, int np );
 
 
 	void
@@ -190,14 +190,14 @@ public:
 								 double const * /*dirs*/,
 								 double const * /*steps*/,
 								 double * /*distance*/,
-								 PhysicalVolume ** nextnode, int np ) const;
+								 const PhysicalVolume ** nextnode, int np ) const;
 
 	void
 	DistToNextBoundaryUsingUSOLIDS( PhysicalVolume const *, Vectors3DSOA const & /*points*/,
 									Vectors3DSOA const & /*dirs*/,
 									double const * /*steps*/,
 									double * /*distance*/,
-									PhysicalVolume ** nextnode, int np ) const;
+									const PhysicalVolume ** nextnode, int np ) const;
 
 
 
