@@ -1,10 +1,7 @@
 build/
-doc/
 io/
 obj/
 bin/
 *~
-*.o
-setmeup.sh
-makefile
-*.disable
+*.[oa]
+\#*\#
