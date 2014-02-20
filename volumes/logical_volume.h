@@ -8,7 +8,7 @@
 
 namespace vecgeom {
 
-class VLogicalVolume {
+class LogicalVolume {
 
 private:
 
@@ -19,14 +19,19 @@ private:
 
 public:
 
-  VECGEOM_CUDA_HEADER_HOST
-  VLogicalVolume(VUnplacedVolume const &unplaced_volume__)
+  LogicalVolume(VUnplacedVolume const &unplaced_volume__)
       : unplaced_volume_(unplaced_volume__) {
     daughters_ = new Vector<VPlacedVolume const*>();
   }
 
-  VECGEOM_CUDA_HEADER_HOST
-  ~VLogicalVolume();
+  /**
+   * Constructor for building geometry on the GPU.
+   */
+  LogicalVolume(VUnplacedVolume const *const unplaced_ptr,
+                 Container<VPlacedVolume const*> *const daughters_ptr)
+      : unplaced_volume_(*unplaced_ptr), daughters_(daughters_ptr) {}
+
+  ~LogicalVolume();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -38,12 +43,10 @@ public:
     return *daughters_;
   }
 
-  VECGEOM_CUDA_HEADER_HOST
-  void PlaceDaughter(VLogicalVolume const &volume,
+  void PlaceDaughter(LogicalVolume const &volume,
                      TransformationMatrix const &matrix);
 
-  VECGEOM_CUDA_HEADER_HOST
-  friend std::ostream& operator<<(std::ostream& os, VLogicalVolume const &vol);
+  friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 
 };
 

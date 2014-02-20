@@ -1,6 +1,8 @@
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
+#include <iostream>
+#include <cassert>
 #include "base/utilities.h"
 #include "base/types.h"
 #include "backend/backend.h"
@@ -35,6 +37,13 @@ int ThreadIndex() {
          + threadIdx.x;
 }
 
+cudaError_t CudaCheckError(const cudaError_t err);
+
+cudaError_t CudaCheckError();
+
+void CudaAssertError(const cudaError_t err);
+
+void CudaAssertError();
 /**
  * Initialize with the number of threads required to construct the necessary
  * block and grid dimensions to accommodate all threads.
@@ -61,27 +70,37 @@ struct LaunchParameters {
   }
 };
 
+VECGEOM_CUDA_HEADER_HOST
+void* AllocateOnGpu(const int size);
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-VECGEOM_INLINE
-static Type* AllocateOnGPU(const int count) {
+Type* AllocateOnGpu() {
   Type *ptr;
-  cudaMalloc((void**)&ptr, count*sizeof(Type));
+  CudaAssertError(cudaMalloc((void**)&ptr, sizeof(Type)));
   return ptr;
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-VECGEOM_INLINE
-void CopyToGPU(Type const *const src, Type *const tgt, const int count) {
-  cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyHostToDevice);
+void FreeFromGpu(Type *const ptr) {
+  CudaAssertError(cudaFree(ptr));
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-VECGEOM_INLINE
+void CopyToGPU(Type const *const src, Type *const tgt, const int count) {
+  CudaAssertError(
+    cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyHostToDevice)
+  );
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_HOST
 void CopyFromGPU(Type const * const src, Type *const tgt, const int count) {
-  cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost);
+  CudaAssertError(
+    cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost)
+  );
 }
 
 // Microkernels

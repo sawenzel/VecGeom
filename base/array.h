@@ -2,20 +2,28 @@
 #define VECGEOM_BASE_ARRAY_H_
 
 #include "base/container.h"
-#ifdef VECGEOM_NVCC
-#include "backend/cuda_backend.h"
-#endif
 
 namespace vecgeom {
 
-template <int arr_size, typename Type>
+template <typename Type>
 class Array : public Container<Type> {
 
 private:
 
-  Type arr[size];
+  Type *arr;
+  int size_;
 
 public:
+
+  Array(const int size) {
+    size_ = size;
+    arr = new Type[size];
+  }
+
+  Array(Type *const arr_, const int size__) {
+    arr = arr_;
+    size_ = size__;
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -32,24 +40,8 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   int size() const {
-    return arr_size;
+    return size_;
   }
-
-  #ifdef VECGEOM_NVCC
-
-  VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  void CopyToGPU(Type *const target) const {
-    vecgeom::CopyToGPU(arr, &target, arr_size);
-  }
-
-  VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  void CopyFromGPU(Type *const target) const {
-    vecgeom::CopyFromGPU(arr, &target, arr_size);
-  }
-
-  #endif
 
 private:
 
@@ -57,8 +49,12 @@ private:
 
   public:
 
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
     ArrayIterator(Type const *const e) : Iterator<Type>(e) {}
 
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
     Iterator<Type>& operator++() {
       this->element_++;
       return *this;
@@ -68,11 +64,15 @@ private:
 
 public:
 
-  Iterator<Type> begin() const {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Iterator<Type> begin() const {
     return ArrayIterator(&arr[0]);
   }
 
-  Iterator<Type> end() const {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Iterator<Type> end() const {
     return ArrayIterator(&arr[size()]);
   }
 

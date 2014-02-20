@@ -10,12 +10,12 @@ class VUnplacedVolume {
 
 public:
 
-  VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol);
+
+  virtual int byte_size() const =0;
 
 private:
 
-  VECGEOM_CUDA_HEADER_HOST
   virtual void print(std::ostream &os) const =0;
 
 };

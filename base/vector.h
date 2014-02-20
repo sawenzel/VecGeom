@@ -16,6 +16,7 @@ private:
 public:
 
   Vector() {}
+
   ~Vector() {}
 
   VECGEOM_INLINE
@@ -43,8 +44,12 @@ private:
 
   public:
 
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
     VectorIterator(Type const *const e) : Iterator<Type>(e) {}
 
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
     Iterator<Type>& operator++() {
       this->element_++;
       return *this;
@@ -54,11 +59,15 @@ private:
 
 public:
 
-  Iterator<Type> begin() const {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Iterator<Type> begin() const {
     return VectorIterator(&vec[0]);
   }
 
-  Iterator<Type> end() const {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Iterator<Type> end() const {
     return VectorIterator(&vec[size()]);
   }
 

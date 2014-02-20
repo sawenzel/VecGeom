@@ -125,7 +125,7 @@ public:
    */
   VECGEOM_CUDA_HEADER_HOST
   VECGEOM_INLINE
-  void FreeFromGPU() {
+  void FreeFromGpu() {
     cudaFree(a);
     cudaFree(b);
     cudaFree(c);

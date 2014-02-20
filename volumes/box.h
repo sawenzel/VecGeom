@@ -16,10 +16,11 @@ private:
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
   UnplacedBox(Vector3D<Precision> const &dim) {
     dimensions_ = dim;
   }
+
+  virtual int byte_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -62,6 +63,10 @@ public:
             TransformationMatrix const &matrix__)
       : VPlacedVolume(unplaced_volume__, matrix__) {}
   #endif
+
+  virtual ~PlacedBox() {}
+
+  virtual int byte_size() const { return sizeof(*this); }
 
   template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
   VECGEOM_CUDA_HEADER_BOTH

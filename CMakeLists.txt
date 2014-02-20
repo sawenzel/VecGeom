@@ -140,7 +140,7 @@ file(GLOB SRC_CPP "source/*.cu" "source/*.cpp")
 
 if (CUDA)
 
-  set(SRC_CUDA)
+  file(GLOB_RECURSE SRC_CUDA "source/*.cu")
 
   foreach(SRC_FILE ${SRC_CPP})
 
@@ -165,9 +165,9 @@ endif()
 if (NOT CUDA)
   add_library(vecgeom_cpp ${SRC_CPP})
   set(LIBS ${LIBS} vecgeom_cpp)
-  add_executable(compile_test ${SRC_COMPILETEST} ${CMAKE_SOURCE_DIR}/test/compile_main.cpp)
+  add_executable(compile_test ${SRC_COMPILETEST})
 else()
-  cuda_add_executable(compile_test ${SRC_CUDA} ${SRC_COMPILETEST} ${CMAKE_SOURCE_DIR}/test/compile_main.cpp OPTIONS ${CUDA_ARCH})
+  cuda_add_executable(compile_test ${SRC_CUDA} ${SRC_COMPILETEST} OPTIONS ${CUDA_ARCH})
 endif()
 
 target_link_libraries(compile_test ${LIBS})

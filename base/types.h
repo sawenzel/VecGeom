@@ -14,7 +14,7 @@ class Vector3D;
 template <typename Type>
 class SOA3D;
 
-class VLogicalVolume;
+class LogicalVolume;
 
 class VPlacedVolume;
 

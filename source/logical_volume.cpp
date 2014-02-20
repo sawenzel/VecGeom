@@ -4,7 +4,7 @@
 namespace vecgeom {
 
 VECGEOM_CUDA_HEADER_HOST
-VLogicalVolume::~VLogicalVolume() {
+LogicalVolume::~LogicalVolume() {
   Vector<VPlacedVolume const*> *vector =
       static_cast<Vector<VPlacedVolume const*> *>(daughters_);
   for (int i = 0; i < vector->size(); ++i) {
@@ -14,7 +14,7 @@ VLogicalVolume::~VLogicalVolume() {
 }
 
 VECGEOM_CUDA_HEADER_HOST
-void VLogicalVolume::PlaceDaughter(VLogicalVolume const &volume,
+void LogicalVolume::PlaceDaughter(LogicalVolume const &volume,
                                    TransformationMatrix const &matrix) {
   VPlacedVolume *placed = new VPlacedVolume(volume, matrix);
   static_cast<Vector<VPlacedVolume const*> *>(
@@ -23,7 +23,7 @@ void VLogicalVolume::PlaceDaughter(VLogicalVolume const &volume,
 }
 
 VECGEOM_CUDA_HEADER_HOST
-std::ostream& operator<<(std::ostream& os, VLogicalVolume const &vol) {
+std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   os << vol.unplaced_volume() << std::endl;
   for (Iterator<VPlacedVolume const*> i = vol.daughters().begin();
        i != vol.daughters().end(); ++i) {
