@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 2.8)
 project(vecgeom)
 
-# Default to Vc
-if (NOT BACKEND)
-  set(BACKEND Vc)
-endif ()
+################################################################################
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
+
+option(BACKEND "Backend for parallelization over particles." "Vc")
+
+option(VECTOR "Vector instruction set to be passed to compiler with
+               -m<instruction_set>." "")
+
+################################################################################
+
+# Determine backend
 
 if (BACKEND STREQUAL "Vc")
   set(Vc TRUE)
@@ -18,9 +24,15 @@ if (BACKEND STREQUAL "Cilk")
   set(Cilk TRUE)
 endif()
 
+message(STATUS "Configuring with backend ${BACKEND}.")
+
+# NVCC cannot compile Vc, which is C++11 exclusive
 if (CUDA)
   set(VC_ACCELERATION OFF)
 endif()
+
+
+# Determine C++ compiler being used
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(Clang TRUE)
@@ -32,12 +44,17 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(Intel TRUE)
 endif()
 
-message(STATUS "Configuring with backend ${BACKEND}.")
+
+# Allow specifying vector instruction set
 
 if ((NOT Intel) AND VECTOR)
   message(STATUS "Compiling with vector instruction set ${VECTOR}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${VECTOR}")
 endif()
+
+################################################################################
+
+# Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -ftree-vectorize")
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -53,26 +70,29 @@ if (Intel)
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
+if (VC_ACCELERATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
+endif()
+
+################################################################################
 
 if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
+  # Dirty workaround because includes are not properly found by CMake
   get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)
   include_directories(${Vc_LIBPATH}/../include/)
 
 endif()
 
-if (VC_ACCELERATION)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
-endif()
-
 if (Vc)
 
   if (GNU)
+    # Fixes ABI issues with Vc using GNU compiler
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/vc_backend.cpp)
+  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/backend/vc_backend.cpp)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
 
 endif()
@@ -83,7 +103,7 @@ if (Cilk)
     message(FATAL_ERROR "Must use Intel C++ compiler for Cilk backend.")
   endif()
 
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/cilk_backend.cpp)
+  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/backend/cilk_backend.cpp)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
 
 endif()
@@ -93,35 +113,61 @@ if (CUDA)
   find_package(CUDA REQUIRED)
   include(FindCUDA)
 
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -rdc=true -arch=sm_30 -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable")
-  set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
+  set(CUDA_ARCH -gencode arch=compute_35,code=sm_35)
+
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_ARCH} -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable")
   set(CUDA_SEPARABLE_COMPILATION ON)
-  set(BUILD_SHARED_LIBS OFF)
+  # set(CUDA_VERBOSE_BUILD ON)
 
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 endif()
-
-include_directories(${CMAKE_SOURCE_DIR})
-
-set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/transformation_matrix.cpp ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp ${CMAKE_SOURCE_DIR}/source/scalar_backend.cpp)
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
-if (NOT CUDA)
-  add_library(vecgeom_cpp ${SRC_CPP})
-else()
-  cuda_add_library(vecgeom_cpp ${SRC_CPP})
+################################################################################
+
+include_directories(${CMAKE_SOURCE_DIR})
+
+file(GLOB SRC_CPP "source/*.cu" "source/*.cpp")
+
+# Copy all source files to .cu-files in order for NVCC to compile them as CUDA
+# code and not regular C++ files.
+
+if (CUDA)
+
+  set(SRC_CUDA)
+
+  foreach(SRC_FILE ${SRC_CPP})
+
+    get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
+
+    ADD_CUSTOM_COMMAND(
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
+      DEPENDS ${SRC_FILE}
+    )
+
+    set(SRC_CUDA ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu)
+
+  endforeach(SRC_FILE)
+
 endif()
-set(LIBS ${LIBS} vecgeom_cpp)
+
+################################################################################
+
+# Compile and link
 
 if (NOT CUDA)
+  add_library(vecgeom_cpp ${SRC_CPP})
+  set(LIBS ${LIBS} vecgeom_cpp)
   add_executable(compile_test ${SRC_COMPILETEST} ${CMAKE_SOURCE_DIR}/test/compile_main.cpp)
 else()
-  cuda_add_executable(compile_test ${SRC_COMPILETEST} ${CMAKE_SOURCE_DIR}/test/compile_main.cpp)
+  cuda_add_executable(compile_test ${SRC_CUDA} ${SRC_COMPILETEST} ${CMAKE_SOURCE_DIR}/test/compile_main.cpp OPTIONS ${CUDA_ARCH})
 endif()
 
 target_link_libraries(compile_test ${LIBS})
