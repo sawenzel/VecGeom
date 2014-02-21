@@ -407,8 +407,8 @@ void SetZ(double z)  {
 		Vector3DFast tmp;
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 		{
-			mask_t m = this->internalVcmemory.vector(i) < 0;
-			result |= ! m.isEmpty();
+		  mask_t m = this->internalVcmemory.vector(i) < Vc::Zero;
+		  result |= ! m.isEmpty();
 		}
 		return result;
 	}
