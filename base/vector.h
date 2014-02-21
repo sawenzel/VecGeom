@@ -12,10 +12,14 @@ class Vector : public Container<Type> {
 private:
 
   std::vector<Type> vec;
+  Type *begin_ptr, *end_ptr;
 
 public:
 
-  Vector() {}
+  Vector() {
+    begin_ptr = &vec[0];
+    end_ptr = &vec[0];
+  }
 
   ~Vector() {}
 
@@ -36,6 +40,8 @@ public:
 
   void push_back(Type const &item) {
     vec.push_back(item);
+    begin_ptr = &vec[0];
+    end_ptr = &vec[size()-1];
   }
 
 private:
@@ -62,13 +68,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Iterator<Type> begin() const {
-    return VectorIterator(&vec[0]);
+    return VectorIterator(begin_ptr);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Iterator<Type> end() const {
-    return VectorIterator(&vec[size()]);
+    return VectorIterator(end_ptr);
   }
 
 };

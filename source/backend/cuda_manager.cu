@@ -118,7 +118,7 @@ void CudaManager::AllocateGeometry() {
     // Also allocate the C-array necessary when creating the array object.
     // Will index with the GPU address of the Array object.
     const GpuAddress gpu_array = AllocateOnGpu(
-      (static_cast<Vector<VPlacedVolume const*> *>(*i))->size()
+      (static_cast<Vector<VPlacedVolume const*> const*>(*i))->size()
       * sizeof(VPlacedVolume const*)
     );
     memory_map[ToCpuAddress(gpu_address)] = ToGpuAddress(gpu_array);
