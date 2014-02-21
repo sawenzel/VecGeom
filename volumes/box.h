@@ -20,7 +20,14 @@ public:
     dimensions_ = dim;
   }
 
+  UnplacedBox(const Precision dx, const Precision dy, const Precision dz)
+      : dimensions_(dx, dy, dz) {}
+
   virtual int byte_size() const { return sizeof(*this); }
+
+  #ifdef VECGEOM_NVCC
+  virtual void CopyToGpu(VUnplacedVolume *const target) const;
+  #endif
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

@@ -8,27 +8,29 @@
 
 namespace vecgeom {
 
+typedef VPlacedVolume const* Daughter;
+
 class LogicalVolume {
 
 private:
 
   VUnplacedVolume const &unplaced_volume_;
-  Container<VPlacedVolume const*> *daughters_;
+  Container<Daughter> *daughters_;
 
-  friend class VPlacedVolume;
+  friend class CudaManager;
 
 public:
 
   LogicalVolume(VUnplacedVolume const &unplaced_volume__)
       : unplaced_volume_(unplaced_volume__) {
-    daughters_ = new Vector<VPlacedVolume const*>();
+    daughters_ = new Vector<Daughter>();
   }
 
   /**
    * Constructor for building geometry on the GPU.
    */
   LogicalVolume(VUnplacedVolume const *const unplaced_ptr,
-                 Container<VPlacedVolume const*> *const daughters_ptr)
+                Container<Daughter> *const daughters_ptr)
       : unplaced_volume_(*unplaced_ptr), daughters_(daughters_ptr) {}
 
   ~LogicalVolume();
@@ -39,7 +41,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Container<VPlacedVolume const*> const& daughters() const {
+  Container<Daughter> const& daughters() const {
     return *daughters_;
   }
 

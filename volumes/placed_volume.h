@@ -14,6 +14,8 @@ private:
 
   int id;
 
+  friend class CudaManager;
+
 protected:
 
   LogicalVolume const &logical_volume_;

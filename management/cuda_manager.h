@@ -17,7 +17,7 @@ private:
   std::set<LogicalVolume const*> logical_volumes;
   std::set<VPlacedVolume const*> placed_volumes;
   std::set<TransformationMatrix const*> matrices;
-  std::set<Container<VPlacedVolume const*> const*> daughters;
+  std::set<Container<VPlacedVolume const*> *> daughters;
 
   typedef void const* CpuAddress;
   typedef void* GpuAddress;

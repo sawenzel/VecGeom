@@ -49,6 +49,7 @@ const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
 const double kInfinity = INFINITY;
 const double kTiny = 1e-20;
+const double kNearZero = 1e-12;
 const double kGTolerance = 1e-9;
 
 } // End namespace vecgeom

@@ -76,11 +76,9 @@ public:
   virtual ~Container() {}
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   virtual Iterator<Type> begin() const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   virtual Iterator<Type> end() const =0;
 
 };

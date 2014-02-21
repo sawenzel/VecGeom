@@ -3,5 +3,5 @@ rm -rf build
 mkdir build
 cd build
 cmake ../ -DBACKEND=CUDA
-make
+make -j4
 cd ../

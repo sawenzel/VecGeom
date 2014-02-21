@@ -4,7 +4,6 @@
 #include <Vc/Vc>
 #include "base/utilities.h"
 #include "base/types.h"
-#include "backend/backend.h"
 
 namespace vecgeom {
 

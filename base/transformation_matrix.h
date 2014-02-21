@@ -34,15 +34,15 @@ private:
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix();
 
-  VECGEOM_CUDA_HEADER_BOTH
+  TransformationMatrix(const Precision tx, const Precision ty,
+                       const Precision tz);
+
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);
-
-  VECGEOM_CUDA_HEADER_BOTH
+  
   TransformationMatrix(TransformationMatrix const &other);
 
   // Accessors
