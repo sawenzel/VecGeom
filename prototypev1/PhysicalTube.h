@@ -50,6 +50,22 @@ private:
 
 
 public:
+
+	// for proper memory allocation on the heap
+	static 
+	void * operator new(std::size_t sz)
+	{
+	  std::cerr  << "overloaded new called for Boxparams" << std::endl; 
+	  void *aligned_buffer=_mm_malloc( sizeof(TubeParameters), 32 );
+	  return ::operator new(sz, aligned_buffer);
+	}
+
+	static
+	  void operator delete(void * ptr)
+	{
+	  _mm_free(ptr);
+	}
+
 	TubeParameters(T pRmin, T pRmax, T pDZ, T pPhiMin=0, T pPhiMax=2*M_PI) :
 		dRmin(pRmin),
 		dRmax(pRmax),
@@ -89,8 +105,15 @@ public:
 			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi, alongPhi1);
 			GeneralPhiUtils::GetAlongVectorToPhiPlane(dSPhi + dDPhi, alongPhi2);
 
-			// normalPhi1.print();
-			// normalPhi2.print();
+			normalPhi1.print();
+			normalPhi2.print();
+
+			normalPhi1fast.Set(normalPhi1.GetX(), normalPhi1.GetY(), normalPhi1.GetZ() );
+			normalPhi2fast.Set(normalPhi2.GetX(), normalPhi2.GetY(), normalPhi2.GetZ() );
+
+			alongPhi1fast.Set(alongPhi1.GetX(), alongPhi1.GetY(), alongPhi1.GetZ() );
+			alongPhi2fast.Set(alongPhi2.GetX(), alongPhi2.GetY(), alongPhi2.GetZ() );
+					
 	};
 
 	//**** we save normals to phi - planes *****//
@@ -99,6 +122,11 @@ public:
 		//**** vectors along radial direction of phi-planes
 		Vector3D alongPhi1;
 		Vector3D alongPhi2;
+
+		Vector3DFast normalPhi1fast;
+		Vector3DFast normalPhi2fast;
+		Vector3DFast alongPhi1fast;
+		Vector3DFast alongPhi2fast;
 
 //	virtual void inspect() const;
 
@@ -272,6 +300,16 @@ public:
 		}
 	};
 
+	// for fast vectors
+	virtual double DistanceToIn( Vector3DFast const &, Vector3DFast const &, double ) const;
+	virtual double DistanceToOut( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const; 
+	// virtual double DistanceToInAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {};
+	// virtual double DistanceToOutAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {};
+	virtual bool   Contains( Vector3DFast const & ) const;
+	virtual bool   UnplacedContains( Vector3DFast const & ) const;
+		
+
+
 	// ** functions to implement
 	__attribute__((always_inline))
 	virtual double DistanceToIn( Vector3D const &, Vector3D const &, double ) const;
@@ -316,6 +354,15 @@ public:
 	__attribute__((always_inline))
 	void DistanceToIn( VectorType const & /*x-vec*/, VectorType const & /*y-vec*/, VectorType const & /*z-vec*/,
 					   VectorType const & /*dx-vec*/, VectorType const & /*dy-vec*/, VectorType const & /*dz-vec*/, VectorType const & /*step*/, VectorType & /*result*/ ) const;
+
+
+
+	// same as Contains but returning the transformed point for further processing
+	// this function is a "specific" version for locating points in a volume hierarchy
+	// it also modifies the global matrix
+	// virtual bool   Contains( Vector3DFast const &, Vector3DFast & ) const; 
+	// this version modifies the global matrix additionally
+	// virtual bool   Contains( Vector3DFast const &, Vector3DFast &, FastTransformationMatrix * ) const; 
 
 
 // some helper functions ( mainly for debugging )
@@ -476,6 +523,126 @@ PlacedUSolidsTube<tid,rid,TubeType,T>::DebugPointAndDirDistanceToIn( Vector3D co
 	printInfoHitPoint("hitpointZ", vZ, distance);
 }
 
+/* for fast vectors */
+template<int tid, int rid, typename TubeType, typename T>
+double 
+PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn( Vector3DFast const &x, Vector3DFast const &dir, double step /*step*/ ) const {
+}
+
+template<int tid, int rid, typename TubeType, typename T>
+double 
+PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToOut( Vector3DFast const &x, Vector3DFast const &dir, double step /*step*/ ) const {
+	
+}
+
+template<int tid, int rid, typename TubeType, typename T>
+bool   PlacedUSolidsTube<tid,rid,TubeType,T>::Contains( Vector3D const & x ) const
+{
+	// std::cout << "in contains vector3d" << std::endl;
+	Vector3D xp;
+	matrix->MasterToLocal<tid,rid>(x,xp);
+	return this->PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains(xp);
+}
+
+template<int tid, int rid, typename TubeType, typename T>
+inline
+bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x) const
+{
+	// checkContainedZ
+	if( std::abs(x.z) > tubeparams->dZ ) return false;
+
+	// checkContainmentR
+	T r2 = x.x*x.x + x.y*x.y;
+	if( r2 > tubeparams->cacheRmaxSqr ) return false;
+
+	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
+	{
+		if( r2 < tubeparams->cacheRminSqr ) return false;
+	}
+
+	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
+	{
+		if ( ( Vector3D::scalarProduct(x, tubeparams->normalPhi1 ) > 0 )
+				&& Vector3D::scalarProductInXYPlane(x, tubeparams->normalPhi2 ) > 0 ) return false;
+	}
+	return true;
+}
+
+template<int tid, int rid, typename TubeType, typename T>
+bool 
+PlacedUSolidsTube<tid,rid,TubeType,T>::Contains( Vector3DFast const & x ) const
+{
+	Vector3DFast local;
+	fastmatrix->MasterToLocal<tid,rid>(x,local);
+	return this->PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains(local);
+}
+
+template<int tid, int rid, typename TubeType, typename T>
+inline
+bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3DFast const & x) const 
+{
+	// std::cout << "in unplaced contains of vector3dfast" << std::endl;
+	// checkContainedZ
+	if( std::abs(x.GetZ()) > tubeparams->dZ ) return false;
+
+	// checkContainmentR
+	T r2 = x.SquaredOnXYplane();
+	if( r2 > tubeparams->cacheRmaxSqr ) return false;
+
+	if( TubeTraits::NeedsRminTreatment<TubeType>::value ) {
+		if( r2 < tubeparams->cacheRminSqr) return false;
+	}
+
+	if( TubeTraits::NeedsPhiTreatment<TubeType>::value ) {
+		//std::cout << "in needs phi treatment" << std::endl;
+		if(  (x.ScalarProduct(tubeparams->normalPhi1fast) > 0 ) &&
+			 (x.ScalarProductInXYPlane(tubeparams->normalPhi2fast) > 0)) {
+
+			return false;
+		}
+	}
+	return true;
+
+
+	// bool outside = r2 > tubeparams->cacheRmaxSqr | r2 < tubeparams->cacheRminSqr;
+	// outside |= x.ScalarProduct(tubeparams->normalPhi1fast) > 0 & x.ScalarProductInXYPlane(tubeparams->normalPhi2fast) > 0;
+
+	// return !outside;
+
+
+	// if( TubeTraits::NeedsPhiTreatment<TubeType>::value ) 
+	// {
+	// 	std::cout << "in needs phi treatment" << std::endl;
+	// 	if(  (x.ScalarProduct(tubeparams->normalPhi1fast) > 0 ) &&
+	// 		 (x.ScalarProductInXYPlane(tubeparams->normalPhi2fast) > 0)) {
+
+	// 		std::cout << "returning false due to phi treatment" << std::endl;
+	// 		return false;
+
+	// 	}
+	// }
+	// return true;
+
+	// if( r2 > tubeparams->cacheRmaxSqr ) return false;
+
+	// if( TubeTraits::NeedsRminTreatment<TubeType>::value ) 
+	// {
+	// 	if( r2 < tubeparams->cacheRminSqr) return false;
+	// }
+
+	// if( TubeTraits::NeedsPhiTreatment<TubeType>::value ) 
+	// {
+	// 	std::cout << "in needs phi treatment" << std::endl;
+	// 	if(  (x.ScalarProduct(tubeparams->normalPhi1fast) > 0 ) &&
+	// 		 (x.ScalarProductInXYPlane(tubeparams->normalPhi2fast) > 0)) {
+
+	// 		std::cout << "returning false due to phi treatment" << std::endl;
+	// 		return false;
+
+	// 	}
+	// }
+	// return true;
+}
 
 template<int tid, int rid, class TubeType, typename T>
 inline
@@ -832,7 +999,6 @@ void PlacedUSolidsTube<tid,rid,TubeType,ValueType>::DistanceToOut( VectorType co
 	}
 }
 
-
 // a template version targeted at T = Vc or T = Boost.SIMD or T= double
 // this is the kernel operating on type T
 template<int tid, int rid, typename TubeType, typename ValueType>
@@ -1036,40 +1202,6 @@ void PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToInIL( Vector3D const * poi
 		distances[i]=this->PlacedUSolidsTube<tid,rid,TubeType,T>::DistanceToIn(points[i],dirs[i],steps[i]);
 	}
 }
-
-template<int tid, int rid, typename TubeType, typename T>
-bool   PlacedUSolidsTube<tid,rid,TubeType,T>::Contains( Vector3D const & x ) const
-{
-	Vector3D xp;
-	matrix->MasterToLocal<tid,rid>(x,xp);
-	return this->PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains(xp);
-}
-
-
-template<int tid, int rid, typename TubeType, typename T>
-inline
-bool PlacedUSolidsTube<tid,rid,TubeType,T>::UnplacedContains( Vector3D const & x) const
-{
-	// checkContainedZ
-	if( std::abs(x.z) > tubeparams->dZ ) return false;
-
-	// checkContainmentR
-	T r2 = x.x*x.x + x.y*x.y;
-	if( r2 > tubeparams->cacheRmaxSqr ) return false;
-
-	if ( TubeTraits::NeedsRminTreatment<TubeType>::value )
-	{
-		if( r2 < tubeparams->cacheRminSqr ) return false;
-	}
-
-	if ( TubeTraits::NeedsPhiTreatment<TubeType>::value )
-	{
-		if ( ( Vector3D::scalarProduct(x, tubeparams->normalPhi1 ) > 0 )
-				&& Vector3D::scalarProductInXYPlane(x, tubeparams->normalPhi2 ) > 0 ) return false;
-	}
-	return true;
-}
-
 
 template<int tid, int rid, typename TubeType, typename T>
 inline
