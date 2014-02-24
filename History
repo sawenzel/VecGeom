@@ -16,6 +16,16 @@ committal in the SVN repository !
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
 
+February 21th, 2014  T.Nikitina            
+- Implemented precise safety in UTubs and UCons for SafetyFromOutside().
+  Precise safety is used in UPolycone for calculation of SafetyFromOutside().
+- UPolycone fixes: added validity check of shape for case when RMin > RMax;
+  moved global bounding-box to be a class data member.
+  Corrected implementation of DistanceToOut(p,v) for convexity and normals.
+  Corrected implementation of DistanceToOut(p,v) for stuck tracks due to
+  DistanceToIn=DistanceToOut=0.
+  Corrected implementation of Inside() in case of OpenPhi. 
+
 February 12th, 2014 - G.Cosmo
 - Corrected implementation of Clone() method in UBox, UTet, UTrd.
 - Corrected copy constructor in G4USolid bridge; removed ResetPolyhedron()
