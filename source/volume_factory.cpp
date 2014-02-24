@@ -3,6 +3,21 @@
 
 namespace vecgeom {
 
+template <typename VolumeType>
+class ShapeFactory;
+
+template <>
+class ShapeFactory<PlacedBox> {
+
+public:
+
+  template<TranslationCode trans_code, RotationCode rot_code>
+  static VPlacedVolume* Create(LogicalVolume const &logical_volume,
+                               TransformationMatrix const &matrix) {
+    return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
+  }
+
+};
 
 VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
     LogicalVolume const &logical_volume,
@@ -19,7 +34,7 @@ VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
       dynamic_cast<UnplacedBox const *const>(
         &logical_volume.unplaced_volume()
       )) {
-    placed = CreateByTransformation<SpecializedBox>(logical_volume, matrix,
+    placed = CreateByTransformation<PlacedBox>(logical_volume, matrix,
                                                     trans_code, rot_code);
   }
 
@@ -36,104 +51,170 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
     const TranslationCode trans_code, const RotationCode rot_code) const {
 
   if (trans_code == 0 && rot_code == 0x1b1) {
-    return Create<VolumeType, 0, 0x1b1>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x1b1>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x1b1) {
-    return Create<VolumeType, 1, 0x1b1>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x1b1>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x18e) {
-    return Create<VolumeType, 0, 0x18e>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x18e>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x18e) {
-    return Create<VolumeType, 1, 0x18e>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x18e>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x076) {
-    return Create<VolumeType, 0, 0x076>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x076>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x076) {
-    return Create<VolumeType, 1, 0x076>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x076>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x16a) {
-    return Create<VolumeType, 0, 0x16a>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x16a>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x16a) {
-    return Create<VolumeType, 1, 0x16a>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x16a>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x155) {
-    return Create<VolumeType, 0, 0x155>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x155>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x155) {
-    return Create<VolumeType, 1, 0x155>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x155>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x0ad) {
-    return Create<VolumeType, 0, 0x0ad>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x0ad>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x0ad) {
-    return Create<VolumeType, 1, 0x0ad>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x0ad>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x0dc) {
-    return Create<VolumeType, 0, 0x0dc>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x0dc>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x0dc) {
-    return Create<VolumeType, 1, 0x0dc>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x0dc>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x0e3) {
-    return Create<VolumeType, 0, 0x0e3>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x0e3>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x0e3) {
-    return Create<VolumeType, 1, 0x0e3>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x0e3>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x11b) {
-    return Create<VolumeType, 0, 0x11b>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x11b>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x11b) {
-    return Create<VolumeType, 1, 0x11b>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x11b>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x0a1) {
-    return Create<VolumeType, 0, 0x0a1>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x0a1>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x0a1) {
-    return Create<VolumeType, 1, 0x0a1>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x0a1>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x10a) {
-    return Create<VolumeType, 0, 0x10a>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x10a>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x10a) {
-    return Create<VolumeType, 1, 0x10a>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x10a>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x046) {
-    return Create<VolumeType, 0, 0x046>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x046>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x046) {
-    return Create<VolumeType, 1, 0x046>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x046>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x062) {
-    return Create<VolumeType, 0, 0x062>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x062>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x062) {
-    return Create<VolumeType, 1, 0x062>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x062>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x054) {
-    return Create<VolumeType, 0, 0x054>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x054>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x054) {
-    return Create<VolumeType, 1, 0x054>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x054>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x111) {
-    return Create<VolumeType, 0, 0x111>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x111>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x111) {
-    return Create<VolumeType, 1, 0x111>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x111>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 0 && rot_code == 0x200) {
-    return Create<VolumeType, 0, 0x200>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<0, 0x200>(
+             logical_volume, matrix
+           );
   }
   if (trans_code == 1 && rot_code == 0x200) {
-    return Create<VolumeType, 1, 0x200>(unplaced, matrix);
+    return ShapeFactory<VolumeType>::template Create<1, 0x200>(
+             logical_volume, matrix
+           );
   }
 
   // No specialization
-  return Create<1, 0>(unplaced, matrix);
+  return ShapeFactory<VolumeType>::template Create<1, 0>(
+           logical_volume, matrix
+         );
 
 }
 
