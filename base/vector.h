@@ -13,12 +13,14 @@ private:
 
   std::vector<Type> vec;
   Type *begin_ptr, *end_ptr;
+  int size_;
 
 public:
 
   Vector() {
     begin_ptr = &vec[0];
     end_ptr = &vec[0];
+    size_ = 0;
   }
 
   ~Vector() {}
@@ -33,15 +35,11 @@ public:
     return vec[index];
   }
 
-  VECGEOM_INLINE
-  int size() const {
-    return vec.size();
-  }
-
   void push_back(Type const &item) {
     vec.push_back(item);
+    size_ = vec.size();
     begin_ptr = &vec[0];
-    end_ptr = &vec[size()-1];
+    end_ptr = &vec[size()];
   }
 
 private:
@@ -75,6 +73,12 @@ public:
   VECGEOM_INLINE
   virtual Iterator<Type> end() const {
     return VectorIterator(end_ptr);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual int size() const {
+    return size_;
   }
 
 };

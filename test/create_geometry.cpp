@@ -33,5 +33,7 @@ int main() {
   world.PlaceDaughter(largebox, box7);
   world.PlaceDaughter(largebox, box8);
 
+  world.PrintContent();
+
   return 0;
 }

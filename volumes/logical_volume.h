@@ -2,6 +2,7 @@
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
 #include <iostream>
+#include <string>
 #include "base/types.h"
 #include "base/vector.h"
 #include "volumes/unplaced_volume.h"
@@ -47,6 +48,11 @@ public:
 
   void PlaceDaughter(LogicalVolume const &volume,
                      TransformationMatrix const &matrix);
+
+  /**
+   * Recursively prints contained logical volumes.
+   */
+  void PrintContent(std::string prefix = "") const;
 
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 

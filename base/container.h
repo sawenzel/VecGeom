@@ -16,6 +16,10 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Iterator(Iterator const &other) : element_(other.element_) {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Iterator& operator=(Iterator const &other) {
     element_ = other.element_;
     return *this;
@@ -30,7 +34,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   bool operator!=(Iterator const &other) {
-    return !(*this == other);
+    return element_ != other.element_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -80,6 +84,9 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Iterator<Type> end() const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual int size() const =0;
 
 };
 
