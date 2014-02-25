@@ -60,9 +60,6 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-if (Clang)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -ftree-vectorize")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000")
@@ -187,8 +184,10 @@ if (NOT CUDA)
   add_executable(compile_test ${SRC_COMPILETEST})
   add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
 else()
-  cuda_add_executable(compile_test ${SRC_CUDA} ${SRC_COMPILETEST} OPTIONS ${CUDA_GENCODE})
-  cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/create_geometry.cu OPTIONS ${CUDA_GENCODE})
+  cuda_add_library(vecgeom_cpp ${SRC_CUDA})
+  set(LIBS ${LIBS} vecgeom_cpp)
+  cuda_add_executable(compile_test ${SRC_COMPILETEST} OPTIONS ${CUDA_GENCODE})
+  cuda_add_executable(create_geometry_test ${CMAKE_CURRENT_BINARY_DIR}/create_geometry.cu OPTIONS ${CUDA_GENCODE})
 endif()
 
 target_link_libraries(compile_test ${LIBS})

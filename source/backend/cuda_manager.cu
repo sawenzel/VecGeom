@@ -35,7 +35,7 @@ void CudaManager::Synchronize() {
     );
 
     CopyToGpu(
-      gpu_object, static_cast<LogicalVolume*>(memory_map[ToCpuAddress(*i)]), 1
+      gpu_object, static_cast<LogicalVolume*>(memory_map[ToCpuAddress(*i)])
     );
 
     delete gpu_object;
@@ -54,17 +54,24 @@ void CudaManager::Synchronize() {
   for (std::set<VPlacedVolume const*>::const_iterator i =
        placed_volumes.begin(); i != placed_volumes.end(); ++i) {
 
-    VPlacedVolume *gpu_object = new VPlacedVolume(
+    VPlacedVolume *gpu_object =
+        VolumeFactory::Instance().CreateSpecializedVolume(
+          (*i)->logical_volume(),
+          (*i)->matrix()
+        );
+    gpu_object->set_logical_volume(
       static_cast<LogicalVolume const*>(
         memory_map[ToCpuAddress(&(*i)->logical_volume())]
-      ),
-      static_cast<TransformationMatrix const*>(
+      )
+    );
+    gpu_object->set_matrix(
+      static_cast<TransformatonMatrix const*>(
         memory_map[ToCpuAddress(&(*i)->matrix())]
       )
     );
 
     CopyToGpu(
-      gpu_object, static_cast<VPlacedVolume*>(memory_map[ToCpuAddress(*i)]), 1
+      gpu_object, static_cast<VPlacedVolume*>(memory_map[ToCpuAddress(*i)])
     );
 
     delete gpu_object;
@@ -75,7 +82,7 @@ void CudaManager::Synchronize() {
        matrices.begin(); i != matrices.end(); ++i) {
 
     CopyToGpu(
-      *i, static_cast<TransformationMatrix*>(memory_map[ToCpuAddress(*i)]), 1
+      *i, static_cast<TransformationMatrix*>(memory_map[ToCpuAddress(*i)])
     );
 
   }
@@ -96,16 +103,14 @@ void CudaManager::Synchronize() {
     VPlacedVolume const **const arr_gpu = static_cast<VPlacedVolume const **>(
       memory_map[ToCpuAddress(memory_map[ToCpuAddress(*i)])]
     );
-    CopyToGpu(arr, arr_gpu, n_daughters);
+    CopyToGpu(arr, arr_gpu, n_daughters*sizeof(VPlacedVolume const*));
     delete arr;
 
     // Then the array containers
     Array<Daughter> *gpu_object =
         new Array<Daughter>(arr_gpu, n_daughters);
     CopyToGpu(
-      gpu_object,
-      static_cast<Array<Daughter> *>(memory_map[ToCpuAddress(*i)]),
-      1
+      gpu_object, static_cast<Array<Daughter> *>(memory_map[ToCpuAddress(*i)]),
     );
     delete gpu_object;
 

@@ -30,12 +30,11 @@ VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
 
   VPlacedVolume *placed = NULL;
 
-  if (UnplacedBox const *const box =
-      dynamic_cast<UnplacedBox const *const>(
-        &logical_volume.unplaced_volume()
-      )) {
+  UnplacedBox const *const box =
+      dynamic_cast<UnplacedBox const *const>(&logical_volume.unplaced_volume());
+  if (box != NULL) {
     placed = CreateByTransformation<PlacedBox>(logical_volume, matrix,
-                                                    trans_code, rot_code);
+                                               trans_code, rot_code);
   }
 
   // Will return null if the passed shape isn't implemented here. Maybe throw an

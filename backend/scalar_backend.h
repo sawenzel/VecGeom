@@ -43,14 +43,14 @@ template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Abs(const Type val) {
-  return std::fabs(val);
+  return fabs(val);
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Sqrt(const Type val) {
-  return std::sqrt(val);
+  return sqrt(val);
 }
 
 } // End namespace vecgeom
