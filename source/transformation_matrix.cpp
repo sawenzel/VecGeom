@@ -2,13 +2,18 @@
 
 namespace vecgeom {
 
-VECGEOM_CUDA_HEADER_BOTH
 TransformationMatrix::TransformationMatrix() {
   SetTranslation(0, 0, 0);
-  SetRotation(0, 0, 0);
+  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
+TransformationMatrix::TransformationMatrix(const Precision tx,
+                                           const Precision ty,
+                                           const Precision tz) {
+  SetTranslation(tx, ty, tz);
+  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+}
+
 TransformationMatrix::TransformationMatrix(
     const Precision tx, const Precision ty,
     const Precision tz, const Precision phi,
@@ -17,7 +22,6 @@ TransformationMatrix::TransformationMatrix(
   SetRotation(phi, theta, psi);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
 TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
   SetTranslation(other.Translation(0), other.Translation(1),
                  other.Translation(2));
@@ -43,7 +47,11 @@ void TransformationMatrix::SetTranslation(Vector3D<Precision> const &vec) {
 
 VECGEOM_CUDA_HEADER_BOTH
 void TransformationMatrix::SetProperties() {
-  has_translation = (trans[0] || trans[1] || trans[2]) ? true : false;
+  has_translation = (
+    fabs(trans[0]) > kNearZero ||
+    fabs(trans[1]) > kNearZero ||
+    fabs(trans[2]) > kNearZero
+  ) ? true : false;
   has_rotation = (GenerateRotationCode() == rotation::kIdentity)
                  ? false : true;
   identity = !has_translation && !has_rotation;
@@ -103,7 +111,7 @@ RotationCode TransformationMatrix::GenerateRotationCode() const {
   int code = 0;
   for (int i = 0; i < 9; ++i) {
     // Assign each bit
-    code |= (1<<i) * (rot[i] != 0);
+    code |= (1<<i) * (fabs(rot[i]) > kNearZero);
   }
   if (code == rotation::kDiagonal
       && (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.)) {

@@ -5,7 +5,6 @@
 #include <cassert>
 #include "base/utilities.h"
 #include "base/types.h"
-#include "backend/backend.h"
 
 namespace vecgeom {
 
@@ -89,7 +88,7 @@ void FreeFromGpu(Type *const ptr) {
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-void CopyToGPU(Type const *const src, Type *const tgt, const int count) {
+void CopyToGpu(Type const *const src, Type *const tgt, const int count) {
   CudaAssertError(
     cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyHostToDevice)
   );

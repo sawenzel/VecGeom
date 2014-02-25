@@ -15,15 +15,17 @@ void CudaManager::Synchronize() {
 
   CleanGpu();
 
+  // Populate the memory map with GPU addresses
+
   AllocateGeometry();
 
-  // New objects are to be created, pointing to the GPU addresses allocated,
-  // and will then be copied to the reserved addresses.
+  // Create new objects with pointers adjusted to point to GPU memory, then
+  // copy them to the allocated memory locations on the GPU.
 
   for (std::set<LogicalVolume const*>::const_iterator i =
        logical_volumes.begin(); i != logical_volumes.end(); ++i) {
 
-    LogicalVolume gpu_object = LogicalVolume(
+    LogicalVolume *gpu_object = new LogicalVolume(
       static_cast<VUnplacedVolume const*>(
         memory_map[ToCpuAddress(&(*i)->unplaced_volume())]
       ),
@@ -31,6 +33,81 @@ void CudaManager::Synchronize() {
         memory_map[ToCpuAddress(&(*i)->daughters())]
       )
     );
+
+    CopyToGpu(
+      gpu_object, static_cast<LogicalVolume*>(memory_map[ToCpuAddress(*i)]), 1
+    );
+
+    delete gpu_object;
+
+  }
+
+  for (std::set<VUnplacedVolume const*>::const_iterator i =
+       unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
+
+    (*i)->CopyToGpu(
+      static_cast<VUnplacedVolume*>(memory_map[ToCpuAddress(*i)])
+    );
+
+  }
+
+  for (std::set<VPlacedVolume const*>::const_iterator i =
+       placed_volumes.begin(); i != placed_volumes.end(); ++i) {
+
+    VPlacedVolume *gpu_object = new VPlacedVolume(
+      static_cast<LogicalVolume const*>(
+        memory_map[ToCpuAddress(&(*i)->logical_volume())]
+      ),
+      static_cast<TransformationMatrix const*>(
+        memory_map[ToCpuAddress(&(*i)->matrix())]
+      )
+    );
+
+    CopyToGpu(
+      gpu_object, static_cast<VPlacedVolume*>(memory_map[ToCpuAddress(*i)]), 1
+    );
+
+    delete gpu_object;
+
+  }
+
+  for (std::set<TransformationMatrix const*>::const_iterator i =
+       matrices.begin(); i != matrices.end(); ++i) {
+
+    CopyToGpu(
+      *i, static_cast<TransformationMatrix*>(memory_map[ToCpuAddress(*i)]), 1
+    );
+
+  }
+
+  for (std::set<Container<Daughter> *>::const_iterator i =
+       daughters.begin(); i != daughters.end(); ++i) {
+
+    // First copy the C-arrays
+    const int n_daughters =
+        (static_cast<Vector<Daughter> *>(*i))->size();
+    Daughter *arr = new Daughter[n_daughters];
+    int j = 0;
+    for (Iterator<Daughter> k = (*i)->begin();
+         k != (*i)->end(); ++k) {
+      arr[j] = *k;
+      j++;
+    }
+    VPlacedVolume const **const arr_gpu = static_cast<VPlacedVolume const **>(
+      memory_map[ToCpuAddress(memory_map[ToCpuAddress(*i)])]
+    );
+    CopyToGpu(arr, arr_gpu, n_daughters);
+    delete arr;
+
+    // Then the array containers
+    Array<Daughter> *gpu_object =
+        new Array<Daughter>(arr_gpu, n_daughters);
+    CopyToGpu(
+      gpu_object,
+      static_cast<Array<Daughter> *>(memory_map[ToCpuAddress(*i)]),
+      1
+    );
+    delete gpu_object;
 
   }
 
@@ -108,18 +185,18 @@ void CudaManager::AllocateGeometry() {
 
   }
 
-  for (std::set<Container<VPlacedVolume const*> const*>::const_iterator i =
+  for (std::set<Container<Daughter> *>::const_iterator i =
        daughters.begin(); i != daughters.end(); ++i) {
 
-    Array<VPlacedVolume const*> *const gpu_address =
-        AllocateOnGpu<Array<VPlacedVolume const*> >();
+    Array<Daughter> *const gpu_address =
+        AllocateOnGpu<Array<Daughter> >();
     memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
 
     // Also allocate the C-array necessary when creating the array object.
     // Will index with the GPU address of the Array object.
     const GpuAddress gpu_array = AllocateOnGpu(
-      (static_cast<Vector<VPlacedVolume const*> const*>(*i))->size()
-      * sizeof(VPlacedVolume const*)
+      (static_cast<Vector<Daughter> const*>(*i))->size()
+      * sizeof(Daughter)
     );
     memory_map[ToCpuAddress(gpu_address)] = ToGpuAddress(gpu_array);
 
@@ -136,20 +213,20 @@ void CudaManager::ScanGeometry(LogicalVolume const &volume) {
   if (logical_volumes.find(&volume) != logical_volumes.end()) {
     logical_volumes.insert(&volume);
   }
-  if (unplaced_volumes.find(&volume.unplaced_volume())
+  if (unplaced_volumes.find(&volume.unplaced_volume_)
       != unplaced_volumes.end()) {
-    unplaced_volumes.insert(&volume.unplaced_volume());
+    unplaced_volumes.insert(&volume.unplaced_volume_);
   }
-  if (daughters.find(&volume.daughters()) != daughters.end()) {
-    daughters.insert(&volume.daughters());
+  if (daughters.find(volume.daughters_) != daughters.end()) {
+    daughters.insert(volume.daughters_);
   }
-  for (Iterator<VPlacedVolume const*> i = volume.daughters().begin();
+  for (Iterator<Daughter> i = volume.daughters().begin();
        i != volume.daughters().end(); ++i) {
     if (placed_volumes.find(*i) != placed_volumes.end()) {
       placed_volumes.insert(*i);
     }
-    if (matrices.find(&((*i)->matrix())) != matrices.end()) {
-      matrices.insert(&(*i)->matrix());
+    if (matrices.find(&((*i)->matrix_)) != matrices.end()) {
+      matrices.insert(&(*i)->matrix_);
     }
     ScanGeometry((*i)->logical_volume());
   }

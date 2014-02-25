@@ -37,12 +37,6 @@ public:
     return arr[index];
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  int size() const {
-    return size_;
-  }
-
 private:
 
   class ArrayIterator : public Iterator<Type> {
@@ -74,6 +68,12 @@ public:
   VECGEOM_INLINE
   virtual Iterator<Type> end() const {
     return ArrayIterator(&arr[size()]);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual int size() const {
+    return size_;
   }
 
 };

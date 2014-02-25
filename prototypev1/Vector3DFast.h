@@ -15,12 +15,21 @@
 #include <cassert>
 #include "mm_malloc.h"
 
+/* Useful to construct masks with the first N-bits set */
+const bool maskinit[] = {true, true, true, true,  
+				false, false, false, false,
+				false, false, false, false,
+				false, false, false, false };
+
+static Vc::Vector<double>::Mask maskFirstTwoOn(maskinit+2);
+
 class Vector3DFast
 {
 private:
 	typedef Vc::Vector<double> base_t;
 	typedef typename base_t::Mask mask_t;
 	Vc::Memory<base_t, 3 > internalVcmemory;
+	// mask_t maskFirstTwoOn;
 
 	inline
 	__attribute__((always_inline))
@@ -36,15 +45,15 @@ public:
 	//	double & z;
 
 	// for proper memory allocation on the heap
-	static 
+	// static 
 	void * operator new(std::size_t sz)
 	{
-//	  std::cerr  << "overloaded new called" << std::endl;
+	  std::cerr  << "overloaded new called" << std::endl;
 	  void *aligned_buffer=_mm_malloc( sizeof(Vector3DFast), 32 );
 	  return ::operator new(sz, aligned_buffer);
 	}
 
-	static
+	// static
 	  void operator delete(void * ptr)
 	{
 	  // std::cerr << "overloaded delete" << std::endl;
@@ -57,6 +66,8 @@ public:
 	Vector3DFast( ) : internalVcmemory()
 // , x(internalVcmemory[0]), 	y(internalVcmemory[1]), z(internalVcmemory[2])
 	{
+		// maskFirstTwoOn.load( maskinit+2 );
+
 		// assert alignment
 	  //	void * a =  &internalVcmemory[0];
 	//	std::cerr << a << " " << ((long long) a) % 32L << std::endl;
@@ -192,6 +203,52 @@ public:
 		return s.sum();
 	}
 
+	inline
+	__attribute__((always_inline))
+	double ScalarProductInXYPlane( Vector3DFast const & rhs ) const
+	{
+		if( Vc::Vector<double>::Size == 1) {
+			base_t tmpx = this->internalVcmemory.vector(0);
+			base_t tmpy = this->internalVcmemory.vector(1);
+
+			base_t tmp2x = rhs.internalVcmemory.vector(0);
+			base_t tmp2y = rhs.internalVcmemory.vector(1);
+
+			return ((tmpx * tmp2x) + (tmpy * tmp2y))[0];
+		}
+		else {
+			base_t result = Vc::Zero;
+			base_t tmp1 = this->internalVcmemory.vector(0);
+			base_t tmp2 = rhs.internalVcmemory.vector(0);
+
+			tmp1 *= tmp2;
+			result(maskFirstTwoOn) = tmp1;
+			return result.sum();
+		}
+
+	}
+
+	inline
+	__attribute__((always_inline))
+	double SquaredOnXYplane() const {	
+
+		if( Vc::Vector<double>::Size == 1 ) {
+			base_t tmpx = this->internalVcmemory.vector(0);
+			base_t tmpy = this->internalVcmemory.vector(1);
+
+			return (tmpx * tmpx + tmpy * tmpy)[0];
+		}
+		else {
+			base_t result = Vc::Zero;
+			base_t tmp = this->internalVcmemory.vector(0);
+			tmp = tmp*tmp;
+			result(maskFirstTwoOn) = tmp;
+			return result.sum();
+		}
+
+	}
+
+
 	__attribute__((always_inline))
 	inline double GetX() const {
 		return internalVcmemory[ 0 ];
@@ -209,6 +266,14 @@ public:
 		return internalVcmemory[ 2 ];
 
 		//return internalVcmemory.vector( 2 / Vc::Vector<double>::Size  )[ 2 % Vc::Vector<double>::Size ];
+	}
+
+	inline 
+	__attribute__((always_inline))	  
+	void Set(double x, double y, double z)  {
+		internalVcmemory[0]=x;
+		internalVcmemory[1]=y;
+		internalVcmemory[2]=z;
 	}
 
 	inline 

@@ -1,6 +1,6 @@
 #include "base/vector3d.h"
+#include "base/specialized_matrix.h"
 #include "base/soa3d.h"
-#include "base/transformation_matrix.h"
 #include "backend/vc_backend.h"
 #include "volumes/kernel/box_kernel.h"
 #include "volumes/logical_volume.h"

@@ -105,8 +105,7 @@ public:
    * returns a new SOA object that points to GPU memory.
    */
   VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  SOA3D<Type> CopyToGPU() const {
+  SOA3D<Type> CopyToGpu() const {
     const int count = size;
     const int mem_size = count*sizeof(Type);
     Type *a_, *b_, *c_;
@@ -124,7 +123,6 @@ public:
    * not the case.
    */
   VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
   void FreeFromGpu() {
     cudaFree(a);
     cudaFree(b);

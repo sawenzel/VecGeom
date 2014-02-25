@@ -5,10 +5,14 @@ project(vecgeom)
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
-option(BACKEND "Backend for parallelization over particles." "Vc")
+if (NOT BACKEND)
+  set(BACKEND "Vc")
+endif()
 
-option(VECTOR "Vector instruction set to be passed to compiler with
-               -m<instruction_set>." "")
+if (NOT CUDA_GENCODE)
+  set(CUDA_GENCODE arch=compute_20,code=sm_20)
+endif()
+set(CUDA_GENCODE -gencode ${CUDA_GENCODE})
 
 ################################################################################
 
@@ -56,8 +60,11 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
+if (Clang)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -ftree-vectorize")
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000")
 endif()
 if (CUDA)
@@ -113,9 +120,7 @@ if (CUDA)
   find_package(CUDA REQUIRED)
   include(FindCUDA)
 
-  set(CUDA_ARCH -gencode arch=compute_35,code=sm_35)
-
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_ARCH} -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable")
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_GENCODE} -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable")
   set(CUDA_SEPARABLE_COMPILATION ON)
   # set(CUDA_VERBOSE_BUILD ON)
 
@@ -142,6 +147,20 @@ if (CUDA)
 
   file(GLOB_RECURSE SRC_CUDA "source/*.cu")
 
+  file(GLOB EXE_CPP "test/*.cpp")
+
+  foreach(SRC_FILE ${EXE_CPP})
+
+    get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
+
+    ADD_CUSTOM_COMMAND(
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
+      DEPENDS ${SRC_FILE}
+    )
+
+  endforeach()
+
   foreach(SRC_FILE ${SRC_CPP})
 
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
@@ -154,7 +173,7 @@ if (CUDA)
 
     set(SRC_CUDA ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu)
 
-  endforeach(SRC_FILE)
+  endforeach()
 
 endif()
 
@@ -166,8 +185,11 @@ if (NOT CUDA)
   add_library(vecgeom_cpp ${SRC_CPP})
   set(LIBS ${LIBS} vecgeom_cpp)
   add_executable(compile_test ${SRC_COMPILETEST})
+  add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
 else()
-  cuda_add_executable(compile_test ${SRC_CUDA} ${SRC_COMPILETEST} OPTIONS ${CUDA_ARCH})
+  cuda_add_executable(compile_test ${SRC_CUDA} ${SRC_COMPILETEST} OPTIONS ${CUDA_GENCODE})
+  cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/create_geometry.cu OPTIONS ${CUDA_GENCODE})
 endif()
 
 target_link_libraries(compile_test ${LIBS})
+target_link_libraries(create_geometry_test ${LIBS})

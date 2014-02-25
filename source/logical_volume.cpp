@@ -1,9 +1,9 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
+#include "management/volume_factory.h"
 
 namespace vecgeom {
 
-VECGEOM_CUDA_HEADER_HOST
 LogicalVolume::~LogicalVolume() {
   Vector<VPlacedVolume const*> *vector =
       static_cast<Vector<VPlacedVolume const*> *>(daughters_);
@@ -13,16 +13,25 @@ LogicalVolume::~LogicalVolume() {
   delete vector;
 }
 
-VECGEOM_CUDA_HEADER_HOST
 void LogicalVolume::PlaceDaughter(LogicalVolume const &volume,
-                                   TransformationMatrix const &matrix) {
-  VPlacedVolume *placed = new VPlacedVolume(volume, matrix);
+                                  TransformationMatrix const &matrix) {
+  VPlacedVolume *placed =
+      VolumeFactory::Instance().CreateSpecializedVolume(volume, matrix);
   static_cast<Vector<VPlacedVolume const*> *>(
     daughters_
   )->push_back(placed);
 }
 
-VECGEOM_CUDA_HEADER_HOST
+void LogicalVolume::PrintContent(std::string prefix) const {
+  std::cout << unplaced_volume_ << std::endl;
+  prefix += "  ";
+  for (Iterator<VPlacedVolume const*> i = daughters_->begin();
+       i != daughters_->end(); ++i) {
+    std::cout << prefix << (*i)->matrix() << ": ";
+    (*i)->logical_volume().PrintContent(prefix);
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   os << vol.unplaced_volume() << std::endl;
   for (Iterator<VPlacedVolume const*> i = vol.daughters().begin();

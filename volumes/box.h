@@ -20,7 +20,14 @@ public:
     dimensions_ = dim;
   }
 
+  UnplacedBox(const Precision dx, const Precision dy, const Precision dz)
+      : dimensions_(dx, dy, dz) {}
+
   virtual int byte_size() const { return sizeof(*this); }
+
+  #ifdef VECGEOM_NVCC
+  virtual void CopyToGpu(VUnplacedVolume *const target) const;
+  #endif
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -59,9 +66,9 @@ public:
   #if (!defined(VECGEOM_INTEL) && defined(VECGEOM_STD_CXX11))
   using VPlacedVolume::VPlacedVolume;
   #else
-  PlacedBox(UnplacedBox const &unplaced_volume__,
+  PlacedBox(LogicalVolume const &logical_volume__,
             TransformationMatrix const &matrix__)
-      : VPlacedVolume(unplaced_volume__, matrix__) {}
+      : VPlacedVolume(logical_volume__, matrix__) {}
   #endif
 
   virtual ~PlacedBox() {}
@@ -97,6 +104,16 @@ private:
 
 template <TranslationCode trans_code, RotationCode rot_code>
 class SpecializedBox : public PlacedBox {
+
+public:
+
+  #if (!defined(VECGEOM_INTEL) && defined(VECGEOM_STD_CXX11))
+  using PlacedBox::PlacedBox;
+  #else
+  SpecializedBox(LogicalVolume const &logical_volume__,
+                 TransformationMatrix const &matrix__)
+      : PlacedBox(logical_volume__, matrix__) {}
+  #endif
 
   template <ImplType it>
   VECGEOM_CUDA_HEADER_BOTH
