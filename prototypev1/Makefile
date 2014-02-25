@@ -1,5 +1,5 @@
 CXX=g++
-CXX_OPT=-ggdb -fpermissive -ffast-math  -finline-limit=10000000 -msse4.2 -ftree-vectorize
+CXX_OPT=-O2 -fpermissive -ffast-math  -finline-limit=10000000 -msse4.2 -ftree-vectorize
 CXX_FLAGS=-fabi-version=6 -m64 -std=c++11 #`root-config --cflags`
 CXX_FLAGS+=${CXX_OPT}
 
