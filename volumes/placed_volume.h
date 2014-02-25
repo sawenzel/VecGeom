@@ -18,23 +18,16 @@ private:
 
 protected:
 
-  LogicalVolume const &logical_volume_;
-  TransformationMatrix const &matrix_;
+  LogicalVolume const *logical_volume_;
+  TransformationMatrix const *matrix_;
 
 public:
 
-  VPlacedVolume(LogicalVolume const &logical_volume__,
-                TransformationMatrix const &matrix__)
+  VPlacedVolume(LogicalVolume const *const logical_volume__,
+                TransformationMatrix const *const matrix__)
       : logical_volume_(logical_volume__), matrix_(matrix__) {
     id = GeoManager::Instance().RegisterVolume(this);
   }
-
-  /**
-   * Constructor for copying geometry to GPU.
-   */
-  VPlacedVolume(LogicalVolume const *const logical_volume_ptr,
-                TransformationMatrix const *const matrix_ptr)
-      : logical_volume_(*logical_volume_ptr), matrix_(*matrix_ptr) {}
 
   virtual ~VPlacedVolume() {
     GeoManager::Instance().DeregisterVolume(this);
@@ -42,31 +35,31 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  LogicalVolume const& logical_volume() const {
+  LogicalVolume const* logical_volume() const {
     return logical_volume_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VUnplacedVolume const& unplaced_volume() const {
-    return logical_volume().unplaced_volume();
+  VUnplacedVolume const* unplaced_volume() const {
+    return logical_volume()->unplaced_volume();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  TransformationMatrix const& matrix() const {
+  TransformationMatrix const* matrix() const {
     return matrix_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void set_logical_volume(LogicalVolume const& logical_volume__) {
+  void set_logical_volume(LogicalVolume const *const logical_volume__) {
     logical_volume_ = logical_volume__;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void set_matrix(TransformationMatrix const& matrix__) {
+  void set_matrix(TransformationMatrix const *const matrix__) {
     matrix_ = matrix__;
   }
 

@@ -320,7 +320,6 @@ public:
     return result;
   }
 
-  template <typename BoolType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<bool> operator<(const Type other) const {
@@ -530,9 +529,8 @@ public:
     return result;
   }
 
-  template <typename TypeOther>
   VECGEOM_INLINE
-  VecType operator*(Vector3D<TypeOther> const &other) const {
+  VecType operator*(Vector3D<Precision> const &other) const {
     VecType result(*this);
     result *= other;
     return result;

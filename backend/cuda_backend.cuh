@@ -25,7 +25,7 @@ typedef Impl<kCuda>::int_v       CudaInt;
 typedef Impl<kCuda>::precision_v CudaPrecision;
 typedef Impl<kCuda>::bool_v      CudaBool;
 
-static const int kThreadsPerBlock = 256;
+static const unsigned kThreadsPerBlock = 256;
 
 // Auxiliary GPU functions
 
@@ -51,13 +51,13 @@ void CudaAssertError();
 struct LaunchParameters {
   dim3 block_size;
   dim3 grid_size;
-  LaunchParameters(const int threads) {
+  LaunchParameters(const unsigned threads) {
     // Blocks always one dimensional
     block_size.x = kThreadsPerBlock;
     block_size.y = 1;
     block_size.z = 1;
     // Grid becomes two dimensions at large sizes
-    const int blocks = 1 + (threads - 1) / kThreadsPerBlock;
+    const unsigned blocks = 1 + (threads - 1) / kThreadsPerBlock;
     grid_size.z = 1;
     if (blocks <= 1<<16) {
       grid_size.x = blocks;
@@ -72,7 +72,7 @@ struct LaunchParameters {
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-Type* AllocateOnGpu(const int size) {
+Type* AllocateOnGpu(const unsigned size) {
   Type *ptr;
   CudaAssertError(cudaMalloc((void**)&ptr, size));
   return ptr;
@@ -81,7 +81,7 @@ Type* AllocateOnGpu(const int size) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
 Type* AllocateOnGpu() {
-  return AllocateOnGpu(sizeof(Type));
+  return AllocateOnGpu<Type>(sizeof(Type));
 }
 
 template <typename Type>
@@ -92,7 +92,7 @@ void FreeFromGpu(Type *const ptr) {
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-void CopyToGpu(Type const *const src, Type *const tgt, const int size) {
+void CopyToGpu(Type const *const src, Type *const tgt, const unsigned size) {
   CudaAssertError(
     cudaMemcpy(tgt, src, size, cudaMemcpyHostToDevice)
   );
@@ -101,12 +101,12 @@ void CopyToGpu(Type const *const src, Type *const tgt, const int size) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
 void CopyToGpu(Type const *const src, Type *const tgt) {
-  CopyToGpu(src, tgt, sizeof(Type));
+  CopyToGpu<Type>(src, tgt, sizeof(Type));
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-void CopyFromGpu(Type const * const src, Type *const tgt, const int size) {
+void CopyFromGpu(Type const * const src, Type *const tgt, const unsigned size) {
   CudaAssertError(
     cudaMemcpy(tgt, src, size, cudaMemcpyDeviceToHost)
   );
@@ -115,7 +115,7 @@ void CopyFromGpu(Type const * const src, Type *const tgt, const int size) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
 void CopyFromGpu(Type const * const src, Type *const tgt) {
-  CopyFromGpu(src, tgt, sizeof(Type));
+  CopyFromGpu<Type>(src, tgt, sizeof(Type));
 }
 
 // Microkernels

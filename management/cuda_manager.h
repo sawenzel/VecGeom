@@ -32,7 +32,7 @@ public:
     return instance;
   }
 
-  void LoadGeometry(LogicalVolume const &volume);
+  void LoadGeometry(LogicalVolume const *const volume);
 
   void Synchronize();
 
@@ -48,8 +48,12 @@ private:
 
   void CleanGpu();
 
-  void ScanGeometry(LogicalVolume const &volume);
+  void ScanGeometry(LogicalVolume const *const volume);
 
+  /**
+   * Allocates all objects retrieved by ScanGeometry() on the GPU, storing
+   * pointers in the memory table for future reference.
+   */
   void AllocateGeometry();
 
   template <typename Type>

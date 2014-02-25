@@ -1,4 +1,3 @@
-#include "backend/scalar_backend.h"
 #include "volumes/box.h"
 #ifdef VECGEOM_NVCC
 #include "backend/cuda_backend.cuh"
@@ -24,14 +23,14 @@ VECGEOM_CUDA_HEADER_BOTH
 Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
                                    Vector3D<Precision> const &direction) const {
 
-  Vector3D<Precision> const &dim =
-      AsUnplacedBox().dimensions();
+  Vector3D<Precision> const &dim = AsUnplacedBox()->dimensions();
 
-  Vector3D<Precision> const safety_plus  = dim + position;
-  Vector3D<Precision> const safety_minus = dim - position;
+  const Vector3D<Precision> safety_plus  = dim + position;
+  const Vector3D<Precision> safety_minus = dim - position;
 
   Vector3D<Precision> distance = safety_minus;
-  distance.MaskedAssign(direction < 0.0, safety_plus);
+  const Vector3D<bool> direction_plus = direction < 0.0;
+  distance.MaskedAssign(direction_plus, safety_plus);
 
   distance /= direction;
 

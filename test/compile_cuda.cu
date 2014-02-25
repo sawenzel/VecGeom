@@ -15,10 +15,10 @@ int main() {
   TransformationMatrix matrix;
   UnplacedBox world_unplaced = UnplacedBox(scalar_v);
   UnplacedBox box_unplaced = UnplacedBox(scalar_v);
-  LogicalVolume world = LogicalVolume(world_unplaced);
-  LogicalVolume box = LogicalVolume(box_unplaced);
-  world.PlaceDaughter(box, matrix);
-  CudaManager::Instance().LoadGeometry(world);
+  LogicalVolume world = LogicalVolume(&world_unplaced);
+  LogicalVolume box = LogicalVolume(&box_unplaced);
+  world.PlaceDaughter(&box, &matrix);
+  CudaManager::Instance().LoadGeometry(&world);
   CudaManager::Instance().PrintContent();
   return 0;
 }

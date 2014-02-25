@@ -67,8 +67,8 @@ public:
   #if (!defined(VECGEOM_INTEL) && defined(VECGEOM_STD_CXX11))
   using VPlacedVolume::VPlacedVolume;
   #else
-  PlacedBox(LogicalVolume const &logical_volume__,
-            TransformationMatrix const &matrix__)
+  PlacedBox(LogicalVolume const *const logical_volume__,
+            TransformationMatrix const *const matrix__)
       : VPlacedVolume(logical_volume__, matrix__) {}
   #endif
 
@@ -110,7 +110,7 @@ private:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  UnplacedBox const& AsUnplacedBox() const;
+  UnplacedBox const* AsUnplacedBox() const;
 
 };
 
@@ -122,8 +122,8 @@ public:
   #if (!defined(VECGEOM_INTEL) && defined(VECGEOM_STD_CXX11))
   using PlacedBox::PlacedBox;
   #else
-  SpecializedBox(LogicalVolume const &logical_volume__,
-                 TransformationMatrix const &matrix__)
+  SpecializedBox(LogicalVolume const *const logical_volume__,
+                 TransformationMatrix const *const matrix__)
       : PlacedBox(logical_volume__, matrix__) {}
   #endif
 
@@ -146,8 +146,8 @@ typename Impl<it>::bool_v PlacedBox::InsideTemplate(
   typename Impl<it>::bool_v output;
 
   BoxInside<trans_code, rot_code, it>(
-    AsUnplacedBox().dimensions(),
-    this->matrix(),
+    AsUnplacedBox()->dimensions(),
+    *this->matrix(),
     point,
     &output
   );
@@ -166,8 +166,8 @@ typename Impl<it>::precision_v PlacedBox::DistanceToInTemplate(
   typename Impl<it>::precision_v output;
 
   BoxDistanceToIn<trans_code, rot_code, it>(
-    AsUnplacedBox().dimensions(),
-    this->matrix(),
+    AsUnplacedBox()->dimensions(),
+    *this->matrix(),
     position,
     direction,
     step_max,
@@ -179,8 +179,8 @@ typename Impl<it>::precision_v PlacedBox::DistanceToInTemplate(
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-UnplacedBox const& PlacedBox::AsUnplacedBox() const {
-  return static_cast<UnplacedBox const&>(this->unplaced_volume());
+UnplacedBox const* PlacedBox::AsUnplacedBox() const {
+  return static_cast<UnplacedBox const*>(this->unplaced_volume());
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
