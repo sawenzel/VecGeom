@@ -34,13 +34,19 @@ public:
   virtual void CopyToGpu(VUnplacedVolume *const target) const =0;
   #endif
 
+  /**
+   * C-style printing for CUDA purposes.
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Print() const =0;
+
 private:
 
   /**
    * Print information about the deriving class.
    * \param os Outstream to stream information into.
    */
-  virtual void print(std::ostream &os) const =0;
+  virtual void Print(std::ostream &os) const =0;
 
 };
 

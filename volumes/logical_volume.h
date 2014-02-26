@@ -17,6 +17,7 @@ private:
 
   VUnplacedVolume const *unplaced_volume_;
   Container<Daughter> *daughters_;
+  bool external_daughters_;
 
   friend class CudaManager;
 
@@ -25,12 +26,13 @@ private:
    */
   LogicalVolume(VUnplacedVolume const *const unplaced_volume__,
                 Container<Daughter> *daughters__)
-      : unplaced_volume_(unplaced_volume__), daughters_(daughters__) {}
+      : unplaced_volume_(unplaced_volume__), daughters_(daughters__),
+        external_daughters_(true) {}
 
 public:
 
   LogicalVolume(VUnplacedVolume const *const unplaced_volume__)
-      : unplaced_volume_(unplaced_volume__) {
+      : unplaced_volume_(unplaced_volume__), external_daughters_(false) {
     daughters_ = new Vector<Daughter>();
   }
 
@@ -52,7 +54,8 @@ public:
   /**
    * Recursively prints contained logical volumes.
    */
-  void PrintContent(std::string prefix = "") const;
+  VECGEOM_CUDA_HEADER_BOTH
+  void PrintContent(const int depth = 0) const;
 
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 

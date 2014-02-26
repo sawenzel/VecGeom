@@ -4,7 +4,7 @@ namespace vecgeom {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
-  vol.print(os);
+  vol.Print(os);
   return os;
 }
 

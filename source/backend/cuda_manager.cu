@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include "backend/cuda_backend.cuh"
 #include "base/array.h"
 #include "management/cuda_manager.h"
@@ -6,13 +7,22 @@
 
 namespace vecgeom {
 
-/**
- * Synchronizes the loaded geometry to the GPU by allocating space, creating new
- * objects with correct pointers, then copying them to the GPU.
- */
-void CudaManager::Synchronize() {
+LogicalVolume const* CudaManager::world() const {
+  assert(world_ != NULL);
+  return world_;
+}
 
-  if (synchronized) return;
+LogicalVolume const* CudaManager::world_gpu() const {
+  assert(world_gpu_ != NULL);
+  return world_gpu_;
+}
+
+LogicalVolume const* CudaManager::Synchronize() {
+
+  if (verbose > 0) std::cerr << "Starting synchronization to GPU.\n";
+
+  // Will return null if no geometry is loaded
+  if (synchronized) return world_gpu_;
 
   CleanGpu();
 
@@ -23,6 +33,9 @@ void CudaManager::Synchronize() {
   // Create new objects with pointers adjusted to point to GPU memory, then
   // copy them to the allocated memory locations on the GPU.
 
+  if (verbose > 1) std::cerr << "Copying geometry to GPU...";
+
+  if (verbose > 2) std::cerr << "Copying logical volumes...";
   for (std::set<LogicalVolume const*>::const_iterator i =
        logical_volumes.begin(); i != logical_volumes.end(); ++i) {
 
@@ -42,7 +55,9 @@ void CudaManager::Synchronize() {
     delete gpu_object;
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Copying unplaced volumes...";
   for (std::set<VUnplacedVolume const*>::const_iterator i =
        unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
 
@@ -51,7 +66,9 @@ void CudaManager::Synchronize() {
     );
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Copying placed volumes...";
   for (std::set<VPlacedVolume const*>::const_iterator i =
        placed_volumes.begin(); i != placed_volumes.end(); ++i) {
 
@@ -78,7 +95,9 @@ void CudaManager::Synchronize() {
     delete gpu_object;
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Copying transformation matrices...";
   for (std::set<TransformationMatrix const*>::const_iterator i =
        matrices.begin(); i != matrices.end(); ++i) {
 
@@ -87,7 +106,9 @@ void CudaManager::Synchronize() {
     );
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Copying daughter lists...";
   for (std::set<Container<Daughter> *>::const_iterator i =
        daughters.begin(); i != daughters.end(); ++i) {
 
@@ -114,14 +135,19 @@ void CudaManager::Synchronize() {
     delete gpu_object;
 
   }
+  if (verbose > 1) std::cerr << " OK\n";
 
   synchronized = true;
 
+  world_gpu_ =
+      static_cast<LogicalVolume const*>(memory_map[ToCpuAddress(world_)]);
+
+  if (verbose > 0) std::cerr << "Geometry synchronized to GPU.\n";
+
+  return world_gpu_;
+
 }
 
-/**
- * Stages a new geometry to be copied to the GPU.
- */
 void CudaManager::LoadGeometry(LogicalVolume const *const volume) {
 
   CleanGpu();
@@ -132,26 +158,45 @@ void CudaManager::LoadGeometry(LogicalVolume const *const volume) {
   matrices.clear();
   daughters.clear();
 
+  world_ = volume;
+
   ScanGeometry(volume);
 
-  // Already set by CleanGpu(), but it'll stay here for good measure
+  // Already set by CleanGpu(), but keep it here for good measure
   synchronized = false;
 
 }
 
 void CudaManager::CleanGpu() {
 
+  if (memory_map.size() == 0 && world_gpu_ == NULL) return;
+
+  if (verbose > 1) std::cerr << "Cleaning GPU...";
+
   for (MemoryMap::iterator i = memory_map.begin(); i != memory_map.end(); ++i) {
     FreeFromGpu(i->second);
   }
   memory_map.clear();
 
+  world_gpu_ = NULL;
   synchronized = false;
+
+  if (verbose > 1) std::cerr << " OK\n";
 
 }
 
 void CudaManager::AllocateGeometry() {
 
+  if (verbose > 1) std::cerr << "Allocating geometry on GPU...";
+
+  if (verbose > 2) {
+    size_t free_memory = 0, total_memory = 0;
+    CudaAssertError(cudaMemGetInfo(&free_memory, &total_memory));
+    std::cerr << "\nAvailable memory: " << free_memory << " / "
+                                        << total_memory << std::endl;
+  }
+
+  if (verbose > 2) std::cerr << "Allocating logical volumes...";
   for (std::set<LogicalVolume const*>::const_iterator i =
        logical_volumes.begin(); i != logical_volumes.end(); ++i) {
 
@@ -159,7 +204,9 @@ void CudaManager::AllocateGeometry() {
     memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Allocating unplaced volumes...";
   for (std::set<VUnplacedVolume const*>::const_iterator i =
        unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
 
@@ -168,7 +215,9 @@ void CudaManager::AllocateGeometry() {
     memory_map[ToCpuAddress(*i)] = gpu_address;
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Allocating placed volumes...";
   for (std::set<VPlacedVolume const*>::const_iterator i =
        placed_volumes.begin(); i != placed_volumes.end(); ++i) {
 
@@ -177,7 +226,9 @@ void CudaManager::AllocateGeometry() {
     memory_map[ToCpuAddress(*i)] = gpu_address;
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Allocating transformation matrices...";
   for (std::set<TransformationMatrix const*>::const_iterator i =
        matrices.begin(); i != matrices.end(); ++i) {
 
@@ -186,7 +237,9 @@ void CudaManager::AllocateGeometry() {
     memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
 
   }
+  if (verbose > 2) std::cerr << " OK\n";
 
+  if (verbose > 2) std::cerr << "Allocating daughter lists...";
   for (std::set<Container<Daughter> *>::const_iterator i =
        daughters.begin(); i != daughters.end(); ++i) {
 
@@ -203,31 +256,28 @@ void CudaManager::AllocateGeometry() {
     memory_map[ToCpuAddress(gpu_address)] = ToGpuAddress(gpu_array);
 
   }
+  if (verbose > 1) std::cerr << " OK\n";
 
 }
 
-/**
- * Recursively scans logical volumes to retrieve all unique objects for copying
- * to the GPU.
- */
 void CudaManager::ScanGeometry(LogicalVolume const *const volume) {
 
-  if (logical_volumes.find(volume) != logical_volumes.end()) {
+  if (logical_volumes.find(volume) == logical_volumes.end()) {
     logical_volumes.insert(volume);
   }
   if (unplaced_volumes.find(volume->unplaced_volume_)
-      != unplaced_volumes.end()) {
+      == unplaced_volumes.end()) {
     unplaced_volumes.insert(volume->unplaced_volume_);
   }
-  if (daughters.find(volume->daughters_) != daughters.end()) {
+  if (daughters.find(volume->daughters_) == daughters.end()) {
     daughters.insert(volume->daughters_);
   }
   for (Iterator<Daughter> i = volume->daughters().begin();
        i != volume->daughters().end(); ++i) {
-    if (placed_volumes.find(*i) != placed_volumes.end()) {
+    if (placed_volumes.find(*i) == placed_volumes.end()) {
       placed_volumes.insert(*i);
     }
-    if (matrices.find((*i)->matrix_) != matrices.end()) {
+    if (matrices.find((*i)->matrix_) == matrices.end()) {
       matrices.insert((*i)->matrix_);
     }
     ScanGeometry((*i)->logical_volume());

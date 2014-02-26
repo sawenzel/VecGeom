@@ -1,7 +1,13 @@
+#include "management/cuda_manager.h"
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda_backend.cuh"
+#endif
 
 using namespace vecgeom;
+
+void CudaCopy(LogicalVolume const *const world);
 
 int main() {
 
@@ -33,7 +39,30 @@ int main() {
   world.PlaceDaughter(&largebox, &box7);
   world.PlaceDaughter(&largebox, &box8);
 
+  std::cerr << "Printing world content:\n";
   world.PrintContent();
+
+  #ifdef VECGEOM_CUDA
+  CudaCopy(&world);
+  #endif
 
   return 0;
 }
+
+#ifdef VECGEOM_CUDA
+__global__
+void PrintDevice(LogicalVolume const *const world) {
+  world->PrintContent();
+}
+
+void CudaCopy(LogicalVolume const *const world) {
+  CudaManager::Instance().set_verbose(3);
+  CudaManager::Instance().LoadGeometry(world);
+  CudaManager::Instance().Synchronize();
+  LogicalVolume const *const world_gpu = CudaManager::Instance().world_gpu();
+  CudaAssertError(cudaDeviceSetLimit(cudaLimitStackSize, 1<<14));
+  CudaAssertError(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1<<14));
+  std::cerr << "\nPrinting GPU world content:\n";
+  PrintDevice<<<1, 1>>>(world_gpu);
+}
+#endif

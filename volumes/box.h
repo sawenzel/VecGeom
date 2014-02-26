@@ -1,6 +1,7 @@
 #ifndef VECGEOM_VOLUMES_BOX_H_
 #define VECGEOM_VOLUMES_BOX_H_
 
+#include <stdio.h>
 #include "base/transformation_matrix.h"
 #include "backend/scalar_backend.h"
 #include "volumes/unplaced_volume.h"
@@ -52,9 +53,11 @@ public:
     return 4.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Print() const;
 private:
 
-  virtual void print(std::ostream &os) const {
+  virtual void Print(std::ostream &os) const {
     os << "Box {" << dimensions_ << "}";
   }
 
@@ -90,6 +93,8 @@ public:
   virtual Precision DistanceToOut(Vector3D<Precision> const &position,
                                   Vector3D<Precision> const &direction) const;
 
+protected:
+
   // Templates to interact with common kernel
 
   template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
@@ -106,8 +111,10 @@ public:
       Vector3D<typename Impl<it>::precision_v> const &direction,
       const typename Impl<it>::precision_v step_max) const;
 
-private:
-
+  /**
+   * Retrieves the unplaced volume pointer from the logical volume and casts it
+   * to an unplaced box.
+   */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedBox const* AsUnplacedBox() const;
@@ -134,6 +141,8 @@ public:
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
                                  Vector3D<Precision> const &direction,
                                  const Precision step_max) const;
+
+  virtual int byte_size() const { return sizeof(*this); }
 
 };
 

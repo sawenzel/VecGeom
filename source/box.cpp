@@ -44,4 +44,9 @@ void UnplacedBox::CopyToGpu(VUnplacedVolume *const target) const {
 }
 #endif
 
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedBox::Print() const {
+  printf("Box {%f, %f, %f}", dimensions_[0], dimensions_[1], dimensions_[2]);
+}
+
 } // End namespace vecgeom

@@ -12,6 +12,7 @@ class CudaManager {
 private:
 
   bool synchronized;
+  int verbose;
 
   std::set<VUnplacedVolume const*> unplaced_volumes;
   std::set<LogicalVolume const*> logical_volumes;
@@ -23,31 +24,71 @@ private:
   typedef void* GpuAddress;
   typedef std::map<CpuAddress, GpuAddress> MemoryMap;
 
+  LogicalVolume const *world_, *world_gpu_;
+
+  /**
+   * Contains a mapping between objects stored in host memory and pointers to
+   * equivalent objects stored on the GPU. Stored GPU pointers are pointing to
+   * allocated memory, but do not necessary have meaningful data stored at the
+   * addresses yet.
+   * \sa AllocateGeometry()
+   * \sa CleanGpu()
+   */
   MemoryMap memory_map;
 
 public:
 
+  /**
+   * Retrieve singleton instance.
+   */
   static CudaManager& Instance() {
     static CudaManager instance;
     return instance;
   }
 
+  LogicalVolume const* world() const;
+
+  LogicalVolume const* world_gpu() const;
+
+  /**
+   * Stages a new geometry to be copied to the GPU.
+   */
   void LoadGeometry(LogicalVolume const *const volume);
 
-  void Synchronize();
+  /**
+   * Synchronizes the loaded geometry to the GPU by allocating space,
+   * creating new objects with correct pointers, then copying them to the GPU.
+   * \return Pointer to top volume on the GPU.
+   */
+  LogicalVolume const* Synchronize();
 
+  /**
+   * Prints all loaded objects to standard output.
+   */
   void PrintContent() const;
+
+  /**
+   * Deallocates all GPU pointers stored in the memory table.
+   */
+  void CleanGpu();
+
+  void set_verbose(const int verbose_) { verbose = verbose_; }
 
 private:
 
   CudaManager() {
     synchronized = true;
+    world_ = NULL;
+    world_gpu_ = NULL;
+    verbose = 0;
   }
   CudaManager(CudaManager const&);
   CudaManager& operator=(CudaManager const&);
 
-  void CleanGpu();
-
+  /**
+   * Recursively scans logical volumes to retrieve all unique objects
+   * for copying to the GPU.
+   */
   void ScanGeometry(LogicalVolume const *const volume);
 
   /**
@@ -56,11 +97,19 @@ private:
    */
   void AllocateGeometry();
 
+  /**
+   * Converts object pointers to void pointers so they can be used as lookup in
+   * the memory table.
+   */
   template <typename Type>
   CpuAddress ToCpuAddress(Type const *const ptr) {
     return static_cast<CpuAddress>(ptr);
   }
 
+  /**
+   * Converts object pointers to void pointers so they can be stored in
+   * the memory table.
+   */
   template <typename Type>
   GpuAddress ToGpuAddress(Type *const ptr) {
     return static_cast<GpuAddress>(ptr);
