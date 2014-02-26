@@ -52,6 +52,17 @@ public:
 	  void *aligned_buffer=_mm_malloc( sizeof(Vector3DFast), 32 );
 	  return ::operator new(sz, aligned_buffer);
 	}
+	void * operator new[](std::size_t sz)
+	{
+	  std::cerr  << "overloaded new called" << std::endl;
+	  void *aligned_buffer=_mm_malloc( sz, 32 );
+	  return ::operator new[](sz, aligned_buffer);
+	}
+
+	void operator delete[](void * ptr)
+	{
+	  _mm_free(ptr);
+	}
 
 	// static
 	  void operator delete(void * ptr)
@@ -217,7 +228,7 @@ public:
 			return ((tmpx * tmp2x) + (tmpy * tmp2y))[0];
 		}
 		else {
-			base_t result = Vc::Zero;
+		  base_t result(0.);
 			base_t tmp1 = this->internalVcmemory.vector(0);
 			base_t tmp2 = rhs.internalVcmemory.vector(0);
 
@@ -239,7 +250,7 @@ public:
 			return (tmpx * tmpx + tmpy * tmpy)[0];
 		}
 		else {
-			base_t result = Vc::Zero;
+		  base_t result(0.);
 			base_t tmp = this->internalVcmemory.vector(0);
 			tmp = tmp*tmp;
 			result(maskFirstTwoOn) = tmp;
