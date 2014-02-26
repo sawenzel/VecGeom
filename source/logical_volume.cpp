@@ -5,16 +5,15 @@
 namespace vecgeom {
 
 LogicalVolume::~LogicalVolume() {
-  Vector<VPlacedVolume const*> *vector =
-      static_cast<Vector<VPlacedVolume const*> *>(daughters_);
-  for (int i = 0; i < vector->size(); ++i) {
-    delete (*vector)[i];
+  for (Iterator<VPlacedVolume const*> i = daughters().begin();
+       i != daughters().end(); ++i) {
+    delete *i;
   }
-  delete vector;
+  delete static_cast<Vector<VPlacedVolume const*> *>(daughters_);
 }
 
-void LogicalVolume::PlaceDaughter(LogicalVolume const &volume,
-                                  TransformationMatrix const &matrix) {
+void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
+                                  TransformationMatrix const *const matrix) {
   VPlacedVolume *placed =
       VolumeFactory::Instance().CreateSpecializedVolume(volume, matrix);
   static_cast<Vector<VPlacedVolume const*> *>(
@@ -23,17 +22,17 @@ void LogicalVolume::PlaceDaughter(LogicalVolume const &volume,
 }
 
 void LogicalVolume::PrintContent(std::string prefix) const {
-  std::cout << unplaced_volume_ << std::endl;
+  std::cout << *unplaced_volume_ << std::endl;
   prefix += "  ";
-  for (Iterator<VPlacedVolume const*> i = daughters_->begin();
-       i != daughters_->end(); ++i) {
+  for (Iterator<VPlacedVolume const*> i = daughters().begin();
+       i != daughters().end(); ++i) {
     std::cout << prefix << (*i)->matrix() << ": ";
-    (*i)->logical_volume().PrintContent(prefix);
+    (*i)->logical_volume()->PrintContent(prefix);
   }
 }
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
-  os << vol.unplaced_volume() << std::endl;
+  os << *vol.unplaced_volume() << std::endl;
   for (Iterator<VPlacedVolume const*> i = vol.daughters().begin();
        i != vol.daughters().end(); ++i) {
     os << "  " << (**i) << std::endl;

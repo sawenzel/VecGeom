@@ -17,8 +17,8 @@ public:
   }
 
   VPlacedVolume* CreateSpecializedVolume(
-    LogicalVolume const &logical_volume,
-    TransformationMatrix const &matrix) const;
+    LogicalVolume const *const logical_volume,
+    TransformationMatrix const *const matrix) const;
 
 private:
 
@@ -33,7 +33,8 @@ private:
    */
   template<typename VolumeType>
   VPlacedVolume* CreateByTransformation(
-      LogicalVolume const &logical_volume, TransformationMatrix const &matrix,
+      LogicalVolume const *const logical_volume,
+      TransformationMatrix const *const matrix,
       const TranslationCode trans_code, const RotationCode rot_code) const;
 
 };

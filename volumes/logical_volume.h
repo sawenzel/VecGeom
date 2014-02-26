@@ -15,30 +15,30 @@ class LogicalVolume {
 
 private:
 
-  VUnplacedVolume const &unplaced_volume_;
+  VUnplacedVolume const *unplaced_volume_;
   Container<Daughter> *daughters_;
 
   friend class CudaManager;
 
+  /**
+   * Constructor used for copying to the GPU by CudaManager.
+   */
+  LogicalVolume(VUnplacedVolume const *const unplaced_volume__,
+                Container<Daughter> *daughters__)
+      : unplaced_volume_(unplaced_volume__), daughters_(daughters__) {}
+
 public:
 
-  LogicalVolume(VUnplacedVolume const &unplaced_volume__)
+  LogicalVolume(VUnplacedVolume const *const unplaced_volume__)
       : unplaced_volume_(unplaced_volume__) {
     daughters_ = new Vector<Daughter>();
   }
-
-  /**
-   * Constructor for building geometry on the GPU.
-   */
-  LogicalVolume(VUnplacedVolume const *const unplaced_ptr,
-                Container<Daughter> *const daughters_ptr)
-      : unplaced_volume_(*unplaced_ptr), daughters_(daughters_ptr) {}
 
   ~LogicalVolume();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VUnplacedVolume const& unplaced_volume() const { return unplaced_volume_; }
+  VUnplacedVolume const* unplaced_volume() const { return unplaced_volume_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -46,8 +46,8 @@ public:
     return *daughters_;
   }
 
-  void PlaceDaughter(LogicalVolume const &volume,
-                     TransformationMatrix const &matrix);
+  void PlaceDaughter(LogicalVolume const *const volume,
+                     TransformationMatrix const *const matrix);
 
   /**
    * Recursively prints contained logical volumes.

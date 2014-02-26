@@ -12,30 +12,29 @@ class ShapeFactory<PlacedBox> {
 public:
 
   template<TranslationCode trans_code, RotationCode rot_code>
-  static VPlacedVolume* Create(LogicalVolume const &logical_volume,
-                               TransformationMatrix const &matrix) {
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               TransformationMatrix const *const matrix) {
     return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
   }
 
 };
 
 VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
-    LogicalVolume const &logical_volume,
-    TransformationMatrix const &matrix) const {
+    LogicalVolume const *const logical_volume,
+    TransformationMatrix const *const matrix) const {
 
-  const TranslationCode trans_code = matrix.GenerateTranslationCode();
-  const RotationCode rot_code = matrix.GenerateRotationCode();
+  const TranslationCode trans_code = matrix->GenerateTranslationCode();
+  const RotationCode rot_code = matrix->GenerateRotationCode();
 
   // All shapes must be implemented here. Better solution?
 
   VPlacedVolume *placed = NULL;
 
-  if (UnplacedBox const *const box =
-      dynamic_cast<UnplacedBox const *const>(
-        &logical_volume.unplaced_volume()
-      )) {
+  UnplacedBox const *const box =
+      dynamic_cast<UnplacedBox const*>(logical_volume->unplaced_volume());
+  if (box != NULL) {
     placed = CreateByTransformation<PlacedBox>(logical_volume, matrix,
-                                                    trans_code, rot_code);
+                                               trans_code, rot_code);
   }
 
   // Will return null if the passed shape isn't implemented here. Maybe throw an
@@ -47,7 +46,8 @@ VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
 
 template<typename VolumeType>
 VPlacedVolume* VolumeFactory::CreateByTransformation(
-    LogicalVolume const &logical_volume, TransformationMatrix const &matrix,
+    LogicalVolume const *const logical_volume,
+    TransformationMatrix const *const matrix,
     const TranslationCode trans_code, const RotationCode rot_code) const {
 
   if (trans_code == 0 && rot_code == 0x1b1) {
