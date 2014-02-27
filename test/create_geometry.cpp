@@ -50,19 +50,10 @@ int main() {
 }
 
 #ifdef VECGEOM_CUDA
-__global__
-void PrintDevice(LogicalVolume const *const world) {
-  world->PrintContent();
-}
-
 void CudaCopy(LogicalVolume const *const world) {
   CudaManager::Instance().set_verbose(3);
   CudaManager::Instance().LoadGeometry(world);
   CudaManager::Instance().Synchronize();
   LogicalVolume const *const world_gpu = CudaManager::Instance().world_gpu();
-  CudaAssertError(cudaDeviceSetLimit(cudaLimitStackSize, 1<<14));
-  CudaAssertError(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1<<14));
-  std::cerr << "\nPrinting GPU world content:\n";
-  PrintDevice<<<1, 1>>>(world_gpu);
 }
 #endif

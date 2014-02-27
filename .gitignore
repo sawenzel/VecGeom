@@ -8,3 +8,7 @@ bin/
 setmeup.sh
 makefile
 *.disable
+Debug
+.cproject
+.project
+.externalToolBuilders
