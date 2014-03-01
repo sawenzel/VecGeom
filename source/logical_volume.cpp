@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <climits>
+#include "base/array.h"
+#include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
-#include "management/volume_factory.h"
 
 namespace vecgeom {
 
@@ -25,14 +27,13 @@ void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
 
 VECGEOM_CUDA_HEADER_BOTH
 void LogicalVolume::PrintContent(const int depth) const {
-  char const *const tab = "  ";
-  for (int i = 0; i < depth; ++i) printf("%s", tab);
+  for (int i = 0; i < depth; ++i) printf("  ");
   unplaced_volume()->Print();
   printf("\n");
-  for (Iterator<VPlacedVolume const*> vol = daughters_->begin();
-       vol != daughters_->end(); ++vol) {
-    (*vol)->logical_volume()->PrintContent(depth + 1);
-  }
+  // for (Iterator<VPlacedVolume const*> vol = daughters_->begin();
+  //      vol != daughters_->end(); ++vol) {
+  //   (*vol)->logical_volume()->PrintContent(depth + 1);
+  // }
 }
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {

@@ -51,6 +51,9 @@ public:
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  int CountVolumes() const;
+
   /**
    * Recursively prints contained logical volumes.
    */

@@ -55,6 +55,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
+  
 private:
 
   virtual void Print(std::ostream &os) const {

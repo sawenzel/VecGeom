@@ -1,6 +1,7 @@
 #ifndef VECGEOM_BASE_CONTAINER_H_
 #define VECGEOM_BASE_CONTAINER_H_
 
+#include <iterator>
 #include "base/utilities.h"
 
 namespace vecgeom {

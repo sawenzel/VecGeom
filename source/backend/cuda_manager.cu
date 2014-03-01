@@ -35,7 +35,7 @@ LogicalVolume const* CudaManager::Synchronize() {
 
   if (verbose > 1) std::cerr << "Copying geometry to GPU...";
 
-  if (verbose > 2) std::cerr << "Copying logical volumes...";
+  if (verbose > 2) std::cerr << "\nCopying logical volumes...";
   for (std::set<LogicalVolume const*>::const_iterator i =
        logical_volumes.begin(); i != logical_volumes.end(); ++i) {
 

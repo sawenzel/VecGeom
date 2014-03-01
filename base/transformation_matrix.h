@@ -42,7 +42,8 @@ public:
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);
-  
+
+  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(TransformationMatrix const &other);
 
   // Accessors
@@ -165,11 +166,15 @@ public:
   Vector3D<InputType> TransformRotation(
       Vector3D<InputType> const &master) const;
 
-  // Utility
+  // Utility and CUDA
 
   VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os,
                                   TransformationMatrix const &v);
+
+  #ifdef VECGEOM_CUDA
+  TransformationMatrix* CopyToGpu() const;
+  #endif
 
 }; // End class TransformationMatrix
 

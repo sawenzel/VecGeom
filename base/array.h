@@ -11,6 +11,7 @@ class Array : public Container<Type> {
 private:
 
   Type *arr;
+
   int size_;
 
 public:

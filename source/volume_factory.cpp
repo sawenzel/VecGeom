@@ -1,3 +1,4 @@
+#include <cassert>
 #include "volumes/box.h"
 #include "management/volume_factory.h"
 
@@ -37,8 +38,11 @@ VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
                                                trans_code, rot_code);
   }
 
-  // Will return null if the passed shape isn't implemented here. Maybe throw an
-  // exception instead?
+  if (placed == NULL) {
+    std::cerr << "Fatal error: shape type not found. Possible missing \
+                  implementation of dynamic cast?\n";
+    assert(placed != NULL);
+  }
 
   return placed;
 

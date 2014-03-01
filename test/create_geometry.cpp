@@ -50,10 +50,18 @@ int main() {
 }
 
 #ifdef VECGEOM_CUDA
+__global__
+void CudaContent(LogicalVolume const *world) {
+  printf("Inside CUDA kernel.\n");
+  world->PrintContent();
+}
+
 void CudaCopy(LogicalVolume const *const world) {
   CudaManager::Instance().set_verbose(3);
   CudaManager::Instance().LoadGeometry(world);
   CudaManager::Instance().Synchronize();
   LogicalVolume const *const world_gpu = CudaManager::Instance().world_gpu();
+  CudaContent<<<1, 1>>>(world_gpu);
+  cudaDeviceSynchronize(); // Necessary to print output
 }
 #endif

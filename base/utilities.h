@@ -8,10 +8,12 @@
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
+  #define VECGEOM_CUDA_HEADER_GLOBAL __global__
 #else // Not compiling for CUDA
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
+  #define VECGEOM_CUDA_HEADER_GLOBAL
 #endif
 
 #ifndef VECGEOM_CUDA // Set by compiler

@@ -1,4 +1,7 @@
 #include "base/transformation_matrix.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda_backend.cuh"
+#endif
 
 namespace vecgeom {
 
@@ -22,6 +25,7 @@ TransformationMatrix::TransformationMatrix(
   SetRotation(phi, theta, psi);
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
   SetTranslation(other.Translation(0), other.Translation(1),
                  other.Translation(2));
@@ -141,5 +145,27 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
      << ", " << matrix.Rotation(8) << ")}";
   return os;
 }
+
+#ifdef VECGEOM_CUDA
+
+namespace {
+
+__global__
+void ConstructOnGpu(const TransformationMatrix matrix,
+                    TransformationMatrix **const output) {
+  *output = new TransformationMatrix(matrix);
+}
+
+}
+
+TransformationMatrix* TransformationMatrix::CopyToGpu() const {
+  TransformationMatrix **const matrix_device =
+      AllocateOnGpu<TransformationMatrix *>();
+  ConstructOnGpu<<<1, 1>>>(*this, matrix_device);
+  CudaAssertError();
+  return *matrix_device;
+}
+
+#endif
 
 } // End namespace vecgeom
