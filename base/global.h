@@ -2,6 +2,7 @@
 #define VECGEOM_BASE_UTILITIES_H_
 
 #include <cmath>
+#include "base/types.h"
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -25,6 +26,7 @@
   #define VECGEOM_INLINE inline
 #else
   #ifndef VECGEOM_CUDA
+    #define VECGEOM_INHERIT_CONSTRUCTOR
     #include <mm_malloc.h>
   #endif
   #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
@@ -39,12 +41,6 @@
 #endif
 
 namespace vecgeom {
-
-#ifdef VECGEOM_FLOAT_PRECISION
-typedef float Precision;
-#else
-typedef double Precision;
-#endif
 
 const int kAlignmentBoundary = 32;
 const double kDegToRad = M_PI/180.;

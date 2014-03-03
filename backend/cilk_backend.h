@@ -2,8 +2,7 @@
 #define VECGEOM_BACKEND_CILKBACKEND_H_
 
 #include <iostream>
-#include "base/utilities.h"
-#include "base/types.h"
+#include "base/global.h"
 
 namespace vecgeom {
 

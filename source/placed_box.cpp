@@ -1,7 +1,5 @@
-#include "volumes/box.h"
-#ifdef VECGEOM_NVCC
-#include "backend/cuda_backend.cuh"
-#endif
+#include "backend/scalar_backend.h"
+#include "volumes/placed_box.h"
 
 namespace vecgeom {
 
@@ -36,17 +34,6 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
 
   const Precision min = distance.Min();
   return (min < 0) ? 0 : min;
-}
-
-#ifdef VECGEOM_NVCC
-void UnplacedBox::CopyToGpu(VUnplacedVolume *const target) const {
-  vecgeom::CopyToGpu(this, static_cast<UnplacedBox*>(target), 1);
-}
-#endif
-
-VECGEOM_CUDA_HEADER_BOTH
-void UnplacedBox::Print() const {
-  printf("Box {%f, %f, %f}", dimensions_[0], dimensions_[1], dimensions_[2]);
 }
 
 } // End namespace vecgeom

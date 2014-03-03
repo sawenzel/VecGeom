@@ -8,6 +8,10 @@ namespace vecgeom {
 template <TranslationCode trans_code, RotationCode rot_code>
 class SpecializedMatrix : public TransformationMatrix {
 
+public:
+
+  virtual int memory_size() const { return sizeof(*this); }
+
   /**
    * \sa TransformationMatrix::Transform(Vector3D<InputType> const &,
    *                                     Vector3D<InputType> *const)

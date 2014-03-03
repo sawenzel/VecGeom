@@ -4,11 +4,10 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include "base/types.h"
-#include "base/utilities.h"
 #ifdef VECGEOM_VC_ACCELERATION
 #include <Vc/Vc>
 #endif
+#include "base/global.h"
 
 namespace vecgeom {
 

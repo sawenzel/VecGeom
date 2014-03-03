@@ -1,3 +1,4 @@
+#include <iostream>
 #include "backend/cuda_backend.cuh"
 
 namespace vecgeom {

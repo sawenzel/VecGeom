@@ -2,7 +2,7 @@
 #define VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 
 #include <string>
-#include "base/utilities.h"
+#include "base/global.h"
 
 namespace vecgeom {
 
@@ -24,14 +24,15 @@ public:
    * Should return the size of bytes of the deriving class. Necessary for
    * copying to the GPU.
    */
-  virtual int byte_size() const =0;
+  virtual int memory_size() const =0;
 
   /**
-   * Copies the deriving class to the specified preallocated memory on the GPU.
-   * \param target Allocated memory on the GPU.
+   * Constructs the deriving class on the GPU and returns a pointer to GPU
+   * memory where the object has been instantiated.
    */
   #ifdef VECGEOM_NVCC
-  virtual void CopyToGpu(VUnplacedVolume *const target) const =0;
+  virtual VUnplacedVolume* CopyToGpu() const =0;
+  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const =0;
   #endif
 
   /**

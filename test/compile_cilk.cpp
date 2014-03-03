@@ -18,8 +18,8 @@ int main() {
   CilkPrecision output_distance;
   UnplacedBox world_unplaced = UnplacedBox(scalar_v);
   UnplacedBox box_unplaced = UnplacedBox(scalar_v);
-  LogicalVolume world = LogicalVolume(world_unplaced);
-  LogicalVolume box = LogicalVolume(box_unplaced);
-  world.PlaceDaughter(box, matrix);
+  LogicalVolume world = LogicalVolume(&world_unplaced);
+  LogicalVolume box = LogicalVolume(&box_unplaced);
+  world.PlaceDaughter(&box, &matrix);
   return 0;
 }

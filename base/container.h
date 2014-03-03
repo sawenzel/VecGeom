@@ -2,7 +2,7 @@
 #define VECGEOM_BASE_CONTAINER_H_
 
 #include <iterator>
-#include "base/utilities.h"
+#include "base/global.h"
 
 namespace vecgeom {
 
@@ -88,6 +88,13 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual int size() const =0;
+
+  #ifdef VECGEOM_CUDA
+  Array<Type>* CopyToGpu(Type const *const gpu_ptr_arr,
+                         Array<Type> *const gpu_ptr) const;
+  Array<Type>* CopyToGpu() const;
+  Type* CopyContentToGpu() const;
+  #endif
 
 };
 

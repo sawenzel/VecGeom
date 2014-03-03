@@ -39,20 +39,11 @@ LogicalVolume const* CudaManager::Synchronize() {
   for (std::set<LogicalVolume const*>::const_iterator i =
        logical_volumes.begin(); i != logical_volumes.end(); ++i) {
 
-    LogicalVolume *gpu_object = new LogicalVolume(
-      static_cast<VUnplacedVolume const*>(
-        memory_map[ToCpuAddress((*i)->unplaced_volume())]
-      ),
-      static_cast<Container<VPlacedVolume const*> *>(
-        memory_map[ToCpuAddress(&(*i)->daughters())]
-      )
+    (*i)->CopyToGpu(
+      LookupUnplaced((*i)->unplaced_volume()),
+      LookupDaughters((*i)->daughters_),
+      LookupLogical(*i)
     );
-
-    CopyToGpu(
-      gpu_object, static_cast<LogicalVolume*>(memory_map[ToCpuAddress(*i)])
-    );
-
-    delete gpu_object;
 
   }
   if (verbose > 2) std::cerr << " OK\n";
@@ -61,88 +52,49 @@ LogicalVolume const* CudaManager::Synchronize() {
   for (std::set<VUnplacedVolume const*>::const_iterator i =
        unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
 
-    (*i)->CopyToGpu(
-      static_cast<VUnplacedVolume*>(memory_map[ToCpuAddress(*i)])
-    );
+    (*i)->CopyToGpu(LookupUnplaced(*i));
 
   }
-  if (verbose > 2) std::cerr << " OK\n";
+  if (verbose > 2) std::cout << " OK\n";
 
-  if (verbose > 2) std::cerr << "Copying placed volumes...";
+  if (verbose > 2) std::cout << "Copying placed volumes...";
   for (std::set<VPlacedVolume const*>::const_iterator i =
        placed_volumes.begin(); i != placed_volumes.end(); ++i) {
 
-    VPlacedVolume *gpu_object =
-        VolumeFactory::Instance().CreateSpecializedVolume(
-          (*i)->logical_volume(),
-          (*i)->matrix()
-        );
-    gpu_object->set_logical_volume(
-      static_cast<LogicalVolume const*>(
-        memory_map[ToCpuAddress((*i)->logical_volume())]
-      )
+    (*i)->CopyToGpu(
+      LookupLogical((*i)->logical_volume()),
+      LookupMatrix((*i)->matrix()),
+      LookupPlaced(*i)
     );
-    gpu_object->set_matrix(
-      static_cast<TransformationMatrix const*>(
-        memory_map[ToCpuAddress((*i)->matrix())]
-      )
-    );
-
-    CopyToGpu(
-      gpu_object, static_cast<VPlacedVolume*>(memory_map[ToCpuAddress(*i)])
-    );
-
-    delete gpu_object;
 
   }
-  if (verbose > 2) std::cerr << " OK\n";
+  if (verbose > 2) std::cout << " OK\n";
 
-  if (verbose > 2) std::cerr << "Copying transformation matrices...";
+  if (verbose > 2) std::cout << "Copying transformation matrices...";
   for (std::set<TransformationMatrix const*>::const_iterator i =
        matrices.begin(); i != matrices.end(); ++i) {
 
-    CopyToGpu(
-      *i, static_cast<TransformationMatrix*>(memory_map[ToCpuAddress(*i)])
-    );
+    (*i)->CopyToGpu(LookupMatrix(*i));
 
   }
-  if (verbose > 2) std::cerr << " OK\n";
+  if (verbose > 2) std::cout << " OK\n";
 
-  if (verbose > 2) std::cerr << "Copying daughter lists...";
+  if (verbose > 2) std::cout << "Copying daughter arrays...";
   for (std::set<Container<Daughter> *>::const_iterator i =
        daughters.begin(); i != daughters.end(); ++i) {
 
-    // First copy the C-arrays
-    const int n_daughters = (static_cast<Vector<Daughter> *>(*i))->size();
-    Daughter *arr = new Daughter[n_daughters];
-    int j = 0;
-    for (Iterator<Daughter> k = (*i)->begin(); k != (*i)->end(); ++k) {
-      arr[j] = *k;
-      j++;
-    }
-    VPlacedVolume const **const arr_gpu = static_cast<VPlacedVolume const **>(
-      memory_map[ToCpuAddress(memory_map[ToCpuAddress(*i)])]
-    );
-    CopyToGpu(arr, arr_gpu, n_daughters*sizeof(VPlacedVolume const*));
-    delete arr;
-
-    // Then the array containers
-    Array<Daughter> *gpu_object =
-        new Array<Daughter>(arr_gpu, n_daughters);
-    CopyToGpu(
-      gpu_object, static_cast<Array<Daughter> *>(memory_map[ToCpuAddress(*i)])
-    );
-    delete gpu_object;
+    // Allocation and copying happens internally
+    Daughter *const daughter_array = (*i)->CopyContentToGpu();
+    (*i)->CopyToGpu(daughter_array, LookupDaughters(*i));
 
   }
-  if (verbose > 1) std::cerr << " OK\n";
+  if (verbose > 1) std::cout << " OK\n";
 
   synchronized = true;
 
-  world_gpu_ =
-      static_cast<LogicalVolume const*>(memory_map[ToCpuAddress(world_)]);
+  world_gpu_ = LookupLogical(world_);
 
-  if (verbose > 0) std::cerr << "Geometry synchronized to GPU.\n";
+  if (verbose > 0) std::cout << "Geometry synchronized to GPU.\n";
 
   return world_gpu_;
 
@@ -171,7 +123,7 @@ void CudaManager::CleanGpu() {
 
   if (memory_map.size() == 0 && world_gpu_ == NULL) return;
 
-  if (verbose > 1) std::cerr << "Cleaning GPU...";
+  if (verbose > 1) std::cout << "Cleaning GPU...";
 
   for (MemoryMap::iterator i = memory_map.begin(); i != memory_map.end(); ++i) {
     FreeFromGpu(i->second);
@@ -181,82 +133,105 @@ void CudaManager::CleanGpu() {
   world_gpu_ = NULL;
   synchronized = false;
 
-  if (verbose > 1) std::cerr << " OK\n";
+  if (verbose > 1) std::cout << " OK\n";
 
 }
 
 void CudaManager::AllocateGeometry() {
 
-  if (verbose > 1) std::cerr << "Allocating geometry on GPU...";
+  if (verbose > 1) std::cout << "Allocating geometry on GPU...";
 
   if (verbose > 2) {
     size_t free_memory = 0, total_memory = 0;
     CudaAssertError(cudaMemGetInfo(&free_memory, &total_memory));
-    std::cerr << "\nAvailable memory: " << free_memory << " / "
+    std::cout << "\nAvailable memory: " << free_memory << " / "
                                         << total_memory << std::endl;
   }
 
-  if (verbose > 2) std::cerr << "Allocating logical volumes...";
-  for (std::set<LogicalVolume const*>::const_iterator i =
-       logical_volumes.begin(); i != logical_volumes.end(); ++i) {
+  {
+    if (verbose > 2) std::cout << "Allocating logical volumes...";
 
-    LogicalVolume *const gpu_address = AllocateOnGpu<LogicalVolume>();
-    memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
+    LogicalVolume *gpu_array =
+        AllocateOnGpu<LogicalVolume>(
+          logical_volumes.size()*sizeof(LogicalVolume)
+        );
 
+    for (std::set<LogicalVolume const*>::const_iterator i =
+         logical_volumes.begin(); i != logical_volumes.end(); ++i) {
+
+      memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
+      gpu_array++;
+
+    }
+
+    if (verbose > 2) std::cout << " OK\n";
   }
-  if (verbose > 2) std::cerr << " OK\n";
 
-  if (verbose > 2) std::cerr << "Allocating unplaced volumes...";
-  for (std::set<VUnplacedVolume const*>::const_iterator i =
-       unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
+  {
+    if (verbose > 2) std::cout << "Allocating unplaced volumes...";
 
-    const GpuAddress gpu_address =
-        AllocateOnGpu<GpuAddress*>((*i)->byte_size());
-    memory_map[ToCpuAddress(*i)] = gpu_address;
+    for (std::set<VUnplacedVolume const*>::const_iterator i =
+         unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
 
+      const GpuAddress gpu_address =
+          AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+      memory_map[ToCpuAddress(*i)] = gpu_address;
+
+    }
+
+    if (verbose > 2) std::cout << " OK\n";
   }
-  if (verbose > 2) std::cerr << " OK\n";
 
-  if (verbose > 2) std::cerr << "Allocating placed volumes...";
-  for (std::set<VPlacedVolume const*>::const_iterator i =
-       placed_volumes.begin(); i != placed_volumes.end(); ++i) {
+  {
+    if (verbose > 2) std::cout << "Allocating placed volumes...";
 
-    const GpuAddress gpu_address =
-        AllocateOnGpu<GpuAddress*>((*i)->byte_size());
-    memory_map[ToCpuAddress(*i)] = gpu_address;
+    for (std::set<VPlacedVolume const*>::const_iterator i =
+         placed_volumes.begin(); i != placed_volumes.end(); ++i) {
 
+      const GpuAddress gpu_address =
+          AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+      memory_map[ToCpuAddress(*i)] = gpu_address;
+
+    }
+
+    if (verbose > 2) std::cout << " OK\n";
   }
-  if (verbose > 2) std::cerr << " OK\n";
 
-  if (verbose > 2) std::cerr << "Allocating transformation matrices...";
-  for (std::set<TransformationMatrix const*>::const_iterator i =
-       matrices.begin(); i != matrices.end(); ++i) {
+  {
+    if (verbose > 2) std::cout << "Allocating transformation matrices...";
 
-    TransformationMatrix *const gpu_address =
-        AllocateOnGpu<TransformationMatrix>();
-    memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
+    for (std::set<TransformationMatrix const*>::const_iterator i =
+         matrices.begin(); i != matrices.end(); ++i) {
 
+      const GpuAddress gpu_address =
+          AllocateOnGpu<TransformationMatrix>((*i)->memory_size());
+      memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
+
+    }
+
+    if (verbose > 2) std::cout << " OK\n";
   }
-  if (verbose > 2) std::cerr << " OK\n";
 
-  if (verbose > 2) std::cerr << "Allocating daughter lists...";
-  for (std::set<Container<Daughter> *>::const_iterator i =
-       daughters.begin(); i != daughters.end(); ++i) {
+  {
+    if (verbose > 2) std::cout << "Allocating daughter lists...";
 
-    Array<Daughter> *const gpu_address =
-        AllocateOnGpu<Array<Daughter> >();
-    memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
+    Array<Daughter> *gpu_array =
+        AllocateOnGpu<Array<Daughter> >(
+          daughters.size()*sizeof(Array<Daughter>)
+        );
 
-    // Also allocate the C-array necessary when creating the array object.
-    // Will index with the GPU address of the Array object.
-    const GpuAddress gpu_array = AllocateOnGpu<GpuAddress*>(
-      (static_cast<Vector<Daughter> const*>(*i))->size()
-      * sizeof(Daughter)
-    );
-    memory_map[ToCpuAddress(gpu_address)] = ToGpuAddress(gpu_array);
+    for (std::set<Container<Daughter> *>::const_iterator i =
+         daughters.begin(); i != daughters.end(); ++i) {
 
+      memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
+      gpu_array++;
+
+    }
+
+    if (verbose > 2) std::cout << " OK\n";
   }
-  if (verbose > 1) std::cerr << " OK\n";
+
+  if (verbose == 2) std::cout << " OK\n";
 
 }
 
@@ -307,5 +282,45 @@ void CudaManager::PrintContent() const {
     std::cout << (**i) << std::endl;
   }
 }
+
+template <typename Type>
+typename CudaManager::GpuAddress CudaManager::Lookup(
+    Type const *const key) {
+  const CpuAddress cpu_address = ToCpuAddress(key);
+  GpuAddress output = memory_map[cpu_address];
+  assert(output != NULL);
+  return output;
+}
+
+VUnplacedVolume* CudaManager::LookupUnplaced(
+    VUnplacedVolume const *const host_ptr) {
+  return static_cast<VUnplacedVolume*>(Lookup(host_ptr));
+}
+
+LogicalVolume* CudaManager::LookupLogical(
+    LogicalVolume const *const host_ptr) {
+  return static_cast<LogicalVolume*>(Lookup(host_ptr));
+}
+
+VPlacedVolume* CudaManager::LookupPlaced(
+    VPlacedVolume const *const host_ptr) {
+  return static_cast<VPlacedVolume*>(Lookup(host_ptr));
+}
+
+TransformationMatrix* CudaManager::LookupMatrix(
+    TransformationMatrix const *const host_ptr) {
+  return static_cast<TransformationMatrix*>(Lookup(host_ptr));
+}
+
+Array<Daughter>* CudaManager::LookupDaughters(
+    Container<Daughter> *const host_ptr) {
+  return static_cast<Array<Daughter>*>(Lookup(host_ptr));
+}
+
+// Daughter const* CudaManager::LookupDaughterArray(
+//     Container<Daughter> *const host_ptr) const {
+//   Container<Daughter> const* daughters = LookupDaughters(host_ptr);
+//   return static_cast<Daughter const*>(Lookup(daughters));
+// }
 
 } // End namespace vecgeom

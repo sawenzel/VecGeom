@@ -4,11 +4,13 @@
 #include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda_backend.cuh"
+#endif
 
 namespace vecgeom {
 
 LogicalVolume::~LogicalVolume() {
-  if (external_daughters_) return;
   for (Iterator<VPlacedVolume const*> i = daughters().begin();
        i != daughters().end(); ++i) {
     delete *i;
@@ -44,5 +46,40 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   }
   return os;
 }
+
+#ifdef VECGEOM_CUDA
+
+namespace {
+
+__global__
+void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
+                    Container<Daughter> *const daughters,
+                    LogicalVolume *const output) {
+  new(output) LogicalVolume(unplaced_volume, daughters);
+}
+
+}
+
+LogicalVolume* LogicalVolume::CopyToGpu(
+    VUnplacedVolume const *const unplaced_volume,
+    Container<Daughter> *const daughters,
+    LogicalVolume *const gpu_ptr) const {
+
+  ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+
+}
+
+LogicalVolume* LogicalVolume::CopyToGpu(
+    VUnplacedVolume const *const unplaced_volume,
+    Container<Daughter> *const daughters) const {
+
+  LogicalVolume *const gpu_ptr = AllocateOnGpu<LogicalVolume>();
+  return CopyToGpu(unplaced_volume, daughters, gpu_ptr);
+
+}
+
+#endif // VECGEOM_CUDA
 
 } // End namespace vecgeom

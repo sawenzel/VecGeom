@@ -1,8 +1,7 @@
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
-#include "base/utilities.h"
-#include "base/types.h"
+#include "base/global.h"
 
 namespace vecgeom {
 

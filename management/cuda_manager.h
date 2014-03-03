@@ -18,11 +18,11 @@ private:
   std::set<LogicalVolume const*> logical_volumes;
   std::set<VPlacedVolume const*> placed_volumes;
   std::set<TransformationMatrix const*> matrices;
-  std::set<Container<VPlacedVolume const*> *> daughters;
+  std::set<Container<Daughter> *> daughters;
 
   typedef void const* CpuAddress;
   typedef void* GpuAddress;
-  typedef std::map<CpuAddress, GpuAddress> MemoryMap;
+  typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
 
   LogicalVolume const *world_, *world_gpu_;
 
@@ -102,7 +102,7 @@ private:
    * the memory table.
    */
   template <typename Type>
-  CpuAddress ToCpuAddress(Type const *const ptr) {
+  CpuAddress ToCpuAddress(Type const *const ptr) const {
     return static_cast<CpuAddress>(ptr);
   }
 
@@ -111,9 +111,27 @@ private:
    * the memory table.
    */
   template <typename Type>
-  GpuAddress ToGpuAddress(Type *const ptr) {
+  GpuAddress ToGpuAddress(Type *const ptr) const {
     return static_cast<GpuAddress>(ptr);
   }
+
+  template <typename Type>
+  GpuAddress Lookup(Type const *const key);
+
+  VUnplacedVolume* LookupUnplaced(
+      VUnplacedVolume const *const host_ptr);
+
+  LogicalVolume* LookupLogical(LogicalVolume const *const host_ptr);
+
+  VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
+
+  TransformationMatrix* LookupMatrix(
+      TransformationMatrix const *const host_ptr);
+
+  Array<Daughter>* LookupDaughters(Container<Daughter> *const host_ptr);
+
+  // Daughter const* LookupDaughterArray(
+  //     Container<Daughter> *const host_ptr) const;
 
 };
 

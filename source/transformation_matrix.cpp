@@ -152,18 +152,26 @@ namespace {
 
 __global__
 void ConstructOnGpu(const TransformationMatrix matrix,
-                    TransformationMatrix **const output) {
-  *output = new TransformationMatrix(matrix);
+                    TransformationMatrix *const gpu_ptr) {
+  new(gpu_ptr) TransformationMatrix(matrix);
 }
+
+} // End anonymous namespace
+
+TransformationMatrix* TransformationMatrix::CopyToGpu(
+    TransformationMatrix *const gpu_ptr) const {
+
+  ConstructOnGpu<<<1, 1>>>(*this, gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
 
 }
 
 TransformationMatrix* TransformationMatrix::CopyToGpu() const {
-  TransformationMatrix **const matrix_device =
-      AllocateOnGpu<TransformationMatrix *>();
-  ConstructOnGpu<<<1, 1>>>(*this, matrix_device);
-  CudaAssertError();
-  return *matrix_device;
+
+  TransformationMatrix *const gpu_ptr = AllocateOnGpu<TransformationMatrix>();
+  return CopyToGpu(gpu_ptr);
+
 }
 
 #endif

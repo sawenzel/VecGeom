@@ -1,10 +1,8 @@
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
-#include <iostream>
 #include <cassert>
-#include "base/utilities.h"
-#include "base/types.h"
+#include "base/global.h"
 #include "backend/scalar_backend.h"
 
 namespace vecgeom {

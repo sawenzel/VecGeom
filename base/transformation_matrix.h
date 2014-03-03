@@ -48,6 +48,8 @@ public:
 
   // Accessors
 
+  virtual int memory_size() const { return sizeof(*this); }
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Translation() const {
@@ -174,6 +176,7 @@ public:
 
   #ifdef VECGEOM_CUDA
   TransformationMatrix* CopyToGpu() const;
+  TransformationMatrix* CopyToGpu(TransformationMatrix *const gpu_ptr) const;
   #endif
 
 }; // End class TransformationMatrix

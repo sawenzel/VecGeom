@@ -1,7 +1,7 @@
 #ifndef VECGEOM_VOLUMES_PLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
-#include "base/types.h"
+#include "base/global.h"
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
@@ -12,7 +12,7 @@ class VPlacedVolume {
 
 private:
 
-  int id;
+  // int id;
 
   friend class CudaManager;
 
@@ -23,15 +23,12 @@ protected:
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
   VPlacedVolume(LogicalVolume const *const logical_volume__,
                 TransformationMatrix const *const matrix__)
-      : logical_volume_(logical_volume__), matrix_(matrix__) {
-    id = GeoManager::Instance().RegisterVolume(this);
-  }
+      : logical_volume_(logical_volume__), matrix_(matrix__) {}
 
-  virtual ~VPlacedVolume() {
-    GeoManager::Instance().DeregisterVolume(this);
-  }
+  virtual ~VPlacedVolume() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -66,7 +63,7 @@ public:
   VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
-  virtual int byte_size() const { return sizeof(*this); }
+  virtual int memory_size() const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const =0;
@@ -75,6 +72,15 @@ public:
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
                                  Vector3D<Precision> const &direction,
                                  const Precision step_max) const =0;
+
+  #ifdef VECGEOM_CUDA
+  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
+                                   TransformationMatrix const *const matrix,
+                                   VPlacedVolume *const gpu_ptr) const =0;
+  virtual VPlacedVolume* CopyToGpu(
+      LogicalVolume const *const logical_volume,
+      TransformationMatrix const *const matrix) const =0;
+  #endif
 
 };
 
