@@ -70,15 +70,18 @@ struct PFMWatch
 
     //    EVENTSTRING[0]="cs"; 
     //    EVENTSTRING[1]="migrations"; 
-    EVENTSTRING[0]="branches"; 
-    EVENTSTRING[1]="branch-misses"; 
-    //    EVENTSTRING[2]="l1-dcache-load-misses"; 
-    EVENTSTRING[2]="cache-misses"; 
-    EVENTSTRING[3]="l1-icache-load-misses"; 
-    EVENTSTRING[4]="cycles"; 
-    EVENTSTRING[5]="instructions"; 
-    EVENTSTRING[6]="idle-cycles-frontend"; 
-    EVENTSTRING[7]="idle-cycles-backend"; 
+    EVENTSTRING[2]="cycles"; 
+    EVENTSTRING[3]="instructions"; 
+    EVENTSTRING[4]="branch-misses"; 
+    EVENTSTRING[5]="L1-dcache-load-misses"; 
+    EVENTSTRING[6]="L1-icache-load-misses"; 
+    EVENTSTRING[7]="branches"; 
+    // EVENTSTRING[2]="cache-misses"; 
+    
+    // EV/ENTSTRING[4]="cycles"; 
+    // EVENTSTRING[5]="instructions"; 
+    EVENTSTRING[0]="idle-cycles-frontend"; 
+    EVENTSTRING[1]="cs"; //idle-cycles-backend"; 
  
 
     ret = pfm_initialize();
