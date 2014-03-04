@@ -63,5 +63,6 @@ void CudaCopy(LogicalVolume const *const world) {
   LogicalVolume const *const world_gpu = CudaManager::Instance().world_gpu();
   CudaContent<<<1, 1>>>(world_gpu);
   cudaDeviceSynchronize(); // Necessary to print output
+  CudaAssertError();
 }
 #endif

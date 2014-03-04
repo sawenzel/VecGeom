@@ -1,7 +1,8 @@
 #ifndef VECGEOM_BASE_ARRAY_H_
 #define VECGEOM_BASE_ARRAY_H_
 
-#include "base/container.h"
+#include "base/global.h"
+#include "base/iterator.h"
 
 namespace vecgeom {
 
@@ -16,11 +17,13 @@ private:
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
   Array(const int size) {
     size_ = size;
     arr = new Type[size];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   Array(Type *const arr_, const int size__) {
     arr = arr_;
     size_ = size__;
@@ -50,7 +53,7 @@ private:
 
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
-    Iterator<Type>& operator++() {
+    virtual Iterator<Type>& operator++() {
       this->element_++;
       return *this;
     }

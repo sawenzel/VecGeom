@@ -24,9 +24,9 @@ protected:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  VPlacedVolume(LogicalVolume const *const logical_volume__,
-                TransformationMatrix const *const matrix__)
-      : logical_volume_(logical_volume__), matrix_(matrix__) {}
+  VPlacedVolume(LogicalVolume const *const logical_volume,
+                TransformationMatrix const *const matrix)
+      : logical_volume_(logical_volume), matrix_(matrix) {}
 
   virtual ~VPlacedVolume() {}
 
@@ -50,14 +50,14 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void set_logical_volume(LogicalVolume const *const logical_volume__) {
-    logical_volume_ = logical_volume__;
+  void set_logical_volume(LogicalVolume const *const logical_volume) {
+    logical_volume_ = logical_volume;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void set_matrix(TransformationMatrix const *const matrix__) {
-    matrix_ = matrix__;
+  void set_matrix(TransformationMatrix const *const matrix) {
+    matrix_ = matrix;
   }
 
   VECGEOM_CUDA_HEADER_HOST

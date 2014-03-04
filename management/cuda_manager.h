@@ -13,6 +13,7 @@ private:
 
   bool synchronized;
   int verbose;
+  int total_volumes;
 
   std::set<VUnplacedVolume const*> unplaced_volumes;
   std::set<LogicalVolume const*> logical_volumes;
@@ -76,12 +77,7 @@ public:
 
 private:
 
-  CudaManager() {
-    synchronized = true;
-    world_ = NULL;
-    world_gpu_ = NULL;
-    verbose = 0;
-  }
+  CudaManager();
   CudaManager(CudaManager const&);
   CudaManager& operator=(CudaManager const&);
 
@@ -130,8 +126,8 @@ private:
 
   Array<Daughter>* LookupDaughters(Container<Daughter> *const host_ptr);
 
-  // Daughter const* LookupDaughterArray(
-  //     Container<Daughter> *const host_ptr) const;
+  Daughter* LookupDaughterArray(
+      Container<Daughter> *const host_ptr);
 
 };
 

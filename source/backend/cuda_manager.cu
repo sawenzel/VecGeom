@@ -7,6 +7,14 @@
 
 namespace vecgeom {
 
+CudaManager::CudaManager() {
+  synchronized = true;
+  world_ = NULL;
+  world_gpu_ = NULL;
+  verbose = 0;
+  total_volumes = 0;
+}
+
 LogicalVolume const* CudaManager::world() const {
   assert(world_ != NULL);
   return world_;
@@ -83,9 +91,20 @@ LogicalVolume const* CudaManager::Synchronize() {
   for (std::set<Container<Daughter> *>::const_iterator i =
        daughters.begin(); i != daughters.end(); ++i) {
 
-    // Allocation and copying happens internally
-    Daughter *const daughter_array = (*i)->CopyContentToGpu();
-    (*i)->CopyToGpu(daughter_array, LookupDaughters(*i));
+    // First handle C arrays that must now point to GPU locations
+    const int daughter_count = (*i)->size();
+    Daughter *const daughter_array = new Daughter[daughter_count];
+    int j = 0;
+    for (Iterator<Daughter> k = (*i)->begin(); k != (*i)->end(); ++k) {
+      daughter_array[j] = LookupPlaced(*k);
+      j++;
+    }
+    vecgeom::CopyToGpu(
+      daughter_array, LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
+    );
+
+    // Create array wrapping newly copied C arrays
+    (*i)->CopyToGpu(LookupDaughterArray(*i), LookupDaughters(*i));
 
   }
   if (verbose > 1) std::cout << " OK\n";
@@ -220,11 +239,16 @@ void CudaManager::AllocateGeometry() {
           daughters.size()*sizeof(Array<Daughter>)
         );
 
+    Daughter *gpu_c_array =
+        AllocateOnGpu<Daughter>(total_volumes*sizeof(Daughter));
+
     for (std::set<Container<Daughter> *>::const_iterator i =
          daughters.begin(); i != daughters.end(); ++i) {
 
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
+      memory_map[ToCpuAddress(gpu_array)] = ToGpuAddress(gpu_c_array);
       gpu_array++;
+      gpu_c_array += (*i)->size();
 
     }
 
@@ -258,6 +282,7 @@ void CudaManager::ScanGeometry(LogicalVolume const *const volume) {
     ScanGeometry((*i)->logical_volume());
   }
 
+  total_volumes++;
 }
 
 void CudaManager::PrintContent() const {
@@ -317,10 +342,10 @@ Array<Daughter>* CudaManager::LookupDaughters(
   return static_cast<Array<Daughter>*>(Lookup(host_ptr));
 }
 
-// Daughter const* CudaManager::LookupDaughterArray(
-//     Container<Daughter> *const host_ptr) const {
-//   Container<Daughter> const* daughters = LookupDaughters(host_ptr);
-//   return static_cast<Daughter const*>(Lookup(daughters));
-// }
+Daughter* CudaManager::LookupDaughterArray(
+    Container<Daughter> *const host_ptr) {
+  Array<Daughter> const *const daughters = LookupDaughters(host_ptr);
+  return static_cast<Daughter*>(Lookup(daughters));
+}
 
 } // End namespace vecgeom

@@ -32,10 +32,10 @@ void LogicalVolume::PrintContent(const int depth) const {
   for (int i = 0; i < depth; ++i) printf("  ");
   unplaced_volume()->Print();
   printf("\n");
-  // for (Iterator<VPlacedVolume const*> vol = daughters_->begin();
-  //      vol != daughters_->end(); ++vol) {
-  //   (*vol)->logical_volume()->PrintContent(depth + 1);
-  // }
+  for (Iterator<VPlacedVolume const*> vol = daughters_->begin();
+       vol != daughters_->end(); ++vol) {
+    (*vol)->logical_volume()->PrintContent(depth + 1);
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
@@ -58,7 +58,7 @@ void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
   new(output) LogicalVolume(unplaced_volume, daughters);
 }
 
-}
+} // End anonymous namespace
 
 LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,

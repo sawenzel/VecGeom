@@ -17,14 +17,10 @@ class SpecializedBox : public PlacedBox {
 
 public:
 
-  #ifdef VECGEOM_INHERIT_CONSTRUCTOR
-  using PlacedBox::PlacedBox;
-  #else
   VECGEOM_CUDA_HEADER_BOTH
   SpecializedBox(LogicalVolume const *const logical_volume,
                  TransformationMatrix const *const matrix)
       : PlacedBox(logical_volume, matrix) {}
-  #endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;

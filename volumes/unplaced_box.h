@@ -23,6 +23,9 @@ public:
   UnplacedBox(const Precision dx, const Precision dy, const Precision dz)
       : dimensions_(dx, dy, dz) {}
 
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedBox(UnplacedBox const &other) : dimensions_(other.dimensions_) {}
+
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_NVCC

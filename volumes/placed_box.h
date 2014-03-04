@@ -14,14 +14,10 @@ class PlacedBox : public VPlacedVolume {
 
 public:
 
-  #if (!defined(VECGEOM_INTEL) && defined(VECGEOM_STD_CXX11))
-  using VPlacedVolume::VPlacedVolume;
-  #else
   VECGEOM_CUDA_HEADER_BOTH
-  PlacedBox(LogicalVolume const *const logical_volume__,
-            TransformationMatrix const *const matrix__)
-      : VPlacedVolume(logical_volume__, matrix__) {}
-  #endif
+  PlacedBox(LogicalVolume const *const logical_volume,
+            TransformationMatrix const *const matrix)
+      : VPlacedVolume(logical_volume, matrix) {}
 
   virtual ~PlacedBox() {}
 

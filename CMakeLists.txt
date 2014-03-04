@@ -71,7 +71,7 @@ if (GNU)
   endif()
 endif()
 if (CUDA)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA -Wno-vla")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
@@ -132,7 +132,6 @@ if (CUDA)
 
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
@@ -160,8 +159,8 @@ if (CUDA)
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
     ADD_CUSTOM_COMMAND(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
       DEPENDS ${SRC_FILE}
     )
 
@@ -172,12 +171,12 @@ if (CUDA)
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
     ADD_CUSTOM_COMMAND(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
       DEPENDS ${SRC_FILE}
     )
 
-    set(SRC_CUDA ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/${SRC_FILENAME}.cu)
+    set(SRC_CUDA ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu)
 
   endforeach()
 
@@ -195,5 +194,5 @@ if (NOT CUDA)
   target_link_libraries(compile_test ${LIBS})
   target_link_libraries(create_geometry_test ${LIBS})
 else()
-  cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/create_geometry.cu OPTIONS ${CUDA_ARCH})
+  cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu OPTIONS ${CUDA_ARCH})
 endif()
