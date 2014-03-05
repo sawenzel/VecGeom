@@ -16,7 +16,10 @@ committal in the SVN repository !
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
 
-February 21th, 2014  T.Nikitina            
+March 5th, 2014 - G.Cosmo
+- Fixed handling of polyhedron pointer in G4USolid bridge class.
+
+February 21th, 2014 - T.Nikitina            
 - Implemented precise safety in UTubs and UCons for SafetyFromOutside().
   Precise safety is used in UPolycone for calculation of SafetyFromOutside().
 - UPolycone fixes: added validity check of shape for case when RMin > RMax;
