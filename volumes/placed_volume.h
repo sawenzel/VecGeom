@@ -82,6 +82,11 @@ public:
       TransformationMatrix const *const matrix) const =0;
   #endif
 
+  #ifdef VECGEOM_COMPARISON
+  virtual TGeoShape const* ConvertToRoot() const =0;
+  virtual ::VUSolid const* ConvertToUSolids() const =0;
+  #endif
+
 };
 
 } // End namespace vecgeom

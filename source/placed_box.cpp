@@ -3,6 +3,10 @@
 #ifdef VECGEOM_CUDA
 #include "backend/cuda_backend.cuh"
 #endif
+#ifdef VECGEOM_COMPARISON
+#include "TGeoBBox.h"
+#include "UBox.hh"
+#endif
 
 namespace vecgeom {
 
@@ -67,6 +71,18 @@ VPlacedVolume* PlacedBox::CopyToGpu(
   return CopyToGpu(logical_volume, matrix, gpu_ptr);
 }
 
-#endif
+#endif // VECGEOM_CUDA
+
+#ifdef VECGEOM_COMPARISON
+
+TGeoShape const* PlacedBox::ConvertToRoot() const {
+  return new TGeoBBox("", x(), y(), z());
+}
+
+::VUSolid const* PlacedBox::ConvertToUSolids() const {
+  return new UBox("", x(), y(), z());
+}
+
+#endif // VECGEOM_COMPARISON
 
 } // End namespace vecgeom

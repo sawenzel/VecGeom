@@ -103,7 +103,7 @@ LogicalVolume const* CudaManager::Synchronize() {
       daughter_array, LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
     );
 
-    // Create array wrapping newly copied C arrays
+    // Create array object wrapping newly copied C arrays
     (*i)->CopyToGpu(LookupDaughterArray(*i), LookupDaughters(*i));
 
   }

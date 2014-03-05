@@ -5,6 +5,8 @@ project(vecgeom)
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
+option(COMPARISON "Include ROOT and USolids to enable performance comparisons." OFF)
+
 if (NOT BACKEND)
   set(BACKEND "Vc")
 endif()
@@ -83,6 +85,9 @@ endif()
 if (VC_ACCELERATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
 endif()
+if (COMPARISON)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_COMPARISON")
+endif()
 
 ################################################################################
 
@@ -137,13 +142,45 @@ if (CUDA)
 
 endif()
 
+if (COMPARISON)
+  
+  include(FindROOT.cmake)
+
+  include_directories(${ROOT_INCLUDE_DIR})
+  link_directories(${ROOT_LIBRARY_DIR})
+  set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
+
+  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
+    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build comparison module.")
+  endif()
+  if (USOLIDS_INCLUDE_DIR)
+    include_directories(${USOLIDS_INCLUDE_DIR})
+  else()
+    include_directories(${USOLIDS_DIR}/include)
+  endif()
+  if (USOLIDS_LIBRARY_DIR)
+    set(USOLIDS_LIBRARY ${USOLIDS_LIBRARY_DIR}/libusolids.a)
+    link_directories(${USOLIDS_LIBRARY_DIR})
+  else()
+    set(USOLIDS_LIBRARY ${USOLIDS_DIR}/lib/libusolids.a)
+    link_directories(${USOLIDS_DIR}/lib)
+  endif()
+  set(LIBS ${LIBS} ${USOLIDS_LIBRARY})
+
+endif()
+
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 ################################################################################
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-file(GLOB SRC_CPP "source/*.cu" "source/*.cpp")
+file(GLOB SRC_CPP "source/*.cpp")
+
+if (COMPARISON)
+  file(GLOB COMPARISON_CPP "source/comparison/*.cpp")
+  set(SRC_CPP ${SRC_CPP} ${COMPARISON_CPP})
+endif()
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
@@ -188,10 +225,9 @@ endif()
 
 if (NOT CUDA)
   add_library(vecgeom_cpp ${SRC_CPP})
-  set(LIBS ${LIBS} vecgeom_cpp)
-  add_executable(compile_test ${SRC_COMPILETEST})
   add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
-  target_link_libraries(compile_test ${LIBS})
+  target_link_libraries(vecgeom_cpp ${LIBS})
+  set(LIBS ${LIBS} vecgeom_cpp)
   target_link_libraries(create_geometry_test ${LIBS})
 else()
   cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu OPTIONS ${CUDA_ARCH})

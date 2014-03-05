@@ -3,7 +3,6 @@
 
 #include "base/global.h"
 #include "backend/scalar_backend.h"
-#include "base/transformation_matrix.h"
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
 #include "volumes/kernel/box_kernel.h"
@@ -21,18 +20,27 @@ public:
 
   virtual ~PlacedBox() {}
 
-  virtual int memory_size() const { return sizeof(*this); }
+  // Accessors
 
-  #ifdef VECGEOM_CUDA
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   TransformationMatrix const *const matrix,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix) const;
-  #endif
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> const& dimensions() const {
+    return AsUnplacedBox()->dimensions();
+  }
 
-  // Virtual volume methods
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision x() const { return AsUnplacedBox()->x(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision y() const { return AsUnplacedBox()->y(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision z() const { return AsUnplacedBox()->z(); }
+
+  // Navigation methods
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;
@@ -71,6 +79,28 @@ protected:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedBox const* AsUnplacedBox() const;
+
+public:
+
+  // CUDA specific
+
+  virtual int memory_size() const { return sizeof(*this); }
+
+  #ifdef VECGEOM_CUDA
+  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
+                                   TransformationMatrix const *const matrix,
+                                   VPlacedVolume *const gpu_ptr) const;
+  virtual VPlacedVolume* CopyToGpu(
+      LogicalVolume const *const logical_volume,
+      TransformationMatrix const *const matrix) const;
+  #endif
+
+  // Comparison specific
+
+  #ifdef VECGEOM_COMPARISON
+  virtual TGeoShape const* ConvertToRoot() const;
+  virtual ::VUSolid const* ConvertToUSolids() const;
+  #endif
 
 };
 

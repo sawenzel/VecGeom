@@ -41,6 +41,15 @@ class TransformationMatrix;
 
 class GeoManager;
 
+#ifdef VECGEOM_CUDA
+class CudaManager;
+#endif
+
 } // End namespace vecgeom
+
+#ifdef VECGEOM_COMPARISON
+class TGeoShape;
+class VUSolid;
+#endif
 
 #endif // VECGEOM_BASE_TYPES_H_

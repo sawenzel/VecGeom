@@ -40,7 +40,7 @@ VPlacedVolume* VolumeFactory::CreateSpecializedVolume(
 
   if (placed == NULL) {
     std::cerr << "Fatal error: shape type not found. Possible missing \
-                  implementation of dynamic cast?\n";
+                  implementation of dynamic cast in volume factory?\n";
     assert(placed != NULL);
   }
 
