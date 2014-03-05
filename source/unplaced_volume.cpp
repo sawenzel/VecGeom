@@ -8,4 +8,14 @@ std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
   return os;
 }
 
+VPlacedVolume* VUnplacedVolume::PlaceVolume(
+    LogicalVolume const *const volume,
+    TransformationMatrix const *const matrix) const {
+
+  const TranslationCode trans_code = matrix->GenerateTranslationCode();
+  const RotationCode rot_code = matrix->GenerateRotationCode();
+
+  return SpecializedVolume(volume, matrix, trans_code, rot_code);
+}
+
 } // End namespace vecgeom

@@ -3,6 +3,7 @@
 
 #include <string>
 #include "base/global.h"
+#include "base/transformation_matrix.h"
 
 namespace vecgeom {
 
@@ -41,6 +42,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const =0;
 
+  VPlacedVolume* PlaceVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix) const;
+
 private:
 
   /**
@@ -48,6 +53,11 @@ private:
    * \param os Outstream to stream information into.
    */
   virtual void Print(std::ostream &os) const =0;
+
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code) const =0;
 
 };
 

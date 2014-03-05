@@ -57,8 +57,17 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
+
+  template <TranslationCode trans_code, RotationCode rot_code>
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               TransformationMatrix const *const matrix);
   
 private:
+
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code) const;
 
   virtual void Print(std::ostream &os) const {
     os << "Box {" << dimensions_ << "}";

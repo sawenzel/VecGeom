@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include "volumes/unplaced_box.h"
+#include "management/volume_factory.h"
+#include "volumes/specialized_box.h"
 #ifdef VECGEOM_NVCC
 #include "backend/cuda_backend.cuh"
 #endif
@@ -30,6 +32,22 @@ VUnplacedVolume* UnplacedBox::CopyToGpu() const {
 }
 
 #endif
+
+template <TranslationCode trans_code, RotationCode rot_code>
+VPlacedVolume* UnplacedBox::Create(
+    LogicalVolume const *const logical_volume,
+    TransformationMatrix const *const matrix) {
+  return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
+}
+
+VPlacedVolume* UnplacedBox::SpecializedVolume(
+    LogicalVolume const *const volume,
+    TransformationMatrix const *const matrix,
+    const TranslationCode trans_code, const RotationCode rot_code) const {
+  return VolumeFactory::Instance().CreateByTransformation<UnplacedBox>(
+           volume, matrix, trans_code, rot_code
+         );
+}
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedBox::Print() const {

@@ -21,7 +21,7 @@ LogicalVolume::~LogicalVolume() {
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
   VPlacedVolume *placed =
-      VolumeFactory::Instance().CreateSpecializedVolume(volume, matrix);
+      volume->unplaced_volume()->PlaceVolume(volume, matrix);
   static_cast<Vector<VPlacedVolume const*> *>(
     daughters_
   )->push_back(placed);

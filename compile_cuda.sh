@@ -2,6 +2,6 @@
 rm -rf build
 mkdir build
 cd build
-cmake ../ -DBACKEND=CUDA -DCUDA_ARCH=sm_30
+cmake ../ -DBACKEND=CUDA
 make
 cd ../
