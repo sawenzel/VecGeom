@@ -2,13 +2,13 @@
 #include "volumes/unplaced_box.h"
 #include "management/volume_factory.h"
 #include "volumes/specialized_box.h"
-#ifdef VECGEOM_NVCC
+#ifdef VECGEOM_CUDA
 #include "backend/cuda_backend.cuh"
 #endif
 
 namespace vecgeom {
 
-#ifdef VECGEOM_NVCC
+#ifdef VECGEOM_CUDA
 
 namespace {
 

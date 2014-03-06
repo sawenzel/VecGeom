@@ -143,7 +143,7 @@ public:
     CudaAssertError();
   }
 
-  #endif // VECGEOM_NVCC
+  #endif // VECGEOM_CUDA
 
 };
 

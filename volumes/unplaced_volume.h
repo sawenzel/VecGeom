@@ -31,7 +31,7 @@ public:
    * Constructs the deriving class on the GPU and returns a pointer to GPU
    * memory where the object has been instantiated.
    */
-  #ifdef VECGEOM_NVCC
+  #ifdef VECGEOM_CUDA
   virtual VUnplacedVolume* CopyToGpu() const =0;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const =0;
   #endif
