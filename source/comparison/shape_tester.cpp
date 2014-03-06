@@ -1,4 +1,8 @@
+#include "base/iterator.h"
+#include "base/soa3d.h"
 #include "comparison/shape_tester.h"
+#include "volumes/logical_volume.h"
+#include "volumes/placed_volume.h"
 
 namespace vecgeom {
 
@@ -9,8 +13,14 @@ const char * const ShapeBenchmark::benchmark_labels[] = {
   "ROOT"
 };
 
+ShapeTester::ShapeTester(LogicalVolume const *const world) {
+  world_ = world;
+}
+
 ShapeTester::~ShapeTester() {
-  if (steps_) _mm_free(steps_);
+  _mm_free(steps_);
+  delete point_pool_;
+  delete dir_pool_;
 }
 
 void ShapeTester::set_pool_multiplier(const unsigned pool_multiplier) {
@@ -21,38 +31,29 @@ void ShapeTester::set_pool_multiplier(const unsigned pool_multiplier) {
   pool_multiplier_ = pool_multiplier;
 }
 
-// void ShapeTester::GenerateVolumePointers(PhysicalVolume const *const vol) {
+void ShapeTester::GenerateVolumePointers(VPlacedVolume const *const vol) {
 
-//   if (vol != world) {
-//     VolumePointers pointers;
-//     pointers.fastgeom = vol;
-//     pointers.usolids = vol->GetAsUnplacedUSolid();
-//     pointers.root = vol->GetAsUnplacedROOTSolid();
-//     volumes.push_back(pointers);
-//   }
+  volumes_.push_back(VolumeConverter(vol));
 
-//   std::list<PhysicalVolume const*> const *daughters = vol->GetDaughterList();
-//   if (!daughters || !daughters->size()) return;
-//   for (auto d : *daughters) {
-//     GenerateVolumePointers(d);
-//   }
+  for (Iterator<Daughter> i = vol->logical_volume()->daughters().begin();
+       i != vol->logical_volume()->daughters().end(); ++i) {
+    GenerateVolumePointers(*i);
+  }
 
-//   n_vols = volumes.size();
+}
 
-// }
-
-// ShapeBenchmark ShapeTester::GenerateBenchmark(const double elapsed,
-//                                               const BenchmarkType type) const {
-//   const ShapeBenchmark benchmark = {
-//     .elapsed = elapsed,
-//     .type = type,
-//     .repetitions = reps,
-//     .volumes = (const unsigned) volumes.size(),
-//     .points = n_points,
-//     .bias = bias
-//   };
-//   return benchmark;
-// }
+ShapeBenchmark ShapeTester::GenerateBenchmark(const double elapsed,
+                                              const BenchmarkType type) const {
+  const ShapeBenchmark benchmark = {
+    .elapsed = elapsed,
+    .type = type,
+    .repetitions = repetitions_,
+    .volumes = static_cast<unsigned>(volumes_.size()),
+    .points = n_points_,
+    .bias = bias_
+  };
+  return benchmark;
+}
 
 // ShapeBenchmark ShapeTester::RunPlaced(double* distances) const {
 //   if (verbose) std::cout << "Running Placed benchmark...";
@@ -159,26 +160,26 @@ void ShapeTester::set_pool_multiplier(const unsigned pool_multiplier) {
 //   return GenerateBenchmark(elapsed, kROOT);
 // }
 
-// void ShapeTester::PrepareBenchmark() {
+void ShapeTester::PrepareBenchmark() {
 
-//   // Allocate memory
-//   if (steps) _mm_free(steps);
-//   point_pool.dealloc();
-//   dir_pool.dealloc();
-//   point_pool.alloc(n_points * pool_multiplier);
-//   dir_pool.alloc(n_points * pool_multiplier);
-//   steps = (double*) _mm_malloc(n_points*sizeof(double),
-//                                kAlignmentBoundary);
-//   for (int i = 0; i < n_points; ++i) steps[i] = Utils::kInfinity;
+  // Allocate memory
+  if (steps_) _mm_free(steps_);
+  delete point_pool_;
+  delete dir_pool_;
+  point_pool_ = new SOA3D<Precision>(n_points_ * pool_multiplier_);
+  point_pool_ = new SOA3D<Precision>(n_points_ * pool_multiplier_);
+  steps_ = static_cast<double*>(_mm_malloc(n_points_*sizeof(double),
+                                           kAlignmentBoundary));
+  for (unsigned i = 0; i < n_points_; ++i) steps_[i] = kInfinity;
 
-//   // Generate pointers to volume objects
-//   volumes.clear();
-//   GenerateVolumePointers(world);
-//   world->fillWithRandomPoints(point_pool, n_points * pool_multiplier);
-//   world->fillWithBiasedDirections(point_pool, dir_pool,
-//                                   n_points * pool_multiplier, bias);
+  // Generate pointers to volume objects
+  volumes_.clear();
+  // GenerateVolumePointers(world);
+  // world->fillWithRandomPoints(point_pool, n_points * pool_multiplier);
+  // world->fillWithBiasedDirections(point_pool, dir_pool,
+  //                                 n_points * pool_multiplier, bias);
 
-// }
+}
 
 // void ShapeTester::BenchmarkAll() {
 

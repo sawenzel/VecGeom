@@ -88,7 +88,7 @@ LogicalVolume const* CudaManager::Synchronize() {
   if (verbose > 2) std::cout << " OK\n";
 
   if (verbose > 2) std::cout << "Copying daughter arrays...";
-  for (std::set<Container<Daughter> *>::const_iterator i =
+  for (std::set<Vector<Daughter> *>::const_iterator i =
        daughters.begin(); i != daughters.end(); ++i) {
 
     // First handle C arrays that must now point to GPU locations
@@ -234,15 +234,15 @@ void CudaManager::AllocateGeometry() {
   {
     if (verbose > 2) std::cout << "Allocating daughter lists...";
 
-    Array<Daughter> *gpu_array =
-        AllocateOnGpu<Array<Daughter> >(
-          daughters.size()*sizeof(Array<Daughter>)
+    Vector<Daughter> *gpu_array =
+        AllocateOnGpu<Vector<Daughter> >(
+          daughters.size()*sizeof(Vector<Daughter>)
         );
 
     Daughter *gpu_c_array =
         AllocateOnGpu<Daughter>(total_volumes*sizeof(Daughter));
 
-    for (std::set<Container<Daughter> *>::const_iterator i =
+    for (std::set<Vector<Daughter> *>::const_iterator i =
          daughters.begin(); i != daughters.end(); ++i) {
 
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
@@ -337,14 +337,14 @@ TransformationMatrix* CudaManager::LookupMatrix(
   return static_cast<TransformationMatrix*>(Lookup(host_ptr));
 }
 
-Array<Daughter>* CudaManager::LookupDaughters(
-    Container<Daughter> *const host_ptr) {
-  return static_cast<Array<Daughter>*>(Lookup(host_ptr));
+Vector<Daughter>* CudaManager::LookupDaughters(
+    Vector<Daughter> *const host_ptr) {
+  return static_cast<Vector<Daughter>*>(Lookup(host_ptr));
 }
 
 Daughter* CudaManager::LookupDaughterArray(
-    Container<Daughter> *const host_ptr) {
-  Array<Daughter> const *const daughters = LookupDaughters(host_ptr);
+    Vector<Daughter> *const host_ptr) {
+  Vector<Daughter> const *const daughters = LookupDaughters(host_ptr);
   return static_cast<Daughter*>(Lookup(daughters));
 }
 

@@ -43,7 +43,7 @@ private:
   unsigned pool_multiplier_ = 1;
   std::vector<ShapeBenchmark> results_;
   unsigned verbose_ = 0;
-  SOA3D<Precision> point_pool_, dir_pool_;
+  SOA3D<Precision> *point_pool_, *dir_pool_;
   double *steps_ = NULL;
 
 public:
@@ -59,7 +59,7 @@ public:
   
   ShapeTester() {}
 
-  ShapeTester(LogicalVolume const *const world) : world_(world) {}
+  ShapeTester(LogicalVolume const *const world);
   
   ~ShapeTester();
 
@@ -97,7 +97,7 @@ public:
 
 private:
     
-  void ConvertVolumes(LogicalVolume const *vol);
+  void GenerateVolumePointers(VPlacedVolume const *const vol);
 
   ShapeBenchmark GenerateBenchmark(const double elapsed,
                                    const BenchmarkType type) const;
