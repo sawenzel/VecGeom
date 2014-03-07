@@ -12,20 +12,34 @@ class VolumeConverter {
 
 private:
 
-  VPlacedVolume const *vecgeom_;
+  VPlacedVolume const *specialized_;
+  VPlacedVolume const *unspecialized_;
   TGeoShape const *root_;
   ::VUSolid const *usolids_;
 
 public:
 
   VolumeConverter(VPlacedVolume const *const volume);
+
+  VolumeConverter(VolumeConverter const &other);
+
   ~VolumeConverter();
 
-  VPlacedVolume const* vecgeom() const { return vecgeom_; }
+  VolumeConverter& operator=(VolumeConverter const &other);
+
+  VPlacedVolume const* specialized() const { return specialized_; }
+
+  VPlacedVolume const* unspecialized() const { return unspecialized_; }
 
   TGeoShape const* root() const { return root_; }
 
   ::VUSolid const* usolids() const { return usolids_; }
+
+private:
+
+  void ConvertVolume();
+  
+  void Deallocate();
 
 };
 

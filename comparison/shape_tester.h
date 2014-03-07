@@ -22,13 +22,7 @@ public:
   const unsigned points;
   const double bias;
   friend std::ostream& operator<<(std::ostream &os,
-                                        ShapeBenchmark const &benchmark) {
-    os << benchmark.elapsed << "s | " << benchmark.volumes << " "
-       << ShapeBenchmark::benchmark_labels[benchmark.type] << " volumes, "
-       << benchmark.points << " points, " << benchmark.bias
-       << " bias, repeated " << benchmark.repetitions << " times.";
-    return os;
-  }
+                                  ShapeBenchmark const &benchmark);
 };
 
 class ShapeTester {
@@ -37,15 +31,13 @@ private:
 
   VPlacedVolume const *world_ = NULL;
   std::vector<VolumeConverter> volumes_;
-  unsigned n_vols_ = 0;
-  unsigned n_points_ = 1<<10;
+  unsigned n_points_ = 1<<13;
   unsigned repetitions_ = 1e3;
   double bias_ = 0.8;
   unsigned pool_multiplier_ = 1;
   std::vector<ShapeBenchmark> results_;
   unsigned verbose_ = 0;
-  SOA3D<Precision> *point_pool_, *dir_pool_;
-  double *steps_ = NULL;
+  SOA3D<Precision> *point_pool_ = NULL, *dir_pool_ = NULL;
 
 public:
 
@@ -53,7 +45,7 @@ public:
   void BenchmarkSpecialized();
   void BenchmarkUnspecialized();
   void BenchmarkUSolids();
-  void BenchmarkROOT();
+  void BenchmarkRoot();
 
   ShapeBenchmark PopResult();
   std::vector<ShapeBenchmark> PopResults();
@@ -139,16 +131,15 @@ private:
 
   ShapeBenchmark RunUSolids(double *distances) const;
 
-  ShapeBenchmark RunROOT(double *distances) const;
+  ShapeBenchmark RunRoot(double *distances) const;
 
   void PrepareBenchmark();
 
   double* AllocateDistance() const {
-    return (double*) _mm_malloc(n_points_*pool_multiplier_*sizeof(double),
-                                kAlignmentBoundary);
+    return (double*) _mm_malloc(n_points_*sizeof(double), kAlignmentBoundary);
   }
 
-  static void FreeDistance(double *distance) {
+  static void FreeDistance(double *const distance) {
     _mm_free(distance);
   }
 

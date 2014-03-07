@@ -6,12 +6,34 @@
 namespace vecgeom {
 
 VolumeConverter::VolumeConverter(VPlacedVolume const *const volume)
-    : vecgeom_(volume) {
-  root_ = volume->ConvertToRoot();
-  usolids_ = volume->ConvertToUSolids();
+    : specialized_(volume) {
+  ConvertVolume();
+}
+
+VolumeConverter::VolumeConverter(VolumeConverter const &other)
+    : specialized_(other.specialized_) {
+  ConvertVolume();
 }
 
 VolumeConverter::~VolumeConverter() {
+  Deallocate();
+}
+
+VolumeConverter& VolumeConverter::operator=(VolumeConverter const &other) {
+  this->Deallocate();
+  this->specialized_ = other.specialized_;
+  this->ConvertVolume();
+  return *this;
+}
+
+void VolumeConverter::ConvertVolume() {
+  unspecialized_ = specialized_->ConvertToUnspecialized();
+  root_ = specialized_->ConvertToRoot();
+  usolids_ = specialized_->ConvertToUSolids();
+}
+
+void VolumeConverter::Deallocate() {
+  delete unspecialized_;
   delete root_;
   delete usolids_;
 }

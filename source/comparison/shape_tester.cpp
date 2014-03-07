@@ -1,3 +1,5 @@
+#include "UBox.hh"
+#include "TGeoBBox.h"
 #include "base/iterator.h"
 #include "base/soa3d.h"
 #include "base/stopwatch.h"
@@ -7,10 +9,18 @@
 #include "volumes/placed_box.h"
 #include <random>
 
+namespace vecgeom {
+
 static std::mt19937 rng(0);
 std::uniform_real_distribution<> uniform_dist(0,1);
 
-namespace vecgeom {
+std::ostream& operator<<(std::ostream &os, ShapeBenchmark const &benchmark) {
+  os << benchmark.elapsed << "s | " << benchmark.volumes << " "
+     << ShapeBenchmark::benchmark_labels[benchmark.type] << " volumes, "
+     << benchmark.points << " points, " << benchmark.bias
+     << " bias, repeated " << benchmark.repetitions << " times.";
+  return os;
+}
 
 const char * const ShapeBenchmark::benchmark_labels[] = {
   "Specialized",
@@ -24,7 +34,6 @@ ShapeTester::ShapeTester(LogicalVolume const *const world) {
 }
 
 ShapeTester::~ShapeTester() {
-  _mm_free(steps_);
   delete point_pool_;
   delete dir_pool_;
 }
@@ -49,16 +58,16 @@ void ShapeTester::set_world(LogicalVolume const *const world) {
 
 void ShapeTester::GenerateVolumePointers(VPlacedVolume const *const vol) {
 
-  volumes_.push_back(VolumeConverter(vol));
+  volumes_.emplace(volumes_.end(), vol);
 
-  for (Iterator<Daughter> i = vol->logical_volume()->daughters().begin();
-       i != vol->logical_volume()->daughters().end(); ++i) {
+  for (Iterator<Daughter> i = vol->daughters().begin();
+       i != vol->daughters().end(); ++i) {
     GenerateVolumePointers(*i);
   }
 
 }
 
-ShapeBenchmark ShapeTester::GenerateBenchmark(const double elapsed,
+ShapeBenchmark ShapeTester::GenerateBenchmark(const Precision elapsed,
                                               const BenchmarkType type) const {
   const ShapeBenchmark benchmark = {
     .elapsed = elapsed,
@@ -71,9 +80,9 @@ ShapeBenchmark ShapeTester::GenerateBenchmark(const double elapsed,
   return benchmark;
 }
 
-Vector3D<double> ShapeTester::SamplePoint(Vector3D<double> const &size,
-                                          const double scale) {
-  const Vector3D<double> ret(
+Vector3D<Precision> ShapeTester::SamplePoint(Vector3D<Precision> const &size,
+                                             const Precision scale) {
+  const Vector3D<Precision> ret(
     scale * (1. - 2. * uniform_dist(rng)) * size[0],
     scale * (1. - 2. * uniform_dist(rng)) * size[1],
     scale * (1. - 2. * uniform_dist(rng)) * size[2]
@@ -81,15 +90,15 @@ Vector3D<double> ShapeTester::SamplePoint(Vector3D<double> const &size,
   return ret;
 }
 
-Vector3D<double> ShapeTester::SampleDirection() {
+Vector3D<Precision> ShapeTester::SampleDirection() {
 
-  Vector3D<double> dir(
+  Vector3D<Precision> dir(
     (1. - 2. * uniform_dist(rng)),
     (1. - 2. * uniform_dist(rng)),
     (1. - 2. * uniform_dist(rng))
   );
 
-  const double inverse_norm =
+  const Precision inverse_norm =
       1. / std::sqrt(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]);
   dir[0] *= inverse_norm;
   dir[1] *= inverse_norm;
@@ -98,11 +107,11 @@ Vector3D<double> ShapeTester::SampleDirection() {
   return dir;
 }
 
-void ShapeTester::FillRandomDirections(SOA3D<double> *const dirs) {
+void ShapeTester::FillRandomDirections(SOA3D<Precision> *const dirs) {
 
   const int size = dirs->size();
   for (int i = 0; i < size; ++i) {
-    const Vector3D<double> temp = SampleDirection();
+    const Vector3D<Precision> temp = SampleDirection();
     dirs->x(i) = temp[0];
     dirs->y(i) = temp[1];
     dirs->z(i) = temp[2];
@@ -111,9 +120,9 @@ void ShapeTester::FillRandomDirections(SOA3D<double> *const dirs) {
 }
 
 void ShapeTester::FillBiasedDirections(VPlacedVolume const &volume,
-                                       SOA3D<double> const &points,
-                                       const double bias,
-                                       SOA3D<double> *const dirs) {
+                                       SOA3D<Precision> const &points,
+                                       const Precision bias,
+                                       SOA3D<Precision> *const dirs) {
 
   assert(bias >= 0. && bias <= 1.);
 
@@ -137,8 +146,8 @@ void ShapeTester::FillBiasedDirections(VPlacedVolume const &volume,
   }
 
   // Add hits until threshold
-  while (double(n_hits) / double(size) >= bias) {
-    h = int(double(size) * uniform_dist(rng));
+  while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) >= bias) {
+    h = static_cast<int>(static_cast<Precision>(size) * uniform_dist(rng));
     while (hit[h]) {
       dirs->Set(h, SampleDirection());
       for (Iterator<Daughter> i = volume.daughters().begin();
@@ -154,8 +163,8 @@ void ShapeTester::FillBiasedDirections(VPlacedVolume const &volume,
 
 
   // Add hits until threshold
-  while (double(n_hits) / double(size) < bias) {
-    h = int(double(size) * uniform_dist(rng));
+  while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) < bias) {
+    h = static_cast<int>(static_cast<Precision>(size) * uniform_dist(rng));
     while (!hit[h]) {
       dirs->Set(h, SampleDirection());
       for (Iterator<Daughter> i = volume.daughters().begin();
@@ -172,18 +181,18 @@ void ShapeTester::FillBiasedDirections(VPlacedVolume const &volume,
 }
 
 void ShapeTester::FillBiasedDirections(LogicalVolume const &volume,
-                                       SOA3D<double> const &points,
-                                       const double bias,
-                                       SOA3D<double> *const dirs) {
+                                       SOA3D<Precision> const &points,
+                                       const Precision bias,
+                                       SOA3D<Precision> *const dirs) {
   VPlacedVolume const *const placed = volume.Place();
   FillBiasedDirections(*placed, points, bias, dirs);
   delete placed;
 }
 
 void ShapeTester::FillUncontainedPoints(VPlacedVolume const &volume,
-                                        SOA3D<double> *const points) {
+                                        SOA3D<Precision> *const points) {
   const int size = points->size();
-  const Vector3D<double> dim = volume.bounding_box()->dimensions();
+  const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
     bool contained;
     do {
@@ -210,14 +219,10 @@ void ShapeTester::FillUncontainedPoints(LogicalVolume const &volume,
 void ShapeTester::PrepareBenchmark() {
 
   // Allocate memory
-  if (steps_) _mm_free(steps_);
-  delete point_pool_;
-  delete dir_pool_;
+  if (point_pool_) delete point_pool_;
+  if (dir_pool_) delete dir_pool_;
   point_pool_ = new SOA3D<Precision>(n_points_*pool_multiplier_);
-  point_pool_ = new SOA3D<Precision>(n_points_*pool_multiplier_);
-  steps_ = static_cast<double*>(_mm_malloc(n_points_*sizeof(double),
-                                           kAlignmentBoundary));
-  for (unsigned i = 0; i < n_points_; ++i) steps_[i] = kInfinity;
+  dir_pool_ = new SOA3D<Precision>(n_points_*pool_multiplier_);
 
   // Generate pointers to representations in each geometry
   volumes_.clear();
@@ -230,199 +235,188 @@ void ShapeTester::PrepareBenchmark() {
 
 }
 
-// void ShapeTester::BenchmarkAll() {
+void ShapeTester::BenchmarkAll() {
 
-//   PrepareBenchmark();
+  PrepareBenchmark();
 
-//   // Allocate output memory
-//   double *distances_placed   = AllocateDistance();
-//   double *distances_unplaced = AllocateDistance();
-//   double *distances_usolids  = AllocateDistance();
-//   double *distances_root     = AllocateDistance();
+  // Allocate output memory
+  Precision *const distances_specialized   = AllocateDistance();
+  Precision *const distances_unspecialized = AllocateDistance();
+  Precision *const distances_usolids       = AllocateDistance();
+  Precision *const distances_root          = AllocateDistance();
 
-//   // Run all four benchmarks
-//   results.push_back(RunPlaced(distances_placed));
-//   results.push_back(RunUnplaced(distances_unplaced));
-//   results.push_back(RunUSolids(distances_usolids));
-//   results.push_back(RunROOT(distances_root));
+  // Run all four benchmarks
+  results_.push_back(RunSpecialized(distances_specialized));
+  results_.push_back(RunUnspecialized(distances_unspecialized));
+  results_.push_back(RunUSolids(distances_usolids));
+  results_.push_back(RunRoot(distances_root));
 
-//   // Compare results
-//   unsigned mismatches = 0;
-//   const double precision = 1e-12;
-//   for (int i = 0; i < n_points * pool_multiplier; ++i) {
-//     const bool root_mismatch =
-//         abs(distances_placed[i] - distances_root[i]) > precision &&
-//         !(distances_placed[i] == Utils::kInfinity && distances_root[i] == 1e30);
-//     const bool usolids_mismatch =
-//         abs(distances_placed[i] - distances_usolids[i]) > precision &&
-//         !(distances_placed[i] == Utils::kInfinity &&
-//           distances_usolids[i] == UUtils::kInfinity);
-//     if (root_mismatch || usolids_mismatch) {
-//       if (!mismatches) std::cout << "Placed / USolids / ROOT\n";
-//       std::cout << distances_placed[i]  << " / "
-//                 << distances_usolids[i] << " / "
-//                 << distances_root[i]    << std::endl;
-//       mismatches++;
-//     }
-//   }
-//   if (verbose) {
-//     std::cout << mismatches << " / " << n_points * pool_multiplier
-//               << " mismatches detected.\n";
-//   }
+  // Compare results
+  unsigned mismatches = 0;
+  const Precision tolerance = 1e-12;
+  for (unsigned i = 0; i < n_points_; ++i) {
+    const bool root_mismatch =
+        abs(distances_specialized[i] - distances_root[i]) > tolerance &&
+        !(distances_specialized[i] == kInfinity &&
+          distances_root[i] == 1e30);
+    const bool usolids_mismatch =
+        abs(distances_specialized[i] - distances_usolids[i]) > tolerance &&
+        !(distances_specialized[i] == kInfinity &&
+          distances_usolids[i] == UUtils::kInfinity);
+    if (root_mismatch || usolids_mismatch) {
+      if (verbose_ > 1) {
+        if (!mismatches) std::cout << "VecGeom / USolids / ROOT\n";
+        std::cout << distances_specialized[i]  << " / "
+                  << distances_usolids[i] << " / "
+                  << distances_root[i]    << std::endl;
+      }
+      mismatches++;
+    }
+  }
+  if (verbose_) {
+    std::cout << mismatches << " / " << n_points_
+              << " mismatches detected.\n";
+  }
 
-//   // Clean up memory
-//   FreeDistance(distances_placed);
-//   FreeDistance(distances_unplaced);
-//   FreeDistance(distances_usolids);
-//   FreeDistance(distances_root);
-// }
+  // Clean up memory
+  FreeDistance(distances_specialized);
+  FreeDistance(distances_unspecialized);
+  FreeDistance(distances_usolids);
+  FreeDistance(distances_root);
+}
 
-// void ShapeTester::BenchmarkPlaced() {
-//   PrepareBenchmark();
-//   double *distances = AllocateDistance();
-//   results.push_back(RunPlaced(distances));
-//   FreeDistance(distances);
-// }
+void ShapeTester::BenchmarkSpecialized() {
+  PrepareBenchmark();
+  Precision *const distances = AllocateDistance();
+  results_.push_back(RunSpecialized(distances));
+  FreeDistance(distances);
+}
 
-// void ShapeTester::BenchmarkUnplaced() {
-//   PrepareBenchmark();
-//   double *distances = AllocateDistance();
-//   results.push_back(RunUnplaced(distances));
-//   FreeDistance(distances);
-// }
+void ShapeTester::BenchmarkUnspecialized() {
+  PrepareBenchmark();
+  Precision *const distances = AllocateDistance();
+  results_.push_back(RunUnspecialized(distances));
+  FreeDistance(distances);
+}
 
-// void ShapeTester::BenchmarkUSolids() {
-//   PrepareBenchmark();
-//   double *distances = AllocateDistance();
-//   results.push_back(RunUnplaced(distances));
-//   FreeDistance(distances);
-// }
+void ShapeTester::BenchmarkUSolids() {
+  PrepareBenchmark();
+  Precision *const distances = AllocateDistance();
+  results_.push_back(RunUSolids(distances));
+  FreeDistance(distances);
+}
 
 
-// void ShapeTester::BenchmarkROOT() {
-//   PrepareBenchmark();
-//   double *distances = AllocateDistance();
-//   results.push_back(RunROOT(distances));
-//   FreeDistance(distances);
-// }
+void ShapeTester::BenchmarkRoot() {
+  PrepareBenchmark();
+  Precision *const distances = AllocateDistance();
+  results_.push_back(RunRoot(distances));
+  FreeDistance(distances);
+}
 
-// ShapeBenchmark ShapeTester::PopResult() {
-//   ShapeBenchmark result = results.back();
-//   results.pop_back();
-//   return result;
-// }
+ShapeBenchmark ShapeTester::PopResult() {
+  ShapeBenchmark result = results_.back();
+  results_.pop_back();
+  return result;
+}
 
-// std::vector<ShapeBenchmark> ShapeTester::PopResults() {
-//   std::vector<ShapeBenchmark> results_ = results;
-//   results.clear();
-//   return results_;
-// }
+std::vector<ShapeBenchmark> ShapeTester::PopResults() {
+  std::vector<ShapeBenchmark> results = results_;
+  results_.clear();
+  return results;
+}
 
-ShapeBenchmark ShapeTester::RunSpecialized(double *const distances) const {
-  if (verbose_) std::cout << "Running Placed benchmark...";
+ShapeBenchmark ShapeTester::RunSpecialized(Precision *const distances) const {
+  if (verbose_) std::cout << "Running specialized benchmark...";
   Stopwatch timer;
   timer.Start();
   for (unsigned r = 0; r < repetitions_; ++r) {
-    int index = (rand() % pool_multiplier_) * n_points_;
-    index = index;
-    // Vectors3DSOA points(point_pool, index, n_points);
-    // Vectors3DSOA dirs(dir_pool, index, n_points);
-    // for (int v = 0; v < n_vols; ++v) {
-    //   volumes[v].fastgeom->DistanceToIn(points, dirs, steps, &distances[index]);
-    // }
+    const int index = (rand() % pool_multiplier_) * n_points_;
+    for (std::vector<VolumeConverter>::const_iterator d = volumes_.begin();
+         d != volumes_.end(); ++d) {
+      for (unsigned i = 0; i < n_points_; ++i) {
+        const int p = index + i;
+        distances[i] = d->specialized()->DistanceToIn(
+          (*point_pool_)[p], (*dir_pool_)[p]
+        );
+      }
+    }
   }
-  timer.Stop();
-  // const double elapsed = timer.getDeltaSecs();
-  // if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
-  // return GenerateBenchmark(elapsed, kPlaced);
-  return GenerateBenchmark(0, kSpecialized);
+  const Precision elapsed = timer.Stop();
+  if (verbose_) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kSpecialized);
 }
 
-// ShapeBenchmark ShapeTester::RunUnplaced(double *distances) const {
-//   if (verbose) std::cout << "Running Unplaced benchmark...";
-//   Vectors3DSOA point_pool_transform(point_pool);
-//   Vectors3DSOA dir_pool_transform(dir_pool);
-//   StopWatch timer;
-//   timer.Start();
-//   for (int r = 0; r < reps; ++r) {
-//     const int index = (rand() % pool_multiplier) * n_points;
-//     Vectors3DSOA points(point_pool, index, n_points);
-//     Vectors3DSOA dirs(dir_pool, index, n_points);
-//     Vectors3DSOA points_transform(point_pool_transform, index, n_points);
-//     Vectors3DSOA dirs_transform(dir_pool_transform, index, n_points);
-//     for (int v = 0; v < n_vols; ++v) {
-//       PhysicalVolume const *unplaced =
-//           volumes[v].fastgeom->GetAsUnplacedVolume();
-//       TransformationMatrix const *matrix = volumes[v].fastgeom->getMatrix();
-//       matrix->MasterToLocal(points, points_transform);
-//       matrix->MasterToLocalVec(dirs, dirs_transform);
-//       unplaced->DistanceToIn(
-//         points_transform, dirs_transform, steps, &distances[index]
-//       );
-//     }
-//   }
-//   timer.Stop();
-//   const double elapsed = timer.getDeltaSecs();
-//   if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
-//   return GenerateBenchmark(elapsed, kUnplaced);
-// }
+ShapeBenchmark ShapeTester::RunUnspecialized(Precision *const distances) const {
+  if (verbose_) std::cout << "Running unspecialized benchmark...";
+  Stopwatch timer;
+  timer.Start();
+  for (unsigned r = 0; r < repetitions_; ++r) {
+    const int index = (rand() % pool_multiplier_) * n_points_;
+    for (std::vector<VolumeConverter>::const_iterator d = volumes_.begin();
+         d != volumes_.end(); ++d) {
+      for (unsigned i = 0; i < n_points_; ++i) {
+        const int p = index + i;
+        distances[i] = d->unspecialized()->DistanceToIn(
+          (*point_pool_)[p], (*dir_pool_)[p]
+        );
+      }
+    }
+  }
+  const Precision elapsed = timer.Stop();
+  if (verbose_) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kUnspecialized);
+}
 
-// ShapeBenchmark ShapeTester::RunUSolids(double* distances) const {
-//   std::vector<Vector3D> point_pool_vec(n_points * pool_multiplier);
-//   std::vector<Vector3D> dir_pool_vec(n_points * pool_multiplier);
-//   point_pool.toStructureOfVector3D(point_pool_vec);
-//   dir_pool.toStructureOfVector3D(dir_pool_vec);
-//   if (verbose) std::cout << "Running USolids benchmark...";
-//   StopWatch timer;
-//   timer.Start();
-//   for (int r = 0; r < reps; ++r) {
-//     const int index = (rand() % pool_multiplier) * n_points;
-//     for (int v = 0; v < n_vols; ++v) {
-//       TransformationMatrix const *matrix = volumes[v].fastgeom->getMatrix();
-//       for (int p = 0; p < n_points; ++p) {
-//         Vector3D point_local, dir_local;
-//         matrix->MasterToLocal<1,-1>(point_pool_vec[index+p], point_local);
-//         matrix->MasterToLocalVec<-1>(dir_pool_vec[index+p], dir_local);
-//         distances[index+p] = volumes[v].usolids->DistanceToIn(
-//           reinterpret_cast<UVector3 const&>(point_local),
-//           reinterpret_cast<UVector3 const&>(dir_local), steps[p]
-//         );
-//       }
-//     }
-//   }
-//   timer.Stop();
-//   const double elapsed = timer.getDeltaSecs();
-//   if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
-//   return GenerateBenchmark(elapsed, kUSolids);
-// }
+ShapeBenchmark ShapeTester::RunUSolids(Precision *const distances) const {
+  if (verbose_) std::cout << "Running USolids benchmark...";
+  Stopwatch timer;
+  timer.Start();
+  for (unsigned r = 0; r < repetitions_; ++r) {
+    const int index = (rand() % pool_multiplier_) * n_points_;
+    for (std::vector<VolumeConverter>::const_iterator v = volumes_.begin();
+         v != volumes_.end(); ++v) {
+      TransformationMatrix const *matrix = v->unspecialized()->matrix();
+      for (unsigned i = 0; i < n_points_; ++i) {
+        const int p = index + i;
+        const Vector3D<Precision> point =
+            matrix->Transform<1, 0>((*point_pool_)[p]);
+        const Vector3D<Precision> dir =
+            matrix->TransformRotation<0>((*dir_pool_)[p]);
+        distances[i] = v->usolids()->DistanceToIn(
+          UVector3(point[0], point[1], point[2]),
+          UVector3(dir[0], dir[1], dir[2])
+        );
+      }
+    }
+  }
+  const Precision elapsed = timer.Stop();
+  if (verbose_) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kUSolids);
+}
 
-// ShapeBenchmark ShapeTester::RunROOT(double *distances) const {
-//   std::vector<Vector3D> point_pool_vec(n_points * pool_multiplier);
-//   std::vector<Vector3D> dir_pool_vec(n_points * pool_multiplier);
-//   point_pool.toStructureOfVector3D(point_pool_vec);
-//   dir_pool.toStructureOfVector3D(dir_pool_vec);
-//   if (verbose) std::cout << "Running ROOT benchmark...";
-//   StopWatch timer;
-//   timer.Start();
-//   for (int r = 0; r < reps; ++r) {
-//     const int index = (rand() % pool_multiplier) * n_points;
-//     for (int v = 0; v < n_vols; ++v) {
-//       TGeoMatrix const *matrix =
-//           volumes[v].fastgeom->getMatrix()->GetAsTGeoMatrix();
-//       for (int p = 0; p < n_points; ++p) {
-//         Vector3D point_local, dir_local;
-//         matrix->MasterToLocal(&point_pool_vec[index+p].x, &point_local.x);
-//         matrix->MasterToLocalVect(&dir_pool_vec[index+p].x, &dir_local.x);
-//         distances[index+p] =
-//             volumes[v].root->DistFromOutside(&point_local.x, &dir_local.x,
-//                                              3, steps[p], 0);
-//       }
-//     }
-//   }
-//   timer.Stop();
-//   const double elapsed = timer.getDeltaSecs();
-//   if (verbose) std::cout << " Finished in " << elapsed << "s.\n";
-//   return GenerateBenchmark(elapsed, kROOT);
-// }
+ShapeBenchmark ShapeTester::RunRoot(Precision *const distances) const {
+  if (verbose_) std::cout << "Running ROOT benchmark...";
+  Stopwatch timer;
+  timer.Start();
+  for (unsigned r = 0; r < repetitions_; ++r) {
+    const int index = (rand() % pool_multiplier_) * n_points_;
+    for (std::vector<VolumeConverter>::const_iterator v = volumes_.begin();
+         v != volumes_.end(); ++v) {
+      TransformationMatrix const *matrix = v->unspecialized()->matrix();
+      for (unsigned i = 0; i < n_points_; ++i) {
+        const int p = index + i;
+        const Vector3D<Precision> point =
+            matrix->Transform<1, 0>((*point_pool_)[p]);
+        const Vector3D<Precision> dir =
+            matrix->TransformRotation<0>((*dir_pool_)[p]);
+        distances[i] = v->root()->DistFromOutside(&point[0], &dir[0]);
+      }
+    }
+  }
+  const Precision elapsed = timer.Stop();
+  if (verbose_) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmark(elapsed, kRoot);
+}
 
 } // End namespace vecgeom
