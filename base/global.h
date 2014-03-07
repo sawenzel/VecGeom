@@ -25,10 +25,7 @@
   #define VECGEOM_INTEL
   #define VECGEOM_INLINE inline
 #else
-  #ifndef VECGEOM_CUDA
-    #define VECGEOM_INHERIT_CONSTRUCTOR
-    #include <mm_malloc.h>
-  #endif
+  #include <mm_malloc.h>
   #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
     #define VECGEOM_INLINE inline __attribute__((always_inline))
   #else // Clang

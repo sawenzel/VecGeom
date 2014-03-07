@@ -16,7 +16,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   PlacedBox(LogicalVolume const *const logical_volume,
             TransformationMatrix const *const matrix)
-      : VPlacedVolume(logical_volume, matrix) {}
+      : VPlacedVolume(logical_volume, matrix, this) {}
 
   virtual ~PlacedBox() {}
 

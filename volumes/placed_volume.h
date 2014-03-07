@@ -8,11 +8,11 @@
 
 namespace vecgeom {
 
+class PlacedBox;
+
 class VPlacedVolume {
 
 private:
-
-  // int id;
 
   friend class CudaManager;
 
@@ -20,15 +20,22 @@ protected:
 
   LogicalVolume const *logical_volume_;
   TransformationMatrix const *matrix_;
-
-public:
+  PlacedBox const *bounding_box_;
 
   VECGEOM_CUDA_HEADER_BOTH
   VPlacedVolume(LogicalVolume const *const logical_volume,
-                TransformationMatrix const *const matrix)
-      : logical_volume_(logical_volume), matrix_(matrix) {}
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box)
+      : logical_volume_(logical_volume), matrix_(matrix),
+        bounding_box_(bounding_box) {}
+
+public:
 
   virtual ~VPlacedVolume() {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  PlacedBox const* bounding_box() const { return bounding_box_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -38,8 +45,14 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Vector<Daughter> const& daughters() const {
+    return logical_volume_->daughters();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   VUnplacedVolume const* unplaced_volume() const {
-    return logical_volume()->unplaced_volume();
+    return logical_volume_->unplaced_volume();
   }
 
   VECGEOM_CUDA_HEADER_BOTH

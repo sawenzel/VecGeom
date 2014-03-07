@@ -6,10 +6,11 @@
 #include "base/global.h"
 #include "base/soa3d.h"
 #include "comparison/volume_converter.h"
+#include "volumes/placed_volume.h"
 
 namespace vecgeom {
 
-enum BenchmarkType {kSpecialized, kPlaced, kUSolids, kRoot};
+enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot};
 
 struct ShapeBenchmark {
 public:
@@ -34,7 +35,7 @@ class ShapeTester {
 
 private:
 
-  LogicalVolume const *world_ = NULL;
+  VPlacedVolume const *world_ = NULL;
   std::vector<VolumeConverter> volumes_;
   unsigned n_vols_ = 0;
   unsigned n_points_ = 1<<10;
@@ -49,8 +50,8 @@ private:
 public:
 
   void BenchmarkAll();
-  void BenchmarkPlaced();
   void BenchmarkSpecialized();
+  void BenchmarkUnspecialized();
   void BenchmarkUSolids();
   void BenchmarkROOT();
 
@@ -65,7 +66,7 @@ public:
 
   // Accessors
 
-  LogicalVolume const* world() const { return world_; }
+  LogicalVolume const* world() const;
 
   unsigned n_points() const { return n_points_; }
 
@@ -81,7 +82,7 @@ public:
 
   // Mutators
 
-  void set_world(LogicalVolume const *const world) { world_ = world; }
+  void set_world(LogicalVolume const *const world);
 
   void set_n_points(const unsigned n_points) { n_points_ = n_points; }
 
@@ -95,6 +96,36 @@ public:
 
   void set_verbose(const unsigned verbose) { verbose_ = verbose; }
 
+  // Utility
+
+  static Vector3D<double> SamplePoint(Vector3D<double> const &size,
+                                      const double scale = 1);
+
+  static Vector3D<double> SampleDirection();
+
+  static void FillRandomDirections(SOA3D<double> *const dirs);
+
+  VECGEOM_INLINE
+  static bool IsFacingVolume(Vector3D<double> const &point,
+                             Vector3D<double> const &dir,
+                             VPlacedVolume const &volume);
+
+  static void FillBiasedDirections(VPlacedVolume const &volume,
+                                   SOA3D<double> const &points,
+                                   const double bias,
+                                   SOA3D<double> *const dirs);
+
+  static void FillBiasedDirections(LogicalVolume const &volume,
+                                   SOA3D<double> const &points,
+                                   const double bias,
+                                   SOA3D<double> *const dirs);
+
+  static void FillUncontainedPoints(VPlacedVolume const &volume,
+                                    SOA3D<double> *const points);
+
+  static void FillUncontainedPoints(LogicalVolume const &volume,
+                                    SOA3D<double> *const points);
+
 private:
     
   void GenerateVolumePointers(VPlacedVolume const *const vol);
@@ -102,9 +133,9 @@ private:
   ShapeBenchmark GenerateBenchmark(const double elapsed,
                                    const BenchmarkType type) const;
 
-  ShapeBenchmark RunPlaced(double *distances) const;
+  ShapeBenchmark RunSpecialized(double *distances) const;
 
-  ShapeBenchmark RunUnplaced(double *distances) const;
+  ShapeBenchmark RunUnspecialized(double *distances) const;
 
   ShapeBenchmark RunUSolids(double *distances) const;
 
@@ -122,6 +153,13 @@ private:
   }
 
 };
+
+VECGEOM_INLINE
+bool ShapeTester::IsFacingVolume(Vector3D<double> const &point,
+                                 Vector3D<double> const &dir,
+                                 VPlacedVolume const &volume) {
+  return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
+}
 
 } // End namespace vecgeom
 

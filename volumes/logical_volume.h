@@ -42,6 +42,10 @@ public:
   VECGEOM_INLINE
   Vector<Daughter> const& daughters() const { return *daughters_; }
 
+  VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
+
+  VPlacedVolume* Place() const;
+
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
 

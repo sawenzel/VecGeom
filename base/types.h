@@ -21,6 +21,9 @@ template <typename Type>
 class SOA3D;
 
 template <typename Type>
+class AOS3D;
+
+template <typename Type>
 class Container;
 
 template <typename Type>

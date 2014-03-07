@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <climits>
 #include "base/array.h"
+#include "base/transformation_matrix.h"
 #include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
@@ -18,10 +19,18 @@ LogicalVolume::~LogicalVolume() {
   delete daughters_;
 }
 
+VPlacedVolume* LogicalVolume::Place(
+    TransformationMatrix const *const matrix) const {
+  return unplaced_volume()->PlaceVolume(this, matrix);
+}
+
+VPlacedVolume* LogicalVolume::Place() const {
+  return Place(&TransformationMatrix::kIdentity);
+}
+
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
-  VPlacedVolume *placed =
-      volume->unplaced_volume()->PlaceVolume(volume, matrix);
+  VPlacedVolume const *const placed = volume->Place(matrix);
   daughters_->push_back(placed);
 }
 

@@ -24,6 +24,10 @@ namespace translation {
 
 class TransformationMatrix {
 
+public:
+
+  static const TransformationMatrix kIdentity;
+
 private:
 
   Precision trans[3];
