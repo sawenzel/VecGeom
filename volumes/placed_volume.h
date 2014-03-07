@@ -84,7 +84,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
                                  Vector3D<Precision> const &direction,
-                                 const Precision step_max) const =0;
+                                 const Precision step_max = kInfinity) const =0;
 
   #ifdef VECGEOM_CUDA
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
@@ -96,6 +96,7 @@ public:
   #endif
 
   #ifdef VECGEOM_COMPARISON
+  virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
   virtual TGeoShape const* ConvertToRoot() const =0;
   virtual ::VUSolid const* ConvertToUSolids() const =0;
   #endif

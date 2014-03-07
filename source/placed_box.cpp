@@ -42,6 +42,10 @@ VPlacedVolume* PlacedBox::CopyToGpu(
 
 #ifdef VECGEOM_COMPARISON
 
+VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
+  return new PlacedBox(logical_volume_, matrix_);
+}
+
 TGeoShape const* PlacedBox::ConvertToRoot() const {
   return new TGeoBBox("", x(), y(), z());
 }

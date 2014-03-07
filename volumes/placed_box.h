@@ -98,6 +98,7 @@ public:
   // Comparison specific
 
   #ifdef VECGEOM_COMPARISON
+  virtual VPlacedVolume const* ConvertToUnspecialized() const;
   virtual TGeoShape const* ConvertToRoot() const;
   virtual ::VUSolid const* ConvertToUSolids() const;
   #endif

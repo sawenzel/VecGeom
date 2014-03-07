@@ -3,6 +3,9 @@
 
 #include "base/global.h"
 #include "base/track_container.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda_backend.cuh"
+#endif
 
 namespace vecgeom {
 
@@ -16,32 +19,15 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  SOA3D(Type *const x, Type *const y, Type *const z, const unsigned size)
-      : TrackContainer<Type>(size, true), x_(x), y_(y), z_(z) {
-    TrackContainer<Type>(size, false);
-  }
+  SOA3D(Type *const x, Type *const y, Type *const z, const unsigned size);
 
-  VECGEOM_CUDA_HEADER_BOTH
-  SOA3D() {
-    SOA3D(NULL, NULL, NULL, 0);
-  }
+  SOA3D();
 
-  SOA3D(const unsigned size) : TrackContainer<Type>(size, true) {
-    x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-    y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-    z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-  }
+  SOA3D(const unsigned size);
 
-  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(TrackContainer<Type> const &other);
 
-  ~SOA3D() {
-    if (this->allocated_) {
-      _mm_free(x_);
-      _mm_free(y_);
-      _mm_free(z_);
-    }
-  }
+  ~SOA3D();
 
   /**
    * Constructs a vector across all three coordinates from the given index. 
@@ -81,19 +67,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual void Set(const int index, const Type x, const Type y, const Type z) {
-    x_[index] = x;
-    y_[index] = y;
-    z_[index] = z;
-  }
+  virtual void Set(const int index, const Type x, const Type y, const Type z);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual void Set(const int index, Vector3D<Type> const &vec) {
-    x_[index] = vec[0];
-    y_[index] = vec[1];
-    z_[index] = vec[2];
-  }
+  virtual void Set(const int index, Vector3D<Type> const &vec);
 
 
   #ifdef VECGEOM_CUDA
@@ -114,6 +92,90 @@ public:
   #endif // VECGEOM_CUDA
 
 };
+
+template <typename Type>
+SOA3D<Type>::SOA3D(Type *const x, Type *const y, Type *const z,
+                   const unsigned size)
+    : TrackContainer<Type>(size, true), x_(x), y_(y), z_(z) {
+  TrackContainer<Type>(size, false);
+}
+
+template <typename Type>
+SOA3D<Type>::SOA3D() {
+  SOA3D(NULL, NULL, NULL, 0);
+}
+
+template <typename Type>
+SOA3D<Type>::SOA3D(const unsigned size) : TrackContainer<Type>(size, true) {
+  x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+  y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+  z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+SOA3D<Type>::SOA3D(TrackContainer<Type> const &other) {
+  SOA3D(other.size());
+  const unsigned count = other.size();
+  for (int i = 0; i < count; ++i) Set(i, other[i]);
+}
+
+template <typename Type>
+SOA3D<Type>::~SOA3D() {
+  if (this->allocated_) {
+    _mm_free(x_);
+    _mm_free(y_);
+    _mm_free(z_);
+  }
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void SOA3D<Type>::Set(const int index, const Type x, const Type y,
+                      const Type z) {
+  x_[index] = x;
+  y_[index] = y;
+  z_[index] = z;
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void SOA3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
+  x_[index] = vec[0];
+  y_[index] = vec[1];
+  z_[index] = vec[2];
+}
+
+#ifdef VECGEOM_CUDA
+
+template <typename Type>
+SOA3D<Type> SOA3D<Type>::CopyToGpu() const {
+  const int count = this->size();
+  const int mem_size = count*sizeof(Type);
+  Type *x, *y, *z;
+  cudaMalloc(static_cast<void**>(&x), mem_size);
+  cudaMalloc(static_cast<void**>(&y), mem_size);
+  cudaMalloc(static_cast<void**>(&z), mem_size);
+  cudaMemcpy(x, x_, mem_size, cudaMemcpyHostToDevice);
+  cudaMemcpy(y, y_, mem_size, cudaMemcpyHostToDevice);
+  cudaMemcpy(z, z_, mem_size, cudaMemcpyHostToDevice);
+  return SOA3D<Type>(x, y, z, count);
+}
+
+/**
+ * Only works for SOA pointing to the GPU.
+ */
+template <typename Type>
+void SOA3D<Type>::FreeFromGpu() {
+  cudaFree(x_);
+  cudaFree(y_);
+  cudaFree(z_);
+  CudaAssertError();
+}
+
+#endif // VECGEOM_CUDA
 
 } // End namespace vecgeom
 
