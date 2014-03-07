@@ -1,5 +1,6 @@
 CXX=g++
-CXX_OPT=-ggdb -fpermissive -ffast-math  -finline-limit=10000000 -msse4.2 -ftree-vectorize
+CXX_OPT=-O3 -fpermissive -ffast-math  -finline-limit=10000000 -msse4.2 -ftree-vectorize
+#CXX_OPT=-O3 -fpermissive -ffast-math  -finline-limit=10000000 -mavx -ftree-vectorize
 CXX_FLAGS=-fabi-version=6 -m64 -std=c++11 #`root-config --cflags`
 CXX_FLAGS+=${CXX_OPT}
 
@@ -9,7 +10,8 @@ CXX_LIBS=-lGeom -L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib/intel64/gcc4.4 -ltbb -lr
 CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp GeoManager_MakePolycone.cpp GeoManager.cpp PhysicalBox.cpp PhysicalVolume.cpp TransformationMatrix.cpp SimpleVecNavigator.cpp Vector3DFast.cpp
 
 #CXX_TESTS=$(wildcard Tests/*.cpp)
-CXX_TESTS=Tests/CHEP13Benchmark.cpp Tests/transTest.cpp
+CXX_TESTS=Tests/CHEP13Benchmark.cpp Tests/CHEP13BenchmarkSpecialMatrices.cpp Tests/CHEP13Benchmark_unspecializedplacements.cpp Tests/transTest.cpp Tests/NavigationInBoxDetector_Benchmark.cpp Tests/NavigationInBoxDetector_Benchmark_FastTest.cpp Tests/BoxPlacementTest.cpp Tests/TransformOfVectorsTest.cpp Tests/TestPolyconeContains.cpp Tests/TestBox.cpp
+#Tests/BuildBoxDetector.cpp
 
 CXX_OBJS=$(addsuffix .o, $(basename $(CXX_SRC)))
 CXX_BINS=$(patsubst Tests/%,bin/%,$(basename $(CXX_TESTS)))
