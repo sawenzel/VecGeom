@@ -1,9 +1,9 @@
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
-#include "base/utilities.h"
-#include "base/types.h"
-#include "backend/backend.h"
+#include <cassert>
+#include "base/global.h"
+#include "backend/scalar_backend.h"
 
 namespace vecgeom {
 
@@ -23,7 +23,7 @@ typedef Impl<kCuda>::int_v       CudaInt;
 typedef Impl<kCuda>::precision_v CudaPrecision;
 typedef Impl<kCuda>::bool_v      CudaBool;
 
-static const int kThreadsPerBlock = 256;
+static const unsigned kThreadsPerBlock = 256;
 
 // Auxiliary GPU functions
 
@@ -35,6 +35,13 @@ int ThreadIndex() {
          + threadIdx.x;
 }
 
+cudaError_t CudaCheckError(const cudaError_t err);
+
+cudaError_t CudaCheckError();
+
+void CudaAssertError(const cudaError_t err);
+
+void CudaAssertError();
 /**
  * Initialize with the number of threads required to construct the necessary
  * block and grid dimensions to accommodate all threads.
@@ -42,13 +49,13 @@ int ThreadIndex() {
 struct LaunchParameters {
   dim3 block_size;
   dim3 grid_size;
-  LaunchParameters(const int threads) {
+  LaunchParameters(const unsigned threads) {
     // Blocks always one dimensional
     block_size.x = kThreadsPerBlock;
     block_size.y = 1;
     block_size.z = 1;
     // Grid becomes two dimensions at large sizes
-    const int blocks = 1 + (threads - 1) / kThreadsPerBlock;
+    const unsigned blocks = 1 + (threads - 1) / kThreadsPerBlock;
     grid_size.z = 1;
     if (blocks <= 1<<16) {
       grid_size.x = blocks;
@@ -63,58 +70,83 @@ struct LaunchParameters {
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-VECGEOM_INLINE
-static Type* AllocateOnGPU(const int count) {
+Type* AllocateOnGpu(const unsigned size) {
   Type *ptr;
-  cudaMalloc((void**)&ptr, count*sizeof(Type));
+  CudaAssertError(cudaMalloc((void**)&ptr, size));
   return ptr;
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-VECGEOM_INLINE
-void CopyToGPU(Type const *const src, Type *const tgt, const int count) {
-  cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyHostToDevice);
+Type* AllocateOnGpu() {
+  return AllocateOnGpu<Type>(sizeof(Type));
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_HOST
-VECGEOM_INLINE
-void CopyFromGPU(Type const * const src, Type *const tgt, const int count) {
-  cudaMemcpy(tgt, src, count*sizeof(Type), cudaMemcpyDeviceToHost);
+void FreeFromGpu(Type *const ptr) {
+  CudaAssertError(cudaFree(ptr));
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_HOST
+void CopyToGpu(Type const *const src, Type *const tgt, const unsigned size) {
+  CudaAssertError(
+    cudaMemcpy(tgt, src, size, cudaMemcpyHostToDevice)
+  );
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_HOST
+void CopyToGpu(Type const *const src, Type *const tgt) {
+  CopyToGpu<Type>(src, tgt, sizeof(Type));
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_HOST
+void CopyFromGpu(Type const * const src, Type *const tgt, const unsigned size) {
+  CudaAssertError(
+    cudaMemcpy(tgt, src, size, cudaMemcpyDeviceToHost)
+  );
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_HOST
+void CopyFromGpu(Type const * const src, Type *const tgt) {
+  CopyFromGpu<Type>(src, tgt, sizeof(Type));
 }
 
 // Microkernels
 
-template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void CondAssign(const bool cond,
-                Type const &thenval, Type const &elseval, Type *const output) {
-  *output = (cond) ? thenval : elseval;
-}
+// template <typename Type>
+// VECGEOM_CUDA_HEADER_BOTH
+// VECGEOM_INLINE
+// void CondAssign(const bool cond,
+//                 Type const &thenval, Type const &elseval, Type *const output) {
+//   *output = (cond) ? thenval : elseval;
+// }
 
-template <typename Type1, typename Type2>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void MaskedAssign(const bool cond,
-                  Type1 const &thenval, Type2 *const output) {
-  *output = (cond) ? thenval : *output;
-}
+// template <typename Type1, typename Type2>
+// VECGEOM_CUDA_HEADER_BOTH
+// VECGEOM_INLINE
+// void MaskedAssign(const bool cond,
+//                   Type1 const &thenval, Type2 *const output) {
+//   *output = (cond) ? thenval : *output;
+// }
 
-template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-Type Abs(Type const &val) {
-  return fabs(val);
-}
+// template <typename Type>
+// VECGEOM_CUDA_HEADER_BOTH
+// VECGEOM_INLINE
+// Type Abs(Type const &val) {
+//   return fabs(val);
+// }
 
-template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-Type Sqrt(Type const &val) {
-  return sqrt(val);
-}
+// template <typename Type>
+// VECGEOM_CUDA_HEADER_BOTH
+// VECGEOM_INLINE
+// Type Sqrt(Type const &val) {
+//   return sqrt(val);
+// }
 
 } // End namespace vecgeom
 

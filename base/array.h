@@ -1,55 +1,50 @@
 #ifndef VECGEOM_BASE_ARRAY_H_
 #define VECGEOM_BASE_ARRAY_H_
 
-#include "base/container.h"
-#ifdef VECGEOM_NVCC
-#include "backend/cuda_backend.h"
-#endif
+#include "base/global.h"
+#include "base/iterator.h"
 
 namespace vecgeom {
 
-template <int arr_size, typename Type>
+template <typename Type>
 class Array : public Container<Type> {
 
 private:
 
-  Type arr[size];
+  Type *arr_;
+  int size_;
+  bool allocated;
 
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
+  Array(const int size) : size_(size), allocated(true) {
+    arr_ = new Type[size_];
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Array(Type *const arr, const int size)
+      : arr_(arr), size_(size), allocated(false) {}
+
+  ~Array() { if (allocated) delete arr_; }
+
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& operator[](const int index) {
-    return arr[index];
+  virtual Type& operator[](const int index) {
+    return arr_[index];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& operator[](const int index) const {
-    return arr[index];
+  virtual Type const& operator[](const int index) const {
+    return arr_[index];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  int size() const {
-    return arr_size;
+  virtual int size() const {
+    return size_;
   }
-
-  #ifdef VECGEOM_NVCC
-
-  VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  void CopyToGPU(Type *const target) const {
-    vecgeom::CopyToGPU(arr, &target, arr_size);
-  }
-
-  VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  void CopyFromGPU(Type *const target) const {
-    vecgeom::CopyFromGPU(arr, &target, arr_size);
-  }
-
-  #endif
 
 private:
 
@@ -57,9 +52,13 @@ private:
 
   public:
 
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
     ArrayIterator(Type const *const e) : Iterator<Type>(e) {}
 
-    Iterator<Type>& operator++() {
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    virtual Iterator<Type>& operator++() {
       this->element_++;
       return *this;
     }
@@ -68,12 +67,16 @@ private:
 
 public:
 
-  Iterator<Type> begin() const {
-    return ArrayIterator(&arr[0]);
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Iterator<Type> begin() const {
+    return ArrayIterator(&arr_[0]);
   }
 
-  Iterator<Type> end() const {
-    return ArrayIterator(&arr[size()]);
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Iterator<Type> end() const {
+    return ArrayIterator(&arr_[size()]);
   }
 
 };

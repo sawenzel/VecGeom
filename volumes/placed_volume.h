@@ -1,56 +1,105 @@
 #ifndef VECGEOM_VOLUMES_PLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
-#include "base/types.h"
+#include "base/global.h"
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
 
 namespace vecgeom {
 
+class PlacedBox;
+
 class VPlacedVolume {
 
 private:
 
-  int id;
+  friend class CudaManager;
 
 protected:
 
-  VLogicalVolume const &logical_volume_;
-  TransformationMatrix const &matrix_;
+  LogicalVolume const *logical_volume_;
+  TransformationMatrix const *matrix_;
+  PlacedBox const *bounding_box_;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VPlacedVolume(LogicalVolume const *const logical_volume,
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box)
+      : logical_volume_(logical_volume), matrix_(matrix),
+        bounding_box_(bounding_box) {}
 
 public:
 
-  VPlacedVolume(VLogicalVolume const &logical_volume__,
-                TransformationMatrix const &matrix__)
-      : logical_volume_(logical_volume__), matrix_(matrix__) {
-    id = GeoManager::Instance().RegisterVolume(this);
-  }
-
-  ~VPlacedVolume() {
-    GeoManager::Instance().DeregisterVolume(this);
-  }
+  virtual ~VPlacedVolume() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VLogicalVolume const &logical_volume() const {
+  PlacedBox const* bounding_box() const { return bounding_box_; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  LogicalVolume const* logical_volume() const {
     return logical_volume_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VUnplacedVolume const& unplaced_volume() const {
-    return logical_volume().unplaced_volume();
+  Vector<Daughter> const& daughters() const {
+    return logical_volume_->daughters();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  TransformationMatrix const& matrix() const {
+  VUnplacedVolume const* unplaced_volume() const {
+    return logical_volume_->unplaced_volume();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  TransformationMatrix const* matrix() const {
     return matrix_;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void set_logical_volume(LogicalVolume const *const logical_volume) {
+    logical_volume_ = logical_volume;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void set_matrix(TransformationMatrix const *const matrix) {
+    matrix_ = matrix;
   }
 
   VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
+
+  virtual int memory_size() const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool Inside(Vector3D<Precision> const &point) const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision DistanceToIn(Vector3D<Precision> const &position,
+                                 Vector3D<Precision> const &direction,
+                                 const Precision step_max = kInfinity) const =0;
+
+  #ifdef VECGEOM_CUDA
+  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
+                                   TransformationMatrix const *const matrix,
+                                   VPlacedVolume *const gpu_ptr) const =0;
+  virtual VPlacedVolume* CopyToGpu(
+      LogicalVolume const *const logical_volume,
+      TransformationMatrix const *const matrix) const =0;
+  #endif
+
+  #ifdef VECGEOM_COMPARISON
+  virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
+  virtual TGeoShape const* ConvertToRoot() const =0;
+  virtual ::VUSolid const* ConvertToUSolids() const =0;
+  #endif
 
 };
 

@@ -1,7 +1,13 @@
 build/
+doc/
 io/
 obj/
 bin/
 *~
 *.[oa]
 \#*\#
+Debug
+.cproject
+.project
+.externalToolBuilders
+compile_comparison.sh

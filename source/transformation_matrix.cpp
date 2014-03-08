@@ -1,14 +1,26 @@
 #include "base/transformation_matrix.h"
+#include "base/specialized_matrix.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda_backend.cuh"
+#endif
 
 namespace vecgeom {
 
-VECGEOM_CUDA_HEADER_BOTH
+const TransformationMatrix TransformationMatrix::kIdentity =
+    SpecializedMatrix<translation::kOrigin, rotation::kIdentity>();
+
 TransformationMatrix::TransformationMatrix() {
   SetTranslation(0, 0, 0);
-  SetRotation(0, 0, 0);
+  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
+TransformationMatrix::TransformationMatrix(const Precision tx,
+                                           const Precision ty,
+                                           const Precision tz) {
+  SetTranslation(tx, ty, tz);
+  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+}
+
 TransformationMatrix::TransformationMatrix(
     const Precision tx, const Precision ty,
     const Precision tz, const Precision phi,
@@ -43,7 +55,11 @@ void TransformationMatrix::SetTranslation(Vector3D<Precision> const &vec) {
 
 VECGEOM_CUDA_HEADER_BOTH
 void TransformationMatrix::SetProperties() {
-  has_translation = (trans[0] || trans[1] || trans[2]) ? true : false;
+  has_translation = (
+    fabs(trans[0]) > kNearZero ||
+    fabs(trans[1]) > kNearZero ||
+    fabs(trans[2]) > kNearZero
+  ) ? true : false;
   has_rotation = (GenerateRotationCode() == rotation::kIdentity)
                  ? false : true;
   identity = !has_translation && !has_rotation;
@@ -103,7 +119,7 @@ RotationCode TransformationMatrix::GenerateRotationCode() const {
   int code = 0;
   for (int i = 0; i < 9; ++i) {
     // Assign each bit
-    code |= (1<<i) * (rot[i] != 0);
+    code |= (1<<i) * (fabs(rot[i]) > kNearZero);
   }
   if (code == rotation::kDiagonal
       && (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.)) {
@@ -133,5 +149,35 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
      << ", " << matrix.Rotation(8) << ")}";
   return os;
 }
+
+#ifdef VECGEOM_CUDA
+
+namespace {
+
+__global__
+void ConstructOnGpu(const TransformationMatrix matrix,
+                    TransformationMatrix *const gpu_ptr) {
+  new(gpu_ptr) TransformationMatrix(matrix);
+}
+
+} // End anonymous namespace
+
+TransformationMatrix* TransformationMatrix::CopyToGpu(
+    TransformationMatrix *const gpu_ptr) const {
+
+  ConstructOnGpu<<<1, 1>>>(*this, gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+
+}
+
+TransformationMatrix* TransformationMatrix::CopyToGpu() const {
+
+  TransformationMatrix *const gpu_ptr = AllocateOnGpu<TransformationMatrix>();
+  return CopyToGpu(gpu_ptr);
+
+}
+
+#endif
 
 } // End namespace vecgeom

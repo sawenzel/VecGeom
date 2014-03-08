@@ -1,66 +1,94 @@
 #ifndef VECGEOM_BASE_CONTAINER_H_
 #define VECGEOM_BASE_CONTAINER_H_
 
-#include "base/utilities.h"
+#include "base/global.h"
+#include "base/array.h"
+#include "base/iterator.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda_backend.cuh"
+#endif
 
 namespace vecgeom {
-
-template <typename Type>
-class Iterator : public std::iterator<std::forward_iterator_tag, Type> {
-
-public:
-
-  Iterator(Type const *const e) : element_(e) {}
-
-  Iterator& operator=(Iterator const &other) {
-    element_ = other.element_;
-    return *this;
-  }
-
-  bool operator==(Iterator const &other) {
-    return element_ == other.element_;
-  }
-
-  bool operator!=(Iterator const &other) {
-    return !(*this == other);
-  }
-
-  virtual Iterator& operator++() {
-    this->element_++;
-    return *this;
-  }
-
-  Iterator& operator++(int) {
-    Iterator temp(*this);
-    ++(*this);
-    return temp;
-  }
-
-  Type const& operator*() {
-    return *element_;
-  }
-
-  Type const* operator->() {
-    return element_;
-  }
-
-protected:
-
-  Type const *element_;
-
-};
 
 template <typename Type>
 class Container {
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Container() {}
+
   virtual ~Container() {}
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Type& operator[](const int index) =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Type const& operator[](const int index) const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Iterator<Type> begin() const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Iterator<Type> end() const =0;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual int size() const =0;
+
+  #ifdef VECGEOM_CUDA
+  Vector<Type>* CopyToGpu(Type *const gpu_ptr_arr,
+                          Vector<Type> *const gpu_ptr) const;
+  Vector<Type>* CopyToGpu() const;
+  Type* CopyContentToGpu() const;
+  #endif
+
 };
+
+#ifdef VECGEOM_CUDA
+
+namespace {
+
+template <typename Type>
+__global__
+void ConstructOnGpu(Type *const arr, const int size,
+                    Vector<Type> *const gpu_ptr) {
+  new(gpu_ptr) vecgeom::Vector<Type>(arr, size);
+}
+
+} // End anonymous namespace
+
+template <typename Type>
+Vector<Type>* Container<Type>::CopyToGpu(Type *const gpu_ptr_arr,
+                                         Vector<Type> *const gpu_ptr) const {
+  ConstructOnGpu<<<1, 1>>>(gpu_ptr_arr, this->size(), gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+}
+
+template <typename Type>
+Vector<Type>* Container<Type>::CopyToGpu() const {
+  Type *arr_gpu = CopyContentToGpu();
+  Vector<Type> *const gpu_ptr = AllocateOnGpu<Vector<Type> >();
+  return CopyToGpu(arr_gpu, gpu_ptr);
+}
+
+template <typename Type>
+Type* Container<Type>::CopyContentToGpu() const {
+  Type *const arr = new Type[this->size()];
+  int i = 0;
+  for (Iterator<Type> j = this->begin(); j != this->end(); ++j) {
+    arr[i] = *j;
+    i++;
+  }
+  Type *const arr_gpu = vecgeom::AllocateOnGpu<Type>(this->size()*sizeof(Type));
+  vecgeom::CopyToGpu(arr, arr_gpu, this->size()*sizeof(Type));
+  delete arr;
+  return arr_gpu;
+}
+
+#endif // VECGEOM_CUDA
 
 } // End namespace vecgeom
 

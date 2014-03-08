@@ -51,6 +51,12 @@ struct Vector3D
 	inline double GetY() const {return y;}
 	inline double GetZ() const {return z;}
 
+	inline
+	void Set(double x, double y, double z) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
 
 	inline
 	Vector3D & operator=(Vector3D const & rhs)

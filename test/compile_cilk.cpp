@@ -1,6 +1,6 @@
 #include "base/vector3d.h"
 #include "base/soa3d.h"
-#include "base/transformation_matrix.h"
+#include "base/specialized_matrix.h"
 #include "backend/cilk_backend.h"
 #include "volumes/kernel/box_kernel.h"
 #include "volumes/logical_volume.h"
@@ -8,7 +8,7 @@
 
 using namespace vecgeom;
 
-void compile_cilk() {
+int main() {
   CilkPrecision scalar;
   Vector3D<double> scalar_v;
   Vector3D<CilkPrecision> vector_v;
@@ -18,7 +18,8 @@ void compile_cilk() {
   CilkPrecision output_distance;
   UnplacedBox world_unplaced = UnplacedBox(scalar_v);
   UnplacedBox box_unplaced = UnplacedBox(scalar_v);
-  VLogicalVolume world = VLogicalVolume(world_unplaced);
-  VLogicalVolume box = VLogicalVolume(box_unplaced);
-  world.PlaceDaughter(box, matrix);
+  LogicalVolume world = LogicalVolume(&world_unplaced);
+  LogicalVolume box = LogicalVolume(&box_unplaced);
+  world.PlaceDaughter(&box, &matrix);
+  return 0;
 }

@@ -46,6 +46,8 @@ int main(int argc, char * argv[])
 	world->AddNode( boxlevel1, 1, new TGeoTranslation("trans1",-L/2., 0,0 ) );
 	world->AddNode( boxlevel1, 2, new TGeoTranslation("trans2",L/2., 0,0 ) );
 	geom->CloseGeometry();
+	delete world->GetVoxels();
+	world->SetVoxelFinder(0);
 
     // perform basic tests
 	TGeoNavigator * nav = geom->GetCurrentNavigator(); // new TGeoNavigator(geom);

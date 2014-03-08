@@ -1,15 +1,12 @@
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
-#include "base/utilities.h"
-#include "base/types.h"
-#include "backend/backend.h"
+#include "base/global.h"
 
 namespace vecgeom {
 
 template <>
 struct Impl<kScalar> {
-  typedef Precision precision;
   typedef int       int_v;
   typedef Precision precision_v;
   typedef bool      bool_v;
@@ -44,14 +41,14 @@ template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Abs(const Type val) {
-  return std::fabs(val);
+  return fabs(val);
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Sqrt(const Type val) {
-  return std::sqrt(val);
+  return sqrt(val);
 }
 
 } // End namespace vecgeom

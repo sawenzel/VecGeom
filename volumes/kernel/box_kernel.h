@@ -1,10 +1,9 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_
 
-#include "base/types.h"
+#include "base/global.h"
 #include "base/vector3d.h"
 #include "base/transformation_matrix.h"
-#include "base/utilities.h"
 
 namespace vecgeom {
 

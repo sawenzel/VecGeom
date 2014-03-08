@@ -24,6 +24,10 @@ namespace translation {
 
 class TransformationMatrix {
 
+public:
+
+  static const TransformationMatrix kIdentity;
+
 private:
 
   Precision trans[3];
@@ -34,10 +38,11 @@ private:
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix();
 
-  VECGEOM_CUDA_HEADER_BOTH
+  TransformationMatrix(const Precision tx, const Precision ty,
+                       const Precision tz);
+
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);
@@ -46,6 +51,8 @@ public:
   TransformationMatrix(TransformationMatrix const &other);
 
   // Accessors
+
+  virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -165,11 +172,16 @@ public:
   Vector3D<InputType> TransformRotation(
       Vector3D<InputType> const &master) const;
 
-  // Utility
+  // Utility and CUDA
 
   VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os,
                                   TransformationMatrix const &v);
+
+  #ifdef VECGEOM_CUDA
+  TransformationMatrix* CopyToGpu() const;
+  TransformationMatrix* CopyToGpu(TransformationMatrix *const gpu_ptr) const;
+  #endif
 
 }; // End class TransformationMatrix
 
@@ -189,95 +201,95 @@ void TransformationMatrix::DoRotation(Vector3D<InputType> const &master,
                                       Vector3D<InputType> *const local) const {
 
   if (code == 0x1B1) {
-    local[0] = master[0]*rot[0];
-    local[1] = master[1]*rot[4] + master[2]*rot[7];
-    local[2] = master[1]*rot[5] + master[2]*rot[8];
+    (*local)[0] = master[0]*rot[0];
+    (*local)[1] = master[1]*rot[4] + master[2]*rot[7];
+    (*local)[2] = master[1]*rot[5] + master[2]*rot[8];
     return;
   }
   if (code == 0x18E) {
-    local[0] = master[1]*rot[3];
-    local[1] = master[0]*rot[1] + master[2]*rot[7];
-    local[2] = master[0]*rot[2] + master[2]*rot[8];
+    (*local)[0] = master[1]*rot[3];
+    (*local)[1] = master[0]*rot[1] + master[2]*rot[7];
+    (*local)[2] = master[0]*rot[2] + master[2]*rot[8];
     return;
   }
   if (code == 0x076){
-    local[0] = master[2]*rot[6];
-    local[1] = master[0]*rot[1] + master[1]*rot[4];
-    local[2] = master[0]*rot[2] + master[1]*rot[5];
+    (*local)[0] = master[2]*rot[6];
+    (*local)[1] = master[0]*rot[1] + master[1]*rot[4];
+    (*local)[2] = master[0]*rot[2] + master[1]*rot[5];
     return;
   }
   if (code == 0x16A) {
-    local[0] = master[1]*rot[3] + master[2]*rot[6];
-    local[1] = master[0]*rot[1];
-    local[2] = master[2]*rot[5] + master[2]*rot[8];
+    (*local)[0] = master[1]*rot[3] + master[2]*rot[6];
+    (*local)[1] = master[0]*rot[1];
+    (*local)[2] = master[2]*rot[5] + master[2]*rot[8];
     return;
   }
   if (code == 0x155) {
-    local[0] = master[0]*rot[0] + master[2]*rot[6];
-    local[1] = master[1]*rot[4];
-    local[2] = master[0]*rot[2] + master[2]*rot[8];
+    (*local)[0] = master[0]*rot[0] + master[2]*rot[6];
+    (*local)[1] = master[1]*rot[4];
+    (*local)[2] = master[0]*rot[2] + master[2]*rot[8];
     return;
   }
   if (code == 0x0AD){
-    local[0] = master[0]*rot[0] + master[1]*rot[3];
-    local[1] = master[2]*rot[7];
-    local[2] = master[0]*rot[2] + master[1]*rot[5];
+    (*local)[0] = master[0]*rot[0] + master[1]*rot[3];
+    (*local)[1] = master[2]*rot[7];
+    (*local)[2] = master[0]*rot[2] + master[1]*rot[5];
     return;
   }
   if (code == 0x0DC){
-    local[0] = master[1]*rot[3] + master[2]*rot[6];
-    local[1] = master[1]*rot[4] + master[2]*rot[7];
-    local[2] = master[0]*rot[2];
+    (*local)[0] = master[1]*rot[3] + master[2]*rot[6];
+    (*local)[1] = master[1]*rot[4] + master[2]*rot[7];
+    (*local)[2] = master[0]*rot[2];
     return;
   }
   if (code == 0x0E3) {
-    local[0] = master[0]*rot[0] + master[2]*rot[6];
-    local[1] = master[0]*rot[1] + master[2]*rot[7];
-    local[2] = master[1]*rot[5];
+    (*local)[0] = master[0]*rot[0] + master[2]*rot[6];
+    (*local)[1] = master[0]*rot[1] + master[2]*rot[7];
+    (*local)[2] = master[1]*rot[5];
     return;
   }
   if (code == 0x11B){
-    local[0] = master[0]*rot[0] + master[1]*rot[3];
-    local[1] = master[0]*rot[1] + master[1]*rot[4];
-    local[2] = master[2]*rot[8];
+    (*local)[0] = master[0]*rot[0] + master[1]*rot[3];
+    (*local)[1] = master[0]*rot[1] + master[1]*rot[4];
+    (*local)[2] = master[2]*rot[8];
     return;
   }
   if (code == 0x0A1){
-    local[0] = master[0]*rot[0];
-    local[1] = master[2]*rot[7];
-    local[2] = master[1]*rot[5];
+    (*local)[0] = master[0]*rot[0];
+    (*local)[1] = master[2]*rot[7];
+    (*local)[2] = master[1]*rot[5];
     return;
   }
   if (code == 0x10A){
-    local[0] = master[1]*rot[3];
-    local[1] = master[0]*rot[1];
-    local[2] = master[2]*rot[8];
+    (*local)[0] = master[1]*rot[3];
+    (*local)[1] = master[0]*rot[1];
+    (*local)[2] = master[2]*rot[8];
     return;
   }
   if (code == 0x046){
-    local[0] = master[1]*rot[3];
-    local[1] = master[2]*rot[7];
-    local[2] = master[0]*rot[2];
+    (*local)[0] = master[1]*rot[3];
+    (*local)[1] = master[2]*rot[7];
+    (*local)[2] = master[0]*rot[2];
     return;
   }
   if (code == 0x062) {
-    local[0] = master[2]*rot[6];
-    local[1] = master[0]*rot[1];
-    local[2] = master[1]*rot[5];
+    (*local)[0] = master[2]*rot[6];
+    (*local)[1] = master[0]*rot[1];
+    (*local)[2] = master[1]*rot[5];
     return;
   }
   if (code == 0x054) {
-    local[0] = master[2]*rot[6];
-    local[1] = master[1]*rot[4];
-    local[2] = master[0]*rot[2];
+    (*local)[0] = master[2]*rot[6];
+    (*local)[1] = master[1]*rot[4];
+    (*local)[2] = master[0]*rot[2];
     return;
   }
 
   // code = 0x111;
   if (code == rotation::kDiagonal) {
-    local[0] = master[0]*rot[0];
-    local[1] = master[1]*rot[4];
-    local[2] = master[2]*rot[8];
+    (*local)[0] = master[0]*rot[0];
+    (*local)[1] = master[1]*rot[4];
+    (*local)[2] = master[2]*rot[8];
     return;
   }
 
@@ -288,15 +300,15 @@ void TransformationMatrix::DoRotation(Vector3D<InputType> const &master,
   }
 
   // General case
-  local[0] =  master[0]*rot[0];
-  local[1] =  master[0]*rot[1];
-  local[2] =  master[0]*rot[2];
-  local[0] += master[1]*rot[3];
-  local[1] += master[1]*rot[4];
-  local[2] += master[1]*rot[5];
-  local[0] += master[2]*rot[6];
-  local[1] += master[2]*rot[7];
-  local[2] += master[2]*rot[8];
+  (*local)[0] =  master[0]*rot[0];
+  (*local)[1] =  master[0]*rot[1];
+  (*local)[2] =  master[0]*rot[2];
+  (*local)[0] += master[1]*rot[3];
+  (*local)[1] += master[1]*rot[4];
+  (*local)[2] += master[1]*rot[5];
+  (*local)[0] += master[2]*rot[6];
+  (*local)[1] += master[2]*rot[7];
+  (*local)[2] += master[2]*rot[8];
 
 }
 

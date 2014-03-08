@@ -1,8 +1,16 @@
 #ifndef VECGEOM_BASE_SPECIALIZEDMATRIX_H_
 #define VECGEOM_BASE_SPECIALIZEDMATRIX_H_
 
+#include "base/transformation_matrix.h"
+
+namespace vecgeom {
+
 template <TranslationCode trans_code, RotationCode rot_code>
 class SpecializedMatrix : public TransformationMatrix {
+
+public:
+
+  virtual int memory_size() const { return sizeof(*this); }
 
   /**
    * \sa TransformationMatrix::Transform(Vector3D<InputType> const &,
@@ -50,5 +58,7 @@ class SpecializedMatrix : public TransformationMatrix {
   }
 
 };
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BASE_SPECIALIZEDMATRIX_H_
