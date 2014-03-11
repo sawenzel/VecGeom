@@ -1,8 +1,6 @@
+#include "backend.h"
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 namespace vecgeom {
 

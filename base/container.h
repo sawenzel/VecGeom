@@ -2,11 +2,9 @@
 #define VECGEOM_BASE_CONTAINER_H_
 
 #include "base/global.h"
+#include "backend.h"
 #include "base/array.h"
 #include "base/iterator.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 namespace vecgeom {
 

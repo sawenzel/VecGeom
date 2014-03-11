@@ -3,6 +3,7 @@
 
 #include <Vc/Vc>
 #include "base/global.h"
+#include "backend/scalar/backend.h"
 
 namespace vecgeom {
 

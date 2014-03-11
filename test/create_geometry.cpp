@@ -1,9 +1,6 @@
 #include "management/cuda_manager.h"
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 using namespace vecgeom;
 

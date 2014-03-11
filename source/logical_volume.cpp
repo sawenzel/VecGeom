@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <climits>
+#include "backend.h"
 #include "base/array.h"
 #include "base/transformation_matrix.h"
 #include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 namespace vecgeom {
 

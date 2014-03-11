@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cassert>
-#include "backend/cuda_backend.cuh"
+#include "backend/cuda/backend.h"
 #include "base/array.h"
 #include "management/cuda_manager.h"
 #include "management/volume_factory.h"

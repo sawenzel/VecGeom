@@ -7,7 +7,7 @@
 namespace vecgeom {
 
 template <typename Type>
-class AOS3D : protected TrackContainer<Type> {
+class AOS3D : public TrackContainer<Type> {
 
 private:
 

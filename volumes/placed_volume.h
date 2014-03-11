@@ -62,13 +62,11 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   void set_logical_volume(LogicalVolume const *const logical_volume) {
     logical_volume_ = logical_volume;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   void set_matrix(TransformationMatrix const *const matrix) {
     matrix_ = matrix;
   }
@@ -81,10 +79,26 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const =0;
 
+  virtual void Inside(SOA3D<Precision> const &point,
+                      bool *const output) const =0;
+
+  virtual void Inside(AOS3D<Precision> const &point,
+                      bool *const output) const =0;
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
                                  Vector3D<Precision> const &direction,
                                  const Precision step_max = kInfinity) const =0;
+
+  virtual void DistanceToIn(SOA3D<Precision> const &position,
+                            SOA3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const =0;
+
+  virtual void DistanceToIn(AOS3D<Precision> const &position,
+                            AOS3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const =0;
 
   #ifdef VECGEOM_CUDA
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,

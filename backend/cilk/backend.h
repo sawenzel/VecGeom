@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "base/global.h"
+#include "backend/scalar/backend.h"
 
 namespace vecgeom {
 
@@ -65,7 +66,7 @@ public:
   static constexpr int Size() { return vec_size; }
 
   VECGEOM_INLINE
-  void Store(Type *destination) const {
+  void store(Type *destination) const {
     destination[0:vec_size] = vec[:];
   }
 

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "backend/cuda_backend.cuh"
+#include "backend/cuda/backend.h"
 
 namespace vecgeom {
 

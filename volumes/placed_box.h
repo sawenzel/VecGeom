@@ -2,7 +2,7 @@
 #define VECGEOM_VOLUMES_PLACEDBOX_H_
 
 #include "base/global.h"
-#include "backend/scalar_backend.h"
+#include "backend.h"
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
 #include "volumes/kernel/box_kernel.h"
@@ -40,37 +40,7 @@ public:
   VECGEOM_INLINE
   Precision z() const { return AsUnplacedBox()->z(); }
 
-  // Navigation methods
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToIn(Vector3D<Precision> const &position,
-                                 Vector3D<Precision> const &direction,
-                                 const Precision step_max) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToOut(Vector3D<Precision> const &position,
-                                  Vector3D<Precision> const &direction) const;
-
 protected:
-
-  // Templates to interact with common kernel
-
-  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Impl<it>::bool_v InsideTemplate(
-      Vector3D<typename Impl<it>::precision_v> const &point) const;
-
-  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Impl<it>::precision_v DistanceToInTemplate(
-      Vector3D<typename Impl<it>::precision_v> const &position,
-      Vector3D<typename Impl<it>::precision_v> const &direction,
-      const typename Impl<it>::precision_v step_max) const;
 
   /**
    * Retrieves the unplaced volume pointer from the logical volume and casts it
@@ -81,6 +51,38 @@ protected:
   UnplacedBox const* AsUnplacedBox() const;
 
 public:
+
+  // Navigation methods
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual bool Inside(Vector3D<Precision> const &point) const;
+
+  virtual void Inside(SOA3D<Precision> const &points,
+                      bool *const output) const;
+
+  virtual void Inside(AOS3D<Precision> const &points,
+                      bool *const output) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &position,
+                                 Vector3D<Precision> const &direction,
+                                 const Precision step_max) const;
+
+  virtual void DistanceToIn(SOA3D<Precision> const &position,
+                            SOA3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const;
+
+  virtual void DistanceToIn(AOS3D<Precision> const &position,
+                            AOS3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision DistanceToOut(Vector3D<Precision> const &position,
+                                  Vector3D<Precision> const &direction) const;
 
   // CUDA specific
 
@@ -102,6 +104,35 @@ public:
   virtual TGeoShape const* ConvertToRoot() const;
   virtual ::VUSolid const* ConvertToUSolids() const;
   #endif
+
+protected:
+
+  // Templates to interact with common kernel
+
+  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Impl<it>::bool_v InsideTemplate(
+      Vector3D<typename Impl<it>::precision_v> const &point) const;
+
+  template <TranslationCode trans_code, RotationCode rot_code,
+            typename ContainerType>
+  void InsideBackend(ContainerType const &points, bool *const output) const;
+
+  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Impl<it>::precision_v DistanceToInTemplate(
+      Vector3D<typename Impl<it>::precision_v> const &position,
+      Vector3D<typename Impl<it>::precision_v> const &direction,
+      const typename Impl<it>::precision_v step_max) const;
+
+  template <TranslationCode trans_code, RotationCode rot_code,
+            typename ContainerType>
+  void DistanceToInBackend(ContainerType const &positions,
+                           ContainerType const &directions,
+                           Precision const *const step_max,
+                           Precision *const output) const;
 
 };
 

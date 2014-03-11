@@ -2,10 +2,8 @@
 #define VECGEOM_BASE_SOA3D_H_
 
 #include "base/global.h"
+#include "backend.h"
 #include "base/track_container.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 namespace vecgeom {
 
@@ -25,6 +23,7 @@ public:
 
   SOA3D(const unsigned size);
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(TrackContainer<Type> const &other);
 
   ~SOA3D();
@@ -94,6 +93,7 @@ public:
 };
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 SOA3D<Type>::SOA3D(Type *const x, Type *const y, Type *const z,
                    const unsigned size)
     : TrackContainer<Type>(size, true), x_(x), y_(y), z_(z) {

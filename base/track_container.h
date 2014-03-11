@@ -27,6 +27,7 @@ public:
   VECGEOM_INLINE
   int size() const { return size_; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Vector3D<Type> operator[](const int index) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH

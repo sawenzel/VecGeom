@@ -1,4 +1,4 @@
-#include "backend/scalar_backend.h"
+#include "backend/scalar/backend.h"
 
 namespace vecgeom {
 

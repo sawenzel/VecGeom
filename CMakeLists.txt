@@ -107,7 +107,8 @@ if (Vc)
     # Fixes ABI issues with Vc using GNU compiler
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/backend/vc_backend.cpp)
+  include_directories(${CMAKE_SOURCE_DIR}/backend/vc)
+  file(GLOB SRC_BACKEND "source/backend/vc/*.cpp")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
 
 endif()
@@ -118,7 +119,8 @@ if (Cilk)
     message(FATAL_ERROR "Must use Intel C++ compiler for Cilk backend.")
   endif()
 
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/backend/cilk_backend.cpp)
+  include_directories(${CMAKE_SOURCE_DIR}/backend/cilk)
+  file(GLOB SRC_BACKEND "source/backend/cilk/*.cpp")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
 
 endif()
@@ -137,6 +139,8 @@ if (CUDA)
 
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
+  include_directories(${CMAKE_SOURCE_DIR}/backend/cuda)
+  file(GLOB SRC_BACKEND source/backend/cuda/*.cpp source/backend/cuda/*.cu)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
@@ -175,19 +179,18 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-file(GLOB SRC_CPP "source/*.cpp")
+file(GLOB SRC_CPP source/*.cpp)
+set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
 if (COMPARISON)
-  file(GLOB COMPARISON_CPP "source/comparison/*.cpp")
-  set(SRC_CPP ${SRC_CPP} ${COMPARISON_CPP})
+  file(GLOB SRC_COMPARISON "source/comparison/*.cpp")
+  set(SRC_CPP ${SRC_CPP} ${SRC_COMPARISON})
 endif()
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
 
 if (CUDA)
-
-  file(GLOB_RECURSE SRC_CUDA "source/*.cu")
 
   file(GLOB EXE_CPP "test/*.cpp")
 

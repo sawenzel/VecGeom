@@ -1,14 +1,41 @@
-#include "backend/scalar_backend.h"
+#include "base/aos3d.h"
+#include "base/soa3d.h"
+#include "implementation.h"
 #include "volumes/placed_box.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 #ifdef VECGEOM_COMPARISON
 #include "TGeoBBox.h"
 #include "UBox.hh"
 #endif
 
 namespace vecgeom {
+
+void PlacedBox::Inside(SOA3D<Precision> const &points,
+                       bool *const output) const {
+  InsideBackend<1, 0, SOA3D<Precision> >(points, output);
+}
+
+void PlacedBox::Inside(AOS3D<Precision> const &points,
+                       bool *const output) const {
+  InsideBackend<1, 0, AOS3D<Precision> >(points, output);
+}
+
+void PlacedBox::DistanceToIn(SOA3D<Precision> const &positions,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const step_max,
+                             Precision *const output) const {
+  DistanceToInBackend<1, 0, SOA3D<Precision> >(
+    positions, directions, step_max, output
+  );
+}
+
+void PlacedBox::DistanceToIn(AOS3D<Precision> const &positions,
+                             AOS3D<Precision> const &directions,
+                             Precision const *const step_max,
+                             Precision *const output) const {
+  DistanceToInBackend<1, 0, AOS3D<Precision> >(
+    positions, directions, step_max, output
+  );
+}
 
 #ifdef VECGEOM_CUDA
 
