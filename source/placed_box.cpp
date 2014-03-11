@@ -2,7 +2,7 @@
 #include "base/soa3d.h"
 #include "implementation.h"
 #include "volumes/placed_box.h"
-#ifdef VECGEOM_COMPARISON
+#ifdef VECGEOM_BENCHMARK
 #include "TGeoBBox.h"
 #include "UBox.hh"
 #endif
@@ -67,7 +67,7 @@ VPlacedVolume* PlacedBox::CopyToGpu(
 
 #endif // VECGEOM_CUDA
 
-#ifdef VECGEOM_COMPARISON
+#ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
   return new PlacedBox(logical_volume_, matrix_);
@@ -81,6 +81,6 @@ TGeoShape const* PlacedBox::ConvertToRoot() const {
   return new UBox("", x(), y(), z());
 }
 
-#endif // VECGEOM_COMPARISON
+#endif // VECGEOM_BENCHMARK
 
 } // End namespace vecgeom

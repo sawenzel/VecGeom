@@ -10,4 +10,4 @@ Debug
 .cproject
 .project
 .externalToolBuilders
-compile_comparison.sh
+compile_benchmark.sh

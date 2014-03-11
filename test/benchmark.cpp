@@ -1,6 +1,6 @@
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
-#include "comparison/shape_tester.h"
+#include "benchmarking/distance_to_in.h"
 
 using namespace vecgeom;
 
@@ -34,7 +34,7 @@ int main() {
   world.PlaceDaughter(&largebox, &placement7);
   world.PlaceDaughter(&largebox, &placement8);
 
-  ShapeTester tester(&world);
+  DistanceToIn tester(&world);
   tester.set_verbose(2);
   tester.BenchmarkAll();
 

@@ -2,6 +2,7 @@
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
 #include "base/global.h"
+
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
@@ -129,7 +130,7 @@ public:
       TransformationMatrix const *const matrix) const =0;
   #endif
 
-  #ifdef VECGEOM_COMPARISON
+  #ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
   virtual TGeoShape const* ConvertToRoot() const =0;
   virtual ::VUSolid const* ConvertToUSolids() const =0;

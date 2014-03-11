@@ -5,7 +5,7 @@ project(vecgeom)
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
-option(COMPARISON "Include ROOT and USolids to enable performance comparisons." OFF)
+option(BENCHMARK "Include ROOT and USolids to enable performance comparisons." OFF)
 
 if (NOT BACKEND)
   set(BACKEND "Vc")
@@ -85,8 +85,8 @@ endif()
 if (VC_ACCELERATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
 endif()
-if (COMPARISON)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_COMPARISON")
+if (BENCHMARK)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_BENCHMARK")
 endif()
 
 ################################################################################
@@ -146,7 +146,7 @@ if (CUDA)
 
 endif()
 
-if (COMPARISON)
+if (BENCHMARK)
   
   include(FindROOT.cmake)
 
@@ -155,7 +155,7 @@ if (COMPARISON)
   set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
 
   if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
-    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build comparison module.")
+    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build benchmarking module.")
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
@@ -182,9 +182,9 @@ include_directories(${CMAKE_SOURCE_DIR})
 file(GLOB SRC_CPP source/*.cpp)
 set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
-if (COMPARISON)
-  file(GLOB SRC_COMPARISON "source/comparison/*.cpp")
-  set(SRC_CPP ${SRC_CPP} ${SRC_COMPARISON})
+if (BENCHMARK)
+  file(GLOB SRC_BENCHMARK "source/benchmarking/*.cpp")
+  set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
 endif()
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
@@ -232,9 +232,9 @@ if (NOT CUDA)
   set(LIBS ${LIBS} vecgeom_cpp)
   add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
   target_link_libraries(create_geometry_test ${LIBS})
-  if (COMPARISON)
-    add_executable(comparison ${CMAKE_SOURCE_DIR}/test/comparison.cpp)
-    target_link_libraries(comparison ${LIBS})
+  if (BENCHMARK)
+    add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
+    target_link_libraries(benchmark ${LIBS})
   endif()
 else()
   cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu OPTIONS ${CUDA_ARCH})

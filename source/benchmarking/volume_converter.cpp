@@ -1,7 +1,7 @@
 #include "UBox.hh"
 #include "TGeoBBox.h"
+#include "benchmarking/volume_converter.h"
 #include "volumes/placed_volume.h"
-#include "comparison/volume_converter.h"
 
 namespace vecgeom {
 

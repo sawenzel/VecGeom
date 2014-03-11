@@ -50,7 +50,7 @@ class CudaManager;
 
 } // End namespace vecgeom
 
-#ifdef VECGEOM_COMPARISON
+#ifdef VECGEOM_BENCHMARK
 class TGeoShape;
 class VUSolid;
 #endif
