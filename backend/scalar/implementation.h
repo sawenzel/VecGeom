@@ -12,26 +12,32 @@
 namespace vecgeom {
 
 template <TranslationCode trans_code, RotationCode rot_code,
-          typename ContainerType>
+          typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
-void PlacedBox::InsideBackend(ContainerType const &points,
-                              bool *const output) const {
+void VPlacedVolume::InsideBackend(VolumeType const &volume,
+                                  ContainerType const &points,
+                                  bool *const output) {
   for (int i = 0; i < points.size(); ++i) {
-    output[i] = InsideTemplate<trans_code, rot_code, kScalar>(points[i]);
+    output[i] =
+        volume.template InsideDispatch<trans_code, rot_code, kScalar>(
+          points[i]
+        );
   }
 }
 
 template <TranslationCode trans_code, RotationCode rot_code,
-          typename ContainerType>
+          typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
-void PlacedBox::DistanceToInBackend(ContainerType const &positions,
-                                    ContainerType const &directions,
-                                    Precision const *const step_max,
-                                    Precision *const output) const {
+void VPlacedVolume::DistanceToInBackend(VolumeType const &volume,
+                                        ContainerType const &positions,
+                                        ContainerType const &directions,
+                                        Precision const *const step_max,
+                                        Precision *const output) {
   for (int i = 0; i < positions.size(); ++i) {
-    output[i] = DistanceToInTemplate<trans_code, rot_code, kScalar>(
-      positions[i], directions[i], step_max[i]
-    );
+    output[i] =
+        volume.template DistanceToInDispatch<trans_code, rot_code, kScalar>(
+          positions[i], directions[i], step_max[i]
+        );
   }
 }
 

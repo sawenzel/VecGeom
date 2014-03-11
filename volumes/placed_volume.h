@@ -100,6 +100,26 @@ public:
                             Precision const *const step_max,
                             Precision *const output) const =0;
 
+protected:
+
+  template <TranslationCode trans_code, RotationCode rot_code,
+            typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void InsideBackend(VolumeType const &volume,
+                            ContainerType const &points,
+                            bool *const output);
+
+  template <TranslationCode trans_code, RotationCode rot_code,
+            typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void DistanceToInBackend(VolumeType const &volume,
+                                  ContainerType const &positions,
+                                  ContainerType const &directions,
+                                  Precision const *const step_max,
+                                  Precision *const output);
+
+public:
+
   #ifdef VECGEOM_CUDA
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    TransformationMatrix const *const matrix,

@@ -105,41 +105,28 @@ public:
   virtual ::VUSolid const* ConvertToUSolids() const;
   #endif
 
-protected:
-
   // Templates to interact with common kernel
 
   template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  typename Impl<it>::bool_v InsideTemplate(
+  typename Impl<it>::bool_v InsideDispatch(
       Vector3D<typename Impl<it>::precision_v> const &point) const;
-
-  template <TranslationCode trans_code, RotationCode rot_code,
-            typename ContainerType>
-  void InsideBackend(ContainerType const &points, bool *const output) const;
 
   template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  typename Impl<it>::precision_v DistanceToInTemplate(
+  typename Impl<it>::precision_v DistanceToInDispatch(
       Vector3D<typename Impl<it>::precision_v> const &position,
       Vector3D<typename Impl<it>::precision_v> const &direction,
       const typename Impl<it>::precision_v step_max) const;
-
-  template <TranslationCode trans_code, RotationCode rot_code,
-            typename ContainerType>
-  void DistanceToInBackend(ContainerType const &positions,
-                           ContainerType const &directions,
-                           Precision const *const step_max,
-                           Precision *const output) const;
 
 };
 
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Impl<it>::bool_v PlacedBox::InsideTemplate(
+typename Impl<it>::bool_v PlacedBox::InsideDispatch(
     Vector3D<typename Impl<it>::precision_v> const &point) const {
 
   typename Impl<it>::bool_v output;
@@ -157,7 +144,7 @@ typename Impl<it>::bool_v PlacedBox::InsideTemplate(
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Impl<it>::precision_v PlacedBox::DistanceToInTemplate(
+typename Impl<it>::precision_v PlacedBox::DistanceToInDispatch(
     Vector3D<typename Impl<it>::precision_v> const &position,
     Vector3D<typename Impl<it>::precision_v> const &direction,
     const typename Impl<it>::precision_v step_max) const {
@@ -185,7 +172,7 @@ UnplacedBox const* PlacedBox::AsUnplacedBox() const {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
-  return PlacedBox::template InsideTemplate<1, 0, kScalar>(point);
+  return PlacedBox::template InsideDispatch<1, 0, kScalar>(point);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -193,7 +180,7 @@ VECGEOM_INLINE
 Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
                                   Vector3D<Precision> const &direction,
                                   const Precision step_max) const {
-  return PlacedBox::template DistanceToInTemplate<1, 0, kScalar>(position,
+  return PlacedBox::template DistanceToInDispatch<1, 0, kScalar>(position,
                                                                  direction,
                                                                  step_max);
 }
