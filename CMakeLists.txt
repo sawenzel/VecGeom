@@ -1,11 +1,24 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(vecgeom)
 
 ################################################################################
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
-option(COMPARISON "Include ROOT and USolids to enable performance comparisons." OFF)
+option(ROOT "Include ROOT." OFF)
+
+option(USOLIDS "Include USolids." OFF)
+
+option(BENCHMARK "Enable performance comparisons, requiring ROOT and USolids." OFF)
+
+if (BENCHMARK)
+  set(ROOT ON)
+  set(USolids ON)
+endif()
+
+if (USOLIDS)
+  set(USolids ON)
+endif()
 
 if (NOT BACKEND)
   set(BACKEND "Vc")
@@ -85,8 +98,8 @@ endif()
 if (VC_ACCELERATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
 endif()
-if (COMPARISON)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_COMPARISON")
+if (BENCHMARK)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_BENCHMARK")
 endif()
 
 ################################################################################
@@ -107,7 +120,8 @@ if (Vc)
     # Fixes ABI issues with Vc using GNU compiler
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/backend/vc_backend.cpp)
+  include_directories(${CMAKE_SOURCE_DIR}/backend/vc)
+  file(GLOB SRC_BACKEND "source/backend/vc/*.cpp")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
 
 endif()
@@ -118,7 +132,8 @@ if (Cilk)
     message(FATAL_ERROR "Must use Intel C++ compiler for Cilk backend.")
   endif()
 
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/backend/cilk_backend.cpp)
+  include_directories(${CMAKE_SOURCE_DIR}/backend/cilk)
+  file(GLOB SRC_BACKEND "source/backend/cilk/*.cpp")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
 
 endif()
@@ -137,21 +152,29 @@ if (CUDA)
 
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
+  include_directories(${CMAKE_SOURCE_DIR}/backend/cuda)
+  file(GLOB SRC_BACKEND source/backend/cuda/*.cpp source/backend/cuda/*.cu)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 endif()
 
-if (COMPARISON)
+if (ROOT)
   
   include(FindROOT.cmake)
 
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
+  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/root_manager.cpp)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
+
+endif()
+
+if (USolids)
 
   if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
-    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build comparison module.")
+    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build benchmarking module.")
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
@@ -166,6 +189,7 @@ if (COMPARISON)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
   set(LIBS ${LIBS} ${USOLIDS_LIBRARY})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
 
 endif()
 
@@ -175,19 +199,26 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-file(GLOB SRC_CPP "source/*.cpp")
+set(SRC_CPP ${SRC_CPP}
+  ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp
+  ${CMAKE_SOURCE_DIR}/source/placed_box.cpp
+  ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp
+  ${CMAKE_SOURCE_DIR}/source/scalar_backend.cpp
+  ${CMAKE_SOURCE_DIR}/source/transformation_matrix.cpp
+  ${CMAKE_SOURCE_DIR}/source/unplaced_box.cpp
+  ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
+)
+set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
-if (COMPARISON)
-  file(GLOB COMPARISON_CPP "source/comparison/*.cpp")
-  set(SRC_CPP ${SRC_CPP} ${COMPARISON_CPP})
+if (BENCHMARK)
+  file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
+  set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
 endif()
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
 
 if (CUDA)
-
-  file(GLOB_RECURSE SRC_CUDA "source/*.cu")
 
   file(GLOB EXE_CPP "test/*.cpp")
 
@@ -225,10 +256,14 @@ endif()
 
 if (NOT CUDA)
   add_library(vecgeom_cpp ${SRC_CPP})
-  add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
   target_link_libraries(vecgeom_cpp ${LIBS})
   set(LIBS ${LIBS} vecgeom_cpp)
+  add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
   target_link_libraries(create_geometry_test ${LIBS})
+  if (BENCHMARK)
+    add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
+    target_link_libraries(benchmark ${LIBS})
+  endif()
 else()
   cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu OPTIONS ${CUDA_ARCH})
 endif()

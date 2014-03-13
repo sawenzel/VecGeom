@@ -1,46 +1,40 @@
-#include "backend/scalar_backend.h"
+#include "base/aos3d.h"
+#include "base/soa3d.h"
+#include "implementation.h"
 #include "volumes/placed_box.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
-#ifdef VECGEOM_COMPARISON
+#ifdef VECGEOM_BENCHMARK
 #include "TGeoBBox.h"
 #include "UBox.hh"
 #endif
 
 namespace vecgeom {
 
-VECGEOM_CUDA_HEADER_BOTH
-bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
-  return PlacedBox::template InsideTemplate<1, 0, kScalar>(point);
+void PlacedBox::Inside(SOA3D<Precision> const &points,
+                       bool *const output) const {
+  InsideBackend<1, 0>(*this, points, output);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
-Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
-                                  Vector3D<Precision> const &direction,
-                                  const Precision step_max) const {
-  return PlacedBox::template DistanceToInTemplate<1, 0, kScalar>(position,
-                                                                 direction,
-                                                                 step_max);
+void PlacedBox::Inside(AOS3D<Precision> const &points,
+                       bool *const output) const {
+  InsideBackend<1, 0>(*this, points, output);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
-Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
-                                   Vector3D<Precision> const &direction) const {
+void PlacedBox::DistanceToIn(SOA3D<Precision> const &positions,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const step_max,
+                             Precision *const output) const {
+  DistanceToInBackend<1, 0>(
+    *this, positions, directions, step_max, output
+  );
+}
 
-  Vector3D<Precision> const &dim = AsUnplacedBox()->dimensions();
-
-  const Vector3D<Precision> safety_plus  = dim + position;
-  const Vector3D<Precision> safety_minus = dim - position;
-
-  Vector3D<Precision> distance = safety_minus;
-  const Vector3D<bool> direction_plus = direction < 0.0;
-  distance.MaskedAssign(direction_plus, safety_plus);
-
-  distance /= direction;
-
-  const Precision min = distance.Min();
-  return (min < 0) ? 0 : min;
+void PlacedBox::DistanceToIn(AOS3D<Precision> const &positions,
+                             AOS3D<Precision> const &directions,
+                             Precision const *const step_max,
+                             Precision *const output) const {
+  DistanceToInBackend<1, 0>(
+    *this, positions, directions, step_max, output
+  );
 }
 
 #ifdef VECGEOM_CUDA
@@ -73,7 +67,11 @@ VPlacedVolume* PlacedBox::CopyToGpu(
 
 #endif // VECGEOM_CUDA
 
-#ifdef VECGEOM_COMPARISON
+#ifdef VECGEOM_BENCHMARK
+
+VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
+  return new PlacedBox(logical_volume_, matrix_);
+}
 
 TGeoShape const* PlacedBox::ConvertToRoot() const {
   return new TGeoBBox("", x(), y(), z());
@@ -83,6 +81,6 @@ TGeoShape const* PlacedBox::ConvertToRoot() const {
   return new UBox("", x(), y(), z());
 }
 
-#endif // VECGEOM_COMPARISON
+#endif // VECGEOM_BENCHMARK
 
 } // End namespace vecgeom

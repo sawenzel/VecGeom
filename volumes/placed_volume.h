@@ -2,17 +2,18 @@
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
 #include "base/global.h"
+
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
 
 namespace vecgeom {
 
+class PlacedBox;
+
 class VPlacedVolume {
 
 private:
-
-  // int id;
 
   friend class CudaManager;
 
@@ -20,15 +21,22 @@ protected:
 
   LogicalVolume const *logical_volume_;
   TransformationMatrix const *matrix_;
-
-public:
+  PlacedBox const *bounding_box_;
 
   VECGEOM_CUDA_HEADER_BOTH
   VPlacedVolume(LogicalVolume const *const logical_volume,
-                TransformationMatrix const *const matrix)
-      : logical_volume_(logical_volume), matrix_(matrix) {}
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box)
+      : logical_volume_(logical_volume), matrix_(matrix),
+        bounding_box_(bounding_box) {}
+
+public:
 
   virtual ~VPlacedVolume() {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  PlacedBox const* bounding_box() const { return bounding_box_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -38,8 +46,14 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Vector<Daughter> const& daughters() const {
+    return logical_volume_->daughters();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   VUnplacedVolume const* unplaced_volume() const {
-    return logical_volume()->unplaced_volume();
+    return logical_volume_->unplaced_volume();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -49,13 +63,11 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   void set_logical_volume(LogicalVolume const *const logical_volume) {
     logical_volume_ = logical_volume;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   void set_matrix(TransformationMatrix const *const matrix) {
     matrix_ = matrix;
   }
@@ -68,10 +80,46 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const =0;
 
+  virtual void Inside(SOA3D<Precision> const &point,
+                      bool *const output) const =0;
+
+  virtual void Inside(AOS3D<Precision> const &point,
+                      bool *const output) const =0;
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
                                  Vector3D<Precision> const &direction,
-                                 const Precision step_max) const =0;
+                                 const Precision step_max = kInfinity) const =0;
+
+  virtual void DistanceToIn(SOA3D<Precision> const &position,
+                            SOA3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const =0;
+
+  virtual void DistanceToIn(AOS3D<Precision> const &position,
+                            AOS3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const =0;
+
+protected:
+
+  template <TranslationCode trans_code, RotationCode rot_code,
+            typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void InsideBackend(VolumeType const &volume,
+                            ContainerType const &points,
+                            bool *const output);
+
+  template <TranslationCode trans_code, RotationCode rot_code,
+            typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void DistanceToInBackend(VolumeType const &volume,
+                                  ContainerType const &positions,
+                                  ContainerType const &directions,
+                                  Precision const *const step_max,
+                                  Precision *const output);
+
+public:
 
   #ifdef VECGEOM_CUDA
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
@@ -82,7 +130,8 @@ public:
       TransformationMatrix const *const matrix) const =0;
   #endif
 
-  #ifdef VECGEOM_COMPARISON
+  #ifdef VECGEOM_BENCHMARK
+  virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
   virtual TGeoShape const* ConvertToRoot() const =0;
   virtual ::VUSolid const* ConvertToUSolids() const =0;
   #endif

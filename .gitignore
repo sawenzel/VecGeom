@@ -4,12 +4,10 @@ io/
 obj/
 bin/
 *~
-*.o
-setmeup.sh
-makefile
-*.disable
+*.[oa]
+\#*\#
 Debug
 .cproject
 .project
 .externalToolBuilders
-compile_comparison.sh
+compile_benchmark.sh

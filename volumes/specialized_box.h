@@ -1,14 +1,16 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 
-#include "base/global.h"
-#include "backend/scalar_backend.h"
-#include "base/transformation_matrix.h"
-#include "volumes/placed_box.h"
 #ifdef VECGEOM_CUDA
 #include <stdio.h>
-#include "backend/cuda_backend.cuh"
 #endif
+
+#include "base/global.h"
+#include "backend.h"
+#include "implementation.h"
+
+#include "base/transformation_matrix.h"
+#include "volumes/placed_box.h"
 
 namespace vecgeom {
 
@@ -25,10 +27,26 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;
 
+  virtual void Inside(SOA3D<Precision> const &points,
+                      bool *const output) const;
+
+  virtual void Inside(AOS3D<Precision> const &points,
+                      bool *const output) const;
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
                                  Vector3D<Precision> const &direction,
                                  const Precision step_max) const;
+
+  virtual void DistanceToIn(SOA3D<Precision> const &position,
+                            SOA3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const;
+
+  virtual void DistanceToIn(AOS3D<Precision> const &position,
+                            AOS3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const;
 
   virtual int memory_size() const { return sizeof(*this); }
 
@@ -47,9 +65,21 @@ template <TranslationCode trans_code, RotationCode rot_code>
 VECGEOM_CUDA_HEADER_BOTH
 bool SpecializedBox<trans_code, rot_code>::Inside(
     Vector3D<Precision> const &point) const {
-  return PlacedBox::template InsideTemplate<trans_code, rot_code, kScalar>(
-           point
-         );
+  return InsideDispatch<trans_code, rot_code, kScalar>(point);
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+void SpecializedBox<trans_code, rot_code>::Inside(
+    SOA3D<Precision> const &points,
+    bool *const output) const {
+  InsideBackend<trans_code, rot_code>(*this, points, output);
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+void SpecializedBox<trans_code, rot_code>::Inside(
+    AOS3D<Precision> const &points,
+    bool *const output) const {
+  InsideBackend<trans_code, rot_code>(*this, points, output);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -59,10 +89,30 @@ Precision SpecializedBox<trans_code, rot_code>::DistanceToIn(
     Vector3D<Precision> const &direction,
     const Precision step_max) const {
 
-  return PlacedBox::template DistanceToInTemplate<trans_code, rot_code,
-                                                  kScalar>(position, direction,
-                                                           step_max);
+  return DistanceToInDispatch<trans_code, rot_code, kScalar>(
+           position, direction, step_max
+         );
                                                   
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+void SpecializedBox<trans_code, rot_code>::DistanceToIn(
+    SOA3D<Precision> const &positions,
+    SOA3D<Precision> const &directions,
+    Precision const *const step_max,
+    Precision *const output) const {
+  DistanceToInBackend<trans_code, rot_code>(*this, positions, directions,
+                                            step_max, output);
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+void SpecializedBox<trans_code, rot_code>::DistanceToIn(
+    AOS3D<Precision> const &positions,
+    AOS3D<Precision> const &directions,
+    Precision const *const step_max,
+    Precision *const output) const {
+  DistanceToInBackend<trans_code, rot_code>(*this, positions, directions,
+                                            step_max, output);
 }
 
 #ifdef VECGEOM_CUDA

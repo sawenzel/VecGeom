@@ -1,4 +1,4 @@
-#include "backend/cilk_backend.h"
+#include "backend/cilk/backend.h"
 
 namespace vecgeom {
 

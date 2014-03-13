@@ -24,6 +24,10 @@ namespace translation {
 
 class TransformationMatrix {
 
+public:
+
+  static const TransformationMatrix kIdentity;
+
 private:
 
   Precision trans[3];
@@ -42,6 +46,13 @@ public:
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);
+
+  TransformationMatrix(const Precision tx, const Precision ty,
+                       const Precision tz, const Precision r0,
+                       const Precision r1, const Precision r2,
+                       const Precision r3, const Precision r4,
+                       const Precision r5, const Precision r6,
+                       const Precision r7, const Precision r8);
 
   VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(TransformationMatrix const &other);

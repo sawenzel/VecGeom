@@ -2,11 +2,9 @@
 #define VECGEOM_BASE_CONTAINER_H_
 
 #include "base/global.h"
+#include "backend.h"
 #include "base/array.h"
 #include "base/iterator.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 namespace vecgeom {
 
@@ -21,6 +19,14 @@ public:
   virtual ~Container() {}
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Type& operator[](const int index) =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Type const& operator[](const int index) const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Iterator<Type> begin() const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -30,9 +36,9 @@ public:
   virtual int size() const =0;
 
   #ifdef VECGEOM_CUDA
-  Array<Type>* CopyToGpu(Type *const gpu_ptr_arr,
-                         Array<Type> *const gpu_ptr) const;
-  Array<Type>* CopyToGpu() const;
+  Vector<Type>* CopyToGpu(Type *const gpu_ptr_arr,
+                          Vector<Type> *const gpu_ptr) const;
+  Vector<Type>* CopyToGpu() const;
   Type* CopyContentToGpu() const;
   #endif
 
@@ -45,24 +51,24 @@ namespace {
 template <typename Type>
 __global__
 void ConstructOnGpu(Type *const arr, const int size,
-                    Array<Type> *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::Array<Type>(arr, size);
+                    Vector<Type> *const gpu_ptr) {
+  new(gpu_ptr) vecgeom::Vector<Type>(arr, size);
 }
 
 } // End anonymous namespace
 
 template <typename Type>
-Array<Type>* Container<Type>::CopyToGpu(Type *const gpu_ptr_arr,
-                                        Array<Type> *const gpu_ptr) const {
+Vector<Type>* Container<Type>::CopyToGpu(Type *const gpu_ptr_arr,
+                                         Vector<Type> *const gpu_ptr) const {
   ConstructOnGpu<<<1, 1>>>(gpu_ptr_arr, this->size(), gpu_ptr);
   CudaAssertError();
   return gpu_ptr;
 }
 
 template <typename Type>
-Array<Type>* Container<Type>::CopyToGpu() const {
+Vector<Type>* Container<Type>::CopyToGpu() const {
   Type *arr_gpu = CopyContentToGpu();
-  Array<Type> *const gpu_ptr = AllocateOnGpu<Array<Type> >();
+  Vector<Type> *const gpu_ptr = AllocateOnGpu<Vector<Type> >();
   return CopyToGpu(arr_gpu, gpu_ptr);
 }
 

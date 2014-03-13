@@ -233,7 +233,7 @@ public:
 			return ((tmpx * tmp2x) + (tmpy * tmp2y))[0];
 		}
 		else {
-			base_t result = Vc::Zero;
+		        base_t result(Vc::Zero);
 			base_t tmp1 = this->internalVcmemory.vector(0);
 			base_t tmp2 = rhs.internalVcmemory.vector(0);
 
@@ -255,7 +255,7 @@ public:
 			return (tmpx * tmpx + tmpy * tmpy)[0];
 		}
 		else {
-			base_t result = Vc::Zero;
+		        base_t result(Vc::Zero);
 			base_t tmp = this->internalVcmemory.vector(0);
 			tmp = tmp*tmp;
 			result(maskFirstTwoOn) = tmp;

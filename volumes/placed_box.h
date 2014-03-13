@@ -2,7 +2,7 @@
 #define VECGEOM_VOLUMES_PLACEDBOX_H_
 
 #include "base/global.h"
-#include "backend/scalar_backend.h"
+#include "backend.h"
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
 #include "volumes/kernel/box_kernel.h"
@@ -16,7 +16,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   PlacedBox(LogicalVolume const *const logical_volume,
             TransformationMatrix const *const matrix)
-      : VPlacedVolume(logical_volume, matrix) {}
+      : VPlacedVolume(logical_volume, matrix, this) {}
 
   virtual ~PlacedBox() {}
 
@@ -40,37 +40,7 @@ public:
   VECGEOM_INLINE
   Precision z() const { return AsUnplacedBox()->z(); }
 
-  // Navigation methods
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToIn(Vector3D<Precision> const &position,
-                                 Vector3D<Precision> const &direction,
-                                 const Precision step_max) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToOut(Vector3D<Precision> const &position,
-                                  Vector3D<Precision> const &direction) const;
-
 protected:
-
-  // Templates to interact with common kernel
-
-  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Impl<it>::bool_v InsideTemplate(
-      Vector3D<typename Impl<it>::precision_v> const &point) const;
-
-  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Impl<it>::precision_v DistanceToInTemplate(
-      Vector3D<typename Impl<it>::precision_v> const &position,
-      Vector3D<typename Impl<it>::precision_v> const &direction,
-      const typename Impl<it>::precision_v step_max) const;
 
   /**
    * Retrieves the unplaced volume pointer from the logical volume and casts it
@@ -81,6 +51,38 @@ protected:
   UnplacedBox const* AsUnplacedBox() const;
 
 public:
+
+  // Navigation methods
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual bool Inside(Vector3D<Precision> const &point) const;
+
+  virtual void Inside(SOA3D<Precision> const &points,
+                      bool *const output) const;
+
+  virtual void Inside(AOS3D<Precision> const &points,
+                      bool *const output) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &position,
+                                 Vector3D<Precision> const &direction,
+                                 const Precision step_max) const;
+
+  virtual void DistanceToIn(SOA3D<Precision> const &position,
+                            SOA3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const;
+
+  virtual void DistanceToIn(AOS3D<Precision> const &position,
+                            AOS3D<Precision> const &direction,
+                            Precision const *const step_max,
+                            Precision *const output) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision DistanceToOut(Vector3D<Precision> const &position,
+                                  Vector3D<Precision> const &direction) const;
 
   // CUDA specific
 
@@ -97,17 +99,34 @@ public:
 
   // Comparison specific
 
-  #ifdef VECGEOM_COMPARISON
+  #ifdef VECGEOM_BENCHMARK
+  virtual VPlacedVolume const* ConvertToUnspecialized() const;
   virtual TGeoShape const* ConvertToRoot() const;
   virtual ::VUSolid const* ConvertToUSolids() const;
   #endif
+
+  // Templates to interact with common kernel
+
+  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Impl<it>::bool_v InsideDispatch(
+      Vector3D<typename Impl<it>::precision_v> const &point) const;
+
+  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Impl<it>::precision_v DistanceToInDispatch(
+      Vector3D<typename Impl<it>::precision_v> const &position,
+      Vector3D<typename Impl<it>::precision_v> const &direction,
+      const typename Impl<it>::precision_v step_max) const;
 
 };
 
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Impl<it>::bool_v PlacedBox::InsideTemplate(
+typename Impl<it>::bool_v PlacedBox::InsideDispatch(
     Vector3D<typename Impl<it>::precision_v> const &point) const {
 
   typename Impl<it>::bool_v output;
@@ -125,7 +144,7 @@ typename Impl<it>::bool_v PlacedBox::InsideTemplate(
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Impl<it>::precision_v PlacedBox::DistanceToInTemplate(
+typename Impl<it>::precision_v PlacedBox::DistanceToInDispatch(
     Vector3D<typename Impl<it>::precision_v> const &position,
     Vector3D<typename Impl<it>::precision_v> const &direction,
     const typename Impl<it>::precision_v step_max) const {
@@ -148,6 +167,42 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 UnplacedBox const* PlacedBox::AsUnplacedBox() const {
   return static_cast<UnplacedBox const*>(this->unplaced_volume());
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
+  return PlacedBox::template InsideDispatch<1, 0, kScalar>(point);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
+                                  Vector3D<Precision> const &direction,
+                                  const Precision step_max) const {
+  return PlacedBox::template DistanceToInDispatch<1, 0, kScalar>(position,
+                                                                 direction,
+                                                                 step_max);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
+                                   Vector3D<Precision> const &direction) const {
+
+  Vector3D<Precision> const &dim = AsUnplacedBox()->dimensions();
+
+  const Vector3D<Precision> safety_plus  = dim + position;
+  const Vector3D<Precision> safety_minus = dim - position;
+
+  Vector3D<Precision> distance = safety_minus;
+  const Vector3D<bool> direction_plus = direction < 0.0;
+  distance.MaskedAssign(direction_plus, safety_plus);
+
+  distance /= direction;
+
+  const Precision min = distance.Min();
+  return (min < 0) ? 0 : min;
 }
 
 } // End namespace vecgeom

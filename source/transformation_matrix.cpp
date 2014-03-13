@@ -1,9 +1,11 @@
+#include "backend.h"
 #include "base/transformation_matrix.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
+#include "base/specialized_matrix.h"
 
 namespace vecgeom {
+
+const TransformationMatrix TransformationMatrix::kIdentity =
+    SpecializedMatrix<translation::kOrigin, rotation::kIdentity>();
 
 TransformationMatrix::TransformationMatrix() {
   SetTranslation(0, 0, 0);
@@ -23,6 +25,15 @@ TransformationMatrix::TransformationMatrix(
     const Precision theta, const Precision psi) {
   SetTranslation(tx, ty, tz);
   SetRotation(phi, theta, psi);
+}
+
+TransformationMatrix::TransformationMatrix(
+    const Precision tx, const Precision ty, const Precision tz,
+    const Precision r0, const Precision r1, const Precision r2,
+    const Precision r3, const Precision r4, const Precision r5,
+    const Precision r6, const Precision r7, const Precision r8) {
+  SetTranslation(tx, ty, tz);
+  SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
 }
 
 VECGEOM_CUDA_HEADER_BOTH

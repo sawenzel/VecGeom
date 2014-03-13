@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <climits>
+#include "backend.h"
 #include "base/array.h"
+#include "base/transformation_matrix.h"
 #include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
-#ifdef VECGEOM_CUDA
-#include "backend/cuda_backend.cuh"
-#endif
 
 namespace vecgeom {
 
@@ -15,16 +14,22 @@ LogicalVolume::~LogicalVolume() {
        i != daughters().end(); ++i) {
     delete *i;
   }
-  delete static_cast<Vector<VPlacedVolume const*> *>(daughters_);
+  delete daughters_;
+}
+
+VPlacedVolume* LogicalVolume::Place(
+    TransformationMatrix const *const matrix) const {
+  return unplaced_volume()->PlaceVolume(this, matrix);
+}
+
+VPlacedVolume* LogicalVolume::Place() const {
+  return Place(&TransformationMatrix::kIdentity);
 }
 
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
-  VPlacedVolume *placed =
-      volume->unplaced_volume()->PlaceVolume(volume, matrix);
-  static_cast<Vector<VPlacedVolume const*> *>(
-    daughters_
-  )->push_back(placed);
+  VPlacedVolume const *const placed = volume->Place(matrix);
+  daughters_->push_back(placed);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -53,7 +58,7 @@ namespace {
 
 __global__
 void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
-                    Container<Daughter> *const daughters,
+                    Vector<Daughter> *const daughters,
                     LogicalVolume *const output) {
   new(output) LogicalVolume(unplaced_volume, daughters);
 }
@@ -62,7 +67,7 @@ void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
 
 LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,
-    Container<Daughter> *const daughters,
+    Vector<Daughter> *const daughters,
     LogicalVolume *const gpu_ptr) const {
 
   ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
@@ -73,7 +78,7 @@ LogicalVolume* LogicalVolume::CopyToGpu(
 
 LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,
-    Container<Daughter> *const daughters) const {
+    Vector<Daughter> *const daughters) const {
 
   LogicalVolume *const gpu_ptr = AllocateOnGpu<LogicalVolume>();
   return CopyToGpu(unplaced_volume, daughters, gpu_ptr);

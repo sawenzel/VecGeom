@@ -3,6 +3,8 @@
 
 #include <set>
 #include <map>
+#include "base/global.h"
+#include "base/vector.h"
 #include "volumes/box.h"
 
 namespace vecgeom {
@@ -19,7 +21,7 @@ private:
   std::set<LogicalVolume const*> logical_volumes;
   std::set<VPlacedVolume const*> placed_volumes;
   std::set<TransformationMatrix const*> matrices;
-  std::set<Container<Daughter> *> daughters;
+  std::set<Vector<Daughter> *> daughters;
 
   typedef void const* CpuAddress;
   typedef void* GpuAddress;
@@ -124,10 +126,10 @@ private:
   TransformationMatrix* LookupMatrix(
       TransformationMatrix const *const host_ptr);
 
-  Array<Daughter>* LookupDaughters(Container<Daughter> *const host_ptr);
+  Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);
 
   Daughter* LookupDaughterArray(
-      Container<Daughter> *const host_ptr);
+      Vector<Daughter> *const host_ptr);
 
 };
 

@@ -1,4 +1,4 @@
-#include "backend/vc_backend.h"
+#include "backend/vc/backend.h"
 
 namespace vecgeom {
 

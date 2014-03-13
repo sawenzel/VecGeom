@@ -22,8 +22,10 @@
 #include "../SimpleVecNavigator.h"
 
 // in order to compare to USolids
-#include "VUSolid.hh"
-#include "UTubs.hh"
+//#include "VUSolid.hh"
+//#include "UTubs.hh"
+
+#include "Tests/SimpleDetector.hh"
 
 static void cmpresults(double * a1, double * a2, int np,
 		PhysicalVolume const * vol, std::vector<Vector3D> const & points, std::vector<Vector3D> const & dirs)
@@ -49,12 +51,12 @@ int main(int argc, char** argv)
 	Vectors3DSOA points, dirs, intermediatepoints, intermediatedirs;
 	StructOfCoord rpoints, rintermediatepoints, rdirs, rintermediatedirs;
 
-	// int np=1024;
-	// int NREPS = 1000;
-	int np    = atoi(argv[1]);
-	int NREPS = atoi(argv[2]);
-	std::cout<<"# points used: NP="<< np
-	    <<" / # repetitions: NREPS="<< NREPS << std::endl;
+	int np=1024;
+	int NREPS = 1000;
+	// int np    = atoi(argv[1]);
+	// int NREPS = atoi(argv[2]);
+	// std::cout<<"# points used: NP="<< np
+	//     <<" / # repetitions: NREPS="<< NREPS << std::endl;
 
 	points.alloc(np);
 	dirs.alloc(np);
@@ -79,40 +81,9 @@ int main(int argc, char** argv)
 
 	StopWatch timer;
 
-    // generate benchmark cases
-	TransformationMatrix const * identity = new TransformationMatrix(0,0,0,0,0,0);
-
-	// the world volume is a tube
-	double worldrmax = 100.;
-	double worldrmin = 0.;
-	double worldz = 200.;
-	PhysicalVolume * world = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmin, worldrmax, worldz, 0, 2.*M_PI), identity );
-	PhysicalVolume * beampipe = GeoManager::MakePlacedTube( new TubeParameters<>(worldrmax/40., worldrmax/20., worldz), identity );
-	world->AddDaughter( beampipe );
-
-	BoxParameters * plateparams = new BoxParameters(30,5.,2.*worldz/3.);
-	PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(50, 0, 0, 35, 0, 10) );
-	PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(-50, 0, 0, 35, 0, 10) );
-	PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, 50, 0, -35, 0, 10) );
-	PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, new TransformationMatrix(0, -50, 0, -35, 0, 10) );
-	//PhysicalVolume * plate1 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(50, 0, 0, 35, 0, 10) );
-	//PhysicalVolume * plate2 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(-50, 0, 0, 35, 0, 10) );
-	//PhysicalVolume * plate3 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, 50, 0, -35, 0, 10) );
-	//PhysicalVolume * plate4 = GeoManager::MakePlacedBox( plateparams, TransformationMatrix::createSpecializedMatrix(0, -50, 0, -35, 0, 10) );
-	world->AddDaughter( plate1 );
-	world->AddDaughter( plate2 );
-	world->AddDaughter( plate3 );
-	world->AddDaughter( plate4 );
-
-	PhysicalVolume * shield = GeoManager::MakePlacedTube( new TubeParameters<>(9*worldrmax/11, 9*worldrmax/10, 8*worldz/10), identity );
-	world->AddDaughter( shield );
-
-	ConeParameters<double> * endcapparams = new ConeParameters<double>( worldrmax/20., worldrmax,
-					worldrmax/20., worldrmax/10., worldz/10., 0, 2.*M_PI );
-	PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,-9.*worldz/10., 0, 0, 0) );
-	PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,9*worldz/10, 0, 180, 0) );
-	world->AddDaughter( endcap1 );
-	world->AddDaughter( endcap2 );
+	// construct geometry
+	SimpleDetector simpleDetector;
+	PhysicalVolume const* world = simpleDetector.getPhysicalVolume();
 
 	//********  Testing starts here  ***************
 
@@ -169,7 +140,7 @@ int main(int argc, char** argv)
 
 	std::cerr << t1 <<" <-- Time for vecnac.DistToNextBoundayUsingUnplacedVolumes"<< std::endl;
 
-	double d1;
+	double d1=0.;
 	for(auto k=0;k<np;k++)
 	{
 		d1+=distances[k];
@@ -185,9 +156,12 @@ int main(int argc, char** argv)
 	}
 	timer.Stop();
 	double t3 = timer.getDeltaSecs();
-
 	std::cerr << t3 <<" <-- Time for vecnav.DistToNextBoundaryUsingROOT"<< std::endl;
-	double d3;
+
+	std::cerr <<"Ratio of times Unpl/Vect: "<< t1/t0 << std::endl;
+	std::cerr <<"Ratio of times ROOT/Vect: "<< t3/t0 << std::endl;
+
+	double d3=0;
 	for(auto k=0;k<np;k++)
 	{
  	    d3+=distances[k];
@@ -197,7 +171,7 @@ int main(int argc, char** argv)
 
 	bool first=true;
 	for(auto k=0;k<np;++k) {
-	  if( fabs(distances2[3*k+2]-distances2[3*k]) > 0.1 ) {
+	  if( fabs(distances2[3*k+1]-distances2[3*k]) > 0.1 ) {
 	    if(first) {
 	      std::cerr<<"Comparing individual measurements: Point#  distances(Vec,VecUnplVol,ROOT)...\n";
 	      first = false;

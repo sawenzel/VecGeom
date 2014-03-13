@@ -1,7 +1,7 @@
 #include "base/vector3d.h"
 #include "base/soa3d.h"
 #include "base/specialized_matrix.h"
-#include "backend/cilk_backend.h"
+#include "backend/cilk/backend.h"
 #include "volumes/kernel/box_kernel.h"
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"

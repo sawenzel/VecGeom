@@ -2,69 +2,38 @@
 #define VECGEOM_BASE_SOA3D_H_
 
 #include "base/global.h"
+#include "backend.h"
+#include "base/track_container.h"
 
 namespace vecgeom {
 
 template <typename Type>
-class SOA3D {
+class SOA3D : public TrackContainer<Type> {
 
 private:
 
-  unsigned size_;
-  bool allocated_;
   Type *x_, *y_, *z_;
 
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  SOA3D(Type *const x, Type *const y, Type *const z, const unsigned size)
-      :  size_(size), allocated_(false), x_(x), y_(y), z_(z) {}
+  SOA3D(Type *const x, Type *const y, Type *const z, const unsigned size);
+
+  SOA3D();
+
+  SOA3D(const unsigned size);
 
   VECGEOM_CUDA_HEADER_BOTH
-  SOA3D() {
-    SOA3D(NULL, NULL, NULL, 0);
-  }
+  SOA3D(TrackContainer<Type> const &other);
 
-  SOA3D(const unsigned size) : size_(size), allocated_(true) {
-    x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size_, kAlignmentBoundary));
-    y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size_, kAlignmentBoundary));
-    z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size_, kAlignmentBoundary));
-  }
-
-  ~SOA3D() {
-    Deallocate();
-  }
-
-  void Deallocate() {
-    if (allocated_) {
-      _mm_free(x_);
-      _mm_free(y_);
-      _mm_free(z_);
-    }
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  SOA3D(SOA3D const &other) {
-    SOA3D(other.size);
-    const unsigned count = other.size;
-    for (int i = 0; i < count; ++i) {
-      x_[i] = other.z_[i];
-      y_[i] = other.y_[i];
-      z_[i] = other.z_[i];
-    }
-    size = count;
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  unsigned size() const { return size_; }
+  ~SOA3D();
 
   /**
    * Constructs a vector across all three coordinates from the given index. 
    */ 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> operator[](const int index) const {
+  virtual Vector3D<Type> operator[](const int index) const {
     return Vector3D<Type>(x_[index], y_[index], z_[index]);
   }
 
@@ -73,43 +42,35 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& x(const int index) { return x_[index]; }
+  virtual Type& x(const int index) { return x_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& x(const int index) const { return x_[index]; }
+  virtual Type const& x(const int index) const { return x_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& y(const int index) { return y_[index]; }
+  virtual Type& y(const int index) { return y_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& y(const int index) const { return y_[index]; }
+  virtual Type const& y(const int index) const { return y_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& z(const int index) { return z_[index]; }
+  virtual Type& z(const int index) { return z_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& z(const int index) const { return z_[index]; }
+  virtual Type const& z(const int index) const { return z_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Set(const int index, const Type x, const Type y, const Type z) {
-    x_[index] = x;
-    y_[index] = y;
-    z_[index] = z;
-  }
+  virtual void Set(const int index, const Type x, const Type y, const Type z);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Set(const int index, Vector3D<Type> const &vec) {
-    x_[index] = vec[0];
-    y_[index] = vec[1];
-    z_[index] = vec[2];
-  }
+  virtual void Set(const int index, Vector3D<Type> const &vec);
 
 
   #ifdef VECGEOM_CUDA
@@ -119,33 +80,102 @@ public:
    * returns a new SOA object that points to GPU memory.
    */
   VECGEOM_CUDA_HEADER_HOST
-  SOA3D<Type> CopyToGpu() const {
-    const int count = size;
-    const int mem_size = count*sizeof(Type);
-    Type *x, *y, *z;
-    cudaMalloc(static_cast<void**>(&x), mem_size);
-    cudaMalloc(static_cast<void**>(&y), mem_size);
-    cudaMalloc(static_cast<void**>(&z), mem_size);
-    cudaMemcpy(x, x_, mem_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(y, y_, mem_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(z, z_, mem_size, cudaMemcpyHostToDevice);
-    return SOA3D<Type>(x, y, z, count);
-  }
+  SOA3D<Type> CopyToGpu() const;
 
   /**
    * Only works for SOA pointing to the GPU.
    */
   VECGEOM_CUDA_HEADER_HOST
-  void FreeFromGpu() {
-    cudaFree(x_);
-    cudaFree(y_);
-    cudaFree(z_);
-    CudaAssertError();
-  }
+  void FreeFromGpu();
 
-  #endif // VECGEOM_NVCC
+  #endif // VECGEOM_CUDA
 
 };
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+SOA3D<Type>::SOA3D(Type *const x, Type *const y, Type *const z,
+                   const unsigned size)
+    : TrackContainer<Type>(size, true), x_(x), y_(y), z_(z) {
+  TrackContainer<Type>(size, false);
+}
+
+template <typename Type>
+SOA3D<Type>::SOA3D() {
+  SOA3D(NULL, NULL, NULL, 0);
+}
+
+template <typename Type>
+SOA3D<Type>::SOA3D(const unsigned size) : TrackContainer<Type>(size, true) {
+  x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+  y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+  z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+SOA3D<Type>::SOA3D(TrackContainer<Type> const &other) {
+  SOA3D(other.size());
+  const unsigned count = other.size();
+  for (int i = 0; i < count; ++i) Set(i, other[i]);
+}
+
+template <typename Type>
+SOA3D<Type>::~SOA3D() {
+  if (this->allocated_) {
+    _mm_free(x_);
+    _mm_free(y_);
+    _mm_free(z_);
+  }
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void SOA3D<Type>::Set(const int index, const Type x, const Type y,
+                      const Type z) {
+  x_[index] = x;
+  y_[index] = y;
+  z_[index] = z;
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void SOA3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
+  x_[index] = vec[0];
+  y_[index] = vec[1];
+  z_[index] = vec[2];
+}
+
+#ifdef VECGEOM_CUDA
+
+template <typename Type>
+SOA3D<Type> SOA3D<Type>::CopyToGpu() const {
+  const int count = this->size();
+  const int mem_size = count*sizeof(Type);
+  Type *x, *y, *z;
+  cudaMalloc(static_cast<void**>(&x), mem_size);
+  cudaMalloc(static_cast<void**>(&y), mem_size);
+  cudaMalloc(static_cast<void**>(&z), mem_size);
+  cudaMemcpy(x, x_, mem_size, cudaMemcpyHostToDevice);
+  cudaMemcpy(y, y_, mem_size, cudaMemcpyHostToDevice);
+  cudaMemcpy(z, z_, mem_size, cudaMemcpyHostToDevice);
+  return SOA3D<Type>(x, y, z, count);
+}
+
+/**
+ * Only works for SOA pointing to the GPU.
+ */
+template <typename Type>
+void SOA3D<Type>::FreeFromGpu() {
+  cudaFree(x_);
+  cudaFree(y_);
+  cudaFree(z_);
+  CudaAssertError();
+}
+
+#endif // VECGEOM_CUDA
 
 } // End namespace vecgeom
 

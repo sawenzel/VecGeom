@@ -1,10 +1,8 @@
-#include "management/cuda_manager.h"
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
+#include "benchmarking/distance_to_in.h"
 
 using namespace vecgeom;
-
-void CudaCopy(LogicalVolume const *const world);
 
 int main() {
 
@@ -36,30 +34,9 @@ int main() {
   world.PlaceDaughter(&largebox, &placement7);
   world.PlaceDaughter(&largebox, &placement8);
 
-  std::cerr << "Printing world content:\n";
-  world.PrintContent();
-
-  #ifdef VECGEOM_CUDA
-  CudaCopy(&world);
-  #endif
+  DistanceToIn tester(&world);
+  tester.set_verbose(2);
+  tester.BenchmarkAll();
 
   return 0;
 }
-
-#ifdef VECGEOM_CUDA
-__global__
-void CudaContent(LogicalVolume const *world) {
-  printf("Inside CUDA kernel.\n");
-  world->PrintContent();
-}
-
-void CudaCopy(LogicalVolume const *const world) {
-  CudaManager::Instance().set_verbose(3);
-  CudaManager::Instance().LoadGeometry(world);
-  CudaManager::Instance().Synchronize();
-  LogicalVolume const *const world_gpu = CudaManager::Instance().world_gpu();
-  CudaContent<<<1, 1>>>(world_gpu);
-  cudaDeviceSynchronize(); // Necessary to print output
-  CudaAssertError();
-}
-#endif

@@ -31,7 +31,7 @@ public:
    * Constructs the deriving class on the GPU and returns a pointer to GPU
    * memory where the object has been instantiated.
    */
-  #ifdef VECGEOM_NVCC
+  #ifdef VECGEOM_CUDA
   virtual VUnplacedVolume* CopyToGpu() const =0;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const =0;
   #endif
@@ -42,6 +42,8 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const =0;
 
+  // Is not static because a virtual function must be called to initialize
+  // specialized volume as the shape of the deriving class.
   VPlacedVolume* PlaceVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix) const;

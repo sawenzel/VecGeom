@@ -21,6 +21,9 @@ template <typename Type>
 class SOA3D;
 
 template <typename Type>
+class AOS3D;
+
+template <typename Type>
 class Container;
 
 template <typename Type>
@@ -37,6 +40,10 @@ typedef VPlacedVolume VUSolid;
 
 class VUnplacedVolume;
 
+class UnplacedBox;
+
+class PlacedBox;
+
 class TransformationMatrix;
 
 class GeoManager;
@@ -47,9 +54,17 @@ class CudaManager;
 
 } // End namespace vecgeom
 
-#ifdef VECGEOM_COMPARISON
+#ifdef VECGEOM_ROOT
 class TGeoShape;
+class TGeoBBox;
+class TGeoNode;
+class TGeoMatrix;
+class TGeoVolume;
+#endif
+
+#ifdef VECGEOM_USOLIDS
 class VUSolid;
+class UBox;
 #endif
 
 #endif // VECGEOM_BASE_TYPES_H_

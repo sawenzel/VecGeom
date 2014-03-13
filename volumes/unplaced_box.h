@@ -28,7 +28,7 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  #ifdef VECGEOM_NVCC
+  #ifdef VECGEOM_CUDA
   virtual VUnplacedVolume* CopyToGpu() const;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
   #endif

@@ -16,7 +16,7 @@ class LogicalVolume {
 private:
 
   VUnplacedVolume const *unplaced_volume_;
-  Container<Daughter> *daughters_;
+  Vector<Daughter> *daughters_;
 
   friend class CudaManager;
 
@@ -29,7 +29,7 @@ public:
 
   VECGEOM_CUDA_HEADER_DEVICE
   LogicalVolume(VUnplacedVolume const *const unplaced_volume,
-                Container<Daughter> *daughters)
+                Vector<Daughter> *daughters)
       : unplaced_volume_(unplaced_volume), daughters_(daughters) {}
 
   ~LogicalVolume();
@@ -40,7 +40,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Container<Daughter> const& daughters() const { return *daughters_; }
+  Vector<Daughter> const& daughters() const { return *daughters_; }
+
+  VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
+
+  VPlacedVolume* Place() const;
 
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
@@ -58,9 +62,9 @@ public:
 
   #ifdef VECGEOM_CUDA
   LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
-                           Container<Daughter> *daughters) const;
+                           Vector<Daughter> *daughters) const;
   LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
-                           Container<Daughter> *daughters,
+                           Vector<Daughter> *daughters,
                            LogicalVolume *const gpu_ptr) const;
   #endif
 
