@@ -23,7 +23,9 @@ void VPlacedVolume::InsideBackend(VolumeType const &volume,
                                 VcPrecision(&points.y(i)),
                                 VcPrecision(&points.z(i)))
         );
-    result.store(&output[i]);
+    for (int j = 0; j < kVectorSize; ++j) {
+      output[j] = result[j];
+    }
   }
 }
 
