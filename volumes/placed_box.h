@@ -49,6 +49,11 @@ protected:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedBox const* AsUnplacedBox() const;
+    virtual bool Inside(Vector3D<Precision> const &point) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+    virtual bool Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const;
+
 
 public:
 

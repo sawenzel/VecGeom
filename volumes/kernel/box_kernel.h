@@ -7,6 +7,18 @@
 
 namespace vecgeom {
 
+/** the core inside function with matrix stripped; it expects a local point ) **/
+template<ImplType it>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void BoxUnplacedInside( Vector3D<Precision> const & dimensions,
+						Vector3D<typename Impl<it>::precision_v> const &point,
+						typename Impl<it>::bool_v *const inside )
+{
+
+
+}
+
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
@@ -57,8 +69,8 @@ void BoxDistanceToIn(
   Bool done(false);
   *distance = kInfinity;
 
-  matrix.Transform<trans_code, rot_code>(pos, &pos_local);
-  matrix.TransformRotation<rot_code>(dir, &dir_local);
+  matrix.Transform<trans_code, rot_code>(pos, pos_local);
+  matrix.TransformRotation<rot_code>(dir, dir_local);
 
   safety[0] = Abs(pos_local[0]) - dimensions[0];
   safety[1] = Abs(pos_local[1]) - dimensions[1];

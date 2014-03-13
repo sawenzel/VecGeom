@@ -9,6 +9,7 @@
 
 namespace vecgeom {
 
+
 void PlacedBox::Inside(SOA3D<Precision> const &points,
                        bool *const output) const {
   InsideBackend<1, 0>(*this, points, output);
@@ -17,6 +18,19 @@ void PlacedBox::Inside(SOA3D<Precision> const &points,
 void PlacedBox::Inside(AOS3D<Precision> const &points,
                        bool *const output) const {
   InsideBackend<1, 0>(*this, points, output);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
+  return PlacedBox::InsideTemplate<1, 0, kScalar>(point);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
+                                  Vector3D<Precision> const &direction,
+                                  const Precision step_max) const {
+  return PlacedBox::DistanceToInTemplate<1, 0, kScalar>(position, direction,
+                                                                  step_max);
 }
 
 void PlacedBox::DistanceToIn(SOA3D<Precision> const &positions,
