@@ -42,6 +42,8 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const =0;
 
+  // Is not static because a virtual function must be called to initialize
+  // specialized volume as the shape of the deriving class.
   VPlacedVolume* PlaceVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix) const;

@@ -5,7 +5,20 @@ project(vecgeom)
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
-option(BENCHMARK "Include ROOT and USolids to enable performance comparisons." OFF)
+option(ROOT "Include ROOT." OFF)
+
+option(USOLIDS "Include USolids." OFF)
+
+option(BENCHMARK "Enable performance comparisons, requiring ROOT and USolids." OFF)
+
+if (BENCHMARK)
+  set(ROOT ON)
+  set(USolids ON)
+endif()
+
+if (USOLIDS)
+  set(USolids ON)
+endif()
 
 if (NOT BACKEND)
   set(BACKEND "Vc")
@@ -146,13 +159,19 @@ if (CUDA)
 
 endif()
 
-if (BENCHMARK)
+if (ROOT)
   
   include(FindROOT.cmake)
 
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
+  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/root_manager.cpp)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
+
+endif()
+
+if (USolids)
 
   if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
     message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build benchmarking module.")
@@ -170,6 +189,7 @@ if (BENCHMARK)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
   set(LIBS ${LIBS} ${USOLIDS_LIBRARY})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
 
 endif()
 
@@ -179,11 +199,19 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-file(GLOB SRC_CPP source/*.cpp)
+set(SRC_CPP ${SRC_CPP}
+  ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp
+  ${CMAKE_SOURCE_DIR}/source/placed_box.cpp
+  ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp
+  ${CMAKE_SOURCE_DIR}/source/scalar_backend.cpp
+  ${CMAKE_SOURCE_DIR}/source/transformation_matrix.cpp
+  ${CMAKE_SOURCE_DIR}/source/unplaced_box.cpp
+  ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
+)
 set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
 if (BENCHMARK)
-  file(GLOB SRC_BENCHMARK "source/benchmarking/*.cpp")
+  file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
   set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
 endif()
 

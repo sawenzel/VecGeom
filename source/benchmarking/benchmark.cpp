@@ -95,7 +95,7 @@ void Benchmark::FillBiasedDirections(VPlacedVolume const &volume,
     }
   }
 
-  // Add hits until threshold
+  // Remove hits until threshold
   while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) >= bias) {
     h = static_cast<int>(
           static_cast<Precision>(size) * RNG::Instance().uniform()

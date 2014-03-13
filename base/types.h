@@ -40,6 +40,10 @@ typedef VPlacedVolume VUSolid;
 
 class VUnplacedVolume;
 
+class UnplacedBox;
+
+class PlacedBox;
+
 class TransformationMatrix;
 
 class GeoManager;
@@ -50,9 +54,17 @@ class CudaManager;
 
 } // End namespace vecgeom
 
-#ifdef VECGEOM_BENCHMARK
+#ifdef VECGEOM_ROOT
 class TGeoShape;
+class TGeoBBox;
+class TGeoNode;
+class TGeoMatrix;
+class TGeoVolume;
+#endif
+
+#ifdef VECGEOM_USOLIDS
 class VUSolid;
+class UBox;
 #endif
 
 #endif // VECGEOM_BASE_TYPES_H_

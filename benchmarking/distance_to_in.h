@@ -7,7 +7,7 @@
 
 #include "base/soa3d.h"
 #include "benchmarking/benchmark.h"
-#include "benchmarking/volume_converter.h"
+#include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 
 namespace vecgeom {
@@ -16,7 +16,7 @@ class DistanceToIn : public Benchmark {
 
 private:
 
-  std::vector<VolumeConverter> volumes_;
+  std::vector<VolumePointers> volumes_;
   unsigned n_points_ = 1<<13;
   double bias_ = 0.8;
   unsigned pool_multiplier_ = 1;

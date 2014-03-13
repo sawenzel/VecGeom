@@ -1,9 +1,7 @@
 #ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
 #define VECGEOM_MANAGEMENT_GEOMANAGER_H_
 
-#include <iostream>
-#include <list>
-#include "base/types.h"
+#include "base/global.h"
 
 namespace vecgeom {
 
@@ -13,11 +11,6 @@ namespace vecgeom {
  */
 class GeoManager {
 
-protected:
-
-  int counter;
-  std::list<VPlacedVolume const*> volumes_;
-
 public:
 
   static GeoManager& Instance() {
@@ -25,33 +18,12 @@ public:
     return instance;
   }
 
-  std::list<VPlacedVolume const*> const& volumes() {
-    return volumes_;
-  }
-
 private:
 
-  GeoManager() {
-    counter = 0;
-  }
+  GeoManager() {}
 
   GeoManager(GeoManager const&);
   GeoManager& operator=(GeoManager const&);
-
-  int RegisterVolume(VPlacedVolume const *const volume) {
-    volumes_.push_back(volume);
-    return counter++;
-  }
-
-  /**
-   * Deregistering will not change the counter, as gaps in the id don't have any
-   * practical consequence.
-   */
-  void DeregisterVolume(VPlacedVolume const *const volume) {
-    volumes_.remove(volume);
-  }
-
-  friend class VPlacedVolume;
 
 };
 

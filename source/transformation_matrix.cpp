@@ -27,6 +27,15 @@ TransformationMatrix::TransformationMatrix(
   SetRotation(phi, theta, psi);
 }
 
+TransformationMatrix::TransformationMatrix(
+    const Precision tx, const Precision ty, const Precision tz,
+    const Precision r0, const Precision r1, const Precision r2,
+    const Precision r3, const Precision r4, const Precision r5,
+    const Precision r6, const Precision r7, const Precision r8) {
+  SetTranslation(tx, ty, tz);
+  SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+}
+
 VECGEOM_CUDA_HEADER_BOTH
 TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
   SetTranslation(other.Translation(0), other.Translation(1),

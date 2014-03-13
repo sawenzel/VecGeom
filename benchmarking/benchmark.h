@@ -7,6 +7,7 @@
 
 #include "base/global.h"
 
+#include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 
 namespace vecgeom {
@@ -87,8 +88,6 @@ public:
                                     TrackContainer<Precision> *const points);
 
 };
-
-enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot};
 
 struct BenchmarkResult {
 public:

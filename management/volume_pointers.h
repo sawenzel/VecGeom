@@ -1,14 +1,16 @@
-#ifndef VECGEOM_BENCHMARKING_VOLUMECONVERTER_H_
-#define VECGEOM_BENCHMARKING_VOLUMECONVERTER_H_
+#ifndef VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
+#define VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 
 #include "base/global.h"
 
-class TGeoShape;
+class TGeoNode;
 class VUSolid;
 
 namespace vecgeom {
 
-class VolumeConverter {
+enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot};
+
+class VolumePointers {
 
 private:
 
@@ -16,16 +18,17 @@ private:
   VPlacedVolume const *unspecialized_;
   TGeoShape const *root_;
   ::VUSolid const *usolids_;
+  BenchmarkType initial_;
 
 public:
 
-  VolumeConverter(VPlacedVolume const *const volume);
+  VolumePointers(VPlacedVolume const *const volume);
 
-  VolumeConverter(VolumeConverter const &other);
+  VolumePointers(VolumePointers const &other);
 
-  ~VolumeConverter();
+  ~VolumePointers();
 
-  VolumeConverter& operator=(VolumeConverter const &other);
+  VolumePointers& operator=(VolumePointers const &other);
 
   VPlacedVolume const* specialized() const { return specialized_; }
 
@@ -45,4 +48,4 @@ private:
 
 } // End namespace vecgeom
 
-#endif // VECGEOM_BENCHMARKING_VOLUMECONVERTER_H_
+#endif // VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_

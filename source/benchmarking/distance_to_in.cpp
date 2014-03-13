@@ -155,7 +155,7 @@ BenchmarkResult DistanceToIn::RunSpecialized(Precision *const distances) const {
   timer.Start();
   for (unsigned r = 0; r < repetitions(); ++r) {
     const int index = (rand() % pool_multiplier_) * n_points_;
-    for (std::vector<VolumeConverter>::const_iterator d = volumes_.begin();
+    for (std::vector<VolumePointers>::const_iterator d = volumes_.begin();
          d != volumes_.end(); ++d) {
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
@@ -176,7 +176,7 @@ BenchmarkResult DistanceToIn::RunUnspecialized(Precision *const distances) const
   timer.Start();
   for (unsigned r = 0; r < repetitions(); ++r) {
     const int index = (rand() % pool_multiplier_) * n_points_;
-    for (std::vector<VolumeConverter>::const_iterator d = volumes_.begin();
+    for (std::vector<VolumePointers>::const_iterator d = volumes_.begin();
          d != volumes_.end(); ++d) {
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
@@ -197,7 +197,7 @@ BenchmarkResult DistanceToIn::RunUSolids(Precision *const distances) const {
   timer.Start();
   for (unsigned r = 0; r < repetitions(); ++r) {
     const int index = (rand() % pool_multiplier_) * n_points_;
-    for (std::vector<VolumeConverter>::const_iterator v = volumes_.begin();
+    for (std::vector<VolumePointers>::const_iterator v = volumes_.begin();
          v != volumes_.end(); ++v) {
       TransformationMatrix const *matrix = v->unspecialized()->matrix();
       for (unsigned i = 0; i < n_points_; ++i) {
@@ -224,7 +224,7 @@ BenchmarkResult DistanceToIn::RunRoot(Precision *const distances) const {
   timer.Start();
   for (unsigned r = 0; r < repetitions(); ++r) {
     const int index = (rand() % pool_multiplier_) * n_points_;
-    for (std::vector<VolumeConverter>::const_iterator v = volumes_.begin();
+    for (std::vector<VolumePointers>::const_iterator v = volumes_.begin();
          v != volumes_.end(); ++v) {
       TransformationMatrix const *matrix = v->unspecialized()->matrix();
       for (unsigned i = 0; i < n_points_; ++i) {
