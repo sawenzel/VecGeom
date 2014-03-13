@@ -12,40 +12,59 @@ template<ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxUnplacedInside( Vector3D<Precision> const & dimensions,
-						Vector3D<typename Impl<it>::precision_v> const &point,
+						Vector3D<typename Impl<it>::precision_v> const &localpoint,
 						typename Impl<it>::bool_v *const inside )
 {
+	Vector3D<typename Impl<it>::bool_v> inside_dim(Impl<it>::kFalse);
+	  for (int i = 0; i < 3; ++i) {
+	    inside_dim[i] = Abs(localpoint[i]) < dimensions[i];
+	    if (Impl<it>::early_returns) {
+	      if (!inside_dim[i]) {
+	        *inside = Impl<it>::kFalse;
+	        return;
+	      }
+	    }
+	  }
 
-
+	  if (Impl<it>::early_returns) {
+	    *inside = Impl<it>::kTrue;
+	  } else {
+	    *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
+	  }
 }
 
+/**
+ *  a C-like function that returns if a particle is inside the box
+ *   given specified by boxdimensions and placed with matrix **/
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void BoxInside(Vector3D<Precision> const &dimensions,
+void BoxInside(Vector3D<Precision> const & boxdimensions,
                TransformationMatrix const &matrix,
                Vector3D<typename Impl<it>::precision_v> const &point,
                typename Impl<it>::bool_v *const inside) {
 
-  const Vector3D<typename Impl<it>::precision_v> local =
-      matrix.Transform<trans_code, rot_code>(point);
+ // probably better like this:
+  BoxUnplacedInside<it>( boxdimensions, matrix.Transform<trans_code, rot_code>(point), inside );
+}
 
-  Vector3D<typename Impl<it>::bool_v> inside_dim(Impl<it>::kFalse);
-  for (int i = 0; i < 3; ++i) {
-    inside_dim[i] = Abs(local[i]) < dimensions[i];
-    if (Impl<it>::early_returns) {
-      if (!inside_dim[i]) {
-        *inside = Impl<it>::kFalse;
-        return;
-      }
-    }
-  }
+/**
+ *  a C-like function that returns if a particle is inside the box
+ *   given specified by boxdimensions and placed with matrix
+ *
+ *   this function also makes the transformed local point available to the caller
+ *   **/
+template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void BoxInside(Vector3D<Precision> const & boxdimensions,
+               TransformationMatrix const &matrix,
+               Vector3D<typename Impl<it>::precision_v> const &point,
+               Vector3D<typename Impl<it>::precision_v> & localpoint,
+               typename Impl<it>::bool_v *const inside) {
 
-  if (Impl<it>::early_returns) {
-    *inside = Impl<it>::kTrue;
-  } else {
-    *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
-  }
+  localpoint = matrix.Transform<trans_code, rot_code>(point);
+  BoxUnplacedInside<it>( boxdimensions, localpoint, inside );
 }
 
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>

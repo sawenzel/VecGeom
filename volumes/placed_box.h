@@ -49,10 +49,6 @@ protected:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedBox const* AsUnplacedBox() const;
-    virtual bool Inside(Vector3D<Precision> const &point) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-    virtual bool Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const;
 
 
 public:
@@ -68,6 +64,13 @@ public:
 
   virtual void Inside(AOS3D<Precision> const &points,
                       bool *const output) const;
+
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual bool Inside(Vector3D<Precision> const &point,
+  		  Vector3D<Precision> & localpoint) const;
+
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -128,6 +131,7 @@ public:
 
 };
 
+
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -145,6 +149,8 @@ typename Impl<it>::bool_v PlacedBox::InsideDispatch(
 
   return output;
 }
+
+
 
 template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
 VECGEOM_CUDA_HEADER_BOTH
@@ -177,15 +183,31 @@ UnplacedBox const* PlacedBox::AsUnplacedBox() const {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
-  return PlacedBox::template InsideDispatch<1, 0, kScalar>(point);
+  return PlacedBox::InsideDispatch<1, 0, kScalar>(point);
 }
+
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool PlacedBox::Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const
+{
+	typename Impl<kScalar>::bool_v output;
+	BoxInside<1, 0, kScalar>(
+			AsUnplacedBox()->dimensions(),
+			*this->matrix_,
+			point,
+			localpoint,
+			&output );
+	return output;
+}
+
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
                                   Vector3D<Precision> const &direction,
                                   const Precision step_max) const {
-  return PlacedBox::template DistanceToInDispatch<1, 0, kScalar>(position,
+  return PlacedBox::DistanceToInDispatch<1, 0, kScalar>(position,
                                                                  direction,
                                                                  step_max);
 }

@@ -91,7 +91,8 @@ public:
    * this is useful for the locate function
    **/
   VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const =0;
+  virtual bool Inside(Vector3D<Precision> const &point,
+		  	  	  	  Vector3D<Precision> & localpoint) const =0;
 
 
   VECGEOM_CUDA_HEADER_BOTH
