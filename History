@@ -16,6 +16,13 @@ committal in the SVN repository !
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
 
+March 13th, 2014 - G.Cosmo
+- Fixed use of inline keyword for methods defined in .cc files in UTrd,
+  UVCSGfaceted and UVoxelizer.
+- Moved findComponentFastest() to be a method of UVoxelizer and changed
+  to FindComponentFastest().
+- Removed unused global variables in UMultiUnion.cc.
+
 March 5th, 2014 - G.Cosmo
 - Fixed handling of polyhedron pointer in G4USolid bridge class.
 
