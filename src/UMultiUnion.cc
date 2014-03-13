@@ -1022,16 +1022,6 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3& aPoint, bool /*aAcc
   return safetyNode;
 }
 
-const double unionMaxX = 1.; // putting it larger can cause particles to escape
-const double unionMaxY = 1.;
-const double unionMaxZ = 1.;
-
-const double extentBorder = 1.1;
-
-const int carBoxesX = 20;
-const int carBoxesY = 20;
-const int carBoxesZ = 20;
-
 //////////////////////////////////////////////////////
 // Stream object contents to an output stream
 
