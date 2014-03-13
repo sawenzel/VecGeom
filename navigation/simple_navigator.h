@@ -11,11 +11,11 @@
 #include "base/global.h"
 #include "volumes/placed_volume.h"
 #include "base/vector3d.h"
+#include "navigation/navigationstate.h"
+#include <iostream>
 
 namespace vecgeom
 {
-
-class NavigationState;
 
 
 class SimpleNavigator
@@ -52,25 +52,24 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
 	}
 	if( candvolume )
 	{
-		path.PushAndUpdateMatrices( candvolume );
-		LogicalVolume::DaugherContainer_t * daughters = vol->logical_volume()->daughters();
-
+		path.Push( candvolume );
+		Vector<Daughter> const * daughters = candvolume->logical_volume()->daughtersp();
 
 		bool godeeper = true;
 		while( godeeper && daughters->size() > 0)
 		{
 			godeeper = false;
-			for(int i=0; i<daughters->size();++i)
+			for(int i=0; i<daughters->size(); ++i)
 			{
-				VPlacedVolume const * nextvolume = daughters->operator [](i);
+				VPlacedVolume const * nextvolume = (*daughters)[i];
 				Vector3D<Precision> transformedpoint;
 
 				if( nextvolume->Inside( tmp, transformedpoint ) )
 				{
-					path.PushAndUpdateMatrices( nextvol );
+					path.Push( nextvolume );
 					tmp = transformedpoint;
 					candvolume =  nextvolume;
-					daughters = candvolume->logical_volume()->daughters();
+					daughters = candvolume->logical_volume()->daughtersp();
 					break;
 				}
 			}
