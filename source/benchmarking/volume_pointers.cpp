@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 

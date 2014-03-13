@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "base/aos3d.h"
 #include "base/soa3d.h"
 #include "implementation.h"

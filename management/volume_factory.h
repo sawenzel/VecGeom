@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_
 #define VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_
 

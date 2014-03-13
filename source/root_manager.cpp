@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
 #include "management/root_manager.h"

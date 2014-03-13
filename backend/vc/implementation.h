@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BACKEND_VC_IMPLEMENTATION_H_
 #define VECGEOM_BACKEND_VC_IMPLEMENTATION_H_
 

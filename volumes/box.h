@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_BOX_H_
 #define VECGEOM_VOLUMES_BOX_H_
 

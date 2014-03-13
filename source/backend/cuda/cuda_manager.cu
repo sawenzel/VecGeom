@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include <algorithm>
 #include <cassert>
 #include "backend/cuda/backend.h"

@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 
@@ -26,6 +30,10 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool Inside(Vector3D<Precision> const &point,
+                      Vector3D<Precision> &local) const;
 
   virtual void Inside(SOA3D<Precision> const &points,
                       bool *const output) const;
@@ -66,6 +74,22 @@ VECGEOM_CUDA_HEADER_BOTH
 bool SpecializedBox<trans_code, rot_code>::Inside(
     Vector3D<Precision> const &point) const {
   return InsideDispatch<trans_code, rot_code, kScalar>(point);
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+VECGEOM_CUDA_HEADER_BOTH
+bool SpecializedBox<trans_code, rot_code>::Inside(
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> &local) const {
+  bool output;
+  BoxInside<trans_code, rot_code, kScalar>(
+    AsUnplacedBox()->dimensions(),
+    *this->matrix_,
+    point,
+    local,
+    &output
+  );
+  return output;
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>

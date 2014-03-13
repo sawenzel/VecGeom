@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
 #include "benchmarking/distance_to_in.h"

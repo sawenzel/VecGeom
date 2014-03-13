@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_PLACEDBOX_H_
 #define VECGEOM_VOLUMES_PLACEDBOX_H_
 
@@ -115,32 +119,32 @@ public:
 
   // Templates to interact with common kernel
 
-  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+  template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  typename Impl<it>::bool_v InsideDispatch(
-      Vector3D<typename Impl<it>::precision_v> const &point) const;
+  typename Backend::bool_v InsideDispatch(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
-  template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+  template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  typename Impl<it>::precision_v DistanceToInDispatch(
-      Vector3D<typename Impl<it>::precision_v> const &position,
-      Vector3D<typename Impl<it>::precision_v> const &direction,
-      const typename Impl<it>::precision_v step_max) const;
+  typename Backend::precision_v DistanceToInDispatch(
+      Vector3D<typename Backend::precision_v> const &position,
+      Vector3D<typename Backend::precision_v> const &direction,
+      const typename Backend::precision_v step_max) const;
 
 };
 
 
-template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Impl<it>::bool_v PlacedBox::InsideDispatch(
-    Vector3D<typename Impl<it>::precision_v> const &point) const {
+typename Backend::bool_v PlacedBox::InsideDispatch(
+    Vector3D<typename Backend::precision_v> const &point) const {
 
-  typename Impl<it>::bool_v output;
+  typename Backend::bool_v output;
 
-  BoxInside<trans_code, rot_code, it>(
+  BoxInside<trans_code, rot_code, Backend>(
     AsUnplacedBox()->dimensions(),
     *this->matrix(),
     point,
@@ -152,17 +156,17 @@ typename Impl<it>::bool_v PlacedBox::InsideDispatch(
 
 
 
-template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Impl<it>::precision_v PlacedBox::DistanceToInDispatch(
-    Vector3D<typename Impl<it>::precision_v> const &position,
-    Vector3D<typename Impl<it>::precision_v> const &direction,
-    const typename Impl<it>::precision_v step_max) const {
+typename Backend::precision_v PlacedBox::DistanceToInDispatch(
+    Vector3D<typename Backend::precision_v> const &position,
+    Vector3D<typename Backend::precision_v> const &direction,
+    const typename Backend::precision_v step_max) const {
 
-  typename Impl<it>::precision_v output;
+  typename Backend::precision_v output;
 
-  BoxDistanceToIn<trans_code, rot_code, it>(
+  BoxDistanceToIn<trans_code, rot_code, Backend>(
     AsUnplacedBox()->dimensions(),
     *this->matrix(),
     position,
@@ -191,7 +195,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const
 {
-	typename Impl<kScalar>::bool_v output;
+	typename kScalar::bool_v output;
 	BoxInside<1, 0, kScalar>(
 			AsUnplacedBox()->dimensions(),
 			*this->matrix_,

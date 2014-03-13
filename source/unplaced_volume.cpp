@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "volumes/unplaced_volume.h"
 
 namespace vecgeom {

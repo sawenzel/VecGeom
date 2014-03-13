@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "UBox.hh"
 #include "TGeoBBox.h"
 #include "base/iterator.h"

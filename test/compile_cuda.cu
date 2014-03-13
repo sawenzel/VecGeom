@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "base/soa3d.h"
 #include "base/specialized_matrix.h"
 #include "backend/cuda_backend.cuh"

@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "management/cuda_manager.h"
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
