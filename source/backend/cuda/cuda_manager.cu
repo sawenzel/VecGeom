@@ -15,17 +15,17 @@ CudaManager::CudaManager() {
   total_volumes = 0;
 }
 
-LogicalVolume const* CudaManager::world() const {
+VPlacedVolume const* CudaManager::world() const {
   assert(world_ != NULL);
   return world_;
 }
 
-LogicalVolume const* CudaManager::world_gpu() const {
+VPlacedVolume const* CudaManager::world_gpu() const {
   assert(world_gpu_ != NULL);
   return world_gpu_;
 }
 
-LogicalVolume const* CudaManager::Synchronize() {
+VPlacedVolume const* CudaManager::Synchronize() {
 
   if (verbose > 0) std::cerr << "Starting synchronization to GPU.\n";
 
@@ -111,7 +111,7 @@ LogicalVolume const* CudaManager::Synchronize() {
 
   synchronized = true;
 
-  world_gpu_ = LookupLogical(world_);
+  world_gpu_ = LookupPlaced(world_);
 
   if (verbose > 0) std::cout << "Geometry synchronized to GPU.\n";
 
@@ -119,7 +119,7 @@ LogicalVolume const* CudaManager::Synchronize() {
 
 }
 
-void CudaManager::LoadGeometry(LogicalVolume const *const volume) {
+void CudaManager::LoadGeometry(VPlacedVolume const *const volume) {
 
   CleanGpu();
 
@@ -259,27 +259,27 @@ void CudaManager::AllocateGeometry() {
 
 }
 
-void CudaManager::ScanGeometry(LogicalVolume const *const volume) {
+void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
 
-  if (logical_volumes.find(volume) == logical_volumes.end()) {
-    logical_volumes.insert(volume);
+  if (placed_volumes.find(volume) == placed_volumes.end()) {
+    placed_volumes.insert(volume);
   }
-  if (unplaced_volumes.find(volume->unplaced_volume_)
+  if (logical_volumes.find(volume->logical_volume()) == logical_volumes.end()) {
+    logical_volumes.insert(volume->logical_volume());
+  }
+  if (matrices.find(volume->matrix()) == matrices.end()) {
+    matrices.insert(volume->matrix());
+  }
+  if (unplaced_volumes.find(volume->unplaced_volume())
       == unplaced_volumes.end()) {
-    unplaced_volumes.insert(volume->unplaced_volume_);
+    unplaced_volumes.insert(volume->unplaced_volume());
   }
-  if (daughters.find(volume->daughters_) == daughters.end()) {
-    daughters.insert(volume->daughters_);
+  if (daughters.find(volume->logical_volume()->daughters_) == daughters.end()) {
+    daughters.insert(volume->logical_volume()->daughters_);
   }
   for (Iterator<Daughter> i = volume->daughters().begin();
        i != volume->daughters().end(); ++i) {
-    if (placed_volumes.find(*i) == placed_volumes.end()) {
-      placed_volumes.insert(*i);
-    }
-    if (matrices.find((*i)->matrix_) == matrices.end()) {
-      matrices.insert((*i)->matrix_);
-    }
-    ScanGeometry((*i)->logical_volume());
+    ScanGeometry(*i);
   }
 
   total_volumes++;

@@ -15,6 +15,8 @@ private:
 
 public:
 
+  virtual ~VUnplacedVolume() {}
+
   /**
    * Uses the virtual print method.
    * \sa print(std::ostream &ps)

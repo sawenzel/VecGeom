@@ -30,7 +30,7 @@ public:
   
   Benchmark() {}
 
-  Benchmark(LogicalVolume const *const world);
+  Benchmark(VPlacedVolume const *const world);
 
   virtual ~Benchmark() {}
 
@@ -43,7 +43,7 @@ public:
   BenchmarkResult PopResult();
   std::vector<BenchmarkResult> PopResults();
 
-  LogicalVolume const* world() const;
+  VPlacedVolume const* world() const;
 
   unsigned repetitions() const { return repetitions_; }
 
@@ -51,7 +51,7 @@ public:
 
   std::vector<BenchmarkResult> results() const { return results_; }
 
-  void set_world(LogicalVolume const *const world);
+  void set_world(VPlacedVolume const *const world);
 
   void set_repetitions(const unsigned repetitions) {
     repetitions_ = repetitions;

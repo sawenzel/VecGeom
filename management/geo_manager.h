@@ -6,10 +6,14 @@
 namespace vecgeom {
 
 /**
- * Singleton class that maintains a list of all instatiated placed volumes.
+ * Singleton class that maintains a list of all instantiated placed volumes.
  * Will assign each placed volume a unique id that identifies them globally.
  */
 class GeoManager {
+
+private:
+
+  VPlacedVolume const *world_;
 
 public:
 
@@ -17,6 +21,10 @@ public:
     static GeoManager instance;
     return instance;
   }
+
+  void set_world(VPlacedVolume const *const world) { world_ = world; }
+
+  VPlacedVolume const* world() const { return world_; }
 
 private:
 

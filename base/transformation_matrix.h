@@ -57,6 +57,8 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(TransformationMatrix const &other);
 
+  virtual ~TransformationMatrix() {}
+
   // Accessors
 
   virtual int memory_size() const { return sizeof(*this); }

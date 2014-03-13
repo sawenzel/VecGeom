@@ -11,7 +11,7 @@
 
 namespace vecgeom {
 
-DistanceToIn::DistanceToIn(LogicalVolume const *const world)
+DistanceToIn::DistanceToIn(VPlacedVolume const *const world)
     : Benchmark(world) {}
 
 DistanceToIn::~DistanceToIn() {

@@ -4,7 +4,7 @@
 
 using namespace vecgeom;
 
-void CudaCopy(LogicalVolume const *const world);
+void CudaCopy(VPlacedVolume const *const world);
 
 int main() {
 
@@ -40,7 +40,8 @@ int main() {
   world.PrintContent();
 
   #ifdef VECGEOM_CUDA
-  CudaCopy(&world);
+  VPlacedVolume *world_placed = world.Place();
+  CudaCopy(world_placed);
   #endif
 
   return 0;
@@ -48,16 +49,16 @@ int main() {
 
 #ifdef VECGEOM_CUDA
 __global__
-void CudaContent(LogicalVolume const *world) {
+void CudaContent(VPlacedVolume const *world) {
   printf("Inside CUDA kernel.\n");
-  world->PrintContent();
+  world->logical_volume()->PrintContent();
 }
 
-void CudaCopy(LogicalVolume const *const world) {
+void CudaCopy(VPlacedVolume const *const world) {
   CudaManager::Instance().set_verbose(3);
   CudaManager::Instance().LoadGeometry(world);
   CudaManager::Instance().Synchronize();
-  LogicalVolume const *const world_gpu = CudaManager::Instance().world_gpu();
+  VPlacedVolume const *const world_gpu = CudaManager::Instance().world_gpu();
   CudaContent<<<1, 1>>>(world_gpu);
   cudaDeviceSynchronize(); // Necessary to print output
   CudaAssertError();

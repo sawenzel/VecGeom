@@ -32,6 +32,10 @@ void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
   daughters_->push_back(placed);
 }
 
+void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
+  daughters_->push_back(placed);
+}
+
 VECGEOM_CUDA_HEADER_BOTH
 void LogicalVolume::PrintContent(const int depth) const {
   for (int i = 0; i < depth; ++i) printf("  ");

@@ -32,7 +32,7 @@ public:
   
   DistanceToIn() {}
 
-  DistanceToIn(LogicalVolume const *const world);
+  DistanceToIn(VPlacedVolume const *const world);
 
   ~DistanceToIn();
 

@@ -49,6 +49,8 @@ public:
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
 
+  void PlaceDaughter(VPlacedVolume const *const placed);
+
   VECGEOM_CUDA_HEADER_BOTH
   int CountVolumes() const;
 
