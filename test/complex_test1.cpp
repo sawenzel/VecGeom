@@ -65,6 +65,7 @@ void test2()
 	NavigationState state(4);
 	VPlacedVolume const * vol;
 
+
 	// point should be in box3
 	Vector3D<Precision> p1(-5., 0., 0.);
 	vol=nav.LocatePoint( world, p1, state, true );
@@ -77,6 +78,7 @@ void test2()
 	assert( std::strcmp( RootManager::Instance().tgeonode( vol )->GetName() , "bl3_0" ) );
 	std::cerr << "test2 passed" << std::endl;
 }
+
 
 void test3()
 {
