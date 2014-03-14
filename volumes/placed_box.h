@@ -71,9 +71,13 @@ public:
 
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual bool Inside(Vector3D<Precision> const &point,
-  		  Vector3D<Precision> & localpoint) const;
+    VECGEOM_INLINE
+    virtual bool Inside(Vector3D<Precision> const &point,
+    		  Vector3D<Precision> & localpoint) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    virtual bool UnplacedInside(Vector3D<Precision> const &) const;
 
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -94,7 +98,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(Vector3D<Precision> const &position,
-                                  Vector3D<Precision> const &direction) const;
+                                  Vector3D<Precision> const &direction,
+                                  Precision const step_max) const;
 
   // CUDA specific
 
@@ -190,6 +195,13 @@ bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
   return PlacedBox::InsideDispatch<1, 0, kScalar>(point);
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
+  // no translation and no rotation should look like this:
+	return PlacedBox::InsideDispatch<0, 0x111, kScalar>(localpoint);
+}
+
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -219,12 +231,16 @@ Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
-                                   Vector3D<Precision> const &direction) const {
+                                   Vector3D<Precision> const &direction,
+                                   Precision const step_max
+								  ) const {
 
   Vector3D<Precision> const &dim = AsUnplacedBox()->dimensions();
 
   const Vector3D<Precision> safety_plus  = dim + position;
   const Vector3D<Precision> safety_minus = dim - position;
+
+  // TODO: compare safety to step_max
 
   Vector3D<Precision> distance = safety_minus;
   const Vector3D<bool> direction_plus = direction < 0.0;
