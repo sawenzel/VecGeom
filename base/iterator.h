@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file iterator.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_ITERATOR_H_
@@ -10,6 +11,9 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Custom iterator class for use with container classes.
+ */
 template <typename Type>
 class Iterator : public std::iterator<std::forward_iterator_tag, Type> {
 

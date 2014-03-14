@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file backend.cu
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include <iostream>

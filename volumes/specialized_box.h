@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file specialized_box.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
@@ -83,7 +84,7 @@ bool SpecializedBox<trans_code, rot_code>::Inside(
     Vector3D<Precision> &local) const {
   bool output;
   BoxInside<trans_code, rot_code, kScalar>(
-    AsUnplacedBox()->dimensions(),
+    unplaced_box()->dimensions(),
     *this->matrix_,
     point,
     local,

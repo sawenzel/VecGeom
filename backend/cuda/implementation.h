@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file cuda/implementation.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include "backend/cuda/backend.h"

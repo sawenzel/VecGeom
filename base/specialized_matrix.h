@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file specialized_matrix.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_SPECIALIZEDMATRIX_H_
@@ -9,6 +10,10 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Specializes on the necessary translation on rotation, eliminating
+ *        unecessary computations.
+ */
 template <TranslationCode trans_code, RotationCode rot_code>
 class SpecializedMatrix : public TransformationMatrix {
 

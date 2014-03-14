@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file container.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_CONTAINER_H_
@@ -12,6 +13,11 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Std-like container base class compatible with CUDA.
+ * @details Derived classes implement random access indexing (time complexity
+ *          can very), size and constant iterator to content.
+ */
 template <typename Type>
 class Container {
 

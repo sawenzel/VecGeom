@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file transformation_matrix.cpp
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include "backend.h"
@@ -67,9 +68,9 @@ void TransformationMatrix::SetTranslation(Vector3D<Precision> const &vec) {
 VECGEOM_CUDA_HEADER_BOTH
 void TransformationMatrix::SetProperties() {
   has_translation = (
-    fabs(trans[0]) > kNearZero ||
-    fabs(trans[1]) > kNearZero ||
-    fabs(trans[2]) > kNearZero
+    fabs(trans[0]) > kTolerance ||
+    fabs(trans[1]) > kTolerance ||
+    fabs(trans[2]) > kTolerance
   ) ? true : false;
   has_rotation = (GenerateRotationCode() == rotation::kIdentity)
                  ? false : true;
@@ -130,7 +131,7 @@ RotationCode TransformationMatrix::GenerateRotationCode() const {
   int code = 0;
   for (int i = 0; i < 9; ++i) {
     // Assign each bit
-    code |= (1<<i) * (fabs(rot[i]) > kNearZero);
+    code |= (1<<i) * (fabs(rot[i]) > kTolerance);
   }
   if (code == rotation::kDiagonal
       && (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.)) {
