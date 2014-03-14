@@ -26,7 +26,7 @@ private:
 	int maxlevel_;
 	int currentlevel_;
 	VPlacedVolume const * * path_;
-	TransformationMatrix const * * cache_of_global_matrices_;
+	TransformationMatrix global_matrix_;
 
 	// add other navigation state here, stuff like:
 
@@ -74,6 +74,11 @@ public:
 	VECGEOM_CUDA_HEADER_BOTH
 	VPlacedVolume const *
 	Top() const;
+
+	VECGEOM_INLINE
+	VECGEOM_CUDA_HEADER_BOTH
+	TransformationMatrix const &
+	TopMatrix();
 
 	VECGEOM_INLINE
 	VECGEOM_CUDA_HEADER_BOTH
@@ -153,6 +158,21 @@ NavigationState::Top() const
 {
 	return (currentlevel_ > 0 )? path_[currentlevel_-1] : 0;
 }
+
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+TransformationMatrix const &
+NavigationState::TopMatrix()
+{
+// this could be actually cached in case the path does not change ( particle stays inside a volume )
+	global_matrix_.CopyFrom( *(path_[0]->matrix()) );
+	for(int i=1;i<currentlevel_;++i)
+	{
+		global_matrix_.MultiplyFromRight( *(path_[i]->matrix()) );
+	}
+	return global_matrix_;
+}
+
 
 void NavigationState::Print() const
 {
