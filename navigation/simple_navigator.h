@@ -74,7 +74,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
 	Vector3D<Precision> tmp(point);
 	if( top )
 	{
-		candvolume = ( vol->Inside( point ) ) ? vol : 0;
+		candvolume = ( vol->UnplacedInside( point ) ) ? vol : 0;
 	}
 	if( candvolume )
 	{
@@ -101,7 +101,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
 			}
 		}
 	}
-	return vol;
+	return candvolume;
 }
 
 VPlacedVolume const *
