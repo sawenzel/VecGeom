@@ -1,9 +1,13 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BACKEND_CILKBACKEND_H_
 #define VECGEOM_BACKEND_CILKBACKEND_H_
 
 #include <iostream>
-#include "base/utilities.h"
-#include "base/types.h"
+#include "base/global.h"
+#include "backend/scalar/backend.h"
 
 namespace vecgeom {
 
@@ -13,8 +17,7 @@ constexpr int kVectorSize = 4;
 template <typename Type = Precision, int vec_size = kVectorSize>
 struct CilkVector;
 
-template <>
-struct Impl<kCilk> {
+struct kCilk {
   typedef CilkVector<int>       int_v;
   typedef CilkVector<Precision> precision_v;
   typedef CilkVector<bool>      bool_v;
@@ -25,9 +28,9 @@ struct Impl<kCilk> {
   const static bool_v kFalse;
 };
 
-typedef Impl<kCilk>::int_v       CilkInt;
-typedef Impl<kCilk>::precision_v CilkPrecision;
-typedef Impl<kCilk>::bool_v      CilkBool;
+typedef kCilk::int_v       CilkInt;
+typedef kCilk::precision_v CilkPrecision;
+typedef kCilk::bool_v      CilkBool;
 
 /**
  * Wrapper struct to allow arithmetic operations to be performed using the Cilk
@@ -66,7 +69,7 @@ public:
   static constexpr int Size() { return vec_size; }
 
   VECGEOM_INLINE
-  void Store(Type *destination) const {
+  void store(Type *destination) const {
     destination[0:vec_size] = vec[:];
   }
 

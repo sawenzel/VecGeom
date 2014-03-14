@@ -1,9 +1,14 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_TRANSMATRIX_H_
 #define VECGEOM_BASE_TRANSMATRIX_H_
 
 #include <cmath>
 #include "base/types.h"
 #include "base/vector3d.h"
+#include <cstring>
 
 namespace vecgeom {
 
@@ -24,8 +29,13 @@ namespace translation {
 
 class TransformationMatrix {
 
-private:
+public:
 
+  static const TransformationMatrix kIdentity;
+
+private:
+  // TODO: it might be better to directly store this in terms of Vector3D<Precision> !!
+  // and would allow for higher level abstraction
   Precision trans[3];
   Precision rot[9];
   bool identity;
@@ -42,10 +52,22 @@ public:
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);
-  
+
+  TransformationMatrix(const Precision tx, const Precision ty,
+                       const Precision tz, const Precision r0,
+                       const Precision r1, const Precision r2,
+                       const Precision r3, const Precision r4,
+                       const Precision r5, const Precision r6,
+                       const Precision r7, const Precision r8);
+
+  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(TransformationMatrix const &other);
 
+  virtual ~TransformationMatrix() {}
+
   // Accessors
+
+  virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -128,13 +150,16 @@ private:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void DoRotation(Vector3D<InputType> const &master,
-                  Vector3D<InputType> *const local) const;
+                  Vector3D<InputType> & local) const;
 
   template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void DoTranslation(Vector3D<InputType> const &master,
-                     Vector3D<InputType> *const local) const;
+                     Vector3D<InputType> & local) const;
+
+  template <bool vectortransform, typename InputType>
+  void InverseTransformKernel( Vector3D<InputType> const & local, Vector3D<InputType> & master ) const;
 
 public:
 
@@ -145,7 +170,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Transform(Vector3D<InputType> const &master,
-                 Vector3D<InputType> *const local) const;
+                 Vector3D<InputType> & local) const;
 
   template <TranslationCode trans_code, RotationCode rot_code,
             typename InputType>
@@ -153,11 +178,38 @@ public:
   VECGEOM_INLINE
   Vector3D<InputType> Transform(Vector3D<InputType> const &master) const;
 
+   /** The inverse transformation ( aka LocalToMaster ) of an object transform like a point
+    *  this does not need to currently template on placement since such a transformation is much less used
+    */
+   template <typename InputType>
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   void InverseTransform(Vector3D<InputType> const &master,
+                  Vector3D<InputType> & local) const;
+
+   template <typename InputType>
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   Vector3D<InputType> InverseTransform(Vector3D<InputType> const &master) const;
+
+   /** The inverse transformation of an object transforming like a vector */
+   template <typename InputType>
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   void InverseTransformVec(Vector3D<InputType> const &master,
+                    Vector3D<InputType> & local) const;
+
+   template <typename InputType>
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   Vector3D<InputType> InverseTransformVec(Vector3D<InputType> const &master) const;
+
+
   template <RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void TransformRotation(Vector3D<InputType> const &master,
-                         Vector3D<InputType> *const local) const;
+                         Vector3D<InputType> & local) const;
 
   template <RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
@@ -165,11 +217,32 @@ public:
   Vector3D<InputType> TransformRotation(
       Vector3D<InputType> const &master) const;
 
-  // Utility
+  /** compose transformations - multiply transformations */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void MultiplyFromRight( TransformationMatrix const & rhs );
+
+  /** compose transformations - multiply transformations */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void CopyFrom( TransformationMatrix const & rhs )
+  {
+	  // not sure this compiles under CUDA
+	  std::memcpy( this, &rhs, sizeof(*this) );
+  }
+
+
+
+  // Utility and CUDA
 
   VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os,
                                   TransformationMatrix const &v);
+
+  #ifdef VECGEOM_CUDA
+  TransformationMatrix* CopyToGpu() const;
+  TransformationMatrix* CopyToGpu(TransformationMatrix *const gpu_ptr) const;
+  #endif
 
 }; // End class TransformationMatrix
 
@@ -186,117 +259,117 @@ template <RotationCode code, typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::DoRotation(Vector3D<InputType> const &master,
-                                      Vector3D<InputType> *const local) const {
+                                      Vector3D<InputType> & local) const {
 
   if (code == 0x1B1) {
-    (*local)[0] = master[0]*rot[0];
-    (*local)[1] = master[1]*rot[4] + master[2]*rot[7];
-    (*local)[2] = master[1]*rot[5] + master[2]*rot[8];
+    local[0] = master[0]*rot[0];
+    local[1] = master[1]*rot[4] + master[2]*rot[7];
+    local[2] = master[1]*rot[5] + master[2]*rot[8];
     return;
   }
   if (code == 0x18E) {
-    (*local)[0] = master[1]*rot[3];
-    (*local)[1] = master[0]*rot[1] + master[2]*rot[7];
-    (*local)[2] = master[0]*rot[2] + master[2]*rot[8];
+    local[0] = master[1]*rot[3];
+    local[1] = master[0]*rot[1] + master[2]*rot[7];
+    local[2] = master[0]*rot[2] + master[2]*rot[8];
     return;
   }
   if (code == 0x076){
-    (*local)[0] = master[2]*rot[6];
-    (*local)[1] = master[0]*rot[1] + master[1]*rot[4];
-    (*local)[2] = master[0]*rot[2] + master[1]*rot[5];
+    local[0] = master[2]*rot[6];
+    local[1] = master[0]*rot[1] + master[1]*rot[4];
+    local[2] = master[0]*rot[2] + master[1]*rot[5];
     return;
   }
   if (code == 0x16A) {
-    (*local)[0] = master[1]*rot[3] + master[2]*rot[6];
-    (*local)[1] = master[0]*rot[1];
-    (*local)[2] = master[2]*rot[5] + master[2]*rot[8];
+    local[0] = master[1]*rot[3] + master[2]*rot[6];
+    local[1] = master[0]*rot[1];
+    local[2] = master[2]*rot[5] + master[2]*rot[8];
     return;
   }
   if (code == 0x155) {
-    (*local)[0] = master[0]*rot[0] + master[2]*rot[6];
-    (*local)[1] = master[1]*rot[4];
-    (*local)[2] = master[0]*rot[2] + master[2]*rot[8];
+    local[0] = master[0]*rot[0] + master[2]*rot[6];
+    local[1] = master[1]*rot[4];
+    local[2] = master[0]*rot[2] + master[2]*rot[8];
     return;
   }
   if (code == 0x0AD){
-    (*local)[0] = master[0]*rot[0] + master[1]*rot[3];
-    (*local)[1] = master[2]*rot[7];
-    (*local)[2] = master[0]*rot[2] + master[1]*rot[5];
+    local[0] = master[0]*rot[0] + master[1]*rot[3];
+    local[1] = master[2]*rot[7];
+    local[2] = master[0]*rot[2] + master[1]*rot[5];
     return;
   }
   if (code == 0x0DC){
-    (*local)[0] = master[1]*rot[3] + master[2]*rot[6];
-    (*local)[1] = master[1]*rot[4] + master[2]*rot[7];
-    (*local)[2] = master[0]*rot[2];
+    local[0] = master[1]*rot[3] + master[2]*rot[6];
+    local[1] = master[1]*rot[4] + master[2]*rot[7];
+    local[2] = master[0]*rot[2];
     return;
   }
   if (code == 0x0E3) {
-    (*local)[0] = master[0]*rot[0] + master[2]*rot[6];
-    (*local)[1] = master[0]*rot[1] + master[2]*rot[7];
-    (*local)[2] = master[1]*rot[5];
+    local[0] = master[0]*rot[0] + master[2]*rot[6];
+    local[1] = master[0]*rot[1] + master[2]*rot[7];
+    local[2] = master[1]*rot[5];
     return;
   }
   if (code == 0x11B){
-    (*local)[0] = master[0]*rot[0] + master[1]*rot[3];
-    (*local)[1] = master[0]*rot[1] + master[1]*rot[4];
-    (*local)[2] = master[2]*rot[8];
+    local[0] = master[0]*rot[0] + master[1]*rot[3];
+    local[1] = master[0]*rot[1] + master[1]*rot[4];
+    local[2] = master[2]*rot[8];
     return;
   }
   if (code == 0x0A1){
-    (*local)[0] = master[0]*rot[0];
-    (*local)[1] = master[2]*rot[7];
-    (*local)[2] = master[1]*rot[5];
+    local[0] = master[0]*rot[0];
+    local[1] = master[2]*rot[7];
+    local[2] = master[1]*rot[5];
     return;
   }
   if (code == 0x10A){
-    (*local)[0] = master[1]*rot[3];
-    (*local)[1] = master[0]*rot[1];
-    (*local)[2] = master[2]*rot[8];
+    local[0] = master[1]*rot[3];
+    local[1] = master[0]*rot[1];
+    local[2] = master[2]*rot[8];
     return;
   }
   if (code == 0x046){
-    (*local)[0] = master[1]*rot[3];
-    (*local)[1] = master[2]*rot[7];
-    (*local)[2] = master[0]*rot[2];
+    local[0] = master[1]*rot[3];
+    local[1] = master[2]*rot[7];
+    local[2] = master[0]*rot[2];
     return;
   }
   if (code == 0x062) {
-    (*local)[0] = master[2]*rot[6];
-    (*local)[1] = master[0]*rot[1];
-    (*local)[2] = master[1]*rot[5];
+    local[0] = master[2]*rot[6];
+    local[1] = master[0]*rot[1];
+    local[2] = master[1]*rot[5];
     return;
   }
   if (code == 0x054) {
-    (*local)[0] = master[2]*rot[6];
-    (*local)[1] = master[1]*rot[4];
-    (*local)[2] = master[0]*rot[2];
+    local[0] = master[2]*rot[6];
+    local[1] = master[1]*rot[4];
+    local[2] = master[0]*rot[2];
     return;
   }
 
   // code = 0x111;
   if (code == rotation::kDiagonal) {
-    (*local)[0] = master[0]*rot[0];
-    (*local)[1] = master[1]*rot[4];
-    (*local)[2] = master[2]*rot[8];
+    local[0] = master[0]*rot[0];
+    local[1] = master[1]*rot[4];
+    local[2] = master[2]*rot[8];
     return;
   }
 
   // code = 0x200;
   if (code == rotation::kIdentity){
-    *local = master;
+    local = master;
     return;
   }
 
   // General case
-  (*local)[0] =  master[0]*rot[0];
-  (*local)[1] =  master[0]*rot[1];
-  (*local)[2] =  master[0]*rot[2];
-  (*local)[0] += master[1]*rot[3];
-  (*local)[1] += master[1]*rot[4];
-  (*local)[2] += master[1]*rot[5];
-  (*local)[0] += master[2]*rot[6];
-  (*local)[1] += master[2]*rot[7];
-  (*local)[2] += master[2]*rot[8];
+  local[0] =  master[0]*rot[0];
+  local[1] =  master[0]*rot[1];
+  local[2] =  master[0]*rot[2];
+  local[0] += master[1]*rot[3];
+  local[1] += master[1]*rot[4];
+  local[2] += master[1]*rot[5];
+  local[0] += master[2]*rot[6];
+  local[1] += master[2]*rot[7];
+  local[2] += master[2]*rot[8];
 
 }
 
@@ -305,12 +378,11 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::DoTranslation(
     Vector3D<InputType> const &master,
-    Vector3D<InputType> *const local) const {
+    Vector3D<InputType> & local) const {
 
-  (*local)[0] = master[0] - trans[0];
-  (*local)[1] = master[1] - trans[1];
-  (*local)[2] = master[2] - trans[2];
-
+  local[0] = master[0] - trans[0];
+  local[1] = master[1] - trans[1];
+  local[2] = master[2] - trans[2];
 }
 
 /**
@@ -324,11 +396,11 @@ template <TranslationCode trans_code, RotationCode rot_code,
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::Transform(Vector3D<InputType> const &master,
-                                     Vector3D<InputType> *const local) const {
+                                     Vector3D<InputType> & local) const {
 
   // Identity
   if (trans_code == 0 && rot_code == rotation::kIdentity) {
-    *local = master;
+    local = master;
     return;
   }
 
@@ -364,9 +436,161 @@ Vector3D<InputType> TransformationMatrix::Transform(
     Vector3D<InputType> const &master) const {
 
   Vector3D<InputType> local;
-  Transform<trans_code, rot_code>(master, &local);
+  Transform<trans_code, rot_code>(master, local);
   return local;
 
+}
+
+
+
+template <bool vectortransform, typename InputType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void TransformationMatrix::InverseTransformKernel(Vector3D<InputType> const &local,
+                Vector3D<InputType> & master) const
+{
+	// we are just doing the full stuff here ( LocalToMaster is less critical than other way round )
+	if(vectortransform == 0)
+	{
+		master[0] =  local[0]*rot[0];
+		master[0] += local[1]*rot[1];
+		master[0] += local[2]*rot[2];
+		master[1] =  local[0]*rot[3];
+		master[1] += local[1]*rot[4];
+		master[1] += local[2]*rot[5];
+		master[2] =  local[0]*rot[6];
+		master[2] += local[1]*rot[7];
+		master[2] += local[2]*rot[8];
+	}
+	else
+	{
+		master[0] = trans[0];
+		master[0] +=  local[0]*rot[0];
+		master[0] += local[1]*rot[1];
+		master[0] += local[2]*rot[2];
+		master[1] = trans[1];
+		master[1] +=  local[0]*rot[3];
+		master[1] += local[1]*rot[4];
+		master[1] += local[2]*rot[5];
+		master[2] = trans[2];
+		master[2] += local[0]*rot[6];
+		master[2] += local[1]*rot[7];
+		master[2] += local[2]*rot[8];
+	}
+}
+
+
+
+
+template <typename InputType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void TransformationMatrix::InverseTransform(Vector3D<InputType> const &local,
+					  Vector3D<InputType> & master) const
+{
+	InverseTransformKernel<0,InputType>(local, master);
+}
+
+
+template <typename InputType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Vector3D<InputType> TransformationMatrix::InverseTransform(Vector3D<InputType> const &local) const
+{
+	Vector3D<InputType> tmp;
+	InverseTransform(local, tmp);
+	return tmp;
+}
+
+template <typename InputType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void TransformationMatrix::InverseTransformVec(Vector3D<InputType> const &local,
+					  Vector3D<InputType> & master) const
+{
+	InverseTransformKernel<1,InputType>(local, master);
+}
+
+
+template <typename InputType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Vector3D<InputType> TransformationMatrix::InverseTransformVec(Vector3D<InputType> const &local) const
+{
+	Vector3D<InputType> tmp;
+	InverseTransformVec(local, tmp);
+	return tmp;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void TransformationMatrix::MultiplyFromRight(TransformationMatrix const & rhs)
+{
+	// TODO: this code should directly operator on Vector3D and Matrix3D
+
+	if(rhs.identity) return;
+
+	if(rhs.HasTranslation())
+	{
+	// ideal for fused multiply add
+	trans[0]+=rot[0]*rhs.trans[0];
+	trans[0]+=rot[1]*rhs.trans[0];
+	trans[0]+=rot[2]*rhs.trans[0];
+	trans[1]+=rot[3]*rhs.trans[1];
+	trans[1]+=rot[4]*rhs.trans[1];
+	trans[1]+=rot[5]*rhs.trans[1];
+	trans[2]+=rot[6]*rhs.trans[2];
+	trans[2]+=rot[7]*rhs.trans[2];
+	trans[2]+=rot[8]*rhs.trans[2];
+	}
+
+	if(rhs.HasRotation())
+	{
+		Precision tmpx = rot[0];
+		Precision tmpy = rot[1];
+		Precision tmpz = rot[2];
+
+		// first row of matrix
+		rot[0] = tmpx*rhs.rot[0];
+		rot[1] = tmpx*rhs.rot[1];
+		rot[2] = tmpx*rhs.rot[2];
+		rot[0]+= tmpy*rhs.rot[3];
+		rot[1]+= tmpy*rhs.rot[4];
+		rot[2]+= tmpy*rhs.rot[5];
+		rot[0]+= tmpz*rhs.rot[6];
+		rot[1]+= tmpz*rhs.rot[7];
+		rot[2]+= tmpz*rhs.rot[8];
+
+		tmpx = rot[3];
+		tmpy = rot[4];
+		tmpz = rot[5];
+
+		// second row of matrix
+		rot[3] = tmpx*rhs.rot[0];
+		rot[4] = tmpx*rhs.rot[1];
+		rot[5] = tmpx*rhs.rot[2];
+		rot[3]+= tmpy*rhs.rot[3];
+		rot[4]+= tmpy*rhs.rot[4];
+		rot[5]+= tmpy*rhs.rot[5];
+		rot[3]+= tmpz*rhs.rot[6];
+		rot[4]+= tmpz*rhs.rot[7];
+		rot[5]+= tmpz*rhs.rot[8];
+
+		tmpx = rot[6];
+		tmpy = rot[7];
+		tmpz = rot[8];
+
+		// third row of matrix
+		rot[6] = tmpx*rhs.rot[0];
+		rot[7] = tmpx*rhs.rot[1];
+		rot[8] = tmpx*rhs.rot[2];
+		rot[6]+= tmpy*rhs.rot[3];
+		rot[7]+= tmpy*rhs.rot[4];
+		rot[8]+= tmpy*rhs.rot[5];
+		rot[6]+= tmpz*rhs.rot[6];
+		rot[7]+= tmpz*rhs.rot[7];
+		rot[8]+= tmpz*rhs.rot[8];
+	}
 }
 
 /**
@@ -380,11 +604,11 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::TransformRotation(
     Vector3D<InputType> const &master,
-    Vector3D<InputType> *const local) const {
+    Vector3D<InputType> & local) const {
 
   // Rotational identity
   if (code == rotation::kIdentity) {
-    *local = master;
+    local = master;
     return;
   }
 
@@ -406,9 +630,8 @@ Vector3D<InputType> TransformationMatrix::TransformRotation(
     Vector3D<InputType> const &master) const {
 
   Vector3D<InputType> local;
-  TransformRotation<code>(master, &local);
+  TransformRotation<code>(master, local);
   return local;
-
 }
 
 } // End namespace vecgeom

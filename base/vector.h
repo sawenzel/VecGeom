@@ -1,7 +1,10 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_VECTOR_H_
 #define VECGEOM_BASE_VECTOR_H_
 
-#include <vector>
 #include "base/container.h"
 
 namespace vecgeom {
@@ -11,35 +14,47 @@ class Vector : public Container<Type> {
 
 private:
 
-  std::vector<Type> vec;
-  Type *begin_ptr, *end_ptr;
-  int size_;
+  Type *vec_;
+  int size_, memory_size_;
+  bool allocated_;
 
 public:
 
-  Vector() {
-    begin_ptr = &vec[0];
-    end_ptr = &vec[0];
-    size_ = 0;
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector() : size_(0), memory_size_(1), allocated_(true) {
+    vec_ = new Type[memory_size_];
   }
 
-  ~Vector() {}
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector(Type *const vec, const int size)
+      : vec_(vec), size_(size), allocated_(false) {}
 
+  ~Vector() {
+    if (allocated_) delete vec_;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& operator[](const int index) {
-    return vec[index];
+  virtual Type& operator[](const int index) {
+    return vec_[index];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& operator[](const int index) const {
-    return vec[index];
+  virtual Type const& operator[](const int index) const {
+    return vec_[index];
   }
 
-  void push_back(Type const &item) {
-    vec.push_back(item);
-    size_ = vec.size();
-    begin_ptr = &vec[0];
-    end_ptr = &vec[size()];
+  void push_back(const Type item) {
+    if (size_ == memory_size_) {
+      memory_size_ = memory_size_<<1;
+      Type *vec_new = new Type[memory_size_];
+      for (int i = 0; i < size_; ++i) vec_new[i] = vec_[i];
+      delete vec_;
+      vec_ = vec_new;
+    }
+    vec_[size_] = item;
+    size_++;
   }
 
 private:
@@ -66,13 +81,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Iterator<Type> begin() const {
-    return VectorIterator(begin_ptr);
+    return VectorIterator(&vec_[0]);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Iterator<Type> end() const {
-    return VectorIterator(end_ptr);
+    return VectorIterator(&vec_[size_]);
   }
 
   VECGEOM_CUDA_HEADER_BOTH

@@ -1,7 +1,12 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_ARRAY_H_
 #define VECGEOM_BASE_ARRAY_H_
 
-#include "base/container.h"
+#include "base/global.h"
+#include "base/iterator.h"
 
 namespace vecgeom {
 
@@ -10,31 +15,39 @@ class Array : public Container<Type> {
 
 private:
 
-  Type *arr;
+  Type *arr_;
   int size_;
+  bool allocated;
 
 public:
 
-  Array(const int size) {
-    size_ = size;
-    arr = new Type[size];
+  VECGEOM_CUDA_HEADER_BOTH
+  Array(const int size) : size_(size), allocated(true) {
+    arr_ = new Type[size_];
   }
 
-  Array(Type *const arr_, const int size__) {
-    arr = arr_;
-    size_ = size__;
+  VECGEOM_CUDA_HEADER_BOTH
+  Array(Type *const arr, const int size)
+      : arr_(arr), size_(size), allocated(false) {}
+
+  ~Array() { if (allocated) delete arr_; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual Type& operator[](const int index) {
+    return arr_[index];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type& operator[](const int index) {
-    return arr[index];
+  virtual Type const& operator[](const int index) const {
+    return arr_[index];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& operator[](const int index) const {
-    return arr[index];
+  virtual int size() const {
+    return size_;
   }
 
 private:
@@ -49,7 +62,7 @@ private:
 
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
-    Iterator<Type>& operator++() {
+    virtual Iterator<Type>& operator++() {
       this->element_++;
       return *this;
     }
@@ -61,19 +74,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Iterator<Type> begin() const {
-    return ArrayIterator(&arr[0]);
+    return ArrayIterator(&arr_[0]);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Iterator<Type> end() const {
-    return ArrayIterator(&arr[size()]);
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual int size() const {
-    return size_;
+    return ArrayIterator(&arr_[size()]);
   }
 
 };

@@ -1,6 +1,15 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
+#include <stdio.h>
+#include <climits>
+#include "backend.h"
+#include "base/array.h"
+#include "base/transformation_matrix.h"
+#include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
-#include "management/volume_factory.h"
 
 namespace vecgeom {
 
@@ -9,25 +18,36 @@ LogicalVolume::~LogicalVolume() {
        i != daughters().end(); ++i) {
     delete *i;
   }
-  delete static_cast<Vector<VPlacedVolume const*> *>(daughters_);
+  delete daughters_;
+}
+
+VPlacedVolume* LogicalVolume::Place(
+    TransformationMatrix const *const matrix) const {
+  return unplaced_volume()->PlaceVolume(this, matrix);
+}
+
+VPlacedVolume* LogicalVolume::Place() const {
+  return Place(&TransformationMatrix::kIdentity);
 }
 
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
-  VPlacedVolume *placed =
-      VolumeFactory::Instance().CreateSpecializedVolume(volume, matrix);
-  static_cast<Vector<VPlacedVolume const*> *>(
-    daughters_
-  )->push_back(placed);
+  VPlacedVolume const *const placed = volume->Place(matrix);
+  daughters_->push_back(placed);
 }
 
-void LogicalVolume::PrintContent(std::string prefix) const {
-  std::cout << *unplaced_volume_ << std::endl;
-  prefix += "  ";
-  for (Iterator<VPlacedVolume const*> i = daughters().begin();
-       i != daughters().end(); ++i) {
-    std::cout << prefix << (*i)->matrix() << ": ";
-    (*i)->logical_volume()->PrintContent(prefix);
+void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
+  daughters_->push_back(placed);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void LogicalVolume::PrintContent(const int depth) const {
+  for (int i = 0; i < depth; ++i) printf("  ");
+  unplaced_volume()->Print();
+  printf("\n");
+  for (Iterator<VPlacedVolume const*> vol = daughters_->begin();
+       vol != daughters_->end(); ++vol) {
+    (*vol)->logical_volume()->PrintContent(depth + 1);
   }
 }
 
@@ -39,5 +59,40 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   }
   return os;
 }
+
+#ifdef VECGEOM_CUDA
+
+namespace {
+
+__global__
+void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
+                    Vector<Daughter> *const daughters,
+                    LogicalVolume *const output) {
+  new(output) LogicalVolume(unplaced_volume, daughters);
+}
+
+} // End anonymous namespace
+
+LogicalVolume* LogicalVolume::CopyToGpu(
+    VUnplacedVolume const *const unplaced_volume,
+    Vector<Daughter> *const daughters,
+    LogicalVolume *const gpu_ptr) const {
+
+  ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+
+}
+
+LogicalVolume* LogicalVolume::CopyToGpu(
+    VUnplacedVolume const *const unplaced_volume,
+    Vector<Daughter> *const daughters) const {
+
+  LogicalVolume *const gpu_ptr = AllocateOnGpu<LogicalVolume>();
+  return CopyToGpu(unplaced_volume, daughters, gpu_ptr);
+
+}
+
+#endif // VECGEOM_CUDA
 
 } // End namespace vecgeom

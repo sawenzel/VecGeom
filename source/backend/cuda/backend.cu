@@ -1,4 +1,9 @@
-#include "backend/cuda_backend.cuh"
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
+#include <iostream>
+#include "backend/cuda/backend.h"
 
 namespace vecgeom {
 

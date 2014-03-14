@@ -1,0 +1,132 @@
+#include "../TransformationMatrix.h"
+#include "../Utils.h"
+//#include "../GlobalDefs.h"
+#include "../GeoManager.h"
+#include "../PhysicalVolume.h"
+#include "../PhysicalBox.h"
+#include "../PhysicalTube.h"
+#include <iostream>
+#include <vector>
+using std::vector;
+
+SimpleDetector::SimpleDetector() { 
+
+  //*** constants and default units
+  auto const PI = double{4.*std::atan(1.)};
+  auto const cm = double{1.0};
+  auto const deg = double{PI/180.};
+  auto const sphi = 0;
+  auto const dphi = double{360.*deg};
+
+  TransformationMatrix const *identity = new TransformationMatrix(0,0,0,0,0,0);
+
+
+  //*** box-like experimental hall
+  auto const expHall_x = double{ 600.*cm };
+  auto const expHall_y = double{ 600.*cm };
+  auto const expHall_z = double{ 600.*cm };
+
+  BoxParameters *expHallParams = new BoxParameters(expHall_x, expHall_y, expHall_z);
+  PhysicalVolume *expHall = GeoManager::MakePlacedBox( expHallParams, identity );
+
+
+  //*** tube-like tracker
+  auto const trkTubs_rmax = double{ 50.*cm};
+  auto const trkTubs_rmin = double{ 20.*cm};
+  auto const trkTubs_dz   = double{100.*cm};
+  auto const trkTubs_sphi = sphi; 
+  auto const trkTubs_dphi = dphi;
+
+  auto const notrkLayers = 5; // {5} does not compile!
+  auto const tracker_thick =  0.5*cm;
+  auto tracker_radius = vector<double>{ 25.*cm, 30.*cm, 35.*cm, 40.*cm, 45.*cm };  // does not compile
+  // float tracker_radius[notrkLayers];
+  float tracker_length[notrkLayers];
+  for(unsigned int i=0; i<notrkLayers; ++i) {
+    tracker_radius.push_back( 25.*cm + 5.*cm*float(i) );
+    tracker_length[i] = tracker_radius[i];
+  }
+
+  TubeParameters<> *trackerParams = new TubeParameters<>(trkTubs_rmin, trkTubs_rmax, trkTubs_dz, trkTubs_sphi, trkTubs_dphi);
+  PhysicalVolume *tracker = GeoManager::MakePlacedTube( trackerParams, identity );
+
+  for(auto i=0; i<notrkLayers; ++i) {
+    double rmin = tracker_radius[i];
+    double rmax = rmin + tracker_thick;
+    TubeParameters<> *trkLayerParams = new TubeParameters<>(rmin, rmax, tracker_length[i], trkTubs_sphi, trkTubs_dphi);
+    PhysicalVolume *trkLayer = GeoManager::MakePlacedTube(trkLayerParams, identity);
+    tracker->AddDaughter(trkLayer);
+  }
+
+  expHall->AddDaughter( tracker );
+
+
+  //*** tube-like calorimeter
+
+  auto const caloTubs_rmax = 300.*cm;
+  auto const caloTubs_rmin =  50.*cm;
+  auto const caloTubs_dz   = 200.*cm;
+  auto const caloTubs_sphi =   0.*deg;
+  auto const caloTubs_dphi = 360.*deg;
+
+  auto const absorber_thick = 3.*cm;
+  auto const scinti_thick = 2.*cm;
+  auto const nocaloLayers = int((caloTubs_rmax-caloTubs_rmin)/(absorber_thick+scinti_thick));
+  auto const segmentsinPhi = 48;
+  auto const caloCell_rmax = caloTubs_rmax;
+  auto const caloCell_rmin = caloTubs_rmin;
+  auto const caloCell_dz   = caloTubs_dz;
+  auto const caloCell_sphi = caloTubs_sphi;
+  auto const caloCell_dphi = caloTubs_dphi/segmentsinPhi;
+
+  auto const segmentsinZ = 20;
+  auto const caloRing_rmax = caloCell_rmax;
+  auto const caloRing_rmin = caloCell_rmin;
+  auto const caloRing_dz   = caloCell_dz/segmentsinZ ;
+  auto const caloRing_sphi = caloCell_sphi;
+  auto const caloRing_dphi = caloCell_dphi;
+
+  TubeParameters<> *caloParams = new TubeParameters<>(caloTubs_rmin, caloTubs_rmax, caloTubs_dz, caloTubs_sphi, caloTubs_dphi);
+  PhysicalVolume *caloEnvelope = GeoManager::MakePlacedTube( caloParams, identity );
+
+  double layer_thick = absorber_thick + scinti_thick;
+  for(auto i=0; i<nocaloLayers; ++i) {
+    double rmin = caloTubs_rmin + i*layer_thick;
+    double rmax = rmin + layer_thick;
+    // no calo cells for now
+    TubeParameters<> *caloLayerParams = new TubeParameters<>(rmin, rmax, caloTubs_dz, caloTubs_sphi, caloTubs_dphi);
+    PhysicalVolume *caloLayer = GeoManager::MakePlacedTube(caloLayerParams, identity);
+    caloEnvelope->AddDaughter(caloLayer);
+  }
+
+  expHall->AddDaughter( caloEnvelope );
+
+
+  //*** prism-like muon system, built out of box chambers
+  auto const nomucounter = 8;
+  auto const muBox_radius = 350.*cm;
+  auto muBox_width  = muBox_radius - 5.*cm;
+  auto const muBox_thick  = 1.*cm;
+  auto const muBox_length = expHall_z - 10.*cm;
+
+  auto muBox_width_max = 2*muBox_radius*tan(PI/float(nomucounter));
+  if(muBox_width>muBox_width_max) muBox_width = muBox_width_max;
+  BoxParameters *muBoxParams = new BoxParameters(muBox_thick, muBox_width, muBox_length);
+
+  for(auto i=0; i<nomucounter; ++i) {
+    auto phi = double{2*PI*i / double(nomucounter)};
+    auto x = double{ (muBox_radius+0.5*muBox_thick)*cos(phi) };
+    auto y = double{ (muBox_radius+0.5*muBox_thick)*sin(phi) };
+    PhysicalVolume *chamber = GeoManager::MakePlacedBox( muBoxParams, new TransformationMatrix(x, y, 0, 0, 0, phi*180/PI) );
+    expHall->AddDaughter(chamber);
+  }
+
+  // ConeParameters<double> * endcapparams = new ConeParameters<double>( expHallrmax/20., expHallrmax,
+  // 								       expHallrmax/20., expHallrmax/10., expHallz/10., 0, 2.*M_PI );
+  // PhysicalVolume * endcap1 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,-9.*expHallz/10., 0, 0, 0) );
+  // PhysicalVolume * endcap2 = GeoManager::MakePlacedCone( endcapparams, new TransformationMatrix(0,0,9*expHallz/10, 0, 180, 0) );
+  // expHall->AddDaughter( endcap1 );
+  // expHall->AddDaughter( endcap2 );
+
+   _world = expHall;
+}

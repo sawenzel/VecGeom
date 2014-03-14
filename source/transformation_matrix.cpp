@@ -1,6 +1,15 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
+#include "backend.h"
 #include "base/transformation_matrix.h"
+#include "base/specialized_matrix.h"
 
 namespace vecgeom {
+
+const TransformationMatrix TransformationMatrix::kIdentity =
+    SpecializedMatrix<translation::kOrigin, rotation::kIdentity>();
 
 TransformationMatrix::TransformationMatrix() {
   SetTranslation(0, 0, 0);
@@ -22,6 +31,16 @@ TransformationMatrix::TransformationMatrix(
   SetRotation(phi, theta, psi);
 }
 
+TransformationMatrix::TransformationMatrix(
+    const Precision tx, const Precision ty, const Precision tz,
+    const Precision r0, const Precision r1, const Precision r2,
+    const Precision r3, const Precision r4, const Precision r5,
+    const Precision r6, const Precision r7, const Precision r8) {
+  SetTranslation(tx, ty, tz);
+  SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
 TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
   SetTranslation(other.Translation(0), other.Translation(1),
                  other.Translation(2));
@@ -138,8 +157,39 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
      << ", " << matrix.Rotation(2) << ", " << matrix.Rotation(3)
      << ", " << matrix.Rotation(4) << ", " << matrix.Rotation(5)
      << ", " << matrix.Rotation(6) << ", " << matrix.Rotation(7)
-     << ", " << matrix.Rotation(8) << ")}";
+     << ", " << matrix.Rotation(8) << ")}"
+  	 << "; identity(" << matrix.identity << "); rotation(" << matrix.has_rotation << ")";
   return os;
 }
+
+#ifdef VECGEOM_CUDA
+
+namespace {
+
+__global__
+void ConstructOnGpu(const TransformationMatrix matrix,
+                    TransformationMatrix *const gpu_ptr) {
+  new(gpu_ptr) TransformationMatrix(matrix);
+}
+
+} // End anonymous namespace
+
+TransformationMatrix* TransformationMatrix::CopyToGpu(
+    TransformationMatrix *const gpu_ptr) const {
+
+  ConstructOnGpu<<<1, 1>>>(*this, gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+
+}
+
+TransformationMatrix* TransformationMatrix::CopyToGpu() const {
+
+  TransformationMatrix *const gpu_ptr = AllocateOnGpu<TransformationMatrix>();
+  return CopyToGpu(gpu_ptr);
+
+}
+
+#endif
 
 } // End namespace vecgeom

@@ -1,22 +1,23 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
 #define VECGEOM_MANAGEMENT_GEOMANAGER_H_
 
-#include <iostream>
-#include <list>
-#include "base/types.h"
+#include "base/global.h"
 
 namespace vecgeom {
 
 /**
- * Singleton class that maintains a list of all instatiated placed volumes.
+ * Singleton class that maintains a list of all instantiated placed volumes.
  * Will assign each placed volume a unique id that identifies them globally.
  */
 class GeoManager {
 
-protected:
+private:
 
-  int counter;
-  std::list<VPlacedVolume const*> volumes_;
+  VPlacedVolume const *world_;
 
 public:
 
@@ -25,33 +26,16 @@ public:
     return instance;
   }
 
-  std::list<VPlacedVolume const*> const& volumes() {
-    return volumes_;
-  }
+  void set_world(VPlacedVolume const *const world) { world_ = world; }
+
+  VPlacedVolume const* world() const { return world_; }
 
 private:
 
-  GeoManager() {
-    counter = 0;
-  }
+  GeoManager() {}
 
   GeoManager(GeoManager const&);
   GeoManager& operator=(GeoManager const&);
-
-  int RegisterVolume(VPlacedVolume const *const volume) {
-    volumes_.push_back(volume);
-    return counter++;
-  }
-
-  /**
-   * Deregistering will not change the counter, as gaps in the id don't have any
-   * practical consequence.
-   */
-  void DeregisterVolume(VPlacedVolume const *const volume) {
-    volumes_.remove(volume);
-  }
-
-  friend class VPlacedVolume;
 
 };
 

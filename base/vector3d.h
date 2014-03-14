@@ -1,14 +1,17 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_VECTOR3D_H_
 #define VECGEOM_BASE_VECTOR3D_H_
 
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include "base/types.h"
-#include "base/utilities.h"
 #ifdef VECGEOM_VC_ACCELERATION
 #include <Vc/Vc>
 #endif
+#include "base/global.h"
 
 namespace vecgeom {
 

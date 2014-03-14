@@ -1,7 +1,11 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "base/vector3d.h"
 #include "base/specialized_matrix.h"
 #include "base/soa3d.h"
-#include "backend/vc_backend.h"
+#include "backend/vc/backend.h"
 #include "volumes/kernel/box_kernel.h"
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"

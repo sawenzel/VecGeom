@@ -89,20 +89,22 @@ G4VPhysicalVolume const * BuildGeometry()
 int main(int argc, char * argv[])
 {
 	double L=10.;
-		double Lz=10.;
+	double Lz=10.;
 
 	G4VPhysicalVolume const *top = BuildGeometry();
-	G4GeometryManager::GetInstance()->CloseGeometry(true);
+	G4GeometryManager::GetInstance()->CloseGeometry(false);
 
 	G4Navigator * nav = new G4Navigator();
 	nav->SetWorldVolume( const_cast<G4VPhysicalVolume *>(top) );
 
-    StopWatch timer;
+	StopWatch timer;
 	timer.Start();
 	int stepsdone=0;
-	for(int i=0;i<100000;i++)
-	// testing the NavigationAndStepInterface
-	{
+	for(int n=0;n<1000;n++)
+	  {
+	    for(int i=0;i<100000;i++)
+	      // testing the NavigationAndStepInterface
+	      {
 		int localstepsdone=0;
 		double distancetravelled=0.;
 		Vector3D p;
@@ -136,7 +138,8 @@ int main(int argc, char * argv[])
 		}
 	//	std::cerr << localstepsdone << " " << distancetravelled << std::endl;
 		stepsdone+=localstepsdone;
-	}
+	      }
+	  }
 	timer.Stop();
 	std::cout << " time for 100000 particles " << timer.getDeltaSecs( ) << std::endl;
 	std::cout << " average steps done " << stepsdone / 100000. << std::endl;

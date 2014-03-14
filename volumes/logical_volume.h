@@ -1,9 +1,13 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
 #include <iostream>
 #include <string>
-#include "base/types.h"
+#include "base/global.h"
 #include "base/vector.h"
 #include "volumes/unplaced_volume.h"
 
@@ -16,16 +20,9 @@ class LogicalVolume {
 private:
 
   VUnplacedVolume const *unplaced_volume_;
-  Container<Daughter> *daughters_;
+  Vector<Daughter> *daughters_;
 
   friend class CudaManager;
-
-  /**
-   * Constructor used for copying to the GPU by CudaManager.
-   */
-  LogicalVolume(VUnplacedVolume const *const unplaced_volume__,
-                Container<Daughter> *daughters__)
-      : unplaced_volume_(unplaced_volume__), daughters_(daughters__) {}
 
 public:
 
@@ -33,6 +30,11 @@ public:
       : unplaced_volume_(unplaced_volume__) {
     daughters_ = new Vector<Daughter>();
   }
+
+  VECGEOM_CUDA_HEADER_DEVICE
+  LogicalVolume(VUnplacedVolume const *const unplaced_volume,
+                Vector<Daughter> *daughters)
+      : unplaced_volume_(unplaced_volume), daughters_(daughters) {}
 
   ~LogicalVolume();
 
@@ -42,19 +44,39 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Container<Daughter> const& daughters() const {
-    return *daughters_;
-  }
+  Vector<Daughter> const& daughters() const { return *daughters_; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector<Daughter> const * daughtersp() const { return daughters_; }
+
+  VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
+
+  VPlacedVolume* Place() const;
 
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
 
+  void PlaceDaughter(VPlacedVolume const *const placed);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  int CountVolumes() const;
+
   /**
    * Recursively prints contained logical volumes.
    */
-  void PrintContent(std::string prefix = "") const;
+  VECGEOM_CUDA_HEADER_BOTH
+  void PrintContent(const int depth = 0) const;
 
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
+
+  #ifdef VECGEOM_CUDA
+  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
+                           Vector<Daughter> *daughters) const;
+  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
+                           Vector<Daughter> *daughters,
+                           LogicalVolume *const gpu_ptr) const;
+  #endif
 
 };
 

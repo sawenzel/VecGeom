@@ -14,6 +14,7 @@
 #include <iostream>
 #include <cassert>
 #include "mm_malloc.h"
+#include "GlobalDefs.h"
 
 /* Useful to construct masks with the first N-bits set */
 const bool maskinit[] = {true, true, true, true,  
@@ -66,6 +67,21 @@ public:
 
 	// static
 	  void operator delete(void * ptr)
+	{
+	  // std::cerr << "overloaded delete" << std::endl;
+	  _mm_free(ptr);
+	}
+
+	static 
+	void * operator new[](std::size_t sz)
+	{
+//	  std::cerr  << "overloaded new called" << std::endl;
+	  void *aligned_buffer=_mm_malloc( sizeof(Vector3DFast)*sz, 32 );
+	  return ::operator new[](sz, aligned_buffer);
+	}
+
+	static
+	  void operator delete[](void * ptr)
 	{
 	  // std::cerr << "overloaded delete" << std::endl;
 	  _mm_free(ptr);
@@ -228,13 +244,14 @@ public:
 			return ((tmpx * tmp2x) + (tmpy * tmp2y))[0];
 		}
 		else {
-		  base_t result(0.);
-			base_t tmp1 = this->internalVcmemory.vector(0);
-			base_t tmp2 = rhs.internalVcmemory.vector(0);
 
-			tmp1 *= tmp2;
-			result(maskFirstTwoOn) = tmp1;
-			return result.sum();
+		  base_t result(0.);
+		  base_t tmp1 = this->internalVcmemory.vector(0);
+		  base_t tmp2 = rhs.internalVcmemory.vector(0);
+		  
+		  tmp1 *= tmp2;
+		  result(maskFirstTwoOn) = tmp1;
+		  return result.sum();
 		}
 
 	}
@@ -462,6 +479,65 @@ void SetZ(double z)  {
 		return false;
 	}
 
+
+	inline
+	static
+	__attribute__((always_inline))
+	// this should be templated and made more general ( for instance generalizing on condition )
+	int CountIndicesWhereBothComponentsPositive( Vector3DFast const & v1, Vector3DFast const & v2, int & mask )
+	{
+		// returns true of there exists an index i such that v1(i)>0 and v2(i)>0
+		// used for instance in box distancetoin
+		int count=0;
+		for(int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++)
+		{
+			base_t v1c = v1.internalVcmemory.vector(i);
+			base_t v2c = v2.internalVcmemory.vector(i);
+			mask_t m = v1c>0 && v2c>0;
+			count+=m.count();
+			mask=m.toInt();
+			int b = mask>>1;
+			//	std::cerr << " Analysing this mask: countofones " << m.count() << " first One " << m.firstOne() << " maskint " << mask << " " << m << " " << b << std::endl;
+		}
+		return count;
+	}
+
+	inline
+	__attribute__((always_inline))
+	int GetIndexOfPositiveMinimum( ) const
+	{
+		double d = Utils::kInfinity;
+		int index=-1;
+		bool condition = internalVcmemory[0] >=0 && internalVcmemory[0]< d;
+		index = ( condition )? 0 : index;
+		d = ( condition )? internalVcmemory[0] : d;
+		condition = internalVcmemory[1] >=0 && internalVcmemory[1] < d;
+		index = ( condition )? 1 : index;
+		d = ( condition )? internalVcmemory[2] : d;
+		condition = internalVcmemory[2] >=0 && internalVcmemory[2] < d;
+		index = ( condition )? 2 : index;
+		return index;
+	}
+
+
+	inline
+	static
+	__attribute__((always_inline))
+	// this should be templated and made more general ( for instance generalizing on condition )
+	bool AllOfLeftSmallerThanRight( Vector3DFast const & lhs, Vector3DFast const & rhs )
+	{
+		// returns true of there exists an index i such that v1(i)>0 and v2(i)>0
+		// used for instance in box distancetoin
+		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+		{
+			base_t v1c = lhs.internalVcmemory.vector(i);
+			base_t v2c = rhs.internalVcmemory.vector(i);
+			mask_t m = v1c <= v2c;
+			if(  m.isFull( ) ) return true;
+		}
+		return false;
+	}
+
 	inline
 	void
 	print() const
@@ -483,12 +559,38 @@ void SetZ(double z)  {
 		Vector3DFast tmp;
 		for( int i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
 		{
-			base_t tmp = this->internalVcmemory.vector(i);
-			mask_t m = tmp < 0;
-			result |= ! m.isEmpty();
+		  mask_t m = this->internalVcmemory.vector(i) < Vc::Zero;
+		  result |= ! m.isEmpty();
 		}
 		return result;
 	}
+
+
+	inline
+	__attribute__((always_inline))
+	// a starting comparison operator
+	int IndexOfMax( ) const
+	{
+		int index=0;
+		double d=internalVcmemory[0];
+		index = ( internalVcmemory[1] > d ) ? 1 : index;
+		d = ( internalVcmemory[1] > d ) ? internalVcmemory[1] : d;
+		index = ( internalVcmemory[2] > d ) ? 2 : index;
+		return index;
+	}
+
+
+	inline
+	__attribute__((always_inline))
+	// a starting comparison operator
+	double HMax( ) const
+	{
+		double d=internalVcmemory[0];
+		d = ( internalVcmemory[1] > d ) ? internalVcmemory[1] : d;
+		d = ( internalVcmemory[2] > d ) ? internalVcmemory[2] : d;
+		return d;
+	}
+
 
 	inline
 	__attribute__((always_inline))
@@ -621,7 +723,7 @@ extern Vector3DFast gZeroVector3DFast;
 extern Vector3DFast gXVector3DFast;
 extern Vector3DFast gYVector3DFast;
 extern Vector3DFast gZVector3DFast;
-
+extern Vector3DFast gEpsilonVector3DFast;
 
 // to try something with Vc memory
 // note: this is a class which should work optimally with vector instructions sets >= AVX
