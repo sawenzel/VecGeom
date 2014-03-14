@@ -2,6 +2,9 @@
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
 
+#include "navigation/simple_navigator.h"
+#include "navigation/navigationstate.h"
+
 using namespace vecgeom;
 
 void CudaCopy(VPlacedVolume const *const world);
@@ -12,7 +15,8 @@ int main() {
   UnplacedBox largebox_params = UnplacedBox(1.5, 1.5, 1.5);
   UnplacedBox smallbox_params = UnplacedBox(0.5, 0.5, 0.5);
 
-  LogicalVolume world = LogicalVolume(&world_params);
+  LogicalVolume worldl = LogicalVolume(&world_params);
+
   LogicalVolume largebox = LogicalVolume(&largebox_params);
   LogicalVolume smallbox = LogicalVolume(&smallbox_params);
 
@@ -27,22 +31,29 @@ int main() {
   TransformationMatrix placement8 = TransformationMatrix(-2, -2, -2);
 
   largebox.PlaceDaughter(&smallbox, &origin);
-  world.PlaceDaughter(&largebox, &placement1);
-  world.PlaceDaughter(&largebox, &placement2);
-  world.PlaceDaughter(&largebox, &placement3);
-  world.PlaceDaughter(&largebox, &placement4);
-  world.PlaceDaughter(&largebox, &placement5);
-  world.PlaceDaughter(&largebox, &placement6);
-  world.PlaceDaughter(&largebox, &placement7);
-  world.PlaceDaughter(&largebox, &placement8);
+  worldl.PlaceDaughter(&largebox, &placement1);
+  worldl.PlaceDaughter(&largebox, &placement2);
+  worldl.PlaceDaughter(&largebox, &placement3);
+  worldl.PlaceDaughter(&largebox, &placement4);
+  worldl.PlaceDaughter(&largebox, &placement5);
+  worldl.PlaceDaughter(&largebox, &placement6);
+  worldl.PlaceDaughter(&largebox, &placement7);
+  worldl.PlaceDaughter(&largebox, &placement8);
 
   std::cerr << "Printing world content:\n";
-  world.PrintContent();
+  worldl.PrintContent();
 
   #ifdef VECGEOM_CUDA
   VPlacedVolume *world_placed = world.Place();
   CudaCopy(world_placed);
   #endif
+
+  SimpleNavigator nav;
+  Vector3D<Precision> point(2,2,2);
+  NavigationState path(4);
+  VPlacedVolume const * locatedV;
+  locatedV = nav.LocatePoint( const_cast<VPlacedVolume const *>(worldl.Place()), point, path, true);
+  path.Print();
 
   return 0;
 }

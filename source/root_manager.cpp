@@ -80,6 +80,16 @@ VUnplacedVolume* RootManager::Convert(TGeoShape const *const shape) {
   return unplaced_volume;
 }
 
+void RootManager::PrintNodeTable() const
+{
+	for(auto iter : placed_volumes_)
+	{
+		std::cerr << iter.first << " " << iter.second << std::endl;
+		TGeoNode const * n = iter.second;
+		n->Print();
+	}
+}
+
 void RootManager::Clear() {
   // Auto used because this will most likely not be compiled along with CUDA.
   // Might change in the future, forcing long and horrible typenames!

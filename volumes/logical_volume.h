@@ -56,6 +56,10 @@ public:
   VECGEOM_INLINE
   Vector<Daughter> const& daughters() const { return *daughters_; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector<Daughter> const * daughtersp() const { return daughters_; }
+
   VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
 
   VPlacedVolume* Place() const;

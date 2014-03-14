@@ -10,6 +10,7 @@
 #include "base/global.h"
 
 #include "base/iterator.h"
+#include <cassert>
 
 namespace vecgeom {
 
@@ -92,7 +93,7 @@ public:
    *         fields ->first and ->second of iterator.
    */
   typename std::map<TypeA, TypeB>::const_iterator end() const {
-    return a_to_b.begin();
+    return a_to_b.end();
   }
 
   /**

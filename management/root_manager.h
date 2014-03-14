@@ -46,6 +46,9 @@ public:
    */
   VPlacedVolume const* world() const { return world_; }
 
+  TGeoNode const * tgeonode( VPlacedVolume const * p ) const { return placed_volumes_[const_cast<VPlacedVolume*>(p)]; }
+  void PrintNodeTable() const;
+
   /**
    * Queries the global ROOT GeoManager for the top volume and recursively
    * imports and converts to VecGeom geometry.
