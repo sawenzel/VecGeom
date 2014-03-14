@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
 #include "benchmarking/distance_to_in.h"
@@ -11,6 +15,7 @@ int main() {
   UnplacedBox smallbox_params = UnplacedBox(0.5, 0.5, 0.5);
 
   LogicalVolume world = LogicalVolume(&world_params);
+  VPlacedVolume *world_placed = world.Place();
   LogicalVolume largebox = LogicalVolume(&largebox_params);
   LogicalVolume smallbox = LogicalVolume(&smallbox_params);
 
@@ -34,9 +39,11 @@ int main() {
   world.PlaceDaughter(&largebox, &placement7);
   world.PlaceDaughter(&largebox, &placement8);
 
-  DistanceToIn tester(&world);
+  DistanceToIn tester(world_placed);
   tester.set_verbose(2);
   tester.BenchmarkAll();
+
+  delete world_placed;
 
   return 0;
 }

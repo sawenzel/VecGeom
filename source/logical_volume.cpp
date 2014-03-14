@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include <stdio.h>
 #include <climits>
 #include "backend.h"
@@ -29,6 +33,10 @@ VPlacedVolume* LogicalVolume::Place() const {
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
   VPlacedVolume const *const placed = volume->Place(matrix);
+  daughters_->push_back(placed);
+}
+
+void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
   daughters_->push_back(placed);
 }
 

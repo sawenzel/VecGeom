@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BACKEND_VCBACKEND_H_
 #define VECGEOM_BACKEND_VCBACKEND_H_
 
@@ -7,8 +11,7 @@
 
 namespace vecgeom {
 
-template <>
-struct Impl<kVc> {
+struct kVc {
   typedef Vc::int_v                   int_v;
   typedef Vc::Vector<Precision>       precision_v;
   typedef Vc::Vector<Precision>::Mask bool_v;
@@ -19,11 +22,11 @@ struct Impl<kVc> {
   const static bool_v kFalse;
 };
 
-constexpr int kVectorSize = Impl<kVc>::precision_v::Size;
+constexpr int kVectorSize = kVc::precision_v::Size;
 
-typedef Impl<kVc>::int_v       VcInt;
-typedef Impl<kVc>::precision_v VcPrecision;
-typedef Impl<kVc>::bool_v      VcBool;
+typedef kVc::int_v       VcInt;
+typedef kVc::precision_v VcPrecision;
+typedef kVc::bool_v      VcBool;
 
 template <typename Type>
 VECGEOM_INLINE

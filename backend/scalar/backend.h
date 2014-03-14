@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
@@ -5,8 +9,7 @@
 
 namespace vecgeom {
 
-template <>
-struct Impl<kScalar> {
+struct kScalar {
   typedef int       int_v;
   typedef Precision precision_v;
   typedef bool      bool_v;
@@ -17,9 +20,9 @@ struct Impl<kScalar> {
   const static bool_v kFalse = false;
 };
 
-typedef Impl<kScalar>::int_v    ScalarInt;
-typedef Impl<kScalar>::precision_v ScalarDouble;
-typedef Impl<kScalar>::bool_v   ScalarBool;
+typedef kScalar::int_v    ScalarInt;
+typedef kScalar::precision_v ScalarDouble;
+typedef kScalar::bool_v   ScalarBool;
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH

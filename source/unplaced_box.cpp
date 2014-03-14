@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include <stdio.h>
 #include "backend.h"
 #include "management/volume_factory.h"

@@ -1,8 +1,12 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "backend/scalar/backend.h"
 
 namespace vecgeom {
 
-const Impl<kScalar>::precision_v Impl<kScalar>::kOne = 1.0;
-const Impl<kScalar>::precision_v Impl<kScalar>::kZero = 0.0;
+const kScalar::precision_v kScalar::kOne = 1.0;
+const kScalar::precision_v kScalar::kZero = 0.0;
 
 } // End namespace vecgeom

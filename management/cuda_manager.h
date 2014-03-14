@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_MANAGEMENT_CUDAMANAGER_H_
 #define VECGEOM_MANAGEMENT_CUDAMANAGER_H_
 
@@ -27,7 +31,7 @@ private:
   typedef void* GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
 
-  LogicalVolume const *world_, *world_gpu_;
+  VPlacedVolume const *world_, *world_gpu_;
 
   /**
    * Contains a mapping between objects stored in host memory and pointers to
@@ -49,21 +53,21 @@ public:
     return instance;
   }
 
-  LogicalVolume const* world() const;
+  VPlacedVolume const* world() const;
 
-  LogicalVolume const* world_gpu() const;
+  VPlacedVolume const* world_gpu() const;
 
   /**
    * Stages a new geometry to be copied to the GPU.
    */
-  void LoadGeometry(LogicalVolume const *const volume);
+  void LoadGeometry(VPlacedVolume const *const volume);
 
   /**
    * Synchronizes the loaded geometry to the GPU by allocating space,
    * creating new objects with correct pointers, then copying them to the GPU.
    * \return Pointer to top volume on the GPU.
    */
-  LogicalVolume const* Synchronize();
+  VPlacedVolume const* Synchronize();
 
   /**
    * Prints all loaded objects to standard output.
@@ -84,10 +88,10 @@ private:
   CudaManager& operator=(CudaManager const&);
 
   /**
-   * Recursively scans logical volumes to retrieve all unique objects
+   * Recursively scans placed volumes to retrieve all unique objects
    * for copying to the GPU.
    */
-  void ScanGeometry(LogicalVolume const *const volume);
+  void ScanGeometry(VPlacedVolume const *const volume);
 
   /**
    * Allocates all objects retrieved by ScanGeometry() on the GPU, storing

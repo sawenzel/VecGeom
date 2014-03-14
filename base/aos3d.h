@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_AOS3D_H_
 #define VECGEOM_BASE_AOS3D_H_
 

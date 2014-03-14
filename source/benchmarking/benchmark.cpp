@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "base/soa3d.h"
 #include "base/rng.h"
 #include "benchmarking/benchmark.h"
@@ -5,17 +9,16 @@
 
 namespace vecgeom {
 
-Benchmark::Benchmark(LogicalVolume const *const world) {
+Benchmark::Benchmark(VPlacedVolume const *const world) {
   set_world(world);
 }
 
-LogicalVolume const* Benchmark::world() const {
-  return world_->logical_volume();
+VPlacedVolume const* Benchmark::world() const {
+  return world_;
 }
 
-void Benchmark::set_world(LogicalVolume const *const world) {
-  delete world_;
-  world_ = world->Place();
+void Benchmark::set_world(VPlacedVolume const *const world) {
+  world_ = world;
 }
 
 BenchmarkResult Benchmark::PopResult() {

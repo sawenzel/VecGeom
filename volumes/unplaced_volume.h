@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 
@@ -14,6 +18,8 @@ private:
   friend class CudaManager;
 
 public:
+
+  virtual ~VUnplacedVolume() {}
 
   /**
    * Uses the virtual print method.

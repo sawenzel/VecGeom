@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_TRANSMATRIX_H_
 #define VECGEOM_BASE_TRANSMATRIX_H_
 
@@ -55,6 +59,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(TransformationMatrix const &other);
+
+  virtual ~TransformationMatrix() {}
 
   // Accessors
 

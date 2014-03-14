@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #include "UBox.hh"
 #include "TGeoBBox.h"
 #include "base/iterator.h"
@@ -11,7 +15,7 @@
 
 namespace vecgeom {
 
-DistanceToIn::DistanceToIn(LogicalVolume const *const world)
+DistanceToIn::DistanceToIn(VPlacedVolume const *const world)
     : Benchmark(world) {}
 
 DistanceToIn::~DistanceToIn() {

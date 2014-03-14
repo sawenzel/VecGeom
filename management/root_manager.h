@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_MANAGEMENT_ROOTMANAGER_H_
 #define VECGEOM_MANAGEMENT_ROOTMANAGER_H_
 
@@ -11,10 +15,12 @@ class RootManager {
 
 private:
 
-  TypeMap<VPlacedVolume const*, TGeoNode const*> placed_volumes_;
-  TypeMap<VUnplacedVolume const*, TGeoShape const*> unplaced_volumes_;
-  TypeMap<LogicalVolume const*, TGeoVolume const*> logical_volumes_;
-  TypeMap<TransformationMatrix const*, TGeoMatrix const*> matrices_;
+  VPlacedVolume const* world_ = nullptr;
+
+  TypeMap<VPlacedVolume*, TGeoNode const*> placed_volumes_;
+  TypeMap<VUnplacedVolume*, TGeoShape const*> unplaced_volumes_;
+  TypeMap<LogicalVolume*, TGeoVolume const*> logical_volumes_;
+  TypeMap<TransformationMatrix*, TGeoMatrix const*> matrices_;
 
 public:
 
@@ -22,6 +28,16 @@ public:
     static RootManager instance;
     return instance;
   }
+
+  VPlacedVolume const* world() const { return world_; }
+
+  /**
+   * Will register the imported ROOT geometry as the new world of the VecGeom
+   * GeoManager singleton.
+   */
+  void LoadRootGeometry();
+
+  void Clear();
 
   VPlacedVolume* Convert(TGeoNode const *const node);
 
@@ -38,6 +54,8 @@ private:
   RootManager() {}
   RootManager(RootManager const&);
   RootManager& operator=(RootManager const&);
+
+  VPlacedVolume* TraverseVolume(TGeoNode const *const node);
 
 };
 

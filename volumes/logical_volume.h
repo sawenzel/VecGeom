@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
@@ -52,6 +56,8 @@ public:
 
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
+
+  void PlaceDaughter(VPlacedVolume const *const placed);
 
   VECGEOM_CUDA_HEADER_BOTH
   int CountVolumes() const;

@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_TYPES_H_
 #define VECGEOM_BASE_TYPES_H_
 
@@ -8,11 +12,6 @@ typedef float Precision;
 #else
 typedef double Precision;
 #endif
-
-enum ImplType { kVc, kCuda, kScalar, kCilk };
-
-template <ImplType it>
-struct Impl;
 
 template <typename Type>
 class Vector3D;

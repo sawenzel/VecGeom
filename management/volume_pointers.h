@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 #define VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 

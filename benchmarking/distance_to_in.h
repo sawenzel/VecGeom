@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BENCHMARKING_DISTANCETOIN_H_
 #define VECGEOM_BENCHMARKING_DISTANCETOIN_H_
 
@@ -32,7 +36,7 @@ public:
   
   DistanceToIn() {}
 
-  DistanceToIn(LogicalVolume const *const world);
+  DistanceToIn(VPlacedVolume const *const world);
 
   ~DistanceToIn();
 

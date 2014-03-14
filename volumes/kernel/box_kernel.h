@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_
 
@@ -8,26 +12,26 @@
 namespace vecgeom {
 
 /** the core inside function with matrix stripped; it expects a local point ) **/
-template<ImplType it>
+template<typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxUnplacedInside( Vector3D<Precision> const & dimensions,
-						Vector3D<typename Impl<it>::precision_v> const &localpoint,
-						typename Impl<it>::bool_v *const inside )
+						Vector3D<typename Backend::precision_v> const &localpoint,
+						typename Backend::bool_v *const inside )
 {
-	Vector3D<typename Impl<it>::bool_v> inside_dim(Impl<it>::kFalse);
+	Vector3D<typename Backend::bool_v> inside_dim(Backend::kFalse);
 	  for (int i = 0; i < 3; ++i) {
 	    inside_dim[i] = Abs(localpoint[i]) < dimensions[i];
-	    if (Impl<it>::early_returns) {
+	    if (Backend::early_returns) {
 	      if (!inside_dim[i]) {
-	        *inside = Impl<it>::kFalse;
+	        *inside = Backend::kFalse;
 	        return;
 	      }
 	    }
 	  }
 
-	  if (Impl<it>::early_returns) {
-	    *inside = Impl<it>::kTrue;
+	  if (Backend::early_returns) {
+	    *inside = Backend::kTrue;
 	  } else {
 	    *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
 	  }
@@ -36,50 +40,51 @@ void BoxUnplacedInside( Vector3D<Precision> const & dimensions,
 /**
  *  a C-like function that returns if a particle is inside the box
  *   given specified by boxdimensions and placed with matrix **/
-template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<Precision> const & boxdimensions,
                TransformationMatrix const &matrix,
-               Vector3D<typename Impl<it>::precision_v> const &point,
-               typename Impl<it>::bool_v *const inside) {
+               Vector3D<typename Backend::precision_v> const &point,
+               typename Backend::bool_v *const inside) {
 
  // probably better like this:
-  BoxUnplacedInside<it>( boxdimensions, matrix.Transform<trans_code, rot_code>(point), inside );
+  BoxUnplacedInside<Backend>(boxdimensions, matrix.Transform<trans_code,
+                            rot_code>(point), inside);
 }
 
 /**
- *  a C-like function that returns if a particle is inside the box
- *   given specified by boxdimensions and placed with matrix
+ * a C-like function that returns if a particle is inside the box
+ * given specified by boxdimensions and placed with matrix
  *
- *   this function also makes the transformed local point available to the caller
- *   **/
-template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+ * this function also makes the transformed local point available to the caller
+ **/
+template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<Precision> const & boxdimensions,
                TransformationMatrix const &matrix,
-               Vector3D<typename Impl<it>::precision_v> const &point,
-               Vector3D<typename Impl<it>::precision_v> & localpoint,
-               typename Impl<it>::bool_v *const inside) {
+               Vector3D<typename Backend::precision_v> const &point,
+               Vector3D<typename Backend::precision_v> & localpoint,
+               typename Backend::bool_v *const inside) {
 
   localpoint = matrix.Transform<trans_code, rot_code>(point);
-  BoxUnplacedInside<it>( boxdimensions, localpoint, inside );
+  BoxUnplacedInside<Backend>( boxdimensions, localpoint, inside );
 }
 
-template <TranslationCode trans_code, RotationCode rot_code, ImplType it>
+template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxDistanceToIn(
     Vector3D<Precision> const &dimensions,
     TransformationMatrix const &matrix,
-    Vector3D<typename Impl<it>::precision_v> const &pos,
-    Vector3D<typename Impl<it>::precision_v> const &dir,
-    typename Impl<it>::precision_v const &step_max,
-    typename Impl<it>::precision_v *const distance) {
+    Vector3D<typename Backend::precision_v> const &pos,
+    Vector3D<typename Backend::precision_v> const &dir,
+    typename Backend::precision_v const &step_max,
+    typename Backend::precision_v *const distance) {
 
-  typedef typename Impl<it>::precision_v Float;
-  typedef typename Impl<it>::bool_v Bool;
+  typedef typename Backend::precision_v Float;
+  typedef typename Backend::bool_v Bool;
 
   Vector3D<Float> safety;
   Vector3D<Float> pos_local;

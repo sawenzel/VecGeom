@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BASE_STOPWATCH_H_
 #define VECGEOM_BASE_STOPWATCH_H_
 

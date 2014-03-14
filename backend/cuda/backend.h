@@ -1,3 +1,7 @@
+/**
+ * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ */
+
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
@@ -7,8 +11,7 @@
 
 namespace vecgeom {
 
-template <>
-struct Impl<kCuda> {
+struct kCuda {
   typedef int       int_v;
   typedef Precision precision_v;
   typedef bool      bool_v;
@@ -19,9 +22,9 @@ struct Impl<kCuda> {
   const static bool_v kFalse = false;
 };
 
-typedef Impl<kCuda>::int_v       CudaInt;
-typedef Impl<kCuda>::precision_v CudaPrecision;
-typedef Impl<kCuda>::bool_v      CudaBool;
+typedef kCuda::int_v       CudaInt;
+typedef kCuda::precision_v CudaPrecision;
+typedef kCuda::bool_v      CudaBool;
 
 static const unsigned kThreadsPerBlock = 256;
 
