@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file scalar/implementation.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BACKEND_SCALAR_IMPLEMENTATION_H_

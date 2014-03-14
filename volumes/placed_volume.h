@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file placed_volume.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_VOLUMES_PLACEDVOLUME_H_

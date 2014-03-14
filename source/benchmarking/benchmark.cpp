@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file benchmark.cpp
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include "base/soa3d.h"

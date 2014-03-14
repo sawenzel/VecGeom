@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file transformation_matrix.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_TRANSMATRIX_H_
@@ -46,13 +47,31 @@ public:
 
   TransformationMatrix();
 
+  /**
+   * Constructor for translation only.
+   * @param tx Translation in x-coordinate.
+   * @param ty Translation in y-coordinate.
+   * @param tz Translation in z-coordinate.
+   */
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz);
 
+  /**
+   * @param tx Translation in x-coordinate.
+   * @param ty Translation in y-coordinate.
+   * @param tz Translation in z-coordinate.
+   * @param phi Rotation angle about z-axis.
+   * @param theta Rotation angle about new y-axis.
+   * @param psi Rotation angle about new z-axis.
+   */
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);
 
+  /**
+   * Constructor to manually set each entry. Used when converting from different
+   * geometry.
+   */
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision r0,
                        const Precision r1, const Precision r2,
@@ -77,7 +96,7 @@ public:
 
   /**
    * No safety against faulty indexing.
-   * \param index Index of translation entry in the range [0-2].
+   * @param index Index of translation entry in the range [0-2].
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -150,13 +169,13 @@ private:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void DoRotation(Vector3D<InputType> const &master,
-                  Vector3D<InputType> & local) const;
+                  Vector3D<InputType> &local) const;
 
   template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void DoTranslation(Vector3D<InputType> const &master,
-                     Vector3D<InputType> & local) const;
+                     Vector3D<InputType> &local) const;
 
   template <bool vectortransform, typename InputType>
   void InverseTransformKernel( Vector3D<InputType> const & local, Vector3D<InputType> & master ) const;
@@ -259,7 +278,7 @@ template <RotationCode code, typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::DoRotation(Vector3D<InputType> const &master,
-                                      Vector3D<InputType> & local) const {
+                                      Vector3D<InputType> &local) const {
 
   if (code == 0x1B1) {
     local[0] = master[0]*rot[0];
@@ -378,7 +397,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::DoTranslation(
     Vector3D<InputType> const &master,
-    Vector3D<InputType> & local) const {
+    Vector3D<InputType> &local) const {
 
   local[0] = master[0] - trans[0];
   local[1] = master[1] - trans[1];
@@ -396,7 +415,7 @@ template <TranslationCode trans_code, RotationCode rot_code,
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::Transform(Vector3D<InputType> const &master,
-                                     Vector3D<InputType> & local) const {
+                                     Vector3D<InputType> &local) const {
 
   // Identity
   if (trans_code == 0 && rot_code == rotation::kIdentity) {
@@ -604,7 +623,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::TransformRotation(
     Vector3D<InputType> const &master,
-    Vector3D<InputType> & local) const {
+    Vector3D<InputType> &local) const {
 
   // Rotational identity
   if (code == rotation::kIdentity) {

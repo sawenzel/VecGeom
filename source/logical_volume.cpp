@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file logical_volume.cpp
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include <stdio.h>

@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file vector3d.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_VECTOR3D_H_
@@ -15,6 +16,11 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Three dimensional vector class supporting most arithmetic operations.
+ * @details If vector acceleration is enabled, the scalar template instantiation
+ *          will use vector instructions for operations when possible.
+ */
 template <typename Type>
 class Vector3D {
 
@@ -114,7 +120,7 @@ public:
   Type const& z() const { return vec[2]; }
 
   /**
-   * \return Length of the vector as sqrt(x^2 + y^2 + z^2).
+   * @return Length of the vector as sqrt(x^2 + y^2 + z^2).
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -124,7 +130,7 @@ public:
 
   /**
    * Normalizes the vector by dividing each entry by the length.
-   * \sa Vector3D::Length()
+   * @sa Vector3D::Length()
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -134,7 +140,7 @@ public:
 
   /**
    * Maps each vector entry to a function that manipulates the entry type.
-   * \param f A function of type "Type f(const Type&)" to map over entries.
+   * @param f A function of type "Type f(const Type&)" to map over entries.
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

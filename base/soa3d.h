@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file soa3d.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_SOA3D_H_
@@ -11,6 +12,9 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Stores arrays of three coordinates in a structure of arrays fashion.
+ */
 template <typename Type>
 class SOA3D : public TrackContainer<Type> {
 
@@ -20,13 +24,23 @@ private:
 
 public:
 
+  /**
+   * Initializes the SOA with existing data arrays, performing no allocation.
+   */
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D(Type *const x, Type *const y, Type *const z, const unsigned size);
 
   SOA3D();
 
+  /**
+   * Initializes the SOA with a fixed size, allocating an aligned array for each
+   * coordinate of the specified size.
+   */
   SOA3D(const unsigned size);
 
+  /**
+   * Performs a deep copy from another SOA.
+   */
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D(TrackContainer<Type> const &other);
 

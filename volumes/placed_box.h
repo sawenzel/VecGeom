@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file placed_box.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_VOLUMES_PLACEDBOX_H_
@@ -29,20 +30,20 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> const& dimensions() const {
-    return AsUnplacedBox()->dimensions();
+    return unplaced_box()->dimensions();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision x() const { return AsUnplacedBox()->x(); }
+  Precision x() const { return unplaced_box()->x(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision y() const { return AsUnplacedBox()->y(); }
+  Precision y() const { return unplaced_box()->y(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision z() const { return AsUnplacedBox()->z(); }
+  Precision z() const { return unplaced_box()->z(); }
 
 protected:
 
@@ -52,7 +53,7 @@ protected:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  UnplacedBox const* AsUnplacedBox() const;
+  UnplacedBox const* unplaced_box() const;
 
 
 public:
@@ -68,7 +69,6 @@ public:
 
   virtual void Inside(AOS3D<Precision> const &points,
                       bool *const output) const;
-
 
   VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
@@ -150,7 +150,7 @@ typename Backend::bool_v PlacedBox::InsideDispatch(
   typename Backend::bool_v output;
 
   BoxInside<trans_code, rot_code, Backend>(
-    AsUnplacedBox()->dimensions(),
+    unplaced_box()->dimensions(),
     *this->matrix(),
     point,
     &output
@@ -172,7 +172,7 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
   typename Backend::precision_v output;
 
   BoxDistanceToIn<trans_code, rot_code, Backend>(
-    AsUnplacedBox()->dimensions(),
+    unplaced_box()->dimensions(),
     *this->matrix(),
     position,
     direction,
@@ -185,7 +185,7 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-UnplacedBox const* PlacedBox::AsUnplacedBox() const {
+UnplacedBox const* PlacedBox::unplaced_box() const {
   return static_cast<UnplacedBox const*>(this->unplaced_volume());
 }
 
@@ -209,7 +209,7 @@ bool PlacedBox::Inside(Vector3D<Precision> const &point, Vector3D<Precision> & l
 {
 	typename kScalar::bool_v output;
 	BoxInside<1, 0, kScalar>(
-			AsUnplacedBox()->dimensions(),
+			unplaced_box()->dimensions(),
 			*this->matrix_,
 			point,
 			localpoint,
@@ -235,7 +235,7 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
                                    Precision const step_max
 								  ) const {
 
-  Vector3D<Precision> const &dim = AsUnplacedBox()->dimensions();
+  Vector3D<Precision> const &dim = unplaced_box()->dimensions();
 
   const Vector3D<Precision> safety_plus  = dim + position;
   const Vector3D<Precision> safety_minus = dim - position;

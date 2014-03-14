@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file stopwatch.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_STOPWATCH_H_
@@ -7,6 +8,10 @@
 
 #include "tbb/tick_count.h"
 
+/**
+ * @brief Timer for benchmarking purposes implemented using the Intel TBB
+ *        library.
+ */
 class Stopwatch {
 
 private:
@@ -18,6 +23,9 @@ public:
 
   void Start() { t1 = tbb::tick_count::now(); }
 
+  /**
+   * @return Elapsed time since start.
+   */
   double Stop() {
     t2 = tbb::tick_count::now();
     return Elapsed();

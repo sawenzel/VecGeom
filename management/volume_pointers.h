@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file volume_pointers.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
@@ -14,20 +15,28 @@ namespace vecgeom {
 
 enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot};
 
+/**
+ * @brief Converts a VecGeom volume to unspecialized, USolids and ROOT
+ *        representations for performance comparison purposes.
+ */
 class VolumePointers {
 
 private:
 
-  VPlacedVolume const *specialized_;
-  VPlacedVolume const *unspecialized_;
-  TGeoShape const *root_;
-  ::VUSolid const *usolids_;
+  VPlacedVolume const *specialized_ = NULL;
+  VPlacedVolume const *unspecialized_ = NULL;
+  TGeoShape const *root_ = NULL;
+  ::VUSolid const *usolids_ = NULL;
+  /** Remember which objects can be safely deleted. */
   BenchmarkType initial_;
 
 public:
 
   VolumePointers(VPlacedVolume const *const volume);
 
+  /**
+   * Deep copies from other object to avoid ownership issues.
+   */
   VolumePointers(VolumePointers const &other);
 
   ~VolumePointers();
@@ -44,6 +53,10 @@ public:
 
 private:
 
+  /**
+   * Converts the currently stored specialized volume to each other
+   * representation not yet instantiated.
+   */
   void ConvertVolume();
   
   void Deallocate();

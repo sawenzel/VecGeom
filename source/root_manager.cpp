@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file root_manager.cpp
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include "base/transformation_matrix.h"
@@ -20,6 +21,7 @@ namespace vecgeom {
 void RootManager::LoadRootGeometry() {
   Clear();
   TGeoNode const *const world_root = ::gGeoManager->GetTopNode();
+  // Convert() will recursively convert daughters
   world_ = Convert(world_root);
   GeoManager::Instance().set_world(world_);
 }
@@ -89,6 +91,8 @@ void RootManager::PrintNodeTable() const
 }
 
 void RootManager::Clear() {
+  // Auto used because this will most likely not be compiled along with CUDA.
+  // Might change in the future, forcing long and horrible typenames!
   for (auto i = placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
     delete i->first;
   }

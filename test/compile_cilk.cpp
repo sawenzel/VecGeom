@@ -1,7 +1,3 @@
-/**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
-
 #include "base/vector3d.h"
 #include "base/soa3d.h"
 #include "base/specialized_matrix.h"

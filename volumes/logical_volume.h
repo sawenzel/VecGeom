@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file logical_volume.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
@@ -15,6 +16,10 @@ namespace vecgeom {
 
 typedef VPlacedVolume const* Daughter;
 
+/**
+ * @brief Class responsible for storing the unplaced volume, material and
+ *        daughter volumes of a mother volume.
+ */
 class LogicalVolume {
 
 private:
@@ -26,12 +31,17 @@ private:
 
 public:
 
+  /**
+   * Standard constructor when constructing geometries. Will initiate an empty
+   * daughter list which can be populated by placing daughters.
+   * \sa PlaceDaughter()
+   */
   LogicalVolume(VUnplacedVolume const *const unplaced_volume__)
       : unplaced_volume_(unplaced_volume__) {
     daughters_ = new Vector<Daughter>();
   }
 
-  VECGEOM_CUDA_HEADER_DEVICE
+  VECGEOM_CUDA_HEADER_BOTH
   LogicalVolume(VUnplacedVolume const *const unplaced_volume,
                 Vector<Daughter> *daughters)
       : unplaced_volume_(unplaced_volume), daughters_(daughters) {}

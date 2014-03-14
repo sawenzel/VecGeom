@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file geo_manager.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
@@ -10,8 +11,7 @@
 namespace vecgeom {
 
 /**
- * Singleton class that maintains a list of all instantiated placed volumes.
- * Will assign each placed volume a unique id that identifies them globally.
+ * @brief Knows about the current world volume.
  */
 class GeoManager {
 

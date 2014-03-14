@@ -1,7 +1,3 @@
-/**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
-
 #include <iostream>
 
 #include "management/root_manager.h"

@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file rng.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_RNG_H_
@@ -9,6 +10,9 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Singleton random number generator.
+ */
 class RNG {
 
 private:
@@ -22,13 +26,22 @@ protected:
 
 public:
 
+  /**
+   * Access singleton instance.
+   */
   static RNG& Instance() {
     static RNG instance;
     return instance;
   }
 
+  /**
+   * @return Uniformly distributed floating point number between 0 and 1 unless
+   *         range arguments are passed.
+   */
   VECGEOM_INLINE
-  Precision uniform() { return uniform_dist(rng); }
+  Precision uniform(const Precision min = 0., const Precision max = 1.) {
+    return min + (max - min) * uniform_dist(rng);
+  }
 
 private:
 

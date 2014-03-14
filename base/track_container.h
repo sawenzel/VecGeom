@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file track_container.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_TRACKCONTAINER_H_
@@ -9,6 +10,10 @@
 
 namespace vecgeom {
 
+/**
+ * @brief Base class for containers storing sets of three coordinates in a
+ *        memory scheme determined by the deriving class.
+ */
 template <typename Type>
 class TrackContainer {
 

@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file volume_pointers.cpp
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #include "management/volume_pointers.h"

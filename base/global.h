@@ -1,5 +1,6 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file global.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
 #ifndef VECGEOM_BASE_UTILITIES_H_
@@ -32,7 +33,7 @@
   #include <mm_malloc.h>
   #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
     #define VECGEOM_INLINE inline __attribute__((always_inline))
-  #else // Clang
+  #else // Clang (most likely)
     #define VECGEOM_INLINE inline
   #endif
 #endif
@@ -48,8 +49,7 @@ const double kDegToRad = M_PI/180.;
 const double kRadToDeg = 180./M_PI;
 const double kInfinity = INFINITY;
 const double kTiny = 1e-20;
-const double kNearZero = 1e-12;
-const double kGTolerance = 1e-9;
+const double kTolerance = 1e-12;
 
 } // End namespace vecgeom
 
