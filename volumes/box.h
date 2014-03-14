@@ -1,5 +1,8 @@
 /**
- * \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @file box.h
+ * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ *
+ * Will include all headers related to the box volume.
  */
 
 #ifndef VECGEOM_VOLUMES_BOX_H_
