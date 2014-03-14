@@ -31,6 +31,9 @@ public:
 
   VPlacedVolume const* world() const { return world_; }
 
+  TGeoNode const * tgeonode( VPlacedVolume const * p ) const { return placed_volumes_[const_cast<VPlacedVolume*>(p)]; }
+  void PrintNodeTable() const;
+
   /**
    * Will register the imported ROOT geometry as the new world of the VecGeom
    * GeoManager singleton.

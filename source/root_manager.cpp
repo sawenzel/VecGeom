@@ -78,6 +78,16 @@ VUnplacedVolume* RootManager::Convert(TGeoShape const *const shape) {
   return unplaced_volume;
 }
 
+void RootManager::PrintNodeTable() const
+{
+	for(auto iter : placed_volumes_)
+	{
+		std::cerr << iter.first << " " << iter.second << std::endl;
+		TGeoNode const * n = iter.second;
+		n->Print();
+	}
+}
+
 void RootManager::Clear() {
   for (auto i = placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
     delete i->first;
