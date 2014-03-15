@@ -96,6 +96,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
 					tmp = transformedpoint;
 					candvolume =  nextvolume;
 					daughters = candvolume->logical_volume()->daughtersp();
+					godeeper=true;
 					break;
 				}
 			}
@@ -174,7 +175,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	// TODO: this is tedious, please provide operators in Vector3D!!
 	// WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS
 	Vector3D<Precision> newpointafterboundary = localdir;
-	newpointafterboundary*=(step + kGTolerance);
+	newpointafterboundary*=(step + 1e-9);
 	newpointafterboundary+=localpoint;
 
 	if( nexthitvolume != -1 ) // not hitting mother
