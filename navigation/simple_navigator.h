@@ -118,7 +118,7 @@ SimpleNavigator::RelocatePointFromPath( Vector3D<Precision> const & localpoint,
 	{
         Vector3D<Precision> tmp = localpoint;
 		// go up iteratively
-		while( currentmother && ! currentmother->Inside( tmp ) )
+		while( currentmother && ! currentmother->UnplacedInside( tmp ) )
 		{
 			path.Pop();
 			Vector3D<Precision> pointhigherup = currentmother->matrix()->InverseTransform( tmp );

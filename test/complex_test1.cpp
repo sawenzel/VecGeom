@@ -136,8 +136,8 @@ void test5()
 void test6()
 {
 	// statistical test  - comparing with ROOT navigation functionality
-	// generate 1000 points
-	for(int i=0;i<10000000;++i)
+	// generate points
+	for(int i=0;i<100000;++i)
 	{
 		double x = RNG::Instance().uniform(-10,10);
 		double y = RNG::Instance().uniform(-10,10);
@@ -159,6 +159,48 @@ void test6()
 	std::cerr << "test6 (statistical) passed" << std::endl;
 }
 
+// relocation test
+void test7()
+{
+	// statistical test  - testing global matrix transforms and relocation at the same time
+	// consistency check with full LocatePoint method
+	// generate points
+	for(int i=0;i<100000;++i)
+	{
+		double x = RNG::Instance().uniform(-10,10);
+		double y = RNG::Instance().uniform(-10,10);
+		double z = RNG::Instance().uniform(-10,10);
+
+		// ROOT navigation
+		TGeoNavigator  *nav = ::gGeoManager->GetCurrentNavigator();
+		TGeoNode * node =nav->FindNode(x,y,z);
+
+		// VecGeom navigation
+		Vector3D<Precision> p(x,y,z);
+		std::cerr << p << std::endl;
+		NavigationState state(4);
+		SimpleNavigator vecnav;
+		VPlacedVolume const *vol1= vecnav.LocatePoint( RootManager::Instance().world(),
+				p , state, true);
+
+		// now we move global point in x direction and find new volume and path
+		NavigationState state2(4);
+		p+=Vector3D<Precision>(1.,0,0);
+		std::cerr << p << std::endl;
+		VPlacedVolume const *vol2= vecnav.LocatePoint( RootManager::Instance().world(),
+					p , state2, true);
+
+		// same with relocation
+		// need local point first
+		TransformationMatrix globalm = state.TopMatrix();
+		Vector3D<Precision> localp = globalm.Transform<1,0>( p );
+		VPlacedVolume const *vol3= vecnav.RelocatePointFromPath( localp, state );
+		std::cerr << vol1 << " " << vol2 << " " << vol3 << std::endl;
+		assert( vol3  == vol2 );
+	}
+	std::cerr << "test7 (statistical relocation) passed" << std::endl;
+}
+
 int main()
 {
     CreateRootGeom();
@@ -174,6 +216,7 @@ int main()
     test4();
     test5();
     test6();
+    test7();
 
     return 0;
 }
