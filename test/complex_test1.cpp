@@ -156,7 +156,7 @@ void test6()
 
 		assert( RootManager::Instance().tgeonode(vol) == node );
 	}
-	std::cerr << "test6 (statistical) passed" << std::endl;
+	std::cerr << "test6 (statistical location) passed" << std::endl;
 }
 
 // relocation test
@@ -165,45 +165,48 @@ void test7()
 	// statistical test  - testing global matrix transforms and relocation at the same time
 	// consistency check with full LocatePoint method
 	// generate points
-	for(int i=0;i<100000;++i)
+	for(int i=0;i<1000000;++i)
 	{
-		std::cerr << "###############" << std::endl;
 		double x = RNG::Instance().uniform(-10,10);
 		double y = RNG::Instance().uniform(-10,10);
 		double z = RNG::Instance().uniform(-10,10);
 
-		// ROOT navigation
-		TGeoNavigator  *nav = ::gGeoManager->GetCurrentNavigator();
-		TGeoNode * node =nav->FindNode(x,y,z);
-
 		// VecGeom navigation
 		Vector3D<Precision> p(x,y,z);
-		std::cerr << "GLOBAL " << p << std::endl;
 		NavigationState state(4);
 		SimpleNavigator vecnav;
 		VPlacedVolume const *vol1= vecnav.LocatePoint( RootManager::Instance().world(),
 				p , state, true);
-		std::cerr << RootManager::Instance().tgeonode( vol1 )->GetName() << std::endl;
-		state.Print();
+		/*
+		if ( vol1 != NULL )
+		{
+			std::cerr << RootManager::Instance().tgeonode( vol1 )->GetName() << std::endl;
+		}
+*/
 
 		// now we move global point in x direction and find new volume and path
 		NavigationState state2(4);
 		p+=Vector3D<Precision>(1.,0,0);
-		std::cerr << "NEW GLOBAL " << p << std::endl;
 		VPlacedVolume const *vol2= vecnav.LocatePoint( RootManager::Instance().world(),
 					p , state2, true);
-		std::cerr << RootManager::Instance().tgeonode( vol2 )->GetName() << std::endl;
+	/*
+		if ( vol2 != NULL )
+		{
+			std::cerr << "new node " << RootManager::Instance().tgeonode( vol2 )->GetName() << std::endl;
+
+			// ROOT navigation
+			TGeoNavigator  *nav = ::gGeoManager->GetCurrentNavigator();
+			TGeoNode * node =nav->FindNode(p[0],p[1],p[2]);
+			std::cerr << "ROOT new: " << node->GetName() << std::endl;
+		}*/
 
 		// same with relocation
 		// need local point first
 		TransformationMatrix globalm = state.TopMatrix();
-		std::cerr << globalm << std::endl;
-		Vector3D<Precision> localp;
-		globalm.Transform<1,0>( p, localp );
-		std::cerr << localp << " "  << std::endl;
+		Vector3D<Precision> localp = globalm.Transform<1,0>( p );
 
 		VPlacedVolume const *vol3= vecnav.RelocatePointFromPath( localp, state );
-		std::cerr << vol1 << " " << vol2 << " " << vol3 << std::endl;
+//		std::cerr << vol1 << " " << vol2 << " " << vol3 << std::endl;
 		assert( vol3  == vol2 );
 	}
 	std::cerr << "test7 (statistical relocation) passed" << std::endl;

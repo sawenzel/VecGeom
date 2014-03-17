@@ -89,6 +89,9 @@ public:
 	VECGEOM_CUDA_HEADER_BOTH
 	void Pop();
 
+	VECGEOM_INLINE
+	VECGEOM_CUDA_HEADER_BOTH
+	int Distance( NavigationState const & ) const;
 //	int Distance(NavigationState const &) const;
 
 	// clear all information
@@ -178,6 +181,10 @@ NavigationState::TopMatrix()
 	return global_matrix_;
 }
 
+/**
+ * function that transforms a global point to local point in reference frame of deepest volume in current navigation state
+ * ( equivalent to using a global matrix )
+ */
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 Vector3D<Precision>
@@ -187,7 +194,8 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
 	Vector3D<Precision> current;
 	for(int level=0;level<currentlevel_;++level)
 	{
-		current = path_[level]->matrix()->Transform<1,0>( tmp );
+		TransformationMatrix const *m = path_[level]->matrix();
+		current = m->Transform<1,0,Precision>( tmp );
 		tmp = current;
 	}
 	return tmp;
@@ -200,6 +208,33 @@ void NavigationState::Print() const
 	std::cerr << "deepest volume " << Top() << std::endl;
 }
 
+/**
+ * calculates if other navigation state takes a different branch in geometry path or is on same branch
+ * ( two states are on same branch if one can connect the states just by going upwards or downwards ( or do nothing ))
+ */
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+int NavigationState::Distance( NavigationState const & other ) const
+{
+	int lastcommonlevel=0;
+	int maxlevel = std::max( GetCurrentLevel() , other.GetCurrentLevel() );
+
+	//  algorithm: start on top and go down until paths split
+	for(int i=0; i < maxlevel; i++)
+	{
+		VPlacedVolume const *v1 = this->path_[i];
+		VPlacedVolume const *v2 = other.path_[i];
+		if( v1 == v2 )
+		{
+			lastcommonlevel = i;
+		}
+		else
+		{
+			break;
+		}
+	}
+	return (GetCurrentLevel()-lastcommonlevel) + ( other.GetCurrentLevel() - lastcommonlevel ) - 2;
+}
 
 
 }
