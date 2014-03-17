@@ -436,9 +436,9 @@ void TransformationMatrix::Transform(Vector3D<InputType> const &master,
   }
 
   // General case
-  DoTranslation(master, local);
-  DoRotation<rot_code>(master, local);
-
+  Vector3D<InputType> tmp;
+  DoTranslation(master, tmp);
+  DoRotation<rot_code>(tmp, local);
 }
 
 /**
@@ -469,7 +469,7 @@ void TransformationMatrix::InverseTransformKernel(Vector3D<InputType> const &loc
                 Vector3D<InputType> & master) const
 {
 	// we are just doing the full stuff here ( LocalToMaster is less critical than other way round )
-	if(vectortransform == 0)
+	if(vectortransform == 1)
 	{
 		master[0] =  local[0]*rot[0];
 		master[0] += local[1]*rot[1];
