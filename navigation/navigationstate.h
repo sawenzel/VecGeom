@@ -82,6 +82,11 @@ public:
 
 	VECGEOM_INLINE
 	VECGEOM_CUDA_HEADER_BOTH
+	Vector3D<Precision>
+	GlobalToLocal(Vector3D<Precision> const &);
+
+	VECGEOM_INLINE
+	VECGEOM_CUDA_HEADER_BOTH
 	void Pop();
 
 //	int Distance(NavigationState const &) const;
@@ -173,6 +178,20 @@ NavigationState::TopMatrix()
 	return global_matrix_;
 }
 
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<Precision>
+NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
+{
+	Vector3D<Precision> tmp=globalpoint;
+	Vector3D<Precision> current;
+	for(int level=0;level<currentlevel_;++level)
+	{
+		current = path_[level]->matrix()->Transform<1,0>( tmp );
+		tmp = current;
+	}
+	return tmp;
+}
 
 void NavigationState::Print() const
 {
