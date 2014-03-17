@@ -199,7 +199,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
   // no translation and no rotation should look like this:
-	return PlacedBox::InsideDispatch<0, 0x111, kScalar>(localpoint);
+	return PlacedBox::InsideDispatch<0, vecgeom::rotation::kIdentity, kScalar>(localpoint);
 }
 
 
