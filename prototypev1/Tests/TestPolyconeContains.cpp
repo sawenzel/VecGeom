@@ -1,5 +1,5 @@
 /*
- * TestVectorizedPlacedTube.cpp
+ * TestPolyconeContains.cpp
  *
  *  Created on: Nov 18, 2013
  *      Author: swenzel

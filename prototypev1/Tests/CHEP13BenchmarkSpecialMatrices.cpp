@@ -1,5 +1,5 @@
 /*
- * TestVectorizedPlacedTube.cpp
+ * CHEP13BenchmarkSpecialMatrices.cpp
  *
  *  Created on: Nov 18, 2013
  *      Author: swenzel

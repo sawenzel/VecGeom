@@ -55,7 +55,7 @@ public:
 	static 
 	void * operator new(std::size_t sz)
 	{
-	  std::cerr  << "overloaded new called for Boxparams" << std::endl; 
+	  std::cerr  << "overloaded new called for TubeParams" << std::endl; 
 	  void *aligned_buffer=_mm_malloc( sizeof(TubeParameters), 32 );
 	  return ::operator new(sz, aligned_buffer);
 	}
