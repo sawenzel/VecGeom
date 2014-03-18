@@ -9,6 +9,7 @@
 #include "base/global.h"
 
 #include "base/type_map.h"
+#include "TGeoNode.h"
 
 namespace vecgeom {
 
@@ -47,6 +48,7 @@ public:
   VPlacedVolume const* world() const { return world_; }
 
   TGeoNode const * tgeonode( VPlacedVolume const * p ) const { return placed_volumes_[const_cast<VPlacedVolume*>(p)]; }
+  char const *  GetName( VPlacedVolume const * p  ) const { return tgeonode(p)->GetName(); }
   void PrintNodeTable() const;
 
   /**
