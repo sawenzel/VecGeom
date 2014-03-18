@@ -64,6 +64,29 @@ public:
 								  double & /*step*/
 								 ) const;
 
+	/**
+	 * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
+	 */
+	template <typename Container3D>
+	void FindNextBoundaryAndStep(
+			Container3D const & /*point*/,
+			Container3D const & /*dir*/,
+			NavigationState **  /* this is interpreted as an array of pointers to NavigationStates */,
+			NavigationState **  /* this is interpreted as an array of pointers to NavigationStates */,
+			double const * /* pSteps -- proposed steps */,
+			double * /* safeties */,
+			double * /* distances; steps */, int np) const;
+
+	/**
+	 * A verbose function telling about possible hit targets and steps; starting from a navigation state
+	 * and a global point and direction ( we need to check for consistency ... ); mainly for debugging purposes
+	 */
+	void InspectEnvironmentForPointAndDirection(
+			Vector3D<Precision> const & /* global point */
+			Vector3D<Precision> const & /* global direction */
+			NavigationState const & /* current state */
+	) const;
+
 };
 
 VPlacedVolume const *
