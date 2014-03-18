@@ -212,6 +212,77 @@ void test7()
 	std::cerr << "test7 (statistical relocation) passed" << std::endl;
 }
 
+Vector3D<Precision> sampleDir()
+{
+	Vector3D<Precision> tmp;
+    tmp[0]=RNG::Instance().uniform(-1,1);
+    tmp[1]=RNG::Instance().uniform(-1,1);
+    tmp[2]=RNG::Instance().uniform(-1,1);
+    double inversenorm=1./sqrt( tmp[0]*tmp[0] + tmp[1]*tmp[1] + tmp[2]*tmp[2]);
+    tmp[0]*=inversenorm;
+    tmp[1]*=inversenorm;
+    tmp[2]*=inversenorm;
+    return tmp;
+}
+
+// navigation
+void test8()
+{
+	// statistical test  of navigation via comparison with ROOT navigation
+	for(int i=0;i<1000000;++i)
+	{
+		double x = RNG::Instance().uniform(-10,10);
+		double y = RNG::Instance().uniform(-10,10);
+		double z = RNG::Instance().uniform(-10,10);
+
+		// VecGeom navigation
+		Vector3D<Precision> p(x,y,z);
+		Vector3D<Precision> d=sampleDir();
+
+		NavigationState state(4), newstate(4);
+		SimpleNavigator nav;
+		VPlacedVolume const *vol1= nav.LocatePoint( RootManager::Instance().world(),
+				p, state, true);
+
+		double step;
+		nav.FindNextBoundaryAndStep( p, d, state, newstate, step );
+
+		TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
+
+		// this is one of the disatvantages of the ROOT interface:
+		// who enforces that I have to call FindNode first before FindNextBoundary
+		// this is not apparent from the interface ?
+		TGeoNode * node = rootnav->FindNode(x,y,z);
+		assert( rootnav->GetCurrentNode()  == RootManager::Instance().tgeonode( state.Top() ) );
+
+		rootnav->SetCurrentPoint(x,y,z);
+		rootnav->SetCurrentDirection(d[0],d[1],d[2]);
+		rootnav->FindNextBoundaryAndStep( 1E30 );
+
+		if( newstate.Top() != NULL )
+		{
+			if( rootnav->GetCurrentNode()  != RootManager::Instance().tgeonode( newstate.Top() ) )
+			{
+				std::cerr << "ERROR" << std::endl;
+				std::cerr << i << " " << d << std::endl;
+				std::cerr << i << " " << p << std::endl;
+				std::cerr << node->GetName() << std::endl;
+				std::cerr << rootnav->GetCurrentNode()->GetName() << std::endl;
+				std::cerr << rootnav->GetStep() << std::endl;
+				std::cerr << RootManager::Instance().tgeonode( newstate.Top() )->GetName() << std::endl;
+			}
+			if( rootnav->GetCurrentNode() == node )
+			{
+				std::cerr << "ROOT ERROR" << std::endl;
+			}
+
+		}
+		assert( state.Top() != newstate.Top() );
+	}
+	std::cerr << "test8 (statistical navigation) passed" << std::endl;
+}
+
+
 int main()
 {
     CreateRootGeom();
@@ -228,6 +299,7 @@ int main()
     test5();
     test6();
     test7();
+    test8();
 
     return 0;
 }
