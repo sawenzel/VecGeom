@@ -274,13 +274,9 @@ void test8()
 				std::cerr << rootnav->GetCurrentNode()->GetName() << std::endl;
 				std::cerr << rootnav->GetStep() << std::endl;
 				std::cerr << RootManager::Instance().tgeonode( newstate.Top() )->GetName() << std::endl;
-				assert(1 == 0);
-			}
-			if( rootnav->GetCurrentNode() == node )
-			{
-				std::cerr << "ROOT ERROR" << std::endl;
-			}
 
+				nav.InspectEnvironmentForPointAndDirection( p, d, state );
+			}
 		}
 		assert( state.Top() != newstate.Top() );
 	}
