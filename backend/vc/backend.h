@@ -54,6 +54,26 @@ VcPrecision Sqrt(VcPrecision const &val) {
   return Vc::sqrt(val);
 }
 
+VECGEOM_INLINE
+VcPrecision Min(VcPrecision const &val1, VcPrecision const &val2) {
+  return Vc::min(val1, val2);
+}
+
+VECGEOM_INLINE
+VcPrecision Max(VcPrecision const &val1, VcPrecision const &val2) {
+  return Vc::max(val1, val2);
+}
+
+VECGEOM_INLINE
+VcInt Min(VcInt const &val1, VcInt const &val2) {
+  return Vc::min(val1, val2);
+}
+
+VECGEOM_INLINE
+VcInt Max(VcInt const &val1, VcInt const &val2) {
+  return Vc::max(val1, val2);
+}
+
 } // End namespace vecgeom
 
 #endif // VECGEOM_BACKEND_VCBACKEND_H_

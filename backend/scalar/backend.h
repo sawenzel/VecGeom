@@ -6,6 +6,8 @@
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
+#include <algorithm>
+
 #include "base/global.h"
 
 namespace vecgeom {
@@ -53,6 +55,46 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Sqrt(const Type val) {
   return sqrt(val);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision Min(Precision const &val1, Precision const &val2) {
+  #ifndef VECGEOM_CUDA
+  return std::min(val1, val2);
+  #else
+  return min(val1, val2);
+  #endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision Max(Precision const &val1, Precision const &val2) {
+  #ifndef VECGEOM_CUDA
+  return std::max(val1, val2);
+  #else
+  return max(val1, val2);
+  #endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+int Min(int const &val1, int const &val2) {
+  #ifndef VECGEOM_CUDA
+  return std::min(val1, val2);
+  #else
+  return min(val1, val2);
+  #endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+int Max(int const &val1, int const &val2) {
+  #ifndef VECGEOM_CUDA
+  return std::max(val1, val2);
+  #else
+  return max(val1, val2);
+  #endif
 }
 
 } // End namespace vecgeom

@@ -6,8 +6,11 @@
 #ifndef VECGEOM_BACKEND_CILKBACKEND_H_
 #define VECGEOM_BACKEND_CILKBACKEND_H_
 
+#include <algorithm>
 #include <iostream>
+
 #include "base/global.h"
+
 #include "backend/scalar/backend.h"
 
 namespace vecgeom {
@@ -390,6 +393,34 @@ VECGEOM_INLINE
 CilkPrecision Sqrt(CilkPrecision const &val) {
   CilkPrecision result;
   result.Map(std::sqrt);
+  return result;
+}
+
+VECGEOM_INLINE
+CilkPrecision Min(CilkPrecision const &val1, CilkPrecision const &val2) {
+  CilkPrecision result;
+  result.vec[:] = std::min(val1.vec[:], val2.vec[:]);
+  return result;
+}
+
+VECGEOM_INLINE
+CilkPrecision Max(CilkPrecision const &val1, CilkPrecision const &val2) {
+  CilkPrecision result;
+  result.vec[:] = std::max(val1.vec[:], val2.vec[:]);
+  return result;
+}
+
+VECGEOM_INLINE
+CilkInt Min(CilkInt const &val1, CilkInt const &val2) {
+  CilkInt result;
+  result.vec[:] = std::min(val1.vec[:], val2.vec[:]);
+  return result;
+}
+
+VECGEOM_INLINE
+CilkInt Max(CilkInt const &val1, CilkInt const &val2) {
+  CilkInt result;
+  result.vec[:] = std::max(val1.vec[:], val2.vec[:]);
   return result;
 }
 

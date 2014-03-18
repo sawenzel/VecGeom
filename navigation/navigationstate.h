@@ -8,10 +8,12 @@
 #ifndef NAVIGATIONSTATE_H_
 #define NAVIGATIONSTATE_H_
 
-#include "volumes/placed_volume.h"
-#include "base/transformation_matrix.h"
-#include "string.h"
+#include <string>
 #include <iostream>
+
+#include "backend.h"
+#include "base/transformation_matrix.h"
+#include "volumes/placed_volume.h"
 
 namespace vecgeom
 {
@@ -50,7 +52,6 @@ public:
 	NavigationState & operator=( NavigationState const & rhs );
 
 	VECGEOM_INLINE
-	VECGEOM_CUDA_HEADER_BOTH
 	~NavigationState( );
 
 
@@ -217,7 +218,7 @@ VECGEOM_CUDA_HEADER_BOTH
 int NavigationState::Distance( NavigationState const & other ) const
 {
 	int lastcommonlevel=0;
-	int maxlevel = std::max( GetCurrentLevel() , other.GetCurrentLevel() );
+	int maxlevel = Max( GetCurrentLevel() , other.GetCurrentLevel() );
 
 	//  algorithm: start on top and go down until paths split
 	for(int i=0; i < maxlevel; i++)

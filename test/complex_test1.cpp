@@ -9,11 +9,13 @@
 
 #include <iostream>
 
+#include "base/soa3d.h"
 #include "management/root_manager.h"
 #include "volumes/placed_volume.h"
 #include "navigation/navigationstate.h"
 #include "navigation/simple_navigator.h"
 #include "base/rng.h"
+#include "benchmarking/benchmark.h"
 
 #include "TGeoManager.h"
 #include "TGeoBBox.h"
@@ -175,8 +177,9 @@ void test7()
 		Vector3D<Precision> p(x,y,z);
 		NavigationState state(4);
 		SimpleNavigator vecnav;
-		VPlacedVolume const *vol1= vecnav.LocatePoint( RootManager::Instance().world(),
-				p , state, true);
+		VPlacedVolume const *vol1 =
+		    vecnav.LocatePoint(RootManager::Instance().world(), p, state, true);
+		vol1 = vol1;
 		/*
 		if ( vol1 != NULL )
 		{
@@ -243,6 +246,7 @@ void test8()
 		SimpleNavigator nav;
 		VPlacedVolume const *vol1= nav.LocatePoint( RootManager::Instance().world(),
 				p, state, true);
+		vol1 = vol1;
 
 		double step;
 		nav.FindNextBoundaryAndStep( p, d, state, newstate, step );
@@ -270,6 +274,7 @@ void test8()
 				std::cerr << rootnav->GetCurrentNode()->GetName() << std::endl;
 				std::cerr << rootnav->GetStep() << std::endl;
 				std::cerr << RootManager::Instance().tgeonode( newstate.Top() )->GetName() << std::endl;
+				assert(1 == 0);
 			}
 			if( rootnav->GetCurrentNode() == node )
 			{
@@ -282,6 +287,35 @@ void test8()
 	std::cerr << "test8 (statistical navigation) passed" << std::endl;
 }
 
+void DistanceToOutTest() {
+	const int n = 1<<8;
+	VPlacedVolume const* world = GeoManager::Instance().world();
+	SOA3D<Precision> points(n);
+	SOA3D<Precision> directions(n);
+	Benchmark::FillUncontainedPoints(*world, &points);
+	Benchmark::FillBiasedDirections(*world, points, 0.8, &directions);
+	int mismatches = 0;
+	for (int i = 0; i < n; ++i) {
+		Vector3D<Precision> master = points[i];
+		Vector3D<Precision> direction = directions[i];
+		const Precision vecgeom = world->DistanceToOut(master, direction);
+		TGeoNode const *node = gGeoManager->GetTopNode();
+		double master_c[3] = {master[0], master[1], master[2]};
+		double local[3];
+		double direction_c[3] = {direction[0], direction[1], direction[2]};
+		node->GetMatrix()->MasterToLocal(master_c, local);
+		const Precision root =
+		    node->GetVolume()->GetShape()->DistFromInside(local, direction_c);
+		const Precision diff = fabs(vecgeom - root);
+		if (diff > 1e-12) {
+		  // std::cerr << "Mismatch: " << vecgeom << " / " << root << std::endl;
+		  mismatches++;
+	  } else {
+		  // std::cerr << "Match: " << vecgeom << " / " << root << std::endl;
+	  }
+	}
+	std::cerr << mismatches << " / " << n << " mismatches detected.\n";
+}
 
 int main()
 {
@@ -299,7 +333,8 @@ int main()
     test5();
     test6();
     test7();
-    test8();
+    DistanceToOutTest();
+    // test8();
 
     return 0;
 }

@@ -6,12 +6,11 @@
 #ifndef VECGEOM_BENCHMARKING_BENCHMARK_H_
 #define VECGEOM_BENCHMARKING_BENCHMARK_H_
 
-#include <iostream>
-#include <random>
 #include <vector>
 
 #include "base/global.h"
 
+#include "base/track_container.h"
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 

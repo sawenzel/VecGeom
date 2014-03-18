@@ -43,17 +43,18 @@ int main() {
   std::cerr << "Printing world content:\n";
   worldl.PrintContent();
 
+  VPlacedVolume *world_placed = worldl.Place();
+
   #ifdef VECGEOM_CUDA
-  VPlacedVolume *world_placed = world.Place();
   CudaCopy(world_placed);
-  #endif
+  #else
 
   SimpleNavigator nav;
-  Vector3D<Precision> point(2,2,2);
+  Vector3D<Precision> point(2, 2, 2);
   NavigationState path(4);
-  VPlacedVolume const * locatedV;
-  locatedV = nav.LocatePoint( const_cast<VPlacedVolume const *>(worldl.Place()), point, path, true);
+  nav.LocatePoint(world_placed, point, path, true);
   path.Print();
+  #endif
 
   return 0;
 }

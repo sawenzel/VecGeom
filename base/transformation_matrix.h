@@ -178,6 +178,8 @@ private:
                      Vector3D<InputType> &local) const;
 
   template <bool vectortransform, typename InputType>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   void InverseTransformKernel( Vector3D<InputType> const & local, Vector3D<InputType> & master ) const;
 
 public:
@@ -465,10 +467,12 @@ Vector3D<InputType> TransformationMatrix::Transform(
 template <bool vectortransform, typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void TransformationMatrix::InverseTransformKernel(Vector3D<InputType> const &local,
-                Vector3D<InputType> & master) const
+void TransformationMatrix::InverseTransformKernel(
+    Vector3D<InputType> const &local,
+    Vector3D<InputType> & master) const
 {
-	// we are just doing the full stuff here ( LocalToMaster is less critical than other way round )
+	// we are just doing the full stuff here ( LocalToMaster is less critical
+  // than other way round )
 	if(vectortransform == 1)
 	{
 		master[0] =  local[0]*rot[0];

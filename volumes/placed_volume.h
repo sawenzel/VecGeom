@@ -73,15 +73,12 @@ public:
     matrix_ = matrix;
   }
 
-  VECGEOM_CUDA_HEADER_HOST
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
   virtual int memory_size() const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   virtual bool Inside(Vector3D<Precision> const &point) const =0;
-
 
   virtual void Inside(SOA3D<Precision> const &point,
                       bool *const output) const =0;
@@ -93,18 +90,14 @@ public:
    * this is useful for the locate function
    **/
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   virtual bool Inside(Vector3D<Precision> const &point,
 		  	  	  	  Vector3D<Precision> & localpoint) const =0;
 
-
-  /** an inside function where we know that localpoint is already in the reference frame of the callee
-    **/
-   VECGEOM_CUDA_HEADER_BOTH
-   VECGEOM_INLINE
-   virtual bool UnplacedInside(Vector3D<Precision> const &localpoint) const =0;
-
-
+  /** An inside function where we know that localpoint is already in the
+   *  reference frame of the callee
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool UnplacedInside(Vector3D<Precision> const &localpoint) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
@@ -122,10 +115,10 @@ public:
                             Precision *const output) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToOut(Vector3D<Precision> const &position,
-		  	  	  	  	  	  	 Vector3D<Precision> const &direction,
-                                 Precision const step_max = kInfinity) const =0;
-
+  virtual Precision DistanceToOut(
+      Vector3D<Precision> const &position,
+		  Vector3D<Precision> const &direction,
+      Precision const step_max = kInfinity) const =0;
 
 protected:
 

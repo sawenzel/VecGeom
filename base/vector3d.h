@@ -14,6 +14,8 @@
 #endif
 #include "base/global.h"
 
+#include "backend.h"
+
 namespace vecgeom {
 
 /**
@@ -148,6 +150,13 @@ public:
     vec[0] = f(vec[0]);
     vec[1] = f(vec[1]);
     vec[2] = f(vec[2]);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Type> Abs() const {
+    return Vector3D<Type>(vecgeom::Abs(vec[0]), vecgeom::Abs(vec[1]),
+                          vecgeom::Abs(vec[2]));
   }
 
   template <typename BoolType>
@@ -636,6 +645,14 @@ public:
   BoolType operator!=(const Precision scalar) const {
     Vector3D<Precision> rhs(scalar);
     return this->mem != rhs.mem;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> Abs() const {
+    return Vector3D<Precision>(vecgeom::Abs((*this)[0]),
+                               vecgeom::Abs((*this)[1]),
+                               vecgeom::Abs((*this)[2]));
   }
 
   #ifdef VECGEOM_STD_CXX11

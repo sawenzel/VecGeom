@@ -82,8 +82,8 @@ public:
 	 * and a global point and direction ( we need to check for consistency ... ); mainly for debugging purposes
 	 */
 	void InspectEnvironmentForPointAndDirection(
-			Vector3D<Precision> const & /* global point */
-			Vector3D<Precision> const & /* global direction */
+			Vector3D<Precision> const & /* global point */,
+			Vector3D<Precision> const & /* global direction */,
 			NavigationState const & /* current state */
 	) const;
 

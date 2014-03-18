@@ -3,6 +3,8 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
+#include <cassert>
+
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
 #include "management/root_manager.h"
@@ -32,7 +34,16 @@ VPlacedVolume* RootManager::Convert(TGeoNode const *const node) {
   TransformationMatrix const *const matrix = Convert(node->GetMatrix());
   LogicalVolume *const logical_volume = Convert(node->GetVolume());
   VPlacedVolume *const placed_volume = logical_volume->Place(matrix);
-  for (int i = 0; i < node->GetNdaughters(); ++i) {
+
+  int remaining_daughters = 0;
+  {
+    // All or no daughters should have been placed already
+    remaining_daughters = node->GetNdaughters()
+                          - logical_volume->daughters().size();
+    assert(remaining_daughters == 0 ||
+           remaining_daughters == node->GetNdaughters());
+  }
+  for (int i = 0; i < remaining_daughters; ++i) {
     logical_volume->PlaceDaughter(Convert(node->GetDaughter(i)));
   }
 

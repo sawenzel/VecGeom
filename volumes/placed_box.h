@@ -64,6 +64,11 @@ public:
   VECGEOM_INLINE
   virtual bool Inside(Vector3D<Precision> const &point) const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual bool Inside(Vector3D<Precision> const &point,
+        Vector3D<Precision> & localpoint) const;
+
   virtual void Inside(SOA3D<Precision> const &points,
                       bool *const output) const;
 
@@ -71,14 +76,8 @@ public:
                       bool *const output) const;
 
   VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    virtual bool Inside(Vector3D<Precision> const &point,
-    		  Vector3D<Precision> & localpoint) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    virtual bool UnplacedInside(Vector3D<Precision> const &) const;
-
+  VECGEOM_INLINE
+  virtual bool UnplacedInside(Vector3D<Precision> const &) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -97,6 +96,7 @@ public:
                             Precision *const output) const;
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   virtual Precision DistanceToOut(Vector3D<Precision> const &position,
                                   Vector3D<Precision> const &direction,
                                   Precision const step_max) const;
@@ -223,17 +223,17 @@ VECGEOM_INLINE
 Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
                                   Vector3D<Precision> const &direction,
                                   const Precision step_max) const {
-  return PlacedBox::DistanceToInDispatch<1, 0, kScalar>(position,
-                                                                 direction,
-                                                                 step_max);
+  return PlacedBox::DistanceToInDispatch<1, 0, kScalar>(position, direction,
+                                                        step_max);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
                                    Vector3D<Precision> const &direction,
-                                   Precision const step_max
-								  ) const {
+                                   Precision const step_max) const {
+
+  // const Vector3D<Precision> local = matrix()->Transform<1, 0>(position);
 
   Vector3D<Precision> const &dim = unplaced_box()->dimensions();
 
@@ -246,7 +246,7 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
   const Vector3D<bool> direction_plus = direction < 0.0;
   distance.MaskedAssign(direction_plus, safety_plus);
 
-  distance /= direction;
+  distance /= direction.Abs();
 
   const Precision min = distance.Min();
   return (min < 0) ? 0 : min;

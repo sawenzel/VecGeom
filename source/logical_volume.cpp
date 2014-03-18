@@ -53,11 +53,13 @@ void LogicalVolume::PrintContent(const int depth) const {
 }
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
-  os << *vol.unplaced_volume() << std::endl;
+  os << *vol.unplaced_volume() << " [";
   for (Iterator<VPlacedVolume const*> i = vol.daughters().begin();
        i != vol.daughters().end(); ++i) {
-    os << "  " << (**i) << std::endl;
+    if (i != vol.daughters().begin()) os << ", ";
+    os << (**i);
   }
+  os << "]";
   return os;
 }
 
