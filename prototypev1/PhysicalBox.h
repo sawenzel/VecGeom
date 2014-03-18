@@ -83,7 +83,7 @@ private:
 	PlacedBox<0,1296> * unplacedbox;
 
 public:
-	void foo() const;
+  //void foo() const;
 	double GetDX() const {return boxparams->GetDX();}
 	double GetDY() const {return boxparams->GetDY();}
 	double GetDZ() const {return boxparams->GetDZ();}
@@ -106,9 +106,7 @@ public:
 	virtual inline double DistanceToIn( Vector3D const &, Vector3D const &, double cPstep ) const;
 
 	__attribute__((always_inline))
-	virtual double DistanceToOut(
-				  Vector3D const & point, 
-	  Vector3D const & dir, double cPstep ) const {
+	virtual double DistanceToOut( Vector3D const & point, Vector3D const & dir, double cPstep ) const {
 	  bool convex;
 	  UVector3 normal;
 	  double s = analogoususolid->DistanceToOut(reinterpret_cast<UVector3 const &>(point), reinterpret_cast<UVector3 const &>(dir), normal, convex);
@@ -124,7 +122,7 @@ public:
 
 	// for fast vectors
 	virtual double DistanceToIn( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const; // done
-	virtual double DistanceToOut( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const; // done
+	// virtual double DistanceToOut( Vector3DFast const &, Vector3DFast const &, double /*step*/ ) const; // done
 	virtual double DistanceToInAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {};
 	virtual double DistanceToOutAndSafety( Vector3DFast const &, Vector3DFast const &, double /*step*/, double & ) const {};
 	virtual bool   Contains( Vector3DFast const & ) const; // done
@@ -137,7 +135,6 @@ public:
 	virtual bool   Contains( Vector3DFast const &, Vector3DFast &, FastTransformationMatrix * ) const; // done
 
 
-
 	virtual void DistanceToInIL( Vectors3DSOA const &, Vectors3DSOA const &, double const * /*steps*/, double * /*result*/ ) const;
 	//	virtual void DistanceToInIL( std::vector<Vector3D> const &, std::vector<Vector3D> const &, double const * /*steps*/, double * /*result*/ ) const;
 	virtual void DistanceToInIL( Vector3D const *, Vector3D const *, double const * /*steps*/, double * /*result*/, int /**/ ) const;
@@ -145,18 +142,30 @@ public:
 
 	// for the basket treatment
 	virtual void DistanceToIn( Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
+	virtual void DistanceToOut( Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
+	virtual void DistanceToOutCheck( Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
 
 	template<typename T>
 	inline
 	void DistanceToInT(Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
+
+
+        template<typename T>
+	inline
+	void DistanceToOutT(Vectors3DSOA const &, Vectors3DSOA const &, double const *, double * ) const;
 
 // a template version for T = Vc or T = Boost.SIMD or T= double
 	template<typename T>
 	inline
 	__attribute__((always_inline))
 	void DistanceToIn( T const & /*x-vec*/, T const & /*y-vec*/, T const & /*z-vec*/,
-					   T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, T const & /*step*/, T & /*result*/ ) const;
+			   T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, T const & /*step*/, T & /*result*/ ) const;
 
+	template<typename T>
+	inline
+	__attribute__((always_inline))
+	void DistanceToOut( T const & /*x-vec*/, T const & /*y-vec*/, T const & /*z-vec*/,
+			    T const & /*dx-vec*/, T const & /*dy-vec*/, T const & /*dz-vec*/, T const & /*step*/, T & /*result*/ ) const;
 
 	virtual ~PlacedBox(){};
 
@@ -288,7 +297,6 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 	VecType par[3]={ boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
 
 	// new thing: do coordinate transformation in place here
-	VecType localx, localy, localz;
 	matrix->MasterToLocal<tid,rid,VecType>(x,y,z,newpt[0],newpt[1],newpt[2]);
 	//
 	saf[0] = Vc::abs(newpt[0])-par[0];
@@ -343,6 +351,72 @@ void PlacedBox<tid,rid>::DistanceToIn( VecType const & x, VecType const & y, Vec
 }
 
 
+// a template version for T = Vc or T = Boost.SIMD or T= double
+// this is the kernel operating on type T
+template<int tid, int rid>
+template<typename VecType>
+inline
+void PlacedBox<tid,rid>::DistanceToOut( VecType const & x, VecType const & y, VecType const & z,
+					VecType const & dirx, VecType const & diry, VecType const & dirz, VecType const & stepmax, VecType & distance ) const
+{
+    typedef typename VecType::Mask MaskType;
+    VecType tiny(1e-20);
+    VecType big(Utils::kInfinity);
+
+    // should be done in the box
+    VecType par[3] = { boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
+
+    // new thing: do coordinate transformation in place here
+    VecType newpt[3];
+    matrix->MasterToLocal<tid,rid,VecType>(x,y,z,newpt[0],newpt[1],newpt[2]);
+
+    /*
+      MaskType faraway; // initializing all components to zero
+      faraway = saf[0]>=stepmax || saf[1]>=stepmax || saf[2]>=stepmax;
+    */
+    VecType saf[3];
+    saf[0] = Vc::abs(newpt[0])-par[0];
+    saf[1] = Vc::abs(newpt[1])-par[1];
+    saf[2] = Vc::abs(newpt[2])-par[2];
+
+    MaskType inside = saf[0]<Vc::Zero && saf[1]<Vc::Zero && saf[2]<Vc::Zero;
+    distance( !inside ) = big;
+
+    //   If all particles are outside volume, can return immediately -- a good shortcut!???
+    //if(!in) return;
+    if(!inside) printf("Shortcut flagged!\n");
+
+    // new thing:  do coordinate transformation for directions here
+    VecType localdirx, localdiry, localdirz;
+    matrix->MasterToLocalVec<tid,rid,VecType>(dirx, diry, dirz, localdirx, localdiry, localdirz);
+
+    auto invdirx = 1.0/localdirx;
+    auto invdiry = 1.0/localdiry;
+    auto invdirz = 1.0/localdirz;
+
+    MaskType mask;
+    auto distx = (par[0]-newpt[0]) * invdirx;
+    mask = dirx<0;
+    distx( mask ) = (-par[0]-newpt[0]) * invdirx;
+
+    auto disty = (par[1]-newpt[1]) * invdiry;
+    mask = diry<0;
+    disty( mask ) = (-par[1]-newpt[1]) * invdiry;
+
+    auto distz = (par[2]-newpt[2]) * invdirz;
+    mask = dirz<0;
+    distz( mask ) = (-par[2]-newpt[2]) * invdirz;
+
+    distance = distx;
+    mask = distance>disty;
+    distance(mask) = disty;
+    mask = distance>distz;
+    distance(mask) = distz;
+
+    return;
+}
+
+
 // for the basket treatment
 // this is actually a very general theme valid for any shape so it should become
 // a template method !!
@@ -370,12 +444,41 @@ void PlacedBox<tid,rid>::DistanceToInT( Vectors3DSOA const & points_v, Vectors3D
 		}
 }
 
+template<int tid, int rid>
+template<typename T>
+inline
+void PlacedBox<tid,rid>::DistanceToOutT( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
+{
+	for( int i=0; i < points_v.size; i += T::Size )
+		{
+			T x( &points_v.x[i] );
+			T y( &points_v.y[i] );
+			T z( &points_v.z[i] );
+			T xd( &dirs_v.x[i] );
+			T yd( &dirs_v.y[i] );
+			T zd( &dirs_v.z[i] );
+			T step( &steps[i] );
+			T dist;
+			DistanceToOut<T>(x, y, z, xd, yd, zd, step, dist);
+
+			// store back result
+			dist.store( &distance[i] );
+		}
+}
+
 // dispatching the virtual method to some concrete method
 template<int tid, int rid>
 void PlacedBox<tid,rid>::DistanceToIn( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const
 {
 	// PlacedBox<tid,rid>::DistanceToInT< Vc::double_v, Vc >(points_v, dirs_v, step, distance);
 	this->template DistanceToInT<Vc::double_v>( points_v, dirs_v, steps, distance);
+}
+
+
+template<int tid, int rid>
+void PlacedBox<tid,rid>::DistanceToOut( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const {
+    // PlacedBox<tid,rid>::DistanceToOutT< Vc::double_v, Vc >(points_v, dirs_v, step, distance);
+    this->template DistanceToOutT<Vc::double_v>( points_v, dirs_v, steps, distance);
 }
 
 
@@ -488,6 +591,7 @@ bool PlacedBox<tid,rid>::UnplacedContains( Vector3DFast const & point ) const
 }
 
 
+/*
 template<int tid, int rid>
 inline
 double PlacedBox<tid,rid>::DistanceToOut( Vector3DFast const & point, Vector3DFast const & dir, double step ) const
@@ -501,7 +605,7 @@ double PlacedBox<tid,rid>::DistanceToOut( Vector3DFast const & point, Vector3DFa
 	Vector3DFast distances = rightSafeties / dir.Abs();
 	return distances.MinButNotNegative();
 }
-
+*/
 
 
 template<int tid, int rid>
@@ -594,5 +698,57 @@ double PlacedBox<tid,rid>::SafetyToOut( Vector3D const & point ) const
 	return Safety<true>( point );
 }
 
+/// a simple cross-check function: should use only doubles internally
+template<int tid, int rid>
+void PlacedBox<tid,rid>::DistanceToOutCheck( Vectors3DSOA const & points_v, Vectors3DSOA const & dirs_v, double const * steps, double * distance ) const {
+
+  auto tiny = double{1.e-20};
+  auto big = double{1.e+30};
+
+   // should be done in the box
+   double par[3] = { boxparams->dX, boxparams->dY, boxparams->dZ }; // very convenient
+
+   double x,y,z,xd,yd,zd,step;
+   double newpt[3],saf[3];
+   for( auto i=0; i < points_v.size; ++i ) {
+     x = points_v.x[i];
+     y = points_v.y[i];
+     z = points_v.z[i];
+     xd = dirs_v.x[i];
+     yd = dirs_v.y[i];
+     zd = dirs_v.z[i];
+     step = steps[i];
+
+     // new thing: do coordinate transformation in place here
+     matrix->MasterToLocal<tid,rid,double>(x,y,z,newpt[0],newpt[1],newpt[2]);
+
+     saf[0] = fabs(newpt[0])-par[0];
+     saf[1] = fabs(newpt[1])-par[1];
+     saf[2] = fabs(newpt[2])-par[2];
+
+     if( saf[0]>0 || saf[1]>0 || saf[2]>0 ) {
+       // all particles are outside volume
+       distance[i] = big;
+     }
+     else {
+
+       // new thing:  do coordinate transformation for directions here
+       double localdirx, localdiry, localdirz;
+       matrix->MasterToLocalVec<tid,rid,double>(xd, yd, zd, localdirx, localdiry, localdirz);
+
+       double distx,disty,distz;
+       distx = (localdirx>0.) ? (par[0]-newpt[0]) / localdirx : (-par[0]-newpt[0]) / localdirx ;
+       disty = (localdiry>0.) ? (par[1]-newpt[1]) / localdiry : (-par[1]-newpt[1]) / localdiry ;
+       distz = (localdirz>0.) ? (par[2]-newpt[2]) / localdirz : (-par[2]-newpt[2]) / localdirz ;
+
+       assert(distx>0);
+       assert(disty>0);
+       assert(distz>0);
+
+       distance[i] = (distx<disty) ? distx : disty ;
+       if(distz < distance[i]) distance[i] = distz;
+     }
+   }
+}
 
 #endif /* PHYSICALBOX_H_ */

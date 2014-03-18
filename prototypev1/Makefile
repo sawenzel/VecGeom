@@ -10,7 +10,7 @@ CXX_LIBS=-lGeom -L ${VCROOT}/lib -lVc -L ${TBBROOT}/lib/intel64/gcc4.4 -ltbb -lr
 CXX_SRC=GeoManager_MakeBox.cpp GeoManager_MakeCone.cpp GeoManager_MakeTube.cpp GeoManager_MakePolycone.cpp GeoManager.cpp PhysicalBox.cpp PhysicalVolume.cpp TransformationMatrix.cpp SimpleVecNavigator.cpp Vector3DFast.cpp
 
 #CXX_TESTS=$(wildcard Tests/*.cpp)
-CXX_TESTS=Tests/CHEP13Benchmark.cpp Tests/CHEP13BenchmarkSpecialMatrices.cpp Tests/CHEP13Benchmark_unspecializedplacements.cpp Tests/transTest.cpp Tests/NavigationInBoxDetector_Benchmark.cpp Tests/NavigationInBoxDetector_Benchmark_FastTest.cpp Tests/BoxPlacementTest.cpp Tests/TransformOfVectorsTest.cpp Tests/TestPolyconeContains.cpp
+CXX_TESTS=Tests/CHEP13Benchmark.cpp Tests/CHEP13BenchmarkSpecialMatrices.cpp Tests/CHEP13Benchmark_unspecializedplacements.cpp Tests/transTest.cpp Tests/NavigationInBoxDetector_Benchmark.cpp Tests/NavigationInBoxDetector_Benchmark_FastTest.cpp Tests/BoxPlacementTest.cpp Tests/TransformOfVectorsTest.cpp Tests/TestPolyconeContains.cpp Tests/DistanceToOutTest.cpp
 # Tests/BuildBoxDetector.cpp  Tests/TestBox.cpp
 
 CXX_OBJS=$(addsuffix .o, $(basename $(CXX_SRC)))

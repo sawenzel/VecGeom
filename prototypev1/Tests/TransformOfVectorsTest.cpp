@@ -54,12 +54,12 @@ int main()
 	double d1=0.,d2=0.,d3=0.;
 	StopWatch timer;
 
-	TransformationMatrix const *** tm = new TransformationMatrix**[EulerAngles.size()];
+	TransformationMatrix const *** tm = new TransformationMatrix const**[EulerAngles.size()];
 	TGeoMatrix *** tmr = new TGeoMatrix**[EulerAngles.size()];
 
 	for( int r=0; r< EulerAngles.size(); ++r )
 	  {
-	    tm[r]=new TransformationMatrix*[TransCases.size()];
+	    tm[r]=new TransformationMatrix const*[TransCases.size()];
 	    tmr[r]=new TGeoMatrix*[TransCases.size()];
 	  }
 
