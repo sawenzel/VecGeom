@@ -12,11 +12,13 @@
 #include "volumes/placed_volume.h"
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
-#include "management/root_manager.h"
 #include <iostream>
 
+#ifdef VECGEOM_ROOT
+#include "management/root_manager.h"
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
+#endif
 
 namespace vecgeom
 {
@@ -80,6 +82,7 @@ public:
 			double const * /* pSteps -- proposed steps */,
 			double * /* safeties */,
 			double * /* distances; steps */, int np) const;
+
 
 	/**
 	 * A verbose function telling about possible hit targets and steps; starting from a navigation state
@@ -222,6 +225,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	}
 }
 
+#ifdef VECGEOM_ROOT
 void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	(	Vector3D<Precision> const & globalpoint,
 		Vector3D<Precision> const & globaldir,
@@ -286,6 +290,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	}
 
 }
+#endif
 
 };
 
