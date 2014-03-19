@@ -101,6 +101,18 @@ public:
                                   Vector3D<Precision> const &direction,
                                   Precision const step_max) const;
 
+
+  virtual void DistanceToOut(SOA3D<Precision> const &position,
+                             SOA3D<Precision> const &direction,
+                             Precision const *const step_max,
+                             Precision *const output) const;
+
+
+  virtual void DistanceToOut(AOS3D<Precision> const &position,
+                             AOS3D<Precision> const &direction,
+                             Precision const *const step_max,
+                             Precision *const output) const;
+
   // CUDA specific
 
   virtual int memory_size() const { return sizeof(*this); }
@@ -122,21 +134,32 @@ public:
   virtual ::VUSolid const* ConvertToUSolids() const;
   #endif
 
-  // Templates to interact with common kernel
 
-  template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
+  // Templates to interact with common C-like kernels
+  template <TranslationCode trans_code, RotationCode rot_code,
+  	  	    typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::bool_v InsideDispatch(
       Vector3D<typename Backend::precision_v> const &point) const;
 
-  template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
+  template <TranslationCode trans_code, RotationCode rot_code,
+  	  	  	  typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v DistanceToInDispatch(
       Vector3D<typename Backend::precision_v> const &position,
       Vector3D<typename Backend::precision_v> const &direction,
       const typename Backend::precision_v step_max) const;
+
+
+  template <typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::precision_v DistanceToOutDispatch(
+		Vector3D<typename Backend::precision_v> const &position,
+        Vector3D<typename Backend::precision_v> const &direction,
+        const typename Backend::precision_v step_max) const;
 
 };
 
@@ -159,8 +182,6 @@ typename Backend::bool_v PlacedBox::InsideDispatch(
   return output;
 }
 
-
-
 template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -170,7 +191,6 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
     const typename Backend::precision_v step_max) const {
 
   typename Backend::precision_v output;
-
   BoxDistanceToIn<trans_code, rot_code, Backend>(
     unplaced_box()->dimensions(),
     *this->matrix(),
@@ -179,9 +199,28 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
     step_max,
     &output
   );
-
   return output;
 }
+
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+typename Backend::precision_v PlacedBox::DistanceToOutDispatch(
+    Vector3D<typename Backend::precision_v> const &position,
+    Vector3D<typename Backend::precision_v> const &direction,
+    const typename Backend::precision_v step_max) const
+{
+	typename Backend::precision_v output;
+	BoxDistanceToOut<Backend>(
+			unplaced_box()->dimensions(),
+			position,
+			direction,
+			step_max,
+			output
+	);
+	return output;
+}
+
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -233,7 +272,14 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
                                    Vector3D<Precision> const &direction,
                                    Precision const step_max) const {
 
-  // const Vector3D<Precision> local = matrix()->Transform<1, 0>(position);
+	// for the moment we dispatch to the common kernel
+	return PlacedBox::DistanceToOutDispatch<kScalar>(position,direction,step_max);
+
+	// this kernel is an optimized "kInternalVectorization" kernel
+	// we have how we can dispatch to this kernel later
+
+	/*
+	// const Vector3D<Precision> local = matrix()->Transform<1, 0>(position);
 
   Vector3D<Precision> const &dim = unplaced_box()->dimensions();
 
@@ -250,7 +296,10 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
 
   const Precision min = distance.Min();
   return (min < 0) ? 0 : min;
+	 */
 }
+
+
 
 } // End namespace vecgeom
 

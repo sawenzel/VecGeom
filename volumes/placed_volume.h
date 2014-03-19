@@ -114,6 +114,14 @@ public:
                             Precision const *const step_max,
                             Precision *const output) const =0;
 
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision DistanceToOut(
+		  	  	  	  	  	  Vector3D<Precision> const &position,
+		  	  	  	  	  	  Vector3D<Precision> const &direction,
+		  	  	  	  	  	  Precision const step_max = kInfinity) const =0;
+
+
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                               SOA3D<Precision> const &direction,
                               Precision const *const step_max,
@@ -125,29 +133,33 @@ public:
                               Precision *const output) const =0;
 
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToOut(
-      Vector3D<Precision> const &position,
-		  Vector3D<Precision> const &direction,
-      Precision const step_max = kInfinity) const =0;
-
 protected:
 
   template <TranslationCode trans_code, RotationCode rot_code,
             typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
-  static void InsideBackend(VolumeType const &volume,
+  static void Inside_Looper(VolumeType const &volume,
                             ContainerType const &points,
                             bool *const output);
 
   template <TranslationCode trans_code, RotationCode rot_code,
             typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
-  static void DistanceToInBackend(VolumeType const &volume,
+  static void DistanceToIn_Looper(VolumeType const &volume,
                                   ContainerType const &positions,
                                   ContainerType const &directions,
                                   Precision const *const step_max,
                                   Precision *const output);
+
+
+  template <typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void DistanceToOut_Looper(VolumeType const &volume,
+                                   ContainerType const &positions,
+                                   ContainerType const &directions,
+                                   Precision const *const step_max,
+                                   Precision *const output);
+
 
 public:
 
