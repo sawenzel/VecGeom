@@ -8,7 +8,7 @@
 #include "benchmarking/benchmark.h"
 #include "volumes/placed_box.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 Benchmark::Benchmark(VPlacedVolume const *const world) {
   set_world(world);
@@ -189,4 +189,4 @@ std::ostream& operator<<(std::ostream &os, BenchmarkResult const &benchmark) {
   return os;
 }
 
-} // End namespace vecgeom
+} // End global namespace

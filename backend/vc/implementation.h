@@ -13,7 +13,7 @@
 #include "base/soa3d.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode trans_code, RotationCode rot_code,
           typename VolumeType, typename ContainerType>
@@ -57,6 +57,6 @@ void VPlacedVolume::DistanceToInBackend(VolumeType const &volume,
   }
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BACKEND_VC_IMPLEMENTATION_H_

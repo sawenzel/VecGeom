@@ -9,7 +9,7 @@
 #include "base/global.h"
 #include <iterator>
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Custom iterator class for use with container classes.
@@ -79,6 +79,6 @@ protected:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_ITERATOR_H_

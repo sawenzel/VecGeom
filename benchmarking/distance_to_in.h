@@ -15,7 +15,7 @@
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class DistanceToIn : public Benchmark {
 
@@ -80,6 +80,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BENCHMARKING_DISTANCETOIN_H_

@@ -12,7 +12,7 @@
 #include "base/vector.h"
 #include "volumes/box.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class CudaManager {
 
@@ -138,6 +138,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_CUDAMANAGER_H_

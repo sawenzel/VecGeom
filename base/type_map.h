@@ -12,7 +12,7 @@
 #include "base/iterator.h"
 #include <cassert>
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Bidirectional map between two distinct types.
@@ -114,6 +114,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_TYPEMAP_H_

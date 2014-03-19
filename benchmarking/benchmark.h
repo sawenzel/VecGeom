@@ -14,7 +14,7 @@
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 struct BenchmarkResult;
 
@@ -113,6 +113,6 @@ bool Benchmark::IsFacingVolume(Vector3D<Precision> const &point,
   return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BENCHMARKING_BENCHMARK_H_

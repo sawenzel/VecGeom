@@ -12,7 +12,7 @@
 #include "UBox.hh"
 #endif
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 
 void PlacedBox::Inside(SOA3D<Precision> const &points,
@@ -90,4 +90,4 @@ TGeoShape const* PlacedBox::ConvertToRoot() const {
 
 #endif // VECGEOM_BENCHMARK
 
-} // End namespace vecgeom
+} // End global namespace

@@ -8,7 +8,7 @@
 
 #include "base/container.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <typename Type>
 class Vector : public Container<Type> {
@@ -99,6 +99,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_CONTAINER_H_

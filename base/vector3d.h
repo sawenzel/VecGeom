@@ -9,14 +9,15 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+
 #ifdef VECGEOM_VC_ACCELERATION
 #include <Vc/Vc>
 #endif
-#include "base/global.h"
 
+#include "base/global.h"
 #include "backend.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Three dimensional vector class supporting most arithmetic operations.
@@ -155,8 +156,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Type> Abs() const {
-    return Vector3D<Type>(vecgeom::Abs(vec[0]), vecgeom::Abs(vec[1]),
-                          vecgeom::Abs(vec[2]));
+    return Vector3D<Type>(VECGEOM_NAMESPACE::Abs(vec[0]),
+                          VECGEOM_NAMESPACE::Abs(vec[1]),
+                          VECGEOM_NAMESPACE::Abs(vec[2]));
   }
 
   template <typename BoolType>
@@ -192,13 +194,15 @@ public:
     this->vec[0] OPERATOR other.vec[0]; \
     this->vec[1] OPERATOR other.vec[1]; \
     this->vec[2] OPERATOR other.vec[2]; \
+    return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
-  VecType& operator OPERATOR(const Type &other) { \
-    this->vec[0] OPERATOR other; \
-    this->vec[1] OPERATOR other; \
-    this->vec[2] OPERATOR other; \
+  VecType& operator OPERATOR(const Type &scalar) { \
+    this->vec[0] OPERATOR scalar; \
+    this->vec[1] OPERATOR scalar; \
+    this->vec[2] OPERATOR scalar; \
+    return *this; \
   }
   INPLACE_BINARY_OP(+=)
   INPLACE_BINARY_OP(-=)
@@ -209,16 +213,16 @@ public:
   #define BINARY_OP(OPERATOR, INPLACE) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
-  VecType& operator OPERATOR(const VecType &other) { \
+  VecType operator OPERATOR(const VecType &other) const { \
     VecType result(*this); \
     result INPLACE other; \
     return result; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
-  VecType& operator OPERATOR(const Type &other) { \
+  VecType operator OPERATOR(const Type &scalar) const { \
     VecType result(*this); \
-    result INPLACE other; \
+    result INPLACE scalar; \
     return result; \
   }
   BINARY_OP(+, +=)
@@ -363,117 +367,45 @@ public:
     return std::max(std::max(mem[0], mem[1]), mem[2]);
   }
 
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType& operator+=(Vector3D<TypeOther> const &rhs) {
-    this->mem += rhs.mem;
-    return *this;
+  #define INPLACE_BINARY_OP(OPERATOR) \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  VecType& operator OPERATOR(const VecType &other) { \
+    this->mem OPERATOR other.mem; \
+    return *this; \
+  } \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  VecType& operator OPERATOR(const Precision &scalar) { \
+    this->mem OPERATOR scalar; \
+    return *this; \
   }
+  INPLACE_BINARY_OP(+=)
+  INPLACE_BINARY_OP(-=)
+  INPLACE_BINARY_OP(*=)
+  INPLACE_BINARY_OP(/=)
+  #undef INPLACE_BINARY_OP
 
-  VECGEOM_INLINE
-  VecType& operator+=(const Precision scalar) {
-    this->mem += scalar;
-    return *this;
+  #define BINARY_OP(OPERATOR, INPLACE) \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  VecType operator OPERATOR(const VecType &other) const { \
+    VecType result(*this); \
+    result INPLACE other; \
+    return result; \
+  } \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  VecType operator OPERATOR(const Precision &scalar) const { \
+    VecType result(*this); \
+    result INPLACE scalar; \
+    return result; \
   }
-
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType& operator-=(Vector3D<TypeOther> const &rhs) {
-    this->mem -= rhs.mem;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator-=(const Precision scalar) {
-    this->mem -= scalar;
-    return *this;
-  }
-
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType& operator*=(Vector3D<TypeOther> const &rhs) {
-    this->mem *= rhs.mem;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator*=(const Precision scalar) {
-    this->mem *= scalar;
-    return *this;
-  }
-
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType& operator/=(Vector3D<TypeOther> const &rhs) {
-    this->mem /= rhs.mem;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator/=(const Precision scalar) {
-    const Precision inverse = 1.0 / scalar;
-    *this *= inverse;
-    return *this;
-  }
-
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType operator+(Vector3D<TypeOther> const &other) const {
-    VecType result(*this);
-    result += other;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator+(const Precision scalar) const {
-    VecType result(*this);
-    result += scalar;
-    return result;
-  }
-
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType operator-(Vector3D<TypeOther> const &other) const {
-    VecType result(*this);
-    result -= other;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator-(const Precision scalar) const {
-    VecType result(*this);
-    result -= scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator*(Vector3D<Precision> const &other) const {
-    VecType result(*this);
-    result *= other;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator*(const Precision scalar) const {
-    VecType result(*this);
-    result *= scalar;
-    return result;
-  }
-
-  template <typename TypeOther>
-  VECGEOM_INLINE
-  VecType operator/(Vector3D<TypeOther> const &other) const {
-    VecType result(*this);
-    result /= other;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator/(const Precision scalar) const {
-    VecType result(*this);
-    result /= scalar;
-    return result;
-  }
+  BINARY_OP(+, +=)
+  BINARY_OP(-, -=)
+  BINARY_OP(*, *=)
+  BINARY_OP(/, /=)
+  #undef BINARY_OP
 
   VECGEOM_INLINE
   BoolType operator<(VecType const &rhs) const {
@@ -549,9 +481,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
-    return Vector3D<Precision>(vecgeom::Abs((*this)[0]),
-                               vecgeom::Abs((*this)[1]),
-                               vecgeom::Abs((*this)[2]));
+    return Vector3D<Precision>(VECGEOM_NAMESPACE::Abs((*this)[0]),
+                               VECGEOM_NAMESPACE::Abs((*this)[1]),
+                               VECGEOM_NAMESPACE::Abs((*this)[2]));
   }
 
   #ifdef VECGEOM_STD_CXX11
@@ -567,6 +499,6 @@ public:
 
 #endif // Vc acceleration enabled
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_VECTOR3D_H_

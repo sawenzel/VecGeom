@@ -23,7 +23,7 @@
 #include "TGeoVolume.h"
 #include <cassert>
 
-using namespace vecgeom;
+using namespace VECGEOM_NAMESPACE;
 
 // creates a four level box detector
 // this modifies the global gGeoManager instance ( so no need for any return )

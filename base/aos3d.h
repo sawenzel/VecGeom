@@ -9,7 +9,7 @@
 #include "base/global.h"
 #include "base/track_container.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <typename Type>
 class AOS3D : public TrackContainer<Type> {
@@ -126,6 +126,6 @@ void AOS3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
   data_[index] = vec;
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_AOS3D_H_

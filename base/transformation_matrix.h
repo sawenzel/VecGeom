@@ -11,7 +11,7 @@
 #include "base/vector3d.h"
 #include <cstring>
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 // enum MatrixEntry {
 //   k00 = 0x001, k01 = 0x002, k02 = 0x004,
@@ -657,6 +657,6 @@ Vector3D<InputType> TransformationMatrix::TransformRotation(
   return local;
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_TRANSMATRIX_H_
