@@ -36,13 +36,7 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector3D() {
-    vec[0] = 0;
-    vec[1] = 0;
-    vec[2] = 0;
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Vector3D(const Type a, const Type b, const Type c) {
     vec[0] = a;
     vec[1] = b;
@@ -50,11 +44,19 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D() {
+    Vector3D(0, 0, 0);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Vector3D(const Type a) {
     Vector3D(a, a, a);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Vector3D(Vector3D const &other) {
     vec[0] = other[0];
     vec[1] = other[1];
@@ -187,6 +189,15 @@ public:
     return max;
   }
 
+  VECGEOM_CUDA_HEADER_HOST
+  VECGEOM_INLINE
+  friend std::ostream& operator<<(std::ostream& os, VecType const &v) {
+    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
+    return os;
+  }
+
+  // Inplace binary operators
+
   #define INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
@@ -210,6 +221,8 @@ public:
   INPLACE_BINARY_OP(/=)
   #undef INPLACE_BINARY_OP
 
+  // Binary operators
+
   #define BINARY_OP(OPERATOR, INPLACE) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
@@ -231,32 +244,34 @@ public:
   BINARY_OP(/, /=)
   #undef BINARY_OP
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Vector3D<bool> operator<(VecType const &other) const {
-    Vector3D<bool> result;
-    result[0] = this->vec[0] < other.vec[0];
-    result[1] = this->vec[1] < other.vec[1];
-    result[2] = this->vec[2] < other.vec[2];
-    return result;
-  }
+  // Boolean operators
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Vector3D<bool> operator<(const Type other) const {
-    Vector3D<bool> result;
-    result[0] = this->vec[0] < other;
-    result[1] = this->vec[1] < other;
-    result[2] = this->vec[2] < other;
-    return result;
+  /*
+  #define BOOLEAN_OP(OPERATOR) \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  BoolType operator OPERATOR(const VecType &other) const { \
+    return BoolType(vec[0] OPERATOR other.vec[0], \
+                    vec[1] OPERATOR other.vec[1], \
+                    vec[2] OPERATOR other.vec[2]); \
+  } \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  BoolType operator OPERATOR(const Type &other) const { \
+    return BoolType(vec[0] OPERATOR other, \
+                    vec[1] OPERATOR other, \
+                    vec[2] OPERATOR other); \
   }
-
-  VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  friend std::ostream& operator<<(std::ostream& os, VecType const &v) {
-    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
-    return os;
-  }
+  BOOLEAN_OP(<)
+  BOOLEAN_OP(>)
+  BOOLEAN_OP(<=)
+  BOOLEAN_OP(>=)
+  BOOLEAN_OP(==)
+  BOOLEAN_OP(!=)
+  BOOLEAN_OP(&&)
+  BOOLEAN_OP(||)
+  #undef BOOLEAN_OP
+  */
 
 };
 
@@ -367,6 +382,25 @@ public:
     return std::max(std::max(mem[0], mem[1]), mem[2]);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> Abs() const {
+    return Vector3D<Precision>(VECGEOM_NAMESPACE::Abs((*this)[0]),
+                               VECGEOM_NAMESPACE::Abs((*this)[1]),
+                               VECGEOM_NAMESPACE::Abs((*this)[2]));
+  }
+
+  #ifdef VECGEOM_STD_CXX11
+  friend
+  VECGEOM_INLINE
+  std::ostream& operator<<(std::ostream& os, VecType const &v) {
+    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
+    return os;
+  }
+  #endif /* VECGEOM_STD_CXX11 */
+
+  // Inplace binary operators
+
   #define INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
@@ -385,6 +419,8 @@ public:
   INPLACE_BINARY_OP(*=)
   INPLACE_BINARY_OP(/=)
   #undef INPLACE_BINARY_OP
+
+  // Binary operators
 
   #define BINARY_OP(OPERATOR, INPLACE) \
   VECGEOM_CUDA_HEADER_BOTH \
@@ -407,93 +443,32 @@ public:
   BINARY_OP(/, /=)
   #undef BINARY_OP
 
-  VECGEOM_INLINE
-  BoolType operator<(VecType const &rhs) const {
-    return this->mem < rhs.mem;
+  // Boolean operators
+
+  #define BOOLEAN_OP(OPERATOR) \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  BoolType operator OPERATOR(const VecType &other) const { \
+    return BoolType(mem[0] OPERATOR other.mem[0], \
+                    mem[1] OPERATOR other.mem[1], \
+                    mem[2] OPERATOR other.mem[2]); \
+  } \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  BoolType operator OPERATOR(const Precision &scalar) const { \
+    return BoolType(mem[0] OPERATOR scalar, \
+                    mem[1] OPERATOR scalar, \
+                    mem[2] OPERATOR scalar); \
   }
-
-  VECGEOM_INLINE
-  BoolType operator<(const Precision scalar) const {
-    Vector3D<Precision> rhs(scalar);
-    return this->mem < rhs.mem;
-  }
-
-
-  VECGEOM_INLINE
-  BoolType operator>(VecType const &rhs) const {
-    return this->mem > rhs.mem;
-  }
-
-  VECGEOM_INLINE
-  BoolType operator>(const Precision scalar) const {
-    Vector3D<Precision> rhs(scalar);
-    return this->mem > rhs.mem;
-  }
-
-
-  VECGEOM_INLINE
-  BoolType operator<=(VecType const &rhs) const {
-    return this->mem <= rhs.mem;
-  }
-
-  VECGEOM_INLINE
-  BoolType operator<=(const Precision scalar) const {
-    Vector3D<Precision> rhs(scalar);
-    return this->mem <= rhs.mem;
-  }
-
-
-  VECGEOM_INLINE
-  BoolType operator>=(VecType const &rhs) const {
-    return this->mem >= rhs.mem;
-  }
-
-  VECGEOM_INLINE
-  BoolType operator>=(const Precision scalar) const {
-    Vector3D<Precision> rhs(scalar);
-    return this->mem >= rhs.mem;
-  }
-
-
-  VECGEOM_INLINE
-  BoolType operator==(VecType const &rhs) const {
-    return this->mem == rhs.mem;
-  }
-
-  VECGEOM_INLINE
-  BoolType operator==(const Precision scalar) const {
-    Vector3D<Precision> rhs(scalar);
-    return this->mem == rhs.mem;
-  }
-
-
-  VECGEOM_INLINE
-  BoolType operator!=(VecType const &rhs) const {
-    return this->mem != rhs.mem;
-  }
-
-  VECGEOM_INLINE
-  BoolType operator!=(const Precision scalar) const {
-    Vector3D<Precision> rhs(scalar);
-    return this->mem != rhs.mem;
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Vector3D<Precision> Abs() const {
-    return Vector3D<Precision>(VECGEOM_NAMESPACE::Abs((*this)[0]),
-                               VECGEOM_NAMESPACE::Abs((*this)[1]),
-                               VECGEOM_NAMESPACE::Abs((*this)[2]));
-  }
-
-  #ifdef VECGEOM_STD_CXX11
-  friend
-  VECGEOM_INLINE
-  std::ostream& operator<<(std::ostream& os, VecType const &v) {
-    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
-    return os;
-  }
-  #endif /* VECGEOM_STD_CXX11 */
+  BOOLEAN_OP(<)
+  BOOLEAN_OP(>)
+  BOOLEAN_OP(<=)
+  BOOLEAN_OP(>=)
+  BOOLEAN_OP(==)
+  BOOLEAN_OP(!=)
+  BOOLEAN_OP(&&)
+  BOOLEAN_OP(||)
+  #undef BOOLEAN_OP
 
 };
 

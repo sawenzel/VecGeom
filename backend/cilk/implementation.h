@@ -66,7 +66,7 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
                                         Precision *const output) {
   for (int i = 0; i < positions.size(); i += kVectorSize) {
     const CilkPrecision result =
-        volume.template DistanceToOutDispatch<kCilk>                                                          kCilk>(
+        volume.template DistanceToOutDispatch<kCilk>(
           Vector3D<CilkPrecision>(CilkPrecision(&positions.x(i)),
                                   CilkPrecision(&positions.y(i)),
                                   CilkPrecision(&positions.z(i))),
