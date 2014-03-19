@@ -13,7 +13,6 @@
 #endif
 
 #include <cmath>
-#include "base/types.h"
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC

@@ -7,9 +7,10 @@
 #define VECGEOM_BASE_TRANSMATRIX_H_
 
 #include <cmath>
-#include "base/types.h"
-#include "base/vector3d.h"
 #include <cstring>
+
+#include "base/global.h"
+#include "base/vector3d.h"
 
 namespace VECGEOM_NAMESPACE {
 
