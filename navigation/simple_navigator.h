@@ -178,7 +178,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	// this information might have been cached in previous navigators??
 	TransformationMatrix const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
 	Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
-	Vector3D<Precision> localdir=m.Transform<1,0>(globaldir);
+	Vector3D<Precision> localdir=m.Transform<0,0>(globaldir);
 
 	VPlacedVolume const * currentvolume = currentstate.Top();
 	int nexthitvolume = -1; // means mother
@@ -201,6 +201,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	// now we have the candidates
 	// try
 	newstate=currentstate;
+	assert( newstate.Top() == currentstate.Top() );
 
 	// TODO: this is tedious, please provide operators in Vector3D!!
 	// WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS
@@ -267,7 +268,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 		nexthitvolume = (ddistance < step) ? d : nexthitvolume;
 		step 	  = (ddistance < step) ? ddistance  : step;
 	}
-
+	std::cout << "DECIDED FOR NEXTVOLUME " << nexthitvolume << std::endl;
 
 	// same information from ROOT
 	TGeoNode const * currentRootNode = RootManager::Instance().tgeonode( currentvolume );

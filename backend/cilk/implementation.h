@@ -19,7 +19,7 @@ namespace VECGEOM_NAMESPACE {
 template <TranslationCode trans_code, RotationCode rot_code,
           typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
-void VPlacedVolume::InsideBackend(VolumeType const &volume,
+void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
                                   bool *const output) {
   for (int i = 0; i < points.size(); i += kVectorSize) {
@@ -36,7 +36,7 @@ void VPlacedVolume::InsideBackend(VolumeType const &volume,
 template <TranslationCode trans_code, RotationCode rot_code,
           typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
-void VPlacedVolume::DistanceToInBackend(VolumeType const &volume,
+void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &positions,
                                         ContainerType const &directions,
                                         Precision const *const step_max,
@@ -56,6 +56,29 @@ void VPlacedVolume::DistanceToInBackend(VolumeType const &volume,
     result.store(&output[i]);
   }
 }
+
+template <typename VolumeType, typename ContainerType>
+VECGEOM_INLINE
+void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
+                                        ContainerType const &positions,
+                                        ContainerType const &directions,
+                                        Precision const *const step_max,
+                                        Precision *const output) {
+  for (int i = 0; i < positions.size(); i += kVectorSize) {
+    const CilkPrecision result =
+        volume.template DistanceToOutDispatch<kCilk>                                                          kCilk>(
+          Vector3D<CilkPrecision>(CilkPrecision(&positions.x(i)),
+                                  CilkPrecision(&positions.y(i)),
+                                  CilkPrecision(&positions.z(i))),
+          Vector3D<CilkPrecision>(CilkPrecision(&directions.x(i)),
+                                  CilkPrecision(&directions.y(i)),
+                                  CilkPrecision(&directions.z(i))),
+          CilkPrecision(&step_max[i])
+        );
+    result.store(&output[i]);
+  }
+}
+
 
 } // End global namespace
 

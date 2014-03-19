@@ -110,7 +110,9 @@ public:
 
 NavigationState & NavigationState::operator=( NavigationState const & rhs )
 {
-
+	currentlevel_=rhs.currentlevel_;
+	maxlevel_ = rhs.maxlevel_;
+	std::memcpy(path_, rhs.path_, sizeof(path_)*currentlevel_);
 	return *this;
 }
 
@@ -118,7 +120,7 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
 NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.maxlevel_), currentlevel_(rhs.currentlevel_)
 {
 	InitInternalStorage();
-	std::memcpy(path_, rhs.path_, sizeof(path_)*currentlevel_ );
+	std::memcpy(path_, rhs.path_, sizeof(path_)*rhs.currentlevel_ );
 }
 
 
