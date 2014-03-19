@@ -1,9 +1,11 @@
+#include <iostream>
 #include "testclass.h"
 
 namespace CPUGPU_NAMESPACE {
 
-int TestClass::foo() const {
-  return 2 * this->bar;
+void TestClass::Print() const {
+  for (int i = 0; i < 10; ++i) std::cout << i << " ";
+  std::cout << std::endl;
 }
 
 }

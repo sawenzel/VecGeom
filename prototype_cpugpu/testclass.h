@@ -10,14 +10,11 @@
 namespace CPUGPU_NAMESPACE {
 
 class TestClass {
-  int bar;
+  int vector[10];
 public:
-  #ifdef CPUGPU_CUDA
-  TestClass() { bar = 5; }
-  #else
-  TestClass() { bar = 42; }
-  #endif
-  int foo() const;
+  TestClass() { for (int i = 0; i < 10; ++i) vector[i] = i; }
+  void DoWork();
+  void Print() const;
 };
 
 }

@@ -3,10 +3,16 @@ project(vecgeom)
 
 include_directories(${CMAKE_SOURCE_DIR})
 set(SRC_CPP ${CMAKE_SOURCE_DIR}/interface.cpp ${CMAKE_SOURCE_DIR}/testclass.cpp)
+set(SRC_CUDA ${CMAKE_SOURCE_DIR}/cuda.cu)
 
 find_package(CUDA REQUIRED)
 include(FindCUDA)
 set(CUDA_SEPARABLE_COMPILATION ON)
+
+find_package(Vc REQUIRED)
+set(LIBS ${LIBS} ${Vc_LIBRARIES})
+get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)
+include_directories(${Vc_LIBPATH}/../include/)
 
 foreach(SRC_FILE ${SRC_CPP})
 
@@ -22,7 +28,12 @@ foreach(SRC_FILE ${SRC_CPP})
 
 endforeach()
 
-add_library(cpugpu_cpp ${SRC_CPP})
+set(CMAKE_CXX_FLAGS -std=c++11)
+add_library(cpugpu_cpp ${SRC_CPP} ${CMAKE_SOURCE_DIR}/vc.cpp)
+target_link_libraries(cpugpu_cpp ${LIBS})
+set(LIBS ${LIBS} cpugpu_cpp)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -DCPUGPU_CUDA)
+set(CMAKE_CXX_FLAGS "")
 cuda_add_executable(cpugpu_final ${CMAKE_SOURCE_DIR}/main.cpp ${SRC_CUDA} OPTIONS -arch=sm_20)
-target_link_libraries(cpugpu_final cpugpu_cpp)
+set(CMAKE_CXX_FLAGS -std=c++11)
+target_link_libraries(cpugpu_final ${LIBS})
