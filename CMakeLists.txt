@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.8)
 project(vecgeom)
 
 ################################################################################
 
-option(VC_ACCELERATION "Internal vectorization using Vc." ON)
+option(VC_ACCELERATION "Internal vectorization using Vc." OFF)
 
 option(ROOT "Include ROOT." OFF)
 
@@ -75,7 +75,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -ftree-vectorize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -ftree-vectorize")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000")
 endif()
@@ -260,6 +260,8 @@ if (NOT CUDA)
   set(LIBS ${LIBS} vecgeom_cpp)
   add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
   target_link_libraries(create_geometry_test ${LIBS})
+  add_executable(transformation_test ${CMAKE_SOURCE_DIR}/test/transformation_test.cpp)
+  target_link_libraries(transformation_test ${LIBS})
   if (ROOT)
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})

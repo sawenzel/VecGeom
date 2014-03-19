@@ -13,6 +13,7 @@
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
 #include <iostream>
+#include "base/soa3d.h"
 
 #ifdef VECGEOM_ROOT
 #include "management/root_manager.h"
@@ -67,21 +68,28 @@ public:
 								  Vector3D<Precision> const & /* global dir */,
 								  NavigationState const & /* currentstate */,
 								  NavigationState & /* newstate */,
-								  double & /*step*/
+								  Precision & /*step*/
 								 ) const;
 
 	/**
 	 * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
+	 * Note that the user has to provide a couple of workspace memories; This is the easiest way to make the navigator fully
+	 * threadsafe
 	 */
 	template <typename Container3D>
 	void FindNextBoundaryAndStep(
 			Container3D const & /*point*/,
 			Container3D const & /*dir*/,
+			Container3D & /*localpoint*/,
+			Container3D & /*localdir*/,
 			NavigationState **  /* this is interpreted as an array of pointers to NavigationStates */,
 			NavigationState **  /* this is interpreted as an array of pointers to NavigationStates */,
-			double const * /* pSteps -- proposed steps */,
-			double * /* safeties */,
-			double * /* distances; steps */, int np) const;
+			Precision const * /* pSteps -- proposed steps */,
+			Precision * /* safeties */,
+			Precision * /* distances; steps */,
+			Precision * /* workspace */,
+			int * /* for array of nextnodes */,
+			int np) const;
 
 
 	/**
@@ -226,6 +234,83 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	}
 }
 
+
+#ifdef VECGEOM_ROOT
+
+
+/**
+ * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
+ */
+template <typename Container3D>
+void FindNextBoundaryAndStep(
+		Container3D const & globalpoints,
+		Container3D const & globaldirs,
+		Container3D & localpoints,
+		Container3D & localdirs,
+		NavigationState * * currentstates  /* this is interpreted as an array of pointers to NavigationStates */,
+		NavigationState * * newstates /* this is interpreted as an array of pointers to NavigationStates */,
+		Precision const * pSteps /* -- proposed steps */,
+		Precision * safeties /* safeties */,
+		Precision * workspace,
+		Precision * distances /* distances */,
+		int * nextnode,
+		int np) const
+{
+	// assuming that points and dirs are always global ones,
+	// we need to transform to local coordinates first of all
+	for( int i=0; i<np; ++i )
+	{
+		// TODO: we might be able to cache the matrices because some of the paths will be identical
+		// need to have a quick way ( hash ) to compare paths
+		TransformationMatrix m = currentstates[i]->TopMatrix();
+		localpoints[i] = m.Transform<1,0>( globalpoints[i] );
+		localdirs[i] = m.Transform<0,0>( globaldirs[i] );
+		// initiallize next nodes
+		nextnode[i]=-1; // -2 indicates that particle stays in the same logical volume
+	}
+
+	localpoints.SetFillSize(np);
+	localdirs.SetFillSize(np);
+
+	// attention here: the placed volume will of course differ for the particles;
+	// however the distancetoout function and the daughtelist are the same for all particles
+	VPlacedVolume const * currentvolume = currentstates[0]->Top();
+
+	// calculate distance to Boundary of current volume
+	currentvolume->DistanceToOut( localpoints, localdirs, pSteps, distances );
+
+	//	nextnode[k]=-1;
+	// this should be moved into the previous function
+	//	for(int k=0;k<np;k++)
+	//	{
+	//		this->nextnode[k] = ( pSteps[k] < distance[k] )? -1 : nextnode[k];
+	//	}
+
+	// iterate over all the daughter
+	Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
+	for( int daughterindex=0; daughterindex < daughters->size(); ++daughterindex )
+	{
+		VPlacedVolume const * daughter = daughters->operator [](daughterindex);
+
+		daughter->DistanceToIn( localpoints, localdirs, distances, workspace );
+
+		// TODO: this has to be moved inside the above function
+		for(int k=0; k<np; k++)
+		{
+			if(workspace[k]<distances[k])
+			{
+				distances[k] = workspace[k];
+				nextnode[k] = daughterindex;
+			}
+		}
+		//daughter->DistanceToIn_ANDUpdateCandidate( points, dirs, distance, nextnode, daughterindex );
+		// at this moment, distance will contain the MINIMUM distance until now and nextnode will point to the candidate nextnode
+	}
+	VectorRelocateFromPaths( localpoints, localdirs,
+			distances, nextnode, const_cast<NavigationState const **>(currentstates), newstates, np );
+}
+
+
 #ifdef VECGEOM_ROOT
 void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	(	Vector3D<Precision> const & globalpoint,
@@ -289,9 +374,11 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 
 		std::cout << "DistanceToDaughter ROOT : " << daughter->GetName() << " " << ddistance << std::endl;
 	}
-
 }
 #endif
+
+
+
 
 };
 
