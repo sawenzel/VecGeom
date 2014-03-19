@@ -179,7 +179,7 @@ void test7()
 		SimpleNavigator vecnav;
 		VPlacedVolume const *vol1 =
 		    vecnav.LocatePoint(RootManager::Instance().world(), p, state, true);
-		vol1 = vol1;
+
 		/*
 		if ( vol1 != NULL )
 		{
