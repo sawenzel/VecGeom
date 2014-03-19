@@ -7,7 +7,7 @@
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 const TransformationMatrix TransformationMatrix::kIdentity =
     SpecializedMatrix<translation::kOrigin, rotation::kIdentity>();
@@ -193,4 +193,4 @@ TransformationMatrix* TransformationMatrix::CopyToGpu() const {
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

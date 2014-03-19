@@ -18,7 +18,7 @@
 #include "TGeoMatrix.h"
 #include "TGeoVolume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 void RootManager::LoadRootGeometry() {
   Clear();
@@ -121,4 +121,4 @@ void RootManager::Clear() {
   }
 }
 
-} // End namespace vecgeom
+} // End global namespace

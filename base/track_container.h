@@ -8,7 +8,7 @@
 
 #include "base/global.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Base class for containers storing sets of three coordinates in a
@@ -66,6 +66,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_TRACKCONTAINER_H_

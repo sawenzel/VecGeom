@@ -10,7 +10,7 @@
 #include "base/global.h"
 #include "base/transformation_matrix.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class VUnplacedVolume {
 
@@ -70,6 +70,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDVOLUME_H_

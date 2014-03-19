@@ -1,5 +1,5 @@
 /*
- * BuildBoxDetector.cpp
+ * NavigationInBoxDetector_Benchmark_Geant4.cpp
  *
  *  Created on: Feb 3, 2014
  *      Author: swenzel

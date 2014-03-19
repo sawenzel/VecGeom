@@ -12,13 +12,15 @@
 #include "volumes/placed_volume.h"
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
-#include "management/root_manager.h"
 #include <iostream>
 
+#ifdef VECGEOM_ROOT
+#include "management/root_manager.h"
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
+#endif
 
-namespace vecgeom
+namespace VECGEOM_NAMESPACE
 {
 
 
@@ -80,6 +82,7 @@ public:
 			double const * /* pSteps -- proposed steps */,
 			double * /* safeties */,
 			double * /* distances; steps */, int np) const;
+
 
 	/**
 	 * A verbose function telling about possible hit targets and steps; starting from a navigation state
@@ -175,7 +178,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	// this information might have been cached in previous navigators??
 	TransformationMatrix const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
 	Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
-	Vector3D<Precision> localdir=m.Transform<1,0>(globaldir);
+	Vector3D<Precision> localdir=m.Transform<0,0>(globaldir);
 
 	VPlacedVolume const * currentvolume = currentstate.Top();
 	int nexthitvolume = -1; // means mother
@@ -198,6 +201,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	// now we have the candidates
 	// try
 	newstate=currentstate;
+	assert( newstate.Top() == currentstate.Top() );
 
 	// TODO: this is tedious, please provide operators in Vector3D!!
 	// WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS
@@ -222,6 +226,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	}
 }
 
+#ifdef VECGEOM_ROOT
 void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	(	Vector3D<Precision> const & globalpoint,
 		Vector3D<Precision> const & globaldir,
@@ -263,7 +268,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 		nexthitvolume = (ddistance < step) ? d : nexthitvolume;
 		step 	  = (ddistance < step) ? ddistance  : step;
 	}
-
+	std::cout << "DECIDED FOR NEXTVOLUME " << nexthitvolume << std::endl;
 
 	// same information from ROOT
 	TGeoNode const * currentRootNode = RootManager::Instance().tgeonode( currentvolume );
@@ -286,6 +291,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	}
 
 }
+#endif
 
 };
 

@@ -10,7 +10,7 @@
 #include "base/vector3d.h"
 #include "base/transformation_matrix.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /** the core inside function with matrix stripped; it expects a local point ) **/
 template<typename Backend>
@@ -157,17 +157,16 @@ void BoxDistanceToOut(
 	typedef typename Backend::precision_v Float;
 	typedef typename Backend::bool_v Bool;
 
-	Float tiny(1e-20);
 	Float big(1E30);
 
 	Float saf[3];
 	saf[0] = Abs(pos[0])-dimensions[0];
-	saf[1] = Abs(pos[0])-dimensions[1];
-	saf[2] = Abs(pos[0])-dimensions[2];
+	saf[1] = Abs(pos[1])-dimensions[1];
+	saf[2] = Abs(pos[2])-dimensions[2];
 
 	// TODO: check this
 	Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2]< Float(0.);
-	distance( !inside ) = big;
+	MaskedAssign( !inside, big, &distance );
 
 	// TODO: could make the code more compact by looping over dir
 	Float invdirx = 1.0/dir[0];
@@ -177,28 +176,28 @@ void BoxDistanceToOut(
 	Bool mask;
 	Float distx = (dimensions[0]-pos[0]) * invdirx;
 	mask = dir[0]<0;
-	MaskedAssign( mask, (-dimensions[0]-pos[0]) * invdirx , distx);
+	MaskedAssign( mask, (-dimensions[0]-pos[0]) * invdirx , &distx);
 
 
 	Float disty = (dimensions[1]-pos[1]) * invdiry;
 	mask = dir[1]<0;
-	MaskedAssign( mask, (-dimensions[1]-pos[1]) * invdiry , disty);
+	MaskedAssign( mask, (-dimensions[1]-pos[1]) * invdiry , &disty);
 
 
 	Float distz = (dimensions[2]-pos[2]) * invdirz;
 	mask = dir[2]<0;
-	MaskedAssign( mask, (-dimensions[2]-pos[2]) * invdirz , distz);
+	MaskedAssign( mask, (-dimensions[2]-pos[2]) * invdirz , &distz);
 
 	distance = distx;
 	mask = distance>disty;
-	MaskedAssign( mask, disty , distance);
+	MaskedAssign( mask, disty, &distance);
 	mask = distance>distz;
-	MaskedAssign( mask, distz , distance);
+	MaskedAssign( mask, distz, &distance);
 
 	return;
 }
 
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_

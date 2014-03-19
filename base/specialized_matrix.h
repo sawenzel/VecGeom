@@ -8,7 +8,7 @@
 
 #include "base/transformation_matrix.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Specializes on the necessary translation on rotation, eliminating
@@ -68,6 +68,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_SPECIALIZEDMATRIX_H_

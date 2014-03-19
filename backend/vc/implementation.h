@@ -13,12 +13,12 @@
 #include "base/soa3d.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode trans_code, RotationCode rot_code,
           typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
-void VPlacedVolume::InsideBackend(VolumeType const &volume,
+void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
                                   bool *const output) {
   for (int i = 0; i < points.size(); i += kVectorSize) {
@@ -37,7 +37,7 @@ void VPlacedVolume::InsideBackend(VolumeType const &volume,
 template <TranslationCode trans_code, RotationCode rot_code,
           typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
-void VPlacedVolume::DistanceToInBackend(VolumeType const &volume,
+void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &positions,
                                         ContainerType const &directions,
                                         Precision const *const step_max,
@@ -57,6 +57,28 @@ void VPlacedVolume::DistanceToInBackend(VolumeType const &volume,
   }
 }
 
-} // End namespace vecgeom
+template <typename VolumeType, typename ContainerType>
+VECGEOM_INLINE
+void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
+                                        ContainerType const &positions,
+                                        ContainerType const &directions,
+                                        Precision const *const step_max,
+                                        Precision *const output) {
+  for (int i = 0; i < positions.size(); i += kVectorSize) {
+    const VcPrecision result =
+        volume.template DistanceToOutDispatch<kVc>(
+          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
+                                VcPrecision(&positions.y(i)),
+                                VcPrecision(&positions.z(i))),
+          Vector3D<VcPrecision>(VcPrecision(&directions.x(i)),
+                                VcPrecision(&directions.y(i)),
+                                VcPrecision(&directions.z(i))),
+          VcPrecision(&step_max[i])
+        );
+    result.store(&output[i]);
+  }
+}
+
+} // End global namespace
 
 #endif // VECGEOM_BACKEND_VC_IMPLEMENTATION_H_

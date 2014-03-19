@@ -11,7 +11,7 @@
 #include "base/array.h"
 #include "base/iterator.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Std-like container base class compatible with CUDA.
@@ -62,7 +62,7 @@ template <typename Type>
 __global__
 void ConstructOnGpu(Type *const arr, const int size,
                     Vector<Type> *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::Vector<Type>(arr, size);
+  new(gpu_ptr) VECGEOM_NAMESPACE::Vector<Type>(arr, size);
 }
 
 } // End anonymous namespace
@@ -90,14 +90,15 @@ Type* Container<Type>::CopyContentToGpu() const {
     arr[i] = *j;
     i++;
   }
-  Type *const arr_gpu = vecgeom::AllocateOnGpu<Type>(this->size()*sizeof(Type));
-  vecgeom::CopyToGpu(arr, arr_gpu, this->size()*sizeof(Type));
+  Type *const arr_gpu =
+      VECGEOM_NAMESPACE::AllocateOnGpu<Type>(this->size()*sizeof(Type));
+  VECGEOM_NAMESPACE::CopyToGpu(arr, arr_gpu, this->size()*sizeof(Type));
   delete arr;
   return arr_gpu;
 }
 
 #endif // VECGEOM_CUDA
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_CONTAINER_H_

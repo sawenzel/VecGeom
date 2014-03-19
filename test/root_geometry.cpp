@@ -8,7 +8,7 @@
 #include "TGeoMatrix.h"
 #include "TGeoVolume.h"
 
-using namespace vecgeom;
+using namespace VECGEOM_NAMESPACE;
 
 int main() {
 

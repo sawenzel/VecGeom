@@ -5,7 +5,7 @@
 
 #include "volumes/unplaced_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
@@ -23,4 +23,4 @@ VPlacedVolume* VUnplacedVolume::PlaceVolume(
   return SpecializedVolume(volume, matrix, trans_code, rot_code);
 }
 
-} // End namespace vecgeom
+} // End global namespace

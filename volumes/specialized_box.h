@@ -17,7 +17,7 @@
 #include "base/transformation_matrix.h"
 #include "volumes/placed_box.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode trans_code, RotationCode rot_code>
 class SpecializedBox : public PlacedBox {
@@ -97,14 +97,14 @@ template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::Inside(
     SOA3D<Precision> const &points,
     bool *const output) const {
-  InsideBackend<trans_code, rot_code>(*this, points, output);
+  Inside_Looper<trans_code, rot_code>(*this, points, output);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::Inside(
     AOS3D<Precision> const &points,
     bool *const output) const {
-  InsideBackend<trans_code, rot_code>(*this, points, output);
+  Inside_Looper<trans_code, rot_code>(*this, points, output);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -126,7 +126,7 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
     SOA3D<Precision> const &directions,
     Precision const *const step_max,
     Precision *const output) const {
-  DistanceToInBackend<trans_code, rot_code>(*this, positions, directions,
+  DistanceToIn_Looper<trans_code, rot_code>(*this, positions, directions,
                                             step_max, output);
 }
 
@@ -136,7 +136,7 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
     AOS3D<Precision> const &directions,
     Precision const *const step_max,
     Precision *const output) const {
-  DistanceToInBackend<trans_code, rot_code>(*this, positions, directions,
+  DistanceToIn_Looper<trans_code, rot_code>(*this, positions, directions,
                                             step_max, output);
 }
 
@@ -181,6 +181,6 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
 
 #endif // VECGEOM_CUDA
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDBOX_H_

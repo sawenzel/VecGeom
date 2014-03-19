@@ -10,7 +10,7 @@
 #include "management/cuda_manager.h"
 #include "management/volume_factory.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 CudaManager::CudaManager() {
   synchronized = true;
@@ -104,7 +104,7 @@ VPlacedVolume const* CudaManager::Synchronize() {
       daughter_array[j] = LookupPlaced(*k);
       j++;
     }
-    vecgeom::CopyToGpu(
+    VECGEOM_NAMESPACE::CopyToGpu(
       daughter_array, LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
     );
 
@@ -353,4 +353,4 @@ Daughter* CudaManager::LookupDaughterArray(
   return static_cast<Daughter*>(Lookup(daughters));
 }
 
-} // End namespace vecgeom
+} // End global namespace

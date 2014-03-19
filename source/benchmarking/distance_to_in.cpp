@@ -14,7 +14,7 @@
 #include "volumes/placed_box.h"
 #include <random>
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 DistanceToIn::DistanceToIn(VPlacedVolume const *const world)
     : Benchmark(world) {}
@@ -247,4 +247,4 @@ BenchmarkResult DistanceToIn::RunRoot(Precision *const distances) const {
   return GenerateBenchmark(elapsed, kRoot);
 }
 
-} // End namespace vecgeom
+} // End global namespace

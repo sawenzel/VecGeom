@@ -12,7 +12,7 @@
 #include "base/vector.h"
 #include "volumes/unplaced_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 typedef VPlacedVolume const* Daughter;
 
@@ -90,6 +90,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_LOGICALVOLUME_H_

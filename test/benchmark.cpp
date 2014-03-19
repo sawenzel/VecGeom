@@ -2,7 +2,7 @@
 #include "volumes/box.h"
 #include "benchmarking/distance_to_in.h"
 
-using namespace vecgeom;
+using namespace VECGEOM_NAMESPACE;
 
 int main() {
 

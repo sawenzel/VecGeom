@@ -23,7 +23,7 @@
 #include "TGeoVolume.h"
 #include <cassert>
 
-using namespace vecgeom;
+using namespace VECGEOM_NAMESPACE;
 
 // creates a four level box detector
 // this modifies the global gGeoManager instance ( so no need for any return )
@@ -234,6 +234,7 @@ void test8()
 	// statistical test  of navigation via comparison with ROOT navigation
 	for(int i=0;i<1000000;++i)
 	{
+		//std::cerr << "START ITERATION " << i << std::endl;
 		double x = RNG::Instance().uniform(-10,10);
 		double y = RNG::Instance().uniform(-10,10);
 		double z = RNG::Instance().uniform(-10,10);
@@ -246,8 +247,6 @@ void test8()
 		SimpleNavigator nav;
 		VPlacedVolume const *vol1= nav.LocatePoint( RootManager::Instance().world(),
 				p, state, true);
-		vol1 = vol1;
-
 		double step;
 		nav.FindNextBoundaryAndStep( p, d, state, newstate, step );
 
@@ -267,13 +266,13 @@ void test8()
 		{
 			if( rootnav->GetCurrentNode()  != RootManager::Instance().tgeonode( newstate.Top() ) )
 			{
-				std::cerr << "ERROR" << std::endl;
+				std::cerr << "ERROR ON ITERATION " << i << std::endl;
 				std::cerr << i << " " << d << std::endl;
 				std::cerr << i << " " << p << std::endl;
-				std::cerr << node->GetName() << std::endl;
-				std::cerr << rootnav->GetCurrentNode()->GetName() << std::endl;
+				std::cerr << "I AM HERE: " << node->GetName() << std::endl;
+				std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << std::endl;
 				std::cerr << rootnav->GetStep() << std::endl;
-				std::cerr << RootManager::Instance().tgeonode( newstate.Top() )->GetName() << std::endl;
+				std::cerr << "VECGEOM GOES HERE: " << RootManager::Instance().GetName( newstate.Top() ) << std::endl;
 
 				nav.InspectEnvironmentForPointAndDirection( p, d, state );
 			}
@@ -283,6 +282,7 @@ void test8()
 	std::cerr << "test8 (statistical navigation) passed" << std::endl;
 }
 
+/*
 void DistanceToOutTest() {
 	const int n = 1<<8;
 	VPlacedVolume const* world = GeoManager::Instance().world();
@@ -312,6 +312,7 @@ void DistanceToOutTest() {
 	}
 	std::cerr << mismatches << " / " << n << " mismatches detected.\n";
 }
+*/
 
 int main()
 {
@@ -329,8 +330,8 @@ int main()
     test5();
     test6();
     test7();
-    DistanceToOutTest();
-    // test8();
+    //DistanceToOutTest();
+    test8();
 
     return 0;
 }

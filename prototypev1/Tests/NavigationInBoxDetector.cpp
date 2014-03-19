@@ -1,5 +1,5 @@
 /*
- * BuildBoxDetector.cpp
+ * NavigationInBoxDetector.cpp
  *
  *  Created on: Feb 3, 2014
  *      Author: swenzel

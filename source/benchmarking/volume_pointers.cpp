@@ -9,7 +9,7 @@
 #include "TGeoShape.h"
 #include "VUSolid.hh"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 VolumePointers::VolumePointers(VPlacedVolume const *const volume)
     : specialized_(volume), initial_(kSpecialized) {
@@ -45,4 +45,4 @@ void VolumePointers::Deallocate() {
   if (initial_ != kUSolids)       delete usolids_;
 }
 
-} // End namespace vecgeom
+} // End global namespace
