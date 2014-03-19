@@ -21,7 +21,7 @@
 #include "TGeoMatrix.h"
 #endif
 
-namespace vecgeom
+namespace VECGEOM_NAMESPACE
 {
 
 

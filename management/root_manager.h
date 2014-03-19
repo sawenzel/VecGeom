@@ -11,7 +11,7 @@
 #include "base/type_map.h"
 #include "TGeoNode.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Manager to handle interaction with ROOT geometry.
@@ -87,6 +87,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_ROOTMANAGER_H_

@@ -9,7 +9,7 @@
 #include "base/global.h"
 #include "base/iterator.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <typename Type>
 class Array : public Container<Type> {
@@ -86,6 +86,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_ARRAY_H_

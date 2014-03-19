@@ -10,7 +10,7 @@
 #include "base/global.h"
 #include "backend/scalar/backend.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 struct kCuda {
   typedef int       int_v;
@@ -152,6 +152,6 @@ void CopyFromGpu(Type const * const src, Type *const tgt) {
 //   return sqrt(val);
 // }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BACKEND_CUDABACKEND_H_

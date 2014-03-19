@@ -11,7 +11,7 @@
 #include "base/vector3d.h"
 #include "volumes/unplaced_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class UnplacedBox : public VUnplacedVolume {
 
@@ -80,6 +80,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDBOX_H_

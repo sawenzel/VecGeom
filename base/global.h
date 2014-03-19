@@ -3,11 +3,16 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
-#ifndef VECGEOM_BASE_UTILITIES_H_
-#define VECGEOM_BASE_UTILITIES_H_
+#ifndef VECGEOM_BASE_GLOBAL_H_
+#define VECGEOM_BASE_GLOBAL_H_
+
+#ifndef VECGEOM_CUDA
+  #define VECGEOM_NAMESPACE vecgeom
+#else
+  #define VECGEOM_NAMESPACE vecgeom_cuda
+#endif
 
 #include <cmath>
-#include "base/types.h"
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -15,7 +20,7 @@
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
   #define VECGEOM_CUDA_HEADER_GLOBAL __global__
-#else // Not compiling for CUDA
+#else // Not compiling with NVCC
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
@@ -42,15 +47,72 @@
   #define NULL 0
 #endif
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
+
+#ifdef VECGEOM_FLOAT_PRECISION
+typedef float Precision;
+#else
+typedef double Precision;
+#endif
 
 const int kAlignmentBoundary = 32;
-const double kDegToRad = M_PI/180.;
-const double kRadToDeg = 180./M_PI;
-const double kInfinity = INFINITY;
-const double kTiny = 1e-20;
-const double kTolerance = 1e-12;
+const Precision kDegToRad = M_PI/180.;
+const Precision kRadToDeg = 180./M_PI;
+const Precision kInfinity = INFINITY;
+const Precision kTiny = 1e-20;
+const Precision kTolerance = 1e-12;
 
-} // End namespace vecgeom
+template <typename Type>
+class Vector3D;
 
-#endif // VECGEOM_BASE_UTILITIES_H_
+template <typename Type>
+class SOA3D;
+
+template <typename Type>
+class AOS3D;
+
+template <typename Type>
+class Container;
+
+template <typename Type>
+class Vector;
+
+template <typename Type>
+class Array;
+
+class LogicalVolume;
+
+class VPlacedVolume;
+
+typedef VPlacedVolume VUSolid;
+
+class VUnplacedVolume;
+
+class UnplacedBox;
+
+class PlacedBox;
+
+class TransformationMatrix;
+
+class GeoManager;
+
+#ifdef VECGEOM_CUDA
+class CudaManager;
+#endif
+
+} // End global namespace
+
+#ifdef VECGEOM_ROOT
+class TGeoShape;
+class TGeoBBox;
+class TGeoNode;
+class TGeoMatrix;
+class TGeoVolume;
+#endif
+
+#ifdef VECGEOM_USOLIDS
+class VUSolid;
+class UBox;
+#endif
+
+#endif // VECGEOM_BASE_GLOBAL_H_

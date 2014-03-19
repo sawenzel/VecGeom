@@ -10,7 +10,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class VolumeFactory {
 
@@ -149,6 +149,6 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
 
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_

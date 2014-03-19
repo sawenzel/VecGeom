@@ -8,7 +8,7 @@
 
 #include "base/global.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Singleton random number generator.
@@ -50,6 +50,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_RNG_H_

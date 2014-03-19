@@ -12,7 +12,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 LogicalVolume::~LogicalVolume() {
   for (Iterator<VPlacedVolume const*> i = daughters().begin();
@@ -98,4 +98,4 @@ LogicalVolume* LogicalVolume::CopyToGpu(
 
 #endif // VECGEOM_CUDA
 
-} // End namespace vecgeom
+} // End global namespace

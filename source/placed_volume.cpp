@@ -5,7 +5,7 @@
 
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
@@ -13,4 +13,4 @@ std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
   return os;
 }
 
-} // End namespace vecgeom
+} // End global namespace

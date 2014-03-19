@@ -17,7 +17,7 @@
 #include "base/transformation_matrix.h"
 #include "volumes/placed_box.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode trans_code, RotationCode rot_code>
 class SpecializedBox : public PlacedBox {
@@ -181,6 +181,6 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
 
 #endif // VECGEOM_CUDA
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDBOX_H_

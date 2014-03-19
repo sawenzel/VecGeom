@@ -6,7 +6,7 @@
 #include <iostream>
 #include "backend/cuda/backend.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 cudaError_t CudaCheckError(const cudaError_t err) {
   if (err != cudaSuccess) {
@@ -34,4 +34,4 @@ void* AllocateOnGpu(const int size) {
   return ptr;
 }
 
-} // End namespace vecgeom
+} // End global namespace

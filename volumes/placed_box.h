@@ -12,7 +12,7 @@
 #include "volumes/unplaced_box.h"
 #include "volumes/kernel/box_kernel.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class PlacedBox : public VPlacedVolume {
 
@@ -238,7 +238,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
   // no translation and no rotation should look like this:
-	return PlacedBox::InsideDispatch<0, vecgeom::rotation::kIdentity, kScalar>(localpoint);
+	return PlacedBox::InsideDispatch<0, rotation::kIdentity, kScalar>(localpoint);
 }
 
 
@@ -299,8 +299,6 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
 	 */
 }
 
-
-
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDBOX_H_

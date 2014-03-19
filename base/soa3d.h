@@ -10,7 +10,7 @@
 #include "backend.h"
 #include "base/track_container.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Stores arrays of three coordinates in a structure of arrays fashion.
@@ -195,6 +195,6 @@ void SOA3D<Type>::FreeFromGpu() {
 
 #endif // VECGEOM_CUDA
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BASE_SOA3D_H_

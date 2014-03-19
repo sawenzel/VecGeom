@@ -13,7 +13,7 @@
 
 #include "backend/scalar/backend.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 // Need a way to detect this... Don't want to include Vc just for this!
 constexpr int kVectorSize = 4;
@@ -424,6 +424,6 @@ CilkInt Max(CilkInt const &val1, CilkInt const &val2) {
   return result;
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BACKEND_CILKBACKEND_H_

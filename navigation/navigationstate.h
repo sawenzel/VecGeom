@@ -15,7 +15,7 @@
 #include "base/transformation_matrix.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom
+namespace VECGEOM_NAMESPACE
 {
 /**
  * a class describing a current geometry state

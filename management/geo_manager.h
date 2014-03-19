@@ -8,7 +8,7 @@
 
 #include "base/global.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Knows about the current world volume.
@@ -39,6 +39,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_

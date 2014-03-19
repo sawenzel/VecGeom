@@ -10,7 +10,7 @@
 #include "base/vector3d.h"
 #include "base/transformation_matrix.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 /** the core inside function with matrix stripped; it expects a local point ) **/
 template<typename Backend>
@@ -198,6 +198,6 @@ void BoxDistanceToOut(
 }
 
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_

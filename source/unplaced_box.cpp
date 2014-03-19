@@ -9,7 +9,7 @@
 #include "volumes/specialized_box.h"
 #include "volumes/unplaced_box.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_CUDA
 
@@ -57,4 +57,4 @@ void UnplacedBox::Print() const {
   printf("Box {%f, %f, %f}", dimensions_[0], dimensions_[1], dimensions_[2]);
 }
 
-} // End namespace vecgeom
+} // End global namespace

@@ -10,7 +10,7 @@
 
 #include "base/global.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 struct kScalar {
   typedef int       int_v;
@@ -97,6 +97,6 @@ int Max(int const &val1, int const &val2) {
   #endif
 }
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BACKEND_SCALARBACKEND_H_

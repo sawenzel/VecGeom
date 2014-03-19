@@ -12,7 +12,7 @@
 #include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 class PlacedBox;
 
@@ -180,6 +180,6 @@ public:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_]

@@ -5,7 +5,7 @@
 #include "navigation/simple_navigator.h"
 #include "navigation/navigationstate.h"
 
-using namespace vecgeom;
+using namespace VECGEOM_NAMESPACE;
 
 void CudaCopy(VPlacedVolume const *const world);
 

@@ -11,7 +11,7 @@
 class TGeoNode;
 class VUSolid;
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot};
 
@@ -63,6 +63,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} // End global namespace
 
 #endif // VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_

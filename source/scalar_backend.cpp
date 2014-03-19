@@ -5,9 +5,9 @@
 
 #include "backend/scalar/backend.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 const kScalar::precision_v kScalar::kOne = 1.0;
 const kScalar::precision_v kScalar::kZero = 0.0;
 
-} // End namespace vecgeom
+} // End global namespace
