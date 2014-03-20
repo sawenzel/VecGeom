@@ -5,12 +5,13 @@
 
 #include <algorithm>
 #include <cassert>
-#include "backend/cuda/backend.h"
+#include "backend/cuda/interface.h"
 #include "base/array.h"
 #include "management/cuda_manager.h"
 #include "management/volume_factory.h"
+#include "volumes/placed_volume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
 CudaManager::CudaManager() {
   synchronized = true;
@@ -167,7 +168,7 @@ void CudaManager::AllocateGeometry() {
 
   if (verbose > 2) {
     size_t free_memory = 0, total_memory = 0;
-    CudaAssertError(cudaMemGetInfo(&free_memory, &total_memory));
+    CudaCheckMemory(&free_memory, &total_memory);
     std::cout << "\nAvailable memory: " << free_memory << " / "
                                         << total_memory << std::endl;
   }
