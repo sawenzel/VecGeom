@@ -59,13 +59,24 @@ public:
 								 NavigationState & /* state to be modified */
 	 	 	 	 	 	 ) const;
 
+	/**
+	 * function to check whether global point has same path as given by currentstate
+	 * input:  A global point
+	 *         the path itself
+	 *         a new path object which is filled
+	 * output: yes or no
+	 *
+	 * scope: function to be used on both CPU and GPU
+	 */
 	VECGEOM_CUDA_HEADER_BOTH
-		VECGEOM_INLINE
-		bool
-		HasSamePath( Vector3D<Precision> const & /* globalpoint */,
-					 NavigationState const & /* currentstate */
-					 NavigationState & /* newstate */
-					) const;
+	VECGEOM_INLINE
+	bool
+	HasSamePath(
+				Vector3D<Precision> const & /* globalpoint */,
+				NavigationState & /* currentstate */,
+				NavigationState & /* newstate */
+			   ) const;
+
 
 	/**
 	* A function to navigate ( find next boundary and/or the step to do )
@@ -109,7 +120,7 @@ public:
 			NavigationState const & /* current state */
 	) const;
 
-};
+}; // end of class declaration
 
 VPlacedVolume const *
 SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> const & point,
@@ -186,11 +197,10 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool
 SimpleNavigator::HasSamePath( Vector3D<Precision> const & globalpoint,
-							  NavigationState const & currentstate,
-							  NavigationState & newstate
-) const
+							  NavigationState & currentstate,
+							  NavigationState & newstate ) const
 {
-	TransformationMatrix m = state.TopMatrix();
+	TransformationMatrix const & m = currentstate.TopMatrix();
 	Vector3D<Precision> localpoint = m.Transform<1,0>(globalpoint);
 	newstate = currentstate;
 	RelocatePointFromPath( localpoint, newstate );
@@ -258,24 +268,24 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 }
 
 
-#ifdef VECGEOM_ROOT
-
 
 /**
  * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
  */
+
+/*
 template <typename Container3D>
 void FindNextBoundaryAndStep(
 		Container3D const & globalpoints,
 		Container3D const & globaldirs,
 		Container3D & localpoints,
 		Container3D & localdirs,
-		NavigationState * * currentstates  /* this is interpreted as an array of pointers to NavigationStates */,
-		NavigationState * * newstates /* this is interpreted as an array of pointers to NavigationStates */,
-		Precision const * pSteps /* -- proposed steps */,
-		Precision * safeties /* safeties */,
+		NavigationState * * currentstates   this is interpreted as an array of pointers to NavigationStates ,
+		NavigationState * * newstates  this is interpreted as an array of pointers to NavigationStates ,
+		Precision const * pSteps  -- proposed steps ,
+		Precision * safeties  safeties ,
 		Precision * workspace,
-		Precision * distances /* distances */,
+		Precision * distances  distances ,
 		int * nextnode,
 		int np) const
 {
@@ -332,6 +342,7 @@ void FindNextBoundaryAndStep(
 	VectorRelocateFromPaths( localpoints, localdirs,
 			distances, nextnode, const_cast<NavigationState const **>(currentstates), newstates, np );
 }
+*/
 
 
 #ifdef VECGEOM_ROOT
