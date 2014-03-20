@@ -22,7 +22,7 @@ VECGEOM_INLINE
 void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
                                   bool *const output) {
-  for (int i = 0; i < points.fillsize(); i += kVectorSize) {
+  for (int i = 0; i < points.fillsize(); i += CilkPrecision::size()) {
     const CilkBool result =
         volume.template InsideDispatch<trans_code, rot_code, kCilk>(
           Vector3D<CilkPrecision>(CilkPrecision(&points.x(i)),
@@ -41,7 +41,7 @@ void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &directions,
                                         Precision const *const step_max,
                                         Precision *const output) {
-  for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
+  for (int i = 0; i < positions.fillsize(); i += CilkPrecision::size()) {
     const CilkPrecision result =
         volume.template DistanceToInDispatch<trans_code, rot_code,
                                                           kCilk>(
@@ -64,7 +64,7 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
                                         ContainerType const &directions,
                                         Precision const *const step_max,
                                         Precision *const output) {
-  for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
+  for (int i = 0; i < positions.fillsize(); i += CilkPrecision::size()) {
     const CilkPrecision result =
         volume.template DistanceToOutDispatch<kCilk>(
           Vector3D<CilkPrecision>(CilkPrecision(&positions.x(i)),
