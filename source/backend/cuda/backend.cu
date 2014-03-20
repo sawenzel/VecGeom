@@ -3,10 +3,12 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
+#include <cassert>
 #include <iostream>
-#include "backend/cuda/backend.h"
+ 
+#include "backend/cuda/interface.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
 cudaError_t CudaCheckError(const cudaError_t err) {
   if (err != cudaSuccess) {
@@ -28,10 +30,4 @@ void CudaAssertError() {
   CudaAssertError(cudaGetLastError());
 }
 
-void* AllocateOnGpu(const int size) {
-  void *ptr;
-  CudaAssertError(cudaMalloc(&ptr, size));
-  return ptr;
-}
-
-} // End global namespace
+} // End namespace vecgeom

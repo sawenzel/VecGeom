@@ -6,9 +6,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
 
-using namespace VECGEOM_NAMESPACE;
-
-void CudaCopy(VPlacedVolume const *const world);
+using namespace vecgeom;
 
 int main() {
 
@@ -50,34 +48,11 @@ int main() {
 
   VPlacedVolume *world_placed = worldl.Place();
 
-  #ifdef VECGEOM_NVCC
-  CudaCopy(world_placed);
-  #else
-
   SimpleNavigator nav;
   Vector3D<Precision> point(2, 2, 2);
   NavigationState path(4);
   nav.LocatePoint(world_placed, point, path, true);
   path.Print();
-  #endif
 
   return 0;
 }
-
-#ifdef VECGEOM_NVCC
-__global__
-void CudaContent(VPlacedVolume const *world) {
-  printf("Inside CUDA kernel.\n");
-  world->logical_volume()->PrintContent();
-}
-
-void CudaCopy(VPlacedVolume const *const world) {
-  CudaManager::Instance().set_verbose(3);
-  CudaManager::Instance().LoadGeometry(world);
-  CudaManager::Instance().Synchronize();
-  VPlacedVolume const *const world_gpu = CudaManager::Instance().world_gpu();
-  CudaContent<<<1, 1>>>(world_gpu);
-  cudaDeviceSynchronize(); // Necessary to print output
-  CudaAssertError();
-}
-#endif

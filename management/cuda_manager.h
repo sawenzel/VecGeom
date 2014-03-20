@@ -12,7 +12,8 @@
 #include "base/vector.h"
 #include "volumes/box.h"
 
-namespace VECGEOM_NAMESPACE {
+// Compile for vecgeom namespace to work as interface
+namespace vecgeom {
 
 class CudaManager {
 

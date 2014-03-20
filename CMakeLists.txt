@@ -76,23 +76,12 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ftree-vectorize")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000")
-endif()
-if (GNU)
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                   OUTPUT_VARIABLE GCC_VERSION)
   if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
   endif()
-endif()
-if (Vc)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC")
-endif()
-if (Cilk)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CILK")
-endif()
-if (CUDA)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
 endif()
 if (Intel)
   set(CMAKE_CXX_FLAGS "-xHost ${CMAKE_CXX_FLAGS}")
@@ -120,6 +109,8 @@ endif()
 
 if (Vc)
 
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC")
+
   if (GNU)
     # Fixes ABI issues with Vc using GNU compiler
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
@@ -135,6 +126,8 @@ if (Cilk)
     message(FATAL_ERROR "Must use Intel C++ compiler (icc) for Cilk backend.")
   endif()
 
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CILK")
+
   set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/cilk)
   file(GLOB SRC_BACKEND "source/backend/cilk/*.cpp")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
@@ -142,6 +135,8 @@ if (Cilk)
 endif()
 
 if (CUDA)
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
 
   find_package(CUDA REQUIRED)
   include(FindCUDA)
@@ -162,6 +157,7 @@ if (CUDA)
   set(BACKEND_INCLUDE_CUDA ${CMAKE_SOURCE_DIR}/backend/cuda)
   file(GLOB SRC_BACKEND source/backend/cuda/*.cpp source/backend/cuda/*.cu)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
 
 endif()
 
@@ -222,26 +218,7 @@ set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
 if (CUDA)
 
-  # Executable files
-
-  file(GLOB EXE_CPP "test/*.cpp")
-
-  foreach(SRC_FILE ${EXE_CPP})
-
-    get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
-
-    ADD_CUSTOM_COMMAND(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
-          ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      DEPENDS ${SRC_FILE}
-    )
-
-  endforeach()
-
   foreach(SRC_FILE ${SRC_CPP})
-
-    # Object files
 
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
@@ -312,7 +289,7 @@ else()
   cuda_add_executable(
     create_geometry_test
     ${SRC_CUDA}
-    ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu
+    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
     OPTIONS ${CUDA_ARCH}
   )
 endif()
