@@ -6,6 +6,14 @@
 #ifndef VECGEOM_BACKEND_CILKBACKEND_H_
 #define VECGEOM_BACKEND_CILKBACKEND_H_
 
+#if defined(__MIC__)
+#define VECGEOM_VECTOR_BIT_SIZE 64
+#elif defined(__AVX__)
+#define VECGEOM_VECTOR_BIT_SIZE 32
+#else // Assume SSE
+#define VECGEOM_VECTOR_BIT_SIZE 16
+#endif
+
 #include <algorithm>
 #include <iostream>
 
@@ -15,8 +23,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-// Need a way to detect this... Don't want to include Vc just for this!
-constexpr int kVectorSize = 4;
+constexpr int kVectorSize = VECGEOM_VECTOR_BIT_SIZE / sizeof(Precision);
 
 template <typename Type = Precision, int vec_size = kVectorSize>
 struct CilkVector;
@@ -49,7 +56,7 @@ struct CilkVector {
 public:
 
   // Left public to allow array notation
-  Type vec[vec_size] __attribute__((aligned(32)));
+  Type __attribute__((align(64))) vec[vec_size];
 
   /**
    * User should not assume any default value when constructing without
