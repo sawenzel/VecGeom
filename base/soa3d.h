@@ -7,7 +7,8 @@
 #define VECGEOM_BASE_SOA3D_H_
 
 #include "base/global.h"
-#include "backend.h"
+#include "backend/backend.h"
+ 
 #include "base/track_container.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -166,7 +167,7 @@ void SOA3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
   z_[index] = vec[2];
 }
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 template <typename Type>
 SOA3D<Type> SOA3D<Type>::CopyToGpu() const {
@@ -193,7 +194,7 @@ void SOA3D<Type>::FreeFromGpu() {
   CudaAssertError();
 }
 
-#endif // VECGEOM_CUDA
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

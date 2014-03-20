@@ -6,13 +6,9 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 
-#ifdef VECGEOM_CUDA
-#include <stdio.h>
-#endif
-
 #include "base/global.h"
-#include "backend.h"
-#include "implementation.h"
+#include "backend/backend.h"
+#include "backend/implementation.h"
 
 #include "base/transformation_matrix.h"
 #include "volumes/placed_box.h"
@@ -146,7 +142,6 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
                                             step_max, output);
 }
 
-
 template <TranslationCode trans_code, RotationCode rot_code>
 Precision SpecializedBox<trans_code, rot_code>::SafetyToIn(
 		Vector3D<Precision> const &position ) const {
@@ -165,8 +160,7 @@ void SpecializedBox<trans_code, rot_code>::SafetyToIn(
 	SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
 }
 
-
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 namespace {
 
@@ -205,7 +199,7 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
 
 }
 
-#endif // VECGEOM_CUDA
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

@@ -10,12 +10,11 @@
 #include <string>
 #include <cstdlib>
 
-#ifdef VECGEOM_VC_ACCELERATION
+#include "base/global.h"
+#include "backend/backend.h"
+#if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 #include <Vc/Vc>
 #endif
-
-#include "base/global.h"
-#include "backend.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -275,7 +274,7 @@ public:
 
 };
 
-#ifdef VECGEOM_VC_ACCELERATION // Activated as a compiler flag
+#if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
 template <>
 class Vector3D<Precision> {
@@ -472,7 +471,7 @@ public:
 
 };
 
-#endif // Vc acceleration enabled
+#endif // (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
 } // End global namespace
 

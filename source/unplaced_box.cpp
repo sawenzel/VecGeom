@@ -4,14 +4,14 @@
  */
 
 #include <stdio.h>
-#include "backend.h"
+#include "backend/backend.h"
 #include "management/volume_factory.h"
 #include "volumes/specialized_box.h"
 #include "volumes/unplaced_box.h"
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 namespace {
 
@@ -34,7 +34,7 @@ VUnplacedVolume* UnplacedBox::CopyToGpu() const {
   return CopyToGpu(gpu_ptr);
 }
 
-#endif
+#endif // VECGEOM_NVCC
 
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* UnplacedBox::Create(

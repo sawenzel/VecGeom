@@ -6,14 +6,6 @@
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
-#ifndef VECGEOM_CUDA
-  #define VECGEOM_NAMESPACE vecgeom
-#else
-  #define VECGEOM_NAMESPACE vecgeom_cuda
-#endif
-
-#include <cmath>
-
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
@@ -27,7 +19,13 @@
   #define VECGEOM_CUDA_HEADER_GLOBAL
 #endif
 
-#ifndef VECGEOM_CUDA // Set by compiler
+#ifndef VECGEOM_NVCC
+  #define VECGEOM_NAMESPACE vecgeom
+#else
+  #define VECGEOM_NAMESPACE vecgeom_cuda
+#endif
+
+#ifndef VECGEOM_NVCC // Set by compiler
   #define VECGEOM_STD_CXX11
 #endif
 
@@ -42,6 +40,8 @@
     #define VECGEOM_INLINE inline
   #endif
 #endif
+
+#include <cmath>
 
 #ifndef NULL
   #define NULL 0
@@ -99,6 +99,23 @@ class GeoManager;
 #ifdef VECGEOM_CUDA
 class CudaManager;
 #endif
+
+namespace entry {
+enum Entry {
+  k00 = 0x001, k01 = 0x002, k02 = 0x004,
+  k10 = 0x008, k11 = 0x010, k12 = 0x020,
+  k20 = 0x040, k21 = 0x080, k22 = 0x100
+};
+}
+
+typedef int RotationCode;
+typedef int TranslationCode;
+namespace rotation {
+enum RotationId { kDiagonal = 0x111, kIdentity = 0x200 };
+}
+namespace translation {
+enum TranslationId { kOrigin = 0, kTranslation = 1 };
+}
 
 } // End global namespace
 

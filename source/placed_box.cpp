@@ -3,9 +3,9 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
+#include "backend/implementation.h"
 #include "base/aos3d.h"
 #include "base/soa3d.h"
-#include "implementation.h"
 #include "volumes/placed_box.h"
 #ifdef VECGEOM_BENCHMARK
 #include "TGeoBBox.h"
@@ -66,7 +66,6 @@ void PlacedBox::DistanceToOut( SOA3D<Precision> const &position,
 	return DistanceToOut_Looper(*this, position, direction, step_max, distances);
 }
 
-
 void PlacedBox::SafetyToIn( SOA3D<Precision> const &position,
 		  Precision *const safeties ) const {
 	return SafetyToIn_Looper<1,0>(*this, position, safeties);
@@ -89,9 +88,7 @@ void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
 	return SafetyToOut_Looper(*this, position, safeties);
 }
 
-
-
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 namespace {
 
@@ -119,7 +116,7 @@ VPlacedVolume* PlacedBox::CopyToGpu(
   return CopyToGpu(logical_volume, matrix, gpu_ptr);
 }
 
-#endif // VECGEOM_CUDA
+#endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_BENCHMARK
 
