@@ -104,18 +104,6 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType& operator=(VecType const &other) {
-    vec[:] = other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator=(Type const &scalar) {
-    vec[:] = scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
   VecType operator!() const {
     VecType result;
     result.vec[:] = !vec[:];
@@ -135,6 +123,7 @@ public:
     this->vec[:] OPERATOR scalar; \
     return *this; \
   }
+  INPLACE_BINARY_OP(=)
   INPLACE_BINARY_OP(+=)
   INPLACE_BINARY_OP(-=)
   INPLACE_BINARY_OP(*=)
