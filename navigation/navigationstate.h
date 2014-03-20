@@ -102,6 +102,10 @@ public:
 
 	void Print() const;
 
+	VECGEOM_INLINE
+	VECGEOM_CUDA_HEADER_BOTH
+	bool IsOutsideWorld() const { return !(currentlevel_>0); }
+
 	//void GetGlobalMatrixFromPath( TransformationMatrix *const m ) const;
 	//TransformationMatrix const * GetGlobalMatrixFromPath() const;
 };
