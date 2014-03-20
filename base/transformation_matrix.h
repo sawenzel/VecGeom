@@ -14,21 +14,6 @@
 
 namespace VECGEOM_NAMESPACE {
 
-// enum MatrixEntry {
-//   k00 = 0x001, k01 = 0x002, k02 = 0x004,
-//   k10 = 0x008, k11 = 0x010, k12 = 0x020,
-//   k20 = 0x040, k21 = 0x080, k22 = 0x100
-// };
-
-typedef int RotationCode;
-typedef int TranslationCode;
-namespace rotation {
-  enum RotationId { kDiagonal = 0x111, kIdentity = 0x200 };
-}
-namespace translation {
-  enum TranslationId { kOrigin = 0, kTranslation = 1 };
-}
-
 class TransformationMatrix {
 
 public:

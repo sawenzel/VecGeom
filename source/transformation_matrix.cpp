@@ -3,7 +3,7 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
-#include "backend.h"
+#include "backend/backend.h"
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
 
@@ -163,7 +163,7 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
   return os;
 }
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 namespace {
 
@@ -191,6 +191,6 @@ TransformationMatrix* TransformationMatrix::CopyToGpu() const {
 
 }
 
-#endif
+#endif // VECGEOM_NVCC
 
 } // End global namespace

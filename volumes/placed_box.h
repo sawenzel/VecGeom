@@ -7,7 +7,8 @@
 #define VECGEOM_VOLUMES_PLACEDBOX_H_
 
 #include "base/global.h"
-#include "backend.h"
+#include "backend/backend.h"
+ 
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
 #include "volumes/kernel/box_kernel.h"

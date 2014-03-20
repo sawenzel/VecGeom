@@ -5,7 +5,8 @@
 
 #include <stdio.h>
 #include <climits>
-#include "backend.h"
+ 
+#include "backend/backend.h"
 #include "base/array.h"
 #include "base/transformation_matrix.h"
 #include "management/volume_factory.h"
@@ -63,7 +64,7 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   return os;
 }
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 namespace {
 
@@ -96,6 +97,6 @@ LogicalVolume* LogicalVolume::CopyToGpu(
 
 }
 
-#endif // VECGEOM_CUDA
+#endif // VECGEOM_NVCC
 
 } // End global namespace

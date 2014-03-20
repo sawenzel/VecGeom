@@ -7,7 +7,8 @@
 #define VECGEOM_BASE_CONTAINER_H_
 
 #include "base/global.h"
-#include "backend.h"
+#include "backend/backend.h"
+ 
 #include "base/array.h"
 #include "base/iterator.h"
 
@@ -54,7 +55,7 @@ public:
 
 };
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 
 namespace {
 
@@ -97,7 +98,7 @@ Type* Container<Type>::CopyContentToGpu() const {
   return arr_gpu;
 }
 
-#endif // VECGEOM_CUDA
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

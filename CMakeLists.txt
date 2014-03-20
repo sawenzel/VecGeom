@@ -3,13 +3,16 @@ project(vecgeom)
 
 ################################################################################
 
-option(VC_ACCELERATION "Internal vectorization using Vc." OFF)
+option(VC_ACCELERATION "Internal vectorization using Vc." ON)
+
+option(CUDA "Enable compilation for CUDA." OFF)
 
 option(ROOT "Include ROOT." OFF)
 
 option(USOLIDS "Include USolids." OFF)
 
-option(BENCHMARK "Enable performance comparisons, requiring ROOT and USolids." OFF)
+option(BENCHMARK "Enable performance comparisons, requiring ROOT and USolids."
+       OFF)
 
 if (BENCHMARK)
   set(ROOT ON)
@@ -36,19 +39,14 @@ set(CUDA_ARCH "-arch=${CUDA_ARCH}")
 if (BACKEND STREQUAL "Vc")
   set(Vc TRUE)
 endif()
-if (BACKEND STREQUAL "CUDA")
-  set(CUDA TRUE)
-endif()
 if (BACKEND STREQUAL "Cilk")
   set(Cilk TRUE)
 endif()
-
-message(STATUS "Configuring with backend ${BACKEND}.")
-
-# NVCC cannot compile Vc, which is C++11 exclusive
-if (CUDA)
-  set(VC_ACCELERATION OFF)
+if (NOT Vc AND NOT Cilk)
+  message(FATAL_ERROR "Configuring with invalid backend \"${BACKEND}\".")
 endif()
+
+message(STATUS "Configuring with vector backend ${BACKEND}.")
 
 
 # Determine C++ compiler being used
@@ -75,20 +73,26 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -ftree-vectorize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ftree-vectorize")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000")
 endif()
-execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
 if (GNU)
+  # Enable pretty diagnostics coloring if gcc 4.9+ is being used
+  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                  OUTPUT_VARIABLE GCC_VERSION)
   if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
   endif()
 endif()
+if (Vc)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC")
+endif()
+if (Cilk)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CILK")
+endif()
 if (CUDA)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA -Wno-vla")
-else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
 endif()
 if (Intel)
   set(CMAKE_CXX_FLAGS "-xHost ${CMAKE_CXX_FLAGS}")
@@ -120,19 +124,18 @@ if (Vc)
     # Fixes ABI issues with Vc using GNU compiler
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
-  include_directories(${CMAKE_SOURCE_DIR}/backend/vc)
+  set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/vc)
   file(GLOB SRC_BACKEND "source/backend/vc/*.cpp")
-  set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_vc.cpp)
 
 endif()
 
 if (Cilk)
 
   if (NOT Intel)
-    message(FATAL_ERROR "Must use Intel C++ compiler for Cilk backend.")
+    message(FATAL_ERROR "Must use Intel C++ compiler (icc) for Cilk backend.")
   endif()
 
-  include_directories(${CMAKE_SOURCE_DIR}/backend/cilk)
+  set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/cilk)
   file(GLOB SRC_BACKEND "source/backend/cilk/*.cpp")
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
 
@@ -143,7 +146,11 @@ if (CUDA)
   find_package(CUDA REQUIRED)
   include(FindCUDA)
 
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable" -Xcudafe "--diag_suppress=initialization_not_reachable")
+  set(
+    CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
+    -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable"
+    -Xcudafe "--diag_suppress=initialization_not_reachable"
+  )
   IF(CMAKE_BUILD_TYPE MATCHES Debug)
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G)
   endif()
@@ -152,10 +159,9 @@ if (CUDA)
 
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
-  include_directories(${CMAKE_SOURCE_DIR}/backend/cuda)
+  set(BACKEND_INCLUDE_CUDA ${CMAKE_SOURCE_DIR}/backend/cuda)
   file(GLOB SRC_BACKEND source/backend/cuda/*.cpp source/backend/cuda/*.cu)
   set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 endif()
 
@@ -174,7 +180,8 @@ endif()
 if (USolids)
 
   if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
-    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and USOLIDS_LIBRARY_DIR to build benchmarking module.")
+    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and
+                         USOLIDS_LIBRARY_DIR to build benchmarking module.")
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
@@ -209,16 +216,18 @@ set(SRC_CPP ${SRC_CPP}
   ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
 )
 set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
-
 if (BENCHMARK)
   file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
   set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
 endif()
+set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
 
 if (CUDA)
+
+  # Executable files
 
   file(GLOB EXE_CPP "test/*.cpp")
 
@@ -228,7 +237,8 @@ if (CUDA)
 
     ADD_CUSTOM_COMMAND(
       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
+          ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
       DEPENDS ${SRC_FILE}
     )
 
@@ -236,15 +246,21 @@ if (CUDA)
 
   foreach(SRC_FILE ${SRC_CPP})
 
+    # Object files
+
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
     ADD_CUSTOM_COMMAND(
       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
+          ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
       DEPENDS ${SRC_FILE}
     )
 
-    set(SRC_CUDA ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu)
+    set(
+      SRC_CUDA ${SRC_CUDA}
+      ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+    )
 
   endforeach()
 
@@ -254,14 +270,27 @@ endif()
 
 # Compile and link
 
+add_library(vecgeom_cpp ${SRC_CPP})
+target_link_libraries(vecgeom_cpp ${LIBS})
+set(LIBS ${LIBS} vecgeom_cpp)
+
+set(
+  SRC_EXECUTABLES
+  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark.cpp
+)
+set_source_files_properties(
+  ${SRC_EXECUTABLES}
+  PROPERTIES COMPILE_FLAGS -std=c++11
+)
+
 if (NOT CUDA)
-  add_library(vecgeom_cpp ${SRC_CPP})
-  target_link_libraries(vecgeom_cpp ${LIBS})
-  set(LIBS ${LIBS} vecgeom_cpp)
-  add_executable(create_geometry_test ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp)
-  target_link_libraries(create_geometry_test ${LIBS})
-  # add_executable(transformation_test ${CMAKE_SOURCE_DIR}/test/transformation_test.cpp)
-  # target_link_libraries(transformation_test ${LIBS})
+  add_executable(
+    create_geometry_test
+    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+  )
   if (ROOT)
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})
@@ -273,5 +302,12 @@ if (NOT CUDA)
     target_link_libraries(benchmark ${LIBS})
   endif()
 else()
-  cuda_add_executable(create_geometry_test ${SRC_CUDA} ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu OPTIONS ${CUDA_ARCH})
+  cuda_add_executable(
+    create_geometry_test
+    ${SRC_CUDA}
+    ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/create_geometry.cu
+    OPTIONS ${CUDA_ARCH}
+  )
 endif()
+
+target_link_libraries(create_geometry_test ${LIBS})

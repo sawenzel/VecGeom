@@ -1,9 +1,10 @@
-#include "management/cuda_manager.h"
-#include "volumes/logical_volume.h"
-#include "volumes/box.h"
+#include <stdio.h>
 
+#include "management/cuda_manager.h"
 #include "navigation/simple_navigator.h"
 #include "navigation/navigationstate.h"
+#include "volumes/logical_volume.h"
+#include "volumes/box.h"
 
 using namespace VECGEOM_NAMESPACE;
 
@@ -49,7 +50,7 @@ int main() {
 
   VPlacedVolume *world_placed = worldl.Place();
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_NVCC
   CudaCopy(world_placed);
   #else
 
@@ -63,7 +64,7 @@ int main() {
   return 0;
 }
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 __global__
 void CudaContent(VPlacedVolume const *world) {
   printf("Inside CUDA kernel.\n");

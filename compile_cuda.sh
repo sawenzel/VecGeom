@@ -2,6 +2,6 @@
 rm -rf build
 mkdir build
 cd build
-cmake ../ -DBACKEND=CUDA
+cmake ../ -DCUDA=ON
 make
 cd ../
