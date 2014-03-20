@@ -13,6 +13,7 @@
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
 #include <iostream>
+#include <cassert>
 #include "base/soa3d.h"
 
 #ifdef VECGEOM_ROOT

@@ -28,7 +28,7 @@ protected:
   bool allocated_;
 
   TrackContainer(const unsigned size, const bool allocated)
-      : size_(size), allocated_(allocated), fillsize_(0) {}
+      : fillsize_(0), size_(size), allocated_(allocated) {}
 
   virtual ~TrackContainer() {}
 

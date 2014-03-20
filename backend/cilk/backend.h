@@ -70,7 +70,7 @@ public:
   }
 
   VECGEOM_INLINE
-  static constexpr int Size() { return vec_size; }
+  static constexpr int size() { return vec_size; }
 
   VECGEOM_INLINE
   void store(Type *destination) const {
@@ -104,253 +104,85 @@ public:
   }
 
   VECGEOM_INLINE
-  VecType& operator=(VecType const &other) {
-    vec[:] = other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator=(Type const &scalar) {
-    vec[:] = scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator+=(VecType const &other) {
-    this->vec[:] += other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator+=(Type const &scalar) {
-    this->vec[:] += scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator-=(VecType const &other) {
-    this->vec[:] -= other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator-=(Type const &scalar) {
-    this->vec[:] -= scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator*=(VecType const &other) {
-    this->vec[:] *= other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator*=(Type const &scalar) {
-    this->vec[:] *= scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator/=(VecType const &other) {
-    this->vec[:] /= other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator/=(Type const &scalar) {
-    this->vec[:] /= scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator|=(VecType const &other) {
-    this->vec[:] |= other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator|=(Type const &scalar) {
-    this->vec[:] |= scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator&=(VecType const &other) {
-    this->vec[:] &= other.vec[:];
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType& operator&=(Type const &scalar) {
-    this->vec[:] &= scalar;
-    return *this;
-  }
-
-  VECGEOM_INLINE
-  VecType operator+(const VecType& other) const {
-    VecType result(*this);
-    result += other;
-    return result;
-  }
-
-
-  VECGEOM_INLINE
-  VecType operator+(const Type& scalar) const {
-    VecType result(*this);
-    result += scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator-(const VecType& other) const {
-    VecType result(*this);
-    result -= other;
-    return result;
-  }
-
-
-  VECGEOM_INLINE
-  VecType operator-(const Type& scalar) const {
-    VecType result(*this);
-    result -= scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator*(const VecType& other) const {
-    VecType result(*this);
-    result *= other;
-    return result;
-  }
-
-
-  VECGEOM_INLINE
-  VecType operator*(const Type& scalar) const {
-    VecType result(*this);
-    result *= scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecType operator/(const VecType& other) const {
-    VecType result(*this);
-    result /= other;
-    return result;
-  }
-
-
-  VECGEOM_INLINE
-  VecType operator/(const Type& scalar) const {
-    VecType result(*this);
-    result /= scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator>(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] > other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator>(const Type& scalar) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] > scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator>=(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] >= other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator>=(const Type& scalar) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] >= scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator<(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] < other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator<(const Type& scalar) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] < scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator<=(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] <= other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator<=(const Type& scalar) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] <= scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator||(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] || other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator&&(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] && other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator==(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] == other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator==(const Type& scalar) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] == scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator!=(const VecType& other) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] != other.vec[:];
-    return result;
-  }
-
-  VECGEOM_INLINE
-  VecBool operator!=(const Type& scalar) const {
-    VecBool result;
-    result.vec[:] = this->vec[:] != scalar;
-    return result;
-  }
-
-  VECGEOM_INLINE
   VecType operator!() const {
     VecType result;
     result.vec[:] = !vec[:];
     return result;
   }
+
+  // Inplace binary operators
+
+  #define INPLACE_BINARY_OP(OPERATOR) \
+  VECGEOM_INLINE \
+  VecType& operator OPERATOR(const VecType &other) { \
+    this->vec[:] OPERATOR other.vec[:]; \
+    return *this; \
+  } \
+  VECGEOM_INLINE \
+  VecType& operator OPERATOR(const Type &scalar) { \
+    this->vec[:] OPERATOR scalar; \
+    return *this; \
+  }
+  INPLACE_BINARY_OP(=)
+  INPLACE_BINARY_OP(+=)
+  INPLACE_BINARY_OP(-=)
+  INPLACE_BINARY_OP(*=)
+  INPLACE_BINARY_OP(/=)
+  INPLACE_BINARY_OP(|=)
+  INPLACE_BINARY_OP(&=)
+  #undef INPLACE_BINARY_OP
+
+  // Binary operators
+
+  #define BINARY_OP(OPERATOR, INPLACE) \
+  VECGEOM_INLINE \
+  VecType operator OPERATOR(const VecType& other) const { \
+    VecType result(*this); \
+    result INPLACE other; \
+    return result; \
+  } \
+  VECGEOM_INLINE \
+  VecType operator OPERATOR(const Type& scalar) const { \
+    VecType result(*this); \
+    result INPLACE scalar; \
+    return result; \
+  } \
+  VECGEOM_INLINE \
+  friend VecType operator OPERATOR(const Type& scalar, VecType const &other) { \
+    VecType result(scalar); \
+    result INPLACE other; \
+    return result; \
+  }
+  BINARY_OP(+, +=)
+  BINARY_OP(-, -=)
+  BINARY_OP(*, *=)
+  BINARY_OP(/, /=)
+  #undef BINARY_OP
+
+  // Boolean operators
+
+  #define BOOLEAN_OP(OPERATOR) \
+  VECGEOM_INLINE \
+  VecBool operator OPERATOR(const VecType& other) const { \
+    VecBool result; \
+    result.vec[:] = this->vec[:] OPERATOR other.vec[:]; \
+    return result; \
+  } \
+  VECGEOM_INLINE \
+  VecBool operator OPERATOR(const Type& scalar) const { \
+    VecBool result; \
+    result.vec[:] = this->vec[:] OPERATOR scalar; \
+    return result; \
+  }
+  BOOLEAN_OP(<)
+  BOOLEAN_OP(>)
+  BOOLEAN_OP(<=)
+  BOOLEAN_OP(>=)
+  BOOLEAN_OP(==)
+  BOOLEAN_OP(!=)
+  BOOLEAN_OP(&&)
+  BOOLEAN_OP(||)
+  #undef BOOLEAN_OP
 
 };
 
