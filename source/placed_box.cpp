@@ -67,6 +67,30 @@ void PlacedBox::DistanceToOut( SOA3D<Precision> const &position,
 }
 
 
+void PlacedBox::SafetyToIn( SOA3D<Precision> const &position,
+		  Precision *const safeties ) const {
+	return SafetyToIn_Looper<1,0>(*this, position, safeties);
+}
+
+
+void PlacedBox::SafetyToIn( AOS3D<Precision> const &position,
+		  Precision *const safeties ) const {
+	return SafetyToIn_Looper<1,0>(*this, position, safeties);
+}
+
+
+void PlacedBox::SafetyToOut( SOA3D<Precision> const &position,
+		  Precision *const safeties ) const {
+	return SafetyToOut_Looper(*this, position, safeties);
+}
+
+void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
+		  Precision *const safeties ) const {
+	return SafetyToOut_Looper(*this, position, safeties);
+}
+
+
+
 #ifdef VECGEOM_CUDA
 
 namespace {

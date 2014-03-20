@@ -61,6 +61,30 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
   }
 }
 
+template <TranslationCode trans_code, RotationCode rot_code,
+typename VolumeType, typename ContainerType>
+VECGEOM_INLINE
+void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
+                                      ContainerType const &positions,
+                                      Precision *const output)
+{
+  for (int i = 0; i < positions.fillsize(); ++i) {
+    output[i] = volume.template SafetToInDispatch<trans_code, rot_code, kScalar>(positions[i]);
+  }
+}
+
+template <typename VolumeType, typename ContainerType>
+VECGEOM_INLINE
+void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
+                                      ContainerType const &positions,
+                                      Precision *const output)
+{
+	for (int i = 0; i < positions.fillsize(); ++i) {
+	    output[i] = volume.template SafetToOutDispatch<kScalar>(positions[i]);
+	  }
+}
+
+
 } // End global namespace
 
 #endif // VECGEOM_BACKEND_SCALAR_IMPLEMENTATION_H_

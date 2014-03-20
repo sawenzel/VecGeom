@@ -79,6 +79,40 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
   }
 }
 
+template <TranslationCode trans_code, RotationCode rot_code,
+			typename VolumeType, typename ContainerType>
+VECGEOM_INLINE
+void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
+                                      ContainerType const &positions,
+                                      Precision *const output)
+{
+  for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
+    const VcPrecision result =
+        volume.template SafetyToInDispatch<trans_code,rot_code, kVc>(
+          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
+                                VcPrecision(&positions.y(i)),
+                                VcPrecision(&positions.z(i))));
+    	result.store(&output[i]);
+  }
+}
+
+template <typename VolumeType, typename ContainerType>
+VECGEOM_INLINE
+void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
+                                      ContainerType const &positions,
+                                      Precision *const output)
+{
+  for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
+    const VcPrecision result =
+        volume.template SafetyToOutDispatch<kVc>(
+          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
+                                VcPrecision(&positions.y(i)),
+                                VcPrecision(&positions.z(i))));
+    	result.store(&output[i]);
+  }
+}
+
+
 } // End global namespace
 
 #endif // VECGEOM_BACKEND_VC_IMPLEMENTATION_H_

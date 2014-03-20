@@ -57,6 +57,12 @@ public:
                             Precision const *const step_max,
                             Precision *const output) const;
 
+  // we need to specialize SafetyToIn
+  virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const;
+  virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const;
+  virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const;
+
+
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA
@@ -139,6 +145,26 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
   DistanceToIn_Looper<trans_code, rot_code>(*this, positions, directions,
                                             step_max, output);
 }
+
+
+template <TranslationCode trans_code, RotationCode rot_code>
+Precision SpecializedBox<trans_code, rot_code>::SafetyToIn(
+		Vector3D<Precision> const &position ) const {
+	return SafetyToInDispatch<trans_code,rot_code,kScalar>( position );
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+void SpecializedBox<trans_code, rot_code>::SafetyToIn(
+		SOA3D<Precision> const &position, Precision *const safeties ) const {
+	SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
+}
+
+template <TranslationCode trans_code, RotationCode rot_code>
+void SpecializedBox<trans_code, rot_code>::SafetyToIn(
+		AOS3D<Precision> const &position, Precision *const safeties ) const {
+	SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
+}
+
 
 #ifdef VECGEOM_CUDA
 

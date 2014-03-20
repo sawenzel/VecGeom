@@ -121,7 +121,6 @@ public:
 		  	  	  	  	  	  Vector3D<Precision> const &direction,
 		  	  	  	  	  	  Precision const step_max = kInfinity) const =0;
 
-
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                               SOA3D<Precision> const &direction,
                               Precision const *const step_max,
@@ -131,6 +130,16 @@ public:
                               AOS3D<Precision> const &direction,
                               Precision const *const step_max,
                               Precision *const output) const =0;
+
+  // interfaces for safety
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision SafetyToOut( Vector3D<Precision> const &position ) const =0;
+  virtual void SafetyToOut( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
+  virtual void SafetyToOut( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
+
+  virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const =0;
+  virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
+  virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
 
 
 protected:
@@ -160,6 +169,18 @@ protected:
                                    Precision const *const step_max,
                                    Precision *const output);
 
+  template <TranslationCode trans_code, RotationCode rot_code,
+  	  	  	typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void SafetyToIn_Looper(VolumeType const &volume,
+		  ContainerType const &positions,
+		  Precision *const output);
+
+  template <typename VolumeType, typename ContainerType>
+  VECGEOM_INLINE
+  static void SafetyToOut_Looper(VolumeType const &volume,
+		  ContainerType const &positions,
+		  Precision *const output);
 
 public:
 
