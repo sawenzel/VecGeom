@@ -87,6 +87,7 @@ public:
 								  Vector3D<Precision> const & /* global dir */,
 								  NavigationState const & /* currentstate */,
 								  NavigationState & /* newstate */,
+								  Precision const & /* proposed physical step */,
 								  Precision & /*step*/
 								 ) const;
 
@@ -214,6 +215,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 		  	  	  	  	  	  	  	  	  Vector3D<Precision> const & globaldir,
 		  	  	  	  	  	  	  	  	  NavigationState const & currentstate,
 		  	  	  	  	  	  	  	  	  NavigationState & newstate,
+		  	  	  	  	  	  	  	  	  Precision const & pstep,
 		  	  	  	  	  	  	  	  	  Precision & step
 ) const
 {
@@ -225,7 +227,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	VPlacedVolume const * currentvolume = currentstate.Top();
 	int nexthitvolume = -1; // means mother
 
-	step = currentvolume->DistanceToOut( localpoint, localdir );
+	step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
 
 	// iterate over all the daughter
 	Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();

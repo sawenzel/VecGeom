@@ -248,7 +248,7 @@ void test8()
 		VPlacedVolume const *vol1= nav.LocatePoint( RootManager::Instance().world(),
 				p, state, true);
 		double step;
-		nav.FindNextBoundaryAndStep( p, d, state, newstate, step );
+		nav.FindNextBoundaryAndStep( p, d, state, newstate, 1E30, step );
 
 		TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
 
