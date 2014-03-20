@@ -172,7 +172,7 @@ if (ROOT)
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
-  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/source/root_manager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/root_manager.cpp)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
 
 endif()
@@ -216,11 +216,6 @@ set(SRC_CPP ${SRC_CPP}
   ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
 )
 set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
-if (BENCHMARK)
-  file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
-  set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
-endif()
-set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
@@ -265,6 +260,18 @@ if (CUDA)
   endforeach()
 
 endif()
+
+# Add optional files that won't be compiled for CUDA
+
+if (BENCHMARK)
+  file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
+  set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
+endif()
+set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL})
+
+# Compile cpp-files for C++11
+
+set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 ################################################################################
 

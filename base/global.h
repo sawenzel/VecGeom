@@ -19,10 +19,15 @@
   #define VECGEOM_CUDA_HEADER_GLOBAL
 #endif
 
-#ifndef VECGEOM_NVCC
-  #define VECGEOM_NAMESPACE vecgeom
-#else
+#ifdef VECGEOM_NVCC
   #define VECGEOM_NAMESPACE vecgeom_cuda
+  #undef VECGEOM_VC
+  #undef VECGEOM_VC_ACCELERATION
+  #undef VECGEOM_CILK
+  #undef VECGEOM_ROOT
+  #undef VECGEOM_USOLIDS
+#else
+  #define VECGEOM_NAMESPACE vecgeom
 #endif
 
 #ifndef VECGEOM_NVCC // Set by compiler
