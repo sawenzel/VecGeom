@@ -46,13 +46,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D() {
-    Vector3D(0, 0, 0);
+    Vector3D<Type>(Type(0.), Type(0.), Type(0.));
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D(const Type a) {
-    Vector3D(a, a, a);
+    Vector3D<Type>(a, a, a);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
