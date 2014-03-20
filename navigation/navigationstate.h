@@ -31,6 +31,7 @@ private:
 	TransformationMatrix global_matrix_;
 
 	// add other navigation state here, stuff like:
+	bool onboundary_; // flag indicating whether track is on boundary of the "Top()" placed volume
 
 	// some private management methods
 	VECGEOM_INLINE
@@ -106,6 +107,14 @@ public:
 	VECGEOM_CUDA_HEADER_BOTH
 	bool IsOutsideWorld() const { return !(currentlevel_>0); }
 
+	VECGEOM_INLINE
+	VECGEOM_CUDA_HEADER_BOTH
+	bool IsOnBoundary() const { return onboundary_; }
+
+	VECGEOM_INLINE
+	VECGEOM_CUDA_HEADER_BOTH
+	void SetBoundaryState( bool b ) { onboundary_ = b; }
+
 	//void GetGlobalMatrixFromPath( TransformationMatrix *const m ) const;
 	//TransformationMatrix const * GetGlobalMatrixFromPath() const;
 };
@@ -121,7 +130,8 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
 }
 
 
-NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.maxlevel_), currentlevel_(rhs.currentlevel_)
+NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.maxlevel_),
+		currentlevel_(rhs.currentlevel_), onboundary_(rhs.onboundary_)
 {
 	InitInternalStorage();
 	std::memcpy(path_, rhs.path_, sizeof(path_)*rhs.currentlevel_ );
@@ -129,7 +139,7 @@ NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.
 
 
 // implementations follow
-NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0)
+NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), onboundary_(0)
 {
 	InitInternalStorage();
 }
