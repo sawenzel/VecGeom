@@ -25,7 +25,7 @@ class RootManager {
 private:
 
   /** Remember pointer to generated world from imported ROOT geometry. */
-  VPlacedVolume const* world_ = nullptr;
+  VPlacedVolume const* world_;
 
   TypeMap<VPlacedVolume*, TGeoNode const*> placed_volumes_;
   TypeMap<VUnplacedVolume*, TGeoShape const*> unplaced_volumes_;
@@ -81,7 +81,7 @@ public:
 
 private:
 
-  RootManager() {}
+  RootManager() : world_(NULL) {}
   RootManager(RootManager const&);
   RootManager& operator=(RootManager const&);
 
