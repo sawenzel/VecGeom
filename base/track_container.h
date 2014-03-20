@@ -13,28 +13,41 @@ namespace VECGEOM_NAMESPACE {
 /**
  * @brief Base class for containers storing sets of three coordinates in a
  *        memory scheme determined by the deriving class.
+ *		  Type can both ordinary pods as well as more complex types such SIMD vectors
  */
 template <typename Type>
 class TrackContainer {
 
 private:
 
-  int size_;
+  int fillsize_; // number of "useful" data elements
+  int size_; // total allocated size
 
 protected:
 
   bool allocated_;
 
   TrackContainer(const unsigned size, const bool allocated)
-      : size_(size), allocated_(allocated) {}
+      : size_(size), allocated_(allocated), fillsize_(0) {}
 
   virtual ~TrackContainer() {}
 
 public:
-
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   int size() const { return size_; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int fillsize() const { return fillsize_; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void setfillsize(int s ) { fillsize_ = s; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void push_back( Vector3D<Type> const & vec )  { Set(fillsize_, vec); fillsize_++; }
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Vector3D<Type> operator[](const int index) const =0;
