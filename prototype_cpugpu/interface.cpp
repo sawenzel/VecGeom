@@ -5,6 +5,9 @@
 namespace CPUGPU_NAMESPACE {
   void entry() {
     TestClass a;
-    std::cout << a.foo() << std::endl;
+    std::cout << "Doing work...\n";
+    a.DoWork();
+    std::cout << "Printing result...\n";
+    a.Print();
   }
 }

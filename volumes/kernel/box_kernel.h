@@ -198,6 +198,46 @@ void BoxDistanceToOut(
 }
 
 
+template< TranslationCode trans_code,
+		  RotationCode rot_code,
+		  typename Backend >
+void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
+					TransformationMatrix const & matrix,
+					Vector3D<typename Backend::precision_v> const & point,
+					typename Backend::precision_v & safety
+				  ) const
+{
+   typedef typename Backend::precision_v Float;
+   typedef typename Backend::bool_v Bool;
+
+   Vector3D<Float> localpoint
+   	   	   = matrix->Transform<trans_code,rot_code>(point);
+   safety = dimensions[0] - Abs(localpoint[0]);
+   Float safy = dimensions[1] - Abs(localpoint[1]);
+   Float safz = dimensions[2] - Abs(localpoint[2]);
+   // check if we should use MIN here instead
+   MaskedAssign( Bool( safy < safety ), safy, &safety );
+   MaskedAssign( Bool( safz < safety ), safz, &safety );
+}
+
+template< typename Backend >
+void BoxSafetyToOut(Vector3D<Precision> const &dimensions,
+					Vector3D<typename Backend::precision_v> const & point,
+					typename Backend::precision_v & safety
+				  ) const
+{
+   typedef typename Backend::precision_v Float;
+   typedef typename Backend::bool_v Bool;
+
+   safety = -dimensions[0] + Abs( point[0] );
+   Float safy = -dimensions[1] + Abs( point[1] );
+   Float safz = -dimensions[2] + Abs( point[2] );
+   // check if we should use MIN here instead
+   MaskedAssign( Bool( safy < safety ), safy, &safety );
+   MaskedAssign( Bool( safz < safety ), safz, &safety );
+}
+
+
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXKERNEL_H_

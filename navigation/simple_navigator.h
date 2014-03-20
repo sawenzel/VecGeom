@@ -59,6 +59,13 @@ public:
 								 NavigationState & /* state to be modified */
 	 	 	 	 	 	 ) const;
 
+	VECGEOM_CUDA_HEADER_BOTH
+		VECGEOM_INLINE
+		bool
+		HasSamePath( Vector3D<Precision> const & /* globalpoint */,
+					 NavigationState const & /* currentstate */
+					 NavigationState & /* newstate */
+					) const;
 
 	/**
 	* A function to navigate ( find next boundary and/or the step to do )
@@ -172,6 +179,22 @@ SimpleNavigator::RelocatePointFromPath( Vector3D<Precision> const & localpoint,
 		}
 	}
 	return currentmother;
+}
+
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool
+SimpleNavigator::HasSamePath( Vector3D<Precision> const & globalpoint,
+							  NavigationState const & currentstate,
+							  NavigationState & newstate
+) const
+{
+	TransformationMatrix m = state.TopMatrix();
+	Vector3D<Precision> localpoint = m.Transform<1,0>(globalpoint);
+	newstate = currentstate;
+	RelocatePointFromPath( localpoint, newstate );
+	return newstate.Top() == currentstate.Top();
 }
 
 
