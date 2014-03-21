@@ -298,20 +298,16 @@ void test_safety()
 
 			NavigationState state(4);
 			SimpleNavigator nav;
-			VPlacedVolume const *vol1= nav.LocatePoint( RootManager::Instance().world(),
+			nav.LocatePoint( RootManager::Instance().world(),
 					p, state, true);
 			double safety = nav.GetSafety( p, state );
 
 			TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
-			TGeoNode * node = rootnav->FindNode(x,y,z);
+			rootnav->FindNode(x,y,z);
 			rootnav->SetCurrentPoint(x,y,z);
-			double safetyRoot = rootnav->GetSafeDistance();
+			double safetyRoot = rootnav->Safety();
 
-			if( !  fabs( safetyRoot - safety ) < 1E-9 )
-			{
-				std::cerr << i << " " << safetyRoot << " " << safety << std::endl;
-			}
-		//	assert( fabs( safetyRoot - safety ) < 1E-9 );
+			assert( fabs( safetyRoot - safety ) < 1E-9 );
 		}
 		std::cerr << "test9 (statistical safetytest from navigation) passed" << std::endl;
 }
