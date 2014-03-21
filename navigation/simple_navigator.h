@@ -291,7 +291,6 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
 	// safety to mother
 	VPlacedVolume const * currentvol = currentstate.Top();
 	double safety = currentvol->SafetyToOut( localpoint );
-//	std::cerr << "SafetyToOut "  << safety << std::endl;
 	assert( safety > 0);
 
 	// safety to daughters
@@ -301,7 +300,6 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
 	{
 		VPlacedVolume const * daughter = daughters->operator [](d);
 		double tmp = daughter->SafetyToIn( localpoint );
-		std::cerr << "SafetyToIn "  << tmp << std::endl;
 		safety = std::min(safety, tmp);
 	}
 	return safety;

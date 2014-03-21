@@ -362,13 +362,10 @@ int main()
     test3_2();
     test4();
     test5();
+    test6();
+    test7();
+    test8();
     test_safety();
-
-    // test6();
-   // test7();
-    //DistanceToOutTest();
-   // test8();
-   // test_safety();
 
     return 0;
 }
