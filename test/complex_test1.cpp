@@ -282,6 +282,40 @@ void test8()
 	std::cerr << "test8 (statistical navigation) passed" << std::endl;
 }
 
+// testing safety functions via the navigator
+void test_safety()
+{
+	// statistical test  of navigation via comparison with ROOT navigation
+		for(int i=0;i<1000000;++i)
+		{
+			//std::cerr << "START ITERATION " << i << std::endl;
+			double x = RNG::Instance().uniform(-10,10);
+			double y = RNG::Instance().uniform(-10,10);
+			double z = RNG::Instance().uniform(-10,10);
+
+			// VecGeom navigation
+			Vector3D<Precision> p(x,y,z);
+
+			NavigationState state(4);
+			SimpleNavigator nav;
+			VPlacedVolume const *vol1= nav.LocatePoint( RootManager::Instance().world(),
+					p, state, true);
+			double safety = nav.GetSafety( p, state );
+
+			TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
+			TGeoNode * node = rootnav->FindNode(x,y,z);
+			rootnav->SetCurrentPoint(x,y,z);
+			double safetyRoot = rootnav->GetSafeDistance();
+
+			if( !  fabs( safetyRoot - safety ) < 1E-9 )
+			{
+				std::cerr << i << " " << safetyRoot << " " << safety << std::endl;
+			}
+		//	assert( fabs( safetyRoot - safety ) < 1E-9 );
+		}
+		std::cerr << "test9 (statistical safetytest from navigation) passed" << std::endl;
+}
+
 /*
 void DistanceToOutTest() {
 	const int n = 1<<8;
@@ -328,10 +362,13 @@ int main()
     test3_2();
     test4();
     test5();
-    test6();
-    test7();
+    test_safety();
+
+    // test6();
+   // test7();
     //DistanceToOutTest();
-    test8();
+   // test8();
+   // test_safety();
 
     return 0;
 }

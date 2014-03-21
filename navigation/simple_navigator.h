@@ -92,6 +92,15 @@ public:
 								 ) const;
 
 	/**
+	 * A function to get back the safe distance; given a NavigationState object and a current global point
+	 * point
+	 */
+	VECGEOM_CUDA_HEADER_BOTH
+	Precision GetSafety( Vector3D<Precision> const & /*global_point*/,
+					NavigationState const & /* currentstate */
+	) const;
+
+	/**
 	 * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
 	 * Note that the user has to provide a couple of workspace memories; This is the easiest way to make the navigator fully
 	 * threadsafe
@@ -256,7 +265,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 	if( nexthitvolume != -1 ) // not hitting mother
 	{
 		// continue directly further down
-		VPlacedVolume const * nextvol = currentstate.Top()->logical_volume()->daughtersp()->operator []( nexthitvolume );
+		VPlacedVolume const * nextvol = daughters->operator []( nexthitvolume );
 		TransformationMatrix const *m = nextvol->matrix();
 
 		// this should be inlined here
@@ -268,6 +277,34 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 		//LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
 		RelocatePointFromPath( newpointafterboundary, newstate );
 	}
+}
+
+// this is just the brute force method; need to see whether it makes sense to combine it into
+// the FindBoundaryAndStep function
+Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
+									 NavigationState const & currentstate) const
+{
+	// this information might have been cached already ??
+	TransformationMatrix const & m = const_cast<NavigationState &>(currentstate).TopMatrix();
+	Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
+
+	// safety to mother
+	VPlacedVolume const * currentvol = currentstate.Top();
+	double safety = currentvol->SafetyToOut( localpoint );
+//	std::cerr << "SafetyToOut "  << safety << std::endl;
+	assert( safety > 0);
+
+	// safety to daughters
+	Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
+	int numberdaughters = daughters->size();
+	for(int d = 0; d<numberdaughters; ++d)
+	{
+		VPlacedVolume const * daughter = daughters->operator [](d);
+		double tmp = daughter->SafetyToIn( localpoint );
+		std::cerr << "SafetyToIn "  << tmp << std::endl;
+		safety = std::min(safety, tmp);
+	}
+	return safety;
 }
 
 

@@ -9,6 +9,7 @@
 #include "base/global.h"
 #include "base/vector3d.h"
 #include "base/transformation_matrix.h"
+#include <ostream>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -212,12 +213,12 @@ void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
 
    Vector3D<Float> localpoint
    	   	   = matrix.Transform<trans_code,rot_code>(point);
-   safety = dimensions[0] - Abs(localpoint[0]);
-   Float safy = dimensions[1] - Abs(localpoint[1]);
-   Float safz = dimensions[2] - Abs(localpoint[2]);
-   // check if we should use MIN here instead
-   MaskedAssign( Bool( safy < safety ), safy, &safety );
-   MaskedAssign( Bool( safz < safety ), safz, &safety );
+   safety = -dimensions[0] + Abs(localpoint[0]);
+   Float safy = -dimensions[1] + Abs(localpoint[1]);
+   Float safz = -dimensions[2] + Abs(localpoint[2]);
+   // check if we should use MIN/MAX here instead
+   MaskedAssign( Bool( safy > safety ), safy, &safety );
+   MaskedAssign( Bool( safz > safety ), safz, &safety );
 }
 
 template< typename Backend >
@@ -229,9 +230,9 @@ void BoxSafetyToOut(Vector3D<Precision> const &dimensions,
    typedef typename Backend::precision_v Float;
    typedef typename Backend::bool_v Bool;
 
-   safety = -dimensions[0] + Abs( point[0] );
-   Float safy = -dimensions[1] + Abs( point[1] );
-   Float safz = -dimensions[2] + Abs( point[2] );
+   safety = dimensions[0] - Abs( point[0] );
+   Float safy = dimensions[1] - Abs( point[1] );
+   Float safz = dimensions[2] - Abs( point[2] );
    // check if we should use MIN here instead
    MaskedAssign( Bool( safy < safety ), safy, &safety );
    MaskedAssign( Bool( safz < safety ), safz, &safety );
