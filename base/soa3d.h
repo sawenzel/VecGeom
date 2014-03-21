@@ -91,24 +91,6 @@ public:
   VECGEOM_INLINE
   virtual void Set(const int index, Vector3D<Type> const &vec);
 
-
-  #ifdef VECGEOM_CUDA
-
-  /**
-   * Allocates and copies the data of this SOA to the GPU, then creates and
-   * returns a new SOA object that points to GPU memory.
-   */
-  VECGEOM_CUDA_HEADER_HOST
-  SOA3D<Type> CopyToGpu() const;
-
-  /**
-   * Only works for SOA pointing to the GPU.
-   */
-  VECGEOM_CUDA_HEADER_HOST
-  void FreeFromGpu();
-
-  #endif // VECGEOM_CUDA
-
 };
 
 template <typename Type>
@@ -166,35 +148,6 @@ void SOA3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
   y_[index] = vec[1];
   z_[index] = vec[2];
 }
-
-#ifdef VECGEOM_NVCC
-
-template <typename Type>
-SOA3D<Type> SOA3D<Type>::CopyToGpu() const {
-  const int count = this->size();
-  const int mem_size = count*sizeof(Type);
-  Type *x, *y, *z;
-  cudaMalloc(static_cast<void**>(&x), mem_size);
-  cudaMalloc(static_cast<void**>(&y), mem_size);
-  cudaMalloc(static_cast<void**>(&z), mem_size);
-  cudaMemcpy(x, x_, mem_size, cudaMemcpyHostToDevice);
-  cudaMemcpy(y, y_, mem_size, cudaMemcpyHostToDevice);
-  cudaMemcpy(z, z_, mem_size, cudaMemcpyHostToDevice);
-  return SOA3D<Type>(x, y, z, count);
-}
-
-/**
- * Only works for SOA pointing to the GPU.
- */
-template <typename Type>
-void SOA3D<Type>::FreeFromGpu() {
-  cudaFree(x_);
-  cudaFree(y_);
-  cudaFree(z_);
-  CudaAssertError();
-}
-
-#endif // VECGEOM_NVCC
 
 } // End global namespace
 

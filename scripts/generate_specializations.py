@@ -6,7 +6,8 @@ translation = [0, 1]
 
 output_string = """\
 if (trans_code == {:d} && rot_code == {:#05x}) {{
-  return VolumeType::template Create<{:d}, {:#05x}>(logical_volume, matrix);
+  return VolumeType::template Create<{:d}, {:#05x}>(logical_volume, matrix,
+                                               placement);
 }}\
 """
 

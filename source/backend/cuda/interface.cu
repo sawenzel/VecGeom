@@ -1,5 +1,5 @@
 /**
- * @file backend.cu
+ * @file interface.cu
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
@@ -28,6 +28,22 @@ void CudaAssertError(const cudaError_t err) {
 
 void CudaAssertError() {
   CudaAssertError(cudaGetLastError());
+}
+
+cudaError_t CudaMalloc(void** ptr, unsigned size) {
+  return cudaMalloc(ptr, size);
+}
+
+cudaError_t CudaCopyToDevice(void* tgt, void const* src, unsigned size) {
+  return cudaMemcpy(tgt, src, size, cudaMemcpyHostToDevice);
+}
+
+cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size) {
+  return cudaMemcpy(tgt, src, size, cudaMemcpyDeviceToHost);
+}
+
+cudaError_t CudaFree(void* ptr) {
+  return cudaFree(ptr);
 }
 
 } // End namespace vecgeom

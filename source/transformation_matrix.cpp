@@ -4,6 +4,7 @@
  */
 
 #include "backend/backend.h"
+#include "backend/cuda/interface.h"
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
 
@@ -163,34 +164,61 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
   return os;
 }
 
-#ifdef VECGEOM_NVCC
+} // End global namespace
 
-namespace {
+namespace vecgeom {
 
-__global__
-void ConstructOnGpu(const TransformationMatrix matrix,
-                    TransformationMatrix *const gpu_ptr) {
-  new(gpu_ptr) TransformationMatrix(matrix);
-}
+#ifdef VECGEOM_CUDA_INTERFACE
 
-} // End anonymous namespace
+void GpuInterface(const Precision tx, const Precision ty, const Precision tz,
+                  const Precision r0, const Precision r1, const Precision r2,
+                  const Precision r3, const Precision r4, const Precision r5,
+                  const Precision r6, const Precision r7, const Precision r8,
+                  TransformationMatrix *const gpu_ptr);
 
 TransformationMatrix* TransformationMatrix::CopyToGpu(
     TransformationMatrix *const gpu_ptr) const {
 
-  ConstructOnGpu<<<1, 1>>>(*this, gpu_ptr);
-  CudaAssertError();
+  GpuInterface(trans[0], trans[1], trans[2], rot[0], rot[1], rot[2], rot[3],
+               rot[4], rot[5], rot[6], rot[7], rot[8], gpu_ptr);
+  vecgeom::CudaAssertError();
   return gpu_ptr;
 
 }
 
 TransformationMatrix* TransformationMatrix::CopyToGpu() const {
 
-  TransformationMatrix *const gpu_ptr = AllocateOnGpu<TransformationMatrix>();
-  return CopyToGpu(gpu_ptr);
+  TransformationMatrix *const gpu_ptr =
+      vecgeom::AllocateOnGpu<TransformationMatrix>();
+  return this->CopyToGpu(gpu_ptr);
 
+}
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+#ifdef VECGEOM_NVCC
+
+class TransformationMatrix;
+
+__global__
+void ConstructOnGpu(const Precision tx, const Precision ty, const Precision tz,
+                    const Precision r0, const Precision r1, const Precision r2,
+                    const Precision r3, const Precision r4, const Precision r5,
+                    const Precision r6, const Precision r7, const Precision r8,
+                    TransformationMatrix *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::TransformationMatrix(tx, ty, tz, r0, r1, r2,
+                                                  r3, r4, r5, r6, r7, r8);
+}
+
+void GpuInterface(const Precision tx, const Precision ty, const Precision tz,
+                  const Precision r0, const Precision r1, const Precision r2,
+                  const Precision r3, const Precision r4, const Precision r5,
+                  const Precision r6, const Precision r7, const Precision r8,
+                  TransformationMatrix *const gpu_ptr) {
+  ConstructOnGpu<<<1, 1>>>(tx, ty, tz, r0, r1, r2, r3, r4, r5,
+                           r6, r7, r8, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
+} // End namespace vecgeom

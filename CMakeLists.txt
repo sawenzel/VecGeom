@@ -286,6 +286,12 @@ if (NOT CUDA)
     target_link_libraries(benchmark ${LIBS})
   endif()
 else()
+  cuda_add_library(
+    vecgeom_cudainterface
+    ${CMAKE_SOURCE_DIR}/source/backend/cuda/interface.cu
+    OPTIONS ${CUDA_ARCH}
+  )
+  target_link_libraries(vecgeom_cpp vecgeom_cudainterface)
   cuda_add_executable(
     create_geometry_test
     ${SRC_CUDA}

@@ -8,6 +8,7 @@
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
+  #define VECGEOM_NAMESPACE vecgeom_cuda
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
@@ -17,21 +18,20 @@
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
   #define VECGEOM_CUDA_HEADER_GLOBAL
+  #ifdef VECGEOM_CUDA
+    #define VECGEOM_CUDA_INTERFACE
+  #endif
 #endif
 
 #ifdef VECGEOM_NVCC
-  #define VECGEOM_NAMESPACE vecgeom_cuda
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
   #undef VECGEOM_ROOT
   #undef VECGEOM_USOLIDS
 #else
-  #define VECGEOM_NAMESPACE vecgeom
-#endif
-
-#ifndef VECGEOM_NVCC // Set by compiler
   #define VECGEOM_STD_CXX11
+  #define VECGEOM_NAMESPACE vecgeom
 #endif
 
 #ifdef __INTEL_COMPILER
@@ -52,13 +52,21 @@
   #define NULL 0
 #endif
 
-namespace VECGEOM_NAMESPACE {
-
+namespace vecgeom {
 #ifdef VECGEOM_FLOAT_PRECISION
 typedef float Precision;
 #else
 typedef double Precision;
 #endif
+}
+
+#ifdef VECGEOM_CUDA
+namespace vecgeom_cuda {
+typedef vecgeom::Precision Precision;
+}
+#endif // VECGEOM_CUDA
+
+namespace VECGEOM_NAMESPACE {
 
 const int kAlignmentBoundary = 32;
 const Precision kDegToRad = M_PI/180.;
@@ -101,7 +109,7 @@ class TransformationMatrix;
 
 class GeoManager;
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_CUDA_INTERFACE
 class CudaManager;
 #endif
 
