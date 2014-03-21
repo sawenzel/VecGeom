@@ -18,7 +18,7 @@ private:
 
   Vector3D<Type> *data_;
 
-  typedef Vector<Type> VecType;
+  typedef Vector3D<Type> VecType;
 
 public:
 
@@ -84,8 +84,7 @@ AOS3D<Type>::AOS3D(Vector3D<Type> *const data, const int size)
     : TrackContainer<Type>(size, false), data_(data) {}
 
 template <typename Type>
-AOS3D<Type>::AOS3D(const int size) {
-  TrackContainer<Type>(size, true);
+AOS3D<Type>::AOS3D(const int size) : TrackContainer<Type>(size, true){
   data_ = static_cast<VecType*>(
             _mm_malloc(sizeof(VecType)*size, kAlignmentBoundary)
           );
