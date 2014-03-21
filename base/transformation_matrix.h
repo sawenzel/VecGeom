@@ -58,6 +58,7 @@ public:
    * Constructor to manually set each entry. Used when converting from different
    * geometry.
    */
+  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision r0,
                        const Precision r1, const Precision r2,
@@ -246,7 +247,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os,
                                   TransformationMatrix const &v);
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   TransformationMatrix* CopyToGpu() const;
   TransformationMatrix* CopyToGpu(TransformationMatrix *const gpu_ptr) const;
   #endif

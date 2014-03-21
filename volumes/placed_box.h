@@ -137,7 +137,7 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    TransformationMatrix const *const matrix,
                                    VPlacedVolume *const gpu_ptr) const;

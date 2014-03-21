@@ -22,28 +22,54 @@ void CudaAssertError(const cudaError_t err);
 
 void CudaAssertError();
 
-template <typename Type>
-Type* AllocateOnGpu(const unsigned size);
+cudaError_t CudaMalloc(void** ptr, unsigned size);
+
+cudaError_t CudaCopyToDevice(void* tgt, void const* src, unsigned size);
+
+cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size);
+
+cudaError_t CudaFree(void* ptr);
 
 template <typename Type>
-Type* AllocateOnGpu();
+Type* AllocateOnGpu(const unsigned size) {
+  Type *ptr;
+  CudaAssertError(CudaMalloc((void**)&ptr, size));
+  return ptr;
+}
 
 template <typename Type>
-void FreeFromGpu(Type *const ptr);
+Type* AllocateOnGpu() {
+  return AllocateOnGpu<Type>(sizeof(Type));
+}
 
 template <typename Type>
-void CopyToGpu(Type const *const src, Type *const tgt, const unsigned size);
+void FreeFromGpu(Type *const ptr) {
+  CudaAssertError(CudaFree(ptr));
+}
 
 template <typename Type>
-void CopyToGpu(Type const *const src, Type *const tgt);
+void CopyToGpu(Type const *const src, Type *const tgt, const unsigned size) {
+  CudaAssertError(
+    CudaCopyToDevice(tgt, src, size)
+  );
+}
 
 template <typename Type>
-void CopyFromGpu(Type const *const src, Type *const tgt, const unsigned size);
+void CopyToGpu(Type const *const src, Type *const tgt) {
+  CopyToGpu<Type>(src, tgt, sizeof(Type));
+}
 
 template <typename Type>
-void CopyFromGpu(Type const *const src, Type *const tgt);
+void CopyFromGpu(Type const * const src, Type *const tgt, const unsigned size) {
+  CudaAssertError(
+    CudaCopyFromDevice(tgt, src, size)
+  );
+}
 
-void CudaCheckMemory(size_t *const free_memory, size_t *const total_memory);
+template <typename Type>
+void CopyFromGpu(Type const *const src, Type *const tgt) {
+  CopyFromGpu<Type>(src, tgt, sizeof(Type));
+}
 
 } // End global namespace
 

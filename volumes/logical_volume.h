@@ -41,7 +41,7 @@ public:
     daughters_ = new Vector<Daughter>();
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_CUDA_HEADER_DEVICE
   LogicalVolume(VUnplacedVolume const *const unplaced_volume,
                 Vector<Daughter> *daughters)
       : unplaced_volume_(unplaced_volume), daughters_(daughters) {}
@@ -80,7 +80,7 @@ public:
 
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
                            Vector<Daughter> *daughters) const;
   LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,

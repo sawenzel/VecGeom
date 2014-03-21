@@ -166,13 +166,6 @@ void CudaManager::AllocateGeometry() {
 
   if (verbose > 1) std::cout << "Allocating geometry on GPU...";
 
-  if (verbose > 2) {
-    size_t free_memory = 0, total_memory = 0;
-    CudaCheckMemory(&free_memory, &total_memory);
-    std::cout << "\nAvailable memory: " << free_memory << " / "
-                                        << total_memory << std::endl;
-  }
-
   {
     if (verbose > 2) std::cout << "Allocating logical volumes...";
 

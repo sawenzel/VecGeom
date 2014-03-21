@@ -64,26 +64,23 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   return os;
 }
 
-#ifdef VECGEOM_NVCC
+} // End global namespace
 
-namespace {
+namespace vecgeom {
 
-__global__
-void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
-                    Vector<Daughter> *const daughters,
-                    LogicalVolume *const output) {
-  new(output) LogicalVolume(unplaced_volume, daughters);
-}
+#ifdef VECGEOM_CUDA_INTERFACE
 
-} // End anonymous namespace
+void GpuInterface(VUnplacedVolume const *const unplaced_volume,
+                  Vector<VPlacedVolume const*> *const daughters,
+                  LogicalVolume *const output);
 
 LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,
     Vector<Daughter> *const daughters,
     LogicalVolume *const gpu_ptr) const {
 
-  ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
-  CudaAssertError();
+  GpuInterface(unplaced_volume, daughters, gpu_ptr);
+  vecgeom::CudaAssertError();
   return gpu_ptr;
 
 }
@@ -92,11 +89,35 @@ LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,
     Vector<Daughter> *const daughters) const {
 
-  LogicalVolume *const gpu_ptr = AllocateOnGpu<LogicalVolume>();
-  return CopyToGpu(unplaced_volume, daughters, gpu_ptr);
+  LogicalVolume *const gpu_ptr = vecgeom::AllocateOnGpu<LogicalVolume>();
+  return this->CopyToGpu(unplaced_volume, daughters, gpu_ptr);
 
+}
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+#ifdef VECGEOM_NVCC
+
+class VUnplacedVolume;
+class VPlacedVolume;
+class LogicalVolume;
+
+__global__
+void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
+                    Vector<VPlacedVolume const*> *daughters,
+                    LogicalVolume *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::LogicalVolume(
+    (vecgeom_cuda::VUnplacedVolume const*)unplaced_volume,
+    (vecgeom_cuda::Vector<vecgeom_cuda::VPlacedVolume const*> *)daughters
+  );
+}
+
+void GpuInterface(VUnplacedVolume const *const unplaced_volume,
+                  Vector<VPlacedVolume const*> *const daughters,
+                  LogicalVolume *const gpu_ptr) {
+  ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
+} // End namespace vecgeom

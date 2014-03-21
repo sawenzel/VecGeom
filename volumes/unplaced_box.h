@@ -25,6 +25,7 @@ public:
     dimensions_ = dim;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   UnplacedBox(const Precision dx, const Precision dy, const Precision dz)
       : dimensions_(dx, dy, dz) {}
 
@@ -33,7 +34,7 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   virtual VUnplacedVolume* CopyToGpu() const;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
   #endif
@@ -64,15 +65,29 @@ public:
   virtual void Print() const;
 
   template <TranslationCode trans_code, RotationCode rot_code>
+  VECGEOM_CUDA_HEADER_BOTH
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
-                               TransformationMatrix const *const matrix);
+                               TransformationMatrix const *const matrix,
+                               VPlacedVolume *const placement = NULL);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL);
   
 private:
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
-      const TranslationCode trans_code, const RotationCode rot_code) const;
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
+                                   placement);
+  }
 
   virtual void Print(std::ostream &os) const {
     os << "Box {" << dimensions_ << "}";

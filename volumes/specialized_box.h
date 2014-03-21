@@ -61,7 +61,7 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    TransformationMatrix const *const matrix,
                                    VPlacedVolume *const gpu_ptr) const;
@@ -160,19 +160,17 @@ void SpecializedBox<trans_code, rot_code>::SafetyToIn(
 	SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
 }
 
-#ifdef VECGEOM_NVCC
+} // End global namespace
 
-namespace {
+namespace vecgeom {
 
-template <TranslationCode trans_code, RotationCode rot_code>
-__global__
-void ConstructOnGpu(LogicalVolume const *const logical_volume,
-                    TransformationMatrix const *const matrix,
-                    VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
-}
+#ifdef VECGEOM_CUDA_INTERFACE
 
-} // End anonymous namespace
+void SpecializedBoxGpuInterface(TranslationCode trans_code,
+                                RotationCode rot_code,
+                                LogicalVolume const *const logical_volume,
+                                TransformationMatrix const *const matrix,
+                                VPlacedVolume *const gpu_ptr);
 
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
@@ -180,10 +178,9 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     TransformationMatrix const *const matrix,
     VPlacedVolume *const gpu_ptr) const {
 
-  ConstructOnGpu<trans_code, rot_code><<<1, 1>>>(
-    logical_volume, matrix, gpu_ptr
-  );
-  CudaAssertError();
+  SpecializedBoxGpuInterface(trans_code, rot_code, logical_volume, matrix,
+                             gpu_ptr);
+  vecgeom::CudaAssertError();
   return gpu_ptr;
 
 }
@@ -194,13 +191,45 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     TransformationMatrix const *const matrix) const {
 
   VPlacedVolume *const gpu_ptr =
-      AllocateOnGpu<SpecializedBox<trans_code, rot_code> >();
-  return CopyToGpu(logical_volume, matrix, gpu_ptr);  
+      vecgeom::AllocateOnGpu<SpecializedBox<trans_code, rot_code> >();
+  return this->CopyToGpu(logical_volume, matrix, gpu_ptr);  
 
+}
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+#ifdef VECGEOM_NVCC
+
+class LogicalVolume;
+class TransformationMatrix;
+class VPlacedVolume;
+
+__global__
+void SpecializedBoxConstructOnGpu(
+    const int trans_code, const int rot_code,
+    LogicalVolume const *const logical_volume,
+    TransformationMatrix const *const matrix,
+    VPlacedVolume *const gpu_ptr) {
+  vecgeom_cuda::UnplacedBox::CreateSpecializedVolume(
+    (vecgeom_cuda::LogicalVolume const*)logical_volume,
+    (vecgeom_cuda::TransformationMatrix const*)matrix,
+    trans_code,
+    rot_code,
+    (vecgeom_cuda::VPlacedVolume*)gpu_ptr
+  );
+}
+
+void SpecializedBoxGpuInterface(int trans_code,
+                                int rot_code,
+                                LogicalVolume const *const logical_volume,
+                                TransformationMatrix const *const matrix,
+                                VPlacedVolume *const gpu_ptr) {
+  SpecializedBoxConstructOnGpu<<<1, 1>>>(trans_code, rot_code, logical_volume,
+                                         matrix, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
+} // End namespace vecgeom
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDBOX_H_

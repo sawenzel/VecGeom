@@ -15,12 +15,13 @@ std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
 
 VPlacedVolume* VUnplacedVolume::PlaceVolume(
     LogicalVolume const *const volume,
-    TransformationMatrix const *const matrix) const {
+    TransformationMatrix const *const matrix,
+    VPlacedVolume *const placement) const {
 
   const TranslationCode trans_code = matrix->GenerateTranslationCode();
   const RotationCode rot_code = matrix->GenerateRotationCode();
 
-  return SpecializedVolume(volume, matrix, trans_code, rot_code);
+  return SpecializedVolume(volume, matrix, trans_code, rot_code, placement);
 }
 
 } // End global namespace
