@@ -31,7 +31,7 @@ public:
       : vec_(vec), size_(size), allocated_(false) {}
 
   ~Vector() {
-    if (allocated_) delete vec_;
+    if (allocated_) delete[] vec_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -51,7 +51,7 @@ public:
       memory_size_ = memory_size_<<1;
       Type *vec_new = new Type[memory_size_];
       for (int i = 0; i < size_; ++i) vec_new[i] = vec_[i];
-      delete vec_;
+      delete[] vec_;
       vec_ = vec_new;
     }
     vec_[size_] = item;
