@@ -17,7 +17,7 @@ VolumePointers::VolumePointers(VPlacedVolume const *const volume)
 }
 
 VolumePointers::VolumePointers(VolumePointers const &other)
-    : specialized_(other.specialized_), initial_(kRoot) {
+    : specialized_(other.specialized_), initial_(other.initial_) {
   ConvertVolume();
 }
 
