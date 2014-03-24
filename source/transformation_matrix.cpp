@@ -4,7 +4,9 @@
  */
 
 #include "backend/backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
 #include "backend/cuda/interface.h"
+#endif
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
 

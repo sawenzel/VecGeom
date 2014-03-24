@@ -8,7 +8,9 @@
 
 #include "base/global.h"
 #include "backend/backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
 #include "backend/cuda/interface.h"
+#endif
  
 #include "base/array.h"
 #include "base/iterator.h"

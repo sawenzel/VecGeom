@@ -116,7 +116,10 @@ if (Vc)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
   set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/vc)
-  file(GLOB SRC_BACKEND "source/backend/vc/*.cpp")
+  set(
+    SRC_EXTERNAL ${SRC_EXTERNAL}
+    ${CMAKE_SOURCE_DIR}/source/backend/vc/backend.cpp
+  )
 
 endif()
 
@@ -129,8 +132,10 @@ if (Cilk)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CILK")
 
   set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/cilk)
-  file(GLOB SRC_BACKEND "source/backend/cilk/*.cpp")
-  set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cilk.cpp)
+  set(
+    SRC_EXTERNAL ${SRC_EXTERNAL}
+    ${CMAKE_SOURCE_DIR}/source/backend/cilk/backend.cpp
+  )
 
 endif()
 
@@ -155,8 +160,6 @@ if (CUDA)
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
   set(BACKEND_INCLUDE_CUDA ${CMAKE_SOURCE_DIR}/backend/cuda)
-  file(GLOB SRC_BACKEND source/backend/cuda/*.cpp source/backend/cuda/*.cu)
-  set(SRC_COMPILETEST ${CMAKE_SOURCE_DIR}/test/compile_cuda.cu)
   set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
 
 endif()
@@ -211,7 +214,6 @@ set(SRC_CPP ${SRC_CPP}
   ${CMAKE_SOURCE_DIR}/source/unplaced_box.cpp
   ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
 )
-set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
@@ -238,7 +240,7 @@ if (CUDA)
 
 endif()
 
-# Add optional files that won't be compiled for CUDA
+# Add files that won't be compiled for CUDA
 
 if (BENCHMARK)
   file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
@@ -291,7 +293,8 @@ else()
     ${CMAKE_SOURCE_DIR}/source/backend/cuda/interface.cu
     OPTIONS ${CUDA_ARCH}
   )
-  target_link_libraries(vecgeom_cpp vecgeom_cudainterface)
+  target_link_libraries(vecgeom_cudainterface ${LIBS})
+  set(LIBS ${LIBS} vecgeom_cudainterface)
   cuda_add_executable(
     create_geometry_test
     ${SRC_CUDA}

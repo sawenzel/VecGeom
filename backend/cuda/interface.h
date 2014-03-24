@@ -6,13 +6,11 @@
 #ifndef VECGEOM_BACKEND_CUDA_INTERFACE_H_
 #define VECGEOM_BACKEND_CUDA_INTERFACE_H_
 
+#include "driver_types.h"
+
 #include "base/global.h"
 
 namespace vecgeom {
-
-#ifndef VECGEOM_NVCC
-typedef int cudaError_t;
-#endif
 
 cudaError_t CudaCheckError(const cudaError_t err);
 
