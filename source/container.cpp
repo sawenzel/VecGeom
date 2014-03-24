@@ -1,6 +1,7 @@
 #include "base/container.h"
+#include "base/vector.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
 #ifdef VECGEOM_NVCC
 
@@ -24,4 +25,4 @@ void ContainerGpuInterface(
 
 #endif
 
-} // End global namespace
+} // End namespace vecgeom

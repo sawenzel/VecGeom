@@ -63,8 +63,8 @@ namespace vecgeom {
 template <typename Type> class Vector;
 class VPlacedVolume;
 
-void ContainerGpuInterface(double *const arr, const int size,
-                           Vector<double> *const gpu_ptr);
+void ContainerGpuInterface(Precision *const arr, const int size,
+                           Vector<Precision> *const gpu_ptr);
 
 void ContainerGpuInterface(VPlacedVolume const **const arr, const int size,
                            Vector<VPlacedVolume const*> *const gpu_ptr);

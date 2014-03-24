@@ -105,7 +105,7 @@ VPlacedVolume const* CudaManager::Synchronize() {
       daughter_array[j] = LookupPlaced(*k);
       j++;
     }
-    VECGEOM_NAMESPACE::CopyToGpu(
+    vecgeom::CopyToGpu(
       daughter_array, LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
     );
 
