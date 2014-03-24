@@ -12,6 +12,8 @@
 
 namespace vecgeom {
 
+class VPlacedVolume;
+
 cudaError_t CudaCheckError(const cudaError_t err);
 
 cudaError_t CudaCheckError();
@@ -68,6 +70,10 @@ template <typename Type>
 void CopyFromGpu(Type const *const src, Type *const tgt) {
   CopyFromGpu<Type>(src, tgt, sizeof(Type));
 }
+
+// Class specific stuf
+
+void CudaManagerPrintGeometry(VPlacedVolume const *const world);
 
 } // End global namespace
 

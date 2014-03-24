@@ -7,6 +7,8 @@
 #include <iostream>
  
 #include "backend/cuda/interface.h"
+#include "volumes/placed_volume.h"
+#include "volumes/logical_volume.h"
 
 namespace vecgeom {
 
@@ -44,6 +46,22 @@ cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size) {
 
 cudaError_t CudaFree(void* ptr) {
   return cudaFree(ptr);
+}
+
+// Class specific functions
+
+__global__
+void CudaManagerPrintGeometryKernel(
+    vecgeom_cuda::VPlacedVolume const *const world) {
+  world->logical_volume()->PrintContent();
+}
+
+void CudaManagerPrintGeometry(VPlacedVolume const *const world) {
+  CudaManagerPrintGeometryKernel<<<1, 1>>>(
+    reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(world)
+  );
+  CudaAssertError();
+  cudaDeviceSynchronize();
 }
 
 } // End namespace vecgeom

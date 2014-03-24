@@ -38,6 +38,7 @@ int main() {
 
   CudaManager::Instance().LoadGeometry(world_placed);
   CudaManager::Instance().Synchronize();
+  CudaManager::Instance().PrintGeometry();
 
   return 0;
 }

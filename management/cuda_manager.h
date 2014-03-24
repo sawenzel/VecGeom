@@ -15,6 +15,13 @@
 // Compile for vecgeom namespace to work as interface
 namespace vecgeom {
 
+#ifdef VECGEOM_NVCC
+// Forward declarations for NVCC compilation
+class VUnplacedVolume;
+class VPlacedVolume;
+typedef VPlacedVolume const* Daughter;
+#endif
+
 class CudaManager {
 
 private:
@@ -72,14 +79,15 @@ public:
   VPlacedVolume const* Synchronize();
 
   /**
-   * Prints all loaded objects to standard output.
-   */
-  void PrintContent() const;
-
-  /**
    * Deallocates all GPU pointers stored in the memory table.
    */
   void CleanGpu();
+
+  /**
+   * Launch a CUDA kernel that recursively outputs the geometry loaded onto the
+   * device.
+   */
+  void PrintGeometry() const;
 
   void set_verbose(const int verbose_) { verbose = verbose_; }
 
