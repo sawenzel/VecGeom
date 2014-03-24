@@ -161,6 +161,10 @@ if (CUDA)
 
   set(BACKEND_INCLUDE_CUDA ${CMAKE_SOURCE_DIR}/backend/cuda)
   set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
+  set(
+    SRC_CUDA ${SRC_CUDA}
+    ${CMAKE_SOURCE_DIR}/source/backend/cuda/interface.cu
+  )
 
 endif()
 
@@ -292,15 +296,14 @@ if (NOT CUDA)
   endif()
 else()
   cuda_add_library(
-    vecgeom_cudainterface
-    ${CMAKE_SOURCE_DIR}/source/backend/cuda/interface.cu
+    vecgeom_cuda
+    ${SRC_CUDA}
     OPTIONS ${CUDA_ARCH}
   )
-  target_link_libraries(vecgeom_cudainterface ${LIBS})
-  set(LIBS ${LIBS} vecgeom_cudainterface)
+  target_link_libraries(vecgeom_cuda ${LIBS})
+  set(LIBS ${LIBS} vecgeom_cuda)
   cuda_add_executable(
     cpugpu
-    ${SRC_CUDA}
     ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
     OPTIONS ${CUDA_ARCH}
   )

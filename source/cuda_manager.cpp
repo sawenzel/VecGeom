@@ -284,29 +284,6 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
   total_volumes++;
 }
 
-void CudaManager::PrintContent() const {
-  std::cout << "-- Logical volumes with daughters:\n";
-  for (std::set<LogicalVolume const*>::const_iterator i =
-       logical_volumes.begin(); i != logical_volumes.end(); ++i) {
-    std::cout << (**i);
-  }
-  std::cout << "-- Unplaced volumes:\n";
-  for (std::set<VUnplacedVolume const*>::const_iterator i =
-       unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
-    std::cout << (**i) << std::endl;
-  }
-  std::cout << "-- Placed volumes:\n";
-  for (std::set<VPlacedVolume const*>::const_iterator i =
-       placed_volumes.begin(); i != placed_volumes.end(); ++i) {
-    std::cout << (**i) << std::endl;
-  }
-  std::cout << "-- Transformation matrices:\n";
-  for (std::set<TransformationMatrix const*>::const_iterator i =
-       matrices.begin(); i != matrices.end(); ++i) {
-    std::cout << (**i) << std::endl;
-  }
-}
-
 template <typename Type>
 typename CudaManager::GpuAddress CudaManager::Lookup(
     Type const *const key) {
@@ -345,6 +322,10 @@ Daughter* CudaManager::LookupDaughterArray(
     Vector<Daughter> *const host_ptr) {
   Vector<Daughter> const *const daughters = LookupDaughters(host_ptr);
   return static_cast<Daughter*>(Lookup(daughters));
+}
+
+void CudaManager::PrintGeometry() const {
+  CudaManagerPrintGeometry(world_gpu_);
 }
 
 } // End global namespace
