@@ -206,6 +206,7 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP ${SRC_CPP}
+  ${CMAKE_SOURCE_DIR}/source/container.cpp
   ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp
   ${CMAKE_SOURCE_DIR}/source/placed_box.cpp
   ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp
@@ -266,6 +267,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
 )
 set_source_files_properties(
   ${SRC_EXECUTABLES}
@@ -277,6 +279,7 @@ if (NOT CUDA)
     create_geometry_test
     ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
   )
+  target_link_libraries(create_geometry_test ${LIBS})
   if (ROOT)
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})
@@ -296,11 +299,10 @@ else()
   target_link_libraries(vecgeom_cudainterface ${LIBS})
   set(LIBS ${LIBS} vecgeom_cudainterface)
   cuda_add_executable(
-    create_geometry_test
+    cpugpu
     ${SRC_CUDA}
-    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+    ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
     OPTIONS ${CUDA_ARCH}
   )
+  target_link_libraries(cpugpu ${LIBS})
 endif()
-
-target_link_libraries(create_geometry_test ${LIBS})
