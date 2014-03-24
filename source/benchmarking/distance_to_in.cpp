@@ -12,6 +12,7 @@
 #include "benchmarking/distance_to_in.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_box.h"
+#include "volumes/utilities/volume_utilities.h"
 #include <random>
 
 namespace VECGEOM_NAMESPACE {
@@ -77,8 +78,8 @@ void DistanceToInBenchmarker::PrepareBenchmark() {
 
   // Generate points not contained in any daughters and set the fraction hitting
   // a daughter to the specified bias.
-  FillUncontainedPoints(*world_, point_pool_);
-  FillBiasedDirections(*world_, *point_pool_, bias_, dir_pool_);
+  volumeutilities::FillUncontainedPoints(*world_, *point_pool_);
+  volumeutilities::FillBiasedDirections(*world_, *point_pool_, bias_, *dir_pool_);
 
   point_pool_->setfillsize(n_points_*pool_multiplier_);
   dir_pool_->setfillsize(n_points_*pool_multiplier_);

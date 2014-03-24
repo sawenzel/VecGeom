@@ -64,34 +64,6 @@ public:
 
   void set_verbose(const unsigned verbose) { verbose_ = verbose; }
 
-  static Vector3D<Precision> SamplePoint(Vector3D<Precision> const &size,
-                                         const Precision scale = 1);
-
-  static Vector3D<Precision> SampleDirection();
-
-  static void FillRandomDirections(TrackContainer<Precision> *const dirs);
-
-  VECGEOM_INLINE
-  static bool IsFacingVolume(Vector3D<Precision> const &point,
-                             Vector3D<Precision> const &dir,
-                             VPlacedVolume const &volume);
-
-  static void FillBiasedDirections(VPlacedVolume const &volume,
-                                   TrackContainer<Precision> const &points,
-                                   const Precision bias,
-                                   TrackContainer<Precision> *const dirs);
-
-  static void FillBiasedDirections(LogicalVolume const &volume,
-                                   TrackContainer<Precision> const &points,
-                                   const Precision bias,
-                                   TrackContainer<Precision> *const dirs);
-
-  static void FillUncontainedPoints(VPlacedVolume const &volume,
-                                    TrackContainer<Precision> *const points);
-
-  static void FillUncontainedPoints(LogicalVolume const &volume,
-                                    TrackContainer<Precision> *const points);
-
 };
 
 struct BenchmarkResult {
@@ -107,12 +79,7 @@ public:
                                   BenchmarkResult const &benchmark);
 };
 
-VECGEOM_INLINE
-bool Benchmark::IsFacingVolume(Vector3D<Precision> const &point,
-                               Vector3D<Precision> const &dir,
-                               VPlacedVolume const &volume) {
-  return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
-}
+
 
 } // End global namespace
 
