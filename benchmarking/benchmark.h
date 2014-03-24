@@ -40,6 +40,7 @@ public:
 
   virtual void BenchmarkAll() =0;
   virtual void BenchmarkSpecialized() =0;
+ // virtual void BenchmarkSpecializedVec() =0;
   virtual void BenchmarkUnspecialized() =0;
   virtual void BenchmarkUSolids() =0;
   virtual void BenchmarkRoot() =0;

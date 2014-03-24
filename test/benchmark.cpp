@@ -35,7 +35,7 @@ int main() {
   world.PlaceDaughter(&largebox, &placement7);
   world.PlaceDaughter(&largebox, &placement8);
 
-  DistanceToIn tester(world_placed);
+  DistanceToInBenchmarker tester(world_placed);
   tester.set_verbose(2);
   tester.BenchmarkAll();
 

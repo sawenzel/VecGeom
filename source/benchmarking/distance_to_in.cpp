@@ -16,15 +16,22 @@
 
 namespace VECGEOM_NAMESPACE {
 
-DistanceToIn::DistanceToIn(VPlacedVolume const *const world)
-    : Benchmark(world) {}
-
-DistanceToIn::~DistanceToIn() {
-  delete point_pool_;
-  delete dir_pool_;
+DistanceToInBenchmarker::DistanceToInBenchmarker(VPlacedVolume const *const world)
+    : Benchmark(world) {
+	psteps_ = (Precision *) _mm_malloc( sizeof(Precision) * n_points_, kAlignmentBoundary );
+	for(int i=0;i<n_points_;++i)
+	{
+		psteps_[i]=kInfinity;
+	}
 }
 
-void DistanceToIn::set_pool_multiplier(const unsigned pool_multiplier) {
+DistanceToInBenchmarker::~DistanceToInBenchmarker() {
+  delete point_pool_;
+  delete dir_pool_;
+  _mm_free(psteps_);
+}
+
+void DistanceToInBenchmarker::set_pool_multiplier(const unsigned pool_multiplier) {
   if (pool_multiplier < 1) {
     std::cerr << "Pool multiplier must be an integral number >= 1.\n";
     return;
@@ -32,7 +39,7 @@ void DistanceToIn::set_pool_multiplier(const unsigned pool_multiplier) {
   pool_multiplier_ = pool_multiplier;
 }
 
-void DistanceToIn::GenerateVolumePointers(VPlacedVolume const *const vol) {
+void DistanceToInBenchmarker::GenerateVolumePointers(VPlacedVolume const *const vol) {
 
   volumes_.emplace(volumes_.end(), vol);
 
@@ -43,7 +50,7 @@ void DistanceToIn::GenerateVolumePointers(VPlacedVolume const *const vol) {
 
 }
 
-BenchmarkResult DistanceToIn::GenerateBenchmark(
+BenchmarkResult DistanceToInBenchmarker::GenerateBenchmarkResult(
     const Precision elapsed, const BenchmarkType type) const {
   const BenchmarkResult benchmark = {
     .elapsed = elapsed,
@@ -56,7 +63,7 @@ BenchmarkResult DistanceToIn::GenerateBenchmark(
   return benchmark;
 }
 
-void DistanceToIn::PrepareBenchmark() {
+void DistanceToInBenchmarker::PrepareBenchmark() {
 
   // Allocate memory
   if (point_pool_) delete point_pool_;
@@ -75,7 +82,7 @@ void DistanceToIn::PrepareBenchmark() {
 
 }
 
-void DistanceToIn::BenchmarkAll() {
+void DistanceToInBenchmarker::BenchmarkAll() {
 
   PrepareBenchmark();
 
@@ -87,9 +94,10 @@ void DistanceToIn::BenchmarkAll() {
 
   // Run all four benchmarks
   results_.push_back(RunSpecialized(distances_specialized));
+  results_.push_back(RunSpecializedVec(distances_specialized));
   results_.push_back(RunUnspecialized(distances_unspecialized));
   results_.push_back(RunUSolids(distances_usolids));
-  results_.push_back(RunRoot(distances_root));
+ // results_.push_back(RunRoot(distances_root));
 
   // Compare results
   unsigned mismatches = 0;
@@ -125,21 +133,21 @@ void DistanceToIn::BenchmarkAll() {
   FreeDistance(distances_root);
 }
 
-void DistanceToIn::BenchmarkSpecialized() {
+void DistanceToInBenchmarker::BenchmarkSpecialized() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunSpecialized(distances));
   FreeDistance(distances);
 }
 
-void DistanceToIn::BenchmarkUnspecialized() {
+void DistanceToInBenchmarker::BenchmarkUnspecialized() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunUnspecialized(distances));
   FreeDistance(distances);
 }
 
-void DistanceToIn::BenchmarkUSolids() {
+void DistanceToInBenchmarker::BenchmarkUSolids() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunUSolids(distances));
@@ -147,14 +155,14 @@ void DistanceToIn::BenchmarkUSolids() {
 }
 
 
-void DistanceToIn::BenchmarkRoot() {
+void DistanceToInBenchmarker::BenchmarkRoot() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunRoot(distances));
   FreeDistance(distances);
 }
 
-BenchmarkResult DistanceToIn::RunSpecialized(Precision *const distances) const {
+BenchmarkResult DistanceToInBenchmarker::RunSpecialized(Precision *const distances) const {
   if (verbose()) std::cout << "Running specialized benchmark...";
   Stopwatch timer;
   timer.Start();
@@ -172,10 +180,28 @@ BenchmarkResult DistanceToIn::RunSpecialized(Precision *const distances) const {
   }
   const Precision elapsed = timer.Stop();
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
-  return GenerateBenchmark(elapsed, kSpecialized);
+  return GenerateBenchmarkResult(elapsed, kSpecialized);
 }
 
-BenchmarkResult DistanceToIn::RunUnspecialized(Precision *const distances) const {
+// QUESTION: HOW DO I GET A DIFFERENT VECTOR CONTAINER FROM THE POOL EACH TIME?
+BenchmarkResult DistanceToInBenchmarker::RunSpecializedVec(Precision *const distances) const {
+  if (verbose()) std::cout << "Running specialized benchmark with vector interface...";
+  Stopwatch timer;
+  timer.Start();
+  for (unsigned r = 0; r < repetitions(); ++r) {
+    const int index = (rand() % pool_multiplier_) * n_points_;
+    for (std::vector<VolumePointers>::const_iterator d = volumes_.begin();
+         d != volumes_.end(); ++d){
+    		// call vector interface
+    		d->specialized()->DistanceToIn(	(*point_pool_), (*dir_pool_), psteps_, distances );
+    }
+  }
+  const Precision elapsed = timer.Stop();
+  if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
+  return GenerateBenchmarkResult(elapsed, kSpecialized);
+}
+
+BenchmarkResult DistanceToInBenchmarker::RunUnspecialized(Precision *const distances) const {
   if (verbose()) std::cout << "Running unspecialized benchmark...";
   Stopwatch timer;
   timer.Start();
@@ -193,10 +219,10 @@ BenchmarkResult DistanceToIn::RunUnspecialized(Precision *const distances) const
   }
   const Precision elapsed = timer.Stop();
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
-  return GenerateBenchmark(elapsed, kUnspecialized);
+  return GenerateBenchmarkResult(elapsed, kUnspecialized);
 }
 
-BenchmarkResult DistanceToIn::RunUSolids(Precision *const distances) const {
+BenchmarkResult DistanceToInBenchmarker::RunUSolids(Precision *const distances) const {
   if (verbose()) std::cout << "Running USolids benchmark...";
   Stopwatch timer;
   timer.Start();
@@ -220,10 +246,10 @@ BenchmarkResult DistanceToIn::RunUSolids(Precision *const distances) const {
   }
   const Precision elapsed = timer.Stop();
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
-  return GenerateBenchmark(elapsed, kUSolids);
+  return GenerateBenchmarkResult(elapsed, kUSolids);
 }
 
-BenchmarkResult DistanceToIn::RunRoot(Precision *const distances) const {
+BenchmarkResult DistanceToInBenchmarker::RunRoot(Precision *const distances) const {
   if (verbose()) std::cout << "Running ROOT benchmark...";
   Stopwatch timer;
   timer.Start();
@@ -234,9 +260,9 @@ BenchmarkResult DistanceToIn::RunRoot(Precision *const distances) const {
       TransformationMatrix const *matrix = v->unspecialized()->matrix();
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
-        const Vector3D<Precision> point =
+        Vector3D<Precision> point =
             matrix->Transform<1, 0>((*point_pool_)[p]);
-        const Vector3D<Precision> dir =
+        Vector3D<Precision> dir =
             matrix->TransformRotation<0>((*dir_pool_)[p]);
         distances[i] = v->root()->DistFromOutside(&point[0], &dir[0]);
       }
@@ -244,7 +270,7 @@ BenchmarkResult DistanceToIn::RunRoot(Precision *const distances) const {
   }
   const Precision elapsed = timer.Stop();
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
-  return GenerateBenchmark(elapsed, kRoot);
+  return GenerateBenchmarkResult(elapsed, kRoot);
 }
 
 } // End global namespace
