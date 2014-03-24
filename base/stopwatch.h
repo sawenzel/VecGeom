@@ -6,33 +6,52 @@
 #ifndef VECGEOM_BASE_STOPWATCH_H_
 #define VECGEOM_BASE_STOPWATCH_H_
 
-#include "tbb/tick_count.h"
+#include <ctime>
 
 /**
- * @brief Timer for benchmarking purposes implemented using the Intel TBB
- *        library.
+ * @brief Timer for benchmarking purposes
  */
+namespace standardtimer
+{
+	// this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
+
+typedef long long count_t;
+
+inline long long now()
+{
+    count_t result;
+    struct timespec ts;
+    clock_gettime( CLOCK_REALTIME, &ts );
+    result = static_cast<count_t>(1000000000UL)*static_cast<count_t>(ts.tv_sec)
+    		 + static_cast<count_t>(ts.tv_nsec);
+    return result;
+}
+
+inline double seconds( count_t value ) {
+    return value*1E-9;
+}
+}
+
 class Stopwatch {
-
 private:
-
-  tbb::tick_count t1;
-  tbb::tick_count t2;
+  standardtimer::count_t t1;
+  standardtimer::count_t t2;
 
 public:
-
-  void Start() { t1 = tbb::tick_count::now(); }
+  inline
+  void Start() { t1 = standardtimer::now(); }
 
   /**
    * @return Elapsed time since start.
    */
+  inline
   double Stop() {
-    t2 = tbb::tick_count::now();
+    t2 = standardtimer::now();
     return Elapsed();
   }
 
-  double Elapsed() const { return (t2-t1).seconds(); }
-
+  inline
+  double Elapsed() const { return standardtimer::seconds( t2-t1 ); }
 };
 
 #endif // VECGEOM_BASE_STOPWATCH_H_

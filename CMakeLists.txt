@@ -211,6 +211,7 @@ set(SRC_CPP ${SRC_CPP}
 set(SRC_CPP ${SRC_CPP} ${SRC_BACKEND})
 
 if (BENCHMARK)
+  set(LIBS ${LIBS} -lrt)
   file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
   set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
 endif()

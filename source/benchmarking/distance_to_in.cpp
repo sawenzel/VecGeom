@@ -80,6 +80,8 @@ void DistanceToInBenchmarker::PrepareBenchmark() {
   FillUncontainedPoints(*world_, point_pool_);
   FillBiasedDirections(*world_, *point_pool_, bias_, dir_pool_);
 
+  point_pool_->setfillsize(n_points_*pool_multiplier_);
+  dir_pool_->setfillsize(n_points_*pool_multiplier_);
 }
 
 void DistanceToInBenchmarker::BenchmarkAll() {
@@ -88,27 +90,28 @@ void DistanceToInBenchmarker::BenchmarkAll() {
 
   // Allocate output memory
   Precision *const distances_specialized   = AllocateDistance();
+  Precision *const distances_specializedvec = AllocateDistance();
   Precision *const distances_unspecialized = AllocateDistance();
   Precision *const distances_usolids       = AllocateDistance();
   Precision *const distances_root          = AllocateDistance();
 
   // Run all four benchmarks
   results_.push_back(RunSpecialized(distances_specialized));
-  results_.push_back(RunSpecializedVec(distances_specialized));
+  results_.push_back(RunSpecializedVec(distances_specializedvec));
   results_.push_back(RunUnspecialized(distances_unspecialized));
   results_.push_back(RunUSolids(distances_usolids));
- // results_.push_back(RunRoot(distances_root));
+  results_.push_back(RunRoot(distances_root));
 
   // Compare results
   unsigned mismatches = 0;
   const Precision tolerance = 1e-12;
   for (unsigned i = 0; i < n_points_; ++i) {
     const bool root_mismatch =
-        abs(distances_specialized[i] - distances_root[i]) > tolerance &&
+        abs(distances_specializedvec[i] - distances_root[i]) > tolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_root[i] == 1e30);
     const bool usolids_mismatch =
-        abs(distances_specialized[i] - distances_usolids[i]) > tolerance &&
+        abs(distances_specializedvec[i] - distances_usolids[i]) > tolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_usolids[i] == UUtils::kInfinity);
     if (root_mismatch || usolids_mismatch) {
