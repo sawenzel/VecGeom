@@ -24,9 +24,9 @@ void VPlacedVolume::Inside_Looper(VolumeType const &volume,
   for (int i = 0; i < points.fillsize(); i += kVectorSize) {
     const VcBool result =
         volume.template InsideDispatch<trans_code, rot_code, kVc>(
-          Vector3D<VcPrecision>(VcPrecision(&points.x(i)),
-                                VcPrecision(&points.y(i)),
-                                VcPrecision(&points.z(i)))
+          Vector3D<VcPrecision>(VcPrecision(&points.ContainerType::x(i)),
+                                VcPrecision(&points.ContainerType::y(i)),
+                                VcPrecision(&points.ContainerType::z(i)))
         );
     for (int j = 0; j < kVectorSize; ++j) {
       output[j] = result[j];
@@ -45,12 +45,12 @@ void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
   for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
     const VcPrecision result =
         volume.template DistanceToInDispatch<trans_code, rot_code, kVc>(
-          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
-                                VcPrecision(&positions.y(i)),
-                                VcPrecision(&positions.z(i))),
-          Vector3D<VcPrecision>(VcPrecision(&directions.x(i)),
-                                VcPrecision(&directions.y(i)),
-                                VcPrecision(&directions.z(i))),
+          Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
+                                VcPrecision(&positions.ContainerType::y(i)),
+                                VcPrecision(&positions.ContainerType::z(i))),
+          Vector3D<VcPrecision>(VcPrecision(&directions.ContainerType::x(i)),
+                                VcPrecision(&directions.ContainerType::y(i)),
+                                VcPrecision(&directions.ContainerType::z(i))),
           VcPrecision(&step_max[i])
         );
     result.store(&output[i]);
@@ -67,12 +67,12 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
   for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
     const VcPrecision result =
         volume.template DistanceToOutDispatch<kVc>(
-          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
-                                VcPrecision(&positions.y(i)),
-                                VcPrecision(&positions.z(i))),
-          Vector3D<VcPrecision>(VcPrecision(&directions.x(i)),
-                                VcPrecision(&directions.y(i)),
-                                VcPrecision(&directions.z(i))),
+          Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
+                                VcPrecision(&positions.ContainerType::y(i)),
+                                VcPrecision(&positions.ContainerType::z(i))),
+          Vector3D<VcPrecision>(VcPrecision(&directions.ContainerType::x(i)),
+                                VcPrecision(&directions.ContainerType::y(i)),
+                                VcPrecision(&directions.ContainerType::z(i))),
           VcPrecision(&step_max[i])
         );
     result.store(&output[i]);
@@ -89,9 +89,9 @@ void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
   for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
     const VcPrecision result =
         volume.template SafetyToInDispatch<trans_code,rot_code, kVc>(
-          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
-                                VcPrecision(&positions.y(i)),
-                                VcPrecision(&positions.z(i))));
+          Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
+                                VcPrecision(&positions.ContainerType::y(i)),
+                                VcPrecision(&positions.ContainerType::z(i))));
     	result.store(&output[i]);
   }
 }
@@ -105,9 +105,9 @@ void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
   for (int i = 0; i < positions.fillsize(); i += kVectorSize) {
     const VcPrecision result =
         volume.template SafetyToOutDispatch<kVc>(
-          Vector3D<VcPrecision>(VcPrecision(&positions.x(i)),
-                                VcPrecision(&positions.y(i)),
-                                VcPrecision(&positions.z(i))));
+          Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
+                                VcPrecision(&positions.ContainerType::y(i)),
+                                VcPrecision(&positions.ContainerType::z(i))));
     	result.store(&output[i]);
   }
 }
