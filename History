@@ -16,6 +16,9 @@ committal in the SVN repository !
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
 
+March 25, 2014  T.Nikitina
+- Fixed DistanceToIn() for UBox in case of points on Edges.
+
 March 13th, 2014 - G.Cosmo
 - Fixed use of inline keyword for methods defined in .cc files in UTrd,
   UVCSGfaceted and UVoxelizer.
