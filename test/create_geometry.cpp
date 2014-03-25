@@ -43,10 +43,10 @@ int main() {
   worldl.PlaceDaughter(&largebox, &placement7);
   worldl.PlaceDaughter(&largebox, &placement8);
 
-  std::cerr << "Printing world content:\n";
-  worldl.PrintContent();
-
   VPlacedVolume *world_placed = worldl.Place();
+
+  std::cerr << "Printing world content:\n";
+  world_placed->PrintContent();
 
   SimpleNavigator nav;
   Vector3D<Precision> point(2, 2, 2);

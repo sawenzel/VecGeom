@@ -64,22 +64,41 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
+  #ifndef VECGEOM_NVCC
+
   template <TranslationCode trans_code, RotationCode rot_code>
-  VECGEOM_CUDA_HEADER_BOTH
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
                                TransformationMatrix const *const matrix,
                                VPlacedVolume *const placement = NULL);
 
-  VECGEOM_CUDA_HEADER_BOTH
   static VPlacedVolume* CreateSpecializedVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL);
+
+  #else
+
+  template <TranslationCode trans_code, RotationCode rot_code>
+  __device__
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               TransformationMatrix const *const matrix,
+                               const int id,
+                               VPlacedVolume *const placement = NULL);
+
+  __device__
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL);
+
+  #endif
   
 private:
 
-  VECGEOM_CUDA_HEADER_BOTH
+  #ifndef VECGEOM_NVCC
+
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
@@ -88,6 +107,20 @@ private:
     return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
                                    placement);
   }
+
+  #else
+
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
+                                   id, placement);
+  }
+
+  #endif
 
   virtual void Print(std::ostream &os) const {
     os << "Box {" << dimensions_ << "}";

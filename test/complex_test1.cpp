@@ -348,7 +348,7 @@ int main()
 {
     CreateRootGeom();
 	RootManager::Instance().LoadRootGeometry();
-    RootManager::Instance().world()->logical_volume()->PrintContent();
+    RootManager::Instance().world()->PrintContent();
 
     RootManager::Instance().PrintNodeTable();
 

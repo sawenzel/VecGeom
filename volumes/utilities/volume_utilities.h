@@ -172,8 +172,22 @@ namespace VECGEOM_NAMESPACE
 			FillUncontainedPoints(*placed, points);
 			delete placed;
 		}
+
+		template <typename TrackContainer>
+		static void FillRandomPoints(VPlacedVolume const &volume,
+															   TrackContainer &points) {
+			const int size = points.size();
+			const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
+			for (int i = 0; i < size; ++i) {
+				Vector3D<Precision> point;
+				do {
+					point = SamplePoint(dim);
+				} while (!volume.Inside(point));
+				points.Set(i, point);
+			}
+		}
+
 	} // end namespace volumeutilities
 } // end namespace VEGGEOM
-
 
 #endif /* VOLUME_UTILITIES_H_ */

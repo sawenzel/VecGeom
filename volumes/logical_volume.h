@@ -60,6 +60,8 @@ public:
   VECGEOM_INLINE
   Vector<Daughter> const * daughtersp() const { return daughters_; }
 
+  #ifndef VECGEOM_NVCC
+
   VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
 
   VPlacedVolume* Place() const;
@@ -69,14 +71,10 @@ public:
 
   void PlaceDaughter(VPlacedVolume const *const placed);
 
+  #endif
+
   VECGEOM_CUDA_HEADER_BOTH
   int CountVolumes() const;
-
-  /**
-   * Recursively prints contained logical volumes.
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  void PrintContent(const int depth = 0) const;
 
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 

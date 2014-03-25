@@ -89,6 +89,18 @@ public:
    */
   void PrintGeometry() const;
 
+  /**
+   * Launch a CUDA kernel that will locate points in the geometry
+   */
+  void LocatePoints(SOA3D<Precision> const &container, const int depth,
+                    int *const output) const;
+
+  /**
+   * Launch a CUDA kernel that will locate points in the geometry
+   */
+  void LocatePoints(AOS3D<Precision> const &container, const int depth,
+                    int *const output) const;
+
   void set_verbose(const int verbose_) { verbose = verbose_; }
 
 private:
@@ -144,6 +156,10 @@ private:
 
   Daughter* LookupDaughterArray(
       Vector<Daughter> *const host_ptr);
+
+  template <typename TrackContainer>
+  void LocatePointsTemplate(TrackContainer const &container, const int n,
+                            const int depth, int *const output) const;
 
 };
 

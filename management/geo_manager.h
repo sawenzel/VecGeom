@@ -17,6 +17,7 @@ class GeoManager {
 
 private:
 
+  int volume_count;
   VPlacedVolume const *world_;
 
 public:
@@ -30,9 +31,15 @@ public:
 
   VPlacedVolume const* world() const { return world_; }
 
+protected:
+
+  friend VPlacedVolume;
+
+  int RegisterVolume(VPlacedVolume const *const volume);
+
 private:
 
-  GeoManager() {}
+  GeoManager() : volume_count(0) {}
 
   GeoManager(GeoManager const&);
   GeoManager& operator=(GeoManager const&);

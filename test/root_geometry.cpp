@@ -29,7 +29,7 @@ int main() {
   ::gGeoManager->SetTopVolume(vol1);
 
   RootManager::Instance().LoadRootGeometry();
-  RootManager::Instance().world()->logical_volume()->PrintContent();
+  RootManager::Instance().world()->PrintContent();
 
   return 0;
 }

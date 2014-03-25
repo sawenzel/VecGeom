@@ -49,12 +49,14 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const =0;
 
+  #ifndef VECGEOM_NVCC
   // Is not static because a virtual function must be called to initialize
   // specialized volume as the shape of the deriving class.
   VPlacedVolume* PlaceVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
       VPlacedVolume *const placement = NULL) const;
+  #endif
 
 private:
 
@@ -64,12 +66,24 @@ private:
    */
   virtual void Print(std::ostream &os) const =0;
 
-  VECGEOM_CUDA_HEADER_BOTH
+  #ifndef VECGEOM_NVCC
+
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL) const =0;
+
+  #else
+
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const =0;
+
+  #endif
 
 };
 

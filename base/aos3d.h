@@ -7,7 +7,12 @@
 #define VECGEOM_BASE_AOS3D_H_
 
 #include "base/global.h"
+
 #include "base/track_container.h"
+#include "base/vector3d.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/interface.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -35,7 +40,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Vector3D<Type> operator[](const int index) const {
+  Vector3D<Type> operator[](const int index) const {
     return data_[index];
   }
 
@@ -76,6 +81,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual void Set(const int index, Vector3D<Type> const &vec);
+
+  #ifdef VECGEOM_CUDA
+  AOS3D<Type>* CopyToGpu(Vector3D<Type> *const data_gpu) const;
+  #endif
 
 };
 
@@ -126,5 +135,27 @@ void AOS3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
 }
 
 } // End global namespace
+
+namespace vecgeom {
+
+template <typename Type> class Vector3D;
+template <typename Type> class AOS3D;
+
+AOS3D<Precision>* AOS3DCopyToGpuInterface(Vector3D<Precision> *const data,
+                                          const unsigned size);
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+template <typename Type>
+AOS3D<Type>* AOS3D<Type>::CopyToGpu(Vector3D<Type> *const data_gpu) const {
+  const int count = this->size();
+  const int mem_size = count*sizeof(Vector3D<Type>);
+  vecgeom::CopyToGpu(data_, data_gpu, mem_size);
+  return AOS3DCopyToGpuInterface(data_gpu, count);
+}
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BASE_AOS3D_H_

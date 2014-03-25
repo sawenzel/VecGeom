@@ -13,6 +13,7 @@ std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
   return os;
 }
 
+#ifndef VECGEOM_NVCC
 VPlacedVolume* VUnplacedVolume::PlaceVolume(
     LogicalVolume const *const volume,
     TransformationMatrix const *const matrix,
@@ -23,5 +24,6 @@ VPlacedVolume* VUnplacedVolume::PlaceVolume(
 
   return SpecializedVolume(volume, matrix, trans_code, rot_code, placement);
 }
+#endif
 
 } // End global namespace
