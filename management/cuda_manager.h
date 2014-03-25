@@ -27,7 +27,7 @@ class CudaManager {
 private:
 
   bool synchronized;
-  int verbose;
+  int verbose_;
   int total_volumes;
 
   std::set<VUnplacedVolume const*> unplaced_volumes;
@@ -101,7 +101,7 @@ public:
   void LocatePoints(AOS3D<Precision> const &container, const int depth,
                     int *const output) const;
 
-  void set_verbose(const int verbose_) { verbose = verbose_; }
+  void set_verbose(const int verbose) { verbose_ = verbose; }
 
 private:
 

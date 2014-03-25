@@ -8,6 +8,8 @@
 
 #include <ctime>
 
+namespace VECGEOM_NAMESPACE {
+
 /**
  * @brief Timer for benchmarking purposes
  */
@@ -53,5 +55,7 @@ public:
   inline
   double Elapsed() const { return standardtimer::seconds( t2-t1 ); }
 };
+
+} // End global namespace
 
 #endif // VECGEOM_BASE_STOPWATCH_H_
