@@ -11,8 +11,9 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifndef VECGEOM_NVCC
+
 template <TranslationCode trans_code, RotationCode rot_code>
-VECGEOM_CUDA_HEADER_BOTH
 VPlacedVolume* UnplacedBox::Create(
     LogicalVolume const *const logical_volume,
     TransformationMatrix const *const matrix,
@@ -24,7 +25,6 @@ VPlacedVolume* UnplacedBox::Create(
   return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
 VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
     LogicalVolume const *const volume,
     TransformationMatrix const *const matrix,
@@ -34,6 +34,35 @@ VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
            volume, matrix, trans_code, rot_code, placement
          );
 }
+
+#else
+
+template <TranslationCode trans_code, RotationCode rot_code>
+__device__
+VPlacedVolume* UnplacedBox::Create(
+    LogicalVolume const *const logical_volume,
+    TransformationMatrix const *const matrix,
+    const int id, VPlacedVolume *const placement) {
+  if (placement) {
+    new(placement) SpecializedBox<trans_code, rot_code>(logical_volume, matrix,
+                                                        id);
+    return placement;
+  }
+  return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix, id);
+}
+
+__device__
+VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
+    LogicalVolume const *const volume,
+    TransformationMatrix const *const matrix,
+    const TranslationCode trans_code, const RotationCode rot_code,
+    const int id, VPlacedVolume *const placement) {
+  return VolumeFactory::CreateByTransformation<UnplacedBox>(
+           volume, matrix, trans_code, rot_code, id, placement
+         );
+}
+
+#endif
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedBox::Print() const {

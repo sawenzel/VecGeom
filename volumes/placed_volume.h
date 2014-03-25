@@ -14,9 +14,14 @@
 
 namespace VECGEOM_NAMESPACE {
 
+// Forward declaration for bounding box
 class PlacedBox;
 
 class VPlacedVolume {
+
+private:
+
+  int id_;
 
 protected:
 
@@ -24,16 +29,31 @@ protected:
   TransformationMatrix const *matrix_;
   PlacedBox const *bounding_box_;
 
-  VECGEOM_CUDA_HEADER_BOTH
   VPlacedVolume(LogicalVolume const *const logical_volume,
                 TransformationMatrix const *const matrix,
                 PlacedBox const *const bounding_box)
       : logical_volume_(logical_volume), matrix_(matrix),
-        bounding_box_(bounding_box) {}
+        bounding_box_(bounding_box) {
+    id_ = GeoManager::Instance().RegisterVolume(this);
+  }
+
+  #ifdef VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_DEVICE
+  VPlacedVolume(LogicalVolume const *const logical_volume,
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box,
+                const int id)
+      : logical_volume_(logical_volume), matrix_(matrix),
+        bounding_box_(bounding_box), id_(id) {}
+  #endif
 
 public:
 
   virtual ~VPlacedVolume() {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int id() const { return id_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -76,6 +96,14 @@ public:
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
   virtual int memory_size() const =0;
+
+  /**
+   * Recursively prints contained volumes.
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  void PrintContent(const int depth = 0) const;
+
+  // Geometry functionality
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const =0;
@@ -134,6 +162,8 @@ public:
 
 
 protected:
+
+  // Implemented by the vector backend
 
   template <TranslationCode trans_code, RotationCode rot_code,
             typename VolumeType, typename ContainerType>

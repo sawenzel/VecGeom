@@ -23,6 +23,8 @@ LogicalVolume::~LogicalVolume() {
   delete daughters_;
 }
 
+#ifndef VECGEOM_NVCC
+
 VPlacedVolume* LogicalVolume::Place(
     TransformationMatrix const *const matrix) const {
   return unplaced_volume()->PlaceVolume(this, matrix);
@@ -42,16 +44,7 @@ void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
   daughters_->push_back(placed);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
-void LogicalVolume::PrintContent(const int depth) const {
-  for (int i = 0; i < depth; ++i) printf("  ");
-  unplaced_volume()->Print();
-  printf("\n");
-  for (Iterator<VPlacedVolume const*> vol = daughters_->begin();
-       vol != daughters_->end(); ++vol) {
-    (*vol)->logical_volume()->PrintContent(depth + 1);
-  }
-}
+#endif
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   os << *vol.unplaced_volume() << " [";

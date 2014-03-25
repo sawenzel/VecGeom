@@ -7,9 +7,12 @@
 #define VECGEOM_BASE_SOA3D_H_
 
 #include "base/global.h"
-#include "backend/backend.h"
- 
+
 #include "base/track_container.h"
+#include "base/vector3d.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/interface.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -52,7 +55,7 @@ public:
    */ 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Vector3D<Type> operator[](const int index) const {
+  Vector3D<Type> operator[](const int index) const {
     return Vector3D<Type>(x_[index], y_[index], z_[index]);
   }
 
@@ -91,15 +94,24 @@ public:
   VECGEOM_INLINE
   virtual void Set(const int index, Vector3D<Type> const &vec);
 
+
+  #ifdef VECGEOM_CUDA_INTERFACE
+  /**
+   * Allocates and copies the data of this SOA to the GPU, then creates and
+   * returns a new SOA object that points to GPU memory.
+   */
+  VECGEOM_CUDA_HEADER_HOST
+  SOA3D<Type>* CopyToGpu(Precision *const x_gpu, Precision *const y_gpu,
+                         Precision *const z_gpu) const;
+  #endif // VECGEOM_CUDA_INTERFACE
+
 };
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 SOA3D<Type>::SOA3D(Type *const x, Type *const y, Type *const z,
                    const unsigned size)
-    : TrackContainer<Type>(size, true), x_(x), y_(y), z_(z) {
-  TrackContainer<Type>(size, false);
-}
+    : TrackContainer<Type>(size, true), x_(x), y_(y), z_(z) {}
 
 template <typename Type>
 SOA3D<Type>::SOA3D() {
@@ -150,5 +162,32 @@ void SOA3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
 }
 
 } // End global namespace
+
+namespace vecgeom {
+
+template <typename Type> class SOA3D;
+
+SOA3D<Precision>* SOA3DCopyToGpuInterface(Precision *const x,
+                                          Precision *const y,
+                                          Precision *const z,
+                                          const unsigned size);
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+template <typename Type>
+SOA3D<Type>* SOA3D<Type>::CopyToGpu(Precision *const x_gpu,
+                                    Precision *const y_gpu,
+                                    Precision *const z_gpu) const {
+  const int count = this->size();
+  const int mem_size = count*sizeof(Type);
+  vecgeom::CopyToGpu(x_, x_gpu, mem_size);
+  vecgeom::CopyToGpu(y_, y_gpu, mem_size);
+  vecgeom::CopyToGpu(z_, z_gpu, mem_size);
+  return SOA3DCopyToGpuInterface(x_gpu, y_gpu, z_gpu, count);
+}
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_BASE_SOA3D_H_

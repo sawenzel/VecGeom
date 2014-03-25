@@ -210,11 +210,14 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP ${SRC_CPP}
+  ${CMAKE_SOURCE_DIR}/source/aos3d.cpp
   ${CMAKE_SOURCE_DIR}/source/container.cpp
+  ${CMAKE_SOURCE_DIR}/source/geo_manager.cpp
   ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp
   ${CMAKE_SOURCE_DIR}/source/placed_box.cpp
   ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp
   ${CMAKE_SOURCE_DIR}/source/scalar_backend.cpp
+  ${CMAKE_SOURCE_DIR}/source/soa3d.cpp
   ${CMAKE_SOURCE_DIR}/source/transformation_matrix.cpp
   ${CMAKE_SOURCE_DIR}/source/unplaced_box.cpp
   ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp

@@ -325,7 +325,42 @@ Daughter* CudaManager::LookupDaughterArray(
 }
 
 void CudaManager::PrintGeometry() const {
-  CudaManagerPrintGeometry(world_gpu_);
+  CudaManagerPrintGeometry(world_gpu());
+}
+
+template <typename TrackContainer>
+void CudaManager::LocatePointsTemplate(TrackContainer const &container,
+                                       const int n, const int depth,
+                                       int *const output) const {
+  CudaManagerLocatePoints(world_gpu(), container, n, depth, output);
+}
+
+void CudaManager::LocatePoints(SOA3D<Precision> const &container,
+                               const int depth, int *const output) const {
+  Precision *const x_gpu =
+      AllocateOnGpu<Precision>(sizeof(Precision)*container.size());
+  Precision *const y_gpu =
+      AllocateOnGpu<Precision>(sizeof(Precision)*container.size());
+  Precision *const z_gpu =
+      AllocateOnGpu<Precision>(sizeof(Precision)*container.size());
+  SOA3D<Precision> *const soa3d_gpu = container.CopyToGpu(x_gpu, y_gpu, z_gpu);
+  LocatePointsTemplate(soa3d_gpu, container.size(), depth, output);
+  CudaFree(x_gpu);
+  CudaFree(y_gpu);
+  CudaFree(z_gpu);
+  CudaFree(soa3d_gpu);
+}
+
+void CudaManager::LocatePoints(AOS3D<Precision> const &container,
+                               const int depth, int *const output) const {
+  Vector3D<Precision> *const data =
+      AllocateOnGpu<Vector3D<Precision> >(
+        container.size()*sizeof(Vector3D<Precision>)
+      );
+  AOS3D<Precision> *const aos3d_gpu = container.CopyToGpu(data);
+  LocatePointsTemplate(aos3d_gpu, container.size(), depth, output);
+  CudaFree(data);
+  CudaFree(aos3d_gpu);
 }
 
 } // End global namespace

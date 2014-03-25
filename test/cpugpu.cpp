@@ -1,5 +1,8 @@
 #include "management/cuda_manager.h"
+#include "navigation/navigationstate.h"
+#include "navigation/simple_navigator.h"
 #include "volumes/box.h"
+#include "volumes/utilities/volume_utilities.h"
 
 using namespace vecgeom;
 
@@ -39,6 +42,30 @@ int main() {
   CudaManager::Instance().LoadGeometry(world_placed);
   CudaManager::Instance().Synchronize();
   CudaManager::Instance().PrintGeometry();
+
+  const int n = 1<<13;
+  const int depth = 3;
+
+  SOA3D<Precision> points(n);
+  volumeutilities::FillRandomPoints(*world_placed, points);
+  int *const results = new int[n]; 
+  int *const results_gpu = new int[n]; 
+
+  SimpleNavigator navigator;
+  for (int i = 0; i < n; ++i) {
+    NavigationState path(depth);
+    results[i] =
+        navigator.LocatePoint(world_placed, points[i], path, true)->id();
+  }
+
+  CudaManager::Instance().LocatePoints(points, depth, results_gpu);
+
+  // Compare output
+  for (int i = 0; i < n; ++i) {
+    // std::cout << results[i] << " vs. " << results_gpu[i] << std::endl;
+    assert(results[i] == results_gpu[i]);
+  }
+  std::cout << "All points located within same volume on CPU and GPU.\n";
 
   return 0;
 }

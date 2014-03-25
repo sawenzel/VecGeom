@@ -24,6 +24,14 @@ public:
             TransformationMatrix const *const matrix)
       : VPlacedVolume(logical_volume, matrix, this) {}
 
+  #ifdef VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_DEVICE
+  PlacedBox(LogicalVolume const *const logical_volume,
+            TransformationMatrix const *const matrix,
+            const int id)
+      : VPlacedVolume(logical_volume, matrix, this, id) {}
+  #endif
+
   virtual ~PlacedBox() {}
 
   // Accessors

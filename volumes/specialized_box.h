@@ -25,6 +25,14 @@ public:
                  TransformationMatrix const *const matrix)
       : PlacedBox(logical_volume, matrix) {}
 
+  #ifdef VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_DEVICE
+  SpecializedBox(LogicalVolume const *const logical_volume,
+                 TransformationMatrix const *const matrix,
+                 const int id)
+      : PlacedBox(logical_volume, matrix, id) {}
+  #endif
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;
 
@@ -146,6 +154,7 @@ void SpecializedBoxGpuInterface(TranslationCode trans_code,
                                 RotationCode rot_code,
                                 LogicalVolume const *const logical_volume,
                                 TransformationMatrix const *const matrix,
+                                const int id,
                                 VPlacedVolume *const gpu_ptr);
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -155,7 +164,7 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     VPlacedVolume *const gpu_ptr) const {
 
   SpecializedBoxGpuInterface(trans_code, rot_code, logical_volume, matrix,
-                             gpu_ptr);
+                             this->id(), gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 
@@ -185,23 +194,26 @@ void SpecializedBoxConstructOnGpu(
     const int trans_code, const int rot_code,
     LogicalVolume const *const logical_volume,
     TransformationMatrix const *const matrix,
+    const int id,
     VPlacedVolume *const gpu_ptr) {
   vecgeom_cuda::UnplacedBox::CreateSpecializedVolume(
     (vecgeom_cuda::LogicalVolume const*)logical_volume,
     (vecgeom_cuda::TransformationMatrix const*)matrix,
     trans_code,
     rot_code,
+    id,
     (vecgeom_cuda::VPlacedVolume*)gpu_ptr
   );
 }
 
-void SpecializedBoxGpuInterface(int trans_code,
-                                int rot_code,
+void SpecializedBoxGpuInterface(const int trans_code,
+                                const int rot_code,
                                 LogicalVolume const *const logical_volume,
                                 TransformationMatrix const *const matrix,
+                                const int id,
                                 VPlacedVolume *const gpu_ptr) {
   SpecializedBoxConstructOnGpu<<<1, 1>>>(trans_code, rot_code, logical_volume,
-                                         matrix, gpu_ptr);
+                                         matrix, id, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC

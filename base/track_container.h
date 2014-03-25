@@ -27,6 +27,7 @@ protected:
 
   bool allocated_;
 
+  VECGEOM_CUDA_HEADER_BOTH
   TrackContainer(const unsigned size, const bool allocated)
       : fillsize_(0), size_(size), allocated_(allocated) {}
 
@@ -48,9 +49,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void push_back( Vector3D<Type> const & vec )  { Set(fillsize_, vec); fillsize_++; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Vector3D<Type> operator[](const int index) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Type& x(const int index) =0;

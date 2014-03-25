@@ -90,12 +90,13 @@ namespace vecgeom {
 
 void GpuInterface(LogicalVolume const *const logical_volume,
                   TransformationMatrix const *const matrix,
+                  const int id,
                   VPlacedVolume *const gpu_ptr);
 
 VPlacedVolume* PlacedBox::CopyToGpu(LogicalVolume const *const logical_volume,
                                     TransformationMatrix const *const matrix,
                                     VPlacedVolume *const gpu_ptr) const {
-  GpuInterface(logical_volume, matrix, gpu_ptr);
+  GpuInterface(logical_volume, matrix, this->id(), gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 }
@@ -118,17 +119,20 @@ class VPlacedVolume;
 __global__
 void ConstructOnGpu(LogicalVolume const *const logical_volume,
                     TransformationMatrix const *const matrix,
+                    const int id,
                     VPlacedVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::PlacedBox(
     (vecgeom_cuda::LogicalVolume const*)logical_volume,
-    (vecgeom_cuda::TransformationMatrix const*)matrix
+    (vecgeom_cuda::TransformationMatrix const*)matrix,
+    id
   );
 }
 
 void GpuInterface(LogicalVolume const *const logical_volume,
                   TransformationMatrix const *const matrix,
+                  const int id,
                   VPlacedVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(logical_volume, matrix, gpu_ptr);
+  ConstructOnGpu<<<1, 1>>>(logical_volume, matrix, id, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC

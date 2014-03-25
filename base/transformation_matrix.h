@@ -31,6 +31,7 @@ private:
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix();
 
   /**
@@ -39,6 +40,7 @@ public:
    * @param ty Translation in y-coordinate.
    * @param tz Translation in z-coordinate.
    */
+  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz);
 
@@ -50,6 +52,7 @@ public:
    * @param theta Rotation angle about new y-axis.
    * @param psi Rotation angle about new z-axis.
    */
+  VECGEOM_CUDA_HEADER_BOTH
   TransformationMatrix(const Precision tx, const Precision ty,
                        const Precision tz, const Precision phi,
                        const Precision theta, const Precision psi);

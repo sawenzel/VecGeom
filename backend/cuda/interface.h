@@ -13,6 +13,8 @@
 namespace vecgeom {
 
 class VPlacedVolume;
+template <typename Type> class SOA3D;
+template <typename Type> class AOS3D;
 
 cudaError_t CudaCheckError(const cudaError_t err);
 
@@ -60,7 +62,7 @@ void CopyToGpu(Type const *const src, Type *const tgt) {
 }
 
 template <typename Type>
-void CopyFromGpu(Type const * const src, Type *const tgt, const unsigned size) {
+void CopyFromGpu(Type const *const src, Type *const tgt, const unsigned size) {
   CudaAssertError(
     CudaCopyFromDevice(tgt, src, size)
   );
@@ -74,6 +76,14 @@ void CopyFromGpu(Type const *const src, Type *const tgt) {
 // Class specific stuf
 
 void CudaManagerPrintGeometry(VPlacedVolume const *const world);
+
+void CudaManagerLocatePoints(VPlacedVolume const *const world,
+                             SOA3D<Precision> const *const points,
+                             const int n, const int depth, int *const output);
+
+void CudaManagerLocatePoints(VPlacedVolume const *const world,
+                             AOS3D<Precision> const *const points,
+                             const int n, const int depth, int *const output);
 
 } // End global namespace
 
