@@ -1,3 +1,4 @@
+#include "base/stopwatch.h"
 #include "management/cuda_manager.h"
 #include "navigation/navigationstate.h"
 #include "navigation/simple_navigator.h"
@@ -43,7 +44,7 @@ int main() {
   CudaManager::Instance().Synchronize();
   CudaManager::Instance().PrintGeometry();
 
-  const int n = 1<<13;
+  const int n = 1<<16;
   const int depth = 3;
 
   SOA3D<Precision> points(n);
@@ -52,13 +53,21 @@ int main() {
   int *const results_gpu = new int[n]; 
 
   SimpleNavigator navigator;
+  Stopwatch sw;
+  sw.Start();
   for (int i = 0; i < n; ++i) {
     NavigationState path(depth);
     results[i] =
         navigator.LocatePoint(world_placed, points[i], path, true)->id();
   }
+  const double cpu = sw.Stop();
+  std::cout << "Points located on CPU in " << cpu << "s.\n";
 
+  sw.Start();
   CudaManager::Instance().LocatePoints(points, depth, results_gpu);
+  const double gpu = sw.Stop();
+  std::cout << "Points located on GPU in " << gpu
+            << "s (including memory transfer).\n";
 
   // Compare output
   for (int i = 0; i < n; ++i) {

@@ -6,7 +6,11 @@
 #ifndef VECGEOM_BASE_STOPWATCH_H_
 #define VECGEOM_BASE_STOPWATCH_H_
 
+#include "base/global.h"
+
 #include "tbb/tick_count.h"
+
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Timer for benchmarking purposes implemented using the Intel TBB
@@ -34,5 +38,7 @@ public:
   double Elapsed() const { return (t2-t1).seconds(); }
 
 };
+
+} // End global namespace
 
 #endif // VECGEOM_BASE_STOPWATCH_H_

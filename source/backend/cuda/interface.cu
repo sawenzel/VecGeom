@@ -9,6 +9,7 @@
  
 #include "base/soa3d.h"
 #include "base/aos3d.h"
+#include "base/stopwatch.h"
 #include "backend/cuda/backend.h"
 #include "backend/cuda/interface.h"
 #include "navigation/navigationstate.h"
@@ -111,6 +112,8 @@ void CudaManagerLocatePointsTemplate(VPlacedVolume const *const world,
   );
   int *const output_gpu = AllocateOnGpu<int>(n*sizeof(int));
 
+  vecgeom_cuda::Stopwatch sw;
+  sw.Start();
   CudaManagerLocatePointsKernel<<<launch.grid_size, launch.block_size>>>(
     reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(world),
     navigator,
@@ -118,6 +121,8 @@ void CudaManagerLocatePointsTemplate(VPlacedVolume const *const world,
     points,
     output_gpu
   );
+  const double elapsed = sw.Stop();
+  std::cout << n << " points located in " << elapsed << "s.\n";
 
   CopyFromGpu(output_gpu, output, n*sizeof(int));
 
