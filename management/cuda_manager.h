@@ -71,6 +71,8 @@ public:
    */
   void LoadGeometry(VPlacedVolume const *const volume);
 
+  void LoadGeometry();
+
   /**
    * Synchronizes the loaded geometry to the GPU by allocating space,
    * creating new objects with correct pointers, then copying them to the GPU.

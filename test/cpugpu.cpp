@@ -5,8 +5,11 @@
 #include "navigation/simple_navigator.h"
 #include "volumes/box.h"
 #include "volumes/utilities/volume_utilities.h"
+#include "TGeoManager.h"
 
 using namespace vecgeom;
+
+void CreateRootGeometry();
 
 int main(const int argc, char const *const *const argv) {
 
@@ -25,45 +28,17 @@ int main(const int argc, char const *const *const argv) {
     return -1;
   }
 
-  UnplacedBox world_params = UnplacedBox(4., 4., 4.);
-  UnplacedBox largebox_params = UnplacedBox(1.5, 1.5, 1.5);
-  UnplacedBox smallbox_params = UnplacedBox(0.5, 0.5, 0.5);
+  CreateRootGeometry();
 
-  LogicalVolume world = LogicalVolume(&world_params);
-
-  LogicalVolume largebox = LogicalVolume(&largebox_params);
-  LogicalVolume smallbox = LogicalVolume(&smallbox_params);
-
-  TransformationMatrix origin = TransformationMatrix();
-  TransformationMatrix placement1 = TransformationMatrix( 2,  2,  2);
-  TransformationMatrix placement2 = TransformationMatrix(-2,  2,  2);
-  TransformationMatrix placement3 = TransformationMatrix( 2, -2,  2);
-  TransformationMatrix placement4 = TransformationMatrix( 2,  2, -2);
-  TransformationMatrix placement5 = TransformationMatrix(-2, -2,  2);
-  TransformationMatrix placement6 = TransformationMatrix(-2,  2, -2);
-  TransformationMatrix placement7 = TransformationMatrix( 2, -2, -2);
-  TransformationMatrix placement8 = TransformationMatrix(-2, -2, -2);
-
-  largebox.PlaceDaughter(&smallbox, &origin);
-  world.PlaceDaughter(&largebox, &placement1);
-  world.PlaceDaughter(&largebox, &placement2);
-  world.PlaceDaughter(&largebox, &placement3);
-  world.PlaceDaughter(&largebox, &placement4);
-  world.PlaceDaughter(&largebox, &placement5);
-  world.PlaceDaughter(&largebox, &placement6);
-  world.PlaceDaughter(&largebox, &placement7);
-  world.PlaceDaughter(&largebox, &placement8);
-
-  VPlacedVolume *const world_placed = world.Place();
-
-  CudaManager::Instance().LoadGeometry(world_placed);
+  RootManager::Instance().LoadRootGeometry();
+  CudaManager::Instance().LoadGeometry();
   CudaManager::Instance().Synchronize();
   CudaManager::Instance().PrintGeometry();
 
-  const int depth = 3;
+  const int depth = 4;
 
   SOA3D<Precision> points(n);
-  volumeutilities::FillRandomPoints(*world_placed, points);
+  volumeutilities::FillRandomPoints(*GeoManager::Instance().world(), points);
   int *const results = new int[n]; 
   int *const results_gpu = new int[n]; 
 
@@ -75,7 +50,8 @@ int main(const int argc, char const *const *const argv) {
   for (int i = 0; i < n; ++i) {
     NavigationState path(depth);
     results[i] =
-        navigator.LocatePoint(world_placed, points[i], path, true)->id();
+        navigator.LocatePoint(GeoManager::Instance().world(), points[i], path,
+                              true)->id();
   }
   const double cpu = sw.Stop();
   std::cout << "Points located on CPU in " << cpu << "s.\n";
@@ -94,4 +70,21 @@ int main(const int argc, char const *const *const argv) {
   std::cout << "All points located within same volume on CPU and GPU.\n";
 
   return 0;
+}
+
+void CreateRootGeometry() {
+  double L = 10.;
+  double Lz = 10.;
+  const double Sqrt2 = sqrt(2.);
+  TGeoVolume * world =  ::gGeoManager->MakeBox("worldl",0, L, L, Lz );
+  TGeoVolume * boxlevel2 = ::gGeoManager->MakeBox("b2l",0, Sqrt2*L/2./2., Sqrt2*L/2./2., Lz );
+  TGeoVolume * boxlevel3 = ::gGeoManager->MakeBox("b3l",0, L/2./2., L/2./2., Lz);
+  TGeoVolume * boxlevel1 = ::gGeoManager->MakeBox("b1l",0, L/2., L/2., Lz );
+
+  boxlevel2->AddNode( boxlevel3, 0, new TGeoRotation("rot1",0,0,45));
+  boxlevel1->AddNode( boxlevel2, 0, new TGeoRotation("rot2",0,0,-45));
+  world->AddNode(boxlevel1, 0, new TGeoTranslation(-L/2.,0,0));
+  world->AddNode(boxlevel1, 1, new TGeoTranslation(+L/2.,0,0));
+  ::gGeoManager->SetTopVolume(world);
+  ::gGeoManager->CloseGeometry();
 }

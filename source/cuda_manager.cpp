@@ -7,6 +7,7 @@
 #include <cassert>
 #include "backend/cuda/interface.h"
 #include "base/array.h"
+#include "management/geo_manager.h"
 #include "management/cuda_manager.h"
 #include "management/volume_factory.h"
 #include "volumes/placed_volume.h"
@@ -142,6 +143,10 @@ void CudaManager::LoadGeometry(VPlacedVolume const *const volume) {
   // Already set by CleanGpu(), but keep it here for good measure
   synchronized = false;
 
+}
+
+void CudaManager::LoadGeometry() {
+  LoadGeometry(GeoManager::Instance().world());
 }
 
 void CudaManager::CleanGpu() {

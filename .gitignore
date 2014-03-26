@@ -10,4 +10,7 @@ Debug
 .cproject
 .project
 .externalToolBuilders
-compile_benchmark.sh
+compile_*.sh
+.png
+.pdf
+.eps
