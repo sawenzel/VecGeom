@@ -6,6 +6,7 @@
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
+#include <iostream>
 #include <cassert>
 #include "base/global.h"
 #include "backend/cuda/interface.h"
@@ -35,8 +36,7 @@ static const unsigned kThreadsPerBlock = 256;
 VECGEOM_CUDA_HEADER_DEVICE
 VECGEOM_INLINE
 int ThreadIndex() {
-  return blockDim.x * gridDim.x * blockIdx.y
-         + blockDim.x * blockIdx.x
+  return blockDim.x * blockIdx.x
          + threadIdx.x;
 }
 
@@ -52,7 +52,7 @@ struct LaunchParameters {
     block_size.x = kThreadsPerBlock;
     block_size.y = 1;
     block_size.z = 1;
-    // Grid becomes two dimensions at large sizes
+    // Grid becomes two dimensional at large sizes
     const unsigned blocks = 1 + (threads - 1) / kThreadsPerBlock;
     grid_size.z = 1;
     if (blocks <= 1<<16) {
@@ -63,6 +63,9 @@ struct LaunchParameters {
       grid_size.x = dim;
       grid_size.y = dim;
     }
+    // std::cout << "Launch parameters set to " << block_size.x << "/"
+    //           << block_size.y << ", " << grid_size.x << "/" << grid_size.y
+    //           << std::endl;
   }
 };
 

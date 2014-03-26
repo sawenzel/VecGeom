@@ -1,3 +1,4 @@
+#include <string>
 #include "base/stopwatch.h"
 #include "management/cuda_manager.h"
 #include "navigation/navigationstate.h"
@@ -7,7 +8,22 @@
 
 using namespace vecgeom;
 
-int main() {
+int main(const int argc, char const *const *const argv) {
+
+  int n = 0;
+
+  for (int i = 1; i < argc; ++i) {
+    std::string arg(argv[i]);
+    int value = 0;
+    try {
+      value = std::stoi(arg);
+      n = value;
+    } catch (std::invalid_argument err) {}
+  }
+  if (n == 0) {
+    std::cerr << "No particles argument received. Exiting.\n";
+    return -1;
+  }
 
   UnplacedBox world_params = UnplacedBox(4., 4., 4.);
   UnplacedBox largebox_params = UnplacedBox(1.5, 1.5, 1.5);
@@ -44,13 +60,14 @@ int main() {
   CudaManager::Instance().Synchronize();
   CudaManager::Instance().PrintGeometry();
 
-  const int n = 1<<16;
   const int depth = 3;
 
   SOA3D<Precision> points(n);
   volumeutilities::FillRandomPoints(*world_placed, points);
   int *const results = new int[n]; 
   int *const results_gpu = new int[n]; 
+
+  std::cout << "Running for " << n << " points...\n";
 
   SimpleNavigator navigator;
   Stopwatch sw;

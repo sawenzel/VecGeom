@@ -78,9 +78,10 @@ void CudaManagerLocatePointsKernel(
     vecgeom_cuda::VPlacedVolume const *const world,
     vecgeom_cuda::SimpleNavigator const *const navigator,
     vecgeom_cuda::NavigationState *const paths,
-    TrackContainer const *const points,
+    TrackContainer const *const points, const int n,
     int *const output) {
-  const int i =vecgeom_cuda::ThreadIndex();
+  const int i = vecgeom_cuda::ThreadIndex();
+  if (i >= n) return; // Out of range
   output[i] =
       navigator->LocatePoint(world, (*points)[i], paths[i], true)->id();
 }
@@ -89,7 +90,7 @@ __global__
 void CudaManagerLocatePointsInitialize(
     vecgeom_cuda::SimpleNavigator *const navigator,
     vecgeom_cuda::NavigationState *const states, const int depth) {
-  const int i =vecgeom_cuda::ThreadIndex();
+  const int i = vecgeom_cuda::ThreadIndex();
   new(&states[i]) vecgeom_cuda::NavigationState(depth);
   if (i == 0) new(navigator) vecgeom_cuda::SimpleNavigator();
 }
@@ -119,10 +120,12 @@ void CudaManagerLocatePointsTemplate(VPlacedVolume const *const world,
     navigator,
     paths,
     points,
+    n,
     output_gpu
   );
   const double elapsed = sw.Stop();
-  std::cout << n << " points located in " << elapsed << "s.\n";
+  CudaAssertError();
+  std::cout << "Points located on GPU in " << elapsed << "s.\n";
 
   CopyFromGpu(output_gpu, output, n*sizeof(int));
 
