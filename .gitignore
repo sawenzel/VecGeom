@@ -11,6 +11,6 @@ Debug
 .project
 .externalToolBuilders
 compile_*.sh
-.png
-.pdf
-.eps
+*.png
+*.pdf
+*.eps
