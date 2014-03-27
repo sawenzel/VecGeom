@@ -7,6 +7,8 @@ option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
 option(CUDA "Enable compilation for CUDA." OFF)
 
+option(CUDA_SPECIALIZATION "Use specialized volumes for CUDA." ON)
+
 option(ROOT "Include ROOT." OFF)
 
 option(USOLIDS "Include USolids." OFF)
@@ -142,6 +144,9 @@ endif()
 if (CUDA)
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
+  if (NOT CUDA_SPECIALIZATION)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA_NO_SPECIALIZATION")
+  endif()
 
   find_package(CUDA REQUIRED)
   include(FindCUDA)

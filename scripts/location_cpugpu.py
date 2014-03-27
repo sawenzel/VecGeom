@@ -14,6 +14,7 @@ gpu_m = np.zeros(len(n_particles), dtype=np.double)
 
 i = 0
 for n in n_particles:
+  print("Running for %i particles..." % n)
   p = sp.Popen(['../build/cpugpu', '%i' % n], stdout=sp.PIPE, stderr=sp.PIPE)
   out, err = p.communicate()
   out = str(out)
@@ -47,7 +48,7 @@ pl.title("Particle location in box geometry")
 pl.xlabel("Number of particles located")
 pl.ylabel("Speedup")
 if save:
-  location = "../figures/location_gpugpu.eps"
+  location = "../figures/location_cpugpu.eps"
   print("Saving file to \"%s\"..." % location)
   fig.savefig(location)
 else:

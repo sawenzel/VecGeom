@@ -220,6 +220,13 @@ void SpecializedBoxConstructOnGpu(
     TransformationMatrix const *const matrix,
     const int id,
     VPlacedVolume *const gpu_ptr) {
+  #ifdef VECGEOM_CUDA_NO_SPECIALIZATION
+  new(gpu_ptr) vecgeom_cuda::PlacedBox(
+    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
+    reinterpret_cast<vecgeom_cuda::TransformationMatrix const*>(matrix),
+    id
+  );
+  #else
   vecgeom_cuda::UnplacedBox::CreateSpecializedVolume(
     (vecgeom_cuda::LogicalVolume const*)logical_volume,
     (vecgeom_cuda::TransformationMatrix const*)matrix,
@@ -228,6 +235,7 @@ void SpecializedBoxConstructOnGpu(
     id,
     (vecgeom_cuda::VPlacedVolume*)gpu_ptr
   );
+  #endif
 }
 
 void SpecializedBoxGpuInterface(const int trans_code,
