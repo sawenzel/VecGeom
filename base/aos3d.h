@@ -52,35 +52,35 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& x(const int index) { return (data_[index])[0]; }
+  Type& x(const int index) { return (data_[index])[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& x(const int index) const { return (data_[index])[0]; }
+  Type const& x(const int index) const { return (data_[index])[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& y(const int index) { return (data_[index])[1]; }
+  Type& y(const int index) { return (data_[index])[1]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& y(const int index) const { return (data_[index])[1]; }
+  Type const& y(const int index) const { return (data_[index])[1]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& z(const int index) { return (data_[index])[2]; }
+  Type& z(const int index) { return (data_[index])[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& z(const int index) const { return (data_[index])[2]; }
+  Type const& z(const int index) const { return (data_[index])[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual void Set(const int index, const Type x, const Type y, const Type z);
+  void Set(const int index, const Type x, const Type y, const Type z);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual void Set(const int index, Vector3D<Type> const &vec);
+  void Set(const int index, Vector3D<Type> const &vec);
 
   #ifdef VECGEOM_CUDA
   AOS3D<Type>* CopyToGpu(Vector3D<Type> *const data_gpu) const;

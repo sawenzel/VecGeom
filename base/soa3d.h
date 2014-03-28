@@ -64,35 +64,35 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& x(const int index) { return x_[index]; }
+  Type& x(const int index) { return x_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& x(const int index) const { return x_[index]; }
+  Type const& x(const int index) const { return x_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& y(const int index) { return y_[index]; }
+  Type& y(const int index) { return y_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& y(const int index) const { return y_[index]; }
+  Type const& y(const int index) const { return y_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& z(const int index) { return z_[index]; }
+  Type& z(const int index) { return z_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& z(const int index) const { return z_[index]; }
+  Type const& z(const int index) const { return z_[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual void Set(const int index, const Type x, const Type y, const Type z);
+  void Set(const int index, const Type x, const Type y, const Type z);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual void Set(const int index, Vector3D<Type> const &vec);
+  void Set(const int index, Vector3D<Type> const &vec);
 
 
   #ifdef VECGEOM_CUDA_INTERFACE
