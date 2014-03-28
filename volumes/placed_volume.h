@@ -165,6 +165,7 @@ public:
   virtual void SafetyToOut( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
   virtual void SafetyToOut( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const =0;
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;

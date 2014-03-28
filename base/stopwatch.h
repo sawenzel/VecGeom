@@ -1,6 +1,8 @@
 /**
  * @file stopwatch.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ * @author Sandro Wenzel (sandro.wenzel@cern.ch),
+ *         Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ *         
  */
 
 #ifndef VECGEOM_BASE_STOPWATCH_H_
@@ -8,11 +10,9 @@
 
 #include <ctime>
 
-namespace VECGEOM_NAMESPACE {
+#include "base/global.h"
 
-/**
- * @brief Timer for benchmarking purposes
- */
+namespace VECGEOM_NAMESPACE {
 namespace standardtimer
 {
 	// this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
@@ -34,6 +34,9 @@ inline double seconds( count_t value ) {
 }
 }
 
+/**
+ * @brief Timer for benchmarking purposes
+ */
 class Stopwatch {
 private:
   standardtimer::count_t t1;
