@@ -94,7 +94,6 @@ public:
   VECGEOM_INLINE
   void Set(const int index, Vector3D<Type> const &vec);
 
-
   #ifdef VECGEOM_CUDA_INTERFACE
   /**
    * Allocates and copies the data of this SOA to the GPU, then creates and

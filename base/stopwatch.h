@@ -32,7 +32,10 @@ inline long long now()
 inline double seconds( count_t value ) {
     return value*1E-9;
 }
+
 }
+
+namespace VECGEOM_NAMESPACE {
 
 /**
  * @brief Timer for benchmarking purposes

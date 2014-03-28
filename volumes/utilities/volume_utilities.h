@@ -130,7 +130,6 @@ namespace VECGEOM_NAMESPACE
 			}
 		}
 
-
 		template<typename TrackContainer>
 		static void FillBiasedDirections(LogicalVolume const &volume,
                                    	   TrackContainer const &points,

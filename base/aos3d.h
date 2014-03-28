@@ -86,6 +86,10 @@ public:
   AOS3D<Type>* CopyToGpu(Vector3D<Type> *const data_gpu) const;
   #endif
 
+  #ifdef VECGEOM_CUDA
+  AOS3D<Type>* CopyToGpu(Vector3D<Type> *const data_gpu) const;
+  #endif
+
 };
 
 template <typename Type>
