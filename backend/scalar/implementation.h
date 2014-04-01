@@ -69,7 +69,7 @@ void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
                                       Precision *const output)
 {
   for (int i = 0; i < positions.fillsize(); ++i) {
-    output[i] = volume.template SafetToInDispatch<trans_code, rot_code, kScalar>(positions[i]);
+    output[i] = volume.template SafetyToInDispatch<trans_code, rot_code, kScalar>(positions[i]);
   }
 }
 
@@ -80,7 +80,7 @@ void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
                                       Precision *const output)
 {
 	for (int i = 0; i < positions.fillsize(); ++i) {
-	    output[i] = volume.template SafetToOutDispatch<kScalar>(positions[i]);
+	    output[i] = volume.template SafetyToOutDispatch<kScalar>(positions[i]);
 	  }
 }
 
