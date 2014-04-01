@@ -206,25 +206,25 @@ public:
    template <typename InputType>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
-   void InverseTransform(Vector3D<InputType> const &master,
-                  Vector3D<InputType> & local) const;
+   void InverseTransform(Vector3D<InputType> const &local,
+                  Vector3D<InputType> &master) const;
 
    template <typename InputType>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
-   Vector3D<InputType> InverseTransform(Vector3D<InputType> const &master) const;
+   Vector3D<InputType> InverseTransform(Vector3D<InputType> const &local) const;
 
    /** The inverse transformation of an object transforming like a vector */
    template <typename InputType>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
-   void InverseTransformVec(Vector3D<InputType> const &master,
-                    Vector3D<InputType> & local) const;
+   void InverseTransformVec(Vector3D<InputType> const &local,
+                    Vector3D<InputType> &master) const;
 
    template <typename InputType>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
-   Vector3D<InputType> InverseTransformVec(Vector3D<InputType> const &master) const;
+   Vector3D<InputType> InverseTransformVec(Vector3D<InputType> const &local) const;
 
 
   template <RotationCode code, typename InputType>
