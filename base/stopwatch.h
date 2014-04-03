@@ -35,8 +35,6 @@ inline double seconds( count_t value ) {
 
 }
 
-namespace VECGEOM_NAMESPACE {
-
 /**
  * @brief Timer for benchmarking purposes
  */

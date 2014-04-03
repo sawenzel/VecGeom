@@ -224,7 +224,7 @@ public:
       TransformationMatrix const *const matrix) const =0;
   #endif
 
-  #ifdef VECGEOM_BENCHMARK
+  #if defined(VECGEOM_BENCHMARK) && !defined(VECGEOM_NVCC)
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
   virtual TGeoShape const* ConvertToRoot() const =0;
   virtual ::VUSolid const* ConvertToUSolids() const =0;
@@ -234,4 +234,4 @@ public:
 
 } // End global namespace
 
-#endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_]
+#endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_

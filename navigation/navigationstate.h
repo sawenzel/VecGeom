@@ -5,8 +5,8 @@
  *      Author: swenzel
  */
 
-#ifndef NAVIGATIONSTATE_H_
-#define NAVIGATIONSTATE_H_
+#ifndef VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
+#define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
 #include <string>
 #include <iostream>
@@ -256,4 +256,4 @@ int NavigationState::Distance( NavigationState const & other ) const
 
 }
 
-#endif /* NAVIGATIONSTATE_H_ */
+#endif // VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_

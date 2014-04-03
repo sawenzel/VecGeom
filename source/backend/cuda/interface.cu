@@ -7,15 +7,13 @@
 #include <iostream>
 #include <stdio.h>
  
-#include "base/soa3d.h"
-#include "base/aos3d.h"
-#include "base/stopwatch.h"
-#include "backend/cuda/backend.h"
 #include "backend/cuda/interface.h"
-#include "navigation/navigationstate.h"
+
+#include "base/stopwatch.h"
+#include "management/cuda_manager.h"
 #include "navigation/simple_navigator.h"
+#include "navigation/navigationstate.h"
 #include "volumes/placed_volume.h"
-#include "volumes/logical_volume.h"
 
 namespace vecgeom {
 
@@ -53,109 +51,6 @@ cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size) {
 
 cudaError_t CudaFree(void* ptr) {
   return cudaFree(ptr);
-}
-
-// Class specific functions
-
-__global__
-void CudaManagerPrintGeometryKernel(
-    vecgeom_cuda::VPlacedVolume const *const world) {
-  printf("Geometry loaded on GPU:\n");
-  world->PrintContent();
-}
-
-void CudaManagerPrintGeometry(VPlacedVolume const *const world) {
-  CudaManagerPrintGeometryKernel<<<1, 1>>>(
-    reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(world)
-  );
-  CudaAssertError();
-  cudaDeviceSynchronize();
-}
-
-template <typename TrackContainer>
-__global__
-void CudaManagerLocatePointsKernel(
-    vecgeom_cuda::VPlacedVolume const *const world,
-    vecgeom_cuda::SimpleNavigator const *const navigator,
-    vecgeom_cuda::NavigationState *const paths,
-    TrackContainer const *const points, const int n,
-    int *const output) {
-  const int i = vecgeom_cuda::ThreadIndex();
-  if (i >= n) return; // Out of range
-  output[i] =
-      navigator->LocatePoint(world, (*points)[i], paths[i], true)->id();
-}
-
-__global__
-void CudaManagerLocatePointsInitialize(
-    vecgeom_cuda::SimpleNavigator *const navigator,
-    vecgeom_cuda::NavigationState *const states, const int depth) {
-  const int i = vecgeom_cuda::ThreadIndex();
-  new(&states[i]) vecgeom_cuda::NavigationState(depth);
-  if (i == 0) new(navigator) vecgeom_cuda::SimpleNavigator();
-}
-
-template <typename TrackContainer>
-void CudaManagerLocatePointsTemplate(VPlacedVolume const *const world,
-                                     TrackContainer const *const points,
-                                     const int n, const int depth,
-                                     int *const output) {
-
-  vecgeom_cuda::SimpleNavigator *const navigator =
-      AllocateOnGpu<vecgeom_cuda::SimpleNavigator>();
-  vecgeom_cuda::NavigationState *const paths =
-      AllocateOnGpu<vecgeom_cuda::NavigationState>(
-        n*sizeof(vecgeom_cuda::NavigationState)
-      );
-  vecgeom_cuda::LaunchParameters launch(n);
-  CudaManagerLocatePointsInitialize<<<launch.grid_size, launch.block_size>>>(
-    navigator, paths, depth
-  );
-  int *const output_gpu = AllocateOnGpu<int>(n*sizeof(int));
-
-  vecgeom_cuda::Stopwatch sw;
-  sw.Start();
-  CudaManagerLocatePointsKernel<<<launch.grid_size, launch.block_size>>>(
-    reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(world),
-    navigator,
-    paths,
-    points,
-    n,
-    output_gpu
-  );
-  const double elapsed = sw.Stop();
-  CudaAssertError();
-  std::cout << "Points located on GPU in " << elapsed << "s.\n";
-
-  CopyFromGpu(output_gpu, output, n*sizeof(int));
-
-  FreeFromGpu(navigator);
-  FreeFromGpu(paths);
-  FreeFromGpu(output_gpu);
-}
-
-void CudaManagerLocatePoints(VPlacedVolume const *const world,
-                             SOA3D<Precision> const *const points,
-                             const int n, const int depth, int *const output) {
-  CudaManagerLocatePointsTemplate(
-    world,
-    reinterpret_cast<vecgeom_cuda::SOA3D<Precision> const*>(points),
-    n,
-    depth,
-    output
-  );
-}
-
-void CudaManagerLocatePoints(VPlacedVolume const *const world,
-                             AOS3D<Precision> const *const points,
-                             const int n, const int depth, int *const output) {
-  CudaManagerLocatePointsTemplate(
-    world,
-    reinterpret_cast<vecgeom_cuda::AOS3D<Precision> const*>(points),
-    n,
-    depth,
-    output
-  );
 }
 
 } // End namespace vecgeom

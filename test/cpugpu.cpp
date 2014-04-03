@@ -57,7 +57,7 @@ int main(const int argc, char const *const *const argv) {
   std::cout << "Points located on CPU in " << cpu << "s.\n";
 
   sw.Start();
-  CudaManager::Instance().LocatePoints(points, depth, results_gpu);
+  // CudaManager::Instance().LocatePoints(points, depth, results_gpu);
   const double gpu = sw.Stop();
   std::cout << "Points located on GPU in " << gpu
             << "s (including memory transfer).\n";

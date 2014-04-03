@@ -10,7 +10,8 @@
 
 namespace VECGEOM_NAMESPACE {
 
-Benchmark::Benchmark(VPlacedVolume const *const world) {
+Benchmark::Benchmark(VPlacedVolume const *const world)
+    : repetitions_(1e3), verbose_(0), world_(NULL) {
   set_world(world);
 }
 
@@ -33,7 +34,6 @@ std::vector<BenchmarkResult> Benchmark::PopResults() {
   results_.clear();
   return results;
 }
-
 
 char const *const BenchmarkResult::benchmark_labels[] = {
   "Specialized",

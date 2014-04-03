@@ -156,7 +156,7 @@ public:
 
   // Comparison specific
 
-  #ifdef VECGEOM_BENCHMARK
+  #if defined(VECGEOM_BENCHMARK) && !defined(VECGEOM_NVCC)
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
   virtual TGeoShape const* ConvertToRoot() const;
   virtual ::VUSolid const* ConvertToUSolids() const;

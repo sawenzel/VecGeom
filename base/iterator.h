@@ -6,8 +6,9 @@
 #ifndef VECGEOM_BASE_ITERATOR_H_
 #define VECGEOM_BASE_ITERATOR_H_
 
-#include "base/global.h"
 #include <iterator>
+
+#include "base/global.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -15,7 +16,7 @@ namespace VECGEOM_NAMESPACE {
  * @brief Custom iterator class for use with container classes.
  */
 template <typename Type>
-class Iterator : public std::iterator<std::forward_iterator_tag, Type> {
+class Iterator : public ::std::iterator< ::std::forward_iterator_tag, Type> {
 
 public:
 

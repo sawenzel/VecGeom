@@ -19,6 +19,7 @@ option(BENCHMARK "Enable performance comparisons, requiring ROOT and USolids."
 if (BENCHMARK)
   set(ROOT ON)
   set(USolids ON)
+  set(CUDA ON)
 endif()
 
 if (USOLIDS)
@@ -168,6 +169,7 @@ if (CUDA)
   set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
   set(
     SRC_CUDA ${SRC_CUDA}
+    ${CMAKE_SOURCE_DIR}/source/cuda_manager.cu
     ${CMAKE_SOURCE_DIR}/source/backend/cuda/interface.cu
   )
 
@@ -223,6 +225,7 @@ set(SRC_CPP ${SRC_CPP}
   ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp
   ${CMAKE_SOURCE_DIR}/source/scalar_backend.cpp
   ${CMAKE_SOURCE_DIR}/source/soa3d.cpp
+  ${CMAKE_SOURCE_DIR}/source/specialized_box.cpp
   ${CMAKE_SOURCE_DIR}/source/transformation_matrix.cpp
   ${CMAKE_SOURCE_DIR}/source/unplaced_box.cpp
   ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
@@ -256,8 +259,14 @@ endif()
 # Add files that won't be compiled for CUDA
 
 if (BENCHMARK)
-  file(GLOB SRC_BENCHMARK "${CMAKE_SOURCE_DIR}/source/benchmarking/*.cpp")
-  set(SRC_CPP ${SRC_CPP} ${SRC_BENCHMARK})
+  set(SRC_CPP ${SRC_CPP}
+    ${CMAKE_SOURCE_DIR}/source/benchmarking/benchmark.cpp
+    ${CMAKE_SOURCE_DIR}/source/benchmarking/distance_to_in.cpp
+    ${CMAKE_SOURCE_DIR}/source/benchmarking/volume_pointers.cpp
+  )
+  set(SRC_CUDA ${SRC_CUDA}
+    ${CMAKE_SOURCE_DIR}/source/benchmarking/distance_to_in.cu
+  )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL})
 

@@ -12,12 +12,14 @@
 namespace VECGEOM_NAMESPACE {
 
 VolumePointers::VolumePointers(VPlacedVolume const *const volume)
-    : specialized_(volume), initial_(kSpecialized) {
+    : specialized_(volume), unspecialized_(NULL), root_(NULL), usolids_(NULL),
+      initial_(kSpecialized) {
   ConvertVolume();
 }
 
 VolumePointers::VolumePointers(VolumePointers const &other)
-    : specialized_(other.specialized_), initial_(other.initial_) {
+    : specialized_(other.specialized_), unspecialized_(NULL), root_(NULL),
+      usolids_(NULL), initial_(other.initial_) {
   ConvertVolume();
 }
 

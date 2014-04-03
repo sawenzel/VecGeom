@@ -6,8 +6,9 @@
 #ifndef VECGEOM_MANAGEMENT_CUDAMANAGER_H_
 #define VECGEOM_MANAGEMENT_CUDAMANAGER_H_
 
-#include <set>
 #include <map>
+#include <set>
+ 
 #include "base/global.h"
 #include "base/vector.h"
 #include "volumes/box.h"
@@ -91,19 +92,37 @@ public:
    */
   void PrintGeometry() const;
 
-  /**
-   * Launch a CUDA kernel that will locate points in the geometry
-   */
-  void LocatePoints(SOA3D<Precision> const &container, const int depth,
-                    int *const output) const;
+  // /**
+  //  * Launch a CUDA kernel that will locate points in the geometry
+  //  */
+  // void LocatePoints(SOA3D<Precision> const &container, const int depth,
+  //                   int *const output) const;
 
-  /**
-   * Launch a CUDA kernel that will locate points in the geometry
-   */
-  void LocatePoints(AOS3D<Precision> const &container, const int depth,
-                    int *const output) const;
+  // /**
+  //  * Launch a CUDA kernel that will locate points in the geometry
+  //  */
+  // void LocatePoints(AOS3D<Precision> const &container, const int depth,
+  //                   int *const output) const;
 
   void set_verbose(const int verbose) { verbose_ = verbose; }
+
+  template <typename Type>
+  GpuAddress Lookup(Type const *const key);
+
+  VUnplacedVolume* LookupUnplaced(
+      VUnplacedVolume const *const host_ptr);
+
+  LogicalVolume* LookupLogical(LogicalVolume const *const host_ptr);
+
+  VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
+
+  TransformationMatrix* LookupMatrix(
+      TransformationMatrix const *const host_ptr);
+
+  Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);
+
+  Daughter* LookupDaughterArray(
+      Vector<Daughter> *const host_ptr);
 
 private:
 
@@ -141,30 +160,22 @@ private:
     return static_cast<GpuAddress>(ptr);
   }
 
-  template <typename Type>
-  GpuAddress Lookup(Type const *const key);
-
-  VUnplacedVolume* LookupUnplaced(
-      VUnplacedVolume const *const host_ptr);
-
-  LogicalVolume* LookupLogical(LogicalVolume const *const host_ptr);
-
-  VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
-
-  TransformationMatrix* LookupMatrix(
-      TransformationMatrix const *const host_ptr);
-
-  Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);
-
-  Daughter* LookupDaughterArray(
-      Vector<Daughter> *const host_ptr);
-
-  template <typename TrackContainer>
-  void LocatePointsTemplate(TrackContainer const &container, const int n,
-                            const int depth, int *const output) const;
+  // template <typename TrackContainer>
+  // void LocatePointsTemplate(TrackContainer const &container, const int n,
+  //                           const int depth, int *const output) const;
 
 };
 
-} // End global namespace
+void CudaManagerPrintGeometry(VPlacedVolume const *const world);
+
+// void CudaManagerLocatePoints(VPlacedVolume const *const world,
+//                              SOA3D<Precision> const *const points,
+//                              const int n, const int depth, int *const output);
+
+// void CudaManagerLocatePoints(VPlacedVolume const *const world,
+//                              AOS3D<Precision> const *const points,
+//                              const int n, const int depth, int *const output);
+
+} // End namespace vecgeom
 
 #endif // VECGEOM_MANAGEMENT_CUDAMANAGER_H_

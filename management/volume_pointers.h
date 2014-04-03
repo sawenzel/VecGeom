@@ -8,12 +8,12 @@
 
 #include "base/global.h"
 
-class TGeoNode;
+class TGeoShape;
 class VUSolid;
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
-enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot};
+enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot, kCuda};
 
 /**
  * @brief Converts a VecGeom volume to unspecialized, USolids and ROOT
@@ -23,10 +23,10 @@ class VolumePointers {
 
 private:
 
-  VPlacedVolume const *specialized_ = NULL;
-  VPlacedVolume const *unspecialized_ = NULL;
-  TGeoShape const *root_ = NULL;
-  ::VUSolid const *usolids_ = NULL;
+  VPlacedVolume const *specialized_;
+  VPlacedVolume const *unspecialized_;
+  TGeoShape const *root_;
+  ::VUSolid const *usolids_;
   /** Remember which objects can be safely deleted. */
   BenchmarkType initial_;
 

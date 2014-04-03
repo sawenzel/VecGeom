@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <iostream>
 
 #include "base/global.h"
 #include "base/vector3d.h"
@@ -246,9 +247,8 @@ public:
 
   // Utility and CUDA
 
-  VECGEOM_CUDA_HEADER_HOST
-  friend std::ostream& operator<<(std::ostream& os,
-                                  TransformationMatrix const &v);
+  friend ::std::ostream& operator<<(::std::ostream& os,
+                                    TransformationMatrix const &v);
 
   #ifdef VECGEOM_CUDA_INTERFACE
   TransformationMatrix* CopyToGpu() const;

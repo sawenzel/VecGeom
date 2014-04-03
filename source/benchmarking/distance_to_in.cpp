@@ -15,12 +15,15 @@
 #include "volumes/utilities/volume_utilities.h"
 #include <random>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
-DistanceToInBenchmarker::DistanceToInBenchmarker(VPlacedVolume const *const world)
-    : Benchmark(world) {
-	psteps_ = (Precision *) _mm_malloc( sizeof(Precision) * n_points_, kAlignmentBoundary );
-	for(int i=0;i<n_points_;++i)
+DistanceToInBenchmarker::DistanceToInBenchmarker(
+    VPlacedVolume const *const world)
+    : Benchmark(world), n_points_(1024), bias_(0.8), pool_multiplier_(1),
+      point_pool_(NULL), dir_pool_(NULL), psteps_(NULL) {
+	psteps_ =
+      (Precision *) _mm_malloc( sizeof(Precision) * n_points_, kAlignmentBoundary );
+	for(unsigned i=0;i<n_points_;++i)
 	{
 		psteps_[i]=kInfinity;
 	}
@@ -90,40 +93,57 @@ void DistanceToInBenchmarker::BenchmarkAll() {
   PrepareBenchmark();
 
   // Allocate output memory
-  Precision *const distances_specialized   = AllocateDistance();
-  Precision *const distances_specializedvec = AllocateDistance();
+  Precision *const distances_specialized = AllocateDistance();
+  // Precision *const distances_specializedvec = AllocateDistance();
   Precision *const distances_unspecialized = AllocateDistance();
-  Precision *const distances_usolids       = AllocateDistance();
-  Precision *const distances_root          = AllocateDistance();
 
-  // Run all four benchmarks
+  // Run all benchmarks
   results_.push_back(RunSpecialized(distances_specialized));
-  results_.push_back(RunSpecializedVec(distances_specializedvec));
+  // results_.push_back(RunSpecializedVec(distances_specializedvec));
   results_.push_back(RunUnspecialized(distances_unspecialized));
+#ifdef VECGEOM_USOLIDS
+  Precision *const distances_usolids = AllocateDistance();
   results_.push_back(RunUSolids(distances_usolids));
+#endif
+#ifdef VECGEOM_ROOT
+  Precision *const distances_root = AllocateDistance();
   results_.push_back(RunRoot(distances_root));
+#endif
+#ifdef VECGEOM_CUDA
+  Precision *const distances_cuda = AllocateDistance();
+  results_.push_back(
+    GenerateBenchmarkResult(RunCuda(
+      &point_pool_->x(0), &point_pool_->y(0), &point_pool_->z(0),
+      &dir_pool_->x(0),   &dir_pool_->y(0),   &dir_pool_->z(0),
+      distances_cuda
+    ), kCuda)
+  );
+#endif
 
   // Compare results
   unsigned mismatches = 0;
   const Precision tolerance = 1e-12;
   for (unsigned i = 0; i < n_points_; ++i) {
-    const bool root_mismatch =
-        abs(distances_specializedvec[i] - distances_root[i]) > tolerance &&
+    bool mismatch = false;
+#ifdef VECGEOM_ROOT
+    mismatch +=
+        abs(distances_specialized[i] - distances_root[i]) > tolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_root[i] == 1e30);
-    const bool usolids_mismatch =
-        abs(distances_specializedvec[i] - distances_usolids[i]) > tolerance &&
+#endif
+#ifdef VECGEOM_USOLIDS
+    mismatch +=
+        abs(distances_specialized[i] - distances_usolids[i]) > tolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_usolids[i] == UUtils::kInfinity);
-    if (root_mismatch || usolids_mismatch) {
-      if (verbose() > 1) {
-        if (!mismatches) std::cout << "VecGeom / USolids / ROOT\n";
-        std::cout << distances_specialized[i]  << " / "
-                  << distances_usolids[i] << " / "
-                  << distances_root[i]    << std::endl;
-      }
-      mismatches++;
-    }
+#endif
+#ifdef VECGEOM_CUDA
+    mismatch +=
+        abs(distances_specialized[i] - distances_cuda[i]) > tolerance &&
+        !(distances_specialized[i] == kInfinity &&
+          distances_cuda[i] == kInfinity);
+#endif
+    mismatches += mismatch;
   }
   if (verbose()) {
     std::cout << mismatches << " / " << n_points_
@@ -133,8 +153,15 @@ void DistanceToInBenchmarker::BenchmarkAll() {
   // Clean up memory
   FreeDistance(distances_specialized);
   FreeDistance(distances_unspecialized);
+#ifdef VECGEOM_USOLIDS
   FreeDistance(distances_usolids);
+#endif
+#ifdef VECGEOM_ROOT
   FreeDistance(distances_root);
+#endif
+#ifdef VECGEOM_CUDA
+  FreeDistance(distances_cuda);
+#endif
 }
 
 void DistanceToInBenchmarker::BenchmarkSpecialized() {
@@ -151,22 +178,41 @@ void DistanceToInBenchmarker::BenchmarkUnspecialized() {
   FreeDistance(distances);
 }
 
+#ifdef VECGEOM_USOLIDS
 void DistanceToInBenchmarker::BenchmarkUSolids() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunUSolids(distances));
   FreeDistance(distances);
 }
+#endif
 
-
+#ifdef VECGEOM_ROOT
 void DistanceToInBenchmarker::BenchmarkRoot() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunRoot(distances));
   FreeDistance(distances);
 }
+#endif
 
-BenchmarkResult DistanceToInBenchmarker::RunSpecialized(Precision *const distances) const {
+#ifdef VECGEOM_CUDA
+void DistanceToInBenchmarker::BenchmarkCuda() {
+  PrepareBenchmark();
+  Precision *const distances = AllocateDistance();
+  results_.push_back(
+    GenerateBenchmarkResult(RunCuda(
+      &point_pool_->x(0), &point_pool_->y(0), &point_pool_->z(0),
+      &dir_pool_->x(0),   &dir_pool_->y(0),   &dir_pool_->z(0),
+      distances
+    ), kCuda)
+  );
+  FreeDistance(distances);
+}
+#endif
+
+BenchmarkResult DistanceToInBenchmarker::RunSpecialized(
+    Precision *const distances) const {
   if (verbose()) std::cout << "Running specialized benchmark...";
   Stopwatch timer;
   timer.Start();
@@ -193,7 +239,7 @@ BenchmarkResult DistanceToInBenchmarker::RunSpecializedVec(Precision *const dist
   Stopwatch timer;
   timer.Start();
   for (unsigned r = 0; r < repetitions(); ++r) {
-    const int index = (rand() % pool_multiplier_) * n_points_;
+    // const int index = (rand() % pool_multiplier_) * n_points_;
     for (std::vector<VolumePointers>::const_iterator d = volumes_.begin();
          d != volumes_.end(); ++d){
     		// call vector interface
@@ -226,7 +272,9 @@ BenchmarkResult DistanceToInBenchmarker::RunUnspecialized(Precision *const dista
   return GenerateBenchmarkResult(elapsed, kUnspecialized);
 }
 
-BenchmarkResult DistanceToInBenchmarker::RunUSolids(Precision *const distances) const {
+#ifdef VECGEOM_USOLIDS
+BenchmarkResult DistanceToInBenchmarker::RunUSolids(
+    Precision *const distances) const {
   if (verbose()) std::cout << "Running USolids benchmark...";
   Stopwatch timer;
   timer.Start();
@@ -252,15 +300,17 @@ BenchmarkResult DistanceToInBenchmarker::RunUSolids(Precision *const distances) 
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
   return GenerateBenchmarkResult(elapsed, kUSolids);
 }
+#endif
 
-BenchmarkResult DistanceToInBenchmarker::RunRoot(Precision *const distances) const {
+#ifdef VECGEOM_ROOT
+BenchmarkResult DistanceToInBenchmarker::RunRoot(
+    Precision *const distances) const {
   if (verbose()) std::cout << "Running ROOT benchmark...";
   Stopwatch timer;
   timer.Start();
   for (unsigned r = 0; r < repetitions(); ++r) {
     const int index = (rand() % pool_multiplier_) * n_points_;
-    for (std::vector<VolumePointers>::const_iterator v = volumes_.begin();
-         v != volumes_.end(); ++v) {
+    for (auto v = volumes_.begin(); v != volumes_.end(); ++v) {
       TransformationMatrix const *matrix = v->unspecialized()->matrix();
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
@@ -276,5 +326,14 @@ BenchmarkResult DistanceToInBenchmarker::RunRoot(Precision *const distances) con
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
   return GenerateBenchmarkResult(elapsed, kRoot);
 }
+#endif
 
-} // End global namespace
+double* DistanceToInBenchmarker::AllocateDistance() const {
+  return (double*) _mm_malloc(n_points_*sizeof(double), kAlignmentBoundary);
+}
+
+void DistanceToInBenchmarker::FreeDistance(double *const distance) {
+  _mm_free(distance);
+}
+
+} // End namespace vecgeom

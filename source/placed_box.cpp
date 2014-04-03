@@ -88,7 +88,7 @@ void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
 	return SafetyToOut_Looper(*this, position, safeties);
 }
 
-#ifdef VECGEOM_BENCHMARK
+#if defined(VECGEOM_BENCHMARK) && !defined(VECGEOM_NVCC)
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
   return new PlacedBox(logical_volume_, matrix_);

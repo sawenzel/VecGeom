@@ -73,18 +73,6 @@ void CopyFromGpu(Type const *const src, Type *const tgt) {
   CopyFromGpu<Type>(src, tgt, sizeof(Type));
 }
 
-// Class specific stuf
-
-void CudaManagerPrintGeometry(VPlacedVolume const *const world);
-
-void CudaManagerLocatePoints(VPlacedVolume const *const world,
-                             SOA3D<Precision> const *const points,
-                             const int n, const int depth, int *const output);
-
-void CudaManagerLocatePoints(VPlacedVolume const *const world,
-                             AOS3D<Precision> const *const points,
-                             const int n, const int depth, int *const output);
-
 } // End global namespace
 
 #endif // VECGEOM_BACKEND_CUDA_INTERFACE_H_
