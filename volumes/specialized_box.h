@@ -29,6 +29,8 @@ public:
                  TransformationMatrix const *const matrix)
       : PlacedBox(logical_volume, matrix) {}
 
+    virtual ~SpecializedBox(){}
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;
 
