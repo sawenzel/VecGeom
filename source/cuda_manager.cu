@@ -13,10 +13,8 @@ void CudaManagerPrintGeometryKernel(
   world->PrintContent();
 }
 
-void CudaManagerPrintGeometry(VPlacedVolume const *const world) {
-  CudaManagerPrintGeometryKernel<<<1, 1>>>(
-    reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(world)
-  );
+void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world) {
+  CudaManagerPrintGeometryKernel<<<1, 1>>>(world);
   CudaAssertError();
   cudaDeviceSynchronize();
 }

@@ -13,7 +13,8 @@ class VUSolid;
 
 namespace vecgeom {
 
-enum BenchmarkType {kSpecialized, kUnspecialized, kUSolids, kRoot, kCuda};
+enum BenchmarkType {kSpecialized, kSpecializedVector, kUnspecialized,
+                    kUSolids, kRoot, kCuda};
 
 /**
  * @brief Converts a VecGeom volume to unspecialized, USolids and ROOT
@@ -25,8 +26,12 @@ private:
 
   VPlacedVolume const *specialized_;
   VPlacedVolume const *unspecialized_;
+#ifdef VECGEOM_ROOT
   TGeoShape const *root_;
+#endif
+#ifdef VECGEOM_USOLIDS
   ::VUSolid const *usolids_;
+#endif
   /** Remember which objects can be safely deleted. */
   BenchmarkType initial_;
 
@@ -47,9 +52,13 @@ public:
 
   VPlacedVolume const* unspecialized() const { return unspecialized_; }
 
+#ifdef VECGEOM_ROOT
   TGeoShape const* root() const { return root_; }
+#endif
 
+#ifdef VECGEOM_USOLIDS
   ::VUSolid const* usolids() const { return usolids_; }
+#endif
 
 private:
 

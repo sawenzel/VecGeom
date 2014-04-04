@@ -3,17 +3,23 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
+#include "benchmarking/distance_to_in.h"
+
+#include <random>
+
+#ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
+#endif // VECGEOM_USOLIDS
+#ifdef VECGEOM_ROOT
 #include "TGeoBBox.h"
+#endif // VECGEOM_ROOT
 #include "base/iterator.h"
 #include "base/soa3d.h"
 #include "base/stopwatch.h"
 #include "base/transformation_matrix.h"
-#include "benchmarking/distance_to_in.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_box.h"
 #include "volumes/utilities/volume_utilities.h"
-#include <random>
 
 namespace vecgeom {
 
@@ -90,16 +96,20 @@ void DistanceToInBenchmarker::PrepareBenchmark() {
 
 void DistanceToInBenchmarker::BenchmarkAll() {
 
+  if (verbose()) std::cout << "Running DistanceToIn benchmark for "
+                           << n_points_ << " points for " << repetitions()
+                           << " repetitions.\n";
+
   PrepareBenchmark();
 
   // Allocate output memory
   Precision *const distances_specialized = AllocateDistance();
-  // Precision *const distances_specializedvec = AllocateDistance();
+  Precision *const distances_vec = AllocateDistance();
   Precision *const distances_unspecialized = AllocateDistance();
 
   // Run all benchmarks
   results_.push_back(RunSpecialized(distances_specialized));
-  // results_.push_back(RunSpecializedVec(distances_specializedvec));
+  results_.push_back(RunSpecializedVec(distances_vec));
   results_.push_back(RunUnspecialized(distances_unspecialized));
 #ifdef VECGEOM_USOLIDS
   Precision *const distances_usolids = AllocateDistance();
@@ -122,24 +132,27 @@ void DistanceToInBenchmarker::BenchmarkAll() {
 
   // Compare results
   unsigned mismatches = 0;
-  const Precision tolerance = 1e-12;
   for (unsigned i = 0; i < n_points_; ++i) {
     bool mismatch = false;
+    mismatch +=
+        abs(distances_specialized[i] - distances_vec[i]) > kTolerance &&
+        !(distances_specialized[i] == kInfinity &&
+          distances_vec[i] == kInfinity);
 #ifdef VECGEOM_ROOT
     mismatch +=
-        abs(distances_specialized[i] - distances_root[i]) > tolerance &&
+        abs(distances_specialized[i] - distances_root[i]) > kTolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_root[i] == 1e30);
 #endif
 #ifdef VECGEOM_USOLIDS
     mismatch +=
-        abs(distances_specialized[i] - distances_usolids[i]) > tolerance &&
+        abs(distances_specialized[i] - distances_usolids[i]) > kTolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_usolids[i] == UUtils::kInfinity);
 #endif
 #ifdef VECGEOM_CUDA
     mismatch +=
-        abs(distances_specialized[i] - distances_cuda[i]) > tolerance &&
+        abs(distances_specialized[i] - distances_cuda[i]) > kTolerance &&
         !(distances_specialized[i] == kInfinity &&
           distances_cuda[i] == kInfinity);
 #endif
@@ -168,6 +181,13 @@ void DistanceToInBenchmarker::BenchmarkSpecialized() {
   PrepareBenchmark();
   Precision *const distances = AllocateDistance();
   results_.push_back(RunSpecialized(distances));
+  FreeDistance(distances);
+}
+
+void DistanceToInBenchmarker::BenchmarkSpecializedVec() {
+  PrepareBenchmark();
+  Precision *const distances = AllocateDistance();
+  results_.push_back(RunSpecializedVec(distances));
   FreeDistance(distances);
 }
 
@@ -248,7 +268,7 @@ BenchmarkResult DistanceToInBenchmarker::RunSpecializedVec(Precision *const dist
   }
   const Precision elapsed = timer.Stop();
   if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
-  return GenerateBenchmarkResult(elapsed, kSpecialized);
+  return GenerateBenchmarkResult(elapsed, kSpecializedVector);
 }
 
 BenchmarkResult DistanceToInBenchmarker::RunUnspecialized(Precision *const distances) const {

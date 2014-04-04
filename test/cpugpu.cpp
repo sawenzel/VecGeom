@@ -1,3 +1,5 @@
+#include "cpugpu.h"
+
 #include <string>
 #include "base/stopwatch.h"
 #include "management/cuda_manager.h"
@@ -10,6 +12,9 @@
 using namespace vecgeom;
 
 void CreateRootGeometry();
+// void LocatePointsGpu(Precision *const x, Precision *const y,
+//                      Precision *const z, const unsigned size, const int depth,
+//                      int *const output);
 
 int main(const int argc, char const *const *const argv) {
 
@@ -57,14 +62,15 @@ int main(const int argc, char const *const *const argv) {
   std::cout << "Points located on CPU in " << cpu << "s.\n";
 
   sw.Start();
-  // CudaManager::Instance().LocatePoints(points, depth, results_gpu);
+  // LocatePointsGpu(&points.x(0), &points.y(0), &points.z(0), n, depth,
+  //                 results_gpu);
   const double gpu = sw.Stop();
   std::cout << "Points located on GPU in " << gpu
             << "s (including memory transfer).\n";
 
   // Compare output
   for (int i = 0; i < n; ++i) {
-    // std::cout << results[i] << " vs. " << results_gpu[i] << std::endl;
+    std::cout << results[i] << " vs. " << results_gpu[i] << std::endl;
     assert(results[i] == results_gpu[i]);
   }
   std::cout << "All points located within same volume on CPU and GPU.\n";

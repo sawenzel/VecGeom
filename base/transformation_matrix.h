@@ -247,8 +247,8 @@ public:
 
   // Utility and CUDA
 
-  friend ::std::ostream& operator<<(::std::ostream& os,
-                                    TransformationMatrix const &v);
+  friend std::ostream& operator<<(std::ostream& os,
+                                  TransformationMatrix const &v);
 
   #ifdef VECGEOM_CUDA_INTERFACE
   TransformationMatrix* CopyToGpu() const;

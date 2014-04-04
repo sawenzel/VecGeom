@@ -134,9 +134,7 @@ void AOS3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
   data_[index] = vec;
 }
 
-} // End global namespace
-
-namespace vecgeom {
+#ifdef VECGEOM_CUDA
 
 template <typename Type> class Vector3D;
 template <typename Type> class AOS3D;
@@ -144,17 +142,17 @@ template <typename Type> class AOS3D;
 AOS3D<Precision>* AOS3DCopyToGpuInterface(Vector3D<Precision> *const data,
                                           const unsigned size);
 
-#ifdef VECGEOM_CUDA_INTERFACE
 
 template <typename Type>
-AOS3D<Type>* AOS3D<Type>::CopyToGpu(Vector3D<Type> *const data_gpu) const {
+AOS3D<Type>* AOS3D<Type>::CopyToGpu(
+    Vector3D<Type> *const data_gpu) const {
   const int count = this->size();
   const int mem_size = count*sizeof(Vector3D<Type>);
   vecgeom::CopyToGpu(data_, data_gpu, mem_size);
   return AOS3DCopyToGpuInterface(data_gpu, count);
 }
 
-#endif // VECGEOM_CUDA_INTERFACE
+#endif // VECGEOM_CUDA
 
 } // End namespace vecgeom
 

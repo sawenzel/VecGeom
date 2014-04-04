@@ -2,7 +2,7 @@
 #include "volumes/box.h"
 #include "benchmarking/distance_to_in.h"
 
-using namespace VECGEOM_NAMESPACE;
+using namespace vecgeom;
 
 int main() {
 
@@ -37,6 +37,7 @@ int main() {
 
   DistanceToInBenchmarker tester(world_placed);
   tester.set_verbose(2);
+  tester.set_repetitions(1<<12);
   tester.BenchmarkAll();
 
   delete world_placed;

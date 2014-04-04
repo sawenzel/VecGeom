@@ -35,6 +35,7 @@ public:
   virtual void BenchmarkAll();
   virtual void BenchmarkSpecialized();
   virtual void BenchmarkUnspecialized();
+  virtual void BenchmarkSpecializedVec();
 #ifdef VECGEOM_USOLIDS
   virtual void BenchmarkUSolids();
 #endif

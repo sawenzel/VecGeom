@@ -32,12 +32,12 @@ VPlacedVolume const* CudaManager::world() const {
   return world_;
 }
 
-VPlacedVolume const* CudaManager::world_gpu() const {
+vecgeom_cuda::VPlacedVolume const* CudaManager::world_gpu() const {
   assert(world_gpu_ != NULL);
   return world_gpu_;
 }
 
-VPlacedVolume const* CudaManager::Synchronize() {
+vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
   if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n";
 
@@ -123,7 +123,9 @@ VPlacedVolume const* CudaManager::Synchronize() {
 
   synchronized = true;
 
-  world_gpu_ = LookupPlaced(world_);
+  world_gpu_ = reinterpret_cast<vecgeom_cuda::VPlacedVolume *>(
+    LookupPlaced(world_)
+  );
 
   if (verbose_ > 0) std::cout << "Geometry synchronized to GPU.\n";
 
