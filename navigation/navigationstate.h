@@ -103,9 +103,13 @@ public:
 
 	void Print() const;
 
+	/**
+	  function returning whether the point (current navigation state) is outside the detector setup
+	*/
 	VECGEOM_INLINE
 	VECGEOM_CUDA_HEADER_BOTH
-	bool IsOutsideWorld() const { return !(currentlevel_>0); }
+	bool IsOutside() const { return !(currentlevel_>0); }
+
 
 	VECGEOM_INLINE
 	VECGEOM_CUDA_HEADER_BOTH
@@ -114,6 +118,17 @@ public:
 	VECGEOM_INLINE
 	VECGEOM_CUDA_HEADER_BOTH
 	void SetBoundaryState( bool b ) { onboundary_ = b; }
+
+	/**
+	 * function return the ROOT TGeoNode object which is equivalent to calling Top()
+	 * function included for convenience; to make porting Geant-V easier; we should eventually get rid of this function
+	 */
+	VECGEOM_INLINE
+	TGeoNode const * GetCurrentNode() const
+	{
+		return RootGeoManager::Instance().tgeonode(this->Top());
+	}
+
 
 	//void GetGlobalMatrixFromPath( TransformationMatrix *const m ) const;
 	//TransformationMatrix const * GetGlobalMatrixFromPath() const;
