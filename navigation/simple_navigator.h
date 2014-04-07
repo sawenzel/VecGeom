@@ -84,6 +84,7 @@ public:
 	* A function to navigate ( find next boundary and/or the step to do )
 	*/
 	VECGEOM_CUDA_HEADER_BOTH
+	VECGEOM_INLINE
 	void FindNextBoundaryAndStep( Vector3D<Precision> const & /* global point */,
 								  Vector3D<Precision> const & /* global dir */,
 								  NavigationState const & /* currentstate */,
@@ -97,6 +98,7 @@ public:
 	 * point
 	 */
 	VECGEOM_CUDA_HEADER_BOTH
+	VECGEOM_INLINE
 	Precision GetSafety( Vector3D<Precision> const & /*global_point*/,
 					NavigationState const & /* currentstate */
 	) const;

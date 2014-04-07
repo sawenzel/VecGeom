@@ -102,6 +102,7 @@ public:
 	VECGEOM_CUDA_HEADER_BOTH
 	void Clear();
 
+	VECGEOM_INLINE
 	void Print() const;
 
 	/**
@@ -234,6 +235,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
 	return tmp;
 }
 
+VECGEOM_INLINE
 void NavigationState::Print() const
 {
 	std::cerr << "maxlevel " << maxlevel_ << std::endl;
