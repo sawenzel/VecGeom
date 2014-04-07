@@ -25,6 +25,8 @@
 #include "TGeoVolume.h"
 #include <cassert>
 
+#include <vector>
+
 using namespace VECGEOM_NAMESPACE;
 
 // creates a four level box detector
@@ -314,45 +316,29 @@ void test_safety()
 		std::cerr << "test9 (statistical safetytest from navigation) passed" << std::endl;
 }
 
-/*
-void DistanceToOutTest() {
-	const int n = 1<<8;
-	VPlacedVolume const* world = GeoManager::Instance().world();
-	SOA3D<Precision> points(n);
-	SOA3D<Precision> directions(n);
-	Benchmark::FillUncontainedPoints(*world, &points);
-	Benchmark::FillBiasedDirections(*world, points, 0.8, &directions);
-	int mismatches = 0;
-	for (int i = 0; i < n; ++i) {
-		Vector3D<Precision> master = points[i];
-		Vector3D<Precision> direction = directions[i];
-		const Precision vecgeom = world->DistanceToOut(master, direction);
-		TGeoNode const *node = gGeoManager->GetTopNode();
-		double master_c[3] = {master[0], master[1], master[2]};
-		double local[3];
-		double direction_c[3] = {direction[0], direction[1], direction[2]};
-		node->GetMatrix()->MasterToLocal(master_c, local);
-		const Precision root =
-		    node->GetVolume()->GetShape()->DistFromInside(local, direction_c);
-		const Precision diff = fabs(vecgeom - root);
-		if (diff > 1e-12) {
-		  // std::cerr << "Mismatch: " << vecgeom << " / " << root << std::endl;
-		  mismatches++;
-	  } else {
-		  // std::cerr << "Match: " << vecgeom << " / " << root << std::endl;
-	  }
-	}
-	std::cerr << mismatches << " / " << n << " mismatches detected.\n";
+void test_geoapi()
+{
+	std::vector<VPlacedVolume *> v1;
+	std::vector<LogicalVolume *> v2;
+
+	GeoManager::Instance().getAllLogicalVolumes( v2 );
+	assert(v2.size() == 4 );
+
+	GeoManager::Instance().getAllPlacedVolumes( v1 );
+	assert(v1.size() == 7 );
+
+	std::cerr << "test of geomanager query API passed" << std::endl;
 }
-*/
 
 int main()
 {
     CreateRootGeom();
-	RootManager::Instance().LoadRootGeometry();
-    RootManager::Instance().world()->PrintContent();
+	RootGeoManager::Instance().LoadRootGeometry();
+    RootGeoManager::Instance().world()->PrintContent();
 
-    RootManager::Instance().PrintNodeTable();
+    RootGeoManager::Instance().PrintNodeTable();
+
+    test_geoapi();
 
     test1();
     test2();
@@ -364,6 +350,8 @@ int main()
     test7();
     test8();
     test_safety();
+
+
 
     return 0;
 }
