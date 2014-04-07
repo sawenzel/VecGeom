@@ -25,7 +25,14 @@ class LogicalVolume {
 private:
 
   VUnplacedVolume const *unplaced_volume_;
+
+  /** a pointer member to register arbitrary objects with logical volume;
+   	  included for the moment to model UserExtension like in TGeoVolume
+  */
+  void * user_extension_;
+
   Vector<Daughter> *daughters_;
+
 
   friend class CudaManager;
 
@@ -36,15 +43,15 @@ public:
    * daughter list which can be populated by placing daughters.
    * \sa PlaceDaughter()
    */
-  LogicalVolume(VUnplacedVolume const *const unplaced_volume__)
-      : unplaced_volume_(unplaced_volume__) {
+  LogicalVolume(VUnplacedVolume const *const unplaced_volume)
+      : unplaced_volume_(unplaced_volume), user_extension_(0) {
     daughters_ = new Vector<Daughter>();
   }
 
   VECGEOM_CUDA_HEADER_DEVICE
   LogicalVolume(VUnplacedVolume const *const unplaced_volume,
                 Vector<Daughter> *daughters)
-      : unplaced_volume_(unplaced_volume), daughters_(daughters) {}
+      : unplaced_volume_(unplaced_volume), user_extension_(0), daughters_(daughters) {}
 
   ~LogicalVolume();
 
@@ -59,6 +66,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector<Daughter> const * daughtersp() const { return daughters_; }
+
+  VECGEOM_INLINE
+  void setUserExtensionPtr( void * userpointer ) { user_extension_ = userpointer; }
+
+  VECGEOM_INLINE
+  void * getUserExtensionPtr( ) const {  return user_extension_;  }
 
   #ifndef VECGEOM_NVCC
 
