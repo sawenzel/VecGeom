@@ -60,11 +60,9 @@ typedef double Precision;
 #endif
 }
 
-#ifdef VECGEOM_CUDA
 namespace vecgeom_cuda {
 typedef vecgeom::Precision Precision;
 }
-#endif // VECGEOM_CUDA
 
 namespace VECGEOM_NAMESPACE {
 

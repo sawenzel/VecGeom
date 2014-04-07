@@ -214,20 +214,22 @@ protected:
 
 public:
 
-  #ifdef VECGEOM_CUDA_INTERFACE
+#ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    TransformationMatrix const *const matrix,
                                    VPlacedVolume *const gpu_ptr) const =0;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
       TransformationMatrix const *const matrix) const =0;
-  #endif
+#endif
 
-  #if defined(VECGEOM_BENCHMARK) && !defined(VECGEOM_NVCC)
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
+#ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const =0;
+#endif
+#ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const =0;
-  #endif
+#endif
 
 };
 

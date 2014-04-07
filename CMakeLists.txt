@@ -13,14 +13,7 @@ option(ROOT "Include ROOT." OFF)
 
 option(USOLIDS "Include USolids." OFF)
 
-option(BENCHMARK "Enable performance comparisons, requiring ROOT and USolids."
-       OFF)
-
-if (BENCHMARK)
-  set(ROOT ON)
-  set(USolids ON)
-  set(CUDA ON)
-endif()
+option(BENCHMARK "Enable performance comparisons." OFF)
 
 if (USOLIDS)
   set(USolids ON)
@@ -76,7 +69,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ftree-vectorize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -ftree-vectorize")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -325,4 +318,8 @@ else()
     OPTIONS ${CUDA_ARCH}
   )
   target_link_libraries(cpugpu ${LIBS})
+  if (BENCHMARK)
+    add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
+    target_link_libraries(benchmark ${LIBS})
+  endif()
 endif()

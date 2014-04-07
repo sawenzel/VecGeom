@@ -7,8 +7,10 @@
 #include "base/aos3d.h"
 #include "base/soa3d.h"
 #include "volumes/placed_box.h"
-#ifdef VECGEOM_BENCHMARK
+#ifdef VECGEOM_ROOT
 #include "TGeoBBox.h"
+#endif
+#ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
 #endif
 
@@ -88,21 +90,21 @@ void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
 	return SafetyToOut_Looper(*this, position, safeties);
 }
 
-#if defined(VECGEOM_BENCHMARK) && !defined(VECGEOM_NVCC)
-
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
   return new PlacedBox(logical_volume_, matrix_);
 }
 
+#ifdef VECGEOM_ROOT
 TGeoShape const* PlacedBox::ConvertToRoot() const {
   return new TGeoBBox("", x(), y(), z());
 }
+#endif
 
+#ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedBox::ConvertToUSolids() const {
   return new UBox("", x(), y(), z());
 }
-
-#endif // VECGEOM_BENCHMARK
+#endif
 
 } // End global namespace
 

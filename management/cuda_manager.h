@@ -13,6 +13,8 @@
 #include "base/vector.h"
 #include "volumes/box.h"
 
+namespace vecgeom_cuda { class VPlacedVolume; }
+
 // Compile for vecgeom namespace to work as interface
 namespace vecgeom {
 
@@ -41,7 +43,8 @@ private:
   typedef void* GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
 
-  VPlacedVolume const *world_, *world_gpu_;
+  VPlacedVolume const *world_;
+  vecgeom_cuda::VPlacedVolume *world_gpu_;
 
   /**
    * Contains a mapping between objects stored in host memory and pointers to
@@ -65,7 +68,7 @@ public:
 
   VPlacedVolume const* world() const;
 
-  VPlacedVolume const* world_gpu() const;
+  vecgeom_cuda::VPlacedVolume const* world_gpu() const;
 
   /**
    * Stages a new geometry to be copied to the GPU.
@@ -79,7 +82,7 @@ public:
    * creating new objects with correct pointers, then copying them to the GPU.
    * \return Pointer to top volume on the GPU.
    */
-  VPlacedVolume const* Synchronize();
+  vecgeom_cuda::VPlacedVolume const* Synchronize();
 
   /**
    * Deallocates all GPU pointers stored in the memory table.
@@ -166,7 +169,7 @@ private:
 
 };
 
-void CudaManagerPrintGeometry(VPlacedVolume const *const world);
+void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world);
 
 // void CudaManagerLocatePoints(VPlacedVolume const *const world,
 //                              SOA3D<Precision> const *const points,

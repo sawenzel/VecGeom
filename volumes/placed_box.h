@@ -19,7 +19,6 @@ class PlacedBox : public VPlacedVolume {
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
   PlacedBox(LogicalVolume const *const logical_volume,
             TransformationMatrix const *const matrix)
       : VPlacedVolume(logical_volume, matrix, this) {}
@@ -146,9 +145,10 @@ public:
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   TransformationMatrix const *const matrix,
-                                   VPlacedVolume *const gpu_ptr) const;
+  virtual VPlacedVolume* CopyToGpu(
+      LogicalVolume const *const logical_volume,
+      TransformationMatrix const *const matrix,
+      VPlacedVolume *const gpu_ptr) const;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
       TransformationMatrix const *const matrix) const;
@@ -156,11 +156,13 @@ public:
 
   // Comparison specific
 
-  #if defined(VECGEOM_BENCHMARK) && !defined(VECGEOM_NVCC)
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
+#ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
+#endif
+#ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
-  #endif
+#endif
 
 
   // Templates to interact with common C-like kernels
