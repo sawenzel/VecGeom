@@ -327,6 +327,8 @@ void test_geoapi()
 	GeoManager::Instance().getAllPlacedVolumes( v1 );
 	assert(v1.size() == 7 );
 
+	assert(GeoManager::Instance().getMaxDepth()  ==  4);
+
 	std::cerr << "test of geomanager query API passed" << std::endl;
 }
 
