@@ -58,7 +58,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision volume() const {
-    return 4.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
+    return 8.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
