@@ -7,7 +7,7 @@
 
 #include "base/transformation_matrix.h"
 #include "management/geo_manager.h"
-#include "management/root_manager.h"
+#include "management/rootgeo_manager.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
@@ -20,7 +20,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-void RootManager::LoadRootGeometry() {
+void RootGeoManager::LoadRootGeometry() {
   Clear();
   TGeoNode const *const world_root = ::gGeoManager->GetTopNode();
   // Convert() will recursively convert daughters
@@ -28,7 +28,7 @@ void RootManager::LoadRootGeometry() {
   GeoManager::Instance().set_world(world_);
 }
 
-VPlacedVolume* RootManager::Convert(TGeoNode const *const node) {
+VPlacedVolume* RootGeoManager::Convert(TGeoNode const *const node) {
   if (placed_volumes_.Contains(node)) return placed_volumes_[node];
 
   TransformationMatrix const *const matrix = Convert(node->GetMatrix());
@@ -51,7 +51,7 @@ VPlacedVolume* RootManager::Convert(TGeoNode const *const node) {
   return placed_volume;
 }
 
-TransformationMatrix* RootManager::Convert(TGeoMatrix const *const geomatrix) {
+TransformationMatrix* RootGeoManager::Convert(TGeoMatrix const *const geomatrix) {
   if (matrices_.Contains(geomatrix)) return matrices_[geomatrix];
 
   Double_t const *const t = geomatrix->GetTranslation();
@@ -64,7 +64,7 @@ TransformationMatrix* RootManager::Convert(TGeoMatrix const *const geomatrix) {
   return matrix;
 }
 
-LogicalVolume* RootManager::Convert(TGeoVolume const *const volume) {
+LogicalVolume* RootGeoManager::Convert(TGeoVolume const *const volume) {
   if (logical_volumes_.Contains(volume)) return logical_volumes_[volume];
 
   VUnplacedVolume const *const unplaced = Convert(volume->GetShape());
@@ -74,7 +74,7 @@ LogicalVolume* RootManager::Convert(TGeoVolume const *const volume) {
   return logical_volume;
 }
 
-VUnplacedVolume* RootManager::Convert(TGeoShape const *const shape) {
+VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
   if (unplaced_volumes_.Contains(shape)) return unplaced_volumes_[shape];
 
   // Dynamic casts are necessary to avoid tight coupling
@@ -91,7 +91,7 @@ VUnplacedVolume* RootManager::Convert(TGeoShape const *const shape) {
   return unplaced_volume;
 }
 
-void RootManager::PrintNodeTable() const
+void RootGeoManager::PrintNodeTable() const
 {
 	for(auto iter : placed_volumes_)
 	{
@@ -101,7 +101,7 @@ void RootManager::PrintNodeTable() const
 	}
 }
 
-void RootManager::Clear() {
+void RootGeoManager::Clear() {
   // Auto used because this will most likely not be compiled along with CUDA.
   // Might change in the future, forcing long and horrible typenames!
   for (auto i = placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {

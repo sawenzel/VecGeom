@@ -28,8 +28,8 @@ int main() {
   vol2->AddNode(vol3, 1, matrix1);
   ::gGeoManager->SetTopVolume(vol1);
 
-  RootManager::Instance().LoadRootGeometry();
-  RootManager::Instance().world()->PrintContent();
+  RootGeoManager::Instance().LoadRootGeometry();
+  RootGeoManager::Instance().world()->PrintContent();
 
   return 0;
 }

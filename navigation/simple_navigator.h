@@ -12,12 +12,13 @@
 #include "volumes/placed_volume.h"
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
+#include "management/geo_manager.h"
 #include <iostream>
 #include <cassert>
 #include "base/soa3d.h"
 
 #ifdef VECGEOM_ROOT
-#include "management/root_manager.h"
+#include "management/rootgeo_manager.h"
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
 #endif
@@ -403,7 +404,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	// now check mother and daughters
 	VPlacedVolume const * currentvolume = state.Top();
 	std::cout << "############################################ " << std::endl;
-	std::cout << "Navigating in placed volume : " << RootManager::Instance().GetName( currentvolume ) << std::endl;
+	std::cout << "Navigating in placed volume : " << RootGeoManager::Instance().GetName( currentvolume ) << std::endl;
 
 	int nexthitvolume = -1; // means mother
 	double step = currentvolume->DistanceToOut( localpoint, localdir );
@@ -420,7 +421,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 		//	 previous distance becomes step estimate, distance to daughter returned in workspace
 		Precision ddistance = daughter->DistanceToIn( localpoint, localdir, step );
 
-		std::cout << "DistanceToDaughter : " << RootManager::Instance().GetName( daughter ) << " " << ddistance << std::endl;
+		std::cout << "DistanceToDaughter : " << RootGeoManager::Instance().GetName( daughter ) << " " << ddistance << std::endl;
 
 		nexthitvolume = (ddistance < step) ? d : nexthitvolume;
 		step 	  = (ddistance < step) ? ddistance  : step;
@@ -428,7 +429,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 	std::cout << "DECIDED FOR NEXTVOLUME " << nexthitvolume << std::endl;
 
 	// same information from ROOT
-	TGeoNode const * currentRootNode = RootManager::Instance().tgeonode( currentvolume );
+	TGeoNode const * currentRootNode = RootGeoManager::Instance().tgeonode( currentvolume );
 	double lp[3]={localpoint[0],localpoint[1],localpoint[2]};
 	double ld[3]={localdir[0],localdir[1],localdir[2]};
 	double rootstep =  currentRootNode->GetVolume()->GetShape()->DistFromInside( lp, ld, 3, 1E30, 0 );

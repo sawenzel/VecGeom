@@ -20,7 +20,7 @@ namespace VECGEOM_NAMESPACE {
  *          compiled if the VECGEOM_ROOT flag is set by the compiler, activated
  *          with -DROOT=ON in CMake.
  */
-class RootManager {
+class RootGeoManager {
 
 private:
 
@@ -35,8 +35,8 @@ private:
 public:
 
   /** Access singleton instance. */
-  static RootManager& Instance() {
-    static RootManager instance;
+  static RootGeoManager& Instance() {
+    static RootGeoManager instance;
     return instance;
   }
 
@@ -81,9 +81,9 @@ public:
 
 private:
 
-  RootManager() : world_(NULL) {}
-  RootManager(RootManager const&);
-  RootManager& operator=(RootManager const&);
+  RootGeoManager() : world_(NULL) {}
+  RootGeoManager(RootGeoManager const&);
+  RootGeoManager& operator=(RootGeoManager const&);
 
 };
 
