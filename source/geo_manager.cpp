@@ -2,8 +2,8 @@
 
 namespace VECGEOM_NAMESPACE {
 
-int GeoManager::RegisterVolume(VPlacedVolume const *const volume) {
-  return volume_count++;
-}
+//int GeoManager::RegisterVolume(VPlacedVolume const *const volume) {
+//  return volume_count++;
+//}
 
 } // End global namespace

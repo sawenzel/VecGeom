@@ -9,7 +9,7 @@
 #include "base/global.h"
 
 #include "base/transformation_matrix.h"
-#include "management/geo_manager.h"
+//#include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -20,7 +20,6 @@ class PlacedBox;
 class VPlacedVolume {
 
 private:
-
   int id_;
 
 protected:
@@ -34,7 +33,7 @@ protected:
                 PlacedBox const *const bounding_box)
       : logical_volume_(logical_volume), matrix_(matrix),
         bounding_box_(bounding_box) {
-    id_ = GeoManager::Instance().RegisterVolume(this);
+    // id_ = GeoManager::Instance().RegisterVolume(this);
   }
 
   #ifdef VECGEOM_NVCC
