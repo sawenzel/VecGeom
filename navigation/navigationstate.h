@@ -14,6 +14,7 @@
 #include "backend/backend.h"
 #include "base/transformation_matrix.h"
 #include "volumes/placed_volume.h"
+#include "management/rootgeo_manager.h"
 
 namespace VECGEOM_NAMESPACE
 {

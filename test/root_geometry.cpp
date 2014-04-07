@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "management/root_manager.h"
+#include "management/rootgeo_manager.h"
 #include "volumes/placed_volume.h"
 
 #include "TGeoManager.h"
