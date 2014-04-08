@@ -300,7 +300,11 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
 	{
 		VPlacedVolume const * daughter = daughters->operator [](d);
 		double tmp = daughter->SafetyToIn( localpoint );
+		#ifdef VECGEOM_NVCC
+		safety = min(safety, tmp);
+		#else
 		safety = std::min(safety, tmp);
+		#endif
 	}
 	return safety;
 }

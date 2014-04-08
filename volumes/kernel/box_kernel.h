@@ -202,6 +202,8 @@ void BoxDistanceToOut(
 template< TranslationCode trans_code,
 		  RotationCode rot_code,
 		  typename Backend >
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
 void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
 					TransformationMatrix const & matrix,
 					Vector3D<typename Backend::precision_v> const & point,
@@ -222,6 +224,8 @@ void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
 }
 
 template< typename Backend >
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
 void BoxSafetyToOut(Vector3D<Precision> const &dimensions,
 					Vector3D<typename Backend::precision_v> const & point,
 					typename Backend::precision_v & safety

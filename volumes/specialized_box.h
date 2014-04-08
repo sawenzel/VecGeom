@@ -58,6 +58,7 @@ public:
                             Precision *const output) const;
 
   // we need to specialize SafetyToIn
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const;
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const;

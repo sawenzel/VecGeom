@@ -11,3 +11,7 @@ Debug
 .project
 .externalToolBuilders
 compile_benchmark.sh
+*.eps
+*.png
+*.jpg
+*.pdf
