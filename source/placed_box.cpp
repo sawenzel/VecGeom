@@ -48,46 +48,46 @@ void PlacedBox::DistanceToIn(AOS3D<Precision> const &positions,
 
 
 void PlacedBox::DistanceToOut( AOS3D<Precision> const &position,
-							   AOS3D<Precision> const &direction,
+                        AOS3D<Precision> const &direction,
                                Precision const * const step_max,
                                Precision *const distances
-							 ) const
+                      ) const
 {
-	// call the looper pattern which calls the appropriate shape methods
-	return DistanceToOut_Looper(*this, position, direction, step_max, distances);
+   // call the looper pattern which calls the appropriate shape methods
+   return DistanceToOut_Looper(*this, position, direction, step_max, distances);
 }
 
 
 void PlacedBox::DistanceToOut( SOA3D<Precision> const &position,
-							   SOA3D<Precision> const &direction,
+                        SOA3D<Precision> const &direction,
                                Precision const * const step_max,
                                Precision *const distances
-							 ) const
+                      ) const
 {
-	// call the looper pattern which calls the appropriate shape methods
-	return DistanceToOut_Looper(*this, position, direction, step_max, distances);
+   // call the looper pattern which calls the appropriate shape methods
+   return DistanceToOut_Looper(*this, position, direction, step_max, distances);
 }
 
 void PlacedBox::SafetyToIn( SOA3D<Precision> const &position,
-		  Precision *const safeties ) const {
-	return SafetyToIn_Looper<1,0>(*this, position, safeties);
+        Precision *const safeties ) const {
+   return SafetyToIn_Looper<1,0>(*this, position, safeties);
 }
 
 
 void PlacedBox::SafetyToIn( AOS3D<Precision> const &position,
-		  Precision *const safeties ) const {
-	return SafetyToIn_Looper<1,0>(*this, position, safeties);
+        Precision *const safeties ) const {
+   return SafetyToIn_Looper<1,0>(*this, position, safeties);
 }
 
 
 void PlacedBox::SafetyToOut( SOA3D<Precision> const &position,
-		  Precision *const safeties ) const {
-	return SafetyToOut_Looper(*this, position, safeties);
+        Precision *const safeties ) const {
+   return SafetyToOut_Looper(*this, position, safeties);
 }
 
 void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
-		  Precision *const safeties ) const {
-	return SafetyToOut_Looper(*this, position, safeties);
+        Precision *const safeties ) const {
+   return SafetyToOut_Looper(*this, position, safeties);
 }
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {

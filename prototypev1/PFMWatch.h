@@ -42,7 +42,7 @@ struct PFMWatch
     std::cout << "# --------------------------------------- " << std::endl;
     for(unsigned int i=0;i<GROUPSIZE;i++)
       {
-	std::cout << std::left << "# " <<std::setw(25)<<EVENTSTRING[i] << "\t: " << count[i] << std::endl;
+   std::cout << std::left << "# " <<std::setw(25)<<EVENTSTRING[i] << "\t: " << count[i] << std::endl;
       }
   }
 
@@ -90,56 +90,56 @@ struct PFMWatch
 
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	memset(&attr[i], 0, sizeof(perf_event_attr)); // initialize attr;
-	count[i]=0;
+   memset(&attr[i], 0, sizeof(perf_event_attr)); // initialize attr;
+   count[i]=0;
 
-	/*
-	 * 1st argument: event string
-	 * 2nd argument: default privilege level (used if not specified in the event string)
-	 * 3rd argument: the perf_event_attr to initialize
-	 */
-	ret = pfm_get_perf_event_encoding( EVENTSTRING[i].c_str(), PFM_PLM0|PFM_PLM3, &attr[i], NULL, NULL);
-	if (ret != PFM_SUCCESS)
-	  errx(1, "cannot find encoding: %s", pfm_strerror(ret));
+   /*
+    * 1st argument: event string
+    * 2nd argument: default privilege level (used if not specified in the event string)
+    * 3rd argument: the perf_event_attr to initialize
+    */
+   ret = pfm_get_perf_event_encoding( EVENTSTRING[i].c_str(), PFM_PLM0|PFM_PLM3, &attr[i], NULL, NULL);
+   if (ret != PFM_SUCCESS)
+     errx(1, "cannot find encoding: %s", pfm_strerror(ret));
 
-	/*
-	 * request timing information because event may be multiplexed
-	 * and thus it may not count all the time. The scaling information
-	 * will be used to scale the raw count as if the event had run all
-	 * along
-	 */
-	attr[i].read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
-	attr[i].disabled=1;
+   /*
+    * request timing information because event may be multiplexed
+    * and thus it may not count all the time. The scaling information
+    * will be used to scale the raw count as if the event had run all
+    * along
+    */
+   attr[i].read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
+   attr[i].disabled=1;
 
-	/*
-	 * create the event and attach to self
-	 * Note that it attaches only to the main thread, there is no inheritance
-	 * to threads that may be created subsequently.
-	 *
-	 * if mulithreaded, then getpid() must be replaced by gettid()
-	 */
-	if( i == 0 )
-	  {
-	    fd[i] = perf_event_open(&attr[i], 0, -1, -1, 0);
-	    if (fd[i] < 0) 
-	      err(1, "cannot create main event");
-	  }
-	else
-	  {
-	    // create other events in same event group
-	    fd[i]= perf_event_open(&attr[i], 0,-1, fd[0], 0); // this is now an event group with fd
-	    if (fd[i] < 0) 
-	      err(1, "cannot create child event");
-	  }
+   /*
+    * create the event and attach to self
+    * Note that it attaches only to the main thread, there is no inheritance
+    * to threads that may be created subsequently.
+    *
+    * if mulithreaded, then getpid() must be replaced by gettid()
+    */
+   if( i == 0 )
+     {
+       fd[i] = perf_event_open(&attr[i], 0, -1, -1, 0);
+       if (fd[i] < 0) 
+         err(1, "cannot create main event");
+     }
+   else
+     {
+       // create other events in same event group
+       fd[i]= perf_event_open(&attr[i], 0,-1, fd[0], 0); // this is now an event group with fd
+       if (fd[i] < 0) 
+         err(1, "cannot create child event");
+     }
       }
 
 
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	// start the counter for each event
-	ret = ioctl(fd[i], PERF_EVENT_IOC_ENABLE, 0);
-	if (ret)
-	  err(1, "ioctl(enable) failed");
+   // start the counter for each event
+   ret = ioctl(fd[i], PERF_EVENT_IOC_ENABLE, 0);
+   if (ret)
+     err(1, "ioctl(enable) failed");
       }
   } 
 
@@ -151,11 +151,11 @@ struct PFMWatch
      */
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	ret = ioctl(fd[i], PERF_EVENT_IOC_DISABLE, 0);
-	if (ret)
-	  err(1, "ioctl(disable) failed");
+   ret = ioctl(fd[i], PERF_EVENT_IOC_DISABLE, 0);
+   if (ret)
+     err(1, "ioctl(disable) failed");
 
-	close(fd[i]);
+   close(fd[i]);
       }
     
     /* free libpfm resources cleanly */
@@ -169,9 +169,9 @@ struct PFMWatch
      */
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	ret = read(fd[i], startvalues + i*3,  sizeof(uint64_t)*3);
-	if (ret != sizeof(uint64_t)*3)
-	  err(1, "cannot read results: %s", strerror(errno));
+   ret = read(fd[i], startvalues + i*3,  sizeof(uint64_t)*3);
+   if (ret != sizeof(uint64_t)*3)
+     err(1, "cannot read results: %s", strerror(errno));
       }
   }
 
@@ -182,12 +182,12 @@ struct PFMWatch
      */
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	ret = read(fd[i], stopvalues + i*3, sizeof(uint64_t)*3);
-	if (ret != sizeof(uint64_t)*3)
-	  err(1, "cannot read results: %s", strerror(errno));
+   ret = read(fd[i], stopvalues + i*3, sizeof(uint64_t)*3);
+   if (ret != sizeof(uint64_t)*3)
+     err(1, "cannot read results: %s", strerror(errno));
 
-	if (stopvalues[3*i+2])
-	  count[i] = (uint64_t)((double) ( stopvalues[3*i+0] - startvalues[3*i+0] ) * ( stopvalues[3*i+1] - startvalues[3*i+1] )/ ( 1.*(stopvalues[3*i+2] - startvalues[3*i+2] )));
+   if (stopvalues[3*i+2])
+     count[i] = (uint64_t)((double) ( stopvalues[3*i+0] - startvalues[3*i+0] ) * ( stopvalues[3*i+1] - startvalues[3*i+1] )/ ( 1.*(stopvalues[3*i+2] - startvalues[3*i+2] )));
       }
   }
 
@@ -204,23 +204,23 @@ struct PFMWatch
     unsigned long long Taccum=0L;
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	countoverhead[i] = 0;
+   countoverhead[i] = 0;
       }
 
     for(unsigned int i=0; i < N; i++)
       {
-	Start();
-	Stop();
-	for(unsigned int i=0;i<GROUPSIZE;++i)
-	  {
-	    fprintf(stderr,"#count of event %d is %ld\n", i, count[i]);
-	    countoverhead[i] += count[i];
-	  }
+   Start();
+   Stop();
+   for(unsigned int i=0;i<GROUPSIZE;++i)
+     {
+       fprintf(stderr,"#count of event %d is %ld\n", i, count[i]);
+       countoverhead[i] += count[i];
+     }
       }
     for(unsigned int i=0;i<GROUPSIZE;++i)
       {
-	countoverhead[i] /= (1.*N);
-	fprintf(stderr,"#OVERHEAD of %s = %lf\n", EVENTSTRING[i].c_str(),countoverhead[i]);
+   countoverhead[i] /= (1.*N);
+   fprintf(stderr,"#OVERHEAD of %s = %lf\n", EVENTSTRING[i].c_str(),countoverhead[i]);
       }
 
     return countoverhead[1];

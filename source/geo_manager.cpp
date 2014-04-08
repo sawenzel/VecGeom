@@ -10,11 +10,11 @@ namespace VECGEOM_NAMESPACE {
 
 int GeoManager::getMaxDepth( ) const
 {
-	// walk all the volume hierarchy and insert
-	// placed volumes if not already in the container
-	GetMaxDepthVisitor depthvisitor;
-	visitAllPlacedVolumes( world(), &depthvisitor, 1 );
-	return depthvisitor.getMaxDepth();
+   // walk all the volume hierarchy and insert
+   // placed volumes if not already in the container
+   GetMaxDepthVisitor depthvisitor;
+   visitAllPlacedVolumes( world(), &depthvisitor, 1 );
+   return depthvisitor.getMaxDepth();
 }
 
 

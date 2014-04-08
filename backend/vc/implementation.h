@@ -80,7 +80,7 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
 }
 
 template <TranslationCode trans_code, RotationCode rot_code,
-			typename VolumeType, typename ContainerType>
+         typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
@@ -92,7 +92,7 @@ void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
           Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
                                 VcPrecision(&positions.ContainerType::y(i)),
                                 VcPrecision(&positions.ContainerType::z(i))));
-    	result.store(&output[i]);
+       result.store(&output[i]);
   }
 }
 
@@ -108,7 +108,7 @@ void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
           Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
                                 VcPrecision(&positions.ContainerType::y(i)),
                                 VcPrecision(&positions.ContainerType::z(i))));
-    	result.store(&output[i]);
+       result.store(&output[i]);
   }
 }
 

@@ -27,7 +27,7 @@ private:
   VUnplacedVolume const *unplaced_volume_;
 
   /** a pointer member to register arbitrary objects with logical volume;
-   	  included for the moment to model UserExtension like in TGeoVolume
+        included for the moment to model UserExtension like in TGeoVolume
   */
   void * user_extension_;
 

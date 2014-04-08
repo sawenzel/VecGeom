@@ -18,25 +18,24 @@ template<typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxUnplacedInside( Vector3D<Precision> const & dimensions,
-						Vector3D<typename Backend::precision_v> const &localpoint,
-						typename Backend::bool_v *const inside )
+                        Vector3D<typename Backend::precision_v> const &localpoint,
+                        typename Backend::bool_v *const inside )
 {
-	Vector3D<typename Backend::bool_v> inside_dim(Backend::kFalse);
-	  for (int i = 0; i < 3; ++i) {
-	    inside_dim[i] = Abs(localpoint[i]) < dimensions[i];
-	    if (Backend::early_returns) {
-	      if (!inside_dim[i]) {
-	        *inside = Backend::kFalse;
-	        return;
-	      }
-	    }
-	  }
-
-	  if (Backend::early_returns) {
-	    *inside = Backend::kTrue;
-	  } else {
-	    *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
-	  }
+    Vector3D<typename Backend::bool_v> inside_dim(Backend::kFalse);
+        for (int i = 0; i < 3; ++i) {
+        inside_dim[i] = Abs(localpoint[i]) < dimensions[i];
+        if (Backend::early_returns) {
+        if (!inside_dim[i]) {
+            *inside = Backend::kFalse;
+            return;
+          }
+        }
+      }
+     if (Backend::early_returns) {
+       *inside = Backend::kTrue;
+     } else {
+       *inside = inside_dim[0] && inside_dim[1] && inside_dim[2];
+     }
 }
 
 /**
@@ -155,66 +154,66 @@ void BoxDistanceToOut(
     typename Backend::precision_v const &step_max,
     typename Backend::precision_v & distance) {
 
-	typedef typename Backend::precision_v Float;
-	typedef typename Backend::bool_v Bool;
+    typedef typename Backend::precision_v Float;
+    typedef typename Backend::bool_v Bool;
 
-	Float big(1E30);
+    Float big(1E30);
 
-	Float saf[3];
-	saf[0] = Abs(pos[0])-dimensions[0];
-	saf[1] = Abs(pos[1])-dimensions[1];
-	saf[2] = Abs(pos[2])-dimensions[2];
+    Float saf[3];
+    saf[0] = Abs(pos[0])-dimensions[0];
+    saf[1] = Abs(pos[1])-dimensions[1];
+    saf[2] = Abs(pos[2])-dimensions[2];
 
-	// TODO: check this
-	Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2]< Float(0.);
-	MaskedAssign( !inside, big, &distance );
+    // TODO: check this
+    Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2]< Float(0.);
+    MaskedAssign( !inside, big, &distance );
 
-	// TODO: could make the code more compact by looping over dir
-	Float invdirx = 1.0/dir[0];
-	Float invdiry = 1.0/dir[1];
-	Float invdirz = 1.0/dir[2];
+    // TODO: could make the code more compact by looping over dir
+    Float invdirx = 1.0/dir[0];
+    Float invdiry = 1.0/dir[1];
+    Float invdirz = 1.0/dir[2];
 
-	Bool mask;
-	Float distx = (dimensions[0]-pos[0]) * invdirx;
-	mask = dir[0]<0;
-	MaskedAssign( mask, (-dimensions[0]-pos[0]) * invdirx , &distx);
-
-
-	Float disty = (dimensions[1]-pos[1]) * invdiry;
-	mask = dir[1]<0;
-	MaskedAssign( mask, (-dimensions[1]-pos[1]) * invdiry , &disty);
+    Bool mask;
+    Float distx = (dimensions[0]-pos[0]) * invdirx;
+    mask = dir[0]<0;
+    MaskedAssign( mask, (-dimensions[0]-pos[0]) * invdirx , &distx);
 
 
-	Float distz = (dimensions[2]-pos[2]) * invdirz;
-	mask = dir[2]<0;
-	MaskedAssign( mask, (-dimensions[2]-pos[2]) * invdirz , &distz);
+    Float disty = (dimensions[1]-pos[1]) * invdiry;
+    mask = dir[1]<0;
+    MaskedAssign( mask, (-dimensions[1]-pos[1]) * invdiry , &disty);
 
-	distance = distx;
-	mask = distance>disty;
-	MaskedAssign( mask, disty, &distance);
-	mask = distance>distz;
-	MaskedAssign( mask, distz, &distance);
 
-	return;
+    Float distz = (dimensions[2]-pos[2]) * invdirz;
+    mask = dir[2]<0;
+    MaskedAssign( mask, (-dimensions[2]-pos[2]) * invdirz , &distz);
+
+    distance = distx;
+    mask = distance>disty;
+    MaskedAssign( mask, disty, &distance);
+    mask = distance>distz;
+    MaskedAssign( mask, distz, &distance);
+
+    return;
 }
 
 
 template< TranslationCode trans_code,
-		  RotationCode rot_code,
-		  typename Backend >
+          RotationCode rot_code,
+          typename Backend >
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
-					TransformationMatrix const & matrix,
-					Vector3D<typename Backend::precision_v> const & point,
-					typename Backend::precision_v & safety
-				  )
+                    TransformationMatrix const & matrix,
+                    Vector3D<typename Backend::precision_v> const & point,
+                    typename Backend::precision_v & safety
+                  )
 {
    typedef typename Backend::precision_v Float;
    typedef typename Backend::bool_v Bool;
 
    Vector3D<Float> localpoint
-   	   	   = matrix.Transform<trans_code,rot_code>(point);
+               = matrix.Transform<trans_code,rot_code>(point);
    safety = -dimensions[0] + Abs(localpoint[0]);
    Float safy = -dimensions[1] + Abs(localpoint[1]);
    Float safz = -dimensions[2] + Abs(localpoint[2]);
@@ -227,9 +226,9 @@ template< typename Backend >
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxSafetyToOut(Vector3D<Precision> const &dimensions,
-					Vector3D<typename Backend::precision_v> const & point,
-					typename Backend::precision_v & safety
-				  )
+                    Vector3D<typename Backend::precision_v> const & point,
+                    typename Backend::precision_v & safety
+                   )
 {
    typedef typename Backend::precision_v Float;
    typedef typename Backend::bool_v Bool;

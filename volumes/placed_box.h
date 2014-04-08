@@ -127,17 +127,17 @@ public:
   virtual Precision SafetyToOut( Vector3D<Precision> const &position ) const;
 
   virtual void SafetyToOut( SOA3D<Precision> const &position,
-		  Precision *const safeties ) const;
+        Precision *const safeties ) const;
   virtual void SafetyToOut( AOS3D<Precision> const &position,
-		  Precision *const safeties ) const;
+        Precision *const safeties ) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const;
   virtual void SafetyToIn( SOA3D<Precision> const &position,
-		  Precision *const safeties ) const;
+        Precision *const safeties ) const;
   virtual void SafetyToIn( AOS3D<Precision> const &position,
-  		  Precision *const safeties ) const;
+          Precision *const safeties ) const;
 
 
   // CUDA specific
@@ -167,14 +167,14 @@ public:
 
   // Templates to interact with common C-like kernels
   template <TranslationCode trans_code, RotationCode rot_code,
-  	  	    typename Backend>
+              typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::bool_v InsideDispatch(
       Vector3D<typename Backend::precision_v> const &point) const;
 
   template <TranslationCode trans_code, RotationCode rot_code,
-  	  	  	  typename Backend>
+                 typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v DistanceToInDispatch(
@@ -187,7 +187,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v DistanceToOutDispatch(
-		Vector3D<typename Backend::precision_v> const &position,
+      Vector3D<typename Backend::precision_v> const &position,
         Vector3D<typename Backend::precision_v> const &direction,
         const typename Backend::precision_v step_max) const;
 
@@ -196,16 +196,16 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v SafetyToOutDispatch(
-		  	  Vector3D<typename Backend::precision_v> const &position
+             Vector3D<typename Backend::precision_v> const &position
           ) const;
 
   template <TranslationCode trans_code, RotationCode rot_code,
-  	  	  	typename Backend>
+               typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v SafetyToInDispatch(
-		  	  Vector3D<typename Backend::precision_v> const &position
-		   ) const;
+             Vector3D<typename Backend::precision_v> const &position
+         ) const;
 
 };
 
@@ -254,37 +254,37 @@ typename Backend::precision_v PlacedBox::DistanceToOutDispatch(
     Vector3D<typename Backend::precision_v> const &direction,
     const typename Backend::precision_v step_max) const
 {
-	typename Backend::precision_v output;
-	BoxDistanceToOut<Backend>(
-			unplaced_box()->dimensions(),
-			position,
-			direction,
-			step_max,
-			output
-	);
-	return output;
+   typename Backend::precision_v output;
+   BoxDistanceToOut<Backend>(
+         unplaced_box()->dimensions(),
+         position,
+         direction,
+         step_max,
+         output
+   );
+   return output;
 }
 
 template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v PlacedBox::SafetyToOutDispatch(
-	  	  Vector3D<typename Backend::precision_v> const &position
+          Vector3D<typename Backend::precision_v> const &position
          ) const {
-	typename Backend::precision_v safety;
-	BoxSafetyToOut<Backend>(unplaced_box()->dimensions(), position, safety);
-	return safety;
+   typename Backend::precision_v safety;
+   BoxSafetyToOut<Backend>(unplaced_box()->dimensions(), position, safety);
+   return safety;
 }
 
 template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v PlacedBox::SafetyToInDispatch(
-		Vector3D<typename Backend::precision_v> const &position
+      Vector3D<typename Backend::precision_v> const &position
 ) const {
-	typename Backend::precision_v safety;
-	BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
-	return safety;
+   typename Backend::precision_v safety;
+   BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
+   return safety;
 }
 
 
@@ -304,7 +304,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
   // no translation and no rotation should look like this:
-	return PlacedBox::InsideDispatch<0, rotation::kIdentity, kScalar>(localpoint);
+   return PlacedBox::InsideDispatch<0, rotation::kIdentity, kScalar>(localpoint);
 }
 
 
@@ -312,14 +312,14 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const
 {
-	typename kScalar::bool_v output;
-	BoxInside<1, 0, kScalar>(
-			unplaced_box()->dimensions(),
-			*this->matrix_,
-			point,
-			localpoint,
-			&output );
-	return output;
+   typename kScalar::bool_v output;
+   BoxInside<1, 0, kScalar>(
+         unplaced_box()->dimensions(),
+         *this->matrix_,
+         point,
+         localpoint,
+         &output );
+   return output;
 }
 
 
@@ -338,14 +338,14 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
                                    Vector3D<Precision> const &direction,
                                    Precision const step_max) const {
 
-	// for the moment we dispatch to the common kernel
-	return PlacedBox::DistanceToOutDispatch<kScalar>(position,direction,step_max);
+   // for the moment we dispatch to the common kernel
+   return PlacedBox::DistanceToOutDispatch<kScalar>(position,direction,step_max);
 
-	// this kernel is an optimized "kInternalVectorization" kernel
-	// we have how we can dispatch to this kernel later
+   // this kernel is an optimized "kInternalVectorization" kernel
+   // we have how we can dispatch to this kernel later
 
-	/*
-	// const Vector3D<Precision> local = matrix()->Transform<1, 0>(position);
+   /*
+   // const Vector3D<Precision> local = matrix()->Transform<1, 0>(position);
 
   Vector3D<Precision> const &dim = unplaced_box()->dimensions();
 
@@ -362,20 +362,20 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
 
   const Precision min = distance.Min();
   return (min < 0) ? 0 : min;
-	 */
+    */
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision PlacedBox::SafetyToOut( Vector3D<Precision> const &position ) const {
-	return SafetyToOutDispatch<kScalar>( position );
+   return SafetyToOutDispatch<kScalar>( position );
 }
 
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision PlacedBox::SafetyToIn( Vector3D<Precision> const &position ) const {
-	return SafetyToInDispatch<1,0,kScalar>( position );
+   return SafetyToInDispatch<1,0,kScalar>( position );
 }
 
 

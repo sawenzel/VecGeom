@@ -118,7 +118,7 @@ public:
    **/
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point,
-		  	  	  	  Vector3D<Precision> & localpoint) const =0;
+                       Vector3D<Precision> & localpoint) const =0;
 
   /** An inside function where we know that localpoint is already in the
    *  reference frame of the callee
@@ -144,9 +144,9 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
-		  	  	  	  	  	  Vector3D<Precision> const &position,
-		  	  	  	  	  	  Vector3D<Precision> const &direction,
-		  	  	  	  	  	  Precision const step_max = kInfinity) const =0;
+                               Vector3D<Precision> const &position,
+                               Vector3D<Precision> const &direction,
+                               Precision const step_max = kInfinity) const =0;
 
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                               SOA3D<Precision> const &direction,
@@ -200,17 +200,17 @@ protected:
                                    Precision *const output);
 
   template <TranslationCode trans_code, RotationCode rot_code,
-  	  	  	typename VolumeType, typename ContainerType>
+               typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void SafetyToIn_Looper(VolumeType const &volume,
-		  ContainerType const &positions,
-		  Precision *const output);
+        ContainerType const &positions,
+        Precision *const output);
 
   template <typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void SafetyToOut_Looper(VolumeType const &volume,
-		  ContainerType const &positions,
-		  Precision *const output);
+        ContainerType const &positions,
+        Precision *const output);
 
 public:
 

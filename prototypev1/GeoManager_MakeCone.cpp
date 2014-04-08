@@ -10,5 +10,5 @@
 
 PhysicalVolume * GeoManager::MakePlacedCone( ConeParameters<> const * bp, TransformationMatrix const * tm, bool specialize_placement)
 {
-		return MakePlacedShape<Cone>( bp, tm, specialize_placement);
+      return MakePlacedShape<Cone>( bp, tm, specialize_placement);
 }

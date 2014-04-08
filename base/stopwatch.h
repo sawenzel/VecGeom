@@ -15,7 +15,7 @@
 namespace VECGEOM_NAMESPACE {
 namespace standardtimer
 {
-	// this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
+   // this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
 
 typedef long long count_t;
 
@@ -25,7 +25,7 @@ inline long long now()
     struct timespec ts;
     clock_gettime( CLOCK_REALTIME, &ts );
     result = static_cast<count_t>(1000000000UL)*static_cast<count_t>(ts.tv_sec)
-    		 + static_cast<count_t>(ts.tv_nsec);
+           + static_cast<count_t>(ts.tv_nsec);
     return result;
 }
 

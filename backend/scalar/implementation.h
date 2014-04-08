@@ -79,9 +79,9 @@ void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
                                       Precision *const output)
 {
-	for (int i = 0; i < positions.fillsize(); ++i) {
-	    output[i] = volume.template SafetyToOutDispatch<kScalar>(positions[i]);
-	  }
+   for (int i = 0; i < positions.fillsize(); ++i) {
+       output[i] = volume.template SafetyToOutDispatch<kScalar>(positions[i]);
+     }
 }
 
 

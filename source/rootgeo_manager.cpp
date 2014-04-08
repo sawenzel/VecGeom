@@ -93,12 +93,12 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
 
 void RootGeoManager::PrintNodeTable() const
 {
-	for(auto iter : placed_volumes_)
-	{
-		std::cerr << iter.first << " " << iter.second << std::endl;
-		TGeoNode const * n = iter.second;
-		n->Print();
-	}
+   for(auto iter : placed_volumes_)
+   {
+      std::cerr << iter.first << " " << iter.second << std::endl;
+      TGeoNode const * n = iter.second;
+      n->Print();
+   }
 }
 
 void RootGeoManager::Clear() {

@@ -37,59 +37,59 @@ struct HollowTubeWithPhiEqualsPi {};
 template <typename T>
 struct NeedsPhiTreatment
 {
-	static const bool value=true;
+   static const bool value=true;
 };
 // specializations
 template <>
 struct NeedsPhiTreatment<NonHollowTube>
 {
-	static const bool value=false;
+   static const bool value=false;
 };
 template <>
 struct NeedsPhiTreatment<HollowTube>
 {
-	static const bool value=false;
+   static const bool value=false;
 };
 
 // *** asking for rmin treatment ***** //
 template <typename T>
 struct NeedsRminTreatment
 {
-	static const bool value=true;
+   static const bool value=true;
 };
 template <>
 struct NeedsRminTreatment<NonHollowTube>
 {
-	static const bool value=false;
+   static const bool value=false;
 };
 template <>
 struct NeedsRminTreatment<NonHollowTubeWithPhi>
 {
-	static const bool value=false;
+   static const bool value=false;
 };
 template <>
 struct NeedsRminTreatment<NonHollowTubeWithPhiEqualsPi>
 {
-	static const bool value=false;
+   static const bool value=false;
 };
 
 
 template <typename T>
 struct IsPhiEqualsPiCase
 {
-	static const bool value = false;
+   static const bool value = false;
 };
 
 template <>
 struct IsPhiEqualsPiCase<NonHollowTubeWithPhiEqualsPi>
 {
-	static const bool value = true;
+   static const bool value = true;
 };
 
 template <>
 struct IsPhiEqualsPiCase<HollowTubeWithPhiEqualsPi>
 {
-	static const bool value = true;
+   static const bool value = true;
 };
 
 

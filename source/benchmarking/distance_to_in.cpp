@@ -27,12 +27,12 @@ DistanceToInBenchmarker::DistanceToInBenchmarker(
     VPlacedVolume const *const world)
     : Benchmark(world), n_points_(1024), bias_(0.8), pool_multiplier_(1),
       point_pool_(NULL), dir_pool_(NULL), psteps_(NULL) {
-	psteps_ =
+   psteps_ =
       (Precision *) _mm_malloc( sizeof(Precision) * n_points_, kAlignmentBoundary );
-	for(unsigned i=0;i<n_points_;++i)
-	{
-		psteps_[i]=kInfinity;
-	}
+   for(unsigned i=0;i<n_points_;++i)
+   {
+      psteps_[i]=kInfinity;
+   }
 }
 
 DistanceToInBenchmarker::~DistanceToInBenchmarker() {
@@ -262,8 +262,8 @@ BenchmarkResult DistanceToInBenchmarker::RunSpecializedVec(Precision *const dist
     // const int index = (rand() % pool_multiplier_) * n_points_;
     for (std::vector<VolumePointers>::const_iterator d = volumes_.begin();
          d != volumes_.end(); ++d){
-    		// call vector interface
-    		d->specialized()->DistanceToIn(	(*point_pool_), (*dir_pool_), psteps_, distances );
+          // call vector interface
+          d->specialized()->DistanceToIn(   (*point_pool_), (*dir_pool_), psteps_, distances );
     }
   }
   const Precision elapsed = timer.Stop();

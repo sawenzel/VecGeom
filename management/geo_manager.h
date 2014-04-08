@@ -17,51 +17,51 @@ template<typename Container>
 class GeoVisitor
 {
 protected:
-	Container & c_;
+   Container & c_;
 public:
-	GeoVisitor( Container & c ) : c_(c) {};
+   GeoVisitor( Container & c ) : c_(c) {};
 
-	virtual void apply( VPlacedVolume *, int level=0 ) = 0;
-	virtual ~GeoVisitor(){}
+   virtual void apply( VPlacedVolume *, int level=0 ) = 0;
+   virtual ~GeoVisitor(){}
 };
 
 template<typename Container>
 class SimpleLogicalVolumeVisitor : public GeoVisitor<Container>
 {
 public:
-	SimpleLogicalVolumeVisitor( Container & c ) : GeoVisitor<Container>(c) {}
-	virtual void apply( VPlacedVolume * vol, int level ){
-		LogicalVolume const *lvol = vol->logical_volume();
-		if( std::find( this->c_.begin(), this->c_.end(), lvol ) == this->c_.end() )
-		{
-			this->c_.push_back( const_cast<LogicalVolume *>(lvol) );
-		}
-	}
-	virtual ~SimpleLogicalVolumeVisitor(){}
+   SimpleLogicalVolumeVisitor( Container & c ) : GeoVisitor<Container>(c) {}
+   virtual void apply( VPlacedVolume * vol, int level ){
+      LogicalVolume const *lvol = vol->logical_volume();
+      if( std::find( this->c_.begin(), this->c_.end(), lvol ) == this->c_.end() )
+      {
+         this->c_.push_back( const_cast<LogicalVolume *>(lvol) );
+      }
+   }
+   virtual ~SimpleLogicalVolumeVisitor(){}
 };
 
 template<typename Container>
 class SimplePlacedVolumeVisitor : public GeoVisitor<Container>
 {
 public:
-	SimplePlacedVolumeVisitor( Container & c) : GeoVisitor<Container>(c) {}
-	virtual void apply( VPlacedVolume * vol, int level ){
-		this->c_.push_back( vol );
-	}
-	virtual ~SimplePlacedVolumeVisitor(){}
+   SimplePlacedVolumeVisitor( Container & c) : GeoVisitor<Container>(c) {}
+   virtual void apply( VPlacedVolume * vol, int level ){
+      this->c_.push_back( vol );
+   }
+   virtual ~SimplePlacedVolumeVisitor(){}
 };
 
 class GetMaxDepthVisitor
 {
 private:
-	int maxdepth_;
+   int maxdepth_;
 public:
-	GetMaxDepthVisitor() : maxdepth_(0) {}
-	void apply( VPlacedVolume * vol, int level )
-	{
-		maxdepth_ = (level>maxdepth_) ? level : maxdepth_;
-	}
-	int getMaxDepth( ) const {return maxdepth_;}
+   GetMaxDepthVisitor() : maxdepth_(0) {}
+   void apply( VPlacedVolume * vol, int level )
+   {
+      maxdepth_ = (level>maxdepth_) ? level : maxdepth_;
+   }
+   int getMaxDepth( ) const {return maxdepth_;}
 };
 
 /**
@@ -122,37 +122,37 @@ template<typename Visitor>
 void
 GeoManager::visitAllPlacedVolumes( VPlacedVolume const * currentvolume, Visitor * visitor, int level ) const
 {
-	if( currentvolume )
-	{
-		visitor->apply( const_cast<VPlacedVolume *>(currentvolume), level );
-		int size = currentvolume->daughters().size();
-		for( int i=0; i<size; ++i )
-		{
-			visitAllPlacedVolumes( currentvolume->daughters().operator[](i), visitor, level+1 );
-		}
-	}
+   if( currentvolume )
+   {
+      visitor->apply( const_cast<VPlacedVolume *>(currentvolume), level );
+      int size = currentvolume->daughters().size();
+      for( int i=0; i<size; ++i )
+      {
+         visitAllPlacedVolumes( currentvolume->daughters().operator[](i), visitor, level+1 );
+      }
+   }
 }
 
 
 template<typename Container>
 void GeoManager::getAllLogicalVolumes( Container & c ) const
 {
-	c.clear();
-	// walk all the volume hierarchy and insert
-	// logical volume if not already in the container
-	SimpleLogicalVolumeVisitor<Container> lv(c);
-	visitAllPlacedVolumes( world(), &lv );
+   c.clear();
+   // walk all the volume hierarchy and insert
+   // logical volume if not already in the container
+   SimpleLogicalVolumeVisitor<Container> lv(c);
+   visitAllPlacedVolumes( world(), &lv );
 }
 
 
 template<typename Container>
 void GeoManager::getAllPlacedVolumes( Container & c ) const
 {
-	c.clear();
-	// walk all the volume hierarchy and insert
-	// placed volumes if not already in the container
-	SimplePlacedVolumeVisitor<Container> pv(c);
-	visitAllPlacedVolumes( world(), &pv );
+   c.clear();
+   // walk all the volume hierarchy and insert
+   // placed volumes if not already in the container
+   SimplePlacedVolumeVisitor<Container> pv(c);
+   visitAllPlacedVolumes( world(), &pv );
 }
 
 

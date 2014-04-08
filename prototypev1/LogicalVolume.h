@@ -13,9 +13,9 @@
 class ShapeParameters
 {
 public:
-	virtual void inspect() const = 0;
+   virtual void inspect() const = 0;
 
-	virtual ~ShapeParameters(){};
+   virtual ~ShapeParameters(){};
 };
 
 
@@ -24,8 +24,8 @@ class Medium;
 class LogicalVolume
 {
 private:
-	ShapeParameters const * shapeparam;
-	Medium          const * med;
+   ShapeParameters const * shapeparam;
+   Medium          const * med;
 };
 
 

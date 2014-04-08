@@ -13,7 +13,7 @@ namespace VECGEOM_NAMESPACE {
 /**
  * @brief Base class for containers storing sets of three coordinates in a
  *        memory scheme determined by the deriving class.
- *		  Type can both ordinary pods as well as more complex types such SIMD vectors
+ *        Type can both ordinary pods as well as more complex types such SIMD vectors
  */
 template <typename Type>
 class TrackContainer {

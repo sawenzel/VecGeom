@@ -162,7 +162,7 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
      << ", " << matrix.Rotation(4) << ", " << matrix.Rotation(5)
      << ", " << matrix.Rotation(6) << ", " << matrix.Rotation(7)
      << ", " << matrix.Rotation(8) << ")}"
-  	 << "; identity(" << matrix.identity << "); rotation(" << matrix.has_rotation << ")";
+      << "; identity(" << matrix.identity << "); rotation(" << matrix.has_rotation << ")";
   return os;
 }
 

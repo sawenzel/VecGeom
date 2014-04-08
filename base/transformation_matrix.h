@@ -239,8 +239,8 @@ public:
   VECGEOM_INLINE
   void CopyFrom( TransformationMatrix const & rhs )
   {
-	  // not sure this compiles under CUDA
-	  std::memcpy( this, &rhs, sizeof(*this) );
+     // not sure this compiles under CUDA
+     std::memcpy( this, &rhs, sizeof(*this) );
   }
 
 
@@ -461,35 +461,35 @@ void TransformationMatrix::InverseTransformKernel(
     Vector3D<InputType> const &local,
     Vector3D<InputType> & master) const
 {
-	// we are just doing the full stuff here ( LocalToMaster is less critical
+   // we are just doing the full stuff here ( LocalToMaster is less critical
   // than other way round )
-	if(vectortransform == 1)
-	{
-		master[0] =  local[0]*rot[0];
-		master[0] += local[1]*rot[1];
-		master[0] += local[2]*rot[2];
-		master[1] =  local[0]*rot[3];
-		master[1] += local[1]*rot[4];
-		master[1] += local[2]*rot[5];
-		master[2] =  local[0]*rot[6];
-		master[2] += local[1]*rot[7];
-		master[2] += local[2]*rot[8];
-	}
-	else
-	{
-		master[0] = trans[0];
-		master[0] +=  local[0]*rot[0];
-		master[0] += local[1]*rot[1];
-		master[0] += local[2]*rot[2];
-		master[1] = trans[1];
-		master[1] +=  local[0]*rot[3];
-		master[1] += local[1]*rot[4];
-		master[1] += local[2]*rot[5];
-		master[2] = trans[2];
-		master[2] += local[0]*rot[6];
-		master[2] += local[1]*rot[7];
-		master[2] += local[2]*rot[8];
-	}
+   if(vectortransform == 1)
+   {
+      master[0] =  local[0]*rot[0];
+      master[0] += local[1]*rot[1];
+      master[0] += local[2]*rot[2];
+      master[1] =  local[0]*rot[3];
+      master[1] += local[1]*rot[4];
+      master[1] += local[2]*rot[5];
+      master[2] =  local[0]*rot[6];
+      master[2] += local[1]*rot[7];
+      master[2] += local[2]*rot[8];
+   }
+   else
+   {
+      master[0] = trans[0];
+      master[0] +=  local[0]*rot[0];
+      master[0] += local[1]*rot[1];
+      master[0] += local[2]*rot[2];
+      master[1] = trans[1];
+      master[1] +=  local[0]*rot[3];
+      master[1] += local[1]*rot[4];
+      master[1] += local[2]*rot[5];
+      master[2] = trans[2];
+      master[2] += local[0]*rot[6];
+      master[2] += local[1]*rot[7];
+      master[2] += local[2]*rot[8];
+   }
 }
 
 
@@ -499,9 +499,9 @@ template <typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::InverseTransform(Vector3D<InputType> const &local,
-					  Vector3D<InputType> & master) const
+                 Vector3D<InputType> & master) const
 {
-	InverseTransformKernel<0,InputType>(local, master);
+   InverseTransformKernel<0,InputType>(local, master);
 }
 
 
@@ -510,18 +510,18 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Vector3D<InputType> TransformationMatrix::InverseTransform(Vector3D<InputType> const &local) const
 {
-	Vector3D<InputType> tmp;
-	InverseTransform(local, tmp);
-	return tmp;
+   Vector3D<InputType> tmp;
+   InverseTransform(local, tmp);
+   return tmp;
 }
 
 template <typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::InverseTransformVec(Vector3D<InputType> const &local,
-					  Vector3D<InputType> & master) const
+                 Vector3D<InputType> & master) const
 {
-	InverseTransformKernel<1,InputType>(local, master);
+   InverseTransformKernel<1,InputType>(local, master);
 }
 
 
@@ -530,80 +530,80 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Vector3D<InputType> TransformationMatrix::InverseTransformVec(Vector3D<InputType> const &local) const
 {
-	Vector3D<InputType> tmp;
-	InverseTransformVec(local, tmp);
-	return tmp;
+   Vector3D<InputType> tmp;
+   InverseTransformVec(local, tmp);
+   return tmp;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void TransformationMatrix::MultiplyFromRight(TransformationMatrix const & rhs)
 {
-	// TODO: this code should directly operator on Vector3D and Matrix3D
+   // TODO: this code should directly operator on Vector3D and Matrix3D
 
-	if(rhs.identity) return;
+   if(rhs.identity) return;
 
-	if(rhs.HasTranslation())
-	{
-	// ideal for fused multiply add
-	trans[0]+=rot[0]*rhs.trans[0];
-	trans[0]+=rot[1]*rhs.trans[0];
-	trans[0]+=rot[2]*rhs.trans[0];
-	trans[1]+=rot[3]*rhs.trans[1];
-	trans[1]+=rot[4]*rhs.trans[1];
-	trans[1]+=rot[5]*rhs.trans[1];
-	trans[2]+=rot[6]*rhs.trans[2];
-	trans[2]+=rot[7]*rhs.trans[2];
-	trans[2]+=rot[8]*rhs.trans[2];
-	}
+   if(rhs.HasTranslation())
+   {
+   // ideal for fused multiply add
+   trans[0]+=rot[0]*rhs.trans[0];
+   trans[0]+=rot[1]*rhs.trans[0];
+   trans[0]+=rot[2]*rhs.trans[0];
+   trans[1]+=rot[3]*rhs.trans[1];
+   trans[1]+=rot[4]*rhs.trans[1];
+   trans[1]+=rot[5]*rhs.trans[1];
+   trans[2]+=rot[6]*rhs.trans[2];
+   trans[2]+=rot[7]*rhs.trans[2];
+   trans[2]+=rot[8]*rhs.trans[2];
+   }
 
-	if(rhs.HasRotation())
-	{
-		Precision tmpx = rot[0];
-		Precision tmpy = rot[1];
-		Precision tmpz = rot[2];
+   if(rhs.HasRotation())
+   {
+      Precision tmpx = rot[0];
+      Precision tmpy = rot[1];
+      Precision tmpz = rot[2];
 
-		// first row of matrix
-		rot[0] = tmpx*rhs.rot[0];
-		rot[1] = tmpx*rhs.rot[1];
-		rot[2] = tmpx*rhs.rot[2];
-		rot[0]+= tmpy*rhs.rot[3];
-		rot[1]+= tmpy*rhs.rot[4];
-		rot[2]+= tmpy*rhs.rot[5];
-		rot[0]+= tmpz*rhs.rot[6];
-		rot[1]+= tmpz*rhs.rot[7];
-		rot[2]+= tmpz*rhs.rot[8];
+      // first row of matrix
+      rot[0] = tmpx*rhs.rot[0];
+      rot[1] = tmpx*rhs.rot[1];
+      rot[2] = tmpx*rhs.rot[2];
+      rot[0]+= tmpy*rhs.rot[3];
+      rot[1]+= tmpy*rhs.rot[4];
+      rot[2]+= tmpy*rhs.rot[5];
+      rot[0]+= tmpz*rhs.rot[6];
+      rot[1]+= tmpz*rhs.rot[7];
+      rot[2]+= tmpz*rhs.rot[8];
 
-		tmpx = rot[3];
-		tmpy = rot[4];
-		tmpz = rot[5];
+      tmpx = rot[3];
+      tmpy = rot[4];
+      tmpz = rot[5];
 
-		// second row of matrix
-		rot[3] = tmpx*rhs.rot[0];
-		rot[4] = tmpx*rhs.rot[1];
-		rot[5] = tmpx*rhs.rot[2];
-		rot[3]+= tmpy*rhs.rot[3];
-		rot[4]+= tmpy*rhs.rot[4];
-		rot[5]+= tmpy*rhs.rot[5];
-		rot[3]+= tmpz*rhs.rot[6];
-		rot[4]+= tmpz*rhs.rot[7];
-		rot[5]+= tmpz*rhs.rot[8];
+      // second row of matrix
+      rot[3] = tmpx*rhs.rot[0];
+      rot[4] = tmpx*rhs.rot[1];
+      rot[5] = tmpx*rhs.rot[2];
+      rot[3]+= tmpy*rhs.rot[3];
+      rot[4]+= tmpy*rhs.rot[4];
+      rot[5]+= tmpy*rhs.rot[5];
+      rot[3]+= tmpz*rhs.rot[6];
+      rot[4]+= tmpz*rhs.rot[7];
+      rot[5]+= tmpz*rhs.rot[8];
 
-		tmpx = rot[6];
-		tmpy = rot[7];
-		tmpz = rot[8];
+      tmpx = rot[6];
+      tmpy = rot[7];
+      tmpz = rot[8];
 
-		// third row of matrix
-		rot[6] = tmpx*rhs.rot[0];
-		rot[7] = tmpx*rhs.rot[1];
-		rot[8] = tmpx*rhs.rot[2];
-		rot[6]+= tmpy*rhs.rot[3];
-		rot[7]+= tmpy*rhs.rot[4];
-		rot[8]+= tmpy*rhs.rot[5];
-		rot[6]+= tmpz*rhs.rot[6];
-		rot[7]+= tmpz*rhs.rot[7];
-		rot[8]+= tmpz*rhs.rot[8];
-	}
+      // third row of matrix
+      rot[6] = tmpx*rhs.rot[0];
+      rot[7] = tmpx*rhs.rot[1];
+      rot[8] = tmpx*rhs.rot[2];
+      rot[6]+= tmpy*rhs.rot[3];
+      rot[7]+= tmpy*rhs.rot[4];
+      rot[8]+= tmpy*rhs.rot[5];
+      rot[6]+= tmpz*rhs.rot[6];
+      rot[7]+= tmpz*rhs.rot[7];
+      rot[8]+= tmpz*rhs.rot[8];
+   }
 }
 
 /**
