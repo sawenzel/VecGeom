@@ -8,14 +8,10 @@
 
 #include "base/global.h"
 
-#if defined(VECGEOM_VC)
-#include "backend/vc/backend.h"
-#elif defined(VECGEOM_CILK)
-#include "backend/cilk/backend.h"
-#elif defined(VECGEOM_NVCC)
+#ifdef VECGEOM_NVCC
 #include "backend/cuda/backend.h"
 #else
-#include "backend/scalar/backend.h"
+#include "backend/vector/backend.h"
 #endif
 
 #endif // VECGEOM_BACKEND_BACKEND_H_

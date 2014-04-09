@@ -69,7 +69,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -ftree-vectorize -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -fPIC")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -82,7 +82,7 @@ endif()
 if (Intel)
   set(CMAKE_CXX_FLAGS "-xHost ${CMAKE_CXX_FLAGS}")
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")
 endif()
 if (VC_ACCELERATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_VC_ACCELERATION")
@@ -111,10 +111,11 @@ if (Vc)
     # Fixes ABI issues with Vc using GNU compiler
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
-  set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/vc)
-  set(
-    SRC_EXTERNAL ${SRC_EXTERNAL}
-    ${CMAKE_SOURCE_DIR}/source/backend/vc/backend.cpp
+  set(BACKEND_INCLUDE backend/vc)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/backend.cpp)
+  set(HEADERS_BACKEND ${HEADERS_BACKEND}
+    ${CMAKE_SOURCE_DIR}/backend/vc/backend.h
+    ${CMAKE_SOURCE_DIR}/backend/vc/implementation.h
   )
 
 endif()
@@ -127,10 +128,14 @@ if (Cilk)
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CILK")
 
-  set(BACKEND_INCLUDE ${CMAKE_SOURCE_DIR}/backend/cilk)
+  set(BACKEND_INCLUDE backend/cilk)
   set(
     SRC_EXTERNAL ${SRC_EXTERNAL}
-    ${CMAKE_SOURCE_DIR}/source/backend/cilk/backend.cpp
+    source/backend/cilk/backend.cpp
+  )
+  set(HEADERS_BACKEND ${HEADERS_BACKEND}
+    ${CMAKE_SOURCE_DIR}/backend/cilk/backend.h
+    ${CMAKE_SOURCE_DIR}/backend/cilk/implementation.h
   )
 
 endif()
@@ -158,12 +163,12 @@ if (CUDA)
 
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
-  set(BACKEND_INCLUDE_CUDA ${CMAKE_SOURCE_DIR}/backend/cuda)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/cuda_manager.cpp)
+  set(BACKEND_INCLUDE_CUDA backend/cuda)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/cuda_manager.cpp)
   set(
     SRC_CUDA ${SRC_CUDA}
-    ${CMAKE_SOURCE_DIR}/source/cuda_manager.cu
-    ${CMAKE_SOURCE_DIR}/source/backend/cuda/interface.cu
+    source/cuda_manager.cu
+    source/backend/cuda/interface.cu
   )
 
 endif()
@@ -175,7 +180,7 @@ if (ROOT)
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} ${CMAKE_SOURCE_DIR}/source/rootgeo_manager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/rootgeo_manager.cpp)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
 
 endif()
@@ -209,20 +214,72 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-set(SRC_CPP ${SRC_CPP}
-  ${CMAKE_SOURCE_DIR}/source/aos3d.cpp
-  ${CMAKE_SOURCE_DIR}/source/container.cpp
-  ${CMAKE_SOURCE_DIR}/source/geo_manager.cpp
-  ${CMAKE_SOURCE_DIR}/source/logical_volume.cpp
-  ${CMAKE_SOURCE_DIR}/source/placed_box.cpp
-  ${CMAKE_SOURCE_DIR}/source/placed_volume.cpp
-  ${CMAKE_SOURCE_DIR}/source/scalar_backend.cpp
-  ${CMAKE_SOURCE_DIR}/source/soa3d.cpp
-  ${CMAKE_SOURCE_DIR}/source/specialized_box.cpp
-  ${CMAKE_SOURCE_DIR}/source/transformation_matrix.cpp
-  ${CMAKE_SOURCE_DIR}/source/unplaced_box.cpp
-  ${CMAKE_SOURCE_DIR}/source/unplaced_volume.cpp
+set(HEADERS_CPP_RELATIVE
+  backend/backend.h
+  backend/implementation.h
+  backend/scalar/backend.h
+  backend/scalar/implementation.h
+  base/aos3d.h
+  base/array.h
+  base/container.h
+  base/global.h
+  base/iterator.h
+  base/rng.h
+  base/soa3d.h
+  base/specialized_matrix.h
+  base/stopwatch.h
+  base/track_container.h
+  base/transformation_matrix.h
+  base/type_map.h
+  base/vector.h
+  base/vector3d.h
+  benchmarking/benchmark.h
+  benchmarking/distance_to_in.h
+  management/cuda_manager.h
+  management/geo_manager.h
+  management/rootgeo_manager.h
+  management/volume_factory.h
+  management/volume_pointers.h
+  navigation/navigationstate.h
+  navigation/simple_navigator.h
+  volumes/kernel/box_kernel.h
+  volumes/utilities/volume_utilities.h
+  volumes/box.h
+  volumes/logical_volume.h
+  volumes/placed_box.h
+  volumes/placed_volume.h
+  volumes/specialized_box.h
+  volumes/unplaced_box.h
+  volumes/unplaced_volume.h
+  volumes/usolid.h
 )
+# CUDA headers are installed normally. Vector headers will change path in
+# installation directory.
+if (CUDA)
+  set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
+    backend/cuda/backend.h
+    backend/cuda/implementation.h
+    backend/cuda/interface.h
+  )
+endif()
+
+set(SRC_CPP_RELATIVE
+  source/aos3d.cpp
+  source/container.cpp
+  source/geo_manager.cpp
+  source/logical_volume.cpp
+  source/placed_box.cpp
+  source/placed_volume.cpp
+  source/scalar_backend.cpp
+  source/soa3d.cpp
+  source/specialized_box.cpp
+  source/transformation_matrix.cpp
+  source/unplaced_box.cpp
+  source/unplaced_volume.cpp
+)
+foreach(SRC ${SRC_CPP_RELATIVE})
+  set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
+endforeach()
 
 # Copy all source files to .cu-files in order for NVCC to compile them as CUDA
 # code and not regular C++ files.
@@ -253,12 +310,12 @@ endif()
 
 if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
-    ${CMAKE_SOURCE_DIR}/source/benchmarking/benchmark.cpp
-    ${CMAKE_SOURCE_DIR}/source/benchmarking/distance_to_in.cpp
-    ${CMAKE_SOURCE_DIR}/source/benchmarking/volume_pointers.cpp
+    source/benchmarking/benchmark.cpp
+    source/benchmarking/distance_to_in.cpp
+    source/benchmarking/volume_pointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
-    ${CMAKE_SOURCE_DIR}/source/benchmarking/distance_to_in.cu
+    source/benchmarking/distance_to_in.cu
   )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL})
@@ -289,12 +346,11 @@ set_source_files_properties(
 )
 
 if (NOT CUDA)
-  add_executable(
-    create_geometry_test
-    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-  )
-  target_link_libraries(create_geometry_test ${LIBS})
   if (ROOT)
+    add_executable(create_geometry_test
+      ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+    )
+    target_link_libraries(create_geometry_test ${LIBS})
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})
     add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
@@ -312,6 +368,7 @@ else()
   )
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
+  install(TARGETS vecgeom_cuda DESTINATION lib)
   cuda_add_executable(
     cpugpu
     ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
@@ -323,3 +380,13 @@ else()
     target_link_libraries(benchmark ${LIBS})
   endif()
 endif()
+
+foreach(HEADER ${HEADERS_CPP_RELATIVE})
+  get_filename_component(PATH ${HEADER} PATH)
+  install(FILES ${CMAKE_SOURCE_DIR}/${HEADER} DESTINATION include/${PATH})
+endforeach()
+foreach(HEADER ${HEADERS_BACKEND})
+  get_filename_component(FILENAME ${HEADER} NAME)
+  install(FILES ${HEADER} DESTINATION include/backend/vector)
+endforeach()
+install(TARGETS vecgeom_cpp DESTINATION lib)
