@@ -35,7 +35,7 @@ int main(const int argc, char const *const *const argv) {
 
   CreateRootGeometry();
 
-  RootManager::Instance().LoadRootGeometry();
+  RootGeoManager::Instance().LoadRootGeometry();
   CudaManager::Instance().LoadGeometry();
   CudaManager::Instance().Synchronize();
   CudaManager::Instance().PrintGeometry();
@@ -86,11 +86,14 @@ void CreateRootGeometry() {
   TGeoVolume * boxlevel2 = ::gGeoManager->MakeBox("b2l",0, Sqrt2*L/2./2., Sqrt2*L/2./2., Lz );
   TGeoVolume * boxlevel3 = ::gGeoManager->MakeBox("b3l",0, L/2./2., L/2./2., Lz);
   TGeoVolume * boxlevel1 = ::gGeoManager->MakeBox("b1l",0, L/2., L/2., Lz );
+  // TGeoVolume * test = ::gGeoManager->MakeCone("unimplemented test", NULL, .1,
+                                              // .2, 5, 2, 4);
 
   boxlevel2->AddNode( boxlevel3, 0, new TGeoRotation("rot1",0,0,45));
   boxlevel1->AddNode( boxlevel2, 0, new TGeoRotation("rot2",0,0,-45));
   world->AddNode(boxlevel1, 0, new TGeoTranslation(-L/2.,0,0));
   world->AddNode(boxlevel1, 1, new TGeoTranslation(+L/2.,0,0));
+  // world->AddNode(test, 2, new TGeoTranslation(0,0,0));
   ::gGeoManager->SetTopVolume(world);
   ::gGeoManager->CloseGeometry();
 }

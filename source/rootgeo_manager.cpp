@@ -77,14 +77,13 @@ LogicalVolume* RootGeoManager::Convert(TGeoVolume const *const volume) {
 VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
   if (unplaced_volumes_.Contains(shape)) return unplaced_volumes_[shape];
 
-  // Dynamic casts are necessary to avoid tight coupling
   VUnplacedVolume *unplaced_volume = NULL;
-  if (TGeoBBox const *box = dynamic_cast<TGeoBBox const*>(shape)) {
+  if (shape->IsA() == TGeoBBox::Class()) {
+    TGeoBBox const *const box = static_cast<TGeoBBox const*>(shape);
     unplaced_volume = new UnplacedBox(box->GetDX(), box->GetDY(), box->GetDZ());
   }
   if (!unplaced_volume) {
-    std::cerr << "Attempted to convert unsupported shape.\n";
-    assert(unplaced_volume);
+    assert(unplaced_volume && "Attempted to convert unsupported shape.\n");
   }
   
   unplaced_volumes_.Set(shape, unplaced_volume);
@@ -102,8 +101,6 @@ void RootGeoManager::PrintNodeTable() const
 }
 
 void RootGeoManager::Clear() {
-  // Auto used because this will most likely not be compiled along with CUDA.
-  // Might change in the future, forcing long and horrible typenames!
   for (auto i = placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
     delete i->first;
   }
