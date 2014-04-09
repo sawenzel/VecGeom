@@ -10,6 +10,12 @@
 
 #include <ctime>
 
+// OS X compatibility
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 #include "base/global.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -17,13 +23,29 @@ namespace standardtimer
 {
    // this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
 
+
 typedef long long count_t;
 
 inline long long now()
 {
-    count_t result;
-    struct timespec ts;
-    clock_gettime( CLOCK_REALTIME, &ts );
+  count_t result;
+  struct timespec ts;
+
+
+#ifdef __MACH__
+  // OS X compatibility code taken from
+  // http://stackoverflow.com/questions/5167269/
+  clock_serv_t cclock;
+  mach_timespec_t mts;
+  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+  clock_get_time(cclock, &mts);
+  mach_port_deallocate(mach_task_self(), cclock);
+  ts.tv_sec = mts.tv_sec;
+  ts.tv_nsec = mts.tv_nsec;
+#else
+    clock_gettime(CLOCK_REALTIME, &ts);
+#endif
+
     result = static_cast<count_t>(1000000000UL)*static_cast<count_t>(ts.tv_sec)
            + static_cast<count_t>(ts.tv_nsec);
     return result;
