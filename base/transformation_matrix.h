@@ -8,7 +8,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <iostream>
 
 #include "base/global.h"
 #include "base/vector3d.h"

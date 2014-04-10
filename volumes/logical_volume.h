@@ -6,7 +6,6 @@
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
-#include <iostream>
 #include <string>
 #include "base/global.h"
 #include "base/vector.h"

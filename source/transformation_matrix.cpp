@@ -10,6 +10,8 @@
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
 
+#include <iostream>
+
 namespace VECGEOM_NAMESPACE {
 
 const TransformationMatrix TransformationMatrix::kIdentity =

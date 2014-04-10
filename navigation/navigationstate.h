@@ -9,7 +9,6 @@
 #define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
 #include <string>
-#include <iostream>
 
 #include "backend/backend.h"
 #include "base/transformation_matrix.h"

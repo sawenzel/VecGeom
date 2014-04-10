@@ -6,7 +6,6 @@
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
-#include <iostream>
 #include <cassert>
 #include "base/global.h"
 #include "backend/cuda/interface.h"

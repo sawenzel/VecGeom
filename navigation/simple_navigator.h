@@ -13,7 +13,6 @@
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
 #include "management/geo_manager.h"
-#include <iostream>
 #include <cassert>
 #include "base/soa3d.h"
 

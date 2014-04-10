@@ -4,6 +4,8 @@
 #include "backend/cuda/backend.h"
 #include "management/cuda_manager.h"
 
+#include <iostream>
+
 namespace vecgeom_cuda {
 
 __global__

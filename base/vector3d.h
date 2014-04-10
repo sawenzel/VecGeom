@@ -6,7 +6,6 @@
 #ifndef VECGEOM_BASE_VECTOR3D_H_
 #define VECGEOM_BASE_VECTOR3D_H_
 
-#include <iostream>
 #include <string>
 #include <cstdlib>
 
@@ -188,13 +187,6 @@ public:
     return max;
   }
 
-  VECGEOM_CUDA_HEADER_HOST
-  VECGEOM_INLINE
-  friend std::ostream& operator<<(std::ostream& os, VecType const &v) {
-    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
-    return os;
-  }
-
   // Inplace binary operators
 
   #define INPLACE_BINARY_OP(OPERATOR) \
@@ -273,6 +265,9 @@ public:
   */
 
 };
+
+template <typename Type>
+std::ostream& operator<<(std::ostream& os, Vector3D<Type> const &vec);
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
