@@ -62,9 +62,6 @@ struct LaunchParameters {
       grid_size.x = dim;
       grid_size.y = dim;
     }
-    // std::cout << "Launch parameters set to " << block_size.x << "/"
-    //           << block_size.y << ", " << grid_size.x << "/" << grid_size.y
-    //           << std::endl;
   }
 };
 

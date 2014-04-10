@@ -63,7 +63,7 @@ double DistanceToInBenchmarker::RunCuda(
   }
   const double elapsed = timer.Stop();
 
-  if (verbose()) std::cout << "Finished in " << elapsed << "s.\n";
+  if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
 
   return elapsed;
 }

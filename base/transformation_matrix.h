@@ -238,16 +238,11 @@ public:
   VECGEOM_INLINE
   void CopyFrom( TransformationMatrix const & rhs )
   {
-     // not sure this compiles under CUDA
-     std::memcpy( this, &rhs, sizeof(*this) );
+    // not sure this compiles under CUDA
+    std::memcpy(this, &rhs, sizeof(*this));
   }
 
-
-
   // Utility and CUDA
-
-  friend std::ostream& operator<<(std::ostream& os,
-                                  TransformationMatrix const &v);
 
   #ifdef VECGEOM_CUDA_INTERFACE
   TransformationMatrix* CopyToGpu() const;
@@ -645,6 +640,8 @@ Vector3D<InputType> TransformationMatrix::TransformRotation(
   TransformRotation<code>(master, local);
   return local;
 }
+
+std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix);
 
 } // End global namespace
 

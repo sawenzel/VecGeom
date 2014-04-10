@@ -61,7 +61,7 @@ void test1()
 
    vol=nav.LocatePoint( world, p1, state, true );
    assert( RootGeoManager::Instance().tgeonode( vol ) == ::gGeoManager->GetTopNode());
-   std::cerr << "test1 passed" << std::endl;
+   std::cerr << "test1 passed" << "\n";
 }
 
 void test2()
@@ -83,7 +83,7 @@ void test2()
    state.Clear();
    vol=nav.LocatePoint( world, p2, state, true );
    assert( std::strcmp( RootGeoManager::Instance().tgeonode( vol )->GetName() , "b3l_0" ) == 0 );
-   std::cerr << "test2 passed" << std::endl;
+   std::cerr << "test2 passed" << "\n";
 }
 
 
@@ -97,7 +97,7 @@ void test3()
    Vector3D<Precision> p1(-9/10., 9*5/10., 0.);
    vol=nav.LocatePoint( world, p1, state, true );
    assert( std::strcmp( RootGeoManager::Instance().tgeonode( vol )->GetName() , "b1l_0" ) == 0);
-   std::cerr << "test3 passed" << std::endl;
+   std::cerr << "test3 passed" << "\n";
 }
 
 void test3_2()
@@ -110,7 +110,7 @@ void test3_2()
    Vector3D<Precision> p1(9/10., 9*5/10., 0.);
    vol=nav.LocatePoint( world, p1, state, true );
    assert( std::strcmp( RootGeoManager::Instance().tgeonode( vol )->GetName() , "b1l_1" ) == 0);
-   std::cerr << "test3_2 passed" << std::endl;
+   std::cerr << "test3_2 passed" << "\n";
 }
 
 void test4()
@@ -123,7 +123,7 @@ void test4()
    Vector3D<Precision> p1(5., 9*5/10., 0.);
    vol=nav.LocatePoint( world, p1, state, true );
    assert( std::strcmp( RootGeoManager::Instance().tgeonode( vol )->GetName() , "b2l_0" ) == 0);
-   std::cerr << "test4 passed" << std::endl;
+   std::cerr << "test4 passed" << "\n";
 }
 
 void test5()
@@ -136,7 +136,7 @@ void test5()
    Vector3D<Precision> p1(-20, 0., 0.);
    vol=nav.LocatePoint( world, p1, state, true );
    assert( vol == 0 );
-   std::cerr << "test5 passed" << std::endl;
+   std::cerr << "test5 passed" << "\n";
 }
 
 void test6()
@@ -162,7 +162,7 @@ void test6()
 
       assert( RootGeoManager::Instance().tgeonode(vol) == node );
    }
-   std::cerr << "test6 (statistical location) passed" << std::endl;
+   std::cerr << "test6 (statistical location) passed" << "\n";
 }
 
 // relocation test
@@ -187,7 +187,7 @@ void test7()
       /*
       if ( vol1 != NULL )
       {
-         std::cerr << RootManager::Instance().tgeonode( vol1 )->GetName() << std::endl;
+         std::cerr << RootManager::Instance().tgeonode( vol1 )->GetName() << "\n";
       }
 */
 
@@ -199,12 +199,12 @@ void test7()
    /*
       if ( vol2 != NULL )
       {
-         std::cerr << "new node " << RootManager::Instance().tgeonode( vol2 )->GetName() << std::endl;
+         std::cerr << "new node " << RootManager::Instance().tgeonode( vol2 )->GetName() << "\n";
 
          // ROOT navigation
          TGeoNavigator  *nav = ::gGeoManager->GetCurrentNavigator();
          TGeoNode * node =nav->FindNode(p[0],p[1],p[2]);
-         std::cerr << "ROOT new: " << node->GetName() << std::endl;
+         std::cerr << "ROOT new: " << node->GetName() << "\n";
       }*/
 
       // same with relocation
@@ -213,10 +213,10 @@ void test7()
       Vector3D<Precision> localp = globalm.Transform<1,0>( p );
 
       VPlacedVolume const *vol3= vecnav.RelocatePointFromPath( localp, state );
-//      std::cerr << vol1 << " " << vol2 << " " << vol3 << std::endl;
+//      std::cerr << vol1 << " " << vol2 << " " << vol3 << "\n";
       assert( vol3  == vol2 );
    }
-   std::cerr << "test7 (statistical relocation) passed" << std::endl;
+   std::cerr << "test7 (statistical relocation) passed" << "\n";
 }
 
 Vector3D<Precision> sampleDir()
@@ -238,7 +238,7 @@ void test8()
    // statistical test  of navigation via comparison with ROOT navigation
    for(int i=0;i<1000000;++i)
    {
-      //std::cerr << "START ITERATION " << i << std::endl;
+      //std::cerr << "START ITERATION " << i << "\n";
       double x = RNG::Instance().uniform(-10,10);
       double y = RNG::Instance().uniform(-10,10);
       double z = RNG::Instance().uniform(-10,10);
@@ -270,20 +270,20 @@ void test8()
       {
          if( rootnav->GetCurrentNode()  != RootGeoManager::Instance().tgeonode( newstate.Top() ) )
          {
-            std::cerr << "ERROR ON ITERATION " << i << std::endl;
-            std::cerr << i << " " << d << std::endl;
-            std::cerr << i << " " << p << std::endl;
-            std::cerr << "I AM HERE: " << node->GetName() << std::endl;
-            std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << std::endl;
-            std::cerr << rootnav->GetStep() << std::endl;
-            std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate.Top() ) << std::endl;
+            std::cerr << "ERROR ON ITERATION " << i << "\n";
+            std::cerr << i << " " << d << "\n";
+            std::cerr << i << " " << p << "\n";
+            std::cerr << "I AM HERE: " << node->GetName() << "\n";
+            std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << "\n";
+            std::cerr << rootnav->GetStep() << "\n";
+            std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate.Top() ) << "\n";
 
             nav.InspectEnvironmentForPointAndDirection( p, d, state );
          }
       }
       assert( state.Top() != newstate.Top() );
    }
-   std::cerr << "test8 (statistical navigation) passed" << std::endl;
+   std::cerr << "test8 (statistical navigation) passed" << "\n";
 }
 
 // testing safety functions via the navigator
@@ -292,7 +292,7 @@ void test_safety()
    // statistical test  of navigation via comparison with ROOT navigation
       for(int i=0;i<1000000;++i)
       {
-         //std::cerr << "START ITERATION " << i << std::endl;
+         //std::cerr << "START ITERATION " << i << "\n";
          double x = RNG::Instance().uniform(-10,10);
          double y = RNG::Instance().uniform(-10,10);
          double z = RNG::Instance().uniform(-10,10);
@@ -313,7 +313,7 @@ void test_safety()
 
          assert( fabs( safetyRoot - safety ) < 1E-9 );
       }
-      std::cerr << "test9 (statistical safetytest from navigation) passed" << std::endl;
+      std::cerr << "test9 (statistical safetytest from navigation) passed" << "\n";
 }
 
 void test_geoapi()
@@ -329,7 +329,7 @@ void test_geoapi()
 
    assert(GeoManager::Instance().getMaxDepth()  ==  4);
 
-   std::cerr << "test of geomanager query API passed" << std::endl;
+   std::cerr << "test of geomanager query API passed" << "\n";
 }
 
 int main()

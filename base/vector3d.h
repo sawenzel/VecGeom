@@ -266,8 +266,7 @@ public:
 
 };
 
-template <typename Type>
-std::ostream& operator<<(std::ostream& os, Vector3D<Type> const &vec);
+std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
@@ -383,15 +382,6 @@ public:
                                VECGEOM_NAMESPACE::Abs((*this)[1]),
                                VECGEOM_NAMESPACE::Abs((*this)[2]));
   }
-
-  #ifdef VECGEOM_STD_CXX11
-  friend
-  VECGEOM_INLINE
-  std::ostream& operator<<(std::ostream& os, VecType const &v) {
-    os << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")";
-    return os;
-  }
-  #endif /* VECGEOM_STD_CXX11 */
 
   // Inplace binary operators
 

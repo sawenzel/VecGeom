@@ -90,8 +90,8 @@ void DistanceToInBenchmarker::PrepareBenchmark() {
   volumeutilities::FillUncontainedPoints(*world_, *point_pool_);
   volumeutilities::FillBiasedDirections(*world_, *point_pool_, bias_, *dir_pool_);
 
-  point_pool_->setfillsize(n_points_*pool_multiplier_);
-  dir_pool_->setfillsize(n_points_*pool_multiplier_);
+  point_pool_->set_size(n_points_*pool_multiplier_);
+  dir_pool_->set_size(n_points_*pool_multiplier_);
 }
 
 void DistanceToInBenchmarker::BenchmarkAll() {
@@ -123,8 +123,8 @@ void DistanceToInBenchmarker::BenchmarkAll() {
   Precision *const distances_cuda = AllocateDistance();
   results_.push_back(
     GenerateBenchmarkResult(RunCuda(
-      &point_pool_->x(0), &point_pool_->y(0), &point_pool_->z(0),
-      &dir_pool_->x(0),   &dir_pool_->y(0),   &dir_pool_->z(0),
+      point_pool_->x(), point_pool_->y(), point_pool_->z(),
+      dir_pool_->x(),   dir_pool_->y(),   dir_pool_->z(),
       distances_cuda
     ), kCuda)
   );
@@ -222,8 +222,8 @@ void DistanceToInBenchmarker::BenchmarkCuda() {
   Precision *const distances = AllocateDistance();
   results_.push_back(
     GenerateBenchmarkResult(RunCuda(
-      &point_pool_->x(0), &point_pool_->y(0), &point_pool_->z(0),
-      &dir_pool_->x(0),   &dir_pool_->y(0),   &dir_pool_->z(0),
+      point_pool_->x(), point_pool_->y(), point_pool_->z(),
+      dir_pool_->x(),   dir_pool_->y(),   dir_pool_->z(),
       distances
     ), kCuda)
   );
