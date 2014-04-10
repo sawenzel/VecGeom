@@ -144,6 +144,28 @@ public:
   }
 
   /**
+   * The dot product of two Vector3D<T> objects
+   * @return T ( where T is float, double, or various SIMD vector types )
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type dotProduct( Vector3D<Type> const & left, Vector3D<Type> const & right ) {
+     return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
+  }
+
+  /**
+   * The dot product of two Vector3D<T> objects
+   * @return Type ( where Type is float, double, or various SIMD vector types )
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Type> crossProduct( Vector3D<Type> const & left, Vector3D<Type> const & right ) {
+      return Vector3D<Type>( left[1]*right[2] - left[2]*right[1],
+                             left[2]*right[0] - left[0]*right[2],
+                             left[0]*right[1] - left[1]*right[0] );
+  }
+
+  /**
    * Maps each vector entry to a function that manipulates the entry type.
    * @param f A function of type "Type f(const Type&)" to map over entries.
    */
@@ -275,7 +297,14 @@ public:
 
 };
 
-#ifdef VECGEOM_VC_ACCELERATION // Activated as a compiler flag
+
+#if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
+/**
+*
+* This is a template specialization of of class Vector3D<double> or Vector3D<float> in case when we have
+* Vc as a backend. The goal of the class is to provide internal vectorization of common vector operations
+*
+*/
 
 template <>
 class Vector3D<Precision> {
@@ -382,12 +411,42 @@ public:
     return std::max(std::max(mem[0], mem[1]), mem[2]);
   }
 
+  /**
+    * The dot product of two Vector3D<> objects
+    * TODO: This function should be internally vectorized ( if proven to be beneficial )
+    * @return Precision ( float or double )
+    */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision dotProduct( Vector3D<Precision> const & left, Vector3D<Precision> const & right ) {
+     return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
+  }
+
+  /**
+   * The dot product of two Vector3D<T> objects
+   * @return Type ( where Type is float, double, or various SIMD vector types )
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType crossProduct( VecType const & left, VecType const & right ) {
+      return VecType( left[1]*right[2] - left[2]*right[1],
+                      left[2]*right[0] - left[0]*right[2],
+                      left[0]*right[1] - left[1]*right[0] );
+  }
+
+  /**
+   * returns abs of the vector ( as a vector )
+   */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
-    return Vector3D<Precision>(VECGEOM_NAMESPACE::Abs((*this)[0]),
-                               VECGEOM_NAMESPACE::Abs((*this)[1]),
-                               VECGEOM_NAMESPACE::Abs((*this)[2]));
+      Vector3DFast tmp;
+      for( int i=0; i < 1 + 3/Vc::Vector<Precision>::Size; i++ )
+      {
+        base_t v = this->mem.vector(i);
+        tmp.mem.vector(i) = Vc::abs( v );
+      }
+      return tmp;
   }
 
   #ifdef VECGEOM_STD_CXX11
