@@ -424,7 +424,7 @@ public:
 
   /**
    * The dot product of two Vector3D<T> objects
-   * @return Type ( where Type is float, double, or various SIMD vector types )
+   * @return Vector3D<Type> ( where Type is float, double, or various SIMD vector types )
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
