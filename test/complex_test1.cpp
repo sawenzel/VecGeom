@@ -12,6 +12,7 @@
 #include "base/soa3d.h"
 #include "management/geo_manager.h"
 #include "management/rootgeo_manager.h"
+#include "base/aos3d.h"
 #include "volumes/placed_volume.h"
 #include "volumes/logical_volume.h"
 #include "navigation/navigationstate.h"
@@ -382,6 +383,22 @@ void test_geoapi()
    std::cerr << "test of geomanager query API passed" << "\n";
 }
 
+void test_aos3d()
+{
+	SOA3D<Precision> container1(1024);
+	assert(container1.fillsize() == 0);
+	container1.push_back( Vector3D<Precision>(1,0,1));
+	assert(container1.fillsize() == 1);
+	std::cerr << "test soa3d passed" << std::endl;
+
+	AOS3D<Precision> container2(1024);
+	assert(container2.fillsize() == 0);
+	container2.push_back( Vector3D<Precision>(1,0,1));
+	assert(container2.fillsize() == 1);
+	std::cerr << "test aos3d passed" << std::endl;
+
+}
+
 int main()
 {
     CreateRootGeom();
@@ -403,8 +420,6 @@ int main()
     test7();
     test8();
     test_safety();
-
-
-
+    test_aos3d();
     return 0;
 }
