@@ -70,7 +70,7 @@ int main(const int argc, char const *const *const argv) {
 
   // Compare output
   for (int i = 0; i < n; ++i) {
-    std::cout << results[i] << " vs. " << results_gpu[i] << std::endl;
+    std::cout << results[i] << " vs. " << results_gpu[i] << "\n";
     assert(results[i] == results_gpu[i]);
   }
   std::cout << "All points located within same volume on CPU and GPU.\n";

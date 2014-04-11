@@ -37,7 +37,8 @@ int main() {
 
   DistanceToInBenchmarker tester(world_placed);
   tester.set_verbose(2);
-  tester.set_repetitions(1<<12);
+  tester.set_repetitions(4096);
+  tester.set_n_points(1<<13);
   tester.BenchmarkAll();
 
   delete world_placed;

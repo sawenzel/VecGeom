@@ -94,7 +94,7 @@ void RootGeoManager::PrintNodeTable() const
 {
    for(auto iter : placed_volumes_)
    {
-      std::cerr << iter.first << " " << iter.second << std::endl;
+      std::cerr << iter.first << " " << iter.second << "\n";
       TGeoNode const * n = iter.second;
       n->Print();
    }

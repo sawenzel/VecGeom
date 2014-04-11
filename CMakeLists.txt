@@ -276,6 +276,7 @@ set(SRC_CPP_RELATIVE
   source/transformation_matrix.cpp
   source/unplaced_box.cpp
   source/unplaced_volume.cpp
+  source/vector3d.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -369,12 +370,14 @@ else()
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
   install(TARGETS vecgeom_cuda DESTINATION lib)
-  cuda_add_executable(
-    cpugpu
-    ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-    OPTIONS ${CUDA_ARCH}
-  )
-  target_link_libraries(cpugpu ${LIBS})
+  if (ROOT)
+    cuda_add_executable(
+      cpugpu
+      ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
+      OPTIONS ${CUDA_ARCH}
+    )
+    target_link_libraries(cpugpu ${LIBS})
+  endif()
   if (BENCHMARK)
     add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
     target_link_libraries(benchmark ${LIBS})

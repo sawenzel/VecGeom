@@ -12,7 +12,7 @@ int main() {
 
   // Vector3D<Precision> vec1(5, 3, 1);
   // Vector3D<Precision> vec2(2, 8, 0);
-  // std::cout << (vec1 < vec2) << std::endl;
+  // std::cout << (vec1 < vec2) << "\n";
 
   UnplacedBox world_params = UnplacedBox(4., 4., 4.);
   UnplacedBox largebox_params = UnplacedBox(1.5, 1.5, 1.5);

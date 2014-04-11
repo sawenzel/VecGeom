@@ -4,23 +4,16 @@
  */
 
 #include <cassert>
-#include <iostream>
 #include <stdio.h>
  
 #include "backend/cuda/interface.h"
-
-#include "base/stopwatch.h"
-#include "management/cuda_manager.h"
-#include "navigation/simple_navigator.h"
-#include "navigation/navigationstate.h"
-#include "volumes/placed_volume.h"
 
 namespace vecgeom {
 
 cudaError_t CudaCheckError(const cudaError_t err) {
   if (err != cudaSuccess) {
-    std::cout << "CUDA reported error with message: \""
-              << cudaGetErrorString(err) << "\"\n";
+    printf("CUDA reported error with message: \"%s\"\n",
+           cudaGetErrorString(err));
   }
   return err;
 }

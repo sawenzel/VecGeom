@@ -6,7 +6,6 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDBOX_H_
 #define VECGEOM_VOLUMES_UNPLACEDBOX_H_
 
-#include <iostream>
 #include "base/global.h"
 #include "base/vector3d.h"
 #include "volumes/unplaced_volume.h"

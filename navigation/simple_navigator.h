@@ -13,7 +13,6 @@
 #include "base/vector3d.h"
 #include "navigation/navigationstate.h"
 #include "management/geo_manager.h"
-#include <iostream>
 #include <cassert>
 #include "base/soa3d.h"
 
@@ -405,39 +404,39 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 
    // now check mother and daughters
    VPlacedVolume const * currentvolume = state.Top();
-   std::cout << "############################################ " << std::endl;
-   std::cout << "Navigating in placed volume : " << RootGeoManager::Instance().GetName( currentvolume ) << std::endl;
+   std::cout << "############################################ " << "\n";
+   std::cout << "Navigating in placed volume : " << RootGeoManager::Instance().GetName( currentvolume ) << "\n";
 
    int nexthitvolume = -1; // means mother
    double step = currentvolume->DistanceToOut( localpoint, localdir );
 
-   std::cout << "DistanceToOutMother : " << step << std::endl;
+   std::cout << "DistanceToOutMother : " << step << "\n";
 
    // iterate over all the daughters
    Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
 
-   std::cout << "ITERATING OVER " << daughters->size() << " DAUGHTER VOLUMES " << std::endl;
+   std::cout << "ITERATING OVER " << daughters->size() << " DAUGHTER VOLUMES " << "\n";
    for(int d = 0; d<daughters->size(); ++d)
    {
       VPlacedVolume const * daughter = daughters->operator [](d);
       //    previous distance becomes step estimate, distance to daughter returned in workspace
       Precision ddistance = daughter->DistanceToIn( localpoint, localdir, step );
 
-      std::cout << "DistanceToDaughter : " << RootGeoManager::Instance().GetName( daughter ) << " " << ddistance << std::endl;
+      std::cout << "DistanceToDaughter : " << RootGeoManager::Instance().GetName( daughter ) << " " << ddistance << "\n";
 
       nexthitvolume = (ddistance < step) ? d : nexthitvolume;
       step      = (ddistance < step) ? ddistance  : step;
    }
-   std::cout << "DECIDED FOR NEXTVOLUME " << nexthitvolume << std::endl;
+   std::cout << "DECIDED FOR NEXTVOLUME " << nexthitvolume << "\n";
 
    // same information from ROOT
    TGeoNode const * currentRootNode = RootGeoManager::Instance().tgeonode( currentvolume );
    double lp[3]={localpoint[0],localpoint[1],localpoint[2]};
    double ld[3]={localdir[0],localdir[1],localdir[2]};
    double rootstep =  currentRootNode->GetVolume()->GetShape()->DistFromInside( lp, ld, 3, 1E30, 0 );
-   std::cout << "---------------- CMP WITH ROOT ---------------------" << std::endl;
-   std::cout << "DistanceToOutMother ROOT : " << rootstep << std::endl;
-   std::cout << "ITERATING OVER " << currentRootNode->GetNdaughters() << " DAUGHTER VOLUMES " << std::endl;
+   std::cout << "---------------- CMP WITH ROOT ---------------------" << "\n";
+   std::cout << "DistanceToOutMother ROOT : " << rootstep << "\n";
+   std::cout << "ITERATING OVER " << currentRootNode->GetNdaughters() << " DAUGHTER VOLUMES " << "\n";
    for( int d=0; d<currentRootNode->GetNdaughters();++d)
    {
       TGeoMatrix const * m = currentRootNode->GetMatrix();
@@ -447,7 +446,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
       TGeoNode const * daughter=currentRootNode->GetDaughter(d);
       Precision ddistance = daughter->GetVolume()->GetShape()->DistFromOutside(llp,llp,3,1E30,0);
 
-      std::cout << "DistanceToDaughter ROOT : " << daughter->GetName() << " " << ddistance << std::endl;
+      std::cout << "DistanceToDaughter ROOT : " << daughter->GetName() << " " << ddistance << "\n";
    }
 }
 #endif

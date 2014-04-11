@@ -9,7 +9,6 @@
 #define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
 #include <string>
-#include <iostream>
 
 #include "backend/backend.h"
 #include "base/transformation_matrix.h"
@@ -238,9 +237,9 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
 VECGEOM_INLINE
 void NavigationState::Print() const
 {
-   std::cerr << "maxlevel " << maxlevel_ << std::endl;
-   std::cerr << "currentlevel " << currentlevel_ << std::endl;
-   std::cerr << "deepest volume " << Top() << std::endl;
+   std::cerr << "maxlevel " << maxlevel_ << "\n";
+   std::cerr << "currentlevel " << currentlevel_ << "\n";
+   std::cerr << "deepest volume " << Top() << "\n";
 }
 
 /**
