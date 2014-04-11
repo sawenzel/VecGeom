@@ -309,6 +309,7 @@ class Vector3D<Precision> {
 
   typedef Vector3D<Precision> VecType;
   typedef Vector3D<bool> BoolType;
+  typedef Vc::Vector<Precision> base_t;
 
 private:
 
@@ -438,7 +439,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
-      Vector3DFast tmp;
+      VecType tmp;
       for( int i=0; i < 1 + 3/Vc::Vector<Precision>::Size; i++ )
       {
         base_t v = this->mem.vector(i);
