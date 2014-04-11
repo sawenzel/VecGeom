@@ -49,12 +49,13 @@ void DistanceToInBenchmarker::set_pool_multiplier(const unsigned pool_multiplier
   pool_multiplier_ = pool_multiplier;
 }
 
-void DistanceToInBenchmarker::GenerateVolumePointers(VPlacedVolume const *const vol) {
+void DistanceToInBenchmarker::GenerateVolumePointers(
+    VPlacedVolume const *const vol) {
 
   volumes_.emplace(volumes_.end(), vol);
 
-  for (Iterator<Daughter> i = vol->daughters().begin();
-       i != vol->daughters().end(); ++i) {
+  for (Iterator<Daughter> i = vol->daughters().begin(),
+       i_end = vol->daughters().end(); i != i_end; ++i) {
     GenerateVolumePointers(*i);
   }
 
