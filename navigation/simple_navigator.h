@@ -143,6 +143,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
    Vector3D<Precision> tmp(point);
    if( top )
    {
+      assert( vol != NULL );
       candvolume = ( vol->UnplacedInside( point ) ) ? vol : 0;
    }
    if( candvolume )
@@ -233,12 +234,17 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // this information might have been cached in previous navigators??
    TransformationMatrix const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
    Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
-   Vector3D<Precision> localdir=m.Transform<0,0>(globaldir);
+   //std::cerr << globaldir << "\n";
+   Vector3D<Precision> localdir=m.TransformRotation<0>(globaldir);
+
+   //std::cerr << localpoint << "\n";
+   //std::cerr << localdir << "\n";
 
    VPlacedVolume const * currentvolume = currentstate.Top();
    int nexthitvolume = -1; // means mother
 
    step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
+   //std::cerr << " DistanceToOut " << step << "\n";
 
    // iterate over all the daughter
    Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
@@ -248,6 +254,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       VPlacedVolume const * daughter = daughters->operator [](d);
       //    previous distance becomes step estimate, distance to daughter returned in workspace
       Precision ddistance = daughter->DistanceToIn( localpoint, localdir, step );
+     // std::cerr << " DistanceToIn " << ddistance << "\n";
 
       nexthitvolume = (ddistance < step) ? d : nexthitvolume;
       step      = (ddistance < step) ? ddistance  : step;
@@ -256,7 +263,16 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // now we have the candidates
    // try
    newstate=currentstate;
-   assert( newstate.Top() == currentstate.Top() );
+
+   // is geometry further away than physics step?
+   if(step > pstep)
+   {
+       // don't need to do anything
+       step = pstep;
+       newstate.SetBoundaryState( false );
+       return;
+   }
+   newstate.SetBoundaryState( true );
 
    // TODO: this is tedious, please provide operators in Vector3D!!
    // WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS
@@ -293,7 +309,8 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
    // safety to mother
    VPlacedVolume const * currentvol = currentstate.Top();
    double safety = currentvol->SafetyToOut( localpoint );
-   assert( safety > 0);
+
+   //assert( safety > 0 );
 
    // safety to daughters
    Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
@@ -399,7 +416,8 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
    {
       NavigationState tmpstate( state );
       tmpstate.Clear();
-      assert( LocatePoint( GeoManager::Instance().world(), globalpoint, tmpstate, true ) == state.Top() );
+      assert( LocatePoint( GeoManager::Instance().world(),
+              globalpoint, tmpstate, true ) == state.Top() );
    }
 
    // now check mother and daughters
@@ -437,7 +455,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
    std::cout << "---------------- CMP WITH ROOT ---------------------" << "\n";
    std::cout << "DistanceToOutMother ROOT : " << rootstep << "\n";
    std::cout << "ITERATING OVER " << currentRootNode->GetNdaughters() << " DAUGHTER VOLUMES " << "\n";
-   for( int d=0; d<currentRootNode->GetNdaughters();++d)
+   for( int d=0; d<currentRootNode->GetNdaughters();++d )
    {
       TGeoMatrix const * m = currentRootNode->GetMatrix();
       double llp[3], lld[3];

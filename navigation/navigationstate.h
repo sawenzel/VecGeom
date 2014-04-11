@@ -79,6 +79,11 @@ public:
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
+   VPlacedVolume const *
+   At(int level) const {return path_[level];}
+
+   VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
    TransformationMatrix const &
    TopMatrix();
 
@@ -141,6 +146,7 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
 {
    currentlevel_=rhs.currentlevel_;
    maxlevel_ = rhs.maxlevel_;
+   onboundary_ = rhs.onboundary_;
    std::memcpy(path_, rhs.path_, sizeof(path_)*currentlevel_);
    return *this;
 }
@@ -183,6 +189,7 @@ void
 NavigationState::Clear()
 {
    currentlevel_=0;
+   onboundary_=false;
 }
 
 void
@@ -237,9 +244,10 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
 VECGEOM_INLINE
 void NavigationState::Print() const
 {
-   std::cerr << "maxlevel " << maxlevel_ << "\n";
-   std::cerr << "currentlevel " << currentlevel_ << "\n";
-   std::cerr << "deepest volume " << Top() << "\n";
+   std::cerr << "maxlevel " << maxlevel_ << std::endl;
+   std::cerr << "currentlevel " << currentlevel_ << std::endl;
+   std::cerr << "onboundary " << onboundary_ << std::endl;
+   std::cerr << "deepest volume " << Top() << std::endl;
 }
 
 /**

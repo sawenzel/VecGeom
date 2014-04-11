@@ -13,7 +13,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-/** the core inside function with matrix stripped; it expects a local point ) **/
+/** the core inside function with matrix stripped; it expects a local point  **/
 template<typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
@@ -169,9 +169,9 @@ void BoxDistanceToOut(
     MaskedAssign( !inside, big, &distance );
 
     // TODO: could make the code more compact by looping over dir
-    Float invdirx = 1.0/dir[0];
-    Float invdiry = 1.0/dir[1];
-    Float invdirz = 1.0/dir[2];
+    Float invdirx = 1.0/(dir[0] + kTiny);
+    Float invdiry = 1.0/(dir[1] + kTiny);
+    Float invdirz = 1.0/(dir[2] + kTiny);
 
     Bool mask;
     Float distx = (dimensions[0]-pos[0]) * invdirx;

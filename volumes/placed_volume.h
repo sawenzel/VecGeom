@@ -48,7 +48,9 @@ protected:
 
 public:
 
-  virtual ~VPlacedVolume() {}
+  virtual ~VPlacedVolume() {
+  //    delete bounding_box_;
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -57,6 +59,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   PlacedBox const* bounding_box() const { return bounding_box_; }
+
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

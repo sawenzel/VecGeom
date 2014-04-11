@@ -136,7 +136,10 @@ void test5()
    Vector3D<Precision> p1(-20, 0., 0.);
    vol=nav.LocatePoint( world, p1, state, true );
    assert( vol == 0 );
-   std::cerr << "test5 passed" << "\n";
+
+   assert( state.Top() == 0);
+   assert( state.IsOutside() == true );
+   std::cerr << "test5 passed" << std::endl;
 }
 
 void test6()
@@ -232,6 +235,48 @@ Vector3D<Precision> sampleDir()
     return tmp;
 }
 
+// unit test very basic navigation functionality
+void testnavsimple()
+{
+    SimpleNavigator nav;
+    Vector3D<Precision> d(0, -1, 0);
+    Vector3D<Precision> d2(0, 1, 0);
+
+    // point should be in world
+    Vector3D<Precision> p1(-1, 9, 0);
+
+    const int maxdepth = GeoManager::Instance().getMaxDepth();
+    assert( maxdepth == 4);
+    NavigationState currentstate( maxdepth );
+
+    VPlacedVolume const * vol=nav.LocatePoint( GeoManager::Instance().world(),
+            p1, currentstate, true );
+    assert( RootGeoManager::Instance().tgeonode( vol ) == ::gGeoManager->GetTopNode());
+
+    NavigationState newstate( maxdepth );
+
+    // check with a large physical step
+    double step;
+    nav.FindNextBoundaryAndStep( p1, d, currentstate, newstate, kInfinity, step );
+    assert( step == 4 );
+    assert( newstate.IsOnBoundary() == true );
+    assert( std::strcmp( RootGeoManager::Instance().tgeonode( newstate.Top() )->GetName() , "b2l_0" ));
+
+    newstate.Clear();
+    nav.FindNextBoundaryAndStep( p1, d, currentstate, newstate, 0.02, step );
+    assert( step == 0.02 );
+    assert( newstate.Top() == currentstate.Top() );
+    assert( newstate.IsOnBoundary() == false );
+    assert( newstate.IsOutside() == false );
+
+    newstate.Clear();
+    nav.FindNextBoundaryAndStep( p1, d2, currentstate, newstate, kInfinity, step );
+    assert( step == 1 );
+    assert( newstate.IsOnBoundary( ) == true );
+    assert( newstate.Top() == NULL );
+    assert( newstate.IsOutside( ) == true );
+}
+
 // navigation
 void test8()
 {
@@ -250,7 +295,7 @@ void test8()
       NavigationState state(4), newstate(4);
       SimpleNavigator nav;
       VPlacedVolume const *vol1= nav.LocatePoint( RootGeoManager::Instance().world(),
-            p, state, true);
+            p, state, true );
       double step;
       nav.FindNextBoundaryAndStep( p, d, state, newstate, 1E30, step );
 
@@ -261,10 +306,15 @@ void test8()
       // this is not apparent from the interface ?
       TGeoNode * node = rootnav->FindNode(x,y,z);
       assert( rootnav->GetCurrentNode()  == RootGeoManager::Instance().tgeonode( state.Top() ) );
+      //std::cerr << " step " << step << " " << rootnav->GetStep() << "\n";
+      //assert( step == rootnav->GetStep() );
 
       rootnav->SetCurrentPoint(x,y,z);
       rootnav->SetCurrentDirection(d[0],d[1],d[2]);
       rootnav->FindNextBoundaryAndStep( 1E30 );
+
+     // std::cerr << " step " << step << " " << rootnav->GetStep() << "\n";
+     // assert( step == rootnav->GetStep() );
 
       if( newstate.Top() != NULL )
       {
@@ -335,12 +385,13 @@ void test_geoapi()
 int main()
 {
     CreateRootGeom();
-   RootGeoManager::Instance().LoadRootGeometry();
+    RootGeoManager::Instance().LoadRootGeometry();
     RootGeoManager::Instance().world()->PrintContent();
 
     RootGeoManager::Instance().PrintNodeTable();
 
     test_geoapi();
+    testnavsimple();
 
     test1();
     test2();
