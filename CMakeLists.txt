@@ -20,13 +20,14 @@ if (USOLIDS)
 endif()
 
 if (NOT BACKEND)
+  message(STATUS "Backend not specified. Defaulting to Vc.")
   set(BACKEND "Vc")
 endif()
 
 if (NOT CUDA_ARCH)
-  set(CUDA_ARCH sm_20)
+  set(CUDA_ARCH 20)
 endif()
-set(CUDA_ARCH "-arch=${CUDA_ARCH}")
+set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
 
 ################################################################################
 
@@ -95,7 +96,10 @@ endif()
 
 if (VC_ACCELERATION OR Vc)
 
-  find_package(Vc REQUIRED)
+  find_package(Vc)
+  if (NOT Vc_FOUND)
+    message(FATAL_ERROR "Vc not found while compiling for Vc backend.")
+  endif()
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
   # Dirty workaround because includes are not properly found by CMake
   get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)

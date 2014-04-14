@@ -1,5 +1,5 @@
 build/
-doc/
+doc/doxygen/
 io/
 obj/
 bin/
