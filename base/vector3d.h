@@ -132,6 +132,15 @@ public:
   }
 
   /**
+   * @return Length of the vector as sqrt(x^2 + y^2 + z^2).
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Mag2() const {
+	  return Dot(*this,*this);
+  }
+
+  /**
    * Normalizes the vector by dividing each entry by the length.
    * @sa Vector3D::Length()
    */
@@ -142,26 +151,49 @@ public:
   }
 
   /**
-   * The dot product of two Vector3D<T> objects
-   * @return T ( where T is float, double, or various SIMD vector types )
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Type dotProduct( Vector3D<Type> const & left, Vector3D<Type> const & right ) {
-     return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
-  }
+    * The dot product of two Vector3D<T> objects
+    * @return T ( where T is float, double, or various SIMD vector types )
+    */
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   static
+   Type Dot( Vector3D<Type> const & left, Vector3D<Type> const & right ) {
+      return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
+   }
+
+   /**
+     * The dot product of two Vector3D<T> objects
+     * @return T ( where T is float, double, or various SIMD vector types )
+     */
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   Type Dot( Vector3D<Type> const & right ) const {
+	   return Dot(*this, right);
+   }
+
 
   /**
-   * The dot product of two Vector3D<T> objects
+   * The cross (vector) product of two Vector3D<T> objects
    * @return Type ( where Type is float, double, or various SIMD vector types )
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> crossProduct( Vector3D<Type> const & left, Vector3D<Type> const & right ) {
+  static
+  Vector3D<Type> Cross( Vector3D<Type> const & left, Vector3D<Type> const & right ) {
       return Vector3D<Type>( left[1]*right[2] - left[2]*right[1],
                              left[2]*right[0] - left[0]*right[2],
                              left[0]*right[1] - left[1]*right[0] );
   }
+
+  /**
+    * The cross (vector) product of two Vector3D<T> objects
+    * @return Type ( where Type is float, double, or various SIMD vector types )
+    */
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   Vector3D<Type> Cross( Vector3D<Type> const & right ) const {
+       return Cross(*this, right);
+   }
 
   /**
    * Maps each vector entry to a function that manipulates the entry type.
@@ -372,6 +404,12 @@ public:
   }
 
   VECGEOM_INLINE
+  Precision Mag2() const {
+	  return Dot(*this,*this);
+  }
+
+
+  VECGEOM_INLINE
   void Normalize() {
     *this /= Length();
   }
@@ -411,30 +449,63 @@ public:
     */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision dotProduct( Vector3D<Precision> const & left, Vector3D<Precision> const & right ) {
-     return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
+  static
+  Precision Dot( Vector3D<Precision> const & left, Vector3D<Precision> const & right ) {
+	  base_t s(Vc::Zero);
+	  for( auto i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
+	    {
+		  //   std::cerr << "adding vector " << i <<  std::endl;
+		  base_t tmp1 = left.mem.vector(i);
+		  base_t tmp2 = right.mem.vector(i);
+		  s+=tmp1*tmp2;
+	    }
+	  return s.sum();
+	  //  return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
   }
 
   /**
-   * The dot product of two Vector3D<T> objects
+     * The dot product of two Vector3D<> objects
+     * TODO: This function should be internally vectorized ( if proven to be beneficial )
+     * @return Precision ( float or double )
+     */
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   Precision Dot( Vector3D<Precision> const & right ) const {
+      return Dot( *this, right );
+   }
+
+
+  /**
+   * The cross product of two Vector3D<T> objects
    * @return Type ( where Type is float, double, or various SIMD vector types )
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType crossProduct( VecType const & left, VecType const & right ) {
+  static
+  VecType Cross( VecType const & left, VecType const & right ) {
       return VecType( left[1]*right[2] - left[2]*right[1],
                       left[2]*right[0] - left[0]*right[2],
                       left[0]*right[1] - left[1]*right[0] );
   }
 
   /**
+     * The cross product with another Vector3D<T> objects
+     * @return Type ( where Type is float, double, or various SIMD vector types )
+     */
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    VecType Cross( VecType const & right ) const {
+        return Cross(*this, right);
+    }
+
+    /**
    * returns abs of the vector ( as a vector )
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
       VecType tmp;
-      for( int i=0; i < 1 + 3/Vc::Vector<Precision>::Size; i++ )
+      for( auto i=0; i < 1 + 3/Vc::Vector<Precision>::Size; i++ )
       {
         base_t v = this->mem.vector(i);
         tmp.mem.vector(i) = Vc::abs( v );
