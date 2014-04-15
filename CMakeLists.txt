@@ -351,11 +351,11 @@ set_source_files_properties(
 )
 
 if (NOT CUDA)
+  add_executable(create_geometry_test
+    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+  )
+  target_link_libraries(create_geometry_test ${LIBS})
   if (ROOT)
-    add_executable(create_geometry_test
-      ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-    )
-    target_link_libraries(create_geometry_test ${LIBS})
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})
     add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)

@@ -13,7 +13,10 @@
 #include "backend/backend.h"
 #include "base/transformation_matrix.h"
 #include "volumes/placed_volume.h"
+
+#ifdef VECGEOM_ROOT
 #include "management/rootgeo_manager.h"
+#endif
 
 namespace VECGEOM_NAMESPACE
 {
@@ -125,6 +128,7 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    void SetBoundaryState( bool b ) { onboundary_ = b; }
 
+#ifdef VECGEOM_ROOT
    /**
     * function return the ROOT TGeoNode object which is equivalent to calling Top()
     * function included for convenience; to make porting Geant-V easier; we should eventually get rid of this function
@@ -134,7 +138,7 @@ public:
    {
       return RootGeoManager::Instance().tgeonode(this->Top());
    }
-
+#endif
 
    //void GetGlobalMatrixFromPath( TransformationMatrix *const m ) const;
    //TransformationMatrix const * GetGlobalMatrixFromPath() const;
