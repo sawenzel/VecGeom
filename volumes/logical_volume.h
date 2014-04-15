@@ -72,31 +72,36 @@ public:
   VECGEOM_INLINE
   void * getUserExtensionPtr( ) const {  return user_extension_;  }
 
-  #ifndef VECGEOM_NVCC
+  VPlacedVolume* Place(char const *const label,
+                       TransformationMatrix const *const matrix) const;
 
   VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
 
+  VPlacedVolume* Place(char const *const label) const;
+
   VPlacedVolume* Place() const;
+
+  void PlaceDaughter(char const *const label,
+                     LogicalVolume const *const volume,
+                     TransformationMatrix const *const matrix);
 
   void PlaceDaughter(LogicalVolume const *const volume,
                      TransformationMatrix const *const matrix);
 
   void PlaceDaughter(VPlacedVolume const *const placed);
 
-  #endif
-
   VECGEOM_CUDA_HEADER_BOTH
   int CountVolumes() const;
 
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 
-  #ifdef VECGEOM_CUDA_INTERFACE
+#ifdef VECGEOM_CUDA_INTERFACE
   LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
                            Vector<Daughter> *daughters) const;
   LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
                            Vector<Daughter> *daughters,
                            LogicalVolume *const gpu_ptr) const;
-  #endif
+#endif
 
 };
 

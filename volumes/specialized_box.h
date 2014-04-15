@@ -19,18 +19,24 @@ class SpecializedBox : public PlacedBox {
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
+  SpecializedBox(char const *const label,
+                 LogicalVolume const *const logical_volume,
+                 TransformationMatrix const *const matrix)
+      : PlacedBox(label, logical_volume, matrix) {}
+
+#ifdef VECGEOM_STD_CXX11
   SpecializedBox(LogicalVolume const *const logical_volume,
                  TransformationMatrix const *const matrix)
-      : PlacedBox(logical_volume, matrix) {}
+      : SpecializedBox<trans_code, rot_code>("", logical_volume, matrix) {}
+#endif
 
-  #ifdef VECGEOM_NVCC
+#ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   SpecializedBox(LogicalVolume const *const logical_volume,
                  TransformationMatrix const *const matrix,
                  const int id)
       : PlacedBox(logical_volume, matrix, id) {}
-  #endif
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;

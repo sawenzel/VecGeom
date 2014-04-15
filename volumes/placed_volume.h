@@ -9,8 +9,10 @@
 #include "base/global.h"
 
 #include "base/transformation_matrix.h"
-//#include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
+
+#include <string>
+#include <list>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -22,7 +24,10 @@ class VPlacedVolume {
 private:
 
   int id_;
+  // Use a pointer so the string won't be constructed on the GPU
+  std::string *label_;
   static int g_id_count;
+  static std::list<VPlacedVolume *> g_volume_list;
 
 protected:
 
@@ -30,33 +35,45 @@ protected:
   TransformationMatrix const *matrix_;
   PlacedBox const *bounding_box_;
 
-  VPlacedVolume(LogicalVolume const *const logical_volume,
+  VPlacedVolume(char const *const label,
+                LogicalVolume const *const logical_volume,
                 TransformationMatrix const *const matrix,
                 PlacedBox const *const bounding_box)
       : logical_volume_(logical_volume), matrix_(matrix),
         bounding_box_(bounding_box) {
     id_ = g_id_count++;
+    g_volume_list.push_back(this);
+    label_ = new std::string(label);
   }
 
-  #ifdef VECGEOM_NVCC
+#ifdef VECGEOM_STD_CXX11
+  VPlacedVolume(LogicalVolume const *const logical_volume,
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box)
+      :  VPlacedVolume("", logical_volume, matrix, bounding_box) {}
+#endif
+
+#ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   VPlacedVolume(LogicalVolume const *const logical_volume,
                 TransformationMatrix const *const matrix,
                 PlacedBox const *const bounding_box,
                 const int id)
       : logical_volume_(logical_volume), matrix_(matrix),
-        bounding_box_(bounding_box), id_(id) {}
-  #endif
+        bounding_box_(bounding_box), id_(id), label_(NULL) {}
+#endif
 
 public:
 
   virtual ~VPlacedVolume() {
-  //    delete bounding_box_;
+    delete label_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   int id() const { return id_; }
+
+  std::string label() const { return *label_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -96,6 +113,8 @@ public:
   void set_matrix(TransformationMatrix const *const matrix) {
     matrix_ = matrix;
   }
+
+  void set_label(char const *const label) { *label_ = label; }
 
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
@@ -173,6 +192,10 @@ public:
   virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const =0;
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
+
+  static VPlacedVolume* FindVolume(const int id);
+
+  static VPlacedVolume* FindVolume(char const *const label);
 
 
 protected:

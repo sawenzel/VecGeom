@@ -91,7 +91,7 @@ void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
 }
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
-  return new PlacedBox(logical_volume_, matrix_);
+  return new PlacedBox("", logical_volume_, matrix_);
 }
 
 #ifdef VECGEOM_ROOT

@@ -26,22 +26,40 @@ LogicalVolume::~LogicalVolume() {
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume* LogicalVolume::Place(
+    char const *const label,
     TransformationMatrix const *const matrix) const {
-  return unplaced_volume()->PlaceVolume(this, matrix);
+  return unplaced_volume()->PlaceVolume(label, this, matrix);
+}
+
+VPlacedVolume* LogicalVolume::Place(
+    TransformationMatrix const *const matrix) const {
+  return Place("", matrix);
+}
+
+VPlacedVolume* LogicalVolume::Place(char const *const label) const {
+  return unplaced_volume()->PlaceVolume(
+           label, this, &TransformationMatrix::kIdentity
+         );
 }
 
 VPlacedVolume* LogicalVolume::Place() const {
-  return Place(&TransformationMatrix::kIdentity);
+  return Place("");
+}
+
+void LogicalVolume::PlaceDaughter(char const *const label,
+                                  LogicalVolume const *const volume,
+                                  TransformationMatrix const *const matrix) {
+  VPlacedVolume const *const placed = volume->Place(label, matrix);
+  daughters_->push_back(placed);
 }
 
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
-  VPlacedVolume const *const placed = volume->Place(matrix);
-  daughters_->push_back(placed);
+  PlaceDaughter("", volume, matrix);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
-  daughters_->push_back(placed);
+  PlaceDaughter(placed);
 }
 
 #endif

@@ -63,7 +63,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
-  #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
 
   template <TranslationCode trans_code, RotationCode rot_code>
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
@@ -76,7 +76,7 @@ public:
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL);
 
-  #else
+#else
 
   template <TranslationCode trans_code, RotationCode rot_code>
   __device__
@@ -92,11 +92,11 @@ public:
       const TranslationCode trans_code, const RotationCode rot_code,
       const int id, VPlacedVolume *const placement = NULL);
 
-  #endif
+#endif
   
 private:
 
-  #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
 
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
@@ -107,7 +107,7 @@ private:
                                    placement);
   }
 
-  #else
+#else
 
   __device__
   virtual VPlacedVolume* SpecializedVolume(
@@ -119,7 +119,7 @@ private:
                                    id, placement);
   }
 
-  #endif
+#endif
 
   virtual void Print(std::ostream &os) const {
     os << "Box {" << dimensions_ << "}";

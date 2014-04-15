@@ -38,7 +38,7 @@ int main() {
   worldl.PlaceDaughter(&largebox, &placement2);
   worldl.PlaceDaughter(&largebox, &placement3);
   worldl.PlaceDaughter(&largebox, &placement4);
-  worldl.PlaceDaughter(&largebox, &placement5);
+  worldl.PlaceDaughter("Hello the world!", &largebox, &placement5);
   worldl.PlaceDaughter(&largebox, &placement6);
   worldl.PlaceDaughter(&largebox, &placement7);
   worldl.PlaceDaughter(&largebox, &placement8);

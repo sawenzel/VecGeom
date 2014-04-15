@@ -5,15 +5,17 @@
 
 #include "volumes/unplaced_volume.h"
 
+#include "volumes/placed_volume.h"
+
 namespace VECGEOM_NAMESPACE {
 
-VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
   vol.Print(os);
   return os;
 }
 
 #ifndef VECGEOM_NVCC
+
 VPlacedVolume* VUnplacedVolume::PlaceVolume(
     LogicalVolume const *const volume,
     TransformationMatrix const *const matrix,
@@ -24,6 +26,17 @@ VPlacedVolume* VUnplacedVolume::PlaceVolume(
 
   return SpecializedVolume(volume, matrix, trans_code, rot_code, placement);
 }
+
+VPlacedVolume* VUnplacedVolume::PlaceVolume(
+    char const *const label,
+    LogicalVolume const *const volume,
+    TransformationMatrix const *const matrix,
+    VPlacedVolume *const placement) const {
+  VPlacedVolume *const placed = PlaceVolume(volume, matrix, placement);
+  placed->set_label(label);
+  return placed;
+}
+
 #endif
 
 } // End global namespace

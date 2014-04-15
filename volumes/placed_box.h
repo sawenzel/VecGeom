@@ -19,17 +19,24 @@ class PlacedBox : public VPlacedVolume {
 
 public:
 
+  PlacedBox(char const *const label,
+            LogicalVolume const *const logical_volume,
+            TransformationMatrix const *const matrix)
+      : VPlacedVolume(label, logical_volume, matrix, this) {}
+
+#ifdef VECGEOM_STD_CXX11
   PlacedBox(LogicalVolume const *const logical_volume,
             TransformationMatrix const *const matrix)
-      : VPlacedVolume(logical_volume, matrix, this) {}
+      : PlacedBox("", logical_volume, matrix) {}
+#endif
 
-  #ifdef VECGEOM_NVCC
+#ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   PlacedBox(LogicalVolume const *const logical_volume,
             TransformationMatrix const *const matrix,
             const int id)
       : VPlacedVolume(logical_volume, matrix, this, id) {}
-  #endif
+#endif
 
   virtual ~PlacedBox() {}
 
