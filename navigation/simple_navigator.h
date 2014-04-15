@@ -215,7 +215,7 @@ SimpleNavigator::HasSamePath( Vector3D<Precision> const & globalpoint,
                        NavigationState & newstate ) const
 {
    TransformationMatrix const & m = currentstate.TopMatrix();
-   Vector3D<Precision> localpoint = m.Transform<1,0>(globalpoint);
+   Vector3D<Precision> localpoint = m.Transform(globalpoint);
    newstate = currentstate;
    RelocatePointFromPath( localpoint, newstate );
    return newstate.Top() == currentstate.Top();
@@ -233,9 +233,9 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 {
    // this information might have been cached in previous navigators??
    TransformationMatrix const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
-   Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
+   Vector3D<Precision> localpoint=m.Transform(globalpoint);
    //std::cerr << globaldir << "\n";
-   Vector3D<Precision> localdir=m.TransformDirection<0>(globaldir);
+   Vector3D<Precision> localdir=m.TransformDirection(globaldir);
 
    //std::cerr << localpoint << "\n";
    //std::cerr << localdir << "\n";
@@ -287,7 +287,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       TransformationMatrix const *m = nextvol->matrix();
 
       // this should be inlined here
-      LocatePoint( nextvol, m->Transform<1,0>(newpointafterboundary), newstate, false );
+      LocatePoint( nextvol, m->Transform(newpointafterboundary), newstate, false );
    }
    else
    {
@@ -304,7 +304,7 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
 {
    // this information might have been cached already ??
    TransformationMatrix const & m = const_cast<NavigationState &>(currentstate).TopMatrix();
-   Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
+   Vector3D<Precision> localpoint=m.Transform(globalpoint);
 
    // safety to mother
    VPlacedVolume const * currentvol = currentstate.Top();
@@ -353,8 +353,8 @@ void FindNextBoundaryAndStep(
       // TODO: we might be able to cache the matrices because some of the paths will be identical
       // need to have a quick way ( hash ) to compare paths
       TransformationMatrix m = currentstates[i]->TopMatrix();
-      localpoints[i] = m.Transform<1,0>( globalpoints[i] );
-      localdirs[i] = m.Transform<0,0>( globaldirs[i] );
+      localpoints[i] = m.Transform( globalpoints[i] );
+      localdirs[i] = m.TransformDirection( globaldirs[i] );
       // initiallize next nodes
       nextnode[i]=-1; // -2 indicates that particle stays in the same logical volume
    }
@@ -409,8 +409,8 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
       NavigationState const & state ) const
 {
    TransformationMatrix m = const_cast<NavigationState &>(state).TopMatrix();
-   Vector3D<Precision> localpoint = m.Transform<1,0>( globalpoint );
-   Vector3D<Precision> localdir = m.Transform<0,0>( globaldir );
+   Vector3D<Precision> localpoint = m.Transform( globalpoint );
+   Vector3D<Precision> localdir = m.TransformDirection( globaldir );
 
    // check that everything is consistent
    {

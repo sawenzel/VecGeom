@@ -244,7 +244,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
    for(int level=0;level<currentlevel_;++level)
    {
       TransformationMatrix const *m = path_[level]->matrix();
-      current = m->Transform<1,0,Precision>( tmp );
+      current = m->Transform( tmp );
       tmp = current;
    }
    return tmp;
