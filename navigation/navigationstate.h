@@ -109,6 +109,11 @@ public:
    VECGEOM_INLINE
    void Print() const;
 
+#ifdef VECGEOM_ROOT
+   VECGEOM_INLINE
+   void printVolumePath() const;
+#endif
+
    /**
      function returning whether the point (current navigation state) is outside the detector setup
    */
@@ -249,6 +254,23 @@ void NavigationState::Print() const
    std::cerr << "onboundary " << onboundary_ << std::endl;
    std::cerr << "deepest volume " << Top() << std::endl;
 }
+
+
+#ifdef VECGEOM_ROOT
+VECGEOM_INLINE
+/**
+ * prints the path of the track as a verbose string ( like TGeoBranchArray in ROOT )
+ * (uses internal root representation for the moment)
+ */
+void NavigationState::printVolumePath() const
+{
+   for(int i=0; i < currentlevel_; ++i)
+   {
+    std::cout << "/" << RootGeoManager::Instance().tgeonode( path_[i] )->GetName();
+   }
+   std::cout << "\n";
+}
+#endif
 
 /**
  * calculates if other navigation state takes a different branch in geometry path or is on same branch
