@@ -20,7 +20,9 @@ class PlacedBox;
 class VPlacedVolume {
 
 private:
+
   int id_;
+  static int g_id_count;
 
 protected:
 
@@ -33,7 +35,7 @@ protected:
                 PlacedBox const *const bounding_box)
       : logical_volume_(logical_volume), matrix_(matrix),
         bounding_box_(bounding_box) {
-    // id_ = GeoManager::Instance().RegisterVolume(this);
+    id_ = g_id_count++;
   }
 
   #ifdef VECGEOM_NVCC

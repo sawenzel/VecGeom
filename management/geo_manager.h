@@ -108,9 +108,6 @@ public:
 
 protected:
 
-  // friend VPlacedVolume;
-  // int RegisterVolume(VPlacedVolume const *const volume);
-
 private:
   GeoManager() : volume_count(0) {}
 

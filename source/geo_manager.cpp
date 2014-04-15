@@ -2,12 +2,6 @@
 
 namespace VECGEOM_NAMESPACE {
 
-//int GeoManager::RegisterVolume(VPlacedVolume const *const volume) {
-//  return volume_count++;
-//}
-
-
-
 int GeoManager::getMaxDepth( ) const
 {
    // walk all the volume hierarchy and insert
@@ -16,6 +10,5 @@ int GeoManager::getMaxDepth( ) const
    visitAllPlacedVolumes( world(), &depthvisitor, 1 );
    return depthvisitor.getMaxDepth();
 }
-
 
 } // End global namespace

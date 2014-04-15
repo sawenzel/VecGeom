@@ -9,6 +9,8 @@
 
 namespace VECGEOM_NAMESPACE {
 
+int VPlacedVolume::g_id_count = 0;
+
 VECGEOM_CUDA_HEADER_BOTH
 void VPlacedVolume::PrintContent(const int depth) const {
   for (int i = 0; i < depth; ++i) printf("  ");
