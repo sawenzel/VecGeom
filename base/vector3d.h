@@ -452,8 +452,7 @@ public:
   static
   Precision Dot( Vector3D<Precision> const & left, Vector3D<Precision> const & right ) {
 	  base_t s(Vc::Zero);
-	  for( auto i=0; i < 1 + 3/Vc::Vector<double>::Size; i++ )
-	    {
+	  for (unsigned i=0; i < 1 + 3/Vc::Vector<double>::Size; ++i) {
 		  //   std::cerr << "adding vector " << i <<  std::endl;
 		  base_t tmp1 = left.mem.vector(i);
 		  base_t tmp2 = right.mem.vector(i);
@@ -505,8 +504,7 @@ public:
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
       VecType tmp;
-      for( auto i=0; i < 1 + 3/Vc::Vector<Precision>::Size; i++ )
-      {
+      for (unsigned i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) {
         base_t v = this->mem.vector(i);
         tmp.mem.vector(i) = Vc::abs( v );
       }
