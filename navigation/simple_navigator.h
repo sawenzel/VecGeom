@@ -235,7 +235,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    TransformationMatrix const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
    Vector3D<Precision> localpoint=m.Transform<1,0>(globalpoint);
    //std::cerr << globaldir << "\n";
-   Vector3D<Precision> localdir=m.TransformRotation<0>(globaldir);
+   Vector3D<Precision> localdir=m.TransformDirection<0>(globaldir);
 
    //std::cerr << localpoint << "\n";
    //std::cerr << localdir << "\n";

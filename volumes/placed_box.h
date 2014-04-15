@@ -352,7 +352,7 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
    // we have how we can dispatch to this kernel later
 
    /*
-   // const Vector3D<Precision> local = matrix()->Transform<1, 0>(position);
+   // const Vector3D<Precision> local = matrix()->Transform(position);
 
   Vector3D<Precision> const &dim = unplaced_box()->dimensions();
 

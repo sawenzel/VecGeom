@@ -95,7 +95,7 @@ void BoxDistanceToIn(
   *distance = kInfinity;
 
   matrix.Transform<trans_code, rot_code>(pos, pos_local);
-  matrix.TransformRotation<rot_code>(dir, dir_local);
+  matrix.TransformDirection<rot_code>(dir, dir_local);
 
   safety[0] = Abs(pos_local[0]) - dimensions[0];
   safety[1] = Abs(pos_local[1]) - dimensions[1];

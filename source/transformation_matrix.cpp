@@ -153,7 +153,7 @@ RotationCode TransformationMatrix::GenerateRotationCode() const {
  */
 VECGEOM_CUDA_HEADER_BOTH
 TranslationCode TransformationMatrix::GenerateTranslationCode() const {
-  return (has_translation) ? translation::kTranslation : translation::kOrigin;
+  return (has_translation) ? translation::kGeneric : translation::kOrigin;
 }
 
 std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {

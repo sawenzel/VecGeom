@@ -307,9 +307,9 @@ BenchmarkResult DistanceToInBenchmarker::RunUSolids(
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
         const Vector3D<Precision> point =
-            matrix->Transform<1, 0>((*point_pool_)[p]);
+            matrix->Transform((*point_pool_)[p]);
         const Vector3D<Precision> dir =
-            matrix->TransformRotation<0>((*dir_pool_)[p]);
+            matrix->TransformDirection((*dir_pool_)[p]);
         distances[i] = v->usolids()->DistanceToIn(
           UVector3(point[0], point[1], point[2]),
           UVector3(dir[0], dir[1], dir[2])
@@ -336,9 +336,9 @@ BenchmarkResult DistanceToInBenchmarker::RunRoot(
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
         Vector3D<Precision> point =
-            matrix->Transform<1, 0>((*point_pool_)[p]);
+            matrix->Transform((*point_pool_)[p]);
         Vector3D<Precision> dir =
-            matrix->TransformRotation<0>((*dir_pool_)[p]);
+            matrix->TransformDirection((*dir_pool_)[p]);
         distances[i] = v->root()->DistFromOutside(&point[0], &dir[0]);
       }
     }

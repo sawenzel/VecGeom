@@ -19,12 +19,14 @@ namespace VECGEOM_NAMESPACE {
 
 void PlacedBox::Inside(SOA3D<Precision> const &points,
                        bool *const output) const {
-  Inside_Looper<1, 0>(*this, points, output);
+  Inside_Looper<translation::kGeneric, rotation::kGeneric>(*this, points,
+                                                           output);
 }
 
 void PlacedBox::Inside(AOS3D<Precision> const &points,
                        bool *const output) const {
-  Inside_Looper<1, 0>(*this, points, output);
+  Inside_Looper<translation::kGeneric, rotation::kGeneric>(*this, points,
+                                                           output);
 }
 
 
@@ -32,7 +34,7 @@ void PlacedBox::DistanceToIn(SOA3D<Precision> const &positions,
                              SOA3D<Precision> const &directions,
                              Precision const *const step_max,
                              Precision *const output) const {
-  DistanceToIn_Looper<1, 0>(
+  DistanceToIn_Looper<translation::kGeneric, rotation::kGeneric>(
     *this, positions, directions, step_max, output
   );
 }
@@ -41,7 +43,7 @@ void PlacedBox::DistanceToIn(AOS3D<Precision> const &positions,
                              AOS3D<Precision> const &directions,
                              Precision const *const step_max,
                              Precision *const output) const {
-  DistanceToIn_Looper<1, 0>(
+  DistanceToIn_Looper<translation::kGeneric, rotation::kGeneric>(
     *this, positions, directions, step_max, output
   );
 }
@@ -70,13 +72,15 @@ void PlacedBox::DistanceToOut( SOA3D<Precision> const &position,
 
 void PlacedBox::SafetyToIn( SOA3D<Precision> const &position,
         Precision *const safeties ) const {
-   return SafetyToIn_Looper<1,0>(*this, position, safeties);
+   return SafetyToIn_Looper<translation::kGeneric, rotation::kGeneric>(
+              *this, position, safeties);
 }
 
 
 void PlacedBox::SafetyToIn( AOS3D<Precision> const &position,
         Precision *const safeties ) const {
-   return SafetyToIn_Looper<1,0>(*this, position, safeties);
+   return SafetyToIn_Looper<translation::kGeneric, rotation::kGeneric>(
+              *this, position, safeties);
 }
 
 

@@ -122,10 +122,10 @@ enum Entry {
 typedef int RotationCode;
 typedef int TranslationCode;
 namespace rotation {
-enum RotationId { kDiagonal = 0x111, kIdentity = 0x200 };
+enum RotationId { kGeneric = -1, kDiagonal = 0x111, kIdentity = 0x200 };
 }
 namespace translation {
-enum TranslationId { kOrigin = 0, kTranslation = 1 };
+enum TranslationId { kGeneric = -1, kOrigin = 0 };
 }
 
 } // End global namespace
