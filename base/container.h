@@ -63,17 +63,17 @@ namespace vecgeom {
 template <typename Type> class Vector;
 class VPlacedVolume;
 
-void ContainerGpuInterface(Precision *const arr, const int size,
-                           Vector<Precision> *const gpu_ptr);
+void Container_CopyToGpu(Precision *const arr, const int size,
+                         Vector<Precision> *const gpu_ptr);
 
-void ContainerGpuInterface(VPlacedVolume const **const arr, const int size,
-                           Vector<VPlacedVolume const*> *const gpu_ptr);
+void Container_CopyToGpu(VPlacedVolume const **const arr, const int size,
+                         Vector<VPlacedVolume const*> *const gpu_ptr);
 
 #ifdef VECGEOM_CUDA_INTERFACE
 template <typename Type>
 Vector<Type>* Container<Type>::CopyToGpu(Type *const gpu_ptr_arr,
                                          Vector<Type> *const gpu_ptr) const {
-  ContainerGpuInterface(gpu_ptr_arr, this->size(), gpu_ptr);
+  Container_CopyToGpu(gpu_ptr_arr, this->size(), gpu_ptr);
   CudaAssertError();
   return gpu_ptr;
 }

@@ -181,12 +181,10 @@ namespace vecgeom {
 class LogicalVolume;
 class TransformationMatrix;
 
-void SpecializedBoxGpuInterface(int trans_code,
-                                int rot_code,
-                                LogicalVolume const *const logical_volume,
-                                TransformationMatrix const *const matrix,
-                                const int id,
-                                VPlacedVolume *const gpu_ptr);
+void SpecializedBox_CopyToGpu(int trans_code, int rot_code,
+                              LogicalVolume const *const logical_volume,
+                              TransformationMatrix const *const matrix,
+                              const int id, VPlacedVolume *const gpu_ptr);
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
@@ -196,8 +194,8 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     TransformationMatrix const *const matrix,
     VPlacedVolume *const gpu_ptr) const {
 
-  SpecializedBoxGpuInterface(trans_code, rot_code, logical_volume, matrix,
-                             this->id(), gpu_ptr);
+  SpecializedBox_CopyToGpu(trans_code, rot_code, logical_volume, matrix,
+                           this->id(), gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 

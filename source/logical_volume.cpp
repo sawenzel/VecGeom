@@ -87,16 +87,16 @@ namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void GpuInterface(VUnplacedVolume const *const unplaced_volume,
-                  Vector<VPlacedVolume const*> *const daughters,
-                  LogicalVolume *const output);
+void LogicalVolume_CopyToGpu(VUnplacedVolume const *const unplaced_volume,
+                             Vector<VPlacedVolume const*> *const daughters,
+                             LogicalVolume *const output);
 
 LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,
     Vector<Daughter> *const daughters,
     LogicalVolume *const gpu_ptr) const {
 
-  GpuInterface(unplaced_volume, daughters, gpu_ptr);
+  LogicalVolume_CopyToGpu(unplaced_volume, daughters, gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 
@@ -124,14 +124,16 @@ void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
                     Vector<VPlacedVolume const*> *daughters,
                     LogicalVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::LogicalVolume(
-    (vecgeom_cuda::VUnplacedVolume const*)unplaced_volume,
-    (vecgeom_cuda::Vector<vecgeom_cuda::VPlacedVolume const*> *)daughters
+    reinterpret_cast<vecgeom_cuda::VUnplacedVolume const*>(unplaced_volume),
+    reinterpret_cast<vecgeom_cuda::Vector<vecgeom_cuda::VPlacedVolume const*>*>(
+      daughters
+    )
   );
 }
 
-void GpuInterface(VUnplacedVolume const *const unplaced_volume,
-                  Vector<VPlacedVolume const*> *const daughters,
-                  LogicalVolume *const gpu_ptr) {
+void LogicalVolume_CopyToGpu(VUnplacedVolume const *const unplaced_volume,
+                             Vector<VPlacedVolume const*> *const daughters,
+                             LogicalVolume *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
 }
 

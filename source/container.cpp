@@ -12,12 +12,12 @@ void ConstructOnGpu(Type *const arr, const int size,
   new(gpu_ptr) vecgeom_cuda::Vector<Type>(arr, size);
 }
 
-void ContainerGpuInterface(Precision *const arr, const int size,
-                           vecgeom::Vector<Precision> *const gpu_ptr) {
+void Container_CopyToGpu(Precision *const arr, const int size,
+                         vecgeom::Vector<Precision> *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(arr, size, gpu_ptr);
 }
 
-void ContainerGpuInterface(
+void Container_CopyToGpu(
     VPlacedVolume const **const arr, const int size,
     vecgeom::Vector<VPlacedVolume const*> *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(arr, size, gpu_ptr);
