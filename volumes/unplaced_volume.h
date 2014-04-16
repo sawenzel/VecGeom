@@ -38,10 +38,10 @@ public:
    * Constructs the deriving class on the GPU and returns a pointer to GPU
    * memory where the object has been instantiated.
    */
-  #ifdef VECGEOM_CUDA
+#ifdef VECGEOM_CUDA_INTERFACE
   virtual VUnplacedVolume* CopyToGpu() const =0;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const =0;
-  #endif
+#endif
 
   /**
    * C-style printing for CUDA purposes.
@@ -52,8 +52,15 @@ public:
   // Is not static because a virtual function must be called to initialize
   // specialized volume as the shape of the deriving class.
   VPlacedVolume* PlaceVolume(
+      char const *const label,
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix) const;
+      TransformationMatrix const *const matrix,
+      VPlacedVolume *const placement = NULL) const;
+
+  VPlacedVolume* PlaceVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      VPlacedVolume *const placement = NULL) const;
 
 private:
 
@@ -63,10 +70,24 @@ private:
    */
   virtual void Print(std::ostream &os) const =0;
 
+#ifndef VECGEOM_NVCC
+
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
-      const TranslationCode trans_code, const RotationCode rot_code) const =0;
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL) const =0;
+
+#else
+
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const =0;
+
+#endif
 
 };
 

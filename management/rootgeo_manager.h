@@ -20,12 +20,12 @@ namespace VECGEOM_NAMESPACE {
  *          compiled if the VECGEOM_ROOT flag is set by the compiler, activated
  *          with -DROOT=ON in CMake.
  */
-class RootManager {
+class RootGeoManager {
 
 private:
 
   /** Remember pointer to generated world from imported ROOT geometry. */
-  VPlacedVolume const* world_ = nullptr;
+  VPlacedVolume const* world_;
 
   TypeMap<VPlacedVolume*, TGeoNode const*> placed_volumes_;
   TypeMap<VUnplacedVolume*, TGeoShape const*> unplaced_volumes_;
@@ -35,8 +35,8 @@ private:
 public:
 
   /** Access singleton instance. */
-  static RootManager& Instance() {
-    static RootManager instance;
+  static RootGeoManager& Instance() {
+    static RootGeoManager instance;
     return instance;
   }
 
@@ -81,9 +81,9 @@ public:
 
 private:
 
-  RootManager() {}
-  RootManager(RootManager const&);
-  RootManager& operator=(RootManager const&);
+  RootGeoManager() : world_(NULL) {}
+  RootGeoManager(RootGeoManager const&);
+  RootGeoManager& operator=(RootGeoManager const&);
 
 };
 

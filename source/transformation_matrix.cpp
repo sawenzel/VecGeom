@@ -3,9 +3,15 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
-#include "backend.h"
+#include "backend/backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/interface.h"
+#endif
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
+
+#include <stdio.h>
+#include <sstream>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -15,6 +21,7 @@ const TransformationMatrix TransformationMatrix::kIdentity =
 TransformationMatrix::TransformationMatrix() {
   SetTranslation(0, 0, 0);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  SetProperties();
 }
 
 TransformationMatrix::TransformationMatrix(const Precision tx,
@@ -22,6 +29,7 @@ TransformationMatrix::TransformationMatrix(const Precision tx,
                                            const Precision tz) {
   SetTranslation(tx, ty, tz);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  SetProperties();
 }
 
 TransformationMatrix::TransformationMatrix(
@@ -30,6 +38,7 @@ TransformationMatrix::TransformationMatrix(
     const Precision theta, const Precision psi) {
   SetTranslation(tx, ty, tz);
   SetRotation(phi, theta, psi);
+  SetProperties();
 }
 
 TransformationMatrix::TransformationMatrix(
@@ -39,6 +48,7 @@ TransformationMatrix::TransformationMatrix(
     const Precision r6, const Precision r7, const Precision r8) {
   SetTranslation(tx, ty, tz);
   SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -48,6 +58,15 @@ TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
   SetRotation(other.Rotation(0), other.Rotation(1), other.Rotation(2),
               other.Rotation(3), other.Rotation(4), other.Rotation(5),
               other.Rotation(6), other.Rotation(7), other.Rotation(8));
+  SetProperties();
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void TransformationMatrix::Print() const {
+  printf("TransformationMatrix {{%.2f, %.2f, %.2f}, ", trans[0], trans[1],
+         trans[2]);
+  printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}", rot[0],
+         rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -57,7 +76,6 @@ void TransformationMatrix::SetTranslation(const Precision tx,
   trans[0] = tx;
   trans[1] = ty;
   trans[2] = tz;
-  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -76,6 +94,7 @@ void TransformationMatrix::SetProperties() {
                  ? false : true;
   identity = !has_translation && !has_rotation;
 }
+
 
 VECGEOM_CUDA_HEADER_BOTH
 void TransformationMatrix::SetRotation(const Precision phi,
@@ -98,8 +117,6 @@ void TransformationMatrix::SetRotation(const Precision phi,
   rot[6] =  sinpsi*sinthe;
   rot[7] =  cospsi*sinthe;
   rot[8] =  costhe;
-
-  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -122,8 +139,6 @@ void TransformationMatrix::SetRotation(
   rot[6] = rot6;
   rot[7] = rot7;
   rot[8] = rot8;
-
-  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -148,10 +163,9 @@ RotationCode TransformationMatrix::GenerateRotationCode() const {
  */
 VECGEOM_CUDA_HEADER_BOTH
 TranslationCode TransformationMatrix::GenerateTranslationCode() const {
-  return (has_translation) ? translation::kTranslation : translation::kOrigin;
+  return (has_translation) ? translation::kGeneric : translation::kOrigin;
 }
 
-VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
   os << "Matrix {" << matrix.Translation() << ", "
      << "("  << matrix.Rotation(0) << ", " << matrix.Rotation(1)
@@ -159,38 +173,69 @@ std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
      << ", " << matrix.Rotation(4) << ", " << matrix.Rotation(5)
      << ", " << matrix.Rotation(6) << ", " << matrix.Rotation(7)
      << ", " << matrix.Rotation(8) << ")}"
-  	 << "; identity(" << matrix.identity << "); rotation(" << matrix.has_rotation << ")";
+     << "; identity(" << matrix.IsIdentity() << "); rotation("
+     << matrix.HasRotation() << ")";
   return os;
 }
 
-#ifdef VECGEOM_CUDA
+} // End global namespace
 
-namespace {
+namespace vecgeom {
 
-__global__
-void ConstructOnGpu(const TransformationMatrix matrix,
-                    TransformationMatrix *const gpu_ptr) {
-  new(gpu_ptr) TransformationMatrix(matrix);
-}
+#ifdef VECGEOM_CUDA_INTERFACE
 
-} // End anonymous namespace
+void TransformationMatrix_CopyToGpu(
+  const Precision tx, const Precision ty, const Precision tz,
+  const Precision r0, const Precision r1, const Precision r2,
+  const Precision r3, const Precision r4, const Precision r5,
+  const Precision r6, const Precision r7, const Precision r8,
+  TransformationMatrix *const gpu_ptr);
 
 TransformationMatrix* TransformationMatrix::CopyToGpu(
     TransformationMatrix *const gpu_ptr) const {
 
-  ConstructOnGpu<<<1, 1>>>(*this, gpu_ptr);
-  CudaAssertError();
+  TransformationMatrix_CopyToGpu(trans[0], trans[1], trans[2], rot[0], rot[1],
+                                 rot[2], rot[3], rot[4], rot[5], rot[6],
+                                 rot[7], rot[8], gpu_ptr);
+  vecgeom::CudaAssertError();
   return gpu_ptr;
 
 }
 
 TransformationMatrix* TransformationMatrix::CopyToGpu() const {
 
-  TransformationMatrix *const gpu_ptr = AllocateOnGpu<TransformationMatrix>();
-  return CopyToGpu(gpu_ptr);
+  TransformationMatrix *const gpu_ptr =
+      vecgeom::AllocateOnGpu<TransformationMatrix>();
+  return this->CopyToGpu(gpu_ptr);
 
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
 
-} // End global namespace
+#ifdef VECGEOM_NVCC
+
+class TransformationMatrix;
+
+__global__
+void ConstructOnGpu(const Precision tx, const Precision ty, const Precision tz,
+                    const Precision r0, const Precision r1, const Precision r2,
+                    const Precision r3, const Precision r4, const Precision r5,
+                    const Precision r6, const Precision r7, const Precision r8,
+                    TransformationMatrix *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::TransformationMatrix(tx, ty, tz, r0, r1, r2,
+                                                  r3, r4, r5, r6, r7, r8);
+}
+
+void TransformationMatrix_CopyToGpu(
+    const Precision tx, const Precision ty, const Precision tz,
+    const Precision r0, const Precision r1, const Precision r2,
+    const Precision r3, const Precision r4, const Precision r5,
+    const Precision r6, const Precision r7, const Precision r8,
+    TransformationMatrix *const gpu_ptr) {
+  ConstructOnGpu<<<1, 1>>>(tx, ty, tz, r0, r1, r2, r3, r4, r5,
+                           r6, r7, r8, gpu_ptr);
+}
+
+#endif // VECGEOM_NVCC
+
+} // End namespace vecgeom

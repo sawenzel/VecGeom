@@ -6,16 +6,13 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 
-#ifdef VECGEOM_CUDA
-#include <stdio.h>
-#endif
-
 #include "base/global.h"
-#include "backend.h"
-#include "implementation.h"
-
+#include "backend/backend.h"
+#include "backend/implementation.h"
 #include "base/transformation_matrix.h"
 #include "volumes/placed_box.h"
+
+#include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -24,10 +21,27 @@ class SpecializedBox : public PlacedBox {
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
+  SpecializedBox(char const *const label,
+                 LogicalVolume const *const logical_volume,
+                 TransformationMatrix const *const matrix)
+      : PlacedBox(label, logical_volume, matrix) {}
+
+#ifdef VECGEOM_STD_CXX11
   SpecializedBox(LogicalVolume const *const logical_volume,
                  TransformationMatrix const *const matrix)
-      : PlacedBox(logical_volume, matrix) {}
+      : SpecializedBox<trans_code, rot_code>("", logical_volume, matrix) {}
+#endif
+
+#ifdef VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_DEVICE
+  SpecializedBox(LogicalVolume const *const logical_volume,
+                 TransformationMatrix const *const matrix,
+                 const int id)
+      : PlacedBox(logical_volume, matrix, id) {}
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const;
 
     virtual ~SpecializedBox(){}
 
@@ -65,10 +79,9 @@ public:
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const;
 
-
   virtual int memory_size() const { return sizeof(*this); }
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    TransformationMatrix const *const matrix,
                                    VPlacedVolume *const gpu_ptr) const;
@@ -78,6 +91,12 @@ public:
   #endif
 
 };
+
+template <TranslationCode trans_code, RotationCode rot_code>
+VECGEOM_CUDA_HEADER_BOTH
+void SpecializedBox<trans_code, rot_code>::PrintType() const {
+  printf("SpecializedBox<%i, %i>", trans_code, rot_code);
+}
 
 template <TranslationCode trans_code, RotationCode rot_code>
 VECGEOM_CUDA_HEADER_BOTH
@@ -149,39 +168,37 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
                                             step_max, output);
 }
 
-
 template <TranslationCode trans_code, RotationCode rot_code>
 Precision SpecializedBox<trans_code, rot_code>::SafetyToIn(
-		Vector3D<Precision> const &position ) const {
-	return SafetyToInDispatch<trans_code,rot_code,kScalar>( position );
+      Vector3D<Precision> const &position ) const {
+   return SafetyToInDispatch<trans_code,rot_code,kScalar>( position );
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::SafetyToIn(
-		SOA3D<Precision> const &position, Precision *const safeties ) const {
-	SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
+      SOA3D<Precision> const &position, Precision *const safeties ) const {
+   SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::SafetyToIn(
-		AOS3D<Precision> const &position, Precision *const safeties ) const {
-	SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
+      AOS3D<Precision> const &position, Precision *const safeties ) const {
+   SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
 }
 
+} // End global namespace
 
-#ifdef VECGEOM_CUDA
+namespace vecgeom {
 
-namespace {
+class LogicalVolume;
+class TransformationMatrix;
 
-template <TranslationCode trans_code, RotationCode rot_code>
-__global__
-void ConstructOnGpu(LogicalVolume const *const logical_volume,
-                    TransformationMatrix const *const matrix,
-                    VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
-}
+void SpecializedBox_CopyToGpu(int trans_code, int rot_code,
+                              LogicalVolume const *const logical_volume,
+                              TransformationMatrix const *const matrix,
+                              const int id, VPlacedVolume *const gpu_ptr);
 
-} // End anonymous namespace
+#ifdef VECGEOM_CUDA_INTERFACE
 
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
@@ -189,10 +206,9 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     TransformationMatrix const *const matrix,
     VPlacedVolume *const gpu_ptr) const {
 
-  ConstructOnGpu<trans_code, rot_code><<<1, 1>>>(
-    logical_volume, matrix, gpu_ptr
-  );
-  CudaAssertError();
+  SpecializedBox_CopyToGpu(trans_code, rot_code, logical_volume, matrix,
+                           this->id(), gpu_ptr);
+  vecgeom::CudaAssertError();
   return gpu_ptr;
 
 }
@@ -203,13 +219,13 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     TransformationMatrix const *const matrix) const {
 
   VPlacedVolume *const gpu_ptr =
-      AllocateOnGpu<SpecializedBox<trans_code, rot_code> >();
-  return CopyToGpu(logical_volume, matrix, gpu_ptr);  
+      vecgeom::AllocateOnGpu<SpecializedBox<trans_code, rot_code> >();
+  return this->CopyToGpu(logical_volume, matrix, gpu_ptr);  
 
 }
 
-#endif // VECGEOM_CUDA
+#endif // VECGEOM_CUDA_INTERFACE
 
-} // End global namespace
+} // End namespace vecgeom
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDBOX_H_

@@ -9,14 +9,25 @@
 #include "base/global.h"
 
 #include "base/transformation_matrix.h"
-#include "management/geo_manager.h"
 #include "volumes/logical_volume.h"
+
+#include <string>
+#include <list>
 
 namespace VECGEOM_NAMESPACE {
 
+// Forward declaration for bounding box
 class PlacedBox;
 
 class VPlacedVolume {
+
+private:
+
+  int id_;
+  // Use a pointer so the string won't be constructed on the GPU
+  std::string *label_;
+  static int g_id_count;
+  static std::list<VPlacedVolume *> g_volume_list;
 
 protected:
 
@@ -24,20 +35,48 @@ protected:
   TransformationMatrix const *matrix_;
   PlacedBox const *bounding_box_;
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VPlacedVolume(LogicalVolume const *const logical_volume,
+  VPlacedVolume(char const *const label,
+                LogicalVolume const *const logical_volume,
                 TransformationMatrix const *const matrix,
                 PlacedBox const *const bounding_box)
       : logical_volume_(logical_volume), matrix_(matrix),
-        bounding_box_(bounding_box) {}
+        bounding_box_(bounding_box) {
+    id_ = g_id_count++;
+    g_volume_list.push_back(this);
+    label_ = new std::string(label);
+  }
+
+#ifdef VECGEOM_STD_CXX11
+  VPlacedVolume(LogicalVolume const *const logical_volume,
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box)
+      :  VPlacedVolume("", logical_volume, matrix, bounding_box) {}
+#endif
+
+#ifdef VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_DEVICE
+  VPlacedVolume(LogicalVolume const *const logical_volume,
+                TransformationMatrix const *const matrix,
+                PlacedBox const *const bounding_box,
+                const int id)
+      : logical_volume_(logical_volume), matrix_(matrix),
+        bounding_box_(bounding_box), id_(id), label_(NULL) {}
+#endif
 
 public:
 
-  virtual ~VPlacedVolume() {}
+  virtual ~VPlacedVolume();
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int id() const { return id_; }
+
+  std::string label() const { return *label_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   PlacedBox const* bounding_box() const { return bounding_box_; }
+
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -63,6 +102,10 @@ public:
     return matrix_;
   }
 
+  static std::list<VPlacedVolume *> const& volume_list() {
+    return g_volume_list;
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   void set_logical_volume(LogicalVolume const *const logical_volume) {
     logical_volume_ = logical_volume;
@@ -73,9 +116,25 @@ public:
     matrix_ = matrix;
   }
 
+  void set_label(char const *const label) { *label_ = label; }
+
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
   virtual int memory_size() const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Print(const int indent = 0) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const =0;
+
+  /**
+   * Recursively prints contained volumes.
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  void PrintContent(const int depth = 0) const;
+
+  // Geometry functionality
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const =0;
@@ -91,7 +150,7 @@ public:
    **/
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point,
-		  	  	  	  Vector3D<Precision> & localpoint) const =0;
+                       Vector3D<Precision> & localpoint) const =0;
 
   /** An inside function where we know that localpoint is already in the
    *  reference frame of the callee
@@ -117,9 +176,9 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
-		  	  	  	  	  	  Vector3D<Precision> const &position,
-		  	  	  	  	  	  Vector3D<Precision> const &direction,
-		  	  	  	  	  	  Precision const step_max = kInfinity) const =0;
+                               Vector3D<Precision> const &position,
+                               Vector3D<Precision> const &direction,
+                               Precision const step_max = kInfinity) const =0;
 
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                               SOA3D<Precision> const &direction,
@@ -142,8 +201,9 @@ public:
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
 
-
 protected:
+
+  // Implemented by the vector backend
 
   template <TranslationCode trans_code, RotationCode rot_code,
             typename VolumeType, typename ContainerType>
@@ -171,37 +231,39 @@ protected:
                                    Precision *const output);
 
   template <TranslationCode trans_code, RotationCode rot_code,
-  	  	  	typename VolumeType, typename ContainerType>
+               typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void SafetyToIn_Looper(VolumeType const &volume,
-		  ContainerType const &positions,
-		  Precision *const output);
+        ContainerType const &positions,
+        Precision *const output);
 
   template <typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void SafetyToOut_Looper(VolumeType const &volume,
-		  ContainerType const &positions,
-		  Precision *const output);
+        ContainerType const &positions,
+        Precision *const output);
 
 public:
 
-  #ifdef VECGEOM_CUDA
+#ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    TransformationMatrix const *const matrix,
                                    VPlacedVolume *const gpu_ptr) const =0;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
       TransformationMatrix const *const matrix) const =0;
-  #endif
+#endif
 
-  #ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
+#ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const =0;
+#endif
+#ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const =0;
-  #endif
+#endif
 
 };
 
 } // End global namespace
 
-#endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_]
+#endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_

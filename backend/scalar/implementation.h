@@ -22,7 +22,7 @@ VECGEOM_INLINE
 void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
                                   bool *const output) {
-  for (int i = 0; i < points.fillsize(); ++i) {
+  for (int i = 0, i_max = points.size(); i < i_max; ++i) {
     output[i] =
         volume.template InsideDispatch<trans_code, rot_code, kScalar>(
           points[i]
@@ -38,7 +38,7 @@ void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &directions,
                                         Precision const *const step_max,
                                         Precision *const output) {
-  for (int i = 0; i < positions.fillsize(); ++i) {
+  for (int i = 0, i_max = positions.size(); i < i_max; ++i) {
     output[i] =
         volume.template DistanceToInDispatch<trans_code, rot_code, kScalar>(
           positions[i], directions[i], step_max[i]
@@ -53,7 +53,7 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
                                         ContainerType const &directions,
                                         Precision const *const step_max,
                                         Precision *const output) {
-  for (int i = 0; i < positions.fillsize(); ++i) {
+  for (int i = 0, i_max = positions.size(); i < i_max; ++i) {
     output[i] =
         volume.template DistanceToOutDispatch<kScalar>(
           positions[i], directions[i], step_max[i]
@@ -68,8 +68,9 @@ void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
                                       Precision *const output)
 {
-  for (int i = 0; i < positions.fillsize(); ++i) {
-    output[i] = volume.template SafetyToInDispatch<trans_code, rot_code, kScalar>(positions[i]);
+  for (int i = 0, i_max = positions.size(); i < i_max; ++i) {
+    output[i] = volume.template SafetyToInDispatch<trans_code, rot_code,
+                                                   kScalar>(positions[i]);
   }
 }
 
@@ -79,9 +80,9 @@ void VPlacedVolume::SafetyToOut_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
                                       Precision *const output)
 {
-	for (int i = 0; i < positions.fillsize(); ++i) {
-	    output[i] = volume.template SafetyToOutDispatch<kScalar>(positions[i]);
-	  }
+  for (int i = 0, i_max = positions.size(); i < i_max; ++i) {
+    output[i] = volume.template SafetyToOutDispatch<kScalar>(positions[i]);
+  }
 }
 
 

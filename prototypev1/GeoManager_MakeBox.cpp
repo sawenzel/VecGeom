@@ -10,5 +10,5 @@
 
 PhysicalVolume * GeoManager::MakePlacedBox( BoxParameters const * bp, TransformationMatrix const * tm, bool specialize_placement)
 {
-		return MakePlacedShape<Box>( bp, tm, specialize_placement);
+      return MakePlacedShape<Box>( bp, tm, specialize_placement);
 }

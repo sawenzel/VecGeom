@@ -6,16 +6,9 @@
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
-#ifndef VECGEOM_CUDA
-  #define VECGEOM_NAMESPACE vecgeom
-#else
-  #define VECGEOM_NAMESPACE vecgeom_cuda
-#endif
-
-#include <cmath>
-
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
+  #define VECGEOM_NAMESPACE vecgeom_cuda
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
@@ -25,10 +18,20 @@
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
   #define VECGEOM_CUDA_HEADER_GLOBAL
+  #ifdef VECGEOM_CUDA
+    #define VECGEOM_CUDA_INTERFACE
+  #endif
 #endif
 
-#ifndef VECGEOM_CUDA // Set by compiler
+#ifdef VECGEOM_NVCC
+  #undef VECGEOM_VC
+  #undef VECGEOM_VC_ACCELERATION
+  #undef VECGEOM_CILK
+  #undef VECGEOM_ROOT
+  #undef VECGEOM_USOLIDS
+#else
   #define VECGEOM_STD_CXX11
+  #define VECGEOM_NAMESPACE vecgeom
 #endif
 
 #ifdef __INTEL_COMPILER
@@ -43,17 +46,25 @@
   #endif
 #endif
 
+#include <cmath>
+
 #ifndef NULL
   #define NULL 0
 #endif
 
-namespace VECGEOM_NAMESPACE {
-
+namespace vecgeom {
 #ifdef VECGEOM_FLOAT_PRECISION
 typedef float Precision;
 #else
 typedef double Precision;
 #endif
+}
+
+namespace vecgeom_cuda {
+typedef vecgeom::Precision Precision;
+}
+
+namespace VECGEOM_NAMESPACE {
 
 const int kAlignmentBoundary = 32;
 const Precision kDegToRad = M_PI/180.;
@@ -96,9 +107,26 @@ class TransformationMatrix;
 
 class GeoManager;
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_CUDA_INTERFACE
 class CudaManager;
 #endif
+
+namespace entry {
+enum Entry {
+  k00 = 0x001, k01 = 0x002, k02 = 0x004,
+  k10 = 0x008, k11 = 0x010, k12 = 0x020,
+  k20 = 0x040, k21 = 0x080, k22 = 0x100
+};
+}
+
+typedef int RotationCode;
+typedef int TranslationCode;
+namespace rotation {
+enum RotationId { kGeneric = -1, kDiagonal = 0x111, kIdentity = 0x200 };
+}
+namespace translation {
+enum TranslationId { kGeneric = -1, kOrigin = 0 };
+}
 
 } // End global namespace
 

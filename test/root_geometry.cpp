@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "management/root_manager.h"
+#include "management/rootgeo_manager.h"
 #include "volumes/placed_volume.h"
 
 #include "TGeoManager.h"
@@ -28,8 +28,8 @@ int main() {
   vol2->AddNode(vol3, 1, matrix1);
   ::gGeoManager->SetTopVolume(vol1);
 
-  RootManager::Instance().LoadRootGeometry();
-  RootManager::Instance().world()->logical_volume()->PrintContent();
+  RootGeoManager::Instance().LoadRootGeometry();
+  RootGeoManager::Instance().world()->PrintContent();
 
   return 0;
 }

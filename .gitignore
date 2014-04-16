@@ -1,5 +1,5 @@
 build/
-doc/
+doc/doxygen/
 io/
 obj/
 bin/
@@ -10,8 +10,8 @@ Debug
 .cproject
 .project
 .externalToolBuilders
-compile_benchmark.sh
-*.eps
+compile_*.sh
 *.png
-*.jpg
 *.pdf
+*.eps
+

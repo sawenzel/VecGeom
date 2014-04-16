@@ -6,18 +6,36 @@
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 
+#ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
+#endif // VECGEOM_ROOT
+#ifdef VECGEOM_USOLIDS
 #include "VUSolid.hh"
+#endif // VECGEOM_USOLIDS
 
 namespace VECGEOM_NAMESPACE {
 
 VolumePointers::VolumePointers(VPlacedVolume const *const volume)
-    : specialized_(volume), initial_(kSpecialized) {
+    : specialized_(volume), unspecialized_(NULL),
+#ifdef VECGEOM_ROOT
+      root_(NULL),
+#endif
+#ifdef VECGEOM_USOLIDS
+      usolids_(NULL),
+#endif
+      initial_(kSpecialized) {
   ConvertVolume();
 }
 
 VolumePointers::VolumePointers(VolumePointers const &other)
-    : specialized_(other.specialized_), initial_(other.initial_) {
+    : specialized_(other.specialized_), unspecialized_(NULL),
+#ifdef VECGEOM_ROOT
+      root_(NULL),
+#endif
+#ifdef VECGEOM_USOLIDS
+      usolids_(NULL),
+#endif
+      initial_(other.initial_) {
   ConvertVolume();
 }
 
@@ -34,15 +52,23 @@ VolumePointers& VolumePointers::operator=(VolumePointers const &other) {
 
 void VolumePointers::ConvertVolume() {
   if (!unspecialized_) unspecialized_ = specialized_->ConvertToUnspecialized();
+#ifdef VECGEOM_ROOT
   if (!root_)          root_          = specialized_->ConvertToRoot();
+#endif
+#ifdef VECGEOM_USOLIDS
   if (!usolids_)       usolids_       = specialized_->ConvertToUSolids();
+#endif
 }
 
 void VolumePointers::Deallocate() {
   if (initial_ != kSpecialized)   delete specialized_;
   if (initial_ != kUnspecialized) delete unspecialized_;
+#ifdef VECGEOM_ROOT
   if (initial_ != kRoot)          delete root_;
+#endif
+#ifdef VECGEOM_USOLIDS
   if (initial_ != kUSolids)       delete usolids_;
+#endif
 }
 
 } // End global namespace

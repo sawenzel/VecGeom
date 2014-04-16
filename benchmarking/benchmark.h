@@ -14,7 +14,7 @@
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
 struct BenchmarkResult;
 
@@ -22,12 +22,12 @@ class Benchmark {
 
 private:
 
-  unsigned repetitions_ = 1e3;
-  unsigned verbose_ = 0;
+  unsigned repetitions_;
+  unsigned verbose_;
 
 protected:
 
-  VPlacedVolume const *world_ = NULL;
+  VPlacedVolume const *world_;
   std::vector<BenchmarkResult> results_;
 
 public:
@@ -42,8 +42,15 @@ public:
   virtual void BenchmarkSpecialized() =0;
  // virtual void BenchmarkSpecializedVec() =0;
   virtual void BenchmarkUnspecialized() =0;
+#ifdef VECGEOM_USOLIDS
   virtual void BenchmarkUSolids() =0;
+#endif
+#ifdef VECGEOM_ROOT
   virtual void BenchmarkRoot() =0;
+#endif
+#ifdef VECGEOM_CUDA
+  virtual void BenchmarkCuda() =0;
+#endif
 
   BenchmarkResult PopResult();
   std::vector<BenchmarkResult> PopResults();
@@ -81,6 +88,6 @@ public:
 
 
 
-} // End global namespace
+} // End namespace vecgeom
 
 #endif // VECGEOM_BENCHMARKING_BENCHMARK_H_

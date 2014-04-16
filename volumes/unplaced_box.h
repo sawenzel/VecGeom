@@ -6,14 +6,17 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDBOX_H_
 #define VECGEOM_VOLUMES_UNPLACEDBOX_H_
 
-#include <iostream>
 #include "base/global.h"
 #include "base/vector3d.h"
 #include "volumes/unplaced_volume.h"
 
 namespace VECGEOM_NAMESPACE {
 
+#ifdef VECGEOM_VC_ACCELERATION
+class UnplacedBox : public VUnplacedVolume, public Vc::VectorAlignedBase {
+#else
 class UnplacedBox : public VUnplacedVolume {
+#endif
 
 private:
 
@@ -25,6 +28,7 @@ public:
     dimensions_ = dim;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   UnplacedBox(const Precision dx, const Precision dy, const Precision dz)
       : dimensions_(dx, dy, dz) {}
 
@@ -33,7 +37,7 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  #ifdef VECGEOM_CUDA
+  #ifdef VECGEOM_CUDA_INTERFACE
   virtual VUnplacedVolume* CopyToGpu() const;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
   #endif
@@ -57,22 +61,69 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision volume() const {
-    return 4.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
+    return 8.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
+#ifndef VECGEOM_NVCC
+
   template <TranslationCode trans_code, RotationCode rot_code>
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
-                               TransformationMatrix const *const matrix);
+                               TransformationMatrix const *const matrix,
+                               VPlacedVolume *const placement = NULL);
+
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL);
+
+#else
+
+  template <TranslationCode trans_code, RotationCode rot_code>
+  __device__
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               TransformationMatrix const *const matrix,
+                               const int id,
+                               VPlacedVolume *const placement = NULL);
+
+  __device__
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL);
+
+#endif
   
 private:
+
+#ifndef VECGEOM_NVCC
 
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       TransformationMatrix const *const matrix,
-      const TranslationCode trans_code, const RotationCode rot_code) const;
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
+                                   placement);
+  }
+
+#else
+
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      TransformationMatrix const *const matrix,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
+                                   id, placement);
+  }
+
+#endif
 
   virtual void Print(std::ostream &os) const {
     os << "Box {" << dimensions_ << "}";

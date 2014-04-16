@@ -44,26 +44,26 @@ public:
   }
 
   /**
-   * \sa TransformationMatrix::TransformRotation(Vector3D<InputType> const &,
+   * \sa TransformationMatrix::TransformDirection(Vector3D<InputType> const &,
    *                                             Vector3D<InputType> *const)
    */
   template <RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void TransformRotation(Vector3D<InputType> const &master,
+  void TransformDirection(Vector3D<InputType> const &master,
                          Vector3D<InputType> *const local) const {
-    this->TransformRotation<code, InputType>(master, local);
+    this->TransformDirection<code, InputType>(master, local);
   }
 
   /**
-   * \sa TransformationMatrix::TransformRotation(Vector3D<InputType> const &)
+   * \sa TransformationMatrix::TransformDirection(Vector3D<InputType> const &)
    */
   template <RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<InputType> TransformRotation(
+  Vector3D<InputType> TransformDirection(
       Vector3D<InputType> const &master) const {
-    return this->TransformRotation<code, InputType>(master);
+    return this->TransformDirection<code, InputType>(master);
   }
 
 };
