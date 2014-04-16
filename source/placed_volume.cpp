@@ -37,20 +37,4 @@ std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
   return os;
 }
 
-VPlacedVolume* VPlacedVolume::FindVolume(const int id) {
-  for (std::list<VPlacedVolume *>::const_iterator v = g_volume_list.begin(),
-       v_end = g_volume_list.end(); v != v_end; ++v) {
-    if ((*v)->id() == id) return *v;
-  }
-  return NULL;
-}
-
-VPlacedVolume* VPlacedVolume::FindVolume(char const *const label) {
-  for (std::list<VPlacedVolume *>::const_iterator v = g_volume_list.begin(),
-       v_end = g_volume_list.end(); v != v_end; ++v) {
-    if ((*v)->label() == label) return *v;
-  }
-  return NULL;
-}
-
 } // End global namespace

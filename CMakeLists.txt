@@ -270,7 +270,6 @@ endif()
 set(SRC_CPP_RELATIVE
   source/aos3d.cpp
   source/container.cpp
-  source/geo_manager.cpp
   source/logical_volume.cpp
   source/placed_box.cpp
   source/placed_volume.cpp
@@ -323,7 +322,9 @@ if (BENCHMARK)
     source/benchmarking/distance_to_in.cu
   )
 endif()
-set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL})
+set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
+  source/geo_manager.cpp
+)
 
 # Compile cpp-files for C++11
 

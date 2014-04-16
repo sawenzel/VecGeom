@@ -104,6 +104,10 @@ public:
     return matrix_;
   }
 
+  static std::list<VPlacedVolume *> const& volume_list() {
+    return g_volume_list;
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   void set_logical_volume(LogicalVolume const *const logical_volume) {
     logical_volume_ = logical_volume;
@@ -192,11 +196,6 @@ public:
   virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const =0;
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
-
-  static VPlacedVolume* FindVolume(const int id);
-
-  static VPlacedVolume* FindVolume(char const *const label);
-
 
 protected:
 
