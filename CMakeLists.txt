@@ -70,7 +70,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -Wall -fPIC")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -362,8 +362,6 @@ if (NOT CUDA)
     target_link_libraries(root_geometry ${LIBS})
     add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
     target_link_libraries(complex_test1 ${LIBS})
-    add_executable(testDistanceToOut ${CMAKE_SOURCE_DIR}/test/testDistanceToOut.cpp)
-    target_link_libraries(testDistanceToOut ${LIBS})
   endif()
   if (BENCHMARK)
     add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
