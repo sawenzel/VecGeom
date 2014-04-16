@@ -191,7 +191,9 @@ NavigationState::~NavigationState()
 void
 NavigationState::Pop()
 {
-   if(currentlevel_ > 0) path_[currentlevel_--]=0;
+   if(currentlevel_ > 0){
+       path_[--currentlevel_]=0;
+   }
 }
 
 void
