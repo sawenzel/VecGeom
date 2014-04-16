@@ -13,6 +13,11 @@ int VPlacedVolume::g_id_count = 0;
 std::list<VPlacedVolume *> VPlacedVolume::g_volume_list =
     std::list<VPlacedVolume *>();
 
+VPlacedVolume::~VPlacedVolume() {
+  delete label_;
+  g_volume_list.remove(this);
+}
+
 VECGEOM_CUDA_HEADER_BOTH
 void VPlacedVolume::PrintContent(const int depth) const {
   for (int i = 0; i < depth; ++i) printf("  ");

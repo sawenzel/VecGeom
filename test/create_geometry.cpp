@@ -54,5 +54,8 @@ int main() {
   nav.LocatePoint(world_placed, point, path, true);
   path.Print();
 
+  GeoManager::Instance().FindLogicalVolume("Large box");
+  GeoManager::Instance().FindPlacedVolume("Large box");
+
   return 0;
 }

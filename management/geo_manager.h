@@ -106,9 +106,29 @@ public:
    */
   int getMaxDepth() const;
 
-  VPlacedVolume* FindVolume(const int id);
+  /**
+   * \return Volume with passed id, or NULL is the id wasn't found.
+   */
+  VPlacedVolume* FindPlacedVolume(const int id);
 
-  VPlacedVolume* FindVolume(char const *const label);
+  /**
+   * \return First occurrence of volume with passed label. If multiple volumes
+   *         are found, their id will be printed to standard output.
+   */
+  VPlacedVolume* FindPlacedVolume(char const *const label);
+
+
+  /**
+   * \return Volume with passed id, or NULL is the id wasn't found.
+   */
+  LogicalVolume* FindLogicalVolume(const int id);
+
+
+  /**
+   * \return First occurrence of volume with passed label. If multiple volumes
+   *         are found, their id will be printed to standard output.
+   */
+  LogicalVolume* FindLogicalVolume(char const *const label);
 
 protected:
 

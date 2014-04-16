@@ -12,6 +12,7 @@
 #include "volumes/unplaced_volume.h"
 
 #include <string>
+#include <list>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -27,7 +28,11 @@ private:
 
   VUnplacedVolume const *unplaced_volume_;
 
+  int id_;
   std::string *label_;
+
+  static int g_id_count;
+  static std::list<LogicalVolume *> g_volume_list;
 
   /** a pointer member to register arbitrary objects with logical volume;
         included for the moment to model UserExtension like in TGeoVolume
@@ -50,6 +55,8 @@ public:
                 VUnplacedVolume const *const unplaced_volume)
       : unplaced_volume_(unplaced_volume),
         user_extension_(NULL) {
+    id_ = g_id_count++;
+    g_volume_list.push_back(this);
     label_ = new std::string(label);
     daughters_ = new Vector<Daughter>();
   }
@@ -63,8 +70,9 @@ public:
   VECGEOM_CUDA_HEADER_DEVICE
   LogicalVolume(VUnplacedVolume const *const unplaced_volume,
                 Vector<Daughter> *daughters)
-      : unplaced_volume_(unplaced_volume), label_(NULL), user_extension_(NULL),
-        daughters_(daughters) {}
+      // Id for logical volumes is not needed on the device for CUDA
+      : unplaced_volume_(unplaced_volume), id_(-1), label_(NULL),
+        user_extension_(NULL), daughters_(daughters) {}
 #endif
 
   ~LogicalVolume();
@@ -84,7 +92,13 @@ public:
   VECGEOM_INLINE
   void * getUserExtensionPtr( ) const {  return user_extension_;  }
 
+  int id() const { return id_; }
+
   std::string label() const { return *label_; }
+
+  static std::list<LogicalVolume *> const& volume_list() {
+    return g_volume_list;
+  }
 
   void set_label(char const *const label) { *label_ = label; }
 

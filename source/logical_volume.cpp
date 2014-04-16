@@ -15,6 +15,10 @@
 
 namespace VECGEOM_NAMESPACE {
 
+int LogicalVolume::g_id_count = 0;
+std::list<LogicalVolume *> LogicalVolume::g_volume_list =
+    std::list<LogicalVolume *>();
+
 LogicalVolume::~LogicalVolume() {
   delete label_;
   for (Iterator<VPlacedVolume const*> i = daughters().begin();
@@ -22,6 +26,7 @@ LogicalVolume::~LogicalVolume() {
     delete *i;
   }
   delete daughters_;
+  g_volume_list.remove(this);
 }
 
 #ifndef VECGEOM_NVCC

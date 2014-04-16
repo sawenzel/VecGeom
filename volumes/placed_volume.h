@@ -65,9 +65,7 @@ protected:
 
 public:
 
-  virtual ~VPlacedVolume() {
-    delete label_;
-  }
+  virtual ~VPlacedVolume();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
