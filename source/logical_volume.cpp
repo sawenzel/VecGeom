@@ -59,7 +59,7 @@ void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
-  PlaceDaughter(placed);
+  daughters_->push_back(placed);
 }
 
 #endif
