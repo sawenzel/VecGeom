@@ -280,6 +280,7 @@ set(SRC_CPP_RELATIVE
   source/unplaced_box.cpp
   source/unplaced_volume.cpp
   source/vector3d.cpp
+  source/simple_navigator.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
