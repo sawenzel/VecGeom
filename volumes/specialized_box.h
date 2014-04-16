@@ -12,6 +12,8 @@
 #include "base/transformation_matrix.h"
 #include "volumes/placed_box.h"
 
+#include <stdio.h>
+
 namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -37,6 +39,9 @@ public:
                  const int id)
       : PlacedBox(logical_volume, matrix, id) {}
 #endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const;
@@ -72,7 +77,6 @@ public:
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const;
 
-
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA_INTERFACE
@@ -85,6 +89,12 @@ public:
   #endif
 
 };
+
+template <TranslationCode trans_code, RotationCode rot_code>
+VECGEOM_CUDA_HEADER_BOTH
+void SpecializedBox<trans_code, rot_code>::PrintType() const {
+  printf("SpecializedBox<%i, %i>", trans_code, rot_code);
+}
 
 template <TranslationCode trans_code, RotationCode rot_code>
 VECGEOM_CUDA_HEADER_BOTH

@@ -19,20 +19,30 @@ VPlacedVolume::~VPlacedVolume() {
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void VPlacedVolume::PrintContent(const int depth) const {
-  for (int i = 0; i < depth; ++i) printf("  ");
-  printf("[%i]", id_);
+void VPlacedVolume::Print(const int indent) const {
+  for (int i = 0; i < indent; ++i) printf("  ");
+  PrintType();
+  printf(" [%i]", id_);
 #ifndef VECGEOM_NVCC
   if (label_->size()) {
     printf(" \"%s\"", label_->c_str());
   }
 #endif
-  printf(": ");
-  unplaced_volume()->Print();
+  printf(": \n");
+  for (int i = 0; i <= indent; ++i) printf("  ");
+  matrix_->Print();
   printf("\n");
+  logical_volume_->Print(indent+1);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void VPlacedVolume::PrintContent(const int indent) const {
+  Print(indent);
+  printf(":");
   for (Iterator<VPlacedVolume const*> vol = daughters().begin();
        vol != daughters().end(); ++vol) {
-    (*vol)->PrintContent(depth + 1);
+    printf("\n");
+    (*vol)->PrintContent(indent+3);
   }
 }
 

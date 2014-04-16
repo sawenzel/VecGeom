@@ -11,6 +11,11 @@
 
 namespace VECGEOM_NAMESPACE {
 
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedBox::Print() const {
+  printf("UnplacedBox {%.2f, %.2f, %.2f}", x(), y(), z());
+}
+
 #ifndef VECGEOM_NVCC
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -63,11 +68,6 @@ VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
 }
 
 #endif
-
-VECGEOM_CUDA_HEADER_BOTH
-void UnplacedBox::Print() const {
-  printf("Box {%f, %f, %f}", dimensions_[0], dimensions_[1], dimensions_[2]);
-}
 
 } // End global namespace
 

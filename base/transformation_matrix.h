@@ -116,6 +116,9 @@ public:
   VECGEOM_INLINE
   bool HasTranslation() const { return has_translation; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Print() const;
+
   // Mutators
 
   VECGEOM_CUDA_HEADER_BOTH

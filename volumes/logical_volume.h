@@ -105,6 +105,12 @@ public:
   VECGEOM_INLINE
   void setUserExtensionPtr( void * userpointer ) { user_extension_ = userpointer; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Print(const int indent = 0) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void PrintContent(const int depth = 0) const;
+
   VPlacedVolume* Place(char const *const label,
                        TransformationMatrix const *const matrix) const;
 

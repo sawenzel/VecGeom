@@ -14,8 +14,14 @@
 #include "UBox.hh"
 #endif
 
+#include <stdio.h>
+
 namespace VECGEOM_NAMESPACE {
 
+VECGEOM_CUDA_HEADER_BOTH
+void PlacedBox::PrintType() const {
+  printf("PlacedBox");
+}
 
 void PlacedBox::Inside(SOA3D<Precision> const &points,
                        bool *const output) const {

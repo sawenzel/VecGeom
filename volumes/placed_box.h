@@ -60,6 +60,9 @@ public:
   VECGEOM_INLINE
   Precision z() const { return unplaced_box()->z(); }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const;
+
 protected:
 
   /**
@@ -69,7 +72,6 @@ protected:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedBox const* unplaced_box() const;
-
 
 public:
 

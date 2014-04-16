@@ -122,6 +122,12 @@ public:
 
   virtual int memory_size() const =0;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Print(const int indent = 0) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const =0;
+
   /**
    * Recursively prints contained volumes.
    */

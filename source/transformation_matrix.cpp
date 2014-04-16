@@ -10,7 +10,8 @@
 #include "base/transformation_matrix.h"
 #include "base/specialized_matrix.h"
 
-#include <iostream>
+#include <stdio.h>
+#include <sstream>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -58,6 +59,14 @@ TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
               other.Rotation(3), other.Rotation(4), other.Rotation(5),
               other.Rotation(6), other.Rotation(7), other.Rotation(8));
   SetProperties();
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void TransformationMatrix::Print() const {
+  printf("TransformationMatrix {{%.2f, %.2f, %.2f}, ", trans[0], trans[1],
+         trans[2]);
+  printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}", rot[0],
+         rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
