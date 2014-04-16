@@ -6,10 +6,12 @@
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
-#include <string>
 #include "base/global.h"
+
 #include "base/vector.h"
 #include "volumes/unplaced_volume.h"
+
+#include <string>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -24,6 +26,8 @@ class LogicalVolume {
 private:
 
   VUnplacedVolume const *unplaced_volume_;
+
+  std::string *label_;
 
   /** a pointer member to register arbitrary objects with logical volume;
         included for the moment to model UserExtension like in TGeoVolume
@@ -42,15 +46,26 @@ public:
    * daughter list which can be populated by placing daughters.
    * \sa PlaceDaughter()
    */
-  LogicalVolume(VUnplacedVolume const *const unplaced_volume)
-      : unplaced_volume_(unplaced_volume), user_extension_(0) {
+  LogicalVolume(char const *const label,
+                VUnplacedVolume const *const unplaced_volume)
+      : unplaced_volume_(unplaced_volume),
+        user_extension_(NULL) {
+    label_ = new std::string(label);
     daughters_ = new Vector<Daughter>();
   }
 
+#ifdef VECGEOM_STD_CXX11
+  LogicalVolume(VUnplacedVolume const *const unplaced_volume)
+      : LogicalVolume("", unplaced_volume) {}
+#endif
+
+#ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   LogicalVolume(VUnplacedVolume const *const unplaced_volume,
                 Vector<Daughter> *daughters)
-      : unplaced_volume_(unplaced_volume), user_extension_(0), daughters_(daughters) {}
+      : unplaced_volume_(unplaced_volume), label_(NULL), user_extension_(NULL),
+        daughters_(daughters) {}
+#endif
 
   ~LogicalVolume();
 
@@ -67,10 +82,14 @@ public:
   Vector<Daughter> const * daughtersp() const { return daughters_; }
 
   VECGEOM_INLINE
-  void setUserExtensionPtr( void * userpointer ) { user_extension_ = userpointer; }
+  void * getUserExtensionPtr( ) const {  return user_extension_;  }
+
+  std::string label() const { return *label_; }
+
+  void set_label(char const *const label) { *label_ = label; }
 
   VECGEOM_INLINE
-  void * getUserExtensionPtr( ) const {  return user_extension_;  }
+  void setUserExtensionPtr( void * userpointer ) { user_extension_ = userpointer; }
 
   VPlacedVolume* Place(char const *const label,
                        TransformationMatrix const *const matrix) const;

@@ -16,6 +16,7 @@
 namespace VECGEOM_NAMESPACE {
 
 LogicalVolume::~LogicalVolume() {
+  delete label_;
   for (Iterator<VPlacedVolume const*> i = daughters().begin();
        i != daughters().end(); ++i) {
     delete *i;
@@ -33,7 +34,7 @@ VPlacedVolume* LogicalVolume::Place(
 
 VPlacedVolume* LogicalVolume::Place(
     TransformationMatrix const *const matrix) const {
-  return Place("", matrix);
+  return Place(label_->c_str(), matrix);
 }
 
 VPlacedVolume* LogicalVolume::Place(char const *const label) const {
@@ -43,7 +44,7 @@ VPlacedVolume* LogicalVolume::Place(char const *const label) const {
 }
 
 VPlacedVolume* LogicalVolume::Place() const {
-  return Place("");
+  return Place(label_->c_str());
 }
 
 void LogicalVolume::PlaceDaughter(char const *const label,
@@ -55,7 +56,7 @@ void LogicalVolume::PlaceDaughter(char const *const label,
 
 void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
                                   TransformationMatrix const *const matrix) {
-  PlaceDaughter("", volume, matrix);
+  PlaceDaughter(volume->label().c_str(), volume, matrix);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
