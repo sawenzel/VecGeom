@@ -20,6 +20,7 @@ const TransformationMatrix TransformationMatrix::kIdentity =
 TransformationMatrix::TransformationMatrix() {
   SetTranslation(0, 0, 0);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  SetProperties();
 }
 
 TransformationMatrix::TransformationMatrix(const Precision tx,
@@ -27,6 +28,7 @@ TransformationMatrix::TransformationMatrix(const Precision tx,
                                            const Precision tz) {
   SetTranslation(tx, ty, tz);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  SetProperties();
 }
 
 TransformationMatrix::TransformationMatrix(
@@ -35,6 +37,7 @@ TransformationMatrix::TransformationMatrix(
     const Precision theta, const Precision psi) {
   SetTranslation(tx, ty, tz);
   SetRotation(phi, theta, psi);
+  SetProperties();
 }
 
 TransformationMatrix::TransformationMatrix(
@@ -44,6 +47,7 @@ TransformationMatrix::TransformationMatrix(
     const Precision r6, const Precision r7, const Precision r8) {
   SetTranslation(tx, ty, tz);
   SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -53,6 +57,7 @@ TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
   SetRotation(other.Rotation(0), other.Rotation(1), other.Rotation(2),
               other.Rotation(3), other.Rotation(4), other.Rotation(5),
               other.Rotation(6), other.Rotation(7), other.Rotation(8));
+  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -62,7 +67,6 @@ void TransformationMatrix::SetTranslation(const Precision tx,
   trans[0] = tx;
   trans[1] = ty;
   trans[2] = tz;
-  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -81,6 +85,7 @@ void TransformationMatrix::SetProperties() {
                  ? false : true;
   identity = !has_translation && !has_rotation;
 }
+
 
 VECGEOM_CUDA_HEADER_BOTH
 void TransformationMatrix::SetRotation(const Precision phi,
@@ -103,8 +108,6 @@ void TransformationMatrix::SetRotation(const Precision phi,
   rot[6] =  sinpsi*sinthe;
   rot[7] =  cospsi*sinthe;
   rot[8] =  costhe;
-
-  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -127,8 +130,6 @@ void TransformationMatrix::SetRotation(
   rot[6] = rot6;
   rot[7] = rot7;
   rot[8] = rot8;
-
-  SetProperties();
 }
 
 VECGEOM_CUDA_HEADER_BOTH

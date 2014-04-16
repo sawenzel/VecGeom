@@ -170,7 +170,7 @@ NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.
 
 
 // implementations follow
-NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), onboundary_(0)
+NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), global_matrix_(), onboundary_(0)
 {
    InitInternalStorage();
 }
