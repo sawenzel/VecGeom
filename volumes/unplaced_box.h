@@ -12,7 +12,11 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifdef VECGEOM_VC_ACCELERATION
+class UnplacedBox : public VUnplacedVolume, public Vc::VectorAlignedBase {
+#else
 class UnplacedBox : public VUnplacedVolume {
+#endif
 
 private:
 
