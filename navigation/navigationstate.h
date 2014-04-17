@@ -17,6 +17,7 @@
 #ifdef VECGEOM_ROOT
 #include "management/rootgeo_manager.h"
 #endif
+class TGeoBranchArray;
 
 namespace VECGEOM_NAMESPACE
 {
@@ -50,6 +51,13 @@ public:
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState( NavigationState const & rhs );
+
+   // TODO: put this in ifdefs to be compiled on in case we have ROOT
+   VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
+   NavigationState( TGeoBranchArray const & rhs );
+
+   TGeoBranchArray * ToTGeoBranchArray() const;
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH

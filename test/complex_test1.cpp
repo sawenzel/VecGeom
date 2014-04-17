@@ -23,6 +23,7 @@
 #include "TGeoBBox.h"
 #include "TGeoMatrix.h"
 #include "TGeoVolume.h"
+#include "TGeoBranchArray.h"
 #include <cassert>
 
 #include <vector>
@@ -366,6 +367,56 @@ void test_safety()
       std::cerr << "test9 (statistical safetytest from navigation) passed" << "\n";
 }
 
+void test_NavigationStateToTGeoBranchArrayConversion()
+{
+	for(int i=0;i<100000;++i)
+	{
+	//std::cerr << "START ITERATION " << i << "\n";
+		double x = RNG::Instance().uniform(-10,10);
+		double y = RNG::Instance().uniform(-10,10);
+		double z = RNG::Instance().uniform(-10,10);
+
+		// VecGeom navigation
+		Vector3D<Precision> p(x,y,z);
+		Vector3D<Precision> d=sampleDir();
+
+		NavigationState state(4), newstate(4);
+		SimpleNavigator nav;
+		nav.LocatePoint( RootGeoManager::Instance().world(),
+				p, state, true );
+		double step;
+		nav.FindNextBoundaryAndStep( p, d, state, newstate, 1E30, step );
+
+		TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
+
+		// we are now testing conversion of states such that the ROOT navigator
+		// does not need to be initialized via FindNode()...
+		TGeoBranchArray * path = state.ToTGeoBranchArray();
+		rootnav->SetCurrentPoint(x,y,z);
+		rootnav->SetCurrentDirection(d[0],d[1],d[2]);
+		path->UpdateNavigator( rootnav );
+		rootnav->FindNextBoundaryAndStep( 1E30 );
+
+		if( newstate.Top() != NULL )
+		{
+			if( rootnav->GetCurrentNode()
+					!= RootGeoManager::Instance().tgeonode( newstate.Top() ) )
+			{
+				std::cerr << "ERROR ON ITERATION " << i << "\n";
+	            std::cerr << i << " " << d << "\n";
+	            std::cerr << i << " " << p << "\n";
+	            std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << "\n";
+	            std::cerr << rootnav->GetStep() << "\n";
+	            std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate.Top() ) << "\n";
+	            nav.InspectEnvironmentForPointAndDirection( p, d, state );
+	         }
+		}
+	   assert( state.Top() != newstate.Top() );
+	   delete path;
+	}
+	std::cerr << "test  (init TGeoBranchArray from NavigationState) passed" << "\n";
+}
+
 void test_geoapi()
 {
    std::vector<VPlacedVolume *> v1;
@@ -392,6 +443,7 @@ int main()
 
     test_geoapi();
     testnavsimple();
+    test_NavigationStateToTGeoBranchArrayConversion();
 
     test1();
     test2();

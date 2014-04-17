@@ -11,6 +11,7 @@
 #include "base/type_map.h"
 #include "TGeoNode.h"
 
+
 namespace VECGEOM_NAMESPACE {
 
 /**
@@ -47,7 +48,16 @@ public:
    */
   VPlacedVolume const* world() const { return world_; }
 
-  TGeoNode const * tgeonode( VPlacedVolume const * p ) const { return placed_volumes_[const_cast<VPlacedVolume*>(p)]; }
+  TGeoNode const * tgeonode( VPlacedVolume const * p ) const
+  { return placed_volumes_[const_cast<VPlacedVolume*>(p)]; }
+
+  /**
+   * Get placed volume that corresponds to a TGeoNode
+   */
+  VPlacedVolume const * GetPlacedVolume( TGeoNode const * n ) const {
+	  return placed_volumes_[n];
+  }
+
   char const *  GetName( VPlacedVolume const * p  ) const { return tgeonode(p)->GetName(); }
   void PrintNodeTable() const;
 
