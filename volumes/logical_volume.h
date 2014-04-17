@@ -100,7 +100,12 @@ public:
     return g_volume_list;
   }
 
-  void set_label(char const *const label) { *label_ = label; }
+  void set_label(char const *const label) {
+    if( label_ )
+      *label_ = label;
+    else
+        label_=new std::string(label);
+  }
 
   VECGEOM_INLINE
   void setUserExtensionPtr( void * userpointer ) { user_extension_ = userpointer; }
