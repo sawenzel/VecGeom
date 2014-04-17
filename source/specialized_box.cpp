@@ -9,7 +9,7 @@ class TransformationMatrix;
 class VPlacedVolume;
 
 __global__
-void SpecializedBoxConstructOnGpu(
+void ConstructOnGpu(
     const int trans_code, const int rot_code,
     LogicalVolume const *const logical_volume,
     TransformationMatrix const *const matrix,
@@ -33,14 +33,12 @@ void SpecializedBoxConstructOnGpu(
 #endif
 }
 
-void SpecializedBoxGpuInterface(const int trans_code,
-                                const int rot_code,
-                                LogicalVolume const *const logical_volume,
-                                TransformationMatrix const *const matrix,
-                                const int id,
-                                VPlacedVolume *const gpu_ptr) {
-  SpecializedBoxConstructOnGpu<<<1, 1>>>(trans_code, rot_code, logical_volume,
-                                         matrix, id, gpu_ptr);
+void SpecializedBox_CopyToGpu(const int trans_code, const int rot_code,
+                              LogicalVolume const *const logical_volume,
+                              TransformationMatrix const *const matrix,
+                              const int id, VPlacedVolume *const gpu_ptr) {
+  ConstructOnGpu<<<1, 1>>>(trans_code, rot_code, logical_volume, matrix, id,
+                           gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC

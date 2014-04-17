@@ -34,6 +34,8 @@ VPlacedVolume* RootGeoManager::Convert(TGeoNode const *const node) {
   TransformationMatrix const *const matrix = Convert(node->GetMatrix());
   LogicalVolume *const logical_volume = Convert(node->GetVolume());
   VPlacedVolume *const placed_volume = logical_volume->Place(matrix);
+    // set name for placed_volume
+  placed_volume->set_label( node->GetName() );
 
   int remaining_daughters = 0;
   {
@@ -69,6 +71,8 @@ LogicalVolume* RootGeoManager::Convert(TGeoVolume const *const volume) {
 
   VUnplacedVolume const *const unplaced = Convert(volume->GetShape());
   LogicalVolume *const logical_volume = new LogicalVolume(unplaced);
+  // set name for logical volume
+  logical_volume->set_label( volume->GetName() );
 
   logical_volumes_.Set(volume, logical_volume);
   return logical_volume;

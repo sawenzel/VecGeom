@@ -20,8 +20,8 @@ int main() {
 
   LogicalVolume worldl = LogicalVolume(&world_params);
 
-  LogicalVolume largebox = LogicalVolume(&largebox_params);
-  LogicalVolume smallbox = LogicalVolume(&smallbox_params);
+  LogicalVolume largebox = LogicalVolume("Large box", &largebox_params);
+  LogicalVolume smallbox = LogicalVolume("Small box", &smallbox_params);
 
   TransformationMatrix origin = TransformationMatrix();
   TransformationMatrix placement1 = TransformationMatrix( 2,  2,  2);
@@ -53,6 +53,9 @@ int main() {
   NavigationState path(4);
   nav.LocatePoint(world_placed, point, path, true);
   path.Print();
+
+  GeoManager::Instance().FindLogicalVolume("Large box");
+  GeoManager::Instance().FindPlacedVolume("Large box");
 
   return 0;
 }

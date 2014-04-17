@@ -202,10 +202,8 @@ void SOA3D<Type>::push_back(Vector3D<Type> const &vec) {
 
 template <typename Type> class SOA3D;
 
-SOA3D<Precision>* SOA3DCopyToGpuInterface(Precision *const x,
-                                          Precision *const y,
-                                          Precision *const z,
-                                          const int size);
+SOA3D<Precision>* SOA3D_CopyToGpu(Precision *const x, Precision *const y,
+                                  Precision *const z, const int size);
 
 template <typename Type>
 SOA3D<Type>* SOA3D<Type>::CopyToGpu(Type *const x_gpu,
@@ -216,7 +214,7 @@ SOA3D<Type>* SOA3D<Type>::CopyToGpu(Type *const x_gpu,
   vecgeom::CopyToGpu(x_, x_gpu, mem_size);
   vecgeom::CopyToGpu(y_, y_gpu, mem_size);
   vecgeom::CopyToGpu(z_, z_gpu, mem_size);
-  return SOA3DCopyToGpuInterface(x_gpu, y_gpu, z_gpu, count);
+  return SOA3D_CopyToGpu(x_gpu, y_gpu, z_gpu, count);
 }
 
 template <typename Type>
@@ -228,7 +226,7 @@ SOA3D<Type>* SOA3D<Type>::CopyToGpu(Type *const x_gpu,
   vecgeom::CopyToGpu(x_, x_gpu, mem_size);
   vecgeom::CopyToGpu(y_, y_gpu, mem_size);
   vecgeom::CopyToGpu(z_, z_gpu, mem_size);
-  return SOA3DCopyToGpuInterface(x_gpu, y_gpu, z_gpu, count);
+  return SOA3D_CopyToGpu(x_gpu, y_gpu, z_gpu, count);
 }
 
 #endif // VECGEOM_CUDA

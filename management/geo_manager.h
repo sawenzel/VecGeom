@@ -10,7 +10,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
 // probably don't need apply to be virtual
 template<typename Container>
@@ -105,6 +105,30 @@ public:
    *  return max depth of volume hierarchy
    */
   int getMaxDepth() const;
+
+  /**
+   * \return Volume with passed id, or NULL is the id wasn't found.
+   */
+  VPlacedVolume* FindPlacedVolume(const int id);
+
+  /**
+   * \return First occurrence of volume with passed label. If multiple volumes
+   *         are found, their id will be printed to standard output.
+   */
+  VPlacedVolume* FindPlacedVolume(char const *const label);
+
+
+  /**
+   * \return Volume with passed id, or NULL is the id wasn't found.
+   */
+  LogicalVolume* FindLogicalVolume(const int id);
+
+
+  /**
+   * \return First occurrence of volume with passed label. If multiple volumes
+   *         are found, their id will be printed to standard output.
+   */
+  LogicalVolume* FindLogicalVolume(char const *const label);
 
 protected:
 

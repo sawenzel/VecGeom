@@ -70,7 +70,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -Wall -fPIC")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -270,7 +270,6 @@ endif()
 set(SRC_CPP_RELATIVE
   source/aos3d.cpp
   source/container.cpp
-  source/geo_manager.cpp
   source/logical_volume.cpp
   source/placed_box.cpp
   source/placed_volume.cpp
@@ -282,6 +281,7 @@ set(SRC_CPP_RELATIVE
   source/unplaced_volume.cpp
   source/vector3d.cpp
   source/NavigationState.cpp	
+  source/simple_navigator.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -324,7 +324,9 @@ if (BENCHMARK)
     source/benchmarking/distance_to_in.cu
   )
 endif()
-set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL})
+set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
+  source/geo_manager.cpp
+)
 
 # Compile cpp-files for C++11
 

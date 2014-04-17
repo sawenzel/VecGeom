@@ -65,9 +65,7 @@ protected:
 
 public:
 
-  virtual ~VPlacedVolume() {
-    delete label_;
-  }
+  virtual ~VPlacedVolume();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -104,6 +102,10 @@ public:
     return matrix_;
   }
 
+  static std::list<VPlacedVolume *> const& volume_list() {
+    return g_volume_list;
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   void set_logical_volume(LogicalVolume const *const logical_volume) {
     logical_volume_ = logical_volume;
@@ -119,6 +121,12 @@ public:
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
   virtual int memory_size() const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Print(const int indent = 0) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const =0;
 
   /**
    * Recursively prints contained volumes.
@@ -192,11 +200,6 @@ public:
   virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const =0;
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
-
-  static VPlacedVolume* FindVolume(const int id);
-
-  static VPlacedVolume* FindVolume(char const *const label);
-
 
 protected:
 

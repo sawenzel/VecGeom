@@ -10,6 +10,7 @@
 
 #include <string>
 
+
 #include "backend/backend.h"
 #include "base/transformation_matrix.h"
 #include "volumes/placed_volume.h"
@@ -178,7 +179,7 @@ NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.
 
 
 // implementations follow
-NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), onboundary_(0)
+NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), global_matrix_(), onboundary_(0)
 {
    InitInternalStorage();
 }
@@ -199,7 +200,9 @@ NavigationState::~NavigationState()
 void
 NavigationState::Pop()
 {
-   if(currentlevel_ > 0) path_[currentlevel_--]=0;
+   if(currentlevel_ > 0){
+       path_[--currentlevel_]=0;
+   }
 }
 
 void

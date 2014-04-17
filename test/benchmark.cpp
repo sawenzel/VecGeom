@@ -42,8 +42,8 @@ int main() {
 
   DistanceToInBenchmarker tester(GeoManager::Instance().world());
   tester.set_verbose(2);
-  tester.set_repetitions(4096);
-  tester.set_n_points(1<<13);
+  tester.set_repetitions(1<<10);
+  tester.set_n_points(1<<10);
   tester.BenchmarkAll();
 
   return 0;

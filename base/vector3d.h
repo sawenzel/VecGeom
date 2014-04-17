@@ -320,6 +320,7 @@ public:
 
 };
 
+
 std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
@@ -331,7 +332,7 @@ std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
 */
 
 template <>
-class Vector3D<Precision> {
+class Vector3D<Precision> : public Vc::VectorAlignedBase {
 
   typedef Vector3D<Precision> VecType;
   typedef Vector3D<bool> BoolType;

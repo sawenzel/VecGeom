@@ -13,21 +13,36 @@ int VPlacedVolume::g_id_count = 0;
 std::list<VPlacedVolume *> VPlacedVolume::g_volume_list =
     std::list<VPlacedVolume *>();
 
+VPlacedVolume::~VPlacedVolume() {
+  delete label_;
+  g_volume_list.remove(this);
+}
+
 VECGEOM_CUDA_HEADER_BOTH
-void VPlacedVolume::PrintContent(const int depth) const {
-  for (int i = 0; i < depth; ++i) printf("  ");
-  printf("[%i]", id_);
+void VPlacedVolume::Print(const int indent) const {
+  for (int i = 0; i < indent; ++i) printf("  ");
+  PrintType();
+  printf(" [%i]", id_);
 #ifndef VECGEOM_NVCC
   if (label_->size()) {
     printf(" \"%s\"", label_->c_str());
   }
 #endif
-  printf(": ");
-  unplaced_volume()->Print();
+  printf(": \n");
+  for (int i = 0; i <= indent; ++i) printf("  ");
+  matrix_->Print();
   printf("\n");
+  logical_volume_->Print(indent+1);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void VPlacedVolume::PrintContent(const int indent) const {
+  Print(indent);
+  printf(":");
   for (Iterator<VPlacedVolume const*> vol = daughters().begin();
        vol != daughters().end(); ++vol) {
-    (*vol)->PrintContent(depth + 1);
+    printf("\n");
+    (*vol)->PrintContent(indent+3);
   }
 }
 
@@ -35,22 +50,6 @@ VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
   os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.matrix()) << ")";
   return os;
-}
-
-VPlacedVolume* VPlacedVolume::FindVolume(const int id) {
-  for (std::list<VPlacedVolume *>::const_iterator v = g_volume_list.begin(),
-       v_end = g_volume_list.end(); v != v_end; ++v) {
-    if ((*v)->id() == id) return *v;
-  }
-  return NULL;
-}
-
-VPlacedVolume* VPlacedVolume::FindVolume(char const *const label) {
-  for (std::list<VPlacedVolume *>::const_iterator v = g_volume_list.begin(),
-       v_end = g_volume_list.end(); v != v_end; ++v) {
-    if ((*v)->label() == label) return *v;
-  }
-  return NULL;
 }
 
 } // End global namespace

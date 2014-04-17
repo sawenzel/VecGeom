@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+
 namespace vecgeom_cuda {
 
 __global__

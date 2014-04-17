@@ -11,6 +11,11 @@
 
 namespace VECGEOM_NAMESPACE {
 
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedBox::Print() const {
+  printf("UnplacedBox {%.2f, %.2f, %.2f}", x(), y(), z());
+}
+
 #ifndef VECGEOM_NVCC
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -64,22 +69,17 @@ VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
 
 #endif
 
-VECGEOM_CUDA_HEADER_BOTH
-void UnplacedBox::Print() const {
-  printf("Box {%f, %f, %f}", dimensions_[0], dimensions_[1], dimensions_[2]);
-}
-
 } // End global namespace
 
 namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void GpuInterface(const Precision x, const Precision y, const Precision z,
-                  VUnplacedVolume *const gpu_ptr);
+void UnplacedBox_CopyToGpu(const Precision x, const Precision y,
+                           const Precision z, VUnplacedVolume *const gpu_ptr);
 
 VUnplacedVolume* UnplacedBox::CopyToGpu(VUnplacedVolume *const gpu_ptr) const {
-  GpuInterface(this->x(), this->y(), this->z(), gpu_ptr);
+  UnplacedBox_CopyToGpu(this->x(), this->y(), this->z(), gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 }
@@ -101,8 +101,8 @@ void ConstructOnGpu(const Precision x, const Precision y, const Precision z,
   new(gpu_ptr) vecgeom_cuda::UnplacedBox(x, y, z);
 }
 
-void GpuInterface(const Precision x, const Precision y, const Precision z,
-                  VUnplacedVolume *const gpu_ptr) {
+void UnplacedBox_CopyToGpu(const Precision x, const Precision y,
+                           const Precision z, VUnplacedVolume *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(x, y, z, gpu_ptr);
 }
 
