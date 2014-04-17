@@ -175,15 +175,13 @@ public:
 
 
   // Templates to interact with common C-like kernels
-  template <TranslationCode trans_code, RotationCode rot_code,
-              typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::bool_v InsideDispatch(
       Vector3D<typename Backend::precision_v> const &point) const;
 
-  template <TranslationCode trans_code, RotationCode rot_code,
-                 typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v DistanceToInDispatch(
@@ -208,8 +206,8 @@ public:
              Vector3D<typename Backend::precision_v> const &position
           ) const;
 
-  template <TranslationCode trans_code, RotationCode rot_code,
-               typename Backend>
+
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   typename Backend::precision_v SafetyToInDispatch(
@@ -219,14 +217,15 @@ public:
 };
 
 
-template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
+// TODO: we could implement this function on specialized box and dispatch there...
 typename Backend::bool_v PlacedBox::InsideDispatch(
     Vector3D<typename Backend::precision_v> const &point) const {
 
   typename Backend::bool_v output;
-  BoxInside<trans_code, rot_code, Backend>(
+  BoxInside<1, 0, Backend>(
     unplaced_box()->dimensions(),
     *this->matrix(),
     point,
@@ -235,7 +234,7 @@ typename Backend::bool_v PlacedBox::InsideDispatch(
   return output;
 }
 
-template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v PlacedBox::DistanceToInDispatch(
@@ -244,7 +243,7 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
     const typename Backend::precision_v step_max) const {
 
   typename Backend::precision_v output;
-  BoxDistanceToIn<trans_code, rot_code, Backend>(
+  BoxDistanceToIn<1, 0, Backend>(
     unplaced_box()->dimensions(),
     *this->matrix(),
     position,
@@ -285,14 +284,15 @@ typename Backend::precision_v PlacedBox::SafetyToOutDispatch(
    return safety;
 }
 
-template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
+
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v PlacedBox::SafetyToInDispatch(
       Vector3D<typename Backend::precision_v> const &position
 ) const {
    typename Backend::precision_v safety;
-   BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
+   BoxSafetyToIn<1, 0, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
    return safety;
 }
 
@@ -306,14 +306,15 @@ UnplacedBox const* PlacedBox::unplaced_box() const {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
-  return PlacedBox::InsideDispatch<1, 0, kScalar>(point);
+  return PlacedBox::InsideDispatch<kScalar>(point);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
-  // no translation and no rotation should look like this:
-   return PlacedBox::InsideDispatch<0, rotation::kIdentity, kScalar>(localpoint);
+  // no translation and no rotation; should look like this:
+ //  return PlacedBox::InsideDispatch<0, rotation::kIdentity, kScalar>(localpoint);
+   return SpecializedPlacedBox<0,rotation::kIdentity>::InsideDispatch(localpoint);
 }
 
 

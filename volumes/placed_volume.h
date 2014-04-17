@@ -205,15 +205,13 @@ protected:
 
   // Implemented by the vector backend
 
-  template <TranslationCode trans_code, RotationCode rot_code,
-            typename VolumeType, typename ContainerType>
+  template <typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void Inside_Looper(VolumeType const &volume,
                             ContainerType const &points,
                             bool *const output);
 
-  template <TranslationCode trans_code, RotationCode rot_code,
-            typename VolumeType, typename ContainerType>
+  template <typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void DistanceToIn_Looper(VolumeType const &volume,
                                   ContainerType const &positions,
@@ -230,12 +228,12 @@ protected:
                                    Precision const *const step_max,
                                    Precision *const output);
 
-  template <TranslationCode trans_code, RotationCode rot_code,
-               typename VolumeType, typename ContainerType>
+  template <typename VolumeType, typename ContainerType>
   VECGEOM_INLINE
   static void SafetyToIn_Looper(VolumeType const &volume,
         ContainerType const &positions,
         Precision *const output);
+
 
   template <typename VolumeType, typename ContainerType>
   VECGEOM_INLINE

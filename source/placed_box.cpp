@@ -78,15 +78,13 @@ void PlacedBox::DistanceToOut( SOA3D<Precision> const &position,
 
 void PlacedBox::SafetyToIn( SOA3D<Precision> const &position,
         Precision *const safeties ) const {
-   return SafetyToIn_Looper<translation::kGeneric, rotation::kGeneric>(
-              *this, position, safeties);
+   return SafetyToIn_Looper(*this, position, safeties);
 }
 
 
 void PlacedBox::SafetyToIn( AOS3D<Precision> const &position,
         Precision *const safeties ) const {
-   return SafetyToIn_Looper<translation::kGeneric, rotation::kGeneric>(
-              *this, position, safeties);
+   return SafetyToIn_Looper(*this, position, safeties);
 }
 
 

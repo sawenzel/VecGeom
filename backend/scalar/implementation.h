@@ -16,22 +16,20 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
                                   bool *const output) {
   for (int i = 0, i_max = points.size(); i < i_max; ++i) {
     output[i] =
-        volume.template InsideDispatch<trans_code, rot_code, kScalar>(
+        volume.template InsideDispatch<kScalar>(
           points[i]
         );
   }
 }
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &positions,
@@ -40,7 +38,7 @@ void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         Precision *const output) {
   for (int i = 0, i_max = positions.size(); i < i_max; ++i) {
     output[i] =
-        volume.template DistanceToInDispatch<trans_code, rot_code, kScalar>(
+        volume.template DistanceToInDispatch<kScalar>(
           positions[i], directions[i], step_max[i]
         );
   }
@@ -61,16 +59,14 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
   }
 }
 
-template <TranslationCode trans_code, RotationCode rot_code,
-typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
                                       Precision *const output)
 {
   for (int i = 0, i_max = positions.size(); i < i_max; ++i) {
-    output[i] = volume.template SafetyToInDispatch<trans_code, rot_code,
-                                                   kScalar>(positions[i]);
+    output[i] = volume.template SafetyToInDispatch<kScalar>(positions[i]);
   }
 }
 

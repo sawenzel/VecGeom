@@ -154,7 +154,7 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
     SOA3D<Precision> const &directions,
     Precision const *const step_max,
     Precision *const output) const {
-  DistanceToIn_Looper<trans_code, rot_code>(*this, positions, directions,
+  DistanceToIn_Looper(*this, positions, directions,
                                             step_max, output);
 }
 
@@ -164,7 +164,7 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
     AOS3D<Precision> const &directions,
     Precision const *const step_max,
     Precision *const output) const {
-  DistanceToIn_Looper<trans_code, rot_code>(*this, positions, directions,
+  DistanceToIn_Looper(*this, positions, directions,
                                             step_max, output);
 }
 
@@ -177,13 +177,13 @@ Precision SpecializedBox<trans_code, rot_code>::SafetyToIn(
 template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::SafetyToIn(
       SOA3D<Precision> const &position, Precision *const safeties ) const {
-   SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
+   SafetyToIn_Looper(*this, position, safeties);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::SafetyToIn(
       AOS3D<Precision> const &position, Precision *const safeties ) const {
-   SafetyToIn_Looper<trans_code, rot_code>(*this, position, safeties);
+   SafetyToIn_Looper(*this, position, safeties);
 }
 
 } // End global namespace

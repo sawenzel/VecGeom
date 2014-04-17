@@ -16,8 +16,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
@@ -25,7 +24,7 @@ void VPlacedVolume::Inside_Looper(VolumeType const &volume,
   for (int i = 0, i_max = points.size(); i < i_max;
        i += CilkPrecision::size()) {
     const CilkBool result =
-        volume.template InsideDispatch<trans_code, rot_code, kCilk>(
+        volume.template InsideDispatch<kCilk>(
           Vector3D<CilkPrecision>(CilkPrecision(&points.x(i)),
                                   CilkPrecision(&points.y(i)),
                                   CilkPrecision(&points.z(i)))
@@ -34,8 +33,7 @@ void VPlacedVolume::Inside_Looper(VolumeType const &volume,
   }
 }
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &positions,
@@ -45,8 +43,7 @@ void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
   for (int i = 0, i_max = positions.size(); i < i_max;
        i += CilkPrecision::size()) {
     const CilkPrecision result =
-        volume.template DistanceToInDispatch<trans_code, rot_code,
-                                                          kCilk>(
+        volume.template DistanceToInDispatch<kCilk>(
           Vector3D<CilkPrecision>(CilkPrecision(&positions.x(i)),
                                   CilkPrecision(&positions.y(i)),
                                   CilkPrecision(&positions.z(i))),
@@ -82,8 +79,7 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
   }
 }
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
@@ -91,7 +87,7 @@ void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
   for (int i = 0, i_max = positions.size(); i < i_max;
        i += CilkPrecision::size()) {
     const CilkPrecision result =
-        volume.template SafetyToInDispatch<trans_code,rot_code, kCilk>(
+        volume.template SafetyToInDispatch<kCilk>(
           Vector3D<CilkPrecision>(CilkPrecision(&positions.x(i)),
                                   CilkPrecision(&positions.y(i)),
                                   CilkPrecision(&positions.z(i)))

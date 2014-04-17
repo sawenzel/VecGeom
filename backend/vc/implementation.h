@@ -15,15 +15,14 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::Inside_Looper(VolumeType const &volume,
                                   ContainerType const &points,
                                   bool *const output) {
   for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
     const VcBool result =
-        volume.template InsideDispatch<trans_code, rot_code, kVc>(
+        volume.template InsideDispatch<kVc>(
           Vector3D<VcPrecision>(VcPrecision(&points.ContainerType::x(i)),
                                 VcPrecision(&points.ContainerType::y(i)),
                                 VcPrecision(&points.ContainerType::z(i)))
@@ -34,8 +33,7 @@ void VPlacedVolume::Inside_Looper(VolumeType const &volume,
   }
 }
 
-template <TranslationCode trans_code, RotationCode rot_code,
-          typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         ContainerType const &positions,
@@ -44,7 +42,7 @@ void VPlacedVolume::DistanceToIn_Looper(VolumeType const &volume,
                                         Precision *const output) {
   for (int i = 0, i_max = positions.size(); i < i_max; i += kVectorSize) {
     const VcPrecision result =
-        volume.template DistanceToInDispatch<trans_code, rot_code, kVc>(
+        volume.template DistanceToInDispatch<kVc>(
           Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
                                 VcPrecision(&positions.ContainerType::y(i)),
                                 VcPrecision(&positions.ContainerType::z(i))),
@@ -79,8 +77,7 @@ void VPlacedVolume::DistanceToOut_Looper(VolumeType const &volume,
   }
 }
 
-template <TranslationCode trans_code, RotationCode rot_code,
-         typename VolumeType, typename ContainerType>
+template <typename VolumeType, typename ContainerType>
 VECGEOM_INLINE
 void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
                                       ContainerType const &positions,
@@ -88,7 +85,7 @@ void VPlacedVolume::SafetyToIn_Looper(VolumeType const &volume,
 {
   for (int i = 0, i_max = positions.size(); i < i_max; i += kVectorSize) {
     const VcPrecision result =
-        volume.template SafetyToInDispatch<trans_code,rot_code, kVc>(
+        volume.template SafetyToInDispatch<kVc>(
           Vector3D<VcPrecision>(VcPrecision(&positions.ContainerType::x(i)),
                                 VcPrecision(&positions.ContainerType::y(i)),
                                 VcPrecision(&positions.ContainerType::z(i))));
