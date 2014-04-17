@@ -70,7 +70,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -std=c++11 -Wall -fPIC")
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -183,7 +183,7 @@ if (ROOT)
 
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
-  set(LIBS ${LIBS} ${ROOT_LIBRARIES} -lGeom)
+  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
   set(SRC_EXTERNAL ${SRC_EXTERNAL} source/rootgeo_manager.cpp)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
 

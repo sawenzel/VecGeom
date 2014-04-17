@@ -393,6 +393,8 @@ void test_NavigationStateToTGeoBranchArrayConversion()
 		// we are now testing conversion of states such that the ROOT navigator
 		// does not need to be initialized via FindNode()...
 		TGeoBranchArray * path = state.ToTGeoBranchArray();
+		// path->Print();
+		rootnav->ResetState();
 		rootnav->SetCurrentPoint(x,y,z);
 		rootnav->SetCurrentDirection(d[0],d[1],d[2]);
 		path->UpdateNavigator( rootnav );
