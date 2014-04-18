@@ -373,49 +373,49 @@ void test_NavigationStateToTGeoBranchArrayConversion()
 	for(int i=0;i<100000;++i)
 	{
 	//std::cerr << "START ITERATION " << i << "\n";
-		double x = RNG::Instance().uniform(-10,10);
-		double y = RNG::Instance().uniform(-10,10);
-		double z = RNG::Instance().uniform(-10,10);
+	  double x = RNG::Instance().uniform(-10,10);
+	  double y = RNG::Instance().uniform(-10,10);
+	  double z = RNG::Instance().uniform(-10,10);
 
-		// VecGeom navigation
-		Vector3D<Precision> p(x,y,z);
-		Vector3D<Precision> d=sampleDir();
+	  // VecGeom navigation
+	  Vector3D<Precision> p(x,y,z);
+	  Vector3D<Precision> d=sampleDir();
+	  
+	  NavigationState state(4), newstate(4);
+	  SimpleNavigator nav;
+	  nav.LocatePoint( RootGeoManager::Instance().world(),
+			   p, state, true );
+	  double step;
+	  nav.FindNextBoundaryAndStep( p, d, state, newstate, 1E30, step );
+	  
+	  TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
 
-		NavigationState state(4), newstate(4);
-		SimpleNavigator nav;
-		nav.LocatePoint( RootGeoManager::Instance().world(),
-				p, state, true );
-		double step;
-		nav.FindNextBoundaryAndStep( p, d, state, newstate, 1E30, step );
-
-		TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
-
-		// we are now testing conversion of states such that the ROOT navigator
-		// does not need to be initialized via FindNode()...
-		TGeoBranchArray * path = state.ToTGeoBranchArray();
-		// path->Print();
-		rootnav->ResetState();
-		rootnav->SetCurrentPoint(x,y,z);
-		rootnav->SetCurrentDirection(d[0],d[1],d[2]);
-		path->UpdateNavigator( rootnav );
-		rootnav->FindNextBoundaryAndStep( 1E30 );
-
-		if( newstate.Top() != NULL )
+	  // we are now testing conversion of states such that the ROOT navigator
+	  // does not need to be initialized via FindNode()...
+	  TGeoBranchArray * path = state.ToTGeoBranchArray();
+	  // path->Print();
+	  rootnav->ResetState();
+	  rootnav->SetCurrentPoint(x,y,z);
+	  rootnav->SetCurrentDirection(d[0],d[1],d[2]);
+	  path->UpdateNavigator( rootnav );
+	  rootnav->FindNextBoundaryAndStep( 1E30 );
+	  
+	  if( newstate.Top() != NULL )
+	    {
+	      if( rootnav->GetCurrentNode()
+		  != RootGeoManager::Instance().tgeonode( newstate.Top() ) )
 		{
-			if( rootnav->GetCurrentNode()
-					!= RootGeoManager::Instance().tgeonode( newstate.Top() ) )
-			{
-				std::cerr << "ERROR ON ITERATION " << i << "\n";
-	            std::cerr << i << " " << d << "\n";
-	            std::cerr << i << " " << p << "\n";
-	            std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << "\n";
-	            std::cerr << rootnav->GetStep() << "\n";
-	            std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate.Top() ) << "\n";
-	            nav.InspectEnvironmentForPointAndDirection( p, d, state );
-	         }
+		  std::cerr << "ERROR ON ITERATION " << i << "\n";
+		  std::cerr << i << " " << d << "\n";
+		  std::cerr << i << " " << p << "\n";
+		  std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << "\n";
+		  std::cerr << rootnav->GetStep() << "\n";
+		  std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate.Top() ) << "\n";
+		  nav.InspectEnvironmentForPointAndDirection( p, d, state );
 		}
-	   assert( state.Top() != newstate.Top() );
-	   delete path;
+	    }
+	  assert( state.Top() != newstate.Top() );
+	  delete path;
 	}
 	std::cerr << "test  (init TGeoBranchArray from NavigationState) passed" << "\n";
 }
@@ -439,15 +439,15 @@ void test_geoapi()
 void test_aos3d()
 {
 	SOA3D<Precision> container1(1024);
-	assert(container1.fillsize() == 0);
+	assert(container1.size() == 0);
 	container1.push_back( Vector3D<Precision>(1,0,1));
-	assert(container1.fillsize() == 1);
+	assert(container1.size() == 1);
 	std::cerr << "test soa3d passed" << std::endl;
 
 	AOS3D<Precision> container2(1024);
-	assert(container2.fillsize() == 0);
+	assert(container2.size() == 0);
 	container2.push_back( Vector3D<Precision>(1,0,1));
-	assert(container2.fillsize() == 1);
+	assert(container2.size() == 1);
 	std::cerr << "test aos3d passed" << std::endl;
 
 }
