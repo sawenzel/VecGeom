@@ -66,6 +66,7 @@ public:
     *         the path itself
     *         a new path object which is filled
     * output: yes or no
+    * side effects: modifies newstate to be path of globalpoint
     *
     * scope: function to be used on both CPU and GPU
     */
@@ -74,7 +75,7 @@ public:
    bool
    HasSamePath(
             Vector3D<Precision> const & /* globalpoint */,
-            NavigationState & /* currentstate */,
+            NavigationState const & /* currentstate */,
             NavigationState & /* newstate */
             ) const;
 
@@ -132,6 +133,15 @@ public:
          Vector3D<Precision> const & /* global direction */,
          NavigationState const & /* current state */
    ) const;
+
+   /**
+    * A verbose function telling about safety calculation starting from a navigation state
+    * and a global point; mainly for debugging purposes
+    */
+   void InspectSafetyForPoint(
+		   Vector3D<Precision> const & /* global point */,
+		   NavigationState const & /* current state */
+      ) const;
 
 }; // end of class declaration
 
@@ -211,14 +221,14 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool
 SimpleNavigator::HasSamePath( Vector3D<Precision> const & globalpoint,
-                       NavigationState & currentstate,
+                       NavigationState const & currentstate,
                        NavigationState & newstate ) const
 {
    TransformationMatrix const & m = currentstate.TopMatrix();
    Vector3D<Precision> localpoint = m.Transform(globalpoint);
    newstate = currentstate;
    RelocatePointFromPath( localpoint, newstate );
-   return newstate.Top() == currentstate.Top();
+   return currentstate.HasSamePathAsOther( newstate );
 }
 
 
@@ -245,6 +255,16 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 
    step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
    //std::cerr << " DistanceToOut " << step << "\n";
+
+   // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
+   // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
+   // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
+   if( step < 0. )
+   {
+	   newstate = currentstate;
+	   RelocatePointFromPath( localpoint, newstate );
+	   return;
+   }
 
    // iterate over all the daughter
    Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
