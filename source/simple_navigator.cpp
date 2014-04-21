@@ -83,5 +83,59 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 }
 #endif
 
+void SimpleNavigator::InspectSafetyForPoint
+   (   Vector3D<Precision> const & globalpoint,
+      NavigationState const & state ) const
+{
+   TransformationMatrix m = const_cast<NavigationState &>(state).TopMatrix();
+   Vector3D<Precision> localpoint = m.Transform( globalpoint );
+
+   // check that everything is consistent
+   {
+      NavigationState tmpstate( state );
+      tmpstate.Clear();
+      assert( LocatePoint( GeoManager::Instance().world(),
+              globalpoint, tmpstate, true ) == state.Top() );
+   }
+
+   std::cout << "############################################ " << "\n";
+   // safety to mother
+   VPlacedVolume const * currentvol = state.Top();
+   double safety = currentvol->SafetyToOut( localpoint );
+   std::cout << "Safety in placed volume : " << RootGeoManager::Instance().GetName( currentvol ) << "\n";
+   std::cout << "Safety to Mother : " << safety << "\n";
+
+   //assert( safety > 0 );
+
+   // safety to daughters
+   Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
+   int numberdaughters = daughters->size();
+   for(int d = 0; d<numberdaughters; ++d)
+   {
+	   VPlacedVolume const * daughter = daughters->operator [](d);
+	   double tmp = daughter->SafetyToIn( localpoint );
+       std::cout << "Safety to Daughter " << tmp << "\n";
+	   safety = Min(safety, tmp);
+   }
+   std::cout << "Would return" << safety << "\n";
+
+   // same information from ROOT
+   TGeoNode const * currentRootNode = RootGeoManager::Instance().tgeonode( currentvol );
+   double lp[3]={localpoint[0],localpoint[1],localpoint[2]};
+   double rootsafe =  currentRootNode->GetVolume()->GetShape()->Safety( lp, kTRUE );
+   std::cout << "---------------- CMP WITH ROOT ---------------------" << "\n";
+   std::cout << "SafetyToOutMother ROOT : " << rootsafe << "\n";
+   std::cout << "ITERATING OVER " << currentRootNode->GetNdaughters() << " DAUGHTER VOLUMES " << "\n";
+   for( int d=0; d<currentRootNode->GetNdaughters();++d )
+   {
+      TGeoMatrix const * m = currentRootNode->GetMatrix();
+      double llp[3];
+      m->MasterToLocal(lp, llp);
+      TGeoNode const * daughter=currentRootNode->GetDaughter(d);
+      Precision ddistance = daughter->GetVolume()->GetShape()->Safety(llp, kFALSE);
+      std::cout << "Safety ToDaughter ROOT : " << daughter->GetName() << " " << ddistance << "\n";
+   }
+}
+
 
 }
