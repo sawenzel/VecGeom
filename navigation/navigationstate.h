@@ -53,16 +53,15 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState( NavigationState const & rhs );
 
-   // TODO: put this in ifdefs to be compiled on in case we have ROOT
-   VECGEOM_INLINE
-   VECGEOM_CUDA_HEADER_BOTH
-   NavigationState( TGeoBranchArray const & rhs );
-
    TGeoBranchArray * ToTGeoBranchArray() const;
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
+
+
+   NavigationState & operator=( TGeoBranchArray const & rhs );
+
 
    VECGEOM_INLINE
    ~NavigationState( );
@@ -121,9 +120,30 @@ public:
    VECGEOM_INLINE
    void Print() const;
 
+   VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
+   bool HasSamePathAsOther( NavigationState const & other ) const
+   {
+        if( other.currentlevel_ != currentlevel_ ) return false;
+        for( int i= currentlevel_-1; i>=0; --i ){
+            if( path_[i] != other.path_[i] ) return false;
+        }
+        return true;
+   }
+
 #ifdef VECGEOM_ROOT
    VECGEOM_INLINE
    void printVolumePath() const;
+
+   /**
+    * returns the number of FILLED LEVELS such that
+    * state.GetNode( state.GetLevel() ) == state.Top()
+    */
+   VECGEOM_INLINE
+   int GetLevel() const {return currentlevel_-1;}
+
+   TGeoNode const * GetNode(int level) const {return
+		   RootGeoManager::Instance().tgeonode( path_[level] );}
 #endif
 
    /**

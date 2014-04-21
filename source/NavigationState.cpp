@@ -28,11 +28,28 @@ namespace VECGEOM_NAMESPACE
     
     for(int i=0;i<currentlevel_;++i)
       array[i]=const_cast<TGeoNode *>(mg.tgeonode( path_[i] ));
-    std::cout << "currentlevel_ " << currentlevel_ << std::endl;
-    // tmp->Print();
-    assert(tmp->GetCurrentNode() == mg.tgeonode( Top() ));
+    // assert( tmp->GetCurrentNode() == mg.tgeonode( Top() ));
     
     return tmp;
   }
+
+  NavigationState & NavigationState::operator=( TGeoBranchArray const & other )
+   {
+     // attention: the counting of levels is different: fLevel=0 means that
+     // this is a branch which is filled at level zero
+	 this->currentlevel_=other.GetLevel()+1;
+	 assert(currentlevel_ <= maxlevel_);
+
+     RootGeoManager & mg=RootGeoManager::Instance();
+
+     for(int i=0;i<currentlevel_;++i)
+       path_[i]=mg.GetPlacedVolume( other.GetNode(i) );
+
+     //other things like onboundary I don't care
+     onboundary_=false;
+
+     return *this;
+   }
+
 };
 
