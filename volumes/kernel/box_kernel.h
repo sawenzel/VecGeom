@@ -112,7 +112,7 @@ void BoxDistanceToIn(
   next = safety[0] / Abs(dir_local[0] + kTiny);
   coord1 = pos_local[1] + next * dir_local[1];
   coord2 = pos_local[2] + next * dir_local[2];
-  hit = safety[0] > 0 &&
+  hit = safety[0] >= 0 &&
         pos_local[0] * dir_local[0] < 0 &&
         Abs(coord1) <= dimensions[1] &&
         Abs(coord2) <= dimensions[2];
@@ -124,7 +124,7 @@ void BoxDistanceToIn(
   next = safety[1] / Abs(dir_local[1] + kTiny);
   coord1 = pos_local[0] + next * dir_local[0];
   coord2 = pos_local[2] + next * dir_local[2];
-  hit = safety[1] > 0 &&
+  hit = safety[1] >= 0 &&
         pos_local[1] * dir_local[1] < 0 &&
         Abs(coord1) <= dimensions[0] &&
         Abs(coord2) <= dimensions[2];
@@ -136,7 +136,7 @@ void BoxDistanceToIn(
   next = safety[2] / Abs(dir_local[2] + kTiny);
   coord1 = pos_local[0] + next * dir_local[0];
   coord2 = pos_local[1] + next * dir_local[1];
-  hit = safety[2] > 0 &&
+  hit = safety[2] >= 0 &&
         pos_local[2] * dir_local[2] < 0 &&
         Abs(coord1) <= dimensions[0] &&
         Abs(coord2) <= dimensions[1];
@@ -157,7 +157,6 @@ void BoxDistanceToOut(
     typedef typename Backend::precision_v Float;
     typedef typename Backend::bool_v Bool;
 
-    Float big(1E30);
 
     Float saf[3];
     saf[0] = Abs(pos[0])-dimensions[0];
@@ -166,7 +165,7 @@ void BoxDistanceToOut(
 
     // TODO: check this
     Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2]< Float(0.);
-    MaskedAssign( !inside, big, &distance );
+    MaskedAssign( !inside, kInfinity, &distance );
 
     // TODO: could make the code more compact by looping over dir
     Float invdirx = 1.0/(dir[0] + kTiny);
