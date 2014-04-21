@@ -38,11 +38,13 @@ void VPlacedVolume::Print(const int indent) const {
 VECGEOM_CUDA_HEADER_BOTH
 void VPlacedVolume::PrintContent(const int indent) const {
   Print(indent);
-  printf(":");
-  for (Iterator<VPlacedVolume const*> vol = daughters().begin();
-       vol != daughters().end(); ++vol) {
-    printf("\n");
-    (*vol)->PrintContent(indent+3);
+  if( daughters().size() > 0){
+    printf(":");
+    for (Iterator<VPlacedVolume const*> vol = daughters().begin();
+         vol != daughters().end(); ++vol) {
+      printf("\n");
+      (*vol)->PrintContent(indent+3);
+    }
   }
 }
 

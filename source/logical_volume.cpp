@@ -84,19 +84,22 @@ void LogicalVolume::Print(const int indent) const {
   unplaced_volume_->Print();
   printf("\n");
   for (int i = 0; i <= indent; ++i) printf("  ");
-  printf("Contains %i daughter", daughters_->size());
-  if (daughters_->size() != 1) printf("s");
+  if( daughters_->size() > 0){
+     printf("Contains %i daughter", daughters_->size());
+     if (daughters_->size() != 1) printf("s");
+  }
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 void LogicalVolume::PrintContent(const int indent) const {
   for (int i = 0; i < indent; ++i) printf("  ");
   Print(indent);
-  printf(":");
-  for (Iterator<Daughter> i = daughters_->begin(), i_end = daughters_->end();
-       i != i_end; ++i) {
-    (*i)->PrintContent(indent+2);
-  }
+  if( daughters_->size() > 0){
+    printf(":");
+    for (Iterator<Daughter> i = daughters_->begin(), i_end = daughters_->end();
+        i != i_end; ++i) {
+      (*i)->PrintContent(indent+2);
+  }}
 }
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
