@@ -49,13 +49,17 @@ public:
   VPlacedVolume const* world() const { return world_; }
 
   TGeoNode const * tgeonode( VPlacedVolume const * p ) const
-  { return placed_volumes_[const_cast<VPlacedVolume*>(p)]; }
+  {
+      if( p==NULL ) return NULL;
+      return placed_volumes_[const_cast<VPlacedVolume*>(p)];
+  }
 
   /**
    * Get placed volume that corresponds to a TGeoNode
    */
   VPlacedVolume const * GetPlacedVolume( TGeoNode const * n ) const {
-	  return placed_volumes_[n];
+      if( n==NULL ) return NULL;
+      return placed_volumes_[n];
   }
 
   char const *  GetName( VPlacedVolume const * p  ) const { return tgeonode(p)->GetName(); }
