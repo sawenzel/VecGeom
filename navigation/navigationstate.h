@@ -33,7 +33,7 @@ private:
    int maxlevel_;
    int currentlevel_;
    VPlacedVolume const * * path_;
-   TransformationMatrix global_matrix_;
+   mutable TransformationMatrix global_matrix_;
 
    // add other navigation state here, stuff like:
    bool onboundary_; // flag indicating whether track is on boundary of the "Top()" placed volume
@@ -97,7 +97,7 @@ public:
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    TransformationMatrix const &
-   TopMatrix();
+   TopMatrix() const;
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -230,7 +230,7 @@ NavigationState::Top() const
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 TransformationMatrix const &
-NavigationState::TopMatrix()
+NavigationState::TopMatrix() const
 {
 // this could be actually cached in case the path does not change ( particle stays inside a volume )
    global_matrix_.CopyFrom( *(path_[0]->matrix()) );
