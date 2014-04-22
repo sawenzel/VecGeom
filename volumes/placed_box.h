@@ -8,7 +8,7 @@
 
 #include "base/global.h"
 #include "backend/backend.h"
- 
+
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
 #include "volumes/kernel/box_kernel.h"
@@ -71,7 +71,9 @@ protected:
    */
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  UnplacedBox const* unplaced_box() const;
+  UnplacedBox const* unplaced_box() const {
+      return static_cast<UnplacedBox const*>(this->unplaced_volume());
+  }
 
 public:
 
@@ -294,13 +296,6 @@ typename Backend::precision_v PlacedBox::SafetyToInDispatch(
    typename Backend::precision_v safety;
    BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
    return safety;
-}
-
-
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-UnplacedBox const* PlacedBox::unplaced_box() const {
-  return static_cast<UnplacedBox const*>(this->unplaced_volume());
 }
 
 VECGEOM_CUDA_HEADER_BOTH
