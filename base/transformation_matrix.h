@@ -253,13 +253,13 @@ public:
    template <typename InputType>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
-   void InverseTransformDirection(Vector3D<InputType> const &master,
-                    Vector3D<InputType> & local) const;
+   void InverseTransformDirection(Vector3D<InputType> const &local,
+                    Vector3D<InputType> &master) const;
 
    template <typename InputType>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
-   Vector3D<InputType> InverseTransformDirection(Vector3D<InputType> const &master) const;
+   Vector3D<InputType> InverseTransformDirection(Vector3D<InputType> const &local) const;
 
   /** compose transformations - multiply transformations */
   VECGEOM_CUDA_HEADER_BOTH
