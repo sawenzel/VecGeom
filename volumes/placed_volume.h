@@ -46,6 +46,16 @@ protected:
     label_ = new std::string(label);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VPlacedVolume(VUnplacedVolume const* const unplacedVolume,
+                TransformationMatrix const *const matrix,
+				PlacedBox const *const bounding_box)
+    : logical_volume_(new LogicalVolume(unplacedVolume))
+    , matrix_(matrix)
+    , bounding_box_(bounding_box)
+  {  }
+
+
 #ifdef VECGEOM_STD_CXX11
   VPlacedVolume(LogicalVolume const *const logical_volume,
                 TransformationMatrix const *const matrix,
@@ -115,6 +125,9 @@ public:
   void set_matrix(TransformationMatrix const *const matrix) {
     matrix_ = matrix;
   }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void set_bounding_box(VPlacedVolume const *const bbox);
 
   void set_label(char const *const label) { *label_ = label; }
 

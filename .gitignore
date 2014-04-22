@@ -10,7 +10,6 @@ Debug
 .cproject
 .project
 .externalToolBuilders
-compile_*.sh
 *.png
 *.pdf
 *.eps

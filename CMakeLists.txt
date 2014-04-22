@@ -251,9 +251,12 @@ set(HEADERS_CPP_RELATIVE
   volumes/box.h
   volumes/logical_volume.h
   volumes/placed_box.h
+  volumes/placed_trap.h
   volumes/placed_volume.h
   volumes/specialized_box.h
+  volumes/specialized_trap.h
   volumes/unplaced_box.h
+  volumes/unplaced_trap.h
   volumes/unplaced_volume.h
   volumes/usolid.h
 )
@@ -272,12 +275,14 @@ set(SRC_CPP_RELATIVE
   source/container.cpp
   source/logical_volume.cpp
   source/placed_box.cpp
+  source/placed_trap.cpp
   source/placed_volume.cpp
   source/scalar_backend.cpp
   source/soa3d.cpp
   source/specialized_box.cpp
   source/transformation_matrix.cpp
   source/unplaced_box.cpp
+  source/unplaced_trap.cpp
   source/unplaced_volume.cpp
   source/vector3d.cpp
   source/NavigationState.cpp	

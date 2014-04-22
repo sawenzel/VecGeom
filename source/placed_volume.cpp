@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "volumes/placed_volume.h"
+#include "volumes/placed_box.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -16,6 +17,11 @@ std::list<VPlacedVolume *> VPlacedVolume::g_volume_list =
 VPlacedVolume::~VPlacedVolume() {
   delete label_;
   g_volume_list.remove(this);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void VPlacedVolume::set_bounding_box(VPlacedVolume const *const bbox) {
+  bounding_box_ = dynamic_cast<PlacedBox const*>(bbox);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
