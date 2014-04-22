@@ -79,6 +79,49 @@ public:
   virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const;
   virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const;
 
+  // for specialized box we need special dispatchers for
+  // SafetyToIn, Inside, DistanceToIn
+  template <typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::precision_v DistanceToInDispatch(
+      Vector3D<typename Backend::precision_v> const &position,
+      Vector3D<typename Backend::precision_v> const &direction,
+      const typename Backend::precision_v step_max) const {
+
+      typename Backend::precision_v output;
+      BoxDistanceToIn<trans_code, rot_code, Backend>(
+          unplaced_box()->dimensions(), *this->matrix(),
+          position, direction,
+          step_max, &output );
+      return output;
+  }
+
+  template <typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::precision_v SafetyToInDispatch(
+        Vector3D<typename Backend::precision_v> const &position
+  ) const {
+     typename Backend::precision_v safety;
+     BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
+     return safety;
+  }
+
+  template <typename Backend>
+  typename Backend::bool_v InsideDispatch(
+      Vector3D<typename Backend::precision_v> const &point) const {
+
+    typename Backend::bool_v output;
+    BoxInside<trans_code, rot_code, Backend>(
+      unplaced_box()->dimensions(),
+      *this->matrix(),
+      point,
+      &output
+    );
+    return output;
+  }
+
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA_INTERFACE
@@ -102,7 +145,7 @@ template <TranslationCode trans_code, RotationCode rot_code>
 VECGEOM_CUDA_HEADER_BOTH
 bool SpecializedBox<trans_code, rot_code>::Inside(
     Vector3D<Precision> const &point) const {
-  return InsideDispatch<trans_code, rot_code, kScalar>(point);
+  return InsideDispatch<kScalar>(point);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -111,7 +154,7 @@ bool SpecializedBox<trans_code, rot_code>::Inside(
     Vector3D<Precision> const &point,
     Vector3D<Precision> &local) const {
   bool output;
-  BoxInside<trans_code, rot_code, kScalar>(
+  BoxInside<trans_code,rot_code,kScalar>(
     unplaced_box()->dimensions(),
     *this->matrix_,
     point,
@@ -125,14 +168,14 @@ template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::Inside(
     SOA3D<Precision> const &points,
     bool *const output) const {
-  Inside_Looper<trans_code, rot_code>(*this, points, output);
+  Inside_Looper(*this, points, output);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
 void SpecializedBox<trans_code, rot_code>::Inside(
     AOS3D<Precision> const &points,
     bool *const output) const {
-  Inside_Looper<trans_code, rot_code>(*this, points, output);
+  Inside_Looper(*this, points, output);
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>
@@ -142,7 +185,7 @@ Precision SpecializedBox<trans_code, rot_code>::DistanceToIn(
     Vector3D<Precision> const &direction,
     const Precision step_max) const {
 
-  return DistanceToInDispatch<trans_code, rot_code, kScalar>(
+  return DistanceToInDispatch<kScalar>(
            position, direction, step_max
          );
                                                   
@@ -171,7 +214,7 @@ void SpecializedBox<trans_code, rot_code>::DistanceToIn(
 template <TranslationCode trans_code, RotationCode rot_code>
 Precision SpecializedBox<trans_code, rot_code>::SafetyToIn(
       Vector3D<Precision> const &position ) const {
-   return SafetyToInDispatch<trans_code,rot_code,kScalar>( position );
+   return SafetyToInDispatch<kScalar>( position );
 }
 
 template <TranslationCode trans_code, RotationCode rot_code>

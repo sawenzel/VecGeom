@@ -25,14 +25,12 @@ void PlacedBox::PrintType() const {
 
 void PlacedBox::Inside(SOA3D<Precision> const &points,
                        bool *const output) const {
-  Inside_Looper<translation::kGeneric, rotation::kGeneric>(*this, points,
-                                                           output);
+  Inside_Looper(*this, points, output);
 }
 
 void PlacedBox::Inside(AOS3D<Precision> const &points,
                        bool *const output) const {
-  Inside_Looper<translation::kGeneric, rotation::kGeneric>(*this, points,
-                                                           output);
+  Inside_Looper(*this, points, output);
 }
 
 
@@ -40,7 +38,7 @@ void PlacedBox::DistanceToIn(SOA3D<Precision> const &positions,
                              SOA3D<Precision> const &directions,
                              Precision const *const step_max,
                              Precision *const output) const {
-  DistanceToIn_Looper<translation::kGeneric, rotation::kGeneric>(
+  DistanceToIn_Looper(
     *this, positions, directions, step_max, output
   );
 }
@@ -49,7 +47,7 @@ void PlacedBox::DistanceToIn(AOS3D<Precision> const &positions,
                              AOS3D<Precision> const &directions,
                              Precision const *const step_max,
                              Precision *const output) const {
-  DistanceToIn_Looper<translation::kGeneric, rotation::kGeneric>(
+  DistanceToIn_Looper(
     *this, positions, directions, step_max, output
   );
 }

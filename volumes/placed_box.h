@@ -225,7 +225,7 @@ typename Backend::bool_v PlacedBox::InsideDispatch(
     Vector3D<typename Backend::precision_v> const &point) const {
 
   typename Backend::bool_v output;
-  BoxInside<1, 0, Backend>(
+  BoxInside<translation::kGeneric, rotation::kGeneric, Backend>(
     unplaced_box()->dimensions(),
     *this->matrix(),
     point,
@@ -243,7 +243,7 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
     const typename Backend::precision_v step_max) const {
 
   typename Backend::precision_v output;
-  BoxDistanceToIn<1, 0, Backend>(
+  BoxDistanceToIn<translation::kGeneric, rotation::kGeneric, Backend>(
     unplaced_box()->dimensions(),
     *this->matrix(),
     position,
@@ -292,7 +292,7 @@ typename Backend::precision_v PlacedBox::SafetyToInDispatch(
       Vector3D<typename Backend::precision_v> const &position
 ) const {
    typename Backend::precision_v safety;
-   BoxSafetyToIn<1, 0, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
+   BoxSafetyToIn<translation::kGeneric, rotation::kGeneric, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
    return safety;
 }
 
@@ -312,9 +312,15 @@ bool PlacedBox::Inside(Vector3D<Precision> const &point) const {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
-  // no translation and no rotation; should look like this:
- //  return PlacedBox::InsideDispatch<0, rotation::kIdentity, kScalar>(localpoint);
-   return SpecializedPlacedBox<0,rotation::kIdentity>::InsideDispatch(localpoint);
+  // a bit special case - direct dispatch
+   typename kScalar::bool_v output;
+   BoxInside<translation::kOrigin, rotation::kIdentity, kScalar>(
+     unplaced_box()->dimensions(),
+     *this->matrix(),
+     localpoint,
+     &output
+   );
+   return output;
 }
 
 
@@ -323,7 +329,7 @@ VECGEOM_INLINE
 bool PlacedBox::Inside(Vector3D<Precision> const &point, Vector3D<Precision> & localpoint) const
 {
    typename kScalar::bool_v output;
-   BoxInside<1, 0, kScalar>(
+   BoxInside<translation::kGeneric, rotation::kGeneric, kScalar>(
          unplaced_box()->dimensions(),
          *this->matrix_,
          point,
@@ -338,7 +344,7 @@ VECGEOM_INLINE
 Precision PlacedBox::DistanceToIn(Vector3D<Precision> const &position,
                                   Vector3D<Precision> const &direction,
                                   const Precision step_max) const {
-  return PlacedBox::DistanceToInDispatch<1, 0, kScalar>(position, direction,
+  return PlacedBox::DistanceToInDispatch<kScalar>(position, direction,
                                                         step_max);
 }
 
@@ -385,7 +391,7 @@ Precision PlacedBox::SafetyToOut( Vector3D<Precision> const &position ) const {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision PlacedBox::SafetyToIn( Vector3D<Precision> const &position ) const {
-   return SafetyToInDispatch<1,0,kScalar>( position );
+   return SafetyToInDispatch<kScalar>( position );
 }
 
 
