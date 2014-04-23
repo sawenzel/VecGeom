@@ -70,7 +70,12 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -std=c++11 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC")
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+endif()
 if (GNU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -159,7 +164,7 @@ if (CUDA)
     -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable"
     -Xcudafe "--diag_suppress=initialization_not_reachable"
   )
-  IF(CMAKE_BUILD_TYPE MATCHES Debug)
+  if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G)
   endif()
   set(CUDA_SEPARABLE_COMPILATION ON)

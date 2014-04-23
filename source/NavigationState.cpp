@@ -6,15 +6,21 @@
  */
 
 #include "navigation/navigationstate.h"
-#include "management/rootgeo_manager.h"
-
-#include "TGeoBranchArray.h"
-#include "TGeoNode.h"
+ 
 #include <cassert>
 #include <iostream>
 
+#ifdef VECGEOM_ROOT
+#include "management/rootgeo_manager.h"
+#include "TGeoBranchArray.h"
+#include "TGeoNode.h"
+#endif
+
 namespace VECGEOM_NAMESPACE
 {
+
+#ifdef VECGEOM_ROOT
+
   TGeoBranchArray * NavigationState::ToTGeoBranchArray() const
   {
     // attention: the counting of levels is different: fLevel=0 means that
@@ -50,6 +56,8 @@ namespace VECGEOM_NAMESPACE
 
      return *this;
    }
+
+#endif
 
 };
 

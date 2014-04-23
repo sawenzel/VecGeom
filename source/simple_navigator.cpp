@@ -13,10 +13,15 @@
 #include "navigation/simple_navigator.h"
 #include "management/geo_manager.h"
 
+#ifdef VECGEOM_ROOT
+#include "TGeoManager.h"
+#endif
+
 namespace VECGEOM_NAMESPACE
 {
 
 #ifdef VECGEOM_ROOT
+
 void SimpleNavigator::InspectEnvironmentForPointAndDirection
    (   Vector3D<Precision> const & globalpoint,
       Vector3D<Precision> const & globaldir,
@@ -81,7 +86,6 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
       std::cout << "DistanceToDaughter ROOT : " << daughter->GetName() << " " << ddistance << "\n";
    }
 }
-#endif
 
 void SimpleNavigator::InspectSafetyForPoint
    (   Vector3D<Precision> const & globalpoint,
@@ -137,5 +141,6 @@ void SimpleNavigator::InspectSafetyForPoint
    }
 }
 
+#endif // VECGEOM_ROOT
 
 }
