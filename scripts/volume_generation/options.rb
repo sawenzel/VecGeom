@@ -1,6 +1,6 @@
 
 ### Change this to include the shape-specific definitions
-require 'tube'
+require './tube'
 
 
 ### No changes should be required beyond this point
