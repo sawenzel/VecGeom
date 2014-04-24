@@ -27,7 +27,8 @@ public:
 
   static const bool is_fancy = false;
 
-  PlacedTube(UnplacedTube const *const unplaced) : unplaced_(unplaced) {}
+  PlacedTube(UnplacedTube const *const unplaced)
+      : Implementation(this), unplaced_(unplaced) {}
 
   ~PlacedTube() {}
 
