@@ -5,7 +5,7 @@
 int main() {
   UnplacedBox unplaced_box = UnplacedBox(5., 5., 5.);
   UnplacedTube unplaced_tube = UnplacedTube();
-  PlacedBox placed_box(&unplaced_box);
+  PlacedBox placed_box = PlacedBox(&unplaced_box);
   SpecializedTube<GeneralTube> general_tube(&unplaced_tube);
   SpecializedTube<FancyTube> fancy_tube(&unplaced_tube);
 
@@ -16,7 +16,7 @@ int main() {
     for (int j = 0; j < VcDouble::Size; ++j) points[i][j] = point[i];
   }
 
-  placed_box.Inside(points, output);
+  placed_box.PlacedBox::Inside(points, output);
   printf("Box: ");
   for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
 

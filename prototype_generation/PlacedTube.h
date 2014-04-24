@@ -4,7 +4,7 @@
 #include "PlacedVolume.h"
 #include "UnplacedTube.h"
 #include "Kernel.h"
-#include "ShapeImplementation.h"
+#include "ShapeImplementationHelper.h"
 
 struct GeneralTube {
   static const bool is_fancy = false;
@@ -15,16 +15,19 @@ struct FancyTube {
 };
 
 class PlacedTube : public PlacedVolume,
-                   public ShapeImplementation<PlacedTube, PlacedTube> {
+                   public ShapeImplementationHelper<PlacedTube, PlacedTube> {
 
 private:
 
-  typedef ShapeImplementation<PlacedTube, PlacedTube> Implementation;
+  typedef ShapeImplementationHelper<PlacedTube, PlacedTube> Implementation;
+
+protected:
 
   UnplacedTube const *unplaced_;
 
 public:
 
+  // This is a problem... so far necessary to avoid ambiguity
   static const bool is_fancy = false;
 
   PlacedTube(UnplacedTube const *const unplaced)
@@ -32,16 +35,16 @@ public:
 
   ~PlacedTube() {}
 
-  UnplacedTube const* unplaced() const { return unplaced_; }
+  VECGEOM_SHAPE_DISPATCH
 
-  template <class Backend, class TubeSpecialization>
-  void InsideDispatch(typename Backend::double_v const point[3],
-                      typename Backend::bool_v &output) const {
-    TubeInside<Backend, TubeSpecialization>(*unplaced_, point, output);
-  }
-
-  VECGEOM_INSIDE_IMPLEMENTATION
+  VECGEOM_SHAPE_IMPLEMENTATION
 
 };
+
+template <class Backend, class ShapeSpecialization>
+void PlacedTube::InsideDispatch(typename Backend::double_v const point[3],
+                                typename Backend::bool_v &output) const {
+  TubeInside<Backend, ShapeSpecialization>(*unplaced_, point, output);
+}
 
 #endif // VECGEOM_PLACEDTUBE_H_

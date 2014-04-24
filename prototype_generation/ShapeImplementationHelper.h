@@ -1,11 +1,15 @@
-#ifndef VECGEOM_SHAPEIMPLEMENTATION_H_
-#define VECGEOM_SHAPEIMPLEMENTATION_H_
+#ifndef VECGEOM_SHAPEIMPLEMENTATIONHELPER_H_
+#define VECGEOM_SHAPEIMPLEMENTATIONHELPER_H_
 
 #include "PlacedVolume.h"
 #include "Kernel.h"
 
-#define VECGEOM_INSIDE_IMPLEMENTATION \
-VECGEOM_CUDA_HEADER_BOTH \
+#define VECGEOM_SHAPE_DISPATCH \
+template <class Backend, class ShapeSpecialization> \
+void InsideDispatch(typename Backend::double_v const point[3], \
+                    typename Backend::bool_v &output) const;
+
+#define VECGEOM_SHAPE_IMPLEMENTATION \
 virtual bool Inside(const double point[3]) const { \
   return Implementation::Inside(point); \
 } \
@@ -15,7 +19,7 @@ virtual void Inside(const double points[3][VcDouble::Size], \
 }
 
 template <class PlacedType, class Specialization>
-class ShapeImplementation {
+class ShapeImplementationHelper {
 
 private:
 
@@ -23,7 +27,8 @@ private:
 
 public:
 
-  ShapeImplementation(PlacedType const *const deriving) : deriving_(deriving) {}
+  ShapeImplementationHelper(PlacedType const *const deriving)
+      : deriving_(deriving) {}
 
   bool Inside(double const point[3]) const {
     bool output;
@@ -34,9 +39,8 @@ public:
     return output;
   }
 
-#ifdef VECGEOM_VC
   void Inside(const double points[3][VcDouble::Size],
-                      bool output[VcDouble::Size]) const {
+                     bool output[VcDouble::Size]) const {
     VcBool output_vc;
     VcDouble points_vc[3] = {VcDouble(points[0]), VcDouble(points[1]),
                              VcDouble(points[2])};
@@ -46,8 +50,7 @@ public:
     );
     for (int i = 0; i < VcDouble::Size; ++i) output[i] = output_vc[i];
   }
-#endif
 
 };
 
-#endif // VECGEOM_SHAPEIMPLEMENTATION_H_
+#endif // VECGEOM_SHAPEIMPLEMENTATIONHELPER_H_
