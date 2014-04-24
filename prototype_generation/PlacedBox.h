@@ -18,7 +18,8 @@ private:
 
 public:
 
-  PlacedBox(UnplacedBox const *const unplaced) : unplaced_(unplaced) {}
+  PlacedBox(UnplacedBox const *const unplaced)
+      : Implementation(this), unplaced_(unplaced) {}
 
   ~PlacedBox() {}
 

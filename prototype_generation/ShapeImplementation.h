@@ -17,12 +17,17 @@ virtual void Inside(const double points[3][VcDouble::Size], \
 template <class PlacedType, class Specialization>
 class ShapeImplementation {
 
+private:
+
+  PlacedType const *const deriving_;
+
 public:
+
+  ShapeImplementation(PlacedType const *const deriving) : deriving_(deriving) {}
 
   bool Inside(double const point[3]) const {
     bool output;
-    PlacedType const *const placed = reinterpret_cast<PlacedType const*>(this);
-    placed->template InsideDispatch<kScalar, Specialization>(
+    deriving_->template InsideDispatch<kScalar, Specialization>(
       point,
       output
     );
@@ -35,8 +40,7 @@ public:
     VcBool output_vc;
     VcDouble points_vc[3] = {VcDouble(points[0]), VcDouble(points[1]),
                              VcDouble(points[2])};
-    PlacedType const *const placed = reinterpret_cast<PlacedType const*>(this);
-    placed->template InsideDispatch<kVc, Specialization>(
+    deriving_->template InsideDispatch<kVc, Specialization>(
       points_vc,
       output_vc
     );

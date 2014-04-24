@@ -14,7 +14,8 @@ private:
 
 public:
 
-  SpecializedTube(UnplacedTube const *const unplaced) : PlacedTube(unplaced) {}
+  SpecializedTube(UnplacedTube const *const unplaced)
+      : Implementation(this), PlacedTube(unplaced) {}
 
   VECGEOM_INSIDE_IMPLEMENTATION
 
