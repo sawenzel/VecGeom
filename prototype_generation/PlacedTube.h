@@ -14,13 +14,18 @@ struct FancyTube {
   static const bool is_fancy = true;
 };
 
-class PlacedTube : public ShapeImplementation<PlacedTube, GeneralTube> {
+class PlacedTube : public PlacedVolume,
+                   public ShapeImplementation<PlacedTube, PlacedTube> {
 
 private:
+
+  typedef ShapeImplementation<PlacedTube, PlacedTube> Implementation;
 
   UnplacedTube const *unplaced_;
 
 public:
+
+  static const bool is_fancy = false;
 
   PlacedTube(UnplacedTube const *const unplaced) : unplaced_(unplaced) {}
 
@@ -33,6 +38,8 @@ public:
                       typename Backend::bool_v &output) const {
     TubeInside<Backend, TubeSpecialization>(*unplaced_, point, output);
   }
+
+  VECGEOM_INSIDE_IMPLEMENTATION
 
 };
 
