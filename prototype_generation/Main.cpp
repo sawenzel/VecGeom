@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include "PlacedBox.h"
-// #include "SpecializedTube.h"
+#include "SpecializedTube.h"
 
 int main() {
-  UnplacedBox unplaced_box(5., 5., 5.);
-  // UnplacedTube unplaced_tube();
+  UnplacedBox unplaced_box = UnplacedBox(5., 5., 5.);
+  UnplacedTube unplaced_tube = UnplacedTube();
   PlacedBox placed_box(&unplaced_box);
-  // SpecializedTube<GeneralTube> general_tube(&unplaced_tube);
-  // SpecializedTube<FancyTube> fancy_tube(&unplaced_tube);
+  SpecializedTube<GeneralTube> general_tube(&unplaced_tube);
+  SpecializedTube<FancyTube> fancy_tube(&unplaced_tube);
 
   const double point[3] = {1, -4, 0};
   double points[3][VcDouble::Size] __attribute__((aligned(32)));
@@ -20,13 +20,13 @@ int main() {
   printf("Box: ");
   for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
 
-  // general_tube.template Inside(points, output);
-  // printf("\nGeneral Tube: ");
-  // for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
+  general_tube.Inside(points, output);
+  printf("\nGeneral Tube: ");
+  for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
 
-  // fancy_tube.Inside(points, output);
-  // printf("\nFancy Tube: ");
-  // for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
+  fancy_tube.Inside(points, output);
+  printf("\nFancy Tube: ");
+  for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
 
   printf("\n");
 

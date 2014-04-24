@@ -23,9 +23,9 @@ void TubeInside(UnplacedTube const &tube,
                 typename Backend::double_v const *const point,
                 typename Backend::bool_v &output) {
   if (TubeSpecialization::is_fancy) {
-    output = true;
+    output = typename Backend::bool_v(true);
   } else {
-    output = false;
+    output = typename Backend::bool_v(false);
   }
 }
 

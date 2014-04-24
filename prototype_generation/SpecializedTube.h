@@ -7,7 +7,17 @@ template <class TubeSpecialization>
 class SpecializedTube
     : public PlacedTube,
       public ShapeImplementation<PlacedTube, TubeSpecialization> {
+
+private:
+
+  typedef ShapeImplementation<PlacedTube, TubeSpecialization> Implementation;
+
+public:
+
   SpecializedTube(UnplacedTube const *const unplaced) : PlacedTube(unplaced) {}
+
+  VECGEOM_INSIDE_IMPLEMENTATION
+
 };
 
 #endif // VECGEOM_SPECIALIZEDTUBE_H_

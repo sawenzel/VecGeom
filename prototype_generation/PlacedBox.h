@@ -7,9 +7,12 @@
 #include "ShapeImplementation.h"
 
 class PlacedBox
-    : public ShapeImplementation<PlacedBox, PlacedBox> {
+    : public PlacedVolume,
+      public ShapeImplementation<PlacedBox, PlacedBox> {
 
 private:
+
+  typedef ShapeImplementation<PlacedBox, PlacedBox> Implementation;
 
   UnplacedBox const *unplaced_;
 
@@ -26,6 +29,8 @@ public:
                       typename Backend::bool_v &output) const {
     BoxInside<Backend>(*unplaced_, point, output);
   }
+
+  VECGEOM_INSIDE_IMPLEMENTATION
 
 };
 

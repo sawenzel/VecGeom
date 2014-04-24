@@ -4,14 +4,24 @@
 #include "PlacedVolume.h"
 #include "Kernel.h"
 
+#define VECGEOM_INSIDE_IMPLEMENTATION \
+VECGEOM_CUDA_HEADER_BOTH \
+virtual bool Inside(const double point[3]) const { \
+  return Implementation::Inside(point); \
+} \
+virtual void Inside(const double points[3][VcDouble::Size], \
+                    bool output[VcDouble::Size]) const { \
+  Implementation::Inside(points, output); \
+}
+
 template <class PlacedType, class Specialization>
-class ShapeImplementation : public PlacedVolume {
+class ShapeImplementation {
 
 public:
 
-  virtual bool Inside(double const point[3]) const {
+  bool Inside(double const point[3]) const {
     bool output;
-    PlacedType const *const placed = static_cast<PlacedType const*>(this);
+    PlacedType const *const placed = reinterpret_cast<PlacedType const*>(this);
     placed->template InsideDispatch<kScalar, Specialization>(
       point,
       output
@@ -20,12 +30,12 @@ public:
   }
 
 #ifdef VECGEOM_VC
-  virtual void Inside(const double points[3][VcDouble::Size],
+  void Inside(const double points[3][VcDouble::Size],
                       bool output[VcDouble::Size]) const {
     VcBool output_vc;
     VcDouble points_vc[3] = {VcDouble(points[0]), VcDouble(points[1]),
                              VcDouble(points[2])};
-    PlacedType const *const placed = static_cast<PlacedType const*>(this);
+    PlacedType const *const placed = reinterpret_cast<PlacedType const*>(this);
     placed->template InsideDispatch<kVc, Specialization>(
       points_vc,
       output_vc
