@@ -21,21 +21,21 @@ public:
 
   PlacedBox(char const *const label,
             LogicalVolume const *const logical_volume,
-            TransformationMatrix const *const matrix)
-      : VPlacedVolume(label, logical_volume, matrix, this) {}
+            Transformation3D const *const transformation)
+      : VPlacedVolume(label, logical_volume, transformation, this) {}
 
 #ifdef VECGEOM_STD_CXX11
   PlacedBox(LogicalVolume const *const logical_volume,
-            TransformationMatrix const *const matrix)
-      : PlacedBox("", logical_volume, matrix) {}
+            Transformation3D const *const transformation)
+      : PlacedBox("", logical_volume, transformation) {}
 #endif
 
 #ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   PlacedBox(LogicalVolume const *const logical_volume,
-            TransformationMatrix const *const matrix,
+            Transformation3D const *const transformation,
             const int id)
-      : VPlacedVolume(logical_volume, matrix, this, id) {}
+      : VPlacedVolume(logical_volume, transformation, this, id) {}
 #endif
 
   virtual ~PlacedBox() {}
@@ -156,11 +156,11 @@ public:
   #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       VPlacedVolume *const gpu_ptr) const;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix) const;
+      Transformation3D const *const transformation) const;
   #endif
 
   // Comparison specific
@@ -227,7 +227,7 @@ typename Backend::bool_v PlacedBox::InsideDispatch(
   typename Backend::bool_v output;
   BoxInside<translation::kGeneric, rotation::kGeneric, Backend>(
     unplaced_box()->dimensions(),
-    *this->matrix(),
+    *this->transformation(),
     point,
     &output
   );
@@ -245,7 +245,7 @@ typename Backend::precision_v PlacedBox::DistanceToInDispatch(
   typename Backend::precision_v output;
   BoxDistanceToIn<translation::kGeneric, rotation::kGeneric, Backend>(
     unplaced_box()->dimensions(),
-    *this->matrix(),
+    *this->transformation(),
     position,
     direction,
     step_max,
@@ -292,7 +292,7 @@ typename Backend::precision_v PlacedBox::SafetyToInDispatch(
       Vector3D<typename Backend::precision_v> const &position
 ) const {
    typename Backend::precision_v safety;
-   BoxSafetyToIn<translation::kGeneric, rotation::kGeneric, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
+   BoxSafetyToIn<translation::kGeneric, rotation::kGeneric, Backend>(unplaced_box()->dimensions(), *transformation(), position, safety);
    return safety;
 }
 
@@ -314,9 +314,9 @@ VECGEOM_INLINE
 bool PlacedBox::UnplacedInside(Vector3D<Precision> const &localpoint) const {
   // a bit special case - direct dispatch
    typename kScalar::bool_v output;
-   BoxInside<translation::kOrigin, rotation::kIdentity, kScalar>(
+   BoxInside<translation::kIdentity, rotation::kIdentity, kScalar>(
      unplaced_box()->dimensions(),
-     *this->matrix(),
+     *this->transformation(),
      localpoint,
      &output
    );
@@ -331,7 +331,7 @@ bool PlacedBox::Inside(Vector3D<Precision> const &point, Vector3D<Precision> & l
    typename kScalar::bool_v output;
    BoxInside<translation::kGeneric, rotation::kGeneric, kScalar>(
          unplaced_box()->dimensions(),
-         *this->matrix_,
+         *this->transformation_,
          point,
          localpoint,
          &output );
@@ -361,7 +361,7 @@ Precision PlacedBox::DistanceToOut(Vector3D<Precision> const &position,
    // we have how we can dispatch to this kernel later
 
    /*
-   // const Vector3D<Precision> local = matrix()->Transform(position);
+   // const Vector3D<Precision> local = transformation()->Transform(position);
 
   Vector3D<Precision> const &dim = unplaced_box()->dimensions();
 

@@ -21,22 +21,24 @@ void UnplacedBox::Print() const {
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* UnplacedBox::Create(
     LogicalVolume const *const logical_volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     VPlacedVolume *const placement) {
   if (placement) {
-    new(placement) SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
+    new(placement) SpecializedBox<trans_code, rot_code>(logical_volume,
+                                                        transformation);
     return placement;
   }
-  return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix);
+  return new SpecializedBox<trans_code, rot_code>(logical_volume,
+                                                  transformation);
 }
 
 VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
     LogicalVolume const *const volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     const TranslationCode trans_code, const RotationCode rot_code,
     VPlacedVolume *const placement) {
   return VolumeFactory::CreateByTransformation<UnplacedBox>(
-           volume, matrix, trans_code, rot_code, placement
+           volume, transformation, trans_code, rot_code, placement
          );
 }
 
@@ -46,24 +48,25 @@ template <TranslationCode trans_code, RotationCode rot_code>
 __device__
 VPlacedVolume* UnplacedBox::Create(
     LogicalVolume const *const logical_volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     const int id, VPlacedVolume *const placement) {
   if (placement) {
-    new(placement) SpecializedBox<trans_code, rot_code>(logical_volume, matrix,
-                                                        id);
+    new(placement) SpecializedBox<trans_code, rot_code>(logical_volume,
+                                                        transformation, id);
     return placement;
   }
-  return new SpecializedBox<trans_code, rot_code>(logical_volume, matrix, id);
+  return new SpecializedBox<trans_code, rot_code>(logical_volume,
+                                                  transformation, id);
 }
 
 __device__
 VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
     LogicalVolume const *const volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     const TranslationCode trans_code, const RotationCode rot_code,
     const int id, VPlacedVolume *const placement) {
   return VolumeFactory::CreateByTransformation<UnplacedBox>(
-           volume, matrix, trans_code, rot_code, id, placement
+           volume, transformation, trans_code, rot_code, id, placement
          );
 }
 

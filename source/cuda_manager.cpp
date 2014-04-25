@@ -57,7 +57,7 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
   if (verbose_ > 2) std::cerr << "\nCopying logical volumes...";
   for (std::set<LogicalVolume const*>::const_iterator i =
-       logical_volumes.begin(); i != logical_volumes.end(); ++i) {
+       logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
 
     (*i)->CopyToGpu(
       LookupUnplaced((*i)->unplaced_volume()),
@@ -70,7 +70,7 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
   if (verbose_ > 2) std::cerr << "Copying unplaced volumes...";
   for (std::set<VUnplacedVolume const*>::const_iterator i =
-       unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
+       unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
 
     (*i)->CopyToGpu(LookupUnplaced(*i));
 
@@ -79,29 +79,29 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
   if (verbose_ > 2) std::cout << "Copying placed volumes...";
   for (std::set<VPlacedVolume const*>::const_iterator i =
-       placed_volumes.begin(); i != placed_volumes.end(); ++i) {
+       placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
     (*i)->CopyToGpu(
       LookupLogical((*i)->logical_volume()),
-      LookupMatrix((*i)->matrix()),
+      LookupTransformation((*i)->transformation()),
       LookupPlaced(*i)
     );
 
   }
   if (verbose_ > 2) std::cout << " OK\n";
 
-  if (verbose_ > 2) std::cout << "Copying transformation matrices...";
-  for (std::set<TransformationMatrix const*>::const_iterator i =
-       matrices.begin(); i != matrices.end(); ++i) {
+  if (verbose_ > 2) std::cout << "Copying transformations_...";
+  for (std::set<Transformation3D const*>::const_iterator i =
+       transformations_.begin(); i != transformations_.end(); ++i) {
 
-    (*i)->CopyToGpu(LookupMatrix(*i));
+    (*i)->CopyToGpu(LookupTransformation(*i));
 
   }
   if (verbose_ > 2) std::cout << " OK\n";
 
   if (verbose_ > 2) std::cout << "Copying daughter arrays...";
   for (std::set<Vector<Daughter> *>::const_iterator i =
-       daughters.begin(); i != daughters.end(); ++i) {
+       daughters_.begin(); i != daughters_.end(); ++i) {
 
     // First handle C arrays that must now point to GPU locations
     const int daughter_count = (*i)->size();
@@ -137,11 +137,11 @@ void CudaManager::LoadGeometry(VPlacedVolume const *const volume) {
 
   CleanGpu();
 
-  logical_volumes.clear();
-  unplaced_volumes.clear();
-  placed_volumes.clear();
-  matrices.clear();
-  daughters.clear();
+  logical_volumes_.clear();
+  unplaced_volumes_.clear();
+  placed_volumes_.clear();
+  transformations_.clear();
+  daughters_.clear();
 
   world_ = volume;
 
@@ -183,11 +183,11 @@ void CudaManager::AllocateGeometry() {
 
     LogicalVolume *gpu_array =
         AllocateOnGpu<LogicalVolume>(
-          logical_volumes.size()*sizeof(LogicalVolume)
+          logical_volumes_.size()*sizeof(LogicalVolume)
         );
 
     for (std::set<LogicalVolume const*>::const_iterator i =
-         logical_volumes.begin(); i != logical_volumes.end(); ++i) {
+         logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
 
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
       gpu_array++;
@@ -201,7 +201,7 @@ void CudaManager::AllocateGeometry() {
     if (verbose_ > 2) std::cout << "Allocating unplaced volumes...";
 
     for (std::set<VUnplacedVolume const*>::const_iterator i =
-         unplaced_volumes.begin(); i != unplaced_volumes.end(); ++i) {
+         unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
 
       const GpuAddress gpu_address =
           AllocateOnGpu<GpuAddress*>((*i)->memory_size());
@@ -216,7 +216,7 @@ void CudaManager::AllocateGeometry() {
     if (verbose_ > 2) std::cout << "Allocating placed volumes...";
 
     for (std::set<VPlacedVolume const*>::const_iterator i =
-         placed_volumes.begin(); i != placed_volumes.end(); ++i) {
+         placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
       const GpuAddress gpu_address =
           AllocateOnGpu<GpuAddress*>((*i)->memory_size());
@@ -228,13 +228,13 @@ void CudaManager::AllocateGeometry() {
   }
 
   {
-    if (verbose_ > 2) std::cout << "Allocating transformation matrices...";
+    if (verbose_ > 2) std::cout << "Allocating transformations_...";
 
-    for (std::set<TransformationMatrix const*>::const_iterator i =
-         matrices.begin(); i != matrices.end(); ++i) {
+    for (std::set<Transformation3D const*>::const_iterator i =
+         transformations_.begin(); i != transformations_.end(); ++i) {
 
       const GpuAddress gpu_address =
-          AllocateOnGpu<TransformationMatrix>((*i)->memory_size());
+          AllocateOnGpu<Transformation3D>((*i)->memory_size());
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
 
     }
@@ -247,14 +247,14 @@ void CudaManager::AllocateGeometry() {
 
     Vector<Daughter> *gpu_array =
         AllocateOnGpu<Vector<Daughter> >(
-          daughters.size()*sizeof(Vector<Daughter>)
+          daughters_.size()*sizeof(Vector<Daughter>)
         );
 
     Daughter *gpu_c_array =
         AllocateOnGpu<Daughter>(total_volumes*sizeof(Daughter));
 
     for (std::set<Vector<Daughter> *>::const_iterator i =
-         daughters.begin(); i != daughters.end(); ++i) {
+         daughters_.begin(); i != daughters_.end(); ++i) {
 
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
       memory_map[ToCpuAddress(gpu_array)] = ToGpuAddress(gpu_c_array);
@@ -272,21 +272,24 @@ void CudaManager::AllocateGeometry() {
 
 void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
 
-  if (placed_volumes.find(volume) == placed_volumes.end()) {
-    placed_volumes.insert(volume);
+  if (placed_volumes_.find(volume) == placed_volumes_.end()) {
+    placed_volumes_.insert(volume);
   }
-  if (logical_volumes.find(volume->logical_volume()) == logical_volumes.end()) {
-    logical_volumes.insert(volume->logical_volume());
+  if (logical_volumes_.find(volume->logical_volume())
+      == logical_volumes_.end()) {
+    logical_volumes_.insert(volume->logical_volume());
   }
-  if (matrices.find(volume->matrix()) == matrices.end()) {
-    matrices.insert(volume->matrix());
+  if (transformations_.find(volume->transformation())
+      == transformations_.end()) {
+    transformations_.insert(volume->transformation());
   }
-  if (unplaced_volumes.find(volume->unplaced_volume())
-      == unplaced_volumes.end()) {
-    unplaced_volumes.insert(volume->unplaced_volume());
+  if (unplaced_volumes_.find(volume->unplaced_volume())
+      == unplaced_volumes_.end()) {
+    unplaced_volumes_.insert(volume->unplaced_volume());
   }
-  if (daughters.find(volume->logical_volume()->daughters_) == daughters.end()) {
-    daughters.insert(volume->logical_volume()->daughters_);
+  if (daughters_.find(volume->logical_volume()->daughters_)
+      == daughters_.end()) {
+    daughters_.insert(volume->logical_volume()->daughters_);
   }
   for (Iterator<Daughter> i = volume->daughters().begin();
        i != volume->daughters().end(); ++i) {
@@ -320,9 +323,9 @@ VPlacedVolume* CudaManager::LookupPlaced(
   return static_cast<VPlacedVolume*>(Lookup(host_ptr));
 }
 
-TransformationMatrix* CudaManager::LookupMatrix(
-    TransformationMatrix const *const host_ptr) {
-  return static_cast<TransformationMatrix*>(Lookup(host_ptr));
+Transformation3D* CudaManager::LookupTransformation(
+    Transformation3D const *const host_ptr) {
+  return static_cast<Transformation3D*>(Lookup(host_ptr));
 }
 
 Vector<Daughter>* CudaManager::LookupDaughters(
@@ -332,8 +335,8 @@ Vector<Daughter>* CudaManager::LookupDaughters(
 
 Daughter* CudaManager::LookupDaughterArray(
     Vector<Daughter> *const host_ptr) {
-  Vector<Daughter> const *const daughters = LookupDaughters(host_ptr);
-  return static_cast<Daughter*>(Lookup(daughters));
+  Vector<Daughter> const *const daughters_ = LookupDaughters(host_ptr);
+  return static_cast<Daughter*>(Lookup(daughters_));
 }
 
 void CudaManager::PrintGeometry() const {

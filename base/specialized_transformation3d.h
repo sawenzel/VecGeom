@@ -1,12 +1,12 @@
 /**
- * @file specialized_matrix.h
+ * @file specialized_transformation3d.h
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
-#ifndef VECGEOM_BASE_SPECIALIZEDMATRIX_H_
-#define VECGEOM_BASE_SPECIALIZEDMATRIX_H_
+#ifndef VECGEOM_BASE_SPECIALIZEDTRANSFORMATION3D_H_
+#define VECGEOM_BASE_SPECIALIZEDTRANSFORMATION3D_H_
 
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -15,15 +15,15 @@ namespace VECGEOM_NAMESPACE {
  *        unecessary computations.
  */
 template <TranslationCode trans_code, RotationCode rot_code>
-class SpecializedMatrix : public TransformationMatrix {
+class SpecializedTransformation3D : public Transformation3D {
 
 public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
   /**
-   * \sa TransformationMatrix::Transform(Vector3D<InputType> const &,
-   *                                     Vector3D<InputType> *const)
+   * \sa Transformation3D::Transform(Vector3D<InputType> const &,
+   *                                 Vector3D<InputType> *const)
    */
   template <typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
@@ -34,7 +34,7 @@ public:
   }
 
   /**
-   * \sa TransformationMatrix::Transform(Vector3D<InputType> const &)
+   * \sa Transformation3D::Transform(Vector3D<InputType> const &)
    */
   template <TranslationCode, RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
@@ -44,19 +44,19 @@ public:
   }
 
   /**
-   * \sa TransformationMatrix::TransformDirection(Vector3D<InputType> const &,
+   * \sa Transformation3D::TransformDirection(Vector3D<InputType> const &,
    *                                             Vector3D<InputType> *const)
    */
   template <RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void TransformDirection(Vector3D<InputType> const &master,
-                         Vector3D<InputType> *const local) const {
+                          Vector3D<InputType> *const local) const {
     this->TransformDirection<code, InputType>(master, local);
   }
 
   /**
-   * \sa TransformationMatrix::TransformDirection(Vector3D<InputType> const &)
+   * \sa Transformation3D::TransformDirection(Vector3D<InputType> const &)
    */
   template <RotationCode code, typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
@@ -70,4 +70,4 @@ public:
 
 } // End global namespace
 
-#endif // VECGEOM_BASE_SPECIALIZEDMATRIX_H_
+#endif // VECGEOM_BASE_SPECIALIZEDTRANSFORMATION3D_H_

@@ -1,5 +1,5 @@
 /**
- * @file transformation_matrix.cpp
+ * @file transformation3d.cpp
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
@@ -7,32 +7,32 @@
 #ifdef VECGEOM_CUDA_INTERFACE
 #include "backend/cuda/interface.h"
 #endif
-#include "base/transformation_matrix.h"
-#include "base/specialized_matrix.h"
+#include "base/transformation3d.h"
+#include "base/specialized_transformation3d.h"
 
 #include <stdio.h>
 #include <sstream>
 
 namespace VECGEOM_NAMESPACE {
 
-const TransformationMatrix TransformationMatrix::kIdentity =
-    SpecializedMatrix<translation::kOrigin, rotation::kIdentity>();
+const Transformation3D Transformation3D::kIdentity =
+    SpecializedTransformation3D<translation::kIdentity, rotation::kIdentity>();
 
-TransformationMatrix::TransformationMatrix() {
+Transformation3D::Transformation3D() {
   SetTranslation(0, 0, 0);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
   SetProperties();
 }
 
-TransformationMatrix::TransformationMatrix(const Precision tx,
-                                           const Precision ty,
-                                           const Precision tz) {
+Transformation3D::Transformation3D(const Precision tx,
+                                   const Precision ty,
+                                   const Precision tz) {
   SetTranslation(tx, ty, tz);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
   SetProperties();
 }
 
-TransformationMatrix::TransformationMatrix(
+Transformation3D::Transformation3D(
     const Precision tx, const Precision ty,
     const Precision tz, const Precision phi,
     const Precision theta, const Precision psi) {
@@ -41,7 +41,7 @@ TransformationMatrix::TransformationMatrix(
   SetProperties();
 }
 
-TransformationMatrix::TransformationMatrix(
+Transformation3D::Transformation3D(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
@@ -52,7 +52,7 @@ TransformationMatrix::TransformationMatrix(
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
+Transformation3D::Transformation3D(Transformation3D const &other) {
   SetTranslation(other.Translation(0), other.Translation(1),
                  other.Translation(2));
   SetRotation(other.Rotation(0), other.Rotation(1), other.Rotation(2),
@@ -62,15 +62,15 @@ TransformationMatrix::TransformationMatrix(TransformationMatrix const &other) {
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::Print() const {
-  printf("TransformationMatrix {{%.2f, %.2f, %.2f}, ", trans[0], trans[1],
+void Transformation3D::Print() const {
+  printf("Transformation3D {{%.2f, %.2f, %.2f}, ", trans[0], trans[1],
          trans[2]);
   printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}", rot[0],
          rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::SetTranslation(const Precision tx,
+void Transformation3D::SetTranslation(const Precision tx,
                                           const Precision ty,
                                           const Precision tz) {
   trans[0] = tx;
@@ -79,12 +79,12 @@ void TransformationMatrix::SetTranslation(const Precision tx,
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::SetTranslation(Vector3D<Precision> const &vec) {
+void Transformation3D::SetTranslation(Vector3D<Precision> const &vec) {
   SetTranslation(vec[0], vec[1], vec[2]);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::SetProperties() {
+void Transformation3D::SetProperties() {
   has_translation = (
     fabs(trans[0]) > kTolerance ||
     fabs(trans[1]) > kTolerance ||
@@ -97,7 +97,7 @@ void TransformationMatrix::SetProperties() {
 
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::SetRotation(const Precision phi,
+void Transformation3D::SetRotation(const Precision phi,
                                        const Precision theta,
                                        const Precision psi) {
 
@@ -120,12 +120,12 @@ void TransformationMatrix::SetRotation(const Precision phi,
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::SetRotation(Vector3D<Precision> const &vec) {
+void Transformation3D::SetRotation(Vector3D<Precision> const &vec) {
   SetRotation(vec[0], vec[1], vec[2]);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void TransformationMatrix::SetRotation(
+void Transformation3D::SetRotation(
     const Precision rot0, const Precision rot1, const Precision rot2,
     const Precision rot3, const Precision rot4, const Precision rot5,
     const Precision rot6, const Precision rot7, const Precision rot8) {
@@ -142,7 +142,7 @@ void TransformationMatrix::SetRotation(
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-RotationCode TransformationMatrix::GenerateRotationCode() const {
+RotationCode Transformation3D::GenerateRotationCode() const {
   int code = 0;
   for (int i = 0; i < 9; ++i) {
     // Assign each bit
@@ -158,23 +158,24 @@ RotationCode TransformationMatrix::GenerateRotationCode() const {
 /**
  * Very simple translation code. Kept as an integer in case other cases are to
  * be implemented in the future.
- * /return The matrix' translation code, which is 0 for matrices without
- * translation and 1 otherwise.
+ * /return The transformation's translation code, which is 0 for transformations
+ *         without translation and 1 otherwise.
  */
 VECGEOM_CUDA_HEADER_BOTH
-TranslationCode TransformationMatrix::GenerateTranslationCode() const {
-  return (has_translation) ? translation::kGeneric : translation::kOrigin;
+TranslationCode Transformation3D::GenerateTranslationCode() const {
+  return (has_translation) ? translation::kGeneric : translation::kIdentity;
 }
 
-std::ostream& operator<<(std::ostream& os, TransformationMatrix const &matrix) {
-  os << "Matrix {" << matrix.Translation() << ", "
-     << "("  << matrix.Rotation(0) << ", " << matrix.Rotation(1)
-     << ", " << matrix.Rotation(2) << ", " << matrix.Rotation(3)
-     << ", " << matrix.Rotation(4) << ", " << matrix.Rotation(5)
-     << ", " << matrix.Rotation(6) << ", " << matrix.Rotation(7)
-     << ", " << matrix.Rotation(8) << ")}"
-     << "; identity(" << matrix.IsIdentity() << "); rotation("
-     << matrix.HasRotation() << ")";
+std::ostream& operator<<(std::ostream& os,
+                         Transformation3D const &transformation) {
+  os << "Transformation {" << transformation.Translation() << ", "
+     << "("  << transformation.Rotation(0) << ", " << transformation.Rotation(1)
+     << ", " << transformation.Rotation(2) << ", " << transformation.Rotation(3)
+     << ", " << transformation.Rotation(4) << ", " << transformation.Rotation(5)
+     << ", " << transformation.Rotation(6) << ", " << transformation.Rotation(7)
+     << ", " << transformation.Rotation(8) << ")}"
+     << "; identity(" << transformation.IsIdentity() << "); rotation("
+     << transformation.HasRotation() << ")";
   return os;
 }
 
@@ -184,28 +185,28 @@ namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void TransformationMatrix_CopyToGpu(
+void Transformation3D_CopyToGpu(
   const Precision tx, const Precision ty, const Precision tz,
   const Precision r0, const Precision r1, const Precision r2,
   const Precision r3, const Precision r4, const Precision r5,
   const Precision r6, const Precision r7, const Precision r8,
-  TransformationMatrix *const gpu_ptr);
+  Transformation3D *const gpu_ptr);
 
-TransformationMatrix* TransformationMatrix::CopyToGpu(
-    TransformationMatrix *const gpu_ptr) const {
+Transformation3D* Transformation3D::CopyToGpu(
+    Transformation3D *const gpu_ptr) const {
 
-  TransformationMatrix_CopyToGpu(trans[0], trans[1], trans[2], rot[0], rot[1],
-                                 rot[2], rot[3], rot[4], rot[5], rot[6],
-                                 rot[7], rot[8], gpu_ptr);
+  Transformation3D_CopyToGpu(trans[0], trans[1], trans[2], rot[0], rot[1],
+                             rot[2], rot[3], rot[4], rot[5], rot[6],
+                             rot[7], rot[8], gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 
 }
 
-TransformationMatrix* TransformationMatrix::CopyToGpu() const {
+Transformation3D* Transformation3D::CopyToGpu() const {
 
-  TransformationMatrix *const gpu_ptr =
-      vecgeom::AllocateOnGpu<TransformationMatrix>();
+  Transformation3D *const gpu_ptr =
+      vecgeom::AllocateOnGpu<Transformation3D>();
   return this->CopyToGpu(gpu_ptr);
 
 }
@@ -214,24 +215,24 @@ TransformationMatrix* TransformationMatrix::CopyToGpu() const {
 
 #ifdef VECGEOM_NVCC
 
-class TransformationMatrix;
+class Transformation3D;
 
 __global__
 void ConstructOnGpu(const Precision tx, const Precision ty, const Precision tz,
                     const Precision r0, const Precision r1, const Precision r2,
                     const Precision r3, const Precision r4, const Precision r5,
                     const Precision r6, const Precision r7, const Precision r8,
-                    TransformationMatrix *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::TransformationMatrix(tx, ty, tz, r0, r1, r2,
+                    Transformation3D *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::Transformation3D(tx, ty, tz, r0, r1, r2,
                                                   r3, r4, r5, r6, r7, r8);
 }
 
-void TransformationMatrix_CopyToGpu(
+void Transformation3D_CopyToGpu(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
     const Precision r6, const Precision r7, const Precision r8,
-    TransformationMatrix *const gpu_ptr) {
+    Transformation3D *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(tx, ty, tz, r0, r1, r2, r3, r4, r5,
                            r6, r7, r8, gpu_ptr);
 }

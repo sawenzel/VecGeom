@@ -6,6 +6,8 @@
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
+#include <cmath>
+
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
   #define VECGEOM_NAMESPACE vecgeom_cuda
@@ -46,10 +48,14 @@
   #endif
 #endif
 
-#include <cmath>
-
 #ifndef NULL
   #define NULL 0
+#endif
+
+#ifdef VECGEOM_STD_CXX11
+  #define VECGEOM_CONSTEXPR constexpr
+#else
+  #define VECGEOM_CONSTEXPR const
 #endif
 
 namespace vecgeom {
@@ -66,12 +72,12 @@ typedef vecgeom::Precision Precision;
 
 namespace VECGEOM_NAMESPACE {
 
-const int kAlignmentBoundary = 32;
-const Precision kDegToRad = M_PI/180.;
-const Precision kRadToDeg = 180./M_PI;
-const Precision kInfinity = INFINITY;
-const Precision kTiny = 1e-20;
-const Precision kTolerance = 1e-12;
+VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
+VECGEOM_CONSTEXPR Precision kDegToRad = M_PI/180.;
+VECGEOM_CONSTEXPR Precision kRadToDeg = 180./M_PI;
+VECGEOM_CONSTEXPR Precision kInfinity = INFINITY;
+VECGEOM_CONSTEXPR Precision kTiny = 1e-20;
+VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 
 template <typename Type>
 class Vector3D;
@@ -103,7 +109,7 @@ class UnplacedBox;
 
 class PlacedBox;
 
-class TransformationMatrix;
+class Transformation3D;
 
 class GeoManager;
 
@@ -111,8 +117,8 @@ class GeoManager;
 class CudaManager;
 #endif
 
-namespace entry {
-enum Entry {
+namespace matrix3d_entry {
+enum Matrix3DEntry {
   k00 = 0x001, k01 = 0x002, k02 = 0x004,
   k10 = 0x008, k11 = 0x010, k12 = 0x020,
   k20 = 0x040, k21 = 0x080, k22 = 0x100
@@ -125,7 +131,7 @@ namespace rotation {
 enum RotationId { kGeneric = -1, kDiagonal = 0x111, kIdentity = 0x200 };
 }
 namespace translation {
-enum TranslationId { kGeneric = -1, kOrigin = 0 };
+enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
 
 } // End global namespace

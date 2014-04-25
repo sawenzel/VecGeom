@@ -214,7 +214,7 @@ void test7()
 
       // same with relocation
       // need local point first
-      TransformationMatrix globalm = state.TopMatrix();
+      Transformation3D globalm = state.TopMatrix();
       Vector3D<Precision> localp = globalm.Transform( p );
 
       VPlacedVolume const *vol3= vecnav.RelocatePointFromPath( localp, state );

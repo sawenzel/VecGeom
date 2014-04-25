@@ -8,7 +8,7 @@
 
 #include "backend/backend.h"
 #include "base/array.h"
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
@@ -33,18 +33,18 @@ LogicalVolume::~LogicalVolume() {
 
 VPlacedVolume* LogicalVolume::Place(
     char const *const label,
-    TransformationMatrix const *const matrix) const {
-  return unplaced_volume()->PlaceVolume(label, this, matrix);
+    Transformation3D const *const transformation) const {
+  return unplaced_volume()->PlaceVolume(label, this, transformation);
 }
 
 VPlacedVolume* LogicalVolume::Place(
-    TransformationMatrix const *const matrix) const {
-  return Place(label_->c_str(), matrix);
+    Transformation3D const *const transformation) const {
+  return Place(label_->c_str(), transformation);
 }
 
 VPlacedVolume* LogicalVolume::Place(char const *const label) const {
   return unplaced_volume()->PlaceVolume(
-           label, this, &TransformationMatrix::kIdentity
+           label, this, &Transformation3D::kIdentity
          );
 }
 
@@ -52,16 +52,18 @@ VPlacedVolume* LogicalVolume::Place() const {
   return Place(label_->c_str());
 }
 
-void LogicalVolume::PlaceDaughter(char const *const label,
-                                  LogicalVolume const *const volume,
-                                  TransformationMatrix const *const matrix) {
-  VPlacedVolume const *const placed = volume->Place(label, matrix);
+void LogicalVolume::PlaceDaughter(
+    char const *const label,
+    LogicalVolume const *const volume,
+    Transformation3D const *const transformation) {
+  VPlacedVolume const *const placed = volume->Place(label, transformation);
   daughters_->push_back(placed);
 }
 
-void LogicalVolume::PlaceDaughter(LogicalVolume const *const volume,
-                                  TransformationMatrix const *const matrix) {
-  PlaceDaughter(volume->label().c_str(), volume, matrix);
+void LogicalVolume::PlaceDaughter(
+    LogicalVolume const *const volume,
+    Transformation3D const *const transformation) {
+  PlaceDaughter(volume->label().c_str(), volume, transformation);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {

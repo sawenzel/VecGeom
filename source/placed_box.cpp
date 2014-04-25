@@ -97,7 +97,7 @@ void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
 }
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
-  return new PlacedBox("", logical_volume_, matrix_);
+  return new PlacedBox("", logical_volume_, transformation_);
 }
 
 #ifdef VECGEOM_ROOT
@@ -119,23 +119,25 @@ namespace vecgeom {
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedBox_CopyToGpu(LogicalVolume const *const logical_volume,
-                         TransformationMatrix const *const matrix,
+                         Transformation3D const *const transformation,
                          const int id,
                          VPlacedVolume *const gpu_ptr);
 
-VPlacedVolume* PlacedBox::CopyToGpu(LogicalVolume const *const logical_volume,
-                                    TransformationMatrix const *const matrix,
-                                    VPlacedVolume *const gpu_ptr) const {
-  vecgeom::PlacedBox_CopyToGpu(logical_volume, matrix, this->id(), gpu_ptr);
+VPlacedVolume* PlacedBox::CopyToGpu(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation,
+    VPlacedVolume *const gpu_ptr) const {
+  vecgeom::PlacedBox_CopyToGpu(logical_volume, transformation, this->id(),
+                               gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 }
 
 VPlacedVolume* PlacedBox::CopyToGpu(
     LogicalVolume const *const logical_volume,
-    TransformationMatrix const *const matrix) const {
+    Transformation3D const *const transformation) const {
   VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedBox>();
-  return this->CopyToGpu(logical_volume, matrix, gpu_ptr);
+  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
@@ -143,26 +145,26 @@ VPlacedVolume* PlacedBox::CopyToGpu(
 #ifdef VECGEOM_NVCC
 
 class LogicalVolume;
-class TransformationMatrix;
+class Transformation3D;
 class VPlacedVolume;
 
 __global__
 void ConstructOnGpu(LogicalVolume const *const logical_volume,
-                    TransformationMatrix const *const matrix,
+                    Transformation3D const *const transformation,
                     const int id,
                     VPlacedVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::PlacedBox(
     reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::TransformationMatrix const*>(matrix),
+    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
     id
   );
 }
 
 void PlacedBox_CopyToGpu(LogicalVolume const *const logical_volume,
-                         TransformationMatrix const *const matrix,
+                         Transformation3D const *const transformation,
                          const int id,
                          VPlacedVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(logical_volume, matrix, id, gpu_ptr);
+  ConstructOnGpu<<<1, 1>>>(logical_volume, transformation, id, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC

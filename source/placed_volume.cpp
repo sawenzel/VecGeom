@@ -30,7 +30,7 @@ void VPlacedVolume::Print(const int indent) const {
 #endif
   printf(": \n");
   for (int i = 0; i <= indent; ++i) printf("  ");
-  matrix_->Print();
+  transformation_->Print();
   printf("\n");
   logical_volume_->Print(indent+1);
 }
@@ -50,7 +50,8 @@ void VPlacedVolume::PrintContent(const int indent) const {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
-  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.matrix()) << ")";
+  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.transformation())
+     << ")";
   return os;
 }
 

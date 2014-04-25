@@ -71,12 +71,12 @@ public:
 
   template <TranslationCode trans_code, RotationCode rot_code>
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
-                               TransformationMatrix const *const matrix,
+                               Transformation3D const *const transformation,
                                VPlacedVolume *const placement = NULL);
 
   static VPlacedVolume* CreateSpecializedVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL);
 
@@ -85,14 +85,14 @@ public:
   template <TranslationCode trans_code, RotationCode rot_code>
   __device__
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
-                               TransformationMatrix const *const matrix,
+                               Transformation3D const *const transformation,
                                const int id,
                                VPlacedVolume *const placement = NULL);
 
   __device__
   static VPlacedVolume* CreateSpecializedVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       const int id, VPlacedVolume *const placement = NULL);
 
@@ -104,10 +104,10 @@ private:
 
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL) const {
-    return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
+    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
                                    placement);
   }
 
@@ -116,10 +116,10 @@ private:
   __device__
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       const int id, VPlacedVolume *const placement = NULL) const {
-    return CreateSpecializedVolume(volume, matrix, trans_code, rot_code,
+    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
                                    id, placement);
   }
 

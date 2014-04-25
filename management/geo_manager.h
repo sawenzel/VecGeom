@@ -10,7 +10,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
 
 // probably don't need apply to be virtual
 template<typename Container>

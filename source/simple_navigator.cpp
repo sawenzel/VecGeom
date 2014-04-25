@@ -27,7 +27,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
       Vector3D<Precision> const & globaldir,
       NavigationState const & state ) const
 {
-   TransformationMatrix m = const_cast<NavigationState &>(state).TopMatrix();
+   Transformation3D m = const_cast<NavigationState &>(state).TopMatrix();
    Vector3D<Precision> localpoint = m.Transform( globalpoint );
    Vector3D<Precision> localdir = m.TransformDirection( globaldir );
 
@@ -91,7 +91,7 @@ void SimpleNavigator::InspectSafetyForPoint
    (   Vector3D<Precision> const & globalpoint,
       NavigationState const & state ) const
 {
-   TransformationMatrix m = const_cast<NavigationState &>(state).TopMatrix();
+   Transformation3D m = const_cast<NavigationState &>(state).TopMatrix();
    Vector3D<Precision> localpoint = m.Transform( globalpoint );
 
    // check that everything is consistent

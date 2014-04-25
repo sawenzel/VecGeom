@@ -33,11 +33,11 @@ private:
   int verbose_;
   int total_volumes;
 
-  std::set<VUnplacedVolume const*> unplaced_volumes;
-  std::set<LogicalVolume const*> logical_volumes;
-  std::set<VPlacedVolume const*> placed_volumes;
-  std::set<TransformationMatrix const*> matrices;
-  std::set<Vector<Daughter> *> daughters;
+  std::set<VUnplacedVolume const*> unplaced_volumes_;
+  std::set<LogicalVolume const*> logical_volumes_;
+  std::set<VPlacedVolume const*> placed_volumes_;
+  std::set<Transformation3D const*> transformations_;
+  std::set<Vector<Daughter> *> daughters_;
 
   typedef void const* CpuAddress;
   typedef void* GpuAddress;
@@ -119,8 +119,8 @@ public:
 
   VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
 
-  TransformationMatrix* LookupMatrix(
-      TransformationMatrix const *const host_ptr);
+  Transformation3D* LookupTransformation(
+      Transformation3D const *const host_ptr);
 
   Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);
 

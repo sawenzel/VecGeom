@@ -8,7 +8,7 @@
 
 #include <string>
 #include "base/global.h"
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -54,12 +54,12 @@ public:
   VPlacedVolume* PlaceVolume(
       char const *const label,
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       VPlacedVolume *const placement = NULL) const;
 
   VPlacedVolume* PlaceVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       VPlacedVolume *const placement = NULL) const;
 
 private:
@@ -74,7 +74,7 @@ private:
 
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL) const =0;
 
@@ -83,7 +83,7 @@ private:
   __device__
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       const int id, VPlacedVolume *const placement = NULL) const =0;
 

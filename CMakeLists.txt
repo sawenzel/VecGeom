@@ -70,7 +70,7 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
 else()
@@ -235,10 +235,10 @@ set(HEADERS_CPP_RELATIVE
   base/iterator.h
   base/rng.h
   base/soa3d.h
-  base/specialized_matrix.h
+  base/specialized_transformation3d.h
   base/stopwatch.h
   base/track_container.h
-  base/transformation_matrix.h
+  base/transformation3d.h
   base/type_map.h
   base/vector.h
   base/vector3d.h
@@ -281,7 +281,7 @@ set(SRC_CPP_RELATIVE
   source/scalar_backend.cpp
   source/soa3d.cpp
   source/specialized_box.cpp
-  source/transformation_matrix.cpp
+  source/transformation3d.cpp
   source/unplaced_box.cpp
   source/unplaced_volume.cpp
   source/vector3d.cpp

@@ -9,10 +9,10 @@
 #define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
 #include <string>
-
+#include <iostream>
 
 #include "backend/backend.h"
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "volumes/placed_volume.h"
 
 #ifdef VECGEOM_ROOT
@@ -34,7 +34,7 @@ private:
    int maxlevel_;
    int currentlevel_;
    VPlacedVolume const * * path_;
-   mutable TransformationMatrix global_matrix_;
+   mutable Transformation3D global_matrix_;
 
    // add other navigation state here, stuff like:
    bool onboundary_; // flag indicating whether track is on boundary of the "Top()" placed volume
@@ -95,7 +95,7 @@ public:
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   TransformationMatrix const &
+   Transformation3D const &
    TopMatrix() const;
 
    VECGEOM_INLINE
@@ -174,8 +174,8 @@ public:
    }
 #endif
 
-   //void GetGlobalMatrixFromPath( TransformationMatrix *const m ) const;
-   //TransformationMatrix const * GetGlobalMatrixFromPath() const;
+   //void GetGlobalMatrixFromPath( Transformation3D *const m ) const;
+   //Transformation3D const * GetGlobalMatrixFromPath() const;
 };
 
 
@@ -249,14 +249,14 @@ NavigationState::Top() const
 
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-TransformationMatrix const &
+Transformation3D const &
 NavigationState::TopMatrix() const
 {
 // this could be actually cached in case the path does not change ( particle stays inside a volume )
-   global_matrix_.CopyFrom( *(path_[0]->matrix()) );
+   global_matrix_.CopyFrom( *(path_[0]->transformation()) );
    for(int i=1;i<currentlevel_;++i)
    {
-      global_matrix_.MultiplyFromRight( *(path_[i]->matrix()) );
+      global_matrix_.MultiplyFromRight( *(path_[i]->transformation()) );
    }
    return global_matrix_;
 }
@@ -274,7 +274,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
    Vector3D<Precision> current;
    for(int level=0;level<currentlevel_;++level)
    {
-      TransformationMatrix const *m = path_[level]->matrix();
+      Transformation3D const *m = path_[level]->transformation();
       current = m->Transform( tmp );
       tmp = current;
    }

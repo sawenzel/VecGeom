@@ -8,7 +8,7 @@
 
 #include "base/global.h"
 
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "volumes/logical_volume.h"
 
 #include <string>
@@ -32,14 +32,14 @@ private:
 protected:
 
   LogicalVolume const *logical_volume_;
-  TransformationMatrix const *matrix_;
+  Transformation3D const *transformation_;
   PlacedBox const *bounding_box_;
 
   VPlacedVolume(char const *const label,
                 LogicalVolume const *const logical_volume,
-                TransformationMatrix const *const matrix,
+                Transformation3D const *const transformation,
                 PlacedBox const *const bounding_box)
-      : logical_volume_(logical_volume), matrix_(matrix),
+      : logical_volume_(logical_volume), transformation_(transformation),
         bounding_box_(bounding_box) {
     id_ = g_id_count++;
     g_volume_list.push_back(this);
@@ -48,18 +48,18 @@ protected:
 
 #ifdef VECGEOM_STD_CXX11
   VPlacedVolume(LogicalVolume const *const logical_volume,
-                TransformationMatrix const *const matrix,
+                Transformation3D const *const transformation,
                 PlacedBox const *const bounding_box)
-      :  VPlacedVolume("", logical_volume, matrix, bounding_box) {}
+      :  VPlacedVolume("", logical_volume, transformation, bounding_box) {}
 #endif
 
 #ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   VPlacedVolume(LogicalVolume const *const logical_volume,
-                TransformationMatrix const *const matrix,
+                Transformation3D const *const transformation,
                 PlacedBox const *const bounding_box,
                 const int id)
-      : logical_volume_(logical_volume), matrix_(matrix),
+      : logical_volume_(logical_volume), transformation_(transformation),
         bounding_box_(bounding_box), id_(id), label_(NULL) {}
 #endif
 
@@ -98,8 +98,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  TransformationMatrix const* matrix() const {
-    return matrix_;
+  Transformation3D const* transformation() const {
+    return transformation_;
   }
 
   static std::list<VPlacedVolume *> const& volume_list() {
@@ -112,8 +112,8 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void set_matrix(TransformationMatrix const *const matrix) {
-    matrix_ = matrix;
+  void set_transformation(Transformation3D const *const transformation) {
+    transformation_ = transformation;
   }
 
   void set_label(char const *const label) { *label_ = label; }
@@ -245,11 +245,11 @@ public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   TransformationMatrix const *const matrix,
+                                   Transformation3D const *const transformation,
                                    VPlacedVolume *const gpu_ptr) const =0;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix) const =0;
+      Transformation3D const *const transformation) const =0;
 #endif
 
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;

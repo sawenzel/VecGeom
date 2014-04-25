@@ -16,15 +16,15 @@ int main() {
   LogicalVolume largebox = LogicalVolume(&largebox_params);
   LogicalVolume smallbox = LogicalVolume(&smallbox_params);
 
-  TransformationMatrix origin = TransformationMatrix();
-  TransformationMatrix placement1 = TransformationMatrix( 2,  2,  2, 45, 0, 0);
-  TransformationMatrix placement2 = TransformationMatrix(-2,  2,  2, 0, 45, 0);
-  TransformationMatrix placement3 = TransformationMatrix( 2, -2,  2, 0, 0, 45);
-  TransformationMatrix placement4 = TransformationMatrix( 2,  2, -2, 45, 45, 0);
-  TransformationMatrix placement5 = TransformationMatrix(-2, -2,  2, 45, 0, 45);
-  TransformationMatrix placement6 = TransformationMatrix(-2,  2, -2, 0, 45, 45);
-  TransformationMatrix placement7 = TransformationMatrix(2, -2, -2, 45, 45, 45);
-  TransformationMatrix placement8 = TransformationMatrix(-2, -2, -2, 0, 0, 0);
+  Transformation3D origin = Transformation3D();
+  Transformation3D placement1 = Transformation3D( 2,  2,  2, 45, 0, 0);
+  Transformation3D placement2 = Transformation3D(-2,  2,  2, 0, 45, 0);
+  Transformation3D placement3 = Transformation3D( 2, -2,  2, 0, 0, 45);
+  Transformation3D placement4 = Transformation3D( 2,  2, -2, 45, 45, 0);
+  Transformation3D placement5 = Transformation3D(-2, -2,  2, 45, 0, 45);
+  Transformation3D placement6 = Transformation3D(-2,  2, -2, 0, 45, 45);
+  Transformation3D placement7 = Transformation3D(2, -2, -2, 45, 45, 45);
+  Transformation3D placement8 = Transformation3D(-2, -2, -2, 0, 0, 0);
 
   largebox.PlaceDaughter(&smallbox, &origin);
   worldl.PlaceDaughter(&largebox, &placement1);

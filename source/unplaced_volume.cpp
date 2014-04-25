@@ -18,21 +18,22 @@ std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
 
 VPlacedVolume* VUnplacedVolume::PlaceVolume(
     LogicalVolume const *const volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     VPlacedVolume *const placement) const {
 
-  const TranslationCode trans_code = matrix->GenerateTranslationCode();
-  const RotationCode rot_code = matrix->GenerateRotationCode();
+  const TranslationCode trans_code = transformation->GenerateTranslationCode();
+  const RotationCode rot_code = transformation->GenerateRotationCode();
 
-  return SpecializedVolume(volume, matrix, trans_code, rot_code, placement);
+  return SpecializedVolume(volume, transformation, trans_code, rot_code,
+                           placement);
 }
 
 VPlacedVolume* VUnplacedVolume::PlaceVolume(
     char const *const label,
     LogicalVolume const *const volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     VPlacedVolume *const placement) const {
-  VPlacedVolume *const placed = PlaceVolume(volume, matrix, placement);
+  VPlacedVolume *const placed = PlaceVolume(volume, transformation, placement);
   placed->set_label(label);
   return placed;
 }

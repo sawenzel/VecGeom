@@ -9,7 +9,7 @@
 #include "base/global.h"
 #include "backend/backend.h"
 #include "backend/implementation.h"
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "volumes/placed_box.h"
 
 #include <stdio.h>
@@ -23,21 +23,22 @@ public:
 
   SpecializedBox(char const *const label,
                  LogicalVolume const *const logical_volume,
-                 TransformationMatrix const *const matrix)
-      : PlacedBox(label, logical_volume, matrix) {}
+                 Transformation3D const *const transformation)
+      : PlacedBox(label, logical_volume, transformation) {}
 
 #ifdef VECGEOM_STD_CXX11
   SpecializedBox(LogicalVolume const *const logical_volume,
-                 TransformationMatrix const *const matrix)
-      : SpecializedBox<trans_code, rot_code>("", logical_volume, matrix) {}
+                 Transformation3D const *const transformation)
+      : SpecializedBox<trans_code, rot_code>("", logical_volume,
+                                             transformation) {}
 #endif
 
 #ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   SpecializedBox(LogicalVolume const *const logical_volume,
-                 TransformationMatrix const *const matrix,
+                 Transformation3D const *const transformation,
                  const int id)
-      : PlacedBox(logical_volume, matrix, id) {}
+      : PlacedBox(logical_volume, transformation, id) {}
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -84,6 +85,7 @@ public:
   template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  // TODO: why is this here? Dispatches should only be in Placed volume code
   typename Backend::precision_v DistanceToInDispatch(
       Vector3D<typename Backend::precision_v> const &position,
       Vector3D<typename Backend::precision_v> const &direction,
@@ -91,7 +93,7 @@ public:
 
       typename Backend::precision_v output;
       BoxDistanceToIn<trans_code, rot_code, Backend>(
-          unplaced_box()->dimensions(), *this->matrix(),
+          unplaced_box()->dimensions(), *this->transformation(),
           position, direction,
           step_max, &output );
       return output;
@@ -104,18 +106,20 @@ public:
         Vector3D<typename Backend::precision_v> const &position
   ) const {
      typename Backend::precision_v safety;
-     BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *matrix(), position, safety);
+     BoxSafetyToIn<trans_code, rot_code, Backend>(unplaced_box()->dimensions(), *transformation(), position, safety);
      return safety;
   }
 
   template <typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   typename Backend::bool_v InsideDispatch(
       Vector3D<typename Backend::precision_v> const &point) const {
 
     typename Backend::bool_v output;
     BoxInside<trans_code, rot_code, Backend>(
       unplaced_box()->dimensions(),
-      *this->matrix(),
+      *this->transformation(),
       point,
       &output
     );
@@ -126,11 +130,11 @@ public:
 
   #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   TransformationMatrix const *const matrix,
+                                   Transformation3D const *const transformation,
                                    VPlacedVolume *const gpu_ptr) const;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix) const;
+      Transformation3D const *const transformation) const;
   #endif
 
 };
@@ -156,7 +160,7 @@ bool SpecializedBox<trans_code, rot_code>::Inside(
   bool output;
   BoxInside<trans_code,rot_code,kScalar>(
     unplaced_box()->dimensions(),
-    *this->matrix_,
+    *this->transformation_,
     point,
     local,
     &output
@@ -234,11 +238,11 @@ void SpecializedBox<trans_code, rot_code>::SafetyToIn(
 namespace vecgeom {
 
 class LogicalVolume;
-class TransformationMatrix;
+class Transformation3D;
 
 void SpecializedBox_CopyToGpu(int trans_code, int rot_code,
                               LogicalVolume const *const logical_volume,
-                              TransformationMatrix const *const matrix,
+                              Transformation3D const *const transformation,
                               const int id, VPlacedVolume *const gpu_ptr);
 
 #ifdef VECGEOM_CUDA_INTERFACE
@@ -246,10 +250,10 @@ void SpecializedBox_CopyToGpu(int trans_code, int rot_code,
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     LogicalVolume const *const logical_volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     VPlacedVolume *const gpu_ptr) const {
 
-  SpecializedBox_CopyToGpu(trans_code, rot_code, logical_volume, matrix,
+  SpecializedBox_CopyToGpu(trans_code, rot_code, logical_volume, transformation,
                            this->id(), gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
@@ -259,11 +263,11 @@ VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* SpecializedBox<trans_code, rot_code>::CopyToGpu(
     LogicalVolume const *const logical_volume,
-    TransformationMatrix const *const matrix) const {
+    Transformation3D const *const transformation) const {
 
   VPlacedVolume *const gpu_ptr =
       vecgeom::AllocateOnGpu<SpecializedBox<trans_code, rot_code> >();
-  return this->CopyToGpu(logical_volume, matrix, gpu_ptr);  
+  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);  
 
 }
 

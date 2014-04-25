@@ -16,7 +16,7 @@
 #include "base/iterator.h"
 #include "base/soa3d.h"
 #include "base/stopwatch.h"
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_box.h"
 #include "volumes/utilities/volume_utilities.h"
@@ -303,13 +303,14 @@ BenchmarkResult DistanceToInBenchmarker::RunUSolids(
     const int index = (rand() % pool_multiplier_) * n_points_;
     for (std::vector<VolumePointers>::const_iterator v = volumes_.begin();
          v != volumes_.end(); ++v) {
-      TransformationMatrix const *matrix = v->unspecialized()->matrix();
+      Transformation3D const *transformation =
+          v->unspecialized()->transformation();
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
         const Vector3D<Precision> point =
-            matrix->Transform((*point_pool_)[p]);
+            transformation->Transform((*point_pool_)[p]);
         const Vector3D<Precision> dir =
-            matrix->TransformDirection((*dir_pool_)[p]);
+            transformation->TransformDirection((*dir_pool_)[p]);
         distances[i] = v->usolids()->DistanceToIn(
           UVector3(point[0], point[1], point[2]),
           UVector3(dir[0], dir[1], dir[2])
@@ -332,13 +333,14 @@ BenchmarkResult DistanceToInBenchmarker::RunRoot(
   for (unsigned r = 0; r < repetitions(); ++r) {
     const int index = (rand() % pool_multiplier_) * n_points_;
     for (auto v = volumes_.begin(); v != volumes_.end(); ++v) {
-      TransformationMatrix const *matrix = v->unspecialized()->matrix();
+      Transformation3D const *transformation =
+          v->unspecialized()->transformation();
       for (unsigned i = 0; i < n_points_; ++i) {
         const int p = index + i;
         Vector3D<Precision> point =
-            matrix->Transform((*point_pool_)[p]);
+            transformation->Transform((*point_pool_)[p]);
         Vector3D<Precision> dir =
-            matrix->TransformDirection((*dir_pool_)[p]);
+            transformation->TransformDirection((*dir_pool_)[p]);
         distances[i] = v->root()->DistFromOutside(&point[0], &dir[0]);
       }
     }

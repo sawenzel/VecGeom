@@ -117,9 +117,9 @@ public:
   void PrintContent(const int depth = 0) const;
 
   VPlacedVolume* Place(char const *const label,
-                       TransformationMatrix const *const matrix) const;
+                       Transformation3D const *const transformation) const;
 
-  VPlacedVolume* Place(TransformationMatrix const *const matrix) const;
+  VPlacedVolume* Place(Transformation3D const *const transformation) const;
 
   VPlacedVolume* Place(char const *const label) const;
 
@@ -127,10 +127,10 @@ public:
 
   void PlaceDaughter(char const *const label,
                      LogicalVolume const *const volume,
-                     TransformationMatrix const *const matrix);
+                     Transformation3D const *const transformation);
 
   void PlaceDaughter(LogicalVolume const *const volume,
-                     TransformationMatrix const *const matrix);
+                     Transformation3D const *const transformation);
 
   void PlaceDaughter(VPlacedVolume const *const placed);
 

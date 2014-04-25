@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "management/geo_manager.h"
 #include "management/rootgeo_manager.h"
 #include "volumes/logical_volume.h"
@@ -31,9 +31,9 @@ void RootGeoManager::LoadRootGeometry() {
 VPlacedVolume* RootGeoManager::Convert(TGeoNode const *const node) {
   if (placed_volumes_.Contains(node)) return placed_volumes_[node];
 
-  TransformationMatrix const *const matrix = Convert(node->GetMatrix());
+  Transformation3D const *const transformation = Convert(node->GetMatrix());
   LogicalVolume *const logical_volume = Convert(node->GetVolume());
-  VPlacedVolume *const placed_volume = logical_volume->Place(matrix);
+  VPlacedVolume *const placed_volume = logical_volume->Place(transformation);
     // set name for placed_volume
   placed_volume->set_label( node->GetName() );
 
@@ -53,17 +53,17 @@ VPlacedVolume* RootGeoManager::Convert(TGeoNode const *const node) {
   return placed_volume;
 }
 
-TransformationMatrix* RootGeoManager::Convert(TGeoMatrix const *const geomatrix) {
-  if (matrices_.Contains(geomatrix)) return matrices_[geomatrix];
+Transformation3D* RootGeoManager::Convert(TGeoMatrix const *const geomatrix) {
+  if (transformations_.Contains(geomatrix)) return transformations_[geomatrix];
 
   Double_t const *const t = geomatrix->GetTranslation();
   Double_t const *const r = geomatrix->GetRotationMatrix();
-  TransformationMatrix *const matrix =
-      new TransformationMatrix(t[0], t[1], t[2], r[0], r[1], r[2],
-                               r[3], r[4], r[5], r[6], r[7], r[8]);
+  Transformation3D *const transformation =
+      new Transformation3D(t[0], t[1], t[2], r[0], r[1], r[2],
+                           r[3], r[4], r[5], r[6], r[7], r[8]);
 
-  matrices_.Set(geomatrix, matrix);
-  return matrix;
+  transformations_.Set(geomatrix, transformation);
+  return transformation;
 }
 
 LogicalVolume* RootGeoManager::Convert(TGeoVolume const *const volume) {
@@ -114,7 +114,7 @@ void RootGeoManager::Clear() {
   for (auto i = logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
     delete i->first;
   }
-  for (auto i = matrices_.begin(); i != matrices_.end(); ++i) {
+  for (auto i = transformations_.begin(); i != transformations_.end(); ++i) {
     delete i->first;
   }
   if (GeoManager::Instance().world() == world_) {

@@ -6,7 +6,7 @@
 #ifndef VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_
 #define VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_
 
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 
@@ -26,7 +26,7 @@ public:
   template<typename VolumeType>
   static VPlacedVolume* CreateByTransformation(
       LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL);
 
@@ -36,7 +36,7 @@ public:
   VECGEOM_CUDA_HEADER_DEVICE
   static VPlacedVolume* CreateByTransformation(
       LogicalVolume const *const logical_volume,
-      TransformationMatrix const *const matrix,
+      Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       const int id, VPlacedVolume *const placement = NULL);
 
@@ -56,7 +56,7 @@ __device__
 #endif
 VPlacedVolume* VolumeFactory::CreateByTransformation(
     LogicalVolume const *const logical_volume,
-    TransformationMatrix const *const matrix,
+    Transformation3D const *const transformation,
     const TranslationCode trans_code, const RotationCode rot_code,
     #ifdef VECGEOM_NVCC
     const int id,
@@ -68,17 +68,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x1b1) {
     return VolumeType::template Create<translation::kGeneric, 0x1b1>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x1b1) {
-    return VolumeType::template Create<translation::kOrigin, 0x1b1>(
+  if (trans_code == translation::kIdentity && rot_code == 0x1b1) {
+    return VolumeType::template Create<translation::kIdentity, 0x1b1>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -88,17 +88,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x18e) {
     return VolumeType::template Create<translation::kGeneric, 0x18e>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x18e) {
-    return VolumeType::template Create<translation::kOrigin, 0x18e>(
+  if (trans_code == translation::kIdentity && rot_code == 0x18e) {
+    return VolumeType::template Create<translation::kIdentity, 0x18e>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -108,17 +108,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x076) {
     return VolumeType::template Create<translation::kGeneric, 0x076>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x076) {
-    return VolumeType::template Create<translation::kOrigin, 0x076>(
+  if (trans_code == translation::kIdentity && rot_code == 0x076) {
+    return VolumeType::template Create<translation::kIdentity, 0x076>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -128,17 +128,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x16a) {
     return VolumeType::template Create<translation::kGeneric, 0x16a>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x16a) {
-    return VolumeType::template Create<translation::kOrigin, 0x16a>(
+  if (trans_code == translation::kIdentity && rot_code == 0x16a) {
+    return VolumeType::template Create<translation::kIdentity, 0x16a>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -148,17 +148,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x155) {
     return VolumeType::template Create<translation::kGeneric, 0x155>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x155) {
-    return VolumeType::template Create<translation::kOrigin, 0x155>(
+  if (trans_code == translation::kIdentity && rot_code == 0x155) {
+    return VolumeType::template Create<translation::kIdentity, 0x155>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -168,17 +168,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x0ad) {
     return VolumeType::template Create<translation::kGeneric, 0x0ad>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x0ad) {
-    return VolumeType::template Create<translation::kOrigin, 0x0ad>(
+  if (trans_code == translation::kIdentity && rot_code == 0x0ad) {
+    return VolumeType::template Create<translation::kIdentity, 0x0ad>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -188,17 +188,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x0dc) {
     return VolumeType::template Create<translation::kGeneric, 0x0dc>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x0dc) {
-    return VolumeType::template Create<translation::kOrigin, 0x0dc>(
+  if (trans_code == translation::kIdentity && rot_code == 0x0dc) {
+    return VolumeType::template Create<translation::kIdentity, 0x0dc>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -208,17 +208,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x0e3) {
     return VolumeType::template Create<translation::kGeneric, 0x0e3>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x0e3) {
-    return VolumeType::template Create<translation::kOrigin, 0x0e3>(
+  if (trans_code == translation::kIdentity && rot_code == 0x0e3) {
+    return VolumeType::template Create<translation::kIdentity, 0x0e3>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -228,17 +228,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x11b) {
     return VolumeType::template Create<translation::kGeneric, 0x11b>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x11b) {
-    return VolumeType::template Create<translation::kOrigin, 0x11b>(
+  if (trans_code == translation::kIdentity && rot_code == 0x11b) {
+    return VolumeType::template Create<translation::kIdentity, 0x11b>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -248,17 +248,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x0a1) {
     return VolumeType::template Create<translation::kGeneric, 0x0a1>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x0a1) {
-    return VolumeType::template Create<translation::kOrigin, 0x0a1>(
+  if (trans_code == translation::kIdentity && rot_code == 0x0a1) {
+    return VolumeType::template Create<translation::kIdentity, 0x0a1>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -268,17 +268,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x10a) {
     return VolumeType::template Create<translation::kGeneric, 0x10a>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x10a) {
-    return VolumeType::template Create<translation::kOrigin, 0x10a>(
+  if (trans_code == translation::kIdentity && rot_code == 0x10a) {
+    return VolumeType::template Create<translation::kIdentity, 0x10a>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -288,17 +288,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x046) {
     return VolumeType::template Create<translation::kGeneric, 0x046>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x046) {
-    return VolumeType::template Create<translation::kOrigin, 0x046>(
+  if (trans_code == translation::kIdentity && rot_code == 0x046) {
+    return VolumeType::template Create<translation::kIdentity, 0x046>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -308,17 +308,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x062) {
     return VolumeType::template Create<translation::kGeneric, 0x062>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x062) {
-    return VolumeType::template Create<translation::kOrigin, 0x062>(
+  if (trans_code == translation::kIdentity && rot_code == 0x062) {
+    return VolumeType::template Create<translation::kIdentity, 0x062>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -328,17 +328,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x054) {
     return VolumeType::template Create<translation::kGeneric, 0x054>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x054) {
-    return VolumeType::template Create<translation::kOrigin, 0x054>(
+  if (trans_code == translation::kIdentity && rot_code == 0x054) {
+    return VolumeType::template Create<translation::kIdentity, 0x054>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -348,17 +348,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x111) {
     return VolumeType::template Create<translation::kGeneric, 0x111>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x111) {
-    return VolumeType::template Create<translation::kOrigin, 0x111>(
+  if (trans_code == translation::kIdentity && rot_code == 0x111) {
+    return VolumeType::template Create<translation::kIdentity, 0x111>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -368,17 +368,17 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
   if (trans_code == translation::kGeneric && rot_code == 0x200) {
     return VolumeType::template Create<translation::kGeneric, 0x200>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
              placement
            );
   }
-  if (trans_code == translation::kOrigin && rot_code == 0x200) {
-    return VolumeType::template Create<translation::kOrigin, 0x200>(
+  if (trans_code == translation::kIdentity && rot_code == 0x200) {
+    return VolumeType::template Create<translation::kIdentity, 0x200>(
              logical_volume,
-             matrix,
+             transformation,
 #ifdef VECGEOM_NVCC
              id,
 #endif
@@ -388,7 +388,8 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
 
   // No specialization
   return VolumeType::template Create<translation::kGeneric, rotation::kGeneric>(
-           logical_volume, matrix,
+           logical_volume,
+           transformation,
 #ifdef VECGEOM_NVCC
            id,
 #endif

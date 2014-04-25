@@ -207,7 +207,7 @@ void test7()
 
 		// same with relocation
 		// need local point first
-		TransformationMatrix globalm = state.TopMatrix();
+		Transformation3D globalm = state.TopMatrix();
 		Vector3D<Precision> localp = globalm.Transform<1,0>( p );
 
 		VPlacedVolume const *vol3= vecnav.RelocatePointFromPath( localp, state );
@@ -432,21 +432,21 @@ void testDistanceToOut() {
 }
 
 
-void foo(TransformationMatrix const &m, Vector3D<Precision> const p, Vector3D<Precision> & localp )
+void foo(Transformation3D const &m, Vector3D<Precision> const p, Vector3D<Precision> & localp )
 {
   m.DoRotation<0x1B1>(p,localp);
 }
 
-void bar(TransformationMatrix const &m, Vector3D<Precision> const p, Vector3D<Precision> & localp )
+void bar(Transformation3D const &m, Vector3D<Precision> const p, Vector3D<Precision> & localp )
 {
   m.DoRotation_new<0x1B1>(p,localp);
 }
 
 void testDoRotation() {
 
-  // instantiate a matrix to test TransformationMatrix::DoRotation()
+  // instantiate a transformation to test Transformation3D::DoRotation()
   // double halfSqrt2 = 0.7071067811865476;
-  TransformationMatrix const matrix_0x1b1 = {0,0,0,0,45,0};
+  Transformation3D const matrix_0x1b1 = {0,0,0,0,45,0};
   std::cout << matrix_0x1b1 << std::endl;
 
   // allocate space

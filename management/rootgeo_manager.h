@@ -11,7 +11,6 @@
 #include "base/type_map.h"
 #include "TGeoNode.h"
 
-
 namespace VECGEOM_NAMESPACE {
 
 /**
@@ -31,7 +30,7 @@ private:
   TypeMap<VPlacedVolume*, TGeoNode const*> placed_volumes_;
   TypeMap<VUnplacedVolume*, TGeoShape const*> unplaced_volumes_;
   TypeMap<LogicalVolume*, TGeoVolume const*> logical_volumes_;
-  TypeMap<TransformationMatrix*, TGeoMatrix const*> matrices_;
+  TypeMap<Transformation3D*, TGeoMatrix const*> transformations_;
 
 public:
 
@@ -91,7 +90,7 @@ public:
 
   UnplacedBox* Convert(TGeoBBox const *const box);
 
-  TransformationMatrix* Convert(TGeoMatrix const *const matrix);
+  Transformation3D* Convert(TGeoMatrix const *const trans);
 
 private:
 

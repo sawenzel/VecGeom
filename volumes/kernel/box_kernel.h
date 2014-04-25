@@ -8,12 +8,13 @@
 
 #include "base/global.h"
 #include "base/vector3d.h"
-#include "base/transformation_matrix.h"
+#include "base/transformation3d.h"
 #include <ostream>
 
 namespace VECGEOM_NAMESPACE {
 
-/** the core inside function with matrix stripped; it expects a local point  **/
+// the core inside function with transformation stripped; it expects a local
+// point
 template<typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
@@ -38,25 +39,24 @@ void BoxUnplacedInside( Vector3D<Precision> const & dimensions,
      }
 }
 
-/**
- *  a C-like function that returns if a particle is inside the box
- *   given specified by boxdimensions and placed with matrix **/
+// a C-like function that returns if a particle is inside the box
+// given specified by boxdimensions and placed with transformation
 template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<Precision> const & boxdimensions,
-               TransformationMatrix const &matrix,
+               Transformation3D const &transformation,
                Vector3D<typename Backend::precision_v> const &point,
                typename Backend::bool_v *const inside) {
 
  // probably better like this:
-  BoxUnplacedInside<Backend>(boxdimensions, matrix.Transform<trans_code,
+  BoxUnplacedInside<Backend>(boxdimensions, transformation.Transform<trans_code,
                             rot_code>(point), inside);
 }
 
 /**
  * a C-like function that returns if a particle is inside the box
- * given specified by boxdimensions and placed with matrix
+ * given specified by boxdimensions and placed with transformation
  *
  * this function also makes the transformed local point available to the caller
  **/
@@ -64,12 +64,12 @@ template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxInside(Vector3D<Precision> const & boxdimensions,
-               TransformationMatrix const &matrix,
+               Transformation3D const &transformation,
                Vector3D<typename Backend::precision_v> const &point,
                Vector3D<typename Backend::precision_v> & localpoint,
                typename Backend::bool_v *const inside) {
 
-  localpoint = matrix.Transform<trans_code, rot_code>(point);
+  localpoint = transformation.Transform<trans_code, rot_code>(point);
   BoxUnplacedInside<Backend>( boxdimensions, localpoint, inside );
 }
 
@@ -78,7 +78,7 @@ VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxDistanceToIn(
     Vector3D<Precision> const &dimensions,
-    TransformationMatrix const &matrix,
+    Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &pos,
     Vector3D<typename Backend::precision_v> const &dir,
     typename Backend::precision_v const &step_max,
@@ -94,8 +94,8 @@ void BoxDistanceToIn(
   Bool done(false);
   *distance = kInfinity;
 
-  matrix.Transform<trans_code, rot_code>(pos, pos_local);
-  matrix.TransformDirection<rot_code>(dir, dir_local);
+  transformation.Transform<trans_code, rot_code>(pos, pos_local);
+  transformation.TransformDirection<rot_code>(dir, dir_local);
 
   safety[0] = Abs(pos_local[0]) - dimensions[0];
   safety[1] = Abs(pos_local[1]) - dimensions[1];
@@ -165,7 +165,8 @@ void BoxDistanceToOut(
 
     // TODO: check this
     Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2]< Float(0.);
-    MaskedAssign( !inside, kInfinity, &distance );
+    // TODO: CUDA can't find kInfinity here. Investigate!
+    MaskedAssign( !inside, INFINITY, &distance ); 
 
     // TODO: could make the code more compact by looping over dir
     Float invdirx = 1.0/(dir[0] + kTiny);
@@ -203,7 +204,7 @@ template< TranslationCode trans_code,
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
-                    TransformationMatrix const & matrix,
+                    Transformation3D const & transformation,
                     Vector3D<typename Backend::precision_v> const & point,
                     typename Backend::precision_v & safety
                   )
@@ -212,7 +213,7 @@ void BoxSafetyToIn( Vector3D<Precision> const &dimensions,
    typedef typename Backend::bool_v Bool;
 
    Vector3D<Float> localpoint
-               = matrix.Transform<trans_code,rot_code>(point);
+               = transformation.Transform<trans_code,rot_code>(point);
    safety = -dimensions[0] + Abs(localpoint[0]);
    Float safy = -dimensions[1] + Abs(localpoint[1]);
    Float safz = -dimensions[2] + Abs(localpoint[2]);
