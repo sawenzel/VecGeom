@@ -164,9 +164,8 @@ void BoxDistanceToOut(
     saf[2] = Abs(pos[2])-dimensions[2];
 
     // TODO: check this
-    Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2]< Float(0.);
-    // TODO: CUDA can't find kInfinity here. Investigate!
-    MaskedAssign( !inside, INFINITY, &distance ); 
+    Bool inside = saf[0]< Float(0.) && saf[1] < Float(0.) && saf[2] < Float(0.);
+    MaskedAssign( !inside, kInfinity, &distance ); 
 
     // TODO: could make the code more compact by looping over dir
     Float invdirx = 1.0/(dir[0] + kTiny);

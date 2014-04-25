@@ -43,6 +43,13 @@ void MaskedAssign(const bool cond,
   *output = (cond) ? thenval : *output;
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void MaskedAssign(const bool cond, const Precision thenval,
+                  Precision *const output) {
+  *output = (cond) ? thenval : *output;
+}
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
