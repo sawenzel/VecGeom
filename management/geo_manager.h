@@ -10,6 +10,8 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
 
+#include <map>
+
 namespace VECGEOM_NAMESPACE {
 
 // probably don't need apply to be virtual
@@ -74,6 +76,9 @@ private:
   int volume_count;
   VPlacedVolume const *world_;
 
+  std::map<int, VPlacedVolume*> placed_volumes_;
+  std::map<int, LogicalVolume*> logical_volumes_;
+
   template<typename Visitor>
   void visitAllPlacedVolumes(VPlacedVolume const *, Visitor * visitor, int level=1 ) const;
 
@@ -105,6 +110,14 @@ public:
    *  return max depth of volume hierarchy
    */
   int getMaxDepth() const;
+
+  void RegisterPlacedVolume(VPlacedVolume *const placed_volume);
+
+  void RegisterLogicalVolume(LogicalVolume *const logical_volume);
+
+  void DeregisterPlacedVolume(const int id);
+
+  void DeregisterLogicalVolume(const int id);
 
   /**
    * \return Volume with passed id, or NULL is the id wasn't found.

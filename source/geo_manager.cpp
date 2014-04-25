@@ -3,7 +3,23 @@
 
 #include <stdio.h>
 
-namespace vecgeom {
+namespace VECGEOM_NAMESPACE {
+
+void GeoManager::RegisterLogicalVolume(LogicalVolume *const logical_volume) {
+  logical_volumes_[logical_volume->id()] = logical_volume;
+}
+
+void GeoManager::RegisterPlacedVolume(VPlacedVolume *const placed_volume) {
+  placed_volumes_[placed_volume->id()] = placed_volume;
+}
+
+void GeoManager::DeregisterLogicalVolume(const int id) {
+  logical_volumes_.erase(id);
+}
+
+void GeoManager::DeregisterPlacedVolume(const int id) {
+  placed_volumes_.erase(id);
+}
 
 int GeoManager::getMaxDepth( ) const
 {
@@ -15,21 +31,18 @@ int GeoManager::getMaxDepth( ) const
 }
 
 VPlacedVolume* GeoManager::FindPlacedVolume(const int id) {
-  for (auto v = VPlacedVolume::volume_list().begin(),
-       v_end = VPlacedVolume::volume_list().end(); v != v_end; ++v) {
-    if ((*v)->id() == id) return *v;
-  }
-  return NULL;
+  auto iterator = placed_volumes_.find(id);
+  return (iterator != placed_volumes_.end()) ? iterator->second : NULL;
 }
 
 VPlacedVolume* GeoManager::FindPlacedVolume(char const *const label) {
   VPlacedVolume *output = NULL;
   bool multiple = false;
-  for (auto v = VPlacedVolume::volume_list().begin(),
-       v_end = VPlacedVolume::volume_list().end(); v != v_end; ++v) {
-    if ((*v)->label() == label) {
+  for (auto v = placed_volumes_.begin(), v_end = placed_volumes_.end();
+       v != v_end; ++v) {
+    if (v->second->label() == label) {
       if (!output) {
-        output = *v;
+        output = v->second;
       } else {
         if (!multiple) {
           multiple = true;
@@ -38,7 +51,7 @@ VPlacedVolume* GeoManager::FindPlacedVolume(char const *const label) {
         } else {
           printf(", ");
         }
-        printf("[%i]", (*v)->id());
+        printf("[%i]", v->second->id());
       }
     }
   }
@@ -47,21 +60,18 @@ VPlacedVolume* GeoManager::FindPlacedVolume(char const *const label) {
 }
 
 LogicalVolume* GeoManager::FindLogicalVolume(const int id) {
-  for (auto v = LogicalVolume::volume_list().begin(),
-       v_end = LogicalVolume::volume_list().end(); v != v_end; ++v) {
-    if ((*v)->id() == id) return *v;
-  }
-  return NULL;
+  auto iterator = logical_volumes_.find(id);
+  return (iterator != logical_volumes_.end()) ? iterator->second : NULL;
 }
 
 LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   LogicalVolume *output = NULL;
   bool multiple = false;
-  for (auto v = LogicalVolume::volume_list().begin(),
-       v_end = LogicalVolume::volume_list().end(); v != v_end; ++v) {
-    if ((*v)->label() == label) {
+  for (auto v = logical_volumes_.begin(), v_end = logical_volumes_.end();
+       v != v_end; ++v) {
+    if (v->second->label() == label) {
       if (!output) {
-        output = *v;
+        output = v->second;
       } else {
         if (!multiple) {
           multiple = true;
@@ -70,7 +80,7 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
         } else {
           printf(", ");
         }
-        printf("[%i]", (*v)->id());
+        printf("[%i]", v->second->id());
       }
     }
   }

@@ -5,17 +5,28 @@
 
 #include <stdio.h>
 
+#include "management/geo_manager.h"
 #include "volumes/placed_volume.h"
 
 namespace VECGEOM_NAMESPACE {
 
 int VPlacedVolume::g_id_count = 0;
-std::list<VPlacedVolume *> VPlacedVolume::g_volume_list =
-    std::list<VPlacedVolume *>();
+
+#ifndef VECGEOM_NVCC
+VPlacedVolume::VPlacedVolume(char const *const label,
+                             LogicalVolume const *const logical_volume,
+                             Transformation3D const *const transformation,
+                             PlacedBox const *const bounding_box)
+    : logical_volume_(logical_volume), transformation_(transformation),
+      bounding_box_(bounding_box) {
+  id_ = g_id_count++;
+  GeoManager::Instance().RegisterPlacedVolume(this);
+  label_ = new std::string(label);
+}
+#endif
 
 VPlacedVolume::~VPlacedVolume() {
   delete label_;
-  g_volume_list.remove(this);
 }
 
 VECGEOM_CUDA_HEADER_BOTH

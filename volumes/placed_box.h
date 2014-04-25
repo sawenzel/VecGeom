@@ -19,23 +19,25 @@ class PlacedBox : public VPlacedVolume {
 
 public:
 
+#ifndef VECGEOM_NVCC
+
   PlacedBox(char const *const label,
             LogicalVolume const *const logical_volume,
             Transformation3D const *const transformation)
       : VPlacedVolume(label, logical_volume, transformation, this) {}
 
-#ifdef VECGEOM_STD_CXX11
   PlacedBox(LogicalVolume const *const logical_volume,
             Transformation3D const *const transformation)
       : PlacedBox("", logical_volume, transformation) {}
-#endif
 
-#ifdef VECGEOM_NVCC
-  VECGEOM_CUDA_HEADER_DEVICE
+#else
+
+  __device__
   PlacedBox(LogicalVolume const *const logical_volume,
             Transformation3D const *const transformation,
             const int id)
       : VPlacedVolume(logical_volume, transformation, this, id) {}
+
 #endif
 
   virtual ~PlacedBox() {}
@@ -165,6 +167,7 @@ public:
 
   // Comparison specific
 
+#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -172,7 +175,7 @@ public:
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
-
+#endif // VECGEOM_NVCC
 
   // Templates to interact with common C-like kernels
   template <typename Backend>

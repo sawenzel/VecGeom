@@ -9,6 +9,7 @@
 #include "backend/backend.h"
 #include "base/array.h"
 #include "base/transformation3d.h"
+#include "management/geo_manager.h"
 #include "management/volume_factory.h"
 #include "volumes/logical_volume.h"
 #include "volumes/placed_volume.h"
@@ -16,8 +17,18 @@
 namespace VECGEOM_NAMESPACE {
 
 int LogicalVolume::g_id_count = 0;
-std::list<LogicalVolume *> LogicalVolume::g_volume_list =
-    std::list<LogicalVolume *>();
+
+#ifndef VECGEOM_NVCC
+LogicalVolume::LogicalVolume(char const *const label,
+                             VUnplacedVolume const *const unplaced_volume)
+    : unplaced_volume_(unplaced_volume),
+      user_extension_(NULL) {
+  id_ = g_id_count++;
+  GeoManager::Instance().RegisterLogicalVolume(this);
+  label_ = new std::string(label);
+  daughters_ = new Vector<Daughter>();
+}
+#endif
 
 LogicalVolume::~LogicalVolume() {
   delete label_;
@@ -26,7 +37,6 @@ LogicalVolume::~LogicalVolume() {
     delete *i;
   }
   delete daughters_;
-  g_volume_list.remove(this);
 }
 
 #ifndef VECGEOM_NVCC

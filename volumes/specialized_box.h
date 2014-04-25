@@ -21,24 +21,25 @@ class SpecializedBox : public PlacedBox {
 
 public:
 
+#ifndef VECGEOM_NVCC
+
   SpecializedBox(char const *const label,
                  LogicalVolume const *const logical_volume,
                  Transformation3D const *const transformation)
       : PlacedBox(label, logical_volume, transformation) {}
 
-#ifdef VECGEOM_STD_CXX11
   SpecializedBox(LogicalVolume const *const logical_volume,
                  Transformation3D const *const transformation)
       : SpecializedBox<trans_code, rot_code>("", logical_volume,
                                              transformation) {}
-#endif
+#else
 
-#ifdef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_DEVICE
   SpecializedBox(LogicalVolume const *const logical_volume,
                  Transformation3D const *const transformation,
                  const int id)
       : PlacedBox(logical_volume, transformation, id) {}
+      
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH

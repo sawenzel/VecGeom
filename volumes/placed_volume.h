@@ -27,7 +27,6 @@ private:
   // Use a pointer so the string won't be constructed on the GPU
   std::string *label_;
   static int g_id_count;
-  static std::list<VPlacedVolume *> g_volume_list;
 
 protected:
 
@@ -35,32 +34,28 @@ protected:
   Transformation3D const *transformation_;
   PlacedBox const *bounding_box_;
 
+#ifndef VECGEOM_NVCC
+
   VPlacedVolume(char const *const label,
                 LogicalVolume const *const logical_volume,
                 Transformation3D const *const transformation,
-                PlacedBox const *const bounding_box)
-      : logical_volume_(logical_volume), transformation_(transformation),
-        bounding_box_(bounding_box) {
-    id_ = g_id_count++;
-    g_volume_list.push_back(this);
-    label_ = new std::string(label);
-  }
+                PlacedBox const *const bounding_box);
 
-#ifdef VECGEOM_STD_CXX11
   VPlacedVolume(LogicalVolume const *const logical_volume,
                 Transformation3D const *const transformation,
                 PlacedBox const *const bounding_box)
       :  VPlacedVolume("", logical_volume, transformation, bounding_box) {}
-#endif
 
-#ifdef VECGEOM_NVCC
-  VECGEOM_CUDA_HEADER_DEVICE
+#else
+
+  __device__
   VPlacedVolume(LogicalVolume const *const logical_volume,
                 Transformation3D const *const transformation,
                 PlacedBox const *const bounding_box,
                 const int id)
       : logical_volume_(logical_volume), transformation_(transformation),
         bounding_box_(bounding_box), id_(id), label_(NULL) {}
+
 #endif
 
 public:
@@ -100,10 +95,6 @@ public:
   VECGEOM_INLINE
   Transformation3D const* transformation() const {
     return transformation_;
-  }
-
-  static std::list<VPlacedVolume *> const& volume_list() {
-    return g_volume_list;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -252,6 +243,7 @@ public:
       Transformation3D const *const transformation) const =0;
 #endif
 
+#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const =0;
@@ -259,6 +251,7 @@ public:
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const =0;
 #endif
+#endif // VECGEOM_NVCC
 
 };
 
