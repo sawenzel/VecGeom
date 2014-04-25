@@ -6,7 +6,7 @@
 template <class TubeSpecialization>
 class SpecializedTube
     : public PlacedTube,
-      public ShapeImplementationHelper<PlacedTube, TubeSpecialization> {
+      private ShapeImplementationHelper<PlacedTube, TubeSpecialization> {
 
 private:
 

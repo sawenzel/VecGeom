@@ -15,7 +15,7 @@ struct FancyTube {
 };
 
 class PlacedTube : public PlacedVolume,
-                   public ShapeImplementationHelper<PlacedTube, PlacedTube> {
+                   private ShapeImplementationHelper<PlacedTube, PlacedTube> {
 
 private:
 

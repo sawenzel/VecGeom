@@ -8,7 +8,7 @@
 
 class PlacedBox
     : public PlacedVolume,
-      public ShapeImplementationHelper<PlacedBox, PlacedBox> {
+      private ShapeImplementationHelper<PlacedBox, PlacedBox> {
 
 private:
 
