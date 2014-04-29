@@ -8,7 +8,6 @@
 struct BoxImplementation {
 
   template <class Backend>
-  inline
   static void Inside(UnplacedBox const &box,
                      Vector3D<typename Backend::double_v> const &point,
                      typename Backend::bool_v &output) {
@@ -27,11 +26,10 @@ template <class TubeSpecialization>
 struct TubeImplementation {
 
   template <class Backend>
-  inline
   static void Inside(UnplacedTube const &tube,
                      Vector3D<typename Backend::double_v> const &point,
                      typename Backend::bool_v &output) {
-    if (TubeSpecialization::isFancy) {
+    if (TubeSpecialization::fgIsFancy) {
       output = typename Backend::bool_v(true);
     } else {
       output = typename Backend::bool_v(false);

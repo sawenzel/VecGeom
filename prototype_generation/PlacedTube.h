@@ -5,11 +5,11 @@
 #include "UnplacedTube.h"
 
 struct GeneralTube {
-  static const bool isFancy = false;
+  static const bool fgIsFancy = false;
 };
 
 struct FancyTube {
-  static const bool isFancy = true;
+  static const bool fgIsFancy = true;
 };
 
 class PlacedTube : public PlacedVolume {
