@@ -3,17 +3,23 @@
  * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
  */
 
-#include <stdio.h>
+#include "volumes/unplaced_box.h"
+
 #include "backend/backend.h"
 #include "management/volume_factory.h"
 #include "volumes/specialized_box.h"
-#include "volumes/unplaced_box.h"
+
+#include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedBox::Print() const {
   printf("UnplacedBox {%.2f, %.2f, %.2f}", x(), y(), z());
+}
+
+void UnplacedBox::Print(std::ostream &os) const {
+  os << "UnplacedBox {" << x() << ", " << y() << ", " << z() << "}";
 }
 
 #ifndef VECGEOM_NVCC

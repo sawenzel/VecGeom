@@ -3,31 +3,36 @@
 #include "management/rootgeo_manager.h"
 #include "volumes/placed_volume.h"
 
-#include "TGeoManager.h"
 #include "TGeoBBox.h"
+#include "TGeoManager.h"
 #include "TGeoMatrix.h"
+#include "TGeoTube.h"
 #include "TGeoVolume.h"
 
 using namespace VECGEOM_NAMESPACE;
 
 int main() {
 
-  TGeoShape *box1 = new TGeoBBox(20., 20., 20.);
-  TGeoShape *box2 = new TGeoBBox(2., 7., 3.);
-  TGeoShape *box3 = new TGeoBBox(1., 1., 1.);
-  TGeoVolume *vol1 = new TGeoVolume("", box1, NULL);
-  TGeoVolume *vol2 = new TGeoVolume("", box2, NULL); 
-  TGeoVolume *vol3 = new TGeoVolume("", box3, NULL); 
-  TGeoMatrix *matrix1 =
-      new TGeoCombiTrans(0., -5., 6., new TGeoRotation("", 1., 2., 3.));
-  TGeoMatrix *matrix2 =
-      new TGeoCombiTrans(3., 3., 3., new TGeoRotation("", 3., 2., 1.));
-  vol1->AddNode(vol2, 0, matrix1);
-  vol1->AddNode(vol2, 1, matrix2);
-  vol2->AddNode(vol3, 0, matrix2);
-  vol2->AddNode(vol3, 1, matrix1);
-  ::gGeoManager->SetTopVolume(vol1);
+  const double l = 10.;
+  const double lz = 10.;
+  const double sqrt2 = sqrt(2.);
 
+  TGeoVolume *world = ::gGeoManager->MakeBox("world",0, l, l, lz );
+  TGeoVolume *boxLevel1 = ::gGeoManager->MakeBox("b1", 0, l/2., l/2., lz);
+  TGeoVolume *boxLevel2 = ::gGeoManager->MakeBox("b2", 0, sqrt2*l/2./2.,
+                                                 sqrt2*l/2./2., lz);
+  TGeoVolume *boxLevel3 = ::gGeoManager->MakeBox("b3", 0, l/2./2., l/2./2.,
+                                                 lz);
+
+  boxLevel2->AddNode(boxLevel3, 0, new TGeoRotation("rot1",0,0,45));
+  boxLevel1->AddNode(boxLevel2, 0, new TGeoRotation("rot2",0,0,-45));
+  world->AddNode(boxLevel1, 0, new TGeoTranslation(-l/2.,0,0));
+  world->AddNode(boxLevel1, 1, new TGeoTranslation(+l/2.,0,0));
+
+  ::gGeoManager->SetTopVolume(world);
+  ::gGeoManager->CloseGeometry();
+
+  RootGeoManager::Instance().set_verbose(1);
   RootGeoManager::Instance().LoadRootGeometry();
   RootGeoManager::Instance().world()->PrintContent();
 

@@ -32,6 +32,8 @@ private:
   TypeMap<LogicalVolume*, TGeoVolume const*> logical_volumes_;
   TypeMap<Transformation3D*, TGeoMatrix const*> transformations_;
 
+  int verbose_;
+
 public:
 
   /** Access singleton instance. */
@@ -46,6 +48,8 @@ public:
    * @sa LoadRootGeometry()
    */
   VPlacedVolume const* world() const { return world_; }
+
+  int verbose() const { return verbose_; }
 
   TGeoNode const * tgeonode( VPlacedVolume const * p ) const
   {
@@ -63,6 +67,8 @@ public:
 
   char const *  GetName( VPlacedVolume const * p  ) const { return tgeonode(p)->GetName(); }
   void PrintNodeTable() const;
+
+  void set_verbose(const int verbose) { verbose_ = verbose; } 
 
   /**
    * Queries the global ROOT GeoManager for the top volume and recursively
@@ -94,7 +100,7 @@ public:
 
 private:
 
-  RootGeoManager() : world_(NULL) {}
+  RootGeoManager() : world_(NULL), verbose_(0) {}
   RootGeoManager(RootGeoManager const&);
   RootGeoManager& operator=(RootGeoManager const&);
 

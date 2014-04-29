@@ -189,7 +189,11 @@ if (ROOT)
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/rootgeo_manager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL}
+    source/placed_root_volume.cpp
+    source/rootgeo_manager.cpp
+    source/unplaced_root_volume.cpp
+  )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
 
 endif()
@@ -269,6 +273,13 @@ if (CUDA)
     backend/cuda/backend.h
     backend/cuda/implementation.h
     backend/cuda/interface.h
+  )
+endif()
+if (ROOT)
+  set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
+    management/rootgeo_manager.h
+    volumes/placed_root_volume.h
+    volumes/unplaced_root_volume.h
   )
 endif()
 

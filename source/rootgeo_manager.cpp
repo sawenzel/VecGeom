@@ -9,8 +9,10 @@
 #include "management/geo_manager.h"
 #include "management/rootgeo_manager.h"
 #include "volumes/logical_volume.h"
+#include "volumes/placed_root_volume.h"
 #include "volumes/placed_volume.h"
 #include "volumes/unplaced_box.h"
+#include "volumes/unplaced_root_volume.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -18,7 +20,7 @@
 #include "TGeoMatrix.h"
 #include "TGeoVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
 void RootGeoManager::LoadRootGeometry() {
   Clear();
@@ -33,9 +35,8 @@ VPlacedVolume* RootGeoManager::Convert(TGeoNode const *const node) {
 
   Transformation3D const *const transformation = Convert(node->GetMatrix());
   LogicalVolume *const logical_volume = Convert(node->GetVolume());
-  VPlacedVolume *const placed_volume = logical_volume->Place(transformation);
-    // set name for placed_volume
-  placed_volume->set_label( node->GetName() );
+  VPlacedVolume *const placed_volume =
+      logical_volume->Place(node->GetName(), transformation);
 
   int remaining_daughters = 0;
   {
@@ -70,9 +71,8 @@ LogicalVolume* RootGeoManager::Convert(TGeoVolume const *const volume) {
   if (logical_volumes_.Contains(volume)) return logical_volumes_[volume];
 
   VUnplacedVolume const *const unplaced = Convert(volume->GetShape());
-  LogicalVolume *const logical_volume = new LogicalVolume(unplaced);
-  // set name for logical volume
-  logical_volume->set_label( volume->GetName() );
+  LogicalVolume *const logical_volume =
+      new LogicalVolume(volume->GetName(), unplaced);
 
   logical_volumes_.Set(volume, logical_volume);
   return logical_volume;
@@ -86,8 +86,13 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
     TGeoBBox const *const box = static_cast<TGeoBBox const*>(shape);
     unplaced_volume = new UnplacedBox(box->GetDX(), box->GetDY(), box->GetDZ());
   }
+  // New volumes should be implemented here...
   if (!unplaced_volume) {
-    assert(unplaced_volume && "Attempted to convert unsupported shape.\n");
+    if (verbose_) {
+      printf("Unsupported shape for ROOT volume \"%s\". "
+             "Using ROOT implementation.\n", shape->GetName());
+    }
+    unplaced_volume = new UnplacedRootVolume(shape);
   }
   
   unplaced_volumes_.Set(shape, unplaced_volume);

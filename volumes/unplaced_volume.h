@@ -6,9 +6,12 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 
-#include <string>
 #include "base/global.h"
+
 #include "base/transformation3d.h"
+
+#include <string>
+#include <ostream>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -44,6 +47,11 @@ public:
 #endif
 
   /**
+   * Virtual print to accommodate outstreams.
+   */
+  virtual void Print(std::ostream &os) const =0;
+
+  /**
    * C-style printing for CUDA purposes.
    */
   VECGEOM_CUDA_HEADER_BOTH
@@ -63,12 +71,6 @@ public:
       VPlacedVolume *const placement = NULL) const;
 
 private:
-
-  /**
-   * Print information about the deriving class.
-   * \param os Outstream to stream information into.
-   */
-  virtual void Print(std::ostream &os) const =0;
 
 #ifndef VECGEOM_NVCC
 

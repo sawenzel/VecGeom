@@ -67,6 +67,8 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
+  virtual void Print(std::ostream &os) const;
+
 #ifndef VECGEOM_NVCC
 
   template <TranslationCode trans_code, RotationCode rot_code>
@@ -124,11 +126,7 @@ private:
   }
 
 #endif
-
-  virtual void Print(std::ostream &os) const {
-    os << "Box {" << dimensions_ << "}";
-  }
-
+  
 };
 
 } // End global namespace
