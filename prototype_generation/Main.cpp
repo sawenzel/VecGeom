@@ -1,32 +1,39 @@
 #include <stdio.h>
-#include "PlacedBox.h"
-#include "SpecializedTube.h"
+#include "SimpleBox.h"
+#include "SimpleTube.h"
+#include "Vector3D.h"
 
 int main() {
-  UnplacedBox unplaced_box = UnplacedBox(5., 5., 5.);
-  UnplacedTube unplaced_tube = UnplacedTube();
-  PlacedBox placed_box = PlacedBox(&unplaced_box);
-  SpecializedTube<GeneralTube> general_tube(&unplaced_tube);
-  SpecializedTube<FancyTube> fancy_tube(&unplaced_tube);
 
-  const double point[3] = {1, -4, 0};
-  double points[3][VcDouble::Size] __attribute__((aligned(32)));
-  bool output[VcDouble::Size] __attribute__((aligned(32)));
+  const int n = 8;
+
+  UnplacedBox unplacedBox = UnplacedBox(5., 5., 5.);
+  UnplacedTube unplacedTube = UnplacedTube();
+  SimpleBox simpleBox = SimpleBox(&unplacedBox);
+  SimpleTube simpleTube(&unplacedTube);
+  SpecializedTube<FancyTube> fancyTube(&unplacedTube);
+
+  const Vector3D<double> point(-1., 2., 0);
+  double **const points = new double*[3];
+  points[0] = new double[n];
+  points[1] = new double[n];
+  points[2] = new double[n];
+  bool *const output = new bool[n];
   for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < VcDouble::Size; ++j) points[i][j] = point[i];
+    for (int j = 0; j < n; ++j) points[i][j] = point[i];
   }
 
-  placed_box.PlacedBox::Inside(points, output);
+  simpleBox.Inside(points, n, output);
   printf("Box: ");
-  for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
+  for (int i = 0; i < n; ++i) printf("%i ", output[i]);
 
-  general_tube.Inside(points, output);
-  printf("\nGeneral Tube: ");
-  for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
+  simpleTube.Inside(points, n, output);
+  printf("\nSimple Tube: ");
+  for (int i = 0; i < n; ++i) printf("%i ", output[i]);
 
-  fancy_tube.Inside(points, output);
+  fancyTube.Inside(points, n, output);
   printf("\nFancy Tube: ");
-  for (int i = 0; i < VcDouble::Size; ++i) printf("%i ", output[i]);
+  for (int i = 0; i < n; ++i) printf("%i ", output[i]);
 
   printf("\n");
 

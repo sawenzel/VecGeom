@@ -1,6 +1,8 @@
 #ifndef VECGEOM_GLOBAL_H_
 #define VECGEOM_GLOBAL_H_
 
+#define VECGEOM_VC
+
 #include <Vc/Vc>
 
 struct kVc {
@@ -17,5 +19,7 @@ struct kScalar {
   typedef double double_v;
   typedef bool bool_v;
 };
+
+template <typename Type> class Vector3D;
 
 #endif // VECGEOM_GLOBAL_H_

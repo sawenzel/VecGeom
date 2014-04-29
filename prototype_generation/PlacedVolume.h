@@ -11,10 +11,10 @@ public:
 
   ~PlacedVolume() {}
 
-  virtual bool Inside(const double point[3]) const =0;
+  virtual bool Inside(Vector3D<double> const &point) const =0;
 
-  virtual void Inside(const double points[3][VcDouble::Size],
-                      bool output[VcDouble::Size]) const =0;
+  virtual void Inside(double const *const *const points, const int n,
+                      bool *const output) const =0;
 
 };
 
