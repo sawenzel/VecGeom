@@ -3,38 +3,23 @@
 
 #include "PlacedVolume.h"
 #include "UnplacedBox.h"
-#include "Kernel.h"
-#include "ShapeImplementationHelper.h"
 
-class PlacedBox
-    : public PlacedVolume,
-      private ShapeImplementationHelper<PlacedBox, PlacedBox> {
+class PlacedBox : public PlacedVolume {
 
 private:
 
-  typedef ShapeImplementationHelper<PlacedBox, PlacedBox> Implementation;
-
-protected:
-
-  UnplacedBox const *unplaced_;
+  UnplacedBox const *fUnplacedBox;
 
 public:
 
-  PlacedBox(UnplacedBox const *const unplaced)
-      : Implementation(this), unplaced_(unplaced) {}
+  typedef UnplacedBox UnplacedShape_t;
 
-  ~PlacedBox() {}
+  PlacedBox(UnplacedBox const *const unplacedBox) : fUnplacedBox(unplacedBox) {}
 
-  VECGEOM_SHAPE_DISPATCH
+  virtual ~PlacedBox() {}
 
-  VECGEOM_SHAPE_IMPLEMENTATION
+  UnplacedBox const* GetUnplacedVolume() const { return fUnplacedBox; }
 
 };
-
-template <class Backend, class ShapeSpecialization>
-void PlacedBox::InsideDispatch(typename Backend::double_v const point[3],
-                               typename Backend::bool_v &output) const {
-  BoxInside<Backend>(*unplaced_, point, output);
-}
 
 #endif // VECGEOM_PLACEDBOX_H_

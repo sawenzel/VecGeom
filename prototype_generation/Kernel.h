@@ -5,28 +5,39 @@
 #include "UnplacedBox.h"
 #include "UnplacedTube.h"
 
-template <class Backend>
-void BoxInside(UnplacedBox const &box,
-               typename Backend::double_v const *const point,
-               typename Backend::bool_v &output) {
+struct BoxImplementation {
 
-  typename Backend::bool_v inside[3];
-  inside[0] = fabs(point[0]) < box.x();
-  inside[1] = fabs(point[1]) < box.y();
-  inside[2] = fabs(point[2]) < box.z();
+  template <class Backend>
+  inline
+  static void Inside(UnplacedBox const &box,
+                     Vector3D<typename Backend::double_v> const &point,
+                     typename Backend::bool_v &output) {
 
-  output = inside[0] && inside[1] && inside[2];
-}
+    typename Backend::bool_v inside[3];
+    inside[0] = fabs(point[0]) < box.x();
+    inside[1] = fabs(point[1]) < box.y();
+    inside[2] = fabs(point[2]) < box.z();
 
-template <class Backend, class TubeSpecialization>
-void TubeInside(UnplacedTube const &tube,
-                typename Backend::double_v const *const point,
-                typename Backend::bool_v &output) {
-  if (TubeSpecialization::is_fancy) {
-    output = typename Backend::bool_v(true);
-  } else {
-    output = typename Backend::bool_v(false);
+    output = inside[0] && inside[1] && inside[2];
   }
-}
+
+};
+
+template <class TubeSpecialization>
+struct TubeImplementation {
+
+  template <class Backend>
+  inline
+  static void Inside(UnplacedTube const &tube,
+                     Vector3D<typename Backend::double_v> const &point,
+                     typename Backend::bool_v &output) {
+    if (TubeSpecialization::isFancy) {
+      output = typename Backend::bool_v(true);
+    } else {
+      output = typename Backend::bool_v(false);
+    }
+  }
+
+};
 
 #endif // VECGEOM_KERNEL_H_

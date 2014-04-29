@@ -1,55 +1,61 @@
 #ifndef VECGEOM_SHAPEIMPLEMENTATIONHELPER_H_
 #define VECGEOM_SHAPEIMPLEMENTATIONHELPER_H_
 
-#include "PlacedVolume.h"
-#include "Kernel.h"
+#include "Global.h"
 
-#define VECGEOM_SHAPE_DISPATCH \
-template <class Backend, class ShapeSpecialization> \
-void InsideDispatch(typename Backend::double_v const point[3], \
-                    typename Backend::bool_v &output) const;
-
-#define VECGEOM_SHAPE_IMPLEMENTATION \
-virtual bool Inside(const double point[3]) const { \
-  return Implementation::Inside(point); \
-} \
-virtual void Inside(const double points[3][VcDouble::Size], \
-                    bool output[VcDouble::Size]) const { \
-  Implementation::Inside(points, output); \
-}
-
-template <class PlacedType, class Specialization>
-class ShapeImplementationHelper {
-
-private:
-
-  PlacedType const *const deriving_;
+template <class Shape, class Specialization>
+struct ShapeImplementationHelper : public Shape {
 
 public:
 
-  ShapeImplementationHelper(PlacedType const *const deriving)
-      : deriving_(deriving) {}
+  ShapeImplementationHelper(
+      typename Shape::UnplacedShape_t const *const unplacedShape)
+      : Shape(unplacedShape) {}
 
-  bool Inside(double const point[3]) const {
+  virtual bool Inside(Vector3D<double> const &point) const {
     bool output;
-    deriving_->template InsideDispatch<kScalar, Specialization>(
+    Specialization::template Inside<kScalar>(
+      *this->GetUnplacedVolume(),
       point,
       output
     );
     return output;
   }
 
-  void Inside(const double points[3][VcDouble::Size],
-                     bool output[VcDouble::Size]) const {
-    VcBool output_vc;
-    VcDouble points_vc[3] = {VcDouble(points[0]), VcDouble(points[1]),
-                             VcDouble(points[2])};
-    deriving_->template InsideDispatch<kVc, Specialization>(
-      points_vc,
-      output_vc
-    );
-    for (int i = 0; i < VcDouble::Size; ++i) output[i] = output_vc[i];
+#ifdef VECGEOM_VC
+  virtual void Inside(double const *const *const points, const int n,
+                      bool *const output) const {
+    for (int i = 0; i < n; i += VcDouble::Size) {
+      const Vector3D<VcDouble> point(
+        VcDouble(&points[0][i]),
+        VcDouble(&points[1][i]),
+        VcDouble(&points[2][i])
+      );
+      VcBool output_vc;
+      Specialization::template Inside<kVc>(
+        *this->GetUnplacedVolume(),
+        point,
+        output_vc
+      );
+      for (int j = 0; j < n; ++j) {
+        output[i+j] = output_vc[j];
+      }
+    }
   }
+#else // Scalar looper
+  virtual void Inside(double const *const *const points, const int n,
+                      bool *const output) const {
+    for (int i = 0; i < n; ++i) {
+      const Vector3D<double> point(points[0][i], points[1][i], points[2][i]);
+      Specialization::template Inside<kScalar>(
+        *this->GetUnplacedVolume(),
+        point,
+        output[i]
+      );
+    }
+  }
+#endif
+
 
 };
 
