@@ -31,14 +31,14 @@ public:
         VcDouble(&points[1][i]),
         VcDouble(&points[2][i])
       );
-      VcBool output_vc;
+      VcBool outputVc;
       Specialization::template Inside<kVc>(
         *this->GetUnplacedVolume(),
         point,
-        output_vc
+        outputVc
       );
       for (int j = 0; j < n; ++j) {
-        output[i+j] = output_vc[j];
+        output[i+j] = outputVc[j];
       }
     }
   }
