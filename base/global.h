@@ -79,6 +79,7 @@ VECGEOM_CONSTEXPR Precision kRadToDeg = 180./M_PI;
 VECGEOM_CONSTEXPR Precision kInfinity = INFINITY;
 VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
 VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
+VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
 
 template <typename Type>
 class Vector3D;
@@ -134,6 +135,8 @@ enum RotationId { kGeneric = -1, kDiagonal = 0x111, kIdentity = 0x200 };
 namespace translation {
 enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
+
+enum EInside { kOutside = 0, kInside = 1, kSurface = 2 };
 
 } // End global namespace
 

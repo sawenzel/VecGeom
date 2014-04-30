@@ -255,16 +255,20 @@ set(HEADERS_CPP_RELATIVE
   management/volume_pointers.h
   navigation/navigationstate.h
   navigation/simple_navigator.h
-  volumes/kernel/box_kernel.h
-  volumes/utilities/volume_utilities.h
   volumes/box.h
+  volumes/kernel/box_kernel.h
   volumes/logical_volume.h
+  volumes/Parallelepiped.h
   volumes/placed_box.h
+  volumes/PlacedParallelepiped.h
   volumes/placed_volume.h
   volumes/specialized_box.h
+  volumes/SpecializedParallelepiped.h
   volumes/unplaced_box.h
+  volumes/UnplacedParallelepiped.h
   volumes/unplaced_volume.h
   volumes/usolid.h
+  volumes/utilities/volume_utilities.h
 )
 # CUDA headers are installed normally. Vector headers will change path in
 # installation directory.
@@ -363,6 +367,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
+  ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
 )
 set_source_files_properties(
   ${SRC_EXECUTABLES}
@@ -374,6 +379,10 @@ if (NOT CUDA)
     ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
   )
   target_link_libraries(create_geometry_test ${LIBS})
+  add_executable(ParallelepipedTest
+    ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
+  )
+  target_link_libraries(ParallelepipedTest ${LIBS})
   if (ROOT)
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})
@@ -393,6 +402,12 @@ else()
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
   install(TARGETS vecgeom_cuda DESTINATION lib)
+  cuda_add_executable(
+    ParallelepipedTest
+    ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
+    OPTIONS ${CUDA_ARCH}
+  )
+  target_link_libraries(ParallelepipedTest ${LIBS})
   if (ROOT)
     cuda_add_executable(
       cpugpu
