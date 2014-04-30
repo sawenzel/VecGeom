@@ -8,6 +8,8 @@
 
 #include "base/global.h"
 
+#include <random>
+
 namespace VECGEOM_NAMESPACE {
 
 /**
