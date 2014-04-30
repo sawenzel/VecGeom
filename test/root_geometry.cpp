@@ -1,6 +1,7 @@
-#include <iostream>
-
+#include "management/geo_manager.h"
 #include "management/rootgeo_manager.h"
+#include "navigation/navigationstate.h"
+#include "navigation/simple_navigator.h"
 #include "volumes/placed_volume.h"
 
 #include "TGeoBBox.h"
@@ -9,32 +10,43 @@
 #include "TGeoTube.h"
 #include "TGeoVolume.h"
 
+#include <cassert>
+
 using namespace VECGEOM_NAMESPACE;
 
 int main() {
 
-  const double l = 10.;
-  const double lz = 10.;
-  const double sqrt2 = sqrt(2.);
+  TGeoVolume *world_root = gGeoManager->MakeBox("world", NULL, 5., 5., 10.);
+  TGeoVolume *tube_root  = gGeoManager->MakeTube("tube", NULL, 1., 5., 10.);
 
-  TGeoVolume *world = ::gGeoManager->MakeBox("world",0, l, l, lz );
-  TGeoVolume *boxLevel1 = ::gGeoManager->MakeBox("b1", 0, l/2., l/2., lz);
-  TGeoVolume *boxLevel2 = ::gGeoManager->MakeBox("b2", 0, sqrt2*l/2./2.,
-                                                 sqrt2*l/2./2., lz);
-  TGeoVolume *boxLevel3 = ::gGeoManager->MakeBox("b3", 0, l/2./2., l/2./2.,
-                                                 lz);
+  world_root->AddNode(tube_root, 0, new TGeoTranslation(0, 0, 0));
 
-  boxLevel2->AddNode(boxLevel3, 0, new TGeoRotation("rot1",0,0,45));
-  boxLevel1->AddNode(boxLevel2, 0, new TGeoRotation("rot2",0,0,-45));
-  world->AddNode(boxLevel1, 0, new TGeoTranslation(-l/2.,0,0));
-  world->AddNode(boxLevel1, 1, new TGeoTranslation(+l/2.,0,0));
-
-  ::gGeoManager->SetTopVolume(world);
-  ::gGeoManager->CloseGeometry();
+  gGeoManager->SetTopVolume(world_root);
+  gGeoManager->CloseGeometry();
 
   RootGeoManager::Instance().set_verbose(1);
   RootGeoManager::Instance().LoadRootGeometry();
   RootGeoManager::Instance().world()->PrintContent();
+
+  VPlacedVolume const *const world = GeoManager::Instance().world();
+  VPlacedVolume const *const tube = *world->daughters().begin();
+
+  SimpleNavigator navigator;
+
+  auto CheckPoint = [&] (const Precision x, const Precision y,
+                         const Precision z, VPlacedVolume const *const volume) {
+    Vector3D<Precision> const point = Vector3D<Precision>(x, y, z);
+    NavigationState path(2);
+    assert(navigator.LocatePoint(world, point, path, true) == volume);
+  };
+
+  CheckPoint(0, 0, 0, world);
+  CheckPoint(4, 4, -9, world);
+  CheckPoint(4, 0, 3, tube);
+  CheckPoint(0, 3, -5, tube);
+  CheckPoint(0, 3, -11, NULL);
+
+  printf("\nAll tests successfully passed.\n");
 
   return 0;
 }

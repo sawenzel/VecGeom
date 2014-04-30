@@ -131,8 +131,8 @@ bool PlacedRootVolume::Inside(Vector3D<Precision> const &point) const {
 
 bool PlacedRootVolume::Inside(Vector3D<Precision> const &point,
                               Vector3D<Precision> &localPoint) const {
-  assert(0 && "Inside with local point output not implemented for"
-         "PlacedRootVolume.");
+  localPoint = this->transformation_->Transform(point);
+  return UnplacedInside(localPoint);
 }
 
 bool PlacedRootVolume::UnplacedInside(Vector3D<Precision> const &point) const {

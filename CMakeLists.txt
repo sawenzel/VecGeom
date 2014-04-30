@@ -400,6 +400,12 @@ else()
       OPTIONS ${CUDA_ARCH}
     )
     target_link_libraries(cpugpu ${LIBS})
+    cuda_add_executable(
+      root_geometry
+      ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
+      OPTIONS ${CUDA_ARCH}
+    )
+    target_link_libraries(root_geometry ${LIBS})
   endif()
   if (BENCHMARK)
     add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
