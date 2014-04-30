@@ -31,6 +31,7 @@
   #undef VECGEOM_CILK
   #undef VECGEOM_ROOT
   #undef VECGEOM_USOLIDS
+  #undef VECGEOM_BENCHMARK
 #else
   #define VECGEOM_STD_CXX11
   #define VECGEOM_NAMESPACE vecgeom

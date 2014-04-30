@@ -96,7 +96,7 @@ void PlacedBox::SafetyToOut( AOS3D<Precision> const &position,
    return SafetyToOut_Looper(*this, position, safeties);
 }
 
-#ifndef VECGEOM_NVCC
+#ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
   return new PlacedBox("", logical_volume_, transformation_);
@@ -114,7 +114,7 @@ TGeoShape const* PlacedBox::ConvertToRoot() const {
 }
 #endif
 
-#endif // VECGEOM_NVCC
+#endif // VECGEOM_BENCHMARK
 
 } // End global namespace
 

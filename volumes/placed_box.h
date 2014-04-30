@@ -167,7 +167,7 @@ public:
 
   // Comparison specific
 
-#ifndef VECGEOM_NVCC
+#ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -175,7 +175,7 @@ public:
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
-#endif // VECGEOM_NVCC
+#endif // VECGEOM_BENCHMARK
 
   // Templates to interact with common C-like kernels
   template <typename Backend>
