@@ -8,11 +8,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <bool HasTanAlpha, bool HasTanThetaSinPhi, bool HasTanThetaCosPhi,
-          TranslationCode tTransCode, RotationCode tRotCode>
-struct ParallelepipedSpecialization {};
-
-class UnplacedParallelepiped : public AlignedBase {
+class UnplacedParallelepiped : public VUnplacedVolume, AlignedBase {
 
 private:
 
@@ -20,6 +16,11 @@ private:
   Precision fTanAlpha, fTanThetaSinPhi, fTanThetaCosPhi;
 
 public:
+
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedParallelepiped(Vector3D<Precision> const &dimensions,
+                         const Precision alpha, const Precision theta,
+                         const Precision phi);
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedParallelepiped(const Precision x, const Precision y,
@@ -46,6 +47,32 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetTanThetaCosPhi() const { return fTanThetaCosPhi; }
+
+  virtual int memory_size() const { return sizeof(*this); }
+
+  virtual void Print() const;
+
+  template <TranslationCode transCodeT, RotationCode rotCodeT>
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               Transformation3D const *const transformation,
+#ifdef VECGEOM_NVCC
+                               const int id,
+#endif
+                               VPlacedVolume *const placement = NULL);
+
+private:
+
+  virtual void Print(std::ostream &os) const;
+
+  VECGEOM_CUDA_HEADER_DEVICE
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+#ifdef VECGEOM_NVCC
+      const int id,
+#endif
+      VPlacedVolume *const placement = NULL) const;
 
 };
 

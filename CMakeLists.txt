@@ -77,7 +77,8 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 endif()
 if (GNU)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=10000000")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmax-errors=20 \
+                       -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                   OUTPUT_VARIABLE GCC_VERSION)
@@ -298,6 +299,7 @@ set(SRC_CPP_RELATIVE
   source/specialized_box.cpp
   source/transformation3d.cpp
   source/unplaced_box.cpp
+  source/UnplacedParallelepiped.cpp
   source/unplaced_volume.cpp
   source/vector3d.cpp
   source/NavigationState.cpp	

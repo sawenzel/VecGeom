@@ -12,14 +12,52 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <class ParallelepipedSpecialization>
+template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedParallelepiped
     : public ShapeImplementationHelper<PlacedParallelepiped,
-                                       ParallelepipedSpecialization> {};
+                                       ParallelepipedImplementation<
+                                           transCodeT, rotCodeT> > {
 
-typedef SpecializedParallelepiped<ParallelepipedSpecialization<
-          true, true, true, translation::kIdentity, rotation::kIdentity>
-        >SimpleParallelepiped;
+  typedef ShapeImplementationHelper<PlacedParallelepiped,
+                                    ParallelepipedImplementation<
+                                        transCodeT, rotCodeT> > Helper;
+
+public:
+
+#ifndef VECGEOM_NVCC
+
+  SpecializedParallelepiped(char const *const label,
+                            LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation)
+      : Helper(label, logical_volume, transformation, NULL) {}
+
+  SpecializedParallelepiped(LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation)
+      : SpecializedParallelepiped("", logical_volume, transformation) {}
+
+#else
+
+  __device__
+  SpecializedParallelepiped(LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation,
+                            PlacedBox const *const boundingBox, const int id)
+      : Helper(logical_volume, transformation, boundingBox, id) {}
+
+#endif
+
+  virtual int memory_size() const { return sizeof(*this); }
+
+  virtual void PrintType() const;
+
+};
+
+typedef SpecializedParallelepiped<translation::kGeneric, rotation::kGeneric>
+    SimpleParallelepiped;
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+void SpecializedParallelepiped<transCodeT, rotCodeT>::PrintType() const {
+  printf("SpecializedParallelepiped<%i, %i>", transCodeT, rotCodeT);
+}
 
 } // End global namespace
 
