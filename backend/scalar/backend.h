@@ -35,18 +35,11 @@ void CondAssign(const bool cond,
   *output = (cond) ? thenval : elseval;
 }
 
-template <typename Type1, typename Type2>
+template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void MaskedAssign(const bool cond,
-                  Type1 const &thenval, Type2 *const output) {
-  *output = (cond) ? thenval : *output;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void MaskedAssign(const bool cond, const Precision thenval,
-                  Precision *const output) {
+                  Type const &thenval, Type *const output) {
   *output = (cond) ? thenval : *output;
 }
 

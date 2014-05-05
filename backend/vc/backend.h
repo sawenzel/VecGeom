@@ -31,17 +31,45 @@ typedef kVc::bool_v      VcBool;
 
 template <typename Type>
 VECGEOM_INLINE
-void CondAssign(VcBool const &cond,
-                Type const &thenval, Type const &elseval, Type *const output) {
+void CondAssign(typename Vc::Vector<Type>::Mask const &cond,
+                Vc::Vector<Type> const &thenval,
+                Vc::Vector<Type> const &elseval,
+                Vc::Vector<Type> *const output) {
   (*output)(cond) = thenval;
   (*output)(!cond) = elseval;
 }
 
-template <typename Type1, typename Type2>
+template <typename Type>
+VECGEOM_INLINE
+void CondAssign(typename Vc::Vector<Type>::Mask const &cond,
+                Type const &thenval,
+                Type const &elseval,
+                Vc::Vector<Type> *const output) {
+  (*output)(cond) = thenval;
+  (*output)(!cond) = elseval;
+}
+
+template <typename Type>
+VECGEOM_INLINE
+void MaskedAssign(typename Vc::Vector<Type>::Mask const &cond,
+                  Vc::Vector<Type> const &thenval,
+                  Vc::Vector<Type> *const output) {
+  (*output)(cond) = thenval;
+}
+
+template <typename Type>
+VECGEOM_INLINE
+void MaskedAssign(typename Vc::Vector<Type>::Mask const &cond,
+                  Type const &thenval,
+                  Vc::Vector<Type> *const output) {
+  (*output)(cond) = thenval;
+}
+
 VECGEOM_INLINE
 void MaskedAssign(VcBool const &cond,
-                  Type1 const &thenval, Type2 *const output) {
-  (*output)(cond) = thenval;
+                  const int thenval,
+                  VcInt *const output) {
+  (*output)(VcInt::Mask(cond)) = thenval;
 }
 
 VECGEOM_INLINE
