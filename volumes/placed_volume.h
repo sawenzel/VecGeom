@@ -128,7 +128,8 @@ public:
   // Geometry functionality
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point) const =0;
+  VECGEOM_INLINE
+  virtual bool Inside(Vector3D<Precision> const &point) const;
 
   virtual void Inside(SOA3D<Precision> const &point,
                       bool *const output) const =0;
@@ -254,6 +255,12 @@ public:
 #endif // VECGEOM_BENCHMARK
 
 };
+
+VECGEOM_CUDA_HEADER_BOTH
+bool VPlacedVolume::Inside(Vector3D<Precision> const &point) const {
+  Vector3D<Precision> localPoint;
+  return Inside(point, localPoint);
+}
 
 } // End global namespace
 
