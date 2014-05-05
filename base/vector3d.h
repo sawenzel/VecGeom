@@ -6,14 +6,16 @@
 #ifndef VECGEOM_BASE_VECTOR3D_H_
 #define VECGEOM_BASE_VECTOR3D_H_
 
-#include <string>
-#include <cstdlib>
-
 #include "base/global.h"
 #include "backend/backend.h"
-#if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
-#include <Vc/Vc>
+#ifndef VECGEOM_NVCC
+  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
+    #include <Vc/Vc>
+  #endif
 #endif
+
+#include <string>
+#include <cstdlib>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -289,37 +291,7 @@ public:
   BINARY_OP(/, /=)
   #undef BINARY_OP
 
-  // Boolean operators
-
-  /*
-  #define BOOLEAN_OP(OPERATOR) \
-  VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
-  BoolType operator OPERATOR(const VecType &other) const { \
-    return BoolType(vec[0] OPERATOR other.vec[0], \
-                    vec[1] OPERATOR other.vec[1], \
-                    vec[2] OPERATOR other.vec[2]); \
-  } \
-  VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
-  BoolType operator OPERATOR(const Type &other) const { \
-    return BoolType(vec[0] OPERATOR other, \
-                    vec[1] OPERATOR other, \
-                    vec[2] OPERATOR other); \
-  }
-  BOOLEAN_OP(<)
-  BOOLEAN_OP(>)
-  BOOLEAN_OP(<=)
-  BOOLEAN_OP(>=)
-  BOOLEAN_OP(==)
-  BOOLEAN_OP(!=)
-  BOOLEAN_OP(&&)
-  BOOLEAN_OP(||)
-  #undef BOOLEAN_OP
-  */
-
 };
-
 
 std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
 
@@ -556,36 +528,54 @@ public:
   BINARY_OP(/, /=)
   #undef BINARY_OP
 
-  // Boolean operators
-
-  #define BOOLEAN_OP(OPERATOR) \
-  VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
-  BoolType operator OPERATOR(const VecType &other) const { \
-    return BoolType(mem[0] OPERATOR other.mem[0], \
-                    mem[1] OPERATOR other.mem[1], \
-                    mem[2] OPERATOR other.mem[2]); \
-  } \
-  VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
-  BoolType operator OPERATOR(const Precision &scalar) const { \
-    return BoolType(mem[0] OPERATOR scalar, \
-                    mem[1] OPERATOR scalar, \
-                    mem[2] OPERATOR scalar); \
-  }
-  BOOLEAN_OP(<)
-  BOOLEAN_OP(>)
-  BOOLEAN_OP(<=)
-  BOOLEAN_OP(>=)
-  BOOLEAN_OP(==)
-  BOOLEAN_OP(!=)
-  BOOLEAN_OP(&&)
-  BOOLEAN_OP(||)
-  #undef BOOLEAN_OP
-
 };
 
 #endif // (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
+
+#define BOOLEAN_OP(OPERATOR) \
+template <typename Type> \
+Vector3D<bool> operator OPERATOR(Vector3D<Type> const &lhs, \
+                                 Vector3D<Type> const &rhs) { \
+  return Vector3D<bool>(lhs[0] OPERATOR rhs[0], \
+                        lhs[1] OPERATOR rhs[1], \
+                        lhs[2] OPERATOR rhs[2]); \
+}
+BOOLEAN_OP(<)
+BOOLEAN_OP(>)
+BOOLEAN_OP(<=)
+BOOLEAN_OP(>=)
+BOOLEAN_OP(==)
+BOOLEAN_OP(!=)
+#undef BOOLEAN_OP
+
+#ifdef VECGEOM_VC
+
+#define BOOLEAN_OP(OPERATOR) \
+template <typename Type> \
+Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
+    Vector3D<typename Vc::Vector<Type> > const &lhs, \
+    Vector3D<typename Vc::Vector<Type> > const &rhs) { \
+  return Vector3D<typename Vc::Vector<Type>::Mask>(lhs[0] OPERATOR rhs[0], \
+                                                   lhs[1] OPERATOR rhs[1], \
+                                                   lhs[2] OPERATOR rhs[2]); \
+} \
+template <typename Type> \
+Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
+    Vector3D<typename Vc::Vector<Type> > const &lhs, \
+    Vector3D<Type> const &rhs) { \
+  return Vector3D<typename Vc::Vector<Type>::Mask>(lhs[0] OPERATOR rhs[0], \
+                                                   lhs[1] OPERATOR rhs[1], \
+                                                   lhs[2] OPERATOR rhs[2]); \
+}
+BOOLEAN_OP(<)
+BOOLEAN_OP(>)
+BOOLEAN_OP(<=)
+BOOLEAN_OP(>=)
+BOOLEAN_OP(==)
+BOOLEAN_OP(!=)
+#undef BOOLEAN_OP
+
+#endif // VECGEOM_VC
 
 } // End global namespace
 
