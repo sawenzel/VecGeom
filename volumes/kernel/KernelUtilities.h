@@ -21,8 +21,8 @@ struct KernelUtilities {
                                   Vector3D<Float_t> const &point,
                                   Int_t &inside) {
 
-    Bool_t done = false;
-    inside = kOutside;
+    Bool_t done(false);
+    inside = EInside::kOutside;
     Vector3D<Float_t> pointAbs = point.Abs();
 
     // Check if points are outside all surfaces
@@ -40,16 +40,19 @@ struct KernelUtilities {
     Bool_t isInside = insideInnerTolerance[0] &&
                       insideInnerTolerance[1] &&
                       insideInnerTolerance[2];
-    MaskedAssign(isInside, kInside, inside);
+    MaskedAssign(isInside, EInside::kInside, &inside);
     done |= isInside;
     if (done == Backend::kTrue) return;
 
     // Check for remaining surface cases
     Vector3D<Bool_t> onSurface = !isInside && !isOutside;
-    Bool_t isSurface = (onSurface[0] && !isOutside[1] && !isOutside[2]) ||
-                       (onSurface[1] && !isOutside[0] && !isOutside[2]) ||
-                       (onSurface[2] && !isOutside[0] && !isOutside[1]);
-    MaskedAssign(isSurface, kSurface, inside);
+    Bool_t isSurface = (onSurface[0] && !insideOuterTolerance[1]
+                        && !insideOuterTolerance[2]) ||
+                       (onSurface[1] && !insideOuterTolerance[0]
+                        && !insideOuterTolerance[2]) ||
+                       (onSurface[2] && !insideOuterTolerance[0]
+                        && !insideOuterTolerance[1]);
+    MaskedAssign(isSurface, EInside::kSurface, &inside);
 
   }
 

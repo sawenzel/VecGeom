@@ -24,20 +24,23 @@ public:
 
   PlacedParallelepiped(char const *const label,
                        LogicalVolume const *const logical_volume,
-                       Transformation3D const *const transformation)
-      : VPlacedVolume(label, logical_volume, transformation, NULL) {}
+                       Transformation3D const *const transformation,
+                       PlacedBox const *const boundingBox)
+      : VPlacedVolume(label, logical_volume, transformation, boundingBox) {}
 
   PlacedParallelepiped(LogicalVolume const *const logical_volume,
-                       Transformation3D const *const transformation)
-      : PlacedParallelepiped("", logical_volume, transformation) {}
+                       Transformation3D const *const transformation,
+                       PlacedBox const *const boundingBox)
+      : PlacedParallelepiped("", logical_volume, transformation, boundingBox) {}
 
 #else
 
   __device__
   PlacedParallelepiped(LogicalVolume const *const logical_volume,
                        Transformation3D const *const transformation,
-                       const int id)
-      : VPlacedVolume(logical_volume, transformation, NULL, id) {}
+                       const int id,
+                       PlacedBox const *const boundingBox)
+      : VPlacedVolume(logical_volume, transformation, id) {}
 
 #endif
 
