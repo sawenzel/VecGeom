@@ -1,0 +1,95 @@
+# Verbose
+#
+/control/verbose 2
+#/tracking/verbose 2
+/run/verbose 2
+
+# Create empty scene 
+/vis/scene/create
+
+#
+/vis/open VRML2FILE
+
+# Draw scene
+/vis/viewer/zoom 1
+#/vis/viewer/set/viewpointThetaPhi -50 -60 deg
+/vis/viewer/set/viewpointThetaPhi 90 0 deg
+#/vis/viewer/set/viewpointThetaPhi 105 165 deg
+
+/vis/viewer/flush
+#
+# for drawing the tracks
+# if too many tracks cause core dump => storeTrajectory 0
+#/tracking/storeTrajectory 1
+#/vis/scene/endOfEventAction accumulate
+#
+#/testem/event/drawTracks all
+/vis/scene/add/trajectories
+
+#/AXPET/gun/optPhotonPolar -360.0 deg
+/gun/position 0.0 0.0 15.0 mm
+#/run/beamOn 1
+#/run/beamOn 1
+#/run/beamOn 1
+
+#if you want to change the detector
+/mydet/SelectDetector UTrd
+/run/beamOn 1
+
+###/mydet/SelectDetector Sphere
+###/run/beamOn 30
+###/mydet/SelectDetector Shell
+###/run/beamOn 30
+###/mydet/SelectDetector Ellipsoid
+###/run/beamOn 30
+###/mydet/SelectDetector Tubs
+###/run/beamOn 30
+###/mydet/SelectDetector Cons
+###/run/beamOn 30
+###/mydet/SelectDetector Polycone
+###/run/beamOn 30
+###/mydet/SelectDetector Polyhedra
+###/run/beamOn 30
+###/mydet/SelectDetector Para
+###/run/beamOn 30
+###/mydet/SelectDetector Torus
+###/run/beamOn 30
+###/mydet/SelectDetector Box
+###/run/beamOn 30
+###/mydet/SelectDetector Orb
+###/run/beamOn 30
+###/mydet/SelectDetector EllipticalTube
+###/run/beamOn 30
+###/mydet/SelectDetector EllipticalCone
+###/run/beamOn 30
+###/mydet/SelectDetector Hype
+###/run/beamOn 30
+###/mydet/SelectDetector Trap
+###/run/beamOn 30
+###/mydet/SelectDetector Trd
+###/run/beamOn 30
+####Infinite Loop
+####/mydet/SelectDetector Tet
+####/run/beamOn 30
+###/mydet/SelectDetector GenericTrap
+###/run/beamOn 30
+###/mydet/SelectDetector Paraboloid
+###/run/beamOn 30
+###/mydet/SelectDetector TessellatedSolid
+###/run/beamOn 30
+###/mydet/SelectDetector ExtrudedSolid
+###/run/beamOn 30
+###/mydet/SelectDetector TwistedBox
+###/run/beamOn 3
+###/mydet/SelectDetector TwistedTrd
+###/run/beamOn 3
+###/mydet/SelectDetector TwistedTrap
+###/run/beamOn 3
+###/mydet/SelectDetector TwistedTubs
+###/run/beamOn 3
+###/mydet/SelectDetector b1Ub2
+###/run/beamOn 30
+###/mydet/SelectDetector b1Ib2
+###/run/beamOn 30
+###/mydet/SelectDetector b1Sb2
+###/run/beamOn 30

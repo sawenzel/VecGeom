@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="en-us" />
+<title>/VHMdgdsnO9</title>
+</head>
+<body><b><u>"Universal Solids" library</u></b><br
+/>Notes - version 1.5.1, 25 May 2011 @15:45 CEST+<br
+/>Editors: J. Apostolakis, G. Cosmo<br
+/>Contributors: J. Apostolakis, G. Cosmo, A. Gheata, Astrid M., T. Nikitina<br
+/><br
+/>- API: generic constructor for "cut"-solids, different implementations/classes for each case.<br
+/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; backwards compatibility in constructors API.<br
+/><br
+/><b>Foundations</b>:<br
+/>- Independent Vector 'bucket' struct/class - no functionality beyond passing values of x,y,z components<br
+/>- Tolerance defines the half-thickness of the surface, must be a global value.&nbsp; Once it is set, the tolerance cannot be changed (so it is Write Once, Read Many times-=WORM). Eventually it will be set based on the value of the "world" diameter.)<br
+/>- SetUnitLength( std::string NameOfUnit );<br
+/>- GetUnitLength() returns std::string<br
+/>&nbsp; (TODO: integrate into a specialized class/singleton.)<br
+/><br
+/><br
+/><b><i>V<u>USolid's Main methods</u></i></b><br
+/><br
+/>- EInside <b>Inside</b> (point-vector) const<br
+/>&nbsp; o returns enum {In, Out, Surface}<br
+/><br
+/>- double <b>SafetyFromIn</b>&nbsp;&nbsp;&nbsp; (point-vector, bool accurate=false) const<br
+/>&nbsp; double <b>SafetyFromOut</b> (point-vector, bool accurate=false) const<br
+/>&nbsp; o return approximated distance (double) from a surface<br
+/>&nbsp; o must be fast, can think to provide also a "precise" version, at the cost of performance (to be investigated)<br
+/>&nbsp; o should be optimized for big distances<br
+/><br
+/>- double <b>DistanceToIn</b>(point-vector, direction-vector) const<br
+/>&nbsp; double <b>DistanceToOut</b>(point-vector, direction-vector, &amp;normal-vector, &amp;bool convex) const<br
+/>&nbsp; o return the exact distance (double) from a surface, given a direction<br
+/>&nbsp; o compute the normal on the surface, returned as argument, calculated<br
+/>&nbsp;&nbsp;&nbsp;&nbsp; within the method to verify if it is close to the surface or not<br
+/>&nbsp; o for DistanceToOut(), normal-vector and convexity flag are mandatory:<br
+/>&nbsp;&nbsp;&nbsp;&nbsp; If 'convex' is 'true' then the solid is fully behind it, (call it "convex at this point")<br
+/>&nbsp;&nbsp;&nbsp;&nbsp; If 'convex' is 'false' either the solid extends beyond this plane or it could not guarantee otherwise.<br
+/>&nbsp; o for DistanceToIn(), the normal-vector could be added as optional<br
+/><br
+/>- bool <b>ComputeNormal</b>(point-vector, &amp;direction-vector) const<br
+/>&nbsp; o computes the normal on a surface and returns it as a direction vector<br
+/>&nbsp; o should return a valid vector also in case the point is not on the surface, for safety<br
+/>&nbsp; o should treat cases on corners, to avoid returning invalid normal<br
+/>&nbsp; o return argument, a Boolean as validity flag<br
+/><br
+/>- void <b>Extent</b>(EAxis, &amp;min, &amp;max) const<br
+/>&nbsp; o returns the minimum and maximum extent along the specified Cartesian axis<br
+/>&nbsp; o expect it to use internally a GetBBox()/CalculateBBox() method to compute the extent<br
+/>Decision: whether to store the computed BBox (containing or representing 6 double values), and whether to compute it at construction time&nbsp;&nbsp;<br
+/>&nbsp; Note: thread-safety is an issue in parameterised volumes - where the dimension can change at runtime).&nbsp;<br
+/>&nbsp; Implementation Issue: The bounding-box can be an auxiliary class/bucket used by each solid.<br
+/><br
+/><br
+/><b><i><u>VUSolid's Auxiliary methods</u></i></b><br
+/><br
+/>- double <b>Capacity</b>();&nbsp;&nbsp; // was <b>CubicVolume</b>()<br
+/><br
+/>- double <b>SurfaceArea</b>()<br
+/><br
+/>- point-vector <b>SamplePointOnSurface</b>() const<br
+/><br
+/>- point-vector <b>SamplePointInVolume</b>() const<br
+/><br
+/>- point-vector <b>SamplePointOnEdges</b>() const<br
+/>&nbsp; o generates points on the edges of a solid - primarily for testing purposes<br
+/>&nbsp; o for solids composed only of curved surfaces(like full spheres or toruses) or where an implementation is not available, it defaults to PointOnSurface.<br
+/><br
+/>- VUSolid* <b>Clone</b>() const<br
+/>&nbsp; o provide a new object which is a clone of the solid<br
+/>&nbsp;&nbsp;<br
+/>- <b>ComputeMesh</b>() - for visualization NOT discussed<br
+/><br
+/>// The definitive version of the interface is in the VUSolid class interface,<br
+/>//&nbsp; currently at /afs/cern.ch/user/j/japost/public/VuSolid.hh<br
+/><br
+/><b><i><u>Open issues</u></i></b><br
+/><br
+/><ul><li>Extension of EInside enum to include mathematical answer; i.e. addition of kInSurface, kOutSurface</li></ul
+>&nbsp;&nbsp;&nbsp;&nbsp; Does the adoption of the mathematical answer matter at all? For Boolean operations? Need to investigate further.<br
+/><ul><li>Thread safety: should always be taken into account; i.e. caching of values which may vary during run (parameterised volumes)</li
+><li>Exceptions: when and where throw them?&nbsp; Agreed to throw in constructors; other reasons tbd (to be determined.)</li
+><li>Challenging use case for double checking: Propagation inside the surface layer (of a flat surface).</li
+><li>Secondary issues<ul><li>Dot product tolerance (angular tolerance), radial relative tolerance</li
+><li>Fixed theta0 angle in implementation</li
+><li>Implementation of Extent(); caching or not bounding-box</li></ul
+></li
+><li>SVN repository (!)</li
+><li>Bridge classes can be implemented and the box tested with the internal tools of G4 and TGeo<br/><br
+/><br/><br
+/></li></ul
+><b><i><u>Implementation details</u></i></b><br
+/><br
+/><ul><li>DistanceToOut() defaults to zero if it finds no exiting surfaces; ignores first solution if the dot-product is less than the tolerance<br/><br
+/><br/><br
+/></li></ul
+><b><i><u>Tests</u></i></b><br
+/><br
+/><ul><li>1. Inside(), DistToIn/Out(), singularities on boundary crossing<ul><li>Generate random points inside the solid (use Inside()) and random directions for each of them</li
+><li>For each, compute d1 = DistToOut() and propagate (d1-tolerance)</li
+><li>Compute DistToIn() (dnext); must be dnext&gt;tolerance (second crossing or nothing, first boundary not seen)</li
+><li>Propagate of min(dmax,dnext) to get outside solid (d2), dmax is the maximum extent of the BBox</li
+><li>Revert direction and compute DistToIn() (d3)</li
+><li>Compute |d3 - d2| &lt; Err*d2&nbsp; and plot it</li
+><li>Propagate back by d3-tolerance (point outside)</li
+><li>Compute DistToOut() (d4); must be d1&lt;d4&lt;dmax</li></ul
+></li
+><li>2. Safety()<ul><li>Generate random points inside 2*BBox</li
+><li>Comute Safety() for each of them and generate random directions</li
+><li>For each, compute the distance to the solid (DistToIn() or DistToOut() depending on Inside() result)</li
+><li>Compare the distance to the value of the safety; must be dist &gt; safety.</li></ul
+></li
+><li>3. Normal()<ul><li>Generate random points inside the solid and random directions for each of them</li
+><li>For each propagate by DistToOut() to surface and reflect randomly so that (norm).(dir)&lt;0 and compute DistToOut()</li
+><li>DistToOut() must never be zero</li
+><li>Visualize intersection (corners and edges will be most exercised)<br/><br
+/></li></ul
+></li
+><li>SBT test<ul><li>Provides integrated tests for Inside(), Safety(), DistToOut/In() in different setups</li
+><li>Defines grid of lines (of tunable granularity) on a world bigger at least twice the solid's extent</li
+><li>Generates random points inside each cell of the grid (may be inside/outside of the solid)</li
+><li>Consider pair of points, one inside and one outside the solid</li
+><li>Select direction versus inside</li
+><li>Must be DistToIn() &lt; infinity (and less the distance between the two points)</li
+><li>Compute SafetyFromOut() (d1), cannot be bigger than DistToIn()</li
+><li>Propagate to surface by d1, and compute Inside(); it must give 'kSurface', otherwise report overshoot or undershoot<ul><li>Compute SafetyFromIn(), must be zero</li
+><li>Compute DistToOut(), should not be zero and be smaller than the extent along that direction</li
+><li>Compute DistToIn(), has to be zero</li></ul
+></li
+><li>Invert direction (towards outside)<ul><li>Compute SafetyFromOut(), must be zero</li
+><li>Compute DistToIn(), must be greater than zero</li
+><li>Compute DistToOut(), must be zero</li></ul
+></li
+><li>Compare the computed normals and make the dot product with direction, must be negative</li
+><li>Visualize errors with 'Fred' application</li></ul
+></li
+><li>Optical photons test (optical escape)<ul><li>Provides integrated tests for DistToOut()/In() and Normal()</li
+><li>Define reflections on the surface; generate random points outside, propagate it to surface</li
+><li>For each, calculate the normal on each intersection point and reflects track</li
+><li>Reports error when normal is not valid</li
+><li>Visualize tracks</li></ul
+></li
+><li>Accuracy test for DistanceToIn/Out()<ul><li>Generate random points in the world (may be inside or outside the solid)</li
+><li>Generate random point on surface</li
+><li>Calculate DistToIn() from any point outside in direction to the point on surface, taking care of multiple intersections</li
+><li>Compute numerical error comparing to the real distance</li
+><li>Same for points inside the solid for DistanceToOut()</li></ul
+></li
+><li>Accuracy of points on surface<ul><li>Generate random points on surface</li
+><li>Compute random directions for each point and check reply of DistToIn() and DistToOut()</li></ul
+></li
+><li>Cross-comparison of solids<ul><li>Verify response of DistToIn/Out()'Safety()... of different solids of same shape but obtained from different classes (box, trap, polyhedra, ...)<br/><br
+/></li></ul
+></li></ul
+>- Additional tests may apply for curved solids for local angular tolerances, by computing the error against the real computed value<br
+/>- Should standardize on the output of the tests in order to be able to visualize them with a single program.<br
+/><br
+/><br
+/><b>Todos</b>:<br
+/><ul><li>(Andrei): Bridge class to TGeo Shape</li
+><li>(John, Gabriele, Tatiana): Bridge class to Geant4 G4VSolid</li
+><li>(Andrei, John): First draft of UBox (John DistanceToOut, Andrei the rest.)</li
+><li>Additional parameter to DistanceToIn/Out(..., proposedStep) to discuss. If during computation the distance reveals to be bigger than proposed step, return BIG.&nbsp;<ul><li>Won't affect functionality - default value BIG = ignored. Can be ignored by certain solids.<br/><br
+/></li></ul
+></li></ul
+><b>Notes for the meeting on June 7 (John, Andrei, Gabiele, Tatiana)</b><br
+/><ul><li>First implementation of UBox using internal math utilities and UVector3 available. This uses a simple Makefile and /src /include directories, compiling into libUSolids.so<ul><li>Available at: /afs/cern.ch/user/a/agheata/public/USolids partially discussed</li
+><li><b>To do:</b> SVN repository (Gabriele, John)</li></ul
+></li
+><li>Coding conventions:<ul><li>Class naming: <b>USomething</b> and <b>VUSomething</b> for virtual base classes</li
+><li>Indenting 3 spaces, no tab characters</li
+><li>Variable naming: aSomething for arguments, rSomething for return values, fSomething for non-static data members and fgSomething for static ones, lower case starting letter for the others</li
+><li>Keep significant names for variables: aDirection and not aD</li></ul
+></li
+><li>Discussed behavior of DistToIn and DistToOut when grazing the surface with norm.dot.direction close to 0. Current understanding:<ul><li>DistToIn() returns 0 if n.dot.d&lt;=0 and ignore current surface otherwise. Should this happen for n.dot.d&lt;-angular_tolerance ?</li
+><li>DistToOut() returns 0 if n.dot.d&gt;0 and ignore current surface otherwise. Should the limit be for n.dot.d&gt;angular_tolerance ?</li></ul
+></li
+><li><b>Homework:</b> Implement bridge classes so that we can test the box using native tools<br/><br
+/></li></ul
+></body>
+</html>

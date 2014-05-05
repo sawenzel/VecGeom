@@ -1,0 +1,24 @@
+$Id: History,v 1.2 2010-11-26 13:34:38 gcosmo Exp $
+-------------------------------------------------------------------
+
+     =========================================================
+     Geant4 - an Object-Oriented Toolkit for Simulation in HEP
+     =========================================================
+
+                    OpticalEscape History file
+                    --------------------------
+This file should be used by the test developer to briefly
+summarize all major modifications introduced in the code and keep
+track of all tags.
+
+     ----------------------------------------------------------
+     * Reverse chronological order (last date on top), please *
+     ----------------------------------------------------------
+
+Nov 16th, 2010  Tatiana Nikitina
+- Added missing specific solids for testing.
+
+Sep 3rd, 2008  Tatiana Nikitina
+- Created.
+
+
