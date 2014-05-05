@@ -136,7 +136,13 @@ namespace translation {
 enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
 
-enum EInside { kOutside = 0, kInside = 1, kSurface = 2 };
+// Handmade enumerator to allow usage as int for vector purposes
+typedef int Inside_t;
+namespace EInside {
+  VECGEOM_CONSTEXPR int kOutside = 0;
+  VECGEOM_CONSTEXPR int kInside = 1;
+  VECGEOM_CONSTEXPR int kSurface = 2;
+}
 
 } // End global namespace
 
