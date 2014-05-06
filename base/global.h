@@ -77,7 +77,7 @@ VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
 VECGEOM_CONSTEXPR Precision kDegToRad = M_PI/180.;
 VECGEOM_CONSTEXPR Precision kRadToDeg = 180./M_PI;
 VECGEOM_CONSTEXPR Precision kInfinity = INFINITY;
-VECGEOM_CONSTEXPR Precision kTiny = 1e-20;
+VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
 VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 
 template <typename Type>
