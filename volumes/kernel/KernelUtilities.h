@@ -17,6 +17,7 @@ struct KernelUtilities {
   typedef typename Backend::int_v Int_t;
   typedef typename Backend::bool_v Bool_t;
 
+  VECGEOM_CUDA_HEADER_BOTH
   static void LocalPointInsideBox(Vector3D<Precision> const &boxDimensions,
                                   Vector3D<Float_t> const &point,
                                   Int_t &inside) {

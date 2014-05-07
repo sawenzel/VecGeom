@@ -293,6 +293,7 @@ set(SRC_CPP_RELATIVE
   source/container.cpp
   source/logical_volume.cpp
   source/placed_box.cpp
+  source/PlacedParallelepiped.cpp
   source/placed_volume.cpp
   source/scalar_backend.cpp
   source/soa3d.cpp

@@ -10,6 +10,7 @@
 #include "backend/backend.h"
 #include "base/soa3d.h"
 #include "base/aos3d.h"
+#include "volumes/placed_box.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -37,10 +38,25 @@ public:
   __device__
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
+                            PlacedBox const *const boundingBox,
                             const int id)
-      : VPlacedVolume(logical_volume, transformation, this, id) {}
+      : Shape(logical_volume, transformation, boundingBox, id) {}
 
 #endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool Inside(Vector3D<Precision> const &point) const {
+    int output;
+    Vector3D<Precision> localPoint;
+    Specialization::template Inside<kScalar>(
+      *this->GetUnplacedVolume(),
+      *this->transformation(),
+      point,
+      localPoint,
+      output
+    );
+    return (output == EInside::kInside) ? true : false;
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point,
@@ -248,15 +264,17 @@ public:
 
   template <class Container_t>
   void InsideTemplate(Container_t const &points, bool *const output) const {
-    for (int i = 0, i_max = points.size(); ++i) {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       int result;
+      Vector3D<Precision> localPoint;
       Specialization::template Inside<kScalar>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
-        point,
+        points[i],
+        localPoint,
         result
       );
-      output[i] = (result[j] == kInside) ? true : false;
+      output[i] = (result == EInside::kInside) ? true : false;
     }
   }
 
@@ -265,12 +283,13 @@ public:
                             Container_t const &directions,
                             Precision const *const stepMax,
                             Precision *const output) const {
-    for (int i = 0, i_max = points.size(); ++i) {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template DistanceToIn<kScalar>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
         points[i],
         directions[i],
+        stepMax[i],
         output[i]
       );
     }
@@ -281,11 +300,12 @@ public:
                              Container_t const &directions,
                              Precision const *const stepMax,
                              Precision *const output) const {
-    for (int i = 0, i_max = points.size(); ++i) {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template DistanceToOut<kScalar>(
         *this->GetUnplacedVolume(),
         points[i],
         directions[i],
+        stepMax[i],
         output[i]
       );
     }
@@ -294,11 +314,11 @@ public:
   template <class Container_t>
   void SafetyToInTemplate(Container_t const &points,
                           Precision *const output) const {
-    for (int i = 0, i_max = points.size(); ++i) {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template SafetyToIn<kScalar>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
-        point,
+        points[i],
         output[i]
       );
     }
@@ -307,10 +327,10 @@ public:
   template <class Container_t>
   void SafetyToOutTemplate(Container_t const &points,
                            Precision *const output) const {
-    for (int i = 0, i_max = points.size(); ++i) {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template SafetyToOut<kScalar>(
         *this->GetUnplacedVolume(),
-        point,
+        points[i],
         output[i]
       );
     }

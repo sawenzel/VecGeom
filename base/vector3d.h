@@ -124,6 +124,13 @@ public:
   VECGEOM_INLINE
   Type const& z() const { return vec[2]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Set(Type const &x, Type const &y, Type const &z) {
+    vec[0] = x;
+    vec[1] = y;
+    vec[2] = z;
+  }
+
   /**
    * @return Length of the vector as sqrt(x^2 + y^2 + z^2).
    */
@@ -371,6 +378,13 @@ public:
   VECGEOM_INLINE
   const Precision& z() const { return mem[2]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Set(const Precision x, const Precision y, const Precision z) {
+    mem[0] = x;
+    mem[1] = y;
+    mem[2] = z;
+  }
+
   VECGEOM_INLINE
   Precision Length() const {
     return sqrt(mem[0]*mem[0] + mem[1]*mem[1] + mem[2]*mem[2]);
@@ -488,13 +502,11 @@ public:
 
   #define INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
   VecType& operator OPERATOR(const VecType &other) { \
     this->mem OPERATOR other.mem; \
     return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
   VecType& operator OPERATOR(const Precision &scalar) { \
     this->mem OPERATOR scalar; \
     return *this; \
@@ -509,14 +521,12 @@ public:
 
   #define BINARY_OP(OPERATOR, INPLACE) \
   VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
   VecType operator OPERATOR(const VecType &other) const { \
     VecType result(*this); \
     result INPLACE other; \
     return result; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
-  VECGEOM_INLINE \
   VecType operator OPERATOR(const Precision &scalar) const { \
     VecType result(*this); \
     result INPLACE scalar; \
@@ -534,6 +544,7 @@ public:
 
 #define BOOLEAN_OP(OPERATOR) \
 template <typename Type> \
+VECGEOM_CUDA_HEADER_BOTH \
 Vector3D<bool> operator OPERATOR(Vector3D<Type> const &lhs, \
                                  Vector3D<Type> const &rhs) { \
   return Vector3D<bool>(lhs[0] OPERATOR rhs[0], \

@@ -13,6 +13,9 @@ class UnplacedParallelepiped : public VUnplacedVolume, AlignedBase {
 private:
 
   Vector3D<Precision> fDimensions;
+  Precision fAlpha, fTheta, fPhi;
+
+  // Precomputed values computed from parameters
   Precision fTanAlpha, fTanThetaSinPhi, fTanThetaCosPhi;
 
 public:
@@ -40,6 +43,15 @@ public:
   Precision GetZ() const { return fDimensions[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  Precision GetAlpha() const { return fAlpha; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetTheta() const { return fTheta; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhi() const { return fPhi; }
+
+  VECGEOM_CUDA_HEADER_BOTH
   Precision GetTanAlpha() const { return fTanAlpha; }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -48,8 +60,31 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetTanThetaCosPhi() const { return fTanThetaCosPhi; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void SetDimensions(Vector3D<Precision> const &dimensions) {
+    fDimensions = dimensions;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void SetDimensions(const Precision x, const Precision y, const Precision z) {
+    fDimensions.Set(x, y, z);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void SetAlpha(const Precision alpha);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void SetTheta(const Precision theta);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void SetPhi(const Precision phi);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void SetThetaAndPhi(const Precision theta, const Precision phi);
+
   virtual int memory_size() const { return sizeof(*this); }
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
   template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -59,6 +94,11 @@ public:
                                const int id,
 #endif
                                VPlacedVolume *const placement = NULL);
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  virtual VUnplacedVolume* CopyToGpu() const;
+  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+#endif
 
 private:
 
