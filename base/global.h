@@ -53,10 +53,10 @@
   #define NULL 0
 #endif
 
-#ifdef VECGEOM_STD_CXX11
+#ifndef VECGEOM_NVCC
   #define VECGEOM_CONSTEXPR constexpr
 #else
-  #define VECGEOM_CONSTEXPR const
+  #define VECGEOM_CONSTEXPR static __constant__ const
 #endif
 
 namespace vecgeom {

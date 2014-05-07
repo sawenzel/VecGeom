@@ -10,6 +10,8 @@
 #include "volumes/PlacedParallelepiped.h"
 #include "volumes/ShapeImplementationHelper.h"
 
+#include <stdio.h>
+
 namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

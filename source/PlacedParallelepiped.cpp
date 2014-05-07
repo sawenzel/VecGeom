@@ -68,10 +68,10 @@ class Transformation3D;
 class VPlacedVolume;
 
 __global__
-void ConstructOnGpu(LogicalVolume const *const logical_volume,
-                    Transformation3D const *const transformation,
-                    const int id,
-                    VPlacedVolume *const gpu_ptr) {
+void PlacedParallelepiped_ConstructOnGpu(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation,
+    const int id, VPlacedVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::SimpleParallelepiped(
     reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
     reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
@@ -84,7 +84,8 @@ void PlacedParallelepiped_CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(logical_volume, transformation, id, gpu_ptr);
+  PlacedParallelepiped_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
+                                                id, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC

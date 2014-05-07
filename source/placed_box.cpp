@@ -153,10 +153,9 @@ class Transformation3D;
 class VPlacedVolume;
 
 __global__
-void ConstructOnGpu(LogicalVolume const *const logical_volume,
-                    Transformation3D const *const transformation,
-                    const int id,
-                    VPlacedVolume *const gpu_ptr) {
+void PlacedBox_ConstructOnGpu(LogicalVolume const *const logical_volume,
+                              Transformation3D const *const transformation,
+                              const int id, VPlacedVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::PlacedBox(
     reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
     reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
@@ -168,7 +167,8 @@ void PlacedBox_CopyToGpu(LogicalVolume const *const logical_volume,
                          Transformation3D const *const transformation,
                          const int id,
                          VPlacedVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(logical_volume, transformation, id, gpu_ptr);
+  PlacedBox_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation, id,
+                                     gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC
