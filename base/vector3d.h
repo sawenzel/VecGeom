@@ -252,7 +252,7 @@ public:
 
   // Inplace binary operators
 
-  #define INPLACE_BINARY_OP(OPERATOR) \
+  #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
   VecType& operator OPERATOR(const VecType &other) { \
@@ -269,15 +269,15 @@ public:
     this->vec[2] OPERATOR scalar; \
     return *this; \
   }
-  INPLACE_BINARY_OP(+=)
-  INPLACE_BINARY_OP(-=)
-  INPLACE_BINARY_OP(*=)
-  INPLACE_BINARY_OP(/=)
-  #undef INPLACE_BINARY_OP
+  VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(+=)
+  VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(-=)
+  VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(*=)
+  VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(/=)
+  #undef VECTOR3D_TEMPLATE_INPLACE_BINARY_OP
 
   // Binary operators
 
-  #define BINARY_OP(OPERATOR, INPLACE) \
+  #define VECTOR3D_TEMPLATE_BINARY_OP(OPERATOR, INPLACE) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
   VecType operator OPERATOR(const VecType &other) const { \
@@ -292,12 +292,11 @@ public:
     result INPLACE scalar; \
     return result; \
   }
-  BINARY_OP(+, +=)
-  BINARY_OP(-, -=)
-  BINARY_OP(*, *=)
-  BINARY_OP(/, /=)
-  #undef BINARY_OP
-
+  VECTOR3D_TEMPLATE_BINARY_OP(+, +=)
+  VECTOR3D_TEMPLATE_BINARY_OP(-, -=)
+  VECTOR3D_TEMPLATE_BINARY_OP(*, *=)
+  VECTOR3D_TEMPLATE_BINARY_OP(/, /=)
+  #undef VECTOR3D_TEMPLATE_BINARY_OP
 };
 
 std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
@@ -500,7 +499,7 @@ public:
 
   // Inplace binary operators
 
-  #define INPLACE_BINARY_OP(OPERATOR) \
+  #define VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const VecType &other) { \
     this->mem OPERATOR other.mem; \
@@ -511,15 +510,15 @@ public:
     this->mem OPERATOR scalar; \
     return *this; \
   }
-  INPLACE_BINARY_OP(+=)
-  INPLACE_BINARY_OP(-=)
-  INPLACE_BINARY_OP(*=)
-  INPLACE_BINARY_OP(/=)
-  #undef INPLACE_BINARY_OP
+  VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(+=)
+  VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(-=)
+  VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(*=)
+  VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(/=)
+  #undef VECTOR3D_ACCELERATED_INPLACE_BINARY_OP
 
   // Binary operators
 
-  #define BINARY_OP(OPERATOR, INPLACE) \
+  #define VECTOR3D_ACCELERATED_BINARY_OP(OPERATOR, INPLACE) \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType operator OPERATOR(const VecType &other) const { \
     VecType result(*this); \
@@ -532,37 +531,70 @@ public:
     result INPLACE scalar; \
     return result; \
   }
-  BINARY_OP(+, +=)
-  BINARY_OP(-, -=)
-  BINARY_OP(*, *=)
-  BINARY_OP(/, /=)
-  #undef BINARY_OP
+  VECTOR3D_ACCELERATED_BINARY_OP(+, +=)
+  VECTOR3D_ACCELERATED_BINARY_OP(-, -=)
+  VECTOR3D_ACCELERATED_BINARY_OP(*, *=)
+  VECTOR3D_ACCELERATED_BINARY_OP(/, /=)
+  #undef VECTOR3D_ACCELERATED_BINARY_OP
 
 };
 
 #endif // (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
-#define BOOLEAN_OP(OPERATOR) \
-template <typename Type> \
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Vector3D<bool> operator!(Vector3D<bool> const &vec) {
+  return Vector3D<bool>(!vec[0], !vec[1], !vec[2]);
+}
+
+#define VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(OPERATOR) \
 VECGEOM_CUDA_HEADER_BOTH \
-Vector3D<bool> operator OPERATOR(Vector3D<Type> const &lhs, \
-                                 Vector3D<Type> const &rhs) { \
+VECGEOM_INLINE \
+Vector3D<bool> operator OPERATOR(Vector3D<Precision> const &lhs, \
+                                 Vector3D<Precision> const &rhs) { \
+  return Vector3D<bool>(lhs[0] OPERATOR rhs[0], \
+                        lhs[1] OPERATOR rhs[1], \
+                        lhs[2] OPERATOR rhs[2]); \
+} \
+VECGEOM_CUDA_HEADER_BOTH \
+VECGEOM_INLINE \
+Vector3D<bool> operator OPERATOR(Vector3D<Precision> const &lhs, \
+                                 const Precision rhs) { \
+  return Vector3D<bool>(lhs[0] OPERATOR rhs, \
+                        lhs[1] OPERATOR rhs, \
+                        lhs[2] OPERATOR rhs); \
+}
+VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<)
+VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>)
+VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<=)
+VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>=)
+VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
+VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
+#undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
+
+#define VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(OPERATOR) \
+VECGEOM_CUDA_HEADER_BOTH \
+VECGEOM_INLINE \
+Vector3D<bool> operator OPERATOR(Vector3D<bool> const &lhs, \
+                                 Vector3D<bool> const &rhs) { \
   return Vector3D<bool>(lhs[0] OPERATOR rhs[0], \
                         lhs[1] OPERATOR rhs[1], \
                         lhs[2] OPERATOR rhs[2]); \
 }
-BOOLEAN_OP(<)
-BOOLEAN_OP(>)
-BOOLEAN_OP(<=)
-BOOLEAN_OP(>=)
-BOOLEAN_OP(==)
-BOOLEAN_OP(!=)
-#undef BOOLEAN_OP
+VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(&&)
+VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(||)
+#undef VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP
 
 #ifdef VECGEOM_VC
 
-#define BOOLEAN_OP(OPERATOR) \
+VECGEOM_INLINE
+Vector3D<VcBool> operator!(Vector3D<VcBool> const &vec) {
+  return Vector3D<VcBool>(!vec[0], !vec[1], !vec[2]);
+}
+
+#define VECTOR3D_VC_BOOLEAN_COMPARISON_OP(OPERATOR) \
 template <typename Type> \
+VECGEOM_INLINE \
 Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
     Vector3D<typename Vc::Vector<Type> > const &lhs, \
     Vector3D<typename Vc::Vector<Type> > const &rhs) { \
@@ -571,6 +603,7 @@ Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
                                                    lhs[2] OPERATOR rhs[2]); \
 } \
 template <typename Type> \
+VECGEOM_INLINE \
 Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
     Vector3D<typename Vc::Vector<Type> > const &lhs, \
     Vector3D<Type> const &rhs) { \
@@ -578,13 +611,26 @@ Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
                                                    lhs[1] OPERATOR rhs[1], \
                                                    lhs[2] OPERATOR rhs[2]); \
 }
-BOOLEAN_OP(<)
-BOOLEAN_OP(>)
-BOOLEAN_OP(<=)
-BOOLEAN_OP(>=)
-BOOLEAN_OP(==)
-BOOLEAN_OP(!=)
-#undef BOOLEAN_OP
+VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<)
+VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>)
+VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<=)
+VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>=)
+VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
+VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
+#undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
+
+#define VECTOR3D_VC_BOOLEAN_LOGICAL_OP(OPERATOR) \
+VECGEOM_INLINE \
+Vector3D<VcBool> operator OPERATOR( \
+    Vector3D<VcBool> const &lhs, \
+    Vector3D<VcBool> const &rhs) { \
+  return Vector3D<VcBool>(lhs[0] OPERATOR rhs[0], \
+                          lhs[1] OPERATOR rhs[1], \
+                          lhs[2] OPERATOR rhs[2]); \
+}
+VECTOR3D_VC_BOOLEAN_LOGICAL_OP(&&)
+VECTOR3D_VC_BOOLEAN_LOGICAL_OP(||)
+#undef VECTOR3D_VC_BOOLEAN_LOGICAL_OP
 
 #endif // VECGEOM_VC
 
