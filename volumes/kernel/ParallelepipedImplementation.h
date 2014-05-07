@@ -36,7 +36,7 @@ struct ParallelepipedImplementation {
 
     // Run regular unplaced kernel for point inside a box
     BoxImplementation<transCodeT, rotCodeT>::template
-        UnplacedInsideKernel<Backend>(unplaced.GetDimensions(), point, inside);
+        InsideKernel<Backend>(unplaced.GetDimensions(), point, inside);
 
   }
 
@@ -69,8 +69,8 @@ struct ParallelepipedImplementation {
 
     // Run regular unplaced kernel for distance to a box
     BoxImplementation<transCodeT, rotCodeT>::template
-        UnplacedDistanceToInKernel<Backend>(unplaced.GetDimensions(), point,
-                                            direction, stepMax, distance
+        DistanceToInKernel<Backend>(unplaced.GetDimensions(), point, direction,
+                                    stepMax, distance
     );
 
   }
@@ -79,11 +79,20 @@ struct ParallelepipedImplementation {
   VECGEOM_CUDA_HEADER_BOTH
   static void DistanceToOut(
       UnplacedParallelepiped const &unplaced,
-      Vector3D<typename Backend::precision_v> const &pos,
-      Vector3D<typename Backend::precision_v> const &dir,
-      typename Backend::precision_v const &step_max,
+      Vector3D<typename Backend::precision_v> point,
+      Vector3D<typename Backend::precision_v> direction,
+      typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance) {
-    // NYI
+
+    Transform<Backend>(unplaced, point);
+    Transform<Backend>(unplaced, direction);
+
+    // Run regular unplaced kernel for distance to a box
+    BoxImplementation<transCodeT, rotCodeT>::template
+        DistanceToOutKernel<Backend>(unplaced.GetDimensions(), point,
+                                     direction, stepMax, distance
+    );
+
   }
 
 

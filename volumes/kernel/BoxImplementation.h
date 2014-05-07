@@ -15,7 +15,7 @@ struct BoxImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  static void UnplacedInsideKernel(
+  static void InsideKernel(
       Vector3D<Precision> const &boxDimensions,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::int_v &inside) {
@@ -60,7 +60,7 @@ struct BoxImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  static void UnplacedDistanceToInKernel(
+  static void DistanceToInKernel(
       Vector3D<Precision> const &dimensions,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
@@ -121,7 +121,70 @@ struct BoxImplementation {
 
   }
 
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void DistanceToOutKernel(
+    Vector3D<Precision> const &dimensions,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v const &stepMax,
+    typename Backend::precision_v &distance);
+
 }; // End struct BoxImplementation
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
+    Vector3D<Precision> const &dimensions,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v const &stepMax,
+    typename Backend::precision_v &distance) {
+
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    Vector3D<Float_t> safety;
+    Bool_t inside;
+
+    distance = kInfinity;
+
+    safety[0] = Abs(point[0]) - dimensions[0];
+    safety[1] = Abs(point[1]) - dimensions[1];
+    safety[2] = Abs(point[2]) - dimensions[2];
+
+    inside = safety[0] < stepMax &&
+             safety[1] < stepMax &&
+             safety[2] < stepMax;
+    if (inside == Backend::kFalse) return;
+
+    Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
+      1. / (direction[0] + kTiny),
+      1. / (direction[1] + kTiny),
+      1. / (direction[2] + kTiny)
+    );
+    Vector3D<Float_t> distances = Vector3D<Float_t>(
+      (dimensions[0] - point[0]) * inverseDirection[0],
+      (dimensions[1] - point[1]) * inverseDirection[1],
+      (dimensions[2] - point[2]) * inverseDirection[2]
+    );
+
+    MaskedAssign(direction[0] < 0,
+                 (-dimensions[0]-point[0]) * inverseDirection[0],
+                 &distances[0]);
+    MaskedAssign(direction[1] < 0,
+                 (-dimensions[1]-point[1]) * inverseDirection[1],
+                 &distances[1]);
+    MaskedAssign(direction[2] < 0,
+                 (-dimensions[2]-point[2]) * inverseDirection[2],
+                 &distances[2]);
+
+    distance = distances[0];
+    MaskedAssign(distances[1] < distance, distances[1], &distance);
+    MaskedAssign(distances[2] < distance, distances[2], &distance);
+}
 
 } // End global namespace
 
