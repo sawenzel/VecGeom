@@ -1,13 +1,14 @@
-/// @file ParallelepipedKernel.h
+/// @file ParallelepipedImplementation.h
 /// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#ifndef VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDKERNEL_H_
-#define VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDKERNEL_H_
+#ifndef VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
+#define VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
 
 #include "base/global.h"
 
 #include "base/transformation3d.h"
-#include "volumes/kernel/KernelUtilities.h"
+#include "volumes/kernel/BoxImplementation.h"
+#include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParallelepiped.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -17,21 +18,25 @@ struct ParallelepipedImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  static void Transform(UnplacedParallelepiped const &unplaced,
+                        Vector3D<typename Backend::precision_v> &point) {
+    point[1] -= unplaced.GetTanThetaSinPhi()*point[2];
+    point[0] -= unplaced.GetTanThetaCosPhi()*point[2]
+                + unplaced.GetTanAlpha()*point[1];
+  }
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
   static void UnplacedInside(
       UnplacedParallelepiped const &unplaced,
-      Vector3D<typename Backend::precision_v> localPoint,
+      Vector3D<typename Backend::precision_v> point,
       typename Backend::int_v &inside) {
 
-    typedef typename Backend::precision_v Float_t;
+    Transform<Backend>(unplaced, point);
 
-    Float_t shift = unplaced.GetTanThetaSinPhi()*localPoint[2];
-    localPoint[0] -= shift + unplaced.GetTanAlpha()*localPoint[1];
-    localPoint[1] -= shift;
-
-    // Run regular kernel for point inside a box
-    KernelUtilities<Backend>::LocalPointInsideBox(
-      unplaced.GetDimensions(), localPoint, inside
-    );
+    // Run regular unplaced kernel for point inside a box
+    BoxImplementation<transCodeT, rotCodeT>::template
+        UnplacedInsideKernel<Backend>(unplaced.GetDimensions(), point, inside);
 
   }
 
@@ -51,11 +56,23 @@ struct ParallelepipedImplementation {
   static void DistanceToIn(
       UnplacedParallelepiped const &unplaced,
       Transformation3D const &transformation,
-      Vector3D<typename Backend::precision_v> const &pos,
-      Vector3D<typename Backend::precision_v> const &dir,
-      typename Backend::precision_v const &step_max,
+      Vector3D<typename Backend::precision_v> point,
+      Vector3D<typename Backend::precision_v> direction,
+      typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance) {
-    // NYI
+
+    point = transformation.Transform(point);
+    direction = transformation.TransformDirection(direction);
+
+    Transform<Backend>(unplaced, point);
+    Transform<Backend>(unplaced, direction);
+
+    // Run regular unplaced kernel for distance to a box
+    BoxImplementation<transCodeT, rotCodeT>::template
+        UnplacedDistanceToInKernel<Backend>(unplaced.GetDimensions(), point,
+                                            direction, stepMax, distance
+    );
+
   }
 
   template <class Backend>
@@ -91,4 +108,4 @@ struct ParallelepipedImplementation {
 
 } // End global namespace
 
-#endif // VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDKERNEL_H_
+#endif // VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
