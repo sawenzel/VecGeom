@@ -5,7 +5,9 @@
 
 #include "volumes/Parallelepiped.h"
 
+#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
 #include "TGeoPara.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
