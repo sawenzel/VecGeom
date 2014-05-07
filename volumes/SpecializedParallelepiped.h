@@ -6,7 +6,7 @@
 
 #include "base/global.h"
 
-#include "volumes/kernel/ParallelepipedKernel.h"
+#include "volumes/kernel/ParallelepipedImplementation.h"
 #include "volumes/PlacedParallelepiped.h"
 #include "volumes/ShapeImplementationHelper.h"
 
