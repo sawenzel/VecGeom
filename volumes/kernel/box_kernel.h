@@ -157,7 +157,6 @@ void BoxDistanceToOut(
     typedef typename Backend::precision_v Float;
     typedef typename Backend::bool_v Bool;
 
-
     Float saf[3];
     saf[0] = Abs(pos[0])-dimensions[0];
     saf[1] = Abs(pos[1])-dimensions[1];
