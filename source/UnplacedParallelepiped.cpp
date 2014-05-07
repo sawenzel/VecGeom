@@ -22,8 +22,10 @@ UnplacedParallelepiped::UnplacedParallelepiped(
 VECGEOM_CUDA_HEADER_BOTH
 UnplacedParallelepiped::UnplacedParallelepiped(
     const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi) {
-  UnplacedParallelepiped(Vector3D<Precision>(x, y, z), alpha, theta, phi);
+    const Precision alpha, const Precision theta, const Precision phi)
+    : fDimensions(x, y, z) {
+  SetAlpha(alpha);
+  SetThetaAndPhi(theta, phi);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -74,18 +76,18 @@ VPlacedVolume* UnplacedParallelepiped::Create(
     VPlacedVolume *const placement) {
   if (placement) {
     return new(placement) SpecializedParallelepiped<transCodeT, rotCodeT>(
-        logical_volume, transformation
 #ifdef VECGEOM_NVCC
-        , const int id,
+        logical_volume, transformation, NULL, id); // TODO: add bounding box?
+#else
+        logical_volume, transformation);
 #endif
-        );
   }
   return new SpecializedParallelepiped<transCodeT, rotCodeT>(
-      logical_volume, transformation
 #ifdef VECGEOM_NVCC
-      , const int id
+      logical_volume, transformation, NULL, id); // TODO: add bounding box?
+#else
+      logical_volume, transformation);
 #endif
-      );
 }
 
 VECGEOM_CUDA_HEADER_DEVICE
@@ -97,8 +99,11 @@ VPlacedVolume* UnplacedParallelepiped::SpecializedVolume(
     const int id,
 #endif
     VPlacedVolume *const placement) const {
-  return VolumeFactory::Instance().CreateByTransformation<
+  return VolumeFactory::CreateByTransformation<
       UnplacedParallelepiped>(volume, transformation, trans_code, rot_code,
+#ifdef VECGEOM_NVCC
+                              id,
+#endif
                               placement);
 }
 
@@ -133,18 +138,19 @@ VUnplacedVolume* UnplacedParallelepiped::CopyToGpu() const {
 class VUnplacedVolume;
 
 __global__
-void ConstructOnGpu(
+void UnplacedParallelepiped_ConstructOnGpu(
     const Precision x, const Precision y, const Precision z,
     const Precision alpha, const Precision theta, const Precision phi,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedBox(x, y, z, alpha, theta, phi);
+  new(gpu_ptr) vecgeom_cuda::UnplacedParallelepiped(x, y, z, alpha, theta, phi);
 }
 
 void UnplacedParallelepiped_CopyToGpu(
     const Precision x, const Precision y, const Precision z,
     const Precision alpha, const Precision theta, const Precision phi,
     VUnplacedVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(x, y, z, alpha, theta, phi, gpu_ptr);
+  UnplacedParallelepiped_ConstructOnGpu<<<1, 1>>>(x, y, z, alpha, theta, phi,
+                                                  gpu_ptr);
 }
 
 #endif

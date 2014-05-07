@@ -88,6 +88,7 @@ public:
   virtual void Print() const;
 
   template <TranslationCode transCodeT, RotationCode rotCodeT>
+  VECGEOM_CUDA_HEADER_DEVICE
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
                                Transformation3D const *const transformation,
 #ifdef VECGEOM_NVCC

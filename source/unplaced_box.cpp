@@ -105,14 +105,14 @@ VUnplacedVolume* UnplacedBox::CopyToGpu() const {
 class VUnplacedVolume;
 
 __global__
-void ConstructOnGpu(const Precision x, const Precision y, const Precision z,
-                    VUnplacedVolume *const gpu_ptr) {
+void UnplacedBox_ConstructOnGpu(const Precision x, const Precision y,
+                                const Precision z, VUnplacedVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::UnplacedBox(x, y, z);
 }
 
 void UnplacedBox_CopyToGpu(const Precision x, const Precision y,
                            const Precision z, VUnplacedVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(x, y, z, gpu_ptr);
+  UnplacedBox_ConstructOnGpu<<<1, 1>>>(x, y, z, gpu_ptr);
 }
 
 #endif
