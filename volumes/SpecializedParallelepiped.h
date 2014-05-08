@@ -51,6 +51,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;
+  
 
 };
 

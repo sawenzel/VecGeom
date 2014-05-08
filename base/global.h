@@ -146,17 +146,4 @@ namespace EInside {
 
 } // End global namespace
 
-#ifdef VECGEOM_ROOT
-class TGeoShape;
-class TGeoBBox;
-class TGeoNode;
-class TGeoMatrix;
-class TGeoVolume;
-#endif
-
-#ifdef VECGEOM_USOLIDS
-class VUSolid;
-class UBox;
-#endif
-
 #endif // VECGEOM_BASE_GLOBAL_H_

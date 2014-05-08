@@ -1,11 +1,11 @@
-#include "benchmarking/distance_to_in.h"
+/// @file ToInBenchmarker.cu
+/// @author Johannes de Fine Licht
+
+#include "benchmarking/ToInBenchmarker.h"
 
 #include "base/stopwatch.h"
 #include "backend/cuda/backend.h"
 #include "management/cuda_manager.h"
-
-#include <iostream>
-
 
 namespace vecgeom_cuda {
 
@@ -25,46 +25,45 @@ void DistanceToInBenchmarkCudaKernel(
 
 namespace vecgeom {
 
-double DistanceToInBenchmarker::RunCuda(
-    Precision *const pos_x, Precision *const pos_y,
-    Precision *const pos_z, Precision *const dir_x, 
-    Precision *const dir_y, Precision *const dir_z,
+double ToInBenchmarker::RunCuda(
+    Precision *const posX, Precision *const posY,
+    Precision *const posZ, Precision *const dirX, 
+    Precision *const dirY, Precision *const dirZ,
     Precision *const distances) const {
 
   typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
 
-  if (verbose()) std::cout << "Running CUDA benchmark...";
+  if (fVerbose > 0) printf("Running CUDA benchmark...");
 
-  CudaManager::Instance().LoadGeometry(this->world());
+  CudaManager::Instance().LoadGeometry(this->GetWorld());
   CudaManager::Instance().Synchronize();
-  std::vector<CudaVolume> volumes_gpu;
-  for (std::vector<VolumePointers>::const_iterator v = volumes_.begin();
-       v != volumes_.end(); ++v) {
-    volumes_gpu.push_back(
+  std::list<CudaVolume> volumesGpu;
+  for (std::list<VolumePointers>::const_iterator v = fVolumes.begin();
+       v != fVolumes.end(); ++v) {
+    volumesGpu.push_back(
       reinterpret_cast<CudaVolume>(
         CudaManager::Instance().LookupPlaced(v->specialized())
       )
     );
   }
-  vecgeom_cuda::SOA3D<Precision> positions(pos_x, pos_y, pos_z, n_points_);
-  vecgeom_cuda::SOA3D<Precision> directions(dir_x, dir_y, dir_z, n_points_);
-
+  vecgeom_cuda::SOA3D<Precision> positions(posX, posY, posZ, fPointCount);
+  vecgeom_cuda::SOA3D<Precision> directions(dirX, dirY, dirZ, fPointCount);
   vecgeom_cuda::LaunchParameters launch =
-      vecgeom_cuda::LaunchParameters(n_points_);
+      vecgeom_cuda::LaunchParameters(fPointCount);
   vecgeom_cuda::Stopwatch timer;
   timer.Start();
-  for (unsigned r = 0; r < repetitions(); ++r) {
-    for (std::vector<CudaVolume>::const_iterator v = volumes_gpu.begin();
-         v != volumes_gpu.end(); ++v) {
+  for (unsigned r = 0; r < fRepetitions; ++r) {
+    for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin();
+         v != volumesGpu.end(); ++v) {
       vecgeom_cuda::DistanceToInBenchmarkCudaKernel<<<launch.grid_size,
                                                       launch.block_size>>>(
-        *v, positions, directions, n_points_, distances
+        *v, positions, directions, fPointCount, distances
       );
     }
   }
   const double elapsed = timer.Stop();
 
-  if (verbose()) std::cout << " Finished in " << elapsed << "s.\n";
+  if (fVerbose > 0) printf(" Finished in %fs.\n", elapsed);
 
   return elapsed;
 }

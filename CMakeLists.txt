@@ -247,8 +247,8 @@ set(HEADERS_CPP_RELATIVE
   base/type_map.h
   base/vector.h
   base/vector3d.h
-  benchmarking/benchmark.h
-  benchmarking/distance_to_in.h
+  benchmarking/BenchmarkResult.h
+  benchmarking/ToInBenchmarker.h
   management/cuda_manager.h
   management/geo_manager.h
   management/rootgeo_manager.h
@@ -339,12 +339,12 @@ endif()
 
 if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
-    source/benchmarking/benchmark.cpp
-    source/benchmarking/distance_to_in.cpp
+    source/benchmarking/BenchmarkResult.cpp
+    source/benchmarking/ToInBenchmarker.cpp
     source/benchmarking/volume_pointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
-    source/benchmarking/distance_to_in.cu
+    source/benchmarking/ToInBenchmarker.cu
   )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}

@@ -8,6 +8,8 @@
 
 #include "volumes/unplaced_volume.h"
 
+class TGeoShape;
+
 namespace vecgeom {
 
 class UnplacedRootVolume : public VUnplacedVolume {
