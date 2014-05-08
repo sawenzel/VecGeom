@@ -34,7 +34,7 @@ struct ParallelepipedImplementation {
 
     Transform<Backend>(unplaced, point);
 
-    // Run regular unplaced kernel for point inside a box
+    // Run unplaced box kernel
     BoxImplementation<transCodeT, rotCodeT>::template
         InsideKernel<Backend>(unplaced.GetDimensions(), point, inside);
 
@@ -47,7 +47,7 @@ struct ParallelepipedImplementation {
                      Vector3D<typename Backend::precision_v> const &point,
                      Vector3D<typename Backend::precision_v> &localPoint,
                      typename Backend::int_v &inside) {
-    localPoint = transformation.template Transform<transCodeT, rotCodeT>(point);
+    localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
     UnplacedInside<Backend>(unplaced, localPoint, inside);
   }
 
@@ -56,22 +56,25 @@ struct ParallelepipedImplementation {
   static void DistanceToIn(
       UnplacedParallelepiped const &unplaced,
       Transformation3D const &transformation,
-      Vector3D<typename Backend::precision_v> point,
-      Vector3D<typename Backend::precision_v> direction,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance) {
 
-    point = transformation.Transform(point);
-    direction = transformation.TransformDirection(direction);
+    typedef typename Backend::precision_v Float_t;
 
-    Transform<Backend>(unplaced, point);
-    Transform<Backend>(unplaced, direction);
+    Vector3D<Float_t> localPoint =
+        transformation.Transform<transCodeT, rotCodeT>(point);
+    Vector3D<Float_t> localDirection =
+        transformation.TransformDirection<rotCodeT>(direction);
 
-    // Run regular unplaced kernel for distance to a box
+    Transform<Backend>(unplaced, localPoint);
+    Transform<Backend>(unplaced, localDirection);
+
+    // Run unplaced box kernel
     BoxImplementation<transCodeT, rotCodeT>::template
-        DistanceToInKernel<Backend>(unplaced.GetDimensions(), point, direction,
-                                    stepMax, distance
-    );
+        DistanceToInKernel<Backend>(unplaced.GetDimensions(), localPoint,
+                                    localDirection, stepMax, distance);
 
   }
 
@@ -87,11 +90,10 @@ struct ParallelepipedImplementation {
     Transform<Backend>(unplaced, point);
     Transform<Backend>(unplaced, direction);
 
-    // Run regular unplaced kernel for distance to a box
+    // Run unplaced box kernel
     BoxImplementation<transCodeT, rotCodeT>::template
         DistanceToOutKernel<Backend>(unplaced.GetDimensions(), point,
-                                     direction, stepMax, distance
-    );
+                                     direction, stepMax, distance);
 
   }
 
@@ -102,15 +104,29 @@ struct ParallelepipedImplementation {
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety) {
-    // NYI
+
+    typedef typename Backend::precision_v Float_t;
+
+    Vector3D<Float_t> localPoint =
+        transformation.Transform<transCodeT, rotCodeT>(point);
+    Transform<Backend>(unplaced, localPoint);
+
+    // Run unplaced box kernel
+    BoxImplementation<transCodeT, rotCodeT>::template
+        SafetyToInKernel<Backend>(unplaced.GetDimensions(), localPoint, safety);
   }
 
   template<class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   static void SafetyToOut(UnplacedParallelepiped const &unplaced,
-                          Vector3D<typename Backend::precision_v> const &point,
+                          Vector3D<typename Backend::precision_v> point,
                           typename Backend::precision_v &safety) {
-    // NYI
+
+    Transform<Backend>(unplaced, point);
+
+    // Run unplaced box kernel
+    BoxImplementation<transCodeT, rotCodeT>::template
+        SafetyToOutKernel<Backend>(unplaced.GetDimensions(), point, safety);
   }
 
 };
