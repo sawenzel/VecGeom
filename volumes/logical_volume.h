@@ -14,6 +14,9 @@
 #include <string>
 #include <list>
 
+class TGeoShape;
+class VUSolid;
+
 namespace VECGEOM_NAMESPACE {
 
 typedef VPlacedVolume const* Daughter;

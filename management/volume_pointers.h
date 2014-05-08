@@ -13,7 +13,7 @@ class VUSolid;
 
 namespace vecgeom {
 
-enum BenchmarkType {kSpecialized, kSpecializedVector, kUnspecialized,
+enum BenchmarkType {kSpecialized, kVectorized, kUnspecialized,
                     kUSolids, kRoot, kCuda};
 
 /**

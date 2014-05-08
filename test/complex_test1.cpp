@@ -18,7 +18,7 @@
 #include "navigation/navigationstate.h"
 #include "navigation/simple_navigator.h"
 #include "base/rng.h"
-#include "benchmarking/benchmark.h"
+#include "benchmarking/BenchmarkResult.h"
 
 #include "TGeoManager.h"
 #include "TGeoBBox.h"

@@ -1,6 +1,6 @@
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
-#include "benchmarking/distance_to_in.h"
+#include "benchmarking/ToInBenchmarker.h"
 #include "management/geo_manager.h"
 
 using namespace vecgeom;
@@ -40,10 +40,10 @@ int main() {
 
   GeoManager::Instance().set_world(world_placed);
 
-  DistanceToInBenchmarker tester(GeoManager::Instance().world());
-  tester.set_verbose(2);
-  tester.set_repetitions(1<<10);
-  tester.set_n_points(1<<10);
+  ToInBenchmarker tester(GeoManager::Instance().world());
+  tester.SetVerbose(2);
+  tester.SetRepetitions(1<<10);
+  tester.SetPointCount(1<<10);
   tester.BenchmarkAll();
 
   return 0;
