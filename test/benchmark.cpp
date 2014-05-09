@@ -17,14 +17,14 @@ int main() {
   LogicalVolume smallbox = LogicalVolume(&smallbox_params);
 
   Transformation3D origin = Transformation3D();
-  Transformation3D placement1 = Transformation3D( 2,  2,  2, 45, 0, 0);
-  Transformation3D placement2 = Transformation3D(-2,  2,  2, 0, 45, 0);
-  Transformation3D placement3 = Transformation3D( 2, -2,  2, 0, 0, 45);
-  Transformation3D placement4 = Transformation3D( 2,  2, -2, 45, 45, 0);
-  Transformation3D placement5 = Transformation3D(-2, -2,  2, 45, 0, 45);
-  Transformation3D placement6 = Transformation3D(-2,  2, -2, 0, 45, 45);
-  Transformation3D placement7 = Transformation3D(2, -2, -2, 45, 45, 45);
-  Transformation3D placement8 = Transformation3D(-2, -2, -2, 0, 0, 0);
+  Transformation3D placement1 = Transformation3D( 2,  2,  2);
+  Transformation3D placement2 = Transformation3D(-2,  2,  2);
+  Transformation3D placement3 = Transformation3D( 2, -2,  2);
+  Transformation3D placement4 = Transformation3D( 2,  2, -2);
+  Transformation3D placement5 = Transformation3D(-2, -2,  2);
+  Transformation3D placement6 = Transformation3D(-2,  2, -2);
+  Transformation3D placement7 = Transformation3D(2, -2, -2);
+  Transformation3D placement8 = Transformation3D(-2, -2, -2);
 
   largebox.PlaceDaughter(&smallbox, &origin);
   worldl.PlaceDaughter(&largebox, &placement1);
@@ -42,7 +42,6 @@ int main() {
 
   ToInBenchmarker tester(GeoManager::Instance().world());
   tester.SetVerbose(2);
-  tester.SetRepetitions(1<<10);
   tester.SetPointCount(1<<10);
   tester.BenchmarkAll();
 
