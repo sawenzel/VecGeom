@@ -7,42 +7,35 @@ using namespace vecgeom;
 
 int main() {
 
-  UnplacedBox world_params = UnplacedBox(4., 4., 4.);
-  UnplacedBox largebox_params = UnplacedBox(1.5, 1.5, 1.5);
-  UnplacedBox smallbox_params = UnplacedBox(0.5, 0.5, 0.5);
+  const double l = 10;
+  const double sqrt2 = sqrt(2.);
 
-  LogicalVolume worldl = LogicalVolume(&world_params);
+  UnplacedBox worldUnplaced = UnplacedBox(l, l, l);
+  UnplacedBox boxLevel1Unplaced = UnplacedBox(0.5*l, 0.5*l, l);
+  UnplacedBox boxLevel2Unplaced = UnplacedBox(sqrt2*l/2./2., sqrt2*l/2./2., l);
+  UnplacedBox boxLevel3Unplaced = UnplacedBox(l/2/2, l/2/2, l);
 
-  LogicalVolume largebox = LogicalVolume(&largebox_params);
-  LogicalVolume smallbox = LogicalVolume(&smallbox_params);
+  Transformation3D placement1 = Transformation3D(-l/2, 0, 0);
+  Transformation3D placement2 = Transformation3D( l/2, 0, 0);
+  Transformation3D placement3 = Transformation3D(0, 0, 0, 0, 0, 45);
+  Transformation3D placement4 = Transformation3D(0, 0, 0, 0, 0, -45);
 
-  Transformation3D origin = Transformation3D();
-  Transformation3D placement1 = Transformation3D( 2,  2,  2);
-  Transformation3D placement2 = Transformation3D(-2,  2,  2);
-  Transformation3D placement3 = Transformation3D( 2, -2,  2);
-  Transformation3D placement4 = Transformation3D( 2,  2, -2);
-  Transformation3D placement5 = Transformation3D(-2, -2,  2);
-  Transformation3D placement6 = Transformation3D(-2,  2, -2);
-  Transformation3D placement7 = Transformation3D(2, -2, -2);
-  Transformation3D placement8 = Transformation3D(-2, -2, -2);
+  LogicalVolume world = LogicalVolume(&worldUnplaced);
+  LogicalVolume boxLevel1 = LogicalVolume(&boxLevel1Unplaced);
+  LogicalVolume boxLevel2 = LogicalVolume(&boxLevel2Unplaced);
+  LogicalVolume boxLevel3 = LogicalVolume(&boxLevel3Unplaced);
+  world.PlaceDaughter(&boxLevel1, &placement1);
+  world.PlaceDaughter(&boxLevel1, &placement2);
+  boxLevel1.PlaceDaughter(&boxLevel2, &placement4);
+  boxLevel2.PlaceDaughter(&boxLevel3, &placement3);
 
-  largebox.PlaceDaughter(&smallbox, &origin);
-  worldl.PlaceDaughter(&largebox, &placement1);
-  worldl.PlaceDaughter(&largebox, &placement2);
-  worldl.PlaceDaughter(&largebox, &placement3);
-  worldl.PlaceDaughter(&largebox, &placement4);
-  worldl.PlaceDaughter(&largebox, &placement5);
-  worldl.PlaceDaughter(&largebox, &placement6);
-  worldl.PlaceDaughter(&largebox, &placement7);
-  worldl.PlaceDaughter(&largebox, &placement8);
-
-  VPlacedVolume *world_placed = worldl.Place();
+  VPlacedVolume *world_placed = world.Place();
 
   GeoManager::Instance().set_world(world_placed);
 
   ToInBenchmarker tester(GeoManager::Instance().world());
   tester.SetVerbose(2);
-  tester.SetPointCount(1<<10);
+  tester.SetPointCount(1<<13);
   tester.BenchmarkAll();
 
   return 0;

@@ -111,7 +111,9 @@ void ToInBenchmarker::RunCuda(
   }
   elapsedSafety = timer.Stop();
 
-  printf(" Finished in %fs/%fs.\n", elapsedDistance, elapsedSafety);
+  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+         elapsedSafety, elapsedDistance/fVolumes.size(),
+         elapsedSafety/fVolumes.size());
 
   CopyFromGpu(distancesGpu, distances, fPointCount*sizeof(Precision));
   CopyFromGpu(safetiesGpu, safeties, fPointCount*sizeof(Precision));

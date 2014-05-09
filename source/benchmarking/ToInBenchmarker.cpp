@@ -97,8 +97,12 @@ void ToInBenchmarker::BenchmarkAll() {
 
   printf("Running DistanceToIn and SafetyToIn benchmark for %i points for "
          "%i repetitions.\n", fPointCount, fRepetitions);
+  printf("Vector instruction size is %i doubles.\n", kVectorSize);
+  printf("Times are printed as DistanceToIn/Safety.\n");
 
   PrepareBenchmark();
+  printf("Found %lu volumes in world volume which to be used for benchmarking.",
+         fVolumes.size());
 
   std::stringstream outputLabels;
   outputLabels << "Specialized - Vectorized - Unspecialized";
@@ -264,7 +268,7 @@ void ToInBenchmarker::BenchmarkAll() {
       if (fVerbose > 1) printf("%s\n", mismatchOutput.str().c_str());
     }
   }
-  if (fVerbose) {
+  if (fVerbose > 0) {
     printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
   }
 
@@ -375,7 +379,9 @@ void ToInBenchmarker::RunSpecialized(
     }
   }
   const Precision elapsedSafety = timer.Stop();
-  printf(" Finished in %fs/%fs.\n", elapsedDistance, elapsedSafety);
+  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+         elapsedSafety, elapsedDistance/fVolumes.size(),
+         elapsedSafety/fVolumes.size());
 }
 
 void ToInBenchmarker::RunVectorized(
@@ -405,7 +411,9 @@ void ToInBenchmarker::RunVectorized(
     }
   }
   const Precision elapsedSafety = timer.Stop();
-  printf(" Finished in %f/%fs.\n", elapsedDistance, elapsedSafety);
+  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+         elapsedSafety, elapsedDistance/fVolumes.size(),
+         elapsedSafety/fVolumes.size());
 }
 
 void ToInBenchmarker::RunUnspecialized(
@@ -438,7 +446,9 @@ void ToInBenchmarker::RunUnspecialized(
     }
   }
   const Precision elapsedSafety = timer.Stop();
-  printf(" Finished in %fs/%fs.\n", elapsedDistance, elapsedSafety);
+  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+         elapsedSafety, elapsedDistance/fVolumes.size(),
+         elapsedSafety/fVolumes.size());
 }
 
 #ifdef VECGEOM_USOLIDS
@@ -483,7 +493,9 @@ void ToInBenchmarker::RunUSolids(
     }
   }
   const Precision elapsedSafety = timer.Stop();
-  printf(" Finished in %fs/%fs.\n", elapsedDistance, elapsedSafety);
+  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+         elapsedSafety, elapsedDistance/fVolumes.size(),
+         elapsedSafety/fVolumes.size());
 }
 #endif
 
@@ -524,7 +536,9 @@ void ToInBenchmarker::RunRoot(
     }
   }
   const Precision elapsedSafety = timer.Stop();
-  printf(" Finished in %fs/%fs.\n", elapsedDistance, elapsedSafety);
+  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+         elapsedSafety, elapsedDistance/fVolumes.size(),
+         elapsedSafety/fVolumes.size());
 }
 #endif
 
