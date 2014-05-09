@@ -66,7 +66,7 @@ void FillBiasedDirections(VPlacedVolume const &volume,
                         TrackContainer & dirs) {
   assert(bias >= 0. && bias <= 1.);
 
-  const int size = dirs.size();
+  const int size = dirs.memory_size();
   int n_hits = 0;
   std::vector<bool> hit(size, false);
   int h;
@@ -137,7 +137,7 @@ void FillBiasedDirections(LogicalVolume const &volume,
 template<typename TrackContainer>
 void FillUncontainedPoints(VPlacedVolume const &volume,
                       TrackContainer & points) {
-  const int size = points.size();
+  const int size = points.memory_size();
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
     bool contained;
@@ -168,7 +168,7 @@ void FillUncontainedPoints(LogicalVolume const &volume,
 template <typename TrackContainer>
 void FillRandomPoints(VPlacedVolume const &volume,
                             TrackContainer &points) {
-  const int size = points.size();
+  const int size = points.memory_size();
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
     Vector3D<Precision> point;

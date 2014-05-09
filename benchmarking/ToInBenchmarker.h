@@ -35,18 +35,18 @@ private:
 
 public:
 
-  std::list<BenchmarkResult> BenchmarkAll();
-  BenchmarkResult BenchmarkSpecialized();
-  BenchmarkResult BenchmarkUnspecialized();
-  BenchmarkResult BenchmarkVectorized();
+  void BenchmarkAll();
+  void BenchmarkSpecialized();
+  void BenchmarkUnspecialized();
+  void BenchmarkVectorized();
 #ifdef VECGEOM_USOLIDS
-  BenchmarkResult BenchmarkUSolids();
+  void BenchmarkUSolids();
 #endif
 #ifdef VECGEOM_ROOT
-  BenchmarkResult BenchmarkRoot();
+  void BenchmarkRoot();
 #endif
 #ifdef VECGEOM_CUDA
-  BenchmarkResult BenchmarkCuda();
+  void BenchmarkCuda();
 #endif
   
   ToInBenchmarker() {}
@@ -78,21 +78,24 @@ private:
   BenchmarkResult GenerateBenchmarkResult(const double elapsed,
                                           const BenchmarkType type) const;
 
-  BenchmarkResult RunSpecialized(double *const distances) const;
-  BenchmarkResult RunVectorized(double *const distances) const;
-  BenchmarkResult RunUnspecialized(double *const distances) const;
+  void RunSpecialized(Precision *const distances,
+                      Precision *const safeties) const;
+  void RunVectorized(Precision *const distances,
+                     Precision *const safeties) const;
+  void RunUnspecialized(Precision *const distances,
+                        Precision *const safeties) const;
 #ifdef VECGEOM_USOLIDS
-  BenchmarkResult RunUSolids(double *const distances) const;
+  void RunUSolids(double *const distances, Precision *const safeties) const;
 #endif
 #ifdef VECGEOM_ROOT
-  BenchmarkResult RunRoot(double *const distances) const;
+  void RunRoot(double *const distances, Precision *const safeties) const;
 #endif
 #ifdef VECGEOM_CUDA
-  double RunCuda(
+  void RunCuda(
     Precision *const pos_x, Precision *const pos_y,
     Precision *const pos_z, Precision *const dir_x,
     Precision *const dir_y, Precision *const dir_z,
-    Precision *const distances) const;
+    Precision *const distances, Precision *const safeties) const;
 #endif
 
   void PrepareBenchmark();

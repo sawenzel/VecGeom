@@ -14,8 +14,6 @@
 #include "backend/cuda/interface.h"
 #endif
 
-// #include <cassert>
-
 namespace vecgeom_cuda { template <typename Type> class SOA3D; }
 
 namespace VECGEOM_NAMESPACE {
