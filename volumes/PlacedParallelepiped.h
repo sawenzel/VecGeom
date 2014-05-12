@@ -1,4 +1,4 @@
-/// @file ShapeImplementationHelper.h
+/// @file PlacedParallelepiped.h
 /// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_PLACEDPARALLELEPIPED_H_

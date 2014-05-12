@@ -1,4 +1,4 @@
-/// @file box.h
+/// @file Parallelepiped.h
 /// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_PARALLELEPIPED_H_

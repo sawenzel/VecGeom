@@ -97,7 +97,6 @@ struct ParallelepipedImplementation {
 
   }
 
-
   template<class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   static void SafetyToIn(UnplacedParallelepiped const &unplaced,
@@ -107,13 +106,33 @@ struct ParallelepipedImplementation {
 
     typedef typename Backend::precision_v Float_t;
 
-    Vector3D<Float_t> localPoint =
+    const Vector3D<Float_t> localPoint =
         transformation.Transform<transCodeT, rotCodeT>(point);
-    Transform<Backend>(unplaced, localPoint);
 
-    // Run unplaced box kernel
-    BoxImplementation<transCodeT, rotCodeT>::template
-        SafetyToInKernel<Backend>(unplaced.GetDimensions(), localPoint, safety);
+    Vector3D<Float_t> safetyVector;
+
+    safetyVector[0] = unplaced.GetZ() - Abs(localPoint[2]);
+
+    Float_t yt = localPoint[1] - unplaced.GetTanThetaSinPhi()
+                                 *localPoint[2];      
+    safetyVector[1] = unplaced.GetY() - Abs(yt);
+
+    Float_t cty = 1.0 / Sqrt(1. + unplaced.GetTanThetaSinPhi()
+                                  *unplaced.GetTanThetaSinPhi());
+
+    Float_t xt = localPoint[0] - unplaced.GetTanThetaCosPhi()*localPoint[2]
+                               - unplaced.GetTanAlpha()*yt;      
+    safetyVector[2] = unplaced.GetX() - Abs(xt);
+
+    Float_t ctx = 1.0 / Sqrt(1. + unplaced.GetTanAlpha()*unplaced.GetTanAlpha()
+                                + unplaced.GetTanThetaCosPhi()
+                                  *unplaced.GetTanThetaCosPhi());
+    safetyVector[2] *= ctx;
+    safetyVector[1] *= cty;
+
+    safety = safetyVector[0];
+    MaskedAssign(safetyVector[1] < safety, safetyVector[1], &safety);
+    MaskedAssign(safetyVector[2] < safety, safetyVector[2], &safety);
   }
 
   template<class Backend>

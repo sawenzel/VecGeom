@@ -101,8 +101,8 @@ void ToInBenchmarker::BenchmarkAll() {
   printf("Times are printed as DistanceToIn/Safety.\n");
 
   PrepareBenchmark();
-  printf("Found %lu volumes in world volume which to be used for benchmarking.",
-         fVolumes.size());
+  printf("Found %lu volumes in world volume which to be used for "
+         "benchmarking.\n", fVolumes.size());
 
   std::stringstream outputLabels;
   outputLabels << "Specialized - Vectorized - Unspecialized";
