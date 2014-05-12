@@ -46,7 +46,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point) const {
-    int output;
+    int output = 0;
     Vector3D<Precision> localPoint;
     Specialization::template Inside<kScalar>(
       *this->GetUnplacedVolume(),
@@ -61,7 +61,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool Inside(Vector3D<Precision> const &point,
                       Vector3D<Precision> &localPoint) const {
-    int output;
+    int output = 0;
     Specialization::template Inside<kScalar>(
       *this->GetUnplacedVolume(),
       *this->transformation(),
@@ -74,7 +74,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual bool UnplacedInside(Vector3D<Precision> const &point) const {
-    int output;
+    int output = 0;
     Specialization::template UnplacedInside<kScalar>(
       *this->GetUnplacedVolume(),
       point,
