@@ -294,13 +294,17 @@ set(SRC_CPP_RELATIVE
   source/logical_volume.cpp
   source/placed_box.cpp
   source/PlacedParallelepiped.cpp
+  source/PlacedParaboloid.cpp
+  source/PlacedTrapezoid.cpp
   source/placed_volume.cpp
   source/scalar_backend.cpp
   source/soa3d.cpp
   source/specialized_box.cpp
   source/transformation3d.cpp
   source/unplaced_box.cpp
+  source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
+  source/UnplacedTrapezoid.cpp
   source/unplaced_volume.cpp
   source/vector3d.cpp
   source/NavigationState.cpp	
