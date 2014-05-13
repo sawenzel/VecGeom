@@ -106,33 +106,30 @@ struct ParallelepipedImplementation {
 
     typedef typename Backend::precision_v Float_t;
 
-    const Vector3D<Float_t> localPoint =
-        transformation.Transform<transCodeT, rotCodeT>(point);
-
+    Float_t cty, ctx;
     Vector3D<Float_t> safetyVector;
 
-    safetyVector[0] = unplaced.GetZ() - Abs(localPoint[2]);
+    Vector3D<Float_t> localPoint =
+        transformation.Transform<transCodeT, rotCodeT>(point);
+    Transform<Backend>(unplaced, localPoint);
 
-    Float_t yt = localPoint[1] - unplaced.GetTanThetaSinPhi()
-                                 *localPoint[2];      
-    safetyVector[1] = unplaced.GetY() - Abs(yt);
+    safetyVector[0] = Abs(localPoint[0]) - unplaced.GetX();
+    safetyVector[1] = Abs(localPoint[1]) - unplaced.GetY();
+    safetyVector[2] = Abs(localPoint[2]) - unplaced.GetZ();
 
-    Float_t cty = 1.0 / Sqrt(1. + unplaced.GetTanThetaSinPhi()
-                                  *unplaced.GetTanThetaSinPhi());
+    ctx = 1.0 / Sqrt(1. + unplaced.GetTanAlpha()*unplaced.GetTanAlpha()
+                        + unplaced.GetTanThetaCosPhi()
+                          *unplaced.GetTanThetaCosPhi());
 
-    Float_t xt = localPoint[0] - unplaced.GetTanThetaCosPhi()*localPoint[2]
-                               - unplaced.GetTanAlpha()*yt;      
-    safetyVector[2] = unplaced.GetX() - Abs(xt);
+    cty = 1.0 / Sqrt(1. + unplaced.GetTanThetaSinPhi()
+                          *unplaced.GetTanThetaSinPhi());
 
-    Float_t ctx = 1.0 / Sqrt(1. + unplaced.GetTanAlpha()*unplaced.GetTanAlpha()
-                                + unplaced.GetTanThetaCosPhi()
-                                  *unplaced.GetTanThetaCosPhi());
-    safetyVector[2] *= ctx;
+    safetyVector[0] *= ctx;
     safetyVector[1] *= cty;
 
     safety = safetyVector[0];
-    MaskedAssign(safetyVector[1] < safety, safetyVector[1], &safety);
-    MaskedAssign(safetyVector[2] < safety, safetyVector[2], &safety);
+    MaskedAssign(safetyVector[1] > safety, safetyVector[1], &safety);
+    MaskedAssign(safetyVector[2] > safety, safetyVector[2], &safety);
   }
 
   template<class Backend>
@@ -141,11 +138,30 @@ struct ParallelepipedImplementation {
                           Vector3D<typename Backend::precision_v> point,
                           typename Backend::precision_v &safety) {
 
+    typedef typename Backend::precision_v Float_t;
+
+    Float_t cty, ctx;
+    Vector3D<Float_t> safetyVector;
+
     Transform<Backend>(unplaced, point);
 
-    // Run unplaced box kernel
-    BoxImplementation<transCodeT, rotCodeT>::template
-        SafetyToOutKernel<Backend>(unplaced.GetDimensions(), point, safety);
+    safetyVector[0] = unplaced.GetX() - Abs(point[0]);
+    safetyVector[1] = unplaced.GetY() - Abs(point[1]);
+    safetyVector[2] = unplaced.GetZ() - Abs(point[2]);
+
+    ctx = 1.0 / Sqrt(1. + unplaced.GetTanAlpha()*unplaced.GetTanAlpha()
+                        + unplaced.GetTanThetaCosPhi()
+                          *unplaced.GetTanThetaCosPhi());
+
+    cty = 1.0 / Sqrt(1. + unplaced.GetTanThetaSinPhi()
+                          *unplaced.GetTanThetaSinPhi());
+
+    safetyVector[0] *= ctx;
+    safetyVector[1] *= cty;
+
+    safety = safetyVector[0];
+    MaskedAssign(safetyVector[1] < safety, safetyVector[1], &safety);
+    MaskedAssign(safetyVector[2] < safety, safetyVector[2], &safety);
   }
 
 };
