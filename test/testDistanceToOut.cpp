@@ -324,8 +324,8 @@ void testDistanceToOut() {
 	VPlacedVolume const* world = GeoManager::Instance().world();
 	SOA3D<Precision> points(n);
 	SOA3D<Precision> directions(n);
-	volumeutilities::FillUncontainedPoints(*world, points);
-	volumeutilities::FillBiasedDirections(*world, points, 0.8, directions);
+	volumeUtilities::FillUncontainedPoints(*world, points);
+	volumeUtilities::FillBiasedDirections(*world, points, 0.8, directions);
 	int mismatches = 0;
 
 	//std::cerr << "START ITERATION " << i << std::endl;
@@ -456,8 +456,8 @@ void testDoRotation() {
 
   // use the world volume to generate random points
   VPlacedVolume const* world = GeoManager::Instance().world();
-  volumeutilities::FillUncontainedPoints(*world, points);
-  //volumeutilities::FillBiasedDirections(*world, points, 0.8, directions);
+  volumeUtilities::FillUncontainedPoints(*world, points);
+  //volumeUtilities::FillBiasedDirections(*world, points, 0.8, directions);
 
   // exercise the MatrixTransformation::DoRotation() methods
   Vector3D<Precision> local(0,0,0);

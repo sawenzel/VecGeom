@@ -14,18 +14,20 @@
 #include "volumes/placed_box.h"
 
 namespace VECGEOM_NAMESPACE {
-namespace volumeutilities {
+namespace volumeUtilities {
 
-using namespace vecgeom;
+using namespace VECGEOM_NAMESPACE;
 
+VECGEOM_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point,
                      Vector3D<Precision> const &dir,
                      VPlacedVolume const &volume) {
   return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
 }
 
+VECGEOM_INLINE
 Vector3D<Precision> SamplePoint(Vector3D<Precision> const &size,
-                                       const Precision scale = 1) {
+                                const Precision scale = 1) {
   const Vector3D<Precision> ret(
       scale * (1. - 2. * RNG::Instance().uniform()) * size[0],
       scale * (1. - 2. * RNG::Instance().uniform()) * size[1],
@@ -34,7 +36,7 @@ Vector3D<Precision> SamplePoint(Vector3D<Precision> const &size,
   return ret;
 }
 
-
+VECGEOM_INLINE
 Vector3D<Precision> SampleDirection() {
 
   Vector3D<Precision> dir(
@@ -52,6 +54,7 @@ Vector3D<Precision> SampleDirection() {
 
 
 template<typename TrackContainer>
+VECGEOM_INLINE
 void FillRandomDirections(TrackContainer &dirs) {
   dirs.set_size(dirs.memory_size());
   for (int i = 0, i_max = dirs.memory_size(); i < i_max; ++i) {
@@ -60,10 +63,11 @@ void FillRandomDirections(TrackContainer &dirs) {
 }
 
 template<typename TrackContainer>
+VECGEOM_INLINE
 void FillBiasedDirections(VPlacedVolume const &volume,
-                        TrackContainer const &points,
-                        const Precision bias,
-                        TrackContainer & dirs) {
+                          TrackContainer const &points,
+                          const Precision bias,
+                          TrackContainer & dirs) {
   assert(bias >= 0. && bias <= 1.);
 
   const int size = dirs.memory_size();
@@ -124,10 +128,11 @@ void FillBiasedDirections(VPlacedVolume const &volume,
 }
 
 template<typename TrackContainer>
+VECGEOM_INLINE
 void FillBiasedDirections(LogicalVolume const &volume,
-                        TrackContainer const &points,
-                        const Precision bias,
-                        TrackContainer & dirs)
+                          TrackContainer const &points,
+                          const Precision bias,
+                          TrackContainer & dirs)
 {
   VPlacedVolume const *const placed = volume.Place();
   FillBiasedDirections(*placed, points, bias, dirs);
@@ -135,8 +140,9 @@ void FillBiasedDirections(LogicalVolume const &volume,
 }
 
 template<typename TrackContainer>
+VECGEOM_INLINE
 void FillUncontainedPoints(VPlacedVolume const &volume,
-                      TrackContainer & points) {
+                           TrackContainer &points) {
   const int size = points.memory_size();
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
@@ -155,19 +161,41 @@ void FillUncontainedPoints(VPlacedVolume const &volume,
   }
 }
 
+template<typename TrackContainer>
+VECGEOM_INLINE
+void FillContainedPoints(VPlacedVolume const &volume,
+                         TrackContainer &points) {
+  const int size = points.memory_size();
+  const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
+  for (int i = 0; i < size; ++i) {
+    bool contained;
+    do {
+      points.Set(i, SamplePoint(dim));
+      contained = false;
+      for (Iterator<Daughter> j = volume.daughters().begin();
+          j != volume.daughters().end(); ++j) {
+        if ((*j)->Inside( points[i] )) {
+          contained = true;
+          break;
+        }
+      }
+    } while (!contained);
+  }
+}
 
 template<typename TrackContainer>
+VECGEOM_INLINE
 void FillUncontainedPoints(LogicalVolume const &volume,
-                      TrackContainer & points)
-{
+                           TrackContainer &points) {
   VPlacedVolume const *const placed = volume.Place();
   FillUncontainedPoints(*placed, points);
   delete placed;
 }
 
 template <typename TrackContainer>
+VECGEOM_INLINE
 void FillRandomPoints(VPlacedVolume const &volume,
-                            TrackContainer &points) {
+                      TrackContainer &points) {
   const int size = points.memory_size();
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
@@ -179,7 +207,7 @@ void FillRandomPoints(VPlacedVolume const &volume,
   }
 }
 
-} // end namespace volumeutilities
-} // end namespace VEGGEOM
+} // end namespace volumeUtilities
+} // end global namespace
 
 #endif /* VOLUME_UTILITIES_H_ */

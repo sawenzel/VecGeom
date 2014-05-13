@@ -8,13 +8,12 @@
 
 #include "base/global.h"
 
+#include "benchmarking/BenchmarkResult.h"
+
 class TGeoShape;
 class VUSolid;
 
 namespace vecgeom {
-
-enum BenchmarkType {kSpecialized, kVectorized, kUnspecialized,
-                    kUSolids, kRoot, kCuda};
 
 /**
  * @brief Converts a VecGeom volume to unspecialized, USolids and ROOT
@@ -33,7 +32,7 @@ private:
   ::VUSolid const *usolids_;
 #endif
   /** Remember which objects can be safely deleted. */
-  BenchmarkType initial_;
+  EBenchmarkedLibrary initial_;
 
 public:
 

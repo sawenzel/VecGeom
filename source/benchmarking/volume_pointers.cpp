@@ -23,7 +23,7 @@ VolumePointers::VolumePointers(VPlacedVolume const *const volume)
 #ifdef VECGEOM_USOLIDS
       usolids_(NULL),
 #endif
-      initial_(kSpecialized) {
+      initial_(kBenchmarkSpecialized) {
   ConvertVolume();
 }
 
@@ -61,13 +61,13 @@ void VolumePointers::ConvertVolume() {
 }
 
 void VolumePointers::Deallocate() {
-  if (initial_ != kSpecialized)   delete specialized_;
-  if (initial_ != kUnspecialized) delete unspecialized_;
+  if (initial_ != kBenchmarkSpecialized)   delete specialized_;
+  if (initial_ != kBenchmarkUnspecialized) delete unspecialized_;
 #ifdef VECGEOM_ROOT
-  if (initial_ != kRoot)          delete root_;
+  if (initial_ != kBenchmarkRoot)          delete root_;
 #endif
 #ifdef VECGEOM_USOLIDS
-  if (initial_ != kUSolids)       delete usolids_;
+  if (initial_ != kBenchmarkUSolids)       delete usolids_;
 #endif
 }
 

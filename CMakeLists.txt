@@ -248,7 +248,7 @@ set(HEADERS_CPP_RELATIVE
   base/vector.h
   base/vector3d.h
   benchmarking/BenchmarkResult.h
-  benchmarking/ToInBenchmarker.h
+  benchmarking/Benchmarker.h
   management/cuda_manager.h
   management/geo_manager.h
   management/rootgeo_manager.h
@@ -262,11 +262,17 @@ set(HEADERS_CPP_RELATIVE
   volumes/Parallelepiped.h
   volumes/placed_box.h
   volumes/PlacedParallelepiped.h
+  volumes/PlacedParaboloid.h
+  volumes/PlacedTrapezoid.h
   volumes/placed_volume.h
   volumes/specialized_box.h
   volumes/SpecializedParallelepiped.h
+  volumes/SpecializedParaboloid.h
+  volumes/SpecializedTrapezoid.h
   volumes/unplaced_box.h
   volumes/UnplacedParallelepiped.h
+  volumes/UnplacedParaboloid.h
+  volumes/UnplacedTrapezoid.h
   volumes/unplaced_volume.h
   volumes/usolid.h
   volumes/utilities/volume_utilities.h
@@ -344,11 +350,11 @@ endif()
 if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
-    source/benchmarking/ToInBenchmarker.cpp
+    source/benchmarking/Benchmarker.cpp
     source/benchmarking/volume_pointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
-    source/benchmarking/ToInBenchmarker.cu
+    source/benchmarking/Benchmarker.cu
   )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}

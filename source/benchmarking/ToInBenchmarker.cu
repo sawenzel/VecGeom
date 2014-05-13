@@ -1,7 +1,7 @@
-/// @file ToInBenchmarker.cu
+/// @file Benchmarker.cu
 /// @author Johannes de Fine Licht
 
-#include "benchmarking/ToInBenchmarker.h"
+#include "benchmarking/Benchmarker.h"
 
 #include "base/stopwatch.h"
 #include "backend/cuda/backend.h"
@@ -36,11 +36,11 @@ void SafetyToInBenchmarkCudaKernel(
 
 namespace vecgeom {
 
-void ToInBenchmarker::RunCuda(
+void Benchmarker::RunToInCuda(
     Precision *const posX, Precision *const posY,
     Precision *const posZ, Precision *const dirX, 
     Precision *const dirY, Precision *const dirZ,
-    Precision *const distances, Precision *const safeties) const {
+    Precision *const distances, Precision *const safeties) {
 
   typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
   typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
@@ -48,7 +48,7 @@ void ToInBenchmarker::RunCuda(
   double elapsedDistance;
   double elapsedSafety;
 
-  printf("Running CUDA benchmark...");
+  if (fVerbosity > 1) printf("Running CUDA benchmark...");
 
   CudaManager::Instance().LoadGeometry(this->GetWorld());
   CudaManager::Instance().Synchronize();
@@ -111,9 +111,21 @@ void ToInBenchmarker::RunCuda(
   }
   elapsedSafety = timer.Stop();
 
-  printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
-         elapsedSafety, elapsedDistance/fVolumes.size(),
-         elapsedSafety/fVolumes.size());
+  if (fVerbosity > 1) {
+    printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
+           elapsedSafety, elapsedDistance/fVolumes.size(),
+           elapsedSafety/fVolumes.size());
+  }
+  fResults.push_back(
+    GenerateBenchmarkResult(
+      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkCuda, fToInBias
+    )
+  );
+  fResults.push_back(
+    GenerateBenchmarkResult(
+      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkCuda, fToInBias
+    )
+  );
 
   CopyFromGpu(distancesGpu, distances, fPointCount*sizeof(Precision));
   CopyFromGpu(safetiesGpu, safeties, fPointCount*sizeof(Precision));
