@@ -43,7 +43,7 @@ int main(const int argc, char const *const *const argv) {
   const int depth = 4;
 
   SOA3D<Precision> points(n);
-  volumeutilities::FillRandomPoints(*GeoManager::Instance().world(), points);
+  volumeUtilities::FillRandomPoints(*GeoManager::Instance().world(), points);
   int *const results = new int[n]; 
   int *const results_gpu = new int[n]; 
 

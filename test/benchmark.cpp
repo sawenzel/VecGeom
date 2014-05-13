@@ -1,7 +1,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/box.h"
 #include "volumes/Parallelepiped.h"
-#include "benchmarking/ToInBenchmarker.h"
+#include "benchmarking/Benchmarker.h"
 #include "management/geo_manager.h"
 
 using namespace vecgeom;
@@ -41,10 +41,10 @@ int main() {
 
   GeoManager::Instance().set_world(worldPlaced);
 
-  ToInBenchmarker tester(GeoManager::Instance().world());
-  tester.SetVerbose(2);
+  Benchmarker tester(GeoManager::Instance().world());
+  tester.SetVerbosity(2);
   tester.SetPointCount(1<<13);
-  tester.BenchmarkAll();
+  tester.RunBenchmark();
 
   return 0;
 }

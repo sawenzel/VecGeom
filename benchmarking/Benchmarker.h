@@ -1,10 +1,8 @@
-/**
- * @file ToInBenchmarker.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// @file Benchmarker.h
+/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#ifndef VECGEOM_BENCHMARKING_TOINBENCHMARKER_H_
-#define VECGEOM_BENCHMARKING_TOINBENCHMARKER_H_
+#ifndef VECGEOM_BENCHMARKING_BENCHMARKER_H_
+#define VECGEOM_BENCHMARKING_BENCHMARKER_H_
 
 
 #include "base/global.h"
@@ -18,7 +16,7 @@
 
 namespace vecgeom {
 
-class ToInBenchmarker {
+class Benchmarker {
 
 private:
 
@@ -27,45 +25,37 @@ private:
   unsigned fPoolMultiplier;
   unsigned fRepetitions;
   std::list<VolumePointers> fVolumes;
-  int fVerbose;
-  double fBias;
+  std::list<BenchmarkResult> fResults;
+  int fVerbosity;
+  double fToInBias, fInsideBias;
   SOA3D<Precision> *fPointPool;
   SOA3D<Precision> *fDirectionPool;
   Precision *fStepMax;
 
 public:
 
-  void BenchmarkAll();
-  void BenchmarkSpecialized();
-  void BenchmarkUnspecialized();
-  void BenchmarkVectorized();
-#ifdef VECGEOM_USOLIDS
-  void BenchmarkUSolids();
-#endif
-#ifdef VECGEOM_ROOT
-  void BenchmarkRoot();
-#endif
-#ifdef VECGEOM_CUDA
-  void BenchmarkCuda();
-#endif
+  void RunBenchmark();
+  void RunInsideBenchmark();
+  void RunToInBenchmark();
+  void RunToOutBenchmark();
   
-  ToInBenchmarker() {}
+  Benchmarker() {}
 
-  ToInBenchmarker(VPlacedVolume const *const world);
+  Benchmarker(VPlacedVolume const *const world);
 
-  ~ToInBenchmarker();
+  ~Benchmarker();
 
   unsigned GetPointCount() const { return fPointCount; }
-  double GetBias() const { return fBias; }
+  double GetToInBias() const { return fToInBias; }
   unsigned GetPoolMultiplier() const { return fPoolMultiplier; }
-  int GetVerbose() const { return fVerbose; }
+  int GetVerbosity() const { return fVerbosity; }
   unsigned GetRepetitions() const { return fRepetitions; }
   VPlacedVolume const* GetWorld() const { return fWorld; }
 
   void SetPointCount(const unsigned pointCount) { fPointCount = pointCount; }
-  void SetBias(const double bias) { fBias = bias; }
+  void SetToInBias(const double toInBias) { fToInBias = toInBias; }
   void SetPoolMultiplier(const unsigned poolMultiplier);
-  void SetVerbose(const int verbose) { fVerbose = verbose; }
+  void SetVerbosity(const int verbosity) { fVerbosity = verbosity; }
   void SetRepetitions(const unsigned repetitions) {
     fRepetitions = repetitions;
   }
@@ -76,36 +66,36 @@ private:
   void GenerateVolumePointers(VPlacedVolume const *const vol);
 
   BenchmarkResult GenerateBenchmarkResult(const double elapsed,
-                                          const BenchmarkType type) const;
+                                          const EBenchmarkedMethod method,
+                                          const EBenchmarkedLibrary library,
+                                          const double bias) const;
 
-  void RunSpecialized(Precision *const distances,
-                      Precision *const safeties) const;
-  void RunVectorized(Precision *const distances,
-                     Precision *const safeties) const;
-  void RunUnspecialized(Precision *const distances,
-                        Precision *const safeties) const;
+  void RunToInSpecialized(Precision *const distances,
+                          Precision *const safeties);
+  void RunToInVectorized(Precision *const distances,
+                         Precision *const safeties);
+  void RunToInUnspecialized(Precision *const distances,
+                            Precision *const safeties);
 #ifdef VECGEOM_USOLIDS
-  void RunUSolids(double *const distances, Precision *const safeties) const;
+  void RunToInUSolids(double *const distances, Precision *const safeties);
 #endif
 #ifdef VECGEOM_ROOT
-  void RunRoot(double *const distances, Precision *const safeties) const;
+  void RunToInRoot(double *const distances, Precision *const safeties);
 #endif
 #ifdef VECGEOM_CUDA
-  void RunCuda(
+  void RunToInCuda(
     Precision *const pos_x, Precision *const pos_y,
     Precision *const pos_z, Precision *const dir_x,
     Precision *const dir_y, Precision *const dir_z,
-    Precision *const distances, Precision *const safeties) const;
+    Precision *const distances, Precision *const safeties);
 #endif
 
-  void PrepareBenchmark();
+  double* AllocateAligned() const;
 
-  double* AllocateDistance() const;
-
-  static void FreeDistance(double *const distance);
+  static void FreeAligned(double *const distance);
 
 };
 
 } // End namespace vecgeom
 
-#endif // VECGEOM_BENCHMARKING_TOINBENCHMARKER_H_
+#endif // VECGEOM_BENCHMARKING_BENCHMARKER_H_
