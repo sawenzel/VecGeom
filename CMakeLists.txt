@@ -365,7 +365,7 @@ set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 add_library(vecgeom_cpp ${SRC_CPP})
 target_link_libraries(vecgeom_cpp ${LIBS})
-set(LIBS ${LIBS} vecgeom_cpp)
+set(LIBS ${LIBS} vecgeom_cpp -lrt)
 
 set(
   SRC_EXECUTABLES
