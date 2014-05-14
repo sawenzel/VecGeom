@@ -7,6 +7,7 @@
 #define VECGEOM_BASE_GLOBAL_H_
 
 #include <cmath>
+#include <limits>
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -76,7 +77,12 @@ namespace VECGEOM_NAMESPACE {
 VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
 VECGEOM_CONSTEXPR Precision kDegToRad = M_PI/180.;
 VECGEOM_CONSTEXPR Precision kRadToDeg = 180./M_PI;
-VECGEOM_CONSTEXPR Precision kInfinity = INFINITY;
+VECGEOM_CONSTEXPR Precision kInfinity =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::infinity();
+#else
+    INFINITY;
+#endif
 VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
 VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;

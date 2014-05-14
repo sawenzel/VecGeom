@@ -135,6 +135,8 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
 void CudaManager::LoadGeometry(VPlacedVolume const *const volume) {
 
+  if (world_ == volume) return;
+
   CleanGpu();
 
   logical_volumes_.clear();
