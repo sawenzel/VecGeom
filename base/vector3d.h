@@ -150,6 +150,24 @@ public:
   }
 
   /**
+   * @return the length squared perpendicular to z direction
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Perp2() const {
+    return x*x+y*y;
+  }
+
+  /**
+   * @return the length perpendicular to z direction
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Perp() const {
+    return sqrt(Perp2());
+  }
+
+  /**
    * Normalizes the vector by dividing each entry by the length.
    * @sa Vector3D::Length()
    */
@@ -392,6 +410,17 @@ public:
   VECGEOM_INLINE
   Precision Mag2() const {
 	  return Dot(*this,*this);
+  }
+
+  //TODO: study if we gain from internal vectorization here
+  VECGEOM_INLINE
+  Precision Perp2() const {
+    return mem[0]*mem[0] + mem[1]*mem[1];
+  }
+
+  VECGEOM_INLINE
+  Precision Perp() const {
+    return sqrt(Perp2());
   }
 
 
