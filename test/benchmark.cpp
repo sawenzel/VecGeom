@@ -42,8 +42,8 @@ int main() {
   GeoManager::Instance().set_world(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().world());
-  tester.SetVerbosity(2);
-  tester.SetPointCount(1<<13);
+  tester.SetVerbosity(3);
+  tester.SetPointCount(1<<4);
   tester.RunBenchmark();
 
   return 0;

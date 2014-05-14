@@ -47,6 +47,7 @@ public:
 
   unsigned GetPointCount() const { return fPointCount; }
   double GetToInBias() const { return fToInBias; }
+  double GetInsideBias() const { return fInsideBias; }
   unsigned GetPoolMultiplier() const { return fPoolMultiplier; }
   int GetVerbosity() const { return fVerbosity; }
   unsigned GetRepetitions() const { return fRepetitions; }
@@ -54,12 +55,17 @@ public:
 
   void SetPointCount(const unsigned pointCount) { fPointCount = pointCount; }
   void SetToInBias(const double toInBias) { fToInBias = toInBias; }
+  void SetInsideBias(const double insideBias) { fInsideBias = insideBias; }
   void SetPoolMultiplier(const unsigned poolMultiplier);
   void SetVerbosity(const int verbosity) { fVerbosity = verbosity; }
   void SetRepetitions(const unsigned repetitions) {
     fRepetitions = repetitions;
   }
-  void SetWorld(VPlacedVolume const *const world) { fWorld = world; }
+  void SetWorld(VPlacedVolume const *const world);
+
+  std::list<BenchmarkResult> const& GetResults() const { return fResults; }
+
+  std::list<BenchmarkResult> PopResults();
 
 private:
     
@@ -70,29 +76,54 @@ private:
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
 
+  void RunInsideSpecialized(bool *const inside);
   void RunToInSpecialized(Precision *const distances,
                           Precision *const safeties);
-  void RunToInVectorized(Precision *const distances,
-                         Precision *const safeties);
+  void RunToOutSpecialized(Precision *const distances,
+                           Precision *const safeties);
+
+  void RunInsideVectorized(bool *const inside);
+  void RunToInVectorized(Precision *const distances, Precision *const safeties);
+  void RunToOutVectorized(Precision *const distances,
+                          Precision *const safeties);
+
+  void RunInsideUnspecialized(bool *const inside);
   void RunToInUnspecialized(Precision *const distances,
                             Precision *const safeties);
+  void RunToOutUnspecialized(Precision *const distances,
+                             Precision *const safeties);
+
 #ifdef VECGEOM_USOLIDS
+  void RunInsideUSolids(bool *const inside);
   void RunToInUSolids(double *const distances, Precision *const safeties);
+  void RunToOutUSolids(double *const distances, Precision *const safeties);
 #endif
 #ifdef VECGEOM_ROOT
+  void RunInsideRoot(bool *const inside);
   void RunToInRoot(double *const distances, Precision *const safeties);
+  void RunToOutRoot(double *const distances, Precision *const safeties);
 #endif
 #ifdef VECGEOM_CUDA
+  void RunInsideCuda(
+    Precision *const pos_x, Precision *const pos_y,
+    Precision *const pos_z, bool *const inside);
   void RunToInCuda(
+    Precision *const pos_x, Precision *const pos_y,
+    Precision *const pos_z, Precision *const dir_x,
+    Precision *const dir_y, Precision *const dir_z,
+    Precision *const distances, Precision *const safeties);
+  void RunToOutCuda(
     Precision *const pos_x, Precision *const pos_y,
     Precision *const pos_z, Precision *const dir_x,
     Precision *const dir_y, Precision *const dir_z,
     Precision *const distances, Precision *const safeties);
 #endif
 
-  double* AllocateAligned() const;
+  template <typename Type>
+  Type* AllocateAligned() const;
 
-  static void FreeAligned(double *const distance);
+  template <typename Type>
+  static void FreeAligned(Type *const distance);
 
 };
 
