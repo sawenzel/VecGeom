@@ -155,7 +155,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Type Perp2() const {
-    return x*x+y*y;
+    return vec[0]*vec[0]+vec[1]*vec[1];
   }
 
   /**
