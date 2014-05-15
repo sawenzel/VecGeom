@@ -269,8 +269,8 @@ bool UVCSGfaceted::Normal(const UVector3& p, UVector3& n) const
 // DistanceToIn(p,v)
 //
 
-double UVCSGfaceted::DistanceToInNoVoxels(const UVector3& p,
-                                          const UVector3& v) const
+ double UVCSGfaceted::DistanceToInNoVoxels(const UVector3& p,
+                                                 const UVector3& v) const
 {
   double distance = UUtils::kInfinity;
   double distFromSurface = UUtils::kInfinity;
@@ -383,6 +383,7 @@ double UVCSGfaceted::DistanceToOutNoVoxels(const UVector3& p, const UVector3&  v
       distance = 0;
     }
     aConvex = false;
+    n = normal;
   }
 
   return distance;

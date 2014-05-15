@@ -1252,8 +1252,9 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
           }
           else
           {
-            //if ( calcNorm )
+            
             {
+              n         = UVector3(-p.x / fRMin, -p.y / fRMin, 0);
               validNorm = false;  // Concave side
             }
             return snxt = 0.0;
@@ -1486,17 +1487,21 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
         break;
 
       case kRMin:
+        xi = p.x + snxt * v.x;
+        yi = p.y + snxt * v.y;
+        n = UVector3(-xi / fRMin, -yi / fRMin, 0);
         validNorm = false;  // Rmin is inconvex
         break;
 
       case kSPhi:
         if (fDPhi <= UUtils::kPi)
         {
-          n        = UVector3(fSinSPhi, -fCosSPhi, 0);
+          n         = UVector3(fSinSPhi, -fCosSPhi, 0);
           validNorm = true;
         }
         else
-        {
+        { 
+           n        = UVector3(fSinSPhi, -fCosSPhi, 0);
           validNorm = false;
         }
         break;
@@ -1504,11 +1509,12 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       case kEPhi:
         if (fDPhi <= UUtils::kPi)
         {
-          n = UVector3(-fSinEPhi, fCosEPhi, 0);
+          n         = UVector3(-fSinEPhi, fCosEPhi, 0);
           validNorm = true;
         }
         else
         {
+          n         = UVector3(-fSinEPhi, fCosEPhi, 0);
           validNorm = false;
         }
         break;

@@ -1748,6 +1748,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
             && (d2 >= fRminTolerance * fRmin) && (pDotV3d < 0))
         {
           validNorm = false;  // Rmin surface is concave
+           n        = UVector3(-p.x / fRmin, -p.y / fRmin, -p.z / fRmin);
           return snxt = 0;
         }
         else
@@ -1827,6 +1828,18 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
               if ((fSTheta < UUtils::kPi / 2) && (p.z > 0.))
               {
                 validNorm = false;
+                if (rho2)
+              {
+                rhoSecTheta = std::sqrt(rho2 * (1 + tanSTheta2));
+
+                n = UVector3(p.x / rhoSecTheta,
+                             p.y / rhoSecTheta,
+                             -std::sin(fSTheta));
+              }
+              else
+              {
+                n = UVector3(0., 0., 1.);
+              }
                 return snxt = 0.;
               }
               else if ((fSTheta > UUtils::kPi / 2) && (p.z <= 0))
@@ -1872,6 +1885,19 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
             else if ((fSTheta < UUtils::kPi / 2) && (t2 < 0.) && (p.z >= 0.)) // leave
             {
               validNorm = false;
+              if (rho2)
+              {
+                rhoSecTheta = std::sqrt(rho2 * (1 + tanSTheta2));
+
+                n = UVector3(p.x / rhoSecTheta,
+                             p.y / rhoSecTheta,
+                             -std::sin(fSTheta));
+              }
+              else
+              {
+                n = UVector3(0., 0., 1.);
+              }
+
               return snxt = 0.;
             }
           }
@@ -1956,6 +1982,17 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
               if ((eTheta > UUtils::kPi / 2) && (p.z < 0.))
               {
                 validNorm = false;
+                 if (rho2)
+                {
+                  rhoSecTheta = std::sqrt(rho2 * (1 + tanETheta2));
+                  n = UVector3(p.x / rhoSecTheta,
+                               p.y / rhoSecTheta,
+                               sinETheta);
+                }
+                else
+                {
+                  n = UVector3(0., 0., -1.);
+                }
                 return snxt = 0.;
               }
               else if ((eTheta < UUtils::kPi / 2) && (p.z >= 0))
@@ -2005,6 +2042,15 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
                      && (t2 < 0.) && (p.z <= 0.)) // leave
             {
               validNorm = false;
+               if (rho2)
+              {
+                rhoSecTheta = std::sqrt(rho2 * (1 + tanETheta2));
+                n = -UVector3(p.x / rhoSecTheta,
+                             p.y / rhoSecTheta,
+                             sinETheta);
+              }
+              else n = UVector3(0., 0., -1.);
+             
               return snxt = 0.;
             }
           }
@@ -2416,6 +2462,10 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       break;
 
     case kRMin:
+      xi = p.x + snxt * v.x;
+      yi = p.y + snxt * v.y;
+      zi = p.z + snxt * v.z;
+      n = UVector3(-xi / fRmin, -yi / fRmin, -zi / fRmin);
       validNorm = false; // Rmin is concave
       break;
 
@@ -2427,6 +2477,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       }
       else
       {
+        n = UVector3(sinSPhi, -cosSPhi, 0);
         validNorm = false;
       }
       break;
@@ -2439,6 +2490,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       }
       else
       {
+        n = UVector3(-sinEPhi, cosEPhi, 0);
         validNorm = false;
       }
       break;
@@ -2468,6 +2520,20 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       }
       else
       {
+       xi = p.x + snxt * v.x;
+        yi = p.y + snxt * v.y;
+        rho2 = xi * xi + yi * yi;
+        if (rho2)
+        {
+          rhoSecTheta = std::sqrt(rho2 * (1 + tanSTheta2));
+          n = UVector3(xi / rhoSecTheta, yi / rhoSecTheta,
+                       -tanSTheta / std::sqrt(1 + tanSTheta2));
+        }
+        else
+        {
+          n = UVector3(0., 0., 1.);
+        }
+      
         validNorm = false;  // Concave STheta cone
       }
       break;
@@ -2497,6 +2563,19 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       }
       else
       {
+        xi = p.x + snxt * v.x;
+        yi = p.y + snxt * v.y;
+        rho2 = xi * xi + yi * yi;
+        if (rho2)
+        {
+          rhoSecTheta = std::sqrt(rho2 * (1 + tanETheta2));
+          n = -UVector3(xi / rhoSecTheta, yi / rhoSecTheta,
+                       -tanETheta / std::sqrt(1 + tanETheta2));
+        }
+        else
+        {
+          n = UVector3(0., 0., -1.);
+        }
         validNorm = false;  // Concave ETheta cone
       }
       break;

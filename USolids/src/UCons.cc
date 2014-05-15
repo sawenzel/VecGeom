@@ -1632,6 +1632,8 @@ double UCons::DistanceToOut(const UVector3& p,
           if (nt2 < 0.0)
           {
             aConvex = false;
+            risec = std::sqrt(p.x * p.x + p.y * p.y) * secRMin;
+            aNormalVector = UVector3(-p.x / risec, -p.y / risec, tanRMin / secRMin);
             return          snxt      = 0.0;
           }
         }
@@ -1924,16 +1926,21 @@ double UCons::DistanceToOut(const UVector3& p,
       aConvex = true;
       break;
     case kRMin:
+      xi         = p.x + snxt * v.x;
+      yi         = p.y + snxt * v.y;
+      risec = std::sqrt(xi * xi + yi * yi) * secRMin;
+      aNormalVector = UVector3(-xi / risec, -yi / risec, tanRMin / secRMin);
       aConvex = false;  // Rmin is inconvex
       break;
     case kSPhi:
       if (fDPhi <= UUtils::kPi)
       {
-        aNormalVector        = UVector3(sinSPhi, -cosSPhi, 0);
+        aNormalVector = UVector3(sinSPhi, -cosSPhi, 0);
         aConvex = true;
       }
       else
       {
+        aNormalVector = UVector3(sinSPhi, -cosSPhi, 0);
         aConvex = false;
       }
       break;
@@ -1945,6 +1952,7 @@ double UCons::DistanceToOut(const UVector3& p,
       }
       else
       {
+        aNormalVector = UVector3(-sinEPhi, cosEPhi, 0);
         aConvex = false;
       }
       break;
@@ -2243,5 +2251,5 @@ void UCons::GetParametersList(int, double* aArray) const
   aArray[4] = GetZHalfLength();
   aArray[5] = GetStartPhiAngle();
   aArray[6] = GetDeltaPhiAngle();
- 
+
 }
