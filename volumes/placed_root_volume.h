@@ -136,15 +136,16 @@ bool PlacedRootVolume::Inside(Vector3D<Precision> const &point,
 }
 
 bool PlacedRootVolume::UnplacedInside(Vector3D<Precision> const &point) const {
-  return fRootShape->Contains(&point[0]);
+  Vector3D<Precision> pointCopy = point; // ROOT expects non const input
+  return fRootShape->Contains(&pointCopy[0]);
 }
 
 Precision PlacedRootVolume::DistanceToIn(Vector3D<Precision> const &position,
                                          Vector3D<Precision> const &direction,
                                          const Precision stepMax) const {
-  const Vector3D<Precision> positionLocal =
+  Vector3D<Precision> positionLocal =
       this->transformation_->Transform(position);
-  const Vector3D<Precision> directionLocal =
+  Vector3D<Precision> directionLocal =
       this->transformation_->TransformDirection(direction);
   return fRootShape->DistFromOutside(
            &positionLocal[0],
@@ -158,9 +159,9 @@ VECGEOM_INLINE
 Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position,
                                           Vector3D<Precision> const &direction,
                                           const Precision stepMax) const {
-  const Vector3D<Precision> positionLocal =
+  Vector3D<Precision> positionLocal =
       this->transformation_->Transform(position);
-  const Vector3D<Precision> directionLocal =
+  Vector3D<Precision> directionLocal =
       this->transformation_->TransformDirection(direction);
   return fRootShape->DistFromInside(
            &positionLocal[0],
@@ -173,7 +174,7 @@ Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position,
 VECGEOM_INLINE
 Precision PlacedRootVolume::SafetyToOut(
     Vector3D<Precision> const &position) const {
-  const Vector3D<Precision> position_local =
+  Vector3D<Precision> position_local =
       this->transformation_->Transform(position);
   return fRootShape->Safety(&position_local[0], true);
 }
@@ -181,7 +182,7 @@ Precision PlacedRootVolume::SafetyToOut(
 VECGEOM_INLINE
 Precision PlacedRootVolume::SafetyToIn(
     Vector3D<Precision> const &position) const {
-  const Vector3D<Precision> position_local =
+  Vector3D<Precision> position_local =
       this->transformation_->Transform(position);
   return fRootShape->Safety(&position_local[0], false);
 }

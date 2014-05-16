@@ -371,7 +371,10 @@ set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 add_library(vecgeom_cpp ${SRC_CPP})
 target_link_libraries(vecgeom_cpp ${LIBS})
-set(LIBS ${LIBS} vecgeom_cpp -lrt)
+set(LIBS ${LIBS} vecgeom_cpp)
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(LIBS ${LIBS} -lrt)
+endif()
 
 set(
   SRC_EXECUTABLES
