@@ -67,7 +67,7 @@ void Benchmarker::GenerateVolumePointers(VPlacedVolume const *const vol) {
 
   for (auto i = vol->daughters().begin(), i_end = vol->daughters().end();
        i != i_end; ++i) {
-    fVolumes.emplace(fVolumes.end(), *i);
+    fVolumes.push_back(*i);
     GenerateVolumePointers(*i);
   }
 
@@ -86,6 +86,90 @@ BenchmarkResult Benchmarker::GenerateBenchmarkResult(
     .bias = bias
   };
   return benchmark;
+}
+
+void Benchmarker::CompareDistances(
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method) const {
+
+  static char const *const outputLabels =
+      "Specialized / Vectorized / Unspecialized"
+#ifdef VECGEOM_ROOT
+      " / ROOT"
+#endif
+#ifdef VECGEOM_USOLIDS
+      " / USolids"
+#endif
+#ifdef VECGEOM_CUDA
+      " / CUDA"
+#endif
+      ;
+
+  if (fPoolMultiplier == 1 && fVerbosity > 0) {
+
+    printf("Comparing %s results...\n", method);
+    if (fVerbosity > 2) printf("%s\n", outputLabels);
+
+    // Compare results
+    int mismatches = 0;
+    for (unsigned i = 0; i < fPointCount; ++i) {
+      bool mismatch = false;
+      std::stringstream mismatchOutput;
+      if (fVerbosity > 2) {
+        mismatchOutput << specialized[i] << " / "
+                       << vectorized[i] << " / "
+                       << unspecialized[i];
+      }
+      if (std::fabs(specialized[i] - vectorized[i]) > kTolerance
+          && !(specialized[i] == kInfinity && vectorized[i] == kInfinity)) {
+        mismatch = true;
+      }
+      if (std::fabs(specialized[i] - unspecialized[i]) > kTolerance
+          && !(specialized[i] == kInfinity && unspecialized[i] == kInfinity)) {
+        mismatch = true;
+      }
+#ifdef VECGEOM_ROOT
+      if (std::fabs(specialized[i] - root[i]) > kTolerance
+          && !(specialized[i] == kInfinity && root[i] == 1e30)) {
+        mismatch = true;
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << root[i];
+#endif
+#ifdef VECGEOM_USOLIDS
+      if (std::fabs(specialized[i] - usolids[i]) > kTolerance
+          && !(specialized[i] == kInfinity
+               && usolids[i] == UUtils::kInfinity)) {
+        mismatch = true;
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];
+#endif
+#ifdef VECGEOM_CUDA
+      if (std::fabs(specialized[i] - cuda[i]) > kTolerance
+          && !(specialized[i] == kInfinity && cuda[i] == kInfinity)) {
+        mismatch = true;
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
+#endif
+      mismatches += mismatch;
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
+        printf("%s\n", mismatchOutput.str().c_str());
+      }
+    }
+    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
+
+  }
+
 }
 
 void Benchmarker::RunBenchmark() {
@@ -112,8 +196,6 @@ void Benchmarker::RunInsideBenchmark() {
   volumeUtilities::FillContainedPoints(*fWorld, fInsideBias, *fPointPool);
 
   if (fVerbosity > 1) printf("Done.\n");
-
-  fPointPool->set_size(fPointCount*fPoolMultiplier);
 
   std::stringstream outputLabels;
   outputLabels << "Specialized - Vectorized - Unspecialized";
@@ -150,43 +232,45 @@ void Benchmarker::RunInsideBenchmark() {
                 insideCuda);
 #endif
 
-  if (fVerbosity > 0) printf("Comparing Inside results:\n");
-  if (fVerbosity > 2) printf("%s\n", outputLabels.str().c_str());
+  if (fPoolMultiplier == 1 && fVerbosity > 0) {
 
-  // Compare results
-  int mismatches = 0;
-  for (unsigned i = 0; i < fPointCount; ++i) {
-    bool mismatch = false;
-    std::stringstream mismatchOutput;
-    if (fVerbosity > 2) {
-      mismatchOutput << insideSpecialized[i] << " / "
-                     << insideVectorized[i] << " / "
-                     << insideUnspecialized[i];
-    }
-    if (insideSpecialized[i] != insideVectorized[i]) mismatch = true;
-    if (insideSpecialized[i] != insideUnspecialized[i]) mismatch = true;
+    printf("Comparing Inside results:\n");
+    if (fVerbosity > 2) printf("%s\n", outputLabels.str().c_str());
+
+    // Compare results
+    int mismatches = 0;
+    for (unsigned i = 0; i < fPointCount; ++i) {
+      bool mismatch = false;
+      std::stringstream mismatchOutput;
+      if (fVerbosity > 2) {
+        mismatchOutput << insideSpecialized[i] << " / "
+                       << insideVectorized[i] << " / "
+                       << insideUnspecialized[i];
+      }
+      if (insideSpecialized[i] != insideVectorized[i]) mismatch = true;
+      if (insideSpecialized[i] != insideUnspecialized[i]) mismatch = true;
 #ifdef VECGEOM_ROOT
-    if (insideSpecialized[i] != insideRoot[i]) mismatch = true;
-    if (fVerbosity > 2) mismatchOutput << " / " << insideRoot[i];
+      if (insideSpecialized[i] != insideRoot[i]) mismatch = true;
+      if (fVerbosity > 2) mismatchOutput << " / " << insideRoot[i];
 #endif
 #ifdef VECGEOM_USOLIDS
-    if (insideSpecialized[i] != insideUSolids[i]) mismatch = true;
-    if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
+      if (insideSpecialized[i] != insideUSolids[i]) mismatch = true;
+      if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
 #endif
 #ifdef VECGEOM_CUDA
-    if (insideSpecialized[i] != insideCuda[i]) mismatch = true;
-    if (fVerbosity > 2) mismatchOutput << " / " << insideCuda[i];
+      if (insideSpecialized[i] != insideCuda[i]) mismatch = true;
+      if (fVerbosity > 2) mismatchOutput << " / " << insideCuda[i];
 #endif
-    if (mismatch) {
-      ++mismatches;
-      if (fVerbosity > 2) printf("%s\n", mismatchOutput.str().c_str());
+      mismatches += mismatch;
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
+        printf("%s\n", mismatchOutput.str().c_str());
+      }
     }
-  }
-  if (fVerbosity > 2 && mismatches > 100) {
-    printf("%s\n", outputLabels.str().c_str());
-  }
-  if (fVerbosity > 0) {
+    if (fVerbosity > 2 && mismatches > 100) {
+      printf("%s\n", outputLabels.str().c_str());
+    }
     printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
+
   }
 
   // Clean up memory
@@ -280,62 +364,20 @@ void Benchmarker::RunToInBenchmark() {
               distancesCuda, safetiesCuda);
 #endif
 
-  if (fVerbosity > 0) printf("Comparing DistanceToIn results:\n");
-  if (fVerbosity > 2) printf("%s\n", outputLabels.str().c_str());
-
-  // Compare results
-  int mismatches = 0;
-  for (unsigned i = 0; i < fPointCount; ++i) {
-    bool mismatch = false;
-    std::stringstream mismatchOutput;
-    if (fVerbosity > 2) {
-      mismatchOutput << distancesSpecialized[i] << " / "
-                     << distancesVectorized[i] << " / "
-                     << distancesUnspecialized[i];
-    }
-    if (std::fabs(distancesSpecialized[i] - distancesVectorized[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesVectorized[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (std::fabs(distancesSpecialized[i] - distancesUnspecialized[i])
-        > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesUnspecialized[i] == kInfinity)) {
-      mismatch = true;
-    }
+  CompareDistances(
+    distancesSpecialized,
+    distancesVectorized,
+    distancesUnspecialized,
 #ifdef VECGEOM_ROOT
-    if (std::fabs(distancesSpecialized[i] - distancesRoot[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesRoot[i] == 1e30)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << distancesRoot[i];
+    distancesRoot,
 #endif
 #ifdef VECGEOM_USOLIDS
-    if (std::fabs(distancesSpecialized[i] - distancesUSolids[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesUSolids[i] == UUtils::kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << distancesUSolids[i];
+    distancesUSolids,
 #endif
 #ifdef VECGEOM_CUDA
-    if (std::fabs(distancesSpecialized[i] - distancesCuda[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesCuda[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << distancesCuda[i];
+    distancesCuda,
 #endif
-    if (mismatch) {
-      ++mismatches;
-      if (fVerbosity > 2) printf("%s\n", mismatchOutput.str().c_str());
-    }
-  }
-  if (fVerbosity > 0) {
-    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
-  }
+    "DistanceToIn");
 
   // Clean up memory
   FreeAligned(distancesSpecialized);
@@ -351,62 +393,20 @@ void Benchmarker::RunToInBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  if (fVerbosity > 0) printf("Comparing SafetyToIn results:\n");
-  if (fVerbosity > 2) printf("%s\n", outputLabels.str().c_str());
-
-  // Compare results
-  mismatches = 0;
-  for (unsigned i = 0; i < fPointCount; ++i) {
-    bool mismatch = false;
-    std::stringstream mismatchOutput;
-    if (fVerbosity > 2) {
-      mismatchOutput << safetiesSpecialized[i] << " / "
-                     << safetiesVectorized[i] << " / "
-                     << safetiesUnspecialized[i];
-    }
-    if (std::fabs(safetiesSpecialized[i] - safetiesVectorized[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesVectorized[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (std::fabs(safetiesSpecialized[i] - safetiesUnspecialized[i])
-        > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesUnspecialized[i] == kInfinity)) {
-      mismatch = true;
-    }
+  CompareDistances(
+    safetiesSpecialized,
+    safetiesVectorized,
+    safetiesUnspecialized,
 #ifdef VECGEOM_ROOT
-    if (std::fabs(safetiesSpecialized[i] - safetiesRoot[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesRoot[i] == 1e30)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << safetiesRoot[i];
+    safetiesRoot,
 #endif
 #ifdef VECGEOM_USOLIDS
-    if (std::fabs(safetiesSpecialized[i] - safetiesUSolids[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesUSolids[i] == UUtils::kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << safetiesUSolids[i];
+    safetiesUSolids,
 #endif
 #ifdef VECGEOM_CUDA
-    if (std::fabs(safetiesSpecialized[i] - safetiesCuda[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesCuda[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << safetiesCuda[i];
+    safetiesCuda,
 #endif
-    if (mismatch) {
-      ++mismatches;
-      if (fVerbosity > 2) printf("%s\n", mismatchOutput.str().c_str());
-    }
-  }
-  if (fVerbosity > 0) {
-    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
-  }
+    "SafetyToIn");
 
   FreeAligned(safetiesSpecialized);
   FreeAligned(safetiesUnspecialized);
@@ -497,62 +497,20 @@ void Benchmarker::RunToOutBenchmark() {
                distancesCuda, safetiesCuda);
 #endif
 
-  if (fVerbosity > 0) printf("Comparing DistanceToOut results:\n");
-  if (fVerbosity > 2) printf("%s\n", outputLabels.str().c_str());
-
-  // Compare results
-  int mismatches = 0;
-  for (unsigned i = 0; i < fPointCount; ++i) {
-    bool mismatch = false;
-    std::stringstream mismatchOutput;
-    if (fVerbosity > 2) {
-      mismatchOutput << distancesSpecialized[i] << " / "
-                     << distancesVectorized[i] << " / "
-                     << distancesUnspecialized[i];
-    }
-    if (std::fabs(distancesSpecialized[i] - distancesVectorized[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesVectorized[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (std::fabs(distancesSpecialized[i] - distancesUnspecialized[i])
-        > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesUnspecialized[i] == kInfinity)) {
-      mismatch = true;
-    }
+  CompareDistances(
+    distancesSpecialized,
+    distancesVectorized,
+    distancesUnspecialized,
 #ifdef VECGEOM_ROOT
-    if (std::fabs(distancesSpecialized[i] - distancesRoot[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesRoot[i] == 1e30)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << distancesRoot[i];
+    distancesRoot,
 #endif
 #ifdef VECGEOM_USOLIDS
-    if (std::fabs(distancesSpecialized[i] - distancesUSolids[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesUSolids[i] == UUtils::kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << distancesUSolids[i];
+    distancesUSolids,
 #endif
 #ifdef VECGEOM_CUDA
-    if (std::fabs(distancesSpecialized[i] - distancesCuda[i]) > kTolerance
-        && !(distancesSpecialized[i] == kInfinity &&
-             distancesCuda[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << distancesCuda[i];
+    distancesCuda,
 #endif
-    if (mismatch) {
-      ++mismatches;
-      if (fVerbosity > 2) printf("%s\n", mismatchOutput.str().c_str());
-    }
-  }
-  if (fVerbosity > 0) {
-    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
-  }
+    "DistanceToOut");
 
   // Clean up memory
   FreeAligned(distancesSpecialized);
@@ -568,62 +526,20 @@ void Benchmarker::RunToOutBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  if (fVerbosity > 0) printf("Comparing SafetyToOut results:\n");
-  if (fVerbosity > 2) printf("%s\n", outputLabels.str().c_str());
-
-  // Compare results
-  mismatches = 0;
-  for (unsigned i = 0; i < fPointCount; ++i) {
-    bool mismatch = false;
-    std::stringstream mismatchOutput;
-    if (fVerbosity > 2) {
-      mismatchOutput << safetiesSpecialized[i] << " / "
-                     << safetiesVectorized[i] << " / "
-                     << safetiesUnspecialized[i];
-    }
-    if (std::fabs(safetiesSpecialized[i] - safetiesVectorized[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesVectorized[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (std::fabs(safetiesSpecialized[i] - safetiesUnspecialized[i])
-        > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesUnspecialized[i] == kInfinity)) {
-      mismatch = true;
-    }
+  CompareDistances(
+    safetiesSpecialized,
+    safetiesVectorized,
+    safetiesUnspecialized,
 #ifdef VECGEOM_ROOT
-    if (std::fabs(safetiesSpecialized[i] - safetiesRoot[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesRoot[i] == 1e30)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << safetiesRoot[i];
+    safetiesRoot,
 #endif
 #ifdef VECGEOM_USOLIDS
-    if (std::fabs(safetiesSpecialized[i] - safetiesUSolids[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesUSolids[i] == UUtils::kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << safetiesUSolids[i];
+    safetiesUSolids,
 #endif
 #ifdef VECGEOM_CUDA
-    if (std::fabs(safetiesSpecialized[i] - safetiesCuda[i]) > kTolerance
-        && !(safetiesSpecialized[i] == kInfinity &&
-             safetiesCuda[i] == kInfinity)) {
-      mismatch = true;
-    }
-    if (fVerbosity > 2) mismatchOutput << " / " << safetiesCuda[i];
+    safetiesCuda,
 #endif
-    if (mismatch) {
-      ++mismatches;
-      if (fVerbosity > 2) printf("%s\n", mismatchOutput.str().c_str());
-    }
-  }
-  if (fVerbosity > 0) {
-    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
-  }
+    "SafetyToOut");
 
   FreeAligned(safetiesSpecialized);
   FreeAligned(safetiesUnspecialized);

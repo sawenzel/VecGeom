@@ -31,7 +31,7 @@ UnplacedParallelepiped::UnplacedParallelepiped(
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedParallelepiped::SetAlpha(const Precision alpha) {
   fAlpha = alpha;
-  fTanAlpha = tan(alpha);
+  fTanAlpha = tan(kDegToRad*alpha);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -49,8 +49,8 @@ void UnplacedParallelepiped::SetThetaAndPhi(const Precision theta,
                                             const Precision phi) {
   fTheta = theta;
   fPhi = phi;
-  fTanThetaCosPhi = tan(theta)*cos(phi);
-  fTanThetaSinPhi = tan(theta)*sin(phi);
+  fTanThetaCosPhi = tan(kDegToRad*theta)*cos(kDegToRad*phi);
+  fTanThetaSinPhi = tan(kDegToRad*theta)*sin(kDegToRad*phi);
 }
 
 void UnplacedParallelepiped::Print() const {

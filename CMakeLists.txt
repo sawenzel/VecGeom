@@ -378,7 +378,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
 )
@@ -392,19 +392,18 @@ if (NOT CUDA)
     ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
   )
   target_link_libraries(create_geometry_test ${LIBS})
-  add_executable(ParallelepipedTest
-    ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
-  )
-  target_link_libraries(ParallelepipedTest ${LIBS})
   if (ROOT)
     add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
     target_link_libraries(root_geometry ${LIBS})
     add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
     target_link_libraries(complex_test1 ${LIBS})
   endif()
-  if (BENCHMARK)
-    add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
-    target_link_libraries(benchmark ${LIBS})
+  if (BENCHMARK AND NOT USOLIDS)
+    add_executable(
+      ParallelepipedBenchmark
+      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
+    )
+    target_link_libraries(ParallelepipedBenchmark ${LIBS})
   endif()
 else()
   cuda_add_library(
@@ -415,12 +414,6 @@ else()
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
   install(TARGETS vecgeom_cuda DESTINATION lib)
-  cuda_add_executable(
-    ParallelepipedTest
-    ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
-    OPTIONS ${CUDA_ARCH}
-  )
-  target_link_libraries(ParallelepipedTest ${LIBS})
   if (ROOT)
     cuda_add_executable(
       cpugpu
@@ -435,9 +428,12 @@ else()
     )
     target_link_libraries(root_geometry ${LIBS})
   endif()
-  if (BENCHMARK)
-    add_executable(benchmark ${CMAKE_SOURCE_DIR}/test/benchmark.cpp)
-    target_link_libraries(benchmark ${LIBS})
+  if (BENCHMARK AND NOT USOLIDS)
+    add_executable(
+      ParallelepipedBenchmark
+      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
+    )
+    target_link_libraries(ParallelepipedBenchmark ${LIBS})
   endif()
 endif()
 

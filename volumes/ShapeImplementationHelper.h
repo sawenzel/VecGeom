@@ -148,7 +148,7 @@ public:
         VcPrecision(&points.z(i))
       );
       Vector3D<VcPrecision> localPoint;
-      VcInt result;
+      VcInt result = EInside::kOutside;
       Specialization::template Inside<kVc>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
@@ -179,7 +179,7 @@ public:
         VcPrecision(&directions.z(i))
       );
       VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template DistanceToIn<kVc>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
@@ -209,7 +209,7 @@ public:
         VcPrecision(&directions.z(i))
       );
       VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template DistanceToOut<kVc>(
         *this->GetUnplacedVolume(),
         point,
@@ -230,7 +230,7 @@ public:
         VcPrecision(&points.y(i)),
         VcPrecision(&points.z(i))
       );
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template SafetyToIn<kVc>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
@@ -250,7 +250,7 @@ public:
         VcPrecision(&points.y(i)),
         VcPrecision(&points.z(i))
       );
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template SafetyToOut<kVc>(
         *this->GetUnplacedVolume(),
         point,
@@ -265,7 +265,7 @@ public:
   template <class Container_t>
   void InsideTemplate(Container_t const &points, bool *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; ++i) {
-      int result;
+      int result = EInside::kOutside;
       Vector3D<Precision> localPoint;
       Specialization::template Inside<kScalar>(
         *this->GetUnplacedVolume(),
