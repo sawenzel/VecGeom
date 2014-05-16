@@ -125,6 +125,21 @@ private:
   template <typename Type>
   static void FreeAligned(Type *const distance);
 
+  void CompareDistances(
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method) const;
+
 };
 
 } // End namespace vecgeom

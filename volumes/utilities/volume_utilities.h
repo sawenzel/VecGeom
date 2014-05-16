@@ -184,7 +184,7 @@ void FillContainedPoints(VPlacedVolume const &volume,
   }
   int i = 0;
   while (static_cast<double>(insideCount)/static_cast<double>(size) > bias) {
-    while (insideVector[i]) ++i;
+    while (!insideVector[i]) ++i;
     bool contained = false;
     do {
       points.Set(i, SamplePoint(dim));
@@ -197,22 +197,25 @@ void FillContainedPoints(VPlacedVolume const &volume,
       }
     } while (contained);
     --insideCount;
+    ++i;
   }
   i = 0;
-  while (static_cast<double>(insideCount)/static_cast<double>(size) <= bias) {
-    while (!insideVector[i]) ++i;
+  while (static_cast<double>(insideCount)/static_cast<double>(size) < bias) {
+    while (insideVector[i]) ++i;
     bool contained = false;
     do {
-      points.Set(i, SamplePoint(dim));
+      const Vector3D<Precision> sample = SamplePoint(dim);
       for (Iterator<Daughter> v = volume.daughters().begin(),
            v_end = volume.daughters().end(); v != v_end; ++v) {
-        if ((*v)->Inside(points[i])) {
+        if ((*v)->Inside(sample)) {
+          points.Set(i, sample);
           contained = true;
           break;
         }
       }
     } while (!contained);
     ++insideCount;
+    ++i;
   }
 }
 
