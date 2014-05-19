@@ -24,10 +24,7 @@ if (NOT BACKEND)
   set(BACKEND "Vc")
 endif()
 
-if (NOT CUDA_ARCH)
-  set(CUDA_ARCH 20)
-endif()
-set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 ################################################################################
 
@@ -102,14 +99,9 @@ endif()
 
 if (VC_ACCELERATION OR Vc)
 
-  find_package(Vc)
-  if (NOT Vc_FOUND)
-    message(FATAL_ERROR "Vc not found while compiling for Vc backend.")
-  endif()
-  set(LIBS ${LIBS} ${Vc_LIBRARIES})
-  # Dirty workaround because includes are not properly found by CMake
-  get_filename_component(Vc_LIBPATH ${Vc_LIBRARIES} PATH)
-  include_directories(${Vc_LIBPATH}/../include/)
+  find_package(Vc REQUIRED)
+  set(LIBS ${LIBS} ${VC_LIBRARIES})
+  include_directories(${VC_INCLUDE_DIR})
 
 endif()
 
@@ -152,13 +144,18 @@ endif()
 
 if (CUDA)
 
+  find_package(CUDA REQUIRED)
+  include(FindCUDA)
+
+  if (NOT CUDA_ARCH)
+    set(CUDA_ARCH 20)
+  endif()
+  set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
+
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA")
   if (NOT CUDA_SPECIALIZATION)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_CUDA_NO_SPECIALIZATION")
   endif()
-
-  find_package(CUDA REQUIRED)
-  include(FindCUDA)
 
   set(
     CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
@@ -185,10 +182,11 @@ endif()
 
 if (ROOT)
   
-  include(FindROOT.cmake)
+  find_package(ROOT REQUIRED)
 
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
+  link_directories(${ROOT_LIBRARY_DIR}/root)
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
     source/placed_root_volume.cpp
@@ -202,22 +200,27 @@ endif()
 if (USolids)
 
   if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
-    message(FATAL_ERROR "Must specify USOLIDS_DIR or USOLIDS_INCLUDE_DIR and
-                         USOLIDS_LIBRARY_DIR to build benchmarking module.")
+    if (NOT ROOT)
+      message(FATAL_ERROR "ROOT required to build USolids from source.")
+    endif()
+    message(STATUS "Building with shipped USolids.")
+    add_subdirectory(USolids)
+    include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
+    link_directories(${CMAKE_BINARY_DIR}/USolids)
+    set(LIBS ${LIBS} usolids)
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
-  else()
+  elseif (USOLIDS_DIR)
     include_directories(${USOLIDS_DIR}/include)
   endif()
   if (USOLIDS_LIBRARY_DIR)
-    set(USOLIDS_LIBRARY ${USOLIDS_LIBRARY_DIR}/libusolids.a)
+    set(LIBS ${LIBS} ${USOLIDS_LIBRARY_DIR}/libusolids.a)
     link_directories(${USOLIDS_LIBRARY_DIR})
-  else()
-    set(USOLIDS_LIBRARY ${USOLIDS_DIR}/lib/libusolids.a)
+  elseif (USOLIDS_DIR)
+    set(LIBS ${LIBS} ${USOLIDS_DIR}/lib/libusolids.a)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
-  set(LIBS ${LIBS} ${USOLIDS_LIBRARY})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
 
 endif()
