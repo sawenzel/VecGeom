@@ -1,5 +1,5 @@
 #include "volumes/logical_volume.h"
-#include "volumes/box.h"
+#include "volumes/Box.h"
 #include "volumes/Parallelepiped.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/geo_manager.h"
@@ -21,7 +21,7 @@ int main() {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
-  tester.SetPointCount(1<<13);
+  tester.SetPointCount(128);
   tester.RunBenchmark();
 
   return 0;

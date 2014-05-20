@@ -11,7 +11,7 @@
  
 #include "base/global.h"
 #include "base/vector.h"
-#include "volumes/box.h"
+#include "volumes/Box.h"
 
 namespace vecgeom_cuda { class VPlacedVolume; }
 
@@ -22,6 +22,8 @@ namespace vecgeom {
 // Forward declarations for NVCC compilation
 class VUnplacedVolume;
 class VPlacedVolume;
+class LogicalVolume;
+class Transformation3D;
 typedef VPlacedVolume const* Daughter;
 #endif
 

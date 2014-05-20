@@ -11,7 +11,7 @@
 #include "volumes/logical_volume.h"
 #include "volumes/placed_root_volume.h"
 #include "volumes/placed_volume.h"
-#include "volumes/unplaced_box.h"
+#include "volumes/UnplacedBox.h"
 #include "volumes/unplaced_root_volume.h"
 
 #include "TGeoManager.h"

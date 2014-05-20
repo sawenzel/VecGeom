@@ -66,10 +66,12 @@ typedef float Precision;
 #else
 typedef double Precision;
 #endif
+typedef short Inside_t;
 }
 
 namespace vecgeom_cuda {
 typedef vecgeom::Precision Precision;
+typedef vecgeom::Inside_t Inside_t;
 }
 
 namespace VECGEOM_NAMESPACE {
@@ -86,6 +88,12 @@ VECGEOM_CONSTEXPR Precision kInfinity =
 VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
 VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
+
+namespace EInside {
+  VECGEOM_CONSTEXPR Inside_t kOutside = 0;
+  VECGEOM_CONSTEXPR Inside_t kInside = 1;
+  VECGEOM_CONSTEXPR Inside_t kSurface = 2;
+}
 
 template <typename Type>
 class Vector3D;
@@ -142,14 +150,8 @@ namespace translation {
 enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
 
-// Handmade enumerator to allow usage as int for vector purposes
-typedef int Inside_t;
-namespace EInside {
-  VECGEOM_CONSTEXPR int kOutside = 0;
-  VECGEOM_CONSTEXPR int kInside = 1;
-  VECGEOM_CONSTEXPR int kSurface = 2;
-}
-
 } // End global namespace
+
+
 
 #endif // VECGEOM_BASE_GLOBAL_H_

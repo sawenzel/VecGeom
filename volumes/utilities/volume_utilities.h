@@ -11,7 +11,7 @@
 #include "base/vector3d.h"
 #include "base/global.h"
 #include "base/rng.h"
-#include "volumes/placed_box.h"
+#include "volumes/PlacedBox.h"
 
 namespace VECGEOM_NAMESPACE {
 namespace volumeUtilities {

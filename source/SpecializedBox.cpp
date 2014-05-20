@@ -1,4 +1,4 @@
-#include "volumes/specialized_box.h"
+#include "volumes/SpecializedBox.h"
 
 namespace vecgeom {
 

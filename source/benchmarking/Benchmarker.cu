@@ -14,7 +14,7 @@ void InsideBenchmarkCudaKernel(
     VPlacedVolume const *const volume,
     const SOA3D<Precision> positions,
     const int n,
-    bool *const inside) {
+    Inside_t *const inside) {
   const int i = ThreadIndex();
   if (i >= n) return;
   inside[i] = volume->Inside(positions[i]);
@@ -72,7 +72,7 @@ namespace vecgeom {
 
 void Benchmarker::RunInsideCuda(
     Precision *const posX, Precision *const posY,
-    Precision *const posZ, bool *const inside) {
+    Precision *const posZ, Inside_t *const inside) {
 
   typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
   typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
@@ -102,7 +102,8 @@ void Benchmarker::RunInsideCuda(
 
   CudaSOA3D positionGpu  = CudaSOA3D(posXGpu, posYGpu, posZGpu, fPointCount);
 
-  bool *insideGpu = AllocateOnGpu<bool>(sizeof(bool)*fPointCount);
+  Inside_t *insideGpu =
+      AllocateOnGpu<Inside_t>(sizeof(Inside_t)*fPointCount);
 
   vecgeom_cuda::LaunchParameters launch =
       vecgeom_cuda::LaunchParameters(fPointCount);
@@ -130,7 +131,7 @@ void Benchmarker::RunInsideCuda(
     )
   );
 
-  CopyFromGpu(insideGpu, inside, fPointCount*sizeof(bool));
+  CopyFromGpu(insideGpu, inside, fPointCount*sizeof(Inside_t));
 
   FreeFromGpu(insideGpu);
   FreeFromGpu(posXGpu);

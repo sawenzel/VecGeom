@@ -4,7 +4,7 @@
 #include "navigation/simple_navigator.h"
 #include "navigation/navigationstate.h"
 #include "volumes/logical_volume.h"
-#include "volumes/box.h"
+#include "volumes/Box.h"
 
 using namespace vecgeom;
 

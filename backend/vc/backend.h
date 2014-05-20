@@ -16,6 +16,7 @@ struct kVc {
   typedef Vc::int_v                   int_v;
   typedef Vc::Vector<Precision>       precision_v;
   typedef Vc::Vector<Precision>::Mask bool_v;
+  typedef Vc::Vector<Inside_t>        inside_v;
   constexpr static bool early_returns = false;
   const static precision_v kOne;
   const static precision_v kZero;
@@ -28,6 +29,7 @@ constexpr int kVectorSize = kVc::precision_v::Size;
 typedef kVc::int_v       VcInt;
 typedef kVc::precision_v VcPrecision;
 typedef kVc::bool_v      VcBool;
+typedef kVc::inside_v    VcInside;
 
 template <typename Type>
 VECGEOM_INLINE
@@ -67,9 +69,16 @@ void MaskedAssign(typename Vc::Vector<Type>::Mask const &cond,
 
 VECGEOM_INLINE
 void MaskedAssign(VcBool const &cond,
-                  const int thenval,
+                  const kScalar::int_v thenval,
                   VcInt *const output) {
   (*output)(VcInt::Mask(cond)) = thenval;
+}
+
+VECGEOM_INLINE
+void MaskedAssign(VcBool const &cond,
+                  const Inside_t thenval,
+                  VcInside *const output) {
+  (*output)(VcInside::Mask(cond)) = thenval;
 }
 
 VECGEOM_INLINE

@@ -117,7 +117,6 @@ if (Vc)
   set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/backend.cpp)
   set(HEADERS_BACKEND ${HEADERS_BACKEND}
     ${CMAKE_SOURCE_DIR}/backend/vc/backend.h
-    ${CMAKE_SOURCE_DIR}/backend/vc/implementation.h
   )
 
 endif()
@@ -137,7 +136,6 @@ if (Cilk)
   )
   set(HEADERS_BACKEND ${HEADERS_BACKEND}
     ${CMAKE_SOURCE_DIR}/backend/cilk/backend.h
-    ${CMAKE_SOURCE_DIR}/backend/cilk/implementation.h
   )
 
 endif()
@@ -233,9 +231,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 set(HEADERS_CPP_RELATIVE
   backend/backend.h
-  backend/implementation.h
   backend/scalar/backend.h
-  backend/scalar/implementation.h
   base/aos3d.h
   base/array.h
   base/container.h
@@ -259,20 +255,20 @@ set(HEADERS_CPP_RELATIVE
   management/volume_pointers.h
   navigation/navigationstate.h
   navigation/simple_navigator.h
-  volumes/box.h
-  volumes/kernel/box_kernel.h
+  volumes/Box.h
+  volumes/kernel/BoxImplementation.h
   volumes/logical_volume.h
   volumes/Parallelepiped.h
-  volumes/placed_box.h
+  volumes/PlacedBox.h
   volumes/PlacedParallelepiped.h
   volumes/PlacedParaboloid.h
   volumes/PlacedTrapezoid.h
   volumes/placed_volume.h
-  volumes/specialized_box.h
+  volumes/SpecializedBox.h
   volumes/SpecializedParallelepiped.h
   volumes/SpecializedParaboloid.h
   volumes/SpecializedTrapezoid.h
-  volumes/unplaced_box.h
+  volumes/UnplacedBox.h
   volumes/UnplacedParallelepiped.h
   volumes/UnplacedParaboloid.h
   volumes/UnplacedTrapezoid.h
@@ -285,7 +281,6 @@ set(HEADERS_CPP_RELATIVE
 if (CUDA)
   set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
     backend/cuda/backend.h
-    backend/cuda/implementation.h
     backend/cuda/interface.h
   )
 endif()
@@ -301,16 +296,16 @@ set(SRC_CPP_RELATIVE
   source/aos3d.cpp
   source/container.cpp
   source/logical_volume.cpp
-  source/placed_box.cpp
+  source/PlacedBox.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
   source/placed_volume.cpp
   source/scalar_backend.cpp
   source/soa3d.cpp
-  source/specialized_box.cpp
+  source/SpecializedBox.cpp
   source/transformation3d.cpp
-  source/unplaced_box.cpp
+  source/UnplacedBox.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp

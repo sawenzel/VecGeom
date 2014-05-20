@@ -17,6 +17,7 @@ struct kCuda {
   typedef int       int_v;
   typedef Precision precision_v;
   typedef bool      bool_v;
+  typedef Inside_t  inside_v;
   const static bool early_returns = false;
   const static precision_v kOne = 1.0;
   const static precision_v kZero = 0.0;

@@ -5,7 +5,7 @@
 #include "management/cuda_manager.h"
 #include "navigation/navigationstate.h"
 #include "navigation/simple_navigator.h"
-#include "volumes/box.h"
+#include "volumes/Box.h"
 #include "volumes/utilities/volume_utilities.h"
 #include "TGeoManager.h"
 

@@ -8,7 +8,7 @@
 #include "base/stopwatch.h"
 #include "base/transformation3d.h"
 #include "volumes/logical_volume.h"
-#include "volumes/placed_box.h"
+#include "volumes/PlacedBox.h"
 #include "volumes/utilities/volume_utilities.h"
 
 #ifdef VECGEOM_USOLIDS
@@ -201,9 +201,9 @@ void Benchmarker::RunInsideBenchmark() {
   outputLabels << "Specialized - Vectorized - Unspecialized";
 
   // Allocate memory
-  bool *const insideSpecialized = AllocateAligned<bool>();
-  bool *const insideVectorized = AllocateAligned<bool>();
-  bool *const insideUnspecialized = AllocateAligned<bool>();
+  Inside_t *const insideSpecialized = AllocateAligned<Inside_t>();
+  Inside_t *const insideVectorized = AllocateAligned<Inside_t>();
+  Inside_t *const insideUnspecialized = AllocateAligned<Inside_t>();
 #ifdef VECGEOM_USOLIDS
   bool *const insideUSolids = AllocateAligned<bool>();
   outputLabels << " - USolids";
@@ -213,7 +213,7 @@ void Benchmarker::RunInsideBenchmark() {
   outputLabels << " - ROOT";
 #endif
 #ifdef VECGEOM_CUDA
-  bool *const insideCuda = AllocateAligned<bool>();
+  Inside_t *const insideCuda = AllocateAligned<Inside_t>();
   outputLabels << " - CUDA";
 #endif
 
@@ -250,11 +250,19 @@ void Benchmarker::RunInsideBenchmark() {
       if (insideSpecialized[i] != insideVectorized[i]) mismatch = true;
       if (insideSpecialized[i] != insideUnspecialized[i]) mismatch = true;
 #ifdef VECGEOM_ROOT
-      if (insideSpecialized[i] != insideRoot[i]) mismatch = true;
+      if (insideSpecialized[i] != insideRoot[i] &&
+          insideSpecialized[i] != EInside::kSurface) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << insideRoot[i];
 #endif
 #ifdef VECGEOM_USOLIDS
-      if (insideSpecialized[i] != insideUSolids[i]) mismatch = true;
+      if (!((insideSpecialized[i] == EInside::kInside &&
+             insideUSolids[i] == eInside) ||
+            (insideSpecialized[i] == EInside::kOutside &&
+             insideUSolids[i] == eOutside) ||
+            (insideSpecialized[i] == EInside::kSurface &&
+             insideUSolids[i] == eSurface))) {
+        mismatch = true;
+      }
       if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
 #endif
 #ifdef VECGEOM_CUDA
@@ -556,7 +564,7 @@ void Benchmarker::RunToOutBenchmark() {
 
 }
 
-void Benchmarker::RunInsideSpecialized(bool *const distances) {
+void Benchmarker::RunInsideSpecialized(Inside_t *const distances) {
   if (fVerbosity > 0) printf("Running specialized benchmark...");
   Stopwatch timer;
   timer.Start();
@@ -674,7 +682,7 @@ void Benchmarker::RunToOutSpecialized(
   );
 }
 
-void Benchmarker::RunInsideVectorized(bool *const inside) {
+void Benchmarker::RunInsideVectorized(Inside_t *const inside) {
   if (fVerbosity > 0) {
     printf("Running specialized benchmark with vector interface...");
   }
@@ -792,7 +800,7 @@ void Benchmarker::RunToOutVectorized(
   );
 }
 
-void Benchmarker::RunInsideUnspecialized(bool *const inside) {
+void Benchmarker::RunInsideUnspecialized(Inside_t *const inside) {
   if (fVerbosity > 0) printf("Running unspecialized benchmark...");
   Stopwatch timer;
   timer.Start();

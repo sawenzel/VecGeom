@@ -128,26 +128,31 @@ public:
   // Geometry functionality
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point) const =0;
+  virtual bool Contains(Vector3D<Precision> const &point) const =0;
+
+  virtual void Contains(SOA3D<Precision> const &point,
+                        bool *const output) const =0;
+
+  virtual void Contains(AOS3D<Precision> const &point,
+                        bool *const output) const =0;
+
+  /// \return The input point transformed to the local reference frame.
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool Contains(Vector3D<Precision> const &point,
+                        Vector3D<Precision> &localPoint) const =0;
+
+  /// \param localPoint Point in the local reference frame of the volume.
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool UnplacedContains(Vector3D<Precision> const &localPoint) const =0;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Inside_t Inside(Vector3D<Precision> const &point) const =0;
 
   virtual void Inside(SOA3D<Precision> const &point,
-                      bool *const output) const =0;
+                      Inside_t *const output) const =0;
 
   virtual void Inside(AOS3D<Precision> const &point,
-                      bool *const output) const =0;
-
-  /** an inside function that gives back the localpoint in the reference frame of the callee
-   * this is useful for the locate function
-   **/
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point,
-                       Vector3D<Precision> & localpoint) const =0;
-
-  /** An inside function where we know that localpoint is already in the
-   *  reference frame of the callee
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual bool UnplacedInside(Vector3D<Precision> const &localpoint) const =0;
+                      Inside_t *const output) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,

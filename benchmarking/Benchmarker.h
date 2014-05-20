@@ -147,18 +147,18 @@ private:
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
 
-  void RunInsideSpecialized(bool *const inside);
+  void RunInsideSpecialized(Inside_t *const inside);
   void RunToInSpecialized(Precision *const distances,
                           Precision *const safeties);
   void RunToOutSpecialized(Precision *const distances,
                            Precision *const safeties);
 
-  void RunInsideVectorized(bool *const inside);
+  void RunInsideVectorized(Inside_t *const inside);
   void RunToInVectorized(Precision *const distances, Precision *const safeties);
   void RunToOutVectorized(Precision *const distances,
                           Precision *const safeties);
 
-  void RunInsideUnspecialized(bool *const inside);
+  void RunInsideUnspecialized(Inside_t *const inside);
   void RunToInUnspecialized(Precision *const distances,
                             Precision *const safeties);
   void RunToOutUnspecialized(Precision *const distances,
@@ -177,7 +177,7 @@ private:
 #ifdef VECGEOM_CUDA
   void RunInsideCuda(
     Precision *const pos_x, Precision *const pos_y,
-    Precision *const pos_z, bool *const inside);
+    Precision *const pos_z, Inside_t *const inside);
   void RunToInCuda(
     Precision *const pos_x, Precision *const pos_y,
     Precision *const pos_z, Precision *const dir_x,

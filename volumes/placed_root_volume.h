@@ -40,20 +40,29 @@ public:
   virtual void PrintType() const;
 
   VECGEOM_INLINE
-  virtual bool Inside(Vector3D<Precision> const &point) const;
+  virtual bool Contains(Vector3D<Precision> const &point) const;
 
   VECGEOM_INLINE
-  virtual bool Inside(Vector3D<Precision> const &point,
-                      Vector3D<Precision> &localpoint) const;
+  virtual bool Contains(Vector3D<Precision> const &point,
+                        Vector3D<Precision> &localPoint) const;
+
+  virtual void Contains(SOA3D<Precision> const &points,
+                        bool *const output) const;
+
+  virtual void Contains(AOS3D<Precision> const &points,
+                        bool *const output) const;
+
+  VECGEOM_INLINE
+  virtual bool UnplacedContains(Vector3D<Precision> const &point) const;
+
+  VECGEOM_INLINE
+  virtual Inside_t Inside(Vector3D<Precision> const &point) const;
 
   virtual void Inside(SOA3D<Precision> const &points,
-                      bool *const output) const;
+                      Inside_t *const output) const;
 
   virtual void Inside(AOS3D<Precision> const &points,
-                      bool *const output) const;
-
-  VECGEOM_INLINE
-  virtual bool UnplacedInside(Vector3D<Precision> const &point) const;
+                      Inside_t *const output) const;
 
   VECGEOM_INLINE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position,
@@ -124,20 +133,26 @@ public:
 
 };
 
-bool PlacedRootVolume::Inside(Vector3D<Precision> const &point) const {
+bool PlacedRootVolume::Contains(Vector3D<Precision> const &point) const {
   const Vector3D<Precision> local = this->transformation_->Transform(point);
-  return UnplacedInside(local);
+  return UnplacedContains(local);
 }
 
-bool PlacedRootVolume::Inside(Vector3D<Precision> const &point,
-                              Vector3D<Precision> &localPoint) const {
+bool PlacedRootVolume::Contains(Vector3D<Precision> const &point,
+                                Vector3D<Precision> &localPoint) const {
   localPoint = this->transformation_->Transform(point);
-  return UnplacedInside(localPoint);
+  return UnplacedContains(localPoint);
 }
 
-bool PlacedRootVolume::UnplacedInside(Vector3D<Precision> const &point) const {
+bool PlacedRootVolume::UnplacedContains(
+    Vector3D<Precision> const &point) const {
   Vector3D<Precision> pointCopy = point; // ROOT expects non const input
   return fRootShape->Contains(&pointCopy[0]);
+}
+
+Inside_t PlacedRootVolume::Inside(Vector3D<Precision> const &point) const {
+  const Vector3D<Precision> local = this->transformation_->Transform(point);
+  return (UnplacedContains(local)) ? EInside::kInside : EInside::kOutside;
 }
 
 Precision PlacedRootVolume::DistanceToIn(Vector3D<Precision> const &position,

@@ -154,7 +154,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
    if( top )
    {
       assert( vol != NULL );
-      candvolume = ( vol->UnplacedInside( point ) ) ? vol : 0;
+      candvolume = ( vol->UnplacedContains( point ) ) ? vol : 0;
    }
    if( candvolume )
    {
@@ -170,7 +170,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
             VPlacedVolume const * nextvolume = (*daughters)[i];
             Vector3D<Precision> transformedpoint;
 
-            if( nextvolume->Inside( tmp, transformedpoint ) )
+            if( nextvolume->Contains( tmp, transformedpoint ) )
             {
                path.Push( nextvolume );
                tmp = transformedpoint;
@@ -198,7 +198,7 @@ SimpleNavigator::RelocatePointFromPath( Vector3D<Precision> const & localpoint,
    {
         Vector3D<Precision> tmp = localpoint;
       // go up iteratively
-      while( currentmother && ! currentmother->UnplacedInside( tmp ) )
+      while( currentmother && ! currentmother->UnplacedContains( tmp ) )
       {
          path.Pop();
          Vector3D<Precision> pointhigherup = currentmother->transformation()->InverseTransform( tmp );
