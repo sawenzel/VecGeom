@@ -384,6 +384,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
@@ -393,25 +394,7 @@ set_source_files_properties(
   PROPERTIES COMPILE_FLAGS -std=c++11
 )
 
-if (NOT CUDA)
-  add_executable(create_geometry_test
-    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-  )
-  target_link_libraries(create_geometry_test ${LIBS})
-  if (ROOT)
-    add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
-    target_link_libraries(root_geometry ${LIBS})
-    add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
-    target_link_libraries(complex_test1 ${LIBS})
-  endif()
-  if (BENCHMARK AND NOT USOLIDS)
-    add_executable(
-      ParallelepipedBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-    )
-    target_link_libraries(ParallelepipedBenchmark ${LIBS})
-  endif()
-else()
+if (CUDA)
   cuda_add_library(
     vecgeom_cuda
     ${SRC_CUDA}
@@ -427,14 +410,28 @@ else()
       OPTIONS ${CUDA_ARCH}
     )
     target_link_libraries(cpugpu ${LIBS})
-    cuda_add_executable(
-      root_geometry
-      ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
-      OPTIONS ${CUDA_ARCH}
-    )
-    target_link_libraries(root_geometry ${LIBS})
   endif()
-  if (BENCHMARK AND NOT USOLIDS)
+endif()
+
+add_executable(create_geometry_test
+  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+)
+target_link_libraries(create_geometry_test ${LIBS})
+
+if (ROOT)
+  add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
+  target_link_libraries(root_geometry ${LIBS})
+  add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
+  target_link_libraries(complex_test1 ${LIBS})
+endif()
+
+if (BENCHMARK)
+  add_executable(
+    BoxBenchmark
+    ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
+  )
+  target_link_libraries(BoxBenchmark ${LIBS})
+  if (NOT USolids)
     add_executable(
       ParallelepipedBenchmark
       ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
