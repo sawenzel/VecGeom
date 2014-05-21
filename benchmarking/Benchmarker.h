@@ -11,6 +11,9 @@
 #include "benchmarking/BenchmarkResult.h"
 #include "management/volume_pointers.h"
 #include "volumes/placed_volume.h"
+#ifdef VECGEOM_USOLIDS
+#include "VUSolid.hh"
+#endif
 
 #include <list>
 
@@ -165,7 +168,7 @@ private:
                              Precision *const safeties);
 
 #ifdef VECGEOM_USOLIDS
-  void RunInsideUSolids(bool *const inside);
+  void RunInsideUSolids(::VUSolid::EnumInside *const inside);
   void RunToInUSolids(double *const distances, Precision *const safeties);
   void RunToOutUSolids(double *const distances, Precision *const safeties);
 #endif

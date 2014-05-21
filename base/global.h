@@ -90,9 +90,9 @@ VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
 
 namespace EInside {
-  VECGEOM_CONSTEXPR Inside_t kOutside = 0;
-  VECGEOM_CONSTEXPR Inside_t kInside = 1;
-  VECGEOM_CONSTEXPR Inside_t kSurface = 2;
+  VECGEOM_CONSTEXPR Inside_t kInside = 0;
+  VECGEOM_CONSTEXPR Inside_t kSurface = 1;
+  VECGEOM_CONSTEXPR Inside_t kOutside = 2;
 }
 
 template <typename Type>
@@ -116,8 +116,6 @@ class Array;
 class LogicalVolume;
 
 class VPlacedVolume;
-
-typedef VPlacedVolume VUSolid;
 
 class VUnplacedVolume;
 

@@ -193,7 +193,7 @@ void Benchmarker::RunInsideBenchmark() {
 
   if (fVerbosity > 1) printf("Generating points with bias %f... ", fInsideBias);
 
-  volumeUtilities::FillContainedPoints(*fWorld, fInsideBias, *fPointPool);
+  volumeUtilities::FillContainedPoints(*fWorld, fInsideBias, *fPointPool, true);
 
   if (fVerbosity > 1) printf("Done.\n");
 
@@ -204,13 +204,14 @@ void Benchmarker::RunInsideBenchmark() {
   Inside_t *const insideSpecialized = AllocateAligned<Inside_t>();
   Inside_t *const insideVectorized = AllocateAligned<Inside_t>();
   Inside_t *const insideUnspecialized = AllocateAligned<Inside_t>();
-#ifdef VECGEOM_USOLIDS
-  bool *const insideUSolids = AllocateAligned<bool>();
-  outputLabels << " - USolids";
-#endif
 #ifdef VECGEOM_ROOT
   bool *const insideRoot = AllocateAligned<bool>();
   outputLabels << " - ROOT";
+#endif
+#ifdef VECGEOM_USOLIDS
+  ::VUSolid::EnumInside *const insideUSolids =
+      AllocateAligned<::VUSolid::EnumInside>();
+  outputLabels << " - USolids";
 #endif
 #ifdef VECGEOM_CUDA
   Inside_t *const insideCuda = AllocateAligned<Inside_t>();
@@ -250,8 +251,12 @@ void Benchmarker::RunInsideBenchmark() {
       if (insideSpecialized[i] != insideVectorized[i]) mismatch = true;
       if (insideSpecialized[i] != insideUnspecialized[i]) mismatch = true;
 #ifdef VECGEOM_ROOT
-      if (insideSpecialized[i] != insideRoot[i] &&
-          insideSpecialized[i] != EInside::kSurface) mismatch = true;
+      if (!(insideSpecialized[i] == EInside::kInside &&
+            insideRoot[i] == true) &&
+          !(insideSpecialized[i] == EInside::kOutside &&
+            insideRoot[i] == false)) {
+        mismatch = true;
+      }
       if (fVerbosity > 2) mismatchOutput << " / " << insideRoot[i];
 #endif
 #ifdef VECGEOM_USOLIDS
@@ -307,6 +312,8 @@ void Benchmarker::RunToInBenchmark() {
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
     printf("Times are printed as DistanceToIn/Safety.\n");
   }
+
+  printf("herp1\n");
 
   // Allocate memory
   if (fPointPool) delete fPointPool;
@@ -455,7 +462,7 @@ void Benchmarker::RunToOutBenchmark() {
 
   // Generate points not contained in any daughters and set the fraction hitting
   // a daughter to the specified bias.
-  volumeUtilities::FillContainedPoints(*fWorld, *fPointPool);
+  volumeUtilities::FillContainedPoints(*fWorld, *fPointPool, false);
   volumeUtilities::FillRandomDirections(*fDirectionPool);
 
   if (fVerbosity > 1) printf(" Done.\n");
@@ -564,7 +571,7 @@ void Benchmarker::RunToOutBenchmark() {
 
 }
 
-void Benchmarker::RunInsideSpecialized(Inside_t *const distances) {
+void Benchmarker::RunInsideSpecialized(Inside_t *const inside) {
   if (fVerbosity > 0) printf("Running specialized benchmark...");
   Stopwatch timer;
   timer.Start();
@@ -572,7 +579,7 @@ void Benchmarker::RunInsideSpecialized(Inside_t *const distances) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
       for (unsigned i = 0; i < fPointCount; ++i) {
-        distances[i] = v->specialized()->Inside((*fPointPool)[index + i]);
+        inside[i] = v->specialized()->Inside((*fPointPool)[index + i]);
       }
     }
   }
@@ -923,7 +930,7 @@ void Benchmarker::RunToOutUnspecialized(
 }
 
 #ifdef VECGEOM_USOLIDS
-void Benchmarker::RunInsideUSolids(bool *const inside) {
+void Benchmarker::RunInsideUSolids(::VUSolid::EnumInside *const inside) {
   if (fVerbosity > 0) printf("Running USolids benchmark...");
   Stopwatch timer;
   timer.Start();
@@ -1018,14 +1025,10 @@ void Benchmarker::RunToOutUSolids(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        const Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
-        const Vector3D<Precision> dir =
-            transformation->TransformDirection((*fDirectionPool)[p]);
+        const Vector3D<Precision> point = (*fPointPool)[p];
+        const Vector3D<Precision> dir = (*fDirectionPool)[p];
         UVector3 normal;
         bool convex;
         distances[i] = v->usolids()->DistanceToOut(
@@ -1042,12 +1045,9 @@ void Benchmarker::RunToOutUSolids(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        const Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
+        const Vector3D<Precision> point = (*fPointPool)[p];
         safeties[i] = v->usolids()->SafetyFromInside(
           UVector3(point[0], point[1], point[2])
         );
@@ -1162,14 +1162,10 @@ void Benchmarker::RunToOutRoot(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
-        Vector3D<Precision> dir =
-            transformation->TransformDirection((*fDirectionPool)[p]);
+        Vector3D<Precision> point = (*fPointPool)[p];
+        Vector3D<Precision> dir = (*fDirectionPool)[p];
         distances[i] = v->root()->DistFromInside(&point[0], &dir[0]);
       }
     }
@@ -1179,12 +1175,9 @@ void Benchmarker::RunToOutRoot(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
+        Vector3D<Precision> point = (*fPointPool)[p];
         safeties[i] = v->root()->Safety(&point[0], true);
       }
     }
