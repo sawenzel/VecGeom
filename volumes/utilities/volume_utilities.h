@@ -166,7 +166,8 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillContainedPoints(VPlacedVolume const &volume,
                          const double bias,
-                         TrackContainer &points) {
+                         TrackContainer &points,
+                         const bool placed = false) {
   const int size = points.memory_size();
   points.set_size(points.memory_size());
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
@@ -176,7 +177,9 @@ void FillContainedPoints(VPlacedVolume const &volume,
     points.Set(i, SamplePoint(dim));
     for (Iterator<Daughter> v = volume.daughters().begin(),
          v_end = volume.daughters().end(); v != v_end; ++v) {
-      if ((*v)->Inside(points[i])) {
+      bool inside = (placed) ? (*v)->Inside(points[i])
+                             : (*v)->UnplacedInside(points[i]);
+      if (inside) {
         ++insideCount;
         insideVector[i] = true;
       }
@@ -190,12 +193,15 @@ void FillContainedPoints(VPlacedVolume const &volume,
       points.Set(i, SamplePoint(dim));
       for (Iterator<Daughter> v = volume.daughters().begin(),
            v_end = volume.daughters().end(); v != v_end; ++v) {
-        if ((*v)->Inside(points[i])) {
+        bool inside = (placed) ? (*v)->Inside(points[i])
+                               : (*v)->UnplacedInside(points[i]);
+        if (inside) {
           contained = true;
           break;
         }
       }
     } while (contained);
+    insideVector[i] = false;
     --insideCount;
     ++i;
   }
@@ -207,13 +213,16 @@ void FillContainedPoints(VPlacedVolume const &volume,
       const Vector3D<Precision> sample = SamplePoint(dim);
       for (Iterator<Daughter> v = volume.daughters().begin(),
            v_end = volume.daughters().end(); v != v_end; ++v) {
-        if ((*v)->Inside(sample)) {
+        bool inside = (placed) ? (*v)->Inside(sample)
+                               : (*v)->UnplacedInside(sample);
+        if (inside) {
           points.Set(i, sample);
           contained = true;
           break;
         }
       }
     } while (!contained);
+    insideVector[i] = true;
     ++insideCount;
     ++i;
   }
@@ -222,7 +231,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
 template<typename TrackContainer>
 VECGEOM_INLINE
 void FillContainedPoints(VPlacedVolume const &volume,
-                         TrackContainer &points) {
+                         TrackContainer &points,
+                         const bool placed = true) {
   FillContainedPoints<TrackContainer>(volume, 1, points);
 }
 
