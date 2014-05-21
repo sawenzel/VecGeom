@@ -1,4 +1,16 @@
-/// @file PlacedParaboloid.h
+//===-- volumes/PlacedParaboloid.h - Instruction class definition -------*- C++ -*-===//
+//
+//                     GeantV - VecGeom
+//
+// This file is distributed under the LGPL
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file volumes/PlacedParaboloid.h 
+/// \author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
+/// \brief This file contains the declaration of the PlacedParaboloid class
+//===----------------------------------------------------------------------===//
 
 #ifndef VECGEOM_VOLUMES_PLACEDPARABOLOID_H_
 #define VECGEOM_VOLUMES_PLACEDPARABOLOID_H_

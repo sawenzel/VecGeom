@@ -1,28 +1,36 @@
-/// @file PlacedParaboloid.cpp
+/// \file PlacedParaboloid.cpp
+/// \author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
 
 #include "volumes/PlacedParaboloid.h"
 
 #include "volumes/Paraboloid.h"
+
+#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#include "TGeoParaboloid.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedParaboloid::ConvertToUnspecialized() const {
-  assert(0 && "NYI");
-  return NULL;
+    std::cout<<"Convert VEC*********\n";
+    return new SimpleParaboloid(label().c_str(), logical_volume(),transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedParaboloid::ConvertToRoot() const {
-  assert(0 && "NYI");
-  return NULL;
+  //assert(0 && "NYI");
+  //return NULL;
+    std::cout<<"Convert ROOT*********\n";
+    //return new TGeoParaboloid(label().c_str(), GetRlo(), GetRhi(), GetDz());
+    return NULL;
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedParaboloid::ConvertToUSolids() const {
-  assert(0 && "NYI");
+  assert(0 && "Paraboloid unsupported for USolids.");
   return NULL;
 }
 #endif

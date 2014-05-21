@@ -385,6 +385,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
 )
@@ -410,6 +411,12 @@ if (NOT CUDA)
       ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
     )
     target_link_libraries(ParallelepipedBenchmark ${LIBS})
+    
+    add_executable(
+      ParaboloidBenchmark
+      ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
+    )
+    target_link_libraries(ParaboloidBenchmark ${LIBS})
   endif()
 else()
   cuda_add_library(
@@ -440,6 +447,13 @@ else()
       ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
     )
     target_link_libraries(ParallelepipedBenchmark ${LIBS})
+    
+    add_executable(
+      ParaboloidBenchmark
+      ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
+    )
+    target_link_libraries(ParaboloidBenchmark ${LIBS})
+
   endif()
 endif()
 

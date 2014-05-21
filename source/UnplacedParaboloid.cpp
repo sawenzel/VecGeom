@@ -1,4 +1,5 @@
-/// @file UnplacedParaboloid.cpp
+/// \file UnplacedParaboloid.cpp
+/// \author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
 
 #include "volumes/UnplacedParaboloid.h"
 
@@ -8,14 +9,68 @@
 #include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
+    
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    UnplacedParaboloid::UnplacedParaboloid()
+    {
+        //dummy constructor
+        fRlo = 0;
+        fRhi = 0;
+        fDz = 0;
+        fA = 0;
+        fB = 0;
+    }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    UnplacedParaboloid::UnplacedParaboloid(const Precision rlo,  const Precision rhi, const Precision dz)
+    {
+        SetRloAndRhiAndDz(rlo, rhi, dz);
+    }
 
-void UnplacedParaboloid::Print() const {
-  // NYI
-}
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::SetRlo(const Precision rlo) {
+        SetRloAndRhiAndDz(rlo, fRhi, fDz);
+    }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::SetRhi(const Precision rhi) {
+        SetRloAndRhiAndDz(fRlo, rhi, fDz);
+    }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::SetDz(const Precision dz) {
+        SetRloAndRhiAndDz(fRlo, fRhi, dz);
+    }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::SetRloAndRhiAndDz(const Precision rlo,
+                                               const Precision rhi, const Precision dz) {
+        
+        if ((rlo<0) || (rhi<0) || (dz<=0)) {
+            
+            std::cout<<"Error SetRloAndRhiAndDz: invadil dimensions. Check (rlo>=0) (rhi>=0) (dz>0)\n";
+            return;
+        }
+        fRlo = rlo;
+        fRhi = rhi;
+        fDz = dz;
+        Precision dd = 1./(fRhi*fRhi - fRlo*fRlo);
+        fA = 2.*fDz*dd;
+        fB = - fDz * (fRlo*fRlo + fRhi*fRhi)*dd;
+    }
+    
+    
+    void UnplacedParaboloid::Print() const {
+        printf("UnplacedParaboloid {%.2f, %.2f, %.2f, %.2f, %.2f}",
+               GetRlo(), GetRhi(), GetDz(), GetA(), GetB());
+    }
+    
+    void UnplacedParaboloid::Print(std::ostream &os) const {
+        os << "UnplacedParaboloid {" << GetRlo() << ", " << GetRhi() << ", " << GetDz()
+        << ", " << GetA() << ", " << GetB();
+    }
 
-void UnplacedParaboloid::Print(std::ostream &os) const {
-  // NYI
-}
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 VECGEOM_CUDA_HEADER_DEVICE
