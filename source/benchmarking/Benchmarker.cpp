@@ -1010,14 +1010,10 @@ void Benchmarker::RunToOutUSolids(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        const Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
-        const Vector3D<Precision> dir =
-            transformation->TransformDirection((*fDirectionPool)[p]);
+        const Vector3D<Precision> point = (*fPointPool)[p];
+        const Vector3D<Precision> dir = (*fDirectionPool)[p];
         UVector3 normal;
         bool convex;
         distances[i] = v->usolids()->DistanceToOut(
@@ -1034,12 +1030,9 @@ void Benchmarker::RunToOutUSolids(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        const Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
+        const Vector3D<Precision> point = (*fPointPool)[p];
         safeties[i] = v->usolids()->SafetyFromInside(
           UVector3(point[0], point[1], point[2])
         );
@@ -1154,14 +1147,10 @@ void Benchmarker::RunToOutRoot(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
-        Vector3D<Precision> dir =
-            transformation->TransformDirection((*fDirectionPool)[p]);
+        Vector3D<Precision> point = (*fPointPool)[p];
+        Vector3D<Precision> dir = (*fDirectionPool)[p];
         distances[i] = v->root()->DistFromInside(&point[0], &dir[0]);
       }
     }
@@ -1171,12 +1160,9 @@ void Benchmarker::RunToOutRoot(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     const int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(); v != fVolumes.end(); ++v) {
-      Transformation3D const *transformation =
-          v->unspecialized()->transformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         const int p = index + i;
-        Vector3D<Precision> point =
-            transformation->Transform((*fPointPool)[p]);
+        Vector3D<Precision> point = (*fPointPool)[p];
         safeties[i] = v->root()->Safety(&point[0], true);
       }
     }
