@@ -256,21 +256,27 @@ set(HEADERS_CPP_RELATIVE
   navigation/navigationstate.h
   navigation/simple_navigator.h
   volumes/Box.h
+  volumes/Tube.h
   volumes/kernel/BoxImplementation.h
+  volumes/kernel/TubeImplementation.h
+  volumes/kernel/shapetype/TubeTypes.h
   volumes/logical_volume.h
   volumes/Parallelepiped.h
   volumes/PlacedBox.h
+  volumes/PlacedTube.h
   volumes/PlacedParallelepiped.h
   volumes/PlacedParaboloid.h
   volumes/PlacedTrapezoid.h
   volumes/placed_volume.h
   volumes/SpecializedBox.h
+  volumes/SpecializedTube.h
   volumes/SpecializedParallelepiped.h
   volumes/SpecializedParaboloid.h
   volumes/SpecializedTrapezoid.h
   volumes/UnplacedBox.h
   volumes/UnplacedParallelepiped.h
   volumes/UnplacedParaboloid.h
+  volumes/UnplacedTube.h
   volumes/UnplacedTrapezoid.h
   volumes/unplaced_volume.h
   volumes/usolid.h
@@ -297,6 +303,7 @@ set(SRC_CPP_RELATIVE
   source/container.cpp
   source/logical_volume.cpp
   source/PlacedBox.cpp
+  source/PlacedTube.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
@@ -306,6 +313,7 @@ set(SRC_CPP_RELATIVE
   source/SpecializedBox.cpp
   source/transformation3d.cpp
   source/UnplacedBox.cpp
+  source/UnplacedTube.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
@@ -380,6 +388,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
@@ -425,7 +434,12 @@ if (BENCHMARK)
     BoxBenchmark
     ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
   )
+  add_executable(
+    TubeBenchmark
+    ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
+  )
   target_link_libraries(BoxBenchmark ${LIBS})
+  target_link_libraries(TubeBenchmark ${LIBS})
   if (NOT USolids)
     add_executable(
       ParallelepipedBenchmark
