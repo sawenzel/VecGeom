@@ -89,6 +89,8 @@ BenchmarkResult Benchmarker::GenerateBenchmarkResult(
 }
 
 void Benchmarker::CompareDistances(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
     Precision const *const specialized,
     Precision const *const vectorized,
     Precision const *const unspecialized,
@@ -162,6 +164,13 @@ void Benchmarker::CompareDistances(
       if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
 #endif
       mismatches += mismatch;
+
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
+        printf("For point (%f, %f, %f)", points->x(i), points->y(i), points->z(i));
+        if(directions != NULL) printf(" with direction (%f, %f, %f)", directions->x(i), directions->y(i), directions->z(i));
+        printf(":\n");
+      }
+
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
         printf("%s\n", mismatchOutput.str().c_str());
       }
@@ -380,6 +389,8 @@ void Benchmarker::RunToInBenchmark() {
 #endif
 
   CompareDistances(
+    fPointPool,
+    fDirectionPool,
     distancesSpecialized,
     distancesVectorized,
     distancesUnspecialized,
@@ -409,6 +420,8 @@ void Benchmarker::RunToInBenchmark() {
 #endif
 
   CompareDistances(
+    fPointPool,
+    NULL,
     safetiesSpecialized,
     safetiesVectorized,
     safetiesUnspecialized,
@@ -513,6 +526,8 @@ void Benchmarker::RunToOutBenchmark() {
 #endif
 
   CompareDistances(
+    fPointPool,
+    fDirectionPool,
     distancesSpecialized,
     distancesVectorized,
     distancesUnspecialized,
@@ -542,6 +557,8 @@ void Benchmarker::RunToOutBenchmark() {
 #endif
 
   CompareDistances(
+    fPointPool,
+    NULL,
     safetiesSpecialized,
     safetiesVectorized,
     safetiesUnspecialized,
