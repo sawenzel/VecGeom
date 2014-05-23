@@ -30,7 +30,7 @@ TGeoShape const* PlacedTube::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTube::ConvertToUSolids() const {
-  return new UTube("", rmin(), rmax(), z(), sphi(), dphi());
+  return new UTubs("", rmin(), rmax(), z(), sphi(), dphi());
 }
 #endif
 

@@ -66,7 +66,7 @@ typedef float Precision;
 #else
 typedef double Precision;
 #endif
-typedef short Inside_t;
+typedef int Inside_t;
 }
 
 namespace vecgeom_cuda {

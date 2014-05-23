@@ -18,8 +18,13 @@ struct kScalar {
   typedef bool      bool_v;
   typedef Inside_t  inside_v;
   const static bool early_returns = true;
-  const static precision_v kOne;
-  const static precision_v kZero;
+#ifdef VECGEOM_NVCC
+  const static precision_v kOne = 1.0;
+  const static precision_v kZero = 0.0;
+#else
+  constexpr static precision_v kOne = 1.0;
+  constexpr static precision_v kZero = 0.0;
+#endif
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
 };

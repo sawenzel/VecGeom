@@ -67,12 +67,12 @@ void MaskedAssign(typename Vc::Vector<Type>::Mask const &cond,
   (*output)(cond) = thenval;
 }
 
-VECGEOM_INLINE
-void MaskedAssign(VcBool const &cond,
-                  const kScalar::int_v thenval,
-                  VcInt *const output) {
-  (*output)(VcInt::Mask(cond)) = thenval;
-}
+// VECGEOM_INLINE
+// void MaskedAssign(VcBool const &cond,
+//                   const kScalar::int_v thenval,
+//                   VcInt *const output) {
+//   (*output)(VcInt::Mask(cond)) = thenval;
+// }
 
 VECGEOM_INLINE
 void MaskedAssign(VcBool const &cond,
