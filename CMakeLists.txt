@@ -264,7 +264,7 @@ set(HEADERS_CPP_RELATIVE
   volumes/Tube.h
   volumes/kernel/BoxImplementation.h
   volumes/kernel/TubeImplementation.h
-  volumes/kernel/shapetype/TubeTypes.h
+  volumes/kernel/shapetypes/TubeTypes.h
   volumes/logical_volume.h
   volumes/Parallelepiped.h
   volumes/PlacedBox.h
