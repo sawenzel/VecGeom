@@ -200,6 +200,8 @@ private:
   static void FreeAligned(Type *const distance);
 
   void CompareDistances(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
     Precision const *const specialized,
     Precision const *const vectorized,
     Precision const *const unspecialized,
