@@ -60,7 +60,7 @@ typedef SpecializedTube<translation::kGeneric, rotation::kGeneric, TubeTypes::Un
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 void SpecializedTube<transCodeT, rotCodeT, tubeTypeT>::PrintType() const {
-  printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString().c_str() );
+  printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
 }
 
 } // End global namespace

@@ -14,7 +14,8 @@ namespace VECGEOM_NAMESPACE { namespace TubeTypes {
 
 #define DEFINE_TUBE_TYPE(name) \
     struct name { \
-      static std::string toString() { \
+      VECGEOM_CUDA_HEADER_BOTH \
+      static char const* toString() { \
         return #name; \
       } \
     } \
@@ -69,6 +70,7 @@ struct NeedsPhiTreatment<UniversalTube> {
 };
 
 template<typename T>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool checkPhiTreatment(const UnplacedTube& tube) {
   if(NeedsPhiTreatment<T>::value != kUnknown)
@@ -111,6 +113,7 @@ struct NeedsRminTreatment<UniversalTube>
 
 
 template<typename T>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool checkRminTreatment(const UnplacedTube& tube) {
   if(NeedsRminTreatment<T>::value != kUnknown)

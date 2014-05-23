@@ -54,10 +54,9 @@ template<typename Backend, typename ShapeType, typename UnplacedVolumeType, bool
  void PointInCyclicalSector(UnplacedVolumeType const& volume, typename Backend::precision_v const &x, 
    typename Backend::precision_v const &y, typename Backend::bool_v &ret) {
   using namespace TubeTypes;
-  assert(SectorType<ShapeType>::value != kNoAngle && "ShapeType without a sector passed to PointInCyclicalSector");
+  // assert(SectorType<ShapeType>::value != kNoAngle && "ShapeType without a sector passed to PointInCyclicalSector");
 
   typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::precision_v Bool_t;
 
   Float_t startx = volume.alongPhi1x();
   Float_t starty = volume.alongPhi1y();
@@ -104,7 +103,7 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
 
   Float_t delta = b*b - c;
   Bool_t delta_mask = delta > 0;
-  MaskedAssign(!delta_mask, Backend::kZero, &delta);
+  MaskedAssign(!delta_mask, 0., &delta);
   delta = Sqrt(delta);
 
   if(!LargestSolution)
@@ -421,7 +420,6 @@ struct TubeImplementation {
     transformation.Transform<transCodeT, rotCodeT>(point, pos_local);
     transformation.TransformDirection<rotCodeT>(direction, dir_local);
 
-    Bool_t done = Backend::kFalse;
     Float_t hitx, hity, r2;
 
     // Determine which particles hit the Z face
@@ -465,7 +463,7 @@ struct TubeImplementation {
      * equation
      */
     Float_t dist_rmin;
-    Bool_t ok_rmin;
+    Bool_t ok_rmin(false);
     if(checkRminTreatment<tubeTypeT>(tube)) {
       Float_t crmin = invnsq * (rsq - tube.rmin2());
       CircleTrajectoryIntersection<Backend, tubeTypeT, true, true>(b, crmin, tube, pos_local, dir_local, dist_rmin, ok_rmin);
@@ -691,7 +689,6 @@ struct TubeImplementation {
      using namespace TubeTypes;
      using namespace TubeUtilities;
      typedef typename Backend::precision_v Float_t;
-     typedef typename Backend::bool_v Bool_t;
 
      safety = 0;
      Float_t r = Sqrt(point.x()*point.x() + point.y()*point.y());

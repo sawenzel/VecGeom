@@ -308,7 +308,6 @@ set(SRC_CPP_RELATIVE
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
   source/placed_volume.cpp
-  source/scalar_backend.cpp
   source/soa3d.cpp
   source/SpecializedBox.cpp
   source/transformation3d.cpp

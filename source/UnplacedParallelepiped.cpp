@@ -76,7 +76,7 @@ VPlacedVolume* UnplacedParallelepiped::Create(
 #endif
     VPlacedVolume *const placement) {
 
-  return CreateSpecializedWithPlacement<SpecializedParallelepiped<transCodeT, rotCodeT>>(
+  return CreateSpecializedWithPlacement<SpecializedParallelepiped<transCodeT, rotCodeT> >(
 #ifdef VECGEOM_NVCC
       logical_volume, transformation, id, placement); // TODO: add bounding box?
 #else
