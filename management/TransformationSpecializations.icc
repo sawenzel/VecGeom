@@ -1,6 +1,7 @@
 /// @file TransformationSpecializations.icc
 /// @author Script generated.
 
+#ifndef VECGEOM_NO_SPECIALIZATION
   if (trans_code == translation::kGeneric && rot_code == 0x1b1) {
     return VolumeType::template Create<translation::kGeneric, 0x1b1>(
       logical_volume, transformation,
@@ -257,6 +258,7 @@
 #endif
       placement);
   }
+#endif // No specialization
 
   return VolumeType::template Create<translation::kGeneric, rotation::kGeneric>(
       logical_volume, transformation,

@@ -6,7 +6,9 @@ translation = ["translation::kGeneric", "translation::kIdentity"]
 
 header_string = """\
 /// @file TransformationSpecializations.icc
-/// @author Script generated.\n
+/// @author Script generated.
+
+#ifndef VECGEOM_NO_SPECIALIZATION
 """
 
 specialization_string = """\
@@ -20,7 +22,9 @@ specialization_string = """\
   }}
 """
 
-generic_string = """
+generic_string = """\
+#endif // No specialization
+
   return VolumeType::template Create<translation::kGeneric, rotation::kGeneric>(
       logical_volume, transformation,
 #ifdef VECGEOM_NVCC

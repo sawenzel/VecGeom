@@ -15,6 +15,8 @@ option(USOLIDS "Include USolids." OFF)
 
 option(BENCHMARK "Enable performance comparisons." OFF)
 
+option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
+
 if (USOLIDS)
   set(USolids ON)
 endif()
@@ -93,6 +95,9 @@ if (VC_ACCELERATION)
 endif()
 if (BENCHMARK)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_BENCHMARK")
+endif()
+if (NO_SPECIALIZATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_NO_SPECIALIZATION")
 endif()
 
 ################################################################################
