@@ -15,6 +15,7 @@
 // --------------------------------------------------------------------
 
 #include <set>
+#include <vector>
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -262,7 +263,6 @@ UExtrudedSolid& UExtrudedSolid::operator = (const UExtrudedSolid& rhs)
   fNv = rhs.fNv;
   fNz = rhs.fNz;
   fPolygon = rhs.fPolygon;
-  fZSections = rhs.fZSections;
   fTriangles = rhs.fTriangles;
   fIsConvex = rhs.fIsConvex;
   fGeometryType = rhs.fGeometryType;
@@ -271,10 +271,15 @@ UExtrudedSolid& UExtrudedSolid::operator = (const UExtrudedSolid& rhs)
   fKOffsets = rhs.fKOffsets;
   fOffset0s = rhs.fOffset0s;
 
+
+  // Workaround to internal compiler error with gcc 4.9
+  fZSections = std::vector<ZSection>(rhs.fZSections); 
+  // fZSections = rhs.fZSections;
+
   return *this;
 }
 
-//_____________________________________________________________________________
+// _____________________________________________________________________________
 
 UExtrudedSolid::~UExtrudedSolid()
 {
@@ -327,7 +332,7 @@ UVector3 UExtrudedSolid::GetVertex(int iz, int ind) const
                   + fZSections[iz].fOffset.y, fZSections[iz].fZ);
 }
 
-//_____________________________________________________________________________
+// _____________________________________________________________________________
 
 
 UVector2 UExtrudedSolid::ProjectPoint(const UVector3& point) const
@@ -338,18 +343,18 @@ UVector2 UExtrudedSolid::ProjectPoint(const UVector3& point) const
   // p(z) = scale(z)*p0 + offset(z)
   // p0 = (p(z) - offset(z))/scale(z);
 
-  // Select projection (z-segment of the solid) according to p.z
+  // Select projection (z-segment of the solid) according to p.z()
   //
   int iz = 0;
-  while (point.z > fZSections[iz + 1].fZ && iz < fNz - 2)
+  while (point.z() > fZSections[iz + 1].fZ && iz < fNz - 2)
   {
     ++iz;
   }
 
   double z0 = (fZSections[iz + 1].fZ + fZSections[iz].fZ) / 2.0;
-  UVector2 p2(point.x, point.y);
-  double pscale  = fKScales[iz] * (point.z - z0) + fScale0s[iz];
-  UVector2 poffset = fKOffsets[iz] * (point.z - z0) + fOffset0s[iz];
+  UVector2 p2(point.x(), point.y());
+  double pscale  = fKScales[iz] * (point.z() - z0) + fScale0s[iz];
+  UVector2 poffset = fKOffsets[iz] * (point.z() - z0) + fOffset0s[iz];
 
   // G4cout << point << " projected to "
   //        << iz << "-th z-segment polygon as "
@@ -485,7 +490,7 @@ UExtrudedSolid::MakeDownFacet(int ind1, int ind2, int ind3) const
   UVector3 cross
     = (vertices[1] - vertices[0]).Cross(vertices[2] - vertices[1]);
 
-  if (cross.z > 0.0)
+  if (cross.z() > 0.0)
   {
     // vertices ardered clock wise has to be reordered
 
@@ -519,7 +524,7 @@ UExtrudedSolid::MakeUpFacet(int ind1, int ind2, int ind3) const
   UVector3 cross
     = (vertices[1] - vertices[0]).Cross(vertices[2] - vertices[1]);
 
-  if (cross.z < 0.0)
+  if (cross.z() < 0.0)
   {
     // vertices ordered clock wise has to be reordered
 
@@ -815,12 +820,12 @@ VUSolid::EnumInside UExtrudedSolid::Inside(const UVector3& p) const
 
   // Check first if outside extent
   //
-  if (p.x < GetMinXExtent() - VUSolid::fgTolerance * 0.5 ||
-      p.x > GetMaxXExtent() + VUSolid::fgTolerance * 0.5 ||
-      p.y < GetMinYExtent() - VUSolid::fgTolerance * 0.5 ||
-      p.y > GetMaxYExtent() + VUSolid::fgTolerance * 0.5 ||
-      p.z < GetMinZExtent() - VUSolid::fgTolerance * 0.5 ||
-      p.z > GetMaxZExtent() + VUSolid::fgTolerance * 0.5)
+  if (p.x() < GetMinXExtent() - VUSolid::fgTolerance * 0.5 ||
+      p.x() > GetMaxXExtent() + VUSolid::fgTolerance * 0.5 ||
+      p.y() < GetMinYExtent() - VUSolid::fgTolerance * 0.5 ||
+      p.y() > GetMaxYExtent() + VUSolid::fgTolerance * 0.5 ||
+      p.z() < GetMinZExtent() - VUSolid::fgTolerance * 0.5 ||
+      p.z() > GetMaxZExtent() + VUSolid::fgTolerance * 0.5)
   {
     //    std::cout<<"UExtru::Inside "<< GetMinXExtent()<<"  "<<GetMaxZExtent()<<" tol="<<VUSolid::fgTolerance * 0.5<<std::endl;
     // G4cout << "UExtrudedSolid::Outside extent: " << p << std::endl;
@@ -864,8 +869,8 @@ VUSolid::EnumInside UExtrudedSolid::Inside(const UVector3& p) const
   {
     // Check if on surface of z sides
     //
-    if (std::fabs(p.z - fZSections[0].fZ) < VUSolid::fgTolerance * 0.5 ||
-        std::fabs(p.z - fZSections[fNz - 1].fZ) < VUSolid::fgTolerance * 0.5)
+    if (std::fabs(p.z() - fZSections[0].fZ) < VUSolid::fgTolerance * 0.5 ||
+        std::fabs(p.z() - fZSections[fNz - 1].fZ) < VUSolid::fgTolerance * 0.5)
     {
       // G4cout << "UExtrudedSolid::Inside return Surface (on z side)"
       //        << std::endl;

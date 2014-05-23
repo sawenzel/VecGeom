@@ -67,12 +67,12 @@ void MaskedAssign(typename Vc::Vector<Type>::Mask const &cond,
   (*output)(cond) = thenval;
 }
 
-VECGEOM_INLINE
-void MaskedAssign(VcBool const &cond,
-                  const kScalar::int_v thenval,
-                  VcInt *const output) {
-  (*output)(VcInt::Mask(cond)) = thenval;
-}
+// VECGEOM_INLINE
+// void MaskedAssign(VcBool const &cond,
+//                   const kScalar::int_v thenval,
+//                   VcInt *const output) {
+//   (*output)(VcInt::Mask(cond)) = thenval;
+// }
 
 VECGEOM_INLINE
 void MaskedAssign(VcBool const &cond,
@@ -89,6 +89,12 @@ VcPrecision Abs(VcPrecision const &val) {
 VECGEOM_INLINE
 VcPrecision Sqrt(VcPrecision const &val) {
   return Vc::sqrt(val);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+VcPrecision ATan2(VcPrecision const &y, VcPrecision const &x) {
+  return Vc::atan2(y, x);
 }
 
 VECGEOM_INLINE

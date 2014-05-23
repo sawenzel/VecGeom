@@ -12,7 +12,7 @@
 #include "base/aos3d.h"
 #include "volumes/PlacedBox.h"
 
-#include <cstring>
+#include <algorithm>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -170,7 +170,7 @@ public:
         localPoint,
         result
       );
-      for (unsigned j = 0; j < VcBool::Size; ++j) {
+      for (unsigned j = 0; j < VcPrecision::Size; ++j) {
         output[j+i] = result[j];
       }
     }
@@ -191,7 +191,7 @@ public:
         point,
         result
       );
-      std::memcpy(&output[i], &result[0], sizeof(Inside_t)*VcPrecision::Size);
+      for (unsigned j = 0; j < VcPrecision::Size; ++j) output[j+i] = result[j];
     }
   }
 

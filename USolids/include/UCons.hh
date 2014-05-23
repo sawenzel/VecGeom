@@ -135,11 +135,11 @@ class UCons : public VUSolid
       static const double halfRadTolerance = kRadTolerance * 0.5;
       static const double halfAngTolerance = kAngTolerance * 0.5;
 
-      if (std::fabs(p.z) > fDz + halfCarTolerance)
+      if (std::fabs(p.z()) > fDz + halfCarTolerance)
       {
         return in = eOutside;
       }
-      else if (std::fabs(p.z) >= fDz - halfCarTolerance)
+      else if (std::fabs(p.z()) >= fDz - halfCarTolerance)
       {
         in = eSurface;
       }
@@ -148,9 +148,9 @@ class UCons : public VUSolid
         in = eInside;
       }
 
-      r2 = p.x * p.x + p.y * p.y;
-      rl = 0.5 * (fRmin2 * (p.z + fDz) + fRmin1 * (fDz - p.z)) / fDz;
-      rh = 0.5 * (fRmax2 * (p.z + fDz) + fRmax1 * (fDz - p.z)) / fDz;
+      r2 = p.x() * p.x() + p.y() * p.y();
+      rl = 0.5 * (fRmin2 * (p.z() + fDz) + fRmin1 * (fDz - p.z())) / fDz;
+      rh = 0.5 * (fRmax2 * (p.z() + fDz) + fRmax1 * (fDz - p.z())) / fDz;
 
       // rh2 = rh*rh;
 
@@ -183,9 +183,9 @@ class UCons : public VUSolid
           in = eSurface;
         }
       }
-      if (!fPhiFullCone && ((p.x != 0.0) || (p.y != 0.0)))
+      if (!fPhiFullCone && ((p.x() != 0.0) || (p.y() != 0.0)))
       {
-        pPhi = std::atan2(p.y, p.x);
+        pPhi = std::atan2(p.y(), p.x());
 
         if (pPhi < fSPhi - halfAngTolerance)
         {

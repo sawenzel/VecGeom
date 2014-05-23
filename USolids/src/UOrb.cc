@@ -52,7 +52,7 @@ UOrb::UOrb(const std::string& name, double r)
 // ok
 VUSolid::EnumInside UOrb::Inside(const UVector3& p) const
 {
-  double rad2 = p.x * p.x + p.y * p.y + p.z * p.z;
+  double rad2 = p.x() * p.x() + p.y() * p.y() + p.z() * p.z();
   //  if (false) double rad = sqrt(rad2);
 
   double tolRMax = fR - fRTolerance * 0.5;
@@ -95,8 +95,8 @@ double UOrb::DistanceToIn(const UVector3& p,
 
   // General Precalcs
 
-  rad    = sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
-  pDotV3d = p.x * v.x + p.y * v.y + p.z * v.z;
+  rad    = sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z());
+  pDotV3d = p.x() * v.x() + p.y() * v.y() + p.z() * v.z();
 
   // Radial Precalcs
 
@@ -211,8 +211,8 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
   double xi, yi, zi;    // Intersection point
   double c, d2;
 
-  rad2    = p.x * p.x + p.y * p.y + p.z * p.z;
-  pDotV3d = p.x * v.x + p.y * v.y + p.z * v.z;
+  rad2    = p.x() * p.x() + p.y() * p.y() + p.z() * p.z();
+  pDotV3d = p.x() * v.x() + p.y() * v.y() + p.z() * v.z();
 
   // Radial Intersection from UOrb::DistanceToIn
   //
@@ -258,7 +258,7 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
         // if(calcNorm) // NOTE: we do not have this variable, calcNorm is true always
         {
           //          *validNorm = true; // NOTE: we do not have this variable, probably always true
-          n = UVector3(p.x / fR, p.y / fR, p.z / fR);
+          n = UVector3(p.x() / fR, p.y() / fR, p.z() / fR);
         }
         return snxt = 0;
       }
@@ -285,14 +285,14 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
     cout << endl;
     //    DumpInfo();
     cout << "Position:"  << endl << endl;
-    cout << "p.x() = "   << p.x << endl;
-    cout << "p.y() = "   << p.y << endl;
-    cout << "p.z() = "   << p.z << endl << endl;
-    cout << "Rp = " << sqrt(p.x * p.x + p.y * p.y + p.z * p.z) << endl << endl;
+    cout << "p.x() = "   << p.x() << endl;
+    cout << "p.y() = "   << p.y() << endl;
+    cout << "p.z() = "   << p.z() << endl << endl;
+    cout << "Rp = " << sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z()) << endl << endl;
     cout << "Direction:" << endl << endl;
-    cout << "v.x() = "   << v.x << endl;
-    cout << "v.y() = "   << v.y << endl;
-    cout << "v.z() = "   << v.z << endl << endl;
+    cout << "v.x() = "   << v.x() << endl;
+    cout << "v.y() = "   << v.y() << endl;
+    cout << "v.z() = "   << v.z() << endl << endl;
     cout << "Proposed distance :" << endl << endl;
     cout << "snxt = "    << snxt << endl << endl;
 
@@ -308,9 +308,9 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
   {
     if (notOutside)
     {
-      xi = p.x + snxt * v.x; // we move to the point on surface, then return normal at that point which for orb, see method bool UOrb::Normal( const UVector3& p, UVector3 &n)
-      yi = p.y + snxt * v.y;
-      zi = p.z + snxt * v.z;
+      xi = p.x() + snxt * v.x(); // we move to the point on surface, then return normal at that point which for orb, see method bool UOrb::Normal( const UVector3& p, UVector3 &n)
+      yi = p.y() + snxt * v.y();
+      zi = p.z() + snxt * v.z();
       n = UVector3(xi / fR, yi / fR, zi / fR); // we return normalized vector
     }
     else
@@ -320,13 +320,13 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
       cout << endl;
       //        DumpInfo();
       cout << "Position:"  << endl << endl;
-      cout << "p.x() = "   << p.x << " mm" << endl;
-      cout << "p.y() = "   << p.y << " mm" << endl;
-      cout << "p.z() = "   << p.z << " mm" << endl << endl;
+      cout << "p.x() = "   << p.x() << " mm" << endl;
+      cout << "p.y() = "   << p.y() << " mm" << endl;
+      cout << "p.z() = "   << p.z() << " mm" << endl << endl;
       cout << "Direction:" << endl << endl;
-      cout << "v.x() = "   << v.x << endl;
-      cout << "v.y() = "   << v.y << endl;
-      cout << "v.z() = "   << v.z << endl << endl;
+      cout << "v.x() = "   << v.x() << endl;
+      cout << "v.y() = "   << v.y() << endl;
+      cout << "v.z() = "   << v.z() << endl << endl;
       cout << "Proposed distance :" << endl << endl;
       cout << "snxt = "    << snxt << " mm" << endl << endl;
       cout.precision(6);
@@ -354,7 +354,7 @@ double UOrb::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
   //
   // Calculate distance (<=actual) to closest surface of shape from inside
 
-  double safe = 0.0, rad = sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  double safe = 0.0, rad = sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z());
 
 #ifdef UDEBUG
   if (Inside(p) == kOutside)
@@ -363,9 +363,9 @@ double UOrb::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
     cout << endl;
     //     DumpInfo();
     cout << "Position:"  << endl << endl;
-    cout << "p.x = "   << p.x << endl;
-    cout << "p.y = "   << p.y << endl;
-    cout << "p.z = "   << p.z << endl << endl;
+    cout << "p.x() = "   << p.x() << endl;
+    cout << "p.y() = "   << p.y() << endl;
+    cout << "p.z() = "   << p.z() << endl << endl;
     //     cout.precision(oldprc);
     UUtils::Exception("UOrb::DistanceToOut(p)", "Notification", Warning, 1,
                       "Point p is outside !?");
@@ -393,7 +393,7 @@ double UOrb::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
 double UOrb::SafetyFromOutside(const UVector3& p, bool /*aAccurate*/) const
 {
   double safe = 0.0;
-  double rad  = sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  double rad  = sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z());
   safe = rad - fR;
   if (safe < 0)
   {
@@ -420,10 +420,10 @@ double UOrb::SafetyFromOutside(const UVector3& p, bool /*aAccurate*/) const
 */
 bool UOrb::Normal(const UVector3& p, UVector3& n) const
 {
-  double rad2 = p.x * p.x + p.y * p.y + p.z * p.z;
+  double rad2 = p.x() * p.x() + p.y() * p.y() + p.z() * p.z();
   double rad = sqrt(rad2);
 
-  n = UVector3(p.x / rad, p.y / rad, p.z / rad);
+  n = UVector3(p.x() / rad, p.y() / rad, p.z() / rad);
 
   double tolRMaxP = fR + fRTolerance;
   double tolRMaxM = fR - fRTolerance;

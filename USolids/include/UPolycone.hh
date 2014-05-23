@@ -265,7 +265,7 @@ class UPolycone : public VUSolid
     inline double SafetyFromInsideSection(int index, const UVector3& p) const
     {
       const UPolyconeSection& section = fSections[index];
-      UVector3 ps(p.x, p.y, p.z - section.shift);
+      UVector3 ps(p.x(), p.y(), p.z() - section.shift);
       double res = section.solid->SafetyFromInside(ps, true);
       return res;
     }
@@ -273,7 +273,7 @@ class UPolycone : public VUSolid
     inline double SafetyFromOutsideSection(int index, const UVector3& p) const
     {
       const UPolyconeSection& section = fSections[index];
-      UVector3 ps(p.x, p.y, p.z - section.shift);
+      UVector3 ps(p.x(), p.y(), p.z() - section.shift);
       double res = section.solid->SafetyFromOutside(ps, true);
       return res;
     }
@@ -281,7 +281,7 @@ class UPolycone : public VUSolid
     bool NormalSection(int index, const UVector3& p, UVector3& n) const
     {
       const UPolyconeSection& section = fSections[index];
-      UVector3 ps(p.x, p.y, p.z - section.shift);
+      UVector3 ps(p.x(), p.y(), p.z() - section.shift);
       bool res = section.solid->Normal(ps, n);
       return res;
     }

@@ -93,18 +93,18 @@ UTrap::UTrap(const std::string& pName,
   // Start with check of centering - the center of gravity trap line
   // should Cross the origin of frame
 
-  if (!(pt[0].z < 0
-        && pt[0].z == pt[1].z && pt[0].z == pt[2].z
-        && pt[0].z == pt[3].z
-        && pt[4].z > 0
-        && pt[4].z == pt[5].z && pt[4].z == pt[6].z
-        && pt[4].z == pt[7].z
-        && std::fabs(pt[0].z + pt[4].z) < VUSolid::Tolerance()
-        && pt[0].y == pt[1].y && pt[2].y == pt[3].y
-        && pt[4].y == pt[5].y && pt[6].y == pt[7].y
-        && std::fabs(pt[0].y + pt[2].y + pt[4].y + pt[6].y) < VUSolid::Tolerance()
-        && std::fabs(pt[0].x + pt[1].x + pt[4].x + pt[5].x +
-                     pt[2].x + pt[3].x + pt[6].x + pt[7].x) < VUSolid::Tolerance()))
+  if (!(pt[0].z() < 0
+        && pt[0].z() == pt[1].z() && pt[0].z() == pt[2].z()
+        && pt[0].z() == pt[3].z()
+        && pt[4].z() > 0
+        && pt[4].z() == pt[5].z() && pt[4].z() == pt[6].z()
+        && pt[4].z() == pt[7].z()
+        && std::fabs(pt[0].z() + pt[4].z()) < VUSolid::Tolerance()
+        && pt[0].y() == pt[1].y() && pt[2].y() == pt[3].y()
+        && pt[4].y() == pt[5].y() && pt[6].y() == pt[7].y()
+        && std::fabs(pt[0].y() + pt[2].y() + pt[4].y() + pt[6].y()) < VUSolid::Tolerance()
+        && std::fabs(pt[0].x() + pt[1].x() + pt[4].x() + pt[5].x() +
+                     pt[2].x() + pt[3].x() + pt[6].x() + pt[7].x()) < VUSolid::Tolerance()))
   {
     std::ostringstream message;
     message << "Invalid vertice coordinates for Solid: " << GetName();
@@ -156,20 +156,20 @@ UTrap::UTrap(const std::string& pName,
     UUtils::Exception("UTrap::UTrap()", "GeomSolids0002",
                       FatalErrorInArguments, 1, message.str().c_str());
   }
-  fDz = (pt[7]).z ;
+  fDz = (pt[7]).z() ;
 
-  fDy1     = ((pt[2]).y - (pt[1]).y) * 0.5;
-  fDx1     = ((pt[1]).x - (pt[0]).x) * 0.5;
-  fDx2     = ((pt[3]).x - (pt[2]).x) * 0.5;
-  fTalpha1 = ((pt[2]).x + (pt[3]).x - (pt[1]).x - (pt[0]).x) * 0.25 / fDy1;
+  fDy1     = ((pt[2]).y() - (pt[1]).y()) * 0.5;
+  fDx1     = ((pt[1]).x() - (pt[0]).x()) * 0.5;
+  fDx2     = ((pt[3]).x() - (pt[2]).x()) * 0.5;
+  fTalpha1 = ((pt[2]).x() + (pt[3]).x() - (pt[1]).x() - (pt[0]).x()) * 0.25 / fDy1;
 
-  fDy2     = ((pt[6]).y - (pt[5]).y) * 0.5;
-  fDx3     = ((pt[5]).x - (pt[4]).x) * 0.5;
-  fDx4     = ((pt[7]).x - (pt[6]).x) * 0.5;
-  fTalpha2 = ((pt[6]).x + (pt[7]).x - (pt[5]).x - (pt[4]).x) * 0.25 / fDy2;
+  fDy2     = ((pt[6]).y() - (pt[5]).y()) * 0.5;
+  fDx3     = ((pt[5]).x() - (pt[4]).x()) * 0.5;
+  fDx4     = ((pt[7]).x() - (pt[6]).x()) * 0.5;
+  fTalpha2 = ((pt[6]).x() + (pt[7]).x() - (pt[5]).x() - (pt[4]).x()) * 0.25 / fDy2;
 
-  fTthetaCphi = ((pt[4]).x + fDy2 * fTalpha2 + fDx3) / fDz;
-  fTthetaSphi = ((pt[4]).y + fDy2) / fDz;
+  fTthetaCphi = ((pt[4]).x() + fDy2 * fTalpha2 + fDx3) / fDz;
+  fTthetaSphi = ((pt[4]).y() + fDy2) / fDz;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -704,25 +704,25 @@ bool UTrap::MakePlane(const UVector3& p1,
     // a,b,c correspond to the x/y/z components of the
     // normal vector to the plane
 
-    // a  = (p2.y-p1.y)*(p1.z+p2.z)+(p3.y-p2.y)*(p2.z+p3.z);
-    // a += (p4.y-p3.y)*(p3.z+p4.z)+(p1.y-p4.y)*(p4.z+p1.z); // ?
-    // b  = (p2.z-p1.z)*(p1.x+p2.x)+(p3.z-p2.z)*(p2.x+p3.x);
-    // b += (p4.z-p3.z)*(p3.x+p4.x)+(p1.z-p4.z)*(p4.x+p1.x); // ?
-    // c  = (p2.x-p1.x)*(p1.y+p2.y)+(p3.x-p2.x)*(p2.y+p3.y);
-    // c += (p4.x-p3.x)*(p3.y+p4.y)+(p1.x-p4.x)*(p4.y+p1.y); // ?
+    // a  = (p2.y()-p1.y())*(p1.z()+p2.z())+(p3.y()-p2.y())*(p2.z()+p3.z());
+    // a += (p4.y()-p3.y())*(p3.z()+p4.z())+(p1.y()-p4.y())*(p4.z()+p1.z()); // ?
+    // b  = (p2.z()-p1.z())*(p1.x()+p2.x())+(p3.z()-p2.z())*(p2.x()+p3.x());
+    // b += (p4.z()-p3.z())*(p3.x()+p4.x())+(p1.z()-p4.z())*(p4.x()+p1.x()); // ?
+    // c  = (p2.x()-p1.x())*(p1.y()+p2.y())+(p3.x()-p2.x())*(p2.y()+p3.y());
+    // c += (p4.x()-p3.x())*(p3.y()+p4.y())+(p1.x()-p4.x())*(p4.y()+p1.y()); // ?
 
     // Let create diagonals 4-2 and 3-1 than (4-2)x(3-1) provides
     // vector perpendicular to the plane directed to outside !!!
     // and a,b,c, = f(1,2,3,4) external relative to trap normal
 
-    a = +(p4.y - p2.y) * (p3.z - p1.z)
-        - (p3.y - p1.y) * (p4.z - p2.z);
+    a = +(p4.y() - p2.y()) * (p3.z() - p1.z())
+        - (p3.y() - p1.y()) * (p4.z() - p2.z());
 
-    b = -(p4.x - p2.x) * (p3.z - p1.z)
-        + (p3.x - p1.x) * (p4.z - p2.z);
+    b = -(p4.x() - p2.x()) * (p3.z() - p1.z())
+        + (p3.x() - p1.x()) * (p4.z() - p2.z());
 
-    c = +(p4.x - p2.x) * (p3.y - p1.y)
-        - (p3.x - p1.x) * (p4.y - p2.y);
+    c = +(p4.x() - p2.x()) * (p3.y() - p1.y())
+        - (p3.x() - p1.x()) * (p4.y() - p2.y());
 
     sd = std::sqrt(a * a + b * b + c * c); // so now vector plane.(a,b,c) is Unit
 
@@ -742,7 +742,7 @@ bool UTrap::MakePlane(const UVector3& p1,
     }
     // Calculate D: p1 in in plane so D=-n.p1.Vect()
 
-    plane.d = -(plane.a * p1.x + plane.b * p1.y + plane.c * p1.z);
+    plane.d = -(plane.a * p1.x() + plane.b * p1.y() + plane.c * p1.z());
 
     good = true;
   }
@@ -761,28 +761,28 @@ VUSolid::EnumInside UTrap::Inside(const UVector3& p) const
   VUSolid::EnumInside in;
   double Dist;
   int i;
-  if (std::fabs(p.z) <= fDz - VUSolid::Tolerance() * 0.5)
+  if (std::fabs(p.z()) <= fDz - VUSolid::Tolerance() * 0.5)
   {
     in = eInside;
 
     for (i = 0; i < 4; i++)
     {
-      Dist = fPlanes[i].a * p.x + fPlanes[i].b * p.y
-             + fPlanes[i].c * p.z + fPlanes[i].d;
+      Dist = fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+             + fPlanes[i].c * p.z() + fPlanes[i].d;
 
       if (Dist > VUSolid::Tolerance() * 0.5) return in = eOutside;
       else if (Dist > -VUSolid::Tolerance() * 0.5)         in = eSurface;
 
     }
   }
-  else if (std::fabs(p.z) <= fDz + VUSolid::Tolerance() * 0.5)
+  else if (std::fabs(p.z()) <= fDz + VUSolid::Tolerance() * 0.5)
   {
     in = eSurface;
 
     for (i = 0; i < 4; i++)
     {
-      Dist =  fPlanes[i].a * p.x + fPlanes[i].b * p.y
-              + fPlanes[i].c * p.z + fPlanes[i].d;
+      Dist =  fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+              + fPlanes[i].c * p.z() + fPlanes[i].d;
 
       if (Dist > VUSolid::Tolerance() * 0.5)        return in = eOutside;
     }
@@ -806,26 +806,26 @@ bool UTrap::Normal(const UVector3& p, UVector3& aNormal) const
 
   for (i = 0; i < 4; i++)
   {
-    dist =  std::fabs(fPlanes[i].a * p.x + fPlanes[i].b * p.y
-                      + fPlanes[i].c * p.z + fPlanes[i].d);
+    dist =  std::fabs(fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+                      + fPlanes[i].c * p.z() + fPlanes[i].d);
     if (dist < safe)
     {
       safe = dist;
     }
   }
-  distz = std::fabs(std::fabs(p.z) - fDz);
+  distz = std::fabs(std::fabs(p.z()) - fDz);
 
-  distmy = std::fabs(fPlanes[0].a * p.x + fPlanes[0].b * p.y
-                     + fPlanes[0].c * p.z + fPlanes[0].d);
+  distmy = std::fabs(fPlanes[0].a * p.x() + fPlanes[0].b * p.y()
+                     + fPlanes[0].c * p.z() + fPlanes[0].d);
 
-  disty = std::fabs(fPlanes[1].a * p.x + fPlanes[1].b * p.y
-                    + fPlanes[1].c * p.z + fPlanes[1].d);
+  disty = std::fabs(fPlanes[1].a * p.x() + fPlanes[1].b * p.y()
+                    + fPlanes[1].c * p.z() + fPlanes[1].d);
 
-  distmx = std::fabs(fPlanes[2].a * p.x + fPlanes[2].b * p.y
-                     + fPlanes[2].c * p.z + fPlanes[2].d);
+  distmx = std::fabs(fPlanes[2].a * p.x() + fPlanes[2].b * p.y()
+                     + fPlanes[2].c * p.z() + fPlanes[2].d);
 
-  distx = std::fabs(fPlanes[3].a * p.x + fPlanes[3].b * p.y
-                    + fPlanes[3].c * p.z + fPlanes[3].d);
+  distx = std::fabs(fPlanes[3].a * p.x() + fPlanes[3].b * p.y()
+                    + fPlanes[3].c * p.z() + fPlanes[3].d);
 
   UVector3 nX = UVector3(fPlanes[3].a, fPlanes[3].b, fPlanes[3].c);
   UVector3 nmX = UVector3(fPlanes[2].a, fPlanes[2].b, fPlanes[2].c);
@@ -856,7 +856,7 @@ bool UTrap::Normal(const UVector3& p, UVector3& aNormal) const
   if (distz <= delta)
   {
     noSurfaces ++;
-    if (p.z >= 0.)  sumnorm += nZ;
+    if (p.z() >= 0.)  sumnorm += nZ;
     else               sumnorm -= nZ;
   }
   if (noSurfaces == 0)
@@ -884,22 +884,22 @@ UVector3 UTrap::ApproxSurfaceNormal(const UVector3& p) const
   int i, imin = 0;
   for (i = 0; i < 4; i++)
   {
-    Dist = std::fabs(fPlanes[i].a * p.x + fPlanes[i].b * p.y
-                     + fPlanes[i].c * p.z + fPlanes[i].d);
+    Dist = std::fabs(fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+                     + fPlanes[i].c * p.z() + fPlanes[i].d);
     if (Dist < safe)
     {
       safe = Dist;
       imin = i;
     }
   }
-  safez = std::fabs(std::fabs(p.z) - fDz);
+  safez = std::fabs(std::fabs(p.z()) - fDz);
   if (safe < safez)
   {
     return UVector3(fPlanes[imin].a, fPlanes[imin].b, fPlanes[imin].c);
   }
   else
   {
-    if (p.z > 0)
+    if (p.z() > 0)
     {
       return UVector3(0, 0, 1);
     }
@@ -930,26 +930,26 @@ double UTrap::DistanceToIn(const UVector3& p,
   //
   // Z Intersection range
   //
-  if (v.z > 0)
+  if (v.z() > 0)
   {
-    max = fDz - p.z ;
+    max = fDz - p.z() ;
     if (max > 0.5 * VUSolid::Tolerance())
     {
-      smax = max / v.z;
-      smin = (-fDz - p.z) / v.z;
+      smax = max / v.z();
+      smin = (-fDz - p.z()) / v.z();
     }
     else
     {
       return snxt = UUtils::Infinity();
     }
   }
-  else if (v.z < 0)
+  else if (v.z() < 0)
   {
-    max = - fDz - p.z ;
+    max = - fDz - p.z() ;
     if (max < -0.5 * VUSolid::Tolerance())
     {
-      smax = max / v.z;
-      smin = (fDz - p.z) / v.z;
+      smax = max / v.z();
+      smin = (fDz - p.z()) / v.z();
     }
     else
     {
@@ -958,7 +958,7 @@ double UTrap::DistanceToIn(const UVector3& p,
   }
   else
   {
-    if (std::fabs(p.z) < fDz - 0.5 * VUSolid::Tolerance()) // Inside was <=fDz
+    if (std::fabs(p.z()) < fDz - 0.5 * VUSolid::Tolerance()) // Inside was <=fDz
     {
       smin = 0;
       smax = UUtils::Infinity();
@@ -971,9 +971,9 @@ double UTrap::DistanceToIn(const UVector3& p,
 
   for (i = 0; i < 4; i++)
   {
-    pdist = fPlanes[i].a * p.x + fPlanes[i].b * p.y
-            + fPlanes[i].c * p.z + fPlanes[i].d;
-    Comp = fPlanes[i].a * v.x + fPlanes[i].b * v.y + fPlanes[i].c * v.z;
+    pdist = fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+            + fPlanes[i].c * p.z() + fPlanes[i].d;
+    Comp = fPlanes[i].a * v.x() + fPlanes[i].b * v.y() + fPlanes[i].c * v.z();
     if (pdist >= -0.5 * VUSolid::Tolerance())      // was >0
     {
       //
@@ -1045,11 +1045,11 @@ double UTrap::SafetyFromInside(const UVector3& p, bool) const
 {
   double safe = 0.0, Dist;
   int i;
-  safe = std::fabs(p.z) - fDz;
+  safe = std::fabs(p.z()) - fDz;
   for (i = 0; i < 4; i++)
   {
-    Dist = fPlanes[i].a * p.x + fPlanes[i].b * p.y
-           + fPlanes[i].c * p.z + fPlanes[i].d;
+    Dist = fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+           + fPlanes[i].c * p.z() + fPlanes[i].d;
     if (Dist > safe) safe = Dist;
   }
   if (safe < 0) safe = 0;
@@ -1069,12 +1069,12 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
   //
   // Z Intersections
   //
-  if (v.z > 0)
+  if (v.z() > 0)
   {
-    max = fDz - p.z;
+    max = fDz - p.z();
     if (max > VUSolid::Tolerance() / 2)
     {
-      snxt = max / v.z;
+      snxt = max / v.z();
       side = kPZ;
     }
     else
@@ -1084,12 +1084,12 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
       return snxt = 0;
     }
   }
-  else if (v.z < 0)
+  else if (v.z() < 0)
   {
-    max = -fDz - p.z;
+    max = -fDz - p.z();
     if (max < -VUSolid::Tolerance() / 2)
     {
-      snxt = max / v.z;
+      snxt = max / v.z();
       side = kMZ;
     }
     else
@@ -1107,8 +1107,8 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
   //
   // Intersections with planes[0] (expanded because of setting enum)
   //
-  pdist = fPlanes[0].a * p.x + fPlanes[0].b * p.y + fPlanes[0].c * p.z + fPlanes[0].d;
-  Comp = fPlanes[0].a * v.x + fPlanes[0].b * v.y + fPlanes[0].c * v.z;
+  pdist = fPlanes[0].a * p.x() + fPlanes[0].b * p.y() + fPlanes[0].c * p.z() + fPlanes[0].d;
+  Comp = fPlanes[0].a * v.x() + fPlanes[0].b * v.y() + fPlanes[0].c * v.z();
   if (pdist > 0)
   {
     // Outside the plane
@@ -1148,8 +1148,8 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
   //
   // Intersections with planes[1] (expanded because of setting enum)
   //
-  pdist = fPlanes[1].a * p.x + fPlanes[1].b * p.y + fPlanes[1].c * p.z + fPlanes[1].d;
-  Comp = fPlanes[1].a * v.x + fPlanes[1].b * v.y + fPlanes[1].c * v.z;
+  pdist = fPlanes[1].a * p.x() + fPlanes[1].b * p.y() + fPlanes[1].c * p.z() + fPlanes[1].d;
+  Comp = fPlanes[1].a * v.x() + fPlanes[1].b * v.y() + fPlanes[1].c * v.z();
   if (pdist > 0)
   {
     // Outside the plane
@@ -1189,8 +1189,8 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
   //
   // Intersections with planes[2] (expanded because of setting enum)
   //
-  pdist = fPlanes[2].a * p.x + fPlanes[2].b * p.y + fPlanes[2].c * p.z + fPlanes[2].d;
-  Comp = fPlanes[2].a * v.x + fPlanes[2].b * v.y + fPlanes[2].c * v.z;
+  pdist = fPlanes[2].a * p.x() + fPlanes[2].b * p.y() + fPlanes[2].c * p.z() + fPlanes[2].d;
+  Comp = fPlanes[2].a * v.x() + fPlanes[2].b * v.y() + fPlanes[2].c * v.z();
   if (pdist > 0)
   {
     // Outside the plane
@@ -1230,8 +1230,8 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
   //
   // Intersections with planes[3] (expanded because of setting enum)
   //
-  pdist = fPlanes[3].a * p.x + fPlanes[3].b * p.y + fPlanes[3].c * p.z + fPlanes[3].d;
-  Comp = fPlanes[3].a * v.x + fPlanes[3].b * v.y + fPlanes[3].c * v.z;
+  pdist = fPlanes[3].a * p.x() + fPlanes[3].b * p.y() + fPlanes[3].c * p.z() + fPlanes[3].d;
+  Comp = fPlanes[3].a * v.x() + fPlanes[3].b * v.y() + fPlanes[3].c * v.z();
   if (pdist > 0)
   {
     // Outside the plane
@@ -1298,13 +1298,13 @@ double UTrap::DistanceToOut(const UVector3& p, const UVector3&  v, UVector3&    
       message << "Undefined side for valid surface normal to solid."
               << std::endl
               << "Position:"  << std::endl << std::endl
-              << "p.x = "  << p.x << " mm" << std::endl
-              << "p.y = "  << p.y << " mm" << std::endl
-              << "p.z = "  << p.z << " mm" << std::endl << std::endl
+              << "p.x() = "  << p.x() << " mm" << std::endl
+              << "p.y() = "  << p.y() << " mm" << std::endl
+              << "p.z() = "  << p.z() << " mm" << std::endl << std::endl
               << "Direction:" << std::endl << std::endl
-              << "v.x = "  << v.x << std::endl
-              << "v.y = "  << v.y << std::endl
-              << "v.z = "  << v.z << std::endl << std::endl
+              << "v.x() = "  << v.x() << std::endl
+              << "v.y() = "  << v.y() << std::endl
+              << "v.z() = "  << v.z() << std::endl << std::endl
               << "Proposed distance :" << std::endl << std::endl
               << "snxt = "    << snxt << " mm" << std::endl;
       message.precision(oldprc);
@@ -1332,23 +1332,23 @@ double UTrap::SafetyFromOutside(const UVector3& p, bool /*precise*/) const
     cout << std::endl ;
 
     cout << "Position:"  << std::endl << std::endl ;
-    cout << "p.x = "  << p.x << " mm" << std::endl ;
-    cout << "p.y = "  << p.y << " mm" << std::endl ;
-    cout << "p.z = "  << p.z << " mm" << std::endl << std::endl ;
+    cout << "p.x() = "  << p.x() << " mm" << std::endl ;
+    cout << "p.y() = "  << p.y() << " mm" << std::endl ;
+    cout << "p.z() = "  << p.z() << " mm" << std::endl << std::endl ;
     cout.precision(oldprc) ;
     UUtils::Exception("UTrap::DistanceToOut(p)",
                       "GeomSolids1002", Warning, 1, "Point p is outside !?");
   }
 #endif
 
-  safe = fDz - std::fabs(p.z);
+  safe = fDz - std::fabs(p.z());
   if (safe < 0) safe = 0;
   else
   {
     for (i = 0; i < 4; i++)
     {
-      Dist = -(fPlanes[i].a * p.x + fPlanes[i].b * p.y
-               + fPlanes[i].c * p.z + fPlanes[i].d);
+      Dist = -(fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
+               + fPlanes[i].c * p.z() + fPlanes[i].d);
       if (Dist < safe) safe = Dist;
     }
     if (safe < 0) safe = 0;
@@ -1431,15 +1431,15 @@ UVector3 UTrap::GetPointOnPlane(UVector3 p0, UVector3 p1,
   v = p3 - p2;
   w = p0 - p3;
 
-  Area = UVector3(w.y * v.z - w.z * v.y,
-                  w.z * v.x - w.x * v.z,
-                  w.x * v.y - w.y * v.x);
+  Area = UVector3(w.y() * v.z() - w.z() * v.y(),
+                  w.z() * v.x() - w.x() * v.z(),
+                  w.x() * v.y() - w.y() * v.x());
 
   aOne = 0.5 * Area.Mag();
 
-  Area = UVector3(t.y * u.z - t.z * u.y,
-                  t.z * u.x - t.x * u.z,
-                  t.x * u.y - t.y * u.x);
+  Area = UVector3(t.y() * u.z() - t.z() * u.y(),
+                  t.z() * u.x() - t.x() * u.z(),
+                  t.x() * u.y() - t.y() * u.x());
 
   aTwo = 0.5 * Area.Mag();
 
@@ -1525,14 +1525,19 @@ UVector3 UTrap::GetPointOnSurface() const
 
 void UTrap::Extent(UVector3& aMin, UVector3& aMax) const
 {
-  aMin.z = -fDz;
-  aMax.z = fDz;
-  double min12 = 0, max12, min34 = 0, max34;
-  if (fDx1 > fDx2)
-    min12 = fDx2, max12 = fDx1;
-  if (fDx3 > fDx4)
-    min34 = fDx3, max34 = fDx4;
-  aMax.x = (min12 < min34) ? min12 : min34;
-  aMin.x = -aMax.x;
-  aMax.y = (fDy1 > fDy2) ? fDy1 : fDy2;
+  aMin.z() = -fDz;
+  aMax.z() = fDz;
+  double min12 = 0, min34 = 0;
+  // double max12, max34;
+  if (fDx1 > fDx2) {
+    min12 = fDx2;
+    // max12 = fDx1;
+  }
+  if (fDx3 > fDx4) {
+    min34 = fDx3;
+    // max34 = fDx4;
+  }
+  aMax.x() = (min12 < min34) ? min12 : min34;
+  aMin.x() = -aMax.x();
+  aMax.y() = (fDy1 > fDy2) ? fDy1 : fDy2;
 }

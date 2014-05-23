@@ -184,7 +184,7 @@ bool UTessellatedSolid::AddFacet(VUFacet* aFacet)
     UVector3 p = aFacet->GetCircumcentre();
     UVertexInfo value;
     value.id = fFacetList.size();
-    value.mag2 = p.x + p.y + p.z;
+    value.mag2 = p.x() + p.y() + p.z();
 
     bool found = false;
     if (!OutsideOfExtent(p, fgTolerance))
@@ -200,7 +200,7 @@ bool UTessellatedSolid::AddFacet(VUFacet* aFacet)
         UVector3 q = facet->GetCircumcentre();
         found = (facet == aFacet);
         if (found) break;
-        double dif = q.x + q.y + q.z - value.mag2;
+        double dif = q.x() + q.y() + q.z() - value.mag2;
         if (dif > fgTolerance3) break;
         it++;
       }
@@ -216,7 +216,7 @@ bool UTessellatedSolid::AddFacet(VUFacet* aFacet)
           UVector3 q = facet->GetCircumcentre();
           found = (facet == aFacet);
           if (found) break;
-          double dif = q.x + q.y + q.z - q.Mag2();
+          double dif = q.x() + q.y() + q.z() - q.Mag2();
           if (dif > fgTolerance3) break;
         }
       }
@@ -328,12 +328,10 @@ void UTessellatedSolid::PrecalculateInsides()
         if (!checked[index] && fVoxels.IsEmpty(index))
         {
           for (int i = 0; i <= 2; ++i) point[i] = fVoxels.GetBoundary(i)[voxel[i]];
+#ifdef USPECSDEBUG
           bool inside = (bool)(InsideNoVoxels(point) == eInside);
           int n = SetAllUsingStack(voxel, maxVoxels, inside, checked);
-#ifdef USPECSDEBUG
           cout << "SetAllUsingStack " << n << " items with status " << inside << "\n";
-#else
-          n = abs(0); // fix so that gcc would not make stupid warning
 #endif
         }
         else checked.SetBitNumber(index);
@@ -453,7 +451,7 @@ void UTessellatedSolid::CreateVertexList()
     {
       p = facet.GetVertex(i);
       value.id = fVertexList.size();
-      value.mag2 = p.x + p.y + p.z;
+      value.mag2 = p.x() + p.y() + p.z();
 
       bool found = false;
       int id = 0;
@@ -469,7 +467,7 @@ void UTessellatedSolid::CreateVertexList()
           double dif = (q - p).Mag2();
           found = (dif < fgTolerance24);
           if (found) break;
-          dif = q.x + q.y + q.z - value.mag2;
+          dif = q.x() + q.y() + q.z() - value.mag2;
           if (dif > fgTolerance3) break;
           it++;
         }
@@ -485,7 +483,7 @@ void UTessellatedSolid::CreateVertexList()
             double dif = (q - p).Mag2();
             found = (dif < fgTolerance24);
             if (found) break;
-            dif = value.mag2 - (q.x + q.y + q.z);
+            dif = value.mag2 - (q.x() + q.y() + q.z());
             if (dif > fgTolerance) break;
           }
         }
@@ -512,12 +510,12 @@ void UTessellatedSolid::CreateVertexList()
         if (value.id == 0) fMinExtent = fMaxExtent = p;
         else
         {
-          if (p.x > fMaxExtent.x) fMaxExtent.x = p.x;
-          else if (p.x < fMinExtent.x) fMinExtent.x = p.x;
-          if (p.y > fMaxExtent.y) fMaxExtent.y = p.y;
-          else if (p.y < fMinExtent.y) fMinExtent.y = p.y;
-          if (p.z > fMaxExtent.z) fMaxExtent.z = p.z;
-          else if (p.z < fMinExtent.z) fMinExtent.z = p.z;
+          if (p.x() > fMaxExtent.x()) fMaxExtent.x() = p.x();
+          else if (p.x() < fMinExtent.x()) fMinExtent.x() = p.x();
+          if (p.y() > fMaxExtent.y()) fMaxExtent.y() = p.y();
+          else if (p.y() < fMinExtent.y()) fMinExtent.y() = p.y();
+          if (p.z() > fMaxExtent.z()) fMaxExtent.z() = p.z();
+          else if (p.z() < fMinExtent.z()) fMinExtent.z() = p.z();
         }
       }
       else
@@ -1084,7 +1082,7 @@ bool UTessellatedSolid::Normal(const UVector3& p, UVector3& aNormal) const
     UUtils::Exception("UTessellatedSolid::SurfaceNormal(p)", "GeomSolids1002",
                       Warning, 1, message.str().c_str());
 #endif
-    aNormal = (p.z > 0 ? UVector3(0, 0, 1) : UVector3(0, 0, -1));
+    aNormal = (p.z() > 0 ? UVector3(0, 0, 1) : UVector3(0, 0, -1));
     return false;
   }
 }
@@ -1818,41 +1816,41 @@ double UTessellatedSolid::GetCubicVolume()
 //
 /*double UTessellatedSolid::GetMinXExtent () const
 {
-  return fMinExtent.x;
+  return fMinExtent.x();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxXExtent () const
 {
-  return fMaxExtent.x;
+  return fMaxExtent.x();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMinYExtent () const
-{return fMinExtent.y;}
+{return fMinExtent.y();}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxYExtent () const
-{return fMaxExtent.y;}
+{return fMaxExtent.y();}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMinZExtent () const
-{return fMinExtent.z;}
+{return fMinExtent.z();}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxZExtent () const
-{return fMaxExtent.z;}
+{return fMaxExtent.z();}
 
 */
 /*
 UVisExtent UTessellatedSolid::GetExtent () const
 {
-  return UVisExtent (fMinExtent.x, fMaxExtent.x, fMinExtent.y, fMaxExtent.y, fMinExtent.z, fMaxExtent.z);
+  return UVisExtent (fMinExtent.x(), fMaxExtent.x(), fMinExtent.y(), fMaxExtent.y(), fMinExtent.z(), fMaxExtent.z());
 }
 */
 
@@ -1869,42 +1867,42 @@ void UTessellatedSolid::Extent(UVector3& aMin, UVector3& aMax) const
 //
 double UTessellatedSolid::GetMinXExtent() const
 {
-  return fMinExtent.x;
+  return fMinExtent.x();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxXExtent() const
 {
-  return fMaxExtent.x;
+  return fMaxExtent.x();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMinYExtent() const
 {
-  return fMinExtent.y;
+  return fMinExtent.y();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxYExtent() const
 {
-  return fMaxExtent.y;
+  return fMaxExtent.y();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMinZExtent() const
 {
-  return fMinExtent.z;
+  return fMinExtent.z();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 double UTessellatedSolid::GetMaxZExtent() const
 {
-  return fMaxExtent.z;
+  return fMaxExtent.z();
 }
 #endif // USOLIDSONLY
 

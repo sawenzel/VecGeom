@@ -158,9 +158,9 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
   static const double halfRadTolerance = kRadTolerance * 0.5;
   static const double halfAngTolerance = kAngTolerance * 0.5;
 
-  if (std::fabs(p.z) <= fDz - halfCarTolerance)
+  if (std::fabs(p.z()) <= fDz - halfCarTolerance)
   {
-    r2 = p.x * p.x + p.y * p.y;
+    r2 = p.x() * p.x() + p.y() * p.y();
 
     if (fRMin)
     {
@@ -184,14 +184,14 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
         // Try inner tolerant phi boundaries (=>inside)
         // if not inside, try outer tolerant phi boundaries
 
-        if ((tolRMin == 0) && (std::fabs(p.x) <= halfCarTolerance)
-            && (std::fabs(p.y) <= halfCarTolerance))
+        if ((tolRMin == 0) && (std::fabs(p.x()) <= halfCarTolerance)
+            && (std::fabs(p.y()) <= halfCarTolerance))
         {
           in = eSurface;
         }
         else
         {
-          pPhi = std::atan2(p.y, p.x);
+          pPhi = std::atan2(p.y(), p.x());
           if (pPhi < -halfAngTolerance)
           {
             pPhi += 2 * UUtils::kPi;  // 0<=pPhi<2UUtils::kPi
@@ -254,7 +254,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
         }
         else // Try outer tolerant phi boundaries only
         {
-          pPhi = std::atan2(p.y, p.x);
+          pPhi = std::atan2(p.y(), p.x());
 
           if (pPhi < -halfAngTolerance)
           {
@@ -289,10 +289,10 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
       }
     }
   }
-  else if (std::fabs(p.z) <= fDz + halfCarTolerance)
+  else if (std::fabs(p.z()) <= fDz + halfCarTolerance)
   {
     // Check within tolerant r limits
-    r2 = p.x * p.x + p.y * p.y;
+    r2 = p.x() * p.x() + p.y() * p.y();
     tolRMin = fRMin - halfRadTolerance;
     tolRMax = fRMax + halfRadTolerance;
 
@@ -310,7 +310,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
       }
       else // Try outer tolerant phi boundaries
       {
-        pPhi = std::atan2(p.y, p.x);
+        pPhi = std::atan2(p.y(), p.x());
 
         if (pPhi < -halfAngTolerance)
         {
@@ -367,17 +367,17 @@ bool UTubs::Normal(const UVector3& p, UVector3& n) const
   UVector3 nZ = UVector3(0, 0, 1.0);
   UVector3 nR, nPs, nPe;
 
-  rho = std::sqrt(p.x * p.x + p.y * p.y);
+  rho = std::sqrt(p.x() * p.x() + p.y() * p.y());
 
   distRMin = std::fabs(rho - fRMin);
   distRMax = std::fabs(rho - fRMax);
-  distZ   = std::fabs(std::fabs(p.z) - fDz);
+  distZ   = std::fabs(std::fabs(p.z()) - fDz);
 
   if (!fPhiFullTube)    // Protected against (0,0,z)
   {
     if (rho > halfCarTolerance)
     {
-      pPhi = std::atan2(p.y, p.x);
+      pPhi = std::atan2(p.y(), p.x());
 
       if (pPhi < fSPhi - halfCarTolerance)
       {
@@ -401,7 +401,7 @@ bool UTubs::Normal(const UVector3& p, UVector3& n) const
   }
   if (rho > halfCarTolerance)
   {
-    nR = UVector3(p.x / rho, p.y / rho, 0);
+    nR = UVector3(p.x() / rho, p.y() / rho, 0);
   }
 
   if (distRMax <= halfCarTolerance)
@@ -430,7 +430,7 @@ bool UTubs::Normal(const UVector3& p, UVector3& n) const
   if (distZ <= halfCarTolerance)
   {
     noSurfaces ++;
-    if (p.z >= 0.)
+    if (p.z() >= 0.)
     {
       sumnorm += nZ;
     }
@@ -445,7 +445,7 @@ bool UTubs::Normal(const UVector3& p, UVector3& n) const
     UUtils::Exception("UTubs::SurfaceNormal(p)", "GeomSolids1002",
                       Warning, 1, "Point p is not on surface !?");
     int oldprc = cout.precision(20);
-    cout << "UTubs::SN ( " << p.x << ", " << p.y << ", " << p.z << " ); "
+    cout << "UTubs::SN ( " << p.x() << ", " << p.y() << ", " << p.z() << " ); "
          << std::endl << std::endl;
     cout.precision(oldprc);
 #endif
@@ -477,11 +477,11 @@ UVector3 UTubs::ApproxSurfaceNormal(const UVector3& p) const
   double rho, phi;
   double distZ, distRMin, distRMax, distSPhi, distEPhi, distMin;
 
-  rho = std::sqrt(p.x * p.x + p.y * p.y);
+  rho = std::sqrt(p.x() * p.x() + p.y() * p.y());
 
   distRMin = std::fabs(rho - fRMin);
   distRMax = std::fabs(rho - fRMax);
-  distZ   = std::fabs(std::fabs(p.z) - fDz);
+  distZ   = std::fabs(std::fabs(p.z()) - fDz);
 
   if (distRMin < distRMax) // First minimum
   {
@@ -511,7 +511,7 @@ UVector3 UTubs::ApproxSurfaceNormal(const UVector3& p) const
   }
   if (!fPhiFullTube &&  rho)  // Protected against (0,0,z)
   {
-    phi = std::atan2(p.y, p.x);
+    phi = std::atan2(p.y(), p.x());
 
     if (phi < 0)
     {
@@ -547,17 +547,17 @@ UVector3 UTubs::ApproxSurfaceNormal(const UVector3& p) const
   {
     case kNRMin : // Inner radius
     {
-      norm = UVector3(-p.x / rho, -p.y / rho, 0);
+      norm = UVector3(-p.x() / rho, -p.y() / rho, 0);
       break;
     }
     case kNRMax : // Outer radius
     {
-      norm = UVector3(p.x / rho, p.y / rho, 0);
+      norm = UVector3(p.x() / rho, p.y() / rho, 0);
       break;
     }
     case kNZ :    // + or - dz
     {
-      if (p.z > 0)
+      if (p.z() > 0)
       {
         norm = UVector3(0, 0, 1);
       }
@@ -646,19 +646,19 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
   tolIDz = fDz - halfCarTolerance;
   tolODz = fDz + halfCarTolerance;
 
-  if (std::fabs(p.z) >= tolIDz)
+  if (std::fabs(p.z()) >= tolIDz)
   {
-    if (p.z * v.z < 0)   // at +Z going in -Z or visa versa
+    if (p.z() * v.z() < 0)   // at +Z going in -Z or visa versa
     {
-      sd = (std::fabs(p.z) - fDz) / std::fabs(v.z); // Z intersect distance
+      sd = (std::fabs(p.z()) - fDz) / std::fabs(v.z()); // Z intersect distance
 
       if (sd < 0.0)
       {
         sd = 0.0;
       }
 
-      xi   = p.x + sd * v.x;              // Intersection coords
-      yi   = p.y + sd * v.y;
+      xi   = p.x() + sd * v.x();              // Intersection coords
+      yi   = p.y() + sd * v.y();
       rho2 = xi * xi + yi * yi;
 
       // Check validity of intersection
@@ -698,16 +698,16 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
   //
   // Intersection with rmax (possible return) and rmin (must also check phi)
   //
-  // Intersection point (xi,yi,zi) on line x=p.x+t*v.x etc.
+  // Intersection point (xi,yi,zi) on line x=p.x()+t*v.x() etc.
   //
   // Intersects with x^2+y^2=R^2
   //
-  // Hence (v.x^2+v.y^2)t^2+ 2t(p.x*v.x+p.y*v.y)+p.x^2+p.y^2-R^2=0
+  // Hence (v.x()^2+v.y()^2)t^2+ 2t(p.x()*v.x()+p.y()*v.y())+p.x()^2+p.y()^2-R^2=0
   //            t1                t2                t3
 
-  t1 = 1.0 - v.z * v.z;
-  t2 = p.x * v.x + p.y * v.y;
-  t3 = p.x * p.x + p.y * p.y;
+  t1 = 1.0 - v.z() * v.z();
+  t2 = p.x() * v.x() + p.y() * v.y();
+  t3 = p.x() * p.x() + p.y() * p.y();
 
   if (t1 > 0)          // Check not || to z axis
   {
@@ -734,7 +734,7 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
           }
           // Check z intersection
           //
-          zi = p.z + sd * v.z;
+          zi = p.z() + sd * v.z();
           if (std::fabs(zi) <= tolODz)
           {
             // Z ok. Check phi intersection if reqd
@@ -745,8 +745,8 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
             }
             else
             {
-              xi     = p.x + sd * v.x;
-              yi     = p.y + sd * v.y;
+              xi     = p.x() + sd * v.x();
+              yi     = p.y() + sd * v.y();
               cosPsi = (xi * fCosCPhi + yi * fSinCPhi) / fRMax;
               if (cosPsi >= fCosHDPhiIT)
               {
@@ -762,13 +762,13 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
       // Inside outer radius :
       // check not inside, and heading through tubs (-> 0 to in)
 
-      if ((t3 > tolIRMin2) && (t2 < 0) && (std::fabs(p.z) <= tolIDz))
+      if ((t3 > tolIRMin2) && (t2 < 0) && (std::fabs(p.z()) <= tolIDz))
       {
         // Inside both radii, delta r -ve, inside z extent
 
         if (!fPhiFullTube)
         {
-          inum   = p.x * fCosCPhi + p.y * fSinCPhi;
+          inum   = p.x() * fCosCPhi + p.y() * fSinCPhi;
           iden   = std::sqrt(t3);
           cosPsi = inum / iden;
           if (cosPsi >= fCosHDPhiIT)
@@ -864,7 +864,7 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
             double fTerm = sd - std::fmod(sd, dRmax);
             sd = fTerm + DistanceToIn(p + fTerm * v, v);
           }
-          zi = p.z + sd * v.z;
+          zi = p.z() + sd * v.z();
           if (std::fabs(zi) <= tolODz)
           {
             // Z ok. Check phi
@@ -875,8 +875,8 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
             }
             else
             {
-              xi     = p.x + sd * v.x;
-              yi     = p.y + sd * v.y;
+              xi     = p.x() + sd * v.x();
+              yi     = p.y() + sd * v.y();
               cosPsi = (xi * fCosCPhi + yi * fSinCPhi) / fRMin;
               if (cosPsi >= fCosHDPhiIT)
               {
@@ -905,11 +905,11 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
   {
     // First phi surface (Starting phi)
     //
-    Comp    = v.x * fSinSPhi - v.y * fCosSPhi;
+    Comp    = v.x() * fSinSPhi - v.y() * fCosSPhi;
 
     if (Comp < 0)    // Component in outwards normal dirn
     {
-      Dist = (p.y * fCosSPhi - p.x * fSinSPhi);
+      Dist = (p.y() * fCosSPhi - p.x() * fSinSPhi);
 
       if (Dist < halfCarTolerance)
       {
@@ -921,20 +921,20 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
           {
             sd = 0.0;
           }
-          zi = p.z + sd * v.z;
+          zi = p.z() + sd * v.z();
           if (std::fabs(zi) <= tolODz)
           {
-            xi   = p.x + sd * v.x;
-            yi   = p.y + sd * v.y;
+            xi   = p.x() + sd * v.x();
+            yi   = p.y() + sd * v.y();
             rho2 = xi * xi + yi * yi;
 
             if (((rho2 >= tolIRMin2) && (rho2 <= tolIRMax2))
                 || ((rho2 > tolORMin2) && (rho2 < tolIRMin2)
-                    && (v.y * fCosSPhi - v.x * fSinSPhi > 0)
-                    && (v.x * fCosSPhi + v.y * fSinSPhi >= 0))
+                    && (v.y() * fCosSPhi - v.x() * fSinSPhi > 0)
+                    && (v.x() * fCosSPhi + v.y() * fSinSPhi >= 0))
                 || ((rho2 > tolIRMax2) && (rho2 < tolORMax2)
-                    && (v.y * fCosSPhi - v.x * fSinSPhi > 0)
-                    && (v.x * fCosSPhi + v.y * fSinSPhi < 0)))
+                    && (v.y() * fCosSPhi - v.x() * fSinSPhi > 0)
+                    && (v.x() * fCosSPhi + v.y() * fSinSPhi < 0)))
             {
               // z and r intersections good
               // - check intersecting with correct half-plane
@@ -951,11 +951,11 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
 
     // Second phi surface (Ending phi)
 
-    Comp    = -(v.x * fSinEPhi - v.y * fCosEPhi);
+    Comp    = -(v.x() * fSinEPhi - v.y() * fCosEPhi);
 
     if (Comp < 0)   // Component in outwards normal dirn
     {
-      Dist = -(p.y * fCosEPhi - p.x * fSinEPhi);
+      Dist = -(p.y() * fCosEPhi - p.x() * fSinEPhi);
 
       if (Dist < halfCarTolerance)
       {
@@ -967,19 +967,19 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
           {
             sd = 0;
           }
-          zi = p.z + sd * v.z;
+          zi = p.z() + sd * v.z();
           if (std::fabs(zi) <= tolODz)
           {
-            xi   = p.x + sd * v.x;
-            yi   = p.y + sd * v.y;
+            xi   = p.x() + sd * v.x();
+            yi   = p.y() + sd * v.y();
             rho2 = xi * xi + yi * yi;
             if (((rho2 >= tolIRMin2) && (rho2 <= tolIRMax2))
                 || ((rho2 > tolORMin2)  && (rho2 < tolIRMin2)
-                    && (v.x * fSinEPhi - v.y * fCosEPhi > 0)
-                    && (v.x * fCosEPhi + v.y * fSinEPhi >= 0))
+                    && (v.x() * fSinEPhi - v.y() * fCosEPhi > 0)
+                    && (v.x() * fCosEPhi + v.y() * fSinEPhi >= 0))
                 || ((rho2 > tolIRMax2) && (rho2 < tolORMax2)
-                    && (v.x * fSinEPhi - v.y * fCosEPhi > 0)
-                    && (v.x * fCosEPhi + v.y * fSinEPhi < 0)))
+                    && (v.x() * fSinEPhi - v.y() * fCosEPhi > 0)
+                    && (v.x() * fCosEPhi + v.y() * fSinEPhi < 0)))
             {
               // z and r intersections good
               // - check intersecting with correct half-plane
@@ -1032,10 +1032,10 @@ double UTubs::SafetyFromOutside(const UVector3& p, bool aAccurate) const
   double safe = 0.0, rho, safe1, safe2, safe3;
   double safePhi, cosPsi;
 
-  rho  = std::sqrt(p.x * p.x + p.y * p.y);
+  rho  = std::sqrt(p.x() * p.x() + p.y() * p.y());
   safe1 = fRMin - rho;
   safe2 = rho - fRMax;
-  safe3 = std::fabs(p.z) - fDz;
+  safe3 = std::fabs(p.z()) - fDz;
 
   if (safe1 > safe2)
   {
@@ -1054,19 +1054,19 @@ double UTubs::SafetyFromOutside(const UVector3& p, bool aAccurate) const
   {
     // Psi=angle from central phi to point
     //
-    cosPsi = (p.x * fCosCPhi + p.y * fSinCPhi) / rho;
+    cosPsi = (p.x() * fCosCPhi + p.y() * fSinCPhi) / rho;
 
     if (cosPsi < std::cos(fDPhi * 0.5))
     {
       // Point lies outside phi range
 
-      if ((p.y * fCosCPhi - p.x * fSinCPhi) <= 0)
+      if ((p.y() * fCosCPhi - p.x() * fSinCPhi) <= 0)
       {
-        safePhi = std::fabs(p.x * fSinSPhi - p.y * fCosSPhi);
+        safePhi = std::fabs(p.x() * fSinSPhi - p.y() * fCosSPhi);
       }
       else
       {
-        safePhi = std::fabs(p.x * fSinEPhi - p.y * fCosEPhi);
+        safePhi = std::fabs(p.x() * fSinEPhi - p.y() * fCosEPhi);
       }
       if (safePhi > safe)
       {
@@ -1121,12 +1121,12 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
 
   // Z plane intersection
 
-  if (v.z > 0)
+  if (v.z() > 0)
   {
-    pdist = fDz - p.z;
+    pdist = fDz - p.z();
     if (pdist > halfCarTolerance)
     {
-      snxt = pdist / v.z;
+      snxt = pdist / v.z();
       side = kPZ;
     }
     else
@@ -1139,13 +1139,13 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       return snxt = 0;
     }
   }
-  else if (v.z < 0)
+  else if (v.z() < 0)
   {
-    pdist = fDz + p.z;
+    pdist = fDz + p.z();
 
     if (pdist > halfCarTolerance)
     {
-      snxt = -pdist / v.z;
+      snxt = -pdist / v.z();
       side = kMZ;
     }
     else
@@ -1167,17 +1167,17 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
   // Radial Intersections
   //
   // Find intersection with cylinders at rmax/rmin
-  // Intersection point (xi,yi,zi) on line x=p.x+t*v.x etc.
+  // Intersection point (xi,yi,zi) on line x=p.x()+t*v.x() etc.
   //
   // Intersects with x^2+y^2=R^2
   //
-  // Hence (v.x^2+v.y^2)t^2+ 2t(p.x*v.x+p.y*v.y)+p.x^2+p.y^2-R^2=0
+  // Hence (v.x()^2+v.y()^2)t^2+ 2t(p.x()*v.x()+p.y()*v.y())+p.x()^2+p.y()^2-R^2=0
   //
   //            t1                t2                    t3
 
-  t1   = 1.0 - v.z * v.z;   // since v normalised
-  t2   = p.x * v.x + p.y * v.y;
-  t3   = p.x * p.x + p.y * p.y;
+  t1   = 1.0 - v.z() * v.z();   // since v normalised
+  t2   = p.x() * v.x() + p.y() * v.y();
+  t3   = p.x() * p.x() + p.y() * p.y();
 
   if (snxt > 10 * (fDz + fRMax))
   {
@@ -1223,7 +1223,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
 
         //        if ( calcNorm )
         {
-          n        = UVector3(p.x / fRMax, p.y / fRMax, 0);
+          n        = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
           validNorm = true;
         }
         return snxt = 0; // Leaving by rmax immediately
@@ -1254,7 +1254,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
           {
             
             {
-              n         = UVector3(-p.x / fRMin, -p.y / fRMin, 0);
+              n         = UVector3(-p.x() / fRMin, -p.y() / fRMin, 0);
               validNorm = false;  // Concave side
             }
             return snxt = 0.0;
@@ -1275,7 +1275,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
           {
             // if (calcNorm)
             {
-              n = UVector3(p.x / fRMax, p.y / fRMax, 0);
+              n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
               validNorm = true;
             }
             return snxt = 0.0;
@@ -1299,7 +1299,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
         {
           //          if (calcNorm)
           {
-            n = UVector3(p.x / fRMax, p.y / fRMax, 0);
+            n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
             validNorm = true;
           }
           return snxt = 0.0;
@@ -1314,7 +1314,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       // add angle calculation with correction
       // of the difference in domain of atan2 and Sphi
       //
-      vphi = std::atan2(v.y, v.x);
+      vphi = std::atan2(v.y(), v.x());
 
       if (vphi < fSPhi - halfAngTolerance)
       {
@@ -1326,17 +1326,17 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       }
 
 
-      if (p.x || p.y)    // Check if on z axis (rho not needed later)
+      if (p.x() || p.y())    // Check if on z axis (rho not needed later)
       {
         // pDist -ve when inside
 
-        pDistS = p.x * fSinSPhi - p.y * fCosSPhi;
-        pDistE = -p.x * fSinEPhi + p.y * fCosEPhi;
+        pDistS = p.x() * fSinSPhi - p.y() * fCosSPhi;
+        pDistE = -p.x() * fSinEPhi + p.y() * fCosEPhi;
 
         // Comp -ve when in direction of outwards normal
 
-        compS  = -fSinSPhi * v.x + fCosSPhi * v.y;
-        compE  =  fSinEPhi * v.x - fCosEPhi * v.y;
+        compS  = -fSinSPhi * v.x() + fCosSPhi * v.y();
+        compE  =  fSinEPhi * v.x() - fCosEPhi * v.y();
 
         sidephi = kNull;
 
@@ -1353,8 +1353,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
 
             if (sphi >= -halfCarTolerance)
             {
-              xi = p.x + sphi * v.x;
-              yi = p.y + sphi * v.y;
+              xi = p.x() + sphi * v.x();
+              yi = p.y() + sphi * v.y();
 
               // Check intersecting with correct half-plane
               // (if not -> no intersect)
@@ -1399,8 +1399,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
             //
             if ((sphi2 > -halfCarTolerance) && (sphi2 < sphi))
             {
-              xi = p.x + sphi2 * v.x;
-              yi = p.y + sphi2 * v.y;
+              xi = p.x() + sphi2 * v.x();
+              yi = p.y() + sphi2 * v.y();
 
               if ((std::fabs(xi) <= VUSolid::Tolerance()) && (std::fabs(yi) <= VUSolid::Tolerance()))
               {
@@ -1480,15 +1480,15 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
         // Note: returned vector not normalised
         // (divide by fRMax for Unit vector)
         //
-        xi = p.x + snxt * v.x;
-        yi = p.y + snxt * v.y;
+        xi = p.x() + snxt * v.x();
+        yi = p.y() + snxt * v.y();
         n = UVector3(xi / fRMax, yi / fRMax, 0);
         validNorm = true;
         break;
 
       case kRMin:
-        xi = p.x + snxt * v.x;
-        yi = p.y + snxt * v.y;
+        xi = p.x() + snxt * v.x();
+        yi = p.y() + snxt * v.y();
         n = UVector3(-xi / fRMin, -yi / fRMin, 0);
         validNorm = false;  // Rmin is inconvex
         break;
@@ -1537,13 +1537,13 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
         message << "Undefined side for valid surface normal to solid."
                 << std::endl
                 << "Position:"  << std::endl << std::endl
-                << "p.x = "  << p.x << " mm" << std::endl
-                << "p.y = "  << p.y << " mm" << std::endl
-                << "p.z = "  << p.z << " mm" << std::endl << std::endl
+                << "p.x() = "  << p.x() << " mm" << std::endl
+                << "p.y() = "  << p.y() << " mm" << std::endl
+                << "p.z() = "  << p.z() << " mm" << std::endl << std::endl
                 << "Direction:" << std::endl << std::endl
-                << "v.x = "  << v.x << std::endl
-                << "v.y = "  << v.y << std::endl
-                << "v.z = "  << v.z << std::endl << std::endl
+                << "v.x() = "  << v.x() << std::endl
+                << "v.y() = "  << v.y() << std::endl
+                << "v.z() = "  << v.z() << std::endl << std::endl
                 << "Proposed distance :" << std::endl << std::endl
                 << "snxt = "    << snxt << " mm" << std::endl;
         message.precision(oldprc);
@@ -1568,7 +1568,7 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
 double UTubs::SafetyFromInside(const UVector3& p, bool) const
 {
   double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi;
-  rho = std::sqrt(p.x * p.x + p.y * p.y);
+  rho = std::sqrt(p.x() * p.x() + p.y() * p.y());
 
 #ifdef UDEBUG
   if (Inside(p) == eOutside)
@@ -1577,9 +1577,9 @@ double UTubs::SafetyFromInside(const UVector3& p, bool) const
     cout << std::endl;
     DumpInfo();
     cout << "Position:" << std::endl << std::endl;
-    cout << "p.x = "   << p.x << " mm" << std::endl;
-    cout << "p.y = "   << p.y << " mm" << std::endl;
-    cout << "p.z = "   << p.z << " mm" << std::endl << std::endl;
+    cout << "p.x() = "   << p.x() << " mm" << std::endl;
+    cout << "p.y() = "   << p.y() << " mm" << std::endl;
+    cout << "p.z() = "   << p.z() << " mm" << std::endl << std::endl;
     cout.precision(oldprc);
     UUtils::Exception("UTubs::DistanceToOut(p)", "GeomSolids1002",
                       Warning, 1, "Point p is outside !?");
@@ -1604,7 +1604,7 @@ double UTubs::SafetyFromInside(const UVector3& p, bool) const
   {
     safe = fRMax - rho;
   }
-  safeZ = fDz - std::fabs(p.z);
+  safeZ = fDz - std::fabs(p.z());
 
   if (safeZ < safe)
   {
@@ -1615,13 +1615,13 @@ double UTubs::SafetyFromInside(const UVector3& p, bool) const
   //
   if (!fPhiFullTube)
   {
-    if (p.y * fCosCPhi - p.x * fSinCPhi <= 0)
+    if (p.y() * fCosCPhi - p.x() * fSinCPhi <= 0)
     {
-      safePhi = -(p.x * fSinSPhi - p.y * fCosSPhi);
+      safePhi = -(p.x() * fSinSPhi - p.y() * fCosSPhi);
     }
     else
     {
-      safePhi = (p.x * fSinEPhi - p.y * fCosEPhi);
+      safePhi = (p.x() * fSinEPhi - p.y() * fCosEPhi);
     }
     if (safePhi < safe)
     {

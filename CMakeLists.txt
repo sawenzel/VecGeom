@@ -100,8 +100,8 @@ endif()
 if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
-  set(LIBS ${LIBS} ${VC_LIBRARIES})
-  include_directories(${VC_INCLUDE_DIR})
+  set(LIBS ${LIBS} ${Vc_LIBRARIES})
+  include_directories(${Vc_INCLUDE_DIR})
 
 endif()
 

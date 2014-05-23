@@ -202,14 +202,14 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
   VUSolid::EnumInside  in = eInside;
   double  cross, len2;
   int  count = 0;
-  UVector2 pt(p.x, p.y);
+  UVector2 pt(p.x(), p.y());
 
   for (int  i = 0; i < 4; i++)
   {
     int  j = (i + 1) % 4;
 
-    cross = (p.x - poly[i].x) * (poly[j].y - poly[i].y) -
-            (p.y - poly[i].y) * (poly[j].x - poly[i].x);
+    cross = (p.x() - poly[i].x) * (poly[j].y - poly[i].y) -
+            (p.y() - poly[i].y) * (poly[j].x - poly[i].x);
     if (cross < 0.)return eOutside;
 
     len2 = (poly[i] - poly[j]).mag2();
@@ -232,12 +232,12 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
 
         if (poly[k].x != poly[l].x)
         {
-          test = (p.x - poly[l].x) / (poly[k].x - poly[l].x)
+          test = (p.x() - poly[l].x) / (poly[k].x - poly[l].x)
                  * (poly[k].y - poly[l].y) + poly[l].y;
         }
         else
         {
-          test = p.y;
+          test = p.y();
         }
 
         // Check if point is Inside Segment
@@ -267,7 +267,7 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
   //
   if (count == 4)
   {
-    if ((std::fabs(p.x - poly[0].x) + std::fabs(p.y - poly[0].y)) > halfCarTolerance)
+    if ((std::fabs(p.x() - poly[0].x) + std::fabs(p.y() - poly[0].y)) > halfCarTolerance)
     {
       in = eOutside;
     }
@@ -344,11 +344,11 @@ VUSolid::EnumInside UGenericTrap::Inside(const UVector3& p) const
   UVector2 xy[4];
   if (fBoundBox->Inside(p) == eOutside) return eOutside;
 
-  if (std::fabs(p.z) <= fDz + halfCarTolerance) // First check Z range
+  if (std::fabs(p.z()) <= fDz + halfCarTolerance) // First check Z range
   {
     // Compute intersection between Z plane containing point and the shape
     //
-    double  cf = 0.5 * (fDz - p.z) / fDz;
+    double  cf = 0.5 * (fDz - p.z()) / fDz;
     for (int  i = 0; i < 4; i++)
     {
       xy[i] = fVertices[i + 4] + cf * (fVertices[i] - fVertices[i + 4]);
@@ -358,7 +358,7 @@ VUSolid::EnumInside UGenericTrap::Inside(const UVector3& p) const
 
     if ((innew == eInside) || (innew == eSurface))
     {
-      if (std::fabs(p.z) > fDz - halfCarTolerance)
+      if (std::fabs(p.z()) > fDz - halfCarTolerance)
       {
         innew = eSurface;
       }
@@ -389,10 +389,10 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   double  distxy, distz;
   bool zPlusSide = false;
 
-  distz = fDz - std::fabs(p.z);
+  distz = fDz - std::fabs(p.z());
   if (distz < halfCarTolerance)
   {
-    if (p.z > 0)
+    if (p.z() > 0)
     {
       zPlusSide = true;
       sumnorm = UVector3(0, 0, 1);
@@ -407,7 +407,7 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   // Check lateral planes
   //
   UVector2 vertices[4];
-  double  cf = 0.5 * (fDz - p.z) / fDz;
+  double  cf = 0.5 * (fDz - p.z()) / fDz;
   for (int  i = 0; i < 4; i++)
   {
     vertices[i] = fVertices[i + 4] + cf * (fVertices[i] - fVertices[i + 4]);
@@ -418,7 +418,7 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   //
   for (int  q = 0; q < 4; q++)
   {
-    p0 = UVector3(vertices[q].x, vertices[q].y, p.z);
+    p0 = UVector3(vertices[q].x, vertices[q].y, p.z());
     if (zPlusSide)
     {
       p1 = UVector3(fVertices[q].x, fVertices[q].y, -fDz);
@@ -427,13 +427,13 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
     {
       p1 = UVector3(fVertices[q + 4].x, fVertices[q + 4].y, fDz);
     }
-    p2 = UVector3(vertices[(q + 1) % 4].x, vertices[(q + 1) % 4].y, p.z);
+    p2 = UVector3(vertices[(q + 1) % 4].x, vertices[(q + 1) % 4].y, p.z());
 
     // Collapsed vertices
     //
     if ((p2 - p0).Mag2() < VUSolid::fgTolerance)
     {
-      if (std::fabs(p.z + fDz) > VUSolid::fgTolerance)
+      if (std::fabs(p.z() + fDz) > VUSolid::fgTolerance)
       {
         p2 = UVector3(fVertices[(q + 1) % 4].x, fVertices[(q + 1) % 4].y, -fDz);
       }
@@ -540,7 +540,7 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   static const double  halfCarTolerance=VUSolid::fgTolerance*0.5;
   UVector3 lnorm, norm(0.,0.,0.), p0,p1,p2;
 
-  double   distz = fDz-p.z;
+  double   distz = fDz-p.z();
   int  i=ipl;  // current plane index
 
   UVector2 u,v;
@@ -553,28 +553,28 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
 
   // Compute cross product
   //
-  p0=UVector3(u.x,u.y,p.z);
+  p0=UVector3(u.x(),u.y(),p.z());
 
   if (std::fabs(distz)<halfCarTolerance)
   {
-    p1=UVector3(fVertices[i].x,fVertices[i].y,-fDz);distz=-1;}
+    p1=UVector3(fVertices[i].x(),fVertices[i].y(),-fDz);distz=-1;}
   else
   {
-    p1=UVector3(fVertices[i+4].x,fVertices[i+4].y,fDz);
+    p1=UVector3(fVertices[i+4].x(),fVertices[i+4].y(),fDz);
   }
-  p2=UVector3(v.x,v.y,p.z);
+  p2=UVector3(v.x(),v.y(),p.z());
 
   // Collapsed vertices
   //
   if ( (p2-p0).Mag2() < VUSolid::fgTolerance )
   {
-    if ( std::fabs(p.z+fDz) > halfCarTolerance )
+    if ( std::fabs(p.z()+fDz) > halfCarTolerance )
     {
-      p2=UVector3(fVertices[j].x,fVertices[j].y,-fDz);
+      p2=UVector3(fVertices[j].x(),fVertices[j].y(),-fDz);
     }
     else
     {
-      p2=UVector3(fVertices[j+4].x,fVertices[j+4].y,fDz);
+      p2=UVector3(fVertices[j+4].x(),fVertices[j+4].y(),fDz);
     }
   }
 
@@ -605,12 +605,12 @@ UVector3 UGenericTrap::NormalToPlane(const UVector3& p,
   static const double  halfCarTolerance = VUSolid::fgTolerance * 0.5;
   UVector3 lnorm, norm(0., 0., 0.), p0, p1, p2;
 
-  double   distz = fDz - p.z;
+  double   distz = fDz - p.z();
   int  i = ipl; // current plane index
 
   UVector2 u, v;
   UVector3 r1, r2, r3, r4;
-  double  cf = 0.5 * (fDz - p.z) / fDz;
+  double  cf = 0.5 * (fDz - p.z()) / fDz;
   int  j = (i + 1) % 4;
 
   u = fVertices[i + 4] + cf * (fVertices[i] - fVertices[i + 4]);
@@ -618,7 +618,7 @@ UVector3 UGenericTrap::NormalToPlane(const UVector3& p,
 
   // Compute cross product
   //
-  p0 = UVector3(u.x, u.y, p.z);
+  p0 = UVector3(u.x, u.y, p.z());
 
   if (std::fabs(distz) < halfCarTolerance)
   {
@@ -629,13 +629,13 @@ UVector3 UGenericTrap::NormalToPlane(const UVector3& p,
   {
     p1 = UVector3(fVertices[i + 4].x, fVertices[i + 4].y, fDz);
   }
-  p2 = UVector3(v.x, v.y, p.z);
+  p2 = UVector3(v.x, v.y, p.z());
 
   // Collapsed vertices
   //
   if ((p2 - p0).Mag2() < VUSolid::fgTolerance)
   {
-    if (std::fabs(p.z + fDz) > halfCarTolerance)
+    if (std::fabs(p.z() + fDz) > halfCarTolerance)
     {
       p2 = UVector3(fVertices[j].x, fVertices[j].y, -fDz);
     }
@@ -718,7 +718,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
   double  ty1 = dz2 * (yb - ya);
   double  tx2 = dz2 * (xd - xc);
   double  ty2 = dz2 * (yd - yc);
-  double  dzp = fDz + p.z;
+  double  dzp = fDz + p.z();
   double  xs1 = xa + tx1 * dzp;
   double  ys1 = ya + ty1 * dzp;
   double  xs2 = xc + tx2 * dzp;
@@ -728,10 +728,10 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
   double  dtx = tx2 - tx1;
   double  dty = ty2 - ty1;
 
-  double  a = (dtx * v.y - dty * v.x + (tx1 * ty2 - tx2 * ty1) * v.z) * v.z;
-  double  b = dxs * v.y - dys * v.x + (dtx * p.y - dty * p.x + ty2 * xs1 - ty1 * xs2
-                                       + tx1 * ys2 - tx2 * ys1) * v.z;
-  double  c = dxs * p.y - dys * p.x + xs1 * ys2 - xs2 * ys1;
+  double  a = (dtx * v.y() - dty * v.x() + (tx1 * ty2 - tx2 * ty1) * v.z()) * v.z();
+  double  b = dxs * v.y() - dys * v.x() + (dtx * p.y() - dty * p.x() + ty2 * xs1 - ty1 * xs2
+                                       + tx1 * ys2 - tx2 * ys1) * v.z();
+  double  c = dxs * p.y() - dys * p.x() + xs1 * ys2 - xs2 * ys1;
   double  q = UUtils::Infinity();
   double  x1, x2, y1, y2, xp, yp, zi;
 
@@ -764,15 +764,15 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
 
       // Check the Intersection
       //
-      zi = p.z + q * v.z;
+      zi = p.z() + q * v.z();
       if (std::fabs(zi) < fDz)
       {
-        x1 = xs1 + tx1 * v.z * q;
-        x2 = xs2 + tx2 * v.z * q;
-        xp = p.x + q * v.x;
-        y1 = ys1 + ty1 * v.z * q;
-        y2 = ys2 + ty2 * v.z * q;
-        yp = p.y + q * v.y;
+        x1 = xs1 + tx1 * v.z() * q;
+        x2 = xs2 + tx2 * v.z() * q;
+        xp = p.x() + q * v.x();
+        y1 = ys1 + ty1 * v.z() * q;
+        y2 = ys2 + ty2 * v.z() * q;
+        yp = p.y() + q * v.y();
         zi = (xp - x1) * (xp - x2) + (yp - y1) * (yp - y2);
         if (zi <= halfCarTolerance)
         {
@@ -825,15 +825,15 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       }
       // Check the Intersection
       //
-      zi = p.z + q * v.z;
+      zi = p.z() + q * v.z();
       if (std::fabs(zi) < fDz)
       {
-        x1 = xs1 + tx1 * v.z * q;
-        x2 = xs2 + tx2 * v.z * q;
-        xp = p.x + q * v.x;
-        y1 = ys1 + ty1 * v.z * q;
-        y2 = ys2 + ty2 * v.z * q;
-        yp = p.y + q * v.y;
+        x1 = xs1 + tx1 * v.z() * q;
+        x2 = xs2 + tx2 * v.z() * q;
+        xp = p.x() + q * v.x();
+        y1 = ys1 + ty1 * v.z() * q;
+        y2 = ys2 + ty2 * v.z() * q;
+        yp = p.y() + q * v.y();
         zi = (xp - x1) * (xp - x2) + (yp - y1) * (yp - y2);
         if (zi <= halfCarTolerance)
         {
@@ -881,15 +881,15 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       }
       // Check the Intersection
       //
-      zi = p.z + q * v.z;
+      zi = p.z() + q * v.z();
       if (std::fabs(zi) < fDz)
       {
-        x1 = xs1 + tx1 * v.z * q;
-        x2 = xs2 + tx2 * v.z * q;
-        xp = p.x + q * v.x;
-        y1 = ys1 + ty1 * v.z * q;
-        y2 = ys2 + ty2 * v.z * q;
-        yp = p.y + q * v.y;
+        x1 = xs1 + tx1 * v.z() * q;
+        x2 = xs2 + tx2 * v.z() * q;
+        xp = p.x() + q * v.x();
+        y1 = ys1 + ty1 * v.z() * q;
+        y2 = ys2 + ty2 * v.z() * q;
+        yp = p.y() + q * v.y();
         zi = (xp - x1) * (xp - x2) + (yp - y1) * (yp - y2);
         if (zi <= halfCarTolerance)
         {
@@ -929,18 +929,18 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
   // Check Z planes
   //
   dist[4] = UUtils::Infinity();
-  if (std::fabs(p.z) > fDz - halfCarTolerance)
+  if (std::fabs(p.z()) > fDz - halfCarTolerance)
   {
-    if (v.z)
+    if (v.z())
     {
       UVector3 pt;
-      if (p.z > 0)
+      if (p.z() > 0)
       {
-        dist[4] = (fDz - p.z) / v.z;
+        dist[4] = (fDz - p.z()) / v.z();
       }
       else
       {
-        dist[4] = (-fDz - p.z) / v.z;
+        dist[4] = (-fDz - p.z()) / v.z();
       }
       if (dist[4] < -halfCarTolerance)
       {
@@ -950,7 +950,7 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
       {
         if (dist[4] < halfCarTolerance)
         {
-          if (p.z > 0)
+          if (p.z() > 0)
           {
             n = UVector3(0, 0, 1);
           }
@@ -1005,7 +1005,7 @@ double UGenericTrap::SafetyFromOutside(const UVector3& p, bool precise) const
   }
 #endif
   if (!precise)return fBoundBox->SafetyFromOutside(p, !precise);
-  double  safz = std::fabs(p.z) - fDz;
+  double  safz = std::fabs(p.z()) - fDz;
   if (safz < 0)
   {
     safz = 0;
@@ -1082,11 +1082,11 @@ UGenericTrap::DistToTriangle(const UVector3& p,
   double  b = (xc - xa) * zab - (xb - xa) * zac;
   double  c = (xb - xa) * (yc - ya) - (xc - xa) * (yb - ya);
   double  d = -xa * a - ya * b + fDz * c;
-  double  t = a * v.x + b * v.y + c * v.z;
+  double  t = a * v.x() + b * v.y() + c * v.z();
 
   if (t != 0)
   {
-    t = -(a * p.x + b * p.y + c * p.z + d) / t;
+    t = -(a * p.x() + b * p.y() + c * p.z() + d) / t;
   }
   if ((t < halfCarTolerance) && (t > -halfCarTolerance))
   {
@@ -1125,17 +1125,17 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
   aConvex = true;
   //   *validNorm=true;  // All normals are valid
 
-  if (v.z < 0)
+  if (v.z() < 0)
   {
-    distmin = (-fDz - p.z) / v.z;
+    distmin = (-fDz - p.z()) / v.z();
     side = kMZ;
     aNormalVector.Set(0, 0, -1);
   }
   else
   {
-    if (v.z > 0)
+    if (v.z() > 0)
     {
-      distmin = (fDz - p.z) / v.z;
+      distmin = (fDz - p.z()) / v.z();
       side = kPZ;
       aNormalVector.Set(0, 0, 1);
     }
@@ -1177,7 +1177,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     double  ty1 = dz2 * (yb - ya);
     double  tx2 = dz2 * (xd - xc);
     double  ty2 = dz2 * (yd - yc);
-    double  dzp = fDz + p.z;
+    double  dzp = fDz + p.z();
     double  xs1 = xa + tx1 * dzp;
     double  ys1 = ya + ty1 * dzp;
     double  xs2 = xc + tx2 * dzp;
@@ -1186,10 +1186,10 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     double  dys = ys2 - ys1;
     double  dtx = tx2 - tx1;
     double  dty = ty2 - ty1;
-    double  a = (dtx * v.y - dty * v.x + (tx1 * ty2 - tx2 * ty1) * v.z) * v.z;
-    double  b = dxs * v.y - dys * v.x + (dtx * p.y - dty * p.x + ty2 * xs1 - ty1 * xs2
-                                         + tx1 * ys2 - tx2 * ys1) * v.z;
-    double  c = dxs * p.y - dys * p.x + xs1 * ys2 - xs2 * ys1;
+    double  a = (dtx * v.y() - dty * v.x() + (tx1 * ty2 - tx2 * ty1) * v.z()) * v.z();
+    double  b = dxs * v.y() - dys * v.x() + (dtx * p.y() - dty * p.x() + ty2 * xs1 - ty1 * xs2
+                                         + tx1 * ys2 - tx2 * ys1) * v.z();
+    double  c = dxs * p.y() - dys * p.x() + xs1 * ys2 - xs2 * ys1;
     double  q = UUtils::Infinity();
 
     if (std::fabs(a) < VUSolid::fgTolerance)
@@ -1315,7 +1315,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     // Check if propagated point is in the polygon
     //
     int  i = 0;
-    if (v.z > 0.)
+    if (v.z() > 0.)
     {
       i = 4;
     }
@@ -1332,7 +1332,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     if (InsidePolygone(pt, xy) == eOutside)
     {
 
-      if (v.z > 0)
+      if (v.z() > 0)
       {
         side = kPZ;
         aNormalVector.Set(0, 0, 1);
@@ -1347,7 +1347,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     }
     else
     {
-      if (v.z > 0)
+      if (v.z() > 0)
       {
         side = kPZ;
       }
@@ -1386,13 +1386,13 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
       int  oldprc = message.precision(16);
       message << "Undefined side for valid surface normal to solid." << std::endl
               << "Position:" << std::endl
-              << "  p.x() = "   << p.x << " mm" << std::endl
-              << "  p.y() = "   << p.y << " mm" << std::endl
-              << "  p.z() = "   << p.z << " mm" << std::endl
+              << "  p.x() = "   << p.x() << " mm" << std::endl
+              << "  p.y() = "   << p.y() << " mm" << std::endl
+              << "  p.z() = "   << p.z() << " mm" << std::endl
               << "Direction:" << std::endl
-              << "  v.x() = "   << v.x << std::endl
-              << "  v.y() = "   << v.y << std::endl
-              << "  v.z() = "   << v.z << std::endl
+              << "  v.x() = "   << v.x() << std::endl
+              << "  v.y() = "   << v.y() << std::endl
+              << "  v.z() = "   << v.z() << std::endl
               << "Proposed distance :" << std::endl
               << "  distmin = " << distmin << " mm";
       message.precision(oldprc);
@@ -1420,7 +1420,7 @@ double  UGenericTrap::SafetyFromInside(const UVector3& p, bool) const
   }
 #endif
 
-  double  safz = fDz - std::fabs(p.z);
+  double  safz = fDz - std::fabs(p.z());
   if (safz < 0)
   {
     safz = 0;
@@ -1971,22 +1971,22 @@ UGenericTrap::IsSegCrossingZ(const UVector2& a, const UVector2& b,
 
   // In case of Collapsed Vertices No crossing
   //
-  if ((std::fabs(dv.x) < VUSolid::fgTolerance) &&
-      (std::fabs(dv.y) < VUSolid::fgTolerance))
+  if ((std::fabs(dv.x()) < VUSolid::fgTolerance) &&
+      (std::fabs(dv.y()) < VUSolid::fgTolerance))
   {
     return false;
   }
 
-  if ((std::fabs((p4 - p3).x) < VUSolid::fgTolerance) &&
-      (std::fabs((p4 - p3).y) < VUSolid::fgTolerance))
+  if ((std::fabs((p4 - p3).x()) < VUSolid::fgTolerance) &&
+      (std::fabs((p4 - p3).y()) < VUSolid::fgTolerance))
   {
     return false;
   }
 
   // First estimate if Intersection is possible( if det is 0)
   //
-  det = dv.x * v1.y * v2.z + dv.y * v1.z * v2.x
-        - dv.x * v1.z * v2.y - dv.y * v1.x * v2.z;
+  det = dv.x() * v1.y() * v2.z() + dv.y() * v1.z() * v2.x()
+        - dv.x() * v1.z() * v2.y() - dv.y() * v1.x() * v2.z();
 
   if (std::fabs(det) < VUSolid::fgTolerance) //Intersection
   {
@@ -2038,7 +2038,7 @@ UGenericTrap::MakeDownFacet(const std::vector<UVector3>& fromVertices,
   //
   UVector3 cross = (vertices[1] - vertices[0]).Cross(vertices[2] - vertices[1]);
 
-  if (cross.z > 0.0)
+  if (cross.z() > 0.0)
   {
     // Should not happen, as vertices should have been reordered at this stage
 
@@ -2078,7 +2078,7 @@ UGenericTrap::MakeUpFacet(const std::vector<UVector3>& fromVertices,
   //
   UVector3 cross = (vertices[1] - vertices[0]).Cross(vertices[2] - vertices[1]);
 
-  if (cross.z < 0.0)
+  if (cross.z() < 0.0)
   {
     // Should not happen, as vertices should have been reordered at this stage
 
@@ -2148,7 +2148,7 @@ UTessellatedSolid* UGenericTrap::CreateTessellatedSolid() const
     = (downVertices[1] - downVertices[0]).Cross(downVertices[2] - downVertices[1]);
   UVector3 cross1
     = (upVertices[1] - upVertices[0]).Cross(upVertices[2] - upVertices[1]);
-  if ((cross.z > 0.0) || (cross1.z > 0.0))
+  if ((cross.z() > 0.0) || (cross1.z() > 0.0))
   {
     ReorderVertices(downVertices);
     ReorderVertices(upVertices);

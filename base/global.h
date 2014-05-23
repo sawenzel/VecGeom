@@ -66,7 +66,7 @@ typedef float Precision;
 #else
 typedef double Precision;
 #endif
-typedef short Inside_t;
+typedef int Inside_t;
 }
 
 namespace vecgeom_cuda {
@@ -77,8 +77,9 @@ typedef vecgeom::Inside_t Inside_t;
 namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
-VECGEOM_CONSTEXPR Precision kDegToRad = M_PI/180.;
-VECGEOM_CONSTEXPR Precision kRadToDeg = 180./M_PI;
+VECGEOM_CONSTEXPR Precision kPi = 3.14159265358979323846;
+VECGEOM_CONSTEXPR Precision kDegToRad = kPi/180.;
+VECGEOM_CONSTEXPR Precision kRadToDeg = 180./kPi;
 VECGEOM_CONSTEXPR Precision kInfinity =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::infinity();

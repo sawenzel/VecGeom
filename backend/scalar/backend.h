@@ -58,6 +58,16 @@ Type Sqrt(const Type val) {
   return sqrt(val);
 }
 
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Type ATan2(const Type y, const Type x) {
+  if (x != 0) return  std::atan2(y, x);
+  if (y >  0) return  kPi / 2;
+  if (y <  0) return -kPi / 2;
+  return  0;
+}
+
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision Min(Precision const &val1, Precision const &val2) {
