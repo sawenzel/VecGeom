@@ -1,15 +1,15 @@
-/// @file ShapeImplementationHelper.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file ShapeImplementationHelper.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 #define VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 
 #include "base/global.h"
 
-#include "backend/scalar/backend.h"
 #include "backend/backend.h"
-#include "base/soa3d.h"
+#include "backend/scalar/backend.h"
 #include "base/aos3d.h"
+#include "base/soa3d.h"
 #include "volumes/PlacedBox.h"
 
 #include <algorithm>

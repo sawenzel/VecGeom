@@ -502,7 +502,7 @@ void SBTperformance::PropagatedNormalU(const UVector3 &point, const UVector3 &di
     UVector3 surfacePoint = point + shift;
     volumeUSolids->Normal(surfacePoint, normal);
     VUSolid::EnumInside e = volumeUSolids->Inside(surfacePoint);
-    if (e != VUSolid::eSurface)
+    if (e != vecgeom::EInside::kSurface)
       e = e;
   }
 }

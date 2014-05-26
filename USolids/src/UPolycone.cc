@@ -434,17 +434,17 @@ VUSolid::EnumInside UPolycone::InsideSection(int index, const UVector3& p) const
 
   double r2 = p.x() * p.x() + p.y() * p.y();
 
-  if (r2 < rMinMinus * rMinMinus || r2 > rMaxPlus * rMaxPlus) return eOutside;
-  if (r2 < rMinPlus * rMinPlus || r2 > rMaxMinus * rMaxMinus) return eSurface;
+  if (r2 < rMinMinus * rMinMinus || r2 > rMaxPlus * rMaxPlus) return vecgeom::EInside::kOutside;
+  if (r2 < rMinPlus * rMinPlus || r2 > rMaxMinus * rMaxMinus) return vecgeom::EInside::kSurface;
 
   if (! phiIsOpen )
   {
     if (ps.z() < -dz + halfTolerance || ps.z() > dz - halfTolerance)
-      return eSurface;
-    return eInside;
+      return vecgeom::EInside::kSurface;
+    return vecgeom::EInside::kInside;
   }
 
-  if (r2 < 1e-10) return eInside;
+  if (r2 < 1e-10) return vecgeom::EInside::kInside;
 
   double phi = std::atan2(p.y(), p.x()); // * UUtils::kTwoPi;
   if ((phi < 0)||(endPhi > UUtils::kTwoPi)) phi += UUtils::kTwoPi;
@@ -454,16 +454,16 @@ VUSolid::EnumInside UPolycone::InsideSection(int index, const UVector3& p) const
   if ((phi <= endPhi + frTolerance)&&(phi>= startPhi-frTolerance))
   {
     if (ps.z() < -dz + halfTolerance || ps.z() > dz - halfTolerance)
-      return eSurface;
+      return vecgeom::EInside::kSurface;
 
     if (std::fabs(endPhi - phi) < frTolerance)
-      return eSurface;
+      return vecgeom::EInside::kSurface;
     if (std::fabs(startPhi - phi) < frTolerance)
-      return eSurface;
+      return vecgeom::EInside::kSurface;
 
-    return eInside;
+    return vecgeom::EInside::kInside;
   }
-  return eOutside;
+  return vecgeom::EInside::kOutside;
 }
 
 
@@ -471,14 +471,14 @@ VUSolid::EnumInside UPolycone::Inside(const UVector3& p) const
 {
   double shift = fZs[0] + fBox.GetZHalfLength();
   UVector3 pb(p.x(), p.y(), p.z() - shift);
-  if (fBox.Inside(pb) == eOutside)
-    return eOutside;
+  if (fBox.Inside(pb) == vecgeom::EInside::kOutside)
+    return vecgeom::EInside::kOutside;
 
   static const double htolerance = 0.5 * fgTolerance;
   int index = GetSection(p.z());
 
   EnumInside pos = InsideSection(index, p);
-  if (pos == eInside) return eInside;
+  if (pos == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
 
   int nextSection;
   EnumInside nextPos;
@@ -496,24 +496,24 @@ VUSolid::EnumInside UPolycone::Inside(const UVector3& p) const
   else
     return pos;
 
-  if (nextPos == eInside) return eInside;
+  if (nextPos == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
 
-  if (pos == eSurface && nextPos == eSurface)
+  if (pos == vecgeom::EInside::kSurface && nextPos == vecgeom::EInside::kSurface)
   {
     UVector3 n, n2;
     NormalSection(index, p, n);
     NormalSection(nextSection, p, n2);
     if ((n +  n2).Mag2() < 1000 * frTolerance)
-      return eInside;
+      return vecgeom::EInside::kInside;
   }
 
-  return (nextPos == eSurface || pos == eSurface) ? eSurface : eOutside;
+  return (nextPos == vecgeom::EInside::kSurface || pos == vecgeom::EInside::kSurface) ? vecgeom::EInside::kSurface : vecgeom::EInside::kOutside;
 
-//  return (res == VUSolid::eOutside) ? nextPos : res;
+//  return (res == vecgeom::EInside::kOutside) ? nextPos : res;
 }
 
 /*
-if (p.z() < fZs.front() - htolerance || p.z() > fZs.back() + htolerance) return VUSolid::eOutside;
+if (p.z() < fZs.front() - htolerance || p.z() > fZs.back() + htolerance) return vecgeom::EInside::kOutside;
 */
 
 double UPolycone::DistanceToIn(const UVector3& p,
@@ -556,7 +556,7 @@ double UPolycone::DistanceToIn(const UVector3& p,
     pb.z() += section.shift;
   }
   while (index >= 0 && index <= fMaxSection);
-  //if(Inside(p)==eInside)return UUtils::kInfinity;
+  //if(Inside(p)==vecgeom::EInside::kInside)return UUtils::kInfinity;
   return distance;
 }
 
@@ -583,7 +583,7 @@ double UPolycone::DistanceToOut(const UVector3&  p, const UVector3& v,
       pn = p + (totalDistance /*+ 0 * 1e-8*/) * v; // point must be shifted,
                                                    // so it could eventually
       pn.z() -= section.shift;                       // get into another solid
-      if (section.solid->Inside(pn) == eOutside)
+      if (section.solid->Inside(pn) == vecgeom::EInside::kOutside)
       {
         break;
       }
@@ -706,7 +706,7 @@ bool UPolycone::Normal(const UVector3& p, UVector3& n) const
     // the code bellow is not used can be deleted
 
     nextPos = section.solid->Inside(ps);
-    if (nextPos == eSurface)
+    if (nextPos == vecgeom::EInside::kSurface)
     {
       return res;
     }
@@ -728,14 +728,14 @@ bool UPolycone::Normal(const UVector3& p, UVector3& n) const
 
   EnumInside pos = InsideSection(index, p);
 
-  if (nextPos == eInside)
+  if (nextPos == vecgeom::EInside::kInside)
   {
     //UVector3 n;
     NormalSection(index, p, n);
     return false;
   }
 
-  if (pos == eSurface && nextPos == eSurface)
+  if (pos == vecgeom::EInside::kSurface && nextPos == vecgeom::EInside::kSurface)
   {
     //UVector3 n, n2;
     UVector3 n2;
@@ -749,9 +749,9 @@ bool UPolycone::Normal(const UVector3& p, UVector3& n) const
     }
   }
 
-  if (nextPos == eSurface || pos == eSurface)
+  if (nextPos == vecgeom::EInside::kSurface || pos == vecgeom::EInside::kSurface)
   {
-    if (pos != eSurface) index = nextSection;
+    if (pos != vecgeom::EInside::kSurface) index = nextSection;
     bool res = NormalSection(index, p, n);
     return res;
   }

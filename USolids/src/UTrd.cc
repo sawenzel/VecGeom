@@ -254,7 +254,7 @@ double UTrd::SafetyFromOutsideAccurate(const UVector3& p) const
 //
 VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
 {
-  VUSolid::EnumInside in = eOutside;
+  VUSolid::EnumInside in = vecgeom::EInside::kOutside;
   double x, y, zbase1, zbase2;
 
   if (std::abs(p.z()) <= fDz - fgTolerance / 2)
@@ -270,11 +270,11 @@ VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
       y = 0.5 * ((fDy2 * zbase1 + fDy1 * zbase2)) / fDz - fgTolerance / 2;
       if (std::abs(p.y()) <= y)
       {
-        in = eInside;
+        in = vecgeom::EInside::kInside;
       }
       else if (std::abs(p.y()) <= y + fgTolerance)
       {
-        in = eSurface;
+        in = vecgeom::EInside::kSurface;
       }
     }
     else if (std::abs(p.x()) <= x + fgTolerance)
@@ -284,7 +284,7 @@ VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
       y = 0.5 * ((fDy2 * zbase1 + fDy1 * zbase2)) / fDz + fgTolerance / 2;
       if (std::abs(p.y()) <= y)
       {
-        in = eSurface;
+        in = vecgeom::EInside::kSurface;
       }
     }
   }
@@ -303,7 +303,7 @@ VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
       // y = y half width of shape at z of point
       //
       y = 0.5 * ((fDy2 * zbase1 + fDy1 * zbase2)) / fDz + fgTolerance / 2;
-      if (std::abs(p.y()) <= y) in = eSurface;
+      if (std::abs(p.y()) <= y) in = vecgeom::EInside::kSurface;
     }
   }
   return in;
@@ -1035,7 +1035,7 @@ bool UTrd::Normal(const UVector3& p, UVector3& norm) const
     // if we added to the vector more than once, we have to normalize the vector
     if (noSurfaces > 1) norm.Normalize();
   }
-  return noSurfaces > 0; // (Inside(p) == eSurface);
+  return noSurfaces > 0; // (Inside(p) == vecgeom::EInside::kSurface);
 }
 
 

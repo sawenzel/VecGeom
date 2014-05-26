@@ -605,11 +605,11 @@ VUSolid::EnumInside UPolyhedraSide::Inside(const UVector3& p,
   // Use distance along normal to decide return value
   //
   if ((std::fabs(norm) < tolerance) && (*bestDistance < 2.0 * tolerance))
-    return VUSolid::eSurface;
+    return vecgeom::EInside::kSurface;
 
-  if (norm < 0) return VUSolid::eInside;
+  if (norm < 0) return vecgeom::EInside::kInside;
 
-  return VUSolid::eOutside;
+  return vecgeom::EInside::kOutside;
 }
 
 

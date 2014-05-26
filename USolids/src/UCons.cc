@@ -2011,7 +2011,7 @@ double UCons::SafetyFromInside(const UVector3& p, bool) const
   double pRMax;
 
 #ifdef UCSGDEBUG
-  if (Inside(p) == eOutside)
+  if (Inside(p) == vecgeom::EInside::kOutside)
   {
     int oldprc = cout.precision(16);
     cout << std::endl;

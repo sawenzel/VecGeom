@@ -153,7 +153,7 @@ UTubs& UTubs::operator = (const UTubs& rhs)
 inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
 {
   double r2, pPhi, tolRMin, tolRMax;
-  VUSolid::EnumInside in = eOutside;
+  VUSolid::EnumInside in = vecgeom::EInside::kOutside;
   static const double halfCarTolerance = VUSolid::Tolerance() * 0.5;
   static const double halfRadTolerance = kRadTolerance * 0.5;
   static const double halfAngTolerance = kAngTolerance * 0.5;
@@ -177,7 +177,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
     {
       if (fPhiFullTube)
       {
-        in = eInside;
+        in = vecgeom::EInside::kInside;
       }
       else
       {
@@ -187,7 +187,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
         if ((tolRMin == 0) && (std::fabs(p.x()) <= halfCarTolerance)
             && (std::fabs(p.y()) <= halfCarTolerance))
         {
-          in = eSurface;
+          in = vecgeom::EInside::kSurface;
         }
         else
         {
@@ -207,12 +207,12 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             if ((pPhi >= fSPhi + halfAngTolerance)
                 && (pPhi <= fSPhi + fDPhi - halfAngTolerance))
             {
-              in = eInside;
+              in = vecgeom::EInside::kInside;
             }
             else if ((pPhi >= fSPhi - halfAngTolerance)
                      && (pPhi <= fSPhi + fDPhi + halfAngTolerance))
             {
-              in = eSurface;
+              in = vecgeom::EInside::kSurface;
             }
           }
           else  // fSPhi < 0
@@ -225,11 +225,11 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             else if ((pPhi <= fSPhi + 2 * UUtils::kPi + halfAngTolerance)
                      && (pPhi >= fSPhi + fDPhi - halfAngTolerance))
             {
-              in = eSurface;
+              in = vecgeom::EInside::kSurface;
             }
             else
             {
-              in = eInside;
+              in = vecgeom::EInside::kInside;
             }
           }
         }
@@ -250,7 +250,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
         if (fPhiFullTube || (r2 <= halfRadTolerance * halfRadTolerance))
         {
           // Continuous in phi or on z-axis
-          in = eSurface;
+          in = vecgeom::EInside::kSurface;
         }
         else // Try outer tolerant phi boundaries only
         {
@@ -270,7 +270,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             if ((pPhi >= fSPhi - halfAngTolerance)
                 && (pPhi <= fSPhi + fDPhi + halfAngTolerance))
             {
-              in = eSurface;
+              in = vecgeom::EInside::kSurface;
             }
           }
           else  // fSPhi < 0
@@ -282,7 +282,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             }
             else
             {
-              in = eSurface;
+              in = vecgeom::EInside::kSurface;
             }
           }
         }
@@ -306,7 +306,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
       if (fPhiFullTube || (r2 <= halfRadTolerance * halfRadTolerance))
       {
         // Continuous in phi or on z-axis
-        in = eSurface;
+        in = vecgeom::EInside::kSurface;
       }
       else // Try outer tolerant phi boundaries
       {
@@ -326,7 +326,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
           if ((pPhi >= fSPhi - halfAngTolerance)
               && (pPhi <= fSPhi + fDPhi + halfAngTolerance))
           {
-            in = eSurface;
+            in = vecgeom::EInside::kSurface;
           }
         }
         else  // fSPhi < 0
@@ -338,7 +338,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
           }
           else
           {
-            in = eSurface;
+            in = vecgeom::EInside::kSurface;
           }
         }
       }
@@ -1571,7 +1571,7 @@ double UTubs::SafetyFromInside(const UVector3& p, bool) const
   rho = std::sqrt(p.x() * p.x() + p.y() * p.y());
 
 #ifdef UDEBUG
-  if (Inside(p) == eOutside)
+  if (Inside(p) == vecgeom::EInside::kOutside)
   {
     int oldprc = cout.precision(16);
     cout << std::endl;

@@ -226,15 +226,15 @@ VUSolid::EnumInside UTet::Inside(const UVector3& p) const
       (r142 = p.Dot(fNormal142) - fCdotN142) > fTol ||
       (r234 = p.Dot(fNormal234) - fCdotN234) > fTol)
   {
-    return eOutside; // at least one is out!
+    return vecgeom::EInside::kOutside; // at least one is out!
   }
   else if ((r123 < -fTol) && (r134 < -fTol) && (r142 < -fTol) && (r234 < -fTol))
   {
-    return eInside; // all are definitively inside
+    return vecgeom::EInside::kInside; // all are definitively inside
   }
   else
   {
-    return eSurface; // too close to tell
+    return vecgeom::EInside::kSurface; // too close to tell
   }
 }
 

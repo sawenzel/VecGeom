@@ -1,7 +1,5 @@
-/**
- * @file placed_volume.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file placed_volume.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_PLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
@@ -10,16 +8,17 @@
 
 #include "base/transformation3d.h"
 #include "volumes/logical_volume.h"
+#include "volumes/USolidsInterfaceHelper.h"
 
-#include <string>
 #include <list>
+#include <string>
 
 namespace VECGEOM_NAMESPACE {
 
 // Forward declaration for bounding box
 class PlacedBox;
 
-class VPlacedVolume {
+class VPlacedVolume : public USolidsInterfaceHelper {
 
 private:
 

@@ -508,7 +508,7 @@ VUSolid::EnumInside UPolyhedra::Inside(const UVector3& p) const
   //
   // Quick test
   //
-  if (fEnclosingCylinder->MustBeOutside(p)) return eOutside;
+  if (fEnclosingCylinder->MustBeOutside(p)) return vecgeom::EInside::kOutside;
 
   //
   // Long answer

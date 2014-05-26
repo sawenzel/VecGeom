@@ -829,7 +829,7 @@ VUSolid::EnumInside UExtrudedSolid::Inside(const UVector3& p) const
   {
     //    std::cout<<"UExtru::Inside "<< GetMinXExtent()<<"  "<<GetMaxZExtent()<<" tol="<<VUSolid::fgTolerance * 0.5<<std::endl;
     // G4cout << "UExtrudedSolid::Outside extent: " << p << std::endl;
-    return eOutside;
+    return vecgeom::EInside::kOutside;
   }
 
   // Project point p(z) to the polygon scale p0
@@ -846,7 +846,7 @@ VUSolid::EnumInside UExtrudedSolid::Inside(const UVector3& p) const
       // G4cout << "UExtrudedSolid::Inside return Surface (on polygon) "
       //        << std::endl;
 
-      return eSurface;
+      return vecgeom::EInside::kSurface;
     }
   }
 
@@ -875,17 +875,17 @@ VUSolid::EnumInside UExtrudedSolid::Inside(const UVector3& p) const
       // G4cout << "UExtrudedSolid::Inside return Surface (on z side)"
       //        << std::endl;
 
-      return eSurface;
+      return vecgeom::EInside::kSurface;
     }
 
     // G4cout << "UExtrudedSolid::Inside return Inside" << std::endl;
 
-    return eInside;
+    return vecgeom::EInside::kInside;
   }
 
   // G4cout << "UExtrudedSolid::Inside return Outside " << std::endl;
 
-  return eOutside;
+  return vecgeom::EInside::kOutside;
 }
 
 //_____________________________________________________________________________

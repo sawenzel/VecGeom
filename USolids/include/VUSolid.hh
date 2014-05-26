@@ -8,6 +8,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "base/global.h"
+
 #include "UTypes.hh"
 #include "UVector3.hh"
 
@@ -20,7 +22,7 @@ class VUSolid
 {
 public:
 
-enum EnumInside { eInside=0, eSurface=1, eOutside=2 }; 
+typedef vecgeom::Inside_t EnumInside;
    // Use eInside < eSurface < eOutside: allows "max(,)" to combine Inside of surfaces
    // Potentially replace eSurface with eInSurface, eOutSurface 
 

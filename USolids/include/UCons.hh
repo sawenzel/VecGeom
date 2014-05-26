@@ -137,15 +137,15 @@ class UCons : public VUSolid
 
       if (std::fabs(p.z()) > fDz + halfCarTolerance)
       {
-        return in = eOutside;
+        return in = vecgeom::EInside::kOutside;
       }
       else if (std::fabs(p.z()) >= fDz - halfCarTolerance)
       {
-        in = eSurface;
+        in = vecgeom::EInside::kSurface;
       }
       else
       {
-        in = eInside;
+        in = vecgeom::EInside::kInside;
       }
 
       r2 = p.x() * p.x() + p.y() * p.y();
@@ -163,7 +163,7 @@ class UCons : public VUSolid
 
       if ((r2 < tolRMin * tolRMin) || (r2 > tolRMax * tolRMax))
       {
-        return in = eOutside;
+        return in = vecgeom::EInside::kOutside;
       }
 
       if (rl)
@@ -176,11 +176,11 @@ class UCons : public VUSolid
       }
       tolRMax = rh - halfRadTolerance;
 
-      if (in == eInside) // else it's eSurface already
+      if (in == vecgeom::EInside::kInside) // else it's eSurface already
       {
         if ((r2 < tolRMin * tolRMin) || (r2 >= tolRMax * tolRMax))
         {
-          in = eSurface;
+          in = vecgeom::EInside::kSurface;
         }
       }
       if (!fPhiFullCone && ((p.x() != 0.0) || (p.y() != 0.0)))
@@ -199,21 +199,21 @@ class UCons : public VUSolid
         if ((pPhi < fSPhi - halfAngTolerance) ||
             (pPhi > fSPhi + fDPhi + halfAngTolerance))
         {
-          return in = eOutside;
+          return in = vecgeom::EInside::kOutside;
         }
 
-        else if (in == eInside) // else it's eSurface anyway already
+        else if (in == vecgeom::EInside::kInside) // else it's eSurface anyway already
         {
           if ((pPhi < fSPhi + halfAngTolerance) ||
               (pPhi > fSPhi + fDPhi - halfAngTolerance))
           {
-            in = eSurface;
+            in = vecgeom::EInside::kSurface;
           }
         }
       }
       else if (!fPhiFullCone)
       {
-        in = eSurface;
+        in = vecgeom::EInside::kSurface;
       }
 
       return in;

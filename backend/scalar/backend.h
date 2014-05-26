@@ -1,7 +1,5 @@
-/**
- * @file scalar/backend.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// @file scalar/backend.h
+/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_

@@ -165,7 +165,7 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
 {
   double rho, rho2, rad2, tolRMin, tolRMax;
   double pPhi, pTheta;
-  VUSolid::EnumInside in = eOutside;
+  VUSolid::EnumInside in = vecgeom::EInside::kOutside;
   static const double halfAngTolerance = kAngTolerance * 0.5;
   const double halfTolerance = kTolerance * 0.5;
   const double halfRminTolerance = fRminTolerance * 0.5;
@@ -182,7 +182,7 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
 
   if ((rad2 <= rMaxMinus * rMaxMinus) && (rad2 >= rMinPlus * rMinPlus))
   {
-    in = eInside;
+    in = vecgeom::EInside::kInside;
   }
   else
   {
@@ -190,11 +190,11 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     tolRMin = std::max(fRmin - halfRminTolerance, 0.);    // outside case
     if ((rad2 <= tolRMax * tolRMax) && (rad2 >= tolRMin * tolRMin))
     {
-      in = eSurface;
+      in = vecgeom::EInside::kSurface;
     }
     else
     {
-      return in = eOutside;
+      return in = vecgeom::EInside::kOutside;
     }
   }
 
@@ -216,15 +216,15 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     if ((pPhi < fSPhi - halfAngTolerance)
         || (pPhi > ePhi + halfAngTolerance))
     {
-      return in = eOutside;
+      return in = vecgeom::EInside::kOutside;
     }
 
-    else if (in == eInside) // else it's eSurface anyway already
+    else if (in == vecgeom::EInside::kInside) // else it's eSurface anyway already
     {
       if ((pPhi < fSPhi + halfAngTolerance)
           || (pPhi > ePhi - halfAngTolerance))
       {
-        in = eSurface;
+        in = vecgeom::EInside::kSurface;
       }
     }
   }
@@ -236,7 +236,7 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     rho   = std::sqrt(rho2);
     pTheta = std::atan2(rho, p.z());
 
-    if (in == eInside)
+    if (in == vecgeom::EInside::kInside)
     {
       if ((pTheta < fSTheta + halfAngTolerance)
           || (pTheta > eTheta - halfAngTolerance))
@@ -244,11 +244,11 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
         if ((pTheta >= fSTheta - halfAngTolerance)
             && (pTheta <= eTheta + halfAngTolerance))
         {
-          in = eSurface;
+          in = vecgeom::EInside::kSurface;
         }
         else
         {
-          in = eOutside;
+          in = vecgeom::EInside::kOutside;
         }
       }
     }
@@ -257,7 +257,7 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
       if ((pTheta < fSTheta - halfAngTolerance)
           || (pTheta > eTheta + halfAngTolerance))
       {
-        in = eOutside;
+        in = vecgeom::EInside::kOutside;
       }
     }
   }
@@ -2643,7 +2643,7 @@ double USphere::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
   rho = std::sqrt(rho2);
 
 #ifdef UDEBUG
-  if (Inside(p) == eOutside)
+  if (Inside(p) == vecgeom::EInside::kOutside)
   {
     int old_prc = cout.precision(16);
     cout << std::endl;

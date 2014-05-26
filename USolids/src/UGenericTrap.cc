@@ -199,7 +199,7 @@ VUSolid::EnumInside
 UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
 {
   static const double  halfCarTolerance = VUSolid::fgTolerance * 0.5;
-  VUSolid::EnumInside  in = eInside;
+  VUSolid::EnumInside  in = vecgeom::EInside::kInside;
   double  cross, len2;
   int  count = 0;
   UVector2 pt(p.x(), p.y());
@@ -210,7 +210,7 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
 
     cross = (p.x() - poly[i].x) * (poly[j].y - poly[i].y) -
             (p.y() - poly[i].y) * (poly[j].x - poly[i].x);
-    if (cross < 0.)return eOutside;
+    if (cross < 0.)return vecgeom::EInside::kOutside;
 
     len2 = (poly[i] - poly[j]).mag2();
     if (len2 > VUSolid::fgTolerance)
@@ -245,16 +245,16 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
         if ((test >= (poly[l].y - halfCarTolerance))
             && (test <= (poly[k].y + halfCarTolerance)))
         {
-          return eSurface;
+          return vecgeom::EInside::kSurface;
         }
         else
         {
-          return eOutside;
+          return vecgeom::EInside::kOutside;
         }
       }
       else if (cross < 0.)
       {
-        return eOutside;
+        return vecgeom::EInside::kOutside;
       }
     }
     else
@@ -269,7 +269,7 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
   {
     if ((std::fabs(p.x() - poly[0].x) + std::fabs(p.y() - poly[0].y)) > halfCarTolerance)
     {
-      in = eOutside;
+      in = vecgeom::EInside::kOutside;
     }
   }
   return in;
@@ -340,9 +340,9 @@ VUSolid::EnumInside UGenericTrap::Inside(const UVector3& p) const
 #endif
 
   static const double  halfCarTolerance = VUSolid::fgTolerance * 0.5;
-  VUSolid::EnumInside innew = eOutside;
+  VUSolid::EnumInside innew = vecgeom::EInside::kOutside;
   UVector2 xy[4];
-  if (fBoundBox->Inside(p) == eOutside) return eOutside;
+  if (fBoundBox->Inside(p) == vecgeom::EInside::kOutside) return vecgeom::EInside::kOutside;
 
   if (std::fabs(p.z()) <= fDz + halfCarTolerance) // First check Z range
   {
@@ -356,11 +356,11 @@ VUSolid::EnumInside UGenericTrap::Inside(const UVector3& p) const
 
     innew = InsidePolygone(p, xy);
 
-    if ((innew == eInside) || (innew == eSurface))
+    if ((innew == vecgeom::EInside::kInside) || (innew == vecgeom::EInside::kSurface))
     {
       if (std::fabs(p.z()) > fDz - halfCarTolerance)
       {
-        innew = eSurface;
+        innew = vecgeom::EInside::kSurface;
       }
     }
 
@@ -504,7 +504,7 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   {
     UUtils::Exception("UGenericTrap::SurfaceNormal(p)", "GeomSolids1002",
                       Warning, 1, "Point p is not on surface !?");
-    if (Inside(p) != eSurface)
+    if (Inside(p) != vecgeom::EInside::kSurface)
     {
       std::cout << "Point is not on Surface, confirmed by Inside()" << p << std::endl;
     }
@@ -751,7 +751,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       {
         if (NormalToPlane(p, ipl).Dot(v) <= 0)
         {
-          if (Inside(p) != eOutside)
+          if (Inside(p) != vecgeom::EInside::kOutside)
           {
             return 0.;
           }
@@ -802,7 +802,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       {
         if (NormalToPlane(p, ipl).Dot(v) <= 0)
         {
-          if (Inside(p) != eOutside)
+          if (Inside(p) != vecgeom::EInside::kOutside)
           {
             return 0.;
           }
@@ -858,7 +858,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       {
         if (NormalToPlane(p, ipl).Dot(v) <= 0)
         {
-          if (Inside(p) != eOutside)
+          if (Inside(p) != vecgeom::EInside::kOutside)
           {
             return 0.;
           }
@@ -968,7 +968,7 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
           }
         }
         pt = p + dist[4] * v;
-        if (Inside(pt) == eOutside)
+        if (Inside(pt) == vecgeom::EInside::kOutside)
         {
           dist[4] = UUtils::Infinity();
         }
@@ -1099,7 +1099,7 @@ UGenericTrap::DistToTriangle(const UVector3& p,
       t = 0;
     }
   }
-  if (Inside(p + v * t) != eSurface)
+  if (Inside(p + v * t) != vecgeom::EInside::kSurface)
   {
     t = UUtils::Infinity();
   }
@@ -1329,7 +1329,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
 
     // Check Inside
     //
-    if (InsidePolygone(pt, xy) == eOutside)
+    if (InsidePolygone(pt, xy) == vecgeom::EInside::kOutside)
     {
 
       if (v.z() > 0)
@@ -1589,7 +1589,7 @@ UVector3 UGenericTrap::GetPointOnSurface() const
     v = u + (v - u) * UUtils::Random();
   }
   point = UVector3(v.x, v.y, zp);
-  //if(Inside(point)!=eSurface){std::cout<<"GenericTrap::GetPointOnSurface-Point is not"<<point<<" ipl="<<ipl<<std::endl;}
+  //if(Inside(point)!=vecgeom::EInside::kSurface){std::cout<<"GenericTrap::GetPointOnSurface-Point is not"<<point<<" ipl="<<ipl<<std::endl;}
   return point;
 }
 

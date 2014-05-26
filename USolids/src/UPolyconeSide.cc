@@ -439,11 +439,11 @@ VUSolid::EnumInside UPolyconeSide::Inside(const UVector3& p,
   //
   if ((std::fabs(edgeRZnorm[i]) < atolerance)
       && (distOut2[i] < atolerance * atolerance))
-    return VUSolid::eSurface;
+    return vecgeom::EInside::kSurface;
   else if (edgeRZnorm[i] < 0)
-    return VUSolid::eInside;
+    return vecgeom::EInside::kInside;
   else
-    return VUSolid::eOutside;
+    return vecgeom::EInside::kOutside;
 }
 
 
