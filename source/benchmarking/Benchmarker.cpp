@@ -322,8 +322,6 @@ void Benchmarker::RunToInBenchmark() {
     printf("Times are printed as DistanceToIn/Safety.\n");
   }
 
-  printf("herp1\n");
-
   // Allocate memory
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;

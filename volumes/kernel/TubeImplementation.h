@@ -48,7 +48,7 @@ namespace TubeUtilities {
  * to use either at compile time (if it has enough information, saving an if statement) or at runtime.
 **/
 
-template<typename Backend, typename ShapeType, typename UnplacedVolumeType, bool onSurfaceT = false>
+template<typename Backend, typename ShapeType, typename UnplacedVolumeType, bool onSurfaceT>
  VECGEOM_INLINE
  VECGEOM_CUDA_HEADER_BOTH
  void PointInCyclicalSector(UnplacedVolumeType const& volume, typename Backend::precision_v const &x, 
@@ -103,7 +103,7 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
 
   Float_t delta = b*b - c;
   Bool_t delta_mask = delta > 0;
-  MaskedAssign(!delta_mask, 0., &delta);
+  MaskedAssign(!delta_mask, (Float_t) 0, &delta);
   delta = Sqrt(delta);
 
   if(!LargestSolution)
@@ -118,7 +118,7 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
 
     Bool_t insector = Backend::kTrue;
     if(checkPhiTreatment<TubeType>(tube)) {
-      PointInCyclicalSector<Backend, TubeType>(tube, hitx, hity, insector);
+      PointInCyclicalSector<Backend, TubeType, UnplacedTube, false>(tube, hitx, hity, insector);
     }
     ok = delta_mask & (dist > 0) & (Abs(hitz) <= tube.z()) & insector;
   }
@@ -344,7 +344,7 @@ struct TubeImplementation {
     Bool_t insector = Backend::kTrue;
     if(checkPhiTreatment<tubeTypeT>(tube)) {
 
-      PointInCyclicalSector<Backend, tubeTypeT>(tube, point.x(), point.y(), insector);
+      PointInCyclicalSector<Backend, tubeTypeT, UnplacedTube, false>(tube, point.x(), point.y(), insector);
       if(Backend::early_returns && !insector) {
         inside = Backend::kFalse;
         return;
@@ -438,7 +438,7 @@ struct TubeImplementation {
     }
     if(checkPhiTreatment<tubeTypeT>(tube)) {
       Bool_t insector;
-      PointInCyclicalSector<Backend, tubeTypeT>(tube, hitx, hity, insector);
+      PointInCyclicalSector<Backend, tubeTypeT, UnplacedTube, false>(tube, hitx, hity, insector);
       okz = okz & insector;
     }
 
@@ -665,7 +665,7 @@ struct TubeImplementation {
     if(checkPhiTreatment<tubeTypeT>(tube)) {
 
       Bool_t insector;
-      PointInCyclicalSector<Backend, tubeTypeT>(tube, local_point.x(), local_point.y(), insector);
+      PointInCyclicalSector<Backend, tubeTypeT, UnplacedTube, false>(tube, local_point.x(), local_point.y(), insector);
 
       if(Backend::early_returns && insector) return;
 

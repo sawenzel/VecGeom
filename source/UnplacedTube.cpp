@@ -119,7 +119,7 @@ void UnplacedTube_ConstructOnGpu(
 void UnplacedTube_CopyToGpu(
     const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr) {
-  UnplacedTube_ConstructOnGpu<<<1, 1>>>(rmin, rmax, z, sphi, dphi);
+  UnplacedTube_ConstructOnGpu<<<1, 1>>>(rmin, rmax, z, sphi, dphi, gpu_ptr);
 }
 
 #endif
