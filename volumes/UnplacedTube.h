@@ -45,6 +45,8 @@ private:
   }
 
 public:
+  
+  VECGEOM_CUDA_HEADER_BOTH
   UnplacedTube(const Precision rmin, const Precision rmax, const Precision z,
                const Precision sphi, const Precision dphi) : fRmin(rmin), fRmax(rmax),
                fZ(z), fSphi(sphi), fDphi(dphi) {

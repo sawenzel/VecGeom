@@ -2,6 +2,7 @@
 namespace VECGEOM_NAMESPACE {
 
 template<typename SpecializationT>
+VECGEOM_CUDA_HEADER_DEVICE
 VPlacedVolume* CreateSpecializedWithPlacement(
 	 LogicalVolume const *const logical_volume,
 	 Transformation3D const *const transformation,
