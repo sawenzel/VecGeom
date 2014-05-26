@@ -185,9 +185,12 @@ if (ROOT)
   find_package(ROOT REQUIRED)
 
   include_directories(${ROOT_INCLUDE_DIR})
+  include_directories(${ROOT_INCLUDE_DIR}/root)
   link_directories(${ROOT_LIBRARY_DIR})
-  link_directories(${ROOT_LIBRARY_DIR}/root)
-  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
+  #link_directories(${ROOT_LIBRARY_DIR}/root)
+
+  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom -lGui -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lm -ldl")
+
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
     source/placed_root_volume.cpp
     source/rootgeo_manager.cpp
@@ -386,6 +389,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
 )
@@ -412,11 +416,10 @@ if (NOT CUDA)
     )
     target_link_libraries(ParallelepipedBenchmark ${LIBS})
     
-    add_executable(
-      ParaboloidBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
-    )
+    add_executable(ParaboloidBenchmark ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp)
     target_link_libraries(ParaboloidBenchmark ${LIBS})
+    add_executable(ParaboloidTest ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp)
+    target_link_libraries(ParaboloidTest ${LIBS})
   endif()
 else()
   cuda_add_library(
@@ -453,6 +456,11 @@ else()
       ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
     )
     target_link_libraries(ParaboloidBenchmark ${LIBS})
+    add_executable(
+      ParaboloidTest
+      ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
+    )
+    target_link_libraries(ParaboloidTest ${LIBS})
 
   endif()
 endif()
