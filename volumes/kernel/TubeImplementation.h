@@ -103,7 +103,7 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
 
   Float_t delta = b*b - c;
   Bool_t delta_mask = delta > 0;
-  MaskedAssign(!delta_mask, (Float_t) 0, &delta);
+  MaskedAssign(!delta_mask, 0. , &delta);
   delta = Sqrt(delta);
 
   if(!LargestSolution)
