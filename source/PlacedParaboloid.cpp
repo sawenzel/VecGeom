@@ -20,10 +20,8 @@ VPlacedVolume const* PlacedParaboloid::ConvertToUnspecialized() const {
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedParaboloid::ConvertToRoot() const {
-  //assert(0 && "NYI");
-  //return NULL;
     std::cout<<"Convert ROOT*********\n";
-    return new TGeoParaboloid(label().c_str(), 3., 5., 7.);
+    return new TGeoParaboloid(label().c_str(), GetRlo(), GetRhi(), GetDz());
     
 }
 #endif
