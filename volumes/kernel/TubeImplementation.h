@@ -442,6 +442,11 @@ struct TubeImplementation {
       okz = okz & insector;
     }
 
+    if(Backend::early_returns && okz == Backend::kTrue) {
+      distance = distz;
+      return;
+    }
+
     /*
      * Calculate the intersection of the trajectory of
      * the particles with the two circles
@@ -450,7 +455,7 @@ struct TubeImplementation {
      * rmax calculations
      */
 
-    Float_t invnsq = 1 / ( dir_local.x()*dir_local.x() + dir_local.y()*dir_local.y() );
+    Float_t invnsq = 1 / ( 1 - dir_local.z()*dir_local.z() );
     Float_t rdotn = dir_local.x()*pos_local.x() + dir_local.y()*pos_local.y();
     Float_t rsq = pos_local.x()*pos_local.x() + pos_local.y()*pos_local.y();
     Float_t b = invnsq * rdotn;
