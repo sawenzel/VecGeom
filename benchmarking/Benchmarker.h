@@ -49,6 +49,15 @@ private:
 
 public:
 
+  Benchmarker();
+
+  /// \param world Mother volume containing daughters that will be benchmarked.
+  ///              The mother volume must have an available bounding box, as it
+  ///              is used in the sampling process.
+  Benchmarker(VPlacedVolume const *const world);
+
+  ~Benchmarker();
+
   /// \brief Runs all geometry benchmarks.
   void RunBenchmark();
 
@@ -68,13 +77,6 @@ public:
 
   /// \brief Runs a benchmark of the DistanceToOut and SafetyToOut methods.
   void RunToOutBenchmark();
-
-  /// \param world Mother volume containing daughters that will be benchmarked.
-  ///              The mother volume must have an available bounding box, as it
-  ///              is used in the sampling process.
-  Benchmarker(VPlacedVolume const *const world);
-
-  ~Benchmarker();
 
   /// \return Amount of points and directions sampled for each benchmark
   ///         iteration.

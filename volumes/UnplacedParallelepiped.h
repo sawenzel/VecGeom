@@ -8,7 +8,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-class UnplacedParallelepiped : public VUnplacedVolume, AlignedBase {
+class UnplacedParallelepiped : public VUnplacedVolume, public AlignedBase {
 
 private:
 

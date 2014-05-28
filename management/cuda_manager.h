@@ -1,17 +1,17 @@
-/**
- * @file cuda_manager.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file cuda_manager.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_MANAGEMENT_CUDAMANAGER_H_
 #define VECGEOM_MANAGEMENT_CUDAMANAGER_H_
-
-#include <map>
-#include <set>
  
 #include "base/global.h"
+
 #include "base/vector.h"
 #include "volumes/Box.h"
+
+#include <list>
+#include <map>
+#include <set>
 
 namespace vecgeom_cuda { class VPlacedVolume; }
 
@@ -57,6 +57,7 @@ private:
    * \sa CleanGpu()
    */
   MemoryMap memory_map;
+  std::list<void*> allocated_memory_;
 
 public:
 

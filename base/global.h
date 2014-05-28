@@ -1,7 +1,5 @@
-/**
- * @file global.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// @file global.h
+/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
@@ -66,6 +64,14 @@ typedef float Precision;
 #else
 typedef double Precision;
 #endif
+// namespace EInside {
+// enum EInside {
+//   kInside = 0,
+//   kSurface = 1,
+//   kOutside = 2
+// };
+// }
+// typedef EInside::EInside Inside_t;
 typedef int Inside_t;
 }
 
@@ -77,8 +83,9 @@ typedef vecgeom::Inside_t Inside_t;
 namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
-VECGEOM_CONSTEXPR Precision kDegToRad = M_PI/180.;
-VECGEOM_CONSTEXPR Precision kRadToDeg = 180./M_PI;
+VECGEOM_CONSTEXPR Precision kPi = 3.14159265358979323846;
+VECGEOM_CONSTEXPR Precision kDegToRad = kPi/180.;
+VECGEOM_CONSTEXPR Precision kRadToDeg = 180./kPi;
 VECGEOM_CONSTEXPR Precision kInfinity =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::infinity();
@@ -90,9 +97,9 @@ VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
 
 namespace EInside {
-  VECGEOM_CONSTEXPR Inside_t kInside = 0;
-  VECGEOM_CONSTEXPR Inside_t kSurface = 1;
-  VECGEOM_CONSTEXPR Inside_t kOutside = 2;
+VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kInside = 0;
+VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kSurface = 1;
+VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kOutside = 2;
 }
 
 template <typename Type>

@@ -77,7 +77,7 @@ void Benchmarker::RunInsideCuda(
   typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
   typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
 
-  double elapsed;
+  double elapsed, elapsed_memory;
 
   if (fVerbosity > 0) printf("Running CUDA benchmark...");
 
@@ -93,6 +93,14 @@ void Benchmarker::RunInsideCuda(
     );
   }
 
+  vecgeom_cuda::LaunchParameters launch =
+      vecgeom_cuda::LaunchParameters(fPointCount);
+
+  vecgeom_cuda::Stopwatch timer;
+  vecgeom_cuda::Stopwatch timer_memory;
+
+  timer_memory.Start();
+
   Precision *posXGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   Precision *posYGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   Precision *posZGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
@@ -104,10 +112,6 @@ void Benchmarker::RunInsideCuda(
 
   Inside_t *insideGpu =
       AllocateOnGpu<Inside_t>(sizeof(Inside_t)*fPointCount);
-
-  vecgeom_cuda::LaunchParameters launch =
-      vecgeom_cuda::LaunchParameters(fPointCount);
-  vecgeom_cuda::Stopwatch timer;
   
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
@@ -121,6 +125,15 @@ void Benchmarker::RunInsideCuda(
   }
   elapsed = timer.Stop();
 
+  CopyFromGpu(insideGpu, inside, fPointCount*sizeof(Inside_t));
+
+  FreeFromGpu(insideGpu);
+  FreeFromGpu(posXGpu);
+  FreeFromGpu(posYGpu);
+  FreeFromGpu(posZGpu);
+
+  elapsed_memory = timer_memory.Stop();
+
   if (fVerbosity > 0) {
     printf(" Finished in %fs (%fs per volume).\n",
            elapsed, elapsed/fVolumes.size());
@@ -130,13 +143,11 @@ void Benchmarker::RunInsideCuda(
       elapsed, kBenchmarkInside, kBenchmarkCuda, fInsideBias
     )
   );
-
-  CopyFromGpu(insideGpu, inside, fPointCount*sizeof(Inside_t));
-
-  FreeFromGpu(insideGpu);
-  FreeFromGpu(posXGpu);
-  FreeFromGpu(posYGpu);
-  FreeFromGpu(posZGpu);
+  fResults.push_back(
+    GenerateBenchmarkResult(
+      elapsed_memory, kBenchmarkInside, kBenchmarkCudaMemory, fInsideBias
+    )
+  );
 
   cudaDeviceSynchronize();
 }
@@ -150,8 +161,8 @@ void Benchmarker::RunToInCuda(
   typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
   typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
 
-  double elapsedDistance;
-  double elapsedSafety;
+  double elapsedDistance = 0, elapsedDistanceMemory = 0;
+  double elapsedSafety = 0, elapsedSafetyMemory = 0;
 
   if (fVerbosity > 0) printf("Running CUDA benchmark...");
 
@@ -167,30 +178,41 @@ void Benchmarker::RunToInCuda(
     );
   }
 
+  vecgeom_cuda::LaunchParameters launch =
+      vecgeom_cuda::LaunchParameters(fPointCount);
+  vecgeom_cuda::Stopwatch timer, timer_memory;
+
+  timer_memory.Start();
+
   Precision *posXGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   Precision *posYGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   Precision *posZGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
-  Precision *dirXGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
-  Precision *dirYGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
-  Precision *dirZGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   CopyToGpu(posX, posXGpu, fPointCount*sizeof(Precision));
   CopyToGpu(posY, posYGpu, fPointCount*sizeof(Precision));
   CopyToGpu(posZ, posZGpu, fPointCount*sizeof(Precision));
+  CudaSOA3D positionGpu  = CudaSOA3D(posXGpu, posYGpu, posZGpu, fPointCount);
+
+  timer_memory.Stop();
+  elapsedDistanceMemory += timer_memory.Elapsed();
+  elapsedSafetyMemory += timer_memory.Elapsed();
+
+  timer_memory.Start();
+
+  Precision *dirXGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
+  Precision *dirYGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
+  Precision *dirZGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   CopyToGpu(dirX, dirXGpu, fPointCount*sizeof(Precision));
   CopyToGpu(dirY, dirYGpu, fPointCount*sizeof(Precision));
   CopyToGpu(dirZ, dirZGpu, fPointCount*sizeof(Precision));
 
-  CudaSOA3D positionGpu  = CudaSOA3D(posXGpu, posYGpu, posZGpu, fPointCount);
   CudaSOA3D directionGpu = CudaSOA3D(dirXGpu, dirYGpu, dirZGpu, fPointCount);
+
+  elapsedDistanceMemory += timer_memory.Stop();
 
   Precision *distancesGpu = AllocateOnGpu<Precision>(sizeof(Precision)
                                                      *fPointCount);
   Precision *safetiesGpu = AllocateOnGpu<Precision>(sizeof(Precision)
                                                     *fPointCount);
-
-  vecgeom_cuda::LaunchParameters launch =
-      vecgeom_cuda::LaunchParameters(fPointCount);
-  vecgeom_cuda::Stopwatch timer;
   
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
@@ -203,6 +225,18 @@ void Benchmarker::RunToInCuda(
     }
   }
   elapsedDistance = timer.Stop();
+
+  timer_memory.Start();
+
+  CopyFromGpu(distancesGpu, distances, fPointCount*sizeof(Precision));
+  FreeFromGpu(distancesGpu);
+  FreeFromGpu(dirXGpu);
+  FreeFromGpu(dirYGpu);
+  FreeFromGpu(dirZGpu);
+
+  elapsedDistanceMemory += timer_memory.Stop();
+
+  elapsedDistanceMemory += elapsedDistance;
   
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
@@ -215,6 +249,18 @@ void Benchmarker::RunToInCuda(
     }
   }
   elapsedSafety = timer.Stop();
+
+  timer_memory.Start();
+
+  CopyFromGpu(safetiesGpu, safeties, fPointCount*sizeof(Precision));
+  FreeFromGpu(safetiesGpu);
+  FreeFromGpu(posXGpu);
+  FreeFromGpu(posYGpu);
+  FreeFromGpu(posZGpu);
+
+  elapsedSafetyMemory += timer_memory.Stop();
+
+  elapsedSafetyMemory += elapsedSafety;
 
   if (fVerbosity > 0) {
     printf(" Finished in %fs/%fs (%fs/%fs per volume).\n", elapsedDistance,
@@ -231,18 +277,18 @@ void Benchmarker::RunToInCuda(
       elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkCuda, fToInBias
     )
   );
-
-  CopyFromGpu(distancesGpu, distances, fPointCount*sizeof(Precision));
-  CopyFromGpu(safetiesGpu, safeties, fPointCount*sizeof(Precision));
-
-  FreeFromGpu(distancesGpu);
-  FreeFromGpu(safetiesGpu);
-  FreeFromGpu(posXGpu);
-  FreeFromGpu(posYGpu);
-  FreeFromGpu(posZGpu);
-  FreeFromGpu(dirXGpu);
-  FreeFromGpu(dirYGpu);
-  FreeFromGpu(dirZGpu);
+  fResults.push_back(
+    GenerateBenchmarkResult(
+      elapsedDistanceMemory, kBenchmarkDistanceToIn, kBenchmarkCudaMemory,
+      fToInBias
+    )
+  );
+  fResults.push_back(
+    GenerateBenchmarkResult(
+      elapsedSafetyMemory, kBenchmarkSafetyToIn, kBenchmarkCudaMemory,
+      fToInBias
+    )
+  );
 
   cudaDeviceSynchronize();
 }

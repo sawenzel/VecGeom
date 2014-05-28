@@ -1,5 +1,5 @@
-/// @file BenchmarkResult.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file BenchmarkResult.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BENCHMARKING_BENCHMARKRESULT_H_
 #define VECGEOM_BENCHMARKING_BENCHMARKRESULT_H_
@@ -16,7 +16,8 @@ enum EBenchmarkedLibrary {
   kBenchmarkUnspecialized = 2,
   kBenchmarkCuda = 3,
   kBenchmarkUSolids = 4,
-  kBenchmarkRoot = 5
+  kBenchmarkRoot = 5,
+  kBenchmarkCudaMemory = 6
 };
 
 enum EBenchmarkedMethod {
@@ -38,6 +39,8 @@ public:
   const unsigned volumes;
   const unsigned points;
   const Precision bias;
+  void WriteToCsv(std::ostream &os);
+  static void WriteCsvHeader(std::ostream &os);
 };
 
 std::ostream& operator<<(std::ostream &os, BenchmarkResult const &benchmark);

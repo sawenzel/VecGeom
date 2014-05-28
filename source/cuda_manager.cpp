@@ -1,7 +1,5 @@
-/**
- * @file cuda_manager.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file cuda_manager.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "management/cuda_manager.h"
 
@@ -14,7 +12,6 @@
 #include "base/stopwatch.h"
 #include "management/geo_manager.h"
 #include "management/volume_factory.h"
-// #include "navigation/simple_navigator.h"
 #include "volumes/placed_volume.h"
 
 namespace vecgeom {
@@ -164,9 +161,11 @@ void CudaManager::CleanGpu() {
 
   if (verbose_ > 1) std::cout << "Cleaning GPU...";
 
-  for (MemoryMap::iterator i = memory_map.begin(); i != memory_map.end(); ++i) {
-    FreeFromGpu(i->second);
+  for (auto i = allocated_memory_.begin(), i_end = allocated_memory_.end();
+       i != i_end; ++i) {
+    FreeFromGpu(*i);
   }
+  allocated_memory_.clear();
   memory_map.clear();
 
   world_gpu_ = NULL;
@@ -187,10 +186,10 @@ void CudaManager::AllocateGeometry() {
         AllocateOnGpu<LogicalVolume>(
           logical_volumes_.size()*sizeof(LogicalVolume)
         );
+    allocated_memory_.push_back(gpu_array);
 
     for (std::set<LogicalVolume const*>::const_iterator i =
          logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
-
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
       gpu_array++;
 
@@ -207,6 +206,7 @@ void CudaManager::AllocateGeometry() {
 
       const GpuAddress gpu_address =
           AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+      allocated_memory_.push_back(gpu_address);
       memory_map[ToCpuAddress(*i)] = gpu_address;
 
     }
@@ -222,6 +222,7 @@ void CudaManager::AllocateGeometry() {
 
       const GpuAddress gpu_address =
           AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+      allocated_memory_.push_back(gpu_address);
       memory_map[ToCpuAddress(*i)] = gpu_address;
 
     }
@@ -230,15 +231,15 @@ void CudaManager::AllocateGeometry() {
   }
 
   {
-    if (verbose_ > 2) std::cout << "Allocating transformations_...";
+    if (verbose_ > 2) std::cout << "Allocating transformations...";
 
     for (std::set<Transformation3D const*>::const_iterator i =
          transformations_.begin(); i != transformations_.end(); ++i) {
 
       const GpuAddress gpu_address =
           AllocateOnGpu<Transformation3D>((*i)->memory_size());
+      allocated_memory_.push_back(gpu_address);
       memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
-
     }
 
     if (verbose_ > 2) std::cout << " OK\n";
@@ -251,9 +252,11 @@ void CudaManager::AllocateGeometry() {
         AllocateOnGpu<Vector<Daughter> >(
           daughters_.size()*sizeof(Vector<Daughter>)
         );
+    allocated_memory_.push_back(gpu_array);
 
     Daughter *gpu_c_array =
         AllocateOnGpu<Daughter>(total_volumes*sizeof(Daughter));
+    allocated_memory_.push_back(gpu_c_array);
 
     for (std::set<Vector<Daughter> *>::const_iterator i =
          daughters_.begin(); i != daughters_.end(); ++i) {

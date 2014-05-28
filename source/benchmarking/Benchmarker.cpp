@@ -1,5 +1,5 @@
-/// @file Benchmarker.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file Benchmarker.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "benchmarking/Benchmarker.h"
 
@@ -26,6 +26,8 @@
 
 namespace vecgeom {
 
+Benchmarker::Benchmarker() : Benchmarker(NULL) {}
+
 Benchmarker::Benchmarker(
     VPlacedVolume const *const world)
     : fPointCount(1024), fPoolMultiplier(1), fRepetitions(1024),
@@ -43,6 +45,7 @@ Benchmarker::~Benchmarker() {
 void Benchmarker::SetWorld(VPlacedVolume const *const world) {
   fVolumes.clear();
   fWorld = world;
+  if (!world) return;
   GenerateVolumePointers(fWorld);
   if (fVerbosity > 2) {
     printf("Found %lu volumes in world volume to be used for benchmarking.\n",
@@ -182,12 +185,15 @@ void Benchmarker::CompareDistances(
 }
 
 void Benchmarker::RunBenchmark() {
+  assert(fWorld);
   RunInsideBenchmark();
   RunToInBenchmark();
   RunToOutBenchmark();
 }
 
 void Benchmarker::RunInsideBenchmark() {
+
+  assert(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running Inside benchmark for %i points for %i repetitions.\n",
@@ -219,7 +225,7 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
 #ifdef VECGEOM_USOLIDS
   ::VUSolid::EnumInside *const insideUSolids =
-      AllocateAligned<::VUSolid::EnumInside>();
+      AllocateAligned< ::VUSolid::EnumInside>();
   outputLabels << " - USolids";
 #endif
 #ifdef VECGEOM_CUDA
@@ -312,6 +318,8 @@ void Benchmarker::RunInsideBenchmark() {
 }
 
 void Benchmarker::RunToInBenchmark() {
+
+  assert(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToIn and SafetyToIn benchmark for %i points for "
@@ -451,6 +459,8 @@ void Benchmarker::RunToInBenchmark() {
 
 void Benchmarker::RunToOutBenchmark() {
 
+  assert(fWorld);
+  
   if (fVerbosity > 0) {
     printf("Running DistanceToOut and SafetyToOut benchmark for %i points for "
            "%i repetitions.\n", fPointCount, fRepetitions);
@@ -699,7 +709,7 @@ void Benchmarker::RunToOutSpecialized(
   );
   fResults.push_back(
     GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkSpecialized, fToInBias
+      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkSpecialized, fToInBias
     )
   );
 }

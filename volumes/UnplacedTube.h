@@ -10,7 +10,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-class UnplacedTube : public VUnplacedVolume, AlignedBase {
+class UnplacedTube : public VUnplacedVolume, public AlignedBase {
 
 private:
   // tube defining parameters

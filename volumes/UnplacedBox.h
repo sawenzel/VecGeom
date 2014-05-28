@@ -5,16 +5,13 @@
 #define VECGEOM_VOLUMES_UNPLACEDBOX_H_
 
 #include "base/global.h"
+#include "base/AlignedBase.h"
 #include "base/vector3d.h"
 #include "volumes/unplaced_volume.h"
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_VC_ACCELERATION
-class UnplacedBox : public VUnplacedVolume, public Vc::VectorAlignedBase {
-#else
-class UnplacedBox : public VUnplacedVolume {
-#endif
+class UnplacedBox : public VUnplacedVolume, public AlignedBase {
 
 private:
 

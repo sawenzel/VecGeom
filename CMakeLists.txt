@@ -105,8 +105,8 @@ endif()
 if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
-  set(LIBS ${LIBS} ${VC_LIBRARIES})
-  include_directories(${VC_INCLUDE_DIR})
+  set(LIBS ${LIBS} ${Vc_LIBRARIES})
+  include_directories(${Vc_INCLUDE_DIR})
 
 endif()
 
@@ -189,6 +189,7 @@ if (ROOT)
 
   include_directories(${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
+  link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
     source/placed_root_volume.cpp
@@ -209,7 +210,6 @@ if (USolids)
     add_subdirectory(USolids)
     include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
     link_directories(${CMAKE_BINARY_DIR}/USolids)
-    set(LIBS ${LIBS} usolids)
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
@@ -217,13 +217,13 @@ if (USolids)
     include_directories(${USOLIDS_DIR}/include)
   endif()
   if (USOLIDS_LIBRARY_DIR)
-    set(LIBS ${LIBS} ${USOLIDS_LIBRARY_DIR}/libusolids.a)
     link_directories(${USOLIDS_LIBRARY_DIR})
   elseif (USOLIDS_DIR)
-    set(LIBS ${LIBS} ${USOLIDS_DIR}/lib/libusolids.a)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
+  
+  set(LIBS ${LIBS} usolids)
 
 endif()
 
@@ -392,6 +392,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
@@ -441,8 +442,13 @@ if (BENCHMARK)
     TubeBenchmark
     ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
   )
+  add_executable(
+    MultiBenchmark
+    ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
+  )
   target_link_libraries(BoxBenchmark ${LIBS})
   target_link_libraries(TubeBenchmark ${LIBS})
+  target_link_libraries(MultiBenchmark ${LIBS})
   if (NOT USolids)
     add_executable(
       ParallelepipedBenchmark
