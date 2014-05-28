@@ -3,14 +3,20 @@
 import sys, re
 
 with open(sys.argv[1]) as f:
-    for line in f:
-        if not line.isspace():
-            match = re.search("(?:VECGEOM|GEANT)-[0-9]+", line)
-	    if match:
-	        sys.exit(0)
-            else:
-		print("Error - no issue number in commit message. Commit aborted.")
-		sys.exit(1)
+    commit = f.readlines()
+
+
+for line in commit:
+    if not line.isspace():
+        match = re.search("(?:VECGEOM|GEANT)-[0-9]+", line)
+        if match:
+            sys.exit(0)
+        else:
+            print("Error - no issue number in commit message, aborting. The message you entered is shown below.")
+            print("\t".join(commit))
+            print("Nothing has been commited.")
+            sys.exit(1)
+
 print("Error - empty commit message?")
 sys.exit(1)
 
