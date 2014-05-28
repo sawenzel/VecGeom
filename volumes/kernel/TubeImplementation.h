@@ -421,12 +421,24 @@ struct TubeImplementation {
     transformation.TransformDirection<rotCodeT>(direction, dir_local);
 
     Float_t hitx, hity, r2;
+    Float_t rsq = pos_local.x()*pos_local.x() + pos_local.y()*pos_local.y();
+    Float_t pos_dot_dir_x = pos_local.x()*dir_local.x();
+    Float_t pos_dot_dir_y = pos_local.y()*dir_local.y();
+
 
     // Determine which particles hit the Z face
     Float_t abspz = Abs(pos_local.z());
     Float_t distz = (abspz - tube.z()) / Abs( dir_local.z() );
     // exclude case in which particle is going away
     Bool_t okz = (pos_local.z() * dir_local.z()) < 0;
+
+    // outside of Z range and going away?
+    if(Backend::early_returns && abspz > tube.z() && !okz) return;
+    // outside of tube and going away?
+    if(Backend::early_returns && Abs(pos_local.x()) > tube.rmax() && pos_dot_dir_x >= 0) return;
+    if(Backend::early_returns && Abs(pos_local.y()) > tube.rmax() && pos_dot_dir_y >= 0) return;
+
+
 
     hitx = pos_local.x() + distz*dir_local.x();
     hity = pos_local.y() + distz*dir_local.y();
@@ -456,9 +468,24 @@ struct TubeImplementation {
      */
 
     Float_t invnsq = 1 / ( 1 - dir_local.z()*dir_local.z() );
-    Float_t rdotn = dir_local.x()*pos_local.x() + dir_local.y()*pos_local.y();
-    Float_t rsq = pos_local.x()*pos_local.x() + pos_local.y()*pos_local.y();
+    Float_t rdotn = pos_dot_dir_x + pos_dot_dir_y;
     Float_t b = invnsq * rdotn;
+
+    /*
+     * rmax
+     * If the particle were to hit rmax, it would hit
+     * the closest point of the two - I only consider
+     * the smallest solution
+     */
+    Float_t crmax = invnsq * (rsq - tube.rmax2());
+    Float_t dist_rmax;
+    Bool_t ok_rmax;
+    CircleTrajectoryIntersection<Backend, tubeTypeT, false, true>(b, crmax, tube, pos_local, dir_local, dist_rmax, ok_rmax);
+
+    if(Backend::early_returns && ok_rmax == Backend::kTrue) {
+      distance = dist_rmax;
+      return;
+    }
 
     /*
      * rmin
@@ -473,17 +500,6 @@ struct TubeImplementation {
       Float_t crmin = invnsq * (rsq - tube.rmin2());
       CircleTrajectoryIntersection<Backend, tubeTypeT, true, true>(b, crmin, tube, pos_local, dir_local, dist_rmin, ok_rmin);
     }
-
-    /*
-     * rmax
-     * If the particle were to hit rmax, it would hit
-     * the closest point of the two - I only consider
-     * the smallest solution
-     */
-    Float_t crmax = invnsq * (rsq - tube.rmax2());
-    Float_t dist_rmax;
-    Bool_t ok_rmax;
-    CircleTrajectoryIntersection<Backend, tubeTypeT, false, true>(b, crmax, tube, pos_local, dir_local, dist_rmax, ok_rmax);
 
     /* 
      * What happens if both intersections are valid
