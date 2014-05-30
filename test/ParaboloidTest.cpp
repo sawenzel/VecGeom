@@ -136,7 +136,8 @@ int main( int argc,  char *argv[]) {
     
     for(int i=0; i<np; i++)
     {
-        inside=dau[0]->Inside(points[i]);
+        //inside=dau[0]->Inside(points[i]);//////////AAHAH
+        inside=dau[0]->Contains(points[i]);
         if(inside==0){
             myCountOut++;
             markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
@@ -153,7 +154,6 @@ int main( int argc,  char *argv[]) {
         inside=someVolume->Contains(coord);
         if(inside==0){
             rootCountOut++;
-            //
             //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
             
         }

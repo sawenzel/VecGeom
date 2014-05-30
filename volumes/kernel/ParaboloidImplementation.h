@@ -100,7 +100,7 @@ struct ParaboloidImplementation {
 
     
     /// \brief UnplacedContains (ROOT STYLE): Inside method that does NOT take account of the surface for an Unplaced Paraboloid
-#if 0
+//#if 0
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
     static void UnplacedContains(UnplacedParaboloid const &unplaced,
@@ -130,7 +130,7 @@ struct ParaboloidImplementation {
         MaskedAssign(!done, EInside::kInside, &inside);
     }
 
-#endif
+//#endif
     
     /// \brief Inside method that takes account of the surface for a Placed Paraboloid
     template <class Backend>
@@ -146,7 +146,7 @@ struct ParaboloidImplementation {
         
     }
     
-#if 0
+//#if 0
     /// \brief Contains: Inside method that does NOT take account of the surface for a Placed Paraboloid
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
@@ -161,7 +161,7 @@ struct ParaboloidImplementation {
         
     }
 
-#endif
+//#endif
     
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
