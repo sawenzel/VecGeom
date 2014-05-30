@@ -53,128 +53,83 @@ namespace VECGEOM_NAMESPACE {
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParaboloidImplementation {
 
-#if 0
     /// \brief Inside method that takes account of the surface for an Unplaced Paraboloid
-    
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
     static void UnplacedInside(UnplacedParaboloid const &unplaced,
                                Vector3D<typename Backend::precision_v> point,
                                typename Backend::int_v &inside) {
         
-        typedef typename Backend::precision_v Float_t;
         typedef typename Backend::precision_v Double_t;
         typedef typename Backend::bool_v      Bool_t;
         
-        Bool_t done(false);
-        
-        inside = EInside::kOutside;
-        Vector3D<Float_t> pointAbs = point.Abs();
-        Double_t rho2=point.Perp2();
-        
-        Double_t k1=1/unplaced.GetA(),
-        k2=-unplaced.GetB()*k1;
+        Double_t rho2=point.x()*point.x()+point.y()*point.y();
         
         //Check if points are above or below the solid or outside the parabolic surface
-        Bool_t outsideAboveOrBelowOuterTolerance=(pointAbs[2] > unplaced.GetDz()+ kHalfTolerance),
-        outsideParabolicSurfaceOuterTolerance= rho2 > (k1*point[2]+k2+kHalfTolerance)*(k1*point[2]+k2+kHalfTolerance);
+        Double_t absZ=Abs(point.z());
+        Bool_t outsideAboveOrBelowOuterTolerance=(absZ > unplaced.GetTolOz());
         
-        Bool_t isOutside= outsideAboveOrBelowOuterTolerance || outsideParabolicSurfaceOuterTolerance;
-        done |= isOutside;
-        if (done == Backend::kTrue) return;
+        Bool_t isOutside= outsideAboveOrBelowOuterTolerance;
+        Bool_t done(isOutside);
+        if (done == Backend::kTrue)
+        {
+            inside = EInside::kOutside;
+            return;
+        }
         
-        //Check if points are inside the inner tolerance  of the solid
-        Bool_t insideAboveOrBelowInnerTolerance=(pointAbs[2] < unplaced.GetDz()- kHalfTolerance),
-        insideParaboloidSurfaceInnerTolerance= rho2 < (k1*point[2]+k2-kHalfTolerance)*(k1*point[2]+k2-kHalfTolerance);
+        Double_t value=unplaced.GetA()*rho2+unplaced.GetB()-point.z();
+        
+        Bool_t outsideParabolicSurfaceOuterTolerance= (value>kHalfTolerance);
+        done|=outsideParabolicSurfaceOuterTolerance;
+        if (done == Backend::kTrue)
+        {
+            inside = EInside::kOutside;
+            return;
+        }
+        //Check if points are inside the inner tolerance of the solid
+        Bool_t insideAboveOrBelowInnerTolerance = (absZ < unplaced.GetTolOz()),
+               insideParaboloidSurfaceInnerTolerance= (value<- kHalfTolerance);
         
         Bool_t isInside=insideAboveOrBelowInnerTolerance && insideParaboloidSurfaceInnerTolerance;
         MaskedAssign(isInside, EInside::kInside, &inside);
         done|=isInside;
         if(done == Backend::kTrue) return;
         
-        Bool_t isSurface= !isInside && !isOutside;
-        MaskedAssign(isSurface, EInside::kSurface, &inside);
+        MaskedAssign(!done, EInside::kSurface, &inside);
     }
 
-#endif
-
-    /// \brief UnplacedContains ROOT STYLE: Inside method that does NOT take account of the surface for an Unplaced Paraboloid
     
-    template <class Backend>
-    VECGEOM_CUDA_HEADER_BOTH
-    static void UnplacedInside(UnplacedParaboloid const &unplaced,
-        Vector3D<typename Backend::precision_v> point,
-        typename Backend::int_v &inside) {
-        
-        typedef typename Backend::precision_v Float_t;
-        typedef typename Backend::precision_v Double_t;
-        typedef typename Backend::bool_v      Bool_t;
-        
-        Bool_t done(false);
-        inside = EInside::kOutside;
-        
-        Vector3D<Float_t> pointAbs = point.Abs();
-        
-        //Check if points are above or below the solid
-        Bool_t isAboveOrBelowSolid=(pointAbs[2] > unplaced.GetDz());
-        done|=isAboveOrBelowSolid;
-        if (done == Backend::kTrue) return;
-        
-        //Check if points are outside the parabolic surface
-        Double_t aa=unplaced.GetA()*(point[2]-unplaced.GetB());
-        
-        
-        Bool_t isOutsideParabolicSurface= aa <0;
-        done |= isOutsideParabolicSurface;
-        if (done == Backend::kTrue) return; //maybe not needed
-        
-        Double_t rho2=point.Perp2();
-        Bool_t isOutside=aa<unplaced.GetA()*unplaced.GetA()*rho2;
-        done |= isOutside;
-        
-        MaskedAssign(!done, EInside::kInside, &inside);
-    }
-
-
-
-    
+    /// \brief UnplacedContains (ROOT STYLE): Inside method that does NOT take account of the surface for an Unplaced Paraboloid
 #if 0
-    /// \brief UnplacedContains: Inside method that does NOT take account of the surface for an Unplaced Paraboloid
-    
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
-     static void UnplacedContains(UnplacedParaboloid const &unplaced,
-     Vector3D<typename Backend::precision_v> point,
-     typename Backend::bool_v &inside) {
-    
-    //static void UnplacedInside(UnplacedParaboloid const &unplaced,
-    //Vector3D<typename Backend::precision_v> point,
-    //typename Backend::int_v &inside) {
-    
-        typedef typename Backend::precision_v Float_t;
+    static void UnplacedContains(UnplacedParaboloid const &unplaced,
+        Vector3D<typename Backend::precision_v> point,
+        typename Backend::bool_v &inside) {
+        
         typedef typename Backend::precision_v Double_t;
         typedef typename Backend::bool_v      Bool_t;
         
-        Bool_t done(false);
-        inside = EInside::kOutside;
-        Vector3D<Float_t> pointAbs = point.Abs();
-        
         //Check if points are above or below the solid
-        Bool_t isAboveOrBelowSolid=(pointAbs[2] > unplaced.GetDz());
-        done|=isAboveOrBelowSolid;
-        if (done == Backend::kTrue) return;
+        Bool_t isAboveOrBelowSolid=(Abs(point.z()) > unplaced.GetDz());
+        //done|=isAboveOrBelowSolid;
+        //if (done == Backend::kTrue) return;
+        
+        inside = EInside::kOutside;
+        if(Backend::early_returns && isAboveOrBelowSolid) return;
+        
+        Bool_t done(isAboveOrBelowSolid);
         
         //Check if points are outside the parabolic surface
-        Double_t rho2=point.Perp2();
-        Double_t k1=1/unplaced.GetA(),
-        k2=-unplaced.GetB()*k1;
+        Double_t aa=unplaced.GetA()*(point.z()-unplaced.GetB());
+        Double_t rho2=point.x()*point.x()+point.y()*point.y();
         
-        Bool_t isOutsideParabolicSurface= rho2 > (k1*point[2]+k2)*(k1*point[2]+k2);
+        Bool_t isOutsideParabolicSurface= aa <0 || aa<unplaced.GetA2()*rho2;
         done |= isOutsideParabolicSurface;
-        if (done == Backend::kTrue) return; //maybe not needed
         
         MaskedAssign(!done, EInside::kInside, &inside);
     }
+
 #endif
     
     /// \brief Inside method that takes account of the surface for a Placed Paraboloid
@@ -208,42 +163,19 @@ struct ParaboloidImplementation {
 
 #endif
     
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  static void DistanceToIn(
-      UnplacedParaboloid const &unplaced,
-      Transformation3D const &transformation,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction,
-      typename Backend::precision_v const &stepMax,
-      typename Backend::precision_v &distance) {
-    // NYI
-  }
+    template <class Backend>
+    VECGEOM_CUDA_HEADER_BOTH
+    static void DistanceToIn(
+                             UnplacedParaboloid const &unplaced,
+                             Transformation3D const &transformation,
+                             Vector3D<typename Backend::precision_v> const &point,
+                             Vector3D<typename Backend::precision_v> const &direction,
+                             typename Backend::precision_v const &stepMax,
+                             typename Backend::precision_v &distance) {
     
-    
-/*
-    typedef typename Backend::precision_v Float_t;
-    
-    Vector3D<Float_t> localPoint =
-    transformation.Transform<transCodeT, rotCodeT>(point);
-    Vector3D<Float_t> localDirection =
-    transformation.TransformDirection<rotCodeT>(direction);
-    
-    Transform<Backend>(unplaced, localPoint);
-    Transform<Backend>(unplaced, localDirection);
-    
-    // Run unplaced box kernel
-    BoxImplementation<transCodeT, rotCodeT>::template
-    DistanceToInKernel<Backend>(unplaced.GetDimensions(), localPoint,
-                                localDirection, stepMax, distance);
+        //NYI
+    }
 
-    
-    
- */   
-    
-    
-    
-    
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH

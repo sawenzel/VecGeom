@@ -54,12 +54,31 @@ namespace VECGEOM_NAMESPACE {
         }
         fRlo = rlo;
         fRhi = rhi;
+        
+        fRlo2= fRlo*fRlo;
+        fRhi2= fRhi*fRhi;
+        
         fDz = dz;
-        Precision dd = 1./(fRhi*fRhi - fRlo*fRlo);
+        Precision dd = 1./(fRhi2 - fRlo2);
         fA = 2.*fDz*dd;
-        fB = - fDz * (fRlo*fRlo + fRhi*fRhi)*dd;
+        fB = - fDz * (fRlo2 + fRhi2)*dd;
+        
+        fA2=fA*fA;
+        fB2=fB*fB;
+        
+        //Inside tolerance for plane at dZ
+        fTolIz= fDz-kHalfTolerance;
+        //Outside tolerance for plane at -dZ
+        fTolOz=fDz+kHalfTolerance;
+        //Inside tolerance for Rlo, squared
+        fTolIrlo2= (fRlo - kHalfTolerance)*(fRlo - kHalfTolerance);
+        //Outside tolerance for Rlo, squared
+        fTolOrlo2= (fRlo + kHalfTolerance)*(fRlo + kHalfTolerance);
+        //Inside tolerance for Rhi, squared
+        fTolIrhi2=(fRhi - kHalfTolerance)*(fRhi - kHalfTolerance);
+        //Outside tolerance for Rhi, squared
+        fTolOrhi2=(fRhi + kHalfTolerance)*(fRhi + kHalfTolerance);
     }
-    
     
     void UnplacedParaboloid::Print() const {
         printf("UnplacedParaboloid {%.2f, %.2f, %.2f, %.2f, %.2f}",

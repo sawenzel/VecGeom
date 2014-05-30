@@ -53,11 +53,25 @@ private:
 
     Precision fRlo, fRhi, fDz;
     // Precomputed values computed from parameters
-    Precision fA, fB;
+    Precision fA, fB,
     
-    //what about adding rho2
-    //Precision fRho2;
-
+    fA2,
+    fB2,
+    fRlo2,
+    fRhi2,
+    //Inside tolerance for plane at dZ
+    fTolIz,
+    //Outside tolerance for plane at -dZ
+    fTolOz,
+    //Inside tolerance for Rlo, squared
+    fTolIrlo2,
+    //Outside tolerance for Rlo, squared
+    fTolOrlo2,
+    //Inside tolerance for Rhi, squared
+    fTolIrhi2,
+    //Outside tolerance for Rhi, squared
+    fTolOrhi2;
+    
 public:
     
     //constructor
@@ -82,7 +96,37 @@ public:
     
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetB() const { return fB; }
+   
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetA2() const { return fA2; }
     
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetB2() const { return fB2; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetRlo2() const { return fRlo2; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetRhi2() const { return fRhi2; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolIz() const { return fTolIz; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolOz() const { return fTolOz; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolIrlo2() const { return fTolIrlo2; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolOrlo2() const { return fTolOrlo2; }
+
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolIrhi2() const { return fTolIrhi2; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolOrhi2() const { return fTolOrhi2; }
+
     VECGEOM_CUDA_HEADER_BOTH
     void SetRloAndRhiAndDz(const Precision rlo, const Precision rhi, const Precision dz);
     

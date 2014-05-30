@@ -11,7 +11,6 @@
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
 #include "TGeoParaboloid.h"
-
 #include "TGraph2D.h"
 #include "TCanvas.h"
 #include "TApplication.h"
@@ -21,6 +20,9 @@
 #include "TGeoParaboloid.h"
 #include "TPolyMarker3D.h"
 #include "TRandom3.h"
+#include "TColor.h"
+#include "TROOT.h"
+#include "TAttMarker.h"
 #endif
 
 
@@ -32,12 +34,20 @@ int main( int argc,  char *argv[]) {
     
     TApplication theApp("App",&argc,argv);
     
-#endif
-
-    std::cout<<"Paraboloid Benchmark\n";
-    UnplacedBox worldUnplaced = UnplacedBox(18., 11., 11.);
-    UnplacedParaboloid paraboloidUnplaced = UnplacedParaboloid(3., 5., 7.); //rlo=3. - rhi=5. dz=7
-    std::cout<<"Paraboloid created\n";
+    
+    if (argc<3)
+	{
+    	std::cout << "usage " << argv[0] << " <Rlo[0-10]> <Rhi[0-10]> <dZ[0-10]>\n";
+    	return 0;
+ 	}
+   	
+    
+    double rlo=atoi(argv[1]), rhi=atoi(argv[2]), dz=atoi(argv[3]);
+    
+    std::cout<<"Setting up the geometry\n";
+    UnplacedBox worldUnplaced = UnplacedBox(10., 10., 10.);
+    UnplacedParaboloid paraboloidUnplaced = UnplacedParaboloid(rlo, rhi, dz);
+    std::cout<<"World and paraboloid unplaced created\n";
     LogicalVolume world = LogicalVolume("MBworld", &worldUnplaced);
     LogicalVolume paraboloid = LogicalVolume("paraboloid", &paraboloidUnplaced);
     world.PlaceDaughter(&paraboloid, &Transformation3D::kIdentity);
@@ -46,49 +56,57 @@ int main( int argc,  char *argv[]) {
     
     GeoManager::Instance().set_world(worldPlaced);
     Vector<Daughter> dau=worldPlaced->daughters();
-    
+    std::cout<<"World and paraboloid placed\n";
+
     //My placed volume
     dau[0]->PrintContent();
     
-    std::cout<<"World set\n";
-    
-    VPlacedVolume *paraboloidPlaced=paraboloid.Place();
+    //VPlacedVolume *paraboloidPlaced=paraboloid.Place();
     //paraboloidPlaced->PrintContent();
+
     
-#ifdef VECGEOM_ROOT
-    int np=100000, myCountIn=0, myCountOut=0, rootCountIn=0, rootCountOut=0;
-    double coord[3];
+    int np=1000000,
+    myCountIn=0,
+    myCountOut=0,
+    rootCountIn=0,
+    rootCountOut=0;
+    
+    double coord[3],
+    x=worldUnplaced.x(),
+    y=worldUnplaced.y(),
+    z=worldUnplaced.z();
+    
     bool inside;
+    
     Vector3D <Precision> *points = new Vector3D<Precision>[np];
     TRandom3 r3;
-    r3.SetSeed(time(NULL)+688);
+    r3.SetSeed(time(NULL));
     
     for(int i=0; i<np; i++) // points inside world volume
     {
-        
-        points[i].x()=r3.Uniform(-10, 10);
-        points[i].y()=r3.Uniform(-10, 10);;
-        points[i].z()=r3.Uniform(-10, 10);;
+        points[i].x()=r3.Uniform(-x, x);
+        points[i].y()=r3.Uniform(-y, y);
+        points[i].z()=r3.Uniform(-z, z);
     }
     
     new TGeoManager("world", "the simplest geometry");
     TGeoMaterial *mat = new TGeoMaterial("Vacuum",0,0,0);
     TGeoMedium *med = new TGeoMedium("Vacuum",1,mat);
-    TGeoVolume *top = gGeoManager->MakeBox("Top",med,10.,10.,10.);
+    TGeoVolume *top = gGeoManager->MakeBox("Top",med,worldUnplaced.x(),worldUnplaced.y(),worldUnplaced.z());
     
     
     gGeoManager->SetTopVolume(top);
     gGeoManager->CloseGeometry();
     top->SetLineColor(kMagenta);
     gGeoManager->SetTopVisible();
-    
-    TGeoVolume *someVolume = gGeoManager->MakeParaboloid("myParab", med, 3., 5., 7.);
+
+    TGeoVolume *someVolume = gGeoManager->MakeParaboloid("myParab", med, paraboloidUnplaced.GetRlo(), paraboloidUnplaced.GetRhi(), paraboloidUnplaced.GetDz());
    // TGeoParaboloid *par=new TGeoParaboloid("myParab", med, 3., 5., 7.);
 
     top->AddNode(someVolume,1);
-    
     TCanvas *c=new TCanvas();
     top->Draw();
+    sleep(3);
     c->Update();
     sleep(3);
     
@@ -96,7 +114,7 @@ int main( int argc,  char *argv[]) {
     TObjArray *pm = new TObjArray(128);
     markerInside = (TPolyMarker3D*)pm->At(4);
     markerInside = new TPolyMarker3D();
-    markerInside->SetMarkerColor(8);
+    markerInside->SetMarkerColor(kYellow);
     markerInside->SetMarkerStyle(8);
     markerInside->SetMarkerSize(0.4);
     pm->AddAt(markerInside, 4);
@@ -106,16 +124,18 @@ int main( int argc,  char *argv[]) {
     TObjArray *pm1 = new TObjArray(128);
     markerOutside = (TPolyMarker3D*)pm->At(4);
     markerOutside = new TPolyMarker3D();
-    markerOutside->SetMarkerColor(4);
+    
+    
+    TColor *col4 = gROOT->GetColor(4);
+    col4->SetAlpha(0.01);
+    
+    markerOutside->SetMarkerColor(kGreen+1);
     markerOutside->SetMarkerStyle(8);
     markerOutside->SetMarkerSize(0.1);
-    //markerOutside->SetMarkerTransparency(4080);
     pm1->AddAt(markerOutside, 4);
-    
     
     for(int i=0; i<np; i++)
     {
-        //inside=paraboloidPlaced->Inside(points[i]);
         inside=dau[0]->Inside(points[i]);
         if(inside==0){
             myCountOut++;
@@ -133,14 +153,13 @@ int main( int argc,  char *argv[]) {
         inside=someVolume->Contains(coord);
         if(inside==0){
             rootCountOut++;
-            //marker->SetMarkerColor(4);
-            //marker->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
+            //
+            //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
             
         }
         else{
             rootCountIn++;
-            
-            //marker->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
+            //markerInside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
         }
 
     }
@@ -154,17 +173,6 @@ int main( int argc,  char *argv[]) {
     std::cout<<"MB:  NPointsInside: "<<myCountIn<<" NPointsOutside: "<<myCountOut<<" \n";
     std::cout<<"Root: NPointsInside: "<<rootCountIn<<" NPointsOutside: "<<rootCountOut<<" \n";
 
-    
-#endif
-    
-    /*Benchmarker tester(GeoManager::Instance().world());
-    tester.SetVerbosity(3);
-    tester.SetPointCount(1<<13);
-    std::cout<<"Prepared to run benchmarker\n";
-    tester.RunBenchmark();*/
-    
-#ifdef VECGEOM_ROOT
-    
     theApp.Run();
     
 #endif

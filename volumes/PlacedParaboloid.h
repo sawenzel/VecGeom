@@ -71,6 +71,37 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetB() const { return GetUnplacedVolume()->GetB(); }
     
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetA2() const { return GetUnplacedVolume()->GetA2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetB2() const { return GetUnplacedVolume()->GetB2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetRlo2() const { return GetUnplacedVolume()->GetRlo2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetRhi2() const { return GetUnplacedVolume()->GetRhi2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolIz() const { return GetUnplacedVolume()->GetTolIz(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolOz() const { return GetUnplacedVolume()->GetTolOz(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetfTolIrlo2() const { return GetUnplacedVolume()->GetTolIrlo2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolOrlo2() const { return GetUnplacedVolume()->GetTolOrlo2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolIrhi2() const { return GetUnplacedVolume()->GetTolIrhi2(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetTolOrhi2() const { return GetUnplacedVolume()->GetTolOrhi2(); }
+
+    
     
 #ifdef VECGEOM_BENCHMARK
     virtual VPlacedVolume const* ConvertToUnspecialized() const;
