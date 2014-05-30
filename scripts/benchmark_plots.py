@@ -49,15 +49,17 @@ def plot_point_count():
                                  /point_count[-1]))
     ax.plot(point_count, np.ones(len(point_count), dtype=np.float), "--b",
             label="Scalar")
-    ax.plot(point_count, elapsed_vector, "-xr", ms=5, label="AVX")
-    ax.plot(point_count, elapsed_cuda, "-xg", ms=5, label="CUDA")
+    ax.plot(point_count, elapsed_vector, "-xr", ms=5,
+            label="CPU SIMD instructions")
+    ax.plot(point_count, elapsed_cuda, "-xg", ms=5,
+            label="CUDA, best case memory overhead")
     ax.plot(point_count, elapsed_cudamem, "--", color=[0, 1, 0], ms=5,
-            label="CUDA with overhead")
+            label="CUDA, worst case memory overhead")
     ax.set_xlim(point_count[0], point_count[-1])
     plt.xticks(point_count, [str(x) for x in point_count])
     ybegin, yend = ax.get_ylim()
     ax.set_yticks(np.arange(0, yend, 1.0))
-    ax.set_title("Performance of distance to tube algorithm")
+    ax.set_title("Performance of %s algorithm for tubes" % method)
     ax.set_xlabel("Input length")
     ax.set_ylabel("Speedup")
     ax.legend(loc="upper left")
