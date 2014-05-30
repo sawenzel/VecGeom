@@ -1,5 +1,5 @@
 #include "benchmarking/Benchmarker.h"
-#include "management/geo_manager.h"
+#include "management/GeoManager.h"
 #include "volumes/Box.h"
 #include "volumes/Tube.h"
 

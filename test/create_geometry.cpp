@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-#include "management/cuda_manager.h"
-#include "navigation/simple_navigator.h"
-#include "navigation/navigationstate.h"
-#include "volumes/logical_volume.h"
+#include "management/CudaManager.h"
+#include "navigation/SimpleNavigator.h"
+#include "navigation/NavigationState.h"
+#include "volumes/LogicalVolume.h"
 #include "volumes/Box.h"
 
 using namespace vecgeom;

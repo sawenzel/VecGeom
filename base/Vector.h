@@ -1,12 +1,12 @@
-/**
- * @file vector.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Vector.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_VECTOR_H_
 #define VECGEOM_BASE_VECTOR_H_
 
-#include "base/container.h"
+#include "base/Global.h"
+
+#include "base/Container.h"
 
 namespace VECGEOM_NAMESPACE {
 

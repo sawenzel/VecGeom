@@ -1,14 +1,12 @@
-/**
- * @file root_manager.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file RootGeoManager.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_MANAGEMENT_ROOTMANAGER_H_
 #define VECGEOM_MANAGEMENT_ROOTMANAGER_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/type_map.h"
+#include "base/TypeMap.h"
 #include "TGeoNode.h"
 
 namespace VECGEOM_NAMESPACE {

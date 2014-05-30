@@ -1,14 +1,13 @@
-/**
- * @file geo_manager.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file GeoManager.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
 #define VECGEOM_MANAGEMENT_GEOMANAGER_H_
 
-#include "base/global.h"
-#include "volumes/logical_volume.h"
-#include "volumes/placed_volume.h"
+#include "base/Global.h"
+
+#include "volumes/PlacedVolume.h"
+#include "volumes/LogicalVolume.h"
 
 #include <map>
 

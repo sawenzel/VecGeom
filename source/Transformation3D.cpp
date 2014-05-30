@@ -1,17 +1,16 @@
-/**
- * @file transformation3d.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Transformation3D.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include "backend/backend.h"
+#include "base/Transformation3D.h"
+
+#include "backend/Backend.h"
 #ifdef VECGEOM_CUDA_INTERFACE
-#include "backend/cuda/interface.h"
+#include "backend/cuda/Interface.h"
 #endif
-#include "base/transformation3d.h"
-#include "base/specialized_transformation3d.h"
+#include "base/SpecializedTransformation3D.h"
 
-#include <stdio.h>
 #include <sstream>
+#include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
 

@@ -1,10 +1,10 @@
-/// @file PlacedBox.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file PlacedBox.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "volumes/PlacedBox.h"
 
-#include "base/aos3d.h"
-#include "base/soa3d.h"
+#include "base/AOS3D.h"
+#include "base/SOA3D.h"
 #include "volumes/SpecializedBox.h"
 #ifdef VECGEOM_ROOT
 #include "TGeoBBox.h"

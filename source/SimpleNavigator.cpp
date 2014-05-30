@@ -1,17 +1,13 @@
-/*
- * simple_navigator.cpp
- *
- *  Created on: Apr 16, 2014
- *      Author: swenzel
- */
+/// \file SimpleNavigator.cpp
+/// \author Sandro Wenzel (sandro.wenzel@cern.ch)
+/// \date 16.04.2014
 
+#include "navigation/SimpleNavigator.h"
 
-#include "base/global.h"
-#include "volumes/placed_volume.h"
-#include "base/vector3d.h"
-#include "navigation/navigationstate.h"
-#include "navigation/simple_navigator.h"
-#include "management/geo_manager.h"
+#include "base/Vector3D.h"
+#include "management/GeoManager.h"
+#include "navigation/NavigationState.h"
+#include "volumes/PlacedVolume.h"
 
 #ifdef VECGEOM_ROOT
 #include "TGeoManager.h"

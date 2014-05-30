@@ -6,7 +6,7 @@
 #ifndef VECGEOM_BASE_SPECIALIZEDTRANSFORMATION3D_H_
 #define VECGEOM_BASE_SPECIALIZEDTRANSFORMATION3D_H_
 
-#include "base/transformation3d.h"
+#include "base/Transformation3D.h"
 
 namespace VECGEOM_NAMESPACE {
 

@@ -1,7 +1,10 @@
-#include "volumes/placed_root_volume.h"
+/// \file PlacedRootVolume.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include "base/aos3d.h"
-#include "base/soa3d.h"
+#include "volumes/PlacedRootVolume.h"
+
+#include "base/AOS3D.h"
+#include "base/SOA3D.h"
 
 namespace vecgeom {
 

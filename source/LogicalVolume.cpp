@@ -1,18 +1,17 @@
-/**
- * @file logical_volume.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file LogicalVolume.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+
+#include "volumes/LogicalVolume.h"
+
+#include "backend/Backend.h"
+#include "base/Array.h"
+#include "volumes/PlacedVolume.h"
+#include "base/Transformation3D.h"
+#include "management/GeoManager.h"
+#include "management/VolumeFactory.h"
 
 #include <stdio.h>
 #include <climits>
-
-#include "backend/backend.h"
-#include "base/array.h"
-#include "base/transformation3d.h"
-#include "management/geo_manager.h"
-#include "management/volume_factory.h"
-#include "volumes/logical_volume.h"
-#include "volumes/placed_volume.h"
 
 namespace VECGEOM_NAMESPACE {
 

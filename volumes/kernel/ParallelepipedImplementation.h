@@ -4,9 +4,9 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/transformation3d.h"
+#include "base/Transformation3D.h"
 #include "volumes/kernel/BoxImplementation.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParallelepiped.h"

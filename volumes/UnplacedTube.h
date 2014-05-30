@@ -4,9 +4,9 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDTUBE_H_
 #define VECGEOM_VOLUMES_UNPLACEDTUBE_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 #include "base/AlignedBase.h"
-#include "volumes/unplaced_volume.h"
+#include "volumes/UnplacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 

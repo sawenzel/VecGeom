@@ -6,10 +6,10 @@
 #ifndef VECGEOM_VOLUMES_LOGICALVOLUME_H_
 #define VECGEOM_VOLUMES_LOGICALVOLUME_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/vector.h"
-#include "volumes/unplaced_volume.h"
+#include "base/Vector.h"
+#include "volumes/UnplacedVolume.h"
 
 #include <string>
 #include <list>

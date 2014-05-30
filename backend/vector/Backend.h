@@ -1,19 +1,17 @@
-/**
- * @file vector/backend.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file vector/Backend.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BACKEND_VECTOR_BACKEND_H_
 #define VECGEOM_BACKEND_VECTOR_BACKEND_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #if defined(VECGEOM_VC)
-#include "backend/vc/backend.h"
+#include "backend/vc/Backend.h"
 #elif defined(VECGEOM_CILK)
 #include "backend/cilk/backend.h"
 #else
-#include "backend/scalar/backend.h"
+#include "backend/scalar/Backend.h"
 #endif
 
 #endif // VECGEOM_BACKEND_VECTOR_BACKEND_H_

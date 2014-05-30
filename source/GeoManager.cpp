@@ -1,5 +1,9 @@
-#include "management/geo_manager.h"
-#include "volumes/placed_volume.h"
+/// \file GeoManager.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+
+#include "management/GeoManager.h"
+
+#include "volumes/PlacedVolume.h"
 
 #include <stdio.h>
 

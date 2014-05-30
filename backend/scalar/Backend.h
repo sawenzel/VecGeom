@@ -1,14 +1,12 @@
-/**
- * @file scalar/backend.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file scalar/Backend.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BACKEND_SCALARBACKEND_H_
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
-#include <algorithm>
+#include "base/Global.h"
 
-#include "base/global.h"
+#include <algorithm>
 
 namespace VECGEOM_NAMESPACE {
 

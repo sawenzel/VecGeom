@@ -1,19 +1,18 @@
-/**
- * @file container.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Container.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_CONTAINER_H_
 #define VECGEOM_BASE_CONTAINER_H_
 
-#include "base/global.h"
-#include "backend/backend.h"
+#include "base/Global.h"
+
+#include "base/Array.h"
+#include "base/Iterator.h"
+#include "backend/Backend.h"
 #ifdef VECGEOM_CUDA_INTERFACE
-#include "backend/cuda/interface.h"
+#include "backend/cuda/Interface.h"
 #endif
  
-#include "base/array.h"
-#include "base/iterator.h"
 
 namespace VECGEOM_NAMESPACE {
 

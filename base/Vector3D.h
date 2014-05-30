@@ -1,21 +1,19 @@
-/**
- * @file vector3d.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file vector3d.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_VECTOR3D_H_
 #define VECGEOM_BASE_VECTOR3D_H_
 
-#include "base/global.h"
-#include "backend/backend.h"
+#include "base/Global.h"
+#include "backend/Backend.h"
 #ifndef VECGEOM_NVCC
   #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
     #include <Vc/Vc>
   #endif
 #endif
 
-#include <string>
 #include <cstdlib>
+#include <string>
 
 namespace VECGEOM_NAMESPACE {
 

@@ -1,16 +1,15 @@
-/**
- * @file transformation3d.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Transformation3D.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_TRANSFORMATION3D_H_
 #define VECGEOM_BASE_TRANSFORMATION3D_H_
 
+#include "base/Global.h"
+
+#include "base/Vector3D.h"
+
 #include <cmath>
 #include <cstring>
-
-#include "base/global.h"
-#include "base/vector3d.h"
 
 namespace VECGEOM_NAMESPACE {
 

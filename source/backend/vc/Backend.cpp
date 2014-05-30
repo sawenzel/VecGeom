@@ -1,9 +1,7 @@
-/**
- * @file vc/backend.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file vc/Backend.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch
 
-#include "backend/vc/backend.h"
+#include "backend/vc/Backend.h"
 
 namespace VECGEOM_NAMESPACE {
 

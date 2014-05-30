@@ -4,10 +4,10 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDBOX_H_
 #define VECGEOM_VOLUMES_UNPLACEDBOX_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 #include "base/AlignedBase.h"
-#include "base/vector3d.h"
-#include "volumes/unplaced_volume.h"
+#include "base/Vector3D.h"
+#include "volumes/UnplacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 

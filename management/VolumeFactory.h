@@ -1,14 +1,12 @@
-/**
- * @file volume_factory.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file VolumeFactory.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_
 #define VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_
 
-#include "base/transformation3d.h"
-#include "volumes/logical_volume.h"
-#include "volumes/placed_volume.h"
+#include "volumes/PlacedVolume.h"
+#include "base/Transformation3D.h"
+#include "volumes/LogicalVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 

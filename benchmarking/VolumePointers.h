@@ -1,12 +1,10 @@
-/**
- * @file volume_pointers.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file VolumePointers.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 #define VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include "benchmarking/BenchmarkResult.h"
 

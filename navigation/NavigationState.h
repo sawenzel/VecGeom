@@ -1,23 +1,20 @@
-/*
- * navigationstate.h
- *
- *  Created on: Mar 12, 2014
- *      Author: swenzel
- */
+/// \file NavigationState.h
+/// \author Sandro Wenzel (sandro.wenzel@cern.ch)
+/// \date 12.03.2014
 
 #ifndef VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 #define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
-#include <string>
-#include <iostream>
-
-#include "backend/backend.h"
-#include "base/transformation3d.h"
-#include "volumes/placed_volume.h"
+#include "backend/Backend.h"
+#include "base/Transformation3D.h"
+#include "volumes/PlacedVolume.h"
 
 #ifdef VECGEOM_ROOT
-#include "management/rootgeo_manager.h"
+#include "management/RootGeoManager.h"
 #endif
+
+#include <iostream>
+#include <string>
 
 class TGeoBranchArray;
 

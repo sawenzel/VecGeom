@@ -1,10 +1,10 @@
-/// @file PlacedTrapezoid.h
+/// \file PlacedTrapezoid.h
 
 #ifndef VECGEOM_VOLUMES_PLACEDTRAPEZOID_H_
 #define VECGEOM_VOLUMES_PLACEDTRAPEZOID_H_
 
-#include "base/global.h"
-#include "volumes/placed_volume.h"
+#include "base/Global.h"
+#include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedTrapezoid.h"
 
 namespace VECGEOM_NAMESPACE {

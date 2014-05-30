@@ -3,13 +3,13 @@
 
 #include "benchmarking/Benchmarker.h"
 
-#include "base/iterator.h"
-#include "base/soa3d.h"
-#include "base/stopwatch.h"
-#include "base/transformation3d.h"
-#include "volumes/logical_volume.h"
+#include "base/Iterator.h"
+#include "base/SOA3D.h"
+#include "base/Stopwatch.h"
+#include "base/Transformation3D.h"
+#include "volumes/LogicalVolume.h"
 #include "volumes/PlacedBox.h"
-#include "volumes/utilities/volume_utilities.h"
+#include "volumes/utilities/VolumeUtilities.h"
 
 #ifdef VECGEOM_USOLIDS
 #include "VUSolid.hh"

@@ -1,7 +1,7 @@
 #ifndef CPUGPU_H_
 #define CPUGPU_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 using namespace vecgeom;
 

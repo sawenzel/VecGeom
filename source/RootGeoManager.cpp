@@ -1,24 +1,22 @@
-/**
- * @file root_manager.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file RootGeoManager.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include <cassert>
-
-#include "base/transformation3d.h"
-#include "management/geo_manager.h"
-#include "management/rootgeo_manager.h"
-#include "volumes/logical_volume.h"
-#include "volumes/placed_root_volume.h"
-#include "volumes/placed_volume.h"
+#include "base/Transformation3D.h"
+#include "management/GeoManager.h"
+#include "management/RootGeoManager.h"
+#include "volumes/LogicalVolume.h"
+#include "volumes/PlacedRootVolume.h"
+#include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedBox.h"
-#include "volumes/unplaced_root_volume.h"
+#include "volumes/UnplacedRootVolume.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
 #include "TGeoBBox.h"
 #include "TGeoMatrix.h"
 #include "TGeoVolume.h"
+
+#include <cassert>
 
 namespace vecgeom {
 

@@ -1,12 +1,12 @@
-/// \file cuda_manager.h
+/// \file CudaManager.h
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_MANAGEMENT_CUDAMANAGER_H_
 #define VECGEOM_MANAGEMENT_CUDAMANAGER_H_
  
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/vector.h"
+#include "base/Vector.h"
 #include "volumes/Box.h"
 
 #include <list>

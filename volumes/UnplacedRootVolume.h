@@ -4,9 +4,9 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDROOTVOLUME_H_
 #define VECGEOM_VOLUMES_UNPLACEDROOTVOLUME_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "volumes/unplaced_volume.h"
+#include "volumes/UnplacedVolume.h"
 
 class TGeoShape;
 

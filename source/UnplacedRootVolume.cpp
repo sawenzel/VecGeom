@@ -1,9 +1,9 @@
-/// @file unplaced_root_volume.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file UnplacedRootVolume.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include "volumes/unplaced_root_volume.h"
+#include "volumes/UnplacedRootVolume.h"
 
-#include "volumes/placed_root_volume.h"
+#include "volumes/PlacedRootVolume.h"
 
 #include <stdio.h>
 

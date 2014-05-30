@@ -1,13 +1,12 @@
-/**
- * @file array.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Array.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_ARRAY_H_
 #define VECGEOM_BASE_ARRAY_H_
 
-#include "base/global.h"
-#include "base/iterator.h"
+#include "base/Global.h"
+
+#include "base/Iterator.h"
 
 namespace VECGEOM_NAMESPACE {
 

@@ -1,14 +1,10 @@
-/**
- * @file stopwatch.h
- * @author Sandro Wenzel (sandro.wenzel@cern.ch),
- *         Johannes de Fine Licht (johannes.definelicht@cern.ch)
- *         
- */
+/// \file Stopwatch.h
+/// \author Sandro Wenzel (sandro.wenzel@cern.ch)
 
 #ifndef VECGEOM_BASE_STOPWATCH_H_
 #define VECGEOM_BASE_STOPWATCH_H_
 
-#include <ctime>
+#include "base/Global.h"
 
 // OS X compatibility
 #ifdef __MACH__
@@ -16,7 +12,7 @@
 #include <mach/mach.h>
 #endif
 
-#include "base/global.h"
+#include <ctime>
 
 namespace VECGEOM_NAMESPACE {
 namespace standardtimer

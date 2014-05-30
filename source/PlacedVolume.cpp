@@ -1,12 +1,11 @@
-/**
- * @file placed_volume.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file PlacedVolume.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+
+#include "volumes/PlacedVolume.h"
+
+#include "management/GeoManager.h"
 
 #include <stdio.h>
-
-#include "management/geo_manager.h"
-#include "volumes/placed_volume.h"
 
 namespace VECGEOM_NAMESPACE {
 

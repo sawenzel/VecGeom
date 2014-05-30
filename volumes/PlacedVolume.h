@@ -6,10 +6,10 @@
 #ifndef VECGEOM_VOLUMES_PLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_PLACEDVOLUME_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/transformation3d.h"
-#include "volumes/logical_volume.h"
+#include "base/Transformation3D.h"
+#include "volumes/LogicalVolume.h"
 
 #include <string>
 #include <list>

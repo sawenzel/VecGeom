@@ -1,8 +1,8 @@
-#include "volumes/logical_volume.h"
+#include "volumes/LogicalVolume.h"
 #include "volumes/Box.h"
 #include "volumes/Parallelepiped.h"
 #include "benchmarking/Benchmarker.h"
-#include "management/geo_manager.h"
+#include "management/GeoManager.h"
 
 using namespace vecgeom;
 

@@ -1,16 +1,16 @@
-/// @file Benchmarker.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file Benchmarker.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BENCHMARKING_BENCHMARKER_H_
 #define VECGEOM_BENCHMARKING_BENCHMARKER_H_
 
+#include "base/Global.h"
 
-#include "base/global.h"
-
-#include "base/soa3d.h"
+#include "volumes/PlacedVolume.h"
+#include "base/SOA3D.h"
 #include "benchmarking/BenchmarkResult.h"
-#include "management/volume_pointers.h"
-#include "volumes/placed_volume.h"
+#include "benchmarking/VolumePointers.h"
+
 #ifdef VECGEOM_USOLIDS
 #include "VUSolid.hh"
 #endif

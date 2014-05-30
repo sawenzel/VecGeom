@@ -1,10 +1,9 @@
-/**
- * @file volume_pointers.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file VolumePointers.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include "management/volume_pointers.h"
-#include "volumes/placed_volume.h"
+#include "benchmarking/VolumePointers.h"
+
+#include "volumes/PlacedVolume.h"
 
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"

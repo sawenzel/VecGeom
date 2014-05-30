@@ -1,17 +1,15 @@
-/**
- * @file aos3d.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file AOS3D.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_AOS3D_H_
 #define VECGEOM_BASE_AOS3D_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/track_container.h"
-#include "base/vector3d.h"
+#include "base/TrackContainer.h"
+#include "base/Vector3D.h"
 #ifdef VECGEOM_CUDA_INTERFACE
-#include "backend/cuda/interface.h"
+#include "backend/cuda/Interface.h"
 #endif
 
 // #include <cassert>

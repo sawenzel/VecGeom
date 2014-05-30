@@ -8,9 +8,9 @@
 #ifndef VOLUME_UTILITIES_H_
 #define VOLUME_UTILITIES_H_
 
-#include "base/vector3d.h"
-#include "base/global.h"
-#include "base/rng.h"
+#include "base/Vector3D.h"
+#include "base/Global.h"
+#include "base/RNG.h"
 #include "volumes/PlacedBox.h"
 
 namespace VECGEOM_NAMESPACE {

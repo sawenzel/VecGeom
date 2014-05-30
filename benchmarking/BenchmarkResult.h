@@ -4,7 +4,7 @@
 #ifndef VECGEOM_BENCHMARKING_BENCHMARKRESULT_H_
 #define VECGEOM_BENCHMARKING_BENCHMARKRESULT_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include <ostream>
 

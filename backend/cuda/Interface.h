@@ -1,14 +1,12 @@
-/**
- * @file cuda/backend.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file cuda/Backend.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BACKEND_CUDA_INTERFACE_H_
 #define VECGEOM_BACKEND_CUDA_INTERFACE_H_
 
-#include "driver_types.h"
+#include "base/Global.h"
 
-#include "base/global.h"
+#include "driver_types.h" // Required for cudaError_t type
 
 namespace vecgeom {
 

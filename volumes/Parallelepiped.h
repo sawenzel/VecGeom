@@ -4,7 +4,7 @@
 #ifndef VECGEOM_VOLUMES_PARALLELEPIPED_H_
 #define VECGEOM_VOLUMES_PARALLELEPIPED_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include "volumes/PlacedParallelepiped.h"
 #include "volumes/SpecializedParallelepiped.h"

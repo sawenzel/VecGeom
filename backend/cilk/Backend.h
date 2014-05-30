@@ -1,7 +1,5 @@
-/**
- * @file cilk/backend.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file cilk/Backend.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BACKEND_CILKBACKEND_H_
 #define VECGEOM_BACKEND_CILKBACKEND_H_
@@ -14,11 +12,11 @@
 #define VECGEOM_VECTOR_BIT_SIZE 16
 #endif
 
+#include "base/Global.h"
+
+#include "backend/scalar/Backend.h"
+
 #include <algorithm>
-
-#include "base/global.h"
-
-#include "backend/scalar/backend.h"
 
 namespace VECGEOM_NAMESPACE {
 

@@ -1,14 +1,12 @@
-/**
- * @file iterator.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Iterator.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_ITERATOR_H_
 #define VECGEOM_BASE_ITERATOR_H_
 
-#include <iterator>
+#include "base/Global.h"
 
-#include "base/global.h"
+#include <iterator>
 
 namespace VECGEOM_NAMESPACE {
 

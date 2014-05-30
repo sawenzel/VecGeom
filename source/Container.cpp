@@ -1,5 +1,9 @@
-#include "base/container.h"
-#include "base/vector.h"
+/// \file Container.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+
+#include "base/Container.h"
+
+#include "base/Vector.h"
 
 namespace vecgeom {
 

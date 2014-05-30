@@ -1,12 +1,10 @@
-/**
- * @file interface.cu
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file Interface.cu
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+ 
+#include "backend/cuda/Interface.h"
 
 #include <cassert>
 #include <stdio.h>
- 
-#include "backend/cuda/interface.h"
 
 namespace vecgeom {
 

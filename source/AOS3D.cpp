@@ -1,6 +1,10 @@
-#include "base/aos3d.h"
+/// \file AOS3D.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+
+#include "base/AOS3D.h"
+
 #ifdef VECGEOM_CUDA
-#include "backend/cuda/interface.h"
+#include "backend/cuda/Interface.h"
 #endif
 
 namespace vecgeom {

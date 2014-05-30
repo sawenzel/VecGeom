@@ -1,11 +1,9 @@
-/**
- * @file unplaced_volume.cpp
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file UnplacedVolume.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include "volumes/unplaced_volume.h"
+#include "volumes/UnplacedVolume.h"
 
-#include "volumes/placed_volume.h"
+#include "volumes/PlacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 

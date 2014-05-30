@@ -1,16 +1,15 @@
-/**
- * @file type_map.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file TypeMap.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+
 #ifndef VECGEOM_BASE_TYPEMAP_H_
 #define VECGEOM_BASE_TYPEMAP_H_
 
-#include <map>
+#include "base/Global.h"
 
-#include "base/global.h"
+#include "base/Iterator.h"
 
-#include "base/iterator.h"
 #include <cassert>
+#include <map>
 
 namespace VECGEOM_NAMESPACE {
 

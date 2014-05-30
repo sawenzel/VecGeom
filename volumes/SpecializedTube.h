@@ -4,7 +4,7 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/PlacedTube.h"

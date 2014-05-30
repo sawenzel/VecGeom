@@ -1,15 +1,15 @@
-/**
- * @file cuda/backend.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file cuda/Backend.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BACKEND_CUDABACKEND_H_
 #define VECGEOM_BACKEND_CUDABACKEND_H_
 
+#include "base/Global.h"
+
+#include "backend/scalar/Backend.h"
+#include "backend/cuda/Interface.h"
+
 #include <cassert>
-#include "base/global.h"
-#include "backend/cuda/interface.h"
-#include "backend/scalar/backend.h"
 
 namespace vecgeom_cuda {
 

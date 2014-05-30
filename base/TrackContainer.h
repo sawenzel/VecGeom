@@ -1,12 +1,10 @@
-/**
- * @file track_container.h
- * @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
- */
+/// \file track_container.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_TRACKCONTAINER_H_
 #define VECGEOM_BASE_TRACKCONTAINER_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 namespace VECGEOM_NAMESPACE {
 

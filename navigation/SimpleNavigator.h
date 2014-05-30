@@ -1,26 +1,25 @@
-/*
- * simple_navigator.h
- *
- *  Created on: Mar 12, 2014
- *      Author: swenzel
- */
+/// \file SimpleNavigator.h
+/// \author Sandro Wenzel (sandro.wenzel@cern.ch)
+/// \date 12.03.2014
 
 #ifndef SIMPLE_NAVIGATOR_H_
 #define SIMPLE_NAVIGATOR_H_
 
-#include "base/global.h"
-#include "volumes/placed_volume.h"
-#include "base/vector3d.h"
-#include "navigation/navigationstate.h"
-#include "management/geo_manager.h"
-#include <cassert>
-#include "base/soa3d.h"
+#include "base/Global.h"
+
+#include "volumes/PlacedVolume.h"
+#include "base/SOA3D.h"
+#include "base/Vector3D.h"
+#include "management/GeoManager.h"
+#include "navigation/NavigationState.h"
 
 #ifdef VECGEOM_ROOT
-#include "management/rootgeo_manager.h"
+#include "management/RootGeoManager.h"
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
 #endif
+
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE
 {

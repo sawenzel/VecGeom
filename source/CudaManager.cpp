@@ -1,18 +1,18 @@
-/// \file cuda_manager.cpp
+/// \file CudaManager.cpp
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#include "management/cuda_manager.h"
+#include "management/CudaManager.h"
+
+#include "backend/cuda/Interface.h"
+#include "base/Array.h"
+#include "base/Stopwatch.h"
+#include "management/GeoManager.h"
+#include "management/VolumeFactory.h"
+#include "volumes/PlacedVolume.h"
 
 #include <algorithm>
 #include <cassert>
 #include <stdio.h>
-
-#include "backend/cuda/interface.h"
-#include "base/array.h"
-#include "base/stopwatch.h"
-#include "management/geo_manager.h"
-#include "management/volume_factory.h"
-#include "volumes/placed_volume.h"
 
 namespace vecgeom {
 
