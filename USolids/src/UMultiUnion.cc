@@ -130,7 +130,7 @@ double UMultiUnion::Capacity()
     for (generated = 0; generated < 10000; generated++)
     {
       UVector3 random(rand(), rand(), rand());
-      point = left + length * (random / RAND_MAX);
+      point = left + length.MultiplyByComponents(random / RAND_MAX);
       if (Inside(point) != vecgeom::EInside::kOutside) inside++;
     }
     double vbox = (2 * d.x()) * (2 * d.y()) * (2 * d.z());

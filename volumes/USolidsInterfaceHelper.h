@@ -4,7 +4,7 @@
 #ifndef VECGEOM_VOLUMES_USOLIDSINTERFACEHELPER_H_
 #define VECGEOM_VOLUMES_USOLIDSINTERFACEHELPER_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #ifndef VECGEOM_USOLIDS
 
@@ -14,8 +14,8 @@ class USolidsInterfaceHelper {};
 
 #else // Compiling with USolids compatibility
 
-#include "base/vector3d.h"
-#include "volumes/placed_volume.h"
+#include "base/Vector3D.h"
+#include "volumes/PlacedVolume.h"
 #include "VUSolid.hh"
 
 namespace VECGEOM_NAMESPACE {

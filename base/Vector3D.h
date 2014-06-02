@@ -173,6 +173,14 @@ public:
     return Dot(*this, right);
   }
 
+  // For UVector3 compatibility. Is equal to normal multiplication.
+  // TODO: check if there are implicit dot products in USolids...
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType MultiplyByComponents(VecType const &other) const {
+    return *this * other;
+  }
+
   /// \return Squared magnitude of the vector.
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -484,6 +492,14 @@ public:
   VECGEOM_INLINE
   Precision Dot(Vector3D<Precision> const &right) const {
     return Dot(*this, right);
+  }
+
+  // For UVector3 compatibility. Is equal to normal multiplication.
+  // TODO: check if there are implicit dot products in USolids...
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType MultiplyByComponents(VecType const &other) const {
+    return *this * other;
   }
 
   /// The cross product of two Vector3D<T> objects.

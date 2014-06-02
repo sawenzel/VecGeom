@@ -8,6 +8,7 @@
 
 #include "base/Transformation3D.h"
 #include "volumes/LogicalVolume.h"
+#include "volumes/USolidsInterfaceHelper.h"
 
 #include <list>
 #include <string>
