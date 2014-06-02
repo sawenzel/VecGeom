@@ -1,5 +1,5 @@
-/// @file BenchmarkResult.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file BenchmarkResult.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "benchmarking/BenchmarkResult.h"
 
@@ -11,7 +11,8 @@ char const *const BenchmarkResult::fgLibraryLabels[] = {
   "Unspecialized",
   "CUDA",
   "USolids",
-  "ROOT"
+  "ROOT",
+  "CUDAMemory"
 };
 
 char const *const BenchmarkResult::fgMethodLabels[] = {
@@ -21,6 +22,16 @@ char const *const BenchmarkResult::fgMethodLabels[] = {
   "DistanceToOut",
   "SafetyToOut",
 };
+
+void BenchmarkResult::WriteCsvHeader(std::ostream &os) {
+  os << "elapsed,method,library,repetitions,volumes,points,bias\n";
+}
+
+void BenchmarkResult::WriteToCsv(std::ostream &os) {
+  os << elapsed << "," << fgMethodLabels[method] << ","
+     << fgLibraryLabels[library] << "," << repetitions << "," << volumes << ","
+     << points << "," << bias << "\n";
+}
 
 std::ostream& operator<<(std::ostream &os, BenchmarkResult const &benchmark) {
   os << benchmark.elapsed << "s | "

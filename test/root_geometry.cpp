@@ -1,8 +1,8 @@
-#include "management/geo_manager.h"
-#include "management/rootgeo_manager.h"
-#include "navigation/navigationstate.h"
-#include "navigation/simple_navigator.h"
-#include "volumes/placed_volume.h"
+#include "management/GeoManager.h"
+#include "management/RootGeoManager.h"
+#include "navigation/NavigationState.h"
+#include "navigation/SimpleNavigator.h"
+#include "volumes/PlacedVolume.h"
 
 #include "TGeoBBox.h"
 #include "TGeoManager.h"

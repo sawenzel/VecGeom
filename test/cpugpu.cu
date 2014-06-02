@@ -1,11 +1,11 @@
 #include "cpugpu.h"
 
-#include "backend/cuda/backend.h"
-#include "base/soa3d.h"
-#include "management/cuda_manager.h"
-#include "navigation/simple_navigator.h"
-#include "navigation/navigationstate.h"
-#include "volumes/placed_volume.h"
+#include "backend/cuda/Backend.h"
+#include "base/SOA3D.h"
+#include "management/CudaManager.h"
+#include "navigation/SimpleNavigator.h"
+#include "navigation/NavigationState.h"
+#include "volumes/PlacedVolume.h"
 
 using namespace vecgeom_cuda;
 

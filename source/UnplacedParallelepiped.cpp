@@ -1,11 +1,11 @@
-/// @file UnplacedParallelepiped.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file UnplacedParallelepiped.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "volumes/UnplacedParallelepiped.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 #include "volumes/SpecializedParallelepiped.h"
-#include "volumes/utilities/generation_utilities.h"
+#include "volumes/utilities/GenerationUtilities.h"
 
 #include <stdio.h>
 

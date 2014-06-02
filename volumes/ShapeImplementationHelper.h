@@ -4,12 +4,12 @@
 #ifndef VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 #define VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "backend/backend.h"
-#include "backend/scalar/backend.h"
-#include "base/aos3d.h"
-#include "base/soa3d.h"
+#include "backend/scalar/Backend.h"
+#include "backend/Backend.h"
+#include "base/SOA3D.h"
+#include "base/AOS3D.h"
 #include "volumes/PlacedBox.h"
 
 #include <algorithm>

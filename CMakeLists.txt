@@ -119,9 +119,9 @@ if (Vc)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
   set(BACKEND_INCLUDE backend/vc)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/backend.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/Backend.cpp)
   set(HEADERS_BACKEND ${HEADERS_BACKEND}
-    ${CMAKE_SOURCE_DIR}/backend/vc/backend.h
+    ${CMAKE_SOURCE_DIR}/backend/vc/Backend.h
   )
 
 endif()
@@ -137,10 +137,10 @@ if (Cilk)
   set(BACKEND_INCLUDE backend/cilk)
   set(
     SRC_EXTERNAL ${SRC_EXTERNAL}
-    source/backend/cilk/backend.cpp
+    source/backend/cilk/Backend.cpp
   )
   set(HEADERS_BACKEND ${HEADERS_BACKEND}
-    ${CMAKE_SOURCE_DIR}/backend/cilk/backend.h
+    ${CMAKE_SOURCE_DIR}/backend/cilk/Backend.h
   )
 
 endif()
@@ -174,11 +174,11 @@ if (CUDA)
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
   set(BACKEND_INCLUDE_CUDA backend/cuda)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/cuda_manager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/CudaManager.cpp)
   set(
     SRC_CUDA ${SRC_CUDA}
-    source/cuda_manager.cu
-    source/backend/cuda/interface.cu
+    source/CudaManager.cu
+    source/backend/cuda/Interface.cu
   )
 
 endif()
@@ -192,9 +192,9 @@ if (ROOT)
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
-    source/placed_root_volume.cpp
-    source/rootgeo_manager.cpp
-    source/unplaced_root_volume.cpp
+    source/PlacedRootVolume.cpp
+    source/RootGeoManager.cpp
+    source/UnplacedRootVolume.cpp
   )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
 
@@ -210,7 +210,6 @@ if (USolids)
     add_subdirectory(USolids)
     include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
     link_directories(${CMAKE_BINARY_DIR}/USolids)
-    set(LIBS ${LIBS} usolids)
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
@@ -218,13 +217,13 @@ if (USolids)
     include_directories(${USOLIDS_DIR}/include)
   endif()
   if (USOLIDS_LIBRARY_DIR)
-    set(LIBS ${LIBS} ${USOLIDS_LIBRARY_DIR}/libusolids.a)
     link_directories(${USOLIDS_LIBRARY_DIR})
   elseif (USOLIDS_DIR)
-    set(LIBS ${LIBS} ${USOLIDS_DIR}/lib/libusolids.a)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
+  
+  set(LIBS ${LIBS} usolids)
 
 endif()
 
@@ -234,97 +233,41 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-set(HEADERS_CPP_RELATIVE
-  backend/backend.h
-  backend/scalar/backend.h
-  base/aos3d.h
-  base/array.h
-  base/container.h
-  base/global.h
-  base/iterator.h
-  base/rng.h
-  base/soa3d.h
-  base/specialized_transformation3d.h
-  base/stopwatch.h
-  base/track_container.h
-  base/transformation3d.h
-  base/type_map.h
-  base/vector.h
-  base/vector3d.h
-  benchmarking/BenchmarkResult.h
-  benchmarking/Benchmarker.h
-  management/cuda_manager.h
-  management/geo_manager.h
-  management/rootgeo_manager.h
-  management/volume_factory.h
-  management/volume_pointers.h
-  navigation/navigationstate.h
-  navigation/simple_navigator.h
-  volumes/Box.h
-  volumes/Tube.h
-  volumes/kernel/BoxImplementation.h
-  volumes/kernel/TubeImplementation.h
-  volumes/kernel/shapetypes/TubeTypes.h
-  volumes/logical_volume.h
-  volumes/Parallelepiped.h
-  volumes/PlacedBox.h
-  volumes/PlacedTube.h
-  volumes/PlacedParallelepiped.h
-  volumes/PlacedParaboloid.h
-  volumes/PlacedTrapezoid.h
-  volumes/placed_volume.h
-  volumes/SpecializedBox.h
-  volumes/SpecializedTube.h
-  volumes/SpecializedParallelepiped.h
-  volumes/SpecializedParaboloid.h
-  volumes/SpecializedTrapezoid.h
-  volumes/UnplacedBox.h
-  volumes/UnplacedParallelepiped.h
-  volumes/UnplacedParaboloid.h
-  volumes/UnplacedTube.h
-  volumes/UnplacedTrapezoid.h
-  volumes/unplaced_volume.h
-  volumes/usolid.h
-  volumes/utilities/volume_utilities.h
-)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/ *.h)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/scalar/ *.h)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/base/ *.h)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/benchmarking/ *.h)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/management/ *.h)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/navigation/ *.h)
+file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/volumes/ *.h)
 # CUDA headers are installed normally. Vector headers will change path in
 # installation directory.
 if (CUDA)
-  set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
-    backend/cuda/backend.h
-    backend/cuda/interface.h
-  )
-endif()
-if (ROOT)
-  set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
-    management/rootgeo_manager.h
-    volumes/placed_root_volume.h
-    volumes/unplaced_root_volume.h
-  )
+  file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/cuda/ *.h)
 endif()
 
 set(SRC_CPP_RELATIVE
-  source/aos3d.cpp
-  source/container.cpp
-  source/logical_volume.cpp
+  source/AOS3D.cpp
+  source/Container.cpp
+  source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
-  source/placed_volume.cpp
-  source/soa3d.cpp
+  source/PlacedVolume.cpp
+  source/SOA3D.cpp
   source/SpecializedBox.cpp
-  source/transformation3d.cpp
+  source/Transformation3D.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
-  source/unplaced_volume.cpp
-  source/vector3d.cpp
+  source/UnplacedVolume.cpp
+  source/Vector3D.cpp
   source/NavigationState.cpp	
-  source/simple_navigator.cpp
+  source/SimpleNavigator.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -361,14 +304,14 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
-    source/benchmarking/volume_pointers.cpp
+    source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
     source/benchmarking/Benchmarker.cu
   )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
-  source/geo_manager.cpp
+  source/GeoManager.cpp
 )
 
 # Compile cpp-files for C++11
@@ -393,6 +336,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
@@ -442,8 +386,13 @@ if (BENCHMARK)
     TubeBenchmark
     ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
   )
+  add_executable(
+    MultiBenchmark
+    ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
+  )
   target_link_libraries(BoxBenchmark ${LIBS})
   target_link_libraries(TubeBenchmark ${LIBS})
+  target_link_libraries(MultiBenchmark ${LIBS})
   if (NOT USolids)
     add_executable(
       ParallelepipedBenchmark

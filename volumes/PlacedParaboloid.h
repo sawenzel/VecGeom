@@ -1,10 +1,10 @@
-/// @file PlacedParaboloid.h
+/// \file PlacedParaboloid.h
 
 #ifndef VECGEOM_VOLUMES_PLACEDPARABOLOID_H_
 #define VECGEOM_VOLUMES_PLACEDPARABOLOID_H_
 
-#include "base/global.h"
-#include "volumes/placed_volume.h"
+#include "base/Global.h"
+#include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParaboloid.h"
 
 namespace VECGEOM_NAMESPACE {

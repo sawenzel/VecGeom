@@ -4,8 +4,8 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 
-#include "backend/backend.h"
-#include "base/vector3d.h"
+#include "backend/Backend.h"
+#include "base/Vector3D.h"
 #include "volumes/UnplacedBox.h"
 
 namespace VECGEOM_NAMESPACE {

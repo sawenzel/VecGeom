@@ -1,14 +1,14 @@
-/// @file PlacedTube.h
-/// @author Georgios Bitzes (georgios.bitzes@cern.ch)
+/// \file PlacedTube.h
+/// \author Georgios Bitzes (georgios.bitzes@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_PLACEDTUBE_H_
 #define VECGEOM_VOLUMES_PLACEDTUBE_H_
 
-#include "base/global.h"
-#include "backend/backend.h"
+#include "base/Global.h"
+#include "backend/Backend.h"
  
-#include "volumes/placed_volume.h"
-#include "volumes/unplaced_volume.h"
+#include "volumes/PlacedVolume.h"
+#include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TubeImplementation.h"
 
 namespace VECGEOM_NAMESPACE {
