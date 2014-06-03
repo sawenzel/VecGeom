@@ -13,6 +13,8 @@
 #include "base/RNG.h"
 #include "volumes/PlacedBox.h"
 
+#include <cassert>
+
 namespace VECGEOM_NAMESPACE {
 namespace volumeUtilities {
 

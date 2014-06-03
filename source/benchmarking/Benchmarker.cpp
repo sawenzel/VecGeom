@@ -21,6 +21,7 @@
 #include "TGeoShape.h"
 #endif
 
+#include <cassert>
 #include <random>
 #include <sstream>
 
@@ -199,9 +200,11 @@ void Benchmarker::RunInsideBenchmark() {
     printf("Running Inside benchmark for %i points for %i repetitions.\n",
             fPointCount, fRepetitions);
   }
+#ifndef VECGEOM_SCALAR
   if (fVerbosity > 1) {
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
   }
+#endif
 
   if (fPointPool) delete fPointPool;
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
@@ -326,7 +329,9 @@ void Benchmarker::RunToInBenchmark() {
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
   if (fVerbosity > 1) {
+#ifndef VECGEOM_SCALAR
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
+#endif
     printf("Times are printed as DistanceToIn/Safety.\n");
   }
 
@@ -466,7 +471,9 @@ void Benchmarker::RunToOutBenchmark() {
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
   if (fVerbosity > 1) {
+#ifndef VECGEOM_SCALAR
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
+#endif
     printf("Times are printed as DistanceToOut/SafetyToOut.\n");
   }
 

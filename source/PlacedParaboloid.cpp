@@ -1,8 +1,10 @@
-/// @file PlacedParaboloid.cpp
+/// \file PlacedParaboloid.cpp
 
 #include "volumes/PlacedParaboloid.h"
 
 #include "volumes/Paraboloid.h"
+
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 

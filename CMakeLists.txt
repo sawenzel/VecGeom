@@ -32,13 +32,20 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 # Determine backend
 
+set(Vc)
+set(Cilk)
+set(Scalar)
+
 if (BACKEND STREQUAL "Vc")
   set(Vc TRUE)
 endif()
 if (BACKEND STREQUAL "Cilk")
   set(Cilk TRUE)
 endif()
-if (NOT Vc AND NOT Cilk)
+if (BACKEND STREQUAL "Scalar")
+  set(Scalar TRUE)
+endif()
+if (NOT Vc AND NOT Cilk AND NOT Scalar)
   message(FATAL_ERROR "Configuring with invalid backend \"${BACKEND}\".")
 endif()
 
@@ -101,6 +108,10 @@ if (NO_SPECIALIZATION)
 endif()
 
 ################################################################################
+
+if (Scalar)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_SCALAR")
+endif()
 
 if (VC_ACCELERATION OR Vc)
 
