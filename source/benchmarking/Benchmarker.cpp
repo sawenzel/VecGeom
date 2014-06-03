@@ -279,11 +279,11 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
 #ifdef VECGEOM_USOLIDS
       if (!((insideSpecialized[i] == EInside::kInside &&
-             insideUSolids[i] == ::VUSolid::eInside) ||
+             insideUSolids[i] == EInside::kInside) ||
             (insideSpecialized[i] == EInside::kOutside &&
-             insideUSolids[i] == ::VUSolid::eOutside) ||
+             insideUSolids[i] == EInside::kOutside) ||
             (insideSpecialized[i] == EInside::kSurface &&
-             insideUSolids[i] == ::VUSolid::eSurface))) {
+             insideUSolids[i] == EInside::kSurface))) {
         mismatch = true;
       }
       if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];

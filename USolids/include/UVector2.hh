@@ -221,7 +221,7 @@ inline UVector2::UVector2(double x1, double y1)
   : x(x1), y(y1) {}
 
 inline UVector2::UVector2(const UVector3& s)
-  : x(s.x), y(s.y) {}
+  : x(s[0]), y(s[1]) {}
 
 inline void UVector2::setX(double x1)
 {

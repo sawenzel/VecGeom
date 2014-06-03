@@ -72,8 +72,8 @@ EInside G4USolid::Inside(const G4ThreeVector& p) const
 
   in_temp = fShape->Inside(pt);
 
-  if (in_temp == VUSolid::eSurface)return kSurface;
-  if (in_temp == VUSolid::eInside)return kInside;
+  if (in_temp == vecgeom::EInside::kSurface)return kSurface;
+  if (in_temp == vecgeom::EInside::kInside)return kInside;
 
   return in;
 }

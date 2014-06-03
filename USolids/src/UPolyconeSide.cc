@@ -288,7 +288,7 @@ bool UPolyconeSide::Distance(const UVector3& p,
       //
       double pr = p.Perp();
       if (pr < DBL_MIN) pr = DBL_MIN;
-      UVector3 pNormal(rNorm * p.x / pr, rNorm * p.y / pr, zNorm);
+      UVector3 pNormal(rNorm * p.x() / pr, rNorm * p.y() / pr, zNorm);
       if (normSign * v.Dot(pNormal) > 0)
       {
         //
@@ -339,7 +339,7 @@ bool UPolyconeSide::Distance(const UVector3& p,
     {
       double pr = p.Perp();
       if (pr < DBL_MIN) pr = DBL_MIN;
-      UVector3 pNormal(rNorm * p.x / pr, rNorm * p.y / pr, zNorm);
+      UVector3 pNormal(rNorm * p.x() / pr, rNorm * p.y() / pr, zNorm);
       if (normSign * v.Dot(pNormal) > 0)
       {
         double distOutside2;
@@ -439,11 +439,11 @@ VUSolid::EnumInside UPolyconeSide::Inside(const UVector3& p,
   //
   if ((std::fabs(edgeRZnorm[i]) < atolerance)
       && (distOut2[i] < atolerance * atolerance))
-    return VUSolid::eSurface;
+    return vecgeom::EInside::kSurface;
   else if (edgeRZnorm[i] < 0)
-    return VUSolid::eInside;
+    return vecgeom::EInside::kInside;
   else
-    return VUSolid::eOutside;
+    return vecgeom::EInside::kOutside;
 }
 
 
@@ -467,7 +467,7 @@ UVector3 UPolyconeSide::Normal(const UVector3& p,
   double rds = p.Perp();
   if (rds != 0.)
   {
-    return UVector3(rNorm * p.x / rds, rNorm * p.y / rds, zNorm);
+    return UVector3(rNorm * p.x() / rds, rNorm * p.y() / rds, zNorm);
   }
   return UVector3(0., 0., zNorm).Unit();
 }
@@ -483,7 +483,7 @@ double UPolyconeSide::Extent(const UVector3 axis)
     //
     // Special case
     //
-    return axis.z < 0 ? -cone->ZLo() : cone->ZHi();
+    return axis.z() < 0 ? -cone->ZLo() : cone->ZHi();
   }
 
   //
@@ -526,8 +526,8 @@ double UPolyconeSide::Extent(const UVector3 axis)
   //
   double aPerp = axis.Perp();
 
-  double a = aPerp * r[0] + axis.z * z[0];
-  double b = aPerp * r[1] + axis.z * z[1];
+  double a = aPerp * r[0] + axis.z() * z[0];
+  double b = aPerp * r[1] + axis.z() * z[1];
 
   if (b > a) a = b;
 
@@ -898,7 +898,7 @@ double UPolyconeSide::DistanceAway(const UVector3& p,
   //
   // Convert our point to r and z
   //
-  double rx = p.Perp(), zx = p.z;
+  double rx = p.Perp(), zx = p.z();
 
   //
   // Change sign of r if opposite says we should
@@ -987,7 +987,7 @@ bool UPolyconeSide::PointOnCone(const UVector3& hit,
   //
   // Check radial/z extent, as appropriate
   //
-  if (!cone->HitOn(rx, hit.z)) return false;
+  if (!cone->HitOn(rx, hit.z())) return false;
 
   if (phiIsOpen)
   {
@@ -1031,7 +1031,7 @@ bool UPolyconeSide::PointOnCone(const UVector3& hit,
   if (rx < DBL_MIN)
     normal = UVector3(0, 0, zNorm < 0 ? -1 : 1);
   else
-    normal = UVector3(rNorm * hit.x / rx, rNorm * hit.y / rx, zNorm);
+    normal = UVector3(rNorm * hit.x() / rx, rNorm * hit.y() / rx, zNorm);
   return true;
 }
 
