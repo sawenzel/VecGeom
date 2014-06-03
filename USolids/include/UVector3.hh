@@ -164,9 +164,6 @@ UVector3 operator + (const UVector3&, const UVector3&);
 UVector3 operator - (const UVector3&, const UVector3&);
 // Subtraction of 3-vectors.
 
-double operator * (const UVector3&, const UVector3&);
-// Scalar product of 3-vectors.
-
 UVector3 operator * (const UVector3&, double a);
 UVector3 operator / (const UVector3&, double a);
 UVector3 operator * (double a, const UVector3&);

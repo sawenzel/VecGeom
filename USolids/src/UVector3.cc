@@ -159,9 +159,4 @@ UVector3 operator * (double a, const UVector3& p)
   return UVector3(a * p.x_, a * p.y_, a * p.z_);
 }
 
-double operator * (const UVector3& a, const UVector3& b)
-{
-  return a.Dot(b);
-}
-
 #endif
