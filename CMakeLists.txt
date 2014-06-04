@@ -244,19 +244,6 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/scalar/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/base/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/benchmarking/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/management/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/navigation/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/volumes/ *.h)
-# CUDA headers are installed normally. Vector headers will change path in
-# installation directory.
-if (CUDA)
-  file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/cuda/ *.h)
-endif()
-
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
   source/Container.cpp
@@ -267,6 +254,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
+  source/Polygon.cpp
   source/SOA3D.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp
@@ -274,6 +262,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedTube.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
+  source/UnplacedPolyhedra.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector3D.cpp
@@ -413,10 +402,27 @@ if (BENCHMARK)
   endif()
 endif()
 
-foreach(HEADER ${HEADERS_CPP_RELATIVE})
-  get_filename_component(PATH ${HEADER} PATH)
-  install(FILES ${CMAKE_SOURCE_DIR}/${HEADER} DESTINATION include/${PATH})
+set(HEADER_FOLDERS
+  base
+  benchmarking
+  management
+  navigation
+  volumes
+)
+set(BACKEND_FOLDERS
+  backend/scalar
+  backend/vc
+  backend/cilk
+  backend/cuda
+)
+foreach(FOLDER ${HEADER_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include)
 endforeach()
+foreach(FOLDER ${BACKEND_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include/backend)
+endforeach()
+install(FILES ${CMAKE_SOURCE_DIR}/backend/Backend.h DESTINATION include/backend)
+
 foreach(HEADER ${HEADERS_BACKEND})
   get_filename_component(FILENAME ${HEADER} NAME)
   install(FILES ${HEADER} DESTINATION include/backend/vector)
