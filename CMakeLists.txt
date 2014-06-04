@@ -261,19 +261,24 @@ set(HEADERS_CPP_RELATIVE
   navigation/simple_navigator.h
   volumes/Box.h
   volumes/Tube.h
+  volumes/Trd.h
   volumes/kernel/BoxImplementation.h
   volumes/kernel/TubeImplementation.h
+  volumes/kernel/TrdImplementation.h
   volumes/kernel/shapetypes/TubeTypes.h
+  volumes/kernel/shapetypes/TrdTypes.h
   volumes/logical_volume.h
   volumes/Parallelepiped.h
   volumes/PlacedBox.h
   volumes/PlacedTube.h
+  volumes/PlacedTrd.h
   volumes/PlacedParallelepiped.h
   volumes/PlacedParaboloid.h
   volumes/PlacedTrapezoid.h
   volumes/placed_volume.h
   volumes/SpecializedBox.h
   volumes/SpecializedTube.h
+  volumes/SpecializedTrd.h
   volumes/SpecializedParallelepiped.h
   volumes/SpecializedParaboloid.h
   volumes/SpecializedTrapezoid.h
@@ -281,6 +286,7 @@ set(HEADERS_CPP_RELATIVE
   volumes/UnplacedParallelepiped.h
   volumes/UnplacedParaboloid.h
   volumes/UnplacedTube.h
+  volumes/UnplacedTrd.h
   volumes/UnplacedTrapezoid.h
   volumes/unplaced_volume.h
   volumes/usolid.h
@@ -308,6 +314,7 @@ set(SRC_CPP_RELATIVE
   source/logical_volume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
@@ -317,6 +324,7 @@ set(SRC_CPP_RELATIVE
   source/transformation3d.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
@@ -392,6 +400,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/TrdBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
@@ -441,8 +450,13 @@ if (BENCHMARK)
     TubeBenchmark
     ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
   )
+  add_executable(
+    TrdBenchmark
+    ${CMAKE_SOURCE_DIR}/test/TrdBenchmark.cpp
+  )
   target_link_libraries(BoxBenchmark ${LIBS})
   target_link_libraries(TubeBenchmark ${LIBS})
+  target_link_libraries(TrdBenchmark ${LIBS})
   if (NOT USolids)
     add_executable(
       ParallelepipedBenchmark
