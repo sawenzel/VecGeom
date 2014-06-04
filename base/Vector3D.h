@@ -61,6 +61,17 @@ public:
     vec[2] = other[2];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D & operator=(Vector3D const &other)
+  {
+    vec[0] = other[0];
+    vec[1] = other[1];
+    vec[2] = other[2];
+    return *this;
+  }
+
+
   /**
    * Constructs a vector from an std::string of the same format as output by the
    * "<<"-operator for outstreams.
@@ -341,9 +352,28 @@ public:
 
   Vector3D() : Vector3D(0) {}
 
+  VECGEOM_INLINE
   Vector3D(Vector3D const &other) {
-    this->mem = other.mem;
+    for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+      {
+         Base_t v1 = rhs.mem.vector(i);
+         this->mem.vector(i)=v1;
+       }
   }
+
+  VECGEOM_INLINE
+  Vector3D & operator=( Vector3D const & rhs )
+   {
+    
+      for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+      {
+         Base_t v1 = rhs.mem.vector(i);
+       this->mem.vector(i)=v1;
+       }
+      // the following line must not be used: this is a bug in Vc
+      // this->mem = rhs.mem;
+     return *this;
+   }
 
   Vector3D(std::string const &str) {
     int begin = 1, end = str.find(",");
