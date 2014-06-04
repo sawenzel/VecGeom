@@ -18,6 +18,7 @@
 #include "TGeoMaterial.h"
 #include "TGeoMedium.h"
 #include "TGeoParaboloid.h"
+#include "TGeoVolume.h"
 #include "TPolyMarker3D.h"
 #include "TRandom3.h"
 #include "TColor.h"
@@ -71,7 +72,7 @@ int main( int argc,  char *argv[]) {
     rootCountIn=0,
     rootCountOut=0;
     
-    double coord[3],
+    double coord[3], direction[3], module,
     x=worldUnplaced.x(),
     y=worldUnplaced.y(),
     z=worldUnplaced.z();
@@ -79,14 +80,210 @@ int main( int argc,  char *argv[]) {
     bool inside;
     
     Vector3D <Precision> *points = new Vector3D<Precision>[np];
+    Vector3D <Precision> *dir = new Vector3D<Precision>[np];
     TRandom3 r3;
     r3.SetSeed(time(NULL));
     
+    int generation=11;
+    
     for(int i=0; i<np; i++) // points inside world volume
     {
-        points[i].x()=r3.Uniform(-x, x);
-        points[i].y()=r3.Uniform(-y, y);
-        points[i].z()=r3.Uniform(-z, z);
+        
+        //generation=i%10;
+        
+        //generic generation
+        if (generation==0) {
+        
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(-z, z);
+            
+            dir[i].x()=r3.Uniform(-1, 1);
+            dir[i].y()=r3.Uniform(-1, 1);
+            dir[i].z()=r3.Uniform(-1, 1);
+            
+        }
+        
+        //points generated everywhere and directions pointing to the origin
+        if (generation==1) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(-z, z);
+            
+            dir[i].x()=-points[i].x();
+            dir[i].y()=-points[i].y();
+            dir[i].z()=-points[i].z();
+        
+        }
+        
+        //points generated everywhere and directions perpendicular to the z-axix
+        if (generation==2) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(-z, z);
+            
+            dir[i].x()=-points[i].x();
+            dir[i].y()=-points[i].y();
+            dir[i].z()=0;
+        }
+        
+        //points generated in -dZ<z<dZ and directions pointing to the origin --> approaching the paraboloid from the parabolic surface
+        if (generation==3) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(-dz, dz);
+            
+            dir[i].x()=-points[i].x();
+            dir[i].y()=-points[i].y();
+            dir[i].z()=0;
+        }
+        
+        
+        //points generated in -dZ<z<dZ and directions perpendicular to the z-axix --> approaching the paraboloid from the parabolic surface
+        if (generation==4) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(-dz, dz);
+            
+            dir[i].x()=-points[i].x();
+            dir[i].y()=-points[i].y();
+            dir[i].z()=0;
+        }
+        
+    
+        //points outside the volume z>dZ and directions distancing from the volume
+        if (generation==5) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(0, y);
+            points[i].z()=r3.Uniform(dz, z);
+            
+            dir[i].x()=0;
+            dir[i].y()=1;
+            dir[i].z()=1;
+        }
+        
+        //z>dz && uz>0 --> leaving the volume
+        if (generation==6) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(dz, z);
+            dir[i].x()=r3.Uniform(-1, 1);
+            dir[i].y()=r3.Uniform(-1, 1);
+            dir[i].z()=1;
+        }
+        
+        //z<-dz && uz<0 --> leaving the volume
+        if (generation==7) {
+            
+            points[i].x()=r3.Uniform(-x, x);
+            points[i].y()=r3.Uniform(-y, y);
+            points[i].z()=r3.Uniform(-dz, -z);
+            dir[i].x()=r3.Uniform(-1, 1);
+            dir[i].y()=r3.Uniform(-1, 1);
+            dir[i].z()=-1;
+            
+        }
+        
+        //x^2+y^2>rhi^2 && x*ux>0 || y*uy>0, x,y>0 --> leaving the volume
+        if (generation==8) {
+            
+            points[i].x()=r3.Uniform(rhi, x);
+            points[i].y()=r3.Uniform(rhi, y);
+            points[i].z()=r3.Uniform(-z, z);
+            
+            dir[i].x()=r3.Uniform(0, 1);
+            dir[i].y()=r3.Uniform(0, 1);
+            dir[i].z()=r3.Uniform(-1, 1);
+            
+        }
+        //x^2+y^2>rhi^2 && x*ux>0 || y*uy>0, x,y<0 --> leaving the volume
+        if (generation==9) {
+            
+            points[i].x()=r3.Uniform(-rhi, -x);
+            points[i].y()=r3.Uniform(-rhi, -y);
+            points[i].z()=r3.Uniform(-z, z);
+            
+            dir[i].x()=r3.Uniform(0, -1);
+            dir[i].y()=r3.Uniform(0, -1);
+            dir[i].z()=r3.Uniform(-1, 1);
+            
+        }
+        //x^2+y^2>rhi^2 && x*ux<0 || y*uy<0 --> approaching the volume
+        if (generation==10) {
+            
+            points[i].x()=r3.Uniform(-x, -rhi);
+            points[i].y()=r3.Uniform(0, rhi);
+            points[i].z()=r3.Uniform(-z, z);
+            
+            dir[i].x()=r3.Uniform(-1, 0);
+            dir[i].y()=r3.Uniform(0, 1);
+            dir[i].z()=r3.Uniform(-1, 1);
+            
+        }
+        //x^2+y^2>rhi^2 && x*ux<0 || y*uy<0 --> approaching the volume
+        if (generation==11) {
+            
+            points[i].x()=r3.Uniform(rhi, x);
+            points[i].y()=r3.Uniform(-y, -rhi);
+            points[i].z()=r3.Uniform(-z, z);
+            dir[i].x()=r3.Uniform(0, 1);
+            dir[i].y()=r3.Uniform(-1, 0);
+            dir[i].z()=r3.Uniform(-1, 1);
+            
+        }
+        //hitting dz surface
+        if (generation==10) {
+         
+            float distZ, xHit, yHit, rhoHit2;
+            points[i].z()=r3.Uniform(dz, z);
+            dir[i].x()=-1;
+            dir[i].y()=-1;
+            do{
+                points[i].x()=r3.Uniform(0, x);
+                points[i].y()=r3.Uniform(0, y);
+                dir[i].z()=r3.Uniform(-1, 0);
+                distZ = (Abs(points[i].z())-dz)/Abs(dir[i].z());
+                xHit = points[i].x()+distZ*dir[i].x();
+                yHit = points[i].y()+distZ*dir[i].y();
+                rhoHit2=xHit*xHit+yHit*yHit;
+            }
+            while (rhoHit2>rhi*rhi);
+        
+        }
+        
+        //hitting -dz surface
+        if (generation==11) {
+            
+            float distZ, xHit, yHit, rhoHit2;
+            points[i].z()=r3.Uniform(-dz, -z);
+            dir[i].x()=-1;
+            dir[i].y()=-1;
+            do{
+                points[i].x()=r3.Uniform(-x, x);
+                points[i].y()=r3.Uniform(-y, y);
+                dir[i].z()=r3.Uniform(0, 1);
+                distZ = (Abs(points[i].z())-dz)/Abs(dir[i].z());
+                xHit = points[i].x()+distZ*dir[i].x();
+                yHit = points[i].y()+distZ*dir[i].y();
+                rhoHit2=xHit*xHit+yHit*yHit;
+            }
+            while (rhoHit2>rlo*rlo);
+            
+        }
+        
+        
+        module=Sqrt(dir[i].x()*dir[i].x()+dir[i].y()*dir[i].y()+dir[i].z()*dir[i].z());
+        dir[i].x()=dir[i].x()/module;
+        dir[i].y()=dir[i].y()/module;
+        dir[i].z()=dir[i].z()/module;
+        
+    
     }
     
     new TGeoManager("world", "the simplest geometry");
@@ -101,7 +298,7 @@ int main( int argc,  char *argv[]) {
     gGeoManager->SetTopVisible();
 
     TGeoVolume *someVolume = gGeoManager->MakeParaboloid("myParab", med, paraboloidUnplaced.GetRlo(), paraboloidUnplaced.GetRhi(), paraboloidUnplaced.GetDz());
-   // TGeoParaboloid *par=new TGeoParaboloid("myParab", med, 3., 5., 7.);
+    TGeoParaboloid *par=new TGeoParaboloid("myParab", paraboloidUnplaced.GetRlo(), paraboloidUnplaced.GetRhi(), paraboloidUnplaced.GetDz());
 
     top->AddNode(someVolume,1);
     TCanvas *c=new TCanvas();
@@ -134,11 +331,16 @@ int main( int argc,  char *argv[]) {
     markerOutside->SetMarkerSize(0.1);
     pm1->AddAt(markerOutside, 4);
     
+    float mbDistToIn, rootDistToIn;
+    int counterDist=0;
     for(int i=0; i<np; i++)
     {
-        //inside=dau[0]->Inside(points[i]);//////////AAHAH
-        inside=dau[0]->Contains(points[i]);
+        inside=dau[0]->Inside(points[i]);
+        
+        //inside=dau[0]->Contains(points[i]);
         if(inside==0){
+            
+            
             myCountOut++;
             markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
             
@@ -151,11 +353,25 @@ int main( int argc,  char *argv[]) {
         coord[1]=points[i].y();
         coord[2]=points[i].z();
         
+        direction[0]=dir[i].x();
+        direction[1]=dir[i].y();
+        direction[2]=dir[i].z();
+        
+        
         inside=someVolume->Contains(coord);
+        //inside=par->Contains(coord);
         if(inside==0){
             rootCountOut++;
-            //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
             
+            mbDistToIn=dau[0]->DistanceToIn(points[i], dir[i]);
+            rootDistToIn=par->DistFromOutside(coord, direction);
+            if( (mbDistToIn!=rootDistToIn) && !(mbDistToIn == kInfinity))
+            {
+                //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
+                std::cout<<"mbDistToIn: "<<mbDistToIn;
+                std::cout<<" rootDistToIn: "<<rootDistToIn<<"\n";
+                counterDist++;
+            }
         }
         else{
             rootCountIn++;
@@ -163,6 +379,7 @@ int main( int argc,  char *argv[]) {
         }
 
     }
+    
 
     if (markerInside) markerInside->Draw("SAME");
     c->Update();
@@ -170,6 +387,7 @@ int main( int argc,  char *argv[]) {
     if (markerOutside) markerOutside->Draw("SAME");
     c->Update();
     sleep(3);
+    std::cout<<"DistToIn mismatch: "<<counterDist<<" \n";
     std::cout<<"MB:  NPointsInside: "<<myCountIn<<" NPointsOutside: "<<myCountOut<<" \n";
     std::cout<<"Root: NPointsInside: "<<rootCountIn<<" NPointsOutside: "<<rootCountOut<<" \n";
 
