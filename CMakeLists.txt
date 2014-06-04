@@ -244,18 +244,17 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/scalar/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/base/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/benchmarking/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/management/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/navigation/ *.h)
-file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/volumes/ *.h)
-# CUDA headers are installed normally. Vector headers will change path in
-# installation directory.
-if (CUDA)
-  file(GLOB HEADERS_CPP_RELATIVE RELATIVE ${CMAKE_SOURCE_DIR}/backend/cuda/ *.h)
-endif()
+set(HEADER_FOLDERS
+  backend
+  base
+  benchmarking
+  management
+  navigation
+  volumes
+)
+foreach(FOLDER ${HEADER_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include)
+endforeach()
 
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
@@ -413,10 +412,7 @@ if (BENCHMARK)
   endif()
 endif()
 
-foreach(HEADER ${HEADERS_CPP_RELATIVE})
-  get_filename_component(PATH ${HEADER} PATH)
-  install(FILES ${CMAKE_SOURCE_DIR}/${HEADER} DESTINATION include/${PATH})
-endforeach()
+install(FILES ${HEADERS_CPP_RELATIVE} DESTINATION include)
 foreach(HEADER ${HEADERS_BACKEND})
   get_filename_component(FILENAME ${HEADER} NAME)
   install(FILES ${HEADER} DESTINATION include/backend/vector)
