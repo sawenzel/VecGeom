@@ -356,7 +356,7 @@ public:
   Vector3D(Vector3D const &other) {
     for( int i=0; i < 1 + 3/Base_t::Size; i++ )
       {
-         Base_t v1 = rhs.mem.vector(i);
+         Base_t v1 = other.mem.vector(i);
          this->mem.vector(i)=v1;
        }
   }
@@ -368,7 +368,7 @@ public:
       for( int i=0; i < 1 + 3/Base_t::Size; i++ )
       {
          Base_t v1 = rhs.mem.vector(i);
-       this->mem.vector(i)=v1;
+         this->mem.vector(i)=v1;
        }
       // the following line must not be used: this is a bug in Vc
       // this->mem = rhs.mem;
