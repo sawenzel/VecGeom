@@ -244,18 +244,6 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-set(HEADER_FOLDERS
-  backend
-  base
-  benchmarking
-  management
-  navigation
-  volumes
-)
-foreach(FOLDER ${HEADER_FOLDERS})
-  install(DIRECTORY ${FOLDER} DESTINATION include)
-endforeach()
-
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
   source/Container.cpp
@@ -412,7 +400,27 @@ if (BENCHMARK)
   endif()
 endif()
 
-install(FILES ${HEADERS_CPP_RELATIVE} DESTINATION include)
+set(HEADER_FOLDERS
+  base
+  benchmarking
+  management
+  navigation
+  volumes
+)
+set(BACKEND_FOLDERS
+  backend/scalar
+  backend/vc
+  backend/cilk
+  backend/cuda
+)
+foreach(FOLDER ${HEADER_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include)
+endforeach()
+foreach(FOLDER ${BACKEND_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include/backend)
+endforeach()
+install(FILES ${CMAKE_SOURCE_DIR}/backend/Backend.h DESTINATION include/backend)
+
 foreach(HEADER ${HEADERS_BACKEND})
   get_filename_component(FILENAME ${HEADER} NAME)
   install(FILES ${HEADER} DESTINATION include/backend/vector)
