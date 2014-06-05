@@ -93,7 +93,7 @@ int main( int argc,  char *argv[]) {
     for(int i=0; i<np; i++) // points inside world volume
     {
         
-        //generation=i%10;
+        //generation=i%5;
         
         //generic generation
         if (generation==0) {

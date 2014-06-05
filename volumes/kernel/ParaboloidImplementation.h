@@ -219,10 +219,21 @@ struct ParaboloidImplementation {
         if (done == Backend::kTrue) return;
         
         //check if the point is distancing in XY
-        Bool_t isDistancingInXY=( (rho2>unplaced.GetRhi2()) && (point_dot_direction_x>0 || point_dot_direction_y>0) );
+	//this check must be changed in 
+        Bool_t isDistancingInXY=( (rho2>unplaced.GetRhi2()) && (point_dot_direction_x>0 && point_dot_direction_y>0) );
         done|=isDistancingInXY;
         if (done == Backend::kTrue) return;
     
+	//check if the point is distancing in X
+        Bool_t isDistancingInX=( (Abs(localPoint.x())>unplaced.GetRhi()) && (point_dot_direction_x>0) );
+        done|=isDistancingInX;
+        if (done == Backend::kTrue) return;
+
+	//check if the point is distancing in Y
+        Bool_t isDistancingInY=( (Abs(localPoint.y())>unplaced.GetRhi()) && (point_dot_direction_y>0) );
+        done|=isDistancingInY;
+        if (done == Backend::kTrue) return;
+
         //is hitting from dz or -dz planes
         Float_t xHit, yHit, zHit, rhoHit2, distZ, ray2;
         
@@ -279,6 +290,9 @@ struct ParaboloidImplementation {
         //to avoid square root operation on negative elements
         MaskedAssign(deltaNeg, 0. , &delta);
         delta = Sqrt(delta);
+
+
+	//I take only the biggest solution among all
         distParab=ainv*(-t - delta);
         
         zHit = localPoint.z()+distParab*localDirection.z();
@@ -322,11 +336,10 @@ struct ParaboloidImplementation {
         t = b*0.5,
         prod = c*a,
         delta = t*t - prod;
-        
-        //Bool_t deltaNeg=delta<0;
     
-        //to avoid square root operation on negative elements
+        //to avoid square root operation on negative element
         //MaskedAssign(deltaNeg, 0. , &delta);
+	//But if the point is inside the solid, delta cannot be negative
         delta = Sqrt(delta);
         
         Bool_t mask_sign=(ainv<0);
@@ -335,8 +348,7 @@ struct ParaboloidImplementation {
         
         Float_t d1=ainv*(-t - sign*delta);
         Float_t d2=ainv*(-t + sign*delta);
-        Bool_t mask_d1=d1<0;
-        //attenzione: se il punto è dentro il solido, il delta non può mai essere negativo!
+    
         //MaskedAssign(!deltaNeg && d1>0 , d1, &distParab);
         //MaskedAssign(!deltaNeg && d1<0 && d2>0 , d2, &distParab);
         //MaskedAssign(deltaNeg || (d1<0 && d2<0), kInfinity, &distParab);
