@@ -76,7 +76,7 @@ VECGEOM_INLINE
 Precision Min(Precision const &val1, Precision const &val2) {
 #ifndef VECGEOM_NVCC
   return std::min(val1, val2);
- #else
+#else
   return min(val1, val2);
 #endif
 }
@@ -104,7 +104,7 @@ int Min(int const &val1, int const &val2) {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 int Max(int const &val1, int const &val2) {
- #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
   return std::max(val1, val2);
 #else
   return max(val1, val2);
@@ -144,7 +144,7 @@ Precision tan(const Precision radians) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void swap(Type a, Type b) {
+void swap(Type &a, Type &b) {
 #ifndef VECGEOM_NVCC
   std::swap(a, b);
 #else
