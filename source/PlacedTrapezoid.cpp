@@ -1,31 +1,39 @@
-/// \file PlacedTrapezoid.cpp
+/// @file PlacedTrapezoid.cpp
+/// @author Guilherme Lima (lima at fnal dot gov)
 
 #include "volumes/PlacedTrapezoid.h"
-
 #include "volumes/Trapezoid.h"
 
-#include <cassert>
+#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#include "TGeoArb8.h"
+#endif
+#ifdef VECGEOM_USOLIDS
+#include "UTrap.hh"
+#endif
 
 namespace VECGEOM_NAMESPACE {
+
+PlacedTrapezoid::~PlacedTrapezoid() {}
 
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
-  assert(0 && "NYI");
-  return NULL;
+  return new SimpleTrapezoid(label().c_str(), logical_volume(), transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
-  assert(0 && "NYI");
-  return NULL;
+  return new TGeoTrap( label().c_str(), GetDz(), GetTheta()*kRadToDeg, GetPhi()*kRadToDeg,
+                       GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+                       GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTrapezoid::ConvertToUSolids() const {
-  assert(0 && "NYI");
-  return NULL;
+  return new ::UTrap(label().c_str(), GetDz(), GetTheta(), GetPhi(),
+                     GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
+                     GetDy2(), GetDx3(), GetDx4(), GetAlpha2());
 }
 #endif
 
