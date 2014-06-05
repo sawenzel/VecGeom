@@ -3,8 +3,8 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDTRAPEZOID_H_
 #define VECGEOM_VOLUMES_UNPLACEDTRAPEZOID_H_
 
-#include "base/global.h"
-#include "volumes/unplaced_volume.h"
+#include "base/Global.h"
+#include "volumes/UnplacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 

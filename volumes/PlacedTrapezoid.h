@@ -8,11 +8,11 @@
 #ifndef VECGEOM_VOLUMES_PLACEDTRAPEZOID_H_
 #define VECGEOM_VOLUMES_PLACEDTRAPEZOID_H_
 
-#include "base/global.h"
-#include "volumes/placed_volume.h"
-#include "volumes/unplaced_box.h"
-#include "volumes/placed_box.h"
-#include "volumes/UnplacedTrapezoid.h"
+#include "base/Global.h"
+#include "volumes/PlacedVolume.h"
+// #include "volumes/UnplacedBox.h"
+// #include "volumes/PlacedBox.h"
+// #include "volumes/UnplacedTrapezoid.h"
 #include "volumes/kernel/TrapezoidImplementation.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -26,9 +26,9 @@ public:
 #ifndef VECGEOM_NVCC
 
   PlacedTrapezoid(char const *const label,
-                   LogicalVolume const *const logical_volume,
-                   Transformation3D const *const transformation,
-                   PlacedBox const *const boundingBox)
+                  LogicalVolume const *const logical_volume,
+                  Transformation3D const *const transformation,
+                  PlacedBox const *const boundingBox)
       : VPlacedVolume(label, logical_volume, transformation, boundingBox) {}
 
   PlacedTrapezoid(LogicalVolume const *const logical_volume,
@@ -118,7 +118,7 @@ public:
       Transformation3D const *const transformation) const;
 #endif
 
-
+/*
 protected:
 
   static PlacedBox* make_bounding_box(LogicalVolume const *const logical_volume,
@@ -167,7 +167,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v SafetyToInDispatch(
     Vector3D<typename Backend::precision_v> const &position ) const;
-
+*/
 }; // end of class PlacedTrapezoid
 
 //===== function definitions in header file  ====
