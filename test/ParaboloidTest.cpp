@@ -70,7 +70,11 @@ int main( int argc,  char *argv[]) {
     myCountIn=0,
     myCountOut=0,
     rootCountIn=0,
-    rootCountOut=0;
+    rootCountOut=0,
+    mismatchDistToIn=0,
+    mismatchDistToOut=0;
+    
+    float mbDistToIn, rootDistToIn, mbDistToOut, rootDistToOut;
     
     double coord[3], direction[3], module,
     x=worldUnplaced.x(),
@@ -84,7 +88,7 @@ int main( int argc,  char *argv[]) {
     TRandom3 r3;
     r3.SetSeed(time(NULL));
     
-    int generation=11;
+    int generation=0;
     
     for(int i=0; i<np; i++) // points inside world volume
     {
@@ -331,8 +335,7 @@ int main( int argc,  char *argv[]) {
     markerOutside->SetMarkerSize(0.1);
     pm1->AddAt(markerOutside, 4);
     
-    float mbDistToIn, rootDistToIn;
-    int counterDist=0;
+    
     for(int i=0; i<np; i++)
     {
         inside=dau[0]->Inside(points[i]);
@@ -370,11 +373,21 @@ int main( int argc,  char *argv[]) {
                 //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
                 std::cout<<"mbDistToIn: "<<mbDistToIn;
                 std::cout<<" rootDistToIn: "<<rootDistToIn<<"\n";
-                counterDist++;
+                mismatchDistToIn++;
             }
         }
         else{
             rootCountIn++;
+            mbDistToOut=dau[0]->DistanceToOut(points[i], dir[i]);
+            rootDistToOut=par->DistFromInside(coord, direction);
+            if( (mbDistToOut!=rootDistToOut))
+            {
+                //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
+                std::cout<<"mbDistToOut: "<<mbDistToOut;
+                std::cout<<" rootDistToOut: "<<rootDistToOut<<"\n";
+                mismatchDistToOut++;
+            }
+
             //markerInside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
         }
 
@@ -387,10 +400,12 @@ int main( int argc,  char *argv[]) {
     if (markerOutside) markerOutside->Draw("SAME");
     c->Update();
     sleep(3);
-    std::cout<<"DistToIn mismatch: "<<counterDist<<" \n";
-    std::cout<<"MB:  NPointsInside: "<<myCountIn<<" NPointsOutside: "<<myCountOut<<" \n";
+    
+    std::cout<<"MB: NPointsInside: "<<myCountIn<<" NPointsOutside: "<<myCountOut<<" \n";
     std::cout<<"Root: NPointsInside: "<<rootCountIn<<" NPointsOutside: "<<rootCountOut<<" \n";
-
+    std::cout<<"DistToIn mismatches: "<<mismatchDistToIn<<" \n";
+    std::cout<<"DistToOut mismatches: "<<mismatchDistToOut<<" \n";
+    
     theApp.Run();
     
 #endif

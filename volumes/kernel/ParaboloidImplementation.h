@@ -293,12 +293,60 @@ struct ParaboloidImplementation {
     VECGEOM_INLINE
     VECGEOM_CUDA_HEADER_BOTH
     static void DistanceToOut(
-      UnplacedParaboloid const &unplaced,
-      Vector3D<typename Backend::precision_v> point,
-      Vector3D<typename Backend::precision_v> direction,
-      typename Backend::precision_v const &stepMax,
-      typename Backend::precision_v &distance) {
-      // NYI
+                              UnplacedParaboloid const &unplaced,
+                              Vector3D<typename Backend::precision_v> point,
+                              Vector3D<typename Backend::precision_v> direction,
+                              typename Backend::precision_v const &stepMax,
+                              typename Backend::precision_v &distance) {
+      
+        typedef typename Backend::precision_v Float_t;
+        typedef typename Backend::bool_v      Bool_t;
+        
+        
+        
+        Float_t distZ=kInfinity,
+                 dirZinv=1/direction.z();
+        
+        Bool_t dir_mask= direction.z()<0;
+        MaskedAssign(dir_mask, -(unplaced.GetDz() + point.z())*dirZinv, &distZ);
+        MaskedAssign(!dir_mask, (unplaced.GetDz() - point.z())*dirZinv, &distZ);
+        
+        Float_t distParab=kInfinity,
+        rho2 = point.x()*point.x()+point.y()*point.y(),
+        dirRho2 = direction.x()*direction.x()+direction.y()*direction.y(),
+        a = unplaced.GetA() * dirRho2,
+        b = 2.*unplaced.GetA()*(point.x()*direction.x()+point.y()*direction.y())-direction.z(),
+        c = unplaced.GetA()*rho2 + unplaced.GetB() - point.z();
+        
+        Float_t ainv = 1./a,
+        t = b*0.5,
+        prod = c*a,
+        delta = t*t - prod;
+        
+        //Bool_t deltaNeg=delta<0;
+    
+        //to avoid square root operation on negative elements
+        //MaskedAssign(deltaNeg, 0. , &delta);
+        delta = Sqrt(delta);
+        
+        Bool_t mask_sign=(ainv<0);
+        Float_t sign=1.;
+        MaskedAssign(mask_sign, -1., &sign);
+        
+        Float_t d1=ainv*(-t - sign*delta);
+        Float_t d2=ainv*(-t + sign*delta);
+        Bool_t mask_d1=d1<0;
+        //attenzione: se il punto è dentro il solido, il delta non può mai essere negativo!
+        //MaskedAssign(!deltaNeg && d1>0 , d1, &distParab);
+        //MaskedAssign(!deltaNeg && d1<0 && d2>0 , d2, &distParab);
+        //MaskedAssign(deltaNeg || (d1<0 && d2<0), kInfinity, &distParab);
+        
+        MaskedAssign(d1>0 , d1, &distParab);
+        MaskedAssign(d1<0 && d2>0 , d2, &distParab);
+        MaskedAssign(d1<0 && d2<0, kInfinity, &distParab);
+        
+        distance=Min(distParab, distZ);
+
     }
 
     template<class Backend>
