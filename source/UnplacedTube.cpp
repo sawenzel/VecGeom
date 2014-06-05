@@ -1,11 +1,11 @@
-/// @file UnplacedTube.cpp
-/// @author Georgios Bitzes (georgios.bitzes@cern.ch)
+/// \file UnplacedTube.cpp
+/// \author Georgios Bitzes (georgios.bitzes@cern.ch)
 
 #include "volumes/UnplacedTube.h"
 #include "volumes/SpecializedTube.h"
-#include "volumes/utilities/generation_utilities.h"
+#include "volumes/utilities/GenerationUtilities.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 
 namespace VECGEOM_NAMESPACE {
 

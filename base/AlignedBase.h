@@ -1,10 +1,10 @@
-/// @file AlignedBase.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file AlignedBase.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_ALIGNEDBASE_H_
 #define VECGEOM_BASE_ALIGNEDBASE_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 #ifdef VECGEOM_VC
 #include <Vc/Vc>
 #endif

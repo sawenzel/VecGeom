@@ -1,12 +1,12 @@
 #include "cpugpu.h"
 
 #include <string>
-#include "base/stopwatch.h"
-#include "management/cuda_manager.h"
-#include "navigation/navigationstate.h"
-#include "navigation/simple_navigator.h"
+#include "base/Stopwatch.h"
+#include "management/CudaManager.h"
+#include "navigation/NavigationState.h"
+#include "navigation/SimpleNavigator.h"
 #include "volumes/Box.h"
-#include "volumes/utilities/volume_utilities.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #include "TGeoManager.h"
 
 using namespace vecgeom;

@@ -174,7 +174,7 @@ void TestMultiUnionWithGraphics()
       chrono += timer.CpuTime();
       timer.Reset();            
 
-      if (inside==VUSolid::eInside || inside==VUSolid::eSurface)
+      if (inside==vecgeom::EInside::kInside || inside==vecgeom::EInside::kSurface)
       {
          pminside->SetNextPoint(point.x, point.y, point.z);
       }
@@ -230,9 +230,9 @@ double TestMultiUnionOneStep(int n)
          VUSolid::EnumInside result = multiUnion->Inside(point);
         switch (result)
         {
-            case VUSolid::eInside: inside++; break;
-            case VUSolid::eOutside: outside++; break;
-            case VUSolid::eSurface: surface++; break;
+            case vecgeom::EInside::kInside: inside++; break;
+            case vecgeom::EInside::kOutside: outside++; break;
+            case vecgeom::EInside::kSurface: surface++; break;
         }
 #endif
     }

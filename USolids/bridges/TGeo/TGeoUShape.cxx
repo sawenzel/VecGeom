@@ -75,7 +75,7 @@ Bool_t TGeoUShape::Contains(Double_t *point) const
 {
 // Test if point is inside this shape.
    VUSolid::EnumInside inside = fUSolid->Inside(point);
-   if (inside == VUSolid::eOutside) return kFALSE;
+   if (inside == vecgeom::EInside::kOutside) return kFALSE;
    return kTRUE;
 }
 

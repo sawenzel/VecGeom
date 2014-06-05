@@ -1,15 +1,15 @@
-/// @file Benchmarker.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file Benchmarker.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "benchmarking/Benchmarker.h"
 
-#include "base/iterator.h"
-#include "base/soa3d.h"
-#include "base/stopwatch.h"
-#include "base/transformation3d.h"
-#include "volumes/logical_volume.h"
+#include "base/Iterator.h"
+#include "base/SOA3D.h"
+#include "base/Stopwatch.h"
+#include "base/Transformation3D.h"
+#include "volumes/LogicalVolume.h"
 #include "volumes/PlacedBox.h"
-#include "volumes/utilities/volume_utilities.h"
+#include "volumes/utilities/VolumeUtilities.h"
 
 #ifdef VECGEOM_USOLIDS
 #include "VUSolid.hh"
@@ -21,10 +21,13 @@
 #include "TGeoShape.h"
 #endif
 
+#include <cassert>
 #include <random>
 #include <sstream>
 
 namespace vecgeom {
+
+Benchmarker::Benchmarker() : Benchmarker(NULL) {}
 
 Benchmarker::Benchmarker(
     VPlacedVolume const *const world)
@@ -43,6 +46,7 @@ Benchmarker::~Benchmarker() {
 void Benchmarker::SetWorld(VPlacedVolume const *const world) {
   fVolumes.clear();
   fWorld = world;
+  if (!world) return;
   GenerateVolumePointers(fWorld);
   if (fVerbosity > 2) {
     printf("Found %lu volumes in world volume to be used for benchmarking.\n",
@@ -182,6 +186,7 @@ void Benchmarker::CompareDistances(
 }
 
 void Benchmarker::RunBenchmark() {
+  assert(fWorld);
   RunInsideBenchmark();
   RunToInBenchmark();
   RunToOutBenchmark();
@@ -189,13 +194,17 @@ void Benchmarker::RunBenchmark() {
 
 void Benchmarker::RunInsideBenchmark() {
 
+  assert(fWorld);
+
   if (fVerbosity > 0) {
     printf("Running Inside benchmark for %i points for %i repetitions.\n",
             fPointCount, fRepetitions);
   }
+#ifndef VECGEOM_SCALAR
   if (fVerbosity > 1) {
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
   }
+#endif
 
   if (fPointPool) delete fPointPool;
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
@@ -219,7 +228,7 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
 #ifdef VECGEOM_USOLIDS
   ::VUSolid::EnumInside *const insideUSolids =
-      AllocateAligned<::VUSolid::EnumInside>();
+      AllocateAligned< ::VUSolid::EnumInside>();
   outputLabels << " - USolids";
 #endif
 #ifdef VECGEOM_CUDA
@@ -270,11 +279,11 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
 #ifdef VECGEOM_USOLIDS
       if (!((insideSpecialized[i] == EInside::kInside &&
-             insideUSolids[i] == ::VUSolid::eInside) ||
+             insideUSolids[i] == EInside::kInside) ||
             (insideSpecialized[i] == EInside::kOutside &&
-             insideUSolids[i] == ::VUSolid::eOutside) ||
+             insideUSolids[i] == EInside::kOutside) ||
             (insideSpecialized[i] == EInside::kSurface &&
-             insideUSolids[i] == ::VUSolid::eSurface))) {
+             insideUSolids[i] == EInside::kSurface))) {
         mismatch = true;
       }
       if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
@@ -313,12 +322,16 @@ void Benchmarker::RunInsideBenchmark() {
 
 void Benchmarker::RunToInBenchmark() {
 
+  assert(fWorld);
+
   if (fVerbosity > 0) {
     printf("Running DistanceToIn and SafetyToIn benchmark for %i points for "
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
   if (fVerbosity > 1) {
+#ifndef VECGEOM_SCALAR
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
+#endif
     printf("Times are printed as DistanceToIn/Safety.\n");
   }
 
@@ -451,12 +464,16 @@ void Benchmarker::RunToInBenchmark() {
 
 void Benchmarker::RunToOutBenchmark() {
 
+  assert(fWorld);
+  
   if (fVerbosity > 0) {
     printf("Running DistanceToOut and SafetyToOut benchmark for %i points for "
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
   if (fVerbosity > 1) {
+#ifndef VECGEOM_SCALAR
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
+#endif
     printf("Times are printed as DistanceToOut/SafetyToOut.\n");
   }
 
@@ -699,7 +716,7 @@ void Benchmarker::RunToOutSpecialized(
   );
   fResults.push_back(
     GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkSpecialized, fToInBias
+      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkSpecialized, fToInBias
     )
   );
 }

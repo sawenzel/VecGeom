@@ -3,9 +3,9 @@
 
 #include "volumes/UnplacedTrd.h"
 #include "volumes/SpecializedTrd.h"
-#include "volumes/utilities/generation_utilities.h"
+#include "volumes/utilities/GenerationUtilities.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 
 
 namespace VECGEOM_NAMESPACE {

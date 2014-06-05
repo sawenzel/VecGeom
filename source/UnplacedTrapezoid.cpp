@@ -1,8 +1,8 @@
-/// @file UnplacedTrapezoid.cpp
+/// \file UnplacedTrapezoid.cpp
 
 #include "volumes/UnplacedTrapezoid.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 #include "volumes/SpecializedTrapezoid.h"
 
 #include <stdio.h>

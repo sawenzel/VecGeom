@@ -4,11 +4,11 @@
 #ifndef VECGEOM_VOLUMES_PLACEDTRD_H_
 #define VECGEOM_VOLUMES_PLACEDTRD_H_
 
-#include "base/global.h"
-#include "backend/backend.h"
+#include "base/Global.h"
+#include "backend/Backend.h"
  
-#include "volumes/placed_volume.h"
-#include "volumes/unplaced_volume.h"
+#include "volumes/PlacedVolume.h"
+#include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TrdImplementation.h"
 
 namespace VECGEOM_NAMESPACE {

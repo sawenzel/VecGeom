@@ -1,10 +1,10 @@
-/// @file UnplacedBox.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file UnplacedBox.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "volumes/UnplacedBox.h"
 
-#include "backend/backend.h"
-#include "management/volume_factory.h"
+#include "backend/Backend.h"
+#include "management/VolumeFactory.h"
 #include "volumes/SpecializedBox.h"
 
 #include <stdio.h>

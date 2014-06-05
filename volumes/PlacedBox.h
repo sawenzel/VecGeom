@@ -1,14 +1,14 @@
-/// @file PlacedBox.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file PlacedBox.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_PLACEDBOX_H_
 #define VECGEOM_VOLUMES_PLACEDBOX_H_
 
-#include "base/global.h"
-#include "backend/backend.h"
+#include "base/Global.h"
+#include "backend/Backend.h"
  
-#include "volumes/placed_volume.h"
-#include "volumes/unplaced_volume.h"
+#include "volumes/PlacedVolume.h"
+#include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/BoxImplementation.h"
 
 namespace VECGEOM_NAMESPACE {

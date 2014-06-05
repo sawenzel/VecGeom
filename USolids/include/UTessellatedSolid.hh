@@ -330,9 +330,12 @@ class UTessellatedSolid : public VUSolid
 
     inline bool OutsideOfExtent(const UVector3& p, double tolerance = 0) const
     {
-      return (p.x < fMinExtent.x - tolerance || p.x > fMaxExtent.x + tolerance ||
-              p.y < fMinExtent.y - tolerance || p.y > fMaxExtent.y + tolerance ||
-              p.z < fMinExtent.z - tolerance || p.z > fMaxExtent.z + tolerance);
+      return (p.x() < fMinExtent.x() - tolerance ||
+              p.x() > fMaxExtent.x() + tolerance ||
+              p.y() < fMinExtent.y() - tolerance ||
+              p.y() > fMaxExtent.y() + tolerance ||
+              p.z() < fMinExtent.z() - tolerance ||
+              p.z() > fMaxExtent.z() + tolerance);
     }
 
     bool fSolidClosed;

@@ -9,14 +9,14 @@
 
 #include <iostream>
 
-#include "base/soa3d.h"
-#include "management/root_manager.h"
-#include "volumes/placed_volume.h"
-#include "navigation/navigationstate.h"
-#include "navigation/simple_navigator.h"
-#include "base/rng.h"
-#include "volumes/utilities/volume_utilities.h"
-#include "base/stopwatch.h"
+#include "base/SOA3D.h"
+#include "management/RootManager.h"
+#include "volumes/PlacedVolume.h"
+#include "navigation/NavigationState.h"
+#include "navigation/SimpleNavigator.h"
+#include "base/RNG.h"
+#include "volumes/utilities/VolumeUtilities.h"
+#include "base/Stopwatch.h"
 
 #include "TGeoManager.h"
 #include "TGeoBBox.h"

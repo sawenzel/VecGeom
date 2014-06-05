@@ -4,8 +4,8 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 
-#include "backend/backend.h"
-#include "base/vector3d.h"
+#include "backend/Backend.h"
+#include "base/Vector3D.h"
 #include "volumes/UnplacedBox.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -337,7 +337,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   done |= (safety[0] >= stepMax ||
            safety[1] >= stepMax ||
            safety[2] >= stepMax);
-  if (done == true) return;
+  if (done == Backend::kTrue) return;
 
   Float_t next, coord1, coord2;
   Bool_t hit;
@@ -352,7 +352,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == true) return;
+  if (done == Backend::kTrue) return;
 
   // y
   next = safety[1] / Abs(direction[1] + kTiny);
@@ -364,7 +364,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == true) return;
+  if (done == Backend::kTrue) return;
 
   // z
   next = safety[2] / Abs(direction[2] + kTiny);

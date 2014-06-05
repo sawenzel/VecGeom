@@ -9,15 +9,15 @@
 
 #include <iostream>
 
-#include "base/soa3d.h"
-#include "management/geo_manager.h"
-#include "management/rootgeo_manager.h"
-#include "base/aos3d.h"
-#include "volumes/placed_volume.h"
-#include "volumes/logical_volume.h"
-#include "navigation/navigationstate.h"
-#include "navigation/simple_navigator.h"
-#include "base/rng.h"
+#include "base/SOA3D.h"
+#include "management/GeoManager.h"
+#include "management/RootGeoManager.h"
+#include "base/AOS3D.h"
+#include "volumes/PlacedVolume.h"
+#include "volumes/LogicalVolume.h"
+#include "navigation/NavigationState.h"
+#include "navigation/SimpleNavigator.h"
+#include "base/RNG.h"
 #include "benchmarking/BenchmarkResult.h"
 
 #include "TGeoManager.h"

@@ -3,7 +3,7 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include "volumes/kernel/TrapezoidImplementation.h"
 #include "volumes/PlacedTrapezoid.h"

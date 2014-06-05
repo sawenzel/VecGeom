@@ -6,7 +6,7 @@
 #ifndef VECGEOM_VOLUMES_BOX_H_
 #define VECGEOM_VOLUMES_BOX_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 #include "volumes/PlacedBox.h"
 #include "volumes/SpecializedBox.h"
 #include "volumes/UnplacedBox.h"
