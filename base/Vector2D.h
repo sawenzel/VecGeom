@@ -71,6 +71,12 @@ public:
   VECGEOM_INLINE
   void Set(const Type x, const Type y);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Cross(VecType const &other) const {
+    return vec[0]*other.vec[1] - vec[1]*other.vec[0];
+  }
+
   #define VECTOR2D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \

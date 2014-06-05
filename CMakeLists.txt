@@ -340,6 +340,7 @@ set(
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/PolygonTest.cpp
 )
 set_source_files_properties(
   ${SRC_EXECUTABLES}
@@ -369,6 +370,10 @@ add_executable(create_geometry_test
   ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
 )
 target_link_libraries(create_geometry_test ${LIBS})
+add_executable(PolygonTest
+  ${CMAKE_SOURCE_DIR}/test/PolygonTest.cpp
+)
+target_link_libraries(PolygonTest ${LIBS})
 
 if (ROOT)
   add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
