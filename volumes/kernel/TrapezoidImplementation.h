@@ -48,7 +48,7 @@ struct TrapezoidImplementation {
   VECGEOM_INLINE
   static void Inside(UnplacedTrapezoid const &unplaced,
                      Transformation3D const &transformation,
-                     Vector3D<typename Backend::precision_v> const &point,
+                     Vector3D<typename Backend::precision_v> const &masterPoint,
                      typename Backend::inside_v &inside);
 
   template <class Backend>
@@ -94,7 +94,7 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void ParallelepipedImplementation<transCodeT, rotCodeT>::Transform(
-    UnplacedTrapezoid const &unplaced,
+    UnplacedParallelepiped const &unplaced,
     Vector3D<typename Backend::precision_v> &point) {
   point[1] -= unplaced.GetTanThetaSinPhi()*point[2];
   point[0] -= unplaced.GetTanThetaCosPhi()*point[2]
@@ -116,7 +116,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
     Bool_t done(false);
     inside = Backend::kTrue;
 
-    // point is outside if beyond trapezoid's z-length
+    // point is outside if beyond trapezoid's z-range
     auto test = Abs(point.z()) >= unplaced.GetDz();
     MaskedAssign(test, Backend::kFalse, &inside);
 
@@ -140,21 +140,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
       if (done == Backend::kTrue) return;
     }
 
-    // at this point, all points outside volume were tagged
-    // next, check which points are in surface
-    test = (!done) && ( Abs(point.z()) >= (unplaced.GetDz() - kHalfTolerance) );
-    MaskedAssign(test, EInside::kSurface, &inside);
-    done |= test;
-    if (done == Backend::kTrue) return;
-
-    for (unsigned int i = 0; i < 4; ++i) {
-      test = (!done) && (Dist[i] > -kHalfTolerance);
-      MaskedAssign(test, EInside::kSurface, &inside);
-      done |= test;
-      if (done == Backend::kTrue) return;
-    }
-
-    // at this point, all points outside or at surface were also tagged
+    // at this point, all points outside have been tagged
     return;
   }
 
@@ -171,6 +157,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Contains(
   UnplacedContains<Backend>(unplaced, localPoint, inside);
 }
 
+/*
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -183,6 +170,67 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
   Vector3D<typename Backend::precision_v> localPoint =
     transformation.Transform<transCodeT, rotCodeT>(point);
   UnplacedInside<Backend>(unplaced, localPoint, inside);
+}
+*/
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
+    UnplacedTrapezoid const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &masterPoint,
+    typename Backend::inside_v &inside) {
+
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Vector3D<typename Backend::precision_v> point =
+      transformation.Transform<transCodeT, rotCodeT>(masterPoint);
+
+  Bool_t done(false);
+  inside = EInside::kInside;
+
+  // point is outside if beyond trapezoid's z-length
+  auto test = Abs(point.z()) >= ( unplaced.GetDz() + kHalfTolerance );
+  MaskedAssign(test, EInside::kOutside, &inside);
+
+  // if all points are outside, we're done
+  done |= test;
+  if (done == Backend::kTrue) return;
+
+  // next check where points are w.r.t. each side plane
+  Float_t Dist[4];
+  TrapSidePlane const* planes = unplaced.GetPlanes();
+  for (unsigned int i = 0; i < 4; ++i) {
+    Dist[i] = planes[i].fA * point.x() + planes[i].fB * point.y()
+            + planes[i].fC * point.z() + planes[i].fD;
+
+    // is it outside of this side plane?
+    test = (Dist[i] > kHalfTolerance);  // no need to check (!done) here
+    MaskedAssign(test, EInside::kOutside, &inside);
+
+    // if all points are outside, we're done
+    done |= test;
+    if (done == Backend::kTrue) return;
+  }
+
+  // at this point, all points outside volume were tagged
+  // next, check which points are in surface
+  test = (!done) && ( Abs(point.z()) >= (unplaced.GetDz() - kHalfTolerance) );
+  MaskedAssign(test, EInside::kSurface, &inside);
+  done |= test;
+  if (done == Backend::kTrue) return;
+
+  for (unsigned int i = 0; i < 4; ++i) {
+    test = (!done) && (Dist[i] > -kHalfTolerance);
+    MaskedAssign(test, EInside::kSurface, &inside);
+    done |= test;
+    if (done == Backend::kTrue) return;
+  }
+
+  // at this point, all points outside or at surface were also tagged
+  return;
 }
 
 

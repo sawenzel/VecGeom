@@ -263,7 +263,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector3D.cpp
-  source/NavigationState.cpp	
+  source/NavigationState.cpp
   source/SimpleNavigator.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
@@ -335,8 +335,10 @@ set(
   ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/TrapezoidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
   ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/TrapezoidTest.cpp
 )
 set_source_files_properties(
   ${SRC_EXECUTABLES}
@@ -397,6 +399,16 @@ if (BENCHMARK)
     )
     target_link_libraries(ParallelepipedBenchmark ${LIBS})
   endif()
+  add_executable(
+    TrapezoidBenchmark
+    ${CMAKE_SOURCE_DIR}/test/TrapezoidBenchmark.cpp
+  )
+  target_link_libraries(TrapezoidBenchmark ${LIBS})
+  add_executable(
+    TrapezoidTest
+    ${CMAKE_SOURCE_DIR}/test/TrapezoidTest.cpp
+  )
+  target_link_libraries(TrapezoidTest ${LIBS})
 endif()
 
 set(HEADER_FOLDERS
