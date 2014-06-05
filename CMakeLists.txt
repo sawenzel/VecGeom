@@ -317,7 +317,7 @@ set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 ################################################################################
 
-# Compile and link
+# Build libraries
 
 add_library(vecgeom_cpp ${SRC_CPP})
 target_link_libraries(vecgeom_cpp ${LIBS})
@@ -325,23 +325,6 @@ set(LIBS ${LIBS} vecgeom_cpp)
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LIBS ${LIBS} -lrt)
 endif()
-
-set(
-  SRC_EXECUTABLES
-  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
-  ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
-)
-set_source_files_properties(
-  ${SRC_EXECUTABLES}
-  PROPERTIES COMPILE_FLAGS -std=c++11
-)
 
 if (CUDA)
   cuda_add_library(
@@ -352,52 +335,71 @@ if (CUDA)
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
   install(TARGETS vecgeom_cuda DESTINATION lib)
-  if (ROOT)
-    cuda_add_executable(
-      cpugpu
-      ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-      OPTIONS ${CUDA_ARCH}
-    )
-    target_link_libraries(cpugpu ${LIBS})
-  endif()
 endif()
 
-add_executable(create_geometry_test
-  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+################################################################################
+
+# Define executables
+
+set(TEST_EXECUTABLES_CORE
+  ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
 )
-target_link_libraries(create_geometry_test ${LIBS})
+set(TEST_EXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/testDistanceToOut.cpp
+)
+set(TEST_EXECUTABLES_USOLIDS
+  # Files go here
+)
+set(TEST_EXECUTABLES_BENCHMARK
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+)
+set(TEST_EXECUTABLES_CUDA
+  # Files go here
+)
+set(TEST_EXECUTABLES
+  ${TEST_EXECUTABLES_CORE}
+  ${TEST_EXECUTABLES_ROOT}
+  ${TEST_EXECUTABLES_USOLIDS}
+  ${TEST_EXECUTABLES_BENCHMARK}
+  ${TEST_EXECUTABLES_CUDA}
+)
+set_source_files_properties(
+  ${TEST_EXECUTABLES}
+  PROPERTIES COMPILE_FLAGS -std=c++11
+)
 
-if (ROOT)
-  add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
-  target_link_libraries(root_geometry ${LIBS})
-  add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
-  target_link_libraries(complex_test1 ${LIBS})
-endif()
+# Build executables
 
+function(build_executables EXECUTABLES)
+  foreach(EXECUTABLE ${EXECUTABLES})
+    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME)
+    add_executable(${TARGET_NAME} ${EXECUTABLE})
+    target_link_libraries(${TARGET_NAME} ${LIBS})
+  endforeach()
+endfunction()
+
+build_executables("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
-  add_executable(
-    BoxBenchmark
-    ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
-  )
-  add_executable(
-    TubeBenchmark
-    ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
-  )
-  add_executable(
-    MultiBenchmark
-    ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
-  )
-  target_link_libraries(BoxBenchmark ${LIBS})
-  target_link_libraries(TubeBenchmark ${LIBS})
-  target_link_libraries(MultiBenchmark ${LIBS})
-  if (NOT USolids)
-    add_executable(
-      ParallelepipedBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-    )
-    target_link_libraries(ParallelepipedBenchmark ${LIBS})
-  endif()
+  build_executables("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
+if (ROOT)
+  build_executables("${TEST_EXECUTABLES_ROOT}")
+endif()
+if (USolids)
+  build_executables("${TEST_EXECUTABLES_USOLIDS}")
+endif()
+if (CUDA)
+  build_executables("${TEST_EXECUTABLES_CUDA}")
+endif()
+
+################################################################################
+
+# Install headers and libraries
 
 set(HEADER_FOLDERS
   base
