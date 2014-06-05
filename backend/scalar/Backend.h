@@ -74,41 +74,105 @@ Type ATan2(const Type y, const Type x) {
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision Min(Precision const &val1, Precision const &val2) {
-  #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
   return std::min(val1, val2);
-  #else
+#else
   return min(val1, val2);
-  #endif
+#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision Max(Precision const &val1, Precision const &val2) {
-  #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
   return std::max(val1, val2);
-  #else
+#else
   return max(val1, val2);
-  #endif
+#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 int Min(int const &val1, int const &val2) {
-  #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
   return std::min(val1, val2);
-  #else
+#else
   return min(val1, val2);
-  #endif
+#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 int Max(int const &val1, int const &val2) {
-  #ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC
   return std::max(val1, val2);
-  #else
+#else
   return max(val1, val2);
-  #endif
+#endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision sin(const Precision radians) {
+#ifndef VECGEOM_NVCC
+  return std::sin(radians);
+#else
+  return sin(radians);
+#endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision cos(const Precision radians) {
+#ifndef VECGEOM_NVCC
+  return std::cos(radians);
+#else
+  return cos(radians);
+#endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision tan(const Precision radians) {
+#ifndef VECGEOM_NVCC
+  return std::tan(radians);
+#else
+  return atan(radians);
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void swap(Type &a, Type &b) {
+#ifndef VECGEOM_NVCC
+  std::swap(a, b);
+#else
+  swap(a, b);
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void copy(Type const *begin, Type const *const end, Type *const target) {
+#ifndef VECGEOM_NVCC
+  std::copy(begin, end, target);
+#else
+  memcpy(target, begin, (end-begin)*sizeof(Type));
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void reverse_copy(Type const *begin, Type const *end,
+                  Type *const target) {
+#ifndef VECGEOM_NVCC
+  std::reverse_copy(begin, end, target);
+#else
+  while (end-- != begin) *(target++) = *end; 
+#endif
 }
 
 } // End global namespace
