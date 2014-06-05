@@ -117,8 +117,7 @@ if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
-  include_directories(${Vc_INCLUDE_DIR})
-
+ include_directories(AFTER SYSTEM ${Vc_INCLUDE_DIR})
 endif()
 
 if (Vc)
