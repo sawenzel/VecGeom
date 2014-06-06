@@ -44,13 +44,17 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D() {
-    Vector3D<Type>(Type(0.), Type(0.), Type(0.));
+    vec[0] = 0;
+    vec[1] = 0;
+    vec[2] = 0;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D(const Type a) {
-    Vector3D<Type>(a, a, a);
+    vec[0] = a;
+    vec[1] = a;
+    vec[2] = a;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -63,8 +67,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D & operator=(Vector3D const &other)
-  {
+  Vector3D& operator=(Vector3D const &other) {
     vec[0] = other[0];
     vec[1] = other[1];
     vec[2] = other[2];
@@ -346,12 +349,10 @@ public:
     mem[2] = c;
   }
 
-  Vector3D(const Precision a) {
-    Vector3D(a,a,a);
-    // performance issue with    mem = a;
-  }
+  // Performance issue in Vc with: mem = a;
+  Vector3D(const Precision a) : Vector3D(a, a, a) {}
 
-  Vector3D() : Vector3D(0) {}
+  Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
   Vector3D(Vector3D const &other) {
