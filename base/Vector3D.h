@@ -347,7 +347,8 @@ public:
   }
 
   Vector3D(const Precision a) {
-    mem = a;
+    Vector3D(a,a,a);
+    // performance issue with    mem = a;
   }
 
   Vector3D() : Vector3D(0) {}
