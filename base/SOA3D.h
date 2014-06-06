@@ -200,9 +200,12 @@ void SOA3D<Type>::push_back(Vector3D<Type> const &vec) {
 
 template <typename Type>
 void SOA3D<Type>::Allocate() {
-  x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-  y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-  z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+  x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*this->memory_size_,
+                          kAlignmentBoundary));
+  y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*this->memory_size_,
+                          kAlignmentBoundary));
+  z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*this->memory_size_,
+                          kAlignmentBoundary));
 }
 
 #ifdef VECGEOM_CUDA
