@@ -78,9 +78,8 @@ public:
   }
 
   template <typename StreamType>
-  VECGEOM_INLINE
-  friend std::ostream& operator<<(std::ostream &os,
-                                  Vector2D<StreamType> const &v);
+  friend inline std::ostream& operator<<(std::ostream &os,
+                                         Vector2D<StreamType> const &v);
 
   #define VECTOR2D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
@@ -108,7 +107,8 @@ public:
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 Vector2D<Type>::Vector2D() {
-  Vector2D(0, 0);
+  vec[0] = 0;
+  vec[1] = 0;
 }
 
 template <typename Type>
@@ -121,7 +121,8 @@ Vector2D<Type>::Vector2D(const Type x, const Type y) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 Vector2D<Type>::Vector2D(Vector2D const &other) {
-  Vector2D(other.vec[0], other.vec[1]);
+  vec[0] = other.vec[0];
+  vec[1] = other.vec[1];
 }
 
 template <typename Type>

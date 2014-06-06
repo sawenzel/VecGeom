@@ -39,7 +39,7 @@ Polygon::Polygon(const Polygon &other)
       fSurfaceArea(other.fSurfaceArea) {}
 
 void Polygon::Initialize() {
-  assert(fVertices.size() > 2 &&
+  Assert(fVertices.size() > 2,
          "Polygon requires at least three input vertices.\n");
   RemoveRedundantVertices();
   CrossesItself();
@@ -100,12 +100,12 @@ void Polygon::Print() const {
 }
 
 void Polygon::RemoveVertex(const int index) {
-  Array<Vector2D<Precision> > old = Array<Vector2D<Precision> >(fVertices);
+  Array<Vector2D<Precision> > old(fVertices);
   fVertices.Allocate(old.size()-1);
   copy(&old[0], &old[index], &fVertices[0]);
   copy(&old[index+1], &old[old.size()], &fVertices[index]);
   fSurfaceArea = 0;
-  assert(fVertices.size() > 2 &&
+  Assert(fVertices.size() > 2,
          "Insufficient significant vertices in Polygon.\n");
 }
 
@@ -139,10 +139,10 @@ void Polygon::CrossesItself() const {
       Vector2D<Precision> diff = p1 - p0;
       Precision slope0 = Abs(diff.Cross(dP1 / cross));
       Precision slope1 = Abs(diff.Cross(dP0 / cross));
-      assert(!(Abs(cross) > kTolerance &&
+      Assert(!(Abs(cross) > kTolerance &&
                (slope0 > kTolerance && slope0 < toleranceOne) &&
-               (slope1 > kTolerance && slope1 < toleranceOne))
-             && "Polygon crosses itself.\n");
+               (slope1 > kTolerance && slope1 < toleranceOne)),
+             "Polygon crosses itself.\n");
     }
   }
 }

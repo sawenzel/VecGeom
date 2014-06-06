@@ -8,6 +8,7 @@
 #include <cmath>
 #include <float.h>
 #include <limits>
+#include <stdio.h>
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -175,6 +176,12 @@ void Assert(const bool condition, char const *const message) {
 #else
   if (condition) printf("%s", message);
 #endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition) {
+  Assert(condition, "");
 }
 
 } // End global namespace

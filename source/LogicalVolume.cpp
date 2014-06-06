@@ -4,14 +4,16 @@
 #include "volumes/LogicalVolume.h"
 
 #include "backend/Backend.h"
+#include "backend/cuda/Interface.h"
 #include "base/Array.h"
-#include "volumes/PlacedVolume.h"
 #include "base/Transformation3D.h"
+#include "base/Vector.h"
 #include "management/GeoManager.h"
 #include "management/VolumeFactory.h"
+#include "volumes/PlacedVolume.h"
 
-#include <stdio.h>
 #include <climits>
+#include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -161,6 +163,7 @@ LogicalVolume* LogicalVolume::CopyToGpu(
 class VUnplacedVolume;
 class VPlacedVolume;
 class LogicalVolume;
+template <typename Type> class Vector;
 
 __global__
 void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,

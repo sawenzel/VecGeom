@@ -23,8 +23,6 @@ private:
 
 public:
 
-#ifndef VECGEOM_NVCC
-
   VECGEOM_INLINE
   Array();
 
@@ -36,14 +34,6 @@ public:
 
   VECGEOM_INLINE
   ~Array();
-
-  VECGEOM_INLINE
-  void Allocate(const unsigned size);
-
-  VECGEOM_INLINE
-  void Deallocate();
-
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -64,6 +54,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   int size() const { return fSize; }
+
+  VECGEOM_INLINE
+  void Allocate(const unsigned size);
+
+  VECGEOM_INLINE
+  void Deallocate();
 
 public:
 
@@ -87,47 +83,55 @@ public:
 
 };
 
-#ifndef VECGEOM_NVCC
+template <typename Type>
+Array<Type>::Array() : fData(NULL), fSize(0), fAllocated(false) {}
 
 template <typename Type>
-Array<Type>::Array() : fSize(0), fAllocated(false) {}
-
-template <typename Type>
-Array<Type>::Array(const unsigned size) : fAllocated(true) {
+Array<Type>::Array(const unsigned size) : fData(NULL), fAllocated(true) {
   Allocate(size);
 }
 
 template <typename Type>
-Array<Type>::Array(Array<Type> const &other) : fAllocated(true) {
+Array<Type>::Array(Array<Type> const &other) : fData(NULL), fAllocated(true) {
   Allocate(other.fSize);
-  std::copy(other.fData, other.fData+other.fSize, fData);
+  copy(other.fData, other.fData+other.fSize, fData);
+}
+
+template <typename Type>
+Array<Type>::~Array() {
+#ifndef VECGEOM_CUDA
+  if (fAllocated) _mm_free(fData);
+#else
+  if (fAllocated) delete fData;
+#endif
 }
 
 template <typename Type>
 void Array<Type>::Allocate(const unsigned size) {
   Deallocate();
   fSize = size;
+#ifndef VECGEOM_NVCC
   fData = static_cast<Type*>(_mm_malloc(fSize*sizeof(Type),
                                         kAlignmentBoundary));
+#else
+  fData = new Type[fSize];
+#endif
 }
 
 template <typename Type>
 void Array<Type>::Deallocate() {
   if (fAllocated) {
+#ifndef VECGEOM_NVCC
     _mm_free(fData);
+#else
+    delete fData;
+#endif
   } else {
     fData = NULL;
   }
   fSize = 0;
   fAllocated = false;
 }
-
-template <typename Type>
-Array<Type>::~Array() {
-  if (fAllocated) _mm_free(fData);
-}
-
-#endif
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
@@ -141,6 +145,7 @@ Array<Type>& Array<Type>::operator=(Array<Type> const &other) {
   Deallocate();
   Allocate(other.fSize);
   copy(other.fData, other.fData+other.fSize, fData);
+  return *this;
 }
 
 } // End global namespace

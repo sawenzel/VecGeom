@@ -22,7 +22,6 @@ private:
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
   UnplacedPolyhedron(
       Precision phiStart,
       Precision phiDelta,

@@ -263,6 +263,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedPolyhedron.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
+  source/Vector.cpp
   source/Vector3D.cpp
   source/NavigationState.cpp	
   source/SimpleNavigator.cpp

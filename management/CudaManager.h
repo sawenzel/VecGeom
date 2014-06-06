@@ -25,6 +25,7 @@ class VPlacedVolume;
 class LogicalVolume;
 class Transformation3D;
 typedef VPlacedVolume const* Daughter;
+template <typename Type> class Vector;
 #endif
 
 class CudaManager {

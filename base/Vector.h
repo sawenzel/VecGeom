@@ -6,6 +6,7 @@
 
 #include "base/Global.h"
 
+#include "backend/cuda/Interface.h"
 #include "base/Iterator.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -76,7 +77,31 @@ public:
     return fSize;
   }
 
+#ifdef VECGEOM_CUDA_INTERFACE
+  Vector<Type>* CopyToGpu(Type *const gpu_ptr_arr,
+                          Vector<Type> *const gpu_ptr) const;
+#endif
+
 };
+
+template <typename Type> class Vector;
+class VPlacedVolume;
+
+void Vector_CopyToGpu(Precision *const arr, const int size,
+                      void *const gpu_ptr);
+
+void Vector_CopyToGpu(VPlacedVolume const **const arr, const int size,
+                      void *const gpu_ptr);
+
+#ifdef VECGEOM_CUDA_INTERFACE
+template <typename Type>
+Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
+                                      Vector<Type> *const gpu_ptr) const {
+  Vector_CopyToGpu(gpu_ptr_arr, this->size(), gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+}
+#endif
 
 } // End global namespace
 

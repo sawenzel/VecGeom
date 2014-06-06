@@ -14,7 +14,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     const int zPlaneCount, const Precision zPlane[], const Precision rInner[],
     const Precision rOuter[]) {
 
-  assert(sideCount > 0 && "Polyhedron requires at least one side.\n");
+  Assert(sideCount > 0, "Polyhedron requires at least one side.\n");
 
   // Fix and set phi parameters
 
@@ -40,7 +40,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
   for (int i = 0; i < zPlaneCount-1; ++i) {
     if (zPlane[i] == zPlane[i+1]) {
-      assert(rInner[i] <= rOuter[i+1] && rInner[i+1] <= rOuter[i]);
+      Assert(rInner[i] <= rOuter[i+1] && rInner[i+1] <= rOuter[i]);
     }
   }
 
@@ -49,10 +49,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   Polygon corners = Polygon(rInner, rOuter, zPlane, zPlaneCount);
   corners.Scale(convertRad, 1.);
 
-  assert(corners.GetXMin() >= 0.);
+  Assert(corners.GetXMin() >= 0.);
 
   if (corners.SurfaceArea() < -kTolerance) corners.ReverseOrder();
-  assert(corners.SurfaceArea() >= -kTolerance);
+  Assert(corners.SurfaceArea() >= -kTolerance);
 
   // Create faces
 
