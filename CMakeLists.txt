@@ -197,7 +197,7 @@ if (ROOT)
   
   find_package(ROOT REQUIRED)
 
-  include_directories(${ROOT_INCLUDE_DIR})
+  include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
