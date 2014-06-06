@@ -377,7 +377,7 @@ set_source_files_properties(
 
 function(build_executables EXECUTABLES)
   foreach(EXECUTABLE ${EXECUTABLES})
-    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME)
+    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} ${LIBS})
   endforeach()
