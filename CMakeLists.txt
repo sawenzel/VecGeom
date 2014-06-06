@@ -197,7 +197,7 @@ if (ROOT)
   
   find_package(ROOT REQUIRED)
 
-  include_directories(${ROOT_INCLUDE_DIR})
+  include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
@@ -379,7 +379,7 @@ set_source_files_properties(
 
 function(build_executables EXECUTABLES)
   foreach(EXECUTABLE ${EXECUTABLES})
-    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME)
+    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} ${LIBS})
   endforeach()
