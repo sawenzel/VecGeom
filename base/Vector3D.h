@@ -355,25 +355,31 @@ public:
 
   VECGEOM_INLINE
   Vector3D(Vector3D const &other) {
-    for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-      {
-         Base_t v1 = other.mem.vector(i);
-         this->mem.vector(i)=v1;
-       }
+    //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+//      {
+         //Base_t v1 = other.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
+     mem[0]=other.mem[0];
+     mem[1]=other.mem[1];
+     mem[2]=other.mem[2];
   }
 
   VECGEOM_INLINE
   Vector3D & operator=( Vector3D const & rhs )
    {
     
-      for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-      {
-         Base_t v1 = rhs.mem.vector(i);
-         this->mem.vector(i)=v1;
-       }
+      //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+      //{
+         //Base_t v1 = rhs.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
       // the following line must not be used: this is a bug in Vc
       // this->mem = rhs.mem;
-     return *this;
+      mem[0]=rhs.mem[0];
+      mem[1]=rhs.mem[1];
+      mem[2]=rhs.mem[2];
+      return *this;
    }
 
   Vector3D(std::string const &str) {
