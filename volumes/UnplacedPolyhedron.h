@@ -1,41 +1,41 @@
-/// \file UnplacedPolyhedra.h
+/// \file UnplacedPolyhedron.h
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#ifndef VECGEOM_VOLUMES_UNPLACEDPOLYHEDRA_H_
-#define VECGEOM_VOLUMES_UNPLACEDPOLYHEDRA_H_
+#ifndef VECGEOM_VOLUMES_UNPLACEDPOLYHEDRON_H_
+#define VECGEOM_VOLUMES_UNPLACEDPOLYHEDRON_H_
 
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
+#include "base/Array.h"
+#include "volumes/Face.h"
 #include "volumes/Polygon.h"
 #include "volumes/UnplacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 
-class UnplacedPolyhedra : public VUnplacedVolume, public AlignedBase {
+class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 private:
 
-  int fSideCount;
-  Precision fPhiStart;
-  Precision fPhiDelta;
-  bool fHasPhi;
-  Polygon *fCorners;
+  Array<Face*> fFaces;
 
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedPolyhedra(
+  UnplacedPolyhedron(
       Precision phiStart,
       Precision phiDelta,
-      const int sideCount,
+      int sideCount,
       const int cornerCount,
       const Precision zPlanes[],
       const Precision rInner[],
       const Precision rOuter[]);
 
+  ~UnplacedPolyhedron();
+
 };
 
 } // End global namespace
 
-#endif // VECGEOM_VOLUMES_UNPLACEDPOLYHEDRA_H_
+#endif // VECGEOM_VOLUMES_UNPLACEDPOLYHEDRON_H_

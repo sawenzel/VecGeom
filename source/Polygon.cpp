@@ -10,60 +10,36 @@
 namespace VECGEOM_NAMESPACE {
 
 Polygon::Polygon(Precision const x[], Precision const y[], const int size)
-    : fSurfaceArea(0.) {
-
-  fVertixCount = size;
-  fX = new Precision[size];
-  fY = new Precision[size];
-
-  std::copy(x, x+size, fX);
-  std::copy(y, y+size, fY);
-
+    : fVertices(size), fSurfaceArea(0.) {
+  for (int i = 0; i < size; ++i) fVertices[i].Set(x[i], y[i]);
   Initialize();
 }
 
 Polygon::Polygon(Vector2D<Precision> const points[], const int size)
-    : fSurfaceArea(0.) {
+    : fVertices(size), fSurfaceArea(0.) {
+  copy(points, points+size, &fVertices[0]);
+  Initialize();
+}
 
-  fVertixCount = size;
-  fX = new Precision[fVertixCount];
-  fY = new Precision[fVertixCount];
+Polygon::Polygon(const Precision rMin[], const Precision rMax[],
+                 const Precision z[], const int size)
+    : fVertices(size<<1), fSurfaceArea(0.) {
 
-  for (int i = 0; i < size; ++i) {
-    fX[i] = points[i].x();
-    fY[i] = points[i].y();
+  for (int i = 0, iRev = size-1, iOffset = i+size; i < size;
+       ++i, --iRev, ++iOffset) {
+    fVertices[i].Set(rMin[iRev], z[iRev]);
+    fVertices[iOffset].Set(rMax[i], z[i]);
   }
 
   Initialize();
 }
 
-Polygon::Polygon(const Precision rMin[], const Precision rMax[],
-                 const Precision z[], const int size) : fSurfaceArea(0.) {
-
-  fVertixCount = size<<1;
-
-  fX = new Precision[fVertixCount];
-  fY = new Precision[fVertixCount];
-
-  std::reverse_copy(rMin, rMin+fVertixCount, fX);
-  std::copy(rMax, rMax+fVertixCount, fX+fVertixCount);
-  std::reverse_copy(z, z+fVertixCount, fY);
-  std::copy(z, z+fVertixCount, fY+fVertixCount);
-
-  Initialize();
-}
-
 Polygon::Polygon(const Polygon &other)
-    : fVertixCount(other.fVertixCount), fXLim(other.fXLim), fYLim(other.fYLim),
-      fSurfaceArea(other.fSurfaceArea) {
-  fX = new Precision[fVertixCount];
-  fY = new Precision[fVertixCount];
-  std::copy(other.fX, other.fX+fVertixCount, fX);
-  std::copy(other.fY, other.fY+fVertixCount, fY);
-}
+    : fVertices(other.fVertices), fXLim(other.fXLim), fYLim(other.fYLim),
+      fSurfaceArea(other.fSurfaceArea) {}
 
 void Polygon::Initialize() {
-  assert(fVertixCount > 2 &&
+  assert(fVertices.size() > 2 &&
          "Polygon requires at least three input vertices.\n");
   RemoveRedundantVertices();
   CrossesItself();
@@ -71,41 +47,45 @@ void Polygon::Initialize() {
 }
 
 void Polygon::FindLimits() {
-  fXLim[0] = *std::min_element(fX, fY+fVertixCount);
-  fXLim[1] = *std::max_element(fX, fY+fVertixCount);
-  fYLim[0] = *std::min_element(fY, fY+fVertixCount);
-  fYLim[1] = *std::max_element(fY, fY+fVertixCount);
+  fXLim[0] = fYLim[0] = kInfinity;
+  fXLim[1] = fYLim[1] = -kInfinity;
+  for (iterator i = begin(), iEnd = end(); i != iEnd; ++i) {
+    fXLim[0] = (i->x() < fXLim[0]) ? i->x() : fXLim[0];
+    fXLim[1] = (i->x() > fXLim[1]) ? i->x() : fXLim[1];
+    fYLim[0] = (i->y() < fXLim[0]) ? i->y() : fYLim[0];
+    fYLim[1] = (i->y() > fXLim[1]) ? i->y() : fYLim[1];
+  }
 }
 
 void Polygon::Scale(const double x, const double y) {
-  for (int i = 0; i < fVertixCount; ++i) {
-    fX[i] *= x;
-    fY[i] *= y;
+  const Vector2D<Precision> scale = Vector2D<Precision>(x, y);
+  for (iterator i = begin(), iEnd = end(); i != iEnd; ++i) {
+    (*i) *= scale;
   }
+  fSurfaceArea = 0;
 }
 
 Precision Polygon::SurfaceArea() {
   if (!fSurfaceArea) {
-    const int iMax = fVertixCount-1;
+    const int iMax = fVertices.size()-1;
     for (int i = 0, iNext = 1; i < iMax; ++i, ++iNext) {
-      fSurfaceArea += fX[i] * fY[iNext] - fX[iNext] * fY[i];
+      fSurfaceArea += fVertices[i].Cross(fVertices[iNext]);
     }
-    fSurfaceArea = 0.5 * (fSurfaceArea + fX[iMax] * fY[0] - fX[0] * fY[iMax]);
+    fSurfaceArea = 0.5 * (fSurfaceArea + fVertices[iMax].Cross(fVertices[0]));
   }
   return fSurfaceArea;
 }
 
 void Polygon::ReverseOrder() {
-  std::reverse(fX, fX+fVertixCount);
-  std::reverse(fY, fY+fVertixCount);
+  reverse(&fVertices[0], &fVertices[fVertices.size()]);
   fSurfaceArea = 0;
 }
 
 std::string Polygon::ToString() const {
   std::stringstream ss;
-  ss << "(" << fX[0] << ", " << fY[0] << ")";
-  for (int i = 1; i < fVertixCount; ++i) {
-    ss << " -- (" << fX[i] << ", " << fY[i] << ")";
+  ss << fVertices[0];
+  for (int i = 1; i < fVertices.size(); ++i) {
+    ss << " -- " << fVertices[i];
   }
   return ss.str();
 }
@@ -120,27 +100,24 @@ void Polygon::Print() const {
 }
 
 void Polygon::RemoveVertex(const int index) {
-  Precision *const xNew = new Precision[fVertixCount-1];
-  Precision *const yNew = new Precision[fVertixCount-1];
-  std::copy(fX, fX+index, xNew);
-  std::copy(fX+index+1, fX+fVertixCount, xNew+index);
-  std::copy(fY, fY+index, yNew);
-  std::copy(fY+index+1, fY+fVertixCount, yNew+index);
-  delete fX;
-  delete fY;
-  fX = xNew;
-  fY = yNew;
-  --fVertixCount;
+  Array<Vector2D<Precision> > old = Array<Vector2D<Precision> >(fVertices);
+  fVertices.Allocate(old.size()-1);
+  copy(&old[0], &old[index], &fVertices[0]);
+  copy(&old[index+1], &old[old.size()], &fVertices[index]);
   fSurfaceArea = 0;
-  assert(fVertixCount > 2 && "Insufficient significant vertices in Polygon.\n");
+  assert(fVertices.size() > 2 &&
+         "Insufficient significant vertices in Polygon.\n");
 }
 
 void Polygon::RemoveRedundantVertices() {
   // Will also remove duplicate vertices as lines will be trivially parallel
-  int i = 0, iMax = fVertixCount-2;
+  int i = 0, iMax = fVertices.size()-2;
   while (i < iMax) {
-    if (Abs((fX[i+1] - fX[i])*(fY[i+2] - fY[i]) -
-            (fX[i+2] - fX[i])*(fY[i+1] - fY[i])) < kTolerance) {
+    // If subsequent lines are parallel, the middle one will be removed
+    if (Abs((fVertices[i+1].x() - fVertices[i].x())
+            *(fVertices[i+2].y() - fVertices[i].y()) -
+            (fVertices[i+2].x() - fVertices[i].x())
+            *(fVertices[i+1].y() - fVertices[i].y()))) {
       RemoveVertex(i+1);
       --iMax;
     } else {
@@ -151,13 +128,13 @@ void Polygon::RemoveRedundantVertices() {
 
 void Polygon::CrossesItself() const {
   const Precision toleranceOne = 1. - kTolerance;
-  for (int i = 0; i < fVertixCount-2; ++i) {
-    Vector2D<Precision> p0 = GetPoint(i);
-    Vector2D<Precision> dP0 = GetPoint(i+1) - p0;
+  for (int i = 0, iMax = fVertices.size()-2; i < iMax; ++i) {
+    Vector2D<Precision> p0 = fVertices[i];
+    Vector2D<Precision> dP0 = fVertices[i+1] - p0;
     // Outer loop over each line segment
-    for (int j = i+1; j < fVertixCount-1; ++j) {
-      Vector2D<Precision> p1 = GetPoint(j);
-      Vector2D<Precision> dP1 = GetPoint(j+1) - p1;
+    for (int j = i+1, jMax = fVertices.size()-1; j < jMax; ++j) {
+      Vector2D<Precision> p1 = fVertices[j];
+      Vector2D<Precision> dP1 = fVertices[j+1] - p1;
       Precision cross = dP1.Cross(dP0);
       Vector2D<Precision> diff = p1 - p0;
       Precision slope0 = Abs(diff.Cross(dP1 / cross));

@@ -77,6 +77,11 @@ public:
     return vec[0]*other.vec[1] - vec[1]*other.vec[0];
   }
 
+  template <typename StreamType>
+  VECGEOM_INLINE
+  friend std::ostream& operator<<(std::ostream &os,
+                                  Vector2D<StreamType> const &v);
+
   #define VECTOR2D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VECGEOM_INLINE \
@@ -116,13 +121,15 @@ Vector2D<Type>::Vector2D(const Type x, const Type y) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 Vector2D<Type>::Vector2D(Vector2D const &other) {
-  copy(&other.vec[0], &other.vec[0]+2, &vec[0]);
+  Vector2D(other.vec[0], other.vec[1]);
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 Vector2D<Type> Vector2D<Type>::operator=(Vector2D<Type> const &other) {
-  copy(&other.vec[0], &other.vec[0]+2, vec);
+  vec[0] = other.vec[0];
+  vec[1] = other.vec[1];
+  return *this;
 }
 
 template <typename Type>
@@ -154,6 +161,12 @@ VECGEOM_CUDA_HEADER_BOTH
 void Vector2D<Type>::Set(const Type x, const Type y) {
   vec[0] = x;
   vec[1] = y;
+}
+
+template <typename Type>
+std::ostream& operator<<(std::ostream &os, Vector2D<Type> const &v) {
+  os << "(" << v.vec[0] << ", " << v.vec[1] << ")";
+  return os;
 }
 
 #define VECTOR2D_BINARY_OP(OPERATOR, INPLACE) \

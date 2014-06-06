@@ -245,7 +245,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
-  source/Container.cpp
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
@@ -261,7 +260,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedTube.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
-  source/UnplacedPolyhedra.cpp
+  source/UnplacedPolyhedron.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector3D.cpp
@@ -426,7 +425,7 @@ endforeach()
 install(FILES ${CMAKE_SOURCE_DIR}/backend/Backend.h DESTINATION include/backend)
 
 foreach(HEADER ${HEADERS_BACKEND})
-  get_filename_component(FILENAME ${HEADER} NAME)
+  get_filename_component(FILENAME ${HEADER} NAME_WE)
   install(FILES ${HEADER} DESTINATION include/backend/vector)
 endforeach()
 install(TARGETS vecgeom_cpp DESTINATION lib)

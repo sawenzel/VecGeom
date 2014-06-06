@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
+#include "base/Array.h"
 #include "base/Vector2D.h"
 
 #include <string>
@@ -17,8 +18,7 @@ class Polygon : public AlignedBase {
 
 private:
 
-  int fVertixCount;
-  Precision *fX, *fY;
+  Array<Vector2D<Precision> > fVertices;
   Vector2D<Precision> fXLim, fYLim;
   Precision fSurfaceArea;
 
@@ -35,18 +35,29 @@ public:
 
   void Scale(const Precision x, const Precision y);
 
-  int GetVertixCount() const { return fVertixCount; }
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int GetVertixCount() const { return fVertices.size(); }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetXMin() const { return fXLim[0]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetXMax() const { return fXLim[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetYMin() const { return fYLim[0]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetYMax() const { return fYLim[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector2D<Precision> GetPoint(const int index) const;
+  Vector2D<Precision> const& operator[](const int i) const;
 
   Precision SurfaceArea();
 
@@ -60,7 +71,27 @@ public:
 
   std::ostream& operator<<(std::ostream &os) const;
 
+  typedef ConstIterator<Vector2D<Precision> > const_iterator;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  const_iterator begin() const { return fVertices.begin(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  const_iterator end() const { return fVertices.end(); }
+
 private:
+
+  typedef Iterator<Vector2D<Precision> > iterator;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  iterator begin() { return fVertices.begin(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  iterator end() { return fVertices.end(); }
 
   void Initialize();
 
@@ -74,8 +105,9 @@ private:
 
 };
 
-Vector2D<Precision> Polygon::GetPoint(const int index) const {
-  return Vector2D<Precision>(fX[index], fY[index]);
+VECGEOM_CUDA_HEADER_BOTH
+Vector2D<Precision> const& Polygon::operator[](const int i) const {
+  return fVertices[i];
 }
 
 } // End global namespace

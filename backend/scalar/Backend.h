@@ -141,15 +141,19 @@ Precision tan(const Precision radians) {
 #endif
 }
 
+namespace {
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void swap(Type &a, Type &b) {
+void Swap(Type &a, Type &b) {
 #ifndef VECGEOM_NVCC
   std::swap(a, b);
 #else
-  swap(a, b);
+  Type c = a; a = b; b = c;
 #endif
+}
+
 }
 
 template <typename Type>
@@ -166,12 +170,23 @@ void copy(Type const *begin, Type const *const end, Type *const target) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void reverse_copy(Type const *begin, Type const *end,
+void reverse_copy(Type const *const begin, Type const *end,
                   Type *const target) {
 #ifndef VECGEOM_NVCC
   std::reverse_copy(begin, end, target);
 #else
   while (end-- != begin) *(target++) = *end; 
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void reverse(Type *begin, Type *end) {
+#ifndef VECGEOM_NVCC
+  std::reverse(begin, end);
+#else
+  while (begin++ < end--) Swap(begin, end);
 #endif
 }
 
