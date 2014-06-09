@@ -123,6 +123,11 @@ public:
                          Type *const z_gpu, const int size) const;
   #endif // VECGEOM_CUDA
 
+private:
+
+  VECGEOM_INLINE
+  void Allocate();
+
 };
 
 template <typename Type>
@@ -135,15 +140,14 @@ SOA3D<Type>::SOA3D(Type *const x, Type *const y, Type *const z,
 
 template <typename Type>
 SOA3D<Type>::SOA3D(const int size) : TrackContainer<Type>(size, true) {
-  x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-  y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
-  z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+  Allocate();
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
-SOA3D<Type>::SOA3D(TrackContainer<Type> const &other) {
-  SOA3D(other.memory_size_);
+SOA3D<Type>::SOA3D(TrackContainer<Type> const &other)
+    : TrackContainer<Type>(other.size_, true) {
+  Allocate();
   this->size_ = other.size_;
   for (int i = 0, i_end = this->size_; i < i_end; ++i) Set(i, other[i]);
 }
@@ -192,6 +196,16 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void SOA3D<Type>::push_back(Vector3D<Type> const &vec) {
   push_back(vec[0], vec[1], vec[2]);
+}
+
+template <typename Type>
+void SOA3D<Type>::Allocate() {
+  x_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*this->memory_size_,
+                          kAlignmentBoundary));
+  y_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*this->memory_size_,
+                          kAlignmentBoundary));
+  z_ = static_cast<Type*>(_mm_malloc(sizeof(Type)*this->memory_size_,
+                          kAlignmentBoundary));
 }
 
 #ifdef VECGEOM_CUDA

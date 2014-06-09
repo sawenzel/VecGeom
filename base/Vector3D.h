@@ -44,13 +44,17 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D() {
-    Vector3D<Type>(Type(0.), Type(0.), Type(0.));
+    vec[0] = 0;
+    vec[1] = 0;
+    vec[2] = 0;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D(const Type a) {
-    Vector3D<Type>(a, a, a);
+    vec[0] = a;
+    vec[1] = a;
+    vec[2] = a;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -63,8 +67,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D & operator=(Vector3D const &other)
-  {
+  Vector3D& operator=(Vector3D const &other) {
     vec[0] = other[0];
     vec[1] = other[1];
     vec[2] = other[2];
@@ -346,33 +349,38 @@ public:
     mem[2] = c;
   }
 
-  Vector3D(const Precision a) {
-    mem = a;
-  }
+  // Performance issue in Vc with: mem = a;
+  Vector3D(const Precision a) : Vector3D(a, a, a) {}
 
-  Vector3D() : Vector3D(0) {}
+  Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
   Vector3D(Vector3D const &other) {
-    for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-      {
-         Base_t v1 = other.mem.vector(i);
-         this->mem.vector(i)=v1;
-       }
+    //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+//      {
+         //Base_t v1 = other.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
+     mem[0]=other.mem[0];
+     mem[1]=other.mem[1];
+     mem[2]=other.mem[2];
   }
 
   VECGEOM_INLINE
   Vector3D & operator=( Vector3D const & rhs )
    {
     
-      for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-      {
-         Base_t v1 = rhs.mem.vector(i);
-         this->mem.vector(i)=v1;
-       }
+      //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+      //{
+         //Base_t v1 = rhs.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
       // the following line must not be used: this is a bug in Vc
       // this->mem = rhs.mem;
-     return *this;
+      mem[0]=rhs.mem[0];
+      mem[1]=rhs.mem[1];
+      mem[2]=rhs.mem[2];
+      return *this;
    }
 
   Vector3D(std::string const &str) {
