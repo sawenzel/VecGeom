@@ -441,7 +441,7 @@ public:
 
   VECGEOM_INLINE
   Precision Mag2() const {
-	  return Dot(*this,*this);
+      return Dot(*this,*this);
   }
 
   VECGEOM_INLINE
@@ -515,14 +515,10 @@ public:
                 Vector3D<Precision> const &right) {
     // TODO: This function should be internally vectorized (if proven to be
     //       beneficial)
-	  Base_t s(Vc::Zero);
-	  for (unsigned i=0; i < 1 + 3/Vc::Vector<double>::Size; ++i) {
-		  Base_t tmp1 = left.mem.vector(i);
-		  Base_t tmp2 = right.mem.vector(i);
-		  s += tmp1*tmp2;
-	  }
-	  return s.sum();
-	  //  return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
+
+    // To avoid to initialize the padding component, we can not use mem.vector's
+    // multiplication and addition since it would accumulate also the (random) padding component
+    return left.mem[0]*right.mem[0] + left.mem[1]*right.mem[1] + left.mem[2]*right.mem[2];
   }
 
   /// \return The dot product with another Vector3D<Precision> object.
