@@ -34,8 +34,8 @@ int main() {
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume trap = LogicalVolume("trap", &trapUnplaced);
 
-  // world.PlaceDaughter(&trap, new Transformation3D(5,6,7));
-  world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
+  world.PlaceDaughter(&trap, new Transformation3D(5,2,3, 15,30,45));
+  //world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
 
   VPlacedVolume *worldPlaced = world.Place();
 
@@ -46,9 +46,6 @@ int main() {
   tester.SetPointCount(1<<13);
 
   tester.RunBenchmark();
-
-  // // if running BenchmarkerGL tester()
-  // tester.RunInsideDebug();
 
   return 0;
 }

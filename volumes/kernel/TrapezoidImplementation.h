@@ -8,16 +8,8 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_TRAPEZOIDIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TRAPEZOIDIMPLEMENTATION_H_
 
-#include "base/Global.h"
-
-//#include "base/Transformation3D.h"
-// #include "volumes/kernel/BoxImplementation.h"
-// #include "volumes/kernel/GenericKernels.h"
-#include "backend/Backend.h"
-#include "base/Vector3D.h"
+#include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTrapezoid.h"
-
-//#include <stdio.h>
 #include <sstream>
 
 namespace VECGEOM_NAMESPACE {
@@ -157,22 +149,6 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Contains(
   UnplacedContains<Backend>(unplaced, localPoint, inside);
 }
 
-/*
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
-    UnplacedTrapezoid const &unplaced,
-    Transformation3D const &transformation,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::inside_v &inside) {
-
-  Vector3D<typename Backend::precision_v> localPoint =
-    transformation.Transform<transCodeT, rotCodeT>(point);
-  UnplacedInside<Backend>(unplaced, localPoint, inside);
-}
-*/
-
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -185,6 +161,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
+  // convert from master to local coordinates
   Vector3D<typename Backend::precision_v> point =
       transformation.Transform<transCodeT, rotCodeT>(masterPoint);
 
@@ -474,12 +451,15 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToIn(
-    UnplacedTrapezoid const &unplaced,
+  UnplacedTrapezoid const &unplaced,
     Transformation3D const &transformation,
-    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &masterPoint,
     typename Backend::precision_v &safety) {
 
   typedef typename Backend::precision_v Float_t;
+
+  // convert from master to local coordinates
+  Vector3D<Float_t> point = transformation.Transform<transCodeT, rotCodeT>(masterPoint);
 
   safety = Abs(point.z()) - unplaced.GetDz();
 
