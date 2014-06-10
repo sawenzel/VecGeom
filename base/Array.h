@@ -7,8 +7,6 @@
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
-#include "base/ConstIterator.h"
-#include "base/Iterator.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -63,23 +61,24 @@ public:
 
 public:
 
-  typedef Iterator<Type> iterator;
+  typedef Type* iterator;
+  typedef Type const* const_iterator;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator<Type> begin() { return Iterator<Type>(&fData[0]); }
+  Type* begin() { return &fData[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator<Type> end() { return Iterator<Type>(&fData[fSize]); }
+  Type* end() { return &fData[fSize]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  ConstIterator<Type> begin() const { return ConstIterator<Type>(&fData[0]); }
+  Type const* begin() const { return &fData[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  ConstIterator<Type> end() const { return ConstIterator<Type>(&fData[fSize]); }
+  Type const* end() const { return &fData[fSize]; }
 
 };
 

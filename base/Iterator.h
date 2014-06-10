@@ -14,7 +14,7 @@ namespace VECGEOM_NAMESPACE {
 template <typename Type>
 class Iterator : public std::iterator<std::forward_iterator_tag, Type> {
 
-private:
+protected:
 
   Type *fElement;
 
@@ -26,40 +26,52 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator(Iterator const &other) : fElement(other.fElement) {}
+  Iterator(Iterator<Type> const &other) : fElement(other.fElement) {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator& operator=(Iterator const &other) {
+  Iterator<Type>& operator=(Iterator<Type> const &other) {
     fElement = other.fElement;
     return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  bool operator==(Iterator const &other) {
+  bool operator==(Iterator<Type> const &other) {
     return fElement == other.fElement;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  bool operator!=(Iterator const &other) {
+  bool operator!=(Iterator<Type> const &other) {
     return fElement != other.fElement;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator& operator++() {
-    this->fElement++;
+  Iterator<Type>& operator++() {
+    fElement++;
     return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator& operator++(int) {
-    Iterator temp(*this);
+  Iterator<Type>& operator++(int) {
+    Iterator<Type> temp(*this);
     ++(*this);
     return temp;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Iterator<Type> operator+(const int val) const {
+    return Iterator<Type>(fElement + val);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Iterator<Type> operator-(const int val) const {
+    return Iterator<Type>(fElement - val);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -73,6 +85,20 @@ public:
   Type* operator->() {
     return fElement;
   }
+
+  #define ITERATOR_COMPARISON_OP(OPERATOR) \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  bool operator OPERATOR(Iterator<Type> const &other) const { \
+    return fElement OPERATOR other.fElement; \
+  }
+  ITERATOR_COMPARISON_OP(<)
+  ITERATOR_COMPARISON_OP(>)
+  ITERATOR_COMPARISON_OP(<=)
+  ITERATOR_COMPARISON_OP(>=)
+  ITERATOR_COMPARISON_OP(!=)
+  ITERATOR_COMPARISON_OP(==)
+  #undef ITERATOR_COMPARISON_OP
 
 };
 

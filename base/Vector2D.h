@@ -13,6 +13,7 @@
 #include <Vc/Vc>
 #endif
 #include <algorithm>
+#include <ostream>
 
 namespace VECGEOM_NAMESPACE {
 

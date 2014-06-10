@@ -7,7 +7,6 @@
 #include "base/Global.h"
 
 #include "backend/cuda/Interface.h"
-#include "base/Iterator.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -59,17 +58,15 @@ public:
     fSize++;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Iterator<Type> begin() const {
-    return Iterator<Type>(&fData[0]);
-  }
+  typedef Type* iterator;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Iterator<Type> end() const {
-    return Iterator<Type>(&fData[fSize]);
-  }
+  iterator begin() const { return iterator(&fData[0]); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  iterator end() const { return iterator(&fData[fSize]); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

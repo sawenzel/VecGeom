@@ -62,8 +62,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 }
 
 UnplacedPolyhedron::~UnplacedPolyhedron() {
-  for (Iterator<Face*> f = fFaces.begin(), fEnd = fFaces.end(); f != fEnd;
-       ++f) {
+  for (Face** f = fFaces.begin(), **fEnd = fFaces.end(); f != fEnd; ++f) {
     delete *f;
   }
 }

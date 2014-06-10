@@ -14,7 +14,7 @@ namespace VECGEOM_NAMESPACE {
 template <typename Type>
 class ConstIterator : public std::iterator<std::forward_iterator_tag, Type> {
 
-private:
+protected:
 
   Type const *fElement;
 
@@ -22,15 +22,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  ConstIterator(Type *const e) : fElement(e) {}
+  ConstIterator(Type const *const e) : fElement(e) {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  ConstIterator(ConstIterator const &other) : fElement(other.fElement) {}
+  ConstIterator(ConstIterator<Type> const &other) : fElement(other.fElement) {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  ConstIterator& operator=(ConstIterator<Type> const &other) {
+  ConstIterator<Type>& operator=(ConstIterator<Type> const &other) {
     fElement = other.fElement;
     return *this;
   }
@@ -64,15 +64,41 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& operator*() {
+  ConstIterator<Type> operator+(const int val) const {
+    return ConstIterator<Type>(fElement + val);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  ConstIterator<Type> operator-(const int val) const {
+    return ConstIterator<Type>(fElement - val);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const& operator*() const {
     return *fElement;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const* operator->() {
+  Type const* operator->() const {
     return fElement;
   }
+
+  #define CONSTITERATOR_COMPARISON_OP(OPERATOR) \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  bool operator OPERATOR(ConstIterator<Type> const &other) const { \
+    return fElement OPERATOR other.fElement; \
+  }
+  CONSTITERATOR_COMPARISON_OP(<)
+  CONSTITERATOR_COMPARISON_OP(>)
+  CONSTITERATOR_COMPARISON_OP(<=)
+  CONSTITERATOR_COMPARISON_OP(>=)
+  CONSTITERATOR_COMPARISON_OP(!=)
+  CONSTITERATOR_COMPARISON_OP(==)
+  #undef ITERATOR_COMPARISON_OP
 
 };
 
