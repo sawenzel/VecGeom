@@ -396,14 +396,14 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
 
     distance = kInfinity;
 
-    safety[0] = Abs(point[0]) - dimensions[0];
-    safety[1] = Abs(point[1]) - dimensions[1];
-    safety[2] = Abs(point[2]) - dimensions[2];
+    //safety[0] = Abs(point[0]) - dimensions[0];
+    //safety[1] = Abs(point[1]) - dimensions[1];
+    //safety[2] = Abs(point[2]) - dimensions[2];
 
-    inside = safety[0] < stepMax &&
-             safety[1] < stepMax &&
-             safety[2] < stepMax;
-    if (inside == Backend::kFalse) return;
+    //inside = safety[0] < stepMax &&
+    //         safety[1] < stepMax &&
+    //         safety[2] < stepMax;
+    //if (inside == Backend::kFalse) return;
 
     Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
       1. / (direction[0] + kTiny),
