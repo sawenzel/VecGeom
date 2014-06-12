@@ -19,9 +19,7 @@ private:
 
 public:
 
-  UnplacedBox(Vector3D<Precision> const &dim) {
-    dimensions_ = dim;
-  }
+  UnplacedBox(Vector3D<Precision> const &dim) : dimensions_(dim) { }
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedBox(const Precision dx, const Precision dy, const Precision dz)

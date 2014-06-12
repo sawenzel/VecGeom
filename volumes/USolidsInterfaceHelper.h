@@ -35,6 +35,8 @@ class USolidsInterfaceHelper : public VUSolid {
                                Vector3D<Precision> const &direction,
                                Precision const step_max = kInfinity) const =0;
 
+  virtual ~USolidsInterfaceHelper(){}
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const =0;
 
@@ -118,7 +120,7 @@ class USolidsInterfaceHelper : public VUSolid {
                 " volume.");
   }
 
-  virtual ~USolidsInterfaceHelper(){}
+
 
 };
 

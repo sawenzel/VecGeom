@@ -39,6 +39,8 @@ public:
     return element_ == other.element_;
   }
 
+  virtual ~Iterator(){}
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   bool operator!=(Iterator<Type> const &other) {

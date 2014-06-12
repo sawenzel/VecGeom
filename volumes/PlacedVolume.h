@@ -56,9 +56,8 @@ protected:
         bounding_box_(boundingbox), id_(id), label_(NULL) {}
 
 #endif
-
-  VPlacedVolume(VPlacedVolume const &other);
-  VPlacedVolume& operator=(VPlacedVolume const &other);
+  VPlacedVolume(VPlacedVolume const &);
+  VPlacedVolume *operator=(VPlacedVolume const &);
 
 public:
 

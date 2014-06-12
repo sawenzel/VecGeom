@@ -343,7 +343,11 @@ private:
 
 public:
 
-  Vector3D(const Precision a, const Precision b, const Precision c) : mem() {
+  Precision * AsArray() {
+    return (Precision * ) &mem;
+  }
+
+ Vector3D(const Precision a, const Precision b, const Precision c) : mem() {
     mem[0] = a;
     mem[1] = b;
     mem[2] = c;
@@ -355,14 +359,15 @@ public:
   Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
-  Vector3D(Vector3D const &other) : mem() {
-    // for (int i = 0; i < 1 + 3/Base_t::Size; ++i) {
-    //   Base_t v1 = other.mem.vector(i);
-    //   this->mem.vector(i)=v1;
-    // }
-    mem[0] = other.mem[0];
-    mem[1] = other.mem[1];
-    mem[2] = other.mem[2];
+    Vector3D(Vector3D const &other) : mem() {
+    //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+//      {
+         //Base_t v1 = other.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
+     mem[0]=other.mem[0];
+     mem[1]=other.mem[1];
+     mem[2]=other.mem[2];
   }
 
   VECGEOM_INLINE
@@ -717,6 +722,8 @@ VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
 #define VECTOR3D_VC_BOOLEAN_LOGICAL_OP(OPERATOR) \
 VECGEOM_INLINE \
 Vector3D<VcBool> operator OPERATOR( \
@@ -729,6 +736,7 @@ Vector3D<VcBool> operator OPERATOR( \
 VECTOR3D_VC_BOOLEAN_LOGICAL_OP(&&)
 VECTOR3D_VC_BOOLEAN_LOGICAL_OP(||)
 #undef VECTOR3D_VC_BOOLEAN_LOGICAL_OP
+#pragma GCC diagnostic pop
 
 #endif // VECGEOM_VC
 
