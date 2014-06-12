@@ -343,7 +343,7 @@ private:
 
 public:
 
-  Vector3D(const Precision a, const Precision b, const Precision c) {
+  Vector3D(const Precision a, const Precision b, const Precision c) : mem() {
     mem[0] = a;
     mem[1] = b;
     mem[2] = c;
@@ -355,15 +355,14 @@ public:
   Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
-  Vector3D(Vector3D const &other) {
-    //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-//      {
-         //Base_t v1 = other.mem.vector(i);
-         //this->mem.vector(i)=v1;
-       //}
-     mem[0]=other.mem[0];
-     mem[1]=other.mem[1];
-     mem[2]=other.mem[2];
+  Vector3D(Vector3D const &other) : mem() {
+    // for (int i = 0; i < 1 + 3/Base_t::Size; ++i) {
+    //   Base_t v1 = other.mem.vector(i);
+    //   this->mem.vector(i)=v1;
+    // }
+    mem[0] = other.mem[0];
+    mem[1] = other.mem[1];
+    mem[2] = other.mem[2];
   }
 
   VECGEOM_INLINE
@@ -383,7 +382,7 @@ public:
       return *this;
    }
 
-  Vector3D(std::string const &str) {
+  Vector3D(std::string const &str) : mem() {
     int begin = 1, end = str.find(",");
     mem[0] = atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;

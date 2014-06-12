@@ -78,13 +78,16 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -DVECGEOM")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -O0 -ggdb")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 endif()
 if (GNU)
+  if (NOT ERROR_LIMIT AND NOT ERROR_LIMIT EQUAL 0)
+    set(ERROR_LIMIT 20)
+  endif()
   set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmax-errors=20 -finline-limit=10000000")
+      "${CMAKE_CXX_FLAGS} -fmax-errors=${ERROR_LIMIT} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                   OUTPUT_VARIABLE GCC_VERSION)
