@@ -40,7 +40,7 @@ Polygon::Polygon(const Polygon &other)
 
 void Polygon::Initialize() {
   Assert(fVertices.size() > 2,
-         "Polygon requires at least three input vertices.\n");
+         "Polygon requires at least three distinct vertices.\n");
   RemoveRedundantVertices();
   CrossesItself();
   FindLimits();

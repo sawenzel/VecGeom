@@ -253,7 +253,6 @@ set(SRC_CPP_RELATIVE
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/Polygon.cpp
-  source/PolyhedronFace.cpp
   source/SOA3D.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp

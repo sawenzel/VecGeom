@@ -8,6 +8,7 @@
 
 #include "base/AlignedBase.h"
 #include "base/Array.h"
+#include "base/CyclicIterator.h"
 #include "base/Vector2D.h"
 
 #include <iterator>
@@ -77,82 +78,13 @@ public:
 
   std::ostream& operator<<(std::ostream &os) const;
 
-  /// \brief Iterator that is cyclic when plus and minus operators are applied.
-  ///        This does not apply for incrementation operators, which will
-  ///        work as usual. This is to allow proper iteration through the
-  ///        seqience.
-  class PolygonIterator
-      : std::iterator<std::forward_iterator_tag, Vector2D<Precision> > {
-
-  private:
-
-    Array<Vector2D<Precision> > const &fCorners;
-    Array<Vector2D<Precision> >::const_iterator fTarget;
-
-  public:
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator(Array<Vector2D<Precision> > const &corners,
-                    const Array<Vector2D<Precision> >::const_iterator corner);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator(PolygonIterator const &other);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator& operator=(PolygonIterator const &rhs);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator& operator++();
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator operator++(int);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator& operator--();
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator operator--(int);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator operator+(int val);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    PolygonIterator operator-(int val);
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    Vector2D<Precision> const& operator*() const;
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    Vector2D<Precision> const* operator->() const;
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    bool operator==(PolygonIterator const &other) const;
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    bool operator!=(PolygonIterator const &other) const;
-
-  }; // End class PolygonIterator
-
-  typedef PolygonIterator const_iterator;
+  typedef CyclicIterator<Vector2D<Precision>, true> const_iterator;
 
   VECGEOM_INLINE
-  PolygonIterator begin() const;
+  const_iterator begin() const;
 
   VECGEOM_INLINE
-  PolygonIterator end() const;
+  const_iterator end() const;
 
 private:
 
@@ -184,91 +116,15 @@ Vector2D<Precision> const& Polygon::operator[](const int i) const {
 }
 
 VECGEOM_INLINE
-Polygon::PolygonIterator Polygon::begin() const {
-  return Polygon::PolygonIterator(fVertices, fVertices.begin());
+Polygon::const_iterator Polygon::begin() const {
+  return Polygon::const_iterator(fVertices.begin(), fVertices.end(),
+                                 fVertices.begin());
 }
 
 VECGEOM_INLINE
-Polygon::PolygonIterator Polygon::end() const {
-  return Polygon::PolygonIterator(fVertices, fVertices.end());
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator::PolygonIterator(
-    Array<Vector2D<Precision> > const &corners,
-    const Array<Vector2D<Precision> >::const_iterator corner)
-    : fCorners(corners), fTarget(corner) {}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator::PolygonIterator(
-    Polygon::PolygonIterator const &other)
-    : fCorners(other.fCorners), fTarget(other.fTarget) {}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator& Polygon::PolygonIterator::operator=(
-    Polygon::PolygonIterator const &rhs) {
-  fTarget = rhs.fTarget;
-  return *this;
-}
-
-Polygon::PolygonIterator& Polygon::PolygonIterator::operator++() {
-  ++fTarget;
-  return *this;
-}
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator Polygon::PolygonIterator::operator++(int) {
-  PolygonIterator temp(*this);
-  ++(*this);
-  return temp;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator& Polygon::PolygonIterator::operator--() {
-  --fTarget;
-  return *this;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator Polygon::PolygonIterator::operator--(int) {
-  PolygonIterator temp(*this);
-  --(*this);
-  return temp;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator Polygon::PolygonIterator::operator+(int val) {
-  return Polygon::PolygonIterator(fCorners,
-             fCorners.begin() +
-             ((fCorners.end()-fTarget) + val) % fCorners.size());
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Polygon::PolygonIterator Polygon::PolygonIterator::operator-(int val) {
-  return Polygon::PolygonIterator(fCorners,
-             fCorners.begin() +
-             ((fCorners.end()-fTarget) - val) % fCorners.size());
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Vector2D<Precision> const& Polygon::PolygonIterator::operator*() const {
-  return *fTarget;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Vector2D<Precision> const* Polygon::PolygonIterator::operator->() const {
-  return fTarget;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-bool Polygon::PolygonIterator::operator==(
-    Polygon::PolygonIterator const &other) const {
-  return fTarget == other.fTarget;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-bool Polygon::PolygonIterator::operator!=(
-    Polygon::PolygonIterator const &other) const {
-  return fTarget != other.fTarget;
+Polygon::const_iterator Polygon::end() const {
+  return Polygon::const_iterator(fVertices.begin(), fVertices.end(),
+                                 fVertices.end());
 }
 
 } // End global namespace

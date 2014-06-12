@@ -8,7 +8,6 @@
 
 #include "base/AlignedBase.h"
 #include "base/Array.h"
-#include "volumes/Face.h"
 #include "volumes/Polygon.h"
 #include "volumes/UnplacedVolume.h"
 
@@ -18,20 +17,61 @@ class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 private:
 
-  Array<Face*> fFaces;
+  int fSideCount;
+  Precision fPhiStart;
+  Precision fPhiTotal;
+  bool fHasPhi;
 
 public:
 
   UnplacedPolyhedron(
-      Precision phiStart,
-      Precision phiDelta,
-      int sideCount,
-      const int cornerCount,
+      const int sideCount,
+      const Precision phiStart,
+      const Precision phiTotal,
+      const int zPlaneCount,
       const Precision zPlanes[],
       const Precision rInner[],
       const Precision rOuter[]);
 
   ~UnplacedPolyhedron();
+
+private:
+
+#ifndef VECGEOM_NVCC
+
+  class PolyhedronSegment {
+
+  private:
+
+    struct PolyhedronEdge {
+      Vector3D<Precision> corner[2];
+    };
+
+    struct PolyhedronSide {
+      Vector3D<Precision> center, normal;
+      Vector3D<Precision> surfRZ, surfPhi;
+      PolyhedronEdge *edges[2];
+      Precision edgeNormal[2];
+    };
+
+    int fSideCount, fEdgeCount;
+    Precision fPhiStart, fPhiEnd, fPhiTotal, fPhiDelta;
+    bool fHasPhi;
+    Vector2D<Precision> fStart, fEnd;
+    Array<PolyhedronSide> fSides;
+    Array<PolyhedronEdge> fEdges;
+    Precision fRZLength;
+    Vector2D<Precision> fPhiLength;
+
+  public:
+
+    PolyhedronSegment(const Polygon::const_iterator corner,
+                      const int sideCount, const Precision phiStart,
+                      const Precision phiTotal);
+
+  };
+
+#endif
 
 };
 
