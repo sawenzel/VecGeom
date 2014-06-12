@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <climits>
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -20,13 +21,26 @@ int LogicalVolume::g_id_count = 0;
 #ifndef VECGEOM_NVCC
 LogicalVolume::LogicalVolume(char const *const label,
                              VUnplacedVolume const *const unplaced_volume)
-    : unplaced_volume_(unplaced_volume),
-      user_extension_(NULL) {
+  :  unplaced_volume_(unplaced_volume), id_(0), label_(NULL),
+     user_extension_(NULL), daughters_() {
   id_ = g_id_count++;
   GeoManager::Instance().RegisterLogicalVolume(this);
   label_ = new std::string(label);
   daughters_ = new Vector<Daughter>();
+  }
+
+LogicalVolume::LogicalVolume(LogicalVolume const & other)
+  : unplaced_volume_(), id_(0), label_(),
+    user_extension_(NULL), daughters_()
+{
+  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
 }
+
+LogicalVolume * LogicalVolume::operator=( LogicalVolume const & other )
+{
+  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+}
+
 #endif
 
 LogicalVolume::~LogicalVolume() {

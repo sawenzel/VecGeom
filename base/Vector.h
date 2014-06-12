@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include "base/Container.h"
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -22,13 +23,23 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector() : size_(0), memory_size_(1), allocated_(true) {
+    Vector() : vec_(), size_(0), memory_size_(1), allocated_(true) {
     vec_ = new Type[memory_size_];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector(Type *const vec, const int s)
       : vec_(vec), size_(s), allocated_(false) {}
+
+  
+  Vector(Vector const & other) : Vector() {
+    assert( 0 && "COPY CONSTRUCTOR FOR CLASS VECTOR NOT IMPLEMENTED");
+  }
+
+  
+  Vector * operator=(Vector const & other) {
+    assert( 0 && "ASSIGNM CONSTRUCTOR FOR CLASS VECTOR NOT IMPLEMENTED");
+  }
 
   ~Vector() {
     if (allocated_) delete[] vec_;

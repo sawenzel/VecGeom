@@ -31,7 +31,7 @@ class SimpleLogicalVolumeVisitor : public GeoVisitor<Container>
 {
 public:
    SimpleLogicalVolumeVisitor( Container & c ) : GeoVisitor<Container>(c) {}
-   virtual void apply( VPlacedVolume * vol, int level ){
+  virtual void apply( VPlacedVolume * vol, int /*level*/ ){
       LogicalVolume const *lvol = vol->logical_volume();
       if( std::find( this->c_.begin(), this->c_.end(), lvol ) == this->c_.end() )
       {

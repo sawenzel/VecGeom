@@ -33,6 +33,8 @@ public:
   AOS3D(const int size);
 
   AOS3D(TrackContainer<Type> const &other);
+  AOS3D(AOS3D const &other);
+  AOS3D* operator=(AOS3D const &other);
 
   ~AOS3D();
 

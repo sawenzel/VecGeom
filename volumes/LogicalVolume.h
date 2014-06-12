@@ -61,6 +61,12 @@ public:
   LogicalVolume(VUnplacedVolume const *const unplaced_vol)
       : LogicalVolume("", unplaced_vol) {}
 
+  /** 
+   * copy operator since we have pointer data members
+   */
+  LogicalVolume( LogicalVolume const & other );    
+  LogicalVolume * operator=( LogicalVolume const & other );
+
 #else
 
   __device__
@@ -97,7 +103,7 @@ public:
     if( label_ )
       *label_ = label;
     else
-        label_=new std::string(label);
+      label_=new std::string(label);
   }
 
   VECGEOM_INLINE
