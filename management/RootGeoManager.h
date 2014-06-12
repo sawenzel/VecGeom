@@ -47,7 +47,7 @@ public:
    */
   VPlacedVolume const* world() const { return world_; }
 
-  int verbose() const { return verbose_; }
+  int GetVerboseLevel() const { return verbose_; }
 
   TGeoNode const * tgeonode( VPlacedVolume const * p ) const
   {
@@ -98,7 +98,8 @@ public:
 
 private:
 
-  RootGeoManager() : world_(NULL), verbose_(0) {}
+ RootGeoManager() : world_(NULL), placed_volumes_(), unplaced_volumes_(),
+    logical_volumes_(), transformations_(), verbose_(0) {}
   RootGeoManager(RootGeoManager const&);
   RootGeoManager& operator=(RootGeoManager const&);
 

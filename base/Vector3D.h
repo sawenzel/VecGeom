@@ -137,15 +137,15 @@ public:
   Type const& z() const { return vec[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(Type const &x, Type const &y, Type const &z) {
-    vec[0] = x;
-    vec[1] = y;
-    vec[2] = z;
+  void Set(Type const &a, Type const &b, Type const &c) {
+    vec[0] = a;
+    vec[1] = b;
+    vec[2] = c;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(const Type x) {
-    Set(x, x, x);
+  void Set(const Type a) {
+    Set(a, a, a);
   }
 
   /// \return the length squared perpendicular to z direction
@@ -667,6 +667,8 @@ VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
 #define VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(OPERATOR) \
 VECGEOM_CUDA_HEADER_BOTH \
 VECGEOM_INLINE \
@@ -679,6 +681,7 @@ Vector3D<bool> operator OPERATOR(Vector3D<bool> const &lhs, \
 VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(&&)
 VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(||)
 #undef VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP
+#pragma GCC diagnostic pop
 
 #ifdef VECGEOM_VC
 

@@ -72,7 +72,7 @@ void LogicalVolume::PlaceDaughter(
 void LogicalVolume::PlaceDaughter(
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  PlaceDaughter(volume->label().c_str(), volume, transformation);
+  PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {

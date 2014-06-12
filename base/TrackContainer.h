@@ -24,8 +24,8 @@ protected:
   bool allocated_;
 
   VECGEOM_CUDA_HEADER_BOTH
-  TrackContainer(const int memory_size, const bool allocated)
-      : memory_size_(memory_size), size_(0), allocated_(allocated) {}
+  TrackContainer(const int memsize, const bool allocated)
+      : memory_size_(memsize), size_(0), allocated_(allocated) {}
 
   virtual ~TrackContainer() {}
 
@@ -41,7 +41,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void set_size(const int size) { size_ = size; }
+  void set_size(const int s) { size_ = s; }
 
 };
 

@@ -188,7 +188,7 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
 
 
 NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.maxlevel_),
-      currentlevel_(rhs.currentlevel_), onboundary_(rhs.onboundary_)
+  currentlevel_(rhs.currentlevel_), path_(NULL), global_matrix_(), onboundary_(rhs.onboundary_)
 {
    InitInternalStorage();
    std::memcpy(path_, rhs.path_, sizeof(path_)*rhs.currentlevel_ );
@@ -196,7 +196,7 @@ NavigationState::NavigationState( NavigationState const & rhs ) : maxlevel_(rhs.
 
 
 // implementations follow
-NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), global_matrix_(), onboundary_(0)
+ NavigationState::NavigationState( int maxlevel ) : maxlevel_(maxlevel), currentlevel_(0), path_(NULL), global_matrix_(), onboundary_(0)
 {
    InitInternalStorage();
 }

@@ -29,7 +29,7 @@ private:
 
 public:
 
-  TypeMap() {}
+  TypeMap() : a_to_b(), b_to_a() {}
   TypeMap(TypeMap const &other);
   TypeMap& operator=(TypeMap const &other);
 

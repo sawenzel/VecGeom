@@ -22,13 +22,13 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  Array(const int size) : size_(size), allocated(true) {
+  Array(const int s) : size_(s), allocated(true) {
     arr_ = new Type[size_];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Array(Type *const arr, const int size)
-      : arr_(arr), size_(size), allocated(false) {}
+  Array(Type *const arr, const int s)
+      : arr_(arr), size_(s), allocated(false) {}
 
   ~Array() { if (allocated) delete arr_; }
 
@@ -60,12 +60,15 @@ private:
     VECGEOM_INLINE
     ArrayIterator(Type const *const e) : Iterator<Type>(e) {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
     virtual ArrayIterator& operator++() {
       this->element_++;
       return *this;
     }
+#pragma GCC diagnostic pop
 
   };
 
