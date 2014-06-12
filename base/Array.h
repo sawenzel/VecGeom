@@ -62,7 +62,7 @@ private:
 
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
-    virtual Iterator<Type>& operator++() {
+    virtual ArrayIterator& operator++() {
       this->element_++;
       return *this;
     }

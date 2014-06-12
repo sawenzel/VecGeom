@@ -70,7 +70,7 @@ private:
 
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
-    Iterator<Type>& operator++() {
+    VectorIterator& operator++() {
       this->element_++;
       return *this;
     }

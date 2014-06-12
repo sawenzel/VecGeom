@@ -57,6 +57,9 @@ protected:
 
 #endif
 
+  VPlacedVolume(VPlacedVolume const &other);
+  VPlacedVolume& operator=(VPlacedVolume const &other);
+
 public:
 
   virtual ~VPlacedVolume();
