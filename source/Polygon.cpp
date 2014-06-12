@@ -49,7 +49,8 @@ void Polygon::Initialize() {
 void Polygon::FindLimits() {
   fXLim[0] = fYLim[0] = kInfinity;
   fXLim[1] = fYLim[1] = -kInfinity;
-  for (Vector2D<Precision> *i = begin(), *iEnd = end(); i != iEnd; ++i) {
+  for (Vector2D<Precision> *i = fVertices.begin(), *iEnd = fVertices.end();
+       i != iEnd; ++i) {
     fXLim[0] = (i->x() < fXLim[0]) ? i->x() : fXLim[0];
     fXLim[1] = (i->x() > fXLim[1]) ? i->x() : fXLim[1];
     fYLim[0] = (i->y() < fXLim[0]) ? i->y() : fYLim[0];
@@ -59,7 +60,8 @@ void Polygon::FindLimits() {
 
 void Polygon::Scale(const double x, const double y) {
   const Vector2D<Precision> scale = Vector2D<Precision>(x, y);
-  for (Vector2D<Precision> *i = begin(), *iEnd = end(); i != iEnd; ++i) {
+  for (Vector2D<Precision> *i = fVertices.begin(), *iEnd = fVertices.end();
+       i != iEnd; ++i) {
     (*i) *= scale;
   }
   fSurfaceArea = 0;

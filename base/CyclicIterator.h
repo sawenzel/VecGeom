@@ -6,6 +6,8 @@
 
 #include "base/Global.h"
 
+#include <iterator>
+
 namespace VECGEOM_NAMESPACE {
 
 namespace {

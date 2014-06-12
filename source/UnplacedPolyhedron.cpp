@@ -9,6 +9,10 @@
 
 namespace VECGEOM_NAMESPACE {
 
+UnplacedPolyhedron::~UnplacedPolyhedron() {}
+
+#ifndef VECGEOM_NVCC // CPU only constructor
+
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount, const Precision phiStart, const Precision phiTotal,
     const int zPlaneCount, const Precision zPlane[], const Precision rInner[],
@@ -55,13 +59,13 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
   // Create faces
 
-  int faceCount = fHasPhi ? corners.GetVertixCount()+2
-                          : corners.GetVertixCount();
+  Array<PolyhedronSegment*> segments(corners.GetVertixCount());
+  PolyhedronSegment **segment = segments.begin();
+  for (Polygon::const_iterator c = corners.begin(), cEnd = corners.end();
+       c != cEnd; ++c, ++segment) {
+    *segment = new PolyhedronSegment(c, fSideCount, fPhiStart, fPhiTotal);
+  }
 }
-
-UnplacedPolyhedron::~UnplacedPolyhedron() {}
-
-#ifndef VECGEOM_NVCC
 
 UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
     const Polygon::const_iterator corner, const int sideCount,
@@ -152,6 +156,50 @@ UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
     (fSides.end()-1)->edges[1] = fEdges.begin();
   }
 
+  for (PolyhedronSide *side = fSides.begin(), *prev = side-1,
+       *sideEnd = fSides.end(); side != sideEnd; ++side, prev = side-1) {
+
+    PolyhedronEdge *prevEdge = side->edges[0];
+
+    prevEdge->normal = (side->normal + prev->normal).Unit();
+
+    prevEdge->cornerNormal[0] =
+        (side->edgeNormal[0] + prev->edgeNormal[0]).Unit();
+    prevEdge->cornerNormal[1] = 
+        (side->edgeNormal[1] + prev->edgeNormal[1]).Unit();
+
+  }
+
+  if (fHasPhi) {
+
+    PolyhedronSide *side = fSides.begin();
+
+    Vector3D<Precision> normal = side->edges[0]->corner[0]
+                                 - side->edges[0]->corner[1];
+    normal = normal.Cross(side->normal);
+    if (normal.Dot(side->surfPhi) > 0) normal = -normal;
+
+    side->edges[0]->normal = normal.Unit();
+    side->edges[0]->cornerNormal[0] = (side->edges[0]->corner[0]
+                                       - side->center).Unit();
+    side->edges[0]->cornerNormal[1] = (side->edges[0]->corner[1]
+                                       - side->center).Unit();
+
+    side = fSides.end();
+
+    normal = side->edges[1]->corner[0] - side->edges[1]->corner[1];
+    normal = normal.Cross(side->normal);
+    if (normal.Dot(side->surfPhi) < 0) normal = -normal;
+
+    side->edges[1]->normal = normal.Unit();
+    side->edges[1]->cornerNormal[0] = (side->edges[1]->corner[0]
+                                       - side->center).Unit();
+    side->edges[1]->cornerNormal[1] = (side->edges[1]->corner[1]
+                                       - side->center).Unit();
+
+  }
+
+  fEdgeNormal = 1. / Sqrt(1. + fPhiLength[1]*fPhiLength[1]);
 }
 
 #endif // VECGEOM_NVCC

@@ -88,16 +88,6 @@ public:
 
 private:
 
-  typedef Array<Vector2D<Precision> >::iterator iterator;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  iterator begin() { return fVertices.begin(); }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  iterator end() { return fVertices.end(); }
-
   void Initialize();
 
   void FindLimits();

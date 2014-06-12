@@ -24,6 +24,7 @@ private:
 
 public:
 
+#ifndef VECGEOM_NVCC
   UnplacedPolyhedron(
       const int sideCount,
       const Precision phiStart,
@@ -32,6 +33,7 @@ public:
       const Precision zPlanes[],
       const Precision rInner[],
       const Precision rOuter[]);
+#endif
 
   ~UnplacedPolyhedron();
 
@@ -44,14 +46,16 @@ private:
   private:
 
     struct PolyhedronEdge {
+      Vector3D<Precision> normal;
       Vector3D<Precision> corner[2];
+      Vector3D<Precision> cornerNormal[2];
     };
 
     struct PolyhedronSide {
       Vector3D<Precision> center, normal;
       Vector3D<Precision> surfRZ, surfPhi;
       PolyhedronEdge *edges[2];
-      Precision edgeNormal[2];
+      Vector3D<Precision> edgeNormal[2];
     };
 
     int fSideCount, fEdgeCount;
@@ -62,6 +66,7 @@ private:
     Array<PolyhedronEdge> fEdges;
     Precision fRZLength;
     Vector2D<Precision> fPhiLength;
+    Precision fEdgeNormal;
 
   public:
 
@@ -71,7 +76,7 @@ private:
 
   };
 
-#endif
+#endif // VECGEOM_NVCC
 
 };
 
