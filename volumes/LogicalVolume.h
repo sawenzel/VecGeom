@@ -56,18 +56,18 @@ public:
    * \sa PlaceDaughter()
    */
   LogicalVolume(char const *const label,
-                VUnplacedVolume const *const unplaced_volume);
+                VUnplacedVolume const *const unplaced_vol);
 
-  LogicalVolume(VUnplacedVolume const *const unplaced_volume)
-      : LogicalVolume("", unplaced_volume) {}
+  LogicalVolume(VUnplacedVolume const *const unplaced_vol)
+      : LogicalVolume("", unplaced_vol) {}
 
 #else
 
   __device__
-  LogicalVolume(VUnplacedVolume const *const unplaced_volume,
+  LogicalVolume(VUnplacedVolume const *const unplaced_vol,
                 Vector<Daughter> *daughters)
       // Id for logical volumes is not needed on the device for CUDA
-      : unplaced_volume_(unplaced_volume), id_(-1), label_(NULL),
+      : unplaced_volume_(unplaced_vol), id_(-1), label_(NULL),
         user_extension_(NULL), daughters_(daughters) {}
 
 #endif
@@ -91,7 +91,7 @@ public:
 
   int id() const { return id_; }
 
-  std::string label() const { return *label_; }
+  std::string GetLabel() const { return *label_; }
 
   void set_label(char const *const label) {
     if( label_ )
@@ -133,9 +133,9 @@ public:
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
+  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_vol,
                            Vector<Daughter> *daughters) const;
-  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_volume,
+  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_vol,
                            Vector<Daughter> *daughters,
                            LogicalVolume *const gpu_ptr) const;
 #endif

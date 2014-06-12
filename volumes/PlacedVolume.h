@@ -36,24 +36,24 @@ protected:
 #ifndef VECGEOM_NVCC
 
   VPlacedVolume(char const *const label,
-                LogicalVolume const *const logical_volume,
-                Transformation3D const *const transformation,
-                PlacedBox const *const bounding_box);
+                LogicalVolume const *const logical_vol,
+                Transformation3D const *const transform,
+                PlacedBox const *const boundingbox);
 
-  VPlacedVolume(LogicalVolume const *const logical_volume,
-                Transformation3D const *const transformation,
-                PlacedBox const *const bounding_box)
-      :  VPlacedVolume("", logical_volume, transformation, bounding_box) {}
+  VPlacedVolume(LogicalVolume const *const logical_vol,
+                Transformation3D const *const transform,
+                PlacedBox const *const boundingbox)
+      :  VPlacedVolume("", logical_vol, transform, boundingbox) {}
 
 #else
 
   __device__
-  VPlacedVolume(LogicalVolume const *const logical_volume,
+  VPlacedVolume(LogicalVolume const *const logical_vol,
                 Transformation3D const *const transformation,
-                PlacedBox const *const bounding_box,
+                PlacedBox const *const boundingbox,
                 const int id)
-      : logical_volume_(logical_volume), transformation_(transformation),
-        bounding_box_(bounding_box), id_(id), label_(NULL) {}
+      : logical_volume_(logical_vol), transformation_(transform),
+        bounding_box_(boundingbox), id_(id), label_(NULL) {}
 
 #endif
 
@@ -68,7 +68,7 @@ public:
   VECGEOM_INLINE
   int id() const { return id_; }
 
-  std::string label() const { return *label_; }
+  std::string GetLabel() const { return *label_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -100,13 +100,13 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void set_logical_volume(LogicalVolume const *const logical_volume) {
-    logical_volume_ = logical_volume;
+  void set_logical_volume(LogicalVolume const *const logical_vol) {
+    logical_volume_ = logical_vol;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void set_transformation(Transformation3D const *const transformation) {
-    transformation_ = transformation;
+  void set_transformation(Transformation3D const *const transform) {
+    transformation_ = transform;
   }
 
   void set_label(char const *const label) { *label_ = label; }
@@ -243,11 +243,11 @@ public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
+                                   Transformation3D const *const transform,
                                    VPlacedVolume *const gpu_ptr) const =0;
   virtual VPlacedVolume* CopyToGpu(
       LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const =0;
+      Transformation3D const *const transform) const =0;
 #endif
 
 #ifdef VECGEOM_BENCHMARK

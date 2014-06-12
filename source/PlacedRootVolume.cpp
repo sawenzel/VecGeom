@@ -112,15 +112,18 @@ void PlacedRootVolume::SafetyToIn(AOS3D<Precision> const &position,
 #ifdef VECGEOM_BENCHMARK
 VPlacedVolume const* PlacedRootVolume::ConvertToUnspecialized() const {
   assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+  return NULL;
 }
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedRootVolume::ConvertToRoot() const {
   assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+  return NULL;
 }
 #endif
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedRootVolume::ConvertToUSolids() const {
   assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+  return NULL;
 }
 #endif
 #endif // VECGEOM_BENCHMARK

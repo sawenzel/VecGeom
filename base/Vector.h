@@ -27,8 +27,8 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector(Type *const vec, const int size)
-      : vec_(vec), size_(size), allocated_(false) {}
+  Vector(Type *const vec, const int s)
+      : vec_(vec), size_(s), allocated_(false) {}
 
   ~Vector() {
     if (allocated_) delete[] vec_;
@@ -68,12 +68,15 @@ private:
     VECGEOM_INLINE
     VectorIterator(Type const *const e) : Iterator<Type>(e) {}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
     VectorIterator& operator++() {
       this->element_++;
       return *this;
     }
+#pragma GCC diagnostic pop
 
   };
 

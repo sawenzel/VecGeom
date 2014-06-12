@@ -58,7 +58,7 @@ private:
    int maxdepth_;
 public:
    GetMaxDepthVisitor() : maxdepth_(0) {}
-   void apply( VPlacedVolume * vol, int level )
+   void apply( VPlacedVolume * /* vol */, int level )
    {
       maxdepth_ = (level>maxdepth_) ? level : maxdepth_;
    }
@@ -88,7 +88,7 @@ public:
     return instance;
   }
 
-  void set_world(VPlacedVolume const *const world) { world_ = world; }
+  void set_world(VPlacedVolume const *const w) { world_ = w; }
 
   VPlacedVolume const* world() const { return world_; }
 
@@ -145,7 +145,8 @@ public:
 protected:
 
 private:
-  GeoManager() : volume_count(0) {}
+ GeoManager() : volume_count(0), world_(NULL), placed_volumes_(), logical_volumes_() 
+ {}
 
   GeoManager(GeoManager const&);
   GeoManager& operator=(GeoManager const&);
