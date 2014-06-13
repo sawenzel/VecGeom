@@ -354,8 +354,10 @@ public:
   }
 
   // Performance issue in Vc with: mem = a;
+  VECGEOM_INLINE
   Vector3D(const Precision a) : Vector3D(a, a, a) {}
 
+  VECGEOM_INLINE
   Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
