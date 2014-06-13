@@ -14,13 +14,13 @@ namespace VECGEOM_NAMESPACE {
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedParallelepiped::ConvertToUnspecialized() const {
-  return new SimpleParallelepiped(label().c_str(), logical_volume(),
+  return new SimpleParallelepiped(GetLabel().c_str(), logical_volume(),
                                   transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedParallelepiped::ConvertToRoot() const {
-  return new TGeoPara(label().c_str(), GetX(), GetY(), GetZ(), GetAlpha(),
+  return new TGeoPara(GetLabel().c_str(), GetX(), GetY(), GetZ(), GetAlpha(),
                       GetTheta(), GetPhi());
 }
 #endif

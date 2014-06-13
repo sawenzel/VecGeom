@@ -1,17 +1,14 @@
-/*
- * NavigationState.cpp
- *
- *  Created on: Apr 17, 2014
- *      Author: swenzel
- */
+/// \file NavigationState.cpp
+/// \author Sandro Wenzel (sandro.wenzel@cern.ch)
+/// \date 17.04.2014
 
-#include "navigation/navigationstate.h"
+#include "navigation/NavigationState.h"
  
 #include <cassert>
 #include <iostream>
 
 #ifdef VECGEOM_ROOT
-#include "management/rootgeo_manager.h"
+#include "management/RootGeoManager.h"
 #include "TGeoBranchArray.h"
 #include "TGeoNode.h"
 #endif

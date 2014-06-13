@@ -1,8 +1,10 @@
-/// @file PlacedTrapezoid.cpp
+/// \file PlacedTrapezoid.cpp
 
 #include "volumes/PlacedTrapezoid.h"
 
 #include "volumes/Trapezoid.h"
+
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 

@@ -1,8 +1,8 @@
-/// @file UnplacedParaboloid.cpp
+/// \file UnplacedParaboloid.cpp
 
 #include "volumes/UnplacedParaboloid.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 #include "volumes/SpecializedParaboloid.h"
 
 #include <stdio.h>

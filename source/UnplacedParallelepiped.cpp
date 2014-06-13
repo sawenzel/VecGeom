@@ -1,10 +1,11 @@
-/// @file UnplacedParallelepiped.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file UnplacedParallelepiped.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "volumes/UnplacedParallelepiped.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 #include "volumes/SpecializedParallelepiped.h"
+#include "volumes/utilities/GenerationUtilities.h"
 
 #include <stdio.h>
 
@@ -31,7 +32,7 @@ UnplacedParallelepiped::UnplacedParallelepiped(
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedParallelepiped::SetAlpha(const Precision alpha) {
   fAlpha = alpha;
-  fTanAlpha = tan(alpha);
+  fTanAlpha = tan(kDegToRad*alpha);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -49,8 +50,8 @@ void UnplacedParallelepiped::SetThetaAndPhi(const Precision theta,
                                             const Precision phi) {
   fTheta = theta;
   fPhi = phi;
-  fTanThetaCosPhi = tan(theta)*cos(phi);
-  fTanThetaSinPhi = tan(theta)*sin(phi);
+  fTanThetaCosPhi = tan(kDegToRad*theta)*cos(kDegToRad*phi);
+  fTanThetaSinPhi = tan(kDegToRad*theta)*sin(kDegToRad*phi);
 }
 
 void UnplacedParallelepiped::Print() const {
@@ -74,20 +75,15 @@ VPlacedVolume* UnplacedParallelepiped::Create(
     const int id,
 #endif
     VPlacedVolume *const placement) {
-  if (placement) {
-    return new(placement) SpecializedParallelepiped<transCodeT, rotCodeT>(
+
+  return CreateSpecializedWithPlacement<SpecializedParallelepiped<transCodeT, rotCodeT> >(
 #ifdef VECGEOM_NVCC
-        logical_volume, transformation, NULL, id); // TODO: add bounding box?
+      logical_volume, transformation, id, placement); // TODO: add bounding box?
 #else
-        logical_volume, transformation);
+      logical_volume, transformation, placement);
 #endif
-  }
-  return new SpecializedParallelepiped<transCodeT, rotCodeT>(
-#ifdef VECGEOM_NVCC
-      logical_volume, transformation, NULL, id); // TODO: add bounding box?
-#else
-      logical_volume, transformation);
-#endif
+
+
 }
 
 VECGEOM_CUDA_HEADER_DEVICE

@@ -61,12 +61,12 @@ UPolyPhiFace::UPolyPhiFace(const UReduciblePolygon* rz,
   // Build normal
   //
   double zSign = start ? 1 : -1;
-  normal = UVector3(zSign * radial.y, -zSign * radial.x, 0);
+  normal = UVector3(zSign * radial.y(), -zSign * radial.x(), 0);
 
   //
   // Is allBehind?
   //
-  allBehind = (zSign * (std::cos(phiOther) * radial.y - std::sin(phiOther) * radial.x) < 0);
+  allBehind = (zSign * (std::cos(phiOther) * radial.y() - std::sin(phiOther) * radial.x()) < 0);
 
   //
   // Adjacent edges
@@ -92,8 +92,8 @@ UPolyPhiFace::UPolyPhiFace(const UReduciblePolygon* rz,
   {
     corn->r = iterRZ.GetA();
     corn->z = iterRZ.GetB();
-    corn->x = corn->r * radial.x;
-    corn->y = corn->r * radial.y;
+    corn->x = corn->r * radial.x();
+    corn->y = corn->r * radial.y();
 
     // Add pointer on prev corner
     //
@@ -242,7 +242,7 @@ UPolyPhiFace::UPolyPhiFace(const UReduciblePolygon* rz,
   //
   double rAve = 0.5 * (rMax - rMin),
          zAve = 0.5 * (zMax - zMin);
-  surface = UVector3(rAve * radial.x, rAve * radial.y, zAve);
+  surface = UVector3(rAve * radial.x(), rAve * radial.y(), zAve);
 }
 
 
@@ -262,7 +262,7 @@ void UPolyPhiFace::Diagnose(VUSolid* owner)
     UVector3 test(corner->x, corner->y, corner->z);
     test -= 1E-6 * corner->norm3D;
 
-    if (owner->Inside(test) != VUSolid::eInside)
+    if (owner->Inside(test) != vecgeom::EInside::kInside)
     {
       UUtils::Exception("UPolyPhiFace::Diagnose()", "GeomSolids0002",
                         FatalError, 1, "Bad vertex normal found.");
@@ -428,7 +428,7 @@ bool UPolyPhiFace::Distance(const UVector3& p,
   //
   // And is it inside the r/z extent?
   //
-  return InsideEdgesExact(r, ip.z, normSign, p, v);
+  return InsideEdgesExact(r, ip.z(), normSign, p, v);
 }
 
 
@@ -459,7 +459,7 @@ double UPolyPhiFace::Safety(const UVector3& p, bool outgoing)
   //
   double distRZ2;
 
-  if (InsideEdges(r, p.z, &distRZ2, 0))
+  if (InsideEdges(r, p.z(), &distRZ2, 0))
   {
     //
     // Yup, answer is just distPhi
@@ -502,7 +502,7 @@ VUSolid::EnumInside UPolyPhiFace::Inside(const UVector3& p,
   UPolyPhiFaceVertex* base3Dnorm;
   UVector3*      head3Dnorm;
 
-  if (InsideEdges(r, p.z, &distRZ2, &base3Dnorm, &head3Dnorm))
+  if (InsideEdges(r, p.z(), &distRZ2, &base3Dnorm, &head3Dnorm))
   {
     //
     // Looks like we're inside. Distance is distance in phi.
@@ -512,9 +512,9 @@ VUSolid::EnumInside UPolyPhiFace::Inside(const UVector3& p,
     //
     // Use distPhi to decide fate
     //
-    if (distPhi < -tolerance) return VUSolid::eInside;
-    if (distPhi < tolerance) return VUSolid::eSurface;
-    return VUSolid::eOutside;
+    if (distPhi < -tolerance) return vecgeom::EInside::kInside;
+    if (distPhi < tolerance) return vecgeom::EInside::kSurface;
+    return vecgeom::EInside::kOutside;
   }
   else
   {
@@ -527,8 +527,8 @@ VUSolid::EnumInside UPolyPhiFace::Inside(const UVector3& p,
     //
     // Use edge normal to decide fate
     //
-    UVector3 cc(base3Dnorm->r * radial.x,
-                base3Dnorm->r * radial.y,
+    UVector3 cc(base3Dnorm->r * radial.x(),
+                base3Dnorm->r * radial.y(),
                 base3Dnorm->z);
     cc = p - cc;
     double normDist = head3Dnorm->Dot(cc);
@@ -537,12 +537,12 @@ VUSolid::EnumInside UPolyPhiFace::Inside(const UVector3& p,
       //
       // We're far enough away that eSurface is not possible
       //
-      return normDist < 0 ? VUSolid::eInside : VUSolid::eOutside;
+      return normDist < 0 ? vecgeom::EInside::kInside : vecgeom::EInside::kOutside;
     }
 
-    if (normDist < -tolerance) return VUSolid::eInside;
-    if (normDist <  tolerance) return VUSolid::eSurface;
-    return VUSolid::eOutside;
+    if (normDist < -tolerance) return vecgeom::EInside::kInside;
+    if (normDist <  tolerance) return vecgeom::EInside::kSurface;
+    return vecgeom::EInside::kOutside;
   }
 }
 
@@ -572,7 +572,7 @@ UVector3 UPolyPhiFace::Normal(const UVector3& p,
   //
   double distRZ2;
 
-  if (InsideEdges(r, p.z, &distRZ2, 0))
+  if (InsideEdges(r, p.z(), &distRZ2, 0))
   {
     //
     // Yup, answer is just distPhi
@@ -603,9 +603,9 @@ double UPolyPhiFace::Extent(const UVector3 axis)
   UPolyPhiFaceVertex* corner = corners;
   do
   {
-    double here = axis.x * corner->r * radial.x
-                  + axis.y * corner->r * radial.y
-                  + axis.z * corner->z;
+    double here = axis.x() * corner->r * radial.x()
+                  + axis.y() * corner->r * radial.y()
+                  + axis.z() * corner->z;
     if (here > max) max = here;
   }
   while (++corner < corners + numEdges);
@@ -692,9 +692,9 @@ bool UPolyPhiFace::InsideEdgesExact(double r, double z,
   //
   // Exact check: loop over all vertices
   //
-  double qx = p.x + v.x,
-         qy = p.y + v.y,
-         qz = p.z + v.z;
+  double qx = p.x() + v.x(),
+         qy = p.y() + v.y(),
+         qz = p.z() + v.z();
 
   int answer = 0;
   UPolyPhiFaceVertex* corn = corners,

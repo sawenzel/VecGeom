@@ -3,9 +3,9 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_PARABOLOIDIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_PARABOLOIDIMPLEMENTATION_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/transformation3d.h"
+#include "base/Transformation3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParaboloid.h"
 
@@ -14,22 +14,35 @@ namespace VECGEOM_NAMESPACE {
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParaboloidImplementation {
 
-  template <class Backend>
+  template<typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  static void UnplacedInside(
-      UnplacedParaboloid const &unplaced,
-      Vector3D<typename Backend::precision_v> point,
-      typename Backend::int_v &inside) {
+  static void UnplacedContains(
+      UnplacedParaboloid const &box,
+      Vector3D<typename Backend::precision_v> const &localPoint,
+      typename Backend::bool_v &inside) {
     // NYI
   }
 
-  template <class Backend>
+  template <typename Backend>
+  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
-  static void Inside(UnplacedParaboloid const &unplaced,
-                     Transformation3D const &transformation,
-                     Vector3D<typename Backend::precision_v> const &point,
-                     Vector3D<typename Backend::precision_v> &localPoint,
-                     typename Backend::int_v &inside) {
+  static void Contains(
+      UnplacedParaboloid const &unplaced,
+      Transformation3D const &transformation,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> &localPoint,
+      typename Backend::bool_v &inside) {
+    // NYI
+  }
+
+  template <typename Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static void Inside(
+      UnplacedParaboloid const &unplaced,
+      Transformation3D const &transformation,
+      Vector3D<typename Backend::precision_v> const &point,
+      typename Backend::inside_v &inside) {
     // NYI
   }
 

@@ -1,16 +1,18 @@
-/// @file ShapeImplementationHelper.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file ShapeImplementationHelper.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 #define VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "backend/scalar/backend.h"
-#include "backend/backend.h"
-#include "base/soa3d.h"
-#include "base/aos3d.h"
-#include "volumes/placed_box.h"
+#include "backend/scalar/Backend.h"
+#include "backend/Backend.h"
+#include "base/SOA3D.h"
+#include "base/AOS3D.h"
+#include "volumes/PlacedBox.h"
+
+#include <algorithm>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -45,42 +47,54 @@ public:
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point) const {
-    int output = 0;
+  virtual Inside_t Inside(Vector3D<Precision> const &point) const {
+    Inside_t output = EInside::kOutside;
+    Specialization::template Inside<kScalar>(
+      *this->GetUnplacedVolume(),
+      *this->transformation(),
+      point,
+      output
+    );
+    return output;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual bool Contains(Vector3D<Precision> const &point) const {
+    bool output = false;
     Vector3D<Precision> localPoint;
-    Specialization::template Inside<kScalar>(
+    Specialization::template Contains<kScalar>(
       *this->GetUnplacedVolume(),
       *this->transformation(),
       point,
       localPoint,
       output
     );
-    return (output == EInside::kInside) ? true : false;
+    return output;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual bool Inside(Vector3D<Precision> const &point,
-                      Vector3D<Precision> &localPoint) const {
-    int output = 0;
-    Specialization::template Inside<kScalar>(
+  virtual bool Contains(Vector3D<Precision> const &point,
+                        Vector3D<Precision> &localPoint) const {
+    bool output = false;
+    Specialization::template Contains<kScalar>(
       *this->GetUnplacedVolume(),
       *this->transformation(),
       point,
       localPoint,
       output
     );
-    return (output == EInside::kInside) ? true : false;
+    return output;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual bool UnplacedInside(Vector3D<Precision> const &point) const {
-    int output = 0;
-    Specialization::template UnplacedInside<kScalar>(
+  virtual bool UnplacedContains(Vector3D<Precision> const &point) const {
+    bool output = false;
+    Specialization::template UnplacedContains<kScalar>(
       *this->GetUnplacedVolume(),
       point,
       output
     );
-    return (output == EInside::kInside) ? true : false;
+    return output;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -140,7 +154,7 @@ public:
 #ifdef VECGEOM_VC
 
   template <class Container_t>
-  void InsideTemplate(Container_t const &points, bool *const output) const {
+  void ContainsTemplate(Container_t const &points, bool *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
         VcPrecision(&points.x(i)),
@@ -148,17 +162,36 @@ public:
         VcPrecision(&points.z(i))
       );
       Vector3D<VcPrecision> localPoint;
-      VcInt result;
-      Specialization::template Inside<kVc>(
+      VcBool result(false);
+      Specialization::template Contains<kVc>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
         point,
         localPoint,
         result
       );
-      for (unsigned j = 0; j < VcInt::Size; ++j) {
-        output[j+i] = (result[j] == EInside::kInside) ? true : false;
+      for (unsigned j = 0; j < VcPrecision::Size; ++j) {
+        output[j+i] = result[j];
       }
+    }
+  }
+
+  template <class Container_t>
+  void InsideTemplate(Container_t const &points, Inside_t *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(&points.x(i)),
+        VcPrecision(&points.y(i)),
+        VcPrecision(&points.z(i))
+      );
+      VcInside result = EInside::kOutside;
+      Specialization::template Inside<kVc>(
+        *this->GetUnplacedVolume(),
+        *this->transformation(),
+        point,
+        result
+      );
+      for (unsigned j = 0; j < VcPrecision::Size; ++j) output[j+i] = result[j];
     }
   }
 
@@ -179,7 +212,7 @@ public:
         VcPrecision(&directions.z(i))
       );
       VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template DistanceToIn<kVc>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
@@ -209,7 +242,7 @@ public:
         VcPrecision(&directions.z(i))
       );
       VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template DistanceToOut<kVc>(
         *this->GetUnplacedVolume(),
         point,
@@ -230,7 +263,7 @@ public:
         VcPrecision(&points.y(i)),
         VcPrecision(&points.z(i))
       );
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template SafetyToIn<kVc>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
@@ -250,7 +283,7 @@ public:
         VcPrecision(&points.y(i)),
         VcPrecision(&points.z(i))
       );
-      VcPrecision result;
+      VcPrecision result = kInfinity;
       Specialization::template SafetyToOut<kVc>(
         *this->GetUnplacedVolume(),
         point,
@@ -263,18 +296,31 @@ public:
 #else // Scalar default
 
   template <class Container_t>
-  void InsideTemplate(Container_t const &points, bool *const output) const {
+  void ContainsTemplate(Container_t const &points, bool *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; ++i) {
-      int result;
       Vector3D<Precision> localPoint;
-      Specialization::template Inside<kScalar>(
+      Specialization::template Contains<kScalar>(
         *this->GetUnplacedVolume(),
         *this->transformation(),
         points[i],
         localPoint,
+        output[i]
+      );
+    }
+  }
+
+  template <class Container_t>
+  void InsideTemplate(Container_t const &points,
+                      Inside_t *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Inside_t result = EInside::kOutside;
+      Specialization::template Inside<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->transformation(),
+        points[i],
         result
       );
-      output[i] = (result == EInside::kInside) ? true : false;
+      output[i] = result;
     }
   }
 
@@ -338,13 +384,23 @@ public:
 
 #endif
 
+  virtual void Contains(AOS3D<Precision> const &points,
+                        bool *const output) const {
+    ContainsTemplate(points, output);
+  }
+
+  virtual void Contains(SOA3D<Precision> const &points,
+                        bool *const output) const {
+    ContainsTemplate(points, output);
+  }
+
   virtual void Inside(AOS3D<Precision> const &points,
-                      bool *const output) const {
+                      Inside_t *const output) const {
     InsideTemplate(points, output);
   }
 
   virtual void Inside(SOA3D<Precision> const &points,
-                      bool *const output) const {
+                      Inside_t *const output) const {
     InsideTemplate(points, output);
   }
 

@@ -3,7 +3,7 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDPARABOLOID_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDPARABOLOID_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include "volumes/kernel/ParaboloidImplementation.h"
 #include "volumes/PlacedParaboloid.h"
