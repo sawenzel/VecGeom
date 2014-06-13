@@ -18,12 +18,12 @@ PlacedTrapezoid::~PlacedTrapezoid() {}
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
-  return new SimpleTrapezoid(label().c_str(), logical_volume(), transformation());
+  return new SimpleTrapezoid(GetLabel().c_str(), logical_volume(), transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
-  return new TGeoTrap( label().c_str(), GetDz(), GetTheta()*kRadToDeg, GetPhi()*kRadToDeg,
+  return new TGeoTrap( GetLabel().c_str(), GetDz(), GetTheta()*kRadToDeg, GetPhi()*kRadToDeg,
                        GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
                        GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
 }
@@ -31,7 +31,7 @@ TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTrapezoid::ConvertToUSolids() const {
-  return new ::UTrap(label().c_str(), GetDz(), GetTheta(), GetPhi(),
+  return new ::UTrap(GetLabel().c_str(), GetDz(), GetTheta(), GetPhi(),
                      GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
                      GetDy2(), GetDx3(), GetDx4(), GetAlpha2());
 }
