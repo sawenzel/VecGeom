@@ -172,9 +172,12 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void Assert(const bool condition, char const *const message) {
 #ifndef VECGEOM_NVCC
-  assert(condition && message);
+  if (!condition) {
+    printf("Assertion failed: %s", message);
+    abort();
+  }
 #else
-  if (condition) printf("%s", message);
+  if (!condition) printf("Assertion failed: %s", message);
 #endif
 }
 

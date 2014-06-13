@@ -61,7 +61,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
   Array<PolyhedronSegment*> segments(corners.GetVertixCount());
   PolyhedronSegment **segment = segments.begin();
-  for (Polygon::const_iterator c = corners.begin(), cEnd = corners.end();
+  for (Polygon::const_iterator c = corners.cbegin(), cEnd = corners.cend();
        c != cEnd; ++c, ++segment) {
     *segment = new PolyhedronSegment(c, fSideCount, fPhiStart, fPhiTotal);
   }

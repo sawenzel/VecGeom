@@ -59,14 +59,23 @@ public:
   }
 
   typedef Type* iterator;
+  typedef Type const* const_iterator;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  iterator begin() const { return iterator(&fData[0]); }
+  iterator begin() const { return &fData[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  iterator end() const { return iterator(&fData[fSize]); }
+  iterator end() const { return &fData[fSize]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  const_iterator cbegin() const { return &fData[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  const_iterator cend() const { return &fData[fSize]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

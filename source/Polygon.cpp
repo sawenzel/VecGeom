@@ -3,6 +3,8 @@
 
 #include "volumes/Polygon.h"
 
+#include "base/CyclicIterator.h"
+
 #include <algorithm>
 #include <ostream>
 #include <sstream>
@@ -116,10 +118,10 @@ void Polygon::RemoveRedundantVertices() {
   int i = 0, iMax = fVertices.size()-2;
   while (i < iMax) {
     // If subsequent lines are parallel, the middle one will be removed
-    if (Abs((fVertices[i+1].x() - fVertices[i].x())
-            *(fVertices[i+2].y() - fVertices[i].y()) -
-            (fVertices[i+2].x() - fVertices[i].x())
-            *(fVertices[i+1].y() - fVertices[i].y()))) {
+    if (Abs((fVertices[i+2].x() - fVertices[i].x())
+            *(fVertices[i+1].y() - fVertices[i].y()) -
+            (fVertices[i+1].x() - fVertices[i].x())
+            *(fVertices[i+2].y() - fVertices[i].y())) < kTolerance) {
       RemoveVertex(i+1);
       --iMax;
     } else {
@@ -128,24 +130,42 @@ void Polygon::RemoveRedundantVertices() {
   }
 }
 
+bool LinesIntersect(
+    Vector2D<Precision> const &p, Vector2D<Precision> const &p1,
+    Vector2D<Precision> const &q, Vector2D<Precision> const &q1) {
+  Vector2D<Precision> r = p1 - p;
+  Vector2D<Precision> s = q1 - q;
+  Vector2D<Precision> diff = q - p;
+  Precision cross = r.Cross(s);
+  if (Abs(cross) < kTolerance) return false;
+  Precision u = diff.Cross(r) / cross;
+  Precision t = diff.Cross(s) / cross;
+  return u >= 0 && u <= 1 && t >= 0 && t <= 1;
+}
+
 void Polygon::CrossesItself() const {
-  const Precision toleranceOne = 1. - kTolerance;
-  for (int i = 0, iMax = fVertices.size()-2; i < iMax; ++i) {
-    Vector2D<Precision> p0 = fVertices[i];
-    Vector2D<Precision> dP0 = fVertices[i+1] - p0;
-    // Outer loop over each line segment
-    for (int j = i+1, jMax = fVertices.size()-1; j < jMax; ++j) {
-      Vector2D<Precision> p1 = fVertices[j];
-      Vector2D<Precision> dP1 = fVertices[j+1] - p1;
-      Precision cross = dP1.Cross(dP0);
-      Vector2D<Precision> diff = p1 - p0;
-      Precision slope0 = Abs(diff.Cross(dP1 / cross));
-      Precision slope1 = Abs(diff.Cross(dP0 / cross));
-      Assert(!(Abs(cross) > kTolerance &&
-               (slope0 > kTolerance && slope0 < toleranceOne) &&
-               (slope1 > kTolerance && slope1 < toleranceOne)),
-             "Polygon crosses itself.\n");
+  static char const *const errorMessage = "Polygon crosses itself.\n";
+  Vector2D<Precision> p, p1;
+  // Adjacent segments don't need to be checked and segments consist of two
+  // points, so loop until end minus three.
+  for (Vector2D<Precision> const *i = fVertices.cbegin(),
+       *iEnd = fVertices.cend()-3; i != iEnd; ++i) {
+    printf("Checking segment\n");
+    p = *i;
+    p1 = *(i+1);
+    // Start from first non-adjacent segment and end at last non-adjacent
+    // segment.
+    for (Vector2D<Precision> const *j = i+2; j != fVertices.cend()-1; ++j) {
+      Assert(!LinesIntersect(p, p1, *j, *(j+1)), errorMessage);
     }
+  }
+  printf("Checking connecting segment\n");
+  // Segment between start and end
+  p = *(fVertices.cend()-1);
+  p1 = *(fVertices.cbegin());
+  for (Vector2D<Precision> const *i = fVertices.cbegin()+1,
+       *iEnd = fVertices.cend()-1; i != iEnd; ++i) {
+    Assert(!LinesIntersect(p, p1, *i, *(i+1)), errorMessage);
   }
 }
 

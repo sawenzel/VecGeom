@@ -81,10 +81,10 @@ public:
   typedef CyclicIterator<Vector2D<Precision>, true> const_iterator;
 
   VECGEOM_INLINE
-  const_iterator begin() const;
+  const_iterator cbegin() const;
 
   VECGEOM_INLINE
-  const_iterator end() const;
+  const_iterator cend() const;
 
 private:
 
@@ -106,15 +106,15 @@ Vector2D<Precision> const& Polygon::operator[](const int i) const {
 }
 
 VECGEOM_INLINE
-Polygon::const_iterator Polygon::begin() const {
-  return Polygon::const_iterator(fVertices.begin(), fVertices.end(),
-                                 fVertices.begin());
+Polygon::const_iterator Polygon::cbegin() const {
+  return Polygon::const_iterator(fVertices.cbegin(), fVertices.cend(),
+                                 fVertices.cbegin());
 }
 
 VECGEOM_INLINE
-Polygon::const_iterator Polygon::end() const {
-  return Polygon::const_iterator(fVertices.begin(), fVertices.end(),
-                                 fVertices.end());
+Polygon::const_iterator Polygon::cend() const {
+  return Polygon::const_iterator(fVertices.cbegin(), fVertices.cend(),
+                                 fVertices.cend());
 }
 
 } // End global namespace

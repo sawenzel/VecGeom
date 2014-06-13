@@ -103,9 +103,9 @@ public:
   VECGEOM_INLINE
   bool operator!=(CyclicIterator_t const &other) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  operator Pointer_t();
+  // VECGEOM_CUDA_HEADER_BOTH
+  // VECGEOM_INLINE
+  // operator Pointer_t();
 
 };
 
@@ -167,7 +167,7 @@ VECGEOM_CUDA_HEADER_BOTH
 CyclicIterator<TypeT, IsConstT> CyclicIterator<TypeT, IsConstT>::operator+(
     const int val) const {
   return CyclicIterator<TypeT, IsConstT>(
-             fBegin, fEnd, fBegin + ((fEnd-fCurrent) + val) % (fEnd-fBegin));
+             fBegin, fEnd, fBegin + ((fCurrent-fBegin) + val) % (fEnd-fBegin));
 }
 
 template <typename TypeT, bool IsConstT>
@@ -175,7 +175,7 @@ VECGEOM_CUDA_HEADER_BOTH
 CyclicIterator<TypeT, IsConstT> CyclicIterator<TypeT, IsConstT>::operator-(
     const int val) const {
   return CyclicIterator<TypeT, IsConstT>(
-             fBegin, fEnd, fBegin + ((fEnd-fCurrent) - val) % (fEnd-fBegin));
+             fBegin, fEnd, fEnd - ((fCurrent-fBegin) + val) % (fEnd-fBegin));
 }
 
 template <typename TypeT, bool IsConstT>
@@ -206,12 +206,12 @@ bool CyclicIterator<TypeT, IsConstT>::operator!=(
   return fCurrent != other.fCurrent;
 }
 
-template <typename TypeT, bool IsConstT>
-VECGEOM_CUDA_HEADER_BOTH
-CyclicIterator<TypeT, IsConstT>::operator
-    CyclicIterator<TypeT, IsConstT>::Pointer_t() {
-  return fCurrent;
-}
+// template <typename TypeT, bool IsConstT>
+// VECGEOM_CUDA_HEADER_BOTH
+// CyclicIterator<TypeT, IsConstT>::operator
+//     CyclicIterator<TypeT, IsConstT>::Pointer_t() {
+//   return fCurrent;
+// }
 
 } // End global namespace
 

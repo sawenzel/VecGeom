@@ -74,11 +74,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const* begin() const { return &fData[0]; }
+  Type const* cbegin() const { return &fData[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const* end() const { return &fData[fSize]; }
+  Type const* cend() const { return &fData[fSize]; }
 
 };
 

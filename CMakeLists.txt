@@ -345,7 +345,6 @@ endif()
 
 set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/PolygonTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -353,7 +352,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/testDistanceToOut.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
-  # Files go here
+  ${CMAKE_SOURCE_DIR}/test/usolids/PolygonTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
