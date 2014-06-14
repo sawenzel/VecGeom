@@ -72,9 +72,19 @@ int main( int argc,  char *argv[]) {
     rootCountIn=0,
     rootCountOut=0,
     mismatchDistToIn=0,
-    mismatchDistToOut=0;
+    mismatchDistToOut=0,
+    mismatchSafetyToIn=0,
+    mismatchSafetyToOut=0;
     
-    float mbDistToIn, rootDistToIn, mbDistToOut, rootDistToOut;
+    float mbDistToIn,
+    rootDistToIn,
+    mbDistToOut,
+    rootDistToOut,
+    mbSafetyToOut,
+    rootSafetyToOut,
+    mbSafetyToIn,
+    rootSafetyToIn;
+    
     
     double coord[3], direction[3], module,
     x=worldUnplaced.x(),
@@ -339,8 +349,6 @@ int main( int argc,  char *argv[]) {
     for(int i=0; i<np; i++)
     {
         inside=dau[0]->Inside(points[i]);
-        
-        //inside=dau[0]->Contains(points[i]);
         if(inside==0){
             
             
@@ -375,6 +383,16 @@ int main( int argc,  char *argv[]) {
                 std::cout<<" rootDistToIn: "<<rootDistToIn<<"\n";
                 mismatchDistToIn++;
             }
+            
+            mbSafetyToIn=dau[0]->SafetyToIn(points[i]);
+            rootSafetyToIn=par->Safety(coord, false);
+            if( (mbSafetyToIn!=rootSafetyToIn))
+            {
+                std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
+                std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
+                mismatchSafetyToIn++;
+            }
+            
         }
         else{
             rootCountIn++;
@@ -387,8 +405,16 @@ int main( int argc,  char *argv[]) {
                 std::cout<<" rootDistToOut: "<<rootDistToOut<<"\n";
                 mismatchDistToOut++;
             }
-
-            //markerInside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
+            
+            mbSafetyToOut=dau[0]->SafetyToOut(points[i]);
+            rootSafetyToOut=par->Safety(coord, true);
+            if( (mbSafetyToOut!=rootSafetyToOut))
+            {
+                //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
+                std::cout<<"mbSafetyToOut: "<<mbSafetyToOut;
+                std::cout<<" rootSafetyToOut: "<<rootSafetyToOut<<"\n";
+                mismatchSafetyToOut++;
+            }
         }
 
     }
@@ -405,6 +431,8 @@ int main( int argc,  char *argv[]) {
     std::cout<<"Root: NPointsInside: "<<rootCountIn<<" NPointsOutside: "<<rootCountOut<<" \n";
     std::cout<<"DistToIn mismatches: "<<mismatchDistToIn<<" \n";
     std::cout<<"DistToOut mismatches: "<<mismatchDistToOut<<" \n";
+    std::cout<<"SafetyToIn mismatches: "<<mismatchSafetyToIn<<" \n";
+    std::cout<<"SafetyToOut mismatches: "<<mismatchSafetyToOut<<" \n";
     
     theApp.Run();
     

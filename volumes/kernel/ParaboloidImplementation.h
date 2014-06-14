@@ -219,17 +219,16 @@ struct ParaboloidImplementation {
         if (done == Backend::kTrue) return;
         
         //check if the point is distancing in XY
-	//this check must be changed in 
         Bool_t isDistancingInXY=( (rho2>unplaced.GetRhi2()) && (point_dot_direction_x>0 && point_dot_direction_y>0) );
         done|=isDistancingInXY;
         if (done == Backend::kTrue) return;
     
-	//check if the point is distancing in X
+        //check if the point is distancing in X
         Bool_t isDistancingInX=( (Abs(localPoint.x())>unplaced.GetRhi()) && (point_dot_direction_x>0) );
         done|=isDistancingInX;
         if (done == Backend::kTrue) return;
 
-	//check if the point is distancing in Y
+        //check if the point is distancing in Y
         Bool_t isDistancingInY=( (Abs(localPoint.y())>unplaced.GetRhi()) && (point_dot_direction_y>0) );
         done|=isDistancingInY;
         if (done == Backend::kTrue) return;
@@ -252,8 +251,6 @@ struct ParaboloidImplementation {
         
         //is hitting from the paraboloid surface
         //DistToParaboloidSurface<Backend>(unplaced,localPoint,localDirection, distParab);
-        
-        
         Float_t distParab=kInfinity,
                 dirRho2 = localDirection.x()*localDirection.x()+localDirection.y()*localDirection.y(),
                 a = unplaced.GetA() * dirRho2,
@@ -261,7 +258,7 @@ struct ParaboloidImplementation {
                 c = unplaced.GetA()*rho2 + unplaced.GetB() - localPoint.z();
         
     
-         /*avoiding division per 0
+        /*avoiding division per 0
         Bool_t aVerySmall=(Abs(a)<kTiny),
                bVerySmall=(Abs(b)<kTiny);
         
@@ -275,8 +272,8 @@ struct ParaboloidImplementation {
         if (done == Backend::kTrue) return;
         
         Bool_t check1=aVerySmall && !bVerySmall && !COverBNeg;
-        MaskedAssign(!done && check1 , COverB, &distParab ); //da memorizzare dopo
-          */
+        MaskedAssign(!done && check1 , COverB, &distParab ); //to store
+        */
         
         Float_t ainv = 1./a,
         t = b*0.5,
@@ -292,7 +289,7 @@ struct ParaboloidImplementation {
         delta = Sqrt(delta);
 
 
-	//I take only the biggest solution among all
+	    //I take only the biggest solution among all
         distParab=ainv*(-t - delta);
         
         zHit = localPoint.z()+distParab*localDirection.z();
@@ -300,8 +297,6 @@ struct ParaboloidImplementation {
         MaskedAssign(!done && isHittingParaboloidSurface && !deltaNeg && distParab>0 , distParab, &distance);
         
     }
-    
-
     
     template <class Backend>
     VECGEOM_INLINE
@@ -319,7 +314,7 @@ struct ParaboloidImplementation {
         
         
         Float_t distZ=kInfinity,
-                 dirZinv=1/direction.z();
+                dirZinv=1/direction.z();
         
         Bool_t dir_mask= direction.z()<0;
         MaskedAssign(dir_mask, -(unplaced.GetDz() + point.z())*dirZinv, &distZ);
@@ -339,7 +334,7 @@ struct ParaboloidImplementation {
     
         //to avoid square root operation on negative element
         //MaskedAssign(deltaNeg, 0. , &delta);
-	//But if the point is inside the solid, delta cannot be negative
+        //But if the point is inside the solid, delta cannot be negative
         delta = Sqrt(delta);
         
         Bool_t mask_sign=(ainv<0);
@@ -368,15 +363,81 @@ struct ParaboloidImplementation {
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety) {
-        // NYI
+        
+        typedef typename Backend::precision_v Float_t;
+        typedef typename Backend::bool_v      Bool_t;
+        
+        
+        Vector3D<Float_t> localPoint =
+        transformation.Transform<transCodeT, rotCodeT>(point);
+        
+        
+        Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz()),
+                r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
+        
+        Bool_t done(false);
+        safety = safZ;
+        
+        Bool_t underParaboloid = (r0sq<0);
+        done|= underParaboloid;
+        if (done == Backend::kTrue) return;
+
+        
+        Float_t safR=kInfinity,
+                ro2=localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y(),
+                z0= unplaced.GetA()*ro2+unplaced.GetB(),
+                dr=Sqrt(ro2)-Sqrt(r0sq);
+        
+        Bool_t drCloseToZero = (dr<1.E-8);
+        done|=drCloseToZero;
+        if (done == Backend::kTrue) return;
+        
+        Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
+        Float_t salf = talf/Sqrt(1.+talf*talf);
+        safR = Abs(dr*salf);
+        
+        Float_t max_safety= Max(safR, safZ);
+        MaskedAssign(!done, max_safety, &safety);
+    
     }
+    
     template<class Backend>
     VECGEOM_INLINE
     VECGEOM_CUDA_HEADER_BOTH
     static void SafetyToOut(UnplacedParaboloid const &unplaced,
                           Vector3D<typename Backend::precision_v> point,
                           typename Backend::precision_v &safety) {
-        // NYI
+
+        typedef typename Backend::precision_v Float_t;
+        typedef typename Backend::bool_v      Bool_t;
+        
+        
+    
+        Float_t absZ= Abs(point.z()),
+                safZ=(unplaced.GetDz() - absZ) ,
+                r0sq = (point.z() - unplaced.GetB())*unplaced.GetAinv();
+        
+        Bool_t done(false);
+        safety=0.;
+        
+        Bool_t closeToParaboloid = (r0sq<0);
+        done|= closeToParaboloid;
+        if (done == Backend::kTrue) return;
+        
+        Float_t safR=kInfinity,
+                ro2=point.x()*point.x()+point.y()*point.y(),
+                z0= unplaced.GetA()*ro2+unplaced.GetB(),
+                dr=Sqrt(ro2)-Sqrt(r0sq); //avoid square root of a negative number
+        
+        Bool_t drCloseToZero= (dr>-1.E-8);
+        done|=drCloseToZero;
+        if (done == Backend::kTrue) return;
+        
+        Float_t dz = Abs(point.z()-z0);
+        safR = -dr*dz/Sqrt(dr*dr+dz*dz);
+        
+        Float_t min_safety=Min(safR, safZ);
+        MaskedAssign(!done, min_safety, &safety);
     }
 
 };

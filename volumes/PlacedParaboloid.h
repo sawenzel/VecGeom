@@ -72,6 +72,12 @@ public:
     Precision GetB() const { return GetUnplacedVolume()->GetB(); }
     
     VECGEOM_CUDA_HEADER_BOTH
+    Precision GetAinv() const { return GetUnplacedVolume()->GetAinv(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetBinv() const { return GetUnplacedVolume()->GetBinv(); }
+    
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetA2() const { return GetUnplacedVolume()->GetA2(); }
     
     VECGEOM_CUDA_HEADER_BOTH

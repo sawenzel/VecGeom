@@ -55,6 +55,8 @@ private:
     // Precomputed values computed from parameters
     Precision fA, fB,
     
+    fAinv,
+    fBinv,
     fA2,
     fB2,
     fRlo2,
@@ -96,6 +98,12 @@ public:
     
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetB() const { return fB; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetAinv() const { return fAinv; }
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetBinv() const { return fBinv; }
    
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetA2() const { return fA2; }

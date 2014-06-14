@@ -63,6 +63,9 @@ namespace VECGEOM_NAMESPACE {
         fA = 2.*fDz*dd;
         fB = - fDz * (fRlo2 + fRhi2)*dd;
         
+        
+        fAinv=1/fA;
+        fBinv=1/fB;
         fA2=fA*fA;
         fB2=fB*fB;
         
