@@ -268,6 +268,9 @@ set(SRC_CPP_RELATIVE
   source/Vector3D.cpp
   source/NavigationState.cpp	
   source/SimpleNavigator.cpp
+
+  source/UnplacedOrb.cpp
+  source/PlacedOrb.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -359,6 +362,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
