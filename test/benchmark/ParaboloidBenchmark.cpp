@@ -1,11 +1,11 @@
 /// @file ParaboloidBenchmark.cpp
 /// @author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
 
-#include "volumes/logical_volume.h"
-#include "volumes/box.h"
+#include "volumes/LogicalVolume.h"
+#include "volumes/Box.h"
 #include "volumes/Paraboloid.h"
 #include "benchmarking/Benchmarker.h"
-#include "management/geo_manager.h"
+#include "management/GeoManager.h"
 
 using namespace vecgeom;
 
