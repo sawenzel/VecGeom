@@ -16,13 +16,13 @@ namespace VECGEOM_NAMESPACE {
 
 VPlacedVolume const* PlacedParaboloid::ConvertToUnspecialized() const {
     std::cout<<"Convert VEC*********\n";
-    return new SimpleParaboloid(label().c_str(), logical_volume(),transformation());
+    return new SimpleParaboloid(GetLabel().c_str(), logical_volume(),transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedParaboloid::ConvertToRoot() const {
     std::cout<<"Convert ROOT*********\n";
-    return new TGeoParaboloid(label().c_str(), GetRlo(), GetRhi(), GetDz());
+    return new TGeoParaboloid(GetLabel().c_str(), GetRlo(), GetRhi(), GetDz());
     
 }
 #endif

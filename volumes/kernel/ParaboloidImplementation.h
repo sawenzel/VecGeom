@@ -115,7 +115,6 @@ struct ParaboloidImplementation {
 
     
     /// \brief UnplacedContains (ROOT STYLE): Inside method that does NOT take account of the surface for an Unplaced Paraboloid
-#if 0
     template <class Backend>
     VECGEOM_INLINE
     VECGEOM_CUDA_HEADER_BOTH
@@ -123,30 +122,25 @@ struct ParaboloidImplementation {
         Vector3D<typename Backend::precision_v> point,
         typename Backend::bool_v &inside) {
         
-        typedef typename Backend::precision_v Double_t;
+        typedef typename Backend::precision_v Float_t;
         typedef typename Backend::bool_v      Bool_t;
         
-        //Check if points are above or below the solid
+        // //Check if points are above or below the solid
         Bool_t isAboveOrBelowSolid=(Abs(point.z()) > unplaced.GetDz());
-        //done|=isAboveOrBelowSolid;
-        //if (done == Backend::kTrue) return;
-        
-        inside = EInside::kOutside;
-        if(Backend::early_returns && isAboveOrBelowSolid) return;
-        
         Bool_t done(isAboveOrBelowSolid);
+
+        inside = Backend::kFalse;
+        if(Backend::early_returns && done==Backend::kTrue) return;
         
-        //Check if points are outside the parabolic surface
-        Double_t aa=unplaced.GetA()*(point.z()-unplaced.GetB());
-        Double_t rho2=point.x()*point.x()+point.y()*point.y();
+        // //Check if points are outside the parabolic surface
+        Float_t aa=unplaced.GetA()*(point.z()-unplaced.GetB());
+        Float_t rho2=point.x()*point.x()+point.y()*point.y();
         
-        Bool_t isOutsideParabolicSurface= aa <0 || aa<unplaced.GetA2()*rho2;
+        Bool_t isOutsideParabolicSurface= aa < 0 || aa < unplaced.GetA2()*rho2;
         done |= isOutsideParabolicSurface;
         
-        MaskedAssign(!done, EInside::kInside, &inside);
+        MaskedAssign(!done, Backend::kTrue, &inside);
     }
-
-#endif
     
     /// \brief Inside method that takes account of the surface for a Placed Paraboloid
     template <class Backend>
@@ -157,13 +151,23 @@ struct ParaboloidImplementation {
                        Vector3D<typename Backend::precision_v> const &point,
                        Vector3D<typename Backend::precision_v> &localPoint,
                        typename Backend::int_v &inside) {
-        
         localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
         UnplacedInside<Backend>(unplaced, localPoint, inside);
-        
     }
-    
-#if 0
+
+    template <class Backend>
+    VECGEOM_INLINE
+    VECGEOM_CUDA_HEADER_BOTH
+    static void Inside(UnplacedParaboloid const &unplaced,
+                       Transformation3D const &transformation,
+                       Vector3D<typename Backend::precision_v> const &point,
+                       typename Backend::int_v &inside) {
+        
+      Vector3D<typename Backend::precision_v> localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+      UnplacedInside<Backend>(unplaced, localPoint, inside);
+    }
+
+
     /// \brief Contains: Inside method that does NOT take account of the surface for a Placed Paraboloid
     template <class Backend>
     VECGEOM_INLINE
@@ -175,11 +179,10 @@ struct ParaboloidImplementation {
                        typename Backend::bool_v &inside) {
         
         localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-        UnplacedInside<Backend>(unplaced, localPoint, inside);
+        UnplacedContains<Backend>(unplaced, localPoint, inside);
         
     }
 
-#endif
     
     template <class Backend>
     VECGEOM_INLINE
@@ -205,11 +208,11 @@ struct ParaboloidImplementation {
         Bool_t done(false);
         distance=kInfinity;
         
-        Float_t absZ=Abs(localPoint.z()),
-                absDirZ=Abs(localDirection.z()),
-                rho2 = localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y(),
-                point_dot_direction_x = localPoint.x()*localDirection.x(),
-                point_dot_direction_y = localPoint.y()*localDirection.y();
+        Float_t absZ=Abs(localPoint.z());
+        Float_t absDirZ=Abs(localDirection.z());
+        Float_t rho2 = localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y();
+        Float_t point_dot_direction_x = localPoint.x()*localDirection.x();
+        Float_t point_dot_direction_y = localPoint.y()*localDirection.y();
         
         Bool_t checkZ=localPoint.z()*localDirection.z() > 0;
         
