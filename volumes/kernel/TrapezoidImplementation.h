@@ -249,13 +249,11 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   // convenience variables for direction pointing to +z or -z.
   // Note that both posZdir and NegZdir may be false, if dir.z() is zero!
   Bool_t posZdir  = dir.z() > Backend::kZero;
-  Bool_t negZdir = dir.z() < Backend::kZero;
+  Bool_t negZdir  = dir.z() < Backend::kZero;
   Float_t zdirSign = Backend::kOne;  // z-direction
-  MaskedAssign( dir.z()<Backend::kZero, -Backend::kOne, &zdirSign);
+  MaskedAssign( negZdir, -Backend::kOne, &zdirSign);
 
-  Float_t max;
-  Float_t dirFactor = Backend::kOne / dir.z();     // convert distances from z to dir
-  max = zdirSign*unplaced.GetDz() - point.z();     // z-dist to farthest z-plane
+  Float_t max = zdirSign*unplaced.GetDz() - point.z();     // z-dist to farthest z-plane
 
   // step 1.a) input particle is moving away --> return infinity
 
@@ -269,11 +267,12 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
 
   // if all particles moving away, we're done
   Bool_t done( distance == infinity );
-  if (done == Backend::kTrue ) return;
+  if (done == Backend::kTrue) return;
 
   // Step 1.b) General case:
   //   smax,smin are range of distances within z-range, taking direction into account.
   //   smin<smax - smax is positive, but smin may be either positive or negative
+  Float_t dirFactor = Backend::kOne / dir.z();     // convert distances from z to dir
   Float_t smax = max * dirFactor;
   Float_t smin = (-zdirSign*unplaced.GetDz() - point.z())*dirFactor;
 
@@ -288,20 +287,20 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   // ... or out of z-range, then trajectory will not intercept volume
   MaskedAssign( test && !zrange, kInfinity, &distance );
 
-  assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
+  //assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
 
   //
   // Step 2: find distances for intersections with side planes.
   //   If dist is such that smin < dist < smax, then adjust either smin or smax.
   //
 
-  Float_t pdist, Comp;
+
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
 
   // loop over side planes - find pdist,Comp for each side plane
   for (unsigned int i = 0; i < 4; i++) {
-
-    // Note: normal vector is pointing outside the volume (convention), therefore
+      Float_t pdist, comp;
+      // Note: normal vector is pointing outside the volume (convention), therefore
     // pdist>0 if point is outside  and  pdist<0 means inside
     pdist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
       + fPlanes[i].fC * point.z() + fPlanes[i].fD;
@@ -309,11 +308,11 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
 
     // Comp is projection of dir over the normal vector of side plane, hence
     // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
-    Comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
-    Bool_t posDir = Comp >= 0;
+    comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
+    Bool_t posDir = comp >= 0;
 
     // discard the ones moving away from this plane
-    MaskedAssign( posPoint && posDir,   kInfinity, &distance  );
+    MaskedAssign( posPoint && posDir, kInfinity, &distance  );
 
     // in original UTrap algorithm, the cases above are returned immediately
     // MaskedAssign( !done, distance == infinity, &done );
@@ -324,7 +323,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
     Bool_t interceptFromInside = (posPoint && !posDir);
 
     // check if trajectory will intercept plane within current range (smin,smax)
-    Float_t vdist = -pdist/Comp;
+    Float_t vdist = -pdist/comp;
     Bool_t intercept = (vdist>Backend::kZero); // equivalent to interceptFromInside||interceptFromOutside
 
     MaskedAssign( interceptFromOutside && vdist<smin, kInfinity, &distance );
@@ -336,7 +335,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
     MaskedAssign( interceptFromOutside && validVdist, vdist, &smax );
     MaskedAssign( interceptFromInside  && validVdist, vdist, &smin );
 
-    assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
+    // assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
   }
 
   // Checks in non z plane intersections ensure smin<smax
@@ -388,7 +387,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   if (done == Backend::kTrue ) return;
 
   // Step 1.b) general case:
-  MaskedAssign( !done,  max/dir.z(), &distance);
+  MaskedAssign( !done,  max*zdirFactor, &distance);
 
   // Step 1.c) special case: if dir is perpendicular to z-axis...
   MaskedAssign(!posZdir && !negZdir, kInfinity, &distance);
@@ -398,12 +397,12 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   //   If dist is such that smin < dist < smax, then adjust either smin or smax.
   //
 
-  Float_t pdist, Comp;
+
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
 
   // loop over side planes - find pdist,Comp for each side plane
   for (unsigned int i = 0; i < 4; i++) {
-
+    Float_t pdist, comp;
     // Note: normal vector is pointing outside the volume (convention), therefore
     // pdist>0 if point is outside  and  pdist<0 means inside
     pdist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
@@ -412,8 +411,8 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
 
     // Comp is projection of dir over the normal vector of side plane, hence
     // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
-    Comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
-    Bool_t posComp = Comp >= 0;
+    comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
+    Bool_t posComp = comp >= 0;
 
     test = (!inside && posComp);
     MaskedAssign( !done && test, Backend::kZero, &distance );
@@ -421,30 +420,30 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
     if (done == Backend::kTrue ) return;
 
     test = inside && posComp;
-    Float_t vdist = -pdist / Comp;
+    Float_t vdist = -pdist / comp;
     MaskedAssign(!done && test && vdist<distance, vdist, &distance);
   }
 
   // check for problems
-  test = ( distance == infinity );
-  assert( test == Backend::kFalse && "Undefined side for valid surface normal to solid.");
-  if(test!=Backend::kFalse) {
-    std::ostringstream message;
-    int oldprc = message.precision(16);
-    message << "Undefined side for valid surface normal to solid."
-            << std::endl
-            << "Position:"  << std::endl << std::endl
-            << "point.x = "  << point.x() << " mm" << std::endl
-            << "point.y = "  << point.y() << " mm" << std::endl
-            << "point.z = "  << point.z() << " mm" << std::endl << std::endl
-            << "Direction:" << std::endl << std::endl
-            << "dir.x = "  << dir.x() << std::endl
-            << "dir.y = "  << dir.y() << std::endl
-            << "dir.z = "  << dir.z() << std::endl << std::endl
-            << "Proposed distance: " << distance <<"\n\n";
-    message.precision(oldprc);
-    std::cout<< "TrapezoidImplementation.h: Warning: "<< message.str().c_str() <<"\n";
-  }
+//  test = ( distance == infinity );
+//  assert( test == Backend::kFalse && "Undefined side for valid surface normal to solid.");
+//  if(test!=Backend::kFalse) {
+//    std::ostringstream message;
+//    int oldprc = message.precision(16);
+//    message << "Undefined side for valid surface normal to solid."
+//            << std::endl
+//            << "Position:"  << std::endl << std::endl
+//            << "point.x = "  << point.x() << " mm" << std::endl
+//            << "point.y = "  << point.y() << " mm" << std::endl
+//            << "point.z = "  << point.z() << " mm" << std::endl << std::endl
+//            << "Direction:" << std::endl << std::endl
+//            << "dir.x = "  << dir.x() << std::endl
+//            << "dir.y = "  << dir.y() << std::endl
+//            << "dir.z = "  << dir.z() << std::endl << std::endl
+//            << "Proposed distance: " << distance <<"\n\n";
+//    message.precision(oldprc);
+//    std::cout<< "TrapezoidImplementation.h: Warning: "<< message.str().c_str() <<"\n";
+//  }
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
