@@ -26,7 +26,7 @@ TGeoShape const* PlacedOrb::ConvertToRoot() const {
    //assert(0 && "NYI");
   //return NULL;
   //assert(0 && "Orb unsupported for ROOT.");
-  return new TGeoSphere(GetLabel().c_str(),0,GetRadius(),0,360,0,360);
+  return new TGeoSphere(GetLabel().c_str(),0,GetRadius());
 }
 #endif
 
