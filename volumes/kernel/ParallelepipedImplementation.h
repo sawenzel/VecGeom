@@ -4,9 +4,9 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
-#include "base/transformation3d.h"
+#include "base/Transformation3D.h"
 #include "volumes/kernel/BoxImplementation.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParallelepiped.h"
@@ -25,10 +25,20 @@ struct ParallelepipedImplementation {
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static void UnplacedInside(
+  static void UnplacedContains(
       UnplacedParallelepiped const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::int_v &inside);
+      typename Backend::bool_v &inside);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void Contains(
+      UnplacedParallelepiped const &unplaced,
+      Transformation3D const &transformation,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> &localPoint,
+      typename Backend::bool_v &inside);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -36,8 +46,7 @@ struct ParallelepipedImplementation {
   static void Inside(UnplacedParallelepiped const &unplaced,
                      Transformation3D const &transformation,
                      Vector3D<typename Backend::precision_v> const &point,
-                     Vector3D<typename Backend::precision_v> &localPoint,
-                     typename Backend::int_v &inside);
+                     typename Backend::inside_v &inside);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -91,18 +100,31 @@ void ParallelepipedImplementation<transCodeT, rotCodeT>::Transform(
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void ParallelepipedImplementation<transCodeT, rotCodeT>::UnplacedInside(
+void ParallelepipedImplementation<transCodeT, rotCodeT>::UnplacedContains(
     UnplacedParallelepiped const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::int_v &inside) {
+    typename Backend::bool_v &inside) {
 
   Vector3D<typename Backend::precision_v> localPoint = point;
   Transform<Backend>(unplaced, localPoint);
 
   // Run unplaced box kernel
   BoxImplementation<transCodeT, rotCodeT>::template
-      InsideKernel<Backend>(unplaced.GetDimensions(), localPoint, inside);
+      ContainsKernel<Backend>(unplaced.GetDimensions(), localPoint, inside);
 
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void ParallelepipedImplementation<transCodeT, rotCodeT>::Contains(
+    UnplacedParallelepiped const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> &localPoint,
+    typename Backend::bool_v &inside) {
+  localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+  UnplacedContains<Backend>(unplaced, localPoint, inside);
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -112,10 +134,13 @@ void ParallelepipedImplementation<transCodeT, rotCodeT>::Inside(
     UnplacedParallelepiped const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> &localPoint,
-    typename Backend::int_v &inside) {
-  localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-  UnplacedInside<Backend>(unplaced, localPoint, inside);
+    typename Backend::inside_v &inside) {
+
+  Vector3D<typename Backend::precision_v> localPoint =
+      transformation.Transform<transCodeT, rotCodeT>(point);
+  Transform<Backend>(unplaced, localPoint);
+  BoxImplementation<transCodeT, rotCodeT>::template
+      InsideKernel<Backend>(unplaced.GetDimensions(), localPoint, inside);
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

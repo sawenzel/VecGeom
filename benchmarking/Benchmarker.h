@@ -1,16 +1,19 @@
-/// @file Benchmarker.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file Benchmarker.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BENCHMARKING_BENCHMARKER_H_
 #define VECGEOM_BENCHMARKING_BENCHMARKER_H_
 
+#include "base/Global.h"
 
-#include "base/global.h"
-
-#include "base/soa3d.h"
+#include "volumes/PlacedVolume.h"
+#include "base/SOA3D.h"
 #include "benchmarking/BenchmarkResult.h"
-#include "management/volume_pointers.h"
-#include "volumes/placed_volume.h"
+#include "benchmarking/VolumePointers.h"
+
+#ifdef VECGEOM_USOLIDS
+#include "VUSolid.hh"
+#endif
 
 #include <list>
 
@@ -46,6 +49,15 @@ private:
 
 public:
 
+  Benchmarker();
+
+  /// \param world Mother volume containing daughters that will be benchmarked.
+  ///              The mother volume must have an available bounding box, as it
+  ///              is used in the sampling process.
+  Benchmarker(VPlacedVolume const *const world);
+
+  ~Benchmarker();
+
   /// \brief Runs all geometry benchmarks.
   void RunBenchmark();
 
@@ -65,13 +77,6 @@ public:
 
   /// \brief Runs a benchmark of the DistanceToOut and SafetyToOut methods.
   void RunToOutBenchmark();
-
-  /// \param world Mother volume containing daughters that will be benchmarked.
-  ///              The mother volume must have an available bounding box, as it
-  ///              is used in the sampling process.
-  Benchmarker(VPlacedVolume const *const world);
-
-  ~Benchmarker();
 
   /// \return Amount of points and directions sampled for each benchmark
   ///         iteration.
@@ -147,25 +152,25 @@ private:
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
 
-  void RunInsideSpecialized(bool *const inside);
+  void RunInsideSpecialized(Inside_t *const inside);
   void RunToInSpecialized(Precision *const distances,
                           Precision *const safeties);
   void RunToOutSpecialized(Precision *const distances,
                            Precision *const safeties);
 
-  void RunInsideVectorized(bool *const inside);
+  void RunInsideVectorized(Inside_t *const inside);
   void RunToInVectorized(Precision *const distances, Precision *const safeties);
   void RunToOutVectorized(Precision *const distances,
                           Precision *const safeties);
 
-  void RunInsideUnspecialized(bool *const inside);
+  void RunInsideUnspecialized(Inside_t *const inside);
   void RunToInUnspecialized(Precision *const distances,
                             Precision *const safeties);
   void RunToOutUnspecialized(Precision *const distances,
                              Precision *const safeties);
 
 #ifdef VECGEOM_USOLIDS
-  void RunInsideUSolids(bool *const inside);
+  void RunInsideUSolids(::VUSolid::EnumInside *const inside);
   void RunToInUSolids(double *const distances, Precision *const safeties);
   void RunToOutUSolids(double *const distances, Precision *const safeties);
 #endif
@@ -177,7 +182,7 @@ private:
 #ifdef VECGEOM_CUDA
   void RunInsideCuda(
     Precision *const pos_x, Precision *const pos_y,
-    Precision *const pos_z, bool *const inside);
+    Precision *const pos_z, Inside_t *const inside);
   void RunToInCuda(
     Precision *const pos_x, Precision *const pos_y,
     Precision *const pos_z, Precision *const dir_x,
@@ -197,6 +202,8 @@ private:
   static void FreeAligned(Type *const distance);
 
   void CompareDistances(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
     Precision const *const specialized,
     Precision const *const vectorized,
     Precision const *const unspecialized,

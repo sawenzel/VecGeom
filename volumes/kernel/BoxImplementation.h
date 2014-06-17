@@ -4,24 +4,96 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 
-#include "backend/backend.h"
-#include "base/vector3d.h"
-#include "volumes/unplaced_box.h"
+#include "backend/Backend.h"
+#include "base/Vector3D.h"
+#include "volumes/UnplacedBox.h"
 
 namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
-  template <class Backend>
+  template<typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  static void InsideKernel(
-      Vector3D<Precision> const &boxDimensions,
+  static void UnplacedContains(
+      UnplacedBox const &box,
+      Vector3D<typename Backend::precision_v> const &localPoint,
+      typename Backend::bool_v &inside);
+
+  template <typename Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static void Contains(
+      UnplacedBox const &unplaced,
+      Transformation3D const &transformation,
       Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::int_v &inside);
+      Vector3D<typename Backend::precision_v> &localPoint,
+      typename Backend::bool_v &inside);
+
+  template <typename Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static void Inside(
+      UnplacedBox const &unplaced,
+      Transformation3D const &transformation,
+      Vector3D<typename Backend::precision_v> const &point,
+      typename Backend::inside_v &inside);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void DistanceToIn(
+      UnplacedBox const &unplaced,
+      Transformation3D const &transformation,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
+      typename Backend::precision_v const &stepMax,
+      typename Backend::precision_v &distance);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void DistanceToOut(
+      UnplacedBox const &unplaced,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
+      typename Backend::precision_v const &stepMax,
+      typename Backend::precision_v &distance);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void SafetyToIn(UnplacedBox const &unplaced,
+                         Transformation3D const &transformation,
+                         Vector3D<typename Backend::precision_v> const &point,
+                         typename Backend::precision_v &safety);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void SafetyToOut(UnplacedBox const &unplaced,
+                          Vector3D<typename Backend::precision_v> const &point,
+                          typename Backend::precision_v &safety);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void ContainsKernel(
+      Vector3D<Precision> const &boxDimensions,
+      Vector3D<typename Backend::precision_v> const &point,
+      typename Backend::bool_v &inside);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void InsideKernel(
+      Vector3D<Precision> const &boxDimensions,
+      Vector3D<typename Backend::precision_v> const &point,
+      typename Backend::inside_v &inside);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void DistanceToInKernel(
       Vector3D<Precision> const &dimensions,
       Vector3D<typename Backend::precision_v> const &point,
@@ -41,6 +113,7 @@ struct BoxImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void SafetyToInKernel(
       Vector3D<Precision> const &dimensions,
       Vector3D<typename Backend::precision_v> const &point,
@@ -48,6 +121,7 @@ struct BoxImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void SafetyToOutKernel(
       Vector3D<Precision> const &dimensions,
       Vector3D<typename Backend::precision_v> const &point,
@@ -56,12 +130,151 @@ struct BoxImplementation {
 }; // End struct BoxImplementation
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::UnplacedContains(
+    UnplacedBox const &box,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &inside) {
+
+  ContainsKernel<Backend>(box.dimensions(), localPoint, inside);
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::Contains(
+    UnplacedBox const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> &localPoint,
+    typename Backend::bool_v &inside) {
+
+  localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+  UnplacedContains<Backend>(unplaced, localPoint, inside);
+
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::Inside(
+    UnplacedBox const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    typename Backend::inside_v &inside) {
+
+  InsideKernel<Backend>(unplaced.dimensions(),
+                        transformation.Transform<transCodeT, rotCodeT>(point),
+                        inside);
+
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::DistanceToIn(
+    UnplacedBox const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v const &stepMax,
+    typename Backend::precision_v &distance) {
+
+  DistanceToInKernel<Backend>(
+    unplaced.dimensions(),
+    transformation.Transform<transCodeT, rotCodeT>(point),
+    transformation.TransformDirection<rotCodeT>(direction),
+    stepMax,
+    distance
+  );
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::DistanceToOut(
+    UnplacedBox const &unplaced,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v const &stepMax,
+    typename Backend::precision_v &distance) {
+
+  DistanceToOutKernel<Backend>(
+    unplaced.dimensions(),
+    point,
+    direction,
+    stepMax,
+    distance
+  );
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void BoxImplementation<transCodeT, rotCodeT>::SafetyToIn(
+    UnplacedBox const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    typename Backend::precision_v &safety) {
+
+  SafetyToInKernel<Backend>(
+    unplaced.dimensions(),
+    transformation.Transform<transCodeT, rotCodeT>(point),
+    safety
+  );
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void BoxImplementation<transCodeT, rotCodeT>::SafetyToOut(
+    UnplacedBox const &unplaced,
+    Vector3D<typename Backend::precision_v> const &point,
+    typename Backend::precision_v &safety) {
+
+  SafetyToOutKernel<Backend>(
+    unplaced.dimensions(),
+    point,
+    safety
+  );
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::ContainsKernel(
+    Vector3D<Precision> const &dimensions,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &inside) {
+
+  Vector3D<typename Backend::bool_v> insideDim = Backend::kFalse;
+  for (int i = 0; i < 3; ++i) {
+    insideDim[i] = Abs(localPoint[i]) < dimensions[i];
+    if (Backend::early_returns) {
+      if (!insideDim[i]) {
+        inside = Backend::kFalse;
+        return;
+      }
+    }
+  }
+  if (Backend::early_returns) {
+    inside = Backend::kTrue;
+  } else {
+    inside = insideDim[0] && insideDim[1] && insideDim[2];
+  }
+
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
     Vector3D<Precision> const &boxDimensions,
     Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::int_v &inside) {
+    typename Backend::inside_v &inside) {
 
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v      Bool_t;
@@ -124,7 +337,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   done |= (safety[0] >= stepMax ||
            safety[1] >= stepMax ||
            safety[2] >= stepMax);
-  if (done == true) return;
+  if (done == Backend::kTrue) return;
 
   Float_t next, coord1, coord2;
   Bool_t hit;
@@ -139,7 +352,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == true) return;
+  if (done == Backend::kTrue) return;
 
   // y
   next = safety[1] / Abs(direction[1] + kTiny);
@@ -151,7 +364,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == true) return;
+  if (done == Backend::kTrue) return;
 
   // z
   next = safety[2] / Abs(direction[2] + kTiny);
@@ -183,14 +396,14 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
 
     distance = kInfinity;
 
-    safety[0] = Abs(point[0]) - dimensions[0];
-    safety[1] = Abs(point[1]) - dimensions[1];
-    safety[2] = Abs(point[2]) - dimensions[2];
+    //safety[0] = Abs(point[0]) - dimensions[0];
+    //safety[1] = Abs(point[1]) - dimensions[1];
+    //safety[2] = Abs(point[2]) - dimensions[2];
 
-    inside = safety[0] < stepMax &&
-             safety[1] < stepMax &&
-             safety[2] < stepMax;
-    if (inside == Backend::kFalse) return;
+    //inside = safety[0] < stepMax &&
+    //         safety[1] < stepMax &&
+    //         safety[2] < stepMax;
+    //if (inside == Backend::kFalse) return;
 
     Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
       1. / (direction[0] + kTiny),

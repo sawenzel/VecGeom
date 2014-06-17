@@ -15,6 +15,8 @@ option(USOLIDS "Include USolids." OFF)
 
 option(BENCHMARK "Enable performance comparisons." OFF)
 
+option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
+
 if (USOLIDS)
   set(USolids ON)
 endif()
@@ -30,13 +32,20 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 # Determine backend
 
+set(Vc)
+set(Cilk)
+set(Scalar)
+
 if (BACKEND STREQUAL "Vc")
   set(Vc TRUE)
 endif()
 if (BACKEND STREQUAL "Cilk")
   set(Cilk TRUE)
 endif()
-if (NOT Vc AND NOT Cilk)
+if (BACKEND STREQUAL "Scalar")
+  set(Scalar TRUE)
+endif()
+if (NOT Vc AND NOT Cilk AND NOT Scalar)
   message(FATAL_ERROR "Configuring with invalid backend \"${BACKEND}\".")
 endif()
 
@@ -67,15 +76,18 @@ endif()
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -DVECGEOM")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -O0 -ggdb")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 endif()
 if (GNU)
+  if (NOT ERROR_LIMIT AND NOT ERROR_LIMIT EQUAL 0)
+    set(ERROR_LIMIT 20)
+  endif()
   set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmax-errors=20 -finline-limit=10000000")
+      "${CMAKE_CXX_FLAGS} -fmax-errors=${ERROR_LIMIT} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                   OUTPUT_VARIABLE GCC_VERSION)
@@ -94,15 +106,21 @@ endif()
 if (BENCHMARK)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_BENCHMARK")
 endif()
+if (NO_SPECIALIZATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_NO_SPECIALIZATION")
+endif()
 
 ################################################################################
+
+if (Scalar)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_SCALAR")
+endif()
 
 if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
-  set(LIBS ${LIBS} ${VC_LIBRARIES})
-  include_directories(AFTER SYSTEM ${VC_INCLUDE_DIR})
-
+  set(LIBS ${LIBS} ${Vc_LIBRARIES})
+ include_directories(AFTER SYSTEM ${Vc_INCLUDE_DIR})
 endif()
 
 if (Vc)
@@ -114,10 +132,9 @@ if (Vc)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
   endif()
   set(BACKEND_INCLUDE backend/vc)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/backend.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/Backend.cpp)
   set(HEADERS_BACKEND ${HEADERS_BACKEND}
-    ${CMAKE_SOURCE_DIR}/backend/vc/backend.h
-    ${CMAKE_SOURCE_DIR}/backend/vc/implementation.h
+    ${CMAKE_SOURCE_DIR}/backend/vc/Backend.h
   )
 
 endif()
@@ -133,11 +150,10 @@ if (Cilk)
   set(BACKEND_INCLUDE backend/cilk)
   set(
     SRC_EXTERNAL ${SRC_EXTERNAL}
-    source/backend/cilk/backend.cpp
+    source/backend/cilk/Backend.cpp
   )
   set(HEADERS_BACKEND ${HEADERS_BACKEND}
-    ${CMAKE_SOURCE_DIR}/backend/cilk/backend.h
-    ${CMAKE_SOURCE_DIR}/backend/cilk/implementation.h
+    ${CMAKE_SOURCE_DIR}/backend/cilk/Backend.h
   )
 
 endif()
@@ -171,11 +187,11 @@ if (CUDA)
   message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 
   set(BACKEND_INCLUDE_CUDA backend/cuda)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/cuda_manager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/CudaManager.cpp)
   set(
     SRC_CUDA ${SRC_CUDA}
-    source/cuda_manager.cu
-    source/backend/cuda/interface.cu
+    source/CudaManager.cu
+    source/backend/cuda/Interface.cu
   )
 
 endif()
@@ -184,17 +200,14 @@ if (ROOT)
   
   find_package(ROOT REQUIRED)
 
-  include_directories(${ROOT_INCLUDE_DIR})
-  include_directories(${ROOT_INCLUDE_DIR}/root)
+  include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
-  #link_directories(${ROOT_LIBRARY_DIR}/root)
-
+  link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom -lGui -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lm -ldl")
-
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
-    source/placed_root_volume.cpp
-    source/rootgeo_manager.cpp
-    source/unplaced_root_volume.cpp
+    source/PlacedRootVolume.cpp
+    source/RootGeoManager.cpp
+    source/UnplacedRootVolume.cpp
   )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_ROOT")
 
@@ -210,7 +223,6 @@ if (USolids)
     add_subdirectory(USolids)
     include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
     link_directories(${CMAKE_BINARY_DIR}/USolids)
-    set(LIBS ${LIBS} usolids)
   endif()
   if (USOLIDS_INCLUDE_DIR)
     include_directories(${USOLIDS_INCLUDE_DIR})
@@ -218,13 +230,13 @@ if (USolids)
     include_directories(${USOLIDS_DIR}/include)
   endif()
   if (USOLIDS_LIBRARY_DIR)
-    set(LIBS ${LIBS} ${USOLIDS_LIBRARY_DIR}/libusolids.a)
     link_directories(${USOLIDS_LIBRARY_DIR})
   elseif (USOLIDS_DIR)
-    set(LIBS ${LIBS} ${USOLIDS_DIR}/lib/libusolids.a)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
+  
+  set(LIBS ${LIBS} usolids)
 
 endif()
 
@@ -234,93 +246,28 @@ message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-set(HEADERS_CPP_RELATIVE
-  backend/backend.h
-  backend/implementation.h
-  backend/scalar/backend.h
-  backend/scalar/implementation.h
-  base/aos3d.h
-  base/array.h
-  base/container.h
-  base/global.h
-  base/iterator.h
-  base/rng.h
-  base/soa3d.h
-  base/specialized_transformation3d.h
-  base/stopwatch.h
-  base/track_container.h
-  base/transformation3d.h
-  base/type_map.h
-  base/vector.h
-  base/vector3d.h
-  benchmarking/BenchmarkResult.h
-  benchmarking/Benchmarker.h
-  management/cuda_manager.h
-  management/geo_manager.h
-  management/rootgeo_manager.h
-  management/volume_factory.h
-  management/volume_pointers.h
-  navigation/navigationstate.h
-  navigation/simple_navigator.h
-  volumes/box.h
-  volumes/kernel/box_kernel.h
-  volumes/logical_volume.h
-  volumes/Parallelepiped.h
-  volumes/placed_box.h
-  volumes/PlacedParallelepiped.h
-  volumes/PlacedParaboloid.h
-  volumes/PlacedTrapezoid.h
-  volumes/placed_volume.h
-  volumes/specialized_box.h
-  volumes/SpecializedParallelepiped.h
-  volumes/SpecializedParaboloid.h
-  volumes/SpecializedTrapezoid.h
-  volumes/unplaced_box.h
-  volumes/UnplacedParallelepiped.h
-  volumes/UnplacedParaboloid.h
-  volumes/UnplacedTrapezoid.h
-  volumes/unplaced_volume.h
-  volumes/usolid.h
-  volumes/utilities/volume_utilities.h
-)
-# CUDA headers are installed normally. Vector headers will change path in
-# installation directory.
-if (CUDA)
-  set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
-    backend/cuda/backend.h
-    backend/cuda/implementation.h
-    backend/cuda/interface.h
-  )
-endif()
-if (ROOT)
-  set(HEADERS_CPP_RELATIVE ${HEADERS_CPP_RELATIVE}
-    management/rootgeo_manager.h
-    volumes/placed_root_volume.h
-    volumes/unplaced_root_volume.h
-  )
-endif()
-
 set(SRC_CPP_RELATIVE
-  source/aos3d.cpp
-  source/container.cpp
-  source/logical_volume.cpp
-  source/placed_box.cpp
+  source/AOS3D.cpp
+  source/Container.cpp
+  source/LogicalVolume.cpp
+  source/PlacedBox.cpp
+  source/PlacedTube.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
-  source/placed_volume.cpp
-  source/scalar_backend.cpp
-  source/soa3d.cpp
-  source/specialized_box.cpp
-  source/transformation3d.cpp
-  source/unplaced_box.cpp
+  source/PlacedVolume.cpp
+  source/SOA3D.cpp
+  source/SpecializedBox.cpp
+  source/Transformation3D.cpp
+  source/UnplacedBox.cpp
+  source/UnplacedTube.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
-  source/unplaced_volume.cpp
-  source/vector3d.cpp
+  source/UnplacedVolume.cpp
+  source/Vector3D.cpp
   source/NavigationState.cpp	
-  source/simple_navigator.cpp
+  source/SimpleNavigator.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -357,14 +304,14 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
-    source/benchmarking/volume_pointers.cpp
+    source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
     source/benchmarking/Benchmarker.cu
   )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
-  source/geo_manager.cpp
+  source/GeoManager.cpp
 )
 
 # Compile cpp-files for C++11
@@ -373,7 +320,7 @@ set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 ################################################################################
 
-# Compile and link
+# Build libraries
 
 add_library(vecgeom_cpp ${SRC_CPP})
 target_link_libraries(vecgeom_cpp ${LIBS})
@@ -382,46 +329,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LIBS ${LIBS} -lrt)
 endif()
 
-set(
-  SRC_EXECUTABLES
-  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
-)
-set_source_files_properties(
-  ${SRC_EXECUTABLES}
-  PROPERTIES COMPILE_FLAGS -std=c++11
-)
-
-if (NOT CUDA)
-  add_executable(create_geometry_test
-    ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-  )
-  target_link_libraries(create_geometry_test ${LIBS})
-  if (ROOT)
-    add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
-    target_link_libraries(root_geometry ${LIBS})
-    add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
-    target_link_libraries(complex_test1 ${LIBS})
-  endif()
-  if (BENCHMARK AND NOT USOLIDS)
-    add_executable(
-      ParallelepipedBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-    )
-    target_link_libraries(ParallelepipedBenchmark ${LIBS})
-    
-    add_executable(ParaboloidBenchmark ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp)
-    target_link_libraries(ParaboloidBenchmark ${LIBS})
-    add_executable(ParaboloidTest ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp)
-    target_link_libraries(ParaboloidTest ${LIBS})
-  endif()
-else()
+if (CUDA)
   cuda_add_library(
     vecgeom_cuda
     ${SRC_CUDA}
@@ -430,45 +338,93 @@ else()
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
   install(TARGETS vecgeom_cuda DESTINATION lib)
-  if (ROOT)
-    cuda_add_executable(
-      cpugpu
-      ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-      OPTIONS ${CUDA_ARCH}
-    )
-    target_link_libraries(cpugpu ${LIBS})
-    cuda_add_executable(
-      root_geometry
-      ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
-      OPTIONS ${CUDA_ARCH}
-    )
-    target_link_libraries(root_geometry ${LIBS})
-  endif()
-  if (BENCHMARK AND NOT USOLIDS)
-    add_executable(
-      ParallelepipedBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-    )
-    target_link_libraries(ParallelepipedBenchmark ${LIBS})
-    
-    add_executable(
-      ParaboloidBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParaboloidBenchmark.cpp
-    )
-    target_link_libraries(ParaboloidBenchmark ${LIBS})
-    add_executable(
-      ParaboloidTest
-      ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
-    )
-    target_link_libraries(ParaboloidTest ${LIBS})
-
-  endif()
 endif()
 
-foreach(HEADER ${HEADERS_CPP_RELATIVE})
-  get_filename_component(PATH ${HEADER} PATH)
-  install(FILES ${CMAKE_SOURCE_DIR}/${HEADER} DESTINATION include/${PATH})
+################################################################################
+
+# Define executables
+
+set(TEST_EXECUTABLES_CORE
+  ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
+)
+set(TEST_EXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+)
+set(TEST_EXECUTABLES_USOLIDS
+  # Files go here
+)
+set(TEST_EXECUTABLES_BENCHMARK
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+)
+set(TEST_EXECUTABLES_CUDA
+  # Files go here
+)
+set(TEST_EXECUTABLES
+  ${TEST_EXECUTABLES_CORE}
+  ${TEST_EXECUTABLES_ROOT}
+  ${TEST_EXECUTABLES_USOLIDS}
+  ${TEST_EXECUTABLES_BENCHMARK}
+  ${TEST_EXECUTABLES_CUDA}
+)
+set_source_files_properties(
+  ${TEST_EXECUTABLES}
+  PROPERTIES COMPILE_FLAGS -std=c++11
+)
+
+# Build executables
+
+function(build_executables EXECUTABLES)
+  foreach(EXECUTABLE ${EXECUTABLES})
+    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
+    add_executable(${TARGET_NAME} ${EXECUTABLE})
+    target_link_libraries(${TARGET_NAME} ${LIBS})
+  endforeach()
+endfunction()
+
+build_executables("${TEST_EXECUTABLES_CORE}")
+if (BENCHMARK)
+  build_executables("${TEST_EXECUTABLES_BENCHMARK}")
+endif()
+if (ROOT)
+  build_executables("${TEST_EXECUTABLES_ROOT}")
+endif()
+if (USolids)
+  build_executables("${TEST_EXECUTABLES_USOLIDS}")
+endif()
+if (CUDA)
+  build_executables("${TEST_EXECUTABLES_CUDA}")
+endif()
+
+################################################################################
+
+# Install headers and libraries
+
+set(HEADER_FOLDERS
+  base
+  benchmarking
+  management
+  navigation
+  volumes
+)
+set(BACKEND_FOLDERS
+  backend/scalar
+  backend/vc
+  backend/cilk
+  backend/cuda
+)
+foreach(FOLDER ${HEADER_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include)
 endforeach()
+foreach(FOLDER ${BACKEND_FOLDERS})
+  install(DIRECTORY ${FOLDER} DESTINATION include/backend)
+endforeach()
+install(FILES ${CMAKE_SOURCE_DIR}/backend/Backend.h DESTINATION include/backend)
+
 foreach(HEADER ${HEADERS_BACKEND})
   get_filename_component(FILENAME ${HEADER} NAME)
   install(FILES ${HEADER} DESTINATION include/backend/vector)

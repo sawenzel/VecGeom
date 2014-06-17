@@ -8,6 +8,7 @@
 #if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
 #include "TGeoParaboloid.h"
 #endif
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 

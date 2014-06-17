@@ -1,10 +1,11 @@
-/// @file UnplacedParallelepiped.cpp
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file UnplacedParallelepiped.cpp
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "volumes/UnplacedParallelepiped.h"
 
-#include "management/volume_factory.h"
+#include "management/VolumeFactory.h"
 #include "volumes/SpecializedParallelepiped.h"
+#include "volumes/utilities/GenerationUtilities.h"
 
 #include <stdio.h>
 
@@ -74,20 +75,15 @@ VPlacedVolume* UnplacedParallelepiped::Create(
     const int id,
 #endif
     VPlacedVolume *const placement) {
-  if (placement) {
-    return new(placement) SpecializedParallelepiped<transCodeT, rotCodeT>(
+
+  return CreateSpecializedWithPlacement<SpecializedParallelepiped<transCodeT, rotCodeT> >(
 #ifdef VECGEOM_NVCC
-        logical_volume, transformation, NULL, id); // TODO: add bounding box?
+      logical_volume, transformation, id, placement); // TODO: add bounding box?
 #else
-        logical_volume, transformation);
+      logical_volume, transformation, placement);
 #endif
-  }
-  return new SpecializedParallelepiped<transCodeT, rotCodeT>(
-#ifdef VECGEOM_NVCC
-      logical_volume, transformation, NULL, id); // TODO: add bounding box?
-#else
-      logical_volume, transformation);
-#endif
+
+
 }
 
 VECGEOM_CUDA_HEADER_DEVICE
