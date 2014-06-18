@@ -217,7 +217,53 @@ typedef typename Backend::precision_v Double_t;
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
-      typename Backend::precision_v &distance){}
+      typename Backend::precision_v &distance){
+
+    typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::bool_v      Bool_t;
+
+    distance = kInfinity;  
+	Double_t zero=Backend::kZero;
+
+    Vector3D<Double_t> localPoint;
+    localPoint = point;
+
+    Vector3D<Double_t> localDir;
+    localDir =  direction;
+
+    //General Precalcs
+    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
+    Double_t rad = sqrt(rad2);
+    Double_t pDotV3d = localPoint.x() * localDir.x() + localPoint.y() * localDir.y() + localPoint.z() * localDir.z();
+    Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
+    Double_t c = rad2 - radius2;
+    Double_t d2 = pDotV3d * pDotV3d - c;
+  
+    Bool_t done(false);
+    distance = kInfinity;
+
+	//checking if the poing is outside
+    Double_t tolRMax = unplaced.GetfRTolO();
+	Double_t tolRMax2 = tolRMax * tolRMax;
+    Bool_t isOutside = ( rad2 > tolRMax2);
+    done|= isOutside;
+    if (done == Backend::kTrue) return;
+
+    Bool_t isInsideAndWithinOuterTolerance = ((rad <= tolRMax) && (c < (kTolerance * unplaced.GetRadius())));
+    Bool_t isInsideAndOnTolerantSurface = ((c > (-2*kTolerance*unplaced.GetRadius())) && ( (pDotV3d >= 0) || (d2 < 0) ));
+
+    Bool_t onSurface=(isInsideAndWithinOuterTolerance && isInsideAndOnTolerantSurface );
+	MaskedAssign(onSurface , zero, &distance);
+	done|=onSurface;
+    if (done == Backend::kTrue) return;
+
+    Bool_t notOnSurface=(isInsideAndWithinOuterTolerance && !isInsideAndOnTolerantSurface );
+	MaskedAssign(notOnSurface , (-pDotV3d + Sqrt(d2)), &distance);
+	done|=notOnSurface;
+	if (done == Backend::kTrue) return;
+
+    
+}
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -225,14 +271,51 @@ typedef typename Backend::precision_v Double_t;
   static void SafetyToIn(UnplacedOrb const &unplaced,
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
-                         typename Backend::precision_v &safety){}
+                         typename Backend::precision_v &safety){
+
+    typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::bool_v      Bool_t;
+
+	Double_t safe=Backend::kZero;
+    Double_t zero=Backend::kZero; 
+
+    Vector3D<Double_t> localPoint;
+    localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+
+    //General Precalcs
+    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
+    Double_t rad = Sqrt(rad2);
+
+    safe = rad - unplaced.GetRadius();
+	safety = safe;
+    MaskedAssign( (safe < zero) , zero, &safety);
+    
+}
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void SafetyToOut(UnplacedOrb const &unplaced,
                           Vector3D<typename Backend::precision_v> const &point,
-                          typename Backend::precision_v &safety){}
+                          typename Backend::precision_v &safety){
+
+    typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::bool_v      Bool_t;
+
+    Double_t safe=Backend::kZero;
+    Double_t zero=Backend::kZero; 
+
+    Vector3D<Double_t> localPoint;
+    localPoint = point;
+
+    //General Precalcs
+    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
+    Double_t rad = Sqrt(rad2);
+
+    safe = unplaced.GetRadius() - rad;
+	safety = safe;
+    MaskedAssign( (safe < zero) , zero, &safety);
+}
 
 };
 
