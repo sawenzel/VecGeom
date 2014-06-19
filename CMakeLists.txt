@@ -250,6 +250,7 @@ set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
   source/Container.cpp
   source/LogicalVolume.cpp
+  source/PlacedCone.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
   source/PlacedParallelepiped.cpp
@@ -259,6 +260,7 @@ set(SRC_CPP_RELATIVE
   source/SOA3D.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp
+  source/UnplacedCone.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
   source/UnplacedParaboloid.cpp
@@ -346,6 +348,7 @@ endif()
 
 set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
+ # ${CMAKE_SOURCE_DIR}/test/core/TestCone.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -359,6 +362,8 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TestCone.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here

@@ -11,7 +11,7 @@
 #define VECGEOM_VOLUMES_PLACEDCONE_H_
 
 #include "base/global.h"
-#include "volumes/placed_volume.h"
+#include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedCone.h"
 
 namespace VECGEOM_NAMESPACE {

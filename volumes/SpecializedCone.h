@@ -62,8 +62,8 @@ public:
 
 };
 
-//typedef SpecializedCone<translation::kGeneric, rotation::kGeneric>
-//    SimpleParallelepiped;
+typedef SpecializedCone<translation::kGeneric, rotation::kGeneric, ConeTypes::UniversalCone>
+    GenericCone;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename ConeType>
 void SpecializedCone<transCodeT, rotCodeT, ConeType>::PrintType() const {

@@ -1,20 +1,18 @@
 /*
- * ConeTraits.h
+ * ConeTypes.h
  *
  *  Created on: May 14, 2014
  *      Author: swenzel
  */
 
-#ifndef VECGEOM_VOLUMES_SPECIALIZATIONS_CONETRAITS_H_
-#define VECGEOM_VOLUMES_SPECIALIZATIONS_CONETRAITS_H_
+#ifndef VECGEOM_VOLUMES_KERNEL_SHAPETYPES_CONETYPES_H_
+#define VECGEOM_VOLUMES_KERNEL_SHAPETYPES_CONETYPES_H_
 
 #include <string>
-#include <csignal>
 #include "volumes/UnplacedCone.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace VECGEOM_NAMESPACE { namespace ConeTypes {
 
-namespace ConeTraits {
 
 #define DEFINE_TRAIT_TYPE(name) \
     struct name { \
@@ -176,8 +174,8 @@ struct SectorType<HollowConeWithBiggerThanPiSector> {
   static const AngleType value=BIGGER_THAN_PI;
 };
 
-} // end conetrait namespace
+} // end CONETYPES namespace
 
 } // End global namespace
 
-#endif /* VECGEOM_VOLUMES_SPECIALIZATIONS_CONETRAITS_H_ */
+#endif /* VECGEOM_VOLUMES_KERNEL_SHAPETYPES_CONETYPES_H_ */

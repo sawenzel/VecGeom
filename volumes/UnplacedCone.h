@@ -13,7 +13,7 @@
 #include "base/global.h"
 
 #include "base/AlignedBase.h"
-#include "volumes/unplaced_volume.h"
+#include "volumes/UnplacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -74,7 +74,15 @@ public:
         fRmax2(rmax2),
         fDz(dz),
         fSPhi(phimin),
-        fDPhi(phimax) {
+        fDPhi(phimax),
+        fInnerSlope(), // "gradient" of inner surface in z direction
+        fOuterSlope(), // "gradient" of outer surface in z direction
+        fInnerOffset(),
+        fOuterOffset(),
+        fOuterSlopeSquare(),
+        fInnerSlopeSquare(),
+        fOuterOffsetSquare(),
+        fInnerOffsetSquare() {
 
         // check this very carefully
        fInnerSlope = -(fRmin1 - fRmin2)/(2.*fDz);
@@ -128,6 +136,7 @@ public:
     Precision GetDz() const {return fDz;}
     Precision GetSPhi() const {return fSPhi;}
     Precision GetDPhi() const {return fDPhi;}
+    Precision dphi() const {return fDPhi;}
     Precision GetInnerSlope() const {return fInnerSlope;}
     Precision GetOuterSlope() const {return fOuterSlope;}
     Precision GetInnerOffset() const {return fInnerOffset;}
@@ -137,6 +146,11 @@ public:
     Precision GetOuterSlopeSquare() const {return fOuterSlope*fOuterSlope;}
     Precision GetInnerOffsetSquare() const {return fInnerOffset*fInnerOffset;}
     Precision GetOuterOffsetSquare() const {return fOuterOffset*fOuterOffset;}
+
+    Precision alongPhi1x() const { return fAlongPhi1.x(); }
+    Precision alongPhi1y() const { return fAlongPhi1.y(); }
+    Precision alongPhi2x() const { return fAlongPhi2.x(); }
+    Precision alongPhi2y() const { return fAlongPhi2.y(); }
 
     Precision Capacity() const {
         return (2.*fDz* kPiThird)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
@@ -160,17 +174,6 @@ public:
          VPlacedVolume *const placement = NULL) const {};
 
 };
-
-
-void UnplacedCone::Print() const {
-  printf("UnplacedParallelepiped {rmin1 %.2f, rmax1 %.2f, rmin2 %.2f, "
-          "rmax2 %.2f, phistart %.2f, deltaphi %.2f}",
-         fRmin1, fRmax2, fRmin2, fRmax2, fSPhi, fDPhi);
-}
-
-void UnplacedCone::Print(std::ostream &os) const {
-  os << "UnplacedParallelepiped; please implement Print to outstream\n";
-}
 
 
 } // end namespace

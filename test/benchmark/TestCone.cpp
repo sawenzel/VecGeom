@@ -5,10 +5,10 @@
  *      Author: swenzel
  */
 
-#include "UnplacedCone.h"
-#include "SpecializedCone.h"
-#include "volumes/logical_volume.h"
-#include "base/transformation3d.h"
+#include "volumes/Cone.h"
+#include "volumes/LogicalVolume.h"
+#include "base/Transformation3D.h"
+#include <cstdio>
 
 // to test compilation and functionality of the cone
 using namespace vecgeom;
