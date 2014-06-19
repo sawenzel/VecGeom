@@ -2253,3 +2253,31 @@ void UCons::GetParametersList(int, double* aArray) const
   aArray[6] = GetDeltaPhiAngle();
 
 }
+
+void UCons::CheckDPhiAngle(double dPhi)
+{
+  fPhiFullCone = true;
+  if (dPhi >= 2 * UUtils::kPi - kAngTolerance * 0.5)
+  {
+    fDPhi = 2 * UUtils::kPi;
+    fSPhi = 0;
+  }
+  else
+  {
+    fPhiFullCone = false;
+    if (dPhi > 0)
+    {
+      fDPhi = dPhi;
+    }
+    else
+    {
+      std::ostringstream message;
+      message << "Invalid dphi." << std::endl
+              << "Negative or zero delta-Phi (" << dPhi << ") in solid: "
+              << GetName();
+      UUtils::Exception("UCons::CheckDPhiAngle()", "GeomSolids0002",
+                        FatalErrorInArguments, 1, message.str().c_str());
+    }
+  }
+}
+
