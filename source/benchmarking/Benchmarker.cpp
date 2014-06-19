@@ -71,8 +71,9 @@ void Benchmarker::GenerateVolumePointers(VPlacedVolume const *const vol) {
 
   for (auto i = vol->daughters().begin(), i_end = vol->daughters().end();
        i != i_end; ++i) {
-    fVolumes.push_back(*i);
-    GenerateVolumePointers(*i);
+        assert(*i!=NULL);
+        fVolumes.push_back(*i);
+        GenerateVolumePointers(*i);
   }
 
 }

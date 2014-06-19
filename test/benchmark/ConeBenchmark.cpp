@@ -24,7 +24,7 @@ int main() {
 
   Transformation3D placement(5, 5, 5);
   world.PlaceDaughter("cone", &cone, &placement);
-  /*
+
   VPlacedVolume *worldPlaced = world.Place();
 
   GeoManager::Instance().set_world(worldPlaced);
@@ -34,7 +34,6 @@ int main() {
   tester.SetRepetitions(1024);
   tester.SetPointCount(1<<12);
   tester.RunBenchmark();
-*/
 
 }
 

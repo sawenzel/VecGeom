@@ -40,7 +40,7 @@ TGeoShape const* PlacedCone::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedCone::ConvertToUSolids() const {
-  return new UCons("", rmin(), rmax(), z(), sphi(), dphi());
+  return new UCons("USolidCone", GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(), GetDz(), GetSPhi(), GetDPhi());
 }
 #endif
 

@@ -8,8 +8,8 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_CONEIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_CONEIMPLEMENTATION_H_
 
-#include "base/global.h"
-#include "base/transformation3d.h"
+#include "base/Global.h"
+#include "base/Transformation3D.h"
 #include "volumes/UnplacedCone.h"
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include "volumes/kernel/TubeImplementation.h"

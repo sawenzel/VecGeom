@@ -10,7 +10,7 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDCONE_H_
 #define VECGEOM_VOLUMES_UNPLACEDCONE_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
@@ -36,11 +36,11 @@ namespace VECGEOM_NAMESPACE {
 class UnplacedCone : public VUnplacedVolume, AlignedBase {
 
 private:
-  Precision fDz;
   Precision fRmin1;
-  Precision fRmin2;
   Precision fRmax1;
+  Precision fRmin2;
   Precision fRmax2;
+  Precision fDz;
   Precision fSPhi;
   Precision fDPhi;
 
@@ -171,7 +171,7 @@ public:
    #ifdef VECGEOM_NVCC
          const int id,
    #endif
-         VPlacedVolume *const placement = NULL) const {};
+         VPlacedVolume *const placement = NULL) const;
 
 };
 

@@ -2,8 +2,8 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "benchmarking/VolumePointers.h"
-
 #include "volumes/PlacedVolume.h"
+#include <iostream>
 
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
@@ -23,7 +23,9 @@ VolumePointers::VolumePointers(VPlacedVolume const *const volume)
       usolids_(NULL),
 #endif
       initial_(kBenchmarkSpecialized) {
-  ConvertVolume();
+    std::cerr << "VolumePointer constructor";
+    assert(specialized_ != NULL);
+    ConvertVolume();
 }
 
 VolumePointers::VolumePointers(VolumePointers const &other)
@@ -35,7 +37,8 @@ VolumePointers::VolumePointers(VolumePointers const &other)
       usolids_(NULL),
 #endif
       initial_(other.initial_) {
-  ConvertVolume();
+    std::cerr << "VolumePointer copy constructor";
+    ConvertVolume();
 }
 
 VolumePointers::~VolumePointers() {
@@ -44,12 +47,14 @@ VolumePointers::~VolumePointers() {
 
 VolumePointers& VolumePointers::operator=(VolumePointers const &other) {
   this->Deallocate();
+  std::cerr << "VolumePointer assignment";
   this->specialized_ = other.specialized_;
   this->ConvertVolume();
   return *this;
 }
 
 void VolumePointers::ConvertVolume() {
+  assert( specialized_ != NULL && "SPECIALIZED SHAPE IS NULL ");
   if (!unspecialized_) unspecialized_ = specialized_->ConvertToUnspecialized();
 #ifdef VECGEOM_ROOT
   if (!root_)          root_          = specialized_->ConvertToRoot();

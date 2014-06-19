@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <climits>
 #include <cassert>
+#include <iostream>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -79,7 +80,8 @@ void LogicalVolume::PlaceDaughter(
     char const *const label,
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  VPlacedVolume const *const placed = volume->Place(label, transformation);
+    std::cerr << label << std::endl;
+    VPlacedVolume const *const placed = volume->Place(label, transformation);
   daughters_->push_back(placed);
 }
 

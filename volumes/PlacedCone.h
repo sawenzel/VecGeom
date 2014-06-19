@@ -10,7 +10,7 @@
 #ifndef VECGEOM_VOLUMES_PLACEDCONE_H_
 #define VECGEOM_VOLUMES_PLACEDCONE_H_
 
-#include "base/global.h"
+#include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedCone.h"
 
