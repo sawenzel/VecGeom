@@ -139,14 +139,9 @@ typedef typename Backend::precision_v Double_t;
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-  //  Vector3D<typename Backend::precision_v> localPoint;
-  //  localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-
+  //std::cout<<"----------Entered DistanceToIn Function------------"<<std::endl;
     typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
-
-    distance = kInfinity;  
-	Double_t zero=Backend::kZero;
 
     Vector3D<Double_t> localPoint;
     localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
@@ -162,50 +157,68 @@ typedef typename Backend::precision_v Double_t;
     Double_t c = rad2 - radius2;
     Double_t d2 = pDotV3d * pDotV3d - c;
 
-    Bool_t done(false);
-    distance = kInfinity;
-
-	Double_t pos_dot_dir_x = localPoint.x()*localDir.x();
+    Double_t pos_dot_dir_x = localPoint.x()*localDir.x();
     Double_t pos_dot_dir_y = localPoint.y()*localDir.y();
 	Double_t pos_dot_dir_z = localPoint.z()*localDir.z();
 
-    // outside of sphere and going away?
-    //check if the point is distancing in X
-    Bool_t isDistancingInX = ( Abs(localPoint.x()) > unplaced.GetRadius() ) && (pos_dot_dir_x > 0);
-    done|=isDistancingInX;
-	if (done == Backend::kTrue) return;
+	//Bool_t done(Backend::kFalse);
+	Bool_t done(false);
+    distance = kInfinity;
+    Double_t zero=Backend::kZero;
 
+    /*
+    //check if the point is distancing in X
+    Bool_t isDistancingInX = (( Abs(localPoint.x()) >= unplaced.GetRadius() ) && (pos_dot_dir_x >= 0));
+    done|=isDistancingInX;
+    if (done == Backend::kTrue)	return;
+	
     //check if the point is distancing in Y
-    Bool_t isDistancingInY = ( Abs(localPoint.y()) > unplaced.GetRadius() ) && (pos_dot_dir_y > 0);
+    Bool_t isDistancingInY = ((Abs(localPoint.y()) >= unplaced.GetRadius() ) && (pos_dot_dir_y >= 0));
     done|=isDistancingInY;
-    if (done == Backend::kTrue) return;
+    if (done == Backend::kTrue) return;  
 
     //check if the point is distancing in Z
-    Bool_t isDistancingInZ = ( Abs(localPoint.z()) > unplaced.GetRadius() ) && (pos_dot_dir_z > 0);
+    Bool_t isDistancingInZ = (( Abs(localPoint.z()) >= unplaced.GetRadius() ) && (pos_dot_dir_z >= 0));
     done|=isDistancingInZ;
-    if (done == Backend::kTrue) return;
-
-    //checking if the poing is inside
-    Double_t tolRMin = unplaced.GetfRTolI();
-	Double_t tolRMin2 = tolRMin * tolRMin;
-    Bool_t isInside = ( rad2 < tolRMin2);
-    done|= isInside;
-    if (done == Backend::kTrue) return;
-
-
-    Bool_t notInsideButOutsideTolerantBoundary=((rad > (unplaced.GetRadius() - kHalfTolerance)) && (c > (kTolerance * unplaced.GetRadius())) && (d2 >= 0));
-	Double_t s = -pDotV3d - Sqrt(d2);
-    MaskedAssign(notInsideButOutsideTolerantBoundary , s, &distance);
-    done|=notInsideButOutsideTolerantBoundary;
 	if (done == Backend::kTrue) return;
+    */
 
-	
-    Bool_t notInsideButInsideTolerantBoundary=((rad > (unplaced.GetRadius() - kHalfTolerance)) && (c > (-kTolerance * unplaced.GetRadius())) && ((d2 < (kTolerance * unplaced.GetRadius())) || (pDotV3d >= 0)));
-//	MaskedAssign(notInsideButInsideTolerantBoundary , zero, &distance);
-    done|=notInsideButInsideTolerantBoundary;
+    /*
+    Bool_t allPointingOut=(pos_dot_dir_x >= 0) && (pos_dot_dir_y >= 0) && (pos_dot_dir_z >= 0) ;
+    Bool_t isOutAndGoingOut=((rad > unplaced.GetRadius()) && allPointingOut );
+    done|=isOutAndGoingOut;
 	if (done == Backend::kTrue) return;
-    
-    MaskedAssign(!done , zero, &distance);
+    */
+
+    //Is the point Inside
+	Bool_t isInside = ((rad < unplaced.GetfRTolI()));
+    done |= isInside;
+    MaskedAssign( isInside, kInfinity, &distance );
+	if(done == Backend::kTrue)return;
+
+ 
+    Bool_t notOutsideAndOnSurface = (c > (-kTolerance * unplaced.GetRadius()));
+    Bool_t d2LTFrTolFrAndPDotV3DGTET0= ((d2 < (kTolerance * unplaced.GetRadius())) || (pDotV3d >= 0));
+	done |= (notOutsideAndOnSurface && d2LTFrTolFrAndPDotV3DGTET0);
+    if(done == Backend::kTrue) return;
+
+	/*
+    done |= (notOutsideAndOnSurface && !d2LTFrTolFrAndPDotV3DGTET0);
+	MaskedAssign((notOutsideAndOnSurface && !d2LTFrTolFrAndPDotV3DGTET0),zero,&distance);
+    if(done == Backend::kTrue) return;
+	*/
+
+
+    Bool_t isOutsideTolBoundary = (c > (kTolerance * unplaced.GetRadius()));
+	Bool_t isD2GtEt0 = (d2>=0);
+	done |= (isOutsideTolBoundary && !isD2GtEt0);
+    if(done == Backend::kTrue) return;
+
+	done |= (isOutsideTolBoundary && isD2GtEt0 );
+	MaskedAssign((isOutsideTolBoundary && isD2GtEt0),(-pDotV3d - Sqrt(d2)),&distance);
+    //MaskedAssign(((-pDotV3d - Sqrt(d2))<0),kInfinity,&distance);
+	MaskedAssign((distance<0),kInfinity,&distance);
+    if(done == Backend::kTrue) return;
 
 }
 
