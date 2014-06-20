@@ -24,7 +24,9 @@ VPlacedVolume const* PlacedTube::ConvertToUnspecialized() const {
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTube::ConvertToRoot() const {
-  return new TGeoTubeSeg(GetLabel().c_str(), rmin(), rmax(), z(), sphi()*(180/M_PI), dphi()*(180/M_PI) );
+  if(dphi() >= 2*M_PI)
+     return new TGeoTube(GetLabel().c_str(), rmin(), rmax(), z());
+  return new TGeoTubeSeg(GetLabel().c_str(), rmin(), rmax(), z(), sphi()*(180/M_PI), sphi()*(180/M_PI)+dphi()*(180/M_PI) );
 }
 #endif
 
