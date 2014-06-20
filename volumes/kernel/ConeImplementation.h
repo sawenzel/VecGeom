@@ -65,6 +65,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void UnplacedContains(
   UnplacedCone const &unplaced,
   Vector3D<typename Backend::precision_v> const &point,
@@ -147,6 +148,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void Contains(
        UnplacedCone const &unplaced,
        Transformation3D const &transformation,
@@ -161,6 +163,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void UnplacedInside(
       UnplacedCone const &unplaced,
       Vector3D<typename Backend::precision_v> const & point,
@@ -171,6 +174,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void Inside(UnplacedCone const &unplaced,
                      Transformation3D const &transformation,
                      Vector3D<typename Backend::precision_v> const &point,
@@ -183,6 +187,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void Inside(UnplacedCone const &unplaced,
                      Transformation3D const &transformation,
                      Vector3D<typename Backend::precision_v> const &point,
@@ -200,6 +205,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void DistanceToIn(
       UnplacedCone const &unplaced,
       Transformation3D const &transformation,
@@ -357,6 +363,7 @@ struct ConeImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void DistanceToOut(
       UnplacedCone const &unplaced,
       Vector3D<typename Backend::precision_v> point,
