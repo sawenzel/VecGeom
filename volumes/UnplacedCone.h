@@ -14,6 +14,7 @@
 
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+#include <cmath>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -36,6 +37,12 @@ namespace VECGEOM_NAMESPACE {
 class UnplacedCone : public VUnplacedVolume, AlignedBase {
 
 private:
+    VECGEOM_CUDA_HEADER_BOTH
+      static void GetAlongVectorToPhiSector(Precision phi, Precision &x, Precision &y) {
+        x = std::cos(phi);
+        y = std::sin(phi);
+      }
+
   Precision fRmin1;
   Precision fRmax1;
   Precision fRmin2;
@@ -48,8 +55,10 @@ private:
   // makes task to detect phi sektors very efficient
   Vector3D<Precision> fNormalPhi1;
   Vector3D<Precision> fNormalPhi2;
-  Vector3D<Precision> fAlongPhi1;
-  Vector3D<Precision> fAlongPhi2;
+  Precision fAlongPhi1x;
+  Precision fAlongPhi1y;
+  Precision fAlongPhi2x;
+  Precision fAlongPhi2y;
 
   // Some precomputed values to avoid divisions etc
   Precision fInnerSlope; // "gradient" of inner surface in z direction
@@ -93,6 +102,9 @@ public:
        fInnerSlopeSquare = fInnerSlope*fInnerSlope;
        fOuterOffsetSquare = fOuterOffset*fOuterOffset;
        fInnerOffsetSquare = fInnerOffset*fInnerOffset;
+
+       GetAlongVectorToPhiSector(fSPhi, fAlongPhi1x, fAlongPhi1y);
+       GetAlongVectorToPhiSector(fSPhi + fDPhi, fAlongPhi2x, fAlongPhi2y);
        // calculate caches
        // the possible caches are one major difference between tube and cone
 
@@ -147,10 +159,10 @@ public:
     Precision GetInnerOffsetSquare() const {return fInnerOffset*fInnerOffset;}
     Precision GetOuterOffsetSquare() const {return fOuterOffset*fOuterOffset;}
 
-    Precision alongPhi1x() const { return fAlongPhi1.x(); }
-    Precision alongPhi1y() const { return fAlongPhi1.y(); }
-    Precision alongPhi2x() const { return fAlongPhi2.x(); }
-    Precision alongPhi2y() const { return fAlongPhi2.y(); }
+    Precision alongPhi1x() const { return fAlongPhi1x; }
+    Precision alongPhi1y() const { return fAlongPhi1y; }
+    Precision alongPhi2x() const { return fAlongPhi2x; }
+    Precision alongPhi2y() const { return fAlongPhi2y; }
 
     Precision Capacity() const {
         return (2.*fDz* kPiThird)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
@@ -172,6 +184,15 @@ public:
          const int id,
    #endif
          VPlacedVolume *const placement = NULL) const;
+
+    template <TranslationCode transCodeT, RotationCode rotCodeT>
+     VECGEOM_CUDA_HEADER_DEVICE
+     static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                                  Transformation3D const *const transformation,
+   #ifdef VECGEOM_NVCC
+                                  const int id,
+   #endif
+                                  VPlacedVolume *const placement = NULL);
 
 };
 

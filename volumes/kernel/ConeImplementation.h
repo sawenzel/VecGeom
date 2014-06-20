@@ -13,6 +13,8 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include "volumes/kernel/TubeImplementation.h"
+#include <iostream>
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -71,57 +73,74 @@ struct ConeImplementation {
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
+//  std::cerr << point.x() << " " << point.y() << " " << point.z() << "\n";
+
   Float_t fDz = unplaced.GetDz();
   // test if point is inside this cone --> replace this by a mask
-  Bool_t outside(Backend::kFalse);
-  outside = Abs( point.z() ) > fDz;
+  Bool_t inside(Backend::kTrue);
+  inside = Abs( point.z() ) < fDz;
+
+//  std::cerr << inside << "\n";
 
   // this could be used even for vector
   if( Backend::early_returns ){
-    if( outside == Backend::kTrue ){
-        contains = Backend::kFalse;
+      if( inside == Backend::kFalse ){
+        // here all particles are outside
+        contains = inside;
+        return;
     }
   }
+
+//  std::cerr << "after first return" << "\n";
+//  std::cerr << inside << "\n";
+
 
   Float_t r2 = point.x()*point.x()+point.y()*point.y();
-
-  // calculate cone stuff at the height of
+  // calculate cone radius at the z-height of position
   Float_t rh = unplaced.GetOuterSlope()*point.z()
           + unplaced.GetOuterOffset();
-  outside |= ( r2 > rh*rh );
+  inside &= ( r2 < rh*rh );
 
   if( Backend::early_returns ){
-    if( outside == Backend::kTrue ){
-        contains = Backend::kFalse;
+    if( inside == Backend::kFalse ){
+        // here all particles are outside
+        contains = inside;
+        return;
     }
-    return;
   }
 
-  if( ConeTypes::checkRminTreatment<ConeType>(unplaced))
-  {
+//  std::cerr << "after second return" << "\n";
+//  std::cerr << inside << "\n";
+
+
+  if(ConeTypes::checkRminTreatment<ConeType>(unplaced)){
      Float_t rl = unplaced.GetInnerSlope()*point.z() + unplaced.GetInnerOffset();
-      outside |= ( r2 < rl*rl );
+     inside &= ( r2 > rl*rl );
 
-      if( Backend::early_returns ){
-          if( outside == Backend::kTrue ){
-              contains = Backend::kFalse;
-            }
-        return;
+     if( Backend::early_returns ){
+        if( inside == Backend::kFalse ){
+            // here all particles are outside
+            contains = inside;
+            return;
+        }
       }
-   }
+  }
 
-   // inside sector?
+//  std::cerr << "after third return" << "\n";
+//  std::cerr << inside << "\n";
+
+   // inside phi sector, then?
    Bool_t insector = Backend::kTrue;
    if( ConeTypes::checkPhiTreatment<ConeType>(unplaced)) {
       TubeUtilities::PointInCyclicalSector<Backend, ConeType, UnplacedCone, false>(unplaced, point.x(), point.y(), insector);
-      if( Backend::early_returns && !insector ) {
-            contains = Backend::kFalse;
-            return;
-          }
+      inside &= insector;
    }
 
+//   std::cerr << "after Phi treatment" << "\n";
+//   std::cerr << inside << "\n";
+
    // this is not correct; look at tube stuff
-   contains=outside;
+   contains=inside;
 }
 
 
@@ -135,7 +154,8 @@ struct ConeImplementation {
        Vector3D<typename Backend::precision_v> &localPoint,
        typename Backend::bool_v &contains) {
 
-    // TOBEIMPLEMENTED
+      localPoint=transformation.Transform<transCodeT,rotCodeT>(point);
+      return UnplacedContains<Backend>(unplaced,localPoint,contains);
   }
 
 
@@ -156,8 +176,8 @@ struct ConeImplementation {
                      Vector3D<typename Backend::precision_v> const &point,
                      Vector3D<typename Backend::precision_v> &localPoint,
                      typename Backend::int_v &inside) {
-    localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-    UnplacedInside<Backend>(unplaced, localPoint, inside);
+ //   localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+ //   UnplacedInside<Backend>(unplaced, localPoint, inside);
   }
 
 
@@ -167,10 +187,13 @@ struct ConeImplementation {
                      Transformation3D const &transformation,
                      Vector3D<typename Backend::precision_v> const &point,
                      typename Backend::int_v &inside) {
-     // Vector3D<> localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-     // UnplacedInside<Backend>(unplaced, localPoint, inside);
+    typename Backend::bool_v contains;
+    Vector3D<typename Backend::precision_v> localPoint
+        = transformation.Transform<transCodeT, rotCodeT>(point);
+    UnplacedContains<Backend>(unplaced, localPoint, contains);
+    inside = EInside::kOutside;
+    MaskedAssign(contains, EInside::kInside, &inside);
   }
-
 
   // we need to provide the Contains functions for the boolean interface
 

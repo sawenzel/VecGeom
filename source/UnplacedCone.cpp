@@ -40,11 +40,11 @@ namespace VECGEOM_NAMESPACE {
        __attribute__((unused)) const UnplacedCone &cone = static_cast<const UnplacedCone&>( *(logical_volume->unplaced_volume()) );
 
        #ifdef VECGEOM_NVCC
-         #define RETURN_SPECIALIZATION(tubeTypeT) return CreateSpecializedWithPlacement< \
-             SpecializedTube<transCodeT, rotCodeT, tubeTypeT> >(logical_volume, transformation, id, placement)
+         #define RETURN_SPECIALIZATION(coneTypeT) return CreateSpecializedWithPlacement< \
+             SpecializedCone<transCodeT, rotCodeT, coneTypeT> >(logical_volume, transformation, id, placement)
        #else
-         #define RETURN_SPECIALIZATION(tubeTypeT) return CreateSpecializedWithPlacement< \
-             SpecializedTube<transCodeT, rotCodeT, tubeTypeT> >(logical_volume, transformation, placement)
+         #define RETURN_SPECIALIZATION(coneTypeT) return CreateSpecializedWithPlacement< \
+             SpecializedCone<transCodeT, rotCodeT, coneTypeT> >(logical_volume, transformation, placement)
        #endif
 
   #ifdef GENERATE_CONE_SPECIALIZATIONS
