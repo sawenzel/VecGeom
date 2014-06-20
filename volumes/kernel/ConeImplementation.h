@@ -75,11 +75,8 @@ struct ConeImplementation {
   typedef typename Backend::bool_v Bool_t;
 
 //  std::cerr << point.x() << " " << point.y() << " " << point.z() << "\n";
-
   Float_t fDz = unplaced.GetDz();
-  // test if point is inside this cone --> replace this by a mask
-  Bool_t inside(Backend::kTrue);
-  inside = Abs( point.z() ) < fDz;
+  Bool_t inside = Abs( point.z() ) < fDz;
 
 //  std::cerr << inside << "\n";
 
@@ -167,9 +164,78 @@ struct ConeImplementation {
   static void UnplacedInside(
       UnplacedCone const &unplaced,
       Vector3D<typename Backend::precision_v> const & point,
-      typename Backend::int_v &inside) {
+      typename Backend::int_v &location) {
 
-    // TOBEIMPLEMENTED
+      typedef typename Backend::precision_v Float_t;
+      typedef typename Backend::bool_v Bool_t;
+
+      //  std::cerr << point.x() << " " << point.y() << " " << point.z() << "\n";
+      Float_t fDz = unplaced.GetDz();
+      // could cache a tolerant fDz;
+      Float_t absz = Abs(point.z());
+      Bool_t completelyinside = absz < fDz - kTolerance;
+      // could cache a tolerant fDz;
+      Bool_t completelyoutside = absz > fDz + kTolerance;
+
+      if ( Backend::early_returns ){
+        if ( completelyoutside == Backend::kTrue ){
+                      // here all particles are outside
+//           std::cerr << "ereturn 1\n";
+           location = EInside::kOutside;
+           return;
+        }
+      }
+
+      Float_t r2 = point.x()*point.x()+point.y()*point.y();
+      // calculate cone radius at the z-height of position
+      Float_t rh = unplaced.GetOuterSlope()*point.z()
+                + unplaced.GetOuterOffset();
+
+      completelyinside &= ( r2 < (rh-kTolerance)*(rh-kTolerance) );
+      // TODO: could we reuse the computation from the previous line??
+      completelyoutside |= ( r2 > (rh+kTolerance)*(rh+kTolerance) );
+
+      /** think about a suitable early return condition **/
+      if (Backend::early_returns){
+        if ( completelyoutside == Backend::kTrue ){
+              location = EInside::kOutside;
+//              std::cerr << "ereturn 2\n";
+              return;
+        }
+      }
+
+      // treat inner radius
+      if (ConeTypes::checkRminTreatment<ConeType>(unplaced)){
+         Float_t rl = unplaced.GetInnerSlope()*point.z() + unplaced.GetInnerOffset();
+         completelyinside &= ( r2 > (rl+kTolerance)*(rl+kTolerance) );
+         completelyoutside |= ( r2 < (rl-kTolerance)*(rl-kTolerance) );
+
+         if( Backend::early_returns ){
+            if( completelyoutside == Backend::kTrue ){
+                // here all particles are outside
+                location = EInside::kOutside;
+ //               std::cerr << "ereturn 3\n";
+                return;
+              }
+            }
+      } /* end inner radius treatment */
+
+      // inside phi sector, then?
+      Bool_t insector = Backend::kTrue;
+      if(ConeTypes::checkPhiTreatment<ConeType>(unplaced)) {
+         TubeUtilities::PointInCyclicalSector<Backend, ConeType, UnplacedCone, false>
+         (unplaced, point.x(), point.y(), insector);
+         completelyinside &= insector;
+         completelyoutside |= !insector;
+      }
+      // could do a final early return check for completely outside here
+
+      // here we are done; do final assignment
+      location = EInside::kSurface;
+      MaskedAssign( completelyinside, EInside::kInside, &location );
+      MaskedAssign( completelyoutside, EInside::kOutside, &location );
+//      std::cerr << "final return\n";
+      return;
   }
 
   template <class Backend>
@@ -195,10 +261,23 @@ struct ConeImplementation {
     typename Backend::bool_v contains;
     Vector3D<typename Backend::precision_v> localPoint
         = transformation.Transform<transCodeT, rotCodeT>(point);
-    UnplacedContains<Backend>(unplaced, localPoint, contains);
-    inside = EInside::kOutside;
-    MaskedAssign(contains, EInside::kInside, &inside);
-  }
+    typename Backend::int_v crosscheck;
+    UnplacedInside<Backend>(unplaced,localPoint,inside);
+
+
+//    UnplacedContains<Backend>(unplaced, localPoint, contains);
+//    inside = EInside::kOutside;
+//    MaskedAssign(contains, EInside::kInside, &inside);
+//    // crosscheck
+//    if( inside != crosscheck )
+//    {
+//        std::cerr << "diff " << inside << " " << crosscheck << "\n";
+//    }
+//    else
+//    {
+//        std::cerr << "same " << inside << " " << crosscheck << "\n";
+//    }
+ }
 
   // we need to provide the Contains functions for the boolean interface
 
