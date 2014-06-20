@@ -76,19 +76,20 @@ VPlacedVolume* LogicalVolume::Place() const {
   return Place(label_->c_str());
 }
 
-void LogicalVolume::PlaceDaughter(
+VPlacedVolume const* LogicalVolume::PlaceDaughter(
     char const *const label,
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
     std::cerr << label << std::endl;
     VPlacedVolume const *const placed = volume->Place(label, transformation);
-  daughters_->push_back(placed);
+    daughters_->push_back(placed);
+    return placed;
 }
 
-void LogicalVolume::PlaceDaughter(
+VPlacedVolume const* LogicalVolume::PlaceDaughter(
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
+    return PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
