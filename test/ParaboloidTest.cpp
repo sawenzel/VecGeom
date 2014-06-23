@@ -1,14 +1,12 @@
 /// @file ParaboloidTest.cpp
 /// @author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
 
-#include "volumes/logical_volume.h"
-#include "volumes/box.h"
+#include "volumes/LogicalVolume.h"
+#include "volumes/Box.h"
 #include "volumes/Paraboloid.h"
 #include "benchmarking/Benchmarker.h"
-#include "management/geo_manager.h"
+#include "management/GeoManager.h"
 
-
-#ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
 #include "TGeoParaboloid.h"
 #include "TGraph2D.h"
@@ -24,14 +22,14 @@
 #include "TColor.h"
 #include "TROOT.h"
 #include "TAttMarker.h"
-#endif
+
 
 
 using namespace vecgeom;
 
 int main( int argc,  char *argv[]) {
     
-#ifdef VECGEOM_ROOT
+
     
     TApplication theApp("App",&argc,argv);
     
@@ -56,14 +54,14 @@ int main( int argc,  char *argv[]) {
     //worldPlaced->PrintContent();
     
     GeoManager::Instance().set_world(worldPlaced);
-    Vector<Daughter> dau=worldPlaced->daughters();
+    //Vector<Daughter> dau=worldPlaced->daughters();
     std::cout<<"World and paraboloid placed\n";
 
     //My placed volume
-    dau[0]->PrintContent();
+    //dau[0]->PrintContent();
     
-    //VPlacedVolume *paraboloidPlaced=paraboloid.Place();
-    //paraboloidPlaced->PrintContent();
+    VPlacedVolume *paraboloidPlaced=paraboloid.Place();
+    paraboloidPlaced->PrintContent();
 
     
     int np=1000000,
@@ -74,7 +72,9 @@ int main( int argc,  char *argv[]) {
     mismatchDistToIn=0,
     mismatchDistToOut=0,
     mismatchSafetyToIn=0,
-    mismatchSafetyToOut=0;
+    mismatchSafetyToOut=0,
+    unvalidatedSafetyToIn=0,
+    unvalidatedSafetyToOut=0;
     
     float mbDistToIn,
     rootDistToIn,
@@ -84,6 +84,7 @@ int main( int argc,  char *argv[]) {
     rootSafetyToOut,
     mbSafetyToIn,
     rootSafetyToIn;
+    
     
     
     double coord[3], direction[3], module,
@@ -348,8 +349,8 @@ int main( int argc,  char *argv[]) {
     
     for(int i=0; i<np; i++)
     {
-        inside=dau[0]->Inside(points[i]);
-        if(inside==0){
+        inside=paraboloidPlaced->Inside(points[i]);
+        if(inside!=0){ //Enum-inside give back 0 if the point is inside 
             
             
             myCountOut++;
@@ -374,7 +375,8 @@ int main( int argc,  char *argv[]) {
         if(inside==0){
             rootCountOut++;
             
-            mbDistToIn=dau[0]->DistanceToIn(points[i], dir[i]);
+            //mbDistToIn=dau[0]->DistanceToIn(points[i], dir[i]);
+            mbDistToIn=paraboloidPlaced->DistanceToIn(points[i], dir[i]);
             rootDistToIn=par->DistFromOutside(coord, direction);
             if( (mbDistToIn!=rootDistToIn) && !(mbDistToIn == kInfinity))
             {
@@ -384,19 +386,25 @@ int main( int argc,  char *argv[]) {
                 mismatchDistToIn++;
             }
             
-            mbSafetyToIn=dau[0]->SafetyToIn(points[i]);
+            mbSafetyToIn=paraboloidPlaced->SafetyToIn(points[i]);
             rootSafetyToIn=par->Safety(coord, false);
             if( (mbSafetyToIn!=rootSafetyToIn))
             {
+                //std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
+                //std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
+                mismatchSafetyToIn++;
+            }
+            if( (mbSafetyToIn>rootSafetyToIn))
+            {
                 std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
                 std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
-                mismatchSafetyToIn++;
+                unvalidatedSafetyToIn++;
             }
             
         }
         else{
             rootCountIn++;
-            mbDistToOut=dau[0]->DistanceToOut(points[i], dir[i]);
+            mbDistToOut=paraboloidPlaced->DistanceToOut(points[i], dir[i]);
             rootDistToOut=par->DistFromInside(coord, direction);
             if( (mbDistToOut!=rootDistToOut))
             {
@@ -406,14 +414,17 @@ int main( int argc,  char *argv[]) {
                 mismatchDistToOut++;
             }
             
-            mbSafetyToOut=dau[0]->SafetyToOut(points[i]);
+            mbSafetyToOut=paraboloidPlaced->SafetyToOut(points[i]);
             rootSafetyToOut=par->Safety(coord, true);
             if( (mbSafetyToOut!=rootSafetyToOut))
             {
-                //markerOutside->SetNextPoint(points[i].x(), points[i].y(), points[i].z());
-                std::cout<<"mbSafetyToOut: "<<mbSafetyToOut;
-                std::cout<<" rootSafetyToOut: "<<rootSafetyToOut<<"\n";
+                //std::cout<<"mbSafetyToOut: "<<mbSafetyToOut;
+                //std::cout<<" rootSafetyToOut: "<<rootSafetyToOut<<"\n";
                 mismatchSafetyToOut++;
+            }
+            if( (mbSafetyToOut>rootSafetyToOut))
+            {
+                unvalidatedSafetyToOut++;
             }
         }
 
@@ -433,10 +444,12 @@ int main( int argc,  char *argv[]) {
     std::cout<<"DistToOut mismatches: "<<mismatchDistToOut<<" \n";
     std::cout<<"SafetyToIn mismatches: "<<mismatchSafetyToIn<<" \n";
     std::cout<<"SafetyToOut mismatches: "<<mismatchSafetyToOut<<" \n";
+    std::cout<<"Unvalidated SafetyToIn: "<<unvalidatedSafetyToIn<<" \n";
+    std::cout<<"Unvalidated SafetyToOut: "<<unvalidatedSafetyToOut<<" \n";
     
     theApp.Run();
     
-#endif
+
     return 0;
 }
 
