@@ -52,7 +52,7 @@ protected:
                 Transformation3D const *const transformation,
                 PlacedBox const *const boundingbox,
                 const int id)
-      : logical_volume_(logical_vol), transformation_(transform),
+      : logical_volume_(logical_vol), transformation_(transformation),
         bounding_box_(boundingbox), id_(id), label_(NULL) {}
 
 #endif

@@ -46,17 +46,17 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D(TrackContainer<Type> const &other);
 
-  /**
-   * Copy constructor
-   */
-  VECGEOM_CUDA_HEADER_BOTH
-  SOA3D(SOA3D const &other);
+  // /**
+  //  * Copy constructor
+  //  */
+  // VECGEOM_CUDA_HEADER_BOTH
+  // SOA3D(SOA3D const &other);
+
   /**
    * assignment operator
    */
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D* operator=(SOA3D const &other);
-
 
   ~SOA3D();
 
@@ -165,12 +165,6 @@ SOA3D<Type>::SOA3D(TrackContainer<Type> const &other)
   Allocate();
   this->size_ = other.size_;
   for (int i = 0, i_end = this->size_; i < i_end; ++i) Set(i, other[i]);
-}
-
-template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
-SOA3D<Type>::SOA3D(SOA3D const &other)
-    : SOA3D(other) {
 }
 
 template <typename Type>

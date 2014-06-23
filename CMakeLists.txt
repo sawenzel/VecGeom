@@ -357,7 +357,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
-  # Files go here
+  ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
