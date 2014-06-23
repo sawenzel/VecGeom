@@ -41,6 +41,8 @@ public:
     return fElement == other.fElement;
   }
 
+  virtual ~Iterator(){}
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   bool operator!=(Iterator<Type> const &other) {
@@ -54,6 +56,8 @@ public:
     return *this;
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Iterator<Type>& operator++(int) {
@@ -61,6 +65,7 @@ public:
     ++(*this);
     return temp;
   }
+#pragma GCC diagnostic pop
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

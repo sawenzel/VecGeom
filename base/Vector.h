@@ -88,6 +88,12 @@ public:
                           Vector<Type> *const gpu_ptr) const;
 #endif
 
+private:
+
+  // Not implemented
+  Vector(Vector const &other);
+  Vector * operator=(Vector const & other);
+
 };
 
 template <typename Type> class Vector;

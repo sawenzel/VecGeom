@@ -32,7 +32,7 @@ public:
    * Initializes the SOA with existing data arrays, performing no allocation.
    */
   VECGEOM_CUDA_HEADER_BOTH
-  SOA3D(Type *const x, Type *const y, Type *const z, const int size);
+    SOA3D(Type *const /* x */ , Type *const /* y */, Type *const /* z */, const int size);
 
   /**
    * Initializes the SOA with a fixed size, allocating an aligned array for each
@@ -45,6 +45,18 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D(TrackContainer<Type> const &other);
+
+  // /**
+  //  * Copy constructor
+  //  */
+  // VECGEOM_CUDA_HEADER_BOTH
+  // SOA3D(SOA3D const &other);
+
+  /**
+   * assignment operator
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  SOA3D* operator=(SOA3D const &other);
 
   ~SOA3D();
 
@@ -132,21 +144,24 @@ private:
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
-SOA3D<Type>::SOA3D(Type *const x, Type *const y, Type *const z,
+SOA3D<Type>::SOA3D(Type *const xarray, Type *const yarray, Type *const zarray,
                    const int memory_size)
-    : TrackContainer<Type>(memory_size, false), x_(x), y_(y), z_(z) {
+    : TrackContainer<Type>(memory_size, false), x_(xarray), y_(yarray), z_(zarray) {
   this->size_ = memory_size;
 }
 
 template <typename Type>
-SOA3D<Type>::SOA3D(const int size) : TrackContainer<Type>(size, true) {
+  SOA3D<Type>::SOA3D(const int size) : TrackContainer<Type>(size, true), x_(NULL), y_(NULL),
+    z_(NULL)
+ {
   Allocate();
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 SOA3D<Type>::SOA3D(TrackContainer<Type> const &other)
-    : TrackContainer<Type>(other.size_, true) {
+  : TrackContainer<Type>(other.size_, true),  x_(NULL), y_(NULL),
+    z_(NULL) {
   Allocate();
   this->size_ = other.size_;
   for (int i = 0, i_end = this->size_; i < i_end; ++i) Set(i, other[i]);
@@ -164,13 +179,13 @@ SOA3D<Type>::~SOA3D() {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void SOA3D<Type>::Set(const int index, const Type x, const Type y,
-                      const Type z) {
+void SOA3D<Type>::Set(const int index, const Type xcomp, const Type ycomp,
+                      const Type zcomp) {
   // assert(index < this->memory_size_);
   if (index >= this->size_) this->size_ = index+1;
-  x_[index] = x;
-  y_[index] = y;
-  z_[index] = z;
+  x_[index] = xcomp;
+  y_[index] = ycomp;
+  z_[index] = zcomp;
 }
 
 template <typename Type>
@@ -183,11 +198,11 @@ void SOA3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void SOA3D<Type>::push_back(const Type x, const Type y, const Type z) {
+void SOA3D<Type>::push_back(const Type xcomp, const Type ycomp, const Type zcomp) {
   // assert(this->size_ < this->memory_size_);
-  x_[this->size_] = x;
-  y_[this->size_] = y;
-  z_[this->size_] = z;
+  x_[this->size_] = xcomp;
+  y_[this->size_] = ycomp;
+  z_[this->size_] = zcomp;
   this->size_++;
 }
 

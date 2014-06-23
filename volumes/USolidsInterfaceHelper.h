@@ -28,12 +28,14 @@ namespace VECGEOM_NAMESPACE {
 /// These do not necessarily provide all the return values promised by the
 /// interface, so use volumes in this way with caution.
 class USolidsInterfaceHelper : public VUSolid {
-
+  public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
                                Vector3D<Precision> const &position,
                                Vector3D<Precision> const &direction,
                                Precision const step_max = kInfinity) const =0;
+
+  virtual ~USolidsInterfaceHelper(){}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const =0;
@@ -117,6 +119,8 @@ class USolidsInterfaceHelper : public VUSolid {
     assert(0 && "ComputeBBox not implemented for USolids interface compatible"
                 " volume.");
   }
+
+
 
 };
 

@@ -303,10 +303,10 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    {
       // continue directly further down
       VPlacedVolume const * nextvol = daughters->operator []( nexthitvolume );
-      Transformation3D const *m = nextvol->transformation();
+      Transformation3D const * trans = nextvol->transformation();
 
       // this should be inlined here
-      LocatePoint( nextvol, m->Transform(newpointafterboundary), newstate, false );
+      LocatePoint( nextvol, trans->Transform(newpointafterboundary), newstate, false );
    }
    else
    {
@@ -425,6 +425,6 @@ void FindNextBoundaryAndStep(
 
 
 
-};
+}
 
 #endif /* SIMPLE_NAVIGATOR_H_ */

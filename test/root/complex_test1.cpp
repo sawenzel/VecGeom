@@ -51,6 +51,11 @@ void CreateRootGeom()
    ::gGeoManager->CloseGeometry();
 }
 
+void testVecAssign( Vector3D<Precision> const & a, Vector3D<Precision> & b )
+{
+  b=a;
+}
+
 void test1()
 {
    VPlacedVolume const * world = RootGeoManager::Instance().world();

@@ -40,9 +40,6 @@
 class UBits
 {
 
-  public:
-    unsigned char* fAllBits;       //[fNBytes] array of UChars
-
   protected:
 
     unsigned int   fNBits;         // Highest bit set + 1
@@ -58,6 +55,9 @@ class UBits
     void DoRightShift(unsigned int shift);
     void DoFlip();
     */
+
+  public:
+    unsigned char* fAllBits;       //[fNBytes] array of UChars
 
   public:
     UBits(unsigned int nbits = 0);

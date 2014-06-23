@@ -44,7 +44,7 @@ VPlacedVolume* GeoManager::FindPlacedVolume(char const *const label) {
   bool multiple = false;
   for (auto v = placed_volumes_.begin(), v_end = placed_volumes_.end();
        v != v_end; ++v) {
-    if (v->second->label() == label) {
+    if (v->second->GetLabel() == label) {
       if (!output) {
         output = v->second;
       } else {
@@ -73,7 +73,7 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   bool multiple = false;
   for (auto v = logical_volumes_.begin(), v_end = logical_volumes_.end();
        v != v_end; ++v) {
-    if (v->second->label() == label) {
+    if (v->second->GetLabel() == label) {
       if (!output) {
         output = v->second;
       } else {

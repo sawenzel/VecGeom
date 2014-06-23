@@ -12,6 +12,7 @@
 #include "management/VolumeFactory.h"
 #include "volumes/PlacedVolume.h"
 
+#include <cassert>
 #include <climits>
 #include <stdio.h>
 
@@ -22,13 +23,26 @@ int LogicalVolume::g_id_count = 0;
 #ifndef VECGEOM_NVCC
 LogicalVolume::LogicalVolume(char const *const label,
                              VUnplacedVolume const *const unplaced_volume)
-    : unplaced_volume_(unplaced_volume),
-      user_extension_(NULL) {
+  :  unplaced_volume_(unplaced_volume), id_(0), label_(NULL),
+     user_extension_(NULL), daughters_() {
   id_ = g_id_count++;
   GeoManager::Instance().RegisterLogicalVolume(this);
   label_ = new std::string(label);
   daughters_ = new Vector<Daughter>();
+  }
+
+LogicalVolume::LogicalVolume(LogicalVolume const & other)
+  : unplaced_volume_(), id_(0), label_(),
+    user_extension_(NULL), daughters_()
+{
+  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
 }
+
+LogicalVolume * LogicalVolume::operator=( LogicalVolume const & other )
+{
+  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+}
+
 #endif
 
 LogicalVolume::~LogicalVolume() {
@@ -74,7 +88,7 @@ void LogicalVolume::PlaceDaughter(
 void LogicalVolume::PlaceDaughter(
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  PlaceDaughter(volume->label().c_str(), volume, transformation);
+  PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
