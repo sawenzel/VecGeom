@@ -373,8 +373,44 @@ struct ParaboloidImplementation {
         
         Vector3D<Float_t> localPoint =
         transformation.Transform<transCodeT, rotCodeT>(point);
+#if 0
+        //in order to reduce the number of zero I have to threat separately the case of particles coming from outside but that are inside the bounding box and outside the shape
+        //FAST implementation starts here
+        safety=0.;
+        Float_t safety_t;
+        Float_t absZ= Abs(localPoint.z());
         
+        Float_t safeZ= absZ-unplaced.GetDz();
+        Float_t r=Sqrt(localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y());
+        Float_t safeRhi=r-unplaced.GetRhi();
         
+        Bool_t mask_z= absZ>unplaced.GetDz(); //if one of the two is TRUE --> go FAST
+        Bool_t mask_r= r>unplaced.GetRhi();
+        
+        MaskedAssign(mask_z && ! mask_r, safeZ, &safety);
+        MaskedAssign(mask_r && ! mask_z, safeRhi, &safety);
+        
+        Bool_t done(mask_r || mask_z);
+        
+        safety_t=Min(safeZ, safeRhi);
+        MaskedAssign(mask_r && mask_z, safety_t, &safety);
+        if (done == Backend::kTrue) return;
+        
+        Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
+        Float_t dr = r-Sqrt(r0sq);
+        Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
+        Float_t salf = talf/Sqrt(1.+talf*talf);
+        Float_t safR = Abs(dr*salf);
+        
+        Float_t max_safety= Max(safR, safeZ);
+        MaskedAssign(!done, max_safety, &safety);
+        
+        //FAST implementation ends here
+        
+#endif
+
+
+        //ACCURATE implementation starts here
         Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz()),
                 r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
         
@@ -401,6 +437,9 @@ struct ParaboloidImplementation {
         
         Float_t max_safety= Max(safR, safZ);
         MaskedAssign(!done, max_safety, &safety);
+        //ACCURATE implementation ends here
+
+
     
     }
     
@@ -416,9 +455,23 @@ struct ParaboloidImplementation {
         
         
     
-        Float_t absZ= Abs(point.z()),
-                safZ=(unplaced.GetDz() - absZ) ,
-                r0sq = (point.z() - unplaced.GetB())*unplaced.GetAinv();
+        Float_t absZ= Abs(point.z());
+        Float_t safZ=(unplaced.GetDz() - absZ);
+#if 0
+        //FAST implementation starts here
+        safety=0.;
+        Float_t safety_t;
+        Float_t r=Sqrt(point.x()*point.x()+point.y()*point.y());
+        Float_t safRlo=unplaced.GetRlo() - r;
+        safety_t=Min(safZ, safRlo);
+        MaskedAssign(safety_t>0, safety_t, &safety);
+        
+        //FAST implementation ends here
+        
+#endif
+
+        //ACCURATE implementation starts here
+        Float_t r0sq = (point.z() - unplaced.GetB())*unplaced.GetAinv();
         
         Bool_t done(false);
         safety=0.;
@@ -441,6 +494,8 @@ struct ParaboloidImplementation {
         
         Float_t min_safety=Min(safR, safZ);
         MaskedAssign(!done, min_safety, &safety);
+        //ACCURATE implementation ends here
+
     }
 
 };
