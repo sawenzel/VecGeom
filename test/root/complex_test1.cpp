@@ -191,8 +191,7 @@ void test7()
       Vector3D<Precision> p(x,y,z);
       NavigationState state(4);
       SimpleNavigator vecnav;
-      VPlacedVolume const *vol1 =
-          vecnav.LocatePoint(RootGeoManager::Instance().world(), p, state, true);
+      vecnav.LocatePoint(RootGeoManager::Instance().world(), p, state, true);
 
       /*
       if ( vol1 != NULL )
@@ -301,8 +300,7 @@ void test8()
 
       NavigationState state(4), newstate(4);
       SimpleNavigator nav;
-      VPlacedVolume const *vol1= nav.LocatePoint( RootGeoManager::Instance().world(),
-            p, state, true );
+      nav.LocatePoint( RootGeoManager::Instance().world(), p, state, true);
       double step;
       nav.FindNextBoundaryAndStep( p, d, state, newstate, 1E30, step );
 

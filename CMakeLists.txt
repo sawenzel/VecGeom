@@ -253,7 +253,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
-  source/Container.cpp
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
@@ -270,6 +269,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
+  source/Vector.cpp
   source/Vector3D.cpp
   source/NavigationState.cpp	
   source/SimpleNavigator.cpp
