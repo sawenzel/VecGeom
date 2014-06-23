@@ -26,27 +26,31 @@ template <class Backend>
       Vector3D<typename Backend::precision_v> point,
       typename Backend::int_v &inside) {
     
-typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;	
-	
-	Double_t radius2 = point.x()*point.x() + point.y()*point.y() + point.z()*point.z();
+    Bool_t done(false);	
+
+	Double_t rad2 = point.Mag2();
     Double_t tolRMax = unplaced.GetfRTolO();
 	Double_t tolRMax2 = tolRMax * tolRMax;
+    Double_t tolRMin = unplaced.GetfRTolI();
+	Double_t tolRMin2 = tolRMin * tolRMin;
 
-	Bool_t isOutside = ( radius2 > tolRMax2);
-	Bool_t done(isOutside);
+    //Point is Outside
+	Bool_t isOutside = ( rad2 > tolRMax2);
+	done |= isOutside;
     MaskedAssign(isOutside, EInside::kOutside, &inside);
     if(done == Backend::kTrue) return;
 
-    Double_t tolRMin = unplaced.GetfRTolI();
-	Double_t tolRMin2 = tolRMin * tolRMin;
-    Bool_t isInside = ( radius2 < tolRMax2);
-    MaskedAssign(isInside, EInside::kInside, &inside);
+    //Point is Inside
+    Bool_t isInside = ( rad2 < tolRMax2);
     done |= isInside;
-	if(done == Backend::kTrue) return;
+    MaskedAssign(isInside, EInside::kInside, &inside);
+    if(done == Backend::kTrue) return;
     
+    //Point is on the Surface
     MaskedAssign(!done, EInside::kSurface, &inside);
- 
+    return;
   }
 
 
@@ -61,38 +65,31 @@ typedef typename Backend::precision_v Double_t;
     typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;	
 	
-	
-	Double_t radius2 = point.x()*point.x() + point.y()*point.y() + point.z()*point.z();
+	Bool_t done(false);
+	Double_t rad2 = point.Mag2();
+
     Double_t tolRMax = unplaced.GetfRTolO();
 	Double_t tolRMax2 = tolRMax * tolRMax;
-
-	Bool_t isOutside = ( radius2 > tolRMax2);
-	Bool_t done(isOutside);
-    //MaskedAssign(isOutside, EInside::kOutside, &inside);
-	//MaskedAssign(isOutside, 0., &inside);
-    if(done == Backend::kTrue) 
-	{	inside=Backend::kFalse;//EInside::kOutside;
-		return;
-    }
-
     Double_t tolRMin = unplaced.GetfRTolI();
 	Double_t tolRMin2 = tolRMin * tolRMin;
-    Bool_t isInside = ( radius2 < tolRMin2);
-    //MaskedAssign(isInside, EInside::kInside, &inside);
-	//MaskedAssign(isOutside, 1., &inside);
+
+    Bool_t inSide(Backend::kTrue);
+
+    //Point is Outside
+	Bool_t isOutside = ( rad2 > tolRMax2);
+	done=isOutside;
+    MaskedAssign(isOutside, !inSide, &inside);
+    if(done == Backend::kTrue)return;
+
+    //Point is Inside    
+    Bool_t isInside = ( rad2 < tolRMin2);
     done |= isInside;
-	if(done == Backend::kTrue)
-	{
-		inside=Backend::kTrue;//EInside::kInside;
-	return;
-	}
-    
-    //MaskedAssign(!done, EInside::kSurface, &inside);
-	//MaskedAssign(!done, 2., &inside);
-	if(!done)
-		{
-		inside=Backend::kFalse;//EInside::kSurface;
-		}
+    MaskedAssign(isInside, inSide, &inside);
+    if(done == Backend::kTrue)return;
+
+	//Point is on the Surface
+    MaskedAssign(!done, !inSide, &inside);
+    return;
 }
 
   template <class Backend>
@@ -121,7 +118,7 @@ typedef typename Backend::precision_v Double_t;
     typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;  
 
-  Vector3D<Double_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
     InsideKernel<Backend>(unplaced, localPoint, inside);
 }
@@ -139,7 +136,6 @@ typedef typename Backend::precision_v Double_t;
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-  //std::cout<<"----------Entered DistanceToIn Function------------"<<std::endl;
     typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
@@ -150,9 +146,10 @@ typedef typename Backend::precision_v Double_t;
     localDir =  transformation.Transform<transCodeT, rotCodeT>(direction);
 
     //General Precalcs
-    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
-    Double_t rad = sqrt(rad2);
-    Double_t pDotV3d = localPoint.x() * localDir.x() + localPoint.y() * localDir.y() + localPoint.z() * localDir.z();
+    Double_t rad2 = localPoint.Mag2();
+    Double_t rad = Sqrt(rad2);
+    Double_t pDotV3d = localPoint.Dot(localDir);
+
     Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
     Double_t c = rad2 - radius2;
     Double_t d2 = pDotV3d * pDotV3d - c;
@@ -161,34 +158,9 @@ typedef typename Backend::precision_v Double_t;
     Double_t pos_dot_dir_y = localPoint.y()*localDir.y();
 	Double_t pos_dot_dir_z = localPoint.z()*localDir.z();
 
-	//Bool_t done(Backend::kFalse);
 	Bool_t done(false);
     distance = kInfinity;
     Double_t zero=Backend::kZero;
-
-    /*
-    //check if the point is distancing in X
-    Bool_t isDistancingInX = (( Abs(localPoint.x()) >= unplaced.GetRadius() ) && (pos_dot_dir_x >= 0));
-    done|=isDistancingInX;
-    if (done == Backend::kTrue)	return;
-	
-    //check if the point is distancing in Y
-    Bool_t isDistancingInY = ((Abs(localPoint.y()) >= unplaced.GetRadius() ) && (pos_dot_dir_y >= 0));
-    done|=isDistancingInY;
-    if (done == Backend::kTrue) return;  
-
-    //check if the point is distancing in Z
-    Bool_t isDistancingInZ = (( Abs(localPoint.z()) >= unplaced.GetRadius() ) && (pos_dot_dir_z >= 0));
-    done|=isDistancingInZ;
-	if (done == Backend::kTrue) return;
-    */
-
-    /*
-    Bool_t allPointingOut=(pos_dot_dir_x >= 0) && (pos_dot_dir_y >= 0) && (pos_dot_dir_z >= 0) ;
-    Bool_t isOutAndGoingOut=((rad > unplaced.GetRadius()) && allPointingOut );
-    done|=isOutAndGoingOut;
-	if (done == Backend::kTrue) return;
-    */
 
     //Is the point Inside
 	Bool_t isInside = ((rad < unplaced.GetfRTolI()));
@@ -202,12 +174,6 @@ typedef typename Backend::precision_v Double_t;
 	done |= (notOutsideAndOnSurface && d2LTFrTolFrAndPDotV3DGTET0);
     if(done == Backend::kTrue) return;
 
-	/*
-    done |= (notOutsideAndOnSurface && !d2LTFrTolFrAndPDotV3DGTET0);
-	MaskedAssign((notOutsideAndOnSurface && !d2LTFrTolFrAndPDotV3DGTET0),zero,&distance);
-    if(done == Backend::kTrue) return;
-	*/
-
 
     Bool_t isOutsideTolBoundary = (c > (kTolerance * unplaced.GetRadius()));
 	Bool_t isD2GtEt0 = (d2>=0);
@@ -216,7 +182,7 @@ typedef typename Backend::precision_v Double_t;
 
 	done |= (isOutsideTolBoundary && isD2GtEt0 );
 	MaskedAssign((isOutsideTolBoundary && isD2GtEt0),(-pDotV3d - Sqrt(d2)),&distance);
-    //MaskedAssign(((-pDotV3d - Sqrt(d2))<0),kInfinity,&distance);
+    //(distance < 0 ) implies point is outside.
 	MaskedAssign((distance<0),kInfinity,&distance);
     if(done == Backend::kTrue) return;
 
@@ -245,9 +211,10 @@ typedef typename Backend::precision_v Double_t;
     localDir =  direction;
 
     //General Precalcs
-    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
-    Double_t rad = sqrt(rad2);
-    Double_t pDotV3d = localPoint.x() * localDir.x() + localPoint.y() * localDir.y() + localPoint.z() * localDir.z();
+    Double_t rad2    = localPoint.Mag2();
+    Double_t rad = Sqrt(rad2);
+    Double_t pDotV3d = localPoint.Dot(localDir);
+
     Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
     Double_t c = rad2 - radius2;
     Double_t d2 = pDotV3d * pDotV3d - c;
@@ -255,7 +222,7 @@ typedef typename Backend::precision_v Double_t;
     Bool_t done(false);
     distance = kInfinity;
 
-	//checking if the poing is outside
+	//checking if the point is outside
     Double_t tolRMax = unplaced.GetfRTolO();
 	Double_t tolRMax2 = tolRMax * tolRMax;
     Bool_t isOutside = ( rad2 > tolRMax2);
@@ -296,9 +263,8 @@ typedef typename Backend::precision_v Double_t;
     localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
 
     //General Precalcs
-    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
+    Double_t rad2    = localPoint.Mag2();
     Double_t rad = Sqrt(rad2);
-
     safe = rad - unplaced.GetRadius();
 	safety = safe;
     MaskedAssign( (safe < zero) , zero, &safety);
@@ -322,9 +288,8 @@ typedef typename Backend::precision_v Double_t;
     localPoint = point;
 
     //General Precalcs
-    Double_t rad2    = (localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y() + localPoint.z() * localPoint.z());
+    Double_t rad2    = localPoint.Mag2();
     Double_t rad = Sqrt(rad2);
-
     safe = unplaced.GetRadius() - rad;
 	safety = safe;
     MaskedAssign( (safe < zero) , zero, &safety);

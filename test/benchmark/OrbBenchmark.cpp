@@ -27,7 +27,7 @@ world.PlaceDaughter(&orb, &Transformation3D::kIdentity);
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
-  tester.SetPointCount(1<<13);
+  tester.SetPointCount(1<<15);
   tester.RunBenchmark();
 
   return 0;
