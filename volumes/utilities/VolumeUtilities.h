@@ -82,8 +82,8 @@ void FillBiasedDirections(VPlacedVolume const &volume,
 
   // Check hits
   for (int i = 0; i < size; ++i) {
-    for (Iterator<Daughter> j = volume.daughters().begin();
-        j != volume.daughters().end(); ++j) {
+    for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin();
+         j != volume.daughters().cend(); ++j) {
       if (IsHittingVolume(points[i], dirs[i], **j)) {
         n_hits++;
         hit[i] = true;
@@ -98,8 +98,8 @@ void FillBiasedDirections(VPlacedVolume const &volume,
     );
     while (hit[h]) {
       dirs.Set(h, SampleDirection());
-      for (Iterator<Daughter> i = volume.daughters().begin();
-          i != volume.daughters().end(); ++i) {
+      for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
+           iEnd = volume.daughters().cend(); i != iEnd; ++i) {
         if (!IsHittingVolume(points[h], dirs[h], **i)) {
           n_hits--;
           hit[h] = false;
@@ -117,8 +117,8 @@ void FillBiasedDirections(VPlacedVolume const &volume,
     );
     while (!hit[h]) {
       dirs.Set(h, SampleDirection());
-      for (Iterator<Daughter> i = volume.daughters().begin();
-            i != volume.daughters().end(); ++i) {
+      for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
+           iEnd = volume.daughters().cend(); i != iEnd; ++i) {
         if (IsHittingVolume(points[h], dirs[h], **i)) {
           n_hits++;
           hit[h] = true;
@@ -153,8 +153,8 @@ void FillUncontainedPoints(VPlacedVolume const &volume,
     do {
       points.Set(i, SamplePoint(dim));
       contained = false;
-      for (Iterator<Daughter> j = volume.daughters().begin();
-          j != volume.daughters().end(); ++j) {
+      for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin(),
+          jEnd = volume.daughters().cend(); j != jEnd; ++j) {
         if ((*j)->Contains( points[i] )) {
           contained = true;
           break;
@@ -177,8 +177,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
   std::vector<bool> insideVector(size, false);
   for (int i = 0; i < size; ++i) {
     points.Set(i, SamplePoint(dim));
-    for (Iterator<Daughter> v = volume.daughters().begin(),
-         v_end = volume.daughters().end(); v != v_end; ++v) {
+    for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
+         v_end = volume.daughters().cend(); v != v_end; ++v) {
       bool inside = (placed) ? (*v)->Contains(points[i])
                              : (*v)->UnplacedContains(points[i]);
       if (inside) {
@@ -193,7 +193,7 @@ void FillContainedPoints(VPlacedVolume const &volume,
     bool contained = false;
     do {
       points.Set(i, SamplePoint(dim));
-      for (Iterator<Daughter> v = volume.daughters().begin(),
+      for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
            v_end = volume.daughters().end(); v != v_end; ++v) {
         bool inside = (placed) ? (*v)->Contains(points[i])
                                : (*v)->UnplacedContains(points[i]);
@@ -213,8 +213,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
     bool contained = false;
     do {
       const Vector3D<Precision> sample = SamplePoint(dim);
-      for (Iterator<Daughter> v = volume.daughters().begin(),
-           v_end = volume.daughters().end(); v != v_end; ++v) {
+      for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
+           v_end = volume.daughters().cend(); v != v_end; ++v) {
         bool inside = (placed) ? (*v)->Contains(sample)
                                : (*v)->UnplacedContains(sample);
         if (inside) {

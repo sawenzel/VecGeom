@@ -11,6 +11,8 @@
 #include "volumes/Polygon.h"
 #include "volumes/UnplacedVolume.h"
 
+#include <ostream>
+
 namespace VECGEOM_NAMESPACE {
 
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
@@ -19,7 +21,7 @@ private:
 
   int fSideCount;
   Precision fPhiStart;
-  Precision fPhiTotal;
+  Precision fPhiEnd;
   bool fHasPhi;
 
 public:
@@ -28,7 +30,7 @@ public:
   UnplacedPolyhedron(
       const int sideCount,
       const Precision phiStart,
-      const Precision phiTotal,
+      Precision phiTotal,
       const int zPlaneCount,
       const Precision zPlanes[],
       const Precision rInner[],
@@ -36,6 +38,37 @@ public:
 #endif
 
   ~UnplacedPolyhedron();
+
+  virtual int memory_size() const { return sizeof(*this); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Print() const;
+
+  virtual void Print(std::ostream &os) const;
+
+#ifndef VECGEOM_NVCC
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL) const { return NULL; }
+#else
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const {
+    return NULL;
+  }
+#endif
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  virtual VUnplacedVolume* CopyToGpu() const { return NULL; }
+  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const {
+    return NULL;
+  }
+#endif
 
 private:
 

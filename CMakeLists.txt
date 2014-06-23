@@ -360,6 +360,7 @@ set(TEST_EXECUTABLES_ROOT
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/PolygonTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/usolids/PolyhedronTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp

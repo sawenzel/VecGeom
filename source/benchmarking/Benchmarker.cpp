@@ -3,7 +3,6 @@
 
 #include "benchmarking/Benchmarker.h"
 
-#include "base/Iterator.h"
 #include "base/SOA3D.h"
 #include "base/Stopwatch.h"
 #include "base/Transformation3D.h"

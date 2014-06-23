@@ -148,23 +148,22 @@ void Polygon::CrossesItself() const {
   Vector2D<Precision> p, p1;
   // Adjacent segments don't need to be checked and segments consist of two
   // points, so loop until end minus three.
-  for (Vector2D<Precision> const *i = fVertices.cbegin(),
-       *iEnd = fVertices.cend()-3; i != iEnd; ++i) {
-    printf("Checking segment\n");
+  for (Array<Vector2D<Precision> >::const_iterator i = fVertices.cbegin(),
+       iEnd = fVertices.cend()-3; i != iEnd; ++i) {
     p = *i;
     p1 = *(i+1);
     // Start from first non-adjacent segment and end at last non-adjacent
     // segment.
-    for (Vector2D<Precision> const *j = i+2; j != fVertices.cend()-1; ++j) {
+    for (Array<Vector2D<Precision> >::const_iterator j = i+2,
+         jEnd = fVertices.cend()-1; j != jEnd; ++j) {
       Assert(!LinesIntersect(p, p1, *j, *(j+1)), errorMessage);
     }
   }
-  printf("Checking connecting segment\n");
   // Segment between start and end
   p = *(fVertices.cend()-1);
   p1 = *(fVertices.cbegin());
-  for (Vector2D<Precision> const *i = fVertices.cbegin()+1,
-       *iEnd = fVertices.cend()-1; i != iEnd; ++i) {
+  for (Array<Vector2D<Precision> >::const_iterator i = fVertices.cbegin()+1,
+       iEnd = fVertices.cend()-2; i != iEnd; ++i) {
     Assert(!LinesIntersect(p, p1, *i, *(i+1)), errorMessage);
   }
 }

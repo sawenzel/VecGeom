@@ -4,6 +4,7 @@
 #include "volumes/UnplacedPolyhedron.h"
 
 #include "volumes/Polygon.h"
+#include "UPolyhedra.hh"
 
 #include <cmath>
 
@@ -14,14 +15,21 @@ UnplacedPolyhedron::~UnplacedPolyhedron() {}
 #ifndef VECGEOM_NVCC // CPU only constructor
 
 UnplacedPolyhedron::UnplacedPolyhedron(
-    const int sideCount, const Precision phiStart, const Precision phiTotal,
+    const int sideCount, const Precision phiStart, Precision phiTotal,
     const int zPlaneCount, const Precision zPlane[], const Precision rInner[],
     const Precision rOuter[])
-    : fSideCount(sideCount), fPhiStart(phiStart), fPhiTotal(phiTotal) {
+    : fSideCount(sideCount), fPhiStart(phiStart) {
+
+  UPolyhedra upolyhedra("", phiStart, phiTotal, sideCount, zPlaneCount,
+                        zPlane, rInner, rOuter);
 
   Assert(fSideCount > 0, "Polyhedron requires at least one side.\n");
 
-  // Fix phi parameters
+  // Fix phi parameters to:
+  //
+  // 0 <= fPhiStart <= 2*pi
+  // 0 <  fPhiTotal <= 2*pi
+  // fPhiStart > fPhiEnd < 4*pi
 
   if (fPhiStart < 0.) {
     fPhiStart += kTwoPi*(1 - static_cast<int>(fPhiStart / kTwoPi));
@@ -30,14 +38,15 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     fPhiStart -= kTwoPi*static_cast<int>(fPhiStart / kTwoPi);
   }
 
-  if ((fPhiTotal <= 0.) || (fPhiTotal >= kTwoPi * (1. - kEpsilon))) {
-    fPhiTotal = kTwoPi;
+  if ((phiTotal <= 0.) || (phiTotal >= kTwoPi * (1. - kEpsilon))) {
+    phiTotal = kTwoPi;
     fHasPhi = false;
   } else {
-    fPhiTotal = fPhiTotal;
     fHasPhi = true;
   }
-  Precision convertRad = 1. / cos(.5 * fPhiTotal / fSideCount);
+  fPhiEnd = fPhiStart + phiTotal;
+  fPhiEnd += kTwoPi * (fPhiEnd < fPhiStart);
+  Precision convertRad = 1. / cos(.5 * phiTotal / fSideCount);
 
   // Check contiguity in segments along Z
 
@@ -63,18 +72,23 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   PolyhedronSegment **segment = segments.begin();
   for (Polygon::const_iterator c = corners.cbegin(), cEnd = corners.cend();
        c != cEnd; ++c, ++segment) {
-    *segment = new PolyhedronSegment(c, fSideCount, fPhiStart, fPhiTotal);
+    *segment = new PolyhedronSegment(c, fSideCount, fPhiStart, fPhiEnd);
   }
+
+  assert(fSideCount == upolyhedra.fNumSides);
+  assert(fPhiStart == upolyhedra.fStartPhi);
+  assert(fPhiEnd == upolyhedra.fEndPhi);
+  assert(fHasPhi == upolyhedra.fPhiIsOpen);
 }
 
 UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
     const Polygon::const_iterator corner, const int sideCount,
-    const Precision phiStart, const Precision phiTotal)
-    : fSideCount(sideCount), fPhiStart(phiStart), fPhiTotal(phiTotal) {
+    const Precision phiStart, const Precision phiEnd)
+    : fSideCount(sideCount), fPhiStart(phiStart), fPhiEnd(phiEnd) {
 
-  fHasPhi = phiTotal != kTwoPi;
+  fPhiTotal = fPhiEnd - fPhiStart;
+  fHasPhi = fPhiTotal != kTwoPi;
   fPhiDelta = fPhiTotal / fSideCount;
-  fPhiEnd = fPhiStart + fPhiDelta;
   fEdgeCount = (fHasPhi) ? fSideCount+1 : fSideCount;
   fStart = *corner;
   fEnd = *(corner + 1);
@@ -203,5 +217,16 @@ UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
 }
 
 #endif // VECGEOM_NVCC
+
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedPolyhedron::Print() const {
+  printf("UnplacedPolyhedron {%i sides, %.2f phi start, %.2f phi end}",
+         fSideCount, fPhiStart, fPhiEnd);
+}
+
+void UnplacedPolyhedron::Print(std::ostream &os) const {
+  os << "UnplacedPolyhedron {" << fSideCount << ", " << fPhiStart
+     << " phi start, " << fPhiEnd << " phi end}";
+}
 
 } // End global namespace

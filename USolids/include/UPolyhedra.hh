@@ -41,6 +41,7 @@
 #include "UVCSGfaceted.hh"
 #include "UPolyhedraSide.hh"
 
+namespace vecgeom { class UnplacedPolyhedron; }
 class UEnclosingCylinder;
 class UReduciblePolygon;
 class UPolyhedraHistorical
@@ -176,6 +177,8 @@ class UPolyhedra : public UVCSGfaceted
     void Extent(UVector3& aMin, UVector3& aMax) const;
 
   protected:  // without description
+
+    friend class vecgeom::UnplacedPolyhedron;
 
     int   fNumSides;      // Number of sides
     double fStartPhi;    // Starting phi value (0 < phiStart < 2pi)
