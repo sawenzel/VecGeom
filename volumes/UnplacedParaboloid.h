@@ -55,6 +55,7 @@ private:
     // Precomputed values computed from parameters
     Precision fA, fB,
     
+    //useful parameters in order to improve performance
     fAinv,
     fBinv,
     fA2,
@@ -73,6 +74,8 @@ private:
     fTolIrhi2,
     //Outside tolerance for Rhi, squared
     fTolOrhi2;
+    
+    Precision fDx, fDy;
     
 public:
     
@@ -146,6 +149,73 @@ public:
     
     VECGEOM_CUDA_HEADER_BOTH
     void SetDz(const Precision dz);
+    
+//__________________________________________________________________
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void Normal(const Precision *point, const Precision *dir, Precision *norm);
+
+//__________________________________________________________________
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax);
+    
+//__________________________________________________________________
+
+    // Computes capacity of the shape in [length^3]
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision Capacity(){ return kPi*fDz*(fRlo*fRlo+fRhi*fRhi);}
+//__________________________________________________________________
+    VECGEOM_CUDA_HEADER_BOTH
+    void SurfaceArea(){;}
+    
+//__________________________________________________________________
+
+    // GetPointOnSurface
+    VECGEOM_CUDA_HEADER_BOTH
+    void GetPointOnSurface();
+//__________________________________________________________________
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void ComputeBoundingBox();
+//__________________________________________________________________
+
+    VECGEOM_CUDA_HEADER_BOTH
+    char* GetEntityType(){ return "Paraboloid";}
+//__________________________________________________________________
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void GetParameterList(){;}
+    
+//__________________________________________________________________
+    
+    // Make a clone of the object
+    VECGEOM_CUDA_HEADER_BOTH
+    UnplacedParaboloid* Clone(){ return new UnplacedParaboloid(fRlo, fRhi, fDz);}
+
+//__________________________________________________________________
+    
+    /*
+     std::ostream& G4Paraboloid::StreamInfo( std::ostream& os ) const
+     {
+     G4int oldprc = os.precision(16);
+     os << "-----------------------------------------------------------\n"
+     << "    *** Dump for solid - " << GetName() << " ***\n"
+     << "    ===================================================\n"
+     << " Solid type: G4Paraboloid\n"
+     << " Parameters: \n"
+     << "    z half-axis:   " << dz/mm << " mm \n"
+     << "    radius at -dz: " << r1/mm << " mm \n"
+     << "    radius at dz:  " << r2/mm << " mm \n"
+     << "-----------------------------------------------------------\n";
+     os.precision(oldprc);
+     
+     return os;
+     }
+     
+     */
+    VECGEOM_CUDA_HEADER_BOTH
+    void StreamInfo(){;}
 
     //memory_size
 
@@ -154,12 +224,12 @@ public:
 
     //print
     VECGEOM_CUDA_HEADER_BOTH
-  virtual void Print() const;
+    virtual void Print() const;
 
      //create
-  template <TranslationCode transCodeT, RotationCode rotCodeT>
-  VECGEOM_CUDA_HEADER_DEVICE
-  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+    template <TranslationCode transCodeT, RotationCode rotCodeT>
+    VECGEOM_CUDA_HEADER_DEVICE
+    static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
                                Transformation3D const *const transformation,
 #ifdef VECGEOM_NVCC
                                const int id,

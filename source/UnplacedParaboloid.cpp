@@ -10,7 +10,7 @@
 
 namespace VECGEOM_NAMESPACE {
     
-    
+//__________________________________________________________________
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid::UnplacedParaboloid()
     {
@@ -81,12 +81,84 @@ namespace VECGEOM_NAMESPACE {
         fTolIrhi2=(fRhi - kHalfTolerance)*(fRhi - kHalfTolerance);
         //Outside tolerance for Rhi, squared
         fTolOrhi2=(fRhi + kHalfTolerance)*(fRhi + kHalfTolerance);
+        
+        ComputeBoundingBox();
     }
+
+//__________________________________________________________________
+
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm){
+       
+        // Compute normal to closest surface from POINT.
+        norm[0] = norm[1] = 0.0;
+        if (Abs(point[2]) > fDz) {
+            //norm[2] = TMath::Sign(1., dir[2]); ------------------>
+            dir[2]>0 ? norm[2]=1 : norm[2]=-1;
+            return;
+        }
+        Precision safz = fDz-Abs(point[2]);
+        Precision r = Sqrt(point[0]*point[0]+point[1]*point[1]);
+        Precision safr = Abs(r-Sqrt((point[2]-fB)*fAinv));
+        if (safz<safr) {
+            //norm[2] = TMath::Sign(1., dir[2]); --------->
+            dir[2]>0 ? norm[2]=1 : norm[2]=-1;
+            return;
+        }
+        Precision talf = -2.*fA*r;
+        Precision calf = 1./Sqrt(1.+talf*talf);
+        Precision salf = talf * calf;
+        Precision phi = ATan2(point[1], point[0]);
+        
+        norm[0] = salf*cos(phi);
+        norm[1] = salf*sin(phi);
+        norm[2] = calf;
+        Precision ndotd = norm[0]*dir[0]+norm[1]*dir[1]+norm[2]*dir[2];
+        if (ndotd < 0) {
+            norm[0] = -norm[0];
+            norm[1] = -norm[1];
+            norm[2] = -norm[2];
+        }
+    }
+    
+//__________________________________________________________________
+
+    // Returns the full 3D cartesian extent of the solid.
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax){
+        
+        aMin.x() = -fDx;
+        aMax.x() = fDx;
+        aMin.y() = -fDy;
+        aMax.y() = fDy;
+        aMin.z() = -fDz;
+        aMax.z() = fDz;
+    }
+    
+//__________________________________________________________________
+
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::GetPointOnSurface(){
+        
+        //NYI
+        ;}
+    
+//__________________________________________________________________
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::ComputeBoundingBox(){
+        fDx=Max(fRhi, fRlo);
+        fDy=fDx;
+        //fDz=fDz;
+    }
+
+//__________________________________________________________________
     
     void UnplacedParaboloid::Print() const {
         printf("UnplacedParaboloid {%.2f, %.2f, %.2f, %.2f, %.2f}",
                GetRlo(), GetRhi(), GetDz(), GetA(), GetB());
     }
+//__________________________________________________________________
     
     void UnplacedParaboloid::Print(std::ostream &os) const {
         os << "UnplacedParaboloid {" << GetRlo() << ", " << GetRhi() << ", " << GetDz()
