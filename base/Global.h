@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <limits>
+#include <stdio.h>
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -54,8 +55,10 @@
 
 #ifndef VECGEOM_NVCC
   #define VECGEOM_CONSTEXPR constexpr
+  #define VECGEOM_GLOBAL constexpr
 #else
-  #define VECGEOM_CONSTEXPR static __constant__ const
+  #define VECGEOM_CONSTEXPR const
+  #define VECGEOM_GLOBAL static __constant__ const
 #endif
 
 namespace vecgeom {
@@ -82,25 +85,25 @@ typedef vecgeom::Inside_t Inside_t;
 
 namespace VECGEOM_NAMESPACE {
 
-VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
-VECGEOM_CONSTEXPR Precision kPi = 3.14159265358979323846;
-VECGEOM_CONSTEXPR Precision kTwoPi = 2.*kPi;
-VECGEOM_CONSTEXPR Precision kDegToRad = kPi/180.;
-VECGEOM_CONSTEXPR Precision kRadToDeg = 180./kPi;
-VECGEOM_CONSTEXPR Precision kInfinity =
+VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
+VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
+VECGEOM_GLOBAL Precision kDegToRad = kPi/180.;
+VECGEOM_GLOBAL Precision kRadToDeg = 180./kPi;
+VECGEOM_GLOBAL Precision kInfinity =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::infinity();
 #else
     INFINITY;
 #endif
-VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
-VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
-VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
+VECGEOM_GLOBAL Precision kTiny = 1e-30;
+VECGEOM_GLOBAL Precision kTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
 
 namespace EInside {
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kInside = 0;
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kSurface = 1;
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kOutside = 2;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kInside = 0;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kSurface = 1;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kOutside = 2;
 }
 
 template <typename Type>
@@ -156,8 +159,25 @@ namespace translation {
 enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition, char const *const message) {
+#ifndef VECGEOM_NVCC
+  if (!condition) {
+    printf("Assertion failed: %s", message);
+    abort();
+  }
+#else
+  if (!condition) printf("Assertion failed: %s", message);
+#endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition) {
+  Assert(condition, "");
+}
+
 } // End global namespace
-
-
 
 #endif // VECGEOM_BASE_GLOBAL_H_

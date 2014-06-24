@@ -353,8 +353,8 @@ void Benchmarker::RunToInBenchmark() {
 
   if (fVerbosity > 1) printf(" Done.\n");
 
-  fPointPool->set_size(fPointCount*fPoolMultiplier);
-  fDirectionPool->set_size(fPointCount*fPoolMultiplier);
+  fPointPool->resize(fPointCount*fPoolMultiplier);
+  fDirectionPool->resize(fPointCount*fPoolMultiplier);
 
   std::stringstream outputLabels;
   outputLabels << "Specialized - Vectorized - Unspecialized";
@@ -494,8 +494,8 @@ void Benchmarker::RunToOutBenchmark() {
 
   if (fVerbosity > 1) printf(" Done.\n");
 
-  fPointPool->set_size(fPointCount*fPoolMultiplier);
-  fDirectionPool->set_size(fPointCount*fPoolMultiplier);
+  fPointPool->resize(fPointCount*fPoolMultiplier);
+  fDirectionPool->resize(fPointCount*fPoolMultiplier);
 
   std::stringstream outputLabels;
   outputLabels << "Specialized - Vectorized - Unspecialized";

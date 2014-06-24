@@ -389,10 +389,10 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
     typename Backend::precision_v &distance) {
 
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
+    // typedef typename Backend::bool_v Bool_t;
 
     Vector3D<Float_t> safety;
-    Bool_t inside;
+    // Bool_t inside;
 
     distance = kInfinity;
 
