@@ -153,8 +153,8 @@ public:
 
 #ifdef VECGEOM_VC
 
-  template <class Container_t>
-  void ContainsTemplate(Container_t const &points, bool *const output) const {
+  void ContainsTemplate(SOA3D<Precision> const &points,
+                        bool *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
         VcPrecision(&points.x(i)),
@@ -176,8 +176,8 @@ public:
     }
   }
 
-  template <class Container_t>
-  void InsideTemplate(Container_t const &points, Inside_t *const output) const {
+  void InsideTemplate(SOA3D<Precision> const &points,
+                      Inside_t *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
         VcPrecision(&points.x(i)),
@@ -195,9 +195,8 @@ public:
     }
   }
 
-  template <class Container_t>
-  void DistanceToInTemplate(Container_t const &points,
-                            Container_t const &directions,
+  void DistanceToInTemplate(SOA3D<Precision> const &points,
+                            SOA3D<Precision> const &directions,
                             Precision const *const stepMax,
                             Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
@@ -225,9 +224,8 @@ public:
     }
   }
 
-  template <class Container_t>
-  void DistanceToOutTemplate(Container_t const &points,
-                             Container_t const &directions,
+  void DistanceToOutTemplate(SOA3D<Precision> const &points,
+                             SOA3D<Precision> const &directions,
                              Precision const *const stepMax,
                              Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
@@ -254,8 +252,7 @@ public:
     }
   }
 
-  template <class Container_t>
-  void SafetyToInTemplate(Container_t const &points,
+  void SafetyToInTemplate(SOA3D<Precision> const &points,
                           Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
@@ -274,8 +271,7 @@ public:
     }
   }
 
-  template <class Container_t>
-  void SafetyToOutTemplate(Container_t const &points,
+  void SafetyToOutTemplate(SOA3D<Precision> const &points,
                            Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
@@ -384,32 +380,32 @@ public:
 
 #endif
 
-  virtual void Contains(AOS3D<Precision> const &points,
-                        bool *const output) const {
-    ContainsTemplate(points, output);
-  }
+  // virtual void Contains(AOS3D<Precision> const &points,
+  //                       bool *const output) const {
+  //   ContainsTemplate(points, output);
+  // }
 
   virtual void Contains(SOA3D<Precision> const &points,
                         bool *const output) const {
     ContainsTemplate(points, output);
   }
 
-  virtual void Inside(AOS3D<Precision> const &points,
-                      Inside_t *const output) const {
-    InsideTemplate(points, output);
-  }
+  // virtual void Inside(AOS3D<Precision> const &points,
+  //                     Inside_t *const output) const {
+  //   InsideTemplate(points, output);
+  // }
 
   virtual void Inside(SOA3D<Precision> const &points,
                       Inside_t *const output) const {
     InsideTemplate(points, output);
   }
 
-  virtual void DistanceToIn(AOS3D<Precision> const &points,
-                            AOS3D<Precision> const &directions,
-                            Precision const *const stepMax,
-                            Precision *const output) const {
-    DistanceToInTemplate(points, directions, stepMax, output);
-  }
+  // virtual void DistanceToIn(AOS3D<Precision> const &points,
+  //                           AOS3D<Precision> const &directions,
+  //                           Precision const *const stepMax,
+  //                           Precision *const output) const {
+  //   DistanceToInTemplate(points, directions, stepMax, output);
+  // }
 
   virtual void DistanceToIn(SOA3D<Precision> const &points,
                             SOA3D<Precision> const &directions,
@@ -418,12 +414,12 @@ public:
     DistanceToInTemplate(points, directions, stepMax, output);
   }
 
-  virtual void DistanceToOut(AOS3D<Precision> const &points,
-                             AOS3D<Precision> const &directions,
-                             Precision const *const stepMax,
-                             Precision *const output) const {
-    DistanceToOutTemplate(points, directions, stepMax, output);
-  }
+  // virtual void DistanceToOut(AOS3D<Precision> const &points,
+  //                            AOS3D<Precision> const &directions,
+  //                            Precision const *const stepMax,
+  //                            Precision *const output) const {
+  //   DistanceToOutTemplate(points, directions, stepMax, output);
+  // }
 
   virtual void DistanceToOut(SOA3D<Precision> const &points,
                              SOA3D<Precision> const &directions,
@@ -432,20 +428,20 @@ public:
     DistanceToOutTemplate(points, directions, stepMax, output);
   }
 
-  virtual void SafetyToIn(AOS3D<Precision> const &points,
-                          Precision *const output) const {
-    SafetyToInTemplate(points, output);
-  }
+  // virtual void SafetyToIn(AOS3D<Precision> const &points,
+  //                         Precision *const output) const {
+  //   SafetyToInTemplate(points, output);
+  // }
 
   virtual void SafetyToIn(SOA3D<Precision> const &points,
                           Precision *const output) const {
     SafetyToInTemplate(points, output);
   }
 
-  virtual void SafetyToOut(AOS3D<Precision> const &points,
-                          Precision *const output) const {
-    SafetyToOutTemplate(points, output);
-  }
+  // virtual void SafetyToOut(AOS3D<Precision> const &points,
+  //                         Precision *const output) const {
+  //   SafetyToOutTemplate(points, output);
+  // }
 
   virtual void SafetyToOut(SOA3D<Precision> const &points,
                           Precision *const output) const {
