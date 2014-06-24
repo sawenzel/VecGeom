@@ -120,9 +120,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const =0;
 
-  /**
-   * Recursively prints contained volumes.
-   */
+  /// Recursively prints contained volumes to standard output.
   VECGEOM_CUDA_HEADER_BOTH
   void PrintContent(const int depth = 0) const;
 
@@ -187,56 +185,29 @@ public:
   //                            Precision const *const step_max,
   //                            Precision *const output) const =0;
 
-  // interfaces for safety
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision SafetyToOut( Vector3D<Precision> const &position ) const =0;
-  virtual void SafetyToOut( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
-  // virtual void SafetyToOut( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
+  virtual Precision SafetyToIn(Vector3D<Precision> const &position) const =0;
+
+  virtual void SafetyToIn(SOA3D<Precision> const &position,
+                          Precision *const safeties) const =0;
+
+  // virtual void SafetyToIn(AOS3D<Precision> const &position,
+  //                         Precision *const safeties) const =0;
+
+  virtual void SafetyToInMinimize(SOA3D<Precision> const &points,
+                                  Precision *const safeties) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision SafetyToIn( Vector3D<Precision> const &position ) const =0;
-  virtual void SafetyToIn( SOA3D<Precision> const &position, Precision *const safeties ) const =0;
-  // virtual void SafetyToIn( AOS3D<Precision> const &position, Precision *const safeties ) const =0;
+  virtual Precision SafetyToOut(Vector3D<Precision> const &position) const =0;
 
-protected:
+  virtual void SafetyToOut(SOA3D<Precision> const &position,
+                           Precision *const safeties) const =0;
 
-  // Implemented by the vector backend
+  // virtual void SafetyToOut(AOS3D<Precision> const &position,
+  //                          Precision *const safeties) const =0;
 
-  template <typename VolumeType, typename ContainerType>
-  VECGEOM_INLINE
-  static void Inside_Looper(VolumeType const &volume,
-                            ContainerType const &points,
-                            bool *const output);
-
-  template <typename VolumeType, typename ContainerType>
-  VECGEOM_INLINE
-  static void DistanceToIn_Looper(VolumeType const &volume,
-                                  ContainerType const &positions,
-                                  ContainerType const &directions,
-                                  Precision const *const step_max,
-                                  Precision *const output);
-
-
-  template <typename VolumeType, typename ContainerType>
-  VECGEOM_INLINE
-  static void DistanceToOut_Looper(VolumeType const &volume,
-                                   ContainerType const &positions,
-                                   ContainerType const &directions,
-                                   Precision const *const step_max,
-                                   Precision *const output);
-
-  template <typename VolumeType, typename ContainerType>
-  VECGEOM_INLINE
-  static void SafetyToIn_Looper(VolumeType const &volume,
-        ContainerType const &positions,
-        Precision *const output);
-
-
-  template <typename VolumeType, typename ContainerType>
-  VECGEOM_INLINE
-  static void SafetyToOut_Looper(VolumeType const &volume,
-        ContainerType const &positions,
-        Precision *const output);
+  virtual void SafetyToOutMinimize(SOA3D<Precision> const &points,
+                                   Precision *const safeties) const =0;
 
 public:
 

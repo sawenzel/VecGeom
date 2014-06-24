@@ -103,6 +103,9 @@ public:
   virtual void SafetyToOut(AOS3D<Precision> const &position,
                            Precision *const safeties) const;
 
+  virtual void SafetyToOutMinimize(SOA3D<Precision> const &position,
+                                   Precision *const safeties) const;
+
   VECGEOM_INLINE
   virtual Precision SafetyToIn(Vector3D<Precision> const &position) const;
 
@@ -111,6 +114,9 @@ public:
 
   virtual void SafetyToIn(AOS3D<Precision> const &position,
                           Precision *const safeties) const;
+
+  virtual void SafetyToInMinimize(SOA3D<Precision> const &position,
+                                  Precision *const safeties) const;
 
 #ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
