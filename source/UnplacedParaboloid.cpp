@@ -7,6 +7,8 @@
 #include "volumes/SpecializedParaboloid.h"
 
 #include <stdio.h>
+#include "base/RNG.h"
+
 
 namespace VECGEOM_NAMESPACE {
     
@@ -21,27 +23,33 @@ namespace VECGEOM_NAMESPACE {
         fA = 0;
         fB = 0;
     }
+//__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid::UnplacedParaboloid(const Precision rlo,  const Precision rhi, const Precision dz)
     {
         SetRloAndRhiAndDz(rlo, rhi, dz);
     }
+//__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
     void UnplacedParaboloid::SetRlo(const Precision rlo) {
         SetRloAndRhiAndDz(rlo, fRhi, fDz);
     }
+//__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
     void UnplacedParaboloid::SetRhi(const Precision rhi) {
         SetRloAndRhiAndDz(fRlo, rhi, fDz);
     }
+
+//__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
     void UnplacedParaboloid::SetDz(const Precision dz) {
         SetRloAndRhiAndDz(fRlo, fRhi, dz);
     }
+//__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
     void UnplacedParaboloid::SetRloAndRhiAndDz(const Precision rlo,
@@ -62,7 +70,6 @@ namespace VECGEOM_NAMESPACE {
         Precision dd = 1./(fRhi2 - fRlo2);
         fA = 2.*fDz*dd;
         fB = - fDz * (fRlo2 + fRhi2)*dd;
-        
         
         fAinv=1/fA;
         fBinv=1/fB;
@@ -93,7 +100,7 @@ namespace VECGEOM_NAMESPACE {
         // Compute normal to closest surface from POINT.
         norm[0] = norm[1] = 0.0;
         if (Abs(point[2]) > fDz) {
-            //norm[2] = TMath::Sign(1., dir[2]); ------------------>
+            //norm[2] = TMath::Sign(1., dir[2]);
             dir[2]>0 ? norm[2]=1 : norm[2]=-1;
             return;
         }
@@ -101,7 +108,7 @@ namespace VECGEOM_NAMESPACE {
         Precision r = Sqrt(point[0]*point[0]+point[1]*point[1]);
         Precision safr = Abs(r-Sqrt((point[2]-fB)*fAinv));
         if (safz<safr) {
-            //norm[2] = TMath::Sign(1., dir[2]); --------->
+            //norm[2] = TMath::Sign(1., dir[2]);
             dir[2]>0 ? norm[2]=1 : norm[2]=-1;
             return;
         }
@@ -138,10 +145,64 @@ namespace VECGEOM_NAMESPACE {
 //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::GetPointOnSurface(){
+    Precision UnplacedParaboloid::SurfaceArea()
+    {
+    
+        //G4 implementation
+        Precision h1, h2, A1, A2;
+        h1=-fB+fDz;
+        h2=-fB-fDz;
         
-        //NYI
-        ;}
+        // Calculate surface area for the paraboloid full paraboloid
+        // cutoff at z = dz (not the cutoff area though).
+        A1 = fRhi2 + 4 * h1*h1;
+        A1 *= (A1*A1); // Sets A1 = A1^3
+        A1 = kPi * fRhi /6 / (h1*h1) * ( sqrt(A1) - fRhi2 * fRhi);
+        
+        // Calculate surface area for the paraboloid full paraboloid
+        // cutoff at z = -dz (not the cutoff area though).
+        A2 = fRlo2 + 4 * (h2*h2);
+        A2 *= (A2*A2); // Sets A2 = A2^3
+        
+        if(h2 != 0)
+            A2 = kPi * fRlo /6 / (h2*h2) * (Sqrt(A2) - fRlo2 * fRlo);
+        else
+            A2 = 0.;
+        return (A1 - A2 + (fRlo2 + fRhi2)*kPi);
+    
+    }
+    //__________________________________________________________________
+
+    VECGEOM_CUDA_HEADER_BOTH
+    Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface(){
+        
+        //G4 implementation
+        Precision A = SurfaceArea();
+        Precision z = RNG::Instance().uniform(0.,1.);
+        Precision phi = RNG::Instance().uniform(0.,2*kPi);
+            if(kPi*(fRlo2 + fRhi2)/A >= z)
+            {
+                Precision rho;
+                //points on the cutting circle surface at -dZ
+                if(kPi * fRlo2/ A > z)
+                {
+                    rho = fRlo * Sqrt(RNG::Instance().uniform(0.,1.));
+                    return Vector3D<Precision>(rho * cos(phi), rho * sin(phi), -fDz);
+                }
+                //points on the cutting circle surface at dZ
+                else
+                {
+                    rho = fRhi * Sqrt(RNG::Instance().uniform(0.,1.));
+                    return Vector3D<Precision>(rho * cos(phi), rho * sin(phi), fDz);
+                }
+            }
+            //points on the paraboloid surface
+            else
+            {
+                z = RNG::Instance().uniform(0.,1.)*2*fDz - fDz;
+                return Vector3D<Precision>(Sqrt(z*fAinv -fB*fAinv)*cos(phi), Sqrt(z*fAinv -fB*fAinv)*sin(phi), z);
+            }
+        }
     
 //__________________________________________________________________
     
@@ -149,7 +210,13 @@ namespace VECGEOM_NAMESPACE {
     void UnplacedParaboloid::ComputeBoundingBox(){
         fDx=Max(fRhi, fRlo);
         fDy=fDx;
-        //fDz=fDz;
+    }
+
+//__________________________________________________________________
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void UnplacedParaboloid::StreamInfo(std::ostream &os){
+        //NYI
     }
 
 //__________________________________________________________________
@@ -164,7 +231,6 @@ namespace VECGEOM_NAMESPACE {
         os << "UnplacedParaboloid {" << GetRlo() << ", " << GetRhi() << ", " << GetDz()
         << ", " << GetA() << ", " << GetB();
     }
-
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 VECGEOM_CUDA_HEADER_DEVICE

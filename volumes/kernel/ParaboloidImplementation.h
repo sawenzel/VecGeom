@@ -409,7 +409,6 @@ struct ParaboloidImplementation {
         
 #endif
 
-
         //ACCURATE implementation starts here
         Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz()),
                 r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
@@ -438,9 +437,7 @@ struct ParaboloidImplementation {
         Float_t max_safety= Max(safR, safZ);
         MaskedAssign(!done, max_safety, &safety);
         //ACCURATE implementation ends here
-
-
-    
+        
     }
     
     template<class Backend>

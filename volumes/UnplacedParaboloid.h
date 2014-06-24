@@ -166,14 +166,13 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity(){ return kPi*fDz*(fRlo*fRlo+fRhi*fRhi);}
 //__________________________________________________________________
-    VECGEOM_CUDA_HEADER_BOTH
-    void SurfaceArea(){;}
     
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision SurfaceArea();
 //__________________________________________________________________
 
-    // GetPointOnSurface
     VECGEOM_CUDA_HEADER_BOTH
-    void GetPointOnSurface();
+    Vector3D<Precision>  GetPointOnSurface();
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
@@ -189,44 +188,34 @@ public:
     
 //__________________________________________________________________
     
-    // Make a clone of the object
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid* Clone(){ return new UnplacedParaboloid(fRlo, fRhi, fDz);}
 
 //__________________________________________________________________
     
-    /*
-     std::ostream& G4Paraboloid::StreamInfo( std::ostream& os ) const
-     {
-     G4int oldprc = os.precision(16);
-     os << "-----------------------------------------------------------\n"
-     << "    *** Dump for solid - " << GetName() << " ***\n"
-     << "    ===================================================\n"
-     << " Solid type: G4Paraboloid\n"
-     << " Parameters: \n"
-     << "    z half-axis:   " << dz/mm << " mm \n"
-     << "    radius at -dz: " << r1/mm << " mm \n"
-     << "    radius at dz:  " << r2/mm << " mm \n"
-     << "-----------------------------------------------------------\n";
-     os.precision(oldprc);
-     
-     return os;
-     }
-     
-     */
+   
     VECGEOM_CUDA_HEADER_BOTH
-    void StreamInfo(){;}
-
-    //memory_size
+    void StreamInfo(std::ostream &os);
+    
+//__________________________________________________________________
+    
 
     virtual int memory_size() const { return sizeof(*this); }
 
+//__________________________________________________________________
+    
 
-    //print
     VECGEOM_CUDA_HEADER_BOTH
     virtual void Print() const;
+//__________________________________________________________________
+    
 
-     //create
+    virtual void Print(std::ostream &os) const;
+    
+//__________________________________________________________________
+    
+
+
     template <TranslationCode transCodeT, RotationCode rotCodeT>
     VECGEOM_CUDA_HEADER_DEVICE
     static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
@@ -243,9 +232,7 @@ public:
 
 private:
 
-    //print
-  virtual void Print(std::ostream &os) const;
-
+  
     //Specialized Volume
   VECGEOM_CUDA_HEADER_DEVICE
   virtual VPlacedVolume* SpecializedVolume(
