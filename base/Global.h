@@ -4,8 +4,11 @@
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
+#include <cassert>
 #include <cmath>
+#include <float.h>
 #include <limits>
+#include <stdio.h>
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -93,9 +96,18 @@ VECGEOM_CONSTEXPR Precision kInfinity =
 #else
     INFINITY;
 #endif
+VECGEOM_CONSTEXPR Precision kEpsilon =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::epsilon();
+#elif VECGEOM_FLOAT_PRECISION
+    FLT_EPSILON;
+#else
+    DBL_EPSILON;
+#endif
 VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
 VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
+VECGEOM_CONSTEXPR Precision kToleranceSquared = kTolerance*kTolerance;
 
 namespace EInside {
 VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kInside = 0;
@@ -156,8 +168,25 @@ namespace translation {
 enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition, char const *const message) {
+#ifndef VECGEOM_NVCC
+  if (!condition) {
+    printf("Assertion failed: %s", message);
+    abort();
+  }
+#else
+  if (!condition) printf("Assertion failed: %s", message);
+#endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition) {
+  Assert(condition, "");
+}
+
 } // End global namespace
-
-
 
 #endif // VECGEOM_BASE_GLOBAL_H_
