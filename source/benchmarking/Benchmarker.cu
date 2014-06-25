@@ -157,9 +157,11 @@ void Benchmarker::RunInsideCuda(
   FreeFromGpu(posZGpu);
 
   if (fVerbosity > 0) {
-    printf("Contains: %.4fs (%.4fs), Inside: %.4fs (%.4fs)\n",
+    printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
+           "Inside/Contains: %.2f\n",
+           elapsedInside, elapsedInside/fVolumes.size(),
            elapsedContains, elapsedContains/fVolumes.size(),
-           elapsedInside, elapsedInside/fVolumes.size());
+           elapsedInside/elapsedContains);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -262,9 +264,11 @@ void Benchmarker::RunToInCuda(
   FreeFromGpu(posZGpu);
 
   if (fVerbosity > 0) {
-    printf("DistanceToIn: %.4fs (%.4fs), SafetyToIn: %.4fs (%.4fs)\n",
+    printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
+           "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -356,9 +360,11 @@ void Benchmarker::RunToOutCuda(
   elapsedSafety = timer.Stop();
 
   if (fVerbosity > 0) {
-    printf("DistanceToOut: %.4fs (%.4fs), SafetyToOut: %.4fs (%.4fs)\n",
+    printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
+           "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(

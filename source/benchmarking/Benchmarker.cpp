@@ -657,9 +657,11 @@ void Benchmarker::RunInsideSpecialized(bool *contains, Inside_t *inside) {
   }
   Precision elapsedInside = timer.Stop();
   if (fVerbosity > 0) {
-    printf("Contains: %.4fs (%.4fs), Inside: %.4fs (%.4fs)\n",
+    printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
+           "Inside/Contains: %.2f\n",
+           elapsedInside, elapsedInside/fVolumes.size(),
            elapsedContains, elapsedContains/fVolumes.size(),
-           elapsedInside, elapsedInside/fVolumes.size());
+           elapsedInside/elapsedContains);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -704,9 +706,11 @@ void Benchmarker::RunToInSpecialized(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToIn: %.4fs (%.4fs), SafetyToIn: %.4fs (%.4fs)\n",
+    printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
+           "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -751,9 +755,11 @@ void Benchmarker::RunToOutSpecialized(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToOut: %.4fs (%.4fs), SafetyToOut: %.4fs (%.4fs)\n",
+    printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
+           "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -793,9 +799,11 @@ void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
   }
   Precision elapsedInside = timer.Stop();
   if (fVerbosity > 0) {
-    printf("Contains: %.4fs (%.4fs), Inside: %.4fs (%.4fs)\n",
+    printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
+           "Inside/Contains: %.2f\n",
+           elapsedInside, elapsedInside/fVolumes.size(),
            elapsedContains, elapsedContains/fVolumes.size(),
-           elapsedInside, elapsedInside/fVolumes.size());
+           elapsedInside/elapsedContains);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -839,9 +847,11 @@ void Benchmarker::RunToInVectorized(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToIn: %.4fs (%.4fs), SafetyToIn: %.4fs (%.4fs)\n",
+    printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
+           "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -885,9 +895,11 @@ void Benchmarker::RunToOutVectorized(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToOut: %.4fs (%.4fs), SafetyToOut: %.4fs (%.4fs)\n",
+    printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
+           "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -927,9 +939,11 @@ void Benchmarker::RunInsideUnspecialized(bool *contains, Inside_t *inside) {
   }
   Precision elapsedInside = timer.Stop();
   if (fVerbosity > 0) {
-    printf("Contains: %.4fs (%.4fs), Inside: %.4fs (%.4fs)\n",
+    printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
+           "Inside/Contains: %.2f\n",
+           elapsedInside, elapsedInside/fVolumes.size(),
            elapsedContains, elapsedContains/fVolumes.size(),
-           elapsedInside, elapsedInside/fVolumes.size());
+           elapsedInside/elapsedContains);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -972,9 +986,11 @@ void Benchmarker::RunToInUnspecialized(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToIn: %.4fs (%.4fs), SafetyToIn: %.4fs (%.4fs)\n",
+    printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
+           "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -1018,9 +1034,11 @@ void Benchmarker::RunToOutUnspecialized(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToOut: %.4fs (%.4fs), SafetyToOut: %.4fs (%.4fs)\n",
+    printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
+           "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -1056,7 +1074,8 @@ void Benchmarker::RunInsideUSolids(::VUSolid::EnumInside *const inside) {
   }
   Precision elapsed = timer.Stop();
   if (fVerbosity > 0) {
-    printf("Contains: -.----s (-.----s), Inside: %.4fs (%.4fs)\n",
+    printf("Inside: %.6fs (%.6fs), Contains: -.------s (-.------s), "
+           "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
   fResults.push_back(
@@ -1108,9 +1127,11 @@ void Benchmarker::RunToInUSolids(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToIn: %.4fs (%.4fs), SafetyToIn: %.4fs (%.4fs)\n",
+    printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
+           "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -1163,9 +1184,11 @@ void Benchmarker::RunToOutUSolids(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToOut: %.4fs (%.4fs), SafetyToOut: %.4fs (%.4fs)\n",
+    printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
+           "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -1200,7 +1223,8 @@ void Benchmarker::RunInsideRoot(bool *inside) {
   }
   Precision elapsed = timer.Stop();
   if (fVerbosity > 0) {
-    printf("Contains: %.4fs (%.4fs), Inside: -.----s (-.----s)\n",
+    printf("Inside: -.------s (-.------s), Contains: %.6fs (%.6fs), "
+           "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
   fResults.push_back(
@@ -1247,9 +1271,11 @@ void Benchmarker::RunToInRoot(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToIn: %.4fs (%.4fs), SafetyToIn: %.4fs (%.4fs)\n",
+    printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
+           "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
@@ -1292,9 +1318,11 @@ void Benchmarker::RunToOutRoot(
   }
   Precision elapsedSafety = timer.Stop();
   if (fVerbosity > 0) {
-    printf("DistanceToOut: %.4fs (%.4fs), SafetyToOut: %.4fs (%.4fs)\n",
+    printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
+           "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
-           elapsedSafety, elapsedSafety/fVolumes.size());
+           elapsedSafety, elapsedSafety/fVolumes.size(),
+           elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
     GenerateBenchmarkResult(
