@@ -156,7 +156,7 @@ template<typename Visitor>
 void
 GeoManager::visitAllPlacedVolumes( VPlacedVolume const * currentvolume, Visitor * visitor, int level ) const
 {
-   if( currentvolume )
+   if( currentvolume != NULL )
    {
       visitor->apply( const_cast<VPlacedVolume *>(currentvolume), level );
       int size = currentvolume->daughters().size();

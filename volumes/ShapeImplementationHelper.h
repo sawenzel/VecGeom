@@ -271,6 +271,27 @@ public:
     }
   }
 
+  void SafetyToInMinimizeTemplate(SOA3D<Precision> const &points,
+                                  Precision *const safeties) const {
+    for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(&points.x(i)),
+        VcPrecision(&points.y(i)),
+        VcPrecision(&points.z(i))
+      );
+      VcPrecision estimate = VcPrecision(&safeties[i]);
+      VcPrecision result = kInfinity;
+      Specialization::template SafetyToIn<kVc>(
+        *this->GetUnplacedVolume(),
+        *this->transformation(),
+        point,
+        result
+      );
+      result(estimate < result) = estimate;
+      result.store(&safeties[i]);
+    }
+  }
+
   void SafetyToOutTemplate(SOA3D<Precision> const &points,
                            Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
@@ -286,6 +307,26 @@ public:
         result
       );
       result.store(&output[i]);
+    }
+  }
+
+  void SafetyToOutMinimizeTemplate(SOA3D<Precision> const &points,
+                                   Precision *const safeties) const {
+    for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(&points.x(i)),
+        VcPrecision(&points.y(i)),
+        VcPrecision(&points.z(i))
+      );
+      VcPrecision estimate = VcPrecision(&safeties[i]);
+      VcPrecision result = kInfinity;
+      Specialization::template SafetyToOut<kVc>(
+        *this->GetUnplacedVolume(),
+        point,
+        result
+      );
+      result(estimate < result) = estimate;
+      result.store(&safeties[i]);
     }
   }
 
@@ -367,6 +408,21 @@ public:
   }
 
   template <class Container_t>
+  void SafetyToInMinimizeTemplate(Container_t const &points,
+                                  Precision *const output) const {
+    for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+      Precision result = 0;
+      Specialization::template SafetyToIn<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->transformation(),
+        points[i],
+        result
+      );
+      output[i] = (result < output[i]) ? result : output[i];
+    }
+  }
+
+  template <class Container_t>
   void SafetyToOutTemplate(Container_t const &points,
                            Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; ++i) {
@@ -375,6 +431,20 @@ public:
         points[i],
         output[i]
       );
+    }
+  }
+
+  template <class Container_t>
+  void SafetyToOutMinimizeTemplate(Container_t const &points,
+                                   Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Precision result = 0;
+      Specialization::template SafetyToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        points[i],
+        result
+      );
+      output[i] = (result < output[i]) ? result : output[i];
     }
   }
 
@@ -428,14 +498,24 @@ public:
     DistanceToOutTemplate(points, directions, stepMax, output);
   }
 
+  virtual void SafetyToIn(SOA3D<Precision> const &points,
+                          Precision *const output) const {
+    SafetyToInTemplate(points, output);
+  }
+
   // virtual void SafetyToIn(AOS3D<Precision> const &points,
   //                         Precision *const output) const {
   //   SafetyToInTemplate(points, output);
   // }
 
-  virtual void SafetyToIn(SOA3D<Precision> const &points,
+  virtual void SafetyToInMinimize(SOA3D<Precision> const &points,
+                                  Precision *const safeties) const {
+    SafetyToInMinimizeTemplate(points, safeties);
+  }
+
+  virtual void SafetyToOut(SOA3D<Precision> const &points,
                           Precision *const output) const {
-    SafetyToInTemplate(points, output);
+    SafetyToOutTemplate(points, output);
   }
 
   // virtual void SafetyToOut(AOS3D<Precision> const &points,
@@ -443,9 +523,9 @@ public:
   //   SafetyToOutTemplate(points, output);
   // }
 
-  virtual void SafetyToOut(SOA3D<Precision> const &points,
-                          Precision *const output) const {
-    SafetyToOutTemplate(points, output);
+  virtual void SafetyToOutMinimize(SOA3D<Precision> const &points,
+                                   Precision *const safeties) const {
+    SafetyToOutMinimizeTemplate(points, safeties);
   }
 
 }; // End class ShapeImplementationHelper

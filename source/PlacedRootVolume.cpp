@@ -49,7 +49,7 @@ void PlacedRootVolume::DistanceToIn(SOA3D<Precision> const &position,
                                     SOA3D<Precision> const &direction,
                                     Precision const *const step_max,
                                     Precision *const output) const {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
     output[i] = DistanceToIn(position[i], direction[i], step_max[i]);
   }
 }
@@ -58,7 +58,7 @@ void PlacedRootVolume::DistanceToIn(AOS3D<Precision> const &position,
                                     AOS3D<Precision> const &direction,
                                     Precision const *const step_max,
                                     Precision *const output) const {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
     output[i] = DistanceToIn(position[i], direction[i], step_max[i]);
   }
 }
@@ -67,7 +67,7 @@ void PlacedRootVolume::DistanceToOut(SOA3D<Precision> const &position,
                                      SOA3D<Precision> const &direction,
                                      Precision const *const step_max,
                                      Precision *const output) const {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
     output[i] = DistanceToOut(position[i], direction[i], step_max[i]);
   }
 }
@@ -76,36 +76,52 @@ void PlacedRootVolume::DistanceToOut(AOS3D<Precision> const &position,
                                      AOS3D<Precision> const &direction,
                                      Precision const *const step_max,
                                      Precision *const output) const {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
     output[i] = DistanceToOut(position[i], direction[i], step_max[i]);
-  }
-}
-
-void PlacedRootVolume::SafetyToOut(SOA3D<Precision> const &position,
-                                   Precision *const safeties) const {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
-    safeties[i] = SafetyToOut(position[i]);
-  }
-}
-
-void PlacedRootVolume::SafetyToOut(AOS3D<Precision> const &position,
-                                   Precision *const safeties) const  {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
-    safeties[i] = SafetyToOut(position[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToIn(SOA3D<Precision> const &position,
                                   Precision *const safeties) const  {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
     safeties[i] = SafetyToIn(position[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToIn(AOS3D<Precision> const &position,
                                   Precision *const safeties) const  {
-  for (int i = 0, i_max = position.size(); i < i_max; ++i) {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
     safeties[i] = SafetyToIn(position[i]);
+  }
+}
+
+void PlacedRootVolume::SafetyToInMinimize(SOA3D<Precision> const &position,
+                                          Precision *const safeties) const  {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
+    Precision result = SafetyToIn(position[i]);
+    safeties[i] = (result < safeties[i]) ? result : safeties[i];
+  }
+}
+
+void PlacedRootVolume::SafetyToOut(SOA3D<Precision> const &position,
+                                   Precision *const safeties) const {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
+    safeties[i] = SafetyToOut(position[i]);
+  }
+}
+
+void PlacedRootVolume::SafetyToOut(AOS3D<Precision> const &position,
+                                   Precision *const safeties) const  {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
+    safeties[i] = SafetyToOut(position[i]);
+  }
+}
+
+void PlacedRootVolume::SafetyToOutMinimize(SOA3D<Precision> const &position,
+                                           Precision *const safeties) const {
+  for (int i = 0, iMax = position.size(); i < iMax; ++i) {
+    Precision result = SafetyToOut(position[i]);
+    safeties[i] = (result < safeties[i]) ? result : safeties[i];
   }
 }
 
