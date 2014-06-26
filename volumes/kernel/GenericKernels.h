@@ -19,6 +19,20 @@ struct GenericKernels {
 
 }; // End struct GenericKernels
 
+template<bool tolerant, typename T>
+T
+MakePlusTolerant( T const & x  )
+{
+    return (tolerant)? x+kTolerance : x;
+}
+
+template<bool tolerant, typename T>
+T
+MakeMinusTolerant( T x  )
+{
+    return (tolerant)? x-kTolerance : x;
+}
+
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_
