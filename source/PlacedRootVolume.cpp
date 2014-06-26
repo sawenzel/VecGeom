@@ -27,22 +27,22 @@ void PlacedRootVolume::PrintType() const {
 
 void PlacedRootVolume::Contains(SOA3D<Precision> const &points,
                                 bool *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Contains(points[i]);
+  for (size_t i = 0; i < points.size(); ++i) output[i] = Contains(points[i]);
 }
 
 void PlacedRootVolume::Contains(AOS3D<Precision> const &points,
                                 bool *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Contains(points[i]);
+  for (size_t i = 0; i < points.size(); ++i) output[i] = Contains(points[i]);
 }
 
 void PlacedRootVolume::Inside(SOA3D<Precision> const &points,
                               Inside_t *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Inside(points[i]);
+  for (size_t i = 0; i < points.size(); ++i) output[i] = Inside(points[i]);
 }
 
 void PlacedRootVolume::Inside(AOS3D<Precision> const &points,
                               Inside_t *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Inside(points[i]);
+  for (size_t i = 0; i < points.size(); ++i) output[i] = Inside(points[i]);
 }
 
 void PlacedRootVolume::DistanceToIn(SOA3D<Precision> const &position,

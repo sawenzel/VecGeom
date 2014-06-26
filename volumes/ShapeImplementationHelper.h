@@ -157,9 +157,9 @@ public:
                         bool *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       Vector3D<VcPrecision> localPoint;
       VcBool result(false);
@@ -180,9 +180,9 @@ public:
                       Inside_t *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       VcInside result = EInside::kOutside;
       Specialization::template Inside<kVc>(
@@ -201,14 +201,14 @@ public:
                             Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       Vector3D<VcPrecision> direction(
-        VcPrecision(&directions.x(i)),
-        VcPrecision(&directions.y(i)),
-        VcPrecision(&directions.z(i))
+        VcPrecision(directions.x()+i),
+        VcPrecision(directions.y()+i),
+        VcPrecision(directions.z()+i)
       );
       VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
       VcPrecision result = kInfinity;
@@ -230,14 +230,14 @@ public:
                              Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       Vector3D<VcPrecision> direction(
-        VcPrecision(&directions.x(i)),
-        VcPrecision(&directions.y(i)),
-        VcPrecision(&directions.z(i))
+        VcPrecision(directions.x()+i),
+        VcPrecision(directions.y()+i),
+        VcPrecision(directions.z()+i)
       );
       VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
       VcPrecision result = kInfinity;
@@ -256,9 +256,9 @@ public:
                           Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       VcPrecision result = kInfinity;
       Specialization::template SafetyToIn<kVc>(
@@ -296,9 +296,9 @@ public:
                            Precision *const output) const {
     for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       VcPrecision result = kInfinity;
       Specialization::template SafetyToOut<kVc>(
@@ -497,6 +497,7 @@ public:
                              Precision *const output) const {
     DistanceToOutTemplate(points, directions, stepMax, output);
   }
+
 
   virtual void SafetyToIn(SOA3D<Precision> const &points,
                           Precision *const output) const {
