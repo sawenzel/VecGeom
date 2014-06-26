@@ -18,7 +18,6 @@
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
 #endif
-
 #include <cassert>
 
 namespace VECGEOM_NAMESPACE
@@ -100,6 +99,25 @@ public:
    VECGEOM_INLINE
    Precision GetSafety( Vector3D<Precision> const & /*global_point*/,
                NavigationState const & /* currentstate */
+   ) const;
+
+   /**
+    * A function to get back the safe distance for a basket (container) of points
+    * with corresponding array of NavigationState objects
+    *
+    * particularities: the stateless nature of the SimpleNavigator requires that the caller
+    * also provides a workspace Container3D ( to store intermediate results )
+    *
+    * the safety results will be made available in the output array
+    *
+    * The Container3D has to be either SOA3D or AOS3D
+    */
+   VECGEOM_CUDA_HEADER_BOTH
+   template <typename Container3D>
+   void GetSafeties( Container3D const & /*global_points*/,
+                   NavigationState **  /*currentstates*/,
+                   Container3D & /*workspace for localpoints*/,
+                   Precision * /*safeties*/
    ) const;
 
    /**
@@ -344,6 +362,37 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
 }
 
 
+template<typename Container3D>
+void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
+                                NavigationState ** states,
+                                Container3D & workspaceforlocalpoints,
+                                Precision * safeties ) const
+{
+    int np=globalpoints.size();
+    //TODO: we have to care for the padding and tail
+    for( int i=0; i<np; ++i ){
+       // TODO: we might be able to cache the matrices because some of the paths will be identical
+       // need to have a quick way ( hash ) to compare paths
+       Transformation3D const & m = states[i]->TopMatrix();
+       workspaceforlocalpoints.Set(i, m.Transform( globalpoints[i] ));
+    }
+
+    // vectorized calculation of safety to mother
+    // we utilize here the fact that the Top() volumes of all NavigationStates
+    // should be the same ( by definition of a basket )
+    VPlacedVolume const * currentvol = states[0]->Top();
+
+    currentvol->SafetyToOut( workspaceforlocalpoints, safeties );
+
+    // safety to daughters; brute force but each function vectorized
+    Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
+    int numberdaughters = daughters->size();
+    for (int d = 0; d<numberdaughters; ++d) {
+         VPlacedVolume const * daughter = daughters->operator [](d);
+         daughter->SafetyToInMinimize( workspaceforlocalpoints, safeties );
+    }
+    return;
+}
 
 /**
  * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
