@@ -65,7 +65,7 @@ public:
    */ 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> operator[](const int index) const {
+  Vector3D<Type> const operator[](const int index) const {
     return Vector3D<Type>(x_[index], y_[index], z_[index]);
   }
 
