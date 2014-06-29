@@ -163,6 +163,13 @@ public:
                             Precision const *const step_max,
                             Precision *const output) const =0;
 
+  virtual void DistanceToInMinimize(SOA3D<Precision> const &position,
+                                    SOA3D<Precision> const &direction,
+                                    int daughterindex,
+                                    Precision *const output,
+                                    int *const nextnodeids
+                                    ) const =0;
+
   // virtual void DistanceToIn(AOS3D<Precision> const &position,
   //                           AOS3D<Precision> const &direction,
   //                           Precision const *const step_max,
@@ -179,6 +186,12 @@ public:
                              SOA3D<Precision> const &direction,
                              Precision const *const step_max,
                              Precision *const output) const =0;
+
+  virtual void DistanceToOut(SOA3D<Precision> const &position,
+                             SOA3D<Precision> const &direction,
+                             Precision const *const step_max,
+                             Precision *const output,
+                             int *const nextnodeindex) const =0;
 
   // virtual void DistanceToOut(AOS3D<Precision> const &position,
   //                            AOS3D<Precision> const &direction,

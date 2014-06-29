@@ -27,22 +27,22 @@ void PlacedRootVolume::PrintType() const {
 
 void PlacedRootVolume::Contains(SOA3D<Precision> const &points,
                                 bool *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Contains(points[i]);
+  for (int i = 0; i < points.size(); ++i) output[i] = PlacedRootVolume::Contains(points[i]);
 }
 
 void PlacedRootVolume::Contains(AOS3D<Precision> const &points,
                                 bool *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Contains(points[i]);
+  for (int i = 0; i < points.size(); ++i) output[i] = PlacedRootVolume::Contains(points[i]);
 }
 
 void PlacedRootVolume::Inside(SOA3D<Precision> const &points,
                               Inside_t *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Inside(points[i]);
+  for (int i = 0; i < points.size(); ++i) output[i] = PlacedRootVolume::Inside(points[i]);
 }
 
 void PlacedRootVolume::Inside(AOS3D<Precision> const &points,
                               Inside_t *const output) const {
-  for (int i = 0; i < points.size(); ++i) output[i] = Inside(points[i]);
+  for (int i = 0; i < points.size(); ++i) output[i] = PlacedRootVolume::Inside(points[i]);
 }
 
 void PlacedRootVolume::DistanceToIn(SOA3D<Precision> const &position,
@@ -50,7 +50,7 @@ void PlacedRootVolume::DistanceToIn(SOA3D<Precision> const &position,
                                     Precision const *const step_max,
                                     Precision *const output) const {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    output[i] = DistanceToIn(position[i], direction[i], step_max[i]);
+    output[i] = PlacedRootVolume::DistanceToIn(position[i], direction[i], step_max[i]);
   }
 }
 
@@ -59,7 +59,7 @@ void PlacedRootVolume::DistanceToIn(AOS3D<Precision> const &position,
                                     Precision const *const step_max,
                                     Precision *const output) const {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    output[i] = DistanceToIn(position[i], direction[i], step_max[i]);
+    output[i] = PlacedRootVolume::DistanceToIn(position[i], direction[i], step_max[i]);
   }
 }
 
@@ -68,7 +68,7 @@ void PlacedRootVolume::DistanceToOut(SOA3D<Precision> const &position,
                                      Precision const *const step_max,
                                      Precision *const output) const {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    output[i] = DistanceToOut(position[i], direction[i], step_max[i]);
+    output[i] = PlacedRootVolume::DistanceToOut(position[i], direction[i], step_max[i]);
   }
 }
 
@@ -77,28 +77,28 @@ void PlacedRootVolume::DistanceToOut(AOS3D<Precision> const &position,
                                      Precision const *const step_max,
                                      Precision *const output) const {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    output[i] = DistanceToOut(position[i], direction[i], step_max[i]);
+    output[i] = PlacedRootVolume::DistanceToOut(position[i], direction[i], step_max[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToIn(SOA3D<Precision> const &position,
                                   Precision *const safeties) const  {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    safeties[i] = SafetyToIn(position[i]);
+    safeties[i] = PlacedRootVolume::SafetyToIn(position[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToIn(AOS3D<Precision> const &position,
                                   Precision *const safeties) const  {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    safeties[i] = SafetyToIn(position[i]);
+    safeties[i] = PlacedRootVolume::SafetyToIn(position[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToInMinimize(SOA3D<Precision> const &position,
                                           Precision *const safeties) const  {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    Precision result = SafetyToIn(position[i]);
+    Precision result = PlacedRootVolume::SafetyToIn(position[i]);
     safeties[i] = (result < safeties[i]) ? result : safeties[i];
   }
 }
@@ -106,24 +106,51 @@ void PlacedRootVolume::SafetyToInMinimize(SOA3D<Precision> const &position,
 void PlacedRootVolume::SafetyToOut(SOA3D<Precision> const &position,
                                    Precision *const safeties) const {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    safeties[i] = SafetyToOut(position[i]);
+    safeties[i] = PlacedRootVolume::SafetyToOut(position[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToOut(AOS3D<Precision> const &position,
                                    Precision *const safeties) const  {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    safeties[i] = SafetyToOut(position[i]);
+    safeties[i] = PlacedRootVolume::SafetyToOut(position[i]);
   }
 }
 
 void PlacedRootVolume::SafetyToOutMinimize(SOA3D<Precision> const &position,
                                            Precision *const safeties) const {
   for (int i = 0, iMax = position.size(); i < iMax; ++i) {
-    Precision result = SafetyToOut(position[i]);
+    Precision result = PlacedRootVolume::SafetyToOut(position[i]);
     safeties[i] = (result < safeties[i]) ? result : safeties[i];
   }
 }
+
+
+void PlacedRootVolume::DistanceToInMinimize(SOA3D<Precision> const &positions,
+                                            SOA3D<Precision> const &directions,
+                                            int daughterindex,
+                                            Precision *step,
+                                            int * nextnodeids) const {
+   for (int i = 0, iMax = positions.size(); i < iMax; ++i) {
+     Precision result = PlacedRootVolume::DistanceToIn(positions[i], directions[i], step[i]);
+     if(result < step[i]) {
+           step[i]=result;
+           nextnodeids[i]=daughterindex;
+     }
+   }
+}
+
+void PlacedRootVolume::DistanceToOut(SOA3D<Precision> const &positions,
+                                     SOA3D<Precision> const &directions,
+                                     Precision const * step_max,
+                                     Precision * distance,
+                                     int * nextnodeindex) const {
+    for (int i = 0, iMax = positions.size(); i < iMax; ++i) {
+        distance[i] = PlacedRootVolume::DistanceToOut(positions[i], directions[i], step_max[i]);
+        nextnodeindex[i] = (distance[i] < step_max[i] ) ? -1 : -2;
+      }
+}
+
 
 #ifdef VECGEOM_BENCHMARK
 VPlacedVolume const* PlacedRootVolume::ConvertToUnspecialized() const {

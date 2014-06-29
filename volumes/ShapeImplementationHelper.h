@@ -224,6 +224,50 @@ public:
     }
   }
 
+#pragma GCC push_options
+#pragma GCC optimize ("unroll-loops")
+  void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
+                                    SOA3D<Precision> const &directions,
+                                    int daughterid,
+                                    Precision *const currentdistance,
+                                    int *const nextdaughteridlist) const {
+      for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
+            Vector3D<VcPrecision> point(
+              VcPrecision(&points.x(i)),
+              VcPrecision(&points.y(i)),
+              VcPrecision(&points.z(i))
+            );
+            Vector3D<VcPrecision> direction(
+              VcPrecision(&directions.x(i)),
+              VcPrecision(&directions.y(i)),
+              VcPrecision(&directions.z(i))
+            );
+            // currentdistance is also estimate for stepmax
+            VcPrecision stepMaxVc = VcPrecision(&currentdistance[i]);
+            VcPrecision result = kInfinity;
+            Specialization::template DistanceToIn<kVc>(
+              *this->GetUnplacedVolume(),
+              *this->transformation(),
+              point,
+              direction,
+              stepMaxVc,
+              result
+            );
+            // now we have distance and we can compare it to old distance step
+            // and update it if necessary
+            VcBool mask=result>stepMaxVc;
+            result( mask ) = stepMaxVc;
+            result.store(&currentdistance[i]);
+            // currently do not know how to do this better (can do it when Vc offers long ints )
+            for(int j=0;j<VcPrecision::Size;++j)
+            {
+                nextdaughteridlist[i+j]
+                                   =( ! mask[j] )? daughterid : nextdaughteridlist[i+j];
+            }
+      }
+  }
+#pragma GCC pop_options
+
   void DistanceToOutTemplate(SOA3D<Precision> const &points,
                              SOA3D<Precision> const &directions,
                              Precision const *const stepMax,
@@ -251,6 +295,40 @@ public:
       result.store(&output[i]);
     }
   }
+
+  void DistanceToOutTemplate(SOA3D<Precision> const &points,
+                               SOA3D<Precision> const &directions,
+                               Precision const *const stepMax,
+                               Precision *const output,
+                               int *const nodeindex ) const {
+      for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+        Vector3D<VcPrecision> point(
+          VcPrecision(&points.x(i)),
+          VcPrecision(&points.y(i)),
+          VcPrecision(&points.z(i))
+        );
+        Vector3D<VcPrecision> direction(
+          VcPrecision(&directions.x(i)),
+          VcPrecision(&directions.y(i)),
+          VcPrecision(&directions.z(i))
+        );
+        VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
+        VcPrecision result = kInfinity;
+        Specialization::template DistanceToOut<kVc>(
+          *this->GetUnplacedVolume(),
+          point,
+          direction,
+          stepMaxVc,
+          result
+        );
+        result.store(&output[i]);
+        for (int j=0;j<VcPrecision::Size;++j) {
+            // -1: physics step is longer than geometry
+            // -2: particle may stay inside volume
+            nodeindex[i+j] = ( result[j] < stepMaxVc[j] )? -1 : -2;
+        }
+      }
+    }
 
   void SafetyToInTemplate(SOA3D<Precision> const &points,
                           Precision *const output) const {
@@ -484,6 +562,15 @@ public:
     DistanceToInTemplate(points, directions, stepMax, output);
   }
 
+
+  virtual void DistanceToInMinimize(SOA3D<Precision> const &points,
+                                    SOA3D<Precision> const &directions,
+                                    int daughterindex,
+                                    Precision *const output,
+                                    int *const nextnodeids) const {
+      DistanceToInMinimizeTemplate(points, directions, daughterindex, output, nextnodeids);
+  }
+
   // virtual void DistanceToOut(AOS3D<Precision> const &points,
   //                            AOS3D<Precision> const &directions,
   //                            Precision const *const stepMax,
@@ -496,6 +583,14 @@ public:
                              Precision const *const stepMax,
                              Precision *const output) const {
     DistanceToOutTemplate(points, directions, stepMax, output);
+  }
+
+  virtual void DistanceToOut(SOA3D<Precision> const &points,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const stepMax,
+                             Precision *const output,
+                             int *const nextnodeindex) const {
+    DistanceToOutTemplate(points, directions, stepMax, output, nextnodeindex);
   }
 
   virtual void SafetyToIn(SOA3D<Precision> const &points,
