@@ -18,7 +18,7 @@ using namespace vecgeom;
 
 VPlacedVolume* SetupBoxGeometry() {
   UnplacedBox *worldUnplaced = new UnplacedBox(10, 10, 10);
-  UnplacedBox *boxUnplaced = new UnplacedBox(2.5, 2.5, 2.5);
+  UnplacedBox *boxUnplaced = new UnplacedBox(0.5, 0.5, 0.5);
   Transformation3D *placement1 = new Transformation3D( 2,  2,  2,  0,  0,  0);
   Transformation3D *placement2 = new Transformation3D(-2,  2,  2, 45,  0,  0);
   Transformation3D *placement3 = new Transformation3D( 2, -2,  2,  0, 45,  0);
@@ -40,7 +40,7 @@ VPlacedVolume* SetupBoxGeometry() {
   return world->Place();
 }
 
-// function
+// function to test safety
 void testVectorSafety( VPlacedVolume* world ){
    SOA3D<Precision> points(1024);
    SOA3D<Precision> workspace(1024);
@@ -63,11 +63,72 @@ void testVectorSafety( VPlacedVolume* world ){
         vecgeom::Assert( safeties[i] == nav.GetSafety( points[i], *states[i] ), ""
                 " Problem in VectorSafety (in SimpleNavigator)" );
     }
+    std::cout << "Safety test passed\n";
    _mm_free(safeties);
+}
+
+// function to test vector navigator
+void testVectorNavigator( VPlacedVolume* world ){
+   int np=100000;
+    SOA3D<Precision> points(np);
+   SOA3D<Precision> dirs(np);
+   SOA3D<Precision> workspace1(np);
+   SOA3D<Precision> workspace2(np);
+
+   Precision * steps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
+   Precision * pSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
+
+   int * intworkspace = (int *) _mm_malloc(sizeof(int)*np,32);
+
+   vecgeom::volumeUtilities::FillUncontainedPoints( *world, points );
+   vecgeom::volumeUtilities::FillRandomDirections( dirs );
+
+   // now setup all the navigation states
+   NavigationState ** states = new NavigationState*[np];
+   NavigationState ** newstates = new NavigationState*[np];
+
+   vecgeom::SimpleNavigator nav;
+   for (int i=0;i<np;++i){
+       pSteps[i] = kInfinity;
+       states[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
+       newstates[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
+
+       nav.LocatePoint( world, points[i], *states[i], true);
+   }
+
+    // calculate steps with vector interface
+    nav.FindNextBoundaryAndStep( points, dirs, workspace1, workspace2,
+            states, newstates, pSteps, steps, intworkspace );
+
+    // verify against serial interface
+    for (int i=0;i<np;++i) {
+        Precision s;
+        NavigationState cmp( GeoManager::Instance().getMaxDepth() );
+        cmp.Clear();
+        nav.FindNextBoundaryAndStep( points[i], dirs[i], *states[i],
+                cmp, pSteps[i], s );
+        vecgeom::Assert( steps[i] == s ,
+                " Problem in VectorNavigation (in SimpleNavigator)" );
+        if( cmp.Top() != newstates[i]->Top() )
+        {
+            nav.InspectEnvironmentForPointAndDirection(points[i],dirs[i],*states[i]);
+        }
+        //  std::cerr << cmp.Top()->DistanceToIn( points[i], dirs[i], pSteps[i] ) << "\n";
+      //  std::cerr << newstates[i]->Top()->DistanceToIn( points[i], dirs[i], pSteps[i] ) << "\n";
+         vecgeom::Assert( cmp.Top() == newstates[i]->Top() ,
+                       " Problem in VectorNavigation (states) (in SimpleNavigator)" );
+    }
+
+    std::cout << "Navigation test passed\n";
+   _mm_free(steps);
+   _mm_free(intworkspace);
+   _mm_free(pSteps);
 }
 
 
 int main()
 {
-    testVectorSafety(SetupBoxGeometry());
+    VPlacedVolume *w;
+    testVectorSafety(w=SetupBoxGeometry());
+    testVectorNavigator(w);
 }
