@@ -22,7 +22,8 @@
 #include "TColor.h"
 #include "TROOT.h"
 #include "TAttMarker.h"
-
+#include "TMath.h"
+#include "TF1.h"
 
 
 using namespace vecgeom;
@@ -64,7 +65,7 @@ int main( int argc,  char *argv[]) {
     paraboloidPlaced->PrintContent();
 
     
-    int np=1000000,
+    int np=100000,
     myCountIn=0,
     myCountOut=0,
     rootCountIn=0,
@@ -74,7 +75,9 @@ int main( int argc,  char *argv[]) {
     mismatchSafetyToIn=0,
     mismatchSafetyToOut=0,
     unvalidatedSafetyToIn=0,
-    unvalidatedSafetyToOut=0;
+    unvalidatedSafetyToOut=0,
+    notValidSafetyToIn=0,
+    notValidSafetyToOut=0;
     
     float mbDistToIn,
     rootDistToIn,
@@ -87,7 +90,7 @@ int main( int argc,  char *argv[]) {
     
     
     
-    double coord[3], direction[3], module,
+    double coord[3], direction[3], new_coord[3], module,
     x=worldUnplaced.x(),
     y=worldUnplaced.y(),
     z=worldUnplaced.z();
@@ -322,6 +325,8 @@ int main( int argc,  char *argv[]) {
     c->Update();
     sleep(3);
     
+    
+    //Marker for inside points
     TPolyMarker3D *markerInside=0;
     TObjArray *pm = new TObjArray(128);
     markerInside = (TPolyMarker3D*)pm->At(4);
@@ -331,21 +336,24 @@ int main( int argc,  char *argv[]) {
     markerInside->SetMarkerSize(0.4);
     pm->AddAt(markerInside, 4);
     
-    
+    //Marker for outside points
     TPolyMarker3D *markerOutside=0;
-    TObjArray *pm1 = new TObjArray(128);
     markerOutside = (TPolyMarker3D*)pm->At(4);
     markerOutside = new TPolyMarker3D();
-    
-    
-    TColor *col4 = gROOT->GetColor(4);
-    col4->SetAlpha(0.01);
-    
     markerOutside->SetMarkerColor(kGreen+1);
     markerOutside->SetMarkerStyle(8);
     markerOutside->SetMarkerSize(0.1);
-    pm1->AddAt(markerOutside, 4);
+    pm->AddAt(markerOutside, 4);
     
+    
+    //Marker for sphere outside points
+    TPolyMarker3D *markerSphereOutside=0;
+    markerSphereOutside = (TPolyMarker3D*)pm->At(4);
+    
+    //Marker for sphere inside points
+    TPolyMarker3D *markerSphereInside=0;
+    markerSphereInside = (TPolyMarker3D*)pm->At(4);
+    int counter;
     
     for(int i=0; i<np; i++)
     {
@@ -372,10 +380,15 @@ int main( int argc,  char *argv[]) {
         
         inside=someVolume->Contains(coord);
         //inside=par->Contains(coord);
+        
+        //the point is outside!
         if(inside==0){
             rootCountOut++;
             
             //mbDistToIn=dau[0]->DistanceToIn(points[i], dir[i]);
+            
+            
+            //DISTANCE TO IN
             mbDistToIn=paraboloidPlaced->DistanceToIn(points[i], dir[i]);
             rootDistToIn=par->DistFromOutside(coord, direction);
             if( (mbDistToIn!=rootDistToIn) && !(mbDistToIn == kInfinity))
@@ -386,24 +399,69 @@ int main( int argc,  char *argv[]) {
                 mismatchDistToIn++;
             }
             
+            //SAFET TO IN
             mbSafetyToIn=paraboloidPlaced->SafetyToIn(points[i]);
             rootSafetyToIn=par->Safety(coord, false);
+            
+            //validation of SafetyToIn
+            //I shoot random point belonging to the sphere with radious mbSafetyToIn and
+            //then I see it they are all still outside the volume
+            
+            markerSphereOutside = new TPolyMarker3D();
+            markerSphereOutside->SetMarkerColor(kGreen+i);
+            counter=0;
+            for (int j=0; j<1000; j++)
+            {
+            
+                double v=r3.Uniform(0, 1);
+                double theta=r3.Uniform(0, 2*kPi);
+                double phi=TMath::ACos(2*v-1);
+                
+                double r= mbSafetyToIn*TMath::Power(r3.Uniform(0, 1), 1./3);
+                //std::cout<<"r: "<<r<<"\n";
+                
+                
+                double x_offset=r*TMath::Cos(theta)*TMath::Sin(phi);
+                double y_offset=r*TMath::Sin(theta)*TMath::Sin(phi);
+                
+                double z_offset=r*TMath::Cos(phi);
+                
+                new_coord[0]=coord[0]+x_offset;
+                new_coord[1]=coord[1]+y_offset;
+                new_coord[2]=coord[2]+z_offset;
+                
+                double safety2=mbSafetyToIn*mbSafetyToIn;
+                
+                if(x_offset*x_offset+y_offset*y_offset+z_offset*z_offset<=safety2)
+                {
+                    counter++;
+                    markerSphereOutside->SetNextPoint(new_coord[0], new_coord[1], new_coord[2]);
+                    inside=someVolume->Contains(new_coord);
+                    if(inside) notValidSafetyToIn++;
+                }
+                
+            }
+            
             if( (mbSafetyToIn!=rootSafetyToIn))
             {
-                //std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
-                //std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
+                std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
+                std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
                 mismatchSafetyToIn++;
             }
             if( (mbSafetyToIn>rootSafetyToIn))
             {
-                std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
-                std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
+                //std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
+                //std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
                 unvalidatedSafetyToIn++;
             }
             
         }
         else{
+            
+            //POINT IS INSIDE
             rootCountIn++;
+            
+            //DISTANCE TO OUT
             mbDistToOut=paraboloidPlaced->DistanceToOut(points[i], dir[i]);
             rootDistToOut=par->DistFromInside(coord, direction);
             if( (mbDistToOut!=rootDistToOut))
@@ -414,6 +472,8 @@ int main( int argc,  char *argv[]) {
                 mismatchDistToOut++;
             }
             
+            
+            //SAFETY TO OUTs
             mbSafetyToOut=paraboloidPlaced->SafetyToOut(points[i]);
             rootSafetyToOut=par->Safety(coord, true);
             if( (mbSafetyToOut!=rootSafetyToOut))
@@ -426,17 +486,52 @@ int main( int argc,  char *argv[]) {
             {
                 unvalidatedSafetyToOut++;
             }
+            
+            //validation of SafetyToOut
+            //I shoot random point belonging to the sphere with radious mbSafetyToOut and
+            //then I see it they are all still outside the volume
+            
+            markerSphereInside = new TPolyMarker3D();
+            markerSphereInside->SetMarkerColor(kGreen+i);
+            for (int j=0; j<10000; j++)
+            {
+                
+                double v=r3.Uniform(0, 1);
+                double theta=r3.Uniform(0, 2*kPi);
+                double phi=TMath::ACos(2*v-1);
+                
+                double r= mbSafetyToOut*TMath::Power(r3.Uniform(0, 1), 1./3);
+                
+                double x_offset=r*TMath::Cos(theta)*TMath::Sin(phi);
+                double y_offset=r*TMath::Sin(theta)*TMath::Sin(phi);
+                
+                double z_offset=r*TMath::Cos(phi);
+                
+                new_coord[0]=coord[0]+x_offset;
+                new_coord[1]=coord[1]+y_offset;
+                new_coord[2]=coord[2]+z_offset;
+                
+                double safety2=mbSafetyToOut*mbSafetyToOut;
+                
+                if(x_offset*x_offset+y_offset*y_offset+z_offset*z_offset<=safety2)
+                {
+                    markerSphereInside->SetNextPoint(new_coord[0], new_coord[1], new_coord[2]);
+                    inside=someVolume->Contains(new_coord);
+                    if(!inside) notValidSafetyToOut++;
+                }
+                
+            }
         }
-
     }
     
-
+    
     if (markerInside) markerInside->Draw("SAME");
     c->Update();
     sleep(3);
-    if (markerOutside) markerOutside->Draw("SAME");
-    c->Update();
-    sleep(3);
+    
+    //if (markerOutside) markerOutside->Draw("SAME");
+    //c->Update();
+    //sleep(3);
     
     std::cout<<"MB: NPointsInside: "<<myCountIn<<" NPointsOutside: "<<myCountOut<<" \n";
     std::cout<<"Root: NPointsInside: "<<rootCountIn<<" NPointsOutside: "<<rootCountOut<<" \n";
@@ -444,8 +539,11 @@ int main( int argc,  char *argv[]) {
     std::cout<<"DistToOut mismatches: "<<mismatchDistToOut<<" \n";
     std::cout<<"SafetyToIn mismatches: "<<mismatchSafetyToIn<<" \n";
     std::cout<<"SafetyToOut mismatches: "<<mismatchSafetyToOut<<" \n";
-    std::cout<<"Unvalidated SafetyToIn: "<<unvalidatedSafetyToIn<<" \n";
-    std::cout<<"Unvalidated SafetyToOut: "<<unvalidatedSafetyToOut<<" \n";
+    std::cout<<"Against ROOT unvalidated SafetyToIn: "<<unvalidatedSafetyToIn<<" \n";
+    std::cout<<"Against ROOT Unvalidated SafetyToOut: "<<unvalidatedSafetyToOut<<" \n";
+    std::cout<<"Not valid SafetyToIn: "<<notValidSafetyToIn<<" \n";
+    std::cout<<"Not valid SafetyToOut: "<<notValidSafetyToOut<<" \n";
+    std::cout<<"Counter: "<<counter<<" \n";
     
     theApp.Run();
     

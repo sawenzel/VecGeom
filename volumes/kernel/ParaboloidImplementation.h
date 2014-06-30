@@ -368,34 +368,96 @@ struct ParaboloidImplementation {
                          typename Backend::precision_v &safety) {
         
         typedef typename Backend::precision_v Float_t;
-        typedef typename Backend::bool_v      Bool_t;
         
         
-        Vector3D<Float_t> localPoint =
-        transformation.Transform<transCodeT, rotCodeT>(point);
-#if 0
-        //in order to reduce the number of zero I have to threat separately the case of particles coming from outside but that are inside the bounding box and outside the shape
-        //FAST implementation starts here
+        Vector3D<Float_t> localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+        
         safety=0.;
         Float_t safety_t;
         Float_t absZ= Abs(localPoint.z());
-        
         Float_t safeZ= absZ-unplaced.GetDz();
+
+#if 0
+        //FAST implementation starts here -- > v.0.
+        //this version give 0 if the points is between the bounding box and the solid
+       
+        Float_t absX= Abs(localPoint.x());
+        Float_t absY= Abs(localPoint.y());
+        Float_t safeX= absX-unplaced.GetRhi();
+        Float_t safeY= absY-unplaced.GetRhi();
+        
+        safety_t=Max(safeX, safeY);
+        safety_t=Max(safety_t, safeZ);
+        MaskedAssign(safety_t>0, safety_t, &safety);
+        //FAST implementation v.0.0 ends here
+        
+#endif
+
+        
+#if 0
+        //FAST implementation starts here -- > v.1
+        //this version give 0 if the points is between the bounding cylinder and the solid
+        
+        Float_t r=Sqrt(localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y());
+        Float_t safeRhi=r-unplaced.GetRhi();
+    
+        safety_t=Max(safeZ, safeRhi);
+        MaskedAssign(safety_t>0, safety_t, &safety);
+        //FAST implementation v.1 ends here
+        
+#endif
+        
+        
+#if 0
+        //FAST implementation starts here -- > v.2
+        //if the point is outside the bounding box-> FAST, otherwise calculate tangent
+        
+        typedef typename Backend::bool_v      Bool_t;
+        
+        Float_t absX= Abs(localPoint.x());
+        Float_t absY= Abs(localPoint.y());
+        
+        Float_t safeX= absX-unplaced.GetRhi();
+        Float_t safeY= absY-unplaced.GetRhi();
+       
+        Bool_t mask_bb= (safeX>0) || (safeY>0) || (safeZ>0);
+        
+        safety_t=Max(safeX, safeY);
+        safety_t=Max(safeZ, safety_t);
+        
+        MaskedAssign(mask_bb , safety_t, &safety);
+        if (mask_bb == Backend::kTrue) return;
+        
+        //then go for the tangent
+        Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
+        Float_t r=Sqrt(localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y());
+        Float_t dr = r-Sqrt(r0sq);
+        Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
+        Float_t salf = talf/Sqrt(1.+talf*talf);
+        Float_t safR = Abs(dr*salf);
+        
+        Float_t max_safety= Max(safR, safeZ);
+        MaskedAssign(!mask_bb, max_safety, &safety);
+        //FAST implementation v.2 ends here
+        
+#endif
+       
+//#if 0
+        //FAST implementation starts here -- > v.3
+        //if the point is outside the bounding cylinder --> FAST, otherwise calculate tangent
+        
+        typedef typename Backend::bool_v      Bool_t;
+        
         Float_t r=Sqrt(localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y());
         Float_t safeRhi=r-unplaced.GetRhi();
         
-        Bool_t mask_z= absZ>unplaced.GetDz(); //if one of the two is TRUE --> go FAST
-        Bool_t mask_r= r>unplaced.GetRhi();
+        Bool_t mask_bc= (safeZ>0) || (safeRhi>0);
+        safety_t=Max(safeZ, safeRhi);
         
-        MaskedAssign(mask_z && ! mask_r, safeZ, &safety);
-        MaskedAssign(mask_r && ! mask_z, safeRhi, &safety);
+        MaskedAssign(mask_bc, safety_t, &safety);
+        if (mask_bc == Backend::kTrue) return;
         
-        Bool_t done(mask_r || mask_z);
-        
-        safety_t=Min(safeZ, safeRhi);
-        MaskedAssign(mask_r && mask_z, safety_t, &safety);
-        if (done == Backend::kTrue) return;
-        
+        //then go for the tangent
         Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
         Float_t dr = r-Sqrt(r0sq);
         Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
@@ -403,12 +465,12 @@ struct ParaboloidImplementation {
         Float_t safR = Abs(dr*salf);
         
         Float_t max_safety= Max(safR, safeZ);
-        MaskedAssign(!done, max_safety, &safety);
+        MaskedAssign(!mask_bc, max_safety, &safety);
+        //FAST implementation v.3 ends here
         
-        //FAST implementation ends here
-        
-#endif
+//#endif
 
+#if 0
         //ACCURATE implementation starts here
         Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz()),
                 r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
@@ -430,6 +492,8 @@ struct ParaboloidImplementation {
         done|=drCloseToZero;
         if (done == Backend::kTrue) return;
         
+        
+        //then go for the tangent
         Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
         Float_t salf = talf/Sqrt(1.+talf*talf);
         safR = Abs(dr*salf);
@@ -437,7 +501,7 @@ struct ParaboloidImplementation {
         Float_t max_safety= Max(safR, safZ);
         MaskedAssign(!done, max_safety, &safety);
         //ACCURATE implementation ends here
-        
+#endif
     }
     
     template<class Backend>
@@ -448,13 +512,13 @@ struct ParaboloidImplementation {
                           typename Backend::precision_v &safety) {
 
         typedef typename Backend::precision_v Float_t;
-        typedef typename Backend::bool_v      Bool_t;
+       
         
         
     
         Float_t absZ= Abs(point.z());
         Float_t safZ=(unplaced.GetDz() - absZ);
-#if 0
+
         //FAST implementation starts here
         safety=0.;
         Float_t safety_t;
@@ -465,9 +529,10 @@ struct ParaboloidImplementation {
         
         //FAST implementation ends here
         
-#endif
 
+#if 0
         //ACCURATE implementation starts here
+        typedef typename Backend::bool_v      Bool_t;
         Float_t r0sq = (point.z() - unplaced.GetB())*unplaced.GetAinv();
         
         Bool_t done(false);
@@ -492,7 +557,7 @@ struct ParaboloidImplementation {
         Float_t min_safety=Min(safR, safZ);
         MaskedAssign(!done, min_safety, &safety);
         //ACCURATE implementation ends here
-
+#endif
     }
 
 };
