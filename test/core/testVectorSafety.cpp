@@ -37,7 +37,10 @@ VPlacedVolume* SetupBoxGeometry() {
   world->PlaceDaughter(box, placement6);
   world->PlaceDaughter(box, placement7);
   world->PlaceDaughter(box, placement8);
-  return world->Place();
+  VPlacedVolume  * w = world->Place();
+  GeoManager::Instance().set_world(w);
+  GeoManager::Instance().CloseGeometry();
+  return w;
 }
 
 // function to test safety
@@ -70,7 +73,7 @@ void testVectorSafety( VPlacedVolume* world ){
 // function to test vector navigator
 void testVectorNavigator( VPlacedVolume* world ){
    int np=100000;
-    SOA3D<Precision> points(np);
+   SOA3D<Precision> points(np);
    SOA3D<Precision> dirs(np);
    SOA3D<Precision> workspace1(np);
    SOA3D<Precision> workspace2(np);
