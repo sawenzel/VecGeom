@@ -16,6 +16,7 @@
 
 using namespace vecgeom;
 
+
 VPlacedVolume* SetupBoxGeometry() {
   UnplacedBox *worldUnplaced = new UnplacedBox(10, 10, 10);
   UnplacedBox *boxUnplaced = new UnplacedBox(0.5, 0.5, 0.5);
@@ -80,6 +81,7 @@ void testVectorNavigator( VPlacedVolume* world ){
 
    Precision * steps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
    Precision * pSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
+   Precision * safeties = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
 
    int * intworkspace = (int *) _mm_malloc(sizeof(int)*np,32);
 
@@ -92,35 +94,34 @@ void testVectorNavigator( VPlacedVolume* world ){
 
    vecgeom::SimpleNavigator nav;
    for (int i=0;i<np;++i){
-       pSteps[i] = kInfinity;
+      // pSteps[i] = kInfinity;
+       pSteps[i] = (i%2)? 1 : kInfinity;
        states[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
        newstates[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
-
        nav.LocatePoint( world, points[i], *states[i], true);
    }
 
-    // calculate steps with vector interface
-    nav.FindNextBoundaryAndStep( points, dirs, workspace1, workspace2,
-            states, newstates, pSteps, steps, intworkspace );
+   // calculate steps with vector interface
+   nav.FindNextBoundaryAndStep( points, dirs, workspace1, workspace2,
+           states, newstates, pSteps, safeties, steps, intworkspace );
 
-    // verify against serial interface
-    for (int i=0;i<np;++i) {
-        Precision s;
-        NavigationState cmp( GeoManager::Instance().getMaxDepth() );
-        cmp.Clear();
-        nav.FindNextBoundaryAndStep( points[i], dirs[i], *states[i],
-                cmp, pSteps[i], s );
-        vecgeom::Assert( steps[i] == s ,
-                " Problem in VectorNavigation (in SimpleNavigator)" );
-        if( cmp.Top() != newstates[i]->Top() )
-        {
-            nav.InspectEnvironmentForPointAndDirection(points[i],dirs[i],*states[i]);
-        }
-        //  std::cerr << cmp.Top()->DistanceToIn( points[i], dirs[i], pSteps[i] ) << "\n";
-      //  std::cerr << newstates[i]->Top()->DistanceToIn( points[i], dirs[i], pSteps[i] ) << "\n";
-         vecgeom::Assert( cmp.Top() == newstates[i]->Top() ,
-                       " Problem in VectorNavigation (states) (in SimpleNavigator)" );
-    }
+   // verify against serial interface
+   for (int i=0;i<np;++i) {
+       Precision s;
+       NavigationState cmp( GeoManager::Instance().getMaxDepth() );
+       cmp.Clear();
+       nav.FindNextBoundaryAndStep( points[i], dirs[i], *states[i],
+               cmp, pSteps[i], s );
+       vecgeom::Assert( steps[i] == s ,
+               " Problem in VectorNavigation (steps) (in SimpleNavigator)" );
+       vecgeom::Assert( cmp.Top() == newstates[i]->Top() ,
+                      " Problem in VectorNavigation (states) (in SimpleNavigator)" );
+       vecgeom::Assert( cmp.IsOnBoundary() == newstates[i]->IsOnBoundary(),
+                      " Problem in VectorNavigation (boundary) (in SimpleNavigator)" );
+
+       vecgeom::Assert( safeties[i] == nav.GetSafety( points[i], *states[i] ),
+               " Problem with safety " );
+   }
 
     std::cout << "Navigation test passed\n";
    _mm_free(steps);

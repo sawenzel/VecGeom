@@ -136,7 +136,7 @@ public:
          NavigationState **  /* array of pointers to NavigationStates for currentstates */,
          NavigationState **  /* array of pointers to NabigationStates for outputstates */,
          Precision const * /* pSteps -- proposed steps */,
- //        Precision * /* safeties */,
+         Precision * /* safeties */,
          Precision * /* distances; steps */,
          int * /* workspace to keep track of nextdaughter ids */
         ) const;
@@ -403,7 +403,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
          NavigationState  ** currentstates,
          NavigationState  ** newstates,
          Precision const   * pSteps,
-  //       Precision         * safeties,
+         Precision         * safeties,
          Precision         * distances,
          int               * nextnodeworkspace
         ) const
@@ -415,28 +415,20 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    {
       // TODO: we might be able to cache the matrices because some of the paths will be identical
       // need to have a quick way ( hash ) to compare paths
-      Transformation3D m = currentstates[i]->TopMatrix();
+      Transformation3D const & m = currentstates[i]->TopMatrix();
       localpoints.Set(i, m.Transform(globalpoints[i]));
       localdirs.Set(i, m.TransformDirection(globaldirs[i]));
-      // initiallize next nodes
-      nextnodeworkspace[i]=-1; // -2 indicates that particle stays in the same logical volume
    }
 
    // attention here: the placed volume will of course differ for the particles;
    // however the distancetoout function and the daughterlist are the same for all particles
    VPlacedVolume const * currentvolume = currentstates[0]->Top();
 
+   currentvolume->SafetyToOut( localpoints, safeties );
    // calculate distance to Boundary of current volume in vectorized way
    // also initialized nextnodeworkspace to -1 == hits or -2 stays in volume
    currentvolume->DistanceToOut( localpoints, localdirs,
            pSteps, distances, nextnodeworkspace );
-
-   // nextnode[k]=-1;
-   // this should be moved into the previous function
-   // for(int k=0;k<np;k++)
-   // {
-   //   this->nextnode[k] = ( pSteps[k] < distance[k] )? -1 : nextnode[k];
-   // }
 
    // iterate over all the daughter
    Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
@@ -444,6 +436,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    {
       VPlacedVolume const * daughter = daughters->operator [](daughterindex);
 
+      daughter->SafetyToInMinimize( localpoints, safeties );
       // we call a version of the DistanceToIn function which is reductive:
       // it takes the existing data in distances as the proposed step
       // if we distance to this daughter is smaller than the step
@@ -474,7 +467,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
        newstates[i]->SetBoundaryState( false );
        continue;
      }
-     //newstate.SetBoundaryState( true );
+     newstates[i]->SetBoundaryState( true );
 
      // TODO: this is tedious, please provide operators in Vector3D!!
      // WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS

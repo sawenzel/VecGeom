@@ -195,6 +195,7 @@ public:
     }
   }
 
+  VECGEOM_INLINE
   void DistanceToInTemplate(SOA3D<Precision> const &points,
                             SOA3D<Precision> const &directions,
                             Precision const *const stepMax,
@@ -226,6 +227,7 @@ public:
 
 #pragma GCC push_options
 #pragma GCC optimize ("unroll-loops")
+  VECGEOM_INLINE
   void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
                                     SOA3D<Precision> const &directions,
                                     int daughterid,
@@ -267,7 +269,7 @@ public:
       }
   }
 #pragma GCC pop_options
-
+  VECGEOM_INLINE
   void DistanceToOutTemplate(SOA3D<Precision> const &points,
                              SOA3D<Precision> const &directions,
                              Precision const *const stepMax,
@@ -296,6 +298,7 @@ public:
     }
   }
 
+  VECGEOM_INLINE
   void DistanceToOutTemplate(SOA3D<Precision> const &points,
                                SOA3D<Precision> const &directions,
                                Precision const *const stepMax,
