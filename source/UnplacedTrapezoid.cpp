@@ -9,6 +9,7 @@
 
 #include "management/VolumeFactory.h"
 #include "volumes/SpecializedTrapezoid.h"
+#include "volumes/utilities/GenerationUtilities.h"
 
 #include <stdio.h>
 
@@ -230,10 +231,12 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Checking coplanarity of all four side faces
   bool good = true;
+  bool good3 = true;
 
   // Bottom side with normal approx. -Y
   good = MakePlane(pt[0],pt[4],pt[5],pt[1],fPlanes[0]);
-  if (!good) {
+  good3 = MakePlane3(pt[0],pt[4],pt[5],pt[1],0);
+  if (!good || !good3 ) {
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n");
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     std::exit(1);
@@ -241,7 +244,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Top side with normal approx. +Y
   good = MakePlane(pt[2],pt[3],pt[7],pt[6],fPlanes[1]);
-  if (!good) {
+  good3 = MakePlane3(pt[2],pt[3],pt[7],pt[6],1);
+  if (!good || !good3 ) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n");
     std::exit(1);
@@ -249,7 +253,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Front side with normal approx. -X
   good = MakePlane(pt[0],pt[2],pt[6],pt[4],fPlanes[2]);
-  if (!good) {
+  good3 = MakePlane3(pt[0],pt[2],pt[6],pt[4],2);
+  if (!good || !good3 ) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n");
     std::exit(1);
@@ -257,7 +262,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Back side with normal approx. +X
   good = MakePlane(pt[1],pt[5],pt[7],pt[3],fPlanes[3]);
-  if (!good) {
+  good3 = MakePlane3(pt[1],pt[5],pt[7],pt[3],3);
+  if (!good || !good3 ) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n");
     std::exit(1);
@@ -330,6 +336,69 @@ bool UnplacedTrapezoid::MakePlane(
     // Calculate fD: p1 in in plane so fD = -n.p1.Vect()
     plane.fD = -( plane.fA*p1.x() + plane.fB*p1.y() + plane.fC*p1.z() );
 
+    good = true;
+  }
+  return good;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Calculate the coef's of the plane p1->p2->p3->p4->p1
+// where the ThreeVectors 1-4 are in anti-clockwise order when viewed from
+// infront of the plane (i.e. from normal direction).
+//
+// Return true if the ThreeVectors are coplanar + set coef;s
+//        false if ThreeVectors are not coplanar
+
+bool UnplacedTrapezoid::MakePlane3(
+    const Vector3D<Precision>& p1,
+    const Vector3D<Precision>& p2,
+    const Vector3D<Precision>& p3,
+    const Vector3D<Precision>& p4,
+    unsigned int planeIndex )
+{
+  bool good;
+  Precision a, b, c, d, norm;
+  Vector3D<Precision> v12, v13, v14, Vcross;
+
+  v12    = p2 - p1;
+  v13    = p3 - p1;
+  v14    = p4 - p1;
+  Vcross = v12.Cross(v13);
+
+  // check coplanarity
+  if (std::fabs( v14.Dot(Vcross)/(Vcross.Length()*v14.Length()) ) > kTolerance)  {
+    assert( false && "UnplacedTrapezoid: ERROR: Coplanarity test failure!" );
+    good = false;
+  }
+  else {
+    // a,b,c correspond to the x/y/z components of the
+    // normal vector to the plane
+
+    // Let create diagonals 4-2 and 3-1 than (4-2)x(3-1) provides
+    // vector perpendicular to the plane directed to outside !!!
+    // and a,b,c, = f(1,2,3,4) external relative to trapezoid normal
+
+    //??? can these be optimized?
+    a = +(p4.y() - p2.y())*(p3.z() - p1.z())
+       - (p3.y() - p1.y())*(p4.z() - p2.z());
+
+    b = -(p4.x() - p2.x())*(p3.z() - p1.z())
+       + (p3.x() - p1.x())*(p4.z() - p2.z());
+
+    c = +(p4.x() - p2.x())*(p3.y() - p1.y())
+       - (p3.x() - p1.x())*(p4.y() - p2.y());
+
+    norm = 1.0 / std::sqrt( a*a + b*b + c*c ); // normalization factor, always positive
+
+    a *= norm;
+    b *= norm;
+    c *= norm;
+
+    // Calculate fD: p1 is in plane so fD = -n.p1.Vect()
+    d = -( a*p1.x() + b*p1.y() + c*p1.z() );
+
+    fPlanes3.Set( planeIndex, a, b, c, d );
     good = true;
   }
   return good;

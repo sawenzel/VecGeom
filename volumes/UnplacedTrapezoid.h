@@ -4,7 +4,19 @@
 #define VECGEOM_VOLUMES_UNPLACEDTRAPEZOID_H_
 
 #include "base/Global.h"
+#include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+
+#include "backend/Backend.h"
+//#include "volumes/Plane.h"
+//#include "base/SOAPlanes.h"
+#include "base/PlaneShell.h"
+
+#ifndef VECGEOM_NVCC
+  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
+    #include <Vc/Vc>
+  #endif
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -14,6 +26,15 @@ struct TrapSidePlane {
     Precision fA,fB,fC,fD;    // Normal unit vector (a,b,c)  and offset (d)
     // => Ax+By+Cz+D=0
 };
+
+// #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
+//   //typedef Plane<VcPrecision> PlaneType;
+//   typedef SOAPlanes<kVc::precision_v,4> Planes;
+// #else
+//   //typedef Plane<Precision> PlaneType;
+//   typedef SOAPlanes<Precision,4> Planes;
+// #endif
+typedef PlaneShell<4,Precision> Planes;
 
 class UnplacedTrapezoid : public VUnplacedVolume
 #ifdef VECGEOM_VC_ACCELERATION
@@ -38,6 +59,8 @@ private:
   Precision fTthetaCphi;
 
   TrapSidePlane  fPlanes[4];
+  // PlaneType fPlanes2[4];
+  Planes fPlanes3;
 
 public:
 
@@ -106,6 +129,12 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   TrapSidePlane const* GetPlanes() const { return fPlanes; }
+
+  // VECGEOM_CUDA_HEADER_BOTH
+  // PlaneType const* GetPlanes2() const { return fPlanes2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Planes const* GetPlanes3() const { return &fPlanes3; }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetDz()  const { return fDz; }
@@ -191,6 +220,14 @@ private:
   bool MakePlane( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
                   const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
                   TrapSidePlane& plane );
+
+  // bool MakePlane2( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
+  //                  const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
+  //                  PlaneType& plane );
+
+  bool MakePlane3( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
+                   const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
+                   unsigned int planeIndex );
 };
 
 } // End global namespace
