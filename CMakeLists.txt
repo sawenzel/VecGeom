@@ -359,7 +359,7 @@ set(TEST_EXECUTABLES_CORE
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   # Files go here
