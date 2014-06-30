@@ -14,71 +14,6 @@
 
 namespace VECGEOM_NAMESPACE {
 
-void UnplacedTrapezoid::Print() const {
-  printf("UnplacedTrapezoid {%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}: size=%d bytes\n",
-         GetDz(), GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(), GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
-         GetTanThetaSinPhi(), GetTanThetaCosPhi(), memory_size() );
-}
-
-void UnplacedTrapezoid::Print(std::ostream &os) const {
-  os << "UnplacedTrapezoid {"
-     <<' '<< GetDz()
-     <<' '<< GetDy1()
-     <<' '<< GetDx1()
-     <<' '<< GetDx2()
-     <<' '<< GetTanAlpha1()
-     <<' '<< GetDy2()
-     <<' '<< GetDx3()
-     <<' '<< GetDx4()
-     <<' '<< GetTanAlpha2()
-     <<' '<< GetTanThetaSinPhi()
-     <<' '<< GetTanThetaCosPhi()
-     <<"}: size="<< memory_size() <<" bytes\n";
-}
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-VECGEOM_CUDA_HEADER_DEVICE
-VPlacedVolume* UnplacedTrapezoid::Create(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-#ifdef VECGEOM_NVCC
-    const int id,
-#endif
-    VPlacedVolume *const placement) {
-  if (placement) {
-    return new(placement) SpecializedTrapezoid<transCodeT, rotCodeT>(
-#ifdef VECGEOM_NVCC
-        logical_volume, transformation, NULL, id); // TODO: add bounding box?
-#else
-        logical_volume, transformation);
-#endif
-  }
-  return new SpecializedTrapezoid<transCodeT, rotCodeT>(
-#ifdef VECGEOM_NVCC
-      logical_volume, transformation, NULL, id); // TODO: add bounding box?
-#else
-      logical_volume, transformation);
-#endif
-}
-
-VECGEOM_CUDA_HEADER_DEVICE
-VPlacedVolume* UnplacedTrapezoid::SpecializedVolume(
-    LogicalVolume const *const volume,
-    Transformation3D const *const transformation,
-    const TranslationCode trans_code, const RotationCode rot_code,
-#ifdef VECGEOM_NVCC
-    const int id,
-#endif
-    VPlacedVolume *const placement) const {
-  return VolumeFactory::CreateByTransformation<UnplacedTrapezoid>(
-    volume, transformation, trans_code, rot_code,
-#ifdef VECGEOM_NVCC
-    id,
-#endif
-    placement);
-}
-
-
 UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision pPhi,
                            Precision pDy1, Precision pDx1, Precision pDx2, Precision pTanAlpha1,
                            Precision pDy2, Precision pDx3, Precision pDx4, Precision pTanAlpha2 )
@@ -149,6 +84,118 @@ UnplacedTrapezoid::UnplacedTrapezoid( UnplacedTrapezoid const& other )
 {
   MakePlanes();
 }
+
+void UnplacedTrapezoid::Print() const {
+  printf("UnplacedTrapezoid {%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}: size=%d bytes\n",
+         GetDz(), GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(), GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
+         GetTanThetaSinPhi(), GetTanThetaCosPhi(), memory_size() );
+}
+
+void UnplacedTrapezoid::Print(std::ostream &os) const {
+  os << "UnplacedTrapezoid {"
+     <<' '<< GetDz()
+     <<' '<< GetDy1()
+     <<' '<< GetDx1()
+     <<' '<< GetDx2()
+     <<' '<< GetTanAlpha1()
+     <<' '<< GetDy2()
+     <<' '<< GetDx3()
+     <<' '<< GetDx4()
+     <<' '<< GetTanAlpha2()
+     <<' '<< GetTanThetaSinPhi()
+     <<' '<< GetTanThetaCosPhi()
+     <<"}: size="<< memory_size() <<" bytes\n";
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+VECGEOM_CUDA_HEADER_DEVICE
+VPlacedVolume* UnplacedTrapezoid::Create(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation,
+#ifdef VECGEOM_NVCC
+    const int id,
+#endif
+    VPlacedVolume *const placement) {
+
+  // return new(placement) SpecializedTrapezoid<transCodeT, rotCodeT>(
+  return CreateSpecializedWithPlacement<SpecializedTrapezoid<transCodeT, rotCodeT> >(
+#ifdef VECGEOM_NVCC
+      logical_volume, transformation, id, placement); // TODO: add bounding box?
+#else
+      logical_volume, transformation, placement);
+#endif
+}
+
+VECGEOM_CUDA_HEADER_DEVICE
+VPlacedVolume* UnplacedTrapezoid::SpecializedVolume(
+    LogicalVolume const *const volume,
+    Transformation3D const *const transformation,
+    const TranslationCode trans_code, const RotationCode rot_code,
+#ifdef VECGEOM_NVCC
+    const int id,
+#endif
+    VPlacedVolume *const placement) const {
+  return VolumeFactory::CreateByTransformation<UnplacedTrapezoid>(
+    volume, transformation, trans_code, rot_code,
+#ifdef VECGEOM_NVCC
+    id,
+#endif
+    placement);
+}
+
+} // End global namespace
+
+namespace vecgeom {
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+void UnplacedTrapezoid_CopyToGpu(
+    Precision dz, Precision theta, Precision phi,
+    Precision dy1, Precision dx1, Precision dx2, Precision pTanAlpha1,
+    Precision dy2, Precision dx3, Precision dx4, Precision pTanAlpha2,
+    VUnplacedVolume *const gpu_ptr);
+
+VUnplacedVolume* UnplacedTrapezoid::CopyToGpu(
+    VUnplacedVolume *const gpu_ptr) const {
+  UnplacedTrapezoid_CopyToGpu(GetDz(), GetTheta(), GetPhi(),
+                              GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+                              GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
+                              gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+}
+
+VUnplacedVolume* UnplacedTrapezoid::CopyToGpu() const {
+  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTrapezoid>();
+  return this->CopyToGpu(gpu_ptr);
+}
+
+#endif
+
+#ifdef VECGEOM_NVCC
+
+class VUnplacedVolume;
+
+__global__
+void UnplacedTrapezoid_ConstructOnGpu(
+    const Precision dz, const Precision theta, const Precision phi,
+    const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
+    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
+    VUnplacedVolume *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::UnplacedTrapezoid(dz, theta, phi,
+                                               dy1, dx1, dx2, tanAlpha1,
+                                               dy2, dx3, dx4, tanAlpha2 );
+}
+
+void UnplacedParallelepiped_CopyToGpu(
+    const Precision x, const Precision y, const Precision z,
+    const Precision alpha, const Precision theta, const Precision phi,
+    VUnplacedVolume *const gpu_ptr) {
+  UnplacedParallelepiped_ConstructOnGpu<<<1, 1>>>(x, y, z, alpha, theta, phi,
+                                                  gpu_ptr);
+}
+
+#endif
 
 UnplacedTrapezoid& UnplacedTrapezoid::operator=( UnplacedTrapezoid const& other ) {
 
@@ -355,4 +402,4 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
       pt[7] = Vector3D<Precision>(+fDz*fTthetaCphi+fDy2*fTanAlpha2+fDx4, +fDz*fTthetaSphi+fDy2, +fDz);
   }
 
-} // End global namespace
+} // End namespace vecgeom
