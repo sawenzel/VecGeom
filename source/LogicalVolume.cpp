@@ -33,12 +33,13 @@ LogicalVolume::LogicalVolume(LogicalVolume const & other)
   : unplaced_volume_(), id_(0), label_(),
     user_extension_(NULL), daughters_()
 {
-  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+  printf("COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
 }
 
 LogicalVolume * LogicalVolume::operator=( LogicalVolume const & other )
 {
-  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+  printf("COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+  return NULL;
 }
 
 #endif
