@@ -10,10 +10,7 @@
 
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
-// #include "volumes/UnplacedBox.h"
-// #include "volumes/PlacedBox.h"
-// #include "volumes/UnplacedTrapezoid.h"
-#include "volumes/kernel/TrapezoidImplementation.h"
+#include "volumes/UnplacedTrapezoid.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -118,139 +115,21 @@ public:
       Transformation3D const *const transformation) const;
 #endif
 
-/*
 protected:
 
-  static PlacedBox* make_bounding_box(LogicalVolume const *const logical_volume,
-                                      Transformation3D const *const transformation) {
+  // static PlacedBox* make_bounding_box(LogicalVolume const *const logical_volume,
+  //                                     Transformation3D const *const transformation) {
 
-    UnplacedTrapezoid const *const utrap = static_cast<UnplacedTrapezoid const *const>(logical_volume->unplaced_volume());
-    UnplacedBox const *const unplaced_bbox = new UnplacedBox(
-      std::max(std::max(utrap->GetDx1(),utrap->GetDx2()),std::max(utrap->GetDx3(),utrap->GetDx4())),
-      std::max(utrap->GetDy1(),utrap->GetDy2()), utrap->GetDz());
-    LogicalVolume const *const box_volume =  new LogicalVolume(unplaced_bbox);
-    return new PlacedBox(box_volume, transformation);
-  }
+  //   UnplacedTrapezoid const *const utrap = static_cast<UnplacedTrapezoid const *const>(logical_volume->unplaced_volume());
+  //   UnplacedBox const *const unplaced_bbox = new UnplacedBox(
+  //     std::max(std::max(utrap->GetDx1(),utrap->GetDx2()),std::max(utrap->GetDx3(),utrap->GetDx4())),
+  //     std::max(utrap->GetDy1(),utrap->GetDy2()), utrap->GetDz());
+  //   LogicalVolume const *const box_volume =  new LogicalVolume(unplaced_bbox);
+  //   return new PlacedBox(box_volume, transformation);
+  // }
 
-
-public:
-
-  // CUDA specific
-
-  // Templates to interact with common C-like kernels
-  template <typename Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Backend::bool_v InsideDispatch(
-    Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <typename Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v DistanceToInDispatch(
-    Vector3D<typename Backend::precision_v> const &position,
-    Vector3D<typename Backend::precision_v> const &direction,
-    const typename Backend::precision_v step_max) const;
-
-  template <typename Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v DistanceToOutDispatch(
-    Vector3D<typename Backend::precision_v> const &position,
-    Vector3D<typename Backend::precision_v> const &direction,
-    const typename Backend::precision_v step_max) const;
-
-  template <typename Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v SafetyToOutDispatch(
-    Vector3D<typename Backend::precision_v> const &position ) const;
-
-  template <typename Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v SafetyToInDispatch(
-    Vector3D<typename Backend::precision_v> const &position ) const;
-*/
 }; // end of class PlacedTrapezoid
 
-//===== function definitions in header file  ====
-
-/*
-template <typename Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename Backend::bool_v PlacedTrapezoid::InsideDispatch(
-  Vector3D<typename Backend::precision_v> const &point) const {
-
-  printf("(%s L%d) PlacedTrap::InsideDisp(): sizeof(point): %ld\n",__FILE__,__LINE__,sizeof(point));
-
-  typename Backend::bool_v output;
-
-  // GL: I give up... don't know how to call what I want...
-  printf("\n(%s L%d) *** I can't figure out how to call Inside() method from here...\n\n");
-  // Inside<translation::kGeneric, rotation::kGeneric, Backend>(
-  //     *GetUnplacedVolume(), *this->transformation(), point, &output );
-
-  return output;
-}
-
-template <typename Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename Backend::precision_v PlacedTrapezoid::DistanceToInDispatch(
-    Vector3D<typename Backend::precision_v> const &position,
-    Vector3D<typename Backend::precision_v> const &direction,
-    const typename Backend::precision_v step_max) const {
-
-  typename Backend::precision_v output;
-  TrapezoidDistanceToIn<Backend>(
-    *GetUnplacedVolume(),
-    *this->transformation(),
-    position,
-    direction,
-    step_max,
-    &output
-    );
-  return output;
-}
-
-template <typename Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename Backend::precision_v PlacedTrapezoid::DistanceToOutDispatch(
-    Vector3D<typename Backend::precision_v> const &position,
-    Vector3D<typename Backend::precision_v> const &direction,
-    const typename Backend::precision_v step_max) const {
-  typename Backend::precision_v output;
-  TrapezoidDistanceToOut<Backend>(
-      *GetUnplacedVolume(),
-      position,
-      direction,
-      step_max,
-      output
-  );
-  return output;
-}
-
-template <typename Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename Backend::precision_v PlacedTrapezoid::SafetyToOutDispatch(
-        Vector3D<typename Backend::precision_v> const &position
-         ) const {
-  typename Backend::precision_v safety;
-  TrapezoidSafetyToOut<Backend>(*GetUnplacedVolume(), position, safety);
-  return safety;
-}
-
-template <TranslationCode trans_code, RotationCode rot_code, typename Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename Backend::precision_v PlacedTrapezoid::SafetyToInDispatch(
-    Vector3D<typename Backend::precision_v> const &position
-) const {
-  typename Backend::precision_v safety;
-  TrapezoidSafetyToIn<Backend>(*GetUnplacedVolume(), *transformation(), position, safety);
-  return safety;
-}
-*/
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTRAPEZOID_H_
