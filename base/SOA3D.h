@@ -144,6 +144,7 @@ private:
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 SOA3D<Type>::SOA3D(Type *const xarray, Type *const yarray, Type *const zarray,
                    const int memory_size)
     : TrackContainer<Type>(memory_size, false), x_(xarray), y_(yarray), z_(zarray) {
@@ -168,6 +169,7 @@ SOA3D<Type>::SOA3D(TrackContainer<Type> const &other)
 }
 
 template <typename Type>
+VECGEOM_INLINE
 SOA3D<Type>::~SOA3D() {
   if (this->allocated_) {
     _mm_free(x_);
