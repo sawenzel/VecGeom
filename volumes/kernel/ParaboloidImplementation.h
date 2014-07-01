@@ -378,7 +378,7 @@ struct ParaboloidImplementation {
         Float_t safeZ= absZ-unplaced.GetDz();
 
 #if 0
-        //FAST implementation starts here -- > v.0.
+        //FAST implementation starts here -- > v.1.
         //this version give 0 if the points is between the bounding box and the solid
        
         Float_t absX= Abs(localPoint.x());
@@ -395,7 +395,7 @@ struct ParaboloidImplementation {
 
         
 #if 0
-        //FAST implementation starts here -- > v.1
+        //FAST implementation starts here -- > v.2
         //this version give 0 if the points is between the bounding cylinder and the solid
         
         Float_t r=Sqrt(localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y());
@@ -409,7 +409,7 @@ struct ParaboloidImplementation {
         
         
 #if 0
-        //FAST implementation starts here -- > v.2
+        //ACCURATE implementation starts here -- > v.1
         //if the point is outside the bounding box-> FAST, otherwise calculate tangent
         
         typedef typename Backend::bool_v      Bool_t;
@@ -443,7 +443,7 @@ struct ParaboloidImplementation {
 #endif
        
 //#if 0
-        //FAST implementation starts here -- > v.3
+        //ACCURATE implementation starts here -- > v.2
         //if the point is outside the bounding cylinder --> FAST, otherwise calculate tangent
         
         typedef typename Backend::bool_v      Bool_t;
@@ -471,19 +471,20 @@ struct ParaboloidImplementation {
 //#endif
 
 #if 0
-        //ACCURATE implementation starts here
-        Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz()),
-                r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
+        //ACCURATE "root-like" implementation starts here
+
+        typedef typename Backend::bool_v      Bool_t;
+        Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
         
         Bool_t done(false);
-        safety = safZ;
+        safety = safeZ;
         
         Bool_t underParaboloid = (r0sq<0);
         done|= underParaboloid;
         if (done == Backend::kTrue) return;
 
         
-        Float_t safR=kInfinity,
+        Float_t safeR=kInfinity,
                 ro2=localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y(),
                 z0= unplaced.GetA()*ro2+unplaced.GetB(),
                 dr=Sqrt(ro2)-Sqrt(r0sq);
@@ -496,9 +497,9 @@ struct ParaboloidImplementation {
         //then go for the tangent
         Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
         Float_t salf = talf/Sqrt(1.+talf*talf);
-        safR = Abs(dr*salf);
+        safeR = Abs(dr*salf);
         
-        Float_t max_safety= Max(safR, safZ);
+        Float_t max_safety= Max(safeR, safeZ);
         MaskedAssign(!done, max_safety, &safety);
         //ACCURATE implementation ends here
 #endif
