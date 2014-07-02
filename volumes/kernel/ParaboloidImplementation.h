@@ -83,24 +83,24 @@ struct ParaboloidImplementation {
         //Check if points are above or below the solid or outside the parabolic surface
         Double_t absZ=Abs(point.z());
         Bool_t outsideAboveOrBelowOuterTolerance=(absZ > unplaced.GetTolOz());
-        
         Bool_t isOutside= outsideAboveOrBelowOuterTolerance;
         Bool_t done(isOutside);
-        if (done == Backend::kTrue)
+        
+        if (Backend::early_returns && done == Backend::kTrue)
         {
             inside = EInside::kOutside;
             return;
         }
         
         Double_t value=unplaced.GetA()*rho2+unplaced.GetB()-point.z();
-        
         Bool_t outsideParabolicSurfaceOuterTolerance= (value>kHalfTolerance);
         done|=outsideParabolicSurfaceOuterTolerance;
-        if (done == Backend::kTrue)
+        if (Backend::early_returns && done == Backend::kTrue)
         {
             inside = EInside::kOutside;
             return;
         }
+        
         //Check if points are inside the inner tolerance of the solid
         Bool_t insideAboveOrBelowInnerTolerance = (absZ < unplaced.GetTolOz()),
                insideParaboloidSurfaceInnerTolerance= (value<- kHalfTolerance);
@@ -108,7 +108,7 @@ struct ParaboloidImplementation {
         Bool_t isInside=insideAboveOrBelowInnerTolerance && insideParaboloidSurfaceInnerTolerance;
         MaskedAssign(isInside, EInside::kInside, &inside);
         done|=isInside;
-        if(done == Backend::kTrue) return;
+        if(Backend::early_returns && done == Backend::kTrue) return;
         
         MaskedAssign(!done, EInside::kSurface, &inside);
     }
@@ -141,7 +141,7 @@ struct ParaboloidImplementation {
         
         MaskedAssign(!done, Backend::kTrue, &inside);
     }
-    
+
     /// \brief Inside method that takes account of the surface for a Placed Paraboloid
     template <class Backend>
     VECGEOM_INLINE
@@ -154,7 +154,7 @@ struct ParaboloidImplementation {
         localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
         UnplacedInside<Backend>(unplaced, localPoint, inside);
     }
-
+    
     template <class Backend>
     VECGEOM_INLINE
     VECGEOM_CUDA_HEADER_BOTH
@@ -182,7 +182,15 @@ struct ParaboloidImplementation {
         UnplacedContains<Backend>(unplaced, localPoint, inside);
         
     }
-
+    
+    template <typename Backend, bool ForInside>
+    VECGEOM_INLINE
+    VECGEOM_CUDA_HEADER_BOTH
+    static void GenericKernelForContainsAndInside(Vector3D<Precision> const &,
+                                                  Vector3D<typename Backend::precision_v> const &,
+                                                  typename Backend::bool_v &,
+                                                  typename Backend::bool_v &);
+    
     
     template <class Backend>
     VECGEOM_INLINE
@@ -219,46 +227,44 @@ struct ParaboloidImplementation {
         //check if the point is distancing in Z
         Bool_t isDistancingInZ= (absZ>unplaced.GetDz() && checkZ);
         done|=isDistancingInZ;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
         
         //check if the point is distancing in XY
         Bool_t isDistancingInXY=( (rho2>unplaced.GetRhi2()) && (point_dot_direction_x>0 && point_dot_direction_y>0) );
         done|=isDistancingInXY;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
     
         //check if the point is distancing in X
         Bool_t isDistancingInX=( (Abs(localPoint.x())>unplaced.GetRhi()) && (point_dot_direction_x>0) );
         done|=isDistancingInX;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
 
         //check if the point is distancing in Y
         Bool_t isDistancingInY=( (Abs(localPoint.y())>unplaced.GetRhi()) && (point_dot_direction_y>0) );
         done|=isDistancingInY;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
 
         //is hitting from dz or -dz planes
-        Float_t xHit, yHit, zHit, rhoHit2, distZ, ray2;
+        Float_t distZ = (absZ-unplaced.GetDz())/absDirZ;
+        Float_t xHit = localPoint.x()+distZ*localDirection.x();
+        Float_t yHit = localPoint.y()+distZ*localDirection.y();
+        Float_t rhoHit2=xHit*xHit+yHit*yHit;
         
-        distZ = (absZ-unplaced.GetDz())/absDirZ;
-        xHit = localPoint.x()+distZ*localDirection.x();
-        yHit = localPoint.y()+distZ*localDirection.y();
-        rhoHit2=xHit*xHit+yHit*yHit;
-        
-        ray2=unplaced.GetRhi2();
+        Float_t ray2=unplaced.GetRhi2();
         MaskedAssign(localPoint.z()<-unplaced.GetDz() && localDirection.z()>0, unplaced.GetRlo2(), &ray2); //verificare
 
         Bool_t isCrossingAtDz= (absZ>unplaced.GetDz()) && (!checkZ) && (rhoHit2 <=ray2);
         MaskedAssign(isCrossingAtDz, distZ, &distance);
         done|=isCrossingAtDz;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
         
         //is hitting from the paraboloid surface
         //DistToParaboloidSurface<Backend>(unplaced,localPoint,localDirection, distParab);
-        Float_t distParab=kInfinity,
-                dirRho2 = localDirection.x()*localDirection.x()+localDirection.y()*localDirection.y(),
-                a = unplaced.GetA() * dirRho2,
-                b = 2.*unplaced.GetA()*(point_dot_direction_x+point_dot_direction_y)-localDirection.z(),
-                c = unplaced.GetA()*rho2 + unplaced.GetB() - localPoint.z();
+        Float_t distParab=kInfinity;
+        Float_t dirRho2 = localDirection.x()*localDirection.x()+localDirection.y()*localDirection.y();
+        Float_t a = unplaced.GetA() * dirRho2;
+        Float_t b = 2.*unplaced.GetA()*(point_dot_direction_x+point_dot_direction_y)-localDirection.z();
+        Float_t c = unplaced.GetA()*rho2 + unplaced.GetB() - localPoint.z();
         
     
         /*avoiding division per 0
@@ -278,14 +284,14 @@ struct ParaboloidImplementation {
         MaskedAssign(!done && check1 , COverB, &distParab ); //to store
         */
         
-        Float_t ainv = 1./a,
-        t = b*0.5,
-        prod = c*a,
-        delta = t*t - prod;
+        Float_t ainv = 1./a;
+        Float_t t = b*0.5;
+        Float_t prod = c*a;
+        Float_t delta = t*t - prod;
         
         Bool_t deltaNeg=delta<0;
         done|= deltaNeg;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
         
         //to avoid square root operation on negative elements
         MaskedAssign(deltaNeg, 0. , &delta);
@@ -295,7 +301,7 @@ struct ParaboloidImplementation {
 	    //I take only the biggest solution among all
         distParab=ainv*(-t - delta);
         
-        zHit = localPoint.z()+distParab*localDirection.z();
+        Float_t zHit = localPoint.z()+distParab*localDirection.z();
         Bool_t isHittingParaboloidSurface = ( (distParab > 1E20) || (Abs(zHit)<=unplaced.GetDz()) ); //why: dist > 1E20?
         MaskedAssign(!done && isHittingParaboloidSurface && !deltaNeg && distParab>0 , distParab, &distance);
         
@@ -316,24 +322,24 @@ struct ParaboloidImplementation {
         
         
         
-        Float_t distZ=kInfinity,
-                dirZinv=1/direction.z();
+        Float_t distZ=kInfinity;
+        Float_t dirZinv=1/direction.z();
         
         Bool_t dir_mask= direction.z()<0;
         MaskedAssign(dir_mask, -(unplaced.GetDz() + point.z())*dirZinv, &distZ);
         MaskedAssign(!dir_mask, (unplaced.GetDz() - point.z())*dirZinv, &distZ);
         
-        Float_t distParab=kInfinity,
-        rho2 = point.x()*point.x()+point.y()*point.y(),
-        dirRho2 = direction.x()*direction.x()+direction.y()*direction.y(),
-        a = unplaced.GetA() * dirRho2,
-        b = 2.*unplaced.GetA()*(point.x()*direction.x()+point.y()*direction.y())-direction.z(),
-        c = unplaced.GetA()*rho2 + unplaced.GetB() - point.z();
+        Float_t distParab=kInfinity;
+        Float_t rho2 = point.x()*point.x()+point.y()*point.y();
+        Float_t dirRho2 = direction.x()*direction.x()+direction.y()*direction.y();
+        Float_t a = unplaced.GetA() * dirRho2;
+        Float_t b = 2.*unplaced.GetA()*(point.x()*direction.x()+point.y()*direction.y())-direction.z();
+        Float_t c = unplaced.GetA()*rho2 + unplaced.GetB() - point.z();
         
-        Float_t ainv = 1./a,
-        t = b*0.5,
-        prod = c*a,
-        delta = t*t - prod;
+        Float_t ainv = 1./a;
+        Float_t t = b*0.5;
+        Float_t prod = c*a;
+        Float_t delta = t*t - prod;
     
         //to avoid square root operation on negative element
         //MaskedAssign(deltaNeg, 0. , &delta);
@@ -377,8 +383,8 @@ struct ParaboloidImplementation {
         Float_t absZ= Abs(localPoint.z());
         Float_t safeZ= absZ-unplaced.GetDz();
 
-#if 0
-        //FAST implementation starts here -- > v.0.
+#ifdef FAST1
+        //FAST implementation starts here -- > v.1.
         //this version give 0 if the points is between the bounding box and the solid
        
         Float_t absX= Abs(localPoint.x());
@@ -389,13 +395,13 @@ struct ParaboloidImplementation {
         safety_t=Max(safeX, safeY);
         safety_t=Max(safety_t, safeZ);
         MaskedAssign(safety_t>0, safety_t, &safety);
-        //FAST implementation v.0.0 ends here
+        //FAST implementation v.1 ends here
         
 #endif
 
         
-#if 0
-        //FAST implementation starts here -- > v.1
+#ifdef FAST2
+        //FAST implementation starts here -- > v.2
         //this version give 0 if the points is between the bounding cylinder and the solid
         
         Float_t r=Sqrt(localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y());
@@ -403,20 +409,19 @@ struct ParaboloidImplementation {
     
         safety_t=Max(safeZ, safeRhi);
         MaskedAssign(safety_t>0, safety_t, &safety);
-        //FAST implementation v.1 ends here
+        //FAST implementation v.2 ends here
         
 #endif
         
         
-#if 0
-        //FAST implementation starts here -- > v.2
+#ifdef ACCURATE1
+        //ACCURATE bounding box implementation starts here -- > v.1
         //if the point is outside the bounding box-> FAST, otherwise calculate tangent
         
         typedef typename Backend::bool_v      Bool_t;
         
         Float_t absX= Abs(localPoint.x());
         Float_t absY= Abs(localPoint.y());
-        
         Float_t safeX= absX-unplaced.GetRhi();
         Float_t safeY= absY-unplaced.GetRhi();
        
@@ -426,7 +431,7 @@ struct ParaboloidImplementation {
         safety_t=Max(safeZ, safety_t);
         
         MaskedAssign(mask_bb , safety_t, &safety);
-        if (mask_bb == Backend::kTrue) return;
+        if (Backend::early_returns && mask_bb == Backend::kTrue) return;
         
         //then go for the tangent
         Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
@@ -438,12 +443,12 @@ struct ParaboloidImplementation {
         
         Float_t max_safety= Max(safR, safeZ);
         MaskedAssign(!mask_bb, max_safety, &safety);
-        //FAST implementation v.2 ends here
+        //ACCURATE implementation v.1 ends here
         
 #endif
-       
-//#if 0
-        //FAST implementation starts here -- > v.3
+        
+//#ifdef  DEFAULT
+        //ACCURATE bounding cylinder implementation starts here -- > v.2
         //if the point is outside the bounding cylinder --> FAST, otherwise calculate tangent
         
         typedef typename Backend::bool_v      Bool_t;
@@ -455,7 +460,7 @@ struct ParaboloidImplementation {
         safety_t=Max(safeZ, safeRhi);
         
         MaskedAssign(mask_bc, safety_t, &safety);
-        if (mask_bc == Backend::kTrue) return;
+        if (Backend::early_returns && mask_bc == Backend::kTrue) return;
         
         //then go for the tangent
         Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
@@ -466,32 +471,29 @@ struct ParaboloidImplementation {
         
         Float_t max_safety= Max(safR, safeZ);
         MaskedAssign(!mask_bc, max_safety, &safety);
-        //FAST implementation v.3 ends here
-        
+        //ACCURATE implementation v.2 ends here
 //#endif
 
-#if 0
-        //ACCURATE implementation starts here
-        Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz()),
-                r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
+#ifdef ACCURATEROOTLIKE
+        //ACCURATE "root-like" implementation starts here
+        Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz());
+        Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
         
         Bool_t done(false);
         safety = safZ;
         
         Bool_t underParaboloid = (r0sq<0);
         done|= underParaboloid;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
 
-        
-        Float_t safR=kInfinity,
-                ro2=localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y(),
-                z0= unplaced.GetA()*ro2+unplaced.GetB(),
-                dr=Sqrt(ro2)-Sqrt(r0sq);
+        Float_t safR=kInfinity;
+        Float_t ro2=localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y();
+        Float_t z0= unplaced.GetA()*ro2+unplaced.GetB();
+        Float_t dr=Sqrt(ro2)-Sqrt(r0sq);
         
         Bool_t drCloseToZero = (dr<1.E-8);
         done|=drCloseToZero;
-        if (done == Backend::kTrue) return;
-        
+        if (Backend::early_returns && done == Backend::kTrue) return;
         
         //then go for the tangent
         Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
@@ -500,7 +502,7 @@ struct ParaboloidImplementation {
         
         Float_t max_safety= Max(safR, safZ);
         MaskedAssign(!done, max_safety, &safety);
-        //ACCURATE implementation ends here
+        //ACCURATE "root-like" implementation ends here
 #endif
     }
     
@@ -540,16 +542,16 @@ struct ParaboloidImplementation {
         
         Bool_t closeToParaboloid = (r0sq<0);
         done|= closeToParaboloid;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
         
-        Float_t safR=kInfinity,
-                ro2=point.x()*point.x()+point.y()*point.y(),
-                z0= unplaced.GetA()*ro2+unplaced.GetB(),
-                dr=Sqrt(ro2)-Sqrt(r0sq); //avoid square root of a negative number
+        Float_t safR=kInfinity;
+        Float_t ro2=point.x()*point.x()+point.y()*point.y();
+        Float_t z0= unplaced.GetA()*ro2+unplaced.GetB();
+        Float_t dr=Sqrt(ro2)-Sqrt(r0sq); //avoid square root of a negative number
         
         Bool_t drCloseToZero= (dr>-1.E-8);
         done|=drCloseToZero;
-        if (done == Backend::kTrue) return;
+        if (Backend::early_returns && done == Backend::kTrue) return;
         
         Float_t dz = Abs(point.z()-z0);
         safR = -dr*dz/Sqrt(dr*dr+dz*dz);
