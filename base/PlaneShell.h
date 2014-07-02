@@ -118,6 +118,17 @@ public:
     }
   }
 
+  /// \return the projection of a (Vector3D) direction into each plane's normal vector.
+  /// The type returned is float, double, or various SIMD vector types.
+  template<typename Type2>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void ProjectionToNormal(Vector3D<Type2> const& dir, Type2* projection) const {
+    for(int i=0; i<N; ++i) {
+      projection[i] = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+    }
+  }
+
 };
 
 } // End global namespace

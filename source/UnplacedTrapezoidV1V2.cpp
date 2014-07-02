@@ -238,34 +238,39 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Checking coplanarity of all four side faces
   bool good = true;
+  bool good2 = true;
 
   // Bottom side with normal approx. -Y
-  good = MakePlane(pt[0],pt[4],pt[5],pt[1],0);
-  if (!good) {
+  good = MakePlane(pt[0],pt[4],pt[5],pt[1],fPlanes[0]);
+  good2 = MakePlane2(pt[0],pt[4],pt[5],pt[1],0);
+  if (!good || !good2 ) {
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n");
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     std::exit(1);
   }
 
   // Top side with normal approx. +Y
-  good = MakePlane(pt[2],pt[3],pt[7],pt[6],1);
-  if (!good) {
+  good = MakePlane(pt[2],pt[3],pt[7],pt[6],fPlanes[1]);
+  good2 = MakePlane2(pt[2],pt[3],pt[7],pt[6],1);
+  if (!good || !good2 ) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n");
     std::exit(1);
   }
 
   // Front side with normal approx. -X
-  good = MakePlane(pt[0],pt[2],pt[6],pt[4],2);
-  if (!good) {
+  good = MakePlane(pt[0],pt[2],pt[6],pt[4],fPlanes[2]);
+  good2 = MakePlane2(pt[0],pt[2],pt[6],pt[4],2);
+  if (!good || !good2 ) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n");
     std::exit(1);
   }
 
   // Back side with normal approx. +X
-  good = MakePlane(pt[1],pt[5],pt[7],pt[3],3);
-  if (!good) {
+  good = MakePlane(pt[1],pt[5],pt[7],pt[3],fPlanes[3]);
+  good2 = MakePlane2(pt[1],pt[5],pt[7],pt[3],3);
+  if (!good || !good2 ) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n");
     std::exit(1);
@@ -283,6 +288,66 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 // Return true if the ThreeVectors are coplanar + set coef;s
 //        false if ThreeVectors are not coplanar
 
+bool UnplacedTrapezoid::MakePlane(
+    const Vector3D<Precision>& p1,
+    const Vector3D<Precision>& p2,
+    const Vector3D<Precision>& p3,
+    const Vector3D<Precision>& p4,
+    TrapSidePlane& plane )
+{
+  bool good;
+  Precision a, b, c, sd;
+  Vector3D<Precision> v12, v13, v14, Vcross;
+
+  v12    = p2 - p1;
+  v13    = p3 - p1;
+  v14    = p4 - p1;
+  Vcross = v12.Cross(v13);
+
+  // check coplanarity
+  if (std::fabs( v14.Dot(Vcross)/(Vcross.Length()*v14.Length()) ) > kTolerance)  {
+    assert( false && "UnplacedTrapezoid: ERROR: Coplanarity test failure!" );
+    good = false;
+  }
+  else {
+    // a,b,c correspond to the x/y/z components of the
+    // normal vector to the plane
+
+    // Let create diagonals 4-2 and 3-1 than (4-2)x(3-1) provides
+    // vector perpendicular to the plane directed to outside !!!
+    // and a,b,c, = f(1,2,3,4) external relative to trapezoid normal
+
+    //??? can these be optimized?
+    a = +(p4.y() - p2.y())*(p3.z() - p1.z())
+       - (p3.y() - p1.y())*(p4.z() - p2.z());
+
+    b = -(p4.x() - p2.x())*(p3.z() - p1.z())
+       + (p3.x() - p1.x())*(p4.z() - p2.z());
+
+    c = +(p4.x() - p2.x())*(p3.y() - p1.y())
+       - (p3.x() - p1.x())*(p4.y() - p2.y());
+
+    sd = std::sqrt( a*a + b*b + c*c ); // so now vector plane.(a,b,c) is unit
+
+    if( sd > 0 ) {
+      plane.fA = a/sd;
+      plane.fB = b/sd;
+      plane.fC = c/sd;
+    }
+    else {
+      //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message) ;
+      printf("UnplacedTrapezoid::MakePlane() - GeomSolids0002 FatalException: Invalid parameters: norm.mod() <=0, for Solid: UnplacedTrapezoid\n");
+      exit(1);
+    }
+
+    // Calculate fD: p1 in in plane so fD = -n.p1.Vect()
+    plane.fD = -( plane.fA*p1.x() + plane.fB*p1.y() + plane.fC*p1.z() );
+
+    good = true;
+  }
+  return good;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Calculate the coef's of the plane p1->p2->p3->p4->p1
@@ -292,7 +357,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 // Return true if the ThreeVectors are coplanar + set coef;s
 //        false if ThreeVectors are not coplanar
 
-bool UnplacedTrapezoid::MakePlane(
+bool UnplacedTrapezoid::MakePlane2(
     const Vector3D<Precision>& p1,
     const Vector3D<Precision>& p2,
     const Vector3D<Precision>& p3,
@@ -340,7 +405,7 @@ bool UnplacedTrapezoid::MakePlane(
     // Calculate fD: p1 is in plane so fD = -n.p1.Vect()
     d = -( a*p1.x() + b*p1.y() + c*p1.z() );
 
-    fPlanes.Set( planeIndex, a, b, c, d );
+    fPlanes3.Set( planeIndex, a, b, c, d );
     good = true;
   }
   return good;

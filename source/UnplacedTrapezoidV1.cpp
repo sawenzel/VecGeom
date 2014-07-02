@@ -240,7 +240,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
   bool good = true;
 
   // Bottom side with normal approx. -Y
-  good = MakePlane(pt[0],pt[4],pt[5],pt[1],0);
+  good = MakePlane(pt[0],pt[4],pt[5],pt[1],fPlanes[0]);
   if (!good) {
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n");
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
@@ -248,7 +248,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
   }
 
   // Top side with normal approx. +Y
-  good = MakePlane(pt[2],pt[3],pt[7],pt[6],1);
+  good = MakePlane(pt[2],pt[3],pt[7],pt[6],fPlanes[1]);
   if (!good) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n");
@@ -256,7 +256,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
   }
 
   // Front side with normal approx. -X
-  good = MakePlane(pt[0],pt[2],pt[6],pt[4],2);
+  good = MakePlane(pt[0],pt[2],pt[6],pt[4],fPlanes[2]);
   if (!good) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n");
@@ -264,7 +264,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
   }
 
   // Back side with normal approx. +X
-  good = MakePlane(pt[1],pt[5],pt[7],pt[3],3);
+  good = MakePlane(pt[1],pt[5],pt[7],pt[3],fPlanes[3]);
   if (!good) {
     //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
     printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n");
@@ -283,24 +283,15 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 // Return true if the ThreeVectors are coplanar + set coef;s
 //        false if ThreeVectors are not coplanar
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Calculate the coef's of the plane p1->p2->p3->p4->p1
-// where the ThreeVectors 1-4 are in anti-clockwise order when viewed from
-// infront of the plane (i.e. from normal direction).
-//
-// Return true if the ThreeVectors are coplanar + set coef;s
-//        false if ThreeVectors are not coplanar
-
 bool UnplacedTrapezoid::MakePlane(
     const Vector3D<Precision>& p1,
     const Vector3D<Precision>& p2,
     const Vector3D<Precision>& p3,
     const Vector3D<Precision>& p4,
-    unsigned int planeIndex )
+    TrapSidePlane& plane )
 {
   bool good;
-  Precision a, b, c, d, norm;
+  Precision a, b, c, sd;
   Vector3D<Precision> v12, v13, v14, Vcross;
 
   v12    = p2 - p1;
@@ -331,16 +322,22 @@ bool UnplacedTrapezoid::MakePlane(
     c = +(p4.x() - p2.x())*(p3.y() - p1.y())
        - (p3.x() - p1.x())*(p4.y() - p2.y());
 
-    norm = 1.0 / std::sqrt( a*a + b*b + c*c ); // normalization factor, always positive
+    sd = std::sqrt( a*a + b*b + c*c ); // so now vector plane.(a,b,c) is unit
 
-    a *= norm;
-    b *= norm;
-    c *= norm;
+    if( sd > 0 ) {
+      plane.fA = a/sd;
+      plane.fB = b/sd;
+      plane.fC = c/sd;
+    }
+    else {
+      //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message) ;
+      printf("UnplacedTrapezoid::MakePlane() - GeomSolids0002 FatalException: Invalid parameters: norm.mod() <=0, for Solid: UnplacedTrapezoid\n");
+      exit(1);
+    }
 
-    // Calculate fD: p1 is in plane so fD = -n.p1.Vect()
-    d = -( a*p1.x() + b*p1.y() + c*p1.z() );
+    // Calculate fD: p1 in in plane so fD = -n.p1.Vect()
+    plane.fD = -( plane.fA*p1.x() + plane.fB*p1.y() + plane.fC*p1.z() );
 
-    fPlanes.Set( planeIndex, a, b, c, d );
     good = true;
   }
   return good;
