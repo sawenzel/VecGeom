@@ -148,31 +148,37 @@ public:
     void SetRhi(const Precision rhi);
     
     VECGEOM_CUDA_HEADER_BOTH
+    void SetDx(const Precision dx);
+    
+    VECGEOM_CUDA_HEADER_BOTH
+    void SetDy(const Precision dy);
+    
+    VECGEOM_CUDA_HEADER_BOTH
     void SetDz(const Precision dz);
     
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    void Normal(const Precision *point, const Precision *dir, Precision *norm);
+    void Normal(const Precision *point, const Precision *dir, Precision *norm) const;
 
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax);
+    void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
     
 //__________________________________________________________________
 
     // Computes capacity of the shape in [length^3]
     VECGEOM_CUDA_HEADER_BOTH
-    Precision Capacity(){ return kPi*fDz*(fRlo*fRlo+fRhi*fRhi);}
+    Precision Capacity() const { return kPi*fDz*(fRlo*fRlo+fRhi*fRhi);}
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    Precision SurfaceArea();
+    Precision SurfaceArea () const;
 //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    Vector3D<Precision>  GetPointOnSurface();
+    Vector3D<Precision>  GetPointOnSurface() const;
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
@@ -180,22 +186,22 @@ public:
 //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    char* GetEntityType(){ return "Paraboloid";}
+    const char* GetEntityType() const{ return "Paraboloid\n";}
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    void GetParameterList(){;}
+    void GetParameterList() const{;}
     
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    UnplacedParaboloid* Clone(){ return new UnplacedParaboloid(fRlo, fRhi, fDz);}
+    UnplacedParaboloid* Clone() const{ return new UnplacedParaboloid(fRlo, fRhi, fDz);}
 
 //__________________________________________________________________
     
    
     VECGEOM_CUDA_HEADER_BOTH
-    void StreamInfo(std::ostream &os);
+    void StreamInfo(std::ostream &os) const;
     
 //__________________________________________________________________
     

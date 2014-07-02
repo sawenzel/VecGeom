@@ -95,7 +95,7 @@ namespace VECGEOM_NAMESPACE {
 //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm){
+    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm) const{
        
         // Compute normal to closest surface from POINT.
         norm[0] = norm[1] = 0.0;
@@ -132,7 +132,7 @@ namespace VECGEOM_NAMESPACE {
 
     // Returns the full 3D cartesian extent of the solid.
     VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax){
+    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const{
         
         aMin.x() = -fDx;
         aMax.x() = fDx;
@@ -145,7 +145,7 @@ namespace VECGEOM_NAMESPACE {
 //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    Precision UnplacedParaboloid::SurfaceArea()
+    Precision UnplacedParaboloid::SurfaceArea() const
     {
     
         //G4 implementation
@@ -174,7 +174,7 @@ namespace VECGEOM_NAMESPACE {
     //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface(){
+    Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface() const{
         
         //G4 implementation
         Precision A = SurfaceArea();
@@ -207,15 +207,15 @@ namespace VECGEOM_NAMESPACE {
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::ComputeBoundingBox(){
-        fDx=Max(fRhi, fRlo);
+    void UnplacedParaboloid::ComputeBoundingBox() {
+        fDx= Max(fRhi, fRlo);
         fDy=fDx;
     }
 
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::StreamInfo(std::ostream &os){
+    void UnplacedParaboloid::StreamInfo(std::ostream &os) const{
         //NYI
     }
 
