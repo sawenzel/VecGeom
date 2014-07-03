@@ -383,7 +383,11 @@ struct ParaboloidImplementation {
         Float_t absZ= Abs(localPoint.z());
         Float_t safeZ= absZ-unplaced.GetDz();
 
+<<<<<<< HEAD
 #ifdef FAST1
+=======
+#if 0
+>>>>>>> 3d7949f666a2380c1eb6fe00d04391e96d165da9
         //FAST implementation starts here -- > v.1.
         //this version give 0 if the points is between the bounding box and the solid
        
@@ -446,9 +450,10 @@ struct ParaboloidImplementation {
         //ACCURATE implementation v.1 ends here
         
 #endif
-        
+      
 //#ifdef  DEFAULT
         //ACCURATE bounding cylinder implementation starts here -- > v.2
+
         //if the point is outside the bounding cylinder --> FAST, otherwise calculate tangent
         
         typedef typename Backend::bool_v      Bool_t;
@@ -474,22 +479,26 @@ struct ParaboloidImplementation {
         //ACCURATE implementation v.2 ends here
 //#endif
 
+
 #ifdef ACCURATEROOTLIKE
         //ACCURATE "root-like" implementation starts here
         Float_t safZ = (Abs(localPoint.z()) - unplaced.GetDz());
+
         Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
         
         Bool_t done(false);
-        safety = safZ;
+        safety = safeZ;
         
         Bool_t underParaboloid = (r0sq<0);
         done|= underParaboloid;
         if (Backend::early_returns && done == Backend::kTrue) return;
 
+
         Float_t safR=kInfinity;
         Float_t ro2=localPoint.x()*localPoint.x()+localPoint.y()*localPoint.y();
         Float_t z0= unplaced.GetA()*ro2+unplaced.GetB();
         Float_t dr=Sqrt(ro2)-Sqrt(r0sq);
+
         
         Bool_t drCloseToZero = (dr<1.E-8);
         done|=drCloseToZero;
@@ -498,9 +507,9 @@ struct ParaboloidImplementation {
         //then go for the tangent
         Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
         Float_t salf = talf/Sqrt(1.+talf*talf);
-        safR = Abs(dr*salf);
+        safeR = Abs(dr*salf);
         
-        Float_t max_safety= Max(safR, safZ);
+        Float_t max_safety= Max(safeR, safeZ);
         MaskedAssign(!done, max_safety, &safety);
         //ACCURATE "root-like" implementation ends here
 #endif

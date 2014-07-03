@@ -65,7 +65,7 @@ int main( int argc,  char *argv[]) {
     paraboloidPlaced->PrintContent();
 
     
-    int np=100000,
+    int np=10000, //10^4
     myCountIn=0,
     myCountOut=0,
     rootCountIn=0,
@@ -410,7 +410,7 @@ int main( int argc,  char *argv[]) {
             markerSphereOutside = new TPolyMarker3D();
             markerSphereOutside->SetMarkerColor(kGreen+i);
             counter=0;
-            for (int j=0; j<1000; j++)
+            for (int j=0; j<100000; j++) //10^5
             {
             
                 double v=r3.Uniform(0, 1);
@@ -441,11 +441,14 @@ int main( int argc,  char *argv[]) {
                 }
                 
             }
+	    //if (markerSphereOutside) markerSphereOutside->Draw("SAME");
+		//c->Update();
+		
             
             if( (mbSafetyToIn!=rootSafetyToIn))
             {
-                std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
-                std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
+                //std::cout<<"mbSafetyToIn: "<<mbSafetyToIn;
+                //std::cout<<" rootSafetyToIn: "<<rootSafetyToIn<<"\n";
                 mismatchSafetyToIn++;
             }
             if( (mbSafetyToIn>rootSafetyToIn))
@@ -473,7 +476,7 @@ int main( int argc,  char *argv[]) {
             }
             
             
-            //SAFETY TO OUTs
+            //SAFETY TO OUT
             mbSafetyToOut=paraboloidPlaced->SafetyToOut(points[i]);
             rootSafetyToOut=par->Safety(coord, true);
             if( (mbSafetyToOut!=rootSafetyToOut))
@@ -525,9 +528,9 @@ int main( int argc,  char *argv[]) {
     }
     
     
-    if (markerInside) markerInside->Draw("SAME");
-    c->Update();
-    sleep(3);
+    //if (markerInside) markerInside->Draw("SAME");
+    //c->Update();
+    //sleep(3);
     
     //if (markerOutside) markerOutside->Draw("SAME");
     //c->Update();
