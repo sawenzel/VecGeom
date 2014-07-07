@@ -383,11 +383,8 @@ struct ParaboloidImplementation {
         Float_t absZ= Abs(localPoint.z());
         Float_t safeZ= absZ-unplaced.GetDz();
 
-<<<<<<< HEAD
 #ifdef FAST1
-=======
-#if 0
->>>>>>> 3d7949f666a2380c1eb6fe00d04391e96d165da9
+
         //FAST implementation starts here -- > v.1.
         //this version give 0 if the points is between the bounding box and the solid
        
