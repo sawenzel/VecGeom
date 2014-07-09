@@ -459,6 +459,30 @@ public:
     }
   }
 
+  VECGEOM_INLINE
+  void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
+                                    SOA3D<Precision> const &directions,
+                                    int daughterId,
+                                    Precision *const currentDistance,
+                                    int *const nextDaughterIdList) const {
+      for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+        Precision stepMax = currentDistance[i];
+        Precision result = kInfinity;
+        Specialization::template DistanceToIn<kScalar>(
+          *this->GetUnplacedVolume(),
+          *this->transformation(),
+          points[i],
+          directions[i],
+          stepMax,
+          result
+        );
+        if (result < currentDistance[i]) {
+          currentDistance[i] = result;
+          nextDaughterIdList[i] = daughterId;
+        }
+    }
+  }
+
   template <class Container_t>
   void DistanceToOutTemplate(Container_t const &points,
                              Container_t const &directions,
@@ -472,6 +496,24 @@ public:
         stepMax[i],
         output[i]
       );
+    }
+  }
+
+  VECGEOM_INLINE
+  void DistanceToOutTemplate(SOA3D<Precision> const &points,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const stepMax,
+                             Precision *const output,
+                             int *const nodeIndex) const {
+    for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+      Specialization::template DistanceToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        points[i],
+        directions[i],
+        stepMax[i],
+        output[i]
+      );
+      nodeIndex[i] = (output[i] < stepMax[i]) ? -1 : -2;
     }
   }
 
@@ -592,8 +634,8 @@ public:
                              SOA3D<Precision> const &directions,
                              Precision const *const stepMax,
                              Precision *const output,
-                             int *const nextnodeindex) const {
-    DistanceToOutTemplate(points, directions, stepMax, output, nextnodeindex);
+                             int *const nextNodeIndex) const {
+    DistanceToOutTemplate(points, directions, stepMax, output, nextNodeIndex);
   }
 
   virtual void SafetyToIn(SOA3D<Precision> const &points,

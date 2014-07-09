@@ -113,8 +113,8 @@ public:
     *
     * The Container3D has to be either SOA3D or AOS3D
     */
-   VECGEOM_CUDA_HEADER_BOTH
    template <typename Container3D>
+   VECGEOM_CUDA_HEADER_BOTH
    void GetSafeties( Container3D const & /*global_points*/,
                    NavigationState **  /*currentstates*/,
                    Container3D & /*workspace for localpoints*/,
@@ -126,8 +126,8 @@ public:
     * Note that the user has to provide a couple of workspace memories; This is the easiest way to make the navigator fully
     * threadsafe
     */
-   VECGEOM_CUDA_HEADER_BOTH
    template <typename Container3D>
+   VECGEOM_CUDA_HEADER_BOTH
    void FindNextBoundaryAndStep(
          Container3D const & /*global point*/,
          Container3D const & /*global dirs*/,
