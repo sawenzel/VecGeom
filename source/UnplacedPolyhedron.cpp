@@ -4,24 +4,31 @@
 #include "volumes/UnplacedPolyhedron.h"
 
 #include "volumes/Polygon.h"
-#include "UPolyhedra.hh"
 
 #include <cmath>
 
 namespace VECGEOM_NAMESPACE {
 
-UnplacedPolyhedron::~UnplacedPolyhedron() {}
+#ifndef VECGEOM_NVCC
 
-#ifndef VECGEOM_NVCC // CPU only constructor
+UnplacedPolyhedron::PolyhedronEdges::PolyhedronEdges(int edgeCount)
+    : normal(edgeCount), corner{edgeCount, edgeCount},
+      cornerNormal{edgeCount, edgeCount} {}
+
+UnplacedPolyhedron::PolyhedronEdges::PolyhedronEdges() : PolyhedronEdges(0) {}
+
+UnplacedPolyhedron::PolyhedronSides::PolyhedronSides(int sideCount)
+    : center(sideCount), normal(sideCount), surfPhi(sideCount),
+      surfRZ(sideCount), edgesNormal{sideCount, sideCount},
+      edges{0, 0}, rZLength(0), phiLength{0, 0}, edgeNormal(0) {}
+
+UnplacedPolyhedron::PolyhedronSides::PolyhedronSides() : PolyhedronSides(0) {}
 
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount, const Precision phiStart, Precision phiTotal,
     const int zPlaneCount, const Precision zPlane[], const Precision rInner[],
     const Precision rOuter[])
     : fSideCount(sideCount), fPhiStart(phiStart) {
-
-  UPolyhedra upolyhedra("", phiStart, phiTotal, sideCount, zPlaneCount,
-                        zPlane, rInner, rOuter);
 
   Assert(fSideCount > 0, "Polyhedron requires at least one side.\n");
 
@@ -48,6 +55,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   fPhiEnd += kTwoPi * (fPhiEnd < fPhiStart);
   Precision convertRad = 1. / cos(.5 * phiTotal / fSideCount);
 
+  fEdgeCount = fSideCount + fHasPhi;
+
   // Check contiguity in segments along Z
 
   for (int i = 0; i < zPlaneCount-1; ++i) {
@@ -66,34 +75,32 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   if (corners.SurfaceArea() < -kTolerance) corners.ReverseOrder();
   Assert(corners.SurfaceArea() >= -kTolerance);
 
-  // Create faces
+  // Construct segments
 
-  Array<PolyhedronSegment*> segments(corners.GetVertixCount());
-  PolyhedronSegment **segment = segments.begin();
+  fSegments.Allocate(corners.GetVertixCount());
+
+  Array<PolyhedronSides>::iterator segment = fSegments.begin();
   for (Polygon::const_iterator c = corners.cbegin(), cEnd = corners.cend();
        c != cEnd; ++c, ++segment) {
-    *segment = new PolyhedronSegment(c, fSideCount, fPhiStart, fPhiEnd);
+    ConstructSegment(c, segment);
   }
-
-  assert(fSideCount == upolyhedra.fNumSides);
-  assert(fPhiStart == upolyhedra.fStartPhi);
-  assert(fPhiEnd == upolyhedra.fEndPhi);
-  assert(fHasPhi == upolyhedra.fPhiIsOpen);
 }
 
-UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
-    const Polygon::const_iterator corner, const int sideCount,
-    const Precision phiStart, const Precision phiEnd)
-    : fSideCount(sideCount), fPhiStart(phiStart), fPhiEnd(phiEnd) {
+void UnplacedPolyhedron::ConstructSegment(
+    Polygon::const_iterator corner,
+    Array<PolyhedronSides>::iterator segment) {
 
-  fPhiTotal = fPhiEnd - fPhiStart;
-  fHasPhi = fPhiTotal != kTwoPi;
-  fPhiDelta = fPhiTotal / fSideCount;
-  fEdgeCount = (fHasPhi) ? fSideCount+1 : fSideCount;
-  fStart = *corner;
-  fEnd = *(corner + 1);
-  fSides.Allocate(fSideCount);
-  fEdges.Allocate(fEdgeCount);
+  // Segments are constructed as a SOA to allow for internal vectorization.
+
+  segment->edgesNormal[0] = SOA3D<Precision>(fSideCount);
+  segment->edgesNormal[1] = SOA3D<Precision>(fSideCount);
+  segment->edges[0] = PolyhedronEdges(fEdgeCount);
+  segment->edges[1] = PolyhedronEdges(fEdgeCount);
+
+  Precision phiTotal = fPhiEnd - fPhiStart;
+  Precision phiDelta = phiTotal / fSideCount;
+  Vector2D<Precision> start = *corner;
+  Vector2D<Precision> end = *(corner + 1);
 
   Vector2D<Precision> cornerPrevious = *(corner - 1);
   Vector2D<Precision> cornerNext = *(corner + 2);
@@ -101,60 +108,57 @@ UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
   Precision phi = fPhiStart;
   Vector3D<Precision> a1, b1, c1, d1, a2, b2, c2, d2;
 
-  auto calcCorners = [&] (Vector3D<Precision> &a, Vector3D<Precision> &b,
-                          Vector3D<Precision> &c, Vector3D<Precision> &d) {
-    a.Set(fStart[0]*cos(phi), fStart[0]*sin(phi), fStart[1]);
-    b.Set(fEnd[0]*cos(phi),   fEnd[0]*sin(phi),   fEnd[1]);
-    c.Set(cornerPrevious[0]*cos(phi), cornerPrevious[0]*sin(phi),
-          cornerPrevious[1]);
-    d.Set(cornerNext[0]*cos(phi), cornerNext[0]*sin(phi), cornerNext[1]);
-  };
+  a1.Set(start[0]*cos(phi), start[0]*sin(phi), start[1]);
+  b1.Set(end[0]*cos(phi),   end[0]*sin(phi),   end[1]);
+  c1.Set(cornerPrevious[0]*cos(phi), cornerPrevious[0]*sin(phi),
+         cornerPrevious[1]);
+  d1.Set(cornerNext[0]*cos(phi), cornerNext[0]*sin(phi), cornerNext[1]);
 
-  calcCorners(a1, b1, c1, d1);
+  for (int s = 0; s < fSideCount; ++s) {
 
-  CyclicIterator<PolyhedronEdge, false> edge =
-      CyclicIterator<PolyhedronEdge, false>(fEdges.begin(), fEdges.end(),
-                                            fEdges.begin());
-  for (PolyhedronSide *side = fSides.begin(), *sideEnd = fSides.end();
-       side != sideEnd; ++side, ++edge) {
-
-    phi += fPhiDelta;
+    phi += phiDelta;
 
     Vector3D<Precision> temp, adj;
-    calcCorners(a2, b2, c2, d2);
+
+    a2.Set(start[0]*cos(phi), start[0]*sin(phi), start[1]);
+    b2.Set(end[0]*cos(phi),   end[0]*sin(phi),   end[1]);
+    c2.Set(cornerPrevious[0]*cos(phi), cornerPrevious[0]*sin(phi),
+           cornerPrevious[1]);
+    d2.Set(cornerNext[0]*cos(phi), cornerNext[0]*sin(phi), cornerNext[1]);
 
     temp = b2 + b1 - a2 - a1;
-    side->center = 0.25 * (a1 + a2 + b1 + b2);
-    side->surfRZ = temp.Unit();
-    if (side == fSides.begin()) fRZLength = 0.25 * temp.Mag();
+    segment->center[s].Set(0.25 * (a1 + a2 + b1 + b2));
+    segment->surfRZ[s] = temp.Unit();
+    if (s == 0) segment->rZLength = 0.25 * temp.Mag();
 
     temp = b2 - b1 + a2 - a1;
-    side->surfPhi = temp.Unit();
-    if (side == fSides.begin()) {
-      fPhiLength[0] = 0.25 * temp.Mag();
+    segment->surfPhi[s] = temp.Unit();
+    if (s == 0) {
+      segment->phiLength[0] = 0.25 * temp.Mag();
       temp = b2 - b1;
-      fPhiLength[1] = (0.5 * temp.Mag() - fPhiLength[0]) / fRZLength;
+      segment->phiLength[1] = (0.5 * temp.Mag() - segment->phiLength[0])
+                            / segment->rZLength;
     }
 
-    temp = side->surfPhi.Cross(side->surfRZ);
-    side->normal = temp.Unit();
+    temp = segment->surfPhi[s].Cross(segment->surfRZ[s]);
+    segment->normal[s] = temp.Unit();
 
     temp = a2 - a1;
     adj = 0.5 * (c1 + c2 - a1 - a2);
     adj = adj.Cross(temp);
-    adj = adj.Unit() + side->normal;
-    side->edgeNormal[0] = adj.Unit();
+    adj = adj.Unit() + segment->normal[s];
+    segment->edgesNormal[0][s] = adj.Unit();
 
     temp = b1 - b2;
     adj = 0.5 * (d1 + d2 - b1 - b2);
     adj = adj.Cross(temp);
-    adj = adj.Unit() + side->normal;
-    side->edgeNormal[1] = adj.Unit();
+    adj = adj.Unit() + segment->normal[s];
+    segment->edgesNormal[1][s] = adj.Unit();
 
-    side->edges[0] = &(*edge);
-    side->edges[1] = &(*(edge+1));
-    edge->corner[0] = a1;
-    edge->corner[1] = b1;
+    segment->edges[0].corner[0][s].Set(a1);
+    segment->edges[0].corner[1][s].Set(b1);
+    segment->edges[1].corner[0][s].Set(a2);
+    segment->edges[1].corner[1][s].Set(b2);
 
     a1 = a2;
     b1 = b2;
@@ -163,60 +167,62 @@ UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(
   }
 
   // Last edge
+  if (!fHasPhi) {
+    segment->edges[0].corner[0][fSideCount-1] = segment->edges[0].corner[0][0];
+    segment->edges[1].corner[0][fSideCount-1] = segment->edges[1].corner[0][0];
+  }
+
+  for (int s = 0; s < fSideCount; ++s) {
+
+    int sPrev = (s == 0) ? fSideCount-1 : s-1;
+
+    segment->edges[0].normal[sPrev] = (segment->normal[s]
+                                     + segment->normal[sPrev]).Unit();
+
+    segment->edges[0].corner[0][s] = (segment->edgesNormal[0][s]
+                                    + segment->edgesNormal[0][sPrev]).Unit();
+
+    segment->edges[1].corner[1][s] = (segment->edgesNormal[1][s]
+                                    + segment->edgesNormal[1][sPrev]).Unit();
+
+  }
+
   if (fHasPhi) {
-    edge->corner[0] = a2;
-    edge->corner[1] = b2;
-  } else {
-    (fSides.end()-1)->edges[1] = fEdges.begin();
-  }
 
-  for (PolyhedronSide *side = fSides.begin(), *prev = side-1,
-       *sideEnd = fSides.end(); side != sideEnd; ++side, prev = side-1) {
+    Vector3D<Precision> normal;
+    normal = segment->edges[0].corner[0][0]
+           - segment->edges[0].corner[1][0];
+    normal = normal.Cross(segment->normal[0]);
+    if (normal.Dot(segment->surfPhi[0]) > 0) normal = -normal;
 
-    PolyhedronEdge *prevEdge = side->edges[0];
+    segment->edges[0].normal[0] = normal.Unit();
+    segment->edges[0].cornerNormal[0][0] =
+        (segment->edges[0].corner[0][0] - segment->center[0]).Unit();
+    segment->edges[0].cornerNormal[1][0] =
+        (segment->edges[0].corner[1][0] - segment->center[0]).Unit();
 
-    prevEdge->normal = (side->normal + prev->normal).Unit();
+    int sEnd = fSideCount-1;
 
-    prevEdge->cornerNormal[0] =
-        (side->edgeNormal[0] + prev->edgeNormal[0]).Unit();
-    prevEdge->cornerNormal[1] = 
-        (side->edgeNormal[1] + prev->edgeNormal[1]).Unit();
+    normal = segment->edges[1].corner[0][sEnd] 
+           - segment->edges[1].corner[1][sEnd];
+    normal = normal.Cross(segment->normal[sEnd]);
+    if (normal.Dot(segment->surfPhi[sEnd]) < 0) normal = -normal;
 
-  }
-
-  if (fHasPhi) {
-
-    PolyhedronSide *side = fSides.begin();
-
-    Vector3D<Precision> normal = side->edges[0]->corner[0]
-                                 - side->edges[0]->corner[1];
-    normal = normal.Cross(side->normal);
-    if (normal.Dot(side->surfPhi) > 0) normal = -normal;
-
-    side->edges[0]->normal = normal.Unit();
-    side->edges[0]->cornerNormal[0] = (side->edges[0]->corner[0]
-                                       - side->center).Unit();
-    side->edges[0]->cornerNormal[1] = (side->edges[0]->corner[1]
-                                       - side->center).Unit();
-
-    side = fSides.end();
-
-    normal = side->edges[1]->corner[0] - side->edges[1]->corner[1];
-    normal = normal.Cross(side->normal);
-    if (normal.Dot(side->surfPhi) < 0) normal = -normal;
-
-    side->edges[1]->normal = normal.Unit();
-    side->edges[1]->cornerNormal[0] = (side->edges[1]->corner[0]
-                                       - side->center).Unit();
-    side->edges[1]->cornerNormal[1] = (side->edges[1]->corner[1]
-                                       - side->center).Unit();
+    segment->edges[1].normal[sEnd] = normal.Unit();
+    segment->edges[1].cornerNormal[0][sEnd] =
+        (segment->edges[1].corner[0][sEnd] - segment->center[sEnd]).Unit();
+    segment->edges[1].cornerNormal[1][sEnd] =
+        (segment->edges[1].corner[1][sEnd] - segment->center[sEnd]).Unit();
 
   }
 
-  fEdgeNormal = 1. / Sqrt(1. + fPhiLength[1]*fPhiLength[1]);
+  segment->edgeNormal =
+      1. / Sqrt(1. + segment->phiLength[1]*segment->phiLength[1]);
 }
 
 #endif // VECGEOM_NVCC
+
+UnplacedPolyhedron::~UnplacedPolyhedron() {}
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedPolyhedron::Print() const {

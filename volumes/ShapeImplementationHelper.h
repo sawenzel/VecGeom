@@ -275,9 +275,9 @@ public:
                                   Precision *const safeties) const {
     for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       VcPrecision estimate = VcPrecision(&safeties[i]);
       VcPrecision result = kInfinity;
@@ -314,9 +314,9 @@ public:
                                    Precision *const safeties) const {
     for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
       Vector3D<VcPrecision> point(
-        VcPrecision(&points.x(i)),
-        VcPrecision(&points.y(i)),
-        VcPrecision(&points.z(i))
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
       VcPrecision estimate = VcPrecision(&safeties[i]);
       VcPrecision result = kInfinity;

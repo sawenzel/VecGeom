@@ -8,6 +8,7 @@
 
 #include "base/AlignedBase.h"
 #include "base/Array.h"
+#include "base/SOA3D.h"
 #include "volumes/Polygon.h"
 #include "volumes/UnplacedVolume.h"
 
@@ -19,10 +20,32 @@ class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 private:
 
-  int fSideCount;
+  struct PolyhedronEdges {
+    SOA3D<Precision> normal;
+    SOA3D<Precision> corner[2];
+    SOA3D<Precision> cornerNormal[2];
+    PolyhedronEdges(int edgeCount);
+    PolyhedronEdges();
+  };
+
+  struct PolyhedronSides {
+    SOA3D<Precision> center, normal;
+    SOA3D<Precision> surfPhi, surfRZ;
+    SOA3D<Precision> edgesNormal[2];
+    PolyhedronEdges edges[2];
+    Precision rZLength;
+    Precision phiLength[2];
+    Precision edgeNormal;
+    PolyhedronSides(int sideCount);
+    PolyhedronSides();
+  };
+
+  int fSideCount, fEdgeCount;
   Precision fPhiStart;
   Precision fPhiEnd;
+  Precision fEdgeNormal;
   bool fHasPhi;
+  Array<PolyhedronSides> fSegments;
 
 public:
 
@@ -38,6 +61,9 @@ public:
 #endif
 
   ~UnplacedPolyhedron();
+
+  void ConstructSegment(Polygon::const_iterator corner,
+                        Array<PolyhedronSides>::iterator segment);
 
   virtual int memory_size() const { return sizeof(*this); }
 
@@ -69,47 +95,6 @@ public:
     return NULL;
   }
 #endif
-
-private:
-
-#ifndef VECGEOM_NVCC
-
-  class PolyhedronSegment {
-
-  private:
-
-    struct PolyhedronEdge {
-      Vector3D<Precision> normal;
-      Vector3D<Precision> corner[2];
-      Vector3D<Precision> cornerNormal[2];
-    };
-
-    struct PolyhedronSide {
-      Vector3D<Precision> center, normal;
-      Vector3D<Precision> surfRZ, surfPhi;
-      PolyhedronEdge *edges[2];
-      Vector3D<Precision> edgeNormal[2];
-    };
-
-    int fSideCount, fEdgeCount;
-    Precision fPhiStart, fPhiEnd, fPhiTotal, fPhiDelta;
-    bool fHasPhi;
-    Vector2D<Precision> fStart, fEnd;
-    Array<PolyhedronSide> fSides;
-    Array<PolyhedronEdge> fEdges;
-    Precision fRZLength;
-    Vector2D<Precision> fPhiLength;
-    Precision fEdgeNormal;
-
-  public:
-
-    PolyhedronSegment(const Polygon::const_iterator corner,
-                      const int sideCount, const Precision phiStart,
-                      const Precision phiTotal);
-
-  };
-
-#endif // VECGEOM_NVCC
 
 };
 

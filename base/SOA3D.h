@@ -35,6 +35,8 @@ public:
 
   SOA3D(SOA3D<T> const &other);
 
+  SOA3D();
+
   SOA3D& operator=(SOA3D<T> const &other);
 
   ~SOA3D();
@@ -157,6 +159,10 @@ SOA3D<T>::SOA3D(SOA3D<T> const &other)
       fCapacity(other.fCapacity), fX(NULL), fY(NULL), fZ(NULL) {
   *this = other;
 }
+
+template <typename T>
+SOA3D<T>::SOA3D()
+    : fAllocated(false), fSize(0), fCapacity(0), fX(NULL), fY(NULL), fZ(NULL) {}
 
 template <typename T>
 SOA3D<T>& SOA3D<T>::operator=(SOA3D<T> const &rhs) {
