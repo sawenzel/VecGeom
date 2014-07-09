@@ -472,7 +472,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   for (int i = 0; i < 4; ++i) {
     Dist = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
              + fPlanes[i].fC * point.z() + fPlanes[i].fD);
-    std::cout<<"i="<< i <<" - Dist[i]="<< Dist <<"\n";
+    // std::cout<<"i="<< i <<" - Dist[i]="<< Dist <<"\n";
     MaskedAssign( !done && Dist>0.0 && Dist < safety, Dist, &safety );
   }
 }
