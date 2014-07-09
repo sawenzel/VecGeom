@@ -6,8 +6,6 @@
 #ifndef APPROXEQUAL_HH
 #define APPROXEQUAL_HH
 
-#include "UVector3.hh"
-
 const double kApproxEqualTolerance = 1E-6;
 
 // Return true if the double check is approximately equal to target
@@ -22,7 +20,8 @@ bool ApproxEqual(const double check,const double target)
 }
 
 // Return true if the 3vector check is approximately equal to target
-bool ApproxEqual(const UVector3& check, const UVector3& target)
+template <class Vec_t>
+bool ApproxEqual(const Vec_t& check, const Vec_t& target)
 {
   return (ApproxEqual(check.x(),target.x())&&
 	  ApproxEqual(check.y(),target.y())&&

@@ -175,7 +175,6 @@ public:
   //                           Precision const *const step_max,
   //                           Precision *const output) const =0;
 
-
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
       Vector3D<Precision> const &position,
