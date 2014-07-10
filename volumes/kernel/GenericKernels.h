@@ -17,6 +17,10 @@ struct GenericKernels {
   typedef typename Backend::int_v Int_t;
   typedef typename Backend::bool_v Bool_t;
 
+  static Float_t NormalizeAngle(Float_t angle) {
+    return angle + kTwoPi*((angle < 0.) - Int_t(angle * kTwoPiInv));
+  }
+
 }; // End struct GenericKernels
 
 } // End global namespace

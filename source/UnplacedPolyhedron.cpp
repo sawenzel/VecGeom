@@ -3,6 +3,7 @@
 
 #include "volumes/UnplacedPolyhedron.h"
 
+#include "volumes/kernel/GenericKernels.h"
 #include "volumes/Polygon.h"
 
 #include <cmath>
@@ -38,12 +39,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // 0 <  fPhiTotal <= 2*pi
   // fPhiStart > fPhiEnd < 4*pi
 
-  if (fPhiStart < 0.) {
-    fPhiStart += kTwoPi*(1 - static_cast<int>(fPhiStart / kTwoPi));
-  }
-  if (fPhiStart > kTwoPi) {
-    fPhiStart -= kTwoPi*static_cast<int>(fPhiStart / kTwoPi);
-  }
+  fPhiStart = GenericKernels<kScalar>::NormalizeAngle(fPhiStart);
 
   if ((phiTotal <= 0.) || (phiTotal >= kTwoPi * (1. - kEpsilon))) {
     phiTotal = kTwoPi;

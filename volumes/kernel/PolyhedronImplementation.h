@@ -13,6 +13,13 @@ namespace VECGEOM_NAMESPACE {
 template <class PolyhedronType>
 struct PolyhedronImplementation {
 
+  template <typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static void FindPhiSegment(
+      typename Backend::precision_v phi0,
+      Precision phiStart,
+      Precision phiDelta);
+
   template<typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   static void UnplacedContains(
@@ -128,6 +135,31 @@ struct PolyhedronImplementation {
       typename Backend::precision_v &safety);
 
 }; // End struct PolyhedronImplementation
+
+template <class PolyhedronType>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void PolyhedronImplementation<PolyhedronType>::FindPhiSegment(
+    typename Backend::precision_v phi0,
+    Precision phiStart,
+    Precision phiDelta) {
+
+  typedef typename Backend::precision_v Float_t;
+
+  Float_t phi = GenericKernels<Backend>::NormalizeAngle(phi0 - phiStart);
+}
+
+template <class PolyhedronType>
+template <typename Backend>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void PolyhedronImplementation<PolyhedronType>::Inside(
+    UnplacedPolyhedron const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    typename Backend::inside_v &inside) {
+  // NYI
+}
 
 } // End global namespace
 
