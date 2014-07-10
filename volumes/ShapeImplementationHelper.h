@@ -128,6 +128,20 @@ public:
     return output;
   }
 
+  /*
+   * WARNING: Dummy method that pretends it supports the USolids interface
+   * for DistanceToOut. Normal and convex are completely ignored.
+   * VecGeom kernels do not yet support normals, so this was added for
+   * USolids interoperability, in particular to aid in testing
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision DistanceToOut(Vector3D<Precision> const &point,
+                                  Vector3D<Precision> const &direction,
+                                  Vector3D<Precision> const &norm,
+                                  bool &convex) {
+      DistanceToOut(point, direction);
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToIn(Vector3D<Precision> const &point) const {
     Precision output = kInfinity;
