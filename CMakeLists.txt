@@ -17,6 +17,8 @@ option(BENCHMARK "Enable performance comparisons." OFF)
 
 option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
 
+option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
+
 if (USOLIDS)
   set(USolids ON)
 endif()
@@ -79,8 +81,8 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -DVECGEOM")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb -fprofile-arcs -ftest-coverage")
-  if (APPLE) 
+      "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
+  if (APPLE OR UNIX) 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
@@ -100,9 +102,16 @@ if (GNU)
   if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
   endif()
+  if (COVERAGE_TESTING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(LIBS ${LIBS} gcov)
+  endif()
 endif()
 if (Intel)
   set(CMAKE_CXX_FLAGS "-xHost ${CMAKE_CXX_FLAGS}")
+  if (COVERAGE_TESTING)
+    message(FATAL_ERROR "Coverage testing not supported for icc.")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")
 endif()
@@ -114,6 +123,12 @@ if (BENCHMARK)
 endif()
 if (NO_SPECIALIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_NO_SPECIALIZATION")
+endif()
+if (Clang)
+  if (COVERAGE_TESTING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    set(LIBS ${LIBS} profile_rt)
+  endif()
 endif()
 
 ################################################################################
@@ -261,8 +276,8 @@ set(SRC_CPP_RELATIVE
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
-  source/Polygon.cpp
   source/SOA3D.cpp
+  source/Polygon.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp
   source/UnplacedBox.cpp
@@ -361,8 +376,8 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
-  ${CMAKE_SOURCE_DIR}/test/usolids/PolygonTest.cpp
   ${CMAKE_SOURCE_DIR}/test/usolids/PolyhedronTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/usolids/PolygonTest.cpp
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
@@ -436,7 +451,7 @@ endforeach()
 install(FILES ${CMAKE_SOURCE_DIR}/backend/Backend.h DESTINATION include/backend)
 
 foreach(HEADER ${HEADERS_BACKEND})
-  get_filename_component(FILENAME ${HEADER} NAME_WE)
+  get_filename_component(FILENAME ${HEADER} NAME)
   install(FILES ${HEADER} DESTINATION include/backend/vector)
 endforeach()
 install(TARGETS vecgeom_cpp DESTINATION lib)

@@ -84,6 +84,11 @@ UnplacedPolyhedron::UnplacedPolyhedron(
        c != cEnd; ++c, ++segment) {
     ConstructSegment(c, segment);
   }
+
+  if (fHasPhi) {
+    // Not yet implemented. Phi faces need to be created.
+  }
+
 }
 
 void UnplacedPolyhedron::ConstructSegment(
