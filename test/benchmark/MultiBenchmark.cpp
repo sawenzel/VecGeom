@@ -21,7 +21,7 @@ int main() {
 
   auto runAndWrite = [&] (char const *const fileName) {
     for (int i = 1; i < 13; ++i) {
-      benchmarker.SetPointCount(1<<i);
+      benchmarker.SetPointCount(2<<i);
       benchmarker.RunBenchmark();
     }
     std::list<BenchmarkResult> results = benchmarker.PopResults();
