@@ -139,7 +139,7 @@ public:
                                   Vector3D<Precision> const &direction,
                                   Vector3D<Precision> const &norm,
                                   bool &convex) {
-      DistanceToOut(point, direction);
+      return DistanceToOut(point, direction);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
