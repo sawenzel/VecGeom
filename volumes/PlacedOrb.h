@@ -46,10 +46,25 @@ public:
     return static_cast<UnplacedOrb const *>(
         logical_volume()->unplaced_volume());
   }
-
+  
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetRadius() const { return GetUnplacedVolume()->GetRadius(); }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision>  dimensions() const { return GetUnplacedVolume()->dimensions(); }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision x() const { return GetUnplacedVolume()->x(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision y() const { return GetUnplacedVolume()->y(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision z() const { return GetUnplacedVolume()->z(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetRadialTolerance() const { return GetUnplacedVolume()->GetRadialTolerance(); }

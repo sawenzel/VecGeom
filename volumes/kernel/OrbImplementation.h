@@ -1,3 +1,4 @@
+
 /// @file OrbImplementation.h
 /// @author Raman Sehgal (raman.sehgal@cern.ch)
 
@@ -10,47 +11,29 @@
 #include "volumes/kernel/BoxImplementation.h"
 #include "volumes/UnplacedOrb.h"
 #include "base/Vector3D.h"
+#include "volumes/kernel/GenericKernels.h"
 
 namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct OrbImplementation {
-
+    
 template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void InsideKernel(
-      UnplacedOrb const &unplaced,
-      Vector3D<typename Backend::precision_v> point,
-      typename Backend::int_v &inside) {
-    
-    typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;	
-    Bool_t done(false);	
-
-    Double_t rad2 = point.Mag2();
-    Double_t tolRMax = unplaced.GetfRTolO();
-    Double_t tolRMax2 = tolRMax * tolRMax;
-    Double_t tolRMin = unplaced.GetfRTolI();
-    Double_t tolRMin2 = tolRMin * tolRMin;
-
-    //Point is Outside
-    Bool_t isOutside = ( rad2 > tolRMax2);
-    done |= isOutside;
-    MaskedAssign(isOutside, EInside::kOutside, &inside);
-    if(done == Backend::kTrue) return;
-
-    //Point is Inside
-    Bool_t isInside = ( rad2 < tolRMax2);
-    done |= isInside;
-    MaskedAssign(isInside, EInside::kInside, &inside);
-    if(done == Backend::kTrue) return;
-    
-    //Point is on the Surface
-    MaskedAssign(!done, EInside::kSurface, &inside);
-    return;
-  }
-
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+static void InsideKernel(
+    Vector3D<Precision> const &orbDimensions,
+    Vector3D<typename Backend::precision_v> const &point,
+    typename Backend::inside_v &inside) {
+  
+  typedef typename Backend::bool_v      Bool_t;
+  Bool_t completelyinside, completelyoutside;
+  GenericKernelForContainsAndInside<Backend,true>(
+      orbDimensions, point, completelyinside, completelyoutside);
+  inside=EInside::kSurface;
+  MaskedAssign(completelyoutside, EInside::kOutside, &inside);
+  MaskedAssign(completelyinside, EInside::kInside, &inside);
+}
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -60,34 +43,7 @@ template <class Backend>
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::bool_v &inside){
 
-    typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;	
-	
-    Bool_t done(false);
-    Double_t rad2 = point.Mag2();
-
-    Double_t tolRMax = unplaced.GetfRTolO();
-    Double_t tolRMax2 = tolRMax * tolRMax;
-    Double_t tolRMin = unplaced.GetfRTolI();
-    Double_t tolRMin2 = tolRMin * tolRMin;
-
-    Bool_t inSide(Backend::kTrue);
-
-    //Point is Outside
-    Bool_t isOutside = ( rad2 > tolRMax2);
-    done=isOutside;
-    MaskedAssign(isOutside, !inSide, &inside);
-    if(done == Backend::kTrue)return;
-
-    //Point is Inside    
-    Bool_t isInside = ( rad2 < tolRMin2);
-    done |= isInside;
-    MaskedAssign(isInside, inSide, &inside);
-    if(done == Backend::kTrue)return;
-
-    //Point is on the Surface
-    MaskedAssign(!done, !inSide, &inside);
-    return;
+      ContainsKernel<Backend>(unplaced.dimensions(), point, inside);
 }
 
   template <class Backend>
@@ -113,12 +69,10 @@ template <class Backend>
                      Vector3D<typename Backend::precision_v> const &point,
                      typename Backend::inside_v &inside){
 
-    typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;  
+    InsideKernel<Backend>(unplaced.dimensions(),
+                        transformation.Transform<transCodeT, rotCodeT>(point),
+                        inside);
 
-    Vector3D<Double_t> localPoint;
-    localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-    InsideKernel<Backend>(unplaced, localPoint, inside);
 }
 
 
@@ -292,9 +246,88 @@ template <class Backend>
     safety = safe;
     MaskedAssign( (safe < zero) , zero, &safety);
 }
+  
+template <typename Backend, bool ForInside>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+static void GenericKernelForContainsAndInside(
+    Vector3D<Precision> const &dimensions,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &completelyinside,
+    typename Backend::bool_v &completelyoutside) {
 
+//    using vecgeom::GenericKernels;
+// here we are explicitely unrolling the loop since  a for statement will likely be a penality
+// check if second call to Abs is compiled away
+    // and it can anyway not be vectorized
+    /* x */
+    completelyoutside = Abs(localPoint[0]) > MakePlusTolerant<ForInside>( dimensions[0] );
+    if (ForInside)
+    {
+        completelyinside = Abs(localPoint[0]) < MakeMinusTolerant<ForInside>( dimensions[0] );
+    }
+    if (Backend::early_returns) {
+      if ( completelyoutside == Backend::kTrue ) {
+        return;
+      }
+    }
+/* y */
+    completelyoutside |= Abs(localPoint[1]) > MakePlusTolerant<ForInside>( dimensions[1] );
+    if (ForInside)
+    {
+      completelyinside &= Abs(localPoint[1]) < MakeMinusTolerant<ForInside>( dimensions[1] );
+    }
+    if (Backend::early_returns) {
+      if ( completelyoutside == Backend::kTrue ) {
+        return;
+      }
+    }
+/* z */
+    completelyoutside |= Abs(localPoint[2]) > MakePlusTolerant<ForInside>( dimensions[2] );
+    if (ForInside)
+    {
+      completelyinside &= Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( dimensions[2] );
+    }
+    
+    
+    typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::bool_v      Bool_t;	
+	
+    Bool_t done(false);
+    Double_t rad2 = localPoint.Mag2();
+    Double_t tolRMax = MakePlusTolerant<ForInside>( dimensions[1] );
+    Double_t tolRMax2 = tolRMax * tolRMax;
+    Double_t tolRMin = MakeMinusTolerant<ForInside>( dimensions[1] );
+    Double_t tolRMin2 = tolRMin * tolRMin;
+    
+    completelyoutside |= ( rad2 > tolRMax2);
+    if (ForInside)
+    {
+      completelyinside &= ( rad2 < tolRMin2);
+    }
+    
+    return;
+}
+
+
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+static void ContainsKernel(
+    Vector3D<Precision> const &dimensions,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &inside) {
+
+  typedef typename Backend::bool_v Bool_t;
+  Bool_t unused;
+  Bool_t outside;
+  GenericKernelForContainsAndInside<Backend, false>(dimensions,
+    localPoint, unused, outside);
+  inside=!outside;
+}
+  //Additional function as suggested by Sandro
+  
 };
-
 
 } // End global namespace
 

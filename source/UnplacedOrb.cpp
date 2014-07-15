@@ -12,7 +12,7 @@
 namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb()
+  UnplacedOrb::UnplacedOrb():dimensions_(0.0)
   {
     //default constructor
     fR=0;
@@ -21,10 +21,11 @@ VECGEOM_CUDA_HEADER_BOTH
     fSurfaceArea=0;
     fRTolI=0;
     fRTolO=0;
+    
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb(const Precision r)
+  UnplacedOrb::UnplacedOrb(const Precision r):dimensions_(r)
   {
     SetRadius(r);
   }
@@ -43,7 +44,7 @@ VECGEOM_CUDA_HEADER_BOTH
     fR=r;
     fRTolI = fR - kHalfTolerance;
     fRTolO = fR + kHalfTolerance;
-
+    //dimensions_(fR);
   }
   
   /*
