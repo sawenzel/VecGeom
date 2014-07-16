@@ -14,7 +14,12 @@
 
 namespace VECGEOM_NAMESPACE {
 
-class GenericPolyhedron {};
+template <bool phiTreatmentT>
+struct PolyhedronSpecialization {
+  static const bool phiTreatment = phiTreatmentT;
+};
+
+typedef PolyhedronSpecialization<true> GenericPolyhedron;
 
 template <class PolyhedronType>
 class SpecializedPolyhedron
@@ -47,6 +52,9 @@ public:
 
 #endif
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Inside_t Inside(Vector3D<Precision> const &point) const;
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -59,6 +67,45 @@ typedef SpecializedPolyhedron<GenericPolyhedron> SimplePolyhedron;
 template <class PolyhedronType>
 void SpecializedPolyhedron<PolyhedronType>::PrintType() const {
   printf("SpecializedPolyhedron");
+}
+
+template <class PolyhedronType>
+VECGEOM_CUDA_HEADER_BOTH
+Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
+    Vector3D<Precision> const &point) const {
+  Inside_t output = EInside::kOutside;
+  Precision bestDistance = kInfinity;
+  int i = 0, iMax = PlacedPolyhedron::GetUnplacedVolume().GetSegmentCount();
+#ifdef VECGEOM_VC
+  for (;i < iMax; i += VcPrecision::Size) {
+    VcInside insideVc;
+    VcPrecision distanceVc;
+    PolyhedronImplementation<PolyhedronType>::template InsideSegments<kVc>(
+      PlacedPolyhedron::GetUnplacedVolume(), i, VPlacedVolume::transformation(),
+      insideVc, distanceVc
+    );
+    for (int j = 0; j < VcPrecision::Size; ++i) {
+      if (insideVc[j] == EInside::kSurface) return EInside::kSurface;
+      if (distanceVc[j] < bestDistance) {
+        output = insideVc[j];
+        bestDistance = distanceVc[j];
+      }
+    }
+  }
+#endif
+  for (;i < iMax; ++i) {
+    Inside_t insideResult;
+    Precision distanceResult;
+    PolyhedronImplementation<PolyhedronType>::template InsideSegments<kScalar>(
+      PlacedPolyhedron::GetUnplacedVolume(), i, VPlacedVolume::transformation(),
+      insideResult, distanceResult
+    );
+    if (insideResult == EInside::kSurface) return EInside::kSurface;
+    if (distanceResult < bestDistance) {
+      output = insideResult;
+      bestDistance = distanceResult;
+    }
+  }
 }
 
 } // End global namespace

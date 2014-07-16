@@ -28,8 +28,7 @@ UnplacedPolyhedron::PolyhedronSides::PolyhedronSides() : PolyhedronSides(0) {}
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount, const Precision phiStart, Precision phiTotal,
     const int zPlaneCount, const Precision zPlane[], const Precision rInner[],
-    const Precision rOuter[])
-    : fSideCount(sideCount), fPhiStart(phiStart) {
+    const Precision rOuter[]) : fSideCount(sideCount) {
 
   Assert(fSideCount > 0, "Polyhedron requires at least one side.\n");
 
@@ -39,7 +38,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // 0 <  fPhiTotal <= 2*pi
   // fPhiStart > fPhiEnd < 4*pi
 
-  fPhiStart = GenericKernels<kScalar>::NormalizeAngle(fPhiStart);
+  fPhiStart = GenericKernels<kScalar>::NormalizeAngle(phiStart);
 
   if ((phiTotal <= 0.) || (phiTotal >= kTwoPi * (1. - kEpsilon))) {
     phiTotal = kTwoPi;
@@ -49,6 +48,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   }
   fPhiEnd = fPhiStart + phiTotal;
   fPhiEnd += kTwoPi * (fPhiEnd < fPhiStart);
+  fPhiDelta = phiTotal / fSideCount;
   Precision convertRad = 1. / cos(.5 * phiTotal / fSideCount);
 
   fEdgeCount = fSideCount + fHasPhi;
@@ -98,8 +98,6 @@ void UnplacedPolyhedron::ConstructSegment(
   segment->edges[0] = PolyhedronEdges(fEdgeCount);
   segment->edges[1] = PolyhedronEdges(fEdgeCount);
 
-  Precision phiTotal = fPhiEnd - fPhiStart;
-  Precision phiDelta = phiTotal / fSideCount;
   Vector2D<Precision> start = *corner;
   Vector2D<Precision> end = *(corner + 1);
 
@@ -117,7 +115,7 @@ void UnplacedPolyhedron::ConstructSegment(
 
   for (int s = 0; s < fSideCount; ++s) {
 
-    phi += phiDelta;
+    phi += fPhiDelta;
 
     Vector3D<Precision> temp, adj;
 

@@ -1,5 +1,5 @@
-/// @file GenericKernels.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file GenericKernels.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_
 #define VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_

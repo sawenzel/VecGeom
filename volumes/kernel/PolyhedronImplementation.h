@@ -1,11 +1,12 @@
-/// @file PolyhedronImplementation.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file PolyhedronImplementation.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_KERNEL_POLYHEDRONIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_POLYHEDRONIMPLEMENTATION_H_
 
 #include "backend/Backend.h"
 #include "base/Vector3D.h"
+#include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedPolyhedron.h"
 
 namespace VECGEOM_NAMESPACE {
@@ -17,8 +18,8 @@ struct PolyhedronImplementation {
   VECGEOM_CUDA_HEADER_BOTH
   static void FindPhiSegment(
       typename Backend::precision_v phi0,
-      Precision phiStart,
-      Precision phiDelta);
+      UnplacedPolyhedron const &polyhedron,
+      typename Backend::int_v side);
 
   template<typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -45,6 +46,27 @@ struct PolyhedronImplementation {
       Transformation3D const &transformation,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::inside_v &inside);
+
+  template <typename Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static void InsideSegments(
+      UnplacedPolyhedron const &unplaced,
+      size_t segmentIndex,
+      Transformation3D const &transformation,
+      Vector3D<Precision> const &point,
+      typename Backend::inside_v &inside,
+      typename Backend::precision_v &distance);
+
+  template <typename Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static void DistanceToSegments(
+      UnplacedPolyhedron const &unplaced,
+      size_t segmentIndex,
+      Vector3D<Precision> const &point,
+      typename Backend::precision_v &normal,
+      typename Backend::precision_v &distance);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -141,23 +163,63 @@ template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void PolyhedronImplementation<PolyhedronType>::FindPhiSegment(
     typename Backend::precision_v phi0,
-    Precision phiStart,
-    Precision phiDelta) {
+    UnplacedPolyhedron const &polyhedron,
+    typename Backend::int_v side) {
+
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::int_v Int_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Float_t phi = GenericKernels<Backend>::NormalizeAngle(
+      phi0 - polyhedron.GetPhiStart());
+  side = Int_t(phi / polyhedron.GetPhiDelta());
+  if (PolyhedronType::phiTreatment) {
+    Bool_t inPhi = side > polyhedron.GetSideCount();
+    if (inPhi == Backend::kZero) return;
+    phi = GenericKernels<Backend>::NormalizeAngle(phi);
+    Float_t start = polyhedron.GetPhiStart() - phi;
+    Float_t end = phi - polyhedron.GetPhiEnd();
+    MaskedAssign(inPhi && start < end, 0, side);
+    MaskedAssign(inPhi && start >= end, polyhedron.GetSideCount()-1);
+  }
+}
+
+template <class PolyhedronType>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void PolyhedronImplementation<PolyhedronType>::InsideSegments(
+    UnplacedPolyhedron const &unplaced,
+    size_t segmentIndex,
+    Transformation3D const &transformation,
+    Vector3D<Precision> const &point,
+    typename Backend::inside_v &inside,
+    typename Backend::precision_v &distance) {
 
   typedef typename Backend::precision_v Float_t;
 
-  Float_t phi = GenericKernels<Backend>::NormalizeAngle(phi0 - phiStart);
+  Vector3D<Precision> localPoint = transformation.Transform(point);
+
+  int segment = FindPhiSegment<kScalar>(point.Phi());
+
+  Float_t normal;
+  DistanceToSegments(unplaced, segmentIndex, point, distance, normal);
+
+  inside = EInside::kOutside;
+  MaskedAssign(normal < 0., EInside::kInside, inside);
+  MaskedAssign((Abs(normal) < kTolerance) && (distance < 2.*kTolerance),
+               EInside::kSurface, inside);
 }
 
 template <class PolyhedronType>
 template <typename Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<PolyhedronType>::Inside(
+void PolyhedronImplementation<PolyhedronType>::DistanceToSegments(
     UnplacedPolyhedron const &unplaced,
-    Transformation3D const &transformation,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::inside_v &inside) {
+    size_t segmentIndex,
+    Vector3D<Precision> const &point,
+    typename Backend::precision_v &normal,
+    typename Backend::precision_v &distance) {
   // NYI
 }
 

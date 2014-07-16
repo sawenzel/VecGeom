@@ -41,8 +41,7 @@ private:
   };
 
   int fSideCount, fEdgeCount;
-  Precision fPhiStart;
-  Precision fPhiEnd;
+  Precision fPhiStart, fPhiEnd, fPhiDelta;
   Precision fEdgeNormal;
   bool fHasPhi;
   Array<PolyhedronSides> fSegments;
@@ -61,6 +60,21 @@ public:
 #endif
 
   ~UnplacedPolyhedron();
+
+  VECGEOM_CUDA_HEADER_BOTH
+  int GetSideCount() const { return fSideCount; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhiStart() const { return fPhiStart; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhiEnd() const { return fPhiEnd; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhiDelta() const { return fPhiDelta; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  bool HasPhi() const { return fHasPhi; }
 
   void ConstructSegment(Polygon::const_iterator corner,
                         Array<PolyhedronSides>::iterator segment);
