@@ -114,8 +114,8 @@ bool testCorners(UnplacedTrapezoid const& trap, TGeoTrap& rtrap) {
 bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
   // get planes from vecgeom trapezoid
-  // TrapSidePlane const* planes = trap.GetPlanes();
-  Planes const* planes = trap.GetPlanes2();
+  TrapSidePlane const* planes = trap.GetPlanes();  // V1
+  //Planes const* planes = trap.GetPlanes(); // V2
 
   // get planes from usolids trapezoid
   UTrapSidePlane uplanes[4];
@@ -130,26 +130,31 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
     if(debug>2) {
       printf("Plane %d: {%.3f, %.3f, %.3f, %.3f}\t\t{%.3f, %.3f, %.3f, %.3f}\n", i,
-             planes->fA[i], planes->fB[i], planes->fC[i], planes->fD[i], uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d);
+             planes[i].fA, planes[i].fB, planes[i].fC, planes[i].fD, uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d); // V1
+             //planes->fA[i], planes->fB[i], planes->fC[i], planes->fD[i], uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d); //  V2
     }
 
-    if( fabs( planes->fA[i] - uplanes[i].a ) > kTolerance ) { // V2
-      printf("Discrepancy in plane A-value: %.3f vs. %.3f\n", planes->fA[i], uplanes[i].a);
+    if( fabs( planes[i].fA - uplanes[i].a ) > kTolerance ) { // V1
+//    if( fabs( planes->fA[i] - uplanes[i].a ) > kTolerance ) { // V2
+      printf("Discrepancy in plane A-value: %.3f vs. %.3f\n", planes[i].fA, uplanes[i].a);
       good = false;
     }
 
-    if( fabs( planes->fB[i] - uplanes[i].b ) > kTolerance ) { // V2
-      printf("Discrepancy in plane B-value: %.3f vs. %.3f\n", planes->fB[i], uplanes[i].b);
+    if( fabs( planes[i].fB - uplanes[i].b ) > kTolerance ) { // V1
+//    if( fabs( planes->fB[i] - uplanes[i].b ) > kTolerance ) { // V2
+      printf("Discrepancy in plane B-value: %.3f vs. %.3f\n", planes[i].fB, uplanes[i].b);
       good = false;
     }
 
-    if( fabs( planes->fC[i] - uplanes[i].c ) > kTolerance ) { // V2
-      printf("Discrepancy in plane C-value: %.3f vs. %.3f\n", planes->fC[i], uplanes[i].c);
+    if( fabs( planes[i].fC - uplanes[i].c ) > kTolerance ) { // V1
+//    if( fabs( planes->fC[i] - uplanes[i].c ) > kTolerance ) { // V2
+      printf("Discrepancy in plane C-value: %.3f vs. %.3f\n", planes[i].fC, uplanes[i].c);
       good = false;
     }
 
-    if( fabs( planes->fD[i] - uplanes[i].d ) > kTolerance ) { // V2
-      printf("Discrepancy in plane D-value: %.3f vs. %.3f\n", planes->fD[i], uplanes[i].d);
+    if( fabs( planes[i].fD - uplanes[i].d ) > kTolerance ) { // V1
+//    if( fabs( planes->fD[i] - uplanes[i].d ) > kTolerance ) { // V2
+      printf("Discrepancy in plane D-value: %.3f vs. %.3f\n", planes[i].fD, uplanes[i].d);
       good = false;
     }
   }

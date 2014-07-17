@@ -115,7 +115,7 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
   // get planes from vecgeom trapezoid
   // TrapSidePlane const* planes = trap.GetPlanes();
-  Planes const* planes = trap.GetPlanes2();
+  Planes const* planes = trap.GetPlanes();
 
   // get planes from usolids trapezoid
   UTrapSidePlane uplanes[4];

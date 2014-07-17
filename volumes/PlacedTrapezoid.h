@@ -96,6 +96,37 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetAlpha2() const { return GetUnplacedVolume()->GetAlpha2(); }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Normal(const Precision *point, const Precision *dir, Precision *norm) const { GetUnplacedVolume()->Normal(point, dir, norm) ;}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface() ;}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void ComputeBoundingBox();
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VUSolid* Clone() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::ostream& StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo(os) ;}
+
+
 #ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
