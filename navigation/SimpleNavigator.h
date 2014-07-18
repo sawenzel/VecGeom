@@ -369,7 +369,7 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
        // TODO: we might be able to cache the matrices because some of the paths will be identical
        // need to have a quick way ( hash ) to compare paths
        Transformation3D const & m = states[i]->TopMatrix();
-       workspaceforlocalpoints.Set(i, m.Transform( globalpoints[i] ));
+       workspaceforlocalpoints.set(i, m.Transform( globalpoints[i] ));
     }
 
     // vectorized calculation of safety to mother
@@ -416,8 +416,8 @@ void SimpleNavigator::FindNextBoundaryAndStep(
       // TODO: we might be able to cache the matrices because some of the paths will be identical
       // need to have a quick way ( hash ) to compare paths
       Transformation3D const & m = currentstates[i]->TopMatrix();
-      localpoints.Set(i, m.Transform(globalpoints[i]));
-      localdirs.Set(i, m.TransformDirection(globaldirs[i]));
+      localpoints.set(i, m.Transform(globalpoints[i]));
+      localdirs.set(i, m.TransformDirection(globaldirs[i]));
    }
 
    // attention here: the placed volume will of course differ for the particles;
