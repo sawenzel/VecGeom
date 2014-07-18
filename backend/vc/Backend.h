@@ -22,6 +22,9 @@ struct kVc {
   const static precision_v kZero;
   const static bool_v kTrue;
   const static bool_v kFalse;
+
+  VECGEOM_INLINE
+  static precision_v Convert(Precision const &input);
 };
 
 constexpr int kVectorSize = kVc::precision_v::Size;
@@ -30,6 +33,10 @@ typedef kVc::int_v       VcInt;
 typedef kVc::precision_v VcPrecision;
 typedef kVc::bool_v      VcBool;
 typedef kVc::inside_v    VcInside;
+
+VcPrecision kVc::Convert(Precision const &input) {
+  return VcPrecision(&input);
+}
 
 template <typename Type>
 VECGEOM_INLINE

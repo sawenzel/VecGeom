@@ -36,10 +36,10 @@ public:
   SpecializedPolyhedron(char const *const label,
                         LogicalVolume const *const logical_volume,
                         Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, this) {}
+      : Helper(label, logical_volume, transformation, NULL) {}
 
   SpecializedPolyhedron(LogicalVolume const *const logical_volume,
-                 Transformation3D const *const transformation)
+                        Transformation3D const *const transformation)
       : SpecializedPolyhedron("", logical_volume, transformation) {}
 
 #else
@@ -48,16 +48,18 @@ public:
   SpecializedPolyhedron(LogicalVolume const *const logical_volume,
                         Transformation3D const *const transformation,
                         const int id)
-      : Helper(logical_volume, transformation, this, id) {}
+      : Helper(logical_volume, transformation, NULL, id) {}
 
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   virtual Inside_t Inside(Vector3D<Precision> const &point) const;
 
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   virtual void PrintType() const;
 
 };
@@ -66,38 +68,28 @@ typedef SpecializedPolyhedron<GenericPolyhedron> SimplePolyhedron;
 
 template <class PolyhedronType>
 void SpecializedPolyhedron<PolyhedronType>::PrintType() const {
-  printf("SpecializedPolyhedron");
+  printf("SpecializedPolyhedron<%i>", PolyhedronType::phiTreatment);
 }
 
 template <class PolyhedronType>
 VECGEOM_CUDA_HEADER_BOTH
 Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
     Vector3D<Precision> const &point) const {
+
   Inside_t output = EInside::kOutside;
   Precision bestDistance = kInfinity;
-  int i = 0, iMax = PlacedPolyhedron::GetUnplacedVolume().GetSegmentCount();
-#ifdef VECGEOM_VC
-  for (;i < iMax; i += VcPrecision::Size) {
-    VcInside insideVc;
-    VcPrecision distanceVc;
-    PolyhedronImplementation<PolyhedronType>::template InsideSegments<kVc>(
-      PlacedPolyhedron::GetUnplacedVolume(), i, VPlacedVolume::transformation(),
-      insideVc, distanceVc
-    );
-    for (int j = 0; j < VcPrecision::Size; ++i) {
-      if (insideVc[j] == EInside::kSurface) return EInside::kSurface;
-      if (distanceVc[j] < bestDistance) {
-        output = insideVc[j];
-        bestDistance = distanceVc[j];
-      }
-    }
-  }
-#endif
-  for (;i < iMax; ++i) {
+
+  Vector3D<Precision> localPoint =
+      VPlacedVolume::transformation()->Transform(point);
+
+  Array<UnplacedPolyhedron::PolyhedronSegment> const &segments =
+      PlacedPolyhedron::GetUnplacedVolume()->GetSegments();
+  for (Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator s =
+       segments.cbegin(), sEnd = segments.cend(); s != sEnd; ++s) {
     Inside_t insideResult;
     Precision distanceResult;
-    PolyhedronImplementation<PolyhedronType>::template InsideSegments<kScalar>(
-      PlacedPolyhedron::GetUnplacedVolume(), i, VPlacedVolume::transformation(),
+    PolyhedronImplementation<PolyhedronType>::InsideSegment(
+      *PlacedPolyhedron::GetUnplacedVolume(), *s, localPoint,
       insideResult, distanceResult
     );
     if (insideResult == EInside::kSurface) return EInside::kSurface;
@@ -106,6 +98,7 @@ Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
       bestDistance = distanceResult;
     }
   }
+  return output;
 }
 
 } // End global namespace

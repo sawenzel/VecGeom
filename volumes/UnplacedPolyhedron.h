@@ -18,33 +18,37 @@ namespace VECGEOM_NAMESPACE {
 
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
-private:
+public:
 
   struct PolyhedronEdges {
     SOA3D<Precision> normal;
     SOA3D<Precision> corner[2];
     SOA3D<Precision> cornerNormal[2];
-    PolyhedronEdges(int edgeCount);
+    PolyhedronEdges(int sideCount);
     PolyhedronEdges();
+    void Allocate(int sideCount);
   };
 
-  struct PolyhedronSides {
+  struct PolyhedronSegment {
     SOA3D<Precision> center, normal;
     SOA3D<Precision> surfPhi, surfRZ;
-    SOA3D<Precision> edgesNormal[2];
-    PolyhedronEdges edges[2];
+    SOA3D<Precision> edgeNormal[2];
+    PolyhedronEdges edge[2];
     Precision rZLength;
     Precision phiLength[2];
-    Precision edgeNormal;
-    PolyhedronSides(int sideCount);
-    PolyhedronSides();
+    Precision rZPhiNormal;
+    PolyhedronSegment(int sideCount);
+    PolyhedronSegment();
+    void Allocate(int sideCount);
   };
 
-  int fSideCount, fEdgeCount;
+private:
+
+  int fSideCount;
   Precision fPhiStart, fPhiEnd, fPhiDelta;
   Precision fEdgeNormal;
   bool fHasPhi;
-  Array<PolyhedronSides> fSegments;
+  Array<PolyhedronSegment> fSegments;
 
 public:
 
@@ -74,10 +78,13 @@ public:
   Precision GetPhiDelta() const { return fPhiDelta; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  bool HasPhi() const { return fHasPhi; }
+  PolyhedronSegment const& GetSegment(size_t i) const { return fSegments[i]; }
 
-  void ConstructSegment(Polygon::const_iterator corner,
-                        Array<PolyhedronSides>::iterator segment);
+  VECGEOM_CUDA_HEADER_BOTH
+  Array<PolyhedronSegment> const& GetSegments() const { return fSegments; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  bool HasPhi() const { return fHasPhi; }
 
   virtual int memory_size() const { return sizeof(*this); }
 
@@ -86,29 +93,31 @@ public:
 
   virtual void Print(std::ostream &os) const;
 
-#ifndef VECGEOM_NVCC
-  virtual VPlacedVolume* SpecializedVolume(
+  VECGEOM_CUDA_HEADER_DEVICE
+  VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
-      VPlacedVolume *const placement = NULL) const { return NULL; }
-#else
-  __device__
-  virtual VPlacedVolume* SpecializedVolume(
-      LogicalVolume const *const volume,
-      Transformation3D const *const transformation,
-      const TranslationCode trans_code, const RotationCode rot_code,
-      const int id, VPlacedVolume *const placement = NULL) const {
+#ifdef VECGEOM_NVCC
+      const int id,
+#endif
+      VPlacedVolume *const placement) const;
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  virtual VUnplacedVolume* CopyToGpu() const {
+    Assert(0, "NYI");
+    return NULL;
+  }
+  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const {
+    Assert(0, "NYI");
     return NULL;
   }
 #endif
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const { return NULL; }
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const {
-    return NULL;
-  }
-#endif
+private:
+
+  void ConstructSegment(Polygon::const_iterator corner,
+                        Array<PolyhedronSegment>::iterator segment);
 
 };
 

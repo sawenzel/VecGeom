@@ -5,6 +5,8 @@
 
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/Polygon.h"
+#include "volumes/PlacedPolyhedron.h"
+#include "volumes/SpecializedPolyhedron.h"
 
 #include <cmath>
 
@@ -12,23 +14,55 @@ namespace VECGEOM_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 
-UnplacedPolyhedron::PolyhedronEdges::PolyhedronEdges(int edgeCount)
-    : normal(edgeCount), corner{edgeCount, edgeCount},
-      cornerNormal{edgeCount, edgeCount} {}
+UnplacedPolyhedron::PolyhedronEdges::PolyhedronEdges(int sideCount)
+    : normal(sideCount), corner{sideCount, sideCount},
+      cornerNormal{sideCount, sideCount} {}
 
 UnplacedPolyhedron::PolyhedronEdges::PolyhedronEdges() : PolyhedronEdges(0) {}
 
-UnplacedPolyhedron::PolyhedronSides::PolyhedronSides(int sideCount)
-    : center(sideCount), normal(sideCount), surfPhi(sideCount),
-      surfRZ(sideCount), edgesNormal{sideCount, sideCount},
-      edges{0, 0}, rZLength(0), phiLength{0, 0}, edgeNormal(0) {}
+void UnplacedPolyhedron::PolyhedronEdges::Allocate(int sideCount) {
+  normal.reserve(sideCount);
+  normal.resize(sideCount);
+  corner[0].reserve(sideCount);
+  corner[0].resize(sideCount);
+  corner[1].reserve(sideCount);
+  corner[1].resize(sideCount);
+  cornerNormal[0].reserve(sideCount);
+  cornerNormal[0].resize(sideCount);
+  cornerNormal[1].reserve(sideCount);
+  cornerNormal[1].resize(sideCount);
+}
 
-UnplacedPolyhedron::PolyhedronSides::PolyhedronSides() : PolyhedronSides(0) {}
+UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment(int sideCount)
+    : center(sideCount), normal(sideCount), surfPhi(sideCount),
+      surfRZ(sideCount), edgeNormal{sideCount, sideCount},
+      edge{0, 0}, rZLength(0), phiLength{0, 0}, rZPhiNormal(0) {}
+
+UnplacedPolyhedron::PolyhedronSegment::PolyhedronSegment()
+    : PolyhedronSegment(0) {}
+
+void UnplacedPolyhedron::PolyhedronSegment::Allocate(int sideCount) {
+  center.reserve(sideCount);
+  center.resize(sideCount);
+  normal.reserve(sideCount);
+  normal.resize(sideCount);
+  surfPhi.reserve(sideCount);
+  surfPhi.resize(sideCount);
+  surfRZ.reserve(sideCount);
+  surfRZ.resize(sideCount);
+  edgeNormal[0].reserve(sideCount);
+  edgeNormal[0].resize(sideCount);
+  edgeNormal[1].reserve(sideCount);
+  edgeNormal[1].resize(sideCount);
+  edge[0].Allocate(sideCount);
+  edge[1].Allocate(sideCount);
+}
 
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount, const Precision phiStart, Precision phiTotal,
     const int zPlaneCount, const Precision zPlane[], const Precision rInner[],
-    const Precision rOuter[]) : fSideCount(sideCount) {
+    const Precision rOuter[])
+    : fSideCount(sideCount) {
 
   Assert(fSideCount > 0, "Polyhedron requires at least one side.\n");
 
@@ -50,8 +84,6 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   fPhiEnd += kTwoPi * (fPhiEnd < fPhiStart);
   fPhiDelta = phiTotal / fSideCount;
   Precision convertRad = 1. / cos(.5 * phiTotal / fSideCount);
-
-  fEdgeCount = fSideCount + fHasPhi;
 
   // Check contiguity in segments along Z
 
@@ -75,10 +107,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
   fSegments.Allocate(corners.GetVertixCount());
 
-  Array<PolyhedronSides>::iterator segment = fSegments.begin();
-  for (Polygon::const_iterator c = corners.cbegin(), cEnd = corners.cend();
-       c != cEnd; ++c, ++segment) {
-    ConstructSegment(c, segment);
+  Array<PolyhedronSegment>::iterator segment = fSegments.begin();
+  for (Polygon::const_iterator corner = corners.cbegin(),
+       cornerEnd = corners.cend(); corner != cornerEnd; ++corner, ++segment) {
+    ConstructSegment(corner, segment);
   }
 
   if (fHasPhi) {
@@ -89,14 +121,11 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
 void UnplacedPolyhedron::ConstructSegment(
     Polygon::const_iterator corner,
-    Array<PolyhedronSides>::iterator segment) {
+    Array<PolyhedronSegment>::iterator segment) {
+
+  segment->Allocate(fSideCount);
 
   // Segments are constructed as a SOA to allow for internal vectorization.
-
-  segment->edgesNormal[0] = SOA3D<Precision>(fSideCount);
-  segment->edgesNormal[1] = SOA3D<Precision>(fSideCount);
-  segment->edges[0] = PolyhedronEdges(fEdgeCount);
-  segment->edges[1] = PolyhedronEdges(fEdgeCount);
 
   Vector2D<Precision> start = *corner;
   Vector2D<Precision> end = *(corner + 1);
@@ -146,18 +175,18 @@ void UnplacedPolyhedron::ConstructSegment(
     adj = 0.5 * (c1 + c2 - a1 - a2);
     adj = adj.Cross(temp);
     adj = adj.Unit() + segment->normal[s];
-    segment->edgesNormal[0][s] = adj.Unit();
+    segment->edgeNormal[0][s] = adj.Unit();
 
     temp = b1 - b2;
     adj = 0.5 * (d1 + d2 - b1 - b2);
     adj = adj.Cross(temp);
     adj = adj.Unit() + segment->normal[s];
-    segment->edgesNormal[1][s] = adj.Unit();
+    segment->edgeNormal[1][s] = adj.Unit();
 
-    segment->edges[0].corner[0][s].Set(a1);
-    segment->edges[0].corner[1][s].Set(b1);
-    segment->edges[1].corner[0][s].Set(a2);
-    segment->edges[1].corner[1][s].Set(b2);
+    segment->edge[0].corner[0][s].Set(a1);
+    segment->edge[0].corner[1][s].Set(b1);
+    segment->edge[1].corner[0][s].Set(a2);
+    segment->edge[1].corner[1][s].Set(b2);
 
     a1 = a2;
     b1 = b2;
@@ -167,55 +196,57 @@ void UnplacedPolyhedron::ConstructSegment(
 
   // Last edge
   if (!fHasPhi) {
-    segment->edges[0].corner[0][fSideCount-1] = segment->edges[0].corner[0][0];
-    segment->edges[1].corner[0][fSideCount-1] = segment->edges[1].corner[0][0];
+    segment->edge[0].corner[0][fSideCount-1]
+        = segment->edge[0].corner[0][0];
+    segment->edge[1].corner[0][fSideCount-1]
+        = segment->edge[1].corner[0][0];
   }
 
   for (int s = 0; s < fSideCount; ++s) {
 
     int sPrev = (s == 0) ? fSideCount-1 : s-1;
 
-    segment->edges[0].normal[sPrev] = (segment->normal[s]
+    segment->edge[0].normal[sPrev] = (segment->normal[s]
                                      + segment->normal[sPrev]).Unit();
 
-    segment->edges[0].corner[0][s] = (segment->edgesNormal[0][s]
-                                    + segment->edgesNormal[0][sPrev]).Unit();
+    segment->edge[0].corner[0][s] = (segment->edgeNormal[0][s]
+                                    + segment->edgeNormal[0][sPrev]).Unit();
 
-    segment->edges[1].corner[1][s] = (segment->edgesNormal[1][s]
-                                    + segment->edgesNormal[1][sPrev]).Unit();
+    segment->edge[1].corner[1][s] = (segment->edgeNormal[1][s]
+                                    + segment->edgeNormal[1][sPrev]).Unit();
 
   }
 
   if (fHasPhi) {
 
     Vector3D<Precision> normal;
-    normal = segment->edges[0].corner[0][0]
-           - segment->edges[0].corner[1][0];
+    normal = segment->edge[0].corner[0][0]
+           - segment->edge[0].corner[1][0];
     normal = normal.Cross(segment->normal[0]);
     if (normal.Dot(segment->surfPhi[0]) > 0) normal = -normal;
 
-    segment->edges[0].normal[0] = normal.Unit();
-    segment->edges[0].cornerNormal[0][0] =
-        (segment->edges[0].corner[0][0] - segment->center[0]).Unit();
-    segment->edges[0].cornerNormal[1][0] =
-        (segment->edges[0].corner[1][0] - segment->center[0]).Unit();
+    segment->edge[0].normal[0] = normal.Unit();
+    segment->edge[0].cornerNormal[0][0] =
+        (segment->edge[0].corner[0][0] - segment->center[0]).Unit();
+    segment->edge[0].cornerNormal[1][0] =
+        (segment->edge[0].corner[1][0] - segment->center[0]).Unit();
 
     int sEnd = fSideCount-1;
 
-    normal = segment->edges[1].corner[0][sEnd] 
-           - segment->edges[1].corner[1][sEnd];
+    normal = segment->edge[1].corner[0][sEnd] 
+           - segment->edge[1].corner[1][sEnd];
     normal = normal.Cross(segment->normal[sEnd]);
     if (normal.Dot(segment->surfPhi[sEnd]) < 0) normal = -normal;
 
-    segment->edges[1].normal[sEnd] = normal.Unit();
-    segment->edges[1].cornerNormal[0][sEnd] =
-        (segment->edges[1].corner[0][sEnd] - segment->center[sEnd]).Unit();
-    segment->edges[1].cornerNormal[1][sEnd] =
-        (segment->edges[1].corner[1][sEnd] - segment->center[sEnd]).Unit();
+    segment->edge[1].normal[sEnd] = normal.Unit();
+    segment->edge[1].cornerNormal[0][sEnd] =
+        (segment->edge[1].corner[0][sEnd] - segment->center[sEnd]).Unit();
+    segment->edge[1].cornerNormal[1][sEnd] =
+        (segment->edge[1].corner[1][sEnd] - segment->center[sEnd]).Unit();
 
   }
 
-  segment->edgeNormal =
+  segment->rZPhiNormal =
       1. / Sqrt(1. + segment->phiLength[1]*segment->phiLength[1]);
 }
 
@@ -230,8 +261,47 @@ void UnplacedPolyhedron::Print() const {
 }
 
 void UnplacedPolyhedron::Print(std::ostream &os) const {
-  os << "UnplacedPolyhedron {" << fSideCount << ", " << fPhiStart
+  os << "UnplacedPolyhedron {" << fSideCount << " sides, " << fPhiStart
      << " phi start, " << fPhiEnd << " phi end}";
+}
+
+VECGEOM_CUDA_HEADER_DEVICE
+VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
+    LogicalVolume const *const volume,
+    Transformation3D const *const transformation,
+    const TranslationCode trans_code, const RotationCode rot_code,
+#ifdef VECGEOM_NVCC
+    const int id,
+#endif
+    VPlacedVolume *const placement) const {
+
+#ifdef VECGEOM_NVCC
+  #define UNPLACEDPOLYHEDRON_SPECIALIZE(PHI) \
+  if (placement) { \
+    return new(placement) \
+           SpecializedPolyhedron<PolyhedronSpecialization<PHI> >( \
+               volume, transformation, id); \
+  } else { \
+    return new SpecializedPolyhedron<PolyhedronSpecialization<PHI> >( \
+               volume, transformation, id); \
+  }
+#else
+  #define UNPLACEDPOLYHEDRON_SPECIALIZE(PHI) \
+  if (placement) { \
+    return new(placement) \
+           SpecializedPolyhedron<PolyhedronSpecialization<PHI> >( \
+               volume, transformation); \
+  } else { \
+    return new SpecializedPolyhedron<PolyhedronSpecialization<PHI> >( \
+               volume, transformation); \
+  }
+#endif
+  if (fHasPhi) {
+    UNPLACEDPOLYHEDRON_SPECIALIZE(true)
+  } else {
+    UNPLACEDPOLYHEDRON_SPECIALIZE(false)
+  }
+  #undef UNPLACEDPOLYHEDRON_CREATE
 }
 
 } // End global namespace

@@ -25,6 +25,10 @@ struct kScalar {
 #endif
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static Precision Convert(Precision const &input) { return input; }
 };
 
 typedef kScalar::int_v    ScalarInt;

@@ -50,9 +50,6 @@ public:
         logical_volume()->unplaced_volume());
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-
   // CUDA specific
 
   virtual int memory_size() const { return sizeof(*this); }
@@ -70,12 +67,18 @@ public:
   // Comparison specific
 
 #ifdef VECGEOM_BENCHMARK
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const {
+    Assert(0, "NYI");
+  }
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const {
+    Assert(0, "NYI");
+  }
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const {
+    Assert(0, "NYI");
+  }
 #endif
 #endif // VECGEOM_BENCHMARK
 
