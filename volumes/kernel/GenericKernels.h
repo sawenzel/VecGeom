@@ -17,6 +17,7 @@ struct GenericKernels {
   typedef typename Backend::int_v Int_t;
   typedef typename Backend::bool_v Bool_t;
 
+  VECGEOM_CUDA_HEADER_BOTH
   static Float_t NormalizeAngle(Float_t angle) {
     return angle + kTwoPi*((angle < 0.) - Int_t(angle * kTwoPiInv));
   }
