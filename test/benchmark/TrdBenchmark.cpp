@@ -20,9 +20,9 @@ int main() {
   GeoManager::Instance().set_world(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().world());
-  tester.SetPoolMultiplier(8);
+  //tester.SetPoolMultiplier(1);
   tester.SetVerbosity(3);
   tester.SetRepetitions(1024);
-  tester.SetPointCount(1<<10);
+  tester.SetPointCount(1<<5);
   tester.RunBenchmark();
 }

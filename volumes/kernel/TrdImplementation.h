@@ -138,6 +138,33 @@ void FaceTrajectoryIntersection(UnplacedTrd const &trd,
     ok &= Abs(hitk) <= dK;
 }
 
+template<typename Backend, bool inside>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void Safety(UnplacedTrd const &trd, 
+            Vector3D<typename Backend::precision_v> const &pos,
+            typename Backend::precision_v &dist) {
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    Float_t safz = trd.dz() - Abs(pos.z());
+    //std::cout << "safz: " << safz << std::endl;
+    dist = safz;
+
+    Float_t distx = trd.halfx1plusx2()-trd.fx()*pos.z();
+    Bool_t okx = distx >= 0;
+    Float_t safx = (distx-Abs(pos.x()))*trd.calfx();
+    MaskedAssign(okx && safx < dist, safx, &dist);
+    //std::cout << "safx: " << safx << std::endl;
+
+    Float_t disty = trd.halfy1plusy2()-trd.fy()*pos.z();
+    Bool_t oky = disty >= 0;
+    Float_t safy = (disty-Abs(pos.y()))*trd.calfy();
+    MaskedAssign(oky && safy < dist, safy, &dist);
+    //std::cout << "safy: " << safy << std::endl;
+    if(!inside) dist = -dist;
+}
+
 } // Trd utilities
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
@@ -375,6 +402,11 @@ struct TrdImplementation {
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety) {
+    using namespace TrdUtilities;
+    typedef typename Backend::precision_v Float_t;
+    Vector3D<Float_t> pos_local;
+    transformation.Transform<transCodeT, rotCodeT>(point, pos_local);
+    Safety<Backend, false>(trd, pos_local, safety);
   }
 
   template <class Backend>
@@ -383,7 +415,8 @@ struct TrdImplementation {
   static void SafetyToOut(UnplacedTrd const &trd,
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety) {
-
+    using namespace TrdUtilities;
+    Safety<Backend, true>(trd, point, safety); 
   }
 
 };
