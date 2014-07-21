@@ -122,55 +122,61 @@ void distancetoin() {
   std::cout << "distancetoin: in: " << in << " misses: " << misses << " hits: " << hits << std::endl;
   std::cout << "correct: " << correct << ", errors: " << errors << std::endl;
 }
-//
-//
-//void distancetoout() {
-//  UnplacedTube tube(rmin, rmax, z, sphi, dphi);
-//  TGeoTubeSeg rtube(rmin, rmax, z, sphi, dphi*(180/M_PI) );
-//  typename Backend::precision_v dist_v;
-//  Precision dist;
-//  double p[3], v[3];
-//
-//  int in = 0, out = 0;
-//  double x, y, z;
-//  for(int i = 0; i < 10000; i++) {
-//    
-//    do {
-//      x = RNG::Instance().uniform(-30,30);
-//      y = RNG::Instance().uniform(-30,30);
-//      z = RNG::Instance().uniform(-40,40);
-//
-//      p[0] = x;
-//      p[1] = y;
-//      p[2] = z;
-//    } while(!rtube.Contains(p));
-//
-//    Vector3D<typename Backend::precision_v> point(x, y, z);
-//    Vector3D<typename Backend::precision_v> direction = volumeutilities::SampleDirection();
-//
-//    v[0] = direction.x();
-//    v[1] = direction.y();
-//    v[2] = direction.z();
-//
-//    TubeDistanceToOut<Backend, TubeTraits::HollowTubeWithSmallerThanPiSector>(tube, point, direction, kInfinity, &dist_v);
-//    dist = rtube.DistFromInside(p, v);
-//
-//    if(rtube.Contains(p)) {
-//        in++;
-//        if( Abs(dist-dist_v) >= kTolerance )
-//          std::cout << "ERROR: dist to out for point " << point << " w dir " << direction << ": " << dist << " , " << dist_v << std::endl;
-//        else
-//          std::cout << "OK: dist to out for point " << point << " w dir " << direction << ": " << dist << " , " << dist_v << std::endl;
-//
-//    }
-//    else {
-//      out++;
-//    }
-//  }
-//  std::cout << "distancetoout: out: " << out << " in: " << in << std::endl;
-//}
-//
-//
+
+void distancetoout() {
+  UnplacedTrd trd(x1, x2, ay1, y2, z);
+  TGeoTrd2 rtrd(x1, x2, ay1, y2, z);
+  Transformation3D const * identity = new Transformation3D(0,0,0,0,0,0);
+  typename Backend::precision_v dist_v;
+  Precision dist;
+  double p[3], v[3];
+
+  int in = 0, out = 0, correct = 0, errors = 0;
+  double x, y, z;
+  for(int i = 0; i < NPOINTS; i++) {
+    
+    do {
+      x = RNG::Instance().uniform(-30,30);
+      y = RNG::Instance().uniform(-30,30);
+      z = RNG::Instance().uniform(-40,40);
+
+      p[0] = x;
+      p[1] = y;
+      p[2] = z;
+    } while(!rtrd.Contains(p));
+
+    Vector3D<typename Backend::precision_v> point(x, y, z);
+    Vector3D<typename Backend::precision_v> direction = volumeUtilities::SampleDirection();
+
+    v[0] = direction.x();
+    v[1] = direction.y();
+    v[2] = direction.z();
+
+    TrdImplementation<rotation::kIdentity, translation::kIdentity, TrdTypes::UniversalTrd> impl;
+    impl.DistanceToOut<Backend>(trd, point, direction, kInfinity, dist_v);
+    dist = rtrd.DistFromInside(p, v);
+
+    if(rtrd.Contains(p)) {
+        in++;
+        if( Abs(dist-dist_v) >= kTolerance ) {
+          std::cout << "ERROR: dist to out for point " << point << " w dir " << direction << ": " << dist << " , " << dist_v << std::endl;
+          errors++;
+        }
+        else {
+          //std::cout << "OK: dist to out for point " << point << " w dir " << direction << ": " << dist << " , " << dist_v << std::endl;
+          correct++;
+        }
+
+    }
+    else {
+      out++;
+    }
+  }
+  std::cout << "distancetoout: out: " << out << " in: " << in << std::endl;
+  std::cout << "correct: " << correct << ", errors: " << errors << std::endl;
+}
+
+
 //void safety() {
 //  UnplacedTube tube(rmin, rmax, z, sphi, dphi);
 //  TGeoTubeSeg rtube(rmin, rmax, z, sphi, dphi*(180/M_PI) );
@@ -256,9 +262,9 @@ void distancetoin() {
 
 int main() {
   //inside();
-  distancetoin();
+  //distancetoin();
  // safety();
- // distancetoout();
+ distancetoout();
  // safetyout();
 }//
 
