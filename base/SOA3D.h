@@ -254,7 +254,7 @@ void SOA3D<T>::Deallocate() {
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 Vector3D<T> SOA3D<T>::operator[](size_t index) const {
-  return Vector3D<T>(fX[index], fX[index], fZ[index]);
+  return Vector3D<T>(fX[index], fY[index], fZ[index]);
 }
 
 template <typename T>
