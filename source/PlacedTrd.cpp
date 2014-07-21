@@ -17,14 +17,14 @@ namespace VECGEOM_NAMESPACE {
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedTrd::ConvertToUnspecialized() const {
-  return new SimpleTrd(label().c_str(), logical_volume(), transformation());
+  return new SimpleTrd(GetLabel().c_str(), logical_volume(), transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTrd::ConvertToRoot() const {
   if(dy1() == dy2())
-    return new TGeoTrd1(label().c_str(), dx1(), dx2(), dy1(), dz());
-  return new TGeoTrd2(label().c_str(), dx1(), dx2(), dy1(), dy2(), dz());
+    return new TGeoTrd1(GetLabel().c_str(), dx1(), dx2(), dy1(), dz());
+  return new TGeoTrd2(GetLabel().c_str(), dx1(), dx2(), dy1(), dy2(), dz());
 }
 #endif
 

@@ -1,5 +1,5 @@
-/// @file SpecializedTube.h
-/// @author Georgios Bitzes (georgios.bitzes@cern.ch)
+/// \file SpecializedTube.h
+/// \author Georgios Bitzes (georgios.bitzes@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
@@ -34,8 +34,15 @@ public:
       : Helper(label, logical_volume, transformation, NULL) {}
 
   SpecializedTube(LogicalVolume const *const logical_volume,
-                            Transformation3D const *const transformation)
+                  Transformation3D const *const transformation)
       : SpecializedTube("", logical_volume, transformation) {}
+
+  SpecializedTube(char const *const label,
+                  const Precision rMin, const Precision rMax, const Precision z,
+                  const Precision sPhi, const Precision dPhi)
+      : SpecializedTube(label, new LogicalVolume(
+                                   new UnplacedTube(rMin, rMax, z, sPhi, dPhi)),
+                        &Transformation3D::kIdentity) {}
 
 #else
 

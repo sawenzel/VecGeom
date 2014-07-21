@@ -6,6 +6,7 @@
 #include "management/GeoManager.h"
 
 #include <stdio.h>
+#include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -16,11 +17,21 @@ VPlacedVolume::VPlacedVolume(char const *const label,
                              LogicalVolume const *const logical_volume,
                              Transformation3D const *const transformation,
                              PlacedBox const *const bounding_box)
-    : logical_volume_(logical_volume), transformation_(transformation),
+  : id_(), label_(), logical_volume_(logical_volume), transformation_(transformation),
       bounding_box_(bounding_box) {
   id_ = g_id_count++;
   GeoManager::Instance().RegisterPlacedVolume(this);
   label_ = new std::string(label);
+}
+
+VPlacedVolume::VPlacedVolume(VPlacedVolume const & other) : id_(), label_(), logical_volume_(), transformation_(),
+    bounding_box_() {
+  assert( 0 && "COPY CONSTRUCTOR FOR PlacedVolumes NOT IMPLEMENTED");
+}
+
+VPlacedVolume * VPlacedVolume::operator=( VPlacedVolume const & other )
+{
+  assert( 0 && "ASSIGNMENT OPERATOR FOR VPlacedVolumes NOT IMPLEMENTED");
 }
 #endif
 
@@ -48,10 +59,10 @@ void VPlacedVolume::Print(const int indent) const {
 VECGEOM_CUDA_HEADER_BOTH
 void VPlacedVolume::PrintContent(const int indent) const {
   Print(indent);
-  if( daughters().size() > 0){
+  if (daughters().size() > 0) {
     printf(":");
-    for (Iterator<VPlacedVolume const*> vol = daughters().begin();
-         vol != daughters().end(); ++vol) {
+    for (VPlacedVolume const **vol = daughters().begin(),
+         **volEnd = daughters().end(); vol != volEnd; ++vol) {
       printf("\n");
       (*vol)->PrintContent(indent+3);
     }

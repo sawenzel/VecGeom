@@ -44,13 +44,17 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D() {
-    Vector3D<Type>(Type(0.), Type(0.), Type(0.));
+    vec[0] = 0;
+    vec[1] = 0;
+    vec[2] = 0;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D(const Type a) {
-    Vector3D<Type>(a, a, a);
+    vec[0] = a;
+    vec[1] = a;
+    vec[2] = a;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -63,8 +67,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D & operator=(Vector3D const &other)
-  {
+  Vector3D& operator=(Vector3D const &other) {
     vec[0] = other[0];
     vec[1] = other[1];
     vec[2] = other[2];
@@ -134,15 +137,15 @@ public:
   Type const& z() const { return vec[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(Type const &x, Type const &y, Type const &z) {
-    vec[0] = x;
-    vec[1] = y;
-    vec[2] = z;
+  void Set(Type const &a, Type const &b, Type const &c) {
+    vec[0] = a;
+    vec[1] = b;
+    vec[2] = c;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(const Type x) {
-    Set(x, x, x);
+  void Set(const Type a) {
+    Set(a, a, a);
   }
 
   /// \return the length squared perpendicular to z direction
@@ -340,42 +343,51 @@ private:
 
 public:
 
-  Vector3D(const Precision a, const Precision b, const Precision c) {
+  Precision * AsArray() {
+    return (Precision * ) &mem;
+  }
+
+ Vector3D(const Precision a, const Precision b, const Precision c) : mem() {
     mem[0] = a;
     mem[1] = b;
     mem[2] = c;
   }
 
-  Vector3D(const Precision a) {
-    mem = a;
-  }
+  // Performance issue in Vc with: mem = a;
+  Vector3D(const Precision a) : Vector3D(a, a, a) {}
 
-  Vector3D() : Vector3D(0) {}
+  Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
-  Vector3D(Vector3D const &other) {
-    for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-      {
-         Base_t v1 = other.mem.vector(i);
-         this->mem.vector(i)=v1;
-       }
+    Vector3D(Vector3D const &other) : mem() {
+    //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+//      {
+         //Base_t v1 = other.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
+     mem[0]=other.mem[0];
+     mem[1]=other.mem[1];
+     mem[2]=other.mem[2];
   }
 
   VECGEOM_INLINE
   Vector3D & operator=( Vector3D const & rhs )
    {
     
-      for( int i=0; i < 1 + 3/Base_t::Size; i++ )
-      {
-         Base_t v1 = rhs.mem.vector(i);
-         this->mem.vector(i)=v1;
-       }
+      //for( int i=0; i < 1 + 3/Base_t::Size; i++ )
+      //{
+         //Base_t v1 = rhs.mem.vector(i);
+         //this->mem.vector(i)=v1;
+       //}
       // the following line must not be used: this is a bug in Vc
       // this->mem = rhs.mem;
-     return *this;
+      mem[0]=rhs.mem[0];
+      mem[1]=rhs.mem[1];
+      mem[2]=rhs.mem[2];
+      return *this;
    }
 
-  Vector3D(std::string const &str) {
+  Vector3D(std::string const &str) : mem() {
     int begin = 1, end = str.find(",");
     mem[0] = atof(str.substr(begin, end-begin).c_str());
     begin = end + 2;
@@ -433,7 +445,7 @@ public:
 
   VECGEOM_INLINE
   Precision Mag2() const {
-	  return Dot(*this,*this);
+      return Dot(*this,*this);
   }
 
   VECGEOM_INLINE
@@ -507,14 +519,10 @@ public:
                 Vector3D<Precision> const &right) {
     // TODO: This function should be internally vectorized (if proven to be
     //       beneficial)
-	  Base_t s(Vc::Zero);
-	  for (unsigned i=0; i < 1 + 3/Vc::Vector<double>::Size; ++i) {
-		  Base_t tmp1 = left.mem.vector(i);
-		  Base_t tmp2 = right.mem.vector(i);
-		  s += tmp1*tmp2;
-	  }
-	  return s.sum();
-	  //  return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
+
+    // To avoid to initialize the padding component, we can not use mem.vector's
+    // multiplication and addition since it would accumulate also the (random) padding component
+    return left.mem[0]*right.mem[0] + left.mem[1]*right.mem[1] + left.mem[2]*right.mem[2];
   }
 
   /// \return The dot product with another Vector3D<Precision> object.
@@ -664,6 +672,8 @@ VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
 #define VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(OPERATOR) \
 VECGEOM_CUDA_HEADER_BOTH \
 VECGEOM_INLINE \
@@ -676,6 +686,7 @@ Vector3D<bool> operator OPERATOR(Vector3D<bool> const &lhs, \
 VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(&&)
 VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(||)
 #undef VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP
+#pragma GCC diagnostic pop
 
 #ifdef VECGEOM_VC
 
@@ -711,6 +722,8 @@ VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
 #define VECTOR3D_VC_BOOLEAN_LOGICAL_OP(OPERATOR) \
 VECGEOM_INLINE \
 Vector3D<VcBool> operator OPERATOR( \
@@ -723,6 +736,7 @@ Vector3D<VcBool> operator OPERATOR( \
 VECTOR3D_VC_BOOLEAN_LOGICAL_OP(&&)
 VECTOR3D_VC_BOOLEAN_LOGICAL_OP(||)
 #undef VECTOR3D_VC_BOOLEAN_LOGICAL_OP
+#pragma GCC diagnostic pop
 
 #endif // VECGEOM_VC
 

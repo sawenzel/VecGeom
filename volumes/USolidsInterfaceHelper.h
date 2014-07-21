@@ -16,7 +16,10 @@ class USolidsInterfaceHelper {};
 
 #include "base/Vector3D.h"
 #include "volumes/PlacedVolume.h"
+#include "UVector3.hh"
 #include "VUSolid.hh"
+
+#include <string>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -26,11 +29,15 @@ namespace VECGEOM_NAMESPACE {
 /// interface, so use volumes in this way with caution.
 class USolidsInterfaceHelper : public VUSolid {
 
+public:
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
-                               Vector3D<Precision> const &position,
-                               Vector3D<Precision> const &direction,
-                               Precision const step_max = kInfinity) const =0;
+    Vector3D<Precision> const &position,
+    Vector3D<Precision> const &direction,
+    Precision stepMax = kInfinity) const =0;
+
+  virtual ~USolidsInterfaceHelper() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const =0;
@@ -42,17 +49,24 @@ class USolidsInterfaceHelper : public VUSolid {
                                Vector3D<double> const &direction,
                                Vector3D<double> &normal,
                                bool &convex,
-                               const double stepMax = kInfinity) const {
+                               double stepMax) const {
     return DistanceToOut(point, direction, stepMax);
   }
 
+  virtual double DistanceToOut(Vector3D<double> const &point,
+                               Vector3D<double> const &direction,
+                               Vector3D<double> &normal,
+                               bool &convex) const {
+    return DistanceToOut(point, direction, kInfinity);
+  }
+
   virtual double SafetyFromOutside(Vector3D<double> const &point,
-                                   const bool accurate) const {
+                                   bool accurate = false) const {
     return SafetyToIn(point);
   }
 
   virtual double SafetyFromInside(Vector3D<double> const &point,
-                                  const bool accurate) const {
+                                  bool accurate = false) const {
     return SafetyToOut(point);
   }
 
@@ -60,6 +74,7 @@ class USolidsInterfaceHelper : public VUSolid {
                       Vector3D<double> &normal) const {
     assert(0 &&
            "Normal not implemented for USolids interface compatible volume.");
+    return false;
   }
 
   virtual void Extent(Vector3D<double> &min,
@@ -71,16 +86,19 @@ class USolidsInterfaceHelper : public VUSolid {
   virtual std::string GetEntityType() const {
     assert(0 && "GetEntityType not implemented for USolids interface compatible"
                 " volume.");
+    return std::string();
   }
 
   virtual double Capacity() {
     assert(0 && "Capacity not implemented for USolids interface compatible"
                 " volume.");
+    return 0;
   }
 
   virtual double SurfaceArea() {
     assert(0 && "SurfaceArea not implemented for USolids interface compatible"
                 " volume.");
+    return 0;
   }
 
   virtual void GetParametersList(int number, double *array) const {
@@ -91,22 +109,27 @@ class USolidsInterfaceHelper : public VUSolid {
   virtual VUSolid* Clone() const {
     assert(0 && "Clone not implemented for USolids interface compatible"
                 " volume.");
+    return NULL;
   }
 
   virtual std::ostream& StreamInfo(std::ostream &os) const {
     assert(0 && "StreamInfo not implemented for USolids interface compatible"
                 " volume.");
+    return os;
   }
 
   virtual UVector3 GetPointOnSurface() const {
     assert(0 && "GetPointOnSurface not implemented for USolids interface"
                 " compatible volume.");
+    return UVector3();
   }
 
   virtual void ComputeBBox(UBBox *aBox, bool aStore = false) {
     assert(0 && "ComputeBBox not implemented for USolids interface compatible"
                 " volume.");
   }
+
+
 
 };
 

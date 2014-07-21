@@ -17,6 +17,8 @@ option(BENCHMARK "Enable performance comparisons." OFF)
 
 option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
 
+option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
+
 if (USOLIDS)
   set(USolids ON)
 endif()
@@ -78,22 +80,38 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -DVECGEOM")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
+  if (APPLE OR UNIX) 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 endif()
 if (GNU)
+  if (NOT ERROR_LIMIT AND NOT ERROR_LIMIT EQUAL 0)
+    set(ERROR_LIMIT 20)
+  endif()
   set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmax-errors=20 -finline-limit=10000000")
+      "${CMAKE_CXX_FLAGS} -fmax-errors=${ERROR_LIMIT} -finline-limit=10000000")
   # Enable pretty diagnostics coloring if gcc 4.9+ is being used
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                   OUTPUT_VARIABLE GCC_VERSION)
   if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
   endif()
+  if (COVERAGE_TESTING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(LIBS ${LIBS} gcov)
+  endif()
 endif()
 if (Intel)
   set(CMAKE_CXX_FLAGS "-xHost ${CMAKE_CXX_FLAGS}")
+  if (COVERAGE_TESTING)
+    message(FATAL_ERROR "Coverage testing not supported for icc.")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")
 endif()
@@ -106,6 +124,12 @@ endif()
 if (NO_SPECIALIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_NO_SPECIALIZATION")
 endif()
+if (Clang)
+  if (COVERAGE_TESTING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    set(LIBS ${LIBS} profile_rt)
+  endif()
+endif()
 
 ################################################################################
 
@@ -117,8 +141,7 @@ if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
   set(LIBS ${LIBS} ${Vc_LIBRARIES})
-  include_directories(${Vc_INCLUDE_DIR})
-
+ include_directories(AFTER SYSTEM ${Vc_INCLUDE_DIR})
 endif()
 
 if (Vc)
@@ -198,7 +221,7 @@ if (ROOT)
   
   find_package(ROOT REQUIRED)
 
-  include_directories(${ROOT_INCLUDE_DIR})
+  include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
@@ -246,7 +269,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
-  source/Container.cpp
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
@@ -265,6 +287,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
+  source/Vector.cpp
   source/Vector3D.cpp
   source/NavigationState.cpp	
   source/SimpleNavigator.cpp
@@ -320,7 +343,7 @@ set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 
 ################################################################################
 
-# Compile and link
+# Build libraries
 
 add_library(vecgeom_cpp ${SRC_CPP})
 target_link_libraries(vecgeom_cpp ${LIBS})
@@ -328,24 +351,6 @@ set(LIBS ${LIBS} vecgeom_cpp)
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LIBS ${LIBS} -lrt)
 endif()
-
-set(
-  SRC_EXECUTABLES
-  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp
-  ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/TrdBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-  ${CMAKE_SOURCE_DIR}/test/ParallelepipedTest.cpp
-)
-set_source_files_properties(
-  ${SRC_EXECUTABLES}
-  PROPERTIES COMPILE_FLAGS -std=c++11
-)
 
 if (CUDA)
   cuda_add_library(
@@ -356,59 +361,75 @@ if (CUDA)
   target_link_libraries(vecgeom_cuda ${LIBS})
   set(LIBS ${LIBS} vecgeom_cuda)
   install(TARGETS vecgeom_cuda DESTINATION lib)
-  if (ROOT)
-    cuda_add_executable(
-      cpugpu
-      ${CMAKE_SOURCE_DIR}/test/cpugpu.cpp
-      OPTIONS ${CUDA_ARCH}
-    )
-    target_link_libraries(cpugpu ${LIBS})
-  endif()
 endif()
 
-add_executable(create_geometry_test
-  ${CMAKE_SOURCE_DIR}/test/create_geometry.cpp
+################################################################################
+
+# Define executables
+
+set(TEST_EXECUTABLES_CORE
+  ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
 )
-target_link_libraries(create_geometry_test ${LIBS})
+set(TEST_EXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
+)
+set(TEST_EXECUTABLES_USOLIDS
+  ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
+)
+set(TEST_EXECUTABLES_BENCHMARK
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/trd_validation.cpp
+)
+set(TEST_EXECUTABLES_CUDA
+  # Files go here
+)
+set(TEST_EXECUTABLES
+  ${TEST_EXECUTABLES_CORE}
+  ${TEST_EXECUTABLES_ROOT}
+  ${TEST_EXECUTABLES_USOLIDS}
+  ${TEST_EXECUTABLES_BENCHMARK}
+  ${TEST_EXECUTABLES_CUDA}
+)
+set_source_files_properties(
+  ${TEST_EXECUTABLES}
+  PROPERTIES COMPILE_FLAGS -std=c++11
+)
 
-if (ROOT)
-  add_executable(root_geometry ${CMAKE_SOURCE_DIR}/test/root_geometry.cpp)
-  target_link_libraries(root_geometry ${LIBS})
-  add_executable(complex_test1 ${CMAKE_SOURCE_DIR}/test/complex_test1.cpp)
-  target_link_libraries(complex_test1 ${LIBS})
-endif()
+# Build executables
 
+function(build_executables EXECUTABLES)
+  foreach(EXECUTABLE ${EXECUTABLES})
+    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
+    add_executable(${TARGET_NAME} ${EXECUTABLE})
+    target_link_libraries(${TARGET_NAME} ${LIBS})
+  endforeach()
+endfunction()
+
+build_executables("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
-  add_executable(
-    BoxBenchmark
-    ${CMAKE_SOURCE_DIR}/test/BoxBenchmark.cpp
-  )
-  add_executable(
-    TubeBenchmark
-    ${CMAKE_SOURCE_DIR}/test/TubeBenchmark.cpp
-  )
-  add_executable(
-    TrdBenchmark
-    ${CMAKE_SOURCE_DIR}/test/TrdBenchmark.cpp
-  )
-  target_link_libraries(BoxBenchmark ${LIBS})
-  target_link_libraries(TubeBenchmark ${LIBS})
-  target_link_libraries(TrdBenchmark ${LIBS})
-  add_executable(
-    MultiBenchmark
-    ${CMAKE_SOURCE_DIR}/test/MultiBenchmark.cpp
-  )
-  target_link_libraries(BoxBenchmark ${LIBS})
-  target_link_libraries(TubeBenchmark ${LIBS})
-  target_link_libraries(MultiBenchmark ${LIBS})
-  if (NOT USolids)
-    add_executable(
-      ParallelepipedBenchmark
-      ${CMAKE_SOURCE_DIR}/test/ParallelepipedBenchmark.cpp
-    )
-    target_link_libraries(ParallelepipedBenchmark ${LIBS})
-  endif()
+  build_executables("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
+if (ROOT)
+  build_executables("${TEST_EXECUTABLES_ROOT}")
+endif()
+if (USolids)
+  build_executables("${TEST_EXECUTABLES_USOLIDS}")
+endif()
+if (CUDA)
+  build_executables("${TEST_EXECUTABLES_CUDA}")
+endif()
+
+################################################################################
+
+# Install headers and libraries
 
 set(HEADER_FOLDERS
   base

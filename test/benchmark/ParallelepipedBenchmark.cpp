@@ -21,7 +21,7 @@ int main() {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
-  tester.SetPointCount(128);
+  // tester.SetPointCount(128);
   tester.RunBenchmark();
 
   return 0;

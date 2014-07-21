@@ -22,15 +22,31 @@ private:
   // cached values
   Precision fX2minusX1;
   Precision fY2minusY1;
+  Precision fX1minusX2;
+  Precision fY1minusY2;
   Precision fDZtimes2;
+  Precision fHalfX1minusX2;
+  Precision fHalfY1minusY2;
+  Precision fHalfX1plusX2;
+  Precision fHalfY1plusY2;
+
+  Precision fFx, fFy;
 
   void calculateCached() {
     fX2minusX1 = fDX2 - fDX1;
     fY2minusY1 = fDY2 - fDY1;
-    
+    fX1minusX2 = fDX1 - fDX2;
+
+    fY1minusY2 = fDY1 - fDY2;
+    fHalfX1minusX2 = 0.5 * (fDX1 - fDX2);
+    fHalfY1minusY2 = 0.5 * (fDY1 - fDY2);
+    fHalfX1plusX2 = 0.5 * (fDX1 + fDX2);
+    fHalfY1plusY2 = 0.5 * (fDY1 + fDY2);
 
     fDZtimes2 = fDZ * 2;
 
+    fFx = 0.5*(fDX1 - fDX2)/fDZ;
+    fFy = 0.5*(fDY1 - fDY2)/fDZ;
   }
 
 public:
@@ -74,12 +90,43 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Precision x1minusx2() const { return fX1minusX2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision y2minusy1() const { return fY2minusY1; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision y1minusy2() const { return fY1minusY2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision halfy1minusy2() const { return fHalfY1minusY2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision halfx1minusx2() const { return fHalfX1minusX2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision halfx1plusx2() const { return fHalfX1plusX2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision halfy1plusy2() const { return fHalfY1plusY2; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision dztimes2() const { return fDZtimes2; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision fx() const { return fFx; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision fy() const { return fFy; }
 
   virtual int memory_size() const { return sizeof(*this); }
 

@@ -6,160 +6,283 @@
 
 #include "base/Global.h"
 
-#include "base/TrackContainer.h"
+#include "base/Container3D.h"
 #include "base/Vector3D.h"
 #ifdef VECGEOM_CUDA_INTERFACE
 #include "backend/cuda/Interface.h"
 #endif
 
-// #include <cassert>
-
 namespace VECGEOM_NAMESPACE {
 
-template <typename Type>
-class AOS3D : public TrackContainer<Type> {
+template <typename T>
+class AOS3D : public Container3D<AOS3D<T> > {
 
 private:
 
-  Vector3D<Type> *data_;
+  bool fAllocated;
+  size_t fSize, fCapacity;
+  Vector3D<T> *fContent;
 
-  typedef Vector3D<Type> VecType;
+  typedef Vector3D<T> Vec_t;
 
 public:
 
+  typedef T value_type;
+
   VECGEOM_CUDA_HEADER_BOTH
-  AOS3D(Vector3D<Type> *const data, const int size);
+  AOS3D(Vector3D<T> *data, size_t size);
 
-  AOS3D(const int size);
+  AOS3D(size_t size);
 
-  AOS3D(TrackContainer<Type> const &other);
+  AOS3D(AOS3D<T> const &other);
+
+  AOS3D& operator=(AOS3D<T> const &other);
 
   ~AOS3D();
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  size_t size() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  size_t capacity() const;
+
+  VECGEOM_INLINE
+  void resize(size_t newSize);
+
+  VECGEOM_INLINE
+  void reserve(size_t newCapacity);
+
+  VECGEOM_INLINE
+  void clear();  
 
   // Element access methods. Can be used to manipulate content.
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> operator[](const int index) const {
-    return data_[index];
-  }
+  Vector3D<T> operator[](size_t index) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type>& operator[](const int index) {
-    return data_[index];
-  }
+  Vector3D<T>& operator[](size_t index);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type* data() { return data_; }
+  T* content();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& x(const int index) const { return (data_[index])[0]; }
+  T const* content() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& y(const int index) const { return (data_[index])[1]; }
+  T x(size_t index) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type const& z(const int index) const { return (data_[index])[2]; }
+  T& x(size_t index);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Set(const int index, const Type x, const Type y, const Type z);
+  T y(size_t index) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Set(const int index, Vector3D<Type> const &vec);
+  T& y(size_t index);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void push_back(const Type x, const Type y, const Type z);
+  T z(size_t index) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void push_back(Vector3D<Type> const &vec);
+  T& z(size_t index);
 
-  #ifdef VECGEOM_CUDA
-  AOS3D<Type>* CopyToGpu(Vector3D<Type> *const data_gpu) const;
-  #endif
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void set(size_t index, T x, T y, T z);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void set(size_t index, Vector3D<T> const &vec);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void push_back(T x, T y, T z);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void push_back(Vector3D<T> const &vec);
+
+#ifdef VECGEOM_CUDA
+  AOS3D<T>* CopyToGpu(Vector3D<T> *contentGpu) const;
+#endif
+
+private:
+
+  void Deallocate();
 
 };
 
-template <typename Type>
-AOS3D<Type>::AOS3D(Vector3D<Type> *const data, const int memory_size)
-    : TrackContainer<Type>(memory_size, false), data_(data) {
-  this->size_ = memory_size;
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+AOS3D<T>::AOS3D(Vector3D<T> *content, size_t size)
+    : fAllocated(false), fSize(size), fCapacity(fSize), fContent(content) {}
+
+template <typename T>
+AOS3D<T>::AOS3D(size_t capacity)
+    : fAllocated(true), fSize(0), fCapacity(capacity), fContent(NULL) {
+  reserve(fCapacity);
 }
 
-template <typename Type>
-AOS3D<Type>::AOS3D(const int memory_size)
-    : TrackContainer<Type>(memory_size, true) {
-  data_ = static_cast<VecType*>(
-            _mm_malloc(sizeof(VecType)*memory_size, kAlignmentBoundary)
-          );
-  for (int i = 0; i < memory_size; ++i) new(data_+i) VecType;
+template <typename T>
+AOS3D<T>::AOS3D(AOS3D<T> const &rhs)
+    : fAllocated(rhs.fAllocated), fSize(rhs.fSize),
+      fCapacity(rhs.fCapacity), fContent(NULL) {
+  *this = rhs;
 }
 
-template <typename Type>
-AOS3D<Type>::AOS3D(TrackContainer<Type> const &other)
-    : TrackContainer<Type>(other.memory_size_, true) {
-  this->size_ = other.size_;
-  data_ = static_cast<VecType*>(
-            _mm_malloc(sizeof(VecType)*other.size(), kAlignmentBoundary)
-          );
-  const int count = other.size();
-  for (int i = 0; i < count; ++i) {
-    data_[i] = other[i];
+template <typename T>
+AOS3D<T>& AOS3D<T>::operator=(AOS3D<T> const &rhs) {
+  clear();
+  if (rhs.fAllocated) {
+    reserve(rhs.fCapacity);
+    copy(rhs.fContent, rhs.fContent+rhs.fSize, fContent);
+  } else {
+    fContent = rhs.fContent;
+    fAllocated = false;
+    fCapacity = rhs.fCapacity;
+  }
+  fSize = rhs.fSize;
+  return *this;
+}
+
+template <typename T>
+AOS3D<T>::~AOS3D() {
+  Deallocate();
+}
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+size_t AOS3D<T>::size() const { return fSize; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+size_t AOS3D<T>::capacity() const { return fCapacity; }
+
+template <typename T>
+void AOS3D<T>::resize(size_t newSize) {
+  Assert(newSize <= fCapacity);
+  fSize = newSize;
+}
+
+template <typename T>
+void AOS3D<T>::reserve(size_t newCapacity) {
+  fCapacity = newCapacity;
+  Vec_t *contentNew;
+#ifndef VECGEOM_NVCC
+  contentNew = static_cast<Vec_t*>(_mm_malloc(sizeof(Vec_t)*fCapacity,
+                                   kAlignmentBoundary));
+#else
+  contentNew = new Vec_t[fCapacity];
+#endif
+  fSize = (fSize > fCapacity) ? fCapacity : fSize;
+  if (fContent) {
+    copy(fContent, fContent+fSize, contentNew);
+  }
+  Deallocate();
+  fContent = contentNew;
+  fAllocated = true;
+}
+
+template <typename T>
+void AOS3D<T>::clear() {
+  Deallocate();
+  fAllocated = false;
+  fSize = 0;
+  fCapacity = 0;
+}
+
+template <typename T>
+void AOS3D<T>::Deallocate() {
+  if (fAllocated) {
+#ifndef VECGEOM_NVCC
+    _mm_free(fContent);
+#else
+    delete fContent;
+#endif
   }
 }
 
-template <typename Type>
-AOS3D<Type>::~AOS3D() {
-  if (this->allocated_) _mm_free(data_);
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<T> AOS3D<T>::operator[](size_t index) const {
+  return fContent[index];
 }
 
-template <typename Type>
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void AOS3D<Type>::Set(const int index, const Type x, const Type y,
-                      const Type z) {
-  // assert(index < this->memory_size_);
-  if (index >= this->size_) this->size_ = index+1;
-  (data_[index])[0] = x;
-  (data_[index])[1] = y;
-  (data_[index])[2] = z;
+Vector3D<T>& AOS3D<T>::operator[](size_t index) {
+  return fContent[index];
 }
 
-template <typename Type>
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void AOS3D<Type>::Set(const int index, Vector3D<Type> const &vec) {
-  // assert(index < this->memory_size_);
-  if (index >= this->size_) this->size_ = index+1;
-  data_[index] = vec;
+T* AOS3D<T>::content() { return fContent; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+T AOS3D<T>::x(size_t index) const { return (fContent[index])[0]; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+T& AOS3D<T>::x(size_t index) { return (fContent[index])[0]; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+T AOS3D<T>::y(size_t index) const { return (fContent[index])[1]; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+T& AOS3D<T>::y(size_t index) { return (fContent[index])[1]; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+T AOS3D<T>::z(size_t index) const { return (fContent[index])[2]; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+T& AOS3D<T>::z(size_t index) { return (fContent[index])[2]; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+void AOS3D<T>::set(size_t index, T x, T y, T z) {
+  (fContent[index])[0] = x;
+  (fContent[index])[1] = y;
+  (fContent[index])[2] = z;
 }
 
-template <typename Type>
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void AOS3D<Type>::push_back(const Type x, const Type y, const Type z) {
-  // assert(this->size_ < this->memory_size_);
-  (data_[this->size_])[0] = x;
-  (data_[this->size_])[1] = y;
-  (data_[this->size_])[2] = z;
-  this->size_++;
+void AOS3D<T>::set(size_t index, Vector3D<T> const &vec) {
+  fContent[index] = vec;
 }
 
-template <typename Type>
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void AOS3D<Type>::push_back(Vector3D<Type> const &vec) {
-  // assert(this->size_ < this->memory_size_);
-  data_[this->size_] = vec;
-  this->size_++;
+void AOS3D<T>::push_back(T x, T y, T z) {
+  (fContent[fSize])[0] = x;
+  (fContent[fSize])[1] = y;
+  (fContent[fSize])[2] = z;
+  ++fSize;
+}
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+void AOS3D<T>::push_back(Vector3D<T> const &vec) {
+  fContent[fSize] = vec;
+  ++fSize;
 }
 
 } // End global namespace
@@ -168,18 +291,16 @@ namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-template <typename Type> class Vector3D;
-template <typename Type> class AOS3D;
+template <typename T> class Vector3D;
+template <typename T> class AOS3D;
 
-AOS3D<Precision>* AOS3D_CopyToGpu(Vector3D<Precision> *const data,
-                                  const int size);
+AOS3D<Precision>* AOS3D_CopyToGpu(Vector3D<Precision> *content, size_t size);
 
-template <typename Type>
-AOS3D<Type>* AOS3D<Type>::CopyToGpu(
-    Vector3D<Type> *const data_gpu) const {
-  const int mem_size = this->size_*sizeof(Vector3D<Type>);
-  vecgeom::CopyToGpu(data_, data_gpu, mem_size);
-  return AOS3D_CopyToGpu(data_gpu, this->size_);
+template <typename T>
+AOS3D<T>* AOS3D<T>::CopyToGpu(Vector3D<T> *const contentGpu) const {
+  size_t bytes = fSize*sizeof(Vec_t);
+  vecgeom::CopyToGpu(fContent, contentGpu, bytes);
+  return AOS3D_CopyToGpu(contentGpu, fSize);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE

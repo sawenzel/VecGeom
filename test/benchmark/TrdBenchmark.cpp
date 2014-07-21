@@ -1,19 +1,19 @@
 #include "volumes/LogicalVolume.h"
-#include "volumes/Tube.h"
+#include "volumes/Trd.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
 
 using namespace vecgeom;
 
 int main() {
-  UnplacedBox worldUnplaced = UnplacedBox(100., 100., 100.);
-  UnplacedTube tubeUnplaced = UnplacedTube(10, 20., 30., 0, 3*M_PI/2);
+  UnplacedBox worldUnplaced = UnplacedBox(1000., 1000., 1000.);
+  UnplacedTrd trdUnplaced = UnplacedTrd(5., 10., 9., 4., 30.);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
-  LogicalVolume tube = LogicalVolume("tube", &tubeUnplaced);
+  LogicalVolume trd = LogicalVolume("trdLogicalVolume", &trdUnplaced);
+  Transformation3D placement(5., 5., 5.);
+  world.PlaceDaughter("trdPlaced", &trd, &placement);
 
-  Transformation3D placement(5, 5, 5);
-  world.PlaceDaughter("tube", &tube, &placement);
 
   VPlacedVolume *worldPlaced = world.Place();
 
@@ -22,8 +22,6 @@ int main() {
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
   tester.SetRepetitions(1024);
-  tester.SetPointCount(1<<12);
-  tester.RunBenchmark();
-
-
+  tester.SetPointCount(1<<10);
+  tester.RunToInBenchmark();
 }

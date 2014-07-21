@@ -19,12 +19,14 @@ namespace VECGEOM_NAMESPACE {
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedTube::ConvertToUnspecialized() const {
-  return new SimpleTube(label().c_str(), logical_volume(), transformation());
+  return new SimpleTube(GetLabel().c_str(), logical_volume(), transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTube::ConvertToRoot() const {
-  return new TGeoTubeSeg(label().c_str(), rmin(), rmax(), z(), sphi()*(180/M_PI), dphi()*(180/M_PI) );
+  if(dphi() >= 2*M_PI)
+     return new TGeoTube(GetLabel().c_str(), rmin(), rmax(), z());
+  return new TGeoTubeSeg(GetLabel().c_str(), rmin(), rmax(), z(), sphi()*(180/M_PI), sphi()*(180/M_PI)+dphi()*(180/M_PI) );
 }
 #endif
 

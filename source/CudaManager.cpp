@@ -104,7 +104,7 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
     const int daughter_count = (*i)->size();
     Daughter *const daughter_array = new Daughter[daughter_count];
     int j = 0;
-    for (Iterator<Daughter> k = (*i)->begin(); k != (*i)->end(); ++k) {
+    for (Daughter* k = (*i)->begin(); k != (*i)->end(); ++k) {
       daughter_array[j] = LookupPlaced(*k);
       j++;
     }
@@ -296,7 +296,7 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
       == daughters_.end()) {
     daughters_.insert(volume->logical_volume()->daughters_);
   }
-  for (Iterator<Daughter> i = volume->daughters().begin();
+  for (Daughter* i = volume->daughters().begin();
        i != volume->daughters().end(); ++i) {
     ScanGeometry(*i);
   }

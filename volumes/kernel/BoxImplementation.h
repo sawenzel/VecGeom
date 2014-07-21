@@ -7,6 +7,7 @@
 #include "backend/Backend.h"
 #include "base/Vector3D.h"
 #include "volumes/UnplacedBox.h"
+#include "volumes/kernel/GenericKernels.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -14,6 +15,7 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
   template<typename Backend>
+  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void UnplacedContains(
       UnplacedBox const &box,
@@ -38,6 +40,14 @@ struct BoxImplementation {
       Transformation3D const &transformation,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::inside_v &inside);
+
+  template <typename Backend, bool ForInside>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static void GenericKernelForContainsAndInside(Vector3D<Precision> const &,
+          Vector3D<typename Backend::precision_v> const &,
+          typename Backend::bool_v &,
+          typename Backend::bool_v &);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -250,22 +260,57 @@ void BoxImplementation<transCodeT, rotCodeT>::ContainsKernel(
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
 
-  Vector3D<typename Backend::bool_v> insideDim = Backend::kFalse;
-  for (int i = 0; i < 3; ++i) {
-    insideDim[i] = Abs(localPoint[i]) < dimensions[i];
+  typedef typename Backend::bool_v Bool_t;
+  Bool_t unused;
+  Bool_t outside;
+  GenericKernelForContainsAndInside<Backend, false>(dimensions,
+    localPoint, unused, outside);
+  inside=!outside;
+}
+
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend, bool ForInside>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
+    Vector3D<Precision> const &dimensions,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &completelyinside,
+    typename Backend::bool_v &completelyoutside) {
+
+//    using vecgeom::GenericKernels;
+// here we are explicitely unrolling the loop since  a for statement will likely be a penality
+// check if second call to Abs is compiled away
+    // and it can anyway not be vectorized
+    /* x */
+    completelyoutside = Abs(localPoint[0]) > MakePlusTolerant<ForInside>( dimensions[0] );
+    if (ForInside)
+    {
+        completelyinside = Abs(localPoint[0]) < MakeMinusTolerant<ForInside>( dimensions[0] );
+    }
     if (Backend::early_returns) {
-      if (!insideDim[i]) {
-        inside = Backend::kFalse;
+      if ( completelyoutside == Backend::kTrue ) {
         return;
       }
     }
-  }
-  if (Backend::early_returns) {
-    inside = Backend::kTrue;
-  } else {
-    inside = insideDim[0] && insideDim[1] && insideDim[2];
-  }
-
+/* y */
+    completelyoutside |= Abs(localPoint[1]) > MakePlusTolerant<ForInside>( dimensions[1] );
+    if (ForInside)
+    {
+      completelyinside &= Abs(localPoint[1]) < MakeMinusTolerant<ForInside>( dimensions[1] );
+    }
+    if (Backend::early_returns) {
+      if ( completelyoutside == Backend::kTrue ) {
+        return;
+      }
+    }
+/* z */
+    completelyoutside |= Abs(localPoint[2]) > MakePlusTolerant<ForInside>( dimensions[2] );
+    if (ForInside)
+    {
+      completelyinside &= Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( dimensions[2] );
+    }
+    return;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -276,42 +321,13 @@ void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
 
-  typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v      Bool_t;
-
-  Bool_t done(false);
-  inside = EInside::kOutside;
-  Vector3D<Float_t> pointAbs = point.Abs();
-
-  // Check if points are outside all surfaces
-  Vector3D<Bool_t> insideOuterTolerance = pointAbs <= boxDimensions
-                                                      + kHalfTolerance;
-  Bool_t isOutside = !insideOuterTolerance[0] &&
-                     !insideOuterTolerance[1] &&
-                     !insideOuterTolerance[2];
-  done |= isOutside;
-  if (done == Backend::kTrue) return;
-
-  // Check if points are inside all surfaces
-  Vector3D<Bool_t> insideInnerTolerance = pointAbs <= boxDimensions
-                                                      - kHalfTolerance;
-  Bool_t isInside = insideInnerTolerance[0] &&
-                    insideInnerTolerance[1] &&
-                    insideInnerTolerance[2];
-  MaskedAssign(isInside, EInside::kInside, &inside);
-  done |= isInside;
-  if (done == Backend::kTrue) return;
-
-  // Check for remaining surface cases
-  Vector3D<Bool_t> onSurface = insideOuterTolerance && !insideInnerTolerance;
-  Bool_t isSurface = (onSurface[0] && insideOuterTolerance[1]
-                      && insideOuterTolerance[2]) ||
-                     (onSurface[1] && insideOuterTolerance[0]
-                      && insideOuterTolerance[2]) ||
-                     (onSurface[2] && insideOuterTolerance[0]
-                      && insideOuterTolerance[1]);
-  MaskedAssign(isSurface, EInside::kSurface, &inside);
-
+  Bool_t completelyinside, completelyoutside;
+  GenericKernelForContainsAndInside<Backend,true>(
+      boxDimensions, point, completelyinside, completelyoutside);
+  inside=EInside::kSurface;
+  MaskedAssign(completelyoutside, EInside::kOutside, &inside);
+  MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -389,21 +405,21 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
     typename Backend::precision_v &distance) {
 
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
+    // typedef typename Backend::bool_v Bool_t;
 
     Vector3D<Float_t> safety;
-    Bool_t inside;
+    // Bool_t inside;
 
     distance = kInfinity;
 
-    safety[0] = Abs(point[0]) - dimensions[0];
-    safety[1] = Abs(point[1]) - dimensions[1];
-    safety[2] = Abs(point[2]) - dimensions[2];
+    //safety[0] = Abs(point[0]) - dimensions[0];
+    //safety[1] = Abs(point[1]) - dimensions[1];
+    //safety[2] = Abs(point[2]) - dimensions[2];
 
-    inside = safety[0] < stepMax &&
-             safety[1] < stepMax &&
-             safety[2] < stepMax;
-    if (inside == Backend::kFalse) return;
+    //inside = safety[0] < stepMax &&
+    //         safety[1] < stepMax &&
+    //         safety[2] < stepMax;
+    //if (inside == Backend::kFalse) return;
 
     Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
       1. / (direction[0] + kTiny),
