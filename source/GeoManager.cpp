@@ -25,14 +25,14 @@ void GeoManager::DeregisterPlacedVolume(const int id) {
   placed_volumes_.erase(id);
 }
 
-int GeoManager::getMaxDepth( ) const
-{
-   // walk all the volume hierarchy and insert
-   // placed volumes if not already in the container
-   GetMaxDepthVisitor depthvisitor;
-   visitAllPlacedVolumes( world(), &depthvisitor, 1 );
-   return depthvisitor.getMaxDepth();
+void GeoManager::CloseGeometry() {
+   // cache some important variables of this geometry
+    GetMaxDepthVisitor depthvisitor;
+    visitAllPlacedVolumes( world(), &depthvisitor, 1 );
+    fMaxDepth = depthvisitor.getMaxDepth();
 }
+
+
 
 VPlacedVolume* GeoManager::FindPlacedVolume(const int id) {
   auto iterator = placed_volumes_.find(id);

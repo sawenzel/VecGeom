@@ -59,7 +59,7 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillRandomDirections(TrackContainer &dirs) {
   dirs.resize(dirs.capacity());
-  for (int i = 0, i_max = dirs.capacity(); i < i_max; ++i) {
+  for (int i = 0, iMax = dirs.capacity(); i < iMax; ++i) {
     dirs.set(i, SampleDirection());
   }
 }
