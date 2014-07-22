@@ -29,11 +29,34 @@ VPlacedVolume* UnplacedTrd::Create(
     const int id,
 #endif
     VPlacedVolume *const placement) {
+
+    using namespace TrdTypes;
+    __attribute__((unused)) const UnplacedTrd &trd = static_cast<const UnplacedTrd&>( *(logical_volume->unplaced_volume()) );
+    
+    #define GENERATE_TRD_SPECIALIZATIONS
+    #ifdef GENERATE_TRD_SPECIALIZATIONS
+      if(trd.dy1() == trd.dy2()) {
+          std::cout << "trd1" << std::endl;
+          return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::Trd1> >(logical_volume, transformation
+#ifdef VECGEOM_NVCC
+                 ,id
+#endif
+                 , placement);
+      } else {
+          std::cout << "trd2" << std::endl;
+          return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::Trd2> >(logical_volume, transformation
+#ifdef VECGEOM_NVCC
+                 ,id
+#endif
+                 , placement);
+    }
+    #endif
+    std::cout << "universal trd" << std::endl; 
 	return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::UniversalTrd> >(logical_volume, transformation 
 #ifdef VECGEOM_NVCC
-,id
+                ,id
 #endif
-, placement);
+                , placement);
 }
 
 VECGEOM_CUDA_HEADER_DEVICE
