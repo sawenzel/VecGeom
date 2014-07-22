@@ -24,11 +24,12 @@ typedef kScalar Backend;
 
 double x1 = 5.;
 double x2 = 10.;
-double ay1 = 9.;
+double ay1 = 4.;
+//double ay1 = 9.;
 double y2 = 4.;
 double z = 10;
 
-#define NPOINTS 10000000
+#define NPOINTS 1000000
 
 void inside() {
   UnplacedTrd trd(x1, x2, ay1, y2, z);
@@ -92,7 +93,7 @@ void distancetoin() {
     v[1] = direction.y();
     v[2] = direction.z();
 
-    TrdImplementation<rotation::kIdentity, translation::kIdentity, TrdTypes::UniversalTrd> impl;
+    TrdImplementation<rotation::kIdentity, translation::kIdentity, TrdTypes::Trd1> impl;
     impl.DistanceToIn<Backend>(trd, *identity, point, direction, kInfinity, dist_v);
     dist = rtrd.DistFromOutside(p, v);
 
@@ -204,7 +205,7 @@ void safety() {
     if(!rtrd.Contains(p)) {
 
       if(Abs(saf-safety_v) > 0.0001) {
-        std::cout << "ERROR for point " << point << "\t" << saf << std::endl;
+        std::cout << "ERROR for point " << point << "\t" << saf << "\t" << safety_v << std::endl;
         errors++;
       }
       else {

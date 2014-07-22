@@ -78,6 +78,24 @@ void PlaneTrajectoryIntersection(typename Backend::precision_v const &alongX,
   ok = Abs(hity) <= ylimit && dist > 0;
 }
 
+template<typename Backend>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void PerpendicularFaceTrajectoryIntersection(UnplacedTrd const &trd,
+                                             Vector3D<typename Backend::precision_v> const &pos,
+                                             Vector3D<typename Backend::precision_v> const &dir,
+                                             typename Backend::precision_v &dist,
+                                             typename Backend::bool_v &ok) {
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    dist = Abs( (Abs(pos.y()) - trd.dy1()) / Abs(dir.y()));
+    Float_t zhit = pos.z() + dist*dir.z();
+    Float_t xhit = pos.x() + dist*dir.x();
+    Float_t dx = trd.halfx1plusx2() - trd.fx()*zhit;
+    ok = pos.y()*dir.y() < 0 && Abs(xhit) < dx && Abs(zhit) < trd.dz();
+}
+
 template<typename Backend, bool forY, bool mirroredPoint>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
@@ -131,19 +149,21 @@ void FaceTrajectoryIntersection(UnplacedTrd const &trd,
     // need to make sure z hit falls within bounds
     Float_t hitz = pos.z() + dist*dir.z();
     ok = Abs(hitz) <= trd.dz() && dist > 0;
-
-    // need to make sure hit on varying dimension falls within bounds
-    Float_t hitk = posK + dist*dirK;
-    Float_t dK = halfKplus - fK * hitz; // calculate the width of the varying dimension at hitz
-    ok &= Abs(hitk) <= dK;
+    if(ok != Backend::kFalse) {
+      // need to make sure hit on varying dimension falls within bounds
+      Float_t hitk = posK + dist*dirK;
+      Float_t dK = halfKplus - fK * hitz; // calculate the width of the varying dimension at hitz
+      ok &= Abs(hitk) <= dK;
+    }
 }
 
-template<typename Backend, bool inside>
+template<typename Backend, typename trdTypeT, bool inside>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void Safety(UnplacedTrd const &trd, 
             Vector3D<typename Backend::precision_v> const &pos,
             typename Backend::precision_v &dist) {
+    using namespace TrdTypes;
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v Bool_t;
 
@@ -157,11 +177,16 @@ void Safety(UnplacedTrd const &trd,
     MaskedAssign(okx && safx < dist, safx, &dist);
     //std::cout << "safx: " << safx << std::endl;
 
-    Float_t disty = trd.halfy1plusy2()-trd.fy()*pos.z();
-    Bool_t oky = disty >= 0;
-    Float_t safy = (disty-Abs(pos.y()))*trd.calfy();
-    MaskedAssign(oky && safy < dist, safy, &dist);
-    //std::cout << "safy: " << safy << std::endl;
+    if(checkVaryingY<trdTypeT>(trd)) {
+      Float_t disty = trd.halfy1plusy2()-trd.fy()*pos.z();
+      Bool_t oky = disty >= 0;
+      Float_t safy = (disty-Abs(pos.y()))*trd.calfy();
+      MaskedAssign(oky && safy < dist, safy, &dist);
+    }
+    else {
+      Float_t safy = trd.dy1() - Abs(pos.y());
+      MaskedAssign(safy < dist, safy, &dist);
+    }
     if(!inside) dist = -dist;
 }
 
@@ -251,6 +276,7 @@ struct TrdImplementation {
       typename Backend::precision_v &distance) {
 
     using namespace TrdUtilities;
+    using namespace TrdTypes;
     typedef typename Backend::bool_v Bool_t;
     typedef typename Backend::precision_v Float_t;
 
@@ -268,11 +294,10 @@ struct TrdImplementation {
     //Float_t abspz = Abs(pos_local.z());
 
     // hit Z faces?
+    Bool_t okz = pos_local.z() * dir_local.z() < 0;
     Float_t distz = (Abs(pos_local.z()) - trd.dz()) / Abs(dir_local.z());
     //std::cout << "distz candidate: " << distz << std::endl;
     // exclude case in which particle is going away
-    Bool_t okz = pos_local.z() * dir_local.z() < 0;
-      
     hitx = Abs(pos_local.x() + distz*dir_local.x());
     hity = Abs(pos_local.y() + distz*dir_local.y());
 
@@ -298,11 +323,21 @@ struct TrdImplementation {
     Float_t disty;
     Bool_t oky;
 
-    FaceTrajectoryIntersection<Backend, true, false>(trd, pos_local, dir_local, disty, oky);
-    MaskedAssign(oky && disty < distance, disty, &distance);
+    if(checkVaryingY<trdTypeT>(trd)) {
+      FaceTrajectoryIntersection<Backend, true, false>(trd, pos_local, dir_local, disty, oky);
+      MaskedAssign(oky && disty < distance, disty, &distance);
 
-    FaceTrajectoryIntersection<Backend, true, true>(trd, pos_local, dir_local, disty, oky);
-    MaskedAssign(oky && disty < distance, disty, &distance);
+      FaceTrajectoryIntersection<Backend, true, true>(trd, pos_local, dir_local, disty, oky);
+      MaskedAssign(oky && disty < distance, disty, &distance);
+    }
+    else {
+      disty = (Abs(pos_local.y()) - trd.dy1()) / Abs(dir_local.y());
+      Float_t zhit = pos_local.z() + disty*dir_local.z();
+      Float_t xhit = pos_local.x() + disty*dir_local.x();
+      Float_t dx = trd.halfx1plusx2() - trd.fx()*zhit;
+      oky = pos_local.y()*dir_local.y() < 0 && disty > 0 && Abs(xhit) < dx && Abs(zhit) < trd.dz();
+      MaskedAssign(oky && disty < distance, disty, &distance);
+    }
   }
 
   template <class Backend>
@@ -316,6 +351,7 @@ struct TrdImplementation {
       typename Backend::precision_v &distance) {
     
     using namespace TrdUtilities;
+    using namespace TrdTypes;
     typedef typename Backend::bool_v Bool_t;
     typedef typename Backend::precision_v Float_t;
     
@@ -332,10 +368,10 @@ struct TrdImplementation {
       Bool_t okzt = dir.z() > 0;
       okzt &= hitx <= trd.dx2() && hity <= trd.dy2();
       MaskedAssign(okzt, distz, &distance);
-      if(Backend::early_returns) {
-          done |= okzt;
-          if(done) return;
-      }
+      //if(Backend::early_returns) {
+      //    done |= okzt;
+      //    if(done) return;
+      //}
       //std::cout << okzt << std::endl;
     }
 
@@ -347,10 +383,10 @@ struct TrdImplementation {
       Bool_t okzt = dir.z() < 0;
       okzt &= hitx <= trd.dx1() && hity <= trd.dy1();
       MaskedAssign(okzt, distz, &distance);
-      if(Backend::early_returns) {
-          done |= okzt;
-          if(done) return;
-      }
+      //if(Backend::early_returns) {
+      //    done |= okzt;
+      //    if(done) return;
+      //}
       //std::cout << okzt << std::endl;
     }
 
@@ -361,37 +397,49 @@ struct TrdImplementation {
     FaceTrajectoryIntersection<Backend, false, false>(trd, point, dir, distx, okx);
     //std::cout << distx << std::endl;
     MaskedAssign(okx & (distx < distance), distx, &distance);
-    if(Backend::early_returns) {
-        done |= okx;
-        if(done) return;
-    }
+    //if(Backend::early_returns) {
+    //    done |= okx;
+    //    if(done) return;
+    //}
       
     FaceTrajectoryIntersection<Backend, false, true>(trd, point, dir, distx, okx);
     MaskedAssign(okx & (distx < distance), distx, &distance);
-    if(Backend::early_returns) {
-        done |= okx;
-        if(done) return;
-    }
+    //if(Backend::early_returns) {
+    //    done |= okx;
+    //    if(done) return;
+    //}
     //std::cout << distx << std::endl;
 
     // hitting X faces?
     Float_t disty;
     Bool_t oky;
 
-    FaceTrajectoryIntersection<Backend, true, false>(trd, point, dir, disty, oky);
-    //std::cout << disty << std::endl;
-    MaskedAssign(oky & (disty < distance), disty, &distance);
-    if(Backend::early_returns) {
-        done |= oky;
-        if(done) return;
-    }
+    if(checkVaryingY<trdTypeT>(trd)) {
+      FaceTrajectoryIntersection<Backend, true, false>(trd, point, dir, disty, oky);
+      //std::cout << disty << std::endl;
+      MaskedAssign(oky & (disty < distance), disty, &distance);
+      //if(Backend::early_returns) {
+      //    done |= oky;
+      //    if(done) return;
+      //}
       
-    FaceTrajectoryIntersection<Backend, true, true>(trd, point, dir, disty, oky);
-    MaskedAssign(oky & (disty < distance), disty, &distance);
-    //std::cout << disty << std::endl;
-    if(Backend::early_returns) {
-        done |= oky;
-        if(done) return;
+      FaceTrajectoryIntersection<Backend, true, true>(trd, point, dir, disty, oky);
+      MaskedAssign(oky & (disty < distance), disty, &distance);
+      //std::cout << disty << std::endl;
+      //if(Backend::early_returns) {
+      //    done |= oky;
+      //    if(done) return;
+      //}
+    }
+    else {
+      Float_t plane = trd.dy1();
+      MaskedAssign(dir.y() < 0, -trd.dy1(), &plane);
+      disty = (plane - point.y()) / dir.y();
+      Float_t zhit = point.z() + disty*dir.z();
+      Float_t xhit = point.x() + disty*dir.x();
+      Float_t dx = trd.halfx1plusx2() - trd.fx()*zhit;
+      oky = Abs(xhit) < dx && Abs(zhit) < trd.dz();
+      MaskedAssign(oky && disty < distance, disty, &distance);
     }
   }
 
@@ -406,7 +454,7 @@ struct TrdImplementation {
     typedef typename Backend::precision_v Float_t;
     Vector3D<Float_t> pos_local;
     transformation.Transform<transCodeT, rotCodeT>(point, pos_local);
-    Safety<Backend, false>(trd, pos_local, safety);
+    Safety<Backend, trdTypeT, false>(trd, pos_local, safety);
   }
 
   template <class Backend>
@@ -416,7 +464,7 @@ struct TrdImplementation {
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety) {
     using namespace TrdUtilities;
-    Safety<Backend, true>(trd, point, safety); 
+    Safety<Backend, trdTypeT, true>(trd, point, safety); 
   }
 
 };

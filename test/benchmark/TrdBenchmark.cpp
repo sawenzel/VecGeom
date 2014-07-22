@@ -7,7 +7,7 @@ using namespace vecgeom;
 
 int main() {
   UnplacedBox worldUnplaced = UnplacedBox(100., 100., 100.);
-  UnplacedTrd trdUnplaced = UnplacedTrd(5., 10., 9., 4., 30.);
+  UnplacedTrd trdUnplaced = UnplacedTrd(5., 10., 4., 4., 30.);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume trd = LogicalVolume("trdLogicalVolume", &trdUnplaced);
@@ -20,7 +20,7 @@ int main() {
   GeoManager::Instance().set_world(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().world());
-  //tester.SetPoolMultiplier(1);
+  tester.SetPoolMultiplier(1);
   tester.SetVerbosity(3);
   tester.SetRepetitions(1024);
   tester.SetPointCount(1<<5);
