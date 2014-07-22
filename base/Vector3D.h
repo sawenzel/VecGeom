@@ -323,7 +323,11 @@ public:
 
 };
 
-std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
+  os << "(" << vec[0] << ", " << vec[1] << ", " << vec[2] << ")";
+  return os;
+}
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 

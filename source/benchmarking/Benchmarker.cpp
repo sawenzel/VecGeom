@@ -173,7 +173,7 @@ void Benchmarker::CompareDistances(
           printf(", Direction (%f, %f, %f)", directions->x(i), directions->y(i),
                  directions->z(i));
         }
-        printf(":");
+        printf(": ");
       }
 
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
@@ -781,8 +781,8 @@ void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
-    SOA3D<Precision> points(&fPointPool->x(index), &fPointPool->y(index),
-                            &fPointPool->z(index), fPointCount);
+    SOA3D<Precision> points(fPointPool->x()+index, fPointPool->y()+index,
+                            fPointPool->z()+index, fPointCount);
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       v->specialized()->Contains(points, contains);
     }
@@ -791,8 +791,8 @@ void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
-    SOA3D<Precision> points(&fPointPool->x(index), &fPointPool->y(index),
-                            &fPointPool->z(index), fPointCount);
+    SOA3D<Precision> points(fPointPool->x()+index, fPointPool->y()+index,
+                            fPointPool->z()+index, fPointCount);
     for (auto v = fVolumes.begin(), v_end = fVolumes.end(); v != v_end; ++v) {
       v->specialized()->Inside(points, inside);
     }
@@ -826,11 +826,11 @@ void Benchmarker::RunToInVectorized(
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
-    SOA3D<Precision> points(&fPointPool->x(index), &fPointPool->y(index),
-                            &fPointPool->z(index), fPointCount);
-    SOA3D<Precision> directions(&fDirectionPool->x(index),
-                                &fDirectionPool->y(index),
-                                &fDirectionPool->z(index), fPointCount);
+    SOA3D<Precision> points(fPointPool->x()+index, fPointPool->y()+index,
+                            fPointPool->z()+index, fPointCount);
+    SOA3D<Precision> directions(fDirectionPool->x() + index,
+                                fDirectionPool->y() + index,
+                                fDirectionPool->z() + index, fPointCount);
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       v->specialized()->DistanceToIn(points, directions, fStepMax, distances);
     }
@@ -839,8 +839,8 @@ void Benchmarker::RunToInVectorized(
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
-    SOA3D<Precision> points(&fPointPool->x(index), &fPointPool->y(index),
-                            &fPointPool->z(index), fPointCount);
+    SOA3D<Precision> points(fPointPool->x()+index, fPointPool->y()+index,
+                            fPointPool->z()+index, fPointCount);
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       v->specialized()->SafetyToIn(points, safeties);
     }
@@ -874,11 +874,11 @@ void Benchmarker::RunToOutVectorized(
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
-    SOA3D<Precision> points(&fPointPool->x(index), &fPointPool->y(index),
-                            &fPointPool->z(index), fPointCount);
-    SOA3D<Precision> directions(&fDirectionPool->x(index),
-                                &fDirectionPool->y(index),
-                                &fDirectionPool->z(index), fPointCount);
+    SOA3D<Precision> points(fPointPool->x()+index, fPointPool->y()+index,
+                            fPointPool->z()+index, fPointCount);
+    SOA3D<Precision> directions(fDirectionPool->x()+index,
+                                fDirectionPool->y()+index,
+                                fDirectionPool->z()+index, fPointCount);
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       v->specialized()->DistanceToOut(points, directions, fStepMax, distances);
     }
@@ -887,8 +887,8 @@ void Benchmarker::RunToOutVectorized(
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
-    SOA3D<Precision> points(&fPointPool->x(index), &fPointPool->y(index),
-                            &fPointPool->z(index), fPointCount);
+    SOA3D<Precision> points(fPointPool->x()+index, fPointPool->y()+index,
+                            fPointPool->z()+index, fPointCount);
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       v->specialized()->SafetyToOut(points, safeties);
     }
