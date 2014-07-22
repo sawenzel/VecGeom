@@ -13,6 +13,7 @@
 #endif
 
 #include <cstdlib>
+#include <ostream>
 #include <string>
 
 namespace VECGEOM_NAMESPACE {
@@ -210,6 +211,8 @@ public:
   }
 
   /// \return Azimuthal angle between -pi and pi.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Type Phi() const {
     Type output = 0;
     VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
@@ -323,7 +326,11 @@ public:
 
 };
 
-std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
+  os << "(" << vec[0] << ", " << vec[1] << ", " << vec[2] << ")";
+  return os;
+}
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
@@ -507,6 +514,8 @@ public:
   }
 
   /// \return Azimuthal angle between -pi and pi.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision Phi() const {
     return (mem[0] != 0. || mem[1] != 0.) ? ATan2(mem[1], mem[0]) : 0.;
   }

@@ -144,7 +144,7 @@ private:
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>::SOA3D(T *x, T *y, T *z, size_t size)
-    : fAllocated(false), fSize(size), fCapacity(fSize), fX(x), fY(y), fZ(y) {}
+    : fAllocated(false), fSize(size), fCapacity(fSize), fX(x), fY(y), fZ(z) {}
 
 template <typename T>
 SOA3D<T>::SOA3D(size_t size)
@@ -254,7 +254,7 @@ void SOA3D<T>::Deallocate() {
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 Vector3D<T> SOA3D<T>::operator[](size_t index) const {
-  return Vector3D<T>(fX[index], fX[index], fZ[index]);
+  return Vector3D<T>(fX[index], fY[index], fZ[index]);
 }
 
 template <typename T>

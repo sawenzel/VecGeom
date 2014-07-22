@@ -288,7 +288,6 @@ set(SRC_CPP_RELATIVE
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector.cpp
-  source/Vector3D.cpp
   source/NavigationState.cpp	
   source/SimpleNavigator.cpp
 )
@@ -370,6 +369,7 @@ endif()
 set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
