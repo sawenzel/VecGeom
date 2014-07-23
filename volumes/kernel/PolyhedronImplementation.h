@@ -63,13 +63,13 @@ struct PolyhedronImplementation {
       Vector3D<Precision> const &point,
       Precision &distance);
 
-  template <class Backend, typename Point_t, typename Segment_t>
+  template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void DistanceToSide(
     UnplacedPolyhedron::PolyhedronSegment const &segment,
-    int sideIndex,
-    Vector3D<Point_t> const &point,
+    UnplacedPolyhedron::PolyhedronSide const &side,
+    Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &distance,
     typename Backend::precision_v &distanceNormal);
 
@@ -108,58 +108,6 @@ struct PolyhedronImplementation {
   static void SafetyToOut(UnplacedPolyhedron const &unplaced,
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void ContainsKernel(
-      Vector3D<Precision> const &polyhedronDimensions,
-      Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::bool_v &inside);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void InsideKernel(
-      Vector3D<Precision> const &polyhedronDimensions,
-      Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::inside_v &inside);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void DistanceToInKernel(
-      Vector3D<Precision> const &dimensions,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction,
-      typename Backend::precision_v const &stepMax,
-      typename Backend::precision_v &distance);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void DistanceToOutKernel(
-    Vector3D<Precision> const &dimensions,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
-    typename Backend::precision_v const &stepMax,
-    typename Backend::precision_v &distance);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void SafetyToInKernel(
-      Vector3D<Precision> const &dimensions,
-      Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::precision_v & safety);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void SafetyToOutKernel(
-      Vector3D<Precision> const &dimensions,
-      Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::precision_v &safety);
 
 }; // End struct PolyhedronImplementation
 
@@ -217,8 +165,8 @@ Inside_t PolyhedronImplementation<PolyhedronType>::InsideSegment(
   int side = FindPhiSegment<kScalar>(point.Phi(), unplaced);
 
   Precision normal;
-  DistanceToSide<kScalar, Precision, Precision>(
-    segment, side, point, distance, normal
+  DistanceToSide<kScalar>(
+    segment, segment.sides[side], point, distance, normal
   );
 
   if (Abs(normal) < kTolerance && distance < 2.*kTolerance) {
@@ -229,16 +177,15 @@ Inside_t PolyhedronImplementation<PolyhedronType>::InsideSegment(
 }
 
 /// Kernel mostly suitable for sequential evaluation. Vectorization can only be
-/// done if sides are adjacent in memory or if all particles check with the same
-/// side.
+/// if all particles check with the same side.
 template <class PolyhedronType>
-template <class Backend, typename Point_t, typename Segment_t>
+template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void PolyhedronImplementation<PolyhedronType>::DistanceToSide(
     UnplacedPolyhedron::PolyhedronSegment const &segment,
-    int sideIndex,
-    Vector3D<Point_t> const &point,
+    UnplacedPolyhedron::PolyhedronSide const &side,
+    Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &distance,
     typename Backend::precision_v &distanceNormal) {
 
@@ -264,34 +211,34 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToSide(
 
   // Manual SOA handling. There should be a better solution.
 
-  Vector3D<Segment_t> sideCenter =
-      VectorFromSOA<Backend>(segment.center, sideIndex);
-  Vector3D<Segment_t> sideNormal =
-      VectorFromSOA<Backend>(segment.normal, sideIndex);
-  Vector3D<Segment_t> sideSurfRZ =
-      VectorFromSOA<Backend>(segment.surfRZ, sideIndex);
-  Vector3D<Segment_t> sideSurfPhi =
-      VectorFromSOA<Backend>(segment.surfPhi, sideIndex);
-  Vector3D<Segment_t> sideEdgeNormal[2];
-  Vector3D<Segment_t> edgeNormal[2];
-  Vector3D<Segment_t> sideCorner[2][2];
-  Vector3D<Segment_t> sideCornerNormal[2][2];
-  for (int i = 0; i < 2; ++i) {
-    sideEdgeNormal[i] =
-        VectorFromSOA<Backend>(segment.edgeNormal[i], sideIndex);
-    edgeNormal[i] =
-        VectorFromSOA<Backend>(segment.edge[i].normal, sideIndex);
-    for (int j = 0; j < 2; ++j) {
-      sideCorner[i][j] = VectorFromSOA<Backend>(segment.edge[i].corner[j],
-                                                sideIndex);
-      sideCornerNormal[i][j]
-          = VectorFromSOA<Backend>(segment.edge[i].cornerNormal[j], sideIndex);
-    }
-  }
+  // Vector3D<Segment_t> sideCenter =
+  //     VectorFromSOA<Backend>(segment.center, sideIndex);
+  // Vector3D<Segment_t> sideNormal =
+  //     VectorFromSOA<Backend>(segment.normal, sideIndex);
+  // Vector3D<Segment_t> sideSurfRZ =
+  //     VectorFromSOA<Backend>(segment.surfRZ, sideIndex);
+  // Vector3D<Segment_t> sideSurfPhi =
+  //     VectorFromSOA<Backend>(segment.surfPhi, sideIndex);
+  // Vector3D<Segment_t> sideEdgeNormal[2];
+  // Vector3D<Segment_t> edgeNormal[2];
+  // Vector3D<Segment_t> sideCorner[2][2];
+  // Vector3D<Segment_t> side.corner[2].normal[2];
+  // for (int i = 0; i < 2; ++i) {
+  //   sideEdgeNormal[i] =
+  //       VectorFromSOA<Backend>(segment.edgeNormal[i], sideIndex);
+  //   edgeNormal[i] =
+  //       VectorFromSOA<Backend>(segment.edge[i].normal, sideIndex);
+  //   for (int j = 0; j < 2; ++j) {
+  //     sideCorner[i][j] = VectorFromSOA<Backend>(segment.edge[i].corner[j],
+  //                                               sideIndex);
+  //     side.corner[i].normal[j]
+  //         = VectorFromSOA<Backend>(segment.edge[i].cornerNormal[j], sideIndex);
+  //   }
+  // }
 
-  Vector3D<Float_t> centerDiff = point - sideCenter;
+  Vector3D<Float_t> centerDiff = point - side.center;
 
-  distanceNormal = sideNormal.Dot(centerDiff);
+  distanceNormal = side.normal.Dot(centerDiff);
 
   //        A = above, B = below, I = inside
   //                                                   Phi
@@ -305,8 +252,8 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToSide(
   //           BB  |      IB      |  AB
   //               |              |
 
-  Float_t dotRZ = centerDiff.Dot(sideSurfRZ);
-  Float_t dotPhi = centerDiff.Dot(sideSurfPhi);
+  Float_t dotRZ = centerDiff.Dot(side.surfRZ);
+  Float_t dotPhi = centerDiff.Dot(side.surfPhi);
 
   // Arguments to determine for final calculation
   Float_t distSquared;
@@ -362,20 +309,20 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToSide(
   MaskedAssign(ia || ib, temp*temp, &distSquared);
 
   // Determine corner
-  MaskedAssign(aa || ia, sideCorner[1][1], &corner);
-  MaskedAssign(ab || ai || ib, sideCorner[0][1], &corner);
-  MaskedAssign(ba, sideCorner[1][0], &corner);
-  MaskedAssign(bb || bi, sideCorner[0][0], &corner);
+  MaskedAssign(aa || ia, side.edges[1].corner[1], &corner);
+  MaskedAssign(ab || ai || ib, side.edges[0].corner[1], &corner);
+  MaskedAssign(ba, side.edges[1].corner[0], &corner);
+  MaskedAssign(bb || bi, side.edges[0].corner[0], &corner);
 
   // Determine corner normal
-  MaskedAssign(aa, sideCornerNormal[1][1], &cornerNormal);
-  MaskedAssign(ab, sideCornerNormal[0][1], &cornerNormal);
-  MaskedAssign(bb, sideCornerNormal[0][0], &cornerNormal);
-  MaskedAssign(ba, sideCornerNormal[1][0], &cornerNormal);
-  MaskedAssign(ai, sideEdgeNormal[1], &cornerNormal);
-  MaskedAssign(bi, sideEdgeNormal[0], &cornerNormal);
-  MaskedAssign(ia, edgeNormal[1], &cornerNormal);
-  MaskedAssign(ib, edgeNormal[0], &cornerNormal);
+  MaskedAssign(aa, side.edges[1].cornerNormal[1], &cornerNormal);
+  MaskedAssign(ab, side.edges[0].cornerNormal[1], &cornerNormal);
+  MaskedAssign(bb, side.edges[0].cornerNormal[0], &cornerNormal);
+  MaskedAssign(ba, side.edges[1].cornerNormal[0], &cornerNormal);
+  MaskedAssign(ai, side.edges[1].normal, &cornerNormal);
+  MaskedAssign(bi, side.edges[0].normal, &cornerNormal);
+  MaskedAssign(ia, side.edgeNormal[1], &cornerNormal);
+  MaskedAssign(ib, side.edgeNormal[0], &cornerNormal);
 
   // Return values
   distance = Sqrt(distanceNormal*distanceNormal + distSquared);
@@ -428,7 +375,12 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "Not implemented.\n");
+
+  // typedef typename Backend::precision_v Float_t;
+
+  // Vector3D<Float_t> localPoint = transformation.Transform(point);
+  // Vector3D<Float_t> localDirection =
+  //     transformation.TransformDirection(direction);
 }
 
 template <class PolyhedronType>
@@ -462,65 +414,6 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void PolyhedronImplementation<PolyhedronType>::SafetyToOut(
     UnplacedPolyhedron const &unplaced,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::precision_v &safety) {
-  Assert(0, "Not implemented.\n");
-}
-
-template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void PolyhedronImplementation<PolyhedronType>::ContainsKernel(
-    Vector3D<Precision> const &polyhedronDimensions,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::bool_v &inside) {
-  Assert(0, "Not implemented.\n");
-}
-
-template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void PolyhedronImplementation<PolyhedronType>::DistanceToInKernel(
-    Vector3D<Precision> const &dimensions,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
-    typename Backend::precision_v const &stepMax,
-    typename Backend::precision_v &distance) {
-  Assert(0, "Not implemented.\n");
-}
-
-template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void PolyhedronImplementation<PolyhedronType>::DistanceToOutKernel(
-    Vector3D<Precision> const &dimensions,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
-    typename Backend::precision_v const &stepMax,
-    typename Backend::precision_v &distance) {
-  Assert(0, "Not implemented.\n");
-}
-
-template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void PolyhedronImplementation<PolyhedronType>::SafetyToInKernel(
-    Vector3D<Precision> const &dimensions,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::precision_v & safety) {
-  Assert(0, "Not implemented.\n");
-}
-
-template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void PolyhedronImplementation<PolyhedronType>::SafetyToOutKernel(
-    Vector3D<Precision> const &dimensions,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
   Assert(0, "Not implemented.\n");

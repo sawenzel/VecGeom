@@ -18,28 +18,51 @@ namespace VECGEOM_NAMESPACE {
 
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
+private:
+
+  typedef Array<Vector3D<Precision> > VecArray_t;
+
 public:
 
-  struct PolyhedronEdges {
-    SOA3D<Precision> normal;
-    SOA3D<Precision> corner[2];
-    SOA3D<Precision> cornerNormal[2];
-    PolyhedronEdges(int sideCount);
-    PolyhedronEdges();
-    void Allocate(int sideCount);
+  // struct PolyhedronEdges {
+  //   SOA3D<Precision> normal;
+  //   SOA3D<Precision> corner[2];
+  //   SOA3D<Precision> cornerNormal[2];
+  //   PolyhedronEdges(int sideCount);
+  //   PolyhedronEdges();
+  //   void Allocate(int sideCount);
+  // };
+
+  // struct PolyhedronSegment {
+  //   SOA3D<Precision> center, normal;
+  //   SOA3D<Precision> surfPhi, surfRZ;
+  //   SOA3D<Precision> edgeNormal[2];
+  //   PolyhedronEdges edge[2];
+  //   Precision rZLength;
+  //   Precision phiLength[2];
+  //   Precision rZPhiNormal;
+  //   PolyhedronSegment(int sideCount);
+  //   PolyhedronSegment();
+  //   void Allocate(int sideCount);
+  // };
+
+  struct PolyhedronEdge {
+    Vector3D<Precision> normal;
+    Vector3D<Precision> corner[2], cornerNormal[2];
+  };
+
+  struct PolyhedronSide {
+    Vector3D<Precision> center, normal;
+    Vector3D<Precision> surfPhi, surfRZ;
+    Vector3D<Precision> edgeNormal[2];
+    PolyhedronEdge edges[2];
   };
 
   struct PolyhedronSegment {
-    SOA3D<Precision> center, normal;
-    SOA3D<Precision> surfPhi, surfRZ;
-    SOA3D<Precision> edgeNormal[2];
-    PolyhedronEdges edge[2];
+    Array<PolyhedronSide> sides;
     Precision rZLength;
     Precision phiLength[2];
     Precision rZPhiNormal;
-    PolyhedronSegment(int sideCount);
-    PolyhedronSegment();
-    void Allocate(int sideCount);
   };
 
 private:
