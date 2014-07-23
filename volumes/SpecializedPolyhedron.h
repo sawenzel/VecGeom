@@ -56,6 +56,10 @@ public:
   VECGEOM_INLINE
   virtual Inside_t Inside(Vector3D<Precision> const &point) const;
 
+  VECGEOM_INLINE
+  virtual void Inside(SOA3D<Precision> const &points,
+                      Inside_t *const output) const;
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -72,7 +76,6 @@ void SpecializedPolyhedron<PolyhedronType>::PrintType() const {
 }
 
 template <class PolyhedronType>
-VECGEOM_CUDA_HEADER_BOTH
 Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
     Vector3D<Precision> const &point) const {
 
@@ -88,17 +91,26 @@ Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
        segments.cbegin(), sEnd = segments.cend(); s != sEnd; ++s) {
     Inside_t insideResult;
     Precision distanceResult;
-    PolyhedronImplementation<PolyhedronType>::InsideSegment(
-      *PlacedPolyhedron::GetUnplacedVolume(), *s, localPoint,
-      insideResult, distanceResult
+    insideResult = PolyhedronImplementation<PolyhedronType>::InsideSegment(
+      *PlacedPolyhedron::GetUnplacedVolume(), *s, localPoint, distanceResult
     );
     if (insideResult == EInside::kSurface) return EInside::kSurface;
     if (distanceResult < bestDistance) {
-      output = insideResult;
       bestDistance = distanceResult;
+      output = insideResult;
     }
   }
+
   return output;
+}
+
+template <class PolyhedronType>
+void SpecializedPolyhedron<PolyhedronType>::Inside(
+    SOA3D<Precision> const &points,
+    Inside_t *const output) const {
+  for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+    output[i] = Inside(points[i]);
+  }
 }
 
 } // End global namespace

@@ -98,7 +98,6 @@ VcPrecision Sqrt(VcPrecision const &val) {
   return Vc::sqrt(val);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 VcPrecision ATan2(VcPrecision const &y, VcPrecision const &x) {
   return Vc::atan2(y, x);
@@ -123,6 +122,12 @@ VECGEOM_INLINE
 VcInt Max(VcInt const &val1, VcInt const &val2) {
   return Vc::max(val1, val2);
 }
+
+// template <typename T1, typename T2>
+// VcBool operator&&(typename Vc::Vector<T1>::Mask const &a,
+//                   typename Vc::Vector<T2>::Mask const &b) {
+//   return VcBool(a) && VcBool(b);
+// }
 
 } // End global namespace
 

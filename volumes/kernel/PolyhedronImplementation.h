@@ -14,21 +14,21 @@ namespace VECGEOM_NAMESPACE {
 template <class PolyhedronType>
 struct PolyhedronImplementation {
 
-  template <typename Backend>
+  template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::int_v FindPhiSegment(
       typename Backend::precision_v phi0,
       UnplacedPolyhedron const &polyhedron);
 
-  template <typename Backend>
+  template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static Vector3D<typename Backend::precision_v> VectorFromSOA(
       SOA3D<Precision> const &soa,
       size_t index);
 
-  template<typename Backend>
+  template<class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void UnplacedContains(
@@ -36,7 +36,7 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> const &localPoint,
       typename Backend::bool_v &inside);
 
-  template <typename Backend>
+  template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void Contains(
@@ -46,7 +46,7 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> &localPoint,
       typename Backend::bool_v &inside);
 
-  template <typename Backend>
+  template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void Inside(
@@ -57,20 +57,19 @@ struct PolyhedronImplementation {
 
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
-  static void InsideSegment(
+  static Inside_t InsideSegment(
       UnplacedPolyhedron const &unplaced,
       UnplacedPolyhedron::PolyhedronSegment const &segment,
       Vector3D<Precision> const &point,
-      Inside_t &inside,
       Precision &distance);
 
-  template <typename Backend>
+  template <class Backend, typename Point_t, typename Segment_t>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void DistanceToSide(
     UnplacedPolyhedron::PolyhedronSegment const &segment,
     int sideIndex,
-    Vector3D<Precision> const &point,
+    Vector3D<Point_t> const &point,
     typename Backend::precision_v &distance,
     typename Backend::precision_v &distanceNormal);
 
@@ -164,8 +163,9 @@ struct PolyhedronImplementation {
 
 }; // End struct PolyhedronImplementation
 
+/// \return Index to the phi segment in which a particle is located.
 template <class PolyhedronType>
-template <typename Backend>
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::int_v
 PolyhedronImplementation<PolyhedronType>::FindPhiSegment(
@@ -192,7 +192,7 @@ PolyhedronImplementation<PolyhedronType>::FindPhiSegment(
 }
 
 template <class PolyhedronType>
-template <typename Backend>
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 Vector3D<typename Backend::precision_v>
 PolyhedronImplementation<PolyhedronType>::VectorFromSOA(
@@ -208,53 +208,74 @@ PolyhedronImplementation<PolyhedronType>::VectorFromSOA(
 
 template <class PolyhedronType>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<PolyhedronType>::InsideSegment(
+Inside_t PolyhedronImplementation<PolyhedronType>::InsideSegment(
     UnplacedPolyhedron const &unplaced,
     UnplacedPolyhedron::PolyhedronSegment const &segment,
     Vector3D<Precision> const &point,
-    Inside_t &inside,
     Precision &distance) {
 
   int side = FindPhiSegment<kScalar>(point.Phi(), unplaced);
 
   Precision normal;
-  DistanceToSide<kScalar>(segment, side, point, distance, normal);
+  DistanceToSide<kScalar, Precision, Precision>(
+    segment, side, point, distance, normal
+  );
 
-  inside = EInside::kOutside;
-  if (normal < 0.) inside = EInside::kInside;
-  if ((Abs(normal) < kTolerance) && (distance < 2.*kTolerance)) {
-    inside = EInside::kSurface;
+  if (Abs(normal) < kTolerance && distance < 2.*kTolerance) {
+    return EInside::kSurface;
   }
+  if (normal < 0.) return EInside::kInside;
+  return EInside::kOutside;
 }
 
+/// Kernel mostly suitable for sequential evaluation. Vectorization can only be
+/// done if sides are adjacent in memory or if all particles check with the same
+/// side.
 template <class PolyhedronType>
-template <typename Backend>
+template <class Backend, typename Point_t, typename Segment_t>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void PolyhedronImplementation<PolyhedronType>::DistanceToSide(
     UnplacedPolyhedron::PolyhedronSegment const &segment,
     int sideIndex,
-    Vector3D<Precision> const &point,
+    Vector3D<Point_t> const &point,
     typename Backend::precision_v &distance,
     typename Backend::precision_v &distanceNormal) {
-  
+
+  // This kernel is the product of several failed attempts at vectorization.
+  //
+  // The function can vectorize over sides in a segment, but for the Inside
+  // method, only one side has to be checked for a given particle, so there is
+  // no opportunity to vectorize.
+  //
+  // If one wanted to vectorize over segments, the data would have to be
+  // structured in an obscure way, which would clash with the vectorization of
+  // other polyhedron algorithms.
+  //
+  // Even for vectorizing over particles the function performs poorly, as each
+  // particle to be evaluated has an individual segment index. Since these will
+  // most likely not be adjacent in memory, they would have to be gathered.
+  //
+  // In the end, no vectorization is done, unless a vector of particles could be
+  // assumed to have the same segment index.
+
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
   // Manual SOA handling. There should be a better solution.
 
-  Vector3D<Float_t> sideCenter =
+  Vector3D<Segment_t> sideCenter =
       VectorFromSOA<Backend>(segment.center, sideIndex);
-  Vector3D<Float_t> sideNormal =
+  Vector3D<Segment_t> sideNormal =
       VectorFromSOA<Backend>(segment.normal, sideIndex);
-  Vector3D<Float_t> sideSurfRZ =
+  Vector3D<Segment_t> sideSurfRZ =
       VectorFromSOA<Backend>(segment.surfRZ, sideIndex);
-  Vector3D<Float_t> sideSurfPhi =
+  Vector3D<Segment_t> sideSurfPhi =
       VectorFromSOA<Backend>(segment.surfPhi, sideIndex);
-  Vector3D<Float_t> sideEdgeNormal[2];
-  Vector3D<Float_t> edgeNormal[2];
-  Vector3D<Float_t> sideCorner[2][2];
-  Vector3D<Float_t> sideCornerNormal[2][2];
+  Vector3D<Segment_t> sideEdgeNormal[2];
+  Vector3D<Segment_t> edgeNormal[2];
+  Vector3D<Segment_t> sideCorner[2][2];
+  Vector3D<Segment_t> sideCornerNormal[2][2];
   for (int i = 0; i < 2; ++i) {
     sideEdgeNormal[i] =
         VectorFromSOA<Backend>(segment.edgeNormal[i], sideIndex);
@@ -362,29 +383,17 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToSide(
 }
 
 template <class PolyhedronType>
-template <typename Backend>
-VECGEOM_INLINE
-VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<PolyhedronType>::Inside(
-    UnplacedPolyhedron const &unplaced,
-    Transformation3D const &transformation,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::inside_v &inside) {
-  Assert(0, "NYI");
-}
-
-template <class PolyhedronType>
-template <typename Backend>
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void PolyhedronImplementation<PolyhedronType>::UnplacedContains(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
-template <typename Backend>
+template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void PolyhedronImplementation<PolyhedronType>::Contains(
@@ -393,7 +402,19 @@ void PolyhedronImplementation<PolyhedronType>::Contains(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> &localPoint,
     typename Backend::bool_v &inside) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
+}
+
+template <class PolyhedronType>
+template <class Backend>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void PolyhedronImplementation<PolyhedronType>::Inside(
+    UnplacedPolyhedron const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    typename Backend::inside_v &inside) {
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -407,7 +428,7 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -420,7 +441,7 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -432,7 +453,7 @@ void PolyhedronImplementation<PolyhedronType>::SafetyToIn(
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -443,7 +464,7 @@ void PolyhedronImplementation<PolyhedronType>::SafetyToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -454,18 +475,7 @@ void PolyhedronImplementation<PolyhedronType>::ContainsKernel(
     Vector3D<Precision> const &polyhedronDimensions,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::bool_v &inside) {
-  Assert(0, "NYI");
-}
-
-template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void PolyhedronImplementation<PolyhedronType>::InsideKernel(
-    Vector3D<Precision> const &polyhedronDimensions,
-    Vector3D<typename Backend::precision_v> const &point,
-    typename Backend::inside_v &inside) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -478,7 +488,7 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToInKernel(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -491,7 +501,7 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToOutKernel(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -502,7 +512,7 @@ void PolyhedronImplementation<PolyhedronType>::SafetyToInKernel(
     Vector3D<Precision> const &dimensions,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v & safety) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -513,7 +523,7 @@ void PolyhedronImplementation<PolyhedronType>::SafetyToOutKernel(
     Vector3D<Precision> const &dimensions,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "NYI");
+  Assert(0, "Not implemented.\n");
 }
 
 } // End global namespace
