@@ -164,7 +164,50 @@ void Safety(UnplacedTrd const &trd,
     if(!inside) dist = -dist;
 }
 
+template <typename Backend, typename trdTypeT, bool surfaceT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+static void UnplacedInside(
+        UnplacedTrd const &trd,
+        Vector3D<typename Backend::precision_v> const &point,
+        typename Backend::bool_v &completelyinside,
+        typename Backend::bool_v &completelyoutside) {
+
+    using namespace TrdUtilities;
+    using namespace TrdTypes;  
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    Float_t pzPlusDz = point.z()+trd.dz();
+
+    // inside Z?
+    completelyoutside = Abs(point.z()) > MakePlusTolerant<surfaceT>(trd.dz());
+    if(surfaceT) completelyinside = Abs(point.x()) < MakeMinusTolerant<surfaceT>(trd.dz());
+
+    // inside X?
+    Float_t cross;
+    PointLineOrientation<Backend>(Abs(point.x()) - trd.dx1(), pzPlusDz, trd.x2minusx1(), trd.dztimes2(), cross);
+    completelyoutside |= MakePlusTolerant<surfaceT>(cross) < 0;
+    if(surfaceT) completelyinside &= MakeMinusTolerant<surfaceT>(cross) > 0;
+
+    if(HasVaryingY<trdTypeT>::value != TrdTypes::kNo) {
+        // If Trd type is unknown don't bother with a runtime check, assume
+        // the general case
+        PointLineOrientation<Backend>(Abs(point.y()) - trd.dy1(), pzPlusDz, trd.y2minusy1(), trd.dztimes2(), cross);
+        completelyoutside |= MakePlusTolerant<surfaceT>(cross) < 0;
+        if(surfaceT) completelyinside &= MakeMinusTolerant<surfaceT>(cross) > 0;
+    }
+    else {
+        completelyoutside |= Abs(point.y()) > MakePlusTolerant<surfaceT>(trd.dy1());
+        if(surfaceT) completelyinside &= Abs(point.y()) < MakeMinusTolerant<surfaceT>(trd.dy1());
+    }
+}
+
+
+
 } // Trd utilities
+
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
 struct TrdImplementation {
@@ -177,34 +220,9 @@ struct TrdImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::bool_v &inside) {
 
-    using namespace TrdUtilities;
-    using namespace TrdTypes;  
-    typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
-
-    Float_t pzPlusDz = point.z()+trd.dz();
-
-    // inside Z?
-    Bool_t inz = Abs(point.z()) <= trd.dz();
-
-    // inside X?
-    Float_t cross;
-    PointLineOrientation<Backend>(Abs(point.x()) - trd.dx1(), pzPlusDz, trd.x2minusx1(), trd.dztimes2(), cross);
-    Bool_t inx = cross >= 0;
-
-    Bool_t iny;
-    // inside Y?
-    if(HasVaryingY<trdTypeT>::value != TrdTypes::kNo) {
-      // If Trd type is unknown don't bother with a runtime check, assume
-      // the general case
-      PointLineOrientation<Backend>(Abs(point.y()) - trd.dy1(), pzPlusDz, trd.y2minusy1(), trd.dztimes2(), cross);
-      iny = cross >= 0;
-    }
-    else {
-      iny = Abs(point.y()) <= trd.dy1();
-    }
-
-    inside = inz & inx & iny;
+    typename Backend::bool_v unused;
+    TrdUtilities::UnplacedInside<Backend, trdTypeT, false>(trd, point, unused, inside);
+    inside = !inside;
   }
 
   template <class Backend>
@@ -216,9 +234,11 @@ struct TrdImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> &localPoint,
       typename Backend::bool_v &inside) {
-
+    
+    typename Backend::bool_v unused;
     localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-    UnplacedContains<Backend>(trd, localPoint, inside);
+    TrdUtilities::UnplacedInside<Backend, trdTypeT, false>(trd, localPoint, unused, inside);
+    inside = !inside;
   }
 
   template <class Backend>
@@ -233,9 +253,11 @@ struct TrdImplementation {
     localpoint = transformation.Transform<transCodeT, rotCodeT>(point);
     inside = EInside::kOutside;
 
-    Bool_t isInside;
-    UnplacedContains<Backend>(trd, localpoint, isInside);
-    MaskedAssign(isInside, EInside::kInside, &inside);
+    Bool_t completelyoutside, completelyinside;
+    TrdUtilities::UnplacedInside<Backend, trdTypeT, true>(trd, localpoint, completelyinside, completelyoutside);
+    inside = EInside::kSurface;
+    MaskedAssign(completelyinside, EInside::kInside, &inside);
+    MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   }
 
   template <class Backend>
