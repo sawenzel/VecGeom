@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include "base/Vector3D.h"
+#include "backend/Backend.h"
 
 #include <cmath>
 #include <cstring>
@@ -288,7 +289,7 @@ public:
   void CopyFrom( Transformation3D const & rhs )
   {
     // not sure this compiles under CUDA
-    std::memcpy(this, &rhs, sizeof(*this));
+    copy(&rhs, &rhs+1, this);
   }
 
   // Utility and CUDA

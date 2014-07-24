@@ -8,6 +8,7 @@
 
 #if defined(VECGEOM_VC)
 #include "backend/vc/Backend.h"
+#include "backend/vc/Vector3D.h"
 #elif defined(VECGEOM_CILK)
 #include "backend/cilk/backend.h"
 #else

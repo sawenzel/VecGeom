@@ -171,20 +171,22 @@ public:
     *this /= Mag();
   }
 
+  template <typename Type2>
   ///The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static
-  Type Dot(Vector3D<Type> const &left, Vector3D<Type> const &right) {
+  Type Dot(Vector3D<Type> const &left, Vector3D<Type2> const &right) {
     return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
   }
 
+  template <typename Type2>
   /// The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type Dot(Vector3D<Type> const &right) const {
+  Type Dot(Vector3D<Type2> const &right) const {
     return Dot(*this, right);
   }
 
@@ -302,6 +304,15 @@ public:
     vec[0] OPERATOR other.vec[0]; \
     vec[1] OPERATOR other.vec[1]; \
     vec[2] OPERATOR other.vec[2]; \
+    return *this; \
+  } \
+  template <typename OtherType> \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  VecType& operator OPERATOR(const Vector3D<OtherType> &other) { \
+    vec[0] OPERATOR other[0]; \
+    vec[1] OPERATOR other[1]; \
+    vec[2] OPERATOR other[2]; \
     return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
@@ -546,7 +557,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   VecType MultiplyByComponents(VecType const &other) const {
-    return *this * other;
+    return (*this) * other;
   }
 
   /// The cross product of two Vector3D<T> objects.
@@ -610,11 +621,11 @@ public:
 #endif // (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
 #define VECTOR3D_BINARY_OP(OPERATOR, INPLACE) \
-template <typename Type> \
+template <typename Type, typename OtherType> \
 VECGEOM_INLINE \
 VECGEOM_CUDA_HEADER_BOTH \
 Vector3D<Type> operator OPERATOR(const Vector3D<Type> &lhs, \
-                                 const Vector3D<Type> &rhs) { \
+                                 const Vector3D<OtherType> &rhs) { \
   Vector3D<Type> result(lhs); \
   result INPLACE rhs; \
   return result; \
@@ -626,15 +637,6 @@ Vector3D<Type> operator OPERATOR(Vector3D<Type> const &lhs, \
                                  const ScalarType rhs) { \
   Vector3D<Type> result(lhs); \
   result INPLACE rhs; \
-  return result; \
-} \
-template <typename Type, typename ScalarType> \
-VECGEOM_INLINE \
-VECGEOM_CUDA_HEADER_BOTH \
-Vector3D<Type> operator OPERATOR(const ScalarType rhs, \
-                                 Vector3D<Type> const &lhs) { \
-  Vector3D<Type> result(rhs); \
-  result INPLACE lhs; \
   return result; \
 }
 VECTOR3D_BINARY_OP(+, +=)
