@@ -73,6 +73,16 @@ struct PolyhedronImplementation {
     typename Backend::precision_v &distance,
     typename Backend::precision_v &distanceNormal);
 
+  template <bool outgoingT, class Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::bool_v DistanceToSegment(
+      UnplacedPolyhedron::PolyhedronSegment const &segment,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
+      typename Backend::precision_v &distance,
+      typename Backend::precision_v &surfaceDistance);
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -367,7 +377,6 @@ void PolyhedronImplementation<PolyhedronType>::Inside(
 template <class PolyhedronType>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
 void PolyhedronImplementation<PolyhedronType>::DistanceToIn(
     UnplacedPolyhedron const &unplaced,
     Transformation3D const &transformation,
@@ -376,17 +385,143 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToIn(
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-  // typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
 
-  // Vector3D<Float_t> localPoint = transformation.Transform(point);
-  // Vector3D<Float_t> localDirection =
-  //     transformation.TransformDirection(direction);
+  Vector3D<Float_t> localPoint = transformation.Transform(point);
+  Vector3D<Float_t> localDirection =
+      transformation.TransformDirection(direction);
+
+  Array<UnplacedPolyhedron::PolyhedronSegment> const &segments =
+      unplaced.GetSegments();
+
+  Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator bestSegment =
+      NULL;
+  Float_t distFromSurface = kInfinity;
+  distance = kInfinity;
+
+  for (Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator s =
+       segments.cbegin(), sEnd = segments.cend(); s != sEnd; ++s) {
+    Float_t segmentDistance = kInfinity;
+    Float_t segmentSurface = kInfinity;
+    Bool_t hit = DistanceToSegment<false, Backend>(
+      *s, localPoint, localDirection, segmentDistance, segmentSurface
+    );
+    Bool_t better = hit && segmentDistance < distance;
+    MaskedAssign(better, segmentDistance, &distance);
+    MaskedAssign(better, segmentSurface, &distFromSurface);
+    MaskedAssign(better, s, &bestSegment);
+    MaskedAssign(segmentSurface <= 0., 0., &distance);
+  }
+}
+
+namespace {
+
+template <bool outgoing>
+struct OutgoingTraits;
+
+template <>
+struct OutgoingTraits<true> {
+  static VECGEOM_CONSTEXPR Precision sign = 1;
+  static VECGEOM_CONSTEXPR Precision invSign = -1;
+};
+
+template <>
+struct OutgoingTraits<false> {
+  static VECGEOM_CONSTEXPR Precision sign = -1;
+  static VECGEOM_CONSTEXPR Precision invSign = 1;
+};
+
+} // End anonymous namespace
+
+template <class PolyhedronType>
+template <bool outgoingT, class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::bool_v
+PolyhedronImplementation<PolyhedronType>::DistanceToSegment(
+    UnplacedPolyhedron::PolyhedronSegment const &segment,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v &distance,
+    typename Backend::precision_v &surfaceDistance) {
+
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Bool_t hit = Backend::kFalse;
+
+  Float_t dotProduct;
+  Vector3D<Float_t> qA, qB, qC, qD, surfPhi, surfRZ, diff;
+
+  for (Array<UnplacedPolyhedron::PolyhedronSide>::const_iterator s =
+       segment.sides.cbegin(), sEnd = segment.sides.cend(); s != sEnd; ++s) {
+
+    Bool_t thisSegment = Backend::kTrue;
+
+    dotProduct = OutgoingTraits<outgoingT>::sign * direction.Dot(s->normal);
+    MaskedAssign(dotProduct <= 0., Backend::kFalse, &thisSegment);
+    if (thisSegment == Backend::kFalse) continue;
+
+    Vector3D<Float_t> delta = point - s->center;
+    surfaceDistance = OutgoingTraits<outgoingT>::invSign * delta.Dot(s->normal);
+    MaskedAssign(surfaceDistance < -kHalfTolerance, Backend::kFalse,
+                 &thisSegment);
+    if (thisSegment == Backend::kFalse) continue;
+
+    Vector3D<Float_t> q = point + direction;
+
+    qC = q - s->edges[1].corner[0];
+    qD = q - s->edges[1].corner[1];
+    MaskedAssign(OutgoingTraits<outgoingT>::sign * qC.Cross(qD).Dot(direction)
+                 < 0, Backend::kFalse, &thisSegment);
+    if (thisSegment == Backend::kFalse) continue;
+
+    qA = q - s->edges[0].corner[0];
+    qB = q - s->edges[0].corner[1];
+    MaskedAssign(OutgoingTraits<outgoingT>::sign * qA.Cross(qB).Dot(direction)
+                 > 0, Backend::kFalse, &thisSegment);
+    if (thisSegment == Backend::kFalse) continue;
+
+    // Any remaining particlers will have found the only possible side
+    MaskedAssign(thisSegment, s->surfPhi, &surfPhi);
+    MaskedAssign(thisSegment, s->surfRZ, &surfRZ);
+    MaskedAssign(thisSegment, delta, &diff);
+    // MaskedAssign(thisSegment, s->normal, &normal);
+    hit |= thisSegment;
+    if (hit == Backend::kTrue) break;
+  }
+
+  // See if there is anything to treat
+  if (hit == Backend::kFalse) return hit;
+
+  MaskedAssign(
+    segment.start[0] > kTolerance &&
+    OutgoingTraits<outgoingT>::sign * qA.Cross(qC).Dot(direction) < 0.,
+    Backend::kFalse,
+    &hit
+  );
+  MaskedAssign(
+    segment.end[0] > kTolerance &&
+    OutgoingTraits<outgoingT>::sign * qB.Cross(qD).Dot(direction) > 0.,
+    Backend::kFalse,
+    &hit
+  );
+  if (hit == Backend::kFalse) return hit;
+
+  Float_t rZ = Abs(diff.Dot(surfRZ));
+  Float_t phi = Abs(diff.Dot(surfPhi));
+  MaskedAssign(surfaceDistance < 0 && rZ > segment.rZLength + kHalfTolerance,
+               Backend::kFalse, &hit);
+  MaskedAssign(phi > segment.phiLength[0] + segment.phiLength[1]*rZ
+               + kHalfTolerance, Backend::kFalse, &hit);
+
+  distance = surfaceDistance / dotProduct;
+  return hit;
 }
 
 template <class PolyhedronType>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
 void PolyhedronImplementation<PolyhedronType>::DistanceToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,

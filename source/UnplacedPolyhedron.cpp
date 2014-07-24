@@ -83,8 +83,8 @@ void UnplacedPolyhedron::ConstructSegment(
 
   // Segments are constructed as a SOA to allow for internal vectorization.
 
-  Vector2D<Precision> start = *corner;
-  Vector2D<Precision> end = *(corner + 1);
+  segment->start = *corner;
+  segment->end = *(corner + 1);
 
   Vector2D<Precision> cornerPrevious = *(corner - 1);
   Vector2D<Precision> cornerNext = *(corner + 2);
@@ -92,8 +92,9 @@ void UnplacedPolyhedron::ConstructSegment(
   Precision phi = fPhiStart;
   Vector3D<Precision> a1, b1, c1, d1, a2, b2, c2, d2;
 
-  a1.Set(start[0]*cos(phi), start[0]*sin(phi), start[1]);
-  b1.Set(end[0]*cos(phi),   end[0]*sin(phi),   end[1]);
+  a1.Set(segment->start[0]*cos(phi), segment->start[0]*sin(phi),
+         segment->start[1]);
+  b1.Set(segment->end[0]*cos(phi),   segment->end[0]*sin(phi), segment->end[1]);
   c1.Set(cornerPrevious[0]*cos(phi), cornerPrevious[0]*sin(phi),
          cornerPrevious[1]);
   d1.Set(cornerNext[0]*cos(phi), cornerNext[0]*sin(phi), cornerNext[1]);
@@ -104,8 +105,10 @@ void UnplacedPolyhedron::ConstructSegment(
 
     Vector3D<Precision> temp, adj;
 
-    a2.Set(start[0]*cos(phi), start[0]*sin(phi), start[1]);
-    b2.Set(end[0]*cos(phi),   end[0]*sin(phi),   end[1]);
+    a2.Set(segment->start[0]*cos(phi), segment->start[0]*sin(phi),
+           segment->start[1]);
+    b2.Set(segment->end[0]*cos(phi),   segment->end[0]*sin(phi),
+           segment->end[1]);
     c2.Set(cornerPrevious[0]*cos(phi), cornerPrevious[0]*sin(phi),
            cornerPrevious[1]);
     d2.Set(cornerNext[0]*cos(phi), cornerNext[0]*sin(phi), cornerNext[1]);

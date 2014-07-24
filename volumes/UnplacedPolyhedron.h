@@ -60,6 +60,7 @@ public:
 
   struct PolyhedronSegment {
     Array<PolyhedronSide> sides;
+    Vector2D<Precision> start, end;
     Precision rZLength;
     Precision phiLength[2];
     Precision rZPhiNormal;
