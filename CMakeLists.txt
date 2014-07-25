@@ -19,6 +19,8 @@ option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
 
 option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
 
+option(CTEST "Enable CTest when building." ON)
+
 if (USOLIDS)
   set(USolids ON)
 endif()
@@ -365,9 +367,10 @@ endif()
 # Define executables
 
 set(TEST_EXECUTABLES_CORE
+  ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -401,26 +404,34 @@ set_source_files_properties(
 
 # Build executables
 
-function(build_executables EXECUTABLES)
+if (CTEST)
+  message(STATUS "Testing with CTest enabled.")
+  enable_testing()
+endif()
+
+function(build_executables EXECUTABLES ENABLE_CTEST)
   foreach(EXECUTABLE ${EXECUTABLES})
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} ${LIBS})
+    if (CTEST AND ENABLE_CTEST)
+      add_test(${TARGET_NAME} ${TARGET_NAME})
+    endif()
   endforeach()
 endfunction()
 
-build_executables("${TEST_EXECUTABLES_CORE}")
+build_executables("${TEST_EXECUTABLES_CORE}" TRUE)
 if (BENCHMARK)
-  build_executables("${TEST_EXECUTABLES_BENCHMARK}")
+  build_executables("${TEST_EXECUTABLES_BENCHMARK}" FALSE)
 endif()
 if (ROOT)
-  build_executables("${TEST_EXECUTABLES_ROOT}")
+  build_executables("${TEST_EXECUTABLES_ROOT}" TRUE)
 endif()
 if (USolids)
-  build_executables("${TEST_EXECUTABLES_USOLIDS}")
+  build_executables("${TEST_EXECUTABLES_USOLIDS}" TRUE)
 endif()
 if (CUDA)
-  build_executables("${TEST_EXECUTABLES_CUDA}")
+  build_executables("${TEST_EXECUTABLES_CUDA}" TRUE)
 endif()
 
 ################################################################################
