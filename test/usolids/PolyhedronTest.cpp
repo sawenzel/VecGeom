@@ -1,6 +1,7 @@
 #include "volumes/Polyhedron.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "UPolyhedra.hh"
+#include "backend/Backend.h"
 
 using namespace vecgeom;
 
@@ -30,8 +31,8 @@ void NormalizeAngle() {
       assert(0);
     }
   }
-#ifdef VECGEOM_NVC
-  for (int i = 0; i < 4; i += Vc::Precision::Size) {
+#ifdef VECGEOM_VC
+  for (int i = 0; i < 4; i += VcPrecision::Size) {
     assert(GenericKernels<kVc>::NormalizeAngle(VcPrecision(&angles[i]))
            == VcPrecision(&result[i]));
   }

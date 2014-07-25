@@ -275,6 +275,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedTube.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
+  source/PlacedPolyhedron.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/SOA3D.cpp
@@ -387,6 +388,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/PolyhedronBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA

@@ -67,18 +67,12 @@ public:
   // Comparison specific
 
 #ifdef VECGEOM_BENCHMARK
-  virtual VPlacedVolume const* ConvertToUnspecialized() const {
-    Assert(0, "NYI");
-  }
+  virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const {
-    Assert(0, "NYI");
-  }
+  virtual TGeoShape const* ConvertToRoot() const;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const {
-    Assert(0, "NYI");
-  }
+  virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
 #endif // VECGEOM_BENCHMARK
 

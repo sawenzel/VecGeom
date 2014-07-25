@@ -51,21 +51,21 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
   // Create corner polygon from segments and verify the outcome
 
-  Polygon corners = Polygon(rInner, rOuter, zPlane, zPlaneCount);
-  corners.Scale(convertRad, 1.);
+  fCorners = new Polygon(rInner, rOuter, zPlane, zPlaneCount);
+  fCorners->Scale(convertRad, 1.);
 
-  Assert(corners.GetXMin() >= 0.);
+  Assert(fCorners->GetXMin() >= 0.);
 
-  if (corners.SurfaceArea() < -kTolerance) corners.ReverseOrder();
-  Assert(corners.SurfaceArea() >= -kTolerance);
+  if (fCorners->SurfaceArea() < -kTolerance) fCorners->ReverseOrder();
+  Assert(fCorners->SurfaceArea() >= -kTolerance);
 
   // Construct segments
 
-  fSegments.Allocate(corners.GetVertixCount());
+  fSegments.Allocate(fCorners->GetVertixCount());
 
   Array<PolyhedronSegment>::iterator segment = fSegments.begin();
-  for (Polygon::const_iterator corner = corners.cbegin(),
-       cornerEnd = corners.cend(); corner != cornerEnd; ++corner, ++segment) {
+  for (Polygon::const_iterator corner = fCorners->cbegin(),
+       cornerEnd = fCorners->cend(); corner != cornerEnd; ++corner, ++segment) {
     ConstructSegment(corner, segment);
   }
 

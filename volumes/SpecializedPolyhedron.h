@@ -60,6 +60,18 @@ public:
   virtual void Inside(SOA3D<Precision> const &points,
                       Inside_t *const output) const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual bool UnplacedContains(Vector3D<Precision> const &point) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  virtual bool Contains(Vector3D<Precision> const &point) const;
+
+  VECGEOM_INLINE
+  virtual void Contains(SOA3D<Precision> const &points,
+                        bool *const output) const;
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -76,32 +88,14 @@ void SpecializedPolyhedron<PolyhedronType>::PrintType() const {
 }
 
 template <class PolyhedronType>
+VECGEOM_CUDA_HEADER_BOTH
 Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
     Vector3D<Precision> const &point) const {
-
-  Inside_t output = EInside::kOutside;
-  Precision bestDistance = kInfinity;
-
-  Vector3D<Precision> localPoint =
-      VPlacedVolume::transformation()->Transform(point);
-
-  Array<UnplacedPolyhedron::PolyhedronSegment> const &segments =
-      PlacedPolyhedron::GetUnplacedVolume()->GetSegments();
-  for (Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator s =
-       segments.cbegin(), sEnd = segments.cend(); s != sEnd; ++s) {
-    Inside_t insideResult;
-    Precision distanceResult;
-    insideResult = PolyhedronImplementation<PolyhedronType>::InsideSegment(
-      *PlacedPolyhedron::GetUnplacedVolume(), *s, localPoint, distanceResult
-    );
-    if (insideResult == EInside::kSurface) return EInside::kSurface;
-    if (distanceResult < bestDistance) {
-      bestDistance = distanceResult;
-      output = insideResult;
-    }
-  }
-
-  return output;
+  return PolyhedronImplementation<PolyhedronType>::InsideScalar(
+           *PlacedPolyhedron::GetUnplacedVolume(),
+           *VPlacedVolume::transformation(),
+           point
+         );
 }
 
 template <class PolyhedronType>
@@ -110,6 +104,38 @@ void SpecializedPolyhedron<PolyhedronType>::Inside(
     Inside_t *const output) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     output[i] = Inside(points[i]);
+  }
+}
+
+template <class PolyhedronType>
+VECGEOM_CUDA_HEADER_BOTH
+bool SpecializedPolyhedron<PolyhedronType>::Contains(
+    Vector3D<Precision> const &point) const {
+  Vector3D<Precision> localPoint;
+  return PolyhedronImplementation<PolyhedronType>::ContainsScalar(
+           *PlacedPolyhedron::GetUnplacedVolume(),
+           *VPlacedVolume::transformation(),
+           point,
+           localPoint
+         );
+}
+
+template <class PolyhedronType>
+VECGEOM_CUDA_HEADER_BOTH
+bool SpecializedPolyhedron<PolyhedronType>::UnplacedContains(
+    Vector3D<Precision> const &point) const {
+  return PolyhedronImplementation<PolyhedronType>::UnplacedContainsScalar(
+           *PlacedPolyhedron::GetUnplacedVolume(),
+           point
+         );
+}
+
+template <class PolyhedronType>
+void SpecializedPolyhedron<PolyhedronType>::Contains(
+    SOA3D<Precision> const &points,
+    bool *const output) const {
+  for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+    output[i] = Contains(points[i]);
   }
 }
 

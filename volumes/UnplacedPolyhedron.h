@@ -72,6 +72,7 @@ private:
   Precision fPhiStart, fPhiEnd, fPhiDelta;
   Precision fEdgeNormal;
   bool fHasPhi;
+  Polygon *fCorners;
   Array<PolyhedronSegment> fSegments;
 
 public:
@@ -106,6 +107,9 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   Array<PolyhedronSegment> const& GetSegments() const { return fSegments; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Polygon const* GetCorners() const { return fCorners; }
 
   VECGEOM_CUDA_HEADER_BOTH
   bool HasPhi() const { return fHasPhi; }

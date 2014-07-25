@@ -19,7 +19,7 @@ struct GenericKernels {
 
   VECGEOM_CUDA_HEADER_BOTH
   static Float_t NormalizeAngle(Float_t angle) {
-    return angle + kTwoPi*((angle < 0.) - Int_t(angle * kTwoPiInv));
+    return angle + kTwoPi*Float_t(((angle < 0.) - Int_t(angle * kTwoPiInv)));
   }
 
 }; // End struct GenericKernels

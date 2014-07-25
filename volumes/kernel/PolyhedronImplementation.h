@@ -21,12 +21,12 @@ struct PolyhedronImplementation {
       typename Backend::precision_v phi0,
       UnplacedPolyhedron const &polyhedron);
 
-  template <class Backend>
-  VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
-  static Vector3D<typename Backend::precision_v> VectorFromSOA(
-      SOA3D<Precision> const &soa,
-      size_t index);
+  // template <class Backend>
+  // VECGEOM_INLINE
+  // VECGEOM_CUDA_HEADER_BOTH
+  // static Vector3D<typename Backend::precision_v> VectorFromSOA(
+  //     SOA3D<Precision> const &soa,
+  //     size_t index);
 
   template<class Backend>
   VECGEOM_INLINE
@@ -35,6 +35,12 @@ struct PolyhedronImplementation {
       UnplacedPolyhedron const &polyhedron,
       Vector3D<typename Backend::precision_v> const &localPoint,
       typename Backend::bool_v &inside);
+
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static bool UnplacedContainsScalar(
+    UnplacedPolyhedron const &unplaced,
+    Vector3D<Precision> const &localPoint);
 
   template <class Backend>
   VECGEOM_INLINE
@@ -46,6 +52,14 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> &localPoint,
       typename Backend::bool_v &inside);
 
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static bool ContainsScalar(
+    UnplacedPolyhedron const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> &localPoint);
+
   template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
@@ -55,6 +69,21 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::inside_v &inside);
 
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static Inside_t InsideScalar(
+    UnplacedPolyhedron const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<Precision> const &point);
+
+  template <bool treatSurfaceT>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static Inside_t InsideScalarKernel(
+    UnplacedPolyhedron const &unplaced,
+    Vector3D<Precision> const &point);
+
+  template <bool treatSurfaceT>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static Inside_t InsideSegment(
@@ -149,22 +178,63 @@ PolyhedronImplementation<PolyhedronType>::FindPhiSegment(
   return side;
 }
 
+// template <class PolyhedronType>
+// template <class Backend>
+// VECGEOM_CUDA_HEADER_BOTH
+// Vector3D<typename Backend::precision_v>
+// PolyhedronImplementation<PolyhedronType>::VectorFromSOA(
+//     SOA3D<Precision> const &soa,
+//     size_t index) {
+//   Vector3D<typename Backend::precision_v> vector(
+//     Backend::Convert(soa.x(index)),
+//     Backend::Convert(soa.y(index)),
+//     Backend::Convert(soa.z(index))
+//   );
+//   return vector;
+// }
+
 template <class PolyhedronType>
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-Vector3D<typename Backend::precision_v>
-PolyhedronImplementation<PolyhedronType>::VectorFromSOA(
-    SOA3D<Precision> const &soa,
-    size_t index) {
-  Vector3D<typename Backend::precision_v> vector(
-    Backend::Convert(soa.x(index)),
-    Backend::Convert(soa.y(index)),
-    Backend::Convert(soa.z(index))
-  );
-  return vector;
+Inside_t PolyhedronImplementation<PolyhedronType>::InsideScalar(
+    UnplacedPolyhedron const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<Precision> const &point) {
+
+  Vector3D<Precision> localPoint = transformation.Transform(point);
+  return InsideScalarKernel<true>(unplaced, localPoint);
 }
 
 template <class PolyhedronType>
+template <bool treatSurfaceT>
+Inside_t PolyhedronImplementation<PolyhedronType>::InsideScalarKernel(
+    UnplacedPolyhedron const &unplaced,
+    Vector3D<Precision> const &point) {
+
+  Inside_t output = EInside::kOutside;
+  Precision bestDistance = kInfinity;
+
+  Array<UnplacedPolyhedron::PolyhedronSegment> const &segments =
+      unplaced.GetSegments();
+  for (Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator s =
+       segments.cbegin(), sEnd = segments.cend(); s != sEnd; ++s) {
+    Inside_t insideResult;
+    Precision distanceResult;
+    insideResult = InsideSegment<treatSurfaceT>(
+      unplaced, *s, point, distanceResult
+    );
+    if (treatSurfaceT) {
+      if (insideResult == EInside::kSurface) return EInside::kSurface;
+    }
+    if (distanceResult < bestDistance) {
+      bestDistance = distanceResult;
+      output = insideResult;
+    }
+  }
+
+  return output;
+}
+
+template <class PolyhedronType>
+template <bool treatSurfaceT>
 VECGEOM_CUDA_HEADER_BOTH
 Inside_t PolyhedronImplementation<PolyhedronType>::InsideSegment(
     UnplacedPolyhedron const &unplaced,
@@ -179,8 +249,10 @@ Inside_t PolyhedronImplementation<PolyhedronType>::InsideSegment(
     segment, segment.sides[side], point, distance, normal
   );
 
-  if (Abs(normal) < kTolerance && distance < 2.*kTolerance) {
-    return EInside::kSurface;
+  if (treatSurfaceT) {
+    if (Abs(normal) < kTolerance && distance < 2.*kTolerance) {
+      return EInside::kSurface;
+    }
   }
   if (normal < 0.) return EInside::kInside;
   return EInside::kOutside;
@@ -363,6 +435,27 @@ void PolyhedronImplementation<PolyhedronType>::Contains(
 }
 
 template <class PolyhedronType>
+VECGEOM_CUDA_HEADER_BOTH
+bool PolyhedronImplementation<PolyhedronType>::UnplacedContainsScalar(
+  UnplacedPolyhedron const &unplaced,
+  Vector3D<Precision> const &localPoint) {
+  Inside_t inside = InsideScalarKernel<false>(unplaced, localPoint);
+  return (inside == EInside::kInside) ? true : false;
+}
+
+template <class PolyhedronType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+bool PolyhedronImplementation<PolyhedronType>::ContainsScalar(
+    UnplacedPolyhedron const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> &localPoint) {
+  localPoint = transformation.Transform(point);
+  return UnplacedContainsScalar(unplaced, localPoint);
+}
+
+template <class PolyhedronType>
 template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
@@ -528,7 +621,7 @@ void PolyhedronImplementation<PolyhedronType>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "DistanceToOut not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -540,7 +633,7 @@ void PolyhedronImplementation<PolyhedronType>::SafetyToIn(
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "SafetyToIn not implemented.\n");
 }
 
 template <class PolyhedronType>
@@ -551,7 +644,7 @@ void PolyhedronImplementation<PolyhedronType>::SafetyToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "SafetyToOut not implemented.\n");
 }
 
 } // End global namespace
