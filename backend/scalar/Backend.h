@@ -175,6 +175,17 @@ void reverse_copy(Type const *begin, Type const *end,
 #endif
 }
 
+template <typename InputIterator1, typename InputIterator2>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool equal(InputIterator1 first, InputIterator1 last, InputIterator2 target) {
+#ifndef VECGEOM_NVCC
+  return std::equal(first, last, target);
+#else
+  return equal(first, last, target);
+#endif
+}
+
 } // End global namespace
 
 #endif // VECGEOM_BACKEND_SCALARBACKEND_H_

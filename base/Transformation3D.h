@@ -327,8 +327,8 @@ Transformation3D& Transformation3D::operator=(Transformation3D const &rhs) {
 
 VECGEOM_CUDA_HEADER_BOTH
 bool Transformation3D::operator==(Transformation3D const &rhs) const {
-  return std::equal(fTranslation, fTranslation+3, rhs.fTranslation) &&
-         std::equal(fRotation, fRotation+9, rhs.fRotation);
+  return equal(fTranslation, fTranslation+3, rhs.fTranslation) &&
+         equal(fRotation, fRotation+9, rhs.fRotation);
 }
 
 /**
