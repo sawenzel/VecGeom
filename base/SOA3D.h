@@ -206,15 +206,9 @@ template <typename T>
 void SOA3D<T>::reserve(size_t newCapacity) {
   fCapacity = newCapacity;
   T *xNew, *yNew, *zNew;
-#ifndef VECGEOM_NVCC
-  xNew = static_cast<T*>(_mm_malloc(sizeof(T)*fCapacity, kAlignmentBoundary));
-  yNew = static_cast<T*>(_mm_malloc(sizeof(T)*fCapacity, kAlignmentBoundary));
-  zNew = static_cast<T*>(_mm_malloc(sizeof(T)*fCapacity, kAlignmentBoundary));
-#else
-  xNew = new T[fCapacity];
-  yNew = new T[fCapacity];
-  zNew = new T[fCapacity];
-#endif
+  xNew = AlignedAllocate<T>(fCapacity);
+  yNew = AlignedAllocate<T>(fCapacity);
+  zNew = AlignedAllocate<T>(fCapacity);
   fSize = (fSize > fCapacity) ? fCapacity : fSize;
   if (fX && fY && fZ) {
     copy(fX, fX+fSize, xNew);
@@ -239,15 +233,9 @@ void SOA3D<T>::clear() {
 template <typename T>
 void SOA3D<T>::Deallocate() {
   if (fAllocated) {
-#ifndef VECGEOM_NVCC
-    _mm_free(fX);
-    _mm_free(fY);
-    _mm_free(fZ);
-#else
-    delete fX;
-    delete fY;
-    delete fZ;
-#endif
+    AlignedFree(fX);
+    AlignedFree(fY);
+    AlignedFree(fZ);
   }
 }
 

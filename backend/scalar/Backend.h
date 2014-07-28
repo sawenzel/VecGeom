@@ -194,6 +194,39 @@ void reverse(Type *begin, Type *end) {
 #endif
 }
 
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Type* AlignedAllocate(size_t size) {
+#ifndef VECGEOM_NVCC
+  return static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+#else
+  return new Type[size];
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void AlignedFree(Type *allocated) {
+#ifndef VECGEOM_NVCC
+  _mm_free(allocated);
+#else
+  delete allocated;
+#endif
+}
+
+template <typename IteratorType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+IteratorType min_element(IteratorType first, IteratorType last) {
+#ifndef VECGEOM_NVCC
+  return std::min_element(first, last);
+#else
+  return min_element(first, last);
+#endif
+}
+
 } // End global namespace
 
 #endif // VECGEOM_BACKEND_SCALARBACKEND_H_

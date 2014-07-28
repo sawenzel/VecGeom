@@ -181,12 +181,7 @@ template <typename T>
 void AOS3D<T>::reserve(size_t newCapacity) {
   fCapacity = newCapacity;
   Vec_t *contentNew;
-#ifndef VECGEOM_NVCC
-  contentNew = static_cast<Vec_t*>(_mm_malloc(sizeof(Vec_t)*fCapacity,
-                                   kAlignmentBoundary));
-#else
-  contentNew = new Vec_t[fCapacity];
-#endif
+  contentNew = AlignedAllocate<Vec_t>(fCapacity);
   fSize = (fSize > fCapacity) ? fCapacity : fSize;
   if (fContent) {
     copy(fContent, fContent+fSize, contentNew);
@@ -207,11 +202,7 @@ void AOS3D<T>::clear() {
 template <typename T>
 void AOS3D<T>::Deallocate() {
   if (fAllocated) {
-#ifndef VECGEOM_NVCC
-    _mm_free(fContent);
-#else
-    delete fContent;
-#endif
+    AlignedFree(fContent);
   }
 }
 
