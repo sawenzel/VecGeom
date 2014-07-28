@@ -409,6 +409,7 @@ bool UnplacedTrapezoid::MakePlane2(
   return good;
 }
 
+es
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedTrapezoid::Normal(const Precision *point, const Precision *dir, Precision *norm) const {
