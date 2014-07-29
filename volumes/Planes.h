@@ -12,6 +12,8 @@
 
 #include <ostream>
 
+// #define VECGEOM_PLANES_VC
+
 namespace VECGEOM_NAMESPACE {
 
 namespace {
@@ -133,7 +135,7 @@ VECGEOM_CUDA_HEADER_BOTH
 void Planes::Distance(Vector3D<Precision> const &point,
                       Precision *distance) const {
   size_t i = 0;
-#ifdef VECGEOM_NVC
+#ifdef VECGEOM_PLANES_VC
   for (size_t iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
        i += VcPrecision::Size) {
     Vector3D<VcPrecision> normal(
@@ -143,7 +145,7 @@ void Planes::Distance(Vector3D<Precision> const &point,
     );
     VcPrecision p(&fP[i]);
     VcPrecision distanceResult = normal.Dot(point) + p;
-    if (signedT) {
+    if (!signedT) {
       distanceResult = Abs(distanceResult);
     }
     distanceResult.store(&distance[i]);
@@ -173,7 +175,7 @@ void Planes::InsideKernel(
     Vector3D<Precision> const &point,
     typename TreatSurfaceTraits<treatSurfaceT>::Surface_t *inside) const {
   int i = 0;
-#ifdef VECGEOM_VC
+#ifdef VECGEOM_PLANES_VC
   for (int iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
        i += VcPrecision::Size) {
     Vector3D<VcPrecision> normal(
@@ -221,7 +223,7 @@ typename TreatSurfaceTraits<treatSurfaceT>::Surface_t
 Planes::InsideKernel(Vector3D<Precision> const &point) const {
   Inside_t result = EInside::kInside;
   int i = 0;
-#ifdef VECGEOM_VC
+#ifdef VECGEOM_PLANES_VC
   for (int iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
        i += VcPrecision::Size) {
     Vector3D<VcPrecision> normal(
@@ -248,7 +250,7 @@ Planes::InsideKernel(Vector3D<Precision> const &point) const {
   for (int iMax = fNormal.size(); i < iMax; ++i) {
     Vector3D<Precision> normal = fNormal[i];
     Precision dotProduct = normal.Dot(point);
-    Precision distanceResult = Abs(dotProduct + fP[i]);
+    Precision distanceResult = dotProduct + fP[i];
     if (distanceResult > kTolerance) return EInside::kOutside;
     if (treatSurfaceT) {
       if (distanceResult > -kTolerance) result = EInside::kSurface;
