@@ -538,78 +538,69 @@ PolyhedronImplementation<PolyhedronType>::DistanceToSegment(
     typename Backend::precision_v &distance,
     typename Backend::precision_v &surfaceDistance) {
 
-  typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v Bool_t;
+  return Backend::kFalse;
 
-  Bool_t hit = Backend::kFalse;
+  // typedef typename Backend::precision_v Float_t;
+  // typedef typename Backend::bool_v Bool_t;
 
-  Float_t dotProduct;
-  Vector3D<Float_t> qA, qB, qC, qD, surfPhi, surfRZ, diff;
+  // Bool_t hit = Backend::kFalse;
 
-  for (Array<UnplacedPolyhedron::PolyhedronSide>::const_iterator s =
-       segment.sides.cbegin(), sEnd = segment.sides.cend(); s != sEnd; ++s) {
+  // Float_t dotProduct;
+  // Vector3D<Float_t> qA, qB, qC, qD, surfPhi, surfRZ, diff;
 
-    Bool_t thisSegment = Backend::kTrue;
+  // for (Array<UnplacedPolyhedron::PolyhedronSide>::const_iterator s =
+  //      segment.sides.cbegin(), sEnd = segment.sides.cend(); s != sEnd; ++s) {
 
-    dotProduct = OutgoingTraits<outgoingT>::sign * direction.Dot(s->normal);
-    MaskedAssign(dotProduct <= 0., Backend::kFalse, &thisSegment);
-    if (thisSegment == Backend::kFalse) continue;
+  //   Bool_t wrongSegment = Backend::kTrue;
 
-    Vector3D<Float_t> delta = point - s->center;
-    surfaceDistance = OutgoingTraits<outgoingT>::invSign * delta.Dot(s->normal);
-    MaskedAssign(surfaceDistance < -kHalfTolerance, Backend::kFalse,
-                 &thisSegment);
-    if (thisSegment == Backend::kFalse) continue;
+  //   dotProduct = OutgoingTraits<outgoingT>::sign * direction.Dot(s->normal);
+  //   wrongSegment |= dotProduct <= 0;
+  //   if (wrongSegment == Backend::kTrue) continue;
 
-    Vector3D<Float_t> q = point + direction;
+  //   Vector3D<Float_t> delta = point - s->center;
+  //   surfaceDistance = OutgoingTraits<outgoingT>::invSign * delta.Dot(s->normal);
+  //   wrongSegment |= surfaceDistance < -kHalfTolerance;
+  //   if (wrongSegment == Backend::kTrue) continue;
 
-    qC = q - s->edges[1].corner[0];
-    qD = q - s->edges[1].corner[1];
-    MaskedAssign(OutgoingTraits<outgoingT>::sign * qC.Cross(qD).Dot(direction)
-                 < 0, Backend::kFalse, &thisSegment);
-    if (thisSegment == Backend::kFalse) continue;
+  //   Vector3D<Float_t> q = point + direction;
 
-    qA = q - s->edges[0].corner[0];
-    qB = q - s->edges[0].corner[1];
-    MaskedAssign(OutgoingTraits<outgoingT>::sign * qA.Cross(qB).Dot(direction)
-                 > 0, Backend::kFalse, &thisSegment);
-    if (thisSegment == Backend::kFalse) continue;
+  //   qC = q - s->edges[1].corner[0];
+  //   qD = q - s->edges[1].corner[1];
+  //   wrongSegment |= OutgoingTraits<outgoingT>::sign
+  //                   * qC.Cross(qD).Dot(direction) < 0;
+  //   if (wrongSegment == Backend::kTrue) continue;
 
-    // Any remaining particlers will have found the only possible side
-    MaskedAssign(thisSegment, s->surfPhi, &surfPhi);
-    MaskedAssign(thisSegment, s->surfRZ, &surfRZ);
-    MaskedAssign(thisSegment, delta, &diff);
-    // MaskedAssign(thisSegment, s->normal, &normal);
-    hit |= thisSegment;
-    if (hit == Backend::kTrue) break;
-  }
+  //   qA = q - s->edges[0].corner[0];
+  //   qB = q - s->edges[0].corner[1];
+  //   wrongSegment |= OutgoingTraits<outgoingT>::sign
+  //                   * qA.Cross(qB).Dot(direction) > 0;
+  //   if (wrongSegment == Backend::kTrue) continue;
 
-  // See if there is anything to treat
-  if (hit == Backend::kFalse) return hit;
+  //   // Any remaining particlers will have found the only possible side
+  //   MaskedAssign(!wrongSegment, s->surfPhi, &surfPhi);
+  //   MaskedAssign(!wrongSegment, s->surfRZ, &surfRZ);
+  //   MaskedAssign(!wrongSegment, delta, &diff);
+  //   // MaskedAssign(!wrongSegment, s->normal, &normal);
+  //   hit |= !wrongSegment;
+  //   if (hit == Backend::kTrue) break;
+  // }
 
-  MaskedAssign(
-    segment.start[0] > kTolerance &&
-    OutgoingTraits<outgoingT>::sign * qA.Cross(qC).Dot(direction) < 0.,
-    Backend::kFalse,
-    &hit
-  );
-  MaskedAssign(
-    segment.end[0] > kTolerance &&
-    OutgoingTraits<outgoingT>::sign * qB.Cross(qD).Dot(direction) > 0.,
-    Backend::kFalse,
-    &hit
-  );
-  if (hit == Backend::kFalse) return hit;
+  // // See if there is anything to treat
+  // if (hit == Backend::kFalse) return hit;
 
-  Float_t rZ = Abs(diff.Dot(surfRZ));
-  Float_t phi = Abs(diff.Dot(surfPhi));
-  MaskedAssign(surfaceDistance < 0 && rZ > segment.rZLength + kHalfTolerance,
-               Backend::kFalse, &hit);
-  MaskedAssign(phi > segment.phiLength[0] + segment.phiLength[1]*rZ
-               + kHalfTolerance, Backend::kFalse, &hit);
+  // hit &= (segment.start[0] <= kTolerance) ||
+  //        (OutgoingTraits<outgoingT>::sign * qA.Cross(qC).Dot(direction) >= 0.);
+  // hit &= segment.end[0] <= kTolerance ||
+  //        OutgoingTraits<outgoingT>::sign * qB.Cross(qD).Dot(direction) <= 0.;
+  // if (hit == Backend::kFalse) return hit;
 
-  distance = surfaceDistance / dotProduct;
-  return hit;
+  // Float_t rZ = Abs(diff.Dot(surfRZ));
+  // Float_t phi = Abs(diff.Dot(surfPhi));
+  // hit &= surfaceDistance >= 0 || rZ <= segment.rZLength + kHalfTolerance;
+  // hit &= phi <= segment.phiLength[0] + segment.phiLength[1]*rZ + kHalfTolerance;
+
+  // distance = surfaceDistance / dotProduct;
+  // return hit;
 }
 
 template <class PolyhedronType>

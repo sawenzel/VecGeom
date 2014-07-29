@@ -148,7 +148,7 @@ SOA3D<T>::SOA3D(T *x, T *y, T *z, size_t size)
 
 template <typename T>
 SOA3D<T>::SOA3D(size_t size)
-    : fAllocated(true), fSize(0), fCapacity(size),
+    : fAllocated(true), fSize(size), fCapacity(size),
       fX(NULL), fY(NULL), fZ(NULL) {
   reserve(fCapacity);
 }

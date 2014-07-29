@@ -10,6 +10,8 @@
 #include "base/AlignedBase.h"
 #include "base/SOA3D.h"
 
+#include <ostream>
+
 namespace VECGEOM_NAMESPACE {
 
 namespace {
@@ -40,7 +42,7 @@ public:
   Planes& operator=(Planes const &rhs);
 
   VECGEOM_INLINE
-  void set(size_t index, Vector3D<Precision> const &normal,
+  void Set(size_t index, Vector3D<Precision> const &normal,
            Vector3D<Precision> const &origin);
 
   template <bool signedT>
@@ -60,20 +62,21 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision MinimumDistance(Vector3D<Precision> const &point) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision MinimumDistance(Vector3D<Precision> const &point,
-                            size_t &index) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Inside_t Inside(Vector3D<Precision> const &point) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Inside(Vector3D<Precision> const &point, Inside_t *inside) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool Contains(Vector3D<Precision> const &point) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void Contains(Vector3D<Precision> const &point, bool *inside) const;
+
+  friend std::ostream& operator<<(std::ostream &os, Planes const &planes);
 
 private:
 
@@ -83,6 +86,12 @@ private:
   void InsideKernel(
       Vector3D<Precision> const &point,
       typename TreatSurfaceTraits<treatSurfaceT>::Surface_t *inside) const;
+
+  template <bool treatSurfaceT>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename TreatSurfaceTraits<treatSurfaceT>::Surface_t
+  InsideKernel(Vector3D<Precision> const &point) const;
 
 };
 
@@ -110,11 +119,9 @@ Planes& Planes::operator=(Planes const &rhs) {
   return *this;
 }
 
-void Planes::set(size_t index, Vector3D<Precision> const &normal,
+void Planes::Set(size_t index, Vector3D<Precision> const &normal,
                  Vector3D<Precision> const &x0) {
-  Precision inverseLength = 1. / std::sqrt(normal.x()*normal.x() +
-                                           normal.y()*normal.y() +
-                                           normal.z()*normal.z());
+  Precision inverseLength = 1. / normal.Mag();
   fNormal.set(index, inverseLength*normal[0], inverseLength*normal[1],
               inverseLength*normal[2]);
   Precision d = -normal.Dot(x0);
@@ -160,34 +167,14 @@ void Planes::UnsignedDistance(Vector3D<Precision> const &point,
   return Distance<false>(point, distance);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
-Precision Planes::MinimumDistance(Vector3D<Precision> const &point,
-                                  size_t &index) const {
-  Precision *distance = AlignedAllocate<Precision>(fNormal.size());
-  UnsignedDistance(point, distance);
-  Precision *minimum = min_element(distance, distance+fNormal.size());
-  index = minimum - distance;
-  AlignedFree(distance);
-  return *minimum;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Precision Planes::MinimumDistance(Vector3D<Precision> const &point) const {
-  Precision *distance = AlignedAllocate<Precision>(fNormal.size());
-  UnsignedDistance(point, distance);
-  Precision result = *min_element(distance, distance+fNormal.size());
-  AlignedFree(distance);
-  return result;
-}
-
 template <bool treatSurfaceT>
 VECGEOM_CUDA_HEADER_BOTH
 void Planes::InsideKernel(
     Vector3D<Precision> const &point,
     typename TreatSurfaceTraits<treatSurfaceT>::Surface_t *inside) const {
-  size_t i = 0;
+  int i = 0;
 #ifdef VECGEOM_VC
-  for (size_t iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
+  for (int iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
        i += VcPrecision::Size) {
     Vector3D<VcPrecision> normal(
       VcPrecision(fNormal.x()+i),
@@ -195,33 +182,25 @@ void Planes::InsideKernel(
       VcPrecision(fNormal.z()+i)
     );
     VcPrecision p(&fP[i]);
-    VcPrecision dotProduct = normal.Dot(point);
-    VcPrecision distanceResult = dotProduct + p;
+    VcPrecision distanceResult = normal.Dot(point) + p;
     VcInside insideResult = EInside::kOutside;
-    MaskedAssign(dotProduct < distanceResult, EInside::kInside,
-                 &insideResult);
+    MaskedAssign(distanceResult < 0., EInside::kInside, &insideResult);
     if (treatSurfaceT) {
       MaskedAssign(Abs(distanceResult) < kTolerance, EInside::kSurface,
                    &insideResult);
-      insideResult.store(&inside[i]);
-    } else {
-      for (size_t i = 0; i < VcPrecision::Size; ++i) {
-        inside[i] = insideResult[i];
-      }
     }
+    for (int j = 0; j < VcPrecision::Size; ++j) inside[i+j] = insideResult[j];
   }
 #endif
-  for (size_t iMax = fNormal.size(); i < iMax; ++i) {
+  for (int iMax = fNormal.size(); i < iMax; ++i) {
     Vector3D<Precision> normal = fNormal[i];
-    Precision dotProduct = normal.Dot(point);
-    Precision distanceResult = dotProduct + fP[i];
+    Precision distanceResult = normal.Dot(point) + fP[i];
     if (treatSurfaceT) {
-      inside[i] = (Abs(distanceResult) < kTolerance) ? EInside::kSurface :
-                  (dotProduct < distanceResult)      ? EInside::kInside
-                                                     : EInside::kOutside;
+      inside[i] = (distanceResult < -kTolerance) ? EInside::kInside :
+                  (distanceResult >  kTolerance) ? EInside::kOutside
+                                                 : EInside::kSurface;
     } else {
-      inside[i] = (dotProduct <= distanceResult)
-                  ? EInside::kInside : EInside::kOutside;
+      inside[i] = (distanceResult <= 0.) ? EInside::kInside : EInside::kOutside;
     }
   }
 }
@@ -232,18 +211,67 @@ void Planes::Inside(Vector3D<Precision> const &point, Inside_t *inside) const {
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-Inside_t Planes::Inside(Vector3D<Precision> const &point) const {
-  Inside_t *inside = AlignedAllocate<Inside_t>(fNormal.size());
-  InsideKernel<true>(point, inside);
+void Planes::Contains(Vector3D<Precision> const &point, bool *inside) const {
+  InsideKernel<false>(point, inside);
+}
+
+template <bool treatSurfaceT>
+VECGEOM_CUDA_HEADER_BOTH
+typename TreatSurfaceTraits<treatSurfaceT>::Surface_t
+Planes::InsideKernel(Vector3D<Precision> const &point) const {
   Inside_t result = EInside::kInside;
-  for (int i = 0, iMax = fNormal.size(); i < iMax; ++i) {
-    if (inside[i] == EInside::kSurface || inside[i] == EInside::kOutside) {
-      result = inside[i];
-      break;
+  int i = 0;
+#ifdef VECGEOM_VC
+  for (int iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
+       i += VcPrecision::Size) {
+    Vector3D<VcPrecision> normal(
+      VcPrecision(fNormal.x()+i),
+      VcPrecision(fNormal.y()+i),
+      VcPrecision(fNormal.z()+i)
+    );
+    VcPrecision p(&fP[i]);
+    VcPrecision distanceResult = normal.Dot(point) + p;
+    VcInside insideResult = EInside::kInside;
+    MaskedAssign(distanceResult > 0., EInside::kOutside, &insideResult);
+    if (treatSurfaceT) {
+      MaskedAssign(Abs(distanceResult) < kTolerance, EInside::kSurface,
+                   &insideResult);
+    }
+    for (int j = 0; j < VcPrecision::Size; ++j) {
+      if (insideResult[j] == EInside::kOutside) return EInside::kOutside;
+      if (treatSurfaceT) {
+        if (insideResult[j] == EInside::kSurface) result = EInside::kSurface;
+      }
     }
   }
-  AlignedFree(inside);
+#endif
+  for (int iMax = fNormal.size(); i < iMax; ++i) {
+    Vector3D<Precision> normal = fNormal[i];
+    Precision dotProduct = normal.Dot(point);
+    Precision distanceResult = Abs(dotProduct + fP[i]);
+    if (distanceResult > kTolerance) return EInside::kOutside;
+    if (treatSurfaceT) {
+      if (distanceResult > -kTolerance) result = EInside::kSurface;
+    }
+  }
   return result;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Inside_t Planes::Inside(Vector3D<Precision> const &point) const {
+  return InsideKernel<true>(point);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+bool Planes::Contains(Vector3D<Precision> const &point) const {
+  return InsideKernel<false>(point);
+}
+
+std::ostream& operator<<(std::ostream &os, Planes const &planes) {
+  for (int i = 0, iMax = planes.fNormal.size(); i < iMax; ++i) {
+    os << "{" << planes.fNormal[i] << ", " << planes.fP[i] << "}\n";
+  }
+  return os;
 }
 
 } // End global namespace
