@@ -64,15 +64,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Inside_t Inside(Vector3D<Precision> const &point) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   void Inside(Vector3D<Precision> const &point, Inside_t *inside) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  bool Contains(Vector3D<Precision> const &point) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -88,12 +80,6 @@ private:
   void InsideKernel(
       Vector3D<Precision> const &point,
       typename TreatSurfaceTraits<treatSurfaceT>::Surface_t *inside) const;
-
-  template <bool treatSurfaceT>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename TreatSurfaceTraits<treatSurfaceT>::Surface_t
-  InsideKernel(Vector3D<Precision> const &point) const;
 
 };
 
@@ -215,58 +201,6 @@ void Planes::Inside(Vector3D<Precision> const &point, Inside_t *inside) const {
 VECGEOM_CUDA_HEADER_BOTH
 void Planes::Contains(Vector3D<Precision> const &point, bool *inside) const {
   InsideKernel<false>(point, inside);
-}
-
-template <bool treatSurfaceT>
-VECGEOM_CUDA_HEADER_BOTH
-typename TreatSurfaceTraits<treatSurfaceT>::Surface_t
-Planes::InsideKernel(Vector3D<Precision> const &point) const {
-  Inside_t result = EInside::kInside;
-  int i = 0;
-#ifdef VECGEOM_PLANES_VC
-  for (int iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
-       i += VcPrecision::Size) {
-    Vector3D<VcPrecision> normal(
-      VcPrecision(fNormal.x()+i),
-      VcPrecision(fNormal.y()+i),
-      VcPrecision(fNormal.z()+i)
-    );
-    VcPrecision p(&fP[i]);
-    VcPrecision distanceResult = normal.Dot(point) + p;
-    VcInside insideResult = EInside::kInside;
-    MaskedAssign(distanceResult > 0., EInside::kOutside, &insideResult);
-    if (treatSurfaceT) {
-      MaskedAssign(Abs(distanceResult) < kTolerance, EInside::kSurface,
-                   &insideResult);
-    }
-    for (int j = 0; j < VcPrecision::Size; ++j) {
-      if (insideResult[j] == EInside::kOutside) return EInside::kOutside;
-      if (treatSurfaceT) {
-        if (insideResult[j] == EInside::kSurface) result = EInside::kSurface;
-      }
-    }
-  }
-#endif
-  for (int iMax = fNormal.size(); i < iMax; ++i) {
-    Vector3D<Precision> normal = fNormal[i];
-    Precision dotProduct = normal.Dot(point);
-    Precision distanceResult = dotProduct + fP[i];
-    if (distanceResult > kTolerance) return EInside::kOutside;
-    if (treatSurfaceT) {
-      if (distanceResult > -kTolerance) result = EInside::kSurface;
-    }
-  }
-  return result;
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-Inside_t Planes::Inside(Vector3D<Precision> const &point) const {
-  return InsideKernel<true>(point);
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-bool Planes::Contains(Vector3D<Precision> const &point) const {
-  return InsideKernel<false>(point);
 }
 
 std::ostream& operator<<(std::ostream &os, Planes const &planes) {

@@ -12,20 +12,23 @@
 namespace VECGEOM_NAMESPACE {
 
 Polygon::Polygon(Precision const x[], Precision const y[], const int size)
-    : fVertices(size), fSurfaceArea(0.) {
+    : fVertices(size), fXLim(kInfinity, -kInfinity),
+      fYLim(kInfinity, -kInfinity), fSurfaceArea(0.), fValid(true) {
   for (int i = 0; i < size; ++i) fVertices[i].Set(x[i], y[i]);
   Initialize();
 }
 
 Polygon::Polygon(Vector2D<Precision> const points[], const int size)
-    : fVertices(size), fSurfaceArea(0.) {
+    : fVertices(size), fXLim(kInfinity, -kInfinity),
+      fYLim(kInfinity, -kInfinity), fSurfaceArea(0.), fValid(true) {
   copy(points, points+size, &fVertices[0]);
   Initialize();
 }
 
 Polygon::Polygon(const Precision rMin[], const Precision rMax[],
                  const Precision z[], const int size)
-    : fVertices(size<<1), fSurfaceArea(0.) {
+    : fVertices(size<<1), fXLim(kInfinity, -kInfinity),
+      fYLim(kInfinity, -kInfinity), fSurfaceArea(0.) {
 
   for (int i = 0, iRev = size-1, iOffset = i+size; i < size;
        ++i, --iRev, ++iOffset) {
@@ -38,17 +41,17 @@ Polygon::Polygon(const Precision rMin[], const Precision rMax[],
 
 Polygon::Polygon(const Polygon &other)
     : fVertices(other.fVertices), fXLim(other.fXLim), fYLim(other.fYLim),
-      fSurfaceArea(other.fSurfaceArea) {}
+      fSurfaceArea(other.fSurfaceArea), fValid(other.fValid) {}
 
 void Polygon::Initialize() {
-  Assert(fVertices.size() > 2,
-         "Polygon requires at least three distinct vertices.\n");
-  RemoveRedundantVertices();
+  if (fVertices.size() <= 2) fValid = false;
+  // RemoveRedundantVertices();
   CrossesItself();
-  FindLimits();
+  ComputeSurfaceArea();
+  ComputeLimits();
 }
 
-void Polygon::FindLimits() {
+void Polygon::ComputeLimits() {
   fXLim[0] = fYLim[0] = kInfinity;
   fXLim[1] = fYLim[1] = -kInfinity;
   for (Vector2D<Precision> *i = fVertices.begin(), *iEnd = fVertices.end();
@@ -66,23 +69,25 @@ void Polygon::Scale(const double x, const double y) {
        i != iEnd; ++i) {
     (*i) *= scale;
   }
-  fSurfaceArea = 0;
+  ComputeLimits();
+  ComputeSurfaceArea();
 }
 
-Precision Polygon::SurfaceArea() {
-  if (!fSurfaceArea) {
-    const int iMax = fVertices.size()-1;
-    for (int i = 0, iNext = 1; i < iMax; ++i, ++iNext) {
-      fSurfaceArea += fVertices[i].Cross(fVertices[iNext]);
-    }
-    fSurfaceArea = 0.5 * (fSurfaceArea + fVertices[iMax].Cross(fVertices[0]));
+void Polygon::ComputeSurfaceArea() {
+  if (!fValid) {
+    fSurfaceArea = 0.;
+    return;
   }
-  return fSurfaceArea;
+  int iMax = fVertices.size();
+  for (int i = 0, iNext = 1; i < iMax; ++i, ++iNext) {
+    fSurfaceArea += fVertices[i].Cross(fVertices[iNext]);
+  }
+  fSurfaceArea = 0.5 * (fSurfaceArea + fVertices[iMax].Cross(fVertices[0]));
 }
 
 void Polygon::ReverseOrder() {
   reverse(&fVertices[0], &fVertices[fVertices.size()]);
-  fSurfaceArea = 0;
+  ComputeSurfaceArea();
 }
 
 std::string Polygon::ToString() const {
@@ -103,17 +108,18 @@ void Polygon::Print() const {
   printf("%s\n", ToString().c_str());
 }
 
-void Polygon::RemoveVertex(const int index) {
+bool Polygon::RemoveVertex(const int index) {
   Array<Vector2D<Precision> > old(fVertices);
   fVertices.Allocate(old.size()-1);
   copy(&old[0], &old[index], &fVertices[0]);
   copy(&old[index+1], &old[old.size()], &fVertices[index]);
-  fSurfaceArea = 0;
-  Assert(fVertices.size() > 2,
-         "Insufficient significant vertices in Polygon.\n");
+  if (fVertices.size() <= 2) fValid = false;
+  ComputeLimits();
+  ComputeSurfaceArea();
+  return fValid;
 }
 
-void Polygon::RemoveRedundantVertices() {
+bool Polygon::RemoveRedundantVertices() {
   // Will also remove duplicate vertices as lines will be trivially parallel
   int i = 0, iMax = fVertices.size()-2;
   while (i < iMax) {
@@ -128,6 +134,7 @@ void Polygon::RemoveRedundantVertices() {
       ++i;
     }
   }
+  return fValid;
 }
 
 bool LinesIntersect(

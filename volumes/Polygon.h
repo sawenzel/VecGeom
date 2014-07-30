@@ -23,6 +23,7 @@ private:
   Array<Vector2D<Precision> > fVertices;
   Vector2D<Precision> fXLim, fYLim;
   Precision fSurfaceArea;
+  bool fValid;
 
 public:
 
@@ -61,13 +62,22 @@ public:
   VECGEOM_INLINE
   Vector2D<Precision> const& operator[](const int i) const;
 
-  /// \return Area of surface covered by the polygon. Is cached after the first
-  ///         computation.
-  Precision SurfaceArea();
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision SurfaceArea() const { return fSurfaceArea; }
+
+  /// A polygon is considered valid when it has >2 vertices.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool IsValid() const { return fValid; }
 
   void ReverseOrder();
 
-  void RemoveVertex(const int index);
+  /// \return Whether the resulting polygon is still valid.
+  bool RemoveVertex(const int index);
+
+  /// \return Whether the resulting polygon is still valid.
+  bool RemoveRedundantVertices();
 
   /// \return String representation of the polygon showing nodes in connected
   ///         sequence.
@@ -78,11 +88,13 @@ public:
 
   std::ostream& operator<<(std::ostream &os) const;
 
-  typedef CyclicIterator<Vector2D<Precision>, true> const_iterator;
+  typedef Array<Vector2D<Precision> >::const_iterator const_iterator;
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const_iterator cbegin() const;
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const_iterator cend() const;
 
@@ -90,11 +102,11 @@ private:
 
   void Initialize();
 
-  void FindLimits();
+  void ComputeLimits();
+
+  void ComputeSurfaceArea();
 
   bool AreParallel() const;
-
-  void RemoveRedundantVertices();
 
   void CrossesItself() const;
 
@@ -105,16 +117,16 @@ Vector2D<Precision> const& Polygon::operator[](const int i) const {
   return fVertices[i];
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Polygon::const_iterator Polygon::cbegin() const {
-  return Polygon::const_iterator(fVertices.cbegin(), fVertices.cend(),
-                                 fVertices.cbegin());
+  return fVertices.cbegin();
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Polygon::const_iterator Polygon::cend() const {
-  return Polygon::const_iterator(fVertices.cbegin(), fVertices.cend(),
-                                 fVertices.cend());
+  return fVertices.cend();
 }
 
 } // End global namespace

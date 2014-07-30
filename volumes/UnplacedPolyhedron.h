@@ -9,7 +9,9 @@
 #include "base/AlignedBase.h"
 #include "base/Array.h"
 #include "base/SOA3D.h"
+#include "volumes/Planes.h"
 #include "volumes/Polygon.h"
+#include "volumes/Rectangles.h"
 #include "volumes/UnplacedVolume.h"
 
 #include <ostream>
@@ -18,9 +20,9 @@ namespace VECGEOM_NAMESPACE {
 
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
-private:
+// private:
 
-  typedef Array<Vector3D<Precision> > VecArray_t;
+//   typedef Array<Vector3D<Precision> > VecArray_t;
 
 public:
 
@@ -46,46 +48,60 @@ public:
   //   void Allocate(int sideCount);
   // };
 
-  struct PolyhedronEdge {
-    Vector3D<Precision> normal;
-    Vector3D<Precision> corner[2], cornerNormal[2];
-  };
+  // struct PolyhedronEdge {
+  //   Vector3D<Precision> normal;
+  //   Vector3D<Precision> corner[2], cornerNormal[2];
+  // };
 
-  struct PolyhedronSide {
-    Vector3D<Precision> center, normal;
-    Vector3D<Precision> surfPhi, surfRZ;
-    Vector3D<Precision> edgeNormal[2];
-    PolyhedronEdge edges[2];
-  };
+  // struct PolyhedronSide {
+  //   Vector3D<Precision> center, normal;
+  //   Vector3D<Precision> surfPhi, surfRZ;
+  //   Vector3D<Precision> edgeNormal[2];
+  //   PolyhedronEdge edges[2];
+  // };
 
-  struct PolyhedronSegment {
-    Array<PolyhedronSide> sides;
-    Vector2D<Precision> start, end;
-    Precision rZLength;
-    Precision phiLength[2];
-    Precision rZPhiNormal;
-  };
+  // struct PolyhedronSegment {
+  //   Array<PolyhedronSide> sides;
+  //   Vector2D<Precision> start, end;
+  //   Precision rZLength;
+  //   Precision phiLength[2];
+  //   Precision rZPhiNormal;
+  // };
 
 private:
 
   int fSideCount;
-  Precision fPhiStart, fPhiEnd, fPhiDelta;
-  Precision fEdgeNormal;
-  bool fHasPhi;
-  Polygon *fCorners;
-  Array<PolyhedronSegment> fSegments;
+  int fSegmentCount;
+  // bool fHasInnerRadii;
+  // Planes *fOuter, *fInner;
+  // /// Kept for conversion purposes
+  // Polygon *fShape;
+
+  // Precision fPhiStart, fPhiEnd, fPhiDelta;
+  // bool fHasPhi;
+  // Precision fEdgeNormal;
+  // Array<PolyhedronSegment> fSegments;
 
 public:
 
 #ifndef VECGEOM_NVCC
-  UnplacedPolyhedron(
-      const int sideCount,
-      const Precision phiStart,
-      Precision phiTotal,
-      const int zPlaneCount,
-      const Precision zPlanes[],
-      const Precision rInner[],
-      const Precision rOuter[]);
+
+  // UnplacedPolyhedron(
+  //     const int sideCount,
+  //     const Precision phiStart,
+  //     Precision phiTotal,
+  //     const int zPlaneCount,
+  //     const Precision zPlanes[],
+  //     const Precision rInner[],
+  //     const Precision rOuter[]);
+
+  // UnplacedPolyhedron::UnplacedPolyhedron(
+  //   int sideCount,
+  //   int segmentCount,
+  //   Precision zPlanes[],
+  //   Precision rInner[],
+  //   Precision rOuter[]);
+
 #endif
 
   ~UnplacedPolyhedron();
@@ -94,25 +110,34 @@ public:
   int GetSideCount() const { return fSideCount; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetPhiStart() const { return fPhiStart; }
+  int GetSegmentCount() const { return fSegmentCount; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision GetPhiEnd() const { return fPhiEnd; }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Precision GetPhiStart() const { return fPhiStart; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision GetPhiDelta() const { return fPhiDelta; }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Precision GetPhiEnd() const { return fPhiEnd; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  PolyhedronSegment const& GetSegment(size_t i) const { return fSegments[i]; }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Precision GetPhiDelta() const { return fPhiDelta; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Array<PolyhedronSegment> const& GetSegments() const { return fSegments; }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // bool HasPhi() const { return fHasPhi; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Polygon const* GetCorners() const { return fCorners; }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // PolyhedronSegment const& GetSegment(size_t i) const { return fSegments[i]; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  bool HasPhi() const { return fHasPhi; }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Array<PolyhedronSegment> const& GetSegments() const { return fSegments; }
+
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Planes const& GetSegment(size_t i) const { return fSegments[i]; }
+
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Planes const& GetSegments() const { return fSegments; }
+
+  // VECGEOM_CUDA_HEADER_BOTH
+  // Polygon const* GetCorners() const { return fCorners; }
 
   virtual int memory_size() const { return sizeof(*this); }
 
@@ -144,8 +169,10 @@ public:
 
 private:
 
-  void ConstructSegment(Polygon::const_iterator corner,
-                        Array<PolyhedronSegment>::iterator segment);
+  // void ConstructSegment(Polygon::const_iterator corner,
+  //                       Array<PolyhedronSegment>::iterator segment);
+
+  void ConstructSegment(Polygon::const_iterator corner);
 
 };
 
