@@ -11,7 +11,7 @@
 #include "base/SOA3D.h"
 #include "volumes/Planes.h"
 #include "volumes/Polygon.h"
-#include "volumes/Rectangles.h"
+// #include "volumes/Rectangles.h"
 #include "volumes/UnplacedVolume.h"
 
 #include <ostream>

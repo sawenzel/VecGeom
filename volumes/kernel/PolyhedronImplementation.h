@@ -467,47 +467,6 @@ void PolyhedronImplementation<PolyhedronType>::Inside(
   Assert(0, "Not implemented.\n");
 }
 
-// template <class PolyhedronType>
-// template <class Backend>
-// VECGEOM_CUDA_HEADER_BOTH
-// void PolyhedronImplementation<PolyhedronType>::DistanceToIn(
-//     UnplacedPolyhedron const &unplaced,
-//     Transformation3D const &transformation,
-//     Vector3D<typename Backend::precision_v> const &point,
-//     Vector3D<typename Backend::precision_v> const &direction,
-//     typename Backend::precision_v const &stepMax,
-//     typename Backend::precision_v &distance) {
-
-//   typedef typename Backend::precision_v Float_t;
-//   typedef typename Backend::bool_v Bool_t;
-
-//   Vector3D<Float_t> localPoint = transformation.Transform(point);
-//   Vector3D<Float_t> localDirection =
-//       transformation.TransformDirection(direction);
-
-//   Array<UnplacedPolyhedron::PolyhedronSegment> const &segments =
-//       unplaced.GetSegments();
-
-//   Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator bestSegment =
-//       NULL;
-//   Float_t distFromSurface = kInfinity;
-//   distance = kInfinity;
-
-//   for (Array<UnplacedPolyhedron::PolyhedronSegment>::const_iterator s =
-//        segments.cbegin(), sEnd = segments.cend(); s != sEnd; ++s) {
-//     Float_t segmentDistance = kInfinity;
-//     Float_t segmentSurface = kInfinity;
-//     Bool_t hit = DistanceToSegment<false, Backend>(
-//       *s, localPoint, localDirection, segmentDistance, segmentSurface
-//     );
-//     Bool_t better = hit && segmentDistance < distance;
-//     MaskedAssign(better, segmentDistance, &distance);
-//     MaskedAssign(better, segmentSurface, &distFromSurface);
-//     MaskedAssign(better, s, &bestSegment);
-//     MaskedAssign(segmentSurface <= 0., 0., &distance);
-//   }
-// }
-
 namespace {
 
 template <bool outgoing>
