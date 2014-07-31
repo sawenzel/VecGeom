@@ -129,6 +129,33 @@ public:
     }
   }
 
+  /// \return the distance to the planar shell when the point is located within the shell itself
+  /// The type returned is the type corresponding to the backend given
+  template<typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::precision_v DistanceToOut(Vector3D<typename Backend::precision_v> const& point,
+          Vector3D<typename Backend::precision_v> const &dir) const {
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    Float_t dist(kInfinity);
+    Float_t tmp[N];
+    // hope for a vectorization of this part for Backend==scalar !! ( in my case this works )
+    for(int i=0; i<N; ++i) {
+      Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+      Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+      // we could put an early return type of thing here!
+      tmp[i] = -pdist / proj;
+    }
+    for(int i=0; i<N; ++i )
+    {
+      Bool_t test = ( tmp[i] > 0 && tmp[i] < dist );
+      MaskedAssign( test, tmp[i], &dist);
+    }
+    return dist;
+  }
+
 };
 
 } // End global namespace

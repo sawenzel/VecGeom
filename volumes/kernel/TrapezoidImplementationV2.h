@@ -66,6 +66,7 @@ struct TrapezoidImplementation {
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
 
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -334,6 +335,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   MaskedAssign(!done && smin<0,   0.0, &distance);
 }
 
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -347,10 +349,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
-  // typename Backend::int_v side = EInside::kInside;
   distance = kInfinity;            // init to invalid value
-  // Float_t infinity(kInfinity);
-
   //
   // Step 1: find range of distances along dir between Z-planes (smin, smax)
   //
@@ -365,6 +364,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   Float_t max = zdirSign*unplaced.GetDz() - point.z();  // z-dist to farthest z-plane
 
   // check if moving away towards +z
+  // do we need this ????
   Bool_t test = posZdir && max <= kHalfTolerance;
   MaskedAssign( test, 0.0, &distance );
 
@@ -376,41 +376,25 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   Bool_t done( distance == 0.0 );
   if (done == Backend::kTrue ) return;
 
-  // Step 1.b) general case:
-  Float_t zdirFactor = Backend::kOne / dir.z();     // convert distances from z to dir
-  MaskedAssign( !done,  max*zdirFactor, &distance);
+  // Step 1.b) general case: assign distance to z plane
+  MaskedAssign( !done,  max/dir.z(), &distance);
 
   // Step 1.c) special case: if dir is perpendicular to z-axis...
+  // should be already done by generic assignment
   MaskedAssign(!posZdir && !negZdir, kInfinity, &distance);
 
   //
-  // Step 2: find distances for intersections with side planes. 
-  //   If dist is such that smin < dist < smax, then adjust either smin or smax.
+  // Step 2: find distances for intersections with side planes.
   //
 
   // next check where points are w.r.t. each side plane
-  typename Backend::precision_v pdist[4], proj[4];
   Planes const* planes = unplaced.GetPlanes();
-  planes->DistanceToPoint(point, pdist);
-  planes->ProjectionToNormal(dir, proj);
+  Float_t disttoplanes = planes->DistanceToOut<Backend>(point, dir);
 
-  // loop over side planes - find pdist,Proj for each side plane
-  for (unsigned int i = 0; i < 4; i++) {
-
-    Bool_t inside = (pdist[i] < -kHalfTolerance);
-    Bool_t posProj = proj[i] >= 0;
-
-    test = (!inside && posProj);
-    MaskedAssign( !done && test, 0.0, &distance );
-    done |= ( distance == 0.0 );
-    if (done == Backend::kTrue ) return;
-
-    test = inside && posProj;
-    Float_t vdist = -pdist[i] / proj[i];
-    MaskedAssign(!done && test && vdist<distance, vdist, &distance);
-  }
-
+  Bool_t hitplanarshell = (disttoplanes < distance);
+  MaskedAssign( hitplanarshell, disttoplanes, &distance);
 }
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
