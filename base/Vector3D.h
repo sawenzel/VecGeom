@@ -291,7 +291,7 @@ public:
   VecType Unit() const {
     const Precision mag2 = Mag2();
     VecType output(*this);
-    output /= Sqrt(mag2 + kTiny);
+    output /= Sqrt(mag2 + kMinimum);
     return output;
   }
 
@@ -520,7 +520,7 @@ public:
   VecType Unit() const {
     const Precision mag2 = Mag2();
     VecType output(*this);
-    output /= Sqrt(mag2 + kTiny);
+    output /= Sqrt(mag2 + kMinimum);
     return output;
   }
 
@@ -637,6 +637,15 @@ Vector3D<Type> operator OPERATOR(Vector3D<Type> const &lhs, \
                                  const ScalarType rhs) { \
   Vector3D<Type> result(lhs); \
   result INPLACE rhs; \
+  return result; \
+} \
+template <typename Type, typename ScalarType> \
+VECGEOM_INLINE \
+VECGEOM_CUDA_HEADER_BOTH \
+Vector3D<Type> operator OPERATOR(const ScalarType lhs, \
+                                 Vector3D<Type> const &rhs) { \
+  Vector3D<Type> result(rhs); \
+  result INPLACE lhs; \
   return result; \
 }
 VECTOR3D_BINARY_OP(+, +=)

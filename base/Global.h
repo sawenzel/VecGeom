@@ -107,7 +107,22 @@ VECGEOM_CONSTEXPR Precision kEpsilon =
 #else
     DBL_EPSILON;
 #endif
-VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
+VECGEOM_CONSTEXPR Precision kMinimum =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::min();
+#elif VECGEOM_FLOAT_PRECISION
+    FLT_MIN;
+#else
+    DBL_MIN;
+#endif
+VECGEOM_CONSTEXPR Precision kMaximum =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::max();
+#elif VECGEOM_FLOAT_PRECISION
+    FLT_MAX;
+#else
+    DBL_MAX;
+#endif
 VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
 VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
 VECGEOM_CONSTEXPR Precision kToleranceSquared = kTolerance*kTolerance;
