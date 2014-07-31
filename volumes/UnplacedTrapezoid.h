@@ -20,6 +20,12 @@
 namespace VECGEOM_NAMESPACE {
 
 typedef Vector3D<Precision> TrapCorners_t[8];
+
+struct TrapSidePlane {
+    Precision fA,fB,fC,fD;    // Normal unit vector (a,b,c)  and offset (d)
+    // => Ax+By+Cz+D=0
+};
+
 typedef PlaneShell<4,Precision> Planes;
 
 class UnplacedTrapezoid : public VUnplacedVolume
@@ -45,7 +51,8 @@ private:
   Precision fTthetaSphi;
   Precision fbbx, fbby, fbbz;
 
-  Planes fPlanes;
+  TrapSidePlane  fPlanes[4];
+  Planes fPlanes2;
 
 public:
 
@@ -113,7 +120,10 @@ public:
   // TrapParameters const& GetParameters() const { return _params; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Planes const* GetPlanes() const { return &fPlanes; }
+  TrapSidePlane const* GetPlanes() const { return fPlanes; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Planes const* GetPlanes2() const { return &fPlanes2; }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetDz()  const { return fDz; }
@@ -163,7 +173,7 @@ public:
   /// @}
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Normal(const Precision *point, const Precision *dir, Precision *norm) const;
+  bool Normal(const Precision *point, Precision *norm) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
@@ -237,7 +247,11 @@ private:
   /// corners defining a side face
   bool MakePlane( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
                   const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
-                  unsigned int planeIndex );
+                  TrapSidePlane& plane );
+
+  bool MakePlane2( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
+                   const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
+                   unsigned int planeIndex );
 };
 
 } // End global namespace

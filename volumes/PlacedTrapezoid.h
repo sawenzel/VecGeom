@@ -97,7 +97,7 @@ public:
   Precision GetAlpha2() const { return GetUnplacedVolume()->GetAlpha2(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Normal(const Precision *point, const Precision *dir, Precision *norm) const { GetUnplacedVolume()->Normal(point, dir, norm) ;}
+  bool Normal(const Precision *point, Precision *norm) const { return GetUnplacedVolume()->Normal(point, norm) ;}
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}

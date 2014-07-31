@@ -173,7 +173,7 @@ public:
   /// @}
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Normal(const Precision *point, const Precision *dir, Precision *norm) const;
+  bool Normal(const Precision *point, Precision *norm) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;

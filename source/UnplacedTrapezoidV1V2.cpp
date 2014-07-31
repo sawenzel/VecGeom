@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include "base/RNG.h"
 #include <cassert>
+#include <iostream>
+using std::cout;
 
 namespace VECGEOM_NAMESPACE {
 
@@ -403,51 +405,50 @@ bool UnplacedTrapezoid::MakePlane2(
     // Calculate fD: p1 is in plane so fD = -n.p1.Vect()
     d = -( a*p1.x() + b*p1.y() + c*p1.z() );
 
-    fPlanes.Set( planeIndex, a, b, c, d );
+    fPlanes2.Set( planeIndex, a, b, c, d );
     good = true;
   }
   return good;
 }
 
-es
-
 VECGEOM_CUDA_HEADER_BOTH
-void UnplacedTrapezoid::Normal(const Precision *point, const Precision *dir, Precision *norm) const {
+bool UnplacedTrapezoid::Normal(const Precision *point, Precision *norm) const {
 
   int noSurfaces = 0;
   Vec3D sumnorm(0., 0., 0.), vecnorm(0.,0.,0.);
 
-  Precision distances[4];
-  fPlanes.DistanceToPoint( Vec3D(point[0], point[1], point[2]), distances );
+  Precision distances[6];
+  fPlanes2.DistanceToPoint( Vec3D(point[0], point[1], point[2]), distances );
+  distances[4] = point[2] - fDz;
+  distances[5] = -point[2] - fDz;
 
-  Precision distx,distmx,disty,distmy;
-  distmy = std::fabs( fPlanes.fA[0] * point[0] + fPlanes.fB[0] * point[1]
-                    + fPlanes.fC[0] * point[2] + fPlanes.fD[0] );
+  // cout<<" distances[0..5] = "<< distances[0] <<"; "<< distances[1] <<"; "<< distances[2] <<"; "<< distances[3]
+  //      <<"; "<< distances[4] <<"; "<< distances[5] <<"\n";
+  // cout<<" old dists: "
+  //     <<"; "<< fPlanes[0].fA * point[0] + fPlanes[0].fB * point[1] + fPlanes[0].fC * point[2] + fPlanes[0].fD
+  //     <<"; "<< fPlanes[1].fA * point[0] + fPlanes[1].fB * point[1] + fPlanes[1].fC * point[2] + fPlanes[1].fD
+  //     <<"; "<< fPlanes[2].fA * point[0] + fPlanes[2].fB * point[1] + fPlanes[2].fC * point[2] + fPlanes[2].fD
+  //     <<"; "<< fPlanes[3].fA * point[0] + fPlanes[3].fB * point[1] + fPlanes[3].fC * point[2] + fPlanes[3].fD
+  //     << std::endl;
 
-  disty = std::fabs( fPlanes.fA[1] * point[0] + fPlanes.fB[1] * point[1]
-                   + fPlanes.fC[1] * point[2] + fPlanes.fD[1] );
 
-  distmx = std::fabs( fPlanes.fA[2] * point[0] + fPlanes.fB[2] * point[1]
-                    + fPlanes.fC[2] * point[2] + fPlanes.fD[2] );
+  // assert( distances[0] == fPlanes[0].fA * point[0] + fPlanes[0].fB * point[1] + fPlanes[0].fC * point[2] + fPlanes[0].fD );
 
-  distx = std::fabs( fPlanes.fA[3] * point[0] + fPlanes.fB[3] * point[1]
-                   + fPlanes.fC[3] * point[2] + fPlanes.fD[3] );
+  // assert( distances[1] == fPlanes[1].fA * point[0] + fPlanes[1].fB * point[1] + fPlanes[1].fC * point[2] + fPlanes[1].fD );
 
-  assert(distx==distances[3]);
-  assert(distmx==distances[2]);
-  assert(disty==distances[1]);
-  assert(distmy==distances[0]);
+  // assert( distances[2] == fPlanes[2].fA * point[0] + fPlanes[2].fB * point[1] + fPlanes[2].fC * point[2] + fPlanes[2].fD );
+
+  // assert( distances[3] == fPlanes[3].fA * point[0] + fPlanes[3].fB * point[1] + fPlanes[3].fC * point[2] + fPlanes[3].fD );
 
   for(unsigned int i=0; i<4; ++i) {
-    if (distances[i] <= kHalfTolerance) {
+    if ( std::fabs(distances[i]) <= kHalfTolerance) {
       noSurfaces ++;
-      sumnorm += Vec3D( fPlanes.fA[i], fPlanes.fB[i], fPlanes.fC[i] );
+      sumnorm += Vec3D( fPlanes2.fA[i], fPlanes2.fB[i], fPlanes2.fC[i] );
     }
   }
 
-  Precision distz = std::fabs(std::fabs(point[2]) - fDz);
-
-  if (distz <= kHalfTolerance) {
+  Precision distz = std::fabs(point[2]) - fDz;
+  if ( std::fabs(distz) <= kHalfTolerance) {
     noSurfaces ++;
     if (point[2] >= 0.)  sumnorm += Vec3D(0.,0.,1.);
     else                 sumnorm -= Vec3D(0.,0.,1.);
@@ -465,6 +466,8 @@ void UnplacedTrapezoid::Normal(const Precision *point, const Precision *dir, Pre
   norm[0] = vecnorm[0];
   norm[1] = vecnorm[1];
   norm[2] = vecnorm[2];
+
+  return noSurfaces != 0;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -640,8 +643,8 @@ Vec3D UnplacedTrapezoid::ApproxSurfaceNormal(const Vec3D& point) const {
   Precision safe = kInfinity, Dist, safez;
   int i, imin = 0;
   for (i = 0; i < 4; i++) {
-    Dist = std::fabs( fPlanes.fA[i] * point.x() + fPlanes.fB[i] * point.y()
-                    + fPlanes.fC[i] * point.z() + fPlanes.fD[i] );
+    Dist = std::fabs( fPlanes2.fA[i] * point.x() + fPlanes2.fB[i] * point.y()
+                    + fPlanes2.fC[i] * point.z() + fPlanes2.fD[i] );
     if (Dist < safe) {
       safe = Dist;
       imin = i;
@@ -649,7 +652,7 @@ Vec3D UnplacedTrapezoid::ApproxSurfaceNormal(const Vec3D& point) const {
   }
   safez = std::fabs(std::fabs(point.z()) - fDz);
   if (safe < safez) {
-    return Vec3D(fPlanes.fA[imin], fPlanes.fB[imin], fPlanes.fC[imin]);
+    return Vec3D(fPlanes2.fA[imin], fPlanes2.fB[imin], fPlanes2.fC[imin]);
   }
   else {
     if (point.z() > 0) {
@@ -734,6 +737,7 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedTrapezoid::StreamInfo(std::ostream &os) const {
     assert( 0 && "Not implemented.\n");
+    return os;
   }
 
 } // End namespace vecgeom
