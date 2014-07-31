@@ -17,12 +17,74 @@
 namespace VECGEOM_NAMESPACE {
 
 namespace {
-template <bool treatSurfaceT> struct TreatSurfaceTraits;
-template <> struct TreatSurfaceTraits<true>  { typedef Inside_t Surface_t; };
-template <> struct TreatSurfaceTraits<false> { typedef bool Surface_t; };
+template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
+template <class Backend> struct TreatSurfaceTraits<true, Backend> {
+  typedef typename Backend::inside_v Surface_t;
+};
+template <class Backend> struct TreatSurfaceTraits<false, Backend> {
+  typedef typename Backend::bool_v Surface_t;
+};
 }
 
+template <int N>
 class Planes : public AlignedBase {
+
+private:
+
+  Precision fA[N], fB[N], fC[N], fP[N];
+
+public:
+
+  Planes() {}
+
+  Planes(Planes<N> const &rhs);
+
+  ~Planes() {}
+
+  Planes& operator=(Planes<N> const &rhs);
+
+  Vector3D<Precision> GetNormal(size_t index) const;
+
+  Precision GetDistance(size_t index) const;
+
+  VECGEOM_INLINE
+  void Set(size_t index, Vector3D<Precision> const &normal,
+           Vector3D<Precision> const &origin);
+
+  template <bool signedT, class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename TreatSurfaceTraits<signedT, Backend>::Surface_t Distance(
+      Vector3D<typename Backend::float_v> const &point) const;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::float_v SignedDistance(
+      Vector3D<typename Backend::float_v> const &point) const;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::float_v UnsignedDistance(
+      Vector3D<typename Backend::float_v> const &point) const;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::inside_v Inside(
+      Vector3D<typename Backend::float_v> const &point) const;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::bool_v Contains(
+      Vector3D<typename Backend::float_v> const &point) const;
+
+};
+
+template <>
+class Planes<0> : public AlignedBase {
 
 private:
 
@@ -42,6 +104,10 @@ public:
   ~Planes();
 
   Planes& operator=(Planes const &rhs);
+
+  Vector3D<Precision> GetNormal(size_t index) const;
+
+  Precision GetDistance(size_t index) const;
 
   VECGEOM_INLINE
   void Set(size_t index, Vector3D<Precision> const &normal,
@@ -70,8 +136,6 @@ public:
   VECGEOM_INLINE
   void Contains(Vector3D<Precision> const &point, bool *inside) const;
 
-  friend std::ostream& operator<<(std::ostream &os, Planes const &planes);
-
 private:
 
   template <bool treatSurfaceT>
@@ -79,36 +143,72 @@ private:
   VECGEOM_INLINE
   void InsideKernel(
       Vector3D<Precision> const &point,
-      typename TreatSurfaceTraits<treatSurfaceT>::Surface_t *inside) const;
+      typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t
+      *inside) const;
 
 };
 
-Planes::Planes(size_t size) : fNormal(size), fP(NULL) {
+template <int N>
+Planes<N>::Planes(Planes<N> const &rhs) {
+  *this = rhs;
+}
+
+template <int N>
+Planes<N>& Planes<N>::operator=(Planes<N> const &rhs) {
+  copy(rhs.fA, rhs.fA+N, fA);
+  copy(rhs.fB, rhs.fB+N, fB);
+  copy(rhs.fC, rhs.fC+N, fC);
+  copy(rhs.fP, rhs.fP+N, fP);
+  return *this;
+}
+
+template <int N>
+Vector3D<Precision> Planes<N>::GetNormal(size_t index) const {
+  return Vector3D<Precision>(fA[index], fB[index], fC[index]);
+}
+
+template <int N>
+Precision Planes<N>::GetDistance(size_t index) const {
+  return fP[index];
+}
+
+Planes<0>::Planes(size_t size) : fNormal(size), fP(NULL) {
   fP = AlignedAllocate<Precision>(size);
 }
 
-Planes::Planes(Planes const &rhs) : fNormal(), fP(NULL) {
+Planes<0>::Planes(Planes const &rhs) : fNormal(), fP(NULL) {
   *this = rhs;
 }
 
 #ifdef VECGEOM_NVCC
+template <>
 __device__
-Planes::Planes(SOA3D<Precision> const &normal, Precision *p)
+Planes<0>::Planes(SOA3D<Precision> const &normal, Precision *p)
     : fNormal(normal.x(), normal.y(), normal.z(), normal.size()), fP(p) {}
 #endif
 
-Planes::~Planes() {
+Planes<0>::~Planes() {
   AlignedFree(fP);
 }
 
-Planes& Planes::operator=(Planes const &rhs) {
+Planes<0>& Planes<0>::operator=(Planes<0> const &rhs) {
   fNormal = rhs.fNormal;
   copy(rhs.fP, rhs.fP+rhs.fNormal.size(), fP);
   return *this;
 }
 
-void Planes::Set(size_t index, Vector3D<Precision> const &normal,
-                 Vector3D<Precision> const &x0) {
+Vector3D<Precision> Planes<0>::GetNormal(size_t index) const {
+  return fNormal[index];
+}
+
+Precision Planes<0>::GetDistance(size_t index) const {
+  return fP[index];
+}
+
+void Planes<0>::Set(
+    size_t index,
+    Vector3D<Precision> const &normal,
+    Vector3D<Precision> const &x0) {
   Precision inverseLength = 1. / normal.Mag();
   fNormal.set(index, inverseLength*normal[0], inverseLength*normal[1],
               inverseLength*normal[2]);
@@ -118,8 +218,9 @@ void Planes::Set(size_t index, Vector3D<Precision> const &normal,
 
 template <bool signedT>
 VECGEOM_CUDA_HEADER_BOTH
-void Planes::Distance(Vector3D<Precision> const &point,
-                      Precision *distance) const {
+void Planes<0>::Distance(
+    Vector3D<Precision> const &point,
+    Precision *distance) const {
   size_t i = 0;
 #ifdef VECGEOM_PLANES_VC
   for (size_t iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
@@ -144,22 +245,25 @@ void Planes::Distance(Vector3D<Precision> const &point,
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void Planes::SignedDistance(Vector3D<Precision> const &point,
-                            Precision *distance) const {
+void Planes<0>::SignedDistance(
+    Vector3D<Precision> const &point,
+    Precision *distance) const {
   return Distance<true>(point, distance);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void Planes::UnsignedDistance(Vector3D<Precision> const &point,
-                              Precision *distance) const {
+void Planes<0>::UnsignedDistance(
+    Vector3D<Precision> const &point,
+    Precision *distance) const {
   return Distance<false>(point, distance);
 }
 
 template <bool treatSurfaceT>
 VECGEOM_CUDA_HEADER_BOTH
-void Planes::InsideKernel(
+void Planes<0>::InsideKernel(
     Vector3D<Precision> const &point,
-    typename TreatSurfaceTraits<treatSurfaceT>::Surface_t *inside) const {
+    typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t
+    *inside) const {
   int i = 0;
 #ifdef VECGEOM_PLANES_VC
   for (int iMax = fNormal.size()-VcPrecision::Size; i <= iMax;
@@ -194,18 +298,21 @@ void Planes::InsideKernel(
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void Planes::Inside(Vector3D<Precision> const &point, Inside_t *inside) const {
+void Planes<0>::Inside(
+    Vector3D<Precision> const &point,
+    Inside_t *inside) const {
   InsideKernel<true>(point, inside);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-void Planes::Contains(Vector3D<Precision> const &point, bool *inside) const {
+void Planes<0>::Contains(Vector3D<Precision> const &point, bool *inside) const {
   InsideKernel<false>(point, inside);
 }
 
-std::ostream& operator<<(std::ostream &os, Planes const &planes) {
-  for (int i = 0, iMax = planes.fNormal.size(); i < iMax; ++i) {
-    os << "{" << planes.fNormal[i] << ", " << planes.fP[i] << "}\n";
+template <int N>
+std::ostream& operator<<(std::ostream &os, Planes<N> const &planes) {
+  for (int i = 0; i < N; ++i) {
+    os << "{" << planes.GetNormal(i) << ", " << planes.GetDistance(i) << "}\n";
   }
   return os;
 }

@@ -29,14 +29,15 @@ class Rectangles : public AlignedBase {
 
 private:
 
-  //   fCorner[0]             fCorner[1]
-  //             p0---------p2
+  //   fCorner[0]
+  //             p0----------
   //       |      |         |
   // (Normalized) | fNormal |  fP := distance to origin
   //    fSide     |   -o-   |        along normal
-  //       |      |         |
+  //       |      |    '    |
   //       v      |         |
-  //             p1----------        
+  //             p1---------p2
+  //                          fCorner[1]
 
   int fSize;
   // SOA3D<Precision> fCenter;

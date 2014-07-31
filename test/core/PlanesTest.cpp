@@ -7,7 +7,7 @@ using namespace vecgeom;
 
 int main() {
   constexpr int multiplier = 1;
-  Planes planes(6*multiplier);
+  Planes<0> planes(6*multiplier);
   for (int i = 0; i < multiplier; ++i) {
     planes.Set(6*i, Vector3D<Precision>(0,0,1), Vector3D<Precision>(0,0,1));
     planes.Set(6*i+1, Vector3D<Precision>(0,0,-1), Vector3D<Precision>(0,0,-1));
