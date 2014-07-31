@@ -27,14 +27,15 @@ int main() {
   xyz[7] = Vector3D<Precision>(  6-xoffset, 10-yoffset,  15 );
 
   // create trapezoid
-  UnplacedTrapezoid trapUnplaced = UnplacedTrapezoid(xyz);
+  UnplacedTrapezoid trapUnplaced(xyz);
 
-//  UnplacedTrapezoid trapUnplaced2 = UnplacedTrapezoid(1,0,0, 1,1,1,0, 1,1,1,0);
+//  UnplacedTrapezoid trapUnplaced2(1,0,0, 1,1,1,0, 1,1,1,0);
 
-  LogicalVolume world = LogicalVolume("world", &worldUnplaced);
-  LogicalVolume trap = LogicalVolume("trap", &trapUnplaced);
+  LogicalVolume world("world", &worldUnplaced);
+  LogicalVolume trap("trap", &trapUnplaced);
 
-  world.PlaceDaughter(&trap, new Transformation3D(5,2,3, 15,30,45));
+  Transformation3D *transf = new Transformation3D(5,2,3, 15,30,45);
+  world.PlaceDaughter(&trap, transf);
   //world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
 
   VPlacedVolume *worldPlaced = world.Place();
@@ -47,6 +48,9 @@ int main() {
   tester.SetRepetitions(512);
 
   tester.RunBenchmark();
+
+  // cleanup
+  delete transf;
 
   return 0;
 }
