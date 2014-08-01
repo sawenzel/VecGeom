@@ -11,8 +11,31 @@
 #include <iomanip>
 #include <fstream>
 
-#include "ShapeTester.hh"
+#include "ShapeTester.h"
 #include "VUSolid.hh"
+
+#include "base/Vector3D.h"
+#include "volumes/Box.h"
+
+#ifdef VECGEOM_ROOT
+#include "TGeoShape.h"
+#include "TGeoParaboloid.h"
+#include "TGeoBBox.h"
+#include "TGraph2D.h"
+#include "TCanvas.h"
+#include "TApplication.h"
+#include "TGeoManager.h"
+#include "TGeoMaterial.h"
+#include "TGeoMedium.h"
+#include "TGeoParaboloid.h"
+#include "TGeoVolume.h"
+#include "TPolyMarker3D.h"
+#include "TRandom3.h"
+#include "TColor.h"
+#include "TROOT.h"
+#include "TAttMarker.h"
+#include "TH1D.h"
+#endif
     
 using namespace std;
 
@@ -117,6 +140,14 @@ void ShapeTester::ShapeNormal()
   ClearErrors();
   int i;
   int numTrials =1000;
+#ifdef VECGEOM_ROOT
+  //Visualisation
+   TPolyMarker3D *pm2 = 0;
+    pm2 = new TPolyMarker3D();
+    pm2->SetMarkerSize(0.2);
+    pm2->SetMarkerColor(kBlue);
+#endif
+
   for ( i = 0; i < maxPointsInside; i++)
   {
    UVector3 point = points[i+offsetInside];
@@ -133,7 +164,7 @@ void ShapeTester::ShapeNormal()
          UVector3 dir_new;
          do{
            dir_new=GetRandomDirection();
-	   inside = volumeUSolids->Inside(point+dir_new*0.001);
+	   inside = volumeUSolids->Inside(point+dir_new*0.0000001);
 	   count++;
          }while((inside!=vecgeom::EInside::kInside)&&(count < 1000));
            
@@ -165,6 +196,10 @@ void ShapeTester::ShapeNormal()
      
          }
          point = point + dist*dir_new;
+#ifdef VECGEOM_ROOT
+         //visualisation
+         pm2->SetNextPoint(point.x(),point.y(),point.z());
+#endif
          if(volumeUSolids->Inside(point)==vecgeom::EInside::kOutside)
          {
            ReportError( &nError,point, dir_new, 0, "SN: DistanceToOut is overshooting,  new point must be on the Surface"); break;
@@ -177,6 +212,12 @@ void ShapeTester::ShapeNormal()
       }
       
   }   
+ 
+#ifdef VECGEOM_ROOT
+    //visualisation
+    new TCanvas("shape03", "ShapeNormals", 1000, 800);
+    pm2->Draw();
+#endif
    std::cout<<"% "<<std::endl;    
    std::cout << "% TestShapeNormal reported = " << CountErrors() << " errors"<<std::endl; 
    std::cout<<"% "<<std::endl; 
@@ -198,7 +239,23 @@ void ShapeTester::ShapeDistances()
   double maxZ=std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
   double maxXYZ=2*std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
   double dmove = maxXYZ;
- 
+
+ #ifdef VECGEOM_ROOT 
+  //Histograms
+   TH1D *hist1 = new TH1D("hTest1", "Residual DistancetoIn/Out",200,-20, 0);
+     hist1->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
+     hist1->GetYaxis()->SetTitle("count");
+     hist1->SetMarkerStyle(kFullCircle);
+   TH1D *hist2 = new TH1D("hTest2", "Accuracy distanceToIn for points near Surface",200,-20, 0);
+     hist2->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
+     hist2->GetYaxis()->SetTitle("count");
+     hist2->SetMarkerStyle(kFullCircle);
+  TH1D *hist3 = new TH1D("hTest3", "Accuracy distanceToOut for points near Surface",200,-20, 0);
+     hist3->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
+     hist3->GetYaxis()->SetTitle("count");
+     hist3->SetMarkerStyle(kFullCircle);
+#endif
+      
   for ( i = 0; i < maxPointsInside; i++)
   {
    UVector3 point = points[i+offsetInside];
@@ -239,6 +296,17 @@ void ShapeTester::ShapeDistances()
     ReportError( &nError,point, dir, difDelta, "SD: Distances calculation is not precise");  
     if ( difDelta > delta) delta=std::fabs (difDelta) ; 
     
+#ifdef VECGEOM_ROOT
+    //Hstograms
+    if(std::fabs(difDelta) < 1E-20) difDelta = 1E-30;
+    if(std::fabs(DistanceIn) < 1E-20) difDelta = 1E-30;
+    if(std::fabs(DistanceOut) < 1E-20) difDelta = 1E-30;
+    hist1->Fill(std::max(0.5*std::log(std::fabs(difDelta)),-20.)); 
+    hist2->Fill(std::max(0.5*std::log(std::fabs(DistanceIn)),-20.)); 
+    hist3->Fill(std::max(0.5*std::log(std::fabs(DistanceOut)),-20.)); 
+#endif
+   
+
   }
   if(fVerbose){
    std::cout<<"% TestShapeDistances:: Accuracy max for DistanceToOut="<<maxDifOut<<" from asked accuracy eps="<<10*tolerance<<std::endl;
@@ -248,6 +316,19 @@ void ShapeTester::ShapeDistances()
    std::cout<<"% "<<std::endl; 
    std::cout << "% TestShapeDistances reported = " << CountErrors() << " errors"<<std::endl; 
    std::cout<<"% "<<std::endl; 
+#ifdef VECGEOM_ROOT
+   //Histograms
+   TCanvas *c4=new TCanvas("c4", "Residuals DistancsToIn/Out", 800, 600);
+   c4->Update();
+    hist1->Draw();
+    TCanvas *c5=new TCanvas("c5", "Residuals DistancsToIn", 800, 600);
+   c5->Update();
+    hist2->Draw();
+ TCanvas *c6=new TCanvas("c6", "Residuals DistancsToOut", 800, 600);
+   c6->Update();
+    hist3->Draw();
+#endif
+  
 }
 
 void ShapeTester::TestNormalSolids()
@@ -301,7 +382,7 @@ void ShapeTester::TestSafetyFromInsideSolids()
          resultDoubleUSolids[i] = res;
 	}
   
-        SaveResultsToFile("SafetyFromOutside");
+        SaveResultsToFile("SafetyFromInside");
       }
 }
 
@@ -540,6 +621,7 @@ void ShapeTester::TestInsidePoint()
        UVector3 vr = points[i+offsetOutside] - point;
        UVector3 v = vr.Unit();
        bool valid,convex;
+       valid=false;
        UVector3 norm;
 
        double dist = volumeUSolids->DistanceToOut( point, v, norm,convex);
@@ -552,7 +634,7 @@ void ShapeTester::TestInsidePoint()
       continue;
       }
       if (dist <= 0) {
-        ReportError( &nError, point, v, safeDistance, "TI: DistanceToOut(p,v) <= 0  Normal Dist = ");
+        ReportError( &nError, point, v, NormalDist, "TI: DistanceToOut(p,v) <= 0  Normal Dist = ");
       continue;
       }
       if (dist >= UUtils::kInfinity) {
@@ -610,7 +692,7 @@ void ShapeTester::TestOutsidePoint( )
   ClearErrors();
 
   for( int j=0; j < maxPointsOutside; j++ ) {
-  // std::cout<<"ConsistencyOutside check"<<j<<std::endl;
+    //std::cout<<"ConsistencyOutside check"<<j<<std::endl;
   UVector3 point = points[j+offsetOutside];
   double safeDistance = volumeUSolids->SafetyFromOutside( point );
   
@@ -647,7 +729,6 @@ void ShapeTester::TestOutsidePoint( )
     }
 
     UVector3 p = point + dist*v;
-
     VUSolid::EnumInside insideOrNot = volumeUSolids->Inside( p );
     if (insideOrNot == vecgeom::EInside::kOutside) {
       ReportError(  &nError, point, v, safeDistance, "T0: DistanceToIn(p,v) undershoots");
@@ -688,6 +769,7 @@ void ShapeTester::TestOutsidePoint( )
     }	
 
     bool valid,convex,convex1;
+    valid=false;
     UVector3 norm;
 
     dist = volumeUSolids->DistanceToOut( p, v, norm, convex );
@@ -710,7 +792,7 @@ void ShapeTester::TestOutsidePoint( )
     }
 
     UVector3 norm1;
-      valid = volumeUSolids->Normal( p,norm1 );
+    valid = volumeUSolids->Normal( p,norm1 );
     if (norm1.Dot(v) > 0) {
       ReportError(  &nError, p, v, safeDistance, "T02: Ingoing surfaceNormal is incorrect" );
     }
@@ -771,15 +853,14 @@ void ShapeTester::TestOutsidePoint( )
     } // if valid normal
   } // Loop over inside points
  
-  n = maxPointsOutside;
+   n = maxPointsOutside;
 
-  for( i=0; i < n; i++ ) {
-    UVector3 vr =  points[i+offsetInside+offsetSurface+offsetEdge] - point;
+  for(int l=0; l < n; l++ ) {
+    UVector3 vr =  points[l+offsetOutside] - point;
     if (vr.Mag2() < DBL_MIN) continue;
 
     UVector3 v = vr.Unit();
 
-    
     double dist = volumeUSolids->DistanceToIn( point, v );
 
     if (dist <= 0) {
@@ -807,7 +888,7 @@ void ShapeTester::TestOutsidePoint( )
     }
   } // Loop over outside points
 
- }
+  }
    std::cout<<"% "<<std::endl; 
    std::cout<< "% TestOutsidePoint reported = " << CountErrors() << " errors"<<std::endl;
    std::cout<<"% "<<std::endl; 
@@ -820,23 +901,49 @@ void ShapeTester::TestAccuracyDistanceToIn(double dist)
   UVector3 point,pointSurf,v, direction, normal;
   bool convex;
   double distIn,distOut;
+  double maxDistIn=0,diff=0,difMax=0;
   int nError=0;
   ClearErrors();
   int  iIn=0,iInNoSurf=0,iOut=0,iOutNoSurf=0,iWrongSideIn=0,iWrongSideOut=0,
         iOutInf=0,iOutZero=0,iInInf=0,iInZero=0,iSafIn=0,iSafOut=0;
   double tolerance = VUSolid::Tolerance();
- //test Accuracy distance for points near Surface
+
+#ifdef VECGEOM_ROOT
+  //Histograms
+   TH1D *hist1 = new TH1D("hTest1", "Accuracy DistancetoIn",200,-20, 0);
+     hist1->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
+     hist1->GetYaxis()->SetTitle("count");
+     hist1->SetMarkerStyle(kFullCircle);
+#endif
+
+ //test Accuracy distance 
      for (int i = 0; i < maxPointsSurface+maxPointsEdge; i++)
-     {  //test GetPointOnSurface
+     { 
+      
+      //test GetPointOnSurface
       pointSurf = points[i+offsetSurface];
       UVector3 vec = GetRandomDirection();
 
       point=pointSurf+vec*dist; 
+
       VUSolid::EnumInside inside=volumeUSolids->Inside(point);
       if(inside !=  vecgeom::EInside::kSurface)
       {
            if(inside ==  vecgeom::EInside::kOutside)
            {
+            distIn   = volumeUSolids->DistanceToIn(pointSurf,vec);
+            if(distIn >= UUtils::kInfinity){ 
+             // Accuracy Test for convex part 
+              distIn   = volumeUSolids->DistanceToIn(point,-vec);
+              if(maxDistIn < distIn)maxDistIn = distIn;
+              diff = ( (pointSurf-point).Mag() - distIn);
+              if(diff > difMax) difMax = diff;
+               if(std::fabs(diff) < 1E-20) diff = 1E-30;
+#ifdef VECGEOM_ROOT
+               hist1->Fill(std::max(0.5*std::log(std::fabs(diff)),-20.)); 
+#endif
+	    }
+
             for(int j = 0; j < 1000; j++ )
             {
              vec = GetRandomDirection();
@@ -917,7 +1024,11 @@ void ShapeTester::TestAccuracyDistanceToIn(double dist)
      std::cout<< "TestForWrongSide:: Point is Inside SafetyFromOutside not zero = " << iSafIn << "\n";
    
    }
-
+#ifdef VECGEOM_ROOT
+    TCanvas *c7=new TCanvas("c7", "Accuracy DistancsToIn", 800, 600);
+    c7->Update();
+    hist1->Draw();
+#endif
     std::cout<<"% "<<std::endl; 
     std::cout << "% TestAccuracyDistanceToIn reported = " << CountErrors() << " errors"<<std::endl;
     std::cout<<"% "<<std::endl; 
@@ -930,6 +1041,13 @@ void  ShapeTester::ShapeSafetyFromInside(int max)
   int count=0, count1=0;
   int nError =0;
   ClearErrors();
+#ifdef VECGEOM_ROOT
+  //visualisation
+   TPolyMarker3D *pm3 = 0;
+    pm3 = new TPolyMarker3D();
+    pm3->SetMarkerSize(0.2);
+    pm3->SetMarkerColor(kBlue);
+#endif
 
   if( max > maxPoints )max=maxPoints;
   for (int i = 0; i < max; i++)
@@ -940,6 +1058,10 @@ void  ShapeTester::ShapeSafetyFromInside(int max)
    { 
      dir=GetRandomDirection();
      pointSphere=point+res*dir;
+#ifdef VECGEOM_ROOT
+     //visualisation
+     pm3->SetNextPoint(pointSphere.x(),pointSphere.y(),pointSphere.z());
+#endif
      double distOut=volumeUSolids->DistanceToOut(point,dir,norm,convex);
      if(distOut < res) {count1++;
         ReportError(  &nError, pointSphere, dir, distOut, "SSFI: DistanceToOut is underestimated,  less that Safety" );
@@ -961,6 +1083,11 @@ void  ShapeTester::ShapeSafetyFromInside(int max)
      std::cout<<"% ShapeSafetyFromInside ::  number of Points Outside Safety="<<count<<" number of points with  distance smaller that safety="<<count1<<std::endl;
      std::cout<<"% "<<std::endl; 
    }
+#ifdef VECGEOM_ROOT
+     //visualisation
+    new TCanvas("shape", "ShapeSafetyFromInside", 1000, 800);
+    pm3->Draw();
+#endif
     std::cout<<"% "<<std::endl; 
     std::cout<< "% TestShapeSafetyFromInside reported = " << CountErrors() << " errors"<<std::endl;
     std::cout<<"% "<<std::endl; 
@@ -973,27 +1100,35 @@ void  ShapeTester::ShapeSafetyFromOutside(int max)
   int count=0, count1=0;
   int nError;
   ClearErrors();
+#ifdef VECGEOM_ROOT
+  //visualisation
+   TPolyMarker3D *pm4 = 0;
+    pm4 = new TPolyMarker3D();
+    pm4->SetMarkerSize(0.2);
+    pm4->SetMarkerColor(kBlue);
+#endif
 
   UVector3 minExtent,maxExtent;
   volumeUSolids->Extent(minExtent,maxExtent);
-  double maxX=std::max(std::fabs(maxExtent.x()),std::fabs(minExtent.x()));
-  double maxY=std::max(std::fabs(maxExtent.y()),std::fabs(minExtent.y()));
-  double maxZ=std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
-  double maxXYZ= std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
-  if( max > maxPoints )max=maxPoints;
+  //double maxX=std::max(std::fabs(maxExtent.x()),std::fabs(minExtent.x()));
+  //double maxY=std::max(std::fabs(maxExtent.y()),std::fabs(minExtent.y()));
+  //double maxZ=std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
+  //double maxXYZ= std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
+  if( max > maxPointsOutside )max=maxPointsOutside;
   for (int i = 0; i < max; i++)
   {
-    GetVectorUSolids(point, points, i);
+    //GetVectorUSolids(point, points, i);
+    point=points[i+offsetOutside];
     res = volumeUSolids->SafetyFromOutside(point);
     if(res>0)
     {     //Safety Sphere test
      bool convex;
      int numTrials = 1000;
-     if(res > maxXYZ) 
-    {
-      int dummy = (int)(std::pow((maxXYZ/res),2));
-      numTrials = numTrials*dummy;
-     }
+     //if(res > maxXYZ) 
+     //{
+     // int dummy = (int)(std::pow((maxXYZ/res),2));
+     // numTrials = numTrials*dummy;
+     //}
      for (int j=0;j<numTrials;j++)
      { dir=GetRandomDirection();
        double distIn=volumeUSolids->DistanceToIn(point,dir);
@@ -1001,6 +1136,11 @@ void  ShapeTester::ShapeSafetyFromOutside(int max)
         ReportError(  &nError, point, dir, distIn, "SSFO: DistanceToIn is underestimated,  less that Safety" );
        }
        pointSphere=point+res*dir;
+       //std::cout<<"SFO "<<pointSphere<<std::endl;
+#ifdef VECGEOM_ROOT
+       //visualisation
+       pm4->SetNextPoint(pointSphere.x(),pointSphere.y(),pointSphere.z());
+#endif
        if( volumeUSolids->Inside(pointSphere) == vecgeom::EInside::kInside)
        { 
              ReportError(  &nError, pointSphere, dir, res, "SSFO: Safety is not safe, point on the SafetySphere is Inside" );
@@ -1020,6 +1160,11 @@ void  ShapeTester::ShapeSafetyFromOutside(int max)
   std::cout<<"% TestShapeSafetyFromOutside::  number of points Inside Safety Sphere ="<<count<<" number of points with Distance smaller that Safety="<<count1<<std::endl;
   std::cout<<"% "<<std::endl; 
  }
+#ifdef VECGEOM_ROOT
+    //visualisation
+    new TCanvas("shapeTest", "ShapeSafetyFromOutside", 1000, 800);
+    pm4->Draw();
+#endif
    std::cout<<"% "<<std::endl; 
    std::cout<< "% TestShapeSafetyFromOutside reported = " << CountErrors() << " errors"<<std::endl;
    std::cout<<"% "<<std::endl; 
@@ -1241,120 +1386,6 @@ int directoryExists (string s)
   return false;
 }
 
-int ShapeTester::SaveVectorToExternalFile(const vector<double> &vector, const string &filename1)
-{
-  Flush("Saving vector<double> to "+filename1+"\n");
-  int res = UUtils::SaveVectorToExternalFile(vector, filename1);
-  if (res) Flush ("Unable to create file"+filename1+"\n");
-  return res;
-}
-
-int ShapeTester::SaveVectorToExternalFile(const vector<UVector3> &vector, const string &filename1)
-{
-  Flush("Saving vector<UVector3> to "+filename1+"\n");
-  int res = UUtils::SaveVectorToExternalFile(vector, filename1);
-  if (res) Flush ("Unable to create file"+filename1+"\n");
-  return res;
-}
-
-int ShapeTester::SaveLegend(const string &filename1)
-{
-   vector<double> offsets(3);
-   offsets[0] = maxPointsInside, offsets[1] = maxPointsSurface, offsets[2] = maxPointsOutside;
-   return SaveVectorToExternalFile(offsets, filename1);
-}
-
-int ShapeTester::SaveDifLegend(const string &filename1)
-{
-   vector<double> offsets(3);
-   offsets[0] = difPointsInside, offsets[1] = difPointsSurface, offsets[2] = difPointsOutside;
-   return SaveVectorToExternalFile(offsets, filename1);
-}
-
-int ShapeTester::SaveDoubleResults(const string &filename1)
-{
-  int result = 0;
-  result += SaveVectorToExternalFile(resultDoubleGeant4, folder+filename1+"Geant4.dat");
-  result += SaveVectorToExternalFile(resultDoubleRoot, folder+filename1+"Root.dat");
-  result += SaveVectorToExternalFile(resultDoubleUSolids, folder+filename1+"USolids.dat");
-  return result;
-}
-
-int ShapeTester::SaveDifDoubleResults(const string &filename1)
-{
-	int result = 0;
-        difPointsInside = 0;
-        difPointsSurface = 0;
-        difPointsOutside = 0;
-        for (int i = 0; i < maxPoints; i++){
-            
-	  if(std::fabs(resultDoubleGeant4[i]-resultDoubleUSolids[i]) > minDifference){
-	    difGeant4.push_back(resultDoubleGeant4[i]);
-            difUSolids.push_back(resultDoubleUSolids[i]);
-            difPoints.push_back(points[i]);
-            difDirections.push_back(directions[i]);
-	    if(i < maxPointsInside) { difPointsInside++; }
-            else if(i < maxPointsSurface) {difPointsSurface++; }
-            else { difPointsOutside++; }
-	  }
-	}
-	result += SaveVectorToExternalFile(difGeant4, folder+filename1+"Geant4.dat");
-	result += SaveVectorToExternalFile(difUSolids, folder+filename1+"USolids.dat");
-	
-        difGeant4.clear();
-        difUSolids.clear();
-	return result;
-}
-
-int ShapeTester::SaveVectorResults(const string &filename1)
-{
-	int result = 0;
-	result += SaveVectorToExternalFile(resultVectorGeant4, folder+filename1+"Geant4.dat");
-	result += SaveVectorToExternalFile(resultVectorRoot, folder+filename1+"Root.dat");
-	result += SaveVectorToExternalFile(resultVectorUSolids, folder+filename1+"USolids.dat");
-        
-	return result;
-}
-
-int ShapeTester::SaveDifVectorResults(const string &filename1)
-{
-	int result = 0;
-        difPointsInside = 0;
-        difPointsSurface = 0;
-        difPointsOutside = 0;
-        for (int i = 0; i < maxPoints; i++){
-	 
-	  if((resultVectorGeant4[i]-resultVectorUSolids[i]).Mag() > minDifference){
-	    difVectorGeant4.push_back(resultVectorGeant4[i]);
-            difVectorUSolids.push_back(resultVectorUSolids[i]);
-            difPoints.push_back(points[i]);
-            difDirections.push_back(directions[i]);
-	    if(i < maxPointsInside) { difPointsInside++; }
-            else if(i < maxPointsSurface) {difPointsSurface++; }
-            else { difPointsOutside++; }
-	  }
-	}
-	result += SaveVectorToExternalFile(difVectorGeant4, folder+filename1+"Geant4.dat");
-	result += SaveVectorToExternalFile(difVectorUSolids, folder+filename1+"USolids.dat");
-	
-        difVectorGeant4.clear();
-        difVectorUSolids.clear();
-	
-	return result;
-}
-
-
-template <class T> void ShapeTester::VectorDifference(const vector<T> &first, const vector<T> &second, vector<T> &result)
-{
-	int size = result.size();
-	for (int i = 0; i < size; i++) 
-	{
-		T value1 = first[i];
-		T value2 = second[i];
-		T difference = value2 - value1;
-		result[i] = difference;
-	}
-}
 
 void ShapeTester::PrintCoordinates (stringstream &ss, const UVector3 &vec, const string &delimiter, int precision)
 { 
@@ -1662,7 +1693,7 @@ void ShapeTester::ReportError( int *nError,  UVector3 &p,
  
   std::cout << "% " << comment;
   if (errors->nUsed == 5) std::cout << " (any further such errors suppressed)";
-  std::cout << " DistanceToIn = " << distance ; 
+  std::cout << " Distance = " << distance ; 
   std::cout << std::endl;
 
   std::cout << ++(*nError) << " " << p.x() << " " << p.y() << " " << p.z() 
@@ -1709,7 +1740,3 @@ int ShapeTester::CountErrors() const
 
   return answer;
 }
-
-
-
-

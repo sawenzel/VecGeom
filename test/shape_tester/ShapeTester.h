@@ -6,6 +6,7 @@
 #define ShapeTester_hh
 
 #include <iostream>
+#include <sstream>
 
 #include "VUSolid.hh"
 #include "UUtils.hh"
@@ -37,7 +38,9 @@ public:
   void SetVerbose(int verbose){ fVerbose = verbose; }
   inline int GetMaxPoints() const { return maxPoints; }
   inline int GetRepeat() const { return repeat; }
+  inline UVector3 GetPoint(int index){ return points[index];}
 
+  	std::vector<UVector3> points, directions;
 private:
 	void SetDefaults();
 
@@ -107,7 +110,7 @@ private:
    
 
    
- 	std::vector<UVector3> points, directions;
+ 	//std::vector<UVector3> points, directions;
 	std::vector<UVector3> resultVectorGeant4;
 	std::vector<UVector3> resultVectorRoot;
         std::vector<UVector3> resultVectorUSolids,resultVectorDifference;
