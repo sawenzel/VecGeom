@@ -46,6 +46,7 @@ private:
   Precision fbbx, fbby, fbbz;
 
   Planes fPlanes;
+  Precision sideAreas[6];  // including z-planes
 
 public:
 
@@ -163,7 +164,7 @@ public:
   /// @}
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Normal(const Precision *point, const Precision *dir, Precision *norm) const;
+  bool Normal(const Precision *point, Precision *norm) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
@@ -186,8 +187,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
-                                      Vector3D<Precision> p2, Vector3D<Precision> p3,
-                                      Precision& area) const;
+                                      Vector3D<Precision> p2, Vector3D<Precision> p3) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrapezoid* Clone() const {

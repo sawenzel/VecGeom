@@ -81,12 +81,14 @@ bool testNormal(UnplacedTrapezoid const& trap, UTrap const& utrap ) {
   dy *= 2.0;
   dz *= 2.0;
 
-  for(int i = 0; i < 100; i++) {
+  for(int i = 0; i < 100000; i++) {
     double x = RNG::Instance().uniform(0., dx);
     double y = RNG::Instance().uniform(0., dy);
     double z = RNG::Instance().uniform(0., dz);
-
-    Vector3D<typename Backend::precision_v> point(x, y, z);
+    Vector3D<Precision> point(x, y, z);
+    if(i%2==0) {
+      point = trap.GetPointOnSurface();
+    }
 
     Precision vecgNormal[3];
     trap.Normal(&point.x(), vecgNormal);
@@ -157,7 +159,7 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
   // get planes from vecgeom trapezoid
   // TrapSidePlane const* planes = trap.GetPlanes();
-  Planes const* planes = trap.GetPlanes2();
+  Planes const* planes = trap.GetPlanes();
 
   // get planes from usolids trapezoid
   UTrapSidePlane uplanes[4];
@@ -439,7 +441,7 @@ int main() {
   }
   testVolume(trap, rtrap);
   testVolume(trap, utrap2);
-  testNormal( trap, utrap2 );
+  // testNormal( trap, utrap2 );
   testCorners(trap, rtrap);
   testPlanes(trap, utrap2);
 
@@ -466,7 +468,7 @@ int main() {
   }
   testVolume(trap, rtrap);
   testVolume(trap, utrap3);
-  testNormal(trap, utrap3);
+  // testNormal(trap, utrap3);
   testCorners(trap, rtrap);
   testPlanes(trap, utrap3);
 

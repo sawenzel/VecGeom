@@ -98,6 +98,29 @@ UnplacedTrapezoid::UnplacedTrapezoid( UnplacedTrapezoid const& other )
   MakePlanes();
 }
 
+UnplacedTrapezoid& UnplacedTrapezoid::operator=( UnplacedTrapezoid const& other ) {
+
+  fDz =other.fDz;
+  fTheta = other.fTheta;
+  fPhi = other.fPhi;
+  fDy1 = other.fDy1;
+  fDx1 = other.fDx1;
+  fDx2 = other.fDx2;
+  fTanAlpha1 = other.fTanAlpha1;
+  fDy2 = other.fDy2;
+  fDx3 = other.fDx3;
+  fDx4 = other.fDx4;
+  fTanAlpha2 = other.fTanAlpha2;
+  fTthetaSphi = other.fTthetaSphi;
+  fTthetaCphi = other.fTthetaCphi;
+
+  MakePlanes();
+
+  return *this;
+}
+
+UnplacedTrapezoid::~UnplacedTrapezoid() {};
+
 void UnplacedTrapezoid::Print() const {
   printf("UnplacedTrapezoid {%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}: size=%d bytes\n",
          GetDz(), GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(), GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
@@ -210,29 +233,6 @@ void UnplacedParallelepiped_CopyToGpu(
 
 #endif
 
-UnplacedTrapezoid& UnplacedTrapezoid::operator=( UnplacedTrapezoid const& other ) {
-
-  fDz =other.fDz;
-  fTheta = other.fTheta;
-  fPhi = other.fPhi;
-  fDy1 = other.fDy1;
-  fDx1 = other.fDx1;
-  fDx2 = other.fDx2;
-  fTanAlpha1 = other.fTanAlpha1;
-  fDy2 = other.fDy2;
-  fDx3 = other.fDx3;
-  fDx4 = other.fDx4;
-  fTanAlpha2 = other.fTanAlpha2;
-  fTthetaSphi = other.fTthetaSphi;
-  fTthetaCphi = other.fTthetaCphi;
-
-  MakePlanes();
-
-  return *this;
-}
-
-UnplacedTrapezoid::~UnplacedTrapezoid() {};
-
 bool UnplacedTrapezoid::MakePlanes() {
   TrapCorners_t pt;
   fromParametersToCorners(pt);
@@ -276,6 +276,10 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
     std::exit(1);
   }
 
+  // include areas for -Z,+Z surfaces
+  sideAreas[4] = 2*(fDx1+fDx2)*fDy1;
+  sideAreas[5] = 2*(fDx3+fDx4)*fDy2;
+
   return good;
 }
 
@@ -283,7 +287,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 //
 // Calculate the coef's of the plane p1->p2->p3->p4->p1
 // where the ThreeVectors 1-4 are in anti-clockwise order when viewed from
-// infront of the plane (i.e. from normal direction).
+// "inside" of the plane (i.e. opposite to normal vector, which points outwards).
 //
 // Return true if the ThreeVectors are coplanar + set coef;s
 //        false if ThreeVectors are not coplanar
@@ -293,8 +297,8 @@ bool UnplacedTrapezoid::MakePlane(
     const Vec3D& p2,
     const Vec3D& p3,
     const Vec3D& p4,
-    unsigned int planeIndex )
-{
+    unsigned int iplane)  {
+
   bool good;
   Precision a, b, c, d, norm;
   Vec3D v12, v13, v14, Vcross;
@@ -336,50 +340,32 @@ bool UnplacedTrapezoid::MakePlane(
     // Calculate fD: p1 is in plane so fD = -n.p1.Vect()
     d = -( a*p1.x() + b*p1.y() + c*p1.z() );
 
-    fPlanes.Set( planeIndex, a, b, c, d );
+    fPlanes.Set( iplane, a, b, c, d );
+
+    sideAreas[iplane] = 0.5* ( Vcross.Mag() + v13.Cross(v14).Mag() );
+
     good = true;
   }
   return good;
 }
 
-
 VECGEOM_CUDA_HEADER_BOTH
-void UnplacedTrapezoid::Normal(const Precision *point, const Precision *dir, Precision *norm) const {
+bool UnplacedTrapezoid::Normal(const Precision *point, Precision *norm) const {
 
   int noSurfaces = 0;
   Vec3D sumnorm(0., 0., 0.), vecnorm(0.,0.,0.);
 
   Precision distances[4];
   fPlanes.DistanceToPoint( Vec3D(point[0], point[1], point[2]), distances );
-
-  Precision distx,distmx,disty,distmy;
-  distmy = std::fabs( fPlanes.fA[0] * point[0] + fPlanes.fB[0] * point[1]
-                    + fPlanes.fC[0] * point[2] + fPlanes.fD[0] );
-
-  disty = std::fabs( fPlanes.fA[1] * point[0] + fPlanes.fB[1] * point[1]
-                   + fPlanes.fC[1] * point[2] + fPlanes.fD[1] );
-
-  distmx = std::fabs( fPlanes.fA[2] * point[0] + fPlanes.fB[2] * point[1]
-                    + fPlanes.fC[2] * point[2] + fPlanes.fD[2] );
-
-  distx = std::fabs( fPlanes.fA[3] * point[0] + fPlanes.fB[3] * point[1]
-                   + fPlanes.fC[3] * point[2] + fPlanes.fD[3] );
-
-  assert(distx==distances[3]);
-  assert(distmx==distances[2]);
-  assert(disty==distances[1]);
-  assert(distmy==distances[0]);
-
   for(unsigned int i=0; i<4; ++i) {
-    if (distances[i] <= kHalfTolerance) {
+    if ( std::fabs(distances[i]) <= kHalfTolerance) {
       noSurfaces ++;
       sumnorm += Vec3D( fPlanes.fA[i], fPlanes.fB[i], fPlanes.fC[i] );
     }
   }
 
-  Precision distz = std::fabs(std::fabs(point[2]) - fDz);
-
-  if (distz <= kHalfTolerance) {
+  Precision distz = std::fabs(point[2]) - fDz;
+  if ( std::fabs(distz) <= kHalfTolerance) {
     noSurfaces ++;
     if (point[2] >= 0.)  sumnorm += Vec3D(0.,0.,1.);
     else                 sumnorm -= Vec3D(0.,0.,1.);
@@ -390,6 +376,7 @@ void UnplacedTrapezoid::Normal(const Precision *point, const Precision *dir, Pre
                       Warning, 1, "Point is not on surface.");
 #endif
     vecnorm = ApproxSurfaceNormal( Vec3D(point[0],point[1],point[2]) );
+    // vecnorm = Vec3D(0,0,1);  // any plane will do it, since false is returned, so save the CPU cycles...
   }
   else if (noSurfaces == 1) vecnorm = sumnorm;
   else                      vecnorm = sumnorm.Unit();
@@ -397,6 +384,8 @@ void UnplacedTrapezoid::Normal(const Precision *point, const Precision *dir, Pre
   norm[0] = vecnorm[0];
   norm[1] = vecnorm[1];
   norm[2] = vecnorm[2];
+
+  return noSurfaces != 0;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -479,54 +468,74 @@ Precision UnplacedTrapezoid::SurfaceArea() const {
 VECGEOM_CUDA_HEADER_BOTH
 Vec3D UnplacedTrapezoid::GetPointOnSurface() const {
 
-  Precision aOne, aTwo, aThree, aFour, aFive, aSix, chose;
-  Vec3D pt[8];
+  Vec3D pt1[8];
 
-  pt[0] = Vec3D(-fDz * fTthetaCphi - fDy1 * fTanAlpha1 - fDx1,
-                              -fDz * fTthetaSphi - fDy1, -fDz);
-  pt[1] = Vec3D(-fDz * fTthetaCphi - fDy1 * fTanAlpha1 + fDx1,
-                              -fDz * fTthetaSphi - fDy1, -fDz);
-  pt[2] = Vec3D(-fDz * fTthetaCphi + fDy1 * fTanAlpha1 - fDx2,
-                              -fDz * fTthetaSphi + fDy1, -fDz);
-  pt[3] = Vec3D(-fDz * fTthetaCphi + fDy1 * fTanAlpha1 + fDx2,
-                              -fDz * fTthetaSphi + fDy1, -fDz);
-  pt[4] = Vec3D(+fDz * fTthetaCphi - fDy2 * fTanAlpha2 - fDx3,
-                              +fDz * fTthetaSphi - fDy2, +fDz);
-  pt[5] = Vec3D(+fDz * fTthetaCphi - fDy2 * fTanAlpha2 + fDx3,
-                              +fDz * fTthetaSphi - fDy2, +fDz);
-  pt[6] = Vec3D(+fDz * fTthetaCphi + fDy2 * fTanAlpha2 - fDx4,
-                              +fDz * fTthetaSphi + fDy2, +fDz);
-  pt[7] = Vec3D(+fDz * fTthetaCphi + fDy2 * fTanAlpha2 + fDx4,
-                              +fDz * fTthetaSphi + fDy2, +fDz);
+  pt1[0] = Vec3D(-fDz * fTthetaCphi - fDy1 * fTanAlpha1 - fDx1,
+                -fDz * fTthetaSphi - fDy1, -fDz);
+  pt1[1] = Vec3D(-fDz * fTthetaCphi - fDy1 * fTanAlpha1 + fDx1,
+                -fDz * fTthetaSphi - fDy1, -fDz);
+  pt1[2] = Vec3D(-fDz * fTthetaCphi + fDy1 * fTanAlpha1 - fDx2,
+                -fDz * fTthetaSphi + fDy1, -fDz);
+  pt1[3] = Vec3D(-fDz * fTthetaCphi + fDy1 * fTanAlpha1 + fDx2,
+                -fDz * fTthetaSphi + fDy1, -fDz);
+  pt1[4] = Vec3D(+fDz * fTthetaCphi - fDy2 * fTanAlpha2 - fDx3,
+                +fDz * fTthetaSphi - fDy2, +fDz);
+  pt1[5] = Vec3D(+fDz * fTthetaCphi - fDy2 * fTanAlpha2 + fDx3,
+                +fDz * fTthetaSphi - fDy2, +fDz);
+  pt1[6] = Vec3D(+fDz * fTthetaCphi + fDy2 * fTanAlpha2 - fDx4,
+                +fDz * fTthetaSphi + fDy2, +fDz);
+  pt1[7] = Vec3D(+fDz * fTthetaCphi + fDy2 * fTanAlpha2 + fDx4,
+                +fDz * fTthetaSphi + fDy2, +fDz);
+
+  TrapCorners_t pt;
+  this->fromParametersToCorners(pt);
+
+  // check outputs
+  for(auto i=0; i<8; ++i) {
+    if( fabs(pt1[i]-pt[i])>kTolerance ) std::cout<<" trapezoid Corner mismatch: i="<< i <<" values: "
+                                                 << pt1[i] <<" new: "<< pt[i] <<"\n";
+  }
 
   // make sure we provide the points in a clockwise fashion
 
-  chose = RNG::Instance().uniform()*(aOne + aTwo + aThree + aFour + aFive + aSix);
+  Precision chose = RNG::Instance().uniform() * SurfaceArea();
 
-  if ((chose >= 0.) && (chose < aOne)) {
-    return GetPointOnPlane(pt[0], pt[1], pt[3], pt[2], aOne);
+  Precision sumArea = 0.0;
+  if ((chose >= sumArea) && (chose < sumArea+sideAreas[0])) {
+    return GetPointOnPlane(pt[0], pt[4], pt[5], pt[1]);
   }
-  else if ((chose >= aOne) && (chose < aOne + aTwo)) {
-    return GetPointOnPlane(pt[4], pt[5], pt[7], pt[6], aTwo);
+
+  sumArea += sideAreas[0];
+  if ((chose >= sumArea) && (chose < sumArea+sideAreas[1])) {
+    return GetPointOnPlane(pt[2], pt[3], pt[7], pt[6]);
   }
-  else if ((chose >= aOne + aTwo) && (chose < aOne + aTwo + aThree)) {
-    return GetPointOnPlane(pt[6], pt[7], pt[3], pt[2], aThree);
+
+  sumArea += sideAreas[1];
+  if ((chose >= sumArea) && (chose < sumArea+sideAreas[2])) {
+    return GetPointOnPlane(pt[0], pt[2], pt[6], pt[4]);
   }
-  else if ((chose >= aOne + aTwo + aThree) && (chose < aOne + aTwo + aThree + aFour)) {
-    return GetPointOnPlane(pt[4], pt[5], pt[1], pt[0], aFour);
+
+  sumArea += sideAreas[2];
+  if ((chose >= sumArea) && (chose < sumArea+sideAreas[3])) {
+    return GetPointOnPlane(pt[1], pt[5], pt[7], pt[3]);
   }
-  else if ((chose >= aOne + aTwo + aThree + aFour)
-           && (chose < aOne + aTwo + aThree + aFour + aFive)) {
-    return GetPointOnPlane(pt[0], pt[2], pt[6], pt[4], aFive);
+
+  sumArea += sideAreas[3];
+  if ((chose >= sumArea) && (chose < sumArea+sideAreas[4])) {
+    return GetPointOnPlane(pt[0], pt[1], pt[3], pt[2]);
   }
-  return GetPointOnPlane(pt[1], pt[3], pt[7], pt[5], aSix);
+
+  sumArea += sideAreas[4];
+  if ((chose >= sumArea) && (chose < sumArea+sideAreas[5])) {
+    return GetPointOnPlane(pt[4], pt[6], pt[7], pt[5]);
+  }
+
+  // should never get here...
+  return Vec3D(0.,0.,0.);
 }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Vec3D UnplacedTrapezoid::GetPointOnPlane(
-    Vec3D p0, Vec3D p1,
-    Vec3D p2, Vec3D p3,
-    Precision& area) const {
+VECGEOM_CUDA_HEADER_BOTH
+Vec3D UnplacedTrapezoid::GetPointOnPlane(Vec3D p0, Vec3D p1, Vec3D p2, Vec3D p3) const {
 
   Precision lambda1, lambda2, chose, aOne, aTwo;
   Vec3D t, u, v, w, Area, normal;
@@ -537,23 +546,20 @@ Vec3D UnplacedTrapezoid::GetPointOnSurface() const {
   w = p0 - p3;
 
   Area = Vec3D(w.y() * v.z() - w.z() * v.y(),
-                             w.z() * v.x() - w.x() * v.z(),
-                             w.x() * v.y() - w.y() * v.x());
+               w.z() * v.x() - w.x() * v.z(),
+               w.x() * v.y() - w.y() * v.x());
 
   aOne = 0.5 * Area.Mag();
 
   Area = Vec3D(t.y() * u.z() - t.z() * u.y(),
-                             t.z() * u.x() - t.x() * u.z(),
-                             t.x() * u.y() - t.y() * u.x());
+               t.z() * u.x() - t.x() * u.z(),
+               t.x() * u.y() - t.y() * u.x());
 
   aTwo = 0.5 * Area.Mag();
 
-  area = aOne + aTwo;
-
   chose = UUtils::Random(0., aOne + aTwo);
 
-  if ((chose >= 0.) && (chose < aOne))
-  {
+  if ((chose >= 0.) && (chose < aOne)) {
     lambda1 = UUtils::Random(0., 1.);
     lambda2 = UUtils::Random(0., lambda1);
     return (p2 + lambda1 * v + lambda2 * w);
@@ -666,6 +672,7 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedTrapezoid::StreamInfo(std::ostream &os) const {
     assert( 0 && "Not implemented.\n");
+    return os;
   }
 
 } // End namespace vecgeom
