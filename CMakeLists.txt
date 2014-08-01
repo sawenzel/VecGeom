@@ -226,7 +226,9 @@ if (ROOT)
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
-  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
+  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom -lGui"
+      "-lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript"
+      "-lMatrix -lPhysics -lm -ldl")
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
     source/PlacedRootVolume.cpp
     source/RootGeoManager.cpp
@@ -322,6 +324,11 @@ endif()
 
 # Add files that won't be compiled for CUDA
 
+if (USOLIDS)
+  set(SRC_CPP ${SRC_CPP}
+    test/shape_tester/ShapeTester.cpp
+  )
+endif()
 if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
@@ -390,12 +397,16 @@ set(TEST_EXECUTABLES_BENCHMARK
 set(TEST_EXECUTABLES_CUDA
   # Files go here
 )
+set(TEST_EXECUTABLES_SHAPETESTER
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
+)
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
   ${TEST_EXECUTABLES_USOLIDS}
   ${TEST_EXECUTABLES_BENCHMARK}
   ${TEST_EXECUTABLES_CUDA}
+  ${TEST_EXECUTABLES_SHAPETESTER}
 )
 set_source_files_properties(
   ${TEST_EXECUTABLES}
@@ -429,6 +440,7 @@ if (ROOT)
 endif()
 if (USolids)
   build_executables("${TEST_EXECUTABLES_USOLIDS}" TRUE)
+  build_executables("${TEST_EXECUTABLES_SHAPETESTER}" TRUE)
 endif()
 if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}" TRUE)
