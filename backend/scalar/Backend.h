@@ -35,6 +35,14 @@ typedef kScalar::int_v    ScalarInt;
 typedef kScalar::precision_v ScalarDouble;
 typedef kScalar::bool_v   ScalarBool;
 
+template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
+template <class Backend> struct TreatSurfaceTraits<true, Backend> {
+  typedef typename Backend::inside_v Surface_t;
+};
+template <class Backend> struct TreatSurfaceTraits<false, Backend> {
+  typedef typename Backend::bool_v Surface_t;
+};
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -224,6 +232,18 @@ IteratorType min_element(IteratorType first, IteratorType last) {
   return std::min_element(first, last);
 #else
   return min_element(first, last);
+#endif
+}
+
+template <typename IteratorType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool all_of(IteratorType first, IteratorType last) {
+#ifndef VECGEOM_NVCC
+  return std::all_of(first, last);
+#else
+  while (first++ != last) if (!first) return false;
+  return true;
 #endif
 }
 
