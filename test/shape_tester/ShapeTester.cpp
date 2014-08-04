@@ -1584,10 +1584,6 @@ void ShapeTester::Run(VUSolid *testVolume)
        
         SetFolder("log");
        
-
-	if (perftab == NULL) perftab = new ofstream((folder+"Performance.dat").c_str());
-	if (perflabels == NULL) perflabels = new ofstream((folder+"PerformanceLabels.txt").c_str());
-
 	if (method == "") method = "all";
 	string name = testVolume->GetName();
 	std::cout<< "\n\n";
@@ -1621,16 +1617,12 @@ void ShapeTester::RunMethod(VUSolid *testVolume, std::string method1)
 	log = &logger;
        
         SetFolder("log");
-       
-	std::cout<<"Get Here in Run Method"<<std::endl;
-	if (perftab == NULL) perftab = new ofstream((folder+"Performance.dat").c_str());
-	if (perflabels == NULL) perflabels = new ofstream((folder+"PerformanceLabels.txt").c_str());
-        std::cout<<"Get Here1 in Run Method"<<std::endl;
+ 
         method = method1;
  
 	if (method == "") method = "all";
 	string name = testVolume->GetName();
-        	std::cout<<"Get Here2 in Run Method"<<std::endl;
+        
 	std::cout<< "\n\n";
 	std::cout << "===============================================================================\n";
 	std::cout << "Invoking test for method " << method << " on " << name << " ..." << "\nFolder is " << folder << std::endl;
