@@ -120,6 +120,40 @@ public:
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction) const;
 
+  // Static versions to be called from a specialized volume
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::bool_v ConvexContainsKernel(
+      Precision const plane[4][N],
+      Vector3D<typename Backend::precision_v> const &point);
+
+  /// \brief Assumes a convex set of rectangles.
+  /// Falls back on the implementation for planes.
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::inside_v ConvexInsideKernel(
+      Precision const plane[4][N],
+      Vector3D<typename Backend::precision_v> const &point);
+
+  /// \brief Assumes a convex set of rectangles.
+  /// Falls back on the implementation for planes.
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::precision_v ConvexDistanceToOutKernel(
+      Precision const plane[4][N],
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::precision_v DistanceToInKernel(
+      Precision const plane[4][N],
+      Precision const corner[2][3][N],
+      Precision const side[3][N],
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction);
+
 };
 
 template <int N>
@@ -206,8 +240,7 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Rectangles<N>::ConvexInside(
     Vector3D<typename Backend::precision_v> const &point) const {
-  return Planes<N>::template InsideKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
+  return ConvexInsideKernel<Backend>(fPlane, point);
 }
 
 template <int N>
@@ -215,8 +248,7 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::bool_v Rectangles<N>::ConvexContains(
     Vector3D<typename Backend::precision_v> const &point) const {
-  return Planes<N>::template ContainsKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
+  return ConvexContainsKernel<Backend>(fPlane, point);
 }
 
 template <int N>
@@ -225,8 +257,7 @@ VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Rectangles<N>::ConvexDistanceToOut(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
-  return Planes<N>::template DistanceToOutKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
+  return ConvexDistanceToOutKernel<Backend>(fPlane, point, direction);
 }
 
 template <int N>
@@ -235,31 +266,73 @@ VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Rectangles<N>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
+  return DistanceToInKernel<Backend>(
+      fPlane, fCorner, fSide, point, direction);
+}
+
+template <int N>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::inside_v Rectangles<N>::ConvexInsideKernel(
+    Precision const plane[4][N],
+    Vector3D<typename Backend::precision_v> const &point) {
+  return Planes<N>::template InsideKernel<Backend>(plane, point);
+}
+
+template <int N>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::bool_v Rectangles<N>::ConvexContainsKernel(
+    Precision const plane[4][N],
+    Vector3D<typename Backend::precision_v> const &point) {
+  return Planes<N>::template ContainsKernel<Backend>(plane, point);
+}
+
+template <int N>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Rectangles<N>::ConvexDistanceToOutKernel(
+    Precision const plane[4][N],
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction) {
+  return Planes<N>::template DistanceToOutKernel<Backend>(
+      plane, point, direction);
+}
+
+template <int N>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Rectangles<N>::DistanceToInKernel(
+    Precision const plane[4][N],
+    Precision const corner[2][3][N],
+    Precision const side[3][N],
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction) {
 
   typedef typename Backend::precision_v Float_t;
 
   Float_t bestDistance = kInfinity;
   Float_t distance[N];
   for (int i = 0; i < N; ++i) {
-    distance[i] = -(fPlane[0][i]*point[0] + fPlane[1][i]*point[1] +
-                    fPlane[2][i]*point[2] + fPlane[3][i])
-                 / (fPlane[0][i]*direction[0] + fPlane[1][i]*direction[1] +
-                    fPlane[2][i]*direction[2]);
+    distance[i] = -(plane[0][i]*point[0] + plane[1][i]*point[1] +
+                    plane[2][i]*point[2] + plane[3][i])
+                 / (plane[0][i]*direction[0] + plane[1][i]*direction[1] +
+                    plane[2][i]*direction[2]);
     Vector3D<Float_t> intersection = point + distance*direction;
     Vector3D<Float_t> fromP0(
-      intersection[0] - fCorner[0][0][i],
-      intersection[1] - fCorner[0][1][i],
-      intersection[2] - fCorner[0][2][i]
+      intersection[0] - corner[0][0][i],
+      intersection[1] - corner[0][1][i],
+      intersection[2] - corner[0][2][i]
     );
     Vector3D<Float_t> fromP2(
-      intersection[0] - fCorner[1][0][i],
-      intersection[1] - fCorner[1][1][i],
-      intersection[2] - fCorner[1][2][i]
+      intersection[0] - corner[1][0][i],
+      intersection[1] - corner[1][1][i],
+      intersection[2] - corner[1][2][i]
     );
     Vector3D<Float_t> side(
-      fSide[0][i],
-      fSide[1][i],
-      fSide[2][i]
+      side[0][i],
+      side[1][i],
+      side[2][i]
     );
     if (distance >= 0 && distance < bestDistance &&
         side.Dot(fromP0) >= 0 && (-side).Dot(fromP2) >= 0) {
