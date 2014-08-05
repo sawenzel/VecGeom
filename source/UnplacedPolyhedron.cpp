@@ -17,8 +17,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision zPlanes[],
     Precision rMin[],
     Precision rMax[])
-    : fSideCount(sideCount), fOuter(zPlaneCount-1), fInner(zPlaneCount-1),
-      fHasInnerRadii(false) {
+    : fSideCount(sideCount), fHasInnerRadii(false) {
 
   // Sanity check of input parameters
   {

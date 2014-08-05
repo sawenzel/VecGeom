@@ -201,8 +201,7 @@ void Rectangles<N>::Set(
   fCorner[1][0][index] = p2[0];
   fCorner[1][1][index] = p2[1];
   fCorner[1][2][index] = p2[2];
-  Vector3D<Precision> side = p1 - p0;
-  side.Normalize();
+  Vector3D<Precision> side = (p1 - p0).Normalized();
   fSide[0][index] = side[0];
   fSide[1][index] = side[1];
   fSide[2][index] = side[2];
@@ -318,7 +317,7 @@ typename Backend::precision_v Rectangles<N>::DistanceToInKernel(
                     plane[2][i]*point[2] + plane[3][i])
                  / (plane[0][i]*direction[0] + plane[1][i]*direction[1] +
                     plane[2][i]*direction[2]);
-    Vector3D<Float_t> intersection = point + distance*direction;
+    Vector3D<Float_t> intersection = point + distance[i]*direction;
     Vector3D<Float_t> fromP0(
       intersection[0] - corner[0][0][i],
       intersection[1] - corner[0][1][i],

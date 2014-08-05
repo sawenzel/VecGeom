@@ -39,9 +39,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   int GetSideCount() const { return fSideCount; }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  int GetSegmentCount() const { return fOuter.size(); }
-
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
