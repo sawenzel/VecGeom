@@ -163,14 +163,6 @@ public:
     return Sqrt(Perp2());
   }
 
-  /// Normalizes the vector by dividing each entry by the length.
-  /// \sa Vector3D::Length()
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void Normalize() {
-    *this /= Mag();
-  }
-
   template <typename Type2>
   ///The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
@@ -210,6 +202,32 @@ public:
   VECGEOM_INLINE
   Type Mag() const {
     return Sqrt(Mag2());
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Length() const {
+    return Mag();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Length2() const {
+    return Mag2();
+  }
+
+  /// Normalizes the vector by dividing each entry by the length.
+  /// \sa Vector3D::Length()
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void Normalize() {
+    *this /= (1. / Length());
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Type> Normalized() const {
+    return *this * (1. / Length());
   }
 
   /// \return Azimuthal angle between -pi and pi.
@@ -484,7 +502,12 @@ public:
 
   VECGEOM_INLINE
   void Normalize() {
-    *this /= Length();
+    *this *= 1. / Length();
+  }
+
+  VECGEOM_INLINE
+  Vector3D<Precision> Normalized() const {
+    return *this * (1. / Length());
   }
 
   VECGEOM_INLINE
