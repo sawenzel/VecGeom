@@ -275,7 +275,7 @@ public:
             result( mask ) = stepMaxVc;
             result.store(&currentdistance[i]);
             // currently do not know how to do this better (can do it when Vc offers long ints )
-            for(int j=0;j<VcPrecision::Size;++j)
+            for(unsigned int j=0;j<VcPrecision::Size;++j)
             {
                 nextdaughteridlist[i+j]
                                    =( ! mask[j] )? daughterid : nextdaughteridlist[i+j];
@@ -339,7 +339,7 @@ public:
           result
         );
         result.store(&output[i]);
-        for (int j=0;j<VcPrecision::Size;++j) {
+        for (unsigned int j=0;j<VcPrecision::Size;++j) {
             // -1: physics step is longer than geometry
             // -2: particle may stay inside volume
             nodeindex[i+j] = ( result[j] < stepMaxVc[j] )? -1 : -2;
