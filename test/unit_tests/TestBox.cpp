@@ -13,7 +13,7 @@
 #include "UVector3.hh"
 #endif
 
-#include <cassert>
+//#include <cassert>
 #include <cmath>
 
 template <class Box_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
@@ -59,6 +59,8 @@ bool TestBox() {
    
     assert(b1.SurfaceArea() == 20800);    
     assert(b2.SurfaceArea() == 6*20*20); 
+#endif
+
 
 // CalculateExtent
     
@@ -163,7 +165,7 @@ bool TestBox() {
     valid= b1.Normal( cornermXmYmZ ,normal); 
     assert(ApproxEqual( normal, Vec_t( -invSqrt3, -invSqrt3, -invSqrt3) )); 
     
- // DistanceToOut(P,V) with asserts for norm and convex
+    // DistanceToOut(P,V) with asserts for norm and convex
      Dist=b1.DistanceToOut(pzero,vx,norm,convex);
      assert(ApproxEqual(Dist,20)&&ApproxEqual(norm,vx)&&convex);
      Dist=b1.DistanceToOut(pzero,vmx,norm,convex);
@@ -193,7 +195,7 @@ bool TestBox() {
      assert(ApproxEqual(Dist,0)&&ApproxEqual(norm,vz)&&convex);
      Dist=b1.DistanceToOut(ponmzside,vmz,norm,convex);
      assert(ApproxEqual(Dist,0)&&ApproxEqual(norm,vmz)&&convex);
-#endif 
+//#endif
 
 // Check Inside
     assert(b1.Inside(pzero)==vecgeom::EInside::kInside);
