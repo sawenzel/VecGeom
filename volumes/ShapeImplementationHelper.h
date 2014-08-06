@@ -128,19 +128,26 @@ public:
     return output;
   }
 
+
+#ifdef VECGEOM_USOLIDS
   /*
-   * WARNING: Dummy method that pretends it supports the USolids interface
-   * for DistanceToOut. Normal and convex are completely ignored.
-   * VecGeom kernels do not yet support normals, so this was added for
-   * USolids interoperability, in particular to aid in testing
+   * WARNING: Trivial implementation for standard USolids interface
+   * for DistanceToOut. The value for convex might be wrong
    */
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(Vector3D<Precision> const &point,
                                   Vector3D<Precision> const &direction,
-                                  Vector3D<Precision> const &norm,
+                                  Vector3D<Precision> &normal,
                                   bool &convex) {
-      return DistanceToOut(point, direction);
+        double d = DistanceToOut(point, direction);
+        Vector3D<double> hitpoint = point + d*direction;
+        Shape::Normal( hitpoint, normal );
+        // we could make this something like
+        // convex = Shape::IsConvex;
+        convex = true;
+        return d;
   }
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToIn(Vector3D<Precision> const &point) const {
