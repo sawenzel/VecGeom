@@ -375,6 +375,7 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/PlanesTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/RectanglesTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
