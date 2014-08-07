@@ -328,6 +328,17 @@ bool TestBox() {
     assert(ApproxEqual(Dist,0.0));
    
 
+    /** testing tolerance of DistanceToIn **/
+    Box_t b4("Box4",5.,5.,5.);
+    // a point very slightly inside should return 0
+    Dist = b4.DistanceToIn( Vec_t(-3.0087437277453119577,
+                                  -4.9999999999999928946,
+                                  4.8935648380409944025),
+                            Vec_t(0.76315134679548990437,
+                                  0.53698876104646497964,
+                                  -0.35950395323836459305) );
+    assert(ApproxEqual(Dist,0.0));
+
     /* **********************************************************
     */ /////////////////////////////////////////////////////
 
@@ -337,7 +348,9 @@ bool TestBox() {
 int main() {
 #ifdef VECGEOM_USOLIDS
   assert(TestBox<UBox>());
+  std::cout << "UBox passed\n";
 #endif
   assert(TestBox<vecgeom::SimpleBox>());
+  std::cout << "VecGeomBox passed\n";
   return 0;
 }
