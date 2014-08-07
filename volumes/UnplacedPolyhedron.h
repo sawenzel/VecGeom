@@ -29,6 +29,7 @@ private:
 
   int fSideCount;
   bool fHasInnerRadii;
+  Planes<2> fEndCaps;
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
 
@@ -47,6 +48,18 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   int GetSideCount() const { return fSideCount; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  bool HasInnerRadii() const { return fHasInnerRadii; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Array<Segment> const& GetSegments() const { return fSegments; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Planes<2> const& GetEndCaps() const { return fEndCaps; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Segment const& GetSegment(int index) const { return fSegments[index]; }
 
   virtual int memory_size() const { return sizeof(*this); }
 

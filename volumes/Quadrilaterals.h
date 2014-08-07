@@ -25,6 +25,8 @@ private:
 
 public:
 
+  typedef Precision Array_t[N];
+
 #ifdef VECGEOM_STD_CXX11
   Quadrilaterals(int size);
 #endif
@@ -43,6 +45,9 @@ public:
       Vector3D<Precision> const &corner2,
       Vector3D<Precision> const &corner3);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  static Array_t const& ToFixedSize(Precision const *array);
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v ConvexDistanceToOut(
@@ -50,6 +55,13 @@ public:
       Vector3D<typename Backend::distance_v> const &direction) const;
 
 };
+
+template <int N>
+VECGEOM_CUDA_HEADER_BOTH
+typename Quadrilaterals<N>::Array_t const&
+Quadrilaterals<N>::ToFixedSize(Precision const *array) {
+  return *reinterpret_cast<Array_t const*>(array);
+}
 
 template <int N>
 void Quadrilaterals<N>::Set(
@@ -130,6 +142,9 @@ private:
 
 public:
 
+  typedef SOA3D<Precision> Sides_t[4];
+  typedef SOA3D<Precision> Corners_t[4];
+
 #ifdef VECGEOM_STD_CXX11
   Quadrilaterals(int size);
 #endif
@@ -140,6 +155,21 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   int size() const { return fNormal.size(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  SOA3D<Precision> const& GetNormal() const { return fNormal; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision const* GetDistance() const { return fDistance; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Sides_t const& GetSides() const { return fSides; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Corners_t const& GetCorners() const { return fCorners; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static Precision const* ToFixedSize(Precision const *array) { return array; }
 
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
@@ -167,6 +197,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::inside_v Inside(
       Vector3D<typename Backend::precision_v> const &point) const;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  typename Backend::precision_v ConvexDistanceToOut(
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::distance_v> const &direction) const;
 
 };
 
@@ -208,6 +244,15 @@ typename Backend::precision_v Quadrilaterals<0>::DistanceToIn(
   AlignedFree(distance);
   AlignedFree(inBounds);
   return bestDistance;
+}
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Quadrilaterals<0>::ConvexDistanceToOut(
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::distance_v> const &direction) const {
+  return Planes<0>::template DistanceToOutKernel<Backend>(
+      &fNormal[0], &fNormal[1], &fNormal[2], fDistance, point, direction);
 }
 
 } // End global namespace

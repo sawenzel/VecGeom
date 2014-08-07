@@ -17,8 +17,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision zPlanes[],
     Precision rMin[],
     Precision rMax[])
-    : fSideCount(sideCount), fHasInnerRadii(false), fSegments(zPlaneCount-1),
-      fZPlanes(zPlaneCount) {
+    : fSideCount(sideCount), fHasInnerRadii(false), fEndCaps(),
+      fSegments(zPlaneCount-1), fZPlanes(zPlaneCount) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -32,12 +32,19 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Initialize segments
   for (int i = 0; i < zPlaneCount-1; ++i) {
     fSegments[i].outer = Quadrilaterals<0>(fSideCount);
+    Assert(zPlanes[i] <= zPlanes[i+i], "Polyhedron Z-planes must be "
+           "monotonically increasing.\n");
     if (rMin[i] > kTolerance || rMin[i+1] > kTolerance) {
       fHasInnerRadii = true;
       fSegments[i].hasInnerRadius = true;
       fSegments[i].inner = Quadrilaterals<0>(fSideCount);
     }
   }
+
+  fEndCaps.Set(0, Vector3D<Precision>(0, 0, -1),
+                  Vector3D<Precision>(0, 0, zPlanes[0]));
+  fEndCaps.Set(1, Vector3D<Precision>(0, 0, 1),
+                  Vector3D<Precision>(0, 0, zPlanes[zPlaneCount-1]));
 
   // Compute phi as the last cylindrical coordinate of the vertices
   Precision deltaPhi = kTwoPi / sideCount;
@@ -97,5 +104,76 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   delete innerVertices;
 }
 #endif
+
+VECGEOM_CUDA_HEADER_DEVICE
+VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
+    LogicalVolume const *const volume,
+    Transformation3D const *const transformation,
+    const TranslationCode trans_code, const RotationCode rot_code,
+#ifdef VECGEOM_NVCC
+    const int id,
+#endif
+    VPlacedVolume *const placement) const {
+
+  UnplacedPolyhedron const *unplaced =
+      static_cast<UnplacedPolyhedron const *>(volume->unplaced_volume());
+
+  bool hasInner = unplaced->HasInnerRadii();
+  int sideCount = unplaced->GetSideCount();
+
+#ifndef VECGEOM_NVCC
+  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, SIDES) \
+  if (hasInner == INNER && sideCount == SIDES) { \
+    if (placement) { \
+      return new(placement) \
+             SpecializedPolyhedron<INNER, SIDES>(volume, transformation); \
+    } else { \
+      return new SpecializedPolyhedron<INNER, SIDES>(volume, transformation); \
+    } \
+  }
+#else
+  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, SIDES) \
+  if (hasInner == INNER && sideCount == SIDES) { \
+    if (placement) { \
+      return new(placement) \
+             SpecializedPolyhedron<INNER, SIDES>(volume, transformation, id); \
+    } else { \
+      return new \
+             SpecializedPolyhedron<INNER, SIDES>(volume, transformation, id); \
+    } \
+  }
+#endif
+
+  POLYHEDRON_CREATE_SPECIALIZATION(true, 3);
+  POLYHEDRON_CREATE_SPECIALIZATION(true, 4);
+  POLYHEDRON_CREATE_SPECIALIZATION(true, 5);
+  POLYHEDRON_CREATE_SPECIALIZATION(true, 6);
+  POLYHEDRON_CREATE_SPECIALIZATION(true, 7);
+  POLYHEDRON_CREATE_SPECIALIZATION(true, 8);
+  POLYHEDRON_CREATE_SPECIALIZATION(false, 3);
+  POLYHEDRON_CREATE_SPECIALIZATION(false, 4);
+  POLYHEDRON_CREATE_SPECIALIZATION(false, 5);
+  POLYHEDRON_CREATE_SPECIALIZATION(false, 6);
+  POLYHEDRON_CREATE_SPECIALIZATION(false, 7);
+  POLYHEDRON_CREATE_SPECIALIZATION(false, 8);
+
+#ifndef VECGEOM_NVCC
+  if (placement) {
+    return new(placement)
+           SpecializedPolyhedron<true, 0>(volume, transformation);
+  } else {
+    return new SpecializedPolyhedron<true, 0>(volume, transformation);
+  }
+#else
+  if (placement) {
+    return new(placement)
+           SpecializedPolyhedron<true, 0>(volume, transformation, id);
+  } else {
+    return new SpecializedPolyhedron<true, 0>(volume, transformation, id);
+  }
+#endif
+
+  #undef POLYHEDRON_CREATE_SPECIALIZATION
+}
 
 } // End global namespace

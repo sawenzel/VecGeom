@@ -14,20 +14,23 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <bool phiTreatmentT>
+template <bool treatInnerT, int sideCountT>
 struct PolyhedronSpecialization {
-  static const bool phiTreatment = phiTreatmentT;
+  static const bool treatInner = treatInnerT;
+  static const int sideCount = sideCountT;
 };
 
-typedef PolyhedronSpecialization<true> GenericPolyhedron;
+typedef PolyhedronSpecialization<true, 0> GenericPolyhedron;
 
-template <class PolyhedronType>
+template <bool treatInnerT, int sideCountT>
 class SpecializedPolyhedron
     : public ShapeImplementationHelper<
-          PlacedPolyhedron, PolyhedronImplementation<PolyhedronType> > {
+          PlacedPolyhedron,
+          PolyhedronImplementation<treatInnerT, sideCountT> > {
 
   typedef ShapeImplementationHelper<
-      PlacedPolyhedron, PolyhedronImplementation<PolyhedronType> > Helper;
+      PlacedPolyhedron,
+      PolyhedronImplementation<treatInnerT, sideCountT> > Helper;
 
 public:
 
@@ -52,26 +55,6 @@ public:
 
 #endif
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual Inside_t Inside(Vector3D<Precision> const &point) const;
-
-  VECGEOM_INLINE
-  virtual void Inside(SOA3D<Precision> const &points,
-                      Inside_t *const output) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual bool UnplacedContains(Vector3D<Precision> const &point) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual bool Contains(Vector3D<Precision> const &point) const;
-
-  VECGEOM_INLINE
-  virtual void Contains(SOA3D<Precision> const &points,
-                        bool *const output) const;
-
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -80,63 +63,11 @@ public:
 
 };
 
-typedef SpecializedPolyhedron<GenericPolyhedron> SimplePolyhedron;
+typedef SpecializedPolyhedron<true, 0> SimplePolyhedron;
 
-template <class PolyhedronType>
-void SpecializedPolyhedron<PolyhedronType>::PrintType() const {
-  printf("SpecializedPolyhedron<%i>", PolyhedronType::phiTreatment);
-}
-
-template <class PolyhedronType>
-VECGEOM_CUDA_HEADER_BOTH
-Inside_t SpecializedPolyhedron<PolyhedronType>::Inside(
-    Vector3D<Precision> const &point) const {
-  return PolyhedronImplementation<PolyhedronType>::InsideScalar(
-           *PlacedPolyhedron::GetUnplacedVolume(),
-           *VPlacedVolume::transformation(),
-           point
-         );
-}
-
-template <class PolyhedronType>
-void SpecializedPolyhedron<PolyhedronType>::Inside(
-    SOA3D<Precision> const &points,
-    Inside_t *const output) const {
-  for (int i = 0, iMax = points.size(); i < iMax; ++i) {
-    output[i] = Inside(points[i]);
-  }
-}
-
-template <class PolyhedronType>
-VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<PolyhedronType>::Contains(
-    Vector3D<Precision> const &point) const {
-  Vector3D<Precision> localPoint;
-  return PolyhedronImplementation<PolyhedronType>::ContainsScalar(
-           *PlacedPolyhedron::GetUnplacedVolume(),
-           *VPlacedVolume::transformation(),
-           point,
-           localPoint
-         );
-}
-
-template <class PolyhedronType>
-VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<PolyhedronType>::UnplacedContains(
-    Vector3D<Precision> const &point) const {
-  return PolyhedronImplementation<PolyhedronType>::UnplacedContainsScalar(
-           *PlacedPolyhedron::GetUnplacedVolume(),
-           point
-         );
-}
-
-template <class PolyhedronType>
-void SpecializedPolyhedron<PolyhedronType>::Contains(
-    SOA3D<Precision> const &points,
-    bool *const output) const {
-  for (int i = 0, iMax = points.size(); i < iMax; ++i) {
-    output[i] = Contains(points[i]);
-  }
+template <bool treatInnerT, int sideCountT>
+void SpecializedPolyhedron<treatInnerT, sideCountT>::PrintType() const {
+  printf("SpecializedPolyhedron<%i, %i>", treatInnerT, sideCountT);
 }
 
 } // End global namespace
