@@ -345,6 +345,7 @@ void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
 
+#include <iostream>
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -361,6 +362,8 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   Vector3D<Float_t> safety;
   Bool_t done = Backend::kFalse;
 
+  static const bool surfacetolerant=true;
+
   safety[0] = Abs(point[0]) - dimensions[0];
   safety[1] = Abs(point[1]) - dimensions[1];
   safety[2] = Abs(point[2]) - dimensions[2];
@@ -368,7 +371,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   done |= (safety[0] >= stepMax ||
            safety[1] >= stepMax ||
            safety[2] >= stepMax);
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   Float_t next, coord1, coord2;
   Bool_t hit;
@@ -377,31 +380,31 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   next = safety[0] / Abs(direction[0] + kTiny);
   coord1 = point[1] + next * direction[1];
   coord2 = point[2] + next * direction[2];
-  hit = safety[0] >= 0 &&
+  hit = safety[0] >= MakeMinusTolerant<surfacetolerant>(0.) &&
         point[0] * direction[0] < 0 &&
         Abs(coord1) <= dimensions[1] &&
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   // y
   next = safety[1] / Abs(direction[1] + kTiny);
   coord1 = point[0] + next * direction[0];
   coord2 = point[2] + next * direction[2];
-  hit = safety[1] >= 0 &&
+  hit = safety[1] >= MakeMinusTolerant<surfacetolerant>(0.) &&
         point[1] * direction[1] < 0 &&
         Abs(coord1) <= dimensions[0] &&
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   // z
   next = safety[2] / Abs(direction[2] + kTiny);
   coord1 = point[0] + next * direction[0];
   coord2 = point[1] + next * direction[1];
-  hit = safety[2] >= 0 &&
+  hit = safety[2] >= MakeMinusTolerant<surfacetolerant>(0.) &&
         point[2] * direction[2] < 0 &&
         Abs(coord1) <= dimensions[0] &&
         Abs(coord2) <= dimensions[1];
