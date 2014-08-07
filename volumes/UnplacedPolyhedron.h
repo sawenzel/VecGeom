@@ -9,7 +9,7 @@
 #include "base/AlignedBase.h"
 #include "base/Array.h"
 #include "base/SOA3D.h"
-#include "volumes/Rectangles.h"
+#include "volumes/Quadrilaterals.h"
 #include "volumes/UnplacedVolume.h"
 
 #include <ostream>
@@ -18,10 +18,19 @@ namespace VECGEOM_NAMESPACE {
 
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
+public:
+
+  struct Segment {
+    bool hasInnerRadius;
+    Quadrilaterals<0> inner, outer;
+  };
+
 private:
 
   int fSideCount;
   bool fHasInnerRadii;
+  Array<Segment> fSegments;
+  Array<Precision> fZPlanes;
 
 public:
 

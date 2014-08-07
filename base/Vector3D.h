@@ -313,6 +313,12 @@ public:
     return output;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static VecType FromCylindrical(Type r, Type phi, Type z) {
+    return VecType(r*cos(phi), r*sin(phi), z);
+  }
+
   // Inplace binary operators
 
   #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
@@ -637,6 +643,12 @@ public:
   VECGEOM_INLINE
   operator bool() const {
     return mem[0] && mem[1] && mem[2];
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static VecType FromCylindrical(Precision r, Precision phi, Precision z) {
+    return VecType(r*cos(phi), r*sin(phi), z);
   }
 
 };
