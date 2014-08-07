@@ -26,29 +26,35 @@ private:
   SOAData<T, rows, columns> fData;
 
   static VECGEOM_CONSTEXPR unsigned long fgColumnSize
-      = sizeof(SOA<T, rows, columns>)>>columns;
+      = sizeof(SOA<T, rows, columns>)/columns;
 
 public:
+
+  typedef T Column_t[rows];
 
   SOA() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T* operator[](int index);
+  Column_t* operator[](int index);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T const* operator[](int index) const;
+  Column_t const* operator[](int index) const;
 
 };
 
 template <typename T, int rows, int columns>
-T* SOA<T, rows, columns>::operator[](int index) {
+VECGEOM_CUDA_HEADER_BOTH
+typename SOA<T, rows, columns>::Column_t*
+SOA<T, rows, columns>::operator[](int index) {
   return &fData.fHead + index*fgColumnSize;
 }
 
 template <typename T, int rows, int columns>
-T const* SOA<T, rows, columns>::operator[](int index) const {
+VECGEOM_CUDA_HEADER_BOTH
+typename SOA<T, rows, columns>::Column_t const*
+SOA<T, rows, columns>::operator[](int index) const {
   return &fData.fHead + index*fgColumnSize;
 }
 

@@ -3,16 +3,12 @@
 using namespace vecgeom;
 
 int main() {
-  SOAData<double, 6, 4>* data = new SOAData<double, 6, 4>;
-  std::cout << "Address: " << data << "\n"
-            << "Size: " << sizeof(*data) << "\n"
-            << "Address of next: " << &data->fTail << "\n"
-            << "Difference in address: "
-            << ((unsigned long)&data->fTail - (unsigned long)data)
-            << "\n"
-            << "Address of next: " << &data->fTail.fTail << "\n"
-            << "Difference in address: "
-            << ((unsigned long)&data->fTail.fTail - (unsigned long)&data->fTail)
-            << "\n";
+  SOA<int, 6, 4> data;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 6; ++j) {
+      (*data[i])[j] = 10*i + j;
+      std::cout << (i*6+j) << ": " << (*data[i])[j] << "\n";
+    }
+  }
   return 0;
 }
