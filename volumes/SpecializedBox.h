@@ -1,5 +1,5 @@
-/// @file SpecializedBox.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file SpecializedBox.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDBOX_H_
@@ -37,6 +37,16 @@ public:
                  Transformation3D const *const transformation)
       : SpecializedBox("", logical_volume, transformation) {}
 
+  SpecializedBox(char const *const label,
+                 Vector3D<Precision> const &dim)
+      : SpecializedBox(label, new LogicalVolume(new UnplacedBox(dim)),
+                       Transformation3D::kIdentity) {}
+
+  SpecializedBox(char const *const label,
+                 const Precision dX, const Precision dY, const Precision dZ)
+      : SpecializedBox(label, new LogicalVolume(new UnplacedBox(dX, dY, dZ)),
+                       &Transformation3D::kIdentity) {}
+
 #else
 
   __device__
@@ -51,7 +61,6 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;
-  
 
 };
 

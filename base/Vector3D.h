@@ -13,6 +13,7 @@
 #endif
 
 #include <cstdlib>
+#include <ostream>
 #include <string>
 
 namespace VECGEOM_NAMESPACE {
@@ -210,6 +211,8 @@ public:
   }
 
   /// \return Azimuthal angle between -pi and pi.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Type Phi() const {
     Type output = 0;
     VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
@@ -323,7 +326,11 @@ public:
 
 };
 
-std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
+  os << "(" << vec[0] << ", " << vec[1] << ", " << vec[2] << ")";
+  return os;
+}
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
@@ -509,6 +516,8 @@ public:
   }
 
   /// \return Azimuthal angle between -pi and pi.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision Phi() const {
     return (mem[0] != 0. || mem[1] != 0.) ? ATan2(mem[1], mem[0]) : 0.;
   }
@@ -636,6 +645,26 @@ VECTOR3D_BINARY_OP(*, *=)
 VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
+template <typename Type, typename BoolType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<BoolType> operator==(Vector3D<Type> const &lhs,
+                              Vector3D<Type> const &rhs) {
+  return Vector3D<bool>(
+    Abs(lhs[0] - rhs[0]) < kTolerance,
+    Abs(lhs[1] - rhs[1]) < kTolerance,
+    Abs(lhs[2] - rhs[2]) < kTolerance
+  );
+}
+
+template <typename Type, typename BoolType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<BoolType> operator!=(Vector3D<Type> const &lhs,
+                              Vector3D<Type> const &rhs) {
+  return !(lhs == rhs);
+}
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -670,8 +699,8 @@ VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<=)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>=)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
+// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
+// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
@@ -720,8 +749,8 @@ VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<=)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>=)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
+// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
+// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push

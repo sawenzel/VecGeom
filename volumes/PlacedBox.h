@@ -70,6 +70,31 @@ public:
   VECGEOM_INLINE
   Precision z() const { return GetUnplacedVolume()->z(); }
 
+#ifdef VECGEOM_USOLIDS
+  virtual
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
+  virtual
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  {
+      bool valid;
+      BoxImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
+              *GetUnplacedVolume(),
+              point,
+              normal, valid);
+      return valid;
+  }
+
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const
+  {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+#endif
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;
 

@@ -16,11 +16,12 @@ char const *const BenchmarkResult::fgLibraryLabels[] = {
 };
 
 char const *const BenchmarkResult::fgMethodLabels[] = {
+  "Contains",
   "Inside",
   "DistanceToIn",
   "SafetyToIn",
   "DistanceToOut",
-  "SafetyToOut",
+  "SafetyToOut"
 };
 
 void BenchmarkResult::WriteCsvHeader(std::ostream &os) {

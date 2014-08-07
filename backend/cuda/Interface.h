@@ -6,6 +6,8 @@
 
 #include "base/Global.h"
 
+#ifdef VECGEOM_CUDA
+
 #include "driver_types.h" // Required for cudaError_t type
 
 namespace vecgeom {
@@ -72,5 +74,7 @@ void CopyFromGpu(Type const *const src, Type *const tgt) {
 }
 
 } // End global namespace
+
+#endif // VECGEOM_CUDA
 
 #endif // VECGEOM_BACKEND_CUDA_INTERFACE_H_

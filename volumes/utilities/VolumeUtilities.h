@@ -58,9 +58,9 @@ Vector3D<Precision> SampleDirection() {
 template<typename TrackContainer>
 VECGEOM_INLINE
 void FillRandomDirections(TrackContainer &dirs) {
-  dirs.set_size(dirs.memory_size());
-  for (int i = 0, i_max = dirs.memory_size(); i < i_max; ++i) {
-    dirs.Set(i, SampleDirection());
+  dirs.resize(dirs.capacity());
+  for (int i = 0, iMax = dirs.capacity(); i < iMax; ++i) {
+    dirs.set(i, SampleDirection());
   }
 }
 
@@ -72,7 +72,7 @@ void FillBiasedDirections(VPlacedVolume const &volume,
                           TrackContainer & dirs) {
   assert(bias >= 0. && bias <= 1.);
 
-  const int size = dirs.memory_size();
+  const int size = dirs.capacity();
   int n_hits = 0;
   std::vector<bool> hit(size, false);
   int h;
@@ -82,8 +82,8 @@ void FillBiasedDirections(VPlacedVolume const &volume,
 
   // Check hits
   for (int i = 0; i < size; ++i) {
-    for (Iterator<Daughter> j = volume.daughters().begin();
-        j != volume.daughters().end(); ++j) {
+    for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin();
+         j != volume.daughters().cend(); ++j) {
       if (IsHittingVolume(points[i], dirs[i], **j)) {
         n_hits++;
         hit[i] = true;
@@ -97,9 +97,9 @@ void FillBiasedDirections(VPlacedVolume const &volume,
         static_cast<Precision>(size) * RNG::Instance().uniform()
     );
     while (hit[h]) {
-      dirs.Set(h, SampleDirection());
-      for (Iterator<Daughter> i = volume.daughters().begin();
-          i != volume.daughters().end(); ++i) {
+      dirs.set(h, SampleDirection());
+      for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
+           iEnd = volume.daughters().cend(); i != iEnd; ++i) {
         if (!IsHittingVolume(points[h], dirs[h], **i)) {
           n_hits--;
           hit[h] = false;
@@ -116,9 +116,9 @@ void FillBiasedDirections(VPlacedVolume const &volume,
         static_cast<Precision>(size) * RNG::Instance().uniform()
     );
     while (!hit[h]) {
-      dirs.Set(h, SampleDirection());
-      for (Iterator<Daughter> i = volume.daughters().begin();
-            i != volume.daughters().end(); ++i) {
+      dirs.set(h, SampleDirection());
+      for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
+           iEnd = volume.daughters().cend(); i != iEnd; ++i) {
         if (IsHittingVolume(points[h], dirs[h], **i)) {
           n_hits++;
           hit[h] = true;
@@ -145,16 +145,16 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillUncontainedPoints(VPlacedVolume const &volume,
                            TrackContainer &points) {
-  const int size = points.memory_size();
-  points.set_size(points.memory_size());
+  const int size = points.capacity();
+  points.resize(points.capacity());
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
     bool contained;
     do {
-      points.Set(i, SamplePoint(dim));
+      points.set(i, SamplePoint(dim));
       contained = false;
-      for (Iterator<Daughter> j = volume.daughters().begin();
-          j != volume.daughters().end(); ++j) {
+      for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin(),
+          jEnd = volume.daughters().cend(); j != jEnd; ++j) {
         if ((*j)->Contains( points[i] )) {
           contained = true;
           break;
@@ -170,15 +170,15 @@ void FillContainedPoints(VPlacedVolume const &volume,
                          const double bias,
                          TrackContainer &points,
                          const bool placed = true) {
-  const int size = points.memory_size();
-  points.set_size(points.memory_size());
+  const int size = points.capacity();
+  points.resize(points.capacity());
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   int insideCount = 0;
   std::vector<bool> insideVector(size, false);
   for (int i = 0; i < size; ++i) {
-    points.Set(i, SamplePoint(dim));
-    for (Iterator<Daughter> v = volume.daughters().begin(),
-         v_end = volume.daughters().end(); v != v_end; ++v) {
+    points.set(i, SamplePoint(dim));
+    for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
+         v_end = volume.daughters().cend(); v != v_end; ++v) {
       bool inside = (placed) ? (*v)->Contains(points[i])
                              : (*v)->UnplacedContains(points[i]);
       if (inside) {
@@ -192,8 +192,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
     while (!insideVector[i]) ++i;
     bool contained = false;
     do {
-      points.Set(i, SamplePoint(dim));
-      for (Iterator<Daughter> v = volume.daughters().begin(),
+      points.set(i, SamplePoint(dim));
+      for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
            v_end = volume.daughters().end(); v != v_end; ++v) {
         bool inside = (placed) ? (*v)->Contains(points[i])
                                : (*v)->UnplacedContains(points[i]);
@@ -213,12 +213,12 @@ void FillContainedPoints(VPlacedVolume const &volume,
     bool contained = false;
     do {
       const Vector3D<Precision> sample = SamplePoint(dim);
-      for (Iterator<Daughter> v = volume.daughters().begin(),
-           v_end = volume.daughters().end(); v != v_end; ++v) {
+      for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
+           v_end = volume.daughters().cend(); v != v_end; ++v) {
         bool inside = (placed) ? (*v)->Contains(sample)
                                : (*v)->UnplacedContains(sample);
         if (inside) {
-          points.Set(i, sample);
+          points.set(i, sample);
           contained = true;
           break;
         }
@@ -251,15 +251,15 @@ template <typename TrackContainer>
 VECGEOM_INLINE
 void FillRandomPoints(VPlacedVolume const &volume,
                       TrackContainer &points) {
-  const int size = points.memory_size();
-  points.set_size(points.memory_size());
+  const int size = points.capacity();
+  points.resize(points.capacity());
   const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
   for (int i = 0; i < size; ++i) {
     Vector3D<Precision> point;
     do {
       point = SamplePoint(dim);
     } while (!volume.Inside(point));
-    points.Set(i, point);
+    points.set(i, point);
   }
 }
 

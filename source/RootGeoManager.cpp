@@ -26,6 +26,7 @@ void RootGeoManager::LoadRootGeometry() {
   // Convert() will recursively convert daughters
   world_ = Convert(world_root);
   GeoManager::Instance().set_world(world_);
+  GeoManager::Instance().CloseGeometry();
 }
 
 VPlacedVolume* RootGeoManager::Convert(TGeoNode const *const node) {

@@ -28,14 +28,16 @@ namespace VECGEOM_NAMESPACE {
 /// These do not necessarily provide all the return values promised by the
 /// interface, so use volumes in this way with caution.
 class USolidsInterfaceHelper : public VUSolid {
-  public:
+
+public:
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
-                               Vector3D<Precision> const &position,
-                               Vector3D<Precision> const &direction,
-                               Precision const step_max = kInfinity) const =0;
+    Vector3D<Precision> const &position,
+    Vector3D<Precision> const &direction,
+    Precision stepMax = kInfinity) const =0;
 
-  virtual ~USolidsInterfaceHelper(){}
+  virtual ~USolidsInterfaceHelper() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const =0;
@@ -47,17 +49,24 @@ class USolidsInterfaceHelper : public VUSolid {
                                Vector3D<double> const &direction,
                                Vector3D<double> &normal,
                                bool &convex,
-                               const double stepMax = kInfinity) const {
+                               double stepMax) const {
     return DistanceToOut(point, direction, stepMax);
   }
 
+  virtual double DistanceToOut(Vector3D<double> const &point,
+                               Vector3D<double> const &direction,
+                               Vector3D<double> &normal,
+                               bool &convex) const {
+    return DistanceToOut(point, direction, kInfinity);
+  }
+
   virtual double SafetyFromOutside(Vector3D<double> const &point,
-                                   const bool accurate) const {
+                                   bool accurate = false) const {
     return SafetyToIn(point);
   }
 
   virtual double SafetyFromInside(Vector3D<double> const &point,
-                                  const bool accurate) const {
+                                  bool accurate = false) const {
     return SafetyToOut(point);
   }
 
