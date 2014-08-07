@@ -12,6 +12,8 @@ Quadrilaterals::Quadrilaterals(int size)
 }
 #endif
 
+Quadrilaterals::Quadrilaterals() : fNormal(), fDistance(NULL) {}
+
 Quadrilaterals::~Quadrilaterals() {
   AlignedFree(size);
 }

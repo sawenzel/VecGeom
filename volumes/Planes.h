@@ -8,6 +8,7 @@
 
 #include "backend/Backend.h"
 #include "base/AlignedBase.h"
+#include "base/SOA.h"
 #include "base/SOA3D.h"
 
 #include <ostream>
@@ -23,28 +24,36 @@ template <int N>
 #endif
 class Planes : public AlignedBase {
 
-private:
+public:
 
-  // Parameters of normalized plane equation
-  // n0*x + n1*y + n2*z + p = 0
-  Precision fPlane[4][N];
+  /// Parameters of normalized plane equation
+  /// n0*x + n1*y + n2*z + p = 0
+  typedef SOA<Precision, 4, N> Plane_t;
+
+private:
+  Plane_t fPlane;
 
 public:
 
   Planes() {}
 
-  Planes(Planes<N> const &rhs);
-
   ~Planes() {}
 
-  Planes& operator=(Planes<N> const &rhs);
+  VECGEOM_CUDA_HEADER_BOTH
+  Plane_t& operator[](int index) { return fPlane[index]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Plane_t const& operator[](int index) const { return fPlane[index]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetNormal(int index) const;
 
+  VECGEOM_CUDA_HEADER_BOTH
   Precision GetDistance(int index) const;
 
-  void Set(int index, Vector3D<Precision> const &normal,
-           Vector3D<Precision> const &origin);
+  void Set(
+      int index, Vector3D<Precision> const &normal,
+      Vector3D<Precision> const &origin);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -72,7 +81,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::precision_v DistanceToOutKernel(
-      Precision const plane[4][N],
+      Precision const (&fA)[N],
+      Precision const (&fB)[N],
+      Precision const (&fC)[N],
+      Precision const (&fD)[N],
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
@@ -80,14 +92,20 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::inside_v InsideKernel(
-      Precision const plane[4][N],
+      Precision const (&fA)[N],
+      Precision const (&fB)[N],
+      Precision const (&fC)[N],
+      Precision const (&fD)[N],
       Vector3D<typename Backend::precision_v> const &point);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::bool_v ContainsKernel(
-      Precision const plane[4][N],
+      Precision const (&fA)[N],
+      Precision const (&fB)[N],
+      Precision const (&fC)[N],
+      Precision const (&fD)[N],
       Vector3D<typename Backend::precision_v> const &point);
 
 };
@@ -124,7 +142,8 @@ VECGEOM_INLINE
 typename Backend::precision_v Planes<N>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToOutKernel<Backend>(fPlane, point, direction);
+  return DistanceToOutKernel<Backend>(
+      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
 }
 
 template <int N>
@@ -132,7 +151,8 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Planes<N>::Inside(
     Vector3D<typename Backend::precision_v> const &point) const {
-  return InsideKernel<Backend>(fPlane, point);
+  return InsideKernel<Backend>(
+      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
 }
 
 template <int N>
@@ -140,20 +160,24 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::bool_v Planes<N>::Contains(
     Vector3D<typename Backend::precision_v> const &point) const {
-  return ContainsKernel<Backend>(fPlane, point);
+  return ContainsKernel<Backend>(
+      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
 }
 
 template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::bool_v Planes<N>::ContainsKernel(
-    Precision const plane[4][N],
+    Precision const (&fA)[N],
+    Precision const (&fB)[N],
+    Precision const (&fC)[N],
+    Precision const (&fD)[N],
     Vector3D<typename Backend::precision_v> const &point) {
   typedef typename Backend::bool_v Bool_t;
   Bool_t contains[N];
   for (int i = 0; i < N; ++i) {
-    contains[i] = (plane[0][i]*point[0] + plane[1][i]*point[1] +
-                   plane[2][i]*point[2] + plane[3][i]) <= 0;
+    contains[i] = (fA[i]*point[0] + fB[i]*point[1] +
+                   fC[i]*point[2] + fD[i]) <= 0;
   }
   return all_of(contains, contains+N);
 }
@@ -162,7 +186,10 @@ template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Planes<N>::InsideKernel(
-    Precision const plane[4][N],
+    Precision const (&fA)[N],
+    Precision const (&fB)[N],
+    Precision const (&fC)[N],
+    Precision const (&fD)[N],
     Vector3D<typename Backend::precision_v> const &point) {
 
   typedef typename Backend::precision_v Float_t;
@@ -171,8 +198,8 @@ typename Backend::inside_v Planes<N>::InsideKernel(
   Inside_t result = EInside::kInside;
   Inside_t inside[N];
   for (int i = 0; i < N; ++i) {
-    Float_t distance = plane[0][i]*point[0] + plane[1][i]*point[1] +
-                       plane[2][i]*point[2] + plane[3][i];
+    Float_t distance = fA[i]*point[0] + fB[i]*point[1] +
+                       fC[i]*point[2] + fD[i];
     inside[i] = EInside::kSurface;
     MaskedAssign(distance < -kTolerance, EInside::kInside,  &inside[i]);
     MaskedAssign(distance >  kTolerance, EInside::kOutside, &inside[i]);
@@ -190,7 +217,10 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v Planes<N>::DistanceToOutKernel(
-    Precision const plane[4][N],
+    Precision const (&fA)[N],
+    Precision const (&fB)[N],
+    Precision const (&fC)[N],
+    Precision const (&fD)[N],
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
@@ -201,10 +231,10 @@ typename Backend::precision_v Planes<N>::DistanceToOutKernel(
   Float_t distance[N];
   Bool_t valid[N];
   for (int i = 0; i < N; ++i) {
-    distance[i] = -(plane[0][i]*point[0] + plane[1][i]*point[1] +
-                    plane[2][i]*point[2] + plane[3][i])
-                 / (plane[0][i]*direction[0] + plane[1][i]*direction[1] +
-                    plane[2][i]*direction[2]);
+    distance[i] = -(fA[i]*point[0] + fB[i]*point[1] +
+                    fC[i]*point[2] + fD[i])
+                 / (fA[i]*direction[0] + fB[i]*direction[1] +
+                    fC[i]*direction[2]);
     valid[i] = distance[i] >= 0;
   }
   for (int i = 0; i < N; ++i) {

@@ -18,7 +18,7 @@ struct SOAData : public AlignedBase {
 template <typename T, int rows>
 struct SOAData<T, rows, 0> : public AlignedBase {};
 
-template <typename T, int rows, int columns>
+template <typename T, int columns, int rows>
 class SOA : public AlignedBase {
 
 private:
@@ -26,7 +26,7 @@ private:
   SOAData<T, rows, columns> fData;
 
   static VECGEOM_CONSTEXPR unsigned long fgColumnSize
-      = sizeof(SOA<T, rows, columns>)/columns;
+      = sizeof(SOA<T, columns, rows>)/columns;
 
 public:
 
@@ -44,17 +44,17 @@ public:
 
 };
 
-template <typename T, int rows, int columns>
+template <typename T, int columns, int rows>
 VECGEOM_CUDA_HEADER_BOTH
-typename SOA<T, rows, columns>::Column_t&
-SOA<T, rows, columns>::operator[](int index) {
+typename SOA<T, columns, rows>::Column_t&
+SOA<T, columns, rows>::operator[](int index) {
   return *(&fData.fHead + index*fgColumnSize);
 }
 
-template <typename T, int rows, int columns>
+template <typename T, int columns, int rows>
 VECGEOM_CUDA_HEADER_BOTH
-typename SOA<T, rows, columns>::Column_t const&
-SOA<T, rows, columns>::operator[](int index) const {
+typename SOA<T, columns, rows>::Column_t const&
+SOA<T, columns, rows>::operator[](int index) const {
   return *(&fData.fHead + index*fgColumnSize);
 }
 
