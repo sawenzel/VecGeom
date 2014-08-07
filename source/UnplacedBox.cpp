@@ -24,7 +24,6 @@ void UnplacedBox::Print(std::ostream &os) const {
 //______________________________________________________________________________
 void UnplacedBox::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
 {
-  std::cerr << "someone calling Extent for Box\n";
     // Returns the full 3D cartesian extent of the solid.
   aMin.x() = -dimensions_[0];
   aMax.x() = dimensions_[0];
@@ -36,7 +35,6 @@ void UnplacedBox::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax)
 
 Vector3D<Precision> UnplacedBox::GetPointOnSurface() const
 {
-  //  std::cerr << "somone calling GetPointOnSurface\n";
    //copy of original UBox algorithm
    double px, py, pz, select, sumS;
    double fDx = dimensions_[0];
