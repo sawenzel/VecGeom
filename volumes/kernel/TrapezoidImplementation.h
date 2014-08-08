@@ -99,7 +99,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
 
     // point is outside if beyond trapezoid's z-range
     auto test = Abs(point.z()) >= unplaced.GetDz();
-    MaskedAssign(test, Backend::kFalse, &inside);
+    inside &= !test;
 
     // if all points are outside, we're done
     done |= test;
@@ -113,7 +113,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
     for (unsigned int i = 0; i < 4; ++i) {
       // is it outside of this side plane?
       test = (Dist[i] > 0.0);  // no need to check (!done) here
-      MaskedAssign(test, Backend::kFalse, &inside);
+      inside &= !test;
 
       // if all points are outside, we're done
       done |= test;
@@ -122,7 +122,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
 
     // at this point, all points outside have been tagged
     return;
-  }
+}
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
@@ -175,7 +175,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
 
   for (unsigned int i = 0; i < 4; ++i) {
     // is it outside of this side plane?
-    test = (Dist[i] > kHalfTolerance);  // no need to check (!done) here
+    test = (Dist[i] > kHalfTolerance);  // no need to check (!done) here, because still testing outside
     MaskedAssign(test, EInside::kOutside, &inside);
 
     // if all points are outside, we're done
@@ -334,6 +334,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   MaskedAssign(!done && smin<0,   0.0, &distance);
 }
 
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -347,10 +348,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
-  // typename Backend::int_v side = EInside::kInside;
   distance = kInfinity;            // init to invalid value
-  // Float_t infinity(kInfinity);
-
   //
   // Step 1: find range of distances along dir between Z-planes (smin, smax)
   //
@@ -376,16 +374,15 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   Bool_t done( distance == 0.0 );
   if (done == Backend::kTrue ) return;
 
-  // Step 1.b) general case:
-  Float_t zdirFactor = Backend::kOne / dir.z();     // convert distances from z to dir
-  MaskedAssign( !done,  max*zdirFactor, &distance);
+  // Step 1.b) general case: assign distance to z plane
+  distance = max/dir.z();
 
   // Step 1.c) special case: if dir is perpendicular to z-axis...
+  // should be already done by generic assignment
   MaskedAssign(!posZdir && !negZdir, kInfinity, &distance);
 
   //
-  // Step 2: find distances for intersections with side planes. 
-  //   If dist is such that smin < dist < smax, then adjust either smin or smax.
+  // Step 2: find distances for intersections with side planes.
   //
 
   // next check where points are w.r.t. each side plane
@@ -411,6 +408,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   }
 
 }
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
