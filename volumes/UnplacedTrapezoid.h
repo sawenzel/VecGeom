@@ -163,12 +163,6 @@ public:
 
   /// @}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  bool Normal(const Precision *point, Precision *norm) const;
-
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
-
   // Computes capacity of the shape in [length^3]
   VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return Volume();}
@@ -176,18 +170,26 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea () const;
 
+#ifdef VECGEOM_USOLIDS
+  VECGEOM_CUDA_HEADER_BOTH
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision>  GetPointOnSurface() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
+                                      Vector3D<Precision> p2, Vector3D<Precision> p3) const;
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return "Trapezoid\n";}
 
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const {;}
-
-  VECGEOM_CUDA_HEADER_BOTH
-  Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
-                                      Vector3D<Precision> p2, Vector3D<Precision> p3) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrapezoid* Clone() const {

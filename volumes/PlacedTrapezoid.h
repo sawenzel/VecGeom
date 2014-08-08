@@ -97,19 +97,27 @@ public:
   Precision GetAlpha2() const { return GetUnplacedVolume()->GetAlpha2(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  bool Normal(const Precision *point, Precision *norm) const { return GetUnplacedVolume()->Normal(point, norm) ;}
-
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
-
-  VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
 
+#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
-  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface() ;}
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const {
+    return GetUnplacedVolume()->Normal(point, normal);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision>  GetPointOnSurface() const {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void ComputeBoundingBox();
