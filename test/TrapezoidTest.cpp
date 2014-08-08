@@ -18,6 +18,8 @@
 #include "UTrap.hh"
 #include "base/RNG.h"
 
+using std::max;
+
 using namespace VECGEOM_NAMESPACE;
 
 typedef kScalar Backend;
@@ -69,6 +71,48 @@ bool testVolume(UnplacedTrapezoid const& trap, UTrap& utrap) {
   return good;
 }
 
+bool testNormal(UnplacedTrapezoid const& trap, UTrap const& utrap ) {
+
+  bool passed = true;
+  auto dx = max( max(trap.GetDx1(), trap.GetDx2()), max(trap.GetDx3(), trap.GetDx4()));
+  auto dy = max(trap.GetDy1(), trap.GetDy2());
+  auto dz = trap.GetDz();
+  dx *= 2.0;
+  dy *= 2.0;
+  dz *= 2.0;
+
+  for(int i = 0; i < 100000; i++) {
+    double x = RNG::Instance().uniform(0., dx);
+    double y = RNG::Instance().uniform(0., dy);
+    double z = RNG::Instance().uniform(0., dz);
+    Vector3D<Precision> point(x, y, z);
+    if(i%2==0) {
+      point = trap.GetPointOnSurface();
+    }
+
+    Precision vecgNormal[3];
+    trap.Normal(&point.x(), vecgNormal);
+    UVector3 usolNormal;
+    utrap.Normal(point, usolNormal);
+
+    bool good = true;
+    if( fabs(vecgNormal[0] - usolNormal.x()) > kTolerance ) good = false;
+    if( fabs(vecgNormal[1] - usolNormal.y()) > kTolerance ) good = false;
+    if( fabs(vecgNormal[2] - usolNormal.z()) > kTolerance ) good = false;
+
+    if(!good) {
+      passed = false;
+      printf("*** testNormal vs. USolids FAILED for point: (%f; %f; %f)\n\tUSolids: (%f; %f; %f)  --  Vecgeom: (%f; %f; %f)\n",
+             point.x(), point.y(), point.z(),
+             usolNormal.x(), usolNormal.y(), usolNormal.z(),
+             vecgNormal[0], vecgNormal[1], vecgNormal[2]);
+    }
+  }
+
+  if(passed && debug) printf("testNormal: VecGeom vs. USolids passed.\n");
+  return passed;
+}
+
 bool testCorners(UnplacedTrapezoid const& trap, TGeoTrap& rtrap) {
 
   // get corners from vecgeom trapezoid
@@ -114,7 +158,8 @@ bool testCorners(UnplacedTrapezoid const& trap, TGeoTrap& rtrap) {
 bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
   // get planes from vecgeom trapezoid
-  TrapSidePlane const* planes = trap.GetPlanes();
+  // TrapSidePlane const* planes = trap.GetPlanes();
+  Planes const* planes = trap.GetPlanes();
 
   // get planes from usolids trapezoid
   UTrapSidePlane uplanes[4];
@@ -129,26 +174,26 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
     if(debug>2) {
       printf("Plane %d: {%.3f, %.3f, %.3f, %.3f}\t\t{%.3f, %.3f, %.3f, %.3f}\n", i,
-             planes[i].fA, planes[i].fB, planes[i].fC, planes[i].fD, uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d);
+             planes->fA[i], planes->fB[i], planes->fC[i], planes->fD[i], uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d);
     }
 
-    if( fabs( planes[i].fA - uplanes[i].a ) > kTolerance ) {
-      printf("Discrepancy in plane A-value: %.3f vs. %.3f\n", planes[i].fA, uplanes[i].a);
+    if( fabs( planes->fA[i] - uplanes[i].a ) > kTolerance ) { // V2
+      printf("Discrepancy in plane A-value: %.3f vs. %.3f\n", planes->fA[i], uplanes[i].a);
       good = false;
     }
 
-    if( fabs( planes[i].fB - uplanes[i].b ) > kTolerance ) {
-      printf("Discrepancy in plane B-value: %.3f vs. %.3f\n", planes[i].fB, uplanes[i].b);
+    if( fabs( planes->fB[i] - uplanes[i].b ) > kTolerance ) { // V2
+      printf("Discrepancy in plane B-value: %.3f vs. %.3f\n", planes->fB[i], uplanes[i].b);
       good = false;
     }
 
-    if( fabs( planes[i].fC - uplanes[i].c ) > kTolerance ) {
-      printf("Discrepancy in plane C-value: %.3f vs. %.3f\n", planes[i].fC, uplanes[i].c);
+    if( fabs( planes->fC[i] - uplanes[i].c ) > kTolerance ) { // V2
+      printf("Discrepancy in plane C-value: %.3f vs. %.3f\n", planes->fC[i], uplanes[i].c);
       good = false;
     }
 
-    if( fabs( planes[i].fD - uplanes[i].d ) > kTolerance ) {
-      printf("Discrepancy in plane D-value: %.3f vs. %.3f\n", planes[i].fD, uplanes[i].d);
+    if( fabs( planes->fD[i] - uplanes[i].d ) > kTolerance ) { // V2
+      printf("Discrepancy in plane D-value: %.3f vs. %.3f\n", planes->fD[i], uplanes[i].d);
       good = false;
     }
   }
@@ -187,7 +232,7 @@ void insideRoot(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
       out++;
 
     if(inside != inside_v) {
-      std::cout << "ERROR for point " << point << ": " << inside <<' '<< inside_v << std::endl;
+      std::cout << "ERROR (insideRoot) for point " << point << ": " << inside <<' '<< inside_v << std::endl;
       passed = false;
     }
   }
@@ -220,7 +265,7 @@ void insideUSolids(PlacedTrapezoid const& trap, UTrap const& utrap) {
     // if( vginside==EInside::kSurface && uinside==::VUSolid::eSurface ) good = true;
     if( vginside == uinside ) good = true;
     if(!good) {
-      std::cout << "ERROR for point " << point << ": "
+      std::cout << "ERROR (insideUsolids) for point " << point << ": "
                 << vginside <<" "<< (vginside==EInside::kInside?"(in) / ":"(out) / ")
                 << uinside <<" "<< (uinside ==EInside::kInside?"(in)":"(out)")
                 << std::endl;
@@ -266,17 +311,17 @@ void distancetoin(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
     rdist  = rtrap.DistFromOutside(p, v);
 
     if(  rdist == 1e+30 && vgdist == kInfinity ) {
-      std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
+      // std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
       ++hits;
     }
     else {
       if( fabs(rdist-vgdist) < kTolerance ) {
-      std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
+      // std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
         ++hits;
       }
       else {
         ++misses;
-        std::cout << "ERROR: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
+        std::cout << "ERROR (distanceToIn): Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
       }
     }
   }
@@ -383,6 +428,7 @@ int main() {
   testVolume(trap, utrap);
   testCorners(trap, rtrap);
   testPlanes(trap, utrap);
+  testNormal( trap, utrap );
 
   // validate constructor with input array
   double pars[11] = {15,0,0,5,5,15,0,10,25,45,0};
@@ -394,8 +440,9 @@ int main() {
     printf("In degrees: Theta=%.2f;  Phi=%.2f\n", trap.GetTheta()*kRadToDeg, trap.GetPhi()*kRadToDeg);
   }
   testVolume(trap, rtrap);
-  testCorners(trap, rtrap);
   testVolume(trap, utrap2);
+  // testNormal( trap, utrap2 );
+  testCorners(trap, rtrap);
   testPlanes(trap, utrap2);
 
   // validate construtor for input corner points -- add an xy-offset for non-zero theta,phi
@@ -421,13 +468,14 @@ int main() {
   }
   testVolume(trap, rtrap);
   testVolume(trap, utrap3);
+  // testNormal(trap, utrap3);
   testCorners(trap, rtrap);
   testPlanes(trap, utrap3);
 
   PlacedTrapezoid const* ptrap = reinterpret_cast<PlacedTrapezoid const*>( LogicalVolume(&trap).Place() );
   insideRoot(*ptrap,rtrap);
   insideUSolids(*ptrap,utrap3);
+  distancetoin(*ptrap, rtrap);  // some discrepancies...
 
-  distancetoin(*ptrap, rtrap);
   // safety();
 }

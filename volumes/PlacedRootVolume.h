@@ -74,6 +74,14 @@ public:
                             Precision const *const stepMax,
                             Precision *const output) const;
 
+
+  virtual void DistanceToInMinimize(SOA3D<Precision> const &position,
+                                    SOA3D<Precision> const &direction,
+                                    int daughterindex,
+                                    Precision *const output,
+                                    int *const nextnodeids
+                                   ) const;
+
   virtual void DistanceToIn(AOS3D<Precision> const &position,
                             AOS3D<Precision> const &direction,
                             Precision const *const stepMax,
@@ -89,6 +97,12 @@ public:
                              Precision const *const step_max,
                              Precision *const output) const;
 
+  virtual void DistanceToOut(SOA3D<Precision> const &position,
+                             SOA3D<Precision> const &direction,
+                             Precision const *const step_max,
+                             Precision *const output,
+                             int *const nextnodeindex) const;
+
   virtual void DistanceToOut(AOS3D<Precision> const &position,
                              AOS3D<Precision> const &direction,
                              Precision const *const stepMax,
@@ -103,6 +117,9 @@ public:
   virtual void SafetyToOut(AOS3D<Precision> const &position,
                            Precision *const safeties) const;
 
+  virtual void SafetyToOutMinimize(SOA3D<Precision> const &position,
+                                   Precision *const safeties) const;
+
   VECGEOM_INLINE
   virtual Precision SafetyToIn(Vector3D<Precision> const &position) const;
 
@@ -111,6 +128,9 @@ public:
 
   virtual void SafetyToIn(AOS3D<Precision> const &position,
                           Precision *const safeties) const;
+
+  virtual void SafetyToInMinimize(SOA3D<Precision> const &position,
+                                  Precision *const safeties) const;
 
 #ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;

@@ -6,8 +6,6 @@
 
 #include "base/Global.h"
 
-#include "base/Iterator.h"
-
 #include <cassert>
 #include <map>
 

@@ -6,6 +6,7 @@
 #include "base/Global.h"
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+#include <string>
 
 #include "backend/Backend.h"
 #include "base/PlaneShell.h"
@@ -42,8 +43,10 @@ private:
   Precision fTanAlpha2;
   Precision fTthetaCphi;
   Precision fTthetaSphi;
+  Precision fbbx, fbby, fbbz;
 
   Planes fPlanes;
+  Precision sideAreas[6];  // including z-planes
 
 public:
 
@@ -160,6 +163,44 @@ public:
 
   /// @}
 
+  VECGEOM_CUDA_HEADER_BOTH
+  bool Normal(const Precision *point, Precision *norm) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+
+  // Computes capacity of the shape in [length^3]
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const { return Volume();}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision SurfaceArea () const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision>  GetPointOnSurface() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return "Trapezoid\n";}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void GetParameterList() const {;}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
+                                      Vector3D<Precision> p2, Vector3D<Precision> p3) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedTrapezoid* Clone() const {
+    return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
+                                 GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+                                 GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::ostream& StreamInfo(std::ostream &os) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> ApproxSurfaceNormal(const Vector3D<Precision>& p) const;
 
   /// \brief Volume
   VECGEOM_CUDA_HEADER_BOTH

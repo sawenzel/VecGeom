@@ -37,17 +37,13 @@ namespace VECGEOM_NAMESPACE {
 
 //template <int N, typename Type>
 template <int N, typename Type>
-class PlaneShell {
-
-private:
+struct PlaneShell {
 
   // Using a SOA-like data structure for vectorization
   Precision fA[N];
   Precision fB[N];
   Precision fC[N];
   Precision fD[N];
-
-public:
 
   /**
    * Initializes the SOA with existing data arrays, performing no allocation.
