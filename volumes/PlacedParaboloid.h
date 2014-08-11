@@ -19,6 +19,9 @@
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParaboloid.h"
+#ifdef USOLIDS
+class VUSOLID;
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -117,7 +120,9 @@ public:
     
     
     VECGEOM_CUDA_HEADER_BOTH
-    void Normal(const Precision *point, const Precision *dir, Precision *norm) const { GetUnplacedVolume()->Normal(point, dir, norm) ;}
+    virtual
+    bool Normal( Vector3D<Precision> const &, Vector3D<double> &normal ) const { }
+  //  { GetUnplacedVolume()->Normal(point, dir, norm) ;}
     
     VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
@@ -139,19 +144,26 @@ public:
 
    
     VECGEOM_CUDA_HEADER_BOTH
-    const char* GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+    virtual
+    std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
    
     VECGEOM_CUDA_HEADER_BOTH
     void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
 
+#ifdef USOLIDS
     VECGEOM_CUDA_HEADER_BOTH
-    UnplacedParaboloid* Clone() const{ return GetUnplacedVolume()->Clone() ;}
-
+    virtual
+    VUSolid* Clone() const{ 
+      return NULL;
+      //return GetUnplacedVolume()->Clone() ;
+}
+#endif
     
-    VECGEOM_CUDA_HEADER_BOTH
-    void StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo( os) ;}
+  //    VECGEOM_CUDA_HEADER_BOTH
+  //    virtual
+  //    void StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo( os) ;}
 
     
 #ifdef VECGEOM_BENCHMARK

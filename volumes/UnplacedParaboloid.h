@@ -186,7 +186,7 @@ public:
 //__________________________________________________________________
 
     VECGEOM_CUDA_HEADER_BOTH
-    const char* GetEntityType() const{ return "Paraboloid\n";}
+    std::string GetEntityType() const{ return "Paraboloid";}
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH

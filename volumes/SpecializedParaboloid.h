@@ -8,7 +8,7 @@
 #include "volumes/kernel/ParaboloidImplementation.h"
 #include "volumes/PlacedParaboloid.h"
 #include "volumes/ShapeImplementationHelper.h"
-
+#include "base/Transformation3D.h"
 #include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
@@ -35,6 +35,12 @@ public:
   SpecializedParaboloid(LogicalVolume const *const logical_volume,
                         Transformation3D const *const transformation)
       : SpecializedParaboloid("", logical_volume, transformation) {}
+
+  //  SpecializedParaboloid(char const *const label, const Precision rlo, const Precision rhi, const Precision dz)
+  //    : SpecializedParaboloid(label, new LogicalVolume(new UnplacedParaboloid(rlo, rhi, dz)), &Transformation3D::kIdentity) {}
+
+  SpecializedParaboloid(char const *const label, const Precision rlo, const Precision rhi, const Precision dz)
+    : SpecializedParaboloid(label, new LogicalVolume(new UnplacedParaboloid(rlo, rhi, dz)), NULL) {}
 
 #else
 
