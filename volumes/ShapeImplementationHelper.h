@@ -13,7 +13,6 @@
 #include "volumes/PlacedBox.h"
 
 #include <algorithm>
-
 namespace VECGEOM_NAMESPACE {
 
 template <class Shape, class Specialization>
@@ -138,8 +137,8 @@ public:
   virtual Precision DistanceToOut(Vector3D<Precision> const &point,
                                   Vector3D<Precision> const &direction,
                                   Vector3D<Precision> &normal,
-                                  bool &convex) {
-        double d = DistanceToOut(point, direction);
+                                  bool &convex, Precision step = kInfinity ) const {
+      double d = DistanceToOut(point, direction, step );
         Vector3D<double> hitpoint = point + d*direction;
         Shape::Normal( hitpoint, normal );
         // we could make this something like

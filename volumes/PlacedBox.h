@@ -93,6 +93,18 @@ public:
   {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
+
+  virtual Precision Capacity() {
+    return GetUnplacedVolume()->volume();
+  }
+
+  virtual double SurfaceArea() {
+     return GetUnplacedVolume()->SurfaceArea();
+  }
+
+  virtual std::string GetEntityType() const {
+      return "Box";
+  }
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
