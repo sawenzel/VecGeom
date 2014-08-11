@@ -2,18 +2,20 @@
 #include "VUSolid.hh"
 #include "UBox.hh"
 
-//#include "base/Vector3D.h"
-//#include "volumes/Box.h"
+#include "base/Vector3D.h"
+#include "volumes/Box.h"
 
 #ifdef VECGEOM_ROOT
 #include "TApplication.h"
 #endif
 #include "stdlib.h"
 
+//typedef UBox Box_t;
+typedef vecgeom::SimpleBox Box_t;
+
 int main(  int argc,char *argv[]) {
 
-  UBox* box=new UBox("test_box",5.,5.,5.);
-  
+  VUSolid* box=new Box_t("test_box",5.,5.,5.);
   ShapeTester tester;
 
   if(argc>1)

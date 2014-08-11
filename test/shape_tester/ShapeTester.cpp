@@ -608,9 +608,9 @@ void ShapeTester::TestInsidePoint()
     return;
     }
     double safeDistanceFromOut = volumeUSolids->SafetyFromOutside(point );
-    if (safeDistanceFromOut != 0.0) {
+    if (safeDistanceFromOut > 0.0) {
 	UVector3 zero(0);
-	ReportError(  &nError, point, zero, safeDistance, "TI: SafetyFromOutside(p) not 0 for Point Inside" );
+	ReportError(  &nError, point, zero, safeDistanceFromOut, "TI: SafetyFromOutside(p) not 0 for Point Inside" );
 	//continue;
     }
    
@@ -715,9 +715,9 @@ void ShapeTester::TestOutsidePoint( )
 
    double safeDistanceFromInside = volumeUSolids->SafetyFromInside( point );
   
-  if (safeDistanceFromInside != 0.0) {
+  if (safeDistanceFromInside > 0.0) {
 	UVector3 zero(0);
-    ReportError(  &nError, point, zero, safeDistance,"T0: SafetyFromInside(p) not 0 for point Outside");
+    ReportError(  &nError, point, zero, safeDistanceFromInside,"T0: SafetyFromInside(p) not 0 for point Outside");
     //continue;
   }
    
