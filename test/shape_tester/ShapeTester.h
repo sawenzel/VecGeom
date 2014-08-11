@@ -35,11 +35,12 @@ public:
         inline void SetSaveAllData( const bool safe ) { ifSaveAllData = safe; }
         inline void SetRunAllTests( const bool safe ) { ifMoreTests = safe; }
 	void SetFolder( const std::string &newFolder );
-  void SetVerbose(int verbose){ fVerbose = verbose; }
-  inline int GetMaxPoints() const { return maxPoints; }
-  inline int GetRepeat() const { return repeat; }
-  inline UVector3 GetPoint(int index){ return points[index];}
-
+        void SetVerbose(int verbose){ fVerbose = verbose; }
+        inline int GetMaxPoints() const { return maxPoints; }
+        inline int GetRepeat() const { return repeat; }
+        inline UVector3 GetPoint(int index){ return points[index];}
+        inline void SetNumberOfScans(int num){ gNumberOfScans = num; } 
+    
   	std::vector<UVector3> points, directions;
 private:
 	void SetDefaults();
@@ -68,7 +69,7 @@ private:
 	int CountDoubleDifferences(const std::vector<double> &differences);
 	int CountDoubleDifferences(const std::vector<double> &differences, const std::vector<double> &values1, const std::vector<double> &values2);
 
-//	int CompareVectorDifference(std::string filename);
+ //	int CompareVectorDifference(std::string filename);
 
 protected:
 	UVector3	GetRandomPoint() const;
@@ -78,13 +79,17 @@ protected:
 		UVector3 &v, double distance,
 			     std::string comment);//, std::ostream &logger );
 	void 	ClearErrors();		
-	int 	CountErrors() const;		
+	int 	CountErrors() const;
 
+        
 protected:
 
 	int maxPoints, repeat;
         int fVerbose;   
-  double	insidePercent, outsidePercent,edgePercent, outsideMaxRadiusMultiple, outsideRandomDirectionPercent, differenceTolerance;
+        double	insidePercent, outsidePercent,edgePercent, outsideMaxRadiusMultiple, outsideRandomDirectionPercent, differenceTolerance;
+        // XRay profile statistics
+        int gNumberOfScans ;
+        double gCapacitySampled,gCapacityError ,gCapacityAnalytical ;
 	std::string method;
 
 
@@ -163,6 +168,10 @@ private:
 
 	void TestDistanceToOutSolids();             
         void ShapeNormal();
+        void TestXRayProfile();
+        void XRayProfile(double theta=45, int nphi=15, int ngrid=1000, bool useeps=true);
+	 void Integration(double theta=45, double phi=45, int ngrid=1000, bool useeps=true, int npercell=1, bool graphics=true);
+	double CrossedLength(const UVector3 &point, const UVector3 &dir, bool useeps);
 
 	void CreatePointsAndDirections();
 	void CreatePointsAndDirectionsSurface();
