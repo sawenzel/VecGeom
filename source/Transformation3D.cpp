@@ -51,30 +51,21 @@ Transformation3D::Transformation3D(
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-Transformation3D::Transformation3D(Transformation3D const &other) {
-  SetTranslation(other.Translation(0), other.Translation(1),
-                 other.Translation(2));
-  SetRotation(other.Rotation(0), other.Rotation(1), other.Rotation(2),
-              other.Rotation(3), other.Rotation(4), other.Rotation(5),
-              other.Rotation(6), other.Rotation(7), other.Rotation(8));
-  SetProperties();
-}
-
-VECGEOM_CUDA_HEADER_BOTH
 void Transformation3D::Print() const {
-  printf("Transformation3D {{%.2f, %.2f, %.2f}, ", trans[0], trans[1],
-         trans[2]);
-  printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}", rot[0],
-         rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+  printf("Transformation3D {{%.2f, %.2f, %.2f}, ",
+         fTranslation[0], fTranslation[1], fTranslation[2]);
+  printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}",
+         fRotation[0], fRotation[1], fRotation[2], fRotation[3], fRotation[4],
+         fRotation[5], fRotation[6], fRotation[7], fRotation[8]);
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 void Transformation3D::SetTranslation(const Precision tx,
                                           const Precision ty,
                                           const Precision tz) {
-  trans[0] = tx;
-  trans[1] = ty;
-  trans[2] = tz;
+  fTranslation[0] = tx;
+  fTranslation[1] = ty;
+  fTranslation[2] = tz;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -84,21 +75,21 @@ void Transformation3D::SetTranslation(Vector3D<Precision> const &vec) {
 
 VECGEOM_CUDA_HEADER_BOTH
 void Transformation3D::SetProperties() {
-  has_translation = (
-    fabs(trans[0]) > kTolerance ||
-    fabs(trans[1]) > kTolerance ||
-    fabs(trans[2]) > kTolerance
+  fHasTranslation = (
+    fabs(fTranslation[0]) > kTolerance ||
+    fabs(fTranslation[1]) > kTolerance ||
+    fabs(fTranslation[2]) > kTolerance
   ) ? true : false;
-  has_rotation = (GenerateRotationCode() == rotation::kIdentity)
+  fHasRotation = (GenerateRotationCode() == rotation::kIdentity)
                  ? false : true;
-  identity = !has_translation && !has_rotation;
+  fIdentity = !fHasTranslation && !fHasRotation;
 }
 
 
 VECGEOM_CUDA_HEADER_BOTH
 void Transformation3D::SetRotation(const Precision phi,
-                                       const Precision theta,
-                                       const Precision psi) {
+                                   const Precision theta,
+                                   const Precision psi) {
 
   const Precision sinphi = sin(kDegToRad*phi);
   const Precision cosphi = cos(kDegToRad*phi);
@@ -107,15 +98,15 @@ void Transformation3D::SetRotation(const Precision phi,
   const Precision sinpsi = sin(kDegToRad*psi);
   const Precision cospsi = cos(kDegToRad*psi);
 
-  rot[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
-  rot[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
-  rot[2] =  sinthe*sinphi;
-  rot[3] =  cospsi*sinphi + costhe*cosphi*sinpsi;
-  rot[4] = -sinpsi*sinphi + costhe*cosphi*cospsi;
-  rot[5] = -sinthe*cosphi;
-  rot[6] =  sinpsi*sinthe;
-  rot[7] =  cospsi*sinthe;
-  rot[8] =  costhe;
+  fRotation[0] =  cospsi*cosphi - costhe*sinphi*sinpsi;
+  fRotation[1] = -sinpsi*cosphi - costhe*sinphi*cospsi;
+  fRotation[2] =  sinthe*sinphi;
+  fRotation[3] =  cospsi*sinphi + costhe*cosphi*sinpsi;
+  fRotation[4] = -sinpsi*sinphi + costhe*cosphi*cospsi;
+  fRotation[5] = -sinthe*cosphi;
+  fRotation[6] =  sinpsi*sinthe;
+  fRotation[7] =  cospsi*sinthe;
+  fRotation[8] =  costhe;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -129,15 +120,15 @@ void Transformation3D::SetRotation(
     const Precision rot3, const Precision rot4, const Precision rot5,
     const Precision rot6, const Precision rot7, const Precision rot8) {
 
-  rot[0] = rot0;
-  rot[1] = rot1;
-  rot[2] = rot2;
-  rot[3] = rot3;
-  rot[4] = rot4;
-  rot[5] = rot5;
-  rot[6] = rot6;
-  rot[7] = rot7;
-  rot[8] = rot8;
+  fRotation[0] = rot0;
+  fRotation[1] = rot1;
+  fRotation[2] = rot2;
+  fRotation[3] = rot3;
+  fRotation[4] = rot4;
+  fRotation[5] = rot5;
+  fRotation[6] = rot6;
+  fRotation[7] = rot7;
+  fRotation[8] = rot8;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -145,10 +136,10 @@ RotationCode Transformation3D::GenerateRotationCode() const {
   int code = 0;
   for (int i = 0; i < 9; ++i) {
     // Assign each bit
-    code |= (1<<i) * (fabs(rot[i]) > kTolerance);
+    code |= (1<<i) * (fabs(fRotation[i]) > kTolerance);
   }
   if (code == rotation::kDiagonal
-      && (rot[0] == 1. && rot[4] == 1. && rot[8] == 1.)) {
+      && (fRotation[0] == 1. && fRotation[4] == 1. && fRotation[8] == 1.)) {
     code = rotation::kIdentity;
   }
   return code;
@@ -162,7 +153,7 @@ RotationCode Transformation3D::GenerateRotationCode() const {
  */
 VECGEOM_CUDA_HEADER_BOTH
 TranslationCode Transformation3D::GenerateTranslationCode() const {
-  return (has_translation) ? translation::kGeneric : translation::kIdentity;
+  return (fHasTranslation) ? translation::kGeneric : translation::kIdentity;
 }
 
 std::ostream& operator<<(std::ostream& os,
@@ -194,9 +185,10 @@ void Transformation3D_CopyToGpu(
 Transformation3D* Transformation3D::CopyToGpu(
     Transformation3D *const gpu_ptr) const {
 
-  Transformation3D_CopyToGpu(trans[0], trans[1], trans[2], rot[0], rot[1],
-                             rot[2], rot[3], rot[4], rot[5], rot[6],
-                             rot[7], rot[8], gpu_ptr);
+  Transformation3D_CopyToGpu(fTranslation[0], fTranslation[1], fTranslation[2],
+                             fRotation[0], fRotation[1], fRotation[2],
+                             fRotation[3], fRotation[4], fRotation[5],
+                             fRotation[6], fRotation[7], fRotation[8], gpu_ptr);
   vecgeom::CudaAssertError();
   return gpu_ptr;
 

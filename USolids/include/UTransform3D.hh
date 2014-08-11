@@ -33,7 +33,7 @@ class UTransform3D
     UTransform3D(double tx, double ty, double tz,
                  double phi = 0., double theta = 0., double psi = 0.);
     UTransform3D(const UTransform3D& other);
-    ~UTransform3D() {}
+    virtual ~UTransform3D() {}
 
     virtual void         RotateX(double angle);
     virtual void         RotateY(double angle);

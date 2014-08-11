@@ -1,5 +1,5 @@
-/// @file SpecializedParallelepiped.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file SpecializedParallelepiped.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
@@ -36,6 +36,30 @@ public:
   SpecializedParallelepiped(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
       : SpecializedParallelepiped("", logical_volume, transformation) {}
+
+  SpecializedParallelepiped(char const *const label,
+                            Vector3D<Precision> const &dimensions,
+                            const Precision alpha, const Precision theta,
+                            const Precision phi)
+      : SpecializedParallelepiped(
+          label,
+          new LogicalVolume(
+            new UnplacedParallelepiped(dimensions, alpha, theta, phi)
+          ),
+          &Transformation3D::kIdentity
+        ) {} 
+
+  SpecializedParallelepiped(char const *const label,
+                            const Precision x, const Precision y,
+                            const Precision z, const Precision alpha,
+                            const Precision theta, const Precision phi)
+      : SpecializedParallelepiped(
+          label,
+          new LogicalVolume(
+            new UnplacedParallelepiped(x, y, z, alpha, theta, phi)
+          ),
+          &Transformation3D::kIdentity
+        ) {}
 
 #else
 

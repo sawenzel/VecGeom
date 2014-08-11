@@ -38,8 +38,11 @@ UExtrudedSolid::UExtrudedSolid(const std::string& pName,
     fZSections(),
     fTriangles(),
     fIsConvex(false),
-    fGeometryType("UExtrudedSolid")
-
+    fGeometryType("UExtrudedSolid"),
+    fKScales(0),
+    fScale0s(0),
+    fKOffsets(0),
+    fOffset0s(0)
 {
   // General constructor
 
@@ -151,7 +154,11 @@ UExtrudedSolid::UExtrudedSolid(const std::string& pName,
     fZSections(),
     fTriangles(),
     fIsConvex(false),
-    fGeometryType("UExtrudedSolid")
+    fGeometryType("UExtrudedSolid"),
+    fKScales(0),
+    fScale0s(0),
+    fKOffsets(0),
+    fOffset0s(0)
 
 {
   // Special constructor for solid with 2 z-sections
