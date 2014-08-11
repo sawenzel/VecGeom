@@ -13,6 +13,7 @@
 
 #include "ShapeTester.h"
 #include "VUSolid.hh"
+#include "UTransform3D.hh"
 
 #include "base/Vector3D.h"
 #include "volumes/Box.h"
@@ -35,6 +36,10 @@
 #include "TROOT.h"
 #include "TAttMarker.h"
 #include "TH1D.h"
+#include "TH2F.h"
+#include "TF1.h"
+#include "TVirtualPad.h"
+#include "TView3D.h"
 #endif
     
 using namespace std;
@@ -77,6 +82,12 @@ void ShapeTester::SetDefaults()
 	method = "all";
 	perftab = perflabels = NULL;
         volumeUSolids = NULL;
+
+        gCapacitySampled = 0;
+        gCapacityError = 0;
+        gCapacityAnalytical =  0;
+        gNumberOfScans = 15;
+
 
   //
   // Zero error list
@@ -144,7 +155,7 @@ void ShapeTester::ShapeNormal()
   //Visualisation
    TPolyMarker3D *pm2 = 0;
     pm2 = new TPolyMarker3D();
-    pm2->SetMarkerSize(0.2);
+    pm2->SetMarkerSize(0.02);
     pm2->SetMarkerColor(kBlue);
 #endif
 
@@ -242,15 +253,15 @@ void ShapeTester::ShapeDistances()
 
  #ifdef VECGEOM_ROOT 
   //Histograms
-   TH1D *hist1 = new TH1D("hTest1", "Residual DistancetoIn/Out",200,-20, 0);
+   TH1D *hist1 = new TH1D("Residual", "Residual DistancetoIn/Out",200,-20, 0);
      hist1->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
      hist1->GetYaxis()->SetTitle("count");
      hist1->SetMarkerStyle(kFullCircle);
-   TH1D *hist2 = new TH1D("hTest2", "Accuracy distanceToIn for points near Surface",200,-20, 0);
+   TH1D *hist2 = new TH1D("AccuracyIn", "Accuracy distanceToIn for points near Surface",200,-20, 0);
      hist2->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
      hist2->GetYaxis()->SetTitle("count");
      hist2->SetMarkerStyle(kFullCircle);
-  TH1D *hist3 = new TH1D("hTest3", "Accuracy distanceToOut for points near Surface",200,-20, 0);
+  TH1D *hist3 = new TH1D("AccuracyOut", "Accuracy distanceToOut for points near Surface",200,-20, 0);
      hist3->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
      hist3->GetYaxis()->SetTitle("count");
      hist3->SetMarkerStyle(kFullCircle);
@@ -910,10 +921,10 @@ void ShapeTester::TestAccuracyDistanceToIn(double dist)
 
 #ifdef VECGEOM_ROOT
   //Histograms
-   TH1D *hist1 = new TH1D("hTest1", "Accuracy DistancetoIn",200,-20, 0);
-     hist1->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
-     hist1->GetYaxis()->SetTitle("count");
-     hist1->SetMarkerStyle(kFullCircle);
+   TH1D *hist10 = new TH1D("AccuracySurf", "Accuracy DistancetoIn",200,-20, 0);
+     hist10->GetXaxis()->SetTitle("delta[mm] - first bin=overflow");
+     hist10->GetYaxis()->SetTitle("count");
+     hist10->SetMarkerStyle(kFullCircle);
 #endif
 
  //test Accuracy distance 
@@ -940,7 +951,7 @@ void ShapeTester::TestAccuracyDistanceToIn(double dist)
               if(diff > difMax) difMax = diff;
                if(std::fabs(diff) < 1E-20) diff = 1E-30;
 #ifdef VECGEOM_ROOT
-               hist1->Fill(std::max(0.5*std::log(std::fabs(diff)),-20.)); 
+               hist10->Fill(std::max(0.5*std::log(std::fabs(diff)),-20.)); 
 #endif
 	    }
 
@@ -1027,7 +1038,7 @@ void ShapeTester::TestAccuracyDistanceToIn(double dist)
 #ifdef VECGEOM_ROOT
     TCanvas *c7=new TCanvas("c7", "Accuracy DistancsToIn", 800, 600);
     c7->Update();
-    hist1->Draw();
+    hist10->Draw();
 #endif
     std::cout<<"% "<<std::endl; 
     std::cout << "% TestAccuracyDistanceToIn reported = " << CountErrors() << " errors"<<std::endl;
@@ -1169,7 +1180,223 @@ void  ShapeTester::ShapeSafetyFromOutside(int max)
    std::cout<< "% TestShapeSafetyFromOutside reported = " << CountErrors() << " errors"<<std::endl;
    std::cout<<"% "<<std::endl; 
 }
+/////////////////////////////////////////////////////////////////////////////
+void  ShapeTester::TestXRayProfile()
+{
+ 
+  std::cout<<"% Performing XRayPROFILE number of scans ="<<gNumberOfScans<<std::endl;
+   std::cout<<"% \n"<<std::endl; 
+   if(gNumberOfScans==1) {Integration(0,45,200,true);}//1-theta,2-phi
+   else{  XRayProfile(0,gNumberOfScans,1000);}
+ 
+     
+}
+/////////////////////////////////////////////////////////////////////////////
+void ShapeTester::XRayProfile(double theta, int nphi, int ngrid, bool useeps)
+{
+#ifdef VECGEOM_ROOT
+   int nError=0; 
+   ClearErrors();
+  
+   TH1F *hxprofile = new TH1F("xprof", Form("X-ray capacity profile of shape %s for theta=%g degrees", volumeUSolids->GetName().c_str(), theta),
+                                nphi, 0, 360);
+   new TCanvas("c8", "X-ray capacity profile");
+   double dphi = 360./nphi;
+   double phi = 0;
+   double phi0 = 5;
+   double maxerr = 0;
 
+   for (int i=0; i<nphi; i++) {
+      phi = phi0 + (i+0.5)*dphi;
+      //graphic option 
+      if(nphi==1) {Integration( theta, phi, ngrid,useeps);}
+      else{Integration( theta, phi, ngrid,useeps,1,false);}
+      hxprofile->SetBinContent(i+1, gCapacitySampled);
+      hxprofile->SetBinError(i+1, gCapacityError);
+      if (gCapacityError>maxerr) maxerr = gCapacityError;
+      if((gCapacitySampled-gCapacityAnalytical)>10*gCapacityError) nError++;
+   }
+  
+   double minval = hxprofile->GetBinContent(hxprofile->GetMinimumBin()) - 2*maxerr;
+   double maxval = hxprofile->GetBinContent(hxprofile->GetMaximumBin()) + 2*maxerr;
+   hxprofile->GetXaxis()->SetTitle("phi [deg]");
+   hxprofile->GetYaxis()->SetTitle("Sampled capacity");
+   hxprofile->GetYaxis()->SetRangeUser(minval,maxval);
+   hxprofile->SetMarkerStyle(4);
+   hxprofile->SetStats(kFALSE);
+   hxprofile->Draw();
+   TF1 *lin = new TF1("linear",Form("%f",gCapacityAnalytical),0,360);
+   lin->SetLineColor(kRed);
+   lin->SetLineStyle(kDotted);
+   lin->Draw("SAME");
+
+   std::cout<<"% "<<std::endl; 
+   std::cout<< "% TestShapeRayProfile reported = " << nError << " errors"<<std::endl;
+   std::cout<<"% "<<std::endl;  
+ #endif
+
+}
+/////////////////////////////////////////////////////////////////////////////
+void ShapeTester::Integration(double theta, double phi, int ngrid, bool useeps, int npercell, bool graphics)
+{
+// integrate shape capacity by sampling rays
+  int nError=0;
+  UVector3 minExtent,maxExtent;
+  volumeUSolids->Extent(minExtent,maxExtent);
+  double maxX=2*std::max(std::fabs(maxExtent.x()),std::fabs(minExtent.x()));
+  double maxY=2*std::max(std::fabs(maxExtent.y()),std::fabs(minExtent.y()));
+  double maxZ=2*std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
+  double extent=std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
+  double cell = 2*extent/ngrid;
+
+  std::vector<UVector3> grid_points ;// new double[3*ngrid*ngrid*npercell];
+  grid_points.resize(ngrid*ngrid*npercell);
+  UVector3 point;
+  UVector3 dir;
+  double xmin, ymin;
+  int npoints = ngrid*ngrid*npercell;
+  dir.x() = std::sin(theta*UUtils::kDegToRad)*std::cos(phi*UUtils::kDegToRad);
+  dir.y() = std::sin(theta*UUtils::kDegToRad)*std::sin(phi*UUtils::kDegToRad);
+  dir.z() = std::cos(theta*UUtils::kDegToRad);
+  
+#ifdef VECGEOM_ROOT
+  TPolyMarker3D *pmx = 0;
+  TH2F *xprof = 0;
+   if (graphics) {
+      pmx = new TPolyMarker3D(npoints);
+      pmx->SetMarkerColor(kRed);
+      pmx->SetMarkerStyle(4);
+      pmx->SetMarkerSize(0.2);
+      xprof = new TH2F("x-ray",Form("X-ray profile from theta=%g phi=%g of shape %s", theta, phi, volumeUSolids->GetName().c_str()), 
+                       ngrid, -extent, extent, ngrid, -extent, extent);
+   }  
+#endif
+ 
+   //TGeoRotation *rot = new TGeoRotation("rot",phi-90,-theta,0);
+   //TGeoCombiTrans *matrix = new TGeoCombiTrans(extent*dir[0], extent*dir[1], extent*dir[2], rot);
+  
+   UTransform3D* matrix= new UTransform3D(0,0,0,phi, theta, 0.);
+   UVector3 origin = UVector3(extent*dir.x(),extent*dir.y(),extent*dir.z());
+   
+   dir=-dir;
+ 
+   if ((fVerbose) && (graphics)) printf("=> x-ray direction:( %f, %f, %f)\n", dir.x(),dir.y(),dir.z());
+   // loop cells   
+   int ip=0;
+   for (int i=0; i<ngrid; i++) {
+      for (int j=0; j<ngrid; j++) {
+         xmin = -extent + i*cell;
+         ymin = -extent + j*cell;
+         if (npercell==1) {
+	   point.x() = xmin+0.5*cell;
+	   point.y() = ymin+0.5*cell;
+	   point.z() = 0;
+	   grid_points[ip]=matrix->GlobalPoint(point)+origin;
+	   //std::cout<<"ip="<<ip<<" grid="<<grid_points[ip]<<" xy="<<point.x()<<" "<<point.y()<<std::endl;
+            #ifdef VECGEOM_ROOT
+	   if (graphics) pmx->SetNextPoint(grid_points[ip].x(),grid_points[ip].y(),grid_points[ip].z());
+            #endif
+            ip++;
+         } else {               
+            for (int k=0; k<npercell; k++) {
+	      point.x() = xmin+cell*gRandom->Rndm();
+	      point.y() = ymin+cell*gRandom->Rndm();
+	      point.z() = 0;
+              grid_points[ip]= matrix->GlobalPoint(point)+origin;
+	      //std::cout<<"ip="<<ip<<" grid="<<grid_points[ip]<<std::endl;
+               #ifdef VECGEOM_ROOT
+	       if (graphics) pmx->SetNextPoint(grid_points[ip].x(),grid_points[ip].y(),grid_points[ip].z());
+               #endif
+               ip++;
+            }
+         }
+      }
+   }
+   double sum = 0;
+   double sumerr = 0;
+   double dist, lastdist;
+   int nhit = 0;
+   int ntransitions = 0;
+   bool last = false;
+   for (int i=0; i<ip; i++) {
+      dist = CrossedLength(grid_points[i], dir, useeps);
+      sum += dist;
+      
+      if (dist>0) {
+         lastdist = dist;
+         nhit++;
+         if (!last) {
+            ntransitions++;
+            sumerr += lastdist;
+         }   
+         last = true;
+         point=matrix->LocalPoint(grid_points[i]);
+         #ifdef VECGEOM_ROOT
+         if (graphics) {
+	     xprof->Fill(point.x(), point.y(), dist);
+         } 
+         #endif  
+      } else {
+         if (last) {
+            ntransitions++;
+            sumerr += lastdist;
+         }
+         last = false;
+      }
+   }   
+    gCapacitySampled = sum*cell*cell/npercell;
+    gCapacityError = sumerr*cell*cell/npercell;
+    gCapacityAnalytical =  volumeUSolids->Capacity();
+    if((fVerbose) && (graphics)){
+     printf("th=%g phi=%g: analytical: %f    --------   sampled: %f +/- %f\n", theta, phi, gCapacityAnalytical ,gCapacitySampled , gCapacityError);
+     printf("Hit ratio: %f\n", Double_t(nhit)/ip);
+     if (nhit>0) printf("Average crossed length: %f\n", sum/nhit);
+    }
+   if((gCapacitySampled-gCapacityAnalytical)>10*gCapacityError) nError++;
+  
+   #ifdef VECGEOM_ROOT
+   if (graphics) {
+     
+     // new TCanvas("X-ray-test", "Shape and projection plane");
+     
+     // TGeoBBox *box = new TGeoBBox("box",5,5,5);
+     //box->Draw();
+     //pmx->Draw("SAME");
+
+     //((TView3D*)gPad->GetView())->ShowAxis();
+    
+      new TCanvas("c11", "X-ray scan");
+      xprof->DrawCopy("LEGO1");
+      
+    #endif
+   }
+      
+}
+//////////////////////////////////////////////////////////////////////////////
+double ShapeTester:: CrossedLength(const UVector3 &point, const UVector3 &dir, bool useeps)
+{
+// Return crossed length of the shape for the given ray, taking into account possible multiple crossings
+   double eps = 0;
+   
+   if (useeps) eps = 1.E-9;
+   double len = 0;
+   double dist = volumeUSolids->DistanceToIn(point,dir);
+   if (dist>1E10) return len;
+   // Propagate from starting point with the found distance (on the numerical boundary)
+   UVector3 pt(point),norm;
+   bool convex;
+  
+   while (dist<1E10) {
+      pt=pt+(dist+eps)*dir;    // ray entering
+      // Compute distance from inside
+      dist = volumeUSolids->DistanceToOut(pt,dir,norm,convex);
+      len += dist;
+      pt=pt+(dist+eps)*dir;     // ray exiting
+      dist = volumeUSolids->DistanceToIn(pt,dir);
+   }   
+   return len;
+}   
+////////////////////////////////////////////////////////////////////////////
 void ShapeTester::FlushSS(stringstream &ss)
 {
 	string s = ss.str();
@@ -1346,29 +1573,31 @@ void ShapeTester::CreatePointsAndDirectionsInside()
 
 void ShapeTester::CreatePointsAndDirections()
 { 
-  maxPointsInside = (int) (maxPoints * (insidePercent/100));
-  maxPointsOutside = (int) (maxPoints * (outsidePercent/100));
-  maxPointsEdge = (int) (maxPoints * (edgePercent/100));
-  maxPointsSurface = maxPoints - maxPointsInside - maxPointsOutside-maxPointsEdge;
+  if(method != "XRayProfile")
+    {
+    maxPointsInside = (int) (maxPoints * (insidePercent/100));
+    maxPointsOutside = (int) (maxPoints * (outsidePercent/100));
+    maxPointsEdge = (int) (maxPoints * (edgePercent/100));
+    maxPointsSurface = maxPoints - maxPointsInside - maxPointsOutside-maxPointsEdge;
       
-  offsetInside = 0;
-  offsetSurface = maxPointsInside;
-  offsetEdge = offsetSurface + maxPointsSurface;
-  offsetOutside = offsetEdge+maxPointsEdge;
+    offsetInside = 0;
+    offsetSurface = maxPointsInside;
+    offsetEdge = offsetSurface + maxPointsSurface;
+    offsetOutside = offsetEdge+maxPointsEdge;
 
-  points.resize(maxPoints);
-  directions.resize(maxPoints);
-  resultDoubleDifference.resize(maxPoints);
-  resultBoolUSolids.resize(maxPoints);
-  resultDoubleUSolids.resize(maxPoints);
+    points.resize(maxPoints);
+    directions.resize(maxPoints);
+    resultDoubleDifference.resize(maxPoints);
+    resultBoolUSolids.resize(maxPoints);
+    resultDoubleUSolids.resize(maxPoints);
 
-  resultVectorDifference.resize(maxPoints);
-  resultVectorUSolids.resize(maxPoints);
+    resultVectorDifference.resize(maxPoints);
+    resultVectorUSolids.resize(maxPoints);
 
-  CreatePointsAndDirectionsOutside();
-  CreatePointsAndDirectionsInside();
-  CreatePointsAndDirectionsSurface();
- 
+    CreatePointsAndDirectionsOutside();
+    CreatePointsAndDirectionsInside();
+    CreatePointsAndDirectionsSurface();
+    }
 }
 
 
@@ -1511,23 +1740,25 @@ int ShapeTester::SaveResultsToFile(const string &method1)
 
 void ShapeTester::TestMethod(void (ShapeTester::*funcPtr)())
 {
+   
+   std::cout<< "========================================================= "<<std::endl;
 
-        std::cout<< "========================================================= "<<std::endl;
-	std::cout<< "% Creating " <<  maxPoints << " points and directions for method =" <<method<<std::endl;
+   if(method != "XRayProfile"){
+   std::cout<< "% Creating " <<  maxPoints << " points and directions for method =" <<method<<std::endl;
 
-	CreatePointsAndDirections();
-           cout.precision(20);
+   CreatePointsAndDirections();
+   cout.precision(20);
+   std::cout<< "% Statistics: points=" << maxPoints << ",\n";
 
-	std::cout<< "% Statistics: points=" << maxPoints << ",\n";
+   std::cout << "%             ";
+   std::cout << "surface=" << maxPointsSurface << ", inside=" << maxPointsInside << ", outside=" <<   
+                maxPointsOutside << "\n";
+   }
+   std::cout << "%     "<<std::endl;
+   
 
-	std::cout << "%             ";
-	std::cout << "surface=" << maxPointsSurface << ", inside=" << maxPointsInside << ", outside=" <<   
-              maxPointsOutside << "\n";
-	std::cout << "%     "<<std::endl;
-
-
-	(*this.*funcPtr)();
-     std::cout<< "========================================================= "<<std::endl;
+   (*this.*funcPtr)();
+   std::cout<< "========================================================= "<<std::endl;
 
 }
 
@@ -1545,6 +1776,8 @@ void ShapeTester::TestMethodAll()
     TestMethod(&ShapeTester::TestDistanceToInSolids);
     method = "DistanceToOut";
     TestMethod(&ShapeTester::TestDistanceToOutSolids);
+     method = "XRayProfile";
+    TestMethod(&ShapeTester::TestXRayProfile);
     method = "all";
 }
 
@@ -1598,7 +1831,8 @@ void ShapeTester::Run(VUSolid *testVolume)
 	if (method == "SafetyFromOutside") funcPtr = &ShapeTester::TestSafetyFromOutsideSolids;
 	if (method == "DistanceToIn") funcPtr = &ShapeTester::TestDistanceToInSolids;
 	if (method == "DistanceToOut") funcPtr = &ShapeTester::TestDistanceToOutSolids;
-
+       	if (method == "XRayProfile") funcPtr = &ShapeTester::TestXRayProfile;
+   
 	if (method == "all") TestMethodAll();
 	else if (funcPtr) TestMethod(funcPtr);
 	else std::cout<< "Method " << method << " is not supported" << std::endl;
@@ -1636,6 +1870,7 @@ void ShapeTester::RunMethod(VUSolid *testVolume, std::string method1)
 	if (method == "DistanceToIn") funcPtr = &ShapeTester::TestDistanceToInSolids;
 	if (method == "DistanceToOut") funcPtr = &ShapeTester::TestDistanceToOutSolids;
 
+        if (method == "XRayProfile") funcPtr = &ShapeTester::TestXRayProfile;
 	if (method == "all") TestMethodAll();
 	else if (funcPtr) TestMethod(funcPtr);
 	else std::cout<< "Method " << method << " is not supported" << std::endl;
