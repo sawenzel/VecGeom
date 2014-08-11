@@ -34,7 +34,7 @@ typedef kScalar Backend;
 //  typename Backend::precision_v distance;
 // }
 
-int debug = 1;
+int debug = 2;
 
 TGeoTrap convertToRoot(UnplacedTrapezoid const& trap) {
   return TGeoTrap( trap.GetDz(), trap.GetTheta()*kRadToDeg, trap.GetPhi()*kRadToDeg,
@@ -90,8 +90,8 @@ bool testNormal(UnplacedTrapezoid const& trap, UTrap const& utrap ) {
       point = trap.GetPointOnSurface();
     }
 
-    Precision vecgNormal[3];
-    trap.Normal(&point.x(), vecgNormal);
+    Vector3D<Precision> vecgNormal;
+    trap.Normal(point, vecgNormal);
     UVector3 usolNormal;
     utrap.Normal(point, usolNormal);
 
@@ -203,7 +203,7 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 }
 
 
-void insideRoot(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
+void containsRoot(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
 
   bool passed = true;
 
@@ -223,29 +223,27 @@ void insideRoot(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
 
     Vector3D<typename Backend::precision_v> point(x, y, z);
 
-    inside_v = trap.Inside(point);
+    inside_v = trap.Contains(point);
     inside = rtrap.Contains(p);
 
-    if(inside)
-      in++;
-    else
-      out++;
+    if(inside)  in++;
+    else        out++;
 
     if(inside != inside_v) {
-      std::cout << "ERROR (insideRoot) for point " << point << ": " << inside <<' '<< inside_v << std::endl;
+      std::cout << "ERROR (containsRoot) for point " << point << ": " << inside <<' '<< inside_v << std::endl;
       passed = false;
     }
   }
 
-  std::cout << "insideRoot(): in: " << in << " out: " << out << std::endl;
-  if(passed) printf("insideRoot() test passed.\n");
+  std::cout << "containsRoot(): in: " << in << " out: " << out << std::endl;
+  if(passed) printf("containsRoot() test passed.\n");
 }
 
 void insideUSolids(PlacedTrapezoid const& trap, UTrap const& utrap) {
 
   bool passed = true;
 
-  int in = 0, out = 0;
+  int in = 0, out = 0, surface=0;
   for(int i = 0; i < 10000; i++) {
     double x = RNG::Instance().uniform(-10,10);
     double y = RNG::Instance().uniform(-10,10);
@@ -253,11 +251,14 @@ void insideUSolids(PlacedTrapezoid const& trap, UTrap const& utrap) {
 
     Vector3D<typename Backend::precision_v> point(x, y, z);
 
-    typename Backend::bool_v vginside = trap.Inside(point);
-    VUSolid::EnumInside uinside = utrap.Inside(point);
+    typename VECGEOM_NAMESPACE::Inside_t vginside = trap.Inside(point);
+    typename VECGEOM_NAMESPACE::Inside_t uinside  = utrap.Inside(point);
 
-    if(vginside)      in++;
-    else      out++;
+    if(vginside==EInside::kInside)       in++;
+    else if(vginside==EInside::kSurface) surface++;
+    else if(vginside==EInside::kOutside) out++;
+    else std::cout<<"ERROR (insideUSolids) for point "<< point <<": "
+                  <<"*** Invalid Inside_t value returned: "<< vginside <<' '<< uinside <<"\n";
 
     bool good = false;
     // if( vginside==EInside::kInside  && uinside==::VUSolid::eInside  ) good = true;
@@ -288,9 +289,9 @@ void distancetoin(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
     // double x = RNG::Instance().uniform(-7,7);
     // double y = RNG::Instance().uniform(-7,7);
     // double z = RNG::Instance().uniform(-7,7);
-    double x = -10. + 0.2*float(i);
-    double y = 0;
-    double z = 0;
+    double x = -50 + 1.*float(i);
+    double y = 13;
+    double z = 27;
 
     p[0] = x;
     p[1] = y;
@@ -298,7 +299,7 @@ void distancetoin(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
 
     Vector3D<typename Backend::precision_v> point(x, y, z);
     // Vector3D<typename Backend::precision_v> direction = volumeUtilities::SampleDirection();
-    Vector3D<typename Backend::precision_v> direction(1,0,0);
+    Vector3D<typename Backend::precision_v> direction(-0.96, -0.166, -0.22);
 
     v[0] = direction.x();
     v[1] = direction.y();
@@ -311,17 +312,17 @@ void distancetoin(PlacedTrapezoid const& trap, TGeoTrap const& rtrap) {
     rdist  = rtrap.DistFromOutside(p, v);
 
     if(  rdist == 1e+30 && vgdist == kInfinity ) {
-      // std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
+      std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
       ++hits;
     }
     else {
       if( fabs(rdist-vgdist) < kTolerance ) {
-      // std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
+      std::cout << "OK: Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
         ++hits;
       }
       else {
         ++misses;
-        std::cout << "ERROR (distanceToIn): Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": " << vgdist << " , " << rdist << std::endl;
+        std::cout << "ERROR (distanceToIn): Inside="<< rtrap.Contains(p) << " - dist for point " << vpos << " w dir " << vdir << ": VG=" << vgdist << ", Root=" << rdist << std::endl;
       }
     }
   }
@@ -366,8 +367,8 @@ void safety() {
 
 int main() {
 
-  UnplacedTrapezoid world_params = UnplacedTrapezoid(4.,0,0, 4.,4.,4.,0, 4.,4.,4.,0);
-  UnplacedTrapezoid largebox_params = UnplacedTrapezoid(1.5, 0,0, 1.5,1.5,1.5,0, 1.5,1.5,1.5,0 );
+  UnplacedTrapezoid world_params = UnplacedTrapezoid(50.,0,0, 50.,50.,50.,0, 50.,50.,50.,0);
+  UnplacedTrapezoid largebox_params = UnplacedTrapezoid(15., 0,0, 5.,2.,3.,0, 10.,4.,6.,0 );
 
   LogicalVolume worldl = LogicalVolume(&world_params);
   LogicalVolume largebox = LogicalVolume("Trapezoid box", &largebox_params);
@@ -383,8 +384,10 @@ int main() {
   // Transformation3D placement8 = Transformation3D(-2, -2, -2);
 
   // largebox.PlaceDaughter(&smallbox, &origin);
-  worldl.PlaceDaughter(&largebox, &placement1);
-  worldl.PlaceDaughter(&largebox, &placement2);
+  // worldl.PlaceDaughter(&largebox, &placement1);
+  // worldl.PlaceDaughter(&largebox, &placement2);
+  worldl.PlaceDaughter(&largebox, &Transformation3D::kIdentity);
+
   // worldl.PlaceDaughter(&largebox, &placement3);
   // worldl.PlaceDaughter(&largebox, &placement4);
   // worldl.PlaceDaughter("Hello the world!", &largebox, &placement5);
@@ -473,7 +476,7 @@ int main() {
   testPlanes(trap, utrap3);
 
   PlacedTrapezoid const* ptrap = reinterpret_cast<PlacedTrapezoid const*>( LogicalVolume(&trap).Place() );
-  insideRoot(*ptrap,rtrap);
+  containsRoot(*ptrap,rtrap);
   insideUSolids(*ptrap,utrap3);
   distancetoin(*ptrap, rtrap);  // some discrepancies...
 

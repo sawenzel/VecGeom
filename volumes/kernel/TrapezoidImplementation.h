@@ -230,8 +230,8 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   Vector3D<Float_t> dir =
       transformation.TransformDirection<rotCodeT>(masterDir);
 
-  distance = 0.0;    // default returned value
-  Float_t infinity = kInfinity;
+  distance = kInfinity;    // set to early returned value
+  Bool_t done = Backend::kFalse;
 
   //
   // Step 1: find range of distances along dir between Z-planes (smin, smax)
@@ -249,15 +249,12 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   // step 1.a) input particle is moving away --> return infinity
 
   // check if moving away towards +z
-  Bool_t test = posZdir && max < kHalfTolerance;
-  MaskedAssign( test, kInfinity, &distance );
+  done |= ( posZdir && max < kHalfTolerance );
 
   // check if moving away towards -z
-  test = negZdir && max > -kHalfTolerance;
-  MaskedAssign( test, kInfinity, &distance );
+  done |= ( negZdir && max >-kHalfTolerance );
 
   // if all particles moving away, we're done
-  Bool_t done( distance == infinity );
   if (done == Backend::kTrue) return;
 
   // Step 1.b) General case:
@@ -268,70 +265,47 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   Float_t smin = (-zdirSign*unplaced.GetDz() - point.z())*dirFactor;
 
   // Step 1.c) special case: if dir is perpendicular to z-axis...
-  test = (!posZdir) && (!negZdir);
+  Bool_t test = (!posZdir) && (!negZdir);
 
-  // ... and within z-range, then smin=0, smax=infinity for now
+  // ... and out of z-range, then trajectory will not intercept volume
   Bool_t zrange = Abs(point.z()) < unplaced.GetDz() - kHalfTolerance;
+  done |= ( test && !zrange );
+  if (done == Backend::kTrue) return;
+
+
+  // ... or within z-range, then smin=0, smax=infinity for now
+  // GL note: in my environment, smin=-inf and smax=inf before these lines
   MaskedAssign( test && zrange,       0.0, &smin );
   MaskedAssign( test && zrange, kInfinity, &smax );
 
-  // ... or out of z-range, then trajectory will not intercept volume
-  MaskedAssign( test && !zrange, kInfinity, &distance );
 
   //assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
 
   //
   // Step 2: find distances for intersections with side planes.
-  //   If dist is such that smin < dist < smax, then adjust either smin or smax.
-  //
+  //   If disttoplanes is such that smin < dist < smax, then distance=disttoplanes
 
   // check where points are w.r.t. each side plane
-  typename Backend::precision_v pdist[4], proj[4];
   Planes const* planes = unplaced.GetPlanes();
+  Float_t disttoplanes = planes->DistanceToIn<Backend>(point, smin, dir);
 
-  // Note: normal vector is pointing outside the volume (convention), therefore
-  // pdist>0 if point is outside  and  pdist<0 means inside
-  planes->DistanceToPoint(point, pdist);
+  // save any misses from plane shell
+  done |= (disttoplanes==kInfinity);
 
-  // Proj is projection of dir over the normal vector of side plane, hence
-  // Proj > 0 if pointing ~same direction as normal and Proj<0 if ~opposite to normal
-  planes->ProjectionToNormal(dir, proj);
+  // reconciliate side planes w/ z-planes
+  done |= (disttoplanes > smax);
+  if (done == Backend::kTrue) return;
 
-  // loop over side planes - find pdist,Proj for each side plane
-  for (unsigned int i = 0; i < 4; i++) {
-    Bool_t posPoint = pdist[i] >= -kHalfTolerance;
-    Bool_t posDir = proj[i] >= 0;
 
-    // discard the ones moving away from this plane
-    MaskedAssign( posPoint && posDir, kInfinity, &distance  );
+  // at this point we know there is a valid distance - start with the z-plane based one
+  MaskedAssign( !done, smin, &distance);
 
-    // in original UTrap algorithm, the cases above are returned immediately
-    // MaskedAssign( !done, distance == infinity, &done );
-    done |= (distance == infinity);
-    if (done == Backend::kTrue ) return;
+  // and then take the one from the planar shell, if valid
+  Bool_t hitplanarshell = (disttoplanes > smin) && (disttoplanes < smax);
+  MaskedAssign( hitplanarshell, disttoplanes, &distance);
 
-    Bool_t interceptFromOutside = (!posPoint && posDir);
-    Bool_t interceptFromInside = (posPoint && !posDir);
-
-    // check if trajectory will intercept plane within current range (smin,smax)
-    Float_t vdist = -pdist[i]/proj[i];
-    // Bool_t intercept = (vdist>0.0); // equivalent to interceptFromInside||interceptFromOutside
-
-    MaskedAssign( interceptFromOutside && vdist<smin, kInfinity, &distance );
-    MaskedAssign( interceptFromInside  && vdist>smax, kInfinity, &distance );
-    done |= (distance == infinity);
-    if (done == Backend::kTrue ) return;
-
-    Bool_t validVdist = (vdist>smin && vdist<smax);
-    MaskedAssign( interceptFromOutside && validVdist, vdist, &smax );
-    MaskedAssign( interceptFromInside  && validVdist, vdist, &smin );
-
-    // assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
-  }
-
-  // Checks in non z plane intersections ensure smin<smax
-  MaskedAssign(!done && smin>=0, smin, &distance);
-  MaskedAssign(!done && smin<0,   0.0, &distance);
+  // at last... negative distance means we're inside the volume -- set distance to zero
+  MaskedAssign( distance<0, 0.0, &distance );
 }
 
 
@@ -362,51 +336,36 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
 
   Float_t max = zdirSign*unplaced.GetDz() - point.z();  // z-dist to farthest z-plane
 
-  // check if moving away towards +z
-  Bool_t test = posZdir && max <= kHalfTolerance;
-  MaskedAssign( test, 0.0, &distance );
+  // // check if moving away towards +z
+  // do we need this ????
+  // Bool_t test = posZdir && max <= kHalfTolerance;
+  // MaskedAssign( test, 0.0, &distance );
 
-  // check if moving away towards -z
-  test = negZdir && max >= -kHalfTolerance;
-  MaskedAssign( test, 0.0, &distance );
+  // // check if moving away towards -z
+  // test = negZdir && max >= -kHalfTolerance;
+  // MaskedAssign( test, 0.0, &distance );
 
-  // if all particles moving away, we're done
-  Bool_t done( distance == 0.0 );
-  if (done == Backend::kTrue ) return;
+  // // if all particles moving away, we're done
+  // Bool_t done( distance == 0.0 );
+  // if (done == Backend::kTrue ) return;
 
   // Step 1.b) general case: assign distance to z plane
   distance = max/dir.z();
 
   // Step 1.c) special case: if dir is perpendicular to z-axis...
   // should be already done by generic assignment
-  MaskedAssign(!posZdir && !negZdir, kInfinity, &distance);
+//  MaskedAssign(!posZdir && !negZdir, kInfinity, &distance);
 
   //
   // Step 2: find distances for intersections with side planes.
   //
 
   // next check where points are w.r.t. each side plane
-  typename Backend::precision_v pdist[4], proj[4];
   Planes const* planes = unplaced.GetPlanes();
-  planes->DistanceToPoint(point, pdist);
-  planes->ProjectionToNormal(dir, proj);
+  Float_t disttoplanes = planes->DistanceToOut<Backend>(point, dir);
 
-  // loop over side planes - find pdist,Proj for each side plane
-  for (unsigned int i = 0; i < 4; i++) {
-
-    Bool_t inside = (pdist[i] < -kHalfTolerance);
-    Bool_t posProj = proj[i] >= 0;
-
-    test = (!inside && posProj);
-    MaskedAssign( !done && test, 0.0, &distance );
-    done |= ( distance == 0.0 );
-    if (done == Backend::kTrue ) return;
-
-    test = inside && posProj;
-    Float_t vdist = -pdist[i] / proj[i];
-    MaskedAssign(!done && test && vdist<distance, vdist, &distance);
-  }
-
+  Bool_t hitplanarshell = (disttoplanes < distance);
+  MaskedAssign( hitplanarshell, disttoplanes, &distance);
 }
 
 

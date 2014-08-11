@@ -45,6 +45,8 @@ struct PlaneShell {
   Precision fC[N];
   Precision fD[N];
 
+public:
+
   /**
    * Initializes the SOA with existing data arrays, performing no allocation.
    */
@@ -125,6 +127,74 @@ struct PlaneShell {
     }
   }
 
+  /// \return the distance to the planar shell when the point is located outside.
+  /// The value returned is Infinite, if point+dir is outside & moving AWAY from any plane,
+  ///     OR when point+dir crosses out a plane BEFORE crossing IN any other plane.
+  /// The type returned is the type corresponding to the backend given.
+  template<typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  typename Backend::precision_v DistanceToIn(Vector3D<typename Backend::precision_v> const& point,
+                                             typename Backend::precision_v const& smin0,
+                                             Vector3D<typename Backend::precision_v> const &dir) const {
+
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    Float_t distIn(kInfinity);  // set for earlier returns
+    Float_t smax(kInfinity);
+    Float_t smin(smin0);
+
+    // hope for a vectorization of this part for Backend==scalar!!
+    Bool_t done(Backend::kFalse);
+    for(int i=0; i<N; ++i) {
+      Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+      Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+
+      Bool_t posPoint = pdist >= -kHalfTolerance;
+      Bool_t posDir = proj > 0;
+
+      // discard the ones moving away from this plane
+      done |= (posPoint && posDir);
+      // std::cout<<"PlaneShell: D2In: spot A: i="<< i <<"; pdist="<< pdist <<", proj="<< proj
+      //          <<"; posPoint="<< posPoint <<", posDir = "<< posDir
+      //          <<"\n - Moving away? (posPoint&&posDir) = "<< (posPoint&&posDir) <<"\n";
+
+      if ( done == Backend::kTrue ) return distIn;
+
+      // check if trajectory will intercept plane within a valid range (smin,smax)
+      Float_t vdist = -pdist / proj;
+      // std::cout <<"PlaneShell: D2In: spot B: vdist="<<vdist<<" distIn="<< distIn <<"\n";
+
+      Bool_t interceptFromInside  = (!posPoint && posDir);
+      done |= ( interceptFromInside  && vdist<smin );
+      // std::cout <<"\n - interceptFromInside (!posPoint && posDir) and vdist<smin? = "
+      //           << (interceptFromInside && vdist<smin) <<"\n";
+      if ( done == Backend::kTrue ) return distIn;
+
+      Bool_t interceptFromOutside = (posPoint && !posDir);
+      done |= ( interceptFromOutside && vdist>smax );
+      // std::cout <<" - interceptFromOutside (posPoint && !posDir) and vdist>smax? = "
+      //           << (interceptFromOutside && vdist>smax) <<"\n";
+      if (done == Backend::kTrue ) return distIn;
+
+      // update smin,smax
+      Bool_t validVdist = (smin<vdist && vdist<smax);
+      MaskedAssign( interceptFromOutside && validVdist, vdist, &smin );
+      MaskedAssign( interceptFromInside  && validVdist, vdist, &smax );
+      // std::cout<<"PlaneShell: D2In: spot C: validVdist="<< validVdist
+      //          <<" InterceptsFrom: Out,In="<< interceptFromOutside <<"/"<< interceptFromInside
+      //          <<" smin="<< smin <<" smax="<< smax <<"\n";
+    }
+
+    // Return smin, which is the maximum distance in an interceptFromOutside situation
+    MaskedAssign( !done, smin, &distIn );
+    // std::cout<<"PlaneShell: D2In: spot D: done="<< done
+    //          <<" smin="<< smin <<" smax="<< smax <<" distIn="<< distIn <<"\n";
+
+    return distIn;
+  }
+
   /// \return the distance to the planar shell when the point is located within the shell itself
   /// The type returned is the type corresponding to the backend given
   template<typename Backend>
@@ -143,9 +213,10 @@ struct PlaneShell {
       Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
       // we could put an early return type of thing here!
       tmp[i] = -pdist / proj;
-    }
-    for(int i=0; i<N; ++i )
-    {
+    // }
+    // for(int i=0; i<N; ++i )
+    // {
+      // GL: why not merge this second loop into the core of the first loop?
       Bool_t test = ( tmp[i] > 0 && tmp[i] < dist );
       MaskedAssign( test, tmp[i], &dist);
     }
