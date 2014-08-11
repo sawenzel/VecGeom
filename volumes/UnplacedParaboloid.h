@@ -47,7 +47,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-class UnplacedParaboloid : public VUnplacedVolume, AlignedBase {
+class UnplacedParaboloid : public VUnplacedVolume, public AlignedBase {
 
 private:
 

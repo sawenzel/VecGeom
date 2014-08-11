@@ -36,12 +36,10 @@ public:
                         Transformation3D const *const transformation)
       : SpecializedParaboloid("", logical_volume, transformation) {}
 
-  //  SpecializedParaboloid(char const *const label, const Precision rlo, const Precision rhi, const Precision dz)
-  //    : SpecializedParaboloid(label, new LogicalVolume(new UnplacedParaboloid(rlo, rhi, dz)), &Transformation3D::kIdentity) {}
-
   SpecializedParaboloid(char const *const label, const Precision rlo, const Precision rhi, const Precision dz)
-    : SpecializedParaboloid(label, new LogicalVolume(new UnplacedParaboloid(rlo, rhi, dz)), NULL) {}
+      : SpecializedParaboloid(label, new LogicalVolume(new UnplacedParaboloid(rlo, rhi, dz)), &Transformation3D::kIdentity) {}
 
+ 
 #else
 
   __device__
