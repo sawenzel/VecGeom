@@ -147,7 +147,67 @@ template <class Backend>
                           typename Backend::precision_v &safety);
   
   
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void Normal(
+       UnplacedOrb const &unplaced,
+       Vector3D<typename Backend::precision_v> const &point,
+       Vector3D<typename Backend::precision_v> &normal,
+       typename Backend::bool_v &valid );
+  
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void NormalKernel(
+       UnplacedOrb const &unplaced,
+       Vector3D<typename Backend::precision_v> const &point,
+       Vector3D<typename Backend::precision_v> &normal,
+       typename Backend::bool_v &valid );
+  
+  
 };
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void OrbImplementation<transCodeT, rotCodeT>::Normal(
+       UnplacedOrb const &unplaced,
+       Vector3D<typename Backend::precision_v> const &point,
+       Vector3D<typename Backend::precision_v> &normal,
+       typename Backend::bool_v &valid ){
+
+    NormalKernel<Backend>(unplaced, point, normal, valid);
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void OrbImplementation<transCodeT, rotCodeT>::NormalKernel(
+       UnplacedOrb const &unplaced,
+       Vector3D<typename Backend::precision_v> const &point,
+       Vector3D<typename Backend::precision_v> &normal,
+       typename Backend::bool_v &valid ){
+
+    typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::bool_v      Bool_t;
+
+    Vector3D<Double_t> localPoint;
+    localPoint = point;
+
+    Double_t rad2=localPoint.Mag2();
+    Double_t rad=Sqrt(rad2);
+    normal = Vector3D<Double_t>(localPoint.x()/rad , localPoint.y()/rad ,localPoint.z()/rad );
+    
+    
+    Double_t tolRMaxP = unplaced.GetfRTolO();
+    Double_t tolRMaxM = unplaced.GetfRTolI();
+
+    // Check radial surface
+    valid = ((rad2 <= tolRMaxP * tolRMaxP) && (rad2 >= tolRMaxM * tolRMaxM)); // means we are on surface
+   
+}
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>

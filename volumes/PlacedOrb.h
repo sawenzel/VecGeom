@@ -7,6 +7,7 @@
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedOrb.h"
+#include "volumes/kernel/OrbImplementation.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -67,20 +68,43 @@ public:
   Precision z() const { return GetUnplacedVolume()->z(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetRadialTolerance() const { return GetUnplacedVolume()->GetRadialTolerance(); }
-
-  VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolO() const { return GetUnplacedVolume()->GetfRTolO(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolI() const { return GetUnplacedVolume()->GetfRTolI(); }
 
+   VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
+  
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetVolume() const { return GetUnplacedVolume()->GetVolume(); }
+  Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const { return GetUnplacedVolume()->Extent(aMin,aMax);}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
+ 
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetSurfaceArea() const { return GetUnplacedVolume()->GetSurfaceArea(); }
-
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  {
+      bool valid;
+      OrbImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
+              *GetUnplacedVolume(),
+              point,
+              normal, valid);
+      return valid;
+  }
 
 
 

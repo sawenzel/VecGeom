@@ -2,6 +2,7 @@
 /// \author Raman Sehgal (raman.sehgal@cern.ch)
 
 #include "volumes/UnplacedOrb.h"
+#include "base/RNG.h"
 
 #include "management/VolumeFactory.h"
 #include "volumes/SpecializedOrb.h"
@@ -16,7 +17,7 @@ VECGEOM_CUDA_HEADER_BOTH
   {
     //default constructor
     fR=0;
-    fRTolerance=0;
+    //fRTolerance=0;
     fCubicVolume=0;
     fSurfaceArea=0;
     fRTolI=0;
@@ -27,16 +28,13 @@ VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb::UnplacedOrb(const Precision r):dimensions_(r)
   {
-    SetRadius(r);
+    fR=r;
+    fRTolI = fR - kHalfTolerance;
+    fRTolO = fR + kHalfTolerance;
+    fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
+    fSurfaceArea = (4 * kPi) * fR * fR;
   }
   
-  /*
-  VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb(const Precision r, const Precision rTol)
-  {
-    SetRadiusAndRadialTolerance(r,rTol);
-  }
-  */
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::SetRadius(const Precision r)
@@ -44,30 +42,98 @@ VECGEOM_CUDA_HEADER_BOTH
     fR=r;
     fRTolI = fR - kHalfTolerance;
     fRTolO = fR + kHalfTolerance;
-    //dimensions_(fR);
+    fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
+    fSurfaceArea = (4 * kPi) * fR * fR;
   }
   
-  /*
   VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::SetRadialTolerance(const Precision rTol)
+  Precision UnplacedOrb::Capacity() const
   {
-    fRTolerance=rTol;
+      return fCubicVolume;
+  }
+  
+  
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision UnplacedOrb::SurfaceArea() const
+  {
+      return fSurfaceArea;
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
+  void UnplacedOrb::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  {
+    // Returns the full 3D cartesian extent of the solid.
+      aMin.Set(-fR);
+      aMax.Set(fR);
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void UnplacedOrb::GetParametersList(int, double* aArray)const
+  {
+      aArray[0] = GetRadius();
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
+  {
+  //  generate a random number from zero to 2UUtils::kPi...
+     
+  Precision phi  = RNG::Instance().uniform(0., 2.* kPi);
+  Precision cosphi  = std::cos(phi);
+  Precision sinphi  = std::sin(phi);
+
+  // generate a random point uniform in area
+  Precision costheta = RNG::Instance().uniform(-1., 1.);
+  Precision sintheta = std::sqrt(1. - (costheta*costheta));
+
+  return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void UnplacedOrb::ComputeBBox() const 
+  {
+  
+  } 
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string UnplacedOrb::GetEntityType() const
+  {
+      return "Orb\n";
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedOrb* UnplacedOrb::Clone() const
+  {
+      return new UnplacedOrb(fR);
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  std::ostream& UnplacedOrb::StreamInfo(std::ostream& os) const
+  //Definition taken from UOrb
+  {
+   int oldprc = os.precision(16);
+   os << "-----------------------------------------------------------\n"
+   //  << "		*** Dump for solid - " << GetName() << " ***\n"
+   //  << "		===================================================\n"
+   
+   << " Solid type: UOrb\n"
+     << " Parameters: \n"
+
+     << "		outer radius: " << fR << " mm \n"
+     << "-----------------------------------------------------------\n";
+   os.precision(oldprc);
+
+   return os;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::SetRadiusAndRadialTolerance(const Precision r, const Precision rTol)
-  {
-    fR=r;
-    fRTolerance=rTol;
-  }
-  */
-
+  
 void UnplacedOrb::Print() const {
-  printf("UnplacedOrb {%.2f, %.2f}",GetRadius(),GetRadialTolerance());
+  printf("UnplacedOrb {%.2f}",GetRadius());
 }
 
 void UnplacedOrb::Print(std::ostream &os) const {
-  os << "UnplacedOrb {" << GetRadius() << ", "<<GetRadialTolerance() << "}";
+  os << "UnplacedOrb {" << GetRadius() <<  "}";
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

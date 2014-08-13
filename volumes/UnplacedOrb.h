@@ -8,6 +8,7 @@
 
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+#include "base/RNG.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -50,22 +51,46 @@ public:
   Precision z() const { return dimensions_[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetRadialTolerance() const { return fRTolerance; }
-
-  VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolO() const { return fRTolO; }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolI() const { return fRTolI; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetVolume() const { return fCubicVolume; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision GetSurfaceArea() const { return fSurfaceArea; }
-
-  VECGEOM_CUDA_HEADER_BOTH
   void SetRadius (const Precision r);
+  
+  //_____________________________________________________________________________
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const;
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision SurfaceArea() const;
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision>  GetPointOnSurface() const;
+ 
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const;
+  
+    
+  VECGEOM_CUDA_HEADER_BOTH
+  void GetParametersList(int aNumber, double *aArray) const; 
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedOrb* Clone() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::ostream& StreamInfo(std::ostream &os) const;
+    
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  void ComputeBBox() const; 
+   
   
 public:
   virtual int memory_size() const { return sizeof(*this); }
