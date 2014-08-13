@@ -103,7 +103,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
 
     // if all points are outside, we're done
     done |= test;
-    if (done == Backend::kTrue) return;
+    if ( IsFull(done) ) return;
 
     // next check where points are w.r.t. each side plane
     typename Backend::precision_v Dist[4];
@@ -117,7 +117,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
 
       // if all points are outside, we're done
       done |= test;
-      if (done == Backend::kTrue) return;
+      if ( IsFull(done) ) return;
     }
 
     // at this point, all points outside have been tagged
@@ -162,7 +162,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
 
   // if all points are outside, we're done
   done |= test;
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   // next check where points are w.r.t. each side plane
   //Float_t Dist[4];
@@ -180,7 +180,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
 
     // if all points are outside, we're done
     done |= test;
-    if (done == Backend::kTrue) return;
+    if ( IsFull(done) ) return;
   }
 
   // at this point, all points outside volume were tagged
@@ -188,13 +188,13 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
   test = (!done) && ( Abs(point.z()) >= (unplaced.GetDz() - kHalfTolerance) );
   MaskedAssign(test, EInside::kSurface, &inside);
   done |= test;
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   for (unsigned int i = 0; i < 4; ++i) {
     test = (!done) && (Dist[i] > -kHalfTolerance);
     MaskedAssign(test, EInside::kSurface, &inside);
     done |= test;
-    if (done == Backend::kTrue) return;
+    if ( IsFull(done) ) return;
   }
 
   // at this point, all points outside or at surface were also tagged
@@ -255,7 +255,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   done |= ( negZdir && max >-kHalfTolerance );
 
   // if all particles moving away, we're done
-  if (done == Backend::kTrue) return;
+  if (IsFull(done)) return;
 
   // Step 1.b) General case:
   //   smax,smin are range of distances within z-range, taking direction into account.
@@ -270,8 +270,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   // ... and out of z-range, then trajectory will not intercept volume
   Bool_t zrange = Abs(point.z()) < unplaced.GetDz() - kHalfTolerance;
   done |= ( test && !zrange );
-  if (done == Backend::kTrue) return;
-
+  if (IsFull(done)) return;
 
   // ... or within z-range, then smin=0, smax=infinity for now
   // GL note: in my environment, smin=-inf and smax=inf before these lines
@@ -279,22 +278,19 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   MaskedAssign( test && zrange, kInfinity, &smax );
 
 
-  //assert( (smin<smax) && "TrapezoidImplementation: smin<smax problem in DistanceToIn().");
-
   //
   // Step 2: find distances for intersections with side planes.
   //   If disttoplanes is such that smin < dist < smax, then distance=disttoplanes
+  //
 
-  // check where points are w.r.t. each side plane
-  Planes const* planes = unplaced.GetPlanes();
-  Float_t disttoplanes = planes->DistanceToIn<Backend>(point, smin, dir);
+  Float_t disttoplanes = unplaced.GetPlanes()->DistanceToIn<Backend>(point, smin, dir);
 
   // save any misses from plane shell
   done |= (disttoplanes==kInfinity);
 
   // reconciliate side planes w/ z-planes
   done |= (disttoplanes > smax);
-  if (done == Backend::kTrue) return;
+  if (IsFull(done)) return;
 
 
   // at this point we know there is a valid distance - start with the z-plane based one
@@ -322,7 +318,9 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
-  distance = kInfinity;            // init to invalid value
+  distance = Backend::kZero;     // early return value
+  Bool_t done(Backend::kFalse);
+
   //
   // Step 1: find range of distances along dir between Z-planes (smin, smax)
   //
@@ -336,34 +334,23 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
 
   Float_t max = zdirSign*unplaced.GetDz() - point.z();  // z-dist to farthest z-plane
 
-  // // check if moving away towards +z
   // do we need this ????
-  // Bool_t test = posZdir && max <= kHalfTolerance;
-  // MaskedAssign( test, 0.0, &distance );
+  // check if moving away towards +z
+  done |= (posZdir && max <= kHalfTolerance);
+  // check if moving away towards -z
+  done |= (negZdir && max >= -kHalfTolerance);
 
-  // // check if moving away towards -z
-  // test = negZdir && max >= -kHalfTolerance;
-  // MaskedAssign( test, 0.0, &distance );
-
-  // // if all particles moving away, we're done
-  // Bool_t done( distance == 0.0 );
-  // if (done == Backend::kTrue ) return;
+  // if all particles moving away, we're done
+  if (IsFull(done) ) return;
 
   // Step 1.b) general case: assign distance to z plane
   distance = max/dir.z();
-
-  // Step 1.c) special case: if dir is perpendicular to z-axis...
-  // should be already done by generic assignment
-//  MaskedAssign(!posZdir && !negZdir, kInfinity, &distance);
 
   //
   // Step 2: find distances for intersections with side planes.
   //
 
-  // next check where points are w.r.t. each side plane
-  Planes const* planes = unplaced.GetPlanes();
-  Float_t disttoplanes = planes->DistanceToOut<Backend>(point, dir);
-
+  Float_t disttoplanes = unplaced.GetPlanes()->DistanceToOut<Backend>(point, dir);
   Bool_t hitplanarshell = (disttoplanes < distance);
   MaskedAssign( hitplanarshell, disttoplanes, &distance);
 }
@@ -387,8 +374,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToIn(
 
   // Loop over side planes
   typename Backend::precision_v Dist[4];
-  Planes const* planes = unplaced.GetPlanes();
-  planes->DistanceToPoint(point, Dist);
+  unplaced.GetPlanes()->DistanceToPoint(point, Dist);
   for (int i = 0; i < 4; ++i) {
     MaskedAssign( Dist[i]>safety, Dist[i], &safety );
   }
@@ -414,7 +400,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   done |= safety==0.0;
 
   // If all test points are outside, we're done
-  if ( done == Backend::kTrue ) return;
+  if ( IsFull(done) ) return;
 
   // Loop over side planes
   typename Backend::precision_v Dist[4];
