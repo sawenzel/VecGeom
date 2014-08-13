@@ -34,9 +34,9 @@ int main() {
   LogicalVolume world("world", &worldUnplaced);
   LogicalVolume trap("trap", &trapUnplaced);
 
-  Transformation3D *transf = new Transformation3D(5,2,3, 15,30,45);
-  world.PlaceDaughter(&trap, transf);
-  //world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
+  // Transformation3D *transf = new Transformation3D(5,2,3, 15,30,45);
+  // world.PlaceDaughter(&trap, transf);
+  world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
 
   VPlacedVolume *worldPlaced = world.Place();
 
@@ -50,7 +50,7 @@ int main() {
   tester.RunBenchmark();
 
   // cleanup
-  delete transf;
+  // delete transf;
 
   return 0;
 }
