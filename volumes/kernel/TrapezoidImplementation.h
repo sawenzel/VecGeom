@@ -41,9 +41,18 @@ struct TrapezoidImplementation {
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void Inside(UnplacedTrapezoid const &unplaced,
-                     Transformation3D const &transformation,
-                     Vector3D<typename Backend::precision_v> const &masterPoint,
-                     typename Backend::inside_v &inside);
+      Transformation3D const &transformation,
+      Vector3D<typename Backend::precision_v> const &masterPoint,
+      typename Backend::inside_v &inside);
+
+  template <typename Backend, bool ForInside>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void GenericKernelForContainsAndInside(
+      UnplacedTrapezoid const &unplaced,
+      Vector3D<typename Backend::precision_v> const &,
+      typename Backend::bool_v &,
+      typename Backend::bool_v &);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -85,6 +94,38 @@ struct TrapezoidImplementation {
 
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend, bool ForInside>
+VECGEOM_CUDA_HEADER_BOTH
+void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
+    UnplacedTrapezoid const &unplaced,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &completelyInside,
+    typename Backend::bool_v &completelyOutside) {
+
+  // z-region
+  completelyOutside = Abs(localPoint[2]) > MakePlusTolerant<ForInside>( unplaced.GetDz() );
+  if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+  if (ForInside) {
+    completelyInside = Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( unplaced.GetDz() );
+  }
+
+  // next check where points are w.r.t. each side plane
+  typename Backend::precision_v Dist[4];
+  unplaced.GetPlanes()->DistanceToPoint(localPoint, Dist);
+
+  for (unsigned int i = 0; i < 4; ++i) {
+    // is it outside of this side plane?
+    completelyOutside |= Dist[i] > MakePlusTolerant<ForInside>(0.);
+    if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+    if(ForInside) {
+      completelyInside &= Dist[i] < MakeMinusTolerant<ForInside>(0.);
+    }
+  }
+
+  return;
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
@@ -92,36 +133,11 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
   Vector3D<typename Backend::precision_v> const &point,
   typename Backend::bool_v &inside) {
 
-    typedef typename Backend::bool_v Bool_t;
-
-    Bool_t done(false);
-    inside = Backend::kTrue;
-
-    // point is outside if beyond trapezoid's z-range
-    auto test = Abs(point.z()) >= unplaced.GetDz();
-    inside &= !test;
-
-    // if all points are outside, we're done
-    done |= test;
-    if ( IsFull(done) ) return;
-
-    // next check where points are w.r.t. each side plane
-    typename Backend::precision_v Dist[4];
-    Planes const* planes = unplaced.GetPlanes();
-    planes->DistanceToPoint(point, Dist);
-
-    for (unsigned int i = 0; i < 4; ++i) {
-      // is it outside of this side plane?
-      test = (Dist[i] > 0.0);  // no need to check (!done) here
-      inside &= !test;
-
-      // if all points are outside, we're done
-      done |= test;
-      if ( IsFull(done) ) return;
-    }
-
-    // at this point, all points outside have been tagged
-    return;
+  typedef typename Backend::bool_v Bool_t;
+  Bool_t unused;
+  Bool_t outside;
+  GenericKernelForContainsAndInside<Backend, false>(unplaced, point, unused, outside);
+  inside=!outside;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -133,8 +149,16 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Contains(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> &localPoint,
     typename Backend::bool_v &inside) {
+
   localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-  UnplacedContains<Backend>(unplaced, localPoint, inside);
+
+  typedef typename Backend::bool_v Bool_t;
+
+  Bool_t unused, outside;
+  GenericKernelForContainsAndInside<Backend,false>(unplaced, localPoint,
+                                                   unused, outside);
+
+  inside = !outside;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -146,61 +170,19 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
     Vector3D<typename Backend::precision_v> const &masterPoint,
     typename Backend::inside_v &inside) {
 
-  // typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
   // convert from master to local coordinates
   Vector3D<typename Backend::precision_v> point =
       transformation.Transform<transCodeT, rotCodeT>(masterPoint);
 
-  Bool_t done(false);
-  inside = EInside::kInside;
-
-  // point is outside if beyond trapezoid's z-length
-  auto test = Abs(point.z()) >= ( unplaced.GetDz() + kHalfTolerance );
-  MaskedAssign(test, EInside::kOutside, &inside);
-
-  // if all points are outside, we're done
-  done |= test;
-  if ( IsFull(done) ) return;
-
-  // next check where points are w.r.t. each side plane
-  //Float_t Dist[4];
-  //TrapSidePlane const* planes = unplaced.GetPlanes();
-
-  // next check where points are w.r.t. each side plane
-  typename Backend::precision_v Dist[4];
-  Planes const* planes = unplaced.GetPlanes();
-  planes->DistanceToPoint(point, Dist);
-
-  for (unsigned int i = 0; i < 4; ++i) {
-    // is it outside of this side plane?
-    test = (Dist[i] > kHalfTolerance);  // no need to check (!done) here, because still testing outside
-    MaskedAssign(test, EInside::kOutside, &inside);
-
-    // if all points are outside, we're done
-    done |= test;
-    if ( IsFull(done) ) return;
-  }
-
-  // at this point, all points outside volume were tagged
-  // next, check which points are in surface
-  test = (!done) && ( Abs(point.z()) >= (unplaced.GetDz() - kHalfTolerance) );
-  MaskedAssign(test, EInside::kSurface, &inside);
-  done |= test;
-  if ( IsFull(done) ) return;
-
-  for (unsigned int i = 0; i < 4; ++i) {
-    test = (!done) && (Dist[i] > -kHalfTolerance);
-    MaskedAssign(test, EInside::kSurface, &inside);
-    done |= test;
-    if ( IsFull(done) ) return;
-  }
-
-  // at this point, all points outside or at surface were also tagged
-  return;
+  Bool_t fullyinside, fullyoutside;
+  GenericKernelForContainsAndInside<Backend,true>(
+      unplaced, point, fullyinside, fullyoutside);
+  inside=EInside::kSurface;
+  MaskedAssign(fullyinside,  EInside::kInside,  &inside);
+  MaskedAssign(fullyoutside, EInside::kOutside, &inside);
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
