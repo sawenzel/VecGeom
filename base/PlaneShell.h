@@ -22,7 +22,7 @@
 namespace VECGEOM_NAMESPACE {
 
 /**
- * @brief Uses SoA layout to store arrays of four (plane) parameters,
+ * @brief Uses SoA layout to store arrays of N (plane) parameters,
  *        representing a set of planes defining a volume or shape.
  *
  * For some volumes, e.g. trapezoid, when two of the planes are
@@ -159,41 +159,28 @@ public:
 
       // discard the ones moving away from this plane
       done |= (posPoint && posDir);
-      // std::cout<<"PlaneShell: D2In: spot A: i="<< i <<"; pdist="<< pdist <<", proj="<< proj
-      //          <<"; posPoint="<< posPoint <<", posDir = "<< posDir
-      //          <<"\n - Moving away? (posPoint&&posDir) = "<< (posPoint&&posDir) <<"\n";
 
-      if ( done == Backend::kTrue ) return distIn;
+      if ( IsFull(done) ) return distIn;
 
       // check if trajectory will intercept plane within a valid range (smin,smax)
       Float_t vdist = -pdist / proj;
-      // std::cout <<"PlaneShell: D2In: spot B: vdist="<<vdist<<" distIn="<< distIn <<"\n";
 
       Bool_t interceptFromInside  = (!posPoint && posDir);
       done |= ( interceptFromInside  && vdist<smin );
-      // std::cout <<"\n - interceptFromInside (!posPoint && posDir) and vdist<smin? = "
-      //           << (interceptFromInside && vdist<smin) <<"\n";
-      if ( done == Backend::kTrue ) return distIn;
+      if ( IsFull(done) ) return distIn;
 
       Bool_t interceptFromOutside = (posPoint && !posDir);
       done |= ( interceptFromOutside && vdist>smax );
-      // std::cout <<" - interceptFromOutside (posPoint && !posDir) and vdist>smax? = "
-      //           << (interceptFromOutside && vdist>smax) <<"\n";
-      if (done == Backend::kTrue ) return distIn;
+      if ( IsFull(done) ) return distIn;
 
       // update smin,smax
       Bool_t validVdist = (smin<vdist && vdist<smax);
       MaskedAssign( interceptFromOutside && validVdist, vdist, &smin );
       MaskedAssign( interceptFromInside  && validVdist, vdist, &smax );
-      // std::cout<<"PlaneShell: D2In: spot C: validVdist="<< validVdist
-      //          <<" InterceptsFrom: Out,In="<< interceptFromOutside <<"/"<< interceptFromInside
-      //          <<" smin="<< smin <<" smax="<< smax <<"\n";
     }
 
     // Return smin, which is the maximum distance in an interceptFromOutside situation
     MaskedAssign( !done, smin, &distIn );
-    // std::cout<<"PlaneShell: D2In: spot D: done="<< done
-    //          <<" smin="<< smin <<" smax="<< smax <<" distIn="<< distIn <<"\n";
 
     return distIn;
   }

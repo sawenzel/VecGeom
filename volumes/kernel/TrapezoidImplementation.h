@@ -185,12 +185,16 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
 
 ////////////////////////////////////////////////////////////////////////////
 //
-// Calculate distance to shape from outside - return kInfinity if no intersection
+// Calculate distance to shape from outside - return kInfinity if no
+// intersection.
 //
-// ALGORITHM:
-// For each component, calculate pair of minimum and maximum intersection
-// values for which the particle is in the extent of the shape
-// - The smallest (MAX minimum) allowed distance of the pairs is intersect
+// ALGORITHM: For each component (z-planes, side planes), calculate
+// pair of minimum (smin) and maximum (smax) intersection values for
+// which the particle is in the extent of the shape.  The point of
+// entrance (exit) is found by the largest smin (smallest smax).
+//
+//  If largest smin > smallest smax, the trajectory does not reach
+//  inside the shape.
 //
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
