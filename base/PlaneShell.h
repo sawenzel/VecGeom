@@ -128,9 +128,12 @@ public:
   }
 
   /// \return the distance to the planar shell when the point is located outside.
-  /// The value returned is Infinite, if point+dir is outside & moving AWAY from any plane,
-  ///     OR when point+dir crosses out a plane BEFORE crossing IN any other plane.
   /// The type returned is the type corresponding to the backend given.
+  /// The value returned is +inf if (1) point+dir is outside & moving AWAY from any plane,
+  ///     OR (2) when point+dir crosses out a plane BEFORE crossing in ALL other planes.
+  /// Note: smin0 parameter is needed here, otherwise smax can become smaller than smin0,
+  ///   which means condition (2) happens and +inf must be returned.  Without smin0, this
+  ///   condition is sometimes missed.
   template<typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -195,32 +198,81 @@ public:
     return distIn;
   }
 
-  /// \return the distance to the planar shell when the point is located within the shell itself
-  /// The type returned is the type corresponding to the backend given
+  /// \return the distance to the planar shell when the point is located within the shell itself.
+  /// The type returned is the type corresponding to the backend given.
   template<typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  typename Backend::precision_v DistanceToOut(Vector3D<typename Backend::precision_v> const& point,
-          Vector3D<typename Backend::precision_v> const &dir) const {
+  typename Backend::precision_v DistanceToOut(
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &dir) const {
+
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v Bool_t;
 
-    Float_t dist(kInfinity);
-    Float_t tmp[N];
+    Float_t distOut(kInfinity);
+
     // hope for a vectorization of this part for Backend==scalar !! ( in my case this works )
+    Bool_t done(Backend::kFalse);
     for(int i=0; i<N; ++i) {
       Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+
+      // early return if point is outside of plane
+      done |= (pdist>0.);
+      if ( IsFull(done) ) return kInfinity;
+
       Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
-      // we could put an early return type of thing here!
-      tmp[i] = -pdist / proj;
-    // }
-    // for(int i=0; i<N; ++i )
-    // {
-      // GL: why not merge this second loop into the core of the first loop?
-      Bool_t test = ( tmp[i] > 0 && tmp[i] < dist );
-      MaskedAssign( test, tmp[i], &dist);
+      Float_t vdist = -pdist / proj;
+      MaskedAssign( vdist>0.0 && vdist<distOut, vdist, &distOut );
     }
-    return dist;
+
+    return distOut;
+  }
+
+  /// \return the safety distance to the planar shell when the point is located within the shell itself.
+  /// The type returned is the type corresponding to the backend given.
+  template<typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void SafetyToIn(Vector3D<typename Backend::precision_v> const& point,
+                  typename Backend::precision_v &safety ) const {
+
+    typedef typename Backend::precision_v Float_t;
+
+    for(int i=0; i<N; ++i) {
+      Float_t dist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+      MaskedAssign( dist>safety, dist, &safety );
+    }
+
+    MaskedAssign(safety<0, 0.0, &safety);
+  }
+
+
+  /// \return the distance to the planar shell when the point is located within the shell itself.
+  /// The type returned is the type corresponding to the backend given.
+  template<typename Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void SafetyToOut(Vector3D<typename Backend::precision_v> const& point,
+                   typename Backend::precision_v &safety ) const {
+
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    Bool_t done(false);
+
+    for(int i=0; i<N; ++i) {
+      Float_t dist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+
+      // early return if point is outside of ANY side plane
+      MaskedAssign( !done && dist>=0.0, 0.0, &safety );
+      done |= dist>0.;
+      if ( IsFull(done) ) return;
+
+      MaskedAssign( !done && dist<0 && -dist<safety, -dist, &safety );
+    }
+
+    return;
   }
 
 };

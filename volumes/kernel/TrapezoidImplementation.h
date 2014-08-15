@@ -134,10 +134,9 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::UnplacedContains(
   typename Backend::bool_v &inside) {
 
   typedef typename Backend::bool_v Bool_t;
-  Bool_t unused;
-  Bool_t outside;
+  Bool_t unused, outside;
   GenericKernelForContainsAndInside<Backend, false>(unplaced, point, unused, outside);
-  inside=!outside;
+  inside = !outside;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -146,14 +145,13 @@ VECGEOM_CUDA_HEADER_BOTH
 void TrapezoidImplementation<transCodeT, rotCodeT>::Contains(
     UnplacedTrapezoid const &unplaced,
     Transformation3D const &transformation,
-    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &masterPoint,
     Vector3D<typename Backend::precision_v> &localPoint,
     typename Backend::bool_v &inside) {
 
-  localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+  localPoint = transformation.Transform<transCodeT, rotCodeT>(masterPoint);
 
   typedef typename Backend::bool_v Bool_t;
-
   Bool_t unused, outside;
   GenericKernelForContainsAndInside<Backend,false>(unplaced, localPoint,
                                                    unused, outside);
@@ -173,12 +171,13 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
   typedef typename Backend::bool_v Bool_t;
 
   // convert from master to local coordinates
-  Vector3D<typename Backend::precision_v> point =
+  Vector3D<typename Backend::precision_v> localPoint =
       transformation.Transform<transCodeT, rotCodeT>(masterPoint);
 
   Bool_t fullyinside, fullyoutside;
   GenericKernelForContainsAndInside<Backend,true>(
-      unplaced, point, fullyinside, fullyoutside);
+      unplaced, localPoint, fullyinside, fullyoutside);
+
   inside=EInside::kSurface;
   MaskedAssign(fullyinside,  EInside::kInside,  &inside);
   MaskedAssign(fullyoutside, EInside::kOutside, &inside);
@@ -334,7 +333,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
 
   Float_t disttoplanes = unplaced.GetPlanes()->DistanceToOut<Backend>(point, dir);
   Bool_t hitplanarshell = (disttoplanes < distance);
-  MaskedAssign( hitplanarshell, disttoplanes, &distance);
+  MaskedAssign( hitplanarshell, disttoplanes, &distance );
 }
 
 
@@ -351,17 +350,10 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToIn(
 
   // convert from master to local coordinates
   Vector3D<Float_t> point = transformation.Transform<transCodeT, rotCodeT>(masterPoint);
-
   safety = Abs(point.z()) - unplaced.GetDz();
 
-  // Loop over side planes
-  typename Backend::precision_v Dist[4];
-  unplaced.GetPlanes()->DistanceToPoint(point, Dist);
-  for (int i = 0; i < 4; ++i) {
-    MaskedAssign( Dist[i]>safety, Dist[i], &safety );
-  }
-
-  MaskedAssign(safety<0, 0.0, &safety);
+  // Get safety over side planes
+  unplaced.GetPlanes()->SafetyToIn<Backend>(point, safety);
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -384,13 +376,8 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   // If all test points are outside, we're done
   if ( IsFull(done) ) return;
 
-  // Loop over side planes
-  typename Backend::precision_v Dist[4];
-  Planes const* planes = unplaced.GetPlanes();
-  planes->DistanceToPoint(point, Dist);
-  for (int i = 0; i < 4; ++i) {
-    MaskedAssign( !done && Dist[i]<0.0 && -Dist[i] < safety, -Dist[i], &safety );
-  }
+  // Get safety over side planes
+  unplaced.GetPlanes()->SafetyToOut<Backend>(point, safety);
 }
 
 } // End global namespace
