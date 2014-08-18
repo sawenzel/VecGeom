@@ -5,6 +5,7 @@
 #define VECGEOM_BASE_SIDEPLANES_H_
 
 #include "base/Global.h"
+#include "volumes/kernel/GenericKernels.h"
 //#include "base/Vector3D.h"
 // #ifdef VECGEOM_CUDA_INTERFACE
 //   #include "backend/cuda/Interface.h"
@@ -126,6 +127,33 @@ public:
       projection[i] = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
     }
   }
+
+
+  template <typename Backend, bool ForInside>
+  VECGEOM_CUDA_HEADER_BOTH
+  void GenericKernelForContainsAndInside(
+      Vector3D<typename Backend::precision_v> const &point,
+      typename Backend::bool_v &completelyInside,
+      typename Backend::bool_v &completelyOutside ) const {
+
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
+    // hope for a vectorization of this part for Backend==scalar!!
+    Bool_t done(Backend::kFalse);
+    for(unsigned int i=0; i<N; ++i) {
+      Float_t dist = this->fA[i]*point.x() + this->fB[i]*point.y()
+                   + this->fC[i]*point.z() + this->fD[i];
+
+      // is it outside of this side plane?
+      completelyOutside |= dist > MakePlusTolerant<ForInside>(0.);
+      if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+      if ( ForInside ) {
+        completelyInside &= dist < MakeMinusTolerant<ForInside>(0.);
+      }
+    }
+  }
+
 
   /// \return the distance to the planar shell when the point is located outside.
   /// The type returned is the type corresponding to the backend given.

@@ -109,18 +109,9 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
     completelyInside = Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( unplaced.GetDz() );
   }
 
-  // next check where points are w.r.t. each side plane
-  typename Backend::precision_v Dist[4];
-  unplaced.GetPlanes()->DistanceToPoint(localPoint, Dist);
 
-  for (unsigned int i = 0; i < 4; ++i) {
-    // is it outside of this side plane?
-    completelyOutside |= Dist[i] > MakePlusTolerant<ForInside>(0.);
-    if ( Backend::early_returns && IsFull(completelyOutside) )  return;
-    if(ForInside) {
-      completelyInside &= Dist[i] < MakeMinusTolerant<ForInside>(0.);
-    }
-  }
+  unplaced.GetPlanes() -> GenericKernelForContainsAndInside<Backend,ForInside>(
+      localPoint, completelyInside, completelyOutside );
 
   return;
 }
