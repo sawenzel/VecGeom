@@ -110,8 +110,28 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
   }
 
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
   unplaced.GetPlanes() -> GenericKernelForContainsAndInside<Backend,ForInside>(
       localPoint, completelyInside, completelyOutside );
+#else
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Bool_t done( Backend::kFalse );
+
+  TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+  for(unsigned int i=0; i<4; ++i) {
+    Float_t dist = fPlanes[i].fA*localPoint.x() + fPlanes[i].fB*localPoint.y()
+                 + fPlanes[i].fC*localPoint.z() + fPlanes[i].fD;
+
+    // is it outside of this side plane?
+    completelyOutside |= dist > MakePlusTolerant<ForInside>(0.);
+    if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+    if ( ForInside ) {
+      completelyInside &= dist < MakeMinusTolerant<ForInside>(0.);
+    }
+  }
+#endif
 
   return;
 }
@@ -256,9 +276,10 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
 
   //
   // Step 2: find distances for intersections with side planes.
-  //   If disttoplanes is such that smin < dist < smax, then distance=disttoplanes
   //
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
+  // If disttoplanes is such that smin < dist < smax, then distance=disttoplanes
   Float_t disttoplanes = unplaced.GetPlanes()->DistanceToIn<Backend>(point, smin, dir);
 
   // save any misses from plane shell
@@ -278,6 +299,50 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
 
   // at last... negative distance means we're inside the volume -- set distance to zero
   MaskedAssign( distance<0, 0.0, &distance );
+#else
+  //   If dist is such that smin < dist < smax, then adjust either smin or smax.
+
+  TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+
+  // loop over side planes - find pdist,Comp for each side plane
+  for (unsigned int i = 0; i < 4; i++) {
+      Float_t pdist, comp;
+      // Note: normal vector is pointing outside the volume (convention), therefore
+    // pdist>0 if point is outside  and  pdist<0 means inside
+    pdist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+      + fPlanes[i].fC * point.z() + fPlanes[i].fD;
+    Bool_t posPoint = pdist >= -kHalfTolerance;
+
+    // Comp is projection of dir over the normal vector of side plane, hence
+    // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
+    comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
+    Bool_t posDir = comp >= 0;
+
+    // discard the ones moving away from this plane
+    done |= (posPoint && posDir);
+    if ( IsFull(done) ) return;
+
+    // check if trajectory will intercept plane within current range (smin,smax)
+    Float_t vdist = -pdist/comp;
+
+    Bool_t interceptFromInside = (!posPoint && posDir);
+    done |= ( interceptFromInside  && vdist<smin );
+    if ( IsFull(done) ) return;
+
+    Bool_t interceptFromOutside = (posPoint && !posDir);
+    done |= ( interceptFromOutside && vdist>smax );
+    if ( IsFull(done) ) return;
+
+    // update smin,smax
+    Bool_t validVdist = (vdist>smin && vdist<smax);
+    MaskedAssign( interceptFromInside  && validVdist, vdist, &smax );
+    MaskedAssign( interceptFromOutside && validVdist, vdist, &smin );
+  }
+
+  // Checks in non z plane intersections ensure smin<smax
+  MaskedAssign(!done && smin>=0, smin, &distance);
+  MaskedAssign(!done && smin<0,   0.0, &distance);
+#endif
 }
 
 
@@ -326,9 +391,37 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   // Step 2: find distances for intersections with side planes.
   //
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
   Float_t disttoplanes = unplaced.GetPlanes()->DistanceToOut<Backend>(point, dir);
   Bool_t hitplanarshell = (disttoplanes < distance);
   MaskedAssign( hitplanarshell, disttoplanes, &distance );
+#else
+  TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+
+  // loop over side planes - find pdist,Comp for each side plane
+  for (unsigned int i = 0; i < 4; i++) {
+    Float_t pdist, comp;
+    // Note: normal vector is pointing outside the volume (convention), therefore
+    // pdist>0 if point is outside  and  pdist<0 means inside
+    pdist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+      + fPlanes[i].fC * point.z() + fPlanes[i].fD;
+    Bool_t inside = (pdist < -kHalfTolerance);
+
+    // Comp is projection of dir over the normal vector of side plane, hence
+    // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
+    comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
+    Bool_t posComp = comp >= 0;
+
+    Bool_t test = (!inside && posComp);
+    MaskedAssign( !done && test, 0.0, &distance );
+    done |= ( distance == 0.0 );
+    if ( IsFull(done) ) return;
+
+    test = inside && posComp;
+    Float_t vdist = -pdist / comp;
+    MaskedAssign(!done && test && vdist<distance, vdist, &distance);
+  }
+#endif
 }
 
 
@@ -347,8 +440,20 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToIn(
   Vector3D<Float_t> point = transformation.Transform<transCodeT, rotCodeT>(masterPoint);
   safety = Abs(point.z()) - unplaced.GetDz();
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
   // Get safety over side planes
   unplaced.GetPlanes()->SafetyToIn<Backend>(point, safety);
+#else
+  // Loop over side planes
+  TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+  for (int i = 0; i < 4; ++i) {
+    Float_t Dist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+      + fPlanes[i].fC * point.z() + fPlanes[i].fD;
+    MaskedAssign( Dist>safety, Dist, &safety );
+  }
+
+  MaskedAssign( safety < 0, 0.0, &safety );
+#endif
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -371,8 +476,21 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   // If all test points are outside, we're done
   if ( IsFull(done) ) return;
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
   // Get safety over side planes
   unplaced.GetPlanes()->SafetyToOut<Backend>(point, safety);
+#else
+  // Loop over side planes
+  TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+  typedef typename Backend::precision_v Float_t;
+  Float_t Dist( 0.0 );
+  for (int i = 0; i < 4; ++i) {
+    Dist = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+             + fPlanes[i].fC * point.z() + fPlanes[i].fD);
+    // std::cout<<"i="<< i <<" - Dist[i]="<< Dist <<"\n";
+    MaskedAssign( !done && Dist>0.0 && Dist < safety, Dist, &safety );
+  }
+#endif
 }
 
 } // End global namespace

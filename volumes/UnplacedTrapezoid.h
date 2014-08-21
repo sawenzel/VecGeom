@@ -20,7 +20,15 @@
 namespace VECGEOM_NAMESPACE {
 
 typedef Vector3D<Precision> TrapCorners_t[8];
+
+#ifndef VECGEOM_PLANESHELL_DISABLE
 typedef PlaneShell<4,Precision> Planes;
+#else
+struct TrapSidePlane {
+    Precision fA,fB,fC,fD;    // Normal unit vector (a,b,c)  and offset (d)
+    // => Ax+By+Cz+D=0
+};
+#endif
 
 class UnplacedTrapezoid : public VUnplacedVolume
 #ifdef VECGEOM_VC_ACCELERATION
@@ -45,7 +53,12 @@ private:
   Precision fTthetaSphi;
   Precision fbbx, fbby, fbbz;
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
   Planes fPlanes;
+#else
+  TrapSidePlane  fPlanes[4];
+#endif
+
   Precision sideAreas[6];  // including z-planes
 
 public:
@@ -113,8 +126,13 @@ public:
   // VECGEOM_CUDA_HEADER_BOTH
   // TrapParameters const& GetParameters() const { return _params; }
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
   VECGEOM_CUDA_HEADER_BOTH
   Planes const* GetPlanes() const { return &fPlanes; }
+#else
+  VECGEOM_CUDA_HEADER_BOTH
+  TrapSidePlane const* GetPlanes() const { return fPlanes; }
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetDz()  const { return fDz; }
@@ -239,7 +257,11 @@ private:
   /// corners defining a side face
   bool MakePlane( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
                   const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
+#ifndef VECGEOM_PLANESHELL_DISABLE
                   unsigned int planeIndex );
+#else
+                  TrapSidePlane& plane );
+#endif
 };
 
 } // End global namespace

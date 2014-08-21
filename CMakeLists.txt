@@ -3,6 +3,8 @@ project(vecgeom)
 
 ################################################################################
 
+option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." OFF)
+
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
 option(CUDA "Enable compilation for CUDA." OFF)
@@ -74,6 +76,11 @@ endif()
 if ((NOT Intel) AND VECTOR)
   message(STATUS "Compiling with vector instruction set ${VECTOR}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${VECTOR}")
+endif()
+
+if ((NOT PLANESHELL))
+  message(STATUS "Disabling PlaneShell class")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_PLANESHELL_DISABLE")
 endif()
 
 ################################################################################

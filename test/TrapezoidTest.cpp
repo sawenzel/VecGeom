@@ -158,8 +158,11 @@ bool testCorners(UnplacedTrapezoid const& trap, TGeoTrap& rtrap) {
 bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
   // get planes from vecgeom trapezoid
-  // TrapSidePlane const* planes = trap.GetPlanes();
+#ifndef VECGEOM_PLANESHELL_DISABLE
   Planes const* planes = trap.GetPlanes();
+#else
+  TrapSidePlane const* planes = trap.GetPlanes();
+#endif
 
   // get planes from usolids trapezoid
   UTrapSidePlane uplanes[4];
@@ -174,9 +177,14 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
 
     if(debug>2) {
       printf("Plane %d: {%.3f, %.3f, %.3f, %.3f}\t\t{%.3f, %.3f, %.3f, %.3f}\n", i,
+#ifndef VECGEOM_PLANESHELL_DISABLE
              planes->fA[i], planes->fB[i], planes->fC[i], planes->fD[i], uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d);
+#else
+             planes[i].fA, planes[i].fB, planes[i].fC, planes[i].fD, uplanes[i].a, uplanes[i].b, uplanes[i].c, uplanes[i].d);
+#endif
     }
 
+#ifndef VECGEOM_PLANESHELL_DISABLE
     if( fabs( planes->fA[i] - uplanes[i].a ) > kTolerance ) { // V2
       printf("Discrepancy in plane A-value: %.3f vs. %.3f\n", planes->fA[i], uplanes[i].a);
       good = false;
@@ -196,6 +204,27 @@ bool testPlanes(UnplacedTrapezoid const& trap, UTrap& utrap) {
       printf("Discrepancy in plane D-value: %.3f vs. %.3f\n", planes->fD[i], uplanes[i].d);
       good = false;
     }
+#else
+    if( fabs( planes[i].fA - uplanes[i].a ) > kTolerance ) { // V1
+      printf("Discrepancy in plane A-value: %.3f vs. %.3f\n", planes[i].fA, uplanes[i].a);
+      good = false;
+    }
+
+    if( fabs( planes[i].fB - uplanes[i].b ) > kTolerance ) { // V1
+      printf("Discrepancy in plane B-value: %.3f vs. %.3f\n", planes[i].fB, uplanes[i].b);
+      good = false;
+    }
+
+    if( fabs( planes[i].fC - uplanes[i].c ) > kTolerance ) { // V1
+      printf("Discrepancy in plane C-value: %.3f vs. %.3f\n", planes[i].fC, uplanes[i].c);
+      good = false;
+    }
+
+    if( fabs( planes[i].fD - uplanes[i].d ) > kTolerance ) { // V1
+      printf("Discrepancy in plane D-value: %.3f vs. %.3f\n", planes[i].fD, uplanes[i].d);
+      good = false;
+    }
+#endif
   }
 
   if(good && debug) printf("testPlanes vs. USolids passed.\n");
