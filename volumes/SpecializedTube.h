@@ -26,6 +26,8 @@ class SpecializedTube
 
 public:
 
+  typedef TubeImplementation<transCodeT, rotCodeT, tubeTypeT> Implementation;
+
 #ifndef VECGEOM_NVCC
 
   SpecializedTube(char const *const label,
