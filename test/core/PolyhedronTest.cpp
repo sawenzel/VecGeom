@@ -1,40 +1,28 @@
 #include "volumes/Polyhedron.h"
 #include "volumes/kernel/GenericKernels.h"
+#ifdef VECGEOM_USOLIDS
 #include "UPolyhedra.hh"
+#endif
 #include "backend/Backend.h"
 
 using namespace vecgeom;
 
-void NormalizeAngle();
-
 int main() {
   Precision zPlanes[] = {1, 3, 5, 8};
-  Precision rInner[] = {1, 1, 1, 1};
-  Precision rOuter[] = {3, 2, 3, 2};
-  UnplacedPolyhedron unplaced(3, 0, kTwoPi, 4, zPlanes, rInner, rOuter);
-  LogicalVolume logical(&unplaced);
+  Precision rInner[] = {0, 0, 0, 0};
+  Precision rOuter[] = {3, 3, 3, 3};
+#ifdef VECGEOM_USOLIDS
+  UPolyhedra usolids("", 0, 360, 4, 4, zPlanes, rInner, rOuter);
+#endif
+  UnplacedPolyhedron vecgeom(4, 4, zPlanes, rInner, rOuter);
+  LogicalVolume logical(&vecgeom);
   Transformation3D placement;
   VPlacedVolume *polyhedron = logical.Place(&placement);
-  delete polyhedron;
-  NormalizeAngle();
+  Vector3D<Precision> point(0, 0, 2), direction(0, 0, -1);
+  assert(polyhedron->DistanceToOut(point, direction) == 1);
+  assert(polyhedron->Contains(point));
+  assert(polyhedron->Contains(Vector3D<Precision>(2.9, 0, 7)));
+  assert(!polyhedron->Contains(Vector3D<Precision>(-2.9, 0, 0)));
+  assert(polyhedron->Inside(Vector3D<Precision>(3, 0, 2)) == EInside::kSurface);
   return 0;
-}
-
-void NormalizeAngle() {
-  Precision angles[] = {-0.1, 3*kPi, 0.1, -kTwoPi};
-  Precision result[] = {kTwoPi-0.1, kPi, 0.1, kTwoPi};
-  for (int i = 0; i < 4; ++i) {
-    Precision normalized = GenericKernels<kScalar>::NormalizeAngle(angles[i]);
-    if (normalized != result[i]) {
-      printf("Mismatch between angles %.4f and %.4f.\n",
-             normalized, result[i]);
-      assert(0);
-    }
-  }
-#ifdef VECGEOM_VC
-  for (int i = 0; i < 4; i += VcPrecision::Size) {
-    assert(GenericKernels<kVc>::NormalizeAngle(VcPrecision(&angles[i]))
-           == VcPrecision(&result[i]));
-  }
-#endif
 }

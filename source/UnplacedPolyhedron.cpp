@@ -12,13 +12,14 @@ namespace VECGEOM_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 UnplacedPolyhedron::UnplacedPolyhedron(
-    int sideCount,
-    int zPlaneCount,
+    const int sideCount,
+    const int zPlaneCount,
     Precision zPlanes[],
     Precision rMin[],
     Precision rMax[])
-    : fSideCount(sideCount), fHasInnerRadii(false), fEndCaps(),
-      fSegments(zPlaneCount-1), fZPlanes(zPlaneCount) {
+    : fSideCount(sideCount), fHasInnerRadii(false),
+      fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
+      fEndCaps(), fSegments(zPlaneCount-1), fZPlanes(zPlaneCount) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -32,12 +33,15 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Initialize segments
   for (int i = 0; i < zPlaneCount-1; ++i) {
     fSegments[i].outer = Quadrilaterals<0>(fSideCount);
-    Assert(zPlanes[i] <= zPlanes[i+i], "Polyhedron Z-planes must be "
+    fSegments[i].zMax = zPlanes[i+1];
+    Assert(zPlanes[i] <= zPlanes[i+1], "Polyhedron Z-planes must be "
            "monotonically increasing.\n");
     if (rMin[i] > kTolerance || rMin[i+1] > kTolerance) {
       fHasInnerRadii = true;
       fSegments[i].hasInnerRadius = true;
       fSegments[i].inner = Quadrilaterals<0>(fSideCount);
+    } else {
+      fSegments[i].hasInnerRadius = false;
     }
   }
 
@@ -64,7 +68,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
           Vec_t::FromCylindrical(rMin[i], vertixPhi[j], zPlanes[i]);
     }
   }
-  delete vertixPhi;
+  delete[] vertixPhi;
 
   // Build segments by drawing quadrilaterals between vertices
   for (int i = 0; i < zPlaneCount-1; ++i) {
@@ -100,8 +104,9 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       fSegments[i].inner.Set(sideCount-1, corner0, corner1, corner2, corner3);
     }
   }
-  delete outerVertices;
-  delete innerVertices;
+
+  delete[] outerVertices;
+  delete[] innerVertices;
 }
 #endif
 
@@ -174,6 +179,19 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
 #endif
 
   #undef POLYHEDRON_CREATE_SPECIALIZATION
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedPolyhedron::Print() const {
+  printf("UnplacedPolyhedron {%i sides, %i segments, %s}",
+         fSideCount, fSegments.size(),
+         (fHasInnerRadii) ? "has inner radii" : "no inner radii");
+}
+
+void UnplacedPolyhedron::Print(std::ostream &os) const {
+  os << "UnplacedPolyhedron {" << fSideCount << " sides, " << fSegments.size()
+     << " segments, "
+     << ((fHasInnerRadii) ? "has inner radii" : "no inner radii") << "}";
 }
 
 } // End global namespace

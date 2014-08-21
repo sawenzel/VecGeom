@@ -5,12 +5,14 @@
 #define VECGEOM_BASE_VECTOR3D_H_
 
 #include "base/Global.h"
+
 #include "backend/Backend.h"
 #ifndef VECGEOM_NVCC
   #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
     #include <Vc/Vc>
   #endif
 #endif
+#include "base/AlignedBase.h"
 
 #include <cstdlib>
 #include <ostream>
@@ -24,7 +26,7 @@ namespace VECGEOM_NAMESPACE {
  *          will use vector instructions for operations when possible.
  */
 template <typename Type>
-class Vector3D {
+class Vector3D : public AlignedBase {
 
   typedef Vector3D<Type> VecType;
 
@@ -373,7 +375,7 @@ std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
 /// Vector3D<float> that can provide internal vectorization of common vector
 /// operations.
 template <>
-class Vector3D<Precision> : public Vc::VectorAlignedBase {
+class Vector3D<Precision> : public AlignedBase {
 
   typedef Vector3D<Precision> VecType;
   typedef Vector3D<bool> BoolType;
@@ -385,8 +387,8 @@ private:
 
 public:
 
-  Precision * AsArray() {
-    return (Precision * ) &mem;
+  Precision* AsArray() {
+    return &mem[0];
   }
 
  Vector3D(const Precision a, const Precision b, const Precision c) : mem() {

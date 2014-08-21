@@ -6,6 +6,7 @@
 
 #include "base/Global.h"
 
+#include "base/Array.h"
 #include "base/SOA.h"
 #include "base/SOA3D.h"
 #include "base/Vector3D.h"
@@ -32,7 +33,11 @@ public:
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_CONSTEXPR int size() const { return N; }
+#ifndef VECGEOM_NVCC
+  constexpr int size() const { return N; }
+#else
+  int size() const { return N; }
+#endif
 
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
@@ -136,7 +141,7 @@ class Quadrilaterals<0> {
 private:
 
   SOA3D<Precision> fNormal;
-  Precision *fDistance;
+  Array<Precision> fDistance;
   SOA3D<Precision> fSides[4];
   SOA3D<Precision> fCorners[4];
 
@@ -146,36 +151,45 @@ public:
   typedef SOA3D<Precision> Corners_t[4];
 
 #ifdef VECGEOM_STD_CXX11
-  Quadrilaterals(int size);
+  inline Quadrilaterals(int size);
+  inline ~Quadrilaterals();
 #endif
 
-  Quadrilaterals();
+  template <int N>
+  Quadrilaterals(Quadrilaterals<N> const &other);
 
-  ~Quadrilaterals();
+  template <int N>
+  Quadrilaterals<0>& operator=(Quadrilaterals<N> const &other);
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   int size() const { return fNormal.size(); }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   SOA3D<Precision> const& GetNormal() const { return fNormal; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision const* GetDistance() const { return fDistance; }
+  VECGEOM_INLINE
+  Array<Precision> const& GetDistance() const { return fDistance; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Sides_t const& GetSides() const { return fSides; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Corners_t const& GetCorners() const { return fCorners; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static Precision const* ToFixedSize(Precision const *array) { return array; }
 
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
   /// \param corner2 Third corner in counterclockwise order.
   /// \param corner3 Fourth corner in counterclockwise order.
-  void Set(
+  inline void Set(
       int index,
       Vector3D<Precision> const &corner0,
       Vector3D<Precision> const &corner1,
@@ -184,27 +198,104 @@ public:
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   typename Backend::precision_v DistanceToIn(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction) const;
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   typename Backend::bool_v Contains(
       Vector3D<typename Backend::precision_v> const &point) const;
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   typename Backend::inside_v Inside(
       Vector3D<typename Backend::precision_v> const &point) const;
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   typename Backend::precision_v ConvexDistanceToOut(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::distance_v> const &direction) const;
 
 };
+
+#ifdef VECGEOM_STD_CXX11
+
+Quadrilaterals<0>::Quadrilaterals(int size)
+    : fNormal(size), fDistance(size), fSides{size, size, size, size},
+      fCorners{size, size, size, size} {}
+
+// Quadrilaterals<0>::Quadrilaterals() : fNormal(0), fDistance(NULL) {}
+
+Quadrilaterals<0>::~Quadrilaterals() {}
+
+template <int N>
+Quadrilaterals<0>& Quadrilaterals<0>::operator=(
+    Quadrilaterals<N> const &other) {
+  fNormal = other.fNormal;
+  fDistance = other.fDistance;
+  for (int i = 0; i < 4; ++i) {
+    fSides[i] = other.fSides[i];
+    fCorners[i] = other.fCorners[i];
+  }
+  return *this;
+}
+
+void Quadrilaterals<0>::Set(
+    int index,
+    Vector3D<Precision> const &corner0,
+    Vector3D<Precision> const &corner1,
+    Vector3D<Precision> const &corner2,
+    Vector3D<Precision> const &corner3) {
+
+  fSides[0].set(index, (corner1 - corner0).Normalized());
+  fSides[1].set(index, (corner2 - corner1).Normalized());
+  fSides[2].set(index, (corner3 - corner2).Normalized());
+  fSides[3].set(index, (corner0 - corner3).Normalized());
+  fCorners[0].set(index, corner0);
+  fCorners[1].set(index, corner1);
+  fCorners[2].set(index, corner2);
+  fCorners[3].set(index, corner3);
+  // TODO: It should be asserted that the quadrilateral is planar and convex.
+
+  // Compute plane equation to retrieve normal and distance to origin
+  // ax + by + cz + d = 0
+  Precision a, b, c, d;
+  a = corner0[1]*(corner1[2] - corner2[2]) +
+      corner1[1]*(corner2[2] - corner0[2]) +
+      corner2[1]*(corner0[2] - corner1[2]);
+  b = corner0[2]*(corner1[0] - corner2[0]) +
+      corner1[2]*(corner2[0] - corner0[0]) +
+      corner2[2]*(corner0[0] - corner1[0]);
+  c = corner0[0]*(corner1[1] - corner2[1]) +
+      corner1[0]*(corner2[1] - corner0[1]) +
+      corner2[0]*(corner0[1] - corner1[1]);
+  d = - corner0[0]*(corner1[1]*corner2[2] - corner2[1]*corner1[2])
+      - corner1[0]*(corner2[1]*corner0[2] - corner0[1]*corner2[2])
+      - corner2[0]*(corner0[1]*corner1[2] - corner1[1]*corner0[2]);
+  Vector3D<Precision> normal(a, b, c);
+  // Normalize the plane equation
+  // (ax + by + cz + d) / sqrt(a^2 + b^2 + c^2) = 0 =>
+  // n0*x + n1*x + n2*x + p = 0
+  Precision inverseLength = 1. / normal.Length();
+  normal *= inverseLength;
+  d *= inverseLength;
+  if (d >= 0) {
+    // Ensure normal is pointing away from origin
+    normal = -normal;
+    d = -d;
+  }
+
+  fNormal.set(index, normal);
+  fDistance[index] = d;
+}
+
+#endif
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -252,7 +343,7 @@ typename Backend::precision_v Quadrilaterals<0>::ConvexDistanceToOut(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::distance_v> const &direction) const {
   return Planes<0>::template DistanceToOutKernel<Backend>(
-      &fNormal[0], &fNormal[1], &fNormal[2], fDistance, point, direction);
+      fNormal.x(), fNormal.y(), fNormal.z(), fDistance, point, direction);
 }
 
 } // End global namespace

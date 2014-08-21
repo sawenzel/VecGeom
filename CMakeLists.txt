@@ -373,6 +373,7 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
   ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PlanesTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/PolyhedronTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/RectanglesTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
@@ -383,7 +384,6 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
-  ${CMAKE_SOURCE_DIR}/test/usolids/PolyhedronTest.cpp
   ${CMAKE_SOURCE_DIR}/test/usolids/PolygonTest.cpp
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp

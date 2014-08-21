@@ -24,33 +24,34 @@ VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
-  UnplacedPolyhedron const &unplaced = *GetUnplacedVolume();
-  Polygon const &corners = *unplaced.GetCorners();
-  TGeoPgon *pgon = new TGeoPgon(GetLabel().c_str(), unplaced.GetPhiStart(),
-                                unplaced.GetPhiDelta(), unplaced.GetSideCount(),
-                                corners.GetVertixCount());
-  // Set the corners somehow...
-  return pgon;
+  assert(0);
+  return NULL;
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
-  UnplacedPolyhedron const &unplaced = *GetUnplacedVolume();
-  Polygon const &corners = *unplaced.GetCorners();
-  double *r = new double[corners.GetVertixCount()];
-  double *z = new double[corners.GetVertixCount()];
-  for (int i = 0, iEnd = corners.GetVertixCount(); i < iEnd; ++i) {
-    Vector2D<Precision> vertix = corners[i];
-    r[i] = vertix[0];
-    z[i] = vertix[1];
-  }
-  return new UPolyhedra(GetLabel(), unplaced.GetPhiStart(),
-                        unplaced.GetPhiDelta(), unplaced.GetSideCount(),
-                        corners.GetVertixCount(), r, z);
+  assert(0);
+  return NULL;
 }
 #endif
 
 #endif // VECGEOM_BENCHMARK
+
+#ifdef VECGEOM_CUDA_INTERFACE
+VPlacedVolume* PlacedPolyhedron::CopyToGpu(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation,
+    VPlacedVolume *const gpu_ptr) const {
+  assert(0);
+  return NULL;
+}
+VPlacedVolume* PlacedPolyhedron::CopyToGpu(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation) const {
+  assert(0);
+  return NULL;
+}
+#endif
 
 } // End global namespace

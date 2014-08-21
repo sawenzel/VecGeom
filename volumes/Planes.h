@@ -106,6 +106,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::inside_v InsideKernel(
+      const int n,
       Precision const (&a)[N],
       Precision const (&b)[N],
       Precision const (&c)[N],
@@ -116,6 +117,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::bool_v ContainsKernel(
+      const int n,
       Precision const (&a)[N],
       Precision const (&b)[N],
       Precision const (&c)[N],
@@ -166,7 +168,7 @@ VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Planes<N>::Inside(
     Vector3D<typename Backend::precision_v> const &point) const {
   return InsideKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
+      N, fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
 }
 
 template <int N>
@@ -175,13 +177,14 @@ VECGEOM_CUDA_HEADER_BOTH
 typename Backend::bool_v Planes<N>::Contains(
     Vector3D<typename Backend::precision_v> const &point) const {
   return ContainsKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
+      N, fPlane[0], fPlane[1], fPlane[2], fPlane[3], point);
 }
 
 template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::bool_v Planes<N>::ContainsKernel(
+    const int n,
     Precision const (&a)[N],
     Precision const (&b)[N],
     Precision const (&c)[N],
@@ -200,6 +203,7 @@ template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Planes<N>::InsideKernel(
+    const int n,
     Precision const (&a)[N],
     Precision const (&b)[N],
     Precision const (&c)[N],
@@ -212,8 +216,7 @@ typename Backend::inside_v Planes<N>::InsideKernel(
   Inside_t result = EInside::kInside;
   Inside_t inside[N];
   for (int i = 0; i < N; ++i) {
-    Float_t distance = a[i]*point[0] + b[i]*point[1] +
-                       c[i]*point[2] + d[i];
+    Float_t distance = a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
     inside[i] = EInside::kSurface;
     MaskedAssign(distance < -kTolerance, EInside::kInside,  &inside[i]);
     MaskedAssign(distance >  kTolerance, EInside::kOutside, &inside[i]);
@@ -282,40 +285,48 @@ private:
 
 public:
 
-  Planes(int size);
+  inline Planes(int size);
 
-#ifdef VECGEOM_NVCC
-  __device__ Planes(SOA3D<Precision> const &normal, Precision *p);
-#endif
-
-  ~Planes();
+  inline ~Planes();
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   int size() const { return fSize; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Vector3D<Precision> GetNormal(int index) const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetDistance(int index) const;
 
-  VECGEOM_INLINE
-  void Set(int index, Vector3D<Precision> const &normal,
-           Vector3D<Precision> const &origin);
+  inline void Set(
+      int index,
+      Vector3D<Precision> const &normal,
+      Vector3D<Precision> const &origin);
 
+  template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Inside(Vector3D<Precision> const &point, Inside_t *inside) const;
+  static typename Backend::bool_v ContainsKernel(
+      const int size,
+      Precision const a[],
+      Precision const b[],
+      Precision const c[],
+      Precision const d[],
+      Vector3D<typename Backend::precision_v> const &point);
 
+  template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Contains(Vector3D<Precision> const &point, bool *inside) const;
-
-  template <bool treatSurfaceT>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void InsideKernel(
-      Vector3D<Precision> const &point,
-      typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t
-      *inside) const;
+  static typename Backend::inside_v InsideKernel(
+      const int size,
+      Precision const a[],
+      Precision const b[],
+      Precision const c[],
+      Precision const d[],
+      Vector3D<typename Backend::precision_v> const &point);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -337,23 +348,6 @@ Planes<0>::Planes(int size) : fSize(size) {
   fPlane[2] = AlignedAllocate<Precision>(size);
   fPlane[3] = AlignedAllocate<Precision>(size);
 }
-
-#ifdef VECGEOM_NVCC
-template <>
-__device__
-Planes<0>::Planes(
-    int size,
-    Precision *a,
-    Precision *b,
-    Precision *c,
-    Precision *d)
-    : fSize(size) {
-  fPlane[0] = a;
-  fPlane[1] = b;
-  fPlane[2] = c;
-  fPlane[3] = d;
-}
-#endif
 
 Planes<0>::~Planes() {
   AlignedFree(fPlane[0]);
@@ -383,55 +377,44 @@ void Planes<0>::Set(
   fPlane[3][index] = inverseLength * d;
 }
 
-template <bool treatSurfaceT>
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void Planes<0>::InsideKernel(
-    Vector3D<Precision> const &point,
-    typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t
-    *inside) const {
-  int i = 0;
-#ifdef VECGEOM_PLANES_VC
-  for (int iMax = fSize-VcPrecision::Size; i <= iMax;
-       i += VcPrecision::Size) {
-    Vector3D<VcPrecision> normal(
-      VcPrecision(fPlane[0]+i),
-      VcPrecision(fPlane[1]+i),
-      VcPrecision(fPlane[2]+i)
-    );
-    VcPrecision p(&fPlane[3][i]);
-    VcPrecision distanceResult = normal.Dot(point) + p;
-    VcInside insideResult = EInside::kOutside;
-    MaskedAssign(distanceResult < 0., EInside::kInside, &insideResult);
-    if (treatSurfaceT) {
-      MaskedAssign(Abs(distanceResult) < kTolerance, EInside::kSurface,
-                   &insideResult);
-    }
-    for (int j = 0; j < VcPrecision::Size; ++j) inside[i+j] = insideResult[j];
+typename Backend::bool_v Planes<0>::ContainsKernel(
+    const int size,
+    Precision const a[],
+    Precision const b[],
+    Precision const c[],
+    Precision const d[],
+    Vector3D<typename Backend::precision_v> const &point) {
+
+  typename Backend::bool_v result(true);
+  for (int i = 0; i < size; ++i) {
+    typename Backend::precision_v distanceResult = 
+        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
+    result &= distanceResult < -kTolerance;
   }
-#endif
-  for (int iMax = fSize; i < iMax; ++i) {
-    Vector3D<Precision> normal(fPlane[0][i], fPlane[1][i], fPlane[2][i]);;
-    Precision distanceResult = normal.Dot(point) + fPlane[3][i];
-    if (treatSurfaceT) {
-      inside[i] = (distanceResult < -kTolerance) ? EInside::kInside :
-                  (distanceResult >  kTolerance) ? EInside::kOutside
-                                                 : EInside::kSurface;
-    } else {
-      inside[i] = (distanceResult <= 0.) ? EInside::kInside : EInside::kOutside;
-    }
-  }
+  return result;
 }
 
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void Planes<0>::Inside(
-    Vector3D<Precision> const &point,
-    Inside_t *inside) const {
-  InsideKernel<true>(point, inside);
-}
+typename Backend::inside_v Planes<0>::InsideKernel(
+    const int size,
+    Precision const a[],
+    Precision const b[],
+    Precision const c[],
+    Precision const d[],
+    Vector3D<typename Backend::precision_v> const &point) {
 
-VECGEOM_CUDA_HEADER_BOTH
-void Planes<0>::Contains(Vector3D<Precision> const &point, bool *inside) const {
-  InsideKernel<false>(point, inside);
+  typename Backend::inside_v result(EInside::kInside);
+  for (int i = 0; i < size; ++i) {
+    typename Backend::precision_v distanceResult =
+        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
+    typename Backend::bool_v notSurface = result != EInside::kSurface;
+    MaskedAssign(notSurface && distanceResult > kTolerance, EInside::kOutside,
+                 &result);
+  }
+  return result;
 }
 
 template <class Backend>

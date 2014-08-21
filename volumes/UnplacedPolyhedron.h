@@ -22,6 +22,7 @@ public:
 
   struct Segment {
     bool hasInnerRadius;
+    Precision zMax;
     Quadrilaterals<0> inner, outer;
   };
 
@@ -29,6 +30,7 @@ private:
 
   int fSideCount;
   bool fHasInnerRadii;
+  Precision fZBounds[2];
   Planes<2> fEndCaps;
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
@@ -37,30 +39,48 @@ public:
 
 #ifndef VECGEOM_NVCC
   UnplacedPolyhedron(
-      int sideCount,
-      int zPlaneCount,
+      const int sideCount,
+      const int zPlaneCount,
       Precision zPlanes[],
       Precision rMin[],
       Precision rMax[]);
 #endif
 
-  ~UnplacedPolyhedron() {}
+  virtual ~UnplacedPolyhedron() {}
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   int GetSideCount() const { return fSideCount; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int GetSegmentCount() const { return fSegments.size(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   bool HasInnerRadii() const { return fHasInnerRadii; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Segment const& GetSegment(int index) const { return fSegments[index]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Array<Segment> const& GetSegments() const { return fSegments; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Planes<2> const& GetEndCaps() const { return fEndCaps; }
+  VECGEOM_INLINE
+  Precision GetZMin() const { return fZBounds[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Segment const& GetSegment(int index) const { return fSegments[index]; }
+  VECGEOM_INLINE
+  Precision GetZMax() const { return fZBounds[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Planes<2> const& GetEndCaps() const { return fEndCaps; }
+
+  VECGEOM_INLINE
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
