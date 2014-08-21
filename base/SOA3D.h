@@ -137,6 +137,8 @@ public:
 
 private:
 
+  void Allocate();
+
   void Deallocate();
 
 };
@@ -148,16 +150,25 @@ SOA3D<T>::SOA3D(T *x, T *y, T *z, size_t size)
 
 template <typename T>
 SOA3D<T>::SOA3D(size_t size)
-    : fAllocated(true), fSize(size), fCapacity(size),
+    : fAllocated(false), fSize(size), fCapacity(size),
       fX(NULL), fY(NULL), fZ(NULL) {
-  reserve(fCapacity);
+  Allocate();
 }
 
 template <typename T>
-SOA3D<T>::SOA3D(SOA3D<T> const &other)
-    : fAllocated(other.fAllocated), fSize(other.fSize),
-      fCapacity(other.fCapacity), fX(NULL), fY(NULL), fZ(NULL) {
-  *this = other;
+SOA3D<T>::SOA3D(SOA3D<T> const &rhs)
+    : fAllocated(false), fSize(rhs.fSize),
+      fCapacity(rhs.fCapacity), fX(NULL), fY(NULL), fZ(NULL) {
+  if (rhs.fAllocated) {
+    Allocate();
+    copy(rhs.fX, rhs.fX+rhs.fSize, fX);
+    copy(rhs.fY, rhs.fY+rhs.fSize, fY);
+    copy(rhs.fZ, rhs.fZ+rhs.fSize, fZ);
+  } else {
+    fX = rhs.fX;
+    fY = rhs.fY;
+    fZ = rhs.fZ;
+  }
 }
 
 template <typename T>
@@ -166,9 +177,11 @@ SOA3D<T>::SOA3D()
 
 template <typename T>
 SOA3D<T>& SOA3D<T>::operator=(SOA3D<T> const &rhs) {
-  clear();
+  fSize = rhs.fSize;
+  fCapacity = rhs.fCapacity;
+  Deallocate();
   if (rhs.fAllocated) {
-    reserve(rhs.fCapacity);
+    Allocate();
     copy(rhs.fX, rhs.fX+rhs.fSize, fX);
     copy(rhs.fY, rhs.fY+rhs.fSize, fY);
     copy(rhs.fZ, rhs.fZ+rhs.fSize, fZ);
@@ -176,10 +189,7 @@ SOA3D<T>& SOA3D<T>::operator=(SOA3D<T> const &rhs) {
     fX = rhs.fX;
     fY = rhs.fY;
     fZ = rhs.fZ;
-    fAllocated = false;
-    fCapacity = rhs.fCapacity;
   }
-  fSize = rhs.fSize;
   return *this;
 }
 
@@ -225,9 +235,16 @@ void SOA3D<T>::reserve(size_t newCapacity) {
 template <typename T>
 void SOA3D<T>::clear() {
   Deallocate();
-  fAllocated = false;
   fSize = 0;
   fCapacity = 0;
+}
+
+template <typename T>
+void SOA3D<T>::Allocate() {
+  fX = AlignedAllocate<T>(fCapacity);
+  fY = AlignedAllocate<T>(fCapacity);
+  fZ = AlignedAllocate<T>(fCapacity);
+  fAllocated = true;
 }
 
 template <typename T>
@@ -237,6 +254,7 @@ void SOA3D<T>::Deallocate() {
     AlignedFree(fY);
     AlignedFree(fZ);
   }
+  fAllocated = false;
 }
 
 template <typename T>
