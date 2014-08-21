@@ -25,8 +25,13 @@ private:
 
   SOAData<T, rows, columns> fData;
 
-  static VECGEOM_CONSTEXPR unsigned long fgColumnSize
-      = sizeof(SOA<T, columns, rows>)/columns;
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+#ifndef VECGEOM_NVCC
+  static constexpr int ColumnSize();
+#else
+  static int ColumnSize();
+#endif
 
 public:
 
@@ -45,17 +50,26 @@ public:
 };
 
 template <typename T, int columns, int rows>
+#ifndef VECGEOM_NVCC
+constexpr int SOA<T, columns, rows>::ColumnSize() {
+#else
+  int SOA<T, columns, rows>::ColumnSize() {
+#endif
+  return sizeof(SOA<T, columns, rows>)/columns;
+}
+
+template <typename T, int columns, int rows>
 VECGEOM_CUDA_HEADER_BOTH
 typename SOA<T, columns, rows>::Column_t&
 SOA<T, columns, rows>::operator[](int index) {
-  return *(&fData.fHead + index*fgColumnSize);
+  return *(&fData.fHead + index*ColumnSize());
 }
 
 template <typename T, int columns, int rows>
 VECGEOM_CUDA_HEADER_BOTH
 typename SOA<T, columns, rows>::Column_t const&
 SOA<T, columns, rows>::operator[](int index) const {
-  return *(&fData.fHead + index*fgColumnSize);
+  return *(&fData.fHead + index*ColumnSize());
 }
 
 } // End global namespace
