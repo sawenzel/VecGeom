@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
+#include "backend/scalar/Backend.h"
 
 namespace VECGEOM_NAMESPACE {
 
