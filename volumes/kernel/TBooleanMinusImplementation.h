@@ -10,194 +10,193 @@
 
 #include "backend/Backend.h"
 #include "base/Vector3D.h"
-#include "volumes/UnplacedBox.h"
-#include "volumes/kernel/GenericKernels.h"
+#include "volumes/TUnplacedBooleanMinusVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename LeftPlacedType_t, typename RightPlacedType_t, TranslationCode transCodeT, RotationCode rotCodeT>
 struct TBooleanMinusImplementation {
 
   //
-  template<typename Unplaced_t, typename Backend>
+  template<typename Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void UnplacedContains(
-      Unplaced_t const &unplaced,
+      TUnplacedBooleanMinusVolume const &unplaced,
       Vector3D<typename Backend::precision_v> const &localPoint,
       typename Backend::bool_v &inside);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void Contains(
-      Unplaced_t const &unplaced,
+      TUnplacedBooleanMinusVolume const &unplaced,
       Transformation3D const &transformation,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> &localPoint,
       typename Backend::bool_v &inside);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void Inside(
-      Unplaced_t const &unplaced,
+      TUnplacedBooleanMinusVolume const &unplaced,
       Transformation3D const &transformation,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::inside_v &inside);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void DistanceToIn(
-      Unplaced_t const &unplaced,
+      TUnplacedBooleanMinusVolume const &unplaced,
       Transformation3D const &transformation,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void DistanceToOut(
-      Unplaced_t const &unplaced,
+      TUnplacedBooleanMinusVolume const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static void SafetyToIn(Unplaced_t const &unplaced,
+  static void SafetyToIn(TUnplacedBooleanMinusVolume const &unplaced,
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static void SafetyToOut(Unplaced_t const &unplaced,
+  static void SafetyToOut(TUnplacedBooleanMinusVolume const &unplaced,
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void ContainsKernel(
-      Unplaced_t const &unplaced,
+      TUnplacedBooleanMinusVolume const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::bool_v &inside);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void InsideKernel(
-      Unplaced_t const & unplaced,
+      TUnplacedBooleanMinusVolume const & unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::inside_v &inside);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void DistanceToInKernel(
-      Unplaced_t const & unplaced,
+      TUnplacedBooleanMinusVolume const & unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void DistanceToOutKernel(
-      Unplaced_t const & unplaced,
+      TUnplacedBooleanMinusVolume const & unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void SafetyToInKernel(
-      Unplaced_t const & unplaced,
+      TUnplacedBooleanMinusVolume const & unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::precision_v & safety);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void SafetyToOutKernel(
-      Unplaced_t const & unplaced,
+      TUnplacedBooleanMinusVolume const & unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::precision_v &safety);
 
-  template <typename Unplaced_t, typename Backend>
+  template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void NormalKernel(
-       Unplaced_t const & unplaced,
+       TUnplacedBooleanMinusVolume const & unplaced,
        Vector3D<typename Backend::precision_v> const &point,
        Vector3D<typename Backend::precision_v> &normal,
        typename Backend::bool_v &valid );
 
 }; // End struct TBooleanMinusImplementation
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::UnplacedContains(
-    Unplaced_t const & unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::UnplacedContains(
+    TUnplacedBooleanMinusVolume const & unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
 
-  ContainsKernel<Unplaced_t, Backend>( unplaced , localPoint, inside);
+  ContainsKernel<Backend>( unplaced , localPoint, inside);
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::Contains(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::Contains(
+        TUnplacedBooleanMinusVolume const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> &localPoint,
     typename Backend::bool_v &inside) {
 
   localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-  UnplacedContains<Unplaced_t, Backend>(unplaced, localPoint, inside);
+  UnplacedContains<Backend>(unplaced, localPoint, inside);
 
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::Inside(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::Inside(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
 
-  InsideKernel<Unplaced_t, Backend>(unplaced,
+  InsideKernel<Backend>(unplaced,
                         transformation.Transform<transCodeT, rotCodeT>(point),
                         inside);
 
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToIn(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::DistanceToIn(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-  DistanceToInKernel<Unplaced_t, Backend>(
+  DistanceToInKernel<Backend>(
     unplaced,
     transformation.Transform<transCodeT, rotCodeT>(point),
     transformation.TransformDirection<rotCodeT>(direction),
@@ -206,17 +205,17 @@ void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToIn(
   );
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToOut(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::DistanceToOut(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-  DistanceToOutKernel<Unplaced_t, Backend>(
+  DistanceToOutKernel<Backend>(
     unplaced,
     point,
     direction,
@@ -225,60 +224,81 @@ void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToOut(
   );
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::SafetyToIn(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::SafetyToIn(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
-  SafetyToInKernel<Unplaced_t, Backend>(
+  SafetyToInKernel<Backend>(
     unplaced,
     transformation.Transform<transCodeT, rotCodeT>(point),
     safety
   );
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, class Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::SafetyToOut(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::SafetyToOut(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
-  SafetyToOutKernel<Unplaced_t, Backend>(
+  SafetyToOutKernel<Backend>(
     unplaced,
     point,
     safety
   );
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::ContainsKernel(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::ContainsKernel(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
 
   // now just use the Contains functionality
   // of Unplaced and its left and right components
   // Find if a subtraction of two shapes contains a given point
-   inside = unplaced.fLeftVolume->Contains(localPoint);
-   if ( IsEmpty(inside) ) return Backend::kFalse;
-   inside &= ! unplaced.fRightVolume->Contains(localPoint);
+
+   // have to figure this out
+   Vector3D<typename Backend::precision_v> tmp;
+   LeftPlacedType_t::Implementation::template Contains<Backend>(
+           *((LeftPlacedType_t *) unplaced.fLeftVolume)->GetUnplacedVolume(),
+           *unplaced.fLeftVolume->transformation(),
+           localPoint, tmp, inside);
+
+//   TUnplacedBooleanMinusVolume const &unplaced,
+//        Transformation3D const &transformation,
+//        Vector3D<typename Backend::precision_v> const &point,
+//        Vector3D<typename Backend::precision_v> &localPoint,
+//        typename Backend::bool_v &inside
+//
+
+   if ( IsEmpty(inside) ) return;
+
+   typename Backend::bool_v rightInside;
+   RightPlacedType_t::Implementation::template Contains<Backend>(
+           *((RightPlacedType_t *) unplaced.fRightVolume)->GetUnplacedVolume(),
+           *unplaced.fRightVolume->transformation(),
+           localPoint, tmp, rightInside);
+
+   inside &= ! rightInside;
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <class Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::InsideKernel(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::InsideKernel(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
 
@@ -288,11 +308,11 @@ void TBooleanMinusImplementation<transCodeT, rotCodeT>::InsideKernel(
 }
 
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <class Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
-    Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::DistanceToInKernel(
+    TUnplacedBooleanMinusVolume const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
@@ -352,12 +372,12 @@ void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 //     }
 
 }
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+#include <iostream>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
-    Unplaced_t const & unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::DistanceToOutKernel(
+    TUnplacedBooleanMinusVolume const & unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
@@ -371,18 +391,29 @@ void TBooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
 
     // what happens if LeftType is VPlacedVolume itself?
     // For the SOA case: is it better to push SOA down or do ONE loop around?
-    distance = unplaced.fLeftVolume->Unplaced_t::LeftType::DistanceToOut( point, direction, stepMax );
-    Float_t dinright = unplaced.fRightVolume->Unplaced_t::RightType::DistanceToIn( point, direction, stepMax );
+   // distance = unplaced.fLeftVolume->Unplaced_t::LeftType::DistanceToOut( point, direction, stepMax );
+   // Float_t dinright = unplaced.fRightVolume->Unplaced_t::RightType::DistanceToIn( point, direction, stepMax );
 
+    // we need a template specialization for this in case we have LeftType or RightType equals to
+    // VPlacedVolume
+
+    LeftPlacedType_t::Implementation::template DistanceToOut<Backend>(
+                    *((LeftPlacedType_t *) unplaced.fLeftVolume)->GetUnplacedVolume(),
+                    point, direction, stepMax, distance );
+    Float_t dinright(kInfinity);
+    RightPlacedType_t::Implementation::template DistanceToIn<Backend>(
+                   *((RightPlacedType_t *) unplaced.fRightVolume)->GetUnplacedVolume(),
+                    *unplaced.fRightVolume->transformation(),
+                    point, direction, stepMax, dinright );
     distance = Min( distance, dinright );
     return;
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::SafetyToInKernel(
-    Unplaced_t const & unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::SafetyToInKernel(
+    TUnplacedBooleanMinusVolume const & unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
@@ -391,40 +422,46 @@ void TBooleanMinusImplementation<transCodeT, rotCodeT>::SafetyToInKernel(
 
   // this is a very crude algorithm which as very many "virtual" surfaces
   // which could return a very small safety
-  Bool_t  inleft   = unplaced.fLeftVolume->Contains(point);
-  Float_t safleft  = unplaced.fLeftVolume->SafetyToIn(point);
-  Bool_t  inright  = unplaced.fRightVolume->Contains(point);
-  Float_t safright = unplaced.fRightVolume->SafetyToOut(point);
-  Bool_t done(Backend::kFalse);
-  MaskedAssign( inleft && inright, safright, &safety );
-  done |= inleft && inright;
-  MaskedAssign( !done && inleft, Min(safleft, safright), &safety);
-  done |= inleft;
-  MaskedAssign( !done && inright, Max(safleft, safright), &safety);
+//  Bool_t  inleft   = unplaced.fLeftVolume->Contains(point);
+//  Float_t safleft  = unplaced.fLeftVolume->SafetyToIn(point);
+//  Bool_t  inright  = unplaced.fRightVolume->Contains(point);
+//  Float_t safright = unplaced.fRightVolume->SafetyToOut(point);
+//  Bool_t done(Backend::kFalse);
+//  MaskedAssign( inleft && inright, safright, &safety );
+//  done |= inleft && inright;
+//  MaskedAssign( !done && inleft, Min(safleft, safright), &safety);
+//  done |= inleft;
+//  MaskedAssign( !done && inright, Max(safleft, safright), &safety);
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(
-    Unplaced_t const & unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t, transCodeT, rotCodeT>::SafetyToOutKernel(
+    TUnplacedBooleanMinusVolume const & unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
    typedef typename Backend::bool_v Bool_t;
    typedef typename Backend::precision_v Float_t;
 
-   Float_t safleft  = unplaced.fLeftVolume->SafetyToOut(point);
-   Float_t safright = unplaced.fRightVolume->SafetyToIn(point);
-   safety = Min(safleft, safright);
-    // might return a negative number --> navigator will handle this
+   LeftPlacedType_t::Implementation::template SafetyToOut<Backend>(
+                      *((LeftPlacedType_t *) unplaced.fLeftVolume)->GetUnplacedVolume(),
+                      point, safety );
+   Float_t safetyright(kInfinity);
+   RightPlacedType_t::Implementation::template SafetyToIn<Backend>(
+                     *((RightPlacedType_t *) unplaced.fRightVolume)->GetUnplacedVolume(),
+                      *unplaced.fRightVolume->transformation(),
+                      point, safetyright );
+   safety = Min( safety, safetyright );
+   return;
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-template <typename Unplaced_t, typename Backend>
+template <typename LeftPlacedType_t, typename RightPlacedType_t,TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void TBooleanMinusImplementation<transCodeT, rotCodeT>::NormalKernel(
-     Unplaced_t const &unplaced,
+void TBooleanMinusImplementation<LeftPlacedType_t,RightPlacedType_t,transCodeT, rotCodeT>::NormalKernel(
+     TUnplacedBooleanMinusVolume const &unplaced,
      Vector3D<typename Backend::precision_v> const &point,
      Vector3D<typename Backend::precision_v> &normal,
      typename Backend::bool_v &valid

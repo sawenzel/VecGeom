@@ -12,6 +12,7 @@
 #include "base/AlignedBase.h"
 #include "base/Vector3D.h"
 #include "volumes/UnplacedVolume.h"
+//#include "volumes/TSpecializedBooleanMinusVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -32,12 +33,16 @@ namespace VECGEOM_NAMESPACE {
  * and B is only translated (not rotated) with respect to A
  *
  */
-template< class LeftUnplacedVolume_t, class RightPlacedVolume_t >
+//template< typename LeftUnplacedVolume_t, typename RightPlacedVolume_t >
+typedef VPlacedVolume LeftUnplacedVolume_t;
+typedef VPlacedVolume RightPlacedVolume_t;
 class TUnplacedBooleanMinusVolume : public VUnplacedVolume, public AlignedBase {
 
 public:
-  LeftUnplacedVolume_t const* fLeftVolume;
-  RightPlacedVolume_t  const* fRightVolume;
+    VPlacedVolume const* fLeftVolume;
+    VPlacedVolume const* fRightVolume;
+    //LeftUnplacedVolume_t const* fLeftVolume;
+    //RightPlacedVolume_t  const* fRightVolume;
 
 public:
   // need a constructor
@@ -60,14 +65,14 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Capacity() const {
-    // TBDONE
+    // TBDONE -- need some sampling
     return 0.;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision SurfaceArea() const {
-    // TBDONE
+    // TBDONE -- need some sampling
     return 0.;
   }
 
@@ -91,16 +96,31 @@ public:
   virtual void Print(std::ostream &os) const {};
 
 #ifndef VECGEOM_NVCC
-  template <TranslationCode trans_code, RotationCode rot_code>
+  template <typename LeftUnplacedVolume_t, typename RightPlacedVolume_t, TranslationCode trans_code, RotationCode rot_code>
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
                                Transformation3D const *const transformation,
-                               VPlacedVolume *const placement = NULL) {}
+                               VPlacedVolume *const placement = NULL) {
+//      if (placement) {
+//          new(placement) TSpecializedBooleanMinusVolume<LeftUnplacedVolume_t, RightPlacedVolume_t,
+//                  trans_code, rot_code>(logical_volume,
+//                                                              transformation);
+//          return placement;
+//        }
+  //      return new TSpecializedBooleanMinusVolume<LeftUnplacedVolume_t, RightPlacedVolume_t, trans_code, rot_code>(logical_volume,
+   //                                                     transformation);
+ }
 
   static VPlacedVolume* CreateSpecializedVolume(
       LogicalVolume const *const volume,
       Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
-      VPlacedVolume *const placement = NULL) {}
+      VPlacedVolume *const placement = NULL) {
+
+     // return VolumeFactory::CreateByTransformation<TUnplacedBooleanMinusVolume<LeftUnplacedVolume_t, RightPlacedVolume_t> >(
+     //           volume, transformation, trans_code, rot_code, placement
+     //         );
+  }
+
 #else // for CUDA
   template <TranslationCode trans_code, RotationCode rot_code>
   __device__

@@ -12,6 +12,7 @@
 #include "base/Vector3D.h"
 #include "volumes/PlacedVolume.h"
 #include <iostream>
+#include "backend/vc/Backend.h"
 
 using namespace vecgeom;
 
@@ -20,18 +21,27 @@ using namespace vecgeom;
 // we know that it is only translated
 typedef SpecializedBox<translation::kIdentity, rotation::kIdentity> OriginBox_t;
 typedef SpecializedBox<translation::kGeneric, rotation::kIdentity> TranslatedBox_t;
-typedef TUnplacedBooleanMinusVolume<
-             OriginBox_t, TranslatedBox_t > BoxMinusBox_t;
+//typedef TUnplacedBooleanMinusVolume<
+//             OriginBox_t, TranslatedBox_t > BoxMinusBox_t;
 
 // if we don't want to give all this information, we can also be very unprecise and construct something based on
 // virtual functions
 typedef TUnplacedBooleanMinusVolume<
              VPlacedVolume, VPlacedVolume > GenericSubtraction_t;
 
+// let's try the vector interface
+VcPrecision DistanceToOut( BoxMinusBox_t const & unplaced, Vector3D<VcPrecision> const & point,
+        Vector3D<VcPrecision> const & dir)
+{
+    VcPrecision dist(0.);
+    TBooleanMinusImplementation<translation::kIdentity, rotation::kIdentity>::DistanceToOut<BoxMinusBox_t,kVc>(
+            unplaced, point, dir, kInfinity, dist);
+    return dist;
+}
 
 double DistanceToOut( BoxMinusBox_t const & unplaced, Vector3D<Precision> const & point, Vector3D<Precision> const & dir)
 {
-    double dist(0);
+    double dist(0.);
     TBooleanMinusImplementation<translation::kIdentity, rotation::kIdentity>::DistanceToOut<BoxMinusBox_t,kScalar>(
             unplaced, point, dir, kInfinity, dist);
     return dist;
@@ -77,10 +87,10 @@ int main()
     // now make the boolean solid
     BoxMinusBox_t complexsolid( placedmotherbox, placedsubtractedbox );
 
-    // now calculate distance to out; here direclty talking to the solid
+    // now calculate distance to out; here directly talking to the solid
     std::cerr << DistanceToOut( complexsolid, Vector3D<Precision>(0.,0.,0.), Vector3D<Precision>(0,0,-1)) << "\n";
     std::cerr << DistanceToOut( complexsolid, Vector3D<Precision>(0.,0.,0.), Vector3D<Precision>(-1,0,0)) << "\n";
     std::cerr << SafetyToOut( complexsolid, Vector3D<Precision>(0.,0.,0.) );
-
+    std::cerr << DistanceToOut( complexsolid, Vector3D<VcPrecision>(0.), Vector3D<VcPrecision>(-1.) );
 }
 

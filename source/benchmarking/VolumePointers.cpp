@@ -60,13 +60,13 @@ void VolumePointers::ConvertVolume() {
 }
 
 void VolumePointers::Deallocate() {
-  if (initial_ != kBenchmarkSpecialized)   delete specialized_;
-  if (initial_ != kBenchmarkUnspecialized) delete unspecialized_;
+ // if (initial_ != kBenchmarkSpecialized)   delete specialized_;
+ // if (initial_ != kBenchmarkUnspecialized) delete unspecialized_;
 #ifdef VECGEOM_ROOT
-  if (initial_ != kBenchmarkRoot)          delete root_;
+ // if (initial_ != kBenchmarkRoot)          delete root_;
 #endif
 #ifdef VECGEOM_USOLIDS
-  if (initial_ != kBenchmarkUSolids)       delete usolids_;
+ // if (initial_ != kBenchmarkUSolids)       delete usolids_;
 #endif
 }
 

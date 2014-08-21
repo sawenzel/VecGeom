@@ -24,7 +24,11 @@ class SpecializedBox
                                     BoxImplementation<
                                         transCodeT, rotCodeT> > Helper;
 
+  // with this we'll be able to access the implementation struct of this shape
+
 public:
+
+  typedef BoxImplementation<transCodeT, rotCodeT> Implementation;
 
 #ifndef VECGEOM_NVCC
 
