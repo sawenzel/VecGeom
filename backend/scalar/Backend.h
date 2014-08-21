@@ -38,9 +38,13 @@ typedef kScalar::bool_v   ScalarBool;
 template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
 template <class Backend> struct TreatSurfaceTraits<true, Backend> {
   typedef typename Backend::inside_v Surface_t;
+  static const Inside_t kInside = 0;
+  static const Inside_t kOutside = 2;
 };
 template <class Backend> struct TreatSurfaceTraits<false, Backend> {
   typedef typename Backend::bool_v Surface_t;
+  static const bool kInside = true;
+  static const bool kOutside = false;
 };
 
 template <typename Type>
@@ -240,7 +244,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool all_of(IteratorType first, IteratorType last) {
 #ifndef VECGEOM_NVCC
-  return std::all_of(first, last);
+  return std::all_of(first, last, [](bool b){return b;});
 #else
   while (first++ != last) if (!first) return false;
   return true;
