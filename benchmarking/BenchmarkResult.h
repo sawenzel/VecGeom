@@ -17,7 +17,8 @@ enum EBenchmarkedLibrary {
   kBenchmarkCuda = 3,
   kBenchmarkUSolids = 4,
   kBenchmarkRoot = 5,
-  kBenchmarkCudaMemory = 6
+  kBenchmarkCudaMemory = 6,
+  kBenchmarkGeant4 = 7
 };
 
 enum EBenchmarkedMethod {
