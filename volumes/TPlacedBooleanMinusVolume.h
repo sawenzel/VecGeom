@@ -15,9 +15,11 @@
 //#define VECGEOM_BENCHMARK
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
+#include "TGeoVolume.h"
 #include "TGeoCompositeShape.h"
 #include "TGeoBoolNode.h"
 #include "TGeoMatrix.h"
+#include "TGeoManager.h"
 #endif
 #ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
@@ -96,28 +98,17 @@ public:
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * leftm = left->transformation();
       Transformation3D const * rightm = right->transformation();
-      TGeoRotation * leftRootRotation = new TGeoRotation();
-      leftRootRotation->SetMatrix( leftm->Rotation() );
-      TGeoRotation * rightRootRotation = new TGeoRotation();
-          rightRootRotation->SetMatrix( rightm->Rotation() );
-      TGeoCombiTrans * leftRootMatrix = new TGeoCombiTrans(
-              leftm->Translation(0),
-              leftm->Translation(1),
-              leftm->Translation(2),
-              leftRootRotation);
-      TGeoCombiTrans * rightRootMatrix = new TGeoCombiTrans(
-              rightm->Translation(0),
-              rightm->Translation(1),
-              rightm->Translation(2),
-              rightRootRotation);
-
-      // do some asserts that the transformations are correct
-
-      TGeoSubtraction * node = new TGeoSubtraction(
+            TGeoSubtraction * node = new TGeoSubtraction(
               const_cast<TGeoShape*>(left->ConvertToRoot()),
               const_cast<TGeoShape*>(right->ConvertToRoot()),
-              leftRootMatrix, rightRootMatrix);
-      return new TGeoCompositeShape("RootComposite",node);
+              leftm->ConvertToTGeoMatrix(), rightm->ConvertToTGeoMatrix());
+      TGeoShape * shape = new TGeoCompositeShape("RootComposite",node);
+      //TGeoManager *m = new TGeoManager();
+      gGeoManager->SetTopVolume( new TGeoVolume("world",shape) );
+      //gGeoManager->CloseGeometry();
+      gGeoManager->Export("FOO.root");
+      shape->InspectShape();
+      return shape;
   }
 #endif
 #ifdef VECGEOM_USOLIDS

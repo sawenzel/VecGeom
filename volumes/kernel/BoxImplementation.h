@@ -304,7 +304,7 @@ void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
         completelyinside = Abs(localPoint[0]) < MakeMinusTolerant<ForInside>( dimensions[0] );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull (completelyoutside) ) {
         return;
       }
     }
@@ -315,7 +315,7 @@ void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
       completelyinside &= Abs(localPoint[1]) < MakeMinusTolerant<ForInside>( dimensions[1] );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull (completelyoutside) ) {
         return;
       }
     }
