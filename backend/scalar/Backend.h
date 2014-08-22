@@ -63,6 +63,18 @@ void MaskedAssign(const bool cond,
   *output = (cond) ? thenval : *output;
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool IsFull(bool const &cond){
+    return cond;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool IsEmpty(bool const &cond){
+    return !cond;
+}
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -248,6 +260,17 @@ bool all_of(IteratorType first, IteratorType last) {
 #else
   while (first++ != last) if (!first) return false;
   return true;
+#endif
+}
+
+template <typename InputIterator1, typename InputIterator2>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool equal(InputIterator1 first, InputIterator1 last, InputIterator2 target) {
+#ifndef VECGEOM_NVCC
+  return std::equal(first, last, target);
+#else
+  return equal(first, last, target);
 #endif
 }
 

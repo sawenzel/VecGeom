@@ -36,6 +36,13 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 }
 #endif
 
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
+  assert(0);
+  return NULL;
+}
+#endif
+
 #endif // VECGEOM_BENCHMARK
 
 #ifdef VECGEOM_CUDA_INTERFACE

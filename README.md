@@ -67,7 +67,8 @@ CMake options
       Enables the benchmarking module. Will support a number of targets to benchmark against depending on which optional dependencies are activated. Flags that affect this are:
       - CUDA
       - ROOT
-      - USolids
+      - USOLIDS
+      - GEANT4
 
     ROOT [OFF]
       Look for a ROOT installation to include ROOT interfacing modules and enable ROOT as a benchmarking case.
@@ -83,3 +84,6 @@ CMake options
 
     USOLIDS_LIB_DIR [NONE]
       Can be used to specify the exact directory in which to look for USolids library files.
+
+    GEANT4 [OFF]
+      Enable Geant4 as a benchmarking case.

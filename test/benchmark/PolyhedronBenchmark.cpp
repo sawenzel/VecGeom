@@ -11,8 +11,7 @@ int main() {
   Precision zPlanes[] = {1, 3, 5, 8};
   Precision rInner[] = {1, 1, 1, 1};
   Precision rOuter[] = {3, 2, 3, 2};
-  UnplacedPolyhedron polyhedronUnplaced(3, 0, kTwoPi, 4, zPlanes, rInner,
-                                        rOuter);
+  UnplacedPolyhedron polyhedronUnplaced(3, 4, zPlanes, rInner, rOuter);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume polyhedron = LogicalVolume("polyhedron", &polyhedronUnplaced);

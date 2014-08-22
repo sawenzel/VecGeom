@@ -464,7 +464,48 @@ UVector3 UBox::GetPointOnSurface() const
   }
   return UVector3(px, py, pz);
 }
+/////////////////////////////////////////////////////////////////////////////////////
+//
+// GetPointOnEdge
+//
+// Return a point (UVector3) randomly and uniformly selected
+// on the solid edge
 
+UVector3 UBox::GetPointOnEdge() const
+{
+  double select, sumL;
+  double Lx = 2 * fDx, Ly = 2 * fDy, Lz= 2 * fDz;
+
+  sumL   = Lx + Ly + Lz;
+  select = sumL * UUtils::Random();
+
+  if (select < Lx)
+  {
+    select = UUtils::Random();
+    if (select < 0.25) return UVector3( -fDx + 2 * fDx* UUtils::Random(),-fDy,-fDz);
+    if (select < 0.5 ) return UVector3( -fDx + 2 * fDx* UUtils::Random(), fDy,-fDz);
+    if (select < 0.75) return UVector3( -fDx + 2 * fDx* UUtils::Random(),-fDy, fDz);
+    return UVector3( -fDx + 2 * fDx* UUtils::Random(),fDy,fDz);
+  }
+  else if ((select - Lx) < Ly)
+  {
+    select = UUtils::Random();
+    if (select < 0.25) return UVector3( -fDx,-fDy + 2 * fDy* UUtils::Random(),-fDz);
+    if (select < 0.5 ) return UVector3(  fDx,-fDy + 2 * fDy* UUtils::Random(),-fDz);
+    if (select < 0.75) return UVector3( -fDx,-fDy + 2 * fDy* UUtils::Random(), fDz);
+    return UVector3( fDx,-fDy + 2 * fDy* UUtils::Random(),fDz);
+  }
+  else
+  {
+   select = UUtils::Random();
+   if (select < 0.25) return UVector3( -fDx,-fDy,-fDz + 2 * fDz* UUtils::Random());
+   if (select < 0.5 ) return UVector3(  fDx,-fDy,-fDz + 2 * fDz* UUtils::Random());
+   if (select < 0.75) return UVector3( -fDx, fDy,-fDz + 2 * fDz* UUtils::Random());
+   return UVector3( fDx,fDy,-fDz + 2 * fDz* UUtils::Random());
+    
+  }
+  return 0;
+}
 std::ostream& UBox::StreamInfo(std::ostream& os) const
 {
   int oldprc = os.precision(16);

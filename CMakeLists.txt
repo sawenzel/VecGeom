@@ -13,14 +13,22 @@ option(ROOT "Include ROOT." OFF)
 
 option(USOLIDS "Include USolids." OFF)
 
+option(GEANT4 "Include Geant4." OFF)
+
 option(BENCHMARK "Enable performance comparisons." OFF)
 
 option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
 
 option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
 
+option(CTEST "Enable CTest when building." ON)
+
 if (USOLIDS)
   set(USolids ON)
+endif()
+
+if (GEANT4)
+  set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)
@@ -225,7 +233,9 @@ if (ROOT)
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
-  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
+  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom -lGui"
+      "-lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript"
+      "-lMatrix -lPhysics -lm -ldl")
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
     source/PlacedRootVolume.cpp
     source/RootGeoManager.cpp
@@ -259,6 +269,17 @@ if (USolids)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
   
   set(LIBS ${LIBS} usolids)
+
+endif()
+
+if (Geant4)
+
+  find_package(Geant4 REQUIRED)
+  # include(${Geant4_USE_FILE})
+  include_directories(AFTER SYSTEM ${Geant4_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${Geant4_LIBRARIES})
+  message(STATUS "Geant4 found in ${Geant4_INCLUDE_DIRS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_GEANT4")
 
 endif()
 
@@ -324,6 +345,11 @@ endif()
 
 # Add files that won't be compiled for CUDA
 
+if (USOLIDS)
+  set(SRC_CPP ${SRC_CPP}
+    test/shape_tester/ShapeTester.cpp
+  )
+endif()
 if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
@@ -369,14 +395,15 @@ endif()
 # Define executables
 
 set(TEST_EXECUTABLES_CORE
+  ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PlanesTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PolyhedronTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/RectanglesTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -398,12 +425,16 @@ set(TEST_EXECUTABLES_BENCHMARK
 set(TEST_EXECUTABLES_CUDA
   # Files go here
 )
+set(TEST_EXECUTABLES_SHAPETESTER
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
+)
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
   ${TEST_EXECUTABLES_USOLIDS}
   ${TEST_EXECUTABLES_BENCHMARK}
   ${TEST_EXECUTABLES_CUDA}
+  ${TEST_EXECUTABLES_SHAPETESTER}
 )
 set_source_files_properties(
   ${TEST_EXECUTABLES}
@@ -412,26 +443,35 @@ set_source_files_properties(
 
 # Build executables
 
-function(build_executables EXECUTABLES)
+if (CTEST)
+  message(STATUS "Testing with CTest enabled.")
+  enable_testing()
+endif()
+
+function(build_executables EXECUTABLES ENABLE_CTEST)
   foreach(EXECUTABLE ${EXECUTABLES})
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} ${LIBS})
+    if (CTEST AND ENABLE_CTEST)
+      add_test(${TARGET_NAME} ${TARGET_NAME})
+    endif()
   endforeach()
 endfunction()
 
-build_executables("${TEST_EXECUTABLES_CORE}")
+build_executables("${TEST_EXECUTABLES_CORE}" TRUE)
 if (BENCHMARK)
-  build_executables("${TEST_EXECUTABLES_BENCHMARK}")
+  build_executables("${TEST_EXECUTABLES_BENCHMARK}" FALSE)
 endif()
 if (ROOT)
-  build_executables("${TEST_EXECUTABLES_ROOT}")
+  build_executables("${TEST_EXECUTABLES_ROOT}" TRUE)
 endif()
 if (USolids)
-  build_executables("${TEST_EXECUTABLES_USOLIDS}")
+  build_executables("${TEST_EXECUTABLES_USOLIDS}" TRUE)
+  build_executables("${TEST_EXECUTABLES_SHAPETESTER}" TRUE)
 endif()
 if (CUDA)
-  build_executables("${TEST_EXECUTABLES_CUDA}")
+  build_executables("${TEST_EXECUTABLES_CUDA}" TRUE)
 endif()
 
 ################################################################################

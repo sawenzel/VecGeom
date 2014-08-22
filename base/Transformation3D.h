@@ -9,6 +9,7 @@
 #include "base/Vector3D.h"
 #include "backend/Backend.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -69,7 +70,16 @@ public:
                    const Precision r7, const Precision r8);
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Transformation3D(Transformation3D const &other);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Transformation3D& operator=(Transformation3D const &rhs);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool operator==(Transformation3D const &rhs) const;
 
   virtual ~Transformation3D() {}
 
@@ -301,6 +311,26 @@ public:
 
 }; // End class Transformation3D
 
+VECGEOM_CUDA_HEADER_BOTH
+Transformation3D::Transformation3D(Transformation3D const &other) {
+  *this = other;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Transformation3D& Transformation3D::operator=(Transformation3D const &rhs) {
+  copy(rhs.fTranslation, rhs.fTranslation+3, fTranslation);
+  copy(rhs.fRotation, rhs.fRotation+9, fRotation);
+  fIdentity = rhs.fIdentity;
+  fHasTranslation = rhs.fHasTranslation;
+  fHasRotation = rhs.fHasRotation;
+  return *this;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+bool Transformation3D::operator==(Transformation3D const &rhs) const {
+  return equal(fTranslation, fTranslation+3, rhs.fTranslation) &&
+         equal(fRotation, fRotation+9, rhs.fRotation);
+}
 
 /**
  * Rotates a vector to this transformation's frame of reference.

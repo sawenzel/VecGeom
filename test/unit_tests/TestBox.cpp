@@ -13,7 +13,7 @@
 #include "UVector3.hh"
 #endif
 
-#include <cassert>
+//#include <cassert>
 #include <cmath>
 
 template <class Box_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
@@ -46,10 +46,8 @@ bool TestBox() {
                            24.707000000000001,  
 	                   22.699999999999999) ;
 
-#ifdef VECGEOM_SMETHODS
 // Check name
     assert(b1.GetName()=="Test Box #1");
-
     // Check cubic volume
 
     assert(b2.Capacity() == 8000);    
@@ -59,6 +57,8 @@ bool TestBox() {
    
     assert(b1.SurfaceArea() == 20800);    
     assert(b2.SurfaceArea() == 6*20*20); 
+
+
 
 // CalculateExtent
     
@@ -163,7 +163,7 @@ bool TestBox() {
     valid= b1.Normal( cornermXmYmZ ,normal); 
     assert(ApproxEqual( normal, Vec_t( -invSqrt3, -invSqrt3, -invSqrt3) )); 
     
- // DistanceToOut(P,V) with asserts for norm and convex
+    // DistanceToOut(P,V) with asserts for norm and convex
      Dist=b1.DistanceToOut(pzero,vx,norm,convex);
      assert(ApproxEqual(Dist,20)&&ApproxEqual(norm,vx)&&convex);
      Dist=b1.DistanceToOut(pzero,vmx,norm,convex);
@@ -193,7 +193,7 @@ bool TestBox() {
      assert(ApproxEqual(Dist,0)&&ApproxEqual(norm,vz)&&convex);
      Dist=b1.DistanceToOut(ponmzside,vmz,norm,convex);
      assert(ApproxEqual(Dist,0)&&ApproxEqual(norm,vmz)&&convex);
-#endif 
+//#endif
 
 // Check Inside
     assert(b1.Inside(pzero)==vecgeom::EInside::kInside);
@@ -326,6 +326,17 @@ bool TestBox() {
     assert(ApproxEqual(Dist,0.0));
    
 
+    /** testing tolerance of DistanceToIn **/
+    Box_t b4("Box4",5.,5.,5.);
+    // a point very slightly inside should return 0
+    Dist = b4.DistanceToIn( Vec_t(-3.0087437277453119577,
+                                  -4.9999999999999928946,
+                                  4.8935648380409944025),
+                            Vec_t(0.76315134679548990437,
+                                  0.53698876104646497964,
+                                  -0.35950395323836459305) );
+    assert(ApproxEqual(Dist,0.0));
+
     /* **********************************************************
     */ /////////////////////////////////////////////////////
 
@@ -335,7 +346,9 @@ bool TestBox() {
 int main() {
 #ifdef VECGEOM_USOLIDS
   assert(TestBox<UBox>());
+  std::cout << "UBox passed\n";
 #endif
   assert(TestBox<vecgeom::SimpleBox>());
+  std::cout << "VecGeomBox passed\n";
   return 0;
 }

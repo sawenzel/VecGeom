@@ -88,6 +88,17 @@ void MaskedAssign(VcBool const &cond,
   (*output)(VcInside::Mask(cond)) = thenval;
 }
 
+
+VECGEOM_INLINE
+bool IsFull(VcBool const &cond){
+    return cond.isFull();
+}
+
+VECGEOM_INLINE
+bool IsEmpty(VcBool const &cond){
+    return cond.isEmpty();
+}
+
 VECGEOM_INLINE
 VcPrecision Abs(VcPrecision const &val) {
   return Vc::abs(val);
