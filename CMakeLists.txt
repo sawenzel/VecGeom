@@ -13,12 +13,22 @@ option(ROOT "Include ROOT." OFF)
 
 option(USOLIDS "Include USolids." OFF)
 
+option(GEANT4 "Include Geant4." OFF)
+
 option(BENCHMARK "Enable performance comparisons." OFF)
 
 option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
 
+option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
+
+option(CTEST "Enable CTest when building." ON)
+
 if (USOLIDS)
   set(USolids ON)
+endif()
+
+if (GEANT4)
+  set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)
@@ -78,7 +88,13 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -DVECGEOM")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -O0 -ggdb")
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
+  if (APPLE OR UNIX) 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 endif()
@@ -94,9 +110,16 @@ if (GNU)
   if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
   endif()
+  if (COVERAGE_TESTING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(LIBS ${LIBS} gcov)
+  endif()
 endif()
 if (Intel)
   set(CMAKE_CXX_FLAGS "-xHost ${CMAKE_CXX_FLAGS}")
+  if (COVERAGE_TESTING)
+    message(FATAL_ERROR "Coverage testing not supported for icc.")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")
 endif()
@@ -108,6 +131,12 @@ if (BENCHMARK)
 endif()
 if (NO_SPECIALIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_NO_SPECIALIZATION")
+endif()
+if (Clang)
+  if (COVERAGE_TESTING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    set(LIBS ${LIBS} profile_rt)
+  endif()
 endif()
 
 ################################################################################
@@ -203,7 +232,9 @@ if (ROOT)
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
-  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom")
+  set(LIBS ${LIBS} "-lCint -lCore -lMathCore -lRIO -lThread -lGeom -lGui"
+      "-lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript"
+      "-lMatrix -lPhysics -lm -ldl")
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
     source/PlacedRootVolume.cpp
     source/RootGeoManager.cpp
@@ -240,6 +271,17 @@ if (USolids)
 
 endif()
 
+if (Geant4)
+
+  find_package(Geant4 REQUIRED)
+  # include(${Geant4_USE_FILE})
+  include_directories(AFTER SYSTEM ${Geant4_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${Geant4_LIBRARIES})
+  message(STATUS "Geant4 found in ${Geant4_INCLUDE_DIRS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_GEANT4")
+
+endif()
+
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 ################################################################################
@@ -248,7 +290,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
-  source/Container.cpp
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
@@ -265,7 +306,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
-  source/Vector3D.cpp
+  source/Vector.cpp
   source/NavigationState.cpp	
   source/SimpleNavigator.cpp
 
@@ -303,6 +344,11 @@ endif()
 
 # Add files that won't be compiled for CUDA
 
+if (USOLIDS)
+  set(SRC_CPP ${SRC_CPP}
+    test/shape_tester/ShapeTester.cpp
+  )
+endif()
 if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
@@ -348,14 +394,19 @@ endif()
 # Define executables
 
 set(TEST_EXECUTABLES_CORE
+  ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
-  # Files go here
+  ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -367,12 +418,16 @@ set(TEST_EXECUTABLES_BENCHMARK
 set(TEST_EXECUTABLES_CUDA
   # Files go here
 )
+set(TEST_EXECUTABLES_SHAPETESTER
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
+)
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
   ${TEST_EXECUTABLES_USOLIDS}
   ${TEST_EXECUTABLES_BENCHMARK}
   ${TEST_EXECUTABLES_CUDA}
+  ${TEST_EXECUTABLES_SHAPETESTER}
 )
 set_source_files_properties(
   ${TEST_EXECUTABLES}
@@ -381,26 +436,35 @@ set_source_files_properties(
 
 # Build executables
 
-function(build_executables EXECUTABLES)
+if (CTEST)
+  message(STATUS "Testing with CTest enabled.")
+  enable_testing()
+endif()
+
+function(build_executables EXECUTABLES ENABLE_CTEST)
   foreach(EXECUTABLE ${EXECUTABLES})
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} ${LIBS})
+    if (CTEST AND ENABLE_CTEST)
+      add_test(${TARGET_NAME} ${TARGET_NAME})
+    endif()
   endforeach()
 endfunction()
 
-build_executables("${TEST_EXECUTABLES_CORE}")
+build_executables("${TEST_EXECUTABLES_CORE}" TRUE)
 if (BENCHMARK)
-  build_executables("${TEST_EXECUTABLES_BENCHMARK}")
+  build_executables("${TEST_EXECUTABLES_BENCHMARK}" FALSE)
 endif()
 if (ROOT)
-  build_executables("${TEST_EXECUTABLES_ROOT}")
+  build_executables("${TEST_EXECUTABLES_ROOT}" TRUE)
 endif()
 if (USolids)
-  build_executables("${TEST_EXECUTABLES_USOLIDS}")
+  build_executables("${TEST_EXECUTABLES_USOLIDS}" TRUE)
+  build_executables("${TEST_EXECUTABLES_SHAPETESTER}" TRUE)
 endif()
 if (CUDA)
-  build_executables("${TEST_EXECUTABLES_CUDA}")
+  build_executables("${TEST_EXECUTABLES_CUDA}" TRUE)
 endif()
 
 ################################################################################

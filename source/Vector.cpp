@@ -1,7 +1,5 @@
-/// \file Container.cpp
+/// \file Vector.cpp
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
-
-#include "base/Container.h"
 
 #include "base/Vector.h"
 
@@ -12,18 +10,18 @@ namespace vecgeom {
 template <typename Type>
 __global__
 void ConstructOnGpu(Type *const arr, const int size,
-                    vecgeom::Vector<Type> *gpu_ptr) {
+                    void *gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::Vector<Type>(arr, size);
 }
 
-void Container_CopyToGpu(Precision *const arr, const int size,
-                         vecgeom::Vector<Precision> *const gpu_ptr) {
+void Vector_CopyToGpu(Precision *const arr, const int size,
+                      void *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(arr, size, gpu_ptr);
 }
 
-void Container_CopyToGpu(
+void Vector_CopyToGpu(
     VPlacedVolume const **const arr, const int size,
-    vecgeom::Vector<VPlacedVolume const*> *const gpu_ptr) {
+    void *const gpu_ptr) {
   ConstructOnGpu<<<1, 1>>>(arr, size, gpu_ptr);
 }
 

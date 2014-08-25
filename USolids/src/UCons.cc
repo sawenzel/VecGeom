@@ -41,12 +41,13 @@ UCons::UCons(const std::string& pName,
              double  pRmin1, double pRmax1,
              double  pRmin2, double pRmax2,
              double pDz,
-             double pSPhi, double pDPhi)
-  : VUSolid(pName.c_str()), fRmin1(pRmin1), fRmin2(pRmin2),
-    fRmax1(pRmax1), fRmax2(pRmax2), fDz(pDz), fSPhi(0.), fDPhi(0.)
+             double pSPhi, double pDPhi) :
+   VUSolid(pName.c_str()), 
+   fCubicVolume(0), fSurfaceArea(0), kRadTolerance(frTolerance), kAngTolerance(faTolerance),
+   fRmin1(pRmin1), fRmin2(pRmin2), fRmax1(pRmax1), fRmax2(pRmax2), fDz(pDz), fSPhi(0.), 
+   fDPhi(0.), sinCPhi(0), cosCPhi(0), cosHDPhiOT(0), cosHDPhiIT(0), sinSPhi(0), cosSPhi(0),
+   sinEPhi(0), cosEPhi(0), fPhiFullCone(false), secRMin(0), tanRMin(0), tanRMax(0), secRMax(0)
 {
-  kRadTolerance = frTolerance;
-  kAngTolerance = faTolerance;
   // Check z-len
   //
   if (pDz < 0)
@@ -91,11 +92,11 @@ UCons::UCons(const std::string& pName,
 //                            for usage restricted to object persistency.
 //
 UCons::UCons(/* __void__& a */)
-  : VUSolid(""), kRadTolerance(0.), kAngTolerance(0.),
+  : VUSolid(""), fCubicVolume(0), fSurfaceArea(0), kRadTolerance(0.), kAngTolerance(0.),
     fRmin1(0.), fRmin2(0.), fRmax1(0.), fRmax2(0.), fDz(0.),
     fSPhi(0.), fDPhi(0.), sinCPhi(0.), cosCPhi(0.), cosHDPhiOT(0.),
     cosHDPhiIT(0.), sinSPhi(0.), cosSPhi(0.), sinEPhi(0.), cosEPhi(0.),
-    fPhiFullCone(false)
+    fPhiFullCone(false), secRMin(0), tanRMin(0), tanRMax(0), secRMax(0)
 {
   Initialize();
 }
@@ -112,14 +113,13 @@ UCons::~UCons()
 //
 // Copy constructor
 
-UCons::UCons(const UCons& rhs)
-  : VUSolid(rhs), kRadTolerance(rhs.kRadTolerance),
-    kAngTolerance(rhs.kAngTolerance), fRmin1(rhs.fRmin1), fRmin2(rhs.fRmin2),
-    fRmax1(rhs.fRmax1), fRmax2(rhs.fRmax2), fDz(rhs.fDz), fSPhi(rhs.fSPhi),
-    fDPhi(rhs.fDPhi), sinCPhi(rhs.sinCPhi), cosCPhi(rhs.cosCPhi),
-    cosHDPhiOT(rhs.cosHDPhiOT), cosHDPhiIT(rhs.cosHDPhiIT),
-    sinSPhi(rhs.sinSPhi), cosSPhi(rhs.cosSPhi), sinEPhi(rhs.sinEPhi),
-    cosEPhi(rhs.cosEPhi), fPhiFullCone(rhs.fPhiFullCone)
+UCons::UCons(const UCons& rhs) : 
+   VUSolid(rhs), fCubicVolume(rhs.fCubicVolume), fSurfaceArea(rhs.fSurfaceArea), kRadTolerance(rhs.kRadTolerance), 
+   kAngTolerance(rhs.kAngTolerance), fRmin1(rhs.fRmin1), fRmin2(rhs.fRmin2), fRmax1(rhs.fRmax1), fRmax2(rhs.fRmax2), 
+   fDz(rhs.fDz), fSPhi(rhs.fSPhi), fDPhi(rhs.fDPhi), sinCPhi(rhs.sinCPhi), cosCPhi(rhs.cosCPhi), 
+   cosHDPhiOT(rhs.cosHDPhiOT), cosHDPhiIT(rhs.cosHDPhiIT), sinSPhi(rhs.sinSPhi), cosSPhi(rhs.cosSPhi), 
+   sinEPhi(rhs.sinEPhi), cosEPhi(rhs.cosEPhi), fPhiFullCone(rhs.fPhiFullCone), secRMin(rhs.secRMin), 
+   tanRMin(rhs.tanRMin), tanRMax(rhs.tanRMax), secRMax(rhs.secRMax)
 {
   Initialize();
 }
@@ -2253,3 +2253,31 @@ void UCons::GetParametersList(int, double* aArray) const
   aArray[6] = GetDeltaPhiAngle();
 
 }
+
+void UCons::CheckDPhiAngle(double dPhi)
+{
+  fPhiFullCone = true;
+  if (dPhi >= 2 * UUtils::kPi - kAngTolerance * 0.5)
+  {
+    fDPhi = 2 * UUtils::kPi;
+    fSPhi = 0;
+  }
+  else
+  {
+    fPhiFullCone = false;
+    if (dPhi > 0)
+    {
+      fDPhi = dPhi;
+    }
+    else
+    {
+      std::ostringstream message;
+      message << "Invalid dphi." << std::endl
+              << "Negative or zero delta-Phi (" << dPhi << ") in solid: "
+              << GetName();
+      UUtils::Exception("UCons::CheckDPhiAngle()", "GeomSolids0002",
+                        FatalErrorInArguments, 1, message.str().c_str());
+    }
+  }
+}
+

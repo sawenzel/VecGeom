@@ -12,15 +12,17 @@ char const *const BenchmarkResult::fgLibraryLabels[] = {
   "CUDA",
   "USolids",
   "ROOT",
-  "CUDAMemory"
+  "CUDAMemory",
+  "Geant4"
 };
 
 char const *const BenchmarkResult::fgMethodLabels[] = {
+  "Contains",
   "Inside",
   "DistanceToIn",
   "SafetyToIn",
   "DistanceToOut",
-  "SafetyToOut",
+  "SafetyToOut"
 };
 
 void BenchmarkResult::WriteCsvHeader(std::ostream &os) {

@@ -17,15 +17,17 @@ enum EBenchmarkedLibrary {
   kBenchmarkCuda = 3,
   kBenchmarkUSolids = 4,
   kBenchmarkRoot = 5,
-  kBenchmarkCudaMemory = 6
+  kBenchmarkCudaMemory = 6,
+  kBenchmarkGeant4 = 7
 };
 
 enum EBenchmarkedMethod {
-  kBenchmarkInside = 0,
-  kBenchmarkDistanceToIn = 1,
-  kBenchmarkSafetyToIn = 2,
-  kBenchmarkDistanceToOut = 3,
-  kBenchmarkSafetyToOut = 4
+  kBenchmarkContains = 0,
+  kBenchmarkInside = 1,
+  kBenchmarkDistanceToIn = 2,
+  kBenchmarkSafetyToIn = 3,
+  kBenchmarkDistanceToOut = 4,
+  kBenchmarkSafetyToOut = 5
 };
 
 struct BenchmarkResult {

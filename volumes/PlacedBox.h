@@ -70,6 +70,43 @@ public:
   VECGEOM_INLINE
   Precision z() const { return GetUnplacedVolume()->z(); }
 
+#ifdef VECGEOM_USOLIDS
+  virtual
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
+  virtual
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  {
+      bool valid;
+      BoxImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
+              *GetUnplacedVolume(),
+              point,
+              normal, valid);
+      return valid;
+  }
+
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const
+  {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
+  virtual Precision Capacity() {
+    return GetUnplacedVolume()->volume();
+  }
+
+  virtual double SurfaceArea() {
+     return GetUnplacedVolume()->SurfaceArea();
+  }
+
+  virtual std::string GetEntityType() const {
+      return "Box";
+  }
+#endif
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;
 
@@ -96,6 +133,9 @@ public:
 #endif
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
+#endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const;
 #endif
 #endif // VECGEOM_BENCHMARK
 

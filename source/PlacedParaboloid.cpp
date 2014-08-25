@@ -29,6 +29,13 @@ TGeoShape const* PlacedParaboloid::ConvertToRoot() const {
 }
 #endif
 
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedParaboloid::ConvertToGeant4() const {
+  assert(0 && "NYI");
+  return NULL;
+}
+#endif
+
 #endif // VECGEOM_BENCHMARK
 
 } // End global namespace

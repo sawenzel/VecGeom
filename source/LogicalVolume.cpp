@@ -4,15 +4,17 @@
 #include "volumes/LogicalVolume.h"
 
 #include "backend/Backend.h"
+#include "backend/cuda/Interface.h"
 #include "base/Array.h"
-#include "volumes/PlacedVolume.h"
 #include "base/Transformation3D.h"
+#include "base/Vector.h"
 #include "management/GeoManager.h"
 #include "management/VolumeFactory.h"
+#include "volumes/PlacedVolume.h"
 
-#include <stdio.h>
-#include <climits>
 #include <cassert>
+#include <climits>
+#include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -45,8 +47,8 @@ LogicalVolume * LogicalVolume::operator=( LogicalVolume const & other )
 
 LogicalVolume::~LogicalVolume() {
   delete label_;
-  for (Iterator<VPlacedVolume const*> i = daughters().begin();
-       i != daughters().end(); ++i) {
+  for (Daughter* i = daughters().begin(); i != daughters().end();
+       ++i) {
     delete *i;
   }
   delete daughters_;
@@ -121,7 +123,7 @@ void LogicalVolume::PrintContent(const int indent) const {
   Print(indent);
   if( daughters_->size() > 0){
     printf(":");
-    for (Iterator<Daughter> i = daughters_->begin(), i_end = daughters_->end();
+    for (Daughter* i = daughters_->begin(), *i_end = daughters_->end();
         i != i_end; ++i) {
       (*i)->PrintContent(indent+2);
   }}
@@ -129,7 +131,7 @@ void LogicalVolume::PrintContent(const int indent) const {
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   os << *vol.unplaced_volume() << " [";
-  for (Iterator<VPlacedVolume const*> i = vol.daughters().begin();
+  for (Daughter* i = vol.daughters().begin();
        i != vol.daughters().end(); ++i) {
     if (i != vol.daughters().begin()) os << ", ";
     os << (**i);
@@ -175,6 +177,7 @@ LogicalVolume* LogicalVolume::CopyToGpu(
 class VUnplacedVolume;
 class VPlacedVolume;
 class LogicalVolume;
+template <typename Type> class Vector;
 
 __global__
 void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,

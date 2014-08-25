@@ -15,6 +15,10 @@
 #include "VUSolid.hh"
 #endif
 
+#ifdef VECGEOM_GEANT4
+#include "G4VSolid.hh"
+#endif
+
 #include <list>
 
 namespace vecgeom {
@@ -152,47 +156,52 @@ private:
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
 
-  void RunInsideSpecialized(Inside_t *const inside);
-  void RunToInSpecialized(Precision *const distances,
-                          Precision *const safeties);
-  void RunToOutSpecialized(Precision *const distances,
-                           Precision *const safeties);
+  void RunInsideSpecialized(bool *contains, Inside_t *inside);
+  void RunToInSpecialized(Precision *distances,
+                          Precision *safeties);
+  void RunToOutSpecialized(Precision *distances,
+                           Precision *safeties);
 
-  void RunInsideVectorized(Inside_t *const inside);
-  void RunToInVectorized(Precision *const distances, Precision *const safeties);
-  void RunToOutVectorized(Precision *const distances,
-                          Precision *const safeties);
+  void RunInsideVectorized(bool *contains, Inside_t *inside);
+  void RunToInVectorized(Precision *distances, Precision *safeties);
+  void RunToOutVectorized(Precision *distances,
+                          Precision *safeties);
 
-  void RunInsideUnspecialized(Inside_t *const inside);
-  void RunToInUnspecialized(Precision *const distances,
-                            Precision *const safeties);
-  void RunToOutUnspecialized(Precision *const distances,
-                             Precision *const safeties);
+  void RunInsideUnspecialized(bool *contains, Inside_t *inside);
+  void RunToInUnspecialized(Precision *distances,
+                            Precision *safeties);
+  void RunToOutUnspecialized(Precision *distances,
+                             Precision *safeties);
 
 #ifdef VECGEOM_USOLIDS
-  void RunInsideUSolids(::VUSolid::EnumInside *const inside);
-  void RunToInUSolids(double *const distances, Precision *const safeties);
-  void RunToOutUSolids(double *const distances, Precision *const safeties);
+  void RunInsideUSolids(::VUSolid::EnumInside *inside);
+  void RunToInUSolids(double *distances, Precision *safeties);
+  void RunToOutUSolids(double *distances, Precision *safeties);
 #endif
 #ifdef VECGEOM_ROOT
-  void RunInsideRoot(bool *const inside);
-  void RunToInRoot(double *const distances, Precision *const safeties);
-  void RunToOutRoot(double *const distances, Precision *const safeties);
+  void RunInsideRoot(bool *inside);
+  void RunToInRoot(double *distances, Precision *safeties);
+  void RunToOutRoot(double *distances, Precision *safeties);
+#endif
+#ifdef VECGEOM_GEANT4
+  void RunInsideGeant4(::EInside *inside);
+  void RunToInGeant4(double *distances, Precision *safeties);
+  void RunToOutGeant4(double *distances, Precision *safeties);
 #endif
 #ifdef VECGEOM_CUDA
   void RunInsideCuda(
-    Precision *const pos_x, Precision *const pos_y,
-    Precision *const pos_z, Inside_t *const inside);
+    Precision *posX, Precision *posY,
+    Precision *posZ, bool *contains, Inside_t *inside);
   void RunToInCuda(
-    Precision *const pos_x, Precision *const pos_y,
-    Precision *const pos_z, Precision *const dir_x,
-    Precision *const dir_y, Precision *const dir_z,
-    Precision *const distances, Precision *const safeties);
+    Precision *posX, Precision *posY,
+    Precision *posZ, Precision *dirX,
+    Precision *dirY, Precision *dirZ,
+    Precision *distances, Precision *safeties);
   void RunToOutCuda(
-    Precision *const pos_x, Precision *const pos_y,
-    Precision *const pos_z, Precision *const dir_x,
-    Precision *const dir_y, Precision *const dir_z,
-    Precision *const distances, Precision *const safeties);
+    Precision *posX, Precision *posY,
+    Precision *posZ, Precision *dirX,
+    Precision *dirY, Precision *dirZ,
+    Precision *distances, Precision *safeties);
 #endif
 
   template <typename Type>
@@ -212,6 +221,9 @@ private:
 #endif
 #ifdef VECGEOM_USOLIDS
     Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
 #endif
 #ifdef VECGEOM_CUDA
     Precision const *const cuda,

@@ -1,18 +1,21 @@
-/// @file PlacedTube.cpp
-/// @author Georgios Bitzes (georgios.bitzes@cern.ch)
+/// \file PlacedTube.cpp
+/// \author Georgios Bitzes (georgios.bitzes@cern.ch)
 
 #include "volumes/PlacedTube.h"
 #include "volumes/Tube.h"
 #include "volumes/SpecializedTube.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#ifdef VECGEOM_ROOT
 #include "TGeoTube.h"
 #endif
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
+#ifdef VECGEOM_USOLIDS
 #include "UTubs.hh"
 #endif
 
+#ifdef VECGEOM_GEANT4
+#include "G4Tubs.hh"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -24,13 +27,21 @@ VPlacedVolume const* PlacedTube::ConvertToUnspecialized() const {
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTube::ConvertToRoot() const {
-  return new TGeoTubeSeg(GetLabel().c_str(), rmin(), rmax(), z(), sphi()*(180/M_PI), dphi()*(180/M_PI) );
+  if(dphi() >= 2*M_PI)
+     return new TGeoTube(GetLabel().c_str(), rmin(), rmax(), z());
+  return new TGeoTubeSeg(GetLabel().c_str(), rmin(), rmax(), z(), sphi()*(180/M_PI), sphi()*(180/M_PI)+dphi()*(180/M_PI) );
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTube::ConvertToUSolids() const {
-  return new UTubs("", rmin(), rmax(), z(), sphi(), dphi());
+  return new UTubs(GetLabel().c_str(), rmin(), rmax(), z(), sphi(), dphi());
+}
+#endif
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedTube::ConvertToGeant4() const {
+  return new G4Tubs(GetLabel().c_str(), rmin(), rmax(), z(), sphi(), dphi());
 }
 #endif
 

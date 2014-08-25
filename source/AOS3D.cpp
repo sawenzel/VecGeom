@@ -11,26 +11,25 @@ namespace vecgeom {
 
 #ifdef VECGEOM_NVCC
 
-template <typename Type>
+template <typename T>
 __global__
 void ConstructOnGpu(
-    vecgeom_cuda::Vector3D<Type> *const data, const unsigned size,
-    vecgeom_cuda::AOS3D<Type> *const placement) {
-  new(placement) vecgeom_cuda::AOS3D<Type>(data, size);
+    vecgeom_cuda::Vector3D<T> *content, size_t size,
+    vecgeom_cuda::AOS3D<T> *placement) {
+  new(placement) vecgeom_cuda::AOS3D<T>(content, size);
 }
 
-template <typename Type>
-AOS3D<Type>* AOS3D_CopyToGpuTemplate(
-    vecgeom_cuda::Vector3D<Type> *const data, const unsigned size) {
-  vecgeom_cuda::AOS3D<Type> *const aos3d_gpu =
-      AllocateOnGpu<vecgeom_cuda::AOS3D<Type> >();
-  ConstructOnGpu<<<1, 1>>>(data, size, aos3d_gpu);
-  return reinterpret_cast<AOS3D<Type> *>(aos3d_gpu);
+template <typename T>
+AOS3D<T>* AOS3D_CopyToGpuTemplate(
+    vecgeom_cuda::Vector3D<T> *content, size_t size) {
+  vecgeom_cuda::AOS3D<T> *aos3DGpu = AllocateOnGpu<vecgeom_cuda::AOS3D<T> >();
+  ConstructOnGpu<<<1, 1>>>(content, size, aos3DGpu);
+  return reinterpret_cast<AOS3D<T> *>(aos3DGpu);
 }
 
 AOS3D<Precision>* AOS3D_CopyToGpu(
-    vecgeom_cuda::Vector3D<Precision> *const data, const unsigned size) {
-  return AOS3D_CopyToGpuTemplate(data, size);
+    vecgeom_cuda::Vector3D<Precision> *content, size_t size) {
+  return AOS3D_CopyToGpuTemplate(content, size);
 }
 
 #endif
