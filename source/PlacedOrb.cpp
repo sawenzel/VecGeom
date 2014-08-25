@@ -12,6 +12,10 @@
 #include "TGeoSphere.h"
 #endif
 
+#ifdef VECGEOM_GEANT4
+#include "G4Orb.hh"
+#endif
+
 namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_BENCHMARK
@@ -23,19 +27,23 @@ VPlacedVolume const* PlacedOrb::ConvertToUnspecialized() const {
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedOrb::ConvertToRoot() const {
-   //assert(0 && "NYI");
-  //return NULL;
-  //assert(0 && "Orb unsupported for ROOT.");
   return new TGeoSphere(GetLabel().c_str(),0,GetRadius());
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedOrb::ConvertToUSolids() const {
-  //assert(0 && "Orb unsupported for USolids.");
+
 return new UOrb(GetLabel().c_str(),GetRadius());
 }
 #endif
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedOrb::ConvertToGeant4() const {
+return new G4Orb(GetLabel().c_str(),GetRadius());
+}
+#endif
+
 
 #endif // VECGEOM_BENCHMARK
 
