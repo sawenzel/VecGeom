@@ -418,25 +418,24 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     Bool_t isInside = ((rad < unplaced.GetfRTolI()));
     done |= isInside;
     MaskedAssign( isInside, kInfinity, &distance );
-    if(done == Backend::kTrue)return;
+    if( IsFull(done) )return;
 
  
     Bool_t notOutsideAndOnSurface = (c > (-kTolerance * unplaced.GetRadius()));
     Bool_t d2LTFrTolFrAndPDotV3DGTET0= ((d2 < (kTolerance * unplaced.GetRadius())) || (pDotV3d >= 0));
     done |= (notOutsideAndOnSurface && d2LTFrTolFrAndPDotV3DGTET0);
-    if(done == Backend::kTrue) return;
+    if( IsFull(done) ) return;
 
 
     Bool_t isOutsideTolBoundary = (c > (kTolerance * unplaced.GetRadius()));
     Bool_t isD2GtEt0 = (d2>=0);
     done |= (isOutsideTolBoundary && !isD2GtEt0);
-    if(done == Backend::kTrue) return;
+    if( IsFull(done) ) return;
 
     done |= (isOutsideTolBoundary && isD2GtEt0 );
     MaskedAssign((isOutsideTolBoundary && isD2GtEt0),(-pDotV3d - Sqrt(d2)),&distance);
     //(distance < 0 ) implies point is outside and going out, hence distance must be set to kInfinity.
     MaskedAssign((distance<0),kInfinity,&distance);
-    if(done == Backend::kTrue) return;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -477,7 +476,7 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
     Double_t tolRMax2 = tolRMax * tolRMax;
     Bool_t isOutside = ( rad2 > tolRMax2);
     done|= isOutside;
-    if (done == Backend::kTrue) return;
+    if ( IsFull(done) ) return;
 
     Bool_t isInsideAndWithinOuterTolerance = ((rad <= tolRMax) && (c < (kTolerance * unplaced.GetRadius())));
     Bool_t isInsideAndOnTolerantSurface = ((c > (-2*kTolerance*unplaced.GetRadius())) && ( (pDotV3d >= 0) || (d2 < 0) ));
@@ -485,13 +484,10 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
     Bool_t onSurface=(isInsideAndWithinOuterTolerance && isInsideAndOnTolerantSurface );
     MaskedAssign(onSurface , zero, &distance);
     done|=onSurface;
-    if (done == Backend::kTrue) return;
+    if ( IsFull(done) ) return;
 
     Bool_t notOnSurface=(isInsideAndWithinOuterTolerance && !isInsideAndOnTolerantSurface );
     MaskedAssign(notOnSurface , (-pDotV3d + Sqrt(d2)), &distance);
-    done|=notOnSurface;
-    if (done == Backend::kTrue) return;
-    
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
