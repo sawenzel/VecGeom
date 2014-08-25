@@ -12,6 +12,11 @@
 #include "UTrd.hh"
 #endif
 
+#ifdef VECGEOM_GEANT4
+#include "G4Trd.hh"
+#endif
+
+
 namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_BENCHMARK
@@ -31,6 +36,12 @@ TGeoShape const* PlacedTrd::ConvertToRoot() const {
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTrd::ConvertToUSolids() const {
   return new UTrd("", dx1(), dx2(), dy1(), dy2(), dz());
+}
+#endif
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedTrd::ConvertToGeant4() const {
+  return new G4Trd(GetLabel(), dx1(), dx2(), dy1(), dy2(), dz());
 }
 #endif
 
