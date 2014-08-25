@@ -339,39 +339,6 @@ Vector3D<Precision> const &dimensions,
     typename Backend::bool_v &completelyinside,
     typename Backend::bool_v &completelyoutside) {
 
-//    using vecgeom::GenericKernels;
-// here we are explicitely unrolling the loop since  a for statement will likely be a penality
-// check if second call to Abs is compiled away
-    // and it can anyway not be vectorized
-    /* x */
-    completelyoutside = Abs(localPoint[0]) > MakePlusTolerant<ForInside>( dimensions[0] );
-    if (ForInside)
-    {
-        completelyinside = Abs(localPoint[0]) < MakeMinusTolerant<ForInside>( dimensions[0] );
-    }
-    if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
-        return;
-      }
-    }
-/* y */
-    completelyoutside |= Abs(localPoint[1]) > MakePlusTolerant<ForInside>( dimensions[1] );
-    if (ForInside)
-    {
-      completelyinside &= Abs(localPoint[1]) < MakeMinusTolerant<ForInside>( dimensions[1] );
-    }
-    if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
-        return;
-      }
-    }
-/* z */
-    completelyoutside |= Abs(localPoint[2]) > MakePlusTolerant<ForInside>( dimensions[2] );
-    if (ForInside)
-    {
-      completelyinside &= Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( dimensions[2] );
-    }
-    
     
     typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;	
