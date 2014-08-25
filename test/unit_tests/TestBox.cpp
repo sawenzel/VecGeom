@@ -46,10 +46,8 @@ bool TestBox() {
                            24.707000000000001,  
 	                   22.699999999999999) ;
 
-#ifdef VECGEOM_SMETHODS
 // Check name
     assert(b1.GetName()=="Test Box #1");
-
     // Check cubic volume
 
     assert(b2.Capacity() == 8000);    
@@ -59,7 +57,7 @@ bool TestBox() {
    
     assert(b1.SurfaceArea() == 20800);    
     assert(b2.SurfaceArea() == 6*20*20); 
-#endif
+
 
 
 // CalculateExtent

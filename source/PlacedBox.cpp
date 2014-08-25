@@ -12,6 +12,9 @@
 #ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
 #endif
+#ifdef VECGEOM_GEANT4
+#include "G4Box.hh"
+#endif
 
 #include <stdio.h>
 
@@ -25,18 +28,24 @@ void PlacedBox::PrintType() const {
 #ifdef VECGEOM_BENCHMARK
 
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
-  return new SimpleBox("", logical_volume_, transformation_);
+  return new SimpleBox(GetLabel().c_str(), logical_volume_, transformation_);
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedBox::ConvertToRoot() const {
-  return new TGeoBBox("", x(), y(), z());
+  return new TGeoBBox(GetLabel().c_str(), x(), y(), z());
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedBox::ConvertToUSolids() const {
-  return new UBox("", x(), y(), z());
+  return new UBox(GetLabel(), x(), y(), z());
+}
+#endif
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedBox::ConvertToGeant4() const {
+  return new G4Box(GetLabel(), x(), y(), z());
 }
 #endif
 

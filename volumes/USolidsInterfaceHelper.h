@@ -8,6 +8,8 @@
 
 #include "base/Global.h"
 
+#undef NDEBUG
+
 #ifndef VECGEOM_USOLIDS
 
 namespace VECGEOM_NAMESPACE {
@@ -32,6 +34,9 @@ namespace VECGEOM_NAMESPACE {
 class USolidsInterfaceHelper : public VUSolid {
 
 public:
+ //   VUSolid(const std::string &name);
+  USolidsInterfaceHelper(const std::string &name) : VUSolid(name) {}
+  USolidsInterfaceHelper() : VUSolid() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
@@ -51,15 +56,19 @@ public:
                                Vector3D<double> const &direction,
                                Vector3D<double> &normal,
                                bool &convex,
-                               double stepMax) const {
-    return DistanceToOut(point, direction, stepMax);
+                               double stepMax = kInfinity) const
+  {
+      assert(0 &&
+                 "This DistanceToOut interface was not implemented for this volume.");
+          return false;
   }
 
   virtual double DistanceToOut(Vector3D<double> const &point,
                                Vector3D<double> const &direction,
                                Vector3D<double> &normal,
-                               bool &convex) const {
-    return DistanceToOut(point, direction, kInfinity);
+                               bool &convex) const
+  {
+    return DistanceToOut(point, direction,normal, convex, kInfinity);
   }
 
   virtual double SafetyFromOutside(Vector3D<double> const &point,

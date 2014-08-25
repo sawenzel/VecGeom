@@ -47,11 +47,13 @@ void MaskedAssign(const bool cond,
   *output = (cond) ? thenval : *output;
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool IsFull(bool const &cond){
     return cond;
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool IsEmpty(bool const &cond){
     return !cond;

@@ -58,6 +58,14 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision SurfaceArea() const {
+     // factor 8 because dimensions_ are half-lengths
+     return 8.0*(dimensions_[0]*dimensions_[1] +
+             dimensions_[1]*dimensions_[2] + dimensions_[2]*dimensions_[0]);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
 
   VECGEOM_CUDA_HEADER_BOTH
