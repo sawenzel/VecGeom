@@ -8,6 +8,7 @@
 
 #include "base/Vector3D.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -68,7 +69,16 @@ public:
                    const Precision r7, const Precision r8);
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Transformation3D(Transformation3D const &other);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Transformation3D& operator=(Transformation3D const &rhs);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool operator==(Transformation3D const &rhs) const;
 
   virtual ~Transformation3D() {}
 
@@ -183,18 +193,33 @@ private:
       Vector3D<InputType> const &local,
       Vector3D<InputType> &master) const;
 
+  template <TranslationCode transCodeT, RotationCode rotCodeT>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool CheckIdentity() const;
+
+  template <TranslationCode transCodeT>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool CheckTranslation() const;
+
+  template <RotationCode rotCodeT>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool CheckRotation() const;
+
 public:
 
   // Transformation interface
 
-  template <TranslationCode trans_code, RotationCode rot_code,
+  template <TranslationCode transCodeT, RotationCode rotCodeT,
             typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Transform(Vector3D<InputType> const &master,
                  Vector3D<InputType> &local) const;
 
-  template <TranslationCode trans_code, RotationCode rot_code,
+  template <TranslationCode transCodeT, RotationCode rotCodeT,
             typename InputType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -285,6 +310,26 @@ public:
 
 }; // End class Transformation3D
 
+VECGEOM_CUDA_HEADER_BOTH
+Transformation3D::Transformation3D(Transformation3D const &other) {
+  *this = other;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Transformation3D& Transformation3D::operator=(Transformation3D const &rhs) {
+  copy(rhs.fTranslation, rhs.fTranslation+3, fTranslation);
+  copy(rhs.fRotation, rhs.fRotation+9, fRotation);
+  fIdentity = rhs.fIdentity;
+  fHasTranslation = rhs.fHasTranslation;
+  fHasRotation = rhs.fHasRotation;
+  return *this;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+bool Transformation3D::operator==(Transformation3D const &rhs) const {
+  return equal(fTranslation, fTranslation+3, rhs.fTranslation) &&
+         equal(fRotation, fRotation+9, rhs.fRotation);
+}
 
 /**
  * Rotates a vector to this transformation's frame of reference.
@@ -463,35 +508,37 @@ void Transformation3D::DoTranslation(
  * \param local Output destination. Should never be the same as the input
  *              vector!
  */
-template <TranslationCode trans_code, RotationCode rot_code,
+template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void Transformation3D::Transform(Vector3D<InputType> const &master,
-                                     Vector3D<InputType> &local) const {
+                                 Vector3D<InputType> &local) const {
 
   // Identity
-  if (trans_code == translation::kIdentity && rot_code == rotation::kIdentity) {
+  if (CheckIdentity<transCodeT, rotCodeT>()) {
     local = master;
     return;
   }
 
   // Only translation
-  if (trans_code != translation::kIdentity && rot_code == rotation::kIdentity) {
+  if (CheckTranslation<transCodeT>()) {
     DoTranslation(master, local);
-    return;
   }
 
   // Only rotation
-  if (trans_code == translation::kIdentity && rot_code != rotation::kIdentity) {
-    DoRotation<rot_code>(master, local);
+  if (CheckRotation<rotCodeT>()) {
+    DoRotation<rotCodeT>(master, local);
+  }
+
+  if (!CheckTranslation<transCodeT>() || !CheckRotation<rotCodeT>()) {
     return;
   }
 
   // General case
   Vector3D<InputType> tmp;
   DoTranslation(master, tmp);
-  DoRotation<rot_code>(tmp, local);
+  DoRotation<rotCodeT>(tmp, local);
 }
 
 /**
@@ -500,7 +547,7 @@ void Transformation3D::Transform(Vector3D<InputType> const &master,
  * \param master Point to be transformed.
  * \return Newly constructed Vector3D with the transformed coordinates.
  */
-template <TranslationCode trans_code, RotationCode rot_code,
+template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -508,7 +555,7 @@ Vector3D<InputType> Transformation3D::Transform(
     Vector3D<InputType> const &master) const {
 
   Vector3D<InputType> local;
-  Transform<trans_code, rot_code>(master, local);
+  Transform<transCodeT, rotCodeT>(master, local);
   return local;
 
 }
@@ -520,6 +567,7 @@ void Transformation3D::Transform(Vector3D<InputType> const &master,
                                  Vector3D<InputType> &local) const {
   Transform<translation::kGeneric, rotation::kGeneric>(master, local);
 }
+
 template <typename InputType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -562,6 +610,38 @@ void Transformation3D::InverseTransformKernel(
       master[2] += local[1]*fRotation[7];
       master[2] += local[2]*fRotation[8];
    }
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+VECGEOM_CUDA_HEADER_BOTH
+bool Transformation3D::CheckIdentity() const {
+  if (transCodeT != translation::kGeneric ||
+      rotCodeT != rotation::kGeneric) {
+    return transCodeT == translation::kIdentity &&
+           rotCodeT == rotation::kIdentity;
+  } else {
+    return IsIdentity();
+  }
+}
+
+template <TranslationCode transCodeT>
+VECGEOM_CUDA_HEADER_BOTH
+bool Transformation3D::CheckTranslation() const {
+  if (transCodeT != translation::kGeneric) {
+    return transCodeT == translation::kIdentity;
+  } else {
+    return HasTranslation();
+  }
+}
+
+template <RotationCode rotCodeT>
+VECGEOM_CUDA_HEADER_BOTH
+bool Transformation3D::CheckRotation() const {
+  if (rotCodeT != rotation::kGeneric) {
+    return rotCodeT == rotation::kIdentity;
+  } else {
+    return HasRotation();
+  }
 }
 
 template <typename InputType>

@@ -137,6 +137,21 @@ struct BoxImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::precision_v &safety);
 
+ // template <class Backend>
+ // static void Normal( Vector3D<Precision> const &dimensions,
+ //         Vector3D<typename Backend::precision_v> const &point,
+ //        Vector3D<typename Backend::precision_v> &normal,
+ //         Vector3D<typename Backend::precision_v> &valid )
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void NormalKernel(
+       UnplacedBox const &,
+       Vector3D<typename Backend::precision_v> const &point,
+       Vector3D<typename Backend::precision_v> &normal,
+       typename Backend::bool_v &valid );
+
 }; // End struct BoxImplementation
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -346,6 +361,12 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   Vector3D<Float_t> safety;
   Bool_t done = Backend::kFalse;
 
+#ifdef VECGEOM_NVCC
+  #define surfacetolerant true
+#else
+  static const bool surfacetolerant=true;
+#endif
+
   safety[0] = Abs(point[0]) - dimensions[0];
   safety[1] = Abs(point[1]) - dimensions[1];
   safety[2] = Abs(point[2]) - dimensions[2];
@@ -353,7 +374,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   done |= (safety[0] >= stepMax ||
            safety[1] >= stepMax ||
            safety[2] >= stepMax);
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   Float_t next, coord1, coord2;
   Bool_t hit;
@@ -362,36 +383,39 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   next = safety[0] / Abs(direction[0] + kTiny);
   coord1 = point[1] + next * direction[1];
   coord2 = point[2] + next * direction[2];
-  hit = safety[0] >= 0 &&
+  hit = safety[0] >= MakeMinusTolerant<surfacetolerant>(0.) &&
         point[0] * direction[0] < 0 &&
         Abs(coord1) <= dimensions[1] &&
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   // y
   next = safety[1] / Abs(direction[1] + kTiny);
   coord1 = point[0] + next * direction[0];
   coord2 = point[2] + next * direction[2];
-  hit = safety[1] >= 0 &&
+  hit = safety[1] >= MakeMinusTolerant<surfacetolerant>(0.) &&
         point[1] * direction[1] < 0 &&
         Abs(coord1) <= dimensions[0] &&
         Abs(coord2) <= dimensions[2];
   MaskedAssign(!done && hit, next, &distance);
   done |= hit;
-  if (done == Backend::kTrue) return;
+  if ( IsFull(done) ) return;
 
   // z
   next = safety[2] / Abs(direction[2] + kTiny);
   coord1 = point[0] + next * direction[0];
   coord2 = point[1] + next * direction[1];
-  hit = safety[2] >= 0 &&
+  hit = safety[2] >= MakeMinusTolerant<surfacetolerant>(0.) &&
         point[2] * direction[2] < 0 &&
         Abs(coord1) <= dimensions[0] &&
         Abs(coord2) <= dimensions[1];
   MaskedAssign(!done && hit, next, &distance);
 
+#ifdef VECGEOM_NVCC
+  #undef surfacetolerant
+#endif
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -484,6 +508,68 @@ void BoxImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(
    MaskedAssign(safetyY < safety, safetyY, &safety);
    MaskedAssign(safetyZ < safety, safetyZ, &safety);
 }
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
+     UnplacedBox const &box,
+     Vector3D<typename Backend::precision_v> const &point,
+     Vector3D<typename Backend::precision_v> &normal,
+     typename Backend::bool_v &valid
+    ) {
+
+        typedef typename Backend::precision_v Float_t;
+        typedef typename Backend::bool_v Bool_t;
+
+         // Computes the normal on a surface and returns it as a unit vector
+         //   In case a point is further than tolerance_normal from a surface, set validNormal=false
+         //   Must return a valid vector. (even if the point is not on the surface.)
+         //
+         //   On an edge or corner, provide an average normal of all facets within tolerance
+         // NOTE: the tolerance value used in here is not yet the global surface
+         //     tolerance - we will have to revise this value - TODO
+         // this version does not yet consider the case when we are not on the surface
+
+         Vector3D<Precision> dimensions= box.dimensions();
+
+         static const double delta = 100.*kTolerance;
+         static const double kInvSqrt2 = 1. / Sqrt(2.);
+         static const double kInvSqrt3 = 1. / Sqrt(3.);
+         normal.Set(0.);
+         Float_t nsurf = 0;
+         Float_t safmin(kInfinity);
+
+         // do a loop here over dimensions
+         for( int dim = 0; dim < 3; ++dim )
+         {
+             Float_t currentsafe = Abs(Abs(point[dim]) - dimensions[dim]);
+             MaskedAssign( currentsafe < safmin, currentsafe, &safmin );
+
+             // close to this surface
+             Bool_t closetoplane = currentsafe < delta;
+             if( ! IsEmpty( closetoplane ) )
+             {
+                Float_t nsurftmp = nsurf + 1.;
+
+                Float_t sign(1.);
+                MaskedAssign( point[dim] < 0, -1., &sign);
+                Float_t tmpnormalcomponent = normal[dim] + sign;
+
+                MaskedAssign( closetoplane, nsurftmp, &nsurf );
+                MaskedAssign( closetoplane, tmpnormalcomponent, &normal[dim] );
+             }
+         }
+
+         valid = Backend::kTrue;
+         valid &= nsurf>0;
+         MaskedAssign( nsurf == 3., normal*kInvSqrt3, &normal );
+         MaskedAssign( nsurf == 2., normal*kInvSqrt2, &normal );
+
+        // TODO: return normal in case of nonvalid case;
+        // need to keep track of minimum safety direction
+    }
+
 
 } // End global namespace
 

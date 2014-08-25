@@ -51,16 +51,6 @@ Transformation3D::Transformation3D(
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-Transformation3D::Transformation3D(Transformation3D const &other) {
-  SetTranslation(other.Translation(0), other.Translation(1),
-                 other.Translation(2));
-  SetRotation(other.Rotation(0), other.Rotation(1), other.Rotation(2),
-              other.Rotation(3), other.Rotation(4), other.Rotation(5),
-              other.Rotation(6), other.Rotation(7), other.Rotation(8));
-  SetProperties();
-}
-
-VECGEOM_CUDA_HEADER_BOTH
 void Transformation3D::Print() const {
   printf("Transformation3D {{%.2f, %.2f, %.2f}, ",
          fTranslation[0], fTranslation[1], fTranslation[2]);

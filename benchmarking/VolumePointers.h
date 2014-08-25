@@ -10,6 +10,7 @@
 
 class TGeoShape;
 class VUSolid;
+class G4VSolid;
 
 namespace vecgeom {
 
@@ -21,16 +22,19 @@ class VolumePointers {
 
 private:
 
-  VPlacedVolume const *specialized_;
-  VPlacedVolume const *unspecialized_;
+  VPlacedVolume const *fSpecialized;
+  VPlacedVolume const *fUnspecialized;
 #ifdef VECGEOM_ROOT
-  TGeoShape const *root_;
+  TGeoShape const *fRoot;
 #endif
 #ifdef VECGEOM_USOLIDS
-  ::VUSolid const *usolids_;
+  ::VUSolid const *fUSolids;
+#endif
+#ifdef VECGEOM_GEANT4
+  G4VSolid const *fGeant4;
 #endif
   /** Remember which objects can be safely deleted. */
-  EBenchmarkedLibrary initial_;
+  EBenchmarkedLibrary fInitial;
 
 public:
 
@@ -45,16 +49,20 @@ public:
 
   VolumePointers& operator=(VolumePointers const &other);
 
-  VPlacedVolume const* specialized() const { return specialized_; }
+  VPlacedVolume const* Specialized() const { return fSpecialized; }
 
-  VPlacedVolume const* unspecialized() const { return unspecialized_; }
+  VPlacedVolume const* Unspecialized() const { return fUnspecialized; }
 
 #ifdef VECGEOM_ROOT
-  TGeoShape const* root() const { return root_; }
+  TGeoShape const* ROOT() const { return fRoot; }
 #endif
 
 #ifdef VECGEOM_USOLIDS
-  ::VUSolid const* usolids() const { return usolids_; }
+  ::VUSolid const* USolids() const { return fUSolids; }
+#endif
+
+#ifdef VECGEOM_GEANT4
+  G4VSolid const* Geant4() const { return fGeant4; }
 #endif
 
 private:

@@ -643,6 +643,26 @@ VECTOR3D_BINARY_OP(*, *=)
 VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
+template <typename Type, typename BoolType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<BoolType> operator==(Vector3D<Type> const &lhs,
+                              Vector3D<Type> const &rhs) {
+  return Vector3D<bool>(
+    Abs(lhs[0] - rhs[0]) < kTolerance,
+    Abs(lhs[1] - rhs[1]) < kTolerance,
+    Abs(lhs[2] - rhs[2]) < kTolerance
+  );
+}
+
+template <typename Type, typename BoolType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<BoolType> operator!=(Vector3D<Type> const &lhs,
+                              Vector3D<Type> const &rhs) {
+  return !(lhs == rhs);
+}
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -677,8 +697,8 @@ VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<=)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>=)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
+// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
+// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
@@ -727,8 +747,8 @@ VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<=)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>=)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
+// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
+// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push

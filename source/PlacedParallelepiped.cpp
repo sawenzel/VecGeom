@@ -5,8 +5,11 @@
 
 #include "volumes/Parallelepiped.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#ifdef VECGEOM_ROOT
 #include "TGeoPara.h"
+#endif
+#ifdef VECGEOM_GEANT4
+#include "G4Para.hh"
 #endif
 
 namespace VECGEOM_NAMESPACE {
@@ -28,6 +31,13 @@ TGeoShape const* PlacedParallelepiped::ConvertToRoot() const {
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedParallelepiped::ConvertToUSolids() const {
   assert(0 && "Parallelepiped unsupported for USolids.");
+}
+#endif
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
+  return new G4Para(GetLabel(), GetX(), GetY(), GetZ(), GetAlpha(), GetTheta(),
+                    GetPhi());
 }
 #endif
 

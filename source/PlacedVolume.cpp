@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <cassert>
 
+#ifdef VECGEOM_USOLIDS
+#include "volumes/USolidsInterfaceHelper.h"
+#endif
+
 namespace VECGEOM_NAMESPACE {
 
 int VPlacedVolume::g_id_count = 0;
@@ -17,7 +21,11 @@ VPlacedVolume::VPlacedVolume(char const *const label,
                              LogicalVolume const *const logical_volume,
                              Transformation3D const *const transformation,
                              PlacedBox const *const bounding_box)
-  : id_(), label_(), logical_volume_(logical_volume), transformation_(transformation),
+  :
+#ifdef VECGEOM_USOLIDS
+    USolidsInterfaceHelper(label),
+#endif
+     id_(), label_(), logical_volume_(logical_volume), transformation_(transformation),
       bounding_box_(bounding_box) {
   id_ = g_id_count++;
   GeoManager::Instance().RegisterPlacedVolume(this);
