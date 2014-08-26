@@ -12,6 +12,10 @@
 #include "UTrap.hh"
 #endif
 
+#ifdef VECGEOM_GEANT4
+#include "G4Trap.hh"
+#endif
+
 namespace VECGEOM_NAMESPACE {
 
 PlacedTrapezoid::~PlacedTrapezoid() {}
@@ -43,6 +47,15 @@ VUSolid* PlacedTrapezoid::Clone() const {
                      GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
                      GetDy2(), GetDx3(), GetDx4(), GetAlpha2());
 }
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
+  return new G4Trap(GetLabel().c_str(), GetDz(), GetTheta(), GetPhi(),
+                     GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
+                     GetDy2(), GetDx3(), GetDx4(), GetAlpha2());
+}
+#endif
+
 
 #endif // VECGEOM_BENCHMARK
 

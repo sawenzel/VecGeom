@@ -97,7 +97,7 @@ void Benchmarker::RunInsideCuda(
        v != fVolumes.end(); ++v) {
     volumesGpu.push_back(
       reinterpret_cast<CudaVolume>(
-        CudaManager::Instance().LookupPlaced(v->specialized())
+        CudaManager::Instance().LookupPlaced(v->Specialized())
       )
     );
   }
@@ -195,7 +195,7 @@ void Benchmarker::RunToInCuda(
        v != fVolumes.end(); ++v) {
     volumesGpu.push_back(
       reinterpret_cast<CudaVolume>(
-        CudaManager::Instance().LookupPlaced(v->specialized())
+        CudaManager::Instance().LookupPlaced(v->Specialized())
       )
     );
   }
@@ -305,7 +305,7 @@ void Benchmarker::RunToOutCuda(
        v != fVolumes.end(); ++v) {
     volumesGpu.push_back(
       reinterpret_cast<CudaVolume>(
-        CudaManager::Instance().LookupPlaced(v->specialized())
+        CudaManager::Instance().LookupPlaced(v->Specialized())
       )
     );
   }

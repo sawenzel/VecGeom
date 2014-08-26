@@ -15,6 +15,8 @@ option(ROOT "Include ROOT." OFF)
 
 option(USOLIDS "Include USolids." OFF)
 
+option(GEANT4 "Include Geant4." OFF)
+
 option(BENCHMARK "Enable performance comparisons." OFF)
 
 option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
@@ -25,6 +27,10 @@ option(CTEST "Enable CTest when building." ON)
 
 if (USOLIDS)
   set(USolids ON)
+endif()
+
+if (GEANT4)
+  set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)
@@ -269,6 +275,17 @@ if (USolids)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_USOLIDS")
   
   set(LIBS ${LIBS} usolids)
+
+endif()
+
+if (Geant4)
+
+  find_package(Geant4 REQUIRED)
+  # include(${Geant4_USE_FILE})
+  include_directories(AFTER SYSTEM ${Geant4_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${Geant4_LIBRARIES})
+  message(STATUS "Geant4 found in ${Geant4_INCLUDE_DIRS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_GEANT4")
 
 endif()
 
