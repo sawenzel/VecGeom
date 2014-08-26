@@ -2,12 +2,26 @@
 #include "volumes/Trd.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
+#include "ArgParser.h"
 
 using namespace vecgeom;
 
-int main() {
-  UnplacedBox worldUnplaced = UnplacedBox(100., 100., 100.);
-  UnplacedTrd trdUnplaced = UnplacedTrd(5., 10., 9., 4., 30.);
+double dmax(double d1, double d2) {
+    if(d1 > d2) return d1;
+    return d2;
+}
+
+int main(int argc, char* argv[]) {
+  OPTION_INT(npoints);
+  OPTION_INT(nrep);
+  OPTION_DOUBLE(dx1);
+  OPTION_DOUBLE(dx2);
+  OPTION_DOUBLE(dy1);
+  OPTION_DOUBLE(dy2);
+  OPTION_DOUBLE(dz);
+
+  UnplacedBox worldUnplaced = UnplacedBox(dmax(dx1, dx2)*4, dmax(dy1, dy2)*4, dz*4);
+  UnplacedTrd trdUnplaced = UnplacedTrd(dx1, dx2, dy1, dy2, dz);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume trd = LogicalVolume("trdLogicalVolume", &trdUnplaced);
@@ -20,9 +34,8 @@ int main() {
   GeoManager::Instance().set_world(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().world());
-  tester.SetPoolMultiplier(1);
   tester.SetVerbosity(3);
-  tester.SetRepetitions(1024);
-  tester.SetPointCount(1<<6);
+  tester.SetRepetitions(nrep);
+  tester.SetPointCount(npoints);
   tester.RunBenchmark();
 }
