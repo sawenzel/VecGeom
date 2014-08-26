@@ -14,7 +14,7 @@ def run(cmd):
     return subprocess.call(cmd, shell=True)
 
 def toBranch(br):
-    run("git checkout {0}".format(br))
+    sh("git checkout {0}".format(br))
 
 def fetch(output, source, function):
     allmatches = []
@@ -47,6 +47,7 @@ def simpleTable(shape, out, f):
     f.write("\n")
 
 def runall(processor, f):
+    toBranch("master")
     run("./compile.sh")
 
     # ===== Box
@@ -69,15 +70,33 @@ def runall(processor, f):
     phi = 3*math.pi/2
     out = sh("./build/TubeBenchmark -npoints {0} -nrep {1} -rmin 10 -rmax 20 -dz 40 -sphi 0 -dphi {2}".format(npoints, nrep, phi))
     processor("Tube - rmin and phi > PI", out, f)
-    
+
     # ===== Parallelepiped
     run("./compileWithoutUSolids.sh")
     out = sh("./build/ParallelepipedBenchmark -npoints {0} -nrep {1} -dx 3 -dy 3 -dz 3 -alpha 14.9 -theta 39 -phi 3.22".format(npoints, nrep))
     processor("ParallelepipedBenchmark", out, f)
 
+    # ===== Trd
+    toBranch("trd-development")
+    run("./compile.sh")
+    out = sh("./build/TrdBenchmark -npoints {0} -nrep {1} -dx1 10 -dx2 20 -dy1 30 -dy2 30 -dz 10".format(npoints, nrep))
+    processor("Trd1", out, f)
 
+    # ===== Orb
+    toBranch("raman/Orb")
+    run("./compile.sh")
+    out = sh("./build/OrbBenchmark -npoints {0} -nrep {1} -r 3".format(npoints, nrep))
+    processor("Orb", out, f)
 
+    # ===== Trapezoid
+    toBranch("trap-SOAPlanes")
+    run("./compile.sh")
+    out = sh("./build/TrapezoidBenchmarkScript -npoints {0} -nrep {1} -dz 15 -p1x -2 -p2x 2 -p3x -3 -p4x 3 -p5x -4 -p6x 4 -p7x -6 -p8x 6 -p1y -5 -p2y -5 -p3y 5 -p4y 5 -p5y -10 -p6y -10 -p7y 10 -p8y 10".format(npoints, nrep))
+    processor("Trapezoid", out, f)
 
+    # Back to master
+    toBranch("master")
+    
 def main():
     f = open(target, "w")
     root = sh("git rev-parse --show-toplevel")
