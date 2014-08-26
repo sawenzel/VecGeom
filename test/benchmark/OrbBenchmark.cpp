@@ -6,13 +6,17 @@
 #include "volumes/Orb.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
+#include "ArgParser.h"
 
 using namespace vecgeom;
 
-int main() {
+int main(int argc, char* argv[]) {
+  OPTION_INT(npoints);
+  OPTION_INT(nrep);
+  OPTION_DOUBLE(r);
 
-  UnplacedBox worldUnplaced = UnplacedBox(10., 10., 10.);
-  UnplacedOrb orbUnplaced = UnplacedOrb(3);
+  UnplacedBox worldUnplaced = UnplacedBox(r*4, r*4, r*4);
+  UnplacedOrb orbUnplaced = UnplacedOrb(r);
   LogicalVolume world = LogicalVolume("w0rld", &worldUnplaced);
   LogicalVolume orb = LogicalVolume("p4r4", &orbUnplaced);
   Transformation3D placement = Transformation3D(5, 5, 5);
@@ -25,7 +29,8 @@ int main() {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
-  tester.SetPointCount(1<<12);
+  tester.SetPointCount(npoints);
+  tester.SetRepetitions(nrep);
   tester.RunBenchmark();
 
   return 0;
