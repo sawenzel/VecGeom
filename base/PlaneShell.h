@@ -178,33 +178,37 @@ public:
 
     // hope for a vectorization of this part for Backend==scalar!!
     Bool_t done(Backend::kFalse);
+    Float_t pdist[N];
+    Float_t proj[N];
+    Float_t vdist[N];
+    // vectorizable part
     for(int i=0; i<N; ++i) {
-      Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
-      Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+      pdist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+      proj[i] = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+    }
 
-      Bool_t posPoint = pdist >= -kHalfTolerance;
-      Bool_t posDir = proj > 0;
-
-      // discard the ones moving away from this plane
+    // analysis loop
+    for(int i=0; i<N; ++i)
+    {
+      Bool_t posPoint = pdist[i] >= -kHalfTolerance;
+      Bool_t posDir = proj[i] > 0;
       done |= (posPoint && posDir);
-
       if ( IsFull(done) ) return distIn;
 
-      // check if trajectory will intercept plane within a valid range (smin,smax)
-      Float_t vdist = -pdist / proj;
-
+      // note(SW): on my machine it was better to keep vdist[N] instead of a local variable vdist here
+      vdist[i]= -pdist[i]/proj[i];
       Bool_t interceptFromInside  = (!posPoint && posDir);
-      done |= ( interceptFromInside  && vdist<smin );
+      done |= ( interceptFromInside  && vdist[i]<smin );
       if ( IsFull(done) ) return distIn;
 
       Bool_t interceptFromOutside = (posPoint && !posDir);
-      done |= ( interceptFromOutside && vdist>smax );
+      done |= ( interceptFromOutside && vdist[i]>smax );
       if ( IsFull(done) ) return distIn;
 
       // update smin,smax
-      Bool_t validVdist = (smin<vdist && vdist<smax);
-      MaskedAssign( interceptFromOutside && validVdist, vdist, &smin );
-      MaskedAssign( interceptFromInside  && validVdist, vdist, &smax );
+      Bool_t validVdist = (smin<vdist[i] && vdist[i]<smax);
+      MaskedAssign( interceptFromOutside && validVdist, vdist[i], &smin );
+      MaskedAssign( interceptFromInside  && validVdist, vdist[i], &smax );
     }
 
     // Return smin, which is the maximum distance in an interceptFromOutside situation
@@ -228,17 +232,25 @@ public:
     Float_t distOut(kInfinity);
 
     // hope for a vectorization of this part for Backend==scalar !! ( in my case this works )
+    // the idea is to put vectorizable things into this loop
+    // and separate the analysis into a separate loop if need be
     Bool_t done(Backend::kFalse);
+    Float_t tmp[N];
     for(int i=0; i<N; ++i) {
       Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
 
       // early return if point is outside of plane
-      done |= (pdist>0.);
-      if ( IsFull(done) ) return kInfinity;
+      //done |= (pdist>0.);
+      //if ( IsFull(done) ) return kInfinity;
 
       Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
-      Float_t vdist = -pdist / proj;
-      MaskedAssign( vdist>0.0 && vdist<distOut, vdist, &distOut );
+      tmp[i] = -pdist / proj;
+    }
+
+    for(int i=0; i<N; ++i )
+    {
+         Bool_t test = ( tmp[i] > 0. && tmp[i] < distOut );
+         MaskedAssign( test, tmp[i], &distOut);
     }
 
     return distOut;
@@ -259,7 +271,8 @@ public:
       MaskedAssign( dist>safety, dist, &safety );
     }
 
-    MaskedAssign(safety<0, 0.0, &safety);
+    // not necessary: negative answer is fine
+    //MaskedAssign(safety<0, 0.0, &safety);
   }
 
 
@@ -276,16 +289,24 @@ public:
 
     Bool_t done(false);
 
+    Float_t dist[4];
+    safety=-kInfinity;
     for(int i=0; i<N; ++i) {
-      Float_t dist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
-
-      // early return if point is outside of ANY side plane
-      MaskedAssign( !done && dist>=0.0, 0.0, &safety );
-      done |= dist>0.;
-      if ( IsFull(done) ) return;
-
-      MaskedAssign( !done && dist<0 && -dist<safety, -dist, &safety );
+      dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+      MaskedAssign( dist[i]>safety, dist[i], &safety );
     }
+
+
+    //for(int i=0; i<N; ++i){
+    // early return if point is outside of ANY side plane
+
+      // do we need this? a negative safety is totally fine
+     //   MaskedAssign( !done && dist[i]>=0.0, 0.0, &safety );
+     // done |= dist[i]>0.;
+     // if ( IsFull(done) ) return;
+
+     //MaskedAssign( dist[i]>safety, dist[i], &safety );
+    //}
 
     return;
   }
