@@ -24,6 +24,10 @@
 #ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
 #endif
+#ifdef VECGEOM_GEANT4
+#include "G4SubtractionSolid.hh"
+#include "G4ThreeVector.hh"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -113,9 +117,19 @@ public:
 #endif
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const {
-      printf("Converting to USOLIDS\n");
+      printf("Converting to USOLIDS; WARNING RETURNING A BOX\n");
       return new UBox("",10,10,10);
   }
+#endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const {
+      printf("Converting to Geant4\n");
+      VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
+      VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
+      Transformation3D const * rightm = right->transformation();
+      return new G4SubtractionSolid(
+                                  GetLabel(),                                  const_cast<G4VSolid*>(left->ConvertToGeant4()),                                 const_cast<G4VSolid*>(right->ConvertToGeant4()), 0, 
+G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2)), );  }
 #endif
 #endif // VECGEOM_BENCHMARK
 
