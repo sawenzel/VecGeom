@@ -13,6 +13,8 @@
 #include <list>
 #include <string>
 
+class G4VSolid;
+
 namespace VECGEOM_NAMESPACE {
 
 // Forward declaration for bounding box
@@ -67,7 +69,7 @@ public:
   VECGEOM_INLINE
   int id() const { return id_; }
 
-  std::string GetLabel() const { return *label_; }
+  std::string const& GetLabel() const { return *label_; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -239,6 +241,9 @@ public:
 #endif
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const =0;
+#endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const =0;
 #endif
 #endif // VECGEOM_BENCHMARK
 

@@ -182,6 +182,12 @@ TGeoShape const* PlacedRootVolume::ConvertToRoot() const {
   return NULL;
 }
 #endif
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedRootVolume::ConvertToGeant4() const {
+  assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+  return NULL;
+}
+#endif
 #endif // VECGEOM_BENCHMARK
 
 #ifdef VECGEOM_CUDA_INTERFACE

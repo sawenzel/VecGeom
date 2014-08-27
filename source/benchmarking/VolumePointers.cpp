@@ -7,34 +7,43 @@
 
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
-#endif // VECGEOM_ROOT
+#endif
 #ifdef VECGEOM_USOLIDS
 #include "VUSolid.hh"
-#endif // VECGEOM_USOLIDS
+#endif
+#ifdef VECGEOM_GEANT4
+#include "G4VSolid.hh"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
 VolumePointers::VolumePointers(VPlacedVolume const *const volume)
-    : specialized_(volume), unspecialized_(NULL),
+    : fSpecialized(volume), fUnspecialized(NULL),
 #ifdef VECGEOM_ROOT
-      root_(NULL),
+      fRoot(NULL),
 #endif
 #ifdef VECGEOM_USOLIDS
-      usolids_(NULL),
+      fUSolids(NULL),
 #endif
-      initial_(kBenchmarkSpecialized) {
+#ifdef VECGEOM_GEANT4
+      fGeant4(NULL),
+#endif
+      fInitial(kBenchmarkSpecialized) {
   ConvertVolume();
 }
 
 VolumePointers::VolumePointers(VolumePointers const &other)
-    : specialized_(other.specialized_), unspecialized_(NULL),
+    : fSpecialized(other.fSpecialized), fUnspecialized(NULL),
 #ifdef VECGEOM_ROOT
-      root_(NULL),
+      fRoot(NULL),
 #endif
 #ifdef VECGEOM_USOLIDS
-      usolids_(NULL),
+      fUSolids(NULL),
 #endif
-      initial_(other.initial_) {
+#ifdef VECGEOM_GEANT4
+      fGeant4(NULL),
+#endif
+      fInitial(other.fInitial) {
   ConvertVolume();
 }
 
@@ -44,18 +53,21 @@ VolumePointers::~VolumePointers() {
 
 VolumePointers& VolumePointers::operator=(VolumePointers const &other) {
   this->Deallocate();
-  this->specialized_ = other.specialized_;
+  this->fSpecialized = other.fSpecialized;
   this->ConvertVolume();
   return *this;
 }
 
 void VolumePointers::ConvertVolume() {
-  if (!unspecialized_) unspecialized_ = specialized_->ConvertToUnspecialized();
+  if (!fUnspecialized) fUnspecialized = fSpecialized->ConvertToUnspecialized();
 #ifdef VECGEOM_ROOT
-  if (!root_)          root_          = specialized_->ConvertToRoot();
+  if (!fRoot)          fRoot          = fSpecialized->ConvertToRoot();
 #endif
 #ifdef VECGEOM_USOLIDS
-  if (!usolids_)       usolids_       = specialized_->ConvertToUSolids();
+  if (!fUSolids)       fUSolids       = fSpecialized->ConvertToUSolids();
+#endif
+#ifdef VECGEOM_GEANT4
+  if (!fGeant4)        fGeant4        = fSpecialized->ConvertToGeant4();
 #endif
 }
 
@@ -67,6 +79,9 @@ void VolumePointers::Deallocate() {
 #endif
 #ifdef VECGEOM_USOLIDS
  // if (initial_ != kBenchmarkUSolids)       delete usolids_;
+#endif
+#ifdef VECGEOM_GEANT4
+  //  if (fInitial != kBenchmarkGeant4)        delete fGeant4;
 #endif
 }
 

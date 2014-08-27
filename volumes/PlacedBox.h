@@ -134,6 +134,9 @@ public:
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const;
+#endif
 #endif // VECGEOM_BENCHMARK
 
 };

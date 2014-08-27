@@ -15,6 +15,10 @@
 #include "VUSolid.hh"
 #endif
 
+#ifdef VECGEOM_GEANT4
+#include "G4VSolid.hh"
+#endif
+
 #include <list>
 
 namespace vecgeom {
@@ -179,6 +183,11 @@ private:
   void RunToInRoot(double *distances, Precision *safeties);
   void RunToOutRoot(double *distances, Precision *safeties);
 #endif
+#ifdef VECGEOM_GEANT4
+  void RunInsideGeant4(::EInside *inside);
+  void RunToInGeant4(double *distances, Precision *safeties);
+  void RunToOutGeant4(double *distances, Precision *safeties);
+#endif
 #ifdef VECGEOM_CUDA
   void RunInsideCuda(
     Precision *posX, Precision *posY,
@@ -212,6 +221,9 @@ private:
 #endif
 #ifdef VECGEOM_USOLIDS
     Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
 #endif
 #ifdef VECGEOM_CUDA
     Precision const *const cuda,

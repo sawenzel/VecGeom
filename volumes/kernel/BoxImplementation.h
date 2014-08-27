@@ -345,7 +345,6 @@ void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
 
-#include <iostream>
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -362,7 +361,11 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   Vector3D<Float_t> safety;
   Bool_t done = Backend::kFalse;
 
+#ifdef VECGEOM_NVCC
+  #define surfacetolerant true
+#else
   static const bool surfacetolerant=true;
+#endif
 
   safety[0] = Abs(point[0]) - dimensions[0];
   safety[1] = Abs(point[1]) - dimensions[1];
@@ -410,6 +413,9 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
         Abs(coord2) <= dimensions[1];
   MaskedAssign(!done && hit, next, &distance);
 
+#ifdef VECGEOM_NVCC
+  #undef surfacetolerant
+#endif
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

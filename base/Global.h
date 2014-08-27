@@ -17,7 +17,15 @@
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
   #define VECGEOM_CUDA_HEADER_GLOBAL __global__
+  #undef VECGEOM_VC
+  #undef VECGEOM_VC_ACCELERATION
+  #undef VECGEOM_CILK
+  #undef VECGEOM_ROOT
+  #undef VECGEOM_USOLIDS
+  #undef VECGEOM_BENCHMARK
 #else // Not compiling with NVCC
+  #define VECGEOM_STD_CXX11
+  #define VECGEOM_NAMESPACE vecgeom
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_BOTH
@@ -25,18 +33,6 @@
   #ifdef VECGEOM_CUDA
     #define VECGEOM_CUDA_INTERFACE
   #endif
-#endif
-
-#ifdef VECGEOM_NVCC
-  #undef VECGEOM_VC
-  #undef VECGEOM_VC_ACCELERATION
-  #undef VECGEOM_CILK
-  #undef VECGEOM_ROOT
-  #undef VECGEOM_USOLIDS
-  #undef VECGEOM_BENCHMARK
-#else
-  #define VECGEOM_STD_CXX11
-  #define VECGEOM_NAMESPACE vecgeom
 #endif
 
 #ifdef __INTEL_COMPILER
