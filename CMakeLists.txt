@@ -181,11 +181,11 @@ if (COVERAGE_TESTING)
   if (GNU)
     set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-    set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} gcov)
+    set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} gcov)
   endif()
   if (Clang)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
-    set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} profile_rt)
+    set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} profile_rt)
   endif()
   if (Intel)
     message(FATAL_ERROR "Coverage testing not supported for icc.")
@@ -227,7 +227,7 @@ if (Intel)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_INTEL}")
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
+set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2 -std=c++11")
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${VECGEOM_NVCC_COMPILATION_FLAGS})
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
@@ -242,7 +242,7 @@ endif()
 if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
-  set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} ${Vc_LIBRARIES})
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${Vc_LIBRARIES})
   include_directories(AFTER SYSTEM ${Vc_INCLUDE_DIR})
 
   if (Vc)
@@ -281,7 +281,7 @@ if (ROOT)
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
-  set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES}
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL}
       Cint Core MathCore RIO Thread Geom Gui Net Hist Graf Graf3d Gpad Tree
       Rint Postscript Matrix Physics m dl)
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
@@ -321,7 +321,8 @@ if (Geant4)
 
   find_package(Geant4 REQUIRED)
   include_directories(AFTER SYSTEM ${Geant4_INCLUDE_DIRS})
-  set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} ${Geant4_LIBRARIES})
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL}
+      ${Geant4_LIBRARIES})
   message(STATUS "Geant4 found in: ${Geant4_INCLUDE_DIRS}")
 
 endif()
@@ -411,10 +412,11 @@ set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
 # Build libraries
 
 add_library(vecgeom ${SRC_CPP})
-target_link_libraries(vecgeom ${VECGEOM_LIBRARIES})
+target_link_libraries(vecgeom ${VECGEOM_LIBRARIES}
+                      ${VECGEOM_LIBRARIES_EXTERNAL})
 set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} vecgeom)
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} rt)
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} rt)
 endif()
 
 if (CUDA)
@@ -423,7 +425,8 @@ if (CUDA)
     ${SRC_CUDA}
     OPTIONS ${CUDA_ARCH}
   )
-  target_link_libraries(vecgeomcuda ${VECGEOM_LIBRARIES})
+  target_link_libraries(vecgeomcuda ${VECGEOM_LIBRARIES}
+                        ${VECGEOM_LIBRARIES_EXTERNAL})
   set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} vecgeomcuda)
 endif()
 
@@ -484,7 +487,8 @@ macro(build_executables EXECUTABLES)
   foreach(EXECUTABLE ${EXECUTABLES})
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
-    target_link_libraries(${TARGET_NAME} ${VECGEOM_LIBRARIES})
+    target_link_libraries(${TARGET_NAME} ${VECGEOM_LIBRARIES}
+                          ${VECGEOM_LIBRARIES_EXTERNAL})
     set(VECGEOM_EXECUTABLES ${VECGEOM_EXECUTABLES} ${TARGET_NAME})
   endforeach()
 endmacro()
@@ -528,14 +532,27 @@ file(RELATIVE_PATH INSTALL_INCLUDE_DIR_RELATIVE
      "${INSTALL_CMAKE_DIR}" "${INSTALL_INCLUDE_DIR}/.")
 file(RELATIVE_PATH INSTALL_LIB_DIR_RELATIVE
      "${INSTALL_CMAKE_DIR}" "${INSTALL_LIB_DIR}/.")
-# Build tree
-set(CONF_INCLUDE_DIR "${PROJECT_SOURCE_DIR}")
-set(CONF_LIBRARY_DIR "${PROJECT_SOURCE_DIR}")
+# Build
+set(CONF_TYPE "build")
+set(CONF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}")
+set(CONF_LIBRARY_DIR "${CMAKE_BINARY_DIR}")
+set(CONF_LIBRARIES ${VECGEOM_LIBRARIES_EXTERNAL}
+    "${CONF_LIBRARY_DIR}/libvecgeom.a")
+if (USolids)
+  set(CONF_LIBRARIES ${CONF_LIBRARIES}
+      "${CONF_LIBRARY_DIR}/USolids/libusolids.a")
+endif()
 configure_file(VecgeomConfig.cmake.in
                "${PROJECT_BINARY_DIR}/VecgeomConfig.cmake" @ONLY)
-# Install tree
+# Installation
+set(CONF_TYPE "install")
 set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}")
 set(CONF_LIBRARY_DIR "\${THIS_DIR}/${INSTALL_LIB_DIR_RELATIVE}")
+set(CONF_LIBRARIES ${VECGEOM_LIBRARIES_EXTERNAL}
+    "${CONF_LIBRARY_DIR}/libvecgeom.a")
+if (USolids)
+  set(CONF_LIBRARIES ${CONF_LIBRARIES} "${CONF_LIBRARY_DIR}/libusolids.a")
+endif()
 configure_file(VecgeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake" @ONLY)
  
