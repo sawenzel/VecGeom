@@ -23,7 +23,7 @@ class RNG {
 private:
 
 #ifdef VECGEOM_NVCC
-#ifdef __CUDA__ARCH__
+#ifdef __CUDA_ARCH__
   curandState fState;
   
   VECGEOM_CUDA_HEADER_DEVICE
@@ -53,7 +53,7 @@ private:
 protected:
 
 #ifdef VECGEOM_NVCC
-#ifdef __CUDA__ARCH__
+#ifdef __CUDA_ARCH__
 // The state should really be 'thread' specific
   VECGEOM_CUDA_HEADER_DEVICE
   RNG() { curand_init(0 /*seed */, 0 /* subsequence */, 0 /* offset */ , &fState); }
@@ -70,7 +70,7 @@ public:
    * Access singleton instance.
    */
 #ifdef VECGEOM_NVCC
-#ifdef __CUDA__ARCH__
+#ifdef __CUDA_ARCH__
   VECGEOM_CUDA_HEADER_DEVICE
   static RNG& Instance() {
      __shared__ RNG instance;
