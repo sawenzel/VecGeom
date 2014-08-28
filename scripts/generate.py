@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import sys
 
-function = "Contains"
+function = "DistanceToIn"
 shapes = ["Box", "Orb", "Trapezoid", "Trd1", "Parallelepiped", "Paraboloid", "Tube - no rmin no phi", "Tube - rmin and phi > PI"]
-factors = ["ROOT", "Specialized", "Vectorized", "USolids", "Geant4"]
+factors = ["ROOT", "Geant4", "Specialized", "Vectorized"]
 
 def fetch(source, factor, shape, func):
     activated = False
@@ -16,7 +16,7 @@ def fetch(source, factor, shape, func):
             pos = header.index(factor)
             try:
                 val = float(line[pos])
-                return val
+                return val # * 100
             except:
                 return 0
     return 0
