@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 import sys
 
-function = "DistanceToIn"
+function = "Contains"
 shapes = ["Box", "Orb", "Trapezoid", "Trd1", "Parallelepiped", "Tube - no rmin no phi", "Tube - rmin and phi > PI"]
 factors = ["ROOT", "Specialized", "Vectorized", "USolids", "Geant4"]
 
-def fetch(source, factor, shape):
+def fetch(source, factor, shape, func):
     activated = False
     for line in source:
         line = line.split(",")
         if line[0] == shape:
             activated = True
             header = line
-        if line[0] == function and activated:
+        if line[0] == func and activated:
             pos = header.index(factor)
             try:
                 val = float(line[pos])
@@ -24,7 +24,10 @@ def fetch(source, factor, shape):
 def print_factor(factor, source):
     values = []
     for shape in shapes:
-        values += [fetch(source, factor, shape)]
+        if factor == "Geant4" and function == "Contains":
+            values += [fetch(source, factor, shape, "Inside")]
+        else:
+            values += [fetch(source, factor, shape, function)]
     print(",".join([str(x) for x in values]))
 
 
