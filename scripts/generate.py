@@ -2,7 +2,7 @@
 import sys
 
 function = "Contains"
-shapes = ["Box", "Orb", "Trapezoid", "Trd1", "Parallelepiped", "Tube - no rmin no phi", "Tube - rmin and phi > PI"]
+shapes = ["Box", "Orb", "Trapezoid", "Trd1", "Parallelepiped", "Paraboloid", "Tube - no rmin no phi", "Tube - rmin and phi > PI"]
 factors = ["ROOT", "Specialized", "Vectorized", "USolids", "Geant4"]
 
 def fetch(source, factor, shape, func):
