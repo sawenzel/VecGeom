@@ -53,26 +53,14 @@ public:
   Precision GetRadius() const { return GetUnplacedVolume()->GetRadius(); }
   
   VECGEOM_CUDA_HEADER_BOTH
-  Vector3D<Precision>  dimensions() const { return GetUnplacedVolume()->dimensions(); }
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision x() const { return GetUnplacedVolume()->x(); }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision y() const { return GetUnplacedVolume()->y(); }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision z() const { return GetUnplacedVolume()->z(); }
-
-  VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolO() const { return GetUnplacedVolume()->GetfRTolO(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolI() const { return GetUnplacedVolume()->GetfRTolI(); }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
+  
    VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
   

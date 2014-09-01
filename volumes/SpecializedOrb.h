@@ -36,6 +36,12 @@ public:
   SpecializedOrb(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
       : SpecializedOrb("", logical_volume, transformation) {}
+  
+  SpecializedOrb(char const *const label,
+                 const Precision fR)
+      : SpecializedOrb(label, new LogicalVolume(new UnplacedOrb(fR)),
+                       &Transformation3D::kIdentity) {}
+
 
 #else
 

@@ -13,26 +13,27 @@
 namespace VECGEOM_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb():dimensions_(0.0)
+  UnplacedOrb::UnplacedOrb()
   {
     //default constructor
     fR=0;
-    //fRTolerance=0;
+    fRTolerance =  std::max(frTolerance, epsilon * fR);
     fCubicVolume=0;
     fSurfaceArea=0;
-    fRTolI=0;
-    fRTolO=0;
+    fRTolI = fR -  fRTolerance;
+    fRTolO = fR +  fRTolerance;
     
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb(const Precision r):dimensions_(r)
+  UnplacedOrb::UnplacedOrb(const Precision r)
   {
     fR=r;
-    fRTolI = fR - kHalfTolerance;
-    fRTolO = fR + kHalfTolerance;
+    fRTolerance =  std::max(frTolerance, epsilon * r);
     fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
     fSurfaceArea = (4 * kPi) * fR * fR;
+    fRTolI = fR -  fRTolerance;
+    fRTolO = fR +  fRTolerance;
   }
   
   
@@ -40,10 +41,11 @@ VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::SetRadius(const Precision r)
   {
     fR=r;
-    fRTolI = fR - kHalfTolerance;
-    fRTolO = fR + kHalfTolerance;
+    fRTolerance =  std::max(frTolerance, epsilon * r);
     fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
     fSurfaceArea = (4 * kPi) * fR * fR;
+    fRTolI = fR -  fRTolerance;
+    fRTolO = fR +  fRTolerance;
   }
   
   VECGEOM_CUDA_HEADER_BOTH

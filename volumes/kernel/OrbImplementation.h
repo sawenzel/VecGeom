@@ -48,7 +48,7 @@ template <typename Backend, bool ForInside>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 static void GenericKernelForContainsAndInside(
-    Vector3D<Precision> const &dimensions,
+    UnplacedOrb const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &completelyinside,
     typename Backend::bool_v &completelyoutside) ;
@@ -94,7 +94,7 @@ template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 static void ContainsKernel(
-    Vector3D<Precision> const &dimensions,
+    UnplacedOrb const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside);
   
@@ -103,7 +103,7 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 static void InsideKernel(
-    Vector3D<Precision> const &orbDimensions,
+    UnplacedOrb const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) ;
 
@@ -217,7 +217,7 @@ void OrbImplementation<transCodeT, rotCodeT>::UnplacedContains(
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::bool_v &inside){
 
-      ContainsKernel<Backend>(unplaced.dimensions(), point, inside);
+      ContainsKernel<Backend>(unplaced, point, inside);
 }    
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -241,7 +241,7 @@ void OrbImplementation<transCodeT, rotCodeT>::Inside(UnplacedOrb const &unplaced
                      Vector3D<typename Backend::precision_v> const &point,
                      typename Backend::inside_v &inside){
 
-    InsideKernel<Backend>(unplaced.dimensions(),
+    InsideKernel<Backend>(unplaced,
                         transformation.Transform<transCodeT, rotCodeT>(point),
                         inside);
 
@@ -318,14 +318,14 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOut(UnplacedOrb const &unp
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void OrbImplementation<transCodeT, rotCodeT>::ContainsKernel(Vector3D<Precision> const &dimensions,
+void OrbImplementation<transCodeT, rotCodeT>::ContainsKernel(UnplacedOrb const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
 
   typedef typename Backend::bool_v Bool_t;
   Bool_t unused;
   Bool_t outside;
-  GenericKernelForContainsAndInside<Backend, false>(dimensions,
+  GenericKernelForContainsAndInside<Backend, false>(unplaced,
     localPoint, unused, outside);
   inside=!outside;
 }  
@@ -334,27 +334,26 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend, bool ForInside>
 VECGEOM_CUDA_HEADER_BOTH
 void OrbImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
-Vector3D<Precision> const &dimensions,
+UnplacedOrb const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &completelyinside,
     typename Backend::bool_v &completelyoutside) {
 
-    
     typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;	
-	
-    Bool_t done(false);
+
     Double_t rad2 = localPoint.Mag2();
-    Double_t tolRMax = MakePlusTolerant<ForInside>( dimensions[1] );
+    Double_t tolRMax = unplaced.GetfRTolO();
+    Double_t tolRMin = unplaced.GetfRTolI();
     Double_t tolRMax2 = tolRMax * tolRMax;
-    Double_t tolRMin = MakeMinusTolerant<ForInside>( dimensions[1] );
     Double_t tolRMin2 = tolRMin * tolRMin;
     
-    completelyoutside |= ( rad2 > tolRMax2);
+    completelyoutside = ( rad2 > tolRMax2);
     if (ForInside)
     {
-      completelyinside &= ( rad2 < tolRMin2);
+      completelyinside = ( rad2 < tolRMin2);
     }
+    
     
     return;
 }
@@ -362,14 +361,14 @@ Vector3D<Precision> const &dimensions,
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void OrbImplementation<transCodeT, rotCodeT>::InsideKernel(Vector3D<Precision> const &orbDimensions,
+void OrbImplementation<transCodeT, rotCodeT>::InsideKernel(UnplacedOrb const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
   
   typedef typename Backend::bool_v      Bool_t;
   Bool_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(
-      orbDimensions, point, completelyinside, completelyoutside);
+      unplaced, point, completelyinside, completelyoutside);
   inside=EInside::kSurface;
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   MaskedAssign(completelyinside, EInside::kInside, &inside);
@@ -389,13 +388,10 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     typedef typename Backend::bool_v      Bool_t;
 
     Vector3D<Double_t> localPoint;
-    //localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
     localPoint = point;
 
     Vector3D<Double_t> localDir;
-    //localDir =  transformation.TransformDirection<rotCodeT>(direction);
     localDir = direction;
-
 
     //General Precalcs
     Double_t rad2 = localPoint.Mag2();
@@ -420,22 +416,29 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     MaskedAssign( isInside, kInfinity, &distance );
     if( IsFull(done) )return;
 
- 
-    Bool_t notOutsideAndOnSurface = (c > (-kTolerance * unplaced.GetRadius()));
-    Bool_t d2LTFrTolFrAndPDotV3DGTET0= ((d2 < (kTolerance * unplaced.GetRadius())) || (pDotV3d >= 0));
-    done |= (notOutsideAndOnSurface && d2LTFrTolFrAndPDotV3DGTET0);
-    if( IsFull(done) ) return;
+    //On the Surface and Moving In
+    Bool_t isInsideOuterToleranceAndMovingIn=((rad >= unplaced.GetfRTolI()) && (rad <= unplaced.GetfRTolO()) && (pDotV3d < 0));
+    done |= isInsideOuterToleranceAndMovingIn;
+    MaskedAssign(isInsideOuterToleranceAndMovingIn,zero,&distance);
+    if( IsFull(done) )return;
 
-
-    Bool_t isOutsideTolBoundary = (c > (kTolerance * unplaced.GetRadius()));
-    Bool_t isD2GtEt0 = (d2>=0);
-    done |= (isOutsideTolBoundary && !isD2GtEt0);
-    if( IsFull(done) ) return;
-
-    done |= (isOutsideTolBoundary && isD2GtEt0 );
-    MaskedAssign((isOutsideTolBoundary && isD2GtEt0),(-pDotV3d - Sqrt(d2)),&distance);
-    //(distance < 0 ) implies point is outside and going out, hence distance must be set to kInfinity.
-    MaskedAssign((distance<0),kInfinity,&distance);
+    //On the Surface and Moving Out
+    Bool_t isInsideOuterToleranceAndMovingOut=((rad >= unplaced.GetfRTolI()) && (rad <= unplaced.GetfRTolO()) && (pDotV3d >= 0));
+    done |= isInsideOuterToleranceAndMovingOut;
+    MaskedAssign(isInsideOuterToleranceAndMovingIn,kInfinity,&distance);
+    if( IsFull(done) )return;
+    
+    //Outside the Surface and Moving In
+    Bool_t isOutsideOuterToleranceAndMovingIn=( (rad > unplaced.GetfRTolO()) && (pDotV3d < 0));
+    done |= isOutsideOuterToleranceAndMovingIn;
+    MaskedAssign(isOutsideOuterToleranceAndMovingIn,(-pDotV3d - Sqrt(d2)),&distance);
+    if( IsFull(done) )return;
+    
+    //Outside the Surface and Moving Out
+    Bool_t isOutsideOuterToleranceAndMovingOut=( (rad > unplaced.GetfRTolO()) && (pDotV3d >= 0));
+    done |= isOutsideOuterToleranceAndMovingOut;
+    MaskedAssign(isOutsideOuterToleranceAndMovingOut,kInfinity,&distance);
+    if( IsFull(done) )return;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -447,12 +450,13 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-    typedef typename Backend::precision_v Double_t;
+   typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
     distance = kInfinity;  
     Double_t zero=Backend::kZero;
-
+    distance = zero;
+    
     Vector3D<Double_t> localPoint;
     localPoint = point;
     
@@ -470,13 +474,14 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
   
     Bool_t done(false);
     distance = kInfinity;
-
+    distance = zero;
+    
     //checking if the point is outside
     Double_t tolRMax = unplaced.GetfRTolO();
     Double_t tolRMax2 = tolRMax * tolRMax;
     Bool_t isOutside = ( rad2 > tolRMax2);
     done|= isOutside;
-    if ( IsFull(done) ) return;
+    if( IsFull(done) )return;
 
     Bool_t isInsideAndWithinOuterTolerance = ((rad <= tolRMax) && (c < (kTolerance * unplaced.GetRadius())));
     Bool_t isInsideAndOnTolerantSurface = ((c > (-2*kTolerance*unplaced.GetRadius())) && ( (pDotV3d >= 0) || (d2 < 0) ));
@@ -484,10 +489,13 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
     Bool_t onSurface=(isInsideAndWithinOuterTolerance && isInsideAndOnTolerantSurface );
     MaskedAssign(onSurface , zero, &distance);
     done|=onSurface;
-    if ( IsFull(done) ) return;
+    if( IsFull(done) )return;
 
     Bool_t notOnSurface=(isInsideAndWithinOuterTolerance && !isInsideAndOnTolerantSurface );
     MaskedAssign(notOnSurface , (-pDotV3d + Sqrt(d2)), &distance);
+    done|=notOnSurface;
+    if( IsFull(done) )return;
+    
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

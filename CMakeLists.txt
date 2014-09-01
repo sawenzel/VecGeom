@@ -407,6 +407,7 @@ set(TEST_EXECUTABLES_ROOT
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -420,6 +421,7 @@ set(TEST_EXECUTABLES_CUDA
 )
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

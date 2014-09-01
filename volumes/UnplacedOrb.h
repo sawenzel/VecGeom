@@ -18,10 +18,13 @@ private:
 
  // Member variables go here
   Precision fR,fRTolerance, fRTolI, fRTolO;
-  Vector3D<Precision> dimensions_;
-
+  
   // Precomputed values computed from parameters
   Precision fCubicVolume, fSurfaceArea;
+  
+  //Tolerance compatiable with USolids
+  Precision epsilon = 2e-11; 
+  Precision frTolerance=1e-9;
 
 public:
     
@@ -35,27 +38,16 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetRadius() const { return fR; }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  Vector3D<Precision>  dimensions() const { return dimensions_; }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision x() const { return dimensions_[0]; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision y() const { return dimensions_[1]; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision z() const { return dimensions_[2]; }
-
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolO() const { return fRTolO; }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolI() const { return fRTolI; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetfRTolerance() const { return fRTolerance; }
+  
   VECGEOM_CUDA_HEADER_BOTH
   void SetRadius (const Precision r);
   
