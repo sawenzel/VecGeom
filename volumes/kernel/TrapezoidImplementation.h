@@ -104,7 +104,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
 
   // z-region
   completelyOutside = Abs(localPoint[2]) > MakePlusTolerant<ForInside>( unplaced.GetDz() );
-  if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+  if ( IsFull(completelyOutside) )  return;
   if (ForInside) {
     completelyInside = Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( unplaced.GetDz() );
   }
@@ -126,7 +126,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
 
     // is it outside of this side plane?
     completelyOutside |= dist > MakePlusTolerant<ForInside>(0.);
-    if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+    if ( IsFull(completelyOutside) )  return;
     if ( ForInside ) {
       completelyInside &= dist < MakeMinusTolerant<ForInside>(0.);
     }
