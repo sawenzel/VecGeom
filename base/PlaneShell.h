@@ -141,15 +141,20 @@ public:
 
     // hope for a vectorization of this part for Backend==scalar!!
     Bool_t done(Backend::kFalse);
-    for(unsigned int i=0; i<N; ++i) {
-      Float_t dist = this->fA[i]*point.x() + this->fB[i]*point.y()
-                   + this->fC[i]*point.z() + this->fD[i];
+    Float_t dist[N];
 
+    for(unsigned int i=0; i<N; ++i) {
+      dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y()
+              + this->fC[i]*point.z() + this->fD[i];
+    }
+
+    // analysis loop
+    for(unsigned int i=0; i<N; ++i) {
       // is it outside of this side plane?
-      completelyOutside |= dist > MakePlusTolerant<ForInside>(0.);
-      if ( Backend::early_returns && IsFull(completelyOutside) )  return;
+      completelyOutside |= dist[i] > MakePlusTolerant<ForInside>(0.);
+      if ( IsFull(completelyOutside) )  return;
       if ( ForInside ) {
-        completelyInside &= dist < MakeMinusTolerant<ForInside>(0.);
+        completelyInside &= dist[i] < MakeMinusTolerant<ForInside>(0.);
       }
     }
   }
@@ -181,6 +186,7 @@ public:
     Float_t pdist[N];
     Float_t proj[N];
     Float_t vdist[N];
+
     // vectorizable part
     for(int i=0; i<N; ++i) {
       pdist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
@@ -266,11 +272,17 @@ public:
 
     typedef typename Backend::precision_v Float_t;
 
+    // vectorizable loop
+    Float_t dist[N];
+
     for(int i=0; i<N; ++i) {
-      Float_t dist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
-      MaskedAssign( dist>safety, dist, &safety );
+      dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
     }
 
+    // non-vectorizable part
+    for(int i=0; i<N; ++i) {
+      MaskedAssign( dist[i]>safety, dist[i], &safety );
+    }
     // not necessary: negative answer is fine
     //MaskedAssign(safety<0, 0.0, &safety);
   }
@@ -288,11 +300,13 @@ public:
     typedef typename Backend::bool_v Bool_t;
 
     Bool_t done(false);
-
-    Float_t dist[4];
-    safety=-kInfinity;
+    Float_t dist[N];
+    safety = -kInfinity;
     for(int i=0; i<N; ++i) {
       dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+    }
+
+    for(int i=0; i<N; ++i) {
       MaskedAssign( dist[i]>safety, dist[i], &safety );
     }
 
