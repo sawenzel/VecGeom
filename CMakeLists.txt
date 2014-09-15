@@ -336,6 +336,7 @@ set(SRC_CPP_RELATIVE
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTorus.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
@@ -345,6 +346,7 @@ set(SRC_CPP_RELATIVE
   source/Transformation3D.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTorus.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
@@ -454,6 +456,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TorusBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
