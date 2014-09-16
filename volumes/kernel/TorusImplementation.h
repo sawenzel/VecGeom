@@ -75,7 +75,7 @@ class Complex
 
  Complex operator+=( Complex const & x ) const
  {
-   return Complex( fR + x.real(), fI+x.imag() );
+   return Complex( fR + x.real(), fI + x.imag() );
  }
 
  Complex operator-() const
@@ -125,7 +125,7 @@ template <typename T>
 inline
 Complex<T> operator-(  T const & y,  Complex<T> const & x)
 {
-  return Complex<T>( y - x.real() , x.imag() );
+  return Complex<T>( y - x.real() , -x.imag() );
 }
 
 
