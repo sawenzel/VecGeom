@@ -338,14 +338,14 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
 {
 
   // Uses Ferrari's Method; this will vectorize trivially ( at least when we treat the real and imaginary parts separately )
-  double inva=1./a;
-  double invaa = inva*inva;
-  double invaaa=invaa*inva;
+  //  double inva=1./a;
+  //  double invaa = inva*inva;
+  //  double invaaa=invaa*inva;
   double bb=b*b;
   double bbb=bb*b;
-  double alpha = -3.0*0.125*bb*invaa   + c*inva, alpha2 = alpha * alpha;
-  double beta  =    0.125*bbb*invaaa - 0.5*b*c*invaa + d*inva;
-  double gamma = -3.0*bbb*b*invaaa*inva/(256.0) + c*bb*invaaa/(16.0) - 0.25*b*d*invaa + e*inva;
+  double alpha = -3.0*0.125*bb   + c, alpha2 = alpha * alpha;
+  double beta  =    0.125*bbb - 0.5*b*c + d;
+  double gamma = -3.0*bbb*b/(256.0) + c*bb/(16.0) - 0.25*b*d + e;
 
   /* std::cerr << alpha << "\n"; */
   /* std::cerr << alpha2 << "\n"; */
@@ -372,7 +372,7 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
   //    std::cerr << "W " << W << "\n";
 
   CT aRoot;
-  double firstPart = -0.25*b*inva;
+  double firstPart = -0.25*b;
   CT secondPart = -3.0*alpha - 2.0*y;
   CT thirdPart = (2.0*beta)/W;
 
@@ -394,14 +394,14 @@ typedef Complex<VCT> CVCT;
 inline
 void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 {
-  VCT inva=1./a;
-  VCT invaa = inva*inva;
-  VCT invaaa=invaa*inva;
+  //  VCT inva=1./a;
+  //  VCT invaa = inva*inva;
+  //  VCT invaaa=invaa*inva;
   VCT bb=b*b;
   VCT bbb=bb*b;
-  VCT alpha = -3.0*0.125*bb*invaa   + c*inva, alpha2 = alpha * alpha;
-  VCT beta  = 0.125*bbb*invaaa - 0.5*b*c*invaa + d*inva;
-  VCT gamma = -3.0*bbb*b*invaaa*inva/(256.0) + c*bb*invaaa/(16.0) - 0.25*b*d*invaa + e*inva;
+  VCT alpha = -3.0*0.125*bb + c, alpha2 = alpha * alpha;
+  VCT beta  = 0.125*bbb - 0.5*b*c+ d;
+  VCT gamma = -3.0*bbb*b/(256.0) + c*bb/(16.0) - 0.25*b*d + e;
 
   VCT P = -alpha2/12.0 - gamma;
   VCT Q = -alpha2*alpha/108.0 + alpha*gamma/3.0 - beta*beta/8.0;
@@ -423,7 +423,7 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 
   CVCT aRoot;
 
-  VCT firstPart = -0.25*b*inva;
+  VCT firstPart = -0.25*b;
   CVCT secondPart = -3.0*alpha - 2.0*y;
   CVCT thirdPart = (2.0*beta)/(W);
 
