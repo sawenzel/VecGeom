@@ -260,11 +260,13 @@ Complex<Vc::double_v> cbrt( const Complex<Vc::double_v>& x )
   // use the sin/cosine formula??
   Vc::double_v r;
   Vc::double_v sinnewangle, cosnewangle;
-  Vc::double_m mask = x.imag() != 0.0;
-  if( !mask.isEmpty() )
+  Vc::double_m imaginary = x.imag() != 0.0;
+  if( ! imaginary.isEmpty() )
     {
       r = x.cabs();
       Vc::double_v angle = x.carg();
+      angle( ! imaginary ) = 0.;
+      r( ! imaginary ) = r.copySign( x.real() );
       Vc::double_v newangle = 0.33333333333333333*angle;
       sincos(newangle, &sinnewangle, &cosnewangle);
     }
@@ -345,29 +347,29 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
   double beta  =    0.125*bbb*invaaa - 0.5*b*c*invaa + d*inva;
   double gamma = -3.0*bbb*b*invaaa*inva/(256.0) + c*bb*invaaa/(16.0) - 0.25*b*d*invaa + e*inva;
 
-  std::cerr << alpha << "\n";
-  std::cerr << alpha2 << "\n";
-  std::cerr << beta << "\n";
-  std::cerr << gamma << "\n";
+  /* std::cerr << alpha << "\n"; */
+  /* std::cerr << alpha2 << "\n"; */
+  /* std::cerr << beta << "\n"; */
+  /* std::cerr << gamma << "\n"; */
 
   double P = -alpha2/12.0 - gamma;
   double Q = -alpha2*alpha/108.0 + alpha*gamma/3.0 - beta*beta/8.0;
-  std::cerr << "P " << P << "\n";
-  std::cerr << "Q " << Q << "\n";
+  //   std::cerr << "P " << P << "\n"; 
+  //   std::cerr << "Q " << Q << "\n"; 
 
   double tmp = 0.25*Q*Q + P*P*P/27.;
-  std::cerr << "tmp " << tmp << "\n";
   CT R = Q*0.5 + csqrtrealargument(tmp);
-  std::cerr << "R " << R << "\n";
+  //    std::cerr << "R " << R << "\n";
   CT U = cbrt(R);
-  std::cerr << "U " << U << "\n";
-  std::cerr << "U*U*U " << U*U*U << "\n";
+  //    std::cerr << "U " << U << "\n";
+  //    std::cerr << "U*U*U " << U*U*U << "\n";
 
   CT y = -5.0*alpha/6.0 - U;
+  //    std::cerr << "y " << y << "\n";
   y = y + P/(3.*U);
-  std::cerr << "y " << y << "\n";
+  //    std::cerr << "y " << y << "\n";
   CT W = csqrt((alpha + y) + y);
-  std::cerr << "W " << W << "\n";
+  //    std::cerr << "W " << W << "\n";
 
   CT aRoot;
   double firstPart = -0.25*b*inva;
@@ -403,12 +405,21 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 
   VCT P = -alpha2/12.0 - gamma;
   VCT Q = -alpha2*alpha/108.0 + alpha*gamma/3.0 - beta*beta/8.0;
+  //   std::cerr << "P " << P << "\n"; 
+  //   std::cerr << "Q " << Q << "\n"; 
+
+
   VCT tmp = 0.25*Q*Q + P*P*P/27.;
   CVCT R = Q*0.5 + csqrtrealargument(tmp);
   CVCT U = cbrt(R);
+  //    std::cerr << "R " << R << "\n";
+  //    std::cerr << "U " << U << "\n";
+  //    std::cerr << "U*U*U " << U*U*U << "\n";
   CVCT y = -5.0*alpha/6.0 - U;
   y = y + P/(3.*U );
+  //    std::cerr << "y " << y << "\n";
   CVCT W = csqrt((alpha + y) + y);
+  //    std::cerr << "W " << W << "\n";
 
   CVCT aRoot;
 
@@ -526,34 +537,35 @@ struct TorusImplementation {
      Float_t c = 4.*(r0sq*rdotn-rsumsq*rdotn+2.*torus.rtor2()*point[2]*dir[2]);
      Float_t d = r0sq*r0sq-2.*r0sq*rsumsq+4.*torus.rtor2()*point[2]*point[2]+(torus.rtor2()-radius*radius)*(torus.rtor2()-radius*radius);
 
-     std::cerr << "#a " << a << "\n";
-     std::cerr << "#b " << b<< "\n";
-     std::cerr << "#c " << c << "\n";
-     std::cerr << "#d " << d << "\n";
+     /* std::cerr << "#a " << a << "\n"; */
+     /* std::cerr << "#b " << b << "\n";  */
+     /* std::cerr << "#c " << c << "\n";  */
+     /* std::cerr << "#d " << d << "\n";  */
 
      // the 4 complex roots
      Complex<Float_t> roots[4];
      // get the roots
      solveQuartic2(Float_t(1.),a,b,c,d,roots);
 
-     std::cerr << "#ROOTS " << roots[0] << "\n";
-     std::cerr << "#ROOTS " << roots[1] << "\n";
-     std::cerr << "#ROOTS " << roots[2] << "\n";
-     std::cerr << "#ROOTS " << roots[3] << "\n";
+     /* std::cerr << "#ROOTS " << roots[0] << "\n"; */
+     /* std::cerr << "#ROOTS " << roots[1] << "\n"; */
+     /* std::cerr << "#ROOTS " << roots[2] << "\n"; */
+     /* std::cerr << "#ROOTS " << roots[3] << "\n"; */
 
      Float_t validdistance = kInfinity;
-     Bool_t havevalidsolution = Abs(roots[0].imag()) < 1E-6 && roots[0].real() > 0.;
+     Bool_t havevalidsolution = Abs(roots[0].imag()) < 1E-10 && roots[0].real() > 0.;
      MaskedAssign( havevalidsolution, roots[0].real(), &validdistance );
 
-     havevalidsolution = Abs(roots[1].imag()) < 1E-6 && roots[1].real() > 0.;
+     havevalidsolution = Abs(roots[1].imag()) < 1E-10 && roots[1].real() > 0.;
      MaskedAssign( havevalidsolution, Min(roots[1].real(), validdistance), &validdistance );
 
-     havevalidsolution = Abs(roots[2].imag()) < 1E-6 && roots[2].real() > 0.;
+     havevalidsolution = Abs(roots[2].imag()) < 1E-10 && roots[2].real() > 0.;
      MaskedAssign( havevalidsolution, Min(roots[2].real(), validdistance), &validdistance );
 
-     havevalidsolution = Abs(roots[3].imag()) < 1E-6 && roots[3].real() > 0.;
+     havevalidsolution = Abs(roots[3].imag()) < 1E-10 && roots[3].real() > 0.;
      MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
 
+     //     std::cerr << "#DISTANCE " << validdistance << "\n";
      return validdistance;
   }
 
