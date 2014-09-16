@@ -51,6 +51,9 @@ private:
   SOA3D<Precision> *fDirectionPool;
   Precision *fStepMax;
 
+  // tolerance for comparisons
+  Precision fTolerance;
+
 public:
 
   Benchmarker();
@@ -61,6 +64,9 @@ public:
   Benchmarker(VPlacedVolume const *const world);
 
   ~Benchmarker();
+
+  /// \brief set tolerance for comparisons
+  void SetTolerance(Precision tol) { fTolerance = tol; }
 
   /// \brief Runs all geometry benchmarks.
   void RunBenchmark();
