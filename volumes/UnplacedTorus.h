@@ -20,7 +20,7 @@ private:
     Precision fDphi; // delta angle of torus section
 
   // cached values
-  Precision fRmin2, fRmax2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
+  Precision fRmin2, fRmax2, fRtor2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
   Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2;
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -33,6 +33,7 @@ private:
   void calculateCached() {
     fRmin2 = fRmin * fRmin;
     fRmax2 = fRmax * fRmax;
+    fRtor2 = fRtor * fRtor;
 
     fTolOrmin2 = (fRmin - kTolerance)*(fRmin - kTolerance);
     fTolIrmin2 = (fRmin + kTolerance)*(fRmin + kTolerance);
@@ -86,6 +87,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision rmax2() const { return fRmax2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision rtor2() const { return fRtor2; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
