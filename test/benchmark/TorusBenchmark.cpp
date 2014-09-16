@@ -25,11 +25,38 @@ int main(int argc, char* argv[]) {
 
   VPlacedVolume *pt = torus.Place(&placement);
 
-  Vector3D<Precision> pos(5.853854, -2.729679, 2.817193);
-  Vector3D<Precision> dir(-0.808899, -0.314328, -0.496871);
+  // {
+  // Vector3D<Precision> pos(5.853854, -2.729679, 2.817193);
+  // Vector3D<Precision> dir(0.121540, -0.179785, -0.976169);
 
-  pt->DistanceToOut( pos, dir, kInfinity );
-  return 1;
+  // pt->DistanceToOut( pos, dir, vecgeom::kInfinity );
+  // }
+
+  // {
+  //   Vector3D<Precision> pos(-8.218764, -0.095058, -3.912914);
+  //   Vector3D<Precision> dir(0.946795, -0.048742, 0.318123);
+
+  //   pt->DistanceToOut( pos, dir, vecgeom::kInfinity );
+  // }
+
+  // {
+  //   SOA3D<Precision> pos(2);
+  //   SOA3D<Precision> dirs(2);
+  //   pos.push_back( Vector3D<Precision>(-10.612969, 2.979640, -1.546988) );
+  //   pos.push_back( Vector3D<Precision>(0.208269, 10.608797, 3.425159) );
+
+  //   dirs.push_back( Vector3D<Precision>(0.523476, -0.326030, 0.787196));
+  //   dirs.push_back( Vector3D<Precision>(-0.667455, -0.602817, -0.437167));
+
+  //   double steps[2]={vecgeom::kInfinity, vecgeom::kInfinity};
+  //   double distances[2];
+  //   pt->DistanceToOut( pos, dirs, steps, distances ); 
+
+  //   pt->DistanceToOut( Vector3D<Precision>(-10.612969, 2.979640, -1.546988), Vector3D<Precision>(0.523476, -0.326030, 0.787196), vecgeom::kInfinity );
+
+  // }
+
+  // return 1;
 
 
   VPlacedVolume *worldPlaced = world.Place();
@@ -38,6 +65,7 @@ int main(int argc, char* argv[]) {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
+  tester.SetTolerance(1E-8);
   tester.SetPoolMultiplier(1);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
