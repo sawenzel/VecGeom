@@ -9,7 +9,7 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTorus.h"
 #include <math.h>
-
+#include <iomanip>
 #include <Vc/Vc>
 
 namespace VECGEOM_NAMESPACE {
@@ -290,6 +290,15 @@ stream& operator<<(stream& s, const Complex<T> & x)
   return s;
 }
 
+static const double inv256 = 1./256;
+static const double inv16 = 1./16;
+static const double inv3 = 1./3;
+static const double inv128 = 1./128;
+static const double inv27 = 1./27;
+static const double inv6 = 1./6;
+static const double inv108 = 1./108;
+static const double inv12 = 1./12;
+
 
 template <typename CT>
 void solveQuartic(double a, double b, double c, double d, double e, CT * roots)
@@ -328,6 +337,11 @@ void solveQuartic(double a, double b, double c, double d, double e, CT * roots)
 
 }
 
+inline
+double foo(double a, double b)
+{
+    return -3.0*inv256*a + b*a;
+}
 // finding all real roots
 // this is Ferrari's method which is not really numerically stable but very elegant
 // CT == complextype
@@ -343,28 +357,29 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
   //  double invaaa=invaa*inva;
   double bb=b*b;
   double bbb=bb*b;
-  double alpha = -3.0*0.125*bb   + c, alpha2 = alpha * alpha;
+  double alpha = -3.0*0.125*bb   + c;
   double beta  =    0.125*bbb - 0.5*b*c + d;
-  double gamma = -3.0*bbb*b/(256.0) + c*bb/(16.0) - 0.25*b*d + e;
+  double alpha2 = alpha * alpha;
+  double gamma = -3.0*bbb*b*inv256 + c*bb*inv16 - 0.25*b*d + e;
 
   /* std::cerr << alpha << "\n"; */
   /* std::cerr << alpha2 << "\n"; */
   /* std::cerr << beta << "\n"; */
   /* std::cerr << gamma << "\n"; */
 
-  double P = -alpha2/12.0 - gamma;
-  double Q = -alpha2*alpha/108.0 + alpha*gamma/3.0 - beta*beta/8.0;
+  double P = -alpha2*inv12 - gamma;
+  double Q = -alpha2*alpha*inv108 + alpha*gamma*inv3 - 0.125*beta*beta;
   //   std::cerr << "P " << P << "\n"; 
   //   std::cerr << "Q " << Q << "\n"; 
 
-  double tmp = 0.25*Q*Q + P*P*P/27.;
+  double tmp = 0.25*Q*Q + P*P*P*inv27;
   CT R = Q*0.5 + csqrtrealargument(tmp);
   //    std::cerr << "R " << R << "\n";
   CT U = cbrt(R);
   //    std::cerr << "U " << U << "\n";
   //    std::cerr << "U*U*U " << U*U*U << "\n";
 
-  CT y = -5.0*alpha/6.0 - U;
+  CT y = -5.0*alpha*inv6 - U;
   //    std::cerr << "y " << y << "\n";
   y = y + P/(3.*U);
   //    std::cerr << "y " << y << "\n";
@@ -401,21 +416,21 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
   VCT bbb=bb*b;
   VCT alpha = -3.0*0.125*bb + c, alpha2 = alpha * alpha;
   VCT beta  = 0.125*bbb - 0.5*b*c+ d;
-  VCT gamma = -3.0*bbb*b/(256.0) + c*bb/(16.0) - 0.25*b*d + e;
+  VCT gamma = -3.0*bbb*b*inv256 + c*bb*inv16 - 0.25*b*d + e;
 
-  VCT P = -alpha2/12.0 - gamma;
-  VCT Q = -alpha2*alpha/108.0 + alpha*gamma/3.0 - beta*beta/8.0;
+  VCT P = -alpha2*inv12 - gamma;
+  VCT Q = -alpha2*alpha*inv108 + alpha*gamma*inv3 - 0.125*beta*beta;
   //   std::cerr << "P " << P << "\n"; 
   //   std::cerr << "Q " << Q << "\n"; 
 
 
-  VCT tmp = 0.25*Q*Q + P*P*P/27.;
+  VCT tmp = 0.25*Q*Q + P*P*P*inv27;
   CVCT R = Q*0.5 + csqrtrealargument(tmp);
   CVCT U = cbrt(R);
   //    std::cerr << "R " << R << "\n";
   //    std::cerr << "U " << U << "\n";
   //    std::cerr << "U*U*U " << U*U*U << "\n";
-  CVCT y = -5.0*alpha/6.0 - U;
+  CVCT y = -5.0*alpha*inv6 - U;
   y = y + P/(3.*U );
   //    std::cerr << "y " << y << "\n";
   CVCT W = csqrt((alpha + y) + y);
@@ -584,7 +599,18 @@ struct TorusImplementation {
      havevalidsolution = Abs(roots[3].imag()) < 1E-10 && roots[3].real() > 0.;
      MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
 
-     //     std::cerr << "#DISTANCE " << validdistance << "\n";
+     validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
+     validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
+
+     //     std::cerr << std::setprecision(20);
+//     std::cerr << "#DISTANCE " << validdistance;
+//     Float_t fold = CheckZero(a, b, c, d, validdistance);
+//     std::cerr << " " << fold;
+//     Float_t newdist = NewtonIter(a, b, c, d, validdistance, fold);
+//     std::cerr << " NEWDIST " << newdist;
+//     std::cerr << " " << CheckZero( a,b,c,d, newdist);
+//     std::cerr << "\n";
+//     std::cerr << std::setprecision(5);
      return validdistance;
   }
 
@@ -628,8 +654,11 @@ struct TorusImplementation {
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety) {
-
-    // TODO
+//    typedef typename Backend::precision_v Float_t;
+//    Complex<Float_t> roots[4];
+//    solveQuartic2(Float_t(1.), point[1], point[2], torus.rmax(), torus.rmin(), roots);
+//    safety=roots[0].real() + roots[1].real() + roots[2].real() + roots[3].real();
+     safety = foo(torus.rmax(), torus.rmin());
   }
 
   template <class Backend>
