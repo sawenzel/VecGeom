@@ -503,6 +503,25 @@ struct TorusImplementation {
     // TODO
   }
 
+    template <class T>
+    static
+    //__attribute__((noinline))
+    T CheckZero(T b, T c, T d, T e, T x)
+    {
+        T x2=x*x;
+        return x2*x2 + b*x2*x + c*x2 + d*x + e;
+    }
+
+    template <class T>
+    static
+    T NewtonIter(T b, T c, T d, T e, T x, T fold)
+    {
+        T x2 = x*x;
+        T fprime = 4*x2*x + 3*b*x2 + 2*c*x + d;
+        return x - fold/fprime;
+    }
+
+
 #include <iostream>
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
