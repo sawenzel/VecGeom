@@ -45,12 +45,11 @@ int StaticPlanes() {
     }
   }
   std::cout << "Mismatches: " << mismatches << " / " << nPoints << "\n";
-  return 0;
+  return mismatches > 0;
 }
 
 int main() {
-  bool success = true;
-  success &= !StaticPlanes();
-  // success &= !DynamicPlanes();
-  return success;
+  bool error = false;
+  error |= StaticPlanes();
+  return error;
 }

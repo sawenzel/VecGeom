@@ -16,7 +16,7 @@ int main() {
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume polyhedron = LogicalVolume("polyhedron", &polyhedronUnplaced);
 
-  Transformation3D placement(5, 5, 5);
+  Transformation3D placement;
   world.PlaceDaughter("polyhedron", &polyhedron, &placement);
 
   VPlacedVolume *worldPlaced = world.Place();
@@ -24,11 +24,12 @@ int main() {
   GeoManager::Instance().set_world(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().world());
-  tester.SetVerbosity(3);
+  tester.SetVerbosity(999);
   tester.SetPoolMultiplier(1);
   tester.SetRepetitions(1);
   tester.SetPointCount(8);
-  tester.RunBenchmark();
+  tester.RunInsideBenchmark();
+  // tester.RunToOutBenchmark();
 
   return 0;
 }

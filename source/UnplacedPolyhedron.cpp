@@ -89,7 +89,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     fSegments[i].outer.Set(sideCount-1, corner0, corner1, corner2, corner3);
     // Sides of inner shell (if needed)
     if (fSegments[i].hasInnerRadius) {
-      for (int j = 0; j < sideCount; ++j) {
+      for (int j = 0; j < sideCount-1; ++j) {
         corner0 = innerVertices[i*sideCount + j];
         corner1 = innerVertices[i*sideCount + j+1];
         corner2 = innerVertices[(i+1)*sideCount + j+1];
@@ -109,6 +109,45 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   delete[] innerVertices;
 }
 #endif
+
+void UnplacedPolyhedron::ExtractZPlanes(
+    Precision *z,
+    Precision *rMin,
+    Precision *rMax) const {
+
+  const int zPlaneCount = fSegments.size()+1;
+
+  Vector3D<Precision> innerCorner, outerCorner;
+  for (int i = 0; i < zPlaneCount-1; ++i) {
+    // Get Z-plane from the segment of which it is the beginning
+    UnplacedPolyhedron::Segment const &segment = GetSegment(i);
+    outerCorner = segment.outer.GetCorners()[0][0];
+    z[i] = outerCorner[2];
+    rMax[i] = sqrt(outerCorner[0]*outerCorner[0] +
+                   outerCorner[1]*outerCorner[1]);
+    if (segment.hasInnerRadius) {
+      innerCorner = segment.inner.GetCorners()[0][0];
+      rMin[i] = sqrt(innerCorner[0]*innerCorner[0] +
+                     innerCorner[1]*innerCorner[1]);
+    } else {
+      rMin[i] = 0;
+    }
+  }
+  // Treat final Z-plane as the end-plane of the last segment
+  UnplacedPolyhedron::Segment const &segment = GetSegment(GetSegmentCount()-1);
+  outerCorner = segment.outer.GetCorners()[3][0];
+  rMax[zPlaneCount-1] =
+      sqrt(outerCorner[0]*outerCorner[0] + outerCorner[1]*outerCorner[1]);
+  z[zPlaneCount-1] = outerCorner[2];
+  if (segment.hasInnerRadius) {
+    innerCorner = segment.inner.GetCorners()[3][0];
+    rMin[zPlaneCount-1] =
+        sqrt(innerCorner[0]*innerCorner[0] + innerCorner[1]*innerCorner[1]);
+  } else {
+    rMin[zPlaneCount-1] = 0;
+  }
+
+}
 
 VECGEOM_CUDA_HEADER_DEVICE
 VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(

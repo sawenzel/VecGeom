@@ -342,7 +342,6 @@ set(SRC_CPP_RELATIVE
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/SOA3D.cpp
-  source/Polygon.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp
   source/UnplacedBox.cpp
@@ -454,7 +453,6 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
-  ${CMAKE_SOURCE_DIR}/test/usolids/PolygonTest.cpp
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
 )

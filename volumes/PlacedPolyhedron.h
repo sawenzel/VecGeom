@@ -50,6 +50,44 @@ public:
         logical_volume()->unplaced_volume());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int GetSideCount() const { return GetUnplacedVolume()->GetSideCount(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int GetSegmentCount() const { return GetUnplacedVolume()->GetSegmentCount(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool HasInnerRadii() const { return GetUnplacedVolume()->HasInnerRadii(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  UnplacedPolyhedron::Segment const& GetSegment(int index) const {
+    return GetUnplacedVolume()->GetSegment(index);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array<UnplacedPolyhedron::Segment> const& GetSegments() const {
+    return GetUnplacedVolume()->GetSegments();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetZMin() const { return GetUnplacedVolume()->GetZMin(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetZMax() const { return GetUnplacedVolume()->GetZMax(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Planes<2> const& GetEndCaps() const {
+    return GetUnplacedVolume()->GetEndCaps();
+  }
+
   // CUDA specific
 
   virtual int memory_size() const { return sizeof(*this); }
