@@ -3,14 +3,23 @@
 #include "volumes/Parallelepiped.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
+#include "ArgParser.h"
 
 using namespace vecgeom;
 
-int main() {
+int main(int argc, char* argv[]) {
+  OPTION_INT(npoints);
+  OPTION_INT(nrep);
+  OPTION_DOUBLE(dx);
+  OPTION_DOUBLE(dy);
+  OPTION_DOUBLE(dz);
+  OPTION_DOUBLE(alpha);
+  OPTION_DOUBLE(theta);
+  OPTION_DOUBLE(phi);
 
-  UnplacedBox worldUnplaced = UnplacedBox(10., 10., 10.);
-  UnplacedParallelepiped paraUnplaced =
-      UnplacedParallelepiped(3., 3., 3., 14.9, 39, 3.22);
+  UnplacedBox worldUnplaced = UnplacedBox(dx*4, dy*4, dz*4);
+  UnplacedParallelepiped paraUnplaced(dx, dy, dz, alpha, theta, phi);
+  // UnplacedParallelepiped paraUnplaced(3., 3., 3., 14.9, 39, 3.22);
   LogicalVolume world = LogicalVolume("w0rld", &worldUnplaced);
   LogicalVolume para = LogicalVolume("p4r4", &paraUnplaced);
   world.PlaceDaughter(&para, &Transformation3D::kIdentity);
@@ -21,7 +30,8 @@ int main() {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
-  // tester.SetPointCount(128);
+  tester.SetRepetitions(nrep);
+  tester.SetPointCount(npoints);
   tester.RunBenchmark();
 
   return 0;

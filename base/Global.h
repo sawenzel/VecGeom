@@ -35,9 +35,16 @@
   #undef VECGEOM_ROOT
   #undef VECGEOM_USOLIDS
   #undef VECGEOM_BENCHMARK
-#else
+#else // Not compiling with NVCC
   #define VECGEOM_STD_CXX11
   #define VECGEOM_NAMESPACE vecgeom
+  #define VECGEOM_CUDA_HEADER_DEVICE
+  #define VECGEOM_CUDA_HEADER_HOST
+  #define VECGEOM_CUDA_HEADER_BOTH
+  #define VECGEOM_CUDA_HEADER_GLOBAL
+  #ifdef VECGEOM_CUDA
+    #define VECGEOM_CUDA_INTERFACE
+  #endif
 #endif
 
 #ifdef __INTEL_COMPILER
