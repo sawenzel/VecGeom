@@ -347,7 +347,14 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
 #endif
 #ifdef VECGEOM_GEANT4
-      if (insideSpecialized[i] != insideGeant4[i]) mismatch = true;
+      if (!((insideSpecialized[i] == EInside::kInside &&
+             insideGeant4[i] == ::kInside) ||
+            (insideSpecialized[i] == EInside::kOutside &&
+             insideGeant4[i] == ::kOutside) ||
+            (insideSpecialized[i] == EInside::kSurface &&
+             insideGeant4[i] == ::kSurface))) {
+        mismatch = true;
+      }
       if (fVerbosity > 2) mismatchOutput << " / " << insideGeant4[i];
 #endif
 #ifdef VECGEOM_CUDA
