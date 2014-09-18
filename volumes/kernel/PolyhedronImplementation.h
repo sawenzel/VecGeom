@@ -17,6 +17,13 @@ namespace VECGEOM_NAMESPACE {
 template <bool treatInnerT, unsigned sideCountT>
 struct PolyhedronImplementation {
 
+  template <class Backend>
+  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::int_v FindPhiSegment(
+      UnplacedPolyhedron const &polyhedron,
+      Vector3D<typename Backend::precision_v> const &point);
+
   template <bool treatSurfaceT>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
@@ -25,7 +32,7 @@ struct PolyhedronImplementation {
       Vector3D<Precision> const &localPoint,
       typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t &inside);
 
-  template<class Backend>
+  template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void UnplacedContains(
@@ -97,6 +104,32 @@ struct PolyhedronImplementation {
 
 }; // End struct PolyhedronImplementation
 
+template <bool treatInnerT, unsigned sideCountT>
+template <class Backend>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::int_v
+PolyhedronImplementation<treatInnerT, sideCountT>::FindPhiSegment(
+    UnplacedPolyhedron const &polyhedron,
+    Vector3D<typename Backend::precision_v> const &point) {
+
+  typename Backend::int_v result = -1;
+
+  typename Backend::bool_v inSection;
+  SOA3D<Precision> const &phiSections = polyhedron.GetPhiSections();
+  for (int i = 0, iMax = polyhedron.GetSegmentCount(); i < iMax; ++i) {
+    inSection = point[0]*phiSections.x(i) + point[1]*phiSections.y(i) +
+                point[2]*phiSections.z(i) >= 0 &&
+                point[0]*phiSections.x(i+1) + point[1]*phiSections.y(i+1) +
+                point[2]*phiSections.z(i+1) >= 0;
+    MaskedAssign(inSection, i, &result);
+    if (Backend::early_returns) {
+      if (IsFull(result >= 0)) return result;
+    }
+  }
+  return result;
+}
+
 namespace {
 
 template <unsigned sideCountT, bool treatSurfaceT, class Backend>
@@ -107,7 +140,7 @@ CallConvexInside(
     Quadrilaterals<0> const &quadrilaterals,
     Vector3D<typename Backend::precision_v> const &localPoint) {
   if (treatSurfaceT) {
-    return Planes<sideCountT>::template InsideKernel<kScalar>(
+    return Planes<sideCountT>::template InsideKernel<Backend>(
       quadrilaterals.size(),
       Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().x()),
       Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().y()),
@@ -116,7 +149,7 @@ CallConvexInside(
       localPoint
     );
   } else {
-    return Planes<sideCountT>::template ContainsKernel<kScalar>(
+    return Planes<sideCountT>::template ContainsKernel<Backend>(
       quadrilaterals.size(),
       Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().x()),
       Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().y()),
@@ -125,6 +158,26 @@ CallConvexInside(
       localPoint
     );
   }
+}
+
+template <unsigned sideCountT, class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+typename Backend::precision_v CallDistanceToIn(
+    Quadrilaterals<0> const &quadrilaterals,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction) {
+  return Quadrilaterals<sideCountT>::template DistanceToInKernel<Backend>(
+    quadrilaterals.size(),
+    Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().x()),
+    Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().y()),
+    Quadrilaterals<sideCountT>::ToFixedSize(quadrilaterals.GetNormal().z()),
+    Quadrilaterals<sideCountT>::ToFixedSize(&quadrilaterals.GetDistance()[0]),
+    quadrilaterals.GetSides(),
+    quadrilaterals.GetCorners(),
+    point,
+    direction
+  );
 }
 
 }
@@ -221,7 +274,15 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "DistanceToIn not implemented.\n");
+
+  distance = kInfinity;
+
+  for (int i = 0, iMax = unplaced.GetSegmentCount(); i < iMax; ++i) {
+    UnplacedPolyhedron::Segment const &segment = unplaced.GetSegment(i);
+    typename Backend::precision_v newDistance =
+        CallDistanceToIn<sideCountT, Backend>(segment.outer, point, direction);
+    MaskedAssign(newDistance < distance, newDistance, &distance);
+  }
 }
 
 template <bool treatInnerT, unsigned sideCountT>

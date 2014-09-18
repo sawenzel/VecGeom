@@ -34,6 +34,7 @@ private:
   Planes<2> fEndCaps;
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
+  SOA3D<Precision> fPhiSections;
 
 public:
 
@@ -79,6 +80,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Planes<2> const& GetEndCaps() const { return fEndCaps; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  SOA3D<Precision> const& GetPhiSections() const { return fPhiSections; }
 
   /// Extract values for the position of Z-planes, and the radius from the
   /// center to the inner and outer shell. These are part of the parameters

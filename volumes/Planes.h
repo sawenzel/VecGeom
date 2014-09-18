@@ -74,22 +74,9 @@ public:
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const;
 
-  // Kernel containing the actual computations, which can be utilized from
+  // Kernels containing the actual computations, which can be utilized from
   // other classes if necessary.
 
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::precision_v DistanceToOutKernel(
-      Precision const (&a)[N],
-      Precision const (&b)[N],
-      Precision const (&c)[N],
-      Precision const (&d)[N],
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction);
-
-  /// Suboptimal solution to be compatible with signature for dynamic sized
-  /// planes.
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -117,6 +104,17 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::bool_v ContainsKernel(
+      const int n,
+      Precision const (&a)[N],
+      Precision const (&b)[N],
+      Precision const (&c)[N],
+      Precision const (&d)[N],
+      Vector3D<typename Backend::precision_v> const &point);
+
+  template <bool pointInsideT, class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::precision_v DistanceKernel(
       const int n,
       Precision const (&a)[N],
       Precision const (&b)[N],
@@ -159,7 +157,7 @@ typename Backend::precision_v Planes<N>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
   return DistanceToOutKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
+      N, fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
 }
 
 template <int N>
@@ -233,6 +231,7 @@ template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Planes<N>::DistanceToOutKernel(
+    const int size,
     Precision const (&a)[N],
     Precision const (&b)[N],
     Precision const (&c)[N],
@@ -260,18 +259,69 @@ typename Backend::precision_v Planes<N>::DistanceToOutKernel(
   return bestDistance;
 }
 
-template <int N>
+namespace {
+/// Trait class to check if the projection of a point along the normal of the
+/// plane has the correct sign, depending on whether the point is inside or
+/// outside. For points behind the plane the distance should be positive (along
+/// the normal), and opposite for points in front of the plane.
+template <bool pointInsideT, class Backend>
+class PointInsideTraits {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::bool_v IsBetterDistance(
+      typename Backend::precision_v const &candidate,
+      typename Backend::precision_v const &proposed);
+};
 template <class Backend>
+class PointInsideTraits<true, Backend> {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::bool_v IsBetterDistance(
+      typename Backend::precision_v const &candidate,
+      typename Backend::precision_v const &proposed) {
+    return candidate >= 0 && candidate < proposed;
+  }
+};
+template <class Backend>
+class PointInsideTraits<false, Backend> {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::bool_v IsBetterDistance(
+      typename Backend::precision_v const &candidate,
+      typename Backend::precision_v const &proposed) {
+    return candidate <= 0 && candidate > proposed;
+  }
+};
+}
+
+template <int N>
+template <bool pointInsideT, class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Planes<N>::DistanceToOutKernel(
-    int size,
+VECGEOM_INLINE
+typename Backend::precision_v Planes<N>::DistanceKernel(
+    const int n,
     Precision const (&a)[N],
     Precision const (&b)[N],
     Precision const (&c)[N],
     Precision const (&d)[N],
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) {
-  return DistanceToOutKernel<Backend>(a, b, c, d, point, direction);
+    Vector3D<typename Backend::precision_v> const &point) {
+
+  typedef typename Backend::precision_v Float_t;
+
+  Float_t distance[N];
+  for (int i = 0; i < N; ++i) {
+    distance[i] = a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
+  }
+  Float_t bestDistance = kInfinity;
+  for (int i = 0; i < N; ++i) {
+    MaskedAssign(
+      PointInsideTraits<pointInsideT, Backend>::IsBetterDistance(
+          distance[i], bestDistance),
+      distance[i],
+      &bestDistance
+    );
+  }
+  return bestDistance;
 }
 
 /// \brief Specialization that allows the size to be specified at runtime.
@@ -339,6 +389,17 @@ public:
       Precision const d[],
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
+
+  template <bool pointInsideT, class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::precision_v DistanceKernel(
+      const int n,
+      Precision const a[],
+      Precision const b[],
+      Precision const c[],
+      Precision const d[],
+      Vector3D<typename Backend::precision_v> const &point);
 
 };
 
@@ -447,6 +508,32 @@ typename Backend::precision_v Planes<0>::DistanceToOutKernel(
   }
   AlignedFree(distance);
   AlignedFree(valid);
+  return bestDistance;
+}
+
+template <bool pointInsideT, class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+typename Backend::precision_v Planes<0>::DistanceKernel(
+    const int n,
+    Precision const a[],
+    Precision const b[],
+    Precision const c[],
+    Precision const d[],
+    Vector3D<typename Backend::precision_v> const &point) {
+
+  typedef typename Backend::precision_v Float_t;
+
+  Float_t distance, bestDistance = kInfinity;
+  for (int i = 0; i < n; ++i) {
+    distance = a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
+    MaskedAssign(
+      PointInsideTraits<pointInsideT, Backend>::IsBetterDistance(
+          distance, bestDistance),
+      distance,
+      &bestDistance
+    );
+  }
   return bestDistance;
 }
 

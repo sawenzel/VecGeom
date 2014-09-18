@@ -1,24 +1,23 @@
+#include "backend/Backend.h"
 #include "volumes/Polyhedron.h"
 #include "volumes/kernel/GenericKernels.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #ifdef VECGEOM_USOLIDS
 #include "UPolyhedra.hh"
 #endif
 #ifdef VECGEOM_ROOT
-#include "TBrowser.h"
+#include "TApplication.h"
 #include "TPad.h"
-#include "TGeoPgon.h"
+#include "TPolyMarker3D.h"
 #endif
-#include "backend/Backend.h"
 
 using namespace vecgeom;
 
 int main() {
+  TApplication app("", NULL, NULL);
   Precision zPlanes[] = {1, 3, 5, 8};
   Precision rInner[] = {1, 1, 1, 1};
   Precision rOuter[] = {3, 2, 3, 2};
-#ifdef VECGEOM_USOLIDS
-  UPolyhedra usolids("", 0, 360, 4, 4, zPlanes, rInner, rOuter);
-#endif
   UnplacedPolyhedron vecgeom(4, 4, zPlanes, rInner, rOuter);
   LogicalVolume logical(&vecgeom);
   Transformation3D placement;
@@ -29,12 +28,42 @@ int main() {
   assert(polyhedron->Contains(Vector3D<Precision>(2.9, 0, 5)));
   assert(!polyhedron->Contains(Vector3D<Precision>(-2.9, 0, 0)));
   assert(polyhedron->Inside(Vector3D<Precision>(2, 0, 3)) == EInside::kSurface);
-#ifdef VECGEOM_ROOT
+#if defined(VECGEOM_ROOT) && defined(VECGEOM_USOLIDS)
   TGeoShape const* root = polyhedron->ConvertToRoot();
-  double point0[] = {0, 0, 0}, point1[] = {1.1, 1.1, 2}, point2[] = {0, 1.5, 5};
-  assert(!root->Contains(point0));
-  assert(root->Contains(point1));
-  assert(root->Contains(point2));
+  // VUSolid const* usolid = polyhedron->ConvertToUSolids();
+  const_cast<TGeoShape*>(root)->Draw();
+  constexpr int nSamples = 256;
+  TPolyMarker3D blue(nSamples);
+  blue.SetMarkerStyle(5);
+  blue.SetMarkerSize(1);
+  blue.SetMarkerColor(kBlue);
+  TPolyMarker3D red(blue), yellow(blue), green(blue);
+  red.SetMarkerColor(kRed);
+  yellow.SetMarkerColor(kYellow);
+  green.SetMarkerColor(kGreen);
+  Vector3D<Precision> bounds(3.25, 3.25, 4.25);
+  for (int i = 0; i < nSamples; ++i) {
+    Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds)
+                               + Vector3D<Precision>(0, 0, 4.5);
+    bool vecgeomContains = polyhedron->Contains(sample);
+    bool rootContains = root->Contains(&sample[0]);
+    if (vecgeomContains && rootContains) {
+      green.SetNextPoint(sample[0], sample[1], sample[2]);
+    } else if (!vecgeomContains && !rootContains) {
+      red.SetNextPoint(sample[0], sample[1], sample[2]);
+    } else if (vecgeomContains && !rootContains) {
+      blue.SetNextPoint(sample[0], sample[1], sample[2]);
+    } else {
+      yellow.SetNextPoint(sample[0], sample[1], sample[2]);
+    }
+  }
+  blue.Draw();
+  red.Draw();
+  green.Draw();
+  yellow.Draw();
+  app.Run();
+  delete root;
+  // delete usolid;
 #endif
   return 0;
 }
