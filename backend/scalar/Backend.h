@@ -99,9 +99,10 @@ Type ATan2(const Type y, const Type x) {
   return  0;
 }
 
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-Precision Min(Precision const &val1, Precision const &val2) {
+T Min(T val1, T val2) {
 #ifndef VECGEOM_NVCC
   return std::min(val1, val2);
 #else
@@ -109,29 +110,10 @@ Precision Min(Precision const &val1, Precision const &val2) {
 #endif
 }
 
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-Precision Max(Precision const &val1, Precision const &val2) {
-#ifndef VECGEOM_NVCC
-  return std::max(val1, val2);
-#else
-  return max(val1, val2);
-#endif
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-int Min(int const &val1, int const &val2) {
-#ifndef VECGEOM_NVCC
-  return std::min(val1, val2);
-#else
-  return min(val1, val2);
-#endif
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-int Max(int const &val1, int const &val2) {
+T Max(T val1, T val2) {
 #ifndef VECGEOM_NVCC
   return std::max(val1, val2);
 #else

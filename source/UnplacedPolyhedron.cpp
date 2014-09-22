@@ -19,7 +19,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision rMax[])
     : fSideCount(sideCount), fHasInnerRadii(false),
       fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
-      fEndCaps(), fSegments(zPlaneCount-1), fZPlanes(zPlaneCount) {
+      fEndCaps(), fSegments(zPlaneCount-1), fZPlanes(zPlaneCount),
+      fPhiSections(sideCount) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -53,7 +54,11 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Compute phi as the last cylindrical coordinate of the vertices
   Precision deltaPhi = kTwoPi / sideCount;
   Precision *vertixPhi = new Precision[sideCount];
-  for (int i = 0; i < sideCount; ++i) vertixPhi[i] = i*deltaPhi;
+  for (int i = 0; i < sideCount; ++i) {
+    vertixPhi[i] = i*deltaPhi;
+    fPhiSections.set(
+        i, Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized());
+  }
 
   // Precompute all vertices to ensure that there are no numerical cracks in the
   // surface.

@@ -71,6 +71,10 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Array<Precision> const& GetZPlanes() const { return fZPlanes; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetZMin() const { return fZBounds[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH

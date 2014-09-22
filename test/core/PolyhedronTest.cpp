@@ -28,6 +28,10 @@ int main() {
   assert(polyhedron->Contains(Vector3D<Precision>(2.9, 0, 5)));
   assert(!polyhedron->Contains(Vector3D<Precision>(-2.9, 0, 0)));
   assert(polyhedron->Inside(Vector3D<Precision>(2, 0, 3)) == EInside::kSurface);
+
+  Precision array[] = {1, 3, 8, 10};
+  std::cout << FindSegmentIndex<kScalar>(array, 4., 2.) << FindSegmentIndex<kScalar>(array, 4., 9.) << "\n";
+
 #if defined(VECGEOM_ROOT) && defined(VECGEOM_USOLIDS)
   TGeoShape const* root = polyhedron->ConvertToRoot();
   // VUSolid const* usolid = polyhedron->ConvertToUSolids();

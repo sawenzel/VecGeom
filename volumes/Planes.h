@@ -10,6 +10,7 @@
 #include "base/AlignedBase.h"
 #include "base/SOA.h"
 #include "base/SOA3D.h"
+#include "volumes/kernel/GenericKernels.h"
 
 #include <ostream>
 
@@ -257,41 +258,6 @@ typename Backend::precision_v Planes<N>::DistanceToOutKernel(
                  &bestDistance);
   }
   return bestDistance;
-}
-
-namespace {
-/// Trait class to check if the projection of a point along the normal of the
-/// plane has the correct sign, depending on whether the point is inside or
-/// outside. For points behind the plane the distance should be positive (along
-/// the normal), and opposite for points in front of the plane.
-template <bool pointInsideT, class Backend>
-class PointInsideTraits {
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsBetterDistance(
-      typename Backend::precision_v const &candidate,
-      typename Backend::precision_v const &proposed);
-};
-template <class Backend>
-class PointInsideTraits<true, Backend> {
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsBetterDistance(
-      typename Backend::precision_v const &candidate,
-      typename Backend::precision_v const &proposed) {
-    return candidate >= 0 && candidate < proposed;
-  }
-};
-template <class Backend>
-class PointInsideTraits<false, Backend> {
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsBetterDistance(
-      typename Backend::precision_v const &candidate,
-      typename Backend::precision_v const &proposed) {
-    return candidate <= 0 && candidate > proposed;
-  }
-};
 }
 
 template <int N>
