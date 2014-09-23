@@ -186,30 +186,30 @@ public:
     Float_t pdist[N];
     Float_t proj[N];
     Float_t vdist[N];
-
     // vectorizable part
     for(int i=0; i<N; ++i) {
       pdist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
       proj[i] = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+
+      // note(SW): on my machine it was better to keep vdist[N] instead of a local variable vdist below
+      vdist[i]= -pdist[i]/proj[i];
     }
 
     // analysis loop
-    for(int i=0; i<N; ++i)
-    {
+    for(int i=0; i<N; ++i) {
       Bool_t posPoint = pdist[i] >= -kHalfTolerance;
       Bool_t posDir = proj[i] > 0;
-      done |= (posPoint && posDir);
-      if ( IsFull(done) ) return distIn;
 
-      // note(SW): on my machine it was better to keep vdist[N] instead of a local variable vdist here
-      vdist[i]= -pdist[i]/proj[i];
+      done |= (posPoint && posDir);
+
+      // check if trajectory will intercept plane within current range (smin,smax)
+
       Bool_t interceptFromInside  = (!posPoint && posDir);
       done |= ( interceptFromInside  && vdist[i]<smin );
-      if ( IsFull(done) ) return distIn;
 
       Bool_t interceptFromOutside = (posPoint && !posDir);
       done |= ( interceptFromOutside && vdist[i]>smax );
-      if ( IsFull(done) ) return distIn;
+      if ( Backend::early_returns && IsFull(done) ) return distIn;
 
       // update smin,smax
       Bool_t validVdist = (smin<vdist[i] && vdist[i]<smax);
@@ -241,7 +241,7 @@ public:
     // the idea is to put vectorizable things into this loop
     // and separate the analysis into a separate loop if need be
     Bool_t done(Backend::kFalse);
-    Float_t tmp[N];
+    Float_t vdist[N];
     for(int i=0; i<N; ++i) {
       Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
 
@@ -250,13 +250,13 @@ public:
       //if ( IsFull(done) ) return kInfinity;
 
       Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
-      tmp[i] = -pdist / proj;
+      vdist[i] = -pdist / proj;
     }
 
     for(int i=0; i<N; ++i )
     {
-         Bool_t test = ( tmp[i] > 0. && tmp[i] < distOut );
-         MaskedAssign( test, tmp[i], &distOut);
+         Bool_t test = ( vdist[i] > 0. && vdist[i] < distOut );
+         MaskedAssign( test, vdist[i], &distOut);
     }
 
     return distOut;
@@ -274,7 +274,6 @@ public:
 
     // vectorizable loop
     Float_t dist[N];
-
     for(int i=0; i<N; ++i) {
       dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
     }
@@ -297,30 +296,17 @@ public:
                    typename Backend::precision_v &safety ) const {
 
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
 
-    Bool_t done(false);
+    // vectorizable loop
     Float_t dist[N];
-    safety = -kInfinity;
     for(int i=0; i<N; ++i) {
-      dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
+      dist[i] = -(this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i]);
     }
 
+    // non-vectorizable part
     for(int i=0; i<N; ++i) {
-      MaskedAssign( dist[i]>safety, dist[i], &safety );
+      MaskedAssign( dist[i]<safety, dist[i], &safety );
     }
-
-
-    //for(int i=0; i<N; ++i){
-    // early return if point is outside of ANY side plane
-
-      // do we need this? a negative safety is totally fine
-     //   MaskedAssign( !done && dist[i]>=0.0, 0.0, &safety );
-     // done |= dist[i]>0.;
-     // if ( IsFull(done) ) return;
-
-     //MaskedAssign( dist[i]>safety, dist[i], &safety );
-    //}
 
     return;
   }

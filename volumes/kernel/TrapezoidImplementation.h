@@ -104,7 +104,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
 
   // z-region
   completelyOutside = Abs(localPoint[2]) > MakePlusTolerant<ForInside>( unplaced.GetDz() );
-  if ( IsFull(completelyOutside) )  return;
+  if ( Backend::early_returns && IsFull(completelyOutside) )  return;
   if (ForInside) {
     completelyInside = Abs(localPoint[2]) < MakeMinusTolerant<ForInside>( unplaced.GetDz() );
   }
@@ -120,15 +120,18 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
   Bool_t done( Backend::kFalse );
 
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+  Float_t dist[4];
   for(unsigned int i=0; i<4; ++i) {
-    Float_t dist = fPlanes[i].fA*localPoint.x() + fPlanes[i].fB*localPoint.y()
-                 + fPlanes[i].fC*localPoint.z() + fPlanes[i].fD;
+    dist[i] = fPlanes[i].fA*localPoint.x() + fPlanes[i].fB*localPoint.y()
+            + fPlanes[i].fC*localPoint.z() + fPlanes[i].fD;
+  }
 
+  for(unsigned int i=0; i<4; ++i) {
     // is it outside of this side plane?
-    completelyOutside |= dist > MakePlusTolerant<ForInside>(0.);
-    if ( IsFull(completelyOutside) )  return;
+    completelyOutside |= dist[i] > MakePlusTolerant<ForInside>(0.);
+    if ( Backend::early_returns && IsFull(completelyOutside) )  return;
     if ( ForInside ) {
-      completelyInside &= dist < MakeMinusTolerant<ForInside>(0.);
+      completelyInside &= dist[i] < MakeMinusTolerant<ForInside>(0.);
     }
   }
 #endif
@@ -251,7 +254,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   done |= ( negZdir && max >-kHalfTolerance );
 
   // if all particles moving away, we're done
-  if (IsFull(done)) return;
+  if (Backend::early_returns && IsFull(done)) return;
 
   // Step 1.b) General case:
   //   smax,smin are range of distances within z-range, taking direction into account.
@@ -266,7 +269,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   // ... and out of z-range, then trajectory will not intercept volume
   Bool_t zrange = Abs(point.z()) < unplaced.GetDz() - kHalfTolerance;
   done |= ( test && !zrange );
-  if (IsFull(done)) return;
+  if (Backend::early_returns && IsFull(done)) return;
 
   // ... or within z-range, then smin=0, smax=infinity for now
   // GL note: in my environment, smin=-inf and smax=inf before these lines
@@ -287,8 +290,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
 
   // reconciliate side planes w/ z-planes
   done |= (disttoplanes > smax);
-  if (IsFull(done)) return;
-
+  if (Backend::early_returns && IsFull(done)) return;
 
   // at this point we know there is a valid distance - start with the z-plane based one
   MaskedAssign( !done, smin, &distance);
@@ -305,38 +307,42 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
 
   // loop over side planes - find pdist,Comp for each side plane
-  for (unsigned int i = 0; i < 4; i++) {
-      Float_t pdist, comp;
+  Float_t pdist[4], comp[4], vdist[4];
+  // auto-vectorizable part of loop
+  for (unsigned int i = 0; i < 4; ++i) {
       // Note: normal vector is pointing outside the volume (convention), therefore
     // pdist>0 if point is outside  and  pdist<0 means inside
-    pdist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+    pdist[i] = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
       + fPlanes[i].fC * point.z() + fPlanes[i].fD;
-    Bool_t posPoint = pdist >= -kHalfTolerance;
 
     // Comp is projection of dir over the normal vector of side plane, hence
     // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
-    comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
-    Bool_t posDir = comp >= 0;
+    comp[i] = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
+
+    vdist[i] = -pdist[i]/comp[i];
+  }
+
+  // this part does not auto-vectorize
+  for(unsigned int i=0; i<4; ++i) {
+    Bool_t posPoint = pdist[i] >= -kHalfTolerance;
+    Bool_t posDir = comp[i] >= 0;
 
     // discard the ones moving away from this plane
     done |= (posPoint && posDir);
-    if ( IsFull(done) ) return;
 
     // check if trajectory will intercept plane within current range (smin,smax)
-    Float_t vdist = -pdist/comp;
 
     Bool_t interceptFromInside = (!posPoint && posDir);
-    done |= ( interceptFromInside  && vdist<smin );
-    if ( IsFull(done) ) return;
+    done |= ( interceptFromInside  && vdist[i]<smin );
 
     Bool_t interceptFromOutside = (posPoint && !posDir);
-    done |= ( interceptFromOutside && vdist>smax );
-    if ( IsFull(done) ) return;
+    done |= ( interceptFromOutside && vdist[i]>smax );
+    if ( Backend::early_returns && IsFull(done) ) return;
 
     // update smin,smax
-    Bool_t validVdist = (vdist>smin && vdist<smax);
-    MaskedAssign( interceptFromInside  && validVdist, vdist, &smax );
-    MaskedAssign( interceptFromOutside && validVdist, vdist, &smin );
+    Bool_t validVdist = (vdist[i]>smin && vdist[i]<smax);
+    MaskedAssign( interceptFromInside  && validVdist, vdist[i], &smax );
+    MaskedAssign( interceptFromOutside && validVdist, vdist[i], &smin );
   }
 
   // Checks in non z plane intersections ensure smin<smax
@@ -382,7 +388,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   done |= (negZdir && max >= -kHalfTolerance);
 
   // if all particles moving away, we're done
-  if (IsFull(done) ) return;
+  if ( IsFull(done) ) return;
 
   // Step 1.b) general case: assign distance to z plane
   distance = max/dir.z();
@@ -399,18 +405,23 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
 
   // loop over side planes - find pdist,Comp for each side plane
-  for (unsigned int i = 0; i < 4; i++) {
-    Float_t pdist, comp;
+  Float_t pdist[4], comp[4], vdist[4];
+  for (unsigned int i = 0; i < 4; ++i) {
     // Note: normal vector is pointing outside the volume (convention), therefore
     // pdist>0 if point is outside  and  pdist<0 means inside
-    pdist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+    pdist[i] = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
       + fPlanes[i].fC * point.z() + fPlanes[i].fD;
-    Bool_t inside = (pdist < -kHalfTolerance);
 
     // Comp is projection of dir over the normal vector of side plane, hence
     // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
-    comp = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
-    Bool_t posComp = comp >= 0;
+    comp[i] = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
+
+    vdist[i] = -pdist[i] / comp[i];
+  }
+
+  for (unsigned int i = 0; i < 4; ++i) {
+    Bool_t inside = (pdist[i] < -kHalfTolerance);
+    Bool_t posComp = comp[i] >= 0;
 
     Bool_t test = (!inside && posComp);
     MaskedAssign( !done && test, 0.0, &distance );
@@ -418,8 +429,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
     if ( IsFull(done) ) return;
 
     test = inside && posComp;
-    Float_t vdist = -pdist / comp;
-    MaskedAssign(!done && test && vdist<distance, vdist, &distance);
+    MaskedAssign(!done && test && vdist[i]<distance, vdist[i], &distance);
   }
 #endif
 }
@@ -446,10 +456,14 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToIn(
 #else
   // Loop over side planes
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
+  Float_t Dist[4];
   for (int i = 0; i < 4; ++i) {
-    Float_t Dist = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+    Dist[i] = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
       + fPlanes[i].fC * point.z() + fPlanes[i].fD;
-    MaskedAssign( Dist>safety, Dist, &safety );
+  }
+
+  for (int i = 0; i < 4; ++i) {
+    MaskedAssign( Dist[i]>safety, Dist[i], &safety );
   }
 
   MaskedAssign( safety < 0, 0.0, &safety );
@@ -474,7 +488,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   done |= safety==0.0;
 
   // If all test points are outside, we're done
-  if ( IsFull(done) ) return;
+  if ( Backend::early_returns && IsFull(done) ) return;
 
 #ifndef VECGEOM_PLANESHELL_DISABLE
   // Get safety over side planes
@@ -483,12 +497,15 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   // Loop over side planes
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
   typedef typename Backend::precision_v Float_t;
-  Float_t Dist( 0.0 );
+  Float_t Dist[4] = 0.f;
   for (int i = 0; i < 4; ++i) {
-    Dist = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
+    Dist[i] = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
              + fPlanes[i].fC * point.z() + fPlanes[i].fD);
-    // std::cout<<"i="<< i <<" - Dist[i]="<< Dist <<"\n";
-    MaskedAssign( !done && Dist>0.0 && Dist < safety, Dist, &safety );
+  }
+
+  for (int i = 0; i < 4; ++i) {
+    MaskedAssign( !done && Dist[i]>0.0 && Dist[i] < safety, Dist[i], &safety );
+    std::cout<<"i="<< i <<" - Dist[i]="<< Dist <<"safety="<< safety <<"\n";
   }
 #endif
 }
