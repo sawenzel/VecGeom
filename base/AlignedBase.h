@@ -18,7 +18,7 @@ class AlignedBase {
 
   VECGEOM_INLINE
   void *operator new(size_t size) {
-    return _mm_malloc(size, alignment);
+    return _mm_malloc(size, kAlignmentBoundary);
   }
 
   VECGEOM_INLINE
@@ -28,7 +28,7 @@ class AlignedBase {
 
   VECGEOM_INLINE
   void *operator new[](size_t size) {
-    return _mm_malloc(size, alignment);
+    return _mm_malloc(size, kAlignmentBoundary);
   }
 
   VECGEOM_INLINE
