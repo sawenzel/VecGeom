@@ -214,10 +214,11 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Type Phi() const {
-    Type output = 0;
-    VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
-                                    ATan2(vec[1], vec[0]), &output);
-    return output;
+    //Type output = 0;
+    //VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
+    //                                ATan2(vec[1], vec[0]), &output);
+    //return output;
+    return ATan2(vec[1], vec[0]);
   }
 
   /// The cross (vector) product of two Vector3D<T> objects
