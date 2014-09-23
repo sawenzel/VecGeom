@@ -3,7 +3,7 @@ project(vecgeom)
 
 ################################################################################
 
-option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." OFF)
+option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
 
 option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
