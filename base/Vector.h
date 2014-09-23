@@ -6,7 +6,9 @@
 
 #include "base/Global.h"
 
+#ifdef VECGEOM_CUDA
 #include "backend/cuda/Interface.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -96,6 +98,8 @@ private:
 
 };
 
+#ifdef VECGEOM_CUDA
+
 template <typename Type> class Vector;
 class VPlacedVolume;
 
@@ -114,6 +118,8 @@ Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
   return gpu_ptr;
 }
 #endif
+
+#endif // VECGEOM_CUDA
 
 } // End global namespace
 

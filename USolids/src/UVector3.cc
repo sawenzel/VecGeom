@@ -14,7 +14,7 @@
 //          Created from original implementation in CLHEP
 // --------------------------------------------------------------------
 
-#ifndef VECGEOM // Only do anything if old vector is being used
+#ifdef VECGEOM_USE_UVECTOR3 // Only do anything if old vector is being used
 
 #include "UVector3.hh"
 #include "UUtils.hh"

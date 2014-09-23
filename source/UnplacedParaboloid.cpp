@@ -57,7 +57,7 @@ namespace VECGEOM_NAMESPACE {
         
         if ((rlo<0) || (rhi<0) || (dz<=0)) {
             
-            std::cout<<"Error SetRloAndRhiAndDz: invadil dimensions. Check (rlo>=0) (rhi>=0) (dz>0)\n";
+            printf("Error SetRloAndRhiAndDz: invadil dimensions. Check (rlo>=0) (rhi>=0) (dz>0)\n");
             return;
         }
         fRlo = rlo;

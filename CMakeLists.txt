@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(Vecgeom)
 
+set(VECGEOM ON)
+
 ################################################################################
 
 # Configuration options
@@ -107,7 +109,7 @@ set(VECGEOM_COMPILATION_FLAGS_INTEL)
 set(VECGEOM_NVCC_COMPILATION_FLAGS)
 
 set(VECGEOM_COMPILATION_FLAGS
-    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC -DVECGEOM")
+    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
   if (APPLE OR UNIX) 

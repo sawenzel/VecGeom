@@ -1,5 +1,5 @@
-/// @file global.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file global.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
@@ -9,6 +9,9 @@
 #include <float.h>
 #include <limits>
 #include <stdio.h>
+
+#define VECGEOM
+#define VECGEOM_STD_CXX11
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -22,9 +25,9 @@
   #undef VECGEOM_CILK
   #undef VECGEOM_ROOT
   #undef VECGEOM_USOLIDS
+  #undef VECGEOM_GEANT4
   #undef VECGEOM_BENCHMARK
 #else // Not compiling with NVCC
-  #define VECGEOM_STD_CXX11
   #define VECGEOM_NAMESPACE vecgeom
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST
