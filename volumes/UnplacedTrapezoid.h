@@ -107,7 +107,11 @@ public:
 
   /// \brief Constructor for "default" UnplacedTrapezoid whose parameters are to be set later
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTrapezoid() {}
+  UnplacedTrapezoid()
+    : fDz(0.f), fTheta(0.f), fPhi(0.f), fDy1(0.f), fDx1(0.f), fDx2(0.f), fTanAlpha1(0.f)
+    , fDy2(0.f), fDx3(0.f), fDx4(0.f), fTanAlpha2(0.f), fTthetaCphi(0.f), fTthetaSphi(0.f)
+    , fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
+  {}
 
   /// \brief Copy constructor
   VECGEOM_CUDA_HEADER_BOTH
