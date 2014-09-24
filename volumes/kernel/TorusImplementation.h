@@ -668,8 +668,16 @@ struct TorusImplementation {
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety) {
 
-    // TODO
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Bool_t;
+    // implementation taken from TGeoTorus
+    
+    Float_t rxy = Sqrt( point[0]*point[0] + point[1]*point[1] );
+    Float_t rad = Sqrt( (rxy - torus.rtor())*(rxy-torus.rtor()) + point[2]*point[2] );
+    safety = Min( rad - torus.rmin(), torus.rmax() - rad );
 
+    // TODO: extend implementation for phi sector case
+    
 }
 
 }; // end struct
