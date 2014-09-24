@@ -3,7 +3,7 @@
 
 #include "volumes/PlacedSphere.h"
 #include "volumes/Sphere.h"
-
+#include "base/Global.h"
 #if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
 #include "USphere.hh"
 #endif
@@ -28,8 +28,8 @@ VPlacedVolume const* PlacedSphere::ConvertToUnspecialized() const {
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedSphere::ConvertToRoot() const {
   return new TGeoSphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
-                                      GetStartThetaAngle(),GetDeltaThetaAngle(),
-                                        GetStartPhiAngle(), GetDeltaPhiAngle());
+                                      GetStartThetaAngle()*kRadToDeg,(GetStartThetaAngle()+GetDeltaThetaAngle())*kRadToDeg,
+                                        GetStartPhiAngle()*kRadToDeg, (GetStartPhiAngle()+GetDeltaPhiAngle())*kRadToDeg);
 }
 #endif
 
