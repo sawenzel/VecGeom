@@ -34,7 +34,7 @@ Benchmarker::Benchmarker() : Benchmarker(NULL) {}
 Benchmarker::Benchmarker(VPlacedVolume const *const world)
     : fPointCount(1024), fPoolMultiplier(4), fRepetitions(1024),
       fVerbosity(1), fToInBias(0.8), fInsideBias(0.5), fPointPool(NULL),
-      fDirectionPool(NULL), fStepMax(NULL) {
+      fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance) {
   SetWorld(world);
 }
 
@@ -142,23 +142,23 @@ void Benchmarker::CompareDistances(
                        << vectorized[i] << " / "
                        << unspecialized[i];
       }
-      if (std::fabs(specialized[i] - vectorized[i]) > kTolerance
+      if (std::fabs(specialized[i] - vectorized[i]) > fTolerance
           && !(specialized[i] == kInfinity && vectorized[i] == kInfinity)) {
         mismatch = true;
       }
-      if (std::fabs(specialized[i] - unspecialized[i]) > kTolerance
+      if (std::fabs(specialized[i] - unspecialized[i]) > fTolerance
           && !(specialized[i] == kInfinity && unspecialized[i] == kInfinity)) {
         mismatch = true;
       }
 #ifdef VECGEOM_ROOT
-      if (std::fabs(specialized[i] - root[i]) > kTolerance
+      if (std::fabs(specialized[i] - root[i]) > fTolerance
           && !(specialized[i] == kInfinity && root[i] == 1e30)) {
         mismatch = true;
       }
       if (fVerbosity > 2) mismatchOutput << " / " << root[i];
 #endif
 #ifdef VECGEOM_USOLIDS
-      if (std::fabs(specialized[i] - usolids[i]) > kTolerance
+      if (std::fabs(specialized[i] - usolids[i]) > fTolerance
           && !(specialized[i] == kInfinity
                && usolids[i] == UUtils::kInfinity)) {
         mismatch = true;
@@ -167,7 +167,7 @@ void Benchmarker::CompareDistances(
 #endif
 #ifdef VECGEOM_GEANT4
       if (geant4) {
-        if (std::fabs(specialized[i] - geant4[i]) > kTolerance
+        if (std::fabs(specialized[i] - geant4[i]) > fTolerance
             && !(specialized[i] == kInfinity
                  && geant4[i] == ::kInfinity)) {
           mismatch = true;
@@ -176,7 +176,7 @@ void Benchmarker::CompareDistances(
       }
 #endif
 #ifdef VECGEOM_CUDA
-      if (std::fabs(specialized[i] - cuda[i]) > kTolerance
+      if (std::fabs(specialized[i] - cuda[i]) > fTolerance
           && !(specialized[i] == kInfinity && cuda[i] == kInfinity)) {
         mismatch = true;
       }
@@ -311,6 +311,10 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << containsCuda[i];
 #endif
       mismatches += mismatch;
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
+        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
+               *(fPointPool->y()+i), fPointPool->z(i));
+      }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
         printf("%s\n", mismatchOutput.str().c_str());
       }
@@ -342,7 +346,14 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
 #endif
 #ifdef VECGEOM_GEANT4
-      if (insideSpecialized[i] != insideGeant4[i]) mismatch = true;
+      if (!((insideSpecialized[i] == EInside::kInside &&
+             insideGeant4[i] == ::kInside) ||
+            (insideSpecialized[i] == EInside::kOutside &&
+             insideGeant4[i] == ::kOutside) ||
+            (insideSpecialized[i] == EInside::kSurface &&
+             insideGeant4[i] == ::kSurface))) {
+        mismatch = true;
+      }
       if (fVerbosity > 2) mismatchOutput << " / " << insideGeant4[i];
 #endif
 #ifdef VECGEOM_CUDA
