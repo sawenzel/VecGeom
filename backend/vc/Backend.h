@@ -90,13 +90,18 @@ void MaskedAssign(VcBool const &cond,
 
 
 VECGEOM_INLINE
-bool IsFull(VcBool const &cond){
-    return cond.isFull();
+bool IsFull(VcBool const &cond) {
+  return cond.isFull();
 }
 
 VECGEOM_INLINE
-bool IsEmpty(VcBool const &cond){
-    return cond.isEmpty();
+bool Any(VcBool const &cond) {
+  return !cond.isEmpty();
+}
+
+VECGEOM_INLINE
+bool IsEmpty(VcBool const &cond) {
+  return cond.isEmpty();
 }
 
 VECGEOM_INLINE

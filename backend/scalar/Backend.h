@@ -71,6 +71,12 @@ bool IsFull(bool const &cond){
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
+bool Any(bool const &cond) {
+  return cond;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 bool IsEmpty(bool const &cond){
     return !cond;
 }

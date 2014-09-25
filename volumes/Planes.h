@@ -71,9 +71,16 @@ public:
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  typename Backend::precision_v DistanceToIn(
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction) const;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   typename Backend::precision_v DistanceToOut(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) const;
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction) const;
 
   // Kernels containing the actual computations, which can be utilized from
   // other classes if necessary.
@@ -81,7 +88,7 @@ public:
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::precision_v DistanceToOutKernel(
+  static typename Backend::precision_v DistanceKernel(
       int size,
       Precision const (&a)[N],
       Precision const (&b)[N],
@@ -154,10 +161,21 @@ template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
+typename Backend::precision_v Planes<N>::DistanceToIn(
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction) const {
+  return DistanceKernel<Backend>(
+      N, fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
+}
+
+template <int N>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 typename Backend::precision_v Planes<N>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToOutKernel<Backend>(
+  return DistanceKernel<Backend>(
       N, fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
 }
 
@@ -231,7 +249,7 @@ typename Backend::inside_v Planes<N>::InsideKernel(
 template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Planes<N>::DistanceToOutKernel(
+typename Backend::precision_v Planes<N>::DistanceKernel(
     const int size,
     Precision const (&a)[N],
     Precision const (&b)[N],
@@ -347,7 +365,7 @@ public:
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::precision_v DistanceToOutKernel(
+  static typename Backend::precision_v DistanceKernel(
       int size,
       Precision const a[],
       Precision const b[],
@@ -446,7 +464,7 @@ typename Backend::inside_v Planes<0>::InsideKernel(
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Planes<0>::DistanceToOutKernel(
+typename Backend::precision_v Planes<0>::DistanceKernel(
     int size,
     Precision const a[],
     Precision const b[],

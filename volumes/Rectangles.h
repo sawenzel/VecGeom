@@ -296,7 +296,7 @@ typename Backend::precision_v Rectangles<N>::ConvexDistanceToOutKernel(
     typename Planes<N>::Plane_t const &plane,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
-  return Planes<N>::template DistanceToOutKernel<Backend>(
+  return Planes<N>::template DistanceKernel<Backend>(
       N, plane[0], plane[1], plane[2], plane[2], point, direction);
 }
 

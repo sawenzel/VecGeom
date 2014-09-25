@@ -362,6 +362,10 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << insideCuda[i];
 #endif
       mismatches += mismatch;
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
+        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
+               *(fPointPool->y()+i), fPointPool->z(i));
+      }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
         printf("%s\n", mismatchOutput.str().c_str());
       }

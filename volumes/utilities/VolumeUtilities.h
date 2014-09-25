@@ -30,7 +30,7 @@ bool IsHittingVolume(Vector3D<Precision> const &point,
                      VPlacedVolume const &volume) {
 #ifdef VECGEOM_ROOT
 static const TGeoShape * rootshape = volume.ConvertToRoot();
-double *safe;
+double *safe = NULL;
 double rpoint[3];
 double rdir[3];
 for(int i=0;i<3;i++){

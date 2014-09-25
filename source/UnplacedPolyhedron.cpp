@@ -20,7 +20,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     : fSideCount(sideCount), fHasInnerRadii(false),
       fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
       fEndCaps(), fSegments(zPlaneCount-1), fZPlanes(zPlaneCount),
-      fPhiSections(sideCount) {
+      fPhiSections(sideCount+1) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -51,7 +51,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   fEndCaps.Set(1, Vector3D<Precision>(0, 0, 1),
                   Vector3D<Precision>(0, 0, zPlanes[zPlaneCount-1]));
 
-  // Compute phi as the last cylindrical coordinate of the vertices
+  // Compute the cylindrical coordinate phi along which the corners are placed
   Precision deltaPhi = kTwoPi / sideCount;
   Precision *vertixPhi = new Precision[sideCount];
   for (int i = 0; i < sideCount; ++i) {
@@ -59,18 +59,31 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     fPhiSections.set(
         i, Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized());
   }
+  fPhiSections.set(sideCount, fPhiSections[0]); // Close the loop
+
+  // Specified radii are to the sides, not to the corners. Change these values,
+  // as corners and not sides are used to build the structure
+  Precision cosHalfDeltaPhi = cos(0.5*deltaPhi);
+  for (int i = 0; i < zPlaneCount; ++i) {
+    rMin[i] /= cosHalfDeltaPhi;
+    rMax[i] /= cosHalfDeltaPhi;
+  }
 
   // Precompute all vertices to ensure that there are no numerical cracks in the
   // surface.
-  Vec_t *outerVertices = new Vec_t[zPlaneCount*sideCount];
-  Vec_t *innerVertices = new Vec_t[zPlaneCount*sideCount];
+  Vec_t *outerVertices = 0, *innerVertices = 0;
+  outerVertices = new Vec_t[zPlaneCount*sideCount];
+  if (fHasInnerRadii) innerVertices = new Vec_t[zPlaneCount*sideCount];
   for (int i = 0; i < zPlaneCount; ++i) {
     for (int j = 0; j < sideCount; ++j) {
       int index = i*sideCount + j;
       outerVertices[index] =
-          Vec_t::FromCylindrical(rMax[i], vertixPhi[j], zPlanes[i]);
-      innerVertices[index] =
-          Vec_t::FromCylindrical(rMin[i], vertixPhi[j], zPlanes[i]);
+          Vec_t::FromCylindrical(rMax[i], vertixPhi[j], zPlanes[i]).FixZeroes();
+      if (fHasInnerRadii) {
+        innerVertices[index] =
+            Vec_t::FromCylindrical(
+                rMin[i], vertixPhi[j], zPlanes[i]).FixZeroes();
+      }
     }
   }
   delete[] vertixPhi;
@@ -92,6 +105,9 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     corner2 = outerVertices[(i+1)*sideCount];
     corner3 = corner2;
     fSegments[i].outer.Set(sideCount-1, corner0, corner1, corner2, corner3);
+    // Make sure the normals are pointing away from the Z-axis
+    bool tiltingUp = rMax[i+1] - rMax[i] < 0;
+    fSegments[i].outer.FixNormalSign(2, tiltingUp);
     // Sides of inner shell (if needed)
     if (fSegments[i].hasInnerRadius) {
       for (int j = 0; j < sideCount-1; ++j) {
@@ -107,11 +123,14 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       corner2 = innerVertices[(i+1)*sideCount];
       corner3 = corner2;
       fSegments[i].inner.Set(sideCount-1, corner0, corner1, corner2, corner3);
+      // Make sure the normals are pointing away from the Z-axis
+      bool tiltingUp = rMin[i+1] - rMin[i] < 0;
+      fSegments[i].inner.FixNormalSign(2, tiltingUp);
     }
   }
 
   delete[] outerVertices;
-  delete[] innerVertices;
+  if (fHasInnerRadii) delete[] innerVertices;
 }
 #endif
 
@@ -150,6 +169,12 @@ void UnplacedPolyhedron::ExtractZPlanes(
         sqrt(innerCorner[0]*innerCorner[0] + innerCorner[1]*innerCorner[1]);
   } else {
     rMin[zPlaneCount-1] = 0;
+  }
+  // Go from radii to corners to radii to sides
+  Precision cosHalfDeltaPhi = cos(0.5*kTwoPi/fSideCount);
+  for (int i = 0; i < zPlaneCount; ++i) {
+    rMin[i] *= cosHalfDeltaPhi;
+    rMax[i] *= cosHalfDeltaPhi;
   }
 
 }

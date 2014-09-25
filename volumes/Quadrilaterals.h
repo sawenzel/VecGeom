@@ -28,16 +28,10 @@ public:
 
   typedef Precision Array_t[N];
 
-#ifdef VECGEOM_STD_CXX11
   Quadrilaterals(int size);
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
-#ifndef VECGEOM_NVCC
   constexpr int size() const { return N; }
-#else
-  int size() const { return N; }
-#endif
 
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
@@ -53,12 +47,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   static Array_t const& ToFixedSize(Precision const *array);
 
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v ConvexDistanceToOut(
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::distance_v> const &direction) const;
-
   template <class Backend, class InputStruct>
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToInKernel(
@@ -69,6 +57,19 @@ public:
       Precision const (&d)[N],
       InputStruct const (&sides)[4],
       InputStruct const (&corners)[4],
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction);
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::precision_v DistanceToOutKernel(
+      const int n,
+      Precision const (&a)[N],
+      Precision const (&b)[N],
+      Precision const (&c)[N],
+      Precision const (&d)[N],
+      const Precision zMin,
+      const Precision zMax,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
@@ -158,10 +159,8 @@ typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
   Float_t distance[N];
   Bool_t inBounds[N];
   for (int i = 0; i < N; ++i) {
-    distance[i] = -(a[i]*point[0] + b[i]*point[1] +
-                    c[i]*point[2] + d[i])
-                 / (a[i]*direction[0] + b[i]*direction[1] +
-                    c[i]*direction[2]);
+    distance[i] = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
+                 / (a[i]*direction[0] + b[i]*direction[1] + c[i]*direction[2]);
     Vector3D<Float_t> intersection = point + direction*distance[i];
     Bool_t inside[4];
     for (int j = 0; j < 4; ++j) {
@@ -170,12 +169,13 @@ typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
                     sides[j][2][i] * (intersection[2] - corners[j][2][i]);
       inside[j] = dot >= 0;
     }
-    inBounds[i] = inside[0] && inside[1] && inside[2] && inside[3];
+    inBounds[i] = distance[i] >= 0 &&
+                  inside[0] && inside[1] && inside[2] && inside[3];
   }
   // Aggregate result
   for (int i = 0; i < N; ++i) {
-    MaskedAssign(inBounds[i] && distance[i] >= 0 && distance[i] < bestDistance,
-                 distance[i], &bestDistance);
+    MaskedAssign(inBounds[i] && distance[i] < bestDistance, distance[i],
+                 &bestDistance);
   }
 
   return bestDistance;
@@ -184,11 +184,39 @@ typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
 template <int N>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals<N>::ConvexDistanceToOut(
+typename Backend::precision_v Quadrilaterals<N>::DistanceToOutKernel(
+    const int n,
+    Precision const (&a)[N],
+    Precision const (&b)[N],
+    Precision const (&c)[N],
+    Precision const (&d)[N],
+    const Precision zMin,
+    const Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::distance_v> const &direction) const {
-  return Planes<N>::template DistanceToOutKernel<Backend>(
-      fPlane[0], fPlane[1], fPlane[2], fPlane[3], point, direction);
+    Vector3D<typename Backend::precision_v> const &direction) {
+
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Float_t bestDistance = kInfinity;
+
+  Float_t distance[N];
+  Bool_t inBounds[N];
+  for (int i = 0; i < N; ++i) {
+    distance[i] = -(a[i]*point[0] + b[i]*point[1] +
+                    c[i]*point[2] + d[i])
+                 / (a[i]*direction[0] + b[i]*direction[1] +
+                    c[i]*direction[2]);
+    Float_t zProjection = point[2] + distance[i]*direction[2];
+    inBounds[i] = distance[i] >= 0 &&
+                  zProjection >= zMin && zProjection <= zMax;
+  }
+  for (int i = 0; i < N; ++i) {
+    MaskedAssign(inBounds[i] && distance[i] < bestDistance, distance[i],
+                 &bestDistance);
+  }
+
+  return bestDistance;
 }
 
 /// \brief Runtime sized convex, planar quadrilaterals.
@@ -253,31 +281,12 @@ public:
       Vector3D<Precision> const &corner2,
       Vector3D<Precision> const &corner3);
 
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Backend::precision_v DistanceToIn(
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction) const;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Backend::bool_v Contains(
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Backend::inside_v Inside(
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  typename Backend::precision_v ConvexDistanceToOut(
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::distance_v> const &direction) const;
+  /// Set the sign of the specified component of the normal to positive or
+  /// negative by flipping the sign of all components to the desired sign.
+  /// \param component Which component of the normal to fix, [0: x, 1: y, 2: z].
+  /// \param positive Whether the component should be set to positive (true) or
+  ///                 negative (false).
+  inline void FixNormalSign(int component, bool positive);
 
   template <class Backend, class InputStruct>
   VECGEOM_CUDA_HEADER_BOTH
@@ -292,9 +301,20 @@ public:
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
-};
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static typename Backend::precision_v DistanceToOutKernel(
+      const int n,
+      Precision const a[],
+      Precision const b[],
+      Precision const c[],
+      Precision const d[],
+      const Precision zMin,
+      const Precision zMax,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction);
 
-#ifdef VECGEOM_STD_CXX11
+};
 
 Quadrilaterals<0>::Quadrilaterals(int size)
     : fNormal(size), fDistance(size), fSides{size, size, size, size},
@@ -355,35 +375,22 @@ void Quadrilaterals<0>::Set(
   Precision inverseLength = 1. / normal.Length();
   normal *= inverseLength;
   d *= inverseLength;
-  if (d >= 0) {
-    // Ensure normal is pointing away from origin
-    normal = -normal;
-    d = -d;
-  }
 
   fNormal.set(index, normal);
   fDistance[index] = d;
 }
 
-#endif
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals<0>::DistanceToIn(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToInKernel<Backend, SOA3D<Precision> >(
-      size(), &fNormal[0], &fNormal[1], &fNormal[2], fDistance, fSides,
-      fCorners);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals<0>::ConvexDistanceToOut(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::distance_v> const &direction) const {
-  return Planes<0>::template DistanceToOutKernel<Backend>(
-      fNormal.x(), fNormal.y(), fNormal.z(), fDistance, point, direction);
+void Quadrilaterals<0>::FixNormalSign(
+    int component,
+    bool positive) {
+  for (int i = 0, iMax = fNormal.size(); i < iMax; ++i) {
+    Vector3D<Precision> normal = fNormal[i];
+    if ((positive  && normal[component] < 0) ||
+        (!positive && normal[component] > 0)) {
+      fNormal.set(i, -normal);
+      fDistance[i] = -fDistance[i];
+    }
+  }
 }
 
 template <class Backend, class InputStruct>
@@ -404,7 +411,8 @@ typename Backend::precision_v Quadrilaterals<0>::DistanceToInKernel(
 
   Float_t bestDistance = kInfinity;
   for (int i = 0; i < n; ++i) {
-    Float_t distance = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
+    Float_t distance = -(a[i]*point[0] + b[i]*point[1] +
+                         c[i]*point[2] + d[i])
                       / (a[i]*direction[0] + b[i]*direction[1] +
                          c[i]*direction[2]);
     Vector3D<Float_t> intersection = point + direction*distance;
@@ -415,13 +423,55 @@ typename Backend::precision_v Quadrilaterals<0>::DistanceToInKernel(
                     sides[j][2][i] * (intersection[2] - corners[j][2][i]);
       inside[j] = dot >= 0;
     }
-    if (inside[0] && inside[1] && inside[2] && inside[3] &&
-        distance < bestDistance) {
-      bestDistance = distance;
-    }
+    MaskedAssign(inside[0] && inside[1] && inside[2] && inside[3] &&
+                 distance >= 0 && distance < bestDistance, distance,
+                 &bestDistance);
   }
 
   return bestDistance;
+}
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Quadrilaterals<0>::DistanceToOutKernel(
+    const int n,
+    Precision const a[],
+    Precision const b[],
+    Precision const c[],
+    Precision const d[],
+    const Precision zMin,
+    const Precision zMax,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction) {
+
+  typedef typename Backend::precision_v Float_t;
+
+  Float_t bestDistance = kInfinity;
+
+  for (int i = 0; i < n; ++i) {
+    Float_t distance = -(a[i]*point[0] + b[i]*point[1] +
+                         c[i]*point[2] + d[i])
+                      / (a[i]*direction[0] + b[i]*direction[1] +
+                         c[i]*direction[2]);
+    Float_t zProjection = point[0] + distance*direction[2];
+    MaskedAssign(distance >= 0 && zProjection >= zMin && zProjection <= zMax &&
+                 distance < bestDistance, distance, &bestDistance);
+  }
+
+  return bestDistance;
+}
+
+template <int N>
+std::ostream& operator<<(std::ostream &os, Quadrilaterals<N> const &quads) {
+  for (int i = 0, iMax = quads.size(); i < iMax; ++i) {
+    os << "{" << quads.GetNormal()[i] << ", " << quads.GetDistance()[i]
+       << ", {";
+    for (int j = 0; j < 4; ++j) os << quads.GetCorners()[j][i] << ", ";
+    os << ", ";
+    for (int j = 0; j < 4; ++j) os << quads.GetSides()[j][i] << ", ";
+    os << "}\n";
+  }
+  return os;
 }
 
 } // End global namespace

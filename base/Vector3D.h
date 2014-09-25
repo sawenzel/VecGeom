@@ -321,6 +321,15 @@ public:
     return VecType(r*cos(phi), r*sin(phi), z);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType& FixZeroes() {
+    for (int i = 0; i < 3; ++i) {
+      MaskedAssign(Abs(vec[i]) < kTolerance, 0, &vec[i]);
+    }
+    return *this;
+  }
+
   // Inplace binary operators
 
   #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
@@ -620,6 +629,15 @@ public:
       tmp.mem.vector(i) = Vc::abs( v );
     }
     return tmp;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision>& FixZeroes() {
+    for (int i = 0; i < 3; ++i) {
+      if (std::abs(mem.scalar(i)) < kTolerance) mem.scalar(i) = 0;
+    }
+    return *this;
   }
 
   // Inplace binary operators

@@ -47,29 +47,17 @@ typename Backend::int_v FindSegmentIndex(
     int size,
     typename Backend::precision_v const &element);
 
-/// Perform binary search
+/// Brute force. Maybe binary search for large sizes?
 template <>
+VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 int FindSegmentIndex<kScalar>(
     Precision const array[],
     const int size,
     Precision const &element) {
-  int middle;
-  int start = 0;
-  int end = size-1;
-  do {
-    middle = start + (end-start)/2;
-    if (element < array[middle]) {
-      end = middle-1;
-      continue;
-    }
-    if (element > array[middle]) {
-      start = middle+1;
-      continue;
-    }
-    break;
-  } while (start < end);
-  return middle;
+  int index = 0;
+  while (index < size && element > array[index]) ++index;
+  return index-1;
 }
 
 #ifdef VECGEOM_CUDA
@@ -81,9 +69,7 @@ int FindSegmentIndex<kCuda>(
     Precision const array[],
     const int size,
     Precision const &element) {
-  int index = 0;
-  while (index < size && element < array[index]) ++index;
-  return index-1;
+  return FindSegmentIndex<kScalar>(array, size, element);
 }
 #endif
 

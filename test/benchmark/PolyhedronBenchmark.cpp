@@ -7,11 +7,12 @@ using namespace vecgeom;
 
 int main() {
 
-  UnplacedBox worldUnplaced = UnplacedBox(10., 10., 10.);
-  Precision zPlanes[] = {1, 3, 5, 8};
-  Precision rInner[] = {1, 1, 1, 1};
-  Precision rOuter[] = {3, 2, 3, 2};
-  UnplacedPolyhedron polyhedronUnplaced(3, 4, zPlanes, rInner, rOuter);
+  UnplacedBox worldUnplaced = UnplacedBox(3., 3., 3.);
+  constexpr int nPlanes = 2;
+  Precision zPlanes[nPlanes] = {-1, 1};
+  Precision rInner[nPlanes] = {0.5, 1};
+  Precision rOuter[nPlanes] = {1, 2};
+  UnplacedPolyhedron polyhedronUnplaced(5, nPlanes, zPlanes, rInner, rOuter);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume polyhedron = LogicalVolume("polyhedron", &polyhedronUnplaced);
@@ -27,7 +28,7 @@ int main() {
   tester.SetVerbosity(3);
   tester.SetPoolMultiplier(1);
   tester.SetRepetitions(1);
-  tester.SetPointCount(8);
+  tester.SetPointCount(16);
   tester.RunBenchmark();
 
   return 0;

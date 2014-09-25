@@ -65,9 +65,15 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
   GetUnplacedVolume()->ExtractZPlanes(z, rMin, rMax);
 
-  UPolyhedra *polyhedra = new UPolyhedra(GetLabel().c_str(), 0, 360,
-                                         GetSideCount(), zPlaneCount,
-                                         z, rMin, rMax);
+UPolyhedra *polyhedra = new UPolyhedra(
+      GetLabel().c_str(),
+      0, // Phi start
+      360, // Phi change
+      GetSideCount(),
+      zPlaneCount,
+      z,
+      rMin,
+      rMax);
 
   delete[] z;
   delete[] rMin;
