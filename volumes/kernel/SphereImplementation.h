@@ -220,7 +220,7 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     Float_t side(10.);
  
     Float_t rho, rho2, radius;
-    Float_t distRMin, distRMax, distSPhi, distEPhi, distSTheta, distETheta, distMin;
+    Float_t distRMin(0.), distRMax(0.), distSPhi(0.), distEPhi(0.), distSTheta(0.), distETheta(0.), distMin(0.);
     Float_t zero(0.),mone(-1.);
     Float_t temp=zero;
     
@@ -356,34 +356,7 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     //std::cout<<"----- 6 ------"<<std::endl;
     if( IsFull(done) )return ;//{  std::cout<<"----- 6 ------"<<std::endl; return;}
     
-    /*
-    switch (side)
-  {
-    case kNRMin:      // Inner radius
-      norm = Vector3D<Float_t>(-localPoint.x() / radius, -localPoint.y() / radius, -localPoint.z() / radius);
-      break;
-    case kNRMax:      // Outer radius
-      norm = Vector3D<Float_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius);
-      break;
-    case kNSPhi:
-      norm = Vector3D<Float_t>(sinSPhi, -cosSPhi, 0);
-      break;
-    case kNEPhi:
-      norm = Vector3D<Float_t>(-sinEPhi, cosEPhi, 0);
-      break;
-    case kNSTheta:
-      norm = Vector3D<Float_t>(-cosSTheta * std::cos(pPhi), -cosSTheta * std::sin(pPhi),sinSTheta);
-      break;
-    case kNETheta:
-      norm = Vector3D<Float_t>(cosETheta * std::cos(pPhi), cosETheta * std::sin(pPhi), sinETheta);
-      break;
-    default:          // Should never reach this case ...
-
-        std::cout<<"Undefined side for valid surface normal to solid."<<std::endl;
-      break;
-  }
-  */
-    
+       
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -424,7 +397,7 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
     Float_t sinETheta = std::sin(eTheta);
     Float_t cosETheta = std::cos(eTheta);
     
-    Precision fRminTolerance = unplaced.GetFRminTolerance();
+    //Precision fRminTolerance = unplaced.GetFRminTolerance();
     Precision kAngTolerance = unplaced.GetAngTolerance();
     Precision halfAngTolerance = (0.5 * kAngTolerance);
     
@@ -738,26 +711,26 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     Float_t rho = std::sqrt(rho2);
     
     //Distance to r shells
-    Float_t fRmin = unplaced.GetInnerRadius();
+    Float_t fRmin (unplaced.GetInnerRadius());
     Float_t safeRMin = unplaced.GetInnerRadius() - rad;
     Float_t safeRMax = rad - unplaced.GetOuterRadius();
-    MaskedAssign(((fRmin > 0)&& (safeRMin > safeRMax)),safeRMin,&safety);
-    MaskedAssign(((fRmin > 0)&& (!(safeRMin > safeRMax))),safeRMax,&safety);
-    MaskedAssign((!(fRmin > 0)),safeRMax,&safety);
+    MaskedAssign(((fRmin > zero)&& (safeRMin > safeRMax)),safeRMin,&safety);
+    MaskedAssign(((fRmin > zero)&& (!(safeRMin > safeRMax))),safeRMax,&safety);
+    MaskedAssign((!(fRmin > zero)),safeRMax,&safety);
     //Distance to r shells over
     
     //Some Precalc
-    Float_t fSPhi = unplaced.GetStartPhiAngle();
-    Float_t fDPhi = unplaced.GetDeltaPhiAngle();
-    Float_t hDPhi = (0.5 * fDPhi);
-    Float_t cPhi  = fSPhi + hDPhi;
-    Float_t ePhi  = fSPhi + fDPhi;
-    Float_t sinCPhi   = std::sin(cPhi);
-    Float_t cosCPhi   = std::cos(cPhi);
-    Float_t sinSPhi = std::sin(fSPhi);
-    Float_t cosSPhi = std::cos(fSPhi);
-    Float_t sinEPhi = std::sin(ePhi);
-    Float_t cosEPhi = std::cos(ePhi);
+    Float_t fSPhi(unplaced.GetStartPhiAngle());
+    Float_t fDPhi(unplaced.GetDeltaPhiAngle());
+    Float_t hDPhi(unplaced.GetHDPhi()); // = (0.5 * fDPhi);
+    Float_t cPhi(unplaced.GetCPhi()); //  =  fSPhi + hDPhi;
+    Float_t ePhi(unplaced.GetEPhi()); //  = fSPhi + fDPhi;
+    Float_t sinCPhi(unplaced.GetSinCPhi()); //   = std::sin(cPhi);
+    Float_t cosCPhi(unplaced.GetCosCPhi()); //   = std::cos(cPhi);
+    Float_t sinSPhi(unplaced.GetSinSPhi()); // = std::sin(fSPhi);
+    Float_t cosSPhi(unplaced.GetCosSPhi()); // = std::cos(fSPhi);
+    Float_t sinEPhi(unplaced.GetSinEPhi()); // = std::sin(ePhi);
+    Float_t cosEPhi(unplaced.GetCosEPhi()); // = std::cos(ePhi);
     Float_t safePhi = zero;
     
     Float_t mone(-1.);
@@ -766,15 +739,17 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     //
     // Distance to phi extent
     //
-    if(!unplaced.IsFullPhiSphere())
+    if(!unplaced.IsFullPhiSphere() && (rho>zero))
     {
         Float_t test1=((localPoint.x() * sinSPhi - localPoint.y() * cosSPhi));
         MaskedAssign((test1<0),mone*test1,&test1); //Facing the issue with abs function of Vc, Its actually giving the absolute value of floor function
+        
         Float_t test2=((localPoint.x() * sinEPhi - localPoint.y() * cosEPhi));
         MaskedAssign((test2<0),mone*test2,&test2);
-        MaskedAssign(((cosPsi < std::cos(hDPhi)) && ((localPoint.y() * cosCPhi - localPoint.x() * sinCPhi) <= 0)),test1,&safePhi);
-        MaskedAssign(((cosPsi < std::cos(hDPhi)) && !((localPoint.y() * cosCPhi - localPoint.x() * sinCPhi) <= 0)),test2,&safePhi);
-        MaskedAssign(((cosPsi < std::cos(hDPhi)) && (safePhi > safety)),safePhi,&safety);
+        
+        MaskedAssign(((cosPsi < cos(hDPhi)) && ((localPoint.y() * cosCPhi - localPoint.x() * sinCPhi) <= 0)),test1,&safePhi);
+        MaskedAssign(((cosPsi < cos(hDPhi)) && !((localPoint.y() * cosCPhi - localPoint.x() * sinCPhi) <= 0)),test2,&safePhi);
+        MaskedAssign(((cosPsi < cos(hDPhi)) && (safePhi > safety)),safePhi,&safety);
                 
     }
     //
@@ -787,20 +762,21 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     
     MaskedAssign((pTheta<zero),pTheta+KPI,&pTheta);
     
-    Float_t fSTheta = unplaced.GetStartThetaAngle();
-    Float_t fDTheta = unplaced.GetDeltaThetaAngle();
-    Float_t eTheta  = fSTheta + fDTheta;
+    Float_t fSTheta(unplaced.GetStartThetaAngle());
+    Float_t fDTheta(unplaced.GetDeltaThetaAngle());
+    Float_t eTheta(unplaced.GetETheta()); //  = fSTheta + fDTheta;
     Float_t dTheta1 = fSTheta - pTheta;
     Float_t dTheta2 = pTheta-eTheta;
-    Float_t sinDTheta1(std::sin(dTheta1));
-    Float_t sinDTheta2(std::sin(dTheta2));
+    Float_t sinDTheta1 = sin(dTheta1);
+    Float_t sinDTheta2 = sin(dTheta2);
     Float_t safeTheta = zero;
     
-    if(!unplaced.IsFullThetaSphere())
+    if(!unplaced.IsFullThetaSphere() && (rds!=zero))
     {
         MaskedAssign(((dTheta1 > dTheta2) && (dTheta1 >= zero)),(rds * sinDTheta1),&safeTheta);
-        MaskedAssign((!(dTheta1 > dTheta2) && (dTheta2 >= zero)),(rds * sinDTheta2),&safeTheta);
         MaskedAssign(((dTheta1 > dTheta2) && (dTheta1 >= zero) && (safety <= safeTheta)),safeTheta,&safety);
+        
+        MaskedAssign((!(dTheta1 > dTheta2) && (dTheta2 >= zero)),(rds * sinDTheta2),&safeTheta);
         MaskedAssign((!(dTheta1 > dTheta2) && (dTheta2 >= zero) && (safety <= safeTheta)),safeTheta,&safety);
     }
     
@@ -808,8 +784,6 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     MaskedAssign( (safety < zero) , zero, &safety);
     
 }
-
-
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
@@ -886,24 +860,10 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
     {
         Float_t test1 = (localPoint.y() * cosCPhi - localPoint.x() * sinCPhi);
         //Float_t test2 = (localPoint.x() * sinEPhi - localPoint.y() * cosEPhi);
-        
-        
         MaskedAssign( (test1<=zero) ,(mone*(localPoint.x() * sinSPhi - localPoint.y() * cosSPhi)), &safePhi);
         MaskedAssign( (!(test1<=zero)) ,(localPoint.x() * sinEPhi - localPoint.y() * cosEPhi), &safePhi);
         MaskedAssign( (safePhi < safety) ,safePhi , &safety);
-        /*
-        if(test1<=zero)
-        {
-            safePhi = (mone*(localPoint.x() * sinSPhi - localPoint.y() * cosSPhi));
-        }
-        else
-        {
-            safePhi = (localPoint.x() * sinEPhi - localPoint.y() * cosEPhi);
-        }
         
-        if(safePhi < safety)
-            safety = safePhi;
-        */
     }
     
     //
@@ -916,16 +876,14 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
     
     MaskedAssign((pTheta<zero),pTheta+KPI,&pTheta);
     
-    Float_t fSTheta = unplaced.GetStartThetaAngle();
-    Float_t fDTheta = unplaced.GetDeltaThetaAngle();
+    Float_t fSTheta(unplaced.GetStartThetaAngle());
+    Float_t fDTheta(unplaced.GetDeltaThetaAngle());
     Float_t eTheta  = fSTheta + fDTheta;
     Float_t  dTheta1 =  pTheta - fSTheta;
     Float_t dTheta2 = eTheta - pTheta;
-    //Float_t ts=zero;
-    //ts = sin(dTheta1);
-    //Float_t sinDTheta1(Sin(dTheta1));
+    
     Float_t sinDTheta1 = sin(dTheta1);
-    Float_t sinDTheta2 = sin(dTheta2); //(std::sin(dTheta2));
+    Float_t sinDTheta2 = sin(dTheta2); 
     Float_t safeTheta = zero;
     
     if(!unplaced.IsFullThetaSphere() && (rds>0))
@@ -933,22 +891,8 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
         MaskedAssign(( (dTheta1 < dTheta2) ),(rds * sinDTheta1),&safeTheta);
         MaskedAssign((!(dTheta1 < dTheta2)),(rds * sinDTheta2),&safeTheta);
         MaskedAssign( (safety > safeTheta ),safeTheta,&safety);
-        /*
-        if(dTheta1 < dTheta2)
-        {
-            safeTheta = (rds * sinDTheta1);
-        }
-        else
-        {
-            safeTheta = (rds * sinDTheta2);
-        }
-        
-        if(safety > safeTheta )
-            safety = safeTheta;
-         */ 
     }
-    
-    
+     
     //Last line
     MaskedAssign( (safety < zero) , zero, &safety);
 }

@@ -270,6 +270,9 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetCosEPhi() const { return cosEPhi;}
   
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetETheta() const { return eTheta;}
+  
   
   VECGEOM_CUDA_HEADER_BOTH
   void Initialize(){
@@ -294,7 +297,7 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
   }
   
   VECGEOM_CUDA_HEADER_BOTH
-  void SetOuterRadius(double newRmax)
+  void SetOuterRadius(Precision newRmax)
   {
     fRmax = newRmax;
     mkTolerance = std::max(kRadTolerance, fEpsilon * fRmax); //RELOOK at kTolerance, may be we will take directly from base/global.h
@@ -426,7 +429,7 @@ VECGEOM_CUDA_HEADER_BOTH
   
     
   VECGEOM_CUDA_HEADER_BOTH
-  void GetParametersList(int aNumber, double *aArray) const; 
+  void GetParametersList(int aNumber, Precision *aArray) const; 
   
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere* Clone() const;

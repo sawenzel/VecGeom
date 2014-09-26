@@ -86,7 +86,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   bool IsFullThetaSphere() const { return GetUnplacedVolume()->IsFullThetaSphere(); }
   
-  //All angle related functions
+  //Function to return all Trignometric values 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetHDPhi() const { return GetUnplacedVolume()->GetHDPhi();}
   
@@ -113,6 +113,9 @@ public:
   
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetCosEPhi() const { return GetUnplacedVolume()->GetCosEPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetETheta() const { return GetUnplacedVolume()->GetETheta();}
   
   // Old access functions
 VECGEOM_CUDA_HEADER_BOTH  
