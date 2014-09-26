@@ -25,9 +25,9 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE    
 static typename Backend::precision_v fabs(typename Backend::precision_v &v)
   {
-      typedef typename Backend::precision_v Float_t;
-      Float_t mone(-1.);
-      Float_t ret(0);
+      typedef typename Backend::precision_v Double_t;
+      Double_t mone(-1.);
+      Double_t ret(0);
       MaskedAssign( (v<0), mone*v , &ret );
       return ret;
   }
@@ -213,43 +213,43 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
 
     //std::cout<<"Entered AppoxNormalKernel"<<std::endl;
         
-    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
     
-    Float_t kNRMin(0.), kNRMax(1.), kNSPhi(2.), kNEPhi(3.), kNSTheta(4.), kNETheta(5.);
-    Float_t side(10.);
+    Double_t kNRMin(0.), kNRMax(1.), kNSPhi(2.), kNEPhi(3.), kNSTheta(4.), kNETheta(5.);
+    Double_t side(10.);
  
-    Float_t rho, rho2, radius;
-    Float_t distRMin, distRMax, distSPhi, distEPhi, distSTheta, distETheta, distMin;
-    Float_t zero(0.),mone(-1.);
-    Float_t temp=zero;
+    Double_t rho, rho2, radius;
+    Double_t distRMin, distRMax, distSPhi, distEPhi, distSTheta, distETheta, distMin;
+    Double_t zero(0.),mone(-1.);
+    Double_t temp=zero;
     
-    Vector3D<Float_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint = point;
     
-    Float_t radius2=localPoint.Mag2();
+    Double_t radius2=localPoint.Mag2();
     radius = Sqrt(radius2);
     rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
     rho = Sqrt(rho2);
     
-    Float_t fRmax = unplaced.GetOuterRadius();
-    Float_t fRmin = unplaced.GetInnerRadius();
-    Float_t fSPhi = unplaced.GetStartPhiAngle();
-    Float_t fDPhi = unplaced.GetDeltaPhiAngle();
-    Float_t ePhi = fSPhi + fDPhi;
-    Float_t fSTheta = unplaced.GetStartThetaAngle();
-    Float_t fDTheta = unplaced.GetDeltaThetaAngle();
-    Float_t eTheta = fSTheta + fDTheta;
-    Float_t pPhi = localPoint.Phi();
-    Float_t pTheta(std::atan2(rho,localPoint.z()));
-    Float_t sinSPhi = std::sin(fSPhi);
-    Float_t cosSPhi = std::cos(fSPhi);
-    Float_t sinEPhi = std::sin(ePhi);
-    Float_t cosEPhi = std::cos(ePhi);
-    Float_t sinSTheta = std::sin(fSTheta);
-    Float_t cosSTheta = std::cos(fSTheta);
-    Float_t sinETheta = std::sin(eTheta);
-    Float_t cosETheta = std::cos(eTheta);
+    Double_t fRmax = unplaced.GetOuterRadius();
+    Double_t fRmin = unplaced.GetInnerRadius();
+    Double_t fSPhi = unplaced.GetStartPhiAngle();
+    Double_t fDPhi = unplaced.GetDeltaPhiAngle();
+    Double_t ePhi = fSPhi + fDPhi;
+    Double_t fSTheta = unplaced.GetStartThetaAngle();
+    Double_t fDTheta = unplaced.GetDeltaThetaAngle();
+    Double_t eTheta = fSTheta + fDTheta;
+    Double_t pPhi = localPoint.Phi();
+    Double_t pTheta(std::atan2(rho,localPoint.z()));
+    Double_t sinSPhi = std::sin(fSPhi);
+    Double_t cosSPhi = std::cos(fSPhi);
+    Double_t sinEPhi = std::sin(ePhi);
+    Double_t cosEPhi = std::cos(ePhi);
+    Double_t sinSTheta = std::sin(fSTheta);
+    Double_t cosSTheta = std::cos(fSTheta);
+    Double_t sinETheta = std::sin(eTheta);
+    Double_t cosETheta = std::cos(eTheta);
         
     //
     // Distance to r shells
@@ -261,7 +261,7 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     temp = radius - fRmin;
     MaskedAssign((temp<zero),mone*temp,&temp);
     distRMin = temp;
-    Float_t prevDistMin(zero);
+    Double_t prevDistMin(zero);
     prevDistMin = distMin;
     MaskedAssign( ( (fRmin > zero) && (distRMin < distRMax) ) , distRMin, &distMin );
     MaskedAssign( ( (fRmin > zero) && (distRMin < distRMax) ) , kNRMin, &side ); //ENorm issue : Resolved hopefully
@@ -327,32 +327,32 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     //std::cout<<"Side : "<<side<<std::endl;
     Bool_t done(false);
     done |= (side == kNRMin);
-    MaskedAssign( (side == kNRMin), Vector3D<Float_t>(-localPoint.x() / radius, -localPoint.y() / radius, -localPoint.z() / radius),&norm);
+    MaskedAssign( (side == kNRMin), Vector3D<Double_t>(-localPoint.x() / radius, -localPoint.y() / radius, -localPoint.z() / radius),&norm);
    
     if( IsFull(done) )return ;//{  std::cout<<"----- 1 ------"<<std::endl; return;}
     
     done |= (side == kNRMax);
-    MaskedAssign( (side == kNRMax),Vector3D<Float_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius),&norm);
+    MaskedAssign( (side == kNRMax),Vector3D<Double_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius),&norm);
     //std::cout<<"----- 2 ------"<<std::endl;
     if( IsFull(done) )return ;//{  std::cout<<"----- 2 ------"<<std::endl; return;}
     
     done |= (side == kNSPhi);
-    MaskedAssign( (side == kNSPhi),Vector3D<Float_t>(sinSPhi, -cosSPhi, 0),&norm);
+    MaskedAssign( (side == kNSPhi),Vector3D<Double_t>(sinSPhi, -cosSPhi, 0),&norm);
     //std::cout<<"----- 3 ------"<<std::endl;
     if( IsFull(done) )return ;//{  std::cout<<"----- 3 ------"<<std::endl; return;}
     
     done |= (side == kNEPhi);
-    MaskedAssign( (side == kNEPhi),Vector3D<Float_t>(-sinEPhi, cosEPhi, 0),&norm);
+    MaskedAssign( (side == kNEPhi),Vector3D<Double_t>(-sinEPhi, cosEPhi, 0),&norm);
     //std::cout<<"----- 4 ------"<<std::endl;
     if( IsFull(done) )return ;//{  std::cout<<"----- 4 ------"<<std::endl; return;}
     
     done |= (side == kNSTheta);
-    MaskedAssign( (side == kNSTheta),Vector3D<Float_t>(-cosSTheta * std::cos(pPhi), -cosSTheta * std::sin(pPhi),sinSTheta),&norm);
+    MaskedAssign( (side == kNSTheta),Vector3D<Double_t>(-cosSTheta * std::cos(pPhi), -cosSTheta * std::sin(pPhi),sinSTheta),&norm);
     //std::cout<<"----- 5 ------"<<std::endl;
     if( IsFull(done) )return ;//{  std::cout<<"----- 5 ------"<<std::endl; return;}
     
     done |= (side == kNETheta);
-    MaskedAssign( (side == kNETheta),Vector3D<Float_t>(cosETheta * std::cos(pPhi), cosETheta * std::sin(pPhi), sinETheta),&norm);
+    MaskedAssign( (side == kNETheta),Vector3D<Double_t>(cosETheta * std::cos(pPhi), cosETheta * std::sin(pPhi), sinETheta),&norm);
     //std::cout<<"----- 6 ------"<<std::endl;
     if( IsFull(done) )return ;//{  std::cout<<"----- 6 ------"<<std::endl; return;}
     
@@ -360,22 +360,22 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     switch (side)
   {
     case kNRMin:      // Inner radius
-      norm = Vector3D<Float_t>(-localPoint.x() / radius, -localPoint.y() / radius, -localPoint.z() / radius);
+      norm = Vector3D<Double_t>(-localPoint.x() / radius, -localPoint.y() / radius, -localPoint.z() / radius);
       break;
     case kNRMax:      // Outer radius
-      norm = Vector3D<Float_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius);
+      norm = Vector3D<Double_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius);
       break;
     case kNSPhi:
-      norm = Vector3D<Float_t>(sinSPhi, -cosSPhi, 0);
+      norm = Vector3D<Double_t>(sinSPhi, -cosSPhi, 0);
       break;
     case kNEPhi:
-      norm = Vector3D<Float_t>(-sinEPhi, cosEPhi, 0);
+      norm = Vector3D<Double_t>(-sinEPhi, cosEPhi, 0);
       break;
     case kNSTheta:
-      norm = Vector3D<Float_t>(-cosSTheta * std::cos(pPhi), -cosSTheta * std::sin(pPhi),sinSTheta);
+      norm = Vector3D<Double_t>(-cosSTheta * std::cos(pPhi), -cosSTheta * std::sin(pPhi),sinSTheta);
       break;
     case kNETheta:
-      norm = Vector3D<Float_t>(cosETheta * std::cos(pPhi), cosETheta * std::sin(pPhi), sinETheta);
+      norm = Vector3D<Double_t>(cosETheta * std::cos(pPhi), cosETheta * std::sin(pPhi), sinETheta);
       break;
     default:          // Should never reach this case ...
 
@@ -395,56 +395,56 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
        Vector3D<typename Backend::precision_v> &normal,
        typename Backend::bool_v &valid ){
 
-    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
-    Vector3D<Float_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint = point;
     
-    Float_t radius2=localPoint.Mag2();
-    Float_t radius=Sqrt(radius2);
-    Float_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
-    Float_t rho = Sqrt(rho2);
-    Float_t fRmax = unplaced.GetOuterRadius();
-    Float_t fRmin = unplaced.GetInnerRadius();
-    Float_t fSPhi = unplaced.GetStartPhiAngle();
-    Float_t fDPhi = unplaced.GetDeltaPhiAngle();
-    Float_t ePhi = fSPhi + fDPhi;
-    Float_t fSTheta = unplaced.GetStartThetaAngle();
-    Float_t fDTheta = unplaced.GetDeltaThetaAngle();
-    Float_t eTheta = fSTheta + fDTheta;
-    Float_t pPhi = localPoint.Phi();
-    Float_t pTheta(std::atan2(rho,localPoint.z()));
-    Float_t sinSPhi = std::sin(fSPhi);
-    Float_t cosSPhi = std::cos(fSPhi);
-    Float_t sinEPhi = std::sin(ePhi);
-    Float_t cosEPhi = std::cos(ePhi);
-    Float_t sinSTheta = std::sin(fSTheta);
-    Float_t cosSTheta = std::cos(fSTheta);
-    Float_t sinETheta = std::sin(eTheta);
-    Float_t cosETheta = std::cos(eTheta);
+    Double_t radius2=localPoint.Mag2();
+    Double_t radius=Sqrt(radius2);
+    Double_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
+    Double_t rho = Sqrt(rho2);
+    Double_t fRmax = unplaced.GetOuterRadius();
+    Double_t fRmin = unplaced.GetInnerRadius();
+    Double_t fSPhi = unplaced.GetStartPhiAngle();
+    Double_t fDPhi = unplaced.GetDeltaPhiAngle();
+    Double_t ePhi = fSPhi + fDPhi;
+    Double_t fSTheta = unplaced.GetStartThetaAngle();
+    Double_t fDTheta = unplaced.GetDeltaThetaAngle();
+    Double_t eTheta = fSTheta + fDTheta;
+    Double_t pPhi = localPoint.Phi();
+    Double_t pTheta(std::atan2(rho,localPoint.z()));
+    Double_t sinSPhi = std::sin(fSPhi);
+    Double_t cosSPhi = std::cos(fSPhi);
+    Double_t sinEPhi = std::sin(ePhi);
+    Double_t cosEPhi = std::cos(ePhi);
+    Double_t sinSTheta = std::sin(fSTheta);
+    Double_t cosSTheta = std::cos(fSTheta);
+    Double_t sinETheta = std::sin(eTheta);
+    Double_t cosETheta = std::cos(eTheta);
     
     Precision fRminTolerance = unplaced.GetFRminTolerance();
     Precision kAngTolerance = unplaced.GetAngTolerance();
     Precision halfAngTolerance = (0.5 * kAngTolerance);
     
-    Float_t distSPhi(kInfinity),distSTheta(kInfinity);
-    Float_t distEPhi(kInfinity),distETheta(kInfinity);
-    Float_t distRMax(kInfinity); 
-    Float_t distRMin(kInfinity);
+    Double_t distSPhi(kInfinity),distSTheta(kInfinity);
+    Double_t distEPhi(kInfinity),distETheta(kInfinity);
+    Double_t distRMax(kInfinity); 
+    Double_t distRMin(kInfinity);
     
-    Vector3D<Float_t> nR, nPs, nPe, nTs, nTe, nZ(0., 0., 1.);
-    Vector3D<Float_t> norm, sumnorm(0., 0., 0.);
+    Vector3D<Double_t> nR, nPs, nPe, nTs, nTe, nZ(0., 0., 1.);
+    Vector3D<Double_t> norm, sumnorm(0., 0., 0.);
     
     Bool_t fFullPhiSphere = unplaced.IsFullPhiSphere();
     //std::cout<<"Full Phi Sphere Check : "<<fFullPhiSphere<<std::endl;
     Bool_t fFullThetaSphere = unplaced.IsFullThetaSphere();
     //std::cout<<"Full Theta Sphere Check : "<<fFullThetaSphere<<std::endl;
 
-    Float_t zero(0.);
-    Float_t mone(-1.);
+    Double_t zero(0.);
+    Double_t mone(-1.);
     
-    Float_t temp=0;
+    Double_t temp=0;
     temp=radius - fRmax;
     MaskedAssign((temp<zero),mone*temp,&temp);
     //distRMax = fabs<Backend>(temp);
@@ -471,8 +471,8 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
     
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (!fRmin) ), zero ,&distSPhi);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (!fRmin) ), zero ,&distEPhi);
-    MaskedAssign( (!unplaced.IsFullPhiSphere()), Vector3D<Float_t>(sinSPhi, -cosSPhi, 0),&nPs );
-    MaskedAssign( (!unplaced.IsFullPhiSphere()), Vector3D<Float_t>(-sinEPhi, cosEPhi, 0),&nPe );
+    MaskedAssign( (!unplaced.IsFullPhiSphere()), Vector3D<Double_t>(sinSPhi, -cosSPhi, 0),&nPs );
+    MaskedAssign( (!unplaced.IsFullPhiSphere()), Vector3D<Double_t>(-sinEPhi, cosEPhi, 0),&nPe );
     
     //Theta Stuff
     temp = pTheta - fSTheta;
@@ -485,19 +485,19 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
     //MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , fabs<Backend>(temp) , &distETheta ) ;
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , temp , &distETheta ) ;
     
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , Vector3D<Float_t>(-cosSTheta * localPoint.x() / rho , -cosSTheta * localPoint.y() / rho, sinSTheta ) , &nTs ) ;
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho) ) , Vector3D<Float_t>(cosETheta * localPoint.x() / rho , cosETheta * localPoint.y() / rho , -sinETheta) , &nTe ) ;
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , Vector3D<Double_t>(-cosSTheta * localPoint.x() / rho , -cosSTheta * localPoint.y() / rho, sinSTheta ) , &nTs ) ;
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho) ) , Vector3D<Double_t>(cosETheta * localPoint.x() / rho , cosETheta * localPoint.y() / rho , -sinETheta) , &nTe ) ;
     
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (fSTheta)) , zero , &distSTheta );
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (fSTheta)) , Vector3D<Float_t>(0., 0., -1.) , &nTs );
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (fSTheta)) , Vector3D<Double_t>(0., 0., -1.) , &nTs );
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (eTheta < kPi)) , zero , &distETheta );
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (eTheta < kPi)) , Vector3D<Float_t>(0., 0., 1.) , &nTe );
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (eTheta < kPi)) , Vector3D<Double_t>(0., 0., 1.) , &nTe );
     
-    MaskedAssign( (radius), Vector3D<Float_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius) ,&nR);
+    MaskedAssign( (radius), Vector3D<Double_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius) ,&nR);
     
     
-    Float_t noSurfaces(0);
-    Float_t halfCarTolerance(0.5 * 1e-9);
+    Double_t noSurfaces(0);
+    Double_t halfCarTolerance(0.5 * 1e-9);
     MaskedAssign((distRMax <= halfCarTolerance) , noSurfaces+1 ,&noSurfaces);
     MaskedAssign((distRMax <= halfCarTolerance) , (sumnorm+nR) ,&sumnorm);
     
@@ -580,7 +580,7 @@ UnplacedSphere const &unplaced,
     typename Backend::bool_v &completelyinside,
     typename Backend::bool_v &completelyoutside) {
 
-    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;	
 
     Precision fRmin = unplaced.GetInnerRadius();
@@ -589,11 +589,11 @@ UnplacedSphere const &unplaced,
     Precision halfAngTolerance = (0.5 * kAngTolerance);
     Precision fRmax = unplaced.GetOuterRadius();
         
-    Float_t rad2 = localPoint.Mag2();
-    Float_t tolRMin = fRmin + (0.5 * fRminTolerance); //rMinPlus
-    Float_t tolRMin2 = tolRMin * tolRMin;
-    Float_t tolRMax = fRmax - (0.5 * fRminTolerance); //rMaxMinus
-    Float_t tolRMax2 = tolRMax * tolRMax;
+    Double_t rad2 = localPoint.Mag2();
+    Double_t tolRMin = fRmin + (0.5 * fRminTolerance); //rMinPlus
+    Double_t tolRMin2 = tolRMin * tolRMin;
+    Double_t tolRMax = fRmax - (0.5 * fRminTolerance); //rMaxMinus
+    Double_t tolRMax2 = tolRMax * tolRMax;
      
     // Check radial surfaces
     //Radial check for GenericKernel Start
@@ -610,10 +610,10 @@ UnplacedSphere const &unplaced,
     
     
     
-    Float_t pPhi = localPoint.Phi();
-    Float_t fSPhi(unplaced.GetStartPhiAngle());
-    Float_t fDPhi(unplaced.GetDeltaPhiAngle());
-    Float_t ePhi = fSPhi+fDPhi;
+    Double_t pPhi = localPoint.Phi();
+    Double_t fSPhi(unplaced.GetStartPhiAngle());
+    Double_t fDPhi(unplaced.GetDeltaPhiAngle());
+    Double_t ePhi = fSPhi+fDPhi;
     
     //*******************************
     //Very important but needs to understand
@@ -622,8 +622,8 @@ UnplacedSphere const &unplaced,
     
     //*******************************
     
-    Float_t tolAngMin = fSPhi + halfAngTolerance;
-    Float_t tolAngMax = ePhi - halfAngTolerance;
+    Double_t tolAngMin = fSPhi + halfAngTolerance;
+    Double_t tolAngMax = ePhi - halfAngTolerance;
     
     // Phi boundaries  : Do not check if it has no phi boundary!
     if(!unplaced.IsFullPhiSphere()) //Later May be done using MaskedAssign
@@ -640,11 +640,11 @@ UnplacedSphere const &unplaced,
     //Phi Check for GenericKernel Over
          
     // Theta bondaries
-    //Float_t pTheta = localPoint.Theta();
-    Float_t pTheta = ATan2(Sqrt(localPoint.x()*localPoint.x() + localPoint.y()*localPoint.y()), localPoint.z()); //This needs to be implemented in Vector3D.h as Theta() function
-    Float_t fSTheta(unplaced.GetStartThetaAngle());
-    Float_t fDTheta(unplaced.GetDeltaThetaAngle());
-    Float_t eTheta = fSTheta + fDTheta;
+    //Double_t pTheta = localPoint.Theta();
+    Double_t pTheta = ATan2(Sqrt(localPoint.x()*localPoint.x() + localPoint.y()*localPoint.y()), localPoint.z()); //This needs to be implemented in Vector3D.h as Theta() function
+    Double_t fSTheta(unplaced.GetStartThetaAngle());
+    Double_t fDTheta(unplaced.GetDeltaThetaAngle());
+    Double_t eTheta = fSTheta + fDTheta;
     
     tolAngMin = fSTheta + halfAngTolerance;
     tolAngMax = eTheta - halfAngTolerance;
@@ -722,55 +722,55 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety){
 
-    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
-    Float_t safe=Backend::kZero;
-    Float_t zero=Backend::kZero; 
+    Double_t safe=Backend::kZero;
+    Double_t zero=Backend::kZero; 
 
-    Vector3D<Float_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint=point;
 
     //General Precalcs
-    Float_t rad2    = localPoint.Mag2();
-    Float_t rad = Sqrt(rad2);
-    Float_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
-    Float_t rho = std::sqrt(rho2);
+    Double_t rad2    = localPoint.Mag2();
+    Double_t rad = Sqrt(rad2);
+    Double_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
+    Double_t rho = std::sqrt(rho2);
     
     //Distance to r shells
-    Float_t fRmin = unplaced.GetInnerRadius();
-    Float_t safeRMin = unplaced.GetInnerRadius() - rad;
-    Float_t safeRMax = rad - unplaced.GetOuterRadius();
+    Double_t fRmin = unplaced.GetInnerRadius();
+    Double_t safeRMin = unplaced.GetInnerRadius() - rad;
+    Double_t safeRMax = rad - unplaced.GetOuterRadius();
     MaskedAssign(((fRmin > 0)&& (safeRMin > safeRMax)),safeRMin,&safety);
     MaskedAssign(((fRmin > 0)&& (!(safeRMin > safeRMax))),safeRMax,&safety);
     MaskedAssign((!(fRmin > 0)),safeRMax,&safety);
     //Distance to r shells over
     
     //Some Precalc
-    Float_t fSPhi = unplaced.GetStartPhiAngle();
-    Float_t fDPhi = unplaced.GetDeltaPhiAngle();
-    Float_t hDPhi = (0.5 * fDPhi);
-    Float_t cPhi  = fSPhi + hDPhi;
-    Float_t ePhi  = fSPhi + fDPhi;
-    Float_t sinCPhi   = std::sin(cPhi);
-    Float_t cosCPhi   = std::cos(cPhi);
-    Float_t sinSPhi = std::sin(fSPhi);
-    Float_t cosSPhi = std::cos(fSPhi);
-    Float_t sinEPhi = std::sin(ePhi);
-    Float_t cosEPhi = std::cos(ePhi);
-    Float_t safePhi = zero;
+    Double_t fSPhi = unplaced.GetStartPhiAngle();
+    Double_t fDPhi = unplaced.GetDeltaPhiAngle();
+    Double_t hDPhi = (0.5 * fDPhi);
+    Double_t cPhi  = fSPhi + hDPhi;
+    Double_t ePhi  = fSPhi + fDPhi;
+    Double_t sinCPhi   = std::sin(cPhi);
+    Double_t cosCPhi   = std::cos(cPhi);
+    Double_t sinSPhi = std::sin(fSPhi);
+    Double_t cosSPhi = std::cos(fSPhi);
+    Double_t sinEPhi = std::sin(ePhi);
+    Double_t cosEPhi = std::cos(ePhi);
+    Double_t safePhi = zero;
     
-    Float_t mone(-1.);
+    Double_t mone(-1.);
     
-    Float_t cosPsi = (localPoint.x() * cosCPhi + localPoint.y() * sinCPhi) / rho; 
+    Double_t cosPsi = (localPoint.x() * cosCPhi + localPoint.y() * sinCPhi) / rho; 
     //
     // Distance to phi extent
     //
     if(!unplaced.IsFullPhiSphere())
     {
-        Float_t test1=((localPoint.x() * sinSPhi - localPoint.y() * cosSPhi));
+        Double_t test1=((localPoint.x() * sinSPhi - localPoint.y() * cosSPhi));
         MaskedAssign((test1<0),mone*test1,&test1); //Facing the issue with abs function of Vc, Its actually giving the absolute value of floor function
-        Float_t test2=((localPoint.x() * sinEPhi - localPoint.y() * cosEPhi));
+        Double_t test2=((localPoint.x() * sinEPhi - localPoint.y() * cosEPhi));
         MaskedAssign((test2<0),mone*test2,&test2);
         MaskedAssign(((cosPsi < std::cos(hDPhi)) && ((localPoint.y() * cosCPhi - localPoint.x() * sinCPhi) <= 0)),test1,&safePhi);
         MaskedAssign(((cosPsi < std::cos(hDPhi)) && !((localPoint.y() * cosCPhi - localPoint.x() * sinCPhi) <= 0)),test2,&safePhi);
@@ -780,21 +780,21 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     //
     // Distance to Theta extent
     //
-    Float_t KPI(kPi);
-    Float_t rds = localPoint.Mag();
-    Float_t piby2(kPi/2);
-    Float_t pTheta = piby2 - asin(localPoint.z() / rds);
+    Double_t KPI(kPi);
+    Double_t rds = localPoint.Mag();
+    Double_t piby2(kPi/2);
+    Double_t pTheta = piby2 - asin(localPoint.z() / rds);
     
     MaskedAssign((pTheta<zero),pTheta+KPI,&pTheta);
     
-    Float_t fSTheta = unplaced.GetStartThetaAngle();
-    Float_t fDTheta = unplaced.GetDeltaThetaAngle();
-    Float_t eTheta  = fSTheta + fDTheta;
-    Float_t dTheta1 = fSTheta - pTheta;
-    Float_t dTheta2 = pTheta-eTheta;
-    Float_t sinDTheta1(std::sin(dTheta1));
-    Float_t sinDTheta2(std::sin(dTheta2));
-    Float_t safeTheta = zero;
+    Double_t fSTheta = unplaced.GetStartThetaAngle();
+    Double_t fDTheta = unplaced.GetDeltaThetaAngle();
+    Double_t eTheta  = fSTheta + fDTheta;
+    Double_t dTheta1 = fSTheta - pTheta;
+    Double_t dTheta2 = pTheta-eTheta;
+    Double_t sinDTheta1(std::sin(dTheta1));
+    Double_t sinDTheta2(std::sin(dTheta2));
+    Double_t safeTheta = zero;
     
     if(!unplaced.IsFullThetaSphere())
     {
@@ -832,28 +832,28 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety){
     //std::cout<<"Safety to OUT Kernel call"<<std::endl;
-    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
-    Float_t safe=Backend::kZero;
-    Float_t zero=Backend::kZero; 
+    Double_t safe=Backend::kZero;
+    Double_t zero=Backend::kZero; 
 
-    Vector3D<Float_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint = point;
     
     //General Precalcs
-    Float_t rad2    = localPoint.Mag2();
-    Float_t rad = Sqrt(rad2);
-    Float_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
-    Float_t rho = Sqrt(rho2);
+    Double_t rad2    = localPoint.Mag2();
+    Double_t rad = Sqrt(rad2);
+    Double_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
+    Double_t rho = Sqrt(rho2);
     
     //Distance to r shells
-    //Float_t
+    //Double_t
     Precision fRmin = unplaced.GetInnerRadius();
-    //Float_t 
+    //Double_t 
     Precision fRmax = unplaced.GetOuterRadius();
-    Float_t safeRMin = rad - fRmin;
-    Float_t safeRMax = fRmax - rad ;
+    Double_t safeRMin = rad - fRmin;
+    Double_t safeRMax = fRmax - rad ;
         
     //
     // Distance to r shells
@@ -867,85 +867,69 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
     //
     
     //Some Precalc
-    Float_t fSPhi (unplaced.GetStartPhiAngle());
-    Float_t fDPhi (unplaced.GetDeltaPhiAngle());
-    Float_t hDPhi (unplaced.GetHDPhi()); //(0.5 * fDPhi);
-    Float_t cPhi  (unplaced.GetCPhi()); //fSPhi + hDPhi;
-    Float_t ePhi  (unplaced.GetEPhi()); //fSPhi + fDPhi;
-    Float_t sinCPhi (unplaced.GetSinCPhi()); //std::sin(cPhi);
-    Float_t cosCPhi (unplaced.GetCosCPhi()); //std::cos(cPhi);
-    Float_t sinSPhi (unplaced.GetSinSPhi()); // std::sin(fSPhi);
-    Float_t cosSPhi (unplaced.GetCosSPhi()); //std::cos(fSPhi);
-    Float_t sinEPhi (unplaced.GetSinEPhi()); //std::sin(ePhi);
-    Float_t cosEPhi (unplaced.GetCosEPhi()); //std::cos(ePhi);
-    Float_t safePhi = zero;
+    //Double_t 
+    Precision fSPhi = unplaced.GetStartPhiAngle();
+    //Double_t 
+    Precision fDPhi = unplaced.GetDeltaPhiAngle();
+    //Double_t 
+    Precision hDPhi = (0.5 * fDPhi);
+    //Double_t 
+    Precision cPhi  = fSPhi + hDPhi;
+    //Double_t 
+    Precision ePhi  = fSPhi + fDPhi;
+    //Double_t 
+    Precision sinCPhi   = std::sin(cPhi);
+    //Double_t 
+    Precision cosCPhi   = std::cos(cPhi);
+    //Double_t 
+    Precision sinSPhi = std::sin(fSPhi);
+    //Double_t 
+    Precision cosSPhi = std::cos(fSPhi);
+    //Double_t 
+    Precision sinEPhi = std::sin(ePhi);
+    //Double_t 
+    Precision cosEPhi = std::cos(ePhi);
+    Double_t safePhi = zero;
     
-    Float_t mone(-1.);
+    Double_t mone(-1.);
     
-    if(!unplaced.IsFullPhiSphere() && (rho>0))
+    if(!unplaced.IsFullPhiSphere())
     {
-        Float_t test1 = (localPoint.y() * cosCPhi - localPoint.x() * sinCPhi);
-        //Float_t test2 = (localPoint.x() * sinEPhi - localPoint.y() * cosEPhi);
-        
-        
+        Double_t test1 = (localPoint.y() * cosCPhi - localPoint.x() * sinCPhi);
+        //Double_t test2 = (localPoint.x() * sinEPhi - localPoint.y() * cosEPhi);
         MaskedAssign( (test1<=zero) ,(mone*(localPoint.x() * sinSPhi - localPoint.y() * cosSPhi)), &safePhi);
         MaskedAssign( (!(test1<=zero)) ,(localPoint.x() * sinEPhi - localPoint.y() * cosEPhi), &safePhi);
         MaskedAssign( (safePhi < safety) ,safePhi , &safety);
-        /*
-        if(test1<=zero)
-        {
-            safePhi = (mone*(localPoint.x() * sinSPhi - localPoint.y() * cosSPhi));
-        }
-        else
-        {
-            safePhi = (localPoint.x() * sinEPhi - localPoint.y() * cosEPhi);
-        }
         
-        if(safePhi < safety)
-            safety = safePhi;
-        */
     }
     
     //
     // Distance to Theta extent
     //
-    Float_t KPI(kPi);
-    Float_t rds = localPoint.Mag();
-    Float_t piby2(kPi/2);
-    Float_t pTheta = piby2 - asin(localPoint.z() / rds);
+    Double_t KPI(kPi);
+    Double_t rds = localPoint.Mag();
+    Double_t piby2(kPi/2);
+    Double_t pTheta = piby2 - asin(localPoint.z() / rds);
     
     MaskedAssign((pTheta<zero),pTheta+KPI,&pTheta);
     
-    Float_t fSTheta = unplaced.GetStartThetaAngle();
-    Float_t fDTheta = unplaced.GetDeltaThetaAngle();
-    Float_t eTheta  = fSTheta + fDTheta;
-    Float_t  dTheta1 =  pTheta - fSTheta;
-    Float_t dTheta2 = eTheta - pTheta;
-    //Float_t ts=zero;
-    //ts = sin(dTheta1);
-    //Float_t sinDTheta1(Sin(dTheta1));
-    Float_t sinDTheta1 = sin(dTheta1);
-    Float_t sinDTheta2 = sin(dTheta2); //(std::sin(dTheta2));
-    Float_t safeTheta = zero;
+    //Double_t 
+    Precision fSTheta = unplaced.GetStartThetaAngle();
+    //Double_t 
+    Precision fDTheta = unplaced.GetDeltaThetaAngle();
+    //Double_t 
+    Precision eTheta  = fSTheta + fDTheta;
+    Double_t  dTheta1 =  pTheta - fSTheta;
+    Double_t dTheta2 = eTheta - pTheta;
+    Double_t sinDTheta1(std::sin(dTheta1));
+    Double_t sinDTheta2(std::sin(dTheta2));
+    Double_t safeTheta = zero;
     
-    if(!unplaced.IsFullThetaSphere() && (rds>0))
+    if(!unplaced.IsFullThetaSphere())
     {
         MaskedAssign(( (dTheta1 < dTheta2) ),(rds * sinDTheta1),&safeTheta);
         MaskedAssign((!(dTheta1 < dTheta2)),(rds * sinDTheta2),&safeTheta);
         MaskedAssign( (safety > safeTheta ),safeTheta,&safety);
-        /*
-        if(dTheta1 < dTheta2)
-        {
-            safeTheta = (rds * sinDTheta1);
-        }
-        else
-        {
-            safeTheta = (rds * sinDTheta2);
-        }
-        
-        if(safety > safeTheta )
-            safety = safeTheta;
-         */ 
     }
     
     
@@ -1004,31 +988,31 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
     
-    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
-    Vector3D<Float_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint = point;
 
-    Vector3D<Float_t> localDir;
+    Vector3D<Double_t> localDir;
     localDir = direction;
 
     //General Precalcs
-    Float_t rad2 = localPoint.Mag2();
-    Float_t rad = Sqrt(rad2);
-    Float_t pDotV3d = localPoint.Dot(localDir);
+    Double_t rad2 = localPoint.Mag2();
+    Double_t rad = Sqrt(rad2);
+    Double_t pDotV3d = localPoint.Dot(localDir);
 
-    Float_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
-    Float_t c = rad2 - radius2;
-    Float_t d2 = pDotV3d * pDotV3d - c;
+    Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
+    Double_t c = rad2 - radius2;
+    Double_t d2 = pDotV3d * pDotV3d - c;
 
-    Float_t pos_dot_dir_x = localPoint.x()*localDir.x();
-    Float_t pos_dot_dir_y = localPoint.y()*localDir.y();
-    Float_t pos_dot_dir_z = localPoint.z()*localDir.z();
+    Double_t pos_dot_dir_x = localPoint.x()*localDir.x();
+    Double_t pos_dot_dir_y = localPoint.y()*localDir.y();
+    Double_t pos_dot_dir_z = localPoint.z()*localDir.z();
 
     Bool_t done(false);
     distance = kInfinity;
-    Float_t zero=Backend::kZero;
+    Double_t zero=Backend::kZero;
 
     //Is the point Inside
     Bool_t isInside = ((rad < unplaced.GetfRTolI()));
@@ -1070,35 +1054,35 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-   typedef typename Backend::precision_v Float_t;
+   typedef typename Backend::precision_v Double_t;
     typedef typename Backend::bool_v      Bool_t;
 
     distance = kInfinity;  
-    Float_t zero=Backend::kZero;
+    Double_t zero=Backend::kZero;
     distance = zero;
     
-    Vector3D<Float_t> localPoint;
+    Vector3D<Double_t> localPoint;
     localPoint = point;
     
-    Vector3D<Float_t> localDir;
+    Vector3D<Double_t> localDir;
     localDir =  direction;
     
     //General Precalcs
-    Float_t rad2    = localPoint.Mag2();
-    Float_t rad = Sqrt(rad2);
-    Float_t pDotV3d = localPoint.Dot(localDir);
+    Double_t rad2    = localPoint.Mag2();
+    Double_t rad = Sqrt(rad2);
+    Double_t pDotV3d = localPoint.Dot(localDir);
 
-    Float_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
-    Float_t c = rad2 - radius2;
-    Float_t d2 = pDotV3d * pDotV3d - c;
+    Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
+    Double_t c = rad2 - radius2;
+    Double_t d2 = pDotV3d * pDotV3d - c;
   
     Bool_t done(false);
     distance = kInfinity;
     distance = zero;
     
     //checking if the point is outside
-    Float_t tolRMax = unplaced.GetfRTolO();
-    Float_t tolRMax2 = tolRMax * tolRMax;
+    Double_t tolRMax = unplaced.GetfRTolO();
+    Double_t tolRMax2 = tolRMax * tolRMax;
     Bool_t isOutside = ( rad2 > tolRMax2);
     done|= isOutside;
     if( IsFull(done) )return;

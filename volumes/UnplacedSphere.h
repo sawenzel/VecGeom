@@ -242,6 +242,35 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
   VECGEOM_CUDA_HEADER_BOTH
   bool IsFullThetaSphere() const { return fFullThetaSphere; }
   
+  //All angle related functions
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetHDPhi() const { return hDPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCPhi() const { return cPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetEPhi() const { return ePhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinCPhi() const { return sinCPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosCPhi() const { return cosCPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinSPhi() const { return sinSPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosSPhi() const { return cosSPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinEPhi() const { return sinEPhi;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosEPhi() const { return cosEPhi;}
+  
+  
   VECGEOM_CUDA_HEADER_BOTH
   void Initialize(){
     fCubicVolume = 0.;

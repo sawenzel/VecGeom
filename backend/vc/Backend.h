@@ -98,6 +98,11 @@ VcPrecision Abs(VcPrecision const &val) {
 }
 
 VECGEOM_INLINE
+VcPrecision sin(VcPrecision const &val) {
+  return Vc::sin(val);
+}
+
+VECGEOM_INLINE
 VcPrecision Sqrt(VcPrecision const &val) {
   return Vc::sqrt(val);
 }

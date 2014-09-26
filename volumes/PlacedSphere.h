@@ -86,6 +86,34 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   bool IsFullThetaSphere() const { return GetUnplacedVolume()->IsFullThetaSphere(); }
   
+  //All angle related functions
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetHDPhi() const { return GetUnplacedVolume()->GetHDPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCPhi() const { return GetUnplacedVolume()->GetCPhi() ;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetEPhi() const { return GetUnplacedVolume()->GetEPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinCPhi() const { return GetUnplacedVolume()->GetSinCPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosCPhi() const { return GetUnplacedVolume()->GetCosCPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinSPhi() const { return GetUnplacedVolume()->GetSinSPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosSPhi() const { return GetUnplacedVolume()->GetCosSPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinEPhi() const { return GetUnplacedVolume()->GetSinEPhi();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosEPhi() const { return GetUnplacedVolume()->GetCosEPhi();}
+  
   // Old access functions
 VECGEOM_CUDA_HEADER_BOTH  
 Precision GetRmin() const { return GetUnplacedVolume()->GetRmin(); }
