@@ -32,6 +32,7 @@ private:
   bool fHasInnerRadii;
   Precision fZBounds[2];
   Planes<2> fEndCaps;
+  Precision fEndCapsOuterRadii[2];
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
   SOA3D<Precision> fPhiSections;
@@ -75,15 +76,23 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision GetZMin() const { return fZBounds[0]; }
+  Precision GetTolerantZMin() const { return fZBounds[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision GetZMax() const { return fZBounds[1]; }
+  Precision GetTolerantZMax() const { return fZBounds[1]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Planes<2> const& GetEndCaps() const { return fEndCaps; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetStartCapOuterRadius() const { return fEndCapsOuterRadii[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetEndCapOuterRadius() const { return fEndCapsOuterRadii[1]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

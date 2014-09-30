@@ -229,7 +229,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Type> Normalized() const {
-    return *this * (1. / Length());
+    return Vector3D<Type>(*this) * (1. / Length());
   }
 
   /// \return Azimuthal angle between -pi and pi.
@@ -244,11 +244,12 @@ public:
 
   /// The cross (vector) product of two Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
+  template <class FirstType, class SecondType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static
-  Vector3D<Type> Cross(Vector3D<Type> const &left,
-                       Vector3D<Type> const &right) {
+  static Vector3D<Type> Cross(
+      Vector3D<FirstType> const &left,
+      Vector3D<SecondType> const &right) {
     return Vector3D<Type>(left[1]*right[2] - left[2]*right[1],
                           left[2]*right[0] - left[0]*right[2],
                           left[0]*right[1] - left[1]*right[0]);
@@ -256,10 +257,11 @@ public:
 
   /// The cross (vector) product of two Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
+  template <class OtherType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> Cross(Vector3D<Type> const &right) const {
-    return Cross(*this, right);
+  Vector3D<Type> Cross(Vector3D<OtherType> const &right) const {
+    return Cross<Type, OtherType>(*this, right);
   }
 
   /// Maps each vector entry to a function that manipulates the entry type.
@@ -378,7 +380,7 @@ std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
   return os;
 }
 
-#if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
+#ifdef VECGEOM_VC_ACCELERATION
 
 /// This is a template specialization of class Vector3D<double> or
 /// Vector3D<float> that can provide internal vectorization of common vector
@@ -523,9 +525,7 @@ public:
   }
 
   VECGEOM_INLINE
-  Vector3D<Precision> Normalized() const {
-    return *this * (1. / Length());
-  }
+  Vector3D<Precision> Normalized() const;
 
   VECGEOM_INLINE
   void Map(Precision (*f)(const Precision&)) {
@@ -594,33 +594,30 @@ public:
 
   // For UVector3 compatibility. Is equal to normal multiplication.
   // TODO: check if there are implicit dot products in USolids...
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType MultiplyByComponents(VecType const &other) const {
-    return (*this) * other;
-  }
+  VecType MultiplyByComponents(VecType const &other) const;
 
   /// The cross product of two Vector3D<T> objects.
   /// \return Type (where Type is float, double, or various SIMD vector types)
-  VECGEOM_CUDA_HEADER_BOTH
+  template <class FirstType, class SecondType>
   VECGEOM_INLINE
-  static
-  VecType Cross(VecType const &left, VecType const &right) {
-    return VecType(left[1]*right[2] - left[2]*right[1],
-                   left[2]*right[0] - left[0]*right[2],
-                   left[0]*right[1] - left[1]*right[0]);
+  static Vector3D<Precision> Cross(
+      Vector3D<FirstType> const &left,
+      Vector3D<SecondType> const &right) {
+    return Vector3D<Precision>(left[1]*right[2] - left[2]*right[1],
+                               left[2]*right[0] - left[0]*right[2],
+                               left[0]*right[1] - left[1]*right[0]);
   }
 
   /// The cross product with another Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
-  VECGEOM_CUDA_HEADER_BOTH
+  template <class OtherType>
   VECGEOM_INLINE
-  VecType Cross(VecType const &right) const {
-    return Cross(*this, right);
+  Vector3D<Precision> Cross(Vector3D<OtherType> const &right) const {
+    return Cross<Precision, OtherType>(*this, right);
   }
 
   /// Returns absolute value of the vector (as a vector).
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
     VecType tmp;
@@ -645,12 +642,16 @@ public:
   #define VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const VecType &other) { \
-    this->mem OPERATOR other.mem; \
+    for (int i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
+      this->mem.vector(i) OPERATOR other.mem.vector(i); \
+    } \
     return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const Precision &scalar) { \
-    this->mem OPERATOR scalar; \
+    for (int i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
+      this->mem.vector(i) OPERATOR scalar; \
+    } \
     return *this; \
   }
   VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(+=)
@@ -661,19 +662,13 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  operator bool() const {
-    return mem[0] && mem[1] && mem[2];
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   static VecType FromCylindrical(Precision r, Precision phi, Precision z) {
     return VecType(r*cos(phi), r*sin(phi), z);
   }
 
 };
 
-#endif // (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
+#endif // VECGEOM_VC_ACCELERATION
 
 #define VECTOR3D_BINARY_OP(OPERATOR, INPLACE) \
 template <typename Type, typename OtherType> \
@@ -709,23 +704,21 @@ VECTOR3D_BINARY_OP(*, *=)
 VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
-template <typename Type, typename BoolType>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-Vector3D<BoolType> operator==(Vector3D<Type> const &lhs,
-                              Vector3D<Type> const &rhs) {
-  return Vector3D<bool>(
-    Abs(lhs[0] - rhs[0]) < kTolerance,
-    Abs(lhs[1] - rhs[1]) < kTolerance,
-    Abs(lhs[2] - rhs[2]) < kTolerance
-  );
+bool operator==(
+    Vector3D<Precision> const &lhs,
+    Vector3D<Precision> const &rhs) {
+  return Abs(lhs[0] - rhs[0]) < kTolerance &&
+         Abs(lhs[1] - rhs[1]) < kTolerance &&
+         Abs(lhs[2] - rhs[2]) < kTolerance;
 }
 
-template <typename Type, typename BoolType>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-Vector3D<BoolType> operator!=(Vector3D<Type> const &lhs,
-                              Vector3D<Type> const &rhs) {
+Vector3D<bool> operator!=(
+    Vector3D<Precision> const &lhs,
+    Vector3D<Precision> const &rhs) {
   return !(lhs == rhs);
 }
 
@@ -741,31 +734,6 @@ VECGEOM_INLINE
 Vector3D<bool> operator!(Vector3D<bool> const &vec) {
   return Vector3D<bool>(!vec[0], !vec[1], !vec[2]);
 }
-
-#define VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(OPERATOR) \
-VECGEOM_CUDA_HEADER_BOTH \
-VECGEOM_INLINE \
-Vector3D<bool> operator OPERATOR(Vector3D<Precision> const &lhs, \
-                                 Vector3D<Precision> const &rhs) { \
-  return Vector3D<bool>(lhs[0] OPERATOR rhs[0], \
-                        lhs[1] OPERATOR rhs[1], \
-                        lhs[2] OPERATOR rhs[2]); \
-} \
-VECGEOM_CUDA_HEADER_BOTH \
-VECGEOM_INLINE \
-Vector3D<bool> operator OPERATOR(Vector3D<Precision> const &lhs, \
-                                 const Precision rhs) { \
-  return Vector3D<bool>(lhs[0] OPERATOR rhs, \
-                        lhs[1] OPERATOR rhs, \
-                        lhs[2] OPERATOR rhs); \
-}
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<=)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>=)
-// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
-// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
-#undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -790,32 +758,14 @@ Vector3D<VcBool> operator!(Vector3D<VcBool> const &vec) {
   return Vector3D<VcBool>(!vec[0], !vec[1], !vec[2]);
 }
 
-#define VECTOR3D_VC_BOOLEAN_COMPARISON_OP(OPERATOR) \
-template <typename Type> \
-VECGEOM_INLINE \
-Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
-    Vector3D<typename Vc::Vector<Type> > const &lhs, \
-    Vector3D<typename Vc::Vector<Type> > const &rhs) { \
-  return Vector3D<typename Vc::Vector<Type>::Mask>(lhs[0] OPERATOR rhs[0], \
-                                                   lhs[1] OPERATOR rhs[1], \
-                                                   lhs[2] OPERATOR rhs[2]); \
-} \
-template <typename Type> \
-VECGEOM_INLINE \
-Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
-    Vector3D<typename Vc::Vector<Type> > const &lhs, \
-    Vector3D<Type> const &rhs) { \
-  return Vector3D<typename Vc::Vector<Type>::Mask>(lhs[0] OPERATOR rhs[0], \
-                                                   lhs[1] OPERATOR rhs[1], \
-                                                   lhs[2] OPERATOR rhs[2]); \
+VECGEOM_INLINE
+VcBool operator==(
+    Vector3D<VcPrecision> const &lhs,
+    Vector3D<VcPrecision> const &rhs) {
+  return Abs(lhs[0] - rhs[0]) < kTolerance &&
+         Abs(lhs[1] - rhs[1]) < kTolerance &&
+         Abs(lhs[2] - rhs[2]) < kTolerance;
 }
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<=)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>=)
-// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
-// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
-#undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -834,6 +784,19 @@ VECTOR3D_VC_BOOLEAN_LOGICAL_OP(||)
 #pragma GCC diagnostic pop
 
 #endif // VECGEOM_VC
+
+#ifdef VECGEOM_VC_ACCELERATION
+
+Vector3D<Precision> Vector3D<Precision>::Normalized() const {
+  return Vector3D<Precision>(*this) * (1. / Length());
+}
+
+Vector3D<Precision> Vector3D<Precision>::MultiplyByComponents(
+    VecType const &other) const {
+  return (*this) * other;
+}
+
+#endif
 
 } // End global namespace
 

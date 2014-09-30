@@ -56,9 +56,12 @@
     #define VECGEOM_INLINE inline __attribute__((always_inline))
     #ifndef VECGEOM_NVCC
       #define VECGEOM_ALIGNED __attribute__((aligned(64)))
+    #else
+      #define VECGEOM_ALIGNED
     #endif
   #else // Clang (most likely)
     #define VECGEOM_INLINE inline
+    #define VECGEOM_ALIGNED
   #endif
 #endif
 

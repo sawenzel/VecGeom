@@ -26,26 +26,22 @@ struct kScalar {
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
 
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static constexpr bool IsEqual() { return false; }
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static Precision Convert(Precision const &input) { return input; }
 };
 
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+inline constexpr bool kScalar::IsEqual<kScalar>() { return true; }
+
 typedef kScalar::int_v    ScalarInt;
 typedef kScalar::precision_v ScalarDouble;
 typedef kScalar::bool_v   ScalarBool;
-
-template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
-template <class Backend> struct TreatSurfaceTraits<true, Backend> {
-  typedef typename Backend::inside_v Surface_t;
-  static const Inside_t kInside = 0;
-  static const Inside_t kOutside = 2;
-};
-template <class Backend> struct TreatSurfaceTraits<false, Backend> {
-  typedef typename Backend::bool_v Surface_t;
-  static const bool kInside = true;
-  static const bool kOutside = false;
-};
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
@@ -224,7 +220,7 @@ void AlignedFree(Type *allocated) {
 #ifndef VECGEOM_NVCC
   _mm_free(allocated);
 #else
-  delete allocated;
+  delete[] allocated;
 #endif
 }
 

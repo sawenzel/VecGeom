@@ -76,11 +76,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision GetZMin() const { return GetUnplacedVolume()->GetZMin(); }
+  Precision GetTolerantZMin() const {
+    return GetUnplacedVolume()->GetTolerantZMin();
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision GetZMax() const { return GetUnplacedVolume()->GetZMax(); }
+  Precision GetTolerantZMax() const {
+    return GetUnplacedVolume()->GetTolerantZMax();
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

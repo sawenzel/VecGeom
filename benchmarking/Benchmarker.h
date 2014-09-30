@@ -229,6 +229,26 @@ private:
     Precision const *const cuda,
 #endif
     char const *const method) const;
+
+  void CompareSafeties(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method) const;
   
 };
 

@@ -92,6 +92,18 @@ VcInt FindSegmentIndex<kVc>(
 }
 #endif
 
+template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
+template <class Backend> struct TreatSurfaceTraits<true, Backend> {
+  typedef typename Backend::inside_v Surface_t;
+  static const Inside_t kInside = 0;
+  static const Inside_t kOutside = 2;
+};
+template <class Backend> struct TreatSurfaceTraits<false, Backend> {
+  typedef typename Backend::bool_v Surface_t;
+  static const bool kInside = true;
+  static const bool kOutside = false;
+};
+
 /// Trait class to check if the projection of a point along the normal of the
 /// plane has the correct sign, depending on whether the point is inside or
 /// outside. For points behind the plane the distance should be positive (along
@@ -124,7 +136,7 @@ public:
   }
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::bool_v Sign(
+  static typename Backend::precision_v Sign(
       typename Backend::precision_v const &candidate) {
     return -candidate;
   }

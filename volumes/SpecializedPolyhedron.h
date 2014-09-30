@@ -189,9 +189,8 @@ Precision SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToIn(
       VPlacedVolume::transformation()->Transform(point);
 
   Precision result = kInfinity;
-  PolyhedronImplementation<treatInnerT, sideCountT>::template
-      ScalarSafetyKernel<false>(
-          *PlacedPolyhedron::GetUnplacedVolume(), localPoint, result);
+  PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToInKernel(
+      *PlacedPolyhedron::GetUnplacedVolume(), localPoint, result);
   return result;
 }
 
@@ -205,9 +204,8 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToIn(
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
 
-    PolyhedronImplementation<treatInnerT, sideCountT>::template
-        ScalarSafetyKernel<false>(
-            *PlacedPolyhedron::GetUnplacedVolume(), localPoint, safeties[i]);
+    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToInKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(), localPoint, safeties[i]);
   }
 }
 
@@ -222,9 +220,8 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToInMinimize(
         VPlacedVolume::transformation()->Transform(points[i]);
 
     Precision candidate = kInfinity;
-    PolyhedronImplementation<treatInnerT, sideCountT>::template
-        ScalarSafetyKernel<false>(
-            *PlacedPolyhedron::GetUnplacedVolume(), localPoint, candidate);
+    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToInKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(), localPoint, candidate);
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];
   }
@@ -235,9 +232,8 @@ VECGEOM_CUDA_HEADER_BOTH
 Precision SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToOut(
     Vector3D<Precision> const &point) const {
   Precision result = kInfinity;
-  PolyhedronImplementation<treatInnerT, sideCountT>::template
-      ScalarSafetyKernel<true>(
-          *PlacedPolyhedron::GetUnplacedVolume(), point, result);
+  PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToOutKernel(
+      *PlacedPolyhedron::GetUnplacedVolume(), point, result);
   return result;
 }
 
@@ -248,9 +244,8 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToOut(
 
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
 
-    PolyhedronImplementation<treatInnerT, sideCountT>::template
-        ScalarSafetyKernel<true>(
-            *PlacedPolyhedron::GetUnplacedVolume(), points[i], safeties[i]);
+    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToOutKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(), points[i], safeties[i]);
   }
 }
 
@@ -262,9 +257,8 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToOutMinimize(
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
 
     Precision candidate = kInfinity;
-    PolyhedronImplementation<treatInnerT, sideCountT>::template
-        ScalarSafetyKernel<true>(
-            *PlacedPolyhedron::GetUnplacedVolume(), points[i], candidate);
+    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToOutKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(), points[i], candidate);
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];
   }

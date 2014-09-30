@@ -25,11 +25,14 @@ int main() {
   // assert(FindSegmentIndex<kScalar>(array, 4, 5) == 2);
   // assert(FindSegmentIndex<kScalar>(array, 4, 7) == 3);
 
-  TApplication app("", NULL, NULL);
-  constexpr int nPlanes = 2;
-  Precision zPlanes[nPlanes] = {-1, 1};
-  Precision rInner[nPlanes] = {0.5, 0.5};
-  Precision rOuter[nPlanes] = {1, 1};
+  constexpr int nPlanes = 4;
+  Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
+  Precision rInner[nPlanes] = {0, 0, 0, 0};
+  Precision rOuter[nPlanes] = {0, 2, 2, 0};
+  // constexpr int nPlanes = 2;
+  // Precision zPlanes[nPlanes] = {-1, 1};
+  // Precision rInner[nPlanes] = {0.5, 1};
+  // Precision rOuter[nPlanes] = {1, 2};
   // Precision zPlanes[] = {0, 2, 4, 6, 8, 10};
   // Precision rInner[] = {0, 0, 0, 0, 0, 0};
   // Precision rOuter[] = {1, 3, 1, 3, 1, 3};
@@ -39,6 +42,7 @@ int main() {
   VPlacedVolume *polyhedron = logical.Place(&placement);
 
 #ifdef VECGEOM_ROOT
+  TApplication app("", NULL, NULL);
   TGeoShape const* root = polyhedron->ConvertToRoot();
 #ifdef VECGEOM_USOLIDS
   VUSolid const* usolid = polyhedron->ConvertToUSolids();
@@ -60,7 +64,7 @@ int main() {
   magenta.SetMarkerColor(kMagenta);
   magenta.SetMarkerStyle(21);
 
-  Vector3D<Precision> bounds(1.25, 1.25, 1.25);
+  Vector3D<Precision> bounds(3, 3, 2.25);
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds);
     bool vecgeomContains = polyhedron->Contains(sample);

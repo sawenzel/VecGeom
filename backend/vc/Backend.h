@@ -23,9 +23,17 @@ struct kVc {
   const static bool_v kTrue;
   const static bool_v kFalse;
 
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static constexpr bool IsEqual() { return false; }
+
   VECGEOM_INLINE
   static precision_v Convert(Precision const &input);
 };
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+inline constexpr bool kVc::IsEqual<kVc>() { return true; }
 
 constexpr int kVectorSize = kVc::precision_v::Size;
 

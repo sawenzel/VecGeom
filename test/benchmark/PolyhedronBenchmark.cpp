@@ -8,11 +8,11 @@ using namespace vecgeom;
 int main() {
 
   UnplacedBox worldUnplaced = UnplacedBox(3., 3., 3.);
-  constexpr int nPlanes = 2;
-  Precision zPlanes[nPlanes] = {-1, 1};
-  Precision rInner[nPlanes] = {0.5, 1};
-  Precision rOuter[nPlanes] = {1, 2};
-  UnplacedPolyhedron polyhedronUnplaced(5, nPlanes, zPlanes, rInner, rOuter);
+  constexpr int nPlanes = 4;
+  Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
+  Precision rInner[nPlanes] = {0, 0, 0, 0};
+  Precision rOuter[nPlanes] = {2, 2, 2, 2};
+  UnplacedPolyhedron polyhedronUnplaced(4, nPlanes, zPlanes, rInner, rOuter);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume polyhedron = LogicalVolume("polyhedron", &polyhedronUnplaced);
@@ -28,8 +28,10 @@ int main() {
   tester.SetVerbosity(3);
   tester.SetPoolMultiplier(1);
   tester.SetRepetitions(1);
-  tester.SetPointCount(16);
-  tester.RunBenchmark();
+  tester.SetPointCount(32);
+  tester.RunInsideBenchmark();
+  tester.RunToOutBenchmark();
+  tester.RunToInBenchmark();
 
   return 0;
 }

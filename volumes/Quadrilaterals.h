@@ -156,25 +156,25 @@ typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
   typedef typename Backend::bool_v Bool_t;
 
   Float_t bestDistance = kInfinity;
+
   Float_t distance[N];
-  Bool_t inBounds[N];
+  Bool_t valid[N];
   for (int i = 0; i < N; ++i) {
     distance[i] = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
-                 / (a[i]*direction[0] + b[i]*direction[1] + c[i]*direction[2]);
+                 / (a[i]*direction[0] + b[i]*direction[1] +
+                    c[i]*direction[2]);
     Vector3D<Float_t> intersection = point + direction*distance[i];
-    Bool_t inside[4];
+    Bool_t inBounds[4];
     for (int j = 0; j < 4; ++j) {
-      Float_t dot = sides[j][0][i] * (intersection[0] - corners[j][0][i]) +
-                    sides[j][1][i] * (intersection[1] - corners[j][1][i]) +
-                    sides[j][2][i] * (intersection[2] - corners[j][2][i]);
-      inside[j] = dot >= 0;
+      Vector3D<Float_t> cross =
+          Vector3D<Float_t>::Cross(sides[j][i], intersection - corners[j][i]);
+      inBounds[j] = a[i]*cross[0] + b[i]*cross[1] + c[i]*cross[2] >= 0;
     }
-    inBounds[i] = distance[i] >= 0 &&
-                  inside[0] && inside[1] && inside[2] && inside[3];
+    valid[i] = distance[i] >= 0 &&
+               inBounds[0] && inBounds[1] && inBounds[2] && inBounds[3];
   }
-  // Aggregate result
   for (int i = 0; i < N; ++i) {
-    MaskedAssign(inBounds[i] && distance[i] < bestDistance, distance[i],
+    MaskedAssign(valid[i] && distance[i] < bestDistance, distance[i],
                  &bestDistance);
   }
 
@@ -410,22 +410,21 @@ typename Backend::precision_v Quadrilaterals<0>::DistanceToInKernel(
   typedef typename Backend::bool_v Bool_t;
 
   Float_t bestDistance = kInfinity;
+
   for (int i = 0; i < n; ++i) {
-    Float_t distance = -(a[i]*point[0] + b[i]*point[1] +
-                         c[i]*point[2] + d[i])
+    Float_t distance = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
                       / (a[i]*direction[0] + b[i]*direction[1] +
                          c[i]*direction[2]);
     Vector3D<Float_t> intersection = point + direction*distance;
-    Bool_t inside[4];
+    Bool_t inBounds[4];
     for (int j = 0; j < 4; ++j) {
-      Float_t dot = sides[j][0][i] * (intersection[0] - corners[j][0][i]) +
-                    sides[j][1][i] * (intersection[1] - corners[j][1][i]) +
-                    sides[j][2][i] * (intersection[2] - corners[j][2][i]);
-      inside[j] = dot >= 0;
+      Vector3D<Float_t> cross =
+          Vector3D<Float_t>::Cross(sides[j][i], intersection - corners[j][i]);
+      inBounds[j] = a[i]*cross[0] + b[i]*cross[1] + c[i]*cross[2] >= 0;
     }
-    MaskedAssign(inside[0] && inside[1] && inside[2] && inside[3] &&
-                 distance >= 0 && distance < bestDistance, distance,
-                 &bestDistance);
+    MaskedAssign(distance >= 0 && distance < bestDistance &&
+                 inBounds[0] && inBounds[1] && inBounds[2] && inBounds[3],
+                 distance, &bestDistance);
   }
 
   return bestDistance;
@@ -453,7 +452,7 @@ typename Backend::precision_v Quadrilaterals<0>::DistanceToOutKernel(
                          c[i]*point[2] + d[i])
                       / (a[i]*direction[0] + b[i]*direction[1] +
                          c[i]*direction[2]);
-    Float_t zProjection = point[0] + distance*direction[2];
+    Float_t zProjection = point[2] + distance*direction[2];
     MaskedAssign(distance >= 0 && zProjection >= zMin && zProjection <= zMax &&
                  distance < bestDistance, distance, &bestDistance);
   }

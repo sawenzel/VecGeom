@@ -10,7 +10,6 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifndef VECGEOM_NVCC
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount,
     const int zPlaneCount,
@@ -19,8 +18,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision rMax[])
     : fSideCount(sideCount), fHasInnerRadii(false),
       fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
-      fEndCaps(), fSegments(zPlaneCount-1), fZPlanes(zPlaneCount),
-      fPhiSections(sideCount+1) {
+      fEndCaps(), fEndCapsOuterRadii{0, 0}, fSegments(zPlaneCount-1),
+      fZPlanes(zPlaneCount), fPhiSections(sideCount+1) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -56,8 +55,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   Precision *vertixPhi = new Precision[sideCount];
   for (int i = 0; i < sideCount; ++i) {
     vertixPhi[i] = i*deltaPhi;
-    fPhiSections.set(
-        i, Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized());
+    fPhiSections.set(i,
+        Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized().FixZeroes());
   }
   fPhiSections.set(sideCount, fPhiSections[0]); // Close the loop
 
@@ -68,6 +67,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     rMin[i] /= cosHalfDeltaPhi;
     rMax[i] /= cosHalfDeltaPhi;
   }
+  fEndCapsOuterRadii[0] = rMax[0];
+  fEndCapsOuterRadii[1] = rMax[zPlaneCount-1];
 
   // Precompute all vertices to ensure that there are no numerical cracks in the
   // surface.
@@ -132,7 +133,6 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   delete[] outerVertices;
   if (fHasInnerRadii) delete[] innerVertices;
 }
-#endif
 
 void UnplacedPolyhedron::ExtractZPlanes(
     Precision *z,

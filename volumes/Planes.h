@@ -211,9 +211,13 @@ typename Backend::bool_v Planes<N>::ContainsKernel(
   Bool_t contains[N];
   for (int i = 0; i < N; ++i) {
     contains[i] = (a[i]*point[0] + b[i]*point[1] +
-                   c[i]*point[2] + d[i]) <= 0;
+                   c[i]*point[2] + d[i]) < 0;
   }
-  return all_of(contains, contains+N);
+  Bool_t result(true);
+  for (int i = 0; i < N; ++i) {
+    result &= contains[i];
+  }
+  return result;
 }
 
 template <int N>
@@ -291,19 +295,20 @@ typename Backend::precision_v Planes<N>::DistanceKernel(
     Vector3D<typename Backend::precision_v> const &point) {
 
   typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Float_t bestDistance = kInfinity;
 
   Float_t distance[N];
+  Bool_t valid[N];
   for (int i = 0; i < N; ++i) {
-    distance[i] = a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
+    distance[i] = PointInsideTraits<pointInsideT, Backend>::Sign(
+        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i]);
+    valid[i] = distance[i] >= 0;
   }
-  Float_t bestDistance = kInfinity;
   for (int i = 0; i < N; ++i) {
-    MaskedAssign(
-      PointInsideTraits<pointInsideT, Backend>::IsBetterDistance(
-          distance[i], bestDistance),
-      distance[i],
-      &bestDistance
-    );
+    MaskedAssign(valid[i] && distance[i] < bestDistance, distance[i],
+                 &bestDistance);
   }
   return bestDistance;
 }
@@ -434,9 +439,7 @@ typename Backend::bool_v Planes<0>::ContainsKernel(
 
   typename Backend::bool_v result(true);
   for (int i = 0; i < size; ++i) {
-    typename Backend::precision_v distanceResult = 
-        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
-    result &= distanceResult < -kTolerance;
+    result &= a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i] < 0;
   }
   return result;
 }
@@ -474,24 +477,16 @@ typename Backend::precision_v Planes<0>::DistanceKernel(
     Vector3D<typename Backend::precision_v> const &direction) {
 
   typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v Bool_t;
 
-  Float_t bestDistance(kInfinity);
-  Float_t *distance = AlignedAllocate<Float_t>(size);
-  Bool_t *valid = AlignedAllocate<Bool_t>(size);
+  Float_t bestDistance = kInfinity;
   for (int i = 0; i < size; ++i) {
-    distance[i] = -(a[i]*point[0] + b[i]*point[1] +
-                    c[i]*point[2] + d[i])
-                 / (a[i]*direction[0] + b[i]*direction[1] +
-                    c[i]*direction[2]);
-    valid[i] = distance[i] >= 0;
-  }
-  for (int i = 0; i < size; ++i) {
-    MaskedAssign(valid[i] && distance[i] < bestDistance, distance[i],
+    Float_t distance = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
+                      / (a[i]*direction[0] + b[i]*direction[1] +
+                         c[i]*direction[2]);
+    MaskedAssign(distance >= 0 && distance < bestDistance, distance,
                  &bestDistance);
   }
-  AlignedFree(distance);
-  AlignedFree(valid);
+
   return bestDistance;
 }
 
@@ -508,15 +503,12 @@ typename Backend::precision_v Planes<0>::DistanceKernel(
 
   typedef typename Backend::precision_v Float_t;
 
-  Float_t distance, bestDistance = kInfinity;
+  Float_t bestDistance = kInfinity;
   for (int i = 0; i < n; ++i) {
-    distance = a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
-    MaskedAssign(
-      PointInsideTraits<pointInsideT, Backend>::IsBetterDistance(
-          distance, bestDistance),
-      distance,
-      &bestDistance
-    );
+    Float_t distance = PointInsideTraits<pointInsideT, Backend>::Sign(
+        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i]);
+    MaskedAssign(distance >= 0 && distance < bestDistance, distance,
+                 &bestDistance);
   }
   return bestDistance;
 }
@@ -524,6 +516,13 @@ typename Backend::precision_v Planes<0>::DistanceKernel(
 template <int N>
 std::ostream& operator<<(std::ostream &os, Planes<N> const &planes) {
   for (int i = 0; i < N; ++i) {
+    os << "{" << planes.GetNormal(i) << ", " << planes.GetDistance(i) << "}\n";
+  }
+  return os;
+}
+
+inline std::ostream& operator<<(std::ostream &os, Planes<0> const &planes) {
+  for (int i = 0, iMax = planes.size(); i < iMax; ++i) {
     os << "{" << planes.GetNormal(i) << ", " << planes.GetDistance(i) << "}\n";
   }
   return os;
