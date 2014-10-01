@@ -7,11 +7,11 @@ using namespace vecgeom;
 
 int main() {
 
-  UnplacedBox worldUnplaced = UnplacedBox(3., 3., 3.);
+  UnplacedBox worldUnplaced = UnplacedBox(5., 5., 5.);
   constexpr int nPlanes = 4;
   Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
-  Precision rInner[nPlanes] = {1, 2, 1, 2};
-  Precision rOuter[nPlanes] = {2, 3, 2, 3};
+  Precision rInner[nPlanes] = {1, 1, 1, 1};
+  Precision rOuter[nPlanes] = {3, 3, 3, 3};
   UnplacedPolyhedron polyhedronUnplaced(4, nPlanes, zPlanes, rInner, rOuter);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);

@@ -27,8 +27,8 @@ int main() {
 
   constexpr int nPlanes = 4;
   Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
-  Precision rInner[nPlanes] = {0, 0, 0, 0};
-  Precision rOuter[nPlanes] = {2, 2, 2, 2};
+  Precision rInner[nPlanes] = {1, 1, 1, 1};
+  Precision rOuter[nPlanes] = {3, 3, 3, 3};
   // constexpr int nPlanes = 2;
   // Precision zPlanes[nPlanes] = {-1, 1};
   // Precision rInner[nPlanes] = {0.5, 1};
@@ -45,8 +45,12 @@ int main() {
   Precision output[kVectorSize];
   Precision stepMax[kVectorSize];
   for (int i = 0; i < kVectorSize; ++i) {
-    p.set(i, 1.313082, -1.654819, -1.999895);
-    d.set(i, -0.187806, 0.649752, 0.736581);
+    // p.set(i, 2.483732, -4.248398, 1.070332);
+    // d.set(i, -0.356131, 0.489997, -0.795660)
+    p.set(i, -4.691678, -3.838186, -2.737104);
+    d.set(i, 0.687631, 0.203269, 0.697026);
+    // p.set(i, 3.071539, -2.304781, -0.629474);
+    // d.set(i, -0.862077, -0.346298, -0.370002);
     stepMax[i] = vecgeom::kInfinity;
   }
   Precision specializedRes = polyhedron->DistanceToIn(p[0], d[0], stepMax[0]);
@@ -77,26 +81,29 @@ int main() {
   magenta.SetMarkerColor(kMagenta);
   magenta.SetMarkerStyle(21);
 
-  Vector3D<Precision> bounds(3, 3, 2.25);
+  Vector3D<Precision> bounds(4, 4, 3);
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds);
     bool vecgeomContains = polyhedron->Contains(sample);
-    bool rootContains = root->Contains(&sample[0]);
+    // bool rootContains = root->Contains(&sample[0]);
 #ifdef VECGEOM_USOLIDS
     bool usolidsContains = usolid->Inside(sample) != EInside::kOutside;
 #endif
-    if (vecgeomContains && rootContains) {
+#ifdef VECGEOM_GEANT4
+    bool geant4Contains = geant4->Inside(G4ThreeVector(sample[0], sample[1], sample[2])) == ::EInside::kInside;
+    if (vecgeomContains && geant4Contains) {
       green.SetNextPoint(sample[0], sample[1], sample[2]);
-    } else if (!vecgeomContains && !rootContains) {
+    } else if (!vecgeomContains && !geant4Contains) {
       red.SetNextPoint(sample[0], sample[1], sample[2]);
-    } else if (vecgeomContains && !rootContains) {
+    } else if (vecgeomContains && !geant4Contains) {
       blue.SetNextPoint(sample[0], sample[1], sample[2]);
-    } else if (!vecgeomContains && rootContains) {
+    } else if (!vecgeomContains && geant4Contains) {
       yellow.SetNextPoint(sample[0], sample[1], sample[2]);
     } else {
       assert(0); // All cases should be covered
     }
   }
+#endif
   Precision cornerLength = 1. / vecgeom::cos(kPi/4);
   magenta.SetNextPoint(cornerLength, 0, 1);
   magenta.SetNextPoint(-cornerLength, 0, 1);

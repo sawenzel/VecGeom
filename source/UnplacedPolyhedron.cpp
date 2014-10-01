@@ -70,6 +70,11 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   fEndCapsOuterRadii[0] = rMax[0];
   fEndCapsOuterRadii[1] = rMax[zPlaneCount-1];
 
+  // Ease indexing into twodimensional vertix array
+  auto GetVertix = [&sideCount] (int plane, int corner) {
+    return plane*(sideCount+1) + corner;
+  };
+
   // Precompute all vertices to ensure that there are no numerical cracks in the
   // surface.
   Vec_t *outerVertices = 0, *innerVertices = 0;
@@ -77,7 +82,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   if (fHasInnerRadii) innerVertices = new Vec_t[zPlaneCount*(sideCount+1)];
   for (int i = 0; i < zPlaneCount; ++i) {
     for (int j = 0; j < sideCount; ++j) {
-      int index = i*sideCount + j;
+      int index = GetVertix(i, j);
       outerVertices[index] =
           Vec_t::FromCylindrical(rMax[i], vertixPhi[j], zPlanes[i]).FixZeroes();
       if (fHasInnerRadii) {
@@ -87,8 +92,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       }
     }
     // Close the loop for easy indexing when building the sides
-    outerVertices[sideCount] = outerVertices[0];
-    if (fHasInnerRadii) innerVertices[sideCount] = innerVertices[0];
+    outerVertices[GetVertix(i, sideCount)] = outerVertices[GetVertix(i, 0)];
+    if (fHasInnerRadii) {
+      innerVertices[GetVertix(i, sideCount)] = innerVertices[GetVertix(i, 0)];
+    }
   }
   delete[] vertixPhi;
 
@@ -97,10 +104,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Vec_t corner0, corner1, corner2, corner3;
     // Sides of outer shell
     for (int j = 0; j < sideCount; ++j) {
-      corner0 = outerVertices[i*sideCount + j];
-      corner1 = outerVertices[i*sideCount + j+1];
-      corner2 = outerVertices[(i+1)*sideCount + j+1];
-      corner3 = outerVertices[(i+1)*sideCount + j];
+      corner0 = outerVertices[GetVertix(i, j)];
+      corner1 = outerVertices[GetVertix(i, j+1)];
+      corner2 = outerVertices[GetVertix(i+1, j+1)];
+      corner3 = outerVertices[GetVertix(i+1, j)];
       fSegments[i].outer.Set(j, corner0, corner1, corner2, corner3);
     }
     // Make sure the normals are pointing away from the Z-axis
@@ -109,10 +116,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     // Sides of inner shell (if needed)
     if (fSegments[i].hasInnerRadius) {
       for (int j = 0; j < sideCount; ++j) {
-        corner0 = innerVertices[i*sideCount + j];
-        corner1 = innerVertices[i*sideCount + j+1];
-        corner2 = innerVertices[(i+1)*sideCount + j+1];
-        corner3 = innerVertices[(i+1)*sideCount + j];
+        corner0 = innerVertices[GetVertix(i, j)];
+        corner1 = innerVertices[GetVertix(i, j+1)];
+        corner2 = innerVertices[GetVertix(i+1, j+1)];
+        corner3 = innerVertices[GetVertix(i+1, j)];
         fSegments[i].inner.Set(j, corner0, corner1, corner2, corner3);
       }
       // Make sure the normals are pointing away from the Z-axis
@@ -132,32 +139,41 @@ void UnplacedPolyhedron::ExtractZPlanes(
 
   const int zPlaneCount = fSegments.size()+1;
 
-  Vector3D<Precision> innerCorner, outerCorner;
+  // Find any corner that lies in the correct Z-plane
+  auto GetCorner = [] (Quadrilaterals<0> const &q, Precision z) {
+    Vector3D<Precision> corner;
+    for (int j = 0; j < 4; ++j) {
+      corner = q.GetCorners()[j][0];
+      if (corner[2] == z) return corner;
+    }
+    Assert(0, "Unexpected corners during extraction of Z-planes in Polyhedron");
+    return corner;
+  };
+
+  Vector3D<Precision> corner;
   for (int i = 0; i < zPlaneCount-1; ++i) {
     // Get Z-plane from the segment of which it is the beginning
     UnplacedPolyhedron::Segment const &segment = GetSegment(i);
-    outerCorner = segment.outer.GetCorners()[0][0];
-    z[i] = outerCorner[2];
-    rMax[i] = sqrt(outerCorner[0]*outerCorner[0] +
-                   outerCorner[1]*outerCorner[1]);
+    z[i] = fZPlanes[i];
+    corner = GetCorner(segment.outer, z[i]);
+    rMax[i] = sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
     if (segment.hasInnerRadius) {
-      innerCorner = segment.inner.GetCorners()[0][0];
-      rMin[i] = sqrt(innerCorner[0]*innerCorner[0] +
-                     innerCorner[1]*innerCorner[1]);
+      corner = GetCorner(segment.inner, z[i]);
+      rMin[i] = sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
     } else {
       rMin[i] = 0;
     }
   }
   // Treat final Z-plane as the end-plane of the last segment
   UnplacedPolyhedron::Segment const &segment = GetSegment(GetSegmentCount()-1);
-  outerCorner = segment.outer.GetCorners()[3][0];
+  z[zPlaneCount-1] = fZPlanes[GetSegmentCount()];
+  corner = GetCorner(segment.outer, z[zPlaneCount-1]);
   rMax[zPlaneCount-1] =
-      sqrt(outerCorner[0]*outerCorner[0] + outerCorner[1]*outerCorner[1]);
-  z[zPlaneCount-1] = outerCorner[2];
+      sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
   if (segment.hasInnerRadius) {
-    innerCorner = segment.inner.GetCorners()[3][0];
+    corner = GetCorner(segment.inner, z[zPlaneCount-1]);
     rMin[zPlaneCount-1] =
-        sqrt(innerCorner[0]*innerCorner[0] + innerCorner[1]*innerCorner[1]);
+        sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
   } else {
     rMin[zPlaneCount-1] = 0;
   }
