@@ -28,7 +28,7 @@ int main() {
   constexpr int nPlanes = 4;
   Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
   Precision rInner[nPlanes] = {0, 0, 0, 0};
-  Precision rOuter[nPlanes] = {0, 2, 2, 0};
+  Precision rOuter[nPlanes] = {2, 2, 2, 2};
   // constexpr int nPlanes = 2;
   // Precision zPlanes[nPlanes] = {-1, 1};
   // Precision rInner[nPlanes] = {0.5, 1};
@@ -40,6 +40,18 @@ int main() {
   LogicalVolume logical(&vecgeom);
   Transformation3D placement;
   VPlacedVolume *polyhedron = logical.Place(&placement);
+  
+  SOA3D<Precision> p(kVectorSize), d(kVectorSize);
+  Precision output[kVectorSize];
+  Precision stepMax[kVectorSize];
+  for (int i = 0; i < kVectorSize; ++i) {
+    p.set(i, 1.313082, -1.654819, -1.999895);
+    d.set(i, -0.187806, 0.649752, 0.736581);
+    stepMax[i] = vecgeom::kInfinity;
+  }
+  Precision specializedRes = polyhedron->DistanceToIn(p[0], d[0], stepMax[0]);
+  polyhedron->DistanceToIn(p, d, stepMax, output);
+  std::cout << specializedRes << " / " << output[0] << "\n";
 
 #ifdef VECGEOM_ROOT
   TApplication app("", NULL, NULL);
@@ -50,6 +62,7 @@ int main() {
 #ifdef VECGEOM_GEANT4
   G4VSolid const* geant4 = polyhedron->ConvertToGeant4();
 #endif
+
   const_cast<TGeoShape*>(root)->Draw();
   constexpr int nSamples = 1024;
   TPolyMarker3D blue(nSamples);

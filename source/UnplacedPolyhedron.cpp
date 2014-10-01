@@ -73,8 +73,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Precompute all vertices to ensure that there are no numerical cracks in the
   // surface.
   Vec_t *outerVertices = 0, *innerVertices = 0;
-  outerVertices = new Vec_t[zPlaneCount*sideCount];
-  if (fHasInnerRadii) innerVertices = new Vec_t[zPlaneCount*sideCount];
+  outerVertices = new Vec_t[zPlaneCount*(sideCount+1)];
+  if (fHasInnerRadii) innerVertices = new Vec_t[zPlaneCount*(sideCount+1)];
   for (int i = 0; i < zPlaneCount; ++i) {
     for (int j = 0; j < sideCount; ++j) {
       int index = i*sideCount + j;
@@ -86,6 +86,9 @@ UnplacedPolyhedron::UnplacedPolyhedron(
                 rMin[i], vertixPhi[j], zPlanes[i]).FixZeroes();
       }
     }
+    // Close the loop for easy indexing when building the sides
+    outerVertices[sideCount] = outerVertices[0];
+    if (fHasInnerRadii) innerVertices[sideCount] = innerVertices[0];
   }
   delete[] vertixPhi;
 
@@ -93,37 +96,25 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   for (int i = 0; i < zPlaneCount-1; ++i) {
     Vec_t corner0, corner1, corner2, corner3;
     // Sides of outer shell
-    for (int j = 0; j < sideCount-1; ++j) {
+    for (int j = 0; j < sideCount; ++j) {
       corner0 = outerVertices[i*sideCount + j];
       corner1 = outerVertices[i*sideCount + j+1];
       corner2 = outerVertices[(i+1)*sideCount + j+1];
       corner3 = outerVertices[(i+1)*sideCount + j];
       fSegments[i].outer.Set(j, corner0, corner1, corner2, corner3);
     }
-    // Close the loop
-    corner0 = corner1;
-    corner1 = outerVertices[i*sideCount];
-    corner2 = outerVertices[(i+1)*sideCount];
-    corner3 = corner2;
-    fSegments[i].outer.Set(sideCount-1, corner0, corner1, corner2, corner3);
     // Make sure the normals are pointing away from the Z-axis
     bool tiltingUp = rMax[i+1] - rMax[i] < 0;
     fSegments[i].outer.FixNormalSign(2, tiltingUp);
     // Sides of inner shell (if needed)
     if (fSegments[i].hasInnerRadius) {
-      for (int j = 0; j < sideCount-1; ++j) {
+      for (int j = 0; j < sideCount; ++j) {
         corner0 = innerVertices[i*sideCount + j];
         corner1 = innerVertices[i*sideCount + j+1];
         corner2 = innerVertices[(i+1)*sideCount + j+1];
         corner3 = innerVertices[(i+1)*sideCount + j];
         fSegments[i].inner.Set(j, corner0, corner1, corner2, corner3);
       }
-      // Close the loop
-      corner0 = corner1;
-      corner1 = innerVertices[i*sideCount];
-      corner2 = innerVertices[(i+1)*sideCount];
-      corner3 = corner2;
-      fSegments[i].inner.Set(sideCount-1, corner0, corner1, corner2, corner3);
       // Make sure the normals are pointing away from the Z-axis
       bool tiltingUp = rMin[i+1] - rMin[i] < 0;
       fSegments[i].inner.FixNormalSign(2, tiltingUp);

@@ -155,7 +155,7 @@ typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
-  Float_t bestDistance = kInfinity;
+  Float_t bestDistance(kInfinity);
 
   Float_t distance[N];
   Bool_t valid[N];
@@ -347,6 +347,7 @@ void Quadrilaterals<0>::Set(
   fSides[1].set(index, (corner2 - corner1).Normalized());
   fSides[2].set(index, (corner3 - corner2).Normalized());
   fSides[3].set(index, (corner0 - corner3).Normalized());
+
   fCorners[0].set(index, corner0);
   fCorners[1].set(index, corner1);
   fCorners[2].set(index, corner2);
