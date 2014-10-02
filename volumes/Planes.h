@@ -302,7 +302,7 @@ typename Backend::precision_v Planes<N>::DistanceKernel(
   Float_t distance[N];
   Bool_t valid[N];
   for (int i = 0; i < N; ++i) {
-    distance[i] = PointInsideTraits<pointInsideT, Backend>::Sign(
+    distance[i] = FlipSign<!pointInsideT>::Flip(
         a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i]);
     valid[i] = distance[i] >= 0;
   }
@@ -505,7 +505,7 @@ typename Backend::precision_v Planes<0>::DistanceKernel(
 
   Float_t bestDistance = kInfinity;
   for (int i = 0; i < n; ++i) {
-    Float_t distance = PointInsideTraits<pointInsideT, Backend>::Sign(
+    Float_t distance = FlipSign<!pointInsideT>::Flip(
         a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i]);
     MaskedAssign(distance >= 0 && distance < bestDistance, distance,
                  &bestDistance);

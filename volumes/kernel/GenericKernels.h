@@ -104,71 +104,26 @@ template <class Backend> struct TreatSurfaceTraits<false, Backend> {
   static const bool kOutside = false;
 };
 
-/// Trait class to check if the projection of a point along the normal of the
-/// plane has the correct sign, depending on whether the point is inside or
-/// outside. For points behind the plane the distance should be positive (along
-/// the normal), and opposite for points in front of the plane.
-template <bool pointInsideT, class Backend>
-class PointInsideTraits {
-public:
+template <bool flipSignT>
+struct FlipSign {};
+
+template <>
+struct FlipSign<true> {
+  template <class T>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::bool_v IsValid(
-      typename Backend::precision_v const &candidate);
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::precision_v Sign(
-      typename Backend::precision_v const &candidate);
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsBetterDistance(
-      typename Backend::precision_v const &candidate,
-      typename Backend::precision_v const &current);
-};
-template <class Backend>
-class PointInsideTraits<true, Backend> {
-public:
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsValid(
-      typename Backend::precision_v const &candidate) {
-    return candidate >= 0;
-  }
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::precision_v Sign(
-      typename Backend::precision_v const &candidate) {
-    return -candidate;
-  }
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsBetterDistance(
-      typename Backend::precision_v const &candidate,
-      typename Backend::precision_v const &current) {
-    return IsValid(candidate) && candidate < current;
+  static T Flip(T const &value) {
+    return -value;
   }
 };
-template <class Backend>
-class PointInsideTraits<false, Backend> {
-public:
+
+template <>
+struct FlipSign<false> {
+  template <class T>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::bool_v IsValid(
-      typename Backend::precision_v const &candidate) {
-    return candidate <= 0;
-  }
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::precision_v Sign(
-      typename Backend::precision_v const &candidate) {
-    return candidate;
-  }
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v IsBetterDistance(
-      typename Backend::precision_v const &candidate,
-      typename Backend::precision_v const &current) {
-    return IsValid(candidate) && candidate > current;
+  static T Flip(T const &value) {
+    return value;
   }
 };
 

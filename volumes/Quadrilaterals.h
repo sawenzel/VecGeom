@@ -160,9 +160,9 @@ typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
   Float_t distance[N];
   Bool_t valid[N];
   for (int i = 0; i < N; ++i) {
-    distance[i] = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
-                 / (a[i]*direction[0] + b[i]*direction[1] +
-                    c[i]*direction[2]);
+    distance[i] =
+        -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
+       / (a[i]*direction[0] + b[i]*direction[1] + c[i]*direction[2]);
     Vector3D<Float_t> intersection = point + direction*distance[i];
     Bool_t inBounds[4];
     for (int j = 0; j < 4; ++j) {
@@ -347,7 +347,7 @@ void Quadrilaterals<0>::Set(
   fSides[1].set(index, (corner2 - corner1).Normalized());
   fSides[2].set(index, (corner3 - corner2).Normalized());
   fSides[3].set(index, (corner0 - corner3).Normalized());
-  
+
   fCorners[0].set(index, corner0);
   fCorners[1].set(index, corner1);
   fCorners[2].set(index, corner2);
@@ -413,9 +413,9 @@ typename Backend::precision_v Quadrilaterals<0>::DistanceToInKernel(
   Float_t bestDistance = kInfinity;
 
   for (int i = 0; i < n; ++i) {
-    Float_t distance = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
-                      / (a[i]*direction[0] + b[i]*direction[1] +
-                         c[i]*direction[2]);
+    Float_t distance = 
+        -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
+       / (a[i]*direction[0] + b[i]*direction[1] + c[i]*direction[2]);
     Vector3D<Float_t> intersection = point + direction*distance;
     Bool_t inBounds[4];
     for (int j = 0; j < 4; ++j) {

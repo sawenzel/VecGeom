@@ -31,37 +31,37 @@ private:
   // ---- Cross section of single Z segment ----
   //
   // R/Phi--->    -o- Z
-  // |      ________________
-  // v     /      ^         \ fPhiSections
-  //      /    rMax |     /  \.
-  //     /          |    o    \.
-  //    /       ____|___/      \. 
-  //   /       /    ^   \       \.
-  //  /       /     |rMin\       \. 
-  // /       /      |     \--o--o-\ fPhiSections
-  // \       \            /       /
-  //  \       \          /       /
-  //   \       \________/       /
-  //    \                      /
-  //     \    [Segment.inner] /
-  //      \                  / Segment.outer
-  //       \________________/
+  // |        ________________
+  // v       /        ^       \ fPhiSections
+  //        /    rMax |     /  \.
+  //       /          |    o    \.
+  //      /       ____|___/      \. 
+  //     /       /    ^   \       \.
+  //    /       /     |rMin\       \. 
+  //   /       /      |     \--o--o-\ fPhiSections
+  //   \       \            /       /
+  //    \       \          /       /
+  //     \       \________/       /
+  //      \                      /
+  //       \    [Segment.inner] /
+  //        \                  / Segment.outer
+  //         \________________/
   //
   //
   // ---- Segments along Z ----
   //
   //
-  //         rMax[1]  rMax[2]        fZBounds[1]/fZPlanes[size-1]
-  //              _____         __       |
-  //            /|     |\     /|  \___   v
-  //   rMax[0] / |     | \___/ |  |   |\.
-  //          |  |     | |   | |  |   | \.
-  //          |  |     | |   | |  |   |  | fEndCaps
-  //          |  |     | |___| |  |   | / 
-  //           \ |     | /   \ |  |___|/    ^
-  //          ^ \|_____|/     \|__/         | R/Phi
-  //          |                         Z   |
-  //          zBounds[0]/fZPlanes[0]    <---
+  //                            fZBounds[1]/fZPlanes[size-1]
+  //  rMax[1]_____rMax[2]  __       |
+  //       /|     |\     /|  \___   v
+  //      / |     | \___/ |  |   |\.
+  //     |  |     | |   | |  |   | \.
+  //     |  |     | |   | |  |   |  | fEndCaps
+  //     |  |     | |___| |  |   | / 
+  //      \ |     | /   \ |  |___|/    ^
+  //     ^ \|_____|/     \|__/         | R/Phi
+  //     |                         Z   |
+  //     zBounds[0]/fZPlanes[0]    <---
 
   int fSideCount;
   bool fHasInnerRadii;

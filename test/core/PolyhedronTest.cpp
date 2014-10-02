@@ -27,8 +27,8 @@ int main() {
 
   constexpr int nPlanes = 4;
   Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
-  Precision rInner[nPlanes] = {1, 1, 1, 1};
-  Precision rOuter[nPlanes] = {3, 3, 3, 3};
+  Precision rInner[nPlanes] = {1, 0.5, 1, 0.5};
+  Precision rOuter[nPlanes] = {2, 2, 2, 2};
   // constexpr int nPlanes = 2;
   // Precision zPlanes[nPlanes] = {-1, 1};
   // Precision rInner[nPlanes] = {0.5, 1};
@@ -81,34 +81,51 @@ int main() {
   magenta.SetMarkerColor(kMagenta);
   magenta.SetMarkerStyle(21);
 
-  Vector3D<Precision> bounds(4, 4, 3);
+  Vector3D<Precision> bounds(4.5, 4.5, 3);
   for (int i = 0; i < nSamples; ++i) {
-    Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds);
-    bool vecgeomContains = polyhedron->Contains(sample);
-    // bool rootContains = root->Contains(&sample[0]);
+    Vector3D<Precision> point;
+    do {
+      point = volumeUtilities::SamplePoint(bounds);
+    } while (polyhedron->Contains(point));
+    Vector3D<Precision> direction = volumeUtilities::SampleDirection();
+    Precision vecgeomDistance =
+        polyhedron->DistanceToIn(point, direction, vecgeom::kInfinity);
 #ifdef VECGEOM_USOLIDS
-    bool usolidsContains = usolid->Inside(sample) != EInside::kOutside;
+    Precision usolidsDistance = usolids->DistanceToIn(point, direction
 #endif
 #ifdef VECGEOM_GEANT4
-    bool geant4Contains = geant4->Inside(G4ThreeVector(sample[0], sample[1], sample[2])) == ::EInside::kInside;
-    if (vecgeomContains && geant4Contains) {
-      green.SetNextPoint(sample[0], sample[1], sample[2]);
-    } else if (!vecgeomContains && !geant4Contains) {
-      red.SetNextPoint(sample[0], sample[1], sample[2]);
-    } else if (vecgeomContains && !geant4Contains) {
-      blue.SetNextPoint(sample[0], sample[1], sample[2]);
-    } else if (!vecgeomContains && geant4Contains) {
-      yellow.SetNextPoint(sample[0], sample[1], sample[2]);
+    Precision geant4Distance = geant4->DistanceToIn(
+        G4ThreeVector(point[0], point[1], point[2]),
+        G4ThreeVector(direction[0], direction[1], direction[2]));
+    if (Abs(vecgeomDistance - geant4Distance) < kTolerance ||
+        (vecgeomDistance == vecgeom::kInfinity &&
+         geant4Distance == ::kInfinity)) {
+      green.SetNextPoint(point[0], point[1], point[2]);
+    } else if (vecgeomDistance == vecgeom::kInfinity) {
+      red.SetNextPoint(point[0], point[1], point[2]);
+    } else if (geant4Distance == ::kInfinity) {
+      blue.SetNextPoint(point[0], point[1], point[2]);
     } else {
-      assert(0); // All cases should be covered
+      magenta.SetNextPoint(point[0], point[1], point[2]);
     }
-  }
 #endif
-  Precision cornerLength = 1. / vecgeom::cos(kPi/4);
-  magenta.SetNextPoint(cornerLength, 0, 1);
-  magenta.SetNextPoint(-cornerLength, 0, 1);
-  magenta.SetNextPoint(0, cornerLength, 1);
-  magenta.SetNextPoint(0, -cornerLength, 1);
+    // if (vecgeomContains && geant4Contains) {
+    //   green.SetNextPoint(point[0], point[1], point[2]);
+    // } else if (!vecgeomContains && !geant4Contains) {
+    //   red.SetNextPoint(point[0], point[1], point[2]);
+    // } else if (vecgeomContains && !geant4Contains) {
+    //   blue.SetNextPoint(point[0], point[1], point[2]);
+    // } else if (!vecgeomContains && geant4Contains) {
+    //   yellow.SetNextPoint(point[0], point[1], point[2]);
+    // } else {
+    //   assert(0); // All cases should be covered
+    // }
+  }
+  // Precision cornerLength = 1. / vecgeom::cos(kPi/4);
+  // magenta.SetNextPoint(cornerLength, 0, 1);
+  // magenta.SetNextPoint(-cornerLength, 0, 1);
+  // magenta.SetNextPoint(0, cornerLength, 1);
+  // magenta.SetNextPoint(0, -cornerLength, 1);
   // for (int i = 0; i < 4; ++i) {
   //   Vector3D<Precision> s =
   //       Vector3D<Precision>::FromCylindrical(1, i*kPi/2 + kPi/4, 1);

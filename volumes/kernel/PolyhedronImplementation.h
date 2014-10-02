@@ -412,9 +412,9 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
             direction);
     MaskedAssign(distanceResult < distance, distanceResult, &distance);
     if (treatInnerT) {
-      if (Any(distanceResult == kInfinity) && s.hasInnerRadius) {
+      if (s.hasInnerRadius) {
         distanceResult = Quadrilaterals<sideCountT>::template
-            DistanceToOutKernel<Backend>(
+            DistanceToInKernel<Backend, SOA3D<Precision> >(
                 unplaced.GetSideCount(),
                 Quadrilaterals<sideCountT>::ToFixedSize(
                     s.inner.GetNormal().x()),
@@ -424,8 +424,8 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
                     s.inner.GetNormal().z()),
                 Quadrilaterals<sideCountT>::ToFixedSize(
                     &s.inner.GetDistance()[0]),
-                unplaced.GetZPlanes()[i],
-                unplaced.GetZPlanes()[i+1],
+                s.inner.GetSides(),
+                s.inner.GetCorners(),
                 point,
                 direction);
         MaskedAssign(distanceResult < distance, distanceResult, &distance);
@@ -444,8 +444,8 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
   Bool_t endcapValid = distanceResult < distance;
   if (Any(endcapValid)) {
     Vector3D<Float_t> intersection = point + distanceResult*direction;
-    UnplacedPolyhedron::Segment const *s = &unplaced.GetSegment(0);
     Bool_t thisCap = endcapValid && point[2] < unplaced.GetZPlanes()[0];
+    UnplacedPolyhedron::Segment const *s = &unplaced.GetSegment(0);
     if (Any(thisCap)) {
       Bool_t insideCap =
           Planes<sideCountT>::template ContainsKernel<Backend>(
@@ -503,45 +503,6 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
     }
   }
 
-  //   Bool_t firstCap, secondCap;
-  //   // The intersection with the endcap plane is valid if it is behind the plane
-  //   // of the quadrilateral that covers the first Z-segment of the phi-segment
-  //   // in which the intersection lies.
-  //   Vector3D<Float_t> intersection = point + distanceResult*direction;
-  //   Int_t iPhi = FindPhiSegment<Backend>(unplaced, intersection);
-  //   UnplacedPolyhedron::Segment const *s = &unplaced.GetSegment(0);
-  //   // First endcap
-  //   firstCap = point[2] < unplaced.GetZPlanes()[0] &&
-  //              -(s->outer.GetNormal().x(iPhi)*intersection[0] +
-  //                s->outer.GetNormal().y(iPhi)*intersection[1] +
-  //                s->outer.GetNormal().z(iPhi)*intersection[2] +
-  //                s->outer.GetDistance()[iPhi]) < 0;
-  //   if (Any(firstCap) && treatInnerT) {
-  //     firstCap &= -(s->inner.GetNormal().x(iPhi)*intersection[0] +
-  //                   s->inner.GetNormal().y(iPhi)*intersection[1] +
-  //                   s->inner.GetNormal().z(iPhi)*intersection[2] +
-  //                   s->inner.GetDistance()[iPhi]) >= 0;
-  //   }
-  //   MaskedAssign(endcapValid && firstCap, distanceResult, &distance);
-  //   s = &unplaced.GetSegment(unplaced.GetSegmentCount()-1);
-  //   if (Any(endcapValid && !firstCap)) {
-  //     // Second endcap
-  //     secondCap =
-  //         point[2] > unplaced.GetZPlanes()[unplaced.GetSegmentCount()] &&
-  //         s->outer.GetNormal().x(iPhi)*intersection[0] +
-  //         s->outer.GetNormal().y(iPhi)*intersection[1] +
-  //         s->outer.GetNormal().z(iPhi)*intersection[2] +
-  //         s->outer.GetDistance()[iPhi];
-  //     if (Any(secondCap) && treatInnerT) {
-  //       secondCap &= -(s->inner.GetNormal().x(iPhi)*intersection[0] +
-  //                      s->inner.GetNormal().y(iPhi)*intersection[1] +
-  //                      s->inner.GetNormal().z(iPhi)*intersection[2] +
-  //                      s->inner.GetDistance()[iPhi]) >= 0;
-  //     }
-  //     MaskedAssign(endcapValid && secondCap, distanceResult, &distance);
-  //   }
-  // }
-
   // Impose upper limit of stepMax on the result
   MaskedAssign(distance > stepMax && distance < kInfinity, stepMax, &distance);
 }
@@ -582,7 +543,7 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToOut(
     if (treatInnerT) {
       if (s.hasInnerRadius) {
         distanceResult = Quadrilaterals<sideCountT>::template
-            DistanceToInKernel<Backend, SOA3D<Precision> >(
+            DistanceToInKernel<Backend, SOA3D<Precision> > (
                 unplaced.GetSideCount(),
                 Quadrilaterals<sideCountT>::ToFixedSize(
                     s.inner.GetNormal().x()),
