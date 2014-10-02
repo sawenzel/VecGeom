@@ -93,6 +93,8 @@ private:
 
 };
 
+std::ostream& operator<<(std::ostream &os, VUnplacedVolume const &vol);
+
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDVOLUME_H_

@@ -26,7 +26,7 @@ int main() {
   // assert(FindSegmentIndex<kScalar>(array, 4, 7) == 3);
 
   constexpr int nPlanes = 4;
-  Precision zPlanes[nPlanes] = {-2, -1, 1, 2};
+  Precision zPlanes[nPlanes] = {-2, -1, 1, 3};
   Precision rInner[nPlanes] = {1, 0.5, 1, 0.5};
   Precision rOuter[nPlanes] = {2, 2, 2, 2};
   // constexpr int nPlanes = 2;

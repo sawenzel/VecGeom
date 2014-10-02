@@ -19,7 +19,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     : fSideCount(sideCount), fHasInnerRadii(false),
       fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
       fEndCaps(), fEndCapsOuterRadii{0, 0}, fSegments(zPlaneCount-1),
-      fZPlanes(zPlaneCount), fPhiSections(sideCount+1) {
+      fZPlanes(zPlaneCount), fPhiSections(sideCount+1),
+      fBoundingTube(0, 1, 1, 0, 360) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -69,6 +70,19 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   }
   fEndCapsOuterRadii[0] = rMax[0];
   fEndCapsOuterRadii[1] = rMax[zPlaneCount-1];
+
+  // Compute bounding tube
+  Precision innerRadius = kInfinity, outerRadius = -kInfinity;
+  for (int i = 0; i < zPlaneCount; ++i) {
+    Assert(rMin[i] >= 0 && rMax[i] > kTolerance, "Invalid radius provided to "
+           "unplaced polyhedron constructor.");
+    if (rMin[i] < innerRadius) innerRadius = rMin[i];
+    if (rMax[i] > outerRadius) outerRadius = rMax[i];
+  }
+  Precision boundingTubeZ = zPlanes[zPlaneCount-1] - zPlanes[0] + 2.*kTolerance;
+  fBoundingTube = UnplacedTube(innerRadius, outerRadius, 0.5*boundingTubeZ,
+                               0, kTwoPi);
+  fBoundingTubeOffset = Abs(zPlanes[0] + 0.5*boundingTubeZ);
 
   // Ease indexing into twodimensional vertix array
   auto GetVertix = [&sideCount] (int plane, int corner) {

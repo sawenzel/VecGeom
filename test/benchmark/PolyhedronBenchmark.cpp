@@ -27,8 +27,8 @@ int main() {
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
   tester.SetPoolMultiplier(1);
-  tester.SetRepetitions(1);
-  tester.SetPointCount(32);
+  tester.SetRepetitions(8192);
+  tester.SetPointCount(128);
   tester.RunInsideBenchmark();
   tester.RunToOutBenchmark();
   tester.RunToInBenchmark();

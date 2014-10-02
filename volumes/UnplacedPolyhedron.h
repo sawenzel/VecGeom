@@ -11,6 +11,7 @@
 #include "base/SOA3D.h"
 #include "volumes/Quadrilaterals.h"
 #include "volumes/UnplacedVolume.h"
+#include "volumes/UnplacedTube.h"
 
 #include <ostream>
 
@@ -71,6 +72,8 @@ private:
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
   SOA3D<Precision> fPhiSections;
+  UnplacedTube fBoundingTube;
+  Precision fBoundingTubeOffset;
 
 public:
 
@@ -132,6 +135,14 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   SOA3D<Precision> const& GetPhiSections() const { return fPhiSections; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  UnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
 
   /// Extract values for the position of Z-planes, and the radius from the
   /// center to the inner and outer shell. These are part of the parameters

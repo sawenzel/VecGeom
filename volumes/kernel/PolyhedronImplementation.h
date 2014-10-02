@@ -9,6 +9,7 @@
 #include "backend/Backend.h"
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
+#include "volumes/kernel/TubeImplementation.h"
 #include "volumes/Quadrilaterals.h"
 #include "volumes/UnplacedPolyhedron.h"
 
@@ -125,6 +126,25 @@ struct PolyhedronImplementation {
 
 }; // End struct PolyhedronImplementation
 
+namespace {
+
+template <bool hasInnerRadiiT>
+struct HasInnerRadiiTraits;
+
+template <>
+struct HasInnerRadiiTraits<true> {
+  typedef TubeImplementation<translation::kIdentity,
+      rotation::kIdentity, TubeTypes::HollowTube> TubeKernels;
+};
+
+template <>
+struct HasInnerRadiiTraits<false> {
+  typedef TubeImplementation<translation::kIdentity,
+      rotation::kIdentity, TubeTypes::NonHollowTube> TubeKernels;
+};
+
+}
+
 template <bool treatInnerT, unsigned sideCountT>
 template <class Backend>
 VECGEOM_INLINE
@@ -210,11 +230,20 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::ScalarInsideKernel(
 
   inside = TreatSurfaceTraits<treatSurfaceT, kScalar>::kOutside;
 
-  // Check if inside z-bounds
-  if (localPoint[2] < polyhedron.GetTolerantZMin() ||
-      localPoint[2] > polyhedron.GetTolerantZMax()) {
-    return;
+  // First check if in bounding tube
+  {
+    bool inBounds;
+    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+        UnplacedContains<kScalar>(
+            polyhedron.GetBoundingTube(), localPoint, inBounds);
+    if (!inBounds) return;
   }
+
+  // // Check if inside z-bounds
+  // if (localPoint[2] < polyhedron.GetTolerantZMin() ||
+  //     localPoint[2] > polyhedron.GetTolerantZMax()) {
+  //   return;
+  // }
 
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint);
@@ -392,6 +421,18 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
 
   distance = kInfinity;
 
+  Vector3D<Float_t> localPoint = transformation.Transform(point);
+  Vector3D<Float_t> localDirection = transformation.Transform(direction);
+
+  if (Backend::early_returns) {
+    Float_t hitsTube;
+    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+        DistanceToIn<Backend>(
+            unplaced.GetBoundingTube(), Transformation3D::kIdentity,
+            localPoint, localDirection, stepMax, hitsTube);
+    if (IsFull(hitsTube == kInfinity)) return;
+  }
+
   Float_t distanceResult;
   for (int i = 0, iMax = unplaced.GetSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetSegment(i);
@@ -408,8 +449,8 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
                 &s.outer.GetDistance()[0]),
             s.outer.GetSides(),
             s.outer.GetCorners(),
-            point,
-            direction);
+            localPoint,
+            localDirection);
     MaskedAssign(distanceResult < distance, distanceResult, &distance);
     if (treatInnerT) {
       if (s.hasInnerRadius) {
@@ -426,25 +467,25 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
                     &s.inner.GetDistance()[0]),
                 s.inner.GetSides(),
                 s.inner.GetCorners(),
-                point,
-                direction);
+                localPoint,
+                localDirection);
         MaskedAssign(distanceResult < distance, distanceResult, &distance);
       }
     }
     // If the next segment is further away than the best distance, no better
     // distance can be found.
     if (Backend::early_returns) {
-      if (IsFull(Abs(point[2] - s.zMax) > distance)) break;
+      if (IsFull(Abs(localPoint[2] - s.zMax) > distance)) break;
     }
   }
 
   // Distance to endcaps
   distanceResult =
-      unplaced.GetEndCaps().DistanceToIn<Backend>(point, direction);
+      unplaced.GetEndCaps().DistanceToIn<Backend>(localPoint, localDirection);
   Bool_t endcapValid = distanceResult < distance;
   if (Any(endcapValid)) {
-    Vector3D<Float_t> intersection = point + distanceResult*direction;
-    Bool_t thisCap = endcapValid && point[2] < unplaced.GetZPlanes()[0];
+    Vector3D<Float_t> intersection = localPoint + distanceResult*localDirection;
+    Bool_t thisCap = endcapValid && localPoint[2] < unplaced.GetZPlanes()[0];
     UnplacedPolyhedron::Segment const *s = &unplaced.GetSegment(0);
     if (Any(thisCap)) {
       Bool_t insideCap =
@@ -473,7 +514,7 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
       MaskedAssign(thisCap && insideCap, distanceResult, &distance);
     }
     s = &unplaced.GetSegment(unplaced.GetSegmentCount()-1);
-    thisCap = endcapValid && point[2] >
+    thisCap = endcapValid && localPoint[2] >
               unplaced.GetZPlanes()[unplaced.GetSegmentCount()];
     if (Any(thisCap)) {
       Bool_t insideCap =
