@@ -64,23 +64,23 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Specified radii are to the sides, not to the corners. Change these values,
   // as corners and not sides are used to build the structure
   Precision cosHalfDeltaPhi = cos(0.5*deltaPhi);
+  Precision innerRadius = kInfinity, outerRadius = -kInfinity;
   for (int i = 0; i < zPlaneCount; ++i) {
+    // Use distance to side for minimizing inner radius
+    if (rMin[i] < innerRadius) innerRadius = rMin[i];
     rMin[i] /= cosHalfDeltaPhi;
     rMax[i] /= cosHalfDeltaPhi;
+    Assert(rMin[i] >= 0 && rMax[i] > kTolerance, "Invalid radius provided to "
+           "unplaced polyhedron constructor.");
+    // Use distance to corner for minimizing outer radius
+    if (rMax[i] > outerRadius) outerRadius = rMax[i];
   }
   fEndCapsOuterRadii[0] = rMax[0];
   fEndCapsOuterRadii[1] = rMax[zPlaneCount-1];
-
-  // Compute bounding tube
-  Precision innerRadius = kInfinity, outerRadius = -kInfinity;
-  for (int i = 0; i < zPlaneCount; ++i) {
-    Assert(rMin[i] >= 0 && rMax[i] > kTolerance, "Invalid radius provided to "
-           "unplaced polyhedron constructor.");
-    if (rMin[i] < innerRadius) innerRadius = rMin[i];
-    if (rMax[i] > outerRadius) outerRadius = rMax[i];
-  }
+  // Create bounding tube with biggest outer radius and smallest inner radius
   Precision boundingTubeZ = zPlanes[zPlaneCount-1] - zPlanes[0] + 2.*kTolerance;
-  fBoundingTube = UnplacedTube(innerRadius, outerRadius, 0.5*boundingTubeZ,
+  fBoundingTube = UnplacedTube(innerRadius - kTolerance,
+                               outerRadius + kTolerance, 0.5*boundingTubeZ,
                                0, kTwoPi);
   fBoundingTubeOffset = Abs(zPlanes[0] + 0.5*boundingTubeZ);
 

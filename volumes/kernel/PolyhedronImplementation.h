@@ -424,14 +424,14 @@ void PolyhedronImplementation<treatInnerT, sideCountT>::DistanceToIn(
   Vector3D<Float_t> localPoint = transformation.Transform(point);
   Vector3D<Float_t> localDirection = transformation.Transform(direction);
 
-  if (Backend::early_returns) {
-    Float_t hitsTube;
-    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
-        DistanceToIn<Backend>(
-            unplaced.GetBoundingTube(), Transformation3D::kIdentity,
-            localPoint, localDirection, stepMax, hitsTube);
-    if (IsFull(hitsTube == kInfinity)) return;
-  }
+  // if (Backend::early_returns) {
+  //   Float_t hitsTube;
+  //   HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+  //       DistanceToIn<Backend>(
+  //           unplaced.GetBoundingTube(), Transformation3D::kIdentity,
+  //           localPoint, localDirection, stepMax, hitsTube);
+  //   if (IsFull(hitsTube == kInfinity)) return;
+  // }
 
   Float_t distanceResult;
   for (int i = 0, iMax = unplaced.GetSegmentCount(); i < iMax; ++i) {
