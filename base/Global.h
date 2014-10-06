@@ -40,7 +40,7 @@
   #define VECGEOM_INLINE inline
 #else
   #include <mm_malloc.h>
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__) && !defined(__NO_INLINE__)
     #define VECGEOM_INLINE inline __attribute__((always_inline))
   #else // Clang (most likely)
     #define VECGEOM_INLINE inline
