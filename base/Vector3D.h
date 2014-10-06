@@ -293,6 +293,21 @@ public:
     return output;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static VecType FromCylindrical(Type r, Type phi, Type z) {
+    return VecType(r*cos(phi), r*sin(phi), z);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType& FixZeroes() {
+    for (int i = 0; i < 3; ++i) {
+      VECGEOM_NAMESPACE::MaskedAssign(VECGEOM_NAMESPACE::Abs(vec[i]) < kTolerance, 0., &vec[i]);
+    }
+    return *this;
+  }
+
   // Inplace binary operators
 
   #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
