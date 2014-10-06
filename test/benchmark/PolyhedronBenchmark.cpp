@@ -28,7 +28,7 @@ int main() {
   tester.SetVerbosity(3);
   tester.SetPoolMultiplier(1);
   tester.SetRepetitions(1);
-  tester.SetPointCount(1024);
+  tester.SetPointCount(32);
   tester.RunInsideBenchmark();
   tester.RunToOutBenchmark();
   tester.RunToInBenchmark();

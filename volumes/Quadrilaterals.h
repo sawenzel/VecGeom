@@ -51,12 +51,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToInKernel(
       const int n,
-      Precision const (&a)[N],
-      Precision const (&b)[N],
-      Precision const (&c)[N],
-      Precision const (&d)[N],
-      InputStruct const (&sides)[4],
-      InputStruct const (&corners)[4],
+      __restrict__ Precision const (&a)[N],
+      __restrict__ Precision const (&b)[N],
+      __restrict__ Precision const (&c)[N],
+      __restrict__ Precision const (&d)[N],
+      __restrict__ InputStruct const (&sides)[4],
+      __restrict__ InputStruct const (&corners)[4],
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
@@ -64,10 +64,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToOutKernel(
       const int n,
-      Precision const (&a)[N],
-      Precision const (&b)[N],
-      Precision const (&c)[N],
-      Precision const (&d)[N],
+      __restrict__ Precision const (&a)[N],
+      __restrict__ Precision const (&b)[N],
+      __restrict__ Precision const (&c)[N],
+      __restrict__ Precision const (&d)[N],
       const Precision zMin,
       const Precision zMax,
       Vector3D<typename Backend::precision_v> const &point,
@@ -143,12 +143,12 @@ template <class Backend, class InputStruct>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals<N>::DistanceToInKernel(
     const int n,
-    Precision const (&a)[N],
-    Precision const (&b)[N],
-    Precision const (&c)[N],
-    Precision const (&d)[N],
-    InputStruct const (&sides)[4],
-    InputStruct const (&corners)[4],
+    __restrict__ Precision const (&a)[N],
+    __restrict__ Precision const (&b)[N],
+    __restrict__ Precision const (&c)[N],
+    __restrict__ Precision const (&d)[N],
+    __restrict__ InputStruct const (&sides)[4],
+    __restrict__ InputStruct const (&corners)[4],
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
@@ -186,10 +186,10 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals<N>::DistanceToOutKernel(
     const int n,
-    Precision const (&a)[N],
-    Precision const (&b)[N],
-    Precision const (&c)[N],
-    Precision const (&d)[N],
+    __restrict__ Precision const (&a)[N],
+    __restrict__ Precision const (&b)[N],
+    __restrict__ Precision const (&c)[N],
+    __restrict__ Precision const (&d)[N],
     const Precision zMin,
     const Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,
@@ -292,12 +292,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToInKernel(
       const int n,
-      Precision const a[],
-      Precision const b[],
-      Precision const c[],
-      Precision const d[],
-      InputStruct const (&sides)[4],
-      InputStruct const (&corners)[4],
+      __restrict__ Precision const a[],
+      __restrict__ Precision const b[],
+      __restrict__ Precision const c[],
+      __restrict__ Precision const d[],
+      __restrict__ InputStruct const (&sides)[4],
+      __restrict__ InputStruct const (&corners)[4],
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
@@ -305,10 +305,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToOutKernel(
       const int n,
-      Precision const a[],
-      Precision const b[],
-      Precision const c[],
-      Precision const d[],
+      __restrict__ Precision const a[],
+      __restrict__ Precision const b[],
+      __restrict__ Precision const c[],
+      __restrict__ Precision const d[],
       const Precision zMin,
       const Precision zMax,
       Vector3D<typename Backend::precision_v> const &point,
@@ -398,12 +398,12 @@ template <class Backend, class InputStruct>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals<0>::DistanceToInKernel(
     const int n,
-    Precision const a[],
-    Precision const b[],
-    Precision const c[],
-    Precision const d[],
-    InputStruct const (&sides)[4],
-    InputStruct const (&corners)[4],
+    __restrict__ Precision const a[],
+    __restrict__ Precision const b[],
+    __restrict__ Precision const c[],
+    __restrict__ Precision const d[],
+    __restrict__ InputStruct const (&sides)[4],
+    __restrict__ InputStruct const (&corners)[4],
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
@@ -435,10 +435,10 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals<0>::DistanceToOutKernel(
     const int n,
-    Precision const a[],
-    Precision const b[],
-    Precision const c[],
-    Precision const d[],
+    __restrict__ Precision const a[],
+    __restrict__ Precision const b[],
+    __restrict__ Precision const c[],
+    __restrict__ Precision const d[],
     const Precision zMin,
     const Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,

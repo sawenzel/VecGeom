@@ -56,7 +56,9 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  int GetSegmentCount() const { return GetUnplacedVolume()->GetSegmentCount(); }
+  int GetZSegmentCount() const {
+    return GetUnplacedVolume()->GetZSegmentCount();
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -64,14 +66,14 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  UnplacedPolyhedron::Segment const& GetSegment(int index) const {
-    return GetUnplacedVolume()->GetSegment(index);
+  UnplacedPolyhedron::Segment const& GetZSegment(int index) const {
+    return GetUnplacedVolume()->GetZSegment(index);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Array<UnplacedPolyhedron::Segment> const& GetSegments() const {
-    return GetUnplacedVolume()->GetSegments();
+  Array<UnplacedPolyhedron::Segment> const& GetZSegments() const {
+    return GetUnplacedVolume()->GetZSegments();
   }
 
   VECGEOM_CUDA_HEADER_BOTH

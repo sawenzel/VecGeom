@@ -29,7 +29,7 @@ VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
-  const int zPlaneCount = GetSegmentCount()+1;
+  const int zPlaneCount = GetZSegmentCount()+1;
 
   TGeoPgon *pgon = new TGeoPgon(GetLabel().c_str(), 0, 360, GetSideCount(),
                                 zPlaneCount);
@@ -57,7 +57,7 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
 
-  const int zPlaneCount = GetSegmentCount()+1;
+  const int zPlaneCount = GetZSegmentCount()+1;
 
   Precision *z = new Precision[zPlaneCount];
   Precision *rMin = new Precision[zPlaneCount];
@@ -86,7 +86,7 @@ UPolyhedra *polyhedra = new UPolyhedra(
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
 
-  const int zPlaneCount = GetSegmentCount()+1;
+  const int zPlaneCount = GetZSegmentCount()+1;
 
   Precision *z = new Precision[zPlaneCount];
   Precision *rMin = new Precision[zPlaneCount];

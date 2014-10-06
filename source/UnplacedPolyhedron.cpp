@@ -167,7 +167,7 @@ void UnplacedPolyhedron::ExtractZPlanes(
   Vector3D<Precision> corner;
   for (int i = 0; i < zPlaneCount-1; ++i) {
     // Get Z-plane from the segment of which it is the beginning
-    UnplacedPolyhedron::Segment const &segment = GetSegment(i);
+    UnplacedPolyhedron::Segment const &segment = GetZSegment(i);
     z[i] = fZPlanes[i];
     corner = GetCorner(segment.outer, z[i]);
     rMax[i] = sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
@@ -179,8 +179,9 @@ void UnplacedPolyhedron::ExtractZPlanes(
     }
   }
   // Treat final Z-plane as the end-plane of the last segment
-  UnplacedPolyhedron::Segment const &segment = GetSegment(GetSegmentCount()-1);
-  z[zPlaneCount-1] = fZPlanes[GetSegmentCount()];
+  UnplacedPolyhedron::Segment const &segment =
+      GetZSegment(GetZSegmentCount()-1);
+  z[zPlaneCount-1] = fZPlanes[GetZSegmentCount()];
   corner = GetCorner(segment.outer, z[zPlaneCount-1]);
   rMax[zPlaneCount-1] =
       sqrt(corner[0]*corner[0] + corner[1]*corner[1]);

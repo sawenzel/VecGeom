@@ -94,7 +94,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  int GetSegmentCount() const { return fSegments.size(); }
+  int GetZSegmentCount() const { return fSegments.size(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -102,11 +102,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Segment const& GetSegment(int index) const { return fSegments[index]; }
+  Segment const& GetZSegment(int index) const { return fSegments[index]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Array<Segment> const& GetSegments() const { return fSegments; }
+  Array<Segment> const& GetZSegments() const { return fSegments; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

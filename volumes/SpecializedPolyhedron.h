@@ -87,18 +87,28 @@ public:
                       Inside_t *const output) const;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision SafetyToIn(Vector3D<Precision> const &position) const;
+  virtual Precision DistanceToIn(Vector3D<Precision> const &point,
+                                 Vector3D<Precision> const &direction,
+                                 const Precision stepMax = kInfinity) const;
 
-  virtual void SafetyToIn(SOA3D<Precision> const &position,
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision SafetyToIn(Vector3D<Precision> const &point) const;
+
+  virtual void SafetyToIn(SOA3D<Precision> const &point,
                           Precision *const safeties) const;
 
   virtual void SafetyToInMinimize(SOA3D<Precision> const &points,
                                   Precision *const safeties) const;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision SafetyToOut(Vector3D<Precision> const &position) const;
+  virtual Precision DistanceToOut(Vector3D<Precision> const &point,
+                                  Vector3D<Precision> const &direction,
+                                  const Precision stepMax = kInfinity) const;
 
-  virtual void SafetyToOut(SOA3D<Precision> const &position,
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision SafetyToOut(Vector3D<Precision> const &point) const;
+
+  virtual void SafetyToOut(SOA3D<Precision> const &point,
                            Precision *const safeties) const;
 
   virtual void SafetyToOutMinimize(SOA3D<Precision> const &points,
@@ -182,6 +192,22 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::Inside(
 
 template <bool treatInnerT, unsigned sideCountT>
 VECGEOM_CUDA_HEADER_BOTH
+Precision SpecializedPolyhedron<treatInnerT, sideCountT>::DistanceToIn(
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
+    const Precision stepMax) const {
+  Vector3D<Precision> localPoint =
+      VPlacedVolume::transformation()->Transform(point);
+  Vector3D<Precision> localDirection =
+      VPlacedVolume::transformation()->TransformDirection(direction);
+  return PolyhedronImplementation<treatInnerT,
+      sideCountT>::ScalarDistanceToInKernel(
+          *PlacedPolyhedron::GetUnplacedVolume(), localPoint, localDirection,
+          stepMax);
+}
+
+template <bool treatInnerT, unsigned sideCountT>
+VECGEOM_CUDA_HEADER_BOTH
 Precision SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToIn(
     Vector3D<Precision> const &point) const {
 
@@ -225,6 +251,17 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToInMinimize(
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];
   }
+}
+
+template <bool treatInnerT, unsigned sideCountT>
+VECGEOM_CUDA_HEADER_BOTH
+Precision SpecializedPolyhedron<treatInnerT, sideCountT>::DistanceToOut(
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
+    const Precision stepMax) const {
+  return PolyhedronImplementation<treatInnerT,
+      sideCountT>::ScalarDistanceToOutKernel(
+          *PlacedPolyhedron::GetUnplacedVolume(), point, direction, stepMax);
 }
 
 template <bool treatInnerT, unsigned sideCountT>
