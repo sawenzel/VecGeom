@@ -52,7 +52,7 @@
   #define VECGEOM_INLINE inline
 #else
   #include <mm_malloc.h>
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__) && !defined(__NO_INLINE__)
     #define VECGEOM_INLINE inline __attribute__((always_inline))
     #ifndef VECGEOM_NVCC
       #define VECGEOM_ALIGNED __attribute__((aligned(64)))

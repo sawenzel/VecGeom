@@ -327,7 +327,8 @@ public:
   VECGEOM_INLINE
   VecType& FixZeroes() {
     for (int i = 0; i < 3; ++i) {
-      MaskedAssign(Abs(vec[i]) < kTolerance, 0, &vec[i]);
+      VECGEOM_NAMESPACE::MaskedAssign(
+          VECGEOM_NAMESPACE::Abs(vec[i]) < kTolerance, 0., &vec[i]);
     }
     return *this;
   }

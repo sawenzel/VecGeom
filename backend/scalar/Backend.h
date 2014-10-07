@@ -149,7 +149,7 @@ Precision tan(const Precision radians) {
 #ifndef VECGEOM_NVCC
   return std::tan(radians);
 #else
-  return atan(radians);
+  return tan(radians);
 #endif
 }
 
