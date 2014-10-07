@@ -341,6 +341,9 @@ set(SRC_CPP_RELATIVE
   source/PlacedPolyhedron.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
+  source/Planes.cpp
+  source/Quadrilaterals.cpp
+  source/Rectangles.cpp
   source/SOA3D.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp
@@ -443,7 +446,6 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/PlanesTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PolyhedronTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/RectanglesTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
 )

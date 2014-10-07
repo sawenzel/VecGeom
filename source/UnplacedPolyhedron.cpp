@@ -18,7 +18,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision rMax[])
     : fSideCount(sideCount), fHasInnerRadii(false),
       fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
-      fEndCaps(), fEndCapsOuterRadii{0, 0}, fSegments(zPlaneCount-1),
+      fEndCaps(2), fEndCapsOuterRadii{0, 0}, fSegments(zPlaneCount-1),
       fZPlanes(zPlaneCount), fPhiSections(sideCount+1),
       fBoundingTube(0, 1, 1, 0, 360) {
 
@@ -33,14 +33,13 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   copy(zPlanes, zPlanes+zPlaneCount, &fZPlanes[0]);
   // Initialize segments
   for (int i = 0; i < zPlaneCount-1; ++i) {
-    fSegments[i].outer = Quadrilaterals<0>(fSideCount);
-    fSegments[i].zMax = zPlanes[i+1];
+    fSegments[i].outer = Quadrilaterals(fSideCount);
     Assert(zPlanes[i] <= zPlanes[i+1], "Polyhedron Z-planes must be "
            "monotonically increasing.\n");
     if (rMin[i] > kTolerance || rMin[i+1] > kTolerance) {
       fHasInnerRadii = true;
       fSegments[i].hasInnerRadius = true;
-      fSegments[i].inner = Quadrilaterals<0>(fSideCount);
+      fSegments[i].inner = Quadrilaterals(fSideCount);
     } else {
       fSegments[i].hasInnerRadius = false;
     }
@@ -154,7 +153,7 @@ void UnplacedPolyhedron::ExtractZPlanes(
   const int zPlaneCount = fSegments.size()+1;
 
   // Find any corner that lies in the correct Z-plane
-  auto GetCorner = [] (Quadrilaterals<0> const &q, Precision z) {
+  auto GetCorner = [] (Quadrilaterals const &q, Precision z) {
     Vector3D<Precision> corner;
     for (int j = 0; j < 4; ++j) {
       corner = q.GetCorners()[j][0];
@@ -215,57 +214,46 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
       static_cast<UnplacedPolyhedron const *>(volume->unplaced_volume());
 
   bool hasInner = unplaced->HasInnerRadii();
-  int sideCount = unplaced->GetSideCount();
 
 #ifndef VECGEOM_NVCC
-  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, SIDES) \
-  if (hasInner == INNER && sideCount == SIDES) { \
+  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER) \
+  if (hasInner == INNER) { \
     if (placement) { \
       return new(placement) \
-             SpecializedPolyhedron<INNER, SIDES>(volume, transformation); \
+             SpecializedPolyhedron<INNER>(volume, transformation); \
     } else { \
-      return new SpecializedPolyhedron<INNER, SIDES>(volume, transformation); \
+      return new SpecializedPolyhedron<INNER>(volume, transformation); \
     } \
   }
 #else
-  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, SIDES) \
-  if (hasInner == INNER && sideCount == SIDES) { \
+  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER) \
+  if (hasInner == INNER) { \
     if (placement) { \
       return new(placement) \
-             SpecializedPolyhedron<INNER, SIDES>(volume, transformation, id); \
+             SpecializedPolyhedron<INNER>(volume, transformation, id); \
     } else { \
       return new \
-             SpecializedPolyhedron<INNER, SIDES>(volume, transformation, id); \
+             SpecializedPolyhedron<INNER>(volume, transformation, id); \
     } \
   }
 #endif
 
-  POLYHEDRON_CREATE_SPECIALIZATION(true, 3);
-  POLYHEDRON_CREATE_SPECIALIZATION(true, 4);
-  POLYHEDRON_CREATE_SPECIALIZATION(true, 5);
-  POLYHEDRON_CREATE_SPECIALIZATION(true, 6);
-  POLYHEDRON_CREATE_SPECIALIZATION(true, 7);
-  POLYHEDRON_CREATE_SPECIALIZATION(true, 8);
-  POLYHEDRON_CREATE_SPECIALIZATION(false, 3);
-  POLYHEDRON_CREATE_SPECIALIZATION(false, 4);
-  POLYHEDRON_CREATE_SPECIALIZATION(false, 5);
-  POLYHEDRON_CREATE_SPECIALIZATION(false, 6);
-  POLYHEDRON_CREATE_SPECIALIZATION(false, 7);
-  POLYHEDRON_CREATE_SPECIALIZATION(false, 8);
+  POLYHEDRON_CREATE_SPECIALIZATION(true);
+  POLYHEDRON_CREATE_SPECIALIZATION(false);
 
 #ifndef VECGEOM_NVCC
   if (placement) {
     return new(placement)
-           SpecializedPolyhedron<true, 0>(volume, transformation);
+           SpecializedPolyhedron<true>(volume, transformation);
   } else {
-    return new SpecializedPolyhedron<true, 0>(volume, transformation);
+    return new SpecializedPolyhedron<true>(volume, transformation);
   }
 #else
   if (placement) {
     return new(placement)
-           SpecializedPolyhedron<true, 0>(volume, transformation, id);
+           SpecializedPolyhedron<true>(volume, transformation, id);
   } else {
-    return new SpecializedPolyhedron<true, 0>(volume, transformation, id);
+    return new SpecializedPolyhedron<true>(volume, transformation, id);
   }
 #endif
 

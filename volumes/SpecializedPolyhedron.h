@@ -14,23 +14,22 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 struct PolyhedronSpecialization {
   static const bool treatInner = treatInnerT;
-  static const int sideCount = sideCountT;
 };
 
-typedef PolyhedronSpecialization<true, 0> GenericPolyhedron;
+typedef PolyhedronSpecialization<true> GenericPolyhedron;
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 class SpecializedPolyhedron
     : public ShapeImplementationHelper<
           PlacedPolyhedron,
-          PolyhedronImplementation<treatInnerT, sideCountT> > {
+          PolyhedronImplementation<treatInnerT> > {
 
   typedef ShapeImplementationHelper<
       PlacedPolyhedron,
-      PolyhedronImplementation<treatInnerT, sideCountT> > Helper;
+      PolyhedronImplementation<treatInnerT> > Helper;
 
 public:
 
@@ -116,83 +115,83 @@ public:
 
 };
 
-typedef SpecializedPolyhedron<true, 0> SimplePolyhedron;
+typedef SpecializedPolyhedron<true> SimplePolyhedron;
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::PrintType() const {
-  printf("SpecializedPolyhedron<%i, %i>", treatInnerT, sideCountT);
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::PrintType() const {
+  printf("SpecializedPolyhedron<%i>", treatInnerT);
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<treatInnerT, sideCountT>::Contains(
+bool SpecializedPolyhedron<treatInnerT>::Contains(
     Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint;
   return Contains(point, localPoint);
 }
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::Contains(
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::Contains(
     SOA3D<Precision> const &points,
     bool *const output) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
-    PolyhedronImplementation<treatInnerT, sideCountT>::template
+    PolyhedronImplementation<treatInnerT>::template
     ScalarInsideKernel<false>(*PlacedPolyhedron::GetUnplacedVolume(),
                               localPoint, output[i]);
   }
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<treatInnerT, sideCountT>::Contains(
+bool SpecializedPolyhedron<treatInnerT>::Contains(
     Vector3D<Precision> const &point,
     Vector3D<Precision> &localPoint) const {
   localPoint = VPlacedVolume::transformation()->Transform(point);
   return UnplacedContains(localPoint);
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<treatInnerT, sideCountT>::UnplacedContains(
+bool SpecializedPolyhedron<treatInnerT>::UnplacedContains(
     Vector3D<Precision> const &localPoint) const {
   bool result = false;
-  PolyhedronImplementation<treatInnerT, sideCountT>::template
+  PolyhedronImplementation<treatInnerT>::template
       ScalarInsideKernel<false>(*PlacedPolyhedron::GetUnplacedVolume(),
                                 localPoint, result);
   return result;
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-Inside_t SpecializedPolyhedron<treatInnerT, sideCountT>::Inside(
+Inside_t SpecializedPolyhedron<treatInnerT>::Inside(
     Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint =
       VPlacedVolume::transformation()->Transform(point);
   Inside_t result = EInside::kOutside;
-  PolyhedronImplementation<treatInnerT, sideCountT>::template
+  PolyhedronImplementation<treatInnerT>::template
       ScalarInsideKernel<true>(*PlacedPolyhedron::GetUnplacedVolume(),
                                localPoint, result);
   return result;
 }
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::Inside(
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::Inside(
     SOA3D<Precision> const &points,
     Inside_t *const output) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
-    PolyhedronImplementation<treatInnerT, sideCountT>::template
+    PolyhedronImplementation<treatInnerT>::template
         ScalarInsideKernel<true>(
             *PlacedPolyhedron::GetUnplacedVolume(), localPoint, output[i]);
   }
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT, sideCountT>::DistanceToIn(
+Precision SpecializedPolyhedron<treatInnerT>::DistanceToIn(
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
     const Precision stepMax) const {
@@ -200,28 +199,27 @@ Precision SpecializedPolyhedron<treatInnerT, sideCountT>::DistanceToIn(
       VPlacedVolume::transformation()->Transform(point);
   Vector3D<Precision> localDirection =
       VPlacedVolume::transformation()->TransformDirection(direction);
-  return PolyhedronImplementation<treatInnerT,
-      sideCountT>::ScalarDistanceToInKernel(
-          *PlacedPolyhedron::GetUnplacedVolume(), localPoint, localDirection,
-          stepMax);
+  return PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
+      *PlacedPolyhedron::GetUnplacedVolume(), localPoint, localDirection,
+      stepMax);
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToIn(
+Precision SpecializedPolyhedron<treatInnerT>::SafetyToIn(
     Vector3D<Precision> const &point) const {
 
   Vector3D<Precision> localPoint =
       VPlacedVolume::transformation()->Transform(point);
 
   Precision result = kInfinity;
-  PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToInKernel(
+  PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), localPoint, result);
   return result;
 }
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToIn(
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::SafetyToIn(
     SOA3D<Precision> const &points,
     Precision *const safeties) const {
 
@@ -230,13 +228,13 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToIn(
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
 
-    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToInKernel(
+    PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
         *PlacedPolyhedron::GetUnplacedVolume(), localPoint, safeties[i]);
   }
 }
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToInMinimize(
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::SafetyToInMinimize(
     SOA3D<Precision> const &points,
     Precision *const safeties) const  {
 
@@ -246,55 +244,54 @@ void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToInMinimize(
         VPlacedVolume::transformation()->Transform(points[i]);
 
     Precision candidate = kInfinity;
-    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToInKernel(
+    PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
         *PlacedPolyhedron::GetUnplacedVolume(), localPoint, candidate);
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];
   }
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT, sideCountT>::DistanceToOut(
+Precision SpecializedPolyhedron<treatInnerT>::DistanceToOut(
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
     const Precision stepMax) const {
-  return PolyhedronImplementation<treatInnerT,
-      sideCountT>::ScalarDistanceToOutKernel(
-          *PlacedPolyhedron::GetUnplacedVolume(), point, direction, stepMax);
+  return PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
+      *PlacedPolyhedron::GetUnplacedVolume(), point, direction, stepMax);
 }
 
-template <bool treatInnerT, unsigned sideCountT>
+template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToOut(
+Precision SpecializedPolyhedron<treatInnerT>::SafetyToOut(
     Vector3D<Precision> const &point) const {
   Precision result = kInfinity;
-  PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToOutKernel(
+  PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), point, result);
   return result;
 }
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToOut(
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::SafetyToOut(
     SOA3D<Precision> const &points,
     Precision *const safeties) const {
 
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
 
-    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToOutKernel(
+    PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
         *PlacedPolyhedron::GetUnplacedVolume(), points[i], safeties[i]);
   }
 }
 
-template <bool treatInnerT, unsigned sideCountT>
-void SpecializedPolyhedron<treatInnerT, sideCountT>::SafetyToOutMinimize(
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::SafetyToOutMinimize(
     SOA3D<Precision> const &points,
     Precision *const safeties) const {
 
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
 
     Precision candidate = kInfinity;
-    PolyhedronImplementation<treatInnerT, sideCountT>::ScalarSafetyToOutKernel(
+    PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
         *PlacedPolyhedron::GetUnplacedVolume(), points[i], candidate);
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];

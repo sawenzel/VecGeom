@@ -4,35 +4,37 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_STD_CXX11
 Quadrilaterals::Quadrilaterals(int size)
-    : fNormal(size), fDistance(NULL), fSides{size, size, size, size},
-      fCorners{size, size, size, size} {
-  fDistance = AlignedAllocate<Precision>(size);  
+    : fPlanes(size), fSides{size, size, size, size},
+      fCorners{size, size, size, size} {}
+
+Quadrilaterals::~Quadrilaterals() {}
+
+Quadrilaterals& Quadrilaterals::operator=(Quadrilaterals const &other) {
+  fPlanes = other.fPlanes;
+  for (int i = 0; i < 4; ++i) {
+    fSides[i] = other.fSides[i];
+    fCorners[i] = other.fCorners[i];
+  }
+  return *this;
 }
-#endif
 
-Quadrilaterals::Quadrilaterals() : fNormal(), fDistance(NULL) {}
-
-Quadrilaterals::~Quadrilaterals() {
-  AlignedFree(size);
-}
-
-Quadrilaterals::Set() {
+void Quadrilaterals::Set(
     int index,
     Vector3D<Precision> const &corner0,
     Vector3D<Precision> const &corner1,
     Vector3D<Precision> const &corner2,
     Vector3D<Precision> const &corner3) {
 
-  fCorners[0].set(index, corner0);
-  fCorners[1].set(index, corner1);
-  fCorners[2].set(index, corner2);
-  fCorners[3].set(index, corner3);
   fSides[0].set(index, (corner1 - corner0).Normalized());
   fSides[1].set(index, (corner2 - corner1).Normalized());
   fSides[2].set(index, (corner3 - corner2).Normalized());
   fSides[3].set(index, (corner0 - corner3).Normalized());
+
+  fCorners[0].set(index, corner0);
+  fCorners[1].set(index, corner1);
+  fCorners[2].set(index, corner2);
+  fCorners[3].set(index, corner3);
   // TODO: It should be asserted that the quadrilateral is planar and convex.
 
   // Compute plane equation to retrieve normal and distance to origin
@@ -57,14 +59,30 @@ Quadrilaterals::Set() {
   Precision inverseLength = 1. / normal.Length();
   normal *= inverseLength;
   d *= inverseLength;
-  if (d >= 0) {
-    // Ensure normal is pointing away from origin
-    normal = -normal;
-    d = -d;
-  }
 
-  fNormal.set(index, normal);
-  fDistance[index] = d;
+  fPlanes.Set(index, normal, d);
+}
+
+void Quadrilaterals::FixNormalSign(int component, bool positive) {
+  for (int i = 0, iMax = size(); i < iMax; ++i) {
+    Vector3D<Precision> normal = GetNormal(i);
+    if ((positive  && normal[component] < 0) ||
+        (!positive && normal[component] > 0)) {
+      fPlanes.Set(i, -normal, -GetDistance(i));
+    }
+  }
+}
+
+std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads) {
+  for (int i = 0, iMax = quads.size(); i < iMax; ++i) {
+    os << "{" << quads.GetNormal(i) << ", " << quads.GetDistance(i)
+       << ", {";
+    for (int j = 0; j < 4; ++j) os << quads.GetCorners()[j][i] << ", ";
+    os << ", ";
+    for (int j = 0; j < 4; ++j) os << quads.GetSides()[j][i] << ", ";
+    os << "}\n";
+  }
+  return os;
 }
 
 } // End global namespace

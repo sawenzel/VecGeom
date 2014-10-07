@@ -23,8 +23,7 @@ public:
 
   struct Segment {
     bool hasInnerRadius;
-    Precision zMax;
-    Quadrilaterals<0> inner, outer;
+    Quadrilaterals inner, outer;
   };
 
 private:
@@ -67,7 +66,7 @@ private:
   int fSideCount;
   bool fHasInnerRadii;
   Precision fZBounds[2];
-  Planes<2> fEndCaps;
+  Planes fEndCaps;
   Precision fEndCapsOuterRadii[2];
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
@@ -102,11 +101,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Segment const& GetZSegment(int index) const { return fSegments[index]; }
+  Segment const& GetZSegment(int i) const { return fSegments[i]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Array<Segment> const& GetZSegments() const { return fSegments; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetZPlane(int i) const { return fZPlanes[i]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -122,7 +125,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Planes<2> const& GetEndCaps() const { return fEndCaps; }
+  Planes const& GetEndCaps() const { return fEndCaps; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

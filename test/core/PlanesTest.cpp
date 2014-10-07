@@ -9,7 +9,7 @@ using namespace vecgeom;
 constexpr int kIterations = 1<<22;
 
 int StaticPlanes() {
-  Planes<6> planes;
+  Planes planes(6);
   planes.Set(0, Vector3D<Precision>(0,0,1), Vector3D<Precision>(0,0,1));
   planes.Set(1, Vector3D<Precision>(0,0,-1), Vector3D<Precision>(0,0,-1));
   planes.Set(2, Vector3D<Precision>(1,0,0), Vector3D<Precision>(1,0,0));
@@ -32,8 +32,7 @@ int StaticPlanes() {
                 << " / " << insideDie << "\n";
     } else {
       if (insidePlanes == EInside::kInside) {
-        Precision distancePlanes =
-            planes.DistanceToOut<kScalar>(point, direction);
+        Precision distancePlanes = planes.Distance<kScalar>(point, direction);
         Precision distanceDie = die.DistanceToOut(point, direction);
         if (Abs(distancePlanes - distanceDie) > kTolerance) {
           ++mismatches;

@@ -90,7 +90,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Planes<2> const& GetEndCaps() const {
+  Planes const& GetEndCaps() const {
     return GetUnplacedVolume()->GetEndCaps();
   }
 
