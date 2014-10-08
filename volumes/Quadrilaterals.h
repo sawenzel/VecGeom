@@ -6,10 +6,14 @@
 
 #include "base/Global.h"
 
+#include "backend/Backend.h"
 #include "base/Array.h"
 #include "base/SOA3D.h"
 #include "base/Vector3D.h"
 #include "volumes/Planes.h"
+
+// Switches on/off explicit vectorization of algorithms using Vc
+#define VECGEOM_QUADRILATERALS_VC
 
 namespace VECGEOM_NAMESPACE {
 
@@ -94,7 +98,7 @@ public:
       Precision zMin = -kInfinity,
       Precision zMax = kInfinity) const;
 
-  template <class Backend, class InputStruct>
+  template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToInKernel(
       const int n,
@@ -102,8 +106,8 @@ public:
       __restrict__ Precision const b[],
       __restrict__ Precision const c[],
       __restrict__ Precision const d[],
-      __restrict__ InputStruct const (&sides)[4],
-      __restrict__ InputStruct const (&corners)[4],
+      SOA3D<Precision> const (&sides)[4],
+      SOA3D<Precision> const (&corners)[4],
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
@@ -174,7 +178,75 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
       &GetDistances()[0], zMin, zMax, point, direction);
 }
 
-template <class Backend, class InputStruct>
+namespace {
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void AcceleratedDistanceToIn(
+    int &i,
+    const int n,
+    __restrict__ Precision const a[],
+    __restrict__ Precision const b[],
+    __restrict__ Precision const c[],
+    __restrict__ Precision const d[],
+    SOA3D<Precision> const (&sides)[4],
+    SOA3D<Precision> const (&corners)[4],
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v &distance) {
+  return;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void AcceleratedDistanceToIn<kScalar>(
+    int &i,
+    const int n,
+    __restrict__ Precision const a[],
+    __restrict__ Precision const b[],
+    __restrict__ Precision const c[],
+    __restrict__ Precision const d[],
+    SOA3D<Precision> const (&sides)[4],
+    SOA3D<Precision> const (&corners)[4],
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
+    Precision &distance) {
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+  // Explicitly vectorize over quadrilaterals using Vc
+  for (;i <= n-kVectorSize; i += kVectorSize) {
+    VcPrecision aVc(&a[i]), bVc(&b[i]), cVc(&c[i]), dVc(&d[i]);
+    VcPrecision distanceTest =
+        -(aVc*point[0] + bVc*point[1] + cVc*point[2] + dVc)
+       / (aVc*direction[0] + bVc*direction[1] + cVc*direction[2]);
+    Vector3D<VcPrecision> intersection =
+        Vector3D<VcPrecision>(direction)*distanceTest + point;
+    VcBool inBounds(true);
+    for (int j = 0; j < 4; ++j) {
+      Vector3D<VcPrecision> corner(
+            VcPrecision(corners[j].x()+i),
+            VcPrecision(corners[j].y()+i),
+            VcPrecision(corners[j].z()+i));
+      Vector3D<VcPrecision> side(
+            VcPrecision(sides[j].x()+i),
+            VcPrecision(sides[j].y()+i),
+            VcPrecision(sides[j].z()+i));
+      Vector3D<VcPrecision> cross =
+          Vector3D<VcPrecision>::Cross(side, intersection - corner);
+      inBounds &= aVc*cross[0] + bVc*cross[1] + cVc*cross[2] >= 0;
+      if (IsEmpty(inBounds)) return;
+    }
+    distanceTest(!inBounds || distanceTest > distance) = kInfinity;
+    distance = Min<Precision>(distance, distanceTest.min());
+  }
+#endif
+  return;
+}
+
+} // End anonymous namespace
+
+template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
     const int n,
@@ -182,8 +254,8 @@ typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
     __restrict__ Precision const b[],
     __restrict__ Precision const c[],
     __restrict__ Precision const d[],
-    __restrict__ InputStruct const (&sides)[4],
-    __restrict__ InputStruct const (&corners)[4],
+    SOA3D<Precision> const (&sides)[4],
+    SOA3D<Precision> const (&corners)[4],
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
@@ -192,7 +264,11 @@ typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
 
   Float_t bestDistance = kInfinity;
 
-  for (int i = 0; i < n; ++i) {
+  int i = 0;
+  AcceleratedDistanceToIn<Backend>(
+      i, n, a, b, c, d, sides, corners, point, direction, bestDistance);
+
+  for (; i < n; ++i) {
     Float_t distance = 
         -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
        / (a[i]*direction[0] + b[i]*direction[1] + c[i]*direction[2]);
@@ -211,6 +287,60 @@ typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
   return bestDistance;
 }
 
+namespace {
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void AcceleratedDistanceToOut(
+    int &i,
+    const int n,
+    __restrict__ Precision const a[],
+    __restrict__ Precision const b[],
+    __restrict__ Precision const c[],
+    __restrict__ Precision const d[],
+    const Precision zMin,
+    const Precision zMax,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v &distance) {
+  // Do nothing if the backend is not scalar
+  return;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void AcceleratedDistanceToOut<kScalar>(
+    int &i,
+    const int n,
+    __restrict__ Precision const a[],
+    __restrict__ Precision const b[],
+    __restrict__ Precision const c[],
+    __restrict__ Precision const d[],
+    const Precision zMin,
+    const Precision zMax,
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
+    Precision &distance) {
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+  // Explicitly vectorize over quadrilaterals using Vc
+  for (;i <= n-kVectorSize; i += kVectorSize) {
+    VcPrecision aVc(&a[i]), bVc(&b[i]), cVc(&c[i]), dVc(&d[i]);
+    VcPrecision distanceTest =
+        -(aVc*point[0] + bVc*point[1] + cVc*point[2] + dVc)
+       / (aVc*direction[0] + bVc*direction[1] + cVc*direction[2]);
+    VcPrecision zProjection = distanceTest*direction[2] + point[2];
+    distanceTest(distanceTest < 0 || zProjection < zMin ||
+                 zProjection >= zMax) = kInfinity;
+    distance = Min<Precision>(distance, distanceTest.min());
+  }
+#endif
+  return;
+}
+
+} // End anonymous namespace
+
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals::DistanceToOutKernel(
@@ -228,7 +358,11 @@ typename Backend::precision_v Quadrilaterals::DistanceToOutKernel(
 
   Float_t bestDistance = kInfinity;
 
-  for (int i = 0; i < n; ++i) {
+  int i = 0;
+  AcceleratedDistanceToOut<Backend>(
+      i, n, a, b, c, d, zMin, zMax, point, direction, bestDistance);
+
+  for (; i < n; ++i) {
     Float_t distance = -(a[i]*point[0] + b[i]*point[1] +
                          c[i]*point[2] + d[i])
                       / (a[i]*direction[0] + b[i]*direction[1] +

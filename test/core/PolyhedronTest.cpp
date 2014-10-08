@@ -25,10 +25,10 @@ int main() {
   // assert(FindSegmentIndex<kScalar>(array, 4, 5) == 2);
   // assert(FindSegmentIndex<kScalar>(array, 4, 7) == 3);
 
-  constexpr int nPlanes = 4;
-  Precision zPlanes[nPlanes] = {-2, -1, 1, 3};
-  Precision rInner[nPlanes] = {1, 0.5, 1, 0.5};
-  Precision rOuter[nPlanes] = {2, 2, 2, 2};
+  constexpr int nPlanes = 6;
+  Precision zPlanes[nPlanes] = {-4, -2, -1, 1, 2, 4};
+  Precision rInner[nPlanes] = {0.5, 1, 1.5, 1.5, 1, 0.5};
+  Precision rOuter[nPlanes] = {1, 2, 3, 3, 2, 1};
   // constexpr int nPlanes = 2;
   // Precision zPlanes[nPlanes] = {-1, 1};
   // Precision rInner[nPlanes] = {0.5, 1};
@@ -81,20 +81,20 @@ int main() {
   magenta.SetMarkerColor(kMagenta);
   magenta.SetMarkerStyle(21);
 
-  Vector3D<Precision> bounds(4.5, 4.5, 3);
+  Vector3D<Precision> bounds(4, 4, 6);
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> point;
     do {
       point = volumeUtilities::SamplePoint(bounds);
-    } while (polyhedron->Contains(point));
+    } while (!polyhedron->Contains(point));
     Vector3D<Precision> direction = volumeUtilities::SampleDirection();
     Precision vecgeomDistance =
-        polyhedron->DistanceToIn(point, direction, vecgeom::kInfinity);
+        polyhedron->DistanceToOut(point, direction, vecgeom::kInfinity);
 #ifdef VECGEOM_USOLIDS
-    Precision usolidsDistance = usolids->DistanceToIn(point, direction
+    Precision usolidsDistance = usolid->DistanceToOut(point, direction);
 #endif
 #ifdef VECGEOM_GEANT4
-    Precision geant4Distance = geant4->DistanceToIn(
+    Precision geant4Distance = geant4->DistanceToOut(
         G4ThreeVector(point[0], point[1], point[2]),
         G4ThreeVector(direction[0], direction[1], direction[2]));
     if (Abs(vecgeomDistance - geant4Distance) < kTolerance ||

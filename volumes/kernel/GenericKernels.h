@@ -84,9 +84,9 @@ VcInt FindSegmentIndex<kVc>(
   VcInt index = -1;
   for (int i = 0; i < size; ++i) {
     MaskedAssign(element >= array[i], i, &index);
-    if (kVc::early_returns) {
-      if (IsFull(index < i)) break;
-    }
+    // if (kVc::early_returns) {
+    //   if (IsFull(index < i)) break;
+    // }
   }
   return index;
 }

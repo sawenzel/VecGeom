@@ -324,7 +324,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
 
   Float_t distance(kInfinity);
 
-  Float_t test = Quadrilaterals::DistanceToInKernel<Backend, SOA3D<Precision> >(
+  Float_t test = Quadrilaterals::DistanceToInKernel<Backend>(
       sideCount,
       segment.outer.GetNormals().x(),
       segment.outer.GetNormals().y(),
@@ -337,7 +337,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
   MaskedAssign(test >= 0, test, &distance);
 
   if (treatInnerT && segment.hasInnerRadius) {
-    test = Quadrilaterals::DistanceToInKernel<Backend, SOA3D<Precision> >(
+    test = Quadrilaterals::DistanceToInKernel<Backend>(
         sideCount,
         segment.inner.GetNormals().x(),
         segment.inner.GetNormals().y(),
@@ -382,7 +382,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
   MaskedAssign(test >= 0, test, &distance);
 
   if (treatInnerT && segment.hasInnerRadius) {
-    test = Quadrilaterals::DistanceToInKernel<Backend, SOA3D<Precision> >(
+    test = Quadrilaterals::DistanceToInKernel<Backend>(
         sideCount,
         segment.inner.GetNormals().x(),
         segment.inner.GetNormals().y(),
@@ -544,7 +544,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
           unplaced.GetZSegment(zIndex),
           unplaced.GetSideCount(),
           unplaced.GetZPlanes()[zIndex],
-          unplaced.GetZPlanes()[zMax],
+          unplaced.GetZPlanes()[zIndex+1],
           point,
           direction);
       if (test < distance) {
@@ -560,7 +560,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
           unplaced.GetZSegment(zIndex),
           unplaced.GetSideCount(),
           unplaced.GetZPlanes()[zIndex],
-          unplaced.GetZPlanes()[zMax],
+          unplaced.GetZPlanes()[zIndex+1],
           point,
           direction);
       if (test < distance) {
@@ -679,7 +679,7 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
     distanceResult =
-        Quadrilaterals::DistanceToInKernel<Backend, SOA3D<Precision> >(
+        Quadrilaterals::DistanceToInKernel<Backend>(
             unplaced.GetSideCount(),
             s.outer.GetNormals().x(),
             s.outer.GetNormals().y(),
@@ -693,7 +693,7 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
     if (treatInnerT) {
       if (s.hasInnerRadius) {
         distanceResult =
-            Quadrilaterals::DistanceToInKernel<Backend, SOA3D<Precision> >(
+            Quadrilaterals::DistanceToInKernel<Backend>(
                 unplaced.GetSideCount(),
                 s.inner.GetNormals().x(),
                 s.inner.GetNormals().y(),
@@ -817,7 +817,7 @@ void PolyhedronImplementation<treatInnerT>::DistanceToOut(
     if (treatInnerT) {
       if (s.hasInnerRadius) {
         distanceResult =
-            Quadrilaterals::DistanceToInKernel<Backend, SOA3D<Precision> > (
+            Quadrilaterals::DistanceToInKernel<Backend> (
                 unplaced.GetSideCount(),
                 s.inner.GetNormals().x(),
                 s.inner.GetNormals().y(),

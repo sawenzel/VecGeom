@@ -60,9 +60,10 @@ public:
     vec[2] = a;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D(Vector3D const &other) {
+  Vector3D(Vector3D<TypeOther> const &other) {
     vec[0] = other[0];
     vec[1] = other[1];
     vec[2] = other[2];
