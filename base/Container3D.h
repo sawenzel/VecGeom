@@ -107,8 +107,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void set(size_t index, value_type x, value_type y, value_type z) {
-    implementation().set(index, x, y, z);
+  void set(size_t index, value_type xval, value_type yval, value_type zval) {
+    implementation().set(index, xval, yval, zval);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -119,8 +119,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void push_back(const value_type x, const value_type y, const value_type z) {
-    implementation().push_back(x, y, z);
+  void push_back(const value_type xval, const value_type yval, const value_type zval) {
+    implementation().push_back(xval, yval, zval);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
