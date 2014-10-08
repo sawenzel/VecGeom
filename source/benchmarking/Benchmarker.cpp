@@ -307,7 +307,7 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << containsRoot[i];
 #endif
 #ifdef VECGEOM_CUDA
-      if (insideSpecialized[i] != containsCuda[i]) mismatch = true;
+      if (containsSpecialized[i] != containsCuda[i]) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << containsCuda[i];
 #endif
       mismatches += mismatch;
