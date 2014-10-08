@@ -19,8 +19,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     : fSideCount(sideCount), fHasInnerRadii(false),
       fZBounds{zPlanes[0]-kTolerance, zPlanes[zPlaneCount-1]+kTolerance},
       fEndCaps(2), fEndCapsOuterRadii{0, 0}, fSegments(zPlaneCount-1),
-      fZPlanes(zPlaneCount), fPhiSections(sideCount+1),
-      fBoundingTube(0, 1, 1, 0, 360) {
+      fZPlanes(zPlaneCount), fRMin(zPlaneCount), fRMax(zPlaneCount),
+      fPhiSections(sideCount+1), fBoundingTube(0, 1, 1, 0, 360) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -31,6 +31,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
          " segments.\n");
 
   copy(zPlanes, zPlanes+zPlaneCount, &fZPlanes[0]);
+  copy(rMin, rMin+zPlaneCount, &fRMin[0]);
+  copy(rMax, rMax+zPlaneCount, &fRMax[0]);
   // Initialize segments
   for (int i = 0; i < zPlaneCount-1; ++i) {
     fSegments[i].outer = Quadrilaterals(fSideCount);
@@ -143,61 +145,6 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
   delete[] outerVertices;
   if (fHasInnerRadii) delete[] innerVertices;
-}
-
-void UnplacedPolyhedron::ExtractZPlanes(
-    Precision *z,
-    Precision *rMin,
-    Precision *rMax) const {
-
-  const int zPlaneCount = fSegments.size()+1;
-
-  // Find any corner that lies in the correct Z-plane
-  auto GetCorner = [] (Quadrilaterals const &q, Precision z) {
-    Vector3D<Precision> corner;
-    for (int j = 0; j < 4; ++j) {
-      corner = q.GetCorners()[j][0];
-      if (corner[2] == z) return corner;
-    }
-    Assert(0, "Unexpected corners during extraction of Z-planes in Polyhedron");
-    return corner;
-  };
-
-  Vector3D<Precision> corner;
-  for (int i = 0; i < zPlaneCount-1; ++i) {
-    // Get Z-plane from the segment of which it is the beginning
-    UnplacedPolyhedron::Segment const &segment = GetZSegment(i);
-    z[i] = fZPlanes[i];
-    corner = GetCorner(segment.outer, z[i]);
-    rMax[i] = sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
-    if (segment.hasInnerRadius) {
-      corner = GetCorner(segment.inner, z[i]);
-      rMin[i] = sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
-    } else {
-      rMin[i] = 0;
-    }
-  }
-  // Treat final Z-plane as the end-plane of the last segment
-  UnplacedPolyhedron::Segment const &segment =
-      GetZSegment(GetZSegmentCount()-1);
-  z[zPlaneCount-1] = fZPlanes[GetZSegmentCount()];
-  corner = GetCorner(segment.outer, z[zPlaneCount-1]);
-  rMax[zPlaneCount-1] =
-      sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
-  if (segment.hasInnerRadius) {
-    corner = GetCorner(segment.inner, z[zPlaneCount-1]);
-    rMin[zPlaneCount-1] =
-        sqrt(corner[0]*corner[0] + corner[1]*corner[1]);
-  } else {
-    rMin[zPlaneCount-1] = 0;
-  }
-  // Go from radii to corners to radii to sides
-  Precision cosHalfDeltaPhi = cos(0.5*kTwoPi/fSideCount);
-  for (int i = 0; i < zPlaneCount; ++i) {
-    rMin[i] *= cosHalfDeltaPhi;
-    rMax[i] *= cosHalfDeltaPhi;
-  }
-
 }
 
 VECGEOM_CUDA_HEADER_DEVICE

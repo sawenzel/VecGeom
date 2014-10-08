@@ -70,6 +70,8 @@ private:
   Precision fEndCapsOuterRadii[2];
   Array<Segment> fSegments;
   Array<Precision> fZPlanes;
+  Array<Precision> fRMin;
+  Array<Precision> fRMax;
   SOA3D<Precision> fPhiSections;
   UnplacedTube fBoundingTube;
   Precision fBoundingTubeOffset;
@@ -117,6 +119,14 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Array<Precision> const& GetRMin() const { return fRMin; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array<Precision> const& GetRMax() const { return fRMax; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetTolerantZMin() const { return fZBounds[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -146,18 +156,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
-
-  /// Extract values for the position of Z-planes, and the radius from the
-  /// center to the inner and outer shell. These are part of the parameters
-  /// included in the original constructor, but which are not stored.
-  ///
-  /// \param z Output of Z-coordinates of Z-planes. Must be of size >= number of
-  ///          segments as returned by GetSegments().
-  /// \param rMin Output of R_min-coordinates of Z-planes. Must be of size
-  ///             >= number of segments as returned by GetSegments().
-  /// \param rMax Output of R_max-coordinates of Z-planes. Must be of size
-  ///             >= number of segments as returned by GetSegments().
-  void ExtractZPlanes(Precision *z, Precision *rMin, Precision *rMax) const;
 
   VECGEOM_INLINE
   virtual int memory_size() const { return sizeof(*this); }

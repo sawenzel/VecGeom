@@ -324,29 +324,11 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
 
   Float_t distance(kInfinity);
 
-  Float_t test = Quadrilaterals::DistanceToInKernel<Backend>(
-      sideCount,
-      segment.outer.GetNormals().x(),
-      segment.outer.GetNormals().y(),
-      segment.outer.GetNormals().z(),
-      &segment.outer.GetDistances()[0],
-      segment.outer.GetSides(),
-      segment.outer.GetCorners(),
-      point,
-      direction);
+  Float_t test = segment.outer.DistanceToIn<Backend>(point, direction);
   MaskedAssign(test >= 0, test, &distance);
 
   if (treatInnerT && segment.hasInnerRadius) {
-    test = Quadrilaterals::DistanceToInKernel<Backend>(
-        sideCount,
-        segment.inner.GetNormals().x(),
-        segment.inner.GetNormals().y(),
-        segment.inner.GetNormals().z(),
-        &segment.inner.GetDistances()[0],
-        segment.inner.GetSides(),
-        segment.inner.GetCorners(),
-        point,
-        direction);
+    test = segment.inner.DistanceToIn<Backend>(point, direction);
     MaskedAssign(test >= 0 && test < distance, test, &distance);
   }
 
@@ -369,30 +351,15 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
 
   Float_t distance(kInfinity);
 
-  Float_t test = Quadrilaterals::DistanceToOutKernel<Backend>(
-      sideCount,
-      segment.outer.GetNormals().x(),
-      segment.outer.GetNormals().y(),
-      segment.outer.GetNormals().z(),
-      &segment.outer.GetDistances()[0],
-      zMin,
-      zMax,
-      point,
-      direction);
+  Float_t test = segment.outer.DistanceToOut<Backend>(
+      point, direction, zMin, zMax);
   MaskedAssign(test >= 0, test, &distance);
 
-  if (treatInnerT && segment.hasInnerRadius) {
-    test = Quadrilaterals::DistanceToInKernel<Backend>(
-        sideCount,
-        segment.inner.GetNormals().x(),
-        segment.inner.GetNormals().y(),
-        segment.inner.GetNormals().z(),
-        &segment.inner.GetDistances()[0],
-        segment.inner.GetSides(),
-        segment.inner.GetCorners(),
-        point,
-        direction);
-    MaskedAssign(test >= 0 && test < distance, test, &distance);
+  if (treatInnerT) {
+    if (segment.hasInnerRadius) {
+      test = segment.inner.DistanceToIn<Backend>(point, direction);
+      MaskedAssign(test >= 0 && test < distance, test, &distance);
+    }
   }
 
   return distance;
@@ -678,31 +645,11 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
   Float_t distanceResult;
   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceResult =
-        Quadrilaterals::DistanceToInKernel<Backend>(
-            unplaced.GetSideCount(),
-            s.outer.GetNormals().x(),
-            s.outer.GetNormals().y(),
-            s.outer.GetNormals().z(),
-            &s.outer.GetDistances()[0],
-            s.outer.GetSides(),
-            s.outer.GetCorners(),
-            localPoint,
-            localDirection);
+    distanceResult = s.outer.DistanceToIn<Backend>(localPoint, localDirection);
     MaskedAssign(distanceResult < distance, distanceResult, &distance);
     if (treatInnerT) {
       if (s.hasInnerRadius) {
-        distanceResult =
-            Quadrilaterals::DistanceToInKernel<Backend>(
-                unplaced.GetSideCount(),
-                s.inner.GetNormals().x(),
-                s.inner.GetNormals().y(),
-                s.inner.GetNormals().z(),
-                &s.inner.GetDistances()[0],
-                s.inner.GetSides(),
-                s.inner.GetCorners(),
-                localPoint,
-                localDirection);
+        s.inner.DistanceToIn<Backend>(localPoint, localDirection);
         MaskedAssign(distanceResult < distance, distanceResult, &distance);
       }
     }
@@ -803,30 +750,12 @@ void PolyhedronImplementation<treatInnerT>::DistanceToOut(
   Float_t distanceResult;
   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceResult = Quadrilaterals::DistanceToOutKernel<Backend>(
-        unplaced.GetSideCount(),
-        s.outer.GetNormals().x(),
-        s.outer.GetNormals().y(),
-        s.outer.GetNormals().z(),
-        &s.outer.GetDistances()[0],
-        unplaced.GetZPlanes()[i],
-        unplaced.GetZPlanes()[i+1],
-        point,
-        direction);
+    distanceResult = s.outer.DistanceToOut<Backend>(
+        point, direction, unplaced.GetZPlanes()[i], unplaced.GetZPlanes()[i+1]);
     MaskedAssign(distanceResult < distance, distanceResult, &distance);
     if (treatInnerT) {
       if (s.hasInnerRadius) {
-        distanceResult =
-            Quadrilaterals::DistanceToInKernel<Backend> (
-                unplaced.GetSideCount(),
-                s.inner.GetNormals().x(),
-                s.inner.GetNormals().y(),
-                s.inner.GetNormals().z(),
-                &s.inner.GetDistances()[0],
-                s.inner.GetSides(),
-                s.inner.GetCorners(),
-                point,
-                direction);
+        distanceResult = s.inner.DistanceToIn<Backend>(point, direction);
         MaskedAssign(distanceResult < distance, distanceResult, &distance);
       }
     }

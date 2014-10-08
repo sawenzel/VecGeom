@@ -6,6 +6,12 @@ Planes::Planes(int size) : fNormals(size), fDistances(size) {}
 
 Planes::~Planes() {}
 
+Planes& Planes::operator=(Planes const &other) {
+  fNormals = other.fNormals;
+  fDistances = other.fDistances;
+  return *this;
+}
+
 void Planes::Set(
     int index,
     Vector3D<Precision> const &normal,

@@ -94,6 +94,24 @@ public:
     return GetUnplacedVolume()->GetEndCaps();
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array<Precision> const& GetZPlanes() const {
+    return GetUnplacedVolume()->GetZPlanes();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array<Precision> const& GetRMin() const {
+    return GetUnplacedVolume()->GetRMin();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array<Precision> const& GetRMax() const {
+    return GetUnplacedVolume()->GetRMax();
+  }
+
   // CUDA specific
 
   virtual int memory_size() const { return sizeof(*this); }

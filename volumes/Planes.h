@@ -35,6 +35,8 @@ public:
   VECGEOM_INLINE
   int size() const;
 
+  Planes& operator=(Planes const &other);
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   SOA3D<Precision> const& GetNormals() const;

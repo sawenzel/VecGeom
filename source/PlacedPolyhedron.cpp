@@ -34,21 +34,11 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
   TGeoPgon *pgon = new TGeoPgon(GetLabel().c_str(), 0, 360, GetSideCount(),
                                 zPlaneCount);
 
-  Precision *z = new Precision[zPlaneCount];
-  Precision *rMin = new Precision[zPlaneCount];
-  Precision *rMax = new Precision[zPlaneCount];
-
-  GetUnplacedVolume()->ExtractZPlanes(z, rMin, rMax);
-
   // Define sections of TGeoPgon. It takes care of the rest internally once the
   // last section is set.
   for (int i = 0; i < zPlaneCount; ++i) {
-    pgon->DefineSection(i, z[i], rMin[i], rMax[i]);
+    pgon->DefineSection(i, GetZPlanes()[i], GetRMin()[i], GetRMax()[i]);
   }
-
-  delete[] z;
-  delete[] rMin;
-  delete[] rMax;
 
   return pgon;
 }
@@ -56,53 +46,29 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
-
-  const int zPlaneCount = GetZSegmentCount()+1;
-
-  Precision *z = new Precision[zPlaneCount];
-  Precision *rMin = new Precision[zPlaneCount];
-  Precision *rMax = new Precision[zPlaneCount];
-
-  GetUnplacedVolume()->ExtractZPlanes(z, rMin, rMax);
-
-UPolyhedra *polyhedra = new UPolyhedra(
+  return new UPolyhedra(
       GetLabel().c_str(),
       0, // Phi start
       360, // Phi change
       GetSideCount(),
-      zPlaneCount,
-      z,
-      rMin,
-      rMax);
-
-  delete[] z;
-  delete[] rMin;
-  delete[] rMax;
-
-  return polyhedra;
+      GetZSegmentCount()+1,
+      &GetZPlanes()[0],
+      &GetRMin()[0],
+      &GetRMax()[0]);
 }
 #endif
 
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
-
-  const int zPlaneCount = GetZSegmentCount()+1;
-
-  Precision *z = new Precision[zPlaneCount];
-  Precision *rMin = new Precision[zPlaneCount];
-  Precision *rMax = new Precision[zPlaneCount];
-
-  GetUnplacedVolume()->ExtractZPlanes(z, rMin, rMax);
-
-  G4Polyhedra *polyhedra = new G4Polyhedra(GetLabel().c_str(), 0, 360,
-                                           GetSideCount(), zPlaneCount,
-                                           z, rMin, rMax);
-
-  delete[] z;
-  delete[] rMin;
-  delete[] rMax;
-
-  return polyhedra;
+  return new G4Polyhedra(
+      GetLabel().c_str(),
+      0,
+      360,
+      GetSideCount(),
+      GetZSegmentCount()+1,
+      &GetZPlanes()[0],
+      &GetRMin()[0],
+      &GetRMax()[0]);
 }
 #endif
 

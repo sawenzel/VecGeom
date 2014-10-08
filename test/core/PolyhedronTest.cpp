@@ -25,17 +25,17 @@ int main() {
   // assert(FindSegmentIndex<kScalar>(array, 4, 5) == 2);
   // assert(FindSegmentIndex<kScalar>(array, 4, 7) == 3);
 
-  constexpr int nPlanes = 6;
-  Precision zPlanes[nPlanes] = {-4, -2, -1, 1, 2, 4};
-  Precision rInner[nPlanes] = {0.5, 1, 1.5, 1.5, 1, 0.5};
-  Precision rOuter[nPlanes] = {1, 2, 3, 3, 2, 1};
-  // constexpr int nPlanes = 2;
-  // Precision zPlanes[nPlanes] = {-1, 1};
-  // Precision rInner[nPlanes] = {0.5, 1};
-  // Precision rOuter[nPlanes] = {1, 2};
-  // Precision zPlanes[] = {0, 2, 4, 6, 8, 10};
-  // Precision rInner[] = {0, 0, 0, 0, 0, 0};
-  // Precision rOuter[] = {1, 3, 1, 3, 1, 3};
+
+  // constexpr int nPlanes = 6;
+  // Precision zPlanes[nPlanes] = {-4, -2, -1, 1, 2, 4};
+  // Precision rInner[nPlanes] = {0.5, 1, 1.5, 1.5, 1, 0.5};
+  // Precision rOuter[nPlanes] = {1, 2, 3, 3, 2, 1};
+  // UnplacedPolyhedron polyhedronUnplaced(8, nPlanes, zPlanes, rInner, rOuter);
+  constexpr int nPlanes = 4;
+  Precision zPlanes[nPlanes] = {-3, -1, 1, 3};
+  Precision rInner[nPlanes] = {0, 0, 0, 0};
+  Precision rOuter[nPlanes] = {2, 2, 2, 2};
+  UnplacedPolyhedron polyhedronUnplaced(4, nPlanes, zPlanes, rInner, rOuter);
   UnplacedPolyhedron vecgeom(4, nPlanes, zPlanes, rInner, rOuter);
   LogicalVolume logical(&vecgeom);
   Transformation3D placement;
@@ -55,7 +55,6 @@ int main() {
   }
   Precision specializedRes = polyhedron->DistanceToIn(p[0], d[0], stepMax[0]);
   polyhedron->DistanceToIn(p, d, stepMax, output);
-  std::cout << specializedRes << " / " << output[0] << "\n";
 
 #ifdef VECGEOM_ROOT
   TApplication app("", NULL, NULL);

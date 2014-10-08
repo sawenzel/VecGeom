@@ -5,16 +5,14 @@
 namespace VECGEOM_NAMESPACE {
 
 Quadrilaterals::Quadrilaterals(int size)
-    : fPlanes(size), fSides{size, size, size, size},
-      fCorners{size, size, size, size} {}
+    : fPlanes(size), fSideVectors{size, size, size, size} {}
 
 Quadrilaterals::~Quadrilaterals() {}
 
 Quadrilaterals& Quadrilaterals::operator=(Quadrilaterals const &other) {
   fPlanes = other.fPlanes;
   for (int i = 0; i < 4; ++i) {
-    fSides[i] = other.fSides[i];
-    fCorners[i] = other.fCorners[i];
+    fSideVectors[i] = other.fSideVectors[i];
   }
   return *this;
 }
@@ -26,15 +24,6 @@ void Quadrilaterals::Set(
     Vector3D<Precision> const &corner2,
     Vector3D<Precision> const &corner3) {
 
-  fSides[0].set(index, (corner1 - corner0).Normalized());
-  fSides[1].set(index, (corner2 - corner1).Normalized());
-  fSides[2].set(index, (corner3 - corner2).Normalized());
-  fSides[3].set(index, (corner0 - corner3).Normalized());
-
-  fCorners[0].set(index, corner0);
-  fCorners[1].set(index, corner1);
-  fCorners[2].set(index, corner2);
-  fCorners[3].set(index, corner3);
   // TODO: It should be asserted that the quadrilateral is planar and convex.
 
   // Compute plane equation to retrieve normal and distance to origin
@@ -61,6 +50,21 @@ void Quadrilaterals::Set(
   d *= inverseLength;
 
   fPlanes.Set(index, normal, d);
+
+  auto ComputeSideVector = [&index, &normal] (
+      Planes &sideVectors,
+      Vector3D<Precision> const &c0,
+      Vector3D<Precision> const &c1) {
+    Vector3D<Precision> sideVector = normal.Cross(c1-c0);
+    Precision d = sideVector.Mag();
+    sideVector *= 1. / d;
+    sideVectors.Set(index, sideVector, d);
+  };
+
+  ComputeSideVector(fSideVectors[0], corner0, corner1);
+  ComputeSideVector(fSideVectors[1], corner1, corner2);
+  ComputeSideVector(fSideVectors[2], corner2, corner3);
+  ComputeSideVector(fSideVectors[3], corner3, corner0);
 }
 
 void Quadrilaterals::FixNormalSign(int component, bool positive) {
@@ -77,10 +81,12 @@ std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads) {
   for (int i = 0, iMax = quads.size(); i < iMax; ++i) {
     os << "{" << quads.GetNormal(i) << ", " << quads.GetDistance(i)
        << ", {";
-    for (int j = 0; j < 4; ++j) os << quads.GetCorners()[j][i] << ", ";
-    os << ", ";
-    for (int j = 0; j < 4; ++j) os << quads.GetSides()[j][i] << ", ";
-    os << "}\n";
+    for (int j = 0; j < 3; ++j) {
+      os << quads.GetSideVectors()[j].GetNormals()[i]
+         << quads.GetSideVectors()[j].GetDistances()[i] << ", ";
+    }
+    os << quads.GetSideVectors()[4].GetNormals()[i]
+       << quads.GetSideVectors()[4].GetDistances()[i] << "}\n";
   }
   return os;
 }
