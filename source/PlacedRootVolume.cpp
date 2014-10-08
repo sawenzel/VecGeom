@@ -196,11 +196,13 @@ VPlacedVolume* PlacedRootVolume::CopyToGpu(
     Transformation3D const *const transformation,
     VPlacedVolume *const gpu_ptr) const {
   assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
+  return NULL;
 }
 VPlacedVolume* PlacedRootVolume::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation) const {
   assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
+  return NULL;
 }
 #endif
 
