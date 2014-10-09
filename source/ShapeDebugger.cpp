@@ -141,21 +141,22 @@ void ShapeDebugger::CompareDistanceToInToROOT(
     if (same && vecgeomMiss) {
       bothMiss.SetNextPoint(point[0], point[1], point[2]);
     } else {
-      Vector3D<Precision> intersection = point + rootResult*direction;
-      auto AddLine = [&] (TPolyLine3D const &line) {
+      auto AddLine = [&] (
+          TPolyLine3D const &line,
+          Vector3D<Precision> const &intersection) {
         TPolyLine3D *ray = new TPolyLine3D(line);
         ray->SetPoint(0, point[0], point[1], point[2]);
         ray->SetPoint(1, intersection[0], intersection[1], intersection[2]);
         rays.push_back(ray);
       };
       if (!vecgeomMiss && rootMiss) {
-        AddLine(vecgeomHits);
+        AddLine(vecgeomHits, point + vecgeomResult*direction);
       } else if (vecgeomMiss && !rootMiss) {
-        AddLine(rootHits);
+        AddLine(rootHits, point + rootResult*direction);
       } else if (same) {
-        AddLine(sameResult);
+        AddLine(sameResult, point + vecgeomResult*direction);
       } else {
-        AddLine(differentResult);
+        AddLine(differentResult, point + vecgeomResult*direction);
       }
     }
   }
