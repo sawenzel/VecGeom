@@ -16,7 +16,7 @@ namespace vecgeom_cuda { template <typename T> class SOA3D; }
 namespace VECGEOM_NAMESPACE {
 
 template <typename T>
-class SOA3D : public Container3D<SOA3D<T> > {
+class SOA3D : Container3D<SOA3D<T> > {
 
 private:
 

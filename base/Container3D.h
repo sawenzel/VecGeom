@@ -16,6 +16,11 @@ class Container3D;
 template <template<typename> class ImplementationType, typename T>
 class Container3D<ImplementationType<T> > {
 
+protected:
+
+  Container3D() {}
+  ~Container3D() {}
+
 private:
 
   typedef ImplementationType<T> Implementation;
@@ -31,8 +36,6 @@ private:
   Implementation& implementation_const() const {
     return *static_cast<Implementation const*>(this);
   }
-
-public:
 
   typedef T value_type;
 
