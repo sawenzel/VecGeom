@@ -402,6 +402,7 @@ if (BENCHMARK)
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
+  source/ShapeDebugger.cpp
 )
 
 # Compile cpp-files for C++11
@@ -446,6 +447,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/VisualizeTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/DebugTube.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
