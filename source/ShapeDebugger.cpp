@@ -114,7 +114,7 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   TPolyLine3D differentResult(2);
   differentResult.SetLineColor(kMagenta);
 
-  std::vector<TPolyLine3D> rays;
+  std::vector<TPolyLine3D*> rays;
   std::vector<Vector3D<Precision> > mismatchPoints;
   std::vector<Vector3D<Precision> > mismatchDirections;
   int vecgeomCount = 0, rootCount = 0, mismatches = 0;
@@ -143,10 +143,10 @@ void ShapeDebugger::CompareDistanceToInToROOT(
     } else {
       Vector3D<Precision> intersection = point + rootResult*direction;
       auto AddLine = [&] (TPolyLine3D const &line) {
-        TPolyLine3D ray(line);
-        ray.SetPoint(0, point[0], point[1], point[2]);
-        ray.SetPoint(1, intersection[0], intersection[1], intersection[2]);
-        rays.emplace_back(ray);
+        TPolyLine3D *ray = new TPolyLine3D(line);
+        ray->SetPoint(0, point[0], point[1], point[2]);
+        ray->SetPoint(1, intersection[0], intersection[1], intersection[2]);
+        rays.push_back(ray);
       };
       if (!vecgeomMiss && rootMiss) {
         AddLine(vecgeomHits);
@@ -178,11 +178,12 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   visualizer.SetVerbosity(0);
   visualizer.AddVolume(rootShape);
   for (auto ray : rays) {
-    visualizer.AddLine(&ray);
+    visualizer.AddLine(ray);
   }
   visualizer.AddPoints(&bothMiss);
   visualizer.Show();
 
+  for (auto ray : rays) delete ray;
   delete rootShape;
 }
 
