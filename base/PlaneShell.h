@@ -6,19 +6,9 @@
 
 #include "base/Global.h"
 #include "volumes/kernel/GenericKernels.h"
-//#include "base/Vector3D.h"
-// #ifdef VECGEOM_CUDA_INTERFACE
-//   #include "backend/cuda/Interface.h"
-// #endif
 
 //namespace vecgeom_cuda { template <typename Backend, int N> class PlaneShell; }
-
 #include "backend/Backend.h"
-#ifndef VECGEOM_NVCC
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
-    #include <Vc/Vc>
-  #endif
-#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -82,11 +72,12 @@ public:
    * assignment operator
    */
   VECGEOM_CUDA_HEADER_BOTH
-    PlaneShell* operator=(PlaneShell const &other) {
+    PlaneShell& operator=(PlaneShell const &other) {
       memcpy( this->fA, other.fA, N*sizeof(Type) );
       memcpy( this->fB, other.fB, N*sizeof(Type) );
       memcpy( this->fC, other.fC, N*sizeof(Type) );
       memcpy( this->fD, other.fD, N*sizeof(Type) );
+      return *this;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -111,7 +102,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void DistanceToPoint(Vector3D<Type2> const& point, Type2* distances) const {
-    // VcPrecision (point.x(), point.y(), point.z(), 1.0f);
     for(int i=0; i<N; ++i) {
       distances[i] = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
     }
@@ -136,19 +126,15 @@ public:
       typename Backend::bool_v &completelyInside,
       typename Backend::bool_v &completelyOutside ) const {
 
+    // auto-vectorizable loop for Backend==scalar
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
-
-    // hope for a vectorization of this part for Backend==scalar!!
-    Bool_t done(Backend::kFalse);
     Float_t dist[N];
-
     for(unsigned int i=0; i<N; ++i) {
       dist[i] = this->fA[i]*point.x() + this->fB[i]*point.y()
               + this->fC[i]*point.z() + this->fD[i];
     }
 
-    // analysis loop
+    // analysis loop - not auto-vectorizable
     for(unsigned int i=0; i<N; ++i) {
       // is it outside of this side plane?
       completelyOutside |= dist[i] > MakePlusTolerant<ForInside>(0.);
@@ -240,7 +226,7 @@ public:
     // hope for a vectorization of this part for Backend==scalar !! ( in my case this works )
     // the idea is to put vectorizable things into this loop
     // and separate the analysis into a separate loop if need be
-    Bool_t done(Backend::kFalse);
+//  Bool_t done(Backend::kFalse);
     Float_t vdist[N];
     for(int i=0; i<N; ++i) {
       Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];

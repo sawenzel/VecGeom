@@ -115,9 +115,6 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndI
       localPoint, completelyInside, completelyOutside );
 #else
   typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v Bool_t;
-
-  Bool_t done( Backend::kFalse );
 
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
   Float_t dist[4];
@@ -497,15 +494,17 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   // Loop over side planes
   TrapSidePlane const* fPlanes = unplaced.GetPlanes();
   typedef typename Backend::precision_v Float_t;
+
+  // auto-vectorizable loop
   Float_t Dist[4] = 0.f;
   for (int i = 0; i < 4; ++i) {
     Dist[i] = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
              + fPlanes[i].fC * point.z() + fPlanes[i].fD);
   }
 
+  // unvectorizable loop
   for (int i = 0; i < 4; ++i) {
     MaskedAssign( !done && Dist[i]>0.0 && Dist[i] < safety, Dist[i], &safety );
-    std::cout<<"i="<< i <<" - Dist[i]="<< Dist <<"safety="<< safety <<"\n";
   }
 #endif
 }

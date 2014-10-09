@@ -11,11 +11,6 @@
 #include "backend/Backend.h"
 #include "base/PlaneShell.h"
 
-#ifndef VECGEOM_NVCC
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
-    #include <Vc/Vc>
-  #endif
-#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -25,15 +20,13 @@ typedef Vector3D<Precision> TrapCorners_t[8];
 typedef PlaneShell<4,Precision> Planes;
 #else
 struct TrapSidePlane {
-    Precision fA,fB,fC,fD;    // Normal unit vector (a,b,c)  and offset (d)
-    // => Ax+By+Cz+D=0
+  Precision fA,fB,fC,fD;
+  // Plane equation: Ax+By+Cz+D=0, where
+  // normal unit vector nvec=(A,B,C)  and offset=D is the distance from origin to plane
 };
 #endif
 
-class UnplacedTrapezoid : public VUnplacedVolume
-#ifdef VECGEOM_VC_ACCELERATION
-                        , public Vc::VectorAlignedBase
-#endif
+  class UnplacedTrapezoid : public VUnplacedVolume, public AlignedBase
 {
 
 private:

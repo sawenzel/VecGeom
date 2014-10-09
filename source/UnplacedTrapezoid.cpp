@@ -332,8 +332,8 @@ bool UnplacedTrapezoid::MakePlane(
   Vcross = v12.Cross(v13);
 
   // check coplanarity
-  if (std::fabs( v14.Dot(Vcross)/(Vcross.Length()*v14.Length()) ) > kTolerance)  {
-    assert( false && "UnplacedTrapezoid: ERROR: Coplanarity test failure!" );
+  if (std::fabs( v14.Dot(Vcross)/(Vcross.Mag()*v14.Mag()) ) > kTolerance)  {
+    assert( false ); // "UnplacedTrapezoid: ERROR: Coplanarity test failure!" );
     good = false;
   }
   else {
