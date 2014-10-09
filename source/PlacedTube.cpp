@@ -19,8 +19,6 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
-
 VPlacedVolume const* PlacedTube::ConvertToUnspecialized() const {
   return new SimpleTube(GetLabel().c_str(), logical_volume(), transformation());
 }
@@ -44,8 +42,6 @@ G4VSolid const* PlacedTube::ConvertToGeant4() const {
   return new G4Tubs(GetLabel().c_str(), rmin(), rmax(), z(), sphi(), dphi());
 }
 #endif
-
-#endif // VECGEOM_BENCHMARK
 
 } // End global namespace
 
