@@ -496,7 +496,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
   typedef typename Backend::precision_v Float_t;
 
   // auto-vectorizable loop
-  Float_t Dist[4] = 0.f;
+  Float_t Dist[4];
   for (int i = 0; i < 4; ++i) {
     Dist[i] = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y()
              + fPlanes[i].fC * point.z() + fPlanes[i].fD);

@@ -43,8 +43,12 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   PlaneShell(Precision *const a, Precision *const b, Precision *const c, Precision *const d)
-    : fA(a), fB(b), fC(c), fD(d)
-  { }
+  {
+    memcpy( &(this->fA), a, N*sizeof(Type) );
+    memcpy( &(this->fB), b, N*sizeof(Type) );
+    memcpy( &(this->fC), c, N*sizeof(Type) );
+    memcpy( &(this->fD), d, N*sizeof(Type) );
+  }
 
 
   /**
@@ -53,8 +57,13 @@ public:
    */
   VECGEOM_CUDA_HEADER_BOTH
   PlaneShell()
-    : fA{0,0,0,0}, fB{0,0,0,0}, fC{0,0,0,0}, fD{0,0,0,0}
-  { }
+  {
+    memset( &(this->fA), 0, N*sizeof(Type) );
+    memset( &(this->fB), 0, N*sizeof(Type) );
+    memset( &(this->fC), 0, N*sizeof(Type) );
+    memset( &(this->fD), 0, N*sizeof(Type) );
+  }
+
 
   /**
    * Copy constructor

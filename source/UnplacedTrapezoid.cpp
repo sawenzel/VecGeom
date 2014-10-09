@@ -12,14 +12,18 @@
 #include "volumes/utilities/GenerationUtilities.h"
 
 #include <stdio.h>
-#include "base/RNG.h"
-#include <cassert>
+
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+  #include <cmath>
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
 typedef Vector3D<Precision> Vec3D;
 
-
+/// angles theta,phi are in radians
+VECGEOM_CUDA_HEADER_BOTH
 UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision pPhi,
                            Precision pDy1, Precision pDx1, Precision pDx2, Precision pTanAlpha1,
                            Precision pDy2, Precision pDx3, Precision pDx4, Precision pTanAlpha2 )
@@ -32,11 +36,13 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
     if( pDz <= 0 || pDy1 <= 0 || pDx1 <= 0 ||
         pDx2 <= 0 || pDy2 <= 0 || pDx3 <= 0 || pDx4 <= 0 ) {
 
-      printf("UnplacedTrapezoid(pDz,...) - GeomSolids0002, Fatal Exception: Invalid length parameters for Solid: UnplacedTrapezoid\n");
+      printf("UnplacedTrapezoid(pDz,...) - GeomSolids0002, Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid\n");
       printf("\t X=%f, %f, %f, %f", pDx1, pDx2, pDx3, pDx4);
       printf("\t Y=%f, %f", pDy1, pDy2);
       printf("\t Z=%f\n", pDz);
-      std::exit(1);
+
+      // force a crash in a CPU/GPU portable way -- any better (graceful) way to do this?
+      Assert(true);  // -- Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid
     }
 
     fTthetaSphi = tan(pTheta)*sin(pPhi);
@@ -75,8 +81,7 @@ UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const& corners )
 {
   // check planarity of all four sides
   bool good = MakePlanes(corners);
-  assert( good && "ERROR: corners provided fail coplanarity tests.");
-  if(!good) std::exit(1);
+  Assert( good ); // ERROR: corners provided fail coplanarity tests.
 
   // fill data members
   fromCornersToParameters(corners);
@@ -125,9 +130,9 @@ UnplacedTrapezoid& UnplacedTrapezoid::operator=( UnplacedTrapezoid const& other 
 UnplacedTrapezoid::~UnplacedTrapezoid() {};
 
 void UnplacedTrapezoid::Print() const {
-  printf("UnplacedTrapezoid {%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}: size=%d bytes\n",
+  printf("UnplacedTrapezoid {%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}\n",
          GetDz(), GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(), GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
-         GetTanThetaSinPhi(), GetTanThetaCosPhi(), memory_size() );
+         GetTanThetaSinPhi(), GetTanThetaCosPhi() );
 }
 
 void UnplacedTrapezoid::Print(std::ostream &os) const {
@@ -143,7 +148,7 @@ void UnplacedTrapezoid::Print(std::ostream &os) const {
      <<' '<< GetTanAlpha2()
      <<' '<< GetTanThetaSinPhi()
      <<' '<< GetTanThetaCosPhi()
-     <<"}: size="<< memory_size() <<" bytes\n";
+     <<"}\n";
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -182,60 +187,6 @@ VPlacedVolume* UnplacedTrapezoid::SpecializedVolume(
     placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void UnplacedTrapezoid_CopyToGpu(
-    Precision dz, Precision theta, Precision phi,
-    Precision dy1, Precision dx1, Precision dx2, Precision pTanAlpha1,
-    Precision dy2, Precision dx3, Precision dx4, Precision pTanAlpha2,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTrapezoid::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTrapezoid_CopyToGpu(GetDz(), GetTheta(), GetPhi(),
-                              GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                              GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
-                              gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-
-VUnplacedVolume* UnplacedTrapezoid::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTrapezoid>();
-  return this->CopyToGpu(gpu_ptr);
-}
-
-#endif
-
-#ifdef VECGEOM_NVCC
-
-class VUnplacedVolume;
-
-__global__
-void UnplacedTrapezoid_ConstructOnGpu(
-    const Precision dz, const Precision theta, const Precision phi,
-    const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
-    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTrapezoid(dz, theta, phi,
-                                               dy1, dx1, dx2, tanAlpha1,
-                                               dy2, dx3, dx4, tanAlpha2 );
-}
-
-void UnplacedParallelepiped_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedParallelepiped_ConstructOnGpu<<<1, 1>>>(x, y, z, alpha, theta, phi,
-                                                  gpu_ptr);
-}
-
-#endif
-
 bool UnplacedTrapezoid::MakePlanes() {
   TrapCorners_t pt;
   fromParametersToCorners(pt);
@@ -253,11 +204,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[0],pt[4],pt[5],pt[1],fPlanes[0]);
 #endif
-  if (!good) {
-    printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n");
-    //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
-    std::exit(1);
-  }
+  Assert( good ); // GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid
 
   // Top side with normal approx. +Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -265,11 +212,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[2],pt[3],pt[7],pt[6],fPlanes[1]);
 #endif
-  if (!good) {
-    //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
-    printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n");
-    std::exit(1);
-  }
+  Assert( good ); // GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid
 
   // Front side with normal approx. -X
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -277,11 +220,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[0],pt[2],pt[6],pt[4],fPlanes[2]);
 #endif
-  if (!good) {
-    //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
-    printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n");
-    std::exit(1);
-  }
+  Assert( good ); // GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid
 
   // Back side with normal approx. +X
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -289,11 +228,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[1],pt[5],pt[7],pt[3],fPlanes[3]);
 #endif
-  if (!good) {
-    //G4Exception("G4Trap::MakePlanes()", "GeomSolids0002", FatalException, message);
-    printf("UnplacedTrapezoid::MakePlanes() - GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n");
-    std::exit(1);
-  }
+  Assert( good ); // GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid
 
   // include areas for -Z,+Z surfaces
   sideAreas[4] = 2*(fDx1+fDx2)*fDy1;
@@ -333,7 +268,7 @@ bool UnplacedTrapezoid::MakePlane(
 
   // check coplanarity
   if (std::fabs( v14.Dot(Vcross)/(Vcross.Mag()*v14.Mag()) ) > kTolerance)  {
-    assert( false ); // "UnplacedTrapezoid: ERROR: Coplanarity test failure!" );
+    Assert( false ); // "UnplacedTrapezoid: ERROR: Coplanarity test failure!
     good = false;
   }
   else {
@@ -537,7 +472,6 @@ Precision UnplacedTrapezoid::SurfaceArea() const {
 }
 
 #ifdef VECGEOM_USOLIDS
-VECGEOM_CUDA_HEADER_BOTH
 Vec3D UnplacedTrapezoid::GetPointOnSurface() const {
 
   TrapCorners_t pt;
@@ -693,7 +627,7 @@ Precision UnplacedTrapezoid::Volume() const {
 void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
 
     fDz = pt[7].z();
-    auto DzRecip = 1.0 / fDz;
+    Precision DzRecip = 1.0 / fDz;
 
     fDy1 = 0.50*( pt[2].y() - pt[1].y() );
     fDx1 = 0.50*( pt[1].x() - pt[0].x() );
@@ -728,8 +662,68 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
 
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedTrapezoid::StreamInfo(std::ostream &os) const {
-    assert( 0 && "Not implemented.\n");
+    Assert( 0 ); // Not implemented yet
     return os;
   }
 
+} // End global namespace
+
+
+namespace vecgeom {
+// only the GPU-related methods should go inside this namespace
+#ifdef VECGEOM_CUDA_INTERFACE
+
+void UnplacedTrapezoid_CopyToGpu(
+    Precision dz, Precision theta, Precision phi,
+    Precision dy1, Precision dx1, Precision dx2, Precision pTanAlpha1,
+    Precision dy2, Precision dx3, Precision dx4, Precision pTanAlpha2,
+    VUnplacedVolume *const gpu_ptr);
+
+VUnplacedVolume* UnplacedTrapezoid::CopyToGpu(
+    VUnplacedVolume *const gpu_ptr) const {
+  UnplacedTrapezoid_CopyToGpu(GetDz(), GetTheta(), GetPhi(),
+                              GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+                              GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
+                              gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+}
+
+VUnplacedVolume* UnplacedTrapezoid::CopyToGpu() const {
+  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTrapezoid>();
+  return this->CopyToGpu(gpu_ptr);
+}
+
+#endif
+
+#ifdef VECGEOM_NVCC
+
+class VUnplacedVolume;
+
+  __global__
+  void UnplacedTrapezoid_ConstructOnGpu(
+    const Precision dz, const Precision theta, const Precision phi,
+    const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
+    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
+    VUnplacedVolume *const gpu_ptr)
+  {
+    new(gpu_ptr) vecgeom_cuda::UnplacedTrapezoid(dz, theta, phi,
+                                                 dy1, dx1, dx2, tanAlpha1,
+                                                 dy2, dx3, dx4, tanAlpha2 );
+  }
+
+  void UnplacedTrapezoid_CopyToGpu(
+    const Precision dz, const Precision theta, const Precision phi,
+    const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
+    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
+    VUnplacedVolume *const gpu_ptr)
+  {
+    UnplacedTrapezoid_ConstructOnGpu<<<1, 1>>>(dz, theta, phi,
+                                               dy1, dx1, dx2, tanAlpha1,
+                                               dy2, dx3, dx4, tanAlpha2,
+                                               gpu_ptr);
+  }
+#endif // VECGEOM_NVCC
+
 } // End namespace vecgeom
+

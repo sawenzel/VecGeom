@@ -224,9 +224,11 @@ public:
   Precision Volume() const;
 
   /// \brief Calculate trapezoid parameters when user provides the 8 corners
+  VECGEOM_CUDA_HEADER_BOTH
   void fromCornersToParameters( TrapCorners_t const & pt);
 
   /// \brief Calculate the 8 corner points using pre-stored parameters
+  VECGEOM_CUDA_HEADER_BOTH
   void fromParametersToCorners( TrapCorners_t & pt ) const;
 
 private:
@@ -245,13 +247,16 @@ private:
   ///
   /// The 4-points used to build each side plane must be co-planar, otherwise
   /// the program will stop after printing an error message.
+  VECGEOM_CUDA_HEADER_BOTH
   bool MakePlanes();
 
   /// \brief Construct the four side planes from input corner points
+  VECGEOM_CUDA_HEADER_BOTH
   bool MakePlanes( TrapCorners_t const & corners );
 
   /// \brief Construct a side plane containing four of the trapezoid
   /// corners defining a side face
+  VECGEOM_CUDA_HEADER_BOTH
   bool MakePlane( const Vector3D<Precision>& p1, const Vector3D<Precision>& p2,
                   const Vector3D<Precision>& p3, const Vector3D<Precision>& p4,
 #ifndef VECGEOM_PLANESHELL_DISABLE
