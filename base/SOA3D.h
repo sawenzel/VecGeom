@@ -15,6 +15,17 @@ namespace vecgeom_cuda { template <typename T> class SOA3D; }
 
 namespace VECGEOM_NAMESPACE {
 
+// gcc 4.8.2's -Wnon-virtual-dtor is broken and turned on by -Weffc++, we
+// need to disable it for SOA3D
+
+#if __GNUC__ < 3 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 8)
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#pragma GCC diagnostic ignored "-Weffc++"
+#define GCC_DIAG_POP_NEEDED
+#endif
+
 template <typename T>
 class SOA3D : Container3D<SOA3D<T> > {
 
@@ -140,6 +151,13 @@ private:
   void Deallocate();
 
 };
+
+#if defined(GCC_DIAG_POP_NEEDED)
+
+#pragma GCC diagnostic pop
+#undef GCC_DIAG_POP_NEEDED
+
+#endif
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
