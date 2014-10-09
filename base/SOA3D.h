@@ -16,7 +16,7 @@ namespace vecgeom_cuda { template <typename T> class SOA3D; }
 namespace VECGEOM_NAMESPACE {
 
 template <typename T>
-class SOA3D : public Container3D<SOA3D<T> > {
+class SOA3D : Container3D<SOA3D<T> > {
 
 private:
 
@@ -145,12 +145,12 @@ private:
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-SOA3D<T>::SOA3D(T *x, T *y, T *z, size_t size)
-    : fAllocated(false), fSize(size), fCapacity(fSize), fX(x), fY(y), fZ(z) {}
+SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
+    : fAllocated(false), fSize(sz), fCapacity(fSize), fX(xval), fY(yval), fZ(zval) {}
 
 template <typename T>
-SOA3D<T>::SOA3D(size_t size)
-    : fAllocated(false), fSize(size), fCapacity(size),
+SOA3D<T>::SOA3D(size_t sz)
+    : fAllocated(true), fSize(0), fCapacity(sz),
       fX(NULL), fY(NULL), fZ(NULL) {
   Allocate();
 }
@@ -313,10 +313,10 @@ T const* SOA3D<T>::z() const { return fZ; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void SOA3D<T>::set(size_t index, T x, T y, T z) {
-  fX[index] = x;
-  fY[index] = y;
-  fZ[index] = z;
+void SOA3D<T>::set(size_t index, T xval, T yval, T zval) {
+  fX[index] = xval;
+  fY[index] = yval;
+  fZ[index] = zval;
 }
 
 template <typename T>
@@ -329,10 +329,10 @@ void SOA3D<T>::set(size_t index, Vector3D<T> const &vec) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void SOA3D<T>::push_back(T x, T y, T z) {
-  fX[fSize] = x;
-  fY[fSize] = y;
-  fZ[fSize] = z;
+void SOA3D<T>::push_back(T xval, T yval, T zval) {
+  fX[fSize] = xval;
+  fY[fSize] = yval;
+  fZ[fSize] = zval;
   ++fSize;
 }
 

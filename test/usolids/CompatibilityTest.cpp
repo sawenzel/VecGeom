@@ -26,7 +26,7 @@ void CompareBox(VUSolid const *first, VUSolid const *second) {
   assert(first->Inside(insidePoint) == second->Inside(insidePoint));
   assert(std::abs(first->DistanceToIn(outsidePoint, direction) -
          second->DistanceToIn(outsidePoint, direction)) < kTolerance);
-  assert(std::abs(first->DistanceToOut(insidePoint, direction, normal, convex) -
+  Assert(std::abs(first->DistanceToOut(insidePoint, direction, normal, convex) -
          second->DistanceToOut(insidePoint, direction, normal, convex))
          < kTolerance);
 }
@@ -40,7 +40,7 @@ void CompareTube(VUSolid const *first, VUSolid const *second) {
   assert(first->Inside(insidePoint) == second->Inside(insidePoint));
   assert(std::abs(first->DistanceToIn(outsidePoint, direction) -
          second->DistanceToIn(outsidePoint, direction)) < kTolerance);
-  assert(std::abs(first->DistanceToOut(insidePoint, direction, normal, convex) -
+  Assert(std::abs(first->DistanceToOut(insidePoint, direction, normal, convex) -
          second->DistanceToOut(insidePoint, direction, normal, convex))
          < kTolerance);
 }

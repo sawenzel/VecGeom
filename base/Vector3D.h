@@ -455,31 +455,39 @@ public:
     mem[2] = atof(str.substr(begin, end-begin).c_str());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& operator[](const int index) {
     return mem[index];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& operator[](const int index) const {
     return mem[index];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& x() { return mem[0]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& x() const { return mem[0]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& y() { return mem[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& y() const { return mem[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& z() { return mem[2]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& z() const { return mem[2]; }
 
@@ -495,37 +503,44 @@ public:
     Set(x, x, x);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Length() const {
     return sqrt(mem[0]*mem[0] + mem[1]*mem[1] + mem[2]*mem[2]);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Mag2() const {
       return Dot(*this,*this);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Mag() const {
     return Sqrt(Mag2());
   }
 
   // TODO: study if we gain from internal vectorization here.
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Perp2() const {
     return mem[0]*mem[0] + mem[1]*mem[1];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Perp() const {
     return Sqrt(Perp2());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Normalize() {
     *this *= 1. / Length();
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Normalized() const;
 

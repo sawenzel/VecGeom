@@ -25,8 +25,6 @@ void PlacedBox::PrintType() const {
   printf("PlacedBox");
 }
 
-#ifdef VECGEOM_BENCHMARK
-
 VPlacedVolume const* PlacedBox::ConvertToUnspecialized() const {
   return new SimpleBox(GetLabel().c_str(), logical_volume_, transformation_);
 }
@@ -48,8 +46,6 @@ G4VSolid const* PlacedBox::ConvertToGeant4() const {
   return new G4Box(GetLabel(), x(), y(), z());
 }
 #endif
-
-#endif // VECGEOM_BENCHMARK
 
 } // End global namespace
 

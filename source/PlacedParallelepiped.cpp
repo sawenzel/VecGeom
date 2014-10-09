@@ -14,8 +14,6 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
-
 VPlacedVolume const* PlacedParallelepiped::ConvertToUnspecialized() const {
   return new SimpleParallelepiped(GetLabel().c_str(), logical_volume(),
                                   transformation());
@@ -31,6 +29,7 @@ TGeoShape const* PlacedParallelepiped::ConvertToRoot() const {
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedParallelepiped::ConvertToUSolids() const {
   assert(0 && "Parallelepiped unsupported for USolids.");
+  return NULL;
 }
 #endif
 
@@ -40,8 +39,6 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
                     GetPhi());
 }
 #endif
-
-#endif // VECGEOM_BENCHMARK
 
 } // End global namespace
 

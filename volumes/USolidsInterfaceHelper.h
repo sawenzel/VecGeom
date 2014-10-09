@@ -11,7 +11,9 @@
 #ifndef VECGEOM_USOLIDS
 
 namespace VECGEOM_NAMESPACE {
-class USolidsInterfaceHelper {};
+  struct USolidsInterfaceHelper {
+    virtual ~USolidsInterfaceHelper() {}
+  };
 }
 
 #else // Compiling with USolids compatibility

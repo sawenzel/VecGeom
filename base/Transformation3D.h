@@ -297,7 +297,7 @@ public:
 }; // End class Transformation3D
 
 VECGEOM_CUDA_HEADER_BOTH
-Transformation3D::Transformation3D(Transformation3D const &other) {
+Transformation3D::Transformation3D(Transformation3D const &other) : fIdentity(false), fHasRotation(false), fHasTranslation(false) {
   *this = other;
 }
 
