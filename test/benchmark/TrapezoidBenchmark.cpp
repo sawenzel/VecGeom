@@ -3,10 +3,12 @@
 #include "volumes/Trapezoid.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
+#include "ArgParser.h"
 
 using namespace vecgeom;
 
-int main() {
+int main(int argc, char* argv[]) {
+  OPTION_INT(npoints);
 
   UnplacedBox worldUnplaced = UnplacedBox(20., 20., 20.);
 
