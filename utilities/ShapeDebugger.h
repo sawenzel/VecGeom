@@ -53,7 +53,7 @@ public:
   /// VecGeom and ROOT. Purple lines are different results between VecGeom and
   /// ROOT, where the solid line is VecGeom's result and the dashed line is
   /// ROOT's result.
-  void CompareDistanceToOutROOT(
+  void CompareDistanceToOutToROOT(
       Vector3D<Precision> const &bounds,
       int nSamples = 1024) const;
 
