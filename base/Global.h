@@ -1,5 +1,5 @@
-/// @file global.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file global.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
@@ -12,6 +12,9 @@
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
+  #ifdef __CUDA_ARCH__
+    #define VECGEOM_NVCC_DEVICE
+  #endif
   #define VECGEOM_NAMESPACE vecgeom_cuda
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
@@ -51,10 +54,18 @@
   #define NULL 0
 #endif
 
-#ifndef VECGEOM_NVCC
+#ifdef VECGEOM_STD_CXX11
   #define VECGEOM_CONSTEXPR constexpr
+  #define VECGEOM_CONSTEXPR_RETURN constexpr
 #else
-  #define VECGEOM_CONSTEXPR static __constant__ const
+  #define VECGEOM_CONSTEXPR const
+  #define VECGEOM_CONSTEXPR_RETURN
+#endif
+
+#ifndef VECGEOM_NVCC
+  #define VECGEOM_GLOBAL constexpr
+#else
+  #define VECGEOM_GLOBAL static __constant__ const
 #endif
 
 namespace vecgeom {
@@ -81,18 +92,18 @@ typedef vecgeom::Inside_t Inside_t;
 
 namespace VECGEOM_NAMESPACE {
 
-VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
-VECGEOM_CONSTEXPR Precision kPi = 3.14159265358979323846;
-VECGEOM_CONSTEXPR Precision kTwoPi = 2.*kPi;
-VECGEOM_CONSTEXPR Precision kDegToRad = kPi/180.;
-VECGEOM_CONSTEXPR Precision kRadToDeg = 180./kPi;
-VECGEOM_CONSTEXPR Precision kInfinity =
+VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
+VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
+VECGEOM_GLOBAL Precision kDegToRad = kPi/180.;
+VECGEOM_GLOBAL Precision kRadToDeg = 180./kPi;
+VECGEOM_GLOBAL Precision kInfinity =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::infinity();
 #else
     INFINITY;
 #endif
-VECGEOM_CONSTEXPR Precision kEpsilon =
+VECGEOM_GLOBAL Precision kEpsilon =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::epsilon();
 #elif VECGEOM_FLOAT_PRECISION
@@ -100,15 +111,15 @@ VECGEOM_CONSTEXPR Precision kEpsilon =
 #else
     DBL_EPSILON;
 #endif
-VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
-VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
-VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
-VECGEOM_CONSTEXPR Precision kToleranceSquared = kTolerance*kTolerance;
+VECGEOM_GLOBAL Precision kTiny = 1e-30;
+VECGEOM_GLOBAL Precision kTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
+VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
 
 namespace EInside {
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kInside = 0;
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kSurface = 1;
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kOutside = 2;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kInside = 0;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kSurface = 1;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kOutside = 2;
 }
 
 template <typename Type>
