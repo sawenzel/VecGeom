@@ -193,7 +193,7 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   delete rootShape;
 }
 
-void ShapeDebugger::CompareDistanceToOutROOT(
+void ShapeDebugger::CompareDistanceToOutToROOT(
     Vector3D<Precision> const &bounds,
     int nSamples) const {
 
