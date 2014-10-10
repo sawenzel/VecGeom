@@ -28,7 +28,9 @@ public:
 
   typedef Planes Sides_t[4];
 
+#ifdef VECGEOM_STD_CXX11
   Quadrilaterals(int size);
+#endif
 
   ~Quadrilaterals();
 
@@ -60,6 +62,7 @@ public:
   VECGEOM_INLINE
   Sides_t const& GetSideVectors() const;
 
+#ifdef VECGEOM_STD_CXX11
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
   /// \param corner2 Third corner in counterclockwise order.
@@ -70,6 +73,7 @@ public:
       Vector3D<Precision> const &corner1,
       Vector3D<Precision> const &corner2,
       Vector3D<Precision> const &corner3);
+#endif
 
   /// Set the sign of the specified component of the normal to positive or
   /// negative by flipping the sign of all components to the desired sign.

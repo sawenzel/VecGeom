@@ -453,7 +453,6 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PlanesTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/PolyhedronTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
@@ -466,6 +465,7 @@ set(TEST_EXECUTABLES_ROOT
 set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp

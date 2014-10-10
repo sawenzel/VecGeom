@@ -10,6 +10,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifdef VECGEOM_STD_CXX11
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount,
     const int zPlaneCount,
@@ -146,6 +147,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   delete[] outerVertices;
   if (fHasInnerRadii) delete[] innerVertices;
 }
+#endif
 
 VECGEOM_CUDA_HEADER_DEVICE
 VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(

@@ -11,6 +11,9 @@
 #include <stdio.h>
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
+  #ifdef __CUDA_ARCH__
+    #define VECGEOM_NVCC_DEVICE
+  #endif
   #define VECGEOM_NVCC
   #ifdef __CUDA_ARCH__
     #define VECGEOM_NVCC_DEVICE
@@ -59,12 +62,12 @@
     #define VECGEOM_INLINE inline __attribute__((always_inline))
     #ifndef VECGEOM_NVCC
       #define VECGEOM_ALIGNED __attribute__((aligned(64)))
-    #else
-      #define VECGEOM_ALIGNED
     #endif
   #else // Clang (most likely)
     #define VECGEOM_INLINE inline
-    #define VECGEOM_ALIGNED
+    #ifndef VECGEOM_NVCC
+      #define VECGEOM_ALIGNED
+    #endif
   #endif
 #endif
 
@@ -130,7 +133,7 @@ VECGEOM_GLOBAL Precision kEpsilon =
 #else
     DBL_EPSILON;
 #endif
-VECGEOM_CONSTEXPR Precision kMinimum =
+VECGEOM_GLOBAL Precision kMinimum =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::min();
 #elif VECGEOM_FLOAT_PRECISION
@@ -138,7 +141,7 @@ VECGEOM_CONSTEXPR Precision kMinimum =
 #else
     DBL_MIN;
 #endif
-VECGEOM_CONSTEXPR Precision kMaximum =
+VECGEOM_GLOBAL Precision kMaximum =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::max();
 #elif VECGEOM_FLOAT_PRECISION

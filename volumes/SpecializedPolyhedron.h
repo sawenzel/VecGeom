@@ -35,14 +35,22 @@ public:
 
 #ifndef VECGEOM_NVCC
 
-  SpecializedPolyhedron(char const *const label,
-                        LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, NULL) {}
+  SpecializedPolyhedron(
+      char const *const label,
+      LogicalVolume const *const logical_volume,
+      Transformation3D const *const transformation);
 
-  SpecializedPolyhedron(LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
-      : SpecializedPolyhedron("", logical_volume, transformation) {}
+  SpecializedPolyhedron(
+      LogicalVolume const *const logical_volume,
+      Transformation3D const *const transformation);
+
+  SpecializedPolyhedron(
+    char const *const label,
+    const int sideCount,
+    const int zPlaneCount,
+    Precision zPlanes[],
+    Precision rMin[],
+    Precision rMax[]);
 
 #else
 
@@ -85,6 +93,8 @@ public:
   virtual void Inside(SOA3D<Precision> const &point,
                       Inside_t *const output) const;
 
+  using Helper::DistanceToIn;
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToIn(Vector3D<Precision> const &point,
                                  Vector3D<Precision> const &direction,
@@ -98,6 +108,8 @@ public:
 
   virtual void SafetyToInMinimize(SOA3D<Precision> const &points,
                                   Precision *const safeties) const;
+
+  using Helper::DistanceToOut;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(Vector3D<Precision> const &point,
@@ -116,6 +128,35 @@ public:
 };
 
 typedef SpecializedPolyhedron<true> SimplePolyhedron;
+
+#ifndef VECGEOM_NVCC
+
+template <bool treatInnerT>
+SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+    char const *const label,
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation)
+    : Helper(label, logical_volume, transformation, NULL) {}
+
+template <bool treatInnerT>
+SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation)
+    : SpecializedPolyhedron("", logical_volume, transformation) {}
+
+template <bool treatInnerT>
+SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+    char const *const label,
+    const int sideCount,
+    const int zPlaneCount,
+    Precision zPlanes[],
+    Precision rMin[],
+    Precision rMax[])
+    : Helper(label, new LogicalVolume(
+          new UnplacedPolyhedron(sideCount, zPlaneCount, zPlanes, rMin, rMax)),
+          &Transformation3D::kIdentity, NULL) {}
+
+#endif
 
 template <bool treatInnerT>
 void SpecializedPolyhedron<treatInnerT>::PrintType() const {

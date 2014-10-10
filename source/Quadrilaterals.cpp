@@ -4,8 +4,10 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifdef VECGEOM_STD_CXX11
 Quadrilaterals::Quadrilaterals(int size)
     : fPlanes(size), fSideVectors{size, size, size, size} {}
+#endif
 
 Quadrilaterals::~Quadrilaterals() {}
 
@@ -17,6 +19,7 @@ Quadrilaterals& Quadrilaterals::operator=(Quadrilaterals const &other) {
   return *this;
 }
 
+#ifdef VECGEOM_STD_CXX11
 void Quadrilaterals::Set(
     int index,
     Vector3D<Precision> const &corner0,
@@ -66,6 +69,7 @@ void Quadrilaterals::Set(
   ComputeSideVector(fSideVectors[2], corner2, corner3);
   ComputeSideVector(fSideVectors[3], corner3, corner0);
 }
+#endif
 
 void Quadrilaterals::FixNormalSign(int component, bool positive) {
   for (int i = 0, iMax = size(); i < iMax; ++i) {
@@ -79,14 +83,14 @@ void Quadrilaterals::FixNormalSign(int component, bool positive) {
 
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads) {
   for (int i = 0, iMax = quads.size(); i < iMax; ++i) {
-    os << "{" << quads.GetNormal(i) << ", " << quads.GetDistance(i)
-       << ", {";
+    os << "{(" << quads.GetNormal(i) << ", " << quads.GetDistance(i)
+       << "), {(";
     for (int j = 0; j < 3; ++j) {
       os << quads.GetSideVectors()[j].GetNormals()[i]
-         << quads.GetSideVectors()[j].GetDistances()[i] << ", ";
+         << ", " << quads.GetSideVectors()[j].GetDistances()[i] << "), ";
     }
-    os << quads.GetSideVectors()[4].GetNormals()[i]
-       << quads.GetSideVectors()[4].GetDistances()[i] << "}\n";
+    os << quads.GetSideVectors()[3].GetNormals()[i]
+       << ", " << quads.GetSideVectors()[3].GetDistances()[i] << ")}}\n";
   }
   return os;
 }

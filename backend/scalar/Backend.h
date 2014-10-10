@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -28,7 +29,7 @@ struct kScalar {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  static constexpr bool IsEqual() { return false; }
+  static VECGEOM_CONSTEXPR_RETURN bool IsEqual() { return false; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -37,7 +38,9 @@ struct kScalar {
 
 template <>
 VECGEOM_CUDA_HEADER_BOTH
-inline constexpr bool kScalar::IsEqual<kScalar>() { return true; }
+inline VECGEOM_CONSTEXPR_RETURN bool kScalar::IsEqual<kScalar>() {
+  return true;
+}
 
 typedef kScalar::int_v    ScalarInt;
 typedef kScalar::precision_v ScalarDouble;
@@ -141,15 +144,11 @@ Precision tan(const Precision radians) {
   return std::tan(radians);
 }
 
-namespace {
-
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void swap(Type &a, Type &b) {
   std::swap(a, b);
-}
-
 }
 
 template <typename Type>
@@ -159,7 +158,7 @@ void copy(Type const *begin, Type const *const end, Type *const target) {
 #ifndef VECGEOM_NVCC_DEVICE
   std::copy(begin, end, target);
 #else
-  memcpy(target, begin, (end-begin)*sizeof(Type));
+  std::memcpy(target, begin, sizeof(Type)*(end-begin));
 #endif
 }
 
@@ -179,10 +178,10 @@ template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void reverse(Type *begin, Type *end) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   std::reverse(begin, end);
 #else
-  while (begin++ < end--) Swap(begin, end);
+  while (begin++ < end--) swap(begin, end);
 #endif
 }
 
@@ -212,21 +211,17 @@ template <typename IteratorType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 IteratorType min_element(IteratorType first, IteratorType last) {
-#ifndef VECGEOM_NVCC
   return std::min_element(first, last);
-#else
-  return min_element(first, last);
-#endif
 }
 
 template <typename IteratorType>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool all_of(IteratorType first, IteratorType last) {
-#ifndef VECGEOM_NVCC
+#ifdef VECGEOM_STD_CXX11
   return std::all_of(first, last, [](bool b){return b;});
 #else
-  while (first++ != last) if (!first) return false;
+  while (first != last) if (!(*first)) return false;
   return true;
 #endif
 }

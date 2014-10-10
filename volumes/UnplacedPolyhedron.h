@@ -78,7 +78,7 @@ private:
 
 public:
 
-#ifndef VECGEOM_NVCC
+#ifdef VECGEOM_STD_CXX11
   UnplacedPolyhedron(
       const int sideCount,
       const int zPlaneCount,

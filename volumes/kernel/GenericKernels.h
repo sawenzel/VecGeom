@@ -60,19 +60,6 @@ int FindSegmentIndex<kScalar>(
   return index-1;
 }
 
-#ifdef VECGEOM_CUDA
-/// Brute force to avoid uncoalesced memory access
-template <>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-int FindSegmentIndex<kCuda>(
-    Precision const array[],
-    const int size,
-    Precision const &element) {
-  return FindSegmentIndex<kScalar>(array, size, element);
-}
-#endif
-
 #ifdef VECGEOM_VC
 /// Brute force with optional early returns
 template <>

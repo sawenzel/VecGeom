@@ -38,7 +38,6 @@ public:
   VECGEOM_INLINE
   Array(Type *const data, const unsigned size);
 
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Array& operator=(Array<Type> const &other);
 
@@ -139,7 +138,6 @@ Array<Type>::Array(Type *const data, const unsigned size)
     : fSize(size), fData(data), fAllocated(false) {}
 
 template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Array<Type>& Array<Type>::operator=(Array<Type> const &other) {
   Deallocate();

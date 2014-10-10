@@ -47,7 +47,9 @@ public:
 
   typedef SOA3D<Precision> Corners_t[2];
 
+#ifdef VECGEOM_STD_CXX11
   Rectangles(int size);
+#endif
 
   ~Rectangles();
 

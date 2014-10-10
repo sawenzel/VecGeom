@@ -19,7 +19,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
   return new SimplePolyhedron(GetLabel().c_str(), logical_volume(),
@@ -72,7 +72,7 @@ G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
 }
 #endif
 
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
 VPlacedVolume* PlacedPolyhedron::CopyToGpu(

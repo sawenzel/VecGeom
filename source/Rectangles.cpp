@@ -2,8 +2,10 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifdef VECGEOM_STD_CXX11
 Rectangles::Rectangles(int size)
     : fPlanes(size), fSides(size), fCorners{size, size} {}
+#endif
 
 Rectangles::~Rectangles() {}
 
