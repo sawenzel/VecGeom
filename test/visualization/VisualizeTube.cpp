@@ -1,4 +1,4 @@
-#include "management/Visualizer.h"
+#include "utilities/Visualizer.h"
 #include "volumes/Tube.h"
 #include "volumes/utilities/VolumeUtilities.h"
 
@@ -16,8 +16,9 @@ int main() {
     points.set(i, sample);
   }
   points.resize(nSamples);
-  Visualizer::Instance().AddVolume(tube);
-  Visualizer::Instance().AddPoints(points);
-  Visualizer::Instance().Show();
+  Visualizer visualizer;
+  visualizer.AddVolume(tube);
+  visualizer.AddPoints(points);
+  visualizer.Show();
   return 0;
 }

@@ -14,6 +14,8 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifndef VECGEOM_NVCC
+
 VPlacedVolume const* PlacedParallelepiped::ConvertToUnspecialized() const {
   return new SimpleParallelepiped(GetLabel().c_str(), logical_volume(),
                                   transformation());
@@ -39,6 +41,8 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
                     GetPhi());
 }
 #endif
+
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

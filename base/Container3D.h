@@ -18,7 +18,10 @@ class Container3D<ImplementationType<T> > {
 
 protected:
 
+  VECGEOM_CUDA_HEADER_BOTH
   Container3D() {}
+
+  VECGEOM_CUDA_HEADER_BOTH
   ~Container3D() {}
 
 private:
