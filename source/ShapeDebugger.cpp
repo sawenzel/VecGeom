@@ -46,6 +46,7 @@ void ShapeDebugger::CompareContainsToROOT(
   bothOutside.SetMarkerColor(kRed);
 
   std::vector<Vector3D<Precision> > mismatchPoints;
+  std::vector<std::pair<Precision, double> > mismatchResults;
   int vecgeomCount = 0, rootCount = 0, mismatches = 0;
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds);
@@ -56,6 +57,7 @@ void ShapeDebugger::CompareContainsToROOT(
     if (vecgeomResult != rootResult) {
       ++mismatches;
       mismatchPoints.push_back(sample);
+      mismatchResults.push_back(std::make_pair(vecgeomResult, rootResult));
     }
     if (vecgeomResult && rootResult) {
       bothInside.SetNextPoint(sample[0], sample[1], sample[2]);
@@ -74,10 +76,11 @@ void ShapeDebugger::CompareContainsToROOT(
             << "  Mismatches detected: " << mismatches << " / " << nSamples
             << "\n";
   if (fMaxMismatches > 0 && mismatches > 0) {
-    std::cout << "\nMismatching points:\n";
+    std::cout << "\nMismatching points [<Point>: <VecGeom> / <ROOT>]:\n";
     int i = 0, iMax = mismatchPoints.size();
     while (i < fMaxMismatches && i < iMax) {
-      std::cout << mismatchPoints[i] << "\n";
+      std::cout << mismatchPoints[i] << ": " << mismatchResults[i].first
+                << " / " << mismatchResults[i].second << "\n";
       ++i;
     }
   }
@@ -121,6 +124,7 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   std::vector<TPolyLine3D*> rays;
   std::vector<Vector3D<Precision> > mismatchPoints;
   std::vector<Vector3D<Precision> > mismatchDirections;
+  std::vector<std::pair<Precision, double> > mismatchResults;
   int vecgeomCount = 0, rootCount = 0, mismatches = 0;
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> point, direction;
@@ -141,6 +145,7 @@ void ShapeDebugger::CompareDistanceToInToROOT(
       ++mismatches;
       mismatchPoints.push_back(point);
       mismatchDirections.push_back(direction);
+      mismatchResults.push_back(std::make_pair(vecgeomResult, rootResult));
     }
     if (same && vecgeomMiss) {
       bothMiss.SetNextPoint(point[0], point[1], point[2]);
@@ -172,10 +177,13 @@ void ShapeDebugger::CompareDistanceToInToROOT(
             << "  Mismatches detected: " << mismatches << " / " << nSamples
             << "\n";
   if (fMaxMismatches > 0 && mismatches > 0) {
-    std::cout << "\nMismatching rays:\n";
+    std::cout << "\nMismatching rays [<Point> -> <Direction>: "
+                 "<VecGeom> / <ROOT>]:\n";
     int i = 0, iMax = mismatchPoints.size();
     while (i < fMaxMismatches && i < iMax) {
-      std::cout << mismatchPoints[i] << " -> " << mismatchDirections[i] << "\n";
+      std::cout << mismatchPoints[i] << " -> " << mismatchDirections[i]
+                << ": " << mismatchResults[i].first << " / "
+                << mismatchResults[i].second << "\n";
       ++i;
     }
   }
@@ -215,6 +223,7 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
   std::vector<TPolyLine3D*> rays;
   std::vector<Vector3D<Precision> > mismatchPoints;
   std::vector<Vector3D<Precision> > mismatchDirections;
+  std::vector<std::pair<Precision, double> > mismatchResults;
   int hits = 0, mismatches = 0;
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> point, direction;
@@ -231,6 +240,7 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
       ++mismatches;
       mismatchPoints.push_back(point);
       mismatchDirections.push_back(direction);
+      mismatchResults.push_back(std::make_pair(vecgeomResult, rootResult));
     }
     auto AddLine = [&] (
         TPolyLine3D const &line,
@@ -257,10 +267,13 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
             << "  Mismatches detected: " << mismatches << " / " << nSamples
             << "\n";
   if (fMaxMismatches > 0 && mismatches > 0) {
-    std::cout << "\nMismatching rays:\n";
+    std::cout << "\nMismatching rays [<Point> -> <Direction>: "
+                 "<VecGeom> / <ROOT>]:\n";
     int i = 0, iMax = mismatchPoints.size();
     while (i < fMaxMismatches && i < iMax) {
-      std::cout << mismatchPoints[i] << " -> " << mismatchDirections[i] << "\n";
+      std::cout << mismatchPoints[i] << " -> " << mismatchDirections[i]
+                << ": " << mismatchResults[i].first << " / "
+                << mismatchResults[i].second << "\n";
       ++i;
     }
   }
