@@ -38,10 +38,22 @@ public:
   /// Visualizes comparison between the DistanceToIn algorithm between the
   /// VecGeom volume and its ROOT equivalent. Yellow crosses are misses from
   /// both algorithms. Red rays are VecGeom intersections that miss in ROOT.
-  /// Blue rays are ROOT intersections that miss in VecGeom. Green are
-  /// intersections that agree between ROOT and VecGeom. Magenta are VecGeom
-  /// intersections that have a different result from ROOT.
+  /// Dashed blue rays are ROOT intersections that miss in VecGeom. Green are
+  /// intersections that agree between ROOT and VecGeom. Magenta rays are
+  /// VecGeom intersections that have a different result from ROOT, with the
+  /// solid line being the VecGeom result and the dashed line being the ROOT
+  /// result.
   void CompareDistanceToInToROOT(
+      Vector3D<Precision> const &bounds,
+      int nSamples = 1024) const;
+
+  /// Visualizes comparison between the DistanceToOut algorithm between the
+  /// VecGeom volume and its ROOT equivalent. Red lines are ROOT intersections
+  /// where VecGeom misses the surface. Green lines are agreements between
+  /// VecGeom and ROOT. Purple lines are different results between VecGeom and
+  /// ROOT, where the solid line is VecGeom's result and the dashed line is
+  /// ROOT's result.
+  void CompareDistanceToOutROOT(
       Vector3D<Precision> const &bounds,
       int nSamples = 1024) const;
 

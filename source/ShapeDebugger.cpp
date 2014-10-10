@@ -106,13 +106,17 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   vecgeomHits.SetLineColor(kRed);
   TPolyLine3D rootHits(2);
   rootHits.SetLineColor(kBlue);
+  rootHits.SetLineStyle(2);
   TPolyMarker3D bothMiss(nSamples);
   bothMiss.SetMarkerStyle(5);
   bothMiss.SetMarkerColor(kYellow);
   TPolyLine3D sameResult(2);
   sameResult.SetLineColor(kGreen);
-  TPolyLine3D differentResult(2);
-  differentResult.SetLineColor(kMagenta);
+  TPolyLine3D differentResultVecgeom(2);
+  differentResultVecgeom.SetLineColor(kMagenta);
+  TPolyLine3D differentResultRoot(2);
+  differentResultRoot.SetLineColor(kMagenta);
+  differentResultRoot.SetLineStyle(2);
 
   std::vector<TPolyLine3D*> rays;
   std::vector<Vector3D<Precision> > mismatchPoints;
@@ -156,7 +160,8 @@ void ShapeDebugger::CompareDistanceToInToROOT(
       } else if (same) {
         AddLine(sameResult, point + vecgeomResult*direction);
       } else {
-        AddLine(differentResult, point + vecgeomResult*direction);
+        AddLine(differentResultVecgeom, point + vecgeomResult*direction);
+        AddLine(differentResultRoot, point + rootResult*direction);
       }
     }
   }
@@ -182,6 +187,90 @@ void ShapeDebugger::CompareDistanceToInToROOT(
     visualizer.AddLine(ray);
   }
   visualizer.AddPoints(&bothMiss);
+  visualizer.Show();
+
+  for (auto ray : rays) delete ray;
+  delete rootShape;
+}
+
+void ShapeDebugger::CompareDistanceToOutROOT(
+    Vector3D<Precision> const &bounds,
+    int nSamples) const {
+
+  TGeoShape const *rootShape = fVolume->ConvertToRoot();
+
+  std::cout << "Comparing DistanceToOut between VecGeom and ROOT:\n";
+
+  TPolyLine3D sameResult;
+  sameResult.SetLineColor(kGreen);
+  TPolyLine3D differentResultVecgeom;
+  differentResultVecgeom.SetLineColor(kMagenta);
+  TPolyLine3D differentResultRoot;
+  differentResultRoot.SetLineColor(kMagenta);
+  differentResultRoot.SetLineStyle(2);
+  TPolyLine3D rootHits;
+  rootHits.SetLineColor(kRed);
+  rootHits.SetLineStyle(2); 
+
+  std::vector<TPolyLine3D*> rays;
+  std::vector<Vector3D<Precision> > mismatchPoints;
+  std::vector<Vector3D<Precision> > mismatchDirections;
+  int hits = 0, mismatches = 0;
+  for (int i = 0; i < nSamples; ++i) {
+    Vector3D<Precision> point, direction;
+    do {
+      point = volumeUtilities::SamplePoint(bounds);
+    } while (!rootShape->Contains(&point[0]));
+    direction = volumeUtilities::SampleDirection();
+    Precision vecgeomResult = fVolume->DistanceToOut(point, direction);
+    double rootResult =
+        rootShape->DistFromInside(&point[0], &direction[0]);
+    bool vecgeomMiss = vecgeomResult == kInfinity;
+    bool same = !vecgeomMiss && Abs(rootResult - vecgeomResult) < kTolerance;
+    if (!same) {
+      ++mismatches;
+      mismatchPoints.push_back(point);
+      mismatchDirections.push_back(direction);
+    }
+    auto AddLine = [&] (
+        TPolyLine3D const &line,
+        Vector3D<Precision> const &intersection) {
+      TPolyLine3D *ray = new TPolyLine3D(line);
+      ray->SetPoint(0, point[0], point[1], point[2]);
+      ray->SetPoint(1, intersection[0], intersection[1], intersection[2]);
+      rays.push_back(ray);
+    };
+    if (vecgeomMiss) {
+      AddLine(rootHits, point + rootResult*direction);
+    } else {
+      ++hits;
+      if (same) {
+        AddLine(sameResult, point + vecgeomResult*direction);
+      } else {
+        AddLine(differentResultVecgeom, point + vecgeomResult*direction);
+        AddLine(differentResultRoot, point + rootResult*direction);
+      }
+    }
+  }
+  std::cout << "  VecGeom: " << hits << " / " << nSamples
+            << " hit the boundary.\n"
+            << "  Mismatches detected: " << mismatches << " / " << nSamples
+            << "\n";
+  if (fMaxMismatches > 0 && mismatches > 0) {
+    std::cout << "\nMismatching rays:\n";
+    int i = 0, iMax = mismatchPoints.size();
+    while (i < fMaxMismatches && i < iMax) {
+      std::cout << mismatchPoints[i] << " -> " << mismatchDirections[i] << "\n";
+      ++i;
+    }
+  }
+
+  Visualizer visualizer;
+  visualizer.SetVerbosity(0);
+  visualizer.AddVolume(rootShape);
+  for (auto ray : rays) {
+    visualizer.AddLine(ray);
+  }
   visualizer.Show();
 
   for (auto ray : rays) delete ray;

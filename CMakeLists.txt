@@ -446,8 +446,10 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/VisualizeTube.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/DebugTube.cpp
+)
+set(TEST_EXECUTABLES_VISUALIZATION
+  ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
@@ -468,6 +470,7 @@ set(TEST_EXECUTABLES_SHAPETESTER
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
+  ${TEST_EXECUTABLES_VISUALIZATION}
   ${TEST_EXECUTABLES_USOLIDS}
   ${TEST_EXECUTABLES_BENCHMARK}
   ${TEST_EXECUTABLES_CUDA}
@@ -514,6 +517,7 @@ endif()
 if (ROOT)
   build_executables("${TEST_EXECUTABLES_ROOT}")
   add_to_ctest("${TEST_EXECUTABLES_ROOT}")
+  build_executables("${TEST_EXECUTABLES_VISUALIZATION}")
 endif()
 if (USolids)
   build_executables("${TEST_EXECUTABLES_USOLIDS}")

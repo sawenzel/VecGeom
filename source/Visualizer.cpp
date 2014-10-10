@@ -72,11 +72,15 @@ void Visualizer::AddLine(TPolyLine3D *line) {
         pointArray[offset], pointArray[offset+1], pointArray[offset+2]);;
   };
   if (line->GetN() == 2) {
-    std::cout << "Added line " << GetPoint(0) << "--" << GetPoint(1)
-              << " to Visualizer.\n";
+    if (fVerbosity > 0) {
+      std::cout << "Added line " << GetPoint(0) << "--" << GetPoint(1)
+                << " to Visualizer.\n";
+    }
   } else {
-    std::cout << "Added line with " << line->GetN()
-              << " points to Visualizer.\n";
+    if (fVerbosity > 0) {
+      std::cout << "Added line with " << line->GetN()
+                << " points to Visualizer.\n";
+    }
   }
 }
 
