@@ -8,6 +8,8 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifndef VECGEOM_NVCC
+
 VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
   assert(0 && "NYI");
   return NULL;
@@ -33,6 +35,8 @@ G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
   return NULL;
 }
 #endif
+
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

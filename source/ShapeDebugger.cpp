@@ -1,10 +1,10 @@
 #include "utilities/ShapeDebugger.h"
 
-#include "utilities/Visualizer.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/utilities/VolumeUtilities.h"
 
 #ifdef VECGEOM_ROOT
+#include "utilities/Visualizer.h"
 #include "TGeoShape.h"
 #include "TPolyLine3D.h"
 #include "TPolyMarker3D.h"
