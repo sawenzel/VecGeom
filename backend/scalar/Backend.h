@@ -104,53 +104,41 @@ Type ATan2(const Type y, const Type x) {
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-T Min(T val1, T val2) {
-#ifndef VECGEOM_NVCC
+T Min(T const &val1, T const &val2) {
+#ifndef VECGEOM_NVCC_DEVICE
   return std::min(val1, val2);
 #else
-  return min(val1, val2);
+  return val1 < val2 ? val1 : val2;
 #endif
 }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-T Max(T val1, T val2) {
-#ifndef VECGEOM_NVCC
+T Max(T const &val1, T const &val2) {
+#ifndef VECGEOM_NVCC_DEVICE
   return std::max(val1, val2);
 #else
-  return max(val1, val2);
+  return val1 > val2 ? val1 : val2;
 #endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision sin(const Precision radians) {
-#ifndef VECGEOM_NVCC
   return std::sin(radians);
-#else
-  return sin(radians);
-#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision cos(const Precision radians) {
-#ifndef VECGEOM_NVCC
   return std::cos(radians);
-#else
-  return cos(radians);
-#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision tan(const Precision radians) {
-#ifndef VECGEOM_NVCC
   return std::tan(radians);
-#else
-  return tan(radians);
-#endif
 }
 
 namespace {
@@ -158,12 +146,8 @@ namespace {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void Swap(Type &a, Type &b) {
-#ifndef VECGEOM_NVCC
+void swap(Type &a, Type &b) {
   std::swap(a, b);
-#else
-  Type c = a; a = b; b = c;
-#endif
 }
 
 }
@@ -172,7 +156,7 @@ template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void copy(Type const *begin, Type const *const end, Type *const target) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   std::copy(begin, end, target);
 #else
   memcpy(target, begin, (end-begin)*sizeof(Type));
@@ -184,10 +168,10 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void reverse_copy(Type const *const begin, Type const *end,
                   Type *const target) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   std::reverse_copy(begin, end, target);
 #else
-  while (end-- != begin) *(target++) = *end; 
+  while (--end >= begin) *target++ = *end;
 #endif
 }
 
@@ -251,10 +235,13 @@ template <typename InputIterator1, typename InputIterator2>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool equal(InputIterator1 first, InputIterator1 last, InputIterator2 target) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   return std::equal(first, last, target);
 #else
-  return equal(first, last, target);
+  while (first != last) {
+    if (*first++ != *target++) return false;
+  }
+  return true;
 #endif
 }
 

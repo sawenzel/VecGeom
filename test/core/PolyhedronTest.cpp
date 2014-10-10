@@ -59,9 +59,9 @@ int main() {
 #ifdef VECGEOM_ROOT
   TApplication app("", NULL, NULL);
   TGeoShape const* root = polyhedron->ConvertToRoot();
-#ifdef VECGEOM_USOLIDS
-  VUSolid const* usolid = polyhedron->ConvertToUSolids();
-#endif
+// #ifdef VECGEOM_USOLIDS
+//   VUSolid const* usolid = polyhedron->ConvertToUSolids();
+// #endif
 #ifdef VECGEOM_GEANT4
   G4VSolid const* geant4 = polyhedron->ConvertToGeant4();
 #endif
@@ -89,9 +89,6 @@ int main() {
     Vector3D<Precision> direction = volumeUtilities::SampleDirection();
     Precision vecgeomDistance =
         polyhedron->DistanceToOut(point, direction, vecgeom::kInfinity);
-#ifdef VECGEOM_USOLIDS
-    Precision usolidsDistance = usolid->DistanceToOut(point, direction);
-#endif
 #ifdef VECGEOM_GEANT4
     Precision geant4Distance = geant4->DistanceToOut(
         G4ThreeVector(point[0], point[1], point[2]),
@@ -137,9 +134,9 @@ int main() {
   yellow.Draw();
   app.Run();
   delete root;
-#ifdef VECGEOM_USOLIDS
-  delete usolid;
-#endif
+// #ifdef VECGEOM_USOLIDS
+//   delete usolid;
+// #endif
 #ifdef VECGEOM_GEANT4
   delete geant4;
 #endif

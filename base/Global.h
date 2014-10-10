@@ -1,5 +1,5 @@
-/// @file global.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file global.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
@@ -12,6 +12,9 @@
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
+  #ifdef __CUDA_ARCH__
+    #define VECGEOM_NVCC_DEVICE
+  #endif
   #define VECGEOM_NAMESPACE vecgeom_cuda
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_HOST __host__
@@ -69,11 +72,17 @@
   #define NULL 0
 #endif
 
-#ifndef VECGEOM_NVCC
+#ifdef VECGEOM_STD_CXX11
   #define VECGEOM_CONSTEXPR constexpr
-  #define VECGEOM_GLOBAL constexpr
+  #define VECGEOM_CONSTEXPR_RETURN constexpr
 #else
   #define VECGEOM_CONSTEXPR const
+  #define VECGEOM_CONSTEXPR_RETURN
+#endif
+
+#ifndef VECGEOM_NVCC
+  #define VECGEOM_GLOBAL constexpr
+#else
   #define VECGEOM_GLOBAL static __constant__ const
 #endif
 
@@ -113,7 +122,7 @@ VECGEOM_GLOBAL Precision kInfinity =
 #else
     INFINITY;
 #endif
-VECGEOM_CONSTEXPR Precision kEpsilon =
+VECGEOM_GLOBAL Precision kEpsilon =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::epsilon();
 #elif VECGEOM_FLOAT_PRECISION
@@ -137,9 +146,10 @@ VECGEOM_CONSTEXPR Precision kMaximum =
 #else
     DBL_MAX;
 #endif
-VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
-VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
-VECGEOM_CONSTEXPR Precision kToleranceSquared = kTolerance*kTolerance;
+VECGEOM_GLOBAL Precision kTiny = 1e-30;
+VECGEOM_GLOBAL Precision kTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
+VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
 
 namespace EInside {
 VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kInside = 0;
