@@ -8,7 +8,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedParaboloid::ConvertToUnspecialized() const {
   assert(0 && "NYI");
@@ -36,7 +36,7 @@ G4VSolid const* PlacedParaboloid::ConvertToGeant4() const {
 }
 #endif
 
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

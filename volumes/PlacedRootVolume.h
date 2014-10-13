@@ -132,7 +132,6 @@ public:
   virtual void SafetyToInMinimize(SOA3D<Precision> const &position,
                                   Precision *const safeties) const;
 
-#ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -143,7 +142,6 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
