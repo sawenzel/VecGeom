@@ -2,7 +2,11 @@
 /// \author Raman Sehgal (raman.sehgal@cern.ch)
 
 #include "volumes/UnplacedSphere.h"
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+#include <cassert>
+#include <cmath>
+#endif
 
 #include "management/VolumeFactory.h"
 #include "volumes/SpecializedSphere.h"
@@ -20,7 +24,8 @@ namespace VECGEOM_NAMESPACE {
                  Precision pSTheta, Precision pDTheta)
   : fCubicVolume(0.),
     fSurfaceArea(0.),fEpsilon(2.e-11),
-    fFullPhiSphere(true), fFullThetaSphere(true)
+    fFullPhiSphere(true), fFullThetaSphere(true),
+    epsilon(2e-11),frTolerance(1e-9),fgTolerance(1e-9),faTolerance(1e-9)
 {
   kAngTolerance = faTolerance;
 
@@ -148,21 +153,16 @@ namespace VECGEOM_NAMESPACE {
       aArray[5] = GetDeltaThetaAngle();
   }
   
+  
+  #ifdef VECGEOM_NVCC
+  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
+  {}
+  #else
+  
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {
-  //  generate a random number from zero to 2UUtils::kPi...
-  /*   
-  Precision phi  = RNG::Instance().uniform(0., 2.* kPi);
-  Precision cosphi  = std::cos(phi);
-  Precision sinphi  = std::sin(phi);
-
-  // generate a random point uniform in area
-  Precision costheta = RNG::Instance().uniform(-1., 1.);
-  Precision sintheta = std::sqrt(1. - (costheta*costheta));
-
-  return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
-  */
+  
       
   Precision zRand, aOne, aTwo, aThr, aFou, aFiv, chose, phi, sinphi, cosphi;
   Precision height1, height2, slant1, slant2, costheta, sintheta, rRand;
@@ -254,6 +254,8 @@ namespace VECGEOM_NAMESPACE {
                     rRand * sintheta * sinEPhi, rRand * costheta);
   }
   }
+   
+ #endif
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedSphere::ComputeBBox() const 
@@ -353,14 +355,14 @@ namespace vecgeom {
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedSphere_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
+    const Precision rmin, const Precision rmax, const Precision sphi,
+    const Precision dphi, const Precision stheta, const Precision dtheta,
     VUnplacedVolume *const gpu_ptr);
 
 VUnplacedVolume* UnplacedSphere::CopyToGpu(
     VUnplacedVolume *const gpu_ptr) const {
-  UnplacedSphere_CopyToGpu(GetX(), GetY(), GetZ(),
-                                   fAlpha, fTheta, fPhi, gpu_ptr);
+  UnplacedSphere_CopyToGpu(this->GetInnerRadius(), this->GetOuterRadius(), this->GetStartPhiAngle(),
+                                   this->GetDeltaPhiAngle(), this->GetStartThetaAngle(),this->GetDeltaThetaAngle(), gpu_ptr);
   CudaAssertError();
   return gpu_ptr;
 }
@@ -380,13 +382,13 @@ __global__
 void UnplacedSphere_ConstructOnGpu(
     const Precision r,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedSphere(r);
+  new(gpu_ptr) vecgeom_cuda::UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
 }
 
 void UnplacedSphere_CopyToGpu(
     const Precision r,
     VUnplacedVolume *const gpu_ptr) {
-  UnplacedSphere_ConstructOnGpu<<<1, 1>>>(r, gpu_ptr);
+  UnplacedSphere_ConstructOnGpu<<<1, 1>>>(rmin,rmax,sphi,dphi,stheta,dtheta, gpu_ptr);
 }
 
 #endif

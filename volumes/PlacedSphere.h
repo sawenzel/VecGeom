@@ -117,6 +117,18 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetETheta() const { return GetUnplacedVolume()->GetETheta();}
   
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinSTheta() const { return GetUnplacedVolume()->GetSinSTheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosSTheta() const { return GetUnplacedVolume()->GetCosSTheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinETheta() const { return GetUnplacedVolume()->GetSinETheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosETheta() const { return GetUnplacedVolume()->GetCosETheta();}
+  
   // Old access functions
 VECGEOM_CUDA_HEADER_BOTH  
 Precision GetRmin() const { return GetUnplacedVolume()->GetRmin(); }

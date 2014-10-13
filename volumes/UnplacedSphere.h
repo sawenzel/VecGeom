@@ -8,7 +8,11 @@
 
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+#include <cassert>
+#include <cmath>
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -37,10 +41,10 @@ private:
     Precision fCubicVolume, fSurfaceArea;
     
     //Tolerance compatiable with USolids
-    Precision epsilon = 2e-11; 
-    Precision frTolerance=1e-9;     //radial tolerance;
-    Precision fgTolerance = 1e-9;  // cartesian tolerance;
-    Precision faTolerance = 1e-9;  // angular tolerance;
+    Precision epsilon;// = 2e-11; 
+    Precision frTolerance;//=1e-9;     //radial tolerance;
+    Precision fgTolerance ;//= 1e-9;  // cartesian tolerance;
+    Precision faTolerance ;//= 1e-9;  // angular tolerance;
 
 
     // Member variables go here
@@ -272,6 +276,18 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
   
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetETheta() const { return eTheta;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinSTheta() const { return sinSTheta;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosSTheta() const { return cosSTheta;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetSinETheta() const { return sinETheta;}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetCosETheta() const { return cosETheta;}
   
   
   VECGEOM_CUDA_HEADER_BOTH

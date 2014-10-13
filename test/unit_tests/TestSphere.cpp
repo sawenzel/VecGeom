@@ -21,6 +21,7 @@
 
 #define PI 3.14159265358979323846
 
+
 template <class Sphere_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestSphere() {
     
@@ -322,9 +323,37 @@ bool TestSphere() {
     valid = b7.Normal(pointO_phi_30_60_theta_31_45,normal);
     assert(ApproxEqual(normal,Vec_t(-0.434127 , -0.462908 , -0.772819))); //Verified with Geant4
     
-    //JUST A TESTING SPHERE FOR DEBUGGING
-    Sphere_t test("Solid VecGeomSphere #test",6, 8, 0, 2*PI, 0., PI);
     
+    
+    Vec_t norm;
+    bool convex;
+    convex = true;
+    //JUST A TESTING SPHERE FOR DEBUGGING
+    //Sphere_t test("Solid VecGeomSphere #test",6, 8, 0, 2*PI, 0., PI);
+    Sphere_t test("Solid VecGeomSphere #test",10, 20, 0.2, 3.6, 0.2, 0.5);
+    Vec_t testPoint(-6.083316, 7.548949, 11.675289);
+    double mag=std::sqrt(testPoint[0]*testPoint[0] + testPoint[1]*testPoint[1] + testPoint[2]*testPoint[2]);
+    std::cout<<"Magnitude of Point : "<< mag <<std::endl;
+    Vec_t testDir(0.478757, -0.602168, 0.638894);
+    double pdotV = testPoint[0]*testDir[0]+testPoint[1]*testDir[1]+testPoint[2]*testDir[2];
+    if(pdotV < 0)
+        std::cout<<"Direction of Point : IN"<<std::endl;
+    else
+        std::cout<<"Direction of Point : Out"<<std::endl;
+    
+    std::cout<<"Theta is : " <<std::acos(testDir[2]/ mag)<<std::endl;
+    std::cout<<"PHI is : "<< std::atan(testDir[1]/testDir[0])<<std::endl;
+    Dist=test.DistanceToOut(testPoint,testDir,norm,convex);
+    std::cout<<"Distance : "<<Dist<<std::endl;
+    
+    /*
+    std::cout<<"---- Point inside inner radius ----"<<std::endl;
+    Sphere_t test2("Solid VecGeomSphere #test2",10, 20, 0, 2*PI, 0., PI);
+    Vec_t pointInsideInnerR(8,0,0);
+    Vec_t dirPointInsideInner(-1,0,0);
+    Dist=test2.DistanceToOut(pointInsideInnerR,dirPointInsideInner,norm,convex);
+    std::cout<<"Distance InsideInnerR: "<<Dist<<std::endl;
+    */
     
     return true;
 }
@@ -335,7 +364,7 @@ int main() {
   assert(TestSphere<USphere>());
   std::cout << "USphere passed\n";
 #endif
-  std::cout<<"------------------------------"<<std::endl;
+  std::cout<<"-------------------------------------------------------------------------------------------------"<<std::endl;
   assert(TestSphere<vecgeom::SimpleSphere>());
   std::cout << "VecGeomSphere passed\n";
   return 0;
