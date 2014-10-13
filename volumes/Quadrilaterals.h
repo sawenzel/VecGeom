@@ -201,18 +201,19 @@ void AcceleratedDistanceToIn<kScalar>(
         VcPrecision(planes.GetNormals().x()+i),
         VcPrecision(planes.GetNormals().y()+i),
         VcPrecision(planes.GetNormals().z()+i));
-    VcPrecision d(&planes.GetDistances()[0]+i);
-    VcPrecision distanceTest = -(plane.Dot(point) + d) / plane.Dot(direction);
+    VcPrecision dPlane(&planes.GetDistances()[0]+i);
+    VcPrecision distanceTest = -(plane.Dot(point) + dPlane) /
+                                plane.Dot(direction);
     Vector3D<VcPrecision> intersection =
         Vector3D<VcPrecision>(direction)*distanceTest + point;
-    VcBool valid = distanceTest < distance;
+    VcBool valid = distanceTest >= 0 && distanceTest < distance;
     for (int j = 0; j < 4; ++j) {
       Vector3D<VcPrecision> sideVector(
           VcPrecision(sideVectors[j].GetNormals().x()+i),
           VcPrecision(sideVectors[j].GetNormals().y()+i),
           VcPrecision(sideVectors[j].GetNormals().z()+i));
-      VcPrecision d(&sideVectors[j].GetDistances()[i]);
-      valid &= sideVector.Dot(intersection) + d >= 0;
+      VcPrecision dSide(&sideVectors[j].GetDistances()[i]);
+      valid &= sideVector.Dot(intersection) + dSide >= 0;
       // Where is your god now
       if (IsEmpty(valid)) goto distanceToInVcContinueOuter;
     }

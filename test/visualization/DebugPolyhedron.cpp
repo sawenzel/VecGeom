@@ -7,13 +7,13 @@ int main() {
 
   constexpr int nPlanes = 5;
   Precision zPlanes[nPlanes] = {-2, -1, 0, 1, 2};
-  Precision rInner[nPlanes] = {0.75, 0.75, 0.75, 0.75, 0.75};
-  Precision rOuter[nPlanes] = {1, 1, 1, 1, 1};
+  Precision rInner[nPlanes] = {1, 2, 1, 2, 1};
+  Precision rOuter[nPlanes] = {2, 3, 2, 3, 2};
   SimplePolyhedron polyhedron("Debug", 4, nPlanes, zPlanes, rInner, rOuter);
-  Vector3D<Precision> bounds(2, 2, 3);
+  Vector3D<Precision> bounds(4, 4, 3);
 
   ShapeDebugger debugger(&polyhedron);
-  debugger.CompareDistanceToOutToROOT(bounds, 256);
+  debugger.CompareDistanceToInToROOT(bounds, 1024);
 
   return 0;
 }
