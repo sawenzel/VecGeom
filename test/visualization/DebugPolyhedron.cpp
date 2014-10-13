@@ -5,12 +5,12 @@ using namespace vecgeom;
 
 int main() {
 
-  constexpr int nPlanes = 4;
-  Precision zPlanes[nPlanes] = {-3, -1, 1, 3};
-  Precision rInner[nPlanes] = {0, 0, 0, 0};
-  Precision rOuter[nPlanes] = {4, 4, 4, 4};
+  constexpr int nPlanes = 5;
+  Precision zPlanes[nPlanes] = {-2, -1, 0, 1, 2};
+  Precision rInner[nPlanes] = {0.75, 0.75, 0.75, 0.75, 0.75};
+  Precision rOuter[nPlanes] = {1, 1, 1, 1, 1};
   SimplePolyhedron polyhedron("Debug", 4, nPlanes, zPlanes, rInner, rOuter);
-  Vector3D<Precision> bounds(6.5, 6.5, 3.1);
+  Vector3D<Precision> bounds(2, 2, 3);
 
   ShapeDebugger debugger(&polyhedron);
   debugger.CompareDistanceToOutToROOT(bounds, 256);

@@ -179,6 +179,7 @@ void AcceleratedDistanceToIn(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v &distance) {
+  // Do nothing if not scalar backend
   return;
 }
 

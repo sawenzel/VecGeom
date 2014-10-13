@@ -391,7 +391,8 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
           localPoint,
           localDirection);
       if (distance >= 0 && distance < kInfinity) break;
-      if (unplaced.GetZPlanes()[++zIndex] - localPoint[2] > distance) break;
+      if (unplaced.GetZPlanes()[zIndex] - localPoint[2] > distance) break;
+      ++zIndex;
     }
   } else {
     // Going left
@@ -645,7 +646,8 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
   Float_t distanceResult;
   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceResult = s.outer.DistanceToIn<Backend>(localPoint, localDirection);
+    distanceResult =
+        s.outer.DistanceToIn<Backend>(localPoint, localDirection);
     MaskedAssign(distanceResult < distance, distanceResult, &distance);
     if (treatInnerT) {
       if (s.hasInnerRadius) {

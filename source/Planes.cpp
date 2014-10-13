@@ -18,7 +18,7 @@ void Planes::Set(
     Vector3D<Precision> const &x0) {
   Precision inverseLength = 1. / normal.Mag();
   fNormals.set(index, inverseLength*normal);
-  fDistances[index] = inverseLength * -normal.Dot(x0);;
+  fDistances[index] = inverseLength * -normal.Dot(x0);
 }
 
 void Planes::Set(

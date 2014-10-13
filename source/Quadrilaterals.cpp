@@ -58,10 +58,8 @@ void Quadrilaterals::Set(
       Planes &sideVectors,
       Vector3D<Precision> const &c0,
       Vector3D<Precision> const &c1) {
-    Vector3D<Precision> sideVector = normal.Cross(c1-c0);
-    Precision d = sideVector.Mag();
-    sideVector *= 1. / d;
-    sideVectors.Set(index, sideVector, d);
+    Vector3D<Precision> sideVector = normal.Cross(c1-c0).Normalized();
+    sideVectors.Set(index, sideVector, c0);
   };
 
   ComputeSideVector(fSideVectors[0], corner0, corner1);
