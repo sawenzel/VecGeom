@@ -422,16 +422,10 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToSphere(
 	MaskedAssign( (distance  < zero) , kInfinity  , &distance );
 	
 	
-	typename Backend::inside_v inside(0.),outside(2),res(0),zro(0);
 	pt =  localPoint + (distance * localDir);
-	InsideKernel<Backend>(unplaced, pt, inside);
-	res = (inside - outside);
-	Bool_t res_m = ((res > zro) || (res < zro));
-	//std::cout<<"RES : "<<res<<"  ::  RES_M : "<<res_m<<std::endl;
-	//std::cout<<"INSIDE DistanceToSphere : "<<inside<<std::endl;
-	
-	//If the intersection point is outside setting distance to Infinity
-	MaskedAssign( ( (check) && !res_m ), kInfinity , &distance );
+        Bool_t inside(true);
+	ContainsKernel<Backend>(unplaced,pt,inside);
+	MaskedAssign( ( (check) && !inside ), kInfinity , &distance );
 	//MaskedAssign( ( (check)  ) , kInfinity , &distance );
 	if(verbose)std::cout<<"From DistanceToSphere : "<<distance<<std::endl;
 	

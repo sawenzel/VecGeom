@@ -2,7 +2,11 @@
 /// \author Raman Sehgal (raman.sehgal@cern.ch)
 
 #include "volumes/UnplacedOrb.h"
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+#include <cassert>
+#include <cmath>
+#endif
 
 #include "management/VolumeFactory.h"
 #include "volumes/SpecializedOrb.h"
@@ -76,6 +80,10 @@ VECGEOM_CUDA_HEADER_BOTH
       aArray[0] = GetRadius();
   }
   
+  #ifdef VECGEOM_NVCC
+  Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
+  {}
+  #else
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
   {
@@ -91,6 +99,7 @@ VECGEOM_CUDA_HEADER_BOTH
 
   return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
   }
+  #endif
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::ComputeBBox() const 
@@ -182,14 +191,12 @@ namespace vecgeom {
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedOrb_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
+    const Precision r,
     VUnplacedVolume *const gpu_ptr);
 
 VUnplacedVolume* UnplacedOrb::CopyToGpu(
     VUnplacedVolume *const gpu_ptr) const {
-  UnplacedOrb_CopyToGpu(GetX(), GetY(), GetZ(),
-                                   fAlpha, fTheta, fPhi, gpu_ptr);
+  UnplacedOrb_CopyToGpu(this->GetRadius(), gpu_ptr);
   CudaAssertError();
   return gpu_ptr;
 }

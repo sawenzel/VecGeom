@@ -8,7 +8,11 @@
 
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+#include <cassert>
+#include <cmath>
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -62,6 +66,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const;
   
+  #ifdef VECGEOM_USOLIDS
+  VECGEOM_CUDA_HEADER_BOTH
+  #endif
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision>  GetPointOnSurface() const;
  

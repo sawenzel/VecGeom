@@ -380,7 +380,7 @@ class VUnplacedVolume;
 
 __global__
 void UnplacedSphere_ConstructOnGpu(
-    const Precision r,
+    const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
     VUnplacedVolume *const gpu_ptr) {
   new(gpu_ptr) vecgeom_cuda::UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
 }
