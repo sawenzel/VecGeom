@@ -40,7 +40,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  int size() const { return fPlanes.size(); }
+  int size() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Planes const& GetPlanes() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -83,12 +87,14 @@ public:
   void FixNormalSign(int component, bool positive);
 
   template <class Backend>
+  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v DistanceToIn(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction) const;
 
   template <class Backend>
+  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v DistanceToOut(
       Vector3D<typename Backend::precision_v> const &point,
@@ -97,6 +103,7 @@ public:
       Precision zMax = kInfinity) const;
 
   template <class Backend>
+  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToInKernel(
       const int n,
@@ -106,6 +113,7 @@ public:
       Vector3D<typename Backend::precision_v> const &direction);
 
   template <class Backend>
+  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToOutKernel(
       const int n,
@@ -119,6 +127,14 @@ public:
       Vector3D<typename Backend::precision_v> const &direction);
 
 };
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+int Quadrilaterals::size() const { return fPlanes.size(); }
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Planes const& Quadrilaterals::GetPlanes() const { return fPlanes; }
 
 VECGEOM_CUDA_HEADER_BOTH
 SOA3D<Precision> const& Quadrilaterals::GetNormals() const {

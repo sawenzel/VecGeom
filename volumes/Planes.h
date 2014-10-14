@@ -66,12 +66,12 @@ public:
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::bool_v Contains(
-      Vector3D<typename Backend::precision_v> const &point);
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::inside_v Inside(
-      Vector3D<typename Backend::precision_v> const &point);
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -159,7 +159,7 @@ Precision Planes::GetDistance(int i) const {
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::bool_v Planes::Contains(
-    Vector3D<typename Backend::precision_v> const &point) {
+    Vector3D<typename Backend::precision_v> const &point) const {
   return ContainsKernel<Backend>(
       size(), fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0], point);
 }
@@ -167,7 +167,7 @@ typename Backend::bool_v Planes::Contains(
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Planes::Inside(
-    Vector3D<typename Backend::precision_v> const &point) {
+    Vector3D<typename Backend::precision_v> const &point) const {
   return InsideKernel<Backend>(
       size(), fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0], point);
 }

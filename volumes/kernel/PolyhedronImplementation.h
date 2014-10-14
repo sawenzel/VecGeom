@@ -407,33 +407,43 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
     }
   }
 
-  bool firstCap = localPoint[2] < unplaced.GetZPlanes()[0] && goingRight;
-  bool secondCap =
-      localPoint[2] > unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] &&
-      !goingRight;
-  // Check endcaps
-  if (firstCap || secondCap) {
-    Precision distanceEndcap =
-        unplaced.GetEndCaps().Distance<kScalar>(localPoint, localDirection);
-    if (distanceEndcap >= 0 && distanceEndcap < distance) {
+  // Endcaps
+  if (localPoint[2] < unplaced.GetZPlanes()[0] && goingRight) {
+    Precision distanceTest =
+        (unplaced.GetZPlanes()[0] - localPoint[2]) / localDirection[2];
+    if (distanceTest >= 0 && distanceTest < distance) {
       Vector3D<Precision> intersection =
-          localPoint + distanceEndcap*localDirection;
-      int phiIndex = FindPhiSegment<kScalar>(unplaced, intersection);
-      UnplacedPolyhedron::Segment const &segment =
-          unplaced.GetZSegment(firstCap ? 0 : zMax-1);
-      bool inBounds =
-          segment.outer.GetNormals().x(phiIndex)*intersection[0] +
-          segment.outer.GetNormals().y(phiIndex)*intersection[1] +
-          segment.outer.GetNormals().z(phiIndex)*intersection[2] +
-          segment.outer.GetDistances()[phiIndex] < 0;
-      if (treatInnerT && inBounds && segment.hasInnerRadius) {
-        inBounds &=
-            segment.inner.GetNormals().x(phiIndex)*intersection[0] +
-            segment.inner.GetNormals().y(phiIndex)*intersection[1] +
-            segment.inner.GetNormals().z(phiIndex)*intersection[2] +
-            segment.inner.GetDistances()[phiIndex] >= 0;
+          localPoint + distanceTest*localDirection;
+      UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(0);
+      if (s.outer.GetPlanes().Contains<kScalar>(intersection)) {
+        if (treatInnerT && s.hasInnerRadius) {
+           if (!s.inner.GetPlanes().Contains<kScalar>(intersection)) {
+             distance = distanceTest;
+           }
+        } else {
+          distance = distanceTest;
+        }
       }
-      distance = inBounds ? distanceEndcap : distance;
+    }
+  } else if (localPoint[2] > unplaced.GetZPlanes()[unplaced.GetZSegmentCount()]
+             && !goingRight) {
+    Precision distanceTest =
+        (unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] - localPoint[2])
+        / localDirection[2];
+    if (distanceTest >= 0 && distanceTest < distance) {
+      Vector3D<Precision> intersection =
+          localPoint + distanceTest*localDirection;
+      UnplacedPolyhedron::Segment const &s =
+          unplaced.GetZSegment(unplaced.GetZSegmentCount()-1);
+      if (s.outer.GetPlanes().Contains<kScalar>(intersection)) {
+        if (treatInnerT && s.hasInnerRadius) {
+           if (!s.inner.GetPlanes().Contains<kScalar>(intersection)) {
+             distance = distanceTest;
+           }
+        } else {
+          distance = distanceTest;
+        }
+      }
     }
   }
 
@@ -634,89 +644,50 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
   Vector3D<Float_t> localPoint = transformation.Transform(point);
   Vector3D<Float_t> localDirection = transformation.Transform(direction);
 
-  // if (Backend::early_returns) {
-  //   Float_t hitsTube;
-  //   HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
-  //       DistanceToIn<Backend>(
-  //           unplaced.GetBoundingTube(), Transformation3D::kIdentity,
-  //           localPoint, localDirection, stepMax, hitsTube);
-  //   if (IsFull(hitsTube == kInfinity)) return;
-  // }
-
-  Float_t distanceResult;
+  // Loop over all Z-planes
+  Float_t distanceTest;
   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceResult =
-        s.outer.DistanceToIn<Backend>(localPoint, localDirection);
-    MaskedAssign(distanceResult < distance, distanceResult, &distance);
-    if (treatInnerT) {
-      if (s.hasInnerRadius) {
-        s.inner.DistanceToIn<Backend>(localPoint, localDirection);
-        MaskedAssign(distanceResult < distance, distanceResult, &distance);
-      }
-    }
-    // If the next segment is further away than the best distance, no better
-    // distance can be found.
-    if (Backend::early_returns) {
-      if (IsFull(Abs(localPoint[2] - unplaced.GetZPlane(i+1)) > distance)) {
-        break;
-      }
+    distanceTest = s.outer.DistanceToIn<Backend>(localPoint, localDirection);
+    MaskedAssign(distanceTest < distance, distanceTest, &distance);
+    if (treatInnerT && s.hasInnerRadius) {
+      distanceTest = s.inner.DistanceToIn<Backend>(localPoint, localDirection);
+      MaskedAssign(distanceTest < distance, distanceTest, &distance);
     }
   }
 
-  // Distance to endcaps
-  distanceResult =
-      unplaced.GetEndCaps().Distance<Backend>(localPoint, localDirection);
-  Bool_t endcapValid = distanceResult < distance;
-  if (Any(endcapValid)) {
-    Vector3D<Float_t> intersection = localPoint + distanceResult*localDirection;
-    Bool_t thisCap = endcapValid && localPoint[2] < unplaced.GetZPlanes()[0];
-    UnplacedPolyhedron::Segment const *s = &unplaced.GetZSegment(0);
-    if (Any(thisCap)) {
-      Bool_t insideCap =
-          Planes::ContainsKernel<Backend>(
-              unplaced.GetSideCount(),
-              s->outer.GetNormals().x(),
-              s->outer.GetNormals().y(),
-              s->outer.GetNormals().z(),
-              &s->outer.GetDistances()[0],
-              intersection);
-      if (treatInnerT && Any(insideCap) && s->hasInnerRadius) {
-        insideCap &=
-            !(Planes::ContainsKernel<Backend>(
-                unplaced.GetSideCount(),
-                s->inner.GetNormals().x(),
-                s->inner.GetNormals().y(),
-                s->inner.GetNormals().z(),
-                &s->inner.GetDistances()[0],
-                intersection));
+  // Check endcaps
+  Bool_t hitsLeftCap =
+      localPoint[2] < unplaced.GetZPlanes()[0] && localDirection[2] > 0;
+  Bool_t hitsRightCap =
+      localPoint[2] > unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] &&
+      localDirection[2] < 0;
+  if (Any(hitsLeftCap || hitsRightCap)) {
+    distanceTest = kInfinity;
+    MaskedAssign(hitsLeftCap, -localPoint[2] + unplaced.GetZPlanes()[0],
+                 &distanceTest);
+    MaskedAssign(hitsRightCap, -localPoint[2] +
+                 unplaced.GetZPlanes()[unplaced.GetZSegmentCount()],
+                 &distanceTest);
+    distanceTest /= localDirection[2];
+    Vector3D<Float_t> intersection = point + distanceTest*direction;
+    UnplacedPolyhedron::Segment const &leftCap = unplaced.GetZSegment(0);
+    UnplacedPolyhedron::Segment const &rightCap =
+        unplaced.GetZSegment(unplaced.GetZSegmentCount()-1);
+    hitsLeftCap &= leftCap.outer.GetPlanes().Contains<Backend>(intersection);
+    hitsRightCap &= rightCap.outer.GetPlanes().Contains<Backend>(intersection);
+    if (treatInnerT) {
+      if (leftCap.hasInnerRadius) {
+        hitsLeftCap &= !leftCap.inner.GetPlanes().Contains<Backend>(
+            intersection);
       }
-      MaskedAssign(thisCap && insideCap, distanceResult, &distance);
-    }
-    s = &unplaced.GetZSegment(unplaced.GetZSegmentCount()-1);
-    thisCap = endcapValid && localPoint[2] >
-              unplaced.GetZPlanes()[unplaced.GetZSegmentCount()];
-    if (Any(thisCap)) {
-      Bool_t insideCap =
-          Planes::ContainsKernel<Backend>(
-              unplaced.GetSideCount(),
-              s->outer.GetNormals().x(),
-              s->outer.GetNormals().y(),
-              s->outer.GetNormals().z(),
-              &s->outer.GetDistances()[0],
-              intersection);
-      if (treatInnerT && Any(insideCap) && s->hasInnerRadius) {
-        insideCap &=
-            !(Planes::ContainsKernel<Backend>(
-                unplaced.GetSideCount(),
-                s->inner.GetNormals().x(),
-                s->inner.GetNormals().y(),
-                s->inner.GetNormals().z(),
-                &s->inner.GetDistances()[0],
-                intersection));
+      if (rightCap.hasInnerRadius) {
+        hitsRightCap &= !rightCap.inner.GetPlanes().Contains<Backend>(
+            intersection);
       }
-      MaskedAssign(thisCap && insideCap, distanceResult, &distance);
     }
+    MaskedAssign((hitsLeftCap || hitsRightCap) && distanceTest >= 0 &&
+                 distanceTest < distance, distanceTest, &distance);
   }
 
   // Impose upper limit of stepMax on the result
