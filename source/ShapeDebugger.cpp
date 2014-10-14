@@ -15,11 +15,15 @@
 namespace vecgeom {
 
 ShapeDebugger::ShapeDebugger(VPlacedVolume const *volume)
-  : fVolume(volume), fMaxMismatches(8) {}
+  : fVolume(volume), fMaxMismatches(8), fShowCorrectResults(false) {}
 
 void ShapeDebugger::SetMaxMismatches(int max) {
   if (max < 0) max = 0;
   fMaxMismatches = max;
+}
+
+void ShapeDebugger::ShowCorrectResults(bool show) {
+  fShowCorrectResults = show;
 }
 
 #ifdef VECGEOM_ROOT
@@ -90,8 +94,10 @@ void ShapeDebugger::CompareContainsToROOT(
   visualizer.AddVolume(rootShape);
   visualizer.AddPoints(&vecgeomInside);
   visualizer.AddPoints(&rootInside);
-  visualizer.AddPoints(&bothInside);
-  visualizer.AddPoints(&bothOutside);
+  if (fShowCorrectResults) {
+    visualizer.AddPoints(&bothInside);
+    visualizer.AddPoints(&bothOutside);
+  }
   visualizer.Show();
 
   delete rootShape;
@@ -148,7 +154,9 @@ void ShapeDebugger::CompareDistanceToInToROOT(
       mismatchResults.push_back(std::make_pair(vecgeomResult, rootResult));
     }
     if (same && vecgeomMiss) {
-      bothMiss.SetNextPoint(point[0], point[1], point[2]);
+      if (fShowCorrectResults) {
+        bothMiss.SetNextPoint(point[0], point[1], point[2]);
+      }
     } else {
       auto AddLine = [&] (
           TPolyLine3D const &line,
@@ -163,7 +171,9 @@ void ShapeDebugger::CompareDistanceToInToROOT(
       } else if (vecgeomMiss && !rootMiss) {
         AddLine(rootHits, point + rootResult*direction);
       } else if (same) {
-        AddLine(sameResult, point + vecgeomResult*direction);
+        if (fShowCorrectResults) {
+          AddLine(sameResult, point + vecgeomResult*direction);
+        }
       } else {
         AddLine(differentResultVecgeom, point + vecgeomResult*direction);
         AddLine(differentResultRoot, point + rootResult*direction);
@@ -194,7 +204,9 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   for (auto ray : rays) {
     visualizer.AddLine(ray);
   }
-  visualizer.AddPoints(&bothMiss);
+  if (fShowCorrectResults) {
+    visualizer.AddPoints(&bothMiss);
+  }
   visualizer.Show();
 
   for (auto ray : rays) delete ray;
@@ -255,7 +267,9 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
     } else {
       ++hits;
       if (same) {
-        AddLine(sameResult, point + vecgeomResult*direction);
+        if (fShowCorrectResults) {
+          AddLine(sameResult, point + vecgeomResult*direction);
+        }
       } else {
         AddLine(differentResultVecgeom, point + vecgeomResult*direction);
         AddLine(differentResultRoot, point + rootResult*direction);

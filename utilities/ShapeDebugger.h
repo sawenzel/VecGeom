@@ -17,6 +17,7 @@ private:
 
   VPlacedVolume const* fVolume;
   int fMaxMismatches;
+  bool fShowCorrectResults;
 
 public:
 
@@ -56,6 +57,10 @@ public:
   void CompareDistanceToOutToROOT(
       Vector3D<Precision> const &bounds,
       int nSamples = 1024) const;
+
+  /// Correct results will not be drawn in the resulting plot unless enabled by
+  /// this method.
+  void ShowCorrectResults(bool show);
 
 #endif
 
