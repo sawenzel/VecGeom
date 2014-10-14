@@ -18,20 +18,13 @@
 
 namespace VECGEOM_NAMESPACE {
 
- VECGEOM_CUDA_HEADER_BOTH
- Precision UnplacedOrb::MyMax(Precision a, Precision b){
-     if(a < b)
-         return a;
-     else
-         return b;
- }
-    
+   
 VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb::UnplacedOrb()
   {
     //default constructor
     fR=0;
-    fRTolerance =  MyMax(frTolerance, epsilon * fR);
+    fRTolerance =  Max(frTolerance, epsilon * fR);
     fCubicVolume=0;
     fSurfaceArea=0;
     fRTolI = fR -  fRTolerance;
@@ -45,7 +38,7 @@ VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb::UnplacedOrb(const Precision r)
   {
     fR=r;
-    fRTolerance = MyMax(frTolerance, epsilon * r);
+    fRTolerance = Max(frTolerance, epsilon * r);
     fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
     fSurfaceArea = (4 * kPi) * fR * fR;
     fRTolI = fR -  fRTolerance;
@@ -60,7 +53,7 @@ VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::SetRadius(const Precision r)
   {
     fR=r;
-    fRTolerance =  MyMax(frTolerance, epsilon * r);
+    fRTolerance =  Max(frTolerance, epsilon * r);
     fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
     fSurfaceArea = (4 * kPi) * fR * fR;
     fRTolI = fR -  fRTolerance;
