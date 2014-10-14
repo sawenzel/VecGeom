@@ -53,7 +53,8 @@ private:
 
 public:
     
-VECGEOM_CUDA_HEADER_BOTH    
+VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_INLINE
 void InitializePhiTrigonometry()
 {
   hDPhi = 0.5 * fDPhi;        // half delta phi
@@ -70,7 +71,8 @@ void InitializePhiTrigonometry()
   cosEPhi = std::cos(ePhi);
 }  
     
-VECGEOM_CUDA_HEADER_BOTH   
+VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_INLINE
 void InitializeThetaTrigonometry()
 {
   eTheta  = fSTheta + fDTheta;
@@ -87,6 +89,7 @@ void InitializeThetaTrigonometry()
 }
 
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void CheckThetaAngles(Precision sTheta, Precision dTheta)
 {
   if ((sTheta < 0) || (sTheta > kPi))
@@ -136,6 +139,7 @@ void CheckThetaAngles(Precision sTheta, Precision dTheta)
 }
 
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void CheckSPhiAngle(Precision sPhi)
 {
   // Ensure fSphi in 0-2PI or -2PI-0 range if shape crosses 0
@@ -155,6 +159,7 @@ void CheckSPhiAngle(Precision sPhi)
 }
 
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void CheckDPhiAngle(Precision dPhi)
 {
   fFullPhiSphere = true;
@@ -187,6 +192,7 @@ void CheckDPhiAngle(Precision dPhi)
 }
 
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void CheckPhiAngles(Precision sPhi, Precision dPhi)
 {
   CheckDPhiAngle(dPhi);
@@ -210,93 +216,121 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
                  Precision pSTheta, Precision pDTheta);
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetInsideRadius() const { return fRmin; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetInnerRadius() const { return fRmin; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetOuterRadius() const { return fRmax; } 
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetStartPhiAngle() const { return fSPhi; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetDeltaPhiAngle() const { return fDPhi; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetStartThetaAngle() const { return fSTheta; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetDeltaThetaAngle() const { return fDTheta; }
   
   //Functions to get Tolerance
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetFRminTolerance() const { return fRminTolerance; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetAngTolerance() const { return kAngTolerance; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   bool IsFullSphere() const { return fFullPhiSphere; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   bool IsFullPhiSphere() const { return fFullSphere; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   bool IsFullThetaSphere() const { return fFullThetaSphere; }
   
   //All angle related functions
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetHDPhi() const { return hDPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetCPhi() const { return cPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetEPhi() const { return ePhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetSinCPhi() const { return sinCPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetCosCPhi() const { return cosCPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetSinSPhi() const { return sinSPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetCosSPhi() const { return cosSPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetSinEPhi() const { return sinEPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetCosEPhi() const { return cosEPhi;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetETheta() const { return eTheta;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetSinSTheta() const { return sinSTheta;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetCosSTheta() const { return cosSTheta;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetSinETheta() const { return sinETheta;}
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetCosETheta() const { return cosETheta;}
   
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   void Initialize(){
     fCubicVolume = 0.;
     fSurfaceArea = 0.;
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void SetInsideRadius(Precision newRmin)
   {
   fRmin = newRmin;
@@ -306,13 +340,15 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
   CalcSurfaceArea();
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void SetInnerRadius(Precision newRmin)
   {
     SetInsideRadius(newRmin);
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void SetOuterRadius(Precision newRmax)
   {
     fRmax = newRmax;
@@ -322,7 +358,8 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
     CalcSurfaceArea();
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void SetStartPhiAngle(Precision newSPhi, bool compute)
   {
    // Flag 'compute' can be used to explicitely avoid recomputation of
@@ -339,7 +376,8 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
    CalcSurfaceArea();
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void SetDeltaPhiAngle(Precision newDPhi)
   {
    CheckPhiAngles(fSPhi, newDPhi);
@@ -348,7 +386,8 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
    CalcSurfaceArea();
   }
   
-  VECGEOM_CUDA_HEADER_BOTH  
+  //VECGEOM_CUDA_HEADER_BOTH  
+  //VECGEOM_INLINE
   void SetStartThetaAngle(Precision newSTheta)
   {
     CheckThetaAngles(newSTheta, fDTheta);
@@ -357,7 +396,8 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
     CalcSurfaceArea();
   }
   
-  VECGEOM_CUDA_HEADER_BOTH  
+  //VECGEOM_CUDA_HEADER_BOTH  
+  //VECGEOM_INLINE
   void SetDeltaThetaAngle(Precision newDTheta)
   {
     CheckThetaAngles(fSTheta, newDTheta);
@@ -368,36 +408,42 @@ void CheckPhiAngles(Precision sPhi, Precision dPhi)
   
 // Old access functions
 VECGEOM_CUDA_HEADER_BOTH  
+  VECGEOM_INLINE
 Precision GetRmin() const
 {
   return GetInsideRadius();
 }
 
-VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_CUDA_HEADER_BOTH 
+VECGEOM_INLINE
 Precision GetRmax() const
 {
   return GetOuterRadius();
 }
 
-VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_CUDA_HEADER_BOTH 
+VECGEOM_INLINE
 Precision GetSPhi() const
 {
   return GetStartPhiAngle();
 }
 
-VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_CUDA_HEADER_BOTH 
+VECGEOM_INLINE
 Precision GetDPhi() const
 {
   return GetDeltaPhiAngle();
 }
 
 VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_INLINE
 Precision GetSTheta() const
 {
   return GetStartThetaAngle();
 }
 
 VECGEOM_CUDA_HEADER_BOTH  
+VECGEOM_INLINE
 Precision GetDTheta() const
 {
   return GetDeltaThetaAngle();
@@ -421,26 +467,30 @@ Precision GetDTheta() const
   //_____________________________________________________________________________
   */
 
-VECGEOM_CUDA_HEADER_BOTH
-  void CalcCapacity();
+//VECGEOM_CUDA_HEADER_BOTH
+void CalcCapacity();
 
-VECGEOM_CUDA_HEADER_BOTH
+//VECGEOM_CUDA_HEADER_BOTH
   void CalcSurfaceArea();
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
    
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision Capacity() const;
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision SurfaceArea() const;
   
+  #ifndef VECGEOM_NVCC
   VECGEOM_CUDA_HEADER_BOTH
+  #endif
   Vector3D<Precision>  GetPointOnSurface() const;
  
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const;
   
     
@@ -464,17 +514,44 @@ VECGEOM_CUDA_HEADER_BOTH
 public:
   virtual int memory_size() const { return sizeof(*this); }
 
+  
   VECGEOM_CUDA_HEADER_BOTH
-  virtual void Print() const;
+  virtual void Print() const;//{}//;
+  
+  //VECGEOM_CUDA_HEADER_BOTH 
+  virtual void Print(std::ostream &os) const;//{}//;
 
-  template <TranslationCode transCodeT, RotationCode rotCodeT>
-  VECGEOM_CUDA_HEADER_DEVICE
+  
+  #ifndef VECGEOM_NVCC
+
+  template <TranslationCode trans_code, RotationCode rot_code>
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
                                Transformation3D const *const transformation,
-#ifdef VECGEOM_NVCC
-                               const int id,
-#endif
                                VPlacedVolume *const placement = NULL);
+
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL);
+
+  #else
+
+  template <TranslationCode trans_code, RotationCode rot_code>
+  __device__
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               Transformation3D const *const transformation,
+                               const int id,
+                               VPlacedVolume *const placement = NULL);
+
+  __device__
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL);
+
+  #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VUnplacedVolume* CopyToGpu() const;
@@ -483,17 +560,32 @@ public:
 
 private:
 
-  virtual void Print(std::ostream &os) const;
+  
 
-  VECGEOM_CUDA_HEADER_DEVICE
+  #ifndef VECGEOM_NVCC
+
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
-#ifdef VECGEOM_NVCC
-      const int id,
+      VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
+                                   placement);
+  }
+
+#else
+
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
+                                   id, placement);
+  }
+
 #endif
-      VPlacedVolume *const placement = NULL) const;
 
 };
 

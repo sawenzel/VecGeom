@@ -42,6 +42,7 @@ public:
       : SpecializedOrb(label, new LogicalVolume(new UnplacedOrb(fR)),
                        &Transformation3D::kIdentity) {}
 
+  
 
 #else
 

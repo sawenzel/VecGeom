@@ -2,6 +2,8 @@
 /// \author Raman Sehgal (raman.sehgal@cern.ch)
 
 #include "volumes/UnplacedSphere.h"
+#include "backend/Backend.h"
+
 #ifndef VECGEOM_NVCC
   #include "base/RNG.h"
 #include <cassert>
@@ -44,8 +46,8 @@ namespace VECGEOM_NAMESPACE {
   }
   fRmin = pRmin;
   fRmax = pRmax;
-  fRminTolerance = (fRmin) ? std::max(kRadTolerance, fEpsilon * fRmin) : 0;
-  mkTolerance = std::max(kRadTolerance, fEpsilon * fRmax);//RELOOK //kTolerance is replaced by mkTolerance
+  fRminTolerance = (fRmin) ? Max(kRadTolerance, fEpsilon * fRmin) : 0;
+  mkTolerance = Max(kRadTolerance, fEpsilon * fRmax);//RELOOK //kTolerance is replaced by mkTolerance
 
   // Check angles
 
@@ -56,7 +58,8 @@ namespace VECGEOM_NAMESPACE {
   CalcSurfaceArea();
 }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void UnplacedSphere::CalcCapacity()
   {
       if (fCubicVolume != 0.)
@@ -73,12 +76,14 @@ namespace VECGEOM_NAMESPACE {
   
   
    VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision UnplacedSphere::Capacity() const
   {
     return fCubicVolume;
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
+  // VECGEOM_INLINE
   void UnplacedSphere::CalcSurfaceArea()
   {
       
@@ -128,6 +133,7 @@ namespace VECGEOM_NAMESPACE {
   }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision UnplacedSphere::SurfaceArea() const
   {
       return fSurfaceArea;
@@ -153,16 +159,20 @@ namespace VECGEOM_NAMESPACE {
       aArray[5] = GetDeltaThetaAngle();
   }
   
-  
+  /*
   #ifdef VECGEOM_NVCC
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {}
   #else
   
   VECGEOM_CUDA_HEADER_BOTH
+   */
+  #ifdef VECGEOM_NVCC
+  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const{}
+  #else 
+  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {
-  
       
   Precision zRand, aOne, aTwo, aThr, aFou, aFiv, chose, phi, sinphi, cosphi;
   Precision height1, height2, slant1, slant2, costheta, sintheta, rRand;
@@ -253,9 +263,10 @@ namespace VECGEOM_NAMESPACE {
     return Vector3D<Precision>(rRand * sintheta * cosEPhi,
                     rRand * sintheta * sinEPhi, rRand * costheta);
   }
+  
   }
-   
- #endif
+  
+  #endif
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedSphere::ComputeBBox() const 
@@ -263,7 +274,7 @@ namespace VECGEOM_NAMESPACE {
   
   } 
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
   std::string UnplacedSphere::GetEntityType() const
   {
       return "Sphere\n";
@@ -275,10 +286,14 @@ namespace VECGEOM_NAMESPACE {
       return new UnplacedSphere(fRmin,fRmax,fSPhi,fDPhi,fSTheta,fDTheta);
   }
   
+#ifdef VECGEOM_NVCC
+  std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const{}
+#else
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const
   //Definition taken from USphere
   {
+      
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
    //  << "		*** Dump for solid - " << GetName() << " ***\n"
@@ -298,55 +313,79 @@ namespace VECGEOM_NAMESPACE {
 
    return os;
   }
+#endif
 
   
+  VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print() const {
   printf("UnplacedSphere {%.2f , %.2f , %.2f , %.2f , %.2f , %.2f}",GetInnerRadius(),GetOuterRadius(),
                                                           GetStartPhiAngle(), GetDeltaPhiAngle(),
                                                           GetStartThetaAngle(), GetDeltaThetaAngle() );
 }
-
+  
+//VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print(std::ostream &os) const {
   os << "UnplacedSphere { " << GetInnerRadius() <<" " << GetOuterRadius() <<" " << GetStartPhiAngle() <<" " << GetDeltaPhiAngle() <<" "
            << GetStartThetaAngle() <<" " << GetDeltaThetaAngle() <<" }";
 }
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-VECGEOM_CUDA_HEADER_DEVICE
+  
+#ifndef VECGEOM_NVCC
+
+template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* UnplacedSphere::Create(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
-#ifdef VECGEOM_NVCC
-    const int id,
-#endif
     VPlacedVolume *const placement) {
-
-  return CreateSpecializedWithPlacement<SpecializedSphere<transCodeT, rotCodeT> >(
-#ifdef VECGEOM_NVCC
-      logical_volume, transformation, id, placement); // TODO: add bounding box?
-#else
-      logical_volume, transformation, placement);
-#endif
-
-
+  if (placement) {
+    new(placement) SpecializedSphere<trans_code, rot_code>(logical_volume,
+                                                        transformation);
+    return placement;
+  }
+  return new SpecializedSphere<trans_code, rot_code>(logical_volume,
+                                                  transformation);
 }
 
-VECGEOM_CUDA_HEADER_DEVICE
-VPlacedVolume* UnplacedSphere::SpecializedVolume(
+VPlacedVolume* UnplacedSphere::CreateSpecializedVolume(
     LogicalVolume const *const volume,
     Transformation3D const *const transformation,
     const TranslationCode trans_code, const RotationCode rot_code,
-#ifdef VECGEOM_NVCC
-    const int id,
-#endif
-    VPlacedVolume *const placement) const {
-  return VolumeFactory::CreateByTransformation<
-      UnplacedSphere>(volume, transformation, trans_code, rot_code,
-#ifdef VECGEOM_NVCC
-                              id,
-#endif
-                              placement);
+    VPlacedVolume *const placement) {
+  return VolumeFactory::CreateByTransformation<UnplacedSphere>(
+           volume, transformation, trans_code, rot_code, placement
+         );
 }
+
+#else
+
+template <TranslationCode trans_code, RotationCode rot_code>
+__device__
+VPlacedVolume* UnplacedSphere::Create(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation,
+    const int id, VPlacedVolume *const placement) {
+  if (placement) {
+    new(placement) SpecializedSphere<trans_code, rot_code>(logical_volume,
+                                                        transformation, NULL, id);
+    return placement;
+  }
+  return new SpecializedSphere<trans_code, rot_code>(logical_volume,
+                                                  transformation,NULL, id);
+}
+
+__device__
+VPlacedVolume* UnplacedSphere::CreateSpecializedVolume(
+    LogicalVolume const *const volume,
+    Transformation3D const *const transformation,
+    const TranslationCode trans_code, const RotationCode rot_code,
+    const int id, VPlacedVolume *const placement) {
+  return VolumeFactory::CreateByTransformation<UnplacedSphere>(
+           volume, transformation, trans_code, rot_code, id, placement
+         );
+}
+
+#endif
+
 
 } // End global namespace
 
@@ -386,7 +425,7 @@ void UnplacedSphere_ConstructOnGpu(
 }
 
 void UnplacedSphere_CopyToGpu(
-    const Precision r,
+    const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
     VUnplacedVolume *const gpu_ptr) {
   UnplacedSphere_ConstructOnGpu<<<1, 1>>>(rmin,rmax,sphi,dphi,stheta,dtheta, gpu_ptr);
 }

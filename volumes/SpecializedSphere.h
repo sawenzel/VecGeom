@@ -5,7 +5,7 @@
 #define VECGEOM_VOLUMES_SPECIALIZEDSPHERE_H_
 
 #include "base/Global.h"
-
+#include "backend/Backend.h"
 #include "volumes/kernel/SphereImplementation.h"
 #include "volumes/PlacedSphere.h"
 #include "volumes/ShapeImplementationHelper.h"

@@ -27,8 +27,8 @@ private:
   Precision fCubicVolume, fSurfaceArea;
   
   //Tolerance compatiable with USolids
-  Precision epsilon = 2e-11; 
-  Precision frTolerance=1e-9;
+  Precision epsilon;// = 2e-11; 
+  Precision frTolerance;//=1e-9;
 
 public:
     
@@ -38,21 +38,30 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb(const Precision r);
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision MyMax(Precision a, Precision b);
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetRadius() const { return fR; }
   
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetfRTolO() const { return fRTolO; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetfRTolI() const { return fRTolI; }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetfRTolerance() const { return fRTolerance; }
   
   VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   void SetRadius (const Precision r);
   
   //_____________________________________________________________________________
@@ -61,19 +70,20 @@ public:
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
   VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   Precision Capacity() const;
   
   VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_INLINE
   Precision SurfaceArea() const;
   
   #ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   #endif
-  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision>  GetPointOnSurface() const;
  
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const;
   
     
@@ -83,7 +93,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* Clone() const;
 
-  VECGEOM_CUDA_HEADER_BOTH
+  //VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
     
   
@@ -97,33 +107,74 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
-  template <TranslationCode transCodeT, RotationCode rotCodeT>
-  VECGEOM_CUDA_HEADER_DEVICE
+  virtual void Print(std::ostream &os) const;
+
+  #ifndef VECGEOM_NVCC
+
+  template <TranslationCode trans_code, RotationCode rot_code>
   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
                                Transformation3D const *const transformation,
-#ifdef VECGEOM_NVCC
-                               const int id,
-#endif
                                VPlacedVolume *const placement = NULL);
+
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      VPlacedVolume *const placement = NULL);
+
+  #else
+
+  template <TranslationCode trans_code, RotationCode rot_code>
+  __device__
+  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                               Transformation3D const *const transformation,
+                               const int id,
+                               VPlacedVolume *const placement = NULL);
+
+  __device__
+  static VPlacedVolume* CreateSpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL);
+
+  #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VUnplacedVolume* CopyToGpu() const;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
 #endif
+  
+  
 
 private:
 
-  virtual void Print(std::ostream &os) const;
+  //virtual void Print(std::ostream &os) const;
 
-  VECGEOM_CUDA_HEADER_DEVICE
+  #ifndef VECGEOM_NVCC
+
   virtual VPlacedVolume* SpecializedVolume(
       LogicalVolume const *const volume,
       Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
-#ifdef VECGEOM_NVCC
-      const int id,
+      VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
+                                   placement);
+  }
+
+#else
+
+  __device__
+  virtual VPlacedVolume* SpecializedVolume(
+      LogicalVolume const *const volume,
+      Transformation3D const *const transformation,
+      const TranslationCode trans_code, const RotationCode rot_code,
+      const int id, VPlacedVolume *const placement = NULL) const {
+    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
+                                   id, placement);
+  }
+
 #endif
-      VPlacedVolume *const placement = NULL) const;
 
 };
 

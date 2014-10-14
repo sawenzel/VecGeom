@@ -4,6 +4,10 @@
 #include "volumes/PlacedSphere.h"
 #include "volumes/Sphere.h"
 #include "base/Global.h"
+#include "base/AOS3D.h"
+#include "base/SOA3D.h"
+#include "backend/Backend.h"
+
 #if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
 #include "USphere.hh"
 #endif
@@ -68,7 +72,7 @@ VPlacedVolume* PlacedSphere::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     VPlacedVolume *const gpu_ptr) const {
-  PlacedSphere_CopyToGpu(logical_volume, transformation, this->id(),
+  vecgeom::PlacedSphere_CopyToGpu(logical_volume, transformation, this->id(),
                                  gpu_ptr);
   CudaAssertError();
   return gpu_ptr;

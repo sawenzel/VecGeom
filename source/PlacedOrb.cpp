@@ -3,6 +3,8 @@
 
 #include "volumes/PlacedOrb.h"
 #include "volumes/Orb.h"
+#include "base/AOS3D.h"
+#include "base/SOA3D.h"
 
 #if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
 #include "UOrb.hh"
@@ -15,6 +17,8 @@
 #ifdef VECGEOM_GEANT4
 #include "G4Orb.hh"
 #endif
+
+#include <stdio.h>
 
 namespace VECGEOM_NAMESPACE {
 
@@ -62,9 +66,9 @@ VPlacedVolume* PlacedOrb::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     VPlacedVolume *const gpu_ptr) const {
-  PlacedOrb_CopyToGpu(logical_volume, transformation, this->id(),
+  vecgeom::PlacedOrb_CopyToGpu(logical_volume, transformation, this->id(),
                                  gpu_ptr);
-  CudaAssertError();
+  vecgeom::CudaAssertError();
   return gpu_ptr;
 }
 

@@ -5,7 +5,9 @@
 #define VECGEOM_VOLUMES_PLACEDORB_H_
 
 #include "base/Global.h"
+#include "backend/Backend.h"
 #include "volumes/PlacedVolume.h"
+#include "volumes/UnplacedVolume.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/kernel/OrbImplementation.h"
 
@@ -43,6 +45,7 @@ public:
   virtual ~PlacedOrb() {}
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   UnplacedOrb const* GetUnplacedVolume() const {
     return static_cast<UnplacedOrb const *>(
         logical_volume()->unplaced_volume());
@@ -50,19 +53,23 @@ public:
   
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetRadius() const { return GetUnplacedVolume()->GetRadius(); }
   
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetfRTolO() const { return GetUnplacedVolume()->GetfRTolO(); }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetfRTolI() const { return GetUnplacedVolume()->GetfRTolI(); }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
   
-   VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
+   #ifdef VECGEOM_USOLIDS  
+   Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
   
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
@@ -76,12 +83,15 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
   
-  VECGEOM_CUDA_HEADER_BOTH
+  //#ifdef VECGEOM_USOLIDS
+  //VECGEOM_CUDA_HEADER_BOTH
+  //#endif
   Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
  
-  
   VECGEOM_CUDA_HEADER_BOTH
   void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+  
+  #endif
 
   VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const

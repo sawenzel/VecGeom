@@ -29,8 +29,11 @@ int main(int argc, char* argv[]) {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
+  tester.SetPoolMultiplier(1);
   tester.SetPointCount(npoints);
   tester.SetRepetitions(nrep);
+  //tester.RunInsideBenchmark();
+  //tester.RunToOutBenchmark();
   tester.RunBenchmark();
 
   return 0;

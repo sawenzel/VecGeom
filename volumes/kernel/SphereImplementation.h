@@ -4,7 +4,7 @@
 
 #ifndef VECGEOM_VOLUMES_KERNEL_SPHEREIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_SPHEREIMPLEMENTATION_H_
-#include "math.h"
+//#include "math.h"
 #include "base/Global.h"
 
 #include "base/Transformation3D.h"
@@ -12,9 +12,9 @@
 #include "volumes/UnplacedSphere.h"
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
-#include <iomanip>
-#include <Vc/Vc>
-#include "TGeoShape.h"
+//#include <iomanip>
+//#include <Vc/Vc>
+//#include "TGeoShape.h"
 //#include "volumes/SphereUtilities.h"
 namespace VECGEOM_NAMESPACE { 
  
@@ -427,7 +427,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToSphere(
 	ContainsKernel<Backend>(unplaced,pt,inside);
 	MaskedAssign( ( (check) && !inside ), kInfinity , &distance );
 	//MaskedAssign( ( (check)  ) , kInfinity , &distance );
-	if(verbose)std::cout<<"From DistanceToSphere : "<<distance<<std::endl;
+	//if(verbose)std::cout<<"From DistanceToSphere : "<<distance<<std::endl;
 	
 
 }

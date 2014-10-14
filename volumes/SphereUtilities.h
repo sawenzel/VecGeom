@@ -2,21 +2,23 @@
 #define VECGEOM_VOLUMES_SPHEREUTILITIES_H_
 
 #include "base/Global.h"
-#include <iostream>
-#include <fstream>
-#include <limits>
-#include <cmath>
-#include <cfloat>
-#include <vector>
-#include <algorithm>
+
+#ifndef VECGEOM_NVCC
 #include "base/RNG.h"
+#include <cassert>
+//#include <iostream>
+//#include <fstream>
+//#include <limits>
+#include <cmath>
+////#include <cfloat>
+//#include <vector>
+//#include <algorithm>
+
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
-  
-  
-  
-      
+     
   VECGEOM_CUDA_HEADER_BOTH
   Precision sqr(Precision x) {return x*x;}; 
   
@@ -30,10 +32,13 @@ namespace VECGEOM_NAMESPACE {
       MaskedAssign( (v<0), mone*v , &v );
   }
   */
-  
+  #ifdef VECGEOM_NVCC
+  Precision GetRadiusInRing(Precision rmin, Precision rmax){}
+  #else 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetRadiusInRing(Precision rmin, Precision rmax)
   {
+      
   // Generate radius in annular ring according to uniform area
   //
   if (rmin <= 0.)
@@ -46,8 +51,9 @@ namespace VECGEOM_NAMESPACE {
                      * (sqr(rmax) - sqr(rmin)) + sqr(rmin));
   }
   return rmin;
+       
 }
-  
+#endif
   
   
 
