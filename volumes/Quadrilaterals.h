@@ -86,7 +86,7 @@ public:
   ///                 negative (false).
   void FixNormalSign(int component, bool positive);
 
-  template <class Backend>
+  template <class Backend, bool behindPlanesT>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v DistanceToIn(
@@ -102,7 +102,7 @@ public:
       Precision zMin = -kInfinity,
       Precision zMax = kInfinity) const;
 
-  template <class Backend>
+  template <class Backend, bool behindPlanesT>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToInKernel(
@@ -161,12 +161,12 @@ Quadrilaterals::Sides_t const& Quadrilaterals::GetSideVectors() const {
   return fSideVectors;
 }
 
-template <class Backend>
+template <class Backend, bool behindPlanesT>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToInKernel<Backend>(
+  return DistanceToInKernel<Backend, behindPlanesT>(
       size(), fPlanes, fSideVectors, point, direction);
 }
 
@@ -185,65 +185,89 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
 namespace {
 
 template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void AcceleratedDistanceToIn(
-    int &i,
-    const int n,
-    Planes const &planes,
-    Planes const (&sideVectors)[4],
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
-    typename Backend::precision_v &distance) {
-  // Do nothing if not scalar backend
-  return;
-}
+struct AcceleratedDistanceToIn {
+
+  template <bool behindPlanesT>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void VectorLoop(
+      int &i,
+      const int n,
+      Planes const &planes,
+      Planes const (&sideVectors)[4],
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
+      typename Backend::precision_v &distance) {
+    // Do nothing if not scalar backend
+    return;
+  }
+
+};
 
 template <>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void AcceleratedDistanceToIn<kScalar>(
-    int &i,
-    const int n,
-    Planes const &planes,
-    Planes const (&sideVectors)[4],
-    Vector3D<Precision> const &point,
-    Vector3D<Precision> const &direction,
-    Precision &distance) {
-#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
-  // Explicitly vectorize over quadrilaterals using Vc
-  for (;i <= n-kVectorSize; i += kVectorSize) {
-    Vector3D<VcPrecision> plane(
-        VcPrecision(planes.GetNormals().x()+i),
-        VcPrecision(planes.GetNormals().y()+i),
-        VcPrecision(planes.GetNormals().z()+i));
-    VcPrecision dPlane(&planes.GetDistances()[0]+i);
-    VcPrecision distanceTest = -(plane.Dot(point) + dPlane) /
-                                plane.Dot(direction);
-    Vector3D<VcPrecision> intersection =
-        Vector3D<VcPrecision>(direction)*distanceTest + point;
-    VcBool valid = distanceTest >= 0 && distanceTest < distance;
-    for (int j = 0; j < 4; ++j) {
-      Vector3D<VcPrecision> sideVector(
-          VcPrecision(sideVectors[j].GetNormals().x()+i),
-          VcPrecision(sideVectors[j].GetNormals().y()+i),
-          VcPrecision(sideVectors[j].GetNormals().z()+i));
-      VcPrecision dSide(&sideVectors[j].GetDistances()[i]);
-      valid &= sideVector.Dot(intersection) + dSide >= 0;
-      // Where is your god now
-      if (IsEmpty(valid)) goto distanceToInVcContinueOuter;
+struct AcceleratedDistanceToIn<kScalar> {
+
+  template <bool behindPlanesT>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void VectorLoop(
+      int &i,
+      const int n,
+      Planes const &planes,
+      Planes const (&sideVectors)[4],
+      Vector3D<Precision> const &point,
+      Vector3D<Precision> const &direction,
+      Precision &distance) {
+  #if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+    // Explicitly vectorize over quadrilaterals using Vc
+    for (;i <= n-kVectorSize; i += kVectorSize) {
+      Vector3D<VcPrecision> plane(
+          VcPrecision(planes.GetNormals().x()+i),
+          VcPrecision(planes.GetNormals().y()+i),
+          VcPrecision(planes.GetNormals().z()+i));
+      VcPrecision dPlane(&planes.GetDistances()[0]+i);
+      VcPrecision distanceTest = plane.Dot(point) + dPlane;
+      // Check if the point is in front of/behind the plane according to the
+      // template parameter
+      VcBool valid = FlipSign<behindPlanesT>::Flip(distanceTest) >= 0;
+      if (IsEmpty(valid)) continue;
+      VcPrecision directionProjection = plane.Dot(direction);
+      valid &= FlipSign<!behindPlanesT>::Flip(directionProjection) >= 0;
+      if (IsEmpty(valid)) continue;
+      distanceTest /= -directionProjection;
+      Vector3D<VcPrecision> intersection =
+          Vector3D<VcPrecision>(direction)*distanceTest + point;
+      valid &= distanceTest < distance;
+      // If there are no better candidates the intersection is not checked
+      if (IsEmpty(valid)) continue;
+      for (int j = 0; j < 4; ++j) {
+        Vector3D<VcPrecision> sideVector(
+            VcPrecision(sideVectors[j].GetNormals().x()+i),
+            VcPrecision(sideVectors[j].GetNormals().y()+i),
+            VcPrecision(sideVectors[j].GetNormals().z()+i));
+        VcPrecision dSide(&sideVectors[j].GetDistances()[i]);
+        valid &= sideVector.Dot(intersection) + dSide >= 0;
+        // Where is your god now
+        if (IsEmpty(valid)) goto distanceToInVcContinueOuter;
+      }
+      // If a hit is found, the algorithm can return, since only one side can
+      // be hit for a convex set of quadrilaterals
+      distanceTest(!valid) = kInfinity;
+      distance = distanceTest.min();
+      i = n;
+      return;
+      // Continue label of outer loop
+      distanceToInVcContinueOuter:;
     }
-    distanceTest(!valid) = kInfinity;
-    distance = Min<Precision>(distance, distanceTest.min());
-    distanceToInVcContinueOuter:;
+  #endif
+    return;
   }
-#endif
-  return;
-}
+
+};
 
 } // End anonymous namespace
 
-template <class Backend>
+template <class Backend, bool behindPlanesT>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
     const int n,
@@ -258,28 +282,42 @@ typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
   Float_t bestDistance = kInfinity;
 
   int i = 0;
-  AcceleratedDistanceToIn<Backend>(
+  AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
       i, n, planes, sideVectors, point, direction, bestDistance);
 
   for (; i < n; ++i) {
     Float_t distance = 
-        -(planes.GetNormals().x(i)*point[0] +
-          planes.GetNormals().y(i)*point[1] +
-          planes.GetNormals().z(i)*point[2] + planes.GetDistances()[i])
-       / (planes.GetNormals().x(i)*direction[0] +
-          planes.GetNormals().y(i)*direction[1] +
-          planes.GetNormals().z(i)*direction[2]);
+        planes.GetNormals().x(i)*point[0] +
+        planes.GetNormals().y(i)*point[1] +
+        planes.GetNormals().z(i)*point[2] + planes.GetDistances()[i];
+    // Check if the point is in front of/behind the plane according to the
+    // template parameter
+    Bool_t valid = FlipSign<behindPlanesT>::Flip(distance) >= 0;
+    if (IsEmpty(valid)) continue;
+    Float_t directionProjection =
+        planes.GetNormals().x(i)*direction[0] +
+        planes.GetNormals().y(i)*direction[1] +
+        planes.GetNormals().z(i)*direction[2];
+    valid &= FlipSign<!behindPlanesT>::Flip(directionProjection) >= 0;
+    if (IsEmpty(valid)) continue;
+    distance /= -directionProjection;
+    valid &= distance < bestDistance;
+    // If there are no better candidates the intersection is not checked
+    if (IsEmpty(valid)) continue;
     Vector3D<Float_t> intersection = point + direction*distance;
-    Bool_t inBounds[4];
     for (int j = 0; j < 4; ++j) {
-      inBounds[j] = sideVectors[j].GetNormals().x(i)*intersection[0] +
-                    sideVectors[j].GetNormals().y(i)*intersection[1] +
-                    sideVectors[j].GetNormals().z(i)*intersection[2] +
-                    sideVectors[j].GetDistances()[i] >= 0;
+      valid &= sideVectors[j].GetNormals().x(i)*intersection[0] +
+               sideVectors[j].GetNormals().y(i)*intersection[1] +
+               sideVectors[j].GetNormals().z(i)*intersection[2] +
+               sideVectors[j].GetDistances()[i] >= 0;
+      // Where is your god now
+      if (IsEmpty(valid)) goto distanceToInContinueOuterLoop;
     }
-    MaskedAssign(distance >= 0 && distance < bestDistance &&
-                 inBounds[0] && inBounds[1] && inBounds[2] && inBounds[3],
-                 distance, &bestDistance);
+    MaskedAssign(valid, distance, &bestDistance);
+    // If all hits are found, the algorithm can return, since only one side can
+    // be hit for a convex set of quadrilaterals
+    if (IsFull(bestDistance < kInfinity)) break;
+    distanceToInContinueOuterLoop:;
   }
 
   return bestDistance;

@@ -324,11 +324,11 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
 
   Float_t distance(kInfinity);
 
-  Float_t test = segment.outer.DistanceToIn<Backend>(point, direction);
+  Float_t test = segment.outer.DistanceToIn<Backend, false>(point, direction);
   MaskedAssign(test >= 0, test, &distance);
 
   if (treatInnerT && segment.hasInnerRadius) {
-    test = segment.inner.DistanceToIn<Backend>(point, direction);
+    test = segment.inner.DistanceToIn<Backend, true>(point, direction);
     MaskedAssign(test >= 0 && test < distance, test, &distance);
   }
 
@@ -357,7 +357,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
 
   if (treatInnerT) {
     if (segment.hasInnerRadius) {
-      test = segment.inner.DistanceToIn<Backend>(point, direction);
+      test = segment.inner.DistanceToIn<Backend, false>(point, direction);
       MaskedAssign(test >= 0 && test < distance, test, &distance);
     }
   }
@@ -384,7 +384,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
 
   Precision distance = kInfinity;
   if (goingRight) {
-    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax;) {
+    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax; ++zIndex) {
       distance = DistanceToInZSegment<kScalar>(
           unplaced.GetZSegment(zIndex),
           unplaced.GetSideCount(),
@@ -392,7 +392,6 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
           localDirection);
       if (distance >= 0 && distance < kInfinity) break;
       if (unplaced.GetZPlanes()[zIndex] - localPoint[2] > distance) break;
-      ++zIndex;
     }
   } else {
     // Going left
@@ -648,10 +647,12 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
   Float_t distanceTest;
   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceTest = s.outer.DistanceToIn<Backend>(localPoint, localDirection);
+    distanceTest = s.outer.DistanceToIn<Backend, false>(
+        localPoint, localDirection);
     MaskedAssign(distanceTest < distance, distanceTest, &distance);
     if (treatInnerT && s.hasInnerRadius) {
-      distanceTest = s.inner.DistanceToIn<Backend>(localPoint, localDirection);
+      distanceTest = s.inner.DistanceToIn<Backend, true>(
+          localPoint, localDirection);
       MaskedAssign(distanceTest < distance, distanceTest, &distance);
     }
   }
@@ -728,7 +729,7 @@ void PolyhedronImplementation<treatInnerT>::DistanceToOut(
     MaskedAssign(distanceResult < distance, distanceResult, &distance);
     if (treatInnerT) {
       if (s.hasInnerRadius) {
-        distanceResult = s.inner.DistanceToIn<Backend>(point, direction);
+        distanceResult = s.inner.DistanceToIn<Backend, false>(point, direction);
         MaskedAssign(distanceResult < distance, distanceResult, &distance);
       }
     }

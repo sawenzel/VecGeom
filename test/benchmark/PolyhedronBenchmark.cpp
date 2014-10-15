@@ -47,8 +47,8 @@ int main(int nArgs, char **args) {
     worldLogical.PlaceDaughter(placed);
     VPlacedVolume *world = worldLogical.Place();
     Benchmarker benchmarker(world);
-    benchmarker.SetVerbosity(1);
-    benchmarker.SetPoolMultiplier(8);
+    benchmarker.SetVerbosity(3);
+    benchmarker.SetPoolMultiplier(1);
     benchmarker.SetRepetitions(8192);
     benchmarker.SetPointCount(128);
     benchmarker.RunInsideBenchmark();
@@ -64,9 +64,9 @@ int main(int nArgs, char **args) {
     outStream.close();
   };
 
-  RunBenchmark(NoInnerRadii(), "polyhedron_no-inner-radii.csv");
+  // RunBenchmark(NoInnerRadii(), "polyhedron_no-inner-radii.csv");
   // RunBenchmark(WithInnerRadii(), "polyhedron_with-inner-radii.csv");
-  // RunBenchmark(ManySegments(), "polyhedron_many-segments.csv");
+  RunBenchmark(ManySegments(), "polyhedron_many-segments.csv");
 
   return 0;
 }
