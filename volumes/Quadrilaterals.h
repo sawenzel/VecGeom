@@ -117,10 +117,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   static typename Backend::precision_v DistanceToOutKernel(
       const int n,
-      __restrict__ Precision const a[],
-      __restrict__ Precision const b[],
-      __restrict__ Precision const c[],
-      __restrict__ Precision const d[],
+      Planes const &planes,
       const Precision zMin,
       const Precision zMax,
       Vector3D<typename Backend::precision_v> const &point,
@@ -178,8 +175,7 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
     Precision zMin,
     Precision zMax) const {
   return DistanceToOutKernel<Backend>(
-      size(), GetNormals().x(), GetNormals().y(), GetNormals().z(),
-      &GetDistances()[0], zMin, zMax, point, direction);
+      size(), GetPlanes(), zMin, zMax, point, direction);
 }
 
 namespace {
@@ -237,9 +233,6 @@ struct AcceleratedDistanceToIn<kScalar> {
       distanceTest /= -directionProjection;
       Vector3D<VcPrecision> intersection =
           Vector3D<VcPrecision>(direction)*distanceTest + point;
-      valid &= distanceTest < distance;
-      // If there are no better candidates the intersection is not checked
-      if (IsEmpty(valid)) continue;
       for (int j = 0; j < 4; ++j) {
         Vector3D<VcPrecision> sideVector(
             VcPrecision(sideVectors[j].GetNormals().x()+i),
@@ -301,9 +294,6 @@ typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
     valid &= FlipSign<!behindPlanesT>::Flip(directionProjection) >= 0;
     if (IsEmpty(valid)) continue;
     distance /= -directionProjection;
-    valid &= distance < bestDistance;
-    // If there are no better candidates the intersection is not checked
-    if (IsEmpty(valid)) continue;
     Vector3D<Float_t> intersection = point + direction*distance;
     for (int j = 0; j < 4; ++j) {
       valid &= sideVectors[j].GetNormals().x(i)*intersection[0] +
@@ -331,10 +321,7 @@ VECGEOM_INLINE
 void AcceleratedDistanceToOut(
     int &i,
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    Planes const &planes,
     const Precision zMin,
     const Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,
@@ -350,10 +337,7 @@ VECGEOM_INLINE
 void AcceleratedDistanceToOut<kScalar>(
     int &i,
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    Planes const &planes,
     const Precision zMin,
     const Precision zMax,
     Vector3D<Precision> const &point,
@@ -362,14 +346,28 @@ void AcceleratedDistanceToOut<kScalar>(
 #if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
   // Explicitly vectorize over quadrilaterals using Vc
   for (;i <= n-kVectorSize; i += kVectorSize) {
-    VcPrecision aVc(&a[i]), bVc(&b[i]), cVc(&c[i]), dVc(&d[i]);
-    VcPrecision distanceTest =
-        -(aVc*point[0] + bVc*point[1] + cVc*point[2] + dVc)
-       / (aVc*direction[0] + bVc*direction[1] + cVc*direction[2]);
+    Vector3D<VcPrecision> plane(
+        VcPrecision(planes.GetNormals().x()+i),
+        VcPrecision(planes.GetNormals().y()+i),
+        VcPrecision(planes.GetNormals().z()+i));
+    VcPrecision dPlane(&planes.GetDistances()[0]+i);
+    VcPrecision distanceTest = plane.Dot(point) + dPlane;
+    // Check if the point is behind the plane
+    VcBool valid = distanceTest < 0;
+    if (IsEmpty(valid)) continue;
+    VcPrecision directionProjection = plane.Dot(direction);
+    // Because the point is behind the plane, the direction must be along the
+    // normal
+    valid &= directionProjection >= 0;
+    if (IsEmpty(valid)) continue;
+    distanceTest /= -directionProjection;
+    valid &= distanceTest < distance;
+    if (IsEmpty(valid)) continue;
     VcPrecision zProjection = distanceTest*direction[2] + point[2];
-    distanceTest(distanceTest < 0 || zProjection < zMin ||
-                 zProjection >= zMax) = kInfinity;
-    distance = Min<Precision>(distance, distanceTest.min());
+    valid &= zProjection >= zMin && zProjection < zMax;
+    if (IsEmpty(valid)) continue;
+    distanceTest(!valid) = kInfinity;
+    distance = distanceTest.min();
   }
 #endif
   return;
@@ -381,31 +379,44 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v Quadrilaterals::DistanceToOutKernel(
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    Planes const &planes,
     const Precision zMin,
     const Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
   typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
 
   Float_t bestDistance = kInfinity;
 
   int i = 0;
   AcceleratedDistanceToOut<Backend>(
-      i, n, a, b, c, d, zMin, zMax, point, direction, bestDistance);
+      i, n, planes, zMin, zMax, point, direction, bestDistance);
 
   for (; i < n; ++i) {
-    Float_t distance = -(a[i]*point[0] + b[i]*point[1] +
-                         c[i]*point[2] + d[i])
-                      / (a[i]*direction[0] + b[i]*direction[1] +
-                         c[i]*direction[2]);
-    Float_t zProjection = point[2] + distance*direction[2];
-    MaskedAssign(distance >= 0 && zProjection >= zMin && zProjection <= zMax &&
-                 distance < bestDistance, distance, &bestDistance);
+    Float_t distanceTest = 
+        planes.GetNormals().x(i)*point[0] +
+        planes.GetNormals().y(i)*point[1] +
+        planes.GetNormals().z(i)*point[2] + planes.GetDistances()[i];
+    // Check if the point is behind the plane
+    Bool_t valid = distanceTest < 0;
+    if (IsEmpty(valid)) continue;
+    Float_t directionProjection =
+        planes.GetNormals().x(i)*direction[0] +
+        planes.GetNormals().y(i)*direction[1] +
+        planes.GetNormals().z(i)*direction[2];
+    // Because the point is behind the plane, the direction must be along the
+    // normal
+    valid &= directionProjection >= 0;
+    if (IsEmpty(valid)) continue;
+    distanceTest /= -directionProjection;
+    valid &= distanceTest < bestDistance;
+    if (IsEmpty(valid)) continue;
+    Float_t zProjection = point[2] + distanceTest*direction[2];
+    valid &= zProjection >= zMin && zProjection < zMax;
+    if (IsEmpty(valid)) continue;
+    MaskedAssign(valid, distanceTest, &bestDistance);
   }
 
   return bestDistance;
