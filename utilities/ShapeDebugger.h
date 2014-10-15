@@ -17,11 +17,15 @@ private:
 
   VPlacedVolume const* fVolume;
   int fMaxMismatches;
+  bool fShowCorrectResults;
 
 public:
 
   ShapeDebugger(VPlacedVolume const *volume);
 
+  /// \param max Maximum number of mismatching points/rays to print to the
+  ///            console. When visualizing rays, this will also limit the amount
+  ///            of rays drawn, unless showing correct results is enabled.
   void SetMaxMismatches(int max);
 
 #ifdef VECGEOM_ROOT
@@ -56,6 +60,11 @@ public:
   void CompareDistanceToOutToROOT(
       Vector3D<Precision> const &bounds,
       int nSamples = 1024) const;
+
+  /// Correct results will not be drawn in the resulting plot unless enabled by
+  /// this method. If enabled, no limit will be imposed on the number of rays
+  /// drawn.
+  void ShowCorrectResults(bool show);
 
 #endif
 
