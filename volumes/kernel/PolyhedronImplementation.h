@@ -374,6 +374,23 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
     Vector3D<Precision> const &localDirection,
     const Precision stepMax) {
 
+  {
+    bool inBounds;
+    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+        UnplacedContains<kScalar>(
+            unplaced.GetBoundingTube(), localPoint, inBounds);
+    if (!inBounds) {
+      // If the point is outside the bounding tube, check if the ray misses
+      // the bounds.
+      Precision tubeDistance;
+      HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+          DistanceToIn<kScalar>(
+              unplaced.GetBoundingTube(), Transformation3D::kIdentity,
+              localPoint, localDirection, stepMax, tubeDistance);
+      if (tubeDistance == kInfinity) return kInfinity;
+    }
+  }
+
   int zIndex = FindZSegment<kScalar>(unplaced, localPoint);
   // Don't go out of bounds
   const int zMax = unplaced.GetZSegmentCount();
