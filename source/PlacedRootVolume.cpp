@@ -164,8 +164,6 @@ void PlacedRootVolume::DistanceToOut(SOA3D<Precision> const &positions,
   }
 }
 
-
-#ifdef VECGEOM_BENCHMARK
 VPlacedVolume const* PlacedRootVolume::ConvertToUnspecialized() const {
   assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
   return NULL;
@@ -188,7 +186,6 @@ G4VSolid const* PlacedRootVolume::ConvertToGeant4() const {
   return NULL;
 }
 #endif
-#endif // VECGEOM_BENCHMARK
 
 #ifdef VECGEOM_CUDA_INTERFACE
 VPlacedVolume* PlacedRootVolume::CopyToGpu(

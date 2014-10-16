@@ -18,9 +18,10 @@
 
 namespace VECGEOM_NAMESPACE {
 
+
 PlacedTrapezoid::~PlacedTrapezoid() {}
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
   return new SimpleTrapezoid(GetLabel().c_str(), logical_volume(), transformation());
@@ -58,8 +59,7 @@ G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
 }
 #endif
 
-
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

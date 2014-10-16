@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(Vecgeom)
 
+set(VECGEOM ON)
+
 ################################################################################
 
 # Configuration options
@@ -49,7 +51,14 @@ if (USOLIDS)
 endif()
 
 if (GEANT4)
-  set(Geant4 ON)
+  if (BENCHMARK)
+    set(Geant4 ON)
+  else()
+    message(WARNING
+      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
+    set(GEANT4 OFF)
+    set(Geant4 OFF)
+  endif()
 endif()
 
 if (NOT BACKEND)
@@ -114,7 +123,7 @@ set(VECGEOM_COMPILATION_FLAGS_INTEL)
 set(VECGEOM_NVCC_COMPILATION_FLAGS)
 
 set(VECGEOM_COMPILATION_FLAGS
-    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC -DVECGEOM")
+    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
   if (APPLE OR UNIX) 
@@ -234,7 +243,7 @@ if (Intel)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_INTEL}")
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2 -std=c++11")
+set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${VECGEOM_NVCC_COMPILATION_FLAGS})
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
@@ -294,7 +303,8 @@ if (ROOT)
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
       source/PlacedRootVolume.cpp
       source/RootGeoManager.cpp
-      source/UnplacedRootVolume.cpp)
+      source/UnplacedRootVolume.cpp
+      source/Visualizer.cpp)
 
 endif()
 
@@ -343,6 +353,7 @@ set(SRC_CPP_RELATIVE
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
@@ -352,6 +363,7 @@ set(SRC_CPP_RELATIVE
   source/Transformation3D.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
@@ -359,6 +371,12 @@ set(SRC_CPP_RELATIVE
   source/Vector.cpp
   source/NavigationState.cpp
   source/SimpleNavigator.cpp
+
+  source/UnplacedOrb.cpp
+  source/PlacedOrb.cpp
+
+  source/UnplacedSphere.cpp
+  source/PlacedSphere.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -408,6 +426,7 @@ if (BENCHMARK)
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
+  source/ShapeDebugger.cpp
 )
 
 # Compile cpp-files for C++11
@@ -457,27 +476,45 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
 )
+set(TEST_EXECUTABLES_VISUALIZATION
+  ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
+)
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
+  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
+  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
+#  ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
+#  ${CMAKE_SOURCE_DIR}/test/HyperboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/trd_validation.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
 )
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
+  ${TEST_EXECUTABLES_VISUALIZATION}
   ${TEST_EXECUTABLES_USOLIDS}
   ${TEST_EXECUTABLES_BENCHMARK}
   ${TEST_EXECUTABLES_CUDA}
@@ -524,6 +561,7 @@ endif()
 if (ROOT)
   build_executables("${TEST_EXECUTABLES_ROOT}")
   add_to_ctest("${TEST_EXECUTABLES_ROOT}")
+  build_executables("${TEST_EXECUTABLES_VISUALIZATION}")
 endif()
 if (USolids)
   build_executables("${TEST_EXECUTABLES_USOLIDS}")

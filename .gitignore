@@ -15,3 +15,5 @@ compile_*.sh
 *.pdf
 *.eps
 prototype_generation/Main
+.DS_Store
+

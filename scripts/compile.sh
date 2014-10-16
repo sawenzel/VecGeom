@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # store build in some random place
 rm -rf build
 mkdir build

@@ -13,27 +13,27 @@ Precision pmax(Precision p1, Precision p2) {
 }
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints);
-  OPTION_INT(nrep);
-  OPTION_DOUBLE(dz);
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(dz,15.);
 
-  OPTION_DOUBLE(p1x);
-  OPTION_DOUBLE(p2x);
-  OPTION_DOUBLE(p3x);
-  OPTION_DOUBLE(p4x);
-  OPTION_DOUBLE(p5x);
-  OPTION_DOUBLE(p6x);
-  OPTION_DOUBLE(p7x);
-  OPTION_DOUBLE(p8x);
+  OPTION_DOUBLE(p1x,-2);
+  OPTION_DOUBLE(p2x,2);
+  OPTION_DOUBLE(p3x,-3);
+  OPTION_DOUBLE(p4x,3);
+  OPTION_DOUBLE(p5x,-4);
+  OPTION_DOUBLE(p6x,4);
+  OPTION_DOUBLE(p7x,-6);
+  OPTION_DOUBLE(p8x,6);
 
-  OPTION_DOUBLE(p1y);
-  OPTION_DOUBLE(p2y);
-  OPTION_DOUBLE(p3y);
-  OPTION_DOUBLE(p4y);
-  OPTION_DOUBLE(p5y);
-  OPTION_DOUBLE(p6y);
-  OPTION_DOUBLE(p7y);
-  OPTION_DOUBLE(p8y);
+  OPTION_DOUBLE(p1y,-5);
+  OPTION_DOUBLE(p2y,-5);
+  OPTION_DOUBLE(p3y,5);
+  OPTION_DOUBLE(p4y,5);
+  OPTION_DOUBLE(p5y,-10);
+  OPTION_DOUBLE(p6y,-10);
+  OPTION_DOUBLE(p7y,10);
+  OPTION_DOUBLE(p8y,10);
 
 
   // UnplacedBox worldUnplaced = UnplacedBox(pmax(p1x, pmax(p2x, pmax(p3x, p4x)))*4, pmax(p1y, pmax(p2y, pmax(p3y, p4y)))*4, dz*4);
