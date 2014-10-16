@@ -46,7 +46,7 @@ class SimplePlacedVolumeVisitor : public GeoVisitor<Container>
 {
 public:
    SimplePlacedVolumeVisitor( Container & c) : GeoVisitor<Container>(c) {}
-   virtual void apply( VPlacedVolume * vol, int level ){
+   virtual void apply( VPlacedVolume * vol, int /* level */ ){
       this->c_.push_back( vol );
    }
    virtual ~SimplePlacedVolumeVisitor(){}

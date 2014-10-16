@@ -29,8 +29,8 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector(Type *const vec, const int size)
-      : fData(vec), fSize(size), fAllocated(false) {}
+  Vector(Type *const vec, const int sz)
+      : fData(vec), fSize(sz), fAllocated(false) {}
 
   ~Vector() {
     if (fAllocated) delete[] fData;

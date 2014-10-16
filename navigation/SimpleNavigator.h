@@ -23,7 +23,6 @@
 namespace VECGEOM_NAMESPACE
 {
 
-
 class SimpleNavigator
 {
 
@@ -365,6 +364,7 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
 {
     int np=globalpoints.size();
     //TODO: we have to care for the padding and tail
+    workspaceforlocalpoints.resize(np);
     for( int i=0; i<np; ++i ){
        // TODO: we might be able to cache the matrices because some of the paths will be identical
        // need to have a quick way ( hash ) to compare paths
@@ -411,6 +411,8 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    // assuming that points and dirs are always global ones,
    // we need to transform to local coordinates first of all
    int np = globalpoints.size();
+   localpoints.resize(np);
+   localdirs.resize(np);
    for (int i=0;i<np;++i)
    {
       // TODO: we might be able to cache the matrices because some of the paths will be identical

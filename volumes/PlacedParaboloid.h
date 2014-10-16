@@ -165,9 +165,9 @@ public:
   //    virtual
   //    void StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo( os) ;}
 
-    
-#ifdef VECGEOM_BENCHMARK
-    virtual VPlacedVolume const* ConvertToUnspecialized() const;
+
+#ifndef VECGEOM_NVCC
+  virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
     virtual TGeoShape const* ConvertToRoot() const;
 #endif
@@ -177,7 +177,7 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
     virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,

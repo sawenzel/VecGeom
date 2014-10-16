@@ -15,8 +15,19 @@ namespace vecgeom_cuda { template <typename T> class SOA3D; }
 
 namespace VECGEOM_NAMESPACE {
 
+// gcc 4.8.2's -Wnon-virtual-dtor is broken and turned on by -Weffc++, we
+// need to disable it for SOA3D
+
+#if __GNUC__ < 3 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 8)
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#pragma GCC diagnostic ignored "-Weffc++"
+#define GCC_DIAG_POP_NEEDED
+#endif
+
 template <typename T>
-class SOA3D : public Container3D<SOA3D<T> > {
+class SOA3D : Container3D<SOA3D<T> > {
 
 private:
 
@@ -141,14 +152,21 @@ private:
 
 };
 
-template <typename T>
-VECGEOM_CUDA_HEADER_BOTH
-SOA3D<T>::SOA3D(T *x, T *y, T *z, size_t size)
-    : fAllocated(false), fSize(size), fCapacity(fSize), fX(x), fY(y), fZ(z) {}
+#if defined(GCC_DIAG_POP_NEEDED)
+
+#pragma GCC diagnostic pop
+#undef GCC_DIAG_POP_NEEDED
+
+#endif
 
 template <typename T>
-SOA3D<T>::SOA3D(size_t size)
-    : fAllocated(true), fSize(0), fCapacity(size),
+VECGEOM_CUDA_HEADER_BOTH
+SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
+    : fAllocated(false), fSize(sz), fCapacity(fSize), fX(xval), fY(yval), fZ(zval) {}
+
+template <typename T>
+SOA3D<T>::SOA3D(size_t sz)
+    : fAllocated(true), fSize(0), fCapacity(sz),
       fX(NULL), fY(NULL), fZ(NULL) {
   reserve(fCapacity);
 }
@@ -307,10 +325,10 @@ T const* SOA3D<T>::z() const { return fZ; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void SOA3D<T>::set(size_t index, T x, T y, T z) {
-  fX[index] = x;
-  fY[index] = y;
-  fZ[index] = z;
+void SOA3D<T>::set(size_t index, T xval, T yval, T zval) {
+  fX[index] = xval;
+  fY[index] = yval;
+  fZ[index] = zval;
 }
 
 template <typename T>
@@ -323,10 +341,10 @@ void SOA3D<T>::set(size_t index, Vector3D<T> const &vec) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void SOA3D<T>::push_back(T x, T y, T z) {
-  fX[fSize] = x;
-  fY[fSize] = y;
-  fZ[fSize] = z;
+void SOA3D<T>::push_back(T xval, T yval, T zval) {
+  fX[fSize] = xval;
+  fY[fSize] = yval;
+  fZ[fSize] = zval;
   ++fSize;
 }
 

@@ -133,30 +133,4 @@ void UVector3::RotateZ(double angle)
   y_ = s * xx + c * y_;
 }
 
-UVector3 operator + (const UVector3& a, const UVector3& b)
-{
-  return UVector3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
-}
-
-UVector3 operator - (const UVector3& a, const UVector3& b)
-{
-  return UVector3(a.x_ - b.x_, a.y_ - b.y_, a.z_ - b.z_);
-}
-
-UVector3 operator * (const UVector3& p, double a)
-{
-  return UVector3(a * p.x_, a * p.y_, a * p.z_);
-}
-
-UVector3 operator / (const UVector3& p, double a)
-{
-  a = 1. / a;
-  return UVector3(a * p.x_, a * p.y_, a * p.z_);
-}
-
-UVector3 operator * (double a, const UVector3& p)
-{
-  return UVector3(a * p.x_, a * p.y_, a * p.z_);
-}
-
 #endif

@@ -8,14 +8,14 @@
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints);
-  OPTION_INT(nrep);
-  OPTION_DOUBLE(dx);
-  OPTION_DOUBLE(dy);
-  OPTION_DOUBLE(dz);
-  OPTION_DOUBLE(alpha);
-  OPTION_DOUBLE(theta);
-  OPTION_DOUBLE(phi);
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(dx,20.);
+  OPTION_DOUBLE(dy,30.);
+  OPTION_DOUBLE(dz,40.);
+  OPTION_DOUBLE(alpha,30./180.*kPi);
+  OPTION_DOUBLE(theta,15./180.*kPi);
+  OPTION_DOUBLE(phi,30./180.*kPi);
 
   UnplacedBox worldUnplaced = UnplacedBox(dx*4, dy*4, dz*4);
   UnplacedParallelepiped paraUnplaced(dx, dy, dz, alpha, theta, phi);
