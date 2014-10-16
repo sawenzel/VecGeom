@@ -1,10 +1,4 @@
 //===-- kernel/ParaboloidImplementation.h - Instruction class definition -------*- C++ -*-===//
-//
-//                     GeantV - VecGeom
-//
-// This file is distributed under the LGPL
-// License. See LICENSE.TXT for details.
-//
 //===----------------------------------------------------------------------===//
 ///
 /// \file

@@ -1,11 +1,4 @@
 //===-- volumes/UnplacedParaboloid.h - Instruction class definition -------*- C++ -*-===//
-//
-//                     GeantV - VecGeom
-//
-// This file is distributed under the LGPL
-// License. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
 ///
 /// \file volumes/UnplacedParaboloid.h
 /// \author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
