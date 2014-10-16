@@ -87,7 +87,7 @@ void FaceTrajectoryIntersection(UnplacedTrd const &trd,
                                 typename Backend::precision_v &dist,
                                 typename Backend::bool_v &ok) {
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
+    // typedef typename Backend::bool_v Bool_t;
     Float_t alongV, posV, dirV, posK, dirK, fK, halfKplus, v1;
     if(forY) {
         alongV = trd.y2minusy1();
@@ -176,7 +176,7 @@ static void UnplacedInside(
     using namespace TrdUtilities;
     using namespace TrdTypes;  
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
+    // typedef typename Backend::bool_v Bool_t;
 
     Float_t pzPlusDz = point.z()+trd.dz();
 

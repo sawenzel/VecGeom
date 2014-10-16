@@ -509,7 +509,7 @@ set(TEST_EXECUTABLES_CUDA
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
-  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
+  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

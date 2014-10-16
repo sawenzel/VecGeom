@@ -114,8 +114,10 @@ public:
     
     VECGEOM_CUDA_HEADER_BOTH
     virtual
-    bool Normal( Vector3D<Precision> const &, Vector3D<double> &normal ) const { }
-  //  { GetUnplacedVolume()->Normal(point, dir, norm) ;}
+    bool Normal(Vector3D<Precision> const &, Vector3D<double> &normal) const {
+      Assert(0, "Normal with point only not implemented for Paraboloid.\n");
+      return false;
+    }
     
     VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}

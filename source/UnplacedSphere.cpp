@@ -24,10 +24,9 @@ namespace VECGEOM_NAMESPACE {
   UnplacedSphere::UnplacedSphere(Precision pRmin, Precision pRmax,
                  Precision pSPhi, Precision pDPhi,
                  Precision pSTheta, Precision pDTheta)
-  : fCubicVolume(0.),
-    fSurfaceArea(0.),fEpsilon(2.e-11),
-    fFullPhiSphere(true), fFullThetaSphere(true),
-    epsilon(2e-11),frTolerance(1e-9),fgTolerance(1e-9),faTolerance(1e-9)
+  : fEpsilon(2.e-11), fFullPhiSphere(true), fFullThetaSphere(true),
+    fCubicVolume(0.), fSurfaceArea(0.), epsilon(2e-11), frTolerance(1e-9),
+    fgTolerance(1e-9),faTolerance(1e-9)
 {
   kAngTolerance = faTolerance;
 
@@ -75,8 +74,7 @@ namespace VECGEOM_NAMESPACE {
   }
   
   
-   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
   Precision UnplacedSphere::Capacity() const
   {
     return fCubicVolume;
@@ -133,7 +131,6 @@ namespace VECGEOM_NAMESPACE {
   }
   
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Precision UnplacedSphere::SurfaceArea() const
   {
       return fSurfaceArea;

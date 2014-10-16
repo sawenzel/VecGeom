@@ -382,7 +382,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToSphere(
 	  typename Backend::bool_v &firstcross, 
       typename Backend::precision_v &distance){
   
-  bool verbose=false;
+  // bool verbose=false;
 	    //std::cout<<"Raman insdie "<<std::endl;
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
@@ -796,7 +796,7 @@ UnplacedSphere const &unplaced,
     typename Backend::bool_v &completelyoutside) {
 
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v      Bool_t;	
+    // typedef typename Backend::bool_v      Bool_t;	
 
     Precision fRmin = unplaced.GetInnerRadius();
     Precision fRminTolerance = unplaced.GetFRminTolerance();
@@ -938,7 +938,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
                          typename Backend::precision_v &safety){
 
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v      Bool_t;
+    // typedef typename Backend::bool_v      Bool_t;
 
     Float_t safe=Backend::kZero;
     Float_t zero=Backend::kZero; 
@@ -1049,7 +1049,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
                           typename Backend::precision_v &safety){
     //std::cout<<"Safety to OUT Kernel call"<<std::endl;
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v      Bool_t;
+    // typedef typename Backend::bool_v      Bool_t;
 
     Float_t safe=Backend::kZero;
     Float_t zero=Backend::kZero; 
@@ -1288,7 +1288,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
     Float_t piby2(kPi/2);
     Float_t toler(1.E-10); 
     Float_t toler2(1.E+10); 
-    Float_t b,delta, xnew,ynew,znew, phi0, ddp;
+    Float_t b(0.), delta(0.), xnew(0.), ynew(0.), znew(0.), phi0(0.), ddp(0.);
     Float_t sn1(kInfinity),rn1(kInfinity);
     Vector3D<Float_t> newPt;
     Float_t fPhi1(unplaced.GetStartPhiAngle());

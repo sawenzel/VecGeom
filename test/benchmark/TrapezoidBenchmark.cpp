@@ -8,7 +8,7 @@
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints, 1024);
+  // OPTION_INT(npoints, 1024);
 
   UnplacedBox worldUnplaced = UnplacedBox(20., 20., 20.);
 
