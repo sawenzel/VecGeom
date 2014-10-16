@@ -36,14 +36,14 @@ VPlacedVolume* UnplacedTrd::Create(
     #define GENERATE_TRD_SPECIALIZATIONS
     #ifdef GENERATE_TRD_SPECIALIZATIONS
       if(trd.dy1() == trd.dy2()) {
-          std::cout << "trd1" << std::endl;
+	//          std::cout << "trd1" << std::endl;
           return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::Trd1> >(logical_volume, transformation
 #ifdef VECGEOM_NVCC
                  ,id
 #endif
                  , placement);
       } else {
-          std::cout << "trd2" << std::endl;
+	//          std::cout << "trd2" << std::endl;
           return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::Trd2> >(logical_volume, transformation
 #ifdef VECGEOM_NVCC
                  ,id
@@ -51,7 +51,7 @@ VPlacedVolume* UnplacedTrd::Create(
                  , placement);
     }
     #endif
-    std::cout << "universal trd" << std::endl; 
+      //    std::cout << "universal trd" << std::endl; 
 	return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::UniversalTrd> >(logical_volume, transformation 
 #ifdef VECGEOM_NVCC
                 ,id
