@@ -12,13 +12,13 @@ double dmax(double d1, double d2) {
 }
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints);
-  OPTION_INT(nrep);
-  OPTION_DOUBLE(dx1);
-  OPTION_DOUBLE(dx2);
-  OPTION_DOUBLE(dy1);
-  OPTION_DOUBLE(dy2);
-  OPTION_DOUBLE(dz);
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(dx1,3.);
+  OPTION_DOUBLE(dx2,4.);
+  OPTION_DOUBLE(dy1,5.);
+  OPTION_DOUBLE(dy2,6.);
+  OPTION_DOUBLE(dz,7.);
 
   UnplacedBox worldUnplaced = UnplacedBox(dmax(dx1, dx2)*4, dmax(dy1, dy2)*4, dz*4);
   UnplacedTrd trdUnplaced = UnplacedTrd(dx1, dx2, dy1, dy2, dz);
