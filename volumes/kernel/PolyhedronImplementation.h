@@ -59,8 +59,9 @@ struct PolyhedronImplementation {
   VECGEOM_CUDA_HEADER_BOTH
   static inline Precision ScalarDistanceToInKernel(
       UnplacedPolyhedron const &unplaced,
-      Vector3D<Precision> const &localPoint,
-      Vector3D<Precision> const &localDirection,
+      Transformation3D const &transformation,
+      Vector3D<Precision> const &point,
+      Vector3D<Precision> const &direction,
       const Precision stepMax);
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -370,9 +371,14 @@ VECGEOM_CUDA_HEADER_BOTH
 Precision
 PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
     UnplacedPolyhedron const &unplaced,
-    Vector3D<Precision> const &localPoint,
-    Vector3D<Precision> const &localDirection,
+    Transformation3D const &transformation,
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
     const Precision stepMax) {
+
+  const Vector3D<Precision> localPoint = transformation.Transform(point);
+  const Vector3D<Precision> localDirection =
+      transformation.TransformDirection(direction);
 
   {
     bool inBounds;
@@ -385,7 +391,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
       Precision tubeDistance;
       HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
           DistanceToIn<kScalar>(
-              unplaced.GetBoundingTube(), Transformation3D::kIdentity,
+              unplaced.GetBoundingTube(), transformation,
               localPoint, localDirection, stepMax, tubeDistance);
       if (tubeDistance == kInfinity) return kInfinity;
     }

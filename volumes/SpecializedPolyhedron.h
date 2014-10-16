@@ -236,13 +236,9 @@ Precision SpecializedPolyhedron<treatInnerT>::DistanceToIn(
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
     const Precision stepMax) const {
-  Vector3D<Precision> localPoint =
-      VPlacedVolume::transformation()->Transform(point);
-  Vector3D<Precision> localDirection =
-      VPlacedVolume::transformation()->TransformDirection(direction);
   return PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
-      *PlacedPolyhedron::GetUnplacedVolume(), localPoint, localDirection,
-      stepMax);
+      *PlacedPolyhedron::GetUnplacedVolume(), *VPlacedVolume::transformation(),
+      point, direction, stepMax);
 }
 
 template <bool treatInnerT>

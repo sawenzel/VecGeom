@@ -65,8 +65,8 @@ int main(int nArgs, char **args) {
   };
 
   // RunBenchmark(NoInnerRadii(), "polyhedron_no-inner-radii.csv");
-  // RunBenchmark(WithInnerRadii(), "polyhedron_with-inner-radii.csv");
-  RunBenchmark(ManySegments(), "polyhedron_many-segments.csv");
+  RunBenchmark(WithInnerRadii(), "polyhedron_with-inner-radii.csv");
+  // RunBenchmark(ManySegments(), "polyhedron_many-segments.csv");
 
   return 0;
 }
