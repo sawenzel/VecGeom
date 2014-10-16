@@ -10,11 +10,11 @@
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-    OPTION_INT(npoints);
-    OPTION_INT(nrep);
-    OPTION_DOUBLE(rlo);
-    OPTION_DOUBLE(rhi);
-    OPTION_DOUBLE(dz);
+    OPTION_INT(npoints,1024);
+    OPTION_INT(nrep,1024);
+    OPTION_DOUBLE(rlo,3.);
+    OPTION_DOUBLE(rhi,5.);
+    OPTION_DOUBLE(dz,7.);
     
     std::cout<<"Paraboloid Benchmark\n";
     //UnplacedBox worldUnplaced = UnplacedBox(10., 10., 10.);
