@@ -28,6 +28,11 @@ public:
   ///            of rays drawn, unless showing correct results is enabled.
   void SetMaxMismatches(int max);
 
+  /// Correct results will not be drawn in the resulting plot unless enabled by
+  /// this method. If enabled, no limit will be imposed on the number of rays
+  /// drawn.
+  void ShowCorrectResults(bool show);
+
 #ifdef VECGEOM_ROOT
 
   /// Visualizes comparison between the contains algorithm between the VecGeom
@@ -60,11 +65,6 @@ public:
   void CompareDistanceToOutToROOT(
       Vector3D<Precision> const &bounds,
       int nSamples = 1024) const;
-
-  /// Correct results will not be drawn in the resulting plot unless enabled by
-  /// this method. If enabled, no limit will be imposed on the number of rays
-  /// drawn.
-  void ShowCorrectResults(bool show);
 
 #endif
 
