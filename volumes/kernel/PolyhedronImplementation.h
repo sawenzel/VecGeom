@@ -392,7 +392,9 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
       HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
           DistanceToIn<kScalar>(
               unplaced.GetBoundingTube(), transformation,
-              localPoint, localDirection, stepMax, tubeDistance);
+              Vector3D<Precision>(localPoint[0], localPoint[1],
+                  localPoint[2]-unplaced.GetBoundingTubeOffset()),
+              localDirection, stepMax, tubeDistance);
       if (tubeDistance == kInfinity) return kInfinity;
     }
   }
