@@ -5,6 +5,7 @@
 #include "volumes/PlacedVolume.h"
 
 #include "TApplication.h"
+#include "TAxis3D.h"
 #include "TGeoShape.h"
 #include "TPolyLine3D.h"
 #include "TPolyMarker3D.h"
@@ -86,6 +87,7 @@ void Visualizer::AddLine(TPolyLine3D *line) {
 
 void Visualizer::Show() const {
   TApplication app("VecGeom Visualizer", NULL, NULL);
+  TAxis3D axes;
   for (auto volume : fVolumes) {
     const_cast<TGeoShape*>(volume.first)->Draw();
   }
@@ -95,6 +97,7 @@ void Visualizer::Show() const {
   for (auto line : fLines) {
     line.first->Draw();
   }
+  axes.Draw();
   app.Run();
 }
 

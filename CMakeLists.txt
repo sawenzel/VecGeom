@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(Vecgeom)
 
+set(VECGEOM ON)
+
 ################################################################################
 
 # Configuration options
@@ -114,7 +116,7 @@ set(VECGEOM_COMPILATION_FLAGS_INTEL)
 set(VECGEOM_NVCC_COMPILATION_FLAGS)
 
 set(VECGEOM_COMPILATION_FLAGS
-    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC -DVECGEOM")
+    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
   if (APPLE OR UNIX) 
@@ -344,6 +346,7 @@ set(SRC_CPP_RELATIVE
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
@@ -353,6 +356,7 @@ set(SRC_CPP_RELATIVE
   source/Transformation3D.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
@@ -473,11 +477,17 @@ set(TEST_EXECUTABLES_USOLIDS
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
+#  ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
+#  ${CMAKE_SOURCE_DIR}/test/HyperboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/trd_validation.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
@@ -485,6 +495,7 @@ set(TEST_EXECUTABLES_CUDA
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

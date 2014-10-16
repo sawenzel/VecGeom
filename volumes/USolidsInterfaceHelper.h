@@ -4,6 +4,8 @@
 #ifndef VECGEOM_VOLUMES_USOLIDSINTERFACEHELPER_H_
 #define VECGEOM_VOLUMES_USOLIDSINTERFACEHELPER_H_
 
+#undef NDEBUG
+
 #include "base/Global.h"
 
 #undef NDEBUG
@@ -83,6 +85,7 @@ public:
 
   virtual bool Normal(Vector3D<double> const &point,
                       Vector3D<double> &normal) const {
+
     assert(0 &&
            "Normal not implemented for USolids interface compatible volume.");
     return false;

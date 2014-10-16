@@ -11,14 +11,14 @@
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints);
-  OPTION_INT(nrep);
-  OPTION_DOUBLE(rmin);
-  OPTION_DOUBLE(rmax);
-  OPTION_DOUBLE(sphi);
-  OPTION_DOUBLE(dphi);
-  OPTION_DOUBLE(stheta);
-  OPTION_DOUBLE(dtheta);
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(rmin,1.);
+  OPTION_DOUBLE(rmax,3.);
+  OPTION_DOUBLE(sphi,0.);
+  OPTION_DOUBLE(dphi,kPi);
+  OPTION_DOUBLE(stheta,0);
+  OPTION_DOUBLE(dtheta,kPi);
 
   UnplacedBox worldUnplaced = UnplacedBox(rmax*4, rmax*4, rmax*4);
   UnplacedSphere sphereUnplaced = UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
