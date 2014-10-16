@@ -108,6 +108,23 @@ VcPrecision ATan2(VcPrecision const &y, VcPrecision const &x) {
   return Vc::atan2(y, x);
 }
 
+
+VECGEOM_INLINE
+VcPrecision sin(VcPrecision const &x) {
+  return Vc::sin(x);
+}
+
+VECGEOM_INLINE
+VcPrecision cos(VcPrecision const &x) {
+  return Vc::cos(x);
+}
+
+VECGEOM_INLINE
+VcPrecision tan(VcPrecision const &radians) {
+  return Vc::atan(radians);
+}
+
+
 VECGEOM_INLINE
 VcPrecision Min(VcPrecision const &val1, VcPrecision const &val2) {
   return Vc::min(val1, val2);

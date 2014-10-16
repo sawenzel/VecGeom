@@ -2,13 +2,19 @@
 #include "volumes/Box.h"
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
+#include "ArgParser.h"
 
 using namespace vecgeom;
 
-int main() {
+int main(int argc, char* argv[]) {
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(dx,1.);
+  OPTION_DOUBLE(dy,2.);
+  OPTION_DOUBLE(dz,3.);
 
-  UnplacedBox worldUnplaced = UnplacedBox(10., 10., 10.);
-  UnplacedBox boxUnplaced = UnplacedBox(2.5, 2.5, 2.5);
+  UnplacedBox worldUnplaced = UnplacedBox(dx*4, dy*4, dz*4);
+  UnplacedBox boxUnplaced = UnplacedBox(dx, dy, dz);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume box = LogicalVolume("box", &boxUnplaced);
@@ -22,8 +28,8 @@ int main() {
 
   Benchmarker tester(GeoManager::Instance().world());
   tester.SetVerbosity(3);
-  // tester.SetRepetitions(1024);
-  // tester.SetPointCount(1<<13);
+  tester.SetRepetitions(nrep);
+  tester.SetPointCount(npoints);
   tester.RunBenchmark();
 
   return 0;

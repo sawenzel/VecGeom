@@ -234,7 +234,7 @@ public:
       Transformation3D const *const transform) const =0;
 #endif
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const =0;
@@ -245,7 +245,7 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const =0;
 #endif
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 };
 
