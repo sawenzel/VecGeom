@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(Vecgeom)
 
+set(VECGEOM ON)
+
 ################################################################################
 
 # Configuration options
@@ -24,6 +26,8 @@ option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
 option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
 
 option(CTEST "Enable CTest when building." ON)
+
+option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
 
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
@@ -103,6 +107,11 @@ if (NOT GNU AND NOT Clang AND NOT Intel)
   message(WARNING "Unsupported compiler. Build will likely fail.")
 endif()
 
+if ((NOT PLANESHELL))
+  message(STATUS "Disabling PlaneShell class")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_PLANESHELL_DISABLE")
+endif()
+
 ################################################################################
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
@@ -114,7 +123,7 @@ set(VECGEOM_COMPILATION_FLAGS_INTEL)
 set(VECGEOM_NVCC_COMPILATION_FLAGS)
 
 set(VECGEOM_COMPILATION_FLAGS
-    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC -DVECGEOM")
+    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
   if (APPLE OR UNIX) 
@@ -344,6 +353,7 @@ set(SRC_CPP_RELATIVE
   source/LogicalVolume.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
   source/PlacedPolyhedron.cpp
@@ -357,14 +367,21 @@ set(SRC_CPP_RELATIVE
   source/Transformation3D.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedPolyhedron.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector.cpp
-  source/NavigationState.cpp	
+  source/NavigationState.cpp
   source/SimpleNavigator.cpp
+
+  source/UnplacedOrb.cpp
+  source/PlacedOrb.cpp
+
+  source/UnplacedSphere.cpp
+  source/PlacedSphere.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -433,6 +450,11 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} rt)
 endif()
 
+set_source_files_properties(
+  ${SRC_EXECUTABLES}
+  PROPERTIES COMPILE_FLAGS -std=c++11
+)
+
 if (CUDA)
   cuda_add_library(
     vecgeomcuda
@@ -461,6 +483,8 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
+  # ${CMAKE_SOURCE_DIR}/test/root/ParaboloidTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
 )
 set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
@@ -470,19 +494,31 @@ set(TEST_EXECUTABLES_VISUALIZATION
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
+  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
+  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/PolyhedronBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
 )
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
+  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

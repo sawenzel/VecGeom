@@ -1,4 +1,9 @@
-/// @file SpecializedTrapezoid.h
+/*
+ * @file   SpecializedTrapezoid.h
+ * @author Guilherme Lima (lima 'at' fnal 'dot' gov)
+ *
+ * 2014-05-01 - Created, based on the Parallelepiped draft
+ */
 
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_
@@ -17,19 +22,19 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedTrapezoid
     : public ShapeImplementationHelper<PlacedTrapezoid,
                                        TrapezoidImplementation<
-                                           transCodeT, rotCodeT> > {
+                                         transCodeT, rotCodeT> > {
 
   typedef ShapeImplementationHelper<PlacedTrapezoid,
                                     TrapezoidImplementation<
-                                        transCodeT, rotCodeT> > Helper;
+                                      transCodeT, rotCodeT> > Helper;
 
 public:
 
 #ifndef VECGEOM_NVCC
 
   SpecializedTrapezoid(char const *const label,
-                        LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
+                       LogicalVolume const *const logical_volume,
+                       Transformation3D const *const transformation)
       : Helper(label, logical_volume, transformation, NULL) {}
 
   SpecializedTrapezoid(LogicalVolume const *const logical_volume,
@@ -50,7 +55,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;
-  
+
 
 };
 

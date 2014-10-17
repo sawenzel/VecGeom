@@ -1255,12 +1255,12 @@ void ShapeTester::Integration(double theta, double phi, int ngrid, bool useeps, 
   UVector3 point;
   UVector3 dir;
   double xmin, ymin;
-  int npoints = ngrid*ngrid*npercell;
   dir.x() = std::sin(theta*UUtils::kDegToRad)*std::cos(phi*UUtils::kDegToRad);
   dir.y() = std::sin(theta*UUtils::kDegToRad)*std::sin(phi*UUtils::kDegToRad);
   dir.z() = std::cos(theta*UUtils::kDegToRad);
   
 #ifdef VECGEOM_ROOT
+  int npoints = ngrid*ngrid*npercell;
   TPolyMarker3D *pmx = 0;
   TH2F *xprof = 0;
    if (graphics) {

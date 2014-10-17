@@ -21,7 +21,7 @@
 #ifndef USOLIDS_UVector3
 #define USOLIDS_UVector3
 
-#ifdef VECGEOM
+#ifndef USOLIDS_USE_UVECTOR3
 
 #include "base/Vector3D.h"
 

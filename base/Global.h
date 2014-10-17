@@ -10,6 +10,8 @@
 #include <limits>
 #include <stdio.h>
 
+#define VECGEOM
+
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #ifdef __CUDA_ARCH__
     #define VECGEOM_NVCC_DEVICE
@@ -40,6 +42,7 @@
   #undef VECGEOM_CILK
   #undef VECGEOM_ROOT
   #undef VECGEOM_USOLIDS
+  #undef VECGEOM_GEANT4
   #undef VECGEOM_BENCHMARK
 #else // Not compiling with NVCC
   #define VECGEOM_STD_CXX11

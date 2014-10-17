@@ -39,7 +39,8 @@ VPlacedVolume::VPlacedVolume(VPlacedVolume const & other) : id_(), label_(), log
 
 VPlacedVolume * VPlacedVolume::operator=( VPlacedVolume const & other )
 {
-  assert( 0 && "ASSIGNMENT OPERATOR FOR VPlacedVolumes NOT IMPLEMENTED");
+  printf("ASSIGNMENT OPERATOR FOR VPlacedVolumes NOT IMPLEMENTED");
+  return NULL;
 }
 #endif
 

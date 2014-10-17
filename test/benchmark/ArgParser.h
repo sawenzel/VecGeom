@@ -1,5 +1,6 @@
 #include <algorithm>
 
+
 double getDoubleOpt(char** begin, char** end, const std::string& option, double defaultval) {
     char** itr = std::find(begin, end, option);
     if(itr != end && ++itr != end) {

@@ -22,7 +22,8 @@ int main(int argc, char* argv[]) {
   // UnplacedParallelepiped paraUnplaced(3., 3., 3., 14.9, 39, 3.22);
   LogicalVolume world = LogicalVolume("w0rld", &worldUnplaced);
   LogicalVolume para = LogicalVolume("p4r4", &paraUnplaced);
-  world.PlaceDaughter(&para, &Transformation3D::kIdentity);
+  Transformation3D placement = Transformation3D(5, 5, 5);
+  world.PlaceDaughter(&para, &placement);
 
   VPlacedVolume *worldPlaced = world.Place();
 
