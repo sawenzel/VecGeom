@@ -20,7 +20,8 @@ int main(int argc, char* argv[]) {
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume torus = LogicalVolume("torus", &torusUnplaced);
 
-  Transformation3D placement(5, 5, 5);
+  //Transformation3D placement(5, 5, 5);
+  Transformation3D placement(0, 0, 0);
   world.PlaceDaughter("torus", &torus, &placement);
 
   VPlacedVolume *pt = torus.Place(&placement);
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
   tester.RunInsideBenchmark();
-
+  tester.RunToInBenchmark();
   tester.RunToOutBenchmark();
 
   return 0;

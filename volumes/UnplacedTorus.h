@@ -18,7 +18,7 @@ private:
     Precision fRtor; // bending radius of torus
     Precision fSphi; // start angle
     Precision fDphi; // delta angle of torus section
-
+   
   // cached values
   Precision fRmin2, fRmax2, fRtor2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
   Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2;
@@ -51,15 +51,19 @@ public:
   UnplacedTorus(const Precision rmin, const Precision rmax, const Precision rtor,
                const Precision sphi, const Precision dphi) : fRmin(rmin), fRmax(rmax),
                fRtor(rtor), fSphi(sphi), fDphi(dphi) {
-    calculateCached();  
+    calculateCached(); 
+   
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTorus(UnplacedTorus const &other) : 
   fRmin(other.fRmin), fRmax(other.fRmax), fRtor(other.fRtor), fSphi(other.fSphi), fDphi(other.fDphi)  {
     calculateCached();
+   
   }
 
+
+    
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision rmin() const { return fRmin; }
