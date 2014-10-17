@@ -572,29 +572,31 @@ struct TorusImplementation {
     Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
     Float_t radsq = ( rxy - torus.rtor() ) * (rxy -  torus.rtor() ) + point[2]*point[2];
 
-    completelyoutside = Abs(radsq) > MakePlusTolerant<ForInside>( torus.rmax() );//rmax
+    completelyoutside = radsq > MakePlusTolerant<ForInside>( torus.rmax2() );//rmax
    
     if (ForInside)
     {
-      completelyinside = Abs(radsq) < MakeMinusTolerant<ForInside>( torus.rmax() );
+      completelyinside = radsq < MakeMinusTolerant<ForInside>( torus.rmax2() );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull(completelyoutside) ) {
         return;
       }
     }
     /* rmin */
-    completelyoutside |= Abs(radsq) < MakePlusTolerant<ForInside>( torus.rmin() );//rmin
+    completelyoutside |= radsq < MakePlusTolerant<ForInside>( torus.rmin2() );//rmin
    
     if (ForInside)
     {
-      completelyinside &= Abs(radsq) > MakeMinusTolerant<ForInside>( torus.rmin() );
+      completelyinside &= radsq > MakeMinusTolerant<ForInside>( torus.rmin2() );
     }
-    if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
-        return;
-      }
-    }
+
+    // NOT YET NEEDED WHEN NOT PHI TREATMENT
+    //        if (Backend::early_returns) {
+    //      if ( IsFull(completelyoutside) ) {
+    //        return;
+    //      }
+    //    }
     /* phi TOO DO*/
 
   }
