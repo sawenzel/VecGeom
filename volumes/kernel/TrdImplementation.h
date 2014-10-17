@@ -276,7 +276,8 @@ struct TrdImplementation {
     typedef typename Backend::bool_v Bool_t;
     typedef typename Backend::precision_v Float_t;
 
-    Float_t hitx, hity, hitz;
+    Float_t hitx, hity;
+    // Float_t hitz;
 
     Vector3D<Float_t> pos_local;
     Vector3D<Float_t> dir_local;
@@ -348,8 +349,9 @@ struct TrdImplementation {
     typedef typename Backend::bool_v Bool_t;
     typedef typename Backend::precision_v Float_t;
     
-    Float_t hitx, hity, hitz;
-    Bool_t done = Backend::kFalse;
+    Float_t hitx, hity;
+    // Float_t hitz;
+    // Bool_t done = Backend::kFalse;
     distance = kInfinity;
 
     // hit top Z face?

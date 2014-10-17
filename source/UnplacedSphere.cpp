@@ -57,7 +57,7 @@ namespace VECGEOM_NAMESPACE {
   CalcSurfaceArea();
 }
   
-  //VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_CUDA_HEADER_BOTH
   //VECGEOM_INLINE
   void UnplacedSphere::CalcCapacity()
   {
@@ -80,7 +80,7 @@ namespace VECGEOM_NAMESPACE {
     return fCubicVolume;
   }
   
-  //VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_CUDA_HEADER_BOTH
   // VECGEOM_INLINE
   void UnplacedSphere::CalcSurfaceArea()
   {
@@ -145,7 +145,6 @@ namespace VECGEOM_NAMESPACE {
       aMax.Set(fRmax);
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
   void UnplacedSphere::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetInnerRadius();
@@ -164,10 +163,7 @@ namespace VECGEOM_NAMESPACE {
   
   VECGEOM_CUDA_HEADER_BOTH
    */
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const{}
-  #else 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {
       
@@ -262,8 +258,7 @@ namespace VECGEOM_NAMESPACE {
   }
   
   }
-  
-  #endif
+#endif
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedSphere::ComputeBBox() const 
@@ -277,16 +272,11 @@ namespace VECGEOM_NAMESPACE {
       return "Sphere\n";
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere* UnplacedSphere::Clone() const
   {
       return new UnplacedSphere(fRmin,fRmax,fSPhi,fDPhi,fSTheta,fDTheta);
   }
   
-#ifdef VECGEOM_NVCC
-  std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const{}
-#else
-  VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const
   //Definition taken from USphere
   {
@@ -310,8 +300,6 @@ namespace VECGEOM_NAMESPACE {
 
    return os;
   }
-#endif
-
   
   VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print() const {

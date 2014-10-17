@@ -89,12 +89,8 @@ VECGEOM_CUDA_HEADER_BOTH
   {
       aArray[0] = GetRadius();
   }
-  
-  
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const{}
-#else
-  VECGEOM_CUDA_HEADER_BOTH
+
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
   Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
   {
   //  generate a random number from zero to 2UUtils::kPi...
@@ -110,13 +106,6 @@ VECGEOM_CUDA_HEADER_BOTH
   return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
   }
 #endif
-  
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::ComputeBBox() const 
-  {
-  
-  } 
   
   //VECGEOM_CUDA_HEADER_BOTH
   std::string UnplacedOrb::GetEntityType() const

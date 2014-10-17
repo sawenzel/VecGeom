@@ -29,6 +29,7 @@ private:
 
   Precision fFx, fFy;
 
+  VECGEOM_CUDA_HEADER_BOTH
   void calculateCached() {
     fX2minusX1 = fDX2 - fDX1;
     fY2minusY1 = fDY2 - fDY1;

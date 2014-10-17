@@ -170,8 +170,9 @@ public:
     Precision SurfaceArea () const;
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
-    Vector3D<Precision>  GetPointOnSurface() const;
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+    virtual Vector3D<Precision> GetPointOnSurface() const;
+#endif
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH

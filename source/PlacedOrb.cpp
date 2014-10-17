@@ -22,7 +22,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedOrb::ConvertToUnspecialized() const {
   return new SimpleOrb(GetLabel().c_str(), logical_volume(),
@@ -48,8 +48,7 @@ return new G4Orb(GetLabel().c_str(),GetRadius());
 }
 #endif
 
-
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

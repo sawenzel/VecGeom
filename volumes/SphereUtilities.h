@@ -32,10 +32,7 @@ namespace VECGEOM_NAMESPACE {
       MaskedAssign( (v<0), mone*v , &v );
   }
   */
-  #ifdef VECGEOM_NVCC
-  Precision GetRadiusInRing(Precision rmin, Precision rmax){}
-  #else 
-  VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
   Precision GetRadiusInRing(Precision rmin, Precision rmax)
   {
       

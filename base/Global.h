@@ -11,7 +11,6 @@
 #include <stdio.h>
 
 #define VECGEOM
-#define VECGEOM_STD_CXX11
 
 #if (defined(__CUDACC__) || defined(__NVCC__))
   #define VECGEOM_NVCC
@@ -31,6 +30,7 @@
   #undef VECGEOM_GEANT4
   #undef VECGEOM_BENCHMARK
 #else // Not compiling with NVCC
+  #define VECGEOM_STD_CXX11
   #define VECGEOM_NAMESPACE vecgeom
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_HOST

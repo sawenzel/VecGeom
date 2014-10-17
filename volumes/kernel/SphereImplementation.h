@@ -806,9 +806,9 @@ UnplacedSphere const &unplaced,
         
     Float_t rad2 = localPoint.Mag2();
     Float_t tolRMin = fRmin + (0.5 * fRminTolerance); //rMinPlus
-    Float_t tolRMin2 = tolRMin * tolRMin;
+    // Float_t tolRMin2 = tolRMin * tolRMin;
     Float_t tolRMax = fRmax - (0.5 * fRminTolerance); //rMaxMinus
-    Float_t tolRMax2 = tolRMax * tolRMax;
+    // Float_t tolRMax2 = tolRMax * tolRMax;
      
     // Check radial surfaces
     //Radial check for GenericKernel Start
@@ -940,7 +940,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     typedef typename Backend::precision_v Float_t;
     // typedef typename Backend::bool_v      Bool_t;
 
-    Float_t safe=Backend::kZero;
+    // Float_t safe=Backend::kZero;
     Float_t zero=Backend::kZero; 
 
     Vector3D<Float_t> localPoint;
@@ -1051,7 +1051,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
     typedef typename Backend::precision_v Float_t;
     // typedef typename Backend::bool_v      Bool_t;
 
-    Float_t safe=Backend::kZero;
+    // Float_t safe=Backend::kZero;
     Float_t zero=Backend::kZero; 
 
     Vector3D<Float_t> localPoint;
@@ -1284,8 +1284,8 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
     Float_t snxt(kInfinity);
     Float_t one(1.);
     
-    Float_t KPI(kPi);
-    Float_t piby2(kPi/2);
+    // Float_t KPI(kPi);
+    // Float_t piby2(kPi/2);
     Float_t toler(1.E-10); 
     Float_t toler2(1.E+10); 
     Float_t b(0.), delta(0.), xnew(0.), ynew(0.), znew(0.), phi0(0.), ddp(0.);

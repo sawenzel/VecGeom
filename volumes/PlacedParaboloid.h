@@ -111,39 +111,29 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetTolOrhi2() const { return GetUnplacedVolume()->GetTolOrhi2(); }
     
-    
-    VECGEOM_CUDA_HEADER_BOTH
     virtual
     bool Normal(Vector3D<Precision> const &, Vector3D<double> &normal) const {
       Assert(0, "Normal with point only not implemented for Paraboloid.\n");
       return false;
     }
     
-    VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
     
-    VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
 
-    
-    VECGEOM_CUDA_HEADER_BOTH
     Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
 
-    
-    VECGEOM_CUDA_HEADER_BOTH
-    Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface() ;}
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+    Vector3D<Precision> GetPointOnSurface() const {
+      return GetUnplacedVolume()->GetPointOnSurface();
+    }
+#endif
 
-    
-    VECGEOM_CUDA_HEADER_BOTH
     void ComputeBoundingBox() {  GetUnplacedVolumeNonConst()->ComputeBoundingBox() ;}
 
-   
-    VECGEOM_CUDA_HEADER_BOTH
     virtual
     std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
-   
-    VECGEOM_CUDA_HEADER_BOTH
     void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
 

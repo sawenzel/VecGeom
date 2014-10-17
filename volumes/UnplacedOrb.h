@@ -77,11 +77,9 @@ public:
   //VECGEOM_INLINE
   Precision SurfaceArea() const;
   
-  #ifdef VECGEOM_USOLIDS
-  VECGEOM_CUDA_HEADER_BOTH
-  #endif
-  Vector3D<Precision>  GetPointOnSurface() const;
- 
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+  virtual Vector3D<Precision> GetPointOnSurface() const;
+#endif 
   
   //VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const;
@@ -96,10 +94,8 @@ public:
   //VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
     
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void ComputeBBox() const; 
-   
+  // VECGEOM_CUDA_HEADER_BOTH
+  // void ComputeBBox() const; 
   
 public:
   virtual int memory_size() const { return sizeof(*this); }

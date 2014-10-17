@@ -19,7 +19,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedTrd::ConvertToUnspecialized() const {
   return new SimpleTrd(GetLabel().c_str(), logical_volume(), transformation());
@@ -45,7 +45,7 @@ G4VSolid const* PlacedTrd::ConvertToGeant4() const {
 }
 #endif
 
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 
