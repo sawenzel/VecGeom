@@ -5,15 +5,21 @@
 
 #include "volumes/Paraboloid.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#ifndef VECGEOM_NVCC
+
+#ifdef VECGEOM_ROOT
 #include "TGeoParaboloid.h"
 #endif
+
 #ifdef VECGEOM_GEANT4
 #include "G4Paraboloid.hh"
 #endif
+
 #ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
 #endif
+
+#endif // VECGEOM_NVCC
 
 #include <cassert>
 

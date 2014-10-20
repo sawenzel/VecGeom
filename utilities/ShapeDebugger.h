@@ -8,6 +8,7 @@
 
 namespace vecgeom {
 
+template <typename T> class Vector3D;
 class VPlacedVolume;
 
 /// \brief Contains methods to debug and verify correctness of shape algorithms.

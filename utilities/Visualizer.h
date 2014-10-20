@@ -20,6 +20,11 @@ class TPolyMarker3D;
 
 namespace vecgeom {
 
+template <typename T> class AOS3D;
+template <typename T> class SOA3D;
+template <typename T> class Vector3D;
+class VPlacedVolume;
+
 /// \brief Visualize volumes through ROOT.
 class Visualizer {
 

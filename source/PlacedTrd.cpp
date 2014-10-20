@@ -3,12 +3,14 @@
 
 #include "volumes/Trd.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#ifndef VECGEOM_NVCC
+
+#ifdef VECGEOM_ROOT
 #include "TGeoTrd1.h"
 #include "TGeoTrd2.h"
 #endif
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
+#ifdef VECGEOM_USOLIDS
 #include "UTrd.hh"
 #endif
 
@@ -16,6 +18,7 @@
 #include "G4Trd.hh"
 #endif
 
+#endif // VECGEOM_NVCC
 
 namespace VECGEOM_NAMESPACE {
 
