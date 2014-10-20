@@ -14,6 +14,9 @@ class TGeoShape;
 
 namespace vecgeom {
 
+template <typename T> class AOS3D;
+template <typename T> class SOA3D;
+
 class PlacedRootVolume : public VPlacedVolume {
 
 private:
