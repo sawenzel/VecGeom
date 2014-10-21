@@ -25,19 +25,17 @@ struct GenericKernels {
 }; // End struct GenericKernels
 
 template<bool tolerant, typename T>
-T
 VECGEOM_CUDA_HEADER_BOTH
-MakePlusTolerant( T const & x  )
-{
-    return (tolerant)? x+kTolerance : x;
+VECGEOM_INLINE
+T MakePlusTolerant(T const &x) {
+  return (tolerant) ? x+kTolerance : x;
 }
 
 template<bool tolerant, typename T>
-T
 VECGEOM_CUDA_HEADER_BOTH
-MakeMinusTolerant( T x  )
-{
-    return (tolerant)? x-kTolerance : x;
+VECGEOM_INLINE
+T MakeMinusTolerant(T const &x) {
+  return (tolerant) ? x-kTolerance : x;
 }
 
 template <class Backend>
