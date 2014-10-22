@@ -22,15 +22,34 @@ struct GenericKernels {
 template<bool tolerant, typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-T MakePlusTolerant(T const &x) {
-  return (tolerant) ? x+kTolerance : x;
+T MakePlusTolerant(T const &x)
+{
+  return (tolerant)? x+kHalfTolerance : x;
 }
 
 template<bool tolerant, typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-T MakeMinusTolerant(T const &x) {
-  return (tolerant) ? x-kTolerance : x;
+=======
+T MakeMinusTolerant(T const &x)
+{
+  return (tolerant)? x-kHalfTolerance : x;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T  MakePlusTolerantSquare(T const &x, T const& xsq)
+{
+  return (tolerant)? xsq+kTolerance*x : xsq;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T MakeMinusTolerantSquare(T const &x, T const &xsq)
+{
+  return (tolerant)? xsq-kTolerance*x : xsq;
 }
 
 } // End global namespace
