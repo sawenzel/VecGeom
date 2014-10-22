@@ -30,7 +30,6 @@ T MakePlusTolerant(T const &x)
 template<bool tolerant, typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-=======
 T MakeMinusTolerant(T const &x)
 {
   return (tolerant)? x-kHalfTolerance : x;
