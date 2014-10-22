@@ -572,11 +572,13 @@ struct TorusImplementation {
     Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
     Float_t radsq = ( rxy - torus.rtor() ) * (rxy -  torus.rtor() ) + point[2]*point[2];
 
-    completelyoutside = radsq > MakePlusTolerant<ForInside>( torus.rmax2() );//rmax
-   
+    // completelyoutside = radsq > MakePlusTolerant<ForInside>( torus.rmax2() );//rmax
+    completelyoutside = radsq > MakePlusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );//rmax
+    //std::cout<<"Kernelrmax  point="<<point<<" radsq="<<radsq<<" Out?"<<completelyoutside<<std::endl;
     if (ForInside)
     {
-      completelyinside = radsq < MakeMinusTolerant<ForInside>( torus.rmax2() );
+      // completelyinside = radsq < MakeMinusTolerant<ForInside>( torus.rmax2() );
+      completelyinside = radsq < MakeMinusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );
     }
     if (Backend::early_returns) {
       if ( IsFull(completelyoutside) ) {
@@ -584,11 +586,13 @@ struct TorusImplementation {
       }
     }
     /* rmin */
-    completelyoutside |= radsq < MakePlusTolerant<ForInside>( torus.rmin2() );//rmin
-   
+    //completelyoutside |= radsq < MakePlusTolerant<ForInside>( torus.rmin2() );//rmin
+   completelyoutside |= radsq < MakePlusTolerantSquare<ForInside>( torus.rmin(),torus.rmin2() );//rmin
+   // std::cout<<"Kernelrmin  point="<<point<<" radsq="<<radsq<<" Out?"<<completelyoutside<<std::endl;
     if (ForInside)
     {
-      completelyinside &= radsq > MakeMinusTolerant<ForInside>( torus.rmin2() );
+      //completelyinside &= radsq > MakeMinusTolerant<ForInside>( torus.rmin2() );
+      completelyinside &= radsq > MakeMinusTolerantSquare<ForInside>( torus.rmin(),torus.rmin2() );
     }
 
     // NOT YET NEEDED WHEN NOT PHI TREATMENT
