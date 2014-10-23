@@ -7,6 +7,9 @@
 #include "base/Global.h"
 
 #include "backend/Backend.h"
+#ifdef VECGEOM_CUDA
+#include "backend/cuda/Backend.h"
+#endif
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/kernel/TubeImplementation.h"
@@ -20,44 +23,81 @@ struct PolyhedronImplementation {
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static typename Backend::int_v FindZSegment(
       UnplacedPolyhedron const &polyhedron,
-      Vector3D<typename Backend::precision_v> const &point);
+      typename Backend::precision_v const &pointZ);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static typename Backend::int_v FindPhiSegment(
       UnplacedPolyhedron const &polyhedron,
       Vector3D<typename Backend::precision_v> const &point);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static typename Backend::precision_v DistanceToInZSegment(
-    UnplacedPolyhedron::Segment const &segment,
-    int sideCount,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction);
+      UnplacedPolyhedron const &polyhedron,
+      int segmentIndex,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  static typename Backend::precision_v DistanceToOutZSegment(
-    UnplacedPolyhedron::Segment const &segment,
-    int sideCount,
-    Precision zMin,
-    Precision zMax,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction);
-
-  template <bool treatSurfaceT>
   VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
-  static void ScalarInsideKernel(
+  static typename Backend::precision_v DistanceToOutZSegment(
       UnplacedPolyhedron const &polyhedron,
-      Vector3D<Precision> const &localPoint,
-      typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t &inside);
+      int segmentIndex,
+      Precision zMin,
+      Precision zMax,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction);
 
   VECGEOM_CUDA_HEADER_BOTH
-  static inline Precision ScalarDistanceToInKernel(
+  VECGEOM_INLINE
+  static void ScalarDistanceToInEndcaps(
+      UnplacedPolyhedron const &polyhedron,
+      bool goingRight,
+      Vector3D<Precision> const &point,
+      Vector3D<Precision> const &direction,
+      Precision &distance);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void ScalarDistanceToOutEndcaps(
+      UnplacedPolyhedron const &polyhedron,
+      bool goingRight,
+      Vector3D<Precision> const &point,
+      Vector3D<Precision> const &direction,
+      Precision &distance);
+
+  /// \return Checks whether a point is within the infinite phi wedge formed
+  ///         from origin in the cutout angle between the first and last vector.
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::bool_v InPhiCutoutWedge(
+      UnplacedPolyhedron::ZSegment const &segment,
+      bool largePhiCutout,
+      Vector3D<typename Backend::precision_v> const &point);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static bool ScalarContainsKernel(
+      UnplacedPolyhedron const &polyhedron,
+      Vector3D<Precision> const &localPoint);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static Inside_t ScalarInsideKernel(
+      UnplacedPolyhedron const &polyhedron,
+      Vector3D<Precision> const &localPoint);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static Precision ScalarDistanceToInKernel(
       UnplacedPolyhedron const &unplaced,
       Transformation3D const &transformation,
       Vector3D<Precision> const &point,
@@ -65,29 +105,30 @@ struct PolyhedronImplementation {
       const Precision stepMax);
 
   VECGEOM_CUDA_HEADER_BOTH
-  static inline Precision ScalarDistanceToOutKernel(
+  VECGEOM_INLINE
+  static Precision ScalarDistanceToOutKernel(
       UnplacedPolyhedron const &unplaced,
       Vector3D<Precision> const &localPoint,
       Vector3D<Precision> const &localDirection,
       const Precision stepMax);
 
-  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void ScalarSafetyToInKernel(
       UnplacedPolyhedron const &unplaced,
       Vector3D<Precision> const &point,
       Precision &safety);
 
-  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void ScalarSafetyToOutKernel(
       UnplacedPolyhedron const &unplaced,
       Vector3D<Precision> const &point,
       Precision &safety);
 
   template <class Backend>
-  VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static void UnplacedContains(
       UnplacedPolyhedron const &polyhedron,
       Vector3D<typename Backend::precision_v> const &localPoint,
@@ -122,13 +163,6 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  static typename Backend::precision_v ComputeDistance(
-      Quadrilaterals const &quadrilaterals,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -174,7 +208,46 @@ struct HasInnerRadiiTraits<false> {
       rotation::kIdentity, TubeTypes::NonHollowTube> TubeKernels;
 };
 
+} // End anonymous namespace
+
+namespace {
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+typename Backend::int_v FindZSegmentKernel(
+    Precision const *begin,
+    Precision const *end,
+    typename Backend::precision_v const &pointZ);
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+int FindZSegmentKernel<kScalar>(
+    Precision const *begin,
+    Precision const *end,
+    Precision const &pointZ) {
+  int index = -1;
+  while (begin < end && pointZ > *begin) {
+    ++index;
+    ++begin;
+  }
+  return index;
 }
+
+#ifdef VECGEOM_CUDA
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+int FindZSegmentKernel<kCuda>(
+    Precision const *begin,
+    Precision const *end,
+    Precision const &pointZ) {
+  return FindZSegmentKernel<kScalar>(begin, end, pointZ);
+}
+#endif
+
+} // End anonymous namespace
 
 template <bool treatInnerT>
 template <class Backend>
@@ -182,9 +255,11 @@ VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindZSegment(
     UnplacedPolyhedron const &polyhedron,
-    Vector3D<typename Backend::precision_v> const &point) {
-  return FindSegmentIndex<Backend>(
-      &polyhedron.GetZPlanes()[0], polyhedron.GetZPlanes().size(), point[2]);
+    typename Backend::precision_v const &pointZ) {
+  return FindZSegmentKernel<Backend>(
+      &polyhedron.GetZPlanes()[0],
+      &polyhedron.GetZPlanes()[0]+polyhedron.GetZPlanes().size(),
+      pointZ);
 }
 
 template <bool treatInnerT>
@@ -213,124 +288,43 @@ typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindPhiSegment(
   return result;
 }
 
-namespace {
-
-// Helper functions to prevent clutter in code. Calls the appropriate method
-// depending on whether surface is being treated or not, casting arrays to fixed
-// size for the fixed side count cases.
-
-template <bool treatSurfaceT, class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename TreatSurfaceTraits<treatSurfaceT, Backend>::Surface_t
-CallConvexInside(
-    Quadrilaterals const &quadrilaterals,
-    Vector3D<typename Backend::precision_v> const &localPoint) {
-  if (treatSurfaceT) {
-    return Planes::InsideKernel<Backend>(
-      quadrilaterals.size(),
-      quadrilaterals.GetNormals().x(),
-      quadrilaterals.GetNormals().y(),
-      quadrilaterals.GetNormals().z(),
-      &quadrilaterals.GetDistances()[0],
-      localPoint
-    );
-  } else {
-    return Planes::ContainsKernel<Backend>(
-      quadrilaterals.size(),
-      quadrilaterals.GetNormals().x(),
-      quadrilaterals.GetNormals().y(),
-      quadrilaterals.GetNormals().z(),
-      &quadrilaterals.GetDistances()[0],
-      localPoint
-    );
-  }
-}
-
-}
-
-template <bool treatInnerT>
-template <bool treatSurfaceT>
-VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
-    UnplacedPolyhedron const &polyhedron,
-    Vector3D<Precision> const &localPoint,
-    typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t &inside) {
-
-  inside = TreatSurfaceTraits<treatSurfaceT, kScalar>::kOutside;
-
-  // First check if in bounding tube
-  {
-    bool inBounds;
-    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
-        UnplacedContains<kScalar>(
-            polyhedron.GetBoundingTube(), localPoint, inBounds);
-    if (!inBounds) return;
-  }
-
-  // // Check if inside z-bounds
-  // if (localPoint[2] < polyhedron.GetTolerantZMin() ||
-  //     localPoint[2] > polyhedron.GetTolerantZMax()) {
-  //   return;
-  // }
-
-  // Find correct segment by checking Z-bounds
-  int zIndex = FindZSegment<kScalar>(polyhedron, localPoint);
-
-  // If an invalid segment index is returned, the point must be on the surface
-  // of the endcaps (Inside) or outside (Contains)
-  if (zIndex < 0 || zIndex >= polyhedron.GetZSegmentCount()) {
-    if (treatSurfaceT) {
-      inside = EInside::kSurface;
-    }
-    return;
-  }
-
-  UnplacedPolyhedron::Segment const &segment =
-      polyhedron.GetZSegment(zIndex);
-
-  inside = CallConvexInside<treatSurfaceT, kScalar>(
-      segment.outer, localPoint);
-
-  // If not in the outer shell, done
-  if (inside != TreatSurfaceTraits<treatSurfaceT, kScalar>::kInside) return;
-
-  // Otherwise check that the point is not inside the inner shell
-  if (treatInnerT && segment.hasInnerRadius) {
-    typename TreatSurfaceTraits<treatSurfaceT, kScalar>::Surface_t insideInner 
-        = CallConvexInside<treatSurfaceT, kScalar>(segment.inner, localPoint);
-    if (treatSurfaceT) {
-      if (insideInner == EInside::kSurface) {
-        inside = EInside::kSurface;
-      } else if (insideInner == EInside::kInside) {
-        inside = EInside::kOutside;
-      }
-    } else {
-      inside &= !insideInner;
-    }
-  }
-}
-
 template <bool treatInnerT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v
 PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
-    UnplacedPolyhedron::Segment const &segment,
-    int sideCount,
+    UnplacedPolyhedron const &polyhedron,
+    int segmentIndex,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
   typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
 
-  Float_t distance(kInfinity);
+  Float_t distance;
+  Bool_t done;
 
-  Float_t test = segment.outer.DistanceToIn<Backend, false>(point, direction);
-  MaskedAssign(test >= 0, test, &distance);
+  UnplacedPolyhedron::ZSegment const &segment =
+      polyhedron.GetZSegment(segmentIndex);
 
+  // If the outer shell is hit, it will always be the correct result
+  distance = segment.outer.DistanceToIn<Backend, false>(point, direction);
+  done = distance < kInfinity;
+  if (IsFull(done)) return distance;
+
+  if (polyhedron.HasPhiCutout()) {
+    MaskedAssign(!done,
+                 segment.phi.DistanceToIn<Backend, false>(point, direction),
+                 &distance);
+  }
+  done = distance < kInfinity;
+  if (IsFull(done)) return distance;
+
+  // Inner shell
   if (treatInnerT && segment.hasInnerRadius) {
-    test = segment.inner.DistanceToIn<Backend, true>(point, direction);
-    MaskedAssign(test >= 0 && test < distance, test, &distance);
+    MaskedAssign(!done,
+                 segment.inner.DistanceToIn<Backend, true>(point, direction),
+                 &distance);
   }
 
   return distance;
@@ -341,29 +335,230 @@ template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v
 PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
-    UnplacedPolyhedron::Segment const &segment,
-    int sideCount,
+    UnplacedPolyhedron const &polyhedron,
+    int segmentIndex,
     Precision zMin,
     Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) {
 
   typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::bool_v Bool_t;
 
+  Bool_t done(false);
   Float_t distance(kInfinity);
 
-  Float_t test = segment.outer.DistanceToOut<Backend>(
-      point, direction, zMin, zMax);
-  MaskedAssign(test >= 0, test, &distance);
+  UnplacedPolyhedron::ZSegment const &segment =
+      polyhedron.GetZSegment(segmentIndex);
 
-  if (treatInnerT) {
-    if (segment.hasInnerRadius) {
-      test = segment.inner.DistanceToIn<Backend, false>(point, direction);
-      MaskedAssign(test >= 0 && test < distance, test, &distance);
+  // Check inner shell first, as it would always be the correct result
+  if (treatInnerT && segment.hasInnerRadius) {
+    distance = segment.inner.DistanceToIn<Backend, false>(point, direction);
+    done = distance < kInfinity;
+    if (IsFull(done)) return distance;
+  }
+
+  // Check phi cutout if necessary. It is also possible to return here if a
+  // result is found
+  if (polyhedron.HasPhiCutout()) {
+    MaskedAssign(!done,
+                 segment.phi.DistanceToIn<Backend, true>(point, direction),
+                 &distance);
+    done = distance < kInfinity;
+    if (IsFull(done)) return distance;
+  }
+
+  // Finally check outer shell
+  MaskedAssign(!done,
+               segment.outer.DistanceToOut<Backend>(
+                  point, direction, zMin, zMax),
+               &distance);
+
+  return distance;
+}
+
+template <bool treatInnerT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void PolyhedronImplementation<treatInnerT>::ScalarDistanceToInEndcaps(
+    UnplacedPolyhedron const &polyhedron,
+    bool goingRight,
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
+    Precision &distance) {
+
+  UnplacedPolyhedron::ZSegment const *segment;
+  Precision zPlane;
+  if (goingRight && point[2] < polyhedron.GetZPlane(0)) {
+    segment = &polyhedron.GetZSegment(0);
+    zPlane = polyhedron.GetZPlane(0);
+  } else if (!goingRight &&
+             point[2] > polyhedron.GetZPlane(polyhedron.GetZSegmentCount())) {
+    segment = &polyhedron.GetZSegment(polyhedron.GetZSegmentCount()-1);
+    zPlane = polyhedron.GetZPlane(polyhedron.GetZSegmentCount());
+  } else {
+    return;
+  }
+
+  Precision distanceTest = (zPlane - point[2]) / direction[2];
+  if (distanceTest < 0 || distanceTest >= distance) return;
+
+  Vector3D<Precision> intersection = point + distanceTest*direction;
+  // Intersection point must be inside outer shell and outside inner shell
+  if (!segment->outer.Contains<kScalar>(intersection)) return;
+  if (treatInnerT && segment->hasInnerRadius) {
+    if (segment->inner.Contains<kScalar>(intersection)) return;
+  }
+
+  distance = distanceTest;
+}
+
+template <bool treatInnerT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutEndcaps(
+    UnplacedPolyhedron const &polyhedron,
+    bool goingRight,
+    Vector3D<Precision> const &point,
+    Vector3D<Precision> const &direction,
+    Precision &distance) {
+
+  UnplacedPolyhedron::ZSegment const *segment;
+  Precision zPlane;
+  if (!goingRight && point[2] > polyhedron.GetZPlane(0)) {
+    segment = &polyhedron.GetZSegment(0);
+    zPlane = polyhedron.GetZPlane(0);
+  } else if (goingRight &&
+             point[2] < polyhedron.GetZPlane(polyhedron.GetZSegmentCount())) {
+    segment = &polyhedron.GetZSegment(polyhedron.GetZSegmentCount()-1);
+    zPlane = polyhedron.GetZPlane(polyhedron.GetZSegmentCount());
+  } else {
+    return;
+  }
+
+  Precision distanceTest = (zPlane - point[2]) / direction[2];
+  if (distanceTest < 0 || distanceTest >= distance) return;
+
+  Vector3D<Precision> intersection = point + distanceTest*direction;
+  // Intersection point must be inside outer shell and outside inner shell
+  if (!segment->outer.Contains<kScalar>(intersection)) return;
+  if (treatInnerT && segment->hasInnerRadius) {
+    if (segment->inner.Contains<kScalar>(intersection)) return;
+  }
+
+  distance = distanceTest;
+}
+
+template <bool treatInnerT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+typename Backend::bool_v
+PolyhedronImplementation<treatInnerT>::InPhiCutoutWedge(
+    UnplacedPolyhedron::ZSegment const &segment,
+    bool largePhiCutout,
+    Vector3D<typename Backend::precision_v> const &point) {
+  bool first  = point.Dot(segment.phi.GetNormal(0)) +
+                segment.phi.GetDistance(0) >= 0;
+  bool second = point.Dot(segment.phi.GetNormal(1)) +
+                segment.phi.GetDistance(1) >= 0;
+  // For a cutout larger than 180 degrees, the point is in the wedge if it is
+  // in front of at least one plane
+  if (largePhiCutout) {
+    return first || second;
+  }
+  // Otherwise it should be in front of both planes
+  return first && second;
+}
+
+template <bool treatInnerT>
+VECGEOM_CUDA_HEADER_BOTH
+bool PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
+    UnplacedPolyhedron const &polyhedron,
+    Vector3D<Precision> const &localPoint) {
+
+  // First check if in bounding tube
+  {
+    bool inBounds;
+    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+        UnplacedContains<kScalar>(
+            polyhedron.GetBoundingTube(),
+            Vector3D<Precision>(localPoint[0], localPoint[1], localPoint[2]
+                                - polyhedron.GetBoundingTubeOffset()),
+            inBounds);
+    if (!inBounds) return false;
+  }
+
+  // Find correct segment by checking Z-bounds
+  int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
+
+  UnplacedPolyhedron::ZSegment const &segment = polyhedron.GetZSegment(zIndex);
+
+  // Check that the point is in the outer shell
+  if (!segment.outer.Contains<kScalar>(localPoint)) return false;
+
+  // Check that the point is not in the inner shell
+  if (treatInnerT && segment.hasInnerRadius) {
+    if (segment.inner.Contains<kScalar>(localPoint)) return false;
+  }
+
+  // Check that the point is not in the phi cutout wedge
+  if (polyhedron.HasPhiCutout()) {
+    return !InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
+                                      localPoint);
+  }
+
+  return true;
+}
+
+template <bool treatInnerT>
+VECGEOM_CUDA_HEADER_BOTH
+Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
+    UnplacedPolyhedron const &polyhedron,
+    Vector3D<Precision> const &localPoint) {
+
+  // First check if in bounding tube
+  {
+    bool inBounds;
+    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+        UnplacedContains<kScalar>(
+            polyhedron.GetBoundingTube(), localPoint, inBounds);
+    if (!inBounds) return EInside::kOutside;
+  }
+
+  // Find correct segment by checking Z-bounds
+  int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
+
+  // If an invalid segment index is returned, the point must be on the surface
+  // of the endcaps
+  if (zIndex < 0 || zIndex >= polyhedron.GetZSegmentCount()) {
+    return EInside::kSurface;
+  }
+
+  UnplacedPolyhedron::ZSegment const &segment = polyhedron.GetZSegment(zIndex);
+
+  // Check if point is within outer shell
+  Inside_t inside = segment.outer.Inside<kScalar>(localPoint);
+  // Return if outside or on surface of outer shell
+  if (inside != EInside::kInside) return inside;
+
+  // Check that the point is not within the inner shell
+  if (treatInnerT && segment.hasInnerRadius) {
+    inside = segment.inner.Inside<kScalar>(localPoint);
+    if (inside == EInside::kInside) return EInside::kOutside;
+    if (inside == EInside::kSurface) return EInside::kSurface;
+  }
+
+  // Check that the point is not within the phi cutout wedge, if any
+  if (polyhedron.HasPhiCutout()) {
+    // TODO: check for being on surface of cutout edges
+    if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
+                                  localPoint)) {
+      return EInside::kOutside;
     }
   }
 
-  return distance;
+  return EInside::kInside;
 }
 
 template <bool treatInnerT>
@@ -382,24 +577,25 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
 
   {
     bool inBounds;
+    Vector3D<Precision> boundsPoint(
+        localPoint[0], localPoint[1],
+        localPoint[2]-unplaced.GetBoundingTubeOffset());
     HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
         UnplacedContains<kScalar>(
-            unplaced.GetBoundingTube(), localPoint, inBounds);
+            unplaced.GetBoundingTube(), boundsPoint, inBounds);
     if (!inBounds) {
       // If the point is outside the bounding tube, check if the ray misses
       // the bounds.
       Precision tubeDistance;
       HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
           DistanceToIn<kScalar>(
-              unplaced.GetBoundingTube(), transformation,
-              Vector3D<Precision>(localPoint[0], localPoint[1],
-                  localPoint[2]-unplaced.GetBoundingTubeOffset()),
+              unplaced.GetBoundingTube(), transformation, boundsPoint,
               localDirection, stepMax, tubeDistance);
       if (tubeDistance == kInfinity) return kInfinity;
     }
   }
 
-  int zIndex = FindZSegment<kScalar>(unplaced, localPoint);
+  int zIndex = FindZSegment<kScalar>(unplaced, localPoint[2]);
   // Don't go out of bounds
   const int zMax = unplaced.GetZSegmentCount();
   zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax-1 : zIndex);
@@ -411,10 +607,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
   if (goingRight) {
     for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax; ++zIndex) {
       distance = DistanceToInZSegment<kScalar>(
-          unplaced.GetZSegment(zIndex),
-          unplaced.GetSideCount(),
-          localPoint,
-          localDirection);
+          unplaced, zIndex, localPoint, localDirection);
       if (distance >= 0 && distance < kInfinity) break;
       if (unplaced.GetZPlanes()[zIndex] - localPoint[2] > distance) break;
     }
@@ -422,54 +615,15 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
     // Going left
     for (; zIndex >= 0; --zIndex) {
       distance = DistanceToInZSegment<kScalar>(
-          unplaced.GetZSegment(zIndex),
-          unplaced.GetSideCount(),
-          localPoint,
-          localDirection);
+          unplaced, zIndex, localPoint, localDirection);
       if (distance >= 0 && distance < kInfinity) break;
       if (localPoint[2] - unplaced.GetZPlanes()[zIndex] > distance) break;
     }
   }
 
   // Endcaps
-  if (localPoint[2] < unplaced.GetZPlanes()[0] && goingRight) {
-    Precision distanceTest =
-        (unplaced.GetZPlanes()[0] - localPoint[2]) / localDirection[2];
-    if (distanceTest >= 0 && distanceTest < distance) {
-      Vector3D<Precision> intersection =
-          localPoint + distanceTest*localDirection;
-      UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(0);
-      if (s.outer.GetPlanes().Contains<kScalar>(intersection)) {
-        if (treatInnerT && s.hasInnerRadius) {
-           if (!s.inner.GetPlanes().Contains<kScalar>(intersection)) {
-             distance = distanceTest;
-           }
-        } else {
-          distance = distanceTest;
-        }
-      }
-    }
-  } else if (localPoint[2] > unplaced.GetZPlanes()[unplaced.GetZSegmentCount()]
-             && !goingRight) {
-    Precision distanceTest =
-        (unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] - localPoint[2])
-        / localDirection[2];
-    if (distanceTest >= 0 && distanceTest < distance) {
-      Vector3D<Precision> intersection =
-          localPoint + distanceTest*localDirection;
-      UnplacedPolyhedron::Segment const &s =
-          unplaced.GetZSegment(unplaced.GetZSegmentCount()-1);
-      if (s.outer.GetPlanes().Contains<kScalar>(intersection)) {
-        if (treatInnerT && s.hasInnerRadius) {
-           if (!s.inner.GetPlanes().Contains<kScalar>(intersection)) {
-             distance = distanceTest;
-           }
-        } else {
-          distance = distanceTest;
-        }
-      }
-    }
-  }
+  ScalarDistanceToInEndcaps(
+      unplaced, goingRight, localPoint, localDirection, distance);
 
   return distance < stepMax ? distance : stepMax;
 }
@@ -481,43 +635,8 @@ void PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
     Vector3D<Precision> const &point,
     Precision &safety) {
 
-  // Safety in Z-axis
-
-  safety = unplaced.GetZPlanes()[0] - point[2];
-  if (safety > 0) {
-    safety = Max<Precision>(
-                 Max<Precision>(safety,
-                     Abs(point[0] - unplaced.GetStartCapOuterRadius())),
-                 Abs(point[1] - unplaced.GetStartCapOuterRadius()));
-    return;
-  }
-
-  safety = point[2] - unplaced.GetZPlanes()[unplaced.GetZSegmentCount()];
-  if (safety > 0) {
-    safety = Max<Precision>(
-                 Max<Precision>(safety,
-                     Abs(point[0] - unplaced.GetEndCapOuterRadius())),
-                 Abs(point[1] - unplaced.GetEndCapOuterRadius()));
-    return;
-  }
-
-  // Safety in rho/phi
-
-  int zIndex = FindZSegment<kScalar>(unplaced, point);
-  int phiIndex = FindPhiSegment<kScalar>(unplaced, point);
-  // Now it is known exactly where to look
-
-  UnplacedPolyhedron::Segment const &segment = unplaced.GetZSegment(zIndex);
-  safety = segment.outer.GetNormals().x(phiIndex)*point[0] +
-           segment.outer.GetNormals().y(phiIndex)*point[1] +
-           segment.outer.GetNormals().z(phiIndex)*point[2] +
-           segment.outer.GetDistances()[phiIndex];
-  if (treatInnerT && safety < 0 && segment.hasInnerRadius) {
-    safety = -(segment.inner.GetNormals().x(phiIndex)*point[0] +
-               segment.inner.GetNormals().y(phiIndex)*point[1] +
-               segment.inner.GetNormals().z(phiIndex)*point[2] +
-               segment.inner.GetDistances()[phiIndex]);
-  }
+  // NYI
+  safety = 0;
 
 }
 
@@ -530,7 +649,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
     Vector3D<Precision> const &direction,
     const Precision stepMax) {
 
-  int zIndex = FindZSegment<kScalar>(unplaced, point);
+  int zIndex = FindZSegment<kScalar>(unplaced, point[2]);
   // Don't go out of bounds
   const int zMax = unplaced.GetZSegmentCount();
   zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax-1 : zIndex);
@@ -538,40 +657,36 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
   // Traverse Z-segments left or right depending on sign of direction
   bool goingRight = direction[2] >= 0;
 
-  Precision distance =
-      unplaced.GetEndCaps().Distance<kScalar>(point, direction);
+  Precision distance = kInfinity;
   if (goingRight) {
-    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax;) {
-      Precision test = DistanceToOutZSegment<kScalar>(
-          unplaced.GetZSegment(zIndex),
-          unplaced.GetSideCount(),
-          unplaced.GetZPlanes()[zIndex],
-          unplaced.GetZPlanes()[zIndex+1],
+    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax; ++zIndex) {
+      distance = DistanceToOutZSegment<kScalar>(
+          unplaced,
+          zIndex,
+          unplaced.GetZPlane(zIndex),
+          unplaced.GetZPlane(zIndex+1),
           point,
           direction);
-      if (test < distance) {
-        distance = test;
-        break;
-      }
-      if (unplaced.GetZPlanes()[++zIndex] - point[2] > distance) break;
+      if (distance >= 0 && distance < kInfinity) break;
+      if (unplaced.GetZPlanes()[zIndex] - point[2] > distance) break;
     }
   } else {
     // Going left
     for (; zIndex >= 0; --zIndex) {
-      Precision test = DistanceToOutZSegment<kScalar>(
-          unplaced.GetZSegment(zIndex),
-          unplaced.GetSideCount(),
-          unplaced.GetZPlanes()[zIndex],
-          unplaced.GetZPlanes()[zIndex+1],
+      distance = DistanceToOutZSegment<kScalar>(
+          unplaced,
+          zIndex,
+          unplaced.GetZPlane(zIndex),
+          unplaced.GetZPlane(zIndex+1),
           point,
           direction);
-      if (test < distance) {
-        distance = test;
-        break;
-      }
+      if (distance >= 0 && distance < kInfinity) break;
       if (point[2] - unplaced.GetZPlanes()[zIndex] > distance) break;
     }
   }
+
+  // Endcaps
+  ScalarDistanceToOutEndcaps(unplaced, goingRight, point, direction, distance);
 
   return distance < stepMax ? distance : stepMax;
 }
@@ -584,35 +699,9 @@ void PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
     Vector3D<Precision> const &point,
     Precision &safety) {
 
-  // Safety in Z-axis
+  // NYI
+  safety = 0;
 
-  Precision testSafety;
-
-  testSafety = point[2] - unplaced.GetZPlanes()[0];
-  if (testSafety >= 0) safety = testSafety;
-
-  testSafety = unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] - point[2];
-  if (testSafety >= 0) safety = Min<Precision>(safety, testSafety);
-
-  // Safety in rho/phi
-
-  int zIndex = FindZSegment<kScalar>(unplaced, point);
-  int phiIndex = FindPhiSegment<kScalar>(unplaced, point);
-  // Now it is known exactly where to look
-
-  UnplacedPolyhedron::Segment const &segment = unplaced.GetZSegment(zIndex);
-  testSafety = -(segment.outer.GetNormals().x(phiIndex)*point[0] +
-                 segment.outer.GetNormals().y(phiIndex)*point[1] +
-                 segment.outer.GetNormals().z(phiIndex)*point[2] +
-                 segment.outer.GetDistances()[phiIndex]);
-  if (treatInnerT && testSafety < 0 && segment.hasInnerRadius) {
-    testSafety = segment.inner.GetNormals().x(phiIndex)*point[0] +
-             segment.inner.GetNormals().y(phiIndex)*point[1] +
-             segment.inner.GetNormals().z(phiIndex)*point[2] +
-             segment.inner.GetDistances()[phiIndex];
-  }
-
-  if (testSafety >= 0) safety = Min<Precision>(safety, testSafety);
 }
 
 template <bool treatInnerT>
@@ -659,77 +748,78 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-
-  typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v Bool_t;
-
-  distance = kInfinity;
-
-  Vector3D<Float_t> localPoint = transformation.Transform(point);
-  Vector3D<Float_t> localDirection = transformation.Transform(direction);
-
-  // Loop over all Z-planes
-  Float_t distanceTest;
-  for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
-    UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceTest = s.outer.DistanceToIn<Backend, false>(
-        localPoint, localDirection);
-    MaskedAssign(distanceTest < distance, distanceTest, &distance);
-    if (treatInnerT && s.hasInnerRadius) {
-      distanceTest = s.inner.DistanceToIn<Backend, true>(
-          localPoint, localDirection);
-      MaskedAssign(distanceTest < distance, distanceTest, &distance);
-    }
-  }
-
-  // Check endcaps
-  Bool_t hitsLeftCap =
-      localPoint[2] < unplaced.GetZPlanes()[0] && localDirection[2] > 0;
-  Bool_t hitsRightCap =
-      localPoint[2] > unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] &&
-      localDirection[2] < 0;
-  if (Any(hitsLeftCap || hitsRightCap)) {
-    distanceTest = kInfinity;
-    MaskedAssign(hitsLeftCap, -localPoint[2] + unplaced.GetZPlanes()[0],
-                 &distanceTest);
-    MaskedAssign(hitsRightCap, -localPoint[2] +
-                 unplaced.GetZPlanes()[unplaced.GetZSegmentCount()],
-                 &distanceTest);
-    distanceTest /= localDirection[2];
-    Vector3D<Float_t> intersection = point + distanceTest*direction;
-    UnplacedPolyhedron::Segment const &leftCap = unplaced.GetZSegment(0);
-    UnplacedPolyhedron::Segment const &rightCap =
-        unplaced.GetZSegment(unplaced.GetZSegmentCount()-1);
-    hitsLeftCap &= leftCap.outer.GetPlanes().Contains<Backend>(intersection);
-    hitsRightCap &= rightCap.outer.GetPlanes().Contains<Backend>(intersection);
-    if (treatInnerT) {
-      if (leftCap.hasInnerRadius) {
-        hitsLeftCap &= !leftCap.inner.GetPlanes().Contains<Backend>(
-            intersection);
-      }
-      if (rightCap.hasInnerRadius) {
-        hitsRightCap &= !rightCap.inner.GetPlanes().Contains<Backend>(
-            intersection);
-      }
-    }
-    MaskedAssign((hitsLeftCap || hitsRightCap) && distanceTest >= 0 &&
-                 distanceTest < distance, distanceTest, &distance);
-  }
-
-  // Impose upper limit of stepMax on the result
-  MaskedAssign(distance > stepMax && distance < kInfinity, stepMax, &distance);
+  Assert(0, "DistanceToIn not implemented.\n");
 }
 
 // template <bool treatInnerT>
 // template <class Backend>
 // VECGEOM_CUDA_HEADER_BOTH
-// void PolyhedronImplementation<treatInnerT>::DistanceToOut(
+// void PolyhedronImplementation<treatInnerT>::DistanceToIn(
 //     UnplacedPolyhedron const &unplaced,
+//     Transformation3D const &transformation,
 //     Vector3D<typename Backend::precision_v> const &point,
 //     Vector3D<typename Backend::precision_v> const &direction,
 //     typename Backend::precision_v const &stepMax,
 //     typename Backend::precision_v &distance) {
-//   Assert(0, "Not implemented.\n");
+
+//   typedef typename Backend::precision_v Float_t;
+//   typedef typename Backend::bool_v Bool_t;
+
+//   distance = kInfinity;
+
+//   Vector3D<Float_t> localPoint = transformation.Transform(point);
+//   Vector3D<Float_t> localDirection = transformation.Transform(direction);
+
+//   // Loop over all Z-planes
+//   Float_t distanceTest;
+//   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
+//     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
+//     distanceTest = s.outer.DistanceToIn<Backend, false>(
+//         localPoint, localDirection);
+//     MaskedAssign(distanceTest < distance, distanceTest, &distance);
+//     if (treatInnerT && s.hasInnerRadius) {
+//       distanceTest = s.inner.DistanceToIn<Backend, true>(
+//           localPoint, localDirection);
+//       MaskedAssign(distanceTest < distance, distanceTest, &distance);
+//     }
+//   }
+
+//   // Check endcaps
+//   Bool_t hitsLeftCap =
+//       localPoint[2] < unplaced.GetZPlanes()[0] && localDirection[2] > 0;
+//   Bool_t hitsRightCap =
+//       localPoint[2] > unplaced.GetZPlanes()[unplaced.GetZSegmentCount()] &&
+//       localDirection[2] < 0;
+//   if (Any(hitsLeftCap || hitsRightCap)) {
+//     distanceTest = kInfinity;
+//     MaskedAssign(hitsLeftCap, -localPoint[2] + unplaced.GetZPlanes()[0],
+//                  &distanceTest);
+//     MaskedAssign(hitsRightCap, -localPoint[2] +
+//                  unplaced.GetZPlanes()[unplaced.GetZSegmentCount()],
+//                  &distanceTest);
+//     distanceTest /= localDirection[2];
+//     Vector3D<Float_t> intersection = point + distanceTest*direction;
+//     UnplacedPolyhedron::Segment const &leftCap = unplaced.GetZSegment(0);
+//     UnplacedPolyhedron::Segment const &rightCap =
+//         unplaced.GetZSegment(unplaced.GetZSegmentCount()-1);
+//     hitsLeftCap &= leftCap.outer.GetPlanes().Contains<Backend>(intersection);
+//     hitsRightCap &= rightCap.outer.GetPlanes().Contains<Backend>(intersection);
+//     if (treatInnerT) {
+//       if (leftCap.hasInnerRadius) {
+//         hitsLeftCap &= !leftCap.inner.GetPlanes().Contains<Backend>(
+//             intersection);
+//       }
+//       if (rightCap.hasInnerRadius) {
+//         hitsRightCap &= !rightCap.inner.GetPlanes().Contains<Backend>(
+//             intersection);
+//       }
+//     }
+//     MaskedAssign((hitsLeftCap || hitsRightCap) && distanceTest >= 0 &&
+//                  distanceTest < distance, distanceTest, &distance);
+//   }
+
+//   // Impose upper limit of stepMax on the result
+//   MaskedAssign(distance > stepMax && distance < kInfinity, stepMax, &distance);
 // }
 
 template <bool treatInnerT>
@@ -741,35 +831,47 @@ void PolyhedronImplementation<treatInnerT>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-
-  typedef typename Backend::precision_v Float_t;
-
-  distance = kInfinity;
-
-  Float_t distanceResult;
-  for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
-    UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
-    distanceResult = s.outer.DistanceToOut<Backend>(
-        point, direction, unplaced.GetZPlanes()[i], unplaced.GetZPlanes()[i+1]);
-    MaskedAssign(distanceResult < distance, distanceResult, &distance);
-    if (treatInnerT) {
-      if (s.hasInnerRadius) {
-        distanceResult = s.inner.DistanceToIn<Backend, false>(point, direction);
-        MaskedAssign(distanceResult < distance, distanceResult, &distance);
-      }
-    }
-    // If the next segment is further away than the best distance, no better
-    // distance can be found.
-    if (Backend::early_returns) {
-      if (IsFull(Abs(point[2] - unplaced.GetZPlane(i+1)) > distance)) break;
-    }
-  }
-  distanceResult =
-      unplaced.GetEndCaps().Distance<Backend>(point, direction);
-  MaskedAssign(distanceResult < distance, distanceResult, &distance);
-
-  MaskedAssign(distance > stepMax && distance < kInfinity, stepMax, &distance);
+  Assert(0, "Not implemented.\n");
 }
+
+// template <bool treatInnerT>
+// template <class Backend>
+// VECGEOM_CUDA_HEADER_BOTH
+// void PolyhedronImplementation<treatInnerT>::DistanceToOut(
+//     UnplacedPolyhedron const &unplaced,
+//     Vector3D<typename Backend::precision_v> const &point,
+//     Vector3D<typename Backend::precision_v> const &direction,
+//     typename Backend::precision_v const &stepMax,
+//     typename Backend::precision_v &distance) {
+
+//   typedef typename Backend::precision_v Float_t;
+
+//   distance = kInfinity;
+
+//   Float_t distanceResult;
+//   for (int i = 0, iMax = unplaced.GetZSegmentCount(); i < iMax; ++i) {
+//     UnplacedPolyhedron::Segment const &s = unplaced.GetZSegment(i);
+//     distanceResult = s.outer.DistanceToOut<Backend>(
+//         point, direction, unplaced.GetZPlanes()[i], unplaced.GetZPlanes()[i+1]);
+//     MaskedAssign(distanceResult < distance, distanceResult, &distance);
+//     if (treatInnerT) {
+//       if (s.hasInnerRadius) {
+//         distanceResult = s.inner.DistanceToIn<Backend, false>(point, direction);
+//         MaskedAssign(distanceResult < distance, distanceResult, &distance);
+//       }
+//     }
+//     // If the next segment is further away than the best distance, no better
+//     // distance can be found.
+//     if (Backend::early_returns) {
+//       if (IsFull(Abs(point[2] - unplaced.GetZPlane(i+1)) > distance)) break;
+//     }
+//   }
+//   distanceResult =
+//       unplaced.GetEndCaps().Distance<Backend>(point, direction);
+//   MaskedAssign(distanceResult < distance, distanceResult, &distance);
+
+//   MaskedAssign(distance > stepMax && distance < kInfinity, stepMax, &distance);
+// }
 
 template <bool treatInnerT>
 template <class Backend>

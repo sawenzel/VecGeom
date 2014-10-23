@@ -3,6 +3,7 @@
 
 #include "volumes/PlacedPolyhedron.h"
 
+#include "volumes/kernel/GenericKernels.h"
 #include "volumes/SpecializedPolyhedron.h"
 
 #ifdef VECGEOM_ROOT
@@ -21,6 +22,8 @@ namespace VECGEOM_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 
+
+
 VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
   return new SimplePolyhedron(GetLabel().c_str(), logical_volume(),
                               transformation());
@@ -31,8 +34,18 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
   const int zPlaneCount = GetZSegmentCount()+1;
 
-  TGeoPgon *pgon = new TGeoPgon(GetLabel().c_str(), 0, 360, GetSideCount(),
-                                zPlaneCount);
+  Precision phiStart, phiDelta;
+  if (HasPhiCutout()) {
+    phiStart = kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
+    phiDelta =
+        kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
+  } else {
+    phiStart = 0;
+    phiDelta = 360;
+  }
+
+  TGeoPgon *pgon = new TGeoPgon(
+      GetLabel().c_str(), phiStart, phiDelta, GetSideCount(), zPlaneCount);
 
   // Define sections of TGeoPgon. It takes care of the rest internally once the
   // last section is set.
@@ -48,8 +61,8 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
   return new UPolyhedra(
       GetLabel().c_str(),
-      0, // Phi start
-      360, // Phi change
+      kPi + GetPhiSection(0).Phi(),
+      kPi + GetPhiSection(GetSideCount()-1),
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],
@@ -62,8 +75,8 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
   return new G4Polyhedra(
       GetLabel().c_str(),
-      0,
-      360,
+      kPi + GetPhiSection(0).Phi(),
+      kPi + GetPhiSection(GetSideCount()-1),
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],

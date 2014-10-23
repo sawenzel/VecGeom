@@ -69,14 +69,8 @@ void Quadrilaterals::Set(
 }
 #endif
 
-void Quadrilaterals::FixNormalSign(int component, bool positive) {
-  for (int i = 0, iMax = size(); i < iMax; ++i) {
-    Vector3D<Precision> normal = GetNormal(i);
-    if ((positive  && normal[component] < 0) ||
-        (!positive && normal[component] > 0)) {
-      fPlanes.Set(i, -normal, -GetDistance(i));
-    }
-  }
+void Quadrilaterals::FlipSign(int index) {
+  fPlanes.FlipSign(index);
 }
 
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads) {

@@ -1,4 +1,5 @@
 #include "volumes/Planes.h"
+#include "backend/Backend.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -16,9 +17,11 @@ void Planes::Set(
     int index,
     Vector3D<Precision> const &normal,
     Vector3D<Precision> const &x0) {
-  Precision inverseLength = 1. / normal.Mag();
-  fNormals.set(index, inverseLength*normal);
-  fDistances[index] = inverseLength * -normal.Dot(x0);
+  Vector3D<Precision> fixedNormal(normal);
+  fixedNormal.FixZeroes();
+  Precision inverseLength = 1. / fixedNormal.Mag();
+  fNormals.set(index, inverseLength*fixedNormal);
+  fDistances[index] = inverseLength * -fixedNormal.Dot(x0);
 }
 
 void Planes::Set(
@@ -27,6 +30,11 @@ void Planes::Set(
     Precision distance) {
   fNormals.set(index, normal);
   fDistances[index] = distance;
+}
+
+void Planes::FlipSign(int index) {
+  fNormals.set(index, -fNormals[index]);
+  fDistances[index] = -fDistances[index];
 }
 
 std::ostream& operator<<(std::ostream &os, Planes const &planes) {

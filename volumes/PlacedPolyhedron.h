@@ -66,32 +66,18 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  UnplacedPolyhedron::Segment const& GetZSegment(int index) const {
+  bool HasPhiCutout() const { return GetUnplacedVolume()->HasPhiCutout(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  UnplacedPolyhedron::ZSegment const& GetZSegment(int index) const {
     return GetUnplacedVolume()->GetZSegment(index);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Array<UnplacedPolyhedron::Segment> const& GetZSegments() const {
+  Array<UnplacedPolyhedron::ZSegment> const& GetZSegments() const {
     return GetUnplacedVolume()->GetZSegments();
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision GetTolerantZMin() const {
-    return GetUnplacedVolume()->GetTolerantZMin();
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision GetTolerantZMax() const {
-    return GetUnplacedVolume()->GetTolerantZMax();
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Planes const& GetEndCaps() const {
-    return GetUnplacedVolume()->GetEndCaps();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -110,6 +96,18 @@ public:
   VECGEOM_INLINE
   Array<Precision> const& GetRMax() const {
     return GetUnplacedVolume()->GetRMax();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> GetPhiSection(int i) const {
+    return GetUnplacedVolume()->GetPhiSection(i);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  SOA3D<Precision> const& GetPhiSections() const {
+    return GetUnplacedVolume()->GetPhiSections();
   }
 
   // CUDA specific

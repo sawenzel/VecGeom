@@ -38,45 +38,6 @@ T MakeMinusTolerant(T const &x) {
   return (tolerant) ? x-kTolerance : x;
 }
 
-template <class Backend>
-VECGEOM_INLINE
-typename Backend::int_v FindSegmentIndex(
-    Precision const array[],
-    int size,
-    typename Backend::precision_v const &element);
-
-/// Brute force. Maybe binary search for large sizes?
-template <>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-int FindSegmentIndex<kScalar>(
-    Precision const array[],
-    const int size,
-    Precision const &element) {
-  int index = 0;
-  while (index < size && element > array[index]) ++index;
-  return index-1;
-}
-
-#ifdef VECGEOM_VC
-/// Brute force with optional early returns
-template <>
-VECGEOM_INLINE
-VcInt FindSegmentIndex<kVc>(
-    Precision const array[],
-    const int size,
-    VcPrecision const &element) {
-  VcInt index = -1;
-  for (int i = 0; i < size; ++i) {
-    MaskedAssign(element >= array[i], i, &index);
-    // if (kVc::early_returns) {
-    //   if (IsFull(index < i)) break;
-    // }
-  }
-  return index;
-}
-#endif
-
 template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
 template <class Backend> struct TreatSurfaceTraits<true, Backend> {
   typedef typename Backend::inside_v Surface_t;
@@ -89,8 +50,10 @@ template <class Backend> struct TreatSurfaceTraits<false, Backend> {
   static const bool kOutside = false;
 };
 
+/// \brief Flips the sign of an input value depending on the set template
+///        parameter.
 template <bool flipSignT>
-struct FlipSign {};
+struct FlipSign;
 
 template <>
 struct FlipSign<true> {
@@ -110,6 +73,11 @@ struct FlipSign<false> {
   static T Flip(T const &value) {
     return value;
   }
+};
+
+template <class Backend>
+typename Backend::precision_v NormalizeAngle(typename Backend::precision_v a) {
+  return a + kTwoPi*((a<0)-typename Backend::int_v(a/kTwoPi));
 };
 
 } // End global namespace

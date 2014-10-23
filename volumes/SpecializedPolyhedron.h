@@ -52,6 +52,16 @@ public:
     Precision rMin[],
     Precision rMax[]);
 
+  SpecializedPolyhedron(
+    char const *const label,
+    Precision phiStart,
+    Precision phiDelta,
+    const int sideCount,
+    const int zPlaneCount,
+    Precision zPlanes[],
+    Precision rMin[],
+    Precision rMax[]);
+
 #else
 
   __device__
@@ -156,6 +166,21 @@ SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
           new UnplacedPolyhedron(sideCount, zPlaneCount, zPlanes, rMin, rMax)),
           &Transformation3D::kIdentity, NULL) {}
 
+template <bool treatInnerT>
+SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+    char const *const label,
+    Precision phiStart,
+    Precision phiDelta,
+    const int sideCount,
+    const int zPlaneCount,
+    Precision zPlanes[],
+    Precision rMin[],
+    Precision rMax[])
+    : Helper(label, new LogicalVolume(
+          new UnplacedPolyhedron(
+              phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax)),
+          &Transformation3D::kIdentity, NULL) {}
+
 #endif
 
 template <bool treatInnerT>
@@ -178,9 +203,8 @@ void SpecializedPolyhedron<treatInnerT>::Contains(
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
-    PolyhedronImplementation<treatInnerT>::template
-    ScalarInsideKernel<false>(*PlacedPolyhedron::GetUnplacedVolume(),
-                              localPoint, output[i]);
+    output[i] = PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
   }
 }
 
@@ -197,11 +221,8 @@ template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
 bool SpecializedPolyhedron<treatInnerT>::UnplacedContains(
     Vector3D<Precision> const &localPoint) const {
-  bool result = false;
-  PolyhedronImplementation<treatInnerT>::template
-      ScalarInsideKernel<false>(*PlacedPolyhedron::GetUnplacedVolume(),
-                                localPoint, result);
-  return result;
+  return PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
+      *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 }
 
 template <bool treatInnerT>
@@ -210,11 +231,8 @@ Inside_t SpecializedPolyhedron<treatInnerT>::Inside(
     Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint =
       VPlacedVolume::transformation()->Transform(point);
-  Inside_t result = EInside::kOutside;
-  PolyhedronImplementation<treatInnerT>::template
-      ScalarInsideKernel<true>(*PlacedPolyhedron::GetUnplacedVolume(),
-                               localPoint, result);
-  return result;
+  return PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
+      *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 }
 
 template <bool treatInnerT>
@@ -224,9 +242,8 @@ void SpecializedPolyhedron<treatInnerT>::Inside(
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
-    PolyhedronImplementation<treatInnerT>::template
-        ScalarInsideKernel<true>(
-            *PlacedPolyhedron::GetUnplacedVolume(), localPoint, output[i]);
+    output[i] = PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
   }
 }
 
@@ -236,9 +253,10 @@ Precision SpecializedPolyhedron<treatInnerT>::DistanceToIn(
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
     const Precision stepMax) const {
-  return PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
+  Precision temp = PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), *VPlacedVolume::transformation(),
       point, direction, stepMax);
+  return temp;
 }
 
 template <bool treatInnerT>

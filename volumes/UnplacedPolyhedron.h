@@ -21,9 +21,11 @@ class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 public:
 
-  struct Segment {
+  struct ZSegment {
+    Quadrilaterals outer;
+    Quadrilaterals phi;
+    Quadrilaterals inner;
     bool hasInnerRadius;
-    Quadrilaterals inner, outer;
   };
 
 private:
@@ -42,36 +44,32 @@ private:
   //   \       \            /       /
   //    \       \          /       /
   //     \       \________/       /
-  //      \                      /
-  //       \    [Segment.inner] /
-  //        \                  / Segment.outer
+  //      \       ZSegment.inner /
+  //       \                    /
+  //        \                  / ZSegment.outer
   //         \________________/
   //
   //
   // ---- Segments along Z ----
   //
   //
-  //                            fZBounds[1]/fZPlanes[size-1]
+  //                          fZPlanes[size-1]
   //  rMax[1]_____rMax[2]  __       |
   //       /|     |\     /|  \___   v
   //      / |     | \___/ |  |   |\.
   //     |  |     | |   | |  |   | \.
-  //     |  |     | |   | |  |   |  | fEndCaps
+  //     |  |     | |   | |  |   |  |
   //     |  |     | |___| |  |   | / 
   //      \ |     | /   \ |  |___|/    ^
   //     ^ \|_____|/     \|__/         | R/Phi
   //     |                         Z   |
-  //     zBounds[0]/fZPlanes[0]    <---
+  //     fZPlanes[0]               <---
 
   int fSideCount;
-  bool fHasInnerRadii;
-  Precision fZBounds[2];
-  Planes fEndCaps;
+  bool fHasInnerRadii, fHasPhiCutout, fHasLargePhiCutout;
   Precision fEndCapsOuterRadii[2];
-  Array<Segment> fSegments;
-  Array<Precision> fZPlanes;
-  Array<Precision> fRMin;
-  Array<Precision> fRMax;
+  Array<ZSegment> fZSegments;
+  Array<Precision> fZPlanes, fRMin, fRMax;
   SOA3D<Precision> fPhiSections;
   UnplacedTube fBoundingTube;
   Precision fBoundingTubeOffset;
@@ -80,6 +78,14 @@ public:
 
 #ifdef VECGEOM_STD_CXX11
   UnplacedPolyhedron(
+      const int sideCount,
+      const int zPlaneCount,
+      Precision zPlanes[],
+      Precision rMin[],
+      Precision rMax[]);
+  UnplacedPolyhedron(
+      Precision phiStart,
+      Precision phiDelta,
       const int sideCount,
       const int zPlaneCount,
       Precision zPlanes[],
@@ -95,7 +101,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  int GetZSegmentCount() const { return fSegments.size(); }
+  int GetZSegmentCount() const { return fZSegments.size(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -103,11 +109,19 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Segment const& GetZSegment(int i) const { return fSegments[i]; }
+  bool HasPhiCutout() const { return fHasPhiCutout; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Array<Segment> const& GetZSegments() const { return fSegments; }
+  bool HasLargePhiCutout() const { return fHasLargePhiCutout; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  ZSegment const& GetZSegment(int i) const { return fZSegments[i]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array<ZSegment> const& GetZSegments() const { return fZSegments; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -127,23 +141,15 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision GetTolerantZMin() const { return fZBounds[0]; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision GetTolerantZMax() const { return fZBounds[1]; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Planes const& GetEndCaps() const { return fEndCaps; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Precision GetStartCapOuterRadius() const { return fEndCapsOuterRadii[0]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetEndCapOuterRadius() const { return fEndCapsOuterRadii[1]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> GetPhiSection(int i) const { return fPhiSections[i]; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
