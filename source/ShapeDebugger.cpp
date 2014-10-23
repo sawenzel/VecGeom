@@ -213,13 +213,13 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   visualizer.AddVolume(rootShape);
   int raysAdded = 0;
   for (auto ray : rays) {
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
     visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
   }
   raysAdded = 0;
   for (auto ray : helperRays) {
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
     visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
   }
   if (fShowCorrectResults) {
     visualizer.AddPoints(&bothMiss);
@@ -317,13 +317,13 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
   visualizer.AddVolume(rootShape);
   int raysAdded = 0;
   for (auto ray : rays) {
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
     visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
   }
   raysAdded = 0;
   for (auto ray : helperRays) {
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
     visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
   }
   visualizer.Show();
 
