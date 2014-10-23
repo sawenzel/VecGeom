@@ -59,10 +59,21 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
+
+  Precision phiStart, phiDelta;
+  if (HasPhiCutout()) {
+    phiStart = kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
+    phiDelta =
+        kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
+  } else {
+    phiStart = 0;
+    phiDelta = 360;
+  }
+  
   return new UPolyhedra(
       GetLabel().c_str(),
-      kPi + GetPhiSection(0).Phi(),
-      kPi + GetPhiSection(GetSideCount()-1),
+      phiStart,
+      phiDelta,
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],
@@ -73,10 +84,21 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
+
+  Precision phiStart, phiDelta;
+  if (HasPhiCutout()) {
+    phiStart = kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
+    phiDelta =
+        kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
+  } else {
+    phiStart = 0;
+    phiDelta = 360;
+  }
+
   return new G4Polyhedra(
       GetLabel().c_str(),
-      kPi + GetPhiSection(0).Phi(),
-      kPi + GetPhiSection(GetSideCount()-1),
+      phiStart,
+      phiDelta,
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],

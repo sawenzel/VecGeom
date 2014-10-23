@@ -522,38 +522,35 @@ Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
     bool inBounds;
     HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
         UnplacedContains<kScalar>(
-            polyhedron.GetBoundingTube(), localPoint, inBounds);
+            polyhedron.GetBoundingTube(),
+            Vector3D<Precision>(localPoint[0], localPoint[1], localPoint[2]
+                                - polyhedron.GetBoundingTubeOffset()),
+            inBounds);
     if (!inBounds) return EInside::kOutside;
   }
 
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
 
-  // If an invalid segment index is returned, the point must be on the surface
-  // of the endcaps
-  if (zIndex < 0 || zIndex >= polyhedron.GetZSegmentCount()) {
-    return EInside::kSurface;
-  }
-
   UnplacedPolyhedron::ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
-  // Check if point is within outer shell
-  Inside_t inside = segment.outer.Inside<kScalar>(localPoint);
-  // Return if outside or on surface of outer shell
-  if (inside != EInside::kInside) return inside;
+  // Check that the point is in the outer shell
+  Inside_t insideTest = segment.outer.Inside<kScalar>(localPoint);
+  // Return outside or surface if returned by outer shell
+  if (insideTest != EInside::kInside) return insideTest;
 
-  // Check that the point is not within the inner shell
+  // Check that the point is not in the inner shell
   if (treatInnerT && segment.hasInnerRadius) {
-    inside = segment.inner.Inside<kScalar>(localPoint);
-    if (inside == EInside::kInside) return EInside::kOutside;
-    if (inside == EInside::kSurface) return EInside::kSurface;
+    insideTest = segment.inner.Inside<kScalar>(localPoint);
+    if (localPoint == EInside::kInside)  return EInside::kOutside;
+    if (localPoint == EInside::kSurface) return EInside::kSurface;
   }
 
-  // Check that the point is not within the phi cutout wedge, if any
+  // Check that the point is not in the phi cutout wedge
   if (polyhedron.HasPhiCutout()) {
-    // TODO: check for being on surface of cutout edges
     if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                   localPoint)) {
+      // TODO: check surface of wedge
       return EInside::kOutside;
     }
   }

@@ -51,10 +51,10 @@ int main(int nArgs, char **args) {
     benchmarker.SetVerbosity(3);
     benchmarker.SetPoolMultiplier(1);
     benchmarker.SetRepetitions(8192);
-    benchmarker.SetPointCount(128);
+    benchmarker.SetPointCount(512);
     benchmarker.RunInsideBenchmark();
-    benchmarker.RunToOutBenchmark();
-    benchmarker.RunToInBenchmark();
+    // benchmarker.RunToOutBenchmark();
+    // benchmarker.RunToInBenchmark();
     std::list<BenchmarkResult> results = benchmarker.PopResults();
     std::ofstream outStream;
     outStream.open(label, std::fstream::app);
