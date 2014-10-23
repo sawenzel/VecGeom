@@ -409,6 +409,12 @@ void PolyhedronImplementation<treatInnerT>::ScalarDistanceToInEndcaps(
   if (treatInnerT && segment->hasInnerRadius) {
     if (segment->inner.Contains<kScalar>(intersection)) return;
   }
+  if (polyhedron.HasPhiCutout()) {
+    if (InPhiCutoutWedge<kScalar>(*segment, polyhedron.HasLargePhiCutout(),
+                                  intersection)) {
+      return;
+    }
+  }
 
   distance = distanceTest;
 }
@@ -444,6 +450,12 @@ void PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutEndcaps(
   if (!segment->outer.Contains<kScalar>(intersection)) return;
   if (treatInnerT && segment->hasInnerRadius) {
     if (segment->inner.Contains<kScalar>(intersection)) return;
+  }
+  if (polyhedron.HasPhiCutout()) {
+    if (InPhiCutoutWedge<kScalar>(*segment, polyhedron.HasLargePhiCutout(),
+                                  intersection)) {
+      return;
+    }
   }
 
   distance = distanceTest;
