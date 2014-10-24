@@ -7,6 +7,7 @@
 #include "base/Global.h"
 #include "base/Transformation3D.h"
 #include "volumes/kernel/GenericKernels.h"
+#include "volumes/kernel/TubeImplementation.h"
 #include "volumes/UnplacedTorus.h"
 #include <math.h>
 #include <iomanip>
@@ -456,9 +457,6 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 }
 
 
-
-
-
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
   /*
@@ -629,6 +627,19 @@ struct TorusImplementation {
      typename Backend::inside_v &inside) {
 
   typedef typename Backend::bool_v      Bool_t;
+  inside = EInside::kOutside;
+  //Check Bounding tube first
+   Bool_t inBounds;
+      TubeImplementation<translation::kIdentity,
+      rotation::kIdentity, TubeTypes::HollowTube>::
+      UnplacedContains<Backend>(
+      torus.GetBoundingTube(), point, inBounds);
+      if( !inBounds ){
+        if (Backend::early_returns) {
+                    return;  
+        }
+      }
+  //
   Bool_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(torus, 
   point, completelyinside, completelyoutside);
@@ -763,25 +774,26 @@ struct TorusImplementation {
      MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
 
      // TODO: only do this in case there is any finite real solution
-     //havevalidsolution = havevalidsolution && (validdistance < kInfinity) ;
-     //if( havevalidsolution){
+     havevalidsolution = (validdistance < kInfinity);
+     if( havevalidsolution){
       validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
       validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
-      //}
-
-     //     std::cerr << std::setprecision(20);
-//     std::cerr << "#DISTANCE " << validdistance;
-//     Float_t fold = CheckZero(a, b, c, d, validdistance);
-//     std::cerr << point << "\n";
-//     std::cerr << " ZERO CHECK " << fold << " dist " << validdistance << "\n";
-//     Float_t newdist = NewtonIter(a, b, c, d, validdistance, fold);
-//     std::cerr << " NEWDIST " << newdist;
-//     std::cerr << " " << CheckZero( a,b,c,d, newdist);
-//     std::cerr << "\n";
-//     std::cerr << std::setprecision(5);
+     
+     }
+     //std::cerr << std::setprecision(20);
+     //std::cerr << "#DISTANCE " << validdistance;
+     //Float_t fold = CheckZero(a, b, c, d, validdistance);
+     //std::cerr << point << "\n";
+     //std::cerr << " ZERO CHECK " << fold << " dist " << validdistance << "\n";
+     //Float_t newdist = NewtonIter(a, b, c, d, validdistance, fold);
+     //std::cerr << " NEWDIST " << newdist;
+     //std::cerr << " " << CheckZero( a,b,c,d, newdist);
+     //std::cerr << "\n";
+     //std::cerr << std::setprecision(5);
+     
      return validdistance;
   }
-
+  
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
@@ -796,23 +808,52 @@ struct TorusImplementation {
       // TODO
       //No Phi Section for the moment
       typedef typename Backend::precision_v Float_t;
+      typedef typename Backend::bool_v Bool_t;
       
       Vector3D<Float_t> localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-      Vector3D<Float_t> localDirection = transformation.Transform<transCodeT, rotCodeT>(direction);       
+      Vector3D<Float_t> localDirection = transformation.Transform<transCodeT, rotCodeT>(direction);
+
       ////////First naive implementation
       distance = kInfinity;
+
+      //Check Bounding Cylinder first
       
-      // TODO
-      // Compute distance from inside point to surface of the torus.
+      Bool_t inBounds;
+      Bool_t missTorus;
+      Float_t tubeDistance = kInfinity;
+      TubeImplementation<translation::kIdentity,
+      rotation::kIdentity, TubeTypes::HollowTube>::
+      UnplacedContains<Backend>(
+      torus.GetBoundingTube(), localPoint, inBounds);
+      missTorus = ! inBounds;
+      if( !inBounds ){
+        TubeImplementation<translation::kIdentity,
+        rotation::kIdentity, TubeTypes::HollowTube>::
+        DistanceToIn<Backend>(
+        torus.GetBoundingTube(), transformation,
+        localPoint, localDirection, stepMax, tubeDistance);
+        //std::cout<<"tubeDistance="<<tubeDistance<<std::endl;
+        missTorus = (tubeDistance == kInfinity); 
+        if (Backend::early_returns) {
+        if ( IsFull(missTorus) ) {
+             return;
+         }
+        }
+      
+     }
+       
+      //if (! missTorus){ localPoint = localPoint+localDirection*tubeDistance;}
+      //MaskedAssign ( missTorus,0., &tubeDistance);
       bool hasphi = (torus.dphi() < kTwoPi );
       bool hasrmin = (torus.rmin() > 0);
+      //Float_t dout = tubeDistance+ToBoundary<Backend> (torus, localPoint, localDirection, torus.rmax());
       Float_t dout = ToBoundary<Backend> (torus, localPoint, localDirection, torus.rmax());
-     
+
       Float_t din(kInfinity);
       if( hasrmin )
 	{
+	  //din = tubeDistance+ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmin());
 	  din = ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmin());
-	 
 	}
     distance = Min(dout,din);
 

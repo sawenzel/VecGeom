@@ -6,6 +6,7 @@
 #include "base/Global.h"
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+#include "volumes/UnplacedTube.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -22,7 +23,9 @@ private:
   // cached values
   Precision fRmin2, fRmax2, fRtor2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
   Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2;
-
+  // bounding tube
+  UnplacedTube fBoundingTube;
+ 
   VECGEOM_CUDA_HEADER_BOTH
   static void GetAlongVectorToPhiSector(Precision phi, Precision &x, Precision &y) {
     x = std::cos(phi);
@@ -50,14 +53,18 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTorus(const Precision rmin, const Precision rmax, const Precision rtor,
                const Precision sphi, const Precision dphi) : fRmin(rmin), fRmax(rmax),
-               fRtor(rtor), fSphi(sphi), fDphi(dphi) {
+    fRtor(rtor), fSphi(sphi), fDphi(dphi),fBoundingTube(0, 1, 1, 0, 360) {
     calculateCached(); 
+    
+    fBoundingTube = UnplacedTube(fRtor-fRmax - kTolerance,
+    fRtor+fRmax + kTolerance, fRmax,
+     0, kTwoPi);
    
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTorus(UnplacedTorus const &other) : 
-  fRmin(other.fRmin), fRmax(other.fRmax), fRtor(other.fRtor), fSphi(other.fSphi), fDphi(other.fDphi)  {
+  fRmin(other.fRmin), fRmax(other.fRmax), fRtor(other.fRtor), fSphi(other.fSphi), fDphi(other.fDphi),fBoundingTube(other.fBoundingTube) {
     calculateCached();
    
   }
@@ -133,6 +140,10 @@ public:
   Precision volume() const {
     return fDphi*kPi*fRtor*(fRmax*fRmax-fRmin*fRmin);
   }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  UnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
 
   virtual int memory_size() const { return sizeof(*this); }
 
