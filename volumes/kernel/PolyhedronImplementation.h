@@ -720,7 +720,7 @@ void PolyhedronImplementation<treatInnerT>::UnplacedContains(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "Generic UnplacedContains not implemented.\n");
 }
 
 template <bool treatInnerT>
@@ -733,7 +733,7 @@ void PolyhedronImplementation<treatInnerT>::Contains(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> &localPoint,
     typename Backend::bool_v &inside) {
-  Assert(0, "Contains not implemented.\n");
+  Assert(0, "Generic Contains not implemented.\n");
 }
 
 template <bool treatInnerT>
@@ -744,7 +744,7 @@ void PolyhedronImplementation<treatInnerT>::Inside(
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
-  Assert(0, "Inside not implemented.\n");
+  Assert(0, "Generic Inside not implemented.\n");
 }
 
 template <bool treatInnerT>
@@ -757,7 +757,7 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "DistanceToIn not implemented.\n");
+  Assert(0, "Generic DistanceToIn not implemented.\n");
 }
 
 // template <bool treatInnerT>
@@ -840,7 +840,7 @@ void PolyhedronImplementation<treatInnerT>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "Generic DistanceToOut not implemented.\n");
 }
 
 // template <bool treatInnerT>
@@ -890,7 +890,7 @@ void PolyhedronImplementation<treatInnerT>::SafetyToIn(
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "Generic SafetyToIn not implemented.\n");
 }
 
 template <bool treatInnerT>
@@ -901,7 +901,7 @@ void PolyhedronImplementation<treatInnerT>::SafetyToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "Not implemented.\n");
+  Assert(0, "Generic SafetyToOut not implemented.\n");
 }
 
 } // End global namespace

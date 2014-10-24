@@ -110,6 +110,11 @@ public:
                                  Vector3D<Precision> const &direction,
                                  const Precision stepMax = kInfinity) const;
 
+  virtual void DistanceToIn(SOA3D<Precision> const &points,
+                            SOA3D<Precision> const &directions,
+                            Precision const *const stepMax,
+                            Precision *const output) const;
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToIn(Vector3D<Precision> const &point) const;
 
@@ -257,6 +262,24 @@ Precision SpecializedPolyhedron<treatInnerT>::DistanceToIn(
       *PlacedPolyhedron::GetUnplacedVolume(), *VPlacedVolume::transformation(),
       point, direction, stepMax);
   return temp;
+}
+
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::DistanceToIn(
+    SOA3D<Precision> const &points,
+    SOA3D<Precision> const &directions,
+    Precision const *const stepMax,
+    Precision *const output) const {
+  for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+    Vector3D<Precision> localPoint =
+        VPlacedVolume::transformation()->Transform(points[i]);
+    Vector3D<Precision> localDirection =
+        VPlacedVolume::transformation()->Transform(directions[i]);
+    output[i] = PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
+        *PlacedPolyhedron::GetUnplacedVolume(),
+        *VPlacedVolume::transformation(),
+        localPoint, localDirection, stepMax[i]);
+  }
 }
 
 template <bool treatInnerT>

@@ -34,18 +34,9 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
   const int zPlaneCount = GetZSegmentCount()+1;
 
-  Precision phiStart, phiDelta;
-  if (HasPhiCutout()) {
-    phiStart = kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
-    phiDelta =
-        kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
-  } else {
-    phiStart = 0;
-    phiDelta = 360;
-  }
-
   TGeoPgon *pgon = new TGeoPgon(
-      GetLabel().c_str(), phiStart, phiDelta, GetSideCount(), zPlaneCount);
+      GetLabel().c_str(), GetPhiStart(), GetPhiDelta(), GetSideCount(),
+      zPlaneCount);
 
   // Define sections of TGeoPgon. It takes care of the rest internally once the
   // last section is set.
@@ -59,21 +50,11 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
-
-  Precision phiStart, phiDelta;
-  if (HasPhiCutout()) {
-    phiStart = kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
-    phiDelta =
-        kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
-  } else {
-    phiStart = 0;
-    phiDelta = 360;
-  }
   
   return new UPolyhedra(
       GetLabel().c_str(),
-      phiStart,
-      phiDelta,
+      GetPhiStart(),
+      GetPhiDelta(),
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],
@@ -85,20 +66,10 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
 
-  Precision phiStart, phiDelta;
-  if (HasPhiCutout()) {
-    phiStart = kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
-    phiDelta =
-        kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
-  } else {
-    phiStart = 0;
-    phiDelta = 360;
-  }
-
   return new G4Polyhedra(
       GetLabel().c_str(),
-      phiStart,
-      phiDelta,
+      GetPhiStart(),
+      GetPhiDelta(),
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],

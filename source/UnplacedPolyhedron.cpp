@@ -96,8 +96,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   fEndCapsOuterRadii[1] = rMax[zPlaneCount-1];
   // Create bounding tube with biggest outer radius and smallest inner radius
   Precision boundingTubeZ = zPlanes[zPlaneCount-1] - zPlanes[0] + 2.*kTolerance;
-  Precision boundsPhiStart = fHasPhiCutout ? 0 : phiStart;
-  Precision boundsPhiDelta = fHasPhiCutout ? 360 : phiDelta;
+  Precision boundsPhiStart = !fHasPhiCutout ? 0 : phiStart;
+  Precision boundsPhiDelta = !fHasPhiCutout ? 360 : phiDelta;
   fBoundingTube = UnplacedTube(innerRadius - kTolerance,
                                outerRadius + kTolerance, 0.5*boundingTubeZ,
                                boundsPhiStart, boundsPhiDelta);
@@ -199,6 +199,22 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 }
 
 #endif
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron::GetPhiStart() const {
+  return kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron::GetPhiEnd() const {
+  return !HasPhiCutout() ? 360 :
+         kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron::GetPhiDelta() const {
+  return GetPhiEnd() - GetPhiStart();
+}
 
 VECGEOM_CUDA_HEADER_DEVICE
 VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(

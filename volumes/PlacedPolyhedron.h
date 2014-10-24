@@ -110,6 +110,24 @@ public:
     return GetUnplacedVolume()->GetPhiSections();
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetPhiStart() const {
+    return GetUnplacedVolume()->GetPhiStart();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetPhiEnd() const {
+    return GetUnplacedVolume()->GetPhiEnd();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetPhiDelta() const {
+    return GetUnplacedVolume()->GetPhiDelta();
+  }
+
   // CUDA specific
 
   virtual int memory_size() const { return sizeof(*this); }

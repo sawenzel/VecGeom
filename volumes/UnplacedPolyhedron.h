@@ -163,6 +163,15 @@ public:
   VECGEOM_INLINE
   Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhiStart() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhiEnd() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetPhiDelta() const;
+
   VECGEOM_INLINE
   virtual int memory_size() const { return sizeof(*this); }
 
