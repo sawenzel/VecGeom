@@ -53,8 +53,8 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
   
   return new UPolyhedra(
       GetLabel().c_str(),
-      GetPhiStart(),
-      GetPhiDelta(),
+      kDegToRad*GetPhiStart(),
+      kDegToRad*GetPhiDelta(),
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],
@@ -68,8 +68,8 @@ G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
 
   return new G4Polyhedra(
       GetLabel().c_str(),
-      GetPhiStart(),
-      GetPhiDelta(),
+      kDegToRad*GetPhiStart(),
+      kDegToRad*GetPhiDelta(),
       GetSideCount(),
       GetZSegmentCount()+1,
       &GetZPlanes()[0],
