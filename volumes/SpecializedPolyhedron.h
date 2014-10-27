@@ -127,9 +127,14 @@ public:
   using Helper::DistanceToOut;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision DistanceToOut(Vector3D<Precision> const &point,
-                                  Vector3D<Precision> const &direction,
+  virtual Precision DistanceToOut(Vector3D<Precision> const &points,
+                                  Vector3D<Precision> const &directions,
                                   const Precision stepMax = kInfinity) const;
+
+  virtual void DistanceToOut(SOA3D<Precision> const &points,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const stepMax,
+                             Precision *const output) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToOut(Vector3D<Precision> const &point) const;
@@ -337,6 +342,20 @@ Precision SpecializedPolyhedron<treatInnerT>::DistanceToOut(
     const Precision stepMax) const {
   return PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), point, direction, stepMax);
+}
+
+template <bool treatInnerT>
+void SpecializedPolyhedron<treatInnerT>::DistanceToOut(
+    SOA3D<Precision> const &points,
+    SOA3D<Precision> const &directions,
+    Precision const *const stepMax,
+    Precision *const output) const {
+  for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+    output[i] =
+        PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
+            *PlacedPolyhedron::GetUnplacedVolume(), points[i], directions[i],
+            stepMax[i]);
+  }
 }
 
 template <bool treatInnerT>
