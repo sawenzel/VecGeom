@@ -95,31 +95,6 @@ public:
   typename Backend::inside_v Inside(
       Vector3D<typename Backend::precision_v> const &point) const;
 
-  template <class Backend>
-  VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::bool_v Contains(
-      int begin,
-      int end,
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::inside_v Inside(
-      int begin,
-      int end,
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend, bool behindPlanesT>
-  VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v DistanceToIn(
-      int begin,
-      int end,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction) const;
-
   template <class Backend, bool behindPlanesT>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
@@ -130,13 +105,8 @@ public:
   template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v DistanceToOut(
-      int begin,
-      int end,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction,
-      Precision zMin,
-      Precision zMax) const;
+  typename Backend::precision_v DistanceToIn(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   template <class Backend>
   VECGEOM_INLINE
@@ -154,28 +124,11 @@ public:
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction) const;
 
-  template <class Backend, bool behindPlanesT>
-  VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
-  static typename Backend::precision_v DistanceToInKernel(
-      int begin,
-      const int end,
-      Planes const &planes,
-      Planes const (&sideVectors)[4],
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction);
-
   template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
-  static typename Backend::precision_v DistanceToOutKernel(
-      int begin,
-      const int end,
-      Planes const &planes,
-      const Precision zMin,
-      const Precision zMax,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction);
+  typename Backend::precision_v DistanceToOut(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
 };
 
@@ -224,77 +177,6 @@ VECGEOM_CUDA_HEADER_BOTH
 typename Backend::inside_v Quadrilaterals::Inside(
     Vector3D<typename Backend::precision_v> const &point) const {
   return fPlanes.Inside<Backend>(point);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::bool_v Quadrilaterals::Contains(
-    int begin,
-    int end,
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return fPlanes.Contains<Backend>(begin, end, point);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::inside_v Quadrilaterals::Inside(
-    int begin,
-    int end,
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return fPlanes.Inside<Backend>(begin, end, point);
-}
-
-template <class Backend, bool behindPlanesT>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToIn(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToInKernel<Backend, behindPlanesT>(
-      0, size(), fPlanes, fSideVectors, point, direction);
-}
-
-template <class Backend, bool behindPlanesT>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToIn(
-    int begin,
-    int end,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToInKernel<Backend, behindPlanesT>(
-      begin, end, fPlanes, fSideVectors, point, direction);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToOut(
-    int begin,
-    int end,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
-    Precision zMin,
-    Precision zMax) const {
-  return DistanceToOutKernel<Backend>(
-      begin, end, GetPlanes(), zMin, zMax, point, direction);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToOut(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
-    Precision zMin,
-    Precision zMax) const {
-  return DistanceToOutKernel<Backend>(
-      0, size(), GetPlanes(), zMin, zMax, point, direction);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToOut(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceToOutKernel<Backend>(
-      0, size(), GetPlanes(), -kInfinity, kInfinity, point, direction);
 }
 
 namespace {
@@ -381,44 +263,35 @@ struct AcceleratedDistanceToIn<kScalar> {
 
 template <class Backend, bool behindPlanesT>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
-    int i,
-    const int n,
-    Planes const &planes,
-    Planes const (&sideVectors)[4],
+typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) {
+    Vector3D<typename Backend::precision_v> const &direction) const {
 
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
   Float_t bestDistance = kInfinity;
 
+  int i = 0;
+  const int n = size();
   AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
-      i, n, planes, sideVectors, point, direction, bestDistance);
+      i, n, fPlanes, fSideVectors, point, direction, bestDistance);
 
   for (; i < n; ++i) {
-    Float_t distance = 
-        planes.GetNormals().x(i)*point[0] +
-        planes.GetNormals().y(i)*point[1] +
-        planes.GetNormals().z(i)*point[2] + planes.GetDistances()[i];
+    Vector3D<Precision> normal = fPlanes.GetNormal(i);
+    Float_t distance = point.Dot(normal) + fPlanes.GetDistance(i);
     // Check if the point is in front of/behind the plane according to the
     // template parameter
     Bool_t valid = vecgeom::FlipSign<behindPlanesT>::Flip(distance) >= 0;
     if (IsEmpty(valid)) continue;
-    Float_t directionProjection =
-        planes.GetNormals().x(i)*direction[0] +
-        planes.GetNormals().y(i)*direction[1] +
-        planes.GetNormals().z(i)*direction[2];
+    Float_t directionProjection = direction.Dot(normal);
     valid &= vecgeom::FlipSign<!behindPlanesT>::Flip(directionProjection) >= 0;
     if (IsEmpty(valid)) continue;
     distance /= -directionProjection;
     Vector3D<Float_t> intersection = point + direction*distance;
     for (int j = 0; j < 4; ++j) {
-      valid &= sideVectors[j].GetNormals().x(i)*intersection[0] +
-               sideVectors[j].GetNormals().y(i)*intersection[1] +
-               sideVectors[j].GetNormals().z(i)*intersection[2] +
-               sideVectors[j].GetDistances()[i] >= 0;
+      valid &= intersection.Dot(fSideVectors[j].GetNormal(i)) +
+               fSideVectors[j].GetDistance(i) >= 0;
       // Where is your god now
       if (IsEmpty(valid)) goto distanceToInContinueOuterLoop;
     }
@@ -430,6 +303,14 @@ typename Backend::precision_v Quadrilaterals::DistanceToInKernel(
   }
 
   return bestDistance;
+}
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Quadrilaterals::DistanceToIn(
+    Vector3D<typename Backend::precision_v> const &point) const {
+  assert(0);
+  return typename Backend::precision_v(0);
 }
 
 namespace {
@@ -496,35 +377,29 @@ void AcceleratedDistanceToOut<kScalar>(
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToOutKernel(
-    int i,
-    const int n,
-    Planes const &planes,
-    const Precision zMin,
-    const Precision zMax,
+typename Backend::precision_v Quadrilaterals::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) {
+    Vector3D<typename Backend::precision_v> const &direction,
+    Precision zMin,
+    Precision zMax) const {
 
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
   Float_t bestDistance = kInfinity;
 
+  int i = 0;
+  const int n = size();
   AcceleratedDistanceToOut<Backend>(
-      i, n, planes, zMin, zMax, point, direction, bestDistance);
+      i, n, fPlanes, zMin, zMax, point, direction, bestDistance);
 
   for (; i < n; ++i) {
-    Float_t distanceTest = 
-        planes.GetNormals().x(i)*point[0] +
-        planes.GetNormals().y(i)*point[1] +
-        planes.GetNormals().z(i)*point[2] + planes.GetDistances()[i];
+    Vector3D<Precision> normal = fPlanes.GetNormal(i);
+    Float_t distanceTest = point.Dot(normal) + fPlanes.GetDistance(i);
     // Check if the point is behind the plane
     Bool_t valid = distanceTest < 0;
     if (IsEmpty(valid)) continue;
-    Float_t directionProjection =
-        planes.GetNormals().x(i)*direction[0] +
-        planes.GetNormals().y(i)*direction[1] +
-        planes.GetNormals().z(i)*direction[2];
+    Float_t directionProjection = direction.Dot(normal);
     // Because the point is behind the plane, the direction must be along the
     // normal
     valid &= directionProjection >= 0;
@@ -539,6 +414,22 @@ typename Backend::precision_v Quadrilaterals::DistanceToOutKernel(
   }
 
   return bestDistance;
+}
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Quadrilaterals::DistanceToOut(
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction) const {
+  return DistanceToOut<Backend>(point, direction, -kInfinity, kInfinity);
+}
+
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+typename Backend::precision_v Quadrilaterals::DistanceToOut(
+    Vector3D<typename Backend::precision_v> const &point) const {
+  assert(0);
+  return typename Backend::precision_v(0);
 }
 
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads);

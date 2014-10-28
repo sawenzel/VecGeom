@@ -55,6 +55,14 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::precision_v SafetyToInZSegment(
+      UnplacedPolyhedron const &polyhedron,
+      int segmentIndex,
+      Vector3D<typename Backend::precision_v> const &point);
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void ScalarDistanceToInEndcaps(
@@ -114,17 +122,15 @@ struct PolyhedronImplementation {
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static void ScalarSafetyToInKernel(
+  static Precision ScalarSafetyToInKernel(
       UnplacedPolyhedron const &unplaced,
-      Vector3D<Precision> const &point,
-      Precision &safety);
+      Vector3D<Precision> const &point);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static void ScalarSafetyToOutKernel(
+  static Precision ScalarSafetyToOutKernel(
       UnplacedPolyhedron const &unplaced,
-      Vector3D<Precision> const &point,
-      Precision &safety);
+      Vector3D<Precision> const &point);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -375,6 +381,24 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
                &distance);
 
   return distance;
+}
+
+template <bool treatInnerT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+typename Backend::precision_v
+PolyhedronImplementation<treatInnerT>::SafetyToInZSegment(
+    UnplacedPolyhedron const &polyhedron,
+    int segmentIndex,
+    Vector3D<typename Backend::precision_v> const &point) {
+
+  UnplacedPolyhedron::ZSegment const &segment =
+      polyhedron.GetZSegment(segmentIndex);
+
+  Precision safety = segment.outer.DistanceToIn<kScalar>(point);
+
+  return safety;
 }
 
 template <bool treatInnerT>
@@ -639,14 +663,26 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
 
 template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
+Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
     UnplacedPolyhedron const &unplaced,
-    Vector3D<Precision> const &point,
-    Precision &safety) {
+    Vector3D<Precision> const &point) {
 
-  // NYI
-  safety = 0;
+  Precision safety = kInfinity;
 
+  const int zIndex = FindZSegment<kScalar>(unplaced, point[2]);
+
+  // Right
+  for (int z = zIndex, zMax = unplaced.GetZSegmentCount(); z < zMax; ++z) {
+    Precision safetyZ = SafetyToInZSegment<kScalar>(unplaced, zIndex, point);
+    safety = Min(safety, safetyZ);
+  }
+  // Left
+  for (int z = zIndex-1; z >= 0; --z) {
+    Precision safetyZ = SafetyToInZSegment<kScalar>(unplaced, zIndex, point);
+    safety = Min(safety, safetyZ);
+  }
+
+  return safety;
 }
 
 template <bool treatInnerT>
@@ -703,14 +739,11 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
 template <bool treatInnerT>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
+Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
     UnplacedPolyhedron const &unplaced,
-    Vector3D<Precision> const &point,
-    Precision &safety) {
-
+    Vector3D<Precision> const &point) {
   // NYI
-  safety = 0;
-
+  return 0;
 }
 
 template <bool treatInnerT>
