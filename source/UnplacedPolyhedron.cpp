@@ -40,7 +40,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Sanity check of input parameters
   Assert(zPlaneCount > 1, "Need at least two z-planes to construct polyhedron"
          " segments.\n");
-  Assert(fSideCount > 2, "Need at least three sides to construct polyhedron"
+  Assert(fSideCount > 0, "Need at least one side to construct polyhedron"
          " segments.\n");
 
   copy(zPlanes, zPlanes+zPlaneCount, &fZPlanes[0]);
