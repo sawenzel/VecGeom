@@ -65,6 +65,19 @@ public:
    int getMaxDepth( ) const {return maxdepth_;}
 };
 
+class GetTotalNodeCountVisitor
+{
+private:
+    int fTotalNodeCount;
+public:
+    GetTotalNodeCountVisitor() : fTotalNodeCount(0) {}
+    void apply( VPlacedVolume *, int level )
+    {
+        fTotalNodeCount++;
+    }
+    int GetTotalNodeCount() const {return fTotalNodeCount;}
+};
+
 /**
  * @brief Knows about the current world volume.
  */
@@ -72,11 +85,12 @@ class GeoManager {
 
 private:
 
-  int volume_count;
-  VPlacedVolume const *world_;
+  int fVolumeCount;
+  int fTotalNodeCount; // total number of nodes in the geometry tree
+  VPlacedVolume const *fWorld;
 
-  std::map<int, VPlacedVolume*> placed_volumes_;
-  std::map<int, LogicalVolume*> logical_volumes_;
+  std::map<int, VPlacedVolume*> fPlacedVolumesMap;
+  std::map<int, LogicalVolume*> fLogicalVolumesMap;
   int fMaxDepth;
 
   template<typename Visitor>
@@ -95,9 +109,9 @@ public:
    */
   void CloseGeometry();
 
-  void set_world(VPlacedVolume const *const w) { world_ = w; }
+  void SetWorld(VPlacedVolume const *const w) { fWorld = w; }
 
-  VPlacedVolume const* world() const { return world_; }
+  VPlacedVolume const* GetWorld() const { return fWorld; }
 
   /**
    *  give back container containing all logical volumes in detector
@@ -152,11 +166,22 @@ public:
    */
   LogicalVolume* FindLogicalVolume(char const *const label);
 
+  /**
+   * Clear/reset the manager
+   *
+   */
+   void Clear();
+
+
+   int GetPlacedVolumesCount() const {return fPlacedVolumesMap.size();}
+   int GetLogicalVolumesCount() const {return fLogicalVolumesMap.size();}
+   int GetTotalNodeCount() const {return fTotalNodeCount;}
+
 protected:
 
 private:
- GeoManager() : volume_count(0), world_(NULL), placed_volumes_(),
- logical_volumes_(), fMaxDepth(-1)
+ GeoManager() : fVolumeCount(0), fTotalNodeCount(0), fWorld(NULL), fPlacedVolumesMap(),
+ fLogicalVolumesMap(), fMaxDepth(-1)
  {}
 
   GeoManager(GeoManager const&);
@@ -186,7 +211,7 @@ void GeoManager::getAllLogicalVolumes( Container & c ) const
    // walk all the volume hierarchy and insert
    // logical volume if not already in the container
    SimpleLogicalVolumeVisitor<Container> lv(c);
-   visitAllPlacedVolumes( world(), &lv );
+   visitAllPlacedVolumes( GetWorld(), &lv );
 }
 
 
@@ -197,7 +222,7 @@ void GeoManager::getAllPlacedVolumes( Container & c ) const
    // walk all the volume hierarchy and insert
    // placed volumes if not already in the container
    SimplePlacedVolumeVisitor<Container> pv(c);
-   visitAllPlacedVolumes( world(), &pv );
+   visitAllPlacedVolumes( GetWorld(), &pv );
 }
 
 
