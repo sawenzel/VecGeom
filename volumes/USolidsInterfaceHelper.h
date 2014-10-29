@@ -4,12 +4,18 @@
 #ifndef VECGEOM_VOLUMES_USOLIDSINTERFACEHELPER_H_
 #define VECGEOM_VOLUMES_USOLIDSINTERFACEHELPER_H_
 
+#undef NDEBUG
+
 #include "base/Global.h"
+
+#undef NDEBUG
 
 #ifndef VECGEOM_USOLIDS
 
 namespace VECGEOM_NAMESPACE {
-class USolidsInterfaceHelper {};
+  struct USolidsInterfaceHelper {
+    virtual ~USolidsInterfaceHelper() {}
+  };
 }
 
 #else // Compiling with USolids compatibility
@@ -28,14 +34,19 @@ namespace VECGEOM_NAMESPACE {
 /// These do not necessarily provide all the return values promised by the
 /// interface, so use volumes in this way with caution.
 class USolidsInterfaceHelper : public VUSolid {
-  public:
+
+public:
+ //   VUSolid(const std::string &name);
+  USolidsInterfaceHelper(const std::string &name) : VUSolid(name) {}
+  USolidsInterfaceHelper() : VUSolid() {}
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
-                               Vector3D<Precision> const &position,
-                               Vector3D<Precision> const &direction,
-                               Precision const step_max = kInfinity) const =0;
+    Vector3D<Precision> const &position,
+    Vector3D<Precision> const &direction,
+    Precision stepMax = kInfinity) const =0;
 
-  virtual ~USolidsInterfaceHelper(){}
+  virtual ~USolidsInterfaceHelper() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const =0;
@@ -47,22 +58,34 @@ class USolidsInterfaceHelper : public VUSolid {
                                Vector3D<double> const &direction,
                                Vector3D<double> &normal,
                                bool &convex,
-                               const double stepMax = kInfinity) const {
-    return DistanceToOut(point, direction, stepMax);
+                               double stepMax = kInfinity) const
+  {
+      assert(0 &&
+                 "This DistanceToOut interface was not implemented for this volume.");
+          return false;
+  }
+
+  virtual double DistanceToOut(Vector3D<double> const &point,
+                               Vector3D<double> const &direction,
+                               Vector3D<double> &normal,
+                               bool &convex) const
+  {
+    return DistanceToOut(point, direction,normal, convex, kInfinity);
   }
 
   virtual double SafetyFromOutside(Vector3D<double> const &point,
-                                   const bool accurate) const {
+                                   bool accurate = false) const {
     return SafetyToIn(point);
   }
 
   virtual double SafetyFromInside(Vector3D<double> const &point,
-                                  const bool accurate) const {
+                                  bool accurate = false) const {
     return SafetyToOut(point);
   }
 
   virtual bool Normal(Vector3D<double> const &point,
                       Vector3D<double> &normal) const {
+
     assert(0 &&
            "Normal not implemented for USolids interface compatible volume.");
     return false;

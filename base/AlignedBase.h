@@ -13,6 +13,48 @@ namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_VC
 class AlignedBase : public Vc::VectorAlignedBase {};
+#elif !defined(VECGEOM_NVCC)
+class AlignedBase {
+
+public:
+
+  VECGEOM_INLINE
+  void *operator new(size_t size) {
+    return _mm_malloc(size, kAlignmentBoundary);
+  }
+
+  VECGEOM_INLINE
+  void *operator new(size_t, void *p) {
+    return p;
+  }
+
+  VECGEOM_INLINE
+  void *operator new[](size_t size) {
+    return _mm_malloc(size, kAlignmentBoundary);
+  }
+
+  VECGEOM_INLINE
+  void *operator new[](size_t , void *p) {
+    return p;
+  }
+  
+  VECGEOM_INLINE
+  void operator delete(void *ptr, size_t) {
+    _mm_free(ptr);
+  }
+
+  VECGEOM_INLINE
+  void operator delete(void *, void *) {}
+
+  VECGEOM_INLINE
+  void operator delete[](void *ptr, size_t) {
+    _mm_free(ptr);
+  }
+
+  VECGEOM_INLINE
+  void operator delete[](void *, void *) {}
+
+};
 #else
 class AlignedBase {};
 #endif

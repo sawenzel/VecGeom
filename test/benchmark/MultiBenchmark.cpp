@@ -9,38 +9,35 @@
 using namespace vecgeom;
 
 VPlacedVolume* SetupBoxGeometry();
-VPlacedVolume* SetupParallelepipedGeometry();
+// VPlacedVolume* SetupParallelepipedGeometry();
 VPlacedVolume* SetupTubeGeometry();
 
 int main() {
   Benchmarker benchmarker = Benchmarker();
-  benchmarker.SetRepetitions(1<<13);
+  benchmarker.SetRepetitions(1<<10);
   benchmarker.SetVerbosity(1);
 
   std::ofstream outStream;
-  outStream.open("tube.csv");
-  BenchmarkResult::WriteCsvHeader(outStream);
-  outStream.close();
 
   auto runAndWrite = [&] (char const *const fileName) {
-    benchmarker.RunBenchmark();
+    for (int i = 1; i < 13; ++i) {
+      benchmarker.SetPointCount(2<<i);
+      benchmarker.RunBenchmark();
+    }
     std::list<BenchmarkResult> results = benchmarker.PopResults();
     outStream.open(fileName, std::fstream::app);
+    BenchmarkResult::WriteCsvHeader(outStream);
     for (auto i = results.begin(), i_end = results.end(); i != i_end; ++i) {
       i->WriteToCsv(outStream);
     }
     outStream.close();
   };
 
-  // benchmarker.SetWorld(SetupBoxGeometry());
-  // runAndWrite("box.csv");
+  benchmarker.SetWorld(SetupBoxGeometry());
+  runAndWrite("box.csv");
 
   benchmarker.SetWorld(SetupTubeGeometry());
-
-  for (int i = 2; i < 13; ++i) {
-    benchmarker.SetPointCount(1<<i);
-    runAndWrite("tube.csv");
-  }
+  runAndWrite("tube.csv");
 
   return 0;
 }

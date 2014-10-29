@@ -1,49 +1,65 @@
-/// @file global.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file Global.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
+#include <cassert>
 #include <cmath>
+#include <float.h>
 #include <limits>
+#include <stdio.h>
 
-#if (defined(__CUDACC__) || defined(__NVCC__))
-  #define VECGEOM_NVCC
-  #define VECGEOM_NAMESPACE vecgeom_cuda
-  #define VECGEOM_CUDA_HEADER_DEVICE __device__
-  #define VECGEOM_CUDA_HEADER_HOST __host__
-  #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
-  #define VECGEOM_CUDA_HEADER_GLOBAL __global__
-#else // Not compiling with NVCC
-  #define VECGEOM_CUDA_HEADER_DEVICE
-  #define VECGEOM_CUDA_HEADER_HOST
-  #define VECGEOM_CUDA_HEADER_BOTH
-  #define VECGEOM_CUDA_HEADER_GLOBAL
-  #ifdef VECGEOM_CUDA
-    #define VECGEOM_CUDA_INTERFACE
-  #endif
+#define VECGEOM
+
+#if __cplusplus >= 201103L
+  #define VECGEOM_STD_CXX11
 #endif
 
-#ifdef VECGEOM_NVCC
+#if (defined(__CUDACC__) || defined(__NVCC__))
+  // Compiling with nvcc
+  #define VECGEOM_NVCC
+  #ifdef __CUDA_ARCH__
+    // Compiling device code
+    #define VECGEOM_NVCC_DEVICE
+  #endif
+  #define VECGEOM_NAMESPACE vecgeom_cuda
+  #define VECGEOM_CUDA_HEADER_HOST __host__
+  #define VECGEOM_CUDA_HEADER_DEVICE __device__
+  #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
+  #define VECGEOM_CUDA_HEADER_GLOBAL __global__
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
   #undef VECGEOM_ROOT
   #undef VECGEOM_USOLIDS
+  #undef VECGEOM_GEANT4
   #undef VECGEOM_BENCHMARK
 #else
-  #define VECGEOM_STD_CXX11
+  // Not compiling with NVCC
   #define VECGEOM_NAMESPACE vecgeom
+  #define VECGEOM_CUDA_HEADER_HOST
+  #define VECGEOM_CUDA_HEADER_DEVICE
+  #define VECGEOM_CUDA_HEADER_BOTH
+  #define VECGEOM_CUDA_HEADER_GLOBAL
+  #ifdef VECGEOM_CUDA
+    // CUDA is enabled, but currently compiling regular C++ code.
+    // This enables methods that interface between C++ and CUDA environments
+    #define VECGEOM_CUDA_INTERFACE
+  #endif
 #endif
 
 #ifdef __INTEL_COMPILER
+  // Compiling with icc
   #define VECGEOM_INTEL
   #define VECGEOM_INLINE inline
 #else
+  // Functionality of <mm_malloc.h> is automatically included in icc
   #include <mm_malloc.h>
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__) && !defined(__NO_INLINE__)
     #define VECGEOM_INLINE inline __attribute__((always_inline))
-  #else // Clang (most likely)
+  #else
+    // Clang or forced inlining is disabled
     #define VECGEOM_INLINE inline
   #endif
 #endif
@@ -52,10 +68,20 @@
   #define NULL 0
 #endif
 
-#ifndef VECGEOM_NVCC
+// Allow constexpr variables and functions if possible
+#ifdef VECGEOM_STD_CXX11
   #define VECGEOM_CONSTEXPR constexpr
+  #define VECGEOM_CONSTEXPR_RETURN constexpr
 #else
-  #define VECGEOM_CONSTEXPR static __constant__ const
+  #define VECGEOM_CONSTEXPR const
+  #define VECGEOM_CONSTEXPR_RETURN
+#endif
+
+// Qualifier(s) of global constants
+#ifndef VECGEOM_NVCC
+  #define VECGEOM_GLOBAL constexpr
+#else
+  #define VECGEOM_GLOBAL static __constant__ const
 #endif
 
 namespace vecgeom {
@@ -82,70 +108,43 @@ typedef vecgeom::Inside_t Inside_t;
 
 namespace VECGEOM_NAMESPACE {
 
-VECGEOM_CONSTEXPR int kAlignmentBoundary = 32;
-VECGEOM_CONSTEXPR Precision kPi = 3.14159265358979323846;
-VECGEOM_CONSTEXPR Precision kDegToRad = kPi/180.;
-VECGEOM_CONSTEXPR Precision kPiThird = M_PI/3.;
-VECGEOM_CONSTEXPR Precision kRadToDeg = 180./kPi;
-VECGEOM_CONSTEXPR Precision kInfinity =
+VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
+VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
+VECGEOM_GLOBAL Precision kDegToRad = kPi/180.;
+VECGEOM_GLOBAL Precision kRadToDeg = 180./kPi;
+VECGEOM_GLOBAL Precision kInfinity =
 #ifndef VECGEOM_NVCC
     std::numeric_limits<Precision>::infinity();
 #else
     INFINITY;
 #endif
-VECGEOM_CONSTEXPR Precision kTiny = 1e-30;
-VECGEOM_CONSTEXPR Precision kTolerance = 1e-12;
-VECGEOM_CONSTEXPR Precision kHalfTolerance = 0.5*kTolerance;
+VECGEOM_GLOBAL Precision kEpsilon =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::epsilon();
+#elif VECGEOM_FLOAT_PRECISION
+    FLT_EPSILON;
+#else
+    DBL_EPSILON;
+#endif
+VECGEOM_GLOBAL Precision kTiny = 1e-30;
+VECGEOM_GLOBAL Precision kTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
+VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
 
 namespace EInside {
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kInside = 0;
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kSurface = 1;
-VECGEOM_CONSTEXPR VECGEOM_NAMESPACE::Inside_t kOutside = 2;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kInside = 0;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kSurface = 1;
+VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kOutside = 2;
 }
 
-template <typename Type>
-class Vector3D;
-
-template <typename Type>
-class SOA3D;
-
-template <typename Type>
-class AOS3D;
-
-template <typename Type>
-class Container;
-
-template <typename Type>
-class Vector;
-
-template <typename Type>
-class Array;
-
-class LogicalVolume;
-
-class VPlacedVolume;
-
-class VUnplacedVolume;
-
-class UnplacedBox;
-
-class PlacedBox;
-
-class Transformation3D;
-
-class GeoManager;
-
-#ifdef VECGEOM_CUDA_INTERFACE
-class CudaManager;
-#endif
-
-namespace matrix3d_entry {
-enum Matrix3DEntry {
-  k00 = 0x001, k01 = 0x002, k02 = 0x004,
-  k10 = 0x008, k11 = 0x010, k12 = 0x020,
-  k20 = 0x040, k21 = 0x080, k22 = 0x100
-};
-}
+// namespace EMatrix3DEntry {
+// enum EMatrix3DEntry {
+//   k00 = 0x001, k01 = 0x002, k02 = 0x004,
+//   k10 = 0x008, k11 = 0x010, k12 = 0x020,
+//   k20 = 0x040, k21 = 0x080, k22 = 0x100
+// };
+// }
 
 typedef int RotationCode;
 typedef int TranslationCode;
@@ -156,8 +155,25 @@ namespace translation {
 enum TranslationId { kGeneric = -1, kIdentity = 0 };
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition, char const *const message) {
+#ifndef VECGEOM_NVCC
+  if (!condition) {
+    printf("Assertion failed: %s", message);
+    abort();
+  }
+#else
+  if (!condition) printf("Assertion failed: %s", message);
+#endif
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void Assert(const bool condition) {
+  Assert(condition, "");
+}
+
 } // End global namespace
-
-
 
 #endif // VECGEOM_BASE_GLOBAL_H_

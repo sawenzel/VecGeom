@@ -10,25 +10,23 @@ namespace vecgeom {
 
 #ifdef VECGEOM_NVCC
 
-template <typename Type>
+template <typename T>
 __global__
-void ConstructOnGpu(Type *const x, Type *const y, Type *const z,
-                    const unsigned size,
-                    vecgeom_cuda::SOA3D<Type> *const placement) {
-  new(placement) vecgeom_cuda::SOA3D<Type>(x, y, z, size);
+void ConstructOnGpu(T *x, T *y, T *z, size_t size,
+                    vecgeom_cuda::SOA3D<T> *placement) {
+  new(placement) vecgeom_cuda::SOA3D<T>(x, y, z, size);
 }
 
-template <typename Type>
-SOA3D<Type>* SOA3D_CopyToGpuTemplate(Type *const x, Type *const y,
-                                     Type *const z, const unsigned size) {
-  vecgeom_cuda::SOA3D<Type> *const soa3d_gpu =
-      AllocateOnGpu<vecgeom_cuda::SOA3D<Type> >();
-  ConstructOnGpu<<<1, 1>>>(x, y, z, size, soa3d_gpu);
-  return reinterpret_cast<SOA3D<Type> *>(soa3d_gpu);
+template <typename T>
+SOA3D<T>* SOA3D_CopyToGpuTemplate(T *x, T *y, T *z, size_t size) {
+  vecgeom_cuda::SOA3D<T> *soa3DGpu =
+      AllocateOnGpu<vecgeom_cuda::SOA3D<T> >();
+  ConstructOnGpu<<<1, 1>>>(x, y, z, size, soa3DGpu);
+  return reinterpret_cast<SOA3D<T> *>(soa3DGpu);
 }
 
-SOA3D<Precision>* SOA3D_CopyToGpu(Precision *const x, Precision *const y,
-                                  Precision *const z, const unsigned size) {
+SOA3D<Precision>* SOA3D_CopyToGpu(Precision *x, Precision *y, Precision *z,
+                                  size_t size) {
   return SOA3D_CopyToGpuTemplate(x, y, z, size);
 }
 

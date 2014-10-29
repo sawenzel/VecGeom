@@ -21,7 +21,7 @@
 #ifndef USOLIDS_UVector3
 #define USOLIDS_UVector3
 
-#ifdef VECGEOM
+#ifndef USOLIDS_USE_UVECTOR3
 
 #include "base/Vector3D.h"
 
@@ -158,17 +158,33 @@ struct UVector3
     double z_;
 };
 
-UVector3 operator + (const UVector3&, const UVector3&);
-// Addition of 3-vectors.
 
-UVector3 operator - (const UVector3&, const UVector3&);
-// Subtraction of 3-vectors.
+inline UVector3 operator + (const UVector3& a, const UVector3& b)
+{
+  return UVector3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
+}
 
-UVector3 operator * (const UVector3&, double a);
-UVector3 operator / (const UVector3&, double a);
-UVector3 operator * (double a, const UVector3&);
+inline UVector3 operator - (const UVector3& a, const UVector3& b)
+{
+  return UVector3(a.x_ - b.x_, a.y_ - b.y_, a.z_ - b.z_);
+}
 
-// Scaling of 3-vectors with a real number
+inline UVector3 operator * (const UVector3& p, double a)
+{
+  return UVector3(a * p.x_, a * p.y_, a * p.z_);
+}
+
+inline UVector3 operator / (const UVector3& p, double a)
+{
+  a = 1. / a;
+  return UVector3(a * p.x_, a * p.y_, a * p.z_);
+}
+
+inline UVector3 operator * (double a, const UVector3& p)
+{
+  return UVector3(a * p.x_, a * p.y_, a * p.z_);
+}
+
 
 //______________________________________________________________________________
 inline UVector3& UVector3::MultiplyByComponents(const UVector3& p)

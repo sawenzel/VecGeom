@@ -31,7 +31,7 @@ class SimpleLogicalVolumeVisitor : public GeoVisitor<Container>
 {
 public:
    SimpleLogicalVolumeVisitor( Container & c ) : GeoVisitor<Container>(c) {}
-  virtual void apply( VPlacedVolume * vol, int /*level*/ ){
+   virtual void apply( VPlacedVolume * vol, int /*level*/ ){
       LogicalVolume const *lvol = vol->logical_volume();
       if( std::find( this->c_.begin(), this->c_.end(), lvol ) == this->c_.end() )
       {
@@ -46,7 +46,7 @@ class SimplePlacedVolumeVisitor : public GeoVisitor<Container>
 {
 public:
    SimplePlacedVolumeVisitor( Container & c) : GeoVisitor<Container>(c) {}
-   virtual void apply( VPlacedVolume * vol, int level ){
+   virtual void apply( VPlacedVolume * vol, int /* level */ ){
       this->c_.push_back( vol );
    }
    virtual ~SimplePlacedVolumeVisitor(){}
@@ -77,6 +77,7 @@ private:
 
   std::map<int, VPlacedVolume*> placed_volumes_;
   std::map<int, LogicalVolume*> logical_volumes_;
+  int fMaxDepth;
 
   template<typename Visitor>
   void visitAllPlacedVolumes(VPlacedVolume const *, Visitor * visitor, int level=1 ) const;
@@ -87,6 +88,12 @@ public:
     static GeoManager instance;
     return instance;
   }
+
+  /**
+   * mark the current detector geometry as finished and initialize
+   * important cached variables such as the maximum tree depth etc.
+   */
+  void CloseGeometry();
 
   void set_world(VPlacedVolume const *const w) { world_ = w; }
 
@@ -108,7 +115,10 @@ public:
   /**
    *  return max depth of volume hierarchy
    */
-  int getMaxDepth() const;
+  int getMaxDepth() const {
+      Assert( fMaxDepth > 0, "geometry not closed" );
+      return fMaxDepth;
+  }
 
   void RegisterPlacedVolume(VPlacedVolume *const placed_volume);
 
@@ -145,7 +155,8 @@ public:
 protected:
 
 private:
- GeoManager() : volume_count(0), world_(NULL), placed_volumes_(), logical_volumes_() 
+ GeoManager() : volume_count(0), world_(NULL), placed_volumes_(),
+ logical_volumes_(), fMaxDepth(-1)
  {}
 
   GeoManager(GeoManager const&);
@@ -156,7 +167,7 @@ template<typename Visitor>
 void
 GeoManager::visitAllPlacedVolumes( VPlacedVolume const * currentvolume, Visitor * visitor, int level ) const
 {
-   if( currentvolume )
+   if( currentvolume != NULL )
    {
       visitor->apply( const_cast<VPlacedVolume *>(currentvolume), level );
       int size = currentvolume->daughters().size();

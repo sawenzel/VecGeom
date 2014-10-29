@@ -81,6 +81,17 @@ void MaskedAssign(VcBool const &cond,
   (*output)(VcInside::Mask(cond)) = thenval;
 }
 
+
+VECGEOM_INLINE
+bool IsFull(VcBool const &cond){
+    return cond.isFull();
+}
+
+VECGEOM_INLINE
+bool IsEmpty(VcBool const &cond){
+    return cond.isEmpty();
+}
+
 VECGEOM_INLINE
 VcPrecision Abs(VcPrecision const &val) {
   return Vc::abs(val);
@@ -96,6 +107,23 @@ VECGEOM_INLINE
 VcPrecision ATan2(VcPrecision const &y, VcPrecision const &x) {
   return Vc::atan2(y, x);
 }
+
+
+VECGEOM_INLINE
+VcPrecision sin(VcPrecision const &x) {
+  return Vc::sin(x);
+}
+
+VECGEOM_INLINE
+VcPrecision cos(VcPrecision const &x) {
+  return Vc::cos(x);
+}
+
+VECGEOM_INLINE
+VcPrecision tan(VcPrecision const &radians) {
+  return Vc::atan(radians);
+}
+
 
 VECGEOM_INLINE
 VcPrecision Min(VcPrecision const &val1, VcPrecision const &val2) {

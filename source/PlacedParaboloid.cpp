@@ -1,35 +1,59 @@
 /// \file PlacedParaboloid.cpp
+/// \author Marilena Bandieramonte (marilena.bandieramonte@cern.ch)
 
 #include "volumes/PlacedParaboloid.h"
 
 #include "volumes/Paraboloid.h"
 
+#ifndef VECGEOM_NVCC
+
+#ifdef VECGEOM_ROOT
+#include "TGeoParaboloid.h"
+#endif
+
+#ifdef VECGEOM_GEANT4
+#include "G4Paraboloid.hh"
+#endif
+
+#ifdef VECGEOM_USOLIDS
+#include "UBox.hh"
+#endif
+
+#endif // VECGEOM_NVCC
+
 #include <cassert>
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedParaboloid::ConvertToUnspecialized() const {
-  assert(0 && "NYI");
-  return NULL;
+    return new SimpleParaboloid(GetLabel().c_str(), logical_volume(),transformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedParaboloid::ConvertToRoot() const {
-  assert(0 && "NYI");
-  return NULL;
+    return new TGeoParaboloid(GetLabel().c_str(), GetRlo(), GetRhi(), GetDz());
+    
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedParaboloid::ConvertToUSolids() const {
-  assert(0 && "NYI");
-  return NULL;
+    std::cerr << "**************************************************************\n";
+    std::cerr << "WARNING: Paraboloid unsupported for USolids.; returning a box\n";
+    std::cerr << "**************************************************************\n";
+    return new UBox("",10,10,10);
 }
 #endif
 
-#endif // VECGEOM_BENCHMARK
+#ifdef VECGEOM_GEANT4
+G4VSolid const* PlacedParaboloid::ConvertToGeant4() const {
+    return new G4Paraboloid(GetLabel(), GetDz(), GetRlo(), GetRhi());
+}
+#endif
+
+#endif // VECGEOM_NVCC
 
 } // End global namespace
 

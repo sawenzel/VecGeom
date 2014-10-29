@@ -6,87 +6,146 @@
 
 #include "base/Global.h"
 
-#include "base/Iterator.h"
+#include "base/AlignedBase.h"
 
 namespace VECGEOM_NAMESPACE {
 
 template <typename Type>
-class Array : public Container<Type> {
+class Array : public AlignedBase {
 
 private:
 
-  Type *arr_;
-  int size_;
-  bool allocated;
+  Type *fData;
+  int fSize;
+  bool fAllocated;
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Array(const int s) : size_(s), allocated(true) {
-    arr_ = new Type[size_];
-  }
+  VECGEOM_INLINE
+  Array();
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Array(Type *const arr, const int s)
-      : arr_(arr), size_(s), allocated(false) {}
+  VECGEOM_INLINE
+  Array(const unsigned size);
 
-  ~Array() { if (allocated) delete arr_; }
+  VECGEOM_INLINE
+  Array(Array<Type> const &other);
+
+  VECGEOM_INLINE
+  ~Array();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& operator[](const int index) {
-    return arr_[index];
-  }
+  Array(Type *const data, const unsigned size);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& operator[](const int index) const {
-    return arr_[index];
-  }
+  Array& operator=(Array<Type> const &other);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual int size() const {
-    return size_;
-  }
+  Type& operator[](const int index) { return fData[index]; }
 
-private:
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const& operator[](const int index) const { return fData[index]; }
 
-  class ArrayIterator : public Iterator<Type> {
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int size() const { return fSize; }
 
-  public:
+  VECGEOM_INLINE
+  void Allocate(const unsigned size);
 
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    ArrayIterator(Type const *const e) : Iterator<Type>(e) {}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    virtual ArrayIterator& operator++() {
-      this->element_++;
-      return *this;
-    }
-#pragma GCC diagnostic pop
-
-  };
+  VECGEOM_INLINE
+  void Deallocate();
 
 public:
 
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual Iterator<Type> begin() const {
-    return ArrayIterator(&arr_[0]);
-  }
+  typedef Type* iterator;
+  typedef Type const* const_iterator;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Iterator<Type> end() const {
-    return ArrayIterator(&arr_[size()]);
-  }
+  Type* begin() { return &fData[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type* end() { return &fData[fSize]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const* cbegin() const { return &fData[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type const* cend() const { return &fData[fSize]; }
 
 };
+
+template <typename Type>
+Array<Type>::Array() : fData(NULL), fSize(0), fAllocated(false) {}
+
+template <typename Type>
+Array<Type>::Array(const unsigned size) : fData(NULL), fAllocated(true) {
+  Allocate(size);
+}
+
+template <typename Type>
+Array<Type>::Array(Array<Type> const &other) : fData(NULL), fAllocated(true) {
+  Allocate(other.fSize);
+  copy(other.fData, other.fData+other.fSize, fData);
+}
+
+template <typename Type>
+Array<Type>::~Array() {
+#ifndef VECGEOM_CUDA
+  if (fAllocated) _mm_free(fData);
+#else
+  if (fAllocated) delete fData;
+#endif
+}
+
+template <typename Type>
+void Array<Type>::Allocate(const unsigned size) {
+  Deallocate();
+  fSize = size;
+#ifndef VECGEOM_NVCC
+  fData = static_cast<Type*>(_mm_malloc(fSize*sizeof(Type),
+                                        kAlignmentBoundary));
+#else
+  fData = new Type[fSize];
+#endif
+}
+
+template <typename Type>
+void Array<Type>::Deallocate() {
+  if (fAllocated) {
+#ifndef VECGEOM_NVCC
+    _mm_free(fData);
+#else
+    delete fData;
+#endif
+  } else {
+    fData = NULL;
+  }
+  fSize = 0;
+  fAllocated = false;
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+Array<Type>::Array(Type *const data, const unsigned size)
+    : fSize(size), fData(data), fAllocated(false) {}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Array<Type>& Array<Type>::operator=(Array<Type> const &other) {
+  Deallocate();
+  Allocate(other.fSize);
+  copy(other.fData, other.fData+other.fSize, fData);
+  return *this;
+}
 
 } // End global namespace
 

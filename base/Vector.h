@@ -6,112 +6,120 @@
 
 #include "base/Global.h"
 
-#include "base/Container.h"
-#include <cassert>
+#ifdef VECGEOM_CUDA
+#include "backend/cuda/Interface.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
 template <typename Type>
-class Vector : public Container<Type> {
+class Vector {
 
 private:
 
-  Type *vec_;
-  int size_, memory_size_;
-  bool allocated_;
+  Type *fData;
+  int fSize, fMemorySize;
+  bool fAllocated;
 
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-    Vector() : vec_(), size_(0), memory_size_(1), allocated_(true) {
-    vec_ = new Type[memory_size_];
+  Vector() : fSize(0), fMemorySize(1), fAllocated(true) {
+    fData = new Type[fMemorySize];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector(Type *const vec, const int s)
-      : vec_(vec), size_(s), allocated_(false) {}
-
-  
-  Vector(Vector const & other) : Vector() {
-    assert( 0 && "COPY CONSTRUCTOR FOR CLASS VECTOR NOT IMPLEMENTED");
-  }
-
-  
-  Vector * operator=(Vector const & other) {
-    assert( 0 && "ASSIGNM CONSTRUCTOR FOR CLASS VECTOR NOT IMPLEMENTED");
-  }
+  Vector(Type *const vec, const int sz)
+      : fData(vec), fSize(sz), fAllocated(false) {}
 
   ~Vector() {
-    if (allocated_) delete[] vec_;
+    if (fAllocated) delete[] fData;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type& operator[](const int index) {
-    return vec_[index];
+  Type& operator[](const int index) {
+    return fData[index];
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  virtual Type const& operator[](const int index) const {
-    return vec_[index];
+  Type const& operator[](const int index) const {
+    return fData[index];
   }
 
   void push_back(const Type item) {
-    if (size_ == memory_size_) {
-      memory_size_ = memory_size_<<1;
-      Type *vec_new = new Type[memory_size_];
-      for (int i = 0; i < size_; ++i) vec_new[i] = vec_[i];
-      delete[] vec_;
-      vec_ = vec_new;
+    if (fSize == fMemorySize) {
+      fMemorySize = fMemorySize<<1;
+      Type *fDataNew = new Type[fMemorySize];
+      for (int i = 0; i < fSize; ++i) fDataNew[i] = fData[i];
+      delete[] fData;
+      fData = fDataNew;
     }
-    vec_[size_] = item;
-    size_++;
+    fData[fSize] = item;
+    fSize++;
   }
+
+  typedef Type* iterator;
+  typedef Type const* const_iterator;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  iterator begin() const { return &fData[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  iterator end() const { return &fData[fSize]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  const_iterator cbegin() const { return &fData[0]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  const_iterator cend() const { return &fData[fSize]; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  int size() const {
+    return fSize;
+  }
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  Vector<Type>* CopyToGpu(Type *const gpu_ptr_arr,
+                          Vector<Type> *const gpu_ptr) const;
+#endif
 
 private:
 
-  class VectorIterator : public Iterator<Type> {
-
-  public:
-
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    VectorIterator(Type const *const e) : Iterator<Type>(e) {}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
-    VECGEOM_CUDA_HEADER_BOTH
-    VECGEOM_INLINE
-    VectorIterator& operator++() {
-      this->element_++;
-      return *this;
-    }
-#pragma GCC diagnostic pop
-
-  };
-
-public:
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual Iterator<Type> begin() const {
-    return VectorIterator(&vec_[0]);
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual Iterator<Type> end() const {
-    return VectorIterator(&vec_[size_]);
-  }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  virtual int size() const {
-    return size_;
-  }
+  // Not implemented
+  Vector(Vector const &other);
+  Vector * operator=(Vector const & other);
 
 };
+
+#ifdef VECGEOM_CUDA
+
+template <typename Type> class Vector;
+class VPlacedVolume;
+
+void Vector_CopyToGpu(Precision *const arr, const int size,
+                      void *const gpu_ptr);
+
+void Vector_CopyToGpu(VPlacedVolume const **const arr, const int size,
+                      void *const gpu_ptr);
+
+#ifdef VECGEOM_CUDA_INTERFACE
+template <typename Type>
+Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
+                                      Vector<Type> *const gpu_ptr) const {
+  Vector_CopyToGpu(gpu_ptr_arr, this->size(), gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+}
+#endif
+
+#endif // VECGEOM_CUDA
 
 } // End global namespace
 

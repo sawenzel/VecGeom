@@ -13,6 +13,7 @@
 #endif
 
 #include <cstdlib>
+#include <ostream>
 #include <string>
 
 namespace VECGEOM_NAMESPACE {
@@ -210,11 +211,14 @@ public:
   }
 
   /// \return Azimuthal angle between -pi and pi.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Type Phi() const {
-    Type output = 0;
-    VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
-                                    ATan2(vec[1], vec[0]), &output);
-    return output;
+    //Type output = 0;
+    //VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
+    //                                ATan2(vec[1], vec[0]), &output);
+    //return output;
+    return ATan2(vec[1], vec[0]);
   }
 
   /// The cross (vector) product of two Vector3D<T> objects
@@ -290,6 +294,21 @@ public:
     return output;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static VecType FromCylindrical(Type r, Type phi, Type z) {
+    return VecType(r*cos(phi), r*sin(phi), z);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  VecType& FixZeroes() {
+    for (int i = 0; i < 3; ++i) {
+      VECGEOM_NAMESPACE::MaskedAssign(VECGEOM_NAMESPACE::Abs(vec[i]) < kTolerance, 0., &vec[i]);
+    }
+    return *this;
+  }
+
   // Inplace binary operators
 
   #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
@@ -323,7 +342,11 @@ public:
 
 };
 
-std::ostream& operator<<(std::ostream& os, Vector3D<Precision> const &vec);
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
+  os << "(" << vec[0] << ", " << vec[1] << ", " << vec[2] << ")";
+  return os;
+}
 
 #if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
@@ -354,8 +377,10 @@ public:
   }
 
   // Performance issue in Vc with: mem = a;
+  VECGEOM_INLINE
   Vector3D(const Precision a) : Vector3D(a, a, a) {}
 
+  VECGEOM_INLINE
   Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
@@ -398,31 +423,39 @@ public:
     mem[2] = atof(str.substr(begin, end-begin).c_str());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& operator[](const int index) {
     return mem[index];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& operator[](const int index) const {
     return mem[index];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& x() { return mem[0]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& x() const { return mem[0]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& y() { return mem[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& y() const { return mem[1]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision& z() { return mem[2]; }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   const Precision& z() const { return mem[2]; }
 
@@ -438,37 +471,44 @@ public:
     Set(x, x, x);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Length() const {
     return sqrt(mem[0]*mem[0] + mem[1]*mem[1] + mem[2]*mem[2]);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Mag2() const {
       return Dot(*this,*this);
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Mag() const {
     return Sqrt(Mag2());
   }
 
   // TODO: study if we gain from internal vectorization here.
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Perp2() const {
     return mem[0]*mem[0] + mem[1]*mem[1];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Perp() const {
     return Sqrt(Perp2());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Normalize() {
     *this /= Length();
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Map(Precision (*f)(const Precision&)) {
     mem[0] = f(mem[0]);
@@ -507,6 +547,8 @@ public:
   }
 
   /// \return Azimuthal angle between -pi and pi.
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   Precision Phi() const {
     return (mem[0] != 0. || mem[1] != 0.) ? ATan2(mem[1], mem[0]) : 0.;
   }
@@ -634,6 +676,26 @@ VECTOR3D_BINARY_OP(*, *=)
 VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
+template <typename Type, typename BoolType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<BoolType> operator==(Vector3D<Type> const &lhs,
+                              Vector3D<Type> const &rhs) {
+  return Vector3D<bool>(
+    Abs(lhs[0] - rhs[0]) < kTolerance,
+    Abs(lhs[1] - rhs[1]) < kTolerance,
+    Abs(lhs[2] - rhs[2]) < kTolerance
+  );
+}
+
+template <typename Type, typename BoolType>
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<BoolType> operator!=(Vector3D<Type> const &lhs,
+                              Vector3D<Type> const &rhs) {
+  return !(lhs == rhs);
+}
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -668,8 +730,8 @@ VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<=)
 VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>=)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
+// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
+// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
@@ -718,8 +780,8 @@ VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<=)
 VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>=)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
+// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
+// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
 #undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push

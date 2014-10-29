@@ -14,6 +14,9 @@ class TGeoShape;
 
 namespace vecgeom {
 
+template <typename T> class AOS3D;
+template <typename T> class SOA3D;
+
 class PlacedRootVolume : public VPlacedVolume {
 
 private:
@@ -74,6 +77,14 @@ public:
                             Precision const *const stepMax,
                             Precision *const output) const;
 
+
+  virtual void DistanceToInMinimize(SOA3D<Precision> const &position,
+                                    SOA3D<Precision> const &direction,
+                                    int daughterindex,
+                                    Precision *const output,
+                                    int *const nextnodeids
+                                   ) const;
+
   virtual void DistanceToIn(AOS3D<Precision> const &position,
                             AOS3D<Precision> const &direction,
                             Precision const *const stepMax,
@@ -89,6 +100,12 @@ public:
                              Precision const *const step_max,
                              Precision *const output) const;
 
+  virtual void DistanceToOut(SOA3D<Precision> const &position,
+                             SOA3D<Precision> const &direction,
+                             Precision const *const step_max,
+                             Precision *const output,
+                             int *const nextnodeindex) const;
+
   virtual void DistanceToOut(AOS3D<Precision> const &position,
                              AOS3D<Precision> const &direction,
                              Precision const *const stepMax,
@@ -103,6 +120,9 @@ public:
   virtual void SafetyToOut(AOS3D<Precision> const &position,
                            Precision *const safeties) const;
 
+  virtual void SafetyToOutMinimize(SOA3D<Precision> const &position,
+                                   Precision *const safeties) const;
+
   VECGEOM_INLINE
   virtual Precision SafetyToIn(Vector3D<Precision> const &position) const;
 
@@ -112,7 +132,9 @@ public:
   virtual void SafetyToIn(AOS3D<Precision> const &position,
                           Precision *const safeties) const;
 
-#ifdef VECGEOM_BENCHMARK
+  virtual void SafetyToInMinimize(SOA3D<Precision> const &position,
+                                  Precision *const safeties) const;
+
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -120,7 +142,9 @@ public:
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
-#endif // VECGEOM_BENCHMARK
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const;
+#endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
