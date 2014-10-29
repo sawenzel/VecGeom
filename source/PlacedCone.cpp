@@ -17,6 +17,10 @@
 #include "UCons.hh"
 #endif
 
+#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_GEANT4)
+#include "G4Cons.hh"
+#endif
+
 
 namespace VECGEOM_NAMESPACE {
 
@@ -41,6 +45,12 @@ TGeoShape const* PlacedCone::ConvertToRoot() const {
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedCone::ConvertToUSolids() const {
   return new UCons("USolidCone", GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(), GetDz(), GetSPhi(), GetDPhi());
+}
+#endif
+
+#ifdef VECGEOM_GEANT4
+G4VSolid const * PlacedCone::ConvertToGeant4() const {
+  return new G4Cons("Geant4Cone", GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(), GetDz(), GetSPhi(), GetDPhi());
 }
 #endif
 

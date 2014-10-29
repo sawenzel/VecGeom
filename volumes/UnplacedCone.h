@@ -165,7 +165,7 @@ public:
     Precision alongPhi2y() const { return fAlongPhi2y; }
 
     Precision Capacity() const {
-        return (2.*fDz* kPiThird)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
+        return (2.*fDz* kPi/3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
                 fRmin1*fRmin1-fRmin2*fRmin2-fRmin1*fRmin2);
     }
 

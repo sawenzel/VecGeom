@@ -4,7 +4,10 @@
  *  Created on: May 14, 2014
  *      Author: swenzel
  */
-
+//#define VECGEOM_ROOT
+//#define VECGEOM_GEANT4
+//#define VECGEOM_BENCHMARK
+//#define VECGEOM_USOLIDS
 
 
 #ifndef VECGEOM_VOLUMES_PLACEDCONE_H_
@@ -61,6 +64,9 @@ public:
 #endif
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
+#endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const;
 #endif
 #endif // VECGEOM_BENCHMARK
 
