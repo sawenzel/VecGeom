@@ -467,40 +467,33 @@ Precision GetDTheta() const
   //_____________________________________________________________________________
   */
 
-//VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_CUDA_HEADER_BOTH
 void CalcCapacity();
 
-//VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_CUDA_HEADER_BOTH
   void CalcSurfaceArea();
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
    
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Precision Capacity() const;
   
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Precision SurfaceArea() const;
   
-  #ifndef VECGEOM_NVCC
-  VECGEOM_CUDA_HEADER_BOTH
-  #endif
-  Vector3D<Precision>  GetPointOnSurface() const;
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+  Vector3D<Precision> GetPointOnSurface() const;
+#endif
  
   
   //VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const;
   
-    
-  VECGEOM_CUDA_HEADER_BOTH
   void GetParametersList(int aNumber, Precision *aArray) const; 
   
-  VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere* Clone() const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
     
   

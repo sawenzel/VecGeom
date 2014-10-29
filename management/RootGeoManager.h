@@ -15,13 +15,13 @@ class TGeoMatrix;
 
 namespace VECGEOM_NAMESPACE {
 
-/**
- * @brief Manager to handle interaction with ROOT geometry.
- * @details Allows integration with ROOT geometries for compatability reasons.
- *          Is not necessary for VecGeom library, and will only have source
- *          compiled if the VECGEOM_ROOT flag is set by the compiler, activated
- *          with -DROOT=ON in CMake.
- */
+class UnplacedBox;
+
+/// \brief Manager to handle interaction with ROOT geometry.
+/// \details Allows integration with ROOT geometries for compatability reasons.
+///          Is not necessary for VecGeom library, and will only have source
+///          compiled if the VECGEOM_ROOT flag is set by the compiler, activated
+///          with -DROOT=ON in CMake.
 class RootGeoManager {
 
 private:
@@ -38,7 +38,7 @@ private:
 
 public:
 
-  /** Access singleton instance. */
+  /// Access singleton instance.
   static RootGeoManager& Instance() {
     static RootGeoManager instance;
     return instance;
@@ -59,9 +59,7 @@ public:
       return (fPlacedVolumeMap[const_cast<VPlacedVolume*>(p)]);
   }
 
-  /**
-   * Get placed volume that corresponds to a TGeoNode
-   */
+  /// Get placed volume that corresponds to a TGeoNode
   VPlacedVolume const * GetPlacedVolume( TGeoNode const * n ) const {
       if( n==NULL ) return NULL;
       return (fPlacedVolumeMap[n]);
@@ -99,11 +97,9 @@ public:
    */
   void Clear();
 
-  /**
-   * Converts a TGeoNode to a VPlacedVolume, recursively converting daughters.
-   * Will take care not to convert anything twice by checking the birectional
-   * map between ROOT and VecGeom geometry.
-   */
+  /// Converts a TGeoNode to a VPlacedVolume, recursively converting daughters.
+  /// Will take care not to convert anything twice by checking the birectional
+  /// map between ROOT and VecGeom geometry.
   VPlacedVolume* Convert(TGeoNode const *const node);
 
   VUnplacedVolume* Convert(TGeoShape const *const shape);

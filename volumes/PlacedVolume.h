@@ -17,8 +17,8 @@ class G4VSolid;
 
 namespace VECGEOM_NAMESPACE {
 
-// Forward declaration for bounding box
 class PlacedBox;
+template <typename T> class SOA3D;
 
 class VPlacedVolume : public USolidsInterfaceHelper {
 

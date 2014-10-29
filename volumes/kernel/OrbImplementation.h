@@ -190,7 +190,7 @@ void OrbImplementation<transCodeT, rotCodeT>::NormalKernel(
        typename Backend::bool_v &valid ){
 
     typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;
+    // typedef typename Backend::bool_v      Bool_t;
 
     Vector3D<Double_t> localPoint;
     localPoint = point;
@@ -340,7 +340,7 @@ UnplacedOrb const &unplaced,
     typename Backend::bool_v &completelyoutside) {
 
     typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;	
+    // typedef typename Backend::bool_v      Bool_t;	
 
     Double_t rad2 = localPoint.Mag2();
     Double_t tolRMax = unplaced.GetfRTolO();
@@ -506,7 +506,7 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedOrb const
                          typename Backend::precision_v &safety){
 
     typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;
+    // typedef typename Backend::bool_v      Bool_t;
 
     Double_t safe=Backend::kZero;
     Double_t zero=Backend::kZero; 
@@ -532,7 +532,7 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedOrb cons
                           typename Backend::precision_v &safety){
     
     typedef typename Backend::precision_v Double_t;
-    typedef typename Backend::bool_v      Bool_t;
+    // typedef typename Backend::bool_v      Bool_t;
 
     Double_t safe=Backend::kZero;
     Double_t zero=Backend::kZero; 

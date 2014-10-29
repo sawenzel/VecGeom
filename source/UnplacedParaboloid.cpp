@@ -7,8 +7,9 @@
 #include "volumes/SpecializedParaboloid.h"
 
 #include <stdio.h>
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
 #include "base/RNG.h"
-
+#endif
 
 namespace VECGEOM_NAMESPACE {
     
@@ -173,7 +174,7 @@ namespace VECGEOM_NAMESPACE {
     }
     //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
     Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface() const{
         
         //G4 implementation
@@ -203,6 +204,7 @@ namespace VECGEOM_NAMESPACE {
                 return Vector3D<Precision>(Sqrt(z*fAinv -fB*fAinv)*cos(phi), Sqrt(z*fAinv -fB*fAinv)*sin(phi), z);
             }
         }
+#endif
     
 //__________________________________________________________________
     

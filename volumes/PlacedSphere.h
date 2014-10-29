@@ -217,9 +217,13 @@ VECGEOM_INLINE
   
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
+  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
   
-  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)  
+  Vector3D<Precision> GetPointOnSurface() const {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+#endif
  
   
   VECGEOM_CUDA_HEADER_BOTH
@@ -238,9 +242,7 @@ VECGEOM_INLINE
       return valid;
   }
   
-
-
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -251,7 +253,7 @@ VECGEOM_INLINE
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,

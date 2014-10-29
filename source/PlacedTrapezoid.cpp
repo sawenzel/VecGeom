@@ -5,9 +5,12 @@
 #include "volumes/Trapezoid.h"
 #include "volumes/PlacedBox.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#ifndef VECGEOM_NVCC
+
+#ifdef VECGEOM_ROOT
 #include "TGeoArb8.h"
 #endif
+
 #ifdef VECGEOM_USOLIDS
 #include "UTrap.hh"
 #endif
@@ -15,6 +18,8 @@
 #ifdef VECGEOM_GEANT4
 #include "G4Trap.hh"
 #endif
+
+#endif // VECGEOM_NVCC
 
 namespace VECGEOM_NAMESPACE {
 

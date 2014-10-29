@@ -88,8 +88,8 @@ public:
   //#endif
   Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
  
-  VECGEOM_CUDA_HEADER_BOTH
-  void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+  // VECGEOM_CUDA_HEADER_BOTH
+  // void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
   
   #endif
 
@@ -106,7 +106,7 @@ public:
 
 
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -117,7 +117,7 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
