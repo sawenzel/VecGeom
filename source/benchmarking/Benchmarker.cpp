@@ -31,9 +31,8 @@ namespace vecgeom {
 
 Benchmarker::Benchmarker() : Benchmarker(NULL) {}
 
-Benchmarker::Benchmarker(
-    VPlacedVolume const *const world)
-    : fPointCount(128), fPoolMultiplier(8), fRepetitions(1<<13),
+Benchmarker::Benchmarker(VPlacedVolume const *const world)
+    : fPointCount(1024), fPoolMultiplier(4), fRepetitions(1024),
       fVerbosity(1), fToInBias(0.8), fInsideBias(0.5), fPointPool(NULL),
       fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance) {
   SetWorld(world);
@@ -42,7 +41,7 @@ Benchmarker::Benchmarker(
 Benchmarker::~Benchmarker() {
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;
-  FreeAligned(fStepMax);
+  if (fStepMax) FreeAligned(fStepMax);
 }
 
 void Benchmarker::SetWorld(VPlacedVolume const *const world) {
@@ -308,7 +307,7 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << containsRoot[i];
 #endif
 #ifdef VECGEOM_CUDA
-      if (insideSpecialized[i] != containsCuda[i]) mismatch = true;
+      if (containsSpecialized[i] != containsCuda[i]) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << containsCuda[i];
 #endif
       mismatches += mismatch;
@@ -413,7 +412,8 @@ void Benchmarker::RunToInBenchmark() {
   // Allocate memory
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;
-  if (fStepMax) delete fStepMax;
+  if (fStepMax)  FreeAligned(fStepMax);
+
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fDirectionPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fStepMax = AllocateAligned<Precision>();
@@ -574,7 +574,7 @@ void Benchmarker::RunToOutBenchmark() {
   // Allocate memory
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;
-  if (fStepMax) delete fStepMax;
+  if (fStepMax) FreeAligned(fStepMax);
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fDirectionPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fStepMax = AllocateAligned<Precision>();

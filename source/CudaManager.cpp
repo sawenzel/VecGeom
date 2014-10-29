@@ -152,7 +152,7 @@ void CudaManager::LoadGeometry(VPlacedVolume const *const volume) {
 }
 
 void CudaManager::LoadGeometry() {
-  LoadGeometry(GeoManager::Instance().world());
+  LoadGeometry(GeoManager::Instance().GetWorld());
 }
 
 void CudaManager::CleanGpu() {

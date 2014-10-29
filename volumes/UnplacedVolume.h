@@ -15,6 +15,9 @@
 
 namespace VECGEOM_NAMESPACE {
 
+class LogicalVolume;
+class VPlacedVolume;
+
 class VUnplacedVolume {
 
 private:

@@ -6,7 +6,9 @@
 
 #include "base/Global.h"
 
+#ifdef VECGEOM_CUDA
 #include "backend/cuda/Interface.h"
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
@@ -27,8 +29,8 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Vector(Type *const vec, const int size)
-      : fData(vec), fSize(size), fAllocated(false) {}
+  Vector(Type *const vec, const int sz)
+      : fData(vec), fSize(sz), fAllocated(false) {}
 
   ~Vector() {
     if (fAllocated) delete[] fData;
@@ -96,6 +98,8 @@ private:
 
 };
 
+#ifdef VECGEOM_CUDA
+
 template <typename Type> class Vector;
 class VPlacedVolume;
 
@@ -114,6 +118,8 @@ Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
   return gpu_ptr;
 }
 #endif
+
+#endif // VECGEOM_CUDA
 
 } // End global namespace
 

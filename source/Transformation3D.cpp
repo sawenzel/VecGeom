@@ -1,6 +1,5 @@
 /// \file Transformation3D.cpp
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
-
 #include "base/Transformation3D.h"
 
 #include "backend/Backend.h"
@@ -8,6 +7,11 @@
 #include "backend/cuda/Interface.h"
 #endif
 #include "base/SpecializedTransformation3D.h"
+
+
+#ifdef VECGEOM_ROOT
+#include "TGeoMatrix.h"
+#endif
 
 #include <sstream>
 #include <stdio.h>
@@ -155,6 +159,34 @@ VECGEOM_CUDA_HEADER_BOTH
 TranslationCode Transformation3D::GenerateTranslationCode() const {
   return (fHasTranslation) ? translation::kGeneric : translation::kIdentity;
 }
+
+
+#ifdef VECGEOM_ROOT
+// function to convert this transformation to a TGeo transformation
+// mainly used for the benchmark comparisons with ROOT
+TGeoMatrix * Transformation3D::ConvertToTGeoMatrix() const
+{
+  if( fIdentity ){
+      return new TGeoIdentity();
+  }
+  if( fHasTranslation && ! fHasRotation ) {
+      return new TGeoTranslation(fTranslation[0], fTranslation[1], fTranslation[2]);
+  }
+  if( fHasRotation && ! fHasTranslation ) {
+      TGeoRotation * tmp = new TGeoRotation();
+      tmp->SetMatrix( Rotation() );
+      return tmp;
+  }
+  if( fHasTranslation && fHasRotation )
+  {
+      TGeoRotation * tmp = new TGeoRotation();
+      tmp->SetMatrix( Rotation() );
+      return  new TGeoCombiTrans(fTranslation[0], fTranslation[1],
+                     fTranslation[2], tmp);
+  }
+  return 0;
+}
+#endif
 
 std::ostream& operator<<(std::ostream& os,
                          Transformation3D const &transformation) {

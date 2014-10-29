@@ -18,9 +18,9 @@ void benchmark(double rmin, double rmax, double dz, double sphi, double dphi, in
 
   VPlacedVolume *worldPlaced = world.Place();
 
-  GeoManager::Instance().set_world(worldPlaced);
+  GeoManager::Instance().SetWorld(worldPlaced);
 
-  Benchmarker tester(GeoManager::Instance().world());
+  Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(3);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
@@ -28,13 +28,13 @@ void benchmark(double rmin, double rmax, double dz, double sphi, double dphi, in
 }
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints);
-  OPTION_INT(nrep);
-  OPTION_DOUBLE(rmin);
-  OPTION_DOUBLE(rmax);
-  OPTION_DOUBLE(dz);
-  OPTION_DOUBLE(sphi);
-  OPTION_DOUBLE(dphi);
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(rmin,0);
+  OPTION_DOUBLE(rmax,5);
+  OPTION_DOUBLE(dz,10);
+  OPTION_DOUBLE(sphi,0);
+  OPTION_DOUBLE(dphi,kTwoPi);
 
   benchmark(rmin, rmax, dz, sphi, dphi, npoints, nrep);
   
