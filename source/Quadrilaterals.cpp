@@ -6,7 +6,8 @@ namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_STD_CXX11
 Quadrilaterals::Quadrilaterals(int size)
-    : fPlanes(size), fSideVectors{size, size, size, size} {}
+    : fPlanes(size), fSideVectors{size, size, size, size},
+      fCorners{size, size, size, size} {}
 #endif
 
 Quadrilaterals::~Quadrilaterals() {}
@@ -15,6 +16,7 @@ Quadrilaterals& Quadrilaterals::operator=(Quadrilaterals const &other) {
   fPlanes = other.fPlanes;
   for (int i = 0; i < 4; ++i) {
     fSideVectors[i] = other.fSideVectors[i];
+    fCorners[i] = other.fCorners[i];
   }
   return *this;
 }
@@ -28,6 +30,11 @@ void Quadrilaterals::Set(
     Vector3D<Precision> const &corner3) {
 
   // TODO: It should be asserted that the quadrilateral is planar and convex.
+
+  fCorners[0].set(index, corner0);
+  fCorners[1].set(index, corner1);
+  fCorners[2].set(index, corner2);
+  fCorners[3].set(index, corner3);
 
   // Compute plane equation to retrieve normal and distance to origin
   // ax + by + cz + d = 0

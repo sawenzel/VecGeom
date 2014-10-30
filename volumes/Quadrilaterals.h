@@ -8,6 +8,7 @@
 
 #include "backend/Backend.h"
 #include "base/Array.h"
+#include "base/AOS3D.h"
 #include "base/SOA3D.h"
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
@@ -24,10 +25,12 @@ private:
 
   Planes fPlanes;
   Planes fSideVectors[4];
+  AOS3D<Precision> fCorners[4];
 
 public:
 
   typedef Planes Sides_t[4];
+  typedef AOS3D<Precision> Corners_t[4];
 
 #ifdef VECGEOM_STD_CXX11
   Quadrilaterals(int size);
@@ -67,6 +70,10 @@ public:
   VECGEOM_INLINE
   Sides_t const& GetSideVectors() const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Corners_t const& GetCorners() const;
+
 #ifdef VECGEOM_STD_CXX11
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
@@ -105,12 +112,6 @@ public:
   template <class Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v DistanceToIn(
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_INLINE
-  VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v DistanceToOut(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
@@ -124,11 +125,12 @@ public:
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction) const;
 
-  template <class Backend>
+  /// \param index Quadrilateral to compute distance to.
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::precision_v DistanceToOut(
-      Vector3D<typename Backend::precision_v> const &point) const;
+  Precision ScalarDistanceSquared(
+      int index,
+      Vector3D<Precision> const &point) const;
 
 };
 
@@ -163,6 +165,11 @@ Precision Quadrilaterals::GetDistance(int i) const {
 VECGEOM_CUDA_HEADER_BOTH
 Quadrilaterals::Sides_t const& Quadrilaterals::GetSideVectors() const {
   return fSideVectors;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Quadrilaterals::Corners_t const& Quadrilaterals::GetCorners() const {
+  return fCorners;
 }
 
 template <class Backend>
@@ -305,14 +312,6 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
   return bestDistance;
 }
 
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToIn(
-    Vector3D<typename Backend::precision_v> const &point) const {
-  assert(0);
-  return typename Backend::precision_v(0);
-}
-
 namespace {
 
 template <class Backend>
@@ -424,12 +423,52 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
   return DistanceToOut<Backend>(point, direction, -kInfinity, kInfinity);
 }
 
-template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Quadrilaterals::DistanceToOut(
-    Vector3D<typename Backend::precision_v> const &point) const {
-  assert(0);
-  return typename Backend::precision_v(0);
+Precision Quadrilaterals::ScalarDistanceSquared(
+    int i,
+    Vector3D<Precision> const &point) const {
+
+  Vector3D<Precision> planeNormal = fPlanes.GetNormal(i);
+  Precision distance = point.Dot(planeNormal) + fPlanes.GetDistance(i);
+  Vector3D<Precision> intersection = point + distance*planeNormal;
+
+  bool withinBound[4];
+  for (int j = 0; j < 4; ++j) {
+    withinBound[j] = intersection[0]*fSideVectors[j].GetNormals().x(i) +
+                     intersection[1]*fSideVectors[j].GetNormals().y(i) +
+                     intersection[2]*fSideVectors[j].GetNormals().z(i) +
+                     fSideVectors[j].GetDistances()[i] >= 0;
+  }
+  if (all_of(withinBound, withinBound+4)) return distance*distance;
+
+  // If the closest point is not on the plane itself, it must either be the
+  // distance to the closest line segment or to the closest corner.
+  // Since it is already known whether the point is to the left or right of each
+  // line, only one side and its corners has to be checked.
+
+  Vector3D<Precision> corner0 = fCorners[0][i];
+  Vector3D<Precision> corner1 = fCorners[1][i];
+
+  // To the right of right side
+  if (!withinBound[0]) {
+    return DistanceToLineSegmentSquared<kScalar>(corner0, corner1, point);
+  }
+
+  Vector3D<Precision> corner2 = fCorners[2][i];
+  Vector3D<Precision> corner3 = fCorners[3][i];
+
+  // To the left of left side
+  if (!withinBound[2]) {
+    return DistanceToLineSegmentSquared<kScalar>(corner2, corner3, point);
+  }
+
+  // Below in the middle
+  if (!withinBound[1]) {
+    return DistanceToLineSegmentSquared<kScalar>(corner1, corner2, point);
+  }
+
+  // Above in the middle
+  return DistanceToLineSegmentSquared<kScalar>(corner3, corner0, point);
 }
 
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads);

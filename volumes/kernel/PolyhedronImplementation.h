@@ -55,13 +55,13 @@ struct PolyhedronImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction);
 
-  template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::precision_v SafetyToInZSegment(
+  static Precision ScalarSafetyToZSegmentSquared(
       UnplacedPolyhedron const &polyhedron,
       int segmentIndex,
-      Vector3D<typename Backend::precision_v> const &point);
+      int phiIndex,
+      Vector3D<Precision> const &point);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -122,7 +122,7 @@ struct PolyhedronImplementation {
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static Precision ScalarSafetyToInKernel(
+  static Precision ScalarSafetyKernel(
       UnplacedPolyhedron const &unplaced,
       Vector3D<Precision> const &point);
 
@@ -384,21 +384,31 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
 }
 
 template <bool treatInnerT>
-template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-typename Backend::precision_v
-PolyhedronImplementation<treatInnerT>::SafetyToInZSegment(
+Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToZSegmentSquared(
     UnplacedPolyhedron const &polyhedron,
     int segmentIndex,
-    Vector3D<typename Backend::precision_v> const &point) {
+    int phiIndex,
+    Vector3D<Precision> const &point) {
 
   UnplacedPolyhedron::ZSegment const &segment =
       polyhedron.GetZSegment(segmentIndex);
 
-  Precision safety = segment.outer.DistanceToIn<kScalar>(point);
+  if (polyhedron.HasPhiCutout() && phiIndex == polyhedron.GetSideCount()) {
+    return Min(segment.phi.ScalarDistanceSquared(0, point),
+               segment.phi.ScalarDistanceSquared(1, point));
+  }
 
-  return safety;
+  Precision safetySquared =
+      segment.outer.ScalarDistanceSquared(phiIndex, point);
+
+  if (treatInnerT && segment.hasInnerRadius) {
+    safetySquared = Min(safetySquared,
+        segment.inner.ScalarDistanceSquared(phiIndex, point));
+  }
+
+  return safetySquared;
 }
 
 template <bool treatInnerT>
@@ -638,10 +648,11 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
 
   Precision distance = kInfinity;
   if (goingRight) {
-    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax; ++zIndex) {
+    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax;) {
       distance = DistanceToInZSegment<kScalar>(
           unplaced, zIndex, localPoint, localDirection);
       if (distance >= 0 && distance < kInfinity) break;
+      ++zIndex;
       if (unplaced.GetZPlanes()[zIndex] - localPoint[2] > distance) break;
     }
   } else {
@@ -663,26 +674,32 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
 
 template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
+Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
     UnplacedPolyhedron const &unplaced,
     Vector3D<Precision> const &point) {
 
   Precision safety = kInfinity;
 
-  const int zIndex = FindZSegment<kScalar>(unplaced, point[2]);
+  const int zMax = unplaced.GetZSegmentCount();
+  int zIndex = FindZSegment<kScalar>(unplaced, point[2]);
+  zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax-1 : zIndex);
+  int phiIndex = FindPhiSegment<kScalar>(unplaced, point);
 
   // Right
-  for (int z = zIndex, zMax = unplaced.GetZSegmentCount(); z < zMax; ++z) {
-    Precision safetyZ = SafetyToInZSegment<kScalar>(unplaced, zIndex, point);
-    safety = Min(safety, safetyZ);
+  for (int z = zIndex; z < zMax;) {
+    safety = Min(safety, ScalarSafetyToZSegmentSquared(unplaced, z, phiIndex,
+                                                       point));
+    ++z;
+    if (unplaced.GetZPlanes()[z] - point[2] > safety) break;
   }
   // Left
   for (int z = zIndex-1; z >= 0; --z) {
-    Precision safetyZ = SafetyToInZSegment<kScalar>(unplaced, zIndex, point);
-    safety = Min(safety, safetyZ);
+    safety = Min(safety, ScalarSafetyToZSegmentSquared(unplaced, z, phiIndex,
+                                                       point));
+    if (point[2] - unplaced.GetZPlanes()[z] > safety) break;
   }
 
-  return safety;
+  return sqrt(safety);
 }
 
 template <bool treatInnerT>

@@ -295,7 +295,7 @@ Precision SpecializedPolyhedron<treatInnerT>::SafetyToIn(
   Vector3D<Precision> localPoint =
       VPlacedVolume::transformation()->Transform(point);
 
-  return PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
+  return PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 }
 
@@ -309,7 +309,7 @@ void SpecializedPolyhedron<treatInnerT>::SafetyToIn(
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
 
-    safeties[i] = PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
+    safeties[i] = PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
         *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
   }
 }
@@ -325,7 +325,7 @@ void SpecializedPolyhedron<treatInnerT>::SafetyToInMinimize(
         VPlacedVolume::transformation()->Transform(points[i]);
 
     Precision candidate =
-        PolyhedronImplementation<treatInnerT>::ScalarSafetyToInKernel(
+        PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];
@@ -360,7 +360,7 @@ template <bool treatInnerT>
 VECGEOM_CUDA_HEADER_BOTH
 Precision SpecializedPolyhedron<treatInnerT>::SafetyToOut(
     Vector3D<Precision> const &point) const {
-  return PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
+  return PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), point);
 }
 
@@ -370,7 +370,7 @@ void SpecializedPolyhedron<treatInnerT>::SafetyToOut(
     Precision *const safeties) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     safeties[i] =
-        PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
+        PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), points[i]);
   }
 }
@@ -381,7 +381,7 @@ void SpecializedPolyhedron<treatInnerT>::SafetyToOutMinimize(
     Precision *const safeties) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
      safeties[i] =
-         PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
+         PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), points[i]);
   }
 }
