@@ -4,18 +4,19 @@
 #include "management/GeoManager.h"
 #include "ArgParser.h"
 #include "base/Vector3D.h"
+#include "base/Global.h"
 
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints);
-  OPTION_INT(nrep);
-  OPTION_DOUBLE(drmin);
-  OPTION_DOUBLE(drmax);
-  OPTION_DOUBLE(drtor);
+  OPTION_INT(npoints,1024);
+  OPTION_INT(nrep,1024);
+  OPTION_DOUBLE(drmin,1.2);
+  OPTION_DOUBLE(drmax,3.1);
+  OPTION_DOUBLE(drtor,5.);
 
   UnplacedBox worldUnplaced = UnplacedBox((drtor+drmax)*2, (drtor+drmax)*2 , (drtor+drmax)*2);
-  UnplacedTorus torusUnplaced = UnplacedTorus(drmin, drmax, drtor, 0, 2.*M_PI);
+  UnplacedTorus torusUnplaced = UnplacedTorus(drmin, drmax, drtor, 0, kTwoPi);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume torus = LogicalVolume("torus", &torusUnplaced);
@@ -62,9 +63,9 @@ int main(int argc, char* argv[]) {
 
   VPlacedVolume *worldPlaced = world.Place();
 
-  GeoManager::Instance().set_world(worldPlaced);
+  GeoManager::Instance().SetWorld(worldPlaced);
 
-  Benchmarker tester(GeoManager::Instance().world());
+  Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(3);
   tester.SetTolerance(1E-8);
   tester.SetPoolMultiplier(1);

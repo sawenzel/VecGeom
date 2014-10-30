@@ -484,6 +484,7 @@ set(TEST_EXECUTABLES_ROOT
 set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/DebugTorus.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
@@ -499,15 +500,12 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
-<<<<<<< HEAD
   ${CMAKE_SOURCE_DIR}/test/benchmark/TorusBenchmark.cpp
-=======
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
->>>>>>> master
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here

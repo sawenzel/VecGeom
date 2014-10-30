@@ -51,23 +51,6 @@ T MakeMinusTolerantSquare(T const &x, T const &xsq)
   return (tolerant)? xsq-kTolerance*x : xsq;
 }
 
-template<bool tolerant, typename T>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-T  MakePlusTolerantSquare(T const &x, T const& xsq)
-{
-  return (tolerant)? xsq+kTolerance*x : xsq;
-}
-
-template<bool tolerant, typename T>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-T MakeMinusTolerantSquare(T const &x, T const &xsq)
-{
-  return (tolerant)? xsq-kTolerance*x : xsq;
-}
-
-
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_

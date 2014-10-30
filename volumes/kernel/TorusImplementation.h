@@ -817,49 +817,58 @@ struct TorusImplementation {
       distance = kInfinity;
 
       //Check Bounding Cylinder first
-      
       Bool_t inBounds;
       Bool_t missTorus;
+      Bool_t done;
       Float_t tubeDistance = kInfinity;
+
+      // call the tube functionality -- first of all we check whether we are inside
+      // bounding volume
       TubeImplementation<translation::kIdentity,
-      rotation::kIdentity, TubeTypes::HollowTube>::
-      UnplacedContains<Backend>(
-      torus.GetBoundingTube(), localPoint, inBounds);
-      missTorus = ! inBounds;
-      if( !inBounds ){
-        TubeImplementation<translation::kIdentity,
-        rotation::kIdentity, TubeTypes::HollowTube>::
-        DistanceToIn<Backend>(
-        torus.GetBoundingTube(), transformation,
-        localPoint, localDirection, stepMax, tubeDistance);
-        //std::cout<<"tubeDistance="<<tubeDistance<<std::endl;
-        missTorus = (tubeDistance == kInfinity); 
-        if (Backend::early_returns) {
-        if ( IsFull(missTorus) ) {
-             return;
-         }
-        }
-      
-     }
-       
-      //if (! missTorus){ localPoint = localPoint+localDirection*tubeDistance;}
-      //MaskedAssign ( missTorus,0., &tubeDistance);
-      bool hasphi = (torus.dphi() < kTwoPi );
-      bool hasrmin = (torus.rmin() > 0);
-      //Float_t dout = tubeDistance+ToBoundary<Backend> (torus, localPoint, localDirection, torus.rmax());
-      Float_t dout = ToBoundary<Backend> (torus, localPoint, localDirection, torus.rmax());
+        rotation::kIdentity, TubeTypes::HollowTube>::UnplacedContains<Backend>(
+            torus.GetBoundingTube(), localPoint, inBounds);
 
-      Float_t din(kInfinity);
-      if( hasrmin )
-	{
-	  //din = tubeDistance+ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmin());
-	  din = ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmin());
-	}
-    distance = Min(dout,din);
 
+      // only need to do this check if all particles (in vector) are outside ( otherwise useless )
+      TubeImplementation<translation::kIdentity,
+            rotation::kIdentity, TubeTypes::HollowTube>::DistanceToIn<Backend>(
+                torus.GetBoundingTube(), transformation, localPoint,
+                localDirection, stepMax, tubeDistance);
+
+       //std::cout<<"tubeDistance="<<tubeDistance<<std::endl;
+       done = (!inBounds && tubeDistance == kInfinity);
+
+       if (Backend::early_returns) {
+           if ( IsFull(done) ) {
+            return;
+       }
+       }
+
+    // move close the points which where outside bounding tube
+    Vector3D<Float_t> forwardedPoint = localPoint + localDirection*tubeDistance;
+
+    MaskedAssign( !inBounds, forwardedPoint[0], &localPoint[0]);
+    MaskedAssign( !inBounds, forwardedPoint[1], &localPoint[1]);
+    MaskedAssign( !inBounds, forwardedPoint[2], &localPoint[2]);
+
+    // move points closer to torus ( for better numerical stability )
+    //localPoint = localPoint+localDirection*tubeDistance;
+
+    Float_t dout = ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmax());
+
+    Float_t din(kInfinity);
+    bool hasrmin = (torus.rmin() > 0);
+    if( hasrmin ){
+      din = ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmin());
+    }
+
+    MaskedAssign( !inBounds && !done, Min(dout+tubeDistance, din+tubeDistance), &distance);
+    MaskedAssign(  inBounds && !done, Min(dout, din), &distance);
+
+    bool hasphi = (torus.dphi() < kTwoPi );
     if( hasphi )
     {
-    // TODO
+     // TODO
     }
     /*bool checkSolution=1;
     if ( checkSolution && (distance < kInfinity ) )
@@ -876,7 +885,6 @@ struct TorusImplementation {
         
            }
     */
-
   }
 
   template <class Backend>
