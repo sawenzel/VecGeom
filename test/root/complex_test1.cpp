@@ -255,7 +255,7 @@ void testnavsimple()
     assert( maxdepth == 4);
     NavigationState currentstate( maxdepth );
 
-    VPlacedVolume const * vol=nav.LocatePoint( GeoManager::Instance().world(),
+    VPlacedVolume const * vol=nav.LocatePoint( GeoManager::Instance().GetWorld(),
             p1, currentstate, true );
     assert( RootGeoManager::Instance().tgeonode( vol ) == ::gGeoManager->GetTopNode());
 

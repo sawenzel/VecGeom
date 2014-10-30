@@ -42,9 +42,9 @@ int main(int argc, char* argv[]) {
 
   VPlacedVolume *worldPlaced = world.Place();
 
-  GeoManager::Instance().set_world(worldPlaced);
+  GeoManager::Instance().SetWorld(worldPlaced);
 
-  Benchmarker tester(GeoManager::Instance().world());
+  Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(1);
   tester.SetPointCount(1<<10);
   tester.SetRepetitions(512);

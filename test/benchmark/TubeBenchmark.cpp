@@ -18,9 +18,9 @@ void benchmark(double rmin, double rmax, double dz, double sphi, double dphi, in
 
   VPlacedVolume *worldPlaced = world.Place();
 
-  GeoManager::Instance().set_world(worldPlaced);
+  GeoManager::Instance().SetWorld(worldPlaced);
 
-  Benchmarker tester(GeoManager::Instance().world());
+  Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(3);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);

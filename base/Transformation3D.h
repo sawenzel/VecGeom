@@ -13,6 +13,10 @@
 #include <cmath>
 #include <cstring>
 
+#ifdef VECGEOM_ROOT
+class TGeoMatrix;
+#endif
+
 namespace VECGEOM_NAMESPACE {
 
 class Transformation3D {
@@ -163,6 +167,8 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   TranslationCode GenerateTranslationCode() const;
 
+
+
 private:
 
   // Templated rotation and translation methods which inline and compile to
@@ -292,6 +298,13 @@ public:
 #ifdef VECGEOM_CUDA_INTERFACE
   Transformation3D* CopyToGpu() const;
   Transformation3D* CopyToGpu(Transformation3D *const gpu_ptr) const;
+#endif
+
+
+#ifdef VECGEOM_ROOT
+// function to convert this transformation to a TGeo transformation
+// mainly used for the benchmark comparisons with ROOT
+  TGeoMatrix * ConvertToTGeoMatrix() const;
 #endif
 
 }; // End class Transformation3D

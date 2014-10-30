@@ -13,7 +13,7 @@
 //______________________________________________________________________________
 void LoadVecGeomGeometry()
 {
-   if( vecgeom::GeoManager::Instance().world() == NULL )
+   if( vecgeom::GeoManager::Instance().GetWorld() == NULL )
    {
     printf("Now loading VecGeom geometry\n");
     vecgeom::RootGeoManager::Instance().LoadRootGeometry();
