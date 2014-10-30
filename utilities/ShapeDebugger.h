@@ -67,6 +67,25 @@ public:
       Vector3D<Precision> const &bounds,
       int nSamples = 1024) const;
 
+  void CompareSafetyToInToROOT(
+      Vector3D<Precision> const &bounds,
+      int nSampels = 8) const;
+
+  void CompareSafetyToOutToROOT(
+      Vector3D<Precision> const &bounds,
+      int nSampels = 8) const;
+
+#endif
+
+private:
+
+#ifdef VECGEOM_ROOT
+
+  template <bool pointInsideT>
+  void CompareSafetyToROOT(
+      Vector3D<Precision> const &bounds,
+      int nSamples = 8) const;
+
 #endif
 
 };
