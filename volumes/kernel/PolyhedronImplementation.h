@@ -81,6 +81,13 @@ struct PolyhedronImplementation {
       Vector3D<Precision> const &direction,
       Precision &distance);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void ScalarSafetyToEndcapsSquared(
+      UnplacedPolyhedron const &polyhedron,
+      Vector3D<Precision> const &point,
+      Precision &distance);
+
   /// \return Checks whether a point is within the infinite phi wedge formed
   ///         from origin in the cutout angle between the first and last vector.
   template <class Backend>
@@ -123,12 +130,6 @@ struct PolyhedronImplementation {
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static Precision ScalarSafetyKernel(
-      UnplacedPolyhedron const &unplaced,
-      Vector3D<Precision> const &point);
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static Precision ScalarSafetyToOutKernel(
       UnplacedPolyhedron const &unplaced,
       Vector3D<Precision> const &point);
 
@@ -395,7 +396,9 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToZSegmentSquared(
   UnplacedPolyhedron::ZSegment const &segment =
       polyhedron.GetZSegment(segmentIndex);
 
-  if (polyhedron.HasPhiCutout() && phiIndex == polyhedron.GetSideCount()) {
+  if (polyhedron.HasPhiCutout() &&
+      InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
+                                point)) {
     return Min(segment.phi.ScalarDistanceSquared(0, point),
                segment.phi.ScalarDistanceSquared(1, point));
   }
@@ -481,6 +484,47 @@ void PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutEndcaps(
 
   Vector3D<Precision> intersection = point + distanceTest*direction;
   // Intersection point must be inside outer shell and outside inner shell
+  if (!segment->outer.Contains<kScalar>(intersection)) return;
+  if (treatInnerT && segment->hasInnerRadius) {
+    if (segment->inner.Contains<kScalar>(intersection)) return;
+  }
+  if (polyhedron.HasPhiCutout()) {
+    if (InPhiCutoutWedge<kScalar>(*segment, polyhedron.HasLargePhiCutout(),
+                                  intersection)) {
+      return;
+    }
+  }
+
+  distance = distanceTest;
+}
+
+template <bool treatInnerT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void PolyhedronImplementation<treatInnerT>::ScalarSafetyToEndcapsSquared(
+    UnplacedPolyhedron const &polyhedron,
+    Vector3D<Precision> const &point,
+    Precision &distance) {
+
+  UnplacedPolyhedron::ZSegment const *segment;
+  Precision zPlane;
+  if (point[2] < polyhedron.GetZPlane(0)) {
+    segment = &polyhedron.GetZSegment(0);
+    zPlane = polyhedron.GetZPlane(0);
+  } else if (point[2] > polyhedron.GetZPlane(polyhedron.GetZSegmentCount())) {
+    segment = &polyhedron.GetZSegment(polyhedron.GetZSegmentCount()-1);
+    zPlane = polyhedron.GetZPlane(polyhedron.GetZSegmentCount());
+  } else {
+    return;
+  }
+
+  Precision distanceTest = zPlane - point[2];
+  distanceTest *= distanceTest;
+  // No need to investigate if distance is larger anyway
+  if (distanceTest >= distance) return;
+
+  // Check if projection is within the endcap bounds
+  Vector3D<Precision> intersection(point[0], point[1], point[2] + distanceTest);
   if (!segment->outer.Contains<kScalar>(intersection)) return;
   if (treatInnerT && segment->hasInnerRadius) {
     if (segment->inner.Contains<kScalar>(intersection)) return;
@@ -699,6 +743,9 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
     if (point[2] - unplaced.GetZPlanes()[z] > safety) break;
   }
 
+  // Endcap
+  ScalarSafetyToEndcapsSquared(unplaced, point, safety);
+
   return sqrt(safety);
 }
 
@@ -751,16 +798,6 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
   ScalarDistanceToOutEndcaps(unplaced, goingRight, point, direction, distance);
 
   return distance < stepMax ? distance : stepMax;
-}
-
-template <bool treatInnerT>
-VECGEOM_INLINE
-VECGEOM_CUDA_HEADER_BOTH
-Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToOutKernel(
-    UnplacedPolyhedron const &unplaced,
-    Vector3D<Precision> const &point) {
-  // NYI
-  return 0;
 }
 
 template <bool treatInnerT>
