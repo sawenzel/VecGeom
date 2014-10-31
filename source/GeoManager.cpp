@@ -97,7 +97,6 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   return output;
 }
 
-
 void GeoManager::Clear()
 {
     fLogicalVolumesMap.clear();
@@ -106,4 +105,4 @@ void GeoManager::Clear()
     fMaxDepth=-1;
 }
 
-} // End global namespace
+} } // End global namespace

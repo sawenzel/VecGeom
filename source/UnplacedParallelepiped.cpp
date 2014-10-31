@@ -117,10 +117,6 @@ VPlacedVolume* UnplacedParallelepiped::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedParallelepiped_CopyToGpu(
@@ -165,4 +161,4 @@ void UnplacedParallelepiped_CopyToGpu(
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace

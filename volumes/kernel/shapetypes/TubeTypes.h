@@ -172,8 +172,9 @@ struct SectorType<HollowTubeWithBiggerThanPiSector> {
 };
 
 
-} }
+} // End of TubeTypes
 
+} } // End global namespace
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_SHAPETYPES_TUBETYPES_H_

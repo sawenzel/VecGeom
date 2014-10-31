@@ -777,6 +777,6 @@ Vector3D<InputType> Transformation3D::TransformDirection(
 
 std::ostream& operator<<(std::ostream& os, Transformation3D const &trans);
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_TRANSFORMATION3D_H_

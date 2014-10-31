@@ -87,6 +87,6 @@ void SpecializedParallelepiped<transCodeT, rotCodeT>::PrintType() const {
   printf("SpecializedParallelepiped<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_

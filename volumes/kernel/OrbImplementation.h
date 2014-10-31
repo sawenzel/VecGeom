@@ -558,6 +558,6 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedOrb cons
 
 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_ORBIMPLEMENTATION_H_

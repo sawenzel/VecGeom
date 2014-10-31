@@ -95,7 +95,7 @@ public:
 
 }; 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTORUS_H_
 

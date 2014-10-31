@@ -201,10 +201,6 @@ VPlacedVolume* UnplacedOrb::CreateSpecializedVolume(
 
 #endif
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedOrb_CopyToGpu(
@@ -214,7 +210,7 @@ void UnplacedOrb_CopyToGpu(
 VUnplacedVolume* UnplacedOrb::CopyToGpu(
     VUnplacedVolume *const gpu_ptr) const {
   UnplacedOrb_CopyToGpu(this->GetRadius(), gpu_ptr);
-  vecgeom::CudaAssertError();
+  CudaAssertError();
   return gpu_ptr;
 }
 
@@ -244,4 +240,4 @@ void UnplacedOrb_CopyToGpu(
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace

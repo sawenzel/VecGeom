@@ -51,6 +51,6 @@ T MakeMinusTolerantSquare(T const &x, T const &xsq)
   return (tolerant)? xsq-kTolerance*x : xsq;
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_

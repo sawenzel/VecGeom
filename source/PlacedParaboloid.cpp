@@ -55,10 +55,6 @@ G4VSolid const* PlacedParaboloid::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedParaboloid_CopyToGpu(
@@ -114,4 +110,4 @@ void PlacedParaboloid_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace

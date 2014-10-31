@@ -266,6 +266,6 @@ VECGEOM_INLINE
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDSPHERE_H_

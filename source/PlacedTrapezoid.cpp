@@ -66,10 +66,6 @@ G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedTrapezoid_CopyToGpu(
@@ -160,4 +156,5 @@ void PlacedTrapezoid::ComputeBoundingBox() {
     delete box1;
   }
 */
-} // End namespace vecgeom
+
+} } // End global namespace

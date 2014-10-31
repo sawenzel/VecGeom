@@ -72,6 +72,6 @@ void SpecializedTube<transCodeT, rotCodeT, tubeTypeT>::PrintType() const {
   printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_

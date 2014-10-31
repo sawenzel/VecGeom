@@ -67,6 +67,6 @@ VPlacedVolume* VolumeFactory::CreateByTransformation(
 
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_VOLUMEFACTORY_H_

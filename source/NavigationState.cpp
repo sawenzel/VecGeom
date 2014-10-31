@@ -60,5 +60,5 @@ namespace VECGEOM_NAMESPACE
 
 #endif
 
-};
+} } // End global namespace
 

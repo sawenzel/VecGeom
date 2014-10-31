@@ -148,8 +148,8 @@ Precision fSinEPhi;
         fSinCPhi   = std::sin(cPhi);
         fCosCPhi   = std::cos(cPhi);
         fCosHDPhi  = std::cos(hDPhi);
-        fCosHDPhiIT = std::cos(hDPhi - 0.5 * VECGEOM_NAMESPACE::kAngTolerance); // inner/outer tol half dphi
-        fCosHDPhiOT = std::cos(hDPhi + 0.5 * VECGEOM_NAMESPACE::kAngTolerance);
+        fCosHDPhiIT = std::cos(hDPhi - 0.5 * kAngTolerance); // inner/outer tol half dphi
+        fCosHDPhiOT = std::cos(hDPhi + 0.5 * kAngTolerance);
         fSinSPhi = std::sin(fSPhi);
         fCosSPhi = std::cos(fSPhi);
         fSinEPhi = std::sin(ePhi);
@@ -323,6 +323,6 @@ Precision fSinEPhi;
 };
 
 
-} // end namespace
+} }  // End global namespace
 
 #endif

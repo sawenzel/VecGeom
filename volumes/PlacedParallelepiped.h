@@ -107,6 +107,6 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDPARALLELEPIPED_H_

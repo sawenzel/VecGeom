@@ -309,10 +309,6 @@ VPlacedVolume* UnplacedParaboloid::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr);
@@ -346,4 +342,4 @@ void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr) {
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace

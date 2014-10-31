@@ -191,7 +191,7 @@ private:
 
 };
 
-} // end global namespace
+} } // end global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTUBE_H_
 

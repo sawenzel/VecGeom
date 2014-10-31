@@ -158,6 +158,6 @@ VcInt Max(VcInt const &val1, VcInt const &val2) {
   return Vc::max(val1, val2);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BACKEND_VCBACKEND_H_

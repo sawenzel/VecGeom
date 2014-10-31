@@ -271,6 +271,6 @@ private:
 #endif
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTRAPEZOID_H_

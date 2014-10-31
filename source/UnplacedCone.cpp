@@ -181,14 +181,6 @@ namespace VECGEOM_NAMESPACE {
                               placement);
 }
 
-
-}
-
-
-
-namespace vecgeom {
-
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedCone_CopyToGpu(
@@ -234,7 +226,4 @@ void UnplacedCone_CopyToGpu(
 
 #endif
 
-} // End namespace vecgeom
-
-
-
+} } // End namespace vecgeom

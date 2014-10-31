@@ -1112,7 +1112,7 @@ struct TorusImplementation {
 
 }; // end struct
 
-} // end namespace
+} } // end namespace
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION_H_

@@ -68,6 +68,6 @@ void SpecializedOrb<transCodeT, rotCodeT>::PrintType() const {
   printf("SpecializedOrb<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDORB_H_

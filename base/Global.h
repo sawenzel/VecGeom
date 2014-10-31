@@ -23,7 +23,8 @@
     // Compiling device code
     #define VECGEOM_NVCC_DEVICE
   #endif
-  #define VECGEOM_NAMESPACE vecgeom_cuda
+  #define VECGEOM_IMPL_NAMESPACE cuda
+  #define VECGEOM_NAMESPACE vecgeom::VECGEOM_IMPL_NAMESPACE
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
@@ -37,7 +38,8 @@
   #undef VECGEOM_BENCHMARK
 #else
   // Not compiling with NVCC
-  #define VECGEOM_NAMESPACE vecgeom
+  #define VECGEOM_IMPL_NAMESPACE cxx
+  #define VECGEOM_NAMESPACE vecgeom::VECGEOM_IMPL_NAMESPACE
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_BOTH
@@ -101,10 +103,10 @@ typedef double Precision;
 typedef int Inside_t;
 }
 
-namespace vecgeom_cuda {
-typedef vecgeom::Precision Precision;
-typedef vecgeom::Inside_t Inside_t;
-}
+//namespace vecgeom_cuda {
+//typedef vecgeom::Precision Precision;
+//typedef vecgeom::Inside_t Inside_t;
+//}
 
 namespace VECGEOM_NAMESPACE {
 
@@ -136,9 +138,9 @@ VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
 VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
 
 namespace EInside {
-VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kInside = 0;
-VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kSurface = 1;
-VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kOutside = 2;
+VECGEOM_GLOBAL vecgeom::Inside_t kInside = 0;
+VECGEOM_GLOBAL vecgeom::Inside_t kSurface = 1;
+VECGEOM_GLOBAL vecgeom::Inside_t kOutside = 2;
 }
 
 // namespace EMatrix3DEntry {
@@ -177,6 +179,6 @@ void Assert(const bool condition) {
   Assert(condition, "");
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_GLOBAL_H_

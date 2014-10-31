@@ -62,7 +62,7 @@ void SpecializedTrd<transCodeT, rotCodeT, trdTypeT>::PrintType() const {
   printf("SpecializedTrd<%i, %i, %s>", transCodeT, rotCodeT, trdTypeT::toString());
 }
 
-} // End global namespace
+} } // End global namespace
 
 
 

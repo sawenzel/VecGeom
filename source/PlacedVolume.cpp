@@ -87,4 +87,4 @@ std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
   return os;
 }
 
-} // End global namespace
+} } // End global namespace

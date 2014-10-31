@@ -145,10 +145,6 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   return os;
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void LogicalVolume_CopyToGpu(VUnplacedVolume const *const unplaced_volume,
@@ -161,7 +157,7 @@ LogicalVolume* LogicalVolume::CopyToGpu(
     LogicalVolume *const gpu_ptr) const {
 
   LogicalVolume_CopyToGpu(unplaced_volume, daughters, gpu_ptr);
-  vecgeom::CudaAssertError();
+  CudaAssertError();
   return gpu_ptr;
 
 }
@@ -170,7 +166,7 @@ LogicalVolume* LogicalVolume::CopyToGpu(
     VUnplacedVolume const *const unplaced_volume,
     Vector<Daughter> *const daughters) const {
 
-  LogicalVolume *const gpu_ptr = vecgeom::AllocateOnGpu<LogicalVolume>();
+   LogicalVolume *const gpu_ptr = AllocateOnGpu<LogicalVolume>();
   return this->CopyToGpu(unplaced_volume, daughters, gpu_ptr);
 
 }
@@ -204,4 +200,4 @@ void LogicalVolume_CopyToGpu(VUnplacedVolume const *const unplaced_volume,
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace

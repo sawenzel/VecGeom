@@ -65,6 +65,6 @@ void SpecializedParaboloid<transCodeT, rotCodeT>::PrintType() const {
   printf("SpecializedParaboloid<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARABOLOID_H_

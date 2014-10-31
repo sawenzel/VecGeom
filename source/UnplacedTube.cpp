@@ -80,10 +80,6 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedTube_CopyToGpu(
@@ -123,4 +119,4 @@ void UnplacedTube_CopyToGpu(
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace

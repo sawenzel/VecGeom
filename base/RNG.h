@@ -149,6 +149,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_RNG_H_

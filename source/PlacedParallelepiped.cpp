@@ -44,7 +44,7 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
+} } // End global namespace
 
 namespace vecgeom {
 

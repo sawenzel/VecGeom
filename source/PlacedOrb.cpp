@@ -50,10 +50,6 @@ return new G4Orb(GetLabel().c_str(),GetRadius());
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedOrb_CopyToGpu(
@@ -109,4 +105,4 @@ void PlacedOrb_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace

@@ -733,6 +733,6 @@ public:
 
 }; // End class ShapeImplementationHelper
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_

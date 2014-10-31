@@ -170,6 +170,6 @@ private:
       VPlacedVolume *const placement = NULL) const;
 };
 
-} // end global namespace
+} } // end global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTRD_H_

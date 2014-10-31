@@ -119,6 +119,6 @@ public:
     }
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_TYPEMAP_H_

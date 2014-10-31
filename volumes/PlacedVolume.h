@@ -268,6 +268,6 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_

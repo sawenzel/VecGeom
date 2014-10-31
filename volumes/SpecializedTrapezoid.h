@@ -104,6 +104,6 @@ void SpecializedTrapezoid<transCodeT, rotCodeT>::PrintType() const {
   printf("SpecializedTrapezoid<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_

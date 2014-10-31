@@ -126,6 +126,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_ROOTMANAGER_H_

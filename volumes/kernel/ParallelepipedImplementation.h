@@ -340,6 +340,6 @@ void ParallelepipedImplementation<transCodeT, rotCodeT>::SafetyToOut(
   MaskedAssign(safetyVector[2] < safety, safetyVector[2], &safety);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_

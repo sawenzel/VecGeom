@@ -13,10 +13,10 @@
 #include <map>
 #include <set>
 
-namespace vecgeom_cuda { class VPlacedVolume; }
-
 // Compile for vecgeom namespace to work as interface
-namespace vecgeom {
+namespace vecgeom { inline namespace cxx { 
+
+namespace cuda { class VPlacedVolume; }
 
 #ifdef VECGEOM_NVCC
 // Forward declarations for NVCC compilation
@@ -47,7 +47,7 @@ private:
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
 
   VPlacedVolume const *world_;
-  vecgeom_cuda::VPlacedVolume *world_gpu_;
+  vecgeom::cuda::VPlacedVolume *world_gpu_;
 
   /**
    * Contains a mapping between objects stored in host memory and pointers to
@@ -72,7 +72,7 @@ public:
 
   VPlacedVolume const* world() const;
 
-  vecgeom_cuda::VPlacedVolume const* world_gpu() const;
+  vecgeom::cuda::VPlacedVolume const* world_gpu() const;
 
   /**
    * Stages a new geometry to be copied to the GPU.
@@ -86,7 +86,7 @@ public:
    * creating new objects with correct pointers, then copying them to the GPU.
    * \return Pointer to top volume on the GPU.
    */
-  vecgeom_cuda::VPlacedVolume const* Synchronize();
+  vecgeom::cuda::VPlacedVolume const* Synchronize();
 
   /**
    * Deallocates all GPU pointers stored in the memory table.
@@ -173,7 +173,7 @@ private:
 
 };
 
-void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world);
+void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world);
 
 // void CudaManagerLocatePoints(VPlacedVolume const *const world,
 //                              SOA3D<Precision> const *const points,
@@ -183,6 +183,6 @@ void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world);
 //                              AOS3D<Precision> const *const points,
 //                              const int n, const int depth, int *const output);
 
-} // End namespace vecgeom
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_CUDAMANAGER_H_

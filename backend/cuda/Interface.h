@@ -10,7 +10,7 @@
 
 #include "driver_types.h" // Required for cudaError_t type
 
-namespace vecgeom {
+namespace vecgeom { namespace cxx {
 
 class VPlacedVolume;
 template <typename Type> class SOA3D;
@@ -73,7 +73,9 @@ void CopyFromGpu(Type const *const src, Type *const tgt) {
   CopyFromGpu<Type>(src, tgt, sizeof(Type));
 }
 
-} // End global namespace
+} // End cuda namespace 
+
+} // End vecgeom namespace
 
 #endif // VECGEOM_CUDA
 

@@ -215,8 +215,8 @@ public:
   VECGEOM_INLINE
   Type Phi() const {
     //Type output = 0;
-    //VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
-    //                                ATan2(vec[1], vec[0]), &output);
+    //vecgeom::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
+    //                      ATan2(vec[1], vec[0]), &output);
     //return output;
     return ATan2(vec[1], vec[0]);
   }
@@ -254,9 +254,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Type> Abs() const {
-    return Vector3D<Type>(VECGEOM_NAMESPACE::Abs(vec[0]),
-                          VECGEOM_NAMESPACE::Abs(vec[1]),
-                          VECGEOM_NAMESPACE::Abs(vec[2]));
+    return Vector3D<Type>(vecgeom::Abs(vec[0]),
+                          vecgeom::Abs(vec[1]),
+                          vecgeom::Abs(vec[2]));
   }
 
   template <typename BoolType>
@@ -304,7 +304,7 @@ public:
   VECGEOM_INLINE
   VecType& FixZeroes() {
     for (int i = 0; i < 3; ++i) {
-      VECGEOM_NAMESPACE::MaskedAssign(VECGEOM_NAMESPACE::Abs(vec[i]) < kTolerance, 0., &vec[i]);
+      vecgeom::MaskedAssign(vecgeom::Abs(vec[i]) < kTolerance, 0., &vec[i]);
     }
     return *this;
   }
@@ -802,6 +802,6 @@ VECTOR3D_VC_BOOLEAN_LOGICAL_OP(||)
 
 #endif // VECGEOM_VC
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_VECTOR3D_H_

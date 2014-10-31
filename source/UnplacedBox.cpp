@@ -142,7 +142,7 @@ VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
 
 #endif
 
-} // End global namespace
+} } // End global namespace
 
 namespace vecgeom {
 

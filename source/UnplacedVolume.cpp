@@ -38,4 +38,4 @@ VPlacedVolume* VUnplacedVolume::PlaceVolume(
 
 #endif
 
-} // End global namespace
+} } // End global namespace

@@ -77,10 +77,6 @@ VPlacedVolume* UnplacedTrd::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedTrd_CopyToGpu(
@@ -122,4 +118,4 @@ void UnplacedTrd_CopyToGpu(
 
 
 
-} // End namespace vecgeom
+} } // End global namespace

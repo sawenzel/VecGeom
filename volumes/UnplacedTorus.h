@@ -9,7 +9,6 @@
 #include "volumes/UnplacedTube.h"
 #include "volumes/Wedge.h"
 
-
 namespace VECGEOM_NAMESPACE {
 
 class UnplacedTorus : public VUnplacedVolume, public AlignedBase {
@@ -187,10 +186,6 @@ private:
 
 };
 
-} // end global namespace
+} } // end global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTORUS_H_
-
-
-
-

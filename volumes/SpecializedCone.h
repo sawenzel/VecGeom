@@ -87,6 +87,6 @@ void SpecializedCone<transCodeT, rotCodeT, ConeType>::PrintType() const {
   printf("SpecializedCone<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_

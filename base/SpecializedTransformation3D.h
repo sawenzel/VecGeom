@@ -68,6 +68,6 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_SPECIALIZEDTRANSFORMATION3D_H_

@@ -75,6 +75,6 @@ void SpecializedBox<transCodeT, rotCodeT>::PrintType() const {
   printf("SpecializedBox<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDBOX_H_

@@ -78,6 +78,6 @@ public:
   double Elapsed() const { return standardtimer::seconds( t2-t1 ); }
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_STOPWATCH_H_

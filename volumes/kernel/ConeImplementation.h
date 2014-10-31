@@ -2111,5 +2111,6 @@ struct ConeImplementation {
 
 }; // end struct
 
-} // end namespace
+} } // End global namespace
+
 #endif /* VECGEOM_VOLUMES_KERNEL_CONEIMPLEMENTATION_H_ */

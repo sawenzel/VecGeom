@@ -71,6 +71,6 @@ void SpecializedSphere<transCodeT, rotCodeT>::PrintType() const {
   printf("SpecializedSphere<%i, %i>", transCodeT, rotCodeT);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDSPHERE_H_

@@ -137,6 +137,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_CONTAINER3D_H_

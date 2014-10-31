@@ -53,7 +53,6 @@ namespace VECGEOM_NAMESPACE {
 #endif
   
   
-
-}// End global 
+} } // End global namespace
 
 #endif //VECGEOM_VOLUMES_SPHEREUTILITIES_H_

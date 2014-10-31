@@ -51,10 +51,6 @@ G4VSolid const* PlacedBox::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedBox_CopyToGpu(LogicalVolume const *const logical_volume,
@@ -108,4 +104,4 @@ void PlacedBox_CopyToGpu(LogicalVolume const *const logical_volume,
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End namespace vecgeom

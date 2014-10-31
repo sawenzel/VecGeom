@@ -6,7 +6,7 @@
 #include <cassert>
 #include <stdio.h>
 
-namespace vecgeom {
+namespace vecgeom { namespace cxx {
 
 cudaError_t CudaCheckError(const cudaError_t err) {
   if (err != cudaSuccess) {
@@ -43,5 +43,7 @@ cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size) {
 cudaError_t CudaFree(void* ptr) {
   return cudaFree(ptr);
 }
+
+} // End namespace cuda
 
 } // End namespace vecgeom

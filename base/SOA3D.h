@@ -11,8 +11,6 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace vecgeom_cuda { template <typename T> class SOA3D; }
-
 namespace VECGEOM_NAMESPACE {
 
 // gcc 4.8.2's -Wnon-virtual-dtor is broken and turned on by -Weffc++, we
@@ -364,23 +362,23 @@ SOA3D<Precision>* SOA3D_CopyToGpu(Precision *x, Precision *y, Precision *z,
 template <typename T>
 SOA3D<T>* SOA3D<T>::CopyToGpu(T *xGpu, T *yGpu, T *zGpu) const {
   size_t bytes = fSize*sizeof(T);
-  vecgeom::CopyToGpu(fX, xGpu, bytes);
-  vecgeom::CopyToGpu(fX, yGpu, bytes);
-  vecgeom::CopyToGpu(fZ, zGpu, bytes);
+  CopyToGpu(fX, xGpu, bytes);
+  CopyToGpu(fX, yGpu, bytes);
+  CopyToGpu(fZ, zGpu, bytes);
   return SOA3D_CopyToGpu(xGpu, yGpu, zGpu, fSize);
 }
 
 template <typename T>
 SOA3D<T>* SOA3D<T>::CopyToGpu(T *xGpu, T *yGpu, T *zGpu, size_t count) const {
   size_t bytes = count*sizeof(T);
-  vecgeom::CopyToGpu(fX, xGpu, bytes);
-  vecgeom::CopyToGpu(fX, yGpu, bytes);
-  vecgeom::CopyToGpu(fZ, zGpu, bytes);
+  CopyToGpu(fX, xGpu, bytes);
+  CopyToGpu(fX, yGpu, bytes);
+  CopyToGpu(fZ, zGpu, bytes);
   return SOA3D_CopyToGpu(xGpu, yGpu, zGpu, count);
 }
 
 #endif // VECGEOM_CUDA
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_SOA3D_H_

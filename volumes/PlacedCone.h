@@ -134,6 +134,6 @@ public:
 
 }; // end class
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDCONE_H_

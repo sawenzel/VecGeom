@@ -409,10 +409,6 @@ VPlacedVolume* UnplacedSphere::CreateSpecializedVolume(
 #endif
 
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedSphere_CopyToGpu(
@@ -454,4 +450,5 @@ void UnplacedSphere_CopyToGpu(
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace
+

@@ -57,10 +57,6 @@ G4VSolid const * PlacedCone::ConvertToGeant4() const {
 
 #endif
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedCone_CopyToGpu(
@@ -116,7 +112,5 @@ void PlacedCone_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
-
-
+} } // End namespace vecgeom
 

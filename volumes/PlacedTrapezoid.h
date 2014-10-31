@@ -174,6 +174,6 @@ protected:
 
 }; // end of class PlacedTrapezoid
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTRAPEZOID_H_

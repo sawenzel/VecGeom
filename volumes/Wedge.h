@@ -347,7 +347,7 @@ class Wedge{
    }
           
 
-} // end of namespace
+} } // end of namespace
 
 
 #endif /* VECGEOM_VOLUMES_WEDGE_H_ */

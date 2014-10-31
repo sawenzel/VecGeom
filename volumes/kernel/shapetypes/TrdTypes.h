@@ -52,7 +52,10 @@ bool checkVaryingY(const UnplacedTrd& trd) {
     return trd.dy1() != trd.dy2();
 }
 
-} }
+} // end of TrdTypes
+
+} } // End global namespace
+
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_SHAPETYPES_TRDTYPES_H_

@@ -62,10 +62,6 @@ VPlacedVolume* UnplacedTorus::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedTorus_CopyToGpu(
@@ -105,4 +101,5 @@ void UnplacedTorus_CopyToGpu(
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace
+

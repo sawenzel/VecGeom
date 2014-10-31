@@ -95,7 +95,7 @@ public:
 
 }; 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTUBE_H_
 

@@ -444,6 +444,7 @@ struct TrdImplementation {
 
 };
 
-}
+} } // End global namespace
+
 
 #endif // VECGEOM_VOLUMES_KERNEL_TRDIMPLEMENTATION_H_

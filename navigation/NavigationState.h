@@ -447,6 +447,7 @@ int NavigationState::Distance( NavigationState const & other ) const
 }
 
 
-}
+} } // End global namespace
+
 
 #endif // VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_

@@ -50,10 +50,6 @@ G4VSolid const* PlacedTrd::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedTrd_CopyToGpu(
@@ -109,4 +105,5 @@ void PlacedTrd_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace
+

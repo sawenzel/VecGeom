@@ -15,7 +15,7 @@ namespace VECGEOM_NAMESPACE {
     VECGEOM_CUDA_HEADER_BOTH
     virtual ~USolidsInterfaceHelper() {}
   };
-}
+} }
 
 #else // Compiling with USolids compatibility
 
@@ -152,7 +152,7 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // USolids defined
 

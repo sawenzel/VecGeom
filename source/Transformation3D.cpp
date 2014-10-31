@@ -205,10 +205,6 @@ std::ostream& operator<<(std::ostream& os,
   return os;
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void Transformation3D_CopyToGpu(
@@ -225,7 +221,7 @@ Transformation3D* Transformation3D::CopyToGpu(
                              fRotation[0], fRotation[1], fRotation[2],
                              fRotation[3], fRotation[4], fRotation[5],
                              fRotation[6], fRotation[7], fRotation[8], gpu_ptr);
-  vecgeom::CudaAssertError();
+  CudaAssertError();
   return gpu_ptr;
 
 }
@@ -266,4 +262,5 @@ void Transformation3D_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace
+

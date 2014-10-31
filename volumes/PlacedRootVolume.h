@@ -14,6 +14,8 @@ class TGeoShape;
 
 namespace vecgeom {
 
+   inline namespace cxx {
+
 template <typename T> class AOS3D;
 template <typename T> class SOA3D;
 
@@ -249,6 +251,6 @@ Precision PlacedRootVolume::SafetyToIn(
   return fRootShape->Safety(&position_local[0], false);
 }
 
-} // End namespace vecgeom
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDROOTVOLUME_H_

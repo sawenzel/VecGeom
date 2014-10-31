@@ -47,10 +47,6 @@ G4VSolid const* PlacedTube::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedTube_CopyToGpu(
@@ -106,5 +102,5 @@ void PlacedTube_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace
 

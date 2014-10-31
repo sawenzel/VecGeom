@@ -489,7 +489,7 @@ struct TubeImplementation {
       distance = dist_rmax;
       return;
     }
-
+    
     /*
      * rmin
      * If the particle were to hit rmin, it would hit
@@ -735,9 +735,8 @@ struct TubeImplementation {
     }
   }
 
-};
+}; // End of TubeUtilties
 
-}
-
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_

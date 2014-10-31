@@ -148,6 +148,6 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_LOGICALVOLUME_H_

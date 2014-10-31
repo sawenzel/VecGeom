@@ -42,10 +42,6 @@ G4VSolid const* PlacedTorus::ConvertToGeant4() const {
 
 #endif // VECGEOM_BENCHMARK
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedTorus_CopyToGpu(
@@ -101,5 +97,5 @@ void PlacedTorus_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace
 

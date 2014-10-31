@@ -525,6 +525,6 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::SafetyToOut(
 #endif
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_TRAPEZOIDIMPLEMENTATION_H_

@@ -319,6 +319,6 @@ void GeoManager::getAllPathForLogicalVolume( LogicalVolume const * lvol, Contain
 
 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_

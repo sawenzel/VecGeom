@@ -139,4 +139,4 @@ void SimpleNavigator::InspectSafetyForPoint
 
 #endif // VECGEOM_ROOT
 
-}
+} } // End global namespace

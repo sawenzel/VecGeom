@@ -62,6 +62,6 @@ public:
 class AlignedBase {};
 #endif
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_ALIGNEDBASE_H_

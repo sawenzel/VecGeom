@@ -120,6 +120,6 @@ Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
 
 #endif // VECGEOM_CUDA
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_CONTAINER_H_

@@ -696,12 +696,8 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
     return os;
   }
 
-} // End global namespace
-
-
-namespace vecgeom {
-// only the GPU-related methods should go inside this namespace
 #ifdef VECGEOM_CUDA_INTERFACE
+// only the GPU-related methods should go inside this part
 
 void UnplacedTrapezoid_CopyToGpu(
     Precision dz, Precision theta, Precision phi,
@@ -755,5 +751,4 @@ class VUnplacedVolume;
   }
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
-
+} } // End global namespace

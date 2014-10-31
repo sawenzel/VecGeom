@@ -10,6 +10,7 @@
 namespace vecgeom {
 
 #ifdef VECGEOM_NVCC
+   namespace cuda {
 
 template <typename T>
 __global__
@@ -31,7 +32,7 @@ AOS3D<Precision>* AOS3D_CopyToGpu(
     vecgeom_cuda::Vector3D<Precision> *content, size_t size) {
   return AOS3D_CopyToGpuTemplate(content, size);
 }
-
+   }
 #endif
 
 } // End namespace vecgeom

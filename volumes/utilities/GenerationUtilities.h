@@ -1,5 +1,6 @@
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom { 
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template<typename SpecializationT>
 VECGEOM_CUDA_HEADER_DEVICE
@@ -29,8 +30,6 @@ VPlacedVolume* CreateSpecializedWithPlacement(
 
 }
 
-
-
-}
+} } // End global namespace
 
 

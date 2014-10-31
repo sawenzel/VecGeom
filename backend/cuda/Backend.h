@@ -11,7 +11,7 @@
 
 #include <cassert>
 
-namespace vecgeom_cuda {
+namespace vecgeom { inline namespace cuda {
 
 struct kCuda {
   typedef int       int_v;
@@ -94,6 +94,6 @@ struct LaunchParameters {
   }
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BACKEND_CUDABACKEND_H_

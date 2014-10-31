@@ -56,10 +56,6 @@ return new G4Sphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedSphere_CopyToGpu(
@@ -115,4 +111,5 @@ void PlacedSphere_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace
+

@@ -10,4 +10,4 @@ const VcBool      kVc::kFalse = VcBool(false);
 const VcPrecision kVc::kOne   = VcPrecision(1.); //Vc::One;
 const VcPrecision kVc::kZero  = VcPrecision(0.); //Vc::Zero;
 
-} // End global namespace
+} } // End global namespace
