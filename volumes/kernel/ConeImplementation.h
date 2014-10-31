@@ -58,7 +58,7 @@ struct ConeHelper
 */
 };
 
-
+#include "backend/vc/Backend.h"
 template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename ConeType>
 struct ConeImplementation {
@@ -281,6 +281,767 @@ struct ConeImplementation {
 
   // we need to provide the Contains functions for the boolean interface
 
+  // the fall-back version from USolids
+  // to take a short cut towards full functionality
+  // this really only makes sense for Scalar and CUDA backend
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::precision_v DistanceToInUSolids
+  ( UnplacedCone const &unplaced,
+    Transformation3D const &transformation,
+    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &direction,
+    typename Backend::precision_v const &stepMax ) {
+
+    // first of all: transform points and directions
+    Vector3D<typename Backend::precision_v> p = transformation.Transform<transCodeT,rotCodeT>(point);
+    Vector3D<typename Backend::precision_v> v = transformation.TransformDirection<rotCodeT>(direction);
+
+    // now comes the original USolids code
+    double snxt = VECGEOM_NAMESPACE::kInfinity;
+    const double dRmax = 100 * Max(unplaced.GetRmax1(), unplaced.GetRmax2());
+    static const double halfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
+    static const double halfRadTolerance = VECGEOM_NAMESPACE::kRadTolerance * 0.5;
+
+    double rMaxAv, rMaxOAv; // Data for cones
+    double rMinAv, rMinOAv;
+    double rout, rin;
+
+    double tolORMin, tolORMin2, tolIRMin, tolIRMin2; // `generous' radii squared
+    double tolORMax2, tolIRMax, tolIRMax2;
+    double tolODz, tolIDz;
+
+    double Dist, sd, xi, yi, zi, ri = 0., risec, rhoi2, cosPsi; // Intersection point vars
+
+    double t1, t2, t3, b, c, d; // Quadratic solver variables
+    double nt1, nt2, nt3;
+    double Comp;
+
+    Vector3D<Precision> norm;
+
+    // Cone Precalcs
+    rMinAv  = (unplaced.GetRmin1() + unplaced.GetRmin2()) * 0.5;
+
+    if (rMinAv > halfRadTolerance) {
+          rMinOAv = rMinAv - halfRadTolerance;
+    }
+    else {
+          rMinOAv = 0.0;
+    }
+    rMaxAv  = (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
+    rMaxOAv = rMaxAv + halfRadTolerance;
+
+    // Intersection with z-surfaces
+    tolIDz = unplaced.GetDz() - halfCarTolerance;
+    tolODz = unplaced.GetDz() + halfCarTolerance;
+
+    if (Abs(p.z()) >= tolIDz)
+    {
+          if (p.z() * v.z() < 0)   // at +Z going in -Z or visa versa
+          {
+            sd = (Abs(p.z()) - unplaced.GetDz()) / Abs(v.z()); // Z intersect distance
+
+            if (sd < 0.0)
+            {
+              sd = 0.0;  // negative dist -> zero
+            }
+
+            xi   = p.x() + sd * v.x(); // Intersection coords
+            yi   = p.y() + sd * v.y();
+            rhoi2 = xi * xi + yi * yi ;
+
+            // Check validity of intersection
+            // Calculate (outer) tolerant radi^2 at intersecion
+
+            if (v.z() > 0)
+            {
+              tolORMin  = unplaced.GetRmin1() - halfRadTolerance * unplaced.fSecRMin;
+              tolIRMin  = unplaced.GetRmin1() + halfRadTolerance * unplaced.fSecRMin;
+              tolIRMax  = unplaced.GetRmax1() - halfRadTolerance * unplaced.fSecRMin;
+              tolORMax2 = (unplaced.GetRmax1() + halfRadTolerance * unplaced.fSecRMax) *
+                          (unplaced.GetRmax1() + halfRadTolerance * unplaced.fSecRMax);
+            }
+            else
+            {
+              tolORMin  = unplaced.GetRmin2() - halfRadTolerance * unplaced.fSecRMin;
+              tolIRMin  = unplaced.GetRmin2() + halfRadTolerance * unplaced.fSecRMin;
+              tolIRMax  = unplaced.GetRmax2() - halfRadTolerance * unplaced.fSecRMin;
+              tolORMax2 = (unplaced.GetRmax2() + halfRadTolerance * unplaced.fSecRMax) *
+                          (unplaced.GetRmax2() + halfRadTolerance * unplaced.fSecRMax);
+            }
+            if (tolORMin > 0)
+            {
+              tolORMin2 = tolORMin * tolORMin;
+              tolIRMin2 = tolIRMin * tolIRMin;
+            }
+            else
+            {
+              tolORMin2 = 0.0;
+              tolIRMin2 = 0.0;
+            }
+            if (tolIRMax > 0)
+            {
+              tolIRMax2 = tolIRMax * tolIRMax;
+            }
+            else
+            {
+              tolIRMax2 = 0.0;
+            }
+
+            if ((tolIRMin2 <= rhoi2) && (rhoi2 <= tolIRMax2))
+            {
+              if (! unplaced.IsFullPhi() && rhoi2)
+              {
+                // Psi = angle made with central (average) phi of shape
+
+                cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / Sqrt(rhoi2);
+
+                if (cosPsi >= unplaced.fCosHDPhiIT)
+                {
+                  return sd;
+                }
+              }
+              else
+              {
+                return sd;
+              }
+            }
+          }
+          else  // On/outside extent, and heading away  -> cannot intersect
+          {
+            return snxt;
+          }
+        }
+
+      // ----> Can not intersect z surfaces
+
+
+      // Intersection with outer cone (possible return) and
+      //                   inner cone (must also check phi)
+      //
+      // Intersection point (xi,yi,zi) on line x=p.x()+t*v.x() etc.
+      //
+      // Intersects with x^2+y^2=(a*z+b)^2
+      //
+      // where a=unplaced.fTanRMax or unplaced.fTanRMin
+      //       b=rMaxAv or rMinAv
+      //
+      // (vx^2+vy^2-(a*vz)^2)t^2+2t(pxvx+pyvy-a*vz(a*pz+b))+px^2+py^2-(a*pz+b)^2=0;
+      //     t1                       t2                      t3
+      //
+      //  \--------u-------/       \-----------v----------/ \---------w--------/
+      //
+
+        t1   = 1.0 - v.z() * v.z();
+        t2   = p.x() * v.x() + p.y() * v.y();
+        t3   = p.x() * p.x() + p.y() * p.y();
+        rin = unplaced.fTanRMin * p.z() + rMinAv;
+        rout = unplaced.fTanRMax * p.z() + rMaxAv;
+
+        // Outer Cone Intersection
+        // Must be outside/on outer cone for valid intersection
+
+        nt1 = t1 - (unplaced.fTanRMax * v.z()) * (unplaced.fTanRMax * v.z());
+        nt2 = t2 - unplaced.fTanRMax * v.z() * rout;
+        nt3 = t3 - rout * rout;
+
+        if (std::fabs(nt1) > VECGEOM_NAMESPACE::kRadTolerance) // Equation quadratic => 2 roots
+        {
+          b = nt2 / nt1;
+          c = nt3 / nt1;
+          d = b * b - c ;
+          if ((nt3 > rout * rout * kRadTolerance * kRadTolerance * unplaced.fSecRMax * unplaced.fSecRMax)
+              || (rout < 0))
+          {
+            // If outside real cone (should be rho-rout>kRadTolerance*0.5
+            // NOT rho^2 etc) saves a std::sqrt() at expense of accuracy
+
+            if (d >= 0)
+            {
+
+              if ((rout < 0) && (nt3 <= 0))
+              {
+                // Inside `shadow cone' with -ve radius
+                // -> 2nd root could be on real cone
+                if (b > 0) {
+                  sd = c / (-b - Sqrt(d));
+                }
+                else {
+                  sd = -b + Sqrt(d);
+                }
+              }
+              else
+              {
+                if ((b <= 0) && (c >= 0)) // both >=0, try smaller root
+                {
+                  sd = c / (-b + Sqrt(d));
+                }
+                else
+                {
+                  if (c <= 0)   // second >=0
+                  {
+                    sd = -b + Sqrt(d);
+                  }
+                  else  // both negative, travel away
+                  {
+                    return VECGEOM_NAMESPACE::kInfinity;
+                  }
+                }
+              }
+              if (sd > 0)    // If 'forwards'. Check z intersection
+              {
+                zi = p.z() + sd * v.z();
+                if (Abs(zi) <= tolODz)
+                {
+                  // Z ok. Check phi intersection if reqd
+                  if (unplaced.IsFullPhi())
+                  {
+                    return sd;
+                  }
+                  else
+                  {
+                    xi     = p.x() + sd * v.x();
+                    yi     = p.y() + sd * v.y();
+                    ri     = rMaxAv + zi * unplaced.fTanRMax;
+                    cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+                    if (cosPsi >= unplaced.fCosHDPhiIT)
+                    {
+                      return sd;
+                    }
+                  }
+                }
+              }               // end if (sd>0)
+            }
+          }
+          else
+          {
+            // Inside outer cone
+            // check not inside, and heading through UCons (-> 0 to in)
+            if ((t3 > (rin + halfRadTolerance * unplaced.fSecRMin)*
+                 (rin + halfRadTolerance * unplaced.fSecRMin))
+                && (nt2 < 0) && (d >= 0) && (Abs(p.z()) <= tolIDz))
+            {
+              // Inside cones, delta r -ve, inside z extent
+              // Point is on the Surface => check Direction using Normal.Dot(v)
+              xi     = p.x();
+              yi     = p.y()  ;
+              risec = std::sqrt(xi * xi + yi * yi) * unplaced.fSecRMax;
+              norm = Vector3D<Precision>(xi / risec, yi / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+              if (!unplaced.IsFullPhi())
+              {
+                cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi) / Sqrt(t3);
+                if (cosPsi >= unplaced.fCosHDPhiIT)
+                {
+                  if (norm.Dot(v) <= 0)
+                  {
+                    return 0.0;
+                  }
+                }
+              }
+              else
+              {
+                if (norm.Dot(v) <= 0)
+                {
+                  return 0.0;
+                }
+              }
+            }
+          }
+        }
+        else  //  Single root case
+        {
+          if (Abs(nt2) > VECGEOM_NAMESPACE::kRadTolerance)
+          {
+            sd = -0.5 * nt3 / nt2;
+            if (sd < 0)
+            {
+              return VECGEOM_NAMESPACE::kInfinity;  // travel away
+            }
+            else  // sd >= 0, If 'forwards'. Check z intersection
+            {
+              zi = p.z() + sd * v.z();
+              if ((Abs(zi) <= tolODz) && (nt2 < 0))
+              {
+                // Z ok. Check phi intersection if reqd
+                if (unplaced.IsFullPhi())
+                {
+                  return sd;
+                }
+                else
+                {
+                  xi     = p.x() + sd * v.x();
+                  yi     = p.y() + sd * v.y();
+                  ri     = rMaxAv + zi * unplaced.fTanRMax;
+                  cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+
+                  if (cosPsi >= unplaced.fCosHDPhiIT)
+                  {
+                    return sd;
+                  }
+                }
+              }
+            }
+          }
+          else  //    travel || cone surface from its origin
+          {
+            sd = VECGEOM_NAMESPACE::kInfinity;
+          }
+        }
+
+        // Inner Cone Intersection
+        // o Space is divided into 3 areas:
+        //   1) Radius greater than real inner cone & imaginary cone & outside
+        //      tolerance
+        //   2) Radius less than inner or imaginary cone & outside tolarance
+        //   3) Within tolerance of real or imaginary cones
+        //      - Extra checks needed for 3's intersections
+        //        => lots of duplicated code
+        if (rMinAv)
+        {
+          nt1 = t1 - (unplaced.fTanRMin * v.z()) * (unplaced.fTanRMin * v.z());
+          nt2 = t2 - unplaced.fTanRMin * v.z() * rin;
+          nt3 = t3 - rin * rin;
+          if (nt1)
+          {
+            if (nt3 > rin * VECGEOM_NAMESPACE::kRadTolerance * unplaced.fSecRMin)
+            {
+              // At radius greater than real & imaginary cones
+              // -> 2nd root, with zi check
+              b = nt2 / nt1;
+              c = nt3 / nt1;
+              d = b * b - c;
+              if (d >= 0)  // > 0
+              {
+                if (b > 0)
+                {
+                  sd = c / (-b - Sqrt(d));
+                }
+                else
+                {
+                  sd = -b + Sqrt(d);
+                }
+                if (sd >= 0)    // > 0
+                {
+                  zi = p.z() + sd * v.z();
+                  if (Abs(zi) <= tolODz)
+                  {
+                    if (! unplaced.IsFullPhi() )
+                    {
+                      xi     = p.x() + sd * v.x();
+                      yi     = p.y() + sd * v.y();
+                      ri     = rMinAv + zi * unplaced.fTanRMin;
+                      cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+                      if (cosPsi >= unplaced.fCosHDPhiIT)
+                      {
+                        if (sd > halfRadTolerance)
+                        {
+                          snxt = sd;
+                        }
+                        else
+                        {
+                          // Calculate a normal vector in order to check Direction
+                          risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                          if (norm.Dot(v) <= 0)
+                          {
+                            snxt = sd;
+                          }
+                        }
+                      }
+                    }
+                    else
+                    {
+                      if (sd > halfRadTolerance)
+                      {
+                        return sd;
+                      }
+                      else
+                      {
+                        // Calculate a normal vector in order to check Direction
+                        xi     = p.x() + sd * v.x();
+                        yi     = p.y() + sd * v.y();
+                        risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                        if (norm.Dot(v) <= 0)
+                        {
+                          return sd;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else  if (nt3 < -rin * VECGEOM_NAMESPACE::kRadTolerance * unplaced.fSecRMin)
+            {
+              // Within radius of inner cone (real or imaginary)
+              // -> Try 2nd root, with checking intersection is with real cone
+              // -> If check fails, try 1st root, also checking intersection is
+              //    on real cone
+              b = nt2 / nt1;
+              c = nt3 / nt1;
+              d = b * b - c;
+              if (d >= 0)    // > 0
+              {
+                if (b > 0)
+                {
+                  sd = c / (-b - Sqrt(d));
+                }
+                else
+                {
+                  sd = -b + Sqrt(d);
+                }
+                zi = p.z() + sd * v.z();
+                ri = rMinAv + zi * unplaced.fTanRMin;
+
+                if (ri > 0)
+                {
+                  if ((sd >= 0) && (Abs(zi) <= tolODz))    // sd > 0
+                  {
+                    if (unplaced.IsFullPhi())
+                    {
+                      xi     = p.x() + sd * v.x();
+                      yi     = p.y() + sd * v.y();
+                      cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+
+                      if (cosPsi >= unplaced.fCosHDPhiOT)
+                      {
+                        if (sd > halfRadTolerance)
+                        {
+                          snxt = sd;
+                        }
+                        else
+                        {
+                          // Calculate a normal vector in order to check Direction
+
+                          risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                          if (norm.Dot(v) <= 0)
+                          {
+                            snxt = sd;
+                          }
+                        }
+                      }
+                    }
+                    else
+                    {
+                      if (sd > halfRadTolerance)
+                      {
+                        return sd;
+                      }
+                      else
+                      {
+                        // Calculate a normal vector in order to check Direction
+                        xi     = p.x() + sd * v.x();
+                        yi     = p.y() + sd * v.y();
+                        risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                        if (norm.Dot(v) <= 0)
+                        {
+                          return sd;
+                        }
+                      }
+                    }
+                  }
+                }
+                else
+                {
+                  if (b > 0)
+                  {
+                    sd = -b - Sqrt(d);
+                  }
+                  else
+                  {
+                    sd = c / (-b + Sqrt(d));
+                  }
+                  zi = p.z() + sd * v.z();
+                  ri = rMinAv + zi * unplaced.fTanRMin;
+                  if ((sd >= 0) && (ri > 0) && (Abs(zi) <= tolODz))   // sd>0
+                  {
+                    if (unplaced.IsFullPhi())
+                    {
+                      xi     = p.x() + sd * v.x();
+                      yi     = p.y() + sd * v.y();
+                      cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+                      if (cosPsi >= unplaced.fCosHDPhiIT)
+                      {
+                        if (sd > halfRadTolerance)
+                        {
+                          snxt = sd;
+                        }
+                        else
+                        {
+                          // Calculate a normal vector in order to check Direction
+                          risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                          if (norm.Dot(v) <= 0)
+                          {
+                            snxt = sd;
+                          }
+                        }
+                      }
+                    }
+                    else
+                    {
+                      if (sd > halfRadTolerance)
+                      {
+                        return sd;
+                      }
+                      else
+                      {
+                        // Calculate a normal vector in order to check Direction
+                        xi     = p.x() + sd * v.x();
+                        yi     = p.y() + sd * v.y();
+                        risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                        if (norm.Dot(v) <= 0)
+                        {
+                          return sd;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            {
+              // Within kRadTol*0.5 of inner cone (real OR imaginary)
+              // ----> Check not travelling through (=>0 to in)
+              // ----> if not:
+              //    -2nd root with validity check
+
+              if (Abs(p.z()) <= tolODz)
+              {
+                if (nt2 > 0)
+                {
+                  // Inside inner real cone, heading outwards, inside z range
+
+                  if (!unplaced.IsFullPhi())
+                  {
+                    cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi) / Sqrt(t3);
+
+                    if (cosPsi >= unplaced.fCosHDPhiIT)
+                    {
+                      return 0.0;
+                    }
+                  }
+                  else
+                  {
+                    return 0.0;
+                  }
+                }
+                else
+                {
+                  // Within z extent, but not travelling through
+                  // -> 2nd root or UUtils::kInfinity if 1st root on imaginary cone
+
+                  b = nt2 / nt1;
+                  c = nt3 / nt1;
+                  d = b * b - c;
+
+                  if (d >= 0)     // > 0
+                  {
+                    if (b > 0)
+                    {
+                      sd = -b - Sqrt(d);
+                    }
+                    else
+                    {
+                      sd = c / (-b + Sqrt(d));
+                    }
+                    zi = p.z() + sd * v.z();
+                    ri = rMinAv + zi * unplaced.fTanRMin;
+
+                    if (ri > 0)     // 2nd root
+                    {
+                      if (b > 0)
+                      {
+                        sd = c / (-b - Sqrt(d));
+                      }
+                      else
+                      {
+                        sd = -b + Sqrt(d);
+                      }
+
+                      zi = p.z() + sd * v.z();
+
+                      if ((sd >= 0) && (std::fabs(zi) <= tolODz))    // sd>0
+                      {
+                        if (!unplaced.IsFullPhi())
+                        {
+                          xi     = p.x() + sd * v.x();
+                          yi     = p.y() + sd * v.y();
+                          ri     = rMinAv + zi * unplaced.fTanRMin;
+                          cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+
+                          if (cosPsi >= unplaced.fCosHDPhiIT)
+                          {
+                            snxt = sd;
+                          }
+                        }
+                        else
+                        {
+                          return sd;
+                        }
+                      }
+                    }
+                    else
+                    {
+                      return VECGEOM_NAMESPACE::kInfinity;
+                    }
+                  }
+                }
+              }
+              else   // 2nd root
+              {
+                b = nt2 / nt1;
+                c = nt3 / nt1;
+                d = b * b - c;
+
+                if (d > 0)
+                {
+                  if (b > 0)
+                  {
+                    sd = c / (-b - Sqrt(d));
+                  }
+                  else
+                  {
+                    sd = -b + Sqrt(d);
+                  }
+                  zi = p.z() + sd * v.z();
+
+                  if ((sd >= 0) && (std::fabs(zi) <= tolODz))    // sd>0
+                  {
+                    if (!unplaced.IsFullPhi())
+                    {
+                      xi     = p.x() + sd * v.x();
+                      yi     = p.y() + sd * v.y();
+                      ri     = rMinAv + zi * unplaced.fTanRMin;
+                      cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / ri;
+
+                      if (cosPsi >= unplaced.fCosHDPhiIT)
+                      {
+                        snxt = sd;
+                      }
+                    }
+                    else
+                    {
+                      return sd;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Phi segment intersection
+        //
+        // o Tolerant of points inside phi planes by up to VUSolid::Tolerance()*0.5
+        //
+        // o NOTE: Large duplication of code between sphi & ephi checks
+        //         -> only diffs: sphi -> ephi, Comp -> -Comp and half-plane
+        //            intersection check <=0 -> >=0
+        //         -> Should use some form of loop Construct
+
+        if (!unplaced.IsFullPhi())
+        {
+          // First phi surface (starting phi)
+
+          Comp    = v.x() * unplaced.fSinSPhi - v.y() * unplaced.fCosSPhi;
+
+          if (Comp < 0)      // Component in outwards normal dirn
+          {
+            Dist = (p.y() * unplaced.fCosSPhi - p.x() * unplaced.fSinSPhi);
+
+            if (Dist < halfCarTolerance)
+            {
+              sd = Dist / Comp;
+
+              if (sd < snxt)
+              {
+                if (sd < 0)
+                {
+                  sd = 0.0;
+                }
+
+                zi = p.z() + sd * v.z();
+
+                if (Abs(zi) <= tolODz)
+                {
+                  xi        = p.x() + sd * v.x();
+                  yi        = p.y() + sd * v.y();
+                  rhoi2    = xi * xi + yi * yi;
+                  tolORMin2 = (rMinOAv + zi * unplaced.fTanRMin) * (rMinOAv + zi * unplaced.fTanRMin);
+                  tolORMax2 = (rMaxOAv + zi * unplaced.fTanRMax) * (rMaxOAv + zi * unplaced.fTanRMax);
+
+                  if ((rhoi2 >= tolORMin2) && (rhoi2 <= tolORMax2))
+                  {
+                    // z and r intersections good - check intersecting with
+                    // correct half-plane
+
+                    if ((yi * unplaced.fCosCPhi - xi * unplaced.fSinCPhi) <= 0)
+                    {
+                      snxt = sd;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // Second phi surface (Ending phi)
+
+          Comp    = -(v.x() * unplaced.fSinEPhi - v.y() * unplaced.fCosEPhi);
+
+          if (Comp < 0)     // Component in outwards normal dirn
+          {
+            Dist = -(p.y() * unplaced.fCosEPhi - p.x() * unplaced.fSinEPhi);
+            if (Dist < halfCarTolerance)
+            {
+              sd = Dist / Comp;
+
+              if (sd < snxt)
+              {
+                if (sd < 0)
+                {
+                  sd = 0.0;
+                }
+
+                zi = p.z() + sd * v.z();
+
+                if (Abs(zi) <= tolODz)
+                {
+                  xi        = p.x() + sd * v.x();
+                  yi        = p.y() + sd * v.y();
+                  rhoi2    = xi * xi + yi * yi;
+                  tolORMin2 = (rMinOAv + zi * unplaced.fTanRMin) * (rMinOAv + zi * unplaced.fTanRMin);
+                  tolORMax2 = (rMaxOAv + zi * unplaced.fTanRMax) * (rMaxOAv + zi * unplaced.fTanRMax);
+
+                  if ((rhoi2 >= tolORMin2) && (rhoi2 <= tolORMax2))
+                  {
+                    // z and r intersections good - check intersecting with
+                    // correct half-plane
+
+                    if ((yi * unplaced.fCosCPhi - xi * unplaced.fSinCPhi) >= 0.0)
+                    {
+                      snxt = sd;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (snxt < halfCarTolerance)
+        {
+          snxt = 0.;
+        }
+        return snxt;
+  }
+
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -294,6 +1055,7 @@ struct ConeImplementation {
       typename Backend::precision_v &distance) {
 
    // TOBEIMPLEMENTED
+    distance = DistanceToInUSolids<Backend>(unplaced, transformation, point, direction, stepMax);
 
 //    typedef typename Backend::bool_v MaskType;
 //    typedef typename Backend::precision_v VectorType;
@@ -438,7 +1200,8 @@ struct ConeImplementation {
 //           }
 //        }
 
-}
+ }
+
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH

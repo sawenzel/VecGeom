@@ -72,6 +72,24 @@ private:
 
 public:
 
+  /** momentarily include this fields because USolids algorithm needs those
+  *
+  *
+  */
+  Precision fSecRMin;
+  Precision fSecRMax;
+  Precision fCosCPhi;
+  Precision fSinCPhi;
+  Precision fCosSPhi;
+  Precision fSinSPhi;
+  Precision fCosEPhi;
+  Precision fSinEPhi;
+  Precision fCosHDPhiIT;
+  Precision fCosHDPhiOT;
+  Precision fTanRMin;
+  Precision fTanRMax;
+
+
   VECGEOM_CUDA_HEADER_BOTH
   // should be implemented in source file
   UnplacedCone(Precision rmin1,
@@ -92,6 +110,25 @@ public:
         fInnerSlopeSquare(),
         fOuterOffsetSquare(),
         fInnerOffsetSquare() {
+
+      // initialize trigonometry for USOLIDS impl
+        double hDPhi = 0.5 * fDPhi;                    // half delta phi
+        double cPhi = fSPhi + hDPhi;
+        double ePhi = fSPhi + fDPhi;
+
+        fSinCPhi   = std::sin(cPhi);
+        fCosCPhi   = std::cos(cPhi);
+        fCosHDPhiIT = std::cos(hDPhi - 0.5 * VECGEOM_NAMESPACE::kAngTolerance); // inner/outer tol half dphi
+        fCosHDPhiOT = std::cos(hDPhi + 0.5 * VECGEOM_NAMESPACE::kAngTolerance);
+        fSinSPhi = std::sin(fSPhi);
+        fCosSPhi = std::cos(fSPhi);
+        fSinEPhi = std::sin(ePhi);
+        fCosEPhi = std::cos(ePhi);
+        fTanRMin = (fRmin2 - fRmin1) * 0.5 / fDz;
+        fSecRMin = std::sqrt(1.0 + fTanRMin * fTanRMin);
+
+        fTanRMax = (fRmax2 - fRmax1) * 0.5 / fDz;
+        fSecRMax = std::sqrt(1.0 + fTanRMax * fTanRMax);
 
         // check this very carefully
        fInnerSlope = -(fRmin1 - fRmin2)/(2.*fDz);
@@ -163,6 +200,8 @@ public:
     Precision alongPhi1y() const { return fAlongPhi1y; }
     Precision alongPhi2x() const { return fAlongPhi2x; }
     Precision alongPhi2y() const { return fAlongPhi2y; }
+
+    bool IsFullPhi() const { return fDPhi == kTwoPi; }
 
     Precision Capacity() const {
         return (2.*fDz* kPi/3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
