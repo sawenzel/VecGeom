@@ -24,8 +24,9 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifndef VECGEOM_NVCC
 VPlacedVolume const* PlacedCone::ConvertToUnspecialized() const {
-    return new GenericCone(GetLabel().c_str(), logical_volume(), transformation());
+    return new SimpleCone(GetLabel().c_str(), logical_volume(), transformation());
 }
 
 #ifdef VECGEOM_ROOT
@@ -54,6 +55,7 @@ G4VSolid const * PlacedCone::ConvertToGeant4() const {
 }
 #endif
 
+#endif
 
 } // End global namespace
 
@@ -61,25 +63,25 @@ namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void PlacedTube_CopyToGpu(
+void PlacedCone_CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr);
 
-VPlacedVolume* PlacedTube::CopyToGpu(
+VPlacedVolume* PlacedCone::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     VPlacedVolume *const gpu_ptr) const {
-  PlacedTube_CopyToGpu(logical_volume, transformation, this->id(),
+  PlacedCone_CopyToGpu(logical_volume, transformation, this->id(),
                                  gpu_ptr);
   CudaAssertError();
   return gpu_ptr;
 }
 
-VPlacedVolume* PlacedTube::CopyToGpu(
+VPlacedVolume* PlacedCone::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedTube>();
+  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedCone>();
   return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
 }
 
@@ -92,11 +94,11 @@ class Transformation3D;
 class VPlacedVolume;
 
 __global__
-void PlacedTube_ConstructOnGpu(
+void PlacedCone_ConstructOnGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleTube(
+  new(gpu_ptr) vecgeom_cuda::SimpleCone(
     reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
     reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
     NULL,
@@ -104,11 +106,11 @@ void PlacedTube_ConstructOnGpu(
   );
 }
 
-void PlacedTube_CopyToGpu(
+void PlacedCone_CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedTube_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
+  PlacedCone_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
                                                 id, gpu_ptr);
 }
 

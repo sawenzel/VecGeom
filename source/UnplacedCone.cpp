@@ -63,7 +63,7 @@ namespace VECGEOM_NAMESPACE {
        }
  #endif
 
-       RETURN_SPECIALIZATION(GenericCone);
+       RETURN_SPECIALIZATION(SimpleCone);
 
        #undef RETURN_SPECIALIZATION
  }
@@ -91,4 +91,58 @@ namespace VECGEOM_NAMESPACE {
 
 
 }
+
+
+
+namespace vecgeom {
+
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+void UnplacedCone_CopyToGpu(
+    const Precision rmin1, const Precision rmax1,
+    const Precision rmin2, const Precision rmax2,
+    const Precision z, const Precision sphi, const Precision dphi,
+    VUnplacedVolume *const gpu_ptr);
+
+VUnplacedVolume* UnplacedCone::CopyToGpu(
+    VUnplacedVolume *const gpu_ptr) const {
+  UnplacedCone_CopyToGpu(GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(), GetDz(), GetSPhi(), GetDPhi(), gpu_ptr);
+  CudaAssertError();
+  return gpu_ptr;
+}
+
+VUnplacedVolume* UnplacedCone::CopyToGpu() const {
+  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedCone>();
+  return this->CopyToGpu(gpu_ptr);
+}
+
+#endif
+
+#ifdef VECGEOM_NVCC
+
+class VUnplacedVolume;
+
+__global__
+void UnplacedCone_ConstructOnGpu(
+    const Precision rmin1, const Precision rmax1,
+    const Precision rmin2, const Precision rmax2,
+    const Precision z, const Precision sphi, const Precision dphi,
+    VUnplacedVolume *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::UnplacedCone(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi);
+}
+
+void UnplacedCone_CopyToGpu(
+        const Precision rmin1, const Precision rmax1,
+        const Precision rmin2, const Precision rmax2,
+        const Precision z, const Precision sphi, const Precision dphi,
+        VUnplacedVolume *const gpu_ptr) {
+  UnplacedCone_ConstructOnGpu<<<1, 1>>>(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi, gpu_ptr);
+}
+
+#endif
+
+} // End namespace vecgeom
+
+
 

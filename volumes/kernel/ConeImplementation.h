@@ -13,7 +13,6 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include "volumes/kernel/TubeImplementation.h"
-#include <iostream>
 #include <cassert>
 
 namespace VECGEOM_NAMESPACE {
@@ -58,7 +57,6 @@ struct ConeHelper
 */
 };
 
-#include "backend/vc/Backend.h"
 template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename ConeType>
 struct ConeImplementation {
@@ -300,9 +298,8 @@ struct ConeImplementation {
 
     // now comes the original USolids code
     double snxt = VECGEOM_NAMESPACE::kInfinity;
-    const double dRmax = 100 * Max(unplaced.GetRmax1(), unplaced.GetRmax2());
-    static const double halfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
-    static const double halfRadTolerance = VECGEOM_NAMESPACE::kRadTolerance * 0.5;
+    const double halfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
+    const double halfRadTolerance = VECGEOM_NAMESPACE::kRadTolerance * 0.5;
 
     double rMaxAv, rMaxOAv; // Data for cones
     double rMinAv, rMinOAv;

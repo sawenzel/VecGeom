@@ -52,7 +52,7 @@ public:
   SpecializedCone(LogicalVolume const *const logical_volume,
                   Transformation3D const *const transformation,
                   PlacedBox const *const boundingBox, const int id)
-      : Helper(logical_volume, transformation, boundingBox, id) {}
+      : PlacedCone(logical_volume, transformation, boundingBox, id) {}
 
 #endif
 
@@ -425,7 +425,7 @@ public:
 };
 
 typedef SpecializedCone<translation::kGeneric, rotation::kGeneric, ConeTypes::UniversalCone>
-    GenericCone;
+    SimpleCone;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename ConeType>
 void SpecializedCone<transCodeT, rotCodeT, ConeType>::PrintType() const {

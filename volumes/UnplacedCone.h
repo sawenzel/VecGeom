@@ -233,6 +233,11 @@ public:
    #endif
                                   VPlacedVolume *const placement = NULL);
 
+#ifdef VECGEOM_CUDA_INTERFACE
+  virtual VUnplacedVolume* CopyToGpu() const;
+  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+#endif
+
 };
 
 
