@@ -363,28 +363,59 @@ void ShapeDebugger::CompareSafetyToROOT(
 
   std::shared_ptr<const TGeoShape> rootShape(fVolume->ConvertToRoot());
 
-  std::vector<std::pair<std::shared_ptr<const TGeoShape>, Transformation3D> >
-      spheres;
+  std::vector<std::tuple<std::shared_ptr<const TGeoShape>,
+                         Transformation3D,
+                         bool> > spheres;
+  std::vector<std::tuple<Vector3D<Precision>, Precision, double> >
+     mismatchResults;
+  int mismatches = 0;
   for (int i = 0; i < nSamples; ++i) {
     Vector3D<Precision> point;
     do {
       point = volumeUtilities::SamplePoint(bounds);
     } while (pointInsideT != rootShape->Contains(&point[0]));
-    Precision safety;
+    Precision safety, rootSafety;
     if (pointInsideT) {
       safety = fVolume->SafetyToOut(point);
+      rootSafety = rootShape->Safety(&point[0], true);
     } else {
       safety = fVolume->SafetyToIn(point);
+      rootSafety = rootShape->Safety(&point[0], false);
+    }
+    bool mismatch = Abs(safety - rootSafety) < kTolerance;
+    if (mismatch) {
+      ++mismatches;
+      mismatchResults.emplace_back(point, safety, rootSafety);
     }
     spheres.emplace_back(
         std::shared_ptr<const TGeoShape>(new TGeoSphere(0, safety)),
-        Transformation3D(point[0], point[1], point[2]));
+        Transformation3D(point[0], point[1], point[2]),
+        Abs(safety - rootSafety) < kTolerance);
+  }
+  std::cout << "Mismatches detected: " << mismatches << " / " << nSamples
+            << "\n";
+  if (fMaxMismatches > 0 && mismatches > 0) {
+    std::cout << "\nMismatching points [<Point>: <VecGeom> / <ROOT>]:\n";
+    int i = 0, iMax = mismatchResults.size();
+    while (i < fMaxMismatches && i < iMax) {
+      std::cout << std::setprecision(std::numeric_limits<Precision>::digits10)
+                << std::get<0>(mismatchResults[i]) << ": "
+                << std::get<1>(mismatchResults[i]) << " / "
+                << std::get<2>(mismatchResults[i]) << "\n";
+      ++i;
+    }
   }
 
   Visualizer visualizer;
   visualizer.AddVolume(rootShape);
+  int added = 0;
   for (auto &sphere : spheres) {
-    visualizer.AddVolume(sphere.first, sphere.second);
+    if (!fShowCorrectResults &&
+        (added >= fMaxMismatches || std::get<2>(sphere))) {
+      continue;
+    }
+    visualizer.AddVolume(std::get<0>(sphere), std::get<1>(sphere));
+    ++added;
   }
   visualizer.Show();
 }
