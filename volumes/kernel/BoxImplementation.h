@@ -173,6 +173,63 @@ struct BoxImplementation {
        Vector3D<typename Backend::precision_v> &normal,
        typename Backend::bool_v &valid );
 
+
+  // an algorithm to test for intersection ( could be faster than DistanceToIn )
+  // actually this also calculated the distance at the same time ( in tmin )
+  // template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static bool Intersect( Vector3D<Precision> const * corners,
+          Vector3D<Precision> const &point,
+          Vector3D<Precision> const &ray,
+          Precision t0,
+          Precision t1){
+    // intersection algorithm 1 ( Amy Williams )
+
+    Precision tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+    // IF THERE IS A STEPMAX; COULD ALSO CHECK SAFETIES
+
+    double inverserayx = 1./ray[0];
+    double inverserayy = 1./ray[1];
+
+    // TODO: we should promote this to handle multiple boxes
+    int sign[3];
+    sign[0] = inverserayx < 0;
+    sign[1] = inverserayy < 0;
+
+
+    tmin =  (corners[sign[0]].x()   -point.x())*inverserayx;
+    tmax =  (corners[1-sign[0]].x() -point.x())*inverserayx;
+    tymin = (corners[sign[1]].y()   -point.y())*inverserayy;
+    tymax = (corners[1-sign[1]].y() -point.y())*inverserayy;
+
+    if((tmin > tymax) || (tymin > tmax))
+        return false;
+
+    double inverserayz = 1./ray.z();
+    sign[2] = inverserayz < 0;
+
+    if(tymin > tmin)
+        tmin = tymin;
+    if(tymax < tmax)
+        tmax = tymax;
+
+    tzmin = (corners[sign[2]].z()   -point.z())*inverserayz;
+    tzmax = (corners[1-sign[2]].z() -point.z())*inverserayz;
+
+    if((tmin > tzmax) || (tzmin > tmax))
+        return false;
+    if((tzmin > tmin))
+        tmin = tzmin;
+    if(tzmax < tmax)
+        tmax = tzmax;
+    //return ((tmin < t1) && (tmax > t0));
+   // std::cerr << "tmin " << tmin << " tmax " << tmax << "\n";
+    return true;
+  }
+
+
 }; // End struct BoxImplementation
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
