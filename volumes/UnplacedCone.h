@@ -78,12 +78,18 @@ public:
   */
   Precision fSecRMin;
   Precision fSecRMax;
+  Precision fInvSecRMin;
+  Precision fInvSecRMax;
+
+
   Precision fCosCPhi;
   Precision fSinCPhi;
   Precision fCosSPhi;
   Precision fSinSPhi;
   Precision fCosEPhi;
-  Precision fSinEPhi;
+
+  Precision fCosHDPhi;
+Precision fSinEPhi;
   Precision fCosHDPhiIT;
   Precision fCosHDPhiOT;
   Precision fTanRMin;
@@ -118,6 +124,7 @@ public:
 
         fSinCPhi   = std::sin(cPhi);
         fCosCPhi   = std::cos(cPhi);
+        fCosHDPhi  = std::cos(hDPhi);
         fCosHDPhiIT = std::cos(hDPhi - 0.5 * VECGEOM_NAMESPACE::kAngTolerance); // inner/outer tol half dphi
         fCosHDPhiOT = std::cos(hDPhi + 0.5 * VECGEOM_NAMESPACE::kAngTolerance);
         fSinSPhi = std::sin(fSPhi);
@@ -125,10 +132,14 @@ public:
         fSinEPhi = std::sin(ePhi);
         fCosEPhi = std::cos(ePhi);
         fTanRMin = (fRmin2 - fRmin1) * 0.5 / fDz;
+
         fSecRMin = std::sqrt(1.0 + fTanRMin * fTanRMin);
+        fInvSecRMin = 1./fSecRMin;
 
         fTanRMax = (fRmax2 - fRmax1) * 0.5 / fDz;
+
         fSecRMax = std::sqrt(1.0 + fTanRMax * fTanRMax);
+        fInvSecRMax = 1./fSecRMax;
 
         // check this very carefully
        fInnerSlope = -(fRmin1 - fRmin2)/(2.*fDz);
