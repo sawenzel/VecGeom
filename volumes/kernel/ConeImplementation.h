@@ -73,8 +73,8 @@ struct ConeImplementation {
   typedef typename Backend::bool_v Bool_t;
 
 //  std::cerr << point.x() << " " << point.y() << " " << point.z() << "\n";
-  Float_t fDz = unplaced.GetDz();
-  Bool_t inside = Abs( point.z() ) < fDz;
+ // Float_t unplaced.GetDz() = unplaced.GetDz();
+  Bool_t inside = Abs( point.z() ) < unplaced.GetDz();
 
 //  std::cerr << inside << "\n";
 
@@ -168,12 +168,12 @@ struct ConeImplementation {
       typedef typename Backend::bool_v Bool_t;
 
       //  std::cerr << point.x() << " " << point.y() << " " << point.z() << "\n";
-      Float_t fDz = unplaced.GetDz();
-      // could cache a tolerant fDz;
+     // Float_t unplaced.GetDz() = unplaced.GetDz();
+      // could cache a tolerant unplaced.GetDz();
       Float_t absz = Abs(point.z());
-      Bool_t completelyinside = absz < fDz - kTolerance;
-      // could cache a tolerant fDz;
-      Bool_t completelyoutside = absz > fDz + kTolerance;
+      Bool_t completelyinside = absz < unplaced.GetDz() - kTolerance;
+      // could cache a tolerant unplaced.GetDz();
+      Bool_t completelyoutside = absz > unplaced.GetDz() + kTolerance;
 
       if ( Backend::early_returns ){
         if ( completelyoutside == Backend::kTrue ){
@@ -392,9 +392,9 @@ struct ConeImplementation {
               {
                 // Psi = angle made with central (average) phi of shape
 
-                cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi) / Sqrt(rhoi2);
+                cosPsi = (xi * unplaced.fCosCPhi + yi * unplaced.fSinCPhi);
 
-                if (cosPsi >= unplaced.fCosHDPhiIT)
+                if (cosPsi >= unplaced.fCosHDPhiIT * Sqrt(rhoi2))
                 {
                   return sd;
                 }
@@ -443,16 +443,15 @@ struct ConeImplementation {
         nt2 = t2 - unplaced.fTanRMax * v.z() * rout;
         nt3 = t3 - rout * rout;
 
-        if (std::fabs(nt1) > VECGEOM_NAMESPACE::kRadTolerance) // Equation quadratic => 2 roots
+        if (Abs(nt1) > VECGEOM_NAMESPACE::kRadTolerance) // Equation quadratic => 2 roots
         {
           b = nt2 / nt1;
           c = nt3 / nt1;
           d = b * b - c ;
-          if ((nt3 > rout * rout * kRadTolerance * kRadTolerance * unplaced.fSecRMax * unplaced.fSecRMax)
-              || (rout < 0))
+          if ( (rout<0) || (nt3 > rout * rout * kRadTolerance * kRadTolerance * unplaced.fSecRMax * unplaced.fSecRMax) )
           {
             // If outside real cone (should be rho-rout>kRadTolerance*0.5
-            // NOT rho^2 etc) saves a std::sqrt() at expense of accuracy
+            // NOT rho^2 etc) saves a Sqrt() at expense of accuracy
 
             if (d >= 0)
             {
@@ -523,12 +522,12 @@ struct ConeImplementation {
               // Point is on the Surface => check Direction using Normal.Dot(v)
               xi     = p.x();
               yi     = p.y()  ;
-              risec = std::sqrt(xi * xi + yi * yi) * unplaced.fSecRMax;
-              norm = Vector3D<Precision>(xi / risec, yi / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+              risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMax;
+              norm = Vector3D<Precision>(xi / risec, yi / risec, -unplaced.fTanRMax * unplaced.fInvSecRMax);
               if (!unplaced.IsFullPhi())
               {
-                cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi) / Sqrt(t3);
-                if (cosPsi >= unplaced.fCosHDPhiIT)
+                cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi);
+                if (cosPsi*cosPsi >= unplaced.fCosHDPhiIT*unplaced.fCosHDPhiIT*t3)
                 {
                   if (norm.Dot(v) <= 0)
                   {
@@ -639,7 +638,7 @@ struct ConeImplementation {
                         {
                           // Calculate a normal vector in order to check Direction
                           risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
-                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin * unplaced.fInvSecRMin);
                           if (norm.Dot(v) <= 0)
                           {
                             snxt = sd;
@@ -659,7 +658,7 @@ struct ConeImplementation {
                         xi     = p.x() + sd * v.x();
                         yi     = p.y() + sd * v.y();
                         risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
-                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin * unplaced.fInvSecRMin);
                         if (norm.Dot(v) <= 0)
                         {
                           return sd;
@@ -713,7 +712,7 @@ struct ConeImplementation {
                           // Calculate a normal vector in order to check Direction
 
                           risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
-                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin * unplaced.fInvSecRMin);
                           if (norm.Dot(v) <= 0)
                           {
                             snxt = sd;
@@ -733,7 +732,7 @@ struct ConeImplementation {
                         xi     = p.x() + sd * v.x();
                         yi     = p.y() + sd * v.y();
                         risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
-                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin * unplaced.fInvSecRMin);
                         if (norm.Dot(v) <= 0)
                         {
                           return sd;
@@ -771,7 +770,7 @@ struct ConeImplementation {
                         {
                           // Calculate a normal vector in order to check Direction
                           risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
-                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                          norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin * unplaced.fInvSecRMin);
                           if (norm.Dot(v) <= 0)
                           {
                             snxt = sd;
@@ -791,7 +790,7 @@ struct ConeImplementation {
                         xi     = p.x() + sd * v.x();
                         yi     = p.y() + sd * v.y();
                         risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
-                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                        norm = Vector3D<Precision>(-xi / risec, -yi / risec, unplaced.fTanRMin * unplaced.fInvSecRMin);
                         if (norm.Dot(v) <= 0)
                         {
                           return sd;
@@ -817,9 +816,9 @@ struct ConeImplementation {
 
                   if (!unplaced.IsFullPhi())
                   {
-                    cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi) / Sqrt(t3);
+                    cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi);
 
-                    if (cosPsi >= unplaced.fCosHDPhiIT)
+                    if (cosPsi*cosPsi >= unplaced.fCosHDPhiIT*unplaced.fCosHDPhiIT*t3 )
                     {
                       return 0.0;
                     }
@@ -832,7 +831,7 @@ struct ConeImplementation {
                 else
                 {
                   // Within z extent, but not travelling through
-                  // -> 2nd root or UUtils::kInfinity if 1st root on imaginary cone
+                  // -> 2nd root or VECGEOM_NAMESPACE::kInfinity if 1st root on imaginary cone
 
                   b = nt2 / nt1;
                   c = nt3 / nt1;
@@ -864,7 +863,7 @@ struct ConeImplementation {
 
                       zi = p.z() + sd * v.z();
 
-                      if ((sd >= 0) && (std::fabs(zi) <= tolODz))    // sd>0
+                      if ((sd >= 0) && (Abs(zi) <= tolODz))    // sd>0
                       {
                         if (!unplaced.IsFullPhi())
                         {
@@ -909,7 +908,7 @@ struct ConeImplementation {
                   }
                   zi = p.z() + sd * v.z();
 
-                  if ((sd >= 0) && (std::fabs(zi) <= tolODz))    // sd>0
+                  if ((sd >= 0) && (Abs(zi) <= tolODz))    // sd>0
                   {
                     if (!unplaced.IsFullPhi())
                     {
@@ -936,7 +935,7 @@ struct ConeImplementation {
 
         // Phi segment intersection
         //
-        // o Tolerant of points inside phi planes by up to VUSolid::Tolerance()*0.5
+        // o Tolerant of points inside phi planes by up to VECGEOM_NAMESPACE::kTolerance*0.5
         //
         // o NOTE: Large duplication of code between sphi & ephi checks
         //         -> only diffs: sphi -> ephi, Comp -> -Comp and half-plane
@@ -1199,6 +1198,583 @@ struct ConeImplementation {
 
  }
 
+  template <class Backend>
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   static Precision DistanceToOutUSOLIDS(
+       UnplacedCone const &unplaced,
+       Vector3D<typename Backend::precision_v> p,
+       Vector3D<typename Backend::precision_v> v,
+       typename Backend::precision_v const &stepMax
+       ) {
+
+       const double halfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
+       const double halfRadTolerance = kRadTolerance * 0.5;
+       const double halfAngTolerance = kAngTolerance * 0.5;
+
+        double snxt, srd, sphi, pdist;
+
+        double rMaxAv;  // Data for outer cone
+        double rMinAv;  // Data for inner cone
+
+        double t1, t2, t3, rout, rin, nt1, nt2, nt3;
+        double b, c, d, sr2, sr3;
+
+        // Vars for intersection within tolerance
+
+      //  ESide   sidetol = kNull;
+      //  double slentol = VECGEOM_NAMESPACE::kInfinity;
+
+        // Vars for phi intersection:
+
+        double pDistS, compS, pDistE, compE, sphi2, xi, yi, risec, vphi;
+        double zi, ri, deltaRoi2;
+
+        // Z plane intersection
+
+        if (v.z() > 0.0)
+        {
+          pdist = unplaced.GetDz() - p.z();
+
+          if (pdist > halfCarTolerance)
+          {
+            snxt = pdist / v.z();
+         //   side = kPZ;
+          }
+          else
+          {
+          //  aNormalVector        = UVector3(0, 0, 1);
+          //  aConvex = true;
+            return  snxt = 0.0;
+          }
+        }
+        else if (v.z() < 0.0)
+        {
+          pdist = unplaced.GetDz() + p.z();
+
+          if (pdist > halfCarTolerance)
+          {
+            snxt = -pdist / v.z();
+           // side = kMZ;
+          }
+          else
+          {
+           // aNormalVector        = UVector3(0, 0, -1);
+           // aConvex = true;
+            return snxt = 0.0;
+          }
+        }
+        else     // Travel perpendicular to z axis
+        {
+          snxt = VECGEOM_NAMESPACE::kInfinity;
+         // side = kNull;
+        }
+
+        // Radial Intersections
+        //
+        // Intersection with outer cone (possible return) and
+        //                   inner cone (must also check phi)
+        //
+        // Intersection point (xi,yi,zi) on line x=p.x()+t*v.x() etc.
+        //
+        // Intersects with x^2+y^2=(a*z+b)^2
+        //
+        // where a=unplaced.fTanRMax or unplaced.fTanRMin
+        //       b=rMaxAv or rMinAv
+        //
+        // (vx^2+vy^2-(a*vz)^2)t^2+2t(pxvx+pyvy-a*vz(a*pz+b))+px^2+py^2-(a*pz+b)^2=0;
+        //     t1                       t2                      t3
+        //
+        //  \--------u-------/       \-----------v----------/ \---------w--------/
+
+        rMaxAv  = (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
+
+        t1   = 1.0 - v.z() * v.z();   // since v normalised
+        t2   = p.x() * v.x() + p.y() * v.y();
+        t3   = p.x() * p.x() + p.y() * p.y();
+        rout = unplaced.fTanRMax * p.z() + rMaxAv;
+
+        nt1 = t1 - (unplaced.fTanRMax * v.z()) * (unplaced.fTanRMax * v.z());
+        nt2 = t2 - unplaced.fTanRMax * v.z() * rout;
+        nt3 = t3 - rout * rout;
+
+        if (v.z() > 0.0)
+        {
+          deltaRoi2 = snxt * snxt * t1 + 2 * snxt * t2 + t3
+                      - unplaced.GetRmax2() * (unplaced.GetRmax2() + kRadTolerance * unplaced.fSecRMax);
+        }
+        else if (v.z() < 0.0)
+        {
+          deltaRoi2 = snxt * snxt * t1 + 2 * snxt * t2 + t3
+                      - unplaced.GetRmax1() * (unplaced.GetRmax1() + kRadTolerance * unplaced.fSecRMax);
+        }
+        else
+        {
+          deltaRoi2 = 1.0;
+        }
+
+        if (nt1 && (deltaRoi2 > 0.0))
+        {
+          // Equation quadratic => 2 roots : second root must be leaving
+
+          b = nt2 / nt1;
+          c = nt3 / nt1;
+          d = b * b - c;
+
+          if (d >= 0)
+          {
+            // Check if on outer cone & heading outwards
+            // NOTE: Should use rho-rout>-kRadTolerance*0.5
+
+            if (nt3 > -halfRadTolerance && nt2 >= 0)
+            {
+              risec     = Sqrt(t3) * unplaced.fSecRMax;
+             // aConvex = true;
+             // aNormalVector        = UVector3(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+              return snxt = 0;
+            }
+            else
+            {
+             // sider = kRMax ;
+              if (b > 0)
+              {
+                srd = -b - Sqrt(d);
+              }
+              else
+              {
+                srd = c / (-b + Sqrt(d));
+              }
+
+              zi    = p.z() + srd * v.z();
+              ri    = unplaced.fTanRMax * zi + rMaxAv;
+
+              if ((ri >= 0) && (-halfRadTolerance <= srd) && (srd <= halfRadTolerance))
+              {
+                // An intersection within the tolerance
+                //   we will Store it in case it is good -
+                //
+               // slentol = srd;
+               // sidetol = kRMax;
+              }
+              if ((ri < 0) || (srd < halfRadTolerance))
+              {
+                // Safety: if both roots -ve ensure that srd cannot `win'
+                //         distance to out
+
+                if (b > 0)
+                {
+                  sr2 = c / (-b - Sqrt(d));
+                }
+                else
+                {
+                  sr2 = -b + Sqrt(d);
+                }
+                zi  = p.z() + sr2 * v.z();
+                ri  = unplaced.fTanRMax * zi + rMaxAv;
+
+                if ((ri >= 0) && (sr2 > halfRadTolerance))
+                {
+                  srd = sr2;
+                }
+                else
+                {
+                  srd = VECGEOM_NAMESPACE::kInfinity;
+
+                  if ((-halfRadTolerance <= sr2) && (sr2 <= halfRadTolerance))
+                  {
+                    // An intersection within the tolerance.
+                    // Storing it in case it is good.
+
+                 //   slentol = sr2;
+                  //  sidetol = kRMax;
+                  }
+                }
+              }
+            }
+          }
+          else
+          {
+            // No intersection with outer cone & not parallel
+            // -> already outside, no intersection
+
+            risec     = Sqrt(t3) * unplaced.fSecRMax;
+           // aConvex = true;
+           // aNormalVector        = UVector3(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+            return snxt = 0.0;
+          }
+        }
+        else if (nt2 && (deltaRoi2 > 0.0))
+        {
+          // Linear case (only one intersection) => point outside outer cone
+
+          risec     = Sqrt(t3) * unplaced.fSecRMax;
+         // aConvex = true;
+         // aNormalVector        = UVector3(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+          return snxt = 0.0;
+        }
+        else
+        {
+          // No intersection -> parallel to outer cone
+          // => Z or inner cone intersection
+
+          srd = VECGEOM_NAMESPACE::kInfinity;
+        }
+
+        // Check possible intersection within tolerance
+
+        /*
+        if (slentol <= halfCarTolerance)
+        {
+          // An intersection within the tolerance was found.
+          // We must accept it only if the momentum points outwards.
+          //
+          // UVector3 ptTol;  // The point of the intersection
+          // ptTol= p + slentol*v;
+          // ri=unplaced.fTanRMax*zi+rMaxAv;
+          //
+          // Calculate a normal vector, as below
+
+          xi    = p.x() + slentol * v.x();
+          yi    = p.y() + slentol * v.y();
+          risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMax;
+          UVector3 norm = UVector3(xi / risec, yi / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+
+          if (norm.Dot(v) > 0)     // We will leave the Cone immediatelly
+          {
+            aNormalVector        = norm.Unit();
+            aConvex = true;
+            return snxt = 0.0;
+          }
+          else // On the surface, but not heading out so we ignore this intersection
+          {
+            //                                        (as it is within tolerance).
+            slentol = VECGEOM_NAMESPACE::kInfinity;
+          }
+
+        }
+*/
+
+        // Inner Cone intersection
+
+        if (unplaced.GetRmin1() || unplaced.GetRmin2())
+        {
+          nt1    = t1 - (unplaced.fTanRMin * v.z()) * (unplaced.fTanRMin * v.z());
+
+          if (nt1)
+          {
+            rMinAv  = (unplaced.GetRmin1() + unplaced.GetRmin2()) * 0.5;
+            rin    = unplaced.fTanRMin * p.z() + rMinAv;
+            nt2    = t2 - unplaced.fTanRMin * v.z() * rin;
+            nt3    = t3 - rin * rin;
+
+            // Equation quadratic => 2 roots : first root must be leaving
+
+            b = nt2 / nt1;
+            c = nt3 / nt1;
+            d = b * b - c;
+
+            if (d >= 0.0)
+            {
+              // NOTE: should be rho-rin<kRadTolerance*0.5,
+              //       but using squared versions for efficiency
+
+              if (nt3 < kRadTolerance * (rin + kRadTolerance * 0.25))
+              {
+                if (nt2 < 0.0)
+                {
+                 // aConvex = false;
+                 // risec = Sqrt(p.x() * p.x() + p.y() * p.y()) * unplaced.fSecRMin;
+                 // aNormalVector = UVector3(-p.x() / risec, -p.y() / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                  return          snxt      = 0.0;
+                }
+              }
+              else
+              {
+                if (b > 0)
+                {
+                  sr2 = -b - Sqrt(d);
+                }
+                else
+                {
+                  sr2 = c / (-b + Sqrt(d));
+                }
+                zi  = p.z() + sr2 * v.z();
+                ri  = unplaced.fTanRMin * zi + rMinAv;
+
+                if ((ri >= 0.0) && (-halfRadTolerance <= sr2) && (sr2 <= halfRadTolerance))
+                {
+                  // An intersection within the tolerance
+                  // storing it in case it is good.
+
+                 // slentol = sr2;
+                 // sidetol = kRMax;
+                }
+                if ((ri < 0) || (sr2 < halfRadTolerance))
+                {
+                  if (b > 0)
+                  {
+                    sr3 = c / (-b - Sqrt(d));
+                  }
+                  else
+                  {
+                    sr3 = -b + Sqrt(d);
+                  }
+
+                  // Safety: if both roots -ve ensure that srd cannot `win'
+                  //         distancetoout
+
+                  if (sr3 > halfRadTolerance)
+                  {
+                    if (sr3 < srd)
+                    {
+                      zi = p.z() + sr3 * v.z();
+                      ri = unplaced.fTanRMin * zi + rMinAv;
+
+                      if (ri >= 0.0)
+                      {
+                        srd = sr3;
+                   //     sider = kRMin;
+                      }
+                    }
+                  }
+                  else if (sr3 > -halfRadTolerance)
+                  {
+                    // Intersection in tolerance. Store to check if it's good
+
+               //     slentol = sr3;
+                //    sidetol = kRMin;
+                  }
+                }
+                else if ((sr2 < srd) && (sr2 > halfCarTolerance))
+                {
+                  srd  = sr2;
+                //  sider = kRMin;
+                }
+                else if (sr2 > -halfCarTolerance)
+                {
+                  // Intersection in tolerance. Store to check if it's good
+
+                //  slentol = sr2;
+                //  sidetol = kRMin;
+                }
+
+                /*
+                if (slentol <= halfCarTolerance)
+                {
+                  // An intersection within the tolerance was found.
+                  // We must accept it only if  the momentum points outwards.
+
+                  UVector3 norm;
+
+                  // Calculate a normal vector, as below
+
+                  xi     = p.x() + slentol * v.x();
+                  yi     = p.y() + slentol * v.y();
+                  if (sidetol == kRMax)
+                  {
+                    risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMax;
+                    norm = UVector3(xi / risec, yi / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
+                  }
+                  else
+                  {
+                    risec = Sqrt(xi * xi + yi * yi) * unplaced.fSecRMin;
+                    norm = UVector3(-xi / risec, -yi / risec, unplaced.fTanRMin / unplaced.fSecRMin);
+                  }
+                  if (norm.Dot(v) > 0)
+                  {
+                    // We will leave the cone immediately
+
+                    aNormalVector        = norm.Unit();
+                    aConvex = true;
+                    return snxt = 0.0;
+                  }
+                  else
+                  {
+                    // On the surface, but not heading out so we ignore this
+                    // intersection (as it is within tolerance).
+
+                    slentol = VECGEOM_NAMESPACE::kInfinity;
+                  }
+                }*/
+              }
+            }
+          }
+        }
+
+        // Linear case => point outside inner cone ---> outer cone intersect
+        //
+        // Phi Intersection
+
+        if (!unplaced.IsFullPhi())
+        {
+          // add angle calculation with correction
+          // of the difference in domain of atan2 and Sphi
+
+          vphi = std::atan2(v.y(), v.x());
+
+          if (vphi < unplaced.GetSPhi() - halfAngTolerance)
+          {
+            vphi += 2 * VECGEOM_NAMESPACE::kPi;
+          }
+          else if (vphi > unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance)
+          {
+            vphi -= 2 * VECGEOM_NAMESPACE::kPi;
+          }
+
+          if (p.x() || p.y())     // Check if on z axis (rho not needed later)
+          {
+            // pDist -ve when inside
+
+            pDistS = p.x() * unplaced.fSinSPhi - p.y() * unplaced.fCosSPhi;
+            pDistE = -p.x() * unplaced.fSinEPhi + p.y() * unplaced.fCosEPhi;
+
+            // Comp -ve when in direction of outwards normal
+
+            compS = -unplaced.fSinSPhi * v.x() + unplaced.fCosSPhi * v.y();
+            compE = unplaced.fSinEPhi * v.x() - unplaced.fCosEPhi * v.y();
+
+        //    sidephi = kNull;
+
+            if (((unplaced.GetDPhi() <= VECGEOM_NAMESPACE::kPi) && ((pDistS <= halfCarTolerance)
+                                            && (pDistE <= halfCarTolerance)))
+                || ((unplaced.GetDPhi() > VECGEOM_NAMESPACE::kPi) && !((pDistS > halfCarTolerance)
+                                               && (pDistE >  halfCarTolerance))))
+            {
+              // Inside both phi *full* planes
+              if (compS < 0)
+              {
+                sphi = pDistS / compS;
+                if (sphi >= -halfCarTolerance)
+                {
+                  xi = p.x() + sphi * v.x();
+                  yi = p.y() + sphi * v.y();
+
+                  // Check intersecting with correct half-plane
+                  // (if not -> no intersect)
+                  //
+                  if ((Abs(xi) <= VECGEOM_NAMESPACE::kTolerance)
+                      && (Abs(yi) <= VECGEOM_NAMESPACE::kTolerance))
+                  {
+                   // sidephi = kSPhi;
+                    if ((unplaced.GetSPhi() - halfAngTolerance <= vphi)
+                        && (unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance >= vphi))
+                    {
+                      sphi = VECGEOM_NAMESPACE::kInfinity;
+                    }
+                  }
+                  else if ((yi * unplaced.fCosCPhi - xi * unplaced.fSinCPhi) >= 0)
+                  {
+                    sphi = VECGEOM_NAMESPACE::kInfinity;
+                  }
+                  else
+                  {
+                   // sidephi = kSPhi;
+                    if (pDistS > -halfCarTolerance)
+                    {
+                      sphi = 0.0; // Leave by sphi immediately
+                    }
+                  }
+                }
+                else
+                {
+                  sphi = VECGEOM_NAMESPACE::kInfinity;
+                }
+              }
+              else
+              {
+                sphi = VECGEOM_NAMESPACE::kInfinity;
+              }
+
+              if (compE < 0)
+              {
+                sphi2 = pDistE / compE;
+
+                // Only check further if < starting phi intersection
+                //
+                if ((sphi2 > -halfCarTolerance) && (sphi2 < sphi))
+                {
+                  xi = p.x() + sphi2 * v.x();
+                  yi = p.y() + sphi2 * v.y();
+
+                  // Check intersecting with correct half-plane
+
+                  if ((Abs(xi) <= VECGEOM_NAMESPACE::kTolerance)
+                      && (Abs(yi) <= VECGEOM_NAMESPACE::kTolerance))
+                  {
+                    // Leaving via ending phi
+
+                    if (!((unplaced.GetSPhi() - halfAngTolerance <= vphi)
+                          && (unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance >= vphi)))
+                    {
+                    //  sidephi = kEPhi;
+                      if (pDistE <= -halfCarTolerance)
+                      {
+                        sphi = sphi2;
+                      }
+                      else
+                      {
+                        sphi = 0.0;
+                      }
+                    }
+                  }
+                  else // Check intersecting with correct half-plane
+                    if (yi * unplaced.fCosCPhi - xi * unplaced.fSinCPhi >= 0)
+                    {
+                      // Leaving via ending phi
+
+                   //   sidephi = kEPhi;
+                      if (pDistE <= -halfCarTolerance)
+                      {
+                        sphi = sphi2;
+                      }
+                      else
+                      {
+                        sphi = 0.0;
+                      }
+                    }
+                }
+              }
+            }
+            else
+            {
+              sphi = VECGEOM_NAMESPACE::kInfinity;
+            }
+          }
+          else
+          {
+            // On z axis + travel not || to z axis -> if phi of vector direction
+            // within phi of shape, Step limited by rmax, else Step =0
+
+            if ((unplaced.GetSPhi() - halfAngTolerance <= vphi)
+                && (vphi <= unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance))
+            {
+              sphi = VECGEOM_NAMESPACE::kInfinity;
+            }
+            else
+            {
+             // sidephi = kSPhi ;  // arbitrary
+              sphi    = 0.0;
+            }
+          }
+          if (sphi < snxt)   // Order intersecttions
+          {
+            snxt = sphi;
+        //    side = sidephi;
+          }
+        }
+        if (srd < snxt)    // Order intersections
+        {
+          snxt = srd  ;
+         // side = sider;
+        }
+        if (snxt < halfCarTolerance)
+        {
+          snxt = 0.;
+        }
+
+        return snxt;
+
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -1214,7 +1790,105 @@ struct ConeImplementation {
 
    // has to be implemented in a way
    // as to be tolerant when particle is outside
+    distance = DistanceToOutUSOLIDS<Backend>( unplaced, point, direction, stepMax );
   }
+
+  template<class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static Precision SafetyToInUSOLIDS(UnplacedCone const &unplaced,
+                          Transformation3D const &transformation,
+                          Vector3D<typename Backend::precision_v> const &point
+                          ) {
+      double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi, cosPsi;
+      double pRMin, pRMax;
+
+      // need a transformation
+      Vector3D<Precision> p = transformation.Transform<transCodeT,rotCodeT>(point);
+
+      rho  = Sqrt(p.x() * p.x() + p.y() * p.y());
+      safeZ = Abs(p.z()) - unplaced.GetDz();
+      safeR1 = 0; safeR2 = 0;
+
+      if ( unplaced.GetRmin1() || unplaced.GetRmin2())
+       {
+         pRMin  = unplaced.fTanRMin * p.z() + (unplaced.GetRmin1() + unplaced.GetRmin2()) * 0.5;
+         safeR1  = (pRMin - rho) * unplaced.fInvSecRMin;
+
+         pRMax  = unplaced.fTanRMax * p.z() + (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
+         safeR2  = (rho - pRMax) * unplaced.fInvSecRMax;
+
+         if (safeR1 > safeR2)
+         {
+           safe = safeR1;
+         }
+         else
+         {
+           safe = safeR2;
+         }
+       }
+       else
+       {
+         pRMax  = unplaced.fTanRMax * p.z() + (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
+         safe    = (rho - pRMax) * unplaced.fInvSecRMax;
+       }
+       if (safeZ > safe)
+       {
+         safe = safeZ;
+       }
+
+       if (!unplaced.IsFullPhi() && rho)
+       {
+         // Psi=angle from central phi to point
+
+         cosPsi = (p.x() * unplaced.fCosCPhi + p.y() * unplaced.fSinCPhi);
+
+         if (cosPsi < unplaced.fCosHDPhi*rho ) // Point lies outside phi range
+         {
+           if ((p.y() * unplaced.fCosCPhi - p.x() * unplaced.fSinCPhi) <= 0.0)
+           {
+             safePhi = Abs(p.x() * unplaced.fSinSPhi - p.y() * unplaced.fCosSPhi);
+           }
+           else
+           {
+             safePhi = Abs(p.x() * unplaced.fSinEPhi - p.y() * unplaced.fCosEPhi);
+           }
+           if (safePhi > safe)
+           {
+             safe = safePhi;
+           }
+         }
+       }
+       if (safe < 0.0)
+       {
+         safe = 0.0; return safe; //point is Inside
+       }
+       return safe;
+       /*
+       if (!aAccurate) return safe;
+
+       double safsq = 0.0;
+       int count = 0;
+       if (safeR1 > 0)
+       {
+         safsq += safeR1 * safeR1;
+         count++;
+       }
+       if (safeR2 > 0)
+       {
+         safsq += safeR2 * safeR2;
+         count++;
+       }
+       if (safeZ > 0)
+       {
+         safsq += safeZ * safeZ;
+         count++;
+       }
+       if (count == 1) return safe;
+       return Sqrt(safsq);
+*/
+
+  }
+
 
   template<class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -1223,10 +1897,76 @@ struct ConeImplementation {
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety) {
 
-    typedef typename Backend::precision_v Float_t;
 
-    // TOBEIMPLEMENTED
+    // TOBEIMPLEMENTED -- momentarily dispatching to USolids
+    safety = SafetyToInUSOLIDS<Backend>(unplaced,transformation,point);
   }
+
+  template<class Backend>
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   static Precision SafetyToOutUSOLIDS(UnplacedCone const &unplaced,
+                           Vector3D<typename Backend::precision_v> p) {
+      double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi;
+       double pRMin;
+       double pRMax;
+
+
+      rho = Sqrt(p.x() * p.x() + p.y() * p.y());
+      safeZ = unplaced.GetDz() - Abs(p.z());
+
+        if (unplaced.GetRmin1() || unplaced.GetRmin2())
+        {
+          pRMin  = unplaced.fTanRMin * p.z() + (unplaced.GetRmin1() + unplaced.GetRmin2()) * 0.5;
+          safeR1  = (rho - pRMin) * unplaced.fInvSecRMin;
+        }
+        else
+        {
+          safeR1 = VECGEOM_NAMESPACE::kInfinity;
+        }
+
+        pRMax  = unplaced.fTanRMax * p.z() + (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
+        safeR2  = (pRMax - rho) * unplaced.fInvSecRMax;
+
+        if (safeR1 < safeR2)
+        {
+          safe = safeR1;
+        }
+        else
+        {
+          safe = safeR2;
+        }
+        if (safeZ < safe)
+        {
+          safe = safeZ;
+        }
+
+        // Check if phi divided, Calc distances closest phi plane
+
+        if (!unplaced.IsFullPhi())
+        {
+          // Above/below central phi of UCons?
+
+          if ((p.y() * unplaced.fCosCPhi - p.x() * unplaced.fSinCPhi) <= 0)
+          {
+            safePhi = -(p.x() * unplaced.fSinSPhi - p.y() * unplaced.fCosSPhi);
+          }
+          else
+          {
+            safePhi = (p.x() * unplaced.fSinEPhi - p.y() * unplaced.fCosEPhi);
+          }
+          if (safePhi < safe)
+          {
+            safe = safePhi;
+          }
+        }
+        if (safe < 0)
+        {
+          safe = 0;
+        }
+
+        return safe;
+   }
 
   template<class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -1234,7 +1974,7 @@ struct ConeImplementation {
                           Vector3D<typename Backend::precision_v> point,
                           typename Backend::precision_v &safety) {
 
-  // TOBEIMPLEMENTED
+    safety = SafetyToOutUSOLIDS<Backend>(unplaced,point);
   }
 }; // end struct
 
