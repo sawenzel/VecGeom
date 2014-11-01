@@ -74,6 +74,7 @@ struct NeedsPhiTreatment<UniversalCone> {
 
 template<typename T>
 VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
 bool checkPhiTreatment(const UnplacedCone& cone) {
   if(NeedsPhiTreatment<T>::value != UNKNOWN)
     return NeedsPhiTreatment<T>::value == YES;
@@ -117,6 +118,7 @@ struct NeedsRminTreatment<UniversalCone>
 
 template<typename T>
 VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
 bool checkRminTreatment(const UnplacedCone& cone) {
   if(NeedsRminTreatment<T>::value != UNKNOWN)
     return NeedsRminTreatment<T>::value == YES;

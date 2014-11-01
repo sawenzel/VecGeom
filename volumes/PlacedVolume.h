@@ -63,7 +63,7 @@ protected:
   VPlacedVolume *operator=(VPlacedVolume const &);
 
 public:
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~VPlacedVolume();
 
   VECGEOM_CUDA_HEADER_BOTH

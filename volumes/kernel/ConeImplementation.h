@@ -256,10 +256,10 @@ struct ConeImplementation {
                      Transformation3D const &transformation,
                      Vector3D<typename Backend::precision_v> const &point,
                      typename Backend::int_v &inside) {
-    typename Backend::bool_v contains;
+    // typename Backend::bool_v contains;
     Vector3D<typename Backend::precision_v> localPoint
         = transformation.Transform<transCodeT, rotCodeT>(point);
-    typename Backend::int_v crosscheck;
+    //  typename Backend::int_v crosscheck;
     UnplacedInside<Backend>(unplaced,localPoint,inside);
 
 
@@ -1896,7 +1896,6 @@ struct ConeImplementation {
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety) {
-
 
     // TOBEIMPLEMENTED -- momentarily dispatching to USolids
     safety = SafetyToInUSOLIDS<Backend>(unplaced,transformation,point);

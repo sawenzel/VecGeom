@@ -61,6 +61,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+    virtual ~SpecializedCone() {}
+
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Inside_t Inside(Vector3D<Precision> const &point) const {

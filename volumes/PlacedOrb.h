@@ -41,7 +41,7 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedOrb() {}
 
   VECGEOM_CUDA_HEADER_BOTH

@@ -14,6 +14,7 @@
 
 namespace VECGEOM_NAMESPACE {
   struct USolidsInterfaceHelper {
+    VECGEOM_CUDA_HEADER_BOTH
     virtual ~USolidsInterfaceHelper() {}
   };
 }
@@ -46,6 +47,7 @@ public:
     Vector3D<Precision> const &direction,
     Precision stepMax = kInfinity) const =0;
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~USolidsInterfaceHelper() {}
 
   VECGEOM_CUDA_HEADER_BOTH

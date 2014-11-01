@@ -48,18 +48,18 @@ namespace VECGEOM_NAMESPACE {
        #endif
 
   #ifdef GENERATE_CONE_SPECIALIZATIONS
-       if(tube.rmin() <= 0) {
-         if(tube.dphi() >= 2*M_PI)  RETURN_SPECIALIZATION(NonHollowCone);
-         if(tube.dphi() == M_PI)    RETURN_SPECIALIZATION(NonHollowConeWithPiSector); // == M_PI ???
+       if(cone.GetRmin1() <= 0 && cone.GetRmin2() <=0) {
+         if(cone.GetDPhi() >= 2*M_PI)  RETURN_SPECIALIZATION(NonHollowCone);
+         if(cone.GetDPhi() == M_PI)    RETURN_SPECIALIZATION(NonHollowConeWithPiSector); // == M_PI ???
 
-         if(tube.dphi() < M_PI)     RETURN_SPECIALIZATION(NonHollowConeWithSmallerThanPiSector);
-         if(tube.dphi() > M_PI)     RETURN_SPECIALIZATION(NonHollowConeWithBiggerThanPiSector);
+         if(cone.GetDPhi() < M_PI)     RETURN_SPECIALIZATION(NonHollowConeWithSmallerThanPiSector);
+         if(cone.GetDPhi() > M_PI)     RETURN_SPECIALIZATION(NonHollowConeWithBiggerThanPiSector);
        }
-       else if(tube.rmin() > 0) {
-         if(tube.dphi() >= 2*M_PI)  RETURN_SPECIALIZATION(HollowCone);
-         if(tube.dphi() == M_PI)    RETURN_SPECIALIZATION(HollowConeWithPiSector); // == M_PI ???
-         if(tube.dphi() < M_PI)     RETURN_SPECIALIZATION(HollowConeWithSmallerThanPiSector);
-         if(tube.dphi() > M_PI)     RETURN_SPECIALIZATION(HollowConeWithBiggerThanPiSector);
+       else if(cone.GetRmin1() > 0 || cone.GetRmin2() > 0) {
+         if(cone.GetDPhi() >= 2*M_PI)  RETURN_SPECIALIZATION(HollowCone);
+         if(cone.GetDPhi() == M_PI)    RETURN_SPECIALIZATION(HollowConeWithPiSector); // == M_PI ???
+         if(cone.GetDPhi() < M_PI)     RETURN_SPECIALIZATION(HollowConeWithSmallerThanPiSector);
+         if(cone.GetDPhi() > M_PI)     RETURN_SPECIALIZATION(HollowConeWithBiggerThanPiSector);
        }
  #endif
 
