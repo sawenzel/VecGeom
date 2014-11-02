@@ -19,14 +19,14 @@ int main(int argc, char* argv[]) {
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume box = LogicalVolume("box", &boxUnplaced);
 
-  Transformation3D placement(5, 5, 5);
+  Transformation3D placement(0.1, 0, 0);
   world.PlaceDaughter("box", &box, &placement);
 
   VPlacedVolume *worldPlaced = world.Place();
 
-  GeoManager::Instance().set_world(worldPlaced);
+  GeoManager::Instance().SetWorld(worldPlaced);
 
-  Benchmarker tester(GeoManager::Instance().world());
+  Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(3);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);

@@ -54,7 +54,7 @@ int main( int argc,  char *argv[]) {
     VPlacedVolume *worldPlaced = world.Place();
     //worldPlaced->PrintContent();
     
-    GeoManager::Instance().set_world(worldPlaced);
+    GeoManager::Instance().SetWorld(worldPlaced);
     //Vector<Daughter> dau=worldPlaced->daughters();
     std::cout<<"World and paraboloid placed\n";
 

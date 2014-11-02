@@ -39,7 +39,7 @@ VPlacedVolume* SetupBoxGeometry() {
   world->PlaceDaughter(box, placement7);
   world->PlaceDaughter(box, placement8);
   VPlacedVolume  * w = world->Place();
-  GeoManager::Instance().set_world(w);
+  GeoManager::Instance().SetWorld(w);
   GeoManager::Instance().CloseGeometry();
   return w;
 }
