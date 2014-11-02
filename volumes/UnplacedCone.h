@@ -34,7 +34,7 @@ namespace VECGEOM_NAMESPACE {
  *  fSPhi starting angle of the segment in radians
  *  fDPhi delta angle of the segment in radiansdz
  */
-class UnplacedCone : public VUnplacedVolume, AlignedBase {
+class UnplacedCone : public VUnplacedVolume, public AlignedBase {
 
 private:
     VECGEOM_CUDA_HEADER_BOTH
