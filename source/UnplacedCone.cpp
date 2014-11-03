@@ -9,7 +9,9 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedCone.h"
 #include "volumes/utilities/GenerationUtilities.h"
+#ifdef VECGEOM_USOLIDS
 #include "base/RNG.h"
+#endif
 
 #include "management/VolumeFactory.h"
 
