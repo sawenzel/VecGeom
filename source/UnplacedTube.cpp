@@ -40,7 +40,6 @@ VPlacedVolume* UnplacedTube::Create(
             SpecializedTube<transCodeT, rotCodeT, tubeTypeT> >(logical_volume, transformation, placement)
       #endif
 
-// #define GENERATE_TUBE_SPECIALIZATIONS
 #ifdef GENERATE_TUBE_SPECIALIZATIONS
       if(tube.rmin() <= 0) {
         if(tube.dphi() >= 2*M_PI)  RETURN_SPECIALIZATION(NonHollowTube);

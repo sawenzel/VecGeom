@@ -129,6 +129,9 @@ VECGEOM_GLOBAL Precision kEpsilon =
 #endif
 VECGEOM_GLOBAL Precision kTiny = 1e-30;
 VECGEOM_GLOBAL Precision kTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kRadTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kAngTolerance = 1e-12;
+
 VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
 VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
 

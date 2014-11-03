@@ -40,7 +40,7 @@ public:
       : VPlacedVolume(logicalVolume, transformation, boundingBox, id) {}
 
 #endif
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedBox() {}
 
   // Accessors
