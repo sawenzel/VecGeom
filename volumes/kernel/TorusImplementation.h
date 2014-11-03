@@ -10,13 +10,17 @@
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/UnplacedTorus.h"
 #include <math.h>
+
+
+#ifndef VECGEOM_NVCC
 #include <iomanip>
 #include <Vc/Vc>
+#endif
 
 namespace VECGEOM_NAMESPACE {
 
 
-
+#ifndef VECGEOM_NVCC
 using namespace Vc;
 
 inline
@@ -27,7 +31,7 @@ double_v Vccbrt( double_v x )
   Vc::double_v tmp= Vc::exp(0.33333333333333333333*Vc::log(x) );
   return tmp.copySign(xorig);
 }
-
+#endif
 
 
 template<class T>
@@ -38,17 +42,23 @@ class Complex
 
  public:
 
+ VECGEOM_CUDA_HEADER_BOTH
  Complex() : fR(T(0.)), fI(T(0.)) {}
+
+ VECGEOM_CUDA_HEADER_BOTH
  Complex(T x, T y) : fR(x), fI(y) {}
+ VECGEOM_CUDA_HEADER_BOTH
   ~Complex(){}
 
   // copy constructor
+ VECGEOM_CUDA_HEADER_BOTH
   Complex( const Complex & other )
     {
       fR=other.fR;
       fI=other.fI;
     }
 
+ VECGEOM_CUDA_HEADER_BOTH
  Complex& operator=( const Complex<T>& x)
    {
      fR=x.fR;
@@ -57,6 +67,7 @@ class Complex
    }
 
  template <typename S>
+ VECGEOM_CUDA_HEADER_BOTH
  Complex& operator=( const S& x)
    {
      fR=x;
@@ -64,21 +75,28 @@ class Complex
      return *this;
    }
 
+ VECGEOM_CUDA_HEADER_BOTH
  T real() const {return fR;}
+ VECGEOM_CUDA_HEADER_BOTH
  T imag() const {return fI;}
 
  // problem: how can we vary the math functions here
  // for Vc:: argument dependent lookup might help
+ VECGEOM_CUDA_HEADER_BOTH
  T carg() const {return atan2(fI,fR);}
+ VECGEOM_CUDA_HEADER_BOTH
  T cabs() const {return sqrt(fR*fR+fI*fI);}
 
+ VECGEOM_CUDA_HEADER_BOTH
  Complex conj() const { return Complex(fR,-fI);}
 
+ VECGEOM_CUDA_HEADER_BOTH
  Complex operator+=( Complex const & x ) const
  {
    return Complex( fR + x.real(), fI + x.imag() );
  }
 
+ VECGEOM_CUDA_HEADER_BOTH
  Complex operator-() const
  {
    return Complex(-fR,-fI);
@@ -88,6 +106,7 @@ class Complex
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator+( Complex<T> const & x, Complex<T> const & y )
 {
   return Complex<T>( x.real() + y.real(), x.imag() + y.imag() );
@@ -95,6 +114,7 @@ Complex<T> operator+( Complex<T> const & x, Complex<T> const & y )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator+( Complex<T> const & x, T const & y )
 {
   return Complex<T>( x.real()+y , x.imag()  );
@@ -102,6 +122,7 @@ Complex<T> operator+( Complex<T> const & x, T const & y )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator+( T const & y, Complex<T> const & x )
 {
   return Complex<T>( x.real()+y , x.imag()  );
@@ -110,6 +131,7 @@ Complex<T> operator+( T const & y, Complex<T> const & x )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator-( Complex<T> const & x, Complex<T> const & y )
 {
   return Complex<T>( x.real() - y.real(), x.imag() - y.imag() );
@@ -117,6 +139,7 @@ Complex<T> operator-( Complex<T> const & x, Complex<T> const & y )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator-( Complex<T> const & x, T const & y )
 {
   return Complex<T>( x.real() - y, x.imag() );
@@ -124,6 +147,7 @@ Complex<T> operator-( Complex<T> const & x, T const & y )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator-(  T const & y,  Complex<T> const & x)
 {
   return Complex<T>( y - x.real() , -x.imag() );
@@ -132,6 +156,7 @@ Complex<T> operator-(  T const & y,  Complex<T> const & x)
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator*( Complex<T> const & x, Complex<T> const & y )
 {
   return Complex<T>( x.real()*y.real() - x.imag()*y.imag(), x.real()*y.imag() + x.imag()*y.real() );
@@ -139,6 +164,7 @@ Complex<T> operator*( Complex<T> const & x, Complex<T> const & y )
 
 template <typename T, typename Other>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator*( Complex<T> const & x, Other const & y )
 {
   return Complex<T>( x.real()*y , x.imag()*y );
@@ -146,6 +172,7 @@ Complex<T> operator*( Complex<T> const & x, Other const & y )
 
 template <typename T, typename Other>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator*( Other const & y, Complex<T> const & x )
 {
   return Complex<T>( x.real()*y , x.imag()*y );
@@ -155,6 +182,7 @@ Complex<T> operator*( Other const & y, Complex<T> const & x )
 // division by T
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator/( Complex<T> const & x, T const & y )
 {
   // could use some fast math here
@@ -166,6 +194,7 @@ Complex<T> operator/( Complex<T> const & x, T const & y )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator/( T const & x, Complex<T> const & y )
 {
   // multiply by conjugate
@@ -175,6 +204,7 @@ Complex<T> operator/( T const & x, Complex<T> const & y )
 
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> operator/( Complex<T> const & x, Complex<T> const & y )
 {
   // multiply by conjugate
@@ -186,6 +216,7 @@ Complex<T> operator/( Complex<T> const & x, Complex<T> const & y )
 // standalone function for sqrt
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> csqrt( const Complex<T>& x )
 {
   T r = x.real();
@@ -198,6 +229,7 @@ Complex<T> csqrt( const Complex<T>& x )
 // standalone function for sqrt
 template <typename T>
 inline
+ VECGEOM_CUDA_HEADER_BOTH
 Complex<T> csqrtrealargument( const T & x )
 {
   T imcoef   = (x>=0.) ? 0. : 1.;
@@ -206,6 +238,7 @@ Complex<T> csqrtrealargument( const T & x )
   return Complex<T>( realcoef * l , imcoef * l );
 }
 
+#ifndef VECGEOM_NVCC
 // template specialization for Vc
 typedef Vc::double_v VCT;
 template <>
@@ -220,10 +253,11 @@ Complex<VCT> csqrtrealargument( const VCT & x )
   impart(!real) = l;
   return Complex<VCT>( realpart , impart );
 }
-
+#endif
 
 // we need standalone function for cubic root
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 inline
 Complex<T> cbrt( const Complex<T>& x )
 {
@@ -252,6 +286,7 @@ Complex<T> cbrt( const Complex<T>& x )
   return Complex<T>(  rcbrt*cosnewangle, rcbrt*sinnewangle );
 }
 
+#ifndef VECGEOM_NVCC
 // template specialization for Vc
 // we need standalone function for cubic root
 template <>
@@ -281,15 +316,17 @@ Complex<Vc::double_v> cbrt( const Complex<Vc::double_v>& x )
   Vc::double_v rcbrt = Vccbrt( r );
   return Complex<Vc::double_v>(  rcbrt*cosnewangle, rcbrt*sinnewangle );
 }
+#endif
 
 
-
+#ifndef VECGEOM_CUDA
 template <typename T, typename stream>
 stream& operator<<(stream& s, const Complex<T> & x)
 {
   s << "(" << x.real() << " , " << x.imag() << ")";
   return s;
 }
+#endif
 
 static const double inv256 = 1./256;
 static const double inv16 = 1./16;
@@ -302,6 +339,7 @@ static const double inv12 = 1./12;
 
 
 template <typename CT>
+VECGEOM_CUDA_HEADER_BOTH
 void solveQuartic(double a, double b, double c, double d, double e, CT * roots)
 {
   // Uses Ferrari's Method; this will vectorize trivially ( at least when we treat the real and imaginary parts separately )
@@ -348,6 +386,7 @@ double foo(double a, double b)
 // CT == complextype
 //template <typename CT>
 typedef Complex<double> CT;
+VECGEOM_CUDA_HEADER_BOTH
 inline
 void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
 {
@@ -406,6 +445,7 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
 // this is Ferrari's method which is not really numerically stable but very elegant
 // CT == complextype
 //typedef Vc::double_v VCT2;
+#ifndef VECGEOM_NVCC
 typedef Complex<VCT> CVCT;
 inline
 void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
@@ -455,7 +495,7 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
   aRoot = firstPart + 0.5 * (W + csqrt(secondPart - thirdPart));
   roots[3] = aRoot;
 }
-
+#endif
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
@@ -690,6 +730,7 @@ struct TorusImplementation {
 
 
     template <class T>
+    VECGEOM_CUDA_HEADER_BOTH
     static
     //__attribute__((noinline))
     T CheckZero(T b, T c, T d, T e, T x)
@@ -699,6 +740,7 @@ struct TorusImplementation {
     }
 
     template <class T>
+    VECGEOM_CUDA_HEADER_BOTH
     static
     T NewtonIter(T b, T c, T d, T e, T x, T fold)
     {
@@ -708,8 +750,7 @@ struct TorusImplementation {
     }
 
 
-#include <iostream>
-  template <class Backend>
+   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static

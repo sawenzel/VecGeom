@@ -28,7 +28,6 @@ class SpecializedTorus
 public:
 
 #ifndef VECGEOM_NVCC
-
   SpecializedTorus(char const *const label,
                             LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
@@ -39,20 +38,17 @@ public:
       : SpecializedTorus("", logical_volume, transformation) {}
 
   SpecializedTorus(char const *const label,
-                  const Precision rMin, const Precision rMax, const Precision z,
+                  const Precision rMin, const Precision rMax, const Precision rTor,
                   const Precision sPhi, const Precision dPhi)
       : SpecializedTorus(label, new LogicalVolume(
-                                   new UnplacedTorus(rMin, rMax, z, sPhi, dPhi)),
+                                   new UnplacedTorus(rMin, rMax, rTor, sPhi, dPhi)),
                         &Transformation3D::kIdentity) {}
-
 #else
-
   __device__
   SpecializedTorus(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox, const int id)
       : Helper(logical_volume, transformation, boundingBox, id) {}
-
 #endif
 
   virtual int memory_size() const { return sizeof(*this); }
