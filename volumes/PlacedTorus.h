@@ -42,6 +42,7 @@ public:
 
 #endif
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedTorus() {}
 
   VECGEOM_CUDA_HEADER_BOTH
