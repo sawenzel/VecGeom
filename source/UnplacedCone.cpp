@@ -9,6 +9,7 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedCone.h"
 #include "volumes/utilities/GenerationUtilities.h"
+#include "base/RNG.h"
 
 #include "management/VolumeFactory.h"
 
@@ -24,7 +25,96 @@ namespace VECGEOM_NAMESPACE {
         os << "UnplacedCone; please implement Print to outstream\n";
     }
 
-    // what else to implement ??
+#ifdef VECGEOM_USOLIDS
+    Vector3D<Precision> UnplacedCone::GetPointOnSurface() const {
+       // implementation taken from UCons; not verified
+       //
+       double Aone, Atwo, Athree, Afour, Afive, slin, slout, phi;
+       double zRand, cosu, sinu, rRand1, rRand2, chose, rone, rtwo, qone, qtwo;
+       rone = (fRmax1 - fRmax2) / (2.*fDz);
+       rtwo = (fRmin1 - fRmin2) / (2.*fDz);
+       qone = 0.;
+       qtwo = 0.;
+       if (fRmax1 != fRmax2){
+            qone = fDz * (fRmax1 + fRmax2) / (fRmax1 - fRmax2);
+       }
+       if (fRmin1 != fRmin2) {
+            qtwo = fDz * (fRmin1 + fRmin2) / (fRmin1 - fRmin2);
+       }
+       slin   = Sqrt((fRmin1 - fRmin2)*(fRmin1 - fRmin2) + 4.*fDz*fDz);
+       slout = Sqrt((fRmax1 - fRmax2)*(fRmax1 - fRmax2) + 4.*fDz*fDz);
+       Aone   = 0.5 * fDPhi * (fRmax2 + fRmax1) * slout;
+       Atwo   = 0.5 * fDPhi * (fRmin2 + fRmin1) * slin;
+       Athree = 0.5 * fDPhi * (fRmax1 * fRmax1 - fRmin1 * fRmin1);
+       Afour = 0.5 * fDPhi * (fRmax2 * fRmax2 - fRmin2 * fRmin2);
+       Afive = fDz * (fRmax1 - fRmin1 + fRmax2 - fRmin2);
+
+       phi  = RNG::Instance().uniform(fSPhi, fSPhi + fDPhi);
+       cosu = std::cos(phi);
+       sinu = std::sin(phi);
+       rRand1 = UUtils::GetRadiusInRing(fRmin1, fRmin2);
+       rRand2 = UUtils::GetRadiusInRing(fRmax1, fRmax2);
+
+       if ((fSPhi == 0.) && IsFullPhi()) {
+         Afive = 0.;
+       }
+       chose = RNG::Instance().uniform(0., Aone + Atwo + Athree + Afour + 2.*Afive);
+
+            if ((chose >= 0.) && (chose < Aone)) {
+              if (fRmin1 != fRmin2)
+              {
+                zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+                return Vector3D<Precision>(rtwo * cosu * (qtwo - zRand),
+                                rtwo * sinu * (qtwo - zRand), zRand);
+              }
+              else {
+                return Vector3D<Precision>(fRmin1 * cosu, fRmin2 * sinu,
+                                RNG::Instance().uniform(-1.*fDz, fDz));
+              }
+            }
+            else if ((chose >= Aone) && (chose <= Aone + Atwo))
+            {
+              if (fRmax1 != fRmax2)
+              {
+                zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+                return Vector3D<Precision>(rone * cosu * (qone - zRand),
+                                rone * sinu * (qone - zRand), zRand);
+              }
+              else
+              {
+                return Vector3D<Precision>(fRmax1 * cosu, fRmax2 * sinu,
+                                RNG::Instance().uniform(-1.*fDz, fDz));
+              }
+            }
+            else if ((chose >= Aone + Atwo) && (chose < Aone + Atwo + Athree))
+            {
+              return Vector3D<Precision>(rRand1 * cosu, rRand1 * sinu, -1 * fDz);
+            }
+            else if ((chose >= Aone + Atwo + Athree)
+                     && (chose < Aone + Atwo + Athree + Afour))
+            {
+              return Vector3D<Precision>(rRand2 * cosu, rRand2 * sinu, fDz);
+            }
+            else if ((chose >= Aone + Atwo + Athree + Afour)
+                     && (chose < Aone + Atwo + Athree + Afour + Afive))
+            {
+              zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+              rRand1 = RNG::Instance().uniform(fRmin2 - ((zRand - fDz) / (2.*fDz)) * (fRmin1 - fRmin2),
+                                      fRmax2 - ((zRand - fDz) / (2.*fDz)) * (fRmax1 - fRmax2));
+              return Vector3D<Precision>(rRand1 * std::cos(fSPhi),
+                              rRand1 * std::sin(fSPhi), zRand);
+            }
+            else
+            {
+              zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+              rRand1 = RNG::Instance().uniform(fRmin2 - ((zRand - fDz) / (2.*fDz)) * (fRmin1 - fRmin2),
+                                      fRmax2 - ((zRand - fDz) / (2.*fDz)) * (fRmax1 - fRmax2));
+              return Vector3D<Precision>(rRand1 * std::cos(fSPhi + fDPhi),
+                              rRand1 * std::sin(fSPhi + fDPhi), zRand);
+            }
+   }
+#endif // VECGEOM_USOLIDS
+
 
   template <TranslationCode transCodeT, RotationCode rotCodeT>
   VECGEOM_CUDA_HEADER_DEVICE

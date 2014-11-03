@@ -1610,7 +1610,7 @@ struct ConeImplementation {
           // add angle calculation with correction
           // of the difference in domain of atan2 and Sphi
 
-          vphi = std::atan2(v.y(), v.x());
+          vphi = ATan2(v.y(), v.x());
 
           if (vphi < unplaced.GetSPhi() - halfAngTolerance)
           {
@@ -1975,6 +1975,136 @@ struct ConeImplementation {
 
     safety = SafetyToOutUSOLIDS<Backend>(unplaced,point);
   }
+
+
+  // normal kernel
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static void NormalKernel(
+       UnplacedCone const &unplaced,
+       Vector3D<typename Backend::precision_v> const &p,
+       Vector3D<typename Backend::precision_v> &normal,
+       typename Backend::bool_v &valid
+      )
+  {
+      // TODO: provide generic vectorized implementation
+      // TODO: tranform point p to local coordinates
+
+      int noSurfaces = 0;
+      double rho, pPhi;
+      double distZ, distRMin, distRMax;
+      double distSPhi = kInfinity, distEPhi = kInfinity;
+      double pRMin, widRMin;
+      double pRMax, widRMax;
+
+      const double delta = 0.5 * kTolerance;
+      const double dAngle = 0.5 * kAngTolerance;
+      typedef Vector3D<typename Backend::precision_v> Vec3D_t;
+      Vec3D_t norm, sumnorm(0., 0., 0.), nZ(0., 0., 1.);
+      Vec3D_t nR, nr(0., 0., 0.), nPs, nPe;
+
+      distZ = Abs(Abs(p.z()) - unplaced.GetDz());
+      rho  = Sqrt(p.x() * p.x() + p.y() * p.y());
+
+      pRMin   = rho - p.z() * unplaced.fTanRMin;
+      widRMin = unplaced.GetRmin2() - unplaced.GetDz() * unplaced.fTanRMin;
+      distRMin = Abs(pRMin - widRMin) * unplaced.fInvSecRMin;
+
+      pRMax   = rho - p.z() * unplaced.fTanRMax;
+      widRMax = unplaced.GetRmax2() - unplaced.GetDz() * unplaced.fTanRMax;
+      distRMax = Abs(pRMax - widRMax) * unplaced.fInvSecRMax;
+
+      if (! unplaced.IsFullPhi() )   // Protected against (0,0,z)
+      {
+          if (rho)
+          {
+            pPhi = ATan2(p.y(), p.x());
+
+            if (pPhi  < unplaced.GetSPhi() - delta)
+            {
+              pPhi += kTwoPi;
+            }
+            else if (pPhi > unplaced.GetSPhi() + unplaced.GetDPhi() + delta)
+            {
+              pPhi -= kTwoPi;
+            }
+
+            distSPhi = Abs(pPhi - unplaced.GetSPhi());
+            distEPhi = Abs(pPhi - unplaced.GetSPhi() - unplaced.GetDPhi());
+          }
+          else if (!(unplaced.GetRmin1()) || !(unplaced.GetRmin2()))
+          {
+            distSPhi = 0.;
+            distEPhi = 0.;
+          }
+          nPs = Vec3D_t( unplaced.fSinSPhi, -unplaced.fCosSPhi, 0);
+          nPe = Vec3D_t(-unplaced.fSinEPhi, unplaced.fCosEPhi, 0);
+        }
+        if (rho > delta)
+        {
+          nR = Vec3D_t(p.x() / rho / unplaced.fSecRMax, p.y() / rho / unplaced.fSecRMax,
+                  -unplaced.fTanRMax * unplaced.fInvSecRMax);
+          if (unplaced.GetRmin1() || unplaced.GetRmin2())
+          {
+            nr = Vec3D_t(-p.x() / rho / unplaced.fSecRMin, -p.y() / rho / unplaced.fSecRMin,
+                    unplaced.fTanRMin * unplaced.fInvSecRMin);
+          }
+        }
+
+        if (distRMax <= delta)
+        {
+          noSurfaces ++;
+          sumnorm += nR;
+        }
+        if ((unplaced.GetRmin1() || unplaced.GetRmin2()) && (distRMin <= delta))
+        {
+          noSurfaces ++;
+          sumnorm += nr;
+        }
+        if (!unplaced.IsFullPhi())
+        {
+          if (distSPhi <= dAngle)
+          {
+            noSurfaces ++;
+            sumnorm += nPs;
+          }
+          if (distEPhi <= dAngle)
+          {
+            noSurfaces ++;
+            sumnorm += nPe;
+          }
+        }
+        if (distZ <= delta)
+        {
+          noSurfaces ++;
+          if (p.z() >= 0.)
+          {
+            sumnorm += nZ;
+          }
+          else
+          {
+            sumnorm -= nZ;
+          }
+        }
+        if (noSurfaces == 0)
+        {
+            Assert(false, "approximate surface normal not implemented");
+            //          norm = ApproxSurfaceNormal(p);
+        }
+        else if (noSurfaces == 1)
+        {
+          norm = sumnorm;
+        }
+        else
+        {
+          norm = sumnorm.Unit();
+        }
+
+        normal = norm;
+
+        valid = (bool) noSurfaces;
+  }
+
 }; // end struct
 
 } // end namespace

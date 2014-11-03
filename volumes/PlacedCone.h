@@ -16,6 +16,7 @@
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedCone.h"
+#include "volumes/kernel/ConeImplementation.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -92,7 +93,46 @@ public:
   Precision GetOuterOffset() const {return GetUnplacedVolume()->GetOuterOffset();}
 
   Precision Capacity() const { return GetUnplacedVolume()->Capacity();}
- }; // end class
+
+#ifdef VECGEOM_USOLIDS
+  virtual
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
+  virtual
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  {
+      bool valid;
+      ConeImplementation<translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::NormalKernel<kScalar>(
+              *GetUnplacedVolume(),
+              point,
+              normal, valid);
+      return valid;
+  }
+
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const
+  {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
+  virtual Precision Capacity() {
+    return GetUnplacedVolume()->Capacity();
+  }
+
+  virtual double SurfaceArea() {
+     return GetUnplacedVolume()->SurfaceArea();
+  }
+
+  virtual std::string GetEntityType() const {
+      return "Cone";
+  }
+#endif
+
+
+}; // end class
 
 } // End global namespace
 

@@ -13,7 +13,8 @@
 
 #include "volumes/kernel/ConeImplementation.h"
 #include "volumes/PlacedCone.h"
-#include "volumes/ShapeImplementationHelper.h"
+//#include "volumes/ShapeImplementationHelper.h"
+#include "base/SOA3D.h"
 
 #include <stdio.h>
 
@@ -45,6 +46,18 @@ public:
   SpecializedCone(LogicalVolume const *const logical_volume,
                   Transformation3D const *const transformation)
       : SpecializedCone("", logical_volume, transformation) {}
+
+  SpecializedCone(char const *const label,
+                   const Precision rmin1,
+                   const Precision rmax1,
+                   const Precision rmin2,
+                   const Precision rmax2,
+                   const Precision dz,
+                   const Precision sphi=0,
+                   const Precision dphi=kTwoPi)
+        : SpecializedCone(label,
+                new LogicalVolume(new UnplacedCone(rmin1, rmax1, rmin2, rmax2, dz, sphi, dphi )),
+                &Transformation3D::kIdentity) {}
 
 #else
 

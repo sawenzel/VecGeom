@@ -271,6 +271,32 @@ Precision fSinEPhi;
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
 #endif
 
+#ifdef VECGEOM_USOLIDS
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  {
+      double max = fRmax1 > fRmax2 ? fRmax1 : fRmax2;
+      aMin = Vector3D<Precision>(-max, -max, -fDz);
+      aMax = Vector3D<Precision>(max, max, fDz);
+  }
+
+  Vector3D<Precision> GetPointOnSurface() const;
+
+  Precision SurfaceArea()  const {
+      double mmin, mmax, dmin, dmax;
+      mmin = (fRmin1 + fRmin2) * 0.5;
+      mmax = (fRmax1 + fRmax2) * 0.5;
+      dmin = (fRmin2 - fRmin1);
+      dmax = (fRmax2 - fRmax1);
+
+      return fDPhi * (mmin * std::sqrt(dmin * dmin + 4 * fDz * fDz)
+                                 + mmax * std::sqrt(dmax * dmax + 4 * fDz * fDz)
+                                 + 0.5 * (fRmax1 * fRmax1 - fRmin1 * fRmin1
+                                          + fRmax2 * fRmax2 - fRmin2 * fRmin2));
+  }
+#endif
+
+
+
 };
 
 
