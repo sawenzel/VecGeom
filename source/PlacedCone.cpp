@@ -9,15 +9,15 @@
 #include "volumes/Cone.h"
 #include "volumes/SpecializedCone.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_ROOT)
+#if defined(VECGEOM_ROOT)
 #include "TGeoCone.h"
 #endif
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
+#if defined(VECGEOM_USOLIDS)
 #include "UCons.hh"
 #endif
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_GEANT4)
+#if defined(VECGEOM_GEANT4)
 #include "G4Cons.hh"
 #endif
 
