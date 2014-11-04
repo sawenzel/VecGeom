@@ -46,9 +46,10 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
-    virtual ~PlacedParaboloid() {}
     VECGEOM_CUDA_HEADER_BOTH
+    virtual ~PlacedParaboloid() {}
+ 
+   VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid const* GetUnplacedVolume() const {
         return static_cast<UnplacedParaboloid const *>(
         logical_volume()->unplaced_volume());

@@ -5,7 +5,9 @@
 
 #ifdef VECGEOM_ROOT
 #include "utilities/Visualizer.h"
+#include "TGeoManager.h"
 #include "TGeoShape.h"
+#include "TGeoSphere.h"
 #include "TPolyLine3D.h"
 #include "TPolyMarker3D.h"
 #endif
@@ -13,6 +15,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <memory>
 
 namespace vecgeom {
 
@@ -34,7 +37,9 @@ void ShapeDebugger::CompareContainsToROOT(
     Vector3D<Precision> const &bounds,
     int nSamples) const {
 
-  TGeoShape const *rootShape = fVolume->ConvertToRoot();
+  TGeoManager geoManager;
+
+  std::shared_ptr<const TGeoShape> rootShape(fVolume->ConvertToRoot());
 
   std::cout << "Comparing contains between VecGeom and ROOT:\n";
 
@@ -97,22 +102,22 @@ void ShapeDebugger::CompareContainsToROOT(
   Visualizer visualizer;
   visualizer.SetVerbosity(0);
   visualizer.AddVolume(rootShape);
-  visualizer.AddPoints(&vecgeomInside);
-  visualizer.AddPoints(&rootInside);
+  visualizer.AddPoints(vecgeomInside);
+  visualizer.AddPoints(rootInside);
   if (fShowCorrectResults) {
-    visualizer.AddPoints(&bothInside);
-    visualizer.AddPoints(&bothOutside);
+    visualizer.AddPoints(bothInside);
+    visualizer.AddPoints(bothOutside);
   }
   visualizer.Show();
-
-  delete rootShape;
 }
 
 void ShapeDebugger::CompareDistanceToInToROOT(
     Vector3D<Precision> const &bounds,
     int nSamples) const {
 
-  TGeoShape const *rootShape = fVolume->ConvertToRoot();
+  TGeoManager geoManager;
+
+  std::shared_ptr<const TGeoShape> rootShape(fVolume->ConvertToRoot());
 
   std::cout << "Comparing DistanceToIn between VecGeom and ROOT:\n";
 
@@ -213,28 +218,29 @@ void ShapeDebugger::CompareDistanceToInToROOT(
   visualizer.AddVolume(rootShape);
   int raysAdded = 0;
   for (auto ray : rays) {
-    visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
+    visualizer.AddLine(*ray);
   }
   raysAdded = 0;
   for (auto ray : helperRays) {
-    visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
+    visualizer.AddLine(*ray);
   }
   if (fShowCorrectResults) {
-    visualizer.AddPoints(&bothMiss);
+    visualizer.AddPoints(bothMiss);
   }
   visualizer.Show();
 
   for (auto ray : rays) delete ray;
-  delete rootShape;
 }
 
 void ShapeDebugger::CompareDistanceToOutToROOT(
     Vector3D<Precision> const &bounds,
     int nSamples) const {
 
-  TGeoShape const *rootShape = fVolume->ConvertToRoot();
+  TGeoManager geoManager;
+
+  std::shared_ptr<const TGeoShape> rootShape(fVolume->ConvertToRoot());
 
   std::cout << "Comparing DistanceToOut between VecGeom and ROOT:\n";
 
@@ -317,18 +323,70 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
   visualizer.AddVolume(rootShape);
   int raysAdded = 0;
   for (auto ray : rays) {
-    visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
+    visualizer.AddLine(*ray);
   }
   raysAdded = 0;
   for (auto ray : helperRays) {
-    visualizer.AddLine(ray);
-    if (!fShowCorrectResults && ++raysAdded >= fMaxMismatches) break;
+    if (!fShowCorrectResults && raysAdded++ >= fMaxMismatches) break;
+    visualizer.AddLine(*ray);
   }
   visualizer.Show();
 
   for (auto ray : rays) delete ray;
-  delete rootShape;
+}
+
+void ShapeDebugger::CompareSafetyToInToROOT(
+    Vector3D<Precision> const &bounds,
+    int nSamples) const {
+  CompareSafetyToROOT<false>(bounds, nSamples);
+}
+
+void ShapeDebugger::CompareSafetyToOutToROOT(
+    Vector3D<Precision> const &bounds,
+    int nSamples) const {
+  CompareSafetyToROOT<true>(bounds, nSamples);
+}
+
+template <bool pointInsideT>
+void ShapeDebugger::CompareSafetyToROOT(
+    Vector3D<Precision> const &bounds,
+    int nSamples) const {
+
+  if (pointInsideT) {
+    std::cout << "Comparing SafetyToOut to ROOT\n";
+  } else {
+    std::cout << "Comparing SafetyToIn to ROOT\n";
+  }
+
+  TGeoManager geoManager;
+
+  std::shared_ptr<const TGeoShape> rootShape(fVolume->ConvertToRoot());
+
+  std::vector<std::pair<std::shared_ptr<const TGeoShape>, Transformation3D> >
+      spheres;
+  for (int i = 0; i < nSamples; ++i) {
+    Vector3D<Precision> point;
+    do {
+      point = volumeUtilities::SamplePoint(bounds);
+    } while (pointInsideT != rootShape->Contains(&point[0]));
+    Precision safety;
+    if (pointInsideT) {
+      safety = fVolume->SafetyToOut(point);
+    } else {
+      safety = fVolume->SafetyToIn(point);
+    }
+    spheres.emplace_back(
+        std::shared_ptr<const TGeoShape>(new TGeoSphere(0, safety)),
+        Transformation3D(point[0], point[1], point[2]));
+  }
+
+  Visualizer visualizer;
+  visualizer.AddVolume(rootShape);
+  for (auto &sphere : spheres) {
+    visualizer.AddVolume(sphere.first, sphere.second);
+  }
+  visualizer.Show();
 }
 
 #endif

@@ -9,6 +9,7 @@
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedBox.h"
 #include "volumes/UnplacedTube.h"
+#include "volumes/UnplacedCone.h"
 #include "volumes/UnplacedRootVolume.h"
 #include "volumes/UnplacedParaboloid.h"
 #include "volumes/UnplacedParallelepiped.h"
@@ -23,6 +24,7 @@
 #include "TGeoBBox.h"
 #include "TGeoSphere.h"
 #include "TGeoTube.h"
+#include "TGeoCone.h"
 #include "TGeoTrd1.h"
 #include "TGeoTrd2.h"
 #include "TGeoPara.h"
@@ -213,6 +215,31 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
       unplaced_volume = new UnplacedTube(tube->GetRmin(), tube->GetRmax(), tube->GetDz(),
               kDegToRad*tube->GetPhi1(),kDegToRad*(tube->GetPhi2()-tube->GetPhi1()));
   }
+
+
+  // THE CONESEG
+  if (shape->IsA() == TGeoConeSeg::Class()) {
+      TGeoConeSeg const *const cone = static_cast<TGeoConeSeg const*>(shape);
+      unplaced_volume = new UnplacedCone(cone->GetRmin1(),
+              cone->GetRmax1(),
+              cone->GetRmin2(),
+              cone->GetRmax2(),
+              cone->GetDz(),
+              kDegToRad*cone->GetPhi1(),
+              kDegToRad*(cone->GetPhi2()-cone->GetPhi1()));
+  }
+
+  // THE CONE
+    if (shape->IsA() == TGeoCone::Class()) {
+      TGeoCone const *const cone = static_cast<TGeoCone const*>(shape);
+      unplaced_volume = new UnplacedCone(cone->GetRmin1(),
+                cone->GetRmax1(),
+                cone->GetRmin2(),
+                cone->GetRmax2(),
+                cone->GetDz(),
+                0.,kTwoPi);
+    }
+
 
   // THE PARABOLOID
   if (shape->IsA() == TGeoParaboloid::Class()) {

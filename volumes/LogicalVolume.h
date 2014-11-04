@@ -124,11 +124,11 @@ public:
 
   VPlacedVolume* Place() const;
 
-  void PlaceDaughter(char const *const label,
+  VPlacedVolume const* PlaceDaughter(char const *const label,
                      LogicalVolume const *const volume,
                      Transformation3D const *const transformation);
 
-  void PlaceDaughter(LogicalVolume const *const volume,
+  VPlacedVolume const* PlaceDaughter(LogicalVolume const *const volume,
                      Transformation3D const *const transformation);
 
   void PlaceDaughter(VPlacedVolume const *const placed);

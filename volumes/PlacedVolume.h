@@ -12,6 +12,7 @@
 
 #include <list>
 #include <string>
+#include <iostream>
 
 class G4VSolid;
 
@@ -62,7 +63,7 @@ protected:
   VPlacedVolume *operator=(VPlacedVolume const &);
 
 public:
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~VPlacedVolume();
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -110,7 +111,15 @@ public:
     transformation_ = transform;
   }
 
-  void set_label(char const *const label) { *label_ = label; }
+  void set_label(char const * label) {
+    //if(label != NULL){
+        //std::cerr << label << std::endl;
+        //std::cerr << *label_ << std::endl;
+        //label_->assign(label);}
+    //else{
+       label_=new std::string(label);
+    //}
+  }
 
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 

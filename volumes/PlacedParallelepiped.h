@@ -38,7 +38,7 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedParallelepiped() {}
 
   VECGEOM_CUDA_HEADER_BOTH
