@@ -14,7 +14,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedTorus::ConvertToUnspecialized() const {
   return new SimpleTorus(GetLabel().c_str(), logical_volume(), transformation());
