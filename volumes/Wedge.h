@@ -10,6 +10,8 @@
 
 #include "base/Global.h"
 #include "volumes/kernel/GenericKernels.h"
+#include "backend/Backend.h"
+#include <iostream>
 
 namespace VECGEOM_NAMESPACE
 {
@@ -18,36 +20,64 @@ namespace VECGEOM_NAMESPACE
  * A class representing a wedge which is represented by an angle. It
  * can be used to divide 3D spaces or to clip wedges from solids.
  * The wedge has an "inner" and "outer" side. For an angle = 180 degree, the wedge is essentially
- * an ordinary halfspace.
+ * an ordinary halfspace. Usually the wedge is used to cut out "phi" sections along z-direction.
  *
  * Idea: should have Unplaced and PlacedWegdes, should have specializations
- * for "PhiWegde" and "ThetaWegde" which are used in symmetric
+ * for "PhiWegde" and which are used in symmetric
  * shapes such as tubes or spheres.
  *
  * Note: This class is meant as an auxiliary class so it is a bit outside the ordinary volume
  * hierarchy.
  *
+ *       / +++++++++++
+ *      / ++++++++++++
+ *     / +++++++++++++
+ *    / +++++ INSIDE +
+ *   / +++++++++++++++
+ *  / fDPhi +++++++++
+ * x------------------ ( this is at angle fSPhi )
+ *
+ *     OUTSIDE
+ *
  */
 class Wedge{
 
     private:
-        Precision fAngle; // angle representing/defining the wedge
-        Vector3D<Precision> fAlongVector1;
-        Vector3D<Precision> fAlongVector2;
+        Precision fSPhi; // starting angle
+        Precision fDPhi; // delta angle representing/defining the wedge
+        Vector3D<Precision> fAlongVector1; // vector along the first plane
+        Vector3D<Precision> fAlongVector2; // vector aling the second plane
+
+        Vector3D<Precision> fNormalVector1; // normal vector for first plane
+        // convention is that it points inwards
+
+        Vector3D<Precision> fNormalVector2; // normal vector for second plane
+        // convention is that it points inwards
 
     public:
-        Wedge( Precision angle ) : fAngle(angle), fAlongVector1(), fAlongVector2() {
+        VECGEOM_CUDA_HEADER_BOTH
+        Wedge( Precision angle, Precision zeroangle = 0 ) :
+            fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2() {
             // check input
             Assert( angle > 0., " wedge angle has to be larger than zero " );
 
             // initialize angles
-            fAlongVector1.x() = 1.;
-            fAlongVector1.y() = 0.;
-            fAlongVector2.x() = std::cos(angle);
-            fAlongVector2.y() = std::sin(angle);
+            fAlongVector1.x() = std::cos(zeroangle);
+            fAlongVector1.y() = std::sin(zeroangle);
+            fAlongVector2.x() = std::cos(zeroangle+angle);
+            fAlongVector2.y() = std::sin(zeroangle+angle);
+
+            fNormalVector1.x() = std::sin(zeroangle);
+            fNormalVector1.y() = std::cos(zeroangle);  // not the + sign
+            fNormalVector2.x() =  std::sin(zeroangle+angle);
+            fNormalVector2.y() = -std::cos(zeroangle+angle); // note the - sign
         }
 
+        VECGEOM_CUDA_HEADER_BOTH
         ~Wedge(){}
+
+        Vector3D<Precision> GetAlong1() const {return fAlongVector1; }
+        Vector3D<Precision> GetAlong2() const {return fAlongVector2; }
 
         // very important:
         template<typename Backend>
@@ -58,7 +88,24 @@ class Wedge{
         VECGEOM_CUDA_HEADER_BOTH
         typename Backend::inside_v Inside( Vector3D<typename Backend::precision_v> const& point ) const;
 
-    private:
+        /**
+         * estimate of the smallest distance to the Wedge boundary when
+         * the point is located outside the Wegde
+         */
+        template<typename Backend>
+        VECGEOM_CUDA_HEADER_BOTH
+        typename Backend::precision_v SafetyToIn( Vector3D<typename Backend::precision_v> const& point ) const;
+
+        /**
+         * estimate of the smallest distance to the Wedge boundary when
+         * the point is located inside the Wedge ( within the defining phi angle )
+         */
+        template<typename Backend>
+        VECGEOM_CUDA_HEADER_BOTH
+        typename Backend::precision_v SafetyToOut( Vector3D<typename Backend::precision_v> const& point ) const;
+
+
+
         // this could be useful to be public such that other shapes can directly
         // use completelyinside + completelyoutside
 
@@ -69,7 +116,8 @@ class Wedge{
                 typename Backend::bool_v &completelyinside,
                 typename Backend::bool_v &completelyoutside) const;
 
-};
+
+}; // end of class Wedge
 
     template<typename Backend>
     VECGEOM_CUDA_HEADER_BOTH
@@ -124,7 +172,7 @@ class Wedge{
         if(ForInside)
             completelyinside = startCheck > MakePlusTolerant<ForInside>(0.);
 
-        if(fAngle<kPi) {
+        if(fDPhi<kPi) {
             completelyoutside |= endCheck < MakeMinusTolerant<ForInside>(0.);
             if(ForInside)
                 completelyinside &= endCheck > MakePlusTolerant<ForInside>(0.);
@@ -136,7 +184,61 @@ class Wedge{
         }
     }
 
-    };
+
+    template<typename Backend>
+    VECGEOM_CUDA_HEADER_BOTH
+    typename Backend::precision_v Wedge::SafetyToOut(
+            Vector3D<typename Backend::precision_v> const& point ) const{
+        typedef typename Backend::precision_v Float_t;
+        // algorithm: calculate projections to both planes
+        // return minimum / maximum depending on fAngle < PI or not
+
+        // assuming that we have z wedge and the planes pass through the origin
+        Float_t dist1 = point.x()*fNormalVector1.x() + point.y()*fNormalVector1.y();
+        Float_t dist2 = point.x()*fNormalVector2.x() + point.y()*fNormalVector2.y();
+
+        std::cerr << "d1 "<<dist1 << "\n";
+        std::cerr << "d2 "<<dist2 << "\n";
+
+        if(fDPhi < kPi){
+            return Min(dist1,dist2);
+        }
+        else{
+            Float_t disttocorner = Sqrt(point.x()*point.x() + point.y()*point.y());
+            return Max(dist1,Max(dist2,disttocorner));
+        }
+    }
+
+
+
+    template<typename Backend>
+    VECGEOM_CUDA_HEADER_BOTH
+    typename Backend::precision_v Wedge::SafetyToIn(
+            Vector3D<typename Backend::precision_v> const& point ) const {
+        typedef typename Backend::precision_v Float_t;
+        // algorithm: calculate projections to both planes
+        // return maximum / minimum depending on fAngle < PI or not
+        // assuming that we have z wedge and the planes pass through the origin
+
+        // actually we
+
+        Float_t dist1 = point.x()*fNormalVector1.x() + point.y()*fNormalVector1.y();
+        Float_t dist2 = point.x()*fNormalVector2.x() + point.y()*fNormalVector2.y();
+
+        std::cerr << "d1 " << dist1 << "\n";
+        std::cerr << "d2 " << dist2 << "\n";
+
+        if(fDPhi < kPi){
+           // Float_t disttocorner = Sqrt(point.x()*point.x() + point.y()*point.y());
+            return Max(-1*dist1,-1*dist2);
+        }
+        else{
+            return Min(dist1,dist2);
+        }
+   }
+
+
+} // end of namespace
 
 
 #endif /* VECGEOM_VOLUMES_WEDGE_H_ */

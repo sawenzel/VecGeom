@@ -658,6 +658,8 @@ struct TorusImplementation {
    // and it can anyway not be vectorized
     /* rmax */
     typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
     Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
     Float_t radsq = ( rxy - torus.rtor() ) * (rxy -  torus.rtor() ) + point[2]*point[2];
 
@@ -685,13 +687,23 @@ struct TorusImplementation {
     }
 
     // NOT YET NEEDED WHEN NOT PHI TREATMENT
-    //        if (Backend::early_returns) {
-    //      if ( IsFull(completelyoutside) ) {
-    //        return;
-    //      }
-    //    }
-    /* phi TOO DO*/
+    if (Backend::early_returns) {
+        if ( IsFull(completelyoutside) ) {
+            return;
+          }
+    }
 
+    /* phi TOO DO*/
+    if( torus.dphi() < kTwoPi ){
+        Bool_t completelyoutsidephi;
+        Bool_t completelyinsidephi;
+        torus.GetWedge().GenericKernelForContainsAndInside<Backend,ForInside>( point,
+            completelyinsidephi, completelyoutsidephi );
+
+        completelyoutside |= completelyoutsidephi;
+        if(ForInside)
+            completelyinside &= completelyinsidephi;
+    }
   }
 
   template <class Backend>

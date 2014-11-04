@@ -7,6 +7,8 @@
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
 #include "volumes/UnplacedTube.h"
+#include "volumes/Wedge.h"
+
 
 namespace VECGEOM_NAMESPACE {
 
@@ -19,7 +21,8 @@ private:
     Precision fRtor; // bending radius of torus
     Precision fSphi; // start angle
     Precision fDphi; // delta angle of torus section
-   
+    Wedge     fPhiWedge; // the Phi bounding of the torus (not the cutout)
+
   // cached values
   Precision fRmin2, fRmax2, fRtor2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
   Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2;
@@ -53,21 +56,21 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTorus(const Precision rmin, const Precision rmax, const Precision rtor,
                const Precision sphi, const Precision dphi) : fRmin(rmin), fRmax(rmax),
-    fRtor(rtor), fSphi(sphi), fDphi(dphi),fBoundingTube(0, 1, 1, 0, 360) {
+    fRtor(rtor), fSphi(sphi), fDphi(dphi), fPhiWedge(dphi,sphi), fBoundingTube(0, 1, 1, 0, dphi) {
     calculateCached(); 
     
     fBoundingTube = UnplacedTube(fRtor-fRmax - kTolerance,
     fRtor+fRmax + kTolerance, fRmax,
-     0, kTwoPi);
+     sphi, dphi);
    
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTorus(UnplacedTorus const &other) : 
-  fRmin(other.fRmin), fRmax(other.fRmax), fRtor(other.fRtor), fSphi(other.fSphi), fDphi(other.fDphi),fBoundingTube(other.fBoundingTube) {
-    calculateCached();
-   
-  }
+//  VECGEOM_CUDA_HEADER_BOTH
+//  UnplacedTorus(UnplacedTorus const &other) :
+//  fRmin(other.fRmin), fRmax(other.fRmax), fRtor(other.fRtor), fSphi(other.fSphi), fDphi(other.fDphi),fBoundingTube(other.fBoundingTube) {
+//    calculateCached();
+//
+//  }
 
 
     
@@ -102,6 +105,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision rtor2() const { return fRtor2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    Wedge const & GetWedge() const { return fPhiWedge; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

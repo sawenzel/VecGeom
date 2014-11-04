@@ -22,7 +22,8 @@ VPlacedVolume const* PlacedTorus::ConvertToUnspecialized() const {
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTorus::ConvertToRoot() const {
-  return new TGeoTorus(GetLabel().c_str(), rtor(), rmin(), rmax(), sphi()*(180/M_PI), dphi()*(180/M_PI));
+  return new TGeoTorus(GetLabel().c_str(), rtor(), rmin(), rmax(),
+          sphi()*kDegToRad, dphi()*kDegToRad);
 }
 #endif
 

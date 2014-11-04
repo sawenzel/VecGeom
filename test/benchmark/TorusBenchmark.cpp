@@ -14,9 +14,11 @@ int main(int argc, char* argv[]) {
   OPTION_DOUBLE(drmin,1.2);
   OPTION_DOUBLE(drmax,3.1);
   OPTION_DOUBLE(drtor,5.);
+  OPTION_DOUBLE(dsphi,0.);
+  OPTION_DOUBLE(ddphi,kTwoPi);
 
   UnplacedBox worldUnplaced = UnplacedBox((drtor+drmax)*2, (drtor+drmax)*2 , (drtor+drmax)*2);
-  UnplacedTorus torusUnplaced = UnplacedTorus(drmin, drmax, drtor, 0, kTwoPi);
+  UnplacedTorus torusUnplaced = UnplacedTorus(drmin, drmax, drtor, dsphi, ddphi);
 
   LogicalVolume world = LogicalVolume("world", &worldUnplaced);
   LogicalVolume torus = LogicalVolume("torus", &torusUnplaced);
