@@ -70,8 +70,16 @@ template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Type Sqrt(const Type val) {
-  return sqrt(val);
+  return std::sqrt(val);
 }
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Type Pow(const Type val1, const Type val2) {
+  return std::pow(val1, val2);
+}
+
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH

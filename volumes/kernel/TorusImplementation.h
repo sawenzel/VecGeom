@@ -69,8 +69,8 @@ class Complex
 
  // problem: how can we vary the math functions here
  // for Vc:: argument dependent lookup might help
- T carg() const {return atan2(fI,fR);}
- T cabs() const {return sqrt(fR*fR+fI*fI);}
+ T carg() const {return ATan2(fI,fR);}
+ T cabs() const {return Sqrt(fR*fR+fI*fI);}
 
  Complex conj() const { return Complex(fR,-fI);}
 
@@ -183,15 +183,15 @@ Complex<T> operator/( Complex<T> const & x, Complex<T> const & y )
 }
 
 
-// standalone function for sqrt
+// standalone function for Sqrt
 template <typename T>
 inline
 Complex<T> csqrt( const Complex<T>& x )
 {
   T r = x.real();
   T i = x.imag();
-  T l = sqrt( r*r + i*i );
-  return Complex<T>( sqrt( 0.5*(l+r) ), sqrt( 0.5*(l-r) ));
+  T l = Sqrt( r*r + i*i );
+  return Complex<T>( Sqrt( 0.5*(l+r) ), Sqrt( 0.5*(l-r) ));
 }
 
 
@@ -202,7 +202,7 @@ Complex<T> csqrtrealargument( const T & x )
 {
   T imcoef   = (x>=0.) ? 0. : 1.;
   T realcoef = (x>=0.) ? 1. : 0.;
-  T l = sqrt( fabs(x) );
+  T l = Sqrt( fabs(x) );
   return Complex<T>( realcoef * l , imcoef * l );
 }
 
@@ -248,7 +248,7 @@ Complex<T> cbrt( const Complex<T>& x )
       cosnewangle=1.;
     }
   // use ordinary cubic root function ( is it in Vc ?? )
-  T rcbrt = pow(r,1./3);//cbrt( r );
+  T rcbrt = Pow(r,1./3);//cbrt( r );
   return Complex<T>(  rcbrt*cosnewangle, rcbrt*sinnewangle );
 }
 
@@ -313,27 +313,27 @@ void solveQuartic(double a, double b, double c, double d, double e, CT * roots)
 
   CT P = -alpha2/12.0 - gamma;
   CT Q = -alpha2*alpha/108.0 + alpha*gamma/3.0 - beta*beta/8.0;
-  CT R = Q*0.5 + sqrt(Q*Q*0.25 + P*P*P/27.0);
-  CT U = pow(R,1./3);
+  CT R = Q*0.5 + Sqrt(Q*Q*0.25 + P*P*P/27.0);
+  CT U = Pow(R,1./3);
   CT y = -5.0*alpha/6.0 - U;
   if(U != 0.0) y += P/(3.0*U);
-  CT W = sqrt(alpha + y + y);
+  CT W = Sqrt(alpha + y + y);
 
   CT aRoot;
    double firstPart = b/(-4.0*a);
   CT secondPart = -3.0*alpha - 2.0*y;
   CT thirdPart = 2.0*beta/(W);
 
-  aRoot = firstPart + 0.5 * (-W - sqrt(secondPart + thirdPart));
+  aRoot = firstPart + 0.5 * (-W - Sqrt(secondPart + thirdPart));
   roots[0] = aRoot;
 
-  aRoot = firstPart + 0.5 * (-W + sqrt(secondPart + thirdPart));
+  aRoot = firstPart + 0.5 * (-W + Sqrt(secondPart + thirdPart));
   roots[1] = aRoot;
 
-  aRoot = firstPart + 0.5 * (W - sqrt(secondPart - thirdPart));
+  aRoot = firstPart + 0.5 * (W - Sqrt(secondPart - thirdPart));
   roots[2] = aRoot;
 
-  aRoot = firstPart + 0.5 * (W + sqrt(secondPart - thirdPart));
+  aRoot = firstPart + 0.5 * (W + Sqrt(secondPart - thirdPart));
   roots[3] = aRoot;
 
 }
