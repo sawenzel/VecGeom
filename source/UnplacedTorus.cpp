@@ -28,11 +28,19 @@ VPlacedVolume* UnplacedTorus::Create(
     VPlacedVolume *const placement) {
   if (placement) {
     new(placement) SpecializedTorus<transCodeT, rotCodeT>(logical_volume,
-                                                        transformation);
+							  transformation
+#ifdef VECGEOM_NVCC
+							  , NULL, id
+#endif
+);
     return placement;
   }
   return new SpecializedTorus<transCodeT, rotCodeT>(logical_volume,
-                                                  transformation);
+                                                  transformation
+#ifdef VECGEOM_NVCC
+						    , NULL, id
+#endif
+						    );
 }
 
 
@@ -61,12 +69,12 @@ namespace vecgeom {
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedTorus_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
+    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr);
 
 VUnplacedVolume* UnplacedTorus::CopyToGpu(
     VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTorus_CopyToGpu(rmin(), rmax(), z(), sphi(), dphi(), gpu_ptr);
+  UnplacedTorus_CopyToGpu(fRmin, fRmax, fRtor, fSphi, fDphi, gpu_ptr);
   CudaAssertError();
   return gpu_ptr;
 }
@@ -84,15 +92,15 @@ class VUnplacedVolume;
 
 __global__
 void UnplacedTorus_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
+    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTorus(rmin, rmax, z, sphi, dphi);
+  new(gpu_ptr) vecgeom_cuda::UnplacedTorus(rmin, rmax, rtor, sphi, dphi);
 }
 
 void UnplacedTorus_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
+    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr) {
-  UnplacedTorus_ConstructOnGpu<<<1, 1>>>(rmin, rmax, z, sphi, dphi, gpu_ptr);
+  UnplacedTorus_ConstructOnGpu<<<1, 1>>>(rmin, rmax, rtor, sphi, dphi, gpu_ptr);
 }
 
 #endif
