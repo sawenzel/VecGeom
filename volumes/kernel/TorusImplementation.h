@@ -9,13 +9,15 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/UnplacedTorus.h"
-#include <math.h>
+//#include <math.h>
 
 
 #ifndef VECGEOM_NVCC
 #include <iomanip>
 #include <Vc/Vc>
 #endif
+
+//#define DEBUGTORUS
 
 namespace VECGEOM_NAMESPACE {
 
@@ -233,8 +235,18 @@ inline
 Complex<T> csqrtrealargument( const T & x )
 {
   T imcoef   = (x>=0.) ? 0. : 1.;
-  T realcoef = (x>=0.) ? 1. : 0.;
-  T l = Sqrt( fabs(x) );
+  T realcoef =0;
+  if(x>=0) realcoef=1.;
+  //  T realcoef = (x>=0.) ? 1. : 0.;
+  T l = Sqrt( Abs(x) );
+#ifdef DEBUGTORUS
+#if !__CUDA__ || __CUDA_ARCH__ >= 200
+  printf("IN COMPL F: x %lf \n",x);
+  printf("IN COMPL F: CUDA imcoef %lf \n",imcoef);
+  printf("IN COMPL F: CUDA realcoef %lf \n",realcoef);
+  printf("IN COMPL F: CUDA l %lf \n",l);
+#endif
+#endif
   return Complex<T>( realcoef * l , imcoef * l );
 }
 
@@ -271,8 +283,8 @@ Complex<T> cbrt( const Complex<T>& x )
       T angle = x.carg();
 
       T newangle = angle/3.;
-      sinnewangle=sin(newangle);
-      cosnewangle=cos(newangle);
+      sinnewangle=std::sin(newangle);
+      cosnewangle=std::cos(newangle);
       //sincos(newangle, &sinnewangle, &cosnewangle);
     }
   else
@@ -282,7 +294,15 @@ Complex<T> cbrt( const Complex<T>& x )
       cosnewangle=1.;
     }
   // use ordinary cubic root function ( is it in Vc ?? )
-  T rcbrt = Pow(r,1./3);//cbrt( r );
+  //  T rcbrt = Pow(r,1./3);//cbrt( r );
+   T rcbrt = Cbrt( r );
+#ifdef DEBUGTORUS
+  printf("IN CBRT for COMPLEX\n");
+  printf("sinnewangle %lf\n", sinnewangle);
+  printf("cosnewangle %lf\n", cosnewangle);
+  printf("r %lf\n", r);
+  printf("rcbrt %lf\n", rcbrt);
+#endif 
   return Complex<T>(  rcbrt*cosnewangle, rcbrt*sinnewangle );
 }
 
@@ -402,10 +422,17 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
   double alpha2 = alpha * alpha;
   double gamma = -3.0*bbb*b*inv256 + c*bb*inv16 - 0.25*b*d + e;
 
-  /* std::cerr << alpha << "\n"; */
+#ifdef DEBUGTORUS
+#if !__CUDA__ || __CUDA_ARCH__ >= 200
+  printf("CUDA alpha %lf \n",alpha);
+#endif
+#ifndef VECGEOM_NVCC
+  std::cerr << "CPU alpha " << alpha << "\n"; 
+#endif
   /* std::cerr << alpha2 << "\n"; */
   /* std::cerr << beta << "\n"; */
   /* std::cerr << gamma << "\n"; */
+#endif
 
   double P = -alpha2*inv12 - gamma;
   double Q = -alpha2*alpha*inv108 + alpha*gamma*inv3 - 0.125*beta*beta;
@@ -414,8 +441,32 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
 
   double tmp = 0.25*Q*Q + P*P*P*inv27;
   CT R = Q*0.5 + csqrtrealargument(tmp);
+  //  CT R = Q*0.5 + csqrtrealargument(tmp);
   //    std::cerr << "R " << R << "\n";
+#ifdef DEBUGTORUS
+#if !__CUDA__ || __CUDA_ARCH__ >= 200
+  printf("CUDA tmp %lf\n",tmp);
+  printf("CUDA R (%lf, %lf) \n",R.real(), R.imag());
+#endif
+#ifndef VECGEOM_NVCC
+  std::cerr << "CPU R " << R.real() << "\t" << R.imag() << "\n"; 
+#endif
+#endif
+
   CT U = cbrt(R);
+#ifdef DEBUGTORUS
+#if __CUDA_ARCH__ >= 200
+  printf("CUDA U (%lf, %lf) \n",U.real(), U.imag());
+#endif
+#ifndef VECGEOM_NVCC
+  std::cerr << "CPU U " << U.real() << "\t" << U.imag() << "\n"; 
+#endif
+  /* std::cerr << alpha2 << "\n"; */
+  /* std::cerr << beta << "\n"; */
+  /* std::cerr << gamma << "\n"; */
+#endif
+
+
   //    std::cerr << "U " << U << "\n";
   //    std::cerr << "U*U*U " << U*U*U << "\n";
 
