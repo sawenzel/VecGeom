@@ -4,7 +4,9 @@
 #include "volumes/LogicalVolume.h"
 
 #include "backend/Backend.h"
+#ifdef VECGEOM_CUDA
 #include "backend/cuda/Interface.h"
+#endif
 #include "base/Array.h"
 #include "base/Transformation3D.h"
 #include "base/Vector.h"
@@ -78,18 +80,20 @@ VPlacedVolume* LogicalVolume::Place() const {
   return Place(label_->c_str());
 }
 
-void LogicalVolume::PlaceDaughter(
+VPlacedVolume const* LogicalVolume::PlaceDaughter(
     char const *const label,
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  VPlacedVolume const *const placed = volume->Place(label, transformation);
-  daughters_->push_back(placed);
+    std::cerr << label << std::endl;
+    VPlacedVolume const *const placed = volume->Place(label, transformation);
+    daughters_->push_back(placed);
+    return placed;
 }
 
-void LogicalVolume::PlaceDaughter(
+VPlacedVolume const* LogicalVolume::PlaceDaughter(
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
+    return PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {

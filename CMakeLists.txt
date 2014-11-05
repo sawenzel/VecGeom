@@ -351,6 +351,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 set(SRC_CPP_RELATIVE
   source/AOS3D.cpp
   source/LogicalVolume.cpp
+  source/PlacedCone.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
   source/PlacedTrd.cpp
@@ -365,6 +366,7 @@ set(SRC_CPP_RELATIVE
   source/SOA3D.cpp
   source/SpecializedBox.cpp
   source/Transformation3D.cpp
+  source/UnplacedCone.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
   source/UnplacedTrd.cpp
@@ -512,6 +514,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
@@ -519,6 +522,7 @@ set(TEST_EXECUTABLES_CUDA
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testCone.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
 )
 set(TEST_EXECUTABLES

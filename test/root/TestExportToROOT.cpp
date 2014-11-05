@@ -10,6 +10,8 @@
 #include "base/Transformation3D.h"
 #include "volumes/UnplacedBox.h"
 #include "volumes/UnplacedTube.h"
+#include "volumes/UnplacedCone.h"
+#include "volumes/UnplacedTube.h"
 #include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedParaboloid.h"
@@ -30,6 +32,9 @@ VPlacedVolume* SetupGeometry() {
 
   UnplacedTube *tube1Unplaced = new UnplacedTube( 0.5, 1., 0.5, 0., kTwoPi);
   UnplacedTube *tube2Unplaced = new UnplacedTube( 0.5, 1., 0.5, 0., kPi);
+  UnplacedCone *cone1Unplaced = new UnplacedCone( 0.5, 1., 0.6, 1.2, 0.5, 0., kTwoPi);
+  UnplacedCone *cone2Unplaced = new UnplacedCone( 0.5, 1., 0.6, 1.2,0.5, kPi/4., kPi);
+
 
   UnplacedTrd *trdUnplaced = new UnplacedTrd( 0.1, 0.2, 0.15, 0.05 );
 
@@ -54,6 +59,9 @@ VPlacedVolume* SetupGeometry() {
   LogicalVolume *box =   new LogicalVolume("lbox1",boxUnplaced);
   LogicalVolume *tube1 = new LogicalVolume("ltube1", tube1Unplaced);
   LogicalVolume *tube2 = new LogicalVolume("ltube2", tube2Unplaced);
+  LogicalVolume *cone1 = new LogicalVolume("lcone1", cone1Unplaced);
+  LogicalVolume *cone2 = new LogicalVolume("lcone2", cone2Unplaced);
+
   LogicalVolume *trd1  = new LogicalVolume("ltrd", trdUnplaced);
 
   LogicalVolume *orb1 = new LogicalVolume("lorb1", orbUnplaced);
@@ -76,6 +84,11 @@ VPlacedVolume* SetupGeometry() {
   world->PlaceDaughter(box, placement6);
   world->PlaceDaughter(box, placement7);
   world->PlaceDaughter(box, placement8);
+
+  world->PlaceDaughter(cone1, new Transformation3D(8,0,0,0,0,0));
+  world->PlaceDaughter(cone2, new Transformation3D(-8,0,0,0,0,0));
+
+
   return world->Place();
 }
 
