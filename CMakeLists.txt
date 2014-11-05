@@ -492,6 +492,10 @@ set(TEST_EXECUTABLES_VISUALIZATION
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestCons.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTrd.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTrap.cpp
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
