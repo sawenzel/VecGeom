@@ -444,31 +444,29 @@ Precision Quadrilaterals::ScalarDistanceSquared(
   // If the closest point is not on the plane itself, it must either be the
   // distance to the closest line segment or to the closest corner.
   // Since it is already known whether the point is to the left or right of each
-  // line, only one side and its corners has to be checked.
+  // line, only one side and its corners have to be checked.
 
-  Vector3D<Precision> corner0 = fCorners[0][i];
-  Vector3D<Precision> corner1 = fCorners[1][i];
+  Vector3D<Precision> corner0, corner1;
 
-  // To the right of right side
   if (!withinBound[0]) {
-    return DistanceToLineSegmentSquared<kScalar>(corner0, corner1, point);
+    // To the right of right side
+    corner0 = fCorners[0][i];
+    corner1 = fCorners[1][i];
+  } else if (!withinBound[2]) {
+    // To the left of left side
+    corner0 = fCorners[2][i];
+    corner1 = fCorners[3][i];
+  } else if (!withinBound[1]) {
+    // Below in the middle
+    corner0 = fCorners[1][i];
+    corner1 = fCorners[2][i];
+  } else {
+    // Above in the middle
+    corner0 = fCorners[3][i];
+    corner1 = fCorners[0][i];
   }
 
-  Vector3D<Precision> corner2 = fCorners[2][i];
-  Vector3D<Precision> corner3 = fCorners[3][i];
-
-  // To the left of left side
-  if (!withinBound[2]) {
-    return DistanceToLineSegmentSquared<kScalar>(corner2, corner3, point);
-  }
-
-  // Below in the middle
-  if (!withinBound[1]) {
-    return DistanceToLineSegmentSquared<kScalar>(corner1, corner2, point);
-  }
-
-  // Above in the middle
-  return DistanceToLineSegmentSquared<kScalar>(corner3, corner0, point);
+  return DistanceToLineSegmentSquared<kScalar>(corner0, corner1, point);
 }
 
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads);

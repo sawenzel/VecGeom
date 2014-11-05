@@ -28,12 +28,11 @@ struct PolyhedronImplementation {
       UnplacedPolyhedron const &polyhedron,
       typename Backend::precision_v const &pointZ);
 
-  template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static typename Backend::int_v FindPhiSegment(
+  static int ScalarFindPhiSegment(
       UnplacedPolyhedron const &polyhedron,
-      Vector3D<typename Backend::precision_v> const &point);
+      Vector3D<Precision> const &point);
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -270,29 +269,24 @@ typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindZSegment(
 }
 
 template <bool treatInnerT>
-template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindPhiSegment(
+int PolyhedronImplementation<treatInnerT>::ScalarFindPhiSegment(
     UnplacedPolyhedron const &polyhedron,
-    Vector3D<typename Backend::precision_v> const &point) {
+    Vector3D<Precision> const &point) {
 
-  typename Backend::int_v result = -1;
-  typename Backend::bool_v inSection;
   SOA3D<Precision> const &phiSections = polyhedron.GetPhiSections();
-  for (int i = 0, iMax = polyhedron.GetSideCount(); i < iMax; ++i) {
-    inSection = point[0]*phiSections.x(i) +
-                point[1]*phiSections.y(i) +
-                point[2]*phiSections.z(i) >= 0 &&
-                point[0]*phiSections.x(i+1) +
-                point[1]*phiSections.y(i+1) +
-                point[2]*phiSections.z(i+1) >= 0;
-    MaskedAssign(inSection, i, &result);
-    if (Backend::early_returns) {
-      if (IsFull(result >= 0)) return result;
-    }
+  int i = 0;
+  const int iMax = polyhedron.GetSideCount()-1;
+  while (i < iMax) {
+    bool inSection = point[0]*phiSections.x(i) + point[1]*phiSections.y(i) +
+                     point[2]*phiSections.z(i) >= 0 &&
+                     point[0]*phiSections.x(i+1) + point[1]*phiSections.y(i+1) +
+                     point[2]*phiSections.z(i+1) < 0;
+    if (inSection) break;
+    ++i;
   }
-  return result;
+  return i;
 }
 
 template <bool treatInnerT>
@@ -504,39 +498,36 @@ VECGEOM_INLINE
 void PolyhedronImplementation<treatInnerT>::ScalarSafetyToEndcapsSquared(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<Precision> const &point,
-    Precision &distance) {
+    Precision &distanceSquared) {
 
-  UnplacedPolyhedron::ZSegment const *segment;
-  Precision zPlane;
-  if (point[2] < polyhedron.GetZPlane(0)) {
-    segment = &polyhedron.GetZSegment(0);
-    zPlane = polyhedron.GetZPlane(0);
-  } else if (point[2] > polyhedron.GetZPlane(polyhedron.GetZSegmentCount())) {
-    segment = &polyhedron.GetZSegment(polyhedron.GetZSegmentCount()-1);
-    zPlane = polyhedron.GetZPlane(polyhedron.GetZSegmentCount());
-  } else {
-    return;
-  }
+  Precision firstDistance = polyhedron.GetZPlane(0) - point[2];
+  Precision lastDistance =
+      polyhedron.GetZPlane(polyhedron.GetZSegmentCount()) - point[2];
 
-  Precision distanceTest = zPlane - point[2];
-  distanceTest *= distanceTest;
-  // No need to investigate if distance is larger anyway
-  if (distanceTest >= distance) return;
+  bool isFirst = Abs(firstDistance) < Abs(lastDistance);
+  UnplacedPolyhedron::ZSegment const &segment =
+      isFirst ? polyhedron.GetZSegment(0)
+              : polyhedron.GetZSegment(polyhedron.GetZSegmentCount()-1);
+
+  Precision distanceTest = isFirst ? firstDistance : lastDistance;
+  Precision distanceTestSquared = distanceTest*distanceTest;
+  // No need to investigate further if distance is larger anyway
+  if (distanceTestSquared >= distanceSquared) return;
 
   // Check if projection is within the endcap bounds
   Vector3D<Precision> intersection(point[0], point[1], point[2] + distanceTest);
-  if (!segment->outer.Contains<kScalar>(intersection)) return;
-  if (treatInnerT && segment->hasInnerRadius) {
-    if (segment->inner.Contains<kScalar>(intersection)) return;
+  if (!segment.outer.Contains<kScalar>(intersection)) return;
+  if (treatInnerT && segment.hasInnerRadius) {
+    if (segment.inner.Contains<kScalar>(intersection)) return;
   }
   if (polyhedron.HasPhiCutout()) {
-    if (InPhiCutoutWedge<kScalar>(*segment, polyhedron.HasLargePhiCutout(),
+    if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                   intersection)) {
       return;
     }
   }
 
-  distance = distanceTest;
+  distanceSquared = distanceTestSquared;
 }
 
 template <bool treatInnerT>
@@ -548,10 +539,11 @@ PolyhedronImplementation<treatInnerT>::InPhiCutoutWedge(
     UnplacedPolyhedron::ZSegment const &segment,
     bool largePhiCutout,
     Vector3D<typename Backend::precision_v> const &point) {
-  bool first  = point.Dot(segment.phi.GetNormal(0)) +
-                segment.phi.GetDistance(0) >= 0;
-  bool second = point.Dot(segment.phi.GetNormal(1)) +
-                segment.phi.GetDistance(1) >= 0;
+  typedef typename Backend::bool_v Bool_t;
+  Bool_t first  = point.Dot(segment.phi.GetNormal(0)) +
+                  segment.phi.GetDistance(0) >= 0;
+  Bool_t second = point.Dot(segment.phi.GetNormal(1)) +
+                  segment.phi.GetDistance(1) < 0;
   // For a cutout larger than 180 degrees, the point is in the wedge if it is
   // in front of at least one plane
   if (largePhiCutout) {
@@ -727,7 +719,7 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
   const int zMax = unplaced.GetZSegmentCount();
   int zIndex = FindZSegment<kScalar>(unplaced, point[2]);
   zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax-1 : zIndex);
-  int phiIndex = FindPhiSegment<kScalar>(unplaced, point);
+  int phiIndex = ScalarFindPhiSegment(unplaced, point);
 
   // Right
   for (int z = zIndex; z < zMax;) {

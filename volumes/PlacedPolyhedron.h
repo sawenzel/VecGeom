@@ -6,7 +6,7 @@
 
 #include "base/Global.h"
 #include "backend/Backend.h"
- 
+
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedPolyhedron.h"
 
@@ -127,6 +127,9 @@ public:
   Precision GetPhiDelta() const {
     return GetUnplacedVolume()->GetPhiDelta();
   }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  int PhiSegmentIndex(Vector3D<Precision> const &point) const;
 
   // CUDA specific
 

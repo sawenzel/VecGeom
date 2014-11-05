@@ -33,7 +33,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       fHasPhiCutout(phiDelta < 360), fHasLargePhiCutout(phiDelta < 180),
       fEndCapsOuterRadii{0, 0}, fZSegments(zPlaneCount-1),
       fZPlanes(zPlaneCount), fRMin(zPlaneCount), fRMax(zPlaneCount),
-      fPhiSections(sideCount+fHasPhiCutout), fBoundingTube(0, 1, 1, 0, 360) {
+      fPhiSections(sideCount), fBoundingTube(0, 1, 1, 0, 360) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -69,13 +69,19 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   if (phiDelta > kTwoPi) phiDelta = kTwoPi;
   Precision sidePhi = phiDelta / sideCount;
   std::unique_ptr<Precision[]> vertixPhi(new Precision[sideCount+1]);
-  for (int i = 0, iMax = sideCount+fHasPhiCutout; i < iMax; ++i) {
+  for (int i = 0, iMax = sideCount; i < iMax; ++i) {
     vertixPhi[i] = NormalizeAngle<kScalar>(phiStart + i*sidePhi);
-    fPhiSections.set(i,
-        Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized().FixZeroes());
+    Vector3D<Precision> cornerVector =
+        Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized().FixZeroes();
+    fPhiSections.set(
+        i, Vector3D<Precision>(0, 0, 1).Cross(cornerVector).Normalized());
   }
-  // If there is no phi cutout, last phi is equal to the first
-  if (!fHasPhiCutout) vertixPhi[sideCount] = vertixPhi[0];
+  if (!fHasPhiCutout) {
+    // If there is no phi cutout, last phi is equal to the first
+    vertixPhi[sideCount] = vertixPhi[0];
+  } else {
+    vertixPhi[sideCount] = phiStart + (sideCount-1)*sidePhi;
+  }
 
   // Specified radii are to the sides, not to the corners. Change these values,
   // as corners and not sides are used to build the structure
@@ -177,8 +183,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
           innerVertices[VertixIndex(iPlane+1, 0)],
           outerVertices[VertixIndex(iPlane+1, 0)],
           outerVertices[VertixIndex(iPlane, 0)]);
-      // Make sure normal points backward along phi
-      if (fZSegments[iPlane].phi.GetNormal(0).Cross(fPhiSections[0])[2] < 0) {
+      // Make sure normal points forwards along phi
+      if (fZSegments[iPlane].phi.GetNormal(0).Cross(fPhiSections[0])[2] > 0) {
         fZSegments[iPlane].phi.FlipSign(0);
       }
       fZSegments[iPlane].phi.Set(
@@ -202,13 +208,14 @@ UnplacedPolyhedron::UnplacedPolyhedron(
 
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiStart() const {
-  return kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(0).Phi());
+  return kRadToDeg*NormalizeAngle<kScalar>(
+      GetPhiSection(0).Cross(Vector3D<Precision>(0, 0, 1)).Phi());
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiEnd() const {
-  return !HasPhiCutout() ? 360 :
-         kRadToDeg*NormalizeAngle<kScalar>(GetPhiSection(GetSideCount()).Phi());
+  return !HasPhiCutout() ? 360 : kRadToDeg*NormalizeAngle<kScalar>(
+      GetPhiSection(GetSideCount()).Cross(Vector3D<Precision>(0, 0, 1)).Phi());
 }
 
 VECGEOM_CUDA_HEADER_BOTH

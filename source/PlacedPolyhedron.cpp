@@ -20,9 +20,15 @@
 
 namespace VECGEOM_NAMESPACE {
 
+VECGEOM_CUDA_HEADER_BOTH
+int PlacedPolyhedron::PhiSegmentIndex(Vector3D<Precision> const &point) const {
+  Vector3D<Precision> localPoint =
+     VPlacedVolume::transformation()->Transform(point);
+  return PolyhedronImplementation<true>::ScalarFindPhiSegment(
+      *GetUnplacedVolume(), localPoint);
+}
+
 #ifndef VECGEOM_NVCC
-
-
 
 VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
   return new SimplePolyhedron(GetLabel().c_str(), logical_volume(),
@@ -50,7 +56,7 @@ TGeoShape const* PlacedPolyhedron::ConvertToRoot() const {
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedPolyhedron::ConvertToUSolids() const {
-  
+
   return new UPolyhedra(
       GetLabel().c_str(),
       kDegToRad*GetPhiStart(),
