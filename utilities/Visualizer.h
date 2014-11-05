@@ -16,8 +16,6 @@
 #include <memory>
 #include <utility>
 
-class Transformation3D;
-
 class TGeoMatrix;
 class TGeoShape;
 class TGeoVolume;
@@ -28,6 +26,7 @@ namespace vecgeom {
 
 template <typename T> class AOS3D;
 template <typename T> class SOA3D;
+class Transformation3D;
 template <typename T> class Vector3D;
 
 /// \brief Visualize volumes through ROOT.
