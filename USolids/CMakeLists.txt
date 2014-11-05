@@ -8,9 +8,6 @@ project(USolids)
 option(USOLIDS_USE_UVECTOR3
        "Use the UVector3 implementation instead of Vector3D." OFF)
 
-set(USOLIDS_INSTALL_TYPE "Binary" CACHE STRING
-    "Installs either binary library [Binary] or raw source files [Source]")
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 if (EXISTS ${PROJECT_SOURCE_DIR}/../base/Global.h)
@@ -122,14 +119,18 @@ endforeach()
 add_library(usolids ${sources} ${headers})
 install(FILES ${headers_usolids} DESTINATION include)
 install(TARGETS usolids DESTINATION lib)
-foreach(header ${headers_vecgeom})
-  file(RELATIVE_PATH header_relative ${VECGEOM_DIR} ${header})
-  get_filename_component(header_relative_path ${header_relative} PATH)
-  # Also add headers to the source installation list
-  set(source_installation_command ${source_installation_command}
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${header} ${CMAKE_INSTALL_PREFIX}/${header_relative})
-  install(FILES ${header_relative} DESTINATION include/${header_relative_path})
-endforeach()
+if (NOT VECGEOM)
+  foreach(header ${headers_vecgeom})
+    file(RELATIVE_PATH header_relative ${VECGEOM_DIR} ${header})
+    get_filename_component(header_relative_path ${header_relative} PATH)
+    # Also add headers to the source installation list
+    set(source_installation_command ${source_installation_command}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${header}
+        ${CMAKE_INSTALL_PREFIX}/${header_relative})
+    install(FILES ${header_relative} DESTINATION
+            include/${header_relative_path})
+  endforeach()
+endif()
 
 macro(install_source_command commands)
   add_custom_target(install_source ${${commands}})
