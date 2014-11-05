@@ -6,7 +6,7 @@
 #include "base/AOS3D.h"
 #include "base/SOA3D.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
+#ifdef VECGEOM_USOLIDS
 #include "UOrb.hh"
 #endif
 
