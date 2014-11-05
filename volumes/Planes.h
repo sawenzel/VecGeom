@@ -78,77 +78,14 @@ public:
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::bool_v Contains(
-      int begin,
-      int end,
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  typename Backend::inside_v Inside(
-      int begin,
-      int end,
-      Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v Distance(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction) const;
 
-  template <class Backend>
+  template <bool pointInsideT, class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   typename Backend::precision_v Distance(
       Vector3D<typename Backend::precision_v> const &point) const;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::bool_v ContainsKernel(
-      int begin,
-      const int end,
-      __restrict__ Precision const a[],
-      __restrict__ Precision const b[],
-      __restrict__ Precision const c[],
-      __restrict__ Precision const d[],
-      Vector3D<typename Backend::precision_v> const &point);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::inside_v InsideKernel(
-      int begin,
-      const int end,
-      __restrict__ Precision const a[],
-      __restrict__ Precision const b[],
-      __restrict__ Precision const c[],
-      __restrict__ Precision const d[],
-      Vector3D<typename Backend::precision_v> const &point);
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::precision_v DistanceKernel(
-      int begin,
-      const int end,
-      __restrict__ Precision const a[],
-      __restrict__ Precision const b[],
-      __restrict__ Precision const c[],
-      __restrict__ Precision const d[],
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> const &direction);
-
-  template <bool pointInsideT, class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static typename Backend::precision_v DistanceKernel(
-      int begin,
-      const int end,
-      __restrict__ Precision const a[],
-      __restrict__ Precision const b[],
-      __restrict__ Precision const c[],
-      __restrict__ Precision const d[],
-      Vector3D<typename Backend::precision_v> const &point);
 
 };
 
@@ -177,76 +114,16 @@ Precision Planes::GetDistance(int i) const {
   return fDistances[i];
 }
 
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::bool_v Planes::Contains(
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return ContainsKernel<Backend>(
-      0, size(), fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0],
-      point);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::inside_v Planes::Inside(
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return InsideKernel<Backend>(
-      0, size(), fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0],
-      point);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::bool_v Planes::Contains(
-    int begin,
-    int end,
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return ContainsKernel<Backend>(
-      begin, end, fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0],
-      point);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::inside_v Planes::Inside(
-    int begin,
-    int end,
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return InsideKernel<Backend>(
-      begin, end, fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0],
-      point);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Planes::Distance(
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) const {
-  return DistanceKernel<Backend>(
-      0, size(), fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0],
-      point, direction);
-}
-
-template <class Backend>
-VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Planes::Distance(
-    Vector3D<typename Backend::precision_v> const &point) const {
-  return DistanceKernel<Backend>(
-      0, size(), fNormals.x(), fNormals.y(), fNormals.z(), &fDistances[0],
-      point);
-}
-
 namespace {
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void AcceleratedContains(
     int &i,
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    SOA3D<Precision> const &normals,
+    Array<Precision> const &distances,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::bool_v &result) {
   return;
@@ -254,19 +131,20 @@ void AcceleratedContains(
 
 template <>
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void AcceleratedContains<kScalar>(
     int &i,
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    SOA3D<Precision> const &normals,
+    Array<Precision> const &distances,
     Vector3D<Precision> const &point,
     bool &result) {
 #ifdef VECGEOM_VC
   for (; i < n-kVectorSize; i += kVectorSize) {
-    VcBool valid = VcPrecision(&a[i])*point[0] + VcPrecision(&b[i])*point[1] +
-                   VcPrecision(&c[i])*point[2] + VcPrecision(&d[i]) < 0;
+    VcBool valid = VcPrecision(normals.x()+i)*point[0] +
+                   VcPrecision(normals.y()+i)*point[1] +
+                   VcPrecision(normals.z()+i)*point[2] +
+                   VcPrecision(&distances[0]+i) < 0;
     result = IsFull(valid);
     if (!result) {
       i = n;
@@ -278,23 +156,20 @@ void AcceleratedContains<kScalar>(
 
 } // End anonymous namespace
 
+
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::bool_v Planes::ContainsKernel(
-   int i,
-   const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
-    Vector3D<typename Backend::precision_v> const &point) {
+typename Backend::bool_v Planes::Contains(
+    Vector3D<typename Backend::precision_v> const &point) const {
 
   typename Backend::bool_v result(true);
 
-  AcceleratedContains<Backend>(i, n, a, b, c, d, point, result);
+  int i = 0;
+  const int n = size();
+  AcceleratedContains<Backend>(i, n, fNormals, fDistances, point, result);
 
   for (; i < n; ++i) {
-    result &= a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i] < 0;
+    result &= point.Dot(fNormals[i]) + fDistances[i] < 0;
   }
 
   return result;
@@ -304,13 +179,12 @@ namespace {
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void AcceleratedInside(
     int &i,
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    SOA3D<Precision> const &normals,
+    Array<Precision> const &distances,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &result) {
   return;
@@ -318,27 +192,30 @@ void AcceleratedInside(
 
 template <>
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void AcceleratedInside<kScalar>(
     int &i,
     const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+    SOA3D<Precision> const &normals,
+    Array<Precision> const &distances,
     Vector3D<Precision> const &point,
     Inside_t &result) {
 #ifdef VECGEOM_VC
   for (; i < n-kVectorSize; i += kVectorSize) {
-    VcPrecision distance =
-        VcPrecision(&a[i])*point[0] + VcPrecision(&b[i])*point[1] +
-        VcPrecision(&c[i])*point[2] + VcPrecision(&d[i]);
-    result = IsFull(distance < -kTolerance) ? EInside::kInside
-                                            : EInside::kOutside;
-    if (!result) {
+    VcPrecision distance = VcPrecision(normals.x()+i)*point[0] +
+                           VcPrecision(normals.y()+i)*point[1] +
+                           VcPrecision(normals.z()+i)*point[2] +
+                           VcPrecision(&distances[0]+i);
+    // If point is outside tolerance of any plane, it is safe to return
+    if (Any(distance > kTolerance)) {
+      result = EInside::kOutside;
       i = n;
-      if (Abs(distance) < kTolerance) result = EInside::kSurface;
       break;
     }
+    // If point is inside tolerance of all planes, keep looking
+    if (IsFull(distance < -kTolerance)) continue;
+    // Otherwise point must be on a surface, but could still be outside
+    result = EInside::kSurface;
   }
 #endif
 }
@@ -347,48 +224,42 @@ void AcceleratedInside<kScalar>(
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::inside_v Planes::InsideKernel(
-    int i,
-    const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
-    Vector3D<typename Backend::precision_v> const &point) {
+typename Backend::inside_v Planes::Inside(
+    Vector3D<typename Backend::precision_v> const &point) const {
 
   typename Backend::inside_v result(EInside::kInside);
 
-  // AcceleratedInside<Backend>(i, n, a, b, c, d, point, result);
+  int i = 0;
+  const int n = size();
+  AcceleratedInside<Backend>(i, n, fNormals, fDistances, point, result);
 
   for (; i < n; ++i) {
     typename Backend::precision_v distanceResult =
-        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i];
-    MaskedAssign(Abs(distanceResult) < kTolerance, EInside::kSurface, &result);
-    MaskedAssign(distanceResult < kTolerance, EInside::kOutside, &result);
-    if (IsEmpty(result == EInside::kInside)) break;
+        fNormals.x(i)*point[0] + fNormals.y(i)*point[1] +
+        fNormals.z(i)*point[2] + fDistances[i];
+    MaskedAssign(distanceResult > kTolerance, EInside::kOutside,
+                 &result);
+    MaskedAssign(result == EInside::kInside && distanceResult > -kTolerance,
+                 EInside::kSurface, &result);
+    if (IsFull(result) == EInside::kOutside) break;
   }
+
   return result;
 }
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::precision_v Planes::DistanceKernel(
-    int i,
-    const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
+typename Backend::precision_v Planes::Distance(
     Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction) {
+    Vector3D<typename Backend::precision_v> const &direction) const {
 
   typedef typename Backend::precision_v Float_t;
 
   Float_t bestDistance = kInfinity;
-  for (; i < n; ++i) {
-    Float_t distance = -(a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i])
-                      / (a[i]*direction[0] + b[i]*direction[1] +
-                         c[i]*direction[2]);
+  for (int i = 0, iMax = size(); i < iMax; ++i) {
+    Vector3D<Precision> normal = fNormals[i];
+    Float_t distance = -(point.Dot(normal) + fDistances[i]) /
+                       direction.Dot(normal);
     MaskedAssign(distance >= 0 && distance < bestDistance, distance,
                  &bestDistance);
   }
@@ -398,22 +269,15 @@ typename Backend::precision_v Planes::DistanceKernel(
 
 template <bool pointInsideT, class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-typename Backend::precision_v Planes::DistanceKernel(
-    int i,
-    const int n,
-    __restrict__ Precision const a[],
-    __restrict__ Precision const b[],
-    __restrict__ Precision const c[],
-    __restrict__ Precision const d[],
-    Vector3D<typename Backend::precision_v> const &point) {
+typename Backend::precision_v Planes::Distance(
+    Vector3D<typename Backend::precision_v> const &point) const {
 
   typedef typename Backend::precision_v Float_t;
 
   Float_t bestDistance = kInfinity;
-  for (; i < n; ++i) {
+  for (int i = 0, iMax = size(); i < iMax; ++i) {
     Float_t distance = vecgeom::FlipSign<!pointInsideT>::Flip(
-        a[i]*point[0] + b[i]*point[1] + c[i]*point[2] + d[i]);
+        point.Dot(fNormals[i]) + fDistances[i]);
     MaskedAssign(distance >= 0 && distance < bestDistance, distance,
                  &bestDistance);
   }

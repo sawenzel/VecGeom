@@ -617,22 +617,23 @@ Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
   UnplacedPolyhedron::ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
   // Check that the point is in the outer shell
-  Inside_t insideTest = segment.outer.Inside<kScalar>(localPoint);
-  // Return outside or surface if returned by outer shell
-  if (insideTest != EInside::kInside) return insideTest;
+  {
+    Inside_t insideOuter = segment.outer.Inside<kScalar>(localPoint);
+    if (insideOuter != EInside::kInside) return insideOuter;
+  }
 
   // Check that the point is not in the inner shell
-  if (treatInnerT && segment.hasInnerRadius) {
-    insideTest = segment.inner.Inside<kScalar>(localPoint);
-    if (localPoint == EInside::kInside)  return EInside::kOutside;
-    if (localPoint == EInside::kSurface) return EInside::kSurface;
+  {
+    Inside_t insideInner = segment.inner.Inside<kScalar>(localPoint);
+    if (insideInner == EInside::kInside)  return EInside::kOutside;
+    if (insideInner == EInside::kSurface) return EInside::kSurface;
   }
 
   // Check that the point is not in the phi cutout wedge
   if (polyhedron.HasPhiCutout()) {
     if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                   localPoint)) {
-      // TODO: check surface of wedge
+      // TODO: check for surface case when in phi wedge
       return EInside::kOutside;
     }
   }
