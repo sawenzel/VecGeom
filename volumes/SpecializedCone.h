@@ -437,11 +437,33 @@ public:
          SafetyToOutMinimizeTemplate(points, safeties);
        }
 
+#ifdef VECGEOM_USOLIDS
+  /*
+   * WARNING: Trivial implementation for standard USolids interface
+   * for DistanceToOut. The value for convex might be wrong
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision DistanceToOut(Vector3D<Precision> const &point,
+                                  Vector3D<Precision> const &direction,
+                                  Vector3D<Precision> &normal,
+                                  bool &convex, Precision step = kInfinity ) const {
+      double d = DistanceToOut(point, direction, step );
+        Vector3D<double> hitpoint = point + d*direction;
+        Normal( hitpoint, normal );
+        // we could make this something like
+        // convex = Shape::IsConvex;
+        convex = true;
+        return d;
+  }
+#endif
 
 };
 
 typedef SpecializedCone<translation::kGeneric, rotation::kGeneric, ConeTypes::UniversalCone>
     SimpleCone;
+typedef SpecializedCone<translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>
+    SimpleUnplacedCone;
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename ConeType>
 void SpecializedCone<transCodeT, rotCodeT, ConeType>::PrintType() const {
