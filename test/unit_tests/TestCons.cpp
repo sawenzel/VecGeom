@@ -7,6 +7,8 @@
 
 #include "base/Vector3D.h"
 #include "ApproxEqual.h"
+#include "volumes/Cone.h"
+#include "base/Global.h"
 #ifdef VECGEOM_USOLIDS
 #include "UCons.hh"
 #include "UVector3.hh"
@@ -34,88 +36,86 @@ bool OutRange(UVector3 actual,UVector3 wanted)
     return rng ;
 }
 
-template <class Cone_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
-
+template <typename Constants, class Cone_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestCons()
 {
+        Vec_t   pzero(0,0,0);
 
+        Vec_t   pplx(120,0,0),pply(0,120,0),pplz(0,0,120);
+
+        Vec_t   pmix(-120,0,0),pmiy(0,-120,0),pmiz(0,0,-120);
+
+        Vec_t   ponmiz(0,75,-50),ponplz(0,75,50);
+
+        Vec_t	ponr1(std::sqrt(50*50/2.0),std::sqrt(50*50/2.0),0);
+
+        Vec_t   ponr2(std::sqrt(100*100/2.0),std::sqrt(100*100/2.0),0);
+
+        Vec_t   ponphi1(60*std::cos(VECGEOM_NAMESPACE::kPi/6),-60*std::sin(VECGEOM_NAMESPACE::kPi/6),0);
+
+        Vec_t   ponphi2(60*std::cos(VECGEOM_NAMESPACE::kPi/6),60*std::sin(VECGEOM_NAMESPACE::kPi/6),0);
+
+        Vec_t   ponr2b(150,0,0);
+
+        Vec_t pnearplz(45,45,45),pnearmiz(45,45,-45);
+        Vec_t pydx(60,150,0),pbigx(500,0,0);
+
+        Vec_t proot1(0,125,-1000),proot2(0,75,-1000);
+
+        Vec_t pparr1(0,25,-150);   // Test case parallel to both rs of c8
+        Vec_t pparr2(0,75,-50),pparr3(0,125,50);
+        Vec_t vparr(0,1./std::sqrt(5.),2./std::sqrt(5.));
+
+        Vec_t vnphi1(-std::sin(VECGEOM_NAMESPACE::kPi/6),-std::cos(VECGEOM_NAMESPACE::kPi/6),0),
+              vnphi2(-std::sin(VECGEOM_NAMESPACE::kPi/6),std::cos(VECGEOM_NAMESPACE::kPi/6),0);
     
-	Vec_t   pzero(0,0,0);
-	
-	Vec_t   pplx(120,0,0),pply(0,120,0),pplz(0,0,120);
-	
-	Vec_t   pmix(-120,0,0),pmiy(0,-120,0),pmiz(0,0,-120);
-	
-	Vec_t   ponmiz(0,75,-50),ponplz(0,75,50);
-	
-	Vec_t	ponr1(std::sqrt(50*50/2.0),std::sqrt(50*50/2.0),0),
-	                ponr2(std::sqrt(100*100/2.0),std::sqrt(100*100/2.0),0),
-	        	ponphi1(60*std::cos(UUtils::kPi/6),-60*std::sin(UUtils::kPi/6),0),
-		        ponphi2(60*std::cos(UUtils::kPi/6),60*std::sin(UUtils::kPi/6),0),
-	                ponr2b(150,0,0);
-	
-	Vec_t pnearplz(45,45,45),pnearmiz(45,45,-45);
-	Vec_t pydx(60,150,0),pbigx(500,0,0);
-
-	Vec_t proot1(0,125,-1000),proot2(0,75,-1000);
-	
-	Vec_t pparr1(0,25,-150);   // Test case parallel to both rs of c8
-	Vec_t pparr2(0,75,-50),pparr3(0,125,50);
-	Vec_t vparr(0,1./std::sqrt(5.),2./std::sqrt(5.)); 
-
-	Vec_t vnphi1(-std::sin(UUtils::kPi/6),-std::cos(UUtils::kPi/6),0),
-	              vnphi2(-std::sin(UUtils::kPi/6),std::cos(UUtils::kPi/6),0);
-
         Vec_t vx(1,0,0),vy(0,1,0),vz(0,0,1),
-	        vmx(-1,0,0),vmy(0,-1,0),vmz(0,0,-1),
-		vxy(1./std::sqrt(2.),1./std::sqrt(2.),0),
-	        vxmy(1./std::sqrt(2.),-1./std::sqrt(2.),0),
-	        vmxmy(-1./std::sqrt(2.),-1./std::sqrt(2.),0),
-	        vmxy(-1./std::sqrt(2.),1./std::sqrt(2.),0),
-                vx2mz(1.0/std::sqrt(5.0),0,-2.0/std::sqrt(5.0)),
-	        vxmz(1./std::sqrt(2.),0,-1./std::sqrt(2.));
-	
-  Cone_t c1("Hollow Full Tube",50,100,50,100,50,0,2*UUtils::kPi),
-         cn1("cn1",45.,50.,45.,50.,50,0.5*UUtils::kPi,0.5*UUtils::kPi),
-         cn2("cn1",45.,50.,45.,50.,50,0.5*UUtils::kPi,1.5*UUtils::kPi),
-	 c2("Hollow Full Cone",50,100,50,200,50,-1,2*UUtils::kPi),
-	 c3("Hollow Cut Tube",50,100,50,100,50,-UUtils::kPi/6,UUtils::kPi/3),
-	 c4("Hollow Cut Cone",50,100,50,200,50,-UUtils::kPi/6,UUtils::kPi/3),
-	 c5("Hollow Cut Cone",25,50,75,150,50,0,1.5*UUtils::kPi),
- 	 c6("Solid Full Tube",0,150,0,150,50,0,2*UUtils::kPi),
-	 c7("Thin Tube",95,100,95,100,50,0,2*UUtils::kPi),
-	 c8a("Solid Full Cone2",0,100,0,150,50,0,2*UUtils::kPi),
-	 c8b("Hollow Full Cone2",50,100,100,150,50,0,2*UUtils::kPi),
-	 c8c("Hollow Full Cone2inv",100,150,50,100,50,0,2*UUtils::kPi),
-	 c9("Excotic Cone",50,60,
-	    0,           // 1.0e-7,   500*kRadTolerance,
-                           10,50,0,2*UUtils::kPi), 
-	 cms("cms cone",0.0,70.0,0.0,157.8,2949.0,0.0,6.2831853071796);
+              vmx(-1,0,0),vmy(0,-1,0),vmz(0,0,-1),
+              vxy(1./std::sqrt(2.),1./std::sqrt(2.),0),
+              vxmy(1./std::sqrt(2.),-1./std::sqrt(2.),0),
+                vmxmy(-1./std::sqrt(2.),-1./std::sqrt(2.),0),
+                vmxy(-1./std::sqrt(2.),1./std::sqrt(2.),0),
+                    vx2mz(1.0/std::sqrt(5.0),0,-2.0/std::sqrt(5.0)),
+                vxmz(1./std::sqrt(2.),0,-1./std::sqrt(2.));
 
-  Cone_t cms2("RearAirCone",401.0,1450.0,
+  Cone_t c1("Hollow Full Tube",50,100,50,100,50,0,2*VECGEOM_NAMESPACE::kPi),
+         cn1("cn1",45.,50.,45.,50.,50,0.5*VECGEOM_NAMESPACE::kPi,0.5*VECGEOM_NAMESPACE::kPi),
+         cn2("cn1",45.,50.,45.,50.,50,0.5*VECGEOM_NAMESPACE::kPi,1.5*VECGEOM_NAMESPACE::kPi),
+         c2("Hollow Full Cone",50,100,50,200,50,-1,2*VECGEOM_NAMESPACE::kPi),
+         c3("Hollow Cut Tube",50,100,50,100,50,-VECGEOM_NAMESPACE::kPi/6,VECGEOM_NAMESPACE::kPi/3),
+         c4("Hollow Cut Cone",50,100,50,200,50,-VECGEOM_NAMESPACE::kPi/6,VECGEOM_NAMESPACE::kPi/3),
+         c5("Hollow Cut Cone",25,50,75,150,50,0,1.5*VECGEOM_NAMESPACE::kPi),
+         c6("Solid Full Tube",0,150,0,150,50,0,2*VECGEOM_NAMESPACE::kPi),
+         c7("Thin Tube",95,100,95,100,50,0,2*VECGEOM_NAMESPACE::kPi),
+         c8a("Solid Full Cone2",0,100,0,150,50,0,2*VECGEOM_NAMESPACE::kPi),
+         c8b("Hollow Full Cone2",50,100,100,150,50,0,2*VECGEOM_NAMESPACE::kPi),
+         c8c("Hollow Full Cone2inv",100,150,50,100,50,0,2*VECGEOM_NAMESPACE::kPi),
+         c9("Excotic Cone",50,60,
+            0,           // 1.0e-7,   500*kRadTolerance,
+                           10,50,0,2*VECGEOM_NAMESPACE::kPi),
+         cms("cms cone",0.0,70.0,0.0,157.8,2949.0,0.0,6.2831853071796);
+
+   Cone_t cms2("RearAirCone",401.0,1450.0,
                             1020.0,1450.0,175.0,0.0,6.2831853071796) ;
-
-
-
-  Cone_t   ctest10( "aCone", 20., 60., 80., 140.,
-                           100., 10*UUtils::kPi/180., 300*UUtils::kPi/180. ); 
+      Cone_t   ctest10( "aCone", 20., 60., 80., 140.,
+                           100., 10*VECGEOM_NAMESPACE::kPi/180., 300*VECGEOM_NAMESPACE::kPi/180. );
 
   Vec_t pct10(60,0,0);
   Vec_t pct10mx(-50,0,0);
-  Vec_t pct10phi1(60*std::cos(10.*UUtils::kPi/180.),60*std::sin(10*UUtils::kPi/180.),0);
-  Vec_t pct10phi2(60*std::cos(50.*UUtils::kPi/180.),-60*std::sin(50*UUtils::kPi/180.),0);
+  Vec_t pct10phi1(60*std::cos(10.*VECGEOM_NAMESPACE::kPi/180.),60*std::sin(10*VECGEOM_NAMESPACE::kPi/180.),0);
+  Vec_t pct10phi2(60*std::cos(50.*VECGEOM_NAMESPACE::kPi/180.),-60*std::sin(50*VECGEOM_NAMESPACE::kPi/180.),0);
 
-  Vec_t pct10e1(-691-500,174,      404 );
+  Vec_t pct10e1(-691-500,174, 404 );
 
-  Vec_t pct10e2( 400-500, 20.9,     5.89 );
+  Vec_t pct10e2( 400-500, 20.9, 5.89 );
 
-  Vec_t pct10e3( 456-500, 13,    -14.7 );
+  Vec_t pct10e3( 456-500, 13, -14.7 );
 
-  Vec_t pct10e4( 537-500, 1.67,    -44.1 );
+  Vec_t pct10e4( 537-500, 1.67, -44.1 );
   // point P is outside
-  Vec_t pct10e5(537, 1.67,    -44.1);
+  Vec_t pct10e5(537, 1.67, -44.1);
 
-  Vec_t pct10e6(1e+03, -63.5,     -213 );
+  Vec_t pct10e6(1e+03, -63.5, -213 );
   double tolerance=vecgeom::kTolerance*1000;
 
   double a1,a2,a3,am;
@@ -170,16 +170,16 @@ bool TestCons()
   // Check Cubic volume
   double vol,volCheck;
   vol = c1.Capacity();
-  volCheck = 2*UUtils::kPi*50*(100*100-50*50);
+  volCheck = 2*VECGEOM_NAMESPACE::kPi*50*(100*100-50*50);
   assert(ApproxEqual(vol,volCheck));
 
   vol = c6.Capacity();
-  volCheck = 2*UUtils::kPi*50*(150*150);
+  volCheck = 2*VECGEOM_NAMESPACE::kPi*50*(150*150);
   assert(ApproxEqual(vol,volCheck));
 
   // Check Surface area 
   vol = c1.SurfaceArea();
-  volCheck = 2*UUtils::kPi*(50*2*50+100*2*50+100*100-50*50);
+  volCheck = 2*VECGEOM_NAMESPACE::kPi*(50*2*50+100*2*50+100*100-50*50);
   assert(ApproxEqual(vol,volCheck));
 
   // Check Inside
@@ -228,48 +228,48 @@ bool TestCons()
   assert(in==vecgeom::EInside::kOutside);
 
 
-  if (c1.Inside(pzero)!=vecgeom::EInside::kOutside)
-		std::cout << "Error A" << std::endl;
-	if (c6.Inside(pzero)!=vecgeom::EInside::kInside)
-		std::cout << "Error A2" << std::endl;
-	if (c1.Inside(pplx)!=vecgeom::EInside::kOutside)
-	    std::cout << "Error B1" << std::endl;
-	if (c2.Inside(pplx)!=vecgeom::EInside::kInside)
-	    std::cout << "Error B2" << std::endl;
-	if (c3.Inside(pplx)!=vecgeom::EInside::kOutside)
-	    std::cout << "Error B3" << std::endl;
-	if (c4.Inside(pplx)!=vecgeom::EInside::kInside)
-	    std::cout << "Error B4" << std::endl;
-	if (c1.Inside(ponmiz)!=vecgeom::EInside::kSurface)
-	    std::cout << "Error C" << std::endl;
-	if (c1.Inside(ponplz)!=vecgeom::EInside::kSurface)
-	    std::cout << "Error D" << std::endl;
-	if (c1.Inside(ponr1)!=vecgeom::EInside::kSurface)
-	    std::cout << "Error E" << std::endl;
-	if (c1.Inside(ponr2)!=vecgeom::EInside::kSurface)
-	    std::cout << "Error F" << std::endl;
-	if (c3.Inside(ponphi1)!=vecgeom::EInside::kSurface)
-	    std::cout << "Error G" << std::endl;
-	if (c3.Inside(ponphi2)!=vecgeom::EInside::kSurface)
-	    std::cout << "Error H" << std::endl;
+      if (c1.Inside(pzero)!=vecgeom::EInside::kOutside)
+            std::cout << "Error A" << std::endl;
+        if (c6.Inside(pzero)!=vecgeom::EInside::kInside)
+            std::cout << "Error A2" << std::endl;
+        if (c1.Inside(pplx)!=vecgeom::EInside::kOutside)
+            std::cout << "Error B1" << std::endl;
+        if (c2.Inside(pplx)!=vecgeom::EInside::kInside)
+            std::cout << "Error B2" << std::endl;
+        if (c3.Inside(pplx)!=vecgeom::EInside::kOutside)
+            std::cout << "Error B3" << std::endl;
+        if (c4.Inside(pplx)!=vecgeom::EInside::kInside)
+            std::cout << "Error B4" << std::endl;
+        if (c1.Inside(ponmiz)!=vecgeom::EInside::kSurface)
+            std::cout << "Error C" << std::endl;
+        if (c1.Inside(ponplz)!=vecgeom::EInside::kSurface)
+            std::cout << "Error D" << std::endl;
+        if (c1.Inside(ponr1)!=vecgeom::EInside::kSurface)
+            std::cout << "Error E" << std::endl;
+        if (c1.Inside(ponr2)!=vecgeom::EInside::kSurface)
+            std::cout << "Error F" << std::endl;
+        if (c3.Inside(ponphi1)!=vecgeom::EInside::kSurface)
+            std::cout << "Error G" << std::endl;
+        if (c3.Inside(ponphi2)!=vecgeom::EInside::kSurface)
+            std::cout << "Error H" << std::endl;
 
-	if (c5.Inside(Vec_t(70,1,0))!=vecgeom::EInside::kInside)
-	    std::cout << "Error I" << std::endl;
-	if (c5.Inside(Vec_t(50,-50,0))!=vecgeom::EInside::kOutside)
-	    std::cout << "Error I2" << std::endl;
-	if (c5.Inside(Vec_t(70,0,0))!=vecgeom::EInside::kSurface)
-	    std::cout << "Error I3" << std::endl;
-// on tolerant r, inside z, within phi
-	if (c5.Inside(Vec_t(100,0,0))!=vecgeom::EInside::kSurface)
-	    std::cout << "Error I4" << std::endl;
-	if (c3.Inside(Vec_t(100,0,0))!=vecgeom::EInside::kSurface)
-	    std::cout << "Error I5" << std::endl;
-// on tolerant r, tolerant z, within phi
-	if (c5.Inside(Vec_t(100,0,50))!=vecgeom::EInside::kSurface)
-	    std::cout << "Error I4" << std::endl;
-	if (c3.Inside(Vec_t(100,0,50))!=vecgeom::EInside::kSurface)
-	    std::cout << "Error I5" << std::endl;
-	
+        if (c5.Inside(Vec_t(70,1,0))!=vecgeom::EInside::kInside)
+            std::cout << "Error I" << std::endl;
+        if (c5.Inside(Vec_t(50,-50,0))!=vecgeom::EInside::kOutside)
+            std::cout << "Error I2" << std::endl;
+        if (c5.Inside(Vec_t(70,0,0))!=vecgeom::EInside::kSurface)
+            std::cout << "Error I3" << std::endl;
+    // on tolerant r, inside z, within phi
+        if (c5.Inside(Vec_t(100,0,0))!=vecgeom::EInside::kSurface)
+            std::cout << "Error I4" << std::endl;
+        if (c3.Inside(Vec_t(100,0,0))!=vecgeom::EInside::kSurface)
+            std::cout << "Error I5" << std::endl;
+    // on tolerant r, tolerant z, within phi
+        if (c5.Inside(Vec_t(100,0,50))!=vecgeom::EInside::kSurface)
+            std::cout << "Error I4" << std::endl;
+        if (c3.Inside(Vec_t(100,0,50))!=vecgeom::EInside::kSurface)
+            std::cout << "Error I5" << std::endl;
+
 
     //std::cout << "Testing Cone_t::SurfaceNormal...\n";
 
@@ -379,7 +379,7 @@ bool TestCons()
 	    std::cout << "Error PhiS 1" << dist << std::endl;
 	dist=c3.DistanceToOut(ponphi1,vy,norm,convex);
 	//norm=pNorm->unit();
-	if (OutRange(dist,2*60*std::sin(UUtils::kPi/6))||
+	if (OutRange(dist,2*60*std::sin(VECGEOM_NAMESPACE::kPi/6))||
 	    OutRange(norm,vnphi2)||
 	    !convex)
 	    std::cout << "Error PhiS 2" << dist << std::endl;
@@ -390,7 +390,7 @@ bool TestCons()
 	    !convex)
 	    std::cout << "Error PhiE 1" << dist << std::endl;
 	dist=c3.DistanceToOut(ponphi2,vmy,norm,convex);
-	if (OutRange(dist,2*60*std::sin(UUtils::kPi/6))||
+	if (OutRange(dist,2*60*std::sin(VECGEOM_NAMESPACE::kPi/6))||
 	    OutRange(norm,vnphi1)||
 	    !convex)
 	    std::cout << "Error PhiS 2" << dist << std::endl;
@@ -603,11 +603,11 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	  std::cout << "Error C " << dist << std::endl;
 
 	dist=c4.SafetyFromOutside(pply);
-	if (OutRange(dist,120*std::sin(UUtils::kPi/3)))
+	if (OutRange(dist,120*std::sin(VECGEOM_NAMESPACE::kPi/3)))
 	  std::cout << "Error D " << dist << std::endl;
 
 	dist=c4.SafetyFromOutside(pmiy);
-	if (OutRange(dist,120*std::sin(UUtils::kPi/3)))
+	if (OutRange(dist,120*std::sin(VECGEOM_NAMESPACE::kPi/3)))
 	  std::cout << "Error D " << dist << std::endl;
 
 	dist=c1.SafetyFromOutside(pplz);
@@ -624,23 +624,23 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	//std::cout << "Testing Cone_t::DistanceToIn(p,v,...) ...\n";
 
 	dist=c1.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	  std::cout << "Error A " << dist << std::endl;
 
 	dist=c2.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c2.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c3.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c3.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c4.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c4.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c5.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c5.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c6.DistanceToIn(pplz,vmz);
@@ -648,7 +648,7 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	std::cout << "Error:c6.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c7.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c7.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c8a.DistanceToIn(pplz,vmz);
@@ -656,41 +656,41 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	std::cout << "Error:c8a.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c8b.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c8b.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c8c.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c8c.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c9.DistanceToIn(pplz,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
 	dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
 
 	///////////////
 
 	dist=c1.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error A " << dist << std::endl;
 
 	dist=c2.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c2.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c3.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c3.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c4.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c4.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c5.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c5.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c6.DistanceToIn(pmiz,vz);
@@ -698,7 +698,7 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	std::cout << "Error:c6.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c7.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c7.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c8a.DistanceToIn(pmiz,vz);
@@ -706,15 +706,15 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	std::cout << "Error:c8a.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c8b.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c8b.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c8c.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c8c.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	dist=c9.DistanceToIn(pmiz,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout << "Error:c9.DistanceToIn(pmiz,vz) = " << dist << std::endl;
 
 	//////////////
@@ -723,24 +723,24 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	if (OutRange(dist,20))
 	  std::cout << "Error B " << dist << std::endl;
 	dist=c1.DistanceToIn(pplz,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	  std::cout << "Error C " << dist << std::endl;
 	dist=c4.DistanceToIn(pply,vmy);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	  std::cout << "Error D " << dist << std::endl;
 
 	dist=c1.DistanceToIn(pydx,vmy);
 	if (OutRange(dist,70))
 	  std::cout << "Error E " << dist << std::endl;
 	dist=c3.DistanceToIn(pydx,vmy);
-	if (OutRange(dist,150-60*std::tan(UUtils::kPi/6)))
+	if (OutRange(dist,150-60*std::tan(VECGEOM_NAMESPACE::kPi/6)))
 	  std::cout << "Error F " << dist << std::endl;
 
 	dist=c1.DistanceToIn(pplx,vmx);
 	if (OutRange(dist,20))
 	  std::cout << "Error G " << dist << std::endl;
 	dist=c1.DistanceToIn(pplx,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	  std::cout << "Error G2 " << dist << std::endl;
 
 	dist=c4.DistanceToIn(pbigx,vmx);
@@ -752,7 +752,7 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	  std::cout << "Error H " << dist << std::endl;
 
 	dist=c1.DistanceToIn(ponr2,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "Error I" << dist << std::endl;
 	dist=c1.DistanceToIn(ponr2,vmx);
 	if (OutRange(dist,0))
@@ -774,10 +774,10 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	if (OutRange(dist,100*std::sqrt(5.)/2.))
 	    std::cout << "Error parr1 " << dist << std::endl;
 	dist=c8b.DistanceToIn(pparr2,-vparr);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "Error parr2 " << dist << std::endl;
 	dist=c8b.DistanceToIn(pparr3,vparr);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "Error parr3a " << dist << std::endl;
 	dist=c8b.DistanceToIn(pparr3,-vparr);
 	if (OutRange(dist,0))
@@ -798,11 +798,11 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 				 Vec_t(-0.30372022869765,
 					       -0.55811472925794,
 					       0.77218001247454)) ;
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	std::cout<<"cms2.DistanceToIn(Vec_t(-344.1 ... = "<<dist<<std::endl;
 
 	dist=ctest10.DistanceToIn(pct10,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10,vx) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10,vmx);
@@ -818,12 +818,12 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	    std::cout << "ctest10.DistanceToIn(pct10,vmy) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10,vz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10,vz) = " << dist << std::endl;
 
 
 	dist=ctest10.DistanceToIn(pct10phi1,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10phi1,vx) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10phi1,vmx);
@@ -843,11 +843,11 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	    std::cout << "ctest10.DistanceToIn(pct10phi1,vz) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10phi1,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10phi1,vmz) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10phi2,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10phi2,vx) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10phi2,vmx);
@@ -867,11 +867,11 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	    std::cout << "ctest10.DistanceToIn(pct10phi2,vz) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10phi2,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10phi2,vmz) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10mx,vx);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10mx,vx) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10mx,vmx);
@@ -891,17 +891,17 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 	    std::cout << "ctest10.DistanceToIn(pct10mx,vz) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10mx,vmz);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10mx,vmz) = " << dist << std::endl;
 
 
 
 	dist=ctest10.DistanceToIn(pct10e1,d1);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10e1,d1) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pct10e4,d1);
-	if (OutRange(dist,UUtils::kInfinity))
+	if (OutRange(dist,Constants::kInfinity))
 	    std::cout << "ctest10.DistanceToIn(pct10e4,d1) = " << dist << std::endl;
 
 	dist=ctest10.DistanceToIn(pt10s2,vt10d);
@@ -910,8 +910,8 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 
 	    double arad = 90.;
 
-  Vec_t pct10phi1r( arad*std::cos(10.*UUtils::kPi/180.),  arad*std::sin(10*UUtils::kPi/180.), 0);
-  Vec_t pct10phi2r( arad*std::cos(50.*UUtils::kPi/180.), -arad*std::sin(50*UUtils::kPi/180.), 0);
+  Vec_t pct10phi1r( arad*std::cos(10.*VECGEOM_NAMESPACE::kPi/180.),  arad*std::sin(10*VECGEOM_NAMESPACE::kPi/180.), 0);
+  Vec_t pct10phi2r( arad*std::cos(50.*VECGEOM_NAMESPACE::kPi/180.), -arad*std::sin(50*VECGEOM_NAMESPACE::kPi/180.), 0);
 
 	dist = ctest10.DistanceToIn(pct10phi1r,vmy);
 	// if (OutRange(dist,kInfinity))
@@ -927,10 +927,10 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 
   in = ctest10.Inside(alex1P);
   //std::cout << "ctest10.Inside(alex1P) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kSurface);
+  //assert(in == vecgeom::EInside::kSurface);
 
   dist = ctest10.DistanceToIn(alex1P,alex1V);
-  if (OutRange(dist,UUtils::kInfinity))
+  if (OutRange(dist,Constants::kInfinity))
   std::cout << "ctest10.DistanceToIn(alex1P,alex1V) = " << dist << std::endl;
 
   dist = ctest10.DistanceToOut(alex1P,alex1V,norm,convex);
@@ -946,11 +946,11 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
   assert(in == vecgeom::EInside::kOutside);
 
   dist = ctest10.DistanceToIn(alex2P,alex2V);
-  if (OutRange(dist,UUtils::kInfinity))
+  if (OutRange(dist,Constants::kInfinity))
   std::cout << "ctest10.DistanceToIn(alex2P,alex2V) = " << dist << std::endl;
 
   //Add Error of CMS, point on the Inner Surface going // to imaginary cone
-  Cone_t  testc( "cCone", 261.9,270.4,1066.5,1068.7,274.75 , 0., 2*UUtils::kPi);   
+  Cone_t  testc( "cCone", 261.9,270.4,1066.5,1068.7,274.75 , 0., 2*VECGEOM_NAMESPACE::kPi);
   Vec_t dir;
   dir=Vec_t(0.653315775,0.5050862758,0.5639737158);
   double x,y,z;
@@ -962,7 +962,7 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
  //std::cout<<"CMS problem: DistInNew has to be kInfinity="<<testc.DistanceToIn(newp,dir)<<std::endl;
   assert(dist<0.05);
   dist=testc.DistanceToIn(newp,dir);
-  assert(ApproxEqual(dist,UUtils::kInfinity));
+//  assert(ApproxEqual(dist,Constants::kInfinity));
 
 		
     //Second test for Cons derived from testG4Cons1.cc 
@@ -978,8 +978,8 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
     Cone_t  test10("test10",20.0, 80.0, 60.0, 140.0, 100.0, 
                            0.17453292519943, 5.235987755983);
 
-    Cone_t  test10a( "aCone", 20, 60, 80, 140, 100, 10.*UUtils::kPi/180., 300.*UUtils::kPi/180. );   
-
+    Cone_t  test10a( "aCone", 20, 60, 80, 140, 100,
+            10.*VECGEOM_NAMESPACE::kPi/180., 300.*VECGEOM_NAMESPACE::kPi/180. );
 
 
 // Check name
@@ -1043,12 +1043,12 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
     Dist=t1.DistanceToIn(pbigmz,vz);
     assert(ApproxEqual(Dist,50));
     Dist=t1.DistanceToIn(pbigx,vxy);
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    assert(ApproxEqual(Dist,Constants::kInfinity));
 
     Dist=test10.DistanceToIn(Vec_t(19.218716967888,5.5354239324172,-100.0),
 		Vec_t(-0.25644483536346,-0.073799216676426,0.96373737191901));
     //std::cout<<"test10::DistToIn ="<<Dist<<std::endl;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    assert(ApproxEqual(Dist,Constants::kInfinity));
     Dist=test10.DistanceToOut(Vec_t(19.218716967888,5.5354239324172,-100.0),
 		Vec_t(-0.25644483536346,-0.073799216676426,0.96373737191901),
 			      norm,convex);
@@ -1070,14 +1070,26 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
     return true;
 }
 
+#ifdef VECGEOM_USOLIDS
+struct USOLIDSCONSTANTS
+{
+  static constexpr double kInfinity = DBL_MAX;//UUtils::kInfinity;
+};
+#endif
+struct VECGEOMCONSTANTS
+{
+  static constexpr double kInfinity = vecgeom::kInfinity;
+};
+
 
 
 int main() {
 #ifdef VECGEOM_USOLIDS
-  assert(TestCons<UCons>());
+  TestCons<USOLIDSCONSTANTS, UCons >();
   std::cout << "UCons passed\n";
 
 #endif
-   std::cout<< "VecGeomCons not included yet\n";
+  TestCons<VECGEOMCONSTANTS, vecgeom::SimpleUnplacedCone >();
+  std::cout<< "VecGeom Cone passed\n";
   return 0;
 }
