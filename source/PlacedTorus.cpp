@@ -23,13 +23,14 @@ VPlacedVolume const* PlacedTorus::ConvertToUnspecialized() const {
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTorus::ConvertToRoot() const {
   return new TGeoTorus(GetLabel().c_str(), rtor(), rmin(), rmax(),
-          sphi()*kDegToRad, dphi()*kDegToRad);
+          sphi()*kRadToDeg, dphi()*kRadToDeg);
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTorus::ConvertToUSolids() const {
-  //  return new UTubs(GetLabel().c_str(), rmin(), rmax(), z(), sphi(), dphi());
+    return NULL;
+    //  return new UTubs(GetLabel().c_str(), rmin(), rmax(), z(), sphi(), dphi());
 }
 #endif
 
