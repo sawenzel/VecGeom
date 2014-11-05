@@ -8,7 +8,7 @@
 #include "base/SOA3D.h"
 #include "backend/Backend.h"
 
-#if defined(VECGEOM_BENCHMARK) && defined(VECGEOM_USOLIDS)
+#ifdef VECGEOM_USOLIDS
 #include "USphere.hh"
 #endif
 
