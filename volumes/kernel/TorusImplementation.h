@@ -660,11 +660,20 @@ struct TorusImplementation {
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v Bool_t;
 
+
+    // very fast check on z-height
+    completelyoutside = point[2] > MakePlusTolerant<ForInside>( torus.rmax() );
+    if (Backend::early_returns) {
+         if ( IsFull(completelyoutside) ) {
+           return;
+         }
+    }
+
     Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
     Float_t radsq = ( rxy - torus.rtor() ) * (rxy -  torus.rtor() ) + point[2]*point[2];
 
     // completelyoutside = radsq > MakePlusTolerant<ForInside>( torus.rmax2() );//rmax
-    completelyoutside = radsq > MakePlusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );//rmax
+    completelyoutside |= radsq > MakePlusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );//rmax
     //std::cout<<"Kernelrmax  point="<<point<<" radsq="<<radsq<<" Out?"<<completelyoutside<<std::endl;
     if (ForInside)
     {
@@ -730,18 +739,6 @@ struct TorusImplementation {
      typename Backend::inside_v &inside) {
 
   typedef typename Backend::bool_v      Bool_t;
-  inside = EInside::kOutside;
-  //Check Bounding tube first
-   Bool_t inBounds;
-      TubeImplementation<translation::kIdentity,
-      rotation::kIdentity, TubeTypes::HollowTube>::
-      UnplacedContains<Backend>(
-      torus.GetBoundingTube(), point, inBounds);
-      if( !inBounds ){
-        if (Backend::early_returns) {
-                    return;  
-        }
-      }
   //
   Bool_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(torus, 
