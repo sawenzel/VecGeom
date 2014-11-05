@@ -661,16 +661,16 @@ struct TorusImplementation {
     typedef typename Backend::bool_v Bool_t;
 
 
-    // very fast check on z-height
-    completelyoutside = point[2] > MakePlusTolerant<ForInside>( torus.rmax() );
-    if (Backend::early_returns) {
-         if ( IsFull(completelyoutside) ) {
-           return;
-         }
-    }
+//    // very fast check on z-height
+//    completelyoutside = point[2] > MakePlusTolerant<ForInside>( torus.rmax() );
+//    if (Backend::early_returns) {
+//         if ( IsFull(completelyoutside) ) {
+//           return;
+//         }
+//    }
 
     Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
-    Float_t radsq = ( rxy - torus.rtor() ) * (rxy -  torus.rtor() ) + point[2]*point[2];
+    Float_t radsq = (rxy - torus.rtor()) * (rxy -  torus.rtor()) + point[2]*point[2];
 
     // completelyoutside = radsq > MakePlusTolerant<ForInside>( torus.rmax2() );//rmax
     completelyoutside |= radsq > MakePlusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );//rmax
@@ -702,7 +702,7 @@ struct TorusImplementation {
           }
     }
 
-    /* phi TOO DO*/
+    /* phi */
     if( torus.dphi() < kTwoPi ){
         Bool_t completelyoutsidephi;
         Bool_t completelyinsidephi;
@@ -747,6 +747,8 @@ struct TorusImplementation {
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
+
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
