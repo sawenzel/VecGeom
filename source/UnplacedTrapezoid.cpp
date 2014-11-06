@@ -244,7 +244,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #ifndef VECGEOM_PLANESHELL_DISABLE
   good = MakePlane(pt[1],pt[3],pt[7],pt[5],3);
 #else
-  good = MakePlane(pt[1],pt[3]+1.f,pt[7],pt[5],fPlanes[3]);
+  good = MakePlane(pt[1],pt[3],pt[7],pt[5],fPlanes[3]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid
 
@@ -647,12 +647,12 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
     fDz = pt[7].z();
     Precision DzRecip = 1.0 / fDz;
 
-    fDy1 = 0.50*( pt[2].y() - pt[1].y() );
+    fDy1 = 0.50*( pt[2].y() - pt[0].y() );
     fDx1 = 0.50*( pt[1].x() - pt[0].x() );
     fDx2 = 0.50*( pt[3].x() - pt[2].x() );
     fTanAlpha1 = 0.25*( pt[2].x() + pt[3].x() - pt[1].x() - pt[0].x() ) / fDy1;
 
-    fDy2 = 0.50*( pt[6].y() - pt[5].y() );
+    fDy2 = 0.50*( pt[6].y() - pt[4].y() );
     fDx3 = 0.50*( pt[5].x() - pt[4].x() );
     fDx4 = 0.50*( pt[7].x() - pt[6].x() );
     fTanAlpha2 = 0.25*( pt[6].x() + pt[7].x() - pt[5].x() - pt[4].x() ) / fDy2;
