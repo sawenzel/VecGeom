@@ -494,6 +494,7 @@ set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTrap.cpp
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
