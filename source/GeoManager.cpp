@@ -10,39 +10,44 @@
 namespace VECGEOM_NAMESPACE {
 
 void GeoManager::RegisterLogicalVolume(LogicalVolume *const logical_volume) {
-  logical_volumes_[logical_volume->id()] = logical_volume;
+  fLogicalVolumesMap[logical_volume->id()] = logical_volume;
 }
 
 void GeoManager::RegisterPlacedVolume(VPlacedVolume *const placed_volume) {
-  placed_volumes_[placed_volume->id()] = placed_volume;
+  fPlacedVolumesMap[placed_volume->id()] = placed_volume;
 }
 
 void GeoManager::DeregisterLogicalVolume(const int id) {
-  logical_volumes_.erase(id);
+  fLogicalVolumesMap.erase(id);
 }
 
 void GeoManager::DeregisterPlacedVolume(const int id) {
-  placed_volumes_.erase(id);
+  fPlacedVolumesMap.erase(id);
 }
 
 void GeoManager::CloseGeometry() {
-   // cache some important variables of this geometry
+    Assert( GetWorld() != NULL, "world volume not set" );
+    // cache some important variables of this geometry
     GetMaxDepthVisitor depthvisitor;
-    visitAllPlacedVolumes( world(), &depthvisitor, 1 );
+    visitAllPlacedVolumes( GetWorld(), &depthvisitor, 1 );
     fMaxDepth = depthvisitor.getMaxDepth();
+
+    GetTotalNodeCountVisitor totalcountvisitor;
+    visitAllPlacedVolumes( GetWorld(), &totalcountvisitor, 1 );
+    fTotalNodeCount = totalcountvisitor.GetTotalNodeCount();
 }
 
 
 
 VPlacedVolume* GeoManager::FindPlacedVolume(const int id) {
-  auto iterator = placed_volumes_.find(id);
-  return (iterator != placed_volumes_.end()) ? iterator->second : NULL;
+  auto iterator = fPlacedVolumesMap.find(id);
+  return (iterator != fPlacedVolumesMap.end()) ? iterator->second : NULL;
 }
 
 VPlacedVolume* GeoManager::FindPlacedVolume(char const *const label) {
   VPlacedVolume *output = NULL;
   bool multiple = false;
-  for (auto v = placed_volumes_.begin(), v_end = placed_volumes_.end();
+  for (auto v = fPlacedVolumesMap.begin(), v_end = fPlacedVolumesMap.end();
        v != v_end; ++v) {
     if (v->second->GetLabel() == label) {
       if (!output) {
@@ -64,14 +69,14 @@ VPlacedVolume* GeoManager::FindPlacedVolume(char const *const label) {
 }
 
 LogicalVolume* GeoManager::FindLogicalVolume(const int id) {
-  auto iterator = logical_volumes_.find(id);
-  return (iterator != logical_volumes_.end()) ? iterator->second : NULL;
+  auto iterator = fLogicalVolumesMap.find(id);
+  return (iterator != fLogicalVolumesMap.end()) ? iterator->second : NULL;
 }
 
 LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   LogicalVolume *output = NULL;
   bool multiple = false;
-  for (auto v = logical_volumes_.begin(), v_end = logical_volumes_.end();
+  for (auto v = fLogicalVolumesMap.begin(), v_end = fLogicalVolumesMap.end();
        v != v_end; ++v) {
     if (v->second->GetLabel() == label) {
       if (!output) {
@@ -90,6 +95,15 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   }
   if (multiple) printf(". Returning first occurence.\n");
   return output;
+}
+
+
+void GeoManager::Clear()
+{
+    fLogicalVolumesMap.clear();
+    fPlacedVolumesMap.clear();
+    fVolumeCount=0; fWorld=NULL;
+    fMaxDepth=-1;
 }
 
 } // End global namespace

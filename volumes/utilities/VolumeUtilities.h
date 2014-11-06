@@ -17,6 +17,10 @@
 #endif
 #include <cassert>
 
+#ifdef VECGEOM_ROOT
+#include "TGeoShape.h"
+#endif
+
 namespace VECGEOM_NAMESPACE {
 namespace volumeUtilities {
 
@@ -26,17 +30,16 @@ VECGEOM_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point,
                      Vector3D<Precision> const &dir,
                      VPlacedVolume const &volume) {
-// it is better we use an existing implementation for this check
-#ifdef VECGEOM_ROOT
-    static const TGeoShape * rootshape = volume.ConvertToRoot();
-    double *safe;
-    double rpoint[3];
-    double rdir[3];
-    for(int i=0;i<3;i++){
-    rpoint[i]=point[i]; rdir[i]=dir[i];}
-    return rootshape->DistFromOutside(&rpoint[0], &rdir[0], 3, kInfinity, safe) < 1E20;
+#if defined(VECGEOM_ROOT) && defined(VECGEOM_BENCHMARK)
+static const TGeoShape * rootshape = volume.ConvertToRoot();
+double *safe = NULL;
+double rpoint[3];
+double rdir[3];
+for(int i=0;i<3;i++){
+  rpoint[i]=point[i]; rdir[i]=dir[i];}
+  return rootshape->DistFromOutside(&rpoint[0], &rdir[0], 3, kInfinity, safe) < 1E20;
 #else
-    return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
+   return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
 #endif
 }
 

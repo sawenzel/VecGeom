@@ -18,7 +18,7 @@ namespace VECGEOM_NAMESPACE {
  *          themselves.
  */
 template <typename TypeA, typename TypeB>
-class TypeMap {
+class BidirectionalTypeMap {
 
 private:
 
@@ -27,9 +27,9 @@ private:
 
 public:
 
-  TypeMap() : a_to_b(), b_to_a() {}
-  TypeMap(TypeMap const &other);
-  TypeMap& operator=(TypeMap const &other);
+  BidirectionalTypeMap() : a_to_b(), b_to_a() {}
+  BidirectionalTypeMap(BidirectionalTypeMap const &other);
+  BidirectionalTypeMap& operator=(BidirectionalTypeMap const &other);
 
   /**
    * Lookup variable of second type using variable of first type. The accessed
@@ -93,22 +93,30 @@ public:
     return a_to_b.end();
   }
 
-  /**
-   * @return True is the passed element is contined in the bidirectional map,
-   *         false if it isn't.
-   */
-  bool Contains(TypeA const &a) const {
-    return a_to_b.find(a) != a_to_b.end();
-  }
+    /**
+     * @return True is the passed element is contined in the bidirectional map,
+     *         false if it isn't.
+     */
+    bool Contains(TypeA const &a) const {
+      return a_to_b.find(a) != a_to_b.end();
+    }
 
-  /**
-   * @return True is the passed element is contined in the bidirectional map,
-   *         false if it isn't.
-   */
-  bool Contains(TypeB const &b) const {
-    return b_to_a.find(b) != b_to_a.end();
-  }
+    /**
+     * @return True is the passed element is contined in the bidirectional map,
+     *         false if it isn't.
+     */
+    bool Contains(TypeB const &b) const {
+      return b_to_a.find(b) != b_to_a.end();
+    }
 
+    /**
+     * remove any content from the containers
+     */
+    void Clear()
+    {
+        b_to_a.clear();
+        a_to_b.clear();
+    }
 };
 
 } // End global namespace

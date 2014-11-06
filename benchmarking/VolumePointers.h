@@ -14,10 +14,10 @@ class G4VSolid;
 
 namespace vecgeom {
 
-/**
- * @brief Converts a VecGeom volume to unspecialized, USolids and ROOT
- *        representations for performance comparison purposes.
- */
+class VPlacedVolume;
+
+/// \brief Converts a VecGeom volume to unspecialized, USolids and ROOT
+///        representations for performance comparison purposes.
 class VolumePointers {
 
 private:

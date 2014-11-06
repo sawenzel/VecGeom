@@ -12,13 +12,14 @@
 
 #include <list>
 #include <string>
+#include <iostream>
 
 class G4VSolid;
 
 namespace VECGEOM_NAMESPACE {
 
-// Forward declaration for bounding box
 class PlacedBox;
+template <typename T> class SOA3D;
 
 class VPlacedVolume : public USolidsInterfaceHelper {
 
@@ -62,7 +63,7 @@ protected:
   VPlacedVolume *operator=(VPlacedVolume const &);
 
 public:
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~VPlacedVolume();
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -110,7 +111,15 @@ public:
     transformation_ = transform;
   }
 
-  void set_label(char const *const label) { *label_ = label; }
+  void set_label(char const * label) {
+    //if(label != NULL){
+        //std::cerr << label << std::endl;
+        //std::cerr << *label_ << std::endl;
+        //label_->assign(label);}
+    //else{
+       label_=new std::string(label);
+    //}
+  }
 
   friend std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol);
 
@@ -234,7 +243,7 @@ public:
       Transformation3D const *const transform) const =0;
 #endif
 
-#ifdef VECGEOM_BENCHMARK
+#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const =0;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const =0;
@@ -245,7 +254,7 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const =0;
 #endif
-#endif // VECGEOM_BENCHMARK
+#endif // VECGEOM_NVCC
 
 };
 

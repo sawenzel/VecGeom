@@ -16,12 +16,12 @@ struct kScalar {
   typedef bool      bool_v;
   typedef Inside_t  inside_v;
   const static bool early_returns = true;
-#ifdef VECGEOM_NVCC
-  const static precision_v kOne = 1.0;
-  const static precision_v kZero = 0.0;
-#else
+#ifdef VECGEOM_STD_CXX11
   constexpr static precision_v kOne = 1.0;
   constexpr static precision_v kZero = 0.0;
+#else
+  const static precision_v kOne = 1.0;
+  const static precision_v kZero = 0.0;
 #endif
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
@@ -83,92 +83,58 @@ Type ATan2(const Type y, const Type x) {
   return  0;
 }
 
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-Precision Min(Precision const &val1, Precision const &val2) {
-#ifndef VECGEOM_NVCC
+T Min(T const &val1, T const &val2) {
+#ifndef VECGEOM_NVCC_DEVICE
   return std::min(val1, val2);
 #else
-  return min(val1, val2);
+  return val1 < val2 ? val1 : val2;
 #endif
 }
 
+template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-Precision Max(Precision const &val1, Precision const &val2) {
-#ifndef VECGEOM_NVCC
+T Max(T const &val1, T const &val2) {
+#ifndef VECGEOM_NVCC_DEVICE
   return std::max(val1, val2);
 #else
-  return max(val1, val2);
-#endif
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-int Min(int const &val1, int const &val2) {
-#ifndef VECGEOM_NVCC
-  return std::min(val1, val2);
-#else
-  return min(val1, val2);
-#endif
-}
-
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-int Max(int const &val1, int const &val2) {
-#ifndef VECGEOM_NVCC
-  return std::max(val1, val2);
-#else
-  return max(val1, val2);
+  return val1 > val2 ? val1 : val2;
 #endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision sin(const Precision radians) {
-#ifndef VECGEOM_NVCC
   return std::sin(radians);
-#else
-  return sin(radians);
-#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision cos(const Precision radians) {
-#ifndef VECGEOM_NVCC
   return std::cos(radians);
-#else
-  return cos(radians);
-#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision tan(const Precision radians) {
-#ifndef VECGEOM_NVCC
   return std::tan(radians);
-#else
-  return atan(radians);
-#endif
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void swap(Type &a, Type &b) {
-#ifndef VECGEOM_NVCC
   std::swap(a, b);
-#else
-  swap(a, b);
-#endif
 }
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void copy(Type const *begin, Type const *const end, Type *const target) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   std::copy(begin, end, target);
 #else
   memcpy(target, begin, (end-begin)*sizeof(Type));
@@ -178,12 +144,12 @@ void copy(Type const *begin, Type const *const end, Type *const target) {
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void reverse_copy(Type const *begin, Type const *end,
+void reverse_copy(Type const *const begin, Type const *end,
                   Type *const target) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   std::reverse_copy(begin, end, target);
 #else
-  while (end-- != begin) *(target++) = *end; 
+  while (--end >= begin) *target++ = *end;
 #endif
 }
 
@@ -191,10 +157,13 @@ template <typename InputIterator1, typename InputIterator2>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool equal(InputIterator1 first, InputIterator1 last, InputIterator2 target) {
-#ifndef VECGEOM_NVCC
+#ifndef VECGEOM_NVCC_DEVICE
   return std::equal(first, last, target);
 #else
-  return equal(first, last, target);
+  while (first != last) {
+    if (*first++ != *target++) return false;
+  }
+  return true;
 #endif
 }
 

@@ -2,6 +2,7 @@
 // Implementation of the batch solid  test
 //
 
+#include "base/RNG.h"
 
 #include <iomanip>
 #include <sstream>
@@ -1254,12 +1255,12 @@ void ShapeTester::Integration(double theta, double phi, int ngrid, bool useeps, 
   UVector3 point;
   UVector3 dir;
   double xmin, ymin;
-  int npoints = ngrid*ngrid*npercell;
   dir.x() = std::sin(theta*UUtils::kDegToRad)*std::cos(phi*UUtils::kDegToRad);
   dir.y() = std::sin(theta*UUtils::kDegToRad)*std::sin(phi*UUtils::kDegToRad);
   dir.z() = std::cos(theta*UUtils::kDegToRad);
   
 #ifdef VECGEOM_ROOT
+  int npoints = ngrid*ngrid*npercell;
   TPolyMarker3D *pmx = 0;
   TH2F *xprof = 0;
    if (graphics) {
@@ -1299,8 +1300,8 @@ void ShapeTester::Integration(double theta, double phi, int ngrid, bool useeps, 
             ip++;
          } else {               
             for (int k=0; k<npercell; k++) {
-	      point.x() = xmin+cell*gRandom->Rndm();
-	      point.y() = ymin+cell*gRandom->Rndm();
+	      point.x() = xmin+cell*vecgeom::RNG::Instance().uniform();
+	      point.y() = ymin+cell*vecgeom::RNG::Instance().uniform();
 	      point.z() = 0;
               grid_points[ip]= matrix->GlobalPoint(point)+origin;
 	      //std::cout<<"ip="<<ip<<" grid="<<grid_points[ip]<<std::endl;
@@ -1349,12 +1350,12 @@ void ShapeTester::Integration(double theta, double phi, int ngrid, bool useeps, 
     gCapacityAnalytical =  volumeUSolids->Capacity();
     if((fVerbose) && (graphics)){
      printf("th=%g phi=%g: analytical: %f    --------   sampled: %f +/- %f\n", theta, phi, gCapacityAnalytical ,gCapacitySampled , gCapacityError);
-     printf("Hit ratio: %f\n", Double_t(nhit)/ip);
+     printf("Hit ratio: %f\n", double(nhit)/ip);
      if (nhit>0) printf("Average crossed length: %f\n", sum/nhit);
     }
    if((gCapacitySampled-gCapacityAnalytical)>10*gCapacityError) nError++;
   
-   #ifdef VECGEOM_ROOT
+#ifdef VECGEOM_ROOT
    if (graphics) {
      
      // new TCanvas("X-ray-test", "Shape and projection plane");
@@ -1368,8 +1369,8 @@ void ShapeTester::Integration(double theta, double phi, int ngrid, bool useeps, 
       new TCanvas("c11", "X-ray scan");
       xprof->DrawCopy("LEGO1");
       
-    #endif
    }
+#endif
       
 }
 //////////////////////////////////////////////////////////////////////////////

@@ -15,6 +15,8 @@ import numpy as np
 import sys
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib.patches import Polygon
 from matplotlib.path import Path
 from matplotlib.spines import Spine
 from matplotlib.projections.polar import PolarAxes
@@ -59,6 +61,8 @@ def radar_factory(num_vars, frame='circle'):
         # define draw_frame method
         draw_patch = patch_dict[frame]
 
+        # def setlinestyle(self, ls):
+
         def fill(self, *args, **kwargs):
             """Override fill so that line is closed by default"""
             closed = kwargs.pop('closed', True)
@@ -97,7 +101,7 @@ def radar_factory(num_vars, frame='circle'):
             verts.append(verts[0])
             path = Path(verts)
 
-            spine = Spine(self, spine_type, path)
+            spine = Spine(self, spine_type, path, linewidth=2)
             spine.set_transform(self.transAxes)
             return {'polar': spine}
 
@@ -145,10 +149,15 @@ if __name__ == '__main__':
             assert len(line) == N
             data[caption].append(line)
 
+        data[caption].append( [0] * N)
+
         print("Got N = {0}, M = {1}".format(N, M))
         print(columns)
         # sys.exit(1)
-
+    
+    # N = N+1
+    mpl.rcParams['axes.linewidth'] = 2
+    # mpl.rcParams['lines.linewidth'] = 2
     theta = radar_factory(N, frame='polygon')
 
     # data = get_data()
@@ -157,9 +166,10 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(10, 10), facecolor="white")
     fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
 
-    colors = ['b', 'r', 'g', 'm', 'y', 'c', 'k']
-    while len(colors) > len(factors):
+    colors = ['#C7F464', '#C44D58', '#4ECDC4', '#556270', 'c', 'k']
+    while len(colors) > len(factors)+1:
         colors.pop()
+    print(colors)
     # Plot the four cases from the example data on separate axes
     for n, title in enumerate(data.keys()):
         ax = fig.add_subplot(1, 1, n+1, projection='radar')
@@ -168,8 +178,10 @@ if __name__ == '__main__':
         ax.set_title(title, weight='bold', size='medium', position=(0.5, 1.1),
                      horizontalalignment='center', verticalalignment='center')
         for d, color in zip(data[title], colors):
-            ax.plot(theta, d, color=color)
-            ax.fill(theta, d, facecolor=color, alpha=0.25)
+            ax.plot(theta, d, color=color, linestyle="None")
+            p = ax.fill(theta, d, facecolor=color, linestyle="solid", linewidth="2", edgecolor="#000000")
+            p = p[0]
+            print(type(p))
         ax.set_varlabels(spoke_labels)
 
     # add legend relative to top-left plot
@@ -177,7 +189,7 @@ if __name__ == '__main__':
     labels = tuple(factors)
 
     # labels = ('Factor 1', 'Factor 2', 'Factor 3', 'Factor 4', 'Factor 5')
-    legend = plt.legend(labels, loc=(0.9, .95), labelspacing=0.1)
+    legend = plt.legend(labels, loc=(0.9, .95), labelspacing=0.1, shadow=False)
     plt.setp(legend.get_texts(), fontsize='small')
 
     # plt.figtext(0.5, 0.965, '5-Factor Solution Profiles Across Four Scenarios',

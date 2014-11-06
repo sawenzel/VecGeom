@@ -2,8 +2,8 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "benchmarking/VolumePointers.h"
-
 #include "volumes/PlacedVolume.h"
+#include <iostream>
 
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"

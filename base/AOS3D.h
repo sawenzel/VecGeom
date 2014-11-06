@@ -15,7 +15,7 @@
 namespace VECGEOM_NAMESPACE {
 
 template <typename T>
-class AOS3D : public Container3D<AOS3D<T> > {
+class AOS3D : Container3D<AOS3D<T> > {
 
 private:
 

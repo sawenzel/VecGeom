@@ -84,8 +84,8 @@ class UCons : public VUSolid
 
     // Other methods for solid
 
-    inline double GetCubicVolume();
-    inline double GetSurfaceArea();
+    inline double Capacity();
+    inline double SurfaceArea();
 
 
 //    inline VUSolid::EnumInside Inside( const UVector3& p ) const;
@@ -94,7 +94,7 @@ class UCons : public VUSolid
 
     double DistanceToIn(const UVector3& p, const UVector3& v, double aPstep = UUtils::kInfinity) const;
 
-    double SafetyFromOutside(const UVector3& p, bool precise) const;
+    double SafetyFromOutside(const UVector3& p, bool precise=false) const;
 
 
 
@@ -105,7 +105,7 @@ class UCons : public VUSolid
                          double aPstep = UUtils::kInfinity) const;
 
 
-    double SafetyFromInside(const UVector3& p, bool precise) const;
+    double SafetyFromInside(const UVector3& p, bool precise=false) const;
 
     UGeometryType GetEntityType() const;
 
@@ -245,9 +245,7 @@ class UCons : public VUSolid
 
     double fCubicVolume, fSurfaceArea;
 
-    inline double Capacity();
-    inline double SurfaceArea();
-
+    
     inline void Initialize();
     //
     // Reset relevant values to zero
