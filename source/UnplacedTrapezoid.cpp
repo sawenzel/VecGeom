@@ -444,10 +444,10 @@ void UnplacedTrapezoid::Extent(Vec3D& aMin, Vec3D& aMax) const {
   extB = ext45>ext67 ? ext45 : ext67;
   aMax.y() = (extA > extB) ? extA : extB;
 
-  ext01 = std::min(pt[0].x(),pt[1].x());
-  ext23 = std::min(pt[2].x(),pt[3].x());
-  ext45 = std::min(pt[4].x(),pt[5].x());
-  ext67 = std::min(pt[6].x(),pt[7].x());
+  ext01 = std::min(pt[0].y(),pt[1].y());
+  ext23 = std::min(pt[2].y(),pt[3].y());
+  ext45 = std::min(pt[4].y(),pt[5].y());
+  ext67 = std::min(pt[6].y(),pt[7].y());
   extA = ext01<ext23 ? ext01 : ext23;
   extB = ext45<ext67 ? ext45 : ext67;
   aMin.y() = (extA < extB) ? extA : extB;
