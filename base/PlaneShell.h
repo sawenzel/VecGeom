@@ -213,10 +213,10 @@ public:
     }
 
     // check that entry point found is valid -- cannot be outside (may happen when track is parallel to a face)
-    Vector3D<typename Backend::precision_v> entry2 = point + dir*smin;
+    Vector3D<typename Backend::precision_v> entry = point + dir*smin;
     Bool_t valid = Backend::kTrue;
     for(unsigned int i=0; i<N; ++i) {
-      Float_t dist = this->fA[i]*entry2.x() + this->fB[i]*entry2.y() + this->fC[i]*entry2.z() + this->fD[i];
+      Float_t dist = this->fA[i]*entry.x() + this->fB[i]*entry.y() + this->fC[i]*entry.z() + this->fD[i];
 
       // valid here means if it is not outside plane, or pdist[i]<=0.
       valid &= (dist <= MakePlusTolerant<true>(0.));
