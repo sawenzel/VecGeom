@@ -218,33 +218,33 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Bottom side with normal approx. -Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[0],pt[4],pt[5],pt[1],0);
+  good = MakePlane(pt[0],pt[1],pt[5],pt[4],0);
 #else
-  good = MakePlane(pt[0],pt[4],pt[5],pt[1],fPlanes[0]);
+  good = MakePlane(pt[0],pt[1],pt[5],pt[4],fPlanes[0]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid
 
   // Top side with normal approx. +Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[2],pt[3],pt[7],pt[6],1);
+  good = MakePlane(pt[2],pt[6],pt[7],pt[3],1);
 #else
-  good = MakePlane(pt[2],pt[3],pt[7],pt[6],fPlanes[1]);
+  good = MakePlane(pt[2],pt[6],pt[7],pt[3],fPlanes[1]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid
 
   // Front side with normal approx. -X
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[0],pt[2],pt[6],pt[4],2);
+  good = MakePlane(pt[0],pt[4],pt[6],pt[2],2);
 #else
-  good = MakePlane(pt[0],pt[2],pt[6],pt[4],fPlanes[2]);
+  good = MakePlane(pt[0],pt[4],pt[6],pt[2],fPlanes[2]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid
 
   // Back side with normal approx. +X
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[1],pt[5],pt[7],pt[3],3);
+  good = MakePlane(pt[1],pt[3],pt[7],pt[5],3);
 #else
-  good = MakePlane(pt[1],pt[5],pt[7],pt[3],fPlanes[3]);
+  good = MakePlane(pt[1],pt[3]+1.f,pt[7],pt[5],fPlanes[3]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid
 
@@ -258,7 +258,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 //////////////////////////////////////////////////////////////////////////////
 //
 // Calculate the coef's of the plane p1->p2->p3->p4->p1
-// where the ThreeVectors 1-4 are in anti-clockwise order when viewed from
+// where the ThreeVectors 1-4 are in clockwise order when viewed from
 // "inside" of the plane (i.e. opposite to normal vector, which points outwards).
 //
 // Return true if the ThreeVectors are coplanar + set coef;s
@@ -293,19 +293,19 @@ bool UnplacedTrapezoid::MakePlane(
     // a,b,c correspond to the x/y/z components of the
     // normal vector to the plane
 
-    // Let create diagonals 4-2 and 3-1 than (4-2)x(3-1) provides
+    // Let create diagonals 3-1 and 4-2 than (3-1)x(4-2) provides
     // vector perpendicular to the plane directed to outside !!!
     // and a,b,c, = f(1,2,3,4) external relative to trapezoid normal
 
     //??? can these be optimized?
-    a = +(p4.y() - p2.y())*(p3.z() - p1.z())
-       - (p3.y() - p1.y())*(p4.z() - p2.z());
+    a = +(p3.y() - p1.y())*(p4.z() - p2.z())
+       - (p4.y() - p2.y())*(p3.z() - p1.z());
 
-    b = -(p4.x() - p2.x())*(p3.z() - p1.z())
-       + (p3.x() - p1.x())*(p4.z() - p2.z());
+    b = -(p3.x() - p1.x())*(p4.z() - p2.z())
+       + (p4.x() - p2.x())*(p3.z() - p1.z());
 
-    c = +(p4.x() - p2.x())*(p3.y() - p1.y())
-       - (p3.x() - p1.x())*(p4.y() - p2.y());
+    c = +(p3.x() - p1.x())*(p4.y() - p2.y())
+       - (p4.x() - p2.x())*(p3.y() - p1.y());
 
     norm = 1.0 / std::sqrt( a*a + b*b + c*c ); // normalization factor, always positive
 
