@@ -50,6 +50,24 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
     MakePlanes();
 }
 
+  UnplacedTrapezoid::UnplacedTrapezoid(Precision xbox, Precision ybox, Precision zbox)
+    : fDz(zbox), fTheta(0.f), fPhi(0.f)
+    , fDy1(ybox), fDx1(xbox), fDx2(xbox), fTanAlpha1(0.f)
+    , fDy2(ybox), fDx3(xbox), fDx4(xbox), fTanAlpha2(0.f)
+    , fTthetaCphi(0.f), fTthetaSphi(0.f), fbbx(xbox), fbby(ybox), fbbz(zbox), fPlanes()
+{
+    // validity check
+  if( xbox <= 0 || ybox <= 0 || zbox <= 0 ) {
+      printf("UnplacedTrapezoid(xbox,...) - GeomSolids0002, Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid\n");
+      printf("\t X=%f, Y=%f, Z=%f", xbox, ybox, zbox);
+
+      // force a crash in a CPU/GPU portable way -- any better (graceful) way to do this?
+      Assert(true);  // -- Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid
+    }
+
+    MakePlanes();
+}
+
 UnplacedTrapezoid::UnplacedTrapezoid(Precision const* params )
   : fDz( params[0] )
   , fTheta( params[1] )
@@ -327,7 +345,7 @@ bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precis
 
 #ifndef VECGEOM_PLANESHELL_DISABLE
   Precision distances[4];
-  fPlanes.DistanceToPoint( Vec3D(point[0], point[1], point[2]), distances );
+  fPlanes.DistanceToPoint( point, distances );
   for(unsigned int i=0; i<4; ++i) {
     if ( std::fabs(distances[i]) <= kHalfTolerance) {
       noSurfaces ++;
