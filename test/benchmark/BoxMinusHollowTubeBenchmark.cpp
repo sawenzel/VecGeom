@@ -42,8 +42,7 @@ int main()
     // translation for boolean solid right shape
     Transformation3D translation(-2.5,0,0);
 
-    VPlacedVolume *worldPlaced = world.Place();
-    GeoManager::Instance().set_world(worldPlaced);
+
 
     TranslatedHollowTube_t const * placedsubtractedtube =
             new TranslatedHollowTube_t(new LogicalVolume("",&subtractedtube), &translation);
@@ -64,13 +63,15 @@ int main()
     // add this boolean solid to the world
     world.PlaceDaughter( sp );
 
-    Benchmarker tester(GeoManager::Instance().world());
-    tester.SetVerbosity(3);
-    tester.SetPoolMultiplier(1);
-    tester.SetRepetitions(1024);
-    tester.SetPointCount(1<<10);
-    tester.RunInsideBenchmark();
-    tester.RunToOutBenchmark();
+    VPlacedVolume *worldPlaced = world.Place();
+    GeoManager::Instance().SetWorld(worldPlaced);
+
+    Benchmarker tester(GeoManager::Instance().GetWorld());
+      tester.SetVerbosity(3);
+      tester.SetRepetitions(1);
+      tester.SetPointCount(1024);
+      tester.RunBenchmark();
+   // tester.RunToOutBenchmark();
 
     return 0;
 }

@@ -40,7 +40,7 @@ int main()
 
 
     VPlacedVolume *worldPlaced = world.Place();
-    GeoManager::Instance().set_world(worldPlaced);
+    GeoManager::Instance().SetWorld(worldPlaced);
 
 
     // now create a specialized box by hand (instead of the factory)
@@ -68,7 +68,7 @@ int main()
     // add this boolean solid to the world
     world.PlaceDaughter( sp );
 
-    Benchmarker tester(GeoManager::Instance().world());
+    Benchmarker tester(GeoManager::Instance().GetWorld());
     tester.SetVerbosity(3);
     tester.SetPoolMultiplier(1);
     tester.SetRepetitions(1024);
