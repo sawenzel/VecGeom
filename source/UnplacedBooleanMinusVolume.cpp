@@ -12,6 +12,7 @@
 #include "volumes/utilities/GenerationUtilities.h"
 #include "volumes/LogicalVolume.h"
 #include "volumes/PlacedVolume.h"
+#include "management/CudaManager.h"
 
 namespace VECGEOM_NAMESPACE
 {
@@ -106,8 +107,8 @@ void UnplacedBooleanMinusVolume_ConstructOnGpu(
 }
 
 void UnplacedBooleanMinusVolume_CopyToGpu(
-        vecgeom_cuda::VPlacedVolume const* left,
-        vecgeom_cuda::VPlacedVolume const* right,
+        VPlacedVolume const* left,
+        VPlacedVolume const* right,
         VUnplacedVolume *const gpu_ptr) {
 
     // here we have our recursion:
@@ -115,16 +116,9 @@ void UnplacedBooleanMinusVolume_CopyToGpu(
     // very brute force; because this might have been copied already
     // TODO: integrate this into CUDA MGR?
 
-  //  Transformation3D const* gpulefttransptr = left->transformation()->CopuToGpu();
-//    Transformation3D const* gpurighttransptr = right->transformation()->CopyToGpu();
-
-    vecgeom_cuda::VPlacedVolume const* leftgpuptr  = left->CopyToGpu (
-            reinterpret_cast< vecgeom_cuda::LogicalVolume const* >(left->logical_volume())->CopyToGpu(),
-            gpulefttransptr );
-
-    vecgeom_cuda::VPlacedVolume const* rightgpuptr = right->CopyToGpu(
-            reinterpret_cast< vecgeom_cuda::LogicalVolume const* >(right->logical_volume())->CopyToGpu(),
-            gpurighttransptr );
+    // use CUDA Manager to lookup GPU pointer
+    VPlacedVolume const* leftgpuptr = CudaManager::Instance().LookupPlaced(left);
+    VPlacedVolume const* rightgpuptr = CudaManager::Instance().LookupPlaced(right);
 
     UnplacedBooleanMinusVolume_ConstructOnGpu<<<1, 1>>>(leftgpuptr, rightgpuptr, gpu_ptr);
 }

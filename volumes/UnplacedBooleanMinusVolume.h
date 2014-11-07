@@ -30,6 +30,7 @@ public:
 
 public:
   // need a constructor
+    VECGEOM_CUDA_HEADER_BOTH
   UnplacedBooleanMinusVolume( VPlacedVolume const* left,
                               VPlacedVolume const* right ) :
                                    fLeftVolume(left),

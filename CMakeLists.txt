@@ -381,7 +381,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedSphere.cpp
 
   source/UnplacedBooleanMinusVolume.cpp
-
+  source/PlacedBooleanMinusVolume.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -476,7 +476,7 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
+#  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -508,9 +508,10 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusHollowTubeBenchmark.cpp
+ # ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusHollowTubeBenchmark.cpp
  # ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusTubeSegBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusHollowTubeBenchmark_virtual.cpp
+ ${CMAKE_SOURCE_DIR}/test/benchmark/3LevelSubtractionBenchmark_virtual.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
