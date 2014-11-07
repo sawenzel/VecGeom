@@ -121,7 +121,7 @@ VcPrecision cos(VcPrecision const &x) {
 
 VECGEOM_INLINE
 VcPrecision tan(VcPrecision const &radians) {
-  return Vc::atan(radians);
+  return Vc::tan(radians);
 }
 
 
