@@ -238,9 +238,9 @@ public:
   virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
                                    Transformation3D const *const transform,
                                    VPlacedVolume *const gpu_ptr) const =0;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transform) const =0;
+
+  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
+                                   Transformation3D const *const transform) const =0;
 #endif
 
 #ifndef VECGEOM_NVCC

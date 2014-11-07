@@ -6,12 +6,17 @@
 #include "volumes/BooleanMinusVolume.h"
 #include "management/GeoManager.h"
 #include "benchmarking/Benchmarker.h"
+#include "ArgParser.h"
+
 
 using namespace vecgeom;
 
 
-int main()
+int main(int argc, char * argv[])
 {
+    OPTION_INT(npoints,1024);
+    OPTION_INT(nrep,1024);
+
     UnplacedBox worldUnplaced(10.,10.,10.);
     LogicalVolume world = LogicalVolume("world", &worldUnplaced);
 
@@ -44,11 +49,10 @@ int main()
 
     Benchmarker tester(GeoManager::Instance().GetWorld());
     tester.SetVerbosity(3);
-   // tester.SetPoolMultiplier(1);
-    tester.SetRepetitions(1024);
-    tester.SetPointCount(1<<10);
-    tester.RunInsideBenchmark();
-    tester.RunToOutBenchmark();
+    tester.SetPoolMultiplier(1);
+    tester.SetRepetitions(nrep);
+    tester.SetPointCount(npoints);
+    tester.RunBenchmark();
 
     return 0;
 }

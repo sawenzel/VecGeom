@@ -54,6 +54,7 @@ public:
 
 }; // endofclassdefinition
 
+typedef SpecializedBooleanMinusVolume<translation::kGeneric, rotation::kGeneric> GenericPlacedBooleanMinusVolume;
 
 } // End global namespace
 

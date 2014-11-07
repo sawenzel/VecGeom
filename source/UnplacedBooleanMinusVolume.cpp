@@ -10,6 +10,8 @@
 #include "volumes/SpecializedBooleanMinusVolume.h"
 #include "management/VolumeFactory.h"
 #include "volumes/utilities/GenerationUtilities.h"
+#include "volumes/LogicalVolume.h"
+#include "volumes/PlacedVolume.h"
 
 namespace VECGEOM_NAMESPACE
 {
@@ -51,3 +53,84 @@ VPlacedVolume* UnplacedBooleanMinusVolume::SpecializedVolume(
 
 
 }
+
+
+// functions to copy data structures to GPU
+namespace vecgeom {
+
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+// declaration of a common helper function
+void UnplacedBooleanMinusVolume_CopyToGpu(
+     VPlacedVolume const* left,
+     VPlacedVolume const* right,
+     VUnplacedVolume *const gpu_ptr);
+
+
+// implementation of the virtual functions CopyToGpu
+VUnplacedVolume* UnplacedBooleanMinusVolume::CopyToGpu(
+    VUnplacedVolume *const gpu_ptr) const {
+
+    UnplacedBooleanMinusVolume_CopyToGpu(fLeftVolume, fRightVolume, gpu_ptr);
+    CudaAssertError();
+
+    return gpu_ptr;
+
+}
+
+VUnplacedVolume* UnplacedBooleanMinusVolume::CopyToGpu() const {
+  // doing an allocation
+  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedBooleanMinusVolume>();
+
+  // construct object in pre-allocated space
+  return this->CopyToGpu(gpu_ptr);
+}
+
+#endif
+
+#ifdef VECGEOM_NVCC
+
+class VUnplacedVolume;
+
+__global__
+void UnplacedBooleanMinusVolume_ConstructOnGpu(
+    VPlacedVolume const * left,
+    VPlacedVolume const * right,
+    VUnplacedVolume *const gpu_ptr) {
+
+    new(gpu_ptr) vecgeom_cuda::UnplacedBooleanMinusVolume(
+        reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(left),
+        reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(right));
+
+}
+
+void UnplacedBooleanMinusVolume_CopyToGpu(
+        vecgeom_cuda::VPlacedVolume const* left,
+        vecgeom_cuda::VPlacedVolume const* right,
+        VUnplacedVolume *const gpu_ptr) {
+
+    // here we have our recursion:
+    // since UnplacedBooleanMinusVolume has pointer members we need to copy/construct those members too
+    // very brute force; because this might have been copied already
+    // TODO: integrate this into CUDA MGR?
+
+  //  Transformation3D const* gpulefttransptr = left->transformation()->CopuToGpu();
+//    Transformation3D const* gpurighttransptr = right->transformation()->CopyToGpu();
+
+    vecgeom_cuda::VPlacedVolume const* leftgpuptr  = left->CopyToGpu (
+            reinterpret_cast< vecgeom_cuda::LogicalVolume const* >(left->logical_volume())->CopyToGpu(),
+            gpulefttransptr );
+
+    vecgeom_cuda::VPlacedVolume const* rightgpuptr = right->CopyToGpu(
+            reinterpret_cast< vecgeom_cuda::LogicalVolume const* >(right->logical_volume())->CopyToGpu(),
+            gpurighttransptr );
+
+    UnplacedBooleanMinusVolume_ConstructOnGpu<<<1, 1>>>(leftgpuptr, rightgpuptr, gpu_ptr);
+}
+
+#endif
+
+} // End namespace vecgeom
+
+

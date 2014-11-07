@@ -12,7 +12,6 @@
 namespace VECGEOM_NAMESPACE {
 
 
-
 /**
  * an ordinary (non-templated) implementation of a BooleanMinus solid
  * using the virtual function interface of its constituents
@@ -151,6 +150,7 @@ struct BooleanMinusImplementation {
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
 void BooleanMinusImplementation<transCodeT, rotCodeT>::UnplacedContains(
     UnplacedBooleanMinusVolume const & unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
@@ -287,11 +287,46 @@ template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void BooleanMinusImplementation<transCodeT, rotCodeT>::InsideKernel(
     UnplacedBooleanMinusVolume const &unplaced,
-    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &p,
     typename Backend::inside_v &inside) {
 
   // now use the Inside functionality of left and right components
+  // algorithm taken from Geant4 implementation
+  VPlacedVolume const*const fPtrSolidA = unplaced.fLeftVolume;
+  VPlacedVolume const*const fPtrSolidB = unplaced.fRightVolume;
 
+  typename Backend::inside_v positionA = fPtrSolidA->Inside(p);
+  if ( positionA == EInside::kOutside ){
+        inside = EInside::kOutside;
+        return;
+  }
+
+  typename Backend::inside_v positionB = fPtrSolidB->Inside(p);
+
+  if(positionA == EInside::kInside && positionB == EInside::kOutside)
+  {
+     inside = EInside::kInside;
+     return;
+  }
+  else {
+    if(( positionA == EInside::kInside  && positionB == EInside::kSurface) ||
+       ( positionB == EInside::kOutside && positionA == EInside::kSurface)
+/*
+         || ( positionA == EInside::kSurface && positionB == EInside::kSurface &&
+           ( fPtrSolidA->Normal(p) -
+             fPtrSolidB->Normal(p) ).mag2() >
+           1000.0*G4GeometryTolerance::GetInstance()->GetRadialTolerance() ) )
+*/ )
+      {
+        inside = EInside::kSurface;
+        return;
+      }
+      else
+      {
+        inside = EInside::kOutside;
+        return;
+      }
+    }
   // going to be a bit more complicated due to Surface states
 }
 
@@ -301,13 +336,96 @@ template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void BooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     UnplacedBooleanMinusVolume const &unplaced,
-    Vector3D<typename Backend::precision_v> const &point,
-    Vector3D<typename Backend::precision_v> const &direction,
+    Vector3D<typename Backend::precision_v> const &p,
+    Vector3D<typename Backend::precision_v> const &v,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v      Bool_t;
+
+  // for the moment we take implementation from Geant4
+  Float_t dist = 0.0,disTmp = 0.0 ;
+
+  VPlacedVolume const* const fPtrSolidB = unplaced.fRightVolume;
+  VPlacedVolume const* const fPtrSolidA = unplaced.fLeftVolume;
+
+  if ( fPtrSolidB->Contains(p) )   // start: out of B if inside B
+     {
+       dist = fPtrSolidB->DistanceToOut(p,v) ; // ,calcNorm,validNorm,n) ;
+
+       if( ! fPtrSolidA->Contains(p+dist*v) ){
+         int count1=0;
+         Bool_t contains;
+         do {
+          disTmp = fPtrSolidA->DistanceToIn(p+dist*v,v) ;
+
+          if(disTmp == kInfinity) {
+              distance=kInfinity;
+              return;
+          }
+          dist += disTmp ;
+
+          // Contains is the one from this solid
+          UnplacedContains<Backend>( unplaced, p+dist*v, contains );
+          if( IsEmpty(contains) ) /* if not contained */
+          {
+            disTmp = fPtrSolidB->DistanceToOut(p+dist*v,v) ;
+            dist += disTmp ;
+            count1++;
+            if( count1 > 1000 )  // Infinite loop detected
+            {
+               // EMIT WARNING
+            }
+          }
+          UnplacedContains<Backend>( unplaced, p+dist*v, contains );
+        }
+        while( IsEmpty(contains) );
+       }
+    }
+  else // p outside A, start in A
+    {
+       dist = fPtrSolidA->DistanceToIn(p,v) ;
+
+       if( dist == kInfinity ) // past A, hence past A\B
+       {
+         distance=kInfinity;
+           return;
+       }
+       else
+       {
+         int count2=0;
+         Bool_t contains;
+         UnplacedContains<Backend>(unplaced, p+dist*v, contains);
+         while( IsEmpty(contains) )  // pushing loop
+         {
+           disTmp = fPtrSolidB->DistanceToOut(p+dist*v,v) ;
+           dist += disTmp ;
+
+           UnplacedContains<Backend>(unplaced, p+dist*v, contains);
+           if( IsEmpty(contains) )
+           {
+             disTmp = fPtrSolidA->DistanceToIn(p+dist*v,v) ;
+
+             if(disTmp == kInfinity) // past A, hence past A\B
+             {
+               distance=kInfinity;
+                 return;
+             }
+             dist += disTmp ;
+             count2++;
+             if( count2 > 1000 )  // Infinite loop detected
+             {
+               // EMIT WARNING
+             }
+           }
+         }
+       }
+     }
+    distance=dist;
+   return;
+
+
 
   // TOBEDONE: ASK Andrei about the while loop
   // Compute distance from a given point outside to the shape.
@@ -358,9 +476,8 @@ void BooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 //        fRightMat->MasterToLocal(&master[0], &local[0]);
 //        inside = kTRUE;
 //     }
-
 }
-#include <iostream>
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -385,11 +502,27 @@ template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void BooleanMinusImplementation<transCodeT, rotCodeT>::SafetyToInKernel(
     UnplacedBooleanMinusVolume const & unplaced,
-    Vector3D<typename Backend::precision_v> const &point,
+    Vector3D<typename Backend::precision_v> const &p,
     typename Backend::precision_v &safety) {
 
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
+
+  VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
+  VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
+
+  // very approximate
+  if( ( fPtrSolidA->Contains(p) ) &&   // case 1
+        ( fPtrSolidB->Contains(p) ) )
+    {
+        safety = fPtrSolidB->SafetyToOut(p);
+    }
+    else
+    {
+        // po
+        safety = fPtrSolidA->SafetyToIn(p);
+    }
+    return;
 
   // this is a very crude algorithm which as very many "virtual" surfaces
   // which could return a very small safety
