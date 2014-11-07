@@ -46,10 +46,13 @@ public:
 
   SOA3D(SOA3D<T> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D();
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D& operator=(SOA3D<T> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   ~SOA3D();
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -139,7 +142,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void push_back(Vector3D<T> const &vec);  
+  void push_back(Vector3D<T> const &vec);
 
 #ifdef VECGEOM_CUDA
   SOA3D<T>* CopyToGpu(T *xGpu, T *yGpu, T *zGpu) const;
@@ -190,11 +193,14 @@ SOA3D<T>::SOA3D(SOA3D<T> const &rhs)
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>::SOA3D()
     : fAllocated(false), fSize(0), fCapacity(0), fX(NULL), fY(NULL), fZ(NULL) {}
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>& SOA3D<T>::operator=(SOA3D<T> const &rhs) {
+#ifndef VECGEOM_NVCC_DEVICE
   fSize = rhs.fSize;
   fCapacity = rhs.fCapacity;
   Deallocate();
@@ -208,12 +214,23 @@ SOA3D<T>& SOA3D<T>::operator=(SOA3D<T> const &rhs) {
     fY = rhs.fY;
     fZ = rhs.fZ;
   }
+#else
+  fAllocated = false;
+  fSize = rhs.fSize;
+  fCapacity = rhs.fCapacity;
+  fX = rhs.fX;
+  fY = rhs.fY;
+  fZ = rhs.fZ;
+#endif
   return *this;
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>::~SOA3D() {
+#ifndef VECGEOM_NVCC_DEVICE
   Deallocate();
+#endif
 }
 
 template <typename T>

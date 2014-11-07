@@ -22,6 +22,7 @@ private:
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Array();
 
@@ -31,13 +32,15 @@ public:
   VECGEOM_INLINE
   Array(Array<Type> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Array(Type *data, int size);
+
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   ~Array();
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Array(Type *const data, const unsigned size);
-
   VECGEOM_INLINE
   Array& operator=(Array<Type> const &other);
 
@@ -58,8 +61,6 @@ public:
 
   VECGEOM_INLINE
   void Deallocate();
-
-public:
 
   typedef Type* iterator;
   typedef Type const* const_iterator;
@@ -83,6 +84,7 @@ public:
 };
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 Array<Type>::Array() : fData(NULL), fSize(0), fAllocated(false) {}
 
 template <typename Type>
@@ -97,11 +99,15 @@ Array<Type>::Array(Array<Type> const &other) : fData(NULL), fAllocated(true) {
 }
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Array<Type>::Array(Type *data, int size)
+    : fData(data), fSize(size), fAllocated(false) {}
+
+template <typename Type>
 Array<Type>::~Array() {
-#ifndef VECGEOM_CUDA
+#ifndef VECGEOM_NVCC_DEVICE
   if (fAllocated) _mm_free(fData);
-#else
-  if (fAllocated) delete fData;
 #endif
 }
 
@@ -134,15 +140,17 @@ void Array<Type>::Deallocate() {
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
-Array<Type>::Array(Type *const data, const unsigned size)
-    : fSize(size), fData(data), fAllocated(false) {}
-
-template <typename Type>
 VECGEOM_INLINE
 Array<Type>& Array<Type>::operator=(Array<Type> const &other) {
+#ifndef VECGEOM_NVCC_DEVICE
   Deallocate();
   Allocate(other.fSize);
   copy(other.fData, other.fData+other.fSize, fData);
+#else
+  fData = other.fData;
+  fSize = other.fSize;
+  fAllocated = false;
+#endif
   return *this;
 }
 
