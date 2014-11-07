@@ -68,7 +68,7 @@ int main()
 
     Benchmarker tester(GeoManager::Instance().GetWorld());
       tester.SetVerbosity(3);
-      tester.SetRepetitions(1);
+      tester.SetRepetitions(1024);
       tester.SetPointCount(1024);
       tester.RunBenchmark();
    // tester.RunToOutBenchmark();

@@ -1,8 +1,8 @@
 /// \file PlacedBox.h
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#ifndef VECGEOM_VOLUMES_PLACEDTBOOLEANMINUS_H_
-#define VECGEOM_VOLUMES_PLACEDTBOOLEANMINUS_H_
+#ifndef VECGEOM_VOLUMES_TPLACEDTBOOLEANMINUS_H_
+#define VECGEOM_VOLUMES_TPLACEDTBOOLEANMINUS_H_
 
 #include "base/Global.h"
 #include "backend/Backend.h"
@@ -129,7 +129,7 @@ public:
       Transformation3D const * rightm = right->transformation();
       return new G4SubtractionSolid(
                                   GetLabel(),                                  const_cast<G4VSolid*>(left->ConvertToGeant4()),                                 const_cast<G4VSolid*>(right->ConvertToGeant4()), 0, 
-G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2)), );  }
+G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2)) );  }
 #endif
 #endif // VECGEOM_BENCHMARK
 

@@ -10,7 +10,7 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <typename LeftUnplacedVolume_t, typename RightPlacedVolume_t, TranslationCode transCodeT, RotationCode rotCodeT>
+template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedBooleanMinusVolume
     : public ScalarShapeImplementationHelper<PlacedBooleanMinusVolume,
                                        BooleanMinusImplementation<transCodeT, rotCodeT> >

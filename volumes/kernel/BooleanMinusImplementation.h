@@ -11,13 +11,14 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
+
 
 /**
  * an ordinary (non-templated) implementation of a BooleanMinus solid
  * using the virtual function interface of its constituents
  * Note that the Backend here is usually not kVc
  */
+template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanMinusImplementation {
 
   //
@@ -375,7 +376,8 @@ void BooleanMinusImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
 
     distance = unplaced.fLeftVolume->DistanceToOut( point, direction, stepMax );
     Float_t dinright = unplaced.fRightVolume->DistanceToIn( point, direction, stepMax );
-    return Min( distance, dinright );
+    distance = Min( distance, dinright );
+    return;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

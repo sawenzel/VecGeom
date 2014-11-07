@@ -5,6 +5,7 @@
 #include "base/AlignedBase.h"
 #include "base/Vector3D.h"
 #include "volumes/UnplacedVolume.h"
+#include "volumes/PlacedVolume.h"
 
 namespace VECGEOM_NAMESPACE {
 
@@ -26,8 +27,6 @@ class UnplacedBooleanMinusVolume : public VUnplacedVolume, public AlignedBase {
 public:
     VPlacedVolume const* fLeftVolume;
     VPlacedVolume const* fRightVolume;
-    //LeftUnplacedVolume_t const* fLeftVolume;
-    //RightPlacedVolume_t  const* fRightVolume;
 
 public:
   // need a constructor
@@ -77,69 +76,31 @@ public:
 
   virtual void Print(std::ostream &os) const {};
 
-#ifndef VECGEOM_NVCC
-  template <TranslationCode trans_code, RotationCode rot_code>
-  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
-                               Transformation3D const *const transformation,
-                               VPlacedVolume *const placement = NULL) {
-//      if (placement) {
-//          new(placement) TSpecializedBooleanMinusVolume<LeftUnplacedVolume_t, RightPlacedVolume_t,
-//                  trans_code, rot_code>(logical_volume,
-//                                                              transformation);
-//          return placement;
-//        }
-  //      return new TSpecializedBooleanMinusVolume<LeftUnplacedVolume_t, RightPlacedVolume_t, trans_code, rot_code>(logical_volume,
-   //                                                     transformation);
- }
+  template <TranslationCode transCodeT, RotationCode rotCodeT>
+   VECGEOM_CUDA_HEADER_DEVICE
+   static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
+                                Transformation3D const *const transformation,
+ #ifdef VECGEOM_NVCC
+                                const int id,
+ #endif
+                                VPlacedVolume *const placement = NULL);
 
-  static VPlacedVolume* CreateSpecializedVolume(
-      LogicalVolume const *const volume,
-      Transformation3D const *const transformation,
-      const TranslationCode trans_code, const RotationCode rot_code,
-      VPlacedVolume *const placement = NULL) {
+ #ifdef VECGEOM_CUDA_INTERFACE
+   virtual VUnplacedVolume* CopyToGpu() const;
+   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+ #endif
 
-     // return VolumeFactory::CreateByTransformation<TUnplacedBooleanMinusVolume<LeftUnplacedVolume_t, RightPlacedVolume_t> >(
-     //           volume, transformation, trans_code, rot_code, placement
-     //         );
-  }
+ private:
 
-#else // for CUDA
-  template <TranslationCode trans_code, RotationCode rot_code>
-  __device__
-  static VPlacedVolume* Create(LogicalVolume const *const logical_volume,
-                               Transformation3D const *const transformation,
-                               const int id,
-                               VPlacedVolume *const placement = NULL);
-  __device__
-  static VPlacedVolume* CreateSpecializedVolume(
-      LogicalVolume const *const volume,
-      Transformation3D const *const transformation,
-      const TranslationCode trans_code, const RotationCode rot_code,
-      const int id, VPlacedVolume *const placement = NULL);
-#endif
-
-private:
-
-#ifndef VECGEOM_NVCC
-  virtual VPlacedVolume* SpecializedVolume(
-      LogicalVolume const *const volume,
-      Transformation3D const *const transformation,
-      const TranslationCode trans_code, const RotationCode rot_code,
-      VPlacedVolume *const placement = NULL) const {
-    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
-                                   placement);
-  }
-#else
-  __device__
-  virtual VPlacedVolume* SpecializedVolume(
-      LogicalVolume const *const volume,
-      Transformation3D const *const transformation,
-      const TranslationCode trans_code, const RotationCode rot_code,
-      const int id, VPlacedVolume *const placement = NULL) const {
-    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
-                                   id, placement);
-  }
-#endif
+   VECGEOM_CUDA_HEADER_DEVICE
+   virtual VPlacedVolume* SpecializedVolume(
+       LogicalVolume const *const volume,
+       Transformation3D const *const transformation,
+       const TranslationCode trans_code, const RotationCode rot_code,
+ #ifdef VECGEOM_NVCC
+       const int id,
+ #endif
+       VPlacedVolume *const placement = NULL) const;
 
 }; // End class
 

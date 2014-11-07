@@ -44,7 +44,7 @@ int main()
 
     Benchmarker tester(GeoManager::Instance().GetWorld());
     tester.SetVerbosity(3);
-    tester.SetPoolMultiplier(1);
+   // tester.SetPoolMultiplier(1);
     tester.SetRepetitions(1024);
     tester.SetPointCount(1<<10);
     tester.RunInsideBenchmark();

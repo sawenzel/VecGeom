@@ -6,19 +6,24 @@
  
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
-#include "volumes/kernel/BooleanMinusImplementation.h"
 #include "volumes/UnplacedBooleanMinusVolume.h"
-//#define VECGEOM_ROOT
-//#define VECGEOM_BENCHMARK
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
+#include "TGeoVolume.h"
 #include "TGeoCompositeShape.h"
 #include "TGeoBoolNode.h"
 #include "TGeoMatrix.h"
+#include "TGeoManager.h"
 #endif
+
 #ifdef VECGEOM_USOLIDS
 #include "UBox.hh"
 #endif
+#ifdef VECGEOM_GEANT4
+#include "G4SubtractionSolid.hh"
+#include "G4ThreeVector.hh"
+#endif
+
 
 namespace VECGEOM_NAMESPACE {
 
@@ -83,35 +88,24 @@ public:
   }
 
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const {
+ virtual TGeoShape const* ConvertToRoot() const {
       printf("Converting to ROOT\n");
       // what do we need?
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * leftm = left->transformation();
       Transformation3D const * rightm = right->transformation();
-      TGeoRotation * leftRootRotation = new TGeoRotation();
-      leftRootRotation->SetMatrix( leftm->Rotation() );
-      TGeoRotation * rightRootRotation = new TGeoRotation();
-          rightRootRotation->SetMatrix( rightm->Rotation() );
-      TGeoCombiTrans * leftRootMatrix = new TGeoCombiTrans(
-              leftm->Translation(0),
-              leftm->Translation(1),
-              leftm->Translation(2),
-              leftRootRotation);
-      TGeoCombiTrans * rightRootMatrix = new TGeoCombiTrans(
-              rightm->Translation(0),
-              rightm->Translation(1),
-              rightm->Translation(2),
-              rightRootRotation);
-
-      // do some asserts that the transformations are correct
-
-      TGeoSubtraction * node = new TGeoSubtraction(
+            TGeoSubtraction * node = new TGeoSubtraction(
               const_cast<TGeoShape*>(left->ConvertToRoot()),
               const_cast<TGeoShape*>(right->ConvertToRoot()),
-              leftRootMatrix, rightRootMatrix);
-      return new TGeoCompositeShape("RootComposite",node);
+              leftm->ConvertToTGeoMatrix(), rightm->ConvertToTGeoMatrix());
+      TGeoShape * shape = new TGeoCompositeShape("RootComposite",node);
+      //TGeoManager *m = new TGeoManager();
+      gGeoManager->SetTopVolume( new TGeoVolume("world",shape) );
+      //gGeoManager->CloseGeometry();
+      gGeoManager->Export("FOO.root");
+      shape->InspectShape();
+      return shape;
   }
 #endif
 #ifdef VECGEOM_USOLIDS
@@ -119,6 +113,19 @@ public:
       printf("Converting to USOLIDS\n");
       return new UBox("",10,10,10);
   }
+#endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const {
+      printf("Converting to Geant4\n");
+      VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
+      VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
+      Transformation3D const * rightm = right->transformation();
+      return new G4SubtractionSolid( GetLabel(),
+              const_cast<G4VSolid*>(left->ConvertToGeant4()),
+              const_cast<G4VSolid*>(right->ConvertToGeant4()),
+              0, /* no rotation for the moment */
+              G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
+            );  }
 #endif
 #endif // VECGEOM_BENCHMARK
 
