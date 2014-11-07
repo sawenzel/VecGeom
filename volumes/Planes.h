@@ -27,15 +27,24 @@ private:
 
 public:
 
+#ifndef VECGEOM_NVCC
   Planes(int size);
+#else
+  __device__
+  Planes();
+  __device__
+  Planes(Precision *a, Precision *b, Precision *c, Precision *d, int size);
+#endif
 
+  VECGEOM_CUDA_HEADER_BOTH
   ~Planes();
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Planes& operator=(Planes const &rhs);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   int size() const;
-
-  Planes& operator=(Planes const &other);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -88,6 +97,8 @@ public:
       Vector3D<typename Backend::precision_v> const &point) const;
 
 };
+
+std::ostream& operator<<(std::ostream &os, Planes const &planes);
 
 VECGEOM_CUDA_HEADER_BOTH
 int Planes::size() const {
@@ -276,15 +287,13 @@ typename Backend::precision_v Planes::Distance(
 
   Float_t bestDistance = kInfinity;
   for (int i = 0, iMax = size(); i < iMax; ++i) {
-    Float_t distance = vecgeom::FlipSign<!pointInsideT>::Flip(
+    Float_t distance = VECGEOM_NAMESPACE::FlipSign<!pointInsideT>::Flip(
         point.Dot(fNormals[i]) + fDistances[i]);
     MaskedAssign(distance >= 0 && distance < bestDistance, distance,
                  &bestDistance);
   }
   return bestDistance;
 }
-
-std::ostream& operator<<(std::ostream &os, Planes const &planes);
 
 } // End global namespace
 

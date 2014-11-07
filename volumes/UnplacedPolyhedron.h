@@ -26,6 +26,9 @@ public:
     Quadrilaterals phi;
     Quadrilaterals inner;
     bool hasInnerRadius;
+#ifdef VECGEOM_CUDA_INTERFACE
+    void CopyToGpu(void *gpuptr) const;
+#endif
   };
 
 private:
@@ -37,9 +40,9 @@ private:
   // v       /        ^       \ fPhiSections
   //        /    rMax |     /  \.
   //       /          |    o    \.
-  //      /       ____|___/      \. 
+  //      /       ____|___/      \.
   //     /       /    ^   \       \.
-  //    /       /     |rMin\       \. 
+  //    /       /     |rMin\       \.
   //   /       /      |     \--o--o-\ fPhiSections
   //   \       \            /       /
   //    \       \          /       /
@@ -54,12 +57,12 @@ private:
   //
   //
   //                          fZPlanes[size-1]
-  //  rMax[1]_____rMax[2]  __       |
+  // fRMax[1]_____fRMax[2] __       |
   //       /|     |\     /|  \___   v
   //      / |     | \___/ |  |   |\.
   //     |  |     | |   | |  |   | \.
   //     |  |     | |   | |  |   |  |
-  //     |  |     | |___| |  |   | / 
+  //     |  |     | |___| |  |   | /
   //      \ |     | /   \ |  |___|/    ^
   //     ^ \|_____|/     \|__/         | R/Phi
   //     |                         Z   |
@@ -67,7 +70,6 @@ private:
 
   int fSideCount;
   bool fHasInnerRadii, fHasPhiCutout, fHasLargePhiCutout;
-  Precision fEndCapsOuterRadii[2];
   Array<ZSegment> fZSegments;
   Array<Precision> fZPlanes, fRMin, fRMax;
   SOA3D<Precision> fPhiSections;
@@ -91,6 +93,16 @@ public:
       Precision zPlanes[],
       Precision rMin[],
       Precision rMax[]);
+#endif
+
+#ifdef VECGEOM_NVCC
+  __device__
+  UnplacedPolyhedron(
+      int sideCount, bool hasInnerRadii, bool hasPhiCutout,
+      bool hasLargePhiCutout, ZSegment *segmentData, Precision *zPlaneData,
+      int zPlaneCount, Precision *phiSectionX, Precision *phiSectionY,
+      Precision *phiSectionZ, UnplacedTube const &boundingTube,
+      Precision boundingTubeOffset);
 #endif
 
   virtual ~UnplacedPolyhedron() {}
@@ -141,14 +153,6 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Precision GetStartCapOuterRadius() const { return fEndCapsOuterRadii[0]; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision GetEndCapOuterRadius() const { return fEndCapsOuterRadii[1]; }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Vector3D<Precision> GetPhiSection(int i) const { return fPhiSections[i]; }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -191,14 +195,8 @@ public:
       VPlacedVolume *const placement) const;
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const {
-    Assert(0, "NYI");
-    return NULL;
-  }
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const {
-    Assert(0, "NYI");
-    return NULL;
-  }
+  virtual VUnplacedVolume* CopyToGpu() const;
+  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
 #endif
 
 };

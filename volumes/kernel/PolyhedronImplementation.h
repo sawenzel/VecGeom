@@ -7,7 +7,7 @@
 #include "base/Global.h"
 
 #include "backend/Backend.h"
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 #include "backend/cuda/Backend.h"
 #endif
 #include "base/Vector3D.h"
@@ -241,7 +241,7 @@ int FindZSegmentKernel<kScalar>(
   return index;
 }
 
-#ifdef VECGEOM_CUDA
+#ifdef VECGEOM_NVCC
 template <>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE

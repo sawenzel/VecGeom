@@ -40,6 +40,7 @@ public:
 
 #endif
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedPolyhedron() {}
 
   // Accessors

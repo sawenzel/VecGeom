@@ -84,22 +84,63 @@ G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
 }
 #endif
 
-#endif // VECGEOM_NVCC
+#endif // !VECGEOM_NVCC
+
+} // End global namespace
+
+namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
+
+void PlacedPolyhedron_CopyToGpu(LogicalVolume const *const logical_volume,
+                                Transformation3D const *const transformation,
+                                const int id,
+                                VPlacedVolume *const gpu_ptr);
+
 VPlacedVolume* PlacedPolyhedron::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     VPlacedVolume *const gpu_ptr) const {
-  assert(0);
-  return NULL;
+  vecgeom::PlacedPolyhedron_CopyToGpu(logical_volume, transformation,
+                                      VPlacedVolume::id(), gpu_ptr);
+  vecgeom::CudaAssertError();
+  return gpu_ptr;
 }
+
 VPlacedVolume* PlacedPolyhedron::CopyToGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation) const {
-  assert(0);
-  return NULL;
+  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedPolyhedron>();
+  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
 }
-#endif
 
-} // End global namespace
+#endif // VECGEOM_CUDA_INTERFACE
+
+#ifdef VECGEOM_NVCC
+
+class LogicalVolume;
+class Transformation3D;
+class VPlacedVolume;
+
+__global__
+void PlacedPolyhedron_ConstructOnGpu(
+    LogicalVolume const *const logical_volume,
+    Transformation3D const *const transformation, const int id,
+    VPlacedVolume *const gpu_ptr) {
+  new(gpu_ptr) vecgeom_cuda::SimplePolyhedron(
+    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
+    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
+    id
+  );
+}
+
+void PlacedPolyhedron_CopyToGpu(LogicalVolume const *const logical_volume,
+                                Transformation3D const *const transformation,
+                                const int id, VPlacedVolume *const gpu_ptr) {
+  PlacedPolyhedron_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation, id,
+                                            gpu_ptr);
+}
+
+#endif // VECGEOM_NVCC
+
+} // End namespace vecgeom

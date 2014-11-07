@@ -3,13 +3,32 @@
 
 namespace VECGEOM_NAMESPACE {
 
+#ifndef VECGEOM_NVCC
 Planes::Planes(int size) : fNormals(size), fDistances(size) {}
+#else
+__device__
+Planes::Planes() : fNormals(), fDistances() {}
+__device__
+Planes::Planes(Precision *a, Precision *b, Precision *c, Precision *d,
+               int size) : fNormals(a, b, c, size), fDistances(d, size) {}
+#endif
 
+VECGEOM_CUDA_HEADER_BOTH
 Planes::~Planes() {}
 
-Planes& Planes::operator=(Planes const &other) {
-  fNormals = other.fNormals;
-  fDistances = other.fDistances;
+VECGEOM_CUDA_HEADER_BOTH
+Planes& Planes::operator=(Planes const &rhs) {
+#ifndef VECGEOM_NVCC_DEVICE
+  fNormals = rhs.fNormals;
+  fDistances = rhs.fDistances;
+#else
+  fNormals = SOA3D<Precision>(
+      const_cast<Precision*>(rhs.fNormals.x()),
+      const_cast<Precision*>(rhs.fNormals.y()),
+      const_cast<Precision*>(rhs.fNormals.z()), rhs.fNormals.size());
+  fDistances = Array<Precision>(
+      const_cast<Precision*>(&rhs.fDistances[0]), rhs.fDistances.size());
+#endif
   return *this;
 }
 
@@ -44,4 +63,4 @@ std::ostream& operator<<(std::ostream &os, Planes const &planes) {
   return os;
 }
 
-}
+} // End global namespace

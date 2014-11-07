@@ -36,6 +36,22 @@ public:
   Quadrilaterals(int size);
 #endif
 
+#ifdef VECGEOM_NVCC
+  // What a nice signature
+  __device__
+  Quadrilaterals(
+      Precision *planeA, Precision *planeB, Precision *planeC,
+      Precision *planeD, Precision *side0A, Precision *side0B,
+      Precision *side0C, Precision *side0D, Precision *side1A,
+      Precision *side1B, Precision *side1C, Precision *side1D,
+      Precision *side2A, Precision *side2B, Precision *side2C,
+      Precision *side2D, Precision *side3A, Precision *side3B,
+      Precision *side3C, Precision *side3D, Vector3D<Precision> *corner0,
+      Vector3D<Precision> *corner1, Vector3D<Precision> *corner2,
+      Vector3D<Precision> *corner3, int size);
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
   ~Quadrilaterals();
 
   Quadrilaterals(Quadrilaterals const &other);
@@ -131,6 +147,10 @@ public:
   Precision ScalarDistanceSquared(
       int index,
       Vector3D<Precision> const &point) const;
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  void CopyToGpu(void *gpuPtr) const;
+#endif
 
 };
 
@@ -233,10 +253,11 @@ struct AcceleratedDistanceToIn<kScalar> {
       VcPrecision distanceTest = plane.Dot(point) + dPlane;
       // Check if the point is in front of/behind the plane according to the
       // template parameter
-      VcBool valid = FlipSign<behindPlanesT>::Flip(distanceTest) >= 0;
+      VcBool valid = vecgeom::FlipSign<behindPlanesT>::Flip(distanceTest) >= 0;
       if (IsEmpty(valid)) continue;
       VcPrecision directionProjection = plane.Dot(direction);
-      valid &= FlipSign<!behindPlanesT>::Flip(directionProjection) >= 0;
+      valid &= vecgeom::FlipSign<!behindPlanesT>::Flip(
+          directionProjection) >= 0;
       if (IsEmpty(valid)) continue;
       distanceTest /= -directionProjection;
       Vector3D<VcPrecision> intersection =
@@ -289,10 +310,12 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Float_t distance = point.Dot(normal) + fPlanes.GetDistance(i);
     // Check if the point is in front of/behind the plane according to the
     // template parameter
-    Bool_t valid = vecgeom::FlipSign<behindPlanesT>::Flip(distance) >= 0;
+    Bool_t valid =
+        VECGEOM_NAMESPACE::FlipSign<behindPlanesT>::Flip(distance) >= 0;
     if (IsEmpty(valid)) continue;
     Float_t directionProjection = direction.Dot(normal);
-    valid &= vecgeom::FlipSign<!behindPlanesT>::Flip(directionProjection) >= 0;
+    valid &= VECGEOM_NAMESPACE::FlipSign<!behindPlanesT>::Flip(
+        directionProjection) >= 0;
     if (IsEmpty(valid)) continue;
     distance /= -directionProjection;
     Vector3D<Float_t> intersection = point + direction*distance;
