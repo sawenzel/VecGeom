@@ -170,9 +170,9 @@ class UTrap : public VUSolid
 
     bool Normal(const UVector3& aPoint, UVector3& aNormal) const;
 
-    double DistanceToIn(const UVector3& p, const UVector3& v, double) const;
+    double DistanceToIn(const UVector3& p, const UVector3& v, double=UUtils::kInfinity) const;
 
-    double SafetyFromOutside(const UVector3& p, bool precise) const;
+    double SafetyFromOutside(const UVector3& p, bool precise=false) const;
 
     double DistanceToOut(const UVector3& p,
                          const UVector3&  v,
@@ -180,13 +180,15 @@ class UTrap : public VUSolid
                          bool&           aConvex,
                          double aPstep = UUtils::kInfinity) const;
 
-    double SafetyFromInside(const UVector3& p, bool precise) const;
+    double SafetyFromInside(const UVector3& p, bool precise=false) const;
 
     UGeometryType GetEntityType() const;
 
     UVector3 GetPointOnSurface() const;
 
     VUSolid* Clone() const;
+   
+    virtual void Extent(UVector3& aMin, UVector3& aMax) const;
 
     std::ostream& StreamInfo(std::ostream& os) const;
 
@@ -232,8 +234,7 @@ class UTrap : public VUSolid
 
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-    virtual void Extent(UVector3& aMin, UVector3& aMax) const;
-
+  
   private:
 
     double fDz, fTthetaCphi, fTthetaSphi;
