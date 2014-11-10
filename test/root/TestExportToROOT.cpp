@@ -24,6 +24,7 @@
 #include "management/RootGeoManager.h"
 #include "management/GeoManager.h"
 #include "TGeoManager.h"
+#include "TGeoBranchArray.h"
 #include <iostream>
 
 using namespace vecgeom;
@@ -157,6 +158,8 @@ int main()
     // create one million navigation state objects
     NavigationState ** states1 = new NavigationState*[NPOINTS];
     NavigationState ** states2 = new NavigationState*[NPOINTS];
+    TGeoBranchArray ** rootstates = new TGeoBranchArray*[NPOINTS];
+
     SimpleNavigator nav;
     for( int i=0;i<NPOINTS;++i )
     {
@@ -167,6 +170,17 @@ int main()
 
     // exporting to ROOT file
     RootGeoManager::Instance().ExportToROOTGeometry( world, "geom1.root" );
+
+    /*** locate in ROOT geometry        **/
+    for( int i=0; i<NPOINTS; ++i){
+        rootstates[i] = states1[i]->ToTGeoBranchArray();
+
+        TGeoNavigator * nav = ::gGeoManager->GetCurrentNavigator();
+        nav->FindNode( testpoints[i][0], testpoints[i][1], testpoints[i][2] );
+        // save state in a ROOT state
+        rootstates[i]->InitFromNavigator(nav);
+    }
+    /*** end locate in ROOT geometry ***/
 
     assert( ::gGeoManager->GetNNodes() == ntotalnodes1 );
 //    assert( ::gGeoManager->GetListOfVolumes()->GetEntries() == mlv1 );
@@ -187,8 +201,14 @@ int main()
     {
         // we cannot compare pointers here; they are different before and after the reload
         // we need names
-        if( states1[i]->GetCurrentLevel() != states2[i]->GetCurrentLevel() ){
-            std::cerr << "### PROBLEM " << states1[i]->GetCurrentLevel() << " " << states2[i]->GetCurrentLevel() << "\n";
+        if( states1[i]->GetCurrentLevel() != states2[i]->GetCurrentLevel()
+            || rootstates[i]->GetLevel() != states1[i]->GetCurrentLevel()-1
+            || rootstates[i]->GetLevel() != states2[i]->GetCurrentLevel()-1
+          ){
+            // I SUSPECT THAT THIS MIGHT HAPPEN WHEN THERE IS AN OVERLAP
+            std::cerr << "### PROBLEM " << i << " s1 "
+                    << states1[i]->GetCurrentLevel() << " s2 " << states2[i]->GetCurrentLevel()
+                    << " r " << rootstates[i]->GetLevel()+1 << "\n";
         }
     }
 
