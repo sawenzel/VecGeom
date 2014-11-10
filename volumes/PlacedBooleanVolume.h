@@ -21,6 +21,8 @@
 #endif
 #ifdef VECGEOM_GEANT4
 #include "G4SubtractionSolid.hh"
+#include "G4UnionSolid.hh"
+#include "G4IntersectionSolid.hh"
 #include "G4ThreeVector.hh"
 #endif
 
@@ -133,13 +135,33 @@ public:
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * rightm = right->transformation();
-      return new G4SubtractionSolid( GetLabel(),
+      if( GetUnplacedVolume()->GetOp() == kSubtraction ){
+        return new G4SubtractionSolid( GetLabel(),
               const_cast<G4VSolid*>(left->ConvertToGeant4()),
               const_cast<G4VSolid*>(right->ConvertToGeant4()),
               0, /* no rotation for the moment */
               G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
-            );  }
-#endif
+            );
+      }
+      if( GetUnplacedVolume()->GetOp() == kUnion ){
+             return new G4UnionSolid( GetLabel(),
+                   const_cast<G4VSolid*>(left->ConvertToGeant4()),
+                   const_cast<G4VSolid*>(right->ConvertToGeant4()),
+                   0, /* no rotation for the moment */
+                   G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
+                 );
+           }
+      if( GetUnplacedVolume()->GetOp() == kIntersection ){
+                  return new G4InterSectionSolid( GetLabel(),
+                        const_cast<G4VSolid*>(left->ConvertToGeant4()),
+                        const_cast<G4VSolid*>(right->ConvertToGeant4()),
+                        0, /* no rotation for the moment */
+                        G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
+                      );
+                }
+
+  }
+  #endif
 #endif // VECGEOM_BENCHMARK
 
 }; // end class declaration

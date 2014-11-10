@@ -577,8 +577,10 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::NormalKernel(
 
 } // End global namespace
 
-// include stuff for booleanunion
-// #include "BooleanUnionImplementation.h"
+// include stuff for boolean union
+#include "BooleanUnionImplementation.h"
 
+// include stuff for boolean intersection
+#include "BooleanIntersectionImplementation.h"
 
 #endif /* BOOLEANIMPLEMENTATION_H_ */

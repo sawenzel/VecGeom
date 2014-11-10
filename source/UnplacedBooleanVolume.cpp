@@ -40,7 +40,6 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
       logical_volume, transformation, placement);
 #endif
     }
-    /*
     else if ( vol.GetOp() == kUnion ){
         return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kUnion, transCodeT, rotCodeT> >(
         #ifdef VECGEOM_NVCC
@@ -57,7 +56,6 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
               logical_volume, transformation, placement);
         #endif
             }
-*/
 }
 
 
