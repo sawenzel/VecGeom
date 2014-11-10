@@ -40,7 +40,7 @@ bool TestTubs()
     Vec_t vmxmy(-1/std::sqrt(2.0),-1/std::sqrt(2.0),0);
     Vec_t vxmy(1/std::sqrt(2.0),-1/std::sqrt(2.0),0);
 
-    double Dist, vol;
+    double Dist, vol,volCheck;
       
     Tube_t t1("Solid Tube #1",0,50,50,0,2*UUtils::kPi);
 
@@ -88,12 +88,14 @@ bool TestTubs()
 
   // Check cubic volume
   vol = t1.Capacity();
-  assert(ApproxEqual(vol,785398.16339744825));
-  assert( ApproxEqual(vol,785398.163397) );
-  
+  volCheck = 50*2*UUtils::kPi*50*50;
+  assert(ApproxEqual(vol,volCheck));
+   
  // Check Surface area
-  assert(t2.SurfaceArea() == 62674.773439116375812);    
-  // std::cout<<t2.SurfaceArea()<<std::endl;
+  vol = t2.SurfaceArea();
+  volCheck = 2*UUtils::kPi*(45+50)*(50-45+2*50);
+  assert(ApproxEqual(vol,volCheck));
+ // std::cout<<t2.SurfaceArea()<<std::endl;
 
 // Check Inside
     assert(t1.Inside(pzero)==vecgeom::EInside::kInside);
