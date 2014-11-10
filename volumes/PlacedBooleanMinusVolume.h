@@ -100,11 +100,6 @@ public:
               const_cast<TGeoShape*>(right->ConvertToRoot()),
               leftm->ConvertToTGeoMatrix(), rightm->ConvertToTGeoMatrix());
       TGeoShape * shape = new TGeoCompositeShape("RootComposite",node);
-      //TGeoManager *m = new TGeoManager();
-      gGeoManager->SetTopVolume( new TGeoVolume("world",shape) );
-      //gGeoManager->CloseGeometry();
-      gGeoManager->Export("FOO.root");
-      shape->InspectShape();
       return shape;
   }
 #endif

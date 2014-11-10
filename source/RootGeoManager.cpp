@@ -16,6 +16,7 @@
 #include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
+#include "volumes/UnplacedBooleanMinusVolume.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -29,6 +30,8 @@
 #include "TGeoTrd2.h"
 #include "TGeoPara.h"
 #include "TGeoParaboloid.h"
+#include "TGeoCompositeShape.h"
+#include "TGeoBoolNode.h"
 
 #include <cassert>
 
@@ -189,6 +192,7 @@ TGeoVolume* RootGeoManager::Convert(VPlacedVolume const *const placed_volume,
 
 
 VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
+
   if (fUnplacedVolumeMap.Contains(shape))
       return const_cast<VUnplacedVolume*>(fUnplacedVolumeMap[shape]);
 
@@ -281,6 +285,42 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
                   p->GetPhi1()*kDegToRad, (p->GetPhi2() - p->GetPhi1())*kDegToRad,
                   p->GetTheta1(), (p->GetTheta2()-p->GetTheta1())*kDegToRad);
       }
+  }
+
+  if (shape->IsA() == TGeoCompositeShape::Class()) {
+    TGeoCompositeShape const *const compshape
+         = static_cast<TGeoCompositeShape const*>(shape);
+    TGeoBoolNode const *const boolnode = compshape->GetBoolNode();
+
+     // need the matrix;
+     Transformation3D const* lefttrans    = Convert( boolnode->GetLeftMatrix() );
+     Transformation3D const* righttrans   = Convert( boolnode->GetRightMatrix() );
+     // unplaced shapes
+     VUnplacedVolume const* leftunplaced  = Convert( boolnode->GetLeftShape() );
+     VUnplacedVolume const* rightunplaced = Convert( boolnode->GetRightShape() );
+
+     // the problem is that I can only place logical volumes
+     VPlacedVolume *const leftplaced =
+          (new LogicalVolume("", leftunplaced ))->Place(lefttrans);
+
+     VPlacedVolume *const rightplaced =
+          (new LogicalVolume("", rightunplaced ))->Place(righttrans);
+
+     // now it depends on concrete type
+     if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoSubtraction ){
+         unplaced_volume = new UnplacedBooleanMinusVolume(
+             leftplaced, rightplaced);
+     }
+     else if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoIntersection ){
+         // NOT YET SUPPORTED
+         //unplaced_volume = new UnplacedBooleanMinusVolume(
+         //    leftplaced, rightplaced);
+        printf(" boolean Intersections are not yet supported \n");
+     }
+     else if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoUnion ){
+        // NOT YET SUPPORTED
+         printf(" boolean unions are not yet supported \n");
+     }
   }
 
   // New volumes should be implemented here...
