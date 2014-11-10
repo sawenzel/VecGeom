@@ -296,7 +296,6 @@ if (ROOT)
 
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
-  link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL}
       Cint Core MathCore RIO Thread Geom Gui Net Hist Graf Graf3d Gpad Tree
       Rint Postscript Matrix Physics m dl)
