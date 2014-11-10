@@ -272,7 +272,7 @@ void FillRandomPoints(VPlacedVolume const &volume,
     Vector3D<Precision> point;
     do {
       point = SamplePoint(dim);
-    } while (!volume.Inside(point));
+    } while (!volume.Contains(point));
     points.set(i, point);
   }
 }
