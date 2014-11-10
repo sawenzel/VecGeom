@@ -44,6 +44,10 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  Precision const* operator[](int index) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   int size() const;
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -99,6 +103,15 @@ public:
 };
 
 std::ostream& operator<<(std::ostream &os, Planes const &planes);
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision const* Planes::operator[](int i) const {
+  if (i == 0) return fNormals.x();
+  if (i == 1) return fNormals.y();
+  if (i == 2) return fNormals.z();
+  if (i == 3) return &fDistances[0];
+  return NULL;
+}
 
 VECGEOM_CUDA_HEADER_BOTH
 int Planes::size() const {

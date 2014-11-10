@@ -105,6 +105,26 @@ void Quadrilaterals::FlipSign(int index) {
   fPlanes.FlipSign(index);
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+void Quadrilaterals::Print() const {
+  for (int i = 0, iMax = size(); i < iMax; ++i) {
+    printf("{(%.2f, %.2f, %.2f, %.2f), {", GetNormals().x(i),
+           GetNormals().y(i), GetNormals().z(i), GetDistance(i));
+    for (int j = 0; j < 3; ++j) {
+      printf("(%.2f, %.2f, %.2f, %.2f), ",
+             GetSideVectors()[j].GetNormals().x(i),
+             GetSideVectors()[j].GetNormals().y(i),
+             GetSideVectors()[j].GetNormals().z(i),
+             GetSideVectors()[j].GetDistance(i));
+    }
+    printf("(%.2f, %.2f, %.2f, %.2f)}}",
+           GetSideVectors()[3].GetNormals().x(i),
+           GetSideVectors()[3].GetNormals().y(i),
+           GetSideVectors()[3].GetNormals().z(i),
+           GetSideVectors()[3].GetDistance(i));
+  }
+}
+
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads) {
   for (int i = 0, iMax = quads.size(); i < iMax; ++i) {
     os << "{(" << quads.GetNormal(i) << ", " << quads.GetDistance(i)
@@ -151,10 +171,13 @@ void Quadrilaterals_CopyToGpu(
     //       delegated rather urgently.
     for (int i = 0; i < 4; ++i) {
       plane[i] = AllocateOnGpu<Precision>(bytes);
+      vecgeom::CopyToGpu(fPlanes[i], plane[i], bytes);
       for (int j = 0; j < 4; ++j) {
         sides[i][j] = AllocateOnGpu<Precision>(bytes);
+        vecgeom::CopyToGpu(fSideVectors[i][j], sides[i][j], bytes);
       }
       corners[i] = AllocateOnGpu<Vector3D<Precision> >(vecBytes);
+      vecgeom::CopyToGpu(fCorners[i].content(), corners[i], vecBytes);
     }
     Quadrilaterals_CopyToGpu(
         gpuPtr, plane[0], plane[1], plane[2], plane[3],

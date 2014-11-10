@@ -152,6 +152,9 @@ public:
   void CopyToGpu(void *gpuPtr) const;
 #endif
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Print() const;
+
 };
 
 VECGEOM_CUDA_HEADER_BOTH
