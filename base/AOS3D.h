@@ -74,11 +74,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T* content();
+  Vector3D<T>* content();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T const* content() const;
+  Vector3D<T> const* content() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -239,7 +239,11 @@ Vector3D<T>& AOS3D<T>::operator[](size_t index) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-T* AOS3D<T>::content() { return fContent; }
+Vector3D<T>* AOS3D<T>::content() { return fContent; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<T> const* AOS3D<T>::content() const { return fContent; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
