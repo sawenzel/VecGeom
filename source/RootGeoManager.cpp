@@ -16,7 +16,7 @@
 #include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
-#include "volumes/UnplacedBooleanMinusVolume.h"
+#include "volumes/UnplacedBooleanVolume.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -308,18 +308,16 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
 
      // now it depends on concrete type
      if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoSubtraction ){
-         unplaced_volume = new UnplacedBooleanMinusVolume(
+         unplaced_volume = new UnplacedBooleanVolume( kSubtraction,
              leftplaced, rightplaced);
      }
      else if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoIntersection ){
-         // NOT YET SUPPORTED
-         //unplaced_volume = new UnplacedBooleanMinusVolume(
-         //    leftplaced, rightplaced);
-        printf(" boolean Intersections are not yet supported \n");
+         unplaced_volume = new UnplacedBooleanVolume( kIntersection,
+                      leftplaced, rightplaced);
      }
      else if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoUnion ){
-        // NOT YET SUPPORTED
-         printf(" boolean unions are not yet supported \n");
+         unplaced_volume = new UnplacedBooleanVolume( kUnion,
+                      leftplaced, rightplaced);
      }
   }
 

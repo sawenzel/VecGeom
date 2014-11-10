@@ -16,7 +16,7 @@
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedParaboloid.h"
 #include "volumes/UnplacedParallelepiped.h"
-#include "volumes/UnplacedBooleanMinusVolume.h"
+#include "volumes/UnplacedBooleanVolume.h"
 #include "volumes/utilities/VolumeUtilities.h"
 #include "base/SOA3D.h"
 #include "navigation/NavigationState.h"
@@ -52,11 +52,12 @@ LogicalVolume const * make3LevelBooleanSubtraction()
         = ( new LogicalVolume("",subtractedbox))->Place(translation2);
 
     // now make the unplaced boolean solid
-    UnplacedBooleanMinusVolume const *booleansolid =
-            new UnplacedBooleanMinusVolume(placedmotherbox, placedsubtractedtube);
+    UnplacedBooleanVolume const *booleansolid =
+            new UnplacedBooleanVolume(kSubtraction,placedmotherbox, placedsubtractedtube);
     LogicalVolume const *  booleanlogical = new LogicalVolume("booleanL",booleansolid);
 
-    UnplacedBooleanMinusVolume const * booleansolid2 = new UnplacedBooleanMinusVolume(
+    UnplacedBooleanVolume const * booleansolid2 = new UnplacedBooleanVolume(
+             kSubtraction,
              booleanlogical->Place(),
              placedsubtractedbox);
 

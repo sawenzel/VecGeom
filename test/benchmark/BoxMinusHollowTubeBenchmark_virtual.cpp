@@ -3,7 +3,7 @@
 #include "volumes/Box.h"
 #include "volumes/Tube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
-#include "volumes/BooleanMinusVolume.h"
+#include "volumes/BooleanVolume.h"
 #include "management/GeoManager.h"
 #include "benchmarking/Benchmarker.h"
 #include "ArgParser.h"
@@ -35,7 +35,7 @@ int main(int argc, char * argv[])
     VPlacedVolume * placedmotherbox = (new LogicalVolume("",&motherbox))->Place();
 
     // now make the unplaced boolean solid
-    UnplacedBooleanMinusVolume booleansolid(placedmotherbox, placedsubtractedtube);
+    UnplacedBooleanVolume booleansolid(kSubtraction, placedmotherbox, placedsubtractedtube);
     LogicalVolume booleanlogical("booleanL",&booleansolid);
 
     // place the boolean volume into the world

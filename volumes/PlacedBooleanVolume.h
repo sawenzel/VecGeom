@@ -1,12 +1,12 @@
-#ifndef VECGEOM_VOLUMES_PLACEDTBOOLEANMINUS_H_
-#define VECGEOM_VOLUMES_PLACEDTBOOLEANMINUS_H_
+#ifndef VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_
+#define VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_
 
 #include "base/Global.h"
 #include "backend/Backend.h"
  
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
-#include "volumes/UnplacedBooleanMinusVolume.h"
+#include "volumes/UnplacedBooleanVolume.h"
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
 #include "TGeoVolume.h"
@@ -27,26 +27,26 @@
 
 namespace VECGEOM_NAMESPACE {
 
-class PlacedBooleanMinusVolume : public VPlacedVolume {
+class PlacedBooleanVolume : public VPlacedVolume {
 
-    typedef UnplacedBooleanMinusVolume UnplacedVol_t;
+    typedef UnplacedBooleanVolume UnplacedVol_t;
 
 public:
 
 #ifndef VECGEOM_NVCC
-  PlacedBooleanMinusVolume(char const *const label,
+  PlacedBooleanVolume(char const *const label,
             LogicalVolume const *const logicalVolume,
             Transformation3D const *const transformation,
             PlacedBox const *const boundingBox)
       : VPlacedVolume(label, logicalVolume, transformation, boundingBox) {}
 
-  PlacedBooleanMinusVolume(LogicalVolume const *const logicalVolume,
+  PlacedBooleanVolume(LogicalVolume const *const logicalVolume,
             Transformation3D const *const transformation,
             PlacedBox const *const boundingBox)
-      : PlacedBooleanMinusVolume("", logicalVolume, transformation, boundingBox) {}
+      : PlacedBooleanVolume("", logicalVolume, transformation, boundingBox) {}
 #else
   __device__
-  PlacedBooleanMinusVolume(LogicalVolume const *const logicalVolume,
+  PlacedBooleanVolume(LogicalVolume const *const logicalVolume,
             Transformation3D const *const transformation,
             PlacedBox const *const boundingBox,
             const int id)
@@ -54,7 +54,7 @@ public:
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual ~PlacedBooleanMinusVolume() {}
+  virtual ~PlacedBooleanVolume() {}
 
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -95,11 +95,29 @@ public:
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * leftm = left->transformation();
       Transformation3D const * rightm = right->transformation();
-            TGeoSubtraction * node = new TGeoSubtraction(
+
+      TGeoShape *shape;
+      if( GetUnplacedVolume()->GetOp() == kSubtraction ){
+        TGeoSubtraction * node = new TGeoSubtraction(
               const_cast<TGeoShape*>(left->ConvertToRoot()),
               const_cast<TGeoShape*>(right->ConvertToRoot()),
               leftm->ConvertToTGeoMatrix(), rightm->ConvertToTGeoMatrix());
-      TGeoShape * shape = new TGeoCompositeShape("RootComposite",node);
+        shape = new TGeoCompositeShape("RootComposite",node);
+      }
+      if( GetUnplacedVolume()->GetOp() == kUnion ){
+        TGeoUnion * node = new TGeoUnion(
+              const_cast<TGeoShape*>(left->ConvertToRoot()),
+              const_cast<TGeoShape*>(right->ConvertToRoot()),
+              leftm->ConvertToTGeoMatrix(), rightm->ConvertToTGeoMatrix());
+        shape = new TGeoCompositeShape("RootComposite",node);
+      }
+      if( GetUnplacedVolume()->GetOp() == kIntersection ){
+        TGeoIntersection * node = new TGeoIntersection(
+              const_cast<TGeoShape*>(left->ConvertToRoot()),
+              const_cast<TGeoShape*>(right->ConvertToRoot()),
+              leftm->ConvertToTGeoMatrix(), rightm->ConvertToTGeoMatrix());
+        shape = new TGeoCompositeShape("RootComposite",node);
+      }
       return shape;
   }
 #endif
@@ -128,4 +146,4 @@ public:
 
 } // End global namespace
 
-#endif // VECGEOM_VOLUMES_PLACEDBOX_H_
+#endif // VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_

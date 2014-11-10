@@ -9,7 +9,7 @@
 #include "management/GeoManager.h"
 #include "management/VolumeFactory.h"
 #include "volumes/PlacedVolume.h"
-#include "volumes/PlacedBooleanMinusVolume.h"
+#include "volumes/PlacedBooleanVolume.h"
 
 #include <algorithm>
 #include <cassert>
@@ -302,9 +302,9 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
     daughters_.insert(volume->logical_volume()->daughters_);
   }
 
-    if( dynamic_cast<PlacedBooleanMinusVolume const*>(volume) ){
-    fprintf(stderr,"found a PlacedBooleanMinusVolume");
-    PlacedBooleanMinusVolume const* v =  dynamic_cast<PlacedBooleanMinusVolume const*>(volume);
+    if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
+    fprintf(stderr,"found a PlacedBooleanVolume");
+    PlacedBooleanVolume const* v =  dynamic_cast<PlacedBooleanVolume const*>(volume);
     ScanGeometry(v->GetUnplacedVolume()->fLeftVolume);
     ScanGeometry(v->GetUnplacedVolume()->fRightVolume);
    }

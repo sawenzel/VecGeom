@@ -573,4 +573,5 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
 
 } // End global namespace
 
+
 #endif // VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_

@@ -1,5 +1,5 @@
-#ifndef UNPLACEDBOOLEANMINUSVOLUME_H_
-#define UNPLACEDBOOLEANMINUSVOLUME_H_
+#ifndef UNPLACEDBOOLEANVOLUME_H_
+#define UNPLACEDBOOLEANVOLUME_H_
 
 #include "base/Global.h"
 #include "base/AlignedBase.h"
@@ -7,10 +7,18 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/PlacedVolume.h"
 
+enum BooleanOperation {
+    kUnion,
+    kIntersection,
+    kSubtraction
+};
+
+
 namespace VECGEOM_NAMESPACE {
 
+
 /**
- * A class representing a simple UNPLACED substraction boolean volume A-B
+ * A class representing a simple UNPLACED boolean volume A-B
  * It takes two template arguments:
  * 1.: the mother (or left) volume A in unplaced form
  * 2.: the subtraction (or right) volume B in placed form;
@@ -22,19 +30,23 @@ namespace VECGEOM_NAMESPACE {
  * and B is only translated (not rotated) with respect to A
  *
  */
-class UnplacedBooleanMinusVolume : public VUnplacedVolume, public AlignedBase {
+class UnplacedBooleanVolume : public VUnplacedVolume, public AlignedBase {
 
 public:
     VPlacedVolume const* fLeftVolume;
     VPlacedVolume const* fRightVolume;
+    BooleanOperation const fOp;
 
 public:
   // need a constructor
     VECGEOM_CUDA_HEADER_BOTH
-  UnplacedBooleanMinusVolume( VPlacedVolume const* left,
-                              VPlacedVolume const* right ) :
-                                   fLeftVolume(left),
-                                   fRightVolume(right) {}
+    UnplacedBooleanVolume(
+          BooleanOperation op,
+          VPlacedVolume const* left,
+          VPlacedVolume const* right ) :
+            fOp(op),
+            fLeftVolume(left),
+            fRightVolume(right) {}
 
   virtual int memory_size() const { return sizeof(*this); }
 
@@ -43,6 +55,9 @@ public:
   virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
   #endif
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  BooleanOperation GetOp() const {return fOp;}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -105,4 +120,4 @@ public:
 
 
 
-#endif /* UNPLACEDBOOLEANMINUSVOLUME_H_ */
+#endif /* UNPLACEDBOOLEANVOLUME_H_ */

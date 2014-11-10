@@ -3,7 +3,7 @@
 #include "volumes/Box.h"
 #include "volumes/Tube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
-#include "volumes/BooleanMinusVolume.h"
+#include "volumes/BooleanVolume.h"
 #include "management/GeoManager.h"
 #include "benchmarking/Benchmarker.h"
 
@@ -38,11 +38,11 @@ int main()
         = ( new LogicalVolume("",&subtractedbox))->Place(&translation2);
 
     // now make the unplaced boolean solid
-    UnplacedBooleanMinusVolume booleansolid(placedmotherbox, placedsubtractedtube);
+    UnplacedBooleanVolume booleansolid(kSubtraction, placedmotherbox, placedsubtractedtube);
     LogicalVolume booleanlogical("booleanL",&booleansolid);
 
 
-    UnplacedBooleanMinusVolume booleansolid2(
+    UnplacedBooleanVolume booleansolid2(kSubtraction,
             booleanlogical.Place(),
             placedsubtractedbox);
 
