@@ -87,7 +87,6 @@ bool TestTrap() {
 
     vol = trap1.Capacity();
     volCheck = 8*20*30*40;
-    std::cout<<"TestTrap.cpp: trap1.Capacity()="<< trap1.Capacity() <<' '<< vol <<' '<< volCheck << std::endl;
     assert(ApproxEqual(vol,volCheck));
 
     vol = trap4.Capacity();
@@ -438,7 +437,7 @@ bool TestTrap() {
     assert(ApproxEqual(dist,UUtils::kInfinity));
 
     dist=trap1.DistanceToIn(Vec_t(0,50,0),vxmy);
-    //std::cout<<"trap1.DistanceToIn(Vec_t(0,50,0),vxmy) = "<<dist<<std::endl ;
+    std::cout<<"trap1.DistanceToIn(Vec_t(0,50,0),vxmy) = "<<dist<<" and vmx="<< vmx << std::endl ;
     assert(ApproxEqual(dist,std::sqrt(800.))&&convex);
 
     dist=trap1.DistanceToIn(Vec_t(0,40,0),vxmy);
