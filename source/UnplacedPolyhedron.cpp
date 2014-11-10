@@ -298,9 +298,29 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedPolyhedron::Print() const {
-  printf("UnplacedPolyhedron {%i sides, %i segments, %s}",
-         fSideCount, fZSegments.size(),
-         (fHasInnerRadii) ? "has inner radii" : "no inner radii");
+  printf("UnplacedPolyhedron {%i sides, phi %f to %f, %i segments}",
+         fSideCount, GetPhiStart(), GetPhiEnd(), fZSegments.size());
+  printf("}");
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedPolyhedron::PrintSegments() const {
+  printf("Printing %i polyhedron segments: ", fZSegments.size());
+  for (int i = 0, iMax = fZSegments.size(); i < iMax; ++i) {
+    printf("  Outer: ");
+    fZSegments[i].outer.Print();
+    printf("\n");
+    if (fHasPhiCutout) {
+      printf("  Phi: ");
+      fZSegments[i].phi.Print();
+      printf("\n");
+    }
+    if (fZSegments[i].hasInnerRadius) {
+      printf("  Inner: ");
+      fZSegments[i].inner.Print();
+      printf("\n");
+    }
+  }
 }
 
 void UnplacedPolyhedron::Print(std::ostream &os) const {
@@ -423,12 +443,13 @@ void UnplacedPolyhedron_ConstructOnGpu(
     bool hasPhiCutout, bool hasLargePhiCutout, void *zSegments,
     Precision *zPlanes, int zPlaneCount, Precision *phiSectionsX,
     Precision *phiSectionsY, Precision *phiSectionsZ,
-    vecgeom_cuda::UnplacedTube boundingTube, Precision boundingTubeOffset) {
+    vecgeom_cuda::UnplacedTube *boundingTube, Precision boundingTubeOffset) {
   new (gpuPtr) vecgeom_cuda::UnplacedPolyhedron(
       sideCount, hasInnerRadii, hasPhiCutout, hasLargePhiCutout,
       static_cast<vecgeom_cuda::UnplacedPolyhedron::ZSegment*>(zSegments),
       zPlanes, zPlaneCount, phiSectionsX, phiSectionsY, phiSectionsZ,
-      boundingTube, boundingTubeOffset);
+      *boundingTube, boundingTubeOffset);
+  reinterpret_cast<vecgeom_cuda::UnplacedPolyhedron*>(gpuPtr)->PrintSegments();
 }
 
 void UnplacedPolyhedron_CopyToGpu(VUnplacedVolume *gpuPtr, int sideCount,
@@ -443,7 +464,7 @@ void UnplacedPolyhedron_CopyToGpu(VUnplacedVolume *gpuPtr, int sideCount,
   UnplacedPolyhedron_ConstructOnGpu<<<1, 1>>>(
       gpuPtr, sideCount, hasInnerRadii, hasPhiCutout, hasLargePhiCutout,
       zSegments, zPlanes, zPlaneCount, phiSectionsX, phiSectionsY, phiSectionsZ,
-      *reinterpret_cast<vecgeom_cuda::UnplacedTube*>(boundingTube),
+      reinterpret_cast<vecgeom_cuda::UnplacedTube*>(boundingTube),
       boundingTubeOffset);
 }
 

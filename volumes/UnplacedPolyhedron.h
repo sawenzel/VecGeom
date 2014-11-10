@@ -182,6 +182,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void PrintSegments() const;
+
   virtual void Print(std::ostream &os) const;
 
   VECGEOM_CUDA_HEADER_DEVICE
