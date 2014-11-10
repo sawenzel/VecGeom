@@ -121,7 +121,12 @@ VcPrecision cos(VcPrecision const &x) {
 
 VECGEOM_INLINE
 VcPrecision tan(VcPrecision const &radians) {
-  return Vc::atan(radians);
+  // apparently Vc does not have a tan function
+  //  return Vc::tan(radians);
+  // emulating it for the moment
+  VcPrecision s,c;
+  Vc::sincos(radians,&s,&c);
+  return s/c;
 }
 
 

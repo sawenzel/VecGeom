@@ -245,10 +245,10 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   // step 1.a) input particle is moving away --> return infinity
 
   // check if moving away towards +z
-  done |= ( posZdir && max < kHalfTolerance );
+  done |= ( posZdir && max < MakePlusTolerant<true>(0.));
 
   // check if moving away towards -z
-  done |= ( negZdir && max >-kHalfTolerance );
+  done |= ( negZdir && max > MakeMinusTolerant<true>(0.));
 
   // if all particles moving away, we're done
   if (Backend::early_returns && IsFull(done)) return;
@@ -264,7 +264,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
   Bool_t test = (!posZdir) && (!negZdir);
 
   // ... and out of z-range, then trajectory will not intercept volume
-  Bool_t zrange = Abs(point.z()) < unplaced.GetDz() - kHalfTolerance;
+  Bool_t zrange = Abs(point.z()) < MakeMinusTolerant<true>(unplaced.GetDz());
   done |= ( test && !zrange );
   if (Backend::early_returns && IsFull(done)) return;
 
@@ -321,8 +321,8 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
 
   // this part does not auto-vectorize
   for(unsigned int i=0; i<4; ++i) {
-    Bool_t posPoint = pdist[i] >= -kHalfTolerance;
-    Bool_t posDir = comp[i] >= 0;
+    Bool_t posPoint = pdist[i] >= MakeMinusTolerant<true>(0.);
+    Bool_t posDir = comp[i] > 0;
 
     // discard the ones moving away from this plane
     done |= (posPoint && posDir);
@@ -342,8 +342,19 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToIn(
     MaskedAssign( interceptFromOutside && validVdist, vdist[i], &smin );
   }
 
+  // check that entry point found is valid -- cannot be outside (may happen when track is parallel to a face)
+  Vector3D<typename Backend::precision_v> entry = point + dir*smin;
+  Bool_t valid = Backend::kTrue;
+  for(unsigned int i=0; i<4; ++i) {
+    Float_t dist = fPlanes[i].fA * entry.x() + fPlanes[i].fB * entry.y()
+      + fPlanes[i].fC * entry.z() + fPlanes[i].fD;
+
+    // valid here means if it is not outside plane, or pdist[i]<=0.
+    valid &= (dist <= MakePlusTolerant<true>(0.));
+  }
+
   // Checks in non z plane intersections ensure smin<smax
-  MaskedAssign(!done && smin>=0, smin, &distance);
+  MaskedAssign(!done && valid && smin>=0, smin, &distance);
   MaskedAssign(!done && smin<0,   0.0, &distance);
 #endif
 }
@@ -380,9 +391,9 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
 
   // do we need this ????
   // check if moving away towards +z
-  done |= (posZdir && max <= kHalfTolerance);
+  done |= (posZdir && max <= MakePlusTolerant<true>(0.));
   // check if moving away towards -z
-  done |= (negZdir && max >= -kHalfTolerance);
+  done |= (negZdir && max >= MakeMinusTolerant<true>(0.));
 
   // if all particles moving away, we're done
   if ( IsFull(done) ) return;
@@ -410,21 +421,22 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
       + fPlanes[i].fC * point.z() + fPlanes[i].fD;
 
     // Comp is projection of dir over the normal vector of side plane, hence
-    // Comp > 0 if pointing ~same direction as normal and Comp<0 if ~opposite to normal
+    // Comp > 0 if pointing ~same direction as normal and Comp<0 if pointing ~opposite to normal
     comp[i] = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
 
     vdist[i] = -pdist[i] / comp[i];
   }
 
   for (unsigned int i = 0; i < 4; ++i) {
-    Bool_t inside = (pdist[i] < -kHalfTolerance);
-    Bool_t posComp = comp[i] >= 0;
+    Bool_t inside = (pdist[i] < MakeMinusTolerant<true>(0.));
+    Bool_t posComp = comp[i] > 0;
 
     Bool_t test = (!inside && posComp);
     MaskedAssign( !done && test, 0.0, &distance );
     done |= ( distance == 0.0 );
     if ( IsFull(done) ) return;
 
+    // if point is inside, pointing towards plane and vdist<distance, then distance=vdist
     test = inside && posComp;
     MaskedAssign(!done && test && vdist[i]<distance, vdist[i], &distance);
   }

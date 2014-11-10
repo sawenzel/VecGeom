@@ -50,6 +50,24 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
     MakePlanes();
 }
 
+  UnplacedTrapezoid::UnplacedTrapezoid(Precision xbox, Precision ybox, Precision zbox)
+    : fDz(zbox), fTheta(0.f), fPhi(0.f)
+    , fDy1(ybox), fDx1(xbox), fDx2(xbox), fTanAlpha1(0.f)
+    , fDy2(ybox), fDx3(xbox), fDx4(xbox), fTanAlpha2(0.f)
+    , fTthetaCphi(0.f), fTthetaSphi(0.f), fbbx(xbox), fbby(ybox), fbbz(zbox), fPlanes()
+{
+    // validity check
+  if( xbox <= 0 || ybox <= 0 || zbox <= 0 ) {
+      printf("UnplacedTrapezoid(xbox,...) - GeomSolids0002, Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid\n");
+      printf("\t X=%f, Y=%f, Z=%f", xbox, ybox, zbox);
+
+      // force a crash in a CPU/GPU portable way -- any better (graceful) way to do this?
+      Assert(true);  // -- Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid
+    }
+
+    MakePlanes();
+}
+
 UnplacedTrapezoid::UnplacedTrapezoid(Precision const* params )
   : fDz( params[0] )
   , fTheta( params[1] )
@@ -200,33 +218,33 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 
   // Bottom side with normal approx. -Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[0],pt[4],pt[5],pt[1],0);
+  good = MakePlane(pt[0],pt[1],pt[5],pt[4],0);
 #else
-  good = MakePlane(pt[0],pt[4],pt[5],pt[1],fPlanes[0]);
+  good = MakePlane(pt[0],pt[1],pt[5],pt[4],fPlanes[0]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid
 
   // Top side with normal approx. +Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[2],pt[3],pt[7],pt[6],1);
+  good = MakePlane(pt[2],pt[6],pt[7],pt[3],1);
 #else
-  good = MakePlane(pt[2],pt[3],pt[7],pt[6],fPlanes[1]);
+  good = MakePlane(pt[2],pt[6],pt[7],pt[3],fPlanes[1]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid
 
   // Front side with normal approx. -X
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[0],pt[2],pt[6],pt[4],2);
+  good = MakePlane(pt[0],pt[4],pt[6],pt[2],2);
 #else
-  good = MakePlane(pt[0],pt[2],pt[6],pt[4],fPlanes[2]);
+  good = MakePlane(pt[0],pt[4],pt[6],pt[2],fPlanes[2]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid
 
   // Back side with normal approx. +X
 #ifndef VECGEOM_PLANESHELL_DISABLE
-  good = MakePlane(pt[1],pt[5],pt[7],pt[3],3);
+  good = MakePlane(pt[1],pt[3],pt[7],pt[5],3);
 #else
-  good = MakePlane(pt[1],pt[5],pt[7],pt[3],fPlanes[3]);
+  good = MakePlane(pt[1],pt[3],pt[7],pt[5],fPlanes[3]);
 #endif
   Assert( good ); // GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid
 
@@ -240,7 +258,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 //////////////////////////////////////////////////////////////////////////////
 //
 // Calculate the coef's of the plane p1->p2->p3->p4->p1
-// where the ThreeVectors 1-4 are in anti-clockwise order when viewed from
+// where the ThreeVectors 1-4 are in clockwise order when viewed from
 // "inside" of the plane (i.e. opposite to normal vector, which points outwards).
 //
 // Return true if the ThreeVectors are coplanar + set coef;s
@@ -275,19 +293,19 @@ bool UnplacedTrapezoid::MakePlane(
     // a,b,c correspond to the x/y/z components of the
     // normal vector to the plane
 
-    // Let create diagonals 4-2 and 3-1 than (4-2)x(3-1) provides
+    // Let create diagonals 3-1 and 4-2 than (3-1)x(4-2) provides
     // vector perpendicular to the plane directed to outside !!!
     // and a,b,c, = f(1,2,3,4) external relative to trapezoid normal
 
     //??? can these be optimized?
-    a = +(p4.y() - p2.y())*(p3.z() - p1.z())
-       - (p3.y() - p1.y())*(p4.z() - p2.z());
+    a = +(p3.y() - p1.y())*(p4.z() - p2.z())
+       - (p4.y() - p2.y())*(p3.z() - p1.z());
 
-    b = -(p4.x() - p2.x())*(p3.z() - p1.z())
-       + (p3.x() - p1.x())*(p4.z() - p2.z());
+    b = -(p3.x() - p1.x())*(p4.z() - p2.z())
+       + (p4.x() - p2.x())*(p3.z() - p1.z());
 
-    c = +(p4.x() - p2.x())*(p3.y() - p1.y())
-       - (p3.x() - p1.x())*(p4.y() - p2.y());
+    c = +(p3.x() - p1.x())*(p4.y() - p2.y())
+       - (p4.x() - p2.x())*(p3.y() - p1.y());
 
     norm = 1.0 / std::sqrt( a*a + b*b + c*c ); // normalization factor, always positive
 
@@ -327,7 +345,7 @@ bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precis
 
 #ifndef VECGEOM_PLANESHELL_DISABLE
   Precision distances[4];
-  fPlanes.DistanceToPoint( Vec3D(point[0], point[1], point[2]), distances );
+  fPlanes.DistanceToPoint( point, distances );
   for(unsigned int i=0; i<4; ++i) {
     if ( std::fabs(distances[i]) <= kHalfTolerance) {
       noSurfaces ++;
@@ -426,10 +444,10 @@ void UnplacedTrapezoid::Extent(Vec3D& aMin, Vec3D& aMax) const {
   extB = ext45>ext67 ? ext45 : ext67;
   aMax.y() = (extA > extB) ? extA : extB;
 
-  ext01 = std::min(pt[0].x(),pt[1].x());
-  ext23 = std::min(pt[2].x(),pt[3].x());
-  ext45 = std::min(pt[4].x(),pt[5].x());
-  ext67 = std::min(pt[6].x(),pt[7].x());
+  ext01 = std::min(pt[0].y(),pt[1].y());
+  ext23 = std::min(pt[2].y(),pt[3].y());
+  ext45 = std::min(pt[4].y(),pt[5].y());
+  ext67 = std::min(pt[6].y(),pt[7].y());
   extA = ext01<ext23 ? ext01 : ext23;
   extB = ext45<ext67 ? ext45 : ext67;
   aMin.y() = (extA < extB) ? extA : extB;
@@ -629,12 +647,12 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
     fDz = pt[7].z();
     Precision DzRecip = 1.0 / fDz;
 
-    fDy1 = 0.50*( pt[2].y() - pt[1].y() );
+    fDy1 = 0.50*( pt[2].y() - pt[0].y() );
     fDx1 = 0.50*( pt[1].x() - pt[0].x() );
     fDx2 = 0.50*( pt[3].x() - pt[2].x() );
     fTanAlpha1 = 0.25*( pt[2].x() + pt[3].x() - pt[1].x() - pt[0].x() ) / fDy1;
 
-    fDy2 = 0.50*( pt[6].y() - pt[5].y() );
+    fDy2 = 0.50*( pt[6].y() - pt[4].y() );
     fDx3 = 0.50*( pt[5].x() - pt[4].x() );
     fDx4 = 0.50*( pt[7].x() - pt[6].x() );
     fTanAlpha2 = 0.25*( pt[6].x() + pt[7].x() - pt[5].x() - pt[4].x() ) / fDy2;

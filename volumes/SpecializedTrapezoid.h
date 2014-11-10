@@ -1,7 +1,6 @@
+/// \file   SpecializedTrapezoid.h
+/// \author Guilherme Lima (lima 'at' fnal 'dot' gov)
 /*
- * @file   SpecializedTrapezoid.h
- * @author Guilherme Lima (lima 'at' fnal 'dot' gov)
- *
  * 2014-05-01 - Created, based on the Parallelepiped draft
  */
 
@@ -41,8 +40,46 @@ public:
                         Transformation3D const *const transformation)
       : SpecializedTrapezoid("", logical_volume, transformation) {}
 
-#else
+  SpecializedTrapezoid(char const *const label,
+                       Precision pDz,
+                       Precision pTheta,
+                       Precision pPhi,
+                       Precision pDy1,
+                       Precision pDx1,
+                       Precision pDx2,
+                       Precision pTanAlpha1,
+                       Precision pDy2,
+                       Precision pDx3,
+                       Precision pDx4,
+                       Precision pTanAlpha2)
+    : SpecializedTrapezoid(label,
+                           new LogicalVolume(
+                             new UnplacedTrapezoid(pDz,pTheta,pPhi,
+                                                   pDy1,pDx1,pDx2,pTanAlpha1,
+                                                   pDy2,pDx3,pDx4,pTanAlpha2)),
+                             &Transformation3D::kIdentity) {}
 
+  SpecializedTrapezoid(char const *const label, Precision const* params )
+    : SpecializedTrapezoid(label,
+                           new LogicalVolume(new UnplacedTrapezoid(params)),
+                           &Transformation3D::kIdentity) {}
+
+  SpecializedTrapezoid(char const *const label, TrapCorners_t const& corners)
+    : SpecializedTrapezoid(label,
+                           new LogicalVolume(new UnplacedTrapezoid(corners)),
+                           &Transformation3D::kIdentity) {}
+
+                           SpecializedTrapezoid(char const *const label)
+    : SpecializedTrapezoid(label, new LogicalVolume(new UnplacedTrapezoid()),
+                           &Transformation3D::kIdentity) {}
+
+  SpecializedTrapezoid(char const *const label,
+                       const Precision dX, const Precision dY, const Precision dZ)
+                           : SpecializedTrapezoid(label, new LogicalVolume(new UnplacedTrapezoid(dX, dY, dZ)),
+                                                  &Transformation3D::kIdentity) {}
+
+#else
+  
   __device__
   SpecializedTrapezoid(LogicalVolume const *const logical_volume,
                         Transformation3D const *const transformation,
