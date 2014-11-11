@@ -40,18 +40,25 @@ VPlacedVolume* PlacedBooleanVolume::CopyToGpu(
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
+//class LogicalVolume;
 class Transformation3D;
 class VPlacedVolume;
+class LogicalVolume;
 
 // construction function on GPU
 __global__
 void PlacedBooleanVolume_ConstructOnGpu(
-    BooleanOperation op,
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
 
+
+    vecgeom_cuda::VUnplacedVolume const * unplaced
+        = (reinterpret_cast<vecgeom_cuda::LogicalVolume const *>(logical_volume))->unplaced_volume();
+    vecgeom_cuda::UnplacedBooleanVolume const * unplacedboolean
+        = reinterpret_cast<vecgeom_cuda::UnplacedBooleanVolume const *>(unplaced);
+
+    BooleanOperation op = unplacedboolean->GetOp();
     if(op == kSubtraction)
     {
         new(gpu_ptr) vecgeom_cuda::GenericPlacedSubtractionVolume(
@@ -85,12 +92,7 @@ void PlacedBooleanVolume_CopyToGpu(
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
 
-    __attribute__((unused)) const vecgeom_cuda::UnplacedBooleanVolume &vol
-           = static_cast<const vecgeom_cuda::UnplacedBooleanVolume&>( *(
-                   reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume)->unplaced_volume()));
-
-    BooleanOperation op = vol.GetOp();
-    PlacedBooleanVolume_ConstructOnGpu<<<1, 1>>>(op,logical_volume, transformation,
+    PlacedBooleanVolume_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
                                                 id, gpu_ptr);
 }
 

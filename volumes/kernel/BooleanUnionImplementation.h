@@ -355,7 +355,7 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
 
     Float_t dist = 0., disTmp = 0.;
-    int count1=0, count2=0;
+    //int count1=0, count2=0;
 
     typename Backend::inside_v positionA = fPtrSolidA->Inside(p);
     if( positionA != EInside::kOutside )
