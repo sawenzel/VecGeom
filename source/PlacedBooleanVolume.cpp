@@ -7,6 +7,8 @@
 
 #include "volumes/PlacedBooleanVolume.h"
 #include "volumes/SpecializedBooleanVolume.h"
+#include "volumes/UnplacedBooleanVolume.h"
+#include "volumes/LogicalVolume.h"
 
 namespace vecgeom {
 
@@ -45,18 +47,35 @@ class VPlacedVolume;
 // construction function on GPU
 __global__
 void PlacedBooleanVolume_ConstructOnGpu(
+    BooleanOperation op,
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
 
-    // TODO: we will have to distinguish according to the operation
-    new(gpu_ptr) vecgeom_cuda::GenericPlacedSubtractionVolume(
-        reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-        reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-
+    if(op == kSubtraction)
+    {
+        new(gpu_ptr) vecgeom_cuda::GenericPlacedSubtractionVolume(
+            reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
+            reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
+        NULL,
+        id);
+    }
+    if(op == kUnion)
+    {
+        new(gpu_ptr) vecgeom_cuda::GenericPlacedUnionVolume(
+            reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
+            reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
+           NULL,
+          id);
+    }
+    if(op == kIntersection)
+    {
+        new(gpu_ptr) vecgeom_cuda::GenericPlacedIntersectionVolume(
+            reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
+            reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
+            NULL,
+            id);
+    }
 }
 
 // implementation of actual copy function to cpu
@@ -66,7 +85,12 @@ void PlacedBooleanVolume_CopyToGpu(
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
 
-  PlacedBooleanVolume_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
+    __attribute__((unused)) const vecgeom_cuda::UnplacedBooleanVolume &vol
+           = static_cast<const vecgeom_cuda::UnplacedBooleanVolume&>( *(
+                   reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume)->unplaced_volume()));
+
+    BooleanOperation op = vol.GetOp();
+    PlacedBooleanVolume_ConstructOnGpu<<<1, 1>>>(op,logical_volume, transformation,
                                                 id, gpu_ptr);
 }
 

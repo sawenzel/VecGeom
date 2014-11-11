@@ -55,7 +55,7 @@ public:
 }; // endofclassdefinition
 
 typedef SpecializedBooleanVolume<kUnion, translation::kGeneric, rotation::kGeneric> GenericPlacedUnionVolume;
-typedef SpecializedBooleanVolume<kIntersection, translation::kGeneric, rotation::kGeneric> GenericPlacedIntersecionVolume;
+typedef SpecializedBooleanVolume<kIntersection, translation::kGeneric, rotation::kGeneric> GenericPlacedIntersectionVolume;
 typedef SpecializedBooleanVolume<kSubtraction, translation::kGeneric, rotation::kGeneric> GenericPlacedSubtractionVolume;
 
 typedef SpecializedBooleanVolume<kUnion, translation::kIdentity, rotation::kIdentity> GenericUnionVolume;
