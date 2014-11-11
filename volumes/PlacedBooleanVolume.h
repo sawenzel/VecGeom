@@ -152,7 +152,7 @@ public:
                  );
            }
       if( GetUnplacedVolume()->GetOp() == kIntersection ){
-                  return new G4InterSectionSolid( GetLabel(),
+                  return new G4IntersectionSolid( GetLabel(),
                         const_cast<G4VSolid*>(left->ConvertToGeant4()),
                         const_cast<G4VSolid*>(right->ConvertToGeant4()),
                         0, /* no rotation for the moment */
