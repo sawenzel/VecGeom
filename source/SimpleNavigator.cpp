@@ -29,8 +29,8 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 
    // check that everything is consistent
    {
-      NavigationState tmpstate( state );
-      tmpstate.Clear();
+      NavigationState * tmpstate = NavigationState::MakeCopy( state ) );
+      tmpstate->Clear();
       assert( LocatePoint( GeoManager::Instance().GetWorld(),
               globalpoint, tmpstate, true ) == state.Top() );
    }
@@ -92,7 +92,7 @@ void SimpleNavigator::InspectSafetyForPoint
 
    // check that everything is consistent
    {
-      NavigationState tmpstate( state );
+      NavigationState * tmpstate = NavigationState::MakeCopy( state );
       tmpstate.Clear();
       assert( LocatePoint( GeoManager::Instance().GetWorld(),
               globalpoint, tmpstate, true ) == state.Top() );

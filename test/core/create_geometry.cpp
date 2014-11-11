@@ -50,9 +50,9 @@ int main() {
 
   SimpleNavigator nav;
   Vector3D<Precision> point(2, 2, 2);
-  NavigationState path(4);
-  nav.LocatePoint(world_placed, point, path, true);
-  path.Print();
+  NavigationState * path = NavigationState::MakeInstance(4);
+  nav.LocatePoint(world_placed, point, *path, true);
+  path->Print();
 
   GeoManager::Instance().FindLogicalVolume("Large box");
   GeoManager::Instance().FindPlacedVolume("Large box");
