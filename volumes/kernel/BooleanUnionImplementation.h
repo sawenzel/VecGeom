@@ -354,20 +354,32 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
     VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
 
-    Float_t dist = 0.0, disTmp = 0.0 ;
+    Float_t dist = 0., disTmp = 0.;
+    int count1=0, count2=0;
+
     typename Backend::inside_v positionA = fPtrSolidA->Inside(p);
     if( positionA != EInside::kOutside )
     {
       do
        {
+         //count1++;
          disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v);
-           dist += disTmp ;
+         // distTmp
+         //std::cerr << "distTmp1 " << disTmp << "\n";
 
-           if(fPtrSolidB->Inside(p+dist*v) != EInside::kOutside)
-           {
-             disTmp = fPtrSolidB->DistanceToOut(p+dist*v,v);
-             dist += disTmp ;
-           }
+         dist += disTmp;
+
+         if(fPtrSolidB->Inside(p+dist*v) != EInside::kOutside)
+         {
+            disTmp = fPtrSolidB->DistanceToOut(
+                        fPtrSolidB->transformation()->Transform(p+dist*v),v
+                    );
+           // std::cerr << "distTmp2 " << disTmp << "\n";
+            dist += disTmp ;
+            //dist += (disTmp>=0.)? disTmp : 0.;
+         }
+        //if(count1 > 100){
+            //std::cerr << "LOOP1 INFINITY\n"; break; }
        }
        while( fPtrSolidA->Inside(p+dist*v) != EInside::kOutside &&
                      disTmp > kHalfTolerance ) ;
@@ -377,16 +389,24 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
     {
       do
       {
-        disTmp = fPtrSolidB->DistanceToOut(p+dist*v,v);
-        dist += disTmp ;
-
+        //count2++;
+        disTmp = fPtrSolidB->DistanceToOut(
+                fPtrSolidB->transformation()->Transform(p+dist*v),v);
+        //std::cerr << "distTmp3 " << disTmp << "\n";
+        //dist += disTmp ;
+        dist += (disTmp>=0.)? disTmp : 0.;
         if(fPtrSolidA->Inside(p+dist*v) != EInside::kOutside)
            {
              disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v);
+             //std::cerr << "distTmp4 " << disTmp;
+          //   std::cerr << "distTmp4 " << disTmp << "\n";
              dist += disTmp ;
+             //dist += (disTmp>=0.)? disTmp : 0.;
            }
-       }
-       while( (fPtrSolidB->Inside(p+dist*v) != EInside::kOutside)
+        //if(count2 > 100){
+            // std::cerr << "LOOP2 INFINITY\n"; break; }
+      }
+      while( (fPtrSolidB->Inside(p+dist*v) != EInside::kOutside)
                && (disTmp > kHalfTolerance));
     }
     distance = dist;
@@ -431,13 +451,16 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::SafetyToOutKernel(
     if( containedA && containedB ) /* in both */
     {
       safety= Max(fPtrSolidA->SafetyToOut(p),
-                  fPtrSolidB->SafetyToOut(p) ) ; // is max correct ??
+                  fPtrSolidB->SafetyToOut(
+                          fPtrSolidB->transformation()->Transform(p)
+                          ) ) ; // is max correct ??
     }
     else
     {
      if( containedB ) /* only contained in B */
       {
-        safety = fPtrSolidB->SafetyToOut(p) ;
+        safety = fPtrSolidB->SafetyToOut(
+                    fPtrSolidB->transformation()->Transform(p));
       }
       else
       {

@@ -56,6 +56,7 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
               logical_volume, transformation, placement);
         #endif
             }
+    return nullptr;
 }
 
 
