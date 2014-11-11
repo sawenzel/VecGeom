@@ -289,7 +289,7 @@ public:
   void CopyFrom( Transformation3D const & rhs )
   {
     // not sure this compiles under CUDA
-    std::memcpy(this, &rhs, sizeof(*this));
+    std::memcpy((void*)this, (void*)&rhs, sizeof(*this));
   }
 
   // Utility and CUDA
