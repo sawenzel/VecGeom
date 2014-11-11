@@ -15,7 +15,14 @@ VECGEOM_CUDA_HEADER_BOTH
 UnplacedParallelepiped::UnplacedParallelepiped(
     Vector3D<Precision> const &dimensions,
     const Precision alpha,  const Precision theta, const Precision phi)
-    : fDimensions(dimensions) {
+   : fDimensions(dimensions),
+fAlpha(0),
+fTheta(0),
+fPhi(0),
+fTanAlpha(0),
+fTanThetaSinPhi(0),
+fTanThetaCosPhi(0)
+{
   SetAlpha(alpha);
   SetThetaAndPhi(theta, phi);
 }
@@ -24,7 +31,14 @@ VECGEOM_CUDA_HEADER_BOTH
 UnplacedParallelepiped::UnplacedParallelepiped(
     const Precision x, const Precision y, const Precision z,
     const Precision alpha, const Precision theta, const Precision phi)
-    : fDimensions(x, y, z) {
+   : fDimensions(x, y, z),
+fAlpha(0),
+fTheta(0),
+fPhi(0),
+fTanAlpha(0),
+fTanThetaSinPhi(0),
+fTanThetaCosPhi(0)
+{
   SetAlpha(alpha);
   SetThetaAndPhi(theta, phi);
 }

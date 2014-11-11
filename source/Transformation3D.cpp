@@ -21,7 +21,8 @@ namespace VECGEOM_NAMESPACE {
 const Transformation3D Transformation3D::kIdentity =
     SpecializedTransformation3D<translation::kIdentity, rotation::kIdentity>();
 
-Transformation3D::Transformation3D() {
+Transformation3D::Transformation3D() :
+   fIdentity(false), fHasRotation(true), fHasTranslation(true) {
   SetTranslation(0, 0, 0);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
   SetProperties();
@@ -29,7 +30,8 @@ Transformation3D::Transformation3D() {
 
 Transformation3D::Transformation3D(const Precision tx,
                                    const Precision ty,
-                                   const Precision tz) {
+                                   const Precision tz) :
+   fIdentity(false), fHasRotation(true), fHasTranslation(true) {
   SetTranslation(tx, ty, tz);
   SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
   SetProperties();
@@ -38,7 +40,8 @@ Transformation3D::Transformation3D(const Precision tx,
 Transformation3D::Transformation3D(
     const Precision tx, const Precision ty,
     const Precision tz, const Precision phi,
-    const Precision theta, const Precision psi) {
+    const Precision theta, const Precision psi) :
+fIdentity(false), fHasRotation(true), fHasTranslation(true) {
   SetTranslation(tx, ty, tz);
   SetRotation(phi, theta, psi);
   SetProperties();
@@ -48,7 +51,8 @@ Transformation3D::Transformation3D(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
-    const Precision r6, const Precision r7, const Precision r8) {
+    const Precision r6, const Precision r7, const Precision r8) :
+fIdentity(false), fHasRotation(true), fHasTranslation(true){
   SetTranslation(tx, ty, tz);
   SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
   SetProperties();
