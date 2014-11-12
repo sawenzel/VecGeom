@@ -187,6 +187,9 @@ void test7()
    // generate points
    for(int i=0;i<1000000;++i)
    {
+     state->Clear();
+     state2->Clear();
+
       double x = RNG::Instance().uniform(-10,10);
       double y = RNG::Instance().uniform(-10,10);
       double z = RNG::Instance().uniform(-10,10);
@@ -295,6 +298,9 @@ void test8()
    // statistical test  of navigation via comparison with ROOT navigation
    for(int i=0;i<1000000;++i)
    {
+     state->Clear();
+     newstate->Clear();
+
       //std::cerr << "START ITERATION " << i << "\n";
       double x = RNG::Instance().uniform(-10,10);
       double y = RNG::Instance().uniform(-10,10);
@@ -354,6 +360,8 @@ void test_safety()
    // statistical test  of navigation via comparison with ROOT navigation
       for(int i=0;i<1000000;++i)
       {
+	state->Clear();
+
          //std::cerr << "START ITERATION " << i << "\n";
          double x = RNG::Instance().uniform(-10,10);
          double y = RNG::Instance().uniform(-10,10);
