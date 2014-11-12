@@ -29,10 +29,10 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 
    // check that everything is consistent
    {
-      NavigationState * tmpstate = NavigationState::MakeCopy( state ) );
+      NavigationState * tmpstate = NavigationState::MakeCopy( state );
       tmpstate->Clear();
       assert( LocatePoint( GeoManager::Instance().GetWorld(),
-              globalpoint, tmpstate, true ) == state.Top() );
+              globalpoint, *tmpstate, true ) == state.Top() );
    }
 
    // now check mother and daughters
@@ -93,9 +93,9 @@ void SimpleNavigator::InspectSafetyForPoint
    // check that everything is consistent
    {
       NavigationState * tmpstate = NavigationState::MakeCopy( state );
-      tmpstate.Clear();
+      tmpstate->Clear();
       assert( LocatePoint( GeoManager::Instance().GetWorld(),
-              globalpoint, tmpstate, true ) == state.Top() );
+              globalpoint, *tmpstate, true ) == state.Top() );
    }
 
    std::cout << "############################################ " << "\n";

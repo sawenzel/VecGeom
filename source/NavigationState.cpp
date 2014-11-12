@@ -25,9 +25,9 @@ namespace VECGEOM_NAMESPACE
 
     // my counting is a bit different: it tells the NUMBER of levels which are filled
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,34,23)
-    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( fCurrentLevel_-1, 0 );
+    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( fMaxlevel );
 #else
-    TGeoBranchArray * tmp = new TGeoBranchArray( fCurrentLevel_-1 );
+    TGeoBranchArray * tmp = new TGeoBranchArray( fMaxlevel );
 #endif
     // gain access to array
     TGeoNode ** array = tmp->GetArray();
