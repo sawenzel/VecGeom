@@ -71,7 +71,7 @@ public:
 
    VECGEOM_CUDA_HEADER_BOTH
    static int SizeNeeded( int maxlevel ){
-       return sizeof(NavigationState) + sizeof(VPlacedVolume*)*maxlevel;
+     return sizeof(NavigationState) + sizeof(VPlacedVolume*)*(maxlevel+1);
    }
 
    VECGEOM_CUDA_HEADER_BOTH
@@ -204,7 +204,7 @@ public:
    //Transformation3D const * GetGlobalMatrixFromPath() const;
 };
 
-
+inline
 NavigationState * NavigationState::MakeInstance(int maxlevel , void * addr)
 {
   // Make an instance of the class which allocates the node array. To be
@@ -227,6 +227,7 @@ NavigationState * NavigationState::MakeInstance(int maxlevel , void * addr)
   return ba;
 }
 
+inline
 NavigationState * NavigationState::MakeCopy( NavigationState const & rhs , void * addr)
 {
   // this might be doing too much work
