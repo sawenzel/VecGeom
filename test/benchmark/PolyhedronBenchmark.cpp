@@ -61,8 +61,8 @@ int main(int nArgs, char **args) {
     benchmarker.SetRepetitions(8192);
     benchmarker.SetPointCount(128);
     benchmarker.RunInsideBenchmark();
-    // benchmarker.RunToInBenchmark();
-    // benchmarker.RunToOutBenchmark();
+    benchmarker.RunToInBenchmark();
+    benchmarker.RunToOutBenchmark();
     std::list<BenchmarkResult> results = benchmarker.PopResults();
     std::ofstream outStream;
     outStream.open(label, std::fstream::app);

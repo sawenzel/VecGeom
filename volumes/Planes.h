@@ -190,7 +190,7 @@ typename Backend::bool_v Planes::Contains(
 
   int i = 0;
   const int n = size();
-  AcceleratedContains<Backend>(i, n, fNormals, fDistances, point, result);
+  // AcceleratedContains<Backend>(i, n, fNormals, fDistances, point, result);
 
   for (; i < n; ++i) {
     result &= point.Dot(fNormals[i]) + fDistances[i] < 0;

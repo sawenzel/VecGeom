@@ -69,7 +69,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   if (phiDelta > kTwoPi) phiDelta = kTwoPi;
   Precision sidePhi = phiDelta / sideCount;
   std::unique_ptr<Precision[]> vertixPhi(new Precision[sideCount+1]);
-  for (int i = 0, iMax = sideCount; i < iMax; ++i) {
+  for (int i = 0, iMax = sideCount+1; i < iMax; ++i) {
     vertixPhi[i] = NormalizeAngle<kScalar>(phiStart + i*sidePhi);
     Vector3D<Precision> cornerVector =
         Vec_t::FromCylindrical(1., vertixPhi[i], 0).Normalized().FixZeroes();
@@ -79,8 +79,6 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   if (!fHasPhiCutout) {
     // If there is no phi cutout, last phi is equal to the first
     vertixPhi[sideCount] = vertixPhi[0];
-  } else {
-    vertixPhi[sideCount] = phiStart + (sideCount-1)*sidePhi;
   }
 
   // Specified radii are to the sides, not to the corners. Change these values,

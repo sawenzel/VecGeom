@@ -305,8 +305,8 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
 
   int i = 0;
   const int n = size();
-  // AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
-  //     i, n, fPlanes, fSideVectors, point, direction, bestDistance);
+  AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
+      i, n, fPlanes, fSideVectors, point, direction, bestDistance);
 
   for (; i < n; ++i) {
     Vector3D<Precision> normal = fPlanes.GetNormal(i);
