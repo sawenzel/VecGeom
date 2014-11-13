@@ -23,6 +23,14 @@ UnplacedPolyhedron WithInnerRadii() {
  return UnplacedPolyhedron(5, nPlanes, zPlanes, rInner, rOuter);
 }
 
+UnplacedPolyhedron WithPhiSection() {
+ constexpr int nPlanes = 5;
+ Precision zPlanes[nPlanes] = {-4, -1, 0, 1, 4};
+ Precision rInner[nPlanes] = {1, 0.75, 0.5, 0.75, 1};
+ Precision rOuter[nPlanes] = {1.5, 1.5, 1.5, 1.5, 1.5};
+ return UnplacedPolyhedron(15, 45, 5, nPlanes, zPlanes, rInner, rOuter);
+}
+
 UnplacedPolyhedron ManySegments() {
   constexpr int nPlanes = 17;
   Precision zPlanes[nPlanes] =
@@ -51,10 +59,10 @@ int main(int nArgs, char **args) {
     benchmarker.SetVerbosity(3);
     benchmarker.SetPoolMultiplier(1);
     benchmarker.SetRepetitions(8192);
-    benchmarker.SetPointCount(512);
+    benchmarker.SetPointCount(128);
     benchmarker.RunInsideBenchmark();
-    // benchmarker.RunToOutBenchmark();
     // benchmarker.RunToInBenchmark();
+    // benchmarker.RunToOutBenchmark();
     std::list<BenchmarkResult> results = benchmarker.PopResults();
     std::ofstream outStream;
     outStream.open(label, std::fstream::app);
@@ -66,8 +74,9 @@ int main(int nArgs, char **args) {
   };
 
   // RunBenchmark(NoInnerRadii(), "polyhedron_no-inner-radii.csv");
-  RunBenchmark(WithInnerRadii(), "polyhedron_with-inner-radii.csv");
+  // RunBenchmark(WithInnerRadii(), "polyhedron_with-inner-radii.csv");
   // RunBenchmark(ManySegments(), "polyhedron_many-segments.csv");
+  RunBenchmark(WithPhiSection(), "polyhedron_phi-section.csv");
 
   return 0;
 }

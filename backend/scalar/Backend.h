@@ -221,7 +221,10 @@ bool all_of(IteratorType first, IteratorType last) {
 #ifdef VECGEOM_STD_CXX11
   return std::all_of(first, last, [](bool b){return b;});
 #else
-  while (first != last) if (!(*first)) return false;
+  while (first < last) {
+    if (!(*first)) return false;
+    ++first;
+  }
   return true;
 #endif
 }

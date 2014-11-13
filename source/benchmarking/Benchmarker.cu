@@ -120,7 +120,7 @@ void Benchmarker::RunInsideCuda(
       AllocateOnGpu<bool>(sizeof(bool)*fPointCount);
   Inside_t *insideGpu =
       AllocateOnGpu<Inside_t>(sizeof(Inside_t)*fPointCount);
-  
+
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
@@ -132,11 +132,11 @@ void Benchmarker::RunInsideCuda(
     }
   }
   Precision elapsedContains = timer.Stop();
-  
+
   CopyFromGpu(containsGpu, contains, fPointCount*sizeof(bool));
 
   FreeFromGpu(containsGpu);
-  
+
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
@@ -148,7 +148,7 @@ void Benchmarker::RunInsideCuda(
     }
   }
   Precision elapsedInside = timer.Stop();
-  
+
   CopyFromGpu(insideGpu, inside, fPointCount*sizeof(Inside_t));
 
   FreeFromGpu(insideGpu);
@@ -179,7 +179,7 @@ void Benchmarker::RunInsideCuda(
 
 void Benchmarker::RunToInCuda(
     Precision *const posX, Precision *const posY,
-    Precision *const posZ, Precision *const dirX, 
+    Precision *const posZ, Precision *const dirX,
     Precision *const dirY, Precision *const dirZ,
     Precision *const distances, Precision *const safeties) {
 
@@ -224,7 +224,7 @@ void Benchmarker::RunToInCuda(
                                                      *fPointCount);
   Precision *safetiesGpu = AllocateOnGpu<Precision>(sizeof(Precision)
                                                     *fPointCount);
-  
+
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
@@ -243,7 +243,7 @@ void Benchmarker::RunToInCuda(
   FreeFromGpu(dirXGpu);
   FreeFromGpu(dirYGpu);
   FreeFromGpu(dirZGpu);
-  
+
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
@@ -286,7 +286,7 @@ void Benchmarker::RunToInCuda(
 
 void Benchmarker::RunToOutCuda(
     Precision *const posX, Precision *const posY,
-    Precision *const posZ, Precision *const dirX, 
+    Precision *const posZ, Precision *const dirX,
     Precision *const dirY, Precision *const dirZ,
     Precision *const distances, Precision *const safeties) {
 
@@ -334,7 +334,7 @@ void Benchmarker::RunToOutCuda(
   vecgeom_cuda::LaunchParameters launch =
       vecgeom_cuda::LaunchParameters(fPointCount);
   vecgeom_cuda::Stopwatch timer;
-  
+
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
@@ -346,7 +346,7 @@ void Benchmarker::RunToOutCuda(
     }
   }
   elapsedDistance = timer.Stop();
-  
+
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
@@ -388,7 +388,7 @@ void Benchmarker::RunToOutCuda(
   FreeFromGpu(dirXGpu);
   FreeFromGpu(dirYGpu);
   FreeFromGpu(dirZGpu);
-  
+
   cudaDeviceSynchronize();
 }
 

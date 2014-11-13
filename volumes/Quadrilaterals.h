@@ -46,9 +46,9 @@ public:
       Precision *side1B, Precision *side1C, Precision *side1D,
       Precision *side2A, Precision *side2B, Precision *side2C,
       Precision *side2D, Precision *side3A, Precision *side3B,
-      Precision *side3C, Precision *side3D, Vector3D<Precision> *corner0,
-      Vector3D<Precision> *corner1, Vector3D<Precision> *corner2,
-      Vector3D<Precision> *corner3, int size);
+      Precision *side3C, Precision *side3D, AOS3D<Precision> const &corner0,
+      AOS3D<Precision> const &corner1, AOS3D<Precision> const &corner2,
+      AOS3D<Precision> const &corner3, int size);
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -305,8 +305,8 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
 
   int i = 0;
   const int n = size();
-  AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
-      i, n, fPlanes, fSideVectors, point, direction, bestDistance);
+  // AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
+  //     i, n, fPlanes, fSideVectors, point, direction, bestDistance);
 
   for (; i < n; ++i) {
     Vector3D<Precision> normal = fPlanes.GetNormal(i);
@@ -324,15 +324,13 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Vector3D<Float_t> intersection = point + direction*distance;
     for (int j = 0; j < 4; ++j) {
       valid &= intersection.Dot(fSideVectors[j].GetNormal(i)) +
-               fSideVectors[j].GetDistance(i) >= 0;
-      // Where is your god now
-      if (IsEmpty(valid)) goto distanceToInContinueOuterLoop;
+               fSideVectors[j].GetDistances()[i] >= 0;
+      if (IsEmpty(valid)) break;
     }
     MaskedAssign(valid, distance, &bestDistance);
     // If all hits are found, the algorithm can return, since only one side can
     // be hit for a convex set of quadrilaterals
     if (IsFull(bestDistance < kInfinity)) break;
-    distanceToInContinueOuterLoop:;
   }
 
   return bestDistance;
@@ -465,12 +463,14 @@ Precision Quadrilaterals::ScalarDistanceSquared(
                      intersection[2]*fSideVectors[j].GetNormals().z(i) +
                      fSideVectors[j].GetDistances()[i] >= 0;
   }
-  if (all_of(withinBound, withinBound+4)) return distance*distance;
+  if (withinBound[0] && withinBound[1] && withinBound[2] && withinBound[3]) {
+    return distance*distance;
+  }
 
   // If the closest point is not on the plane itself, it must either be the
   // distance to the closest line segment or to the closest corner.
-  // Since it is already known whether the point is to the left or right of each
-  // line, only one side and its corners have to be checked.
+  // Since it is already known whether the point is to the left or right of
+  // each line, only one side and its corners have to be checked.
 
   Vector3D<Precision> corner0, corner1;
 

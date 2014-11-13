@@ -449,7 +449,6 @@ void UnplacedPolyhedron_ConstructOnGpu(
       static_cast<vecgeom_cuda::UnplacedPolyhedron::ZSegment*>(zSegments),
       zPlanes, zPlaneCount, phiSectionsX, phiSectionsY, phiSectionsZ,
       *boundingTube, boundingTubeOffset);
-  reinterpret_cast<vecgeom_cuda::UnplacedPolyhedron*>(gpuPtr)->PrintSegments();
 }
 
 void UnplacedPolyhedron_CopyToGpu(VUnplacedVolume *gpuPtr, int sideCount,
