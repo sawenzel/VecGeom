@@ -24,7 +24,12 @@ namespace VECGEOM_NAMESPACE
     // this is a branch which is filled at level zero
 
     // my counting is a bit different: it tells the NUMBER of levels which are filled
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,34,23)
+    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( currentlevel_-1, 0 );
+#else
     TGeoBranchArray * tmp = new TGeoBranchArray( currentlevel_-1 );
+#endif
+
     // gain access to array
     TGeoNode ** array = tmp->GetArray();
     RootGeoManager & mg=RootGeoManager::Instance();

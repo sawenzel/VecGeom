@@ -15,6 +15,8 @@ namespace vecgeom {
 class UnplacedRootVolume : public VUnplacedVolume {
 
 private:
+   UnplacedRootVolume(const UnplacedRootVolume&); // Not implemented
+   UnplacedRootVolume& operator=(const UnplacedRootVolume&); // Not implemented
 
   TGeoShape const *fRootShape;
 

@@ -97,10 +97,12 @@ public:
   Precision GetAlpha2() const { return GetUnplacedVolume()->GetAlpha2(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
+  virtual
+  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
+  virtual
+  Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
 
 #ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH

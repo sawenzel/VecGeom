@@ -1227,7 +1227,7 @@ struct ConeImplementation {
 
         // Vars for phi intersection:
 
-        double pDistS, compS, pDistE, compE, sphi2, xi, yi, risec, vphi;
+        double pDistS, compS, pDistE, compE, sphi2, xi, yi, /*risec,*/ vphi;
         double zi, ri, deltaRoi2;
 
         // Z plane intersection
@@ -1328,7 +1328,7 @@ struct ConeImplementation {
 
             if (nt3 > -halfRadTolerance && nt2 >= 0)
             {
-              risec     = Sqrt(t3) * unplaced.fSecRMax;
+	       //              risec     = Sqrt(t3) * unplaced.fSecRMax;
              // aConvex = true;
              // aNormalVector        = UVector3(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
               return snxt = 0;
@@ -1397,7 +1397,7 @@ struct ConeImplementation {
             // No intersection with outer cone & not parallel
             // -> already outside, no intersection
 
-            risec     = Sqrt(t3) * unplaced.fSecRMax;
+            //risec     = Sqrt(t3) * unplaced.fSecRMax;
            // aConvex = true;
            // aNormalVector        = UVector3(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
             return snxt = 0.0;
@@ -1407,7 +1407,7 @@ struct ConeImplementation {
         {
           // Linear case (only one intersection) => point outside outer cone
 
-          risec     = Sqrt(t3) * unplaced.fSecRMax;
+	   //          risec     = Sqrt(t3) * unplaced.fSecRMax;
          // aConvex = true;
          // aNormalVector        = UVector3(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
           return snxt = 0.0;

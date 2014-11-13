@@ -126,7 +126,7 @@ set(VECGEOM_COMPILATION_FLAGS
     "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
-  if (APPLE OR UNIX) 
+  if (APPLE OR UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
@@ -291,12 +291,11 @@ if (CUDA)
 endif()
 
 if (ROOT)
-  
+
   find_package(ROOT REQUIRED)
 
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
-  link_directories(${ROOT_LIBRARY_DIR}/root) # For natively installed ROOT
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL}
       Cint Core MathCore RIO Thread Geom Gui Net Hist Graf Graf3d Gpad Tree
       Rint Postscript Matrix Physics m dl)
@@ -329,7 +328,7 @@ if (USolids)
   elseif (USOLIDS_DIR)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
-  
+
   set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} usolids)
 
 endif()
@@ -490,6 +489,8 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
 )
 set(TEST_EXECUTABLES_VISUALIZATION
+  ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTrap.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
@@ -630,7 +631,7 @@ if (USolids)
 endif()
 configure_file(VecgeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake" @ONLY)
- 
+
 # Install the VecgeomConfig.cmake
 install(FILES
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake"
