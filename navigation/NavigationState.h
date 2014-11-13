@@ -55,6 +55,19 @@ private:
    VECGEOM_CUDA_HEADER_BOTH
    void InitInternalStorage();
 
+private:
+
+   // The data start should point to the address of the first data member,
+   // after the virtual table
+  // the purpose is probably for the Copy function
+  void*  DataStart() const {return (void*)&fMaxlevel;}
+  void*  ObjectStart() const {return (void*)this;}
+
+     // The actual size of the data for an instance, excluding the virtual table
+  size_t      DataSize() const {
+      return SizeOf() + (size_t)ObjectStart() - (size_t)DataStart();}
+
+
 public:
 
    VECGEOM_CUDA_HEADER_BOTH
@@ -63,25 +76,54 @@ public:
    // be placed
    // the caller has to make sure that the size of the external memory
    // is >= sizeof(NavigationState) + sizeof(VPlacedVolume*)*maxlevel
+   //
+   // TODO: It would probably be clearer to the user to have 2 functions
+   // MakeInstance and MakeInstanceAt
    static NavigationState* MakeInstance(int maxlevel, void *addr=0);
 
    // The equivalent of the copy constructor
+   // MakeCopy + MakeCopyAt?
    static NavigationState* MakeCopy(NavigationState const & other, void *addr=0);
 
-
+   // returns the size in bytes of a NavigationState object with internal
+   // path depth maxlevel
    VECGEOM_CUDA_HEADER_BOTH
    static int SizeNeeded( int maxlevel ){
      return sizeof(NavigationState) + sizeof(VPlacedVolume*)*(maxlevel+1);
    }
 
+   // same as above ( to be equivalent with TGeoBranchArray in ROOT )
    VECGEOM_CUDA_HEADER_BOTH
-   int GetObjectSize(  ) const {
+   static int SizeOf( int maxlevel ){
+     return sizeof(NavigationState) + sizeof(VPlacedVolume*)*(maxlevel+1);
+   }
+
+   //
+   VECGEOM_CUDA_HEADER_BOTH
+   int GetObjectSize() const {
         return NavigationState::SizeNeeded(fMaxlevel);
+   }
+
+   VECGEOM_CUDA_HEADER_BOTH
+   int SizeOf() const {
+       return NavigationState::SizeOf(fMaxlevel);
    }
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
+
+   // another copy method (inverse direction )
+   VECGEOM_CUDA_HEADER_BOTH
+   void CopyTo( NavigationState * other ) const {
+       // Raw memcpy of the content to another existing state.
+       //
+       // in case NavigationState was a virtual class: change to
+       // std::memcpy(other->DataStart(), DataStart(), DataSize());
+       std::memcpy(other, this, this->SizeOf());
+       other->fPath = &(other->fBuffer[0]);
+   }
+
 
 #ifdef VECGEOM_ROOT
    TGeoBranchArray * ToTGeoBranchArray() const;
@@ -233,10 +275,7 @@ NavigationState * NavigationState::MakeCopy( NavigationState const & rhs , void 
   // this might be doing too much work
   NavigationState* copy = NavigationState::MakeInstance( rhs.fMaxlevel, addr );
   // copy info
-  copy->fCurrentLevel = rhs.fCurrentLevel;
-  copy->fOnBoundary = rhs.fOnBoundary;
-  copy->global_matrix_ = rhs.global_matrix_;
-  std::memcpy(copy->fPath, rhs.fPath, sizeof(*fPath)*rhs.fCurrentLevel);
+  rhs.CopyTo(copy);
   return copy;
 }
 
