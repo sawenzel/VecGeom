@@ -18,7 +18,6 @@
 
 class TGeoBranchArray;
 
-#include <iostream>
 
 namespace VECGEOM_NAMESPACE
 {
@@ -84,6 +83,10 @@ public:
    // The equivalent of the copy constructor
    // MakeCopy + MakeCopyAt?
    static NavigationState* MakeCopy(NavigationState const & other, void *addr=0);
+
+
+   // static function to release an instance
+   static void ReleaseInstance( NavigationState *instance ){}
 
    // returns the size in bytes of a NavigationState object with internal
    // path depth maxlevel
