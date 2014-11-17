@@ -17,6 +17,46 @@
 
 namespace VECGEOM_NAMESPACE {
 
+/// \class UnplacedPolyhedron
+/// \brief A series of regular n-sided segments along the Z-axis with varying
+///        radii and mutual distance in Z.
+///
+/// ---- Cross section of single Z segment ----
+///
+/// R/Phi--->    -o- Z
+/// |        ________________
+/// v       /        ^      .\
+///        /    rMax |     .  \,
+///       /          |    . <------ fPhiSections[1]
+///      /       ____|___.      \,
+///     /       /    ^   \       \,
+///    /       /     |rMin\       \,
+///   /       /      |     \_______\ phiStart/fPhiSections[0]
+///   \       \                ^
+///    \       \               |
+///     \       \________      |
+///      \           ^   \<---fZSegments.phi
+///      fZSegments.inner \
+///        \               \
+///         \_______________\
+///           ^              phiStart+phiDelta/fPhiSections[n-1]
+/// zSegment.outer
+///
+///
+/// ---- Segments along Z ----
+///
+///                          fZPlanes[size-1]
+/// fRMax[1]_____fRMax[2] __       |
+///       /|     |\     /|  \___   v
+///      / |     | \___/ |  |   |\.
+///     |  |     | |   | |  |   | \.
+///     |  |     | |   | |  |   |  |
+///     |  |     | |___| |  |   | /
+///      \ |     | /   \ |  |___|/    ^ R/Phi
+///     ^ \|_____|/     \|__/         |
+///     |                             |     Z
+///     fZPlanes[0]/fRMax[0]           ----->
+
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 public:
@@ -33,48 +73,26 @@ public:
 
 private:
 
-  // ---- Cross section of single Z segment ----
-  //
-  // R/Phi--->    -o- Z
-  // |        ________________
-  // v       /        ^       \ fPhiSections
-  //        /    rMax |     /  \.
-  //       /          |    o    \.
-  //      /       ____|___/      \.
-  //     /       /    ^   \       \.
-  //    /       /     |rMin\       \.
-  //   /       /      |     \--o--o-\ fPhiSections
-  //   \       \            /       /
-  //    \       \          /       /
-  //     \       \________/       /
-  //      \       ZSegment.inner /
-  //       \                    /
-  //        \                  / ZSegment.outer
-  //         \________________/
-  //
-  //
-  // ---- Segments along Z ----
-  //
-  //
-  //                          fZPlanes[size-1]
-  // fRMax[1]_____fRMax[2] __       |
-  //       /|     |\     /|  \___   v
-  //      / |     | \___/ |  |   |\.
-  //     |  |     | |   | |  |   | \.
-  //     |  |     | |   | |  |   |  |
-  //     |  |     | |___| |  |   | /
-  //      \ |     | /   \ |  |___|/    ^
-  //     ^ \|_____|/     \|__/         | R/Phi
-  //     |                         Z   |
-  //     fZPlanes[0]               <---
-
-  int fSideCount;
-  bool fHasInnerRadii, fHasPhiCutout, fHasLargePhiCutout;
-  Array<ZSegment> fZSegments;
-  Array<Precision> fZPlanes, fRMin, fRMax;
-  SOA3D<Precision> fPhiSections;
-  UnplacedTube fBoundingTube;
-  Precision fBoundingTubeOffset;
+  int fSideCount; ///< Number of segments along phi.
+  bool fHasInnerRadii; ///< Has any Z-segments with an inner radius != 0.
+  bool fHasPhiCutout; ///< Has a cutout angle along phi.
+  bool fHasLargePhiCutout; ///< Phi cutout is larger than pi.
+  Array<ZSegment> fZSegments; ///< AOS'esque collections of quadrilaterals
+  Array<Precision> fZPlanes; ///< Z-coordinate of each plane separating segments
+  // TODO: find a way to re-compute R-min and R-max when converting to another
+  //       library's representation to avoid having to store them here.
+  Array<Precision> fRMin; ///< Inner radii as specified in constructor.
+  Array<Precision> fRMax; ///< Outer radii as specified in constructor.
+  SOA3D<Precision> fPhiSections; ///< Unit vectors representing the angle
+                                 ///  separating each phi segment, allowing for
+                                 ///  quick determination of correct segment
+                                 ///  without using trigonometric functions.
+  UnplacedTube fBoundingTube; ///< Tube enclosing the outer bounds of the
+                              ///  polyhedron. Used in Contains, Inside and
+                              ///  DistanceToIn.
+  Precision fBoundingTubeOffset; ///< Offset in Z of the center of the bounding
+                                 ///  tube. Used as a quick substitution for
+                                 ///  running a full transformation.
 
 public:
 
@@ -167,12 +185,24 @@ public:
   VECGEOM_INLINE
   Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
 
+  /// Not a stored value, and should not be called from performance critical
+  /// code.
+  /// \return The angle along phi where the first corner is placed, specified in
+  ///         degrees.
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetPhiStart() const;
 
+  /// Not a stored value, and should not be called from performance critical
+  /// code.
+  /// \return The angle along phi where the last corner is placed, specified in
+  ///         degrees.
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetPhiEnd() const;
 
+  /// Not a stored value, and should not be called from performance critical
+  /// code.
+  /// \return The difference in angle along phi between the last corner and the
+  ///         first corner.
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetPhiDelta() const;
 
