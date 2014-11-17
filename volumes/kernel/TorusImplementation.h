@@ -793,31 +793,36 @@ struct TorusImplementation {
 
      Float_t validdistance = kInfinity;
      Bool_t havevalidsolution = Abs(roots[0].imag()) < 1E-9 && roots[0].real() > 0.;
-     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir));
+     if(needphi && ! IsEmpty(havevalidsolution))
+         havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir));
      MaskedAssign( havevalidsolution, roots[0].real(), &validdistance );
      //std::cerr << "#ROOTS " << roots[0] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir))<< "\n";
      
      havevalidsolution = Abs(roots[1].imag()) < 1E-9 && roots[1].real() > 0.;
-     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir));
+     if(needphi && ! IsEmpty(havevalidsolution))
+         havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[1].real(), validdistance), &validdistance );
      //std::cerr << "#ROOTS " << roots[1] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir))<< "\n"; 
 
 
      havevalidsolution = Abs(roots[2].imag()) < 1E-9 && roots[2].real() > 0.;
-     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir));
+     if(needphi && ! IsEmpty(havevalidsolution) )
+         havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[2].real(), validdistance), &validdistance );
      //std::cerr << "#ROOTS " << roots[2] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir))<< "\n";
 
 
      havevalidsolution = Abs(roots[3].imag()) < 1E-9 && roots[3].real() > 0.;
-     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir));
+     if(needphi && ! IsEmpty(havevalidsolution))
+              havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir));
+
      MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
      //std::cerr << "#ROOTS " << roots[3] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir))<< "\n";
     
 
      // TODO: only do this in case there is any finite real solution
      havevalidsolution &= (validdistance < kInfinity);
-     if( havevalidsolution){
+     if( ! IsEmpty( havevalidsolution ) ){
       validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
       validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
      
