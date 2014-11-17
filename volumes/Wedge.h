@@ -67,7 +67,7 @@ class Wedge{
             fAlongVector2.x() = std::cos(zeroangle+angle);
             fAlongVector2.y() = std::sin(zeroangle+angle);
 
-            fNormalVector1.x() = std::sin(zeroangle);
+            fNormalVector1.x() = -std::sin(zeroangle);
             fNormalVector1.y() = std::cos(zeroangle);  // not the + sign
             fNormalVector2.x() =  std::sin(zeroangle+angle);
             fNormalVector2.y() = -std::cos(zeroangle+angle); // note the - sign
@@ -104,6 +104,17 @@ class Wedge{
         VECGEOM_CUDA_HEADER_BOTH
         typename Backend::precision_v SafetyToOut( Vector3D<typename Backend::precision_v> const& point ) const;
 
+        /**
+         * estimate of the distance to the Wedge boundary with given direction
+         */
+        template<typename Backend>
+        VECGEOM_CUDA_HEADER_BOTH
+	void DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
+           Vector3D<typename Backend::precision_v> const &dir,typename  Backend::precision_v &distWedge1,typename  Backend::precision_v &distWedge2 ) const;
+          template<typename Backend>
+        VECGEOM_CUDA_HEADER_BOTH
+	void DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
+           Vector3D<typename Backend::precision_v> const &dir,typename  Backend::precision_v &distWedge1,typename  Backend::precision_v &distWedge2 ) const;
 
 
         // this could be useful to be public such that other shapes can directly
@@ -197,15 +208,16 @@ class Wedge{
         Float_t dist1 = point.x()*fNormalVector1.x() + point.y()*fNormalVector1.y();
         Float_t dist2 = point.x()*fNormalVector2.x() + point.y()*fNormalVector2.y();
 
-        std::cerr << "d1 "<<dist1 << "\n";
-        std::cerr << "d2 "<<dist2 << "\n";
+        // std::cerr << "d1 " << dist1<<"  "<<point << "\n";
+	// std::cerr << "d2 " << dist2<<"  "<<point << "\n";
 
         if(fDPhi < kPi){
             return Min(dist1,dist2);
         }
         else{
-            Float_t disttocorner = Sqrt(point.x()*point.x() + point.y()*point.y());
-            return Max(dist1,Max(dist2,disttocorner));
+	  //Float_t disttocorner = Sqrt(point.x()*point.x() + point.y()*point.y());
+	  // return Max(dist1,Max(dist2,disttocorner));
+           return Max(dist1,dist2);
         }
     }
 
@@ -225,18 +237,91 @@ class Wedge{
         Float_t dist1 = point.x()*fNormalVector1.x() + point.y()*fNormalVector1.y();
         Float_t dist2 = point.x()*fNormalVector2.x() + point.y()*fNormalVector2.y();
 
-        std::cerr << "d1 " << dist1 << "\n";
-        std::cerr << "d2 " << dist2 << "\n";
+       
+        // std::cerr << "d1 " << dist1<<"  "<<point << "\n";
+        // std::cerr << "d2 " << dist2<<"  "<<point << "\n";
 
         if(fDPhi < kPi){
            // Float_t disttocorner = Sqrt(point.x()*point.x() + point.y()*point.y());
+           // commented out DistanceToCorner in order to not have a differences with Geant4 and Root
             return Max(-1*dist1,-1*dist2);
         }
         else{
-            return Min(dist1,dist2);
+            return Min(-1*dist1,-1*dist2);
         }
    }
 
+   template <class Backend>
+   VECGEOM_CUDA_HEADER_BOTH
+   void Wedge::DistanceToIn(
+           Vector3D<typename Backend::precision_v> const &point,
+           Vector3D<typename Backend::precision_v> const &dir,typename  Backend::precision_v &distWedge1,typename  Backend::precision_v &distWedge2 ) const {
+      typedef typename Backend::precision_v Float_t;
+      // algorithm::first calculate projections of direction to both planes,
+      // then calculate real distance along given direction,
+      // distance can be negative
+
+      Float_t comp1 = dir.x()*fNormalVector1.x() + dir.y()*fNormalVector1.y();
+      Float_t comp2 = dir.x()*fNormalVector2.x() + dir.y()*fNormalVector2.y();
+
+      //std::cerr << "c1 " << comp1 <<" p="<<point<< "\n";
+      //std::cerr << "c2 " << comp2 << "\n";
+      distWedge1 = kInfinity;
+      distWedge2 = kInfinity;
+      if( comp1 > 0 )
+      {
+        comp1 = 1./comp1;
+        distWedge1 = -comp1*(point.x()*fNormalVector1.x()+point.y()*fNormalVector1.y());
+        if(distWedge1 < 0)distWedge1 = kInfinity;
+      }
+
+      if( comp2 > 0 )
+      {
+        comp2 = 1./comp2;
+        distWedge2 = -comp2*(point.x()*fNormalVector2.x()+point.y()*fNormalVector2.y());
+        if(distWedge2 < 0)distWedge2 = kInfinity;
+      }
+     
+      // std::cerr << "c1 " << comp1 <<" d1="<<distWedge1<<" p="<<point<< "\n";
+      // std::cerr << "c2 " << comp2 <<" d2="<<distWedge2<< "\n";
+    
+   }
+
+    template <class Backend>
+   VECGEOM_CUDA_HEADER_BOTH
+   void Wedge::DistanceToOut(
+           Vector3D<typename Backend::precision_v> const &point,
+           Vector3D<typename Backend::precision_v> const &dir,typename  Backend::precision_v &distWedge1,typename  Backend::precision_v &distWedge2 ) const {
+      typedef typename Backend::precision_v Float_t;
+      // algorithm::first calculate projections of direction to both planes,
+      // then calculate real distance along given direction,
+      // distance can be negative
+
+      Float_t comp1 = dir.x()*fNormalVector1.x() + dir.y()*fNormalVector1.y();
+      Float_t comp2 = dir.x()*fNormalVector2.x() + dir.y()*fNormalVector2.y();
+
+      //std::cerr << "c1 " << comp1 << "\n";
+      //std::cerr << "c2 " << comp2 << "\n";
+      distWedge1 = kInfinity;
+      distWedge2 = kInfinity;
+      if( comp1 < 0 )
+      {
+        comp1 = 1./comp1;
+	distWedge1 = -comp1*(point.x()*fNormalVector1.x()+point.y()*fNormalVector1.y());
+        if(distWedge1 < 0)distWedge1 = kInfinity;
+      }
+
+      if( comp2 < 0 )
+      {
+        comp2 = 1./comp2;
+	distWedge2 = -comp2*(point.x()*fNormalVector2.x()+point.y()*fNormalVector2.y());
+        if(distWedge2 < 0)distWedge2 = kInfinity;
+      }
+     
+      //std::cerr << "c1 " << comp1 <<" d1="<<distWedge1<< "\n";
+      //std::cerr << "c2 " << comp2 <<" d2=" <<distWedge2<<"\n";
+   }
+          
 
 } // end of namespace
 

@@ -550,106 +550,15 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
-  /*
-  // First Implementation of Contains/Inside without GenericKernel
-  // Tested with Benchmarker
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void UnplacedContains( UnplacedTorus const &torus,
-      Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::bool_v &inside) {
-
-   typedef typename Backend::precision_v Float_t;
-
-   // TODO: do this generically WITH a generic contains/inside kernel
-   // forget about sector for the moment
-
-   Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
-   Float_t radsq = ( rxy - torus.rtor() ) * (rxy - torus.rtor() ) + point[2]*point[2];
-   inside = radsq > torus.rmin2() && radsq < torus.rmax2();
-   
-}
-*/
-  /*
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void Contains(
-      UnplacedTorus const &torus,
-      Transformation3D const &transformation,
-      Vector3D<typename Backend::precision_v> const &point,
-      Vector3D<typename Backend::precision_v> &localPoint,
-      typename Backend::bool_v &inside) {
-
-    localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
-    UnplacedContains<Backend>(torus, localPoint, inside);
-  }
-  */
-  /*
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  static void Inside(UnplacedTorus const &torus,
-                     Transformation3D const &transformation,
-                     Vector3D<typename Backend::precision_v> const &point,
-                     typename Backend::inside_v &inside) {
-    
- 
-   // TODO: No Phi sector for the moment
-   typedef typename Backend::precision_v Float_t;
-   typedef typename Backend::bool_v      Bool_t;
- 
-   Float_t rxy = Sqrt(point[0]*point[0] + point[1]*point[1]);
-   Float_t radsq = ( rxy - torus.rtor() ) * (rxy - torus.rtor() ) + point[2]*point[2];
-   
-   // Geant4 code with Surface included
- 
-   Float_t r2, tolRMin = 0.0, tolRMax, fRminTolerance = kTolerance, fRmaxTolerance = kTolerance ;
-   
-   MaskedAssign( torus.rmin(),torus.rmin() + fRminTolerance , &tolRMin );
-   tolRMax = torus.rmax() - fRmaxTolerance;
-
-   Bool_t ifOutside = (radsq < tolRMin*tolRMin) || (radsq > tolRMax*tolRMax);
-   MaskedAssign ( ifOutside, EInside::kOutside, &inside); //exit early return?
-   //std::cout<<"ifOutside="<<ifOutside<<" rad2="<<radsq<<" p="<<point<<std::endl;
-   if (Backend::early_returns && IsFull(ifOutside) )
-   {
-        inside = EInside::kOutside;
-        return;
-   }
- 
-   tolRMin = torus.rmin() - fRminTolerance ;
-   Bool_t ifNegativeTolerance = (tolRMin < 0);// =RMin=0
   
-   tolRMax = torus.rmax() + fRmaxTolerance ;
-    
-   Bool_t ifSurface = ( (!ifOutside) && (!ifNegativeTolerance) && (radsq>= tolRMin*tolRMin) ) && (radsq >= tolRMax*tolRMax) ;
-   //  std::cout<<"ifSurface="<<ifSurface<<" rad2="<<radsq<<" p="<<point<<std::endl;
-   MaskedAssign ( ifSurface, EInside::kSurface, &inside); //exit early return?
-   if (Backend::early_returns && IsFull(ifSurface) )
-   {
-       inside = EInside::kSurface;
-       return;
-   }
-   Bool_t ifInside = (!ifSurface) && (!ifOutside);
-   // std::cout<<"conditionINside ="<< ifInside<<" rad2="<<radsq<<" p="<<point<<std::endl;
-   MaskedAssign( ifInside, EInside::kInside, &inside);
-   
-  
-   
-  }
-
-  */
-
   /////GenericKernel Contains/Inside implementation
-  template <typename Backend, bool ForInside>
+  template <typename Backend, bool ForInside, bool notForDisk>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   static void GenericKernelForContainsAndInside(UnplacedTorus const &torus,
           Vector3D<typename Backend::precision_v> const &point,
           typename Backend::bool_v &completelyinside,
-          typename Backend::bool_v &completelyoutside)
+	  typename Backend::bool_v &completelyoutside)
 
    {
    // using vecgeom::GenericKernels;
@@ -673,7 +582,7 @@ struct TorusImplementation {
     Float_t radsq = (rxy - torus.rtor()) * (rxy -  torus.rtor()) + point[2]*point[2];
 
     // completelyoutside = radsq > MakePlusTolerant<ForInside>( torus.rmax2() );//rmax
-    completelyoutside |= radsq > MakePlusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );//rmax
+    completelyoutside = radsq > MakePlusTolerantSquare<ForInside>( torus.rmax(),torus.rmax2() );//rmax
     //std::cout<<"Kernelrmax  point="<<point<<" radsq="<<radsq<<" Out?"<<completelyoutside<<std::endl;
     if (ForInside)
     {
@@ -688,7 +597,7 @@ struct TorusImplementation {
     /* rmin */
     //completelyoutside |= radsq < MakePlusTolerant<ForInside>( torus.rmin2() );//rmin
    completelyoutside |= radsq < MakePlusTolerantSquare<ForInside>( torus.rmin(),torus.rmin2() );//rmin
-   // std::cout<<"Kernelrmin  point="<<point<<" radsq="<<radsq<<" Out?"<<completelyoutside<<std::endl;
+   //std::cout<<"Kernelrmin  point="<<point<<" radsq="<<radsq<<" Out?"<<completelyoutside<<std::endl;
     if (ForInside)
     {
       //completelyinside &= radsq > MakeMinusTolerant<ForInside>( torus.rmin2() );
@@ -703,7 +612,8 @@ struct TorusImplementation {
     }
 
     /* phi */
-    if( torus.dphi() < kTwoPi ){
+   
+    if(( torus.dphi() < kTwoPi  )&&(notForDisk)){
         Bool_t completelyoutsidephi;
         Bool_t completelyinsidephi;
         torus.GetWedge().GenericKernelForContainsAndInside<Backend,ForInside>( point,
@@ -715,7 +625,7 @@ struct TorusImplementation {
     }
   }
 
-  template <class Backend>
+  template <class Backend, bool notForDisk>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void ContainsKernel(
@@ -726,7 +636,7 @@ struct TorusImplementation {
    typedef typename Backend::bool_v Bool_t;
     Bool_t unused;
     Bool_t outside;
-    GenericKernelForContainsAndInside<Backend, false>(torus,
+    GenericKernelForContainsAndInside<Backend, false,notForDisk>(torus,
     point, unused, outside);
     inside = !outside;
  }
@@ -741,7 +651,7 @@ struct TorusImplementation {
   typedef typename Backend::bool_v      Bool_t;
   //
   Bool_t completelyinside, completelyoutside;
-  GenericKernelForContainsAndInside<Backend,true>(torus, 
+  GenericKernelForContainsAndInside<Backend,true,true>(torus, 
   point, completelyinside, completelyoutside);
   inside = EInside::kSurface;
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
@@ -760,7 +670,20 @@ struct TorusImplementation {
     // TODO: do this generically WITH a generic contains/inside kernel
     // forget about sector for the moment
   
-     ContainsKernel<Backend>(torus, point, inside);
+    ContainsKernel<Backend,true>(torus, point, inside);
+}
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void UnplacedContainsDisk( UnplacedTorus const &torus,
+      Vector3D<typename Backend::precision_v> const &point,
+      typename Backend::bool_v &inside) {
+
+ 
+    // TODO: do this generically WITH a generic contains/inside kernel
+    // forget about sector for the moment
+  
+    ContainsKernel<Backend,false>(torus, point, inside);
 }
   template <typename Backend>
   VECGEOM_INLINE
@@ -845,6 +768,7 @@ struct TorusImplementation {
      Float_t c = 4.*(r0sq*rdotn-rsumsq*rdotn+2.*torus.rtor2()*point[2]*dir[2]);
      Float_t d = r0sq*r0sq-2.*r0sq*rsumsq+4.*torus.rtor2()*point[2]*point[2]+(torus.rtor2()-radius*radius)*(torus.rtor2()-radius*radius);
 
+     bool needphi = ( torus.dphi() < kTwoPi);
      //std::cerr << "#a " << a << "\n"; 
      // std::cerr << "#b " << b << "\n"; 
      //  std::cerr << "#c " << c << "\n"; 
@@ -858,26 +782,41 @@ struct TorusImplementation {
      // get the roots
      solveQuartic2(Float_t(1.),a,b,c,d,roots);
 
-     //    std::cerr << "#ROOTS " << roots[0] << "\n"; 
+     //std::cout << "#ROOTS " << roots[0] << "\n"; 
+     //  std::cout << "#ROOTS " << roots[1] << "\n"; 
+     //  std::cout << "#ROOTS " << roots[2] << "\n"; 
+     //  std::cout << "#ROOTS " << roots[3] << "\n"; 
+     //std::cerr << "#ROOTS " << roots[0] << "\n"; 
      //    std::cerr << "#ROOTS " << roots[1] << "\n"; 
      //    std::cerr << "#ROOTS " << roots[2] << "\n"; 
      //    std::cerr << "#ROOTS " << roots[3] << "\n"; 
 
      Float_t validdistance = kInfinity;
-     Bool_t havevalidsolution = Abs(roots[0].imag()) < 1E-10 && roots[0].real() > 0.;
+     Bool_t havevalidsolution = Abs(roots[0].imag()) < 1E-9 && roots[0].real() > 0.;
+     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir));
      MaskedAssign( havevalidsolution, roots[0].real(), &validdistance );
-
-     havevalidsolution = Abs(roots[1].imag()) < 1E-10 && roots[1].real() > 0.;
+     //std::cerr << "#ROOTS " << roots[0] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir))<< "\n";
+     
+     havevalidsolution = Abs(roots[1].imag()) < 1E-9 && roots[1].real() > 0.;
+     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[1].real(), validdistance), &validdistance );
+     //std::cerr << "#ROOTS " << roots[1] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir))<< "\n"; 
 
-     havevalidsolution = Abs(roots[2].imag()) < 1E-10 && roots[2].real() > 0.;
+
+     havevalidsolution = Abs(roots[2].imag()) < 1E-9 && roots[2].real() > 0.;
+     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[2].real(), validdistance), &validdistance );
+     //std::cerr << "#ROOTS " << roots[2] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir))<< "\n";
 
-     havevalidsolution = Abs(roots[3].imag()) < 1E-10 && roots[3].real() > 0.;
+
+     havevalidsolution = Abs(roots[3].imag()) < 1E-9 && roots[3].real() > 0.;
+     if(needphi && havevalidsolution) havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
+     //std::cerr << "#ROOTS " << roots[3] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir))<< "\n";
+    
 
      // TODO: only do this in case there is any finite real solution
-     havevalidsolution = (validdistance < kInfinity);
+     havevalidsolution &= (validdistance < kInfinity);
      if( havevalidsolution){
       validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
       validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
@@ -938,7 +877,7 @@ struct TorusImplementation {
                 torus.GetBoundingTube(), transformation, localPoint,
                 localDirection, stepMax, tubeDistance);
 
-       //std::cout<<"tubeDistance="<<tubeDistance<<std::endl;
+       //std::cerr<<"tubeDistance="<<tubeDistance<<std::endl;
        done = (!inBounds && tubeDistance == kInfinity);
 
        if (Backend::early_returns) {
@@ -953,9 +892,10 @@ struct TorusImplementation {
     MaskedAssign( !inBounds, forwardedPoint[0], &localPoint[0]);
     MaskedAssign( !inBounds, forwardedPoint[1], &localPoint[1]);
     MaskedAssign( !inBounds, forwardedPoint[2], &localPoint[2]);
-
+    
     // move points closer to torus ( for better numerical stability )
     //localPoint = localPoint+localDirection*tubeDistance;
+     bool hasphi = (torus.dphi() < kTwoPi );
 
     Float_t dout = ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmax());
 
@@ -964,14 +904,51 @@ struct TorusImplementation {
     if( hasrmin ){
       din = ToBoundary<Backend>(torus,localPoint,localDirection,torus.rmin());
     }
-
-    MaskedAssign( !inBounds && !done, Min(dout+tubeDistance, din+tubeDistance), &distance);
-    MaskedAssign(  inBounds && !done, Min(dout, din), &distance);
-
-    bool hasphi = (torus.dphi() < kTwoPi );
+    Float_t minDist = Min(dout, din);
+   
+    //std::cout<<" minDist="<<minDist<<" dout="<<dout<<" din="<<din<<std::endl;
     if( hasphi )
     {
-     // TODO
+     // TODO Check for Infinity
+      Float_t distPhi1;
+      Float_t distPhi2;
+      torus.GetWedge().DistanceToIn<Backend>(localPoint,localDirection,distPhi1,distPhi2);
+       
+      if ( distPhi1 < minDist)
+      {
+          Vector3D<Float_t> intersectionPoint = localPoint + localDirection*distPhi1;
+          Bool_t insideDisk ;
+          UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
+          
+          if( insideDisk)//Inside Disk
+          {
+            Float_t diri=intersectionPoint.x()*torus.GetWedge().GetAlong1().x()+
+	                 intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
+            Bool_t rightside = (diri >=0);
+	   
+	    MaskedAssign( rightside, distPhi1, &minDist);
+	   
+	  }
+         
+      }
+      Bool_t insideDisk2;
+      Float_t diri2;
+      if ( distPhi2 < minDist )
+	{
+	  Vector3D<Float_t> intersectionPoint = localPoint + localDirection*distPhi2;
+          Bool_t insideDisk;
+          UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
+          if( insideDisk)//Inside Disk
+          {
+            Float_t diri2=intersectionPoint.x()*torus.GetWedge().GetAlong2().x()+
+            intersectionPoint.y()*torus.GetWedge().GetAlong2().y();
+            Bool_t rightside = (diri2 >=0);
+	    MaskedAssign( rightside&&(distPhi2<distPhi1), distPhi2, &minDist);
+	   
+	  }
+         
+      }
+      
     }
     /*bool checkSolution=1;
     if ( checkSolution && (distance < kInfinity ) )
@@ -988,6 +965,9 @@ struct TorusImplementation {
         
            }
     */
+   
+    MaskedAssign( !inBounds && !done, minDist+tubeDistance, &distance);
+    MaskedAssign(  inBounds && !done, minDist, &distance);
   }
 
   template <class Backend>
@@ -1001,6 +981,7 @@ struct TorusImplementation {
       typename Backend::precision_v &distance) {
 
     typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
     distance = kInfinity;
 
     // TODO
@@ -1019,7 +1000,46 @@ struct TorusImplementation {
     if( hasphi )
     {
     // TODO
+      Float_t distPhi1;
+      Float_t distPhi2;
+      torus.GetWedge().DistanceToOut<Backend>(point,dir,distPhi1,distPhi2);
+        if(distPhi1 < distance )
+	{
+          Vector3D<Float_t> intersectionPoint = point + dir*distPhi1;
+          Bool_t insideDisk ;
+          UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
+          
+          if( insideDisk)//Inside Disk
+          {
+            Float_t diri=intersectionPoint.x()*torus.GetWedge().GetAlong1().x()+
+	                 intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
+            Bool_t rightside = (diri >=0);
+	   
+	    MaskedAssign( rightside, distPhi1, &distance);
+	   
+	  }
+         
+        }
+        if(distPhi2 < distance )
+	{
+        
+	  Vector3D<Float_t> intersectionPoint = point + dir*distPhi2;
+          Bool_t insideDisk;
+          UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
+          if( insideDisk)//Inside Disk
+          {
+            Float_t diri2=intersectionPoint.x()*torus.GetWedge().GetAlong2().x()+
+            intersectionPoint.y()*torus.GetWedge().GetAlong2().y();
+            Bool_t rightside = (diri2 >=0);
+	    MaskedAssign( rightside&&(distPhi2<distPhi1), distPhi2, &distance);
+	   
+	  }
+         }
+         
+    
+	//std::cerr<<" Dout for point "<<point<<" df1="<<distPhi1<<" df2="<<distPhi2<<" dout="<<dout<<" din="<<din<<" dist="<<distance<<std::endl;
     }
+   
   }
 
   template <class Backend>
@@ -1031,7 +1051,7 @@ struct TorusImplementation {
                          typename Backend::precision_v &safety) {
 
     typedef typename Backend::precision_v Float_t;
-
+   
     Vector3D<Float_t> localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
    
     // implementation taken from TGeoTorus
@@ -1040,11 +1060,19 @@ struct TorusImplementation {
     Float_t rad = Sqrt( (rxy - torus.rtor())*(rxy-torus.rtor()) + localPoint[2]*localPoint[2] );
     safety = rad - torus.rmax();
     if( torus.rmin() )
-      {safety = Max( torus.rmin()- rad, rad - torus.rmax() );}
+     {safety = Max( torus.rmin()- rad, rad - torus.rmax() );}
   
     
     //std::cerr << "#SAF IN "<<" rxy="<<rxy <<" rad="<< rad<<" saf="<<safety<<std::endl;
     // TODO: extend implementation for phi sector case
+     bool hasphi = (torus.dphi()<kTwoPi);
+     if ( hasphi && (rxy !=0.) )
+     {
+
+       Float_t safetyPhi = torus.GetWedge().SafetyToIn<Backend>(localPoint);
+       safety = Max(safetyPhi,safety);
+     }
+   
 
   }
 
@@ -1065,8 +1093,14 @@ struct TorusImplementation {
        { safety = Min( rad - torus.rmin(), torus.rmax() - rad );}
     
     // TODO: extend implementation for phi sector case
+    bool hasphi = (torus.dphi()<kTwoPi);
+    if ( hasphi )// Above/below central phi of Torus?
+    { 
+    Float_t safetyPhi = torus.GetWedge().SafetyToOut<Backend>(point);
     
-}
+      safety = Min(safetyPhi,safety);
+    }
+  }
 
 }; // end struct
 
