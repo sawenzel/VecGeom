@@ -291,8 +291,13 @@ class Wedge{
    VECGEOM_CUDA_HEADER_BOTH
    void Wedge::DistanceToOut(
            Vector3D<typename Backend::precision_v> const &point,
-           Vector3D<typename Backend::precision_v> const &dir,typename  Backend::precision_v &distWedge1,typename  Backend::precision_v &distWedge2 ) const {
+           Vector3D<typename Backend::precision_v> const &dir,
+           typename  Backend::precision_v &distWedge1,
+           typename  Backend::precision_v &distWedge2 ) const {
+
       typedef typename Backend::precision_v Float_t;
+      typedef typename Backend::bool_v Bool_t;
+
       // algorithm::first calculate projections of direction to both planes,
       // then calculate real distance along given direction,
       // distance can be negative
@@ -304,18 +309,19 @@ class Wedge{
       //std::cerr << "c2 " << comp2 << "\n";
       distWedge1 = kInfinity;
       distWedge2 = kInfinity;
-      if( comp1 < 0 )
+
+      Bool_t cmp1 = comp1 < 0.;
+      if( ! IsEmpty(cmp1) )
       {
-        comp1 = 1./comp1;
-	distWedge1 = -comp1*(point.x()*fNormalVector1.x()+point.y()*fNormalVector1.y());
-        if(distWedge1 < 0)distWedge1 = kInfinity;
+        Float_t tmp =  -(point.x()*fNormalVector1.x()+point.y()*fNormalVector1.y())/comp1;
+        MaskedAssign( cmp1 && tmp>0., tmp, &distWedge1 );
       }
 
-      if( comp2 < 0 )
+      Bool_t cmp2 = comp2 < 0.;
+      if( ! IsEmpty(cmp2) )
       {
-        comp2 = 1./comp2;
-	distWedge2 = -comp2*(point.x()*fNormalVector2.x()+point.y()*fNormalVector2.y());
-        if(distWedge2 < 0)distWedge2 = kInfinity;
+        Float_t tmp = -(point.x()*fNormalVector2.x()+point.y()*fNormalVector2.y())/comp2;
+        MaskedAssign( cmp2 && tmp>0., tmp, &distWedge2 );
       }
      
       //std::cerr << "c1 " << comp1 <<" d1="<<distWedge1<< "\n";
