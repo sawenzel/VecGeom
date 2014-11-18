@@ -21,11 +21,12 @@ namespace VECGEOM_NAMESPACE {
 /// \brief A series of regular n-sided segments along the Z-axis with varying
 ///        radii and mutual distance in Z.
 ///
+///
 /// ---- Cross section of single Z segment ----
 ///
 /// R/Phi--->    -o- Z
 /// |        ________________
-/// v       /        ^      .\
+/// v       /        ^      .\,
 ///        /    rMax |     .  \,
 ///       /          |    . <------ fPhiSections[1]
 ///      /       ____|___.      \,
@@ -36,9 +37,9 @@ namespace VECGEOM_NAMESPACE {
 ///    \       \               |
 ///     \       \________      |
 ///      \           ^   \<---fZSegments.phi
-///      fZSegments.inner \
-///        \               \
-///         \_______________\
+///      fZSegments.inner \,
+///        \               \,
+///         \_______________\,
 ///           ^              phiStart+phiDelta/fPhiSections[n-1]
 /// zSegment.outer
 ///
