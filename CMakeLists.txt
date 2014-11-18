@@ -344,6 +344,11 @@ if (Geant4)
 
 endif()
 
+
+# until VecCore is separated from VecGeom (then it become something
+# ${VecCore_DIR}/include
+include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
+
 ################################################################################
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -636,3 +641,7 @@ install(TARGETS vecgeom DESTINATION ${INSTALL_LIB_DIR})
 if (CUDA)
   install(TARGETS vecgeomcuda DESTINATION ${INSTALL_LIB_DIR})
 endif()
+
+
+# Not yet a proper project.
+add_subdirectory (VecCore)
