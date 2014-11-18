@@ -6,6 +6,7 @@
 #define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
 #include "backend/Backend.h"
+#include "VariableSizeObj.h"
 #include "base/Transformation3D.h"
 #include "volumes/PlacedVolume.h"
 
@@ -27,28 +28,45 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
  * likely there will be such an object for each
  * particle/track currently treated
  */
-class NavigationState
-{
+class NavigationState : public VecCore::VariableSizeObjectInterface<NavigationState, VPlacedVolume const *> {
+public:
+   using Value_t = VPlacedVolume const *;
+   using Base_t = VecCore::VariableSizeObjectInterface<NavigationState, Value_t>;
+   using VariableData_t = VecCore::VariableSizeObj<Value_t>;
+
 private:
-   int fMaxlevel;
+   friend Base_t;
+
+   // Required by VariableSizeObjectInterface
+   VariableData_t &GetVariableData() { return fPath; }
+   const VariableData_t &GetVariableData() const { return fPath; }
+
    int fCurrentLevel;
    // add other navigation state here, stuff like:
    bool fOnBoundary; // flag indicating whether track is on boundary of the "Top()" placed volume
    mutable Transformation3D global_matrix_;
 
    // pointer data follows; has to be last
-   VPlacedVolume const * * fPath; //
-   VPlacedVolume const * fBuffer[1]; // the real buffer to store the path
+   VecCore::VariableSizeObj<VPlacedVolume const *> fPath;
 
    // constructors and assignment operators are private
    // states have to be constructed using MakeInstance() function
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   NavigationState( int );
+   NavigationState(int maxlevel);
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   NavigationState( NavigationState const & rhs );
+   NavigationState(size_t new_size, NavigationState &other )  : fCurrentLevel(other.fCurrentLevel), fOnBoundary(other.fOnBoundary), global_matrix_(other.global_matrix_), fPath(new_size, other.fPath)  {
+       // Raw memcpy of the content to another existing state.
+       //
+       // in case NavigationState was a virtual class: change to
+       // std::memcpy(other->DataStart(), DataStart(), DataSize());
+
+      if (new_size > other.fPath.fN) {
+         memset(fPath.fValues+other.fPath.fN,0,new_size - other.fPath.fN);
+      }
+   }
 
    // some private management methods
    VECGEOM_INLINE
@@ -59,12 +77,11 @@ private:
 
    // The data start should point to the address of the first data member,
    // after the virtual table
-   // the purpose is probably for the Copy function
-   const void*  DataStart() const {return (const void*)&fMaxlevel;}
-   const void*  ObjectStart() const {return (const void*)this;}
-   void*  DataStart() {return (void*)&fMaxlevel;}
-   void*  ObjectStart() {return (void*)this;}
-
+  // the purpose is probably for the Copy function
+  const void*  DataStart() const {return (const void*)&fCurrentLevel;} // or should it be fSelfAlloc or just this suince we do not have any virtual table ...
+  const void*  ObjectStart() const {return (const void*)this;}
+  void*  DataStart() {return (void*)&fCurrentLevel;} // or should it be fSelfAlloc or just this suince we do not have any virtual table ...
+  void*  ObjectStart() {return (void*)this;}
 
      // The actual size of the data for an instance, excluding the virtual table
    size_t      DataSize() const {
@@ -73,63 +90,37 @@ private:
 
 public:
 
-   VECGEOM_CUDA_HEADER_BOTH
    // produces a compact navigation state object of a certain depth
    // the caller can give a memory address where the object will
    // be placed
    // the caller has to make sure that the size of the external memory
    // is >= sizeof(NavigationState) + sizeof(VPlacedVolume*)*maxlevel
    //
-   // TODO: It would probably be clearer to the user to have 2 functions
-   // MakeInstance and MakeInstanceAt
-   static NavigationState* MakeInstance(int maxlevel, void *addr=0);
-
-   // The equivalent of the copy constructor
-   // MakeCopy + MakeCopyAt?
-   static NavigationState* MakeCopy(NavigationState const & other, void *addr=0);
-
-
-   // static function to release an instance
-   static void ReleaseInstance( NavigationState *instance ){}
+   // Both MakeInstance, MakeInstanceAt, MakeCopy and MakeCopyAT are provided by 
+   // VariableSizeObjectInterface
 
    // returns the size in bytes of a NavigationState object with internal
    // path depth maxlevel
    VECGEOM_CUDA_HEADER_BOTH
    static size_t SizeOfInstance(int maxlevel) {
-      return SizeOf( maxlevel );
+      return VariableSizeObjectInterface::SizeOf( maxlevel );
    }
 
-   // same as above ( to be equivalent with TGeoBranchArray in ROOT )
-   VECGEOM_CUDA_HEADER_BOTH
-   static int SizeOf( int maxlevel ){
-     return sizeof(NavigationState) + sizeof(VPlacedVolume*)*(maxlevel+1);
-   }
+   using Base_t::SizeOf;
 
-   //
    VECGEOM_CUDA_HEADER_BOTH
    int GetObjectSize() const {
-      return NavigationState::SizeOfInstance(fMaxlevel);
+      return SizeOf( fPath.fN );
    }
 
    VECGEOM_CUDA_HEADER_BOTH
    int SizeOf() const {
-       return NavigationState::SizeOf(fMaxlevel);
+       return NavigationState::SizeOfInstance(fPath.fN);
    }
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
-
-   // another copy method (inverse direction )
-   VECGEOM_CUDA_HEADER_BOTH
-   void CopyTo( NavigationState * other ) const {
-       // Raw memcpy of the content to another existing state.
-       //
-       // in case NavigationState was a virtual class: change to
-       // std::memcpy(other->DataStart(), DataStart(), DataSize());
-       std::memcpy(other, this, this->SizeOf());
-       other->fPath = &(other->fBuffer[0]);
-   }
 
 
 #ifdef VECGEOM_ROOT
@@ -146,7 +137,7 @@ public:
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   int GetMaxLevel() const {return fMaxlevel;}
+   int GetMaxLevel() const { return fPath.fN; }
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -166,7 +157,7 @@ public:
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    VPlacedVolume const *
-   At(int level) const {return fPath[level];}
+   At(int level) const {return fPath.fValues[level];}
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -201,7 +192,7 @@ public:
    {
         if( other.fCurrentLevel != fCurrentLevel ) return false;
         for( int i= fCurrentLevel-1; i>=0; --i ){
-            if( fPath[i] != other.fPath[i] ) return false;
+            if( fPath.fValues[i] != other.fPath.fValues[i] ) return false;
         }
         return true;
    }
@@ -218,7 +209,7 @@ public:
    int GetLevel() const {return fCurrentLevel-1;}
 
    TGeoNode const * GetNode(int level) const {return
-		   RootGeoManager::Instance().tgeonode( fPath[level] );}
+		   RootGeoManager::Instance().tgeonode( fPath.fValues[level] );}
 #endif
 
    /**
@@ -253,47 +244,23 @@ public:
    //Transformation3D const * GetGlobalMatrixFromPath() const;
 };
 
-inline
-NavigationState * NavigationState::MakeInstance(int maxlevel , void * addr)
-{
-  // Make an instance of the class which allocates the node array. To be
-  // released using ReleaseInstance. If addr is non-zero, the user promised that
-  // addr contains at least that many bytes:  size_t needed = SizeOf(maxlevel);
-  NavigationState* ba = 0;
-  if (!addr) {
-     size_t needed = NavigationState::SizeOfInstance(maxlevel);
-     char *ptr = new char[ needed ];
-     if (!ptr) return 0;
-     new (ptr) NavigationState(maxlevel);
-     ba = reinterpret_cast<NavigationState*>(ptr);
-     // ba->SetBit(kBASelfAlloc, kTRUE);
-  }
-  else {
-     new (addr) NavigationState(maxlevel);
-     ba = reinterpret_cast<NavigationState*>(addr);
-     // ba->SetBit(kBASelfAlloc, kFALSE);
-  }
-  return ba;
-}
-
-inline
-NavigationState * NavigationState::MakeCopy( NavigationState const & rhs , void * addr)
-{
-  // this might be doing too much work
-  NavigationState* copy = NavigationState::MakeInstance( rhs.fMaxlevel, addr );
-  // copy info
-  rhs.CopyTo(copy);
-  return copy;
-}
-
-
 NavigationState & NavigationState::operator=( NavigationState const & rhs )
 {
-   fCurrentLevel=rhs.fCurrentLevel;
-   fMaxlevel = rhs.fMaxlevel;
-   fOnBoundary = rhs.fOnBoundary;
-   // what about the matrix????
-   std::memcpy(fPath, rhs.fPath, sizeof(*fPath)*fCurrentLevel);
+   if (this != &rhs) {
+      fCurrentLevel=rhs.fCurrentLevel;
+      fOnBoundary = rhs.fOnBoundary;
+      // what about the matrix????
+      
+      if (rhs.GetMaxLevel() == GetMaxLevel()) {
+         memcpy(fPath.fValues,rhs.fPath.fValues,rhs.GetMaxLevel());
+      } else if (rhs.GetMaxLevel() < GetMaxLevel()) {
+         memcpy(fPath.fValues,rhs.fPath.fValues,rhs.GetMaxLevel());
+         memset(fPath.fValues+rhs.GetMaxLevel(),0,GetMaxLevel()-rhs.GetMaxLevel());
+      } else {
+         // Truncation!
+         memcpy(fPath.fValues,rhs.fPath.fValues,GetMaxLevel());
+      }
+   }
    return *this;
 }
 
@@ -311,21 +278,20 @@ NavigationState::NavigationState( NavigationState const & rhs ) :
 */
 
 // private implementation of standard constructor
- NavigationState::NavigationState( int maxlevel ) :
-         fMaxlevel(maxlevel),
+NavigationState::NavigationState( int maxlevel ) :
          fCurrentLevel(0),
          fOnBoundary(false),
          global_matrix_(),
-         fPath(&fBuffer[0]) /* point to immediately following buffer */
+         fPath(maxlevel)
 {
    // clear the buffer
-   std::memset(fBuffer, 0, fMaxlevel*sizeof(VPlacedVolume*));
+   std::memset(fPath.fValues, 0, maxlevel*sizeof(VPlacedVolume*));
 }
 
 
 NavigationState::~NavigationState()
 {
-   delete[] fPath;
+   
 }
 
 
@@ -333,7 +299,7 @@ void
 NavigationState::Pop()
 {
    if(fCurrentLevel > 0){
-       fPath[--fCurrentLevel]=0;
+       fPath.fValues[--fCurrentLevel]=0;
    }
 }
 
@@ -350,13 +316,13 @@ NavigationState::Push( VPlacedVolume const * v )
 #ifdef DEBUG
   assert( fCurrentLevel < fMaxlevel );
 #endif
-   fPath[fCurrentLevel++]=v;
+   fPath.fValues[fCurrentLevel++]=v;
 }
 
 VPlacedVolume const *
 NavigationState::Top() const
 {
-   return (fCurrentLevel > 0 )? fPath[fCurrentLevel-1] : 0;
+   return (fCurrentLevel > 0 )? fPath.fValues[fCurrentLevel-1] : 0;
 }
 
 VECGEOM_INLINE
@@ -365,10 +331,10 @@ Transformation3D const &
 NavigationState::TopMatrix() const
 {
 // this could be actually cached in case the path does not change ( particle stays inside a volume )
-   global_matrix_.CopyFrom( *(fPath[0]->transformation()) );
+   global_matrix_.CopyFrom( *(fPath.fValues[0]->transformation()) );
    for(int i=1;i<fCurrentLevel;++i)
    {
-      global_matrix_.MultiplyFromRight( *(fPath[i]->transformation()) );
+      global_matrix_.MultiplyFromRight( *(fPath.fValues[i]->transformation()) );
    }
    return global_matrix_;
 }
@@ -386,7 +352,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
    Vector3D<Precision> current;
    for(int level=0;level<fCurrentLevel;++level)
    {
-      Transformation3D const *m = fPath[level]->transformation();
+      Transformation3D const *m = fPath.fValues[level]->transformation();
       current = m->Transform( tmp );
       tmp = current;
    }
@@ -396,7 +362,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
 VECGEOM_INLINE
 void NavigationState::Print() const
 {
-   std::cerr << "maxlevel " << fMaxlevel << std::endl;
+   std::cerr << "maxlevel " << GetMaxLevel() << std::endl;
    std::cerr << "currentlevel " << fCurrentLevel << std::endl;
    std::cerr << "onboundary " << fOnBoundary << std::endl;
    std::cerr << "deepest volume " << Top() << std::endl;
@@ -413,7 +379,7 @@ void NavigationState::printVolumePath() const
 {
    for(int i=0; i < fCurrentLevel; ++i)
    {
-    std::cout << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
+    std::cout << "/" << RootGeoManager::Instance().tgeonode( fPath.fValues[i] )->GetName();
    }
    std::cout << "\n";
 }
@@ -433,8 +399,8 @@ int NavigationState::Distance( NavigationState const & other ) const
    //  algorithm: start on top and go down until paths split
    for(int i=0; i < maxlevel; i++)
    {
-      VPlacedVolume const *v1 = this->fPath[i];
-      VPlacedVolume const *v2 = other.fPath[i];
+      VPlacedVolume const *v1 = this->fPath.fValues[i];
+      VPlacedVolume const *v2 = other.fPath.fValues[i];
       if( v1 == v2 )
       {
          lastcommonlevel = i;

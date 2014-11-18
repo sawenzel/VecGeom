@@ -25,16 +25,16 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
     // my counting is a bit different: it tells the NUMBER of levels which are filled
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,34,23)
-    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( fMaxlevel );
+    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( GetMaxLevel() );
 #else
-    TGeoBranchArray * tmp = new TGeoBranchArray( fMaxlevel );
+    TGeoBranchArray * tmp = new TGeoBranchArray( GetMaxLevel() );
 #endif
     // gain access to array
     TGeoNode ** array = tmp->GetArray();
     RootGeoManager & mg=RootGeoManager::Instance();
     
     for(int i=0;i<fCurrentLevel;++i)
-      array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath[i] ));
+      array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath.fValues[i] ));
     // assert( tmp->GetCurrentNode() == mg.tgeonode( Top() ));
     
     return tmp;
@@ -45,12 +45,12 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      // attention: the counting of levels is different: fLevel=0 means that
      // this is a branch which is filled at level zero
 	 this->fCurrentLevel=other.GetLevel()+1;
-	 assert(fCurrentLevel <= fMaxlevel);
+	 assert(fCurrentLevel <= GetMaxLevel());
 
      RootGeoManager & mg=RootGeoManager::Instance();
 
      for(int i=0;i<fCurrentLevel;++i)
-       fPath[i]=mg.GetPlacedVolume( other.GetNode(i) );
+       fPath.fValues[i]=mg.GetPlacedVolume( other.GetNode(i) );
 
      //other things like onboundary I don't care
      fOnBoundary=false;
