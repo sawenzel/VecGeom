@@ -482,8 +482,8 @@ Precision UnplacedTrapezoid::SurfaceArea() const {
   Precision ghgf = cr.Mag();
 
   Precision surfArea = 2 * fDy1 * (fDx1 + fDx2) + 2 * fDy2 * (fDx3 + fDx4)
-    + (fDx1 + fDx3) * std::sqrt(4 * fDz * fDz + std::pow(fDy2 - fDy1 - 2 * fDz * fTthetaSphi, 2))
-    + (fDx2 + fDx4) * std::sqrt(4 * fDz * fDz + std::pow(fDy2 - fDy1 + 2 * fDz * fTthetaSphi, 2))
+    + (fDx1 + fDx3) * std::sqrt(4 * fDz * fDz + Pow(fDy2 - fDy1 - 2 * fDz * fTthetaSphi, 2))
+    + (fDx2 + fDx4) * std::sqrt(4 * fDz * fDz + Pow(fDy2 - fDy1 + 2 * fDz * fTthetaSphi, 2))
     + 0.5 * (babc + dcda + efeh + ghgf);
 
   return surfArea;

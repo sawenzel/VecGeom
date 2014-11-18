@@ -31,6 +31,30 @@ typedef kCuda::bool_v      CudaBool;
 
 static const unsigned kThreadsPerBlock = 256;
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+double Pow(double const &x, double arg) {
+   return pow(x,arg);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+float Pow(float const &x, float arg) {
+   return powf(x,arg);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+double Pow(double const &x, int arg) {
+   return pow(x,(double)arg);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+float Pow(float const &x, int arg) {
+   return powf(x,(float)arg);
+}
+
 // Auxiliary GPU functions
 
 VECGEOM_CUDA_HEADER_DEVICE

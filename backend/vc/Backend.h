@@ -129,6 +129,10 @@ VcPrecision tan(VcPrecision const &radians) {
   return s/c;
 }
 
+VECGEOM_INLINE
+Precision Pow(Precision const &x, Precision arg) {
+   return std::pow(x,arg);
+}
 
 VECGEOM_INLINE
 VcPrecision Min(VcPrecision const &val1, VcPrecision const &val2) {
