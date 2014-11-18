@@ -478,6 +478,7 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
