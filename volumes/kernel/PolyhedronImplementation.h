@@ -331,7 +331,7 @@ int PolyhedronImplementation<treatInnerT>::ScalarFindPhiSegment(
 
   SOA3D<Precision> const &phiSections = polyhedron.GetPhiSections();
   int i = 0;
-  const int iMax = polyhedron.GetSideCount()-1;
+  const int iMax = polyhedron.GetSideCount();
   while (i < iMax) {
     bool inSection = point[0]*phiSections.x(i) + point[1]*phiSections.y(i) +
                      point[2]*phiSections.z(i) >= 0 &&
@@ -617,7 +617,7 @@ PolyhedronImplementation<treatInnerT>::InPhiCutoutWedge(
   Bool_t first  = point.Dot(segment.phi.GetNormal(0)) +
                   segment.phi.GetDistance(0) >= 0;
   Bool_t second = point.Dot(segment.phi.GetNormal(1)) +
-                  segment.phi.GetDistance(1) < 0;
+                  segment.phi.GetDistance(1) >= 0;
   // For a cutout larger than 180 degrees, the point is in the wedge if it is
   // in front of at least one plane.
   // TODO: this should rely on a template parameter once this is added to the
