@@ -34,7 +34,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
     RootGeoManager & mg=RootGeoManager::Instance();
     
     for(int i=0;i<fCurrentLevel;++i)
-      array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath.fValues[i] ));
+      array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath[i] ));
     // assert( tmp->GetCurrentNode() == mg.tgeonode( Top() ));
     
     return tmp;
@@ -50,7 +50,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      RootGeoManager & mg=RootGeoManager::Instance();
 
      for(int i=0;i<fCurrentLevel;++i)
-       fPath.fValues[i]=mg.GetPlacedVolume( other.GetNode(i) );
+       fPath[i]=mg.GetPlacedVolume( other.GetNode(i) );
 
      //other things like onboundary I don't care
      fOnBoundary=false;

@@ -64,7 +64,7 @@ private:
        // std::memcpy(other->DataStart(), DataStart(), DataSize());
 
       if (new_size > other.fPath.fN) {
-         memset(fPath.fValues+other.fPath.fN,0,new_size - other.fPath.fN);
+         memset(fPath.GetValues()+other.fPath.fN,0,new_size - other.fPath.fN);
       }
    }
 
@@ -157,7 +157,7 @@ public:
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    VPlacedVolume const *
-   At(int level) const {return fPath.fValues[level];}
+   At(int level) const {return fPath[level];}
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -192,7 +192,7 @@ public:
    {
         if( other.fCurrentLevel != fCurrentLevel ) return false;
         for( int i= fCurrentLevel-1; i>=0; --i ){
-            if( fPath.fValues[i] != other.fPath.fValues[i] ) return false;
+            if( fPath[i] != other.fPath[i] ) return false;
         }
         return true;
    }
@@ -209,7 +209,7 @@ public:
    int GetLevel() const {return fCurrentLevel-1;}
 
    TGeoNode const * GetNode(int level) const {return
-		   RootGeoManager::Instance().tgeonode( fPath.fValues[level] );}
+		   RootGeoManager::Instance().tgeonode( fPath[level] );}
 #endif
 
    /**
@@ -252,13 +252,13 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
       // what about the matrix????
       
       if (rhs.GetMaxLevel() == GetMaxLevel()) {
-         memcpy(fPath.fValues,rhs.fPath.fValues,rhs.GetMaxLevel());
+         memcpy(fPath.GetValues(),rhs.fPath.GetValues(),rhs.GetMaxLevel());
       } else if (rhs.GetMaxLevel() < GetMaxLevel()) {
-         memcpy(fPath.fValues,rhs.fPath.fValues,rhs.GetMaxLevel());
-         memset(fPath.fValues+rhs.GetMaxLevel(),0,GetMaxLevel()-rhs.GetMaxLevel());
+         memcpy(fPath.GetValues(),rhs.fPath.GetValues(),rhs.GetMaxLevel());
+         memset(fPath.GetValues()+rhs.GetMaxLevel(),0,GetMaxLevel()-rhs.GetMaxLevel());
       } else {
          // Truncation!
-         memcpy(fPath.fValues,rhs.fPath.fValues,GetMaxLevel());
+         memcpy(fPath.GetValues(),rhs.fPath.GetValues(),GetMaxLevel());
       }
    }
    return *this;
@@ -285,7 +285,7 @@ NavigationState::NavigationState( int maxlevel ) :
          fPath(maxlevel)
 {
    // clear the buffer
-   std::memset(fPath.fValues, 0, maxlevel*sizeof(VPlacedVolume*));
+   std::memset(fPath.GetValues(), 0, maxlevel*sizeof(VPlacedVolume*));
 }
 
 
@@ -299,7 +299,7 @@ void
 NavigationState::Pop()
 {
    if(fCurrentLevel > 0){
-       fPath.fValues[--fCurrentLevel]=0;
+       fPath[--fCurrentLevel]=0;
    }
 }
 
@@ -316,13 +316,13 @@ NavigationState::Push( VPlacedVolume const * v )
 #ifdef DEBUG
   assert( fCurrentLevel < fMaxlevel );
 #endif
-   fPath.fValues[fCurrentLevel++]=v;
+   fPath[fCurrentLevel++]=v;
 }
 
 VPlacedVolume const *
 NavigationState::Top() const
 {
-   return (fCurrentLevel > 0 )? fPath.fValues[fCurrentLevel-1] : 0;
+   return (fCurrentLevel > 0 )? fPath[fCurrentLevel-1] : 0;
 }
 
 VECGEOM_INLINE
@@ -331,10 +331,10 @@ Transformation3D const &
 NavigationState::TopMatrix() const
 {
 // this could be actually cached in case the path does not change ( particle stays inside a volume )
-   global_matrix_.CopyFrom( *(fPath.fValues[0]->transformation()) );
+   global_matrix_.CopyFrom( *(fPath[0]->transformation()) );
    for(int i=1;i<fCurrentLevel;++i)
    {
-      global_matrix_.MultiplyFromRight( *(fPath.fValues[i]->transformation()) );
+      global_matrix_.MultiplyFromRight( *(fPath[i]->transformation()) );
    }
    return global_matrix_;
 }
@@ -352,7 +352,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
    Vector3D<Precision> current;
    for(int level=0;level<fCurrentLevel;++level)
    {
-      Transformation3D const *m = fPath.fValues[level]->transformation();
+      Transformation3D const *m = fPath[level]->transformation();
       current = m->Transform( tmp );
       tmp = current;
    }
@@ -379,7 +379,7 @@ void NavigationState::printVolumePath() const
 {
    for(int i=0; i < fCurrentLevel; ++i)
    {
-    std::cout << "/" << RootGeoManager::Instance().tgeonode( fPath.fValues[i] )->GetName();
+    std::cout << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
    }
    std::cout << "\n";
 }
@@ -399,8 +399,8 @@ int NavigationState::Distance( NavigationState const & other ) const
    //  algorithm: start on top and go down until paths split
    for(int i=0; i < maxlevel; i++)
    {
-      VPlacedVolume const *v1 = this->fPath.fValues[i];
-      VPlacedVolume const *v2 = other.fPath.fValues[i];
+      VPlacedVolume const *v1 = this->fPath[i];
+      VPlacedVolume const *v2 = other.fPath[i];
       if( v1 == v2 )
       {
          lastcommonlevel = i;
