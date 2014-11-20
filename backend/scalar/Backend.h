@@ -16,6 +16,10 @@ struct kScalar {
   typedef bool      bool_v;
   typedef Inside_t  inside_v;
   const static bool early_returns = true;
+  // alternative typedefs ( might supercede above typedefs )
+  typedef int                   Int_t;
+  typedef Precision       Double_t;
+  typedef bool Bool_t;
 #ifdef VECGEOM_STD_CXX11
   constexpr static precision_v kOne = 1.0;
   constexpr static precision_v kZero = 0.0;

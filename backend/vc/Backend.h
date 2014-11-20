@@ -22,6 +22,10 @@ struct kVc {
   const static precision_v kZero;
   const static bool_v kTrue;
   const static bool_v kFalse;
+  // alternative typedefs ( might supercede above typedefs )
+  typedef Vc::int_v                   Int_t;
+  typedef Vc::Vector<Precision>       Double_t;
+  typedef Vc::Vector<Precision>::Mask Bool_t;
 };
 
 constexpr int kVectorSize = kVc::precision_v::Size;

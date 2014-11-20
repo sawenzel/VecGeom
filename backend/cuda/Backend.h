@@ -23,6 +23,10 @@ struct kCuda {
   static constexpr precision_v kZero = 0.0;
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
+  // alternative typedefs ( might supercede above typedefs )
+  typedef int                   Int_t;
+  typedef Precision       Double_t;
+  typedef bool Bool_t;
 };
 
 typedef kCuda::int_v       CudaInt;
