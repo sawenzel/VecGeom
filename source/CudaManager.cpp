@@ -16,7 +16,7 @@
 
 namespace vecgeom {
 
-CudaManager::CudaManager() {
+CudaManager::CudaManager() : memory_map(), fGPUtoCPUmapForPlacedVolumes() {
   synchronized = true;
   world_ = NULL;
   world_gpu_ = NULL;
@@ -36,7 +36,7 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::world_gpu() const {
 
 vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
-  if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n";
+  if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n" << std::endl;
 
   // Will return null if no geometry is loaded
   if (synchronized) return world_gpu_;
@@ -50,7 +50,7 @@ vecgeom_cuda::VPlacedVolume const* CudaManager::Synchronize() {
   // Create new objects with pointers adjusted to point to GPU memory, then
   // copy them to the allocated memory locations on the GPU.
 
-  if (verbose_ > 1) std::cerr << "Copying geometry to GPU...";
+  if (verbose_ > 1) std::cerr << "Copying geometry to GPU..." << std::endl;
 
   if (verbose_ > 2) std::cerr << "\nCopying logical volumes...";
   for (std::set<LogicalVolume const*>::const_iterator i =
@@ -143,7 +143,6 @@ void CudaManager::LoadGeometry(VPlacedVolume const *const volume) {
   daughters_.clear();
 
   world_ = volume;
-
   ScanGeometry(volume);
 
   // Already set by CleanGpu(), but keep it here for good measure
@@ -220,11 +219,12 @@ void CudaManager::AllocateGeometry() {
     for (std::set<VPlacedVolume const*>::const_iterator i =
          placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
-      const GpuAddress gpu_address =
-          AllocateOnGpu<GpuAddress*>((*i)->memory_size());
-      allocated_memory_.push_back(gpu_address);
-      memory_map[ToCpuAddress(*i)] = gpu_address;
+            const GpuAddress gpu_address =
+                AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+            allocated_memory_.push_back(gpu_address);
+            memory_map[ToCpuAddress(*i)] = gpu_address;
 
+            fGPUtoCPUmapForPlacedVolumes[ static_cast<VPlacedVolume const*>(gpu_address) ] = *i;
     }
 
     if (verbose_ > 2) std::cout << " OK\n";

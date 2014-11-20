@@ -8,6 +8,8 @@
 #include "backend/Backend.h"
 #include "base/Transformation3D.h"
 #include "volumes/PlacedVolume.h"
+#include "management/CudaManager.h"
+#include "base/Global.h"
 
 #ifdef VECGEOM_ROOT
 #include "management/RootGeoManager.h"
@@ -36,7 +38,10 @@ private:
    mutable Transformation3D global_matrix_;
 
    // pointer data follows; has to be last
+   // Question: DO WE NEED THIS POINTER; ISN'T IT ONLY AN ALIAS?
    VPlacedVolume const * * fPath; //
+
+
    VPlacedVolume const * fBuffer[1]; // the real buffer to store the path
 
    // constructors and assignment operators are private
@@ -59,15 +64,69 @@ private:
    // The data start should point to the address of the first data member,
    // after the virtual table
   // the purpose is probably for the Copy function
-  void*  DataStart() const {return (void*)&fMaxlevel;}
-  void*  ObjectStart() const {return (void*)this;}
+  VECGEOM_CUDA_HEADER_BOTH
+  void*  DataStart() const {return
+          (void*)(&fMaxlevel);}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void*  ObjectStart() const {return (void*)(this);}
+
+  // returns the start address of the variable size data buffer holding
+  // the geometry path information
+  VECGEOM_CUDA_HEADER_BOTH
+  void* BufferStart() const {return (void*)(&fBuffer);}
 
      // The actual size of the data for an instance, excluding the virtual table
+  VECGEOM_CUDA_HEADER_BOTH
   size_t      DataSize() const {
       return SizeOf() + (size_t)ObjectStart() - (size_t)DataStart();}
 
+  // return the relative offset in bytes where the Buffer starts
+  // relative to the beginning of the object
+  VECGEOM_CUDA_HEADER_BOTH
+  size_t      BufferOffset() const{
+      return (size_t)&fBuffer - (size_t)ObjectStart();
+  }
+
 
 public:
+    // function that automatically deduced the correct pointer for fPath
+    // based on the start of the object
+    // function momentarily introduced to fix pointers on the GPU
+    // this problem wouldn't exist if we could get rid of fPath
+    // TODO: consider this to be a device function only
+    VECGEOM_CUDA_HEADER_BOTH
+    void CorrectPathPointer(){
+        fPath = (VPlacedVolume const **)(
+                    ((char*)(this)) + BufferOffset());
+    }
+
+    // Evil method to set path pointer.
+    // Introduced here such that accelerator (each thread in parallel)
+    // can restore path pointer to CPU memory space
+    // before a NavigationState is copied back to CPU.
+    // This problem wouldn't exist if we could get rid of fPath
+    // TODO: consider this to be a device function only
+    VECGEOM_CUDA_HEADER_BOTH
+    void SetPathPointer( void* ptr ){
+        fPath = (VPlacedVolume const **) ptr;
+    }
+
+    VECGEOM_CUDA_HEADER_BOTH
+    void * GetPathPointer( ) const {
+        return (void *) fPath;
+    }
+
+    // replaces the volume pointers from CPU volumes in fPath
+     // to the equivalent pointers on the GPU
+     // uses the CudaManager to do so
+    void ConvertToGPUPointers();
+
+    // replaces the pointers from GPU volumes in fPath
+    // to the equivalent pointers on the CPU
+    // uses the CudaManager to do so
+    void ConvertToCPUPointers();
+
 
    VECGEOM_CUDA_HEADER_BOTH
    // produces a compact navigation state object of a certain depth
@@ -159,6 +218,12 @@ public:
    VPlacedVolume const *
    Top() const;
 
+   // an alternative function not using fPath
+   VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
+   VPlacedVolume const *
+   TopAlternative() const;
+
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    VPlacedVolume const *
@@ -245,9 +310,10 @@ public:
    }
 #endif
 
+
    //void GetGlobalMatrixFromPath( Transformation3D *const m ) const;
    //Transformation3D const * GetGlobalMatrixFromPath() const;
-};
+}; // end of class
 
 inline
 NavigationState * NavigationState::MakeInstance(int maxlevel , void * addr)
@@ -355,6 +421,13 @@ NavigationState::Top() const
    return (fCurrentLevel > 0 )? fPath[fCurrentLevel-1] : 0;
 }
 
+VPlacedVolume const *
+NavigationState::TopAlternative() const
+{
+   return (fCurrentLevel > 0 )? ((VPlacedVolume const **) &fBuffer[0])[fCurrentLevel-1] : 0;
+}
+
+
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 Transformation3D const &
@@ -395,6 +468,7 @@ void NavigationState::Print() const
    std::cerr << "maxlevel " << fMaxlevel << std::endl;
    std::cerr << "currentlevel " << fCurrentLevel << std::endl;
    std::cerr << "onboundary " << fOnBoundary << std::endl;
+   std::cerr << "fPath " << fPath << std::endl;
    std::cerr << "deepest volume " << Top() << std::endl;
 }
 
@@ -443,7 +517,30 @@ int NavigationState::Distance( NavigationState const & other ) const
    return (GetCurrentLevel()-lastcommonlevel) + ( other.GetCurrentLevel() - lastcommonlevel ) - 2;
 }
 
-
+inline
+void NavigationState::ConvertToGPUPointers()
+   {
+       #ifdef HAVENORMALNAMESPACE
+#ifdef VECGEOM_CUDA
+     for(int i=0;i<fCurrentLevel;++i){
+	 fPath[i]=vecgeom::CudaManager::Instance().LookupPlaced( fPath[i] );
+     }
+#endif
+#endif
 }
+
+inline
+void NavigationState::ConvertToCPUPointers()
+{
+       #ifdef HAVENORMALNAMESPACE
+#ifdef VECGEOM_CUDA
+       for(int i=0;i<fCurrentLevel;++i)
+         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( fPath[i] );
+#endif
+#endif
+}
+
+
+} // end namespace
 
 #endif // VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_

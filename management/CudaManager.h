@@ -45,6 +45,7 @@ private:
   typedef void const* CpuAddress;
   typedef void* GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
+  typedef std::map<VPlacedVolume const *, VPlacedVolume const *> PlacedVolumeMemoryMap;
 
   VPlacedVolume const *world_;
   vecgeom_cuda::VPlacedVolume *world_gpu_;
@@ -58,6 +59,13 @@ private:
    * \sa CleanGpu()
    */
   MemoryMap memory_map;
+
+  /**
+   * inverse memory_map for fast GPU pointer to CPU conversion
+   *
+   */
+  PlacedVolumeMemoryMap fGPUtoCPUmapForPlacedVolumes;
+
   std::list<void*> allocated_memory_;
 
 public:
@@ -122,6 +130,7 @@ public:
   LogicalVolume* LookupLogical(LogicalVolume const *const host_ptr);
 
   VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
+  VPlacedVolume const* LookupPlacedCPUPtr(VPlacedVolume const *const gpu_ptr);
 
   Transformation3D* LookupTransformation(
       Transformation3D const *const host_ptr);
@@ -182,6 +191,14 @@ void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world);
 // void CudaManagerLocatePoints(VPlacedVolume const *const world,
 //                              AOS3D<Precision> const *const points,
 //                              const int n, const int depth, int *const output);
+
+inline
+VPlacedVolume const* CudaManager::LookupPlacedCPUPtr(VPlacedVolume const *const gpu_ptr)
+{
+    const VPlacedVolume * cpu_ptr = fGPUtoCPUmapForPlacedVolumes[gpu_ptr];
+    assert(cpu_ptr != NULL);
+    return  cpu_ptr;
+}
 
 } // End namespace vecgeom
 
