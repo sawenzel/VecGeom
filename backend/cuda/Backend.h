@@ -31,6 +31,7 @@ struct kCuda {
   typedef int                   Int_t;
   typedef Precision       Double_t;
   typedef bool Bool_t;
+  typedef int  Index_t;
 };
 
 typedef kCuda::int_v       CudaInt;

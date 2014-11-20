@@ -27,6 +27,7 @@ struct kVc {
   typedef Vc::int_v                   Int_t;
   typedef Vc::Vector<Precision>       Double_t;
   typedef Vc::Vector<Precision>::Mask Bool_t;
+  typedef Vc::Vector<Precision>       Index_t;
 };
 
 constexpr int kVectorSize = kVc::precision_v::Size;
@@ -161,6 +162,12 @@ VcInt Min(VcInt const &val1, VcInt const &val2) {
 VECGEOM_INLINE
 VcInt Max(VcInt const &val1, VcInt const &val2) {
   return Vc::max(val1, val2);
+}
+
+
+VECGEOM_INLINE
+VcPrecision Floor( VcPrecision const &val ){
+  return Vc::floor( val );
 }
 
 } // End inline namespace

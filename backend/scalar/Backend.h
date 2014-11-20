@@ -22,6 +22,8 @@ struct kScalar {
   typedef int                   Int_t;
   typedef Precision       Double_t;
   typedef bool Bool_t;
+  typedef int  Index_t; // the type of indices
+
 #ifdef VECGEOM_STD_CXX11
   constexpr static precision_v kOne = 1.0;
   constexpr static precision_v kZero = 0.0;
@@ -176,6 +178,12 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision tan(const Precision radians) {
   return std::tan(radians);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Precision Floor( Precision val ){
+    return std::floor(val);
 }
 
 template <typename Type>
