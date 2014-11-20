@@ -543,6 +543,9 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
+
+  # higher level benchmarks
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
