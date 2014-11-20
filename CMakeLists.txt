@@ -166,7 +166,7 @@ if (Cilk)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CILK")
 endif()
 if (CUDA)
-  set(CUDA_ARCH 20 CACHE STRING "CUDA device architecture.")
+  set(CUDA_ARCH 50 CACHE STRING "CUDA device architecture.")
   set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA")
   if (NOT CUDA_SPECIALIZATION)
@@ -174,6 +174,7 @@ if (CUDA)
         "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_SPECIALIZATION")
   endif()
   set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS}
+      -std=c++11
       -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
   if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -298,7 +299,7 @@ if (ROOT)
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
   link_directories(${ROOT_LIBRARY_DIR})
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL}
-${ROOT_LIBRARIES} Geom)
+      ${ROOT_LIBRARIES} Geom)
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
       source/PlacedRootVolume.cpp
       source/RootGeoManager.cpp
@@ -342,6 +343,11 @@ if (Geant4)
   message(STATUS "Geant4 found in: ${Geant4_INCLUDE_DIRS}")
 
 endif()
+
+
+# until VecCore is separated from VecGeom (then it become something
+# ${VecCore_DIR}/include
+include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
 
 ################################################################################
 
@@ -492,6 +498,7 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
 )
 
 
@@ -658,3 +665,7 @@ install(TARGETS vecgeom DESTINATION ${INSTALL_LIB_DIR})
 if (CUDA)
   install(TARGETS vecgeomcuda DESTINATION ${INSTALL_LIB_DIR})
 endif()
+
+
+# Not yet a proper project.
+add_subdirectory (VecCore)

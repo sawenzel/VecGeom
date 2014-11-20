@@ -41,7 +41,6 @@ private:
    // Question: DO WE NEED THIS POINTER; ISN'T IT ONLY AN ALIAS?
    VPlacedVolume const * * fPath; //
 
-
    VPlacedVolume const * fBuffer[1]; // the real buffer to store the path
 
    // constructors and assignment operators are private
@@ -126,7 +125,6 @@ public:
     // to the equivalent pointers on the CPU
     // uses the CudaManager to do so
     void ConvertToCPUPointers();
-
 
    VECGEOM_CUDA_HEADER_BOTH
    // produces a compact navigation state object of a certain depth
@@ -410,7 +408,7 @@ void
 NavigationState::Push( VPlacedVolume const * v )
 {
 #ifdef DEBUG
-   assert( fCurrentLevel < fMaxlevel )
+  assert( fCurrentLevel < fMaxlevel );
 #endif
    fPath[fCurrentLevel++]=v;
 }
