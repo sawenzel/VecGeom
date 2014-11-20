@@ -794,37 +794,36 @@ struct TorusImplementation {
      Float_t validdistance = kInfinity;
      Bool_t havevalidsolution = Abs(roots[0].imag()) < 1E-9 && roots[0].real() > 0.;
      if(needphi && ! IsEmpty(havevalidsolution))
-         havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir));
+     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[0].real()*dir));
      MaskedAssign( havevalidsolution, roots[0].real(), &validdistance );
-     //std::cerr << "#ROOTS " << roots[0] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[0].real()*dir))<< "\n";
+     //std::cerr << "#ROOTS " << roots[0] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[0].real()*dir))<< "\n";
      
      havevalidsolution = Abs(roots[1].imag()) < 1E-9 && roots[1].real() > 0.;
      if(needphi && ! IsEmpty(havevalidsolution))
-         havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir));
+     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[1].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[1].real(), validdistance), &validdistance );
-     //std::cerr << "#ROOTS " << roots[1] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[1].real()*dir))<< "\n"; 
+     //std::cerr << "#ROOTS " << roots[1] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[1].real()*dir))<< "\n"; 
 
 
      havevalidsolution = Abs(roots[2].imag()) < 1E-9 && roots[2].real() > 0.;
      if(needphi && ! IsEmpty(havevalidsolution) )
-         havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir));
+     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[2].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[2].real(), validdistance), &validdistance );
-     //std::cerr << "#ROOTS " << roots[2] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[2].real()*dir))<< "\n";
+     //std::cerr << "#ROOTS " << roots[2] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[2].real()*dir))<< "\n";
 
 
      havevalidsolution = Abs(roots[3].imag()) < 1E-9 && roots[3].real() > 0.;
      if(needphi && ! IsEmpty(havevalidsolution))
-              havevalidsolution &= (torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir));
-
+     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[3].real()*dir));
      MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
-     //std::cerr << "#ROOTS " << roots[3] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().Contains<Backend>(point+roots[3].real()*dir))<< "\n";
+     //std::cerr << "#ROOTS " << roots[3] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[3].real()*dir))<< "\n";
     
 
      // TODO: only do this in case there is any finite real solution
      havevalidsolution &= (validdistance < kInfinity);
      if( ! IsEmpty( havevalidsolution ) ){
-      validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
-      validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
+       if(havevalidsolution)validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
+       if(havevalidsolution)validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
      
      }
      //std::cerr << std::setprecision(20);
@@ -882,7 +881,6 @@ struct TorusImplementation {
                 torus.GetBoundingTube(), transformation, localPoint,
                 localDirection, stepMax, tubeDistance);
 
-       //std::cerr<<"tubeDistance="<<tubeDistance<<std::endl;
        done = (!inBounds && tubeDistance == kInfinity);
 
        if (Backend::early_returns) {
@@ -911,68 +909,71 @@ struct TorusImplementation {
     }
     Float_t minDist = Min(dout, din);
    
-    //std::cout<<" minDist="<<minDist<<" dout="<<dout<<" din="<<din<<std::endl;
     if( hasphi )
     {
      // TODO Check for Infinity
       Float_t distPhi1;
       Float_t distPhi2;
       torus.GetWedge().DistanceToIn<Backend>(localPoint,localDirection,distPhi1,distPhi2);
-       
-      if ( distPhi1 < minDist)
+      Bool_t smallerdist =  distPhi1 < minDist;
+      if ( ! IsEmpty(smallerdist))
       {
           Vector3D<Float_t> intersectionPoint = localPoint + localDirection*distPhi1;
           Bool_t insideDisk ;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
           
-          if( insideDisk)//Inside Disk
+          if( ! IsEmpty(insideDisk))//Inside Disk
           {
             Float_t diri=intersectionPoint.x()*torus.GetWedge().GetAlong1().x()+
 	                 intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
             Bool_t rightside = (diri >=0);
 	   
-	    MaskedAssign( rightside, distPhi1, &minDist);
-	   
+	    MaskedAssign( rightside && smallerdist && insideDisk, distPhi1, &minDist);
+	    
 	  }
          
       }
       Bool_t insideDisk2;
       Float_t diri2;
-      if ( distPhi2 < minDist )
+      smallerdist = distPhi2 < minDist;
+      if ( ! IsEmpty(smallerdist))
 	{
 	  Vector3D<Float_t> intersectionPoint = localPoint + localDirection*distPhi2;
           Bool_t insideDisk;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
-          if( insideDisk)//Inside Disk
+          if( ! IsEmpty(insideDisk))//Inside Disk
           {
             Float_t diri2=intersectionPoint.x()*torus.GetWedge().GetAlong2().x()+
             intersectionPoint.y()*torus.GetWedge().GetAlong2().y();
             Bool_t rightside = (diri2 >=0);
-	    MaskedAssign( rightside&&(distPhi2<distPhi1), distPhi2, &minDist);
+	    MaskedAssign( rightside && (distPhi2<minDist) && smallerdist && insideDisk, distPhi2, &minDist);
 	   
 	  }
          
       }
-      
+      //std::cerr<<" Din for point "<<point<<" df1="<<distPhi1<<" df2="<<distPhi2<<" dout="<<dout<<" din="<<din<<" dist="<<minDist<<" smallerphi="<<smallerdist<<" tubeD="<<tubeDistance<<std::endl;
     }
-    /*bool checkSolution=1;
-    if ( checkSolution && (distance < kInfinity ) )
-      {
-           Vector3D<typename Backend::precision_v> ptemp=point+direction*distance;
-            Float_t rxy = Sqrt(ptemp[0]*ptemp[0] + ptemp[1]*ptemp[1]);
-            Float_t radsq = ( rxy - torus.rtor() ) * (rxy - torus.rtor() ) + ptemp[2]*ptemp[2];
-            Float_t dif=Abs(radsq-torus.rmax2());
-	    if( dif > 1E-6)std::cerr<<"radsq="<<radsq<<" rmax2="<<torus.rmax2()<<" dif="<<radsq-torus.rmax2()<<std::endl;
+   
+    MaskedAssign( !inBounds && !done, minDist+tubeDistance, &distance);
+    MaskedAssign(  inBounds && !done, minDist, &distance);
 
+    
+    /* bool checkSolution=1;
+      if ( checkSolution && (distance < kInfinity ) )
+      {
+        Vector3D<typename Backend::precision_v> ptemp=point+direction*distance;
+        Float_t rxy = Sqrt(ptemp[0]*ptemp[0] + ptemp[1]*ptemp[1]);
+        Float_t radsq = ( rxy - torus.rtor() ) * (rxy - torus.rtor() ) + ptemp[2]*ptemp[2];
+        Float_t dif=Abs(radsq-torus.rmax2());
+        if( dif > 1E-6)
+            std::cerr<<"radsq="<<radsq<<" rmax2="<<torus.rmax2()<<" dif="<<radsq-torus.rmax2()<<"ptemt="<<ptemp<<std::endl;
             //Float_t douut=ToBoundary<Backend>(torus,ptemp,direction,torus.rmax());;
             // std::cerr << point << "\n";   
             //std::cerr<<"VC ptempZ="<<ptemp[2]<<" Dout="<<douut<<std::endl;
         
-           }
+      }
     */
-   
-    MaskedAssign( !inBounds && !done, minDist+tubeDistance, &distance);
-    MaskedAssign(  inBounds && !done, minDist, &distance);
+
   }
 
   template <class Backend>
@@ -1008,41 +1009,43 @@ struct TorusImplementation {
       Float_t distPhi1;
       Float_t distPhi2;
       torus.GetWedge().DistanceToOut<Backend>(point,dir,distPhi1,distPhi2);
-        if(distPhi1 < distance )
+      Bool_t smallerphi = distPhi1 < distance;
+      if(! IsEmpty(smallerphi) )
 	{
           Vector3D<Float_t> intersectionPoint = point + dir*distPhi1;
           Bool_t insideDisk ;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
           
-          if( insideDisk)//Inside Disk
+          if( ! IsEmpty(insideDisk))//Inside Disk
           {
             Float_t diri=intersectionPoint.x()*torus.GetWedge().GetAlong1().x()+
 	                 intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
             Bool_t rightside = (diri >=0);
 	   
-	    MaskedAssign( rightside, distPhi1, &distance);
+	    MaskedAssign( rightside && smallerphi && insideDisk, distPhi1, &distance);
 	   
 	  }
          
         }
-        if(distPhi2 < distance )
+      smallerphi = distPhi2 < distance;
+      if(! IsEmpty(smallerphi) )
 	{
         
 	  Vector3D<Float_t> intersectionPoint = point + dir*distPhi2;
           Bool_t insideDisk;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
-          if( insideDisk)//Inside Disk
+          if( ! IsEmpty(insideDisk))//Inside Disk
           {
             Float_t diri2=intersectionPoint.x()*torus.GetWedge().GetAlong2().x()+
             intersectionPoint.y()*torus.GetWedge().GetAlong2().y();
             Bool_t rightside = (diri2 >=0);
-	    MaskedAssign( rightside&&(distPhi2<distPhi1), distPhi2, &distance);
-	   
+	    MaskedAssign( rightside && (distPhi2 < distance) &&smallerphi && insideDisk, distPhi2, &distance);
+	   	   
 	  }
          }
          
     
-	//std::cerr<<" Dout for point "<<point<<" df1="<<distPhi1<<" df2="<<distPhi2<<" dout="<<dout<<" din="<<din<<" dist="<<distance<<std::endl;
+      //std::cerr<<" Dout for point "<<point<<" df1="<<distPhi1<<" df2="<<distPhi2<<" dout="<<dout<<" din="<<din<<" dist="<<distance<<" smallerphi="<<smallerphi<<std::endl;
     }
    
   }
