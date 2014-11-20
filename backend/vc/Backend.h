@@ -27,7 +27,10 @@ struct kVc {
   typedef Vc::int_v                   Int_t;
   typedef Vc::Vector<Precision>       Double_t;
   typedef Vc::Vector<Precision>::Mask Bool_t;
+<<<<<<< HEAD
   typedef Vc::Vector<Precision>       Index_t;
+=======
+>>>>>>> 99fc285... [VecGeom-35]; extended trait classes with alternative typedefs
 };
 
 constexpr int kVectorSize = kVc::precision_v::Size;
