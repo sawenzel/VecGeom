@@ -58,12 +58,15 @@ private:
 
    // The data start should point to the address of the first data member,
    // after the virtual table
-  // the purpose is probably for the Copy function
-  void*  DataStart() const {return (void*)&fMaxlevel;}
-  void*  ObjectStart() const {return (void*)this;}
+   // the purpose is probably for the Copy function
+   const void*  DataStart() const {return (const void*)&fMaxlevel;}
+   const void*  ObjectStart() const {return (const void*)this;}
+   void*  DataStart() {return (void*)&fMaxlevel;}
+   void*  ObjectStart() {return (void*)this;}
+
 
      // The actual size of the data for an instance, excluding the virtual table
-  size_t      DataSize() const {
+   size_t      DataSize() const {
       return SizeOf() + (size_t)ObjectStart() - (size_t)DataStart();}
 
 
