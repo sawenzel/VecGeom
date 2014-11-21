@@ -3,9 +3,9 @@
 
 namespace VECGEOM_NAMESPACE {
 
-#ifndef VECGEOM_NVCC
 Planes::Planes(int size) : fNormals(size), fDistances(size) {}
-#else
+
+#ifdef VECGEOM_NVCC
 __device__
 Planes::Planes() : fNormals(), fDistances() {}
 __device__

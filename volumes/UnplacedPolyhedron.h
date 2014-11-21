@@ -124,6 +124,7 @@ public:
       Precision boundingTubeOffset);
 #endif
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~UnplacedPolyhedron() {}
 
   VECGEOM_CUDA_HEADER_BOTH

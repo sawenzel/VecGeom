@@ -27,9 +27,9 @@ private:
 
 public:
 
-#ifndef VECGEOM_NVCC
   Planes(int size);
-#else
+
+#ifdef VECGEOM_NVCC
   __device__
   Planes();
   __device__

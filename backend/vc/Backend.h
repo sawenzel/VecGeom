@@ -28,20 +28,12 @@ struct kVc {
   typedef Vc::Vector<Precision>::Mask Bool_t;
 };
 
-template <>
-VECGEOM_CUDA_HEADER_BOTH
-inline constexpr bool kVc::IsEqual<kVc>() { return true; }
-
 constexpr int kVectorSize = kVc::precision_v::Size;
 
 typedef kVc::int_v       VcInt;
 typedef kVc::precision_v VcPrecision;
 typedef kVc::bool_v      VcBool;
 typedef kVc::inside_v    VcInside;
-
-VcPrecision kVc::Convert(Precision const &input) {
-  return VcPrecision(&input);
-}
 
 template <typename Type>
 VECGEOM_INLINE
