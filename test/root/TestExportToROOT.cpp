@@ -17,6 +17,7 @@
 #include "volumes/UnplacedParaboloid.h"
 #include "volumes/UnplacedParallelepiped.h"
 #include "volumes/UnplacedTorus.h"
+#include "volumes/UnplacedTrapezoid.h"
 #include "management/RootGeoManager.h"
 #include "management/GeoManager.h"
 #include "TGeoManager.h"
@@ -36,8 +37,8 @@ VPlacedVolume* SetupGeometry() {
   UnplacedCone *cone1Unplaced = new UnplacedCone( 0.5, 1., 0.6, 1.2, 0.5, 0., kTwoPi);
   UnplacedCone *cone2Unplaced = new UnplacedCone( 0.5, 1., 0.6, 1.2,0.5, kPi/4., kPi);
 
-
   UnplacedTrd *trdUnplaced = new UnplacedTrd( 0.1, 0.2, 0.15, 0.05 );
+  UnplacedTrapezoid *trapUnplaced = new UnplacedTrapezoid(0.2,0.,0.,0.1,0.08,0.12,0.,0.15,0.12,0.18,0.);
 
   UnplacedOrb *orbUnplaced = new UnplacedOrb( 0.1 );
   UnplacedParaboloid *paraUnplaced = new UnplacedParaboloid( 0.1, 0.2, 0.1 );
@@ -66,6 +67,7 @@ VPlacedVolume* SetupGeometry() {
   LogicalVolume *cone2 = new LogicalVolume("lcone2", cone2Unplaced);
 
   LogicalVolume *trd1  = new LogicalVolume("ltrd", trdUnplaced);
+  LogicalVolume *trap1 = new LogicalVolume("ltrap", trapUnplaced);
 
   LogicalVolume *orb1 = new LogicalVolume("lorb1", orbUnplaced);
   LogicalVolume *parab1 = new LogicalVolume("lparab1", paraUnplaced);
@@ -78,6 +80,7 @@ VPlacedVolume* SetupGeometry() {
   world->PlaceDaughter(epip1, idendity);
 
   tube1->PlaceDaughter( trd1, idendity );
+  tube2->PlaceDaughter( trap1, idendity );
   box->PlaceDaughter( tube1, placement9 );
   box->PlaceDaughter( tube2, placement10 );
 
@@ -90,10 +93,12 @@ VPlacedVolume* SetupGeometry() {
   world->PlaceDaughter(box, placement7);
   world->PlaceDaughter(box, placement8);
 
+  cone1->PlaceDaughter(trap1, idendity);
   world->PlaceDaughter(cone1, new Transformation3D(8,0,0,0,0,0));
   world->PlaceDaughter(cone2, new Transformation3D(-8,0,0,0,0,0));
   // might not be fully in world ( need to rotate ... )
   world->PlaceDaughter(tor1, new Transformation3D(-9,0,0,0,0,0));
+
 
   return world->Place();
 }

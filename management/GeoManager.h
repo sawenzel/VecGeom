@@ -71,7 +71,7 @@ private:
     int fTotalNodeCount;
 public:
     GetTotalNodeCountVisitor() : fTotalNodeCount(0) {}
-    void apply( VPlacedVolume *, int level )
+    void apply( VPlacedVolume *, int /* level */ )
     {
         fTotalNodeCount++;
     }

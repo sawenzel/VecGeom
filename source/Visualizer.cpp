@@ -17,7 +17,7 @@
 
 namespace vecgeom {
 
-Visualizer::Visualizer() : fVerbosity(0), fVolumes() {}
+   Visualizer::Visualizer() : fVerbosity(0), fVolumes(), fMarkers(), fLines() {}
 
 Visualizer::~Visualizer() {}
 

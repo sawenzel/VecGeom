@@ -108,6 +108,12 @@ Precision fSinEPhi;
         fDz(dz),
         fSPhi(phimin),
         fDPhi(phimax),
+        fNormalPhi1(),
+	fNormalPhi2(),
+        fAlongPhi1x(0),
+        fAlongPhi1y(0),
+        fAlongPhi2x(0),
+        fAlongPhi2y(0),
         fInnerSlope(), // "gradient" of inner surface in z direction
         fOuterSlope(), // "gradient" of outer surface in z direction
         fInnerOffset(),
@@ -115,7 +121,24 @@ Precision fSinEPhi;
         fOuterSlopeSquare(),
         fInnerSlopeSquare(),
         fOuterOffsetSquare(),
-        fInnerOffsetSquare() {
+        fInnerOffsetSquare(),
+	   fSecRMin(0),
+	   fSecRMax(0),
+	   fInvSecRMin(0),
+	   fInvSecRMax(0),
+   fCosCPhi(0),
+   fSinCPhi(0),
+   fCosSPhi(0),
+   fSinSPhi(0),
+   fCosEPhi(0),
+
+   fCosHDPhi(0),
+ fSinEPhi(0),
+   fCosHDPhiIT(0),
+   fCosHDPhiOT(0),
+   fTanRMin(0),
+   fTanRMax(0)
+	      {
 
       // initialize trigonometry for USOLIDS impl
         double hDPhi = 0.5 * fDPhi;                    // half delta phi

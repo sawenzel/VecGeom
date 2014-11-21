@@ -61,6 +61,9 @@ UTrap::UTrap(const std::string& pName,
                       FatalErrorInArguments, 1, message.str().c_str());
   }
 
+  fCubicVolume = 0;
+  fSurfaceArea = 0;
+
   fDz = pDz;
   fTthetaCphi = std::tan(pTheta) * std::cos(pPhi);
   fTthetaSphi = std::tan(pTheta) * std::sin(pPhi);
@@ -87,6 +90,8 @@ UTrap::UTrap(const std::string& pName,
 UTrap::UTrap(const std::string& pName,
              const UVector3 pt[8])
   : VUSolid(pName)
+  , fCubicVolume(0)
+  , fSurfaceArea(0)
 {
   bool good;
 
@@ -476,6 +481,8 @@ UTrap::UTrap(const std::string& pName)
   : VUSolid(pName), fDz(1.), fTthetaCphi(0.), fTthetaSphi(0.),
     fDy1(1.), fDx1(1.), fDx2(1.), fTalpha1(0.),
     fDy2(1.), fDx3(1.), fDx4(1.), fTalpha2(0.)
+  , fCubicVolume(0)
+  , fSurfaceArea(0)
 {
   MakePlanes();
 }
@@ -498,6 +505,8 @@ UTrap::UTrap(const UTrap& rhs)
     fTthetaCphi(rhs.fTthetaCphi), fTthetaSphi(rhs.fTthetaSphi),
     fDy1(rhs.fDy1), fDx1(rhs.fDx1), fDx2(rhs.fDx2), fTalpha1(rhs.fTalpha1),
     fDy2(rhs.fDy2), fDx3(rhs.fDx3), fDx4(rhs.fDx4), fTalpha2(rhs.fTalpha2)
+  , fCubicVolume(0)
+  , fSurfaceArea(0.)
 {
   for (size_t i = 0; i < 4; ++i)
   {

@@ -15,19 +15,52 @@ namespace VECGEOM_NAMESPACE {
     
 //__________________________________________________________________
     VECGEOM_CUDA_HEADER_BOTH
-    UnplacedParaboloid::UnplacedParaboloid()
+    UnplacedParaboloid::UnplacedParaboloid() :
+fRlo(0),
+fRhi(0),
+fDz(0),
+fA(0),
+fB(0),
+fAinv(0),
+fBinv(0),
+fA2(0),
+fB2(0),
+fRlo2(0),
+fRhi2(0),
+fTolIz(0),
+fTolOz(0),
+fTolIrlo2(0),
+fTolOrlo2(0),
+fTolIrhi2(0),
+fTolOrhi2(0),
+fDx(0),
+fDy(0)
     {
         //dummy constructor
-        fRlo = 0;
-        fRhi = 0;
-        fDz = 0;
-        fA = 0;
-        fB = 0;
     }
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    UnplacedParaboloid::UnplacedParaboloid(const Precision rlo,  const Precision rhi, const Precision dz)
+    UnplacedParaboloid::UnplacedParaboloid(const Precision rlo,  const Precision rhi, const Precision dz):
+fRlo(0),
+fRhi(0),
+fDz(0),
+fA(0),
+fB(0),
+fAinv(0),
+fBinv(0),
+fA2(0),
+fB2(0),
+fRlo2(0),
+fRhi2(0),
+fTolIz(0),
+fTolOz(0),
+fTolIrlo2(0),
+fTolOrlo2(0),
+fTolIrhi2(0),
+fTolOrhi2(0),
+fDx(0),
+fDy(0)
     {
         SetRloAndRhiAndDz(rlo, rhi, dz);
     }

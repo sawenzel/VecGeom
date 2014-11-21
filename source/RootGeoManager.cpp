@@ -17,6 +17,7 @@
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
 #include "volumes/UnplacedTorus.h"
+#include "volumes/UnplacedTrapezoid.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -31,6 +32,7 @@
 #include "TGeoPara.h"
 #include "TGeoParaboloid.h"
 #include "TGeoTorus.h"
+#include "TGeoArb8.h"
 
 #include <cassert>
 
@@ -267,6 +269,14 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
   if (shape->IsA() == TGeoTrd1::Class() ) {
          TGeoTrd1 const *const p = static_cast<TGeoTrd1 const*>(shape);
          unplaced_volume = new UnplacedTrd(p->GetDx1(), p->GetDx2(), p->GetDy(),p->GetDz());
+  }
+
+  // TRAPEZOID
+  if (shape->IsA() == TGeoTrap::Class() ) {
+         TGeoTrap const *const p = static_cast<TGeoTrap const*>(shape);
+         unplaced_volume = new UnplacedTrapezoid(p->GetDz(),p->GetTheta()*kDegToRad,p->GetPhi()*kDegToRad,
+                                                 p->GetH1(),p->GetBl1(),p->GetTl1(),std::tan(p->GetAlpha1()*kDegToRad),
+                                                 p->GetH2(),p->GetBl2(), p->GetTl2(),std::tan(p->GetAlpha2()*kDegToRad));
   }
 
   // THE SPHERE | ORB

@@ -23,10 +23,47 @@ namespace VECGEOM_NAMESPACE {
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere::UnplacedSphere(Precision pRmin, Precision pRmax,
                  Precision pSPhi, Precision pDPhi,
-                 Precision pSTheta, Precision pDTheta)
-  : fEpsilon(2.e-11), fFullPhiSphere(true), fFullThetaSphere(true),
-    fCubicVolume(0.), fSurfaceArea(0.), epsilon(2e-11), frTolerance(1e-9),
-    fgTolerance(1e-9),faTolerance(1e-9)
+                 Precision pSTheta, Precision pDTheta): 
+     fRmin(0),
+     fRmax(0),
+     fSPhi(0),
+     fDPhi(0),
+     fSTheta(0),
+     fDTheta(0),
+     fRminTolerance(0),
+     mkTolerance(0),
+     kAngTolerance(0),
+     kRadTolerance(0),
+     fEpsilon(2.e-11), 
+     sinCPhi(0),
+     cosCPhi(0),
+     cosHDPhiOT(0),
+     cosHDPhiIT(0),
+     sinSPhi(0),
+     cosSPhi(0),
+     sinEPhi(0),
+     cosEPhi(0),
+     hDPhi(0),
+     cPhi(0),
+     ePhi(0),
+     sinSTheta(0),
+     cosSTheta(0),
+     sinETheta(0),
+     cosETheta(0),
+     tanSTheta(0),
+     tanSTheta2(0),
+     tanETheta(0),
+     tanETheta2(0),
+     eTheta(0),
+     fFullPhiSphere(true), 
+     fFullThetaSphere(true),
+     fFullSphere(true),
+     fCubicVolume(0.), 
+     fSurfaceArea(0.), 
+     epsilon(2e-11), 
+     frTolerance(1e-9),
+     fgTolerance(1e-9),
+     faTolerance(1e-9)
 {
   kAngTolerance = faTolerance;
 
@@ -101,8 +138,8 @@ namespace VECGEOM_NAMESPACE {
             }
             if (fSTheta > 0)
             {
-             Precision acos1 = std::acos(std::pow(sinSTheta, 2) * std::cos(fDPhi)
-                               + std::pow(cosSTheta, 2));
+             Precision acos1 = std::acos(Pow(sinSTheta, 2) * std::cos(fDPhi)
+                               + Pow(cosSTheta, 2));
             if (fDPhi > kPi)
             {
               fSurfaceArea = fSurfaceArea + 0.5 * (Rsq - rsq) * (2 * kPi - acos1);
@@ -114,8 +151,8 @@ namespace VECGEOM_NAMESPACE {
             }
             if (eTheta < kPi)
             {
-             double acos2 = std::acos(std::pow(sinETheta, 2) * std::cos(fDPhi)
-                               + std::pow(cosETheta, 2));
+             double acos2 = std::acos(Pow(sinETheta, 2) * std::cos(fDPhi)
+                               + Pow(cosETheta, 2));
             if (fDPhi > kPi)
             {
               fSurfaceArea = fSurfaceArea + 0.5 * (Rsq - rsq) * (2 * kPi - acos2);

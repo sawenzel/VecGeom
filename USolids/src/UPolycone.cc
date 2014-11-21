@@ -230,6 +230,7 @@ void UPolycone::Init(double phiStart,
 //        {
 //          solid = new UHedra("", prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal, fNumSides);
 //        }
+	//std::cout<<" sectionPCone tub="<<tubular<<" rMin="<<rMin<<" rMax="<<rMax<<" phiStart="<<phiStart<<" phiTotal="<<phiTotal<<" dz="<<dz<<std::endl;
 
         fZs.push_back(z);
 
@@ -270,8 +271,9 @@ void UPolycone::Init(double phiStart,
     prevRmax = rMax;
   }
 
+  //fMaxSection = fZs.size() - 1;
   fMaxSection = fZs.size() - 2;
-
+  
   //
   // Build RZ polygon using special PCON/PGON GEANT3 constructor
   //
@@ -434,8 +436,18 @@ VUSolid::EnumInside UPolycone::InsideSection(int index, const UVector3& p) const
 
   double r2 = p.x() * p.x() + p.y() * p.y();
 
+  if (r2 < 1e-10) {
+
+    if((! phiIsOpen) && (rMinMinus <= 0) )return vecgeom::EInside::kInside;
+    if(rMinMinus <= 0)return vecgeom::EInside::kSurface;
+    return vecgeom::EInside::kOutside;
+  }
+  
   if (r2 < rMinMinus * rMinMinus || r2 > rMaxPlus * rMaxPlus) return vecgeom::EInside::kOutside;
-  if (r2 < rMinPlus * rMinPlus || r2 > rMaxMinus * rMaxMinus) return vecgeom::EInside::kSurface;
+  if (r2 < rMinPlus * rMinPlus || r2 > rMaxMinus * rMaxMinus) 
+  {
+    if(! phiIsOpen)return vecgeom::EInside::kSurface;
+  }
 
   if (! phiIsOpen )
   {
@@ -444,13 +456,12 @@ VUSolid::EnumInside UPolycone::InsideSection(int index, const UVector3& p) const
     return vecgeom::EInside::kInside;
   }
 
-  if (r2 < 1e-10) return vecgeom::EInside::kInside;
-
   double phi = std::atan2(p.y(), p.x()); // * UUtils::kTwoPi;
   if ((phi < 0)||(endPhi > UUtils::kTwoPi)) phi += UUtils::kTwoPi;
 
   double ddp = phi - startPhi;
   if (ddp < 0) ddp += UUtils::kTwoPi;
+  
   if ((phi <= endPhi + frTolerance)&&(phi>= startPhi-frTolerance))
   {
     if (ps.z() < -dz + halfTolerance || ps.z() > dz - halfTolerance)
@@ -777,12 +788,13 @@ double UPolycone::Capacity()
   }
   else
   {
-    for (int i = 0; i < fMaxSection; i++)
+    for (int i = 0; i < fMaxSection+1; i++)
     {
       UPolyconeSection& section = fSections[i];
       fCubicVolume += section.solid->Capacity();
     }
   }
+ 
   return fCubicVolume;
 }
 
@@ -804,7 +816,6 @@ double UPolycone::SurfaceArea()
 
     areas.push_back(UUtils::kPi * (UUtils::sqr(fOriginalParameters->Rmax[0])
                                    - UUtils::sqr(fOriginalParameters->Rmin[0])));
-
     for (i = 0; i < numPlanes - 1; i++)
     {
       Area = (fOriginalParameters->Rmin[i] + fOriginalParameters->Rmin[i + 1])
@@ -820,8 +831,7 @@ double UPolycone::SurfaceArea()
                                       - fOriginalParameters->fZValues[i]));
 
       Area *= 0.5 * (endPhi - startPhi);
-
-      if (startPhi == 0. && endPhi == 2 * UUtils::kPi)
+      if (endPhi < 2 * UUtils::kPi)
       {
         Area += std::fabs(fOriginalParameters->fZValues[i + 1]
                           - fOriginalParameters->fZValues[i]) *
@@ -836,7 +846,7 @@ double UPolycone::SurfaceArea()
 
     areas.push_back(UUtils::kPi * (UUtils::sqr(fOriginalParameters->Rmax[numPlanes - 1]) -
                                    UUtils::sqr(fOriginalParameters->Rmin[numPlanes - 1])));
-
+    
     totArea += (areas[0] + areas[numPlanes]);
     fSurfaceArea = totArea;
 

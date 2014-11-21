@@ -16,6 +16,10 @@ struct kScalar {
   typedef bool      bool_v;
   typedef Inside_t  inside_v;
   const static bool early_returns = true;
+  // alternative typedefs ( might supercede above typedefs )
+  typedef int                   Int_t;
+  typedef Precision       Double_t;
+  typedef bool Bool_t;
 #ifdef VECGEOM_STD_CXX11
   constexpr static precision_v kOne = 1.0;
   constexpr static precision_v kZero = 0.0;
@@ -57,6 +61,20 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool IsEmpty(bool const &cond){
     return !cond;
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Type Pow(Type const &x, Type arg) {
+   return pow(x,arg);
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Type Pow(Type const &x, int arg) {
+   return pow(x,arg);
 }
 
 template <typename Type>

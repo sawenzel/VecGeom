@@ -49,14 +49,38 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTube(const Precision rmin, const Precision rmax, const Precision z,
                const Precision sphi, const Precision dphi) : fRmin(rmin), fRmax(rmax),
-               fZ(z), fSphi(sphi), fDphi(dphi) {
+     fZ(z), fSphi(sphi), fDphi(dphi),
+fRmin2(0),
+fRmax2(0),
+fAlongPhi1x(0),
+fAlongPhi1y(0),
+fAlongPhi2x(0),
+fAlongPhi2y(0),
+fTolIrmin2(0),
+fTolOrmin2(0),
+fTolIrmax2(0),
+fTolOrmax2(0),
+fTolIz(0),
+fTolOz(0)
+{
     calculateCached();  
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTube(UnplacedTube const &other) : fRmin(other.fRmin), fRmax(other.fRmax), fZ(other.fZ), fSphi(other.fSphi), fDphi(other.fDphi)  {
-    calculateCached();
-  }
+     UnplacedTube(UnplacedTube const &other) : fRmin(other.fRmin), fRmax(other.fRmax), fZ(other.fZ), fSphi(other.fSphi), fDphi(other.fDphi),  
+fRmin2(other.fRmin2),
+fRmax2(other.fRmax2),
+fAlongPhi1x(other.fAlongPhi1x),
+fAlongPhi1y(other.fAlongPhi1y),
+fAlongPhi2x(other.fAlongPhi2x),
+fAlongPhi2y(other.fAlongPhi2y),
+fTolIrmin2(other.fTolIrmin2),
+fTolOrmin2(other.fTolOrmin2),
+fTolIrmax2(other.fTolIrmax2),
+fTolOrmax2(other.fTolOrmax2),
+fTolIz(other.fTolIz),
+fTolOz(other.fTolOz)
+{  }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

@@ -212,8 +212,19 @@ public:
       MaskedAssign( interceptFromInside  && validVdist, vdist[i], &smax );
     }
 
+    // check that entry point found is valid -- cannot be outside (may happen when track is parallel to a face)
+    Vector3D<typename Backend::precision_v> entry = point + dir*smin;
+    Bool_t valid = Backend::kTrue;
+    for(unsigned int i=0; i<N; ++i) {
+      Float_t dist = this->fA[i]*entry.x() + this->fB[i]*entry.y() + this->fC[i]*entry.z() + this->fD[i];
+
+      // valid here means if it is not outside plane, or pdist[i]<=0.
+      valid &= (dist <= MakePlusTolerant<true>(0.));
+
+    }
+
     // Return smin, which is the maximum distance in an interceptFromOutside situation
-    MaskedAssign( !done, smin, &distIn );
+    MaskedAssign( !done && valid, smin, &distIn );
 
     return distIn;
   }
@@ -232,10 +243,11 @@ public:
 
     Float_t distOut(kInfinity);
 
-    // hope for a vectorization of this part for Backend==scalar !! ( in my case this works )
+    // hope for a vectorization of this part for Backend==scalar !!
     // the idea is to put vectorizable things into this loop
     // and separate the analysis into a separate loop if need be
 //  Bool_t done(Backend::kFalse);
+    Float_t proj[N];
     Float_t vdist[N];
     for(int i=0; i<N; ++i) {
       Float_t pdist = this->fA[i]*point.x() + this->fB[i]*point.y() + this->fC[i]*point.z() + this->fD[i];
@@ -244,14 +256,15 @@ public:
       //done |= (pdist>0.);
       //if ( IsFull(done) ) return kInfinity;
 
-      Float_t proj = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
-      vdist[i] = -pdist / proj;
+      proj[i] = this->fA[i]*dir.x() + this->fB[i]*dir.y() + this->fC[i]*dir.z();
+      vdist[i] = -pdist / proj[i];
     }
 
+    // add = in vdist[i]>=0  and "proj[i]>0" in order to pass unit tests, but this will slow down DistToOut()!!! check effect!
     for(int i=0; i<N; ++i )
     {
-         Bool_t test = ( vdist[i] > 0. && vdist[i] < distOut );
-         MaskedAssign( test, vdist[i], &distOut);
+      Bool_t test = ( vdist[i] >= 0. && proj[i]>0 && vdist[i] < distOut );
+      MaskedAssign( test, vdist[i], &distOut);
     }
 
     return distOut;
