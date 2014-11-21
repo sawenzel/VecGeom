@@ -306,6 +306,7 @@ bool TestTrap() {
     Dist=trap1.DistanceToOut(ponmzside,vz,norm,convex);
     assert(ApproxEqual(Dist,80)&&ApproxEqual(norm,vz)&&convex);
 
+
     Dist=trap2.DistanceToOut(pzero,vx,norm,convex);
     assert(ApproxEqual(Dist,20)&&ApproxEqual(norm,Vec_t(cosa,0,-sina))&&convex);
     Dist=trap2.DistanceToOut(pzero,vmx,norm,convex);
@@ -494,7 +495,6 @@ bool TestTrap() {
 }
 
 int main() {
-
   assert(TestTrap<VECGEOM_NAMESPACE::SimpleTrapezoid>());
   std::cout << "VecGeom Trap passed.\n";
 
@@ -502,6 +502,5 @@ int main() {
   assert(TestTrap<UTrap>());
   std::cout << "UTrap passed\n";
 #endif
-
   return 0;
 }

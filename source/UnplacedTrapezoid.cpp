@@ -42,7 +42,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
       printf("\t Z=%f\n", pDz);
 
       // force a crash in a CPU/GPU portable way -- any better (graceful) way to do this?
-      Assert(true);  // -- Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid
+      Assert(true);
     }
 
     fTthetaSphi = tan(pTheta)*sin(pPhi);
@@ -62,7 +62,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
       printf("\t X=%f, Y=%f, Z=%f", xbox, ybox, zbox);
 
       // force a crash in a CPU/GPU portable way -- any better (graceful) way to do this?
-      Assert(true);  // -- Fatal Exception: Invalid input length parameters for Solid: UnplacedTrapezoid
+      Assert(true);
     }
 
     MakePlanes();
@@ -99,7 +99,7 @@ UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const& corners )
 {
   // check planarity of all four sides
   bool good = MakePlanes(corners);
-  Assert( good ); // ERROR: corners provided fail coplanarity tests.
+  if(!good) printf("***** ERROR: corners provided fail coplanarity tests.");
 
   // fill data members
   fromCornersToParameters(corners);
@@ -222,7 +222,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[0],pt[1],pt[5],pt[4],fPlanes[0]);
 #endif
-  Assert( good ); // GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid
+  if(!good) printf("***** GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n");
+  //  Assert( good );
 
   // Top side with normal approx. +Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -230,7 +231,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[2],pt[6],pt[7],pt[3],fPlanes[1]);
 #endif
-  Assert( good ); // GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid
+  if(!good) printf("***** GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n");
+  // Assert( good );
 
   // Front side with normal approx. -X
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -238,7 +240,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[0],pt[4],pt[6],pt[2],fPlanes[2]);
 #endif
-  Assert( good ); // GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid
+  if(!good) printf("***** GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n");
+  // Assert( good );
 
   // Back side with normal approx. +X
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -246,7 +249,8 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
 #else
   good = MakePlane(pt[1],pt[3],pt[7],pt[5],fPlanes[3]);
 #endif
-  Assert( good ); // GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid
+  if(!good) printf("***** GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n");
+  // Assert( good );
 
   // include areas for -Z,+Z surfaces
   sideAreas[4] = 2*(fDx1+fDx2)*fDy1;
@@ -285,9 +289,17 @@ bool UnplacedTrapezoid::MakePlane(
   Vcross = v12.Cross(v13);
 
   // check coplanarity
-  if (std::fabs( v14.Dot(Vcross)/(Vcross.Mag()*v14.Mag()) ) > kTolerance)  {
-    Assert( false ); // "UnplacedTrapezoid: ERROR: Coplanarity test failure!
+  // if (std::fabs( v14.Dot(Vcross)/(Vcross.Mag()*v14.Mag()) ) > kTolerance)  {
+  if ( std::fabs( v14.Dot(Vcross)/(Vcross.Mag()*v14.Mag()) ) > 1.0e-7 )  {
+    printf("*** ERROR (UnplacedTrapezoid): coplanarity test failure by %e.\n",
+           std::fabs( v14.Dot(Vcross)/(Vcross.Mag()*v14.Mag()) ) );
+    printf("\tcorner 1: (%f; %f; %f)\n", p1.x(), p1.y(), p1.z());
+    printf("\tcorner 2: (%f; %f; %f)\n", p2.x(), p2.y(), p2.z());
+    printf("\tcorner 3: (%f; %f; %f)\n", p3.x(), p3.y(), p3.z());
+    printf("\tcorner 4: (%f; %f; %f)\n", p4.x(), p4.y(), p4.z());
     good = false;
+
+    //Assert( false );
   }
   else {
     // a,b,c correspond to the x/y/z components of the
@@ -482,8 +494,8 @@ Precision UnplacedTrapezoid::SurfaceArea() const {
   Precision ghgf = cr.Mag();
 
   Precision surfArea = 2 * fDy1 * (fDx1 + fDx2) + 2 * fDy2 * (fDx3 + fDx4)
-    + (fDx1 + fDx3) * std::sqrt(4 * fDz * fDz + std::pow(fDy2 - fDy1 - 2 * fDz * fTthetaSphi, 2))
-    + (fDx2 + fDx4) * std::sqrt(4 * fDz * fDz + std::pow(fDy2 - fDy1 + 2 * fDz * fTthetaSphi, 2))
+    + (fDx1 + fDx3) * std::sqrt(4 * fDz * fDz + Pow(fDy2 - fDy1 - 2 * fDz * fTthetaSphi, 2))
+    + (fDx2 + fDx4) * std::sqrt(4 * fDz * fDz + Pow(fDy2 - fDy1 + 2 * fDz * fTthetaSphi, 2))
     + 0.5 * (babc + dcda + efeh + ghgf);
 
   return surfArea;

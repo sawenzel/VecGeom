@@ -120,7 +120,8 @@ public:
   UnplacedTrapezoid& operator=( UnplacedTrapezoid const& other );
 
   /// Destructor
-  ~UnplacedTrapezoid();
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual ~UnplacedTrapezoid();
 
   /// Accessors
   /// @{

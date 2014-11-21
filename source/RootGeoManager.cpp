@@ -16,6 +16,7 @@
 #include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
+#include "volumes/UnplacedTorus.h"
 #include "volumes/UnplacedTrapezoid.h"
 
 #include "TGeoManager.h"
@@ -30,6 +31,7 @@
 #include "TGeoTrd2.h"
 #include "TGeoPara.h"
 #include "TGeoParaboloid.h"
+#include "TGeoTorus.h"
 #include "TGeoArb8.h"
 
 #include <cassert>
@@ -293,6 +295,13 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
       }
   }
 
+  // THE TORUS
+    if (shape->IsA() == TGeoTorus::Class()) {
+        // make distinction
+        TGeoTorus const *const p = static_cast<TGeoTorus const*>(shape);
+            unplaced_volume = new UnplacedTorus(p->GetRmin(),p->GetRmax(),
+                    p->GetR(), p->GetPhi1()*kDegToRad, p->GetDphi()*kDegToRad);
+    }
   // New volumes should be implemented here...
   if (!unplaced_volume) {
     if (fVerbose) {

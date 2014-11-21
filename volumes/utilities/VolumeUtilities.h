@@ -28,6 +28,7 @@ VECGEOM_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point,
                      Vector3D<Precision> const &dir,
                      VPlacedVolume const &volume) {
+
 #if defined(VECGEOM_ROOT) && defined(VECGEOM_BENCHMARK)
 static const TGeoShape * rootshape = volume.ConvertToRoot();
 double *safe = NULL;

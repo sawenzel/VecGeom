@@ -22,13 +22,10 @@ struct kVc {
   const static precision_v kZero;
   const static bool_v kTrue;
   const static bool_v kFalse;
-
-  template <class Backend>
-  VECGEOM_CUDA_HEADER_BOTH
-  static constexpr bool IsEqual() { return false; }
-
-  VECGEOM_INLINE
-  static precision_v Convert(Precision const &input);
+  // alternative typedefs ( might supercede above typedefs )
+  typedef Vc::int_v                   Int_t;
+  typedef Vc::Vector<Precision>       Double_t;
+  typedef Vc::Vector<Precision>::Mask Bool_t;
 };
 
 template <>
@@ -148,6 +145,10 @@ VcPrecision tan(VcPrecision const &radians) {
   return s/c;
 }
 
+VECGEOM_INLINE
+Precision Pow(Precision const &x, Precision arg) {
+   return std::pow(x,arg);
+}
 
 VECGEOM_INLINE
 VcPrecision Min(VcPrecision const &val1, VcPrecision const &val2) {

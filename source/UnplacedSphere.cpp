@@ -138,8 +138,8 @@ namespace VECGEOM_NAMESPACE {
             }
             if (fSTheta > 0)
             {
-             Precision acos1 = std::acos(std::pow(sinSTheta, 2) * std::cos(fDPhi)
-                               + std::pow(cosSTheta, 2));
+             Precision acos1 = std::acos(Pow(sinSTheta, 2) * std::cos(fDPhi)
+                               + Pow(cosSTheta, 2));
             if (fDPhi > kPi)
             {
               fSurfaceArea = fSurfaceArea + 0.5 * (Rsq - rsq) * (2 * kPi - acos1);
@@ -151,8 +151,8 @@ namespace VECGEOM_NAMESPACE {
             }
             if (eTheta < kPi)
             {
-             double acos2 = std::acos(std::pow(sinETheta, 2) * std::cos(fDPhi)
-                               + std::pow(cosETheta, 2));
+             double acos2 = std::acos(Pow(sinETheta, 2) * std::cos(fDPhi)
+                               + Pow(cosETheta, 2));
             if (fDPhi > kPi)
             {
               fSurfaceArea = fSurfaceArea + 0.5 * (Rsq - rsq) * (2 * kPi - acos2);

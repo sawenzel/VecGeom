@@ -45,13 +45,11 @@ public:
   
 
 #else
-
   __device__
   SpecializedOrb(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox, const int id)
       : Helper(logical_volume, transformation, boundingBox, id) {}
-
 #endif
 
   virtual int memory_size() const { return sizeof(*this); }

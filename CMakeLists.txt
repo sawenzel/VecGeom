@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 2.8.8)
 project(Vecgeom)
 
@@ -165,7 +166,7 @@ if (Cilk)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CILK")
 endif()
 if (CUDA)
-  set(CUDA_ARCH 20 CACHE STRING "CUDA device architecture.")
+  set(CUDA_ARCH 50 CACHE STRING "CUDA device architecture.")
   set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA")
   if (NOT CUDA_SPECIALIZATION)
@@ -173,6 +174,7 @@ if (CUDA)
         "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_SPECIALIZATION")
   endif()
   set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS}
+      -std=c++11
       -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
   if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -342,6 +344,11 @@ if (Geant4)
 
 endif()
 
+
+# until VecCore is separated from VecGeom (then it become something
+# ${VecCore_DIR}/include
+include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
+
 ################################################################################
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -352,6 +359,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedCone.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTorus.cpp
   source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
@@ -367,6 +375,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedCone.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTorus.cpp
   source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
@@ -471,6 +480,7 @@ endif()
 # Define executables
 
 set(TEST_EXECUTABLES_CORE
+#  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationState.cpp
   ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
@@ -478,6 +488,8 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -516,6 +528,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/PolyhedronBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TorusBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
@@ -643,3 +656,7 @@ install(TARGETS vecgeom DESTINATION ${INSTALL_LIB_DIR})
 if (CUDA)
   install(TARGETS vecgeomcuda DESTINATION ${INSTALL_LIB_DIR})
 endif()
+
+
+# Not yet a proper project.
+add_subdirectory (VecCore)
