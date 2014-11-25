@@ -175,8 +175,8 @@ int main()
     SimpleNavigator nav;
     for( int i=0;i<NPOINTS;++i )
     {
-        states1[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
-        states2[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
+        states1[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+        states2[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
         nav.LocatePoint( GeoManager::Instance().GetWorld(), testpoints[i], *states1[i], true );
     }
 
