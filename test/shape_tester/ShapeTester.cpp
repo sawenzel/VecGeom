@@ -487,7 +487,8 @@ void ShapeTester::TestFarAwayPoint()
     if( diff > tolerance ) icount++;
     if( diff >=  UUtils::kInfinity)
     {icount1++;
-       ReportError( &nError,point, point1, diff, "TFA:  Point missed Solid (DistanceToIn = Infinity)");
+       UVector3 temp=-vec;
+       ReportError( &nError,point1, temp, diff, "TFA:  Point missed Solid (DistanceToIn = Infinity)");
     }
     else{ if ( diff > difMax ) difMax = diff; }
   }

@@ -21,6 +21,9 @@ class PlacedRootVolume : public VPlacedVolume {
 
 private:
 
+   PlacedRootVolume(const PlacedRootVolume&); // Not implemented
+   PlacedRootVolume& operator=(const PlacedRootVolume&); // Not implemented
+
   TGeoShape const *fRootShape;
 
 public:

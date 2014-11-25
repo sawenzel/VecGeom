@@ -1334,6 +1334,8 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
             transformation->Transform((*fPointPool)[p]);
         const Vector3D<Precision> dir =
             transformation->TransformDirection((*fDirectionPool)[p]);
+        //printf("Geant4 RunToIn will get point %.6f %.6f %.6f",point[0],point[1],point[2]);
+	//printf("Geant4 RunToIn before transform point %.6f %.6f %.6f",(*fPointPool)[p][0],(*fPointPool)[p][1],(*fPointPool)[p][2]);
         distances[i] = v->Geant4()->DistanceToIn(
           G4ThreeVector(point[0], point[1], point[2]),
           G4ThreeVector(dir[0], dir[1], dir[2])

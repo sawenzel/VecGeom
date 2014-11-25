@@ -106,6 +106,10 @@ public:
     , fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
   {}
 
+  /// \brief Constructor for masquerading a box (test purposes)
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedTrapezoid(Precision xbox, Precision ybox, Precision zbox);
+
   /// \brief Copy constructor
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrapezoid(UnplacedTrapezoid const &other);
@@ -116,7 +120,8 @@ public:
   UnplacedTrapezoid& operator=( UnplacedTrapezoid const& other );
 
   /// Destructor
-  ~UnplacedTrapezoid();
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual ~UnplacedTrapezoid();
 
   /// Accessors
   /// @{

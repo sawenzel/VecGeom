@@ -12,7 +12,10 @@
 namespace VECGEOM_NAMESPACE {
 
 #ifdef VECGEOM_VC
-class AlignedBase : public Vc::VectorAlignedBase {};
+class AlignedBase : public Vc::VectorAlignedBase {
+public:
+      virtual ~AlignedBase() {}
+};
 #elif !defined(VECGEOM_NVCC)
 class AlignedBase {
 

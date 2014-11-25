@@ -19,10 +19,14 @@ struct kCuda {
   typedef bool      bool_v;
   typedef Inside_t  inside_v;
   const static bool early_returns = false;
-  const static precision_v kOne = 1.0;
-  const static precision_v kZero = 0.0;
+  static constexpr precision_v kOne = 1.0;
+  static constexpr precision_v kZero = 0.0;
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
+  // alternative typedefs ( might supercede above typedefs )
+  typedef int                   Int_t;
+  typedef Precision       Double_t;
+  typedef bool Bool_t;
 };
 
 typedef kCuda::int_v       CudaInt;
@@ -30,6 +34,30 @@ typedef kCuda::precision_v CudaPrecision;
 typedef kCuda::bool_v      CudaBool;
 
 static const unsigned kThreadsPerBlock = 256;
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+double Pow(double const &x, double arg) {
+   return pow(x,arg);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+float Pow(float const &x, float arg) {
+   return powf(x,arg);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+double Pow(double const &x, int arg) {
+   return pow(x,(double)arg);
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+float Pow(float const &x, int arg) {
+   return powf(x,(float)arg);
+}
 
 // Auxiliary GPU functions
 

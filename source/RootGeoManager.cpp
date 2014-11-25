@@ -17,6 +17,8 @@
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
 #include "volumes/UnplacedBooleanVolume.h"
+#include "volumes/UnplacedTorus.h"
+#include "volumes/UnplacedTrapezoid.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -32,6 +34,8 @@
 #include "TGeoParaboloid.h"
 #include "TGeoCompositeShape.h"
 #include "TGeoBoolNode.h"
+#include "TGeoTorus.h"
+#include "TGeoArb8.h"
 
 #include <cassert>
 
@@ -271,6 +275,14 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
          unplaced_volume = new UnplacedTrd(p->GetDx1(), p->GetDx2(), p->GetDy(),p->GetDz());
   }
 
+  // TRAPEZOID
+  if (shape->IsA() == TGeoTrap::Class() ) {
+         TGeoTrap const *const p = static_cast<TGeoTrap const*>(shape);
+         unplaced_volume = new UnplacedTrapezoid(p->GetDz(),p->GetTheta()*kDegToRad,p->GetPhi()*kDegToRad,
+                                                 p->GetH1(),p->GetBl1(),p->GetTl1(),std::tan(p->GetAlpha1()*kDegToRad),
+                                                 p->GetH2(),p->GetBl2(), p->GetTl2(),std::tan(p->GetAlpha2()*kDegToRad));
+  }
+
   // THE SPHERE | ORB
   if (shape->IsA() == TGeoSphere::Class()) {
       // make distinction
@@ -321,6 +333,13 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
      }
   }
 
+  // THE TORUS
+    if (shape->IsA() == TGeoTorus::Class()) {
+        // make distinction
+        TGeoTorus const *const p = static_cast<TGeoTorus const*>(shape);
+            unplaced_volume = new UnplacedTorus(p->GetRmin(),p->GetRmax(),
+                    p->GetR(), p->GetPhi1()*kDegToRad, p->GetDphi()*kDegToRad);
+    }
   // New volumes should be implemented here...
   if (!unplaced_volume) {
     if (fVerbose) {

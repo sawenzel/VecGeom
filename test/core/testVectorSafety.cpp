@@ -55,7 +55,7 @@ void testVectorSafety( VPlacedVolume* world ){
    NavigationState ** states = new NavigationState*[1024];
    vecgeom::SimpleNavigator nav;
    for (int i=0;i<1024;++i){
-       states[i]=new NavigationState( GeoManager::Instance().getMaxDepth() );
+       states[i]=NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
        nav.LocatePoint( world, points[i], *states[i], true);
    }
 
@@ -96,8 +96,8 @@ void testVectorNavigator( VPlacedVolume* world ){
    for (int i=0;i<np;++i){
       // pSteps[i] = kInfinity;
        pSteps[i] = (i%2)? 1 : kInfinity;
-       states[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
-       newstates[i] = new NavigationState( GeoManager::Instance().getMaxDepth() );
+       states[i] =  NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+       newstates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
        nav.LocatePoint( world, points[i], *states[i], true);
    }
 
@@ -108,15 +108,15 @@ void testVectorNavigator( VPlacedVolume* world ){
    // verify against serial interface
    for (int i=0;i<np;++i) {
        Precision s;
-       NavigationState cmp( GeoManager::Instance().getMaxDepth() );
-       cmp.Clear();
+       NavigationState * cmp = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+       cmp->Clear();
        nav.FindNextBoundaryAndStep( points[i], dirs[i], *states[i],
-               cmp, pSteps[i], s );
+               *cmp, pSteps[i], s );
        vecgeom::Assert( steps[i] == s ,
                " Problem in VectorNavigation (steps) (in SimpleNavigator)" );
-       vecgeom::Assert( cmp.Top() == newstates[i]->Top() ,
+       vecgeom::Assert( cmp->Top() == newstates[i]->Top() ,
                       " Problem in VectorNavigation (states) (in SimpleNavigator)" );
-       vecgeom::Assert( cmp.IsOnBoundary() == newstates[i]->IsOnBoundary(),
+       vecgeom::Assert( cmp->IsOnBoundary() == newstates[i]->IsOnBoundary(),
                       " Problem in VectorNavigation (boundary) (in SimpleNavigator)" );
 
        vecgeom::Assert( safeties[i] == nav.GetSafety( points[i], *states[i] ),

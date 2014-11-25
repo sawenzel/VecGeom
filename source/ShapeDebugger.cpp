@@ -382,7 +382,7 @@ void ShapeDebugger::CompareSafetyToROOT(
       safety = fVolume->SafetyToIn(point);
       rootSafety = rootShape->Safety(&point[0], false);
     }
-    bool mismatch = Abs(safety - rootSafety) < kTolerance;
+    bool mismatch = Abs(safety - rootSafety) > kTolerance;
     if (mismatch) {
       ++mismatches;
       mismatchResults.emplace_back(point, safety, rootSafety);

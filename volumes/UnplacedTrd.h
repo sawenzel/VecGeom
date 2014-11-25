@@ -49,14 +49,34 @@ public:
   // special case Trd1 when dY1 == dY2
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrd(const Precision dx1, const Precision dx2, const Precision dy1, const Precision dz) :
-      fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy1), fDZ(dz) {
+  fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy1), fDZ(dz),
+fX2minusX1(0),
+fY2minusY1(0),
+fDZtimes2(0),
+fHalfX1plusX2(0),
+fHalfY1plusY2(0),
+fCalfX(0),
+fCalfY(0),
+fFx(0),
+fFy(0)
+{
     calculateCached();
   }
 
   // general case
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrd(const Precision dx1, const Precision dx2, const Precision dy1, const Precision dy2, const Precision dz) :
-      fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy2), fDZ(dz) {
+  fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy2), fDZ(dz),
+fX2minusX1(0),
+fY2minusY1(0),
+fDZtimes2(0),
+fHalfX1plusX2(0),
+fHalfY1plusY2(0),
+fCalfX(0),
+fCalfY(0),
+fFx(0),
+fFy(0)
+ {
     calculateCached();
   }
 

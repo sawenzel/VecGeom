@@ -72,8 +72,10 @@ void VolumePointers::ConvertVolume() {
 }
 
 void VolumePointers::Deallocate() {
- // if (initial_ != kBenchmarkSpecialized)   delete specialized_;
- // if (initial_ != kBenchmarkUnspecialized) delete unspecialized_;
+  /*
+  if (fInitial != kBenchmarkSpecialized)   delete fSpecialized;
+  if (fInitial != kBenchmarkUnspecialized) delete fUnspecialized;
+>>>>>>> master
 #ifdef VECGEOM_ROOT
  // if (initial_ != kBenchmarkRoot)          delete root_;
 #endif
@@ -83,6 +85,7 @@ void VolumePointers::Deallocate() {
 #ifdef VECGEOM_GEANT4
   //  if (fInitial != kBenchmarkGeant4)        delete fGeant4;
 #endif
+  */
 }
 
 } // End global namespace
