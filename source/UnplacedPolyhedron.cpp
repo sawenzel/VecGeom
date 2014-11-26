@@ -51,12 +51,12 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Assert(zPlanes[i] <= zPlanes[i+1], "Polyhedron Z-planes must be "
            "monotonically increasing.\n");
     fZSegments[i].hasInnerRadius = rMin[i] > 0 || rMin[i+1] > 0;
-    fZSegments[i].outer = Quadrilaterals(sideCount);
+    new (&fZSegments[i].outer) Quadrilaterals(sideCount);
     if (fHasPhiCutout) {
-      fZSegments[i].phi = Quadrilaterals(2);
+      new (&fZSegments[i].phi) Quadrilaterals(2);
     }
     if (fZSegments[i].hasInnerRadius) {
-      fZSegments[i].inner = Quadrilaterals(sideCount);
+      new (&fZSegments[i].inner) Quadrilaterals(sideCount);
       fHasInnerRadii = true;
     }
   }
