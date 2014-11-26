@@ -36,11 +36,12 @@ struct PolyhedronImplementation {
   /// \return Index of the phi-segment in which the passed point is located.
   ///         Assuming the polyhedron has been constructed properly, this should
   ///         always be a valid index.
+  template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static int ScalarFindPhiSegment(
+  static typename Backend::int_v FindPhiSegment(
       UnplacedPolyhedron const &polyhedron,
-      Vector3D<Precision> const &point);
+      Vector3D<typename Backend::precision_v> const &point);
 
   /// \param segmentIndex Index to the Z-segment to which the distance should be
   ///                     computed.
@@ -323,24 +324,30 @@ typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindZSegment(
 }
 
 template <bool treatInnerT>
+template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-int PolyhedronImplementation<treatInnerT>::ScalarFindPhiSegment(
+typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindPhiSegment(
     UnplacedPolyhedron const &polyhedron,
-    Vector3D<Precision> const &point) {
+    Vector3D<typename Backend::precision_v> const &point) {
 
+  typedef typename Backend::int_v Int_t;
+  typedef typename Backend::bool_v Bool_t;
+
+  Int_t index(-1);
   SOA3D<Precision> const &phiSections = polyhedron.GetPhiSections();
-  int i = 0;
-  const int iMax = polyhedron.GetSideCount();
-  while (i < iMax) {
-    bool inSection = point[0]*phiSections.x(i) + point[1]*phiSections.y(i) +
-                     point[2]*phiSections.z(i) >= 0 &&
-                     point[0]*phiSections.x(i+1) + point[1]*phiSections.y(i+1) +
-                     point[2]*phiSections.z(i+1) < 0;
-    if (inSection) break;
-    ++i;
+  for (int i = 0, iMax = polyhedron.GetSideCount(); i < iMax; ++i) {
+    Bool_t inSection = point[0]*phiSections.x(i) +
+                       point[1]*phiSections.y(i) +
+                       point[2]*phiSections.z(i) >= 0 &&
+                       point[0]*phiSections.x(i+1) +
+                       point[1]*phiSections.y(i+1) +
+                       point[2]*phiSections.z(i+1) < 0;
+    MaskedAssign(inSection, i, &index);
+    if (IsFull(index >= 0)) break;
   }
-  return i;
+
+  return index;
 }
 
 template <bool treatInnerT>
@@ -810,7 +817,7 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
   const int zMax = unplaced.GetZSegmentCount();
   int zIndex = FindZSegment<kScalar>(unplaced, point[2]);
   zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax-1 : zIndex);
-  int phiIndex = ScalarFindPhiSegment(unplaced, point);
+  int phiIndex = FindPhiSegment<kScalar>(unplaced, point);
 
   // Right
   for (int z = zIndex; z < zMax;) {
