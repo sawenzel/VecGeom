@@ -24,8 +24,10 @@ VECGEOM_CUDA_HEADER_BOTH
 int PlacedPolyhedron::PhiSegmentIndex(Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint =
      VPlacedVolume::transformation()->Transform(point);
-  return PolyhedronImplementation<true>::FindPhiSegment<kScalar>(
-      *GetUnplacedVolume(), localPoint);
+  return PolyhedronImplementation<
+      UnplacedPolyhedron::kInnerRadiiGeneric,
+      UnplacedPolyhedron::kPhiCutoutGeneric>::FindPhiSegment<kScalar>(
+          *GetUnplacedVolume(), localPoint);
 }
 
 #ifndef VECGEOM_NVCC

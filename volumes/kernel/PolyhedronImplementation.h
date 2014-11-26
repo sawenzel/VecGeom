@@ -18,7 +18,8 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 struct PolyhedronImplementation {
 
   /// \param pointZ Z-coordinate of a point.
@@ -236,22 +237,75 @@ namespace {
 
 /// Polyhedron-specific trait class typedef'ing the tube specialization that
 /// should be called as a bounds check in Contains, Inside and DistanceToIn.
-template <bool hasInnerRadiiT>
-struct HasInnerRadiiTraits;
-
-template <>
-struct HasInnerRadiiTraits<true> {
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT>
+struct HasInnerRadiiTraits {
   /// If polyhedron has inner radii, use a hollow tube
   typedef TubeImplementation<translation::kIdentity,
       rotation::kIdentity, TubeTypes::HollowTube> TubeKernels;
 };
 
 template <>
-struct HasInnerRadiiTraits<false> {
+struct HasInnerRadiiTraits<UnplacedPolyhedron::kInnerRadiiFalse> {
   /// If polyhedron has no inner radii, use a non-hollow tube
   typedef TubeImplementation<translation::kIdentity,
       rotation::kIdentity, TubeTypes::NonHollowTube> TubeKernels;
 };
+
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool TreatInner(bool hasInnerRadius) {
+  return hasInnerRadius;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool TreatInner<UnplacedPolyhedron::kInnerRadiiFalse>(bool hasInnerRadius) {
+  return false;
+}
+
+template <UnplacedPolyhedron::EPhiCutout phiCutoutT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool TreatPhi(bool hasPhiCutout) {
+  return true;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool TreatPhi<UnplacedPolyhedron::kPhiCutoutFalse>(bool hasPhiCutout) {
+  return false;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool TreatPhi<UnplacedPolyhedron::kPhiCutoutGeneric>(bool hasPhiCutout) {
+  return hasPhiCutout;
+}
+
+template <UnplacedPolyhedron::EPhiCutout phiCutoutT>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool LargePhiCutout(bool largePhiCutout) {
+  return largePhiCutout;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool LargePhiCutout<UnplacedPolyhedron::kPhiCutoutTrue>(bool largePhiCutout) {
+  return false;
+}
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool LargePhiCutout<UnplacedPolyhedron::kPhiCutoutLarge>(bool largePhiCutout) {
+  return true;
+}
 
 } // End anonymous namespace
 
@@ -298,11 +352,13 @@ int FindZSegmentKernel<kCuda>(
 
 } // End anonymous namespace
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindZSegment(
+typename Backend::int_v
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::FindZSegment(
     UnplacedPolyhedron const &polyhedron,
     typename Backend::precision_v const &pointZ) {
   return FindZSegmentKernel<Backend>(
@@ -311,11 +367,13 @@ typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindZSegment(
       pointZ);
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindPhiSegment(
+typename Backend::int_v
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::FindPhiSegment(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<typename Backend::precision_v> const &point) {
 
@@ -346,11 +404,12 @@ typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindPhiSegment(
   return index;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v
-PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToInZSegment(
     UnplacedPolyhedron const &polyhedron,
     int segmentIndex,
     Vector3D<typename Backend::precision_v> const &point,
@@ -372,7 +431,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
 
   // If the outer shell is not hit and the phi cutout sides are hit, this will
   // always be the correct result
-  if (polyhedron.HasPhiCutout()) {
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
     MaskedAssign(!done,
                  segment.phi.DistanceToIn<Backend, false>(point, direction),
                  &distance);
@@ -381,7 +440,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
   if (IsFull(done)) return distance;
 
   // Finally treat inner shell
-  if (treatInnerT && segment.hasInnerRadius) {
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
     MaskedAssign(!done,
                  segment.inner.DistanceToIn<Backend, true>(point, direction),
                  &distance);
@@ -390,11 +449,12 @@ PolyhedronImplementation<treatInnerT>::DistanceToInZSegment(
   return distance;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 typename Backend::precision_v
-PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToOutZSegment(
     UnplacedPolyhedron const &polyhedron,
     int segmentIndex,
     Precision zMin,
@@ -412,7 +472,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
       polyhedron.GetZSegment(segmentIndex);
 
   // Check inner shell first, as it would always be the correct result
-  if (treatInnerT && segment.hasInnerRadius) {
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
     distance = segment.inner.DistanceToIn<Backend, false>(point, direction);
     done = distance < kInfinity;
     if (IsFull(done)) return distance;
@@ -420,7 +480,7 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
 
   // Check phi cutout if necessary. It is also possible to return here if a
   // result is found
-  if (polyhedron.HasPhiCutout()) {
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
     MaskedAssign(!done,
                  segment.phi.DistanceToIn<Backend, true>(point, direction),
                  &distance);
@@ -437,10 +497,13 @@ PolyhedronImplementation<treatInnerT>::DistanceToOutZSegment(
   return distance;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToZSegmentSquared(
+Precision
+PolyhedronImplementation<innerRadiiT,
+                         phiCutoutT>::ScalarSafetyToZSegmentSquared(
     UnplacedPolyhedron const &polyhedron,
     int segmentIndex,
     int phiIndex,
@@ -449,7 +512,7 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToZSegmentSquared(
   UnplacedPolyhedron::ZSegment const &segment =
       polyhedron.GetZSegment(segmentIndex);
 
-  if (polyhedron.HasPhiCutout() &&
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout()) &&
       InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                 point)) {
     // If the point is within the phi cutout wedge, the two phi cutout sides are
@@ -463,7 +526,7 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToZSegmentSquared(
       segment.outer.ScalarDistanceSquared(phiIndex, point);
 
   // And finally the inner
-  if (treatInnerT && segment.hasInnerRadius) {
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
     safetySquared = Min(safetySquared,
         segment.inner.ScalarDistanceSquared(phiIndex, point));
   }
@@ -471,11 +534,12 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyToZSegmentSquared(
   return safetySquared;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <bool pointInsideT>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void PolyhedronImplementation<treatInnerT>::ScalarDistanceToEndcaps(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToEndcaps(
     UnplacedPolyhedron const &polyhedron,
     bool goingRight,
     Vector3D<Precision> const &point,
@@ -506,11 +570,11 @@ void PolyhedronImplementation<treatInnerT>::ScalarDistanceToEndcaps(
   Vector3D<Precision> intersection = point + distanceTest*direction;
   // Intersection point must be inside outer shell and outside inner shell
   if (!segment->outer.Contains<kScalar>(intersection)) return;
-  if (treatInnerT && segment->hasInnerRadius) {
+  if (TreatInner<innerRadiiT>(segment->hasInnerRadius)) {
     if (segment->inner.Contains<kScalar>(intersection)) return;
   }
   // Intersection point must not be in phi cutout wedge
-  if (polyhedron.HasPhiCutout()) {
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
     if (InPhiCutoutWedge<kScalar>(*segment, polyhedron.HasLargePhiCutout(),
                                   intersection)) {
       return;
@@ -520,10 +584,12 @@ void PolyhedronImplementation<treatInnerT>::ScalarDistanceToEndcaps(
   distance = distanceTest;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void PolyhedronImplementation<treatInnerT>::ScalarSafetyToEndcapsSquared(
+void
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyToEndcapsSquared(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<Precision> const &point,
     Precision &distanceSquared) {
@@ -547,10 +613,10 @@ void PolyhedronImplementation<treatInnerT>::ScalarSafetyToEndcapsSquared(
   // Check if projection is within the endcap bounds
   Vector3D<Precision> intersection(point[0], point[1], point[2] + distanceTest);
   if (!segment.outer.Contains<kScalar>(intersection)) return;
-  if (treatInnerT && segment.hasInnerRadius) {
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
     if (segment.inner.Contains<kScalar>(intersection)) return;
   }
-  if (polyhedron.HasPhiCutout()) {
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
     if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                   intersection)) {
       return;
@@ -560,12 +626,13 @@ void PolyhedronImplementation<treatInnerT>::ScalarSafetyToEndcapsSquared(
   distanceSquared = distanceTestSquared;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::bool_v
-PolyhedronImplementation<treatInnerT>::InPhiCutoutWedge(
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::InPhiCutoutWedge(
     UnplacedPolyhedron::ZSegment const &segment,
     bool largePhiCutout,
     Vector3D<typename Backend::precision_v> const &point) {
@@ -576,18 +643,17 @@ PolyhedronImplementation<treatInnerT>::InPhiCutoutWedge(
                   segment.phi.GetDistance(1) >= 0;
   // For a cutout larger than 180 degrees, the point is in the wedge if it is
   // in front of at least one plane.
-  // TODO: this should rely on a template parameter once this is added to the
-  //       specialized polyhedron.
-  if (largePhiCutout) {
+  if (LargePhiCutout<phiCutoutT>(largePhiCutout)) {
     return first || second;
   }
   // Otherwise it should be in front of both planes
   return first && second;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-bool PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
+bool PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<Precision> const &localPoint) {
 
@@ -595,7 +661,7 @@ bool PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
   {
     bool inBounds;
     // Correct tube algorithm obtained from trait class
-    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+    HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template
         UnplacedContains<kScalar>(
             polyhedron.GetBoundingTube(),
             Vector3D<Precision>(localPoint[0], localPoint[1], localPoint[2]
@@ -613,12 +679,12 @@ bool PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
   if (!segment.outer.Contains<kScalar>(localPoint)) return false;
 
   // Check that the point is not in the inner shell
-  if (treatInnerT && segment.hasInnerRadius) {
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
     if (segment.inner.Contains<kScalar>(localPoint)) return false;
   }
 
   // Check that the point is not in the phi cutout wedge
-  if (polyhedron.HasPhiCutout()) {
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
     return !InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                       localPoint);
   }
@@ -626,9 +692,10 @@ bool PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
   return true;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
+Inside_t PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarInsideKernel(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<Precision> const &localPoint) {
 
@@ -636,7 +703,7 @@ Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
   {
     bool inBounds;
     // Correct tube algorithm obtained from trait class
-    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+    HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template
         UnplacedContains<kScalar>(
             polyhedron.GetBoundingTube(),
             Vector3D<Precision>(localPoint[0], localPoint[1], localPoint[2]
@@ -657,14 +724,14 @@ Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
   }
 
   // Check that the point is not in the inner shell
-  if (treatInnerT && segment.hasInnerRadius){
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
     Inside_t insideInner = segment.inner.Inside<kScalar>(localPoint);
     if (insideInner == EInside::kInside)  return EInside::kOutside;
     if (insideInner == EInside::kSurface) return EInside::kSurface;
   }
 
   // Check that the point is not in the phi cutout wedge
-  if (polyhedron.HasPhiCutout()) {
+  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
     if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                   localPoint)) {
       // TODO: check for surface case when in phi wedge. This can be done by
@@ -676,10 +743,11 @@ Inside_t PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
   return EInside::kInside;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
 Precision
-PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
     UnplacedPolyhedron const &unplaced,
     Transformation3D const &transformation,
     Vector3D<Precision> const &point,
@@ -698,7 +766,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
     Vector3D<Precision> boundsPoint(
         localPoint[0], localPoint[1],
         localPoint[2]-unplaced.GetBoundingTubeOffset());
-    HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+    HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template
         UnplacedContains<kScalar>(
             unplaced.GetBoundingTube(), boundsPoint, inBounds);
     // If the point is inside the bounding tube, the result of DistanceToIn is
@@ -710,7 +778,7 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
       // If the point is outside the bounding tube, check if the ray misses
       // the bounds
       Precision tubeDistance;
-      HasInnerRadiiTraits<treatInnerT>::TubeKernels::template
+      HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template
           DistanceToIn<kScalar>(
               unplaced.GetBoundingTube(), transformation, boundsPoint,
               localDirection, stepMax, tubeDistance);
@@ -755,9 +823,10 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
   return distance < stepMax ? distance : stepMax;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
+Precision PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
     UnplacedPolyhedron const &unplaced,
     Vector3D<Precision> const &point) {
 
@@ -788,10 +857,11 @@ Precision PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
   return sqrt(safety);
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
 Precision
-PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
+PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToOutKernel(
     UnplacedPolyhedron const &unplaced,
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
@@ -840,21 +910,23 @@ PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
   return distance < stepMax ? distance : stepMax;
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::UnplacedContains(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::UnplacedContains(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
   Assert(0, "Generic UnplacedContains not implemented.\n");
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::Contains(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::Contains(
     UnplacedPolyhedron const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
@@ -863,10 +935,11 @@ void PolyhedronImplementation<treatInnerT>::Contains(
   Assert(0, "Generic Contains not implemented.\n");
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::Inside(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::Inside(
     UnplacedPolyhedron const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
@@ -874,10 +947,11 @@ void PolyhedronImplementation<treatInnerT>::Inside(
   Assert(0, "Generic Inside not implemented.\n");
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::DistanceToIn(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToIn(
     UnplacedPolyhedron const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
@@ -887,10 +961,11 @@ void PolyhedronImplementation<treatInnerT>::DistanceToIn(
   Assert(0, "Generic DistanceToIn not implemented.\n");
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::DistanceToOut(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction,
@@ -899,10 +974,11 @@ void PolyhedronImplementation<treatInnerT>::DistanceToOut(
   Assert(0, "Generic DistanceToOut not implemented.\n");
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-void PolyhedronImplementation<treatInnerT>::SafetyToIn(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::SafetyToIn(
     UnplacedPolyhedron const &unplaced,
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
@@ -910,11 +986,12 @@ void PolyhedronImplementation<treatInnerT>::SafetyToIn(
   Assert(0, "Generic SafetyToIn not implemented.\n");
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
-void PolyhedronImplementation<treatInnerT>::SafetyToOut(
+void PolyhedronImplementation<innerRadiiT, phiCutoutT>::SafetyToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {

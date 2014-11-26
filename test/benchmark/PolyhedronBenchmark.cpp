@@ -73,10 +73,10 @@ int main(int nArgs, char **args) {
     outStream.close();
   };
 
-  // RunBenchmark(NoInnerRadii(), "polyhedron_no-inner-radii.csv");
+  RunBenchmark(NoInnerRadii(), "polyhedron_no-inner-radii.csv");
   // RunBenchmark(WithInnerRadii(), "polyhedron_with-inner-radii.csv");
   // RunBenchmark(ManySegments(), "polyhedron_many-segments.csv");
-  RunBenchmark(WithPhiSection(), "polyhedron_phi-section.csv");
+  // RunBenchmark(WithPhiSection(), "polyhedron_phi-section.csv");
 
   return 0;
 }

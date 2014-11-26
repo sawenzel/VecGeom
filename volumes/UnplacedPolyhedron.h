@@ -62,6 +62,19 @@ class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 public:
 
+  enum EInnerRadii {
+    kInnerRadiiFalse = -1,
+    kInnerRadiiGeneric = 0,
+    kInnerRadiiTrue = 1
+  };
+
+  enum EPhiCutout {
+    kPhiCutoutFalse = -1,
+    kPhiCutoutGeneric = 0,
+    kPhiCutoutTrue = 1,
+    kPhiCutoutLarge = 2
+  };
+
   /// Represents one segment along the Z-axis, containing one or more sets of
   /// quadrilaterals that represent the outer, inner and phi shells.
   struct ZSegment {

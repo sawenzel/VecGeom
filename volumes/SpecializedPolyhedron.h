@@ -14,22 +14,16 @@
 
 namespace VECGEOM_NAMESPACE {
 
-template <bool treatInnerT>
-struct PolyhedronSpecialization {
-  static const bool treatInner = treatInnerT;
-};
-
-typedef PolyhedronSpecialization<true> GenericPolyhedron;
-
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 class SpecializedPolyhedron
     : public ShapeImplementationHelper<
           PlacedPolyhedron,
-          PolyhedronImplementation<treatInnerT> > {
+          PolyhedronImplementation<innerRadiiT, phiCutoutT> > {
 
   typedef ShapeImplementationHelper<
       PlacedPolyhedron,
-      PolyhedronImplementation<treatInnerT> > Helper;
+      PolyhedronImplementation<innerRadiiT, phiCutoutT> > Helper;
 
 public:
 
@@ -147,25 +141,30 @@ public:
 
 };
 
-typedef SpecializedPolyhedron<true> SimplePolyhedron;
+typedef SpecializedPolyhedron<UnplacedPolyhedron::kInnerRadiiGeneric,
+                              UnplacedPolyhedron::kPhiCutoutGeneric>
+    SimplePolyhedron;
 
 #ifndef VECGEOM_NVCC
 
-template <bool treatInnerT>
-SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SpecializedPolyhedron(
     char const *const label,
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation)
     : Helper(label, logical_volume, transformation, NULL) {}
 
-template <bool treatInnerT>
-SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SpecializedPolyhedron(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation)
     : SpecializedPolyhedron("", logical_volume, transformation) {}
 
-template <bool treatInnerT>
-SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SpecializedPolyhedron(
     char const *const label,
     const int sideCount,
     const int zPlaneCount,
@@ -176,8 +175,9 @@ SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
           new UnplacedPolyhedron(sideCount, zPlaneCount, zPlanes, rMin, rMax)),
           &Transformation3D::kIdentity, NULL) {}
 
-template <bool treatInnerT>
-SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SpecializedPolyhedron(
     char const *const label,
     Precision phiStart,
     Precision phiDelta,
@@ -193,84 +193,98 @@ SpecializedPolyhedron<treatInnerT>::SpecializedPolyhedron(
 
 #endif
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::PrintType() const {
-  printf("SpecializedPolyhedron<%i>", treatInnerT);
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::PrintType() const {
+  printf("SpecializedPolyhedron<%i>", innerRadiiT);
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<treatInnerT>::Contains(
+bool SpecializedPolyhedron<innerRadiiT, phiCutoutT>::Contains(
     Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint;
   return Contains(point, localPoint);
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::Contains(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::Contains(
     SOA3D<Precision> const &points,
     bool *const output) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
-    output[i] = PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
-        *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
+    output[i] =
+        PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
+            *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
   }
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<treatInnerT>::Contains(
+bool SpecializedPolyhedron<innerRadiiT, phiCutoutT>::Contains(
     Vector3D<Precision> const &point,
     Vector3D<Precision> &localPoint) const {
   localPoint = VPlacedVolume::transformation()->Transform(point);
   return UnplacedContains(localPoint);
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-bool SpecializedPolyhedron<treatInnerT>::UnplacedContains(
+bool SpecializedPolyhedron<innerRadiiT, phiCutoutT>::UnplacedContains(
     Vector3D<Precision> const &localPoint) const {
-  return PolyhedronImplementation<treatInnerT>::ScalarContainsKernel(
-      *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
+  return
+      PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
+          *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Inside_t SpecializedPolyhedron<treatInnerT>::Inside(
+Inside_t SpecializedPolyhedron<innerRadiiT, phiCutoutT>::Inside(
     Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint =
       VPlacedVolume::transformation()->Transform(point);
-  return PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
+  return PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarInsideKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::Inside(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::Inside(
     SOA3D<Precision> const &points,
     Inside_t *const output) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
-    output[i] = PolyhedronImplementation<treatInnerT>::ScalarInsideKernel(
-        *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
+    output[i] =
+        PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarInsideKernel(
+            *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
   }
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT>::DistanceToIn(
+Precision SpecializedPolyhedron<innerRadiiT, phiCutoutT>::DistanceToIn(
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
     const Precision stepMax) const {
-  Precision temp = PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
-      *PlacedPolyhedron::GetUnplacedVolume(), *VPlacedVolume::transformation(),
-      point, direction, stepMax);
+  Precision temp =
+      PolyhedronImplementation<innerRadiiT,
+                               phiCutoutT>::ScalarDistanceToInKernel(
+          *PlacedPolyhedron::GetUnplacedVolume(),
+          *VPlacedVolume::transformation(), point, direction, stepMax);
   return temp;
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::DistanceToIn(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::DistanceToIn(
     SOA3D<Precision> const &points,
     SOA3D<Precision> const &directions,
     Precision const *const stepMax,
@@ -280,27 +294,30 @@ void SpecializedPolyhedron<treatInnerT>::DistanceToIn(
         VPlacedVolume::transformation()->Transform(points[i]);
     Vector3D<Precision> localDirection =
         VPlacedVolume::transformation()->Transform(directions[i]);
-    output[i] = PolyhedronImplementation<treatInnerT>::ScalarDistanceToInKernel(
+    output[i] = PolyhedronImplementation<innerRadiiT,
+                                         phiCutoutT>::ScalarDistanceToInKernel(
         *PlacedPolyhedron::GetUnplacedVolume(),
         *VPlacedVolume::transformation(),
         localPoint, localDirection, stepMax[i]);
   }
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT>::SafetyToIn(
+Precision SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SafetyToIn(
     Vector3D<Precision> const &point) const {
 
   Vector3D<Precision> localPoint =
       VPlacedVolume::transformation()->Transform(point);
 
-  return PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
+  return PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::SafetyToIn(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SafetyToIn(
     SOA3D<Precision> const &points,
     Precision *const safeties) const {
 
@@ -309,13 +326,15 @@ void SpecializedPolyhedron<treatInnerT>::SafetyToIn(
     Vector3D<Precision> localPoint =
         VPlacedVolume::transformation()->Transform(points[i]);
 
-    safeties[i] = PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
-        *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
+    safeties[i] =
+        PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
+            *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
   }
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::SafetyToInMinimize(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SafetyToInMinimize(
     SOA3D<Precision> const &points,
     Precision *const safeties) const  {
 
@@ -325,63 +344,70 @@ void SpecializedPolyhedron<treatInnerT>::SafetyToInMinimize(
         VPlacedVolume::transformation()->Transform(points[i]);
 
     Precision candidate =
-        PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
+        PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), localPoint);
 
     safeties[i] = (candidate < safeties[i]) ? candidate : safeties[i];
   }
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT>::DistanceToOut(
+Precision SpecializedPolyhedron<innerRadiiT, phiCutoutT>::DistanceToOut(
     Vector3D<Precision> const &point,
     Vector3D<Precision> const &direction,
     const Precision stepMax) const {
-  return PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
+  return PolyhedronImplementation<innerRadiiT,
+                                  phiCutoutT>::ScalarDistanceToOutKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), point, direction, stepMax);
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::DistanceToOut(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::DistanceToOut(
     SOA3D<Precision> const &points,
     SOA3D<Precision> const &directions,
     Precision const *const stepMax,
     Precision *const output) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     output[i] =
-        PolyhedronImplementation<treatInnerT>::ScalarDistanceToOutKernel(
+        PolyhedronImplementation<innerRadiiT,
+                                 phiCutoutT>::ScalarDistanceToOutKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), points[i], directions[i],
             stepMax[i]);
   }
 }
 
-template <bool treatInnerT>
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
-Precision SpecializedPolyhedron<treatInnerT>::SafetyToOut(
+Precision SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SafetyToOut(
     Vector3D<Precision> const &point) const {
-  return PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
+  return PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
       *PlacedPolyhedron::GetUnplacedVolume(), point);
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::SafetyToOut(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SafetyToOut(
     SOA3D<Precision> const &points,
     Precision *const safeties) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
     safeties[i] =
-        PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
+        PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), points[i]);
   }
 }
 
-template <bool treatInnerT>
-void SpecializedPolyhedron<treatInnerT>::SafetyToOutMinimize(
+template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
+          UnplacedPolyhedron::EPhiCutout phiCutoutT>
+void SpecializedPolyhedron<innerRadiiT, phiCutoutT>::SafetyToOutMinimize(
     SOA3D<Precision> const &points,
     Precision *const safeties) const {
   for (int i = 0, iMax = points.size(); i < iMax; ++i) {
      safeties[i] =
-         PolyhedronImplementation<treatInnerT>::ScalarSafetyKernel(
+         PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyKernel(
             *PlacedPolyhedron::GetUnplacedVolume(), points[i]);
   }
 }
