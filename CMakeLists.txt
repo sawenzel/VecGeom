@@ -495,6 +495,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
   # ${CMAKE_SOURCE_DIR}/test/root/ParaboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
