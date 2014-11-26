@@ -256,11 +256,10 @@ struct AcceleratedDistanceToIn<kScalar> {
       VcPrecision distanceTest = plane.Dot(point) + dPlane;
       // Check if the point is in front of/behind the plane according to the
       // template parameter
-      VcBool valid = vecgeom::FlipSign<behindPlanesT>::Flip(distanceTest) >= 0;
+      VcBool valid = Flip<behindPlanesT>::FlipSign(distanceTest) >= 0;
       if (IsEmpty(valid)) continue;
       VcPrecision directionProjection = plane.Dot(direction);
-      valid &= vecgeom::FlipSign<!behindPlanesT>::Flip(
-          directionProjection) >= 0;
+      valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) >= 0;
       if (IsEmpty(valid)) continue;
       distanceTest /= -directionProjection;
       Vector3D<VcPrecision> intersection =
@@ -313,12 +312,10 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Float_t distance = point.Dot(normal) + fPlanes.GetDistance(i);
     // Check if the point is in front of/behind the plane according to the
     // template parameter
-    Bool_t valid =
-        VECGEOM_NAMESPACE::FlipSign<behindPlanesT>::Flip(distance) >= 0;
+    Bool_t valid = Flip<behindPlanesT>::FlipSign(distance) >= 0;
     if (IsEmpty(valid)) continue;
     Float_t directionProjection = direction.Dot(normal);
-    valid &= VECGEOM_NAMESPACE::FlipSign<!behindPlanesT>::Flip(
-        directionProjection) >= 0;
+    valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) >= 0;
     if (IsEmpty(valid)) continue;
     distance /= -directionProjection;
     Vector3D<Float_t> intersection = point + direction*distance;

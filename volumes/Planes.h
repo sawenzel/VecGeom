@@ -300,7 +300,7 @@ typename Backend::precision_v Planes::Distance(
 
   Float_t bestDistance = kInfinity;
   for (int i = 0, iMax = size(); i < iMax; ++i) {
-    Float_t distance = VECGEOM_NAMESPACE::FlipSign<!pointInsideT>::Flip(
+    Float_t distance = Flip<!pointInsideT>::FlipSign(
         point.Dot(fNormals[i]) + fDistances[i]);
     MaskedAssign(distance >= 0 && distance < bestDistance, distance,
                  &bestDistance);

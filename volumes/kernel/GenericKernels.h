@@ -56,25 +56,37 @@ template <class Backend> struct TreatSurfaceTraits<false, Backend> {
 
 /// \brief Flips the sign of an input value depending on the set template
 ///        parameter.
-template <bool flipSignT>
-struct FlipSign;
+template <bool flipT>
+struct Flip;
 
 template <>
-struct FlipSign<true> {
+struct Flip<true> {
   template <class T>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static T Flip(T const &value) {
+  static T FlipSign(T const &value) {
     return -value;
+  }
+  template <class T>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static T FlipLogical(T const &value) {
+    return !value;
   }
 };
 
 template <>
-struct FlipSign<false> {
+struct Flip<false> {
   template <class T>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static T Flip(T const &value) {
+  static T FlipSign(T const &value) {
+    return value;
+  }
+  template <class T>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static T FlipLogical(T const &value) {
     return value;
   }
 };
