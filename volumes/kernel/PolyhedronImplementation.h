@@ -332,19 +332,21 @@ typename Backend::int_v PolyhedronImplementation<treatInnerT>::FindPhiSegment(
     Vector3D<typename Backend::precision_v> const &point) {
 
   typedef typename Backend::int_v Int_t;
-  typedef typename Backend::bool_v Bool_t;
+  typedef typename Backend::precision_v Float_t;
 
   Int_t index(-1);
   SOA3D<Precision> const &phiSections = polyhedron.GetPhiSections();
-  for (int i = 0, iMax = polyhedron.GetSideCount(); i < iMax; ++i) {
-    Bool_t inSection = point[0]*phiSections.x(i) +
+  Float_t projectionFirst, projectionSecond;
+  projectionFirst = point[0]*phiSections.x(0) +
+                    point[1]*phiSections.y(0) +
+                    point[2]*phiSections.z(0);
+  for (int i = 1, iMax = polyhedron.GetSideCount()+1; i < iMax; ++i) {
+    projectionSecond = point[0]*phiSections.x(i) +
                        point[1]*phiSections.y(i) +
-                       point[2]*phiSections.z(i) >= 0 &&
-                       point[0]*phiSections.x(i+1) +
-                       point[1]*phiSections.y(i+1) +
-                       point[2]*phiSections.z(i+1) < 0;
-    MaskedAssign(inSection, i, &index);
+                       point[2]*phiSections.z(i);
+    MaskedAssign(projectionFirst >= 0 && projectionSecond < 0, i-1, &index);
     if (IsFull(index >= 0)) break;
+    projectionFirst = projectionSecond;
   }
 
   return index;
