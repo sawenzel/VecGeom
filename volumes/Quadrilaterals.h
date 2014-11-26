@@ -297,6 +297,18 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> const &direction) const {
 
+  // Looks for the shortest distance to one of the quadrilaterals.
+  // The algorithm projects the position and direction onto the plane of the
+  // quadrilateral, determines the intersection point, then checks if this point
+  // is within the bounds of the quadrilateral. There are many opportunities to
+  // perform early returns along the way, and the speed of this algorithm relies
+  // heavily on this property.
+  //
+  // The code below is optimized for the Polyhedron, and will return as soon as
+  // a valid intersection is found, since only one intersection will ever occur
+  // per Z-segment in Polyhedron case. If used in other contexts, a template
+  // parameter would have to be added to make a distinction.
+
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
@@ -403,6 +415,14 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
     Precision zMin,
     Precision zMax) const {
 
+  // The below computes the distance to the quadrilaterals similar to
+  // DistanceToIn, but is optimized for Polyhedron, and as such can assume that
+  // the quadrilaterals form a convex shell, and that the shortest distance to
+  // one of the quadrilaterals will indeed be an intersection. The exception to
+  // this is if the point leaves the Z-bounds specified in the input parameters.
+  // If used for another purpose than Polyhedron, DistanceToIn should be used if
+  // the set of quadrilaterals is not convex.
+
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
@@ -449,12 +469,20 @@ Precision Quadrilaterals::ScalarDistanceSquared(
     int i,
     Vector3D<Precision> const &point) const {
 
+  // This function is used by the safety algorithms to return the exact distance
+  // to the quadrilateral specified.
+  // The algorithm has three stages, trying first to return the shortest
+  // distance to the plane, then to the closest line segment, then to the
+  // closest corner.
+
   Vector3D<Precision> planeNormal = fPlanes.GetNormal(i);
   Precision distance = point.Dot(planeNormal) + fPlanes.GetDistance(i);
   Vector3D<Precision> intersection = point + distance*planeNormal;
 
   bool withinBound[4];
   for (int j = 0; j < 4; ++j) {
+    // TODO: check if this autovectorizes. Otherwise it should be explicitly
+    //       vectorized.
     withinBound[j] = intersection[0]*fSideVectors[j].GetNormals().x(i) +
                      intersection[1]*fSideVectors[j].GetNormals().y(i) +
                      intersection[2]*fSideVectors[j].GetNormals().z(i) +
@@ -468,6 +496,14 @@ Precision Quadrilaterals::ScalarDistanceSquared(
   // distance to the closest line segment or to the closest corner.
   // Since it is already known whether the point is to the left or right of
   // each line, only one side and its corners have to be checked.
+  //
+  //           above
+  //   corner3_______corner0
+  //         |       |
+  //   left  |       |  right
+  //         |_______|
+  //   corner2       corner1
+  //           below
 
   Vector3D<Precision> corner0, corner1;
 

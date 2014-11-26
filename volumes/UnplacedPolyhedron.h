@@ -62,11 +62,14 @@ class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 public:
 
+  /// Represents one segment along the Z-axis, containing one or more sets of
+  /// quadrilaterals that represent the outer, inner and phi shells.
   struct ZSegment {
-    Quadrilaterals outer;
-    Quadrilaterals phi;
-    Quadrilaterals inner;
-    bool hasInnerRadius;
+    Quadrilaterals outer; ///< Should always be non-empty.
+    Quadrilaterals phi;   ///< Is empty if fHasPhiCutout is false.
+    Quadrilaterals inner; ///< Is empty hasInnerRadius is false.
+    bool hasInnerRadius;  ///< Indicates whether any inner quadrilaterals are
+                          ///  present in this segment.
 #ifdef VECGEOM_CUDA_INTERFACE
     void CopyToGpu(void *gpuptr) const;
 #endif
@@ -80,14 +83,14 @@ private:
   bool fHasLargePhiCutout; ///< Phi cutout is larger than pi.
   Array<ZSegment> fZSegments; ///< AOS'esque collections of quadrilaterals
   Array<Precision> fZPlanes; ///< Z-coordinate of each plane separating segments
-  // TODO: find a way to re-compute R-min and R-max when converting to another
+  // TODO: find a way to re-compute R_min and R_max when converting to another
   //       library's representation to avoid having to store them here.
   Array<Precision> fRMin; ///< Inner radii as specified in constructor.
   Array<Precision> fRMax; ///< Outer radii as specified in constructor.
-  SOA3D<Precision> fPhiSections; ///< Unit vectors representing the angle
-                                 ///  separating each phi segment, allowing for
-                                 ///  quick determination of correct segment
-                                 ///  without using trigonometric functions.
+  SOA3D<Precision> fPhiSections; ///< Unit vectors marking the bounds between
+                                 ///  phi segments, represented by planes
+                                 ///  through the origin with the normal
+                                 ///  point along the positive phi direction.
   UnplacedTube fBoundingTube; ///< Tube enclosing the outer bounds of the
                               ///  polyhedron. Used in Contains, Inside and
                               ///  DistanceToIn.
@@ -98,12 +101,35 @@ private:
 public:
 
 #ifdef VECGEOM_STD_CXX11
+  /// \param sideCount Number of sides along phi in each Z-segment.
+  /// \param zPlaneCount Number of Z-planes to draw segments between. The number
+  ///                    of segments will always be this number minus one.
+  /// \param zPlanes Z-coordinates of each Z-plane to draw segments between.
+  /// \param rMin Radius to the sides (not to the corners!) of the inner shell
+  ///             for the corresponding Z-plane.
+  /// \param rMin Radius to the sides (not to the corners!) of the outer shell
+  ///             for the corresponding Z-plane.
   UnplacedPolyhedron(
       const int sideCount,
       const int zPlaneCount,
       Precision zPlanes[],
       Precision rMin[],
       Precision rMax[]);
+  /// \param phiStart Angle in phi of first corner. This will be one phi angle
+  ///                 of the phi cutout, if any cutout is specified. Specified
+  ///                 in degrees (not radians).
+  /// \param phiDelta Total angle in phi over which the sides of each segment
+  ///                 will be drawn. When added to the starting angle, this will
+  ///                 mark one of the angles of the phi cutout, if any cutout is
+  ///                 specified.
+  /// \param sideCount Number of sides along phi in each Z-segment.
+  /// \param zPlaneCount Number of Z-planes to draw segments between. The number
+  ///                    of segments will always be this number minus one.
+  /// \param zPlanes Z-coordinates of each Z-plane to draw segments between.
+  /// \param rMin Radius to the sides (not to the corners!) of the inner shell
+  ///             for the corresponding Z-plane.
+  /// \param rMin Radius to the sides (not to the corners!) of the outer shell
+  ///             for the corresponding Z-plane.
   UnplacedPolyhedron(
       Precision phiStart,
       Precision phiDelta,

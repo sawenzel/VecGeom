@@ -98,6 +98,10 @@ typename Backend::precision_v NormalizeAngle(typename Backend::precision_v a) {
   return a + kTwoPi*((a<0)-typename Backend::int_v(a/kTwoPi));
 };
 
+// \param corner0 First corner of line segment.
+// \param corner1 Second corner of line segment.
+// \return Shortest distance from the point to the three dimensional line
+//         segment represented by the two input points.
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
