@@ -93,9 +93,9 @@ void PlacedParaboloid_ConstructOnGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleParaboloid(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
+  new(gpu_ptr) vecgeom::cuda::SimpleParaboloid(
+    reinterpret_cast<vecgeom::cuda::LogicalVolume const*>(logical_volume),
+    reinterpret_cast<vecgeom::cuda::Transformation3D const*>(transformation),
     NULL,
     id
   );

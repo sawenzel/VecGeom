@@ -13,8 +13,8 @@
 #include "TGeoNode.h"
 #endif
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_ROOT
 

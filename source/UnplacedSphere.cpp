@@ -440,7 +440,7 @@ __global__
 void UnplacedSphere_ConstructOnGpu(
     const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
+  new(gpu_ptr) vecgeom::cuda::UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
 }
 
 void UnplacedSphere_CopyToGpu(

@@ -149,7 +149,7 @@ void UnplacedParallelepiped_ConstructOnGpu(
     const Precision x, const Precision y, const Precision z,
     const Precision alpha, const Precision theta, const Precision phi,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedParallelepiped(x, y, z, alpha, theta, phi);
+  new(gpu_ptr) vecgeom::cuda::UnplacedParallelepiped(x, y, z, alpha, theta, phi);
 }
 
 void UnplacedParallelepiped_CopyToGpu(

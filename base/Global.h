@@ -24,7 +24,7 @@
     #define VECGEOM_NVCC_DEVICE
   #endif
   #define VECGEOM_IMPL_NAMESPACE cuda
-  #define VECGEOM_NAMESPACE vecgeom::VECGEOM_IMPL_NAMESPACE
+  #define VECGEOM_NAMESPACE ::vecgeom
   #define VECGEOM_CUDA_HEADER_HOST __host__
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
@@ -39,7 +39,7 @@
 #else
   // Not compiling with NVCC
   #define VECGEOM_IMPL_NAMESPACE cxx
-  #define VECGEOM_NAMESPACE vecgeom::VECGEOM_IMPL_NAMESPACE
+  #define VECGEOM_NAMESPACE ::vecgeom
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_BOTH
@@ -103,7 +103,7 @@ typedef double Precision;
 typedef int Inside_t;
 }
 
-//namespace vecgeom_cuda {
+//namespace vecgeom::cuda {
 //typedef vecgeom::Precision Precision;
 //typedef vecgeom::Inside_t Inside_t;
 //}

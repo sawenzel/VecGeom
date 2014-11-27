@@ -290,7 +290,7 @@ void AOS3D<T>::push_back(Vector3D<T> const &vec) {
 
 //#ifdef VECGEOM_CUDA_INTERFACE
 #ifdef VECGEOM_NVCC
-namespace vecgeom { namespace cuda {
+namespace vecgeom { inline namespace cuda {
 
 template <typename T> class Vector3D;
 template <typename T> class AOS3D;
@@ -300,7 +300,7 @@ AOS3D<Precision>* AOS3D_CopyToGpu(Vector3D<Precision> *content, size_t size);
 template <typename T>
 AOS3D<T>* AOS3D<T>::CopyToGpu(Vector3D<T> *const contentGpu) const {
   size_t bytes = fSize*sizeof(Vec_t);
-  vecgeom::CopyToGpu(fContent, contentGpu, bytes);
+  cxx::CopyToGpu(fContent, contentGpu, bytes);
   return AOS3D_CopyToGpu(contentGpu, fSize);
 }
 

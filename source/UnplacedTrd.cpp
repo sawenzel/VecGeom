@@ -106,7 +106,7 @@ __global__
 void UnplacedTrd_ConstructOnGpu(
     const Precision dx1, const Precision dx2, const Precision dy1, const Precision dy2, const Precision dz,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTrd(dx1, dx2, dy1, dy2, dz);
+  new(gpu_ptr) vecgeom::cuda::UnplacedTrd(dx1, dx2, dy1, dy2, dz);
 }
 
 void UnplacedTrd_CopyToGpu(

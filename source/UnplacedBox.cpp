@@ -143,10 +143,6 @@ VPlacedVolume* UnplacedBox::CreateSpecializedVolume(
 
 #endif
 
-} } // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void UnplacedBox_CopyToGpu(const Precision x, const Precision y,
@@ -172,7 +168,7 @@ class VUnplacedVolume;
 __global__
 void UnplacedBox_ConstructOnGpu(const Precision x, const Precision y,
                                 const Precision z, VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedBox(x, y, z);
+  new(gpu_ptr) vecgeom::cuda::UnplacedBox(x, y, z);
 }
 
 void UnplacedBox_CopyToGpu(const Precision x, const Precision y,
@@ -182,4 +178,4 @@ void UnplacedBox_CopyToGpu(const Precision x, const Precision y,
 
 #endif
 
-} // End global namespace
+} } // End global namespace

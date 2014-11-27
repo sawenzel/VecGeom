@@ -19,8 +19,9 @@
 class TGeoBranchArray;
 
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
 /**
  * a class describing a current geometry state
  * likely there will be such an object for each

@@ -11,7 +11,7 @@ template <typename Type>
 __global__
 void ConstructOnGpu(Type *const arr, const int size,
                     void *gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::Vector<Type>(arr, size);
+  new(gpu_ptr) vecgeom::cuda::Vector<Type>(arr, size);
 }
 
 void Vector_CopyToGpu(Precision *const arr, const int size,

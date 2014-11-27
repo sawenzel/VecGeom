@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 namespace vecgeom {
+inline namespace cxx {
 
 CudaManager::CudaManager() {
   synchronized = true;
@@ -397,4 +398,4 @@ void CudaManager::PrintGeometry() const {
 //   CudaFree(aos3d_gpu);
 // }
 
-} // End namespace vecgeom
+} } // End namespace vecgeom

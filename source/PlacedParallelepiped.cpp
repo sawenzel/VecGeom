@@ -45,10 +45,6 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} } // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 void PlacedParallelepiped_CopyToGpu(
@@ -86,9 +82,9 @@ void PlacedParallelepiped_ConstructOnGpu(
     LogicalVolume const *const logical_volume,
     Transformation3D const *const transformation,
     const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleParallelepiped(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
+  new(gpu_ptr) vecgeom::cuda::SimpleParallelepiped(
+    reinterpret_cast<vecgeom::cuda::LogicalVolume const*>(logical_volume),
+    reinterpret_cast<vecgeom::cuda::Transformation3D const*>(transformation),
     NULL,
     id
   );
@@ -104,4 +100,4 @@ void PlacedParallelepiped_CopyToGpu(
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} } // End global namespace

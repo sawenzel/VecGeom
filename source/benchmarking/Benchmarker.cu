@@ -7,7 +7,8 @@
 #include "backend/cuda/Backend.h"
 #include "management/CudaManager.h"
 
-namespace vecgeom_cuda {
+namespace vecgeom {
+inline namespace cuda {
 
 __global__
 void ContainsBenchmarkCudaKernel(
@@ -77,7 +78,7 @@ void SafetyToOutBenchmarkCudaKernel(
   distance[i] = volume->SafetyToOut(positions[i]);
 }
 
-} // End namespace vecgeom_cuda
+} } // End namespace vecgeom::cuda
 
 namespace vecgeom {
 
@@ -85,8 +86,8 @@ void Benchmarker::RunInsideCuda(
     Precision *const posX, Precision *const posY,
     Precision *const posZ, bool *const contains, Inside_t *const inside) {
 
-  typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
-  typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
+  typedef vecgeom::cuda::VPlacedVolume const* CudaVolume;
+  typedef vecgeom::cuda::SOA3D<Precision> CudaSOA3D;
 
   if (fVerbosity > 0) printf("CUDA          - ");
 
@@ -102,10 +103,10 @@ void Benchmarker::RunInsideCuda(
     );
   }
 
-  vecgeom_cuda::LaunchParameters launch =
-      vecgeom_cuda::LaunchParameters(fPointCount);
+  vecgeom::cuda::LaunchParameters launch =
+      vecgeom::cuda::LaunchParameters(fPointCount);
 
-  vecgeom_cuda::Stopwatch timer;
+  vecgeom::cuda::Stopwatch timer;
 
   Precision *posXGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   Precision *posYGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
@@ -125,7 +126,7 @@ void Benchmarker::RunInsideCuda(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
          vEnd = volumesGpu.end(); v != vEnd; ++v) {
-      vecgeom_cuda::ContainsBenchmarkCudaKernel<<<launch.grid_size,
+      vecgeom::cuda::ContainsBenchmarkCudaKernel<<<launch.grid_size,
                                                   launch.block_size>>>(
         *v, positionGpu, fPointCount, containsGpu
       );
@@ -141,7 +142,7 @@ void Benchmarker::RunInsideCuda(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
          vEnd = volumesGpu.end(); v != vEnd; ++v) {
-      vecgeom_cuda::InsideBenchmarkCudaKernel<<<launch.grid_size,
+      vecgeom::cuda::InsideBenchmarkCudaKernel<<<launch.grid_size,
                                                 launch.block_size>>>(
         *v, positionGpu, fPointCount, insideGpu
       );
@@ -183,8 +184,8 @@ void Benchmarker::RunToInCuda(
     Precision *const dirY, Precision *const dirZ,
     Precision *const distances, Precision *const safeties) {
 
-  typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
-  typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
+  typedef vecgeom::cuda::VPlacedVolume const* CudaVolume;
+  typedef vecgeom::cuda::SOA3D<Precision> CudaSOA3D;
 
   if (fVerbosity > 0) printf("CUDA          - ");
 
@@ -200,9 +201,9 @@ void Benchmarker::RunToInCuda(
     );
   }
 
-  vecgeom_cuda::LaunchParameters launch =
-      vecgeom_cuda::LaunchParameters(fPointCount);
-  vecgeom_cuda::Stopwatch timer;
+  vecgeom::cuda::LaunchParameters launch =
+      vecgeom::cuda::LaunchParameters(fPointCount);
+  vecgeom::cuda::Stopwatch timer;
 
   Precision *posXGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
   Precision *posYGpu = AllocateOnGpu<Precision>(sizeof(Precision)*fPointCount);
@@ -229,7 +230,7 @@ void Benchmarker::RunToInCuda(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
          vEnd = volumesGpu.end(); v != vEnd; ++v) {
-      vecgeom_cuda::DistanceToInBenchmarkCudaKernel<<<launch.grid_size,
+      vecgeom::cuda::DistanceToInBenchmarkCudaKernel<<<launch.grid_size,
                                                       launch.block_size>>>(
         *v, positionGpu, directionGpu, fPointCount, distancesGpu
       );
@@ -248,7 +249,7 @@ void Benchmarker::RunToInCuda(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
          vEnd = volumesGpu.end(); v != vEnd; ++v) {
-      vecgeom_cuda::SafetyToInBenchmarkCudaKernel<<<launch.grid_size,
+      vecgeom::cuda::SafetyToInBenchmarkCudaKernel<<<launch.grid_size,
                                                     launch.block_size>>>(
         *v, positionGpu, fPointCount, safetiesGpu
       );
@@ -290,8 +291,8 @@ void Benchmarker::RunToOutCuda(
     Precision *const dirY, Precision *const dirZ,
     Precision *const distances, Precision *const safeties) {
 
-  typedef vecgeom_cuda::VPlacedVolume const* CudaVolume;
-  typedef vecgeom_cuda::SOA3D<Precision> CudaSOA3D;
+  typedef vecgeom::cuda::VPlacedVolume const* CudaVolume;
+  typedef vecgeom::cuda::SOA3D<Precision> CudaSOA3D;
 
   double elapsedDistance;
   double elapsedSafety;
@@ -331,15 +332,15 @@ void Benchmarker::RunToOutCuda(
   Precision *safetiesGpu = AllocateOnGpu<Precision>(sizeof(Precision)
                                                     *fPointCount);
 
-  vecgeom_cuda::LaunchParameters launch =
-      vecgeom_cuda::LaunchParameters(fPointCount);
-  vecgeom_cuda::Stopwatch timer;
+  vecgeom::cuda::LaunchParameters launch =
+      vecgeom::cuda::LaunchParameters(fPointCount);
+  vecgeom::cuda::Stopwatch timer;
   
   timer.Start();
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
          vEnd = volumesGpu.end(); v != vEnd; ++v) {
-      vecgeom_cuda::DistanceToOutBenchmarkCudaKernel<<<launch.grid_size,
+      vecgeom::cuda::DistanceToOutBenchmarkCudaKernel<<<launch.grid_size,
                                                        launch.block_size>>>(
         *v, positionGpu, directionGpu, fPointCount, distancesGpu
       );
@@ -351,7 +352,7 @@ void Benchmarker::RunToOutCuda(
   for (unsigned r = 0; r < fRepetitions; ++r) {
     for (std::list<CudaVolume>::const_iterator v = volumesGpu.begin(),
          vEnd = volumesGpu.end(); v != vEnd; ++v) {
-      vecgeom_cuda::SafetyToOutBenchmarkCudaKernel<<<launch.grid_size,
+      vecgeom::cuda::SafetyToOutBenchmarkCudaKernel<<<launch.grid_size,
                                                      launch.block_size>>>(
         *v, positionGpu, fPointCount, safetiesGpu
       );

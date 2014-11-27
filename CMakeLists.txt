@@ -293,9 +293,9 @@ if (CUDA)
 
   set(CUDA_SEPARABLE_COMPILATION ON)
 
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/CudaManager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/CudaManager.cpp source/backend/cuda/Interface.cpp)
   set(SRC_CUDA ${SRC_CUDA}
-      source/CudaManager.cu source/backend/cuda/Interface.cu)
+      source/CudaManager.cu)
 
 endif()
 

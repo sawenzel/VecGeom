@@ -334,7 +334,7 @@ class VUnplacedVolume;
 
 __global__
 void UnplacedParaboloid_ConstructOnGpu(VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedParaboloid();
+  new(gpu_ptr) vecgeom::cuda::UnplacedParaboloid();
 }
 
 void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr) {

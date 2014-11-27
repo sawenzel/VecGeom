@@ -14,9 +14,17 @@
 #include <set>
 
 // Compile for vecgeom namespace to work as interface
-namespace vecgeom { inline namespace cxx { 
+namespace vecgeom {
 
+#ifdef VECGEOM_NVCC
+inline
+#endif
 namespace cuda { class VPlacedVolume; }
+
+#ifndef VECGEOM_NVCC
+inline
+#endif
+namespace cxx {
 
 #ifdef VECGEOM_NVCC
 // Forward declarations for NVCC compilation

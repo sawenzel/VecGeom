@@ -230,7 +230,7 @@ __global__
 void UnplacedOrb_ConstructOnGpu(
     const Precision r,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedOrb(r);
+  new(gpu_ptr) vecgeom::cuda::UnplacedOrb(r);
 }
 
 void UnplacedOrb_CopyToGpu(

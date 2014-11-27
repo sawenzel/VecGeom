@@ -20,8 +20,8 @@
 #endif
 #include <cassert>
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class SimpleNavigator
 {

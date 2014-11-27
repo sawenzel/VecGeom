@@ -91,3 +91,4 @@ void SpecializedCone<transCodeT, rotCodeT, ConeType>::PrintType() const {
 } } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
+

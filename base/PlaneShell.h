@@ -7,7 +7,7 @@
 #include "base/Global.h"
 #include "volumes/kernel/GenericKernels.h"
 
-//namespace vecgeom_cuda { template <typename Backend, int N> class PlaneShell; }
+//namespace vecgeom::cuda { template <typename Backend, int N> class PlaneShell; }
 #include "backend/Backend.h"
 
 namespace vecgeom {

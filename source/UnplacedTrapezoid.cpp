@@ -734,7 +734,7 @@ class VUnplacedVolume;
     const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
     VUnplacedVolume *const gpu_ptr)
   {
-    new(gpu_ptr) vecgeom_cuda::UnplacedTrapezoid(dz, theta, phi,
+    new(gpu_ptr) vecgeom::cuda::UnplacedTrapezoid(dz, theta, phi,
                                                  dy1, dx1, dx2, tanAlpha1,
                                                  dy2, dx3, dx4, tanAlpha2 );
   }

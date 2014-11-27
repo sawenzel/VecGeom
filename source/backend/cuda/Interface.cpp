@@ -6,7 +6,17 @@
 #include <cassert>
 #include <stdio.h>
 
-namespace vecgeom { namespace cxx {
+#include <cuda.h>
+
+// includes CUDA Runtime
+#include <cuda_runtime.h>
+
+// maybe you need also helpers
+//#include <helper_cuda.h>
+//#include <helper_functions.h> // helper utility functions
+
+namespace vecgeom {
+namespace cxx {
 
 cudaError_t CudaCheckError(const cudaError_t err) {
   if (err != cudaSuccess) {

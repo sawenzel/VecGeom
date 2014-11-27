@@ -185,9 +185,9 @@ __global__
 void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
                     Vector<VPlacedVolume const*> *daughters,
                     LogicalVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::LogicalVolume(
-    reinterpret_cast<vecgeom_cuda::VUnplacedVolume const*>(unplaced_volume),
-    reinterpret_cast<vecgeom_cuda::Vector<vecgeom_cuda::VPlacedVolume const*>*>(
+  new(gpu_ptr) vecgeom::cuda::LogicalVolume(
+    reinterpret_cast<vecgeom::cuda::VUnplacedVolume const*>(unplaced_volume),
+    reinterpret_cast<vecgeom::cuda::Vector<vecgeom::cuda::VPlacedVolume const*>*>(
       daughters
     )
   );

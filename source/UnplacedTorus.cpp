@@ -91,7 +91,7 @@ __global__
 void UnplacedTorus_ConstructOnGpu(
     const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTorus(rmin, rmax, rtor, sphi, dphi);
+  new(gpu_ptr) vecgeom::cuda::UnplacedTorus(rmin, rmax, rtor, sphi, dphi);
 }
 
 void UnplacedTorus_CopyToGpu(

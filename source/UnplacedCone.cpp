@@ -5,7 +5,6 @@
  *      Author: swenzel
  */
 
-
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedCone.h"
 #include "volumes/utilities/GenerationUtilities.h"
@@ -214,7 +213,7 @@ void UnplacedCone_ConstructOnGpu(
     const Precision rmin2, const Precision rmax2,
     const Precision z, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedCone(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi);
+  new(gpu_ptr) vecgeom::cuda::UnplacedCone(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi);
 }
 
 void UnplacedCone_CopyToGpu(

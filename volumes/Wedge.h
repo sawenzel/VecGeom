@@ -13,8 +13,8 @@
 #include "backend/Backend.h"
 #include <iostream>
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * A class representing a wedge which is represented by an angle. It
@@ -305,7 +305,7 @@ class Wedge{
        //std::cerr << "c2 " << comp2 <<" d2="<<distWedge2<< "\n";
    }
 
-    template <class Backend>
+   template <class Backend>
    VECGEOM_CUDA_HEADER_BOTH
    void Wedge::DistanceToOut(
            Vector3D<typename Backend::precision_v> const &point,

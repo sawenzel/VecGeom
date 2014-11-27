@@ -12,7 +12,8 @@
 #include "volumes/UnplacedCone.h"
 
 namespace vecgeom {
-inline namespace VECGEOM_IMPL_NAMESPACE { namespace ConeTypes {
+inline namespace VECGEOM_IMPL_NAMESPACE {
+namespace ConeTypes {
 
 
 #define DEFINE_TRAIT_TYPE(name) \
@@ -179,6 +180,6 @@ struct SectorType<HollowConeWithBiggerThanPiSector> {
 
 } // end CONETYPES namespace
 
-} // End global namespace
+} } // End global namespace
 
 #endif /* VECGEOM_VOLUMES_KERNEL_SHAPETYPES_CONETYPES_H_ */

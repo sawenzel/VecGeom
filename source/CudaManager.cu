@@ -8,18 +8,19 @@
 #include "backend/cuda/Backend.h"
 
 namespace vecgeom {
+inline namespace cuda {
 
 __global__
 void CudaManagerPrintGeometryKernel(
-    vecgeom_cuda::VPlacedVolume const *const world) {
+    vecgeom::cuda::VPlacedVolume const *const world) {
   printf("Geometry loaded on GPU:\n");
   world->PrintContent();
 }
 
-void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world) {
+void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world) {
   CudaManagerPrintGeometryKernel<<<1, 1>>>(world);
-  CudaAssertError();
+  cxx::CudaAssertError();
   cudaDeviceSynchronize();
 }
 
-} // End namespace vecgeom
+} } // End namespace vecgeom

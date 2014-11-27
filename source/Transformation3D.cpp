@@ -247,7 +247,7 @@ void ConstructOnGpu(const Precision tx, const Precision ty, const Precision tz,
                     const Precision r3, const Precision r4, const Precision r5,
                     const Precision r6, const Precision r7, const Precision r8,
                     Transformation3D *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::Transformation3D(tx, ty, tz, r0, r1, r2,
+  new(gpu_ptr) vecgeom::cuda::Transformation3D(tx, ty, tz, r0, r1, r2,
                                                   r3, r4, r5, r6, r7, r8);
 }
 

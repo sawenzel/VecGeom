@@ -109,7 +109,7 @@ __global__
 void UnplacedTube_ConstructOnGpu(
     const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
     VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTube(rmin, rmax, z, sphi, dphi);
+   new(gpu_ptr) vecgeom::cuda::UnplacedTube(rmin, rmax, z, sphi, dphi);
 }
 
 void UnplacedTube_CopyToGpu(
