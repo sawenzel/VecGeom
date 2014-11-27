@@ -10,7 +10,8 @@
 
 #include <Vc/Vc>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 struct kVc {
   typedef Vc::int_v                   int_v;

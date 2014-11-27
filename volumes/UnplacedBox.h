@@ -9,7 +9,8 @@
 #include "base/Vector3D.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedBox : public VUnplacedVolume, public AlignedBase {
 

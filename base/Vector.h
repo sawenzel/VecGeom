@@ -10,7 +10,8 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename Type>
 class Vector {

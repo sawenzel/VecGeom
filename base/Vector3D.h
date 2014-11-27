@@ -16,7 +16,8 @@
 #include <ostream>
 #include <string>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * @brief Three dimensional vector class supporting most arithmetic operations.

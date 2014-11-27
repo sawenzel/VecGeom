@@ -8,7 +8,8 @@
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParallelepiped.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedParallelepiped : public VPlacedVolume {
 

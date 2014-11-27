@@ -38,7 +38,8 @@
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedParaboloid : public VUnplacedVolume, public AlignedBase {
 

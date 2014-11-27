@@ -9,7 +9,8 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {

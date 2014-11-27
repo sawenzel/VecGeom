@@ -12,7 +12,8 @@
 #include "volumes/USolidsInterfaceHelper.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 int VPlacedVolume::g_id_count = 0;
 

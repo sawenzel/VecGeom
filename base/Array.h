@@ -8,7 +8,8 @@
 
 #include "base/AlignedBase.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename Type>
 class Array : public AlignedBase {

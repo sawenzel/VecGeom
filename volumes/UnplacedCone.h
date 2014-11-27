@@ -16,7 +16,8 @@
 #include "volumes/UnplacedVolume.h"
 #include <cmath>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * Class representing an unplaced cone; Encapsulated parameters of a cone and

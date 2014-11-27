@@ -24,7 +24,8 @@
 #include "TGeoShape.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace volumeUtilities {
 
 VECGEOM_INLINE

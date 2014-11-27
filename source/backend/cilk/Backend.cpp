@@ -5,7 +5,8 @@
 
 #include "backend/cilk/backend.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 const CilkBool      kCilk::kTrue  = CilkBool(true);
 const CilkBool      kCilk::kFalse = CilkBool(false);

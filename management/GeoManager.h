@@ -13,7 +13,8 @@
 
 #include <map>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 // probably don't need apply to be virtual
 template<typename Container>

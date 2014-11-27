@@ -11,7 +11,8 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
   // NOTE: we may want to specialize the torus like we do for the tube
   // at the moment this is not done

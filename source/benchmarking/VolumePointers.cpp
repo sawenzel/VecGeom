@@ -15,7 +15,8 @@
 #include "G4VSolid.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VolumePointers::VolumePointers(VPlacedVolume const *const volume)
     : fSpecialized(volume), fUnspecialized(NULL),

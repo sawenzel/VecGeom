@@ -16,7 +16,8 @@
 class TGeoMatrix;
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class Transformation3D {
 

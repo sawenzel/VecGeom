@@ -10,7 +10,8 @@
 //namespace vecgeom_cuda { template <typename Backend, int N> class PlaneShell; }
 #include "backend/Backend.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * @brief Uses SoA layout to store arrays of N (plane) parameters,

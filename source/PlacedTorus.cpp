@@ -12,7 +12,8 @@
 #include "G4Torus.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 

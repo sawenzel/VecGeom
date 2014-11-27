@@ -8,7 +8,8 @@
 #include "management/VolumeFactory.h"
 
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void UnplacedTrd::Print() const {
   printf("UnplacedTrd {%.2f, %.2f, %.2f, %.2f, %.2f}",

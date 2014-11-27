@@ -18,7 +18,8 @@
   #include <cmath>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef Vector3D<Precision> Vec3D;
 

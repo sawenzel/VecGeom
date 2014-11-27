@@ -7,7 +7,8 @@
 
 #include "management/VolumeFactory.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void UnplacedTube::Print() const {
   printf("UnplacedTube {%.2f, %.2f, %.2f, %.2f, %.2f}",

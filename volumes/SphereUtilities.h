@@ -16,7 +16,8 @@
 
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
      
   VECGEOM_CUDA_HEADER_BOTH

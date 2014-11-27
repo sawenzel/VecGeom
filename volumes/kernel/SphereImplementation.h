@@ -16,7 +16,8 @@
 //#include <Vc/Vc>
 //#include "TGeoShape.h"
 //#include "volumes/SphereUtilities.h"
-namespace VECGEOM_NAMESPACE { 
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE { 
  
  
 template <TranslationCode transCodeT, RotationCode rotCodeT>

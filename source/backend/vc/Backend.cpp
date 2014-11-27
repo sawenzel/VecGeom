@@ -3,7 +3,8 @@
 
 #include "backend/vc/Backend.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 const VcBool      kVc::kTrue  = VcBool(true);
 const VcBool      kVc::kFalse = VcBool(false);

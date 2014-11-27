@@ -10,7 +10,8 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TorusImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTorus : public VPlacedVolume {
 

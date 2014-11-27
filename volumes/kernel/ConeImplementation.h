@@ -15,7 +15,8 @@
 #include "volumes/kernel/TubeImplementation.h"
 #include <cassert>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename ConeType>
 struct ConeHelper

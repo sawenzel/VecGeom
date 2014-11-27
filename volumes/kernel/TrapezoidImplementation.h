@@ -14,7 +14,8 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTrapezoid.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TrapezoidImplementation {

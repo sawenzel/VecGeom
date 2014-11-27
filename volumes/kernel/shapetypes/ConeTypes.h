@@ -11,7 +11,8 @@
 #include <string>
 #include "volumes/UnplacedCone.h"
 
-namespace VECGEOM_NAMESPACE { namespace ConeTypes {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE { namespace ConeTypes {
 
 
 #define DEFINE_TRAIT_TYPE(name) \

@@ -18,7 +18,8 @@
 
 #include <algorithm>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 constexpr int kVectorSize = VECGEOM_VECTOR_BIT_SIZE / sizeof(Precision);
 

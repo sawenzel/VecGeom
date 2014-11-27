@@ -18,7 +18,8 @@
 #include <climits>
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 int LogicalVolume::g_id_count = 0;
 

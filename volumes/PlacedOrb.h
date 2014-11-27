@@ -11,7 +11,8 @@
 #include "volumes/UnplacedOrb.h"
 #include "volumes/kernel/OrbImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedOrb : public VPlacedVolume {
 

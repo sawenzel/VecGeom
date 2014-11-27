@@ -18,7 +18,8 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/kernel/ConeImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedCone : public VPlacedVolume {
 

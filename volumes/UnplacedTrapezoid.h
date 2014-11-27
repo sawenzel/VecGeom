@@ -12,7 +12,8 @@
 #include "base/PlaneShell.h"
 
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef Vector3D<Precision> TrapCorners_t[8];
 

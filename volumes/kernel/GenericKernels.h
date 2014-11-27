@@ -8,7 +8,8 @@
 #include "base/Transformation3D.h"
 #include "base/Vector3D.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <class Backend>
 struct GenericKernels {

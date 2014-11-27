@@ -5,7 +5,8 @@
 
 #include "management/VolumeFactory.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void UnplacedTorus::Print() const {
   printf("UnplacedTorus {%.2f, %.2f, %.2f, %.2f, %.2f}",

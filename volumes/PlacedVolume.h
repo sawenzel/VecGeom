@@ -16,7 +16,8 @@
 
 class G4VSolid;
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedBox;
 template <typename T> class SOA3D;

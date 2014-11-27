@@ -18,7 +18,8 @@
 #include "volumes/utilities/ResultComparator.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <class Shape, class Specialization>
 class ShapeImplementationHelper : public Shape {

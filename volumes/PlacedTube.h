@@ -11,7 +11,8 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TubeImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTube : public VPlacedVolume {
 

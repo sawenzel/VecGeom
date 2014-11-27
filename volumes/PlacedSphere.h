@@ -11,7 +11,8 @@
 #include "volumes/UnplacedSphere.h"
 #include "volumes/kernel/SphereImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedSphere : public VPlacedVolume {
 

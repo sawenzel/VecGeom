@@ -12,7 +12,8 @@
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedTrapezoid.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTrapezoid : public VPlacedVolume {
 

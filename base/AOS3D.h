@@ -12,7 +12,8 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename T>
 class AOS3D : Container3D<AOS3D<T> > {

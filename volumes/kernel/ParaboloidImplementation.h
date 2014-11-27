@@ -42,7 +42,8 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParaboloid.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
     
     namespace ParaboloidUtilities
     {

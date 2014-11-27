@@ -8,7 +8,8 @@
 #include "base/Transformation3D.h"
 #include "volumes/LogicalVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class VolumeFactory {
 

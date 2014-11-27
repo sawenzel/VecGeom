@@ -9,7 +9,8 @@
 #include "base/RNG.h"
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedBox::Print() const {

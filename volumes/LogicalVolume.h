@@ -17,7 +17,8 @@
 class TGeoShape;
 class VUSolid;
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef VPlacedVolume const* Daughter;
 

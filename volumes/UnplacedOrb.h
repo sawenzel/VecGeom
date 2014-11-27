@@ -14,7 +14,8 @@
 #include <cmath>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedOrb : public VUnplacedVolume, public AlignedBase {
 

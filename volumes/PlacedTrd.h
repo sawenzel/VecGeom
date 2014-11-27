@@ -11,7 +11,8 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TrdImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTrd : public VPlacedVolume {
 

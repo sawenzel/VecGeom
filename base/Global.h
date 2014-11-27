@@ -108,7 +108,8 @@ typedef int Inside_t;
 //typedef vecgeom::Inside_t Inside_t;
 //}
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECGEOM_GLOBAL int kAlignmentBoundary = 32;
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;

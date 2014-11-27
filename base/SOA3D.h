@@ -11,7 +11,8 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 // gcc 4.8.2's -Wnon-virtual-dtor is broken and turned on by -Weffc++, we
 // need to disable it for SOA3D

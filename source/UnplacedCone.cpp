@@ -15,7 +15,8 @@
 
 #include "management/VolumeFactory.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
     void UnplacedCone::Print() const {
      printf("UnplacedCone {rmin1 %.2f, rmax1 %.2f, rmin2 %.2f, "

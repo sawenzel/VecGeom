@@ -8,7 +8,8 @@
 
 #include <algorithm>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 struct kScalar {
   typedef int       int_v;

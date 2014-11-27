@@ -13,7 +13,8 @@
 #include <string>
 #include <ostream>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class LogicalVolume;
 class VPlacedVolume;

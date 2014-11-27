@@ -16,7 +16,8 @@
 class VUSOLID;
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedParaboloid : public VPlacedVolume {
 

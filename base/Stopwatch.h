@@ -14,7 +14,8 @@
 
 #include <ctime>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace standardtimer
 {
    // this implementation is stripped from the TBB library ( so that we don't need to link against tbb )

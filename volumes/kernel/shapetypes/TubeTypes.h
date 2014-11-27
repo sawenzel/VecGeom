@@ -10,7 +10,8 @@
 
 #include <string>
 
-namespace VECGEOM_NAMESPACE { namespace TubeTypes {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE { namespace TubeTypes {
 
 #define DEFINE_TUBE_TYPE(name) \
     struct name { \

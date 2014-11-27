@@ -11,7 +11,8 @@
 #include "base/RNG.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
     
 //__________________________________________________________________
     VECGEOM_CUDA_HEADER_BOTH

@@ -17,7 +17,8 @@
 #include "G4Tubs.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 

@@ -8,7 +8,8 @@
 
 #include "base/Transformation3D.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * @brief Specializes on the necessary translation on rotation, eliminating

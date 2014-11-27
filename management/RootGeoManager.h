@@ -13,7 +13,8 @@ class TGeoVolume;
 #include "TGeoNode.h"
 class TGeoMatrix;
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedBox;
 

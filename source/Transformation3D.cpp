@@ -16,7 +16,8 @@
 #include <sstream>
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 const Transformation3D Transformation3D::kIdentity =
     SpecializedTransformation3D<translation::kIdentity, rotation::kIdentity>();
