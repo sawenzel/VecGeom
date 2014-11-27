@@ -935,7 +935,6 @@ struct TorusImplementation {
 	  }
          
       }
-
       smallerdist = distPhi2 < minDist;
       if ( ! IsEmpty(smallerdist))
 	{
