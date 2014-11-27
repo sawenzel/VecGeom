@@ -57,6 +57,8 @@ public:
   void AddVolume(std::shared_ptr<const TGeoShape> rootVolume,
                  Transformation3D const &position);
 
+  void AddPoint( Vector3D<Precision> const & point );
+
   void AddPoints(AOS3D<Precision> const &points);
 
   void AddPoints(SOA3D<Precision> const &points);

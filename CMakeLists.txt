@@ -30,6 +30,8 @@ option(CTEST "Enable CTest when building." ON)
 
 option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
 
+option(DISTANCE_DEBUG "Enable comparision of calculcated distances againt ROOT/Geant4 behind the scenes" OFF)
+
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
 
@@ -233,6 +235,11 @@ endif()
 if (Geant4)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_GEANT4")
 endif()
+if (DISTANCE_DEBUG)
+  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_DISTANCE_DEBUG")
+endif()
+
+
 
 # Pass flags to compilers
 if (GNU)

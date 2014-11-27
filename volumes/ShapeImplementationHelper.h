@@ -13,6 +13,11 @@
 #include "volumes/PlacedBox.h"
 
 #include <algorithm>
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+#include "volumes/utilities/ResultComparator.h"
+#endif
+
 namespace VECGEOM_NAMESPACE {
 
 template <class Shape, class Specialization>
@@ -109,6 +114,11 @@ public:
       stepMax,
       output
     );
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareDistanceToIn( this, output, point, direction, stepMax );
+#endif
+
     return output;
   }
 
@@ -124,6 +134,12 @@ public:
       stepMax,
       output
     );
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareDistanceToOut( this, output, point, direction, stepMax );
+#endif
+
+
     return output;
   }
 
