@@ -10,6 +10,10 @@
 #include "base/Vector3D.h"
 #include "volumes/UnplacedBooleanVolume.h"
 
+#ifdef VECGEOM_ROOT
+#include "TGeoShape.h"
+#endif
+
 namespace VECGEOM_NAMESPACE {
 
 /**
@@ -348,70 +352,151 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-    /* algorithm taken from Geant4 */
-
     typedef typename Backend::precision_v Float_t;
     VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
 
     Float_t dist = 0., disTmp = 0.;
-    //int count1=0, count2=0;
-
-    typename Backend::inside_v positionA = fPtrSolidA->Inside(p);
-    if( positionA != EInside::kOutside )
+    int count1=0, count2=0;
+    // std::cout << "##VECGEOMSTART\n";
+    typename Backend::Bool_t positionA = fPtrSolidA->Contains(p);
+    if( positionA )
     {
       do
        {
          //count1++;
+	 // we don't need a transformation here
          disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v);
          // distTmp
-         //std::cerr << "distTmp1 " << disTmp << "\n";
+	 //   std::cout << "VecdistTmp1 " << disTmp << "\n";
+         dist += ( disTmp >= 0. && disTmp < kInfinity )? disTmp : 0;
+	 // give a push
+	 dist += kTolerance;
 
-         dist += disTmp;
-
-         if(fPtrSolidB->Inside(p+dist*v) != EInside::kOutside)
+         if( fPtrSolidB->Contains(p+dist*v) )
          {
             disTmp = fPtrSolidB->DistanceToOut(
-                        fPtrSolidB->transformation()->Transform(p+dist*v),v
-                    );
-           // std::cerr << "distTmp2 " << disTmp << "\n";
-            dist += disTmp ;
-            //dist += (disTmp>=0.)? disTmp : 0.;
+                        fPtrSolidB->transformation()->Transform(p+dist*v),v);
+	    // std::cout << "VecdistTmp2 " << disTmp << "\n";
+	    dist += ( disTmp >= 0. && disTmp < kInfinity )? disTmp : 0;
+             //dist += (disTmp>=0.)? disTmp : 0.;
          }
         //if(count1 > 100){
             //std::cerr << "LOOP1 INFINITY\n"; break; }
        }
-       while( fPtrSolidA->Inside(p+dist*v) != EInside::kOutside &&
-                     disTmp > kHalfTolerance ) ;
+       while( fPtrSolidA->Contains(p+dist*v) );
       // NOTE was kCarTolerance; just taking kHalfHolerance
     }
     else // if( positionB != kOutside )
     {
       do
       {
-        //count2++;
-        disTmp = fPtrSolidB->DistanceToOut(
-                fPtrSolidB->transformation()->Transform(p+dist*v),v);
-        //std::cerr << "distTmp3 " << disTmp << "\n";
+        count2++;
+	disTmp = fPtrSolidB->DistanceToOut(
+                   fPtrSolidB->transformation()->Transform(p+dist*v),v);
+	//  std::cout << "VecdistTmp3 " << disTmp << "\n";
         //dist += disTmp ;
-        dist += (disTmp>=0.)? disTmp : 0.;
-        if(fPtrSolidA->Inside(p+dist*v) != EInside::kOutside)
+        dist += (disTmp>=0. && disTmp<kInfinity)? disTmp : 0.;
+	dist += kTolerance;
+
+        if( fPtrSolidA->Contains(p+dist*v) )
            {
              disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v);
              //std::cerr << "distTmp4 " << disTmp;
-          //   std::cerr << "distTmp4 " << disTmp << "\n";
+	     //   std::cout << "VecdistTmp4 " << disTmp << "\n";
              dist += disTmp ;
-             //dist += (disTmp>=0.)? disTmp : 0.;
+	     //dist += (disTmp>=0.)? disTmp : 0.;
            }
-        //if(count2 > 100){
-            // std::cerr << "LOOP2 INFINITY\n"; break; }
+
+        if(count2 > 100){
+             std::cerr << "LOOP2 INFINITY\n"; break; }
       }
-      while( (fPtrSolidB->Inside(p+dist*v) != EInside::kOutside)
-               && (disTmp > kHalfTolerance));
+      while(fPtrSolidB->Contains(p+dist*v) );
     }
+    //  std::cerr << "--VecGeom return " << dist << "\n";
     distance = dist;
     return;
 }
+
+
+/* template <TranslationCode transCodeT, RotationCode rotCodeT> */
+/* template <typename Backend> */
+/* VECGEOM_CUDA_HEADER_BOTH */
+/* void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel( */
+/*     UnplacedBooleanVolume const & unplaced, */
+/*     Vector3D<typename Backend::precision_v> const &p, */
+/*     Vector3D<typename Backend::precision_v> const &v, */
+/*     typename Backend::precision_v const &stepMax, */
+/*     typename Backend::precision_v &distance) { */
+
+/*     /\* algorithm taken from Geant4 *\/ */
+
+/*     typedef typename Backend::precision_v Float_t; */
+/*     VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume; */
+/*     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume; */
+
+/*     Float_t dist = 0., disTmp = 0.; */
+/*     int count1=0, count2=0; */
+/*     // std::cout << "##VECGEOMSTART\n"; */
+/*     typename Backend::inside_v positionA = fPtrSolidA->Inside(p); */
+/*     if( positionA != EInside::kOutside ) */
+/*     { */
+/*       do */
+/*        { */
+/*          //count1++; */
+/*          disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v); */
+/*          // distTmp */
+/* 	 //   std::cout << "VecdistTmp1 " << disTmp << "\n"; */
+
+/*          dist += disTmp; */
+
+/*          if(fPtrSolidB->Inside(p+dist*v) != EInside::kOutside) */
+/*          { */
+/*             disTmp = fPtrSolidB->DistanceToOut( */
+/*                         fPtrSolidB->transformation()->Transform(p+dist*v),v); */
+/* 	    // std::cout << "VecdistTmp2 " << disTmp << "\n"; */
+/*             dist += disTmp; */
+/*             //dist += (disTmp>=0.)? disTmp : 0.; */
+/*          } */
+/*         //if(count1 > 100){ */
+/*             //std::cerr << "LOOP1 INFINITY\n"; break; } */
+/*        } */
+/*        while( fPtrSolidA->Inside(p+dist*v) != EInside::kOutside && */
+/*                      disTmp > kHalfTolerance ) ; */
+/*       // NOTE was kCarTolerance; just taking kHalfHolerance */
+/*     } */
+/*     else // if( positionB != kOutside ) */
+/*     { */
+/*       do */
+/*       { */
+/*         count2++; */
+/* 	disTmp = fPtrSolidB->DistanceToOut( */
+/*                    fPtrSolidB->transformation()->Transform(p+dist*v),v); */
+/* 	//  std::cout << "VecdistTmp3 " << disTmp << "\n"; */
+/*         //dist += disTmp ; */
+/*         dist += (disTmp>=0. && disTmp<kInfinity)? disTmp : 0.; */
+/*         if(fPtrSolidA->Inside(p+dist*v) != EInside::kOutside) */
+/*            { */
+/*              disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v); */
+/*              //std::cerr << "distTmp4 " << disTmp; */
+/* 	     //   std::cout << "VecdistTmp4 " << disTmp << "\n"; */
+/*              dist += disTmp ; */
+/*              //dist += (disTmp>=0.)? disTmp : 0.; */
+/*            } */
+
+/*         if(count2 > 100){ */
+/*              std::cerr << "LOOP2 INFINITY\n"; break; } */
+/* 	//  std::cout << fPtrSolidB->Contains(p+dist*v) << "\n"; */
+/* 	// std::cout << fPtrSolidB->Inside(p+dist*v) << "\n"; */
+/*       } */
+/*       while( (fPtrSolidB->Inside(p+dist*v) != EInside::kOutside) */
+/*                && (disTmp > kHalfTolerance) ); */
+/*     } */
+/*     //  std::cerr << "--VecGeom return " << dist << "\n"; */
+/*     distance = dist; */
+/*     return; */
+/* } */
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
