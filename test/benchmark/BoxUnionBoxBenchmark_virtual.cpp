@@ -22,7 +22,7 @@ int main(int argc, char * argv[])
 
     // components for boolean solid
     UnplacedBox motherbox(5.,5.,5.);
-    UnplacedTube subtractedtube(0.5,2.,10.,0,kTwoPi);
+    UnplacedBox box2(2,2.,10.);
     // translation for boolean solid right shape ( it should now stick outside )
     Transformation3D translation(-2.5,0,3.5);
 
@@ -30,12 +30,12 @@ int main(int argc, char * argv[])
     GeoManager::Instance().SetWorld(worldPlaced);
 
 
-    VPlacedVolume * placedsubtractedtube
-        = (new LogicalVolume("",&subtractedtube))->Place(&translation);
+    VPlacedVolume * placedbox2
+        = (new LogicalVolume("",&box2))->Place(&translation);
     VPlacedVolume * placedmotherbox = (new LogicalVolume("",&motherbox))->Place();
 
     // now make the unplaced boolean solid
-    UnplacedBooleanVolume booleansolid(kUnion, placedmotherbox, placedsubtractedtube);
+    UnplacedBooleanVolume booleansolid(kUnion, placedmotherbox, placedbox2);
     LogicalVolume booleanlogical("booleanL",&booleansolid);
 
     // place the boolean volume into the world
