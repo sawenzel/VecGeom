@@ -9,6 +9,7 @@
 #ifdef VECGEOM_CUDA
 
 #include "driver_types.h" // Required for cudaError_t type
+#include "cuda_runtime.h"
 
 namespace vecgeom { namespace cxx {
 
@@ -68,6 +69,69 @@ void CopyFromGpu(Type const *const src, Type *const tgt, const unsigned size) {
   );
 }
 
+class DevicePtrBase
+{
+   void *fPtr;
+
+protected:
+   DevicePtrBase(const DevicePtrBase&orig) : fPtr(orig.fPtr) {}
+   DevicePtrBase &operator=(const DevicePtrBase&orig) { fPtr = orig.fPtr; return *this; }
+
+   void MemcpyToDevice(const void* what, unsigned long nbytes)
+   {
+      CudaAssertError(cudaMemcpy(fPtr,what,nbytes,
+                                 cudaMemcpyHostToDevice) );
+   }
+
+   void MemcpyToHostAsync(void* where, unsigned long nbytes, cudaStream_t stream)
+   {
+      CudaAssertError(cudaMemcpyAsync(where, fPtr, nbytes, cudaMemcpyDeviceToHost, stream));
+   }
+   void *GetPtr() const { return fPtr; }
+
+   void Malloc(unsigned long size) {
+      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
+   }
+public:
+   DevicePtrBase() : fPtr(0) {}
+   explicit DevicePtrBase(void *input) : fPtr(input) {}
+   ~DevicePtrBase() { /* does not own content per se */ }
+
+};
+
+template <typename Type>
+class DevicePtr : private DevicePtrBase
+{
+public:
+   DevicePtr() = default;
+   DevicePtr(const DevicePtr&) = default;
+   DevicePtr &operator=(const DevicePtr&orig) = default;
+
+   // should be taking a DevicePtr<void*>
+   explicit DevicePtr(void *input) : DevicePtrBase(input) {}
+
+   void Allocate(unsigned long nelems = 1) {
+      Malloc(nelems*SizeOf());
+   }
+
+   template <typename... ArgsTypes>
+   void Construct(ArgsTypes... params) const;
+
+   void ToDevice(const Type* what, unsigned long nelems = 1) {
+      MemcpyToDevice(what,nelems*SizeOf());
+   }
+   void FromDevice(Type* where,cudaStream_t stream) {
+      // Async since we past a stream.
+      MemcpyToHostAsync(where,SizeOf(),stream);
+   }
+   void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
+      // Async since we past a stream.
+      MemcpyToHostAsync(where,nelems*SizeOf(),stream);
+   }
+   operator Type*() const { return reinterpret_cast<Type*>(GetPtr()); }
+
+   static size_t SizeOf();
+};
 
 } // End cxx namespace
 
@@ -95,6 +159,17 @@ template <typename DataClass, typename... ArgsTypes>
 void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
 {
    ConstructOnGpu<<<1, 1>>>(gpu_ptr, params...);
+}
+
+template <typename DataClass, typename... ArgsTypes>
+void DevicePtr::Construct(ArgsTypes... params) const
+{
+   ConstructOnGpu<<<1, 1>>>(*(*this), params...);
+}
+
+template <typename DataClass> size_t DevicePtr::SizeOf()
+{
+   return sizeof<DataClass>;
 }
 
 } // End cuda namespace
