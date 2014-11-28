@@ -9,6 +9,10 @@
 #include "base/Vector.h"
 #include "volumes/Box.h"
 
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Interface.h"
+#endif
+
 #include <list>
 #include <map>
 #include <set>
@@ -131,7 +135,7 @@ public:
 
   VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
 
-  Transformation3D* LookupTransformation(
+  DevicePtr<cuda::Transformation3D> LookupTransformation(
       Transformation3D const *const host_ptr);
 
   Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);

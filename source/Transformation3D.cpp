@@ -208,28 +208,20 @@ std::ostream& operator<<(std::ostream& os,
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-} // End of impl namespace
+DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const {
 
-namespace cuda {
-
-
-} // End of cuda namespace
-
-inline namespace VECGEOM_IMPL_NAMESPACE {
-
-Transformation3D* Transformation3D::CopyToGpu(cuda::Transformation3D *const gpu_ptr) const {
-
-   cuda::Generic_CopyToGpu(gpu_ptr, fTranslation[0], fTranslation[1], fTranslation[2],
-                           fRotation[0], fRotation[1], fRotation[2],
-                           fRotation[3], fRotation[4], fRotation[5],
-                           fRotation[6], fRotation[7], fRotation[8]);
+   gpu_ptr.Construct(fTranslation[0], fTranslation[1], fTranslation[2],
+                     fRotation[0], fRotation[1], fRotation[2],
+                     fRotation[3], fRotation[4], fRotation[5],
+                     fRotation[6], fRotation[7], fRotation[8]);
    CudaAssertError();
-   return (Transformation3D*)gpu_ptr;
+   return gpu_ptr;
 }
 
-Transformation3D* Transformation3D::CopyToGpu() const {
+DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu() const {
 
-   cuda::Transformation3D *const gpu_ptr = vecgeom::cuda::AllocateOnDevice<cuda::Transformation3D>();
+   DevicePtr<cuda::Transformation3D> gpu_ptr;
+   gpu_ptr.Allocate();
    return this->CopyToGpu(gpu_ptr);
 }
 
@@ -237,14 +229,13 @@ Transformation3D* Transformation3D::CopyToGpu() const {
 
 #ifdef VECGEOM_NVCC
 
-
-
-template cuda::Transformation3D* AllocateOnDevice<cuda::Transformation3D>();
-template void Generic_CopyToGpu(cuda::Transformation3D *const gpu_ptr, 
+template void DevicePtr<cuda::Transformation3D>::SizeOf();
+template void DevicePtr<cuda::Transformation3D>::Construct(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
     const Precision r6, const Precision r7, const Precision r8);
+
 
 #endif // VECGEOM_NVCC
 

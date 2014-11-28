@@ -93,7 +93,7 @@ vecgeom::cuda::VPlacedVolume const* CudaManager::Synchronize() {
   for (std::set<Transformation3D const*>::const_iterator i =
        transformations_.begin(); i != transformations_.end(); ++i) {
 
-    (*i)->CopyToGpu(LookupTransformation(*i));
+     (*i)->CopyToGpu(LookupTransformation(*i));
 
   }
   if (verbose_ > 2) std::cout << " OK\n";
@@ -343,9 +343,9 @@ VPlacedVolume* CudaManager::LookupPlaced(
   return static_cast<VPlacedVolume*>(Lookup(host_ptr));
 }
 
-Transformation3D* CudaManager::LookupTransformation(
+DevicePtr<Transformation3D> CudaManager::LookupTransformation(
     Transformation3D const *const host_ptr) {
-  return static_cast<Transformation3D*>(Lookup(host_ptr));
+  return DevicePtrBase(Lookup(host_ptr));
 }
 
 Vector<Daughter>* CudaManager::LookupDaughters(
