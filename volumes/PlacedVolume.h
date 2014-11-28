@@ -17,6 +17,9 @@
 class G4VSolid;
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedBox;
@@ -246,12 +249,12 @@ public:
 public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transform,
-                                   VPlacedVolume *const gpu_ptr) const =0;
-
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transform) const =0;
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
+                                                   DevicePtr<cuda::Transformation3D> const transform,
+                                                   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const =0;
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+      DevicePtr<cuda::LogicalVolume> const logical_volume,
+      DevicePtr<cuda::Transformation3D> const transform) const =0;
 #endif
 
 #ifndef VECGEOM_NVCC

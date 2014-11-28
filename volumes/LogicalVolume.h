@@ -18,6 +18,9 @@ class TGeoShape;
 class VUSolid;
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class LogicalVolume; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef VPlacedVolume const* Daughter;

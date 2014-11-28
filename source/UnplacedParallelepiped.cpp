@@ -120,45 +120,30 @@ VPlacedVolume* UnplacedParallelepiped::SpecializedVolume(
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedParallelepiped_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedParallelepiped::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedParallelepiped_CopyToGpu(GetX(), GetY(), GetZ(),
-                                   fAlpha, fTheta, fPhi, gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   DevicePtr<cuda::UnplacedParallelepiped> gpu_ptr(in_gpu_ptr);
+   gpu_ptr.Construct(GetX(), GetY(), GetZ(), fAlpha, fTheta, fPhi);
+   CudaAssertError();
+   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
 }
 
-VUnplacedVolume* UnplacedParallelepiped::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedParallelepiped>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu() const
+{
+   DevicePtr<cuda::UnplacedParallelepiped> gpu_ptr;
+   gpu_ptr.Allocate();
+   return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>(gpu_ptr));
 }
 
 #endif
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-
-__global__
-void UnplacedParallelepiped_ConstructOnGpu(
+template void DevicePtr<cuda::UnplacedParallelepiped>::SizeOf();
+template void DevicePtr<cuda::UnplacedParallelepiped>::Construct(
     const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::UnplacedParallelepiped(x, y, z, alpha, theta, phi);
-}
-
-void UnplacedParallelepiped_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedParallelepiped_ConstructOnGpu<<<1, 1>>>(x, y, z, alpha, theta, phi,
-                                                  gpu_ptr);
-}
+    const Precision alpha, const Precision theta, const Precision phi);
 
 #endif
 

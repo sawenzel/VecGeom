@@ -23,7 +23,7 @@ class TGeoMatrix;
 
 namespace vecgeom {
 
-//namespace cuda {}
+VECGEOM_DEVICE_FORWARD_DECLARE( class Transformation3D; )
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

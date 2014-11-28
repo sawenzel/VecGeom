@@ -204,40 +204,28 @@ VPlacedVolume* UnplacedOrb::CreateSpecializedVolume(
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedOrb_CopyToGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedOrb::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedOrb_CopyToGpu(this->GetRadius(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   DevicePtr<cuda::UnplacedOrb> gpu_ptr(in_gpu_ptr);
+   gpu_ptr.Construct(GetRadius());
+   CudaAssertError();
+   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
 }
 
-VUnplacedVolume* UnplacedOrb::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<UnplacedOrb>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu() const
+{
+   DevicePtr<cuda::UnplacedOrb> gpu_ptr;
+   gpu_ptr.Allocate();
+   return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>(gpu_ptr));
 }
 
 #endif
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-
-__global__
-void UnplacedOrb_ConstructOnGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::UnplacedOrb(r);
-}
-
-void UnplacedOrb_CopyToGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedOrb_ConstructOnGpu<<<1, 1>>>(r, gpu_ptr);
-}
+template void DevicePtr<cuda::UnplacedOrb>::SizeOf();
+template void DevicePtr<cuda::UnplacedOrb>::Construct(const Precision r);
 
 #endif
 

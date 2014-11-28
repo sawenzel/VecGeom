@@ -72,8 +72,8 @@ public:
                                VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual DevicePtr<VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<VUnplacedVolume> CopyToGpu(DevicePtr<VUnplacedVolume> gpu_ptr) const;
 #endif
 
 private:

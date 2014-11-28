@@ -12,6 +12,9 @@
 #include "volumes/kernel/TubeImplementation.h"
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedTube; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTube : public VPlacedVolume {
@@ -86,12 +89,12 @@ public:
 #endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
+                                                   DevicePtr<cuda::Transformation3D> const transform,
+                                                   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const;
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+      DevicePtr<cuda::LogicalVolume> const logical_volume,
+      DevicePtr<cuda::Transformation3D> const transform) const;
 #endif
 
 }; 

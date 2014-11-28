@@ -36,7 +36,6 @@ class VUnplacedVolume;
 class VPlacedVolume;
 class LogicalVolume;
 class Transformation3D;
-typedef VPlacedVolume const* Daughter;
 template <typename Type> class Vector;
 #endif
 
@@ -48,11 +47,16 @@ private:
   int verbose_;
   int total_volumes;
 
+  
+  using Daughter_t = VPlacedVolume const*;
+  using CudaDaughter_t = cuda::VPlacedVolume const*;
+  using CudaDaughterPtr_t = DevicePtr<cuda::VPlacedVolume>;
+
   std::set<VUnplacedVolume const*> unplaced_volumes_;
   std::set<LogicalVolume const*> logical_volumes_;
   std::set<VPlacedVolume const*> placed_volumes_;
   std::set<Transformation3D const*> transformations_;
-  std::set<Vector<Daughter> *> daughters_;
+  std::set<Vector<Daughter_t> *> daughters_;
 
   typedef void const* CpuAddress;
   typedef void* GpuAddress;
@@ -128,20 +132,20 @@ public:
   template <typename Type>
   GpuAddress Lookup(Type const *const key);
 
-  VUnplacedVolume* LookupUnplaced(
+  DevicePtr<cuda::VUnplacedVolume> LookupUnplaced(
       VUnplacedVolume const *const host_ptr);
 
-  LogicalVolume* LookupLogical(LogicalVolume const *const host_ptr);
+  DevicePtr<cuda::LogicalVolume> LookupLogical(LogicalVolume const *const host_ptr);
 
-  VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
+  DevicePtr<cuda::VPlacedVolume> LookupPlaced(VPlacedVolume const *const host_ptr);
 
   DevicePtr<cuda::Transformation3D> LookupTransformation(
       Transformation3D const *const host_ptr);
 
-  Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);
+  DevicePtr<Vector<Daughter_t>*> LookupDaughters(Vector<Daughter_t> *const host_ptr);
 
-  Daughter* LookupDaughterArray(
-      Vector<Daughter> *const host_ptr);
+  CudaDaughter_t* LookupDaughterArray(
+      Vector<Daughter_t> *const host_ptr);
 
 private:
 

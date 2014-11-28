@@ -304,15 +304,15 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
     daughters_.insert(volume->logical_volume()->daughters_);
   }
 
-    if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
+  if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
     fprintf(stderr,"found a PlacedBooleanVolume");
     PlacedBooleanVolume const* v =  dynamic_cast<PlacedBooleanVolume const*>(volume);
     ScanGeometry(v->GetUnplacedVolume()->fLeftVolume);
     ScanGeometry(v->GetUnplacedVolume()->fRightVolume);
-   }
+  }
 
 
-  for (Daughter* i = volume->daughters().begin();
+  for (Daughter_t* i = volume->daughters().begin();
        i != volume->daughters().end(); ++i) {
     ScanGeometry(*i);
   }
@@ -329,24 +329,24 @@ typename CudaManager::GpuAddress CudaManager::Lookup(
   return output;
 }
 
-VUnplacedVolume* CudaManager::LookupUnplaced(
+DevicePtr<VUnplacedVolume> CudaManager::LookupUnplaced(
     VUnplacedVolume const *const host_ptr) {
-  return static_cast<VUnplacedVolume*>(Lookup(host_ptr));
+  return DevicePtr<VUnplacedVolume>(Lookup(host_ptr));
 }
 
-LogicalVolume* CudaManager::LookupLogical(
+DevicePtr<LogicalVolume> CudaManager::LookupLogical(
     LogicalVolume const *const host_ptr) {
-  return static_cast<LogicalVolume*>(Lookup(host_ptr));
+  return DevicePtr<LogicalVolume>(Lookup(host_ptr));
 }
 
-VPlacedVolume* CudaManager::LookupPlaced(
+DevicePtr<VPlacedVolume> CudaManager::LookupPlaced(
     VPlacedVolume const *const host_ptr) {
-  return static_cast<VPlacedVolume*>(Lookup(host_ptr));
+  return DevicePtr<VPlacedVolume>(Lookup(host_ptr));
 }
 
 DevicePtr<Transformation3D> CudaManager::LookupTransformation(
     Transformation3D const *const host_ptr) {
-  return DevicePtrBase(Lookup(host_ptr));
+  return DevicePtr<Transformation3D>(Lookup(host_ptr));
 }
 
 Vector<Daughter>* CudaManager::LookupDaughters(

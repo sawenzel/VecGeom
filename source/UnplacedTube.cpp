@@ -83,40 +83,30 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedTube_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTube::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTube_CopyToGpu(rmin(), rmax(), z(), sphi(), dphi(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTube::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   DevicePtr<cuda::UnplacedTube> gpu_ptr(in_gpu_ptr);
+   gpu_ptr.Construct(rmin(), rmax(), z(), sphi(), dphi());
+   CudaAssertError();
+   return DevicePtr<cuda::VUnplacedVolume>(gpu_ptr);
 }
 
-VUnplacedVolume* UnplacedTube::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTube>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> PlacedTube::CopyToGpu() const
+{
+   DevicePtr<cuda::UnplacedTube> gpu_ptr;
+   gpu_ptr.Allocate();
+   return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>(gpu_ptr));
 }
 
 #endif
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-
-__global__
-void UnplacedTube_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-   new(gpu_ptr) vecgeom::cuda::UnplacedTube(rmin, rmax, z, sphi, dphi);
-}
-
-void UnplacedTube_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedTube_ConstructOnGpu<<<1, 1>>>(rmin, rmax, z, sphi, dphi, gpu_ptr);
-}
+template void DevicePtr<cuda::UnplacedTube>::SizeOf();
+template void DevicePtr<cuda::UnplacedTube>::Construct(
+    const Precision rmin, const Precision rmax, const Precision z, 
+    const Precision sphi, const Precision dphi);
 
 #endif
 

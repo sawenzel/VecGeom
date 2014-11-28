@@ -14,6 +14,9 @@
 #include <ostream>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class VUnplacedVolume; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class LogicalVolume;
@@ -47,8 +50,8 @@ public:
    * memory where the object has been instantiated.
    */
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const =0;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const =0;
+  virtual DevicePtr<VUnplacedVolume> CopyToGpu() const =0;
+  virtual DevicePtr<VUnplacedVolume> CopyToGpu(DevicePtr<VUnplacedVolume> gpu_ptr) const =0;
 #endif
 
   /**

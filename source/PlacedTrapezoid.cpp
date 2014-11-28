@@ -69,56 +69,35 @@ G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void PlacedTrapezoid_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedTrapezoid::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  PlacedTrapezoid_CopyToGpu(logical_volume, transformation, this->id(),
-                             gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VPlacedVolume> PlacedTrapezoid::CopyToGpu(
+   DevicePtr<cuda::LogicalVolume> const logical_volume,
+   DevicePtr<cuda::Transformation3D> const transform,
+   DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
+{
+   DevicePtr<cuda::PlacedTrapezoid> gpu_ptr(in_gpu_ptr);
+   gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
+   CudaAssertError();
+   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
 }
 
-VPlacedVolume* PlacedTrapezoid::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedTrapezoid>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
+DevicePtr<cuda::VPlacedVolume> PlacedTrapezoid::CopyToGpu(
+      DevicePtr<cuda::LogicalVolume> const logical_volume,
+      DevicePtr<cuda::Transformation3D> const transform) const
+{
+   DevicePtr<cuda::PlacedTrapezoid> gpu_ptr;
+   gpu_ptr.Allocate();
+   return this->CopyToGpu(logical_volume,transform,DevicePtr<cuda::VPlacedVolume>(gpu_ptr));
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
-
-__global__
-void PlacedTrapezoid_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::SimpleTrapezoid(
-    reinterpret_cast<vecgeom::cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom::cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-}
-
-void PlacedTrapezoid_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedTrapezoid_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
-                                            id, gpu_ptr);
-}
+template void DevicePtr<cuda::PlacedTrapezoid>::SizeOf();
+template void DevicePtr<cuda::PlacedTrapezoid>::Construct(
+   DevicePtr<cuda::LogicalVolume> const logical_volume,
+   DevicePtr<cuda::Transformation3D> const transform,
+   const int id);
 
 #endif // VECGEOM_NVCC
 
