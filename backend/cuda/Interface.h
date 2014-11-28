@@ -11,9 +11,10 @@
 #include "driver_types.h" // Required for cudaError_t type
 #include "cuda_runtime.h"
 
+#include <type_traits>
+
 namespace vecgeom { namespace cxx {
 
-class VPlacedVolume;
 template <typename Type> class SOA3D;
 template <typename Type> class AOS3D;
 
@@ -109,6 +110,20 @@ public:
 
    // should be taking a DevicePtr<void*>
    explicit DevicePtr(void *input) : DevicePtrBase(input) {}
+
+   // Need to go via the explicit route accepting all conversion
+   // because the regular c++ compilation
+   // does not actually see the declaration for the cuda version
+   // (and thus can not determine the inheritance).
+   template <typename inputType>
+      explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase((void*)input) {}
+
+#ifdef VECGEOM_NVCC
+   // Allows implicit conversion from DevicePtr<Derived> to DevicePtr<Base>
+   template <typename inputType,
+      typename std::enable_if<std::is_base_of<Type, inputType>::value>::type* = nullptr>
+      DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase(input.GetPtr()) {}
+#endif
 
    void Allocate(unsigned long nelems = 1) {
       Malloc(nelems*SizeOf());
