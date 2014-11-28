@@ -99,19 +99,20 @@ vecgeom::cuda::VPlacedVolume const* CudaManager::Synchronize() {
   if (verbose_ > 2) std::cout << " OK\n";
 
   if (verbose_ > 2) std::cout << "Copying daughter arrays...";
-  for (std::set<Vector<Daughter> *>::const_iterator i =
+  std::vector<CudaDaughter_t> daugher_array;
+  for (std::set<Vector<Daughter_t> *>::const_iterator i =
        daughters_.begin(); i != daughters_.end(); ++i) {
 
     // First handle C arrays that must now point to GPU locations
     const int daughter_count = (*i)->size();
-    Daughter *const daughter_array = new Daughter[daughter_count];
+    daugher_array.resize( daughter_count );
     int j = 0;
-    for (Daughter* k = (*i)->begin(); k != (*i)->end(); ++k) {
+    for (Daughter_t* k = (*i)->begin(); k != (*i)->end(); ++k) {
       daughter_array[j] = LookupPlaced(*k);
       j++;
     }
     vecgeom::CopyToGpu(
-      daughter_array, LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
+       &(daughter_array[0]), LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
     );
 
     // Create array object wrapping newly copied C arrays
