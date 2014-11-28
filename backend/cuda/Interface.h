@@ -68,12 +68,48 @@ void CopyFromGpu(Type const *const src, Type *const tgt, const unsigned size) {
   );
 }
 
+
+} // End cxx namespace
+
+#ifdef VECGEOM_NVCC
+
+inline namespace cuda {
+
+using vecgeom::cxx::CudaAssertError;
+using vecgeom::cxx::CudaMalloc;
+
 template <typename Type>
-void CopyFromGpu(Type const *const src, Type *const tgt) {
-  CopyFromGpu<Type>(src, tgt, sizeof(Type));
+Type* AllocateOnDevice() {
+  Type *ptr;
+  vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&ptr, sizeof(Type)));
+  return ptr;
 }
 
-} // End cuda namespace 
+template <typename DataClass, typename... ArgsTypes>
+__global__
+void ConstructOnGpu(DataClass *const gpu_ptr, ArgsTypes... params) {
+   new (gpu_ptr) DataClass(params...);
+}
+
+template <typename DataClass, typename... ArgsTypes>
+void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
+{
+   ConstructOnGpu<<<1, 1>>>(gpu_ptr, params...);
+}
+
+} // End cuda namespace
+
+#else // VECGEOM_NVCC
+
+namespace cuda {
+
+template <typename Type> Type* AllocateOnDevice();
+template <typename DataClass, typename... ArgsTypes>
+void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params);
+
+} // End cuda namespace
+
+#endif // VECGEOM_NVCC
 
 } // End vecgeom namespace
 
