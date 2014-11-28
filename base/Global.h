@@ -29,6 +29,7 @@
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
   #define VECGEOM_CUDA_HEADER_GLOBAL __global__
+  #define VECGEOM_DEVICE_FORWARD_DECLARE(X)
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
@@ -49,6 +50,10 @@
     // This enables methods that interface between C++ and CUDA environments
     #define VECGEOM_CUDA_INTERFACE
   #endif
+  #define VECGEOM_DEVICE_FORWARD_DECLARE(X)  namespace cuda { X }
+  // If it was supported to be inside the inline namespace we would use:
+//  #define VECGEOM_DEVICE_FORWARD_DECLARE(X) } namespace cuda { class Transformation3D; } \
+//      inline namespace VECGEOM_IMPL_NAMESPACE {
 #endif
 
 #ifdef __INTEL_COMPILER
