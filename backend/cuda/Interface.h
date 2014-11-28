@@ -33,7 +33,7 @@ cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size);
 cudaError_t CudaFree(void* ptr);
 
 template <typename Type>
-Type* AllocateOnGpu(const unsigned size) {
+Type* AllocateOnGpu(const unsigned int size) {
   Type *ptr;
   CudaAssertError(CudaMalloc((void**)&ptr, size));
   return ptr;
