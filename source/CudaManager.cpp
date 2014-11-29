@@ -99,13 +99,13 @@ vecgeom::cuda::VPlacedVolume const* CudaManager::Synchronize() {
   if (verbose_ > 2) std::cout << " OK\n";
 
   if (verbose_ > 2) std::cout << "Copying daughter arrays...";
-  std::vector<CudaDaughter_t> daugher_array;
+  std::vector<CudaDaughter_t> daughter_array;
   for (std::set<Vector<Daughter_t> *>::const_iterator i =
        daughters_.begin(); i != daughters_.end(); ++i) {
 
     // First handle C arrays that must now point to GPU locations
     const int daughter_count = (*i)->size();
-    daugher_array.resize( daughter_count );
+    daughter_array.resize( daughter_count );
     int j = 0;
     for (Daughter_t* k = (*i)->begin(); k != (*i)->end(); ++k) {
       daughter_array[j] = LookupPlaced(*k);
@@ -349,12 +349,12 @@ DevicePtr<Transformation3D> CudaManager::LookupTransformation(
   return DevicePtr<Transformation3D>(Lookup(host_ptr));
 }
 
-Vector<Daughter>* CudaManager::LookupDaughters(
+DevicePtr<cuda::Vector<CudaDaughter_t> > CudaManager::LookupDaughters(
     Vector<Daughter> *const host_ptr) {
   return static_cast<Vector<Daughter>*>(Lookup(host_ptr));
 }
 
-Daughter* CudaManager::LookupDaughterArray(
+DevicePtr<CudaDaughter_t> CudaManager::LookupDaughterArray(
     Vector<Daughter> *const host_ptr) {
   Vector<Daughter> const *const daughters_ = LookupDaughters(host_ptr);
   return static_cast<Daughter*>(Lookup(daughters_));

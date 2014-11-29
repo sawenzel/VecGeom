@@ -4,27 +4,21 @@
 #include "base/Vector.h"
 
 namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_NVCC
 
-template <typename Type>
-__global__
-void ConstructOnGpu(Type *const arr, const int size,
-                    void *gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::Vector<Type>(arr, size);
-}
+template void DevicePtr<cuda::Vector<Precision> >::SizeOf();
+template void DevicePtr<cuda::Vector<Precision> >::Construct(
+   DevicePtr<Precision> const arr,
+   const int size);
 
-void Vector_CopyToGpu(Precision *const arr, const int size,
-                      void *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(arr, size, gpu_ptr);
-}
+template void DevicePtr<cuda::Vector<cuda::VPlacedVolume* > >::SizeOf();
+template void DevicePtr<cuda::Vector<Precision> >::Construct(
+   DevicePtr<cuda::VPlacedVolume*> const arr,
+   const int size);
 
-void Vector_CopyToGpu(
-    VPlacedVolume const **const arr, const int size,
-    void *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(arr, size, gpu_ptr);
-}
 
 #endif
 
-} // End namespace vecgeom
+} } // End global namespace

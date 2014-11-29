@@ -142,9 +142,9 @@ public:
   DevicePtr<cuda::Transformation3D> LookupTransformation(
       Transformation3D const *const host_ptr);
 
-  DevicePtr<Vector<Daughter_t>*> LookupDaughters(Vector<Daughter_t> *const host_ptr);
+  DevicePtr<cuda::Vector<CudaDaughter_t>> LookupDaughters(Vector<Daughter_t> *const host_ptr);
 
-  CudaDaughter_t* LookupDaughterArray(
+  DevicePtr<CudaDaughter_t> LookupDaughterArray(
       Vector<Daughter_t> *const host_ptr);
 
 private:

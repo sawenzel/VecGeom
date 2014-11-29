@@ -11,6 +11,9 @@
 #endif
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class Vector; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename Type>
@@ -86,8 +89,14 @@ public:
   }
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  Vector<Type>* CopyToGpu(Type *const gpu_ptr_arr,
-                          Vector<Type> *const gpu_ptr) const;
+  DevicePtr<Vector<CudaType_t<Type> > > CopyToGpu(
+     DevicePtr<CudaType_t<Type> > const gpu_ptr_arr,
+     DevicePtr<cuda::Vector<CudaType_t<Type> > > const gpu_ptr) const 
+  {
+     gpu_ptr.Construct(gpu_ptr_arr, size());
+     return gpu_ptr;
+  }
+
 #endif
 
 private:
@@ -97,29 +106,6 @@ private:
   Vector * operator=(Vector const & other);
 
 };
-
-#ifdef VECGEOM_CUDA
-
-template <typename Type> class Vector;
-class VPlacedVolume;
-
-void Vector_CopyToGpu(Precision *const arr, const int size,
-                      void *const gpu_ptr);
-
-void Vector_CopyToGpu(VPlacedVolume const **const arr, const int size,
-                      void *const gpu_ptr);
-
-#ifdef VECGEOM_CUDA_INTERFACE
-template <typename Type>
-Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
-                                      Vector<Type> *const gpu_ptr) const {
-  Vector_CopyToGpu(gpu_ptr_arr, this->size(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-#endif
-
-#endif // VECGEOM_CUDA
 
 } } // End global namespace
 
