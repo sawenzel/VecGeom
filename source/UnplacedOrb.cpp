@@ -207,17 +207,12 @@ VPlacedVolume* UnplacedOrb::CreateSpecializedVolume(
 DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu(
    DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
 {
-   DevicePtr<cuda::UnplacedOrb> gpu_ptr(in_gpu_ptr);
-   gpu_ptr.Construct(GetRadius());
-   CudaAssertError();
-   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
+   return CopyToGpuImpl<UnplacedOrb>(in_gpu_ptr, GetRadius());
 }
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu() const
 {
-   DevicePtr<cuda::UnplacedOrb> gpu_ptr;
-   gpu_ptr.Allocate();
-   return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>(gpu_ptr));
+   return CopyToGpuImpl<UnplacedOrb>();
 }
 
 #endif

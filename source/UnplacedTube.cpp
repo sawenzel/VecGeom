@@ -86,17 +86,12 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 DevicePtr<cuda::VUnplacedVolume> UnplacedTube::CopyToGpu(
    DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
 {
-   DevicePtr<cuda::UnplacedTube> gpu_ptr(in_gpu_ptr);
-   gpu_ptr.Construct(rmin(), rmax(), z(), sphi(), dphi());
-   CudaAssertError();
-   return DevicePtr<cuda::VUnplacedVolume>(gpu_ptr);
+   return CopyToGpuImpl<UnplacedTube>(in_gpu_ptr, rmin(), rmax(), z(), sphi(), dphi());
 }
 
-DevicePtr<cuda::VUnplacedVolume> PlacedTube::CopyToGpu() const
+DevicePtr<cuda::VUnplacedVolume> UnplacedTube::CopyToGpu() const
 {
-   DevicePtr<cuda::UnplacedTube> gpu_ptr;
-   gpu_ptr.Allocate();
-   return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>(gpu_ptr));
+   return CopyToGpuImpl<UnplacedTube>();
 }
 
 #endif

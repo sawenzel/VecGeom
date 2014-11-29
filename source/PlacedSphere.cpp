@@ -62,21 +62,16 @@ return new G4Sphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
 DevicePtr<cuda::VPlacedVolume> PlacedSphere::CopyToGpu(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,
-   DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
+   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const
 {
-   DevicePtr<cuda::PlacedSphere> gpu_ptr(in_gpu_ptr);
-   gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
-   CudaAssertError();
-   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
+   return CopyToGpuImpl<PlacedSphere>(logical_volume, transform, gpu_ptr);
 }
 
 DevicePtr<cuda::VPlacedVolume> PlacedSphere::CopyToGpu(
       DevicePtr<cuda::LogicalVolume> const logical_volume,
       DevicePtr<cuda::Transformation3D> const transform) const
 {
-   DevicePtr<cuda::PlacedSphere> gpu_ptr;
-   gpu_ptr.Allocate();
-   return this->CopyToGpu(logical_volume,transform,DevicePtr<cuda::VPlacedVolume>(gpu_ptr));
+   return CopyToGpuImpl<PlacedSphere>(logical_volume, transform);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE

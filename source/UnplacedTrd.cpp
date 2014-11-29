@@ -80,40 +80,25 @@ VPlacedVolume* UnplacedTrd::SpecializedVolume(
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedTrd_CopyToGpu(
-    const Precision dx1, const Precision dx2, const Precision dy1, const Precision dy2, const Precision dz,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTrd::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTrd_CopyToGpu(dx1(), dx2(), dy1(), dy2(), dz(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrd::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedTrd>(in_gpu_ptr, dx1(), dx2(), dy1(), dy2(), dz());
 }
 
-VUnplacedVolume* UnplacedTrd::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTrd>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrd::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedTrd>();
 }
 
 #endif
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-
-__global__
-void UnplacedTrd_ConstructOnGpu(
-    const Precision dx1, const Precision dx2, const Precision dy1, const Precision dy2, const Precision dz,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::UnplacedTrd(dx1, dx2, dy1, dy2, dz);
-}
-
-void UnplacedTrd_CopyToGpu(
-    const Precision dx1, const Precision dx2, const Precision dy1, const Precision dy2, const Precision dz,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedTrd_ConstructOnGpu<<<1, 1>>>(dx1, dx2, dy1, dy2, dz, gpu_ptr);
-}
+template void DevicePtr<cuda::UnplacedTrd>::SizeOf();
+template void DevicePtr<cuda::UnplacedTrd>::Construct(
+   const Precision dx1, const Precision dx2, const Precision dy1, 
+   const Precision dy2, const Precision d);
 
 #endif
 

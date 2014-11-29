@@ -18,7 +18,9 @@ class G4VSolid;
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; )
+VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; );
+VECGEOM_DEVICE_DECLARE_CONV( VPlacedVolume );
+template <> struct kCudaType<const cxx::VPlacedVolume*> { using type_t = const cuda::VPlacedVolume*; };
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -255,6 +257,31 @@ public:
   virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(
       DevicePtr<cuda::LogicalVolume> const logical_volume,
       DevicePtr<cuda::Transformation3D> const transform) const =0;
+
+  template <typename Derived>
+  DevicePtr<cuda::VPlacedVolume> CopyToGpuImpl(DevicePtr<cuda::LogicalVolume> const logical_volume,
+                                               DevicePtr<cuda::Transformation3D> const transform,
+                                               DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
+  {
+     DevicePtr<Derived> gpu_ptr(in_gpu_ptr);
+     gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
+     CudaAssertError();
+     // Need to go via the void* because the regular c++ compilation
+     // does not actually see the declaration for the cuda version
+     // (and thus can not determine the inheritance).
+     return DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr);
+  }
+  template <typename Derived>
+  DevicePtr<cuda::VPlacedVolume> CopyToGpuImpl(
+      DevicePtr<cuda::LogicalVolume> const logical_volume,
+      DevicePtr<cuda::Transformation3D> const transform) const
+  {
+     DevicePtr<Derived> gpu_ptr;
+     gpu_ptr.Allocate();
+     return this->CopyToGpuImpl<Derived>(logical_volume,transform,
+                                         DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr));
+  }
+
 #endif
 
 #ifndef VECGEOM_NVCC

@@ -312,18 +312,15 @@ VPlacedVolume* UnplacedParaboloid::SpecializedVolume(
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedParaboloid::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedParaboloid_CopyToGpu(gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedParaboloid>(in_gpu_ptr, GetRlo(), GetRhi(), GetDz());
 }
 
-VUnplacedVolume* UnplacedParaboloid::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedParaboloid>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedParaboloid>();
 }
 
 #endif
@@ -332,14 +329,8 @@ VUnplacedVolume* UnplacedParaboloid::CopyToGpu() const {
 
 class VUnplacedVolume;
 
-__global__
-void UnplacedParaboloid_ConstructOnGpu(VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::UnplacedParaboloid();
-}
-
-void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr) {
-  UnplacedParaboloid_ConstructOnGpu<<<1, 1>>>(gpu_ptr);
-}
+template void DevicePtr<cuda::UnplacedParaboloid>::SizeOf();
+template void DevicePtr<cuda::UnplacedParaboloid>::Construct(const Precision rlo, const Precision rhi, const Precision dz);
 
 #endif
 

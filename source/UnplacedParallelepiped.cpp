@@ -123,17 +123,12 @@ VPlacedVolume* UnplacedParallelepiped::SpecializedVolume(
 DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu(
    DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
 {
-   DevicePtr<cuda::UnplacedParallelepiped> gpu_ptr(in_gpu_ptr);
-   gpu_ptr.Construct(GetX(), GetY(), GetZ(), fAlpha, fTheta, fPhi);
-   CudaAssertError();
-   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
+   return CopyToGpuImpl<UnplacedParallelepiped>(in_gpu_ptr, GetX(), GetY(), GetZ(), fAlpha, fTheta, fPhi);
 }
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu() const
 {
-   DevicePtr<cuda::UnplacedParallelepiped> gpu_ptr;
-   gpu_ptr.Allocate();
-   return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>(gpu_ptr));
+   return CopyToGpuImpl<UnplacedParallelepiped>();
 }
 
 #endif

@@ -65,40 +65,25 @@ VPlacedVolume* UnplacedTorus::SpecializedVolume(
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedTorus_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTorus::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTorus_CopyToGpu(fRmin, fRmax, fRtor, fSphi, fDphi, gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedTorus>(in_gpu_ptr, fRmin, fRmax, fRtor, fSphi, fDphi);
 }
 
-VUnplacedVolume* UnplacedTorus::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTorus>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedTorus>();
 }
 
 #endif
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-
-__global__
-void UnplacedTorus_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom::cuda::UnplacedTorus(rmin, rmax, rtor, sphi, dphi);
-}
-
-void UnplacedTorus_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedTorus_ConstructOnGpu<<<1, 1>>>(rmin, rmax, rtor, sphi, dphi, gpu_ptr);
-}
+template void DevicePtr<cuda::UnplacedTorus>::SizeOf();
+template void DevicePtr<cuda::UnplacedTorus>::Construct(
+    const Precision rmin, const Precision rmax, const Precision rtor,
+    const Precision sphi, const Precision dphi);
 
 #endif
 

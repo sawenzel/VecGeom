@@ -15,7 +15,7 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_FORWARD_DECLARE( class VUnplacedVolume; )
+VECGEOM_DEVICE_FORWARD_DECLARE( class VUnplacedVolume; );
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -50,8 +50,29 @@ public:
    * memory where the object has been instantiated.
    */
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual DevicePtr<VUnplacedVolume> CopyToGpu() const =0;
-  virtual DevicePtr<VUnplacedVolume> CopyToGpu(DevicePtr<VUnplacedVolume> gpu_ptr) const =0;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const =0;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const =0;
+
+  template <typename Derived, typename... ArgsTypes>
+  DevicePtr<cuda::VUnplacedVolume> CopyToGpuImpl(DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr,
+                                                 ArgsTypes... params) const
+  {
+     DevicePtr<Derived> gpu_ptr(in_gpu_ptr);
+     gpu_ptr.Construct(params...);
+     CudaAssertError();
+     // Need to go via the void* because the regular c++ compilation
+     // does not actually see the declaration for the cuda version
+     // (and thus can not determine the inheritance).
+     return DevicePtr<cuda::VUnplacedVolume>((void*)gpu_ptr);
+  }
+  template <typename Derived>
+  DevicePtr<cuda::VUnplacedVolume> CopyToGpuImpl() const
+  {
+     DevicePtr<Derived> gpu_ptr;
+     gpu_ptr.Allocate();
+     return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>((void*)gpu_ptr));
+  }
+
 #endif
 
   /**

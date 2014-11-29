@@ -700,56 +700,30 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
 #ifdef VECGEOM_CUDA_INTERFACE
 // only the GPU-related methods should go inside this part
 
-void UnplacedTrapezoid_CopyToGpu(
-    Precision dz, Precision theta, Precision phi,
-    Precision dy1, Precision dx1, Precision dx2, Precision pTanAlpha1,
-    Precision dy2, Precision dx3, Precision dx4, Precision pTanAlpha2,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTrapezoid::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTrapezoid_CopyToGpu(GetDz(), GetTheta(), GetPhi(),
-                              GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                              GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
-                              gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedTrapezoid>(in_gpu_ptr, GetDz(), GetTheta(), GetPhi(),
+                                           GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+                                           GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2());
 }
 
-VUnplacedVolume* UnplacedTrapezoid::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTrapezoid>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedTrapezoid>();
 }
+
 
 #endif
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-
-  __global__
-  void UnplacedTrapezoid_ConstructOnGpu(
+template void DevicePtr<cuda::UnplacedTrapezoid>::SizeOf();
+template void DevicePtr<cuda::UnplacedTrapezoid>::Construct(
     const Precision dz, const Precision theta, const Precision phi,
     const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
-    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
-    VUnplacedVolume *const gpu_ptr)
-  {
-    new(gpu_ptr) vecgeom::cuda::UnplacedTrapezoid(dz, theta, phi,
-                                                 dy1, dx1, dx2, tanAlpha1,
-                                                 dy2, dx3, dx4, tanAlpha2 );
-  }
+    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2);
 
-  void UnplacedTrapezoid_CopyToGpu(
-    const Precision dz, const Precision theta, const Precision phi,
-    const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
-    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
-    VUnplacedVolume *const gpu_ptr)
-  {
-    UnplacedTrapezoid_ConstructOnGpu<<<1, 1>>>(dz, theta, phi,
-                                               dy1, dx1, dx2, tanAlpha1,
-                                               dy2, dx3, dx4, tanAlpha2,
-                                               gpu_ptr);
-  }
 #endif // VECGEOM_NVCC
 
 } } // End global namespace

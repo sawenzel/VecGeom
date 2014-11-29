@@ -57,21 +57,16 @@ G4VSolid const* PlacedBox::ConvertToGeant4() const {
 DevicePtr<cuda::VPlacedVolume> PlacedBox::CopyToGpu(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,
-   DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
+   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const
 {
-   DevicePtr<cuda::PlacedBox> gpu_ptr(in_gpu_ptr);
-   gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
-   CudaAssertError();
-   return DevicePtr<cuda::VPlacedVolume>(gpu_ptr);
+   return CopyToGpuImpl<PlacedBox>(logical_volume, transform, gpu_ptr);
 }
 
 DevicePtr<cuda::VPlacedVolume> PlacedBox::CopyToGpu(
       DevicePtr<cuda::LogicalVolume> const logical_volume,
       DevicePtr<cuda::Transformation3D> const transform) const
 {
-   DevicePtr<cuda::PlacedBox> gpu_ptr;
-   gpu_ptr.Allocate();
-   return this->CopyToGpu(logical_volume,transform,DevicePtr<cuda::VPlacedVolume>(gpu_ptr));
+   return CopyToGpuImpl<PlacedBox>(logical_volume, transform);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
