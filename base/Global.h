@@ -50,10 +50,20 @@
     // This enables methods that interface between C++ and CUDA environments
     #define VECGEOM_CUDA_INTERFACE
   #endif
+  namespace vecgeom {
+     template <typename DataType> struct kCudaType;
+     template <typename DataType> using CudaType_t = typename kCudaType<DataType>::type_t;
+  }
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)  namespace cuda { X }
+  #define VECGEOM_DEVICE_DECLARE_CONV(X)  namespace cuda { class X; }  \
+     namespace cxx { class X; } \
+     template <> struct kCudaType<cxx::X> { using type_t = cuda::X; };
+
   // If it was supported to be inside the inline namespace we would use:
-//  #define VECGEOM_DEVICE_FORWARD_DECLARE(X) } namespace cuda { class Transformation3D; } \
-//      inline namespace VECGEOM_IMPL_NAMESPACE {
+/*
+  #define VECGEOM_DEVICE_FORWARD_DECLARE(X) } namespace cuda { class Transformation3D; } \
+      inline namespace VECGEOM_IMPL_NAMESPACE {
+*/
 #endif
 
 #ifdef __INTEL_COMPILER
