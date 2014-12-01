@@ -33,17 +33,6 @@ void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
 
 } // End cuda namespace
 
-namespace cxx {
-
-template <typename Type>
-Type* AllocateOnDevice() {
-  Type *ptr;
-  vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&ptr, sizeof(Type)));
-  return ptr;
-}
-
-} // End cxx namespace
-
 #else
 
 namespace cuda {
@@ -57,9 +46,6 @@ void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params);
 #endif
 
 namespace cxx {
-
-template <typename Type> class SOA3D;
-template <typename Type> class AOS3D;
 
 cudaError_t CudaCheckError(const cudaError_t err);
 
@@ -76,6 +62,13 @@ cudaError_t CudaCopyToDevice(void* tgt, void const* src, unsigned size);
 cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size);
 
 cudaError_t CudaFree(void* ptr);
+
+template <typename Type>
+Type* AllocateOnDevice() {
+  Type *ptr;
+  vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&ptr, sizeof(Type)));
+  return ptr;
+}
 
 template <typename Type>
 Type* AllocateOnGpu(const unsigned int size) {
@@ -131,6 +124,8 @@ protected:
    {
       CudaAssertError(cudaMemcpyAsync(where, fPtr, nbytes, cudaMemcpyDeviceToHost, stream));
    }
+
+   VECGEOM_CUDA_HEADER_BOTH
    void *GetPtr() const { return fPtr; }
 
    void Malloc(unsigned long size) {
@@ -183,8 +178,10 @@ public:
       MemcpyToHostAsync(where,nelems*Derived::SizeOf(),stream);
    }
 
+   VECGEOM_CUDA_HEADER_BOTH
    Type* GetPtr() const { return reinterpret_cast<Type*>(DevicePtrBase::GetPtr()); }
 
+   VECGEOM_CUDA_HEADER_BOTH
    operator Type*() const { return GetPtr(); }
 
    Derived& operator++ ()     // prefix ++
@@ -298,7 +295,7 @@ public:
 
    static size_t SizeOf()
    {
-      return sizeof<DataClass>;
+      return sizeof(Type);
    }
 
 #else
