@@ -149,8 +149,63 @@ public:
 
 };
 
+ template <typename T> class DevicePtr;
+
+template <typename Type, typename Derived = DevicePtr<Type> >
+class DevicePtrImpl : public DevicePtrBase
+{
+protected:
+   DevicePtrImpl(const DevicePtrImpl&orig) = default;
+   DevicePtrImpl &operator=(const DevicePtrImpl&orig) = default;
+   DevicePtrImpl() = default;
+   explicit DevicePtrImpl(void *input) : DevicePtrBase(input) {}
+   ~DevicePtrImpl() = default;
+
+public:
+
+   void Allocate(unsigned long nelems = 1) {
+      Malloc(nelems*Derived::SizeOf());
+   }
+
+   void Deallocate() {
+      Free();
+   }
+
+   void ToDevice(const Type* what, unsigned long nelems = 1) {
+      MemcpyToDevice(what,nelems*Derived::SizeOf());
+   }
+   void FromDevice(Type* where,cudaStream_t stream) {
+      // Async since we past a stream.
+      MemcpyToHostAsync(where,Derived::SizeOf(),stream);
+   }
+   void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
+      // Async since we past a stream.
+      MemcpyToHostAsync(where,nelems*Derived::SizeOf(),stream);
+   }
+   operator Type*() const { return reinterpret_cast<Type*>(GetPtr()); }
+
+   Derived& operator++ ()     // prefix ++
+   {
+      Increment(Derived::SizeOf());
+      return *(Derived*)this;
+   }
+
+   Derived operator++ (int)     // postfix ++
+   {
+      Derived tmp( *(Derived*)this );
+      Increment(Derived::SizeOf());
+      return tmp;
+   }
+
+   Derived& operator+= (long len)     // prefix ++
+   {
+      Increment(len*Derived::SizeOf());
+      return *(Derived*)this;
+   }
+};
+
 template <typename Type>
-class DevicePtr : private DevicePtrBase
+class DevicePtr : public DevicePtrImpl<Type>
 {
 public:
    DevicePtr() = default;
@@ -158,14 +213,14 @@ public:
    DevicePtr &operator=(const DevicePtr&orig) = default;
 
    // should be taking a DevicePtr<void*>
-   explicit DevicePtr(void *input) : DevicePtrBase(input) {}
+   explicit DevicePtr(void *input) : DevicePtrImpl<Type>(input) {}
 
    // Need to go via the explicit route accepting all conversion
    // because the regular c++ compilation
    // does not actually see the declaration for the cuda version
    // (and thus can not determine the inheritance).
    template <typename inputType>
-      explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase((void*)input) {}
+      explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrImpl<Type>((void*)input) {}
 
    // Disallow conversion from const to non-const.
    DevicePtr(DevicePtr<const Type> const &input, 
@@ -175,7 +230,7 @@ public:
    // Allows implicit conversion from DevicePtr<Derived> to DevicePtr<Base>
    template <typename inputType,
       typename std::enable_if<std::is_base_of<Type, inputType>::value>::type* = nullptr>
-      DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase(input.GetPtr()) {}
+      DevicePtr(DevicePtr<inputType> const &input) : DevicePtrImpl<Type>(input.GetPtr()) {}
 
    // Disallow conversion from const to non-const.
    template <typename inputType,
@@ -204,7 +259,7 @@ public:
 };
 
 template <typename Type>
-class DevicePtr<const Type> : private DevicePtrBase
+class DevicePtr<const Type> : private DevicePtrImpl<const Type>
 {
 public:
    DevicePtr() = default;
