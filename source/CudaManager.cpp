@@ -18,30 +18,29 @@
 namespace vecgeom {
 inline namespace cxx {
 
-CudaManager::CudaManager() {
+CudaManager::CudaManager() : world_gpu_() {
   synchronized = true;
   world_ = NULL;
-  world_gpu_ = NULL;
   verbose_ = 0;
   total_volumes = 0;
 }
 
 VPlacedVolume const* CudaManager::world() const {
-  assert(world_ != NULL);
+  assert(world_ != nullptr);
   return world_;
 }
 
 vecgeom::cuda::VPlacedVolume const* CudaManager::world_gpu() const {
-  assert(world_gpu_ != NULL);
+  assert(world_gpu_ != nullptr);
   return world_gpu_;
 }
 
-vecgeom::cuda::VPlacedVolume const* CudaManager::Synchronize() {
+vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize() {
 
   if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n";
 
   // Will return null if no geometry is loaded
-  if (synchronized) return world_gpu_;
+  if (synchronized) return vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume>(world_gpu_);
 
   CleanGpu();
 
@@ -111,9 +110,12 @@ vecgeom::cuda::VPlacedVolume const* CudaManager::Synchronize() {
       daughter_array[j] = LookupPlaced(*k);
       j++;
     }
-    vecgeom::CopyToGpu(
-       &(daughter_array[0]), LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
-    );
+    DevicePtr<CudaDaughter_t> daughter_array_gpu( LookupDaughterArray(*i) );
+    //daughter_array_gpu.Allocate( daughter_count );
+    daughter_array_gpu.ToDevice( &(daughter_array[0]), daughter_count);
+    // vecgeom::CopyToGpu(
+    //    daughter_array_gpu, LookupDaughterArray(*i), daughter_count*sizeof(Daughter)
+    // );
 
     // Create array object wrapping newly copied C arrays
     (*i)->CopyToGpu(LookupDaughterArray(*i), LookupDaughters(*i));
@@ -123,9 +125,7 @@ vecgeom::cuda::VPlacedVolume const* CudaManager::Synchronize() {
 
   synchronized = true;
 
-  world_gpu_ = reinterpret_cast<vecgeom::cuda::VPlacedVolume *>(
-    LookupPlaced(world_)
-  );
+  world_gpu_ = LookupPlaced(world_);
 
   if (verbose_ > 0) std::cout << "Geometry synchronized to GPU.\n";
 
@@ -171,7 +171,7 @@ void CudaManager::CleanGpu() {
   allocated_memory_.clear();
   memory_map.clear();
 
-  world_gpu_ = NULL;
+  world_gpu_ = vecgeom::DevicePtr<vecgeom::cuda::VPlacedVolume>();
   synchronized = false;
 
   if (verbose_ > 1) std::cout << " OK\n";
@@ -329,35 +329,35 @@ typename CudaManager::GpuAddress CudaManager::Lookup(
   return output;
 }
 
-DevicePtr<VUnplacedVolume> CudaManager::LookupUnplaced(
+DevicePtr<cuda::VUnplacedVolume> CudaManager::LookupUnplaced(
     VUnplacedVolume const *const host_ptr) {
-  return DevicePtr<VUnplacedVolume>(Lookup(host_ptr));
+  return DevicePtr<cuda::VUnplacedVolume>(Lookup(host_ptr));
 }
 
-DevicePtr<LogicalVolume> CudaManager::LookupLogical(
+DevicePtr<cuda::LogicalVolume> CudaManager::LookupLogical(
     LogicalVolume const *const host_ptr) {
-  return DevicePtr<LogicalVolume>(Lookup(host_ptr));
+  return DevicePtr<cuda::LogicalVolume>(Lookup(host_ptr));
 }
 
-DevicePtr<VPlacedVolume> CudaManager::LookupPlaced(
+DevicePtr<cuda::VPlacedVolume> CudaManager::LookupPlaced(
     VPlacedVolume const *const host_ptr) {
-  return DevicePtr<VPlacedVolume>(Lookup(host_ptr));
+  return DevicePtr<cuda::VPlacedVolume>(Lookup(host_ptr));
 }
 
-DevicePtr<Transformation3D> CudaManager::LookupTransformation(
+DevicePtr<cuda::Transformation3D> CudaManager::LookupTransformation(
     Transformation3D const *const host_ptr) {
-  return DevicePtr<Transformation3D>(Lookup(host_ptr));
+  return DevicePtr<cuda::Transformation3D>(Lookup(host_ptr));
 }
 
-DevicePtr<cuda::Vector<CudaDaughter_t> > CudaManager::LookupDaughters(
+DevicePtr<cuda::Vector<CudaManager::CudaDaughter_t> > CudaManager::LookupDaughters(
     Vector<Daughter> *const host_ptr) {
-  return static_cast<Vector<Daughter>*>(Lookup(host_ptr));
+  return DevicePtr<cuda::Vector<CudaManager::CudaDaughter_t> >(Lookup(host_ptr));
 }
 
-DevicePtr<CudaDaughter_t> CudaManager::LookupDaughterArray(
+DevicePtr<CudaManager::CudaDaughter_t> CudaManager::LookupDaughterArray(
     Vector<Daughter> *const host_ptr) {
   Vector<Daughter> const *const daughters_ = LookupDaughters(host_ptr);
-  return static_cast<Daughter*>(Lookup(daughters_));
+  return DevicePtr<cuda::Vector<CudaManager::CudaDaughter_t> >(Lookup(daughters_));
 }
 
 void CudaManager::PrintGeometry() const {

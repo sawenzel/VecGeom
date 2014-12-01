@@ -59,11 +59,11 @@ private:
   std::set<Vector<Daughter_t> *> daughters_;
 
   typedef void const* CpuAddress;
-  typedef void* GpuAddress;
+  typedef DevicePtr<void> GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
 
   VPlacedVolume const *world_;
-  vecgeom::cuda::VPlacedVolume *world_gpu_;
+  DevicePtr<vecgeom::cuda::VPlacedVolume> world_gpu_;
 
   /**
    * Contains a mapping between objects stored in host memory and pointers to
@@ -102,7 +102,7 @@ public:
    * creating new objects with correct pointers, then copying them to the GPU.
    * \return Pointer to top volume on the GPU.
    */
-  vecgeom::cuda::VPlacedVolume const* Synchronize();
+  DevicePtr<const vecgeom::cuda::VPlacedVolume> Synchronize();
 
   /**
    * Deallocates all GPU pointers stored in the memory table.
