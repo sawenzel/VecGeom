@@ -157,8 +157,14 @@ public:
         stepMax,
         output
       );
+
   #ifdef VECGEOM_DISTANCE_DEBUG
-      DistanceComparator::CompareDistanceToOut( this, output, point, direction, stepMax );
+      DistanceComparator::CompareDistanceToOut(
+              this,
+              output,
+              this->transformation()->Transform(point),
+              this->transformation()->TransformDirection(direction),
+              stepMax );
   #endif
       return output;
     }
