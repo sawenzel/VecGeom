@@ -13,7 +13,50 @@
 
 #include <type_traits>
 
-namespace vecgeom { namespace cxx {
+namespace vecgeom { 
+
+#ifdef VECGEOM_NVCC
+
+inline namespace cuda {
+
+template <typename DataClass, typename... ArgsTypes>
+__global__
+void ConstructOnGpu(DataClass *const gpu_ptr, ArgsTypes... params) {
+   new (gpu_ptr) DataClass(params...);
+}
+
+template <typename DataClass, typename... ArgsTypes>
+void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
+{
+   ConstructOnGpu<<<1, 1>>>(gpu_ptr, params...);
+}
+
+} // End cuda namespace
+
+namespace cxx {
+
+template <typename Type>
+Type* AllocateOnDevice() {
+  Type *ptr;
+  vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&ptr, sizeof(Type)));
+  return ptr;
+}
+
+} // End cxx namespace
+
+#else
+
+namespace cuda {
+
+template <typename Type> Type* AllocateOnDevice();
+template <typename DataClass, typename... ArgsTypes>
+void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params);
+
+} // End cuda namespace
+
+#endif
+
+namespace cxx {
 
 template <typename Type> class SOA3D;
 template <typename Type> class AOS3D;
@@ -93,6 +136,12 @@ protected:
    void Malloc(unsigned long size) {
       vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
    }
+   void Free() {
+      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaFree((void**)&fPtr));
+   }
+   void Increment(long add) {
+      fPtr = (char*)fPtr + add;
+   }
 public:
    DevicePtrBase() : fPtr(0) {}
    explicit DevicePtrBase(void *input) : fPtr(input) {}
@@ -129,32 +178,29 @@ public:
       DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase(input.GetPtr()) {}
 
    // Disallow conversion from const to non-const.
-   template <typename const inputType,
+   template <typename inputType,
       typename std::enable_if<std::is_base_of<Type, inputType>::value>::type* = nullptr>
       DevicePtr(DevicePtr<const inputType> const &input) = delete;
 #endif
 
-   void Allocate(unsigned long nelems = 1) {
-      Malloc(nelems*SizeOf());
+#ifdef VECGEOM_NVCC
+   template <typename DataClass, typename... ArgsTypes>
+   void Construct(ArgsTypes... params) const
+   {
+      ConstructOnGpu<<<1, 1>>>(*(*this), params...);
    }
 
+   static size_t SizeOf()
+   {
+      return sizeof<DataClass>;
+   }
+
+#else
    template <typename... ArgsTypes>
    void Construct(ArgsTypes... params) const;
 
-   void ToDevice(const Type* what, unsigned long nelems = 1) {
-      MemcpyToDevice(what,nelems*SizeOf());
-   }
-   void FromDevice(Type* where,cudaStream_t stream) {
-      // Async since we past a stream.
-      MemcpyToHostAsync(where,SizeOf(),stream);
-   }
-   void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
-      // Async since we past a stream.
-      MemcpyToHostAsync(where,nelems*SizeOf(),stream);
-   }
-   operator Type*() const { return reinterpret_cast<Type*>(GetPtr()); }
-
    static size_t SizeOf();
+#endif
 };
 
 template <typename Type>
@@ -173,94 +219,40 @@ public:
    // does not actually see the declaration for the cuda version
    // (and thus can not determine the inheritance).
    template <typename inputType>
-      explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase((void*)input) {}
+      explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrImpl<const Type>((void*)input) {}
 
    // Implicit conversion from non-const to const.
-   DevicePtr(DevicePtr<typename std::remove_const<Type>::type > const &input) : DevicePtrBase((void*)input) {}
+   DevicePtr(DevicePtr<typename std::remove_const<Type>::type > const &input) : DevicePtrImpl<const Type>((void*)input) {}
  
 #ifdef VECGEOM_NVCC
    // Allows implicit conversion from DevicePtr<Derived> to DevicePtr<Base>
    template <typename inputType,
       typename std::enable_if<std::is_base_of<Type, inputType>::value>::type* = nullptr>
-      DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase(input.GetPtr()) {}
+      DevicePtr(DevicePtr<inputType> const &input) : DevicePtrImpl<const Type>(input.GetPtr()) {}
 #endif
 
-   void Allocate(unsigned long nelems = 1) {
-      Malloc(nelems*SizeOf());
+#ifdef VECGEOM_NVCC
+   template <typename DataClass, typename... ArgsTypes>
+   void Construct(ArgsTypes... params) const
+   {
+      ConstructOnGpu<<<1, 1>>>(*(*this), params...);
    }
 
+   static size_t SizeOf()
+   {
+      return sizeof<DataClass>;
+   }
+
+#else
    template <typename... ArgsTypes>
    void Construct(ArgsTypes... params) const;
 
-   void ToDevice(const Type* what, unsigned long nelems = 1) {
-      MemcpyToDevice(what,nelems*SizeOf());
-   }
-   void FromDevice(Type* where,cudaStream_t stream) {
-      // Async since we past a stream.
-      MemcpyToHostAsync(where,SizeOf(),stream);
-   }
-   void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
-      // Async since we past a stream.
-      MemcpyToHostAsync(where,nelems*SizeOf(),stream);
-   }
-   operator Type*() const { return reinterpret_cast<Type*>(GetPtr()); }
-
    static size_t SizeOf();
+#endif
 };
 
 
 } // End cxx namespace
-
-#ifdef VECGEOM_NVCC
-
-inline namespace cuda {
-
-using vecgeom::cxx::CudaAssertError;
-using vecgeom::cxx::CudaMalloc;
-
-template <typename Type>
-Type* AllocateOnDevice() {
-  Type *ptr;
-  vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&ptr, sizeof(Type)));
-  return ptr;
-}
-
-template <typename DataClass, typename... ArgsTypes>
-__global__
-void ConstructOnGpu(DataClass *const gpu_ptr, ArgsTypes... params) {
-   new (gpu_ptr) DataClass(params...);
-}
-
-template <typename DataClass, typename... ArgsTypes>
-void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
-{
-   ConstructOnGpu<<<1, 1>>>(gpu_ptr, params...);
-}
-
-template <typename DataClass, typename... ArgsTypes>
-void DevicePtr::Construct(ArgsTypes... params) const
-{
-   ConstructOnGpu<<<1, 1>>>(*(*this), params...);
-}
-
-template <typename DataClass> size_t DevicePtr::SizeOf()
-{
-   return sizeof<DataClass>;
-}
-
-} // End cuda namespace
-
-#else // VECGEOM_NVCC
-
-namespace cuda {
-
-template <typename Type> Type* AllocateOnDevice();
-template <typename DataClass, typename... ArgsTypes>
-void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params);
-
-} // End cuda namespace
-
-#endif // VECGEOM_NVCC
 
 } // End vecgeom namespace
 
