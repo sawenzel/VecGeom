@@ -233,12 +233,12 @@ DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu() const {
 
 namespace cxx {
 
-template void DevicePtr<cuda::Transformation3D>::SizeOf();
+template size_t DevicePtr<cuda::Transformation3D>::SizeOf();
 template void DevicePtr<cuda::Transformation3D>::Construct(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
-    const Precision r6, const Precision r7, const Precision r8);
+    const Precision r6, const Precision r7, const Precision r8) const;
 
 } // End cxx namespace
 

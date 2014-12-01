@@ -7,6 +7,8 @@ namespace vecgeom {
 
 #ifdef VECGEOM_NVCC
 
+inline namespace cuda { class VPlacedVolume; }
+
 namespace cxx {
 
 template size_t DevicePtr<cuda::Vector<Precision> >::SizeOf();

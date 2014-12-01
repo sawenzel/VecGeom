@@ -169,13 +169,19 @@ DevicePtr<cuda::LogicalVolume> LogicalVolume::CopyToGpu(
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+} // End impl namespace
+
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::LogicalVolume>::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::LogicalVolume>::SizeOf();
 template void DevicePtr<cuda::LogicalVolume>::Construct(
     DevicePtr<cuda::VUnplacedVolume> const,
-    DevicePtr<cuda::Vector<cuda::VPlacedVolume const*>>);
+    DevicePtr<cuda::Vector<cuda::VPlacedVolume const*>>) const;
+
+}
 
 #endif // VECGEOM_NVCC
 
-} } // End global namespace
+} // End global namespace
