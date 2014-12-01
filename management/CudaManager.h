@@ -59,8 +59,9 @@ private:
   std::set<Vector<Daughter_t> *> daughters_;
 
   typedef void const* CpuAddress;
-  typedef DevicePtr<void> GpuAddress;
+  typedef DevicePtr<char> GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
+  typedef std::map<GpuAddress, GpuAddress> GpuMemoryMap;
 
   VPlacedVolume const *world_;
   DevicePtr<vecgeom::cuda::VPlacedVolume> world_gpu_;
@@ -74,7 +75,8 @@ private:
    * \sa CleanGpu()
    */
   MemoryMap memory_map;
-  std::list<void*> allocated_memory_;
+  GpuMemoryMap gpu_memory_map;
+  std::list<GpuAddress> allocated_memory_;
 
 public:
 
@@ -132,6 +134,9 @@ public:
   template <typename Type>
   GpuAddress Lookup(Type const *const key);
 
+  template <typename Type>
+  GpuAddress Lookup(DevicePtr<Type> key);
+
   DevicePtr<cuda::VUnplacedVolume> LookupUnplaced(
       VUnplacedVolume const *const host_ptr);
 
@@ -172,15 +177,6 @@ private:
   template <typename Type>
   CpuAddress ToCpuAddress(Type const *const ptr) const {
     return static_cast<CpuAddress>(ptr);
-  }
-
-  /**
-   * Converts object pointers to void pointers so they can be stored in
-   * the memory table.
-   */
-  template <typename Type>
-  GpuAddress ToGpuAddress(Type *const ptr) const {
-    return static_cast<GpuAddress>(ptr);
   }
 
   // template <typename TrackContainer>

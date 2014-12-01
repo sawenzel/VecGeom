@@ -166,10 +166,11 @@ void CudaManager::CleanGpu() {
 
   for (auto i = allocated_memory_.begin(), i_end = allocated_memory_.end();
        i != i_end; ++i) {
-    FreeFromGpu(*i);
+    i->Deallocate();
   }
   allocated_memory_.clear();
   memory_map.clear();
+  gpu_memory_map.clear();
 
   world_gpu_ = vecgeom::DevicePtr<vecgeom::cuda::VPlacedVolume>();
   synchronized = false;
@@ -185,17 +186,14 @@ void CudaManager::AllocateGeometry() {
   {
     if (verbose_ > 2) std::cout << "Allocating logical volumes...";
 
-    LogicalVolume *gpu_array =
-        AllocateOnGpu<LogicalVolume>(
-          logical_volumes_.size()*sizeof(LogicalVolume)
-        );
-    allocated_memory_.push_back(gpu_array);
+    DevicePtr<cuda::LogicalVolume> gpu_array;
+    gpu_array.Allocate(logical_volumes_.size());
+    allocated_memory_.push_back(DevicePtr<char>(gpu_array));
 
     for (std::set<LogicalVolume const*>::const_iterator i =
          logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
-      memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
-      gpu_array++;
-
+      memory_map[ToCpuAddress(*i)] = DevicePtr<char>(gpu_array);
+      ++gpu_array;
     }
 
     if (verbose_ > 2) std::cout << " OK\n";
@@ -207,8 +205,8 @@ void CudaManager::AllocateGeometry() {
     for (std::set<VUnplacedVolume const*>::const_iterator i =
          unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
 
-      const GpuAddress gpu_address =
-          AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+      GpuAddress gpu_address;
+      gpu_address.Allocate((*i)->DeviceSizeOf());
       allocated_memory_.push_back(gpu_address);
       memory_map[ToCpuAddress(*i)] = gpu_address;
 
@@ -223,8 +221,8 @@ void CudaManager::AllocateGeometry() {
     for (std::set<VPlacedVolume const*>::const_iterator i =
          placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
-      const GpuAddress gpu_address =
-          AllocateOnGpu<GpuAddress*>((*i)->memory_size());
+      GpuAddress gpu_address;
+      gpu_address.Allocate((*i)->DeviceSizeOf());
       allocated_memory_.push_back(gpu_address);
       memory_map[ToCpuAddress(*i)] = gpu_address;
 
@@ -239,10 +237,10 @@ void CudaManager::AllocateGeometry() {
     for (std::set<Transformation3D const*>::const_iterator i =
          transformations_.begin(); i != transformations_.end(); ++i) {
 
-      const GpuAddress gpu_address =
-          AllocateOnGpu<Transformation3D>((*i)->memory_size());
+      GpuAddress gpu_address;
+      gpu_address.Allocate((*i)->DeviceSizeOf());
       allocated_memory_.push_back(gpu_address);
-      memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_address);
+      memory_map[ToCpuAddress(*i)] = gpu_address;
     }
 
     if (verbose_ > 2) std::cout << " OK\n";
@@ -251,22 +249,21 @@ void CudaManager::AllocateGeometry() {
   {
     if (verbose_ > 2) std::cout << "Allocating daughter lists...";
 
-    Vector<Daughter> *gpu_array =
-        AllocateOnGpu<Vector<Daughter> >(
-          daughters_.size()*sizeof(Vector<Daughter>)
-        );
-    allocated_memory_.push_back(gpu_array);
+    DevicePtr<cuda::Vector<CudaDaughter_t> > gpu_array;
+    gpu_array.Allocate(daughters_.size());
+    allocated_memory_.push_back(GpuAddress(gpu_array));
 
-    Daughter *gpu_c_array =
-        AllocateOnGpu<Daughter>(total_volumes*sizeof(Daughter));
-    allocated_memory_.push_back(gpu_c_array);
+    
+    DevicePtr<CudaDaughter_t> gpu_c_array;
+    gpu_c_array.Allocate(total_volumes);
+    allocated_memory_.push_back(GpuAddress(gpu_c_array));
 
     for (std::set<Vector<Daughter> *>::const_iterator i =
          daughters_.begin(); i != daughters_.end(); ++i) {
 
-      memory_map[ToCpuAddress(*i)] = ToGpuAddress(gpu_array);
-      memory_map[ToCpuAddress(gpu_array)] = ToGpuAddress(gpu_c_array);
-      gpu_array++;
+      memory_map[ToCpuAddress(*i)] = GpuAddress(gpu_array);
+      gpu_memory_map[GpuAddress(gpu_array)] = GpuAddress(gpu_c_array);
+      ++gpu_array;
       gpu_c_array += (*i)->size();
 
     }
@@ -325,7 +322,16 @@ typename CudaManager::GpuAddress CudaManager::Lookup(
     Type const *const key) {
   const CpuAddress cpu_address = ToCpuAddress(key);
   GpuAddress output = memory_map[cpu_address];
-  assert(output != NULL);
+  assert(output != nullptr);
+  return output;
+}
+
+template <typename Type>
+typename CudaManager::GpuAddress CudaManager::Lookup(
+    DevicePtr<Type> key) {
+  GpuAddress gpu_address(key);
+  GpuAddress output = gpu_memory_map[gpu_address];
+  assert(output != nullptr);
   return output;
 }
 
@@ -356,8 +362,8 @@ DevicePtr<cuda::Vector<CudaManager::CudaDaughter_t> > CudaManager::LookupDaughte
 
 DevicePtr<CudaManager::CudaDaughter_t> CudaManager::LookupDaughterArray(
     Vector<Daughter> *const host_ptr) {
-  Vector<Daughter> const *const daughters_ = LookupDaughters(host_ptr);
-  return DevicePtr<cuda::Vector<CudaManager::CudaDaughter_t> >(Lookup(daughters_));
+  GpuAddress daughters_(LookupDaughters(host_ptr));
+  return DevicePtr<CudaManager::CudaDaughter_t>(Lookup(daughters_));
 }
 
 void CudaManager::PrintGeometry() const {
