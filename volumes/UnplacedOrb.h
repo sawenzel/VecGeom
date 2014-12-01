@@ -138,6 +138,7 @@ public:
   #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedOrb>::SizeOf(); }
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif

@@ -170,6 +170,7 @@ public:
 #endif // VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::PlacedParaboloid>::SizeOf(); }
   virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
                                                    DevicePtr<cuda::Transformation3D> const transform,
                                                    DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const;

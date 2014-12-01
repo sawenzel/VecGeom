@@ -119,6 +119,7 @@ public:
   virtual int memory_size() const { return sizeof(*this); }
 
 #ifdef VECGEOM_CUDA_INTERFACE
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::PlacedBox>::SizeOf(); }
   virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
                                                    DevicePtr<cuda::Transformation3D> const transform,
                                                    DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const;

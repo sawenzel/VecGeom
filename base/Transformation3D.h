@@ -311,6 +311,7 @@ public:
   // Utility and CUDA
 
 #ifdef VECGEOM_CUDA_INTERFACE
+  size_t DeviceSizeOf() const { return DevicePtr<cuda::Transformation3D>::SizeOf(); }
   DevicePtr<cuda::Transformation3D> CopyToGpu() const;
   DevicePtr<cuda::Transformation3D> CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const;
 #endif

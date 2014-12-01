@@ -50,6 +50,7 @@ public:
    * memory where the object has been instantiated.
    */
 #ifdef VECGEOM_CUDA_INTERFACE
+  virtual size_t DeviceSizeOf() const = 0;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const =0;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const =0;
 
@@ -57,7 +58,7 @@ public:
   DevicePtr<cuda::VUnplacedVolume> CopyToGpuImpl(DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr,
                                                  ArgsTypes... params) const
   {
-     DevicePtr<Derived> gpu_ptr(in_gpu_ptr);
+     DevicePtr<CudaType_t<Derived> > gpu_ptr(in_gpu_ptr);
      gpu_ptr.Construct(params...);
      CudaAssertError();
      // Need to go via the void* because the regular c++ compilation
@@ -68,7 +69,7 @@ public:
   template <typename Derived>
   DevicePtr<cuda::VUnplacedVolume> CopyToGpuImpl() const
   {
-     DevicePtr<Derived> gpu_ptr;
+     DevicePtr<CudaType_t<Derived> > gpu_ptr;
      gpu_ptr.Allocate();
      return this->CopyToGpu(DevicePtr<cuda::VUnplacedVolume>((void*)gpu_ptr));
   }

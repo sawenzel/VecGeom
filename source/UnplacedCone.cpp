@@ -198,7 +198,9 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedCone::CopyToGpu() const
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::UnplacedCone>::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::UnplacedCone>::SizeOf();
 template void DevicePtr<cuda::UnplacedCone>::Construct(
     const Precision rmin1, const Precision rmax1,
     const Precision rmin2, const Precision rmax2,

@@ -251,6 +251,7 @@ public:
 public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
+  virtual size_t DeviceSizeOf() const = 0;
   virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
                                                    DevicePtr<cuda::Transformation3D> const transform,
                                                    DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const =0;
