@@ -30,6 +30,7 @@
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
   #define VECGEOM_CUDA_HEADER_GLOBAL __global__
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)
+  #define VECGEOM_DEVICE_DECLARE_CONV(X)
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
