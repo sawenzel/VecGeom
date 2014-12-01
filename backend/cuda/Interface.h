@@ -118,6 +118,66 @@ public:
    template <typename inputType>
       explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase((void*)input) {}
 
+   // Disallow conversion from const to non-const.
+   DevicePtr(DevicePtr<const Type> const &input, 
+      typename std::enable_if<!std::is_const<Type>::value, Type>::type * = nullptr) = delete;
+
+#ifdef VECGEOM_NVCC
+   // Allows implicit conversion from DevicePtr<Derived> to DevicePtr<Base>
+   template <typename inputType,
+      typename std::enable_if<std::is_base_of<Type, inputType>::value>::type* = nullptr>
+      DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase(input.GetPtr()) {}
+
+   // Disallow conversion from const to non-const.
+   template <typename const inputType,
+      typename std::enable_if<std::is_base_of<Type, inputType>::value>::type* = nullptr>
+      DevicePtr(DevicePtr<const inputType> const &input) = delete;
+#endif
+
+   void Allocate(unsigned long nelems = 1) {
+      Malloc(nelems*SizeOf());
+   }
+
+   template <typename... ArgsTypes>
+   void Construct(ArgsTypes... params) const;
+
+   void ToDevice(const Type* what, unsigned long nelems = 1) {
+      MemcpyToDevice(what,nelems*SizeOf());
+   }
+   void FromDevice(Type* where,cudaStream_t stream) {
+      // Async since we past a stream.
+      MemcpyToHostAsync(where,SizeOf(),stream);
+   }
+   void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
+      // Async since we past a stream.
+      MemcpyToHostAsync(where,nelems*SizeOf(),stream);
+   }
+   operator Type*() const { return reinterpret_cast<Type*>(GetPtr()); }
+
+   static size_t SizeOf();
+};
+
+template <typename Type>
+class DevicePtr<const Type> : private DevicePtrBase
+{
+public:
+   DevicePtr() = default;
+   DevicePtr(const DevicePtr&) = default;
+   DevicePtr &operator=(const DevicePtr&orig) = default;
+
+   // should be taking a DevicePtr<void*>
+   explicit DevicePtr(void *input) : DevicePtrBase(input) {}
+
+   // Need to go via the explicit route accepting all conversion
+   // because the regular c++ compilation
+   // does not actually see the declaration for the cuda version
+   // (and thus can not determine the inheritance).
+   template <typename inputType>
+      explicit DevicePtr(DevicePtr<inputType> const &input) : DevicePtrBase((void*)input) {}
+
+   // Implicit conversion from non-const to const.
+   DevicePtr(DevicePtr<typename std::remove_const<Type>::type > const &input) : DevicePtrBase((void*)input) {}
+ 
 #ifdef VECGEOM_NVCC
    // Allows implicit conversion from DevicePtr<Derived> to DevicePtr<Base>
    template <typename inputType,
@@ -147,6 +207,7 @@ public:
 
    static size_t SizeOf();
 };
+
 
 } // End cxx namespace
 
