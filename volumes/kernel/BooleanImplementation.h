@@ -13,7 +13,9 @@ namespace VECGEOM_NAMESPACE {
 
 template <BooleanOperation boolOp, TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation {
-// empty since functionality will be implemented in
+    static const int transC = transCodeT;
+    static const int rotC   = rotCodeT;
+    // empty since functionality will be implemented in
 // partially template specialized structs
 };
 
@@ -27,6 +29,10 @@ struct BooleanImplementation {
  */
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation<kSubtraction, transCodeT, rotCodeT> {
+
+   static const int transC = transCodeT;
+   static const int rotC   = rotCodeT;
+
 
   //
   template<typename Backend>
@@ -360,7 +366,9 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
 
   if ( fPtrSolidB->Contains(p) )   // start: out of B if inside B
      {
-       dist = fPtrSolidB->DistanceToOut(p,v) ; // ,calcNorm,validNorm,n) ;
+
+       dist = fPtrSolidB->DistanceToOut(
+               fPtrSolidB->transformation()->Transform(p), v ) ; // ,calcNorm,validNorm,n) ;
 
        if( ! fPtrSolidA->Contains(p+dist*v) ){
          int count1=0;
@@ -374,11 +382,12 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
           }
           dist += disTmp ;
 
-          // Contains is the one from this solid
+          // Contains is the one from this boolean solid
           UnplacedContains<Backend>( unplaced, p+dist*v, contains );
           if( IsEmpty(contains) ) /* if not contained */
           {
-            disTmp = fPtrSolidB->DistanceToOut(p+dist*v,v) ;
+            disTmp = fPtrSolidB->DistanceToOut(
+                    fPtrSolidB->transformation()->Transform(p+dist*v),v) ;
             dist += disTmp ;
             count1++;
             if( count1 > 1000 )  // Infinite loop detected
@@ -391,7 +400,7 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
         while( IsEmpty(contains) );
        }
     }
-  else // p outside A, start in A
+  else // p outside B and of A;
     {
        dist = fPtrSolidA->DistanceToIn(p,v) ;
 
@@ -407,8 +416,10 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
          UnplacedContains<Backend>(unplaced, p+dist*v, contains);
          while( IsEmpty(contains) )  // pushing loop
          {
-           disTmp = fPtrSolidB->DistanceToOut(p+dist*v,v) ;
+           disTmp = fPtrSolidB->DistanceToOut(
+                   fPtrSolidB->transformation()->Transform(p+dist*v),v) ;
            dist += disTmp ;
+           dist += kTolerance;
 
            UnplacedContains<Backend>(unplaced, p+dist*v, contains);
            if( IsEmpty(contains) )

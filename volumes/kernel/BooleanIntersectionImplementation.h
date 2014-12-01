@@ -17,7 +17,8 @@ namespace VECGEOM_NAMESPACE {
  */
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation<kIntersection, transCodeT, rotCodeT> {
-
+    static const int transC = transCodeT;
+       static const int rotC   = rotCodeT;
   //
   template<typename Backend>
   VECGEOM_INLINE

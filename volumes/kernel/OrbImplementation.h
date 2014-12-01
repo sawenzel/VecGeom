@@ -17,6 +17,11 @@ namespace VECGEOM_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct OrbImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+
     
 template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH

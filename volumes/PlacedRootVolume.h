@@ -98,6 +98,12 @@ public:
                                   Vector3D<Precision> const &direction,
                                   Precision const stepMax) const;
 
+
+  virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &position,
+                                    Vector3D<Precision> const &direction,
+                                    Precision const stepMax) const;
+
+
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                              SOA3D<Precision> const &direction,
                              Precision const *const step_max,
@@ -201,6 +207,19 @@ VECGEOM_INLINE
 Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position,
                                           Vector3D<Precision> const &direction,
                                           const Precision stepMax) const {
+  return fRootShape->DistFromInside(
+           &position[0],
+           &direction[0],
+           1,
+           (stepMax == kInfinity) ? TGeoShape::Big() : stepMax
+         );
+}
+
+
+VECGEOM_INLINE
+Precision PlacedRootVolume::PlacedDistanceToOut(Vector3D<Precision> const &position,
+                                          Vector3D<Precision> const &direction,
+                                          const Precision stepMax) const {
   Vector3D<Precision> positionLocal =
       this->transformation_->Transform(position);
   Vector3D<Precision> directionLocal =
@@ -212,6 +231,7 @@ Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position,
            (stepMax == kInfinity) ? TGeoShape::Big() : stepMax
          ); 
 }
+
 
 VECGEOM_INLINE
 Precision PlacedRootVolume::SafetyToOut(

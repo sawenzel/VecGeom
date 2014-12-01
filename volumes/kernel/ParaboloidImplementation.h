@@ -61,6 +61,10 @@ namespace VECGEOM_NAMESPACE {
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParaboloidImplementation {
 
+    static const int transC = transCodeT;
+    static const int rotC   = rotCodeT;
+
+
     /// \brief Inside method that takes account of the surface for an Unplaced Paraboloid
     template <class Backend>
     VECGEOM_INLINE

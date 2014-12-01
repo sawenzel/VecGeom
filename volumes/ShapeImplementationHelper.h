@@ -144,6 +144,27 @@ public:
   }
 
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point,
+                                        Vector3D<Precision> const &direction,
+                                        const Precision stepMax = kInfinity) const {
+     Precision output = kInfinity;
+     Transformation3D const * t = this->transformation();
+     Specialization::template DistanceToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        t->Transform< Specialization::transC, Specialization::rotC, Precision>(point),
+        t->TransformDirection< Specialization::rotC, Precision>(direction),
+        stepMax,
+        output
+      );
+  #ifdef VECGEOM_DISTANCE_DEBUG
+      DistanceComparator::CompareDistanceToOut( this, output, point, direction, stepMax );
+  #endif
+      return output;
+    }
+
+
+
 #ifdef VECGEOM_USOLIDS
   /*
    * WARNING: Trivial implementation for standard USolids interface

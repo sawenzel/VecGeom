@@ -212,6 +212,9 @@ static void UnplacedInside(
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
 struct TrdImplementation {
 
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
   template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

@@ -22,6 +22,10 @@ namespace VECGEOM_NAMESPACE {
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation<kUnion, transCodeT, rotCodeT> {
 
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+
   //
   template<typename Backend>
   VECGEOM_INLINE
@@ -358,6 +362,7 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
 
     Float_t dist = 0., disTmp = 0.;
     int count1=0, count2=0;
+    int push=0;
     // std::cout << "##VECGEOMSTART\n";
     typename Backend::Bool_t positionA = fPtrSolidA->Contains(p);
     if( positionA )
@@ -365,18 +370,18 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
       do
        {
          //count1++;
-	 // we don't need a transformation here
+	    // we don't need a transformation here
          disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v);
          // distTmp
-	 //   std::cout << "VecdistTmp1 " << disTmp << "\n";
+	    //   std::cout << "VecdistTmp1 " << disTmp << "\n";
          dist += ( disTmp >= 0. && disTmp < kInfinity )? disTmp : 0;
-	 // give a push
-	 dist += kTolerance;
+	    // give a push
+	    dist += kTolerance;
+	 push++;
 
          if( fPtrSolidB->Contains(p+dist*v) )
          {
-            disTmp = fPtrSolidB->DistanceToOut(
-                        fPtrSolidB->transformation()->Transform(p+dist*v),v);
+            disTmp = fPtrSolidB->PlacedDistanceToOut(p+dist*v,v);
 	    // std::cout << "VecdistTmp2 " << disTmp << "\n";
 	    dist += ( disTmp >= 0. && disTmp < kInfinity )? disTmp : 0;
              //dist += (disTmp>=0.)? disTmp : 0.;
@@ -391,30 +396,28 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
     {
       do
       {
-        count2++;
-	disTmp = fPtrSolidB->DistanceToOut(
-                   fPtrSolidB->transformation()->Transform(p+dist*v),v);
-	//  std::cout << "VecdistTmp3 " << disTmp << "\n";
+	    disTmp = fPtrSolidB->PlacedDistanceToOut(p+dist*v,v);
+    	//  std::cout << "VecdistTmp3 " << disTmp << "\n";
         //dist += disTmp ;
         dist += (disTmp>=0. && disTmp<kInfinity)? disTmp : 0.;
-	dist += kTolerance;
-
+	    dist += kTolerance;
+	    push++;
         if( fPtrSolidA->Contains(p+dist*v) )
-           {
+        {
              disTmp = fPtrSolidA->DistanceToOut(p+dist*v,v);
              //std::cerr << "distTmp4 " << disTmp;
 	     //   std::cout << "VecdistTmp4 " << disTmp << "\n";
              dist += disTmp ;
 	     //dist += (disTmp>=0.)? disTmp : 0.;
-           }
+        }
 
-        if(count2 > 100){
-             std::cerr << "LOOP2 INFINITY\n"; break; }
+	//        if(count2 > 100){
+        //     std::cerr << "LOOP2 INFINITY\n"; break; }
       }
       while(fPtrSolidB->Contains(p+dist*v) );
     }
     //  std::cerr << "--VecGeom return " << dist << "\n";
-    distance = dist;
+    distance = dist - push*kTolerance;
     return;
 }
 

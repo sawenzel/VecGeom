@@ -192,6 +192,16 @@ public:
       Vector3D<Precision> const &direction,
       Precision const step_max = kInfinity) const =0;
 
+
+  // a "placed" version of the distancetoout function; here
+  // the point and direction are first of all transformed into the reference frame of the
+  // callee. The normal DistanceToOut method does not do this
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision PlacedDistanceToOut(
+      Vector3D<Precision> const &position,
+      Vector3D<Precision> const &direction,
+      Precision const step_max = kInfinity) const = 0;
+
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                              SOA3D<Precision> const &direction,
                              Precision const *const step_max,

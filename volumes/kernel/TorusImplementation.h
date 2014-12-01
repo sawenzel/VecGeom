@@ -551,6 +551,10 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
   
+   static const int transC = transCodeT;
+   static const int rotC   = rotCodeT;
+
+
   /////GenericKernel Contains/Inside implementation
   template <typename Backend, bool ForInside, bool notForDisk>
   VECGEOM_INLINE

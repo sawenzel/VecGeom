@@ -17,6 +17,9 @@ namespace VECGEOM_NAMESPACE {
 template <typename LeftPlacedType_t, typename RightPlacedType_t, TranslationCode transCodeT, RotationCode rotCodeT>
 struct TBooleanMinusImplementation {
 
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
   //
   template<typename Backend>
   VECGEOM_INLINE

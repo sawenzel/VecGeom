@@ -21,7 +21,7 @@ namespace VECGEOM_NAMESPACE {
  * are dispatched to loops over scalar implementations
  *
  */
-template <class Shape, class Specialization>
+template <class Shape, typename Specialization>
 class ScalarShapeImplementationHelper : public Shape {
 
 public:
@@ -132,6 +132,27 @@ public:
     );
     return output;
   }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point,
+                                        Vector3D<Precision> const &direction,
+                                        const Precision stepMax = kInfinity) const {
+     Transformation3D const* t = this->transformation();
+
+     Precision output = kInfinity;
+     Specialization::template DistanceToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        t->Transform< Specialization::transC, Specialization::rotC, Precision>(point),
+        t->TransformDirection< Specialization::rotC, Precision>(direction),
+        stepMax,
+        output);
+
+    #ifdef VECGEOM_DISTANCE_DEBUG
+        DistanceComparator::CompareDistanceToOut( this, output, point, direction, stepMax );
+    #endif
+
+    return output;
+   }
 
 
 #ifdef VECGEOM_USOLIDS

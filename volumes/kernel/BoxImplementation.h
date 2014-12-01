@@ -14,6 +14,9 @@ namespace VECGEOM_NAMESPACE {
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
   template<typename Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH

@@ -302,6 +302,9 @@ void PointOnTubeSurface(
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 struct TubeImplementation {
 
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
