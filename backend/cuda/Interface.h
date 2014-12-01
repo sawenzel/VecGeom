@@ -21,7 +21,7 @@ inline namespace cuda {
 
 template <typename DataClass, typename... ArgsTypes>
 __global__
-void ConstructOnGpu(DataClass *const gpu_ptr, ArgsTypes... params) {
+void ConstructOnGpu(DataClass *gpu_ptr, ArgsTypes... params) {
    new (gpu_ptr) DataClass(params...);
 }
 
@@ -182,7 +182,10 @@ public:
       // Async since we past a stream.
       MemcpyToHostAsync(where,nelems*Derived::SizeOf(),stream);
    }
-   operator Type*() const { return reinterpret_cast<Type*>(GetPtr()); }
+
+   Type* GetPtr() const { return reinterpret_cast<Type*>(DevicePtrBase::GetPtr()); }
+
+   operator Type*() const { return GetPtr(); }
 
    Derived& operator++ ()     // prefix ++
    {
@@ -239,22 +242,22 @@ public:
 #endif
 
 #ifdef VECGEOM_NVCC
-   template <typename DataClass, typename... ArgsTypes>
+   template <typename... ArgsTypes>
    void Construct(ArgsTypes... params) const
    {
-      ConstructOnGpu<<<1, 1>>>(*(*this), params...);
+      ConstructOnGpu<<<1, 1>>>( this->GetPtr(), params...);
    }
 
    static size_t SizeOf()
    {
-      return sizeof<DataClass>;
+      return sizeof(Type);
    }
 
 #else
-   template <typename... ArgsTypes>
-   void Construct(ArgsTypes... params) const;
+  template <typename... ArgsTypes>
+     void Construct(ArgsTypes... params) const;
 
-   static size_t SizeOf();
+  static size_t SizeOf();
 #endif
 };
 

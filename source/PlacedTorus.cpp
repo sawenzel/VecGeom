@@ -62,7 +62,11 @@ DevicePtr<cuda::VPlacedVolume> PlacedTorus::CopyToGpu(
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+} // End impl namespace
+
 #ifdef VECGEOM_NVCC
+
+namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedTorus>::SizeOf();
 template void DevicePtr<cuda::PlacedTorus>::Construct(
@@ -70,7 +74,9 @@ template void DevicePtr<cuda::PlacedTorus>::Construct(
    DevicePtr<cuda::Transformation3D> const transform,
    const int id) const;
 
+} // End cxx namespace
+
 #endif // VECGEOM_NVCC
 
-} } // End global namespace
+} // End global namespace
 

@@ -227,7 +227,11 @@ DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu() const {
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+} // End impl namespace
+
 #ifdef VECGEOM_NVCC
+
+namespace cxx {
 
 template void DevicePtr<cuda::Transformation3D>::SizeOf();
 template void DevicePtr<cuda::Transformation3D>::Construct(
@@ -236,8 +240,9 @@ template void DevicePtr<cuda::Transformation3D>::Construct(
     const Precision r3, const Precision r4, const Precision r5,
     const Precision r6, const Precision r7, const Precision r8);
 
+} // End cxx namespace
 
 #endif // VECGEOM_NVCC
 
-} } // End global namespace
+} // End global namespace
 

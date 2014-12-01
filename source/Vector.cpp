@@ -4,21 +4,23 @@
 #include "base/Vector.h"
 
 namespace vecgeom {
-inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::Vector<Precision> >::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::Vector<Precision> >::SizeOf();
 template void DevicePtr<cuda::Vector<Precision> >::Construct(
    DevicePtr<Precision> const arr,
-   const int size);
+   const int size) const;
 
-template void DevicePtr<cuda::Vector<cuda::VPlacedVolume* > >::SizeOf();
+template size_t DevicePtr<cuda::Vector<cuda::VPlacedVolume* > >::SizeOf();
 template void DevicePtr<cuda::Vector<Precision> >::Construct(
    DevicePtr<cuda::VPlacedVolume*> const arr,
-   const int size);
+   const int size) const;
 
+} // End cxx namespace
 
 #endif
 
-} } // End global namespace
+} // End global namespace

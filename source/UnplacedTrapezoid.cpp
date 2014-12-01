@@ -714,16 +714,22 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu() const
 }
 
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::UnplacedTrapezoid>::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::UnplacedTrapezoid>::SizeOf();
 template void DevicePtr<cuda::UnplacedTrapezoid>::Construct(
     const Precision dz, const Precision theta, const Precision phi,
     const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
-    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2);
+    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2) const;
+
+} // End cxx namespace
 
 #endif // VECGEOM_NVCC
 
-} } // End global namespace
+} // End global namespace

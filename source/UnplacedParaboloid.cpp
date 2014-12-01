@@ -323,15 +323,19 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu() const
    return CopyToGpuImpl<UnplacedParaboloid>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-template void DevicePtr<cuda::UnplacedParaboloid>::SizeOf();
-template void DevicePtr<cuda::UnplacedParaboloid>::Construct(const Precision rlo, const Precision rhi, const Precision dz);
+template size_t DevicePtr<cuda::UnplacedParaboloid>::SizeOf();
+template void DevicePtr<cuda::UnplacedParaboloid>::Construct(const Precision rlo, const Precision rhi, const Precision dz) const;
+
+} // End cxx namespace
 
 #endif
 
-} } // End global namespace
+} // End global namespace

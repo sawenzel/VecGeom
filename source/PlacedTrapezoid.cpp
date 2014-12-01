@@ -86,13 +86,19 @@ DevicePtr<cuda::VPlacedVolume> PlacedTrapezoid::CopyToGpu(
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+} // End impl namespace
+
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::PlacedTrapezoid>::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::PlacedTrapezoid>::SizeOf();
 template void DevicePtr<cuda::PlacedTrapezoid>::Construct(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,
-   const int id);
+   const int id) const;
+
+} // End cxx namespace
 
 #endif // VECGEOM_NVCC
 
@@ -132,4 +138,4 @@ void PlacedTrapezoid::ComputeBoundingBox() {
   }
 */
 
-} } // End global namespace
+} // End global namespace

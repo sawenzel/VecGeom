@@ -76,16 +76,22 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu() const
    return CopyToGpuImpl<UnplacedTorus>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::UnplacedTorus>::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::UnplacedTorus>::SizeOf();
 template void DevicePtr<cuda::UnplacedTorus>::Construct(
     const Precision rmin, const Precision rmax, const Precision rtor,
-    const Precision sphi, const Precision dphi);
+    const Precision sphi, const Precision dphi) const;
+
+} // End cxx namespace
 
 #endif
 
-} } // End global namespace
+} // End global namespace
 

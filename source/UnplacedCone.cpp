@@ -194,7 +194,9 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedCone::CopyToGpu() const
    return CopyToGpuImpl<UnplacedCone>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
@@ -204,8 +206,10 @@ template size_t DevicePtr<cuda::UnplacedCone>::SizeOf();
 template void DevicePtr<cuda::UnplacedCone>::Construct(
     const Precision rmin1, const Precision rmax1,
     const Precision rmin2, const Precision rmax2,
-    const Precision z, const Precision sphi, const Precision dphi);
+    const Precision z, const Precision sphi, const Precision dphi) const;
+
+} // End cxx namespace
 
 #endif
 
-} } // End namespace vecgeom
+} // End namespace vecgeom

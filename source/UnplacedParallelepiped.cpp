@@ -131,15 +131,21 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu() const
    return CopyToGpuImpl<UnplacedParallelepiped>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::UnplacedParallelepiped>::SizeOf();
+namespace cxx {
+
+template size_t DevicePtr<cuda::UnplacedParallelepiped>::SizeOf();
 template void DevicePtr<cuda::UnplacedParallelepiped>::Construct(
     const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi);
+    const Precision alpha, const Precision theta, const Precision phi) const;
+
+} // End cxx namespace
 
 #endif
 
-} } // End global namespace
+} // End global namespace
