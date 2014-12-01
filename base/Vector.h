@@ -33,7 +33,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector(Type *const vec, const int sz)
-      : fData(vec), fSize(sz), fAllocated(false) {}
+     : fData(vec), fSize(sz), fMemorySize(sz), fAllocated(false) {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector(Type *const vec, const int sz, const int maxsize)
+     : fData(vec), fSize(sz), fMemorySize(maxsize), fAllocated(true) {}
 
   ~Vector() {
     if (fAllocated) delete[] fData;
@@ -53,6 +57,7 @@ public:
 
   void push_back(const Type item) {
     if (fSize == fMemorySize) {
+      assert(fAllocated && "Trying to push on a 'fixed' size vector (memory not allocated by Vector itself");
       fMemorySize = fMemorySize<<1;
       Type *fDataNew = new Type[fMemorySize];
       for (int i = 0; i < fSize; ++i) fDataNew[i] = fData[i];
