@@ -359,142 +359,152 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
   typedef typename Backend::bool_v      Bool_t;
 
   // for the moment we take implementation from Geant4
-  Float_t dist = 0.0,disTmp = 0.0 ;
-
-  VPlacedVolume const* const fPtrSolidB = unplaced.fRightVolume;
-  VPlacedVolume const* const fPtrSolidA = unplaced.fLeftVolume;
-
-  if ( fPtrSolidB->Contains(p) )   // start: out of B if inside B
-     {
-
-       dist = fPtrSolidB->DistanceToOut(
-               fPtrSolidB->transformation()->Transform(p), v ) ; // ,calcNorm,validNorm,n) ;
-
-       if( ! fPtrSolidA->Contains(p+dist*v) ){
-         int count1=0;
-         Bool_t contains;
-         do {
-          disTmp = fPtrSolidA->DistanceToIn(p+dist*v,v) ;
-
-          if(disTmp == kInfinity) {
-              distance=kInfinity;
-              return;
-          }
-          dist += disTmp ;
-
-          // Contains is the one from this boolean solid
-          UnplacedContains<Backend>( unplaced, p+dist*v, contains );
-          if( IsEmpty(contains) ) /* if not contained */
-          {
-            disTmp = fPtrSolidB->DistanceToOut(
-                    fPtrSolidB->transformation()->Transform(p+dist*v),v) ;
-            dist += disTmp ;
-            count1++;
-            if( count1 > 1000 )  // Infinite loop detected
-            {
-               // EMIT WARNING
-            }
-          }
-          UnplacedContains<Backend>( unplaced, p+dist*v, contains );
-        }
-        while( IsEmpty(contains) );
-       }
-    }
-  else // p outside B and of A;
-    {
-       dist = fPtrSolidA->DistanceToIn(p,v) ;
-
-       if( dist == kInfinity ) // past A, hence past A\B
-       {
-         distance=kInfinity;
-           return;
-       }
-       else
-       {
-         int count2=0;
-         Bool_t contains;
-         UnplacedContains<Backend>(unplaced, p+dist*v, contains);
-         while( IsEmpty(contains) )  // pushing loop
-         {
-           disTmp = fPtrSolidB->DistanceToOut(
-                   fPtrSolidB->transformation()->Transform(p+dist*v),v) ;
-           dist += disTmp ;
-           dist += kTolerance;
-
-           UnplacedContains<Backend>(unplaced, p+dist*v, contains);
-           if( IsEmpty(contains) )
-           {
-             disTmp = fPtrSolidA->DistanceToIn(p+dist*v,v) ;
-
-             if(disTmp == kInfinity) // past A, hence past A\B
-             {
-               distance=kInfinity;
-                 return;
-             }
-             dist += disTmp ;
-             count2++;
-             if( count2 > 1000 )  // Infinite loop detected
-             {
-               // EMIT WARNING
-             }
-           }
-         }
-       }
-     }
-    distance=dist;
-   return;
+//  Float_t dist = 0.0,disTmp = 0.0 ;
+//
+//  VPlacedVolume const* const fPtrSolidB = unplaced.fRightVolume;
+//  VPlacedVolume const* const fPtrSolidA = unplaced.fLeftVolume;
+//
+//  if ( fPtrSolidB->Contains(p) )   // start: out of B if inside B
+//     {
+//       dist = fPtrSolidB->PlacedDistanceToOut( p, v ); // ,calcNorm,validNorm,n) ;
+//
+//       if( ! fPtrSolidA->Contains(p+dist*v) ){
+//         int count1=0;
+//         Bool_t contains;
+//         do {
+//          disTmp = fPtrSolidA->DistanceToIn(p+dist*v,v) ;
+//
+//          if(disTmp == kInfinity) {
+//              distance=kInfinity;
+//              return;
+//          }
+//          dist += disTmp ;
+//
+//          // Contains is the one from this boolean solid
+//          UnplacedContains<Backend>( unplaced, p+dist*v, contains );
+//          if( IsEmpty(contains) ) /* if not contained */
+//          {
+//            disTmp = fPtrSolidB->PlacedDistanceToOut(p+dist*v,v);
+//            dist += disTmp ;
+//            count1++;
+//            if( count1 > 1000 )  // Infinite loop detected
+//            {
+//               // EMIT WARNING
+//            }
+//          }
+//          UnplacedContains<Backend>( unplaced, p+dist*v, contains );
+//         }
+//        while( IsEmpty(contains) );
+//       }
+//       // no else part
+//    }
+//  else // p outside B and of A;
+//    {
+//       dist = fPtrSolidA->DistanceToIn(p,v) ;
+//
+//       if( dist == kInfinity ) // past A, hence past A\B
+//       {
+//         distance=kInfinity;
+//           return;
+//       }
+//       else
+//       {
+//         int count2=0;
+//         Bool_t contains;
+//         UnplacedContains<Backend>(unplaced, p+dist*v, contains);
+//         while( IsEmpty(contains) )  // pushing loop
+//         {
+//           disTmp = fPtrSolidB->PlacedDistanceToOut(p+dist*v,v);
+//           dist += disTmp ;
+//           dist += kTolerance;
+//
+//           UnplacedContains<Backend>(unplaced, p+dist*v, contains);
+//           if( IsEmpty(contains) )
+//           {
+//             disTmp = fPtrSolidA->DistanceToIn(p+dist*v,v) ;
+//
+//             if(disTmp == kInfinity) // past A, hence past A\B
+//             {
+//               distance=kInfinity;
+//                 return;
+//             }
+//             dist += disTmp ;
+//             count2++;
+//             if( count2 > 1000 )  // Infinite loop detected
+//             {
+//               // EMIT WARNING
+//             }
+//           }
+//         }
+//       }
+//     }
+//    distance=dist;
+//   return;
 
 
 
   // TOBEDONE: ASK Andrei about the while loop
   // Compute distance from a given point outside to the shape.
 //  Int_t i;
-//  Float_t d1, d2, snxt=0.;
-//  fRightMat->MasterToLocal(point, &local[0]);
+    Float_t d1, d2, snxt=0.;
+    Vector3D<Precision> hitpoint=p;
+    //  fRightMat->MasterToLocal(point, &local[0]);
 //  fLeftMat->MasterToLocalVect(dir, &ldir[0]);
 //  fRightMat->MasterToLocalVect(dir, &rdir[0]);
 //
-//  // check if inside '-'
-//  Bool_t insideRight = unplaced.fRightVolume->Contains(point);
+  // check if inside '-'
+    Bool_t insideRight = unplaced.fRightVolume->Contains(p);
 //  // epsilon is used to push across boundaries
-//  Precision epsil(0.);
+    Precision epsil(0.);
 //
 //  // we should never subtract a volume such that B - A > 0
 //
 //  // what does this while loop do?
-//  if ( ! IsEmpty( insideRight ) ) {
+   while(1){
+    if ( insideRight  ) {
 //    // propagate to outside of '- / RightShape'
-//    d1 = unplaced.fRightVolume->DistanceToOut( point, direction, stepMax);
-//    snxt += d1+epsil;
-//    hitpoint += (d1+1E-8)*direction;
+      d1 = unplaced.fRightVolume->PlacedDistanceToOut( hitpoint, v, stepMax);
+      snxt += (d1 > 0. && d1 < kInfinity)? d1+epsil : 0.;
+      hitpoint += (d1 > 0. && d1 < kInfinity)? (d1+1E-8)*v : 1E-8*v;
+      Float_t t = (d1 > 0. && d1 < kInfinity)? d1+epsil : 0.;
+      // std::cerr << "adding " << t << "\n";
+
 //
-//    epsil = 1.E-8;
-//    // now master outside 'B'; check if inside 'A'
+      epsil = 1.E-8;
+// now master outside 'B'; check if inside 'A'
 //    Bool_t insideLeft =
-//    if (unplaced.fLeftVolume->Contains(&local[0])) return snxt;
-//  }
-//
-//  // if outside of both we do a max operation
-//  // master outside '-' and outside '+' ;  find distances to both
-//        node->SetSelected(1);
+    if (unplaced.fLeftVolume->Contains( hitpoint )){
+        distance = snxt;
+	//	std::cerr << "hitting  " << distance << "\n";
+        return;
+    }
+  }
+
+  // if outside of both we do a max operation
+  // master outside '-' and outside '+' ;  find distances to both
 //        fLeftMat->MasterToLocal(&master[0], &local[0]);
-//        d2 = fLeft->DistFromOutside(&local[0], &ldir[0], iact, step, safe);
-//        if (d2>1E20) return TGeoShape::Big();
-//
-//        fRightMat->MasterToLocal(&master[0], &local[0]);
-//        d1 = fRight->DistFromOutside(&local[0], &rdir[0], iact, step, safe);
-//        if (d2<d1-TGeoShape::Tolerance()) {
-//           snxt += d2+epsil;
-//           return snxt;
-//        }
-//        // propagate to '-'
-//        snxt += d1+epsil;
-//        for (i=0; i<3; i++) master[i] += (d1+1E-8)*dir[i];
-//        epsil = 1.E-8;
-//        // now inside '-' and not inside '+'
-//        fRightMat->MasterToLocal(&master[0], &local[0]);
-//        inside = kTRUE;
-//     }
+   d2 = unplaced.fLeftVolume->DistanceToIn( hitpoint, v, stepMax );
+   if (d2 == kInfinity){
+       distance = kInfinity;
+       // std::cerr << "missing A " << d2 << "\n";
+       return ;
+   }
+
+   d1 = unplaced.fRightVolume->DistanceToIn( hitpoint, v, stepMax );
+   if (d2 < d1 - kTolerance ) {
+          snxt += d2+epsil;
+	  // std::cerr << "returning  " << snxt << "\n";
+          distance = snxt;
+          return;
+   }
+
+   //        // propagate to '-'
+   snxt += (d1>0. && d1<kInfinity)?  d1+epsil : 0.;
+   hitpoint += (d1>0. && d1<kInfinity)? (d1 + epsil)*v : epsil*v;
+   Float_t t = (d1>0. && d1<kInfinity)?  d1+epsil : 0.;
+   // std::cerr << "adding 2 :  " << t << "\n";  
+   insideRight = true;
+  } // end while
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -534,7 +544,8 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::SafetyToInKernel
   if( ( fPtrSolidA->Contains(p) ) &&   // case 1
         ( fPtrSolidB->Contains(p) ) )
     {
-        safety = fPtrSolidB->SafetyToOut(p);
+        safety = fPtrSolidB->SafetyToOut(
+					 fPtrSolidB->transformation()->Transform(p));
     }
     else
     {
