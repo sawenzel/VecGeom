@@ -17,6 +17,9 @@
 #include <string>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class Vector3D; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**

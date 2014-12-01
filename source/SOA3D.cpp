@@ -10,29 +10,14 @@ namespace vecgeom {
 
 #ifdef VECGEOM_NVCC
 
-inline namespace cuda {
+namespace cxx {
 
-template <typename T>
-__global__
-void ConstructOnGpu(T *x, T *y, T *z, size_t size,
-                    vecgeom::cuda::SOA3D<T> *placement) {
-   new(placement) vecgeom::cuda::SOA3D<T>(x, y, z, size);
-}
+template size_t DevicePtr< cuda::SOA3D<Precision> >::SizeOf();
+template void DevicePtr< cuda::SOA3D<Precision> >::Construct(
+   DevicePtr<Precision> x, DevicePtr<Precision> y,DevicePtr< Precision> z,
+   size_t size) const;
 
-template <typename T>
-SOA3D<T>* SOA3D_CopyToGpuTemplate(T *x, T *y, T *z, size_t size) {
-  vecgeom::cuda::SOA3D<T> *soa3DGpu =
-     cxx::AllocateOnGpu<vecgeom::cuda::SOA3D<T> >();
-  ConstructOnGpu<<<1, 1>>>(x, y, z, size, soa3DGpu);
-  return reinterpret_cast<SOA3D<T> *>(soa3DGpu);
-}
-
-SOA3D<Precision>* SOA3D_CopyToGpu(Precision *x, Precision *y, Precision *z,
-                                  size_t size) {
-  return SOA3D_CopyToGpuTemplate(x, y, z, size);
-}
-
-} // End namespace cuda
+} // End cxx namespace
 
 #endif
 
