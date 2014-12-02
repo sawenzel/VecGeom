@@ -466,8 +466,6 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
       d1 = unplaced.fRightVolume->PlacedDistanceToOut( hitpoint, v, stepMax);
       snxt += (d1 > 0. && d1 < kInfinity)? d1+epsil : 0.;
       hitpoint += (d1 > 0. && d1 < kInfinity)? (d1+1E-8)*v : 1E-8*v;
-      Float_t t = (d1 > 0. && d1 < kInfinity)? d1+epsil : 0.;
-      // std::cerr << "adding " << t << "\n";
 
 //
       epsil = 1.E-8;
@@ -501,8 +499,6 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToInKern
    //        // propagate to '-'
    snxt += (d1>0. && d1<kInfinity)?  d1+epsil : 0.;
    hitpoint += (d1>0. && d1<kInfinity)? (d1 + epsil)*v : epsil*v;
-   Float_t t = (d1>0. && d1<kInfinity)?  d1+epsil : 0.;
-   // std::cerr << "adding 2 :  " << t << "\n";  
    insideRight = true;
   } // end while
 }

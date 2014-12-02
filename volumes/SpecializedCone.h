@@ -62,7 +62,7 @@ public:
   SpecializedCone(LogicalVolume const *const logical_volume,
                   Transformation3D const *const transformation,
                   PlacedBox const *const boundingBox, const int id)
-      : PlacedCone(logical_volume, transformation, boundingBox, id) {}
+      : Helper(logical_volume, transformation, boundingBox, id) {}
 
 #endif
 

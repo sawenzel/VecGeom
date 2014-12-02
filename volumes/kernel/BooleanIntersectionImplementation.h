@@ -332,6 +332,8 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::DistanceToInKer
     typename Backend::precision_v &distance) {
 
     typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
+
     Vector3D<Precision> hitpoint = p;
 
     Bool_t inleft = unplaced.fLeftVolume->Contains( hitpoint );
@@ -373,7 +375,7 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::DistanceToInKer
           if (d1>d2) {
              // propagate to left shape
              snext += d1;
-             inleft = kTRUE;
+             inleft = Backend::kTrue;
              hitpoint += d1*v;
 
              // check if propagated point is inside right shape
@@ -386,7 +388,7 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::DistanceToInKer
           } else {
              // propagate to right shape
              snext += d2;
-             inright = kTRUE;
+             inright = Backend::kTrue;
              hitpoint += d2*v;
 
              // check if propagated point is inside left shape

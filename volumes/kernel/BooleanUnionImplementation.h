@@ -361,7 +361,6 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::DistanceToOutKernel(
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
 
     Float_t dist = 0., disTmp = 0.;
-    int count1=0, count2=0;
     int push=0;
     // std::cout << "##VECGEOMSTART\n";
     typename Backend::Bool_t positionA = fPtrSolidA->Contains(p);

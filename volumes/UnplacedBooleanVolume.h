@@ -44,9 +44,8 @@ public:
           BooleanOperation op,
           VPlacedVolume const* left,
           VPlacedVolume const* right ) :
-            fOp(op),
             fLeftVolume(left),
-            fRightVolume(right) {}
+            fRightVolume(right), fOp(op) {}
 
   virtual int memory_size() const { return sizeof(*this); }
 

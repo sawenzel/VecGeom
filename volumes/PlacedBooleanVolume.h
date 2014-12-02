@@ -158,7 +158,7 @@ public:
                         G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
                       );
                 }
-
+      return NULL;
   }
   #endif
 #endif // VECGEOM_BENCHMARK
