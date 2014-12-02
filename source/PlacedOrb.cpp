@@ -77,10 +77,12 @@ DevicePtr<cuda::VPlacedVolume> PlacedOrb::CopyToGpu(
 namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedOrb>::SizeOf();
+#ifdef HAS_PLACED_IMPL
 template void DevicePtr<cuda::PlacedOrb>::Construct(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,
    const int id) const;
+#endif
 
 } // End cxx namespace
 

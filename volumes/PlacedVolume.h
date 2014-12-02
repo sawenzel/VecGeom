@@ -267,7 +267,9 @@ public:
                                                DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
   {
      DevicePtr<CudaType_t<Derived> > gpu_ptr(in_gpu_ptr);
+#ifdef HAS_PLACED_IMPL
      gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
+#endif
      CudaAssertError();
      // Need to go via the void* because the regular c++ compilation
      // does not actually see the declaration for the cuda version

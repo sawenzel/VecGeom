@@ -71,10 +71,12 @@ DevicePtr<cuda::VPlacedVolume> PlacedParallelepiped::CopyToGpu(
 namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedParallelepiped>::SizeOf();
+#ifdef HAS_PLACED_IMPL
 template void DevicePtr<cuda::PlacedParallelepiped>::Construct(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,
    const int id) const;
+#endif
 
 } // End cxx namespace
 
