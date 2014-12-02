@@ -29,6 +29,7 @@
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
   #define VECGEOM_CUDA_HEADER_GLOBAL __global__
+  #define VECGEOM_HOST_FORWARD_DECLARE(X) namespace cxx { X }
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_DECLARE_CONV(X)
   #undef VECGEOM_VC
@@ -55,6 +56,7 @@
      template <typename DataType> struct kCudaType;
      template <typename DataType> using CudaType_t = typename kCudaType<DataType>::type_t;
   }
+  #define VECGEOM_HOST_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)  namespace cuda { X }
   #define VECGEOM_DEVICE_DECLARE_CONV(X)  namespace cuda { class X; }  \
      namespace cxx { class X; } \
