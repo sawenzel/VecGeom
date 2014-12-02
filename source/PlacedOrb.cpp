@@ -77,7 +77,7 @@ DevicePtr<cuda::VPlacedVolume> PlacedOrb::CopyToGpu(
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::PlacedOrb>::SizeOf();
+template size_t DevicePtr<cuda::PlacedOrb>::SizeOf();
 template void DevicePtr<cuda::PlacedOrb>::Construct(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,

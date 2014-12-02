@@ -69,11 +69,11 @@ DevicePtr<cuda::VPlacedVolume> PlacedTorus::CopyToGpu(
 
 #ifdef VECGEOM_NVCC
 
-template void DevicePtr<cuda::PlacedParaboloid>::SizeOf();
-template void DevicePtr<cuda::PlacedParaboloid>::Construct(
+template size_t DevicePtr<cuda::PlacedTorus>::SizeOf();
+template void DevicePtr<cuda::PlacedTorus>::Construct(
    DevicePtr<cuda::LogicalVolume> const logical_volume,
    DevicePtr<cuda::Transformation3D> const transform,
-   const int id);
+   const int id) const;
 
 #endif // VECGEOM_NVCC
 
