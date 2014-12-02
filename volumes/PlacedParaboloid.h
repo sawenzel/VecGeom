@@ -19,6 +19,7 @@ class VUSOLID;
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedParaboloid; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedParaboloid );
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

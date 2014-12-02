@@ -10,6 +10,10 @@
 #include "volumes/Wedge.h"
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedTorus; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedTorus );
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedTorus : public VUnplacedVolume, public AlignedBase {

@@ -17,6 +17,10 @@
 #include <cmath>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedCone; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedCone );
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**

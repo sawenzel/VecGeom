@@ -7,6 +7,10 @@
 #include "volumes/UnplacedVolume.h"
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedParallelepiped; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedParallelepiped );
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedParallelepiped : public VUnplacedVolume, public AlignedBase {

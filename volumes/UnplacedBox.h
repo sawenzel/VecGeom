@@ -10,6 +10,10 @@
 #include "volumes/UnplacedVolume.h"
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedBox; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedBox );
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedBox : public VUnplacedVolume, public AlignedBase {

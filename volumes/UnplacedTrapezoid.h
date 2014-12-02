@@ -13,6 +13,10 @@
 
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedTrapezoid; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedTrapezoid );
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef Vector3D<Precision> TrapCorners_t[8];

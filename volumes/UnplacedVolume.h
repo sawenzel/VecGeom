@@ -16,6 +16,7 @@
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class VUnplacedVolume; );
+VECGEOM_DEVICE_DECLARE_CONV(VUnplacedVolume);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

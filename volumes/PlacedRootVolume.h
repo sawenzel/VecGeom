@@ -14,6 +14,9 @@ class TGeoShape;
 
 namespace vecgeom {
 
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedRootVolume; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedRootVolume );
+
    inline namespace cxx {
 
 template <typename T> class AOS3D;
