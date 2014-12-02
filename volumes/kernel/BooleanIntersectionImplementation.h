@@ -17,9 +17,10 @@ namespace VECGEOM_NAMESPACE {
  */
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation<kIntersection, transCodeT, rotCodeT> {
-    static const int transC = transCodeT;
-       static const int rotC   = rotCodeT;
-  //
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+    //
   template<typename Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
@@ -330,103 +331,76 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::DistanceToInKer
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-		// copied from Geant4
-	    double dist = 0.0;
-		/*
-	    if( Inside(p) == kInside )
-	    {
-	  #ifdef G4BOOLDEBUG
-	      G4cout << "WARNING - Invalid call in "
-	             << "G4IntersectionSolid::DistanceToIn(p,v)" << G4endl
-	             << "  Point p is inside !" << G4endl;
-	      G4cout << "          p = " << p << G4endl;
-	      G4cout << "          v = " << v << G4endl;
-	      G4cerr << "WARNING - Invalid call in "
-	             << "G4IntersectionSolid::DistanceToIn(p,v)" << G4endl
-	             << "  Point p is inside !" << G4endl;
-	      G4cerr << "          p = " << p << G4endl;
-	      G4cerr << "          v = " << v << G4endl;
-	  #endif
-	    }*/
-		
-	    VPlacedVolume const*const fPtrSolidA = unplaced.fLeftVolume;
-	    VPlacedVolume const*const fPtrSolidB = unplaced.fRightVolume;
-	    typename Backend::inside_v wA = fPtrSolidA->Inside(p);
-	    typename Backend::inside_v wB = fPtrSolidB->Inside(p);
+    typedef typename Backend::precision_v Float_t;
+    Vector3D<Precision> hitpoint = p;
 
-	    Vector3D<Precision> pA = p,  pB = p;
-	    double      dA = 0., dA1=0., dA2=0.;
-	    double      dB = 0., dB1=0., dB2=0.;
-	    bool        doA = true, doB = true;
+    Bool_t inleft = unplaced.fLeftVolume->Contains( hitpoint );
+    Bool_t inright = unplaced.fRightVolume->Contains( hitpoint );
+    Float_t d1 = 0.;
+    Float_t d2 = 0.;
+    Float_t snext = 0.0;
 
-	    while(true) {
-	        if(doA) 
-	        {
-	          // find next valid range for A
-	          dA1 = 0.;
+    // just a pre-check before entering main algorithm
+    if (inleft && inright) {
+          d1 = unplaced.fLeftVolume->PlacedDistanceToOut( hitpoint, v, stepMax);
+          d2 = unplaced.fRightVolume->PlacedDistanceToOut( hitpoint, v, stepMax);
 
-	          if( wA != EInside::kInside ) 
-	          {
-	            dA1 = fPtrSolidA->DistanceToIn(pA, v);
-	            if( dA1 == kInfinity ){
-					distance = kInfinity;
-					return;
-				   }
-	            pA += dA1*v;
-	          }
-	          dA2 = dA1 + fPtrSolidA->DistanceToOut(pA, v);
-	        }
-	        dA1 += dA;
-	        dA2 += dA;
+          // if we are close to a boundary continue
+          if (d1<2*kTolerance) inleft = Backend::kFalse;
+          if (d2<2*kTolerance) inright = Backend::kFalse;
 
-	        if(doB) 
-	        {
-	          // find next valid range for B
+          // otherwise exit
+          if (inleft && inright){
+              // TODO: WE are inside both so should return a negative number
+              distance = 0.0;
+              return; }
+    }
 
-	          dB1 = 0.;
-	          if(wB != EInside::kInside) 
-	          {
-	            dB1 = fPtrSolidB->DistanceToIn(pB, v);
-	            if(dB1 == kInfinity){  
-					distance = kInfinity;
-					return;
-				}
-	            pB += dB1*v;
-	          }
-	          dB2 = dB1 + fPtrSolidB->DistanceToOut(pB, v);
-	        }
-	        dB1 += dB;
-	        dB2 += dB;
+    // main loop
+    while (1) {
+          d1 = d2 = 0;
+          if (!inleft)  {
+             d1 = unplaced.fLeftVolume->DistanceToIn( hitpoint, v );
+             d1 = Max( d1, kTolerance );
+             if ( d1 >1E20 ){ distance = kInfinity; return; }
+          }
+          if (!inright) {
+             d2 = unplaced.fRightVolume->DistanceToIn( hitpoint, v );
+             d2 = Max( d2, kTolerance );
+             if ( d2>1E20 ){ distance = kInfinity; return; }
+          }
 
-	         // check if they overlap
-	        if( dA1 < dB1 ) 
-	        {
-	          if( dB1 < dA2 ){
-				  distance = dB1;
-				    return;
-				}
-	          dA   = dA2;
-	          pA   = p + dA*v;  // continue from here
-	          wA   = EInside::kSurface;
-	          doA  = true;
-	          doB  = false;
-	        }
-	        else 
-	        {
-	          if( dA1 < dB2 ){  
-				  distance = dA1;
-				  return;
-			  }
-	          dB   = dB2;
-	          pB   = p + dB*v;  // continue from here
-	          wB   = EInside::kSurface;
-	          doB  = true;
-	          doA  = false;
-	        }
-	      }
-  		distance = dist;
-  	    return;  
-	}
+          if (d1>d2) {
+             // propagate to left shape
+             snext += d1;
+             inleft = kTRUE;
+             hitpoint += d1*v;
+
+             // check if propagated point is inside right shape
+             // check is done with a little push
+             inright = unplaced.fRightVolume->Contains( hitpoint + kTolerance*v );
+             if (inright){
+                 distance = snext;
+                 return;}
+             // here inleft=true, inright=false
+          } else {
+             // propagate to right shape
+             snext += d2;
+             inright = kTRUE;
+             hitpoint += d2*v;
+
+             // check if propagated point is inside left shape
+             inleft = unplaced.fLeftVolume->Contains(hitpoint + kTolerance*v );
+             if (inleft){
+                distance = snext;
+                return;
+             }
+          }
+             // here inleft=false, inright=true
+     } // end while loop
+     distance = snext;
+     return;
+}
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
@@ -439,7 +413,7 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::DistanceToOutKe
     typename Backend::precision_v &distance) {
 
 	distance = Min(unplaced.fLeftVolume->DistanceToOut(p,v),
-	               unplaced.fRightVolume->DistanceToOut(p,v));
+	               unplaced.fRightVolume->PlacedDistanceToOut(p,v));
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -450,28 +424,31 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::SafetyToInKerne
     Vector3D<typename Backend::precision_v> const &p,
     typename Backend::precision_v &safety) {
 
-		typedef typename Backend::bool_v Bool_t;
+    typedef typename Backend::bool_v Bool_t;
 
-	Bool_t insideA = unplaced.fLeftVolume->Contains(p) ;
-	Bool_t insideB = unplaced.fRightVolume->Contains(p) ;
-	
-	    if( ! insideA && insideB  )
-	    {
-	      safety = unplaced.fLeftVolume->SafetyToIn(p) ;
-	    }
-	    else
-	    {
-	      if( ! insideB  && insideA  )
-	      {
-	        safety = unplaced.fRightVolume->SafetyToIn(p) ;
-	      }
-	      else
-	      {
-	        safety =  Min(unplaced.fLeftVolume->SafetyToIn(p),
-	                      unplaced.fRightVolume->SafetyToIn(p) ) ; 
-	      }
-	    }
-	    return;
+    // This is the Geant4 algorithm
+    // TODO: ROOT seems to produce better safeties
+
+    Bool_t insideA = unplaced.fLeftVolume->Contains(p);
+    Bool_t insideB = unplaced.fRightVolume->Contains(p);
+
+    if( ! insideA && insideB  )
+    {
+       safety = unplaced.fLeftVolume->SafetyToIn(p);
+    }
+    else
+    {
+       if( ! insideB  && insideA  )
+       {
+          safety = unplaced.fRightVolume->SafetyToIn(p);
+       }
+       else
+       {
+           safety =  Min(unplaced.fLeftVolume->SafetyToIn(p),
+                         unplaced.fRightVolume->SafetyToIn(p));
+       }
+    }
+    return;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -482,8 +459,14 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::SafetyToOutKern
     Vector3D<typename Backend::precision_v> const &p,
     typename Backend::precision_v &safety) {
 
-	safety = Min(unplaced.fLeftVolume->SafetyToOut(p),
-	 unplaced.fRightVolume->SafetyToOut(p));
+    safety = Min(
+             // TODO: could fail if left volume is placed shape
+             unplaced.fLeftVolume->SafetyToOut(p),
+
+             // TODO: consider introducing PlacedSafetyToOut function
+             unplaced.fRightVolume->SafetyToOut(
+                     unplaced.fRightVolume->transformation()->Transform(p))
+             );
     MaskedAssign( safety < 0, 0., &safety);
 }
 
