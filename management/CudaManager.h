@@ -20,10 +20,9 @@
 // Compile for vecgeom namespace to work as interface
 namespace vecgeom {
 
-#ifdef VECGEOM_NVCC
-inline
-#endif
-namespace cuda { class VPlacedVolume; }
+VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; )
+VECGEOM_DEVICE_FORWARD_DECLARE( void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world); )
+
 
 #ifndef VECGEOM_NVCC
 inline
@@ -184,8 +183,6 @@ private:
   //                           const int depth, int *const output) const;
 
 };
-
-void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world);
 
 // void CudaManagerLocatePoints(VPlacedVolume const *const world,
 //                              SOA3D<Precision> const *const points,
