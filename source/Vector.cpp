@@ -29,6 +29,15 @@ template void DevicePtr<cuda::Vector<cuda::VPlacedVolume* > >::Construct(
    const int size,
    const int maxsize) const;
 
+template size_t DevicePtr<cuda::Vector<cuda::VPlacedVolume const * > >::SizeOf();
+template void DevicePtr<cuda::Vector<cuda::VPlacedVolume const * > >::Construct(
+   DevicePtr<cuda::VPlacedVolume const*> const arr,
+   const int size) const;
+template void DevicePtr<cuda::Vector<cuda::VPlacedVolume const * > >::Construct(
+   DevicePtr<cuda::VPlacedVolume const*> const arr,
+   const int size,
+   const int maxsize) const;
+
 } // End cxx namespace
 
 #endif
