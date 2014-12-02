@@ -266,7 +266,7 @@ public:
                                                DevicePtr<cuda::Transformation3D> const transform,
                                                DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
   {
-     DevicePtr<Derived> gpu_ptr(in_gpu_ptr);
+     DevicePtr<CudaType_t<Derived> > gpu_ptr(in_gpu_ptr);
      gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
      CudaAssertError();
      // Need to go via the void* because the regular c++ compilation
@@ -279,7 +279,7 @@ public:
       DevicePtr<cuda::LogicalVolume> const logical_volume,
       DevicePtr<cuda::Transformation3D> const transform) const
   {
-     DevicePtr<Derived> gpu_ptr;
+     DevicePtr<CudaType_t<Derived> > gpu_ptr;
      gpu_ptr.Allocate();
      return this->CopyToGpuImpl<Derived>(logical_volume,transform,
                                          DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr));
