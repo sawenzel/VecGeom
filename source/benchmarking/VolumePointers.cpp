@@ -89,4 +89,5 @@ void VolumePointers::Deallocate() {
   */
 }
 
+} // End impl namespace
 } // End global namespace
