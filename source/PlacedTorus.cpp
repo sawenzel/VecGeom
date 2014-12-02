@@ -69,12 +69,12 @@ DevicePtr<cuda::VPlacedVolume> PlacedTorus::CopyToGpu(
 namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedTorus>::SizeOf();
-#ifdef HAS_PLACED_IMPL
-template void DevicePtr<cuda::PlacedTorus>::Construct(
-   DevicePtr<cuda::LogicalVolume> const logical_volume,
-   DevicePtr<cuda::Transformation3D> const transform,
-   const int id) const;
-#endif
+
+// PlacedTorus is abstract
+// template void DevicePtr<cuda::PlacedTorus>::Construct(
+//    DevicePtr<cuda::LogicalVolume> const logical_volume,
+//    DevicePtr<cuda::Transformation3D> const transform,
+//    const int id) const;
 
 } // End cxx namespace
 

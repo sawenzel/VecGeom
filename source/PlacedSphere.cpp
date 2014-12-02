@@ -83,12 +83,12 @@ DevicePtr<cuda::VPlacedVolume> PlacedSphere::CopyToGpu(
 namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedSphere>::SizeOf();
-#ifdef HAS_PLACED_IMPL
-template void DevicePtr<cuda::PlacedSphere>::Construct(
-    DevicePtr<cuda::LogicalVolume> const logical_volume,
-    DevicePtr<cuda::Transformation3D> const transform,
-    const int id) const;
-#endif
+
+// PlacedSphere is abstract.
+// template void DevicePtr<cuda::PlacedSphere>::Construct(
+//     DevicePtr<cuda::LogicalVolume> const logical_volume,
+//     DevicePtr<cuda::Transformation3D> const transform,
+//     const int id) const;
 
 } // End cxx namespace
 

@@ -74,12 +74,13 @@ DevicePtr<cuda::VPlacedVolume> PlacedTube::CopyToGpu(
 namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedTube>::SizeOf();
-#ifdef HAS_PLACED_IMPL
-template void DevicePtr<cuda::PlacedTube>::Construct(
-   DevicePtr<cuda::LogicalVolume> const logical_volume,
-   DevicePtr<cuda::Transformation3D> const transform,
-   const int id) const;
-#endif
+
+// PlacedTube is abstract
+// template void DevicePtr<cuda::PlacedTube>::Construct(
+//    DevicePtr<cuda::LogicalVolume> const logical_volume,
+//    DevicePtr<cuda::Transformation3D> const transform,
+//    const int id) const;
+
 } // End cxx namespace
 
 #endif // VECGEOM_NVCC

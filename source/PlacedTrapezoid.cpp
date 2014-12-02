@@ -93,12 +93,12 @@ DevicePtr<cuda::VPlacedVolume> PlacedTrapezoid::CopyToGpu(
 namespace cxx {
 
 template size_t DevicePtr<cuda::PlacedTrapezoid>::SizeOf();
-#ifdef HAS_PLACED_IMPL
-template void DevicePtr<cuda::PlacedTrapezoid>::Construct(
-   DevicePtr<cuda::LogicalVolume> const logical_volume,
-   DevicePtr<cuda::Transformation3D> const transform,
-   const int id) const;
-#endif
+
+// PlacedTrapezoid is abstract
+// template void DevicePtr<cuda::PlacedTrapezoid>::Construct(
+//    DevicePtr<cuda::LogicalVolume> const logical_volume,
+//    DevicePtr<cuda::Transformation3D> const transform,
+//    const int id) const;
 
 } // End cxx namespace
 
