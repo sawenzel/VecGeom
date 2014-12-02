@@ -757,8 +757,6 @@ struct TorusImplementation {
      typedef typename Backend::precision_v Float_t;
      typedef typename Backend::bool_v Bool_t;
 
-     Float_t tol = kTolerance;
-
      // actually a scalar product
      Float_t r0sq  = point[0]*point[0]+point[1]*point[1]+point[2]*point[2];
 
@@ -868,7 +866,6 @@ struct TorusImplementation {
 
       //Check Bounding Cylinder first
       Bool_t inBounds;
-      Bool_t missTorus;
       Bool_t done;
       Float_t tubeDistance = kInfinity;
 
@@ -937,8 +934,7 @@ struct TorusImplementation {
 	  }
          
       }
-      Bool_t insideDisk2;
-      Float_t diri2;
+
       smallerdist = distPhi2 < minDist;
       if ( ! IsEmpty(smallerdist))
 	{

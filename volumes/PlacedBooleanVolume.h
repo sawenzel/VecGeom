@@ -97,7 +97,7 @@ public:
       Transformation3D const * leftm = left->transformation();
       Transformation3D const * rightm = right->transformation();
 
-      TGeoShape *shape;
+      TGeoShape *shape = NULL;
       if( GetUnplacedVolume()->GetOp() == kSubtraction ){
         TGeoSubtraction * node = new TGeoSubtraction(
               const_cast<TGeoShape*>(left->ConvertToRoot()),

@@ -76,7 +76,10 @@ class Wedge{
         VECGEOM_CUDA_HEADER_BOTH
         ~Wedge(){}
 
+        VECGEOM_CUDA_HEADER_BOTH
         Vector3D<Precision> GetAlong1() const {return fAlongVector1; }
+
+        VECGEOM_CUDA_HEADER_BOTH
         Vector3D<Precision> GetAlong2() const {return fAlongVector2; }
 
         // very important:
@@ -145,6 +148,7 @@ class Wedge{
         typename Backend::inside_v  inside=EInside::kSurface;
         MaskedAssign(completelyoutside, EInside::kOutside, &inside);
         MaskedAssign(completelyinside, EInside::kInside, &inside);
+        return inside;
     }
 
     template<typename Backend>
