@@ -16,12 +16,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedParaboloid
-    : public ShapeImplementationHelper<PlacedParaboloid,
-                                       ParaboloidImplementation<
+    : public ShapeImplementationHelper<ParaboloidImplementation<
                                            transCodeT, rotCodeT> > {
 
-  typedef ShapeImplementationHelper<PlacedParaboloid,
-                                    ParaboloidImplementation<
+  typedef ShapeImplementationHelper<ParaboloidImplementation<
                                         transCodeT, rotCodeT> > Helper;
 
 public:
@@ -52,19 +50,10 @@ public:
 #endif
 
   virtual int memory_size() const { return sizeof(*this); }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
 };
 
 typedef SpecializedParaboloid<translation::kGeneric, rotation::kGeneric>
     SimpleParaboloid;
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-void SpecializedParaboloid<transCodeT, rotCodeT>::PrintType() const {
-  printf("SpecializedParaboloid<%i, %i>", transCodeT, rotCodeT);
-}
 
 } } // End global namespace
 

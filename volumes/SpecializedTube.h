@@ -17,12 +17,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 class SpecializedTube
-    : public ShapeImplementationHelper<PlacedTube,
-                                       TubeImplementation<
+    : public ShapeImplementationHelper<TubeImplementation<
                                            transCodeT, rotCodeT, tubeTypeT> > {
 
-  typedef ShapeImplementationHelper<PlacedTube,
-                                    TubeImplementation<
+  typedef ShapeImplementationHelper<TubeImplementation<
                                         transCodeT, rotCodeT, tubeTypeT> > Helper;
 
 public:
@@ -59,19 +57,11 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
-
 };
 
 typedef SpecializedTube<translation::kGeneric, rotation::kGeneric, TubeTypes::UniversalTube>
     SimpleTube;
 
-template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
-void SpecializedTube<transCodeT, rotCodeT, tubeTypeT>::PrintType() const {
-  printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
-}
 
 } } // End global namespace
 

@@ -17,12 +17,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedSphere
-    : public ShapeImplementationHelper<PlacedSphere,
-                                       SphereImplementation<
+    : public ShapeImplementationHelper<SphereImplementation<
                                            transCodeT, rotCodeT> > {
 
-  typedef ShapeImplementationHelper<PlacedSphere,
-                                    SphereImplementation<
+  typedef ShapeImplementationHelper<SphereImplementation<
                                         transCodeT, rotCodeT> > Helper;
 
 public:
@@ -58,19 +56,10 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
-
 };
 
 typedef SpecializedSphere<translation::kGeneric, rotation::kGeneric>
     SimpleSphere;
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-void SpecializedSphere<transCodeT, rotCodeT>::PrintType() const {
-  printf("SpecializedSphere<%i, %i>", transCodeT, rotCodeT);
-}
 
 } } // End global namespace
 

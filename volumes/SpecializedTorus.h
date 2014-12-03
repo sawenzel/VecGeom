@@ -18,12 +18,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   // at the moment this is not done
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedTorus
-    : public ShapeImplementationHelper<PlacedTorus,
-                                       TorusImplementation<
+    : public ShapeImplementationHelper<TorusImplementation<
                                            transCodeT, rotCodeT> > {
 
-  typedef ShapeImplementationHelper<PlacedTorus,
-                                    TorusImplementation<
+  typedef ShapeImplementationHelper<TorusImplementation<
                                         transCodeT, rotCodeT> > Helper;
 
 public:
@@ -54,18 +52,9 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
-
 };
 
 typedef SpecializedTorus<translation::kGeneric, rotation::kGeneric> SimpleTorus;
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-void SpecializedTorus<transCodeT, rotCodeT>::PrintType() const {
-  printf("SpecializedTorus<%i, %i>", transCodeT, rotCodeT);
-}
 
 } } // End global namespace
 

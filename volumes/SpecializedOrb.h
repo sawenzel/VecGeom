@@ -17,12 +17,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedOrb
-    : public ShapeImplementationHelper<PlacedOrb,
-                                       OrbImplementation<
+    : public ShapeImplementationHelper<OrbImplementation<
                                            transCodeT, rotCodeT> > {
 
-  typedef ShapeImplementationHelper<PlacedOrb,
-                                    OrbImplementation<
+  typedef ShapeImplementationHelper<OrbImplementation<
                                         transCodeT, rotCodeT> > Helper;
 
 public:
@@ -55,19 +53,10 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
-
 };
 
 typedef SpecializedOrb<translation::kGeneric, rotation::kGeneric>
     SimpleOrb;
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-void SpecializedOrb<transCodeT, rotCodeT>::PrintType() const {
-  printf("SpecializedOrb<%i, %i>", transCodeT, rotCodeT);
-}
 
 } } // End global namespace
 

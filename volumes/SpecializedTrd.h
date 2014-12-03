@@ -16,12 +16,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
 class SpecializedTrd
-    : public ShapeImplementationHelper<PlacedTrd,
-                                       TrdImplementation<
+    : public ShapeImplementationHelper<TrdImplementation<
                                            transCodeT, rotCodeT, trdTypeT> > {
 
-  typedef ShapeImplementationHelper<PlacedTrd,
-                                    TrdImplementation<
+  typedef ShapeImplementationHelper<TrdImplementation<
                                         transCodeT, rotCodeT, trdTypeT> > Helper;
 
 public:
@@ -49,19 +47,10 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
-
 };
 
 typedef SpecializedTrd<translation::kGeneric, rotation::kGeneric, TrdTypes::UniversalTrd>
     SimpleTrd;
-
-template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
-void SpecializedTrd<transCodeT, rotCodeT, trdTypeT>::PrintType() const {
-  printf("SpecializedTrd<%i, %i, %s>", transCodeT, rotCodeT, trdTypeT::toString());
-}
 
 } } // End global namespace
 

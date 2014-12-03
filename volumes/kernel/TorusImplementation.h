@@ -11,6 +11,7 @@
 #include "volumes/UnplacedTorus.h"
 //#include <math.h>
 
+#include <stdio.h>
 
 #ifndef VECGEOM_NVCC
 #include <iomanip>
@@ -549,12 +550,21 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 }
 #endif
 
+class PlacedTorus;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
   
    static const int transC = transCodeT;
    static const int rotC   = rotCodeT;
 
+  using PlacedShape_t = PlacedTorus;
+  using UnplacedShape_t = UnplacedTorus;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTorus<%i, %i>", transCodeT, rotCodeT);
+  }
 
   /////GenericKernel Contains/Inside implementation
   template <typename Backend, bool ForInside, bool notForDisk>

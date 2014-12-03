@@ -21,8 +21,10 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-template <class Shape, class Specialization>
-class ShapeImplementationHelper : public Shape {
+template <class Specialization>
+class ShapeImplementationHelper : public Specialization::PlacedShape_t {
+
+using PlacedShape_t = typename Specialization::PlacedShape_t;
 
 public:
 
@@ -32,7 +34,7 @@ public:
                             LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox)
-      : Shape(label, logical_volume, transformation, boundingBox) {}
+      : PlacedShape_t(label, logical_volume, transformation, boundingBox) {}
 
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
@@ -47,9 +49,14 @@ public:
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox,
                             const int id)
-      : Shape(logical_volume, transformation, boundingBox, id) {}
+      : PlacedShape_t(logical_volume, transformation, boundingBox, id) {}
 
 #endif
+
+  virtual int memory_size() const { return sizeof(*this); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const { Specialization::PrintType(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Inside_t Inside(Vector3D<Precision> const &point) const {
@@ -184,9 +191,9 @@ public:
                                   bool &convex, Precision step = kInfinity ) const {
       double d = DistanceToOut(point, direction, step );
         Vector3D<double> hitpoint = point + d*direction;
-        Shape::Normal( hitpoint, normal );
+        PlacedShape_t::Normal( hitpoint, normal );
         // we could make this something like
-        // convex = Shape::IsConvex;
+        // convex = PlacedShape_t::IsConvex;
         convex = true;
         return d;
   }

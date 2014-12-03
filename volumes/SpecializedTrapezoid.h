@@ -20,12 +20,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 class SpecializedTrapezoid
-    : public ShapeImplementationHelper<PlacedTrapezoid,
-                                       TrapezoidImplementation<
+    : public ShapeImplementationHelper<TrapezoidImplementation<
                                          transCodeT, rotCodeT> > {
 
-  typedef ShapeImplementationHelper<PlacedTrapezoid,
-                                    TrapezoidImplementation<
+  typedef ShapeImplementationHelper<TrapezoidImplementation<
                                       transCodeT, rotCodeT> > Helper;
 
 public:
@@ -89,21 +87,12 @@ public:
 
 #endif
 
-  virtual int memory_size() const { return sizeof(*this); }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-
-
+  virtual int memory_size() const { return sizeof(*this); } 
 };
 
 typedef SpecializedTrapezoid<translation::kGeneric, rotation::kGeneric>
     SimpleTrapezoid;
 
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-void SpecializedTrapezoid<transCodeT, rotCodeT>::PrintType() const {
-  printf("SpecializedTrapezoid<%i, %i>", transCodeT, rotCodeT);
-}
 
 } } // End global namespace
 

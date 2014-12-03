@@ -13,8 +13,13 @@
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
+#include <stdio.h>
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE { 
+
+class PlacedOrb;
+class UnplacedOrb;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct OrbImplementation {
@@ -24,6 +29,14 @@ struct OrbImplementation {
 
 
     
+using PlacedShape_t = PlacedOrb;
+using UnplacedShape_t = UnplacedOrb;
+
+VECGEOM_CUDA_HEADER_BOTH
+static void PrintType() {
+   printf("SpecializedOrb<%i, %i>", transCodeT, rotCodeT);
+}
+
 template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

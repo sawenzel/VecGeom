@@ -14,8 +14,12 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTrapezoid.h"
 
+#include <stdio.h>
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedTrapezoid;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TrapezoidImplementation {
@@ -23,6 +27,13 @@ struct TrapezoidImplementation {
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
 
+  using PlacedShape_t = PlacedTrapezoid;
+  using UnplacedShape_t = UnplacedTrapezoid;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTrapezoid<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH

@@ -12,6 +12,8 @@
 #include "volumes/UnplacedTube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
 
+#include <stdio.h>
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -300,11 +302,20 @@ void PointOnTubeSurface(
 
 }
 
+class PlacedTube;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 struct TubeImplementation {
 
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+  using PlacedShape_t = PlacedTube;
+  using UnplacedShape_t = UnplacedTube;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH

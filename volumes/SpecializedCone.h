@@ -23,12 +23,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename ConeType>
-class SpecializedCone : public ScalarShapeImplementationHelper<PlacedCone,
-                                       ConeImplementation<transCodeT, rotCodeT, ConeType> >
+class SpecializedCone : public ScalarShapeImplementationHelper<ConeImplementation<transCodeT, rotCodeT, ConeType> >
 {
 
-  typedef ScalarShapeImplementationHelper<PlacedCone,
-                                    ConeImplementation<
+  typedef ScalarShapeImplementationHelper<ConeImplementation<
                                         transCodeT, rotCodeT, ConeType> > Helper;
   typedef ConeImplementation<transCodeT, rotCodeT, ConeType> Specialization;
 

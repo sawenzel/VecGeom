@@ -14,6 +14,7 @@
 #include "volumes/kernel/shapetypes/TrdTypes.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -209,12 +210,21 @@ static void UnplacedInside(
 } // Trd utilities
 
 
+class PlacedTrd;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
 struct TrdImplementation {
 
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedTrd;
+  using UnplacedShape_t = UnplacedTrd;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTrd<%i, %i, %s>", transCodeT, rotCodeT, trdTypeT::toString());
+  }
 
   template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH

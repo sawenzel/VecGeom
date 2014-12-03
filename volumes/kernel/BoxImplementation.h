@@ -9,14 +9,27 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
+#include <stdio.h>
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedBox;
+class UnplacedBox;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedBox;
+  using UnplacedShape_t = UnplacedBox;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedBox<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template<typename Backend>
   VECGEOM_INLINE
