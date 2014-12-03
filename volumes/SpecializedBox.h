@@ -32,7 +32,7 @@ public:
   SpecializedBox(char const *const label,
                  LogicalVolume const *const logical_volume,
                  Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, this) {}
+      : Helper(label, logical_volume, transformation, (PlacedBox const *const)this) {}
 
   SpecializedBox(LogicalVolume const *const logical_volume,
                  Transformation3D const *const transformation)

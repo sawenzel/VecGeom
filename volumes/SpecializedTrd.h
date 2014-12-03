@@ -29,7 +29,7 @@ public:
   SpecializedTrd(char const *const label,
                             LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, NULL) {}
+      : Helper(label, logical_volume, transformation, (PlacedBox const *const)nullptr) {}
 
   SpecializedTrd(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)

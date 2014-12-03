@@ -25,6 +25,7 @@ template <class Specialization>
 class ShapeImplementationHelper : public Specialization::PlacedShape_t {
 
 using PlacedShape_t = typename Specialization::PlacedShape_t;
+using UnplacedShape_t = typename Specialization::UnplacedShape_t;
 
 public:
 
@@ -36,11 +37,26 @@ public:
                             PlacedBox const *const boundingBox)
       : PlacedShape_t(label, logical_volume, transformation, boundingBox) {}
 
+  ShapeImplementationHelper(char const *const label,
+                            LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation)
+      : ShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
+
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox)
       : ShapeImplementationHelper("", logical_volume, transformation,
                                   boundingBox) {}
+
+  ShapeImplementationHelper(LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation)
+      : ShapeImplementationHelper("", logical_volume, transformation) {}
+
+  template <typename... ArgTypes>
+  ShapeImplementationHelper(char const *const label, ArgTypes... params)
+      : ShapeImplementationHelper(label, 
+                                  new LogicalVolume(new UnplacedShape_t(params...)),
+                                  &Transformation3D::kIdentity) {}
 
 #else // Compiling for CUDA
 
