@@ -45,12 +45,12 @@ public:
   SpecializedBox(char const *const label,
                  Vector3D<Precision> const &dim)
       : SpecializedBox(label, new LogicalVolume(new UnplacedBox(dim)),
-                       Transformation3D::kIdentity) {}
+                       &Transformation3D::kIdentity) {}
 
   SpecializedBox(char const *const label,
                  const Precision dX, const Precision dY, const Precision dZ)
-      : SpecializedBox(label, new LogicalVolume(new UnplacedBox(dX, dY, dZ)),
-                       &Transformation3D::kIdentity) {}
+     : SpecializedBox(label, new LogicalVolume(new UnplacedBox(dX, dY, dZ)),
+                      &Transformation3D::kIdentity) {}
 
 #else
 
