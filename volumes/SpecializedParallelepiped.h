@@ -16,66 +16,9 @@ namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
-class SpecializedParallelepiped
-    : public ShapeImplementationHelper<ParallelepipedImplementation<
-                                           transCodeT, rotCodeT> > {
+using SpecializedParallelepiped = ShapeImplementationHelper<ParallelepipedImplementation<transCodeT, rotCodeT> >;
 
-  typedef ShapeImplementationHelper<ParallelepipedImplementation<
-                                        transCodeT, rotCodeT> > Helper;
-
-public:
-
-#ifndef VECGEOM_NVCC
-
-  SpecializedParallelepiped(char const *const label,
-                            LogicalVolume const *const logical_volume,
-                            Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, (PlacedBox const *const)nullptr) {}
-
-  SpecializedParallelepiped(LogicalVolume const *const logical_volume,
-                            Transformation3D const *const transformation)
-      : SpecializedParallelepiped("", logical_volume, transformation) {}
-
-  SpecializedParallelepiped(char const *const label,
-                            Vector3D<Precision> const &dimensions,
-                            const Precision alpha, const Precision theta,
-                            const Precision phi)
-      : SpecializedParallelepiped(
-          label,
-          new LogicalVolume(
-            new UnplacedParallelepiped(dimensions, alpha, theta, phi)
-          ),
-          &Transformation3D::kIdentity
-        ) {} 
-
-  SpecializedParallelepiped(char const *const label,
-                            const Precision x, const Precision y,
-                            const Precision z, const Precision alpha,
-                            const Precision theta, const Precision phi)
-      : SpecializedParallelepiped(
-          label,
-          new LogicalVolume(
-            new UnplacedParallelepiped(x, y, z, alpha, theta, phi)
-          ),
-          &Transformation3D::kIdentity
-        ) {}
-
-#else
-
-  __device__
-  SpecializedParallelepiped(LogicalVolume const *const logical_volume,
-                            Transformation3D const *const transformation,
-                            PlacedBox const *const boundingBox, const int id)
-      : Helper(logical_volume, transformation, boundingBox, id) {}
-
-#endif
-
-  virtual int memory_size() const { return sizeof(*this); }
-
-};
-
-typedef SpecializedParallelepiped<translation::kGeneric, rotation::kGeneric>
-    SimpleParallelepiped;
+using SimpleParallelepiped = SpecializedParallelepiped<translation::kGeneric, rotation::kGeneric>;
 
 } } // End global namespace
 

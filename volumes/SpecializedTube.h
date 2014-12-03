@@ -16,52 +16,9 @@ namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
-class SpecializedTube
-    : public ShapeImplementationHelper<TubeImplementation<
-                                           transCodeT, rotCodeT, tubeTypeT> > {
+using SpecializedTube = ShapeImplementationHelper<TubeImplementation<transCodeT, rotCodeT, tubeTypeT> >;
 
-  typedef ShapeImplementationHelper<TubeImplementation<
-                                        transCodeT, rotCodeT, tubeTypeT> > Helper;
-
-public:
-
-  typedef TubeImplementation<transCodeT, rotCodeT, tubeTypeT> Implementation;
-
-#ifndef VECGEOM_NVCC
-
-  SpecializedTube(char const *const label,
-                            LogicalVolume const *const logical_volume,
-                            Transformation3D const *const transformation)
-     : Helper(label, logical_volume, transformation, (PlacedBox const *const)nullptr ) {}
-
-  SpecializedTube(LogicalVolume const *const logical_volume,
-                  Transformation3D const *const transformation)
-      : SpecializedTube("", logical_volume, transformation) {}
-
-  SpecializedTube(char const *const label,
-                  const Precision rMin, const Precision rMax, const Precision z,
-                  const Precision sPhi, const Precision dPhi)
-      : SpecializedTube(label, new LogicalVolume(
-                                   new UnplacedTube(rMin, rMax, z, sPhi, dPhi)),
-                        &Transformation3D::kIdentity) {}
-
-#else
-
-  __device__
-  SpecializedTube(LogicalVolume const *const logical_volume,
-                            Transformation3D const *const transformation,
-                            PlacedBox const *const boundingBox, const int id)
-      : Helper(logical_volume, transformation, boundingBox, id) {}
-
-#endif
-
-  virtual int memory_size() const { return sizeof(*this); }
-
-};
-
-typedef SpecializedTube<translation::kGeneric, rotation::kGeneric, TubeTypes::UniversalTube>
-    SimpleTube;
-
+using SimpleTube = SpecializedTube<translation::kGeneric, rotation::kGeneric, TubeTypes::UniversalTube>;
 
 } } // End global namespace
 

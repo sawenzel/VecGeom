@@ -15,45 +15,9 @@ namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
-class SpecializedParaboloid
-    : public ShapeImplementationHelper<ParaboloidImplementation<
-                                           transCodeT, rotCodeT> > {
+using SpecializedParaboloid = ShapeImplementationHelper<ParaboloidImplementation<transCodeT, rotCodeT> >;
 
-  typedef ShapeImplementationHelper<ParaboloidImplementation<
-                                        transCodeT, rotCodeT> > Helper;
-
-public:
-
-#ifndef VECGEOM_NVCC
-
-  SpecializedParaboloid(char const *const label,
-                        LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, (PlacedBox const *const)nullptr) {}
-
-  SpecializedParaboloid(LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
-      : SpecializedParaboloid("", logical_volume, transformation) {}
-
-  SpecializedParaboloid(char const *const label, const Precision rlo, const Precision rhi, const Precision dz)
-      : SpecializedParaboloid(label, new LogicalVolume(new UnplacedParaboloid(rlo, rhi, dz)), &Transformation3D::kIdentity) {}
-
- 
-#else
-
-  __device__
-  SpecializedParaboloid(LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation,
-                        PlacedBox const *const boundingBox, const int id)
-      : Helper(logical_volume, transformation, boundingBox, id) {}
-
-#endif
-
-  virtual int memory_size() const { return sizeof(*this); }
-};
-
-typedef SpecializedParaboloid<translation::kGeneric, rotation::kGeneric>
-    SimpleParaboloid;
+using SimpleParaboloid = SpecializedParaboloid<translation::kGeneric, rotation::kGeneric>;
 
 } } // End global namespace
 

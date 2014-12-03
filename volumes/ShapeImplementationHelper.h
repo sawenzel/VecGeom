@@ -42,6 +42,17 @@ public:
                             Transformation3D const *const transformation)
       : ShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
 
+  ShapeImplementationHelper(char const *const label,
+                            LogicalVolume *const logical_volume,
+                            Transformation3D const*const transformation,
+                            PlacedBox const*const boundingBox)
+      : PlacedShape_t(label, logical_volume, transformation, boundingBox) {}
+
+  ShapeImplementationHelper(char const *const label,
+                            LogicalVolume *const logical_volume,
+                            Transformation3D const*const transformation)
+      : ShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
+
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox)
@@ -66,6 +77,13 @@ public:
                             PlacedBox const *const boundingBox,
                             const int id)
       : PlacedShape_t(logical_volume, transformation, boundingBox, id) {}
+
+
+  __device__
+  ShapeImplementationHelper(LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation,
+                            const int id)
+      : PlacedShape_t(logical_volume, transformation, dynamic_cast<PlacedBox*>(this), id) {}
 
 #endif
 
