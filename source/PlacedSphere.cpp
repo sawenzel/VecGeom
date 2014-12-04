@@ -57,25 +57,6 @@ return new G4Sphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
 
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-
-DevicePtr<cuda::VPlacedVolume> PlacedSphere::CopyToGpu(
-   DevicePtr<cuda::LogicalVolume> const logical_volume,
-   DevicePtr<cuda::Transformation3D> const transform,
-   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const
-{
-   return CopyToGpuImpl<PlacedSphere>(logical_volume, transform, gpu_ptr);
-}
-
-DevicePtr<cuda::VPlacedVolume> PlacedSphere::CopyToGpu(
-      DevicePtr<cuda::LogicalVolume> const logical_volume,
-      DevicePtr<cuda::Transformation3D> const transform) const
-{
-   return CopyToGpuImpl<PlacedSphere>(logical_volume, transform);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
-
 } // End impl namespace
 
 #ifdef VECGEOM_NVCC

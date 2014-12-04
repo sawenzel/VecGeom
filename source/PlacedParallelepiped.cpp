@@ -45,25 +45,6 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-
-DevicePtr<cuda::VPlacedVolume> PlacedParallelepiped::CopyToGpu(
-   DevicePtr<cuda::LogicalVolume> const logical_volume,
-   DevicePtr<cuda::Transformation3D> const transform,
-   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const
-{
-   return CopyToGpuImpl<PlacedParallelepiped>(logical_volume, transform, gpu_ptr);
-}
-
-DevicePtr<cuda::VPlacedVolume> PlacedParallelepiped::CopyToGpu(
-      DevicePtr<cuda::LogicalVolume> const logical_volume,
-      DevicePtr<cuda::Transformation3D> const transform) const
-{
-   return CopyToGpuImpl<PlacedParallelepiped>(logical_volume, transform);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
-
 } // End impl namespace
 
 #ifdef VECGEOM_NVCC

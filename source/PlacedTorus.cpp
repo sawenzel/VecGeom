@@ -43,25 +43,6 @@ G4VSolid const* PlacedTorus::ConvertToGeant4() const {
 
 #endif // VECGEOM_BENCHMARK
 
-#ifdef VECGEOM_CUDA_INTERFACE
-
-DevicePtr<cuda::VPlacedVolume> PlacedTorus::CopyToGpu(
-   DevicePtr<cuda::LogicalVolume> const logical_volume,
-   DevicePtr<cuda::Transformation3D> const transform,
-   DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const
-{
-   return CopyToGpuImpl<PlacedTorus>(logical_volume, transform, gpu_ptr);
-}
-
-DevicePtr<cuda::VPlacedVolume> PlacedTorus::CopyToGpu(
-      DevicePtr<cuda::LogicalVolume> const logical_volume,
-      DevicePtr<cuda::Transformation3D> const transform) const
-{
-   return CopyToGpuImpl<PlacedTorus>(logical_volume, transform);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
-
 } // End impl namespace
 
 #ifdef VECGEOM_NVCC
