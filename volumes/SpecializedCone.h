@@ -69,8 +69,6 @@ public:
 
 #endif
 
-  using Helper = SpecializedCone<transCodeT, rotCodeT, ConeType>;
-
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
