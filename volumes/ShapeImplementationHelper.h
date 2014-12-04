@@ -106,7 +106,7 @@ public:
     DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
  {
      DevicePtr<CudaType_t<Helper> > gpu_ptr(in_gpu_ptr);
-     gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
+     gpu_ptr.Construct(logical_volume, transform, DevicePtr<cuda::PlacedBox>(), this->id());
      CudaAssertError();
      // Need to go via the void* because the regular c++ compilation
      // does not actually see the declaration for the cuda version

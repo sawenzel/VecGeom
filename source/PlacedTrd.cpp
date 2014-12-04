@@ -51,23 +51,16 @@ G4VSolid const* PlacedTrd::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End impl namespace
+} // End im%pl namespace
 
 #ifdef VECGEOM_NVCC
 
-namespace cxx {
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTrd, TrdTypes::UniversalTrd )
 
-template size_t DevicePtr<cuda::PlacedTrd>::SizeOf();
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTrd, TrdTypes::Trd1 )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTrd, TrdTypes::Trd2 )
 
-// PlacedTrd is abstract. 
-// template void DevicePtr<cuda::PlacedTrd>::Construct(
-//    DevicePtr<cuda::LogicalVolume> const logical_volume,
-//    DevicePtr<cuda::Transformation3D> const transform,
-//    const int id) const;
-
-} // End cxx namespace
-
-#endif // VECGEOM_NVCC
+#endif
 
 } // End global namespace
 

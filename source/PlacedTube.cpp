@@ -52,19 +52,19 @@ G4VSolid const* PlacedTube::ConvertToGeant4() const {
 
 #ifdef VECGEOM_NVCC
 
-namespace cxx {
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::UniversalTube )
 
-template size_t DevicePtr<cuda::PlacedTube>::SizeOf();
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTube )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTubeWithSmallerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTubeWithBiggerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTubeWithPiSector )
 
-// PlacedTube is abstract
-// template void DevicePtr<cuda::PlacedTube>::Construct(
-//    DevicePtr<cuda::LogicalVolume> const logical_volume,
-//    DevicePtr<cuda::Transformation3D> const transform,
-//    const int id) const;
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTube )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTubeWithSmallerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTubeWithBiggerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTubeWithPiSector )
 
-} // End cxx namespace
+#endif
 
-#endif // VECGEOM_NVCC
-
-} // End global namespace
+} // End global namespace  
 

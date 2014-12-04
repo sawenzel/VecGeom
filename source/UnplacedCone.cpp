@@ -155,7 +155,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
        }
  #endif
 
-       RETURN_SPECIALIZATION(SimpleCone);
+       RETURN_SPECIALIZATION(UniversalCone);
 
        #undef RETURN_SPECIALIZATION
  }

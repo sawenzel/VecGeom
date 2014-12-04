@@ -71,17 +71,7 @@ G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
 
 #ifdef VECGEOM_NVCC
 
-namespace cxx {
-
-template size_t DevicePtr<cuda::PlacedTrapezoid>::SizeOf();
-
-// PlacedTrapezoid is abstract
-// template void DevicePtr<cuda::PlacedTrapezoid>::Construct(
-//    DevicePtr<cuda::LogicalVolume> const logical_volume,
-//    DevicePtr<cuda::Transformation3D> const transform,
-//    const int id) const;
-
-} // End cxx namespace
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedTrapezoid )
 
 #endif // VECGEOM_NVCC
 

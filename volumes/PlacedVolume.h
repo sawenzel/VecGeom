@@ -304,4 +304,84 @@ public:
 
 } } // End global namespace
 
+#ifdef VECGEOM_NVCC
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME( PlacedVol ) \
+   namespace cxx { \
+      template size_t DevicePtr<cuda::PlacedVol>::SizeOf(); \
+      template void DevicePtr<cuda::PlacedVol>::Construct( \
+         DevicePtr<cuda::LogicalVolume> const logical_volume, \
+         DevicePtr<cuda::Transformation3D> const transform, \
+         DevicePtr<cuda::PlacedBox> const boundingBox, \
+         const int id) const; \
+    }
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol, Extra )    \
+   namespace cxx { \
+      template size_t DevicePtr<cuda::PlacedVol, Extra>::SizeOf(); \
+      template void DevicePtr<cuda::PlacedVol, Extra>::Construct( \
+         DevicePtr<cuda::LogicalVolume> const logical_volume, \
+         DevicePtr<cuda::Transformation3D> const transform, \
+         DevicePtr<cuda::PlacedBox> const boundingBox, \
+         const int id) const; \
+    }
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT( PlacedVol, trans )    \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, rotation::kGeneric> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, rotation::kDiagonal> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, rotation::kIdentity> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x046> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x054> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x062> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x076> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x0a1> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x0ad> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x0dc> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x0e3> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x10a> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x11b> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x155> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x16a> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x18e> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, 0x1b1> )
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( PlacedVol ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT(PlacedVol, translation::kGeneric) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT(PlacedVol, translation::kIdentity)
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol, Extra, Type )   \
+   namespace cxx { \
+      template size_t DevicePtr<cuda::PlacedVol, Extra, cuda::Type>::SizeOf(); \
+      template void DevicePtr<cuda::PlacedVol, Extra, cuda::Type>::Construct( \
+         DevicePtr<cuda::LogicalVolume> const logical_volume, \
+         DevicePtr<cuda::Transformation3D> const transform, \
+         DevicePtr<cuda::PlacedBox> const boundingBox, \
+         const int id) const; \
+    }
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_3( PlacedVol, trans, Type ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, rotation::kGeneric, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, rotation::kDiagonal, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, rotation::kIdentity, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x046, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x054, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x062, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x076, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x0a1, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x0ad, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x0dc, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x0e3, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x10a, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x11b, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x155, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x16a, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x18e, Type> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, 0x1b1, Type> )
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( PlacedVol, Type )       \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_3(PlacedVol, translation::kGeneric, Type) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_3(PlacedVol, translation::kIdentity, Type)
+
+#endif
+
 #endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_

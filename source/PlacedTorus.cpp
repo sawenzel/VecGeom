@@ -47,19 +47,9 @@ G4VSolid const* PlacedTorus::ConvertToGeant4() const {
 
 #ifdef VECGEOM_NVCC
 
-namespace cxx {
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedTorus )
 
-template size_t DevicePtr<cuda::PlacedTorus>::SizeOf();
-
-// PlacedTorus is abstract
-// template void DevicePtr<cuda::PlacedTorus>::Construct(
-//    DevicePtr<cuda::LogicalVolume> const logical_volume,
-//    DevicePtr<cuda::Transformation3D> const transform,
-//    const int id) const;
-
-} // End cxx namespace
-
-#endif // VECGEOM_NVCC
+#endif
 
 } // End global namespace
 

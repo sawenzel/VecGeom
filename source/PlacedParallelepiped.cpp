@@ -49,17 +49,7 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
 
 #ifdef VECGEOM_NVCC
 
-namespace cxx {
-
-template size_t DevicePtr<cuda::PlacedParallelepiped>::SizeOf();
-
-// PlacedParallelepiped is abstract
-// template void DevicePtr<cuda::PlacedParallelepiped>::Construct(
-//    DevicePtr<cuda::LogicalVolume> const logical_volume,
-//    DevicePtr<cuda::Transformation3D> const transform,
-//    const int id) const;
-
-} // End cxx namespace
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedParallelepiped )
 
 #endif // VECGEOM_NVCC
 
