@@ -31,7 +31,7 @@ class ScalarShapeImplementationHelper : public Specialization::PlacedShape_t {
 
 using PlacedShape_t = typename Specialization::PlacedShape_t;
 using UnplacedShape_t = typename Specialization::UnplacedShape_t;
-using Helper = ScalarShapeImplementationHelper<Specialization>;
+using Helper_t = ScalarShapeImplementationHelper<Specialization>;
 using Implementation_t = Specialization;
 
 public:
@@ -100,14 +100,14 @@ public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-  virtual size_t DeviceSizeOf() const { return DevicePtr<CudaType_t<Helper> >::SizeOf(); }
+  virtual size_t DeviceSizeOf() const { return DevicePtr<CudaType_t<Helper_t> >::SizeOf(); }
 
   DevicePtr<cuda::VPlacedVolume> CopyToGpu(
     DevicePtr<cuda::LogicalVolume> const logical_volume,
     DevicePtr<cuda::Transformation3D> const transform,
     DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
   {
-     DevicePtr<CudaType_t<Helper> > gpu_ptr(in_gpu_ptr);
+     DevicePtr<CudaType_t<Helper_t> > gpu_ptr(in_gpu_ptr);
      gpu_ptr.Construct(logical_volume, transform, DevicePtr<cuda::PlacedBox>(), this->id());
      CudaAssertError();
      // Need to go via the void* because the regular c++ compilation
@@ -120,7 +120,7 @@ public:
     DevicePtr<cuda::LogicalVolume> const logical_volume,
     DevicePtr<cuda::Transformation3D> const transform) const
   {
-     DevicePtr<CudaType_t<Helper> > gpu_ptr;
+     DevicePtr<CudaType_t<Helper_t> > gpu_ptr;
      gpu_ptr.Allocate();
      return CopyToGpu(logical_volume,transform,
                       DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr));
