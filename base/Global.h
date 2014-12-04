@@ -32,6 +32,10 @@
   #define VECGEOM_HOST_FORWARD_DECLARE(X) namespace cxx { X }
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_DECLARE_CONV(X)
+  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType,Arg)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Arg1,ArgType2,Arg2)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3)
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
@@ -55,17 +59,40 @@
   namespace vecgeom {
      template <typename DataType> struct kCudaType;
      template <typename DataType> using CudaType_t = typename kCudaType<DataType>::type_t;
+     template <> struct kCudaType<float> { using type_t = float; };
+     template <> struct kCudaType<double> { using type_t = double; };
+     template <> struct kCudaType<int> { using type_t = int; };
   }
   #define VECGEOM_HOST_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)  namespace cuda { X }
-  #define VECGEOM_DEVICE_DECLARE_CONV(X)  namespace cuda { class X; }  \
-     namespace cxx { class X; } \
+  #define VECGEOM_DEVICE_DECLARE_CONV(X) \
+     namespace cuda { class X; } \
+     namespace cxx  { class X; } \
      template <> struct kCudaType<cxx::X> { using type_t = cuda::X; };
+  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X) \
+     namespace cuda { namespace NS { class X; } } \
+     namespace cxx { namespace NS { class X; } } \
+     template <> struct kCudaType<cxx::NS::X> { using type_t = cuda::NS::X; };
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType,Arg) \
+     namespace cuda { template <ArgType Arg> class X; } \
+     namespace cxx  { template <ArgType Arg> class X; } \
+     template <ArgType Arg> struct kCudaType<cxx::X<Arg> > \
+     { using type_t = cuda::X<CudaType_t<Arg> >; };
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Arg1,ArgType2,Arg2) \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     template <ArgType1 Arg1,ArgType2 Arg2> struct kCudaType<cxx::X<Arg1,Arg2> > \
+     { using type_t = cuda::X<Arg1,Arg2 >; };
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3) \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
+     { using type_t = cuda::X<Arg1, Arg2, CudaType_t<Arg3> >; };
 
-  // If it was supported to be inside the inline namespace we would use:
-/*
-  #define VECGEOM_DEVICE_FORWARD_DECLARE(X) } namespace cuda { class Transformation3D; } \
-      inline namespace VECGEOM_IMPL_NAMESPACE {
+/* Instead of multiple macro, when we have auto expansion of Template pack we could use:
+template <typename... Arguments>
+struct kCudaType<cxx::BoxImplementation<Arguments...>  >
+   { using type_t = typename cuda::BoxImplementation<CudaType_t<Arguments...> >; };
 */
 #endif
 
