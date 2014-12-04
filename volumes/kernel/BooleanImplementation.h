@@ -9,12 +9,22 @@
 #include "base/Vector3D.h"
 #include "volumes/UnplacedBooleanVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(BooleanImplementation, BooleanOperation,boolOp, TranslationCode,transCodeT, RotationCode,rotCodeT)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedBooleanVolume;
+class UnplacedBooleanVolume;
 
 template <BooleanOperation boolOp, TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation {
-    static const int transC = transCodeT;
-    static const int rotC   = rotCodeT;
+   static const int transC = transCodeT;
+   static const int rotC   = rotCodeT;
+   using PlacedShape_t = PlacedBooleanVolume;
+   using UnplacedShape_t = UnplacedBooleanVolume;
+
     // empty since functionality will be implemented in
 // partially template specialized structs
 };
@@ -33,6 +43,13 @@ struct BooleanImplementation<kSubtraction, transCodeT, rotCodeT> {
    static const int transC = transCodeT;
    static const int rotC   = rotCodeT;
 
+   using PlacedShape_t = PlacedBooleanVolume;
+   using UnplacedShape_t = UnplacedBooleanVolume;
+
+   VECGEOM_CUDA_HEADER_BOTH
+   static void PrintType() {
+     printf("SpecializedBooleanVolume<%i, %i, %i>", kSubtraction, transCodeT, rotCodeT);
+   }
 
   //
   template<typename Backend>
@@ -587,6 +604,8 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::NormalKernel(
     ) {
     // TBDONE
 }
+
+} // End impl namespace
 
 } // End global namespace
 

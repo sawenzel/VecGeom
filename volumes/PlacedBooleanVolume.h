@@ -27,7 +27,12 @@
 #endif
 
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedBooleanVolume; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedBooleanVolume );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedBooleanVolume : public VPlacedVolume {
 
@@ -165,6 +170,7 @@ public:
 
 }; // end class declaration
 
+} // End impl namespace
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_

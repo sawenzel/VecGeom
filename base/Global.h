@@ -36,6 +36,7 @@
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType,Arg)
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Arg1,ArgType2,Arg2)
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3)
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
@@ -88,6 +89,11 @@
      namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Arg1, Arg2, CudaType_t<Arg3> >; };
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3) \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
+     { using type_t = cuda::X<Arg1,Arg2,Arg3 >; };
 
 /* Instead of multiple macro, when we have auto expansion of Template pack we could use:
 template <typename... Arguments>

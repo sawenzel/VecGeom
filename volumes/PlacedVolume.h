@@ -382,6 +382,39 @@ public:
    VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_3(PlacedVol, translation::kGeneric, Type) \
    VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_3(PlacedVol, translation::kIdentity, Type)
 
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol, trans, rot ) \
+   namespace cxx { \
+      template size_t DevicePtr<cuda::PlacedVol, trans, rot>::SizeOf(); \
+      template void DevicePtr<cuda::PlacedVol, trans, rot>::Construct( \
+         DevicePtr<cuda::LogicalVolume> const logical_volume, \
+         DevicePtr<cuda::Transformation3D> const transform, \
+         DevicePtr<cuda::PlacedBox> const boundingBox, \
+         const int id) const; \
+    }
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_BOOLEAN( PlacedVol, Op, trans) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, rotation::kGeneric> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, rotation::kDiagonal> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, rotation::kIdentity> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x046> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x054> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x062> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x076> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x0a1> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x0ad> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x0dc> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x0e3> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x10a> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x11b> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x155> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x16a> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x18e> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, 0x1b1> )
+
+#define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_BOOLEAN( PlacedVol, Op )       \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_BOOLEAN(PlacedVol, Op, translation::kGeneric) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_BOOLEAN(PlacedVol, Op, translation::kIdentity)
+
 #endif
 
 #endif // VECGEOM_VOLUMES_PLACEDVOLUME_H_
