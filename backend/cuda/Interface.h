@@ -132,7 +132,7 @@ protected:
       vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
    }
    void Free() {
-      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaFree((void**)&fPtr));
+      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaFree((void*)fPtr));
    }
    void Increment(long add) {
       fPtr = (char*)fPtr + add;
