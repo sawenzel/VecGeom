@@ -275,8 +275,8 @@ void CudaManager::AllocateGeometry() {
   if (verbose_ == 2) std::cout << " OK\n";
 
 
-  fprintf(stderr,"NUMBER OF PLACED VOLUMES %d\n", placed_volumes_.size());
-  fprintf(stderr,"NUMBER OF UNPLACED VOLUMES %d\n", unplaced_volumes_.size());
+  fprintf(stderr,"NUMBER OF PLACED VOLUMES %ld\n", placed_volumes_.size());
+  fprintf(stderr,"NUMBER OF UNPLACED VOLUMES %ld\n", unplaced_volumes_.size());
 
 }
 

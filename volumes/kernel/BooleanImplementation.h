@@ -514,7 +514,6 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::DistanceToOutKer
     typename Backend::precision_v &distance) {
 
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
 
     distance = unplaced.fLeftVolume->DistanceToOut( point, direction, stepMax );
     Float_t dinright = unplaced.fRightVolume->DistanceToIn( point, direction, stepMax );
@@ -529,9 +528,6 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::SafetyToInKernel
     UnplacedBooleanVolume const & unplaced,
     Vector3D<typename Backend::precision_v> const &p,
     typename Backend::precision_v &safety) {
-
-  typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v Bool_t;
 
   VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
   VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
@@ -572,7 +568,6 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::SafetyToOutKerne
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
-   typedef typename Backend::bool_v Bool_t;
    typedef typename Backend::precision_v Float_t;
 
    safety = unplaced.fLeftVolume->SafetyToOut( point );
