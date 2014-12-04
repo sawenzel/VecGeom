@@ -98,7 +98,7 @@ public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-  virtual size_t DeviceSizeOf() const { return DevicePtr<CudaType_t<PlacedShape_t> >::SizeOf(); }
+  virtual size_t DeviceSizeOf() const { return DevicePtr<CudaType_t<Helper> >::SizeOf(); }
 
   DevicePtr<cuda::VPlacedVolume> CopyToGpu(
     DevicePtr<cuda::LogicalVolume> const logical_volume,
