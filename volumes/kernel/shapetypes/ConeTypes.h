@@ -12,6 +12,19 @@
 #include "volumes/UnplacedCone.h"
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,UniversalCone)
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowConeWithSmallerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowConeWithBiggerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowConeWithPiSector)
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowConeWithSmallerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowConeWithBiggerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowConeWithPiSector)
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace ConeTypes {
 

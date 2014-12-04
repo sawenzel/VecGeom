@@ -21,6 +21,9 @@
 //#define DEBUGTORUS
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(TorusImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT)
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 

@@ -5,6 +5,11 @@
 #define VECGEOM_VOLUMES_KERNEL_SHAPETYPES_TRDTYPES_H_
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(TrdTypes,UniversalTrd)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TrdTypes,Trd1)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TrdTypes,Trd2)
+
 inline namespace VECGEOM_IMPL_NAMESPACE { namespace TrdTypes {
 
 #define DEFINE_TRD_TYPE(name) \

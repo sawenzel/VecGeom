@@ -45,6 +45,9 @@
 #include <stdio.h>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(ParaboloidImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT)
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
     
     namespace ParaboloidUtilities

@@ -19,6 +19,9 @@
 #endif
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(ShapeImplementationHelper,class,Specialization)
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <class Specialization>
@@ -26,6 +29,7 @@ class ShapeImplementationHelper : public Specialization::PlacedShape_t {
 
 using PlacedShape_t = typename Specialization::PlacedShape_t;
 using UnplacedShape_t = typename Specialization::UnplacedShape_t;
+using Helper = ShapeImplementationHelper<Specialization>;
 
 public:
 
@@ -91,6 +95,36 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const { Specialization::PrintType(); }
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+  virtual size_t DeviceSizeOf() const { return DevicePtr<CudaType_t<PlacedShape_t> >::SizeOf(); }
+
+  DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+    DevicePtr<cuda::LogicalVolume> const logical_volume,
+    DevicePtr<cuda::Transformation3D> const transform,
+    DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
+ {
+     DevicePtr<CudaType_t<Helper> > gpu_ptr(in_gpu_ptr);
+     gpu_ptr.Construct(logical_volume, transform, nullptr, this->id());
+     CudaAssertError();
+     // Need to go via the void* because the regular c++ compilation
+     // does not actually see the declaration for the cuda version
+     // (and thus can not determine the inheritance).
+     return DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr);
+ }
+
+ DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+    DevicePtr<cuda::LogicalVolume> const logical_volume,
+    DevicePtr<cuda::Transformation3D> const transform) const
+ {
+     DevicePtr<CudaType_t<Helper> > gpu_ptr;
+     gpu_ptr.Allocate();
+     return CopyToGpu(logical_volume,transform,
+                      DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr));
+ }
+
+#endif // VECGEOM_CUDA_INTERFACE
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Inside_t Inside(Vector3D<Precision> const &point) const {

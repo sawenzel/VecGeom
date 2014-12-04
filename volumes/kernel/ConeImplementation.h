@@ -17,6 +17,9 @@
 #include <stdio.h>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(ConeImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT,typename,ConeType)
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename ConeType>

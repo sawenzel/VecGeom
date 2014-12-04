@@ -11,6 +11,19 @@
 #include <string>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,UniversalTube)
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithSmallerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithBiggerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithPiSector)
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithSmallerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithBiggerThanPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithPiSector)
+
 inline namespace VECGEOM_IMPL_NAMESPACE { namespace TubeTypes {
 
 #define DEFINE_TUBE_TYPE(name) \

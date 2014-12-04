@@ -11,6 +11,7 @@
 #include "volumes/ShapeImplementationHelper.h"
 
 namespace vecgeom {
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

@@ -17,6 +17,9 @@
 #include <stdio.h>
 
 namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(TrdImplementation, TranslationCode,transCodeT, RotationCode,rotCode,typename,trdTypeT)
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 namespace TrdUtilities {
