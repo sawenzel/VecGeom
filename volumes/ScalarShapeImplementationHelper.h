@@ -32,6 +32,7 @@ class ScalarShapeImplementationHelper : public Specialization::PlacedShape_t {
 using PlacedShape_t = typename Specialization::PlacedShape_t;
 using UnplacedShape_t = typename Specialization::UnplacedShape_t;
 using Helper = ScalarShapeImplementationHelper<Specialization>;
+using Implementation_t = Specialization;
 
 public:
 
