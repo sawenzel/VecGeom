@@ -231,6 +231,17 @@ void Assert(const bool condition) {
   Assert(condition, "");
 }
 
+namespace details {
+   template <typename DataType, typename Target> struct UseIfSameType { 
+      VECGEOM_CUDA_HEADER_BOTH
+      static Target const *Get(DataType*) { return nullptr; }
+   };
+   template <typename DataType> struct UseIfSameType<DataType,DataType> {
+      VECGEOM_CUDA_HEADER_BOTH
+      static DataType const *Get(DataType *ptr) { return ptr; }
+   };
+}
+
 } } // End global namespace
 
 #endif // VECGEOM_BASE_GLOBAL_H_

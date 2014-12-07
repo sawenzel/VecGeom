@@ -47,7 +47,7 @@ public:
   ScalarShapeImplementationHelper(char const *const label,
                             LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
-      : ScalarShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
+      : ScalarShapeImplementationHelper(label, logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this)) {}
 
   ScalarShapeImplementationHelper(char const *const label,
                             LogicalVolume *const logical_volume,
@@ -58,7 +58,7 @@ public:
   ScalarShapeImplementationHelper(char const *const label,
                             LogicalVolume *const logical_volume,
                             Transformation3D const*const transformation)
-      : ScalarShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
+      : ScalarShapeImplementationHelper(label, logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this)) {}
 
   ScalarShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
@@ -90,7 +90,7 @@ public:
   ScalarShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             const int id)
-      : PlacedShape_t(logical_volume, transformation, dynamic_cast<PlacedBox*>(this), id) {}
+      : PlacedShape_t(logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this), id) {}
 #endif
 
   virtual int memory_size() const { return sizeof(*this); }

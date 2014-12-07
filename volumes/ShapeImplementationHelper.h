@@ -45,7 +45,7 @@ public:
   ShapeImplementationHelper(char const *const label,
                             LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
-      : ShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
+     : ShapeImplementationHelper(label, logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this)) {}
 
   ShapeImplementationHelper(char const *const label,
                             LogicalVolume *const logical_volume,
@@ -56,7 +56,7 @@ public:
   ShapeImplementationHelper(char const *const label,
                             LogicalVolume *const logical_volume,
                             Transformation3D const*const transformation)
-      : ShapeImplementationHelper(label, logical_volume, transformation, ( PlacedBox const *const)dynamic_cast<PlacedBox*>(this)) {}
+      : ShapeImplementationHelper(label, logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this)) {}
 
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
@@ -88,7 +88,7 @@ public:
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             const int id)
-      : PlacedShape_t(logical_volume, transformation, dynamic_cast<PlacedBox*>(this), id) {}
+      : PlacedShape_t(logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this), id) {}
 
 #endif
 
