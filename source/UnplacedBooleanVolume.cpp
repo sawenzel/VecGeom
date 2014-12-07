@@ -12,7 +12,10 @@
 #include "volumes/utilities/GenerationUtilities.h"
 #include "volumes/LogicalVolume.h"
 #include "volumes/PlacedVolume.h"
+
+#ifdef VECGEOM_CUDA_INTERFACE
 #include "management/CudaManager.h"
+#endif
 
 namespace vecgeom {
 

@@ -1585,6 +1585,7 @@ void Benchmarker::FreeAligned(Type *const distance) {
   if (distance) _mm_free(distance);
 }
 
+#ifdef VECGEOM_CUDA_INTERFACE
 void Benchmarker::GetVolumePointers( std::list<DevicePtr<cuda::VPlacedVolume>> &volumesGpu )
 {
 
@@ -1595,6 +1596,6 @@ void Benchmarker::GetVolumePointers( std::list<DevicePtr<cuda::VPlacedVolume>> &
     volumesGpu.push_back(CudaManager::Instance().LookupPlaced(v->Specialized()));
   }
 }
-
+#endif
 
 } // End namespace vecgeom
