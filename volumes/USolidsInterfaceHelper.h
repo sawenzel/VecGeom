@@ -10,12 +10,13 @@
 
 #ifndef VECGEOM_USOLIDS
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
   struct USolidsInterfaceHelper {
     VECGEOM_CUDA_HEADER_BOTH
     virtual ~USolidsInterfaceHelper() {}
   };
-}
+} }
 
 #else // Compiling with USolids compatibility
 
@@ -31,7 +32,8 @@ namespace VECGEOM_NAMESPACE {
 #include <cassert>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /// \brief USolids compatibility signatures.
 /// 
@@ -152,7 +154,7 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // USolids defined
 

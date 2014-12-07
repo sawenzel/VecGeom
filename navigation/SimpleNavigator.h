@@ -20,8 +20,8 @@
 #endif
 #include <cassert>
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class SimpleNavigator
 {
@@ -495,6 +495,6 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    } // end loop for relocation
 }
 
-} // end namespace
+} } // End global namespace
 
 #endif /* SIMPLE_NAVIGATOR_H_ */

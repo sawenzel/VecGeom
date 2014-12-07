@@ -8,7 +8,8 @@
 
 #include "base/Vector3D.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <class Implementation>
 class Container3D;
@@ -137,6 +138,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_CONTAINER3D_H_

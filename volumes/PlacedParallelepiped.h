@@ -8,7 +8,12 @@
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParallelepiped.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedParallelepiped; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedParallelepiped );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedParallelepiped : public VPlacedVolume {
 
@@ -96,17 +101,8 @@ public:
 #endif
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
-
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDPARALLELEPIPED_H_

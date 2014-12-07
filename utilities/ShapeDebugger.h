@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 namespace vecgeom {
+   inline namespace cxx {
 
 template <typename T> class Vector3D;
 class VPlacedVolume;
@@ -90,6 +91,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} } // End namespace vecgeom
 
 #endif // VECGEOM_UTILITIES_SHAPEDEBUGGER_H_

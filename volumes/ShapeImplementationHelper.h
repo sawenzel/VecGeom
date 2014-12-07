@@ -18,10 +18,19 @@
 #include "volumes/utilities/ResultComparator.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
-template <class Shape, class Specialization>
-class ShapeImplementationHelper : public Shape {
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(ShapeImplementationHelper,class,Specialization)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+template <class Specialization>
+class ShapeImplementationHelper : public Specialization::PlacedShape_t {
+
+using PlacedShape_t = typename Specialization::PlacedShape_t;
+using UnplacedShape_t = typename Specialization::UnplacedShape_t;
+using Helper_t = ShapeImplementationHelper<Specialization>;
+using Implementation_t = Specialization;
 
 public:
 
@@ -31,13 +40,39 @@ public:
                             LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox)
-      : Shape(label, logical_volume, transformation, boundingBox) {}
+      : PlacedShape_t(label, logical_volume, transformation, boundingBox) {}
+
+  ShapeImplementationHelper(char const *const label,
+                            LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation)
+     : ShapeImplementationHelper(label, logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this)) {}
+
+  ShapeImplementationHelper(char const *const label,
+                            LogicalVolume *const logical_volume,
+                            Transformation3D const*const transformation,
+                            PlacedBox const*const boundingBox)
+      : PlacedShape_t(label, logical_volume, transformation, boundingBox) {}
+
+  ShapeImplementationHelper(char const *const label,
+                            LogicalVolume *const logical_volume,
+                            Transformation3D const*const transformation)
+      : ShapeImplementationHelper(label, logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this)) {}
 
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox)
       : ShapeImplementationHelper("", logical_volume, transformation,
                                   boundingBox) {}
+
+  ShapeImplementationHelper(LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation)
+      : ShapeImplementationHelper("", logical_volume, transformation) {}
+
+  template <typename... ArgTypes>
+  ShapeImplementationHelper(char const *const label, ArgTypes... params)
+      : ShapeImplementationHelper(label, 
+                                  new LogicalVolume(new UnplacedShape_t(params...)),
+                                  &Transformation3D::kIdentity) {}
 
 #else // Compiling for CUDA
 
@@ -46,9 +81,51 @@ public:
                             Transformation3D const *const transformation,
                             PlacedBox const *const boundingBox,
                             const int id)
-      : Shape(logical_volume, transformation, boundingBox, id) {}
+      : PlacedShape_t(logical_volume, transformation, boundingBox, id) {}
+
+
+  __device__
+  ShapeImplementationHelper(LogicalVolume const *const logical_volume,
+                            Transformation3D const *const transformation,
+                            const int id)
+      : PlacedShape_t(logical_volume, transformation, details::UseIfSameType<PlacedShape_t,PlacedBox>::Get(this), id) {}
 
 #endif
+
+  virtual int memory_size() const { return sizeof(*this); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void PrintType() const { Specialization::PrintType(); }
+
+#ifdef VECGEOM_CUDA_INTERFACE
+
+  virtual size_t DeviceSizeOf() const { return DevicePtr<CudaType_t<Helper_t> >::SizeOf(); }
+
+  DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+    DevicePtr<cuda::LogicalVolume> const logical_volume,
+    DevicePtr<cuda::Transformation3D> const transform,
+    DevicePtr<cuda::VPlacedVolume> const in_gpu_ptr) const
+ {
+     DevicePtr<CudaType_t<Helper_t> > gpu_ptr(in_gpu_ptr);
+     gpu_ptr.Construct(logical_volume, transform, DevicePtr<cuda::PlacedBox>(), this->id());
+     CudaAssertError();
+     // Need to go via the void* because the regular c++ compilation
+     // does not actually see the declaration for the cuda version
+     // (and thus can not determine the inheritance).
+     return DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr);
+ }
+
+ DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+    DevicePtr<cuda::LogicalVolume> const logical_volume,
+    DevicePtr<cuda::Transformation3D> const transform) const
+ {
+     DevicePtr<CudaType_t<Helper_t> > gpu_ptr;
+     gpu_ptr.Allocate();
+     return CopyToGpu(logical_volume,transform,
+                      DevicePtr<cuda::VPlacedVolume>((void*)gpu_ptr));
+ }
+
+#endif // VECGEOM_CUDA_INTERFACE
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual Inside_t Inside(Vector3D<Precision> const &point) const {
@@ -183,9 +260,9 @@ public:
                                   bool &convex, Precision step = kInfinity ) const {
       double d = DistanceToOut(point, direction, step );
         Vector3D<double> hitpoint = point + d*direction;
-        Shape::Normal( hitpoint, normal );
+        PlacedShape_t::Normal( hitpoint, normal );
         // we could make this something like
-        // convex = Shape::IsConvex;
+        // convex = PlacedShape_t::IsConvex;
         convex = true;
         return d;
   }
@@ -733,6 +810,6 @@ public:
 
 }; // End class ShapeImplementationHelper
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_

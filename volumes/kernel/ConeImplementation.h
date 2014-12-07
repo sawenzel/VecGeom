@@ -14,8 +14,13 @@
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include "volumes/kernel/TubeImplementation.h"
 #include <cassert>
+#include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(ConeImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT,typename,ConeType)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename ConeType>
 struct ConeHelper
@@ -57,6 +62,8 @@ struct ConeHelper
 */
 };
 
+class PlacedCone;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename ConeType>
 struct ConeImplementation {
@@ -64,6 +71,13 @@ struct ConeImplementation {
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
 
+  using PlacedShape_t = PlacedCone;
+  using UnplacedShape_t = UnplacedCone;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedCone<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -2111,5 +2125,6 @@ struct ConeImplementation {
 
 }; // end struct
 
-} // end namespace
+} } // End global namespace
+
 #endif /* VECGEOM_VOLUMES_KERNEL_CONEIMPLEMENTATION_H_ */

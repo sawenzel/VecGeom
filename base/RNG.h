@@ -13,7 +13,8 @@
 #include <random>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_NVCC
    class RNG;
@@ -149,6 +150,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_RNG_H_

@@ -9,7 +9,12 @@
 #include "base/Vector3D.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedBox; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedBox );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedBox : public VUnplacedVolume, public AlignedBase {
 
@@ -31,8 +36,9 @@ public:
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedBox>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
   #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -137,6 +143,6 @@ private:
   
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDBOX_H_

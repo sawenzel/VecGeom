@@ -16,7 +16,8 @@
 
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
      
   VECGEOM_CUDA_HEADER_BOTH
@@ -53,7 +54,6 @@ namespace VECGEOM_NAMESPACE {
 #endif
   
   
-
-}// End global 
+} } // End global namespace
 
 #endif //VECGEOM_VOLUMES_SPHEREUTILITIES_H_

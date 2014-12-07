@@ -4,7 +4,13 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_SHAPETYPES_TRDTYPES_H_
 #define VECGEOM_VOLUMES_KERNEL_SHAPETYPES_TRDTYPES_H_
 
-namespace VECGEOM_NAMESPACE { namespace TrdTypes {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(TrdTypes,UniversalTrd)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TrdTypes,Trd1)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TrdTypes,Trd2)
+
+inline namespace VECGEOM_IMPL_NAMESPACE { namespace TrdTypes {
 
 #define DEFINE_TRD_TYPE(name) \
     struct name { \
@@ -52,7 +58,10 @@ bool checkVaryingY(const UnplacedTrd& trd) {
     return trd.dy1() != trd.dy2();
 }
 
-} }
+} // end of TrdTypes
+
+} } // End global namespace
+
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_SHAPETYPES_TRDTYPES_H_

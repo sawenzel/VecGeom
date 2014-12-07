@@ -12,7 +12,8 @@
 #include "volumes/USolidsInterfaceHelper.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 int VPlacedVolume::g_id_count = 0;
 
@@ -86,5 +87,22 @@ std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
      << ")";
   return os;
 }
+
+} // End impl namespace
+
+#ifdef VECGEOM_NVCC
+
+namespace cxx {
+
+template size_t DevicePtr<cuda::VPlacedVolume const*>::SizeOf();
+template size_t DevicePtr<char>::SizeOf();
+// template void DevicePtr<cuda::PlacedBox>::Construct(
+//    DevicePtr<cuda::LogicalVolume> const logical_volume,
+//    DevicePtr<cuda::Transformation3D> const transform,
+//    const int id) const;
+
+} // End cxx namespace
+
+#endif // VECGEOM_NVCC
 
 } // End global namespace

@@ -11,7 +11,12 @@
 #include "volumes/UnplacedSphere.h"
 #include "volumes/kernel/SphereImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedSphere; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedSphere );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedSphere : public VPlacedVolume {
 
@@ -255,17 +260,8 @@ VECGEOM_INLINE
 #endif
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
-
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDSPHERE_H_

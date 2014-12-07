@@ -14,6 +14,11 @@ class TGeoShape;
 
 namespace vecgeom {
 
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedRootVolume; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedRootVolume );
+
+   inline namespace cxx {
+
 template <typename T> class AOS3D;
 template <typename T> class SOA3D;
 
@@ -156,12 +161,13 @@ public:
 #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
+  virtual size_t DeviceSizeOf() const { return 0; /* return DevicePtr<cuda::PlacedRootVolume>::SizeOf(); */ }
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
+                                             DevicePtr<cuda::Transformation3D> const transform,
+                                             DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const;
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+      DevicePtr<cuda::LogicalVolume> const logical_volume,
+      DevicePtr<cuda::Transformation3D> const transform) const;
 #endif
 
 };
@@ -249,6 +255,6 @@ Precision PlacedRootVolume::SafetyToIn(
   return fRootShape->Safety(&position_local[0], false);
 }
 
-} // End namespace vecgeom
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDROOTVOLUME_H_

@@ -5,7 +5,8 @@
 
 #include "management/VolumeFactory.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void UnplacedTorus::Print() const {
   printf("UnplacedTorus {%.2f, %.2f, %.2f, %.2f, %.2f}",
@@ -62,47 +63,35 @@ VPlacedVolume* UnplacedTorus::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedTorus_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTorus::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTorus_CopyToGpu(fRmin, fRmax, fRtor, fSphi, fDphi, gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedTorus>(in_gpu_ptr, fRmin, fRmax, fRtor, fSphi, fDphi);
 }
 
-VUnplacedVolume* UnplacedTorus::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTorus>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedTorus>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedTorus_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTorus(rmin, rmax, rtor, sphi, dphi);
-}
+template size_t DevicePtr<cuda::UnplacedTorus>::SizeOf();
+template void DevicePtr<cuda::UnplacedTorus>::Construct(
+    const Precision rmin, const Precision rmax, const Precision rtor,
+    const Precision sphi, const Precision dphi) const;
 
-void UnplacedTorus_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision rtor, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedTorus_ConstructOnGpu<<<1, 1>>>(rmin, rmax, rtor, sphi, dphi, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace
+

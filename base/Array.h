@@ -8,7 +8,8 @@
 
 #include "base/AlignedBase.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename Type>
 class Array : public AlignedBase {
@@ -147,6 +148,6 @@ Array<Type>& Array<Type>::operator=(Array<Type> const &other) {
   return *this;
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_ARRAY_H_

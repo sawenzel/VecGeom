@@ -8,7 +8,8 @@
 
 #include <algorithm>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 struct kScalar {
   typedef int       int_v;
@@ -200,6 +201,6 @@ bool equal(InputIterator1 first, InputIterator1 last, InputIterator2 target) {
 #endif
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BACKEND_SCALARBACKEND_H_

@@ -12,7 +12,11 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class AOS3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename T>
 class AOS3D : Container3D<AOS3D<T> > {
@@ -115,8 +119,8 @@ public:
   VECGEOM_INLINE
   void push_back(Vector3D<T> const &vec);
 
-#ifdef VECGEOM_CUDA
-  AOS3D<T>* CopyToGpu(Vector3D<T> *contentGpu) const;
+#ifdef VECGEOM_CUDA_INTERFACE
+  DevicePtr<cuda::AOS3D<T> > CopyToGpu(DevicePtr<cuda::Vector3D<T> > contentGpu) const;
 #endif
 
 private:
@@ -285,26 +289,21 @@ void AOS3D<T>::push_back(Vector3D<T> const &vec) {
   ++fSize;
 }
 
-} // End global namespace
-
-namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-template <typename T> class Vector3D;
-template <typename T> class AOS3D;
-
-AOS3D<Precision>* AOS3D_CopyToGpu(Vector3D<Precision> *content, size_t size);
-
 template <typename T>
-AOS3D<T>* AOS3D<T>::CopyToGpu(Vector3D<T> *const contentGpu) const {
-  size_t bytes = fSize*sizeof(Vec_t);
-  vecgeom::CopyToGpu(fContent, contentGpu, bytes);
-  return AOS3D_CopyToGpu(contentGpu, fSize);
+DevicePtr< cuda::AOS3D<T> > AOS3D<T>::CopyToGpu(DevicePtr<cuda::Vector3D<T> > contentGpu) const {
+   contentGpu.ToDevice(fContent, fSize);
+
+   DevicePtr< cuda::AOS3D<T> > gpu_ptr;
+   gpu_ptr.Allocate();
+   gpu_ptr.Construct(contentGpu, fSize);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
-} // End namespace vecgeom
+} } // End namespace vecgeom
+
 
 #endif // VECGEOM_BASE_AOS3D_H_

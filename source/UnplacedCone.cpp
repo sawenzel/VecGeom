@@ -5,7 +5,6 @@
  *      Author: swenzel
  */
 
-
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedCone.h"
 #include "volumes/utilities/GenerationUtilities.h"
@@ -15,7 +14,8 @@
 
 #include "management/VolumeFactory.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
     void UnplacedCone::Print() const {
      printf("UnplacedCone {rmin1 %.2f, rmax1 %.2f, rmin2 %.2f, "
@@ -155,7 +155,7 @@ namespace VECGEOM_NAMESPACE {
        }
  #endif
 
-       RETURN_SPECIALIZATION(SimpleCone);
+       RETURN_SPECIALIZATION(UniversalCone);
 
        #undef RETURN_SPECIALIZATION
  }
@@ -181,60 +181,35 @@ namespace VECGEOM_NAMESPACE {
                               placement);
 }
 
-
-}
-
-
-
-namespace vecgeom {
-
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedCone_CopyToGpu(
-    const Precision rmin1, const Precision rmax1,
-    const Precision rmin2, const Precision rmax2,
-    const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedCone::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedCone_CopyToGpu(GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(), GetDz(), GetSPhi(), GetDPhi(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedCone::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedCone>(in_gpu_ptr, GetRmin1(), GetRmax1(), GetRmin2(), GetRmax2(), GetDz(), GetSPhi(), GetDPhi());
 }
 
-VUnplacedVolume* UnplacedCone::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedCone>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedCone::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedCone>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedCone_ConstructOnGpu(
+template size_t DevicePtr<cuda::UnplacedCone>::SizeOf();
+template void DevicePtr<cuda::UnplacedCone>::Construct(
     const Precision rmin1, const Precision rmax1,
     const Precision rmin2, const Precision rmax2,
-    const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedCone(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi);
-}
+    const Precision z, const Precision sphi, const Precision dphi) const;
 
-void UnplacedCone_CopyToGpu(
-        const Precision rmin1, const Precision rmax1,
-        const Precision rmin2, const Precision rmax2,
-        const Precision z, const Precision sphi, const Precision dphi,
-        VUnplacedVolume *const gpu_ptr) {
-  UnplacedCone_ConstructOnGpu<<<1, 1>>>(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
 } // End namespace vecgeom
-
-
-

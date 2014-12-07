@@ -7,7 +7,8 @@
 
 #include "management/VolumeFactory.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void UnplacedTube::Print() const {
   printf("UnplacedTube {%.2f, %.2f, %.2f, %.2f, %.2f}",
@@ -80,47 +81,34 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedTube_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTube::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTube_CopyToGpu(rmin(), rmax(), z(), sphi(), dphi(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTube::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedTube>(in_gpu_ptr, rmin(), rmax(), z(), sphi(), dphi());
 }
 
-VUnplacedVolume* UnplacedTube::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTube>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedTube::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedTube>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedTube_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedTube(rmin, rmax, z, sphi, dphi);
-}
+template size_t DevicePtr<cuda::UnplacedTube>::SizeOf();
+template void DevicePtr<cuda::UnplacedTube>::Construct(
+    const Precision rmin, const Precision rmax, const Precision z, 
+    const Precision sphi, const Precision dphi) const;
 
-void UnplacedTube_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision z, const Precision sphi, const Precision dphi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedTube_ConstructOnGpu<<<1, 1>>>(rmin, rmax, z, sphi, dphi, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

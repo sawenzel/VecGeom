@@ -11,7 +11,12 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TubeImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedTube; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedTube );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTube : public VPlacedVolume {
 
@@ -84,18 +89,9 @@ public:
 #endif
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
-
 }; 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTUBE_H_
 

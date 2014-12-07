@@ -13,9 +13,12 @@ enum BooleanOperation {
     kSubtraction
 };
 
+namespace vecgeom {
 
-namespace VECGEOM_NAMESPACE {
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedBooleanVolume; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedBooleanVolume );
 
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * A class representing a simple UNPLACED boolean volume A-B
@@ -50,8 +53,9 @@ public:
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedBooleanVolume>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
   #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -114,6 +118,8 @@ public:
        VPlacedVolume *const placement = NULL) const;
 
 }; // End class
+
+} // End impl namespace
 
 } // End global namespace
 

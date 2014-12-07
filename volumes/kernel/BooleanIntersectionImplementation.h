@@ -10,7 +10,9 @@
 #include "base/Vector3D.h"
 #include "volumes/UnplacedBooleanVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * partial template specialization for UNION implementation
@@ -20,7 +22,15 @@ struct BooleanImplementation<kIntersection, transCodeT, rotCodeT> {
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
 
-    //
+  using PlacedShape_t = PlacedBooleanVolume;
+  using UnplacedShape_t = UnplacedBooleanVolume;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedBooleanVolume<%i, %i, %i>", kIntersection, transCodeT, rotCodeT);
+  }
+
+  //
   template<typename Backend>
   VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
@@ -484,6 +494,8 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::NormalKernel(
     ) {
     // TBDONE
 }
+
+} // End impl namespace
 
 } // End global namespace
 

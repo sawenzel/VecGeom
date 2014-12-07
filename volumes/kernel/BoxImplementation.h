@@ -9,13 +9,30 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(BoxImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedBox;
+class UnplacedBox;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedBox;
+  using UnplacedShape_t = UnplacedBox;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedBox<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template<typename Backend>
   VECGEOM_INLINE
@@ -574,7 +591,7 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
     }
 
 
-} // End global namespace
+} } // End global namespace
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_

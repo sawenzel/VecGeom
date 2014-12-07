@@ -13,8 +13,8 @@
 #include "TGeoManager.h"
 #endif
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_ROOT
 
@@ -139,4 +139,4 @@ void SimpleNavigator::InspectSafetyForPoint
 
 #endif // VECGEOM_ROOT
 
-}
+} } // End global namespace

@@ -13,7 +13,8 @@
 
 #include <map>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 // probably don't need apply to be virtual
 template<typename Container>
@@ -319,6 +320,6 @@ void GeoManager::getAllPathForLogicalVolume( LogicalVolume const * lvol, Contain
 
 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_

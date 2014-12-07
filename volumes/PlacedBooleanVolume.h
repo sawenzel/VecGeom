@@ -27,7 +27,12 @@
 #endif
 
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedBooleanVolume; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedBooleanVolume );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedBooleanVolume : public VPlacedVolume {
 
@@ -71,16 +76,6 @@ public:
 
   // CUDA specific
   virtual int memory_size() const { return sizeof(*this); }
-
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation,
-      VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
 
   // Comparison specific
 
@@ -165,6 +160,7 @@ public:
 
 }; // end class declaration
 
+} // End impl namespace
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_

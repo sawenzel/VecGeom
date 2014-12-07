@@ -9,7 +9,8 @@
 #include <Vc/Vc>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_VC
 class AlignedBase : public Vc::VectorAlignedBase {
@@ -62,6 +63,6 @@ public:
 class AlignedBase {};
 #endif
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_ALIGNEDBASE_H_

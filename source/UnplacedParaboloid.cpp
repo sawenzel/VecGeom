@@ -11,7 +11,8 @@
 #include "base/RNG.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
     
 //__________________________________________________________________
     VECGEOM_CUDA_HEADER_BOTH
@@ -309,41 +310,32 @@ VPlacedVolume* UnplacedParaboloid::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedParaboloid::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedParaboloid_CopyToGpu(gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedParaboloid>(in_gpu_ptr, GetRlo(), GetRhi(), GetDz());
 }
 
-VUnplacedVolume* UnplacedParaboloid::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedParaboloid>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedParaboloid>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedParaboloid_ConstructOnGpu(VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedParaboloid();
-}
+template size_t DevicePtr<cuda::UnplacedParaboloid>::SizeOf();
+template void DevicePtr<cuda::UnplacedParaboloid>::Construct(const Precision rlo, const Precision rhi, const Precision dz) const;
 
-void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr) {
-  UnplacedParaboloid_ConstructOnGpu<<<1, 1>>>(gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

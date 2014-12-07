@@ -22,7 +22,8 @@
 #endif
 
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 VPlacedVolume const* PlacedCone::ConvertToUnspecialized() const {
@@ -57,66 +58,12 @@ G4VSolid const * PlacedCone::ConvertToGeant4() const {
 
 #endif
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void PlacedCone_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedCone::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  PlacedCone_CopyToGpu(logical_volume, transformation, this->id(),
-                                 gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-
-VPlacedVolume* PlacedCone::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedCone>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
-
-__global__
-void PlacedCone_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleCone(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-}
-
-void PlacedCone_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedCone_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
-                                                id, gpu_ptr);
-}
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedCone, ConeTypes::UniversalCone )
 
 #endif // VECGEOM_NVCC
 
 } // End namespace vecgeom
-
-
-

@@ -11,7 +11,15 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParallelepiped.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(ParallelepipedImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedParallelepiped;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParallelepipedImplementation {
@@ -19,6 +27,13 @@ struct ParallelepipedImplementation {
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
 
+  using PlacedShape_t = PlacedParallelepiped;
+  using UnplacedShape_t = UnplacedParallelepiped;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedParallelepiped<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -340,6 +355,6 @@ void ParallelepipedImplementation<transCodeT, rotCodeT>::SafetyToOut(
   MaskedAssign(safetyVector[2] < safety, safetyVector[2], &safety);
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_PARALLELEPIPEDIMPLEMENTATION_H_

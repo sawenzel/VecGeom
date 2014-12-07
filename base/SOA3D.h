@@ -11,9 +11,11 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace vecgeom_cuda { template <typename T> class SOA3D; }
+namespace vecgeom {
 
-namespace VECGEOM_NAMESPACE {
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class SOA3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 // gcc 4.8.2's -Wnon-virtual-dtor is broken and turned on by -Weffc++, we
 // need to disable it for SOA3D
@@ -141,9 +143,9 @@ public:
   VECGEOM_INLINE
   void push_back(Vector3D<T> const &vec);  
 
-#ifdef VECGEOM_CUDA
-  SOA3D<T>* CopyToGpu(T *xGpu, T *yGpu, T *zGpu) const;
-  SOA3D<T>* CopyToGpu(T *xGpu, T *yGpu, T *zGpu, size_t size) const;
+#ifdef VECGEOM_CUDA_INTERFACE
+  DevicePtr< cuda::SOA3D<T> > CopyToGpu(DevicePtr<T> xGpu, DevicePtr<T> yGpu, DevicePtr<T> zGpu) const;
+  DevicePtr< cuda::SOA3D<T> > CopyToGpu(DevicePtr<T> xGpu, DevicePtr<T> yGpu, DevicePtr<T> zGpu, size_t size) const;
 #endif // VECGEOM_CUDA
 
 private:
@@ -354,33 +356,32 @@ void SOA3D<T>::push_back(Vector3D<T> const &vec) {
   push_back(vec[0], vec[1], vec[2]);
 }
 
-#ifdef VECGEOM_CUDA
-
-template <typename T> class SOA3D;
-
-SOA3D<Precision>* SOA3D_CopyToGpu(Precision *x, Precision *y, Precision *z,
-                                  size_t size);
+#ifdef VECGEOM_CUDA_INTERFACE
 
 template <typename T>
-SOA3D<T>* SOA3D<T>::CopyToGpu(T *xGpu, T *yGpu, T *zGpu) const {
-  size_t bytes = fSize*sizeof(T);
-  vecgeom::CopyToGpu(fX, xGpu, bytes);
-  vecgeom::CopyToGpu(fX, yGpu, bytes);
-  vecgeom::CopyToGpu(fZ, zGpu, bytes);
-  return SOA3D_CopyToGpu(xGpu, yGpu, zGpu, fSize);
+DevicePtr< cuda::SOA3D<T> > SOA3D<T>::CopyToGpu(DevicePtr<T> xGpu, DevicePtr<T> yGpu, DevicePtr<T> zGpu) const {
+   xGpu.ToDevice(fX, fSize);
+   yGpu.ToDevice(fY, fSize);
+   zGpu.ToDevice(fZ, fSize);
+
+   DevicePtr< cuda::SOA3D<T> > gpu_ptr;
+   gpu_ptr.Allocate();
+   gpu_ptr.Construct(xGpu, yGpu, zGpu, fSize);
 }
 
 template <typename T>
-SOA3D<T>* SOA3D<T>::CopyToGpu(T *xGpu, T *yGpu, T *zGpu, size_t count) const {
-  size_t bytes = count*sizeof(T);
-  vecgeom::CopyToGpu(fX, xGpu, bytes);
-  vecgeom::CopyToGpu(fX, yGpu, bytes);
-  vecgeom::CopyToGpu(fZ, zGpu, bytes);
-  return SOA3D_CopyToGpu(xGpu, yGpu, zGpu, count);
+DevicePtr< cuda::SOA3D<T> > SOA3D<T>::CopyToGpu(DevicePtr<T> xGpu, DevicePtr<T> yGpu, DevicePtr<T> zGpu, size_t count) const {
+   xGpu.ToDevice(fX, count);
+   yGpu.ToDevice(fY, count);
+   zGpu.ToDevice(fZ, count);
+
+   DevicePtr< cuda::SOA3D<T> > gpu_ptr;
+   gpu_ptr.Allocate();
+   gpu_ptr.Construct(xGpu, yGpu, zGpu, fSize);
 }
 
 #endif // VECGEOM_CUDA
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_SOA3D_H_

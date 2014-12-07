@@ -12,11 +12,14 @@
 #include "volumes/utilities/GenerationUtilities.h"
 #include "volumes/LogicalVolume.h"
 #include "volumes/PlacedVolume.h"
+
+#ifdef VECGEOM_CUDA_INTERFACE
 #include "management/CudaManager.h"
+#endif
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
 
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 VECGEOM_CUDA_HEADER_DEVICE
@@ -29,35 +32,34 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
     VPlacedVolume *const placement)
 {
     // since this is a static function, we need to get instance of UnplacedBooleanVolume first of all from logical volume
-    __attribute__((unused)) const UnplacedBooleanVolume &vol
+   __attribute__((unused)) const UnplacedBooleanVolume &vol
             = static_cast<const UnplacedBooleanVolume&>( *(logical_volume->unplaced_volume()) );
 
-    if( vol.GetOp() == kSubtraction ){
-   return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kSubtraction, transCodeT, rotCodeT> >(
+   if( vol.GetOp() == kSubtraction ) {
+      return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kSubtraction, transCodeT, rotCodeT> >(
+      logical_volume, transformation, 
 #ifdef VECGEOM_NVCC
-      logical_volume, transformation, id, placement); // TODO: add bounding box?
-#else
-      logical_volume, transformation, placement);
-#endif
-    }
-    else if ( vol.GetOp() == kUnion ){
-        return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kUnion, transCodeT, rotCodeT> >(
+      id,
+#endif 
+      placement); // TODO: add bounding box?
+   }
+   else if ( vol.GetOp() == kUnion ) {
+      return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kUnion, transCodeT, rotCodeT> >(
+              logical_volume, transformation,
         #ifdef VECGEOM_NVCC
-              logical_volume, transformation, id, placement); // TODO: add bounding box?
-        #else
-              logical_volume, transformation, placement);
+              id,
         #endif
-            }
-    else if ( vol.GetOp() == kIntersection ){
-        return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kIntersection, transCodeT, rotCodeT> >(
+              placement); // TODO: add bounding box?
+   }
+   else if ( vol.GetOp() == kIntersection ){
+      return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kIntersection, transCodeT, rotCodeT> >(
+              logical_volume, transformation,
         #ifdef VECGEOM_NVCC
-              logical_volume, transformation, id, placement); // TODO: add bounding box?
-        #else
-              logical_volume, transformation, placement);
+              id,
         #endif
-            }
- return NULL;
-    //return nullptr;
+              placement); // TODO: add bounding box?
+   }
+   return nullptr;
 }
 
 
@@ -70,7 +72,7 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
     const int id,
 #endif
     VPlacedVolume *const placement) const {
-  return VolumeFactory::CreateByTransformation<UnplacedBooleanVolume>(
+   return VolumeFactory::CreateByTransformation<UnplacedBooleanVolume>(
     volume, transformation, trans_code, rot_code,
 #ifdef VECGEOM_NVCC
     id,
@@ -79,81 +81,49 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
 }
 
 
-}
-
-
-// functions to copy data structures to GPU
-namespace vecgeom {
 
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-// declaration of a common helper function
-void UnplacedBooleanVolume_CopyToGpu(
-     BooleanOperation op,
-     VPlacedVolume const* left,
-     VPlacedVolume const* right,
-     VUnplacedVolume *const gpu_ptr);
-
-
-// implementation of the virtual functions CopyToGpu
-VUnplacedVolume* UnplacedBooleanVolume::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-
-    UnplacedBooleanVolume_CopyToGpu(fOp, fLeftVolume, fRightVolume, gpu_ptr);
-    CudaAssertError();
-
-    return gpu_ptr;
-
-}
-
-VUnplacedVolume* UnplacedBooleanVolume::CopyToGpu() const {
-  // doing an allocation
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedBooleanVolume>();
-
-  // construct object in pre-allocated space
-  return this->CopyToGpu(gpu_ptr);
-}
-
-#endif
-
-#ifdef VECGEOM_NVCC
-
-class VUnplacedVolume;
-
-__global__
-void UnplacedBooleanVolume_ConstructOnGpu(
-    BooleanOperation op,
-    VPlacedVolume const * left,
-    VPlacedVolume const * right,
-    VUnplacedVolume *const gpu_ptr) {
-
-    new(gpu_ptr) vecgeom_cuda::UnplacedBooleanVolume(
-        op,
-        reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(left),
-        reinterpret_cast<vecgeom_cuda::VPlacedVolume const*>(right));
-
-}
-
-void UnplacedBooleanVolume_CopyToGpu(
-        BooleanOperation op,
-        VPlacedVolume const* left,
-        VPlacedVolume const* right,
-        VUnplacedVolume *const gpu_ptr) {
-
+// functions to copy data structures to GPU
+DevicePtr<cuda::VUnplacedVolume> UnplacedBooleanVolume::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
     // here we have our recursion:
     // since UnplacedBooleanVolume has pointer members we need to copy/construct those members too
     // very brute force; because this might have been copied already
     // TODO: integrate this into CUDA MGR?
 
     // use CUDA Manager to lookup GPU pointer
-    VPlacedVolume const* leftgpuptr = CudaManager::Instance().LookupPlaced(left);
-    VPlacedVolume const* rightgpuptr = CudaManager::Instance().LookupPlaced(right);
+    DevicePtr<cuda::VPlacedVolume> leftgpuptr = CudaManager::Instance().LookupPlaced(fLeftVolume);
+    DevicePtr<cuda::VPlacedVolume> rightgpuptr = CudaManager::Instance().LookupPlaced(fRightVolume);
 
-    UnplacedBooleanVolume_ConstructOnGpu<<<1, 1>>>(op, leftgpuptr, rightgpuptr, gpu_ptr);
+    return CopyToGpuImpl<UnplacedBooleanVolume>(in_gpu_ptr, fOp, leftgpuptr, rightgpuptr);
 }
 
+DevicePtr<cuda::VUnplacedVolume> UnplacedBooleanVolume::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedBooleanVolume>();
+}
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
+
+#ifdef VECGEOM_NVCC
+
+namespace cxx {
+
+template size_t DevicePtr<cuda::UnplacedBooleanVolume>::SizeOf();
+template void DevicePtr<cuda::UnplacedBooleanVolume>::Construct(
+    BooleanOperation op,
+    DevicePtr<cuda::VPlacedVolume> left,
+    DevicePtr<cuda::VPlacedVolume> right) const;
+
+} // End cxx namespace
+
 #endif
+
 
 } // End namespace vecgeom
 

@@ -20,7 +20,8 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 
@@ -50,63 +51,12 @@ return new G4Orb(GetLabel().c_str(),GetRadius());
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void PlacedOrb_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedOrb::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  vecgeom::PlacedOrb_CopyToGpu(logical_volume, transformation, this->id(),
-                                 gpu_ptr);
-  vecgeom::CudaAssertError();
-  return gpu_ptr;
-}
-
-VPlacedVolume* PlacedOrb::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedOrb>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
-
-__global__
-void PlacedOrb_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleOrb(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-}
-
-void PlacedOrb_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedOrb_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
-                                                id, gpu_ptr);
-}
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedOrb )
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} // End global namespace

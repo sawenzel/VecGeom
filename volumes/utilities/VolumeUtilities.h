@@ -24,10 +24,9 @@
 #include "TGeoShape.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace volumeUtilities {
-
-using namespace VECGEOM_NAMESPACE;
 
 VECGEOM_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point,
@@ -388,6 +387,6 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
 
 
 } // end namespace volumeUtilities
-} // end global namespace
+} } // end global namespace
 
 #endif /* VOLUME_UTILITIES_H_ */

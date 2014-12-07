@@ -20,6 +20,11 @@
 #include "TGeoShape.h"
 #endif
 
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Backend.h"
+#include "management/CudaManager.h"
+#endif
+
 #ifdef VECGEOM_GEANT4
 #endif
 
@@ -1579,5 +1584,18 @@ template <typename Type>
 void Benchmarker::FreeAligned(Type *const distance) {
   if (distance) _mm_free(distance);
 }
+
+#ifdef VECGEOM_CUDA_INTERFACE
+void Benchmarker::GetVolumePointers( std::list<DevicePtr<cuda::VPlacedVolume>> &volumesGpu )
+{
+
+  CudaManager::Instance().LoadGeometry(GetWorld());
+  CudaManager::Instance().Synchronize();
+  for (std::list<VolumePointers>::const_iterator v = fVolumes.begin();
+       v != fVolumes.end(); ++v) {
+    volumesGpu.push_back(CudaManager::Instance().LookupPlaced(v->Specialized()));
+  }
+}
+#endif
 
 } // End namespace vecgeom

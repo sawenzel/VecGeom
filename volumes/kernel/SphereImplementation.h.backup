@@ -15,7 +15,8 @@
 #include <iomanip>
 #include <Vc/Vc>
 //#include "volumes/SphereUtilities.h"
-namespace VECGEOM_NAMESPACE { 
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE { 
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct SphereImplementation {

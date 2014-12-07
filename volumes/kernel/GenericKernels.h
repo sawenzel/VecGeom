@@ -8,7 +8,8 @@
 #include "base/Transformation3D.h"
 #include "base/Vector3D.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <class Backend>
 struct GenericKernels {
@@ -51,6 +52,6 @@ T MakeMinusTolerantSquare(T const &x, T const &xsq)
   return (tolerant)? xsq-kTolerance*x : xsq;
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_

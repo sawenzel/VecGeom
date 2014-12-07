@@ -24,6 +24,8 @@ class TPolyMarker3D;
 
 namespace vecgeom {
 
+inline namespace cxx {
+
 template <typename T> class AOS3D;
 template <typename T> class SOA3D;
 class Transformation3D;
@@ -85,6 +87,6 @@ private:
 
 };
 
-} // End namespace vecgeom
+} } // End namespace vecgeom
 
 #endif // VECGEOM_MANAGEMENT_VISUALIZER_H_
