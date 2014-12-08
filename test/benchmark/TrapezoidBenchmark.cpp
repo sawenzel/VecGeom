@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
   GeoManager::Instance().SetWorld(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().GetWorld());
-  tester.SetVerbosity(1);
+  tester.SetVerbosity(3);
   tester.SetPointCount(npoints);
   tester.SetRepetitions(nreps);
   tester.SetPoolMultiplier(1);

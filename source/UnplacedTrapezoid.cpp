@@ -92,7 +92,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision const* params )
   MakePlanes();
 }
 
-UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const& corners )
+UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const corners )
   : fDz(0.f), fTheta(0.f), fPhi(0.f)
   , fDy1(0.f), fDx1(0.f), fDx2(0.f), fTanAlpha1(0.f)
   , fDy2(0.f), fDx3(0.f), fDx4(0.f), fTanAlpha2(0.f)
@@ -212,7 +212,7 @@ bool UnplacedTrapezoid::MakePlanes() {
   return MakePlanes(pt);
 }
 
-bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
+bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const pt) {
 
   // Checking coplanarity of all four side faces
   bool good = true;
@@ -655,7 +655,7 @@ Precision UnplacedTrapezoid::Volume() const {
     return cubicVolume;
 }
 
-void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
+void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const pt) {
 
     fDz = pt[7].z();
     Precision DzRecip = 1.0 / fDz;
@@ -677,7 +677,7 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
     fPhi   = atan2(fTthetaSphi, fTthetaCphi);
   }
 
-  void UnplacedTrapezoid::fromParametersToCorners( TrapCorners_t& pt ) const {
+  void UnplacedTrapezoid::fromParametersToCorners( TrapCorners_t pt ) const {
 
       // hopefully the compiler will optimize the repeated multiplications ... to be checked!
       pt[0] = Vec3D(-fDz*fTthetaCphi-fDy1*fTanAlpha1-fDx1, -fDz*fTthetaSphi-fDy1, -fDz);

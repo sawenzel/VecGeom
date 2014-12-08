@@ -64,15 +64,19 @@ public:
       : ShapeImplementationHelper("", logical_volume, transformation,
                                   boundingBox) {}
 
+
   ShapeImplementationHelper(LogicalVolume const *const logical_volume,
                             Transformation3D const *const transformation)
       : ShapeImplementationHelper("", logical_volume, transformation) {}
 
+  // this constructor mimics the constructor from the Unplaced solid
+  // it ensures that placed volumes can be constructed just like ordinary Geant4/ROOT/USolids solids
   template <typename... ArgTypes>
   ShapeImplementationHelper(char const *const label, ArgTypes... params)
       : ShapeImplementationHelper(label, 
                                   new LogicalVolume(new UnplacedShape_t(params...)),
                                   &Transformation3D::kIdentity) {}
+
 
 #else // Compiling for CUDA
 

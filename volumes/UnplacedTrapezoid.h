@@ -102,7 +102,7 @@ public:
 
   /// \brief Constructor based on 8 corner points
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTrapezoid( TrapCorners_t const& corners );
+  UnplacedTrapezoid( TrapCorners_t const corners );
 
   /// \brief Constructor for "default" UnplacedTrapezoid whose parameters are to be set later
   VECGEOM_CUDA_HEADER_BOTH
@@ -236,11 +236,11 @@ public:
 
   /// \brief Calculate trapezoid parameters when user provides the 8 corners
   VECGEOM_CUDA_HEADER_BOTH
-  void fromCornersToParameters( TrapCorners_t const & pt);
+  void fromCornersToParameters( TrapCorners_t const  pt);
 
   /// \brief Calculate the 8 corner points using pre-stored parameters
   VECGEOM_CUDA_HEADER_BOTH
-  void fromParametersToCorners( TrapCorners_t & pt ) const;
+  void fromParametersToCorners( TrapCorners_t  pt ) const;
 
 private:
 
@@ -263,7 +263,7 @@ private:
 
   /// \brief Construct the four side planes from input corner points
   VECGEOM_CUDA_HEADER_BOTH
-  bool MakePlanes( TrapCorners_t const & corners );
+  bool MakePlanes( TrapCorners_t const corners );
 
   /// \brief Construct a side plane containing four of the trapezoid
   /// corners defining a side face
