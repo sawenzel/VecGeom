@@ -59,7 +59,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
           // take care of a possible discontinuity
           if( i < unplaced->GetNSections()-1 && ( prevrmin != unplaced->GetSection(i+1).solid->GetRmin1()
-             || prevrmax != unplaced->GetSection(i+1).solid->GetRmax2() ) ) {
+             || prevrmax != unplaced->GetSection(i+1).solid->GetRmax1() ) ) {
              putlowersection = true;
           }
           else{
@@ -96,19 +96,22 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
                   rminvector[counter] = cone->GetRmin1();
                   rmaxvector[counter] = cone->GetRmax1();
                   zvector[counter] = -cone->GetDz() + unplaced->GetSection(i).shift;
+		  std::cerr << "###" << counter << " " << zvector[counter] << "\n";
 		  counter++;
                 }
                 rminvector[counter] = cone->GetRmin2();
                 rmaxvector[counter] = cone->GetRmax2();
                 zvector[counter]   =  cone->GetDz() + unplaced->GetSection(i).shift;
-                counter++;
+		std::cerr << "###" << counter << " " << zvector[counter] << "\n";                
+		counter++;
 
                 prevrmin = cone->GetRmin2();
                 prevrmax = cone->GetRmax2();
 
+		putlowersection = false;
                 // take care of a possible discontinuity
                 if( i < unplaced->GetNSections()-1 && ( prevrmin != unplaced->GetSection(i+1).solid->GetRmin1()
-                   || prevrmax != unplaced->GetSection(i+1).solid->GetRmax2() ) ) {
+                   || prevrmax != unplaced->GetSection(i+1).solid->GetRmax1() ) ) {
                    putlowersection = true;
                 }
                 else{
@@ -124,6 +127,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
              rmaxvector
      );
 
+     g4shape->StreamInfo( std::cout );
+     
      return g4shape;
   }
 #endif
