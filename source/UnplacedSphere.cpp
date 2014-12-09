@@ -23,17 +23,53 @@ namespace VECGEOM_NAMESPACE {
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere::UnplacedSphere(Precision pRmin, Precision pRmax,
                  Precision pSPhi, Precision pDPhi,
-                 Precision pSTheta, Precision pDTheta)
-  : fCubicVolume(0.),
-    fSurfaceArea(0.),fEpsilon(2.e-11),
-    fFullPhiSphere(true), fFullThetaSphere(true),
-    epsilon(2e-11),frTolerance(1e-9),fgTolerance(1e-9),faTolerance(1e-9)
+                 Precision pSTheta, Precision pDTheta)  :
+     fRmax(0),
+     fSPhi(0),
+     fDPhi(0),
+     fSTheta(0),
+     fDTheta(0),
+     fRminTolerance(0),
+     mkTolerance(0),
+     fEpsilon(kSEpsilon), 
+     sinCPhi(0),
+     cosCPhi(0),
+     cosHDPhiOT(0),
+     cosHDPhiIT(0),
+     sinSPhi(0),
+     cosSPhi(0),
+     sinEPhi(0),
+     cosEPhi(0),
+     hDPhi(0),
+     cPhi(0),
+     ePhi(0),
+     sinSTheta(0),
+     cosSTheta(0),
+     sinETheta(0),
+     cosETheta(0),
+     tanSTheta(0),
+     tanSTheta2(0),
+     tanETheta(0),
+     tanETheta2(0),
+     eTheta(0),
+     fFullPhiSphere(true), 
+     fFullThetaSphere(true),
+     fFullSphere(true),
+     fCubicVolume(0.), 
+     fSurfaceArea(0.), 
+     epsilon(kSEpsilon), 
+     frTolerance(kSTolerance),
+     fgTolerance(kSTolerance),
+     faTolerance(kSTolerance),
+     kAngTolerance(kSTolerance),
+     kRadTolerance(kSTolerance),
+     fPhiWedge(pDPhi,pSPhi),
+     fThetaCone(pSTheta,pDTheta)
+            
 {
-  kAngTolerance = faTolerance;
-
   // Check radii and Set radial tolerances
 
-  kRadTolerance = frTolerance;
+ 
   if ((pRmin >= pRmax) || (pRmax < 1.1 * kRadTolerance) || (pRmin < 0))
   {/*
     std::ostringstream message;
@@ -75,12 +111,6 @@ namespace VECGEOM_NAMESPACE {
   }
   
   
-   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision UnplacedSphere::Capacity() const
-  {
-    return fCubicVolume;
-  }
   
   //VECGEOM_CUDA_HEADER_BOTH
   // VECGEOM_INLINE
@@ -132,13 +162,6 @@ namespace VECGEOM_NAMESPACE {
       
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision UnplacedSphere::SurfaceArea() const
-  {
-      return fSurfaceArea;
-      
-  }
   
   VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
   void UnplacedSphere::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
@@ -159,14 +182,7 @@ namespace VECGEOM_NAMESPACE {
       aArray[5] = GetDeltaThetaAngle();
   }
   
-  /*
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
-  {}
-  #else
   
-  VECGEOM_CUDA_HEADER_BOTH
-   */
   #ifdef VECGEOM_NVCC
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const{}
   #else 
@@ -323,7 +339,7 @@ void UnplacedSphere::Print() const {
                                                           GetStartThetaAngle(), GetDeltaThetaAngle() );
 }
   
-//VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print(std::ostream &os) const {
   os << "UnplacedSphere { " << GetInnerRadius() <<" " << GetOuterRadius() <<" " << GetStartPhiAngle() <<" " << GetDeltaPhiAngle() <<" "
            << GetStartThetaAngle() <<" " << GetDeltaThetaAngle() <<" }";

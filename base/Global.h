@@ -118,6 +118,9 @@ VECGEOM_GLOBAL Precision kTiny = 1e-30;
 VECGEOM_GLOBAL Precision kTolerance = 1e-12;
 VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
 VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
+VECGEOM_GLOBAL Precision kSTolerance = 1e-9;
+VECGEOM_GLOBAL Precision kSHalfTolerance = 0.5*kSTolerance;
+VECGEOM_GLOBAL Precision kSEpsilon = 2.e-11;
 
 namespace EInside {
 VECGEOM_GLOBAL VECGEOM_NAMESPACE::Inside_t kInside = 0;

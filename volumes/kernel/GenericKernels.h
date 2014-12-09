@@ -1,5 +1,5 @@
-/// @file GenericKernels.h
-/// @author Johannes de Fine Licht (johannes.definelicht@cern.ch)
+/// \file GenericKernels.h
+/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_
 #define VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_
@@ -20,19 +20,69 @@ struct GenericKernels {
 }; // End struct GenericKernels
 
 template<bool tolerant, typename T>
-T
 VECGEOM_CUDA_HEADER_BOTH
-MakePlusTolerant( T const & x  )
+VECGEOM_INLINE
+T MakePlusTolerant(T const &x)
 {
-    return (tolerant)? x+kTolerance : x;
+  return (tolerant)? x+kHalfTolerance : x;
 }
 
 template<bool tolerant, typename T>
-T
 VECGEOM_CUDA_HEADER_BOTH
-MakeMinusTolerant( T x  )
+VECGEOM_INLINE
+T MakeMinusTolerant(T const &x)
 {
-    return (tolerant)? x-kTolerance : x;
+  return (tolerant)? x-kHalfTolerance : x;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T  MakePlusTolerantSquare(T const &x, T const& xsq)
+{
+  return (tolerant)? xsq+kTolerance*x : xsq;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T MakeMinusTolerantSquare(T const &x, T const &xsq)
+{
+  return (tolerant)? xsq-kTolerance*x : xsq;
+}
+
+
+//Replicated definitions with modified Tolerances appropriate for Sphere
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T MakeSPlusTolerant(T const &x)
+{
+  return (tolerant)? x+kSHalfTolerance : x;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T MakeSMinusTolerant(T const &x)
+{
+  return (tolerant)? x-kSHalfTolerance : x;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T  MakeSPlusTolerantSquare(T const &x, T const& xsq)
+{
+  return (tolerant)? xsq+kSTolerance*x : xsq;
+}
+
+template<bool tolerant, typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+T MakeSMinusTolerantSquare(T const &x, T const &xsq)
+{
+  return (tolerant)? xsq-kSTolerance*x : xsq;
 }
 
 } // End global namespace

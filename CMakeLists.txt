@@ -348,7 +348,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedTube.cpp
   source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
-  source/PlacedParaboloid.cpp
+  #source/PlacedParaboloid.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/SOA3D.cpp
@@ -357,7 +357,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
   source/UnplacedTrd.cpp
-  source/UnplacedParaboloid.cpp
+  #source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
@@ -370,6 +370,8 @@ set(SRC_CPP_RELATIVE
 
   source/UnplacedSphere.cpp
   source/PlacedSphere.cpp
+  
+  
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -467,18 +469,22 @@ set(TEST_EXECUTABLES_ROOT
 set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/DebugSphere.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+ # ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere.cpp
+#${CMAKE_SOURCE_DIR}/test/unit_tests/newTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
+  #${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
+  #${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
 #  ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/HyperboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
@@ -495,7 +501,8 @@ set(TEST_EXECUTABLES_CUDA
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
-  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
+  #${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testSphere.cpp
+  #${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
