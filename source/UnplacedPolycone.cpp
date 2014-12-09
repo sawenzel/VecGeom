@@ -27,8 +27,7 @@ void UnplacedPolycone::Init(double phiStart,
                      const double rInner[],
                      const double rOuter[])
 {
-  //Convertion for angles
-
+  //Conversion for angles
   if (phiTotal <= 0. || phiTotal > kTwoPi-kTolerance)
    {
      // phiIsOpen=false;
@@ -40,7 +39,6 @@ void UnplacedPolycone::Init(double phiStart,
      //
      // Convert phi into our convention
      //
-
        // phiIsOpen=true;
      fStartPhi = phiStart;
      while( fStartPhi < 0 ) fStartPhi += kTwoPi;
@@ -56,7 +54,7 @@ void UnplacedPolycone::Init(double phiStart,
   {
     if (rOuter[j] > RMaxextent) RMaxextent=rOuter[j];
 
-    if (rInner[j]>rOuter[j])
+    if (rInner[j] > rOuter[j])
     {
 
       std::cerr << "Cannot create Polycone with rInner > rOuter for the same Z"
@@ -72,18 +70,16 @@ void UnplacedPolycone::Init(double phiStart,
   //
   double prevZ = 0, prevRmax = 0, prevRmin = 0;
   int dirZ = 1;
-  if (zPlane[1] < zPlane[0])dirZ = -1;
+  if (zPlane[1] < zPlane[0]) dirZ = -1;
 //  int curSolid = 0;
 
-  int i;
-  for (i = 0; i < numZPlanes; i++)
+  for (int i = 0; i < numZPlanes; ++i)
   {
     if ((i < numZPlanes - 1) && (zPlane[i] == zPlane[i + 1]))
     {
-      if ((rInner[i]  > rOuter[i + 1])
-          || (rInner[i + 1] > rOuter[i]))
-      {
-        std::cerr << "Cannot create a Polycone with no contiguous segments."
+      if ((rInner[i]  > rOuter[i + 1]) || (rInner[i + 1] > rOuter[i]))
+            {
+                std::cerr << "Cannot create a Polycone with no contiguous segments."
                 << std::endl
                 << "                Segments are not contiguous !" << std::endl
                 << "                rMin[" << i << "] = " << rInner[i]
@@ -95,12 +91,12 @@ void UnplacedPolycone::Init(double phiStart,
       }
     }
 
-
-
     double rMin = rInner[i];
+
     double rMax = rOuter[i];
     double z = zPlane[i];
 
+    // i has to be at least one to complete a section
     if (i > 0)
     {
       if (z > prevZ)
@@ -117,9 +113,6 @@ void UnplacedPolycone::Init(double phiStart,
                   << " -- rPlane[" << i << "] = " << zPlane[i];
           //UUtils::Exception("UPolycone::UPolycone()", "GeomSolids0002",
                             //FatalErrorInArguments, 1, message.str().c_str());
-
-
-
         }
 
 
@@ -136,7 +129,7 @@ void UnplacedPolycone::Init(double phiStart,
         //{
 //          if (tubular)
           //{
-          solid = new UnplacedCone(prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
+            solid = new UnplacedCone(prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
           //}
           //else
           //{
@@ -145,7 +138,6 @@ void UnplacedPolycone::Init(double phiStart,
         //}
 
         fZs.push_back(z);
-
         int zi = fZs.size() - 1;
         double shift = fZs[zi - 1] + 0.5 * (fZs[zi] - fZs[zi - 1]);
 
@@ -167,21 +159,15 @@ void UnplacedPolycone::Init(double phiStart,
         }
         fSections.push_back(section);
       }
-      else
-      {
-        ;// i = i;
-      }
     }
-    else fZs.push_back(z);
-
+    else{ // for i == 0 just push back first z plane
+        fZs.push_back(z);
+    }
 
     prevZ = z;
     prevRmin = rMin;
     prevRmax = rMax;
-  }
-
-  //fMaxSection = fZs.size() - 1;
-  fMaxSection = fZs.size() - 2;
+  } // end loop over Nz
 
   //
   // Build RZ polygon using special PCON/PGON GEANT3 constructor
@@ -261,12 +247,22 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
     }
 
     void UnplacedPolycone::Print() const {
-    printf("UnplacedPolycone {%.2f, %.2f, %.2d}",
+    printf("UnplacedPolycone {%.2f, %.2f, %d}\n",
             fStartPhi, fDeltaPhi, fNz);
-    printf("------ sections follow ----------\n");
-    for(int s=0;s<fMaxSection;++s)
+    printf("have %d size Z\n", fZs.size());
+    printf("------- z planes follow ---------\n");
+    for(int p = 0; p < fZs.size(); ++p)
     {
+        printf(" plane %d at z pos %lf\n", p, fZs[p]);
+    }
+
+    printf("have %d size fSections\n", fSections.size());
+    printf("------ sections follow ----------\n");
+    for(int s=0;s<GetNSections();++s)
+    {
+        printf("## section %d, shift %lf\n", s, fSections[s].solid, fSections[s].shift);
         fSections[s].solid->Print();
+        printf("\n");
     }
     }
 

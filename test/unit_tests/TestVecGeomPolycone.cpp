@@ -29,7 +29,7 @@ int main()
 {
     int Nz = 4;
     // a tube and two cones
-    double rmin[] = { 0., 0., 0. , 0. };
+    double rmin[] = { 0.1, 0.0, 0.0 , 0.4 };
     double rmax[] = { 1., 2., 2. , 1.5 };
     double z[] = { -1, -0.5, 0.5, 2 };
 
@@ -41,6 +41,8 @@ int main()
             rmax,
             z);
 
+    poly1.Print();
+
     // lets make external separate tubes and cones representing the sections
     UnplacedCone section0(rmin[0], rmax[0], rmin[1], rmax[1], (z[1] - z[0])/2., 0, kTwoPi);
     UnplacedCone section1(rmin[1], rmax[1], rmin[2], rmax[2], (z[2] - z[1])/2., 0, kTwoPi);
@@ -48,9 +50,16 @@ int main()
 
 
     assert( poly1.GetNz() == 4 );
+    assert( poly1.GetNSections() == 3 );
+    assert( poly1.GetSectionIndex( -0.8 ) == 0 );
+    assert( poly1.GetSectionIndex( 0.51 ) == 2 );
+    assert( poly1.GetSectionIndex( 0. ) == 1 );
+    assert( poly1.GetSectionIndex( -2. ) == -1 );
+    assert( poly1.GetSectionIndex( 3. ) == -1 );
     assert( poly1.GetStartPhi() == 0. );
     assert( (std::fabs(poly1.GetDeltaPhi()-kTwoPi))<1e-10 );
 
+    assert( poly1.Capacity() > 0 );
     assert( poly1.Capacity() == section0.Capacity() + section1.Capacity() + section2.Capacity() );
 
     // create a place version
@@ -59,6 +68,11 @@ int main()
     // test contains/inside
     assert( placedpoly1->Contains( Vec3D_t(0.,0.,0.) ) == true );
     assert( placedpoly1->Contains( Vec3D_t(0.,0.,-2.) ) == false );
+    assert( placedpoly1->Contains( Vec3D_t(0.,0.,-0.8) ) == false );
+    assert( placedpoly1->Contains( Vec3D_t(0.,0.,-1.8) ) == false );
+    assert( placedpoly1->Contains( Vec3D_t(0.,0., 10) ) == false );
+    assert( placedpoly1->Contains( Vec3D_t(0.,0., 1.8) ) == false );
+
 
     return 0.;
 }

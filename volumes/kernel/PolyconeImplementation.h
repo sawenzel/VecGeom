@@ -64,7 +64,7 @@ struct PolyconeImplementation {
         // TODO: add bounding box check maybe??
 
         // add z check
-        if( point.z() < polycone.fZs[0] || point.z() > polycone.fZs[polycone.fMaxSection] )
+        if( point.z() < polycone.fZs[0] || point.z() > polycone.fZs[polycone.GetNSections()-1] )
         {
             inside = Backend::kFalse;
             return;

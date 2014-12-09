@@ -28,7 +28,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 struct PolyconeSection
 {
     UnplacedCone * solid;
-    //VPlacedVolume * solid;
     double shift;
     bool tubular;
     bool convex; // TURE if all points in section are concave in regards to whole polycone, will be determined
@@ -52,11 +51,11 @@ public:
     //Precision * fRmax;
     //Precision * fZ;
 
-    int fMaxSection;
     // actual internal storage
-    Vector<PolyconeSection> fSections;
-    Vector<double> fZs;
-
+    //    Vector<PolyconeSection> fSections;
+    // Vector<double> fZs;
+    std::vector<PolyconeSection> fSections;
+    std::vector<double> fZs;
 
 public:
     VECGEOM_CUDA_HEADER_BOTH
@@ -79,43 +78,60 @@ public:
       //          fRmin(rmin),
                 //fRmax(rmax),
                 //fZ(z),
-                fMaxSection(),
                 fSections(),
                 fZs()
                 {
 
         // init internal members
         Init(phistart, deltaphi, Nz, z, rmin, rmax);
+    }
 
-    } ;
     VECGEOM_CUDA_HEADER_BOTH
     int GetNz() const {return fNz;}
+
+    VECGEOM_CUDA_HEADER_BOTH
+    int GetNSections() const {return fSections.size();}
+
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetStartPhi() const {return fStartPhi;}
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetDeltaPhi() const {return fDeltaPhi;}
 
     VECGEOM_CUDA_HEADER_BOTH
-    PolyconeSection const & GetSection( Precision zposition ) const {
-    //TODO: consider bindary search
-        for(int i=0;i<fMaxSection;++i)
-        {
-            if( zposition >= fZs[i] && zposition <= fZs[i+1] )
-                return fSections[i];
-        }
-
+    int GetSectionIndex( Precision zposition ) const {
+     //TODO: consider bindary search
+     for(int i=0;i<GetNSections();++i)
+       {
+           if( zposition >= fZs[i] && zposition <= fZs[i+1] )
+                return i;
+       }
+     return -1;
     }
+
+    VECGEOM_CUDA_HEADER_BOTH
+    PolyconeSection const & GetSection( Precision zposition ) const {
+        //TODO: consider bindary search
+        int i = GetSectionIndex(zposition);
+        return fSections[i];
+    }
+
+    VECGEOM_CUDA_HEADER_BOTH
+    // GetSection if index is known
+    PolyconeSection const & GetSection( int index ) const {
+      return fSections[index];
+    }
+
 
     VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const
     {
-      Precision cubicVolume = 0.;
-      for (int i = 0; i < fMaxSection+1; i++)
-      {
-         PolyconeSection const& section = fSections[i];
-         cubicVolume += section.solid->Capacity();
-      }
-      return cubicVolume;
+        Precision cubicVolume = 0.;
+        for (int i = 0; i < GetNSections(); i++)
+        {
+            PolyconeSection const& section = fSections[i];
+            cubicVolume += section.solid->Capacity();
+        }
+        return cubicVolume;
     }
 
     // these methods are required by VUnplacedVolume
