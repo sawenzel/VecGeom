@@ -14,7 +14,7 @@ void UnplacedTorus::Print() const {
 }
 
 void UnplacedTorus::Print(std::ostream &os) const {
-  os << "UnplacedTube {" << rmin() << ", " << rmax() << ", " << rtor()
+  os << "UnplacedTorus {" << rmin() << ", " << rmax() << ", " << rtor()
      << ", " << sphi() << ", " << dphi();
 }
 

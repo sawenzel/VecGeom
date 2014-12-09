@@ -7,7 +7,10 @@
 
 #include "volumes/UnplacedPolycone.h"
 #include "volumes/UnplacedCone.h"
+#include "volumes/SpecializedPolycone.h"
+#include "management/VolumeFactory.h"
 #include <iostream>
+#include <cstdio>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -227,5 +230,70 @@ void UnplacedPolycone::Init(double phiStart,
 
   //delete rz;
 }
+
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+    VECGEOM_CUDA_HEADER_DEVICE
+    VPlacedVolume* UnplacedPolycone::Create(LogicalVolume const *const logical_volume,
+                                   Transformation3D const *const transformation,
+    #ifdef VECGEOM_NVCC
+                                   const int id,
+    #endif
+                                   VPlacedVolume *const placement )
+    {
+
+    if (placement) {
+        new(placement) SpecializedPolycone<transCodeT, rotCodeT>(logical_volume,
+                                                                transformation
+    #ifdef VECGEOM_NVCC
+                                                              , NULL, id
+    #endif
+                                                              );
+        return placement;
+      }
+    return new SpecializedPolycone<transCodeT, rotCodeT>(logical_volume,
+                                                      transformation
+    #ifdef VECGEOM_NVCC
+                                , NULL, id
+    #endif
+                                );
+
+    }
+
+    void UnplacedPolycone::Print() const {
+    printf("UnplacedPolycone {%.2f, %.2f, %.2d}",
+            fStartPhi, fDeltaPhi, fNz);
+    printf("------ sections follow ----------\n");
+    for(int s=0;s<fMaxSection;++s)
+    {
+        fSections[s].solid->Print();
+    }
+    }
+
+    void UnplacedPolycone::Print(std::ostream &os) const {
+    os << "UnplacedPolycone output to string not implemented\n";
+    }
+
+
+    VECGEOM_CUDA_HEADER_DEVICE
+    VPlacedVolume* UnplacedPolycone::SpecializedVolume(
+          LogicalVolume const *const volume,
+          Transformation3D const *const transformation,
+          const TranslationCode trans_code, const RotationCode rot_code,
+    #ifdef VECGEOM_NVCC
+          const int id,
+    #endif
+          VPlacedVolume *const placement ) const
+    {
+
+        // TODO: for the Polycone this might be overkill
+        return VolumeFactory::CreateByTransformation<
+            UnplacedPolycone>(volume, transformation, trans_code, rot_code,
+      #ifdef VECGEOM_NVCC
+                                    id,
+      #endif
+                                    placement);
+    }
+
 
 }} // end namespace

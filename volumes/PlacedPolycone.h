@@ -15,6 +15,7 @@
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
 
+#include "volumes/UnplacedPolycone.h"
 
 namespace vecgeom {
 
@@ -24,6 +25,52 @@ VECGEOM_DEVICE_DECLARE_CONV( PlacedPolycone );
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedPolycone : public VPlacedVolume {
+
+public:
+  typedef UnplacedPolycone UnplacedShape_t;
+
+#ifndef VECGEOM_NVCC
+  PlacedPolycone(char const *const label,
+          LogicalVolume const *const logical_volume,
+          Transformation3D const *const transformation,
+          PlacedBox const *const boundingBox)
+      : VPlacedVolume(label, logical_volume, transformation, boundingBox) {}
+
+  PlacedPolycone(LogicalVolume const *const logical_volume,
+          Transformation3D const *const transformation,
+          PlacedBox const *const boundingBox)
+      : PlacedPolycone("", logical_volume, transformation, boundingBox) {}
+
+#else
+  __device__
+  PlacedPolycone(LogicalVolume const *const logical_volume,
+          Transformation3D const *const transformation,
+          PlacedBox const *const boundingBox, const int id)
+      : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual ~PlacedPolycone() {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  UnplacedPolycone const* GetUnplacedVolume() const {
+    return static_cast<UnplacedPolycone const *>(
+        logical_volume()->unplaced_volume());
+  }
+
+
+#ifndef VECGEOM_NVCC
+  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+#ifdef VECGEOM_ROOT
+  virtual TGeoShape const* ConvertToRoot() const;
+#endif
+#ifdef VECGEOM_USOLIDS
+  virtual ::VUSolid const* ConvertToUSolids() const;
+#endif
+#ifdef VECGEOM_GEANT4
+  virtual G4VSolid const* ConvertToGeant4() const;
+#endif
+#endif // VECGEOM_NVCC
 
 
 

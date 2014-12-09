@@ -40,7 +40,7 @@ struct PolyconeSection
 
 class UnplacedPolycone : public VUnplacedVolume, public AlignedBase {
 
-private:
+public:
     // the members
     // for the phi section --> will be replaced by a wedge
     Precision fStartPhi;
@@ -96,6 +96,17 @@ public:
     Precision GetDeltaPhi() const {return fDeltaPhi;}
 
     VECGEOM_CUDA_HEADER_BOTH
+    PolyconeSection const & GetSection( Precision zposition ) const {
+    //TODO: consider bindary search
+        for(int i=0;i<fMaxSection;++i)
+        {
+            if( zposition >= fZs[i] && zposition <= fZs[i+1] )
+                return fSections[i];
+        }
+
+    }
+
+    VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const
     {
       Precision cubicVolume = 0.;
@@ -113,7 +124,7 @@ public:
     virtual int memory_size() const { return sizeof(*this); }
 
     VECGEOM_CUDA_HEADER_BOTH
-    virtual void Print() const { };
+    virtual void Print() const;
 
     template <TranslationCode transCodeT, RotationCode rotCodeT>
     VECGEOM_CUDA_HEADER_DEVICE
@@ -122,7 +133,7 @@ public:
     #ifdef VECGEOM_NVCC
                                    const int id,
     #endif
-                                   VPlacedVolume *const placement = NULL) { };
+                                   VPlacedVolume *const placement = NULL);
 
 
     #ifdef VECGEOM_CUDA_INTERFACE
@@ -133,7 +144,7 @@ public:
 
     private:
 
-      virtual void Print(std::ostream &os) const {};
+      virtual void Print(std::ostream &os) const;
 
       VECGEOM_CUDA_HEADER_DEVICE
       virtual VPlacedVolume* SpecializedVolume(
@@ -143,7 +154,7 @@ public:
     #ifdef VECGEOM_NVCC
           const int id,
     #endif
-          VPlacedVolume *const placement = NULL) const {} ;
+          VPlacedVolume *const placement = NULL) const;
 
 
 }; // end class UnplacedPolycone

@@ -398,6 +398,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedBooleanVolume.cpp
 
   source/UnplacedPolycone.cpp
+  source/PlacedPolycone.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
