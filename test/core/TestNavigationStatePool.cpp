@@ -22,6 +22,7 @@ int main()
 {
   // Load a geometry
   RootGeoManager::Instance().LoadRootGeometry("Ex03.root");
+#ifdef VECGEOM_CUDA
   CudaManager::Instance().set_verbose(3);
   CudaManager::Instance().LoadGeometry();
 
@@ -31,6 +32,7 @@ int main()
   CudaManager::Instance().PrintGeometry();
 
   std::cout << std::flush;
+#endif
   
    // generate some points
   int npoints=3;
@@ -55,7 +57,9 @@ int main()
   }
   pool.Print();
 
+#ifdef VECGEOM_CUDA
   pool.CopyToGpu();
+#endif
 
   // launch some kernel on GPU using the
   std::cerr << "sizeof navigation state on CPU " << sizeof(vecgeom::NavigationState) << "\n";
@@ -63,7 +67,9 @@ int main()
   LaunchNavigationKernel( pool.GetGPUPointer(), GeoManager::Instance().getMaxDepth(), npoints );
 #endif
 
+#ifdef VECGEOM_CUDA
   pool.CopyFromGpu();
+#endif
 
   pool.Print();
 }
