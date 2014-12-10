@@ -35,9 +35,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class Transformation3D {
 
-public:
-
-  static const Transformation3D kIdentity;
 
 private:
   // TODO: it might be better to directly store this in terms of Vector3D<Precision> !!
@@ -51,7 +48,8 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  Transformation3D();
+  constexpr Transformation3D() : fTranslation{0.,0.,0.},
+  fRotation{1.,0.,0.,0.,1.,0.,0.,0.,1.}, fIdentity(true), fHasRotation(false), fHasTranslation(false) {};
 
   /**
    * Constructor for translation only.
@@ -60,7 +58,12 @@ public:
    * @param tz Translation in z-coordinate.
    */
   VECGEOM_CUDA_HEADER_BOTH
-  Transformation3D(const Precision tx, const Precision ty, const Precision tz);
+  Transformation3D(const Precision tx, const Precision ty, const Precision tz) :
+      fTranslation{tx,ty,tz},
+      fRotation{1.,0.,0.,0.,1.,0.,0.,0.,1.},
+      fIdentity( tx==0 && ty==0 && tz==0 ),
+      fHasRotation(false),
+      fHasTranslation( tx!=0 || ty!=0 || tz!=0 ) { }
 
   /**
    * @param tx Translation in x-coordinate.
@@ -322,6 +325,11 @@ public:
 // mainly used for the benchmark comparisons with ROOT
   TGeoMatrix * ConvertToTGeoMatrix() const;
 #endif
+
+public:
+
+  static const Transformation3D kIdentity;
+
 
 }; // End class Transformation3D
 

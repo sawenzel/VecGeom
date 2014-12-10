@@ -20,23 +20,18 @@ namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 const Transformation3D Transformation3D::kIdentity =
-    SpecializedTransformation3D<translation::kIdentity, rotation::kIdentity>();
+    Transformation3D();
 
-Transformation3D::Transformation3D() :
-   fIdentity(false), fHasRotation(true), fHasTranslation(true) {
-  SetTranslation(0, 0, 0);
-  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
-  SetProperties();
-}
 
-Transformation3D::Transformation3D(const Precision tx,
-                                   const Precision ty,
-                                   const Precision tz) :
-   fIdentity(false), fHasRotation(true), fHasTranslation(true) {
-  SetTranslation(tx, ty, tz);
-  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
-  SetProperties();
-}
+//Transformation3D::Transformation3D(const Precision tx,
+//                                   const Precision ty,
+//                                   const Precision tz) :
+//   fIdentity(false), fHasRotation(true), fHasTranslation(true)
+//{
+//  SetTranslation(tx, ty, tz);
+//  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+//  SetProperties();
+//}
 
 Transformation3D::Transformation3D(
     const Precision tx, const Precision ty,
