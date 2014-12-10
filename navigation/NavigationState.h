@@ -78,14 +78,15 @@ private:
    // The data start should point to the address of the first data member,
    // after the virtual table
   // the purpose is probably for the Copy function
-  const void*  DataStart() const {return (const void*)&fCurrentLevel;} // or should it be fSelfAlloc or just this suince we do not have any virtual table ...
+  const void*  DataStart() const {return (const void*)&fCurrentLevel;}
   const void*  ObjectStart() const {return (const void*)this;}
-  void*  DataStart() {return (void*)&fCurrentLevel;} // or should it be fSelfAlloc or just this suince we do not have any virtual table ...
+  void*  DataStart() {return (void*)&fCurrentLevel;}
   void*  ObjectStart() {return (void*)this;}
 
      // The actual size of the data for an instance, excluding the virtual table
-   size_t      DataSize() const {
-      return SizeOf() + (size_t)ObjectStart() - (size_t)DataStart();}
+  size_t      DataSize() const {
+     return SizeOf() + (size_t)ObjectStart() - (size_t)DataStart();
+  }
 
 
 public:
@@ -250,16 +251,9 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
       fCurrentLevel=rhs.fCurrentLevel;
       fOnBoundary = rhs.fOnBoundary;
       // what about the matrix????
-      
-      if (rhs.GetMaxLevel() == GetMaxLevel()) {
-         memcpy(fPath.GetValues(),rhs.fPath.GetValues(),rhs.GetMaxLevel());
-      } else if (rhs.GetMaxLevel() < GetMaxLevel()) {
-         memcpy(fPath.GetValues(),rhs.fPath.GetValues(),rhs.GetMaxLevel());
-         memset(fPath.GetValues()+rhs.GetMaxLevel(),0,GetMaxLevel()-rhs.GetMaxLevel());
-      } else {
-         // Truncation!
-         memcpy(fPath.GetValues(),rhs.fPath.GetValues(),GetMaxLevel());
-      }
+
+      // Use memcpy.  Potential trucation if this is smaller than rhs.
+      fPath = rhs.fPath;
    }
    return *this;
 }
