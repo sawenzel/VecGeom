@@ -139,12 +139,14 @@ else()
 endif()
 
 # Compiler specific optimization flags
+if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
 set(VECGEOM_COMPILATION_FLAGS_GNU
     "${VECGEOM_COMPILATION_FLAGS_GNU} -finline-limit=10000000")
 set(VECGEOM_COMPILATION_FLAGS_GNU
     "${VECGEOM_COMPILATION_FLAGS_GNU} -ffast-math -ftree-vectorize")
 set(VECGEOM_COMPILATION_FLAGS_CLANG
     "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
+endif()
 set(VECGEOM_COMPILATION_FLAGS_INTEL
     "${VECGEOM_COMPILATION_FLAGS_INTEL} -xHost")
 if (VECGEOM_VECTOR)
@@ -177,10 +179,12 @@ if (CUDA)
   endif()
   set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS}
       -std=c++11
-      -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable"
+      -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
   if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G)
+  else ()
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O2 --use_fast_math)
   endif()
 endif()
 
