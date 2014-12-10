@@ -181,11 +181,11 @@ if (CUDA)
       -std=c++11
       -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
-  if (CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G)
-  else ()
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O2 --use_fast_math)
-  endif()
+  set(VECGEOM_NVCC_CONFIGS
+        DEBUG -g -G
+        RELEASE  -O2 --use_fast_math
+        RELWITHDEBINFO -g -G  -O2 --use_fast_math
+        MINSIZEREL --use_fast_math )
 endif()
 
 # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -478,6 +478,7 @@ if (CUDA)
     vecgeomcuda
     ${SRC_CUDA}
     OPTIONS ${CUDA_ARCH}
+    ${VECGEOM_NVCC_CONFIGS}
   )
   target_link_libraries(vecgeomcuda ${VECGEOM_LIBRARIES}
                         ${VECGEOM_LIBRARIES_EXTERNAL})
