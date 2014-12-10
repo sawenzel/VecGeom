@@ -298,6 +298,9 @@ void Benchmarker::RunInsideBenchmark() {
     // Compare results
     int mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
+
+      //fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+
       bool mismatch = false;
       std::stringstream mismatchOutput;
       if (fVerbosity > 2) {
@@ -317,8 +320,12 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
       mismatches += mismatch;
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
-        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
-               *(fPointPool->y()+i), fPointPool->z(i));
+        printf("Point (%f, %f, %f): ", fPointPool->x(i),
+               fPointPool->y(i), fPointPool->z(i));
+
+        // store point for later inspection
+        fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+
       }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
         printf("%s\n", mismatchOutput.str().c_str());
@@ -367,7 +374,9 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
       mismatches += mismatch;
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
-        printf("%s\n", mismatchOutput.str().c_str());
+
+          fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+          printf("%s\n", mismatchOutput.str().c_str());
       }
     }
     if (fVerbosity > 2 && mismatches > 100) {
