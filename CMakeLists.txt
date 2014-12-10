@@ -380,7 +380,6 @@ set(SRC_CPP_RELATIVE
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/SOA3D.cpp
-  source/SpecializedBox.cpp
   source/Transformation3D.cpp
   source/UnplacedCone.cpp
   source/UnplacedBox.cpp
