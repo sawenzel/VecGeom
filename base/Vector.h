@@ -55,6 +55,7 @@ public:
     return fData[index];
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
   void push_back(const Type item) {
     if (fSize == fMemorySize) {
       assert(fAllocated && "Trying to push on a 'fixed' size vector (memory not allocated by Vector itself");

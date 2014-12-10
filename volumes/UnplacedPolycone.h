@@ -15,12 +15,15 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/UnplacedCone.h"
 #include "base/Vector.h"
-#include <vector>
 
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolycone; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolycone );
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PolyconeSection; )
+VECGEOM_DEVICE_DECLARE_CONV( PolyconeSection );
+
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -52,10 +55,8 @@ public:
     //Precision * fZ;
 
     // actual internal storage
-    //    Vector<PolyconeSection> fSections;
-    // Vector<double> fZs;
-    std::vector<PolyconeSection> fSections;
-    std::vector<double> fZs;
+    Vector<PolyconeSection> fSections;
+    Vector<double> fZs;
 
 public:
     VECGEOM_CUDA_HEADER_BOTH

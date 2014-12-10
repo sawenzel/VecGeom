@@ -56,7 +56,7 @@ void UnplacedPolycone::Init(double phiStart,
 
     if (rInner[j] > rOuter[j])
     {
-
+#ifndef VECGEOM_NVCC
       std::cerr << "Cannot create Polycone with rInner > rOuter for the same Z"
               << "\n"
               << "        rInner > rOuter for the same Z !\n"
@@ -64,6 +64,7 @@ void UnplacedPolycone::Init(double phiStart,
               << " -- rMax[" << j << "] = " << rOuter[j];
       // UUtils::Exception("UPolycone::UPolycone()", "GeomSolids0002",
         //                 FatalErrorInArguments, 1, message.str().c_str());
+#endif
     }
   }
 
@@ -79,16 +80,18 @@ void UnplacedPolycone::Init(double phiStart,
     {
       if ((rInner[i]  > rOuter[i + 1]) || (rInner[i + 1] > rOuter[i]))
             {
-                std::cerr << "Cannot create a Polycone with no contiguous segments."
+#ifndef VECGEOM_NVCC
+          std::cerr << "Cannot create a Polycone with no contiguous segments."
                 << std::endl
                 << "                Segments are not contiguous !" << std::endl
                 << "                rMin[" << i << "] = " << rInner[i]
                 << " -- rMax[" << i + 1 << "] = " << rOuter[i + 1] << std::endl
                 << "                rMin[" << i + 1 << "] = " << rInner[i + 1]
                 << " -- rMax[" << i << "] = " << rOuter[i];
-        //UUtils::Exception("UPolycone::UPolycone()", "GeomSolids0002",
+            //UUtils::Exception("UPolycone::UPolycone()", "GeomSolids0002",
                           //FatalErrorInArguments, 1, message.str().c_str());
-      }
+#endif
+            }
     }
 
     double rMin = rInner[i];
@@ -104,7 +107,8 @@ void UnplacedPolycone::Init(double phiStart,
         if (dirZ < 0)
         {
           //std::ostringstream message;
-          std::cerr << "Cannot create a Polycone with different Z directions.Use GenericPolycone."
+#ifndef VECGEOM_NVCC
+            std::cerr << "Cannot create a Polycone with different Z directions.Use GenericPolycone."
                   << std::endl
                   << "              ZPlane is changing direction  !" << std::endl
                   << "  zPlane[0] = " << zPlane[0]
@@ -113,6 +117,7 @@ void UnplacedPolycone::Init(double phiStart,
                   << " -- rPlane[" << i << "] = " << zPlane[i];
           //UUtils::Exception("UPolycone::UPolycone()", "GeomSolids0002",
                             //FatalErrorInArguments, 1, message.str().c_str());
+#endif
         }
 
 
@@ -260,7 +265,7 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
     printf("------ sections follow ----------\n");
     for(int s=0;s<GetNSections();++s)
     {
-        printf("## section %d, shift %lf\n", s, fSections[s].solid, fSections[s].shift);
+        printf("## section %d, shift %lf\n", s, fSections[s].shift);
         fSections[s].solid->Print();
         printf("\n");
     }

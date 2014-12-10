@@ -74,7 +74,7 @@ struct PolyconeImplementation {
         Vector3D<Precision> localp;
         ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::Contains<Backend>(
                 *sec.solid,
-                Transformation3D::kIdentity,
+                Transformation3D(),
                 point - Vector3D<Precision>(0,0,sec.shift),
                 localp,
                 inside
