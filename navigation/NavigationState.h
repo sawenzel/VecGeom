@@ -28,7 +28,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
  * likely there will be such an object for each
  * particle/track currently treated
  */
-class NavigationState : public VecCore::VariableSizeObjectInterface<NavigationState, VPlacedVolume const *> {
+class NavigationState : protected VecCore::VariableSizeObjectInterface<NavigationState, VPlacedVolume const *> {
 public:
    using Value_t = VPlacedVolume const *;
    using Base_t = VecCore::VariableSizeObjectInterface<NavigationState, Value_t>;
@@ -91,6 +91,13 @@ private:
 
 public:
 
+  // Enumerate the part of the private interface, we want to expose.
+  using Base_t::MakeCopy;
+  using Base_t::MakeCopyAt;
+  using Base_t::MakeInstance;
+  using Base_t::MakeInstanceAt;
+  using Base_t::ReleaseInstance;
+
    // produces a compact navigation state object of a certain depth
    // the caller can give a memory address where the object will
    // be placed
@@ -123,7 +130,14 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
 
-
+   void CopyTo( NavigationState * other ) const {
+      // Raw memcpy of the content to another existing state.
+      //
+      // in case NavigationState was a virtual class: change to
+      // std::memcpy(other->DataStart(), DataStart(), DataSize());
+      std::memcpy(other, this, this->SizeOf());
+   }
+ 
 #ifdef VECGEOM_ROOT
    TGeoBranchArray * ToTGeoBranchArray() const;
    NavigationState & operator=( TGeoBranchArray const & rhs );
