@@ -31,8 +31,9 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
 #endif
     VPlacedVolume *const placement)
 {
+          
     // since this is a static function, we need to get instance of UnplacedBooleanVolume first of all from logical volume
-   __attribute__((unused)) const UnplacedBooleanVolume &vol
+   const UnplacedBooleanVolume &vol
             = static_cast<const UnplacedBooleanVolume&>( *(logical_volume->unplaced_volume()) );
 
    if( vol.GetOp() == kSubtraction ) {
@@ -72,16 +73,23 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
     const int id,
 #endif
     VPlacedVolume *const placement) const {
+
+#ifndef VECGEOM_NVCC
+
    return VolumeFactory::CreateByTransformation<UnplacedBooleanVolume>(
     volume, transformation, trans_code, rot_code,
 #ifdef VECGEOM_NVCC
     id,
 #endif
     placement);
+
+#else
+   // Compiling the above code with nvcc 6.5 faile with the error:
+   // nvcc error   : 'ptxas' died due to signal 11 (Invalid memory reference)
+   // at least when optimized.
+   return nullptr;
+#endif
 }
-
-
-
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
@@ -116,9 +124,9 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedBooleanVolume>::SizeOf();
 template void DevicePtr<cuda::UnplacedBooleanVolume>::Construct(
-    BooleanOperation op,
-    DevicePtr<cuda::VPlacedVolume> left,
-    DevicePtr<cuda::VPlacedVolume> right) const;
+     BooleanOperation op,
+     DevicePtr<cuda::VPlacedVolume> left,
+     DevicePtr<cuda::VPlacedVolume> right) const;
 
 } // End cxx namespace
 
