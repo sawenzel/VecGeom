@@ -92,6 +92,11 @@ public:
    // static function to release an instance
    static void ReleaseInstance( NavigationState *instance ){}
 
+   VECGEOM_CUDA_HEADER_BOTH
+   static size_t SizeOfInstance(int maxlevel) {
+      return SizeOf( maxlevel );
+   }
+
    // returns the size in bytes of a NavigationState object with internal
    // path depth maxlevel
    VECGEOM_CUDA_HEADER_BOTH
