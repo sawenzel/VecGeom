@@ -92,16 +92,11 @@ public:
    // static function to release an instance
    static void ReleaseInstance( NavigationState *instance ){}
 
-   VECGEOM_CUDA_HEADER_BOTH
-   static size_t SizeOfInstance(int maxlevel) {
-      return SizeOf( maxlevel );
-   }
-
    // returns the size in bytes of a NavigationState object with internal
    // path depth maxlevel
    VECGEOM_CUDA_HEADER_BOTH
-   static int SizeNeeded( int maxlevel ){
-     return sizeof(NavigationState) + sizeof(VPlacedVolume*)*(maxlevel+1);
+   static size_t SizeOfInstance(int maxlevel) {
+      return SizeOf( maxlevel );
    }
 
    // same as above ( to be equivalent with TGeoBranchArray in ROOT )
@@ -113,7 +108,7 @@ public:
    //
    VECGEOM_CUDA_HEADER_BOTH
    int GetObjectSize() const {
-        return NavigationState::SizeNeeded(fMaxlevel);
+      return NavigationState::SizeOfInstance(fMaxlevel);
    }
 
    VECGEOM_CUDA_HEADER_BOTH
@@ -266,7 +261,7 @@ NavigationState * NavigationState::MakeInstance(int maxlevel , void * addr)
   // addr contains at least that many bytes:  size_t needed = SizeOf(maxlevel);
   NavigationState* ba = 0;
   if (!addr) {
-     size_t needed = NavigationState::SizeNeeded(maxlevel);
+     size_t needed = NavigationState::SizeOfInstance(maxlevel);
      char *ptr = new char[ needed ];
      if (!ptr) return 0;
      new (ptr) NavigationState(maxlevel);
