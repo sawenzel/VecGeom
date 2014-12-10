@@ -12,7 +12,7 @@ option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
 option(CUDA "Enable compilation for CUDA." OFF)
 
-option(CUDA_SPECIALIZATION "Use specialized volumes for CUDA." ON)
+option(CUDA_VOLUME_SPECIALIZATION "Use specialized volumes for CUDA." ON)
 
 option(ROOT "Include ROOT." OFF)
 
@@ -173,7 +173,7 @@ if (CUDA)
   set(CUDA_ARCH 20 CACHE STRING "CUDA device architecture.")
   set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA")
-  if (NOT CUDA_SPECIALIZATION)
+  if (NOT CUDA_VOLUME_SPECIALIZATION)
     set(VECGEOM_COMPILATION_FLAGS
         "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_SPECIALIZATION")
   endif()
