@@ -17,7 +17,7 @@ void ConstructOnGpu(
     Transformation3D const *const transformation,
     const int id,
     VPlacedVolume *const gpu_ptr) {
-#ifdef VECGEOM_CUDA_NO_SPECIALIZATION
+#ifdef VECGEOM_CUDA_NO_VOLUME_SPECIALIZATION
   new(gpu_ptr) vecgeom::cuda::PlacedBox(
     reinterpret_cast<vecgeom::cuda::LogicalVolume const*>(logical_volume),
     reinterpret_cast<vecgeom::cuda::Transformation3D const*>(transformation),
