@@ -15,9 +15,7 @@
 
 #ifndef VECGEOM_NVCC
 #include <iomanip>
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
-    #include <Vc/Vc>
-  #endif
+#include <Vc/Vc>
 #endif
 
 //#define DEBUGTORUS
@@ -30,7 +28,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 
 #ifndef VECGEOM_NVCC
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
 using namespace Vc;
 
 inline
@@ -41,7 +38,6 @@ double_v Vccbrt( double_v x )
   Vc::double_v tmp= Vc::exp(0.33333333333333333333*Vc::log(x) );
   return tmp.copySign(xorig);
 }
-#endif
 #endif
 
 
@@ -260,7 +256,6 @@ Complex<T> csqrtrealargument( const T & x )
 }
 
 #ifndef VECGEOM_NVCC
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
 // template specialization for Vc
 typedef Vc::double_v VCT;
 template <>
@@ -276,8 +271,7 @@ Complex<VCT> csqrtrealargument( const VCT & x )
   return Complex<VCT>( realpart , impart );
 }
 #endif
-#endif
- 
+
 // we need standalone function for cubic root
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
@@ -318,8 +312,6 @@ Complex<T> cbrt( const Complex<T>& x )
 }
 
 #ifndef VECGEOM_NVCC
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
-
 // template specialization for Vc
 // we need standalone function for cubic root
 template <>
@@ -350,7 +342,7 @@ Complex<Vc::double_v> cbrt( const Complex<Vc::double_v>& x )
   return Complex<Vc::double_v>(  rcbrt*cosnewangle, rcbrt*sinnewangle );
 }
 #endif
-#endif
+
 
 #ifndef VECGEOM_CUDA
 template <typename T, typename stream>
@@ -510,7 +502,6 @@ void solveQuartic2(double a, double b, double c, double d, double e, CT * roots)
 // CT == complextype
 //typedef Vc::double_v VCT2;
 #ifndef VECGEOM_NVCC
-  #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
 typedef Complex<VCT> CVCT;
 inline
 void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
@@ -561,8 +552,7 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
   roots[3] = aRoot;
 }
 #endif
-#endif
- 
+
 class PlacedTorus;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
