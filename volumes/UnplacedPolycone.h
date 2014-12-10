@@ -135,6 +135,13 @@ public:
         return cubicVolume;
     }
 
+    // a method to reconstruct "plane" section arrays for z, rmin and rmax
+    template<typename PushableContainer>
+    void ReconstructSectionArrays(PushableContainer & z,
+            PushableContainer & rmin,
+            PushableContainer & rmax) const;
+
+
     // these methods are required by VUnplacedVolume
     //
 public:
@@ -175,6 +182,38 @@ public:
 
 
 }; // end class UnplacedPolycone
+
+template<typename PushableContainer>
+void UnplacedPolycone::ReconstructSectionArrays(PushableContainer & z,
+        PushableContainer & rmin,
+        PushableContainer & rmax) const {
+
+      double prevrmin, prevrmax;
+      bool putlowersection=true;
+      for(int i=0;i< GetNSections();++i){
+          UnplacedCone const * cone = GetSection(i).solid;
+          if( putlowersection ){
+            rmin.push_back(cone->GetRmin1());
+            rmax.push_back(cone->GetRmax1());
+            z.push_back(-cone->GetDz() + GetSection(i).shift);
+          }
+          rmin.push_back(cone->GetRmin2());
+          rmax.push_back(cone->GetRmax2());
+          z.push_back(cone->GetDz() + GetSection(i).shift);
+
+          prevrmin = cone->GetRmin2();
+          prevrmax = cone->GetRmax2();
+
+          // take care of a possible discontinuity
+          if( i < GetNSections()-1 && ( prevrmin != GetSection(i+1).solid->GetRmin1()
+             || prevrmax != GetSection(i+1).solid->GetRmax1() ) ) {
+             putlowersection = true;
+          }
+          else{
+             putlowersection = false;
+          }
+      }
+}
 
 } // end inline namespace
 

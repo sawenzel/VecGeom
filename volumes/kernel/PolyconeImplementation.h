@@ -71,9 +71,6 @@ struct PolyconeImplementation {
         // now we have to find a section
         PolyconeSection const & sec = polycone.GetSection(point.z());
 
-        polycone.GetSectionIndex(lowerpointer ) = -1;
-        polycone.GetSectionIndex(upperpointer ) = -2;
-
         Vector3D<Precision> localp;
         ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::Contains<Backend>(
                 *sec.solid,
