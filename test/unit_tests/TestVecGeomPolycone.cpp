@@ -59,6 +59,9 @@ int main()
     assert( poly1.GetStartPhi() == 0. );
     assert( (std::fabs(poly1.GetDeltaPhi()-kTwoPi))<1e-10 );
 
+    assert(  poly1.fZs[0] == z[0] );
+    assert(  poly1.fZs[poly1.GetNSections()] == z[Nz-1] );
+
     assert( poly1.Capacity() > 0 );
     assert( poly1.Capacity() == section0.Capacity() + section1.Capacity() + section2.Capacity() );
 

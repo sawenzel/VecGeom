@@ -61,10 +61,8 @@ struct PolyconeImplementation {
         Vector3D<typename Backend::precision_v> const &point,
         typename Backend::bool_v &inside)
     {
-        // TODO: add bounding box check maybe??
-
         // add z check
-        if( point.z() < polycone.fZs[0] || point.z() > polycone.fZs[polycone.GetNSections()-1] )
+        if( point.z() < polycone.fZs[0] || point.z() > polycone.fZs[polycone.GetNSections()] )
         {
             inside = Backend::kFalse;
             return;
@@ -72,6 +70,10 @@ struct PolyconeImplementation {
 
         // now we have to find a section
         PolyconeSection const & sec = polycone.GetSection(point.z());
+
+        polycone.GetSectionIndex(lowerpointer ) = -1;
+        polycone.GetSectionIndex(upperpointer ) = -2;
+
         Vector3D<Precision> localp;
         ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::Contains<Backend>(
                 *sec.solid,
@@ -91,7 +93,15 @@ struct PolyconeImplementation {
        Vector3D<typename Backend::precision_v> const &point,
        typename Backend::inside_v &inside) {
 
-        // TBD
+        typename Backend::bool_v contains;
+        ContainsKernel<Backend>(polycone,point,contains);
+        if(contains){
+            inside = EInside::kInside;
+        }
+        else
+        {
+            inside = EInside::kOutside;
+        }
     }
 
 
@@ -101,11 +111,8 @@ struct PolyconeImplementation {
     static void UnplacedContains( UnplacedPolycone const &polycone,
         Vector3D<typename Backend::precision_v> const &point,
         typename Backend::bool_v &inside) {
-
-
       // TODO: do this generically WITH a generic contains/inside kernel
       // forget about sector for the moment
-
       ContainsKernel<Backend>(polycone, point, inside);
     }
 

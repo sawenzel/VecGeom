@@ -30,29 +30,27 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   {
       UnplacedPolycone const * unplaced = GetUnplacedVolume();
       TGeoPcon* rootshape = new TGeoPcon(
-              unplaced->fStartPhi,
-              unplaced->fDeltaPhi,
+              unplaced->fStartPhi*kRadToDeg,
+              unplaced->fDeltaPhi*kRadToDeg,
               unplaced->fNz );
 
-      // fill Rmin
-      double * rmin = rootshape->GetRmin();
-      double * rmax = rootshape->GetRmax();
-      double * z = rootshape->GetZ();
+
+      std::vector<double> rmin;
+      std::vector<double> rmax;
+      std::vector<double> z;
 
       double prevrmin, prevrmax;
       bool putlowersection=true;
-      for(int i=0, counter=0;i< unplaced->GetNSections();++i){
+      for(int i=0;i< unplaced->GetNSections();++i){
           UnplacedCone const * cone = unplaced->GetSection(i).solid;
           if( putlowersection ){
-            rmin[counter] = cone->GetRmin1();
-            rmax[counter] = cone->GetRmax1();
-            z[counter] = -cone->GetDz() + unplaced->GetSection(i).shift;
-            counter++;
+            rmin.push_back(cone->GetRmin1());
+            rmax.push_back(cone->GetRmax1());
+            z.push_back(-cone->GetDz() + unplaced->GetSection(i).shift);
           }
-          rmin[counter] = cone->GetRmin2();
-          rmax[counter] = cone->GetRmax2();
-          z[counter]   =  cone->GetDz() + unplaced->GetSection(i).shift;;
-          counter++;
+          rmin.push_back(cone->GetRmin2());
+          rmax.push_back(cone->GetRmax2());
+          z.push_back(cone->GetDz() + unplaced->GetSection(i).shift);
 
           prevrmin = cone->GetRmin2();
           prevrmax = cone->GetRmax2();
@@ -67,7 +65,13 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
           }
       }
 
+      // now transfer the parameter to the ROOT polycone
+      for(int i=0;i<unplaced->fNz;++i)
+      {
+          rootshape->DefineSection(i,z[i],rmin[i],rmax[i]);
+      }
       rootshape->InspectShape();
+
       return rootshape;
   }
 
