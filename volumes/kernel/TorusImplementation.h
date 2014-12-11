@@ -22,7 +22,7 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(TorusImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT)
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(TorusImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -883,6 +883,7 @@ struct TorusImplementation {
       Bool_t done;
       Float_t tubeDistance = kInfinity;
 
+#ifndef VECGEOM_NO_SPECIALIZATION
       // call the tube functionality -- first of all we check whether we are inside
       // bounding volume
       TubeImplementation<translation::kIdentity,
@@ -895,6 +896,20 @@ struct TorusImplementation {
             rotation::kIdentity, TubeTypes::HollowTube>::DistanceToIn<Backend>(
                 torus.GetBoundingTube(), transformation, localPoint,
                 localDirection, stepMax, tubeDistance);
+#else
+      // call the tube functionality -- first of all we check whether we are inside
+      // bounding volume
+      TubeImplementation<translation::kIdentity,
+        rotation::kIdentity, TubeTypes::UniversalTube>::UnplacedContains<Backend>(
+            torus.GetBoundingTube(), localPoint, inBounds);
+
+
+      // only need to do this check if all particles (in vector) are outside ( otherwise useless )
+      TubeImplementation<translation::kIdentity,
+            rotation::kIdentity, TubeTypes::UniversalTube>::DistanceToIn<Backend>(
+                torus.GetBoundingTube(), transformation, localPoint,
+                localDirection, stepMax, tubeDistance);
+#endif // VECGEOM_NO_SPECIALIZATION
 
        done = (!inBounds && tubeDistance == kInfinity);
 

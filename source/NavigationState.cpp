@@ -25,9 +25,9 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
     // my counting is a bit different: it tells the NUMBER of levels which are filled
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,34,23)
-    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( fMaxlevel );
+    TGeoBranchArray * tmp = TGeoBranchArray::MakeInstance( GetMaxLevel() );
 #else
-    TGeoBranchArray * tmp = new TGeoBranchArray( fMaxlevel );
+    TGeoBranchArray * tmp = new TGeoBranchArray( GetMaxLevel() );
 #endif
     // gain access to array
     TGeoNode ** array = tmp->GetArray();
@@ -45,7 +45,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      // attention: the counting of levels is different: fLevel=0 means that
      // this is a branch which is filled at level zero
 	 this->fCurrentLevel=other.GetLevel()+1;
-	 assert(fCurrentLevel <= fMaxlevel);
+	 assert(fCurrentLevel <= GetMaxLevel());
 
      RootGeoManager & mg=RootGeoManager::Instance();
 

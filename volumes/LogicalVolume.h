@@ -19,8 +19,8 @@ class VUSolid;
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_FORWARD_DECLARE( class LogicalVolume; );
-VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; );
+VECGEOM_DEVICE_FORWARD_DECLARE( class LogicalVolume; )
+VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; )
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

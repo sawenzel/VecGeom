@@ -1,3 +1,6 @@
+#ifndef VECGEOM_VOLUMES_UTILITIES_GENERATION_UTILITIES_H
+#define VECGEOM_VOLUMES_UTILITIES_GENERATION_UTILITIES_H
+
 
 namespace vecgeom { 
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -33,3 +36,4 @@ VPlacedVolume* CreateSpecializedWithPlacement(
 } } // End global namespace
 
 
+#endif // VECGEOM_VOLUMES_UTILITIES_GENERATION_UTILITIES_H

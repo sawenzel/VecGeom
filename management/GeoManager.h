@@ -112,8 +112,7 @@ public:
             // the current state is a good one;
 
             // make a copy and store it in the container for this visitor
-            NavigationState * copy = NavigationState::MakeInstance( fMaxDepth );
-            state->CopyTo(copy);
+            NavigationState * copy = NavigationState::MakeCopy( *state );
 
             this->c_.push_back( copy );
         }

@@ -12,17 +12,21 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,UniversalTube,UniversalTube)
 
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTube)
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithSmallerThanPiSector)
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithBiggerThanPiSector)
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithPiSector)
+#ifndef VECGEOM_NO_SPECIALIZATION
 
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTube)
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithSmallerThanPiSector)
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithBiggerThanPiSector)
-VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithPiSector)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTube,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithSmallerThanPiSector,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithBiggerThanPiSector,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTubeWithPiSector,UniversalTube)
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTube,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithSmallerThanPiSector,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithBiggerThanPiSector,UniversalTube)
+VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTubeWithPiSector,UniversalTube)
+
+#endif // VECGEOM_NO_SPECIALIZATION
 
 inline namespace VECGEOM_IMPL_NAMESPACE { namespace TubeTypes {
 
@@ -37,6 +41,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE { namespace TubeTypes {
 // A tube that encompasses all cases - not specialized and
 // will do extra checks at runtime
 DEFINE_TUBE_TYPE(UniversalTube);
+
+#ifndef VECGEOM_NO_SPECIALIZATION
 
 // A tube not having rmin or phi sector
 DEFINE_TUBE_TYPE(NonHollowTube);
@@ -56,6 +62,8 @@ DEFINE_TUBE_TYPE(HollowTubeWithBiggerThanPiSector);
 // A tube with rmin and a phi sector equal to pi
 DEFINE_TUBE_TYPE(HollowTubeWithPiSector);
 
+#endif // VECGEOM_NO_SPECIALIZATION
+
 #undef DEFINE_TUBE_TYPE
 
 // Mapping of tube types to certain characteristics
@@ -70,6 +78,9 @@ template <typename T>
 struct NeedsPhiTreatment {
   static const ETreatmentType value=kYes;
 };
+
+#ifndef VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsPhiTreatment<NonHollowTube> {
   static const ETreatmentType value=kNo;
@@ -78,6 +89,9 @@ template <>
 struct NeedsPhiTreatment<HollowTube> {
   static const ETreatmentType value=kNo;
 };
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsPhiTreatment<UniversalTube> {
   static const ETreatmentType value=kUnknown;
@@ -99,6 +113,9 @@ struct NeedsRminTreatment
 {
   static const ETreatmentType value=kYes;
 };
+
+#ifndef VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsRminTreatment<NonHollowTube>
 {
@@ -119,6 +136,9 @@ struct NeedsRminTreatment<NonHollowTubeWithPiSector>
 {
   static const ETreatmentType value=kNo;
 };
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsRminTreatment<UniversalTube>
 {
@@ -156,6 +176,8 @@ struct SectorType<UniversalTube> {
   static const EAngleType value=kUnknownAngle;
 };
 
+#ifndef VECGEOM_NO_SPECIALIZATION
+
 template<>
 struct SectorType<NonHollowTubeWithSmallerThanPiSector> {
   static const EAngleType value=kSmallerThanPi;
@@ -185,6 +207,7 @@ struct SectorType<HollowTubeWithBiggerThanPiSector> {
   static const EAngleType value=kBiggerThanPi;
 };
 
+#endif // VECGEOM_NO_SPECIALIZATION
 
 } // End of TubeTypes
 

@@ -32,8 +32,11 @@ VPlacedVolume* UnplacedTrd::Create(
     VPlacedVolume *const placement) {
 
     using namespace TrdTypes;
-    __attribute__((unused)) const UnplacedTrd &trd = static_cast<const UnplacedTrd&>( *(logical_volume->unplaced_volume()) );
-    
+
+#ifndef VECGEOM_NO_SPECIALIZATION
+
+     __attribute__((unused)) const UnplacedTrd &trd = static_cast<const UnplacedTrd&>( *(logical_volume->unplaced_volume()) );
+
     #define GENERATE_TRD_SPECIALIZATIONS
     #ifdef GENERATE_TRD_SPECIALIZATIONS
       if(trd.dy1() == trd.dy2()) {
@@ -52,6 +55,9 @@ VPlacedVolume* UnplacedTrd::Create(
                  , placement);
     }
     #endif
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
       //    std::cout << "universal trd" << std::endl; 
 	return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::UniversalTrd> >(logical_volume, transformation 
 #ifdef VECGEOM_NVCC

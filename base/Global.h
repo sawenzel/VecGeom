@@ -32,11 +32,11 @@
   #define VECGEOM_HOST_FORWARD_DECLARE(X) namespace cxx { X }
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_DECLARE_CONV(X)
-  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X)
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType,Arg)
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Arg1,ArgType2,Arg2)
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3)
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3)
+  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X,Def)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Def1,ArgType2,Def2)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Def1,ArgType2,Def2,ArgType3)
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Def1,ArgType2,Def2,ArgType3,Def3)
   #undef VECGEOM_VC
   #undef VECGEOM_VC_ACCELERATION
   #undef VECGEOM_CILK
@@ -66,34 +66,65 @@
   }
   #define VECGEOM_HOST_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)  namespace cuda { X }
+
   #define VECGEOM_DEVICE_DECLARE_CONV(X) \
      namespace cuda { class X; } \
-     namespace cxx  { class X; } \
+     inline namespace cxx  { class X; } \
      template <> struct kCudaType<cxx::X> { using type_t = cuda::X; };
-  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X) \
-     namespace cuda { namespace NS { class X; } } \
-     namespace cxx { namespace NS { class X; } } \
-     template <> struct kCudaType<cxx::NS::X> { using type_t = cuda::NS::X; };
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType,Arg) \
+
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType) \
      namespace cuda { template <ArgType Arg> class X; } \
-     namespace cxx  { template <ArgType Arg> class X; } \
+     inline namespace cxx  { template <ArgType Arg> class X; } \
      template <ArgType Arg> struct kCudaType<cxx::X<Arg> > \
      { using type_t = cuda::X<CudaType_t<Arg> >; };
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Arg1,ArgType2,Arg2) \
+
+#ifdef VECGEOM_CUDA_VOLUME_SPECIALIZATION
+
+  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X,Def)     \
+     namespace cuda { namespace NS { class X; } } \
+     inline namespace cxx { namespace NS { class X; } } \
+     template <> struct kCudaType<cxx::NS::X> { using type_t = cuda::NS::X; };
+
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Def1,ArgType2,Def2) \
      namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
-     namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
      template <ArgType1 Arg1,ArgType2 Arg2> struct kCudaType<cxx::X<Arg1,Arg2> > \
      { using type_t = cuda::X<Arg1,Arg2 >; };
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3) \
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Def1,ArgType2,Def2,ArgType3) \
      namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
-     namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Arg1, Arg2, CudaType_t<Arg3> >; };
-  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Arg1,ArgType2,Arg2,ArgType3,Arg3) \
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Def1,ArgType2,Def2,ArgType3,Def3) \
      namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
-     namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Arg1,Arg2,Arg3 >; };
+
+#else // VECGEOM_CUDA_VOLUME_SPECIALIZATION
+
+  #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X,Def)     \
+     namespace cuda { namespace NS { class Def; } } \
+     inline namespace cxx { namespace NS { class X; } } \
+     template <> struct kCudaType<cxx::NS::X> { using type_t = cuda::NS::Def; };
+
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Def1,ArgType2,Def2) \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     template <ArgType1 Arg1,ArgType2 Arg2> struct kCudaType<cxx::X<Arg1,Arg2> > \
+     { using type_t = cuda::X<Def1, Def2 >; };
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Def1,ArgType2,Def2,ArgType3) \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
+     { using type_t = cuda::X<Def2, Def2, CudaType_t<Arg3> >; };
+  #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Def1,ArgType2,Def2,ArgType3,Def3) \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
+     { using type_t = cuda::X<Def1,Def2,Def3 >; };
+
+#endif // VECGEOM_CUDA_VOLUME_SPECIALIZATION
 
 /* Instead of multiple macro, when we have auto expansion of Template pack we could use:
 template <typename... Arguments>
@@ -118,7 +149,7 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 #ifndef NULL
-  #define NULL 0
+  #define NULL nullptr
 #endif
 
 // Allow constexpr variables and functions if possible
@@ -202,7 +233,9 @@ VECGEOM_GLOBAL vecgeom::Inside_t kOutside = 2;
 //   k20 = 0x040, k21 = 0x080, k22 = 0x100
 // };
 // }
-
+// rotation::kGeneric
+// translation::kGeneric
+ 
 typedef int RotationCode;
 typedef int TranslationCode;
 namespace rotation {

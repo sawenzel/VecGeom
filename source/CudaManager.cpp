@@ -23,6 +23,7 @@ CudaManager::CudaManager() : world_gpu_() {
   world_ = NULL;
   verbose_ = 0;
   total_volumes = 0;
+  cudaDeviceSetLimit( cudaLimitStackSize, 4096 );
 }
 
 VPlacedVolume const* CudaManager::world() const {
