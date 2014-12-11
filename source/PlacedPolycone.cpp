@@ -101,4 +101,13 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #endif
 #endif // VECGEOM_NVCC
 
-}} // end namespace
+}
+
+#ifdef VECGEOM_NVCC
+
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedPolycone )
+
+#endif
+
+
+} // end global namespace

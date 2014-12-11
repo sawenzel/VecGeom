@@ -39,6 +39,7 @@ public:
   Vector(Type *const vec, const int sz, const int maxsize)
      : fData(vec), fSize(sz), fMemorySize(maxsize), fAllocated(true) {}
 
+  VECGEOM_CUDA_HEADER_BOTH
   ~Vector() {
     if (fAllocated) delete[] fData;
   }
