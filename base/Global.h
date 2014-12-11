@@ -118,7 +118,7 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 #ifndef NULL
-  #define NULL 0
+  #define NULL nullptr
 #endif
 
 // Allow constexpr variables and functions if possible
