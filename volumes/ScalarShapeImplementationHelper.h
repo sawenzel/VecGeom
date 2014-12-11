@@ -12,7 +12,7 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(ScalarShapeImplementationHelper,class,Specialization)
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(ScalarShapeImplementationHelper,class)
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

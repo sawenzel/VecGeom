@@ -18,7 +18,7 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(TrapezoidImplementation, TranslationCode,transCodeT, RotationCode,rotCodeT)
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(TrapezoidImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
