@@ -55,7 +55,7 @@ int main()
     assert( poly1.GetSectionIndex( 0.51 ) == 2 );
     assert( poly1.GetSectionIndex( 0. ) == 1 );
     assert( poly1.GetSectionIndex( -2. ) == -1 );
-    assert( poly1.GetSectionIndex( 3. ) == -1 );
+    assert( poly1.GetSectionIndex( 3. ) == -2 );
     assert( poly1.GetStartPhi() == 0. );
     assert( (std::fabs(poly1.GetDeltaPhi()-kTwoPi))<1e-10 );
 
@@ -76,6 +76,30 @@ int main()
     assert( placedpoly1->Contains( Vec3D_t(0.,0., 10) ) == false );
     assert( placedpoly1->Contains( Vec3D_t(0.,0., 1.8) ) == false );
 
+     // test DistanceToIn
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,-3.) , Vec3D_t(0.,0.,1.)) == 2.5 );
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,-2.) , Vec3D_t(0.,0.,-1.)) == kInfinity );
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,3) , Vec3D_t(0.,0.,-1.)) == 2.5 );
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,3) , Vec3D_t(0.,0.,1.)) == kInfinity );
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(3.,0.,0) , Vec3D_t(-1.,0.,0.)) == 1 );
+    assert( std::fabs(placedpoly1-> DistanceToIn( Vec3D_t(0.,0., 1.999999999) , Vec3D_t(1.,0.,0.)) -0.4)<1000.*kTolerance );
 
+    // test SafetyToIn
+    assert( placedpoly1-> SafetyToIn( Vec3D_t(0.,0.,-3.)) == 2. );
+    assert( placedpoly1-> SafetyToIn( Vec3D_t(0.5,0.,-1.)) == 0. );
+    assert( placedpoly1-> SafetyToIn( Vec3D_t(0.,0.,3) ) == 1 );
+    assert( placedpoly1-> SafetyToIn( Vec3D_t(2.,0.,0.1) ) == 0 );
+    // assert( placedpoly1-> SafetyToIn( Vec3D_t(3.,0.,0) ) == 1. );
+
+    // test SafetyToOut
+    //std::cout<<"test SOUT "<<placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.))<<std::endl;
+    // assert( placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.)) == 0.5 );
+    //  assert( placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.5)) == 0. );
+    //  assert( placedpoly1-> SafetyToOut( Vec3D_t(1.9,0.,0) ) == 0.1 );
+    // assert( placedpoly1-> SafetyToOut( Vec3D_t(0.2,0.,-1) ) == 0. );
+    //  assert( placedpoly1-> SafetyToOut( Vec3D_t(1.4,0.,2) ) == 0. );
+    
+
+   
     return 0.;
 }

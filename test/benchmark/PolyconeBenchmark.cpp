@@ -48,10 +48,11 @@ int main(int argc, char* argv[]) {
   tester.SetPoolMultiplier(1);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
-  tester.SetInsideBias( 0.99 );
+  tester.SetInsideBias( 0.5 );
 
   tester.RunInsideBenchmark();
-
+  tester.RunToInBenchmark();
+  // tester.RunToOutBenchmark();
   Visualizer visualizer;
   visualizer.AddVolume( *vol );
   if( tester.GetProblematicContainPoints().size() > 0 ) {
@@ -61,12 +62,12 @@ int main(int argc, char* argv[]) {
 
         // for debugging purpose
         std::cerr << " " << vol->Contains(v) << "\n";
-
+        std::cout << v<<"\n";
       }
       visualizer.Show();
   }
 
-  //  tester.RunToInBenchmark();
+  //tester.RunToInBenchmark();
   //  tester.RunToOutBenchmark();
 
   return 0;
