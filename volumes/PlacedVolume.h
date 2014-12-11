@@ -326,7 +326,7 @@ public:
          const int id) const; \
     }
 
-#ifdef VECGEOM_CUDA_VOLUME_SPECIALIZATION
+#ifdef VECGEOM_NO_SPECIALIZATION
 
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT( PlacedVol, trans )   \
    VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<trans, rotation::kGeneric> ) \
@@ -371,7 +371,7 @@ public:
          const int id) const; \
     }
 
-#ifdef VECGEOM_CUDA_VOLUME_SPECIALIZATION
+#ifdef VECGEOM_NO_SPECIALIZATION
 
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_3( PlacedVol, trans, Type ) \
    VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol<trans, rotation::kGeneric, Type> ) \
@@ -415,7 +415,7 @@ public:
          const int id) const; \
     }
 
-#ifdef VECGEOM_CUDA_VOLUME_SPECIALIZATION
+#ifdef VECGEOM_NO_SPECIALIZATION
 
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALL_ROT_BOOLEAN( PlacedVol, Op, trans) \
    VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_BOOLEAN( PlacedVol<Op, trans, rotation::kGeneric> ) \
