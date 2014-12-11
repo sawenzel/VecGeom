@@ -310,9 +310,14 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
         std::vector<Precision> rmin, z, rmax;
         ReconstructSectionArrays(z,rmin,rmax);
 
-        Precision *z_gpu_ptr = AllocateOnGpu<Precision>( (z.size() + rmin.size() + rmax.size())*sizeof(Precision) );
-        Precision *rmin_gpu_ptr = z_gpu_ptr + sizeof(Precision)*z.size();
-        Precision *rmax_gpu_ptr = rmin_gpu_ptr + sizeof(Precision)*rmin.size();
+	// somehow this does not work:
+	//        Precision *z_gpu_ptr = AllocateOnGpu<Precision>( (z.size() + rmin.size() + rmax.size())*sizeof(Precision) );
+	//        Precision *rmin_gpu_ptr = z_gpu_ptr + sizeof(Precision)*z.size();
+	//        Precision *rmax_gpu_ptr = rmin_gpu_ptr + sizeof(Precision)*rmin.size();
+
+	Precision *z_gpu_ptr = AllocateOnGpu<Precision>( z.size()*sizeof(Precision) );
+	Precision *rmin_gpu_ptr = AllocateOnGpu<Precision>( rmin.size()*sizeof(Precision) );
+	Precision *rmax_gpu_ptr = AllocateOnGpu<Precision>( rmax.size()*sizeof(Precision) );
 
         vecgeom::CopyToGpu(&z[0], z_gpu_ptr, sizeof(Precision)*z.size());
         vecgeom::CopyToGpu(&rmin[0], rmin_gpu_ptr, sizeof(Precision)*rmin.size());
@@ -323,6 +328,9 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 
         // remove temporary space from GPU
         FreeFromGpu(z_gpu_ptr);
+        FreeFromGpu(rmin_gpu_ptr);
+        FreeFromGpu(rmax_gpu_ptr);
+
 
         return gpupolycon;
     }
