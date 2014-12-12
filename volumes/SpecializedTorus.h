@@ -1,7 +1,7 @@
 /// \file SpecializedTorus.h
 
-#ifndef VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
-#define VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
+#ifndef VECGEOM_VOLUMES_SPECIALIZEDTORUS_H_
+#define VECGEOM_VOLUMES_SPECIALIZEDTORUS_H_
 
 #include "base/Global.h"
 
@@ -24,4 +24,4 @@ using SimpleTorus = SpecializedTorus<translation::kGeneric, rotation::kGeneric>;
 
 } } // End global namespace
 
-#endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
+#endif // VECGEOM_VOLUMES_SPECIALIZEDTORUS_H_

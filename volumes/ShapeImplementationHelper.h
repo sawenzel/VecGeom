@@ -20,7 +20,7 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(ShapeImplementationHelper,class,Specialization)
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(ShapeImplementationHelper,class)
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

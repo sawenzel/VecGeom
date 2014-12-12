@@ -11,6 +11,7 @@
 #include "management/VolumeFactory.h"
 #include <iostream>
 #include <cstdio>
+#include <vector>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -296,5 +297,58 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
                                     placement);
     }
 
+#ifdef VECGEOM_CUDA_INTERFACE
 
-}} // end namespace
+    DevicePtr<cuda::VUnplacedVolume> UnplacedPolycone::CopyToGpu() const {
+        return  CopyToGpuImpl<UnplacedPolycone>();
+    }
+
+    DevicePtr<cuda::VUnplacedVolume> UnplacedPolycone::CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const {
+
+        // idea: reconstruct defining arrays: copy them to GPU; then construct the UnplacedPolycon object from scratch
+        // on the GPU
+        std::vector<Precision> rmin, z, rmax;
+        ReconstructSectionArrays(z,rmin,rmax);
+
+	// somehow this does not work:
+	//        Precision *z_gpu_ptr = AllocateOnGpu<Precision>( (z.size() + rmin.size() + rmax.size())*sizeof(Precision) );
+	//        Precision *rmin_gpu_ptr = z_gpu_ptr + sizeof(Precision)*z.size();
+	//        Precision *rmax_gpu_ptr = rmin_gpu_ptr + sizeof(Precision)*rmin.size();
+
+	Precision *z_gpu_ptr = AllocateOnGpu<Precision>( z.size()*sizeof(Precision) );
+	Precision *rmin_gpu_ptr = AllocateOnGpu<Precision>( rmin.size()*sizeof(Precision) );
+	Precision *rmax_gpu_ptr = AllocateOnGpu<Precision>( rmax.size()*sizeof(Precision) );
+
+        vecgeom::CopyToGpu(&z[0], z_gpu_ptr, sizeof(Precision)*z.size());
+        vecgeom::CopyToGpu(&rmin[0], rmin_gpu_ptr, sizeof(Precision)*rmin.size());
+        vecgeom::CopyToGpu(&rmax[0], rmax_gpu_ptr, sizeof(Precision)*rmax.size());
+
+        DevicePtr<cuda::VUnplacedVolume> gpupolycon =  CopyToGpuImpl<UnplacedPolycone>(gpu_ptr,
+                fStartPhi, fDeltaPhi, fNz, rmin_gpu_ptr, rmax_gpu_ptr, z_gpu_ptr);
+
+        // remove temporary space from GPU
+        FreeFromGpu(z_gpu_ptr);
+        FreeFromGpu(rmin_gpu_ptr);
+        FreeFromGpu(rmax_gpu_ptr);
+
+
+        return gpupolycon;
+    }
+
+ #endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
+
+#ifdef VECGEOM_NVCC
+
+namespace cxx {
+
+template size_t DevicePtr<cuda::UnplacedPolycone>::SizeOf();
+template void DevicePtr<cuda::UnplacedPolycone>::Construct(
+        Precision, Precision, int, Precision *, Precision *, Precision *) const;
+
+} // End cxx namespace
+
+#endif
+
+} // end global namespace

@@ -16,7 +16,7 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(TubeImplementation, TranslationCode,transCodeT, RotationCode,rotCode,typename,tubeTypeT)
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(TubeImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric, typename)
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

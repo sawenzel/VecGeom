@@ -6,7 +6,9 @@
 #include "base/Vector3D.h"
 #include "base/Global.h"
 #include "ArgParser.h"
+#ifdef VECGEOM_ROOT
 #include "utilities/Visualizer.h"
+#endif
 
 using namespace vecgeom;
 
@@ -51,8 +53,9 @@ int main(int argc, char* argv[]) {
   tester.SetInsideBias( 0.5 );
 
   tester.RunInsideBenchmark();
-  tester.RunToInBenchmark();
-  // tester.RunToOutBenchmark();
+
+
+#ifdef VECGEOM_ROOT
   Visualizer visualizer;
   visualizer.AddVolume( *vol );
   if( tester.GetProblematicContainPoints().size() > 0 ) {
@@ -66,6 +69,7 @@ int main(int argc, char* argv[]) {
       }
       visualizer.Show();
   }
+#endif // VECGEOM_ROOT
 
   //tester.RunToInBenchmark();
   //  tester.RunToOutBenchmark();
