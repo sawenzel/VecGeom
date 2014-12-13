@@ -63,7 +63,7 @@ private:
    // states have to be constructed using MakeInstance() function
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   NavigationState(int maxlevel);
+   NavigationState(size_t nvalues);
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -94,7 +94,7 @@ private:
   void*  ObjectStart() {return (void*)this;}
 
      // The actual size of the data for an instance, excluding the virtual table
-  size_t      DataSize() const {
+  size_t DataSize() const {
      return SizeOf() + (size_t)ObjectStart() - (size_t)DataStart();
   }
 
@@ -104,9 +104,8 @@ public:
   // Enumerate the part of the private interface, we want to expose.
   using Base_t::MakeCopy;
   using Base_t::MakeCopyAt;
-  using Base_t::MakeInstance;
-  using Base_t::MakeInstanceAt;
   using Base_t::ReleaseInstance;
+  using Base_t::SizeOf;
 
    // produces a compact navigation state object of a certain depth
    // the caller can give a memory address where the object will
@@ -117,23 +116,32 @@ public:
    // Both MakeInstance, MakeInstanceAt, MakeCopy and MakeCopyAT are provided by 
    // VariableSizeObjectInterface
 
+   static NavigationState *MakeInstance(int maxlevel) {
+      // MaxLevel is 'zero' based (i.e. maxlevel==0 requires one value)
+      return Base_t::MakeInstance(maxlevel+1);
+   }
+
+   static NavigationState *MakeInstanceAt(int maxlevel, void *addr) {
+      // MaxLevel is 'zero' based (i.e. maxlevel==0 requires one value)
+      return Base_t::MakeInstanceAt(maxlevel+1, addr);
+   }
+
    // returns the size in bytes of a NavigationState object with internal
    // path depth maxlevel
    VECGEOM_CUDA_HEADER_BOTH
    static size_t SizeOfInstance(int maxlevel) {
-      return VariableSizeObjectInterface::SizeOf( maxlevel );
+      // MaxLevel is 'zero' based (i.e. maxlevel==0 requires one value)
+      return VariableSizeObjectInterface::SizeOf( maxlevel + 1 );
    }
-
-   using Base_t::SizeOf;
 
    VECGEOM_CUDA_HEADER_BOTH
    int GetObjectSize() const {
-      return SizeOf( fPath.fN );
+      return SizeOf( GetMaxLevel() );
    }
 
    VECGEOM_CUDA_HEADER_BOTH
    int SizeOf() const {
-       return NavigationState::SizeOfInstance(fPath.fN);
+      return NavigationState::SizeOfInstance(GetMaxLevel());
    }
 
    VECGEOM_INLINE
@@ -162,7 +170,7 @@ public:
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   int GetMaxLevel() const { return fPath.fN; }
+   int GetMaxLevel() const { return fPath.fN-1; }
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -296,14 +304,14 @@ NavigationState::NavigationState( NavigationState const & rhs ) :
 */
 
 // private implementation of standard constructor
-NavigationState::NavigationState( int maxlevel ) :
+NavigationState::NavigationState( size_t nvalues ) :
          fCurrentLevel(0),
          fOnBoundary(false),
          global_matrix_(),
-         fPath(maxlevel)
+         fPath(nvalues)
 {
    // clear the buffer
-   std::memset(fPath.GetValues(), 0, maxlevel*sizeof(VPlacedVolume*));
+   std::memset(fPath.GetValues(), 0, nvalues*sizeof(VPlacedVolume*));
 }
 
 
