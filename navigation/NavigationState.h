@@ -153,7 +153,9 @@ public:
       //
       // in case NavigationState was a virtual class: change to
       // std::memcpy(other->DataStart(), DataStart(), DataSize());
+      bool alloc = other->fPath.fSelfAlloc;
       std::memcpy(other, this, this->SizeOf());
+      other->fPath.fSelfAlloc = alloc;
    }
  
 #ifdef VECGEOM_ROOT
