@@ -339,7 +339,7 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 
  #endif // VECGEOM_CUDA_INTERFACE
 
-#ifdef VECGEOM_USOLIDS
+	 //#ifdef VECGEOM_USOLIDS
 /////////////////////////////////////////////////////////////////////////
 //
 // GetPointOnSurface
@@ -541,7 +541,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnRing(Precision fRMin1, Precision
     rRand2 = RNG::Instance().uniform(fRMax1, fRMax2);
     Atot   = A1 + std::fabs(fRMax2 * fRMax2 - fRMax1 * fRMax1);
   }
-  rCh   = UUtils::Random(0., Atot);
+  rCh   = RNG::Instance().uniform(0., Atot);
 
   if (rCh > A1)
   {
@@ -762,7 +762,7 @@ Precision UnplacedPolycone::SurfaceArea() const{
          aMax.z() = fZs[GetNSections()];
          
 }
-#endif
+	 //#endif
 
 } // End impl namespace
 

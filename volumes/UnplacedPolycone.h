@@ -125,7 +125,7 @@ public:
       return fSections[index];
     }
 
-#ifdef VECGEOM_USOLIDS
+    //#ifdef VECGEOM_USOLIDS
     VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const
     {
@@ -167,7 +167,7 @@ public:
                             Precision fRMin2, Precision fRMax2,
                             Precision zOne) const;
 
-#endif
+    //#endif
 
     // a method to reconstruct "plane" section arrays for z, rmin and rmax
     template<typename PushableContainer>
