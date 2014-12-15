@@ -85,20 +85,31 @@ int main()
     assert( std::fabs(placedpoly1-> DistanceToIn( Vec3D_t(0.,0., 1.999999999) , Vec3D_t(1.,0.,0.)) -0.4)<1000.*kTolerance );
 
     // test SafetyToIn
-    assert( placedpoly1-> SafetyToIn( Vec3D_t(0.,0.,-3.)) == 2. );
-    assert( placedpoly1-> SafetyToIn( Vec3D_t(0.5,0.,-1.)) == 0. );
-    assert( placedpoly1-> SafetyToIn( Vec3D_t(0.,0.,3) ) == 1 );
-    assert( placedpoly1-> SafetyToIn( Vec3D_t(2.,0.,0.1) ) == 0 );
+    //assert( placedpoly1-> SafetyToIn( Vec3D_t(0.,0.,-3.)) == 2. );
+    //assert( placedpoly1-> SafetyToIn( Vec3D_t(0.5,0.,-1.)) == 0. );
+    //assert( placedpoly1-> SafetyToIn( Vec3D_t(0.,0.,3) ) == 1 );
+    //assert( placedpoly1-> SafetyToIn( Vec3D_t(2.,0.,0.1) ) == 0 );
     // assert( placedpoly1-> SafetyToIn( Vec3D_t(3.,0.,0) ) == 1. );
-
+std::cout<<"test SIN "<<placedpoly1-> SafetyToIn( Vec3D_t(8.,0.,0.))<<std::endl;
     // test SafetyToOut
-    //std::cout<<"test SOUT "<<placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.))<<std::endl;
+    std::cout<<"test SOUT "<<placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.))<<std::endl;
     // assert( placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.)) == 0.5 );
     //  assert( placedpoly1-> SafetyToOut( Vec3D_t(0.,0.,0.5)) == 0. );
     //  assert( placedpoly1-> SafetyToOut( Vec3D_t(1.9,0.,0) ) == 0.1 );
     // assert( placedpoly1-> SafetyToOut( Vec3D_t(0.2,0.,-1) ) == 0. );
     //  assert( placedpoly1-> SafetyToOut( Vec3D_t(1.4,0.,2) ) == 0. );
     
+     // test DistanceToOut
+    assert( placedpoly1-> DistanceToOut( Vec3D_t(0.,0.,0.) , Vec3D_t(0.,0.,1.)) == 0.5 );
+    assert( placedpoly1-> DistanceToOut( Vec3D_t(0.,0.,0.) , Vec3D_t(0.,0.,-1.)) == 0.5 );
+      assert( placedpoly1-> DistanceToOut( Vec3D_t(2.,0.,0.) , Vec3D_t(1.,0.,0.)) == 0. );
+      // std::cout<<"test DOUT "<<placedpoly1-> DistanceToOut( Vec3D_t(1.999999999,0.,0.), Vec3D_t(-1.,0.,0.))<<std::endl;
+      assert( placedpoly1-> DistanceToOut( Vec3D_t(2.,0.,0.) , Vec3D_t(-1.,0.,0.)) == 4. );
+     
+assert( placedpoly1-> DistanceToOut( Vec3D_t(1.,0.,2) , Vec3D_t(0.,0.,1.)) == 0. );
+assert( placedpoly1-> DistanceToOut( Vec3D_t(0.5,0., -1) , Vec3D_t(0.,0.,-1.)) == 0. );
+    
+     assert( placedpoly1-> DistanceToOut( Vec3D_t(0.5,0., -1) , Vec3D_t(0.,0., 1.)) == 3. );
 
    
     return 0.;

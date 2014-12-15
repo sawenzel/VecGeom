@@ -97,6 +97,8 @@ public:
     Precision GetStartPhi() const {return fStartPhi;}
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetDeltaPhi() const {return fDeltaPhi;}
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetEndPhi() const {return fStartPhi+fDeltaPhi;}
 
     VECGEOM_CUDA_HEADER_BOTH
     int GetSectionIndex( Precision zposition ) const {
@@ -123,7 +125,7 @@ public:
       return fSections[index];
     }
 
-
+#ifdef VECGEOM_USOLIDS
     VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const
     {
@@ -135,6 +137,37 @@ public:
         }
         return cubicVolume;
     }
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision SurfaceArea() const;
+    VECGEOM_CUDA_HEADER_BOTH
+    Vector3D<Precision> GetPointOnSurface() const;
+
+    VECGEOM_CUDA_HEADER_BOTH
+    bool Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const;
+    VECGEOM_CUDA_HEADER_BOTH
+    void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const;
+
+ // Methods for random point generation
+    VECGEOM_CUDA_HEADER_BOTH
+    Vector3D<Precision> GetPointOnCone(Precision fRmin1, Precision fRmax1,
+                            Precision fRmin2, Precision fRmax2,
+                            Precision zOne,   Precision zTwo,
+                            Precision& totArea) const;
+    VECGEOM_CUDA_HEADER_BOTH
+    Vector3D<Precision> GetPointOnTubs(Precision fRMin, Precision fRMax,
+                            Precision zOne,  Precision zTwo,
+                            Precision& totArea) const;
+    VECGEOM_CUDA_HEADER_BOTH
+    Vector3D<Precision> GetPointOnCut(Precision fRMin1, Precision fRMax1,
+                           Precision fRMin2, Precision fRMax2,
+                           Precision zOne,   Precision zTwo,
+                           Precision& totArea) const;
+    VECGEOM_CUDA_HEADER_BOTH
+    Vector3D<Precision> GetPointOnRing(Precision fRMin, Precision fRMax,
+                            Precision fRMin2, Precision fRMax2,
+                            Precision zOne) const;
+
+#endif
 
     // a method to reconstruct "plane" section arrays for z, rmin and rmax
     template<typename PushableContainer>

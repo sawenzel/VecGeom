@@ -19,8 +19,10 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(PolyconeImplementation,
-        TranslationCode,transCodeT, RotationCode,rotCodeT)
+  //VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(PolyconeImplementation,
+  //     TranslationCode,transCodeT, RotationCode,rotCodeT)
+
+  VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(PolyconeImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -201,8 +203,110 @@ struct PolyconeImplementation {
         typename Backend::precision_v &distance) {
 
     Vector3D<typename Backend::precision_v>  pn(point);
-  
-  
+
+     if (polycone.GetNSections()==1)
+    {
+     const PolyconeSection& section = polycone.GetSection(0);
+       
+     ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::DistanceToOut<Backend>(
+                *section.solid,
+                point - Vector3D<Precision>(0,0,section.shift),dir,stepMax,distance);
+     return;
+     }
+
+    int indexLow = polycone.GetSectionIndex(point.z()-kTolerance);
+    int indexHigh = polycone.GetSectionIndex(point.z()+kTolerance);
+    int index = 0;
+ 
+    if ( indexLow != indexHigh && (indexLow >= 0 ))
+    { //we are close to Surface, section has to be identified
+      const PolyconeSection& section = polycone.GetSection(indexLow);
+      
+      bool inside;
+      Vector3D<Precision> localp;
+      ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::Contains<Backend>(
+                *section.solid,
+                Transformation3D(),
+                point - Vector3D<Precision>(0,0,section.shift),
+                localp,
+                inside);
+      if(!inside){index=indexHigh;}
+      else{index=indexLow;}
+    
+    }
+  else{index=indexLow;
+    if(index<0)index=polycone.GetSectionIndex(point.z());
+  } 
+    if(index < 0 ){distance = 0.; return; }
+
+  Precision totalDistance = 0.;
+  Precision dist;
+  int increment = (dir.z() > 0) ? 1 : -1;
+  if (std::fabs(dir.z()) < kTolerance) increment = 0;
+  int istep = 0; 
+  do
+    {
+      const PolyconeSection& section = polycone.GetSection(index);
+    
+    if (totalDistance != 0||(istep < 2))
+    {
+      pn = point + (totalDistance ) * dir; // point must be shifted, so it could eventually get into another solid
+      pn.z() -= section.shift;
+      typename Backend::int_v inside;
+      ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::Inside<Backend>(
+                *section.solid,
+                Transformation3D(),
+                pn,
+                inside);
+      if (inside == EInside::kOutside)
+      {
+        break;
+      }
+    }
+    else pn.z() -= section.shift;
+    istep = istep+1;
+    
+   
+   ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::DistanceToOut<Backend>(
+                *section.solid,
+                pn,dir,stepMax,dist);
+   //std::cout<<"Section dist="<<dist<<" td="<<totalDistance<<" index="<<index<<std::endl;
+   //Section Surface case   
+   if(std::fabs(dist) < 0.5*kTolerance)
+   { int index1 = index;
+        if(( index > 0) && ( index < polycone.GetNSections()-1 )){index1 += increment;}
+        else{
+        if((index == 0) && ( increment > 0 ))index1 += increment;
+        if((index == polycone.GetNSections()-1) && (increment<0 ))index1 += increment;
+        }
+
+        Vector3D<Precision> pte = point+(totalDistance+dist)*dir;
+        const PolyconeSection& section1 = polycone.GetSection(index1);
+        bool inside1;
+        pte.z() -= section1.shift;
+        Vector3D<Precision> localp;
+        ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::Contains<Backend>(
+                *section1.solid,
+                Transformation3D(),
+                pte,
+                localp,
+                inside1);
+        if (!inside1)
+        {
+         break;
+        }
+    }
+   
+    totalDistance += dist;
+    index += increment;
+   
+  }
+  while (index >= 0 && index < polycone.GetNSections());
+ 
+  distance=totalDistance;
+ 
+  return ;
+   
 }
 
     
@@ -251,7 +355,7 @@ struct PolyconeImplementation {
      if (dz >= minSafety) break;
      
      PolyconeSection const & sec = polycone.GetSection(i);
-     safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToInUSOLIDS<Backend,true>(
+     safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToInUSOLIDS<Backend,false>(
                 *sec.solid,
                 Transformation3D(),
                 p - Vector3D<Precision>(0,0,sec.shift));
@@ -265,17 +369,42 @@ struct PolyconeImplementation {
      Precision dz = zbase - polycone.fZs[i];
      if (dz >= minSafety) break;
      PolyconeSection const & sec = polycone.GetSection(i);
-     safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToInUSOLIDS<Backend,true>(
+     safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToInUSOLIDS<Backend,false>(
                 *sec.solid,
                 Transformation3D(),
                 p - Vector3D<Precision>(0,0,sec.shift));
-
+     //std::cout<<"Din-1="<<safety<<" i="<<i<<"dz="<<dz<<std::endl;
      if (safety < minSafety) minSafety = safety;
     }
     safety = minSafety;
     return ;
+    /*
+     if (!aAccurate)
+    return enclosingCylinder->SafetyFromOutside(p);
 
+  int index = GetSection(p.z);
+  double minSafety = SafetyFromOutsideSection(index, p);
+  if (minSafety < 1e-6) return minSafety;
 
+  double zbase = fZs[index + 1];
+  for (int i = index + 1; i <= fMaxSection; ++i)
+  {
+    double dz = fZs[i] - zbase;
+    if (dz >= minSafety) break;
+    double safety = SafetyFromOutsideSection(i, p);
+    if (safety < minSafety) minSafety = safety;
+  }
+
+  zbase = fZs[index - 1];
+  for (int i = index - 1; i >= 0; --i)
+  {
+    double dz = zbase - fZs[i];
+    if (dz >= minSafety) break;
+    double safety = SafetyFromOutsideSection(i, p);
+    if (safety < minSafety) minSafety = safety;
+  }
+  return minSafety;
+    */
     }
 
     template <class Backend>
@@ -285,6 +414,53 @@ struct PolyconeImplementation {
                             Vector3D<typename Backend::precision_v> const &point,
                             typename Backend::precision_v &safety) {
 
+    
+ int index = polycone.GetSectionIndex(point.z());
+   
+    if (index < 0 ){ safety=0;return ;}
+  
+  
+  
+  PolyconeSection const & sec = polycone.GetSection(index);
+  Vector3D<typename Backend::precision_v> p = point - Vector3D<Precision>(0,0,sec.shift);
+  safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToOutUSOLIDS<Backend,false>(
+	   *sec.solid,p);
+  Precision minSafety =safety;
+  //std::cout<<"Sout0="<<safety<<" index="<<index<<std::endl;
+  if (minSafety == kInfinity) {safety = 0.;return ;}
+  if (minSafety < kTolerance) {safety = 0.; return ;}
+
+  Precision zbase = polycone.fZs[index + 1];
+  for (int i = index + 1; i < polycone.GetNSections(); ++i)
+  {
+    Precision dz = polycone.fZs[i] - zbase;
+    if (dz >= minSafety) break;
+    PolyconeSection const & sec = polycone.GetSection(i);
+    p = point - Vector3D<Precision>(0,0,sec.shift);
+    safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToInUSOLIDS<Backend,false>(
+	    *sec.solid,  Transformation3D(),p);
+    if(safety < minSafety)minSafety =safety;
+    // std::cout<<"Sout+1="<<safety<<" i="<<i<<"dz="<<dz<<std::endl;
+  }
+
+  if (index > 0)
+  {
+    zbase = polycone.fZs[index - 1];
+    for (int i = index - 1; i >= 0; --i)
+    {
+    Precision dz = zbase - polycone.fZs[i];
+    if (dz >= minSafety) break;
+    PolyconeSection const & sec = polycone.GetSection(i);
+    p = point - Vector3D<Precision>(0,0,sec.shift);
+    safety = ConeImplementation< translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::SafetyToInUSOLIDS<Backend,false>(
+	     *sec.solid,  Transformation3D(),p);
+    if(safety < minSafety)minSafety =safety;
+    //std::cout<<"Sout-1="<<safety<<" i="<<i<<"dz="<<dz<<std::endl;
+    }
+  }
+ 
+  safety=minSafety;
+  return ;
    
 }
 

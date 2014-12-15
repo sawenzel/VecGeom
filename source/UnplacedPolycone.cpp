@@ -9,6 +9,7 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedPolycone.h"
 #include "management/VolumeFactory.h"
+#include "base/RNG.h"
 #include <iostream>
 #include <cstdio>
 #include <vector>
@@ -70,7 +71,7 @@ void UnplacedPolycone::Init(double phiStart,
   }
 
   //
-  double prevZ = 0, prevRmax = 0, prevRmin = 0;
+  double prevZ =  zPlane[0], prevRmax = 0, prevRmin = 0;
   int dirZ = 1;
   if (zPlane[1] < zPlane[0]) dirZ = -1;
 //  int curSolid = 0;
@@ -103,10 +104,11 @@ void UnplacedPolycone::Init(double phiStart,
     // i has to be at least one to complete a section
     if (i > 0)
     {
-      if (z > prevZ)
+     if (((z > prevZ)&&(dirZ>0))||((z < prevZ)&&(dirZ<0)))
       {
-        if (dirZ < 0)
+        if (dirZ*(z-prevZ)< 0)
         {
+     
           //std::ostringstream message;
 #ifndef VECGEOM_NVCC
             std::cerr << "Cannot create a Polycone with different Z directions.Use GenericPolycone."
@@ -336,6 +338,431 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
     }
 
  #endif // VECGEOM_CUDA_INTERFACE
+
+#ifdef VECGEOM_USOLIDS
+/////////////////////////////////////////////////////////////////////////
+//
+// GetPointOnSurface
+//
+// GetPointOnCone
+//
+// Auxiliary method for Get Point On Surface
+//
+
+Vector3D<Precision> UnplacedPolycone::GetPointOnCone(Precision fRmin1, Precision fRmax1,
+                                   Precision fRmin2, Precision fRmax2,
+                                   Precision zOne,   Precision zTwo,
+                                   Precision& totArea) const
+{
+  // declare working variables
+  //
+  Precision Aone, Atwo, Afive, phi, zRand, fDPhi, cosu, sinu;
+  Precision rRand1, rmin, rmax, chose, rone, rtwo, qone, qtwo;
+  Precision fDz = (zTwo - zOne) / 2., afDz = std::fabs(fDz);
+  Vector3D<Precision> point, offset = Vector3D<Precision>(0., 0., 0.5 * (zTwo + zOne));
+  fDPhi = GetDeltaPhi();
+  rone = (fRmax1 - fRmax2) / (2.*fDz);
+  rtwo = (fRmin1 - fRmin2) / (2.*fDz);
+  if (fRmax1 == fRmax2)
+  {
+    qone = 0.;
+  }
+  else
+  {
+    qone = fDz * (fRmax1 + fRmax2) / (fRmax1 - fRmax2);
+  }
+  if (fRmin1 == fRmin2)
+  {
+    qtwo = 0.;
+  }
+  else
+  {
+    qtwo = fDz * (fRmin1 + fRmin2) / (fRmin1 - fRmin2);
+  }
+  Aone   = 0.5 * fDPhi * (fRmax2 + fRmax1) * ((fRmin1 - fRmin2)*(fRmin1 - fRmin2) + (zTwo - zOne)*(zTwo - zOne));
+  Atwo   = 0.5 * fDPhi * (fRmin2 + fRmin1) * ((fRmax1 - fRmax2)*(fRmax1 - fRmax2) + (zTwo - zOne)*(zTwo - zOne));
+  Afive  = fDz * (fRmax1 - fRmin1 + fRmax2 - fRmin2);
+  totArea = Aone + Atwo + 2.*Afive;
+
+	 phi  = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+  cosu = std::cos(phi);
+  sinu = std::sin(phi);
+
+
+  if (GetDeltaPhi() >= kTwoPi )
+  {
+    Afive = 0;
+  }
+  chose = RNG::Instance().uniform(0., Aone + Atwo + 2.*Afive);
+  if ((chose >= 0) && (chose < Aone))
+  {
+    if (fRmax1 != fRmax2)
+    {
+      zRand = RNG::Instance().uniform(-1.*afDz, afDz);
+      point = Vector3D<Precision>(rone * cosu * (qone - zRand),
+                       rone * sinu * (qone - zRand), zRand);
+    }
+    else
+    {
+      point = Vector3D<Precision>(fRmax1 * cosu, fRmax1 * sinu,
+                       RNG::Instance().uniform(-1.*afDz, afDz));
+
+    }
+  }
+  else if (chose >= Aone && chose < Aone + Atwo)
+  {
+    if (fRmin1 != fRmin2)
+    {
+      zRand = RNG::Instance().uniform(-1.*afDz, afDz);
+      point = Vector3D<Precision>(rtwo * cosu * (qtwo - zRand),
+                       rtwo * sinu * (qtwo - zRand), zRand);
+
+    }
+    else
+    {
+      point = Vector3D<Precision>(fRmin1 * cosu, fRmin1 * sinu,
+                       RNG::Instance().uniform(-1.*afDz, afDz));
+    }
+  }
+  else if ((chose >= Aone + Atwo + Afive) && (chose < Aone + Atwo + 2.*Afive))
+  {
+    zRand  = RNG::Instance().uniform(-afDz, afDz);
+    rmin   = fRmin2 - ((zRand - fDz) / (2.*fDz)) * (fRmin1 - fRmin2);
+    rmax   = fRmax2 - ((zRand - fDz) / (2.*fDz)) * (fRmax1 - fRmax2);
+    rRand1 = std::sqrt(RNG::Instance().uniform(0.,1.)  * (rmax*rmax - rmin*rmin) +rmin*rmin);
+	 point  = Vector3D<Precision>(rRand1 * std::cos(GetStartPhi()),
+    rRand1 * std::sin(GetStartPhi()), zRand);
+  }
+  else
+  {
+    zRand  = RNG::Instance().uniform(-1.*afDz, afDz);
+    rmin   = fRmin2 - ((zRand - fDz) / (2.*fDz)) * (fRmin1 - fRmin2);
+    rmax   = fRmax2 - ((zRand - fDz) / (2.*fDz)) * (fRmax1 - fRmax2);
+    rRand1 = std::sqrt(RNG::Instance().uniform(0.,1.)  * (rmax*rmax - rmin*rmin) + rmin*rmin);
+	 point  = Vector3D<Precision>(rRand1 * std::cos(GetEndPhi()),
+    rRand1 * std::sin(GetEndPhi()), zRand);
+
+  }
+
+  return point + offset;
+}
+
+
+//
+// GetPointOnTubs
+//
+// Auxiliary method for GetPoint On Surface
+//
+Vector3D<Precision> UnplacedPolycone::GetPointOnTubs(Precision fRMin, Precision fRMax,
+                                   Precision zOne,  Precision zTwo,
+                                   Precision& totArea) const
+{
+  Precision xRand, yRand, zRand, phi, cosphi, sinphi, chose,
+         aOne, aTwo, aFou, rRand, fDz, fSPhi, fDPhi;
+  fDz = std::fabs(0.5 * (zTwo - zOne));
+  fSPhi = GetStartPhi();
+  fDPhi = GetDeltaPhi();
+
+  aOne = 2.*fDz * fDPhi * fRMax;
+  aTwo = 2.*fDz * fDPhi * fRMin;
+  aFou = 2.*fDz * (fRMax - fRMin);
+  totArea = aOne + aTwo + 2.*aFou;
+	 phi    = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+  cosphi = std::cos(phi);
+  sinphi = std::sin(phi);
+  rRand  = fRMin + (fRMax - fRMin) * std::sqrt(RNG::Instance().uniform(0.,1.) );
+
+	 if (GetDeltaPhi() >= 2 * kPi)
+    aFou = 0;
+
+  chose  = RNG::Instance().uniform(0., aOne + aTwo + 2.*aFou);
+  if ((chose >= 0) && (chose < aOne))
+  {
+    xRand = fRMax * cosphi;
+    yRand = fRMax * sinphi;
+    zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+    return Vector3D<Precision>(xRand, yRand, zRand + 0.5 * (zTwo + zOne));
+  }
+  else if ((chose >= aOne) && (chose < aOne + aTwo))
+  {
+    xRand = fRMin * cosphi;
+    yRand = fRMin * sinphi;
+    zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+    return Vector3D<Precision>(xRand, yRand, zRand + 0.5 * (zTwo + zOne));
+  }
+  else if ((chose >= aOne + aTwo) && (chose < aOne + aTwo + aFou))
+  {
+    xRand = rRand * std::cos(fSPhi + fDPhi);
+    yRand = rRand * std::sin(fSPhi + fDPhi);
+    zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+    return Vector3D<Precision>(xRand, yRand, zRand + 0.5 * (zTwo + zOne));
+  }
+
+  // else
+
+  xRand = rRand * std::cos(fSPhi + fDPhi);
+  yRand = rRand * std::sin(fSPhi + fDPhi);
+  zRand = RNG::Instance().uniform(-1.*fDz, fDz);
+  return Vector3D<Precision>(xRand, yRand, zRand + 0.5 * (zTwo + zOne));
+}
+
+
+//
+// GetPointOnRing
+//
+// Auxiliary method for GetPoint On Surface
+//
+Vector3D<Precision> UnplacedPolycone::GetPointOnRing(Precision fRMin1, Precision fRMax1,
+                                   Precision fRMin2, Precision fRMax2,
+                                   Precision zOne) const
+{
+  Precision xRand, yRand, phi, cosphi, sinphi, rRand1, rRand2, A1, Atot, rCh;
+	 phi    = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+  cosphi = std::cos(phi);
+  sinphi = std::sin(phi);
+
+  if (fRMin1 == fRMin2)
+  {
+    rRand1 = fRMin1;
+    A1 = 0.;
+  }
+  else
+  {
+    rRand1 = RNG::Instance().uniform(fRMin1, fRMin2);
+    A1 = std::fabs(fRMin2 * fRMin2 - fRMin1 * fRMin1);
+  }
+  if (fRMax1 == fRMax2)
+  {
+    rRand2 = fRMax1;
+    Atot = A1;
+  }
+  else
+  {
+    rRand2 = RNG::Instance().uniform(fRMax1, fRMax2);
+    Atot   = A1 + std::fabs(fRMax2 * fRMax2 - fRMax1 * fRMax1);
+  }
+  rCh   = UUtils::Random(0., Atot);
+
+  if (rCh > A1)
+  {
+    rRand1 = rRand2;
+  }
+
+  xRand = rRand1 * cosphi;
+  yRand = rRand1 * sinphi;
+
+  return Vector3D<Precision>(xRand, yRand, zOne);
+}
+
+
+//
+// GetPointOnCut
+//
+// Auxiliary method for Get Point On Surface
+//
+Vector3D<Precision> UnplacedPolycone::GetPointOnCut(Precision fRMin1, Precision fRMax1,
+                                  Precision fRMin2, Precision fRMax2,
+                                  Precision zOne,  Precision zTwo,
+                                  Precision& totArea) const
+{
+  if (zOne == zTwo)
+  {
+    return GetPointOnRing(fRMin1, fRMax1, fRMin2, fRMax2, zOne);
+  }
+  if ((fRMin1 == fRMin2) && (fRMax1 == fRMax2))
+  {
+    return GetPointOnTubs(fRMin1, fRMax1, zOne, zTwo, totArea);
+  }
+  return GetPointOnCone(fRMin1, fRMax1, fRMin2, fRMax2, zOne, zTwo, totArea);
+}
+
+
+//
+// GetPointOnSurface
+//
+Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
+{
+  Precision Area = 0, totArea = 0, Achose1 = 0, Achose2 = 0, phi, cosphi, sinphi, rRand;
+  int i = 0;
+  int numPlanes = GetNSections();
+
+	 phi = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+  cosphi = std::cos(phi);
+  sinphi = std::sin(phi);
+ std::vector<Precision> areas;  
+   PolyconeSection const & sec0 = GetSection(0);
+	 areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
+	 - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
+	 rRand = sec0.solid->GetRmin1() +
+	 ((sec0.solid->GetRmax1() - sec0.solid->GetRmin1())
+           * std::sqrt(RNG::Instance().uniform(0.,1.) ));
+
+
+
+  areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
+                                 - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
+
+  for (i = 0; i < numPlanes - 1; i++)
+  {
+     PolyconeSection const & sec = GetSection(i);
+	 Area = (sec.solid->GetRmin1() + sec.solid->GetRmin2())
+	         * std::sqrt((sec.solid->GetRmin1()- 
+		 sec.solid->GetRmin2())*(sec.solid->GetRmin1()- 
+		 sec.solid->GetRmin2())+ 
+                 4.*sec.solid->GetDz()*sec.solid->GetDz());
+
+      Area += (sec.solid->GetRmax1() + sec.solid->GetRmax2())
+	         * std::sqrt((sec.solid->GetRmax1()- 
+	         sec.solid->GetRmax2())*(sec.solid->GetRmax1()- 
+	         sec.solid->GetRmax2())+
+                 4.*sec.solid->GetDz()*sec.solid->GetDz());
+
+	 Area *= 0.5 * GetDeltaPhi();
+
+	 if (GetDeltaPhi() < kTwoPi)
+      {
+	 Area += std::fabs(2*sec.solid->GetDz()) *
+	   ( sec.solid->GetRmax1()
+	   + sec.solid->GetRmax2()
+	   - sec.solid->GetRmin1()
+	   - sec.solid->GetRmin2());
+      }
+     
+    
+    areas.push_back(Area);
+    totArea += Area;
+  }
+  PolyconeSection const & secn = GetSection(numPlanes - 1);
+  areas.push_back(kPi * kPi * (secn.solid->GetRmax2()*secn.solid->GetRmax2()
+                  - secn.solid->GetRmin2()*secn.solid->GetRmin2()));
+
+   
+  totArea += (areas[0] + areas[numPlanes]);
+  Precision chose = RNG::Instance().uniform(0., totArea);
+
+  if ((chose >= 0.) && (chose < areas[0]))
+  {
+    return Vector3D<Precision>(rRand * cosphi, rRand * sinphi,
+                    fZs[0]);
+  }
+
+  for (i = 0; i < numPlanes - 1; i++)
+  {
+    Achose1 += areas[i];
+    Achose2 = (Achose1 + areas[i + 1]);
+    if (chose >= Achose1 && chose < Achose2)
+    {
+      PolyconeSection const & sec = GetSection(i);
+	 return GetPointOnCut(sec.solid->GetRmin1(),
+                              sec.solid->GetRmax1(),
+                              sec.solid->GetRmin2(),
+                              sec.solid->GetRmax2(),
+                              fZs[i],
+                              fZs[i + 1], Area);
+    }
+  }
+
+	 rRand = secn.solid->GetRmin2() +
+         ((secn.solid->GetRmax2() - secn.solid->GetRmin2())
+           * std::sqrt(RNG::Instance().uniform(0.,1.) ));
+
+  return Vector3D<Precision>(rRand * cosphi, rRand * sinphi,
+                             fZs[numPlanes]);
+
+}
+
+
+bool UnplacedPolycone::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
+     bool valid = true ;
+     int index = GetSectionIndex(point.z());
+    
+     if(index < 0)
+      {valid = true;
+	 if(index == -1) norm = Vector3D<Precision>(0.,0.,-1.);
+	 if(index == -2)  norm  = Vector3D<Precision>(0.,0.,1.);
+         return valid;
+      } 
+      PolyconeSection const & sec = GetSection(index);
+      //TODO Normal to Section, need Normal from Cone impemenation
+	 valid = false;//sec.solid->Normal(point,norm);   
+     return valid;
+
+}    
+
+Precision UnplacedPolycone::SurfaceArea() const{
+    Precision Area = 0, totArea = 0;
+    int i = 0;
+    int numPlanes = GetNSections();
+    Precision fSurfaceArea = 0;
+    
+    Vector<Precision> areas;       // (numPlanes+1);
+   
+    PolyconeSection const & sec0 = GetSection(0);
+	 areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
+	 - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
+
+    for (i = 0; i < numPlanes - 1; i++)
+    {
+     PolyconeSection const & sec = GetSection(i);
+	 Area = (sec.solid->GetRmin1() + sec.solid->GetRmin2())
+	         * std::sqrt((sec.solid->GetRmin1()- 
+		 sec.solid->GetRmin2())*(sec.solid->GetRmin1()- 
+		 sec.solid->GetRmin2())+ 
+                 4.*sec.solid->GetDz()*sec.solid->GetDz());
+
+      Area += (sec.solid->GetRmax1() + sec.solid->GetRmax2())
+	         * std::sqrt((sec.solid->GetRmax1()- 
+	         sec.solid->GetRmax2())*(sec.solid->GetRmax1()- 
+	         sec.solid->GetRmax2())+
+                 4.*sec.solid->GetDz()*sec.solid->GetDz());
+
+	 Area *= 0.5 * GetDeltaPhi();
+
+	 if (GetDeltaPhi() < kTwoPi)
+      {
+	 Area += std::fabs(2*sec.solid->GetDz()) *
+	   ( sec.solid->GetRmax1()
+	   + sec.solid->GetRmax2()
+	   - sec.solid->GetRmin1()
+	   - sec.solid->GetRmin2());
+      }
+      areas.push_back(Area);
+      totArea += Area;
+    }
+     PolyconeSection const & secn = GetSection(numPlanes - 1);
+     areas.push_back(kPi * kPi * (secn.solid->GetRmax2()*secn.solid->GetRmax2()
+	 - secn.solid->GetRmin2()*secn.solid->GetRmin2()));
+
+     totArea += (areas[0] + areas[numPlanes]);
+     fSurfaceArea = totArea;
+
+  
+
+  return fSurfaceArea;
+
+
+}
+ void UnplacedPolycone::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const {
+
+    int i = 0;
+    Precision maxR = 0;
+    
+    for (i = 0; i < GetNSections(); i++)
+    {
+     PolyconeSection const & sec = GetSection(i);
+     if(maxR > sec.solid->GetRmax1())  maxR = sec.solid->GetRmax1(); 
+     if(maxR > sec.solid->GetRmax2())  maxR = sec.solid->GetRmax2(); 
+    }
+    
+	 aMin.x() = -maxR;
+         aMin.y() = -maxR;
+         aMin.z() = fZs[0];
+         aMax.x() = maxR;
+         aMax.y() = maxR;
+         aMax.z() = fZs[GetNSections()];
+         
+}
+#endif
 
 } // End impl namespace
 
