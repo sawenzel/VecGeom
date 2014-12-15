@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   tester.SetPointCount(npoints);
   tester.SetInsideBias( 0.5 );
 
-  tester.RunInsideBenchmark();
+  tester.RunBenchmark();
 
 
 #ifdef VECGEOM_ROOT
