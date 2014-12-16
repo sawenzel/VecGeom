@@ -206,13 +206,13 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     int sideCount, bool hasInnerRadii, bool hasPhiCutout,
     bool hasLargePhiCutout, ZSegment *segmentData, Precision *zPlaneData,
     int zPlaneCount, Precision *phiSectionX, Precision *phiSectionY,
-    Precision *phiSectionZ, UnplacedTube const &boundingTube,
+    Precision *phiSectionZ, UnplacedTube const *boundingTube,
     Precision boundingTubeOffset)
     : fSideCount(sideCount), fHasInnerRadii(hasInnerRadii),
       fHasPhiCutout(hasPhiCutout), fHasLargePhiCutout(hasLargePhiCutout),
       fZSegments(segmentData, zPlaneCount-1), fZPlanes(zPlaneData, zPlaneCount),
       fPhiSections(phiSectionX, phiSectionY, phiSectionZ, sideCount),
-      fBoundingTube(boundingTube), fBoundingTubeOffset(boundingTubeOffset) {}
+      fBoundingTube(*boundingTube), fBoundingTubeOffset(boundingTubeOffset) {}
 
 
 #endif // VECGEOM_NVCC
@@ -465,7 +465,7 @@ template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(int sideCount,
                                  DevicePtr<Precision> phiSectionsX,
                                  DevicePtr<Precision> phiSectionsY,
                                  DevicePtr<Precision> phiSectionsZ,
-                                 DevicePtr<cuda::VUnplacedVolume> boundingTube,
+                                 DevicePtr<cuda::UnplacedTube> boundingTube,
                                  Precision boundingTubeOffset) const;
 
 } // End cxx namespace

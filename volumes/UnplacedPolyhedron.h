@@ -169,10 +169,12 @@ public:
 #ifdef VECGEOM_NVCC
   __device__
   UnplacedPolyhedron(
-      int sideCount, bool hasInnerRadii, bool hasPhiCutout,
-      bool hasLargePhiCutout, ZSegment *segmentData, Precision *zPlaneData,
-      int zPlaneCount, Precision *phiSectionX, Precision *phiSectionY,
-      Precision *phiSectionZ, UnplacedTube const &boundingTube,
+      int sideCount,
+      bool hasInnerRadii, bool hasPhiCutout, bool hasLargePhiCutout,
+      ZSegment *segmentData,
+      Precision *zPlaneData, int zPlaneCount,
+      Precision *phiSectionX, Precision *phiSectionY, Precision *phiSectionZ,
+      UnplacedTube const *boundingTube,
       Precision boundingTubeOffset);
 #endif
 
