@@ -15,12 +15,27 @@
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/Quadrilaterals.h"
 #include "volumes/UnplacedPolyhedron.h"
+#include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
           UnplacedPolyhedron::EPhiCutout phiCutoutT>
 struct PolyhedronImplementation {
+
+    // there is currently no specialization
+   static const int transC = translation::kGeneric;
+   static const int rotC   = rotation::kGeneric;
+
+   using PlacedShape_t = PlacedPolyhedron;
+   using UnplacedShape_t = UnplacedPolyhedron;
+
+   VECGEOM_CUDA_HEADER_BOTH
+   static void PrintType() {
+        printf("SpecializedPolyhedron<trans = %i, rot = %i, innerR = %i, phicut = %i>", transC, rotC,innerRadiiT,phiCutoutT);
+   }
+
 
   /// \param pointZ Z-coordinate of a point.
   /// \return Index of the Z-segment in which the passed point is located. If
@@ -915,10 +930,11 @@ template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 void PolyhedronImplementation<innerRadiiT, phiCutoutT>::UnplacedContains(
-    UnplacedPolyhedron const &polyhedron,
+    UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
-  Assert(0, "Generic UnplacedContains not implemented.\n");
+
+    inside = ScalarContainsKernel( unplaced, localPoint );
 }
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
@@ -932,7 +948,11 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::Contains(
     Vector3D<typename Backend::precision_v> const &point,
     Vector3D<typename Backend::precision_v> &localPoint,
     typename Backend::bool_v &inside) {
-  Assert(0, "Generic Contains not implemented.\n");
+ // Assert(0, "Generic Contains not implemented.\n");
+
+ // we should assert if Backend != scalar
+    localPoint = transformation.Transform<transC,rotC>(point);
+    inside = ScalarContainsKernel( unplaced, localPoint);
 }
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
@@ -944,7 +964,9 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::Inside(
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
-  Assert(0, "Generic Inside not implemented.\n");
+
+    // we should assert if Backend != scalar
+    inside = ScalarInsideKernel( unplaced, transformation.Transform<transC,rotC>(point));
 }
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
@@ -958,7 +980,9 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToIn(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "Generic DistanceToIn not implemented.\n");
+ // Assert(0, "Generic DistanceToIn not implemented.\n");
+    distance = ScalarDistanceToInKernel( unplaced, transformation,
+           point, direction, stepMax) ;
 }
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
@@ -971,7 +995,8 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToOut(
     Vector3D<typename Backend::precision_v> const &direction,
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
-  Assert(0, "Generic DistanceToOut not implemented.\n");
+
+    distance = ScalarDistanceToOutKernel( unplaced, point, direction, stepMax);
 }
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
@@ -983,7 +1008,9 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::SafetyToIn(
     Transformation3D const &transformation,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "Generic SafetyToIn not implemented.\n");
+
+     safety = ScalarSafetyKernel(
+           unplaced, transformation.Transform<transC,rotC>(point) );
 }
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
@@ -995,9 +1022,11 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::SafetyToOut(
     UnplacedPolyhedron const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
-  Assert(0, "Generic SafetyToOut not implemented.\n");
+
+    safety = ScalarSafetyKernel(unplaced, point);
 }
 
+} // End inline namespace
 } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_POLYHEDRONIMPLEMENTATION_H_

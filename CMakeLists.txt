@@ -377,7 +377,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
-#  source/PlacedPolyhedron.cpp
+  source/PlacedPolyhedron.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/Planes.cpp
@@ -392,7 +392,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
-#  source/UnplacedPolyhedron.cpp
+  source/UnplacedPolyhedron.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector.cpp

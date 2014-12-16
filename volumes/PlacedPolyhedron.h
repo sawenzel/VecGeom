@@ -10,7 +10,9 @@
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedPolyhedron.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedPolyhedron : public VPlacedVolume {
 
@@ -162,6 +164,8 @@ public:
 #endif // VECGEOM_NVCC
 
 };
+
+} // End inline namespace
 
 } // End global namespace
 

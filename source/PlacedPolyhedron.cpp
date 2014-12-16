@@ -18,7 +18,9 @@
 #include "G4Polyhedra.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
 int PlacedPolyhedron::PhiSegmentIndex(Vector3D<Precision> const &point) const {
@@ -144,5 +146,7 @@ void PlacedPolyhedron_CopyToGpu(LogicalVolume const *const logical_volume,
 }
 
 #endif // VECGEOM_NVCC
+
+} // End inline namespace
 
 } // End namespace vecgeom
