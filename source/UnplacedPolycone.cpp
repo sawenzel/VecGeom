@@ -9,7 +9,9 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedPolycone.h"
 #include "management/VolumeFactory.h"
+#ifndef VECGEOM_NVCC
 #include "base/RNG.h"
+#endif
 #include <iostream>
 #include <cstdio>
 #include <vector>
@@ -339,6 +341,8 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 
  #endif // VECGEOM_CUDA_INTERFACE
 
+#ifndef VECGEOM_NVCC
+
 	 //#ifdef VECGEOM_USOLIDS
 /////////////////////////////////////////////////////////////////////////
 //
@@ -577,6 +581,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnCut(Precision fRMin1, Precision 
 }
 
 
+
 //
 // GetPointOnSurface
 //
@@ -586,17 +591,16 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
   int i = 0;
   int numPlanes = GetNSections();
 
-	 phi = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+  phi = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
   cosphi = std::cos(phi);
   sinphi = std::sin(phi);
- std::vector<Precision> areas;  
-   PolyconeSection const & sec0 = GetSection(0);
-	 areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
-	 - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
-	 rRand = sec0.solid->GetRmin1() +
-	 ((sec0.solid->GetRmax1() - sec0.solid->GetRmin1())
+  std::vector<Precision> areas;
+  PolyconeSection const & sec0 = GetSection(0);
+  areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
+    - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
+    rRand = sec0.solid->GetRmin1() +
+   ((sec0.solid->GetRmax1() - sec0.solid->GetRmin1())
            * std::sqrt(RNG::Instance().uniform(0.,1.) ));
-
 
 
   areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
@@ -605,27 +609,27 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
   for (i = 0; i < numPlanes - 1; i++)
   {
      PolyconeSection const & sec = GetSection(i);
-	 Area = (sec.solid->GetRmin1() + sec.solid->GetRmin2())
-	         * std::sqrt((sec.solid->GetRmin1()- 
-		 sec.solid->GetRmin2())*(sec.solid->GetRmin1()- 
-		 sec.solid->GetRmin2())+ 
+     Area = (sec.solid->GetRmin1() + sec.solid->GetRmin2())
+          * std::sqrt((sec.solid->GetRmin1()-
+          sec.solid->GetRmin2())*(sec.solid->GetRmin1()-
+          sec.solid->GetRmin2())+
                  4.*sec.solid->GetDz()*sec.solid->GetDz());
 
-      Area += (sec.solid->GetRmax1() + sec.solid->GetRmax2())
-	         * std::sqrt((sec.solid->GetRmax1()- 
-	         sec.solid->GetRmax2())*(sec.solid->GetRmax1()- 
-	         sec.solid->GetRmax2())+
+     Area += (sec.solid->GetRmax1() + sec.solid->GetRmax2())
+           * std::sqrt((sec.solid->GetRmax1()-
+             sec.solid->GetRmax2())*(sec.solid->GetRmax1()-
+             sec.solid->GetRmax2())+
                  4.*sec.solid->GetDz()*sec.solid->GetDz());
 
-	 Area *= 0.5 * GetDeltaPhi();
+     Area *= 0.5 * GetDeltaPhi();
 
-	 if (GetDeltaPhi() < kTwoPi)
+     if (GetDeltaPhi() < kTwoPi)
       {
-	 Area += std::fabs(2*sec.solid->GetDz()) *
-	   ( sec.solid->GetRmax1()
-	   + sec.solid->GetRmax2()
-	   - sec.solid->GetRmin1()
-	   - sec.solid->GetRmin2());
+      Area += std::fabs(2*sec.solid->GetDz()) *
+        ( sec.solid->GetRmax1()
+            + sec.solid->GetRmax2()
+           - sec.solid->GetRmin1()
+           - sec.solid->GetRmin2());
       }
      
     
@@ -653,7 +657,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
     if (chose >= Achose1 && chose < Achose2)
     {
       PolyconeSection const & sec = GetSection(i);
-	 return GetPointOnCut(sec.solid->GetRmin1(),
+     return GetPointOnCut(sec.solid->GetRmin1(),
                               sec.solid->GetRmax1(),
                               sec.solid->GetRmin2(),
                               sec.solid->GetRmax2(),
@@ -662,14 +666,14 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
     }
   }
 
-	 rRand = secn.solid->GetRmin2() +
+     rRand = secn.solid->GetRmin2() +
          ((secn.solid->GetRmax2() - secn.solid->GetRmin2())
            * std::sqrt(RNG::Instance().uniform(0.,1.) ));
 
   return Vector3D<Precision>(rRand * cosphi, rRand * sinphi,
                              fZs[numPlanes]);
-
 }
+#endif
 
 
 bool UnplacedPolycone::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
