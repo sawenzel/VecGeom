@@ -440,8 +440,8 @@ void ZSegment::CopyToGpu(DevicePtr<cuda::ZSegment> gpuPtr) const {
 void UnplacedPolyhedron_ZSegment_GetAddresses(void *object, void *&outer,
                                               void *&inner, void *&phi,
                                               bool *&innerRadius) {
-  vecgeom_cuda::UnplacedPolyhedron::ZSegment *segment =
-      static_cast<vecgeom_cuda::UnplacedPolyhedron::ZSegment*>(object);
+   vecgeom::cuda::ZSegment *segment =
+     static_cast<vecgeom::cuda::ZSegment*>(object);
   outer = &segment->outer;
   inner = &segment->inner;
   phi   = &segment->phi;
@@ -460,7 +460,7 @@ template size_t DevicePtr<cuda::UnplacedPolyhedron>::SizeOf();
 template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(int sideCount,
                                  bool hasInnerRadii, bool hasPhiCutout,
                                  bool hasLargePhiCutout,
-                                 DevicePtr<cuda::UnplacedPolyhedron::ZSegment> zSegments,
+                                 DevicePtr<cuda::ZSegment> zSegments,
                                  DevicePtr<Precision> zPlanes, int zPlaneCount,
                                  DevicePtr<Precision> phiSectionsX,
                                  DevicePtr<Precision> phiSectionsY,
