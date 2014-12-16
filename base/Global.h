@@ -197,8 +197,46 @@ typedef int Inside_t;
 //typedef vecgeom::Inside_t Inside_t;
 //}
 
+namespace std {
+   template< class T, class Deleter> class unique_ptr;
+}
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+#ifndef VECGEOM_NVCC
+   using std::unique_ptr;
+
+#else
+
+   template <typename T>
+   class unique_ptr {
+      T *fValue;
+   public:
+     VECGEOM_CUDA_HEADER_BOTH
+     unique_ptr(T *in) : fValue(in) {}
+
+     VECGEOM_CUDA_HEADER_BOTH
+     ~unique_ptr() { delete fValue; }
+
+     VECGEOM_CUDA_HEADER_BOTH
+     T* operator->() { return fValue; }
+   };
+
+   template <typename T>
+   class unique_ptr<T[]> {
+      T *fValue;
+   public:
+     VECGEOM_CUDA_HEADER_BOTH
+     unique_ptr(T *in) : fValue(in) {}
+
+     VECGEOM_CUDA_HEADER_BOTH
+     ~unique_ptr() { delete [] fValue; }
+
+     VECGEOM_CUDA_HEADER_BOTH
+     T &operator[](size_t idx) { return fValue[idx]; }
+   };
+#endif
 
 VECGEOM_GLOBAL int kAlignmentBoundary = 32;
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
