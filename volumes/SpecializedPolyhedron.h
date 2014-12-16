@@ -14,12 +14,12 @@ namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-template <UnplacedPolyhedron::EInnerRadii innerRadiiT, UnplacedPolyhedron::EPhiCutout phiCutoutT>
+template <Polyhedron::EInnerRadii innerRadiiT, Polyhedron::EPhiCutout phiCutoutT>
 using SpecializedPolyhedron = ScalarShapeImplementationHelper< PolyhedronImplementation<innerRadiiT, phiCutoutT> >;
 
 
-using SimplePolyhedron = SpecializedPolyhedron<UnplacedPolyhedron::kInnerRadiiGeneric,
-                                UnplacedPolyhedron::kPhiCutoutGeneric>;
+using SimplePolyhedron = SpecializedPolyhedron<Polyhedron::EInnerRadii::kGeneric,
+   Polyhedron::EPhiCutout::kGeneric>;
 
 } // End inline namespace
 

@@ -12,6 +12,7 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+using namespace vecgeom::Polyhedron;
 
 
 UnplacedPolyhedron::UnplacedPolyhedron(
@@ -247,12 +248,12 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
   UnplacedPolyhedron const *unplaced =
       static_cast<UnplacedPolyhedron const *>(volume->unplaced_volume());
 
-  int innerRadii = unplaced->HasInnerRadii() ? kInnerRadiiTrue
-                                             : kInnerRadiiFalse;
-  int phiCutout = unplaced->HasPhiCutout() ?
-                      (unplaced->HasLargePhiCutout() ? kPhiCutoutLarge
-                                                     : kPhiCutoutTrue)
-                                                     : kPhiCutoutFalse;
+  EInnerRadii innerRadii = unplaced->HasInnerRadii() ? EInnerRadii::kTrue
+                                                     : EInnerRadii::kFalse;
+  EPhiCutout phiCutout = unplaced->HasPhiCutout() ?
+                      (unplaced->HasLargePhiCutout() ? EPhiCutout::kLarge
+                                                     : EPhiCutout::kTrue)
+                                                     : EPhiCutout::kFalse;
 
 #ifndef VECGEOM_NVCC
   #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, PHI) \
@@ -277,29 +278,29 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
   }
 #endif
 
-  POLYHEDRON_CREATE_SPECIALIZATION(kInnerRadiiTrue, kPhiCutoutFalse);
-  POLYHEDRON_CREATE_SPECIALIZATION(kInnerRadiiTrue, kPhiCutoutTrue);
-  POLYHEDRON_CREATE_SPECIALIZATION(kInnerRadiiTrue, kPhiCutoutLarge);
-  POLYHEDRON_CREATE_SPECIALIZATION(kInnerRadiiFalse, kPhiCutoutFalse);
-  POLYHEDRON_CREATE_SPECIALIZATION(kInnerRadiiFalse, kPhiCutoutTrue);
-  POLYHEDRON_CREATE_SPECIALIZATION(kInnerRadiiFalse, kPhiCutoutLarge);
+  POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kFalse);
+  POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kTrue);
+  POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kLarge);
+  POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kFalse, EPhiCutout::kFalse);
+  POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kFalse, EPhiCutout::kTrue);
+  POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kFalse, EPhiCutout::kLarge);
 
 #ifndef VECGEOM_NVCC
   if (placement) {
     return new(placement)
-           SpecializedPolyhedron<kInnerRadiiGeneric, kPhiCutoutGeneric>(
+           SpecializedPolyhedron<EInnerRadii::kGeneric, EPhiCutout::kGeneric>(
                volume, transformation);
   } else {
-    return new SpecializedPolyhedron<kInnerRadiiGeneric, kPhiCutoutGeneric>(
+    return new SpecializedPolyhedron<EInnerRadii::kGeneric, EPhiCutout::kGeneric>(
         volume, transformation);
   }
 #else
   if (placement) {
     return new(placement)
-           SpecializedPolyhedron<kInnerRadiiGeneric, kPhiCutoutGeneric>(
+           SpecializedPolyhedron<EInnerRadii::kGeneric, EPhiCutout::kGeneric>(
                volume, transformation, id);
   } else {
-    return new SpecializedPolyhedron<kInnerRadiiGeneric, kPhiCutoutGeneric>(
+    return new SpecializedPolyhedron<EInnerRadii::kGeneric, EPhiCutout::kGeneric>(
         volume, transformation, id);
   }
 #endif

@@ -20,22 +20,23 @@ namespace vecgeom {
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
 
-//// forward declare inner structures for CUDA namespace ( no macro yet for this )
-//namespace cuda { class UnplacedPolyhedron { public:
-//    enum EInnerRadii {
-//        kInnerRadiiFalse = -1,
-//        kInnerRadiiGeneric = 0,
-//        kInnerRadiiTrue = 1
-//      };
-//
-//      enum EPhiCutout {
-//        kPhiCutoutFalse = -1,
-//        kPhiCutoutGeneric = 0,
-//        kPhiCutoutTrue = 1,
-//        kPhiCutoutLarge = 2
-//      };
-//};};
+// Declare types shared by cxx and cuda.
+namespace Polyhedron {
+    
+   enum struct EInnerRadii {
+      kFalse = -1,
+      kGeneric = 0,
+      kTrue = 1
+   };
 
+   enum struct EPhiCutout {
+      kFalse = -1,
+      kGeneric = 0,
+      kTrue = 1,
+      kLarge = 2
+   };
+
+}
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -83,19 +84,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 public:
-
-  enum EInnerRadii {
-    kInnerRadiiFalse = -1,
-    kInnerRadiiGeneric = 0,
-    kInnerRadiiTrue = 1
-  };
-
-  enum EPhiCutout {
-    kPhiCutoutFalse = -1,
-    kPhiCutoutGeneric = 0,
-    kPhiCutoutTrue = 1,
-    kPhiCutoutLarge = 2
-  };
 
   /// Represents one segment along the Z-axis, containing one or more sets of
   /// quadrilaterals that represent the outer, inner and phi shells.
