@@ -20,6 +20,23 @@ namespace vecgeom {
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
 
+//// forward declare inner structures for CUDA namespace ( no macro yet for this )
+//namespace cuda { class UnplacedPolyhedron { public:
+//    enum EInnerRadii {
+//        kInnerRadiiFalse = -1,
+//        kInnerRadiiGeneric = 0,
+//        kInnerRadiiTrue = 1
+//      };
+//
+//      enum EPhiCutout {
+//        kPhiCutoutFalse = -1,
+//        kPhiCutoutGeneric = 0,
+//        kPhiCutoutTrue = 1,
+//        kPhiCutoutLarge = 2
+//      };
+//};};
+
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /// \class UnplacedPolyhedron
@@ -337,13 +354,9 @@ public:
     virtual int memory_size() const { return sizeof(*this); }
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual size_t DeviceSizeOf() const {
-      return DevicePtr<cuda::UnplacedPolyhedron>::SizeOf();
-  }
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedPolyhedron>::SizeOf(); }
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
-  //virtual VUnplacedVolume* CopyToGpu() const;
-  //virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
 #endif
 
 }; // End class UnplacedPolyhedron

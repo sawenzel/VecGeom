@@ -12,11 +12,16 @@
 
 namespace vecgeom {
 
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedPolyhedron; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedPolyhedron );
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedPolyhedron : public VPlacedVolume {
 
 public:
+
+    typedef UnplacedPolyhedron UnplacedShape_t;
 
 #ifndef VECGEOM_NVCC
 
@@ -138,18 +143,7 @@ public:
 
   virtual int memory_size() const { return sizeof(*this); }
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation,
-      VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
-
   // Comparison specific
-
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT

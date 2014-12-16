@@ -19,7 +19,6 @@
 #endif
 
 namespace vecgeom {
-
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -87,66 +86,14 @@ G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
       &GetRMax()[0]);
 }
 #endif
-
 #endif // !VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void PlacedPolyhedron_CopyToGpu(LogicalVolume const *const logical_volume,
-                                Transformation3D const *const transformation,
-                                const int id,
-                                VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedPolyhedron::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  vecgeom::PlacedPolyhedron_CopyToGpu(logical_volume, transformation,
-                                      VPlacedVolume::id(), gpu_ptr);
-  vecgeom::CudaAssertError();
-  return gpu_ptr;
-}
-
-VPlacedVolume* PlacedPolyhedron::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedPolyhedron>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
+} // End inline namespace
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedPolyhedron )
 
-__global__
-void PlacedPolyhedron_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation, const int id,
-    VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimplePolyhedron(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    id
-  );
-}
-
-void PlacedPolyhedron_CopyToGpu(LogicalVolume const *const logical_volume,
-                                Transformation3D const *const transformation,
-                                const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedPolyhedron_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation, id,
-                                            gpu_ptr);
-}
-
-#endif // VECGEOM_NVCC
-
-} // End inline namespace
+#endif
 
 } // End namespace vecgeom

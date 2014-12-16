@@ -18,7 +18,20 @@
 #include <stdio.h>
 
 namespace vecgeom {
+
+// forward declaration for cuda namespace
+// TODO: this is unclear
+// we should declare it in a way such that we can use the specialization on the GPU
+//
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(PolyhedronImplementation,
+        UnplacedPolyhedron::EInnerRadii, 0, UnplacedPolyhedron::EPhiCutout, 0)
+
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+   class PlacedPolyhedron;
+  class UnplacedPolyhedron;
+
 
 template <UnplacedPolyhedron::EInnerRadii innerRadiiT,
           UnplacedPolyhedron::EPhiCutout phiCutoutT>
