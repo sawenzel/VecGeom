@@ -203,14 +203,21 @@ void CudaManager::AllocateGeometry() {
   {
     if (verbose_ > 2) std::cout << "Allocating unplaced volumes...";
 
+    size_t totalUnplacedSize = 0;
+    for (std::set<VUnplacedVolume const*>::const_iterator i =
+            unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
+       totalUnplacedSize += (*i)->DeviceSizeOf();
+    }
+
+    GpuAddress gpu_address;
+    gpu_address.Allocate(totalUnplacedSize);
+    allocated_memory_.push_back(gpu_address);
+
     for (std::set<VUnplacedVolume const*>::const_iterator i =
          unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
 
-      GpuAddress gpu_address;
-      gpu_address.Allocate((*i)->DeviceSizeOf());
-      allocated_memory_.push_back(gpu_address);
       memory_map[ToCpuAddress(*i)] = gpu_address;
-
+      gpu_address += (*i)->DeviceSizeOf();
     }
 
     if (verbose_ > 2) std::cout << " OK\n";
@@ -219,14 +226,22 @@ void CudaManager::AllocateGeometry() {
   {
     if (verbose_ > 2) std::cout << "Allocating placed volumes...";
 
+    size_t totalPlacedSize = 0;
     for (std::set<VPlacedVolume const*>::const_iterator i =
          placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
-      GpuAddress gpu_address;
-      gpu_address.Allocate((*i)->DeviceSizeOf());
-      allocated_memory_.push_back(gpu_address);
-      memory_map[ToCpuAddress(*i)] = gpu_address;
+       totalPlacedSize += (*i)->DeviceSizeOf();
+    }
 
+    GpuAddress gpu_address;
+    gpu_address.Allocate(totalPlacedSize);
+    allocated_memory_.push_back(gpu_address);
+
+    for (std::set<VPlacedVolume const*>::const_iterator i =
+         placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
+
+      memory_map[ToCpuAddress(*i)] = gpu_address;
+      gpu_address += (*i)->DeviceSizeOf();
     }
 
     if (verbose_ > 2) std::cout << " OK\n";
@@ -235,13 +250,22 @@ void CudaManager::AllocateGeometry() {
   {
     if (verbose_ > 2) std::cout << "Allocating transformations...";
 
+    size_t totalTransformationSize = 0;
     for (std::set<Transformation3D const*>::const_iterator i =
          transformations_.begin(); i != transformations_.end(); ++i) {
 
-      GpuAddress gpu_address;
-      gpu_address.Allocate((*i)->DeviceSizeOf());
-      allocated_memory_.push_back(gpu_address);
+       totalTransformationSize += (*i)->DeviceSizeOf();
+    }
+
+    GpuAddress gpu_address;
+    gpu_address.Allocate(totalTransformationSize);
+    allocated_memory_.push_back(gpu_address);
+
+    for (std::set<Transformation3D const*>::const_iterator i =
+         transformations_.begin(); i != transformations_.end(); ++i) {
+
       memory_map[ToCpuAddress(*i)] = gpu_address;
+      gpu_address += (*i)->DeviceSizeOf();
     }
 
     if (verbose_ > 2) std::cout << " OK\n";
