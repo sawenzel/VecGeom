@@ -44,6 +44,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   SOA3D(T *x, T *y, T *z, size_t size);
 
+  VECGEOM_CUDA_HEADER_BOTH
   SOA3D(size_t size);
 
   SOA3D(SOA3D<T> const &other);
@@ -68,6 +69,7 @@ public:
   VECGEOM_INLINE
   void resize(size_t newSize);
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void reserve(size_t newCapacity);
 
@@ -153,8 +155,10 @@ public:
 
 private:
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Allocate();
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Deallocate();
 
 };
@@ -172,6 +176,7 @@ SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
     : fAllocated(false), fSize(sz), fCapacity(fSize), fX(xval), fY(yval), fZ(zval) {}
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>::SOA3D(size_t sz)
     : fAllocated(true), fSize(sz), fCapacity(sz),
       fX(NULL), fY(NULL), fZ(NULL) {
@@ -250,6 +255,7 @@ void SOA3D<T>::resize(size_t newSize) {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void SOA3D<T>::reserve(size_t newCapacity) {
   fCapacity = newCapacity;
   T *xNew, *yNew, *zNew;
@@ -277,6 +283,7 @@ void SOA3D<T>::clear() {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void SOA3D<T>::Allocate() {
   fX = AlignedAllocate<T>(fCapacity);
   fY = AlignedAllocate<T>(fCapacity);
@@ -285,6 +292,7 @@ void SOA3D<T>::Allocate() {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void SOA3D<T>::Deallocate() {
   if (fAllocated) {
     AlignedFree(fX);

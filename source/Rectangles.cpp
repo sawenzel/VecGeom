@@ -4,10 +4,17 @@ namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-
+#ifdef VECGEOM_NVCC
+Rectangles::Rectangles(int size)
+    : fPlanes(size), fSides(size)
+{
+   fCorners[0].reserve(size);
+   fCorners[1].reserve(size);
+}
+#else
 Rectangles::Rectangles(int size)
     : fPlanes(size), fSides(size), fCorners{size, size} {}
-
+#endif
 
 Rectangles::~Rectangles() {}
 

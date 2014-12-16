@@ -32,6 +32,7 @@ private:
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
   Planes(int size);
 
 #ifdef VECGEOM_NVCC
@@ -57,6 +58,10 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  void reserve(size_t size) { fNormals.reserve(size); fDistances.Allocate(size); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   SOA3D<Precision> const& GetNormals() const;
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -71,17 +76,20 @@ public:
   VECGEOM_INLINE
   Precision GetDistance(int i) const;
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Set(
       int index,
       Vector3D<Precision> const &normal,
       Vector3D<Precision> const &origin);
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Set(
       int index,
       Vector3D<Precision> const &normal,
       Precision distance);
 
   /// Flip the sign of the normal and distance at the specified index
+  VECGEOM_CUDA_HEADER_BOTH
   void FlipSign(int index);
 
   template <class Backend>

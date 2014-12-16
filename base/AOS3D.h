@@ -60,6 +60,7 @@ public:
   VECGEOM_INLINE
   void resize(size_t newSize);
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void reserve(size_t newCapacity);
 
@@ -130,6 +131,7 @@ public:
 
 private:
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Deallocate();
 
 };
@@ -181,9 +183,7 @@ AOS3D<T>& AOS3D<T>::operator=(AOS3D<T> const &rhs) {
 
 template <typename T>
 AOS3D<T>::~AOS3D() {
-#ifndef VECGEOM_NVCC_DEVICE
   Deallocate();
-#endif
 }
 
 template <typename T>
@@ -201,6 +201,7 @@ void AOS3D<T>::resize(size_t newSize) {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::reserve(size_t newCapacity) {
   fCapacity = newCapacity;
   Vec_t *contentNew;
@@ -223,6 +224,7 @@ void AOS3D<T>::clear() {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::Deallocate() {
   if (fAllocated) {
     AlignedFree(fContent);

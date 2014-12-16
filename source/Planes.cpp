@@ -4,6 +4,7 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+VECGEOM_CUDA_HEADER_BOTH
 Planes::Planes(int size) : fNormals(size), fDistances(size) {}
 
 #ifdef VECGEOM_NVCC
@@ -33,6 +34,7 @@ Planes& Planes::operator=(Planes const &rhs) {
   return *this;
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 void Planes::Set(
     int index,
     Vector3D<Precision> const &normal,
@@ -44,6 +46,7 @@ void Planes::Set(
   fDistances[index] = inverseLength * -fixedNormal.Dot(x0);
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 void Planes::Set(
     int index,
     Vector3D<Precision> const &normal,

@@ -27,6 +27,7 @@ public:
   VECGEOM_INLINE
   Array();
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Array(const unsigned size);
 
@@ -58,9 +59,11 @@ public:
   int size() const { return fSize; }
 
   VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
   void Allocate(const unsigned size);
 
   VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
   void Deallocate();
 
   typedef Type* iterator;
@@ -89,6 +92,7 @@ VECGEOM_CUDA_HEADER_BOTH
 Array<Type>::Array() : fData(NULL), fSize(0), fAllocated(false) {}
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 Array<Type>::Array(const unsigned size) : fData(NULL), fAllocated(true) {
   Allocate(size);
 }

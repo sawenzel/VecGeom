@@ -267,7 +267,7 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
   }
 #else
   #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, PHI) \
-  if (hasInner == INNER && phiCutout == PHI) { \
+  if (innerRadii == INNER && phiCutout == PHI) { \
     if (placement) { \
       return new(placement) \
              SpecializedPolyhedron<INNER, PHI>(volume, transformation, id); \
@@ -341,10 +341,6 @@ void UnplacedPolyhedron::Print(std::ostream &os) const {
      << ((fHasInnerRadii) ? "has inner radii" : "no inner radii") << "}";
 }
 
-
-// Has to return a void pointer as it's not possible to forward declare a nested
-// class (vecgeom_cuda::UnplacedPolyhedron::ZSegment)
-void* UnplacedPolyhedron_AllocateZSegments(int size, int &gpuMemorySize);
 
 void UnplacedPolyhedron_ZSegment_GetAddresses(void *object, void *&outer,
                                               void *&inner, void *&phi,
@@ -440,13 +436,6 @@ void ZSegment::CopyToGpu(DevicePtr<cuda::ZSegment> gpuPtr) const {
 #endif
 
 #ifdef VECGEOM_NVCC
-
-void *UnplacedPolyhedron_AllocateZSegments(int size, int &gpuMemorySize) {
-  gpuMemorySize = sizeof(vecgeom_cuda::UnplacedPolyhedron::ZSegment);
-  return static_cast<void*>(
-      AllocateOnGpu<vecgeom_cuda::UnplacedPolyhedron::ZSegment>(
-          gpuMemorySize*size));
-}
 
 void UnplacedPolyhedron_ZSegment_GetAddresses(void *object, void *&outer,
                                               void *&inner, void *&phi,
