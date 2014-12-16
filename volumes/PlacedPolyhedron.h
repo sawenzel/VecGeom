@@ -78,13 +78,13 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  UnplacedPolyhedron::ZSegment const& GetZSegment(int index) const {
+  ZSegment const& GetZSegment(int index) const {
     return GetUnplacedVolume()->GetZSegment(index);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Array<UnplacedPolyhedron::ZSegment> const& GetZSegments() const {
+  Array<ZSegment> const& GetZSegments() const {
     return GetUnplacedVolume()->GetZSegments();
   }
 

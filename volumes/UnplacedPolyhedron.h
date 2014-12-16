@@ -18,7 +18,9 @@
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
+VECGEOM_DEVICE_FORWARD_DECLARE( class ZSegment; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
+VECGEOM_DEVICE_DECLARE_CONV( ZSegment );
 
 // Declare types shared by cxx and cuda.
 namespace Polyhedron {
@@ -81,22 +83,24 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 ///     |                             |     Z
 ///     fZPlanes[0]/fRMax[0]           ----->
 
+
+   /// Represents one segment along the Z-axis, containing one or more sets of
+   /// quadrilaterals that represent the outer, inner and phi shells.
+   struct ZSegment {
+      Quadrilaterals outer; ///< Should always be non-empty.
+      Quadrilaterals phi;   ///< Is empty if fHasPhiCutout is false.
+      Quadrilaterals inner; ///< Is empty hasInnerRadius is false.
+      bool hasInnerRadius;  ///< Indicates whether any inner quadrilaterals are
+                            ///  present in this segment.
+#ifdef VECGEOM_CUDA_INTERFACE
+      void CopyToGpu(DevicePtr<cuda::ZSegment> gpuptr) const;
+#endif
+   };
+
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
 
 public:
 
-  /// Represents one segment along the Z-axis, containing one or more sets of
-  /// quadrilaterals that represent the outer, inner and phi shells.
-  struct ZSegment {
-    Quadrilaterals outer; ///< Should always be non-empty.
-    Quadrilaterals phi;   ///< Is empty if fHasPhiCutout is false.
-    Quadrilaterals inner; ///< Is empty hasInnerRadius is false.
-    bool hasInnerRadius;  ///< Indicates whether any inner quadrilaterals are
-                          ///  present in this segment.
-#ifdef VECGEOM_CUDA_INTERFACE
-    void CopyToGpu(void *gpuptr) const;
-#endif
-  };
 
 private:
 

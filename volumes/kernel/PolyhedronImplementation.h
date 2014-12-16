@@ -147,7 +147,7 @@ struct PolyhedronImplementation {
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static typename Backend::bool_v InPhiCutoutWedge(
-      UnplacedPolyhedron::ZSegment const &segment,
+      ZSegment const &segment,
       bool largePhiCutout,
       Vector3D<typename Backend::precision_v> const &point);
 
@@ -448,8 +448,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToInZSegment(
   Float_t distance;
   Bool_t done;
 
-  UnplacedPolyhedron::ZSegment const &segment =
-      polyhedron.GetZSegment(segmentIndex);
+  ZSegment const &segment = polyhedron.GetZSegment(segmentIndex);
 
   // If the outer shell is hit, this will always be the correct result
   distance = segment.outer.DistanceToIn<Backend, false>(point, direction);
@@ -495,8 +494,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToOutZSegment(
   Bool_t done(false);
   Float_t distance(kInfinity);
 
-  UnplacedPolyhedron::ZSegment const &segment =
-      polyhedron.GetZSegment(segmentIndex);
+  ZSegment const &segment = polyhedron.GetZSegment(segmentIndex);
 
   // Check inner shell first, as it would always be the correct result
   if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
@@ -536,8 +534,7 @@ PolyhedronImplementation<innerRadiiT,
     int phiIndex,
     Vector3D<Precision> const &point) {
 
-  UnplacedPolyhedron::ZSegment const &segment =
-      polyhedron.GetZSegment(segmentIndex);
+  ZSegment const &segment = polyhedron.GetZSegment(segmentIndex);
 
   if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout()) &&
       InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
@@ -573,7 +570,7 @@ void PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToEndcaps(
     Vector3D<Precision> const &direction,
     Precision &distance) {
 
-  UnplacedPolyhedron::ZSegment const *segment;
+  ZSegment const *segment;
   Precision zPlane;
   // Determine whether to use first segment/first endcap or last segment/second
   // endcap
@@ -628,7 +625,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarSafetyToEndcapsSquared(
 
   // Only treat the closest endcap
   bool isFirst = Abs(firstDistance) < Abs(lastDistance);
-  UnplacedPolyhedron::ZSegment const &segment =
+  ZSegment const &segment =
       isFirst ? polyhedron.GetZSegment(0)
               : polyhedron.GetZSegment(polyhedron.GetZSegmentCount()-1);
 
@@ -660,7 +657,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::bool_v
 PolyhedronImplementation<innerRadiiT, phiCutoutT>::InPhiCutoutWedge(
-    UnplacedPolyhedron::ZSegment const &segment,
+    ZSegment const &segment,
     bool largePhiCutout,
     Vector3D<typename Backend::precision_v> const &point) {
   typedef typename Backend::bool_v Bool_t;
@@ -700,7 +697,7 @@ bool PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
 
-  UnplacedPolyhedron::ZSegment const &segment = polyhedron.GetZSegment(zIndex);
+  ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
   // Check that the point is in the outer shell
   if (!segment.outer.Contains<kScalar>(localPoint)) return false;
@@ -742,7 +739,7 @@ Inside_t PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarInsideKernel(
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
 
-  UnplacedPolyhedron::ZSegment const &segment = polyhedron.GetZSegment(zIndex);
+  ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
   // Check that the point is in the outer shell
   {
