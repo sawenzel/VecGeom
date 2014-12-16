@@ -92,9 +92,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       Quadrilaterals inner; ///< Is empty hasInnerRadius is false.
       bool hasInnerRadius;  ///< Indicates whether any inner quadrilaterals are
                             ///  present in this segment.
-#ifdef VECGEOM_CUDA_INTERFACE
-      void CopyToGpu(DevicePtr<cuda::ZSegment> gpuptr) const;
-#endif
    };
 
 class UnplacedPolyhedron : public VUnplacedVolume, public AlignedBase {
@@ -108,6 +105,8 @@ private:
   bool fHasInnerRadii; ///< Has any Z-segments with an inner radius != 0.
   bool fHasPhiCutout; ///< Has a cutout angle along phi.
   bool fHasLargePhiCutout; ///< Phi cutout is larger than pi.
+  Precision fPhiStart; ///< Phi start in degree (input to constructor)
+  Precision fPhiDelta; ///< Phi delta in degree (input to constructor)
   Array<ZSegment> fZSegments; ///< AOS'esque collections of quadrilaterals
   Array<Precision> fZPlanes; ///< Z-coordinate of each plane separating segments
   // TODO: find a way to re-compute R_min and R_max when converting to another
@@ -156,6 +155,7 @@ public:
   ///             for the corresponding Z-plane.
   /// \param rMin Radius to the sides (not to the corners!) of the outer shell
   ///             for the corresponding Z-plane.
+  VECGEOM_CUDA_HEADER_BOTH
   UnplacedPolyhedron(
       Precision phiStart,
       Precision phiDelta,
@@ -164,19 +164,6 @@ public:
       Precision zPlanes[],
       Precision rMin[],
       Precision rMax[]);
-
-
-#ifdef VECGEOM_NVCC
-  __device__
-  UnplacedPolyhedron(
-      int sideCount,
-      bool hasInnerRadii, bool hasPhiCutout, bool hasLargePhiCutout,
-      ZSegment *segmentData,
-      Precision *zPlaneData, int zPlaneCount,
-      Precision *phiSectionX, Precision *phiSectionY, Precision *phiSectionZ,
-      UnplacedTube const *boundingTube,
-      Precision boundingTubeOffset);
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual ~UnplacedPolyhedron() {}

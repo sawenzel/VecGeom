@@ -23,6 +23,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision rMax[])
     : UnplacedPolyhedron(0, 360, sideCount, zPlaneCount, zPlanes, rMin, rMax) {}
 
+VECGEOM_CUDA_HEADER_BOTH
 UnplacedPolyhedron::UnplacedPolyhedron(
     Precision phiStart,
     Precision phiDelta,
@@ -33,6 +34,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     Precision rMax[])
     : fSideCount(sideCount), fHasInnerRadii(false),
       fHasPhiCutout(phiDelta < 360), fHasLargePhiCutout(phiDelta < 180),
+      fPhiStart(phiStart),fPhiDelta(phiDelta),
       fZSegments(zPlaneCount-1), fZPlanes(zPlaneCount), fRMin(zPlaneCount),
       fRMax(zPlaneCount), fPhiSections(sideCount+1),
       fBoundingTube(0, 1, 1, 0, 360) {
@@ -199,24 +201,6 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   } // End loop over segments
 } // end constructor
 
-#ifdef VECGEOM_NVCC
-
-__device__
-UnplacedPolyhedron::UnplacedPolyhedron(
-    int sideCount, bool hasInnerRadii, bool hasPhiCutout,
-    bool hasLargePhiCutout, ZSegment *segmentData, Precision *zPlaneData,
-    int zPlaneCount, Precision *phiSectionX, Precision *phiSectionY,
-    Precision *phiSectionZ, UnplacedTube const *boundingTube,
-    Precision boundingTubeOffset)
-    : fSideCount(sideCount), fHasInnerRadii(hasInnerRadii),
-      fHasPhiCutout(hasPhiCutout), fHasLargePhiCutout(hasLargePhiCutout),
-      fZSegments(segmentData, zPlaneCount-1), fZPlanes(zPlaneData, zPlaneCount),
-      fPhiSections(phiSectionX, phiSectionY, phiSectionZ, sideCount),
-      fBoundingTube(*boundingTube), fBoundingTubeOffset(boundingTubeOffset) {}
-
-
-#endif // VECGEOM_NVCC
-
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiStart() const {
   return kRadToDeg*NormalizeAngle<kScalar>(
@@ -342,71 +326,32 @@ void UnplacedPolyhedron::Print(std::ostream &os) const {
 }
 
 
-void UnplacedPolyhedron_ZSegment_GetAddresses(void *object, void *&outer,
-                                              void *&inner, void *&phi,
-                                              bool *&innerRadius);
-
-void UnplacedPolyhedron_CopyToGpu(VUnplacedVolume *gpuPtr, int sideCount,
-                                  bool hasInnerRadii, bool hasPhiCutout,
-                                  bool hasLargePhiCutout, void *zSegments,
-                                  Precision *zPlanes, int zPlaneCount,
-                                  Precision *phiSectionsX,
-                                  Precision *phiSectionsY,
-                                  Precision *phiSectionsZ,
-                                  VUnplacedVolume *boundingTube,
-                                  Precision boundingTubeOffset);
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpuPtr) const {
-
-   DevicePtr<cuda::ZSegment> zSegmentsGpu;
-   zSegmentsGpu.Allocate(fZSegments.size());
-
-   // Copy all segment data ... we could also save some bandwidth at the expense of additional
-   // latency/messages.
-
-   // We also need to make sure that cxx::ZSegment and cuda::ZSegment have the same layout.
-   zSegmentsGpu.ToDevice( (cuda::ZSegment*) &(fZSegments[0]), fZSegments.size() );
-
-//    for (int i = 0, iMax = fZSegments.size(); i < iMax; ++i) {
-// #pragma GCC diagnostic push
-// #pragma GCC diagnostic ignored "-Wpointer-arith"
-//       fZSegments[i].CopyToGpu(zSegmentsGpu + i*gpuMemorySize);
-// #pragma GCC diagnostic pop
-//    }
 
    DevicePtr<Precision> zPlanesGpu;
    zPlanesGpu.Allocate(fZPlanes.size());
    zPlanesGpu.ToDevice(&fZPlanes[0], fZPlanes.size());
 
-   size_t phiSectionSize = fPhiSections.size();
-   DevicePtr<Precision> phiSectionsXGpu;
-   DevicePtr<Precision> phiSectionsYGpu;
-   DevicePtr<Precision> phiSectionsZGpu;
-   phiSectionsXGpu.Allocate(phiSectionSize);
-   phiSectionsYGpu.Allocate(phiSectionSize);
-   phiSectionsZGpu.Allocate(phiSectionSize);
+   DevicePtr<Precision> rminGpu;
+   rminGpu.Allocate(fZPlanes.size());
+   rminGpu.ToDevice(&fRMin[0], fZPlanes.size());
 
-   phiSectionsXGpu.ToDevice( fPhiSections.x(), phiSectionSize );
-   phiSectionsYGpu.ToDevice( fPhiSections.y(), phiSectionSize );
-   phiSectionsZGpu.ToDevice( fPhiSections.z(), phiSectionSize );
-
-   DevicePtr<cuda::VUnplacedVolume> boundingTubeGpu = fBoundingTube.CopyToGpu();
+   DevicePtr<Precision> rmaxGpu;
+   rmaxGpu.Allocate(fZPlanes.size());
+   rmaxGpu.ToDevice(&fRMax[0], fZPlanes.size());
 
    DevicePtr<cuda::VUnplacedVolume> result =
-      CopyToGpuImpl<UnplacedPolyhedron>(gpuPtr, fSideCount, fHasInnerRadii,
-                                fHasPhiCutout, fHasLargePhiCutout,
-                                zSegmentsGpu, zPlanesGpu, fZPlanes.size(),
-                                phiSectionsXGpu, phiSectionsYGpu,
-                                phiSectionsZGpu, boundingTubeGpu,
-                                fBoundingTubeOffset);
+      CopyToGpuImpl<UnplacedPolyhedron>(gpuPtr,
+                                        fPhiStart, fPhiDelta,
+                                        fSideCount, fZPlanes.size(),
+                                        zPlanesGpu, rminGpu, rmaxGpu
+                                        );
 
-  zSegmentsGpu.Deallocate();
   zPlanesGpu.Deallocate();
-  phiSectionsXGpu.Deallocate();
-  phiSectionsYGpu.Deallocate();
-  phiSectionsZGpu.Deallocate();
+  rminGpu.Deallocate();
+  rminGpu.Deallocate();
 
   CudaAssertError();
   return result;
@@ -418,37 +363,8 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const {
    return this->CopyToGpu(gpuPtr);
 }
 
-void ZSegment::CopyToGpu(DevicePtr<cuda::ZSegment> gpuPtr) const {
-
-   assert(0 && "Not used (yet?)");
-#if 0
-   void *outerGpu, *innerGpu, *phiGpu;
-   bool *innerRadiusGpu;
-   UnplacedPolyhedron_ZSegment_GetAddresses(gpuPtr, outerGpu, innerGpu, phiGpu,
-                                           innerRadiusGpu);
-   outer.CopyToGpu(outerGpu);
-   if (inner.size() > 0) inner.CopyToGpu(innerGpu);
-   if (phi.size() > 0)   phi.CopyToGpu(phiGpu);
-   vecgeom::CopyToGpu<bool>(&hasInnerRadius, innerRadiusGpu);
-#endif
-}
-
 #endif
 
-#ifdef VECGEOM_NVCC
-
-void UnplacedPolyhedron_ZSegment_GetAddresses(void *object, void *&outer,
-                                              void *&inner, void *&phi,
-                                              bool *&innerRadius) {
-   vecgeom::cuda::ZSegment *segment =
-     static_cast<vecgeom::cuda::ZSegment*>(object);
-  outer = &segment->outer;
-  inner = &segment->inner;
-  phi   = &segment->phi;
-  innerRadius = &segment->hasInnerRadius;
-}
-
-#endif
 
 } // End impl namespace
 
@@ -457,16 +373,13 @@ void UnplacedPolyhedron_ZSegment_GetAddresses(void *object, void *&outer,
 namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedPolyhedron>::SizeOf();
-template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(int sideCount,
-                                 bool hasInnerRadii, bool hasPhiCutout,
-                                 bool hasLargePhiCutout,
-                                 DevicePtr<cuda::ZSegment> zSegments,
-                                 DevicePtr<Precision> zPlanes, int zPlaneCount,
-                                 DevicePtr<Precision> phiSectionsX,
-                                 DevicePtr<Precision> phiSectionsY,
-                                 DevicePtr<Precision> phiSectionsZ,
-                                 DevicePtr<cuda::UnplacedTube> boundingTube,
-                                 Precision boundingTubeOffset) const;
+template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(Precision phiStart,
+                                 Precision phiDelta,
+                                 int sideCount,
+                                 int zPlaneCount,
+                                 DevicePtr<Precision> zPlanes,
+                                 DevicePtr<Precision> rMin,
+                                 DevicePtr<Precision> rMax) const;
 
 } // End cxx namespace
 
