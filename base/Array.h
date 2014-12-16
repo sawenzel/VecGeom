@@ -124,7 +124,7 @@ void Array<Type>::Allocate(const unsigned size) {
   fData = static_cast<Type*>(_mm_malloc(fSize*sizeof(Type),
                                         kAlignmentBoundary));
 #else
-  fData = new Type[fSize];
+  fData = static_cast<Type*>(malloc(fSize*sizeof(Type))); // new Type[fSize];
 #endif
 }
 
@@ -134,7 +134,7 @@ void Array<Type>::Deallocate() {
 #ifndef VECGEOM_NVCC
     _mm_free(fData);
 #else
-    delete fData;
+    free(fData); // delete fData;
 #endif
   } else {
     fData = NULL;
