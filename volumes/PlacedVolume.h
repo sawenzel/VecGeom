@@ -361,6 +361,29 @@ public:
 
 #endif // VECGEOM_NO_SPECIALIZATION
 
+#ifdef VECGEOM_NO_SPECIALIZATION
+
+#define VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALL_CUTOUT( PlacedVol, radii )   \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<radii, Polyhedron::EPhiCutout::kGeneric> )
+
+#define VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALLSPEC( PlacedVol ) \
+   VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALL_CUTOUT(PlacedVol, Polyhedron::EInnerRadii::kGeneric)
+
+#else // VECGEOM_NO_SPECIALIZATION
+
+#define VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALL_CUTOUT( PlacedVol, radii )   \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<radii, Polyhedron::EPhiCutout::kGeneric> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<radii, Polyhedron::EPhiCutout::kFalse> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<radii, Polyhedron::EPhiCutout::kTrue> ) \
+   VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL( PlacedVol<radii, Polyhedron::EPhiCutout::kLarge> ) \
+
+#define VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALLSPEC( PlacedVol ) \
+   VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALL_CUTOUT(PlacedVol, Polyhedron::EInnerRadii::kGeneric) \
+   VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALL_CUTOUT(PlacedVol, Polyhedron::EInnerRadii::kFalse) \
+   VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALL_CUTOUT(PlacedVol, Polyhedron::EInnerRadii::kTrue)
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_IMPL_3( PlacedVol, Extra, Type ) \
    namespace cxx { \
       template size_t DevicePtr<cuda::PlacedVol, Extra, cuda::Type>::SizeOf(); \

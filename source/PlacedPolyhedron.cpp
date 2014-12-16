@@ -92,7 +92,7 @@ G4VSolid const* PlacedPolyhedron::ConvertToGeant4() const {
 
 #ifdef VECGEOM_NVCC
 
-VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedPolyhedron )
+VECGEOM_DEVICE_INST_PLACED_POLYHEDRON_ALLSPEC( SpecializedPolyhedron )
 
 #endif
 
