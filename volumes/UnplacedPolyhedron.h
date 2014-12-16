@@ -15,6 +15,26 @@
 
 #include <ostream>
 
+// This enums should be in the scope vecgeom::Polyhedron but when using in the
+// shape implementation helper instantiation's, this consfused nvcc:
+/*
+In file included from tmpxft_00004012_00000000-3_PlacedPolyhedron.cudafe1.stub.c:1:0:
+/tmp/tmpxft_00004012_00000000-3_PlacedPolyhedron.cudafe1.stub.c:5:136: error: template argument 2 is invalid
+ typedef vecgeom::cuda::SpecializedPolyhedron<(vecgeom::Polyhedron::EInnerRadii)0, (vecgeom::cuda::SpecializedPolyhedron::EPhiCutout)0>  _ZN7vecgeom4cuda21SpecializedPolyhedronILNS_10Polyhedron11EInnerRadiiE0ELNS1_10EPhiCutoutE0EEE;
+*/
+enum struct EInnerRadii {
+   kFalse = -1,
+   kGeneric = 0,
+   kTrue = 1
+};
+
+enum struct EPhiCutout {
+   kFalse = -1,
+   kGeneric = 0,
+   kTrue = 1,
+   kLarge = 2
+};
+
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
@@ -24,19 +44,9 @@ VECGEOM_DEVICE_DECLARE_CONV( ZSegment );
 
 // Declare types shared by cxx and cuda.
 namespace Polyhedron {
-    
-   enum struct EInnerRadii {
-      kFalse = -1,
-      kGeneric = 0,
-      kTrue = 1
-   };
 
-   enum struct EPhiCutout {
-      kFalse = -1,
-      kGeneric = 0,
-      kTrue = 1,
-      kLarge = 2
-   };
+   using ::EInnerRadii;
+   using ::EPhiCutout;
 
 }
 
