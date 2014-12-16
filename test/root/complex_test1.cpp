@@ -15,6 +15,7 @@
 #include "base/AOS3D.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/LogicalVolume.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #include "navigation/NavigationState.h"
 #include "navigation/SimpleNavigator.h"
 #include "base/RNG.h"
@@ -25,9 +26,14 @@
 #include "TGeoMatrix.h"
 #include "TGeoVolume.h"
 #include "TGeoBranchArray.h"
-#include <cassert>
 
 #include <vector>
+#include <set>
+
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <cassert>
 
 using namespace VECGEOM_NAMESPACE;
 
@@ -456,19 +462,61 @@ void test_geoapi()
 
 void test_aos3d()
 {
-	SOA3D<Precision> container1(1024);
-	assert(container1.size() == 0);
-	container1.push_back( Vector3D<Precision>(1,0,1));
-	assert(container1.size() == 1);
-	std::cerr << "test soa3d passed" << std::endl;
+   SOA3D<Precision> container1(1024);
+   assert(container1.size() == 0);
+   container1.push_back( Vector3D<Precision>(1,0,1));
+   assert(container1.size() == 1);
+   std::cerr << "test soa3d passed" << std::endl;
 
-	AOS3D<Precision> container2(1024);
-	assert(container2.size() == 0);
-	container2.push_back( Vector3D<Precision>(1,0,1));
-	assert(container2.size() == 1);
-	std::cerr << "test aos3d passed" << std::endl;
-
+   AOS3D<Precision> container2(1024);
+   assert(container2.size() == 0);
+   container2.push_back( Vector3D<Precision>(1,0,1));
+   assert(container2.size() == 1);
+   std::cerr << "test aos3d passed" << std::endl;
 }
+
+// tests the generation of global points in certain logical reference volumes
+void test_pointgenerationperlogicalvolume( )
+{
+    int np = 1024;
+    SOA3D<Precision> localpoints(np);
+    SOA3D<Precision> globalpoints(np);
+    SOA3D<Precision> directions(np);
+
+    // might need to resize this
+    localpoints.resize(np);
+    globalpoints.resize(np);
+    directions.resize(np);
+
+    volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume(
+        "b1l",
+        localpoints,
+        globalpoints,
+        directions,
+        0.5, np
+    );
+
+    assert( localpoints.size() == np );
+    assert( globalpoints.size() == np );
+    assert( directions.size() == np );
+
+    // test that points are really inside b1l; test also that they have to be in two different placed volumes
+    std::set<VPlacedVolume const *> pvolumeset;
+    SimpleNavigator nav;
+    NavigationState * state = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth( ));
+    for(int i=0;i<np;++i)
+    {
+        state->Clear();
+        nav.LocatePoint( GeoManager::Instance().GetWorld(), globalpoints[i], *state, true );
+	assert( std::strcmp( state->Top()->logical_volume()->GetLabel().c_str(), "b1l" ) == 0 );
+        pvolumeset.insert( state->Top() );
+    }
+    // b1l should be placed two times
+    assert( pvolumeset.size() == 2 );
+    NavigationState::ReleaseInstance( state );
+    std::cout << "test pointgenerationperlogicalvolume passed\n";
+}
+
 
 int main()
 {
@@ -493,5 +541,7 @@ int main()
     test8();
     test_safety();
     test_aos3d();
+    test_pointgenerationperlogicalvolume();
+
     return 0;
 }

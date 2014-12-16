@@ -9,14 +9,25 @@
 #include "base/Vector.h"
 #include "volumes/Box.h"
 
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Interface.h"
+#endif
+
 #include <list>
 #include <map>
 #include <set>
 
-namespace vecgeom_cuda { class VPlacedVolume; }
-
 // Compile for vecgeom namespace to work as interface
 namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; )
+VECGEOM_DEVICE_FORWARD_DECLARE( void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world); )
+
+
+#ifndef VECGEOM_NVCC
+inline
+#endif
+namespace cxx {
 
 #ifdef VECGEOM_NVCC
 // Forward declarations for NVCC compilation
@@ -24,7 +35,6 @@ class VUnplacedVolume;
 class VPlacedVolume;
 class LogicalVolume;
 class Transformation3D;
-typedef VPlacedVolume const* Daughter;
 template <typename Type> class Vector;
 #endif
 
@@ -36,18 +46,24 @@ private:
   int verbose_;
   int total_volumes;
 
+  
+  using Daughter_t = VPlacedVolume const*;
+  using CudaDaughter_t = cuda::VPlacedVolume const*;
+  using CudaDaughterPtr_t = DevicePtr<cuda::VPlacedVolume>;
+
   std::set<VUnplacedVolume const*> unplaced_volumes_;
   std::set<LogicalVolume const*> logical_volumes_;
   std::set<VPlacedVolume const*> placed_volumes_;
   std::set<Transformation3D const*> transformations_;
-  std::set<Vector<Daughter> *> daughters_;
+  std::set<Vector<Daughter_t> *> daughters_;
 
   typedef void const* CpuAddress;
-  typedef void* GpuAddress;
+  typedef DevicePtr<char> GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
+  typedef std::map<GpuAddress, GpuAddress> GpuMemoryMap;
 
   VPlacedVolume const *world_;
-  vecgeom_cuda::VPlacedVolume *world_gpu_;
+  DevicePtr<vecgeom::cuda::VPlacedVolume> world_gpu_;
 
   /**
    * Contains a mapping between objects stored in host memory and pointers to
@@ -58,7 +74,8 @@ private:
    * \sa CleanGpu()
    */
   MemoryMap memory_map;
-  std::list<void*> allocated_memory_;
+  GpuMemoryMap gpu_memory_map;
+  std::list<GpuAddress> allocated_memory_;
 
 public:
 
@@ -72,7 +89,7 @@ public:
 
   VPlacedVolume const* world() const;
 
-  vecgeom_cuda::VPlacedVolume const* world_gpu() const;
+  vecgeom::cuda::VPlacedVolume const* world_gpu() const;
 
   /**
    * Stages a new geometry to be copied to the GPU.
@@ -86,7 +103,7 @@ public:
    * creating new objects with correct pointers, then copying them to the GPU.
    * \return Pointer to top volume on the GPU.
    */
-  vecgeom_cuda::VPlacedVolume const* Synchronize();
+  DevicePtr<const vecgeom::cuda::VPlacedVolume> Synchronize();
 
   /**
    * Deallocates all GPU pointers stored in the memory table.
@@ -116,20 +133,23 @@ public:
   template <typename Type>
   GpuAddress Lookup(Type const *const key);
 
-  VUnplacedVolume* LookupUnplaced(
+  template <typename Type>
+  GpuAddress Lookup(DevicePtr<Type> key);
+
+  DevicePtr<cuda::VUnplacedVolume> LookupUnplaced(
       VUnplacedVolume const *const host_ptr);
 
-  LogicalVolume* LookupLogical(LogicalVolume const *const host_ptr);
+  DevicePtr<cuda::LogicalVolume> LookupLogical(LogicalVolume const *const host_ptr);
 
-  VPlacedVolume* LookupPlaced(VPlacedVolume const *const host_ptr);
+  DevicePtr<cuda::VPlacedVolume> LookupPlaced(VPlacedVolume const *const host_ptr);
 
-  Transformation3D* LookupTransformation(
+  DevicePtr<cuda::Transformation3D> LookupTransformation(
       Transformation3D const *const host_ptr);
 
-  Vector<Daughter>* LookupDaughters(Vector<Daughter> *const host_ptr);
+  DevicePtr<cuda::Vector<CudaDaughter_t>> LookupDaughters(Vector<Daughter_t> *const host_ptr);
 
-  Daughter* LookupDaughterArray(
-      Vector<Daughter> *const host_ptr);
+  DevicePtr<CudaDaughter_t> LookupDaughterArray(
+      Vector<Daughter_t> *const host_ptr);
 
 private:
 
@@ -158,22 +178,11 @@ private:
     return static_cast<CpuAddress>(ptr);
   }
 
-  /**
-   * Converts object pointers to void pointers so they can be stored in
-   * the memory table.
-   */
-  template <typename Type>
-  GpuAddress ToGpuAddress(Type *const ptr) const {
-    return static_cast<GpuAddress>(ptr);
-  }
-
   // template <typename TrackContainer>
   // void LocatePointsTemplate(TrackContainer const &container, const int n,
   //                           const int depth, int *const output) const;
 
 };
-
-void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world);
 
 // void CudaManagerLocatePoints(VPlacedVolume const *const world,
 //                              SOA3D<Precision> const *const points,
@@ -183,6 +192,6 @@ void CudaManagerPrintGeometry(vecgeom_cuda::VPlacedVolume const *const world);
 //                              AOS3D<Precision> const *const points,
 //                              const int n, const int depth, int *const output);
 
-} // End namespace vecgeom
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_CUDAMANAGER_H_

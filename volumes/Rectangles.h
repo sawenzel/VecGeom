@@ -11,9 +11,14 @@
 #include "base/Vector3D.h"
 #include "volumes/Planes.h"
 
-#include <ostream>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class Rectangles; )
+VECGEOM_DEVICE_DECLARE_CONV( Rectangles );
+
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /// \class Rectangles
 ///
@@ -47,10 +52,10 @@ public:
 
   typedef SOA3D<Precision> Corners_t[2];
 
-#ifdef VECGEOM_STD_CXX11
+  VECGEOM_CUDA_HEADER_BOTH
   Rectangles(int size);
-#endif
 
+  VECGEOM_CUDA_HEADER_BOTH
   ~Rectangles();
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -90,6 +95,7 @@ public:
   VECGEOM_INLINE
   SOA3D<Precision> const& GetSides() const;
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Set(
       int index,
       Vector3D<Precision> const &p0,
@@ -152,6 +158,7 @@ SOA3D<Precision> const& Rectangles::GetSides() const {
   return fSides;
 }
 
+VECGEOM_CUDA_HEADER_BOTH
 void Rectangles::Set(
     int index,
     Vector3D<Precision> const &p0,
@@ -211,6 +218,8 @@ Precision Rectangles::Distance(
 }
 
 std::ostream& operator<<(std::ostream &os, Rectangles const &rhs);
+
+} // End inline impl namespace
 
 } // End global namespace
 

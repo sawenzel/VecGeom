@@ -35,7 +35,7 @@ int main(int argc, char * argv[]) {
   LogicalVolume cone  = LogicalVolume("cone", &coneUnplaced);
 
   Transformation3D placement(5, 0, 0);
-  VPlacedVolume const* plcone = world.PlaceDaughter("cone", &cone, &placement);
+  world.PlaceDaughter("cone", &cone, &placement);
 
   // now the cone is placed; how do we get it back?
   VPlacedVolume *worldPlaced = world.Place();

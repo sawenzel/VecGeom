@@ -15,7 +15,12 @@
 
 #include <ostream>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /// \class UnplacedPolyhedron
 /// \brief A series of regular n-sided segments along the Z-axis with varying
@@ -113,7 +118,6 @@ private:
 
 public:
 
-#ifdef VECGEOM_STD_CXX11
   /// \param sideCount Number of sides along phi in each Z-segment.
   /// \param zPlaneCount Number of Z-planes to draw segments between. The number
   ///                    of segments will always be this number minus one.
@@ -151,7 +155,7 @@ public:
       Precision zPlanes[],
       Precision rMin[],
       Precision rMax[]);
-#endif
+
 
 #ifdef VECGEOM_NVCC
   __device__
@@ -247,8 +251,69 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetPhiDelta() const;
 
-  VECGEOM_INLINE
-  virtual int memory_size() const { return sizeof(*this); }
+
+  // reconstructs fZPlanes, fRmin, fRMax from Quadrilaterals
+  template<typename PushableContainer>
+  void ReconstructSectionArrays(PushableContainer & zplanes,
+                                  PushableContainer & rmin,
+                                  PushableContainer & rmax) const {
+      // iterate over sections;
+      // pick one inner quadrilateral and one outer quadrilateral
+      // reconstruct rmin, rmax and z from these
+
+      // TODO: this might not yet be correct when we have degenerate
+      // z-plane values
+
+      AOS3D<Precision> const * innercorners;
+      AOS3D<Precision> const * outercorners;
+
+      // lambda function to recalculate the radiuses
+      auto getradius = [](Vector3D<Precision> const & a, Vector3D<Precision> const & b) {
+          return  std::sqrt(a.Perp2() - (a-b).Mag2()/4.);
+      };
+
+      int counter = 0;
+
+      Array<ZSegment>::const_iterator s;
+      Array<ZSegment>::const_iterator end=fZSegments.cend();
+
+      for( s=fZSegments.cbegin(); s!=end; ++s )
+      {
+          outercorners  = (*s).outer.GetCorners();
+          Vector3D<Precision> a = outercorners[0][0];
+          Vector3D<Precision> b = outercorners[1][0];
+          rmax.push_back( getradius(a,b) );
+          zplanes.push_back(a.z());
+
+          if( fHasInnerRadii ){
+              innercorners  = (*s).inner.GetCorners();
+              a = innercorners[0][0];
+              b = innercorners[1][0];
+              rmin.push_back( getradius(a,b) );
+          }
+          else
+          {
+              rmin.push_back( 0. );
+          }
+      }
+      // for last segment need to add addidional plane
+
+      Vector3D<Precision> a = outercorners[2][0];
+      Vector3D<Precision> b = outercorners[3][0];
+      rmax.push_back( getradius(a,b) );
+      zplanes.push_back(a.z());
+
+      if( fHasInnerRadii ){
+        a = innercorners[2][0];
+        b = innercorners[3][0];
+        rmin.push_back( getradius(a,b) );
+      }
+      else {
+          rmin.push_back( 0. );
+      }
+
+    }
+
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
@@ -268,12 +333,22 @@ public:
 #endif
       VPlacedVolume *const placement) const;
 
+  VECGEOM_INLINE
+    virtual int memory_size() const { return sizeof(*this); }
+
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const {
+      return DevicePtr<cuda::UnplacedPolyhedron>::SizeOf();
+  }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
+  //virtual VUnplacedVolume* CopyToGpu() const;
+  //virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
 #endif
 
-};
+}; // End class UnplacedPolyhedron
+
+} // End inline namespace
 
 } // End global namespace
 

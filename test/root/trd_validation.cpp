@@ -93,7 +93,11 @@ void distancetoin() {
     v[1] = direction.y();
     v[2] = direction.z();
 
+#ifndef VECGEOM_NO_SPECIALIZATION
     TrdImplementation<rotation::kIdentity, translation::kIdentity, TrdTypes::Trd1> impl;
+#else
+    TrdImplementation<rotation::kIdentity, translation::kIdentity, TrdTypes::UniversalTrd> impl;
+#endif
     impl.DistanceToIn<Backend>(trd, *identity, point, direction, kInfinity, dist_v);
     dist = rtrd.DistFromOutside(p, v);
 

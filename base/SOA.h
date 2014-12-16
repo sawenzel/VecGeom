@@ -8,7 +8,10 @@
 
 #include "base/AlignedBase.h"
 
-namespace VECGEOM_NAMESPACE { 
+namespace vecgeom {
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
 
 template <typename T, int rows, int columns>
 struct SOAData : public AlignedBase {
@@ -71,6 +74,8 @@ typename SOA<T, columns, rows>::Column_t const&
 SOA<T, columns, rows>::operator[](int index) const {
   return *(&fData.fHead + index*ColumnSize());
 }
+
+} // End inline namespace
 
 } // End global namespace
 

@@ -12,7 +12,12 @@
 #include "base/PlaneShell.h"
 
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedTrapezoid; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedTrapezoid );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef Vector3D<Precision> TrapCorners_t[8];
 
@@ -70,8 +75,9 @@ public:
                                VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedTrapezoid>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 private:
@@ -95,7 +101,7 @@ public:
 
   /// \brief Constructor based on 8 corner points
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTrapezoid( TrapCorners_t const& corners );
+  UnplacedTrapezoid( TrapCorners_t const corners );
 
   /// \brief Constructor for "default" UnplacedTrapezoid whose parameters are to be set later
   VECGEOM_CUDA_HEADER_BOTH
@@ -229,11 +235,11 @@ public:
 
   /// \brief Calculate trapezoid parameters when user provides the 8 corners
   VECGEOM_CUDA_HEADER_BOTH
-  void fromCornersToParameters( TrapCorners_t const & pt);
+  void fromCornersToParameters( TrapCorners_t const  pt);
 
   /// \brief Calculate the 8 corner points using pre-stored parameters
   VECGEOM_CUDA_HEADER_BOTH
-  void fromParametersToCorners( TrapCorners_t & pt ) const;
+  void fromParametersToCorners( TrapCorners_t  pt ) const;
 
 private:
 
@@ -256,7 +262,7 @@ private:
 
   /// \brief Construct the four side planes from input corner points
   VECGEOM_CUDA_HEADER_BOTH
-  bool MakePlanes( TrapCorners_t const & corners );
+  bool MakePlanes( TrapCorners_t const corners );
 
   /// \brief Construct a side plane containing four of the trapezoid
   /// corners defining a side face
@@ -270,6 +276,6 @@ private:
 #endif
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTRAPEZOID_H_

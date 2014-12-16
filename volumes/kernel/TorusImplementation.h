@@ -11,6 +11,7 @@
 #include "volumes/UnplacedTorus.h"
 //#include <math.h>
 
+#include <stdio.h>
 
 #ifndef VECGEOM_NVCC
 #include <iomanip>
@@ -19,7 +20,11 @@
 
 //#define DEBUGTORUS
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(TorusImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 
 #ifndef VECGEOM_NVCC
@@ -548,9 +553,22 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
 }
 #endif
 
+class PlacedTorus;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
   
+   static const int transC = transCodeT;
+   static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedTorus;
+  using UnplacedShape_t = UnplacedTorus;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTorus<%i, %i>", transCodeT, rotCodeT);
+  }
+
   /////GenericKernel Contains/Inside implementation
   template <typename Backend, bool ForInside, bool notForDisk>
   VECGEOM_INLINE
@@ -753,8 +771,6 @@ struct TorusImplementation {
      typedef typename Backend::precision_v Float_t;
      typedef typename Backend::bool_v Bool_t;
 
-     Float_t tol = kTolerance;
-
      // actually a scalar product
      Float_t r0sq  = point[0]*point[0]+point[1]*point[1]+point[2]*point[2];
 
@@ -864,10 +880,10 @@ struct TorusImplementation {
 
       //Check Bounding Cylinder first
       Bool_t inBounds;
-      Bool_t missTorus;
       Bool_t done;
       Float_t tubeDistance = kInfinity;
 
+#ifndef VECGEOM_NO_SPECIALIZATION
       // call the tube functionality -- first of all we check whether we are inside
       // bounding volume
       TubeImplementation<translation::kIdentity,
@@ -880,6 +896,20 @@ struct TorusImplementation {
             rotation::kIdentity, TubeTypes::HollowTube>::DistanceToIn<Backend>(
                 torus.GetBoundingTube(), transformation, localPoint,
                 localDirection, stepMax, tubeDistance);
+#else
+      // call the tube functionality -- first of all we check whether we are inside
+      // bounding volume
+      TubeImplementation<translation::kIdentity,
+        rotation::kIdentity, TubeTypes::UniversalTube>::UnplacedContains<Backend>(
+            torus.GetBoundingTube(), localPoint, inBounds);
+
+
+      // only need to do this check if all particles (in vector) are outside ( otherwise useless )
+      TubeImplementation<translation::kIdentity,
+            rotation::kIdentity, TubeTypes::UniversalTube>::DistanceToIn<Backend>(
+                torus.GetBoundingTube(), transformation, localPoint,
+                localDirection, stepMax, tubeDistance);
+#endif // VECGEOM_NO_SPECIALIZATION
 
        done = (!inBounds && tubeDistance == kInfinity);
 
@@ -933,8 +963,6 @@ struct TorusImplementation {
 	  }
          
       }
-      Bool_t insideDisk2;
-      Float_t diri2;
       smallerdist = distPhi2 < minDist;
       if ( ! IsEmpty(smallerdist))
 	{
@@ -1112,7 +1140,7 @@ struct TorusImplementation {
 
 }; // end struct
 
-} // end namespace
+} } // end namespace
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION_H_

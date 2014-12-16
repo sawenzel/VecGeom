@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
   Transformation3D placement(0, 0, 0);
   world.PlaceDaughter("torus", &torus, &placement);
 
-  VPlacedVolume *pt = torus.Place(&placement);
+  torus.Place(&placement);
 
   // {
   // Vector3D<Precision> pos(5.853854, -2.729679, 2.817193);

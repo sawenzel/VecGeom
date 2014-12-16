@@ -10,7 +10,11 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class Vector; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename Type>
 class Vector {
@@ -29,7 +33,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector(Type *const vec, const int sz)
-      : fData(vec), fSize(sz), fAllocated(false) {}
+     : fData(vec), fSize(sz), fMemorySize(sz), fAllocated(false) {}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector(Type *const vec, const int sz, const int maxsize)
+     : fData(vec), fSize(sz), fMemorySize(maxsize), fAllocated(true) {}
 
   ~Vector() {
     if (fAllocated) delete[] fData;
@@ -49,6 +57,7 @@ public:
 
   void push_back(const Type item) {
     if (fSize == fMemorySize) {
+      assert(fAllocated && "Trying to push on a 'fixed' size vector (memory not allocated by Vector itself");
       fMemorySize = fMemorySize<<1;
       Type *fDataNew = new Type[fMemorySize];
       for (int i = 0; i < fSize; ++i) fDataNew[i] = fData[i];
@@ -85,8 +94,14 @@ public:
   }
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  Vector<Type>* CopyToGpu(Type *const gpu_ptr_arr,
-                          Vector<Type> *const gpu_ptr) const;
+  DevicePtr<cuda::Vector<CudaType_t<Type> > > CopyToGpu(
+     DevicePtr<CudaType_t<Type> > const gpu_ptr_arr,
+     DevicePtr<cuda::Vector<CudaType_t<Type> > > const gpu_ptr) const 
+  {
+     gpu_ptr.Construct(gpu_ptr_arr, size());
+     return gpu_ptr;
+  }
+
 #endif
 
 private:
@@ -97,29 +112,6 @@ private:
 
 };
 
-#ifdef VECGEOM_CUDA
-
-template <typename Type> class Vector;
-class VPlacedVolume;
-
-void Vector_CopyToGpu(Precision *const arr, const int size,
-                      void *const gpu_ptr);
-
-void Vector_CopyToGpu(VPlacedVolume const **const arr, const int size,
-                      void *const gpu_ptr);
-
-#ifdef VECGEOM_CUDA_INTERFACE
-template <typename Type>
-Vector<Type>* Vector<Type>::CopyToGpu(Type *const gpu_ptr_arr,
-                                      Vector<Type> *const gpu_ptr) const {
-  Vector_CopyToGpu(gpu_ptr_arr, this->size(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-#endif
-
-#endif // VECGEOM_CUDA
-
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_CONTAINER_H_

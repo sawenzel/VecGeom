@@ -17,7 +17,8 @@
 #include "G4Tubs.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 
@@ -47,64 +48,25 @@ G4VSolid const* PlacedTube::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void PlacedTube_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedTube::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  PlacedTube_CopyToGpu(logical_volume, transformation, this->id(),
-                                 gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-
-VPlacedVolume* PlacedTube::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedTube>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::UniversalTube )
 
-__global__
-void PlacedTube_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleTube(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-}
+#ifndef VECGEOM_NO_SPECIALIZATION
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTube )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTubeWithSmallerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTubeWithBiggerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::NonHollowTubeWithPiSector )
 
-void PlacedTube_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedTube_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
-                                                id, gpu_ptr);
-}
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTube )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTubeWithSmallerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTubeWithBiggerThanPiSector )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTube, TubeTypes::HollowTubeWithPiSector )
+#endif
 
-#endif // VECGEOM_NVCC
+#endif
 
-} // End namespace vecgeom
+} // End global namespace  
 

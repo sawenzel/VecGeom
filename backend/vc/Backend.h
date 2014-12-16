@@ -10,7 +10,8 @@
 
 #include <Vc/Vc>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 struct kVc {
   typedef Vc::int_v                   int_v;
@@ -162,12 +163,9 @@ VcInt Max(VcInt const &val1, VcInt const &val2) {
   return Vc::max(val1, val2);
 }
 
-// template <typename T1, typename T2>
-// VcBool operator&&(typename Vc::Vector<T1>::Mask const &a,
-//                   typename Vc::Vector<T2>::Mask const &b) {
-//   return VcBool(a) && VcBool(b);
-// }
+} // End inline namespace
 
 } // End global namespace
+
 
 #endif // VECGEOM_BACKEND_VCBACKEND_H_

@@ -9,10 +9,31 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(BoxImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedBox;
+class UnplacedBox;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedBox;
+  using UnplacedShape_t = UnplacedBox;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedBox<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template<typename Backend>
   VECGEOM_INLINE
@@ -304,7 +325,7 @@ void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
         completelyinside = Abs(localPoint[0]) < MakeMinusTolerant<ForInside>( dimensions[0] );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull (completelyoutside) ) {
         return;
       }
     }
@@ -315,7 +336,7 @@ void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
       completelyinside &= Abs(localPoint[1]) < MakeMinusTolerant<ForInside>( dimensions[1] );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull (completelyoutside) ) {
         return;
       }
     }
@@ -571,6 +592,7 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
     }
 
 
-} // End global namespace
+} } // End global namespace
+
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_

@@ -16,7 +16,12 @@
 #include "volumes/UnplacedVolume.h"
 #include <cmath>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedCone; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedCone );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * Class representing an unplaced cone; Encapsulated parameters of a cone and
@@ -148,8 +153,8 @@ Precision fSinEPhi;
         fSinCPhi   = std::sin(cPhi);
         fCosCPhi   = std::cos(cPhi);
         fCosHDPhi  = std::cos(hDPhi);
-        fCosHDPhiIT = std::cos(hDPhi - 0.5 * VECGEOM_NAMESPACE::kAngTolerance); // inner/outer tol half dphi
-        fCosHDPhiOT = std::cos(hDPhi + 0.5 * VECGEOM_NAMESPACE::kAngTolerance);
+        fCosHDPhiIT = std::cos(hDPhi - 0.5 * kAngTolerance); // inner/outer tol half dphi
+        fCosHDPhiOT = std::cos(hDPhi + 0.5 * kAngTolerance);
         fSinSPhi = std::sin(fSPhi);
         fCosSPhi = std::cos(fSPhi);
         fSinEPhi = std::sin(ePhi);
@@ -290,8 +295,9 @@ Precision fSinEPhi;
                                   VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedCone>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 #ifdef VECGEOM_USOLIDS
@@ -323,6 +329,6 @@ Precision fSinEPhi;
 };
 
 
-} // end namespace
+} }  // End global namespace
 
 #endif

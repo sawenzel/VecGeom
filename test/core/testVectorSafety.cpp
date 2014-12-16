@@ -95,7 +95,7 @@ void testVectorNavigator( VPlacedVolume* world ){
    vecgeom::SimpleNavigator nav;
    for (int i=0;i<np;++i){
       // pSteps[i] = kInfinity;
-       pSteps[i] = (i%2)? 1 : kInfinity;
+     pSteps[i] = (i%2)? 1 : VECGEOM_NAMESPACE::kInfinity;
        states[i] =  NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
        newstates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
        nav.LocatePoint( world, points[i], *states[i], true);

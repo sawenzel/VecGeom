@@ -7,7 +7,8 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void GeoManager::RegisterLogicalVolume(LogicalVolume *const logical_volume) {
   fLogicalVolumesMap[logical_volume->id()] = logical_volume;
@@ -97,7 +98,6 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   return output;
 }
 
-
 void GeoManager::Clear()
 {
     fLogicalVolumesMap.clear();
@@ -106,4 +106,4 @@ void GeoManager::Clear()
     fMaxDepth=-1;
 }
 
-} // End global namespace
+} } // End global namespace

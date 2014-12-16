@@ -7,10 +7,11 @@
 #include "base/Global.h"
 #include "volumes/kernel/GenericKernels.h"
 
-//namespace vecgeom_cuda { template <typename Backend, int N> class PlaneShell; }
+//namespace vecgeom::cuda { template <typename Backend, int N> class PlaneShell; }
 #include "backend/Backend.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * @brief Uses SoA layout to store arrays of N (plane) parameters,
@@ -321,6 +322,6 @@ public:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_SIDEPLANES_H_

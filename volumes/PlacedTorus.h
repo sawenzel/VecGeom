@@ -10,7 +10,12 @@
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TorusImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedTorus; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedTorus );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTorus : public VPlacedVolume {
 
@@ -84,18 +89,10 @@ public:
 #endif
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
 
 }; 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTORUS_H_
 

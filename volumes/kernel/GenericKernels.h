@@ -8,7 +8,8 @@
 #include "base/Transformation3D.h"
 #include "base/Vector3D.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template<bool tolerant, typename T>
 VECGEOM_CUDA_HEADER_BOTH
@@ -41,6 +42,7 @@ T MakeMinusTolerantSquare(T const &x, T const &xsq)
 {
   return (tolerant)? xsq-kTolerance*x : xsq;
 }
+
 
 template <bool treatSurfaceT, class Backend> struct TreatSurfaceTraits;
 template <class Backend> struct TreatSurfaceTraits<true, Backend> {
@@ -135,6 +137,9 @@ typename Backend::precision_v DistanceToLineSegmentSquared(
   return result;
 }
 
+} // End inline namespace
+
 } // End global namespace
+
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_

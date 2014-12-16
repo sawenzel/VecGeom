@@ -1,11 +1,13 @@
 #include "volumes/Rectangles.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
 
-#ifdef VECGEOM_STD_CXX11
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+
 Rectangles::Rectangles(int size)
     : fPlanes(size), fSides(size), fCorners{size, size} {}
-#endif
+
 
 Rectangles::~Rectangles() {}
 
@@ -20,4 +22,6 @@ std::ostream& operator<<(std::ostream &os, Rectangles const &rhs) {
   return os;
 }
 
-}
+} // End inline impl namespace
+
+} // End global namespace

@@ -13,7 +13,8 @@ class TGeoVolume;
 #include "TGeoNode.h"
 class TGeoMatrix;
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class LogicalVolume;
 class Transformation3D;
@@ -130,6 +131,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_MANAGEMENT_ROOTMANAGER_H_

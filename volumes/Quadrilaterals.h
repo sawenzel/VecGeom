@@ -17,7 +17,12 @@
 // Switches on/off explicit vectorization of algorithms using Vc
 #define VECGEOM_QUADRILATERALS_VC
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class Quadrilaterals; )
+VECGEOM_DEVICE_DECLARE_CONV( Quadrilaterals );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class Quadrilaterals {
 
@@ -32,30 +37,16 @@ public:
   typedef Planes Sides_t[4];
   typedef AOS3D<Precision> Corners_t[4];
 
-#ifdef VECGEOM_STD_CXX11
+  VECGEOM_CUDA_HEADER_BOTH
   Quadrilaterals(int size);
-#endif
-
-#ifdef VECGEOM_NVCC
-  // What a nice signature
-  __device__
-  Quadrilaterals(
-      Precision *planeA, Precision *planeB, Precision *planeC,
-      Precision *planeD, Precision *side0A, Precision *side0B,
-      Precision *side0C, Precision *side0D, Precision *side1A,
-      Precision *side1B, Precision *side1C, Precision *side1D,
-      Precision *side2A, Precision *side2B, Precision *side2C,
-      Precision *side2D, Precision *side3A, Precision *side3B,
-      Precision *side3C, Precision *side3D, AOS3D<Precision> const &corner0,
-      AOS3D<Precision> const &corner1, AOS3D<Precision> const &corner2,
-      AOS3D<Precision> const &corner3, int size);
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   ~Quadrilaterals();
 
+  VECGEOM_CUDA_HEADER_BOTH
   Quadrilaterals(Quadrilaterals const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   Quadrilaterals& operator=(Quadrilaterals const &other);
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -90,20 +81,20 @@ public:
   VECGEOM_INLINE
   Corners_t const& GetCorners() const;
 
-#ifdef VECGEOM_STD_CXX11
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
   /// \param corner2 Third corner in counterclockwise order.
   /// \param corner3 Fourth corner in counterclockwise order.
+  VECGEOM_CUDA_HEADER_BOTH
   void Set(
       int index,
       Vector3D<Precision> const &corner0,
       Vector3D<Precision> const &corner1,
       Vector3D<Precision> const &corner2,
       Vector3D<Precision> const &corner3);
-#endif
 
   /// Flips the sign of the normal and distance of the specified quadrilateral.
+  VECGEOM_CUDA_HEADER_BOTH
   void FlipSign(int index);
 
   template <class Backend>
@@ -148,14 +139,10 @@ public:
       int index,
       Vector3D<Precision> const &point) const;
 
-#ifdef VECGEOM_CUDA_INTERFACE
-  void CopyToGpu(void *gpuPtr) const;
-#endif
-
   VECGEOM_CUDA_HEADER_BOTH
   void Print() const;
 
-};
+}; // end of class declaration
 
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -529,6 +516,8 @@ Precision Quadrilaterals::ScalarDistanceSquared(
 }
 
 std::ostream& operator<<(std::ostream &os, Quadrilaterals const &quads);
+
+} // End inline namespace
 
 } // End global namespace
 

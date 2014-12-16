@@ -12,7 +12,8 @@
 #include "G4Para.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 
@@ -44,63 +45,12 @@ G4VSolid const* PlacedParallelepiped::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void PlacedParallelepiped_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedParallelepiped::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  PlacedParallelepiped_CopyToGpu(logical_volume, transformation, this->id(),
-                                 gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-
-VPlacedVolume* PlacedParallelepiped::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedParallelepiped>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
-
-__global__
-void PlacedParallelepiped_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleParallelepiped(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-}
-
-void PlacedParallelepiped_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedParallelepiped_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
-                                                id, gpu_ptr);
-}
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC( SpecializedParallelepiped )
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} // End global namespace

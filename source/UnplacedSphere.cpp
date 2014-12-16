@@ -17,7 +17,8 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -409,49 +410,36 @@ VPlacedVolume* UnplacedSphere::CreateSpecializedVolume(
 #endif
 
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedSphere_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision sphi,
-    const Precision dphi, const Precision stheta, const Precision dtheta,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedSphere::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedSphere_CopyToGpu(this->GetInnerRadius(), this->GetOuterRadius(), this->GetStartPhiAngle(),
-                                   this->GetDeltaPhiAngle(), this->GetStartThetaAngle(),this->GetDeltaThetaAngle(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedSphere::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedSphere>(in_gpu_ptr, GetInnerRadius(), GetOuterRadius(), GetStartPhiAngle(),
+                                        GetDeltaPhiAngle(), GetStartThetaAngle(),GetDeltaThetaAngle());
 }
 
-VUnplacedVolume* UnplacedSphere::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedSphere>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedSphere::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedSphere>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedSphere_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
-}
+template size_t DevicePtr<cuda::UnplacedSphere>::SizeOf();
+template void DevicePtr<cuda::UnplacedSphere>::Construct(
+    const Precision rmin, const Precision rmax, const Precision sphi,
+    const Precision dphi, const Precision stheta,const Precision dtheta) const;
 
-void UnplacedSphere_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedSphere_ConstructOnGpu<<<1, 1>>>(rmin,rmax,sphi,dphi,stheta,dtheta, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace
+

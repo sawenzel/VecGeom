@@ -18,6 +18,7 @@
 #include <memory>
 
 namespace vecgeom {
+   inline namespace cxx {
 
 ShapeDebugger::ShapeDebugger(VPlacedVolume const *volume)
   : fVolume(volume), fMaxMismatches(8), fShowCorrectResults(false) {}
@@ -422,4 +423,4 @@ void ShapeDebugger::CompareSafetyToROOT(
 
 #endif
 
-} // End namespace vecgeom
+} } // End namespace vecgeom

@@ -9,7 +9,8 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
 UnplacedParallelepiped::UnplacedParallelepiped(
@@ -117,52 +118,34 @@ VPlacedVolume* UnplacedParallelepiped::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedParallelepiped_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedParallelepiped::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedParallelepiped_CopyToGpu(GetX(), GetY(), GetZ(),
-                                   fAlpha, fTheta, fPhi, gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedParallelepiped>(in_gpu_ptr, GetX(), GetY(), GetZ(), fAlpha, fTheta, fPhi);
 }
 
-VUnplacedVolume* UnplacedParallelepiped::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedParallelepiped>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedParallelepiped::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedParallelepiped>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedParallelepiped_ConstructOnGpu(
+template size_t DevicePtr<cuda::UnplacedParallelepiped>::SizeOf();
+template void DevicePtr<cuda::UnplacedParallelepiped>::Construct(
     const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedParallelepiped(x, y, z, alpha, theta, phi);
-}
+    const Precision alpha, const Precision theta, const Precision phi) const;
 
-void UnplacedParallelepiped_CopyToGpu(
-    const Precision x, const Precision y, const Precision z,
-    const Precision alpha, const Precision theta, const Precision phi,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedParallelepiped_ConstructOnGpu<<<1, 1>>>(x, y, z, alpha, theta, phi,
-                                                  gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

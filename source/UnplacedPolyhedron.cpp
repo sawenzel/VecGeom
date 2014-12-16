@@ -9,9 +9,10 @@
 #include <cmath>
 #include <memory>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
-#ifdef VECGEOM_STD_CXX11
+
 
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount,
@@ -195,10 +196,9 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     }
 
   } // End loop over segments
+} // end constructor
 
-}
-
-#else // !VECGEOM_NVCC
+#ifdef VECGEOM_NVCC
 
 __device__
 UnplacedPolyhedron::UnplacedPolyhedron(
@@ -479,5 +479,7 @@ void UnplacedPolyhedron_CopyToGpu(VUnplacedVolume *gpuPtr, int sideCount,
 }
 
 #endif
+
+} // End impl namespace
 
 } // End namespace vecgeom

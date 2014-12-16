@@ -12,17 +12,21 @@
 #include "base/Global.h"
 #include "base/RNG.h"
 #include "volumes/PlacedBox.h"
-
+#include "volumes/LogicalVolume.h"
+#include "navigation/NavigationState.h"
+#include "management/GeoManager.h"
+#ifdef VECGEOM_ROOT
+#include "TGeoShape.h"
+#endif
 #include <cassert>
 
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace volumeUtilities {
-
-using namespace VECGEOM_NAMESPACE;
 
 VECGEOM_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point,
@@ -156,6 +160,9 @@ void FillBiasedDirections(LogicalVolume const &volume,
   delete placed;
 }
 
+// fills the volume with 3D points which are not contained in daughters
+// of volume
+// TODO: seems to be missing a check that the generated points are actually within volume
 template<typename TrackContainer>
 VECGEOM_INLINE
 void FillUncontainedPoints(VPlacedVolume const &volume,
@@ -179,6 +186,7 @@ void FillUncontainedPoints(VPlacedVolume const &volume,
   }
 }
 
+// what is the bias??
 template<typename TrackContainer>
 VECGEOM_INLINE
 void FillContainedPoints(VPlacedVolume const &volume,
@@ -278,7 +286,107 @@ void FillRandomPoints(VPlacedVolume const &volume,
   }
 }
 
+
+// a function to generate points and directions in the global reference frame
+// under the constraint that the positions have to be within a given logical volume
+// ( and not within daughters of that logical volume )
+//
+// the function also returns the generated points in local reference frame of the logical volume
+//
+// fraction: is the fraction with which the directions should hit a daughtervolume
+// np: number of particles
+//
+// TrackContainer can either be a SOA3D or AOS3D
+#include <iostream>
+
+template <typename TrackContainer>
+inline
+void FillGlobalPointsAndDirectionsForLogicalVolume(
+        LogicalVolume const * lvol,
+        TrackContainer  & localpoints,
+        TrackContainer  & globalpoints,
+        TrackContainer  & directions,
+        Precision fraction,
+        int np ){
+
+    // we need to generate a list of all the paths ( or placements ) which reference
+    // the logical volume as their deepest node
+
+    std::list<NavigationState *> allpaths;
+    GeoManager::Instance().getAllPathForLogicalVolume( lvol, allpaths );
+
+    if(allpaths.size() > 0){
+        // get one representative of such a logical volume
+        VPlacedVolume const * pvol = allpaths.front()->Top();
+
+        // generate points which are in lvol but not in its daughters
+        FillUncontainedPoints( *pvol, localpoints ); 
+
+        // now have the points in the local reference frame of the logical volume
+        FillBiasedDirections( *lvol, localpoints, fraction, directions );
+
+        // transform points to global frame
+        int placedcount=0;
+        while( placedcount < np )
+        {
+            std::list<NavigationState *>::iterator iter = allpaths.begin();
+            while( placedcount < np && iter!=allpaths.end() )
+            {
+                // this is matrix linking local and global reference frame
+                Transformation3D m = (*iter)->TopMatrix();
+
+                globalpoints.set(placedcount, m.InverseTransform(localpoints[placedcount]));
+                directions.set(placedcount, m.InverseTransformDirection(directions[placedcount]));
+
+                placedcount++;
+                iter++;
+            }
+        }
+    }
+    else{
+        // an error message
+
+    }
+}
+
+
+// same as above; logical volume is given by name
+template <typename TrackContainer>
+inline
+void FillGlobalPointsAndDirectionsForLogicalVolume(
+        std::string const & name,
+        TrackContainer & localpoints,
+        TrackContainer & globalpoints,
+        TrackContainer & directions,
+        Precision fraction,
+        int np ){
+
+    LogicalVolume const * vol = GeoManager::Instance().FindLogicalVolume( name.c_str() );
+    if( vol != NULL )
+    FillGlobalPointsAndDirectionsForLogicalVolume( vol, localpoints, globalpoints, directions, fraction, np );
+}
+
+
+// same as above; logical volume is given by id
+template <typename TrackContainer>
+inline
+void FillGlobalPointsAndDirectionsForLogicalVolume(
+        int id,
+        TrackContainer & localpoints,
+        TrackContainer & globalpoints,
+        TrackContainer & directions,
+        Precision fraction,
+        int np ){
+
+    LogicalVolume const * vol = GeoManager::Instance().FindLogicalVolume( id );
+    if( vol != NULL )
+    FillGlobalPointsAndDirectionsForLogicalVolume( vol, localpoints, globalpoints, directions, fraction, np );
+}
+
+
+
+
 } // end namespace volumeUtilities
-} // end global namespace
+} } // end global namespace
 
 #endif /* VOLUME_UTILITIES_H_ */

@@ -14,7 +14,12 @@
 #include <cmath>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedOrb; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedOrb );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedOrb : public VUnplacedVolume, public AlignedBase {
 
@@ -137,8 +142,9 @@ public:
   #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedOrb>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
   
   
@@ -174,6 +180,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDORB_H_

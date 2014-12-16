@@ -8,7 +8,12 @@
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedTrd; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedTrd );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedTrd : public VUnplacedVolume, public AlignedBase {
 private:
@@ -151,8 +156,9 @@ fFy(0)
                                VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedTrd>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 private:
@@ -170,6 +176,6 @@ private:
       VPlacedVolume *const placement = NULL) const;
 };
 
-} // end global namespace
+} } // end global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTRD_H_

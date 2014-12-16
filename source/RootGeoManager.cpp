@@ -17,6 +17,7 @@
 #include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
+#include "volumes/UnplacedBooleanVolume.h"
 #include "volumes/UnplacedTorus.h"
 #include "volumes/UnplacedTrapezoid.h"
 
@@ -33,6 +34,8 @@
 #include "TGeoPara.h"
 #include "TGeoParaboloid.h"
 #include "TGeoPgon.h"
+#include "TGeoCompositeShape.h"
+#include "TGeoBoolNode.h"
 #include "TGeoTorus.h"
 #include "TGeoArb8.h"
 
@@ -195,6 +198,7 @@ TGeoVolume* RootGeoManager::Convert(VPlacedVolume const *const placed_volume,
 
 
 VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
+
   if (fUnplacedVolumeMap.Contains(shape))
       return const_cast<VUnplacedVolume*>(fUnplacedVolumeMap[shape]);
 
@@ -309,6 +313,40 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
                   p->GetPhi1()*kDegToRad, (p->GetPhi2() - p->GetPhi1())*kDegToRad,
                   p->GetTheta1(), (p->GetTheta2()-p->GetTheta1())*kDegToRad);
       }
+  }
+
+  if (shape->IsA() == TGeoCompositeShape::Class()) {
+    TGeoCompositeShape const *const compshape
+         = static_cast<TGeoCompositeShape const*>(shape);
+    TGeoBoolNode const *const boolnode = compshape->GetBoolNode();
+
+     // need the matrix;
+     Transformation3D const* lefttrans    = Convert( boolnode->GetLeftMatrix() );
+     Transformation3D const* righttrans   = Convert( boolnode->GetRightMatrix() );
+     // unplaced shapes
+     VUnplacedVolume const* leftunplaced  = Convert( boolnode->GetLeftShape() );
+     VUnplacedVolume const* rightunplaced = Convert( boolnode->GetRightShape() );
+
+     // the problem is that I can only place logical volumes
+     VPlacedVolume *const leftplaced =
+          (new LogicalVolume("", leftunplaced ))->Place(lefttrans);
+
+     VPlacedVolume *const rightplaced =
+          (new LogicalVolume("", rightunplaced ))->Place(righttrans);
+
+     // now it depends on concrete type
+     if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoSubtraction ){
+         unplaced_volume = new UnplacedBooleanVolume( kSubtraction,
+             leftplaced, rightplaced);
+     }
+     else if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoIntersection ){
+         unplaced_volume = new UnplacedBooleanVolume( kIntersection,
+                      leftplaced, rightplaced);
+     }
+     else if( boolnode->GetBooleanOperator() == TGeoBoolNode::kGeoUnion ){
+         unplaced_volume = new UnplacedBooleanVolume( kUnion,
+                      leftplaced, rightplaced);
+     }
   }
 
   // THE TORUS

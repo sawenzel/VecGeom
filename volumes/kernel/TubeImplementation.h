@@ -12,7 +12,13 @@
 #include "volumes/UnplacedTube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(TubeImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric, typename)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 namespace TubeUtilities {
 
@@ -299,8 +305,20 @@ void PointOnTubeSurface(
 
 }
 
+class PlacedTube;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 struct TubeImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+  using PlacedShape_t = PlacedTube;
+  using UnplacedShape_t = UnplacedTube;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -486,7 +504,7 @@ struct TubeImplementation {
       distance = dist_rmax;
       return;
     }
-
+    
     /*
      * rmin
      * If the particle were to hit rmin, it would hit
@@ -732,9 +750,8 @@ struct TubeImplementation {
     }
   }
 
-};
+}; // End of TubeUtilties
 
-}
-
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_

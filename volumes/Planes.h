@@ -12,11 +12,16 @@
 #include "base/SOA3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
-#include <ostream>
+//#include <ostream>
 
 // #define VECGEOM_PLANES_VC
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class Planes; )
+VECGEOM_DEVICE_DECLARE_CONV( Planes );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class Planes : public AlignedBase {
 
@@ -307,6 +312,8 @@ typename Backend::precision_v Planes::Distance(
   }
   return bestDistance;
 }
+
+} // End inline namespace
 
 } // End global namespace
 

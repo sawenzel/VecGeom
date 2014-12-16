@@ -9,8 +9,12 @@
 #include "volumes/UnplacedTube.h"
 #include "volumes/Wedge.h"
 
+namespace vecgeom {
 
-namespace VECGEOM_NAMESPACE {
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedTorus; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedTorus );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedTorus : public VUnplacedVolume, public AlignedBase {
 
@@ -167,8 +171,9 @@ public:
                                VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedTorus>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 private:
@@ -187,10 +192,6 @@ private:
 
 };
 
-} // end global namespace
+} } // end global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTORUS_H_
-
-
-
-

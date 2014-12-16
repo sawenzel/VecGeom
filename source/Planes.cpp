@@ -1,7 +1,8 @@
 #include "volumes/Planes.h"
 #include "backend/Backend.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 Planes::Planes(int size) : fNormals(size), fDistances(size) {}
 
@@ -62,5 +63,7 @@ std::ostream& operator<<(std::ostream &os, Planes const &planes) {
   }
   return os;
 }
+
+} // End inline implementation namespace
 
 } // End global namespace

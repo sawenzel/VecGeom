@@ -9,6 +9,11 @@
 #include "base/Vector3D.h"
 #include "backend/Backend.h"
 
+#include "backend/Backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Interface.h"
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -17,7 +22,17 @@
 class TGeoMatrix;
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class Transformation3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+#ifndef VECGEOM_NVCC
+   } namespace cuda { class Transformation3D; }
+   inline namespace VECGEOM_IMPL_NAMESPACE {
+   //class vecgeom::cuda::Transformation3D;
+#endif
 
 class Transformation3D {
 
@@ -297,8 +312,9 @@ public:
   // Utility and CUDA
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  Transformation3D* CopyToGpu() const;
-  Transformation3D* CopyToGpu(Transformation3D *const gpu_ptr) const;
+  size_t DeviceSizeOf() const { return DevicePtr<cuda::Transformation3D>::SizeOf(); }
+  DevicePtr<cuda::Transformation3D> CopyToGpu() const;
+  DevicePtr<cuda::Transformation3D> CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const;
 #endif
 
 
@@ -778,6 +794,6 @@ Vector3D<InputType> Transformation3D::TransformDirection(
 
 std::ostream& operator<<(std::ostream& os, Transformation3D const &trans);
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_TRANSFORMATION3D_H_
