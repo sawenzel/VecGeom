@@ -72,7 +72,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   phiDelta *= kDegToRad;
   if (phiDelta > kTwoPi) phiDelta = kTwoPi;
   Precision sidePhi = phiDelta / sideCount;
-  std::unique_ptr<Precision[]> vertixPhi(new Precision[sideCount+1]);
+  vecgeom::unique_ptr<Precision[]> vertixPhi(new Precision[sideCount+1]);
   for (int i = 0, iMax = sideCount+1; i < iMax; ++i) {
     vertixPhi[i] = NormalizeAngle<kScalar>(phiStart + i*sidePhi);
     Vector3D<Precision> cornerVector =
@@ -116,8 +116,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Precompute all vertices to ensure that there are no numerical cracks in the
   // surface.
   const int nVertices = zPlaneCount*(sideCount+1);
-  std::unique_ptr<Vec_t[]> outerVertices(new Vec_t[nVertices]);
-  std::unique_ptr<Vec_t[]> innerVertices(new Vec_t[nVertices]);
+  vecgeom::unique_ptr<Vec_t[]> outerVertices(new Vec_t[nVertices]);
+  vecgeom::unique_ptr<Vec_t[]> innerVertices(new Vec_t[nVertices]);
   for (int i = 0; i < zPlaneCount; ++i) {
     for (int j = 0, jMax = sideCount+fHasPhiCutout; j < jMax; ++j) {
       int index = VertixIndex(i, j);
