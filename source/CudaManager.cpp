@@ -180,6 +180,34 @@ void CudaManager::CleanGpu() {
 
 }
 
+template <typename Coll>
+bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title,
+                                             const Coll &data
+                                             )
+{
+   // NOTE: Code need to be enhanced to propage the error correctly.
+
+   if (verbose_ > 2) std::cout << "Allocating " << verbose_title << "...";
+
+   size_t totalSize = 0;
+   for (auto i : data) {
+      totalSize += i->DeviceSizeOf();
+   }
+
+   GpuAddress gpu_address;
+   gpu_address.Allocate(totalSize);
+   allocated_memory_.push_back(gpu_address);
+
+   for (auto i : data) {
+      memory_map[ToCpuAddress(i)] = gpu_address;
+      gpu_address += i->DeviceSizeOf();
+   }
+
+   if (verbose_ > 2) std::cout << " OK\n";
+
+   return true;
+}
+
 void CudaManager::AllocateGeometry() {
 
   if (verbose_ > 1) std::cout << "Allocating geometry on GPU...";
@@ -200,76 +228,11 @@ void CudaManager::AllocateGeometry() {
     if (verbose_ > 2) std::cout << " OK\n";
   }
 
-  {
-    if (verbose_ > 2) std::cout << "Allocating unplaced volumes...";
+  AllocateCollectionOnCoproc("unplaced volumes", unplaced_volumes_);
 
-    size_t totalUnplacedSize = 0;
-    for (std::set<VUnplacedVolume const*>::const_iterator i =
-            unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
-       totalUnplacedSize += (*i)->DeviceSizeOf();
-    }
+  AllocateCollectionOnCoproc("placed volumes", placed_volumes_);
 
-    GpuAddress gpu_address;
-    gpu_address.Allocate(totalUnplacedSize);
-    allocated_memory_.push_back(gpu_address);
-
-    for (std::set<VUnplacedVolume const*>::const_iterator i =
-         unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
-
-      memory_map[ToCpuAddress(*i)] = gpu_address;
-      gpu_address += (*i)->DeviceSizeOf();
-    }
-
-    if (verbose_ > 2) std::cout << " OK\n";
-  }
-
-  {
-    if (verbose_ > 2) std::cout << "Allocating placed volumes...";
-
-    size_t totalPlacedSize = 0;
-    for (std::set<VPlacedVolume const*>::const_iterator i =
-         placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
-
-       totalPlacedSize += (*i)->DeviceSizeOf();
-    }
-
-    GpuAddress gpu_address;
-    gpu_address.Allocate(totalPlacedSize);
-    allocated_memory_.push_back(gpu_address);
-
-    for (std::set<VPlacedVolume const*>::const_iterator i =
-         placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
-
-      memory_map[ToCpuAddress(*i)] = gpu_address;
-      gpu_address += (*i)->DeviceSizeOf();
-    }
-
-    if (verbose_ > 2) std::cout << " OK\n";
-  }
-
-  {
-    if (verbose_ > 2) std::cout << "Allocating transformations...";
-
-    size_t totalTransformationSize = 0;
-    for (std::set<Transformation3D const*>::const_iterator i =
-         transformations_.begin(); i != transformations_.end(); ++i) {
-
-       totalTransformationSize += (*i)->DeviceSizeOf();
-    }
-
-    GpuAddress gpu_address;
-    gpu_address.Allocate(totalTransformationSize);
-    allocated_memory_.push_back(gpu_address);
-
-    for (std::set<Transformation3D const*>::const_iterator i =
-         transformations_.begin(); i != transformations_.end(); ++i) {
-
-      memory_map[ToCpuAddress(*i)] = gpu_address;
-      gpu_address += (*i)->DeviceSizeOf();
-    }
-
-    if (verbose_ > 2) std::cout << " OK\n";
-  }
+  AllocateCollectionOnCoproc("transformations", transformations_);
 
   {
     if (verbose_ > 2) std::cout << "Allocating daughter lists...";

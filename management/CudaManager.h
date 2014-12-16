@@ -174,9 +174,16 @@ private:
    * the memory table.
    */
   template <typename Type>
-  CpuAddress ToCpuAddress(Type const *const ptr) const {
+  static CpuAddress ToCpuAddress(Type const *const ptr) {
     return static_cast<CpuAddress>(ptr);
   }
+
+  /**
+   * Helper routine allocate GPU memory for a collection of object
+   */
+  template <typename Coll>
+  bool AllocateCollectionOnCoproc(const char *verbose_title,
+                                  const Coll &data);
 
   // template <typename TrackContainer>
   // void LocatePointsTemplate(TrackContainer const &container, const int n,
