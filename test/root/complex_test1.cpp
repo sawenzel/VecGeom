@@ -466,13 +466,13 @@ void test_aos3d()
    assert(container1.size() == 0);
    container1.push_back( Vector3D<Precision>(1,0,1));
    assert(container1.size() == 1);
-   std::cerr << "test soa3d passed" << std::endl;
+   std::cerr << "test10: soa3d passed" << std::endl;
 
    AOS3D<Precision> container2(1024);
    assert(container2.size() == 0);
    container2.push_back( Vector3D<Precision>(1,0,1));
    assert(container2.size() == 1);
-   std::cerr << "test aos3d passed" << std::endl;
+   std::cerr << "test10: aos3d passed" << std::endl;
 }
 
 // tests the generation of global points in certain logical reference volumes

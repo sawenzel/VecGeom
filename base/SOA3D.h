@@ -178,7 +178,7 @@ SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>::SOA3D(size_t sz)
-    : fAllocated(true), fSize(sz), fCapacity(sz),
+    : fAllocated(true), fSize(0), fCapacity(sz),
       fX(NULL), fY(NULL), fZ(NULL) {
   Allocate();
 }
