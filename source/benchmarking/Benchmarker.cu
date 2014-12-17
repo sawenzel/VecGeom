@@ -127,6 +127,7 @@ void Benchmarker::RunInsideCuda(
   Precision elapsedContains = timer.Stop();
   
   cxx::CopyFromGpu(containsGpu, contains, fPointCount*sizeof(bool));
+
   cxx::FreeFromGpu(containsGpu);
   
 
@@ -141,8 +142,7 @@ void Benchmarker::RunInsideCuda(
     }
   }
   Precision elapsedInside = timer.Stop();
-
-
+  
   cxx::CopyFromGpu(insideGpu, inside, fPointCount*sizeof(Inside_t));
 
   cxx::FreeFromGpu(insideGpu);

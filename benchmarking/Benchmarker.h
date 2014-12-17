@@ -24,6 +24,7 @@
 #endif
 
 #include <list>
+#include <vector>
 
 namespace vecgeom {
 
@@ -61,6 +62,10 @@ private:
 
   // tolerance for comparisons
   Precision fTolerance;
+
+  // containers to store problematic points
+  // this can be filled during evaluation
+  std::vector< Vector3D<Precision> > fProblematicContainPoints;
 
 public:
 
@@ -161,6 +166,10 @@ public:
   ///         internal history.
   std::list<BenchmarkResult> PopResults();
 
+  std::vector<Vector3D<Precision> > const & GetProblematicContainPoints() const {
+      return fProblematicContainPoints;
+  }
+
 private:
     
   void GenerateVolumePointers(VPlacedVolume_t const vol);
@@ -169,7 +178,6 @@ private:
                                           const EBenchmarkedMethod method,
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
-
   void RunInsideSpecialized(bool *contains, Inside_t *inside);
   void RunToInSpecialized(Precision *distances,
                           Precision *safeties);

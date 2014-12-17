@@ -19,8 +19,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
     void UnplacedCone::Print() const {
      printf("UnplacedCone {rmin1 %.2f, rmax1 %.2f, rmin2 %.2f, "
-          "rmax2 %.2f, phistart %.2f, deltaphi %.2f}",
-             fRmin1, fRmax2, fRmin2, fRmax2, fSPhi, fDPhi);
+          "rmax2 %.2f, dz %.2f, phistart %.2f, deltaphi %.2f}",
+             fRmin1, fRmax1, fRmin2, fRmax2, fDz, fSPhi, fDPhi);
     }
 
     void UnplacedCone::Print(std::ostream &os) const {

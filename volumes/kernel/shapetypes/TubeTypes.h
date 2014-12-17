@@ -13,8 +13,6 @@
 namespace vecgeom {
 
 VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,UniversalTube,UniversalTube)
-//VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,HollowTube,HollowTube)
-//VECGEOM_DEVICE_DECLARE_NS_CONV(TubeTypes,NonHollowTube,NonHollowTube)
 
 #ifndef VECGEOM_NO_SPECIALIZATION
 
@@ -43,6 +41,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE { namespace TubeTypes {
 // A tube that encompasses all cases - not specialized and
 // will do extra checks at runtime
 DEFINE_TUBE_TYPE(UniversalTube);
+
 
 //#ifndef VECGEOM_NO_SPECIALIZATION
 

@@ -333,9 +333,6 @@ public:
   VECGEOM_INLINE
   VecType& FixZeroes() {
     for (int i = 0; i < 3; ++i) {
-
-//      VECGEOM_NAMESPACE::MaskedAssign(
-//          VECGEOM_NAMESPACE::Abs(vec[i]) < kTolerance, 0., &vec[i]);
       vecgeom::MaskedAssign(vecgeom::Abs(vec[i]) < kTolerance, 0., &vec[i]);
     }
     return *this;

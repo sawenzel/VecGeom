@@ -407,6 +407,9 @@ set(SRC_CPP_RELATIVE
 
   source/UnplacedBooleanVolume.cpp
   source/PlacedBooleanVolume.cpp
+
+  source/UnplacedPolycone.cpp
+  source/PlacedPolycone.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -509,6 +512,7 @@ set(TEST_EXECUTABLES_CORE
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestVecGeomPolycone.cpp
 )
 set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
@@ -539,6 +543,7 @@ set(TEST_EXECUTABLES_USOLIDS
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
+    
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -562,6 +567,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/PolyconeBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
@@ -572,6 +578,7 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testCone.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

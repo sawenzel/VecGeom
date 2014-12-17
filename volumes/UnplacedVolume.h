@@ -124,6 +124,7 @@ private:
 
 };
 
+
 std::ostream& operator<<(std::ostream &os, VUnplacedVolume const &vol);
 
 } // End inline namespace

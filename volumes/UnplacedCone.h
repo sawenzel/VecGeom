@@ -104,8 +104,10 @@ Precision fSinEPhi;
   VECGEOM_CUDA_HEADER_BOTH
   // should be implemented in source file
   UnplacedCone(Precision rmin1,
-          Precision rmax1, Precision rmin2, Precision rmax2,
-          Precision dz, Precision phimin, Precision phimax) :
+               Precision rmax1,
+               Precision rmin2,
+               Precision rmax2,
+               Precision dz, Precision phimin, Precision phimax) :
         fRmin1(rmin1),
         fRmax1(rmax1),
         fRmin2(rmin2),
@@ -217,53 +219,53 @@ Precision fSinEPhi;
     }
 
     // public interfaces
-   	VECGEOM_CUDA_HEADER_BOTH
- Precision GetRmin1() const {return fRmin1;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
+    Precision GetRmin1() const {return fRmin1;}
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetRmax1() const {return fRmax1;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetRmin2() const {return fRmin2;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetRmax2() const {return fRmax2;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetDz() const {return fDz;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetSPhi() const {return fSPhi;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetDPhi() const {return fDPhi;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision dphi() const {return fDPhi;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetInnerSlope() const {return fInnerSlope;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetOuterSlope() const {return fOuterSlope;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetInnerOffset() const {return fInnerOffset;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetOuterOffset() const {return fOuterOffset;}
     // these values could be cached
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetInnerSlopeSquare() const {return fInnerSlope*fInnerSlope;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetOuterSlopeSquare() const {return fOuterSlope*fOuterSlope;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetInnerOffsetSquare() const {return fInnerOffset*fInnerOffset;}
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision GetOuterOffsetSquare() const {return fOuterOffset*fOuterOffset;}
 
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision alongPhi1x() const { return fAlongPhi1x; }
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision alongPhi1y() const { return fAlongPhi1y; }
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision alongPhi2x() const { return fAlongPhi2x; }
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision alongPhi2y() const { return fAlongPhi2y; }
 
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     bool IsFullPhi() const { return fDPhi == kTwoPi; }
 
-	VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const {
         return (2.*fDz* kPi/3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
                 fRmin1*fRmin1-fRmin2*fRmin2-fRmin1*fRmin2);

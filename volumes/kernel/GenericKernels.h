@@ -11,6 +11,15 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+template <class Backend>
+struct GenericKernels {
+
+  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::int_v Int_t;
+  typedef typename Backend::bool_v Bool_t;
+
+}; // End struct GenericKernels
+
 template<bool tolerant, typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
@@ -140,6 +149,7 @@ typename Backend::precision_v DistanceToLineSegmentSquared(
 } // End inline namespace
 
 } // End global namespace
+
 
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_
