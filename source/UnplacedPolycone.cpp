@@ -314,14 +314,14 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
         std::vector<Precision> rmin, z, rmax;
         ReconstructSectionArrays(z,rmin,rmax);
 
-	// somehow this does not work:
-	//        Precision *z_gpu_ptr = AllocateOnGpu<Precision>( (z.size() + rmin.size() + rmax.size())*sizeof(Precision) );
-	//        Precision *rmin_gpu_ptr = z_gpu_ptr + sizeof(Precision)*z.size();
-	//        Precision *rmax_gpu_ptr = rmin_gpu_ptr + sizeof(Precision)*rmin.size();
+    // somehow this does not work:
+    //        Precision *z_gpu_ptr = AllocateOnGpu<Precision>( (z.size() + rmin.size() + rmax.size())*sizeof(Precision) );
+    //        Precision *rmin_gpu_ptr = z_gpu_ptr + sizeof(Precision)*z.size();
+    //        Precision *rmax_gpu_ptr = rmin_gpu_ptr + sizeof(Precision)*rmin.size();
 
-	Precision *z_gpu_ptr = AllocateOnGpu<Precision>( z.size()*sizeof(Precision) );
-	Precision *rmin_gpu_ptr = AllocateOnGpu<Precision>( rmin.size()*sizeof(Precision) );
-	Precision *rmax_gpu_ptr = AllocateOnGpu<Precision>( rmax.size()*sizeof(Precision) );
+    Precision *z_gpu_ptr = AllocateOnGpu<Precision>( z.size()*sizeof(Precision) );
+    Precision *rmin_gpu_ptr = AllocateOnGpu<Precision>( rmin.size()*sizeof(Precision) );
+    Precision *rmax_gpu_ptr = AllocateOnGpu<Precision>( rmax.size()*sizeof(Precision) );
 
         vecgeom::CopyToGpu(&z[0], z_gpu_ptr, sizeof(Precision)*z.size());
         vecgeom::CopyToGpu(&rmin[0], rmin_gpu_ptr, sizeof(Precision)*rmin.size());
@@ -343,7 +343,7 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
 
 #ifndef VECGEOM_NVCC
 
-	 //#ifdef VECGEOM_USOLIDS
+     //#ifdef VECGEOM_USOLIDS
 /////////////////////////////////////////////////////////////////////////
 //
 // GetPointOnSurface
@@ -388,7 +388,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnCone(Precision fRmin1, Precision
   Afive  = fDz * (fRmax1 - fRmin1 + fRmax2 - fRmin2);
   totArea = Aone + Atwo + 2.*Afive;
 
-	 phi  = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+     phi  = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
   cosu = std::cos(phi);
   sinu = std::sin(phi);
 
@@ -434,7 +434,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnCone(Precision fRmin1, Precision
     rmin   = fRmin2 - ((zRand - fDz) / (2.*fDz)) * (fRmin1 - fRmin2);
     rmax   = fRmax2 - ((zRand - fDz) / (2.*fDz)) * (fRmax1 - fRmax2);
     rRand1 = std::sqrt(RNG::Instance().uniform(0.,1.)  * (rmax*rmax - rmin*rmin) +rmin*rmin);
-	 point  = Vector3D<Precision>(rRand1 * std::cos(GetStartPhi()),
+     point  = Vector3D<Precision>(rRand1 * std::cos(GetStartPhi()),
     rRand1 * std::sin(GetStartPhi()), zRand);
   }
   else
@@ -443,7 +443,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnCone(Precision fRmin1, Precision
     rmin   = fRmin2 - ((zRand - fDz) / (2.*fDz)) * (fRmin1 - fRmin2);
     rmax   = fRmax2 - ((zRand - fDz) / (2.*fDz)) * (fRmax1 - fRmax2);
     rRand1 = std::sqrt(RNG::Instance().uniform(0.,1.)  * (rmax*rmax - rmin*rmin) + rmin*rmin);
-	 point  = Vector3D<Precision>(rRand1 * std::cos(GetEndPhi()),
+     point  = Vector3D<Precision>(rRand1 * std::cos(GetEndPhi()),
     rRand1 * std::sin(GetEndPhi()), zRand);
 
   }
@@ -471,12 +471,12 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnTubs(Precision fRMin, Precision 
   aTwo = 2.*fDz * fDPhi * fRMin;
   aFou = 2.*fDz * (fRMax - fRMin);
   totArea = aOne + aTwo + 2.*aFou;
-	 phi    = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+     phi    = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
   cosphi = std::cos(phi);
   sinphi = std::sin(phi);
   rRand  = fRMin + (fRMax - fRMin) * std::sqrt(RNG::Instance().uniform(0.,1.) );
 
-	 if (GetDeltaPhi() >= 2 * kPi)
+     if (GetDeltaPhi() >= 2 * kPi)
     aFou = 0;
 
   chose  = RNG::Instance().uniform(0., aOne + aTwo + 2.*aFou);
@@ -521,7 +521,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnRing(Precision fRMin1, Precision
                                    Precision zOne) const
 {
   Precision xRand, yRand, phi, cosphi, sinphi, rRand1, rRand2, A1, Atot, rCh;
-	 phi    = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
+     phi    = RNG::Instance().uniform(GetStartPhi(), GetEndPhi());
   cosphi = std::cos(phi);
   sinphi = std::sin(phi);
 
@@ -682,13 +682,13 @@ bool UnplacedPolycone::Normal(Vector3D<Precision> const& point, Vector3D<Precisi
     
      if(index < 0)
       {valid = true;
-	 if(index == -1) norm = Vector3D<Precision>(0.,0.,-1.);
-	 if(index == -2)  norm  = Vector3D<Precision>(0.,0.,1.);
+     if(index == -1) norm = Vector3D<Precision>(0.,0.,-1.);
+     if(index == -2)  norm  = Vector3D<Precision>(0.,0.,1.);
          return valid;
       } 
-      PolyconeSection const & sec = GetSection(index);
+     //PolyconeSection const & sec = GetSection(index);
       //TODO Normal to Section, need Normal from Cone impemenation
-	 valid = false;//sec.solid->Normal(point,norm);   
+     valid = false;//sec.solid->Normal(point,norm);
      return valid;
 
 }    
@@ -702,40 +702,40 @@ Precision UnplacedPolycone::SurfaceArea() const{
     Vector<Precision> areas;       // (numPlanes+1);
    
     PolyconeSection const & sec0 = GetSection(0);
-	 areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
-	 - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
+     areas.push_back(kPi * (sec0.solid->GetRmax1()*sec0.solid->GetRmax1()
+     - sec0.solid->GetRmin1()*sec0.solid->GetRmin1()));
 
     for (i = 0; i < numPlanes - 1; i++)
     {
      PolyconeSection const & sec = GetSection(i);
-	 Area = (sec.solid->GetRmin1() + sec.solid->GetRmin2())
-	         * std::sqrt((sec.solid->GetRmin1()- 
-		 sec.solid->GetRmin2())*(sec.solid->GetRmin1()- 
-		 sec.solid->GetRmin2())+ 
+     Area = (sec.solid->GetRmin1() + sec.solid->GetRmin2())
+             * std::sqrt((sec.solid->GetRmin1()-
+         sec.solid->GetRmin2())*(sec.solid->GetRmin1()-
+         sec.solid->GetRmin2())+
                  4.*sec.solid->GetDz()*sec.solid->GetDz());
 
       Area += (sec.solid->GetRmax1() + sec.solid->GetRmax2())
-	         * std::sqrt((sec.solid->GetRmax1()- 
-	         sec.solid->GetRmax2())*(sec.solid->GetRmax1()- 
-	         sec.solid->GetRmax2())+
+             * std::sqrt((sec.solid->GetRmax1()-
+             sec.solid->GetRmax2())*(sec.solid->GetRmax1()-
+             sec.solid->GetRmax2())+
                  4.*sec.solid->GetDz()*sec.solid->GetDz());
 
-	 Area *= 0.5 * GetDeltaPhi();
+     Area *= 0.5 * GetDeltaPhi();
 
-	 if (GetDeltaPhi() < kTwoPi)
+     if (GetDeltaPhi() < kTwoPi)
       {
-	 Area += std::fabs(2*sec.solid->GetDz()) *
-	   ( sec.solid->GetRmax1()
-	   + sec.solid->GetRmax2()
-	   - sec.solid->GetRmin1()
-	   - sec.solid->GetRmin2());
+     Area += std::fabs(2*sec.solid->GetDz()) *
+       ( sec.solid->GetRmax1()
+       + sec.solid->GetRmax2()
+       - sec.solid->GetRmin1()
+       - sec.solid->GetRmin2());
       }
       areas.push_back(Area);
       totArea += Area;
     }
      PolyconeSection const & secn = GetSection(numPlanes - 1);
      areas.push_back(kPi * kPi * (secn.solid->GetRmax2()*secn.solid->GetRmax2()
-	 - secn.solid->GetRmin2()*secn.solid->GetRmin2()));
+     - secn.solid->GetRmin2()*secn.solid->GetRmin2()));
 
      totArea += (areas[0] + areas[numPlanes]);
      fSurfaceArea = totArea;
@@ -758,7 +758,7 @@ Precision UnplacedPolycone::SurfaceArea() const{
      if(maxR > sec.solid->GetRmax2())  maxR = sec.solid->GetRmax2(); 
     }
     
-	 aMin.x() = -maxR;
+     aMin.x() = -maxR;
          aMin.y() = -maxR;
          aMin.z() = fZs[0];
          aMax.x() = maxR;
@@ -766,7 +766,7 @@ Precision UnplacedPolycone::SurfaceArea() const{
          aMax.z() = fZs[GetNSections()];
          
 }
-	 //#endif
+     //#endif
 
 } // End impl namespace
 

@@ -366,7 +366,7 @@ void test_safety()
    // statistical test  of navigation via comparison with ROOT navigation
       for(int i=0;i<1000000;++i)
       {
-	state->Clear();
+    state->Clear();
 
          //std::cerr << "START ITERATION " << i << "\n";
          double x = RNG::Instance().uniform(-10,10);
@@ -394,54 +394,54 @@ void test_NavigationStateToTGeoBranchArrayConversion()
 {
   NavigationState *state= NavigationState::MakeInstance(4);
   NavigationState *newstate = NavigationState::MakeInstance(4);
-	for(int i=0;i<100000;++i)
-	{
-	//std::cerr << "START ITERATION " << i << "\n";
-	  double x = RNG::Instance().uniform(-10,10);
-	  double y = RNG::Instance().uniform(-10,10);
-	  double z = RNG::Instance().uniform(-10,10);
+    for(int i=0;i<100000;++i)
+    {
+    //std::cerr << "START ITERATION " << i << "\n";
+      double x = RNG::Instance().uniform(-10,10);
+      double y = RNG::Instance().uniform(-10,10);
+      double z = RNG::Instance().uniform(-10,10);
 
-	  // VecGeom navigation
-	  Vector3D<Precision> p(x,y,z);
-	  Vector3D<Precision> d=sampleDir();
-	  
+      // VecGeom navigation
+      Vector3D<Precision> p(x,y,z);
+      Vector3D<Precision> d=sampleDir();
 
-	  SimpleNavigator nav;
-	  nav.LocatePoint( RootGeoManager::Instance().world(),
-			   p, *state, true );
-	  double step;
-	  nav.FindNextBoundaryAndStep( p, d, *state, *newstate, 1E30, step );
-	  
-	  TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
 
-	  // we are now testing conversion of states such that the ROOT navigator
-	  // does not need to be initialized via FindNode()...
-	  TGeoBranchArray * path = state->ToTGeoBranchArray();
-	  // path->Print();
-	  rootnav->ResetState();
-	  rootnav->SetCurrentPoint(x,y,z);
-	  rootnav->SetCurrentDirection(d[0],d[1],d[2]);
-	  path->UpdateNavigator( rootnav );
-	  rootnav->FindNextBoundaryAndStep( 1E30 );
-	  
-	  if( newstate->Top() != NULL )
-	    {
-	      if( rootnav->GetCurrentNode()
-		  != RootGeoManager::Instance().tgeonode( newstate->Top() ) )
-		{
-		  std::cerr << "ERROR ON ITERATION " << i << "\n";
-		  std::cerr << i << " " << d << "\n";
-		  std::cerr << i << " " << p << "\n";
-		  std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << "\n";
-		  std::cerr << rootnav->GetStep() << "\n";
-		  std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate->Top() ) << "\n";
-		  nav.InspectEnvironmentForPointAndDirection( p, d, *state );
-		}
-	    }
-	  assert( state->Top() != newstate->Top() );
-	  delete path;
-	}
-	std::cerr << "test  (init TGeoBranchArray from NavigationState) passed" << "\n";
+      SimpleNavigator nav;
+      nav.LocatePoint( RootGeoManager::Instance().world(),
+               p, *state, true );
+      double step;
+      nav.FindNextBoundaryAndStep( p, d, *state, *newstate, 1E30, step );
+
+      TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
+
+      // we are now testing conversion of states such that the ROOT navigator
+      // does not need to be initialized via FindNode()...
+      TGeoBranchArray * path = state->ToTGeoBranchArray();
+      // path->Print();
+      rootnav->ResetState();
+      rootnav->SetCurrentPoint(x,y,z);
+      rootnav->SetCurrentDirection(d[0],d[1],d[2]);
+      path->UpdateNavigator( rootnav );
+      rootnav->FindNextBoundaryAndStep( 1E30 );
+
+      if( newstate->Top() != NULL )
+        {
+          if( rootnav->GetCurrentNode()
+          != RootGeoManager::Instance().tgeonode( newstate->Top() ) )
+        {
+          std::cerr << "ERROR ON ITERATION " << i << "\n";
+          std::cerr << i << " " << d << "\n";
+          std::cerr << i << " " << p << "\n";
+          std::cerr << "ROOT GOES HERE: " << rootnav->GetCurrentNode()->GetName() << "\n";
+          std::cerr << rootnav->GetStep() << "\n";
+          std::cerr << "VECGEOM GOES HERE: " << RootGeoManager::Instance().GetName( newstate->Top() ) << "\n";
+          nav.InspectEnvironmentForPointAndDirection( p, d, *state );
+        }
+        }
+      assert( state->Top() != newstate->Top() );
+      delete path;
+    }
+    std::cerr << "test  (init TGeoBranchArray from NavigationState) passed" << "\n";
 }
 
 void test_geoapi()
@@ -496,9 +496,9 @@ void test_pointgenerationperlogicalvolume( )
         0.5, np
     );
 
-    assert( localpoints.size() == np );
-    assert( globalpoints.size() == np );
-    assert( directions.size() == np );
+    assert( (int)localpoints.size() == np );
+    assert( (int)globalpoints.size() == np );
+    assert( (int)directions.size() == np );
 
     // test that points are really inside b1l; test also that they have to be in two different placed volumes
     std::set<VPlacedVolume const *> pvolumeset;
@@ -508,7 +508,7 @@ void test_pointgenerationperlogicalvolume( )
     {
         state->Clear();
         nav.LocatePoint( GeoManager::Instance().GetWorld(), globalpoints[i], *state, true );
-	assert( std::strcmp( state->Top()->logical_volume()->GetLabel().c_str(), "b1l" ) == 0 );
+    assert( std::strcmp( state->Top()->logical_volume()->GetLabel().c_str(), "b1l" ) == 0 );
         pvolumeset.insert( state->Top() );
     }
     // b1l should be placed two times

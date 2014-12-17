@@ -37,7 +37,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector(Type *const vec, const int sz, const int maxsize)
-     : fData(vec), fSize(sz), fMemorySize(maxsize), fAllocated(true) {}
+     : fData(vec), fSize(sz), fMemorySize(maxsize), fAllocated(false) {}
 
   VECGEOM_CUDA_HEADER_BOTH
   ~Vector() {
@@ -59,7 +59,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void push_back(const Type item) {
     if (fSize == fMemorySize) {
-      assert(fAllocated && "Trying to push on a 'fixed' size vector (memory not allocated by Vector itself");
+      assert(fAllocated && "Trying to push on a 'fixed' size vector (memory not allocated by Vector itself)");
       fMemorySize = fMemorySize<<1;
       Type *fDataNew = new Type[fMemorySize];
       for (int i = 0; i < fSize; ++i) fDataNew[i] = fData[i];
@@ -103,7 +103,6 @@ public:
      gpu_ptr.Construct(gpu_ptr_arr, size());
      return gpu_ptr;
   }
-
 #endif
 
 private:

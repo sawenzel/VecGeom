@@ -214,8 +214,8 @@ int main()
         // we cannot compare pointers here; they are different before and after the reload
         // we need names
         if( states1[i]->GetCurrentLevel() != states2[i]->GetCurrentLevel()
-            || rootstates[i]->GetLevel() != states1[i]->GetCurrentLevel()-1
-            || rootstates[i]->GetLevel() != states2[i]->GetCurrentLevel()-1
+            || (int)rootstates[i]->GetLevel() != states1[i]->GetCurrentLevel()-1
+            || (int)rootstates[i]->GetLevel() != states2[i]->GetCurrentLevel()-1
           ){
             // I SUSPECT THAT THIS MIGHT HAPPEN WHEN THERE IS AN OVERLAP
             std::cerr << "### PROBLEM " << i << " s1 "

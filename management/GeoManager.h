@@ -104,8 +104,10 @@ private:
     int fMaxDepth;
 public:
     GetPathsForLogicalVolumeVisitor(
-            Container &c, LogicalVolume const * lv, int maxd) : fReferenceLogicalVolume(lv), fMaxDepth(maxd),
-            GeoVisitorWithAccessToPath<Container>(c) {}
+      Container &c, LogicalVolume const * lv, int maxd)
+      : GeoVisitorWithAccessToPath<Container>(c), fReferenceLogicalVolume(lv), fMaxDepth(maxd)
+    {}
+
     void apply( NavigationState * state, int /* level */ )
     {
         if( state->Top()->logical_volume() == fReferenceLogicalVolume ){

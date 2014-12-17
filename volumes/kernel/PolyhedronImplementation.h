@@ -45,7 +45,8 @@ struct PolyhedronImplementation {
 
    VECGEOM_CUDA_HEADER_BOTH
    static void PrintType() {
-        printf("SpecializedPolyhedron<trans = %i, rot = %i, innerR = %d, phicut = %d>", transC, rotC,innerRadiiT,phiCutoutT);
+     printf("SpecializedPolyhedron<trans = %i, rot = %i, innerR = %i, phicut = %i>", transC, rotC,
+            (int)innerRadiiT, (int)phiCutoutT);
    }
 
 
