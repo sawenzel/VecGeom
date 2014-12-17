@@ -342,7 +342,7 @@ void
 NavigationState::Push( VPlacedVolume const * v )
 {
 #ifdef DEBUG
-  assert( fCurrentLevel < fMaxlevel );
+   assert( fCurrentLevel < GetMaxlevel() );
 #endif
    fPath[fCurrentLevel++]=v;
 }
