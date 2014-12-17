@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
+#include "backend/scalar/Backend.h"
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -22,21 +23,24 @@ private:
 
 public:
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Array();
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Array(const unsigned size);
 
   VECGEOM_INLINE
   Array(Array<Type> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  ~Array();
+  Array(Type *data, int size);
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Array(Type *const data, const unsigned size);
+  ~Array();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -55,12 +59,12 @@ public:
   int size() const { return fSize; }
 
   VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
   void Allocate(const unsigned size);
 
   VECGEOM_INLINE
+  VECGEOM_CUDA_HEADER_BOTH
   void Deallocate();
-
-public:
 
   typedef Type* iterator;
   typedef Type const* const_iterator;
@@ -84,9 +88,11 @@ public:
 };
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 Array<Type>::Array() : fData(NULL), fSize(0), fAllocated(false) {}
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
 Array<Type>::Array(const unsigned size) : fData(NULL), fAllocated(true) {
   Allocate(size);
 }
@@ -98,11 +104,15 @@ Array<Type>::Array(Array<Type> const &other) : fData(NULL), fAllocated(true) {
 }
 
 template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Array<Type>::Array(Type *data, int size)
+    : fData(data), fSize(size), fAllocated(false) {}
+
+template <typename Type>
 Array<Type>::~Array() {
-#ifndef VECGEOM_CUDA
+#ifndef VECGEOM_NVCC_DEVICE
   if (fAllocated) _mm_free(fData);
-#else
-  if (fAllocated) delete fData;
 #endif
 }
 
@@ -114,7 +124,7 @@ void Array<Type>::Allocate(const unsigned size) {
   fData = static_cast<Type*>(_mm_malloc(fSize*sizeof(Type),
                                         kAlignmentBoundary));
 #else
-  fData = new Type[fSize];
+  fData = static_cast<Type*>(malloc(fSize*sizeof(Type))); // new Type[fSize];
 #endif
 }
 
@@ -124,7 +134,7 @@ void Array<Type>::Deallocate() {
 #ifndef VECGEOM_NVCC
     _mm_free(fData);
 #else
-    delete fData;
+    free(fData); // delete fData;
 #endif
   } else {
     fData = NULL;
@@ -135,16 +145,17 @@ void Array<Type>::Deallocate() {
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
-Array<Type>::Array(Type *const data, const unsigned size)
-    : fSize(size), fData(data), fAllocated(false) {}
-
-template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Array<Type>& Array<Type>::operator=(Array<Type> const &other) {
+#ifndef VECGEOM_NVCC_DEVICE
   Deallocate();
   Allocate(other.fSize);
   copy(other.fData, other.fData+other.fSize, fData);
+#else
+  fData = other.fData;
+  fSize = other.fSize;
+  fAllocated = false;
+#endif
   return *this;
 }
 

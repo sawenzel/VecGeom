@@ -21,18 +21,17 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef Vector3D<Precision> TrapCorners_t[8];
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
-typedef PlaneShell<4,Precision> Planes;
-#else
-struct TrapSidePlane {
-  Precision fA,fB,fC,fD;
-  // Plane equation: Ax+By+Cz+D=0, where
-  // normal unit vector nvec=(A,B,C)  and offset=D is the distance from origin to plane
-};
-#endif
+class UnplacedTrapezoid : public VUnplacedVolume, public AlignedBase {
 
-  class UnplacedTrapezoid : public VUnplacedVolume, public AlignedBase
-{
+#ifndef VECGEOM_PLANESHELL_DISABLE
+  typedef PlaneShell<4, Precision> Planes;
+#else
+  struct TrapSidePlane {
+    Precision fA,fB,fC,fD;
+    // Plane equation: Ax+By+Cz+D=0, where
+    // normal unit vector nvec=(A,B,C)  and offset=D is the distance from origin to plane
+  };
+#endif
 
 private:
 

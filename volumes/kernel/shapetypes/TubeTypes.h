@@ -42,7 +42,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE { namespace TubeTypes {
 // will do extra checks at runtime
 DEFINE_TUBE_TYPE(UniversalTube);
 
-#ifndef VECGEOM_NO_SPECIALIZATION
+
+//#ifndef VECGEOM_NO_SPECIALIZATION
 
 // A tube not having rmin or phi sector
 DEFINE_TUBE_TYPE(NonHollowTube);
@@ -62,7 +63,7 @@ DEFINE_TUBE_TYPE(HollowTubeWithBiggerThanPiSector);
 // A tube with rmin and a phi sector equal to pi
 DEFINE_TUBE_TYPE(HollowTubeWithPiSector);
 
-#endif // VECGEOM_NO_SPECIALIZATION
+//#endif // VECGEOM_NO_SPECIALIZATION
 
 #undef DEFINE_TUBE_TYPE
 

@@ -16,7 +16,11 @@ class TGeoMatrix;
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+class LogicalVolume;
+class Transformation3D;
 class UnplacedBox;
+class VPlacedVolume;
+class VUnplacedVolume;
 
 /// \brief Manager to handle interaction with ROOT geometry.
 /// \details Allows integration with ROOT geometries for compatability reasons.
@@ -69,7 +73,7 @@ public:
   char const *  GetName( VPlacedVolume const * p  ) const { return tgeonode(p)->GetName(); }
   void PrintNodeTable() const;
 
-  void set_verbose(const int verbose) { fVerbose = verbose; } 
+  void set_verbose(const int verbose) { fVerbose = verbose; }
 
   /**
    * Queries the global ROOT GeoManager for the top volume and recursively

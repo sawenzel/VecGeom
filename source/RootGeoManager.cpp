@@ -13,12 +13,14 @@
 #include "volumes/UnplacedRootVolume.h"
 #include "volumes/UnplacedParaboloid.h"
 #include "volumes/UnplacedParallelepiped.h"
+#include "volumes/UnplacedPolyhedron.h"
 #include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
 #include "volumes/UnplacedBooleanVolume.h"
 #include "volumes/UnplacedTorus.h"
 #include "volumes/UnplacedTrapezoid.h"
+#include "volumes/UnplacedPolycone.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -32,10 +34,12 @@
 #include "TGeoTrd2.h"
 #include "TGeoPara.h"
 #include "TGeoParaboloid.h"
+#include "TGeoPgon.h"
 #include "TGeoCompositeShape.h"
 #include "TGeoBoolNode.h"
 #include "TGeoTorus.h"
 #include "TGeoArb8.h"
+#include "TGeoPcon.h"
 
 #include <cassert>
 
@@ -262,6 +266,20 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
                p->GetAlpha(), p->GetTheta(), p->GetPhi());
   }
 
+  // Polyhedron/TGeoPgon
+  if (shape->IsA() == TGeoPgon::Class()) {
+    TGeoPgon const *pgon = static_cast<TGeoPgon const*>(shape);
+    unplaced_volume = new UnplacedPolyhedron(
+      pgon->GetPhi1(),   // phiStart
+      pgon->GetDphi(),   // phiEnd
+      pgon->GetNedges(), // sideCount
+      pgon->GetNz(),     // zPlaneCount
+      pgon->GetZ(),      // zPlanes
+      pgon->GetRmin(),   // rMin
+      pgon->GetRmax()    // rMax
+    );
+  }
+
   // TRD2
   if (shape->IsA() == TGeoTrd2::Class() ) {
          TGeoTrd2 const *const p = static_cast<TGeoTrd2 const*>(shape);
@@ -340,7 +358,21 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
             unplaced_volume = new UnplacedTorus(p->GetRmin(),p->GetRmax(),
                     p->GetR(), p->GetPhi1()*kDegToRad, p->GetDphi()*kDegToRad);
     }
-  // New volumes should be implemented here...
+
+
+  // THE POLYCONE
+   if (shape->IsA() == TGeoPcon::Class()) {
+        TGeoPcon const *const p = static_cast<TGeoPcon const*>(shape);
+        unplaced_volume = new UnplacedPolycone(
+            p->GetPhi1()*kDegToRad,
+            p->GetDphi()*kDegToRad,
+            p->GetNz(),
+            p->GetRmin(),
+            p->GetRmax(),
+            p->GetZ());
+   }
+
+   // New volumes should be implemented here...
   if (!unplaced_volume) {
     if (fVerbose) {
       printf("Unsupported shape for ROOT volume \"%s\". "
@@ -348,7 +380,7 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
     }
     unplaced_volume = new UnplacedRootVolume(shape);
   }
-  
+
   fUnplacedVolumeMap.Set(shape, unplaced_volume);
   return unplaced_volume;
 }

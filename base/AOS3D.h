@@ -38,10 +38,15 @@ public:
 
   AOS3D(size_t size);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  AOS3D();
+
   AOS3D(AOS3D<T> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   AOS3D& operator=(AOS3D<T> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   ~AOS3D();
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -55,11 +60,12 @@ public:
   VECGEOM_INLINE
   void resize(size_t newSize);
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void reserve(size_t newCapacity);
 
   VECGEOM_INLINE
-  void clear();  
+  void clear();
 
   // Element access methods. Can be used to manipulate content.
 
@@ -73,11 +79,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T* content();
+  Vector3D<T>* content();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T const* content() const;
+  Vector3D<T> const* content() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -125,6 +131,7 @@ public:
 
 private:
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Deallocate();
 
 };
@@ -135,10 +142,14 @@ AOS3D<T>::AOS3D(Vector3D<T> *content, size_t size)
     : fAllocated(false), fSize(size), fCapacity(fSize), fContent(content) {}
 
 template <typename T>
-AOS3D<T>::AOS3D(size_t capacity)
-    : fAllocated(true), fSize(0), fCapacity(capacity), fContent(NULL) {
+AOS3D<T>::AOS3D(size_t sz)
+    : fAllocated(true), fSize(sz), fCapacity(sz), fContent(NULL) {
   reserve(fCapacity);
 }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+AOS3D<T>::AOS3D() : fAllocated(false), fSize(0), fCapacity(0), fContent(NULL) {}
 
 template <typename T>
 AOS3D<T>::AOS3D(AOS3D<T> const &rhs)
@@ -148,7 +159,9 @@ AOS3D<T>::AOS3D(AOS3D<T> const &rhs)
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 AOS3D<T>& AOS3D<T>::operator=(AOS3D<T> const &rhs) {
+#ifndef VECGEOM_NVCC_DEVICE
   clear();
   if (rhs.fAllocated) {
     reserve(rhs.fCapacity);
@@ -159,6 +172,12 @@ AOS3D<T>& AOS3D<T>::operator=(AOS3D<T> const &rhs) {
     fCapacity = rhs.fCapacity;
   }
   fSize = rhs.fSize;
+#else
+  fAllocated = false;
+  fSize = rhs.fSize;
+  fCapacity = rhs.fCapacity;
+  fContent = rhs.fContent;
+#endif
   return *this;
 }
 
@@ -182,15 +201,11 @@ void AOS3D<T>::resize(size_t newSize) {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::reserve(size_t newCapacity) {
   fCapacity = newCapacity;
   Vec_t *contentNew;
-#ifndef VECGEOM_NVCC
-  contentNew = static_cast<Vec_t*>(_mm_malloc(sizeof(Vec_t)*fCapacity,
-                                   kAlignmentBoundary));
-#else
-  contentNew = new Vec_t[fCapacity];
-#endif
+  contentNew = AlignedAllocate<Vec_t>(fCapacity);
   fSize = (fSize > fCapacity) ? fCapacity : fSize;
   if (fContent) {
     copy(fContent, fContent+fSize, contentNew);
@@ -209,13 +224,10 @@ void AOS3D<T>::clear() {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::Deallocate() {
   if (fAllocated) {
-#ifndef VECGEOM_NVCC
-    _mm_free(fContent);
-#else
-    delete fContent;
-#endif
+    AlignedFree(fContent);
   }
 }
 
@@ -233,7 +245,11 @@ Vector3D<T>& AOS3D<T>::operator[](size_t index) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-T* AOS3D<T>::content() { return fContent; }
+Vector3D<T>* AOS3D<T>::content() { return fContent; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<T> const* AOS3D<T>::content() const { return fContent; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH

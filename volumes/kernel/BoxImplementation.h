@@ -401,7 +401,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   Bool_t hit;
 
   // x
-  next = safety[0] / Abs(direction[0] + kTiny);
+  next = safety[0] / Abs(direction[0] + kMinimum);
   coord1 = point[1] + next * direction[1];
   coord2 = point[2] + next * direction[2];
   hit = safety[0] >= MakeMinusTolerant<surfacetolerant>(0.) &&
@@ -413,7 +413,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   if ( IsFull(done) ) return;
 
   // y
-  next = safety[1] / Abs(direction[1] + kTiny);
+  next = safety[1] / Abs(direction[1] + kMinimum);
   coord1 = point[0] + next * direction[0];
   coord2 = point[2] + next * direction[2];
   hit = safety[1] >= MakeMinusTolerant<surfacetolerant>(0.) &&
@@ -425,7 +425,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   if ( IsFull(done) ) return;
 
   // z
-  next = safety[2] / Abs(direction[2] + kTiny);
+  next = safety[2] / Abs(direction[2] + kMinimum);
   coord1 = point[0] + next * direction[0];
   coord2 = point[1] + next * direction[1];
   hit = safety[2] >= MakeMinusTolerant<surfacetolerant>(0.) &&
@@ -467,9 +467,9 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
     //if (inside == Backend::kFalse) return;
 
     Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
-      1. / (direction[0] + kTiny),
-      1. / (direction[1] + kTiny),
-      1. / (direction[2] + kTiny)
+      1. / (direction[0] + kMinimum),
+      1. / (direction[1] + kMinimum),
+      1. / (direction[2] + kMinimum)
     );
     Vector3D<Float_t> distances = Vector3D<Float_t>(
       (dimensions[0] - point[0]) * inverseDirection[0],

@@ -88,13 +88,18 @@ void MaskedAssign(VcBool const &cond,
 
 
 VECGEOM_INLINE
-bool IsFull(VcBool const &cond){
-    return cond.isFull();
+bool IsFull(VcBool const &cond) {
+  return cond.isFull();
 }
 
 VECGEOM_INLINE
-bool IsEmpty(VcBool const &cond){
-    return cond.isEmpty();
+bool Any(VcBool const &cond) {
+  return !cond.isEmpty();
+}
+
+VECGEOM_INLINE
+bool IsEmpty(VcBool const &cond) {
+  return cond.isEmpty();
 }
 
 VECGEOM_INLINE
@@ -107,7 +112,6 @@ VcPrecision Sqrt(VcPrecision const &val) {
   return Vc::sqrt(val);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 VcPrecision ATan2(VcPrecision const &y, VcPrecision const &x) {
   return Vc::atan2(y, x);
@@ -159,6 +163,9 @@ VcInt Max(VcInt const &val1, VcInt const &val2) {
   return Vc::max(val1, val2);
 }
 
-} } // End global namespace
+} // End inline namespace
+
+} // End global namespace
+
 
 #endif // VECGEOM_BACKEND_VCBACKEND_H_

@@ -17,7 +17,7 @@ void UnplacedTube::Print() const {
 
 void UnplacedTube::Print(std::ostream &os) const {
   os << "UnplacedTube {" << rmin() << ", " << rmax() << ", " << z()
-     << ", " << sphi() << ", " << dphi();
+     << ", " << sphi() << ", " << dphi() << "}";
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

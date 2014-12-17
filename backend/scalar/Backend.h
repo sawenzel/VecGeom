@@ -7,6 +7,7 @@
 #include "base/Global.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -30,7 +31,21 @@ struct kScalar {
 #endif
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
+
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  static VECGEOM_CONSTEXPR_RETURN bool IsEqual() { return false; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static Precision Convert(Precision const &input) { return input; }
 };
+
+template <>
+VECGEOM_CUDA_HEADER_BOTH
+inline VECGEOM_CONSTEXPR_RETURN bool kScalar::IsEqual<kScalar>() {
+  return true;
+}
 
 typedef kScalar::int_v    ScalarInt;
 typedef kScalar::precision_v ScalarDouble;
@@ -56,6 +71,12 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 bool IsFull(bool const &cond){
     return cond;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool Any(bool const &cond) {
+  return cond;
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -171,7 +192,7 @@ void copy(Type const *begin, Type const *const end, Type *const target) {
 #ifndef VECGEOM_NVCC_DEVICE
   std::copy(begin, end, target);
 #else
-  memcpy(target, begin, (end-begin)*sizeof(Type));
+  std::memcpy(target, begin, sizeof(Type)*(end-begin));
 #endif
 }
 
@@ -184,6 +205,61 @@ void reverse_copy(Type const *const begin, Type const *end,
   std::reverse_copy(begin, end, target);
 #else
   while (--end >= begin) *target++ = *end;
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void reverse(Type *begin, Type *end) {
+#ifndef VECGEOM_NVCC_DEVICE
+  std::reverse(begin, end);
+#else
+  while (begin++ < end--) swap(begin, end);
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+Type* AlignedAllocate(size_t size) {
+#ifndef VECGEOM_NVCC
+  return static_cast<Type*>(_mm_malloc(sizeof(Type)*size, kAlignmentBoundary));
+#else
+  return new Type[size];
+#endif
+}
+
+template <typename Type>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void AlignedFree(Type *allocated) {
+#ifndef VECGEOM_NVCC
+  _mm_free(allocated);
+#else
+  delete[] allocated;
+#endif
+}
+
+template <typename IteratorType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+IteratorType min_element(IteratorType first, IteratorType last) {
+  return std::min_element(first, last);
+}
+
+template <typename IteratorType>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool all_of(IteratorType first, IteratorType last) {
+#ifdef VECGEOM_STD_CXX11
+  return std::all_of(first, last, [](bool b){return b;});
+#else
+  while (first < last) {
+    if (!(*first)) return false;
+    ++first;
+  }
+  return true;
 #endif
 }
 

@@ -29,6 +29,7 @@
   #define VECGEOM_CUDA_HEADER_DEVICE __device__
   #define VECGEOM_CUDA_HEADER_BOTH __host__ __device__
   #define VECGEOM_CUDA_HEADER_GLOBAL __global__
+  #define VECGEOM_ALIGNED __align__((64))
   #define VECGEOM_HOST_FORWARD_DECLARE(X) namespace cxx { X }
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X)
   #define VECGEOM_DEVICE_DECLARE_CONV(X)
@@ -142,9 +143,15 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
   #include <mm_malloc.h>
   #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__) && !defined(__NO_INLINE__)
     #define VECGEOM_INLINE inline __attribute__((always_inline))
+    #ifndef VECGEOM_NVCC
+      #define VECGEOM_ALIGNED __attribute__((aligned(64)))
+    #endif
   #else
     // Clang or forced inlining is disabled
     #define VECGEOM_INLINE inline
+    #ifndef VECGEOM_NVCC
+      #define VECGEOM_ALIGNED
+    #endif
   #endif
 #endif
 
@@ -190,12 +197,52 @@ typedef int Inside_t;
 //typedef vecgeom::Inside_t Inside_t;
 //}
 
+
+namespace std {
+   template< class T, class Deleter> class unique_ptr;
+}
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+#ifndef VECGEOM_NVCC
+   using std::unique_ptr;
+
+#else
+
+   template <typename T>
+   class unique_ptr {
+      T *fValue;
+   public:
+     VECGEOM_CUDA_HEADER_BOTH
+     unique_ptr(T *in) : fValue(in) {}
+
+     VECGEOM_CUDA_HEADER_BOTH
+     ~unique_ptr() { delete fValue; }
+
+     VECGEOM_CUDA_HEADER_BOTH
+     T* operator->() { return fValue; }
+   };
+
+   template <typename T>
+   class unique_ptr<T[]> {
+      T *fValue;
+   public:
+     VECGEOM_CUDA_HEADER_BOTH
+     unique_ptr(T *in) : fValue(in) {}
+
+     VECGEOM_CUDA_HEADER_BOTH
+     ~unique_ptr() { delete [] fValue; }
+
+     VECGEOM_CUDA_HEADER_BOTH
+     T &operator[](size_t idx) { return fValue[idx]; }
+   };
+#endif
 
 VECGEOM_GLOBAL int kAlignmentBoundary = 32;
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
 VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
+VECGEOM_GLOBAL Precision kTwoPiInv = 1./kTwoPi;
 VECGEOM_GLOBAL Precision kDegToRad = kPi/180.;
 VECGEOM_GLOBAL Precision kRadToDeg = 180./kPi;
 VECGEOM_GLOBAL Precision kInfinity =
@@ -211,6 +258,22 @@ VECGEOM_GLOBAL Precision kEpsilon =
     FLT_EPSILON;
 #else
     DBL_EPSILON;
+#endif
+VECGEOM_GLOBAL Precision kMinimum =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::min();
+#elif VECGEOM_FLOAT_PRECISION
+    FLT_MIN;
+#else
+    DBL_MIN;
+#endif
+VECGEOM_GLOBAL Precision kMaximum =
+#ifndef VECGEOM_NVCC
+    std::numeric_limits<Precision>::max();
+#elif VECGEOM_FLOAT_PRECISION
+    FLT_MAX;
+#else
+    DBL_MAX;
 #endif
 VECGEOM_GLOBAL Precision kTiny = 1e-30;
 VECGEOM_GLOBAL Precision kTolerance = 1e-12;

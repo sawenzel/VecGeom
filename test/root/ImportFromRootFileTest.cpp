@@ -7,14 +7,18 @@
 
 #include "management/GeoManager.h"
 #include "management/RootGeoManager.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "management/CudaManager.h"
+#endif
 #include "TGeoManager.h"
 #include <cstdio>
 
 //______________________________________________________________________________
-void LoadVecGeomGeometry()
+void LoadVecGeomGeometry(bool printcontent = false)
 {
    if( vecgeom::GeoManager::Instance().GetWorld() == NULL )
    {
+    vecgeom::RootGeoManager::Instance().set_verbose(3);
     printf("Now loading VecGeom geometry\n");
     vecgeom::RootGeoManager::Instance().LoadRootGeometry();
     printf("Loading VecGeom geometry done\n");
@@ -25,7 +29,14 @@ void LoadVecGeomGeometry()
     std::vector<vecgeom::VPlacedVolume *> v2;
     vecgeom::GeoManager::Instance().getAllPlacedVolumes( v2 );
     printf("Have placed volumes %ld\n", v2.size() );
-    vecgeom::RootGeoManager::Instance().world()->PrintContent();
+    if( printcontent )
+    {
+        vecgeom::RootGeoManager::Instance().world()->PrintContent();
+    }
+   }
+   else
+   {
+       printf("GeoManager already initialized; cannot load from ROOT file\n");
    }
 }
 
@@ -39,8 +50,22 @@ void LoadGeometry(const char *filename)
    }
 }
 
+
 int main(int argc, char * argv[])
 {
     if(argc>1)
     LoadGeometry(argv[1]);
+
+#ifdef VECGEOM_CUDA_INTERFACE
+    #pragma message "VECGEOM NVCC enabled"
+    if( vecgeom::GeoManager::Instance().GetWorld() != NULL ){
+        printf("copying to GPU\n");
+        vecgeom::CudaManager::Instance().set_verbose(3);
+        vecgeom::CudaManager::Instance().LoadGeometry( vecgeom::GeoManager::Instance().GetWorld() );
+        vecgeom::CudaManager::Instance().Synchronize();
+    }
+    printf("CUDA manager successfully finished");
+    #endif
+
+    return 0;
 }

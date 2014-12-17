@@ -37,7 +37,8 @@ vecgeom::cuda::VPlacedVolume const* CudaManager::world_gpu() const {
 }
 
 vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize() {
-
+  Stopwatch timer, overalltimer;
+  overalltimer.Start();
   if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n";
 
   // Will return null if no geometry is loaded
@@ -55,6 +56,7 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
   if (verbose_ > 1) std::cerr << "Copying geometry to GPU...";
 
   if (verbose_ > 2) std::cerr << "\nCopying logical volumes...";
+  timer.Start();
   for (std::set<LogicalVolume const*>::const_iterator i =
        logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
 
@@ -65,18 +67,22 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     );
 
   }
-  if (verbose_ > 2) std::cerr << " OK\n";
+  timer.Stop();
+  if (verbose_ > 2) std::cerr << " OK; TIME NEEDED " << timer.Elapsed() << "s \n";
 
   if (verbose_ > 2) std::cerr << "Copying unplaced volumes...";
+  timer.Start();
   for (std::set<VUnplacedVolume const*>::const_iterator i =
        unplaced_volumes_.begin(); i != unplaced_volumes_.end(); ++i) {
 
     (*i)->CopyToGpu(LookupUnplaced(*i));
 
   }
-  if (verbose_ > 2) std::cout << " OK\n";
+  timer.Stop();
+  if (verbose_ > 2) std::cout << " OK; TIME NEEDED " << timer.Elapsed() << "s \n";
 
   if (verbose_ > 2) std::cout << "Copying placed volumes...";
+  timer.Start();
   for (std::set<VPlacedVolume const*>::const_iterator i =
        placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
@@ -87,18 +93,22 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     );
 
   }
-  if (verbose_ > 2) std::cout << " OK\n";
+  timer.Stop();
+  if (verbose_ > 2) std::cout << " OK; TIME NEEDED " << timer.Elapsed() << "s \n";
 
   if (verbose_ > 2) std::cout << "Copying transformations_...";
+  timer.Start();
   for (std::set<Transformation3D const*>::const_iterator i =
        transformations_.begin(); i != transformations_.end(); ++i) {
 
      (*i)->CopyToGpu(LookupTransformation(*i));
 
   }
-  if (verbose_ > 2) std::cout << " OK\n";
+  timer.Stop();
+  if (verbose_ > 2) std::cout << " OK; TIME NEEDED " << timer.Elapsed() << "s \n";
 
   if (verbose_ > 2) std::cout << "Copying daughter arrays...";
+  timer.Start();
   std::vector<CudaDaughter_t> daughter_array;
   for (std::set<Vector<Daughter_t> *>::const_iterator i =
        daughters_.begin(); i != daughters_.end(); ++i) {
@@ -122,13 +132,15 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     (*i)->CopyToGpu(LookupDaughterArray(*i), LookupDaughters(*i));
 
   }
-  if (verbose_ > 1) std::cout << " OK\n";
+  timer.Stop();
+  if (verbose_ > 1) std::cout << " OK; TIME NEEDED " << timer.Elapsed() << "s \n";
 
   synchronized = true;
 
   world_gpu_ = LookupPlaced(world_);
 
-  if (verbose_ > 0) std::cout << "Geometry synchronized to GPU.\n";
+  overalltimer.Stop();
+  if (verbose_ > 0) std::cout << "Geometry synchronized to GPU in " << overalltimer.Elapsed() << " s.\n";
 
   return world_gpu_;
 
@@ -290,7 +302,6 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
   }
 
   if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
-    fprintf(stderr,"found a PlacedBooleanVolume");
     PlacedBooleanVolume const* v =  dynamic_cast<PlacedBooleanVolume const*>(volume);
     ScanGeometry(v->GetUnplacedVolume()->fLeftVolume);
     ScanGeometry(v->GetUnplacedVolume()->fRightVolume);

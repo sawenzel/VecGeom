@@ -124,6 +124,12 @@ private:
 
 };
 
-} } // End global namespace
+
+std::ostream& operator<<(std::ostream &os, VUnplacedVolume const &vol);
+
+} // End inline namespace
+
+} // End global namespace
+
 
 #endif // VECGEOM_VOLUMES_UNPLACEDVOLUME_H_

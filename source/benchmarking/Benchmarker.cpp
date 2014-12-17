@@ -209,6 +209,129 @@ void Benchmarker::CompareDistances(
 
 }
 
+void Benchmarker::CompareSafeties(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method) const {
+
+  static char const *const outputLabels =
+      "Specialized / Vectorized / Unspecialized"
+#ifdef VECGEOM_ROOT
+      " / ROOT"
+#endif
+#ifdef VECGEOM_USOLIDS
+      " / USolids"
+#endif
+#ifdef VECGEOM_GEANT4
+      " / Geant4"
+#endif
+#ifdef VECGEOM_CUDA
+      " / CUDA"
+#endif
+      ;
+
+  if (fPoolMultiplier == 1 && fVerbosity > 0) {
+
+    printf("Comparing %s results...\n", method);
+    if (fVerbosity > 2) printf("%s\n", outputLabels);
+
+    // Compare results
+    int mismatches = 0;
+    int worse = 0;
+    for (unsigned i = 0; i < fPointCount; ++i) {
+      bool mismatch = false;
+      bool better = true;
+      std::stringstream mismatchOutput;
+      if (fVerbosity > 2) {
+        mismatchOutput << specialized[i] << " / "
+                       << vectorized[i] << " / "
+                       << unspecialized[i];
+      }
+      if (std::fabs(specialized[i] - vectorized[i]) > kTolerance
+          && !(specialized[i] == kInfinity && vectorized[i] == kInfinity)) {
+        mismatch = true;
+      }
+      better &= specialized[i] >= vectorized[i];
+      if (std::fabs(specialized[i] - unspecialized[i]) > kTolerance
+          && !(specialized[i] == kInfinity && unspecialized[i] == kInfinity)) {
+        mismatch = true;
+        better &= specialized[i] >= unspecialized[i];
+      }
+#ifdef VECGEOM_ROOT
+      if (std::fabs(specialized[i] - root[i]) > kTolerance
+          && !(specialized[i] == kInfinity && root[i] == 1e30)) {
+        mismatch = true;
+        better &= specialized[i] >= root[i];
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << root[i];
+#endif
+#ifdef VECGEOM_USOLIDS
+      if (std::fabs(specialized[i] - usolids[i]) > kTolerance
+          && !(specialized[i] == kInfinity
+               && usolids[i] == UUtils::kInfinity)) {
+        mismatch = true;
+        better &= specialized[i] >= usolids[i];
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];
+#endif
+#ifdef VECGEOM_GEANT4
+      if (geant4) {
+        if (std::fabs(specialized[i] - geant4[i]) > kTolerance
+            && !(specialized[i] == kInfinity
+                 && geant4[i] == ::kInfinity)) {
+          mismatch = true;
+          better &= specialized[i] >= geant4[i];
+        }
+        if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
+      }
+#endif
+#ifdef VECGEOM_CUDA
+      if (std::fabs(specialized[i] - cuda[i]) > kTolerance
+          && !(specialized[i] == kInfinity && cuda[i] == kInfinity)) {
+        mismatch = true;
+        better &= specialized[i] >= cuda[i];
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
+#endif
+      mismatches += mismatch;
+      worse += !better;
+
+      if ((!better && fVerbosity > 2) || fVerbosity > 4) {
+        printf("Point (%f, %f, %f)", points->x(i), points->y(i),
+               points->z(i));
+        if (directions != NULL) {
+          printf(", Direction (%f, %f, %f)", directions->x(i), directions->y(i),
+                 directions->z(i));
+        }
+        printf(": ");
+      }
+
+      if ((!better && fVerbosity > 2) || fVerbosity > 3) {
+        printf("%s\n", mismatchOutput.str().c_str());
+      }
+    }
+    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
+    printf("%i / %i worse safeties detected.\n", worse, fPointCount);
+
+  }
+
+}
+
 void Benchmarker::RunBenchmark() {
   Assert(fWorld, "No world specified to benchmark.\n");
   RunInsideBenchmark();
@@ -298,6 +421,9 @@ void Benchmarker::RunInsideBenchmark() {
     // Compare results
     int mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
+
+      //fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+
       bool mismatch = false;
       std::stringstream mismatchOutput;
       if (fVerbosity > 2) {
@@ -317,8 +443,12 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
       mismatches += mismatch;
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
-        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
-               *(fPointPool->y()+i), fPointPool->z(i));
+        printf("Point (%f, %f, %f): ", fPointPool->x(i),
+               fPointPool->y(i), fPointPool->z(i));
+
+        // store point for later inspection
+        fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+
       }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
         printf("%s\n", mismatchOutput.str().c_str());
@@ -366,8 +496,14 @@ void Benchmarker::RunInsideBenchmark() {
       if (fVerbosity > 2) mismatchOutput << " / " << insideCuda[i];
 #endif
       mismatches += mismatch;
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
+        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
+               *(fPointPool->y()+i), fPointPool->z(i));
+      }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
-        printf("%s\n", mismatchOutput.str().c_str());
+
+          fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+          printf("%s\n", mismatchOutput.str().c_str());
       }
     }
     if (fVerbosity > 2 && mismatches > 100) {
@@ -524,7 +660,7 @@ void Benchmarker::RunToInBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  CompareDistances(
+  CompareSafeties(
     fPointPool,
     NULL,
     safetiesSpecialized,
@@ -684,7 +820,7 @@ void Benchmarker::RunToOutBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  CompareDistances(
+  CompareSafeties(
     fPointPool,
     NULL,
     safetiesSpecialized,

@@ -254,7 +254,7 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
   differentResultRoot.SetLineStyle(2);
   TPolyLine3D rootHits;
   rootHits.SetLineColor(kRed);
-  rootHits.SetLineStyle(2); 
+  rootHits.SetLineStyle(2);
 
   std::vector<TPolyLine3D*> rays;
   std::vector<TPolyLine3D*> helperRays;
