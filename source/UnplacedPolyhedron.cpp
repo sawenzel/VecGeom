@@ -262,7 +262,7 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
   }
 #endif
 
-#ifdef VECGEOM_NO_SPECIALIZATION
+#ifndef VECGEOM_NO_SPECIALIZATION
 
   POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kFalse);
   POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kTrue);
