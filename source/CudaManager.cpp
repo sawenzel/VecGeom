@@ -290,7 +290,6 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
   }
 
   if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
-    fprintf(stderr,"found a PlacedBooleanVolume");
     PlacedBooleanVolume const* v =  dynamic_cast<PlacedBooleanVolume const*>(volume);
     ScanGeometry(v->GetUnplacedVolume()->fLeftVolume);
     ScanGeometry(v->GetUnplacedVolume()->fRightVolume);
