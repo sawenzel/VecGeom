@@ -361,10 +361,9 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::V
   return result;
 }
 
-DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const {
-   DevicePtr<cuda::VUnplacedVolume> gpuPtr;
-   gpuPtr.Allocate();
-   return this->CopyToGpu(gpuPtr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedPolyhedron>();
 }
 
 #endif
