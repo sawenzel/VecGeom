@@ -15,7 +15,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 using namespace vecgeom::Polyhedron;
 
-
 UnplacedPolyhedron::UnplacedPolyhedron(
     const int sideCount,
     const int zPlaneCount,
@@ -334,57 +333,36 @@ void UnplacedPolyhedron::Print(std::ostream &os) const {
 #ifdef VECGEOM_CUDA_INTERFACE
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpuPtr) const {
-    // idea: reconstruct defining arrays: copy them to GPU; then construct the UnplacedPolycon object from scratch
-      // on the GPU
 
+   // idea: reconstruct defining arrays: copy them to GPU; then construct the UnplacedPolycon object from scratch
+   // on the GPU
 
-  Precision *z_gpu_ptr = AllocateOnGpu<Precision>( fZPlanes.size()*sizeof(Precision) );
-  Precision *rmin_gpu_ptr = AllocateOnGpu<Precision>( fRMin.size()*sizeof(Precision) );
-  Precision *rmax_gpu_ptr = AllocateOnGpu<Precision>( fRMax.size()*sizeof(Precision) );
+   DevicePtr<Precision> zPlanesGpu;
+   zPlanesGpu.Allocate(fZPlanes.size());
+   zPlanesGpu.ToDevice(&fZPlanes[0], fZPlanes.size());
 
-  vecgeom::CopyToGpu(&fZPlanes[0], z_gpu_ptr, sizeof(Precision)*fZPlanes.size());
-  vecgeom::CopyToGpu(&fRMin[0], rmin_gpu_ptr, sizeof(Precision)*fRMin.size());
-  vecgeom::CopyToGpu(&fRMax[0], rmax_gpu_ptr, sizeof(Precision)*fRMax.size());
+   DevicePtr<Precision> rminGpu;
+   rminGpu.Allocate(fZPlanes.size());
+   rminGpu.ToDevice(&fRMin[0], fZPlanes.size());
 
-      DevicePtr<cuda::VUnplacedVolume> gpupolyhedra =  CopyToGpuImpl<UnplacedPolyhedron>(gpuPtr,
-              fPhiStart, fPhiDelta, fSideCount, fZPlanes.size(), z_gpu_ptr, rmin_gpu_ptr, rmax_gpu_ptr);
+   DevicePtr<Precision> rmaxGpu;
+   rmaxGpu.Allocate(fZPlanes.size());
+   rmaxGpu.ToDevice(&fRMax[0], fZPlanes.size());
+
+   DevicePtr<cuda::VUnplacedVolume> gpupolyhedra =
+      CopyToGpuImpl<UnplacedPolyhedron>(gpuPtr,
+                                        fPhiStart, fPhiDelta,
+                                        fSideCount, fZPlanes.size(),
+                                        zPlanesGpu, rminGpu, rmaxGpu
+                                        );
 
   // remove temporary space from GPU : dangerous as the polyhedra keeps pointer to these
-  FreeFromGpu(z_gpu_ptr);
-  FreeFromGpu(rmin_gpu_ptr);
-  FreeFromGpu(rmax_gpu_ptr);
+  zPlanesGpu.Deallocate();
+  rminGpu.Deallocate();
+  rminGpu.Deallocate();
+
   CudaAssertError();
-
- return gpupolyhedra;
-
- /* Philipps more elegant solution does not work yet: DevicePtr<double>::SizeOf undefined symbol
-      DevicePtr<Precision> zPlanesGpu;
-         zPlanesGpu.Allocate(fZPlanes.size());
-         zPlanesGpu.ToDevice(&fZPlanes[0], fZPlanes.size());
-
-         DevicePtr<Precision> rminGpu;
-         rminGpu.Allocate(fZPlanes.size());
-         rminGpu.ToDevice(&fRMin[0], fZPlanes.size());
-
-         DevicePtr<Precision> rmaxGpu;
-         rmaxGpu.Allocate(fZPlanes.size());
-         rmaxGpu.ToDevice(&fRMax[0], fZPlanes.size());
-
-         DevicePtr<cuda::VUnplacedVolume> result =
-            CopyToGpuImpl<UnplacedPolyhedron>(gpuPtr,
-                                              fPhiStart, fPhiDelta,
-                                              fSideCount, fZPlanes.size(),
-                                              zPlanesGpu, rminGpu, rmaxGpu
-                                              );
-
-        zPlanesGpu.Deallocate();
-        rminGpu.Deallocate();
-        rminGpu.Deallocate();
-
-        CudaAssertError();
-        return result;
-*/
-
+  return gpupolyhedra;
 }
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const
@@ -402,25 +380,15 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const
 namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedPolyhedron>::SizeOf();
-//template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(Precision phiStart,
-//                                 Precision phiDelta,
-//                                 int sideCount,
-//                                 int zPlaneCount,
-//                                 DevicePtr<Precision> zPlanes,
-//                                 DevicePtr<Precision> rMin,
-//                                 DevicePtr<Precision> rMax) const;
-//
-//} // End cxx namespace
 template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(Precision phiStart,
                                  Precision phiDelta,
                                  int sideCount,
                                  int zPlaneCount,
-                                 Precision zPlanes[],
-                                 Precision rMin[],
-                                 Precision rMax[]) const;
+                                 DevicePtr<Precision> zPlanes,
+                                 DevicePtr<Precision> rMin,
+                                 DevicePtr<Precision> rMax) const;
 
 } // End cxx namespace
-
 
 #endif
  

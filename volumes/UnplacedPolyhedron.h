@@ -280,6 +280,8 @@ public:
           return  std::sqrt(a.Perp2() - (a-b).Mag2()/4.);
       };
 
+      int counter = 0;
+
       Array<ZSegment>::const_iterator s;
       Array<ZSegment>::const_iterator end=fZSegments.cend();
 
