@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#ifdef VECGEOM_CUDA_INTERFACE
 #include "management/CudaManager.h"
+#endif
 #include "navigation/SimpleNavigator.h"
 #include "navigation/NavigationState.h"
 #include "volumes/LogicalVolume.h"

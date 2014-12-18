@@ -74,6 +74,12 @@ void Visualizer::AddPoints(SOA3D<Precision> const &points) {
   AddPointsTemplate(points);
 }
 
+void Visualizer::AddPoint(Vector3D<Precision> const & point){
+    SOA3D<Precision> c(1);
+    c.push_back( point );
+    AddPoints(c);
+}
+
 void Visualizer::AddPoints(TPolyMarker3D const &marker) {
   fMarkers.emplace_back(new TPolyMarker3D(marker));
   if (fVerbosity > 0) {
@@ -134,7 +140,7 @@ void Visualizer::Show() const {
   for (auto &line : fLines) {
     line->Draw();
   }
-  axes.Draw();
+ // axes.Draw();
   app.Run();
 }
 

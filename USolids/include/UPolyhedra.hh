@@ -177,6 +177,8 @@ class UPolyhedra : public UVCSGfaceted
    
   protected:  // without description
 
+  //    friend class vecgeom::UnplacedPolyhedron;
+
     int   fNumSides;      // Number of sides
     double fStartPhi;    // Starting phi value (0 < phiStart < 2pi)
     double fEndPhi;      // end phi value (0 < endPhi-phiStart < 2pi)

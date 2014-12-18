@@ -16,11 +16,30 @@
 //#include <Vc/Vc>
 //#include "TGeoShape.h"
 //#include "volumes/SphereUtilities.h"
-namespace VECGEOM_NAMESPACE { 
+
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(SphereImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+inline namespace VECGEOM_IMPL_NAMESPACE { 
  
+class PlacedSphere;
  
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct SphereImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+using PlacedShape_t = PlacedSphere;
+using UnplacedShape_t = UnplacedSphere;
+
+VECGEOM_CUDA_HEADER_BOTH
+static void PrintType() {
+   printf("SpecializedSphere<%i, %i>", transCodeT, rotCodeT);
+}
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -1507,6 +1526,6 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
 }
 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_SPHEREIMPLEMENTATION_H_

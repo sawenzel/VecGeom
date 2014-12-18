@@ -6,7 +6,17 @@
 #include <cassert>
 #include <stdio.h>
 
+#include <cuda.h>
+
+// includes CUDA Runtime
+#include <cuda_runtime.h>
+
+// maybe you need also helpers
+//#include <helper_cuda.h>
+//#include <helper_functions.h> // helper utility functions
+
 namespace vecgeom {
+namespace cxx {
 
 cudaError_t CudaCheckError(const cudaError_t err) {
   if (err != cudaSuccess) {
@@ -43,5 +53,7 @@ cudaError_t CudaCopyFromDevice(void* tgt, void const* src, unsigned size) {
 cudaError_t CudaFree(void* ptr) {
   return cudaFree(ptr);
 }
+
+} // End namespace cuda
 
 } // End namespace vecgeom

@@ -12,7 +12,7 @@ option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
 option(CUDA "Enable compilation for CUDA." OFF)
 
-option(CUDA_SPECIALIZATION "Use specialized volumes for CUDA." ON)
+option(CUDA_VOLUME_SPECIALIZATION "Use specialized volumes for CUDA." ON)
 
 option(ROOT "Include ROOT." OFF)
 
@@ -29,6 +29,8 @@ option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
 option(CTEST "Enable CTest when building." ON)
 
 option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
+
+option(DISTANCE_DEBUG "Enable comparision of calculcated distances againt ROOT/Geant4 behind the scenes" OFF)
 
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
@@ -127,7 +129,7 @@ set(VECGEOM_COMPILATION_FLAGS
     "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
-  if (APPLE OR UNIX) 
+  if (APPLE OR UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
@@ -137,12 +139,14 @@ else()
 endif()
 
 # Compiler specific optimization flags
+if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
 set(VECGEOM_COMPILATION_FLAGS_GNU
     "${VECGEOM_COMPILATION_FLAGS_GNU} -finline-limit=10000000")
 set(VECGEOM_COMPILATION_FLAGS_GNU
     "${VECGEOM_COMPILATION_FLAGS_GNU} -ffast-math -ftree-vectorize")
 set(VECGEOM_COMPILATION_FLAGS_CLANG
     "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
+endif()
 set(VECGEOM_COMPILATION_FLAGS_INTEL
     "${VECGEOM_COMPILATION_FLAGS_INTEL} -xHost")
 if (VECGEOM_VECTOR)
@@ -166,20 +170,25 @@ if (Cilk)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CILK")
 endif()
 if (CUDA)
-  set(CUDA_ARCH 50 CACHE STRING "CUDA device architecture.")
+  set(CUDA_ARCH 20 CACHE STRING "CUDA device architecture.")
   set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA")
-  if (NOT CUDA_SPECIALIZATION)
+  if (CUDA_VOLUME_SPECIALIZATION)
     set(VECGEOM_COMPILATION_FLAGS
-        "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_SPECIALIZATION")
+        "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_VOLUME_SPECIALIZATION")
+  else()
+    set(VECGEOM_COMPILATION_FLAGS
+        "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_VOLUME_SPECIALIZATION")
   endif()
   set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS}
       -std=c++11
-      -O2 --use_fast_math -Xcudafe "--diag_suppress=code_is_unreachable"
+      -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
-  if (CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -g -G)
-  endif()
+  set(VECGEOM_NVCC_CONFIGS
+        DEBUG -g -G
+        RELEASE  -O2 --use_fast_math
+        RELWITHDEBINFO -g -G  -O2 --use_fast_math
+        MINSIZEREL --use_fast_math )
 endif()
 
 # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -233,6 +242,11 @@ endif()
 if (Geant4)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_GEANT4")
 endif()
+if (DISTANCE_DEBUG)
+  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_DISTANCE_DEBUG")
+endif()
+
+
 
 # Pass flags to compilers
 if (GNU)
@@ -246,7 +260,6 @@ if (Intel)
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
 set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${VECGEOM_NVCC_COMPILATION_FLAGS})
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 if (CUDA)
@@ -286,14 +299,15 @@ if (CUDA)
 
   set(CUDA_SEPARABLE_COMPILATION ON)
 
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/CudaManager.cpp)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/CudaManager.cpp source/backend/cuda/Interface.cpp)
   set(SRC_CUDA ${SRC_CUDA}
-      source/CudaManager.cu source/backend/cuda/Interface.cu)
+      source/CudaManager.cu)
 
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${VECGEOM_NVCC_COMPILATION_FLAGS})
 endif()
 
 if (ROOT)
-  
+
   find_package(ROOT REQUIRED)
 
   include_directories(AFTER SYSTEM ${ROOT_INCLUDE_DIR})
@@ -329,7 +343,7 @@ if (USolids)
   elseif (USOLIDS_DIR)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
-  
+
   set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} usolids)
 
 endif()
@@ -359,20 +373,26 @@ set(SRC_CPP_RELATIVE
   source/PlacedCone.cpp
   source/PlacedBox.cpp
   source/PlacedTube.cpp
+  source/PlacedTorus.cpp
   source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
+  source/PlacedPolyhedron.cpp
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
+  source/Planes.cpp
+  source/Quadrilaterals.cpp
+  source/Rectangles.cpp
   source/SOA3D.cpp
-  source/SpecializedBox.cpp
   source/Transformation3D.cpp
   source/UnplacedCone.cpp
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
+  source/UnplacedTorus.cpp
   source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp
+  source/UnplacedPolyhedron.cpp
   source/UnplacedTrapezoid.cpp
   source/UnplacedVolume.cpp
   source/Vector.cpp
@@ -384,6 +404,12 @@ set(SRC_CPP_RELATIVE
 
   source/UnplacedSphere.cpp
   source/PlacedSphere.cpp
+
+  source/UnplacedBooleanVolume.cpp
+  source/PlacedBooleanVolume.cpp
+
+  source/UnplacedPolycone.cpp
+  source/PlacedPolycone.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -471,6 +497,7 @@ if (CUDA)
     vecgeomcuda
     ${SRC_CUDA}
     OPTIONS ${CUDA_ARCH}
+    ${VECGEOM_NVCC_CONFIGS}
   )
   target_link_libraries(vecgeomcuda ${VECGEOM_LIBRARIES}
                         ${VECGEOM_LIBRARIES_EXTERNAL})
@@ -497,8 +524,15 @@ set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/PlanesTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/QuadrilateralTest.cpp
+#  ${CMAKE_SOURCE_DIR}/test/core/SOATest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/Transformation3DTest.cpp
+#  ${CMAKE_SOURCE_DIR}/test/core/boolminustest.cpp
+#  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestVecGeomPolycone.cpp
 )
 
 
@@ -506,14 +540,20 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
   # ${CMAKE_SOURCE_DIR}/test/root/ParaboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
+
+  # higher level benchmarks
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
 )
+
 set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTrap.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
@@ -529,6 +569,7 @@ set(TEST_EXECUTABLES_USOLIDS
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
+    
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -536,7 +577,16 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/PolyhedronBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
+ # ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusHollowTubeBenchmark.cpp
+ # ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusTubeSegBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxMinusHollowTubeBenchmark_virtual.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxUnionHollowTubeBenchmark_virtual.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxIntersectHollowTubeBenchmark_virtual.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BoxUnionBoxBenchmark_virtual.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/3LevelSubtractionBenchmark_virtual.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/TorusBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
@@ -544,8 +594,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
 
-  # higher level benchmarks
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/PolyconeBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
@@ -556,6 +605,7 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testCone.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
@@ -654,7 +704,7 @@ if (USolids)
 endif()
 configure_file(VecgeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake" @ONLY)
- 
+
 # Install the VecgeomConfig.cmake
 install(FILES
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake"

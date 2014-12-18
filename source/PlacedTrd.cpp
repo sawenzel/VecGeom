@@ -20,7 +20,8 @@
 
 #endif // VECGEOM_NVCC
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 
@@ -50,63 +51,18 @@ G4VSolid const* PlacedTrd::ConvertToGeant4() const {
 
 #endif // VECGEOM_NVCC
 
-} // End global namespace
-
-namespace vecgeom {
-
-#ifdef VECGEOM_CUDA_INTERFACE
-
-void PlacedTrd_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr);
-
-VPlacedVolume* PlacedTrd::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
-  PlacedTrd_CopyToGpu(logical_volume, transformation, this->id(),
-                                 gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
-}
-
-VPlacedVolume* PlacedTrd::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
-  VPlacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<PlacedTrd>();
-  return this->CopyToGpu(logical_volume, transformation, gpu_ptr);
-}
-
-#endif // VECGEOM_CUDA_INTERFACE
+} // End im%pl namespace
 
 #ifdef VECGEOM_NVCC
 
-class LogicalVolume;
-class Transformation3D;
-class VPlacedVolume;
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTrd, TrdTypes::UniversalTrd )
 
-__global__
-void PlacedTrd_ConstructOnGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::SimpleTrd(
-    reinterpret_cast<vecgeom_cuda::LogicalVolume const*>(logical_volume),
-    reinterpret_cast<vecgeom_cuda::Transformation3D const*>(transformation),
-    NULL,
-    id
-  );
-}
+#ifndef VECGEOM_NO_SPECIALIZATION
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTrd, TrdTypes::Trd1 )
+VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3( SpecializedTrd, TrdTypes::Trd2 )
+#endif
 
-void PlacedTrd_CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    const int id, VPlacedVolume *const gpu_ptr) {
-  PlacedTrd_ConstructOnGpu<<<1, 1>>>(logical_volume, transformation,
-                                                id, gpu_ptr);
-}
+#endif
 
-#endif // VECGEOM_NVCC
+} // End global namespace
 
-} // End namespace vecgeom

@@ -9,10 +9,31 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(BoxImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+class PlacedBox;
+class UnplacedBox;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedBox;
+  using UnplacedShape_t = UnplacedBox;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedBox<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template<typename Backend>
   VECGEOM_INLINE
@@ -304,7 +325,7 @@ void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
         completelyinside = Abs(localPoint[0]) < MakeMinusTolerant<ForInside>( dimensions[0] );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull (completelyoutside) ) {
         return;
       }
     }
@@ -315,7 +336,7 @@ void BoxImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
       completelyinside &= Abs(localPoint[1]) < MakeMinusTolerant<ForInside>( dimensions[1] );
     }
     if (Backend::early_returns) {
-      if ( completelyoutside == Backend::kTrue ) {
+      if ( IsFull (completelyoutside) ) {
         return;
       }
     }
@@ -380,7 +401,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   Bool_t hit;
 
   // x
-  next = safety[0] / Abs(direction[0] + kTiny);
+  next = safety[0] / Abs(direction[0] + kMinimum);
   coord1 = point[1] + next * direction[1];
   coord2 = point[2] + next * direction[2];
   hit = safety[0] >= MakeMinusTolerant<surfacetolerant>(0.) &&
@@ -392,7 +413,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   if ( IsFull(done) ) return;
 
   // y
-  next = safety[1] / Abs(direction[1] + kTiny);
+  next = safety[1] / Abs(direction[1] + kMinimum);
   coord1 = point[0] + next * direction[0];
   coord2 = point[2] + next * direction[2];
   hit = safety[1] >= MakeMinusTolerant<surfacetolerant>(0.) &&
@@ -404,7 +425,7 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   if ( IsFull(done) ) return;
 
   // z
-  next = safety[2] / Abs(direction[2] + kTiny);
+  next = safety[2] / Abs(direction[2] + kMinimum);
   coord1 = point[0] + next * direction[0];
   coord2 = point[1] + next * direction[1];
   hit = safety[2] >= MakeMinusTolerant<surfacetolerant>(0.) &&
@@ -446,9 +467,9 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
     //if (inside == Backend::kFalse) return;
 
     Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
-      1. / (direction[0] + kTiny),
-      1. / (direction[1] + kTiny),
-      1. / (direction[2] + kTiny)
+      1. / (direction[0] + kMinimum),
+      1. / (direction[1] + kMinimum),
+      1. / (direction[2] + kMinimum)
     );
     Vector3D<Float_t> distances = Vector3D<Float_t>(
       (dimensions[0] - point[0]) * inverseDirection[0],
@@ -571,6 +592,7 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
     }
 
 
-} // End global namespace
+} } // End global namespace
+
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_

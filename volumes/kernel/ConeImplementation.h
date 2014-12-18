@@ -14,8 +14,13 @@
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include "volumes/kernel/TubeImplementation.h"
 #include <cassert>
+#include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(ConeImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric, typename)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename ConeType>
 struct ConeHelper
@@ -57,9 +62,22 @@ struct ConeHelper
 */
 };
 
+class PlacedCone;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename ConeType>
 struct ConeImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedCone;
+  using UnplacedShape_t = UnplacedCone;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedCone<%i, %i>", transCodeT, rotCodeT);
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -1793,7 +1811,7 @@ struct ConeImplementation {
     distance = DistanceToOutUSOLIDS<Backend>( unplaced, point, direction, stepMax );
   }
 
-  template<class Backend>
+  template<class Backend, bool ForPolycone>
   VECGEOM_CUDA_HEADER_BOTH
   static Precision SafetyToInUSOLIDS(UnplacedCone const &unplaced,
                           Transformation3D const &transformation,
@@ -1831,11 +1849,12 @@ struct ConeImplementation {
          pRMax  = unplaced.fTanRMax * p.z() + (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
          safe    = (rho - pRMax) * unplaced.fInvSecRMax;
        }
-       if (safeZ > safe)
-       {
-         safe = safeZ;
-       }
-
+      if( ! ForPolycone)//For Polycone only safety in R and Phi is needed
+	{ if (safeZ > safe)
+         {
+          safe = safeZ;
+         }
+	}
        if (!unplaced.IsFullPhi() && rho)
        {
          // Psi=angle from central phi to point
@@ -1898,10 +1917,10 @@ struct ConeImplementation {
                          typename Backend::precision_v &safety) {
 
     // TOBEIMPLEMENTED -- momentarily dispatching to USolids
-    safety = SafetyToInUSOLIDS<Backend>(unplaced,transformation,point);
+    safety = SafetyToInUSOLIDS<Backend, false>(unplaced,transformation,point);
   }
 
-  template<class Backend>
+  template<class Backend, bool ForPolycone>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
    static Precision SafetyToOutUSOLIDS(UnplacedCone const &unplaced,
@@ -1935,11 +1954,12 @@ struct ConeImplementation {
         {
           safe = safeR2;
         }
-        if (safeZ < safe)
-        {
-          safe = safeZ;
-        }
-
+        if( ! ForPolycone)//For Polycone only safety in R and Phi is needed
+	  {if (safeZ < safe)
+          {
+           safe = safeZ;
+          }
+	  }
         // Check if phi divided, Calc distances closest phi plane
 
         if (!unplaced.IsFullPhi())
@@ -1973,7 +1993,7 @@ struct ConeImplementation {
                           Vector3D<typename Backend::precision_v> point,
                           typename Backend::precision_v &safety) {
 
-    safety = SafetyToOutUSOLIDS<Backend>(unplaced,point);
+    safety = SafetyToOutUSOLIDS<Backend,false>(unplaced,point);
   }
 
 
@@ -2107,5 +2127,6 @@ struct ConeImplementation {
 
 }; // end struct
 
-} // end namespace
+} } // End global namespace
+
 #endif /* VECGEOM_VOLUMES_KERNEL_CONEIMPLEMENTATION_H_ */

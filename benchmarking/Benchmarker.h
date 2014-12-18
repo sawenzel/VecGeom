@@ -19,9 +19,17 @@
 #include "G4VSolid.hh"
 #endif
 
+#ifdef VECGEOM_CUDA
+#include "backend/cuda/Interface.h"
+#endif
+
 #include <list>
+#include <vector>
 
 namespace vecgeom {
+
+VECGEOM_HOST_FORWARD_DECLARE( class VPlacedVolume; );
+VECGEOM_DEVICE_FORWARD_DECLARE( class VolumePointers; );
 
 /// \brief Benchmarks geometry methods of arbitrary volumes for different
 ///        backends and compares to any included external libraries.
@@ -38,8 +46,9 @@ namespace vecgeom {
 class Benchmarker {
 
 private:
+  using VPlacedVolume_t = cxx::VPlacedVolume const *;
 
-  VPlacedVolume const *fWorld;
+  VPlacedVolume_t fWorld;
   unsigned fPointCount;
   unsigned fPoolMultiplier;
   unsigned fRepetitions;
@@ -54,6 +63,10 @@ private:
   // tolerance for comparisons
   Precision fTolerance;
 
+  // containers to store problematic points
+  // this can be filled during evaluation
+  std::vector< Vector3D<Precision> > fProblematicContainPoints;
+
 public:
 
   Benchmarker();
@@ -61,7 +74,7 @@ public:
   /// \param world Mother volume containing daughters that will be benchmarked.
   ///              The mother volume must have an available bounding box, as it
   ///              is used in the sampling process.
-  Benchmarker(VPlacedVolume const *const world);
+  Benchmarker(VPlacedVolume_t const world);
 
   ~Benchmarker();
 
@@ -110,7 +123,7 @@ public:
   unsigned GetRepetitions() const { return fRepetitions; }
 
   /// \return World whose daughters are benchmarked.
-  VPlacedVolume const* GetWorld() const { return fWorld; }
+  VPlacedVolume_t GetWorld() const { return fWorld; }
 
   /// \param pointCount Amount of points to benchmark in each iteration.
   void SetPointCount(const unsigned pointCount) { fPointCount = pointCount; }
@@ -144,7 +157,7 @@ public:
   }
 
   /// \param World volume containing daughters to be benchmarked.
-  void SetWorld(VPlacedVolume const *const world);
+  void SetWorld(VPlacedVolume_t const world);
 
   /// \return List of results of previously performed benchmarks.
   std::list<BenchmarkResult> const& GetResults() const { return fResults; }
@@ -153,15 +166,18 @@ public:
   ///         internal history.
   std::list<BenchmarkResult> PopResults();
 
+  std::vector<Vector3D<Precision> > const & GetProblematicContainPoints() const {
+      return fProblematicContainPoints;
+  }
+
 private:
     
-  void GenerateVolumePointers(VPlacedVolume const *const vol);
+  void GenerateVolumePointers(VPlacedVolume_t const vol);
 
   BenchmarkResult GenerateBenchmarkResult(const double elapsed,
                                           const EBenchmarkedMethod method,
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
-
   void RunInsideSpecialized(bool *contains, Inside_t *inside);
   void RunToInSpecialized(Precision *distances,
                           Precision *safeties);
@@ -208,6 +224,7 @@ private:
     Precision *posZ, Precision *dirX,
     Precision *dirY, Precision *dirZ,
     Precision *distances, Precision *safeties);
+  void GetVolumePointers( std::list<cxx::DevicePtr<cuda::VPlacedVolume> > &volumesGpu );
 #endif
 
   template <typename Type>
@@ -217,6 +234,26 @@ private:
   static void FreeAligned(Type *const distance);
 
   void CompareDistances(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method) const;
+
+  void CompareSafeties(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,

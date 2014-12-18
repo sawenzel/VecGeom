@@ -18,7 +18,8 @@
   #include <cmath>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef Vector3D<Precision> Vec3D;
 
@@ -91,7 +92,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision const* params )
   MakePlanes();
 }
 
-UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const& corners )
+UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const corners )
   : fDz(0.f), fTheta(0.f), fPhi(0.f)
   , fDy1(0.f), fDx1(0.f), fDx2(0.f), fTanAlpha1(0.f)
   , fDy2(0.f), fDx3(0.f), fDx4(0.f), fTanAlpha2(0.f)
@@ -211,7 +212,7 @@ bool UnplacedTrapezoid::MakePlanes() {
   return MakePlanes(pt);
 }
 
-bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const & pt) {
+bool UnplacedTrapezoid::MakePlanes(TrapCorners_t const pt) {
 
   // Checking coplanarity of all four side faces
   bool good = true;
@@ -654,7 +655,7 @@ Precision UnplacedTrapezoid::Volume() const {
     return cubicVolume;
 }
 
-void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
+void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const pt) {
 
     fDz = pt[7].z();
     Precision DzRecip = 1.0 / fDz;
@@ -676,7 +677,7 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
     fPhi   = atan2(fTthetaSphi, fTthetaCphi);
   }
 
-  void UnplacedTrapezoid::fromParametersToCorners( TrapCorners_t& pt ) const {
+  void UnplacedTrapezoid::fromParametersToCorners( TrapCorners_t pt ) const {
 
       // hopefully the compiler will optimize the repeated multiplications ... to be checked!
       pt[0] = Vec3D(-fDz*fTthetaCphi-fDy1*fTanAlpha1-fDx1, -fDz*fTthetaSphi-fDy1, -fDz);
@@ -696,64 +697,39 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const& pt) {
     return os;
   }
 
-} // End global namespace
-
-
-namespace vecgeom {
-// only the GPU-related methods should go inside this namespace
 #ifdef VECGEOM_CUDA_INTERFACE
+// only the GPU-related methods should go inside this part
 
-void UnplacedTrapezoid_CopyToGpu(
-    Precision dz, Precision theta, Precision phi,
-    Precision dy1, Precision dx1, Precision dx2, Precision pTanAlpha1,
-    Precision dy2, Precision dx3, Precision dx4, Precision pTanAlpha2,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedTrapezoid::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedTrapezoid_CopyToGpu(GetDz(), GetTheta(), GetPhi(),
-                              GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                              GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2(),
-                              gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedTrapezoid>(in_gpu_ptr, GetDz(), GetTheta(), GetPhi(),
+                                           GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+                                           GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2());
 }
 
-VUnplacedVolume* UnplacedTrapezoid::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedTrapezoid>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedTrapezoid>();
 }
 
-#endif
+
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-  __global__
-  void UnplacedTrapezoid_ConstructOnGpu(
+template size_t DevicePtr<cuda::UnplacedTrapezoid>::SizeOf();
+template void DevicePtr<cuda::UnplacedTrapezoid>::Construct(
     const Precision dz, const Precision theta, const Precision phi,
     const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
-    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
-    VUnplacedVolume *const gpu_ptr)
-  {
-    new(gpu_ptr) vecgeom_cuda::UnplacedTrapezoid(dz, theta, phi,
-                                                 dy1, dx1, dx2, tanAlpha1,
-                                                 dy2, dx3, dx4, tanAlpha2 );
-  }
+    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2) const;
 
-  void UnplacedTrapezoid_CopyToGpu(
-    const Precision dz, const Precision theta, const Precision phi,
-    const Precision dy1, const Precision dx1, const Precision dx2, const Precision tanAlpha1,
-    const Precision dy2, const Precision dx3, const Precision dx4, const Precision tanAlpha2,
-    VUnplacedVolume *const gpu_ptr)
-  {
-    UnplacedTrapezoid_ConstructOnGpu<<<1, 1>>>(dz, theta, phi,
-                                               dy1, dx1, dx2, tanAlpha1,
-                                               dy2, dx3, dx4, tanAlpha2,
-                                               gpu_ptr);
-  }
+} // End cxx namespace
+
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
-
+} // End global namespace

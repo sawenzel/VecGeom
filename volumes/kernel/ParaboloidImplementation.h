@@ -42,7 +42,13 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParaboloid.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <stdio.h>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(ParaboloidImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
     
     namespace ParaboloidUtilities
     {
@@ -58,8 +64,21 @@ namespace VECGEOM_NAMESPACE {
                                  }
     }
 
+class PlacedParaboloid;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParaboloidImplementation {
+
+    static const int transC = transCodeT;
+    static const int rotC   = rotCodeT;
+
+    using PlacedShape_t = PlacedParaboloid;
+    using UnplacedShape_t = UnplacedParaboloid;
+   
+    VECGEOM_CUDA_HEADER_BOTH
+    static void PrintType() {
+       printf("SpecializedParaboloid<%i, %i>", transCodeT, rotCodeT);
+    }
 
     /// \brief Inside method that takes account of the surface for an Unplaced Paraboloid
     template <class Backend>
@@ -563,6 +582,6 @@ struct ParaboloidImplementation {
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_PARABOLOIDIMPLEMENTATION_H_

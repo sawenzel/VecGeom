@@ -13,7 +13,8 @@
 #include <random>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_NVCC
    class RNG;
@@ -130,6 +131,18 @@ public:
     return min + (max - min) * GetUniform();
   }
 
+  /**
+   * Uniformly distributed array of floating point number between 0 and 1 unless
+   *         range arguments are passed.
+   */
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void uniform_array(size_t n, Precision *array, const Precision min = 0., const Precision max = 1.) {
+     for(size_t i = 0; i<n; ++i) {
+        array[i] = min + (max - min) * GetUniform();
+     }
+  }
+
 private:
 
   RNG(RNG const&);
@@ -137,6 +150,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_RNG_H_

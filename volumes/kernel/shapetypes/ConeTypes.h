@@ -11,7 +11,26 @@
 #include <string>
 #include "volumes/UnplacedCone.h"
 
-namespace VECGEOM_NAMESPACE { namespace ConeTypes {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,UniversalCone,UniversalCone)
+
+#ifndef VECGEOM_NO_SPECIALIZATION
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowCone,UniversalCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowConeWithSmallerThanPiSector,UniversalCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowConeWithBiggerThanPiSector,UniversalCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,NonHollowConeWithPiSector,UniversalCone)
+
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowCone,UniversalCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowConeWithSmallerThanPiSector,UniversalCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowConeWithBiggerThanPiSector,UniversalCone)
+VECGEOM_DEVICE_DECLARE_NS_CONV(ConeTypes,HollowConeWithPiSector,UniversalCone)
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+namespace ConeTypes {
 
 
 #define DEFINE_TRAIT_TYPE(name) \
@@ -24,6 +43,8 @@ namespace VECGEOM_NAMESPACE { namespace ConeTypes {
 // A cone that encompasses all cases - not specialized and
 // will do extra checks at runtime
 DEFINE_TRAIT_TYPE(UniversalCone);
+
+#ifndef VECGEOM_NO_SPECIALIZATION
 
 // A cone not having rmin or phi sector
 DEFINE_TRAIT_TYPE(NonHollowCone);
@@ -43,6 +64,8 @@ DEFINE_TRAIT_TYPE(HollowConeWithBiggerThanPiSector);
 // A cone with rmin and a phi sector equal to pi
 DEFINE_TRAIT_TYPE(HollowConeWithPiSector);
 
+#endif // VECGEOM_NO_SPECIALIZATION
+
 #undef DEFINE_TRAIT_TYPE
 
 // Mapping of cone types to certain characteristics
@@ -58,6 +81,9 @@ template <typename T>
 struct NeedsPhiTreatment {
   static const TreatmentType value=YES;
 };
+
+#ifndef VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsPhiTreatment<NonHollowCone> {
   static const TreatmentType value=NO;
@@ -66,6 +92,9 @@ template <>
 struct NeedsPhiTreatment<HollowCone> {
   static const TreatmentType value=NO;
 };
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsPhiTreatment<UniversalCone> {
   static const TreatmentType value=UNKNOWN;
@@ -89,6 +118,9 @@ struct NeedsRminTreatment
 {
   static const TreatmentType value=YES;
 };
+
+#ifndef VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsRminTreatment<NonHollowCone>
 {
@@ -109,6 +141,9 @@ struct NeedsRminTreatment<NonHollowConeWithPiSector>
 {
   static const TreatmentType value=NO;
 };
+
+#endif // VECGEOM_NO_SPECIALIZATION
+
 template <>
 struct NeedsRminTreatment<UniversalCone>
 {
@@ -147,6 +182,8 @@ struct SectorType<UniversalCone> {
   static const AngleType value=UNKNOWN_AT_COMPILE_TIME;
 };
 
+#ifndef VECGEOM_NO_SPECIALIZATION
+
 template<>
 struct SectorType<NonHollowConeWithSmallerThanPiSector> {
   static const AngleType value=SMALLER_THAN_PI;
@@ -176,8 +213,10 @@ struct SectorType<HollowConeWithBiggerThanPiSector> {
   static const AngleType value=BIGGER_THAN_PI;
 };
 
+#endif // VECGEOM_NO_SPECIALIZATION
+
 } // end CONETYPES namespace
 
-} // End global namespace
+} } // End global namespace
 
 #endif /* VECGEOM_VOLUMES_KERNEL_SHAPETYPES_CONETYPES_H_ */

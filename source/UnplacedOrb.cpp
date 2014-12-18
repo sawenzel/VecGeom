@@ -16,7 +16,8 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
    
 VECGEOM_CUDA_HEADER_BOTH
@@ -201,47 +202,32 @@ VPlacedVolume* UnplacedOrb::CreateSpecializedVolume(
 
 #endif
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedOrb_CopyToGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedOrb::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedOrb_CopyToGpu(this->GetRadius(), gpu_ptr);
-  vecgeom::CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedOrb>(in_gpu_ptr, GetRadius());
 }
 
-VUnplacedVolume* UnplacedOrb::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<UnplacedOrb>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedOrb>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedOrb_ConstructOnGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedOrb(r);
-}
+template size_t DevicePtr<cuda::UnplacedOrb>::SizeOf();
+template void DevicePtr<cuda::UnplacedOrb>::Construct(const Precision r) const;
 
-void UnplacedOrb_CopyToGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedOrb_ConstructOnGpu<<<1, 1>>>(r, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

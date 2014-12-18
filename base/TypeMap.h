@@ -9,7 +9,8 @@
 #include <cassert>
 #include <map>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * @brief Bidirectional map between two distinct types.
@@ -119,6 +120,6 @@ public:
     }
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_TYPEMAP_H_

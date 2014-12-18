@@ -18,7 +18,8 @@
 
 #include <algorithm>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 constexpr int kVectorSize = VECGEOM_VECTOR_BIT_SIZE / sizeof(Precision);
 
@@ -260,6 +261,6 @@ CilkInt Max(CilkInt const &val1, CilkInt const &val2) {
   return result;
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BACKEND_CILKBACKEND_H_

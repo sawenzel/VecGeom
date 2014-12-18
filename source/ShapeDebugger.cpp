@@ -18,6 +18,7 @@
 #include <memory>
 
 namespace vecgeom {
+   inline namespace cxx {
 
 ShapeDebugger::ShapeDebugger(VPlacedVolume const *volume)
   : fVolume(volume), fMaxMismatches(8), fShowCorrectResults(false) {}
@@ -253,7 +254,7 @@ void ShapeDebugger::CompareDistanceToOutToROOT(
   differentResultRoot.SetLineStyle(2);
   TPolyLine3D rootHits;
   rootHits.SetLineColor(kRed);
-  rootHits.SetLineStyle(2); 
+  rootHits.SetLineStyle(2);
 
   std::vector<TPolyLine3D*> rays;
   std::vector<TPolyLine3D*> helperRays;
@@ -422,4 +423,4 @@ void ShapeDebugger::CompareSafetyToROOT(
 
 #endif
 
-} // End namespace vecgeom
+} } // End namespace vecgeom

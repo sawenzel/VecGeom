@@ -188,18 +188,18 @@ G4VSolid const* PlacedRootVolume::ConvertToGeant4() const {
 #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
-VPlacedVolume* PlacedRootVolume::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation,
-    VPlacedVolume *const gpu_ptr) const {
+DevicePtr<cuda::VPlacedVolume> PlacedRootVolume::CopyToGpu(
+   DevicePtr<cuda::LogicalVolume> const /* logical_volume */,
+   DevicePtr<cuda::Transformation3D> const /* transform */,
+   DevicePtr<cuda::VPlacedVolume> const /* in_gpu_ptr */) const {
   assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
-  return NULL;
+  return DevicePtr<cuda::VPlacedVolume>(nullptr);
 }
-VPlacedVolume* PlacedRootVolume::CopyToGpu(
-    LogicalVolume const *const logical_volume,
-    Transformation3D const *const transformation) const {
+DevicePtr<cuda::VPlacedVolume> PlacedRootVolume::CopyToGpu(
+   DevicePtr<cuda::LogicalVolume> const /*logical_volume*/,
+   DevicePtr<cuda::Transformation3D> const /* transform */) const {
   assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
-  return NULL;
+  return DevicePtr<cuda::VPlacedVolume>(nullptr);
 }
 #endif
 

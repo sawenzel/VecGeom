@@ -14,6 +14,11 @@ class TGeoShape;
 
 namespace vecgeom {
 
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedRootVolume; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedRootVolume );
+
+   inline namespace cxx {
+
 template <typename T> class AOS3D;
 template <typename T> class SOA3D;
 
@@ -98,6 +103,12 @@ public:
                                   Vector3D<Precision> const &direction,
                                   Precision const stepMax) const;
 
+
+  virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &position,
+                                    Vector3D<Precision> const &direction,
+                                    Precision const stepMax) const;
+
+
   virtual void DistanceToOut(SOA3D<Precision> const &position,
                              SOA3D<Precision> const &direction,
                              Precision const *const step_max,
@@ -150,12 +161,13 @@ public:
 #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
+  virtual size_t DeviceSizeOf() const { return 0; /* return DevicePtr<cuda::PlacedRootVolume>::SizeOf(); */ }
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(DevicePtr<cuda::LogicalVolume> const logical_volume,
+                                             DevicePtr<cuda::Transformation3D> const transform,
+                                             DevicePtr<cuda::VPlacedVolume> const gpu_ptr) const;
+  virtual DevicePtr<cuda::VPlacedVolume> CopyToGpu(
+      DevicePtr<cuda::LogicalVolume> const logical_volume,
+      DevicePtr<cuda::Transformation3D> const transform) const;
 #endif
 
 };
@@ -201,6 +213,19 @@ VECGEOM_INLINE
 Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position,
                                           Vector3D<Precision> const &direction,
                                           const Precision stepMax) const {
+  return fRootShape->DistFromInside(
+           &position[0],
+           &direction[0],
+           1,
+           (stepMax == kInfinity) ? TGeoShape::Big() : stepMax
+         );
+}
+
+
+VECGEOM_INLINE
+Precision PlacedRootVolume::PlacedDistanceToOut(Vector3D<Precision> const &position,
+                                          Vector3D<Precision> const &direction,
+                                          const Precision stepMax) const {
   Vector3D<Precision> positionLocal =
       this->transformation_->Transform(position);
   Vector3D<Precision> directionLocal =
@@ -212,6 +237,7 @@ Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position,
            (stepMax == kInfinity) ? TGeoShape::Big() : stepMax
          ); 
 }
+
 
 VECGEOM_INLINE
 Precision PlacedRootVolume::SafetyToOut(
@@ -229,6 +255,6 @@ Precision PlacedRootVolume::SafetyToIn(
   return fRootShape->Safety(&position_local[0], false);
 }
 
-} // End namespace vecgeom
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDROOTVOLUME_H_

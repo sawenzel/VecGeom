@@ -8,7 +8,8 @@
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-  // OPTION_INT(npoints, 1024);
+  OPTION_INT(npoints, 1024);
+  OPTION_INT(nreps, 1024);
 
   UnplacedBox worldUnplaced = UnplacedBox(20., 20., 20.);
 
@@ -45,14 +46,15 @@ int main(int argc, char* argv[]) {
   GeoManager::Instance().SetWorld(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().GetWorld());
-  tester.SetVerbosity(1);
-  tester.SetPointCount(1<<10);
-  tester.SetRepetitions(512);
+  tester.SetVerbosity(3);
+  tester.SetPointCount(npoints);
+  tester.SetRepetitions(nreps);
+  tester.SetPoolMultiplier(1);
 
   tester.RunBenchmark();
 
   // cleanup
-  // delete transf;
+  //delete transf;
 
   return 0;
 }

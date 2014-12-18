@@ -13,6 +13,7 @@ class VUSolid;
 class G4VSolid;
 
 namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class VPlacedVolume;
 
@@ -77,6 +78,7 @@ private:
 
 };
 
+} // End impl namespace
 } // End global namespace
 
 #endif // VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_

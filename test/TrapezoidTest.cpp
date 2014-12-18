@@ -280,8 +280,8 @@ void insideUSolids(PlacedTrapezoid const& trap, UTrap const& utrap) {
 
     Vector3D<typename Backend::precision_v> point(x, y, z);
 
-    typename VECGEOM_NAMESPACE::Inside_t vginside = trap.Inside(point);
-    typename VECGEOM_NAMESPACE::Inside_t uinside  = utrap.Inside(point);
+    typename vecgeom::Inside_t vginside = trap.Inside(point);
+    typename vecgeom::Inside_t uinside  = utrap.Inside(point);
 
     if(vginside==EInside::kInside)       in++;
     else if(vginside==EInside::kSurface) surface++;

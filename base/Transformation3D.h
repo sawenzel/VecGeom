@@ -7,6 +7,17 @@
 #include "base/Global.h"
 
 #include "base/Vector3D.h"
+#include "backend/Backend.h"
+
+#include "backend/Backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Interface.h"
+#endif
+
+#include "backend/Backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Interface.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -16,13 +27,20 @@
 class TGeoMatrix;
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class Transformation3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+#ifndef VECGEOM_NVCC
+   } namespace cuda { class Transformation3D; }
+   inline namespace VECGEOM_IMPL_NAMESPACE {
+   //class vecgeom::cuda::Transformation3D;
+#endif
 
 class Transformation3D {
 
-public:
-
-  static const Transformation3D kIdentity;
 
 private:
   // TODO: it might be better to directly store this in terms of Vector3D<Precision> !!
@@ -36,7 +54,8 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  Transformation3D();
+  constexpr Transformation3D() : fTranslation{0.,0.,0.},
+  fRotation{1.,0.,0.,0.,1.,0.,0.,0.,1.}, fIdentity(true), fHasRotation(false), fHasTranslation(false) {};
 
   /**
    * Constructor for translation only.
@@ -45,7 +64,12 @@ public:
    * @param tz Translation in z-coordinate.
    */
   VECGEOM_CUDA_HEADER_BOTH
-  Transformation3D(const Precision tx, const Precision ty, const Precision tz);
+  Transformation3D(const Precision tx, const Precision ty, const Precision tz) :
+      fTranslation{tx,ty,tz},
+      fRotation{1.,0.,0.,0.,1.,0.,0.,0.,1.},
+      fIdentity( tx==0 && ty==0 && tz==0 ),
+      fHasRotation(false),
+      fHasTranslation( tx!=0 || ty!=0 || tz!=0 ) { }
 
   /**
    * @param tx Translation in x-coordinate.
@@ -290,14 +314,15 @@ public:
   void CopyFrom( Transformation3D const & rhs )
   {
     // not sure this compiles under CUDA
-    std::memcpy((void*)this, (const void*)&rhs, sizeof(*this));
+    copy(&rhs, &rhs+1, this);
   }
 
   // Utility and CUDA
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  Transformation3D* CopyToGpu() const;
-  Transformation3D* CopyToGpu(Transformation3D *const gpu_ptr) const;
+  size_t DeviceSizeOf() const { return DevicePtr<cuda::Transformation3D>::SizeOf(); }
+  DevicePtr<cuda::Transformation3D> CopyToGpu() const;
+  DevicePtr<cuda::Transformation3D> CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const;
 #endif
 
 
@@ -306,6 +331,11 @@ public:
 // mainly used for the benchmark comparisons with ROOT
   TGeoMatrix * ConvertToTGeoMatrix() const;
 #endif
+
+public:
+
+  static const Transformation3D kIdentity;
+
 
 }; // End class Transformation3D
 
@@ -777,6 +807,6 @@ Vector3D<InputType> Transformation3D::TransformDirection(
 
 std::ostream& operator<<(std::ostream& os, Transformation3D const &trans);
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_TRANSFORMATION3D_H_
