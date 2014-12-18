@@ -68,6 +68,8 @@ void benchROOT( double * points, TGeoBranchArray ** pool, int npoints )
     std::cout << "ROOT locate took " << timer.Elapsed() << " s\n";
 }
 
+
+#ifdef VECGEOM_GEANT4
 // we have to make sure that pool are valid touchables for this geometry
 void benchGeant4( G4Navigator * nav, std::vector<G4ThreeVector> const & points,
                   G4TouchableHistory ** pool ){
@@ -83,6 +85,7 @@ void benchGeant4( G4Navigator * nav, std::vector<G4ThreeVector> const & points,
     timer.Stop();
     std::cout << "GEANT4 locate took " << timer.Elapsed() << " s\n";
 }
+#endif
 
 
 void benchCUDA(){
@@ -121,7 +124,9 @@ int main( int argc, char * argv[] )
 
     TGeoBranchArray ** ROOTstatepool = new TGeoBranchArray*[npoints];
     double * rootpoints = new double[3*npoints];
+#ifdef VECGEOM_GEANT4
     std::vector<G4ThreeVector> g4points;
+#endif
 
     for( int i=0;i<npoints;++i )
     {
@@ -133,13 +138,16 @@ int main( int argc, char * argv[] )
 //#else
         //ROOTstatepool[i] = new TGeoBranchArray(GeoManager::Instance().getMaxDepth());
 //#endif
+#ifdef VECGEOM_GEANT4
         g4points.push_back(G4ThreeVector(points.x(i),points.y(i),points.z(i)));
+#endif
     }
 
     benchROOT( rootpoints, ROOTstatepool, npoints );
 
     // *** checks can follow **** /
 
+#ifdef VECGEOM_GEANT4
     // *** now try G4
     G4GDMLParser parser;
     parser.Read( argv[2] );
@@ -154,6 +162,7 @@ int main( int argc, char * argv[] )
         }
 
     benchGeant4( nav, g4points, Geant4statepool );
+#endif
 
     return 0;
 }

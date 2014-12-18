@@ -60,7 +60,7 @@ private:
   typedef void const* CpuAddress;
   typedef DevicePtr<char> GpuAddress;
   typedef std::map<const CpuAddress, GpuAddress> MemoryMap;
-  typedef std::map<VPlacedVolume const *, VPlacedVolume const *> PlacedVolumeMemoryMap;
+  typedef std::map<GpuAddress, CpuAddress> PlacedVolumeMemoryMap;
   typedef std::map<GpuAddress, GpuAddress> GpuMemoryMap;
 
   VPlacedVolume const *world_;
@@ -149,7 +149,7 @@ public:
   DevicePtr<cuda::LogicalVolume> LookupLogical(LogicalVolume const *const host_ptr);
 
   DevicePtr<cuda::VPlacedVolume> LookupPlaced(VPlacedVolume const *const host_ptr);
-  VPlacedVolume const* LookupPlacedCPUPtr(VPlacedVolume const *const gpu_ptr);
+  VPlacedVolume const* LookupPlacedCPUPtr( void * address );
 
   DevicePtr<cuda::Transformation3D> LookupTransformation(
       Transformation3D const *const host_ptr);
@@ -208,9 +208,9 @@ private:
 //                              const int n, const int depth, int *const output);
 
 inline
-VPlacedVolume const* CudaManager::LookupPlacedCPUPtr(VPlacedVolume const *const gpu_ptr)
+VPlacedVolume const* CudaManager::LookupPlacedCPUPtr(void * address)
 {
-    const VPlacedVolume * cpu_ptr = fGPUtoCPUmapForPlacedVolumes[gpu_ptr];
+    const VPlacedVolume * cpu_ptr = (const VPlacedVolume *) fGPUtoCPUmapForPlacedVolumes[GpuAddress(address)];
     assert(cpu_ptr != NULL);
     return  cpu_ptr;
 }

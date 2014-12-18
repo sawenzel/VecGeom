@@ -9,7 +9,7 @@
 #include "VariableSizeObj.h"
 #include "base/Transformation3D.h"
 #include "volumes/PlacedVolume.h"
-#ifdef VECGEOM_NVCC
+#ifdef VECGEOM_CUDA
 #include "management/CudaManager.h"
 #endif
 #include "base/Global.h"
@@ -462,7 +462,7 @@ void NavigationState::ConvertToGPUPointers()
        #ifdef HAVENORMALNAMESPACE
 #ifdef VECGEOM_CUDA
      for(int i=0;i<fCurrentLevel;++i){
-	 fPath[i]=vecgeom::CudaManager::Instance().LookupPlaced( fPath[i] );
+	 fPath[i] = (vecgeom::cxx::VPlacedVolume*) vecgeom::CudaManager::Instance().LookupPlaced( fPath[i] ).GetPtr();
      }
 #endif
 #endif
@@ -474,7 +474,7 @@ void NavigationState::ConvertToCPUPointers()
        #ifdef HAVENORMALNAMESPACE
 #ifdef VECGEOM_CUDA
        for(int i=0;i<fCurrentLevel;++i)
-         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( fPath[i] );
+         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( (void*) fPath[i] );
 #endif
 #endif
 }

@@ -3,7 +3,9 @@
 #include "base/Global.h"
 #include "management/RootGeoManager.h"
 #include "management/GeoManager.h"
+#ifdef VECGEOM_NVCC
 #include "management/CudaManager.h"
+#endif
 #include "volumes/utilities/VolumeUtilities.h"
 #include "navigation/SimpleNavigator.h"
 

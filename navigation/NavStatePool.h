@@ -10,7 +10,9 @@
 
 #include "base/Global.h"
 #include "navigation/NavigationState.h"
+#ifdef VECGEOM_CUDA
 #include "management/CudaManager.h"
+#endif
 #include "backend/cuda/Interface.h"
 
 // a fixed (runtime) size  "array" or contiguous
@@ -21,7 +23,9 @@
 
 #include <iostream>
 
-namespace VECGEOM_NAMESPACE{
+namespace vecgeom {
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class NavStatePool
 {
@@ -42,7 +46,7 @@ public:
 #endif
        // now create the states
        for(int i=0;i<fCapacity;++i){
-           NavigationState::MakeInstance( depth, fBuffer + NavigationState::SizeOf(depth)*i );
+           NavigationState::MakeInstanceAt( depth, fBuffer + NavigationState::SizeOf(depth)*i );
        }
 
     }
@@ -132,6 +136,6 @@ void NavStatePool::CopyFromGpu() {
 #endif
 #endif
 
-} // end namespace
+} } // end Global namespace
 
 #endif /* NAVSTATEPOOL_H_ */

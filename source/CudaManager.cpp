@@ -234,7 +234,7 @@ void CudaManager::AllocateGeometry() {
          logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
       memory_map[ToCpuAddress(*i)] = DevicePtr<char>(gpu_array);
 
-         fGPUtoCPUmapForPlacedVolumes[ static_cast<VPlacedVolume const*>(gpu_address) ] = *i;
+         fGPUtoCPUmapForPlacedVolumes[ GpuAddress(gpu_array) ] = *i;
 
       ++gpu_array;
     }

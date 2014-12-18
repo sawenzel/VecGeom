@@ -520,7 +520,6 @@ endif()
 # Define executables
 
 set(TEST_EXECUTABLES_CORE 
-  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
   ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
@@ -537,6 +536,7 @@ set(TEST_EXECUTABLES_CORE
 
 
 set(TEST_EXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
