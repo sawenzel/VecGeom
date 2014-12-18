@@ -356,7 +356,6 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::V
                                         zPlanesGpu, rminGpu, rmaxGpu
                                         );
 
-  // remove temporary space from GPU : dangerous as the polyhedra keeps pointer to these
   zPlanesGpu.Deallocate();
   rminGpu.Deallocate();
   rminGpu.Deallocate();
