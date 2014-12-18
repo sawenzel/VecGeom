@@ -193,7 +193,8 @@ void CudaManager::CleanGpu() {
 
 template <typename Coll>
 bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title,
-                                             const Coll &data
+                                             const Coll &data,
+					     bool isforplacedvol
                                              )
 {
    // NOTE: Code need to be enhanced to propage the error correctly.
@@ -211,6 +212,8 @@ bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title,
 
    for (auto i : data) {
       memory_map[ToCpuAddress(i)] = gpu_address;
+      if(isforplacedvol)
+	  fGPUtoCPUmapForPlacedVolumes[ gpu_address ] = i;
       gpu_address += i->DeviceSizeOf();
    }
 
@@ -234,7 +237,7 @@ void CudaManager::AllocateGeometry() {
          logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
       memory_map[ToCpuAddress(*i)] = DevicePtr<char>(gpu_array);
 
-         fGPUtoCPUmapForPlacedVolumes[ GpuAddress(gpu_array) ] = *i;
+
 
       ++gpu_array;
     }
@@ -244,7 +247,7 @@ void CudaManager::AllocateGeometry() {
 
   AllocateCollectionOnCoproc("unplaced volumes", unplaced_volumes_);
 
-  AllocateCollectionOnCoproc("placed volumes", placed_volumes_);
+  AllocateCollectionOnCoproc("placed volumes", placed_volumes_, true);
 
   AllocateCollectionOnCoproc("transformations", transformations_);
 

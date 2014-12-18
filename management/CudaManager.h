@@ -191,7 +191,7 @@ private:
    */
   template <typename Coll>
   bool AllocateCollectionOnCoproc(const char *verbose_title,
-                                  const Coll &data);
+                                  const Coll &data, bool isplaced=false);
 
   // template <typename TrackContainer>
   // void LocatePointsTemplate(TrackContainer const &container, const int n,

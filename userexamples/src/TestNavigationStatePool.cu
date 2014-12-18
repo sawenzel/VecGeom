@@ -20,19 +20,8 @@ void ProcessNavStates( void* gpu_ptr /* a pointer to buffer of navigation states
   vecgeom::cuda::NavigationState * state = reinterpret_cast<vecgeom::cuda::NavigationState*>( gpu_ptr +
         vecgeom::cuda::NavigationState::SizeOf(depth)*i ); 
 
-  //void * oldpathpointer = state->GetPathPointer();
-  // need to fix path pointer
-  //state->CorrectPathPointer();
-
-//  if(i==5){
- //   printf("thread %i state %d\n", i, state->GetCurrentLevel());
-  //  for(int j=0;j<state->GetCurrentLevel();++j)
-  //  	    printf("volumep %p", state->At(j));
- // }
-
   // actually do something to the states; here just popping off the top volume
- // if( state->GetCurrentLevel()>0 )
-    state->Pop();
+  state->Pop();
 
    // state->SetPathPointer( oldpathpointer );
 }
