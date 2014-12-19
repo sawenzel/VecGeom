@@ -358,7 +358,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::V
 
   zPlanesGpu.Deallocate();
   rminGpu.Deallocate();
-  rminGpu.Deallocate();
+  rmaxGpu.Deallocate();
 
   CudaAssertError();
   return gpupolyhedra;
