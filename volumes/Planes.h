@@ -27,8 +27,8 @@ class Planes : public AlignedBase {
 
 private:
 
-  SOA3D<Precision> fNormals;
-  Array<Precision> fDistances;
+  SOA3D<Precision> fNormals; ///< Normalized normals of the planes.
+  Array<Precision> fDistances; ///< Distance from plane to origin (0, 0, 0).
 
 public:
 

@@ -28,9 +28,13 @@ class Quadrilaterals {
 
 private:
 
-  Planes fPlanes;
-  Planes fSideVectors[4];
-  AOS3D<Precision> fCorners[4];
+  Planes fPlanes; ///< The planes in which the quadrilaterals lie.
+  Planes fSideVectors[4]; ///< Vectors pointing from a side constructed from two
+                          ///  corners to the origin, equivalent to
+                          ///  normal x (c1 - c0)
+                          ///  Used to check if an intersection is in bounds.
+  AOS3D<Precision> fCorners[4]; ///< Four corners of the quadrilaterals. Used
+                                ///  for bounds checking.
 
 public:
 
