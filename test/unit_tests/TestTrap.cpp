@@ -17,7 +17,7 @@
 //#include <cassert>
 #include <cmath>
 
-template <class Trap_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
+template <typename Constants, class Trap_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestTrap() {
     Vec_t pzero(0,0,0);
     Vec_t ponxside(20,0,0),ponyside(0,30,0),ponzside(0,0,40);
@@ -389,11 +389,9 @@ bool TestTrap() {
     Dist=trap1.DistanceToIn(pbigmz,vz);
     assert(ApproxEqual(Dist,60));
     Dist=trap1.DistanceToIn(pbigx,vxy);
-    if( Dist >= UUtils::kInfinity ) Dist = UUtils::kInfinity;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    assert(ApproxEqual(Dist,Constants::kInfinity));
     Dist=trap1.DistanceToIn(pbigmx,vxy);
-    if( Dist >= UUtils::kInfinity ) Dist = UUtils::kInfinity;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    assert(ApproxEqual(Dist,Constants::kInfinity));
 
     Dist=trap2.DistanceToIn(pbigx,vmx);
     assert(ApproxEqual(Dist,80));
@@ -408,74 +406,51 @@ bool TestTrap() {
     Dist=trap2.DistanceToIn(pbigmz,vz);
     assert(ApproxEqual(Dist,60));
     Dist=trap2.DistanceToIn(pbigx,vxy);
-    if( Dist >= UUtils::kInfinity ) Dist = UUtils::kInfinity;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    assert(ApproxEqual(Dist,Constants::kInfinity));
     Dist=trap2.DistanceToIn(pbigmx,vxy);
-    if( Dist >= UUtils::kInfinity ) Dist = UUtils::kInfinity;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    assert(ApproxEqual(Dist,Constants::kInfinity));
 
     dist=trap3.DistanceToIn(Vec_t(50,-50,0),vy);
-    //  std::cout<<"trap3.DistanceToIn(Vec_t(50,-50,0),vy) = "<<dist<<std::endl ;
     assert(ApproxEqual(dist,50));
 
     dist=trap3.DistanceToIn(Vec_t(50,-50,0),vmy);
-    // std::cout<<"trap3.DistanceToIn(Vec_t(50,-50,0),vmy) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap4.DistanceToIn(Vec_t(50,50,0),vy);
-    //  std::cout<<"trap4.DistanceToIn(Vec_t(50,50,0),vy) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap4.DistanceToIn(Vec_t(50,50,0),vmy);
-    //  std::cout<<"trap4.DistanceToIn(Vec_t(50,50,0),vmy) = "<<dist<<std::endl ;
     assert(ApproxEqual(dist,50));
 
     dist=trap1.DistanceToIn(Vec_t(0,60,0),vxmy);
-    //  std::cout<<"trap1.DistanceToIn(Vec_t(0,60,0),vxmy) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap1.DistanceToIn(Vec_t(0,50,0),vxmy);
     std::cout<<"trap1.DistanceToIn(Vec_t(0,50,0),vxmy) = "<<dist<<" and vxmy="<< vxmy << std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
     // assert(ApproxEqual(dist,sqrt(800.)));  // A bug in UTrap!!!  Just keep printout above as a reminder
 
     dist=trap1.DistanceToIn(Vec_t(0,40,0),vxmy);
-    // std::cout<<"trap1.DistanceToIn(Vec_t(0,40,0),vxmy) = "<<dist<<std::endl ;
     assert(ApproxEqual(dist,10.0*std::sqrt(2.0)));
 
     dist=trap1.DistanceToIn(Vec_t(0,40,50),vxmy);
-    // std::cout<<"trap1.DistanceToIn(Vec_t(0,40,50),vxmy) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     // Parallel to side planes
 
     dist=trap1.DistanceToIn(Vec_t(40,60,0),vmx);
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    //std::cout<<"TestTrap: point="<< Vec_t(40,60,0) <<", dir="<< vmx <<" -- Dist="<< dist << std::endl;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap1.DistanceToIn(Vec_t(40,60,0),vmy);
-    //  std::cout<<"trap1.DistanceToIn(Vec_t(40,60,0),vmy) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap1.DistanceToIn(Vec_t(40,60,50),vmz);
-    //   std::cout<<"trap1.DistanceToIn(Vec_t(40,60,50),vmz) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap1.DistanceToIn(Vec_t(0,0,50),vymz);
-    // std::cout<<"trap1.DistanceToIn(Vec_t(0,0,50),vymz) = "<<dist<<std::endl ;
     assert(ApproxEqual(dist,10.0*std::sqrt(2.0)));
 
     dist=trap1.DistanceToIn(Vec_t(0,0,80),vymz);
-    // std::cout<<"trap1.DistanceToIn(Vec_t(0,0,80),vymz) = "<<dist<<std::endl ;
-    if( dist >= UUtils::kInfinity ) dist = UUtils::kInfinity;
-    assert(ApproxEqual(dist,UUtils::kInfinity));
+    assert(ApproxEqual(dist,Constants::kInfinity));
 
     dist=trap1.DistanceToIn(Vec_t(0,0,70),vymz);
     std::cout<<"trap1.DistanceToIn(Vec_t(0,0,70),vymz) = "<<dist<<", vymz="<< vymz << std::endl ;
@@ -494,13 +469,27 @@ bool TestTrap() {
    return true;
 }
 
+#ifdef VECGEOM_USOLIDS
+struct USOLIDSCONSTANTS
+{
+  static constexpr double kInfinity = DBL_MAX;//UUSolids::kInfinity;
+};
+#endif
+struct VECGEOMCONSTANTS
+{
+  static constexpr double kInfinity = vecgeom::kInfinity;
+};
+
+
 int main() {
-  assert(TestTrap<VECGEOM_NAMESPACE::SimpleTrapezoid>());
-  std::cout << "VecGeom Trap passed.\n";
+
+    TestTrap<VECGEOMCONSTANTS, VECGEOM_NAMESPACE::SimpleTrapezoid>();
+    std::cout << "VecGeom Trap passed.\n";
 
 #ifdef VECGEOM_USOLIDS
-  assert(TestTrap<UTrap>());
-  std::cout << "UTrap passed (but notice discrepancies above, where asserts have been disabled!)\n";
+    TestTrap<USOLIDSCONSTANTS, UTrap>();
+    std::cout << "UTrap passed (but notice discrepancies above, where asserts have been disabled!)\n";
 #endif
+
   return 0;
 }

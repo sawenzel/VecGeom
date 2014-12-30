@@ -10,8 +10,8 @@
 #endif
 #include "stdlib.h"
 
-//typedef UTrap Trap_t;
-typedef vecgeom::SimpleTrapezoid Trap_t;
+//using Trap_t = UTrap;
+using Trap_t = vecgeom::SimpleTrapezoid;
 
 int main(int argc, char *argv[]) {
 
