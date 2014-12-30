@@ -90,7 +90,7 @@ bool TestCons()
          c8a("Solid Full Cone2",0,100,0,150,50,0,2*VECGEOM_NAMESPACE::kPi),
          c8b("Hollow Full Cone2",50,100,100,150,50,0,2*VECGEOM_NAMESPACE::kPi),
          c8c("Hollow Full Cone2inv",100,150,50,100,50,0,2*VECGEOM_NAMESPACE::kPi),
-         c9("Excotic Cone",50,60,
+         c9("Exotic Cone",50,60,
             0,           // 1.0e-7,   500*kRadTolerance,
                            10,50,0,2*VECGEOM_NAMESPACE::kPi),
          cms("cms cone",0.0,70.0,0.0,157.8,2949.0,0.0,6.2831853071796);
