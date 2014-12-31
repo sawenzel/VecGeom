@@ -328,23 +328,24 @@ bool TestSphere() {
     Vec_t norm;
     bool convex;
     convex = true;
+    //bool verbose=false;
     //JUST A TESTING SPHERE FOR DEBUGGING
     //Sphere_t test("Solid VecGeomSphere #test",6, 8, 0, 2*PI, 0., PI);
     Sphere_t test("Solid VecGeomSphere #test",10, 20, 0.2, 3.6, 0.2, 0.5);
     Vec_t testPoint(-6.083316, 7.548949, 11.675289);
     double mag=std::sqrt(testPoint[0]*testPoint[0] + testPoint[1]*testPoint[1] + testPoint[2]*testPoint[2]);
-    std::cout<<"Magnitude of Point : "<< mag <<std::endl;
+    if(verbose)std::cout<<"Magnitude of Point : "<< mag <<std::endl;
     Vec_t testDir(0.478757, -0.602168, 0.638894);
     double pdotV = testPoint[0]*testDir[0]+testPoint[1]*testDir[1]+testPoint[2]*testDir[2];
     if(pdotV < 0)
-        std::cout<<"Direction of Point : IN"<<std::endl;
+    { if(verbose)std::cout<<"Direction of Point : IN"<<std::endl;}
     else
-        std::cout<<"Direction of Point : Out"<<std::endl;
+    {if(verbose)std::cout<<"Direction of Point : Out"<<std::endl;}
     
-    std::cout<<"Theta is : " <<std::acos(testDir[2]/ mag)<<std::endl;
-    std::cout<<"PHI is : "<< std::atan(testDir[1]/testDir[0])<<std::endl;
+    if(verbose)std::cout<<"Theta is : " <<std::acos(testDir[2]/ mag)<<std::endl;
+    if(verbose)std::cout<<"PHI is : "<< std::atan(testDir[1]/testDir[0])<<std::endl;
     Dist=test.DistanceToOut(testPoint,testDir,norm,convex);
-    std::cout<<"Distance : "<<Dist<<std::endl;
+    if(verbose)std::cout<<"Distance : "<<Dist<<std::endl;
     
     /*
     std::cout<<"---- Point inside inner radius ----"<<std::endl;

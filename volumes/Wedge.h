@@ -53,11 +53,16 @@ class Wedge{
 
         Vector3D<Precision> fNormalVector2; // normal vector for second plane
         // convention is that it points inwards
+        
+        Precision kAngTolerance;
+        Precision halfAngTolerance;
+        Precision fEPhi,cPhi,hDPhi;
+        Precision sinSPhi,cosSPhi,sinCPhi,cosCPhi,sinEPhi,cosEPhi;
 
     public:
         VECGEOM_CUDA_HEADER_BOTH
         Wedge( Precision angle, Precision zeroangle = 0 ) :
-            fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2() {
+            fSPhi(zeroangle), fDPhi(angle), kAngTolerance(kSTolerance),fAlongVector1(), fAlongVector2() {
             // check input
             Assert( angle > 0., " wedge angle has to be larger than zero " );
 
@@ -71,6 +76,17 @@ class Wedge{
             fNormalVector1.y() = std::cos(zeroangle);  // not the + sign
             fNormalVector2.x() =  std::sin(zeroangle+angle);
             fNormalVector2.y() = -std::cos(zeroangle+angle); // note the - sign
+            
+            fEPhi = fSPhi + fDPhi;
+            hDPhi = 0.5 * fDPhi;
+            cPhi  = fSPhi + hDPhi;
+            sinSPhi = std::sin(fSPhi);
+            cosSPhi = std::cos(fSPhi);
+            sinEPhi = std::sin(fEPhi);
+            cosEPhi = std::cos(fEPhi);
+            sinCPhi   = std::sin(cPhi);
+            cosCPhi   = std::cos(cPhi);
+            halfAngTolerance = (0.5 * kAngTolerance*10.);
         }
 
         VECGEOM_CUDA_HEADER_BOTH
@@ -145,6 +161,7 @@ class Wedge{
         typename Backend::inside_v  inside=EInside::kSurface;
         MaskedAssign(completelyoutside, EInside::kOutside, &inside);
         MaskedAssign(completelyinside, EInside::kInside, &inside);
+        return inside;
     }
 
     template<typename Backend>
@@ -178,10 +195,12 @@ class Wedge{
                 typename Backend::bool_v &completelyinside,
                 typename Backend::bool_v &completelyoutside) const
     {
+        
         typedef typename Backend::precision_v Float_t;
 
        // this part of the code assumes some symmetry knowledge and is currently only
         // correct for a PhiWedge assumed to be aligned along the z-axis.
+        /*
         Float_t x = localPoint.x();
         Float_t y = localPoint.y();
         Float_t startx = fAlongVector1.x( );
@@ -194,6 +213,7 @@ class Wedge{
 
         // TODO: I think we need to treat the tolerance as a phi - tolerance
         // this will complicate things a little bit
+        
         completelyoutside = startCheck < MakeMinusTolerant<ForInside>(0.);
         if(ForInside)
             completelyinside = startCheck > MakePlusTolerant<ForInside>(0.);
@@ -208,6 +228,29 @@ class Wedge{
             if(ForInside)
                completelyinside |= endCheck > MakePlusTolerant<ForInside>(0.);
         }
+         */
+        
+        //New Definition with Angular Tolerances
+        Float_t pPhi = localPoint.Phi();
+        
+    
+        //*******************************
+        //Very important 
+        MaskedAssign((pPhi<(fSPhi - halfAngTolerance)),pPhi+(2.*kPi),&pPhi);
+        MaskedAssign((pPhi>(fEPhi + halfAngTolerance)),pPhi-(2.*kPi),&pPhi);
+        //*******************************
+    
+        Float_t tolAngMin = fSPhi + halfAngTolerance;
+        Float_t tolAngMax = fEPhi - halfAngTolerance;
+        completelyinside = (pPhi <= tolAngMax) && (pPhi >= tolAngMin);
+        
+    
+        tolAngMin = fSPhi - halfAngTolerance;
+        tolAngMax = fEPhi + halfAngTolerance;
+    
+        completelyoutside = (pPhi < tolAngMin) || (pPhi > tolAngMax);
+       
+        
     }
 
 
@@ -266,7 +309,37 @@ class Wedge{
         }
    }
 
+   //New Definition
    template <class Backend>
+   VECGEOM_CUDA_HEADER_BOTH
+   void Wedge::DistanceToIn(
+           Vector3D<typename Backend::precision_v> const &point,
+           Vector3D<typename Backend::precision_v> const &dir,typename  Backend::precision_v &distWedge1,
+           typename  Backend::precision_v &distWedge2 ) const {
+     
+      typedef typename Backend::precision_v Float_t;
+      typedef typename Backend::bool_v Bool_t;
+     
+      distWedge1 = kInfinity;
+      distWedge2 = kInfinity;
+      Float_t Dist(0.);
+      Float_t Comp = dir.x() * sinSPhi - dir.y() * cosSPhi;
+      MaskedAssign((Comp < 0.),(point.y() * cosSPhi - point.x() * sinSPhi),&Dist);
+      MaskedAssign(((Comp < 0.) && (Dist < halfAngTolerance) ),(Dist/Comp),&distWedge1);
+      
+      Comp = -1*(dir.x() * sinEPhi - dir.y() * cosEPhi);
+      MaskedAssign( (Comp < 0.),(-1 * (point.y() * cosEPhi - point.x() * sinEPhi)),&Dist );
+      MaskedAssign(((Comp < 0.) && (Dist < halfAngTolerance) ),(Dist/Comp),&distWedge2);
+      
+      MaskedAssign((distWedge1 < 0.),0., &distWedge1);
+       MaskedAssign((distWedge2 < 0.),0., &distWedge2);
+      
+      
+   }
+
+    //Actual Definition
+    /*
+    template <class Backend>
    VECGEOM_CUDA_HEADER_BOTH
    void Wedge::DistanceToIn(
            Vector3D<typename Backend::precision_v> const &point,
@@ -299,8 +372,13 @@ class Wedge{
      
        //std::cerr << "c1 " << comp1 <<" d1="<<distWedge1<<" p="<<point<< "\n";
        //std::cerr << "c2 " << comp2 <<" d2="<<distWedge2<< "\n";
+       MaskedAssign((distWedge1 < 0.),0.,&distWedge1);
+       MaskedAssign((distWedge2 < 0.),0.,&distWedge2);
    }
 
+    */
+    
+    
     template <class Backend>
    VECGEOM_CUDA_HEADER_BOTH
    void Wedge::DistanceToOut(
