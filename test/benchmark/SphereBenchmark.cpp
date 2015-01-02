@@ -17,8 +17,8 @@ int main(int argc, char* argv[]) {
   OPTION_DOUBLE(rmax,15.);
   OPTION_DOUBLE(sphi,0.);
   OPTION_DOUBLE(dphi,2*kPi/12);
-  OPTION_DOUBLE(stheta,0.);
-  OPTION_DOUBLE(dtheta,kPi/3); 
+  OPTION_DOUBLE(stheta,kPi/2.);
+  OPTION_DOUBLE(dtheta,kPi/4); 
 
   UnplacedBox worldUnplaced = UnplacedBox(rmax*4, rmax*4, rmax*4);
   UnplacedSphere sphereUnplaced = UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
