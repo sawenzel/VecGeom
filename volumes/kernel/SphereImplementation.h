@@ -580,12 +580,19 @@ UnplacedSphere const &unplaced,
         
     Float_t rad2 = localPoint.Mag2();
     //Float_t tolRMin = fRmin + (0.5 * fRminTolerance); 
-    Float_t tolRMin(fRmin + (0.5 * fRminTolerance *10. )); 
+    
+    //Float_t tolRMin(fRmin + (0.5 * fRminTolerance *10. )); 
+    //Float_t tolRMin2 = tolRMin * tolRMin;
+    
+    Float_t tolRMin(fRmin + ( fRminTolerance *10. )); 
     Float_t tolRMin2 = tolRMin * tolRMin;
+    
     //Float_t tolRMax = fRmax - (0.5 * fRminTolerance); 
-    Float_t tolRMax(fRmax - (0.5 * unplaced.GetMKTolerance() * 10. )); 
+    //Float_t tolRMax(fRmax - (0.5 * unplaced.GetMKTolerance() * 10. )); 
+    //Float_t tolRMax2 = tolRMax * tolRMax;
+    Float_t tolRMax(fRmax - ( unplaced.GetMKTolerance() * 10. )); 
     Float_t tolRMax2 = tolRMax * tolRMax;
-     
+    
     // Check radial surfaces
     //Radial check for GenericKernel Start
     
@@ -1884,6 +1891,10 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
       }
    distance = Min(distThetaMin,distance);
    
+   //std::cout<<"Distance : "<<distance << "  :: kSTolerance*100 : "<< kSTolerance*100. << "   ::  ( distance < kSTolerance*100.) : "<< ( distance < kSTolerance*100.)<<std::endl;
+   
+   MaskedAssign(( distance < kSTolerance/*2.25 * kSTolerance * 10.*/) , 0. , &distance);
+   
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -2157,6 +2168,8 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
   }
     distance = Min(distThetaMin,snxt);
     distance = Min(distPhiMin,distance);
+    
+    MaskedAssign(( distance < kSTolerance) , 0. , &distance);
     
 }
 

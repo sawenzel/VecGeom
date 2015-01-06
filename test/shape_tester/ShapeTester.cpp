@@ -58,7 +58,7 @@ ShapeTester::~ShapeTester()
 void ShapeTester::SetDefaults()
 {
 	numCheckPoints = 10;
-	maxPoints = 10000;
+	maxPoints = 3000;
         fVerbose = 1 ;
 	repeat = 1000;
 	insidePercent = 100.0/3;

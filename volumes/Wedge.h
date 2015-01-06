@@ -242,11 +242,16 @@ class Wedge{
     
         Float_t tolAngMin = fSPhi + halfAngTolerance;
         Float_t tolAngMax = fEPhi - halfAngTolerance;
+        //Float_t tolAngMin = fSPhi + kAngTolerance;
+        //Float_t tolAngMax = fEPhi - kAngTolerance;
         completelyinside = (pPhi <= tolAngMax) && (pPhi >= tolAngMin);
         
     
         tolAngMin = fSPhi - halfAngTolerance;
         tolAngMax = fEPhi + halfAngTolerance;
+        
+        //tolAngMin = fSPhi - kAngTolerance;
+        //tolAngMax = fEPhi + kAngTolerance;
     
         completelyoutside = (pPhi < tolAngMin) || (pPhi > tolAngMax);
        
