@@ -12,7 +12,7 @@
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedBox; )
-VECGEOM_DEVICE_DECLARE_CONV( UnplacedBox );
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedBox )
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -119,11 +119,11 @@ private:
 #ifndef VECGEOM_NVCC
 
   virtual VPlacedVolume* SpecializedVolume(
-      LogicalVolume const *const volume,
+      LogicalVolume const *const lvolume,
       Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL) const {
-    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
+    return CreateSpecializedVolume(lvolume, transformation, trans_code, rot_code,
                                    placement);
   }
 

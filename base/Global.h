@@ -143,13 +143,14 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #else
   // Functionality of <mm_malloc.h> is automatically included in icc
   #include <mm_malloc.h>
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__) && !defined(__NO_INLINE__)
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__) && !defined(__NO_INLINE__) && !defined( VECGEOM_NOINLINE )
     #define VECGEOM_INLINE inline __attribute__((always_inline))
     #ifndef VECGEOM_NVCC
       #define VECGEOM_ALIGNED __attribute__((aligned(64)))
     #endif
   #else
-    // Clang or forced inlining is disabled
+#pragma message "forced inlining disabled"
+  // Clang or forced inlining is disabled ( by falling back to compiler decision )
     #define VECGEOM_INLINE inline
     #ifndef VECGEOM_NVCC
       #define VECGEOM_ALIGNED

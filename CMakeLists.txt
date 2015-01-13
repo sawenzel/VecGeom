@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 2.8.8)
-project(Vecgeom)
+project(VecGeom)
 
 set(VECGEOM ON)
 
@@ -38,7 +38,7 @@ set(VECGEOM_VECTOR "" CACHE STRING
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries.")
 set(INSTALL_INCLUDE_DIR include CACHE PATH
     "Installation directory for header files.")
-set(INSTALL_CMAKE_DIR lib/CMake/Vecgeom CACHE PATH
+set(INSTALL_CMAKE_DIR lib/CMake/VecGeom CACHE PATH
     "Installation directory for CMake files.")
 
 # Make relative paths absolute
@@ -130,7 +130,7 @@ set(VECGEOM_COMPILATION_FLAGS
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
   if (APPLE OR UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
   endif()
@@ -259,7 +259,7 @@ if (Intel)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_INTEL}")
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
+#set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 if (CUDA)
@@ -362,6 +362,7 @@ endif()
 # until VecCore is separated from VecGeom (then it become something
 # ${VecCore_DIR}/include
 include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
+include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
 
 ################################################################################
 
@@ -539,6 +540,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
   ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
@@ -675,7 +677,7 @@ endif()
 
 # Installation
 
-export(PACKAGE Vecgeom)
+export(PACKAGE VecGeom)
 
 file(RELATIVE_PATH INSTALL_INCLUDE_DIR_RELATIVE
      "${INSTALL_CMAKE_DIR}" "${INSTALL_INCLUDE_DIR}/.")
@@ -691,8 +693,8 @@ if (USolids)
   set(CONF_LIBRARIES ${CONF_LIBRARIES}
       "${CONF_LIBRARY_DIR}/USolids/libusolids.a")
 endif()
-configure_file(VecgeomConfig.cmake.in
-               "${PROJECT_BINARY_DIR}/VecgeomConfig.cmake" @ONLY)
+configure_file(VecGeomConfig.cmake.in
+               "${PROJECT_BINARY_DIR}/VecGeomConfig.cmake" @ONLY)
 # Installation
 set(CONF_TYPE "install")
 set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}")
@@ -702,12 +704,12 @@ set(CONF_LIBRARIES ${VECGEOM_LIBRARIES_EXTERNAL}
 if (USolids)
   set(CONF_LIBRARIES ${CONF_LIBRARIES} "${CONF_LIBRARY_DIR}/libusolids.a")
 endif()
-configure_file(VecgeomConfig.cmake.in
-  "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake" @ONLY)
+configure_file(VecGeomConfig.cmake.in
+  "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake" @ONLY)
 
-# Install the VecgeomConfig.cmake
+# Install the VecGeomConfig.cmake
 install(FILES
-  "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecgeomConfig.cmake"
+  "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake"
   DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
 
 # Install headers and libraries

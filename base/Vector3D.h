@@ -388,6 +388,8 @@ std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
 
 #ifdef VECGEOM_VC_ACCELERATION
 
+#pragma message "using Vc accelerated Vector3D"
+
 /// This is a template specialization of class Vector3D<double> or
 /// Vector3D<float> that can provide internal vectorization of common vector
 /// operations.
@@ -690,8 +692,10 @@ public:
   }
 
 };
-
+#else
+#pragma message "using normal Vector3D.h"
 #endif // VECGEOM_VC_ACCELERATION
+
 
 #define VECTOR3D_BINARY_OP(OPERATOR, INPLACE) \
 template <typename Type, typename OtherType> \
