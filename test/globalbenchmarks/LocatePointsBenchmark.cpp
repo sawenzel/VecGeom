@@ -133,11 +133,11 @@ int main( int argc, char * argv[] )
         rootpoints[3*i]=points.x(i);
         rootpoints[3*i+1]=points.y(i);
         rootpoints[3*i+2]=points.z(i);
-//#if ROOTVERSION
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,34,23)
         ROOTstatepool[i] = TGeoBranchArray::MakeInstance( GeoManager::Instance().getMaxDepth()+1 );
-//#else
-        //ROOTstatepool[i] = new TGeoBranchArray(GeoManager::Instance().getMaxDepth());
-//#endif
+#else
+        ROOTstatepool[i] = new TGeoBranchArray(GeoManager::Instance().getMaxDepth());
+#endif // check ROOT_VERSION
 #ifdef VECGEOM_GEANT4
         g4points.push_back(G4ThreeVector(points.x(i),points.y(i),points.z(i)));
 #endif
