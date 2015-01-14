@@ -667,14 +667,14 @@ public:
   #define VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const VecType &other) { \
-    for (int i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
+    for (unsigned i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
       this->mem.vector(i) OPERATOR other.mem.vector(i); \
     } \
     return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const Precision &scalar) { \
-    for (int i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
+    for (unsigned i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
       this->mem.vector(i) OPERATOR scalar; \
     } \
     return *this; \
