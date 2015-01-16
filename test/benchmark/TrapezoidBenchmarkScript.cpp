@@ -85,10 +85,8 @@ int main(int argc, char* argv[]) {
   tester.SetPointCount(npoints);
   tester.SetRepetitions(nrep);
 
-  tester.RunBenchmark();
+  return tester.RunBenchmark();
 
   // cleanup
   // delete transf;
-
-  return 0;
 }
