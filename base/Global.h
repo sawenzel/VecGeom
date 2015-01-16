@@ -9,6 +9,7 @@
 #include <float.h>
 #include <limits>
 #include <stdio.h>
+#include <memory>
 
 #define VECGEOM
 
@@ -201,9 +202,9 @@ typedef int Inside_t;
 //}
 
 
-namespace std {
-   template< class T, class Deleter> class unique_ptr;
-}
+//namespace std {
+//  template< class T, class Deleter=std::default_delete<T> > class unique_ptr;
+//}
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {

@@ -82,24 +82,28 @@ public:
   void SetTolerance(Precision tol) { fTolerance = tol; }
 
   /// \brief Runs all geometry benchmarks.
-  void RunBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunBenchmark();
 
   /// \brief Runs a benchmark of the Inside method.
   ///
   /// The fraction of sampled points that will be located inside of daughter
   /// volume is specified by calling SetInsideBias().
   /// \sa SetInsideBias(const double)
-  void RunInsideBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunInsideBenchmark();
 
   /// \brief Runs a benchmark of the DistanceToIn and SafetyToIn methods.
   ///
   /// The fraction of sampled points that should be hitting a daughter volume is
   /// specified by calling SetToInBias().
   /// \sa SetToInBias(const double)
-  void RunToInBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunToInBenchmark();
 
   /// \brief Runs a benchmark of the DistanceToOut and SafetyToOut methods.
-  void RunToOutBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunToOutBenchmark();
 
   /// \return Amount of points and directions sampled for each benchmark
   ///         iteration.
@@ -233,7 +237,7 @@ private:
   template <typename Type>
   static void FreeAligned(Type *const distance);
 
-  void CompareDistances(
+  int CompareDistances(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,
@@ -253,7 +257,7 @@ private:
 #endif
     char const *const method) const;
 
-  void CompareSafeties(
+  int CompareSafeties(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,

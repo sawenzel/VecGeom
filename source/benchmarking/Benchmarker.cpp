@@ -96,7 +96,7 @@ BenchmarkResult Benchmarker::GenerateBenchmarkResult(
   return benchmark;
 }
 
-void Benchmarker::CompareDistances(
+int Benchmarker::CompareDistances(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,
@@ -116,6 +116,7 @@ void Benchmarker::CompareDistances(
 #endif
     char const *const method) const {
 
+  int mismatches=0;
   static char const *const outputLabels =
       "Specialized / Vectorized / Unspecialized"
 #ifdef VECGEOM_ROOT
@@ -138,7 +139,6 @@ void Benchmarker::CompareDistances(
     if (fVerbosity > 2) printf("%s\n", outputLabels);
 
     // Compare results
-    int mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
       bool mismatch = false;
       std::stringstream mismatchOutput;
@@ -206,10 +206,10 @@ void Benchmarker::CompareDistances(
     printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
 
   }
-
+  return mismatches;
 }
 
-void Benchmarker::CompareSafeties(
+int Benchmarker::CompareSafeties(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,
@@ -228,6 +228,8 @@ void Benchmarker::CompareSafeties(
     Precision const *const cuda,
 #endif
     char const *const method) const {
+
+    int mismatches = 0;
 
   static char const *const outputLabels =
       "Specialized / Vectorized / Unspecialized"
@@ -251,7 +253,6 @@ void Benchmarker::CompareSafeties(
     if (fVerbosity > 2) printf("%s\n", outputLabels);
 
     // Compare results
-    int mismatches = 0;
     int worse = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
       bool mismatch = false;
@@ -330,16 +331,20 @@ void Benchmarker::CompareSafeties(
 
   }
 
+  return mismatches;
 }
 
-void Benchmarker::RunBenchmark() {
+int Benchmarker::RunBenchmark() {
   Assert(fWorld, "No world specified to benchmark.\n");
-  RunInsideBenchmark();
-  RunToInBenchmark();
-  RunToOutBenchmark();
+  int errorcode=0;
+  errorcode+=RunInsideBenchmark();
+  errorcode+=RunToInBenchmark();
+  errorcode+=RunToOutBenchmark();
+  return (errorcode)? 1 : 0;
 }
 
-void Benchmarker::RunInsideBenchmark() {
+int Benchmarker::RunInsideBenchmark() {
+  int mismatches = 0;
 
   assert(fWorld);
 
@@ -419,12 +424,12 @@ void Benchmarker::RunInsideBenchmark() {
     if (fVerbosity > 2) printf("%s\n", outputLabelsContains.str().c_str());
 
     // Compare results
-    int mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
+        bool mismatch = false;
 
       //fProblematicContainPoints.push_back( fPointPool->operator[](i) );
 
-      bool mismatch = false;
+
       std::stringstream mismatchOutput;
       if (fVerbosity > 2) {
         mismatchOutput << containsSpecialized[i] << " / "
@@ -533,11 +538,10 @@ void Benchmarker::RunInsideBenchmark() {
   FreeAligned(containsCuda);
   FreeAligned(insideCuda);
 #endif
-
+  return mismatches;
 }
 
-void Benchmarker::RunToInBenchmark() {
-
+int Benchmarker::RunToInBenchmark() {
   assert(fWorld);
 
   if (fVerbosity > 0) {
@@ -623,7 +627,7 @@ void Benchmarker::RunToInBenchmark() {
               distancesCuda, safetiesCuda);
 #endif
 
-  CompareDistances(
+  int errorcode = CompareDistances(
     fPointPool,
     fDirectionPool,
     distancesSpecialized,
@@ -660,7 +664,7 @@ void Benchmarker::RunToInBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  CompareSafeties(
+  errorcode += CompareSafeties(
     fPointPool,
     NULL,
     safetiesSpecialized,
@@ -695,10 +699,10 @@ void Benchmarker::RunToInBenchmark() {
 #ifdef VECGEOM_CUDA
   FreeAligned(safetiesCuda);
 #endif
-
+  return (errorcode)? 1 : 0;
 }
 
-void Benchmarker::RunToOutBenchmark() {
+int Benchmarker::RunToOutBenchmark() {
 
   assert(fWorld);
   
@@ -783,7 +787,7 @@ void Benchmarker::RunToOutBenchmark() {
                distancesCuda, safetiesCuda);
 #endif
 
-  CompareDistances(
+  int errorcode = CompareDistances(
     fPointPool,
     fDirectionPool,
     distancesSpecialized,
@@ -820,7 +824,7 @@ void Benchmarker::RunToOutBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  CompareSafeties(
+  errorcode += CompareSafeties(
     fPointPool,
     NULL,
     safetiesSpecialized,
@@ -855,7 +859,7 @@ void Benchmarker::RunToOutBenchmark() {
 #ifdef VECGEOM_CUDA
   FreeAligned(safetiesCuda);
 #endif
-
+  return ( errorcode ) ? 1 : 0 ;
 }
 
 void Benchmarker::RunInsideSpecialized(bool *contains, Inside_t *inside) {
