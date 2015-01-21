@@ -85,6 +85,11 @@ public:
   /// return 0 if no error found; returns 1 if error found
   int RunBenchmark();
 
+
+  /// \brief Runs some meta information functions (such as surface arrea, volume and so on) on registered shapes
+  /// checks if this information agrees across different implementations (VecGeom, ROOT, Geant4, ...)
+  int CompareMetaInformation() const;
+
   /// \brief Runs a benchmark of the Inside method.
   ///
   /// The fraction of sampled points that will be located inside of daughter
