@@ -337,6 +337,7 @@ int Benchmarker::CompareSafeties(
 int Benchmarker::RunBenchmark() {
   Assert(fWorld, "No world specified to benchmark.\n");
   int errorcode=0;
+  errorcode+=CompareMetaInformation();
   errorcode+=RunInsideBenchmark();
   errorcode+=RunToInBenchmark();
   errorcode+=RunToOutBenchmark();
@@ -540,6 +541,40 @@ int Benchmarker::RunInsideBenchmark() {
 #endif
   return mismatches;
 }
+
+int Benchmarker::CompareMetaInformation() const {
+
+    double vecgeomcapacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+            vecgeomcapacity += (const_cast<VPlacedVolume *>(v->Specialized()))->Capacity();
+        printf("## VecGeom capacity sum %lf\n", vecgeomcapacity);
+    }
+#ifdef VECGEOM_ROOT
+    double ROOTcapacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+        ROOTcapacity += v->ROOT()->Capacity();
+    }
+    printf("## ROOT capacity sum %lf\n", ROOTcapacity);
+#endif
+
+    #ifdef VECGEOM_USOLIDS
+    double USOLIDScapacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+        USOLIDScapacity += const_cast<VUSolid*>(v->USolids())->Capacity();
+    }
+    printf("## USOLIDS capacity sum %lf\n", USOLIDScapacity);
+#endif
+
+    #ifdef VECGEOM_GEANT4
+    double g4capacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+        g4capacity += const_cast<G4VSolid*>(v->Geant4())->GetCubicVolume();
+    }
+    printf("## G4 capacity sum %lf\n", g4capacity);
+#endif
+    return 0;
+}
+
 
 int Benchmarker::RunToInBenchmark() {
   assert(fWorld);
