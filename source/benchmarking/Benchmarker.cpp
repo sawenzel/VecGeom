@@ -699,8 +699,10 @@ int Benchmarker::RunToInBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  errorcode += CompareSafeties(
-    fPointPool,
+  // for the moment; do not consider safety for errorcodes
+  //errorcode += CompareSafeties(
+  CompareSafeties(
+  fPointPool,
     NULL,
     safetiesSpecialized,
     safetiesVectorized,
@@ -859,8 +861,9 @@ int Benchmarker::RunToOutBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  errorcode += CompareSafeties(
-    fPointPool,
+  //errorcode += CompareSafeties(
+  CompareSafeties(
+  fPointPool,
     NULL,
     safetiesSpecialized,
     safetiesVectorized,

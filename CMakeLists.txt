@@ -581,6 +581,7 @@ set(TEST_EXECUTABLES_USOLIDS
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/BenchmarkShapeFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
