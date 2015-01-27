@@ -26,7 +26,7 @@ int main( int argc, char *argv[] ) {
 
     if( argc < 3 )
     {
-        std::cerr << "need to give root geometry file and logical volume name"
+      std::cerr << "need to give root geometry file and logical volume name";
     }
 
     TGeoManager::Import( argv[1] );
@@ -42,10 +42,15 @@ int main( int argc, char *argv[] ) {
         TGeoVolume * vol = reinterpret_cast<TGeoVolume*>(vlist->At( i ));
         std::string fullname(vol->GetName());
 
-        std::size_t founds = fullname.find(testvolume);
-        if (founds!=std::string::npos){
+	// strip off pointer information
+	std::string strippedname(fullname, 0, fullname.length()-4);
+
+        std::size_t founds = strippedname.compare(testvolume);
+        if (founds == 0){
             found++;
             foundvolume = vol;
+
+	    std::cerr << "found matching volume " << fullname << " of type " << vol->GetShape()->ClassName() << "\n";
         }
     }
 
@@ -67,7 +72,7 @@ int main( int argc, char *argv[] ) {
         UnplacedBox worldUnplaced( (bx + fabs(offset[0])*4, (by + fabs(offset[1]))*4 , (bz + fabs(offset[2]))*4));
         LogicalVolume world("world", &worldUnplaced);
         Transformation3D placement(5, 0, 0);
-        world.PlaceDaughter("cone", converted, &placement);
+        world.PlaceDaughter("testshape", converted, &placement);
 
         VPlacedVolume *worldPlaced = world.Place();
         GeoManager::Instance().SetWorld(worldPlaced);
