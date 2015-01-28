@@ -42,8 +42,8 @@ int main( int argc, char *argv[] ) {
         TGeoVolume * vol = reinterpret_cast<TGeoVolume*>(vlist->At( i ));
         std::string fullname(vol->GetName());
 
-	// strip off pointer information
-	std::string strippedname(fullname, 0, fullname.length()-4);
+        // strip off pointer information
+        std::string strippedname(fullname, 0, fullname.length()-4);
 
         std::size_t founds = strippedname.compare(testvolume);
         if (founds == 0){
@@ -57,42 +57,52 @@ int main( int argc, char *argv[] ) {
     std::cerr << "volume found " << found << " times \n";
 
     // now get the VecGeom shape and benchmark it
-    LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
-
-    // get the bounding box
-    TGeoBBox * bbox = dynamic_cast<TGeoBBox *>(foundvolume->GetShape( ));
-    double bx, by, bz;
-    double const * offset;
-    if(bbox)
+    if( foundvolume )
     {
-        bbox->InspectShape();
-        offset = bbox->GetOrigin();
+        LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
 
+        // get the bounding box
+        TGeoBBox * bbox = dynamic_cast<TGeoBBox *>(foundvolume->GetShape( ));
+        double bx, by, bz;
+        double const * offset;
+        if(bbox)
+        {
+            bx=bbox->GetDX();
+            by=bbox->GetDY();
+            bz=bbox->GetDZ();
+            bbox->InspectShape();
+            offset = bbox->GetOrigin();
 
-        UnplacedBox worldUnplaced( (bx + fabs(offset[0])*4, (by + fabs(offset[1]))*4 , (bz + fabs(offset[2]))*4));
-        LogicalVolume world("world", &worldUnplaced);
-        Transformation3D placement(5, 0, 0);
-        world.PlaceDaughter("testshape", converted, &placement);
+            UnplacedBox worldUnplaced( (bx + fabs(offset[0]))*4, (by + fabs(offset[1]))*4 , (bz + fabs(offset[2]))*4);
+            LogicalVolume world("world", &worldUnplaced);
+            // for the moment at origin
+            Transformation3D placement( 0, 0, 0 );
+            world.PlaceDaughter("testshape", converted, &placement);
 
-        VPlacedVolume *worldPlaced = world.Place();
-        GeoManager::Instance().SetWorld(worldPlaced);
+            VPlacedVolume *worldPlaced = world.Place();
+            GeoManager::Instance().SetWorld(worldPlaced);
 
-        Benchmarker tester(GeoManager::Instance().GetWorld());
-        tester.SetTolerance(1E-6);
-        tester.SetVerbosity(3);
-        tester.SetPoolMultiplier(1);
-        tester.SetRepetitions(1);
-        tester.SetPointCount(1000);
-        int returncodeIns   = tester.RunInsideBenchmark();
+            Benchmarker tester(GeoManager::Instance().GetWorld());
+            tester.SetTolerance(1E-6);
+            tester.SetVerbosity(3);
+            tester.SetPoolMultiplier(1);
+            tester.SetRepetitions(1);
+            tester.SetPointCount(100);
 
-        int returncodeToIn  = tester.RunToInBenchmark();
+            tester.CompareMetaInformation();
 
-        int returncodeToOut = tester.RunToOutBenchmark();
+            int returncodeIns   = tester.RunInsideBenchmark();
+            int returncodeToIn  = tester.RunToInBenchmark();
+            int returncodeToOut = tester.RunToOutBenchmark();
 
-        return returncodeIns + returncodeToIn + returncodeToOut;
-     }
-    return 1;
+            return returncodeIns + returncodeToIn + returncodeToOut;
+        }
+        return 1;
+    }
+    else
+    {
+        std::cerr << " NO SUCH VOLUME [" <<  testvolume << "] FOUND ... EXITING \n";
+        return 1;
+    }
 }
-
-
 
