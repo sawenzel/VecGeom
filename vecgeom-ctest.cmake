@@ -1,9 +1,17 @@
 ####################################################################
+# Before run should be exported next variables:
+# $CTEST_BUILD_OPTIONS // CMake flags for VecGeom build
+# $CMAKE_SOURCE_DIR    // CMake source directory
+# $CMAKE_BINARY_DIR    // CMake binary directory
+# $CMAKE_BUILD_TYPE    // CMake build type: Debug, Release 
+# $CMAKE_INSTALL_PREFIX // Installation prefix for CMake (Jenkins trigger)
+# $LABEL                // Name of node (Jenkins trigger)
+
 cmake_minimum_required(VERSION 2.8)
 
 ####################################################################
-#Compiler settings (only for unix)
-#TBD: APPLE & WIN32
+# Compiler settings (only for unix)
+# TBD: APPLE & WIN32
 
 if(UNIX)
   if(NOT compiler)
@@ -47,13 +55,17 @@ set(WITH_COVERAGE FALSE)
 # CTest/CMake settings 
 
 set(CTEST_BUILD_CONFIGURATION "$ENV{CMAKE_BUILD_TYPE}")
+set(CMAKE_INSTALL_PREFIX "$ENV{CMAKE_INSTALL_PREFIX}")
 set(CTEST_SOURCE_DIRECTORY "$ENV{CMAKE_SOURCE_DIR}")  
 set(CTEST_BINARY_DIRECTORY "$ENV{CMAKE_BINARY_DIR}")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
-set(CTEST_BUILD_OPTIONS "-DCMAKE_INSTALL_PREFIX=/afs/cern.ch/work/g/geant/jenkins/workspace/$ENV{LABEL}/VecGeom$ENV{CMAKE_BUILD_TYPE}
-  -DROOT=ON -DCMAKE_BUILD_TYPE=${CTEST_BUILD_CONFIGURATION} -DVc_DIR=$ENV{Vc_DIR} -DCTEST=ON")
-set(CTEST_CONFIGURE_COMMAND "${CMAKE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\" \"${CTEST_BUILD_OPTIONS}\" \"${CTEST_SOURCE_DIRECTORY}\"")
-#ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
+set(CTEST_BUILD_OPTIONS "$ENV{CTEST_BUILD_OPTIONS}")
+set(CTEST_CONFIGURE_COMMAND 
+ "${CMAKE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"
+ \"-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\"
+ \"-DCMAKE_BUILD_TYPE=${CTEST_BUILD_CONFIGURATION}\"
+ \"${CTEST_BUILD_OPTIONS}\" \"${CTEST_SOURCE_DIRECTORY}\"")
+ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
 #########################################################
 # Set build enviroment
@@ -131,7 +143,7 @@ ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Built.")
 ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Tested.")
-ctest_submit()
-message("Submitted.")
+#ctest_submit()
+#message("Submitted.")
 
 message("DONE:CTestScript")

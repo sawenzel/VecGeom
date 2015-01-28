@@ -696,17 +696,17 @@ if(DATA_DOWNLOAD)
     if(APPLE)
       execute_process(COMMAND curl -o ${DATA_FILE} ${DATA_URL})
     else()  
-      execute_process(COMMAND wget -q ${DATA_URL} -O ${DATA_FILE} --no-check-certificate)
+      execute_process(COMMAND wget -q ${DATA_URL} -O ${DATA_FILE})
     endif()
  endfunction(DATA_DOWNLOAD)
 
  message(STATUS "Searching for already downloaded data file(s)")
- find_file(DATA_FILE ExN03.root WORKING_DIRECTORY)
+ find_file(DATA_FILE ExN03.root ${CMAKE_BINARY_DIR})
  if(DATA_FILE STREQUAL "DATA_FILE-NOTFOUND")
     message("File not found: ExN03.root")
     DATA_DOWNLOAD()
  else()
-    message("File found: " ${DATA_FILE})
+    message("File found:" ${DATA_FILE})
     if(APPLE)
       execute_process(COMMAND md5 ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
       string(LENGTH ${MD5SUM} MD5LENGTH)
@@ -724,6 +724,7 @@ if(DATA_DOWNLOAD)
     endif()
  endif()
 endif()
+
 
 ################################################################################
 
