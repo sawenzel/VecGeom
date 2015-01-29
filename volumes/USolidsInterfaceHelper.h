@@ -110,11 +110,7 @@ public:
     return std::string();
   }
 
-  virtual double Capacity() {
-    assert(0 && "Capacity not implemented for USolids interface compatible"
-                " volume.");
-    return 0;
-  }
+
 
   virtual double SurfaceArea() {
     assert(0 && "SurfaceArea not implemented for USolids interface compatible"
