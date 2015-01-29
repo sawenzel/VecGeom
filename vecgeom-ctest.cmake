@@ -6,24 +6,9 @@
 # $CMAKE_BUILD_TYPE    // CMake build type: Debug, Release 
 # $CMAKE_INSTALL_PREFIX // Installation prefix for CMake (Jenkins trigger)
 # $LABEL                // Name of node (Jenkins trigger)
+# CC and CXX (In Jenkins this step has been done authomaticly)
 
 cmake_minimum_required(VERSION 2.8)
-
-####################################################################
-# Compiler settings (only for unix)
-# TBD: APPLE & WIN32
-
-if(UNIX)
-  if(NOT compiler)
-    set(compiler gcc)
-  endif(NOT compiler)
-  if(NOT cc_compiler)
-    set(cc_compiler gcc)
-  endif(NOT cc_compiler)
-  if(NOT cxx_compiler)
-    set(cxx_compiler c++)
-  endif(NOT cxx_compiler)
-endif(UNIX)
 
 ####################################################################
 # Build name settings
@@ -68,20 +53,13 @@ set(CTEST_CONFIGURE_COMMAND
 ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
 #########################################################
-# Set build enviroment
-if(CTEST_CMAKE_GENERATOR MATCHES Makefiles)
-  set(ENV{CC}                  "${cc_compiler}")
-  set(ENV{CXX}                 "${cxx_compiler}")
-endif(CTEST_CMAKE_GENERATOR MATCHES Makefiles)
-
-#########################################################
 # git command configuration
 
 find_program(CTEST_GIT_COMMAND NAMES git)
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone http://git.cern.ch/pub/VecGeom ${CTEST_SOURCE_DIRECTORY}")
 endif()
-set(CTEST_GIT_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
+#set(CTEST_GIT_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
 
 #########################################################
 ## Output language
