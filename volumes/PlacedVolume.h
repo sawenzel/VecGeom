@@ -250,6 +250,14 @@ public:
   virtual void SafetyToOutMinimize(SOA3D<Precision> const &points,
                                    Precision *const safeties) const =0;
 
+  // returning the cubic volume of the shape satisfying the USolids interface
+  // it is currently not a const function since some shapes might cache this value
+  // if it is expensive to calculate
+  virtual double Capacity() {
+      assert(0 && "Capacity not implemented");
+      return 0;
+  }
+
 public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
