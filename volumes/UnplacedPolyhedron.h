@@ -234,6 +234,10 @@ public:
   VECGEOM_INLINE
   UnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
 
+  // TODO: do this properly
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const { return 0.; }
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
