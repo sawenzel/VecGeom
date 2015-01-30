@@ -25,6 +25,7 @@
 
 #include <list>
 #include <vector>
+#include <utility> // for std::pair
 
 namespace vecgeom {
 
@@ -44,6 +45,9 @@ VECGEOM_DEVICE_FORWARD_DECLARE( class VolumePointers; );
 /// specific run.
 /// \sa BenchmarkResult
 class Benchmarker {
+
+public:
+    typedef typename std::vector< std::pair< Vector3D<Precision>, Vector3D<Precision> > > RayContainer;
 
 private:
   using VPlacedVolume_t = cxx::VPlacedVolume const *;
@@ -66,6 +70,9 @@ private:
   // containers to store problematic points
   // this can be filled during evaluation
   std::vector< Vector3D<Precision> > fProblematicContainPoints;
+
+  // a container storing rays : startpoint (Vector3D) plus direction (Vector3D)
+   RayContainer fProblematicRays;
 
 public:
 
@@ -179,6 +186,10 @@ public:
       return fProblematicContainPoints;
   }
 
+  RayContainer const & GetProblematicRays() const {
+        return fProblematicRays;
+  }
+
 private:
     
   void GenerateVolumePointers(VPlacedVolume_t const vol);
@@ -242,6 +253,7 @@ private:
   template <typename Type>
   static void FreeAligned(Type *const distance);
 
+  // internal method to crosscheck results; fills a container with problematic cases
   int CompareDistances(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
@@ -260,7 +272,7 @@ private:
 #ifdef VECGEOM_CUDA
     Precision const *const cuda,
 #endif
-    char const *const method) const;
+    char const *const method);
 
   int CompareSafeties(
     SOA3D<Precision> *points,

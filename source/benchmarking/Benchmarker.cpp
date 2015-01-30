@@ -31,6 +31,7 @@
 #include <cassert>
 #include <random>
 #include <sstream>
+#include <utility>
 
 namespace vecgeom {
 
@@ -114,7 +115,9 @@ int Benchmarker::CompareDistances(
 #ifdef VECGEOM_CUDA
     Precision const *const cuda,
 #endif
-    char const *const method) const {
+    char const *const method) {
+
+   fProblematicRays.clear();
 
   int mismatches=0;
   static char const *const outputLabels =
@@ -188,6 +191,12 @@ int Benchmarker::CompareDistances(
       if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
 #endif
       mismatches += mismatch;
+
+      if( mismatch )
+      {
+          fProblematicRays.push_back( std::pair<Vector3D<Precision>,Vector3D<Precision> >(Vector3D<Precision>(points->x(i), points->y(i), points->z(i)),
+                  Vector3D<Precision>( directions->x(i), directions->y(i), directions->z(i) ) ) );
+      }
 
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
         printf("Point (%f, %f, %f)", points->x(i), points->y(i),

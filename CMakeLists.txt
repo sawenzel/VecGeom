@@ -553,6 +553,7 @@ set(TEST_EXECUTABLES_ROOT
   # higher level benchmarks
   # ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile_WithVisualization.cpp
 )
 
 set(TEST_EXECUTABLES_VISUALIZATION
