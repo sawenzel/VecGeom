@@ -39,7 +39,7 @@ TGeoShape const* PlacedCone::ConvertToRoot() const {
     else
     {
        return new TGeoConeSeg("RootCone", GetDz(),GetRmin1(),GetRmax1(), GetRmin2(), GetRmax2(),
-               GetSPhi()*(180/M_PI), GetSPhi()+180*GetDPhi()/(M_PI) );
+               GetSPhi()*kRadToDeg, (GetSPhi() + GetDPhi())*kRadToDeg );
     }
 }
 #endif

@@ -14,6 +14,7 @@
 
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+#include "volumes/Wedge.h"
 #include <cmath>
 
 namespace vecgeom {
@@ -55,6 +56,7 @@ private:
   Precision fDz;
   Precision fSPhi;
   Precision fDPhi;
+  Wedge     fPhiWedge; // the Phi bounding of the cone (not the cutout) -- will be able to get rid of the next angles
 
   // vectors characterizing the normals of phi planes
   // makes task to detect phi sektors very efficient
@@ -107,16 +109,17 @@ Precision fSinEPhi;
                Precision rmax1,
                Precision rmin2,
                Precision rmax2,
-               Precision dz, Precision phimin, Precision phimax) :
+               Precision dz, Precision phimin, Precision deltaphi) :
         fRmin1(rmin1),
         fRmax1(rmax1),
         fRmin2(rmin2),
         fRmax2(rmax2),
         fDz(dz),
         fSPhi(phimin),
-        fDPhi(phimax),
+        fDPhi(deltaphi),
+        fPhiWedge(deltaphi,phimin),
         fNormalPhi1(),
-	fNormalPhi2(),
+        fNormalPhi2(),
         fAlongPhi1x(0),
         fAlongPhi1y(0),
         fAlongPhi2x(0),
@@ -263,11 +266,14 @@ Precision fSinEPhi;
     Precision alongPhi2y() const { return fAlongPhi2y; }
 
     VECGEOM_CUDA_HEADER_BOTH
+    Wedge const & GetWedge() const { return fPhiWedge; }
+
+    VECGEOM_CUDA_HEADER_BOTH
     bool IsFullPhi() const { return fDPhi == kTwoPi; }
 
     VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const {
-        return (2.*fDz* kPi/3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
+        return (fDz * fDPhi / 3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
                 fRmin1*fRmin1-fRmin2*fRmin2-fRmin1*fRmin2);
     }
 

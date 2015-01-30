@@ -88,7 +88,9 @@ public:
   Precision GetInnerOffset() const {return GetUnplacedVolume()->GetInnerOffset();}
   Precision GetOuterOffset() const {return GetUnplacedVolume()->GetOuterOffset();}
 
-  Precision Capacity() const { return GetUnplacedVolume()->Capacity();}
+  virtual Precision Capacity() {
+      return GetUnplacedVolume()->Capacity();
+  }
 
 #ifdef VECGEOM_USOLIDS
   virtual
@@ -114,9 +116,7 @@ public:
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  virtual Precision Capacity() {
-    return GetUnplacedVolume()->Capacity();
-  }
+
 
   virtual double SurfaceArea() {
      return GetUnplacedVolume()->SurfaceArea();
