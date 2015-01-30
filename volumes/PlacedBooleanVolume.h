@@ -24,6 +24,7 @@
 #include "G4UnionSolid.hh"
 #include "G4IntersectionSolid.hh"
 #include "G4ThreeVector.hh"
+#include "G4RotationMatrix.hh"
 #endif
 
 
@@ -70,6 +71,11 @@ public:
         logical_volume()->unplaced_volume());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision Capacity() {
+       // TODO: implement this
+      return 0.;
+  }
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const { };
@@ -129,30 +135,29 @@ public:
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * rightm = right->transformation();
+      G4RotationMatrix * g4rot = new G4RotationMatrix();
+      g4rot->set( CLHEP::HepRep3x3( rightm->Rotation() ) );
       if( GetUnplacedVolume()->GetOp() == kSubtraction ){
-        return new G4SubtractionSolid( GetLabel(),
-              const_cast<G4VSolid*>(left->ConvertToGeant4()),
-              const_cast<G4VSolid*>(right->ConvertToGeant4()),
-              0, /* no rotation for the moment */
-              G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
-            );
+            return new G4SubtractionSolid( GetLabel(),
+                 const_cast<G4VSolid*>(left->ConvertToGeant4()),
+                 const_cast<G4VSolid*>(right->ConvertToGeant4()),
+                 g4rot,
+                 G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2)));
       }
       if( GetUnplacedVolume()->GetOp() == kUnion ){
              return new G4UnionSolid( GetLabel(),
-                   const_cast<G4VSolid*>(left->ConvertToGeant4()),
-                   const_cast<G4VSolid*>(right->ConvertToGeant4()),
-                   0, /* no rotation for the moment */
-                   G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
-                 );
-           }
+                 const_cast<G4VSolid*>(left->ConvertToGeant4()),
+                 const_cast<G4VSolid*>(right->ConvertToGeant4()),
+                 g4rot,
+                 G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2)));
+      }
       if( GetUnplacedVolume()->GetOp() == kIntersection ){
-                  return new G4IntersectionSolid( GetLabel(),
-                        const_cast<G4VSolid*>(left->ConvertToGeant4()),
-                        const_cast<G4VSolid*>(right->ConvertToGeant4()),
-                        0, /* no rotation for the moment */
-                        G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2))
-                      );
-                }
+              return new G4IntersectionSolid( GetLabel(),
+                 const_cast<G4VSolid*>(left->ConvertToGeant4()),
+                 const_cast<G4VSolid*>(right->ConvertToGeant4()),
+                 g4rot,
+                 G4ThreeVector(rightm->Translation(0),  rightm->Translation(1),  rightm->Translation(2)));
+       }
       return NULL;
   }
   #endif
