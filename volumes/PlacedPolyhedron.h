@@ -137,6 +137,12 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() {
+      return GetUnplacedVolume()->Capacity();
+  }
+
+
+  VECGEOM_CUDA_HEADER_BOTH
   int PhiSegmentIndex(Vector3D<Precision> const &point) const;
 
   // CUDA specific

@@ -21,7 +21,7 @@ class UnplacedTorus : public VUnplacedVolume, public AlignedBase {
 private:
   // torus defining parameters ( like G4torus )
     Precision fRmin; // outer radius of torus "tube"
-    Precision fRmax; // innter radius of torus "tube"
+    Precision fRmax; // inner radius of torus "tube"
     Precision fRtor; // bending radius of torus
     Precision fSphi; // start angle
     Precision fDphi; // delta angle of torus section
