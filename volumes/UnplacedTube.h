@@ -161,6 +161,11 @@ fTolOz(other.fTolOz)
     return fZ * (fRmax2 - fRmin2) * fDphi;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const {
+      return volume();
+  }
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
