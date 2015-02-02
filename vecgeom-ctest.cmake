@@ -122,10 +122,12 @@ ctest_start(${MODEL})
 ctest_update(SOURCE ${CTEST_SOURCE_DIRECTORY})
 message("Updated.")
 ctest_configure(SOURCE "${CTEST_SOURCE_DIRECTORY}" BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
-
 message("Configured.")
+ctest_submit(PARTS Update Configure Notes)
+
 ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Built.")
+ctest_submit(PARTS Build)
 
 message(" -- Install ${MODEL} - ${CTEST_BUILD_NAME} --")
 execute_process(COMMAND make install  WORKING_DIRECTORY ${CTEST_BINARY_DIRECTORY}  RESULT_VARIABLE ExitCode)
@@ -133,7 +135,6 @@ CheckExitCode()
 
 ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Tested.")
+ctest_submit(PARTS Test)
 
-ctest_submit()
-message("Submitted.")
 message("DONE:CTestScript")
