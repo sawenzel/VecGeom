@@ -53,6 +53,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Quadrilaterals& operator=(Quadrilaterals const &other);
 
+  // returns the number of quadrilaterals ( planes ) stored in this container
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   int size() const;

@@ -37,7 +37,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       fPhiStart(phiStart),fPhiDelta(phiDelta),
       fZSegments(zPlaneCount-1), fZPlanes(zPlaneCount), fRMin(zPlaneCount),
       fRMax(zPlaneCount), fPhiSections(sideCount+1),
-      fBoundingTube(0, 1, 1, 0, 360) {
+      fBoundingTube(0, 1, 1, 0, kTwoPi) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -105,7 +105,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   Precision boundsPhiDelta = !fHasPhiCutout ? 360 : phiDelta;
   fBoundingTube = UnplacedTube(innerRadius - kTolerance,
                                outerRadius + kTolerance, 0.5*boundingTubeZ,
-                               boundsPhiStart, boundsPhiDelta);
+                               boundsPhiStart*kDegToRad, boundsPhiDelta*kDegToRad);
   fBoundingTubeOffset = zPlanes[0] + 0.5*boundingTubeZ;
 
   // Ease indexing into twodimensional vertix array

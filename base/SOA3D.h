@@ -178,7 +178,7 @@ SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 SOA3D<T>::SOA3D(size_t sz)
-    : fAllocated(true), fSize(0), fCapacity(sz),
+    : fAllocated(true), fSize(sz), fCapacity(sz),
       fX(NULL), fY(NULL), fZ(NULL) {
   Allocate();
 }
@@ -359,14 +359,17 @@ T const* SOA3D<T>::z() const { return fZ; }
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 void SOA3D<T>::set(size_t index, T xval, T yval, T zval) {
+  assert(index < fCapacity);
   fX[index] = xval;
   fY[index] = yval;
   fZ[index] = zval;
+
 }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 void SOA3D<T>::set(size_t index, Vector3D<T> const &vec) {
+  assert(index < fCapacity);
   fX[index] = vec[0];
   fY[index] = vec[1];
   fZ[index] = vec[2];

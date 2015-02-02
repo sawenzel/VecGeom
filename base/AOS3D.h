@@ -143,7 +143,7 @@ AOS3D<T>::AOS3D(Vector3D<T> *content, size_t size)
 
 template <typename T>
 AOS3D<T>::AOS3D(size_t sz)
-    : fAllocated(true), fSize(0), fCapacity(sz), fContent(NULL) {
+    : fAllocated(true), fSize(sz), fCapacity(sz), fContent(NULL) {
   reserve(fCapacity);
 }
 
