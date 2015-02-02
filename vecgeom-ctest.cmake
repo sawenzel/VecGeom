@@ -9,6 +9,12 @@
 # CC and CXX (In Jenkins this step has been done authomaticly)
 
 cmake_minimum_required(VERSION 2.8)
+###################################################################
+macro(CheckExitCode)
+  if(NOT ${ExitCode} EQUAL 0)
+    return(${ExitCode})
+ endif()
+endmacro(CheckExitCode)
 
 ####################################################################
 # Build name settings
@@ -29,7 +35,7 @@ message("CTEST name: ${CTEST_BUILD_NAME}")
 find_program(HOSTNAME_CMD NAMES hostname)
 exec_program(${HOSTNAME_CMD} ARGS OUTPUT_VARIABLE HOSTNAME)
 IF(NOT DEFINED CTEST_SITE)
-	SET(CTEST_SITE "${HOSTNAME}")
+  SET(CTEST_SITE "${HOSTNAME}")
 ENDIF(NOT DEFINED CTEST_SITE)
 
 #######################################################
@@ -46,7 +52,7 @@ set(CTEST_BINARY_DIRECTORY "$ENV{CMAKE_BINARY_DIR}")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_OPTIONS "$ENV{CTEST_BUILD_OPTIONS}")
 set(CTEST_CONFIGURE_COMMAND 
- "${CMAKE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"
+ "\"${CMAKE_COMMAND}\" \"-G${CTEST_CMAKE_GENERATOR}\"
  \"-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\"
  \"-DCMAKE_BUILD_TYPE=${CTEST_BUILD_CONFIGURATION}\"
  \"${CTEST_BUILD_OPTIONS}\" \"${CTEST_SOURCE_DIRECTORY}\"")
@@ -59,7 +65,7 @@ find_program(CTEST_GIT_COMMAND NAMES git)
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone http://git.cern.ch/pub/VecGeom ${CTEST_SOURCE_DIRECTORY}")
 endif()
-#set(CTEST_GIT_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
+set(CTEST_GIT_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
 
 #########################################################
 ## Output language
@@ -116,12 +122,18 @@ ctest_start(${MODEL})
 ctest_update(SOURCE ${CTEST_SOURCE_DIRECTORY})
 message("Updated.")
 ctest_configure(SOURCE "${CTEST_SOURCE_DIRECTORY}" BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
+
 message("Configured.")
 ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Built.")
+
+message(" -- Install ${MODEL} - ${CTEST_BUILD_NAME} --")
+execute_process(COMMAND make install  WORKING_DIRECTORY ${CTEST_BINARY_DIRECTORY}  RESULT_VARIABLE ExitCode)
+CheckExitCode()
+
 ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Tested.")
+
 ctest_submit()
 message("Submitted.")
-
 message("DONE:CTestScript")
