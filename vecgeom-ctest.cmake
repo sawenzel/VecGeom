@@ -1,3 +1,4 @@
+
 ####################################################################
 # Before run should be exported next variables:
 # $CTEST_BUILD_OPTIONS // CMake flags for VecGeom build
@@ -5,8 +6,10 @@
 # $CMAKE_BINARY_DIR    // CMake binary directory
 # $CMAKE_BUILD_TYPE    // CMake build type: Debug, Release 
 # $CMAKE_INSTALL_PREFIX // Installation prefix for CMake (Jenkins trigger)
-# $LABEL                // Name of node (Jenkins trigger)
 # CC and CXX (In Jenkins this step has been done authomaticly)
+# Enviroment for name of build for CERN CDash: 
+# $LABEL                // Name of node (Jenkins trigger)
+# Name of $BACKEND     // Backend for VecGeom (CUDA/Vc/Scalar/..)
 
 cmake_minimum_required(VERSION 2.8)
 ###################################################################
@@ -28,6 +31,10 @@ getuname(osrel  -r)
 getuname(cpu    -m)
 
 if(DEFINED ENV{LABEL})
+  if (DEFINED ENV{BACKEND})
+  set(CTEST_BUILD_NAME "${osname}-${cpu}-$ENV{LABEL}-$ENV{BACKEND}-$ENV{CMAKE_BUILD_TYPE}")
+  endif()
+else()
   set(CTEST_BUILD_NAME "${osname}-${cpu}-$ENV{LABEL}-$ENV{CMAKE_BUILD_TYPE}")
 endif()
 message("CTEST name: ${CTEST_BUILD_NAME}")
