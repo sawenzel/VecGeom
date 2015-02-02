@@ -355,7 +355,7 @@ int FindZSegmentKernel<kScalar>(
     Precision const *end,
     Precision const &pointZ) {
   // TODO: vectorize this and move the brute-force algorithm to the CUDA
-  //       implemetation. Inspiration can be found at:
+  //       implementation. Inspiration can be found at:
   //       http://schani.wordpress.com/2010/04/30/linear-vs-binary-search/
   int index = -1;
   while (begin < end && pointZ > *begin) {
@@ -697,6 +697,7 @@ bool PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
 
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
+  if( ! (zIndex >= 0) ) return false;
 
   ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
