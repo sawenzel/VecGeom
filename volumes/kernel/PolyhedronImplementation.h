@@ -710,14 +710,17 @@ bool PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
   }
 
   // Check that the point is not in the phi cutout wedge
-  if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
-    return !InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
-                                      localPoint);
-  }
+  // NOTE: This check is already part of the bounding tube check
+  // this code should be removed
+  //if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
+  //  return !InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
+                                     //localPoint);
+  //}
 
   return true;
 }
 
+// TODO: check this code -- maybe unify with previous function
 template <Polyhedron::EInnerRadii innerRadiiT,
           Polyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
@@ -786,6 +789,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
   const Vector3D<Precision> localDirection =
       transformation.TransformDirection(direction);
 
+
   {
     // Check if the point is within the bounding tube
     bool inBounds;
@@ -808,7 +812,10 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
           DistanceToIn<kScalar>(
               unplaced.GetBoundingTube(), transformation, boundsPoint,
               localDirection, stepMax, tubeDistance);
-      if (tubeDistance == kInfinity) return kInfinity;
+      if (tubeDistance == kInfinity)
+          {
+            return kInfinity;
+          }
     }
   }
 

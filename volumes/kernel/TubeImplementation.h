@@ -362,7 +362,8 @@ struct TubeImplementation {
     Bool_t insector = Backend::kTrue;
     if(checkPhiTreatment<tubeTypeT>(tube)) {
 
-      PointInCyclicalSector<Backend, tubeTypeT, UnplacedTube, false>(tube, point.x(), point.y(), insector);
+      insector = tube.GetWedge().Contains<Backend>( point );
+
       if(Backend::early_returns && !insector) {
         inside = Backend::kFalse;
         return;

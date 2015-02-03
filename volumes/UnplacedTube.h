@@ -7,6 +7,7 @@
 #include "base/Global.h"
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
+#include "volumes/Wedge.h"
 
 namespace vecgeom {
 
@@ -24,6 +25,7 @@ private:
   // cached values
   Precision fRmin2, fRmax2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
   Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2, fTolIz, fTolOz;
+  Wedge fPhiWedge;
 
   VECGEOM_CUDA_HEADER_BOTH
   static void GetAlongVectorToPhiSector(Precision phi, Precision &x, Precision &y) {
@@ -66,7 +68,8 @@ fTolOrmin2(0),
 fTolIrmax2(0),
 fTolOrmax2(0),
 fTolIz(0),
-fTolOz(0)
+fTolOz(0),
+fPhiWedge(dphi,sphi)
 {
     calculateCached();  
   }
@@ -84,7 +87,8 @@ fTolOrmin2(other.fTolOrmin2),
 fTolIrmax2(other.fTolIrmax2),
 fTolOrmax2(other.fTolOrmax2),
 fTolIz(other.fTolIz),
-fTolOz(other.fTolOz)
+fTolOz(other.fTolOz),
+fPhiWedge(other.fDphi,other.fSphi)
 {  }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -154,6 +158,10 @@ fTolOz(other.fTolOz)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision tolIrmax2() const { return fTolIrmax2; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Wedge const & GetWedge() const { return fPhiWedge; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

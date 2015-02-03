@@ -355,6 +355,7 @@ int Benchmarker::RunBenchmark() {
 
 int Benchmarker::RunInsideBenchmark() {
   int mismatches = 0;
+  int insidemismatches = 0;
 
   assert(fWorld);
 
@@ -480,7 +481,6 @@ int Benchmarker::RunInsideBenchmark() {
     printf("Comparing Inside results:\n");
     if (fVerbosity > 2) printf("%s\n", outputLabelsInside.str().c_str());
 
-    mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
       bool mismatch = false;
       std::stringstream mismatchOutput;
@@ -510,7 +510,7 @@ int Benchmarker::RunInsideBenchmark() {
       if (insideSpecialized[i] != insideCuda[i]) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << insideCuda[i];
 #endif
-      mismatches += mismatch;
+      insidemismatches += mismatch;
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
         printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
                *(fPointPool->y()+i), fPointPool->z(i));
@@ -524,7 +524,7 @@ int Benchmarker::RunInsideBenchmark() {
     if (fVerbosity > 2 && mismatches > 100) {
       printf("%s\n", outputLabelsInside.str().c_str());
     }
-    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
+    printf("%i / %i mismatches detected.\n", insidemismatches, fPointCount);
 
   }
 
@@ -548,7 +548,7 @@ int Benchmarker::RunInsideBenchmark() {
   FreeAligned(containsCuda);
   FreeAligned(insideCuda);
 #endif
-  return mismatches;
+  return mismatches + insidemismatches;
 }
 
 int Benchmarker::CompareMetaInformation() const {

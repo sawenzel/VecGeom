@@ -60,6 +60,8 @@ class Wedge{
             fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2() {
             // check input
             Assert( angle > 0., " wedge angle has to be larger than zero " );
+            //
+            Assert( angle <= kTwoPi, "wedge angle is larger than 2*Pi; Are you using radians?" );
 
             // initialize angles
             fAlongVector1.x() = std::cos(zeroangle);
