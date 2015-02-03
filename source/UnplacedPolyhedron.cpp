@@ -102,10 +102,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   // Create bounding tube with biggest outer radius and smallest inner radius
   Precision boundingTubeZ = zPlanes[zPlaneCount-1] - zPlanes[0] + 2.*kTolerance;
   Precision boundsPhiStart = !fHasPhiCutout ? 0 : phiStart;
-  Precision boundsPhiDelta = !fHasPhiCutout ? 360 : phiDelta;
+  Precision boundsPhiDelta = !fHasPhiCutout ? kTwoPi : phiDelta;
   fBoundingTube = UnplacedTube(innerRadius - kTolerance,
                                outerRadius + kTolerance, 0.5*boundingTubeZ,
-                               boundsPhiStart*kDegToRad, boundsPhiDelta*kDegToRad);
+                               boundsPhiStart, boundsPhiDelta);
   fBoundingTubeOffset = zPlanes[0] + 0.5*boundingTubeZ;
 
   // Ease indexing into twodimensional vertix array
@@ -216,7 +216,7 @@ Precision UnplacedPolyhedron::GetPhiEnd() const {
 
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiDelta() const {
-  return GetPhiEnd() - GetPhiStart();
+    return fPhiDelta;
 }
 
 VECGEOM_CUDA_HEADER_DEVICE
