@@ -148,8 +148,8 @@ public:
       const int sideCount,
       const int zPlaneCount,
       Precision zPlanes[],
-      Precision rMin[],
-      Precision rMax[]);
+      Precision const rMin[],
+      Precision const rMax[]);
   /// \param phiStart Angle in phi of first corner. This will be one phi angle
   ///                 of the phi cutout, if any cutout is specified. Specified
   ///                 in degrees (not radians).
@@ -172,8 +172,8 @@ public:
       const int sideCount,
       const int zPlaneCount,
       Precision zPlanes[],
-      Precision rMin[],
-      Precision rMax[]);
+      Precision const rMin[],
+      Precision const rMax[]);
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual ~UnplacedPolyhedron() {}
