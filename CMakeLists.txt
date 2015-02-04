@@ -551,7 +551,7 @@ endif()
 
 # Define executables
 
-set(TEST_EXECUTABLES_CORE 
+set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
@@ -609,7 +609,7 @@ set(TEST_EXECUTABLES_USOLIDS
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
-    
+
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -684,7 +684,7 @@ macro(build_executables EXECUTABLES)
       get_target_property(current_property ${TARGET_NAME} LINK_FLAGS)
       if(NOT current_property)
         set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "-B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4")
-      else() 
+      else()
         set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "${current_property} -B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4")
       endif()
     endif()
@@ -738,7 +738,7 @@ if(DATA_DOWNLOAD)
     set(DATA_FILE ExN03.root)
     if(APPLE)
       execute_process(COMMAND curl -o ${DATA_FILE} ${DATA_URL})
-    else()  
+    else()
       execute_process(COMMAND wget -q ${DATA_URL} -O ${DATA_FILE})
     endif()
  endfunction(DATA_DOWNLOAD)
@@ -754,7 +754,7 @@ if(DATA_DOWNLOAD)
       execute_process(COMMAND md5 ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
       string(LENGTH ${MD5SUM} MD5LENGTH)
       MATH(EXPR START "${MD5LENGTH} - 33")
-      string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)         
+      string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)
     else()
   execute_process(COMMAND md5sum ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
       string(SUBSTRING ${MD5SUM} 0 32 MD5SUM)
