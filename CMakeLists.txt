@@ -2,13 +2,30 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(VecGeom)
 
+enable_language(CXX)
+
 set(VECGEOM ON)
 
 ################################################################################
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type selected, default to Release")
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+string(TOUPPER ${CMAKE_BUILD_TYPE} _build_type)
+
+
+# Setting the C++ compiler to use
+set("${CMAKE_CXX_COMPILER_ID}" TRUE CACHE STRING "C++ Compiler")
+if (NOT GNU AND NOT Clang AND NOT Intel)
+  message(WARNING "Unsupported compiler. Build will likely fail.")
+endif()
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
+
+include(MacroUtilities)
+################################################################################
 
 # Configuration options
-
-option(VC_ACCELERATION "Internal vectorization using Vc." ON)
 
 option(CUDA "Enable compilation for CUDA." OFF)
 
@@ -34,8 +51,22 @@ option(DISTANCE_DEBUG "Enable comparision of calculcated distances againt ROOT/G
 
 option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
 
-set(VECGEOM_VECTOR "" CACHE STRING
-    "Vector instruction set to use (sse/avx/...).")
+set(VECGEOM_ARCH native sse2 sse3 ssse3 sse4.1 sse4.2 avx avx2 mic avx512)
+
+enum_option(VECGEOM_VECTOR
+      DOC "Vector instruction set to be used"
+      TYPE STRING
+      VALUES ${VECGEOM_ARCH}
+      CASE_INSENSITIVE
+    )
+
+option(Vc "Enable Vc backend" ON)
+
+option(VC_ACCELERATION "Internal vectorization using Vc." ON)
+
+option(Cilk "Enable Cilk+ backend" OFF)
+
+option(Scalar "Enable Scalar backend" OFF)
 
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries.")
 set(INSTALL_INCLUDE_DIR include CACHE PATH
@@ -81,86 +112,94 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 # Determine backend
 
-set(Vc)
-set(Cilk)
-set(Scalar)
-
-if (BACKEND STREQUAL "Vc")
-  set(Vc TRUE)
-endif()
-if (BACKEND STREQUAL "Cilk")
-  set(Cilk TRUE)
-endif()
-if (BACKEND STREQUAL "Scalar")
-  set(Scalar TRUE)
-endif()
-if (NOT Vc AND NOT Cilk AND NOT Scalar)
-  message(FATAL_ERROR "Invalid backend specified: \"${BACKEND}\"")
-endif()
-
-message(STATUS "Configuring with vector backend ${BACKEND}.")
-
-
-# Determine C++ compiler being used
-
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(Clang TRUE)
-endif()
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set(GNU TRUE)
-endif()
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(Intel TRUE)
-endif()
-if (NOT GNU AND NOT Clang AND NOT Intel)
-  message(WARNING "Unsupported compiler. Build will likely fail.")
+if (Vc)
+  if (Cilk OR Scalar)
+    message(WARNING "Multiple backend configuration detected.")
+    message(WARNING "Configuring with \"Vc\" vector backend")
+  else()
+    message(STATUS "Configuring with \"Vc\" vector backend")
+  endif()
+elseif(Cilk)
+  if (NOT Intel)
+    message(FATAL_ERROR "Must use Intel C++ compiler (icpc) for Cilk+ backend.")
+  elseif (Scalar)
+    message(WARNING "Multiple backend configuration detected.")
+    message(WARNING "Configuring with \"Cilk+\" vector backend")
+  else()
+    message(STATUS "Configuring with \"Cilk+\" vector backend")
+  endif()
+elseif(Scalar)
+  message(STATUS "Configuring with \"Scalar\" vector backend")
+else()
+  message(FATAL_ERROR "No backend selected. Pls add \"-DVc=ON\" or \"-DCilk=ON\" or \"-DScalar=ON\" to your cmake command.")
 endif()
 
-if ((NOT PLANESHELL))
-  message(STATUS "Disabling PlaneShell class")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVECGEOM_PLANESHELL_DISABLE")
+################################################################################
+
+# Set Default compiler flags for each build type
+
+if (GNU)
+  set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -Weffc++ -Wall -fPIC -fabi-version=6")
+  if (CMAKE_BUILD_TYPE MATCHES Debug)
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -ggdb")
+  else()
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -finline-limit=10000000 -ffast-math -ftree-vectorize")
+  endif()
+  if (Vc)
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -fabi-version=6")
+  endif()
+elseif(Intel)
+  set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -Wall -fPIC")
+  if (CMAKE_BUILD_TYPE MATCHES Debug)
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -g -O0")
+  else()
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -g -O2 -fno-alias")
+  endif()
+else(Clang)
+  set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -Wall -fPIC")
+  if (CMAKE_BUILD_TYPE MATCHES Debug)
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -ggdb")
+  else()
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -Weffc++ -ffast-math -ftree-vectorize")
+  endif()
 endif()
+
+string(TOLOWER ${VECGEOM_VECTOR} _arch_lo)
+string(TOUPPER ${VECGEOM_VECTOR} _arch_up)
+
+if (${_arch_lo} MATCHES mic)
+  if (Intel)
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -m${_arch_lo}")
+    set(MIC TRUE)
+  else()
+    message(FATAL_ERROR "MIC native of offload compilation requires Intel Compiler.")
+  endif()
+elseif (${_arch_lo} MATCHES native)
+  if (Intel)
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -xHost")
+  else()
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -march=${_arch_lo}")
+  endif()
+else()
+  if (Intel)
+    if (${_arch_lo} MATCHES avx2)
+      set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -xCORE-${_arch_up}")
+    else()
+      set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -x${_arch_up}")
+    endif()
+  else()
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -m${_arch_lo}")
+  endif()
+endif()
+message(STATUS "Compiling for ${_arch_up} SIMD achitecture")
 
 ################################################################################
 
 # Set C++ compiler flags. Will also be forwarded by CUDA when compiling C++.
 
-set(VECGEOM_COMPILATION_FLAGS)
-set(VECGEOM_COMPILATION_FLAGS_GNU)
-set(VECGEOM_COMPILATION_FLAGS_CLANG)
-set(VECGEOM_COMPILATION_FLAGS_INTEL)
-set(VECGEOM_NVCC_COMPILATION_FLAGS)
-
-set(VECGEOM_COMPILATION_FLAGS
-    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
-  if (APPLE OR UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-  endif()
-else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
-endif()
-
-# Compiler specific optimization flags
-if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
-set(VECGEOM_COMPILATION_FLAGS_GNU
-    "${VECGEOM_COMPILATION_FLAGS_GNU} -finline-limit=10000000")
-set(VECGEOM_COMPILATION_FLAGS_GNU
-    "${VECGEOM_COMPILATION_FLAGS_GNU} -ffast-math -ftree-vectorize")
-set(VECGEOM_COMPILATION_FLAGS_CLANG
-    "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
-endif()
-set(VECGEOM_COMPILATION_FLAGS_INTEL
-    "${VECGEOM_COMPILATION_FLAGS_INTEL} -xHost")
-if (VECGEOM_VECTOR)
-  message(STATUS "Compiling with vector instruction set ${VECGEOM_VECTOR}")
-  set(VECGEOM_COMPILATION_FLAGS_GNU
-      "${VECGEOM_COMPILATION_FLAGS_GNU} -m${VECGEOM_VECTOR}")
-  set(VECGEOM_COMPILATION_FLAGS_CLANG
-      "${VECGEOM_COMPILATION_FLAGS_CLANG} -m${VECGEOM_VECTOR}")
+if ((NOT PLANESHELL))
+  message(STATUS "Disabling PlaneShell class")
+  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_PLANESHELL_DISABLE")
 endif()
 
 # Backend specific
@@ -169,12 +208,11 @@ if (Scalar)
 endif()
 if (Vc)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_VC")
-  set(VECGEOM_COMPILATION_FLAGS_GNU
-      "${VECGEOM_COMPILATION_FLAGS_GNU} -fabi-version=6")
 endif()
 if (Cilk)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CILK")
 endif()
+
 if (CUDA)
   set(CUDA_ARCH 20 CACHE STRING "CUDA device architecture.")
   set(CUDA_ARCH "-arch=sm_${CUDA_ARCH}")
@@ -201,23 +239,23 @@ endif()
 if (GNU)
   set(VECGEOM_ERROR_LIMIT 20 CACHE STRING
       "Limit number of errors output by diagnostics.")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmax-errors=${VECGEOM_ERROR_LIMIT}")
+  set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -fmax-errors=${VECGEOM_ERROR_LIMIT}")
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                   OUTPUT_VARIABLE GCC_VERSION)
   if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -fdiagnostics-color=auto")
   endif()
 endif()
 
 # Coverage testing support
 if (COVERAGE_TESTING)
   if (GNU)
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(VECGEOM_CXX_FLAGS
+        "${VECGEOM_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
     set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} gcov)
   endif()
   if (Clang)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} --coverage")
     set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} profile_rt)
   endif()
   if (Intel)
@@ -253,25 +291,6 @@ if (DISTANCE_DEBUG)
 endif()
 
 
-
-# Pass flags to compilers
-if (GNU)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_GNU}")
-endif()
-if (Clang)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_CLANG}")
-endif()
-if (Intel)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_INTEL}")
-endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-#set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
-
-message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
-if (CUDA)
-  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
-endif()
-
 ################################################################################
 
 # Backend configuration
@@ -279,7 +298,11 @@ endif()
 if (VC_ACCELERATION OR Vc)
 
   find_package(Vc REQUIRED)
-  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${Vc_LIBRARIES})
+  if (MIC)
+    set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${Vc_MIC_LIBRARIES})
+  else()
+    set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${Vc_LIBRARIES})
+  endif()
   include_directories(AFTER SYSTEM ${Vc_INCLUDE_DIR})
 
   if (Vc)
@@ -289,13 +312,7 @@ if (VC_ACCELERATION OR Vc)
 endif()
 
 if (Cilk)
-
-  if (NOT Intel)
-    message(FATAL_ERROR "Must use Intel C++ compiler (icc) for Cilk backend.")
-  endif()
-
   set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/cilk/Backend.cpp)
-
 endif()
 
 if (CUDA)
@@ -361,6 +378,18 @@ if (Geant4)
 
 endif()
 
+# Pass flags to compilers
+# We may have addition in compiler flags from the above included packages
+# We don't want to have trailing CMAKE_CXX_FLAGS_"BUILD_TYPE" options on the command line
+# but rather have it as first set of argument.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_build_type}} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
+#set(VECGEOM_CXX_FLAGS ${CMAKE_CXX_FLAGS_${_build_type}})
+unset(CMAKE_CXX_FLAGS_${_build_type} CACHE)
+
+message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
+if (CUDA)
+  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
+endif()
 
 # until VecCore is separated from VecGeom (then it become something
 # ${VecCore_DIR}/include
@@ -523,7 +552,7 @@ endif()
 
 # Define executables
 
-set(TEST_EXECUTABLES_CORE 
+set(TEST_EXECUTABLES_CORE
   ${CMAKE_SOURCE_DIR}/test/core/ContainerTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/create_geometry.cpp
   ${CMAKE_SOURCE_DIR}/test/core/testVectorSafety.cpp
@@ -581,7 +610,7 @@ set(TEST_EXECUTABLES_USOLIDS
   #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
-    
+
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -616,8 +645,8 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testCone.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
-  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
@@ -650,6 +679,14 @@ macro(build_executables EXECUTABLES)
                           ${VECGEOM_LIBRARIES_EXTERNAL}
                           ${USERKERNELLIB})
     set(VECGEOM_EXECUTABLES ${VECGEOM_EXECUTABLES} ${TARGET_NAME})
+    if (MIC)
+      get_target_property(current_property ${TARGET_NAME} LINK_FLAGS)
+      if(NOT current_property)
+        set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "-B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4")
+      else()
+        set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "${current_property} -B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4")
+      endif()
+    endif()
   endforeach()
 endmacro()
 
@@ -700,7 +737,7 @@ if(DATA_DOWNLOAD)
     set(DATA_FILE ExN03.root)
     if(APPLE)
       execute_process(COMMAND curl -o ${DATA_FILE} ${DATA_URL})
-    else()  
+    else()
       execute_process(COMMAND wget -q ${DATA_URL} -O ${DATA_FILE})
     endif()
  endfunction(DATA_DOWNLOAD)
@@ -716,7 +753,7 @@ if(DATA_DOWNLOAD)
       execute_process(COMMAND md5 ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
       string(LENGTH ${MD5SUM} MD5LENGTH)
       MATH(EXPR START "${MD5LENGTH} - 33")
-      string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)         
+      string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)
     else()
   execute_process(COMMAND md5sum ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
       string(SUBSTRING ${MD5SUM} 0 32 MD5SUM)
