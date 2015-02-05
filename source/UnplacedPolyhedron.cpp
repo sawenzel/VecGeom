@@ -99,6 +99,10 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     // Use distance to corner for minimizing outer radius of bounding tube
     if (rMax[i] > outerRadius) outerRadius = rMax[i];
   }
+  // need to convert from distance to planes to real radius
+  outerRadius/=cosHalfDeltaPhi;
+  innerRadius/=cosHalfDeltaPhi;
+
   // Create bounding tube with biggest outer radius and smallest inner radius
   Precision boundingTubeZ = zPlanes[zPlaneCount-1] - zPlanes[0] + 2.*kTolerance;
   Precision boundsPhiStart = !fHasPhiCutout ? 0 : phiStart;
