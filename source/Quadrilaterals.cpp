@@ -59,23 +59,46 @@ void Quadrilaterals::Set(
 
   // Compute plane equation to retrieve normal and distance to origin
   // ax + by + cz + d = 0
+  // use only 3 corners given
+  // problem: if two those three corners are degenerate we have to use the other
+  // so we have to check first of all if there is a degenerate case
+
+  // chose 3 corners out of 4: usually this will choose 0,1,2 unless there are degenerate points
+  Vector3D<Precision> chosencorners[4];
+  chosencorners[0] = fCorners[0][index];
+  int cornersassigned=1;
+  int cornerstested=1;
+
+  while( cornerstested <= 4 )
+  {
+    do{
+        chosencorners[ cornersassigned ] = fCorners[ cornerstested ][index];
+        cornerstested++;
+    }
+    while( (chosencorners[cornersassigned] == chosencorners[cornersassigned-1]) && cornerstested < 4);
+    cornersassigned++;
+    if( cornersassigned == 3) break;
+  }
+
   Precision a, b, c, d;
-  a = corner0[1]*(corner1[2] - corner2[2]) +
-      corner1[1]*(corner2[2] - corner0[2]) +
-      corner2[1]*(corner0[2] - corner1[2]);
-  b = corner0[2]*(corner1[0] - corner2[0]) +
-      corner1[2]*(corner2[0] - corner0[0]) +
-      corner2[2]*(corner0[0] - corner1[0]);
-  c = corner0[0]*(corner1[1] - corner2[1]) +
-      corner1[0]*(corner2[1] - corner0[1]) +
-      corner2[0]*(corner0[1] - corner1[1]);
-  d = - corner0[0]*(corner1[1]*corner2[2] - corner2[1]*corner1[2])
-      - corner1[0]*(corner2[1]*corner0[2] - corner0[1]*corner2[2])
-      - corner2[0]*(corner0[1]*corner1[2] - corner1[1]*corner0[2]);
+  a = chosencorners[0][1]*(chosencorners[1][2] - chosencorners[2][2]) +
+      chosencorners[1][1]*(chosencorners[2][2] - chosencorners[0][2]) +
+      chosencorners[2][1]*(chosencorners[0][2] - chosencorners[1][2]);
+  b = chosencorners[0][2]*(chosencorners[1][0] - chosencorners[2][0]) +
+      chosencorners[1][2]*(chosencorners[2][0] - chosencorners[0][0]) +
+      chosencorners[2][2]*(chosencorners[0][0] - chosencorners[1][0]);
+  c = chosencorners[0][0]*(chosencorners[1][1] - chosencorners[2][1]) +
+      chosencorners[1][0]*(chosencorners[2][1] - chosencorners[0][1]) +
+      chosencorners[2][0]*(chosencorners[0][1] - chosencorners[1][1]);
+  d = - chosencorners[0][0]*(chosencorners[1][1]*chosencorners[2][2] - chosencorners[2][1]*chosencorners[1][2])
+      - chosencorners[1][0]*(chosencorners[2][1]*chosencorners[0][2] - chosencorners[0][1]*chosencorners[2][2])
+      - chosencorners[2][0]*(chosencorners[0][1]*chosencorners[1][2] - chosencorners[1][1]*chosencorners[0][2]);
   Vector3D<Precision> normal(a, b, c);
   // Normalize the plane equation
   // (ax + by + cz + d) / sqrt(a^2 + b^2 + c^2) = 0 =>
   // n0*x + n1*x + n2*x + p = 0
+
+  assert( a+b+c != 0 ); // this happens in extremely degenerate cases and would lead to ill defined planes
   Precision inverseLength = 1. / normal.Length();
   normal *= inverseLength;
   d *= inverseLength;
