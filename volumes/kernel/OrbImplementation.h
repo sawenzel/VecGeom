@@ -329,7 +329,7 @@ void OrbImplementation<transCodeT, rotCodeT>::ContainsKernel(UnplacedOrb const &
     localPoint, unused, outside);
   inside=!outside;
 }  
-
+/*
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend, bool ForInside>
 VECGEOM_CUDA_HEADER_BOTH
@@ -357,6 +357,40 @@ UnplacedOrb const &unplaced,
     
     return;
 }
+*/
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <typename Backend, bool ForInside>
+VECGEOM_CUDA_HEADER_BOTH
+void OrbImplementation<transCodeT, rotCodeT>::GenericKernelForContainsAndInside(
+UnplacedOrb const &unplaced,
+    Vector3D<typename Backend::precision_v> const &localPoint,
+    typename Backend::bool_v &completelyinside,
+    typename Backend::bool_v &completelyoutside) {
+
+    
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v      Bool_t;	
+    
+    
+    Precision fR = unplaced.GetRadius();
+    //Precision fRTolerance = unplaced.GetFRminTolerance();
+    
+    Float_t rad2 = localPoint.Mag2();
+    Float_t tolR(fR - ( 1e-9 )); 
+    Float_t tolR2 = tolR * tolR;
+    
+        
+    // Check radial surfaces
+    //Radial check for GenericKernel Start
+    completelyinside = (rad2 <= tolR *tolR) ;
+    
+    tolR = fR + ( 1e-9 );
+    
+    completelyoutside = (rad2 >= tolR *tolR);
+    if( IsFull(completelyoutside) )return;
+    
+    //Radial Check for GenericKernel Over
+}
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
@@ -374,6 +408,7 @@ void OrbImplementation<transCodeT, rotCodeT>::InsideKernel(UnplacedOrb const &un
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
  
+/*
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -440,7 +475,112 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     MaskedAssign(isOutsideOuterToleranceAndMovingOut,kInfinity,&distance);
     if( IsFull(done) )return;
 }
+*/
 
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
+      UnplacedOrb const &unplaced,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
+      typename Backend::precision_v const &stepMax,
+      typename Backend::precision_v &distance){
+
+	typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v      Bool_t;
+    typedef typename Backend::inside_v    Inside_t;
+
+	Vector3D<Float_t> localPoint = point;
+    Vector3D<Float_t> localDir = direction;
+    
+    distance = kInfinity;
+    Bool_t done(false);
+    Bool_t tr(true),fal(false);
+
+	Float_t fR(unplaced.GetRadius()); 
+	// General Precalcs
+    Float_t rad2 = localPoint.Mag2();
+    Float_t rho2 = localPoint.x()*localPoint.x() + localPoint.y()*localPoint.y();
+    Float_t pDotV3d = localPoint.Dot(localDir);
+
+    Bool_t cond(false);
+  
+     Float_t  c(0.), d2(0.);
+    c = rad2 - fR * fR;
+    MaskedAssign((tr),(pDotV3d * pDotV3d - c),&d2);
+
+Float_t sd1(kInfinity);
+done |= (d2 < 0. || ((localPoint.Mag() > fR) && (pDotV3d > 0.)));
+   if(IsFull(done)) return; //Returning in case of no intersection with outer shell
+
+MaskedAssign(( (Sqrt(rad2) >= (fR - 1e-9) ) && (Sqrt(rad2) <= (fR + 1e-9)) && (pDotV3d < 0.) && !done ),0.,&sd1);
+   MaskedAssign( ( (Sqrt(rad2) > (fR + 1e-9) ) && (tr) && (d2 >= 0.) && pDotV3d < 0.  && !done ) ,(-1.*pDotV3d - Sqrt(d2)),&sd1);
+distance=sd1;
+
+
+}
+
+template <TranslationCode transCodeT, RotationCode rotCodeT>
+template <class Backend>
+VECGEOM_CUDA_HEADER_BOTH
+void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb const &unplaced,
+      Vector3D<typename Backend::precision_v> const &point,
+      Vector3D<typename Backend::precision_v> const &direction,
+      /*Vector3D<typename Backend::precision_v> const &n,  
+      typename Backend::bool_v validNorm,  */
+      typename Backend::precision_v const &stepMax,
+      typename Backend::precision_v &distance){
+
+   
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v      Bool_t;
+
+    Vector3D<Float_t> localPoint = point;
+   
+    Vector3D<Float_t> localDir=direction;
+    
+    distance = kInfinity;
+    Float_t  pDotV2d, pDotV3d;
+    
+    
+    Bool_t done(false);
+    Bool_t tr(true),fal(false);
+    
+    Float_t snxt(kInfinity);
+    
+    Float_t fR(unplaced.GetRadius()); 
+//    Float_t fRmin(unplaced.GetInnerRadius()); 
+    
+    // Intersection point
+    Vector3D<Float_t> intSecPt;
+    Float_t  c(0.), d2(0.);
+
+   pDotV2d = localPoint.x() * localDir.x() + localPoint.y() * localDir.y();
+   pDotV3d = pDotV2d + localPoint.z() * localDir.z(); //localPoint.Dot(localDir);
+
+   Float_t rad2 = localPoint.Mag2();
+   c = rad2 - fR * fR;
+   
+   //New Code
+   
+   Float_t sd1(0.);
+   //Float_t sd2(kInfinity);
+   //Float_t Rmax_plus = fRmax + unplaced.GetMKTolerance();
+   //Float_t Rmin_minus = fRmin - unplaced.GetFRminTolerance();
+   
+   Bool_t cond1 = (Sqrt(rad2) <= (fR + 0.5*1e-9)) ;
+   Bool_t cond = (Sqrt(rad2) <= (fR + 1e-9)) && (Sqrt(rad2) >= (fR - 1e-9)) && pDotV3d >=0 && cond1;
+   done |= cond;
+   MaskedAssign(cond ,0.,&sd1);
+   
+   MaskedAssign((tr && cond1),(pDotV3d * pDotV3d - c),&d2);
+   MaskedAssign( (!done && cond1 && (tr) && (d2 >= 0.) ) ,(-1.*pDotV3d + Sqrt(d2)),&sd1);
+   
+   MaskedAssign((sd1 < 0.),kInfinity, &sd1);
+	distance=sd1;
+}
+/*
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -497,7 +637,7 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
     if( IsFull(done) )return;
     
 }
-
+*/
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
