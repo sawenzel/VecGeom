@@ -50,17 +50,30 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   copy(zPlanes, zPlanes+zPlaneCount, &fZPlanes[0]);
   copy(rMin, rMin+zPlaneCount, &fRMin[0]);
   copy(rMax, rMax+zPlaneCount, &fRMax[0]);
+
   // Initialize segments
+  // sometimes there will be no quadrilaterals: for instance when
+  // rmin jumps at some z and rmax remains continouus
   for (int i = 0; i < zPlaneCount-1; ++i) {
     Assert(zPlanes[i] <= zPlanes[i+1], "Polyhedron Z-planes must be "
            "monotonically increasing.\n");
     fZSegments[i].hasInnerRadius = rMin[i] > 0 || rMin[i+1] > 0;
-    new (&fZSegments[i].outer) Quadrilaterals(sideCount);
+
+    int multiplier = (zPlanes[i] == zPlanes[i+1] && rMax[i] == rMax[i+1])? 0 : 1;
+
+    // create quadrilaterals in a predefined place with placement new
+    new (&fZSegments[i].outer) Quadrilaterals(sideCount*multiplier);
+
+    // no phi segment here if degenerate z;
     if (fHasPhiCutout) {
-      new (&fZSegments[i].phi) Quadrilaterals(2);
+        multiplier = ( zPlanes[i] == zPlanes[i+1] )? 0 : 1;
+        new (&fZSegments[i].phi) Quadrilaterals(2*multiplier);
     }
+
+    multiplier = (zPlanes[i] == zPlanes[i+1] && rMin[i] == rMin[i+1])? 0 : 1;
+
     if (fZSegments[i].hasInnerRadius) {
-      new (&fZSegments[i].inner) Quadrilaterals(sideCount);
+      new (&fZSegments[i].inner) Quadrilaterals(sideCount*multiplier);
       fHasInnerRadii = true;
     }
   }
@@ -107,8 +120,12 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   Precision boundingTubeZ = zPlanes[zPlaneCount-1] - zPlanes[0] + 2.*kTolerance;
   Precision boundsPhiStart = !fHasPhiCutout ? 0 : phiStart;
   Precision boundsPhiDelta = !fHasPhiCutout ? kTwoPi : phiDelta;
-  fBoundingTube = UnplacedTube(innerRadius - kTolerance,
-                               outerRadius + kTolerance, 0.5*boundingTubeZ,
+  // correct inner and outer Radius with conversion factor
+  //innerRadius /= cosHalfDeltaPhi;
+  //outerRadius /= cosHalfDeltaPhi;
+
+  fBoundingTube = UnplacedTube( innerRadius - kTolerance,
+                                outerRadius + kTolerance, 0.5*boundingTubeZ,
                                boundsPhiStart, boundsPhiDelta);
   fBoundingTubeOffset = zPlanes[0] + 0.5*boundingTubeZ;
 
@@ -149,7 +166,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
     };
 
     // Draw the regular quadrilaterals along phi
-    for (int iSide = 0; iSide < sideCount; ++iSide) {
+    for (int iSide = 0; iSide < fZSegments[iPlane].outer.size(); ++iSide) {
       fZSegments[iPlane].outer.Set(
           iSide,
           outerVertices[VertixIndex(iPlane, iSide)],
@@ -161,6 +178,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
                       outerVertices[VertixIndex(iPlane, iSide)])) {
         fZSegments[iPlane].outer.FlipSign(iSide);
       }
+    }
+    for (int iSide = 0; iSide < fZSegments[iPlane].inner.size(); ++iSide) {
       if (fZSegments[iPlane].hasInnerRadius) {
         fZSegments[iPlane].inner.Set(
             iSide,
@@ -176,7 +195,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       }
     }
 
-    if (fHasPhiCutout) {
+    if (fHasPhiCutout && fZSegments[iPlane].phi.size()==2) {
       // If there's a phi cutout, draw two quadrilaterals connecting the four
       // corners (two inner, two outer) of the first and last phi coordinate,
       // respectively
