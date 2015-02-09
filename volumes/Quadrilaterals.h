@@ -15,7 +15,7 @@
 #include "volumes/Planes.h"
 
 // Switches on/off explicit vectorization of algorithms using Vc
-#define VECGEOM_QUADRILATERALS_VC
+//#define VECGEOM_QUADRILATERALS_VC
 
 namespace vecgeom {
 
@@ -85,6 +85,18 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Corners_t const& GetCorners() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool RayHitsQuadrilateral( int index, Vector3D<Precision> const & intersection ) const {
+      bool valid = true;
+      for (int j = 0; j < 4; ++j) {
+        valid &= intersection.Dot(fSideVectors[j].GetNormal(index)) +
+                 fSideVectors[j].GetDistances()[index] >= 0;
+        if (IsEmpty(valid)) break;
+      }
+     return valid;
+  }
 
   /// \param corner0 First corner in counterclockwise order.
   /// \param corner1 Second corner in counterclockwise order.
@@ -387,6 +399,7 @@ void AcceleratedDistanceToOut<kScalar>(
     distanceTest /= -directionProjection;
     valid &= distanceTest < distance;
     if (IsEmpty(valid)) continue;
+// TODO: need to adapt this for the case of degenerate Z planes
     VcPrecision zProjection = distanceTest*direction[2] + point[2];
     valid &= zProjection >= zMin && zProjection < zMax;
     if (IsEmpty(valid)) continue;
@@ -439,8 +452,22 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
     distanceTest /= -directionProjection;
     valid &= distanceTest < bestDistance;
     if (IsEmpty(valid)) continue;
-    Float_t zProjection = point[2] + distanceTest*direction[2];
-    valid &= zProjection >= zMin && zProjection < zMax;
+
+
+    // this is a tricky test when zMin == zMax ( degenerate planes )
+    if( zMin == zMax ){
+        // in this case need proper hit detection
+        //valid &= zProjection >= zMin-1E-10 && zProjection <= zMax+1E-10;
+        Vector3D<Float_t> intersection = point + distanceTest*direction;
+
+        valid = RayHitsQuadrilateral( i, intersection );
+
+    }
+    else
+    {
+        Float_t zProjection = point[2] + distanceTest*direction[2];
+        valid &= zProjection >= zMin && zProjection < zMax;
+    }
     if (IsEmpty(valid)) continue;
     MaskedAssign(valid, distanceTest, &bestDistance);
   }

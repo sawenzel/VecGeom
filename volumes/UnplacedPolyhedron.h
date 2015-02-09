@@ -264,6 +264,11 @@ public:
   Precision GetPhiDelta() const;
 
 
+  // \return the number of quadrilaterals (including triangles) that this
+  // polyhedra consists of; this should be all visible surfaces except the endcaps
+  VECGEOM_CUDA_HEADER_BOTH
+  int GetNQuadrilaterals() const;
+
   // reconstructs fZPlanes, fRmin, fRMax from Quadrilaterals
   template<typename PushableContainer>
   void ReconstructSectionArrays(PushableContainer & zplanes,

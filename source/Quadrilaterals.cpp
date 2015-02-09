@@ -110,15 +110,17 @@ void Quadrilaterals::Set(
       Vector3D<Precision> const &c0,
       Vector3D<Precision> const &c1) {
 
-  if(! (c1==c0 )){
-    Vector3D<Precision> sideVector = normal.Cross(c1-c0).Normalized();
-    sideVectors.Set(index, sideVector, c0);
-  }
-  else
-  {
-      sideVectors.Set(index, Vector3D<Precision>(0,0,0), 0);
-  }
-
+      // protect against degenerate points
+      if(! (c1==c0 )){
+        Vector3D<Precision> sideVector = normal.Cross(c1-c0).Normalized();
+        sideVectors.Set(index, sideVector, c0);
+      }
+      else
+      {
+       // the choice (0,0,0), 0 is motivated barely from the fact that
+       // it does not do anything harmful in the hit checks
+        sideVectors.Set(index, Vector3D<Precision>(0,0,0), 0);
+      }
   };
 
   ComputeSideVector(fSideVectors[0], corner0, corner1);
