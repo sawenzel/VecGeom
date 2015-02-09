@@ -224,12 +224,14 @@ UnplacedPolyhedron::UnplacedPolyhedron(
   } // End loop over segments
 } // end constructor
 
+// TODO: move this to HEADER; this is now stored as a member
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiStart() const {
   return kRadToDeg*NormalizeAngle<kScalar>(
       fPhiSections[0].Cross(Vector3D<Precision>(0, 0, 1)).Phi());
 }
 
+// TODO: move this to HEADER; this is now stored as a member
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiEnd() const {
   return !HasPhiCutout() ? 360 : kRadToDeg*NormalizeAngle<kScalar>(
@@ -237,9 +239,26 @@ Precision UnplacedPolyhedron::GetPhiEnd() const {
           Vector3D<Precision>(0, 0, 1)).Phi());
 }
 
+// TODO: move this to HEADER
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::GetPhiDelta() const {
     return fPhiDelta;
+}
+
+
+VECGEOM_CUDA_HEADER_BOTH
+int UnplacedPolyhedron::GetNQuadrilaterals() const {
+    int count=0;
+    for(int i=0;i<GetZSegmentCount();++i)
+    {
+        // outer
+        count+=GetZSegment(i).outer.size();
+        // inner
+        count+=GetZSegment(i).inner.size();
+        // phi
+        count+=GetZSegment(i).phi.size();
+    }
+    return count;
 }
 
 VECGEOM_CUDA_HEADER_DEVICE
