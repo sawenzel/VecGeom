@@ -66,18 +66,18 @@ void Visualizer::AddVolume(std::shared_ptr<const TGeoShape> volume,
   }
 }
 
-void Visualizer::AddPoints(AOS3D<Precision> const &points) {
-  AddPointsTemplate(points);
+void Visualizer::AddPoints(AOS3D<Precision> const &points, int color) {
+  AddPointsTemplate(points, color);
 }
 
-void Visualizer::AddPoints(SOA3D<Precision> const &points) {
-  AddPointsTemplate(points);
+void Visualizer::AddPoints(SOA3D<Precision> const &points, int color) {
+  AddPointsTemplate(points, color);
 }
 
-void Visualizer::AddPoint(Vector3D<Precision> const & point){
+void Visualizer::AddPoint(Vector3D<Precision> const & point, int color ){
     SOA3D<Precision> c(1);
     c.push_back( point );
-    AddPoints(c);
+    AddPoints(c, color);
 }
 
 void Visualizer::AddPoints(TPolyMarker3D const &marker) {
@@ -158,10 +158,10 @@ void Visualizer::SetVerbosity(int level) {
 }
 
 template <class ContainerType>
-void Visualizer::AddPointsTemplate(ContainerType const &points) {
+void Visualizer::AddPointsTemplate(ContainerType const &points, int color) {
   const int size = points.size();
   TPolyMarker3D *marker = new TPolyMarker3D(size);
-  marker->SetMarkerColor(kRed);
+  marker->SetMarkerColor(color);
   marker->SetMarkerSize(1);
   marker->SetMarkerStyle(5);
   for (int i = 0; i < size; ++i) {

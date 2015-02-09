@@ -20,7 +20,7 @@ class TGeoMatrix;
 class TGeoShape;
 class TGeoVolume;
 class TPolyLine3D;
-class TPolyMarker3D;
+#include "TPolyMarker3D.h"
 
 namespace vecgeom {
 
@@ -59,11 +59,11 @@ public:
   void AddVolume(std::shared_ptr<const TGeoShape> rootVolume,
                  Transformation3D const &position);
 
-  void AddPoint( Vector3D<Precision> const & point );
+  void AddPoint( Vector3D<Precision> const & point, int color=kRed );
 
-  void AddPoints(AOS3D<Precision> const &points);
+  void AddPoints(AOS3D<Precision> const &points, int color=kRed);
 
-  void AddPoints(SOA3D<Precision> const &points);
+  void AddPoints(SOA3D<Precision> const &points, int color=kRed);
 
   void AddPoints(TPolyMarker3D const &marker);
 
@@ -83,7 +83,7 @@ public:
 private:
 
   template <class ContainerType>
-  void AddPointsTemplate(ContainerType const &points);
+  void AddPointsTemplate(ContainerType const &points, int color=kRed);
 
 };
 
