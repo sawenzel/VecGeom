@@ -16,8 +16,12 @@ using namespace vecgeom;
 
 
 // benchmarking any available shape (logical volume) found in a ROOT file
-// usage: BenchmarkShapeFromROOTFile detector.root logicalvolumename
+// usage: shape_testFromROOTFile detector.root logicalvolumename [option]
+//   option : [--usolids(default)|--vecgeom] [--vis]
 // logicalvolumename should not contain trailing pointer information
+
+bool usolids= true;
+bool vis= false;
 
 int main(  int argc,char *argv[]) {
 
@@ -28,6 +32,16 @@ int main(  int argc,char *argv[]) {
 
   TGeoManager::Import( argv[1] );
   std::string testvolume( argv[2] );
+
+  for(auto i= 3; i< argc; i++)
+  {
+    if( ! strcmp(argv[i], "--usolids") )
+      usolids= true;
+    if( ! strcmp(argv[i], "--vecgeom") )
+      usolids= false;
+    if( ! strcmp(argv[i], "--vis") )
+      vis= true;
+  }
 
   int found = 0;
   TGeoVolume * foundvolume = NULL;
@@ -61,26 +75,46 @@ int main(  int argc,char *argv[]) {
   if( foundvolume )
   {
     LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
-    VUSolid* shape= converted->Place()->ConvertToUSolids()->Clone();
-    ShapeTester tester;
 
-    std::cout << "\n==============Shape StreamInfo ========= \n";
-    shape->StreamInfo(std::cout);
+    if(usolids){
+      VUSolid* shape= converted->Place()->ConvertToUSolids()->Clone();
+      std::cerr << "\n==============Shape StreamInfo ========= \n";
+      shape->StreamInfo(std::cerr);
 
-    if(argc>3)
-    {
-      if(strcmp(argv[3],"vis")==0)
+      std::cerr << "\n=========Using USolids=========\n\n";
+      ShapeTester tester;
+      if( vis )
       {
-      #ifdef VECGEOM_ROOT
+        #ifdef VECGEOM_ROOT
 	TApplication theApp("App",0,0);
 	tester.Run(shape);
 	theApp.Run();
-      #endif
+        #endif
+      }
+      else
+      {
+	tester.Run(shape);
       }
     }
+
     else
     {
-      tester.Run(shape);
+      VPlacedVolume* shape= converted->Place();
+      std::cerr << "\n=========Using VecGeom=========\n\n";
+
+      ShapeTester tester;
+      if( vis )
+      {
+        #ifdef VECGEOM_ROOT
+	TApplication theApp("App",0,0);
+	tester.Run(shape);
+	theApp.Run();
+        #endif
+      }
+      else
+      {
+	tester.Run(shape);
+      }
     }
     return 1;
   }
