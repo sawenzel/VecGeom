@@ -493,6 +493,7 @@ Precision Quadrilaterals::ScalarDistanceSquared(
   // The algorithm has three stages, trying first to return the shortest
   // distance to the plane, then to the closest line segment, then to the
   // closest corner.
+  assert( i < size() );
 
   Vector3D<Precision> planeNormal = fPlanes.GetNormal(i);
   Precision distance = point.Dot(planeNormal) + fPlanes.GetDistance(i);
