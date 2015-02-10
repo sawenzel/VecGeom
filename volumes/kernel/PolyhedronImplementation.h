@@ -538,6 +538,7 @@ PolyhedronImplementation<innerRadiiT,
   ZSegment const &segment = polyhedron.GetZSegment(segmentIndex);
 
   if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout()) &&
+      segment.phi.size() == 2 &&
       InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
                                 point)) {
     // If the point is within the phi cutout wedge, the two phi cutout sides are
@@ -547,16 +548,19 @@ PolyhedronImplementation<innerRadiiT,
   }
 
   // Otherwise check the outer shell
-  Precision safetySquared =
+  // TODO: we need to check segment.outer.size() > 0
+  Precision safetySquaredOuter = kInfinity;
+  if( segment.outer.size() > 0 )
       segment.outer.ScalarDistanceSquared(phiIndex, point);
 
   // And finally the inner
+  Precision safetySquaredInner = kInfinity;
   if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
-    safetySquared = Min(safetySquared,
-        segment.inner.ScalarDistanceSquared(phiIndex, point));
+      if( segment.inner.size() > 0 )
+    safetySquaredInner = segment.inner.ScalarDistanceSquared(phiIndex, point);
   }
 
-  return safetySquared;
+  return Min(safetySquaredInner, safetySquaredOuter);
 }
 
 template <Polyhedron::EInnerRadii innerRadiiT,
