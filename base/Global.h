@@ -150,7 +150,7 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
       #define VECGEOM_ALIGNED __attribute__((aligned(64)))
     #endif
   #else
-#pragma message "forced inlining disabled"
+//#pragma message "forced inlining disabled"
   // Clang or forced inlining is disabled ( by falling back to compiler decision )
     #define VECGEOM_INLINE inline
     #ifndef VECGEOM_NVCC
