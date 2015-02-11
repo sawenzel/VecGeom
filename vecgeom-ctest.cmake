@@ -52,6 +52,7 @@ set(WITH_COVERAGE FALSE)
 #######################################################
 # CTest/CMake settings 
 
+set(CTEST_TEST_TIMEOUT 3600)
 set(CTEST_BUILD_CONFIGURATION "$ENV{CMAKE_BUILD_TYPE}")
 set(CMAKE_INSTALL_PREFIX "$ENV{CMAKE_INSTALL_PREFIX}")
 set(CTEST_SOURCE_DIRECTORY "$ENV{CMAKE_SOURCE_DIR}")  
