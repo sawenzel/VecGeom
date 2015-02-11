@@ -6,11 +6,11 @@
 
 #include <cassert>
 #include <cmath>
-#include <float.h>
+#include <cfloat>
 #include <limits>
 #include <memory>
-#include <stdio.h>
-#include <stdlib>
+#include <cstdio>
+#include <cstdlib>
 
 #define VECGEOM
 
@@ -303,7 +303,7 @@ VECGEOM_GLOBAL vecgeom::Inside_t kOutside = 2;
 // }
 // rotation::kGeneric
 // translation::kGeneric
- 
+
 typedef int RotationCode;
 typedef int TranslationCode;
 namespace rotation {
@@ -333,7 +333,7 @@ void Assert(const bool condition) {
 }
 
 namespace details {
-   template <typename DataType, typename Target> struct UseIfSameType { 
+   template <typename DataType, typename Target> struct UseIfSameType {
       VECGEOM_CUDA_HEADER_BOTH
       static Target const *Get(DataType*) { return nullptr; }
    };
