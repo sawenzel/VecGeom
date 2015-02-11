@@ -17,6 +17,7 @@
 #include "backend/scalar/Backend.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -54,7 +55,7 @@ struct CilkVector {
 public:
 
   // Left public to allow array notation
-  Type __attribute__((align(64))) vec[vec_size];
+  Type __attribute__((aligned(64))) vec[vec_size];
 
   /**
    * User should not assume any default value when constructing without
