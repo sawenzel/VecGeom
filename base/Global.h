@@ -8,8 +8,9 @@
 #include <cmath>
 #include <float.h>
 #include <limits>
-#include <stdio.h>
 #include <memory>
+#include <stdio.h>
+#include <stdlib>
 
 #define VECGEOM
 
