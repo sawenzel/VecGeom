@@ -32,6 +32,8 @@ option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
 
 option(DISTANCE_DEBUG "Enable comparision of calculcated distances againt ROOT/Geant4 behind the scenes" OFF)
 
+option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
+
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
 
@@ -67,6 +69,10 @@ endif()
 if (NOT BACKEND)
   message(STATUS "Backend not specified. Defaulting to Vc.")
   set(BACKEND "Vc")
+endif()
+
+if (CTEST)
+  set (DATA_DOWNLOAD ON)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
@@ -656,6 +662,7 @@ build_executables("${TEST_EXECUTABLES_CORE}")
 add_to_ctest("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
   build_executables("${TEST_EXECUTABLES_BENCHMARK}")
+  add_to_ctest("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
 if (ROOT)
   build_executables("${TEST_EXECUTABLES_ROOT}")
@@ -672,6 +679,53 @@ if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}")
   add_to_ctest("${TEST_EXECUTABLES_CUDA}")
 endif()
+#---------------------------------------------------------------------------
+# Include creation and submission to dashboard cdash.cern.ch
+
+include(CTest)
+
+#---------------------------------------------------------------------------
+# Set data to be dowloaded
+
+message(STATUS "Downloading data files")
+if(DATA_DOWNLOAD)
+ set(DATA_URL "http://mnovak.web.cern.ch/mnovak/data/ExN03.root")
+ set(EXPECTED_MD5SUM "b6b0cfdd5035117171bfe1b7f1f40c3f")
+
+ function(DATA_DOWNLOAD)
+    set(DATA_FILE ExN03.root)
+    if(APPLE)
+      execute_process(COMMAND curl -o ${DATA_FILE} ${DATA_URL})
+    else()  
+      execute_process(COMMAND wget -q ${DATA_URL} -O ${DATA_FILE})
+    endif()
+ endfunction(DATA_DOWNLOAD)
+
+ message(STATUS "Searching for already downloaded data file(s)")
+ find_file(DATA_FILE ExN03.root ${CMAKE_BINARY_DIR})
+ if(DATA_FILE STREQUAL "DATA_FILE-NOTFOUND")
+    message("File not found: ExN03.root")
+    DATA_DOWNLOAD()
+ else()
+    message("File found:" ${DATA_FILE})
+    if(APPLE)
+      execute_process(COMMAND md5 ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
+      string(LENGTH ${MD5SUM} MD5LENGTH)
+      MATH(EXPR START "${MD5LENGTH} - 33")
+      string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)         
+    else()
+  execute_process(COMMAND md5sum ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
+      string(SUBSTRING ${MD5SUM} 0 32 MD5SUM)
+    endif()
+    if(MD5SUM STREQUAL EXPECTED_MD5SUM)
+        message("MD5sum of file is matching")
+    else()
+        message("MD5sum of file is not matching " ${EXPECTED_MD5SUM})
+        DATA_DOWNLOAD()
+    endif()
+ endif()
+endif()
+
 
 ################################################################################
 

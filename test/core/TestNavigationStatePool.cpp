@@ -23,7 +23,7 @@ extern void LaunchNavigationKernel( void* gpu_ptr, int depth, int );
 int main()
 {
   // Load a geometry
-  RootGeoManager::Instance().LoadRootGeometry("Ex03.root");
+  RootGeoManager::Instance().LoadRootGeometry("ExN03.root");
 #ifdef VECGEOM_CUDA
   CudaManager::Instance().set_verbose(3);
   CudaManager::Instance().LoadGeometry();
