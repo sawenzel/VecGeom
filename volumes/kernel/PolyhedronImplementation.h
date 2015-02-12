@@ -547,11 +547,13 @@ PolyhedronImplementation<innerRadiiT,
                segment.phi.ScalarDistanceSquared(1, point));
   }
 
+  if(phiIndex < 0) return kInfinity;
+
   // Otherwise check the outer shell
   // TODO: we need to check segment.outer.size() > 0
   Precision safetySquaredOuter = kInfinity;
   if( segment.outer.size() > 0 )
-      segment.outer.ScalarDistanceSquared(phiIndex, point);
+    safetySquaredOuter = segment.outer.ScalarDistanceSquared(phiIndex, point);
 
   // And finally the inner
   Precision safetySquaredInner = kInfinity;
