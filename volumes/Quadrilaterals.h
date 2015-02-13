@@ -15,7 +15,7 @@
 #include "volumes/Planes.h"
 
 // Switches on/off explicit vectorization of algorithms using Vc
-//#define VECGEOM_QUADRILATERALS_VC
+#define VECGEOM_QUADRILATERALS_VC
 
 namespace vecgeom {
 
@@ -323,6 +323,7 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
   AcceleratedDistanceToIn<Backend>::template VectorLoop<behindPlanesT>(
       i, n, fPlanes, fSideVectors, point, direction, bestDistance);
 
+  // TODO: IN CASE QUADRILATERALS ARE PERPENDICULAR TO Z WE COULD SAVE MANY DIVISIONS
   for (; i < n; ++i) {
     Vector3D<Precision> normal = fPlanes.GetNormal(i);
     Float_t distance = point.Dot(normal) + fPlanes.GetDistance(i);
@@ -358,6 +359,7 @@ void AcceleratedDistanceToOut(
     int &i,
     const int n,
     Planes const &planes,
+    Planes const (&sideVectors)[4],
     const Precision zMin,
     const Precision zMax,
     Vector3D<typename Backend::precision_v> const &point,
@@ -374,6 +376,7 @@ void AcceleratedDistanceToOut<kScalar>(
     int &i,
     const int n,
     Planes const &planes,
+    Planes const (&sideVectors)[4],
     const Precision zMin,
     const Precision zMax,
     Vector3D<Precision> const &point,
@@ -399,9 +402,28 @@ void AcceleratedDistanceToOut<kScalar>(
     distanceTest /= -directionProjection;
     valid &= distanceTest < distance;
     if (IsEmpty(valid)) continue;
-// TODO: need to adapt this for the case of degenerate Z planes
-    VcPrecision zProjection = distanceTest*direction[2] + point[2];
-    valid &= zProjection >= zMin && zProjection < zMax;
+
+    if(zMin==zMax) { // need a careful treatment in case of degenerate Z planes
+        // in this case need proper hit detection
+        Vector3D<VcPrecision> intersection =
+                  Vector3D<VcPrecision>(direction)*distanceTest + point;
+        for (int j = 0; j < 4; ++j) {
+            Vector3D<VcPrecision> sideVector(
+                VcPrecision(sideVectors[j].GetNormals().x()+i),
+                VcPrecision(sideVectors[j].GetNormals().y()+i),
+                VcPrecision(sideVectors[j].GetNormals().z()+i));
+           VcPrecision dSide(&sideVectors[j].GetDistances()[i]);
+           valid &= sideVector.Dot(intersection) + dSide >= 0;
+          // Where is your god now
+           if (IsEmpty(valid)) goto distanceToOutVcContinueOuter;
+        }
+    }
+    else
+    {
+        VcPrecision zProjection = distanceTest*direction[2] + point[2];
+        valid &= zProjection >= zMin && zProjection < zMax;
+    }
+distanceToOutVcContinueOuter:
     if (IsEmpty(valid)) continue;
     distanceTest(!valid) = kInfinity;
     distance = distanceTest.min();
@@ -436,7 +458,7 @@ typename Backend::precision_v Quadrilaterals::DistanceToOut(
   int i = 0;
   const int n = size();
   AcceleratedDistanceToOut<Backend>(
-      i, n, fPlanes, zMin, zMax, point, direction, bestDistance);
+      i, n, fPlanes, fSideVectors, zMin, zMax, point, direction, bestDistance);
 
   for (; i < n; ++i) {
     Vector3D<Precision> normal = fPlanes.GetNormal(i);
