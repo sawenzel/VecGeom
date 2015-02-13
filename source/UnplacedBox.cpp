@@ -25,65 +25,32 @@ void UnplacedBox::Print(std::ostream &os) const {
 //______________________________________________________________________________
 void UnplacedBox::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
 {
-    // Returns the full 3D cartesian extent of the solid.
-  aMin.x() = -dimensions_[0];
-  aMax.x() = dimensions_[0];
-  aMin.y() = -dimensions_[1];
-  aMax.y() = dimensions_[1];
-  aMin.z() = -dimensions_[2];
-  aMax.z() = dimensions_[2];
+  // Returns the full 3D cartesian extent of the solid.
+  aMin = -dimensions_;
+  aMax =  dimensions_;
 }
 
 Vector3D<Precision> UnplacedBox::GetPointOnSurface() const
 {
-   //copy of original UBox algorithm
-   double px, py, pz, select, sumS;
-   double fDx = dimensions_[0];
-   double fDy = dimensions_[1];
-   double fDz = dimensions_[2];
-   double Sxy = fDx * fDy, Sxz = fDx * fDz, Syz = fDy * fDz;
+	Vector3D<Precision> p(dimensions_);
 
-   sumS   = Sxy + Sxz + Syz;
-   select = sumS * RNG::Instance().uniform(0.,1.);
+	double S[3] = { p[1]*p[2], p[0]*p[2], p[0]*p[1] };
 
-   if (select < Sxy) {
-      px = -fDx + 2 * fDx * RNG::Instance().uniform(0.,1.);
-      py = -fDy + 2 * fDy * RNG::Instance().uniform(0.,1.);
+	double rand = (S[0] + S[1] + S[2]) * RNG::Instance().uniform(-1.0, 1.0);
 
-      if (RNG::Instance().uniform(0.,1.) > 0.5)
-      {
-        pz = fDz;
-      }
-      else
-      {
-        pz = -fDz;
-      }
-   }
-   else if ((select - Sxy) < Sxz) {
-      px = -fDx + 2 * fDx * RNG::Instance().uniform(0.,1.);
-      pz = -fDz + 2 * fDz * RNG::Instance().uniform(0.,1.);
+	int axis = 0, direction = rand < 0.0 ? -1 : 1;
 
-      if (RNG::Instance().uniform(0.,1.) > 0.5)
-      {
-          py = fDy;
-      }
-      else
-      {
-          py = -fDy;
-      }
-   }
-   else {
-      py = -fDy + 2 * fDy * RNG::Instance().uniform(0.,1.);
-      pz = -fDz + 2 * fDz * RNG::Instance().uniform(0.,1.);
+	rand = std::abs(rand);
 
-      if (RNG::Instance().uniform(0.,1.) > 0.5) {
-          px = fDx;
-      }
-      else {
-          px = -fDx;
-      }
-   }
-   return Vector3D<Precision>(px, py, pz);
+	while (rand > S[axis]) rand -= S[axis], axis++;
+
+	p[0] = (axis == 0) ? direction * dimensions_[0]
+	                   : p[0] * RNG::Instance().uniform(-1.0, 1.0);
+	p[1] = (axis == 1) ? direction * dimensions_[1]
+	                   : p[1] * RNG::Instance().uniform(-1.0, 1.0);
+	p[2] = (axis == 2) ? direction * dimensions_[2]
+	                   : p[2] * RNG::Instance().uniform(-1.0, 1.0);
+	return p;
 }
 
 
