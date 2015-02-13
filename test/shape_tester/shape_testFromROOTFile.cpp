@@ -43,6 +43,7 @@ int main(  int argc,char *argv[]) {
       vis= true;
   }
 
+  int errCode= 0;
   int found = 0;
   TGeoVolume * foundvolume = NULL;
   // now try to find shape with logical volume name given on the command line
@@ -87,13 +88,13 @@ int main(  int argc,char *argv[]) {
       {
         #ifdef VECGEOM_ROOT
 	TApplication theApp("App",0,0);
-	tester.Run(shape);
+	errCode= tester.Run(shape);
 	theApp.Run();
         #endif
       }
       else
       {
-	tester.Run(shape);
+	errCode= tester.Run(shape);
       }
     }
 
@@ -107,21 +108,23 @@ int main(  int argc,char *argv[]) {
       {
         #ifdef VECGEOM_ROOT
 	TApplication theApp("App",0,0);
-	tester.Run(shape);
+	errCode= tester.Run(shape);
 	theApp.Run();
         #endif
       }
       else
       {
-	tester.Run(shape);
+	errCode= tester.Run(shape);
       }
     }
-    return 1;
+    return errCode;
   }
   else
   {
     std::cerr << " NO SUCH VOLUME [" 
 	      <<  testvolume << "] FOUND ... EXITING \n";
-    return 1;
+
+    errCode= 2048; // errCode: 1000 0000 0000
+    return errCode;
   }
 }
