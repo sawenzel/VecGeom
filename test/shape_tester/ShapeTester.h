@@ -17,8 +17,8 @@ public:
 	ShapeTester();
 	~ShapeTester();
 
-  void Run(VUSolid *testVolume);//std::ofstream &logger);
- void RunMethod(VUSolid *testVolume, std::string method1 );//std::ofstream &logger);
+	int Run(VUSolid *testVolume);//std::ofstream &logger);
+	int RunMethod(VUSolid *testVolume, std::string method1 );//std::ofstream &logger);
 
 	inline void SetFilename( const std::string &newFilename ) { filename = newFilename; }
 	inline void SetMaxPoints( const int newMaxPoints ) { maxPoints = newMaxPoints; }
@@ -145,32 +145,32 @@ private:
 	UVector3 GetRandomDirection();
 
 
-	void TestConsistencySolids();
-        void TestInsidePoint();
-        void TestOutsidePoint();
-        void TestSurfacePoint();
+	int TestConsistencySolids();
+        int TestInsidePoint();
+        int TestOutsidePoint();
+        int TestSurfacePoint();
 
-	void TestNormalSolids();
+	int TestNormalSolids();
 
 
-	void TestSafetyFromInsideSolids();
-        void TestSafetyFromOutsideSolids();
-        void ShapeSafetyFromInside(int max);
-	void ShapeSafetyFromOutside(int max);
+	int TestSafetyFromInsideSolids();
+        int TestSafetyFromOutsideSolids();
+        int ShapeSafetyFromInside(int max);
+	int ShapeSafetyFromOutside(int max);
 
 	void PropagatedNormal(const UVector3 &point, const UVector3 &direction, double distance, UVector3 &normal);
         void PropagatedNormalU(const UVector3 &point, const UVector3 &direction, double distance, UVector3 &normal);
 
-	void TestDistanceToInSolids();
-        void TestAccuracyDistanceToIn(double dist);
-        void ShapeDistances();
-        void TestFarAwayPoint();
+	int TestDistanceToInSolids();
+        int TestAccuracyDistanceToIn(double dist);
+        int ShapeDistances();
+        int TestFarAwayPoint();
 
-	void TestDistanceToOutSolids();             
-        void ShapeNormal();
-        void TestXRayProfile();
-        void XRayProfile(double theta=45, int nphi=15, int ngrid=1000, bool useeps=true);
-	 void Integration(double theta=45, double phi=45, int ngrid=1000, bool useeps=true, int npercell=1, bool graphics=true);
+	int TestDistanceToOutSolids();             
+        int ShapeNormal();
+        int TestXRayProfile();
+        int XRayProfile(double theta=45, int nphi=15, int ngrid=1000, bool useeps=true);
+	int Integration(double theta=45, double phi=45, int ngrid=1000, bool useeps=true, int npercell=1, bool graphics=true);
 	double CrossedLength(const UVector3 &point, const UVector3 &dir, bool useeps);
 
 	void CreatePointsAndDirections();
@@ -185,12 +185,12 @@ private:
 
 	void SavePolyhedra(const std::string &method);
 
-	double MeasureTest (void (ShapeTester::*funcPtr)(int), const std::string &method);
+	double MeasureTest (int (ShapeTester::*funcPtr)(int), const std::string &method);
 
 	double NormalizeToNanoseconds(double time);
 
-	void TestMethod(void (ShapeTester::*funcPtr)());
-	void TestMethodAll();
+	int TestMethod(int (ShapeTester::*funcPtr)());
+	int TestMethodAll();
 
      inline double RandomRange(double min, double max)
   {
