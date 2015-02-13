@@ -98,11 +98,12 @@ void Quadrilaterals::Set(
   // (ax + by + cz + d) / sqrt(a^2 + b^2 + c^2) = 0 =>
   // n0*x + n1*x + n2*x + p = 0
 
-  assert( a+b+c != 0 ); // this happens in extremely degenerate cases and would lead to ill defined planes
+  //assert( a+b+c != 0 ); // this happens in extremely degenerate cases and would lead to ill defined planes
   Precision inverseLength = 1. / normal.Length();
   normal *= inverseLength;
   d *= inverseLength;
 
+  normal.FixZeroes();
   fPlanes.Set(index, normal, d);
 
   auto ComputeSideVector = [&index, &normal] (
