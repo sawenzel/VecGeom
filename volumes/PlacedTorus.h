@@ -76,6 +76,11 @@ public:
   VECGEOM_INLINE
   Precision dphi() const { return GetUnplacedVolume()->dphi(); }
 
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision Capacity() { return GetUnplacedVolume()->volume(); }
+
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
