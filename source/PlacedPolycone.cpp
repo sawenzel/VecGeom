@@ -33,15 +33,21 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   TGeoShape const* PlacedPolycone::ConvertToRoot() const
   {
       UnplacedPolycone const * unplaced = GetUnplacedVolume();
-      TGeoPcon* rootshape = new TGeoPcon(
-              unplaced->fStartPhi*kRadToDeg,
-              unplaced->fDeltaPhi*kRadToDeg,
-              unplaced->fNz );
 
       std::vector<double> rmin;
       std::vector<double> rmax;
       std::vector<double> z;
       unplaced->ReconstructSectionArrays(z,rmin,rmax);
+
+      TGeoPcon* rootshape = new TGeoPcon(
+                    unplaced->fStartPhi*kRadToDeg,
+                    unplaced->fDeltaPhi*kRadToDeg,
+                    z.size() );
+
+      if( unplaced->fNz != z.size() )
+      {
+          std::cout << "WARNING: Inconsistency in number of polycone sections\n";
+      }
 
       // now transfer the parameter to the ROOT polycone
       for(int i=0;i<unplaced->fNz;++i)
