@@ -72,6 +72,10 @@ public:
 #endif
 #endif // VECGEOM_NVCC
 
+  virtual Precision Capacity() {
+     return GetUnplacedVolume()->Capacity();
+   }
+
 #ifdef VECGEOM_USOLIDS
   virtual
   void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
@@ -94,10 +98,6 @@ public:
   Vector3D<Precision> GetPointOnSurface() const
   {
     return GetUnplacedVolume()->GetPointOnSurface();
-  }
-
-  virtual Precision Capacity() {
-    return GetUnplacedVolume()->Capacity();
   }
 
   virtual double SurfaceArea() {
