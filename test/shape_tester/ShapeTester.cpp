@@ -293,7 +293,19 @@ int ShapeTester::ShapeDistances()
    if(DistanceToInSurf >= UUtils::kInfinity )
    {
      dmove = maxXYZ;
-     if( !convex2 )ReportError( &nError,point, dir, DistanceToInSurf, "SD: Error in convexity, must be convex"); 
+     if( !convex2 )
+     { bool testConvexity = false;
+       UVector3 pointSurf = point+dir*DistanceOut2;
+       for (int k = 0; k < 100; k++)
+       {
+         UVector3 rndDir = GetRandomDirection();
+         double distTest = volumeUSolids->DistanceToIn(pointSurf,rndDir);
+         if((distTest <= UUtils::kInfinity )&&(distTest>0.))
+           {testConvexity=true;break;}
+       }
+       if(!testConvexity)ReportError( &nError,point, dir, DistanceToInSurf, "SD: Error in convexity, must be convex"); 
+     }
+  
    }
    else
    {//reentering solid, it is not convex

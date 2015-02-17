@@ -16,7 +16,9 @@ typedef vecgeom::SimpleCone Cone_t;
 
 int main(int argc,char *argv[]) {
 
-  VUSolid* cone=new Cone_t("test_cone",5.,6.,5.5,7.,2,0,vecgeom::kTwoPi);
+  //VUSolid* cone=new Cone_t("test_cone",5.,6.,5.5,7.,2,0,vecgeom::kTwoPi);
+  VUSolid* cone=new UCons("test_ucone",2.,6.,2.5,7.,7.,0,vecgeom::kTwoPi*0.3);
+  cone->StreamInfo(std::cout);
   ShapeTester tester;
 
   if(argc>1)
