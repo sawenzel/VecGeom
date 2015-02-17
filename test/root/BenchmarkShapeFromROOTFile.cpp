@@ -94,54 +94,13 @@ int main( int argc, char *argv[] ) {
             tester.SetVerbosity(3);
             tester.SetPoolMultiplier(1);
             tester.SetRepetitions(1);
-            tester.SetPointCount(100);
+            tester.SetPointCount(2000);
 
             tester.CompareMetaInformation();
 
             int returncodeIns   = tester.RunInsideBenchmark();
-//            if( returncodeIns ){
-//
-//                // try to visualize if there was a problem
-//                Visualizer visualizer;
-//                visualizer.AddVolume( *vol );
-//                if( tester.GetProblematicContainPoints().size() > 0 ) {
-//                    for(auto v : tester.GetProblematicContainPoints())
-//                    {
-//                        visualizer.AddPoint(v);
-//
-//                        // for debugging purpose
-//                        std::cerr << " " << vol->Contains(v) << "\n";
-//                            std::cout << v<<"\n";
-//                    }
-//                    visualizer.Show();
-//                }
-//            }
-
             int returncodeToIn  = tester.RunToInBenchmark();
-//            if( returncodeToIn ){
-//                Visualizer visualizer;
-//                visualizer.AddVolume( *vol );
-//                for( auto v : tester.GetProblematicRays() ){
-//                    auto point = v.first; // first and second are direct member of std::pair ...
-//                    visualizer.AddPoint( point );
-//                    visualizer.AddLine( v.first, v.first + std::max(by,std::max(bz,bx)) * v.second );
-//                }
-//                visualizer.Show();
-//            }
-
             int returncodeToOut = tester.RunToOutBenchmark();
-//            if( returncodeToIn ){
-//                            Visualizer visualizer;
-//                            visualizer.AddVolume( *vol );
-//                            for( auto v : tester.GetProblematicRays() ){
-//                                auto point = v.first; // first and second are direct member of std::pair ...
-//                                visualizer.AddPoint( point );
-//                                visualizer.AddLine( v.first, v.first + std::sqrt(
-//                                        4*(worldUnplaced.x() *worldUnplaced.x() + worldUnplaced.y()*
-//                                        worldUnplaced.y() + worldUnplaced.z()*worldUnplaced.z())));
-//                }
-//                visualizer.Show();
-//            }
 
             return returncodeIns + returncodeToIn + returncodeToOut;
         }
