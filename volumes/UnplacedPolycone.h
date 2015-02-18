@@ -30,6 +30,12 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 // helper structure to encapsulate a section
 struct PolyconeSection
 {
+   PolyconeSection()
+      : solid(0), shift(0.0), tubular(0), convex(0)
+   {}
+
+   ~PolyconeSection() = default;
+   
    UnplacedCone * solid;
    double shift;
    bool tubular;
