@@ -1,17 +1,18 @@
 #include "ShapeTester.h"
 #include "VUSolid.hh"
-#include "UTrap.hh"
+#include "UTrd.hh"
 
 #include "base/Vector3D.h"
-#include "volumes/Trapezoid.h"
+#include "base/Global.h"
+#include "volumes/Trd.h"
 
 #ifdef VECGEOM_ROOT
 #include "TApplication.h"
 #endif
 #include "stdlib.h"
 
-//using Trap_t = UTrap;
-using Trap_t = vecgeom::SimpleTrapezoid;
+//typedef UCons Cone_t;
+typedef vecgeom::SimpleTrd Trd_t;
 
 int main(int argc,char *argv[]) {
   int errCode= 0;
@@ -19,17 +20,18 @@ int main(int argc,char *argv[]) {
   if(argc>1){
     if(strcmp(argv[1],"vec")==0)
     {
-      solid = new Trap_t("test_VecGeomTrap",5.,0.,0.,5.,5.,5.,0.,5.,5.,5.,0.);   
+      solid=new Trd_t("test_VecGeomTrd",5.,5. ,6.,6.,5.);    
     }
     else
     {   
-     solid = new UTrap("test_USolidsTrap",40,0,0,30,20,20,0,30,20,20,0);  
+     solid=new UTrd("test_USolidsTrd",5.,5.,6.,6.,5.);  
      solid->StreamInfo(std::cout);      
     }
   }
   else
     {
-     solid = new Trap_t("test_VecGeomTrap",5.,0.,0.,5.,5.,5.,0.,5.,5.,5.,0.);    
+     solid=new UTrd("test_USolidsTrd",5.,5.,6.,6.,5.);  
+     solid->StreamInfo(std::cout);
     }
   
   ShapeTester tester;
@@ -53,3 +55,6 @@ int main(int argc,char *argv[]) {
   std::cout<<"========================================================="<<std::endl;
   return 0;
 }
+
+
+

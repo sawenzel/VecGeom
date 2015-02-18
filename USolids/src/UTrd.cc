@@ -920,7 +920,8 @@ double UTrd::DistanceToOut(const UVector3&  p, const UVector3& v,
         n.Set(0, 0, -1);
         break;
       default:
-        UUtils::Exception("G4Trd::DistanceToOut(p,v,..)", "Notification", Warning, 1, "Undefined side for valid surface normal to solid.");
+        UUtils::Exception("UTrd::DistanceToOut(p,v,..)", "Notification", Warning, 1, "Undefined side for valid surface normal to solid.");
+	std::cout<<"point is "<<Inside(p)<<" DistanceToIn(p,v)="<<DistanceToIn(p,v)<<" DistanceToOut(p,v)="<<snxt<<std::endl;
         break;
     }
   }
