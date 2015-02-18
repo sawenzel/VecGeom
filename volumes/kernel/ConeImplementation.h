@@ -251,7 +251,7 @@ struct ConeImplementation {
       Vector3D<typename Backend::precision_v> v = transformation.TransformDirection<rotCodeT>(direction);
 
       double snxt = VECGEOM_NAMESPACE::kInfinity;
-      const double dRmax = 100 * std::max(unplaced.GetRmax1(), unplaced.GetRmax2());
+      const double dRmax = 100 * Max(unplaced.GetRmax1(), unplaced.GetRmax2());
 
       double rMaxAv, rMaxOAv; // Data for cones
       double rMinAv, rMinOAv;
