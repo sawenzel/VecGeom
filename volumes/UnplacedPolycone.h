@@ -30,10 +30,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 // helper structure to encapsulate a section
 struct PolyconeSection
 {
-    UnplacedCone * solid;
-    double shift;
-    bool tubular;
-    bool convex; // TURE if all points in section are concave in regards to whole polycone, will be determined
+   UnplacedCone * solid;
+   double shift;
+   bool tubular;
+   bool convex; // TURE if all points in section are concave in regards to whole polycone, will be determined
 };
 
 
