@@ -834,7 +834,7 @@ int ShapeTester::TestOutsidePoint( )
       continue;
     }
     if (dist >= UUtils::kInfinity) {
-      ReportError(0, point, v, safeDistance, "T0: DistanceToIn(p,v) == kInfinity" );
+      ReportError(&nError, point, v, safeDistance, "T0: DistanceToIn(p,v) == kInfinity" );
       continue;
     }
     if (dist < safeDistance-1E-10) {
@@ -865,7 +865,7 @@ int ShapeTester::TestOutsidePoint( )
     dist = volumeUSolids->SafetyFromInside( p );
     //if (dist != 0) {
     if (dist > VUSolid::Tolerance()) {
-      ReportError( 0, p, v, safeDistance, "T02: DistanceToOut(p) should be zero" );
+      ReportError(&nError , p, v, safeDistance, "T02: DistanceToOut(p) should be zero" );
       continue;
     }
 
