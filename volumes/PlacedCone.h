@@ -88,6 +88,7 @@ public:
   Precision GetInnerOffset() const {return GetUnplacedVolume()->GetInnerOffset();}
   Precision GetOuterOffset() const {return GetUnplacedVolume()->GetOuterOffset();}
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision Capacity() {
       return GetUnplacedVolume()->Capacity();
   }

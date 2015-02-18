@@ -72,6 +72,7 @@ public:
 #endif
 #endif // VECGEOM_NVCC
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision Capacity() {
      return GetUnplacedVolume()->Capacity();
    }
