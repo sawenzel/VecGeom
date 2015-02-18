@@ -163,7 +163,13 @@ int ShapeTester::ShapeNormal()
     pm2->SetMarkerSize(0.02);
     pm2->SetMarkerColor(kBlue);
 #endif
-
+  UVector3 minExtent,maxExtent;
+  volumeUSolids->Extent(minExtent,maxExtent);
+  double maxX=std::max(std::fabs(maxExtent.x()),std::fabs(minExtent.x()));
+  double maxY=std::max(std::fabs(maxExtent.y()),std::fabs(minExtent.y()));
+  double maxZ=std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
+  double maxXYZ=2*std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
+  double step = maxXYZ*VUSolid::Tolerance();
   for ( i = 0; i < maxPointsInside; i++)
   {
    UVector3 point = points[i+offsetInside];
@@ -180,7 +186,7 @@ int ShapeTester::ShapeNormal()
          UVector3 dir_new;
          do{
            dir_new=GetRandomDirection();
-	   inside = volumeUSolids->Inside(point+dir_new*0.0000001);
+	   inside = volumeUSolids->Inside(point+dir_new*step);
 	   count++;
          }while((inside!=vecgeom::EInside::kInside)&&(count < 1000));
            
@@ -193,6 +199,10 @@ int ShapeTester::ShapeNormal()
          if ( dist <  VUSolid::Tolerance() ) {
 	   if(inside == vecgeom::EInside::kInside)
            ReportError( &nError,point, dir_new, dist, "SN: DistanceToOut has to be  bigger than tolerance for point Inside");
+         }
+          if ( dist >=  UUtils::kInfinity ) {
+	 
+           ReportError( &nError,point, dir_new, dist, "SN: DistanceToOut has to be finite number");
          }
          double dot=norm.Dot(dir_new);
          if ( dot < 0. )
@@ -507,14 +517,17 @@ int ShapeTester::TestDistanceToOutSolids()
 int ShapeTester::TestFarAwayPoint()
 {
   int errCode= 0;
-  UVector3 point,point1,vec, direction, normal;
+  UVector3 point,point1,vec, direction, normal,pointSurf;
   int icount=0, icount1=0, nError = 0;
   double distIn,diff, difMax=0., maxDistIn =0.;
   double tolerance = VUSolid::Tolerance();
    ClearErrors();
-   for ( int j=0; j<maxPointsSurface+maxPointsEdge; j++)
+   
+   //for ( int j=0; j<maxPointsSurface+maxPointsEdge; j++)
+   for ( int j=0; j<maxPointsInside; j++)
    {
-    point = points[j+offsetSurface];
+     //point = points[j+offsetSurface];
+    point = points[j+offsetInside];
     vec = GetRandomDirection();
     if(volumeUSolids->DistanceToIn(point,vec) < UUtils::kInfinity)continue;
     point1= point;
@@ -524,9 +537,11 @@ int ShapeTester::TestFarAwayPoint()
           point1 = point1+vec*10000;
     }
     distIn =  volumeUSolids-> DistanceToIn(point1,-vec);
+    pointSurf = point1-distIn*vec;
     if( (distIn < UUtils::kInfinity) && (distIn > maxDistIn )) maxDistIn = distIn;
-    diff = std::fabs ( (point1 - point). Mag() - distIn );
-    if( diff > tolerance ) icount++;
+
+    diff = std::fabs ( (point1 - pointSurf). Mag() - distIn );
+    if( diff > 100*tolerance ) icount++;
     if( diff >=  UUtils::kInfinity)
     {icount1++;
        UVector3 temp=-vec;
@@ -560,10 +575,22 @@ int ShapeTester::TestSurfacePoint()
   double tolerance = VUSolid::Tolerance();
   int nError=0;
   ClearErrors();
+#ifdef VECGEOM_ROOT
+  //Visualisation
+   TPolyMarker3D *pm5 = 0;
+    pm5 = new TPolyMarker3D();
+    pm5->SetMarkerStyle(20);
+    pm5->SetMarkerSize(1);
+    pm5->SetMarkerColor(kRed);
+#endif
  
    for (int i = 0; i < maxPointsSurface+maxPointsEdge; i++)
      { //test GetPointOnSurface()
        point = points[offsetSurface+i];
+       #ifdef VECGEOM_ROOT
+         //visualisation
+         pm5->SetNextPoint(point.x(),point.y(),point.z());
+       #endif
        if(volumeUSolids->Inside(point) !=  vecgeom::EInside::kSurface)
        {icount++;   
 	 UVector3 v(0,0,0);
@@ -629,6 +656,11 @@ int ShapeTester::TestSurfacePoint()
      std::cout<<"% TestSurfacePoints new moved point is not on Surface::iInNoSurf = "<<iInNoSurf<<";    iOutNoSurf = "<<iOutNoSurf<<std::endl;
   
    }
+   #ifdef VECGEOM_ROOT
+    //visualisation
+    new TCanvas("shape05", "GetPointOnSurface", 1000, 800);
+    pm5->Draw();
+    #endif
    std::cout<<"% "<<std::endl; 
    std::cout << "% Test Surface Point reported = " << CountErrors() << " errors"<<std::endl;	
    std::cout<<"% "<<std::endl; 

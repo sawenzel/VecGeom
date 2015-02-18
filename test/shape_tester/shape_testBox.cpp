@@ -15,28 +15,49 @@ typedef vecgeom::SimpleBox Box_t;
 
 int main(  int argc,char *argv[]) {
 
-  VUSolid* box=new Box_t("test_box",5.,5.,5.);
+ int errCode= 0;
+ VUSolid* box;
+  if(argc>1){
+    if(strcmp(argv[1],"vec")==0)
+    {
+     box=new Box_t("test_VecGeomBox",5.,5.,5.);
+    }
+    else
+    {   
+     box=new UBox("test_USolidsBox",5.,5.,5.);
+     box->StreamInfo(std::cout);
+    }
+  }
+  else
+    {
+     box=new Box_t("test_VecGeomBox",5.,5.,5.);
+    
+    }
   ShapeTester tester;
 
-  if(argc>1)
+  if(argc>2)
   {
-    if(strcmp(argv[1],"vis")==0)
+    if(strcmp(argv[2],"vis")==0)
     {
      #ifdef VECGEOM_ROOT
      TApplication theApp("App",0,0);
-     tester.Run(box);
+     errCode = tester.Run(box);
      theApp.Run();
      #endif
     }
   }
   else
   {
-    tester.Run(box);
+    errCode = tester.Run(box);
 
    }
-
+  std::cout<<"Final Error count for Shape *** "<<box->GetName()<<"*** = "<<errCode<<std::endl;
+  std::cout<<"========================================================="<<std::endl;
   return 0;
 }
+
+
+
 
 
 
