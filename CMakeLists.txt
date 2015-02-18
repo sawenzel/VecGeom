@@ -479,6 +479,7 @@ set(TEST_EXECUTABLES_USOLIDS
 ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb2.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere.cpp
+${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere2.cpp
 #${CMAKE_SOURCE_DIR}/test/unit_tests/newTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
 )

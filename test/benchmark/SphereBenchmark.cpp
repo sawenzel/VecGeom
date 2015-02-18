@@ -33,11 +33,13 @@ int main(int argc, char* argv[]) {
   GeoManager::Instance().set_world(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().world());
+  tester.SetTolerance(1e-6);
   tester.SetVerbosity(3);
   tester.SetPoolMultiplier(1);
   tester.SetPointCount(npoints);
   tester.SetRepetitions(nrep);
-  tester.RunInsideBenchmark();
+	
+  //tester.RunInsideBenchmark();
   tester.RunToOutBenchmark();
   tester.RunToInBenchmark();
 

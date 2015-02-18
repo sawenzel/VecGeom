@@ -37,14 +37,14 @@ bool TestSphere() {
     //Sphere_t test("Solid VecGeomSphere #test",6, 8, 0, 2*PI, 0., PI);
     //std::cout<<std::setprecision(15);
     //Sphere_t test("Solid VecGeomSphere #test",10, 15, PI/3, PI/3, 2*PI/3, PI/6);
-    Sphere_t test("Solid VecGeomSphere #test",15, 20, 0, 2*PI/3, 0, PI);
+    Sphere_t test("Solid VecGeomSphere #test",10, 15, 0, 2*PI, 0, 2.14159265359);
     
     //Vec_t testPoint(2.243909, -0.241734, -0.499920);
-    Vec_t testPoint(-5.7115763880551639886, 9.892740495422344793, 16.283159922687730159);
+    Vec_t testPoint(12.162665, -5.136044, 1.055655);
     double mag=std::sqrt(testPoint[0]*testPoint[0] + testPoint[1]*testPoint[1] + testPoint[2]*testPoint[2]);
     std::cout<<"Magnitude of Point : "<< mag <<std::endl;
     //Vec_t testDir(0.002330, 0.974209, 0.225635);
-    Vec_t testDir(0.69633755044086875774, 0.42379864694004742987, -0.57923114790021068554);
+    Vec_t testDir(-0.288098, 0.123455, 0.949610);
     double pdotV = testPoint[0]*testDir[0]+testPoint[1]*testDir[1]+testPoint[2]*testDir[2];
    
     if(pdotV < 0)
