@@ -68,6 +68,9 @@ option(Cilk "Enable Cilk+ backend" OFF)
 
 option(Scalar "Enable Scalar backend" OFF)
 
+option(VTUNE "Enable the use of profiler Vtune" OFF)
+
+
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries.")
 set(INSTALL_INCLUDE_DIR include CACHE PATH
     "Installation directory for header files.")
@@ -288,6 +291,9 @@ endif()
 if (DISTANCE_DEBUG)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_DISTANCE_DEBUG")
 endif()
+if (VTUNE)
+  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_VTUNE")
+endif()
 
 
 ################################################################################
@@ -375,6 +381,12 @@ if (Geant4)
       ${Geant4_LIBRARIES})
   message(STATUS "Geant4 found in: ${Geant4_INCLUDE_DIRS}")
 
+endif()
+
+if (VTUNE)
+  find_package(VTUNE REQUIRED)
+  include_directories(AFTER SYSTEM ${VTUNE_INCLUDE_DIR})
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${VTUNE_LIBRARIES} -lpthread)
 endif()
 
 # Pass flags to compilers
@@ -683,9 +695,9 @@ macro(build_executables EXECUTABLES)
     if (MIC)
       get_target_property(current_property ${TARGET_NAME} LINK_FLAGS)
       if(NOT current_property)
-        set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "-B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4")
-      else()
-        set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "${current_property} -B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4")
+        set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "-B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4 -B/usr/linux-k1om-4.7/linux-k1om/lib64/4.7.4")
+      else() 
+        set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "${current_property} -B/usr/linux-k1om-4.7/linux-k1om/usr/lib64/k1om-mpss-linux/4.7.4 -B/usr/linux-k1om-4.7/linux-k1om/lib64/4.7.4")
       endif()
     endif()
   endforeach()
