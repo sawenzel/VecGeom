@@ -110,6 +110,9 @@ message("Dashboard script configuration (check if everything is declared correct
 # Build dashboard model setup
 
 SET(MODEL Nightly)
+IF(${CTEST_SCRIPT_ARG} MATCHES NightlyCUDA)
+  SET(MODEL NightlyCUDA)
+ENDIF(${CTEST_SCRIPT_ARG} MATCHES NightlyCUDA)
 IF(${CTEST_SCRIPT_ARG} MATCHES Experimental)
   SET(MODEL Experimental)
 ENDIF(${CTEST_SCRIPT_ARG} MATCHES Experimental)
