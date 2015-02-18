@@ -259,7 +259,7 @@ typename Backend::precision_v SphereImplementation<transCodeT, rotCodeT>::ArcTan
 	Float_t val(0.);
 	val = Abs(y/x);
 	Float_t arctan(0.);
-	//arctan = 0.9998660*val - 0.3302995*val*val*val + 0.1801410*val*val*val*val*val - 0.0851330*val*val*val*val*val*val*val + 0.0208351*val*val*val*val*val*val*val*val*val;
+	arctan = 0.9998660*val - 0.3302995*val*val*val + 0.1801410*val*val*val*val*val - 0.0851330*val*val*val*val*val*val*val + 0.0208351*val*val*val*val*val*val*val*val*val;
 	return arctan;
 
   }
