@@ -122,7 +122,7 @@ function(enum_option _var)
   set(multiValueArgs VALUES)
   cmake_parse_arguments(_ENUMOP "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  # - Validation as needed arguments 
+  # - Validation as needed arguments
   if(NOT _ENUMOP_VALUES)
     message(FATAL_ERROR "enum_option must be called with non-empty VALUES\n(Called for enum_option '${_var}')")
   endif()
@@ -147,7 +147,7 @@ function(enum_option _var)
     set(_var_tmp ${${_var}})
     if(_ENUMOP_CASE_INSENSITIVE)
       string(TOLOWER ${_var_tmp} _var_tmp)
-    endif() 
+    endif()
 
     list(FIND _ENUMOP_VALUES ${_var_tmp} _elem)
     if(_elem LESS 0)

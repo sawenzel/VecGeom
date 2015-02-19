@@ -98,7 +98,7 @@ public:
 #ifdef VECGEOM_CUDA_INTERFACE
   DevicePtr<cuda::Vector<CudaType_t<Type> > > CopyToGpu(
      DevicePtr<CudaType_t<Type> > const gpu_ptr_arr,
-     DevicePtr<cuda::Vector<CudaType_t<Type> > > const gpu_ptr) const 
+     DevicePtr<cuda::Vector<CudaType_t<Type> > > const gpu_ptr) const
   {
      gpu_ptr.Construct(gpu_ptr_arr, size());
      return gpu_ptr;
