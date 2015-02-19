@@ -386,7 +386,7 @@ endif()
 if (VTUNE)
   find_package(VTUNE REQUIRED)
   include_directories(AFTER SYSTEM ${VTUNE_INCLUDE_DIR})
-  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${VTUNE_LIBRARIES} -lpthread)
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${VTUNE_LIBRARIES} -lpthread -ldl)
 endif()
 
 # Pass flags to compilers
