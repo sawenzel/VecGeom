@@ -640,11 +640,15 @@ UnplacedSphere const &unplaced,
     // Check radial surfaces
     //Radial check for GenericKernel Start
     completelyinside = (rad2 <= tolRMax*tolRMax) && (rad2 >= tolRMin*tolRMin);
+    //std::cout<<"Comp In - Rad : "<<completelyinside<<std::endl;
     
     tolRMin = fRmin - (0.5 * fRminTolerance*10); 
     tolRMax = fRmax + (0.5 * unplaced.GetMKTolerance()*10); 
     
     completelyoutside = (rad2 <= tolRMin*tolRMin) || (rad2 >= tolRMax*tolRMax);
+	 //   std::cout<<"Comp Out - Rad : "<<completelyoutside<<std::endl;
+	 //   std::cout<<"Comp In - Rad : "<<completelyinside<<std::endl;
+
     if( IsFull(completelyoutside) )return;
     
     //Radial Check for GenericKernel Over
@@ -660,8 +664,10 @@ UnplacedSphere const &unplaced,
      unplaced.GetWedge().GenericKernelForContainsAndInside<Backend,ForInside>( localPoint,
      completelyinsidephi, completelyoutsidephi );
      completelyoutside |= completelyoutsidephi;
+	//std::cout<<"Comp Out - Phi : "<<completelyoutsidephi<<std::endl;
      if(ForInside)
             completelyinside &= completelyinsidephi;
+	//    std::cout<<"Comp In - Phi : "<<completelyinsidephi<<std::endl;
            
     }
     //Phi Check for GenericKernel Over
@@ -676,8 +682,10 @@ UnplacedSphere const &unplaced,
      unplaced.GetThetaCone().GenericKernelForContainsAndInside<Backend,ForInside>( localPoint,
      completelyinsidetheta, completelyoutsidetheta );
      completelyoutside |= completelyoutsidetheta;
+	//std::cout<<"Comp Out - Theta : "<<completelyoutsidetheta<<std::endl;
      if(ForInside)
            completelyinside &= completelyinsidetheta;
+	//    std::cout<<"Comp In - Theta : "<<completelyinsidetheta<<std::endl;
         
     }
     return;
@@ -904,6 +912,8 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     Vector3D<Float_t> localDir = direction;
     
     distance = kInfinity;
+	
+	
     Bool_t done(false);
     Bool_t tr(true),fal(false);
     
@@ -920,39 +930,13 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     //Precision halfRminTolerance = 0.5 * fRminTolerance;
     Float_t halfRminTolerance = 0.5 * unplaced.GetFRminTolerance() * 10.;
     Float_t halfRmaxTolerance = 0.5 * unplaced.GetMKTolerance() * 10.;
+    Float_t kAngTolerance(kSTolerance * 10.);
+    Float_t halfAngTolerance = 0.5 * kAngTolerance;
+    bool fullPhiSphere = unplaced.IsFullPhiSphere();
+    bool fullThetaSphere = unplaced.IsFullThetaSphere();
 
-//==================================================================================
-   Float_t sinCPhi(unplaced.GetSinCPhi()); 
-   Float_t cosCPhi(unplaced.GetCosCPhi()); 
-   Float_t sinSPhi(unplaced.GetSinSPhi()); 
-   Float_t cosSPhi(unplaced.GetCosSPhi()); 
-   Float_t sinEPhi(unplaced.GetSinEPhi()); 
-   Float_t cosEPhi(unplaced.GetCosEPhi()); 
-   Float_t cosHDPhiIT(unplaced.GetCosHDPhiIT());
-   Float_t cosHDPhiOT(unplaced.GetCosHDPhiOT());
-//-------------------------------------------------------------------------------
-  //General Precalc
-   Float_t kAngTolerance(kSTolerance * 10.);
-   Float_t halfAngTolerance = 0.5 * kAngTolerance;
-   //Bool_t fullThetaSphere(unplaced.IsFullThetaSphere());
-   //Bool_t fullPhiSphere(unplaced.IsFullPhiSphere());
-   //Precision fRmin = unplaced.GetInnerRadius();
-   //Precision fRmax = unplaced.GetOuterRadius();
-   //Float_t halfRminTolerance = 0.5 * unplaced.GetFRminTolerance() * 10.;
-   //Float_t halfRmaxTolerance = 0.5 * unplaced.GetMKTolerance() * 10.;
-   Float_t tolSTheta(0.), tolETheta(0.);
-   //Bool_t tr(true), fal(false);
-bool fullPhiSphere = unplaced.IsFullPhiSphere();
-   bool fullThetaSphere = unplaced.IsFullThetaSphere();
-Bool_t fullThetaSphere_v(unplaced.IsFullThetaSphere());
-   Bool_t fullPhiSphere_v(unplaced.IsFullPhiSphere());
-MaskedAssign(!fullThetaSphere,(unplaced.GetStartThetaAngle() - halfAngTolerance), &tolSTheta );
-   MaskedAssign(!fullThetaSphere,(unplaced.GetETheta() + halfAngTolerance), &tolETheta );
-//-------------------------------------------------------------------------------
     Vector3D<Float_t> tmpPt;
-
-  
-  Float_t  c(0.), d2(0.);
+    Float_t  c(0.), d2(0.);
 
   // General Precalcs
   Float_t rad2 = localPoint.Mag2();
@@ -967,11 +951,9 @@ MaskedAssign(!fullThetaSphere,(unplaced.GetStartThetaAngle() - halfAngTolerance)
    
    Float_t sd1(kInfinity);
    Float_t sd2(kInfinity);
-   
-  // bool fullPhiSphere = unplaced.IsFullPhiSphere();
-  // bool fullThetaSphere = unplaced.IsFullThetaSphere();
-   
-   MaskedAssign((tr),(pDotV3d * pDotV3d - c),&d2);
+  
+   //MaskedAssign((tr),(pDotV3d * pDotV3d - c),&d2);
+   d2 = (pDotV3d * pDotV3d - c);
    done |= (d2 < 0. || ((localPoint.Mag() > fRmax) && (pDotV3d > 0)));
    if(IsFull(done)) return; //Returning in case of no intersection with outer shell
   
@@ -996,52 +978,17 @@ MaskedAssign(!fullThetaSphere,(unplaced.GetStartThetaAngle() - halfAngTolerance)
    }
    else
    { 
-
-     //CondAssign( c > kSTolerance * 10. * fRmax, CheckPhiTheta<Backend>(unplaced,localPoint,localDir,sd1,done) , 
-       //                  CheckSpecialTolerantCase<Backend>(unplaced,localPoint,localDir,false, done) , &outerDist);
-
-	Bool_t testCond = c > kSTolerance * 10. * fRmax;
    tmpPt.x()= sd1 * localDir.x() + localPoint.x();
    tmpPt.y()= sd1 * localDir.y() + localPoint.y() ;
    tmpPt.z()= sd1 * localDir.z() + localPoint.z();
+   MaskedAssign(unplaced.GetWedge().Contains<Backend>(tmpPt) && unplaced.GetThetaCone().Contains<Backend>(tmpPt),sd1,&outerDist);
    
-      
-   if(!fullPhiSphere && fullThetaSphere)
-   {
-       //interPhi = tmpPt.Phi();
-	interPhi = GetPhi<Backend>(tmpPt.y() , tmpPt.x());
-	MaskedAssign((testCond && !done && (interPhi >= fSPhi) && (interPhi<=fEPhi)),sd1,&outerDist);
-   }
-   else
-   {
-   if(fullPhiSphere and !fullThetaSphere)
-   {
-//       interTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());
-	interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());    
-       MaskedAssign((testCond && !done && (interTheta >= fSTheta) && (interTheta <= fETheta)),sd1,&outerDist);
-   }
-   else
-   {
-	
-   if(!fullPhiSphere && !fullThetaSphere)
-   {
-//   interPhi = tmpPt.Phi();
-interPhi = GetPhi<Backend>(tmpPt.y() , tmpPt.x());
-	if(verbose)std::cout<<"InterPhi - 2 : "<<interPhi<<std::endl;
-//   interTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());
-interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());    
-   MaskedAssign((testCond && !done && ((interPhi >= fSPhi) && (interPhi<=fEPhi)) &&
-                   ((interTheta >= fSTheta) && (interTheta <= fETheta)) ),sd1,&outerDist);
-   }
-   }
-   }	
-
-	MaskedAssign(!testCond , CheckSpecialTolerantCase<Backend>(unplaced,localPoint,localDir,false, done) , &outerDist);
-
-
+   
 
    }
    
+   //MaskedAssign(!(c > kSTolerance*10*fRmax),);
+
   if(unplaced.GetInnerRadius())
   { 
       c = rad2 - fRmin * fRmin;
@@ -1053,49 +1000,11 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
       }
       else
       {
-
-        //CondAssign(((c > -1. * halfRminTolerance) && (rad2 < tolIRMin2) && ((d2 < fRmin * fRminTolerance) || (pDotV3d >= 0)) ),
-          //             CheckSpecialTolerantCase<Backend>(unplaced,localPoint,localDir,true, done), CheckPhiTheta<Backend>(unplaced,localPoint,localDir,sd2,done) ,
-            //      &innerDist);
-Bool_t testCond = ((c > -1. * halfRminTolerance) && (rad2 < tolIRMin2) && ((d2 < fRmin * fRminTolerance) || (pDotV3d >= 0)) );
-MaskedAssign(testCond,CheckSpecialTolerantCase<Backend>(unplaced,localPoint,localDir,true, done), &innerDist);
-
-
-   tmpPt.x()= sd2 * localDir.x() + localPoint.x();
-   tmpPt.y()= sd2 * localDir.y() + localPoint.y() ;
-   tmpPt.z()= sd2 * localDir.z() + localPoint.z();
+   		tmpPt.x()= sd2 * localDir.x() + localPoint.x();
+		tmpPt.y()= sd2 * localDir.y() + localPoint.y() ;
+	    	tmpPt.z()= sd2 * localDir.z() + localPoint.z();
+   		MaskedAssign(unplaced.GetWedge().Contains<Backend>(tmpPt) && unplaced.GetThetaCone().Contains<Backend>(tmpPt),sd2,&innerDist);
    
-   
-  if(!fullPhiSphere && fullThetaSphere)
-   {
-//	interPhi = tmpPt.Phi();
-interPhi = GetPhi<Backend>(tmpPt.y() , tmpPt.x());
-	MaskedAssign((!testCond && !done &&  (interPhi >= fSPhi) && (interPhi<=fEPhi)),sd2,&innerDist);
-   }
-  else
-  {
-	
-   if(fullPhiSphere and !fullThetaSphere)
-   {
-//      	interTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());  
-interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
-       	MaskedAssign((!testCond && !done &&  (interTheta >= fSTheta) && (interTheta <= fETheta)),sd2,&innerDist);
-   }
-   else{
-	
-   if(!fullPhiSphere && !fullThetaSphere)
-   {
-//   	interPhi = tmpPt.Phi();
-interPhi = GetPhi<Backend>(tmpPt.y() , tmpPt.x());
-//	interTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());  
-interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
-	MaskedAssign((!testCond && !done &&   ((interPhi >= fSPhi) && (interPhi<=fEPhi)) &&
-                   ((interTheta >= fSTheta) && (interTheta <= fETheta)) ),sd2,&innerDist);
-   }
-   }
-  }
-
-
       }
   }
    
@@ -1105,6 +1014,10 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
    
    if(!fullPhiSphere)
   {
+	  Float_t sinSPhi(unplaced.GetSinSPhi()); 
+   	  Float_t cosSPhi(unplaced.GetCosSPhi()); 
+      Float_t sinEPhi(unplaced.GetSinEPhi()); 
+      Float_t cosEPhi(unplaced.GetCosEPhi()); 
       Float_t distPhi1(kInfinity);
       Float_t distPhi2(kInfinity);
       //******************************************************
@@ -1114,19 +1027,14 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
       Float_t zero(0.);
       
       unplaced.GetWedge().DistanceToIn<Backend>(localPoint,localDir,distPhi1,distPhi2);
-	/*      
-	Precision sinSPhi = unplaced.GetSinSPhi();
-      Precision cosSPhi = unplaced.GetCosSPhi();
-      Precision sinEPhi = unplaced.GetSinEPhi();
-      Precision cosEPhi = unplaced.GetCosEPhi();
-      */
+	
 
       Float_t distPhiMin = Min(distPhi1, distPhi2);
-      MaskedAssign((distPhiMin<0.),kInfinity,&distPhiMin);
+      MaskedAssign((distPhiMin<0.),0.,&distPhiMin);
      
       
       Float_t distPhiMax = Max(distPhi1, distPhi2);
-      MaskedAssign((distPhiMax<0.),kInfinity,&distPhiMax);
+      MaskedAssign((distPhiMax<0.),0.,&distPhiMax);
       
       Float_t minFace(1.);
       MaskedAssign((distPhi2 < distPhi1),2.,&minFace);
@@ -1134,7 +1042,9 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
       tmpPt.x() = localPoint.x() + distPhiMin * localDir.x();
       tmpPt.y() = localPoint.y() + distPhiMin * localDir.y();
       tmpPt.z() = localPoint.z() + distPhiMin * localDir.z();
-      Float_t tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
+	  Bool_t containsCond(false);
+	  containsCond = unplaced.GetThetaCone().Contains<Backend>(tmpPt);
+      //Float_t tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
       
       Float_t rT = tmpPt.Mag();
       Bool_t radCond = ((rT <= fRmax) && (rT >= fRmin));
@@ -1142,11 +1052,12 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
         CondAssign( ( radCond && (minFace == 1.)) , (tmpPt.x()*cosSPhi + tmpPt.y()*sinSPhi) ,
                 (tmpPt.x()*cosEPhi + tmpPt.y()*sinEPhi),&tmpPt.x()); //&minTPoint.x());
         
-        CondAssign( ( radCond && (minFace == 1.)) , (-1.*tmpPt.x()*sinSPhi + tmpPt.y()*cosSPhi) ,
-                (-1.*tmpPt.x()*sinEPhi + tmpPt.y()*cosEPhi),&tmpPt.y()); //&minTPoint.y());
+        //CondAssign( ( radCond && (minFace == 1.)) , (-1.*tmpPt.x()*sinSPhi + tmpPt.y()*cosSPhi) ,
+          //      (-1.*tmpPt.x()*sinEPhi + tmpPt.y()*cosEPhi),&tmpPt.y()); //&minTPoint.y());
         
        Bool_t checkCond = (radCond && (tmpPt.x() > 0.));//(minTPoint.x() > zero));    
-       MaskedAssign(!done &&  checkCond && (tmpPtTheta > fSTheta && tmpPtTheta < fETheta), Min(distPhiMin,distance),&distance );
+       //MaskedAssign(!done &&  checkCond && (tmpPtTheta > fSTheta && tmpPtTheta < fETheta), Min(distPhiMin,distance),&distance );
+	   MaskedAssign(!done &&  checkCond && containsCond, Min(distPhiMin,distance),&distance );
        
        //Going to phiMax face
         
@@ -1156,8 +1067,9 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
         MaskedAssign(!checkCond, (localPoint.x() + distPhiMax * localDir.x()),&tmpPt.x());
         MaskedAssign(!checkCond, (localPoint.y() + distPhiMax * localDir.y()),&tmpPt.y());
         MaskedAssign(!checkCond, (localPoint.z() + distPhiMax * localDir.z()),&tmpPt.z());
-        
-        tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
+	containsCond = fal;
+        containsCond = unplaced.GetThetaCone().Contains<Backend>(tmpPt);
+        //tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
         
         rT = tmpPt.Mag();
                 
@@ -1166,11 +1078,12 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
         CondAssign( (!checkCond && radCond && (maxFace == 1.)  ) , (tmpPt.x()*cosSPhi + tmpPt.y()*sinSPhi) ,
                 (tmpPt.x()*cosEPhi + tmpPt.y()*sinEPhi),&tmpPt.x());//&maxTPoint.x());
         
-        CondAssign( (!checkCond && radCond && (maxFace == 1.)  )  , (-1.*tmpPt.x()*sinSPhi + tmpPt.y()*cosSPhi) ,
-                (-1.*tmpPt.x()*sinEPhi + tmpPt.y()*cosEPhi),&tmpPt.y());//&maxTPoint.y());
+        //CondAssign( (!checkCond && radCond && (maxFace == 1.)  )  , (-1.*tmpPt.x()*sinSPhi + tmpPt.y()*cosSPhi) ,
+         //       (-1.*tmpPt.x()*sinEPhi + tmpPt.y()*cosEPhi),&tmpPt.y());//&maxTPoint.y());
         
         Bool_t checkCondMax = (radCond && (tmpPt.x() > 0.));//(maxTPoint.x() > zero));
-        MaskedAssign(!done &&  !checkCond && checkCondMax && (tmpPtTheta > fSTheta && tmpPtTheta < fETheta), Min(distPhiMax,distance),&distance );
+        //MaskedAssign(!done &&  !checkCond && checkCondMax && (tmpPtTheta > fSTheta && tmpPtTheta < fETheta), Min(distPhiMax,distance),&distance );
+	MaskedAssign(!done &&  !checkCond && checkCondMax && containsCond, Min(distPhiMax,distance),&distance );
        
        
      
@@ -1178,42 +1091,47 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
  
    Float_t distThetaMin(kInfinity);
    
-   //{
    if(!fullThetaSphere)
    {
       Bool_t intsect1(false);  
       Bool_t intsect2(false);  
       Float_t distTheta1(kInfinity);
       Float_t distTheta2(kInfinity);
-      Vector3D<Float_t> coneIntSecPt;
+      Vector3D<Float_t> coneIntSecPt1,coneIntSecPt2;
       Float_t xi,yi,zi;
       
       
       unplaced.GetThetaCone().DistanceToIn<Backend>(localPoint,localDir,distTheta1,distTheta2, intsect1,intsect2);//,cone1IntSecPt, cone2IntSecPt);
-      MaskedAssign( (intsect1),(localPoint.x() + distTheta1 * localDir.x()),&coneIntSecPt.x());
-      MaskedAssign( (intsect1),(localPoint.y() + distTheta1 * localDir.y()),&coneIntSecPt.y());
-      MaskedAssign( (intsect1),(localPoint.z() + distTheta1 * localDir.z()),&coneIntSecPt.z());
+      MaskedAssign( (intsect1),(localPoint.x() + distTheta1 * localDir.x()),&coneIntSecPt1.x());
+      MaskedAssign( (intsect1),(localPoint.y() + distTheta1 * localDir.y()),&coneIntSecPt1.y());
+      MaskedAssign( (intsect1),(localPoint.z() + distTheta1 * localDir.z()),&coneIntSecPt1.z());
      
       
-      Float_t distCone1 = coneIntSecPt.Mag();
+      Float_t distCone1 = coneIntSecPt1.Mag();
       //Float_t phiCone1 = coneIntSecPt.Phi();
-      Float_t phiCone1 = GetPhi<Backend>(coneIntSecPt.y() , coneIntSecPt.x());
+      //Float_t phiCone1 = GetPhi<Backend>(coneIntSecPt.y() , coneIntSecPt.x());
+      //Bool_t isValCon1 = unplaced.GetThetaCone().Contains<Backend>(coneIntSecPt);
       
       
-      MaskedAssign( (intsect2),(localPoint.x() + distTheta2 * localDir.x()),&coneIntSecPt.x());
-      MaskedAssign( (intsect2),(localPoint.y() + distTheta2 * localDir.y()),&coneIntSecPt.y());
-      MaskedAssign( (intsect2),(localPoint.z() + distTheta2 * localDir.z()),&coneIntSecPt.z());
+      MaskedAssign( (intsect2),(localPoint.x() + distTheta2 * localDir.x()),&coneIntSecPt2.x());
+      MaskedAssign( (intsect2),(localPoint.y() + distTheta2 * localDir.y()),&coneIntSecPt2.y());
+      MaskedAssign( (intsect2),(localPoint.z() + distTheta2 * localDir.z()),&coneIntSecPt2.z());
       
       
-      Float_t distCone2 = coneIntSecPt.Mag();
+      Float_t distCone2 = coneIntSecPt2.Mag();
       //Float_t phiCone2 = coneIntSecPt.Phi();
-      Float_t phiCone2 = GetPhi<Backend>(coneIntSecPt.y() , coneIntSecPt.x());
-      Bool_t isValidCone1 = (phiCone1 > fSPhi && phiCone1  < fEPhi) && (distCone1 > fRmin && distCone1 < fRmax);
-      Bool_t isValidCone2 = (phiCone2 > fSPhi && phiCone2  < fEPhi) && (distCone2 > fRmin && distCone2 < fRmax);
+      //Float_t phiCone2 = GetPhi<Backend>(coneIntSecPt.y() , coneIntSecPt.x());
+      //Bool_t isValCon2 = unplaced.GetThetaCone().Contains<Backend>(coneIntSecPt);
+
+	  //Bool_t isValidCone1 = (phiCone1 > fSPhi && phiCone1  < fEPhi) && (distCone1 > fRmin && distCone1 < fRmax);
+	  Bool_t isValidCone1 = /*isValCon1 && */ (distCone1 > fRmin && distCone1 < fRmax);
+          //Bool_t isValidCone2 = (phiCone2 > fSPhi && phiCone2  < fEPhi) && (distCone2 > fRmin && distCone2 < fRmax);
+	  Bool_t isValidCone2 = /*isValCon2 && */(distCone2 > fRmin && distCone2 < fRmax);
      
       if(!fullPhiSphere)
           {
-              
+            isValidCone1 &= unplaced.GetWedge().Contains<Backend>(coneIntSecPt1) ;
+            isValidCone2 &= unplaced.GetWedge().Contains<Backend>(coneIntSecPt2) ;
             MaskedAssign( (!done && (((intsect2 && !intsect1)  && isValidCone2) || ((intsect2 && intsect1) && isValidCone2 && !isValidCone1)) ),distTheta2,&distThetaMin);
       
             MaskedAssign( (!done && (((!intsect2 && intsect1) && isValidCone1) || ((intsect2 && intsect1) && isValidCone1 && !isValidCone2)) ),distTheta1,&distThetaMin);
@@ -1237,20 +1155,20 @@ interTheta = GetATan2<Backend>(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), 
           }
       
       }
-  // }
+  
    
    distance = Min(distThetaMin,distance);
    MaskedAssign(( distance < kSTolerance ) , 0. , &distance);
    
 }
-
+/*
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v SphereImplementation<transCodeT, rotCodeT>::CheckPhiTheta(UnplacedSphere const &unplaced,
                                                 Vector3D<typename Backend::precision_v> const localPoint, Vector3D<typename Backend::precision_v> const localDir,
-                                                typename Backend::precision_v sd, /*typename Backend::precision_v &dist,*/ typename Backend::bool_v done ){
+                                                typename Backend::precision_v sd,  typename Backend::bool_v done ){
 
    bool fullPhiSphere = unplaced.IsFullPhiSphere();
    bool fullThetaSphere = unplaced.IsFullThetaSphere();
@@ -1380,6 +1298,7 @@ typename Backend::precision_v SphereImplementation<transCodeT, rotCodeT>::CheckS
    return snxt;
    
 }
+*/
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH

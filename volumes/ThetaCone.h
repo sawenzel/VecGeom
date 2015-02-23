@@ -11,7 +11,7 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "backend/Backend.h"
 #include <iostream>
-
+#include <iomanip>
 namespace VECGEOM_NAMESPACE
 {
 
@@ -45,13 +45,16 @@ class ThetaCone{
         Precision kAngTolerance;
         Precision halfAngTolerance;
         Precision fETheta;
+		Precision tanSTheta;
+		Precision tanETheta;
         Precision tanSTheta2;
         Precision tanETheta2;
+	//Precision cone1Radius,cone2Radius;
         
 
     public:
         VECGEOM_CUDA_HEADER_BOTH
-        ThetaCone( Precision sTheta, Precision dTheta ) :
+        ThetaCone( Precision sTheta, Precision dTheta) :
             fSTheta(sTheta), fDTheta(dTheta), kAngTolerance(kSTolerance) {
             // check input
             //Assert( angle > 0., " wedge angle has to be larger than zero " );
@@ -59,10 +62,19 @@ class ThetaCone{
             // initialize angles
             fETheta = fSTheta + fDTheta;
             halfAngTolerance = (0.5 * kAngTolerance*10.);
-            Precision tanSTheta = tan(fSTheta);
+			Precision tempfSTheta=fSTheta;
+			Precision tempfETheta=fETheta;
+			if(fSTheta > kPi/2)
+			    tempfSTheta = kPi - fSTheta;
+			if(fETheta > kPi/2)
+			    tempfETheta = kPi - fETheta;
+
+            tanSTheta = std::tan(tempfSTheta);
             tanSTheta2 = tanSTheta * tanSTheta;
-            Precision tanETheta = tan(fETheta);
+            tanETheta = std::tan(tempfETheta);
             tanETheta2 = tanETheta * tanETheta;
+	    //cone1Radius = slantHeight*sin(fSTheta);
+	    //cone2Radius = slantHeight*sin(fETheta);
             
         }
 
@@ -418,16 +430,71 @@ class ThetaCone{
                 typename Backend::bool_v &completelyoutside) const {
         
             typedef typename Backend::precision_v Float_t;
-            Float_t pTheta = ATan2(Sqrt(localPoint.x()*localPoint.x() + localPoint.y()*localPoint.y()), localPoint.z()); 
+	    if(fSTheta < kPi/2 + halfAngTolerance)
+              {
+                  if(fETheta < kPi/2 + halfAngTolerance)
+                  {  //Working Fine
+                      if(fSTheta < fETheta)
+                      {
+			Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
+				Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
+				Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
+	    		Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
+            		Float_t tolAngMax = cone2Radius - kAngTolerance*100.;
+					if(ForInside)
+            		completelyinside = (rad <= tolAngMax) && (rad >= tolAngMin) && (localPoint.z() > 0.);
+            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
+            		Float_t tolAngMax2 = cone2Radius + kAngTolerance*100.;
+            		completelyoutside = (rad < tolAngMin2) || (rad*rad > tolAngMax2*tolAngMax2) || (localPoint.z() < 0.);   
+
+		      }
+		  }
+		
+		if(fETheta > kPi/2 + halfAngTolerance)
+                  { 
+                      if(fSTheta < fETheta)
+                      {
+			Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
+				Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
+				Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
+	    		Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
+            		Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
+					if(ForInside)
+            		completelyinside = ((rad >= tolAngMin) && (localPoint.z() > 0.)) || ((rad >= tolAngMax) && (localPoint.z() < 0.));
             
-            Precision tolAngMin = fSTheta + kAngTolerance*10.;
-            Precision tolAngMax = fETheta - kAngTolerance*10.;
-            completelyinside = (pTheta <= tolAngMax) && (pTheta >= tolAngMin);
+            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
+            		Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
+            		completelyoutside = ((rad < tolAngMin2) && (localPoint.z() > 0.))  || ((rad < tolAngMax2) && (localPoint.z() < 0.));   
+		      }
+		  }
+		                
+	      }	
+
+	if(fETheta > kPi/2 + halfAngTolerance)
+             {
+		if(fSTheta > kPi/2 + halfAngTolerance)
+                     { 
+			 if(fSTheta < fETheta)
+                      		{
+					Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
+						Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
+						Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
+	    				Float_t tolAngMin = cone1Radius - kAngTolerance*100.;
+            				Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
+							if(ForInside)
+            				completelyinside = (rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < 0.);
             
-            Precision tolAngMin2 = fSTheta - kAngTolerance*10.;
-            Precision tolAngMax2 = fETheta + kAngTolerance*10.;
-            completelyoutside = (pTheta < tolAngMin2) || (pTheta > tolAngMax2);
-        
+            				Float_t tolAngMin2 = cone1Radius + kAngTolerance*100.;
+            				Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
+           				completelyoutside = (rad < tolAngMax2) || (rad > tolAngMin2) || (localPoint.z() > 0.);   
+					
+				}
+			
+		     }
+	     }
+
+
+//------------------------------------------------
     }
     
     

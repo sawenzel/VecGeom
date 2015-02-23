@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
   tester.SetPointCount(npoints);
   tester.SetRepetitions(nrep);
 	
-  //tester.RunInsideBenchmark();
+  tester.RunInsideBenchmark();
   tester.RunToOutBenchmark();
   tester.RunToInBenchmark();
 
