@@ -237,8 +237,8 @@ struct ConeImplementation {
    // this really only makes sense for Scalar and CUDA backend and is copied here until
    //  a generic and fully optimized VecGeom version is available
    template <class Backend>
-   //VECGEOM_CUDA_HEADER_BOTH
-   //VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
    static typename Backend::precision_v DistanceToInUSolids
    ( UnplacedCone const &unplaced,
      Transformation3D const &transformation,
