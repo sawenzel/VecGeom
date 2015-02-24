@@ -226,11 +226,10 @@ struct ConeImplementation {
 
   }
 
-   VECGEOM_GLOBAL double kHalfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
+   VECGEOM_CLASS_GLOBAL double kHalfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
    // static constexpr double kHalfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
-   VECGEOM_GLOBAL double kHalfRadTolerance = kRadTolerance * 0.5;
-   VECGEOM_GLOBAL double kHalfAngTolerance = kAngTolerance * 0.5;
-
+   VECGEOM_CLASS_GLOBAL double kHalfRadTolerance = kRadTolerance * 0.5;
+   VECGEOM_CLASS_GLOBAL double kHalfAngTolerance = kAngTolerance * 0.5;
 
    // the fall-back version from USolids
    // to take a short cut towards full functionality
