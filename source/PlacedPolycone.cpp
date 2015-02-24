@@ -44,7 +44,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
                     unplaced->fDeltaPhi*kRadToDeg,
                     z.size() );
 
-      if( unplaced->fNz != z.size() )
+      if( (size_t)unplaced->fNz != z.size() )
       {
           std::cout << "WARNING: Inconsistency in number of polycone sections\n";
       }
