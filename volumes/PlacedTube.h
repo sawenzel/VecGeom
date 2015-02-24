@@ -77,7 +77,7 @@ public:
   Precision dphi() const { return GetUnplacedVolume()->dphi(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+  virtual Precision Capacity() const {
       return GetUnplacedVolume()->Capacity();
   }
 

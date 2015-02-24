@@ -89,7 +89,7 @@ public:
   Precision GetOuterOffset() const {return GetUnplacedVolume()->GetOuterOffset();}
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+  virtual Precision Capacity() const {
       return GetUnplacedVolume()->Capacity();
   }
 

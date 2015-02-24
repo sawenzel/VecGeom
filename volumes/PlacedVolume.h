@@ -254,7 +254,7 @@ public:
   // it is currently not a const function since some shapes might cache this value
   // if it is expensive to calculate
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+  virtual Precision Capacity() const {
       assert(0 && "Capacity not implemented");
       return 0;
   }

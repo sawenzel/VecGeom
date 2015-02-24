@@ -72,7 +72,7 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+  virtual Precision Capacity() const {
        // TODO: implement this
       return 0.;
   }

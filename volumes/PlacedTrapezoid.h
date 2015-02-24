@@ -103,7 +103,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual
-  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
+  Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual
