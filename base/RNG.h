@@ -56,6 +56,9 @@ private:
   std::mt19937 rng;
   std::uniform_real_distribution<> uniform_dist;
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_CUDA_HEADER_BOTH
+#endif
   VECGEOM_INLINE
   Precision GetUniform() {
      return uniform_dist(rng);

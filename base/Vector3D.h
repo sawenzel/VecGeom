@@ -14,9 +14,15 @@
 #endif
 #include "base/AlignedBase.h"
 
+#ifdef OFFLOAD_MODE
+  #pragma offload_attribute(push,target(mic))
+#endif
 #include <cstdlib>
 #include <ostream>
 #include <string>
+#ifdef OFFLOAD_MODE
+  #pragma offload_attribute(pop)
+#endif
 
 namespace vecgeom {
 

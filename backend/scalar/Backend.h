@@ -6,8 +6,14 @@
 
 #include "base/Global.h"
 
+#ifdef OFFLOAD_MODE
+  #pragma offload_attribute(push,target(mic))
+#endif
 #include <algorithm>
 #include <cstring>
+#ifdef OFFLOAD_MODE
+  #pragma offload_attribute(pop)
+#endif
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -17,7 +23,11 @@ struct kScalar {
   typedef Precision precision_v;
   typedef bool      bool_v;
   typedef Inside_t  inside_v;
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL bool early_returns = true;
+#else
   const static bool early_returns = true;
+#endif
   // alternative typedefs ( might supercede above typedefs )
   typedef int                   Int_t;
   typedef Precision       Double_t;
@@ -25,14 +35,24 @@ struct kScalar {
   typedef int  Index_t; // the type of indices
 
 #ifdef VECGEOM_STD_CXX11
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL precision_v kOne = 1.0;
+  VECGEOM_GLOBAL precision_v kZero = 0.0;
+#else
   constexpr static precision_v kOne = 1.0;
   constexpr static precision_v kZero = 0.0;
+#endif
 #else
   const static precision_v kOne = 1.0;
   const static precision_v kZero = 0.0;
 #endif
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL bool_v kTrue = true;
+  VECGEOM_GLOBAL bool_v kFalse = false;
+#else
   const static bool_v kTrue = true;
   const static bool_v kFalse = false;
+#endif
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -185,14 +205,14 @@ VECGEOM_INLINE
 Precision Floor( Precision val ){
     return std::floor(val);
 }
-
+/* This comment were made because of MPSS error, in order to make either native mode or offload mode.
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void swap(Type &a, Type &b) {
   std::swap(a, b);
 }
-
+*/
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE

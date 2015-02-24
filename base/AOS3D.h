@@ -216,6 +216,9 @@ void AOS3D<T>::reserve(size_t newCapacity) {
 }
 
 template <typename T>
+#ifdef OFFLOAD_MODE
+VECGEOM_CUDA_HEADER_BOTH
+#endif
 void AOS3D<T>::clear() {
   Deallocate();
   fAllocated = false;
