@@ -174,7 +174,11 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 // Qualifier(s) of global constants
-#define VECGEOM_GLOBAL static constexpr
+#ifndef VECGEOM_NVCC
+  #define VECGEOM_GLOBAL constexpr
+#else
+  #define VECGEOM_GLOBAL static __constant__ const
+#endif
 
 namespace vecgeom {
 #ifdef VECGEOM_FLOAT_PRECISION
