@@ -34,6 +34,8 @@ option(DISTANCE_DEBUG "Enable comparision of calculcated distances againt ROOT/G
 
 option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
 
+option(OFFLOAD_MODE "Enable offload mode for Intel Xeon Phi." OFF) 
+
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
 
@@ -154,7 +156,7 @@ set(VECGEOM_COMPILATION_FLAGS_CLANG
     "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
 endif()
 set(VECGEOM_COMPILATION_FLAGS_INTEL
-    "${VECGEOM_COMPILATION_FLAGS_INTEL} -xHost")
+    "${VECGEOM_COMPILATION_FLAGS_INTEL} ")
 if (VECGEOM_VECTOR)
   message(STATUS "Compiling with vector instruction set ${VECGEOM_VECTOR}")
   set(VECGEOM_COMPILATION_FLAGS_GNU
@@ -251,8 +253,13 @@ endif()
 if (DISTANCE_DEBUG)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_DISTANCE_DEBUG")
 endif()
-
-
+if (OFFLOAD_MODE)
+  if (NOT Intel)
+    message(FATAL_ERROR "Must use Intel C++ compiler (icc) for Xeon Phi Offload Mode.")
+  endif()
+  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DOFFLOAD_MODE")
+  message(STATUS "Preparing for a offload compiler mode.")
+endif()
 
 # Pass flags to compilers
 if (GNU)

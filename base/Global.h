@@ -4,6 +4,9 @@
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
+#ifdef OFFLOAD_MODE
+  #pragma offload_attribute(push,target(mic))
+#endif
 #include <cassert>
 #include <cmath>
 #include <cfloat>
@@ -11,6 +14,9 @@
 #include <memory>
 #include <cstdio>
 #include <cstdlib>
+#ifdef OFFLOAD_MODE
+  #pragma offload_attribute(pop)
+#endif
 
 #define VECGEOM
 
@@ -56,6 +62,12 @@
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_BOTH
+  #ifdef OFFLOAD_MODE
+    #undef VECGEOM_CUDA_HEADER_BOTH
+    #undef VECGEOM_CUDA_HEADER_DEVICE
+    #define VECGEOM_CUDA_HEADER_BOTH __attribute__ ((target(mic)))
+    #define VECGEOM_CUDA_HEADER_DEVICE __attribute__ ((target(mic)))
+  #endif
   #define VECGEOM_CUDA_HEADER_GLOBAL
   #ifdef VECGEOM_CUDA
     // CUDA is enabled, but currently compiling regular C++ code.
@@ -175,6 +187,10 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 
 // Qualifier(s) of global constants
 #define VECGEOM_GLOBAL static constexpr
+#ifdef OFFLOAD_MODE
+  #undef VECGEOM_GLOBAL
+  #define VECGEOM_GLOBAL __attribute__ (( target (mic))) static constexpr
+#endif
 
 namespace vecgeom {
 #ifdef VECGEOM_FLOAT_PRECISION
