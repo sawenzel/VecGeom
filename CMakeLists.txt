@@ -619,8 +619,14 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
+  # 
 )
+if(ROOT) # add shape testers that depend on ROOT
+  set(TEST_EXECUTABLES_SHAPETESTER
+  ${TEST_EXECUTABLES_SHAPETESTER}
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp )
+endif()
+
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
