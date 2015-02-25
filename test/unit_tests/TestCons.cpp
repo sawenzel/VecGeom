@@ -1089,7 +1089,8 @@ int main() {
   std::cout << "UCons passed\n";
 
 #endif
-  TestCons<VECGEOMCONSTANTS, vecgeom::SimpleUnplacedCone >();
+  //  TestCons<VECGEOMCONSTANTS, vecgeom::SimpleUnplacedCone >();
+  TestCons<VECGEOMCONSTANTS, vecgeom::SimpleCone >();
   std::cout<< "VecGeom Cone passed\n";
   return 0;
 }
