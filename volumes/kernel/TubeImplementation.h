@@ -310,8 +310,14 @@ class PlacedTube;
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 struct TubeImplementation {
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+#endif
+
   using PlacedShape_t = PlacedTube;
   using UnplacedShape_t = UnplacedTube;
 

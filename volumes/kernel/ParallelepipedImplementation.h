@@ -24,8 +24,13 @@ class PlacedParallelepiped;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParallelepipedImplementation {
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+#endif
 
   using PlacedShape_t = PlacedParallelepiped;
   using UnplacedShape_t = UnplacedParallelepiped;

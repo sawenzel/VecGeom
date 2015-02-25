@@ -37,8 +37,13 @@ template <Polyhedron::EInnerRadii innerRadiiT,
 struct PolyhedronImplementation {
 
     // there is currently no specialization
+#ifdef OFFLOAD_MODE
+   VECGEOM_GLOBAL int transC = translation::kGeneric;
+   VECGEOM_GLOBAL int rotC   = rotation::kGeneric;
+#else
    static const int transC = translation::kGeneric;
    static const int rotC   = rotation::kGeneric;
+#endif
 
    using PlacedShape_t = PlacedPolyhedron;
    using UnplacedShape_t = UnplacedPolyhedron;

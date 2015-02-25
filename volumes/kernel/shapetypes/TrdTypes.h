@@ -48,18 +48,30 @@ enum ETreatmentType {
 
 template <typename T>
 struct HasVaryingY {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kUnknown;
+#else
   static const ETreatmentType value=kUnknown;
+#endif
 };
 
 #ifndef VECGEOM_NO_SPECIALIZATION
 
 template <>
 struct HasVaryingY<Trd1> {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kNo;
+#else
   static const ETreatmentType value=kNo;
+#endif
 };
 template <>
 struct HasVaryingY<Trd2> {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kYes;
+#else
   static const ETreatmentType value=kYes;
+#endif
 };
 
 #endif // VECGEOM_NO_SPECIALIZATION

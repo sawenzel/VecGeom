@@ -77,25 +77,41 @@ enum ETreatmentType {
 // asking for phi treatment
 template <typename T>
 struct NeedsPhiTreatment {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kYes;
+#else
   static const ETreatmentType value=kYes;
+#endif
 };
 
 #ifndef VECGEOM_NO_SPECIALIZATION
 
 template <>
 struct NeedsPhiTreatment<NonHollowTube> {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kNo;
+#else
   static const ETreatmentType value=kNo;
+#endif
 };
 template <>
 struct NeedsPhiTreatment<HollowTube> {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kNo;
+#else
   static const ETreatmentType value=kNo;
+#endif
 };
 
 #endif // VECGEOM_NO_SPECIALIZATION
 
 template <>
 struct NeedsPhiTreatment<UniversalTube> {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kUnknown;
+#else
   static const ETreatmentType value=kUnknown;
+#endif
 };
 
 template<typename T>
@@ -112,7 +128,11 @@ bool checkPhiTreatment(const UnplacedTube& tube) {
 template <typename T>
 struct NeedsRminTreatment
 {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kYes;
+#else
   static const ETreatmentType value=kYes;
+#endif
 };
 
 #ifndef VECGEOM_NO_SPECIALIZATION
@@ -120,7 +140,11 @@ struct NeedsRminTreatment
 template <>
 struct NeedsRminTreatment<NonHollowTube>
 {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kNo;
+#else
   static const ETreatmentType value=kNo;
+#endif
 };
 template <>
 struct NeedsRminTreatment<NonHollowTubeWithSmallerThanPiSector>
@@ -143,7 +167,11 @@ struct NeedsRminTreatment<NonHollowTubeWithPiSector>
 template <>
 struct NeedsRminTreatment<UniversalTube>
 {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL ETreatmentType value=kUnknown;
+#else
   static const ETreatmentType value=kUnknown;
+#endif
 };
 
 
@@ -169,12 +197,20 @@ enum EAngleType
 
 template<typename T>
 struct SectorType {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL EAngleType value=kNoAngle;
+#else
   static const EAngleType value=kNoAngle;
+#endif
 };
 
 template<>
 struct SectorType<UniversalTube> {
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL EAngleType value=kUnknownAngle;
+#else
   static const EAngleType value=kUnknownAngle;
+#endif
 };
 
 #ifndef VECGEOM_NO_SPECIALIZATION

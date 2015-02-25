@@ -31,8 +31,13 @@ class PlacedPolycone;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct PolyconeImplementation {
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+#endif
 
   using PlacedShape_t = PlacedPolycone;
   using UnplacedShape_t = UnplacedPolycone;

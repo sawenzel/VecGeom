@@ -27,8 +27,13 @@ class UnplacedOrb;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct OrbImplementation {
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+#endif
 
 
     

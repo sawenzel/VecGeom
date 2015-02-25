@@ -68,8 +68,13 @@ template <TranslationCode transCodeT, RotationCode rotCodeT,
           typename ConeType>
 struct ConeImplementation {
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+#endif
 
   using PlacedShape_t = PlacedCone;
   using UnplacedShape_t = UnplacedCone;

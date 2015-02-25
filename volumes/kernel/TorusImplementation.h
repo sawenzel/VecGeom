@@ -361,6 +361,16 @@ stream& operator<<(stream& s, const Complex<T> & x)
 }
 #endif
 
+#ifdef OFFLOAD_MODE
+VECGEOM_GLOBAL const double inv256 = 1./256;
+VECGEOM_GLOBAL const double inv16 = 1./16;
+VECGEOM_GLOBAL const double inv3 = 1./3;
+VECGEOM_GLOBAL const double inv128 = 1./128;
+VECGEOM_GLOBAL const double inv27 = 1./27;
+VECGEOM_GLOBAL const double inv6 = 1./6;
+VECGEOM_GLOBAL const double inv108 = 1./108;
+VECGEOM_GLOBAL const double inv12 = 1./12;
+#else
 static const double inv256 = 1./256;
 static const double inv16 = 1./16;
 static const double inv3 = 1./3;
@@ -369,6 +379,7 @@ static const double inv27 = 1./27;
 static const double inv6 = 1./6;
 static const double inv108 = 1./108;
 static const double inv12 = 1./12;
+#endif
 
 
 template <typename CT>
@@ -568,8 +579,13 @@ class PlacedTorus;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
   
-   static const int transC = transCodeT;
-   static const int rotC   = rotCodeT;
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+#endif
 
   using PlacedShape_t = PlacedTorus;
   using UnplacedShape_t = UnplacedTorus;

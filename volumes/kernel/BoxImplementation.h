@@ -24,8 +24,13 @@ class UnplacedBox;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
+#ifdef OFFLOAD_MODE
+  VECGEOM_GLOBAL int transC = transCodeT;
+  VECGEOM_GLOBAL int rotC   = rotCodeT;
+#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
+#endif
 
   using PlacedShape_t = PlacedBox;
   using UnplacedShape_t = UnplacedBox;
