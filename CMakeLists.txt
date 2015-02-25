@@ -614,10 +614,12 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testCone.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTube.cpp
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrd.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
+  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

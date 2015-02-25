@@ -78,8 +78,7 @@ public:
 
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision Capacity() { return GetUnplacedVolume()->volume(); }
+  virtual Precision Capacity() { return GetUnplacedVolume()->volume(); }
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;

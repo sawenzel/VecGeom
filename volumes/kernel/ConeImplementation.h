@@ -226,10 +226,15 @@ struct ConeImplementation {
 
   }
 
+   VECGEOM_CLASS_GLOBAL double kHalfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
+   // static constexpr double kHalfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
+   VECGEOM_CLASS_GLOBAL double kHalfRadTolerance = kRadTolerance * 0.5;
+   VECGEOM_CLASS_GLOBAL double kHalfAngTolerance = kAngTolerance * 0.5;
+
    // the fall-back version from USolids
    // to take a short cut towards full functionality
    // this really only makes sense for Scalar and CUDA backend and is copied here until
-  //  a generic and fully optimized VecGeom version is available
+   //  a generic and fully optimized VecGeom version is available
    template <class Backend>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
@@ -241,8 +246,8 @@ struct ConeImplementation {
      typename Backend::precision_v const &stepMax ) {
 
      // first of all: transform points and directions
-     Vector3D<typename Backend::precision_v> p = transformation.Transform<transCodeT,rotCodeT>(point);
-     Vector3D<typename Backend::precision_v> v = transformation.TransformDirection<rotCodeT>(direction);
+      Vector3D<typename Backend::precision_v> p = transformation.Transform<transCodeT,rotCodeT>(point);
+      Vector3D<typename Backend::precision_v> v = transformation.TransformDirection<rotCodeT>(direction);
 
      double snxt = VECGEOM_NAMESPACE::kInfinity;
      const double dRmax = 100 * Max(unplaced.GetRmax1(), unplaced.GetRmax2());
@@ -268,21 +273,21 @@ struct ConeImplementation {
       // Cone Precalcs
       rMinAv  = (unplaced.GetRmin1() + unplaced.GetRmin2()) * 0.5;
 
-      if (rMinAv > halfRadTolerance)
+      if (rMinAv > kHalfRadTolerance)
       {
-        rMinOAv = rMinAv - halfRadTolerance;
+        rMinOAv = rMinAv - kHalfRadTolerance;
       }
       else
       {
         rMinOAv = 0.0;
       }
       rMaxAv  = (unplaced.GetRmax1() + unplaced.GetRmax2()) * 0.5;
-      rMaxOAv = rMaxAv + halfRadTolerance;
+      rMaxOAv = rMaxAv + kHalfRadTolerance;
 
       // Intersection with z-surfaces
 
-      tolIDz = unplaced.GetDz() - halfCarTolerance;
-      tolODz = unplaced.GetDz() + halfCarTolerance;
+      tolIDz = unplaced.GetDz() - kHalfCarTolerance;
+      tolODz = unplaced.GetDz() + kHalfCarTolerance;
 
       if (std::fabs(p.z()) >= tolIDz)
       {
@@ -304,19 +309,19 @@ struct ConeImplementation {
 
           if (v.z() > 0)
           {
-            tolORMin  = unplaced.GetRmin1() - halfRadTolerance * unplaced.fSecRMin;
-            tolIRMin  = unplaced.GetRmin1() + halfRadTolerance * unplaced.fSecRMin;
-            tolIRMax  = unplaced.GetRmax1() - halfRadTolerance * unplaced.fSecRMin;
-            tolORMax2 = (unplaced.GetRmax1() + halfRadTolerance * unplaced.fSecRMax) *
-                        (unplaced.GetRmax1() + halfRadTolerance * unplaced.fSecRMax);
+            tolORMin  = unplaced.GetRmin1() - kHalfRadTolerance * unplaced.fSecRMin;
+            tolIRMin  = unplaced.GetRmin1() + kHalfRadTolerance * unplaced.fSecRMin;
+            tolIRMax  = unplaced.GetRmax1() - kHalfRadTolerance * unplaced.fSecRMin;
+            tolORMax2 = (unplaced.GetRmax1() + kHalfRadTolerance * unplaced.fSecRMax) *
+                        (unplaced.GetRmax1() + kHalfRadTolerance * unplaced.fSecRMax);
           }
           else
           {
-            tolORMin  = unplaced.GetRmin2() - halfRadTolerance * unplaced.fSecRMin;
-            tolIRMin  = unplaced.GetRmin2() + halfRadTolerance * unplaced.fSecRMin;
-            tolIRMax  = unplaced.GetRmax2() - halfRadTolerance * unplaced.fSecRMin;
-            tolORMax2 = (unplaced.GetRmax2() + halfRadTolerance * unplaced.fSecRMax) *
-                        (unplaced.GetRmax2() + halfRadTolerance * unplaced.fSecRMax);
+            tolORMin  = unplaced.GetRmin2() - kHalfRadTolerance * unplaced.fSecRMin;
+            tolIRMin  = unplaced.GetRmin2() + kHalfRadTolerance * unplaced.fSecRMin;
+            tolIRMax  = unplaced.GetRmax2() - kHalfRadTolerance * unplaced.fSecRMin;
+            tolORMax2 = (unplaced.GetRmax2() + kHalfRadTolerance * unplaced.fSecRMax) *
+                        (unplaced.GetRmax2() + kHalfRadTolerance * unplaced.fSecRMax);
           }
           if (tolORMin > 0)
           {
@@ -479,8 +484,8 @@ struct ConeImplementation {
           // Inside outer cone
           // check not inside, and heading through UCons (-> 0 to in)
 
-          if ((t3 > (rin + halfRadTolerance * unplaced.fSecRMin)*
-               (rin + halfRadTolerance * unplaced.fSecRMin))
+          if ((t3 > (rin + kHalfRadTolerance * unplaced.fSecRMin)*
+               (rin + kHalfRadTolerance * unplaced.fSecRMin))
               && (nt2 < 0) && (d >= 0) && (std::fabs(p.z()) <= tolIDz))
           {
             // Inside cones, delta r -ve, inside z extent
@@ -611,7 +616,7 @@ struct ConeImplementation {
 
                     if (cosPsi >= unplaced.fCosHDPhiIT)
                     {
-                      if (sd > halfRadTolerance)
+                      if (sd > kHalfRadTolerance)
                       {
                         snxt = sd;
                       }
@@ -630,7 +635,7 @@ struct ConeImplementation {
                   }
                   else
                   {
-                    if (sd > halfRadTolerance)
+                    if (sd > kHalfRadTolerance)
                     {
                       return sd;
                     }
@@ -694,7 +699,7 @@ struct ConeImplementation {
 
                     if (cosPsi >= unplaced.fCosHDPhiOT)
                     {
-                      if (sd > halfRadTolerance)
+                      if (sd > kHalfRadTolerance)
                       {
                         snxt = sd;
                       }
@@ -713,7 +718,7 @@ struct ConeImplementation {
                   }
                   else
                   {
-                    if (sd > halfRadTolerance)
+                    if (sd > kHalfRadTolerance)
                     {
                       return sd;
                     }
@@ -762,7 +767,7 @@ struct ConeImplementation {
 
                     if (cosPsi >= unplaced.fCosHDPhiIT)
                     {
-                      if (sd > halfRadTolerance)
+                      if (sd > kHalfRadTolerance)
                       {
                         snxt = sd;
                       }
@@ -781,7 +786,7 @@ struct ConeImplementation {
                   }
                   else
                   {
-                    if (sd > halfRadTolerance)
+                    if (sd > kHalfRadTolerance)
                     {
                       return sd;
                     }
@@ -966,7 +971,7 @@ struct ConeImplementation {
         {
           Dist = (p.y() * unplaced.fCosSPhi - p.x() * unplaced.fSinSPhi);
 
-          if (Dist < halfCarTolerance)
+          if (Dist < kHalfCarTolerance)
           {
             sd = Dist / Comp;
 
@@ -1009,7 +1014,7 @@ struct ConeImplementation {
         if (Comp < 0)     // Component in outwards normal dirn
         {
           Dist = -(p.y() * unplaced.fCosEPhi - p.x() * unplaced.fSinEPhi);
-          if (Dist < halfCarTolerance)
+          if (Dist < kHalfCarTolerance)
           {
             sd = Dist / Comp;
 
@@ -1045,7 +1050,7 @@ struct ConeImplementation {
           }
         }
       }
-    if (snxt < halfCarTolerance)
+    if (snxt < kHalfCarTolerance)
     {
        snxt = 0.;
     }
@@ -1214,7 +1219,7 @@ struct ConeImplementation {
 
  }
 
-  template <class Backend>
+   template <class Backend>
    VECGEOM_CUDA_HEADER_BOTH
    VECGEOM_INLINE
    static Precision DistanceToOutUSOLIDS(
@@ -1224,9 +1229,6 @@ struct ConeImplementation {
        typename Backend::precision_v const &stepMax
        ) {
 
-       const double halfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
-       const double halfRadTolerance = kRadTolerance * 0.5;
-       const double halfAngTolerance = kAngTolerance * 0.5;
 
         double snxt, srd, sphi, pdist;
 
@@ -1252,7 +1254,7 @@ struct ConeImplementation {
         {
           pdist = unplaced.GetDz() - p.z();
 
-          if (pdist > halfCarTolerance)
+          if (pdist > kHalfCarTolerance)
           {
             snxt = pdist / v.z();
          //   side = kPZ;
@@ -1268,7 +1270,7 @@ struct ConeImplementation {
         {
           pdist = unplaced.GetDz() + p.z();
 
-          if (pdist > halfCarTolerance)
+          if (pdist > kHalfCarTolerance)
           {
             snxt = -pdist / v.z();
            // side = kMZ;
@@ -1342,7 +1344,7 @@ struct ConeImplementation {
             // Check if on outer cone & heading outwards
             // NOTE: Should use rho-rout>-kRadTolerance*0.5
 
-            if (nt3 > -halfRadTolerance && nt2 >= 0)
+            if (nt3 > -kHalfRadTolerance && nt2 >= 0)
             {
 	       //              risec     = Sqrt(t3) * unplaced.fSecRMax;
              // aConvex = true;
@@ -1364,7 +1366,7 @@ struct ConeImplementation {
               zi    = p.z() + srd * v.z();
               ri    = unplaced.fTanRMax * zi + rMaxAv;
 
-              if ((ri >= 0) && (-halfRadTolerance <= srd) && (srd <= halfRadTolerance))
+              if ((ri >= 0) && (-kHalfRadTolerance <= srd) && (srd <= kHalfRadTolerance))
               {
                 // An intersection within the tolerance
                 //   we will Store it in case it is good -
@@ -1372,7 +1374,7 @@ struct ConeImplementation {
                // slentol = srd;
                // sidetol = kRMax;
               }
-              if ((ri < 0) || (srd < halfRadTolerance))
+              if ((ri < 0) || (srd < kHalfRadTolerance))
               {
                 // Safety: if both roots -ve ensure that srd cannot `win'
                 //         distance to out
@@ -1388,7 +1390,7 @@ struct ConeImplementation {
                 zi  = p.z() + sr2 * v.z();
                 ri  = unplaced.fTanRMax * zi + rMaxAv;
 
-                if ((ri >= 0) && (sr2 > halfRadTolerance))
+                if ((ri >= 0) && (sr2 > kHalfRadTolerance))
                 {
                   srd = sr2;
                 }
@@ -1396,7 +1398,7 @@ struct ConeImplementation {
                 {
                   srd = VECGEOM_NAMESPACE::kInfinity;
 
-                  if ((-halfRadTolerance <= sr2) && (sr2 <= halfRadTolerance))
+                  if ((-kHalfRadTolerance <= sr2) && (sr2 <= kHalfRadTolerance))
                   {
                     // An intersection within the tolerance.
                     // Storing it in case it is good.
@@ -1439,7 +1441,7 @@ struct ConeImplementation {
         // Check possible intersection within tolerance
 
         /*
-        if (slentol <= halfCarTolerance)
+        if (slentol <= kHalfCarTolerance)
         {
           // An intersection within the tolerance was found.
           // We must accept it only if the momentum points outwards.
@@ -1517,7 +1519,7 @@ struct ConeImplementation {
                 zi  = p.z() + sr2 * v.z();
                 ri  = unplaced.fTanRMin * zi + rMinAv;
 
-                if ((ri >= 0.0) && (-halfRadTolerance <= sr2) && (sr2 <= halfRadTolerance))
+                if ((ri >= 0.0) && (-kHalfRadTolerance <= sr2) && (sr2 <= kHalfRadTolerance))
                 {
                   // An intersection within the tolerance
                   // storing it in case it is good.
@@ -1525,7 +1527,7 @@ struct ConeImplementation {
                  // slentol = sr2;
                  // sidetol = kRMax;
                 }
-                if ((ri < 0) || (sr2 < halfRadTolerance))
+                if ((ri < 0) || (sr2 < kHalfRadTolerance))
                 {
                   if (b > 0)
                   {
@@ -1539,7 +1541,7 @@ struct ConeImplementation {
                   // Safety: if both roots -ve ensure that srd cannot `win'
                   //         distancetoout
 
-                  if (sr3 > halfRadTolerance)
+                  if (sr3 > kHalfRadTolerance)
                   {
                     if (sr3 < srd)
                     {
@@ -1553,7 +1555,7 @@ struct ConeImplementation {
                       }
                     }
                   }
-                  else if (sr3 > -halfRadTolerance)
+                  else if (sr3 > -kHalfRadTolerance)
                   {
                     // Intersection in tolerance. Store to check if it's good
 
@@ -1561,12 +1563,12 @@ struct ConeImplementation {
                 //    sidetol = kRMin;
                   }
                 }
-                else if ((sr2 < srd) && (sr2 > halfCarTolerance))
+                else if ((sr2 < srd) && (sr2 > kHalfCarTolerance))
                 {
                   srd  = sr2;
                 //  sider = kRMin;
                 }
-                else if (sr2 > -halfCarTolerance)
+                else if (sr2 > -kHalfCarTolerance)
                 {
                   // Intersection in tolerance. Store to check if it's good
 
@@ -1575,7 +1577,7 @@ struct ConeImplementation {
                 }
 
                 /*
-                if (slentol <= halfCarTolerance)
+                if (slentol <= kHalfCarTolerance)
                 {
                   // An intersection within the tolerance was found.
                   // We must accept it only if  the momentum points outwards.
@@ -1628,11 +1630,11 @@ struct ConeImplementation {
 
           vphi = ATan2(v.y(), v.x());
 
-          if (vphi < unplaced.GetSPhi() - halfAngTolerance)
+          if (vphi < unplaced.GetSPhi() - kHalfAngTolerance)
           {
             vphi += 2 * VECGEOM_NAMESPACE::kPi;
           }
-          else if (vphi > unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance)
+          else if (vphi > unplaced.GetSPhi() + unplaced.GetDPhi() + kHalfAngTolerance)
           {
             vphi -= 2 * VECGEOM_NAMESPACE::kPi;
           }
@@ -1651,29 +1653,29 @@ struct ConeImplementation {
 
         //    sidephi = kNull;
 
-            if (((unplaced.GetDPhi() <= VECGEOM_NAMESPACE::kPi) && ((pDistS <= halfCarTolerance)
-                                            && (pDistE <= halfCarTolerance)))
-                || ((unplaced.GetDPhi() > VECGEOM_NAMESPACE::kPi) && !((pDistS > halfCarTolerance)
-                                               && (pDistE >  halfCarTolerance))))
+            if (((unplaced.GetDPhi() <= VECGEOM_NAMESPACE::kPi) && ((pDistS <= kHalfCarTolerance)
+                                            && (pDistE <= kHalfCarTolerance)))
+                || ((unplaced.GetDPhi() > VECGEOM_NAMESPACE::kPi) && !((pDistS > kHalfCarTolerance)
+                                               && (pDistE >  kHalfCarTolerance))))
             {
               // Inside both phi *full* planes
               if (compS < 0)
               {
                 sphi = pDistS / compS;
-                if (sphi >= -halfCarTolerance)
+                if (sphi >= -kHalfCarTolerance)
                 {
                   xi = p.x() + sphi * v.x();
                   yi = p.y() + sphi * v.y();
 
-                  // Check intersecting with correct half-plane
+                  // Check intersecting with correct kHalf-plane
                   // (if not -> no intersect)
                   //
                   if ((Abs(xi) <= VECGEOM_NAMESPACE::kTolerance)
                       && (Abs(yi) <= VECGEOM_NAMESPACE::kTolerance))
                   {
                    // sidephi = kSPhi;
-                    if ((unplaced.GetSPhi() - halfAngTolerance <= vphi)
-                        && (unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance >= vphi))
+                    if ((unplaced.GetSPhi() - kHalfAngTolerance <= vphi)
+                        && (unplaced.GetSPhi() + unplaced.GetDPhi() + kHalfAngTolerance >= vphi))
                     {
                       sphi = VECGEOM_NAMESPACE::kInfinity;
                     }
@@ -1685,7 +1687,7 @@ struct ConeImplementation {
                   else
                   {
                    // sidephi = kSPhi;
-                    if (pDistS > -halfCarTolerance)
+                    if (pDistS > -kHalfCarTolerance)
                     {
                       sphi = 0.0; // Leave by sphi immediately
                     }
@@ -1707,23 +1709,23 @@ struct ConeImplementation {
 
                 // Only check further if < starting phi intersection
                 //
-                if ((sphi2 > -halfCarTolerance) && (sphi2 < sphi))
+                if ((sphi2 > -kHalfCarTolerance) && (sphi2 < sphi))
                 {
                   xi = p.x() + sphi2 * v.x();
                   yi = p.y() + sphi2 * v.y();
 
-                  // Check intersecting with correct half-plane
+                  // Check intersecting with correct kHalf-plane
 
                   if ((Abs(xi) <= VECGEOM_NAMESPACE::kTolerance)
                       && (Abs(yi) <= VECGEOM_NAMESPACE::kTolerance))
                   {
                     // Leaving via ending phi
 
-                    if (!((unplaced.GetSPhi() - halfAngTolerance <= vphi)
-                          && (unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance >= vphi)))
+                    if (!((unplaced.GetSPhi() - kHalfAngTolerance <= vphi)
+                          && (unplaced.GetSPhi() + unplaced.GetDPhi() + kHalfAngTolerance >= vphi)))
                     {
                     //  sidephi = kEPhi;
-                      if (pDistE <= -halfCarTolerance)
+                      if (pDistE <= -kHalfCarTolerance)
                       {
                         sphi = sphi2;
                       }
@@ -1739,7 +1741,7 @@ struct ConeImplementation {
                       // Leaving via ending phi
 
                    //   sidephi = kEPhi;
-                      if (pDistE <= -halfCarTolerance)
+                      if (pDistE <= -kHalfCarTolerance)
                       {
                         sphi = sphi2;
                       }
@@ -1761,8 +1763,8 @@ struct ConeImplementation {
             // On z axis + travel not || to z axis -> if phi of vector direction
             // within phi of shape, Step limited by rmax, else Step =0
 
-            if ((unplaced.GetSPhi() - halfAngTolerance <= vphi)
-                && (vphi <= unplaced.GetSPhi() + unplaced.GetDPhi() + halfAngTolerance))
+            if ((unplaced.GetSPhi() - kHalfAngTolerance <= vphi)
+                && (vphi <= unplaced.GetSPhi() + unplaced.GetDPhi() + kHalfAngTolerance))
             {
               sphi = VECGEOM_NAMESPACE::kInfinity;
             }
@@ -1783,7 +1785,7 @@ struct ConeImplementation {
           snxt = srd  ;
          // side = sider;
         }
-        if (snxt < halfCarTolerance)
+        if (snxt < kHalfCarTolerance)
         {
           snxt = 0.;
         }

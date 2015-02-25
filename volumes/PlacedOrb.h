@@ -72,9 +72,11 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
-  
-   #ifdef VECGEOM_USOLIDS  
-   Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision Capacity()  { return GetUnplacedVolume()->Capacity(); }
+
+  #ifdef VECGEOM_USOLIDS  
   
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }

@@ -137,7 +137,7 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() {
+  virtual Precision Capacity() {
       return GetUnplacedVolume()->Capacity();
   }
 
