@@ -124,10 +124,21 @@ public:
   }
 #endif
 #ifdef VECGEOM_USOLIDS
+#ifdef OFFLOAD_MODE
+  __attribute__ (( target (mic)))
+  virtual
+  bool Normal(Vector3D<double> const &point,
+                      Vector3D<double> &normal) const {
+    assert(0 &&
+           "Normal not implemented for USolids interface compatible volume.");
+    return false;
+  }
+
   virtual ::VUSolid const* ConvertToUSolids() const {
       printf("Converting to USOLIDS\n");
       return new UBox("",10,10,10);
   }
+#endif
 #endif
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const {

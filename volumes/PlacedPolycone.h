@@ -79,16 +79,16 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  //virtual
-  //bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
-  //{
-      //bool valid;
-      //BoxImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
-              //*GetUnplacedVolume(),
-              //point,
-              //normal, valid);
-      //return valid;
-  //}
+#ifdef OFFLOAD_MODE
+  __attribute__ (( target (mic)))
+  virtual
+  bool Normal(Vector3D<double> const &point,
+                      Vector3D<double> &normal) const {
+    assert(0 &&
+           "Normal not implemented for USolids interface compatible volume.");
+    return false;
+  }
+#endif
 
   virtual
   Vector3D<Precision> GetPointOnSurface() const

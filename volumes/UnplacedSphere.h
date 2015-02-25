@@ -495,6 +495,9 @@ VECGEOM_CUDA_HEADER_BOTH
   //VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const;
   
+#ifdef OFFLOAD_MODE
+  VECGEOM_CUDA_HEADER_BOTH
+#endif
   void GetParametersList(int aNumber, Precision *aArray) const; 
   
   UnplacedSphere* Clone() const;

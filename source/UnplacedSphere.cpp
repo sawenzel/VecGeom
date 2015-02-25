@@ -182,7 +182,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       aMin.Set(-fRmax);
       aMax.Set(fRmax);
   }
-  
+
+#ifdef OFFLOAD_MODE
+  VECGEOM_CUDA_HEADER_BOTH
+#endif
   void UnplacedSphere::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetInnerRadius();
