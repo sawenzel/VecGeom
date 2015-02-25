@@ -40,15 +40,19 @@ namespace VECGEOM_NAMESPACE
 class ThetaCone{
 
     private:
+	
         Precision fSTheta; // starting angle
         Precision fDTheta; // delta angle representing/defining the wedge
         Precision kAngTolerance;
         Precision halfAngTolerance;
-        Precision fETheta;
-		Precision tanSTheta;
-		Precision tanETheta;
+        Precision fETheta; // ending angle
+	Precision tanSTheta;
+	Precision tanETheta;
+	Precision tanBisector;
+	Precision slope1,slope2;
         Precision tanSTheta2;
         Precision tanETheta2;
+
 	//Precision cone1Radius,cone2Radius;
         
 
@@ -62,19 +66,22 @@ class ThetaCone{
             // initialize angles
             fETheta = fSTheta + fDTheta;
             halfAngTolerance = (0.5 * kAngTolerance*10.);
-			Precision tempfSTheta=fSTheta;
-			Precision tempfETheta=fETheta;
-			if(fSTheta > kPi/2)
-			    tempfSTheta = kPi - fSTheta;
-			if(fETheta > kPi/2)
-			    tempfETheta = kPi - fETheta;
+	    Precision tempfSTheta=fSTheta;
+	    Precision tempfETheta=fETheta;
+			
+	    if(fSTheta > kPi/2)
+		tempfSTheta = kPi - fSTheta;
+	    if(fETheta > kPi/2)
+		tempfETheta = kPi - fETheta;
+			
 
-            tanSTheta = std::tan(tempfSTheta);
+            tanSTheta = tan(tempfSTheta);
             tanSTheta2 = tanSTheta * tanSTheta;
-            tanETheta = std::tan(tempfETheta);
+            tanETheta = tan(tempfETheta);
             tanETheta2 = tanETheta * tanETheta;
-	    //cone1Radius = slantHeight*sin(fSTheta);
-	    //cone2Radius = slantHeight*sin(fETheta);
+	    tanBisector = tan(tempfSTheta+(fDTheta/2));
+	    slope1=tan(kPi/2-fSTheta);
+	    slope2=tan(kPi/2-fETheta);
             
         }
 
@@ -153,20 +160,77 @@ class ThetaCone{
             typedef typename Backend::bool_v      Bool_t;
             
             
-            Float_t pTheta(0.);
-            Float_t dTheta1(0.);
-            Float_t dTheta2(0.);
-            Float_t safeTheta(0.);
-        
+	
+	Float_t safeTheta(0.);
+	Float_t pointRad = Sqrt(point.x()*point.x() + point.y()*point.y());
+	Float_t bisectorRad = point.z() * tanBisector;
+	
+	//Case 1 : Both cones are in Positive Z direction
+	if(fSTheta < kPi/2 + halfAngTolerance)
+              {
+                  if(fETheta < kPi/2 + halfAngTolerance)
+                  {
+                      if(fSTheta < fETheta)
+                      {
+			CondAssign((pointRad < bisectorRad),DistanceToLine<Backend>(slope1,pointRad, point.z()),DistanceToLine<Backend>(slope2,pointRad, point.z()),&safeTheta);
+			
+		     } 
+		  }
+
+	//Case 2 : First Cone is in Positive Z direction and Second is in Negative Z direction	
+		if(fETheta > kPi/2 + halfAngTolerance)
+                  {
+                      if(fSTheta < fETheta)
+                      {
+			Float_t sfTh1 = DistanceToLine<Backend>(slope1,pointRad, point.z());
+			Float_t sfTh2 = DistanceToLine<Backend>(slope2,pointRad, point.z());
+			safeTheta = sfTh1;
+			MaskedAssign((sfTh2 < sfTh1),sfTh2,&safeTheta);
+		      }
+		 }
+		
+	     }
+
+	//Case 3 : Both cones are in Negative Z direction	
+	if(fETheta > kPi/2 + halfAngTolerance)
+             {
+		if(fSTheta > kPi/2 + halfAngTolerance)
+                     { 
+			 if(fSTheta < fETheta)
+                      		{
+					CondAssign((pointRad < bisectorRad),DistanceToLine<Backend>(slope2,pointRad, point.z()),DistanceToLine<Backend>(slope1,pointRad, point.z()),&safeTheta);
+	   			}	
+		     }
+	     }
+	
+		return safeTheta;
+	
+	/*
+	//This Block of code can work for all the three cases categorized above.
+	//But using this will run the case1 and case3 around 10% slower (for scalar version ie. Specialized and UnSpecialized) than categorized one above.
+	Float_t safeTheta(0.);
+	Float_t pointRad = Sqrt(point.x()*point.x() + point.y()*point.y());
+	Float_t sfTh1 = DistanceToLine<Backend>(slope1,pointRad, point.z());
+	Float_t sfTh2 = DistanceToLine<Backend>(slope2,pointRad, point.z());
+	safeTheta = sfTh1;
+	MaskedAssign((sfTh2 < sfTh1),sfTh2,&safeTheta);
+	return safeTheta;
+	*/
     
-            Float_t rad = point.Mag();
-            MaskedAssign((rad != 0.),(kPi/2 - asin(point.z() / rad)),&pTheta);
-            MaskedAssign( ((rad != 0.) && (pTheta < 0.) ),(pTheta+kPi),&pTheta);
-            MaskedAssign( ((rad != 0.)),(pTheta - fSTheta),&dTheta1);
-            MaskedAssign( ((rad != 0.)),(fETheta - pTheta),&dTheta2);
-            CondAssign((dTheta1 < dTheta2),(rad * sin(dTheta1)),(rad * sin(dTheta2)),&safeTheta);
-            return safeTheta;
+	
         }
+
+	template<typename Backend>
+        VECGEOM_CUDA_HEADER_BOTH
+	//typename Backend::precision_v DistanceToLine(typename Backend::precision_v const& slope, typename Backend::precision_v const& x, typename Backend::precision_v const& y ) const{
+	typename Backend::precision_v DistanceToLine(Precision const& slope, typename Backend::precision_v const& x, typename Backend::precision_v const& y ) const{
+		
+		typedef typename Backend::precision_v Float_t;
+		Float_t dist = (y - slope*x)/Sqrt(1.+ slope*slope);
+		return Abs(dist);
+		
+	}
+
 
         /**
          * estimate of the distance to the ThetaCone boundary with given direction
@@ -194,9 +258,9 @@ class ThetaCone{
             Float_t pDotV2d = point.x() * dir.x() + point.y() * dir.y();
             Float_t rho2 = point.x() * point.x() + point.y() * point.y();
             
-            b = pDotV2d - point.z() * dir.z() * tanSTheta2 ; // tan(fSTheta) * tan(fSTheta);
-            a = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanSTheta2;  //tan(fSTheta) * tan(fSTheta);
-            c = rho2 - point.z() * point.z() * tanSTheta2; //tan(fSTheta) * tan(fSTheta);
+            b = pDotV2d - point.z() * dir.z() * tanSTheta2 ; 
+            a = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanSTheta2;  
+            c = rho2 - point.z() * point.z() * tanSTheta2; 
             d2 = b * b - a * c;
             
             MaskedAssign((d2 > 0.), (-1*b + Sqrt(d2))/a, &firstRoot);
@@ -204,9 +268,9 @@ class ThetaCone{
             MaskedAssign( ( (Abs(firstRoot) < 3.0*kSTolerance*10.)),0., &firstRoot);
             MaskedAssign( ( !done && (firstRoot < 0.)) ,kInfinity,&firstRoot);
             
-            b2 = pDotV2d - point.z() * dir.z() * tanETheta2; // tan(fETheta) * tan(fETheta);
-            a2 = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanETheta2; //tan(fETheta) * tan(fETheta);
-            c2 = rho2 - point.z() * point.z() * tanETheta2; //tan(fETheta) * tan(fETheta);
+            b2 = pDotV2d - point.z() * dir.z() * tanETheta2;
+            a2 = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanETheta2; 
+            c2 = rho2 - point.z() * point.z() * tanETheta2; 
             d22 = b2 * b2 - a2 * c2;
             
             MaskedAssign((d22 > 0.), (-1*b2 - Sqrt(d22))/a2, &secondRoot);
@@ -330,17 +394,17 @@ class ThetaCone{
             Float_t pDotV2d = point.x() * dir.x() + point.y() * dir.y();
             Float_t rho2 = point.x() * point.x() + point.y() * point.y();
             
-            b = pDotV2d - point.z() * dir.z() * tanSTheta2 ; // tan(fSTheta) * tan(fSTheta);
-            a = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanSTheta2;  //tan(fSTheta) * tan(fSTheta);
-            c = rho2 - point.z() * point.z() * tanSTheta2; //tan(fSTheta) * tan(fSTheta);
+            b = pDotV2d - point.z() * dir.z() * tanSTheta2 ; 
+            a = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanSTheta2; 
+            c = rho2 - point.z() * point.z() * tanSTheta2; 
             d2 = b * b - a * c;
             
             MaskedAssign((d2 > 0.), (-1*b - Sqrt(d2))/a, &firstRoot);
             MaskedAssign(firstRoot < 0. ,kInfinity, &firstRoot);
             
-            b2 = point.x() * dir.x() + point.y() * dir.y() - point.z() * dir.z() * tanETheta2; // tan(fETheta) * tan(fETheta);
-            a2 = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanETheta2; //tan(fETheta) * tan(fETheta);
-            c2 = point.x() * point.x() + point.y() * point.y() - point.z() * point.z() * tanETheta2; //tan(fETheta) * tan(fETheta);
+            b2 = point.x() * dir.x() + point.y() * dir.y() - point.z() * dir.z() * tanETheta2;
+            a2 = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanETheta2; ;
+            c2 = point.x() * point.x() + point.y() * point.y() - point.z() * point.z() * tanETheta2; 
             d22 = b2 * b2 - a2 * c2;
             
             MaskedAssign((d22 > 0.), (-1*b2 + Sqrt(d22))/a2, &secondRoot);
@@ -430,40 +494,38 @@ class ThetaCone{
                 typename Backend::bool_v &completelyoutside) const {
         
             typedef typename Backend::precision_v Float_t;
-	    if(fSTheta < kPi/2 + halfAngTolerance)
+
+	Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
+	Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
+	Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
+	if(fSTheta < kPi/2 + halfAngTolerance)
               {
                   if(fETheta < kPi/2 + halfAngTolerance)
                   {  //Working Fine
                       if(fSTheta < fETheta)
                       {
-			Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
-				Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
-				Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
-	    		Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
+			Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
             		Float_t tolAngMax = cone2Radius - kAngTolerance*100.;
-					if(ForInside)
+			if(ForInside)
             		completelyinside = (rad <= tolAngMax) && (rad >= tolAngMin) && (localPoint.z() > 0.);
             		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
             		Float_t tolAngMax2 = cone2Radius + kAngTolerance*100.;
-            		completelyoutside = (rad < tolAngMin2) || (rad*rad > tolAngMax2*tolAngMax2) || (localPoint.z() < 0.);   
-
+			completelyoutside = (rad < tolAngMin2) || (rad*rad > tolAngMax2*tolAngMax2) || (localPoint.z() < 0.);   
+			
 		      }
 		  }
 		
 		if(fETheta > kPi/2 + halfAngTolerance)
-                  { 
+                  { //Working fine . 1/1024 mismatches
                       if(fSTheta < fETheta)
                       {
-			Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
-				Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
-				Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
-	    		Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
-            		Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
+			Float_t tolAngMin = cone1Radius + kAngTolerance*10.;
+            		Float_t tolAngMax = cone2Radius + kAngTolerance*10.;
 					if(ForInside)
             		completelyinside = ((rad >= tolAngMin) && (localPoint.z() > 0.)) || ((rad >= tolAngMax) && (localPoint.z() < 0.));
             
-            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
-            		Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
+            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*10.;
+            		Float_t tolAngMax2 = cone2Radius - kAngTolerance*10.;
             		completelyoutside = ((rad < tolAngMin2) && (localPoint.z() > 0.))  || ((rad < tolAngMax2) && (localPoint.z() < 0.));   
 		      }
 		  }
@@ -473,19 +535,16 @@ class ThetaCone{
 	if(fETheta > kPi/2 + halfAngTolerance)
              {
 		if(fSTheta > kPi/2 + halfAngTolerance)
-                     { 
+                     { //Working fine . 1/1024 mismatches
 			 if(fSTheta < fETheta)
                       		{
-					Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
-						Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
-						Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
-	    				Float_t tolAngMin = cone1Radius - kAngTolerance*100.;
-            				Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
-							if(ForInside)
+					Float_t tolAngMin = cone1Radius - kAngTolerance*10.;
+            				Float_t tolAngMax = cone2Radius + kAngTolerance*10.;
+					if(ForInside)
             				completelyinside = (rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < 0.);
             
-            				Float_t tolAngMin2 = cone1Radius + kAngTolerance*100.;
-            				Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
+            				Float_t tolAngMin2 = cone1Radius + kAngTolerance*10.;
+            				Float_t tolAngMax2 = cone2Radius - kAngTolerance*10.;
            				completelyoutside = (rad < tolAngMax2) || (rad > tolAngMin2) || (localPoint.z() > 0.);   
 					
 				}
@@ -494,7 +553,7 @@ class ThetaCone{
 	     }
 
 
-//------------------------------------------------
+
     }
     
     
