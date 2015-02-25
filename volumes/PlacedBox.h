@@ -86,6 +86,9 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
+#ifdef OFFLOAD_MODE
+  __attribute__ (( target (mic))) 
+#endif
   virtual
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
   {
