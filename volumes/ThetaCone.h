@@ -122,31 +122,62 @@ class ThetaCone{
          * estimate of the smallest distance to the ThetaCone boundary when
          * the point is located outside the ThetaCone
          */
-        template<typename Backend>
+		template<typename Backend>
         VECGEOM_CUDA_HEADER_BOTH
-        //typename Backend::precision_v SafetyToIn( Vector3D<typename Backend::precision_v> const& point ) const {
-        void SafetyToIn( Vector3D<typename Backend::precision_v> const& point, typename Backend::precision_v &safety  ) const {
+        typename Backend::precision_v SafetyToIn( Vector3D<typename Backend::precision_v> const& point ) const {
         
             
             typedef typename Backend::precision_v Float_t;
             typedef typename Backend::bool_v      Bool_t;
             
-            Float_t rad = point.Mag();
-            Float_t dTheta1(0.),dTheta2(0.);
-            Float_t pTheta;//,safeTheta1, safeTheta2;
-            Float_t safeTheta(0.);
-            
-            MaskedAssign((rad != 0.),ATan2(Sqrt(point.x()*point.x() + point.y()*point.y()), point.z()),&pTheta);
-            MaskedAssign(((rad != 0.) && (pTheta < 0.)),(pTheta+kPi),&pTheta);
-            MaskedAssign(((rad != 0.) ),(fSTheta - pTheta),&dTheta1);
-            MaskedAssign(((rad != 0.) ),(pTheta - fETheta),&dTheta2);
-            MaskedAssign(((rad != 0.) && (dTheta1 > dTheta2) && (dTheta1 >= 0.)),(rad * sin(dTheta1)),&safeTheta);
-            MaskedAssign(((rad != 0.) && (dTheta1 > dTheta2) && (dTheta1 >= 0.) && (safety <= safeTheta) ),safeTheta,&safety);
-            MaskedAssign(((rad != 0.) && (dTheta2 > dTheta1) && (dTheta2 >= 0.)),(rad * sin(dTheta2)),&safeTheta);
-            MaskedAssign(((rad != 0.) && !(dTheta1 > dTheta2) && (dTheta2 >= 0.) && (safety <= safeTheta)),safeTheta,&safety);
-            //return Max(safeTheta1 , safeTheta2);
-            //return safeTheta;
-        }
+			Float_t safeTheta(0.);
+			Float_t pointRad = Sqrt(point.x()*point.x() + point.y()*point.y());
+			Float_t sfTh1 = DistanceToLine<Backend>(slope1,pointRad, point.z());
+			Float_t sfTh2 = DistanceToLine<Backend>(slope2,pointRad, point.z());
+	
+			safeTheta = Min(sfTh1,sfTh2);
+			Bool_t done=Contains<Backend>(point);
+			MaskedAssign(done,0., &safeTheta);
+			if(IsFull(done)) return safeTheta;
+
+			//Case 1 : Both cones are in Positive Z direction
+			if(fSTheta < kPi/2 + halfAngTolerance)
+              	{
+                  if(fETheta < kPi/2 + halfAngTolerance)
+                  {
+                      if(fSTheta < fETheta)
+                      {
+						MaskedAssign((!done && point.z()<0.),sfTh2, &safeTheta);
+		      		  }
+		  		 }
+
+				//Case 2 : First Cone is in Positive Z direction and Second is in Negative Z direction	
+				if(fETheta > kPi/2 + halfAngTolerance)
+                  {
+                      if(fSTheta < fETheta)
+                      {
+						MaskedAssign((!done && point.z()>0.),sfTh1, &safeTheta);
+						MaskedAssign((!done && point.z()<0.),sfTh2, &safeTheta);
+					  }
+		 		 }
+				}
+
+			//Case 3 : Both cones are in Negative Z direction	
+			if(fETheta > kPi/2 + halfAngTolerance)
+             {
+				if(fSTheta > kPi/2 + halfAngTolerance)
+                     { 
+			 	if(fSTheta < fETheta)
+                      		{
+								MaskedAssign((!done && point.z()>0.),sfTh1, &safeTheta);
+	   						}	
+		     		}
+	     	}
+	
+	
+	return safeTheta;
+	
+  }
 
         /**
          * estimate of the smallest distance to the ThetaCone boundary when

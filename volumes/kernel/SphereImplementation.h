@@ -793,7 +793,8 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     // Distance to Theta extent
     if(!unplaced.IsFullThetaSphere())
     {
-        unplaced.GetThetaCone().SafetyToIn<Backend>(localPoint,safety);
+        Float_t safetyTheta = unplaced.GetThetaCone().SafetyToIn<Backend>(localPoint); 
+		safety = Max(safetyTheta,safety);
     }
     
     MaskedAssign( (safety < zero) , zero, &safety);
