@@ -93,10 +93,10 @@ bool TestCons()
          c9("Exotic Cone",50,60,
             0,           // 1.0e-7,   500*kRadTolerance,
                            10,50,0,2*VECGEOM_NAMESPACE::kPi),
-         cms("cms cone",0.0,70.0,0.0,157.8,2949.0,0.0,6.2831853071796);
+         cms("cms cone",0.0,70.0,0.0,157.8,2949.0,0.0,6.283185307179586);
 
    Cone_t cms2("RearAirCone",401.0,1450.0,
-                            1020.0,1450.0,175.0,0.0,6.2831853071796) ;
+                            1020.0,1450.0,175.0,0.0,6.283185307179586) ;
       Cone_t   ctest10( "aCone", 20., 60., 80., 140.,
                            100., 10*VECGEOM_NAMESPACE::kPi/180., 300*VECGEOM_NAMESPACE::kPi/180. );
 
@@ -1046,8 +1046,8 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
     assert(ApproxEqual(Dist,Constants::kInfinity));
 
     Dist=test10.DistanceToIn(Vec_t(19.218716967888,5.5354239324172,-100.0),
-		Vec_t(-0.25644483536346,-0.073799216676426,0.96373737191901));
-    //std::cout<<"test10::DistToIn ="<<Dist<<std::endl;
+        Vec_t(-0.25644483536346,-0.073799216676426,0.96373737191901));
+    std::cout<<"test10::DistToIn ="<<Dist<<std::endl;
     assert(ApproxEqual(Dist,Constants::kInfinity));
     Dist=test10.DistanceToOut(Vec_t(19.218716967888,5.5354239324172,-100.0),
         Vec_t(-0.25644483536346,-0.073799216676426,0.96373737191901),
