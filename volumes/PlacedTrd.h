@@ -6,7 +6,7 @@
 
 #include "base/Global.h"
 #include "backend/Backend.h"
- 
+
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TrdImplementation.h"
@@ -73,6 +73,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision dz() const { return GetUnplacedVolume()->dz(); }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual
+  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
