@@ -251,8 +251,8 @@ struct ConeImplementation {
 
      double snxt = VECGEOM_NAMESPACE::kInfinity;
      const double dRmax = 100 * Max(unplaced.GetRmax1(), unplaced.GetRmax2());
-     const double halfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
-     const double halfRadTolerance = kRadTolerance * 0.5;
+     // const double halfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
+     // const double halfRadTolerance = kRadTolerance * 0.5;
 
       double rMaxAv, rMaxOAv; // Data for cones
       double rMinAv, rMinOAv;
