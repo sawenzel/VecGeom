@@ -1346,7 +1346,7 @@ struct ConeImplementation {
 
             if (nt3 > -kHalfRadTolerance && nt2 >= 0)
             {
-	       //              risec     = Sqrt(t3) * unplaced.fSecRMax;
+           //              risec     = Sqrt(t3) * unplaced.fSecRMax;
              // aConvex = true;
              // aNormalVector        = Vector3D<Precision>(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
               return snxt = 0;
@@ -1425,7 +1425,7 @@ struct ConeImplementation {
         {
           // Linear case (only one intersection) => point outside outer cone
 
-	   //          risec     = Sqrt(t3) * unplaced.fSecRMax;
+       //          risec     = Sqrt(t3) * unplaced.fSecRMax;
          // aConvex = true;
          // aNormalVector        = Vector3D<Precision>(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
           return snxt = 0.0;
@@ -1850,11 +1850,11 @@ struct ConeImplementation {
          safe    = (rho - pRMax) * unplaced.fInvSecRMax;
        }
       if( ! ForPolycone)//For Polycone only safety in R and Phi is needed
-	{ if (safeZ > safe)
+    { if (safeZ > safe)
          {
           safe = safeZ;
          }
-	}
+    }
        if (!unplaced.IsFullPhi() && rho)
        {
          // Psi=angle from central phi to point
@@ -1955,11 +1955,11 @@ struct ConeImplementation {
           safe = safeR2;
         }
         if( ! ForPolycone)//For Polycone only safety in R and Phi is needed
-	  {if (safeZ < safe)
+      {if (safeZ < safe)
           {
            safe = safeZ;
           }
-	  }
+      }
         // Check if phi divided, Calc distances closest phi plane
 
         if (!unplaced.IsFullPhi())
