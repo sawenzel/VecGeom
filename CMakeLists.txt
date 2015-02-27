@@ -552,6 +552,7 @@ set(TEST_EXECUTABLES_ROOT
 
   # higher level benchmarks
   # ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
 )
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
