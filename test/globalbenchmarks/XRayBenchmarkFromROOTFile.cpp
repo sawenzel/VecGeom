@@ -1,5 +1,11 @@
 /*
  * XRayBenchmarkFromROOTFile.cpp
+ *
+ * this benchmark performs an X-Ray scan of a (logical volume
+ * in a) detector
+ *
+ * the benchmark stresses the distance functions of the volumes as well as
+ * the basic higher level navigation functionality
  */
 
 #include "VUSolid.hh"
@@ -66,7 +72,211 @@ typedef struct tMY_BITMAP
 
 bool usolids= true;
 
-int make_bmp(int* volume_result, int data_size_x, int data_size_y);
+// produce a bmp image out of pixel information given in volume_results
+int make_bmp(int const * image_result, char const *, int data_size_x, int data_size_y);
+
+
+void XRayWithROOT(int axis,
+                 Vector3D<Precision> origin,
+                 Vector3D<Precision> bbox,
+                 Vector3D<Precision> dir,
+                 double axis1_start, double axis1_end,
+                 double axis2_start, double axis2_end,
+                 int data_size_x,
+                 int data_size_y,
+                 double pixel_axis,
+                 int * image) {
+
+if(VERBOSE){
+    std::cout << "from [" << axis1_start << ";" << axis2_start
+              << "] to [" << axis1_end   << ";" << axis2_end << "]\n";
+    std::cout << "Xpixels " << data_size_x << " YPixels " << data_size_y << "\n";
+
+    std::cout << pixel_axis << "\n";
+}
+
+    double pixel_width_1 = (axis1_end-axis1_start)/data_size_x;
+    double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
+
+    if(VERBOSE){
+    std::cout << pixel_width_1 << "\n";
+    std::cout << pixel_width_2 << "\n";
+    }
+
+    for( int pixel_count_2 = 0; pixel_count_2 < data_size_y; ++pixel_count_2 ){
+        for( int pixel_count_1 = 0; pixel_count_1 < data_size_x; ++pixel_count_1 )
+        {
+            double axis1_count = axis1_start + pixel_count_1 * pixel_width_1 + 1E-6;
+            double axis2_count = axis2_start + pixel_count_2 * pixel_width_2 + 1E-6;
+
+            if(VERBOSE) {
+                std::cout << "\n OutputPoint("<< axis1_count<< ", "<< axis2_count<< ")\n";
+            }
+            // set start point of XRay
+            Vector3D<Precision> p;
+
+            if( axis== 1 )
+              p.Set( origin[0]-bbox[0], axis1_count, axis2_count);
+            else if( axis== 2)
+              p.Set( axis1_count, origin[1]-bbox[1], axis2_count);
+            else if( axis== 3)
+              p.Set( axis1_count, axis2_count, origin[2]-bbox[2]);
+
+            TGeoNavigator * nav = gGeoManager->GetCurrentNavigator();
+            nav->SetCurrentPoint( p.x(), p.y(), p.z() );
+            nav->SetCurrentDirection( dir.x(), dir.y(), dir.z() );
+
+            double distancetravelled=0.;
+            int crossedvolumecount=0;
+
+            if(VERBOSE) {
+              std::cout << " StartPoint(" << p[0] << ", " << p[1] << ", " << p[2] << ")";
+              std::cout << " Direction <" << dir[0] << ", " << dir[1] << ", " << dir[2] << ">"<< std::endl;
+            }
+
+            // propagate until we leave detector
+            TGeoNode const * node = nav->FindNode();
+
+          //  std::cout << pixel_count_1 << " " << pixel_count_2 << " " << dir << "\t" << p << "\t";
+          //  std::cout << "IN|OUT" << nav->IsOutside() << "\n";
+          //  if( node ) std::cout <<    node->GetVolume()->GetName() << "\t";
+            while( node !=NULL ) {
+                node = nav->FindNextBoundaryAndStep( kInfinity );
+                distancetravelled+=nav->GetStep();
+
+                if(VERBOSE) {
+                    if( node != NULL ){
+                        std::cout << "  VolumeName: "<< node->GetVolume()->GetName();
+                    }
+                    else
+                       std::cout << "  NULL: ";
+
+                    std::cout << " step[" << nav->GetStep()<< "]"<< std::endl;
+                    double const * pROOT = nav->GetCurrentPoint();
+                    p = Vector3D<Precision>(pROOT[0],pROOT[1],pROOT[2]);
+                    std::cout << " point(" << p[0] << ", " << p[1] << ", " << p[2] << ")";
+                }
+                // Increase passed_volume
+                // TODO: correct counting of travel in "world" bounding box
+                crossedvolumecount++;
+              } // end while
+            // std::cout << crossedvolumecount << "\n";
+
+            ///////////////////////////////////
+            // Store the number of passed volume at 'volume_result'
+            *(image+pixel_count_2*data_size_x+pixel_count_1)= crossedvolumecount;
+
+            if(VERBOSE) {
+                std::cout << "  EndOfBoundingBox:";
+                std::cout << " PassedVolume:" << "<"<< crossedvolumecount << " ";
+                std::cout << " step[" << nav->GetStep()<< "]";
+                std::cout << " Distance: " << distancetravelled<< std::endl;
+            }
+      } // end inner loop
+    } // end outer loop
+} // end XRayWithROOT
+
+
+void XRayWithVecGeom(int axis,
+                  Vector3D<Precision> origin,
+                  Vector3D<Precision> bbox,
+                  Vector3D<Precision> dir,
+                  double axis1_start, double axis1_end,
+                  double axis2_start, double axis2_end,
+                  int data_size_x,
+                  int data_size_y,
+                  double pixel_axis,
+                  int * image) {
+
+    // convert current gGeoManager to a VecGeom geometry
+    RootGeoManager::Instance().LoadRootGeometry();
+
+if(VERBOSE){
+    std::cout << "from [" << axis1_start << ";" << axis2_start
+              << "] to [" << axis1_end   << ";" << axis2_end << "]\n";
+    std::cout << "Xpixels " << data_size_x << " YPixels " << data_size_y << "\n";
+
+    std::cout << pixel_axis << "\n";
+}
+    double pixel_width_1 = (axis1_end-axis1_start)/data_size_x;
+    double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
+
+    if(VERBOSE){
+        std::cout << pixel_width_1 << "\n";
+        std::cout << pixel_width_2 << "\n";
+    }
+
+    NavigationState * newnavstate = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+    NavigationState * curnavstate = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+
+    for( int pixel_count_2 = 0; pixel_count_2 < data_size_y; ++pixel_count_2 ){
+        for( int pixel_count_1 = 0; pixel_count_1 < data_size_x; ++pixel_count_1 )
+        {
+            double axis1_count = axis1_start + pixel_count_1 * pixel_width_1 + 1E-6;
+            double axis2_count = axis2_start + pixel_count_2 * pixel_width_2 + 1E-6;
+
+            if(VERBOSE) {
+                std::cout << "\n OutputPoint("<< axis1_count<< ", "<< axis2_count<< ")\n";
+            }
+
+            // set start point of XRay
+            Vector3D<Precision> p;
+            if( axis== 1 )
+              p.Set( origin[0]-bbox[0], axis1_count, axis2_count);
+            else if( axis== 2)
+              p.Set( axis1_count, origin[1]-bbox[1], axis2_count);
+            else if( axis== 3)
+              p.Set( axis1_count, axis2_count, origin[2]-bbox[2]);
+
+            SimpleNavigator nav;
+            curnavstate->Clear();
+            nav.LocatePoint( GeoManager::Instance().GetWorld(), p, *curnavstate, true );
+
+//            curnavstate->Print();
+
+            double distancetravelled=0.;
+            int crossedvolumecount=0;
+
+            if(VERBOSE) {
+              std::cout << " StartPoint(" << p[0] << ", " << p[1] << ", " << p[2] << ")";
+              std::cout << " Direction <" << dir[0] << ", " << dir[1] << ", " << dir[2] << ">"<< std::endl;
+            }
+
+            while( ! curnavstate->IsOutside() ) {
+                double step = 0;
+                newnavstate->Clear();
+                nav.FindNextBoundaryAndStep( p,
+                        dir,
+                        *curnavstate,
+                        *newnavstate,
+                        kInfinity, step);
+                distancetravelled+=step;
+
+
+                // here we have to propagate partice ourselves and adjust navigation state
+                p = p + dir*(step + 1E-6);
+                newnavstate->CopyTo(curnavstate);
+
+                // Increase passed_volume
+                // TODO: correct counting of travel in "world" bounding box
+                crossedvolumecount++;
+              } // end while
+
+             ///////////////////////////////////
+             // Store the number of passed volume at 'volume_result'
+             *(image+pixel_count_2*data_size_x+pixel_count_1)= crossedvolumecount;
+
+      } // end inner loop
+    } // end outer loop
+
+    NavigationState::ReleaseInstance( curnavstate );
+    NavigationState::ReleaseInstance( newnavstate );
+
+} // end XRayWithVecGeom
+
+
+// performs the XRay scan using Geant4
+int XRayWithGeant4(int * image);
 
 
 //////////////////////////////////
@@ -144,18 +354,23 @@ int main(int argc, char * argv[])
 
   std::cerr << "volume found " << found << " times \n\n";
 
+  // if volume not found take world
+  if( ! foundvolume )
+  {
+      std::cerr << "specified volume not found; xraying complete detector\n";
+      foundvolume = gGeoManager->GetTopVolume();
+  }
+
   if( foundvolume )
   {
     foundvolume->GetShape()->InspectShape();
     std::cerr << "volume capacity " 
-	      << foundvolume->GetShape()->Capacity() << "\n";
+          << foundvolume->GetShape()->Capacity() << "\n";
 
-
-    // generate benchmark cases
+    // get bounding box to generate x-ray start positions
     double dx = ((TGeoBBox*)foundvolume->GetShape())->GetDX()*1.5;
     double dy = ((TGeoBBox*)foundvolume->GetShape())->GetDY()*1.5;
     double dz = ((TGeoBBox*)foundvolume->GetShape())->GetDZ()*1.5;
-
 
     double origin[3]= {0., };
     origin[0]= ((TGeoBBox*)foundvolume->GetShape())->GetOrigin()[0];
@@ -164,8 +379,13 @@ int main(int argc, char * argv[])
     
     TGeoMaterial * matVacuum = new TGeoMaterial("Vacuum",0,0,0);
     TGeoMedium * vac = new TGeoMedium("Vacuum",1,matVacuum);
-    TGeoVolume* boundingbox= gGeoManager->MakeBox("BoundingBox", vac, dx, dy, dz);
     
+
+    TGeoVolume* boundingbox= gGeoManager->MakeBox("BoundingBox", vac,
+            std::abs(origin[0]) + dx,
+            std::abs(origin[1]) + dy,
+            std::abs(origin[2]) + dz );
+
     TGeoManager * geom = boundingbox->GetGeoManager();
     geom->SetTopVolume( boundingbox );
     boundingbox->AddNode( foundvolume, 1, new TGeoTranslation("trans1", 0, 0, 0 ) );
@@ -173,8 +393,6 @@ int main(int argc, char * argv[])
     //geom->CloseGeometry();
     //delete world->GetVoxels();
     //world->SetVoxelFinder(0);
-    
-    TGeoNavigator * nav = geom->GetCurrentNavigator();
     
     std::cout<< std::endl;
     std::cout<< "BoundingBoxDX: "<< dx<< std::endl;
@@ -225,109 +443,55 @@ int main(int argc, char * argv[])
 
       pixel_axis= (dx*2)/pixel_width;
     }
-    nav->SetCurrentDirection( dir.x(), dir.y(), dir.z() );
 
-
-    TGeoNode const * vol;
-    double const * cp = nav->GetCurrentPoint();
-    double const * cd = nav->GetCurrentDirection();
-    int passed_volume= 0;
-
+    // init data for image
     int data_size_x= (axis1_end-axis1_start)/pixel_axis;
     int data_size_y= (axis2_end-axis2_start)/pixel_axis;
-    int pixel_count_x= 0;
-    int pixel_count_y= 0;
-    int *volume_result= (int*)malloc((sizeof(int))*data_size_y * data_size_x*3);
+    int *volume_result= (int*) new int[data_size_y * data_size_x*3];
 
     Stopwatch timer;
     timer.Start();
-    
-    for(double axis2_count= axis2_start; (axis2_count < axis2_end) && (pixel_count_y<data_size_y); axis2_count=axis2_count+pixel_axis)
-    {
-      for(double axis1_count= axis1_start; (axis1_count < axis1_end) && (pixel_count_x<data_size_x); axis1_count=axis1_count+pixel_axis)
-      {
-	if(VERBOSE)
-	{
-	  std::cout << std::endl;
-	  std::cout << " OutputPoint("<< axis1_count<< ", "<< axis2_count<< ")"<< std::endl;
-	}
-	
-	if( axis== 1)
-	  p.Set( origin[0]-dx, axis1_count, axis2_count);
-	else if( axis== 2)
-	  p.Set( axis1_count, origin[1]-dy, axis2_count);
-	else if( axis== 3)
-	  p.Set( axis1_count, axis2_count, origin[2]-dz);
-	
-	nav->SetCurrentPoint( p.x(), p.y(), p.z() );
-	
-	double distancetravelled=0.;
-	passed_volume= 0;
-	
-	if(VERBOSE)
-	{
-	  std::cout << " StartPoint(" << cp[0] << ", " << cp[1] << ", " << cp[2] << ")";
-	  std::cout << " Direction <" << cd[0] << ", " << cd[1] << ", " << cd[2] << ">"<< std::endl;
-	}
-	
-	
-	while( vol = nav->FindNextBoundaryAndStep( kInfinity ) )
-        {
-	  distancetravelled+=nav->GetStep();
-	  
-	  if(VERBOSE)
-	  {
-	    if( vol != NULL )
-	      std::cout << "  VolumeName: "<< vol->GetVolume()->GetName();
-	    else
-	      std::cout << "  NULL: ";
-	    std::cout << " point(" << cp[0] << ", " << cp[1] << ", " << cp[2] << ")";
-	    std::cout << " step[" << nav->GetStep()<< "]"<< std::endl;
-	  }
-	  
-	  // Increase passed_volume
-	  passed_volume++;
-	  
-	  cp = nav->GetCurrentPoint();
-	  cd = nav->GetCurrentDirection();
-	  
-	}
-	
-	///////////////////////////////////
-	// Store the number of passed volume at 'volume_result'
-	*(volume_result+pixel_count_y*data_size_x+pixel_count_x)= passed_volume;
-
-	if(VERBOSE)
-	{
-	  std::cout << "  EndOfBoundingBox:";
-	  std::cout << " point(" << cp[0] << ", " << cp[1] << ", " << cp[2] << ")";
-	  std::cout << " PassedVolume:" << "<"<< passed_volume<< "("<< passed_volume%10<< ")>";
-	  std::cout << " step[" << nav->GetStep()<< "]";
-	  std::cout << " Distance: " << distancetravelled<< std::endl;
-	}
-	pixel_count_x++;
-      }
-
-      pixel_count_x= 0;
-      pixel_count_y++;
-    }
-   
+    XRayWithROOT( axis,
+            Vector3D<Precision>(origin[0],origin[1],origin[2]),
+            Vector3D<Precision>(dx,dy,dz),
+            dir,
+            axis1_start, axis1_end,
+            axis2_start, axis2_end,
+            data_size_x, data_size_y,
+            pixel_axis,
+            volume_result );
     timer.Stop();
 
     std::cout << std::endl;
-    std::cout << " Elapsed time : "<< timer.Elapsed() << std::endl;
+    std::cout << " ROOT Elapsed time : "<< timer.Elapsed() << std::endl;
 
     // Make bitmap file
-    make_bmp(volume_result, data_size_x, data_size_y);
-    std::cout << " Result is stored at 'volumeImage.bmp'"<< std::endl<< std::endl;
+    make_bmp(volume_result, "volumeImage_ROOT.bmp", data_size_x, data_size_y);
 
-    delete volume_result;
+    timer.Start();
+    XRayWithVecGeom( axis,
+               Vector3D<Precision>(origin[0],origin[1],origin[2]),
+               Vector3D<Precision>(dx,dy,dz),
+               dir,
+               axis1_start, axis1_end,
+               axis2_start, axis2_end,
+               data_size_x, data_size_y,
+               pixel_axis,
+               volume_result );
+    timer.Stop();
+
+    make_bmp(volume_result, "volumeImage_VecGeom.bmp", data_size_x, data_size_y);
+
+    std::cout << std::endl;
+    std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    delete[] volume_result;
   }
   return 0;
 }
 
 
-int make_bmp(int* volume_result, int data_size_x, int data_size_y)
+int make_bmp(int const * volume_result, char const * name, int data_size_x, int data_size_y)
 {
 
   MY_BITMAP* pBitmap= new MY_BITMAP;
@@ -335,7 +499,7 @@ int make_bmp(int* volume_result, int data_size_x, int data_size_y)
   int width_4= (data_size_x+ 3)&~3;
   unsigned char* bmpBuf;
 
-  bmpBuf = (unsigned char*)malloc(sizeof(unsigned char)* (data_size_y* width_4* 3+ 54));
+  bmpBuf = (unsigned char*) new unsigned char[data_size_y* width_4* 3+ 54];
   printf("\n Write bitmap...\n");
 
   unsigned int len= 0;
@@ -402,28 +566,27 @@ int make_bmp(int* volume_result, int data_size_x, int data_size_y)
 
   int padding= width_4- data_size_x;
   int padding_idx= padding;
-  unsigned char *imgdata= (unsigned char*)malloc(sizeof(unsigned char)*data_size_y*width_4*3);
+  unsigned char *imgdata= (unsigned char*) new unsigned char[data_size_y*width_4*3];
 
   while( y< data_size_y )
   {
     while( origin_x< data_size_x )
     {
-      *(imgdata+y*width_4*3+x*3+0)= (*(volume_result+y*data_size_x+origin_x) *50) %256;
-      *(imgdata+y*width_4*3+x*3+1)= (*(volume_result+y*data_size_x+origin_x) *40) %256;
-      *(imgdata+y*width_4*3+x*3+2)= (*(volume_result+y*data_size_x+origin_x) *30) %256;
+      *(imgdata+y*width_4*3+x*3+0)= (*(volume_result+y*data_size_x+origin_x) *50) % 256;
+      *(imgdata+y*width_4*3+x*3+1)= (*(volume_result+y*data_size_x+origin_x) *40) % 256;
+      *(imgdata+y*width_4*3+x*3+2)= (*(volume_result+y*data_size_x+origin_x) *30) % 256;
       
       x++;
       origin_x++;
 
       while( origin_x== data_size_x && padding_idx)
       {
-	// padding 4-byte at bitmap image
-	*(imgdata+y*width_4*3+x*3+0)= 0;
-	*(imgdata+y*width_4*3+x*3+1)= 0;
-	*(imgdata+y*width_4*3+x*3+2)= 0;
-	x++;
-	padding_idx--;
-
+// padding 4-byte at bitmap image
+        *(imgdata+y*width_4*3+x*3+0)= 0;
+        *(imgdata+y*width_4*3+x*3+1)= 0;
+        *(imgdata+y*width_4*3+x*3+2)= 0;
+        x++;
+        padding_idx--;
       }
       padding_idx= padding;
     }
@@ -434,14 +597,16 @@ int make_bmp(int* volume_result, int data_size_x, int data_size_y)
   
   memcpy(bmpBuf + 54, imgdata, width_4* data_size_y* 3);
 
-  pBitmapFile = fopen(WRITE_FILE_NAME, "wb");
+  pBitmapFile = fopen(name, "wb");
   fwrite(bmpBuf, sizeof(char), width_4*data_size_y*3+54, pBitmapFile);
 
 
   fclose(pBitmapFile);
-  delete imgdata;
+  delete[] imgdata;
+  delete[] bmpBuf;
   delete pBitmap;
-  delete bmpBuf;
+
+  std::cout << " wrote image file " << name <<  "\n";
 
   return 0;
 }
