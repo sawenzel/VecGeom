@@ -550,13 +550,13 @@ class ThetaCone{
                   { //Working fine . 1/1024 mismatches
                       if(fSTheta < fETheta)
                       {
-			Float_t tolAngMin = cone1Radius + kAngTolerance*10.;
-            		Float_t tolAngMax = cone2Radius + kAngTolerance*10.;
+			Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
+            		Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
 					if(ForInside)
             		completelyinside = ((rad >= tolAngMin) && (localPoint.z() > 0.)) || ((rad >= tolAngMax) && (localPoint.z() < 0.));
             
-            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*10.;
-            		Float_t tolAngMax2 = cone2Radius - kAngTolerance*10.;
+            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
+            		Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
             		completelyoutside = ((rad < tolAngMin2) && (localPoint.z() > 0.))  || ((rad < tolAngMax2) && (localPoint.z() < 0.));   
 		      }
 		  }
@@ -569,8 +569,8 @@ class ThetaCone{
                      { //Working fine . 1/1024 mismatches
 			 if(fSTheta < fETheta)
                       		{
-					Float_t tolAngMin = cone1Radius - kAngTolerance*10.;
-            				Float_t tolAngMax = cone2Radius + kAngTolerance*10.;
+					Float_t tolAngMin = cone1Radius - kAngTolerance*100.;
+            				Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
 					if(ForInside)
             				completelyinside = (rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < 0.);
             
