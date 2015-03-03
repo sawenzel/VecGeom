@@ -24,8 +24,9 @@
 #endif
 #endif
 
-namespace VECGEOM_NAMESPACE{
+namespace vecgeom {
 
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 // reusable utility function to compare distance results against ROOT/Geant4/ etc.
 namespace DistanceComparator{
@@ -110,7 +111,7 @@ inline
     }
 } // end inner namespace
 
-} // end namespace
+}} // end namespace
 
 
 #endif /* VECGEOM_RESULTCOMPARATOR_H_ */
