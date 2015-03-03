@@ -9,6 +9,9 @@
 #include "volumes/PlacedBox.h"
 
 #include <algorithm>
+#ifdef VECGEOM_DISTANCE_DEBUG
+#include "volumes/utilities/ResultComparator.h"
+#endif
 
 namespace vecgeom {
 
