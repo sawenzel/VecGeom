@@ -14,11 +14,6 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-#include "backend/Backend.h"
-#ifdef VECGEOM_CUDA_INTERFACE
-#include "backend/cuda/Interface.h"
-#endif
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
