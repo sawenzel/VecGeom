@@ -24,7 +24,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 T MakePlusTolerant(T const &x)
 {
-  return (tolerant)? x+kHalfTolerance : x;
+  return (tolerant)? x+kSHalfTolerance*10 : x;
 }
 
 template<bool tolerant, typename T>
@@ -32,7 +32,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 T MakeMinusTolerant(T const &x)
 {
-  return (tolerant)? x-kHalfTolerance : x;
+  return (tolerant)? x-kSHalfTolerance*10 : x;
 }
 
 template<bool tolerant, typename T>
@@ -40,7 +40,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 T  MakePlusTolerantSquare(T const &x, T const& xsq)
 {
-  return (tolerant)? xsq+kTolerance*x : xsq;
+  return (tolerant)? xsq+kSTolerance*10*x : xsq;
 }
 
 template<bool tolerant, typename T>
@@ -48,7 +48,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 T MakeMinusTolerantSquare(T const &x, T const &xsq)
 {
-  return (tolerant)? xsq-kTolerance*x : xsq;
+  return (tolerant)? xsq-kSTolerance*10*x : xsq;
 }
 
 

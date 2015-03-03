@@ -20,7 +20,7 @@ typedef vecgeom::SimpleSphere Sphere_t;
 int main(  int argc,char *argv[]) {
 
 //  VUSolid* sphere=new USphere("test_sphere",15. , 20. , 0 ,2*PI/3, 2*PI/3 ,PI/6);
-VUSolid* sphere=new Sphere_t("test_sphere",15. , 20. , 0 ,2*PI, PI/6 ,PI/6);
+VUSolid* sphere=new Sphere_t("test_sphere",15. , 20. , 2*PI/3,PI/6, PI/6 ,PI/6);
    // VUSolid* sphere=new USphere("test_USphere",3.);
   ShapeTester tester;
 
