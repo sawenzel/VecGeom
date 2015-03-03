@@ -26,7 +26,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedSphere::ConvertToUnspecialized() const {
-  return new SimpleSphere(GetLabel().c_str(), logical_volume(),
+  return new SimpleSphere(GetLabel().c_str(), GetLogicalVolume(),
                                   transformation());
 }
 

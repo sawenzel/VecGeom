@@ -34,7 +34,7 @@ int PlacedPolyhedron::PhiSegmentIndex(Vector3D<Precision> const &point) const {
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
-  return new SimplePolyhedron(GetLabel().c_str(), logical_volume(),
+  return new SimplePolyhedron(GetLabel().c_str(), GetLogicalVolume(),
                               transformation());
 }
 

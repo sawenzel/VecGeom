@@ -53,7 +53,7 @@ public:
   VECGEOM_INLINE
   UnplacedSphere const* GetUnplacedVolume() const {
     return static_cast<UnplacedSphere const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
   
 

@@ -87,7 +87,7 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
        placed_volumes_.begin(); i != placed_volumes_.end(); ++i) {
 
     (*i)->CopyToGpu(
-      LookupLogical((*i)->logical_volume()),
+      LookupLogical((*i)->GetLogicalVolume()),
       LookupTransformation((*i)->transformation()),
       LookupPlaced(*i)
     );
@@ -289,9 +289,9 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
   if (placed_volumes_.find(volume) == placed_volumes_.end()) {
     placed_volumes_.insert(volume);
   }
-  if (logical_volumes_.find(volume->logical_volume())
+  if (logical_volumes_.find(volume->GetLogicalVolume())
       == logical_volumes_.end()) {
-    logical_volumes_.insert(volume->logical_volume());
+    logical_volumes_.insert(volume->GetLogicalVolume());
   }
   if (transformations_.find(volume->transformation())
       == transformations_.end()) {
@@ -301,9 +301,9 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
       == unplaced_volumes_.end()) {
     unplaced_volumes_.insert(volume->unplaced_volume());
   }
-  if (daughters_.find(volume->logical_volume()->daughters_)
+  if (daughters_.find(volume->GetLogicalVolume()->daughters_)
       == daughters_.end()) {
-    daughters_.insert(volume->logical_volume()->daughters_);
+    daughters_.insert(volume->GetLogicalVolume()->daughters_);
   }
 
   if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){

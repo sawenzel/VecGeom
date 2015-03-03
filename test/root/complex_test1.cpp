@@ -508,7 +508,7 @@ void test_pointgenerationperlogicalvolume( )
     {
         state->Clear();
         nav.LocatePoint( GeoManager::Instance().GetWorld(), globalpoints[i], *state, true );
-    assert( std::strcmp( state->Top()->logical_volume()->GetLabel().c_str(), "b1l" ) == 0 );
+    assert( std::strcmp( state->Top()->GetLogicalVolume()->GetLabel().c_str(), "b1l" ) == 0 );
         pvolumeset.insert( state->Top() );
     }
     // b1l should be placed two times

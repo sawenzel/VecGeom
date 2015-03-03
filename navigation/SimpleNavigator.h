@@ -176,7 +176,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
    if( candvolume )
    {
       path.Push( candvolume );
-      Vector<Daughter> const * daughters = candvolume->logical_volume()->daughtersp();
+      Vector<Daughter> const * daughters = candvolume->GetLogicalVolume()->daughtersp();
 
       bool godeeper = true;
       while( godeeper && daughters->size() > 0)
@@ -192,7 +192,7 @@ SimpleNavigator::LocatePoint( VPlacedVolume const * vol, Vector3D<Precision> con
                path.Push( nextvolume );
                tmp = transformedpoint;
                candvolume =  nextvolume;
-               daughters = candvolume->logical_volume()->daughtersp();
+               daughters = candvolume->GetLogicalVolume()->daughtersp();
                godeeper=true;
                break;
             }
@@ -279,7 +279,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    }
 
    // iterate over all the daughter
-   Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvolume->GetLogicalVolume()->daughtersp();
 
    for(int d = 0; d<daughters->size(); ++d)
    {
@@ -344,7 +344,7 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
    //assert( safety > 0 );
 
    // safety to daughters
-   Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->daughtersp();
    int numberdaughters = daughters->size();
    for(int d = 0; d<numberdaughters; ++d)
    {
@@ -380,7 +380,7 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
     currentvol->SafetyToOut( workspaceforlocalpoints, safeties );
 
     // safety to daughters; brute force but each function vectorized
-    Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
+    Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->daughtersp();
     int numberdaughters = daughters->size();
     for (int d = 0; d<numberdaughters; ++d) {
          VPlacedVolume const * daughter = daughters->operator [](d);
@@ -433,7 +433,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
            pSteps, distances, nextnodeworkspace );
 
    // iterate over all the daughter
-   Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvolume->GetLogicalVolume()->daughtersp();
    for (int daughterindex=0; daughterindex < daughters->size(); ++daughterindex)
    {
       VPlacedVolume const * daughter = daughters->operator [](daughterindex);

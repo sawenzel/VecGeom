@@ -18,7 +18,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedParallelepiped::ConvertToUnspecialized() const {
-  return new SimpleParallelepiped(GetLabel().c_str(), logical_volume(),
+  return new SimpleParallelepiped(GetLabel().c_str(), GetLogicalVolume(),
                                   transformation());
 }
 
