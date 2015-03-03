@@ -80,6 +80,8 @@ class ThetaCone{
             tanETheta = tan(tempfETheta);
             tanETheta2 = tanETheta * tanETheta;
 	    tanBisector = tan(tempfSTheta+(fDTheta/2));
+	    if(fSTheta > kPi/2 && fETheta > kPi/2)
+		tanBisector = tan(tempfSTheta-(fDTheta/2));
 	    slope1=tan(kPi/2-fSTheta);
 	    slope2=tan(kPi/2-fETheta);
             
@@ -194,7 +196,7 @@ class ThetaCone{
 	
 	Float_t safeTheta(0.);
 	Float_t pointRad = Sqrt(point.x()*point.x() + point.y()*point.y());
-	Float_t bisectorRad = point.z() * tanBisector;
+	Float_t bisectorRad = Abs(point.z() * tanBisector);
 	
 	//Case 1 : Both cones are in Positive Z direction
 	if(fSTheta < kPi/2 + halfAngTolerance)
@@ -574,8 +576,8 @@ class ThetaCone{
 					if(ForInside)
             				completelyinside = (rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < 0.);
             
-            				Float_t tolAngMin2 = cone1Radius + kAngTolerance*10.;
-            				Float_t tolAngMax2 = cone2Radius - kAngTolerance*10.;
+            				Float_t tolAngMin2 = cone1Radius + kAngTolerance*100.;
+            				Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
            				completelyoutside = (rad < tolAngMax2) || (rad > tolAngMin2) || (localPoint.z() > 0.);   
 					
 				}
