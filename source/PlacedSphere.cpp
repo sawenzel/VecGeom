@@ -27,31 +27,31 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VPlacedVolume const* PlacedSphere::ConvertToUnspecialized() const {
   return new SimpleSphere(GetLabel().c_str(), GetLogicalVolume(),
-                                  transformation());
+                          GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedSphere::ConvertToRoot() const {
   return new TGeoSphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
-                                      GetStartThetaAngle()*kRadToDeg,(GetStartThetaAngle()+GetDeltaThetaAngle())*kRadToDeg,
-                                        GetStartPhiAngle()*kRadToDeg, (GetStartPhiAngle()+GetDeltaPhiAngle())*kRadToDeg);
+                        GetStartThetaAngle()*kRadToDeg,(GetStartThetaAngle()+GetDeltaThetaAngle())*kRadToDeg,
+                        GetStartPhiAngle()*kRadToDeg, (GetStartPhiAngle()+GetDeltaPhiAngle())*kRadToDeg);
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedSphere::ConvertToUSolids() const {
 
-return new USphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
-                                      GetStartPhiAngle(), GetDeltaPhiAngle(),
-                                      GetStartThetaAngle(),GetDeltaThetaAngle());
+   return new USphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
+                      GetStartPhiAngle(), GetDeltaPhiAngle(),
+                      GetStartThetaAngle(),GetDeltaThetaAngle());
 }
 #endif
 
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedSphere::ConvertToGeant4() const {
-return new G4Sphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
-                                      GetStartPhiAngle(), GetDeltaPhiAngle(),
-                                      GetStartThetaAngle(),GetDeltaThetaAngle());
+   return new G4Sphere(GetLabel().c_str(),GetInnerRadius(),GetOuterRadius(),
+                       GetStartPhiAngle(), GetDeltaPhiAngle(),
+                       GetStartThetaAngle(),GetDeltaThetaAngle());
 }
 #endif
 

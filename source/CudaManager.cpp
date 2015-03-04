@@ -88,7 +88,7 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
 
     (*i)->CopyToGpu(
       LookupLogical((*i)->GetLogicalVolume()),
-      LookupTransformation((*i)->transformation()),
+      LookupTransformation((*i)->GetTransformation()),
       LookupPlaced(*i)
     );
 
@@ -293,9 +293,9 @@ void CudaManager::ScanGeometry(VPlacedVolume const *const volume) {
       == logical_volumes_.end()) {
     logical_volumes_.insert(volume->GetLogicalVolume());
   }
-  if (transformations_.find(volume->transformation())
+  if (transformations_.find(volume->GetTransformation())
       == transformations_.end()) {
-    transformations_.insert(volume->transformation());
+    transformations_.insert(volume->GetTransformation());
   }
   if (unplaced_volumes_.find(volume->unplaced_volume())
       == unplaced_volumes_.end()) {

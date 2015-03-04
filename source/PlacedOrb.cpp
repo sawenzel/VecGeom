@@ -27,7 +27,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VPlacedVolume const* PlacedOrb::ConvertToUnspecialized() const {
   return new SimpleOrb(GetLabel().c_str(), GetLogicalVolume(),
-                                  transformation());
+                                  GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT

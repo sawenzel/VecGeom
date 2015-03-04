@@ -95,8 +95,8 @@ public:
       // what do we need?
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
-      Transformation3D const * leftm = left->transformation();
-      Transformation3D const * rightm = right->transformation();
+      Transformation3D const * leftm = left->GetTransformation();
+      Transformation3D const * rightm = right->GetTransformation();
 
       TGeoShape *shape = NULL;
       if( GetUnplacedVolume()->GetOp() == kSubtraction ){
@@ -134,7 +134,7 @@ public:
       printf("Converting to Geant4\n");
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
-      Transformation3D const * rightm = right->transformation();
+      Transformation3D const * rightm = right->GetTransformation();
       G4RotationMatrix * g4rot = new G4RotationMatrix();
       g4rot->set( CLHEP::HepRep3x3( rightm->Rotation() ) );
       if( GetUnplacedVolume()->GetOp() == kSubtraction ){

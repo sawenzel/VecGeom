@@ -218,7 +218,7 @@ SimpleNavigator::RelocatePointFromPath( Vector3D<Precision> const & localpoint,
       while( currentmother && ! currentmother->UnplacedContains( tmp ) )
       {
          path.Pop();
-         Vector3D<Precision> pointhigherup = currentmother->transformation()->InverseTransform( tmp );
+         Vector3D<Precision> pointhigherup = currentmother->GetTransformation()->InverseTransform( tmp );
          tmp=pointhigherup;
          currentmother=path.Top();
       }
@@ -315,7 +315,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    {
       // continue directly further down
       VPlacedVolume const * nextvol = daughters->operator []( nexthitvolume );
-      Transformation3D const * trans = nextvol->transformation();
+      Transformation3D const * trans = nextvol->GetTransformation();
 
       // this should be inlined here
       LocatePoint( nextvol, trans->Transform(newpointafterboundary), newstate, false );
@@ -481,7 +481,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
      {
         // continue directly further down
         VPlacedVolume const * nextvol = daughters->operator []( nextnodeworkspace[i] );
-        Transformation3D const * trans = nextvol->transformation();
+        Transformation3D const * trans = nextvol->GetTransformation();
 
         // this should be inlined here
         LocatePoint( nextvol,

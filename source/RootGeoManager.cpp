@@ -127,7 +127,7 @@ TGeoNode* RootGeoManager::Convert(VPlacedVolume const *const placed_volume) {
 
       // get matrix of daughter
       TGeoMatrix * geomatrixofdaughter
-        = Convert(daughter_placed->transformation());
+        = Convert(daughter_placed->GetTransformation());
 
       // add node to the TGeoVolume; using the TGEO API
       // unfortunately, there is not interface allowing to add an existing

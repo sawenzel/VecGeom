@@ -64,7 +64,7 @@ void ShapeDebugger::CompareContainsToROOT(
     Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds);
     bool vecgeomResult = fVolume->Contains(sample);
     Vector3D<Precision> localPoint =
-        fVolume->transformation()->Transform(sample);
+        fVolume->GetTransformation()->Transform(sample);
     bool rootResult = rootShape->Contains(&localPoint[0]);
     vecgeomCount += vecgeomResult;
     rootCount += rootResult;
@@ -152,9 +152,9 @@ void ShapeDebugger::CompareDistanceToInToROOT(
     direction = volumeUtilities::SampleDirection();
     Precision vecgeomResult = fVolume->DistanceToIn(point, direction);
     Vector3D<Precision> localPoint =
-        fVolume->transformation()->Transform(point);
+        fVolume->GetTransformation()->Transform(point);
     Vector3D<Precision> localDirection =
-        fVolume->transformation()->TransformDirection(direction);
+        fVolume->GetTransformation()->TransformDirection(direction);
     double rootResult =
         rootShape->DistFromOutside(&localPoint[0], &localDirection[0]);
     bool vecgeomMiss = vecgeomResult == kInfinity;
