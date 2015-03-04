@@ -474,7 +474,7 @@ void NavigationState::ConvertToCPUPointers()
        #ifdef HAVENORMALNAMESPACE
 #ifdef VECGEOM_CUDA
        for(int i=0;i<fCurrentLevel;++i)
-         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( (void*) fPath[i] );
+         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( (const void*) fPath[i] );
 #endif
 #endif
 }
