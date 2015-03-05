@@ -28,10 +28,16 @@
 #ifdef VECGEOM_GEANT4
 #endif
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
 #include <cassert>
 #include <random>
 #include <sstream>
 #include <utility>
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 namespace vecgeom {
 

@@ -4,6 +4,10 @@
 #ifndef VECGEOM_BASE_STOPWATCH_H_
 #define VECGEOM_BASE_STOPWATCH_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 // OS X compatibility
@@ -80,5 +84,9 @@ public:
 };
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_BASE_STOPWATCH_H_

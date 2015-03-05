@@ -4,6 +4,10 @@
 #ifndef VECGEOM_BENCHMARKING_BENCHMARKER_H_
 #define VECGEOM_BENCHMARKING_BENCHMARKER_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/PlacedVolume.h"
@@ -297,5 +301,9 @@ private:
 };
 
 } // End namespace vecgeom
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_BENCHMARKING_BENCHMARKER_H_
