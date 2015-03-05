@@ -4,6 +4,10 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDBOX_H_
 #define VECGEOM_VOLUMES_UNPLACEDBOX_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 #include "base/AlignedBase.h"
 #include "base/Vector3D.h"
@@ -144,5 +148,9 @@ private:
 };
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_UNPLACEDBOX_H_

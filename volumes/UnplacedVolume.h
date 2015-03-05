@@ -6,6 +6,10 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "base/Transformation3D.h"
@@ -131,5 +135,8 @@ std::ostream& operator<<(std::ostream &os, VUnplacedVolume const &vol);
 
 } // End global namespace
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_UNPLACEDVOLUME_H_

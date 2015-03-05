@@ -4,6 +4,10 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDTUBE_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/kernel/TubeImplementation.h"
@@ -21,5 +25,9 @@ using SpecializedTube = ShapeImplementationHelper<TubeImplementation<transCodeT,
 using SimpleTube = SpecializedTube<translation::kGeneric, rotation::kGeneric, TubeTypes::UniversalTube>;
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_

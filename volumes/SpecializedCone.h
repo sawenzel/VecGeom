@@ -9,6 +9,10 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDCONE_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDCONE_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/kernel/ConeImplementation.h"
@@ -32,6 +36,10 @@ using SimpleUnplacedCone = SpecializedCone<translation::kIdentity, rotation::kId
 
 } // End impl namespace
 } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
 

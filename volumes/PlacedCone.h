@@ -4,14 +4,13 @@
  *  Created on: May 14, 2014
  *      Author: swenzel
  */
-//#define VECGEOM_ROOT
-//#define VECGEOM_GEANT4
-//#define VECGEOM_BENCHMARK
-//#define VECGEOM_USOLIDS
-
 
 #ifndef VECGEOM_VOLUMES_PLACEDCONE_H_
 #define VECGEOM_VOLUMES_PLACEDCONE_H_
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
 
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
@@ -134,5 +133,9 @@ public:
 }; // end class
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_PLACEDCONE_H_

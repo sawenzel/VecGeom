@@ -1,6 +1,10 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDBOOLEAN_H
 #define VECGEOM_VOLUMES_SPECIALIZEDBOOLEAN_H
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/kernel/BooleanImplementation.h"
@@ -26,5 +30,9 @@ using GenericSubtractionVolume = SpecializedBooleanVolume<kSubtraction, translat
 } // End impl namespace
 
 } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDBOOLEAN_H

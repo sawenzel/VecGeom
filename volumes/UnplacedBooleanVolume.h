@@ -1,6 +1,10 @@
 #ifndef UNPLACEDBOOLEANVOLUME_H_
 #define UNPLACEDBOOLEANVOLUME_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 #include "base/AlignedBase.h"
 #include "base/Vector3D.h"
@@ -123,6 +127,8 @@ public:
 
 } // End global namespace
 
-
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif /* UNPLACEDBOOLEANVOLUME_H_ */

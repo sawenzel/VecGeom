@@ -36,6 +36,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   AOS3D(Vector3D<T> *data, size_t size);
 
+  VECGEOM_CUDA_HEADER_BOTH
   AOS3D(size_t size);
 
   VECGEOM_CUDA_HEADER_BOTH

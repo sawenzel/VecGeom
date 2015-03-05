@@ -5,10 +5,12 @@
  *      Author: swenzel
  */
 
-
-
 #ifndef VECGEOM_VOLUMES_UNPLACEDCONE_H_
 #define VECGEOM_VOLUMES_UNPLACEDCONE_H_
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
 
 #include "base/Global.h"
 
@@ -338,5 +340,9 @@ Precision fSinEPhi;
 
 
 } }  // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif

@@ -4,12 +4,15 @@
 #ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
 #define VECGEOM_MANAGEMENT_GEOMANAGER_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/PlacedVolume.h"
 #include "volumes/LogicalVolume.h"
 #include "navigation/NavigationState.h"
-
 
 #include <map>
 
@@ -150,6 +153,9 @@ private:
 
 public:
 
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   static GeoManager& Instance() {
     static GeoManager instance;
     return instance;
@@ -195,6 +201,9 @@ public:
 
   void RegisterPlacedVolume(VPlacedVolume *const placed_volume);
 
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   void RegisterLogicalVolume(LogicalVolume *const logical_volume);
 
   void DeregisterPlacedVolume(const int id);
@@ -239,11 +248,20 @@ public:
 protected:
 
 private:
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
  GeoManager() : fVolumeCount(0), fTotalNodeCount(0), fWorld(NULL), fPlacedVolumesMap(),
  fLogicalVolumesMap(), fMaxDepth(-1)
  {}
 
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   GeoManager(GeoManager const&);
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   GeoManager& operator=(GeoManager const&);
 };
 
@@ -322,5 +340,9 @@ void GeoManager::getAllPathForLogicalVolume( LogicalVolume const * lvol, Contain
 
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_

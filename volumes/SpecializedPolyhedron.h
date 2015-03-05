@@ -4,6 +4,10 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDPOLYHEDRON_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDPOLYHEDRON_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/kernel/PolyhedronImplementation.h"
@@ -24,5 +28,9 @@ using SimplePolyhedron = SpecializedPolyhedron<Polyhedron::EInnerRadii::kGeneric
 } // End inline namespace
 
 } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPOLYHEDRON_H_

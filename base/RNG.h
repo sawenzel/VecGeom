@@ -79,6 +79,9 @@ protected:
 #endif
   }
 #else
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   RNG() : rng(0), uniform_dist(0, 1) {}
 #endif
 
@@ -148,7 +151,14 @@ public:
 
 private:
 
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   RNG(RNG const&);
+
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   RNG& operator=(RNG const&);
 
 };

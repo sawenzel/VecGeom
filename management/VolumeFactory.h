@@ -23,6 +23,9 @@ public:
   #ifndef VECGEOM_NVCC
 
   template<typename VolumeType>
+#ifdef OFFLOAD_MODE
+__attribute__ ((target(mic)))
+#endif
   static VPlacedVolume* CreateByTransformation(
       LogicalVolume const *const logical_volume,
       Transformation3D const *const transformation,

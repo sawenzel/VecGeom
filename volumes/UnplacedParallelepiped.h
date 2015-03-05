@@ -1,6 +1,10 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDPARALLELEPIPED_H_
 #define VECGEOM_VOLUMES_UNPLACEDPARALLELEPIPED_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
@@ -124,5 +128,9 @@ private:
 };
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_UNPLACEDPARALLELEPIPED_H_
