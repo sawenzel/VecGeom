@@ -292,9 +292,9 @@ void AOS3D<T>::set(size_t index, Vector3D<T> const &vec) {
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::push_back(T in_x, T in_y, T in_z) {
-  (fContent[fSize])[0] = x;
-  (fContent[fSize])[1] = y;
-  (fContent[fSize])[2] = z;
+  (fContent[fSize])[0] = in_x;
+  (fContent[fSize])[1] = in_y;
+  (fContent[fSize])[2] = in_z;
   ++fSize;
 }
 
