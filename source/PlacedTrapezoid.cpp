@@ -30,7 +30,7 @@ PlacedTrapezoid::~PlacedTrapezoid() {}
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
-  return new SimpleTrapezoid(GetLabel().c_str(), logical_volume(), transformation());
+  return new SimpleTrapezoid(GetLabel().c_str(), GetLogicalVolume(), GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT

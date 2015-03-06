@@ -14,15 +14,17 @@ VECGEOM_CUDA_HEADER_BOTH
 Quadrilaterals::Quadrilaterals(int size)
     : fPlanes(size)
 {
-   fSideVectors[0].reserve(size);
-   fSideVectors[1].reserve(size);
-   fSideVectors[2].reserve(size);
-   fSideVectors[3].reserve(size);
+    if(size>0){
+        fSideVectors[0].reserve(size);
+        fSideVectors[1].reserve(size);
+        fSideVectors[2].reserve(size);
+        fSideVectors[3].reserve(size);
 
-   fCorners[0].reserve(size);
-   fCorners[1].reserve(size);
-   fCorners[2].reserve(size);
-   fCorners[3].reserve(size);
+        fCorners[0].reserve(size);
+        fCorners[1].reserve(size);
+        fCorners[2].reserve(size);
+        fCorners[3].reserve(size);
+    }
 }
 #else
 Quadrilaterals::Quadrilaterals(int size)

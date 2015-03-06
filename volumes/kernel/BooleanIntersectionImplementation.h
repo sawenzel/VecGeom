@@ -477,7 +477,7 @@ void BooleanImplementation<kIntersection, transCodeT, rotCodeT>::SafetyToOutKern
 
              // TODO: consider introducing PlacedSafetyToOut function
              unplaced.fRightVolume->SafetyToOut(
-                     unplaced.fRightVolume->transformation()->Transform(p))
+                     unplaced.fRightVolume->GetTransformation()->Transform(p))
              );
     MaskedAssign( safety < 0, 0., &safety);
 }

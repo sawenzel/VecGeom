@@ -177,7 +177,14 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 // Qualifier(s) of global constants
-#define VECGEOM_GLOBAL static constexpr
+#ifdef VECGEOM_NVCC_DEVICE
+    // constexpr not supported on device in CUDA 6.5
+    #define VECGEOM_GLOBAL static __constant__ const
+    #define VECGEOM_CLASS_GLOBAL static const
+#else
+  #define VECGEOM_GLOBAL static constexpr
+  #define VECGEOM_CLASS_GLOBAL static constexpr
+#endif
 
 namespace vecgeom {
 #ifdef VECGEOM_FLOAT_PRECISION

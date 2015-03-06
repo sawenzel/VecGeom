@@ -57,13 +57,13 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid const* GetUnplacedVolume() const {
         return static_cast<UnplacedParaboloid const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
     }
     
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid * GetUnplacedVolumeNonConst() const {
         return static_cast<UnplacedParaboloid *>(const_cast<VUnplacedVolume *>(
-            logical_volume()->unplaced_volume()));
+            GetLogicalVolume()->unplaced_volume()));
     }
     
     VECGEOM_CUDA_HEADER_BOTH
@@ -125,7 +125,8 @@ public:
     
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
     
-    Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
+    VECGEOM_CUDA_HEADER_BOTH
+    virtual Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
     Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
 

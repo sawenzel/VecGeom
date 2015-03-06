@@ -87,7 +87,7 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  LogicalVolume const* logical_volume() const {
+  LogicalVolume const* GetLogicalVolume() const {
     return logical_volume_;
   }
 
@@ -105,17 +105,17 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Transformation3D const* transformation() const {
+  Transformation3D const* GetTransformation() const {
     return transformation_;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void set_logical_volume(LogicalVolume const *const logical_vol) {
+  void SetLogicalVolume(LogicalVolume const *const logical_vol) {
     logical_volume_ = logical_vol;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void set_transformation(Transformation3D const *const transform) {
+  void SetTransformation(Transformation3D const *const transform) {
     transformation_ = transform;
   }
 
@@ -253,6 +253,7 @@ public:
   // returning the cubic volume of the shape satisfying the USolids interface
   // it is currently not a const function since some shapes might cache this value
   // if it is expensive to calculate
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision Capacity() {
       assert(0 && "Capacity not implemented");
       return 0;

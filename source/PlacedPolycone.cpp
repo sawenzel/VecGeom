@@ -27,21 +27,27 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #ifndef VECGEOM_NVCC
   VPlacedVolume const* PlacedPolycone::ConvertToUnspecialized() const
   {
-      return new SimplePolycone(GetLabel().c_str(), logical_volume(), transformation());
+      return new SimplePolycone(GetLabel().c_str(), GetLogicalVolume(), GetTransformation());
   }
 #ifdef VECGEOM_ROOT
   TGeoShape const* PlacedPolycone::ConvertToRoot() const
   {
       UnplacedPolycone const * unplaced = GetUnplacedVolume();
-      TGeoPcon* rootshape = new TGeoPcon(
-              unplaced->fStartPhi*kRadToDeg,
-              unplaced->fDeltaPhi*kRadToDeg,
-              unplaced->fNz );
 
       std::vector<double> rmin;
       std::vector<double> rmax;
       std::vector<double> z;
       unplaced->ReconstructSectionArrays(z,rmin,rmax);
+
+      TGeoPcon* rootshape = new TGeoPcon(
+                    unplaced->fStartPhi*kRadToDeg,
+                    unplaced->fDeltaPhi*kRadToDeg,
+                    z.size() );
+
+      if( (size_t)unplaced->fNz != z.size() )
+      {
+          std::cout << "WARNING: Inconsistency in number of polycone sections\n";
+      }
 
       // now transfer the parameter to the ROOT polycone
       for(int i=0;i<unplaced->fNz;++i)

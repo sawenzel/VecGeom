@@ -15,6 +15,7 @@
 #include "volumes/LogicalVolume.h"
 #include "navigation/NavigationState.h"
 #include "management/GeoManager.h"
+#include <cstdio>
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
 #endif
@@ -96,7 +97,10 @@ void FillBiasedDirections(VPlacedVolume const &volume,
   std::vector<bool> hit(size, false);
   int h;
 
-  // Randomize points
+  int tries = 0;
+  int maxtries = 10000*size;
+
+  // Randomize directions
   FillRandomDirections(dirs);
 
   // Check hits
@@ -128,13 +132,12 @@ void FillBiasedDirections(VPlacedVolume const &volume,
     }
   }
 
-
   // Add hits until threshold
-  while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) < bias) {
+  while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) < bias && tries < maxtries ) {
     h = static_cast<int>(
         static_cast<Precision>(size) * RNG::Instance().uniform()
     );
-    while (!hit[h]) {
+    while (!hit[h] && tries < maxtries ) {
       dirs.set(h, SampleDirection());
       for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
            iEnd = volume.daughters().cend(); i != iEnd; ++i) {
@@ -144,8 +147,17 @@ void FillBiasedDirections(VPlacedVolume const &volume,
           break;
         }
       }
+      tries++;
     }
   }
+
+
+  if( tries == maxtries )
+  {
+      printf("WARNING: NUMBER OF DIRECTORY SAMPLING TRIES EXCEEDED MAXIMUM; N_HITS %d; ACHIEVED BIAS %lf \n",n_hits, n_hits/(1.*size));
+  }
+
+
 }
 
 template<typename TrackContainer>

@@ -29,7 +29,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedParaboloid::ConvertToUnspecialized() const {
-    return new SimpleParaboloid(GetLabel().c_str(), logical_volume(),transformation());
+    return new SimpleParaboloid(GetLabel().c_str(), GetLogicalVolume(),GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT

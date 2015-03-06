@@ -30,10 +30,12 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 // helper structure to encapsulate a section
 struct PolyconeSection
 {
+   VECGEOM_CUDA_HEADER_BOTH
    PolyconeSection()
       : fSolid(0), fShift(0.0), fTubular(0), fConvex(0)
    {}
 
+   VECGEOM_CUDA_HEADER_BOTH
    ~PolyconeSection() = default;
    
    UnplacedCone *fSolid;

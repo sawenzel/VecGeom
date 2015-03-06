@@ -60,7 +60,6 @@ UnplacedOrb::UnplacedOrb() :
   }
   
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Precision UnplacedOrb::Capacity() const
   {
       return fCubicVolume;
@@ -69,7 +68,6 @@ UnplacedOrb::UnplacedOrb() :
   
   
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   Precision UnplacedOrb::SurfaceArea() const
   {
       return fSurfaceArea;

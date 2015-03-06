@@ -327,8 +327,15 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
         vecgeom::CopyToGpu(&rmin[0], rmin_gpu_ptr, sizeof(Precision)*rmin.size());
         vecgeom::CopyToGpu(&rmax[0], rmax_gpu_ptr, sizeof(Precision)*rmax.size());
 
-        DevicePtr<cuda::VUnplacedVolume> gpupolycon =  CopyToGpuImpl<UnplacedPolycone>(gpu_ptr,
-                fStartPhi, fDeltaPhi, fNz, rmin_gpu_ptr, rmax_gpu_ptr, z_gpu_ptr);
+    vecgeom::CopyToGpu(&z[0], z_gpu_ptr, sizeof(Precision)*z.size());
+    vecgeom::CopyToGpu(&rmin[0], rmin_gpu_ptr, sizeof(Precision)*rmin.size());
+    vecgeom::CopyToGpu(&rmax[0], rmax_gpu_ptr, sizeof(Precision)*rmax.size());
+
+    int s = z.size();
+
+    // attention here z.size() might be different than fNz due to compactification during Reconstruction
+    DevicePtr<cuda::VUnplacedVolume> gpupolycon =  CopyToGpuImpl<UnplacedPolycone>(gpu_ptr,
+             fStartPhi, fDeltaPhi, s, rmin_gpu_ptr, rmax_gpu_ptr, z_gpu_ptr);
 
         // remove temporary space from GPU
         FreeFromGpu(z_gpu_ptr);

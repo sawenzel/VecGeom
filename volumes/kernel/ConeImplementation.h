@@ -226,19 +226,18 @@ struct ConeImplementation {
 
   }
 
-   VECGEOM_GLOBAL double kHalfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
+   VECGEOM_CLASS_GLOBAL double kHalfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
    // static constexpr double kHalfCarTolerance = VECGEOM_NAMESPACE::kHalfTolerance;
-   VECGEOM_GLOBAL double kHalfRadTolerance = kRadTolerance * 0.5;
-   VECGEOM_GLOBAL double kHalfAngTolerance = kAngTolerance * 0.5;
-
+   VECGEOM_CLASS_GLOBAL double kHalfRadTolerance = kRadTolerance * 0.5;
+   VECGEOM_CLASS_GLOBAL double kHalfAngTolerance = kAngTolerance * 0.5;
 
    // the fall-back version from USolids
    // to take a short cut towards full functionality
    // this really only makes sense for Scalar and CUDA backend and is copied here until
    //  a generic and fully optimized VecGeom version is available
    template <class Backend>
-   //VECGEOM_CUDA_HEADER_BOTH
-   //VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
    static typename Backend::precision_v DistanceToInUSolids
    ( UnplacedCone const &unplaced,
      Transformation3D const &transformation,
@@ -250,8 +249,10 @@ struct ConeImplementation {
       Vector3D<typename Backend::precision_v> p = transformation.Transform<transCodeT,rotCodeT>(point);
       Vector3D<typename Backend::precision_v> v = transformation.TransformDirection<rotCodeT>(direction);
 
-      double snxt = VECGEOM_NAMESPACE::kInfinity;
-      const double dRmax = 100 * std::max(unplaced.GetRmax1(), unplaced.GetRmax2());
+     double snxt = VECGEOM_NAMESPACE::kInfinity;
+     const double dRmax = 100 * Max(unplaced.GetRmax1(), unplaced.GetRmax2());
+     // const double halfCarTolerance = VECGEOM_NAMESPACE::kTolerance * 0.5;
+     // const double halfRadTolerance = kRadTolerance * 0.5;
 
       double rMaxAv, rMaxOAv; // Data for cones
       double rMinAv, rMinOAv;
@@ -1345,7 +1346,7 @@ struct ConeImplementation {
 
             if (nt3 > -kHalfRadTolerance && nt2 >= 0)
             {
-	       //              risec     = Sqrt(t3) * unplaced.fSecRMax;
+           //              risec     = Sqrt(t3) * unplaced.fSecRMax;
              // aConvex = true;
              // aNormalVector        = Vector3D<Precision>(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
               return snxt = 0;
@@ -1424,7 +1425,7 @@ struct ConeImplementation {
         {
           // Linear case (only one intersection) => point outside outer cone
 
-	   //          risec     = Sqrt(t3) * unplaced.fSecRMax;
+       //          risec     = Sqrt(t3) * unplaced.fSecRMax;
          // aConvex = true;
          // aNormalVector        = Vector3D<Precision>(p.x() / risec, p.y() / risec, -unplaced.fTanRMax / unplaced.fSecRMax);
           return snxt = 0.0;
@@ -1849,11 +1850,11 @@ struct ConeImplementation {
          safe    = (rho - pRMax) * unplaced.fInvSecRMax;
        }
       if( ! ForPolycone)//For Polycone only safety in R and Phi is needed
-	{ if (safeZ > safe)
+    { if (safeZ > safe)
          {
           safe = safeZ;
          }
-	}
+    }
        if (!unplaced.IsFullPhi() && rho)
        {
          // Psi=angle from central phi to point
@@ -1954,11 +1955,11 @@ struct ConeImplementation {
           safe = safeR2;
         }
         if( ! ForPolycone)//For Polycone only safety in R and Phi is needed
-	  {if (safeZ < safe)
+      {if (safeZ < safe)
           {
            safe = safeZ;
           }
-	  }
+      }
         // Check if phi divided, Calc distances closest phi plane
 
         if (!unplaced.IsFullPhi())
