@@ -121,9 +121,6 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetTolOrhi2() const { return GetUnplacedVolume()->GetTolOrhi2(); }
     
-#ifdef OFFLOAD_MODE
-    __attribute__ (( target (mic)))
-#endif
     virtual
     bool Normal(Vector3D<Precision> const &, Vector3D<double> &normal) const {
       Assert(0, "Normal with point only not implemented for Paraboloid.\n");

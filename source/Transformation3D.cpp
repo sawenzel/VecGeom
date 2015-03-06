@@ -33,9 +33,6 @@ const Transformation3D Transformation3D::kIdentity =
 //  SetProperties();
 //}
 
-#ifdef OFFLOAD_MODE
-__attribute__ (( target (mic)))
-#endif
 Transformation3D::Transformation3D(
     const Precision tx, const Precision ty,
     const Precision tz, const Precision phi,
@@ -46,9 +43,6 @@ fIdentity(false), fHasRotation(true), fHasTranslation(true) {
   SetProperties();
 }
 
-#ifdef OFFLOAD_MODE
-__attribute__ (( target (mic)))
-#endif
 Transformation3D::Transformation3D(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,

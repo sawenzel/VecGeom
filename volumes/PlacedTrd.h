@@ -84,17 +84,6 @@ public:
   virtual TGeoShape const* ConvertToRoot() const;
 #endif
 #ifdef VECGEOM_USOLIDS
-#ifdef OFFLOAD_MODE
-  __attribute__ (( target (mic)))
-  virtual
-  bool Normal(Vector3D<double> const &point,
-                      Vector3D<double> &normal) const {
-    assert(0 &&
-           "Normal not implemented for USolids interface compatible volume.");
-    return false;
-  }
-#endif
-
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
 #ifdef VECGEOM_GEANT4
