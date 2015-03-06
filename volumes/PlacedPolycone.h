@@ -55,7 +55,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedPolycone const* GetUnplacedVolume() const {
     return static_cast<UnplacedPolycone const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
 
 
@@ -71,6 +71,11 @@ public:
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
 #endif // VECGEOM_NVCC
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision Capacity() {
+     return GetUnplacedVolume()->Capacity();
+   }
 
 #ifdef VECGEOM_USOLIDS
   virtual
@@ -94,10 +99,6 @@ public:
   Vector3D<Precision> GetPointOnSurface() const
   {
     return GetUnplacedVolume()->GetPointOnSurface();
-  }
-
-  virtual Precision Capacity() {
-    return GetUnplacedVolume()->Capacity();
   }
 
   virtual double SurfaceArea() {

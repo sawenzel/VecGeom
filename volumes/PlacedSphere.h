@@ -57,7 +57,7 @@ public:
   VECGEOM_INLINE
   UnplacedSphere const* GetUnplacedVolume() const {
     return static_cast<UnplacedSphere const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
   
 
@@ -193,9 +193,7 @@ VECGEOM_INLINE
 Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
 
 VECGEOM_CUDA_HEADER_BOTH  
-VECGEOM_INLINE
-Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
-
+virtual Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
 
   /*
@@ -208,8 +206,6 @@ Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
   
-   VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
   */
   
   VECGEOM_CUDA_HEADER_BOTH

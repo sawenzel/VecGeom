@@ -186,10 +186,17 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 // Qualifier(s) of global constants
-#define VECGEOM_GLOBAL static constexpr
+#ifdef VECGEOM_NVCC_DEVICE
+    // constexpr not supported on device in CUDA 6.5
+    #define VECGEOM_GLOBAL static __constant__ const
+    #define VECGEOM_CLASS_GLOBAL static const
+#else
+  #define VECGEOM_GLOBAL static constexpr
 #ifdef OFFLOAD_MODE
   #undef VECGEOM_GLOBAL
   #define VECGEOM_GLOBAL __attribute__ (( target (mic))) static constexpr
+#endif
+  #define VECGEOM_CLASS_GLOBAL static constexpr
 #endif
 
 namespace vecgeom {

@@ -107,7 +107,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 typename Backend::precision_v NormalizeAngle(typename Backend::precision_v a) {
   return a + kTwoPi*((a<0)-typename Backend::int_v(a/kTwoPi));
-};
+}
 
 // \param corner0 First corner of line segment.
 // \param corner1 Second corner of line segment.

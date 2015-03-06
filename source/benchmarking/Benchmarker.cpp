@@ -1343,7 +1343,7 @@ void Benchmarker::RunInsideUSolids(::VUSolid::EnumInside *const inside) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1376,7 +1376,7 @@ void Benchmarker::RunToInUSolids(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1396,7 +1396,7 @@ void Benchmarker::RunToInUSolids(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1494,7 +1494,7 @@ void Benchmarker::RunInsideGeant4(::EInside *const inside) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1525,7 +1525,7 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1547,7 +1547,7 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1643,7 +1643,7 @@ void Benchmarker::RunInsideRoot(bool *inside) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         Vector3D<Precision> point =
@@ -1674,7 +1674,7 @@ void Benchmarker::RunToInRoot(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         Vector3D<Precision> point =
@@ -1691,7 +1691,7 @@ void Benchmarker::RunToInRoot(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         Vector3D<Precision> point =

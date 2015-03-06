@@ -147,6 +147,10 @@ fFy(0)
 
   virtual int memory_size() const { return sizeof(*this); }
 
+  // Computes capacity of the shape in [length^3]
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const;
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 

@@ -21,6 +21,12 @@ void UnplacedTrd::Print(std::ostream &os) const {
      << ", " << dy2() << ", " << dz();
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedTrd::Capacity() const {
+   return  2*(fDX1+fDX2)*(fDY1+fDY2)*fDZ
+     + (2./3.)*(fDX1-fDX2)*(fDY1-fDY2)*fDZ;
+}
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 VECGEOM_CUDA_HEADER_DEVICE
 VPlacedVolume* UnplacedTrd::Create(
@@ -40,14 +46,14 @@ VPlacedVolume* UnplacedTrd::Create(
     #define GENERATE_TRD_SPECIALIZATIONS
     #ifdef GENERATE_TRD_SPECIALIZATIONS
       if(trd.dy1() == trd.dy2()) {
-	//          std::cout << "trd1" << std::endl;
+    //          std::cout << "trd1" << std::endl;
           return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::Trd1> >(logical_volume, transformation
 #ifdef VECGEOM_NVCC
                  ,id
 #endif
                  , placement);
       } else {
-	//          std::cout << "trd2" << std::endl;
+    //          std::cout << "trd2" << std::endl;
           return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::Trd2> >(logical_volume, transformation
 #ifdef VECGEOM_NVCC
                  ,id
@@ -58,8 +64,8 @@ VPlacedVolume* UnplacedTrd::Create(
 
 #endif // VECGEOM_NO_SPECIALIZATION
 
-      //    std::cout << "universal trd" << std::endl; 
-	return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::UniversalTrd> >(logical_volume, transformation 
+      //    std::cout << "universal trd" << std::endl;
+    return CreateSpecializedWithPlacement<SpecializedTrd<transCodeT, rotCodeT, TrdTypes::UniversalTrd> >(logical_volume, transformation
 #ifdef VECGEOM_NVCC
                 ,id
 #endif
@@ -107,7 +113,7 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedTrd>::SizeOf();
 template void DevicePtr<cuda::UnplacedTrd>::Construct(
-   const Precision dx1, const Precision dx2, const Precision dy1, 
+   const Precision dx1, const Precision dx2, const Precision dy1,
    const Precision dy2, const Precision d) const;
 
 } // End cxx namespace

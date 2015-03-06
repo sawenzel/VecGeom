@@ -38,7 +38,7 @@ public:
         fGPUPointer( NULL ) {
 
 #ifdef HAVENORMALNAMESPACE
-#pragma message "in namespace vecgeom"
+// #pragma message "in namespace vecgeom"
 #ifdef VECGEOM_CUDA
         vecgeom::CudaMalloc( &fGPUPointer, NavigationState::SizeOf(depth)*size );
         std::cerr << " cuda pointer " << fGPUPointer << "\n";
@@ -107,7 +107,7 @@ void NavStatePool::CopyToGpu() {
     // copy
     vecgeom::CopyToGpu((void*)fBuffer, fGPUPointer, fCapacity*NavigationState::SizeOf(fDepth));
     //  vecgeom::CopyFromGpu(fGPUPointer, (void*) fBuffer, fCapacity*NavigationState::SizeOf(fDepth));
-  
+
     // modify back pointers
     for(int i=0;i<fCapacity;++i){
         state = operator[]( i );
@@ -129,7 +129,7 @@ void NavStatePool::CopyFromGpu() {
    NavigationState * state;
     for(int i=0;i<fCapacity;++i){
         state = operator[]( i );
-	state->ConvertToCPUPointers();
+    state->ConvertToCPUPointers();
     }
 } // end CopyFunction
 

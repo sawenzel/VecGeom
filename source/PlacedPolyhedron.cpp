@@ -24,7 +24,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 VECGEOM_CUDA_HEADER_BOTH
 int PlacedPolyhedron::PhiSegmentIndex(Vector3D<Precision> const &point) const {
   Vector3D<Precision> localPoint =
-     VPlacedVolume::transformation()->Transform(point);
+     VPlacedVolume::GetTransformation()->Transform(point);
   return PolyhedronImplementation<
      Polyhedron::EInnerRadii::kGeneric,
      Polyhedron::EPhiCutout::kGeneric>::FindPhiSegment<kScalar>(
@@ -34,8 +34,8 @@ int PlacedPolyhedron::PhiSegmentIndex(Vector3D<Precision> const &point) const {
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedPolyhedron::ConvertToUnspecialized() const {
-  return new SimplePolyhedron(GetLabel().c_str(), logical_volume(),
-                              transformation());
+  return new SimplePolyhedron(GetLabel().c_str(), GetLogicalVolume(),
+                              GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT

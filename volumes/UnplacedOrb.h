@@ -79,7 +79,6 @@ public:
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
   VECGEOM_CUDA_HEADER_BOTH
-  //VECGEOM_INLINE
   Precision Capacity() const;
   
   VECGEOM_CUDA_HEADER_BOTH

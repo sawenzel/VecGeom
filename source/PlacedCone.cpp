@@ -27,7 +27,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECGEOM_NVCC
 VPlacedVolume const* PlacedCone::ConvertToUnspecialized() const {
-    return new SimpleCone(GetLabel().c_str(), logical_volume(), transformation());
+    return new SimpleCone(GetLabel().c_str(), GetLogicalVolume(), GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT

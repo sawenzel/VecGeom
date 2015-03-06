@@ -18,7 +18,7 @@
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedBox; )
-VECGEOM_DEVICE_DECLARE_CONV( PlacedBox );
+VECGEOM_DEVICE_DECLARE_CONV( PlacedBox )
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -57,7 +57,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedBox const* GetUnplacedVolume() const {
     return static_cast<UnplacedBox const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
 
 
@@ -79,6 +79,7 @@ public:
   VECGEOM_INLINE
   Precision z() const { return GetUnplacedVolume()->z(); }
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision Capacity() {
       return GetUnplacedVolume()->volume();
   }

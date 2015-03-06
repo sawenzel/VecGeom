@@ -140,7 +140,7 @@ public:
     Inside_t output = EInside::kOutside;
     Specialization::template Inside<kScalar>(
       *this->GetUnplacedVolume(),
-      *this->transformation(),
+      *this->GetTransformation(),
       point,
       output
     );
@@ -153,7 +153,7 @@ public:
     Vector3D<Precision> localPoint;
     Specialization::template Contains<kScalar>(
       *this->GetUnplacedVolume(),
-      *this->transformation(),
+      *this->GetTransformation(),
       point,
       localPoint,
       output
@@ -167,7 +167,7 @@ public:
     bool output = false;
     Specialization::template Contains<kScalar>(
       *this->GetUnplacedVolume(),
-      *this->transformation(),
+      *this->GetTransformation(),
       point,
       localPoint,
       output
@@ -193,7 +193,7 @@ public:
     Precision output = kInfinity;
     Specialization::template DistanceToIn<kScalar>(
       *this->GetUnplacedVolume(),
-      *this->transformation(),
+      *this->GetTransformation(),
       point,
       direction,
       stepMax,
@@ -234,7 +234,7 @@ public:
                                         Vector3D<Precision> const &direction,
                                         const Precision stepMax = kInfinity) const {
      Precision output = kInfinity;
-     Transformation3D const * t = this->transformation();
+     Transformation3D const * t = this->GetTransformation();
      Specialization::template DistanceToOut<kScalar>(
         *this->GetUnplacedVolume(),
         t->Transform< Specialization::transC, Specialization::rotC, Precision>(point),
@@ -247,8 +247,8 @@ public:
       DistanceComparator::CompareDistanceToOut(
               this,
               output,
-              this->transformation()->Transform(point),
-              this->transformation()->TransformDirection(direction),
+              this->GetTransformation()->Transform(point),
+              this->GetTransformation()->TransformDirection(direction),
               stepMax );
   #endif
       return output;
@@ -281,7 +281,7 @@ public:
     Precision output = kInfinity;
     Specialization::template SafetyToIn<kScalar>(
       *this->GetUnplacedVolume(),
-      *this->transformation(),
+      *this->GetTransformation(),
       point,
       output
     );
@@ -313,7 +313,7 @@ public:
       VcBool result(false);
       Specialization::template Contains<kVc>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         point,
         localPoint,
         result
@@ -335,7 +335,7 @@ public:
       VcInside result = EInside::kOutside;
       Specialization::template Inside<kVc>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         point,
         result
       );
@@ -363,7 +363,7 @@ public:
       VcPrecision result = kInfinity;
       Specialization::template DistanceToIn<kVc>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         point,
         direction,
         stepMaxVc,
@@ -397,7 +397,7 @@ public:
             VcPrecision result = kInfinity;
             Specialization::template DistanceToIn<kVc>(
               *this->GetUnplacedVolume(),
-              *this->transformation(),
+              *this->GetTransformation(),
               point,
               direction,
               stepMaxVc,
@@ -492,7 +492,7 @@ public:
       VcPrecision result = kInfinity;
       Specialization::template SafetyToIn<kVc>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         point,
         result
       );
@@ -512,7 +512,7 @@ public:
       VcPrecision result = kInfinity;
       Specialization::template SafetyToIn<kVc>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         point,
         result
       );
@@ -567,7 +567,7 @@ public:
       Vector3D<Precision> localPoint;
       Specialization::template Contains<kScalar>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         points[i],
         localPoint,
         output[i]
@@ -582,7 +582,7 @@ public:
       Inside_t result = EInside::kOutside;
       Specialization::template Inside<kScalar>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         points[i],
         result
       );
@@ -598,7 +598,7 @@ public:
     for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template DistanceToIn<kScalar>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         points[i],
         directions[i],
         stepMax[i],
@@ -618,7 +618,7 @@ public:
         Precision result = kInfinity;
         Specialization::template DistanceToIn<kScalar>(
           *this->GetUnplacedVolume(),
-          *this->transformation(),
+          *this->GetTransformation(),
           points[i],
           directions[i],
           stepMax,
@@ -671,7 +671,7 @@ public:
     for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template SafetyToIn<kScalar>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         points[i],
         output[i]
       );
@@ -685,7 +685,7 @@ public:
       Precision result = 0;
       Specialization::template SafetyToIn<kScalar>(
         *this->GetUnplacedVolume(),
-        *this->transformation(),
+        *this->GetTransformation(),
         points[i],
         result
       );
