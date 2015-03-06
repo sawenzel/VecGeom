@@ -36,6 +36,8 @@ option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
 
 option(OFFLOAD_MODE "Enable offload mode for Intel Xeon Phi." OFF) 
 
+option(VTUNE "Enable the use of profiler Vtune." OFF)
+
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
 
@@ -259,7 +261,13 @@ if (OFFLOAD_MODE)
   endif()
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DOFFLOAD_MODE")
   message(STATUS "Preparing for a offload compiler mode.")
+  set(VTUNE OFF)
 endif()
+if (VTUNE)
+  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_VTUNE")
+  message(STATUS "Prepating for Intel VTune profiling.")
+endif()
+
 
 # Pass flags to compilers
 if (GNU)
@@ -274,10 +282,6 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
 #set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
 
-message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
-if (CUDA)
-  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
-endif()
 
 ################################################################################
 
@@ -366,6 +370,19 @@ if (Geant4)
       ${Geant4_LIBRARIES})
   message(STATUS "Geant4 found in: ${Geant4_INCLUDE_DIRS}")
 
+endif()
+
+if (VTUNE)
+  find_package(VTUNE REQUIRED)
+  include_directories(AFTER SYSTEM ${VTUNE_INCLUDE_DIR})
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${VTUNE_LIBRARIES} -lpthread -ldl)
+endif()
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
+
+message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
+if (CUDA)
+  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 endif()
 
 
@@ -768,10 +785,6 @@ set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}")
 set(CONF_LIBRARY_DIR "\${THIS_DIR}/${INSTALL_LIB_DIR_RELATIVE}")
 set(CONF_LIBRARIES ${VECGEOM_LIBRARIES_EXTERNAL}
     "${CONF_LIBRARY_DIR}/libvecgeom.a")
-if (CUDA)
-   set(CONF_LIBRARIES ${CONF_LIBRARIES}
-       "${CONF_LIBRARY_DIR}/libvecgeomcuda.a")
-endif()
 if (USolids)
   set(CONF_LIBRARIES ${CONF_LIBRARIES} "${CONF_LIBRARY_DIR}/libusolids.a")
 endif()
