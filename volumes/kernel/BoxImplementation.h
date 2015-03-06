@@ -4,6 +4,10 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "backend/Backend.h"
 #include "base/Vector3D.h"
 #include "volumes/UnplacedBox.h"
@@ -599,5 +603,8 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
 
 } } // End global namespace
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
