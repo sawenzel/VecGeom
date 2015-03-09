@@ -25,9 +25,9 @@
 template <class Sphere_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestSphere() {
     
-    int verbose=0;
-    double fRmin=0, fRmax=3, fSPhi=0, fDPhi=2*PI, fSTheta=0, fDTheta=PI;
-    double fR=fRmax;
+    //int verbose=0;
+    //double fRmin=0, fRmax=3, fSPhi=0, fDPhi=2*PI, fSTheta=0, fDTheta=PI;
+    //double fR=fRmax;
     
     double Dist;
     Vec_t norm;

@@ -37,14 +37,14 @@ bool TestSphere() {
     //Sphere_t test("Solid VecGeomSphere #test",6, 8, 0, 2*PI, 0., PI);
     //std::cout<<std::setprecision(15);
     //Sphere_t test("Solid VecGeomSphere #test",10, 15, PI/3, PI/3, 2*PI/3, PI/6);
-    Sphere_t test("Solid VecGeomSphere #test",10, 15, 0, 2*PI, 0, 2.14159265359);
+    Sphere_t test("Solid VecGeomSphere #test",15. , 20. ,PI/6, 4.265389, PI/3 ,0.235869);
     
     //Vec_t testPoint(2.243909, -0.241734, -0.499920);
-    Vec_t testPoint(12.162665, -5.136044, 1.055655);
+    Vec_t testPoint(0.10588870098289572541, 15.719460617081534082, 4.6521552210514363068);
     double mag=std::sqrt(testPoint[0]*testPoint[0] + testPoint[1]*testPoint[1] + testPoint[2]*testPoint[2]);
     std::cout<<"Magnitude of Point : "<< mag <<std::endl;
     //Vec_t testDir(0.002330, 0.974209, 0.225635);
-    Vec_t testDir(-0.288098, 0.123455, 0.949610);
+    Vec_t testDir(0.15984671815432369146, -0.24665171529946061657, 0.95583050695985116718);
     double pdotV = testPoint[0]*testDir[0]+testPoint[1]*testDir[1]+testPoint[2]*testDir[2];
    
     if(pdotV < 0)
@@ -54,22 +54,26 @@ bool TestSphere() {
     
     //std::cout<<"Theta is : " <<std::acos(testDir[2]/ mag)<<std::endl;
     //std::cout<<"PHI is : "<< std::atan(testDir[1]/testDir[0])<<std::endl;
-    Dist=test.DistanceToIn(testPoint,testDir);//,norm,convex);
+    //Dist=test.DistanceToIn(testPoint,testDir);//,norm,convex);
 //Dist = test.SafetyFromInside(testPoint);
     //Dist = test.SafetyFromOutside(testPoint);
     //Dist=test.DistanceToOut(testPoint,testDir,norm,convex);//,norm,convex);
-    std::cout<<std::endl<<"Distance To IN : "<<Dist<<std::endl;
+    //std::cout<<std::endl<<"Distance To IN : "<<Dist<<std::endl;
     
     
     std::cout<<"Inside : "<<test.Inside(testPoint)<<std::endl;
     std::cout<<"===================================\n";
-    Dist=test.DistanceToOut(testPoint,testDir,norm,convex);//,norm,convex);
-    std::cout<<std::endl<<"Distance To OUT : "<<Dist<<std::endl;
-    double phi = std::atan(testPoint[1]/testPoint[0]);
+    //Dist=test.DistanceToOut(testPoint,testDir,norm,convex);//,norm,convex);
+    //std::cout<<std::endl<<"Distance To OUT : "<<Dist<<std::endl;
+    //double phi = std::atan2(testPoint[1],testPoint[0]);
     //if(phi < 0.)
       //  phi += 2*PI;
-    std::cout<< std::setprecision(15)<<"PHI of point : "<<phi<<std::endl;
-    
+    //std::cout<< std::setprecision(15)<<"PHI of point : "<<phi<<std::endl;
+
+    //std::cout<<"Theta Of Point : "<<std::atan2(testPoint[2],std::sqrt(testPoint[0]*testPoint[0] + testPoint[1]*testPoint[1]))<<std::endl;
+
+    //Dist=test.SafetyFromInside(testPoint);
+    //std::cout<<"SafetyFromInisde : "<<Dist<<std::endl;
     /*
     std::cout<<"---- Point inside inner radius ----"<<std::endl;
     Sphere_t test2("Solid VecGeomSphere #test2",10, 20, 0, 2*PI, 0., PI);

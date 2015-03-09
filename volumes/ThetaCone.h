@@ -95,8 +95,8 @@ class ThetaCone{
         typename Backend::bool_v Contains( Vector3D<typename Backend::precision_v> const& point ) const{
         
             typedef typename Backend::bool_v Bool_t;
-            Bool_t unused;
-            Bool_t outside;
+            Bool_t unused(false);
+            Bool_t outside(false);
             GenericKernelForContainsAndInside<Backend, false>(
                 point, unused, outside);
             return !outside;
@@ -190,10 +190,8 @@ class ThetaCone{
         typename Backend::precision_v SafetyToOut( Vector3D<typename Backend::precision_v> const& point ) const{
         
             typedef typename Backend::precision_v Float_t;
-            typedef typename Backend::bool_v      Bool_t;
+            //typedef typename Backend::bool_v      Bool_t;
             
-            
-	
 	Float_t safeTheta(0.);
 	Float_t pointRad = Sqrt(point.x()*point.x() + point.y()*point.y());
 	Float_t bisectorRad = Abs(point.z() * tanBisector);
@@ -283,8 +281,10 @@ class ThetaCone{
             Bool_t done(false);
             Bool_t fal(false);
             
+		
             Float_t a,b,c,d2;
             Float_t a2,b2,c2,d22;
+
             
             Float_t firstRoot(kInfinity), secondRoot(kInfinity);
             
@@ -307,9 +307,10 @@ class ThetaCone{
             d22 = b2 * b2 - a2 * c2;
             
             MaskedAssign((d22 > 0.), (-1*b2 - Sqrt(d22))/a2, &secondRoot);
-            done = fal;
-            done |= (Abs(secondRoot) < 3.0*kSTolerance*10.);
-            MaskedAssign( ( (Abs(secondRoot) < 3.0*kSTolerance*10.)),0., &secondRoot);
+            //done = fal;
+            //done |= (Abs(secondRoot) < 3.0*kSTolerance*10.);
+            MaskedAssign( (!done && (Abs(secondRoot) < 3.0*kSTolerance*10.)),0., &secondRoot);
+	    done |= (Abs(secondRoot) < 3.0*kSTolerance*10.);
             MaskedAssign(!done && (secondRoot < 0.) ,kInfinity, &secondRoot);
             
               if(fSTheta < kPi/2 + halfAngTolerance)
@@ -400,11 +401,14 @@ class ThetaCone{
                       
                   }
             
+		//std::cout<<"DistThetaCone-1 : "<<distThetaCone1<<"  :: DistThetaCone-2 : "<<distThetaCone2<<std::endl;
             MaskedAssign((distThetaCone1 < halfAngTolerance), 0.,&distThetaCone1);
             MaskedAssign((distThetaCone2 < halfAngTolerance), 0.,&distThetaCone2);
             
             }
             
+
+	
 	}
 
         template<typename Backend>
@@ -417,7 +421,7 @@ class ThetaCone{
             
             
             typedef typename Backend::precision_v Float_t;
-            typedef typename Backend::bool_v      Bool_t;
+            //typedef typename Backend::bool_v      Bool_t;
             
             Float_t a,b,c,d2;
             Float_t a2,b2,c2,d22;
@@ -537,13 +541,14 @@ class ThetaCone{
                   {  //Working Fine
                       if(fSTheta < fETheta)
                       {
-			Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
-            		Float_t tolAngMax = cone2Radius - kAngTolerance*100.;
+			Float_t tolAngMin = cone1Radius + 2*kAngTolerance*100.;
+            		Float_t tolAngMax = cone2Radius - 2*kAngTolerance*100.;
 			if(ForInside)
             		completelyinside = (rad <= tolAngMax) && (rad >= tolAngMin) && (localPoint.z() > 0.);
-            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
-            		Float_t tolAngMax2 = cone2Radius + kAngTolerance*100.;
-			completelyoutside = (rad < tolAngMin2) || (rad*rad > tolAngMax2*tolAngMax2) || (localPoint.z() < 0.);   
+            		Float_t tolAngMin2 = cone1Radius - 2*kAngTolerance*100.;
+            		Float_t tolAngMax2 = cone2Radius + 2*kAngTolerance*100.;
+			//completelyoutside = (rad < tolAngMin2) || (rad*rad > tolAngMax2*tolAngMax2) || (localPoint.z() < 0.);
+			completelyoutside = (rad < tolAngMin2) || (rad > tolAngMax2) || (localPoint.z() < 0.);      
 			
 		      }
 		  }
@@ -552,13 +557,13 @@ class ThetaCone{
                   { //Working fine . 1/1024 mismatches
                       if(fSTheta < fETheta)
                       {
-			Float_t tolAngMin = cone1Radius + kAngTolerance*100.;
-            		Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
+			Float_t tolAngMin = cone1Radius + 2*kAngTolerance*100.;
+            		Float_t tolAngMax = cone2Radius + 2*kAngTolerance*100.;
 					if(ForInside)
             		completelyinside = ((rad >= tolAngMin) && (localPoint.z() > 0.)) || ((rad >= tolAngMax) && (localPoint.z() < 0.));
             
-            		Float_t tolAngMin2 = cone1Radius - kAngTolerance*100.;
-            		Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
+            		Float_t tolAngMin2 = cone1Radius - 2*kAngTolerance*100.;
+            		Float_t tolAngMax2 = cone2Radius - 2*kAngTolerance*100.;
             		completelyoutside = ((rad < tolAngMin2) && (localPoint.z() > 0.))  || ((rad < tolAngMax2) && (localPoint.z() < 0.));   
 		      }
 		  }
@@ -571,13 +576,13 @@ class ThetaCone{
                      { //Working fine . 1/1024 mismatches
 			 if(fSTheta < fETheta)
                       		{
-					Float_t tolAngMin = cone1Radius - kAngTolerance*100.;
-            				Float_t tolAngMax = cone2Radius + kAngTolerance*100.;
+					Float_t tolAngMin = cone1Radius - 2*kAngTolerance*100.;
+            				Float_t tolAngMax = cone2Radius + 2*kAngTolerance*100.;
 					if(ForInside)
             				completelyinside = (rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < 0.);
             
-            				Float_t tolAngMin2 = cone1Radius + kAngTolerance*100.;
-            				Float_t tolAngMax2 = cone2Radius - kAngTolerance*100.;
+            				Float_t tolAngMin2 = cone1Radius + 2*kAngTolerance*100.;
+            				Float_t tolAngMax2 = cone2Radius - 2*kAngTolerance*100.;
            				completelyoutside = (rad < tolAngMax2) || (rad > tolAngMin2) || (localPoint.z() > 0.);   
 					
 				}
@@ -586,6 +591,7 @@ class ThetaCone{
 	     }
 
 
+	//std::cout<<"CompleteyOutside : "<<completelyoutside << "  :: CompletelyInside  : "<<completelyinside<<std::endl;
 
     }
     
