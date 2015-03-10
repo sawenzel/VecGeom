@@ -70,12 +70,12 @@ public:
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
   VECGEOM_CUDA_HEADER_BOTH
-  //VECGEOM_INLINE
-  Precision Capacity() const;
+  VECGEOM_INLINE
+  Precision Capacity() const {return fCubicVolume;}
   
   VECGEOM_CUDA_HEADER_BOTH
-  //VECGEOM_INLINE
-  Precision SurfaceArea() const;
+  VECGEOM_INLINE
+  Precision SurfaceArea() const {return fSurfaceArea;}
   
   #ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH

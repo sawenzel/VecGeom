@@ -56,12 +56,12 @@ bool TestOrb() {
 
     
    // Check cubic volume
-   // assert(b1.Capacity() == ((4 * PI / 3) * fR * fR * fR));    
-   // assert(b2.Capacity() == ((4 * PI / 3) * 6 * 6 * 6));    
+    assert(b1.Capacity() == ((4 * PI / 3) * fR * fR * fR));    
+    assert(b2.Capacity() == ((4 * PI / 3) * 6 * 6 * 6));    
 
     // Check Surface area
-    //assert(b1.SurfaceArea() == ((4 * PI) * fR * fR));   
-    //assert(b2.SurfaceArea() == ((4 * PI) * 6 * 6));
+    assert(b1.SurfaceArea() == ((4 * PI) * fR * fR));   
+    assert(b2.SurfaceArea() == ((4 * PI) * 6 * 6));
 
     Vec_t minExtent,maxExtent;
     b1.Extent(minExtent,maxExtent);
