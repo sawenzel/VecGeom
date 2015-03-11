@@ -74,7 +74,7 @@ public:
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
   
    #ifdef VECGEOM_USOLIDS  
-   Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
+   Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
   
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }

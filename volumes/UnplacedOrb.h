@@ -76,11 +76,11 @@ public:
   
   VECGEOM_CUDA_HEADER_BOTH
   //VECGEOM_INLINE
-  Precision Capacity() const;
+  Precision Capacity() const { return fCubicVolume ;}
   
   VECGEOM_CUDA_HEADER_BOTH
   //VECGEOM_INLINE
-  Precision SurfaceArea() const;
+  Precision SurfaceArea() const { return fSurfaceArea; }
   
 #if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
   virtual Vector3D<Precision> GetPointOnSurface() const;

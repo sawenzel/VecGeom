@@ -73,7 +73,7 @@ public:
 #endif // VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() const {
+  virtual Precision Capacity() {
      return GetUnplacedVolume()->Capacity();
    }
 

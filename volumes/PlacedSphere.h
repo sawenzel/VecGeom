@@ -188,11 +188,8 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
 
-VECGEOM_CUDA_HEADER_BOTH  
-VECGEOM_INLINE
-Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
-
-
+VECGEOM_CUDA_HEADER_BOTH
+Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
   /*
   VECGEOM_CUDA_HEADER_BOTH
@@ -204,8 +201,6 @@ Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
   
-   VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
   */
   
   VECGEOM_CUDA_HEADER_BOTH

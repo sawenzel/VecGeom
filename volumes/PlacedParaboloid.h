@@ -126,7 +126,7 @@ public:
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
     
     VECGEOM_CUDA_HEADER_BOTH
-    Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
+    Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
     Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
 

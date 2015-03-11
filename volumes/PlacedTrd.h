@@ -74,6 +74,7 @@ public:
   VECGEOM_INLINE
   Precision dz() const { return GetUnplacedVolume()->dz(); }
 
+
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT

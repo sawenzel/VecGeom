@@ -76,7 +76,7 @@ public:
   Precision z() const { return GetUnplacedVolume()->z(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() const {
+  virtual Precision Capacity() {
       return GetUnplacedVolume()->volume();
   }
 
