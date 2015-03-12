@@ -104,11 +104,9 @@ public:
   bool operator==(Transformation3D const &rhs) const;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual ~Transformation3D() {}
+  ~Transformation3D() {}
 
-  // Accessors
-
-  virtual int memory_size() const { return sizeof(*this); }
+  int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
