@@ -337,6 +337,15 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
   #undef POLYHEDRON_CREATE_SPECIALIZATION
 }
 
+#ifdef VECGEOM_USOLIDS
+VECGEOM_CUDA_HEADER_BOTH
+void UnplacedPolyhedron::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+  const UnplacedTube& bTube = GetBoundingTube();
+  bTube.Extent(aMin, aMax);
+}
+#endif
+
+
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedPolyhedron::Print() const {
   printf("UnplacedPolyhedron {%i sides, phi %f to %f, %i segments}",

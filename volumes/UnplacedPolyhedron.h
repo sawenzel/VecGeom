@@ -238,9 +238,27 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return 0.; }
 
+#ifdef VECGEOM_USOLIDS
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision SurfaceArea() const {
+    // TBDONE
+    return 0.;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> GetPointOnSurface() const {
+    // TBDONE
+      return Vector3D<Precision>() ;
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
+#endif
 
   /// Not a stored value, and should not be called from performance critical
   /// code.
@@ -262,7 +280,6 @@ public:
   ///         first corner.
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetPhiDelta() const;
-
 
   // \return the number of quadrilaterals (including triangles) that this
   // polyhedra consists of; this should be all visible surfaces except the endcaps

@@ -141,6 +141,11 @@ public:
       return GetUnplacedVolume()->Capacity();
   }
 
+#ifdef VECGEOM_USOLIDS
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   int PhiSegmentIndex(Vector3D<Precision> const &point) const;
