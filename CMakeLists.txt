@@ -30,7 +30,7 @@ option(CTEST "Enable CTest when building." ON)
 
 option(PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
 
-option(DISTANCE_DEBUG "Enable comparision of calculcated distances againt ROOT/Geant4 behind the scenes" OFF)
+option(DISTANCE_DEBUG "Enable comparison of calculated distances againt ROOT/Geant4 behind the scenes" OFF)
 
 option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
 
@@ -146,11 +146,11 @@ endif()
 
 # Compiler specific optimization flags
 if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
-set(VECGEOM_COMPILATION_FLAGS_GNU
+  set(VECGEOM_COMPILATION_FLAGS_GNU
     "${VECGEOM_COMPILATION_FLAGS_GNU} -finline-limit=10000000")
-set(VECGEOM_COMPILATION_FLAGS_GNU
+  set(VECGEOM_COMPILATION_FLAGS_GNU
     "${VECGEOM_COMPILATION_FLAGS_GNU} -ffast-math -ftree-vectorize")
-set(VECGEOM_COMPILATION_FLAGS_CLANG
+  set(VECGEOM_COMPILATION_FLAGS_CLANG
     "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
 endif()
 set(VECGEOM_COMPILATION_FLAGS_INTEL
@@ -268,9 +268,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
 #set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
-if (CUDA)
-  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
-endif()
 
 ################################################################################
 
@@ -310,6 +307,7 @@ if (CUDA)
       source/CudaManager.cu)
 
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${VECGEOM_NVCC_COMPILATION_FLAGS})
+  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 endif()
 
 if (ROOT)
