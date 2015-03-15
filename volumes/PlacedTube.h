@@ -81,7 +81,6 @@ public:
       return GetUnplacedVolume()->Capacity();
   }
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   virtual
   Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
@@ -90,7 +89,7 @@ public:
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
-#endif
+
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;

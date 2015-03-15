@@ -77,11 +77,9 @@ public:
       return 0.;
   }
 
-#ifdef VECGEOM_USOLIDS
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const { };

@@ -238,7 +238,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return 0.; }
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision SurfaceArea() const {
@@ -258,7 +257,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetBoundingTubeOffset() const { return fBoundingTubeOffset; }
-#endif
+
 
   /// Not a stored value, and should not be called from performance critical
   /// code.

@@ -81,7 +81,6 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
                               placement);
 }
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   Precision UnplacedTube::SurfaceArea () const {
     Precision area = fDphi * (fRmin + fRmax) * (2 * fZ + fRmax - fRmin);
@@ -145,7 +144,7 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 
     return;
   }
-#endif
+
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
