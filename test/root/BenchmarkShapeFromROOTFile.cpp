@@ -53,7 +53,7 @@ int main( int argc, char *argv[] ) {
             found++;
             foundvolume = vol;
 
-	    std::cerr << "found matching volume " << fullname << " of type " << vol->GetShape()->ClassName() << "\n";
+        std::cerr << "found matching volume " << fullname << " of type " << vol->GetShape()->ClassName() << "\n";
         }
     }
 
@@ -84,7 +84,8 @@ int main( int argc, char *argv[] ) {
             LogicalVolume world("world", &worldUnplaced);
             // for the moment at origin
             Transformation3D placement( 0, 0, 0 );
-            VPlacedVolume const *  vol = world.PlaceDaughter("testshape", converted, &placement);
+            /*VPlacedVolume const *  vol =*/
+            world.PlaceDaughter("testshape", converted, &placement);
 
             VPlacedVolume *worldPlaced = world.Place();
             GeoManager::Instance().SetWorld(worldPlaced);

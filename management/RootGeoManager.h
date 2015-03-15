@@ -5,12 +5,10 @@
 #define VECGEOM_MANAGEMENT_ROOTMANAGER_H_
 
 #include "base/Global.h"
-
 #include "base/TypeMap.h"
 
-class TGeoNode;
-class TGeoVolume;
 #include "TGeoNode.h"
+class TGeoVolume;
 class TGeoMatrix;
 
 namespace vecgeom {
