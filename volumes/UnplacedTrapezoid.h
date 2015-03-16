@@ -202,6 +202,7 @@ public:
 #ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const;
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
@@ -212,10 +213,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
                                       Vector3D<Precision> p2, Vector3D<Precision> p3) const;
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
-  std::string GetEntityType() const { return "Trapezoid\n";}
+  std::string GetEntityType() const { return "Trapezoid";}
 
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const {;}

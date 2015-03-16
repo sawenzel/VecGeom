@@ -77,7 +77,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
       m->MasterToLocal(lp, llp);
       m->MasterToLocalVect(ld, lld);
       TGeoNode const * daughter=currentRootNode->GetDaughter(d);
-      Precision ddistance = daughter->GetVolume()->GetShape()->DistFromOutside(llp,llp,3,1E30,0);
+      Precision ddistance = daughter->GetVolume()->GetShape()->DistFromOutside(llp,lld,3,1E30,0);
 
       std::cout << "DistanceToDaughter ROOT : " << daughter->GetName() << " " << ddistance << "\n";
    }
@@ -112,10 +112,10 @@ void SimpleNavigator::InspectSafetyForPoint
    int numberdaughters = daughters->size();
    for(int d = 0; d<numberdaughters; ++d)
    {
-	   VPlacedVolume const * daughter = daughters->operator [](d);
-	   double tmp = daughter->SafetyToIn( localpoint );
+       VPlacedVolume const * daughter = daughters->operator [](d);
+       double tmp = daughter->SafetyToIn( localpoint );
        std::cout << "Safety to Daughter " << tmp << "\n";
-	   safety = Min(safety, tmp);
+       safety = Min(safety, tmp);
    }
    std::cout << "Would return" << safety << "\n";
 

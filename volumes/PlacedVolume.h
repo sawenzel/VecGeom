@@ -9,14 +9,9 @@
 #endif
 
 #include "base/Global.h"
-
-#include "base/Transformation3D.h"
 #include "volumes/LogicalVolume.h"
 #include "volumes/USolidsInterfaceHelper.h"
-
-#include <list>
 #include <string>
-#include <iostream>
 
 class G4VSolid;
 
@@ -129,7 +124,8 @@ public:
         //std::cerr << *label_ << std::endl;
         //label_->assign(label);}
     //else{
-       label_=new std::string(label);
+    if(label_) delete label_;
+    label_ = new std::string(label);
     //}
   }
 

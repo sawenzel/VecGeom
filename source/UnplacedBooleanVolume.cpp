@@ -91,6 +91,39 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
 #endif
 }
 
+#ifdef VECGEOM_USOLIDS
+  VECGEOM_CUDA_HEADER_BOTH
+  void UnplacedBooleanVolume::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+
+    Vector3D<Precision> minLeft, maxLeft, minRight, maxRight;
+    fLeftVolume->Extent(minLeft, maxLeft);
+    fRightVolume->Extent(minRight,maxRight);
+
+    if( this->GetOp() == kUnion ) {
+      aMin = Vector3D<Precision>( Min(minLeft.x(), minRight.x()),
+                                  Min(minLeft.y(), minRight.y()),
+                                  Min(minLeft.z(), minRight.z()));
+      aMax = Vector3D<Precision>( Max(maxLeft.x(), maxRight.x()),
+                                  Max(maxLeft.y(), maxRight.y()),
+                                  Max(maxLeft.z(), maxRight.z()));
+    }
+
+    if( this->GetOp() == kIntersection ) {
+      aMin = Vector3D<Precision>( Max(minLeft.x(), minRight.x()),
+                                  Max(minLeft.y(), minRight.y()),
+                                  Max(minLeft.z(), minRight.z()));
+      aMax = Vector3D<Precision>( Min(maxLeft.x(), maxRight.x()),
+                                  Min(maxLeft.y(), maxRight.y()),
+                                  Min(maxLeft.z(), maxRight.z()));
+    }
+
+    if( this->GetOp() == kSubtraction ) {
+      aMin = minLeft;
+      aMax = maxLeft;
+    }
+  }
+#endif
+
 #ifdef VECGEOM_CUDA_INTERFACE
 
 // functions to copy data structures to GPU

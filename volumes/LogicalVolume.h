@@ -110,6 +110,7 @@ public:
     if( label_ )
       *label_ = label;
     else
+      if(label_) delete label_;
       label_=new std::string(label);
   }
 

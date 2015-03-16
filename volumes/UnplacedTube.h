@@ -178,6 +178,12 @@ fPhiWedge(other.fDphi,other.fSphi)
       return volume();
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision SurfaceArea () const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
