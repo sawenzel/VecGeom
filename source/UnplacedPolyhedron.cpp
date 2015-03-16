@@ -271,39 +271,40 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
 #endif
     VPlacedVolume *const placement) const {
 
+#ifndef VECGEOM_NO_SPECIALIZATION
+
   UnplacedPolyhedron const *unplaced =
       static_cast<UnplacedPolyhedron const *>(volume->unplaced_volume());
 
   EInnerRadii innerRadii = unplaced->HasInnerRadii() ? EInnerRadii::kTrue
                                                      : EInnerRadii::kFalse;
+
   EPhiCutout phiCutout = unplaced->HasPhiCutout() ? (unplaced->HasLargePhiCutout() ? EPhiCutout::kLarge
                                                                                    : EPhiCutout::kTrue)
                                                   : EPhiCutout::kFalse;
 
-#ifndef VECGEOM_NVCC
-  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, PHI) \
-  if (innerRadii == INNER && phiCutout == PHI) { \
-    if (placement) { \
-      return new(placement) \
-             SpecializedPolyhedron<INNER, PHI>(volume, transformation); \
-    } else { \
-      return new SpecializedPolyhedron<INNER, PHI>(volume, transformation); \
-    } \
-  }
-#else
-  #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, PHI) \
-  if (innerRadii == INNER && phiCutout == PHI) { \
-    if (placement) { \
-      return new(placement) \
-             SpecializedPolyhedron<INNER, PHI>(volume, transformation, id); \
-    } else { \
-      return new \
-             SpecializedPolyhedron<INNER, PHI>(volume, transformation, id); \
-    } \
-  }
-#endif
-
-#ifndef VECGEOM_NO_SPECIALIZATION
+  #ifndef VECGEOM_NVCC
+    #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, PHI) \
+    if (innerRadii == INNER && phiCutout == PHI) { \
+      if (placement) { \
+        return new(placement) \
+               SpecializedPolyhedron<INNER, PHI>(volume, transformation); \
+      } else { \
+        return new SpecializedPolyhedron<INNER, PHI>(volume, transformation); \
+      } \
+    }
+  #else
+    #define POLYHEDRON_CREATE_SPECIALIZATION(INNER, PHI) \
+    if (innerRadii == INNER && phiCutout == PHI) { \
+      if (placement) { \
+        return new(placement) \
+               SpecializedPolyhedron<INNER, PHI>(volume, transformation, id); \
+      } else { \
+        return new \
+               SpecializedPolyhedron<INNER, PHI>(volume, transformation, id); \
+      } \
+    }
+  #endif
 
   POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kFalse);
   POLYHEDRON_CREATE_SPECIALIZATION(EInnerRadii::kTrue, EPhiCutout::kTrue);
