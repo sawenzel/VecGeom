@@ -277,7 +277,8 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
     }
 
     void UnplacedPolycone::Print(std::ostream &os) const {
-    os << "UnplacedPolycone output to string not implemented\n";
+      os << "UnplacedPolycone output to string not implemented -- calling Print() instead:\n";
+      Print();
     }
 
 
@@ -761,8 +762,8 @@ Precision UnplacedPolycone::SurfaceArea() const{
     for (i = 0; i < GetNSections(); i++)
     {
      PolyconeSection const & sec = GetSection(i);
-     if(maxR > sec.fSolid->GetRmax1())  maxR = sec.fSolid->GetRmax1(); 
-     if(maxR > sec.fSolid->GetRmax2())  maxR = sec.fSolid->GetRmax2(); 
+     if(maxR < sec.fSolid->GetRmax1())  maxR = sec.fSolid->GetRmax1();
+     if(maxR < sec.fSolid->GetRmax2())  maxR = sec.fSolid->GetRmax2();
     }
     
      aMin.x() = -maxR;

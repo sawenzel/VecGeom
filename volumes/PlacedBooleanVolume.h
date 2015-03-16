@@ -77,6 +77,10 @@ public:
       return 0.;
   }
 
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const { };
 
