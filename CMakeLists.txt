@@ -158,7 +158,7 @@ set(VECGEOM_COMPILATION_FLAGS_CLANG
     "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
 endif()
 set(VECGEOM_COMPILATION_FLAGS_INTEL
-    "${VECGEOM_COMPILATION_FLAGS_INTEL} ")
+    "${VECGEOM_COMPILATION_FLAGS_INTEL} -Wall -fPIC -diag-disable 3438 -O2 -fno-alias")
 if (VECGEOM_VECTOR)
   message(STATUS "Compiling with vector instruction set ${VECGEOM_VECTOR}")
   set(VECGEOM_COMPILATION_FLAGS_GNU
