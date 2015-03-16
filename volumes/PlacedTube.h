@@ -53,7 +53,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTube const* GetUnplacedVolume() const {
     return static_cast<UnplacedTube const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -80,6 +80,16 @@ public:
   virtual Precision Capacity() {
       return GetUnplacedVolume()->Capacity();
   }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual
+  Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+    GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;

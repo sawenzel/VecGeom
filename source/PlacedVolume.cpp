@@ -26,14 +26,14 @@ VPlacedVolume::VPlacedVolume(char const *const label,
 #ifdef VECGEOM_USOLIDS
     USolidsInterfaceHelper(label),
 #endif
-     id_(), label_(), logical_volume_(logical_volume), transformation_(transformation),
+     id_(), label_(NULL), logical_volume_(logical_volume), transformation_(transformation),
       bounding_box_(bounding_box) {
   id_ = g_id_count++;
   GeoManager::Instance().RegisterPlacedVolume(this);
   label_ = new std::string(label);
 }
 
-VPlacedVolume::VPlacedVolume(VPlacedVolume const & other) : id_(), label_(), logical_volume_(), transformation_(),
+VPlacedVolume::VPlacedVolume(VPlacedVolume const & other) : id_(), label_(NULL), logical_volume_(), transformation_(),
     bounding_box_() {
   assert( 0 && "COPY CONSTRUCTOR FOR PlacedVolumes NOT IMPLEMENTED");
 }
@@ -84,7 +84,7 @@ void VPlacedVolume::PrintContent(const int indent) const {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
-  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.transformation())
+  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.GetTransformation())
      << ")";
   return os;
 }

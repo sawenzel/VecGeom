@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
   tester.SetPointCount(npoints);
   tester.SetRepetitions(nreps);
   tester.SetPoolMultiplier(1);
+  tester.SetTolerance(2.e-12);
 
   tester.RunBenchmark();
 

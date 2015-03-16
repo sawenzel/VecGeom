@@ -50,7 +50,7 @@ class SimpleLogicalVolumeVisitor : public GeoVisitor<Container>
 public:
    SimpleLogicalVolumeVisitor( Container & c ) : GeoVisitor<Container>(c) {}
    virtual void apply( VPlacedVolume * vol, int /*level*/ ){
-      LogicalVolume const *lvol = vol->logical_volume();
+      LogicalVolume const *lvol = vol->GetLogicalVolume();
       if( std::find( this->c_.begin(), this->c_.end(), lvol ) == this->c_.end() )
       {
          this->c_.push_back( const_cast<LogicalVolume *>(lvol) );
@@ -110,7 +110,7 @@ public:
 
     void apply( NavigationState * state, int /* level */ )
     {
-        if( state->Top()->logical_volume() == fReferenceLogicalVolume ){
+        if( state->Top()->GetLogicalVolume() == fReferenceLogicalVolume ){
             // the current state is a good one;
 
             // make a copy and store it in the container for this visitor

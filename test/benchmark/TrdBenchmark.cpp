@@ -37,5 +37,6 @@ int main(int argc, char* argv[]) {
   tester.SetVerbosity(3);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
+  tester.SetPoolMultiplier(1);
   tester.RunBenchmark();
 }

@@ -554,7 +554,7 @@ void BooleanImplementation<kSubtraction, transCodeT, rotCodeT>::SafetyToInKernel
         ( fPtrSolidB->Contains(p) ) )
     {
         safety = fPtrSolidB->SafetyToOut(
-					 fPtrSolidB->transformation()->Transform(p));
+					 fPtrSolidB->GetTransformation()->Transform(p));
     }
     else
     {

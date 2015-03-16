@@ -81,6 +81,71 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
                               placement);
 }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision UnplacedTube::SurfaceArea () const {
+    Precision area = fDphi * (fRmin + fRmax) * (2 * fZ + fRmax - fRmin);
+    if (fDphi<kTwoPi) {
+      area += 4 * fZ * (fRmax - fRmin);
+    }
+    return area;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  void UnplacedTube::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+    // most general case
+    aMin = Vector3D<Precision>(-fRmax,-fRmax,-fZ);
+    aMax = Vector3D<Precision>( fRmax, fRmax, fZ);
+
+    if(fDphi==kTwoPi) return;
+
+    // check how many of phi=90, 180, 270, 360deg are outside this tube
+    auto Rin = 0.5*(fRmax+fRmin);
+    bool phi0out   = ! GetWedge().Contains<kScalar>( Vector3D<Precision>( Rin, 0, 0) );
+    bool phi90out  = ! GetWedge().Contains<kScalar>( Vector3D<Precision>( 0, Rin, 0) );
+    bool phi180out = ! GetWedge().Contains<kScalar>( Vector3D<Precision>(-Rin, 0, 0) );
+    bool phi270out = ! GetWedge().Contains<kScalar>( Vector3D<Precision>( 0,-Rin, 0) );
+
+    // if none of those 4 phis is outside, largest box still required
+    if( !(phi0out || phi90out || phi180out || phi270out) ) return;
+
+    // some extent(s) of box will be reduced
+    // --> think of 4 points A,B,C,D such that A,B are at Rmin, C,D at Rmax
+    //     and A,C at startPhi (fSphi), B,D at endPhi (fSphi+fDphi)
+    auto Cx = fRmax * cos(fSphi);
+    auto Dx = fRmax * cos(fSphi+fDphi);
+    auto Cy = fRmax * sin(fSphi);
+    auto Dy = fRmax * sin(fSphi+fDphi);
+
+    // then rewrite box sides whenever each one of those phis are not contained in the tube section
+    if( phi0out )   aMax.x() = Max( Cx, Dx );
+    if( phi90out )  aMax.y() = Max( Cy, Dy );
+    if( phi180out ) aMin.x() = Min( Cx, Dx );
+    if( phi270out ) aMin.y() = Min( Cy, Dy );
+
+    if(fDphi>=kPi) return;
+
+    auto Ax = fRmin * cos(fSphi);
+    auto Bx = fRmin * cos(fSphi+fDphi);
+    auto Ay = fRmin * sin(fSphi);
+    auto By = fRmin * sin(fSphi+fDphi);
+
+    Precision temp;
+    temp = Max(Ax, Bx);
+    aMax.x() =  temp > aMax.x() ? temp : aMax.x();
+
+    temp = Max(Ay, By);
+    aMax.y() =  temp > aMax.y() ? temp : aMax.y();
+
+    temp = Min(Ax, Bx);
+    aMin.x() =  temp < aMin.x() ? temp : aMin.x();
+
+    temp = Min(Ay, By);
+    aMin.y() =  temp < aMin.y() ? temp : aMin.y();
+
+    return;
+  }
+
+
 #ifdef VECGEOM_CUDA_INTERFACE
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedTube::CopyToGpu(

@@ -53,7 +53,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTorus const* GetUnplacedVolume() const {
     return static_cast<UnplacedTorus const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -78,8 +78,7 @@ public:
 
 
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision Capacity() { return GetUnplacedVolume()->volume(); }
+  virtual Precision Capacity() { return GetUnplacedVolume()->volume(); }
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;

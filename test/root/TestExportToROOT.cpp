@@ -225,7 +225,7 @@ int main()
     }
 
     //// see if everything was restored
-    // RootGeoManager::Instance().world()->logical_volume()->PrintContent(0);
+    // RootGeoManager::Instance().world()->GetLogicalVolume()->PrintContent(0);
 
     int md2 = GeoManager::Instance().getMaxDepth();
     int mpv2 = GeoManager::Instance().GetPlacedVolumesCount();

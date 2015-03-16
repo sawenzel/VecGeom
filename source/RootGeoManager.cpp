@@ -104,7 +104,7 @@ TGeoNode* RootGeoManager::Convert(VPlacedVolume const *const placed_volume) {
   if (fPlacedVolumeMap.Contains(placed_volume))
       return const_cast<TGeoNode*> (fPlacedVolumeMap[placed_volume]);
 
-  TGeoVolume * geovolume = Convert(placed_volume, placed_volume->logical_volume());
+  TGeoVolume * geovolume = Convert(placed_volume, placed_volume->GetLogicalVolume());
   TGeoNode * node = new TGeoNodeMatrix( geovolume, NULL );
   fPlacedVolumeMap.Set(node, placed_volume);
 
@@ -127,7 +127,7 @@ TGeoNode* RootGeoManager::Convert(VPlacedVolume const *const placed_volume) {
 
       // get matrix of daughter
       TGeoMatrix * geomatrixofdaughter
-        = Convert(daughter_placed->transformation());
+        = Convert(daughter_placed->GetTransformation());
 
       // add node to the TGeoVolume; using the TGEO API
       // unfortunately, there is not interface allowing to add an existing
@@ -182,7 +182,7 @@ LogicalVolume* RootGeoManager::Convert(TGeoVolume const *const volume) {
 // they should match
 TGeoVolume* RootGeoManager::Convert(VPlacedVolume const *const placed_volume,
         LogicalVolume const *const logical_volume) {
-  assert( placed_volume->logical_volume() == logical_volume);
+  assert( placed_volume->GetLogicalVolume() == logical_volume);
 
   if (fLogicalVolumeMap.Contains(logical_volume))
       return const_cast<TGeoVolume*>(fLogicalVolumeMap[logical_volume]);

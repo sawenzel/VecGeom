@@ -78,10 +78,7 @@ public:
 
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const {
-     // TBDONE
-  };
-
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnSurface() const {

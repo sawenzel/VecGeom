@@ -107,7 +107,7 @@ void testVectorNavigator( VPlacedVolume* world ){
 
    // verify against serial interface
    for (int i=0;i<np;++i) {
-       Precision s;
+       Precision s=0;
        NavigationState * cmp = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
        cmp->Clear();
        nav.FindNextBoundaryAndStep( points[i], dirs[i], *states[i],

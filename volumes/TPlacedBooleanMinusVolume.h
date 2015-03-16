@@ -67,7 +67,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedVol_t const* GetUnplacedVolume() const {
     return static_cast<UnplacedVol_t const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
 
 
