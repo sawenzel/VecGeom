@@ -36,8 +36,8 @@ VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
   return new TGeoTrap( GetLabel().c_str(), GetDz(), GetTheta()*kRadToDeg, GetPhi()*kRadToDeg,
-                       GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                       GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+                       GetDy1(), GetDx1(), GetDx2(), GetAlpha1()*kRadToDeg,
+                       GetDy2(), GetDx3(), GetDx4(), GetAlpha2()*kRadToDeg );
 }
 #endif
 
