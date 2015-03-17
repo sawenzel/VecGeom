@@ -52,7 +52,9 @@ private:
    friend Base_t;
 
    // Required by VariableSizeObjectInterface
+   VECGEOM_CUDA_HEADER_DEVICE
    VariableData_t &GetVariableData() { return fPath; }
+   VECGEOM_CUDA_HEADER_DEVICE
    const VariableData_t &GetVariableData() const { return fPath; }
 
    int fCurrentLevel;
@@ -129,6 +131,7 @@ public:
    // Both MakeInstance, MakeInstanceAt, MakeCopy and MakeCopyAT are provided by 
    // VariableSizeObjectInterface
 
+   VECGEOM_CUDA_HEADER_DEVICE
    static NavigationState *MakeInstance(int maxlevel) {
       // MaxLevel is 'zero' based (i.e. maxlevel==0 requires one value)
       return Base_t::MakeInstance(maxlevel+1);
@@ -161,6 +164,7 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
 
+   VECGEOM_CUDA_HEADER_DEVICE
    void CopyTo( NavigationState * other ) const {
       // Raw memcpy of the content to another existing state.
       //
