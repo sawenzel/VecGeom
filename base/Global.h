@@ -247,7 +247,11 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
    };
 #endif
 
+#ifdef __MIC__
+VECGEOM_GLOBAL int kAlignmentBoundary = 64;
+#else
 VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+#endif
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
 VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
 VECGEOM_GLOBAL Precision kTwoPiInv = 1./kTwoPi;
