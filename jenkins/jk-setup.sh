@@ -41,7 +41,7 @@ then
   export CMAKE_BINARY_DIR=$WORKSPACE/VecGeom/builds
   export CMAKE_BUILD_TYPE=$BUILDTYPE
 
-  export CMAKE_INSTALL_PREFIX=/afs/cern.ch/work/g/geant/jenkins/workspace/$LABEL/VecGeom-$BUILDTYPE-Usolids
+  export CMAKE_INSTALL_PREFIX=$WORKSPACE/VecGeom/installation
   export BACKEND=Vc 
   export CTEST_BUILD_OPTIONS="-DROOT=ON -DVc=ON -DCTEST=ON -DBENCHMARK=ON -DUSOLIDS=ON ${ExtraCMakeOptions}"
 
