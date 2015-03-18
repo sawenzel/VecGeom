@@ -164,6 +164,13 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
 
+   // functions useful to "serialize" navigationstate
+   // the Vector-of-Indices basically describes the path on the tree taken from top to bottom
+   // an index corresponds to a daughter
+   void GetPathAsListOfIndices( std::list<uint> & indices ) const;
+   void ResetPathFromListOfIndices( VPlacedVolume const * world, std::list<uint> const & indices );
+
+
    VECGEOM_CUDA_HEADER_BOTH
    void CopyTo( NavigationState * other ) const {
       // Raw memcpy of the content to another existing state.
@@ -219,7 +226,16 @@ public:
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    Vector3D<Precision>
-   GlobalToLocal(Vector3D<Precision> const &);
+   GlobalToLocal(Vector3D<Precision> const &) const;
+
+   VECGEOM_CUDA_HEADER_BOTH
+   Vector3D<Precision>
+   GlobalToLocal(Vector3D<Precision> const &, int tolevel) const;
+
+   VECGEOM_CUDA_HEADER_BOTH
+   Transformation3D const &
+   TopMatrix(int tolevel) const;
+
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -386,25 +402,6 @@ NavigationState::TopMatrix() const
    return global_matrix_;
 }
 
-/**
- * function that transforms a global point to local point in reference frame of deepest volume in current navigation state
- * ( equivalent to using a global matrix )
- */
-VECGEOM_INLINE
-VECGEOM_CUDA_HEADER_BOTH
-Vector3D<Precision>
-NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
-{
-   Vector3D<Precision> tmp=globalpoint;
-   Vector3D<Precision> current;
-   for(int level=0;level<fCurrentLevel;++level)
-   {
-      Transformation3D const *m = fPath[level]->GetTransformation();
-      current = m->Transform( tmp );
-      tmp = current;
-   }
-   return tmp;
-}
 
 VECGEOM_INLINE
 void NavigationState::Print() const
