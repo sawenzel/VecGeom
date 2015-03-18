@@ -37,8 +37,8 @@ then
   export CXX=`which g++`
   export CC=`which gcc`
 
-  export CMAKE_SOURCE_DIR=$WORKSPACE 
-  export CMAKE_BINARY_DIR=$WORKSPACE/builds
+  export CMAKE_SOURCE_DIR=$WORKSPACE/VecGeom 
+  export CMAKE_BINARY_DIR=$WORKSPACE/VecGeom/builds
   export CMAKE_BUILD_TYPE=$BUILDTYPE
 
   export CMAKE_INSTALL_PREFIX=/afs/cern.ch/work/g/geant/jenkins/workspace/$LABEL/VecGeom-$BUILDTYPE-Usolids
