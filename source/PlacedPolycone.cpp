@@ -54,7 +54,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       {
           rootshape->DefineSection(i,z[i],rmin[i],rmax[i]);
       }
-      rootshape->InspectShape();
+    //  rootshape->InspectShape();
 
       return rootshape;
   }
@@ -78,7 +78,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
                    &rmax[0]
            );
 
-      usolidshape->StreamInfo( std::cout );
+     // usolidshape->StreamInfo( std::cout );
       return usolidshape;
   }
 #endif
@@ -100,7 +100,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
              &rmax[0]
      );
 
-     g4shape->StreamInfo( std::cout );
+    // g4shape->StreamInfo( std::cout );
      
      return g4shape;
   }
