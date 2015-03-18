@@ -57,13 +57,13 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid const* GetUnplacedVolume() const {
         return static_cast<UnplacedParaboloid const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
     }
     
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid * GetUnplacedVolumeNonConst() const {
         return static_cast<UnplacedParaboloid *>(const_cast<VUnplacedVolume *>(
-            logical_volume()->unplaced_volume()));
+            GetLogicalVolume()->unplaced_volume()));
     }
     
     VECGEOM_CUDA_HEADER_BOTH

@@ -52,7 +52,9 @@ private:
    friend Base_t;
 
    // Required by VariableSizeObjectInterface
+   VECGEOM_CUDA_HEADER_BOTH
    VariableData_t &GetVariableData() { return fPath; }
+   VECGEOM_CUDA_HEADER_BOTH
    const VariableData_t &GetVariableData() const { return fPath; }
 
    int fCurrentLevel;
@@ -129,6 +131,7 @@ public:
    // Both MakeInstance, MakeInstanceAt, MakeCopy and MakeCopyAT are provided by 
    // VariableSizeObjectInterface
 
+   VECGEOM_CUDA_HEADER_BOTH
    static NavigationState *MakeInstance(int maxlevel) {
       // MaxLevel is 'zero' based (i.e. maxlevel==0 requires one value)
       return Base_t::MakeInstance(maxlevel+1);
@@ -161,6 +164,7 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
 
+   VECGEOM_CUDA_HEADER_BOTH
    void CopyTo( NavigationState * other ) const {
       // Raw memcpy of the content to another existing state.
       //
@@ -374,10 +378,10 @@ Transformation3D const &
 NavigationState::TopMatrix() const
 {
 // this could be actually cached in case the path does not change ( particle stays inside a volume )
-   global_matrix_.CopyFrom( *(fPath[0]->transformation()) );
+   global_matrix_.CopyFrom( *(fPath[0]->GetTransformation()) );
    for(int i=1;i<fCurrentLevel;++i)
    {
-      global_matrix_.MultiplyFromRight( *(fPath[i]->transformation()) );
+      global_matrix_.MultiplyFromRight( *(fPath[i]->GetTransformation()) );
    }
    return global_matrix_;
 }
@@ -395,7 +399,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
    Vector3D<Precision> current;
    for(int level=0;level<fCurrentLevel;++level)
    {
-      Transformation3D const *m = fPath[level]->transformation();
+      Transformation3D const *m = fPath[level]->GetTransformation();
       current = m->Transform( tmp );
       tmp = current;
    }
@@ -474,7 +478,7 @@ void NavigationState::ConvertToCPUPointers()
        #ifdef HAVENORMALNAMESPACE
 #ifdef VECGEOM_CUDA
        for(int i=0;i<fCurrentLevel;++i)
-         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( (void*) fPath[i] );
+         fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( (const void*) fPath[i] );
 #endif
 #endif
 }

@@ -150,8 +150,8 @@ template <typename Type, typename Derived = DevicePtr<Type> >
 class DevicePtrImpl : public DevicePtrBase
 {
 protected:
-   DevicePtrImpl(const DevicePtrImpl&orig) = default;
-   DevicePtrImpl &operator=(const DevicePtrImpl&orig) = default;
+   DevicePtrImpl(const DevicePtrImpl& /* orig */) = default;
+   DevicePtrImpl &operator=(const DevicePtrImpl& /*orig*/) = default;
    DevicePtrImpl() = default;
    explicit DevicePtrImpl(void *input) : DevicePtrBase(input) {}
    ~DevicePtrImpl() = default;

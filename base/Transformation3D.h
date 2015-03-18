@@ -14,11 +14,6 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-#include "backend/Backend.h"
-#ifdef VECGEOM_CUDA_INTERFACE
-#include "backend/cuda/Interface.h"
-#endif
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -109,11 +104,9 @@ public:
   bool operator==(Transformation3D const &rhs) const;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual ~Transformation3D() {}
+  ~Transformation3D() {}
 
-  // Accessors
-
-  virtual int memory_size() const { return sizeof(*this); }
+  int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -688,13 +681,15 @@ void Transformation3D::MultiplyFromRight(Transformation3D const & rhs)
    {
    // ideal for fused multiply add
    fTranslation[0]+=fRotation[0]*rhs.fTranslation[0];
-   fTranslation[0]+=fRotation[1]*rhs.fTranslation[0];
-   fTranslation[0]+=fRotation[2]*rhs.fTranslation[0];
-   fTranslation[1]+=fRotation[3]*rhs.fTranslation[1];
+   fTranslation[0]+=fRotation[1]*rhs.fTranslation[1];
+   fTranslation[0]+=fRotation[2]*rhs.fTranslation[2];
+
+   fTranslation[1]+=fRotation[3]*rhs.fTranslation[0];
    fTranslation[1]+=fRotation[4]*rhs.fTranslation[1];
-   fTranslation[1]+=fRotation[5]*rhs.fTranslation[1];
-   fTranslation[2]+=fRotation[6]*rhs.fTranslation[2];
-   fTranslation[2]+=fRotation[7]*rhs.fTranslation[2];
+   fTranslation[1]+=fRotation[5]*rhs.fTranslation[2];
+
+   fTranslation[2]+=fRotation[6]*rhs.fTranslation[0];
+   fTranslation[2]+=fRotation[7]*rhs.fTranslation[1];
    fTranslation[2]+=fRotation[8]*rhs.fTranslation[2];
    }
 

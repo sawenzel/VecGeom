@@ -54,6 +54,7 @@ namespace VecCore {
       VECGEOM_INLINE VECGEOM_CUDA_HEADER_BOTH V &operator[](Index_t index) { return GetValues()[index]; };
       VECGEOM_INLINE VECGEOM_CUDA_HEADER_BOTH const V &operator[](Index_t index) const { return GetValues()[index]; };
 
+      VECGEOM_INLINE VECGEOM_CUDA_HEADER_BOTH
       VariableSizeObj& operator=(const VariableSizeObj&rhs) {
          // Copy data content using memcpy, limited by the respective size
          // of the the object.  If this is smaller there is data truncation,
@@ -82,6 +83,7 @@ namespace VecCore {
       // The static maker to be used to create an instance of the variable size object.
 
       template <typename... T>
+      VECGEOM_CUDA_HEADER_BOTH
       static  Cont *MakeInstance(size_t nvalues, const T&... params) {
          // Make an instance of the class which allocates the node array. To be
          // released using ReleaseInstance. If addr is non-zero, the user promised that
@@ -149,6 +151,7 @@ namespace VecCore {
       }
 
       // The equivalent of the destructor
+      VECGEOM_CUDA_HEADER_BOTH
       static void ReleaseInstance(Cont *obj)
       {
          // Releases the space allocated for the object

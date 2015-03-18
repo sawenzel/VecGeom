@@ -30,14 +30,14 @@ PlacedTrapezoid::~PlacedTrapezoid() {}
 #ifndef VECGEOM_NVCC
 
 VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
-  return new SimpleTrapezoid(GetLabel().c_str(), logical_volume(), transformation());
+  return new SimpleTrapezoid(GetLabel().c_str(), GetLogicalVolume(), GetTransformation());
 }
 
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
   return new TGeoTrap( GetLabel().c_str(), GetDz(), GetTheta()*kRadToDeg, GetPhi()*kRadToDeg,
-                       GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                       GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+                       GetDy1(), GetDx1(), GetDx2(), GetAlpha1()*kRadToDeg,
+                       GetDy2(), GetDx3(), GetDx4(), GetAlpha2()*kRadToDeg );
 }
 #endif
 

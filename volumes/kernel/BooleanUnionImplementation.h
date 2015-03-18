@@ -548,7 +548,7 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::SafetyToOutKernel(
     {
       safety= Max(fPtrSolidA->SafetyToOut(p),
                   fPtrSolidB->SafetyToOut(
-                          fPtrSolidB->transformation()->Transform(p)
+                          fPtrSolidB->GetTransformation()->Transform(p)
                           ) ) ; // is max correct ??
     }
     else
@@ -556,7 +556,7 @@ void BooleanImplementation<kUnion, transCodeT, rotCodeT>::SafetyToOutKernel(
      if( containedB ) /* only contained in B */
       {
         safety = fPtrSolidB->SafetyToOut(
-                    fPtrSolidB->transformation()->Transform(p));
+                    fPtrSolidB->GetTransformation()->Transform(p));
       }
       else
       {

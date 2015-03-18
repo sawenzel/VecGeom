@@ -59,20 +59,6 @@ UnplacedOrb::UnplacedOrb() :
     fRTolO = fR +  fRTolerance;
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision UnplacedOrb::Capacity() const
-  {
-      return fCubicVolume;
-  }
-  
-  
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision UnplacedOrb::SurfaceArea() const
-  {
-      return fSurfaceArea;
-  }
-  
   VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
   void UnplacedOrb::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {

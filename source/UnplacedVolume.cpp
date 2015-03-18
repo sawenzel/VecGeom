@@ -33,7 +33,7 @@ VPlacedVolume* VUnplacedVolume::PlaceVolume(
     Transformation3D const *const transformation,
     VPlacedVolume *const placement) const {
   VPlacedVolume *const placed = PlaceVolume(volume, transformation, placement);
-  // placed->set_label(label);
+  placed->set_label(label);
   return placed;
 }
 

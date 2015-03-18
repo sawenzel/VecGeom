@@ -138,8 +138,8 @@ private:
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-AOS3D<T>::AOS3D(Vector3D<T> *content, size_t size)
-    : fAllocated(false), fSize(size), fCapacity(fSize), fContent(content) {}
+AOS3D<T>::AOS3D(Vector3D<T> *in_content, size_t in_size)
+    : fAllocated(false), fSize(in_size), fCapacity(fSize), fContent(in_content) {}
 
 template <typename T>
 AOS3D<T>::AOS3D(size_t sz)
@@ -277,10 +277,10 @@ T& AOS3D<T>::z(size_t index) { return (fContent[index])[2]; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void AOS3D<T>::set(size_t index, T x, T y, T z) {
-  (fContent[index])[0] = x;
-  (fContent[index])[1] = y;
-  (fContent[index])[2] = z;
+void AOS3D<T>::set(size_t index, T in_x, T in_y, T in_z) {
+  (fContent[index])[0] = in_x;
+  (fContent[index])[1] = in_y;
+  (fContent[index])[2] = in_z;
 }
 
 template <typename T>
@@ -291,10 +291,10 @@ void AOS3D<T>::set(size_t index, Vector3D<T> const &vec) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void AOS3D<T>::push_back(T x, T y, T z) {
-  (fContent[fSize])[0] = x;
-  (fContent[fSize])[1] = y;
-  (fContent[fSize])[2] = z;
+void AOS3D<T>::push_back(T in_x, T in_y, T in_z) {
+  (fContent[fSize])[0] = in_x;
+  (fContent[fSize])[1] = in_y;
+  (fContent[fSize])[2] = in_z;
   ++fSize;
 }
 
