@@ -168,6 +168,12 @@ public:
       localPoint,
       output
     );
+
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareUnplacedContains( this, output, localPoint );
+#endif
+
     return output;
   }
 
@@ -179,6 +185,11 @@ public:
       point,
       output
     );
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareUnplacedContains( this, output, point );
+#endif
+
     return output;
   }
 
