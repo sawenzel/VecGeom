@@ -135,12 +135,13 @@ def default_bt():
 
 def directories():
    dir_hash = []
-
+   packages_list = ['ROOT','Geant4','Vc','hepmc3','MCGenerators']
    for dirs in os.listdir(rootDir):
       if os.path.isfile(dirs):
          pass
       else:
-         dir_hash.append(dirs)
+         if dirs in packages_list:
+            dir_hash.append(dirs)
 
    return dir_hash;      
 
@@ -232,33 +233,17 @@ if __name__ == "__main__":
    if not op_sys:
       op_sys = default_os()
 
-   txt_directory = rootDir+"/"+arch+"-"+op_sys+"-"+compiler+"-"+build_type+".txt"
-
-   if os.path.exists(txt_directory):
-      fh = open(txt_directory, "r")
-      env_var = fh.readlines()
-      fh.close()
-
-      prefix = env_var[0].rstrip('\r\n')
-      path = env_var[1].rstrip('\r\n')+":"+os.environ["PATH"]
-      ld_libs = env_var[2].rstrip('\r\n')+":"+os.environ["LD_LIBRARY_PATH"] 
-
-      print prefix 
-      print path 
-      print ld_libs
-
-   else:
-      os.environ["CMAKE_PREFIX_PATH_ALL"] = directory_names()[0]
-      os.environ["PATH_ALL"] = directory_names()[1]+":"+os.environ["PATH"]
-      os.environ["LD_LIBRARY_PATH_ALL"] = directory_names()[2]+":"+os.environ["LD_LIBRARY_PATH"]
+   os.environ["CMAKE_PREFIX_PATH_ALL"] = directory_names()[0]
+   os.environ["PATH_ALL"] = directory_names()[1]+":"+os.environ["PATH"]
+   os.environ["LD_LIBRARY_PATH_ALL"] = directory_names()[2]+":"+os.environ["LD_LIBRARY_PATH"]
       
-      prefix = os.environ["CMAKE_PREFIX_PATH_ALL"]
-      path = os.environ["PATH_ALL"]
-      ld_libs = os.environ["LD_LIBRARY_PATH_ALL"]
+   prefix = os.environ["CMAKE_PREFIX_PATH_ALL"]
+   path = os.environ["PATH_ALL"]
+   ld_libs = os.environ["LD_LIBRARY_PATH_ALL"]
 
-      print '%s=%s' % ("export CMAKE_PREFIX_PATH", prefix)
-      print '%s=%s' % ("export PATH", path)
-      print '%s=%s' % ("export LD_LIBRARY_PATH", ld_libs)
+   print '%s=%s' % ("export CMAKE_PREFIX_PATH", prefix)
+   print '%s=%s' % ("export PATH", path)
+   print '%s=%s' % ("export LD_LIBRARY_PATH", ld_libs)
 
 
 
