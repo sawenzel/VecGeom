@@ -397,6 +397,12 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
            safety[2] >= stepMax);
   if ( IsFull(done) ) return;
 
+  Bool_t inside = Backend::kFalse;
+  inside = safety[0] < 0 && safety[1] < 0 && safety[2] < 0;
+  MaskedAssign(!done && inside, -1., &distance);
+  done |= inside;
+  if ( IsFull(done) ) return;
+
   Float_t next, coord1, coord2;
   Bool_t hit;
 
