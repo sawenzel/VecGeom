@@ -255,6 +255,20 @@ public:
       return 0;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual void Extent(Vector3D<Precision> &min,
+                      Vector3D<Precision> &max) const {
+    assert(0 && "Extent not implemented for this shape type.");
+  }
+
+
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual Precision SurfaceArea() {
+    assert(0 && "SurfaceArea not implemented for this shape type.");
+    return 0.0;
+  }
+
+
 public:
 
 #ifdef VECGEOM_CUDA_INTERFACE

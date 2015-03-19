@@ -308,7 +308,6 @@ Precision fSinEPhi;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
-#ifdef VECGEOM_USOLIDS
   void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
       double max = fRmax1 > fRmax2 ? fRmax1 : fRmax2;
@@ -316,7 +315,12 @@ Precision fSinEPhi;
       aMax = Vector3D<Precision>(max, max, fDz);
   }
 
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const;
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return "Cone";}
 
   Precision SurfaceArea()  const {
       double mmin, mmax, dmin, dmax;
@@ -330,8 +334,6 @@ Precision fSinEPhi;
                                  + 0.5 * (fRmax1 * fRmax1 - fRmin1 * fRmin1
                                           + fRmax2 * fRmax2 - fRmin2 * fRmin2));
   }
-#endif
-
 
 
 };

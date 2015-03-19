@@ -487,15 +487,14 @@ VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const;
   
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const;
 #endif
  
-  
-  //VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const;
-  
-  void GetParametersList(int aNumber, Precision *aArray) const; 
+
+  void GetParametersList(int aNumber, Precision *aArray) const;
   
   UnplacedSphere* Clone() const;
 

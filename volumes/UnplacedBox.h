@@ -74,9 +74,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const;
+#endif
 
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual std::string GetEntityType() const { return "Box";}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;

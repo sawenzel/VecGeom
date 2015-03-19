@@ -159,6 +159,7 @@ void FillBiasedDirections(VPlacedVolume const &volume,
   }
 
   // Remove hits until threshold
+  printf("VolumeUtilities: FillBiasedDirs: nhits/size = %i/%i and requested bias=%f\n", n_hits, size, bias);
   int tries = 0;
   int maxtries = 10000*size;
   while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) > bias) {
@@ -208,7 +209,6 @@ void FillBiasedDirections(VPlacedVolume const &volume,
           break;
         }
       }
-      tries++;
     }
   }
 
@@ -273,16 +273,10 @@ void FillUncontainedPoints(VPlacedVolume const &volume,
   const int size = points.capacity();
   points.resize(points.capacity());
 
-#ifdef VECGEOM_USOLIDS
   Vector3D<Precision> lower, upper, offset;
   volume.Extent(lower,upper);
   offset = 0.5*(upper+lower);
   const Vector3D<Precision> dim = 0.5*(upper-lower);
-  std::cout<<"lower="<<lower <<" / upper="<< upper <<" / offset="<< offset <<" / dim="<< dim <<"\n";
-#else
-  Vector3D<Precision> offset(0,0,0);
-  const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
-#endif
 
   int tries = 0;
   for (int i = 0; i < size; ++i) {
@@ -342,16 +336,10 @@ void FillContainedPoints(VPlacedVolume const &volume,
   const int size = points.capacity();
   points.resize(points.capacity());
 
-#ifdef VECGEOM_USOLIDS
   Vector3D<Precision> lower,upper,offset;
   volume.Extent(lower,upper);
   offset = 0.5*(upper+lower);
   const Vector3D<Precision> dim = 0.5*(upper-lower);
-#else
-  // use the bounding box to generate points
-  const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
-  Vector3D<Precision> offset(0,0,0);
-#endif
 
   int insideCount = 0;
   std::vector<bool> insideVector(size, false);
@@ -454,15 +442,10 @@ void FillRandomPoints(VPlacedVolume const &volume,
 
   int tries =0;
 
-#ifdef VECGEOM_USOLIDS
   Vector3D<Precision> lower,upper,offset;
   volume.Extent(lower,upper);
   offset = 0.5*(upper+lower);
   const Vector3D<Precision> dim = 0.5*(upper-lower);
-#else
-  const Vector3D<Precision> dim = volume.bounding_box()->dimensions();
-  Vector3D<Precision> offset(0,0,0);
-#endif
 
   for (int i = 0; i < size; ++i) {
     Vector3D<Precision> point;

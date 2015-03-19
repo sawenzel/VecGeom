@@ -193,15 +193,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       aArray[5] = GetDeltaThetaAngle();
   }
   
-  /*
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
-  {}
-  #else
-  
-  VECGEOM_CUDA_HEADER_BOTH
-   */
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {
       

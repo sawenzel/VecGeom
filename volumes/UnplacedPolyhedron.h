@@ -248,11 +248,15 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const {
     // TBDONE
       return Vector3D<Precision>() ;
   }
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return "Polyhedron"; }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

@@ -348,7 +348,6 @@ bool UnplacedTrapezoid::MakePlane(
   return good;
 }
 
-#ifdef VECGEOM_USOLIDS
 VECGEOM_CUDA_HEADER_BOTH
 bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
 
@@ -425,6 +424,7 @@ bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precis
   return noSurfaces != 0;
 }
 
+
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedTrapezoid::Extent(Vec3D& aMin, Vec3D& aMax) const {
   aMin.z() = -fDz;
@@ -465,7 +465,6 @@ void UnplacedTrapezoid::Extent(Vec3D& aMin, Vec3D& aMax) const {
   extB = ext45<ext67 ? ext45 : ext67;
   aMin.y() = (extA < extB) ? extA : extB;
 }
-#endif
 
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedTrapezoid::SurfaceArea() const {
@@ -502,7 +501,6 @@ Precision UnplacedTrapezoid::SurfaceArea() const {
   return surfArea;
 }
 
-#ifdef VECGEOM_USOLIDS
 Vec3D UnplacedTrapezoid::GetPointOnSurface() const {
 
   TrapCorners_t pt;
@@ -584,7 +582,7 @@ Vec3D UnplacedTrapezoid::GetPointOnPlane(Vec3D p0, Vec3D p1, Vec3D p2, Vec3D p3)
 
   return (p0 + lambda1 * t + lambda2 * u);
 }
-#endif
+
 
 VECGEOM_CUDA_HEADER_BOTH
 Vec3D UnplacedTrapezoid::ApproxSurfaceNormal(const Vec3D& point) const {
