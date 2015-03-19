@@ -613,6 +613,19 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
     FillGlobalPointsAndDirectionsForLogicalVolume( vol, localpoints, globalpoints, directions, fraction, np );
 }
 
+inline Precision GetRadiusInRing(Precision rmin, Precision rmax) {
+
+  // Generate radius in annular ring according to uniform area
+  if (rmin <= 0.) {
+    return rmax * std::sqrt( RNG::Instance().uniform() );
+  }
+  if (rmin != rmax) {
+    Precision rmin2 = rmin*rmin;
+    Precision rmax2 = rmax*rmax;
+    return std::sqrt( rmin2 + RNG::Instance().uniform()*(rmax2 - rmin2) );
+  }
+  return rmin;
+}
 
 } // end namespace volumeUtilities
 } } // end global namespace
