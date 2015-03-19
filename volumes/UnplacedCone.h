@@ -132,10 +132,10 @@ Precision fSinEPhi;
         fInnerSlopeSquare(),
         fOuterOffsetSquare(),
         fInnerOffsetSquare(),
-	   fSecRMin(0),
-	   fSecRMax(0),
-	   fInvSecRMin(0),
-	   fInvSecRMax(0),
+       fSecRMin(0),
+       fSecRMax(0),
+       fInvSecRMin(0),
+       fInvSecRMax(0),
    fCosCPhi(0),
    fSinCPhi(0),
    fCosSPhi(0),
@@ -148,7 +148,7 @@ Precision fSinEPhi;
    fCosHDPhiOT(0),
    fTanRMin(0),
    fTanRMax(0)
-	      {
+          {
 
       // initialize trigonometry for USOLIDS impl
         double hDPhi = 0.5 * fDPhi;                    // half delta phi

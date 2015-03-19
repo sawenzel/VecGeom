@@ -75,7 +75,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   {/*
     std::ostringstream message;
     message << "Invalid radii for Solid: " ;//<< GetName() << std::endl
-            << std::endl<<"				pRmin = " << pRmin << ", pRmax = " << pRmax;
+            << std::endl<<"             pRmin = " << pRmin << ", pRmax = " << pRmax;
                 return;
     */ 
     //UUtils::Exception("USphere::USphere()", "GeomSolids0002",
@@ -313,13 +313,13 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
-   //  << "		*** Dump for solid - " << GetName() << " ***\n"
-   //  << "		===================================================\n"
+   //  << "     *** Dump for solid - " << GetName() << " ***\n"
+   //  << "     ===================================================\n"
    
    << " Solid type: VecGeomSphere\n"
      << " Parameters: \n"
 
-     << "		outer radius: " << fRmax << " mm \n"
+     << "       outer radius: " << fRmax << " mm \n"
      << "               Inner radius: " <<fRmin <<"mm\n"    
      << "               Start Phi Angle: "<<fSPhi<<"\n"
      << "               Delta Phi Angle: "<<fDPhi<<"\n"
