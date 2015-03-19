@@ -391,8 +391,8 @@ G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
                  worldlv, /* this is where it is placed */
                  0,0);
 
-        // voxelize
-      // G4GeometryManager::GetInstance()->CloseGeometry( worldpv );
+        // do not voxelize
+        G4GeometryManager::GetInstance()->CloseGeometry( false );
 
         return worldpv;
 }
