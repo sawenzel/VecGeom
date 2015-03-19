@@ -216,12 +216,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const {;}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTrapezoid* Clone() const {
-    return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
-                                 GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                                 GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
-  }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // UnplacedTrapezoid* Clone() const {
+  //   return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
+  //                                GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+  //                                GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+  // }
 
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
