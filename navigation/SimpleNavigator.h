@@ -506,10 +506,10 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 
        if( newstate.Top() == currentstate.Top() )
        {
-           std::cerr << "relocate failed; trying to locate from top \n";
+          // std::cerr << "relocate failed; trying to locate from top \n";
            newstate.Clear();
            LocatePoint( GeoManager::Instance().GetWorld(), globalpoint + (step+1E-6)*globaldir, newstate, true );
-           std::cerr << "newstate top " << newstate.Top()->GetLabel() << "\n";
+         //  std::cerr << "newstate top " << newstate.Top()->GetLabel() << "\n";
        }
        assert( newstate.Top() != currentstate.Top() && " error relocating when leaving ");
 

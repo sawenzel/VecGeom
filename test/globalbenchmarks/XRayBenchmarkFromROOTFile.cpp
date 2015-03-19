@@ -93,21 +93,26 @@ bool usolids= true;
 // produce a bmp image out of pixel information given in volume_results
 int make_bmp(int const * image_result, char const *, int data_size_x, int data_size_y);
 
-
+__attribute__((noinline))
 void DeleteROOTVoxels()
 {
+    std::cout << " IN DELETE VOXEL METHOD \n";
+    int counter=0;
     TObjArray * volist = gGeoManager->GetListOfVolumes();
+
+    std::cout << " entries " << volist->GetEntries() << "\n";
+
     for(int i=0;i<volist->GetEntries();++i)
     {
         TGeoVolume *vol = (TGeoVolume *) volist->At(i);
         if ( vol!=NULL && vol->GetVoxels()!=0 )
         {
+            counter++;
             delete vol->GetVoxels();
             vol->SetVoxelFinder(0);
         }
     }
-
-
+    std::cout << " deleted " << counter << " Voxels \n";
 }
 
 void XRayWithROOT(int axis,
@@ -578,6 +583,8 @@ int main(int argc, char * argv[])
     // TGeoManager * geom = boundingbox->GetGeoManager();
     std::cout << gGeoManager->CountNodes() << "\n";
 
+    DeleteROOTVoxels();
+
     TGeoManager * mg1 = gGeoManager;
     gGeoManager = 0;
 
@@ -651,7 +658,7 @@ int main(int argc, char * argv[])
     int data_size_y= (axis2_end-axis2_start)/pixel_axis;
     int *volume_result= (int*) new int[data_size_y * data_size_x*3];
 
-    DeleteROOTVoxels();
+
     Stopwatch timer;
     timer.Start();
     XRayWithROOT( axis,
