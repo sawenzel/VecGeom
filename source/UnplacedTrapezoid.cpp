@@ -569,18 +569,18 @@ Vec3D UnplacedTrapezoid::GetPointOnPlane(Vec3D p0, Vec3D p1, Vec3D p2, Vec3D p3)
 
   aTwo = 0.5 * Area.Mag();
 
-  chose = UUtils::Random(0., aOne + aTwo);
+  chose = RNG::Instance().uniform(0., aOne + aTwo);
 
   if ((chose >= 0.) && (chose < aOne)) {
-    lambda1 = UUtils::Random(0., 1.);
-    lambda2 = UUtils::Random(0., lambda1);
+    lambda1 = RNG::Instance().uniform(0., 1.);
+    lambda2 = RNG::Instance().uniform(0., lambda1);
     return (p2 + lambda1 * v + lambda2 * w);
   }
 
   // else
 
-  lambda1 = UUtils::Random(0., 1.);
-  lambda2 = UUtils::Random(0., lambda1);
+  lambda1 = RNG::Instance().uniform(0., 1.);
+  lambda2 = RNG::Instance().uniform(0., lambda1);
 
   return (p0 + lambda1 * t + lambda2 * u);
 }

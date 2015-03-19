@@ -6,8 +6,8 @@
 
 #ifndef VECGEOM_NVCC
   #include "base/RNG.h"
-#include <cassert>
-#include <cmath>
+  #include <cassert>
+  #include <cmath>
 #endif
 
 #include "management/VolumeFactory.h"

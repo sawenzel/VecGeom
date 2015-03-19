@@ -6,7 +6,9 @@
 #include "backend/Backend.h"
 #include "management/VolumeFactory.h"
 #include "volumes/SpecializedBox.h"
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+#endif
 #include <stdio.h>
 
 namespace vecgeom {

@@ -7,11 +7,11 @@
 
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedCone.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #include "volumes/utilities/GenerationUtilities.h"
-#ifdef VECGEOM_USOLIDS
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
 #endif
-
 #include "management/VolumeFactory.h"
 
 namespace vecgeom {
@@ -54,8 +54,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
        phi  = RNG::Instance().uniform(fSPhi, fSPhi + fDPhi);
        cosu = std::cos(phi);
        sinu = std::sin(phi);
-       rRand1 = UUtils::GetRadiusInRing(fRmin1, fRmin2);
-       rRand2 = UUtils::GetRadiusInRing(fRmax1, fRmax2);
+       rRand1 = volumeUtilities::GetRadiusInRing(fRmin1, fRmin2);
+       rRand2 = volumeUtilities::GetRadiusInRing(fRmax1, fRmax2);
 
        if ((fSPhi == 0.) && IsFullPhi()) {
          Afive = 0.;
