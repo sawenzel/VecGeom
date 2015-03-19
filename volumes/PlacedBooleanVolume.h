@@ -82,6 +82,9 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+
+  VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const { };
 
   // CUDA specific

@@ -27,7 +27,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
         os << "UnplacedCone; please implement Print to outstream\n";
     }
 
-#ifdef VECGEOM_USOLIDS
+#if !defined(VECGEOM_NVCC)
     Vector3D<Precision> UnplacedCone::GetPointOnSurface() const {
        // implementation taken from UCons; not verified
        //
@@ -115,7 +115,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
                               rRand1 * std::sin(fSPhi + fDPhi), zRand);
             }
    }
-#endif // VECGEOM_USOLIDS
+#endif // VECGEOM_NVCC
 
 
   template <TranslationCode transCodeT, RotationCode rotCodeT>
