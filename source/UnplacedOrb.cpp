@@ -6,8 +6,8 @@
 
 #ifndef VECGEOM_NVCC
   #include "base/RNG.h"
-#include <cassert>
-#include <cmath>
+  #include <cassert>
+  #include <cmath>
 #endif
 
 #include "management/VolumeFactory.h"
@@ -66,14 +66,14 @@ UnplacedOrb::UnplacedOrb() :
       aMin.Set(-fR);
       aMax.Set(fR);
   }
-  
+
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetRadius();
   }
 
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
   {
   //  generate a random number from zero to 2UUtils::kPi...
@@ -89,7 +89,7 @@ UnplacedOrb::UnplacedOrb() :
   return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
   }
 #endif
-  
+
   //VECGEOM_CUDA_HEADER_BOTH
   std::string UnplacedOrb::GetEntityType() const
   {

@@ -98,24 +98,10 @@ public:
     return false;
   }
 
-  virtual void Extent(Vector3D<double> &min,
-                      Vector3D<double> &max) const {
-    assert(0 && "Extent not implemented for USolids interface compatible"
-                " volume.");
-  }
-
   virtual std::string GetEntityType() const {
     assert(0 && "GetEntityType not implemented for USolids interface compatible"
                 " volume.");
     return std::string();
-  }
-
-
-
-  virtual double SurfaceArea() {
-    assert(0 && "SurfaceArea not implemented for USolids interface compatible"
-                " volume.");
-    return 0;
   }
 
   virtual void GetParametersList(int number, double *array) const {

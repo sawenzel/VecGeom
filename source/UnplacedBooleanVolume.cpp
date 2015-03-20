@@ -91,7 +91,6 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
 #endif
 }
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedBooleanVolume::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
 
@@ -122,7 +121,6 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
       aMax = maxLeft;
     }
   }
-#endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
 

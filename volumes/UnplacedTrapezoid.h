@@ -195,16 +195,15 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea () const;
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const;
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision>  GetPointOnSurface() const;
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
@@ -216,12 +215,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const {;}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTrapezoid* Clone() const {
-    return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
-                                 GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                                 GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
-  }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // UnplacedTrapezoid* Clone() const {
+  //   return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
+  //                                GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+  //                                GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+  // }
 
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;

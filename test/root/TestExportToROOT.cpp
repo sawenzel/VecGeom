@@ -29,6 +29,9 @@
 #include "TGeoBranchArray.h"
 #include <iostream>
 
+#undef NDEBUG
+#include <cassert>
+
 using namespace vecgeom;
 
 

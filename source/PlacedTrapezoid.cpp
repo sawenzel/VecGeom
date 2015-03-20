@@ -49,14 +49,6 @@ TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
 }
 #endif
 
-#ifdef VECGEOM_USOLIDS
-VUSolid* PlacedTrapezoid::Clone() const {
-  return new ::UTrap(GetLabel().c_str(), GetDz(), GetTheta(), GetPhi(),
-                     GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
-                     GetDy2(), GetDx3(), GetDx4(), GetAlpha2());
-}
-#endif
-
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedTrapezoid::ConvertToGeant4() const {
   return new G4Trap(GetLabel().c_str(), GetDz(), GetTheta(), GetPhi(),

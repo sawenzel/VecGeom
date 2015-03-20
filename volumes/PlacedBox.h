@@ -80,7 +80,6 @@ public:
       return GetUnplacedVolume()->volume();
   }
 
-#ifdef VECGEOM_USOLIDS
   virtual
   void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
@@ -98,20 +97,20 @@ public:
       return valid;
   }
 
+#if !defined(VECGEOM_NVCC)
   virtual
-  Vector3D<Precision> GetPointOnSurface() const
-  {
+  Vector3D<Precision> GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
+#endif
 
+  VECGEOM_CUDA_HEADER_BOTH
   virtual double SurfaceArea() {
      return GetUnplacedVolume()->SurfaceArea();
   }
 
-  virtual std::string GetEntityType() const {
-      return "Box";
-  }
-#endif
+  VECGEOM_CUDA_HEADER_BOTH
+  virtual std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;

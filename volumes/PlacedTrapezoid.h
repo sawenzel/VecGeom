@@ -136,9 +136,6 @@ public:
   void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
   VECGEOM_CUDA_HEADER_BOTH
-  VUSolid* Clone() const;
-
-  VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo(os) ;}
 
 

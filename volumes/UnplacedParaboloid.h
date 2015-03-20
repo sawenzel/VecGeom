@@ -175,7 +175,7 @@ public:
     Precision SurfaceArea () const;
 //__________________________________________________________________
 
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
     virtual Vector3D<Precision> GetPointOnSurface() const;
 #endif
 //__________________________________________________________________
