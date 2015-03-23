@@ -12,6 +12,7 @@
 #include "base/Vector3D.h"
 #include "management/GeoManager.h"
 #include "navigation/NavigationState.h"
+#include "navigation/NavStatePool.h"
 
 #ifdef VECGEOM_ROOT
 #include "management/RootGeoManager.h"
@@ -41,6 +42,10 @@ public:
                 Vector3D<Precision> const & /* globalpoint */,
                 NavigationState & /* state (volume path) to be returned */,
                 bool /*top*/) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   SimpleNavigator(){}
 
    /**
     * function to locate a global point in the geometry hierarchy
@@ -132,8 +137,8 @@ public:
          Container3D const & /*global dirs*/,
          Container3D & /*workspace for localpoints*/,
          Container3D & /*workspace for localdirs*/,
-         NavigationState **  /* array of pointers to NavigationStates for currentstates */,
-         NavigationState **  /* array of pointers to NabigationStates for outputstates */,
+         NavStatePool const&  /* array of pointers to NavigationStates for currentstates */,
+         NavStatePool &  /* array of pointers to NabigationStates for outputstates */,
          Precision const * /* pSteps -- proposed steps */,
          Precision * /* safeties */,
          Precision * /* distances; steps */,
@@ -156,8 +161,8 @@ public:
     * and a global point; mainly for debugging purposes
     */
    void InspectSafetyForPoint(
-		   Vector3D<Precision> const & /* global point */,
-		   NavigationState const & /* current state */
+           Vector3D<Precision> const & /* global point */,
+           NavigationState const & /* current state */
       ) const;
 
 }; // end of class declaration
@@ -266,16 +271,16 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    VPlacedVolume const * currentvolume = currentstate.Top();
    int nexthitvolume = -1; // means mother
 
-   step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
+   if(currentvolume) step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
 
    // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
    // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
    // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
    if( step < 0. )
    {
-	   newstate = currentstate;
-	   RelocatePointFromPath( localpoint, newstate );
-	   return;
+       newstate = currentstate;
+       RelocatePointFromPath( localpoint, newstate );
+       return;
    }
 
    // iterate over all the daughter
@@ -293,7 +298,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 
    // now we have the candidates
    // try
-   newstate=currentstate;
+   newstate = currentstate;
 
    // is geometry further away than physics step?
    if(step > pstep)
@@ -304,6 +309,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
        return;
    }
    newstate.SetBoundaryState( true );
+
 
    // TODO: this is tedious, please provide operators in Vector3D!!
    // WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS
@@ -319,12 +325,14 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 
       // this should be inlined here
       LocatePoint( nextvol, trans->Transform(newpointafterboundary), newstate, false );
+      // newstate.Print();
    }
    else
    {
       // continue directly further up
       //LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
       RelocatePointFromPath( newpointafterboundary, newstate );
+      // newstate.Print();
    }
 }
 
@@ -393,15 +401,14 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
  * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
  */
 
-
 template <typename Container3D>
 void SimpleNavigator::FindNextBoundaryAndStep(
          Container3D const & globalpoints,
          Container3D const & globaldirs,
          Container3D       & localpoints,
          Container3D       & localdirs,
-         NavigationState  ** currentstates,
-         NavigationState  ** newstates,
+         NavStatePool const& currentstates,
+         NavStatePool      & newstates,
          Precision const   * pSteps,
          Precision         * safeties,
          Precision         * distances,
@@ -460,7 +467,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    // now we have the candidates
    for( int i=0;i<np;++i )
    {
-     *newstates[i]=*currentstates[i];
+     *newstates[i] = *currentstates[i];
 
      // is geometry further away than physics step?
      if( distances[i]>pSteps[i] ) {
@@ -492,6 +499,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
         // continue directly further up
         RelocatePointFromPath( newpointafterboundary, *newstates[i] );
      }
+
    } // end loop for relocation
 }
 

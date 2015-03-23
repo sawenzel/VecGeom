@@ -13,7 +13,9 @@
 #ifdef VECGEOM_CUDA
 #include "management/CudaManager.h"
 #endif
+#ifdef VECGEOM_CUDA_INTERFACE
 #include "backend/cuda/Interface.h"
+#endif
 
 // a fixed (runtime) size  "array" or contiguous
 // memory pool of navigation states
@@ -25,6 +27,8 @@
 
 namespace vecgeom {
 
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class SOA3D; )
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class NavStatePool
@@ -35,20 +39,19 @@ public:
         fCapacity( size ),
         fDepth( depth ),
         fBuffer( new char[NavigationState::SizeOf( depth )*size ] ),
-        fGPUPointer( NULL ) {
+        fGPUPointer( NULL )
+    {
 
 #ifdef HAVENORMALNAMESPACE
 // #pragma message "in namespace vecgeom"
 #ifdef VECGEOM_CUDA
         vecgeom::CudaMalloc( &fGPUPointer, NavigationState::SizeOf(depth)*size );
-        std::cerr << " cuda pointer " << fGPUPointer << "\n";
 #endif
 #endif
-       // now create the states
-       for(int i=0;i<fCapacity;++i){
-           NavigationState::MakeInstanceAt( depth, fBuffer + NavigationState::SizeOf(depth)*i );
-       }
-
+        // now create the states
+        for(int i=0;i<fCapacity;++i){
+            NavigationState::MakeInstanceAt( depth, fBuffer + NavigationState::SizeOf(depth)*i );
+        }
     }
 
     ~NavStatePool(){
@@ -61,10 +64,12 @@ public:
 #endif
 #endif
 
+    VECGEOM_CUDA_HEADER_BOTH
     NavigationState * operator[]( int i ){
         return reinterpret_cast<NavigationState*> ( fBuffer + NavigationState::SizeOf(fDepth)*i );
     }
 
+    VECGEOM_CUDA_HEADER_BOTH
     NavigationState const* operator[]( int i ) const{
         return reinterpret_cast<NavigationState const *> ( fBuffer + NavigationState::SizeOf(fDepth)*i );
     }
@@ -75,10 +80,21 @@ public:
     }
 
     void* GetGPUPointer() const {
-        return fGPUPointer;
+       return fGPUPointer;
     }
 
-private:
+private: // protected methods
+#ifdef VECGEOM_CUDA
+    // This constructor used to build NavStatePool at the GPU.  BufferGPU
+    VECGEOM_CUDA_HEADER_DEVICE
+    NavStatePool( int size, int depth, char* fBufferGPU ) :
+        fCapacity( size ),
+        fDepth( depth ),
+        fBuffer( fBufferGPU ),
+        fGPUPointer( NULL ) { }
+#endif
+
+private: // members
     int fCapacity; // the number of states in the pool
     int fDepth; // depth of the navigation objects to cover
     char* fBuffer; // the memory buffer in which we place states
@@ -95,6 +111,7 @@ private:
 #ifdef VECGEOM_CUDA
 inline
 void NavStatePool::CopyToGpu() {
+
     // modify content temporarily to convert CPU pointers to GPU pointers
     NavigationState * state;
     for(int i=0;i<fCapacity;++i){
@@ -106,13 +123,14 @@ void NavStatePool::CopyToGpu() {
 
     // copy
     vecgeom::CopyToGpu((void*)fBuffer, fGPUPointer, fCapacity*NavigationState::SizeOf(fDepth));
-    //  vecgeom::CopyFromGpu(fGPUPointer, (void*) fBuffer, fCapacity*NavigationState::SizeOf(fDepth));
+    //CudaAssertError( cudaMemcpy(fGPUPointer, (void*)fBuffer, fCapacity*NavigationState::SizeOf(fDepth), cudaMemcpyHostToDevice) );
 
     // modify back pointers
     for(int i=0;i<fCapacity;++i){
         state = operator[]( i );
-        state->Clear(); // ConvertToCPUPointers();
+        state->ConvertToCPUPointers();
     }
+
     // now some kernel can be launched on GPU side
 } // end CopyFunction
 
@@ -122,11 +140,11 @@ void NavStatePool::CopyFromGpu() {
     // this does not work
     // modify content temporarily to convert CPU pointers to GPU pointers
 
-  std::cerr << "Starting to COPY" << std::endl;
-  std::cerr << "GPU pointer " << fGPUPointer << std::endl;
-  vecgeom::CopyFromGpu(fGPUPointer, (void*) fBuffer, fCapacity*NavigationState::SizeOf(fDepth));
+    std::cerr << "Starting to COPY" << std::endl;
+    std::cerr << "GPU pointer " << fGPUPointer << std::endl;
+    vecgeom::CopyFromGpu(fGPUPointer, (void*) fBuffer, fCapacity*NavigationState::SizeOf(fDepth));
 
-   NavigationState * state;
+    NavigationState * state;
     for(int i=0;i<fCapacity;++i){
         state = operator[]( i );
     state->ConvertToCPUPointers();
