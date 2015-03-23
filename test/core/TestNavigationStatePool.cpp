@@ -19,7 +19,6 @@ extern void LaunchNavigationKernel( void* gpu_ptr, int depth, int );
 #endif
 
 
-
 int main()
 {
   // Load a geometry
@@ -58,20 +57,24 @@ int main()
       nav.LocatePoint(GeoManager::Instance().GetWorld(), testpoints[i], *pool[i], true);
   }
   pool.Print();
+  std::cerr << "sizeof navigation state on CPU: " << sizeof(vecgeom::cxx::NavigationState) <<" and "<< sizeof(vecgeom::NavigationState) << " bytes/state\n";
 
 #ifdef VECGEOM_CUDA
-  pool.CopyToGpu();
+   pool.CopyToGpu();
 #endif
 
   // launch some kernel on GPU using the
-  std::cerr << "sizeof navigation state on CPU " << sizeof(vecgeom::NavigationState) << "\n";
 #ifdef VECGEOM_CUDA
+  printf("TestNavStatePool: calling LaunchNavigationKernel()...\n");
   LaunchNavigationKernel( pool.GetGPUPointer(), GeoManager::Instance().getMaxDepth(), npoints );
+  printf("TestNavStatePool: waiting for CudaDeviceSynchronize()...\n");
+  cudaDeviceSynchronize();
+  printf("TestNavStatePool: synchronized!\n");
 #endif
 
-#ifdef VECGEOM_CUDA
-  pool.CopyFromGpu();
-#endif
+// #ifdef VECGEOM_CUDA
+//   pool.CopyFromGpu();
+// #endif
 
   pool.Print();
 }
