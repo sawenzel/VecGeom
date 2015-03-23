@@ -76,8 +76,6 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision Capacity()  { return GetUnplacedVolume()->Capacity(); }
 
-  #ifdef VECGEOM_USOLIDS  
-  
   VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
   
@@ -90,16 +88,11 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
   
-  //#ifdef VECGEOM_USOLIDS
-  //VECGEOM_CUDA_HEADER_BOTH
-  //#endif
   Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
  
   // VECGEOM_CUDA_HEADER_BOTH
   // void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
   
-  #endif
-
   VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
   {

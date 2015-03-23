@@ -109,7 +109,6 @@ public:
   virtual
   Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const {
     return GetUnplacedVolume()->Normal(point, normal);
@@ -124,7 +123,6 @@ public:
   Vector3D<Precision>  GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void ComputeBoundingBox();

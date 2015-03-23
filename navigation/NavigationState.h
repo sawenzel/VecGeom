@@ -236,7 +236,12 @@ public:
    void Clear();
 
    VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
    void Print() const;
+
+   VECGEOM_INLINE
+   VECGEOM_CUDA_HEADER_BOTH
+   void Dump() const;
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -261,7 +266,7 @@ public:
    int GetLevel() const {return fCurrentLevel-1;}
 
    TGeoNode const * GetNode(int level) const {return
-		   RootGeoManager::Instance().tgeonode( fPath[level] );}
+           RootGeoManager::Instance().tgeonode( fPath[level] );}
 #endif
 
    /**
@@ -304,7 +309,7 @@ NavigationState & NavigationState::operator=( NavigationState const & rhs )
       fOnBoundary = rhs.fOnBoundary;
       // what about the matrix????
 
-      // Use memcpy.  Potential trucation if this is smaller than rhs.
+      // Use memcpy.  Potential truncation if this is smaller than rhs.
       fPath = rhs.fPath;
    }
    return *this;
@@ -334,7 +339,7 @@ NavigationState::NavigationState( size_t nvalues ) :
    std::memset(fPath.GetValues(), 0, nvalues*sizeof(VPlacedVolume*));
 }
 
-
+  VECGEOM_CUDA_HEADER_BOTH
 NavigationState::~NavigationState()
 {
    
@@ -407,12 +412,39 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
 }
 
 VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
+void NavigationState::Dump() const
+{
+   unsigned int* ptr = (unsigned int*)this;
+   printf("NavState::Dump(): data: %p(%lu) : %p(%lu) : %p(%lu) : %p(%lu)\n", &fCurrentLevel, sizeof(fCurrentLevel),
+          &fOnBoundary, sizeof(fOnBoundary), &global_matrix_, sizeof(global_matrix_), &fPath, sizeof(fPath));
+   for(unsigned int i=0; i<20; ++i) {
+      printf("%p: ", ptr);
+      for(unsigned int i=0; i<8; ++i) {
+         printf(" %08x ", *ptr);
+         ptr++;
+      }
+      printf("\n");
+   }
+}
+
+VECGEOM_INLINE
+VECGEOM_CUDA_HEADER_BOTH
 void NavigationState::Print() const
 {
-   std::cerr << "maxlevel " << GetMaxLevel() << std::endl;
-   std::cerr << "currentlevel " << fCurrentLevel << std::endl;
-   std::cerr << "onboundary " << fOnBoundary << std::endl;
-   std::cerr << "deepest volume " << Top() << std::endl;
+   // printf("bool: fOnBoundary=%i %p (%l bytes)\n", fOnBoundary, static_cast<void*>(fOnBoundary), sizeof(bool));
+   // printf("Transf3D: matrix (%l bytes)\n", sizeof(Transformation3D) );
+   // printf("VariableSizeObj: fPath=%p (%l bytes)\n", fPath, sizeof(fPath));
+   printf("NavState: Level(cur/max)=%i/%i,  onBoundary=%s, topVol=<%s>, this=%p\n",
+          fCurrentLevel, GetMaxLevel(), (fOnBoundary?"true":"false"), (Top()? Top()->GetLabel().c_str():"NULL"), this );
+   // std::cerr << "NavState: Level(cur/max)=" << fCurrentLevel <<'/'<< GetMaxLevel()
+   //           <<" onBoundary="<< fOnBoundary
+   //           <<" topVol="<< Top() <<" this="<< this
+   //           << std::endl;
+   // // std::cerr << "maxlevel " << fMaxlevel << std::endl;
+   // // std::cerr << "currentlevel " << fCurrentLevel << std::endl;
+   // // std::cerr << "onboundary " << fOnBoundary << std::endl;
+   // // std::cerr << "deepest volume " << Top() << std::endl;
 }
 
 
@@ -461,21 +493,19 @@ int NavigationState::Distance( NavigationState const & other ) const
 }
 
 inline
-void NavigationState::ConvertToGPUPointers()
-   {
-       #ifdef HAVENORMALNAMESPACE
+void NavigationState::ConvertToGPUPointers() {
+#ifdef HAVENORMALNAMESPACE
 #ifdef VECGEOM_CUDA
-     for(int i=0;i<fCurrentLevel;++i){
-	 fPath[i] = (vecgeom::cxx::VPlacedVolume*) vecgeom::CudaManager::Instance().LookupPlaced( fPath[i] ).GetPtr();
-     }
+      for(int i=0;i<fCurrentLevel;++i){
+         fPath[i] = (vecgeom::cxx::VPlacedVolume*) vecgeom::CudaManager::Instance().LookupPlaced( fPath[i] ).GetPtr();
+      }
 #endif
 #endif
 }
 
 inline
-void NavigationState::ConvertToCPUPointers()
-{
-       #ifdef HAVENORMALNAMESPACE
+void NavigationState::ConvertToCPUPointers() {
+#ifdef HAVENORMALNAMESPACE
 #ifdef VECGEOM_CUDA
        for(int i=0;i<fCurrentLevel;++i)
          fPath[i]=vecgeom::CudaManager::Instance().LookupPlacedCPUPtr( (const void*) fPath[i] );
@@ -487,12 +517,8 @@ void NavigationState::ConvertToCPUPointers()
 
 
 #if defined(GCC_DIAG_POP_NEEDED)
-
-#pragma GCC diagnostic pop
-#undef GCC_DIAG_POP_NEEDED
-
+  #pragma GCC diagnostic pop
+  #undef GCC_DIAG_POP_NEEDED
 #endif
-
-
 
 #endif // VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_

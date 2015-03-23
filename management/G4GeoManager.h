@@ -24,7 +24,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 /// \brief singleton class to handle interaction with a G4 geometry.
 /// \details Allows integration with G4 geometries mainly for debugging reasons.
 ///          Is not necessary for VecGeom library, and will only have source
-///          compiled if the VECGEOM_ROOT flag is set by the compiler, activated
+///          compiled if the VECGEOM_GEANT4 flag is set by the compiler, activated
 ///          with -DGeant4=ON in CMake.
 /// this class is more lightweight than the RootGeoManager; for the moment it only
 /// keeps track of the world volume of the G4 geometry and a navigator object
@@ -45,13 +45,7 @@ public:
         G4GDMLParser parser;
         parser.Read( gdmlfile );
 
-        // if there is an existing geometry
-        if( fNavigator!=nullptr ) delete fNavigator;
-        fNavigator = new G4Navigator();
-        fNavigator->SetWorldVolume( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
-
-        // voxelize
-        G4GeometryManager::GetInstance()->CloseGeometry( fNavigator->GetWorldVolume() );
+        LoadG4Geometry( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
     }
 
     // sets a G4 geometry from existing G4PhysicalVolume
