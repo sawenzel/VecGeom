@@ -453,7 +453,7 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
-    source/benchmarking/NavigationBenchmarker.cpp
+    #source/benchmarking/NavigationBenchmarker.cpp
     source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
