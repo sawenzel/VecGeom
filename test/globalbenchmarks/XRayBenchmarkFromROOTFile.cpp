@@ -23,6 +23,7 @@
 #include <cmath>
 #include <map>
 #include <cassert>
+#include <sstream>
 
 #include "TGeoManager.h"
 #include "TGeoBBox.h"
@@ -89,6 +90,9 @@ typedef struct tMY_BITMAP
 } MY_BITMAP;
 
 bool usolids= true;
+
+// a global variable to switch voxels on or off
+bool voxelize = true;
 
 // produce a bmp image out of pixel information given in volume_results
 int make_bmp(int const * image_result, char const *, int data_size_x, int data_size_y);
@@ -391,8 +395,7 @@ G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
                  worldlv, /* this is where it is placed */
                  0,0);
 
-        // do not voxelize
-        G4GeometryManager::GetInstance()->CloseGeometry( false );
+        G4GeometryManager::GetInstance()->CloseGeometry( voxelize );
 
         return worldpv;
 }
@@ -496,9 +499,11 @@ int main(int argc, char * argv[])
   {
     std::cerr<< std::endl;
     std::cerr<< "Need to give rootfile, volumename, axis and number of axis"<< std::endl;
-    std::cerr<< "USAGE : ./XRayBenchmarkFromROOTFile [rootfile] [VolumeName] [ViewDirection(Axis)] [PixelWidth(OutputImageSize)] [--usolids|--vecgeom(Default:usolids)]"<< std::endl;
+    std::cerr<< "USAGE : ./XRayBenchmarkFromROOTFile [rootfile] [VolumeName] [ViewDirection(Axis)]"
+             << "[PixelWidth(OutputImageSize)] [--usolids|--vecgeom(Default:usolids)] [--novoxel(Default:voxel)]"
+             << std::endl;
     std::cerr<< "  ex) ./XRayBenchmarkFromROOTFile cms2015.root BSCTrap y 95"<< std::endl;
-    std::cerr<< "      ./XRayBenchmarkFromROOTFile cms2015.root PLT z 500 --vecgeom"<< std::endl<< std::endl;
+    std::cerr<< "      ./XRayBenchmarkFromROOTFile cms2015.root PLT z 500 --vecgeom --novoxel"<< std::endl<< std::endl;
     return 1;
   }
 
@@ -523,9 +528,10 @@ int main(int argc, char * argv[])
   {
     if( ! strcmp(argv[i], "--usolids") )
       usolids= true;
-    
     if( ! strcmp(argv[i], "--vecgeom") )
       usolids= false;
+    if( ! strcmp(argv[i], "--novoxel") )
+      voxelize = false;
   }
 
   int found = 0;
@@ -583,7 +589,7 @@ int main(int argc, char * argv[])
     // TGeoManager * geom = boundingbox->GetGeoManager();
     std::cout << gGeoManager->CountNodes() << "\n";
 
-    DeleteROOTVoxels();
+    if(! voxelize ) DeleteROOTVoxels();
 
     TGeoManager * mg1 = gGeoManager;
     gGeoManager = 0;
@@ -675,8 +681,18 @@ int main(int argc, char * argv[])
     std::cout << std::endl;
     std::cout << " ROOT Elapsed time : "<< timer.Elapsed() << std::endl;
 
-    // Make bitmap file
-    make_bmp(volume_result, "volumeImage_ROOT.bmp", data_size_x, data_size_y);
+    // Make bitmap file; generate filename
+    std::stringstream imagenamebase;
+    imagenamebase << "volumeImage_" << testvolume;
+    if(axis==1) imagenamebase << "x";
+    if(axis==2) imagenamebase << "y";
+    if(axis==3) imagenamebase << "z";
+    if(voxelize) imagenamebase << "_VOXELIZED_";
+    std::stringstream ROOTimage;
+    ROOTimage << imagenamebase.str();
+    ROOTimage << "_ROOT.bmp";
+
+    make_bmp(volume_result, ROOTimage.str().c_str(), data_size_x, data_size_y);
 
 #ifdef VECGEOM_GEANT4
 
@@ -698,7 +714,10 @@ int main(int argc, char * argv[])
             volume_result );
     timer.Stop();
 
-    make_bmp(volume_result, "volumeImage_Geant4.bmp", data_size_x, data_size_y);
+    std::stringstream G4image;
+    G4image << imagenamebase.str();
+    G4image << "_Geant4.bmp";
+    make_bmp(volume_result, G4image.str().c_str(), data_size_x, data_size_y);
     std::cout << std::endl;
     std::cout << " Geant4 Elapsed time : "<< timer.Elapsed() << std::endl;
 
@@ -719,7 +738,10 @@ int main(int argc, char * argv[])
                volume_result );
     timer.Stop();
 
-    make_bmp(volume_result, "volumeImage_VecGeom.bmp", data_size_x, data_size_y);
+    std::stringstream VecGeomimage;
+    VecGeomimage << imagenamebase.str();
+    VecGeomimage << "_VecGeom.bmp";
+    make_bmp(volume_result, VecGeomimage.str().c_str(), data_size_x, data_size_y);
 
     std::cout << std::endl;
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
