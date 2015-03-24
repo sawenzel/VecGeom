@@ -17,6 +17,7 @@
 #include "base/Stopwatch.h"
 #include "navigation/SimpleNavigator.h"
 #include "base/Transformation3D.h"
+#include "base/SOA3D.h"
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
@@ -349,6 +350,157 @@ if(VERBOSE){
     NavigationState::ReleaseInstance( newnavstate );
 
 } // end XRayWithVecGeom
+
+
+//// stressing the vector interface of navigator
+//void XRayWithVecGeom_VecNav(int axis,
+//                  Vector3D<Precision> origin,
+//                  Vector3D<Precision> bbox,
+//                  Vector3D<Precision> dir,
+//                  double axis1_start, double axis1_end,
+//                  double axis2_start, double axis2_end,
+//                  int data_size_x,
+//                  int data_size_y,
+//                  double pixel_axis,
+//                  int * image) {
+//
+//if(VERBOSE){
+//    std::cout << "from [" << axis1_start << ";" << axis2_start
+//              << "] to [" << axis1_end   << ";" << axis2_end << "]\n";
+//    std::cout << "Xpixels " << data_size_x << " YPixels " << data_size_y << "\n";
+//
+//    std::cout << pixel_axis << "\n";
+//}
+//    double pixel_width_1 = (axis1_end-axis1_start)/data_size_x;
+//    double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
+//
+//    if(VERBOSE){
+//        std::cout << pixel_width_1 << "\n";
+//        std::cout << pixel_width_2 << "\n";
+//    }
+//
+//    // we need N navstates ( where N should be a multiple of the SIMD width )
+//    unsigned int N = 8;
+//    NavigationState ** newnavstates;
+//    NavigationState ** curnavstates;
+//    for( unsigned int j=0;j<N;++j ){
+//        NavigationState * newnavstates[j] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+//        NavigationState * curnavstates[j] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+//    }
+//
+//    SOA3D<Precision> points(N);
+//    SOA3D<Precision> dirs(N);
+//    SOA3D<Precision> workspaceforlocalpoints(N);
+//    SOA3D<Precision> workspaceforlocaldirs(N);
+//
+//    double * steps = new double[N];
+//    double * psteps = new double[N];
+//    double * safeties = new double[N];
+//    for(unsigned int j=0;j<N;++j)
+//        psteps[j]=vecgeom::kInfinity;
+//
+//    for( int pixel_count_2 = 0; pixel_count_2 < data_size_y; ++pixel_count_2 ){
+//        for( int pixel_count_1 = 0; pixel_count_1 < data_size_x; ++pixel_count_1 )
+//        {
+//            double axis1_count = axis1_start + pixel_count_1 * pixel_width_1 + 1E-6;
+//            double axis2_count = axis2_start + pixel_count_2 * pixel_width_2 + 1E-6;
+//
+//            if(VERBOSE) {
+//                std::cout << "\n OutputPoint("<< axis1_count<< ", "<< axis2_count<< ")\n";
+//            }
+//            // std::cout << pixel_count_1 << " " << pixel_count_2 << "\n";
+//            // set start points of XRay; points should be in a SOA/AOS
+//
+//            SimpleNavigator nav;
+//            // initialize points and locate them is serialized
+//            for( unsigned int j=0; j<N; ++j ){
+//                if( axis== 1 )
+//                  points.set( j, origin[0]-bbox[0], axis1_count, axis2_count );
+//                else if( axis== 2)
+//                  points.set( j, axis1_count, origin[1]-bbox[1], axis2_count );
+//                else if( axis== 3)
+//                  points.set( j, axis1_count, axis2_count, origin[2]-bbox[2] );
+//                curnavstates[j]->Clear();
+//                nav.LocatePoint( GeoManager::Instance().GetWorld(), p, *curnavstates[j], true );
+//            }
+//#ifdef VECGEOM_DISTANCE_DEBUG
+//            gGeoManager->GetCurrentNavigator()->FindNode( p.x(), p.y(), p.z() );
+//#endif
+//            double distancetravelled=0.;
+//            int crossedvolumecount=0;
+//            if(VERBOSE) {
+//              std::cout << " StartPoint(" << p[0] << ", " << p[1] << ", " << p[2] << ")";
+//              std::cout << " Direction <" << dir[0] << ", " << dir[1] << ", " << dir[2] << ">"<< std::endl;
+//            }
+//
+//            // we do the while loop only over the first "particle index"
+//            // the rest of the particles should follow exactly the same path
+//            while( ! curnavstates[0]->IsOutside() ) {
+//                nav.FindNextBoundaryAndStep(
+//                        points,
+//                        dirs,
+//                        workspaceforlocalpoints,
+//                        workspaceforlocaldirs,
+//                        curnavstates,
+//                        newnavstates,
+//                        psteps,
+//                        safeties,
+//                        steps);
+//
+//                //std::cout << "step " << step << "\n";
+//                distancetravelled+=steps[0];
+//
+//                // TODO: DO HERE AN ASSERTION THAT ALL STEPS AGREE
+//
+////
+////              std::cout << "GOING FROM "
+////                       << curnavstate->Top()->GetLabel() << "(";
+////                        curnavstate->Top()->PrintType();
+////                     std::cout << ") to ";
+////
+////                if( newnavstate->Top() ){
+////                    std::cout << newnavstate->Top()->GetLabel() << "(";
+////                    newnavstate->Top()->PrintType();
+////                    std::cout << ")";
+////                }
+////                else
+////                    std::cout << "outside ";
+////
+////                if ( curnavstate->Top() == newnavstate->Top() ) {
+////                    std::cout << " CROSSING PROBLEM \n";
+////                    curnavstate->Print();
+////                    newnavstate->Print();
+////                }
+////
+////                std::cout << "# step " << step << " crossed "<< crossedvolumecount << "\n";
+//
+//                // here we have to propagate particle ourselves and adjust navigation state
+//                // propagate points
+//                points = points + dirs*(steps[0] + 1E-6);
+//
+////                std::cout << p << "\n";
+//
+//                newnavstate->CopyTo(curnavstate);
+//
+//                // Increase passed_volume
+//                // TODO: correct counting of travel in "world" bounding box
+//                if(steps[0]>0) crossedvolumecount++;
+//             } // end while
+//
+//             ///////////////////////////////////
+//             // Store the number of passed volume at 'volume_result'
+//             *(image+pixel_count_2*data_size_x+pixel_count_1) = crossedvolumecount;
+//
+//      } // end inner loop
+//    } // end outer loop
+//
+//    for( unsigned int j=0; j<N ; ++j ) {
+//        NavigationState::ReleaseInstance( curnavstates[j] );
+//        NavigationState::ReleaseInstance( newnavstates[j] );
+//    }
+//} // end XRayWithVecGeomVectorInterface
+
+
 
 #ifdef VECGEOM_GEANT4
 G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
