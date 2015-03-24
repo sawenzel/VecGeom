@@ -7,7 +7,6 @@
 
 #include "base/Global.h"
 #include "base/Transformation3D.h"
-#include "volumes/kernel/BoxImplementation.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
