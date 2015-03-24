@@ -381,8 +381,8 @@ if(VERBOSE){
 
     // we need N navstates ( where N should be a multiple of the SIMD width )
     unsigned int N = 8;
-    NavigationState ** newnavstates = nullptr;
-    NavigationState ** curnavstates = nullptr;
+    NavigationState ** newnavstates = new NavigationState*[N];
+    NavigationState ** curnavstates = new NavigationState*[N];
     for( unsigned int j=0;j<N;++j ){
         newnavstates[j] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
         curnavstates[j] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
@@ -903,6 +903,28 @@ int main(int argc, char * argv[])
 
     std::cout << std::endl;
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    // use the vector interface
+    timer.Start();
+    XRayWithVecGeom_VecNav( axis,
+                   Vector3D<Precision>(origin[0],origin[1],origin[2]),
+                   Vector3D<Precision>(dx,dy,dz),
+                   dir,
+                   axis1_start, axis1_end,
+                   axis2_start, axis2_end,
+                   data_size_x, data_size_y,
+                   pixel_axis,
+                   volume_result );
+    timer.Stop();
+    std::cout << std::endl;
+    std::cout << " VecGeom Vector Interface Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    std::stringstream VecGeomimagevec;
+    VecGeomimagevec << imagenamebase.str();
+    VecGeomimagevec << "_VecGeomVecNav.bmp";
+    make_bmp(volume_result, VecGeomimagevec.str().c_str(), data_size_x, data_size_y);
+
+
 
     delete[] volume_result;
   }
