@@ -8,7 +8,6 @@
 #include "base/Global.h"
 
 #include "base/Transformation3D.h"
-#include "volumes/kernel/BoxImplementation.h"
 #include "volumes/UnplacedSphere.h"
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
@@ -220,9 +219,9 @@ template <class Backend>
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
-  	  typename Backend::precision_v const &radius,
+      typename Backend::precision_v const &radius,
       typename Backend::bool_v &check,
-	  typename Backend::bool_v &firstcross,
+      typename Backend::bool_v &firstcross,
       typename Backend::precision_v &distance);//{}  
   
     
@@ -396,13 +395,13 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToSphere(
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
-	  typename Backend::precision_v const &radius,
+      typename Backend::precision_v const &radius,
       typename Backend::bool_v &check,
-	  typename Backend::bool_v &firstcross, 
+      typename Backend::bool_v &firstcross,
       typename Backend::precision_v &distance){
   
   // bool verbose=false;
-	    //std::cout<<"Raman insdie "<<std::endl;
+        //std::cout<<"Raman insdie "<<std::endl;
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
 
@@ -423,31 +422,31 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToSphere(
     Float_t radius2 = radius * radius; //radius = rsph (in ROOT)
     Float_t c = rad2 - radius2;
     Float_t d2 = pDotV3d * pDotV3d - c;
-	Float_t d = Sqrt(d2);
+    Float_t d = Sqrt(d2);
    //std::cout<<"D = "<<d<<std::endl;
-	done |= (d2 <= zero);
-	MaskedAssign( (d2 <= zero) , kInfinity, &distance );
-	if( IsFull(done) )return ;
+    done |= (d2 <= zero);
+    MaskedAssign( (d2 <= zero) , kInfinity, &distance );
+    if( IsFull(done) )return ;
 
-	Vector3D<Float_t> pt;
-	//Bool_t in(false);
- 	//MaskedAssign( (c <= zero) , true , &in);
-	Bool_t in = (c <= zero);
+    Vector3D<Float_t> pt;
+    //Bool_t in(false);
+    //MaskedAssign( (c <= zero) , true , &in);
+    Bool_t in = (c <= zero);
 
-	MaskedAssign((in) ,((mone * pDotV3d) + d)  , &distance);
-	MaskedAssign( ((!in) && (firstcross)) ,((mone * pDotV3d) - d)  , &distance);
-	MaskedAssign( ((!in) && (!firstcross)) ,((mone * pDotV3d) + d)  , &distance);
+    MaskedAssign((in) ,((mone * pDotV3d) + d)  , &distance);
+    MaskedAssign( ((!in) && (firstcross)) ,((mone * pDotV3d) - d)  , &distance);
+    MaskedAssign( ((!in) && (!firstcross)) ,((mone * pDotV3d) + d)  , &distance);
 
-	MaskedAssign( (distance  < zero) , kInfinity  , &distance );
-	
-	
-	pt =  localPoint + (distance * localDir);
+    MaskedAssign( (distance  < zero) , kInfinity  , &distance );
+
+
+    pt =  localPoint + (distance * localDir);
         Bool_t inside(true);
-	ContainsKernel<Backend>(unplaced,pt,inside);
-	MaskedAssign( ( (check) && !inside ), kInfinity , &distance );
-	//MaskedAssign( ( (check)  ) , kInfinity , &distance );
-	//if(verbose)std::cout<<"From DistanceToSphere : "<<distance<<std::endl;
-	
+    ContainsKernel<Backend>(unplaced,pt,inside);
+    MaskedAssign( ( (check) && !inside ), kInfinity , &distance );
+    //MaskedAssign( ( (check)  ) , kInfinity , &distance );
+    //if(verbose)std::cout<<"From DistanceToSphere : "<<distance<<std::endl;
+
 
 }
 
@@ -815,7 +814,7 @@ UnplacedSphere const &unplaced,
     typename Backend::bool_v &completelyoutside) {
 
     typedef typename Backend::precision_v Float_t;
-    // typedef typename Backend::bool_v      Bool_t;	
+    // typedef typename Backend::bool_v      Bool_t;
 
     Precision fRmin = unplaced.GetInnerRadius();
     Precision fRminTolerance = unplaced.GetFRminTolerance();
@@ -1362,7 +1361,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                MaskedAssign( (cond1 && !(ci > zero)) , fRmin*ci ,&z2);
                
                dz = 0.5*(z2-z1);
-	       ptnew = localPoint;
+           ptnew = localPoint;
                ptnew.z() = localPoint.z() - 0.5*(z1+z2);
                Float_t zinv = one/dz;
                Float_t rin = 0.5*(r1+r2+(r2-r1)*ptnew.z()*zinv);
@@ -1372,7 +1371,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                
                Bool_t bigequ(false);
                bigequ = ( (sigz*ci>zero) && (sigz*rxy2 < sigz*rin*(rin+sigz*toler)));
-	       Float_t ddotn(0.);
+           Float_t ddotn(0.);
                Float_t ddotnTemp = ptnew.x()*localDir.x() + ptnew.y()*localDir.y() + 0.5*(r1-r2)*localDir.z()*zinv*Sqrt(rxy2);
                MaskedAssign((cond1 && bigequ),ddotnTemp,&ddotn);
                
@@ -1382,21 +1381,21 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                
                Float_t deltav(0.),bv(0.);
                DistanceToCone<Backend>(unplaced, ptnew, localDir, dz, r1, r2, bv, deltav);
-	       MaskedAssign((cond1 && !bigequ),deltav,&delta);
+           MaskedAssign((cond1 && !bigequ),deltav,&delta);
                MaskedAssign((cond1 && !bigequ),bv,&b);
-	       
-	       
+
+
                MaskedAssign((cond1 &&  (!bigequ) && (delta>zero)), (mone*b-delta), &snxt);
-	    
+
                MaskedAssign((cond1 && (!bigequ) && (delta>zero)), (ptnew.z() + snxt*localDir.z()), &znew);
                
                Float_t temp=znew;
                MaskedAssign((temp<zero),mone*temp,&temp);
-	    
-	       Bool_t tempBigCond1 = (cond1 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && isFullPhiSphere);
-	       MaskedAssign(tempBigCond1, snxt, &sn1);
+
+           Bool_t tempBigCond1 = (cond1 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && isFullPhiSphere);
+           MaskedAssign(tempBigCond1, snxt, &sn1);
                Bool_t bigcond3 = (cond1 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && (!isFullPhiSphere));
-	       
+
                MaskedAssign(bigcond3, (ptnew.x() + snxt*localDir.x()), &xnew);
                MaskedAssign(bigcond3, (ptnew.y() + snxt*localDir.y()), &ynew);
                MaskedAssign(bigcond3, (ATan2(ynew,xnew)), &phi0);
@@ -1412,7 +1411,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                
                MaskedAssign((cond1 && (!bigequ) && (delta>zero) && (sn1>toler2) && (snxt>zero) && (temp < dz) && isFullPhiSphere), snxt, &sn1);
                Bool_t bigcond4 = (cond1 && (!bigequ) && (delta>zero) && (sn1>toler2) && (snxt>zero) && (temp < dz) && (!isFullPhiSphere));
-	       
+
                MaskedAssign(bigcond4, (ptnew.x() + snxt*localDir.x()), &xnew);
                MaskedAssign(bigcond4, (ptnew.y() + snxt*localDir.y()), &ynew);
                MaskedAssign(bigcond4, (ATan2(ynew,xnew)), &phi0);
@@ -1432,9 +1431,9 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                Vector3D<Float_t> ptnew;
                Float_t sei(unplaced.GetSinETheta());
                Float_t cei(unplaced.GetCosETheta());
-	       
-	       Float_t si=sei;
-	       Float_t ci=cei;
+
+           Float_t si=sei;
+           Float_t ci=cei;
                
                MaskedAssign( (cond2 && (ci > zero)) , fRmin*si ,&r1);
                MaskedAssign( (cond2 && (ci > zero)) , fRmin*ci ,&z1);
@@ -1447,16 +1446,16 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                MaskedAssign( (cond2 && !(ci > zero)) , fRmin*ci ,&z2);
                
                dz = 0.5*(z2-z1);
-               	       
+
                ptnew = localPoint;
                ptnew.z() = localPoint.z() - 0.5*(z1+z2);
-	       Float_t zinv = one/dz;
+           Float_t zinv = one/dz;
                Float_t rin = 0.5*(r1+r2+(r2-r1)*ptnew.z()*zinv);
                Float_t sigz=one;
                MaskedAssign( ( localPoint.z() < zero ),mone*sigz,&sigz);
                
                Bool_t bigequ = ( (sigz*ci>zero) && (sigz*rxy2 > sigz*rin*(rin-sigz*toler)));
-	       Float_t ddotn=zero;
+           Float_t ddotn=zero;
                Float_t ddotnTemp = ptnew.x()*localDir.x() + ptnew.y()*localDir.y() + 0.5*(r1-r2)*localDir.z()*zinv*Sqrt(rxy2);
                MaskedAssign((cond2 && bigequ),ddotnTemp,&ddotn);
                
@@ -1466,18 +1465,18 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                
                Float_t deltav=zero;Float_t bv=zero;
                DistanceToCone<Backend>(unplaced, ptnew, localDir, dz, r1, r2, bv, deltav);
-	       MaskedAssign((cond2 && !bigequ),deltav,&delta);
+           MaskedAssign((cond2 && !bigequ),deltav,&delta);
                MaskedAssign((cond2 && !bigequ),bv,&b);
                
-	       MaskedAssign(( cond2 && (!bigequ) && (delta>zero)), (mone*b-delta), &snxt);
-	       MaskedAssign(( cond2 && (!bigequ) && (delta>zero)), (ptnew.z() + snxt*localDir.z()), &znew);
+           MaskedAssign(( cond2 && (!bigequ) && (delta>zero)), (mone*b-delta), &snxt);
+           MaskedAssign(( cond2 && (!bigequ) && (delta>zero)), (ptnew.z() + snxt*localDir.z()), &znew);
                
                Float_t temp=znew;
                MaskedAssign((temp<zero),mone*temp,&temp);
-	       Bool_t tempBigCond = ( cond2 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && isFullPhiSphere);
-	       MaskedAssign(tempBigCond, snxt, &sn2);
+           Bool_t tempBigCond = ( cond2 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && isFullPhiSphere);
+           MaskedAssign(tempBigCond, snxt, &sn2);
                
-	       Bool_t bigcond5 = ( cond2 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && (!isFullPhiSphere));
+           Bool_t bigcond5 = ( cond2 && (!bigequ) && (delta>zero) && (snxt>zero) && (temp < dz) && (!isFullPhiSphere));
                MaskedAssign(bigcond5, (ptnew.x() + snxt*localDir.x()), &xnew);
                MaskedAssign(bigcond5, (ptnew.y() + snxt*localDir.y()), &ynew);
                MaskedAssign(bigcond5, (ATan2(ynew,xnew)), &phi0);
@@ -1485,13 +1484,13 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
                MaskedAssign((bigcond5 && (ddp<zero)), (ddp+2*kPi), &ddp);
                MaskedAssign((bigcond5 && (ddp<=(fPhi2-fPhi1))), snxt, &sn2);
                MaskedAssign((cond2 &&  (!bigequ) && (delta>zero) && (sn2>toler)), mone*b+delta,&snxt);
-	       MaskedAssign(( cond2 && (!bigequ) && (delta>zero) && (sn2>toler2)), (ptnew.z() + snxt*localDir.z()), &znew);
+           MaskedAssign(( cond2 && (!bigequ) && (delta>zero) && (sn2>toler2)), (ptnew.z() + snxt*localDir.z()), &znew);
                
                temp=znew;
                MaskedAssign((temp<zero),mone*temp,&temp);
                MaskedAssign((cond2 &&  (!bigequ) && (delta>zero) && (sn2>toler2) && (snxt>zero) && (temp < dz) && isFullPhiSphere), snxt, &sn2);
                
-	       Bool_t bigcond6 = ( cond2 && (!bigequ) && (delta>zero) && (sn2>toler2) && (snxt>zero) && (temp < dz) && (!isFullPhiSphere));
+           Bool_t bigcond6 = ( cond2 && (!bigequ) && (delta>zero) && (sn2>toler2) && (snxt>zero) && (temp < dz) && (!isFullPhiSphere));
                MaskedAssign(bigcond6, (ptnew.x() + snxt*localDir.x()), &xnew);
                MaskedAssign(bigcond6, (ptnew.y() + snxt*localDir.y()), &ynew);
                MaskedAssign(bigcond6, (ATan2(ynew,xnew)), &phi0);
