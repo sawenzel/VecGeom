@@ -16,9 +16,9 @@
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParaboloid.h"
-#ifdef USOLIDS
-class VUSOLID;
-#endif
+// #ifdef USOLIDS
+// class VUSOLID;
+// #endif
 
 namespace vecgeom {
 
@@ -134,7 +134,7 @@ public:
 
     Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
 
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
     Vector3D<Precision> GetPointOnSurface() const {
       return GetUnplacedVolume()->GetPointOnSurface();
     }

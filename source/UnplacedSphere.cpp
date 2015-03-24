@@ -75,7 +75,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   {/*
     std::ostringstream message;
     message << "Invalid radii for Solid: " ;//<< GetName() << std::endl
-            << std::endl<<"				pRmin = " << pRmin << ", pRmax = " << pRmax;
+            << std::endl<<"             pRmin = " << pRmin << ", pRmax = " << pRmax;
                 return;
     */ 
     //UUtils::Exception("USphere::USphere()", "GeomSolids0002",
@@ -196,15 +196,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       aArray[5] = GetDeltaThetaAngle();
   }
   
-  /*
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
-  {}
-  #else
-  
-  VECGEOM_CUDA_HEADER_BOTH
-   */
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {
       
@@ -324,13 +316,13 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
-   //  << "		*** Dump for solid - " << GetName() << " ***\n"
-   //  << "		===================================================\n"
+   //  << "     *** Dump for solid - " << GetName() << " ***\n"
+   //  << "     ===================================================\n"
    
    << " Solid type: VecGeomSphere\n"
      << " Parameters: \n"
 
-     << "		outer radius: " << fRmax << " mm \n"
+     << "       outer radius: " << fRmax << " mm \n"
      << "               Inner radius: " <<fRmin <<"mm\n"    
      << "               Start Phi Angle: "<<fSPhi<<"\n"
      << "               Delta Phi Angle: "<<fDPhi<<"\n"

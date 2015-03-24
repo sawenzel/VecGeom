@@ -215,7 +215,7 @@ VECGEOM_INLINE
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
-  
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const { return GetUnplacedVolume()->Extent(aMin,aMax);}
@@ -224,7 +224,7 @@ VECGEOM_INLINE
   VECGEOM_INLINE
   void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
   
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)  
+#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }

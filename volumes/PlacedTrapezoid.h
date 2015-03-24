@@ -113,7 +113,6 @@ public:
   virtual
   Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
 
-#ifdef VECGEOM_USOLIDS
   VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const {
     return GetUnplacedVolume()->Normal(point, normal);
@@ -128,7 +127,6 @@ public:
   Vector3D<Precision>  GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
-#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void ComputeBoundingBox();
@@ -138,9 +136,6 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VUSolid* Clone() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo(os) ;}

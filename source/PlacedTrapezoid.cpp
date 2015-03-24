@@ -36,21 +36,13 @@ VPlacedVolume const* PlacedTrapezoid::ConvertToUnspecialized() const {
 #ifdef VECGEOM_ROOT
 TGeoShape const* PlacedTrapezoid::ConvertToRoot() const {
   return new TGeoTrap( GetLabel().c_str(), GetDz(), GetTheta()*kRadToDeg, GetPhi()*kRadToDeg,
-                       GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                       GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+                       GetDy1(), GetDx1(), GetDx2(), GetAlpha1()*kRadToDeg,
+                       GetDy2(), GetDx3(), GetDx4(), GetAlpha2()*kRadToDeg );
 }
 #endif
 
 #ifdef VECGEOM_USOLIDS
 ::VUSolid const* PlacedTrapezoid::ConvertToUSolids() const {
-  return new ::UTrap(GetLabel().c_str(), GetDz(), GetTheta(), GetPhi(),
-                     GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
-                     GetDy2(), GetDx3(), GetDx4(), GetAlpha2());
-}
-#endif
-
-#ifdef VECGEOM_USOLIDS
-VUSolid* PlacedTrapezoid::Clone() const {
   return new ::UTrap(GetLabel().c_str(), GetDz(), GetTheta(), GetPhi(),
                      GetDy1(), GetDx1(), GetDx2(), GetAlpha1(),
                      GetDy2(), GetDx3(), GetDx4(), GetAlpha2());

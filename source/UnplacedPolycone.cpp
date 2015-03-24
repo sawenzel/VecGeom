@@ -350,8 +350,6 @@ template <TranslationCode transCodeT, RotationCode rotCodeT>
  #endif // VECGEOM_CUDA_INTERFACE
 
 #ifndef VECGEOM_NVCC
-
-     //#ifdef VECGEOM_USOLIDS
 /////////////////////////////////////////////////////////////////////////
 //
 // GetPointOnSurface
@@ -754,7 +752,8 @@ Precision UnplacedPolycone::SurfaceArea() const{
 
 
 }
- void UnplacedPolycone::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const {
+
+void UnplacedPolycone::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const {
 
     int i = 0;
     Precision maxR = 0;

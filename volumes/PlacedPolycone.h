@@ -77,7 +77,6 @@ public:
      return GetUnplacedVolume()->Capacity();
    }
 
-#ifdef VECGEOM_USOLIDS
   virtual
   void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
@@ -94,6 +93,8 @@ public:
     return false;
   }
 #endif
+  VECGEOM_CUDA_HEADER_BOTH
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
   virtual
   Vector3D<Precision> GetPointOnSurface() const
@@ -104,13 +105,6 @@ public:
   virtual double SurfaceArea() {
      return GetUnplacedVolume()->SurfaceArea();
   }
-
-  virtual std::string GetEntityType() const {
-      return "Polycone";
-  }
-#endif
-
-
 
 }; // end of class
 

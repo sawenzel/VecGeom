@@ -7,7 +7,7 @@
 #include "volumes/SpecializedParaboloid.h"
 
 #include <stdio.h>
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
 #include "base/RNG.h"
 #endif
 
@@ -208,7 +208,7 @@ fDy(0)
     }
     //__________________________________________________________________
 
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
     Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface() const{
         
         //G4 implementation
