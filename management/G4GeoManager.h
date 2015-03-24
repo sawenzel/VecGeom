@@ -3,12 +3,23 @@
  *
  *  Created on: 09.03.2015
  *      Author: swenzel
+ *
+ *  Note: This class introduces incompatibilities between Geant4 and USolids, through
+ *    the #include "G4GDMLParser.hh".  Here's the error message:
+ *
+
+${Geant4_DIR}/include/Geant4/G4UMultiUnion.hh:119:52:
+error: no matching function for call to ‘CLHEP::Hep3Vector::Hep3Vector(<unresolved overloaded function type>, <unresolved overloaded function type>, <unresolved overloaded function type>)’
+   G4ThreeVector transl(tr.fTr.x, tr.fTr.y, tr.fTr.z);
+                                                    ^
+
+ *
  */
 
 #ifndef VECGEOM_G4GEOMANAGER_H_
 #define VECGEOM_G4GEOMANAGER_H_
 
-#ifdef VECGEOM_GEANT4
+#if defined(VECGEOM_GEANT4) // and !defined(VECGEOM_USOLIDS)
 
 #include "G4VSolid.hh"
 #include "G4VPhysicalVolume.hh"
