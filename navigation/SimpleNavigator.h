@@ -12,7 +12,6 @@
 #include "base/Vector3D.h"
 #include "management/GeoManager.h"
 #include "navigation/NavigationState.h"
-#include "navigation/NavStatePool.h"
 
 #ifdef VECGEOM_ROOT
 #include "management/RootGeoManager.h"
@@ -137,8 +136,8 @@ public:
          Container3D const & /*global dirs*/,
          Container3D & /*workspace for localpoints*/,
          Container3D & /*workspace for localdirs*/,
-         NavStatePool const&  /* array of pointers to NavigationStates for currentstates */,
-         NavStatePool &  /* array of pointers to NabigationStates for outputstates */,
+         NavigationState **  /* array of pointers to NavigationStates for currentstates */,
+         NavigationState **  /* array of pointers to NabigationStates for outputstates */,
          Precision const * /* pSteps -- proposed steps */,
          Precision * /* safeties */,
          Precision * /* distances; steps */,
@@ -161,8 +160,8 @@ public:
     * and a global point; mainly for debugging purposes
     */
    void InspectSafetyForPoint(
-           Vector3D<Precision> const & /* global point */,
-           NavigationState const & /* current state */
+		   Vector3D<Precision> const & /* global point */,
+		   NavigationState const & /* current state */
       ) const;
 
 }; // end of class declaration
@@ -401,14 +400,15 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
  * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
  */
 
+
 template <typename Container3D>
 void SimpleNavigator::FindNextBoundaryAndStep(
          Container3D const & globalpoints,
          Container3D const & globaldirs,
          Container3D       & localpoints,
          Container3D       & localdirs,
-         NavStatePool const& currentstates,
-         NavStatePool      & newstates,
+         NavigationState  ** currentstates,
+         NavigationState  ** newstates,
          Precision const   * pSteps,
          Precision         * safeties,
          Precision         * distances,
