@@ -595,6 +595,7 @@ public:
                             Container_t const &directions,
                             Precision const *const stepMax,
                             Precision *const output) const {
+#ifndef MIC_SIDE // Scalar default
     for (int i = 0, i_max = points.size(); i < i_max; ++i) {
       Specialization::template DistanceToIn<kScalar>(
         *this->GetUnplacedVolume(),
@@ -605,6 +606,32 @@ public:
         output[i]
       );
     }
+#else // MIC
+  #pragma omp parallel for
+    for(int i = 0, i_max = points.size(); i < i_max; i+=8) {
+        Vector3D<MicPrecision> point(
+        MicPrecision((double*)points.x()+i),
+        MicPrecision((double*)points.y()+i),
+        MicPrecision((double*)points.z()+i)
+      );
+      Vector3D<MicPrecision> direction(
+        MicPrecision((double*)directions.x()+i),
+        MicPrecision((double*)directions.y()+i),
+        MicPrecision((double*)directions.z()+i)
+      );
+      MicPrecision stepMaxMic((double*)stepMax+i);
+      MicPrecision result(_mm512_set1_pd(kInfinity));
+      Specialization::template DistanceToIn<kMic>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        point,
+        direction,
+        stepMaxMic,
+        result
+      );
+      _mm512_store_pd(output+i,result);
+    }
+#endif
   }
 
   VECGEOM_INLINE

@@ -12,6 +12,8 @@
 #include "backend/vc/Backend.h"
 #elif defined(VECGEOM_CILK)
 #include "backend/cilk/Backend.h"
+#elif defined(__MIC__)
+#include "backend/mic/Backend.h"
 #else
 #include "backend/scalar/Backend.h"
 #endif
