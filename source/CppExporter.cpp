@@ -11,6 +11,13 @@
 #include "volumes/LogicalVolume.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedBox.h"
+#include "volumes/UnplacedTube.h"
+#include "volumes/UnplacedCone.h"
+#include "volumes/UnplacedTrapezoid.h"
+#include "volumes/UnplacedTorus.h"
+#include "volumes/UnplacedPolycone.h"
+#include "volumes/UnplacedPolyhedron.h"
+#include "volumes/UnplacedBooleanVolume.h"
 #include <sstream>
 #include <ostream>
 #include <vector>
@@ -55,6 +62,14 @@ inline namespace cxx {
         }
     }
 
+
+    void DumpVector( std::vector<double> const & v, std::ostream & dumps ){
+        dumps << "&std::vector<double>{";
+        for(auto j=0;j<v.size()-1;++j)
+           dumps << v[j] << " , ";
+        dumps << v[v.size()-1] << "}[0]";
+    }
+
     // function which dumps the logical volumes
     void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps ) {
         std::vector<LogicalVolume const *> alllogicalvolumes;
@@ -82,6 +97,7 @@ inline namespace cxx {
 
             // now we need to distinguish types
             // use here dynamic casting ( alternatives might exist )
+            // ******* TREAT THE BOX *********
             if( dynamic_cast<UnplacedBox const *>( l->unplaced_volume() ) ){
                 UnplacedBox const * box = dynamic_cast<UnplacedBox const *>( l->unplaced_volume() );
                 line << " new UnplacedBox( " ;
@@ -92,11 +108,153 @@ inline namespace cxx {
 
                 fNeededHeaderFiles.insert("volumes/UnplacedBox.h");
             }
-            else{
-                line << " = new UNSUPPORTEDSHAPE()\n";
+
+            // ******* TREAT THE TUBE *********
+            else if( dynamic_cast<UnplacedTube const *>( l->unplaced_volume() ) ){
+                UnplacedTube const * shape
+                    = dynamic_cast<UnplacedTube const *>( l->unplaced_volume() );
+                line << " new UnplacedTube( " ;
+                line << shape->rmin() << " , ";
+                line << shape->rmax() << " , ";
+                line << shape->z() << " , ";
+                line << shape->sphi() << " , ";
+                line << shape->dphi();
+                line << " )";
+
+                fNeededHeaderFiles.insert("volumes/UnplacedTube.h");
             }
-            line << " );\n";
-            dumps << line.str();
+
+            // ******* TREAT THE CONE *********
+            else if( dynamic_cast<UnplacedCone const *>( l->unplaced_volume() ) ){
+                 UnplacedCone const * shape
+                     = dynamic_cast<UnplacedCone const *>( l->unplaced_volume() );
+                 line << " new UnplacedCone( " ;
+                 line << shape->GetRmin1() << " , ";
+                 line << shape->GetRmax1() << " , ";
+                 line << shape->GetRmin2() << " , ";
+                 line << shape->GetRmax2() << " , ";
+                 line << shape->GetSPhi() << " , ";
+                 line << shape->GetDPhi();
+                 line << " )";
+                 fNeededHeaderFiles.insert("volumes/UnplacedCone.h");
+            }
+
+            // ******* TREAT THE TRAPEZOID *********
+            else if( dynamic_cast<UnplacedTrapezoid const *>( l->unplaced_volume() ) ){
+                 UnplacedTrapezoid const * shape
+                     = dynamic_cast<UnplacedTrapezoid const *>( l->unplaced_volume() );
+                 line << " new UnplacedTrapezoid( " ;
+
+                 line << shape->GetDz() << " , ";
+                 line << shape->GetTheta() << " , ";
+                 line << shape->GetPhi() << " , ";
+                 line << shape->GetDy1() << " , ";
+                 line << shape->GetDx1() << " , ";
+                 line << shape->GetDx2() << " , ";
+                 line << shape->GetAlpha1() << " , ";
+                 line << shape->GetDy2() << " , ";
+                 line << shape->GetDx3() << " , ";
+                 line << shape->GetDx4() << " , ";
+                 line << shape->GetAlpha2();
+                 line << " )";
+
+                 fNeededHeaderFiles.insert("volumes/UnplacedTrapezoid.h");
+            }
+
+            // ******* TREAT THE TORUS **********
+            else if( dynamic_cast<UnplacedTorus const *>( l->unplaced_volume() ) ){
+                 UnplacedTorus const * shape
+                     = dynamic_cast<UnplacedTorus const *>( l->unplaced_volume() );
+                 line << " new UnplacedTorus( " ;
+                 line << shape->rmin() << " , ";
+                 line << shape->rmax() << " , ";
+                 line << shape->rtor() << " , ";
+                 line << shape->sphi() << " , ";
+                 line << shape->dphi() << " , ";
+                 line << " )";
+                 fNeededHeaderFiles.insert("volumes/UnplacedTorus.h");
+            }
+
+            // ********* TREAT THE PCON **********
+            else if( dynamic_cast<UnplacedPolycone const *>( l->unplaced_volume() ) ){
+                  UnplacedPolycone const * shape
+                    = dynamic_cast<UnplacedPolycone const *>( l->unplaced_volume() );
+                line << " new UnplacedPolycone( " ;
+                line << shape->GetStartPhi() << " , ";
+                line << shape->GetDeltaPhi() << " , ";
+                line << shape->GetNz() << " , ";
+
+                std::vector<double> rmin, rmax, z;
+                // serialize the arrays as tempary std::vector
+                shape->ReconstructSectionArrays(z,rmin,rmax);
+
+                // put rmin vector
+                DumpVector( rmin, line );
+                line << " , ";
+
+                // put rmax vector
+                DumpVector( rmax, line );
+                line << " , ";
+
+                // put z vector
+                DumpVector( z, line );
+                line << " )";
+
+                fNeededHeaderFiles.insert("volumes/UnplacedPolycone.h");
+            }
+
+            // ********* TREAT THE PGON **********
+            else if( dynamic_cast<UnplacedPolyhedron const *>( l->unplaced_volume() ) ){
+                  UnplacedPolyhedron const * shape
+                    = dynamic_cast<UnplacedPolyhedron const *>( l->unplaced_volume() );
+                line << " new UnplacedPolyhedron( " ;
+                line << shape->GetPhiStart() << " , ";
+                line << shape->GetPhiDelta() << " , ";
+                line << shape->GetSideCount() << " , ";
+                line << shape->GetZSegmentCount() + 1 << " , ";
+                std::vector<double> rmin, rmax, z;
+                // serialize the arrays as tempary std::vector
+                shape->ReconstructSectionArrays( z,rmin,rmax );
+
+                if( shape->GetZSegmentCount()+1 != z.size() )
+                    std::cerr << "problem with dimensions\n";
+
+                // put z vector
+                DumpVector( z, line );
+                line << " , ";
+
+                // put rmin vector
+                DumpVector( rmin, line );
+                line << " , ";
+
+                // put rmax vector
+                DumpVector( rmax, line );
+                line << " )";
+
+                fNeededHeaderFiles.insert("volumes/UnplacedPolyhedron.h");
+            }
+
+            // *** BOOLEAN SOLIDS NEED A SPECIAL TREATMENT *** //
+            // their constituents are  not already a part of the logical volume list
+            else if( dynamic_cast<UnplacedBooleanVolume const *>( l->unplaced_volume() ) ){
+                 UnplacedBooleanVolume const * shape
+                   = dynamic_cast<UnplacedBooleanVolume const *>( l->unplaced_volume() );
+
+                    VPlacedVolume const * left = shape->fLeftVolume;
+                    VPlacedVolume const * right = shape->fRightVolume;
+
+                    if( fLVolumeToStringMap.find( left->logical_volume() ) == fLVolumeToStringMap.cend() )
+                        std::cerr << "SUBPART NOT YET REGISTERED\n";
+                    if( fLVolumeToStringMap.find( right->logical_volume() ) == fLVolumeToStringMap.cend() )
+                        std::cerr << "SUBPART NOT YET REGISTERED\n";
+            }
+
+            else{
+                    line << " = new UNSUPPORTEDSHAPE()";
+            }
+
+        line << " );\n";
+        dumps << line.str();
         }
     }
 
