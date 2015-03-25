@@ -34,6 +34,9 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   }
   */
 #ifndef VECGEOM_NVCC
+#ifdef OFFLOAD_MODE
+VECGEOM_CUDA_HEADER_BOTH
+#endif
   Precision GetRadiusInRing(Precision rmin, Precision rmax)
   {
       
