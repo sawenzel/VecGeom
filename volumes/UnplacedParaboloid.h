@@ -154,39 +154,34 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     void SetDz(const Precision dz);
     
+#if !defined(VECGEOM_NVCC)
 //__________________________________________________________________
     
-    VECGEOM_CUDA_HEADER_BOTH
     void Normal(const Precision *point, const Precision *dir, Precision *norm) const;
 
 //__________________________________________________________________
     
-    VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
-    
+
 //__________________________________________________________________
 
     // Computes capacity of the shape in [length^3]
-    VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const { return kPi*fDz*(fRlo*fRlo+fRhi*fRhi);}
 //__________________________________________________________________
     
-    VECGEOM_CUDA_HEADER_BOTH
-    Precision SurfaceArea () const;
+    Precision SurfaceArea() const;
 //__________________________________________________________________
 
-#if !defined(VECGEOM_NVCC)
     virtual Vector3D<Precision> GetPointOnSurface() const;
-#endif
 //__________________________________________________________________
     
+    std::string GetEntityType() const{ return "Paraboloid";}
+#endif // !VECGEOM_NVCC
+
     VECGEOM_CUDA_HEADER_BOTH
     void ComputeBoundingBox();
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
-    std::string GetEntityType() const{ return "Paraboloid";}
-//__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
     void GetParameterList() const{;}

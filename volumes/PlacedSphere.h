@@ -188,11 +188,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
 
-VECGEOM_CUDA_HEADER_BOTH  
-virtual Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
-
-
-  /*
+/*
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolO() const { return GetUnplacedVolume()->GetfRTolO(); }
 
@@ -201,38 +197,29 @@ virtual Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
-  
-  */
-  
-  VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-  Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+*/
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const { return GetUnplacedVolume()->Extent(aMin,aMax);}
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
   void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
-  
-#if !defined(VECGEOM_NVCC)
-  Vector3D<Precision> GetPointOnSurface() const {
-    return GetUnplacedVolume()->GetPointOnSurface();
-  }
-#endif
- 
-  
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+
+#ifndef VECGEOM_NVCC
+  VECGEOM_INLINE
+  virtual Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
+
+  VECGEOM_INLINE
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
+  VECGEOM_INLINE
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+
+  VECGEOM_INLINE
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override { return GetUnplacedVolume()->Extent(aMin,aMax);}
   
-  VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
   {
       bool valid;
@@ -242,9 +229,13 @@ VECGEOM_INLINE
               normal, valid);
       return valid;
   }
-  
-#ifndef VECGEOM_NVCC
+
+  Vector3D<Precision> GetPointOnSurface() const {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
+
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
 #endif

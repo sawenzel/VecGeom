@@ -76,22 +76,18 @@ public:
   VECGEOM_INLINE
   Precision dphi() const { return GetUnplacedVolume()->dphi(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+#ifndef VECGEOM_NVCC
+  virtual Precision Capacity() override {
       return GetUnplacedVolume()->Capacity();
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   virtual
-  Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-
-#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;

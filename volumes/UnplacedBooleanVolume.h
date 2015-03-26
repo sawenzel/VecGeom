@@ -62,33 +62,28 @@ public:
   VECGEOM_INLINE
   BooleanOperation GetOp() const {return fOp;}
 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   VECGEOM_INLINE
   Precision Capacity() const {
     // TBDONE -- need some sampling
     return 0.;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision SurfaceArea() const {
     // TBDONE -- need some sampling
     return 0.;
   }
 
-
-  VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
-
-#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const {
     // TBDONE
       return Vector3D<Precision>() ;
   }
-#endif
 
   std::string GetEntityType() const { return "BooleanVolume"; }
+#endif // !VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const {} ;

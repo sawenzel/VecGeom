@@ -71,22 +71,17 @@ public:
   
   //_____________________________________________________________________________
   
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
-  VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return fCubicVolume; }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  //VECGEOM_INLINE
   Precision SurfaceArea() const { return fSurfaceArea; }
   
-#if !defined(VECGEOM_NVCC)
   virtual Vector3D<Precision> GetPointOnSurface() const;
-#endif 
-  
-  //VECGEOM_CUDA_HEADER_BOTH
+
   std::string GetEntityType() const;
+#endif
   
     
   VECGEOM_CUDA_HEADER_BOTH

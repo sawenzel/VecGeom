@@ -338,15 +338,14 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
   #undef POLYHEDRON_CREATE_SPECIALIZATION
 }
 
-
-VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
 void UnplacedPolyhedron::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
   const UnplacedTube& bTube = GetBoundingTube();
   bTube.Extent(aMin, aMax);
   aMin.z()+=fBoundingTubeOffset;
   aMax.z()+=fBoundingTubeOffset;
 }
-
+#endif // !VECGEOM_NVCC
 
 VECGEOM_CUDA_HEADER_BOTH
 void UnplacedPolyhedron::Print() const {

@@ -82,13 +82,13 @@ public:
   Precision GetInnerOffset() const {return GetUnplacedVolume()->GetInnerOffset();}
   Precision GetOuterOffset() const {return GetUnplacedVolume()->GetOuterOffset();}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+#if !defined(VECGEOM_NVCC)
+  virtual Precision Capacity() override {
       return GetUnplacedVolume()->Capacity();
   }
 
   virtual
-  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const {
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
@@ -107,13 +107,14 @@ public:
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  virtual double SurfaceArea() {
+  virtual double SurfaceArea() override {
      return GetUnplacedVolume()->SurfaceArea();
   }
 
   virtual std::string GetEntityType() const {
       return "Cone";
   }
+#endif
 
 }; // end class
 
