@@ -48,7 +48,7 @@ for SHAPE in ${SHAPES}; do
 		if [ $? == 0 ]; then
 			ssh mic0 "(cd ${PWD}; ./${SHAPE}Benchmark -npoints ${NPTS})" &> ${SHAPE}-${i}.log
 		else
-			${SHAPE}Benchmark -npoints ${NPTS} &> ${SHAPE}-${i}.log
+			./${SHAPE}Benchmark -npoints ${NPTS} &> ${SHAPE}-${i}.log
 		fi
 	done
 
