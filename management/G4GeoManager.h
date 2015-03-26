@@ -25,7 +25,11 @@ error: no matching function for call to ‘CLHEP::Hep3Vector::Hep3Vector(<unreso
 #include "G4VPhysicalVolume.hh"
 #include "G4Navigator.hh"
 #include "G4GeometryManager.hh"
-#include "G4GDMLParser.hh"
+
+#ifndef VECGEOM_USOLIDS
+  #include "G4GDMLParser.hh"
+#endif
+
 #undef NDEBUG
 
 namespace vecgeom {
@@ -53,10 +57,17 @@ public:
 
     // loads a G4 geometry from a gdmlfile
     void LoadG4Geometry( std::string gdmlfile ){
+#ifndef VECGEOM_USOLIDS
         G4GDMLParser parser;
         parser.Read( gdmlfile );
 
         LoadG4Geometry( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
+#else
+        std::cerr<<"\n*** WARNING: LoadG4Geometry() is incompatible with USOLIDS!\n";
+        std::cerr<<"      Please turn off USOLIDS and rebuild.  Aborting...\n";
+        Assert(false);
+        exit(-1);
+#endif
     }
 
     // sets a G4 geometry from existing G4PhysicalVolume
