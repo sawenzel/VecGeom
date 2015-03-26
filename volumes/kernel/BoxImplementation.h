@@ -554,9 +554,9 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
 
          Vector3D<Precision> dimensions= box.dimensions();
 
-         static const double delta = 100.*kTolerance;
-         static const double kInvSqrt2 = 1. / Sqrt(2.);
-         static const double kInvSqrt3 = 1. / Sqrt(3.);
+         constexpr double delta = 100.*kTolerance;
+         constexpr double kInvSqrt2 = 0.7071067811865475; // = 1. / Sqrt(2.);
+         constexpr double kInvSqrt3 = 0.5773502691896258; // = 1. / Sqrt(3.);
          normal.Set(0.);
          Float_t nsurf = 0;
          Float_t safmin(kInfinity);
