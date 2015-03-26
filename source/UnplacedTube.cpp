@@ -3,8 +3,14 @@
 
 #include "volumes/UnplacedTube.h"
 #include "volumes/SpecializedTube.h"
-#include "volumes/utilities/GenerationUtilities.h"
+#include "backend/Backend.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
+#include <cassert>
+#include <cmath>
+#endif
 
+#include "volumes/utilities/GenerationUtilities.h"
 #include "management/VolumeFactory.h"
 
 namespace vecgeom {
@@ -82,7 +88,66 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 }
 
 
-#ifndef VECGEOM_NVCC
+// VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+Vector3D<Precision> UnplacedTube::GetPointOnSurface() const {
+  // select on which surface to create the point; should be done in proportion to the area of that surface
+
+  // once decided create a point
+	Precision rArea = 0.0, phiArea = 0.0, zInArea = 0.0, zOutArea = 0.0;
+	Precision rVal, phiVal, zVal;
+
+    int choice = ChooseSurface(rArea, phiArea, zInArea, zOutArea); 
+	Precision RRND = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
+	Precision FRND = RNG::Instance().uniform(sphi(), sphi() + dphi());
+	Precision ZRND = RNG::Instance().uniform() * z();
+	// 0::rTop, 1::rBot, 2::phiLeft, 3::phiRight, 4::zIn, 5::zOut
+		
+	if (choice == 0) {   // TOP
+		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
+		rVal = RRND;
+		phiVal = FRND;
+		zVal = z();
+		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
+	} else if (choice == 1) {
+		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
+		rVal = RRND;
+		phiVal = FRND;
+		zVal = -1.0 * z();
+		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
+	} else if (choice == 2) {
+		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
+		//zVal = RNG::Instance().uniform() * z();
+		rVal = RRND;
+		phiVal = sphi();
+		zVal = ZRND;
+	} else if (choice == 3) {
+		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
+		//zVal = RNG::Instance().uniform() * z();
+		rVal = RRND;
+		phiVal = sphi() + dphi(); std::cout << phiVal << "  ";
+		zVal = ZRND;
+	} else if (choice == 4) {
+		rVal = rmin();
+		phiVal = FRND;
+		zVal = ZRND;
+		//zVal = RNG::Instance().uniform() * z();
+		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
+	} else if (choice == 5) {
+		rVal = rmax();
+		phiVal = FRND;
+		zVal = ZRND;
+		//zVal = RNG::Instance().uniform() * z();
+		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
+	}
+	 Precision xVal = rVal * cos(phiVal);
+	 Precision yVal = rVal * sin(phiVal);
+	return Vector3D<Precision>(xVal, yVal, zVal);
+}
+#endif
+
+/*
+  VECGEOM_CUDA_HEADER_BOTH
   Precision UnplacedTube::SurfaceArea () const {
     Precision area = fDphi * (fRmin + fRmax) * (2 * fZ + fRmax - fRmin);
     if (fDphi<kTwoPi) {
@@ -91,7 +156,9 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
     return area;
   }
 
+  */
 
+  VECGEOM_CUDA_HEADER_BOTH
   void UnplacedTube::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
     // most general case
     aMin = Vector3D<Precision>(-fRmax,-fRmax,-fZ);
@@ -145,7 +212,7 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 
     return;
   }
-#endif // !VECGEOM_NVCC
+
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
