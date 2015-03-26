@@ -335,11 +335,11 @@ bool validateNavigationStepAgainstRoot(
       std::cerr << " OUTSIDEERROR \n";
     }
   }
-  else if( Abs(testStep - rootnav->GetStep()) > 3.*kTolerance
+  else if( Abs(testStep - rootnav->GetStep()) > 100.*kTolerance
            || rootnav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top()) )
   {
     result = false;
-    std::cerr << "*** ERROR on validateAgainstROOT: "
+    std::cerr << "\n*** ERROR on validateAgainstROOT: "
               <<" ROOT node="<< rootnav->GetCurrentNode()->GetName()
               <<" outside="<< rootnav->IsOutside()
               <<" step="<< rootnav->GetStep()
@@ -500,7 +500,6 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
       std::cout << (nextPV ? nextPV->GetName() : "NULL") <<" / ";
 #endif
       std::cout << (vgSerialStates[i]->Top()? vgSerialStates[i]->Top()->GetLabel() : "NULL") << "\n";
-
       // nav.InspectEnvironmentForPointAndDirection( pos, dir, *origState );
     }
   }
@@ -584,7 +583,7 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   errorCount = 0;
   for(int i=0; i<np; ++i) {
     bool mismatch = false;
-    if( Abs( gpuSteps[i] - refSteps[i] ) > kTolerance )                       mismatch = true;
+    if( Abs( gpuSteps[i] - refSteps[i] ) > 10.*kTolerance )                   mismatch = true;
     // if( gpuStates[i]->Top() != vgSerialStates[i]->Top() )                  mismatch = true;
     // if( gpuStates[i]->IsOnBoundary() != vgSerialStates[i]->IsOnBoundary()) mismatch = true;
     // if( safeties[i] != nav.GetSafety( points[i], *origStates[i] ))         mismatch = true;
