@@ -10,6 +10,7 @@
 #include "base/Transformation3D.h"
 #include "volumes/LogicalVolume.h"
 #include "volumes/PlacedVolume.h"
+#include "volumes/PlacedBooleanVolume.h"
 #include "volumes/UnplacedBox.h"
 #include "volumes/UnplacedTube.h"
 #include "volumes/UnplacedCone.h"
@@ -17,24 +18,63 @@
 #include "volumes/UnplacedTorus.h"
 #include "volumes/UnplacedPolycone.h"
 #include "volumes/UnplacedPolyhedron.h"
+#include "volumes/UnplacedTrd.h"
 #include "volumes/UnplacedBooleanVolume.h"
 #include <sstream>
 #include <ostream>
-#include <vector>
+#include <algorithm>
+#include <list>
 
 namespace vecgeom {
 inline namespace cxx {
 
+template<typename IterableContainer, typename ElementType>
+bool ContainerContains( IterableContainer const & c, ElementType const & e ){
+    return std::find( c.cbegin(), c.cend(), e ) != c.cend();
+}
 
-    void GeomCppExporter::DumpTransformations( std::ostream & dumps ){
 
-        std::vector<VPlacedVolume const *> allplacedvolumes;
-        GeoManager::Instance().getAllPlacedVolumes( allplacedvolumes );
+// this function should live in GeoManager and to be used by various exporters
+// function returns
+// a sorted list of logical volumes -- if some logical volume A depends on another volume B
+// (as for boolean volumes); then B
+// should come in that list before A
+// a list of transformations
+void ScanGeometry( VPlacedVolume const *const volume,
+                   std::list<LogicalVolume const *> & lvlist,
+                   std::list<LogicalVolume const *> & boollvlist,
+                   std::list<Transformation3D const *> & tlist ) {
+    // if not yet treated
+    if( std::find( lvlist.cbegin(), lvlist.cend(), volume->logical_volume() ) == lvlist.cend()
+      && std::find( boollvlist.cbegin(), boollvlist.cend(), volume->logical_volume() ) == boollvlist.cend() ) {
+
+      if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
+          boollvlist.push_front( volume->logical_volume() );
+          PlacedBooleanVolume const* v =  dynamic_cast<PlacedBooleanVolume const*>(volume);
+          ScanGeometry(v->GetUnplacedVolume()->fLeftVolume, lvlist, boollvlist, tlist );
+          ScanGeometry(v->GetUnplacedVolume()->fRightVolume, lvlist, boollvlist, tlist );
+      }
+      else{
+          // ordinary logical volume
+          lvlist.push_back( volume->logical_volume() );
+      }
+
+      for( auto d = 0; d < volume->daughters().size(); ++d )
+        ScanGeometry(volume->daughters()[d], lvlist, boollvlist, tlist);
+  }
+
+  if ( std::find( tlist.cbegin(),tlist.cend(), volume->transformation()) == tlist.cend() ){
+      tlist.push_back(volume->transformation());
+  }
+}
+
+
+
+    void GeomCppExporter::DumpTransformations( std::ostream & dumps, std::list<Transformation3D const *> const & tvlist ){
 
         // loop over all transformations
         unsigned int counter=0;
-        for( auto p : allplacedvolumes ){
-            Transformation3D const * t = p->transformation();
+        for( auto t : tvlist ){
             // register transformation
             if( fTrafoToStringMap.find(t) == fTrafoToStringMap.cend() ){
                 // create a variable name
@@ -71,12 +111,11 @@ inline namespace cxx {
     }
 
     // function which dumps the logical volumes
-    void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps ) {
-        std::vector<LogicalVolume const *> alllogicalvolumes;
-        GeoManager::Instance().getAllLogicalVolumes( alllogicalvolumes );
+    void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
+            std::list<LogicalVolume const *> const & lvlist ) {
 
-        unsigned int counter=0;
-        for( auto l : alllogicalvolumes ){
+        static unsigned int counter=0;
+        for( auto l : lvlist ){
             // register logical volume
             if( fLVolumeToStringMap.find(l) == fLVolumeToStringMap.cend() ){
                  // create a variable name
@@ -89,10 +128,9 @@ inline namespace cxx {
         }
 
         // generate code that instantiates LogicalVolumes
-        for ( auto iter : fLVolumeToStringMap ){
-            LogicalVolume const * l = iter.first;
+        for ( auto l : lvlist ){
             std::stringstream line;
-            line << "LogicalVolume * " << iter.second;
+            line << "LogicalVolume * " << fLVolumeToStringMap[l];
             line << " = new LogicalVolume ( \"" << l->GetLabel() << "\" , ";
 
             // now we need to distinguish types
@@ -100,6 +138,7 @@ inline namespace cxx {
             // ******* TREAT THE BOX *********
             if( dynamic_cast<UnplacedBox const *>( l->unplaced_volume() ) ){
                 UnplacedBox const * box = dynamic_cast<UnplacedBox const *>( l->unplaced_volume() );
+
                 line << " new UnplacedBox( " ;
                    line << box->dimensions().x() << " , ";
                    line << box->dimensions().y() << " , ";
@@ -128,11 +167,13 @@ inline namespace cxx {
             else if( dynamic_cast<UnplacedCone const *>( l->unplaced_volume() ) ){
                  UnplacedCone const * shape
                      = dynamic_cast<UnplacedCone const *>( l->unplaced_volume() );
+
                  line << " new UnplacedCone( " ;
                  line << shape->GetRmin1() << " , ";
                  line << shape->GetRmax1() << " , ";
                  line << shape->GetRmin2() << " , ";
                  line << shape->GetRmax2() << " , ";
+                 line << shape->GetDz() << " , ";
                  line << shape->GetSPhi() << " , ";
                  line << shape->GetDPhi();
                  line << " )";
@@ -165,12 +206,13 @@ inline namespace cxx {
             else if( dynamic_cast<UnplacedTorus const *>( l->unplaced_volume() ) ){
                  UnplacedTorus const * shape
                      = dynamic_cast<UnplacedTorus const *>( l->unplaced_volume() );
+
                  line << " new UnplacedTorus( " ;
                  line << shape->rmin() << " , ";
                  line << shape->rmax() << " , ";
                  line << shape->rtor() << " , ";
                  line << shape->sphi() << " , ";
-                 line << shape->dphi() << " , ";
+                 line << shape->dphi();
                  line << " )";
                  fNeededHeaderFiles.insert("volumes/UnplacedTorus.h");
             }
@@ -179,7 +221,8 @@ inline namespace cxx {
             else if( dynamic_cast<UnplacedPolycone const *>( l->unplaced_volume() ) ){
                   UnplacedPolycone const * shape
                     = dynamic_cast<UnplacedPolycone const *>( l->unplaced_volume() );
-                line << " new UnplacedPolycone( " ;
+
+                  line << " new UnplacedPolycone( " ;
                 line << shape->GetStartPhi() << " , ";
                 line << shape->GetDeltaPhi() << " , ";
                 line << shape->GetNz() << " , ";
@@ -207,7 +250,8 @@ inline namespace cxx {
             else if( dynamic_cast<UnplacedPolyhedron const *>( l->unplaced_volume() ) ){
                   UnplacedPolyhedron const * shape
                     = dynamic_cast<UnplacedPolyhedron const *>( l->unplaced_volume() );
-                line << " new UnplacedPolyhedron( " ;
+
+                  line << " new UnplacedPolyhedron( " ;
                 line << shape->GetPhiStart() << " , ";
                 line << shape->GetPhiDelta() << " , ";
                 line << shape->GetSideCount() << " , ";
@@ -243,32 +287,74 @@ inline namespace cxx {
                     VPlacedVolume const * left = shape->fLeftVolume;
                     VPlacedVolume const * right = shape->fRightVolume;
 
-                    if( fLVolumeToStringMap.find( left->logical_volume() ) == fLVolumeToStringMap.cend() )
-                        std::cerr << "SUBPART NOT YET REGISTERED\n";
-                    if( fLVolumeToStringMap.find( right->logical_volume() ) == fLVolumeToStringMap.cend() )
-                        std::cerr << "SUBPART NOT YET REGISTERED\n";
+                    // CHECK IF THIS BOOLEAN VOLUME DEPENDS ON OTHER BOOLEAN VOLUMES NOT YET DUMPED
+                    // THIS SOLUTION IS POTENTIALLY SLOW; MIGHT CONSIDER DIFFERENT TYPE OF CONTAINER
+                    if( ! ContainerContains(fListofTreatedLogicalVolumes, left->logical_volume())
+                            || ! ContainerContains(fListofTreatedLogicalVolumes, right->logical_volume()) ) {
+                        // we need to defer the treatment of this logical volume
+                        fListofDeferredLogicalVolumes.push_back( l );
+                        continue;
+                    }
+
+                    line << " new UnplacedBooleanVolume( " ;
+                    if( shape->GetOp() == kUnion ){
+                        line << " kUnion ";
+                    }
+                    if( shape->GetOp() == kSubtraction ){
+                        line << " kSubtraction ";
+                    }
+                    if( shape->GetOp() == kIntersection ){
+                        line << " kIntersection ";
+                    }
+                    line << " , ";
+                    // placed versions of left and right volume
+                    line << fLVolumeToStringMap[ left->logical_volume() ]
+                         << "->Place( "
+                         << fTrafoToStringMap[ left->transformation() ]
+                         << " )";
+                    line << " , ";
+                    line << fLVolumeToStringMap[ right->logical_volume() ]
+                         << "->Place( "
+                         << fTrafoToStringMap[ right->transformation() ]
+                         <<  " )";
+                    line << " )";
+
+                    fNeededHeaderFiles.insert("volumes/UnplacedBooleanVolume.h");
             }
 
+            else if( dynamic_cast<UnplacedTrd const *>( l->unplaced_volume() ) ){
+                    UnplacedTrd const * shape
+                         = dynamic_cast<UnplacedTrd const *>( l->unplaced_volume() );
+
+                    line << " new UnplacedTrd( " ;
+                    line << shape->dx1() << " , ";
+                 line << shape->dx2() << " , ";
+                 line << shape->dy1() << " , ";
+                 line << shape->dy2() << " , ";
+                 line << shape->dz();
+                 line << " )";
+
+                 fNeededHeaderFiles.insert("volumes/UnplacedTrd.h");
+            }
             else{
-                    line << " = new UNSUPPORTEDSHAPE()";
+                line << " = new UNSUPPORTEDSHAPE()";
+                line << l->GetLabel() << "\n";
             }
 
         line << " );\n";
         dumps << line.str();
-        }
+        // if we came here, we dumped this logical volume; so register it as beeing treated
+        fListofTreatedLogicalVolumes.push_back( l );
+        } // end loop over logical volumes
     }
 
 
     // now recreate geometry hierarchy
     // the mappings fLogicalVolToStringMap and fTrafoToStringMap need to be initialized
-    void GeomCppExporter::DumpGeomHierarchy( std::ostream & dumps ){
-        // idea recreate hierarchy by adding daughters
-        std::vector<LogicalVolume const *> alllogicalvolumes;
-        GeoManager::Instance().getAllLogicalVolumes( alllogicalvolumes );
+    void GeomCppExporter::DumpGeomHierarchy( std::ostream & dumps, std::list<LogicalVolume const *> const & lvlist ){
 
-        for( auto l : alllogicalvolumes ){
+        for( auto l : lvlist ){
             // map daughters for logical volume l
-
             std::string thisvolumevariable = fLVolumeToStringMap[l];
 
             for( auto d = 0; d < l->daughters().size(); ++d ){
@@ -303,6 +389,7 @@ inline namespace cxx {
         dumps << "#include \"volumes/PlacedVolume.h\"\n";
         dumps << "#include \"volumes/LogicalVolume.h\"\n";
         dumps << "#include \"base/Transformation3D.h\"\n";
+        dumps << "#include <vector>\n";
 
         // put shape specific headers
         for( auto headerfile : fNeededHeaderFiles ){
@@ -311,33 +398,42 @@ inline namespace cxx {
     }
 
 
-//    void GeomCppExporter::DumpLogicalV( stream & dumps,  LogicalVolume const & lvol ){
-//        // common part create variable name
-//        std::stringstream s;
-//        s << lvol.GetLabel();
-//
-//        // if GetLabelIsEmpty; need to create a variable name
-//
-//        // register pointer to variablename
-//        fLVolumeToNameMap.add( &lvol, s.str() );
-//
-//        DumpSpecific()
-//    }
-//    void DumpSpecific( UnplacedBox const & ){
-//    //
-//
-//    }
-
 void GeomCppExporter::DumpGeometry( std::ostream & s ) {
     std::stringstream transformations;
     std::stringstream logicalvolumes;
     std::stringstream header;
     std::stringstream geomhierarchy;
 
-    DumpTransformations( transformations );
-    DumpLogicalVolumes( logicalvolumes );
+    // create list of transformations, simple logical volumes and boolean logical volumes
+    std::list<Transformation3D const *> tlist;
+    std::list<LogicalVolume const *> lvlist;
+    std::list<LogicalVolume const *> boollvlist;
+    ScanGeometry( GeoManager::Instance().GetWorld(), lvlist, boollvlist, tlist );
+
+    // generate code that instantiates the transformations
+    DumpTransformations( transformations, tlist );
+    // generate code that instantiates ordinary logical volumes
+    DumpLogicalVolumes( logicalvolumes, lvlist );
+
+    // generate code that instantiates complex logical volumes ( for the moment only booleans )
+    // do a first pass
+    DumpLogicalVolumes( logicalvolumes, boollvlist );
+    int counter=0;
+    // do more passes to resolve dependencies between logical volumes
+    // doing max 10 passes to protect against infinite loop ( which should never occur )
+    while( fListofDeferredLogicalVolumes.size() > 0 && counter < 10){
+        std::list< LogicalVolume const *> remainingvolumes = fListofDeferredLogicalVolumes;
+        fListofDeferredLogicalVolumes.clear();
+        DumpLogicalVolumes( logicalvolumes, remainingvolumes );
+        counter++;
+    }
+
+    // generate more header; this has to be done here since
+    // headers are determined from the logical volumes used !!
     DumpHeader( header );
-    DumpGeomHierarchy( geomhierarchy );
+
+    // generate code that reproduces the geometry hierarchy
+    DumpGeomHierarchy( geomhierarchy, lvlist );
 
     s << header.str();
     s << "using namespace vecgeom;\n";

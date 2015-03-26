@@ -464,6 +464,7 @@ endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
   source/ShapeDebugger.cpp
+  source/CppExporter.cpp
 )
 
 # some CUDA kernel code in "userspace"
