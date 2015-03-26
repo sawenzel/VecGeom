@@ -5,6 +5,9 @@
 #define VECGEOM_VOLUMES_UNPLACEDTUBE_H_
 
 #include "base/Global.h"
+#include "base/RNG.h"
+#include "base/AlignedBase.h"
+#include "base/Array.h"
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
 #include "volumes/Wedge.h"
@@ -25,6 +28,7 @@ private:
   // cached values
   Precision fRmin2, fRmax2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
   Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2, fTolIz, fTolOz;
+  Precision fTolIrmin, fTolOrmin, fTolIrmax, fTolOrmax;
   Wedge fPhiWedge;
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -41,11 +45,15 @@ private:
     fRmin2 = fRmin * fRmin;
     fRmax2 = fRmax * fRmax;
 
-    fTolOrmin2 = (fRmin - kTolerance)*(fRmin - kTolerance);
-    fTolIrmin2 = (fRmin + kTolerance)*(fRmin + kTolerance);
-    
-    fTolOrmax2 = (fRmax + kTolerance)*(fRmax + kTolerance);
-    fTolIrmax2 = (fRmax - kTolerance)*(fRmax - kTolerance);
+ 	fTolOrmin = (fRmin - kTolerance);
+    fTolIrmin = (fRmin + kTolerance);
+	fTolOrmin2 = fTolOrmin * fTolOrmin;
+	fTolIrmin2 = fTolIrmin * fTolIrmin;
+			     
+	fTolOrmax = (fRmax + kTolerance);
+	fTolIrmax = (fRmax - kTolerance);
+	fTolOrmax2 = fTolOrmax * fTolOrmax;
+	fTolIrmax2 = fTolIrmax * fTolIrmax;
 
     GetAlongVectorToPhiSector(fSphi, fAlongPhi1x, fAlongPhi1y);
     GetAlongVectorToPhiSector(fSphi + fDphi, fAlongPhi2x, fAlongPhi2y);
@@ -163,20 +171,96 @@ fPhiWedge(other.fDphi,other.fSphi)
   VECGEOM_INLINE
   Wedge const & GetWedge() const { return fPhiWedge; }
 
-#ifndef VECGEOM_NVCC
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision volume() const {
     return fZ * (fRmax2 - fRmin2) * fDphi;
   }
 
+#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+	Vector3D<Precision> GetPointOnSurface() const;
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const {
       return volume();
   }
 
-  Precision SurfaceArea () const;
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision SurfaceArea () const {
+	  //return fZ * (fRmax + fRmin) * fDphi + (fRmax2 - fRmin2) * fDphi;
+	  return fDphi * (fRmax + fRmin) * (fRmax - fRmin + fZ);
+  }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetTopArea() const {            // Abhijit:: this is top and bottom circular area of tube
+	  return 0.5 * (fRmax2 - fRmin2) * fDphi;
+  }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetLateralPhiArea() const {     // Abhijit:: this is vertical Phi_start and phi_end opening
+	  return fZ * (fRmax - fRmin);
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetLateralRInArea() const {    // Abhijit:: this is Inner surface of tube along Z
+	  return fZ * fRmin * fDphi;
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetLateralROutArea() const {  // Abhijit:: this is Outer surface of tube along Z
+	  return fZ * fRmax * fDphi;
+  }
+
+  //  This computes where the random point would be placed
+  // 1::rTop, 2::rBot, 3::phiLeft, 4::phiRight, 5::zIn, 6::zOut
+  VECGEOM_CUDA_HEADER_BOTH
+  int ChooseSurface(Precision &rArea, Precision &phiArea, Precision &zInArea, Precision &zOutArea) const {
+      int i, j, nChoice = 6; 
+	  Precision totArea, sumWeight = 0.0, minArea = 9999999.9;
+	  
+	  rArea = GetTopArea();  		// 50% divide into top and bottom
+	  phiArea = GetLateralPhiArea();	// 50% divide into Left and Right
+	  zInArea = GetLateralRInArea();	// Inner tube surface
+	  zOutArea = GetLateralROutArea();	// Outer tube surface
+	  totArea = 2.0*rArea + 2.0*phiArea + zInArea + zOutArea;
+	  Array<Precision>prob;
+	  Array<int>iprob;
+
+	  // prob contains the value of weightage while iprobe contains the serial number denoting surface
+
+	  prob[0] = rArea/totArea;   iprob[0]=0; minArea = Min(minArea, prob[0]);   sumWeight += prob[0];   // circular top
+	  prob[1] = prob[0];	     iprob[1]=1;                                    sumWeight += prob[1];	// circular bottom
+	  prob[2] = phiArea/totArea; iprob[2]=2; minArea = Min(minArea, prob[2]);   sumWeight += prob[2];	// phi left
+	  prob[3] = prob[2];	     iprob[3]=3;                                    sumWeight += prob[3];	// phi right
+	  prob[4] = zInArea/totArea; iprob[4]=4; minArea = Min(minArea, prob[4]);   sumWeight += prob[4];	// Tube Inner Surface
+	  prob[5] = zOutArea/totArea;iprob[5]=5; minArea = Min(minArea, prob[5]);   sumWeight += prob[5];	// Tube Outer Surface
+
+	  //  Sort the array
+	  Precision tmp1, tmp2;
+	  for (i = 0; i < nChoice - 1; i++) {
+		  for (j = 0; j < nChoice - 1; j++) {
+			  if (prob[j] > prob[j+1]) {
+				  tmp1 = prob[j];        tmp2 = iprob[j];
+				  prob[j] = prob[j+1];   iprob[j] = iprob[j+1];
+				  prob[j+1] = tmp1;      iprob[j+1] = tmp2; // sort iprob also depending on prob value
+			  }
+		  }
+	  }
+
+      // Precision firstRnd = RNG::Instance().uniform() * (sumWeight - minArea) + minArea;
+      Precision firstRnd = RNG::Instance().uniform() * sumWeight ;
+	 
+	  // total number of choices = 6 as rtop, rbot, phileft, phiright, zin, zout
+      for(i = 0; i < nChoice; i++) {
+		if(firstRnd < prob[i]) return i;
+		firstRnd -= prob[i]; 
+	  }
+  }
+
+
+  VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
-#endif // !VECGEOM_NVCC
 
   virtual int memory_size() const { return sizeof(*this); }
 

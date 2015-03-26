@@ -16,6 +16,9 @@
 //#include <cassert>
 #include <cmath>
 
+#define PI 3.14159265358979323846
+
+
 template <class Tube_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 
 bool TestTubs()
@@ -23,6 +26,7 @@ bool TestTubs()
     std::cout.precision(16) ;
     VUSolid::EnumInside side;
     Vec_t pzero(0,0,0);
+	Vec_t ptS(0,0,0);
 
     double kCarTolerance = VUSolid::Tolerance();
 
@@ -80,6 +84,7 @@ bool TestTubs()
 
   Tube_t* core =
       new Tube_t("core",95.,105.,100,0.,UUtils::kPi); // internal
+  
 
 
     std::cout.precision(20);
@@ -91,12 +96,60 @@ bool TestTubs()
   vol = t1.Capacity();
   volCheck = 50*2*UUtils::kPi*50*50;
   assert(ApproxEqual(vol,volCheck));
-   
- // Check Surface area
-  vol = t2.SurfaceArea();
-  volCheck = 2*UUtils::kPi*(45+50)*(50-45+2*50);
-  assert(ApproxEqual(vol,volCheck));
- // std::cout<<t2.SurfaceArea()<<std::endl;
+ 
+  // Check Surface area
+  // vol = t2.SurfaceArea();
+  // volCheck = 2*UUtils::kPi*(45+50)*(50-45+2*50);
+  // assert(ApproxEqual(vol,volCheck));
+
+
+  	Tube_t myClad("myClad", 90.0, 110.0, 105.0, 0.0, PI);    // TEST MINE
+	
+	long int totPointOnSurface = 2000000;
+	std::cout << " Generating " << totPointOnSurface << " points on the surface of the tube ." << std::endl;
+	long int totInSurf = 0, totOutSurf = 0, totTop = 0, totBot = 0, totL = 0, totR = 0, added = 0;
+  
+	for (long int i = 0; i < totPointOnSurface; i++) {
+	  ptS = myClad.GetPointOnSurface(); 
+	  double x2y2 = sqrt(ptS[0]*ptS[0]+ptS[1]*ptS[1]);
+	  double fival = sqrt(atan2(ptS[1], ptS[0]));  //std::cout << " fival = " << fival*180.0/3.14 << std::endl;
+	  double fi1 = 0.0;
+	  double fi2 = PI;
+	  double zz = ptS[2];
+	  double eps = 1.0e-8;
+	  bool surfaceIn = (abs(x2y2 - 90.0) <= eps);
+	  bool surfaceOut = (abs(x2y2 - 110.0) <= eps);
+	  bool topSurface = (abs(zz - 105) <= eps); // (x2y2 >= 90.0) && (x2y2 <= 110.0) && (abs(zz - 105) <= eps);
+	  bool botSurface = (abs(zz + 105) <= eps); // (x2y2 >= 90.0) && (x2y2 <= 110.0) && (abs(zz + 105) <= eps);
+	  bool fiLeft = (abs(fival - fi1) <= eps);
+	  bool fiRight = (abs(fival - fi2) <= eps);
+	  bool Tagged = 0;
+	  //std::cout << i;
+	  if (fiLeft && !Tagged) {
+		  totL++;  added++; Tagged++; //std::cout << " FiL "; 
+	  }
+	  if (fiRight && !Tagged) {
+		  totR++;  added++; Tagged++; //std::cout << " FiR ";
+	  }
+	  if (surfaceIn && !Tagged) {
+		  totInSurf++; added++; Tagged++;  //std::cout << " In  ";
+	  }
+	  if (surfaceOut && !Tagged) {
+		  totOutSurf++; added++; Tagged++;  //std::cout << " Out "; 
+	  }
+	  if (topSurface && !Tagged) {
+		  totTop++; added++; Tagged++; // std::cout << " Top "; 
+	  }
+	  if (botSurface && !Tagged) {
+		  totBot++;  added++; Tagged++; //std::cout << " Bot ";
+	  }
+	  //std::cout << std::endl;
+	  if (!Tagged && !fiLeft && !fiRight && !surfaceIn && !surfaceOut && !topSurface && !botSurface && fival > 3.0 && fival < 3.16) std::cout << ptS << std::endl;
+  }
+	std::cout << std::endl;
+  std::cout << " Total Inner surface = " << totInSurf << " (" << ((totInSurf*1.0)/totPointOnSurface)*100.0 << "%)  Total Outer surface = " << totOutSurf << " (" << ((totOutSurf*1.0)/totPointOnSurface)*100.0 << "%) Total Top surface = " << totTop << " (" << ((totTop*1.0)/totPointOnSurface)*100.0 << "%) Total Bottom Surface = " << totBot << " (" << ((totBot*1.0)/totPointOnSurface)*100.0 << "%) " << " Total Left Surface = " << totL << " (" << ((totL*1.0)/totPointOnSurface)*100.0 << "%) Total Right Surface = " << totR << " (" << ((totR*1.0)/totPointOnSurface)*100.0 << "%) " << std::endl;
+
+  std::cout << "Total point = " << totPointOnSurface << std::endl <<"total added = " << added << std::endl;
 
 // Check Inside
     assert(t1.Inside(pzero)==vecgeom::EInside::kInside);
