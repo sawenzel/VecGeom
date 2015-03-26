@@ -10,8 +10,8 @@
 #include "volumes/utilities/VolumeUtilities.h"
 
 #include "volumes/PlacedVolume.h"
-#include "navigation/NavStatePool.h"
 #include "navigation/SimpleNavigator.h"
+#include "navigation/NavStatePool.h"
 
 #ifdef VECGEOM_ROOT
   #include "TGeoNavigator.h"
@@ -111,8 +111,9 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
                                      SOA3D<Precision> const& points,
                                      SOA3D<Precision> const& dirs ) {
 
-  NavStatePool curStates(nPoints, GeoManager::Instance().getMaxDepth() );
-  NavStatePool newStates(nPoints, GeoManager::Instance().getMaxDepth() );
+  // now setup all the navigation states
+  NavigationState ** curStates = new NavigationState*[nPoints];
+  NavigationState ** newStates = new NavigationState*[nPoints];
 
   SOA3D<Precision> workspace1(nPoints);
   SOA3D<Precision> workspace2(nPoints);
@@ -127,9 +128,9 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
   memset(safeties, 0, sizeof(Precision)*nPoints);
 
   vecgeom::SimpleNavigator nav;
-
-  for( int i=0; i<nPoints; ++i ) {
-    curStates[i]->Clear();
+  for (int i=0;i<nPoints;++i){
+    curStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+    newStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
     nav.LocatePoint( startVol, points[i], *curStates[i], startVol==GeoManager::Instance().GetWorld());
   }
 
@@ -146,8 +147,8 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
     NavigationState::ReleaseInstance( curStates[i] );
     NavigationState::ReleaseInstance( newStates[i] );
   }
-  // delete[] curStates;
-  // delete[] newStates;
+  delete[] curStates;
+  delete[] newStates;
 
   _mm_free(intworkspace);
   _mm_free(maxSteps);
@@ -427,8 +428,11 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   bool result = true;
 
   // now setup all the navigation states - one loop at a time for better data locality
-  NavStatePool origStates(np, GeoManager::Instance().getMaxDepth() );
-  NavStatePool vgSerialStates(np, GeoManager::Instance().getMaxDepth() );
+  NavigationState** origStates     = new NavigationState*[np];
+  for( int i=0; i<np; ++i) origStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+
+  NavigationState** vgSerialStates = new NavigationState*[np];
+  for( int i=0; i<np; ++i) vgSerialStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
 
   vecgeom::SimpleNavigator nav;
   Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
@@ -513,7 +517,8 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   //=== N-particle navigation interface
 
   //--- Creating vgVectorStates
-  NavStatePool vgVectorStates(np, GeoManager::Instance().getMaxDepth() );
+  NavigationState** vgVectorStates = new NavigationState*[np];
+  for( int i=0; i<np; ++i) vgVectorStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
 
   SOA3D<Precision> workspace1(np);
   SOA3D<Precision> workspace2(np);
