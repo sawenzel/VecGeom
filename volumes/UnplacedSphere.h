@@ -478,21 +478,18 @@ void CalcCapacity();
 VECGEOM_CUDA_HEADER_BOTH
   void CalcSurfaceArea();
 
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
-   
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() const;
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision SurfaceArea() const;
-  
+
 #if !defined(VECGEOM_NVCC)
+  void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
+
+  Precision Capacity() const;
+
+  Precision SurfaceArea() const;
+
   Vector3D<Precision> GetPointOnSurface() const;
-#endif
- 
-  VECGEOM_CUDA_HEADER_BOTH
+
   std::string GetEntityType() const;
+#endif
 
   void GetParametersList(int aNumber, Precision *aArray) const;
   

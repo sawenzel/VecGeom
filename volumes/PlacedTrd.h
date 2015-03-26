@@ -74,18 +74,20 @@ public:
   VECGEOM_INLINE
   Precision dz() const { return GetUnplacedVolume()->dz(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
   virtual
   Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
-#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
+
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
 #endif
+
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
+
 #ifdef VECGEOM_GEANT4
   G4VSolid const* ConvertToGeant4() const;
 #endif

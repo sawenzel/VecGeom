@@ -91,12 +91,13 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   CheckPhiAngles(pSPhi, pDPhi);
   CheckThetaAngles(pSTheta, pDTheta);
   
+#ifndef VECGEOM_NVCC
   CalcCapacity();
   CalcSurfaceArea();
+#endif
 }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  //VECGEOM_INLINE
+#ifndef VECGEOM_NVCC
   void UnplacedSphere::CalcCapacity()
   {
       if (fCubicVolume != 0.)
@@ -110,16 +111,14 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
         }
       
   }
-  
-  
-  VECGEOM_CUDA_HEADER_BOTH
+
+
   Precision UnplacedSphere::Capacity() const
   {
     return fCubicVolume;
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  // VECGEOM_INLINE
+
   void UnplacedSphere::CalcSurfaceArea()
   {
       
@@ -164,25 +163,22 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
             }
             }
         }
-       
-      
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
+
   Precision UnplacedSphere::SurfaceArea() const
   {
       return fSurfaceArea;
-      
   }
   
-  VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
   void UnplacedSphere::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
     // Returns the full 3D cartesian extent of the solid.
       aMin.Set(-fRmax);
       aMax.Set(fRmax);
   }
-  
+#endif // !VECGEOM_NVCC
+
   void UnplacedSphere::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetInnerRadius();
@@ -288,19 +284,20 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   }
   
   }
-#endif
+
+
+  std::string UnplacedSphere::GetEntityType() const
+  {
+      return "Sphere\n";
+  }
+
+#endif // !VECGEOM_NVCC
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedSphere::ComputeBBox() const 
   {
   
   } 
-  
-  //VECGEOM_CUDA_HEADER_BOTH
-  std::string UnplacedSphere::GetEntityType() const
-  {
-      return "Sphere\n";
-  }
   
   UnplacedSphere* UnplacedSphere::Clone() const
   {

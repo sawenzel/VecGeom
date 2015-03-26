@@ -163,22 +163,20 @@ fPhiWedge(other.fDphi,other.fSphi)
   VECGEOM_INLINE
   Wedge const & GetWedge() const { return fPhiWedge; }
 
-  VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
   VECGEOM_INLINE
   Precision volume() const {
     return fZ * (fRmax2 - fRmin2) * fDphi;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const {
       return volume();
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea () const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+#endif // !VECGEOM_NVCC
 
   virtual int memory_size() const { return sizeof(*this); }
 

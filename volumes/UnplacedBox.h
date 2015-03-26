@@ -57,13 +57,14 @@ public:
   VECGEOM_INLINE
   Precision z() const { return dimensions_[2]; }
 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   VECGEOM_INLINE
   Precision volume() const {
     return 8.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() { return volume(); }
+
   VECGEOM_INLINE
   Precision SurfaceArea() const {
      // factor 8 because dimensions_ are half-lengths
@@ -71,15 +72,12 @@ public:
              dimensions_[1]*dimensions_[2] + dimensions_[2]*dimensions_[0]);
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
 
-#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const;
-#endif
 
-  VECGEOM_CUDA_HEADER_BOTH
   virtual std::string GetEntityType() const { return "Box";}
+#endif // !VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;

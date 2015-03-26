@@ -234,29 +234,25 @@ public:
   VECGEOM_INLINE
   UnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
 
+#ifndef VECGEOM_NVCC
   // TODO: do this properly
-  VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return 0.; }
 
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision SurfaceArea() const {
     // TBDONE
     return 0.;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
-#if !defined(VECGEOM_NVCC)
   Vector3D<Precision> GetPointOnSurface() const {
     // TBDONE
       return Vector3D<Precision>() ;
   }
-#endif
 
-  VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return "Polyhedron"; }
+#endif // !VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE

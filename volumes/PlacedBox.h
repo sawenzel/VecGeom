@@ -75,13 +75,13 @@ public:
   VECGEOM_INLINE
   Precision z() const { return GetUnplacedVolume()->z(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+#if !defined(VECGEOM_NVCC)
+  virtual Precision Capacity() override {
       return GetUnplacedVolume()->volume();
   }
 
   virtual
-  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const override
   {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
@@ -97,20 +97,17 @@ public:
       return valid;
   }
 
-#if !defined(VECGEOM_NVCC)
   virtual
   Vector3D<Precision> GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
-#endif
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual double SurfaceArea() {
+  virtual double SurfaceArea() override {
      return GetUnplacedVolume()->SurfaceArea();
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   virtual std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const;

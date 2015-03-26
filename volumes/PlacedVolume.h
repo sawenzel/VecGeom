@@ -249,20 +249,16 @@ public:
   // returning the cubic volume of the shape satisfying the USolids interface
   // it is currently not a const function since some shapes might cache this value
   // if it is expensive to calculate
-  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision Capacity() {
       assert(0 && "Capacity not implemented");
       return 0;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   virtual void Extent(Vector3D<Precision> &min,
                       Vector3D<Precision> &max) const {
     assert(0 && "Extent not implemented for this shape type.");
   }
 
-
-  VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SurfaceArea() {
     assert(0 && "SurfaceArea not implemented for this shape type.");
     return 0.0;

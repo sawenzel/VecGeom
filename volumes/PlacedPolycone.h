@@ -70,20 +70,17 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_NVCC
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+  virtual Precision Capacity() override {
      return GetUnplacedVolume()->Capacity();
    }
 
   virtual
-  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const override
   {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
   //virtual
@@ -98,14 +95,14 @@ public:
   //}
 
   virtual
-  Vector3D<Precision> GetPointOnSurface() const
-  {
+  Vector3D<Precision> GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  virtual double SurfaceArea() {
+  virtual double SurfaceArea() override {
      return GetUnplacedVolume()->SurfaceArea();
   }
+#endif
 
 }; // end of class
 

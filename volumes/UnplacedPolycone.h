@@ -133,52 +133,45 @@ public:
       return fSections[index];
     }
 
-    VECGEOM_CUDA_HEADER_BOTH
-    Precision Capacity() const
-    {
+#if !defined(VECGEOM_NVCC)
+    Precision Capacity() const {
         Precision cubicVolume = 0.;
-        for (int i = 0; i < GetNSections(); i++)
-        {
+        for (int i = 0; i < GetNSections(); i++) {
             PolyconeSection const& section = fSections[i];
             cubicVolume += section.fSolid->Capacity();
         }
         return cubicVolume;
     }
-    VECGEOM_CUDA_HEADER_BOTH
+
     Precision SurfaceArea() const;
 
-    VECGEOM_CUDA_HEADER_BOTH
     bool Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const;
 
-    VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const;
 
-#if !defined(VECGEOM_NVCC)
     Vector3D<Precision> GetPointOnSurface() const;
 
- // Methods for random point generation
-    VECGEOM_CUDA_HEADER_BOTH
+  // Methods for random point generation
     Vector3D<Precision> GetPointOnCone(Precision fRmin1, Precision fRmax1,
                             Precision fRmin2, Precision fRmax2,
                             Precision zOne,   Precision zTwo,
                             Precision& totArea) const;
-    VECGEOM_CUDA_HEADER_BOTH
+
     Vector3D<Precision> GetPointOnTubs(Precision fRMin, Precision fRMax,
                             Precision zOne,  Precision zTwo,
                             Precision& totArea) const;
-    VECGEOM_CUDA_HEADER_BOTH
+
     Vector3D<Precision> GetPointOnCut(Precision fRMin1, Precision fRMax1,
                            Precision fRMin2, Precision fRMax2,
                            Precision zOne,   Precision zTwo,
                            Precision& totArea) const;
-    VECGEOM_CUDA_HEADER_BOTH
+
     Vector3D<Precision> GetPointOnRing(Precision fRMin, Precision fRMax,
                             Precision fRMin2, Precision fRMax2,
                             Precision zOne) const;
-#endif
 
-    VECGEOM_CUDA_HEADER_BOTH
     std::string GetEntityType() const { return "Polycone";}
+#endif // !VECGEOM_NVCC
 
     // a method to reconstruct "plane" section arrays for z, rmin and rmax
     template<typename PushableContainer>

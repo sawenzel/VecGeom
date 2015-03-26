@@ -81,7 +81,8 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
                               placement);
 }
 
-  VECGEOM_CUDA_HEADER_BOTH
+
+#ifndef VECGEOM_NVCC
   Precision UnplacedTube::SurfaceArea () const {
     Precision area = fDphi * (fRmin + fRmax) * (2 * fZ + fRmax - fRmin);
     if (fDphi<kTwoPi) {
@@ -90,7 +91,7 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
     return area;
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
+
   void UnplacedTube::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
     // most general case
     aMin = Vector3D<Precision>(-fRmax,-fRmax,-fZ);
@@ -144,7 +145,7 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 
     return;
   }
-
+#endif // !VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
 

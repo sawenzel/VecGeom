@@ -24,6 +24,7 @@ void UnplacedBox::Print(std::ostream &os) const {
 }
 
 
+#ifndef VECGEOM_NVCC
 //______________________________________________________________________________
 void UnplacedBox::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
 {
@@ -54,10 +55,9 @@ Vector3D<Precision> UnplacedBox::GetPointOnSurface() const
                        : p[2] * RNG::Instance().uniform(-1.0, 1.0);
     return p;
 }
-
+#endif
 
 #ifndef VECGEOM_NVCC
-
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* UnplacedBox::Create(
     LogicalVolume const *const logical_volume,
