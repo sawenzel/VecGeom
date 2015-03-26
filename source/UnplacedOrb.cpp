@@ -108,13 +108,13 @@ UnplacedOrb::UnplacedOrb() :
   {
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
-   //  << "		*** Dump for solid - " << GetName() << " ***\n"
-   //  << "		===================================================\n"
+   //  << "     *** Dump for solid - " << GetName() << " ***\n"
+   //  << "     ===================================================\n"
    
    << " Solid type: UOrb\n"
      << " Parameters: \n"
 
-     << "		outer radius: " << fR << " mm \n"
+     << "       outer radius: " << fR << " mm \n"
      << "-----------------------------------------------------------\n";
    os.precision(oldprc);
 
