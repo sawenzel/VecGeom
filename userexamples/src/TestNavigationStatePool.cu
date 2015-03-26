@@ -32,7 +32,7 @@ void ProcessNavStates( void* gpu_ptr /* a pointer to buffer of navigation states
 
   // get the navigationstate for this thread/lane
   // Warning: arithmetic on pointer to void or function type.
-  vecgeom::cuda::NavigationState * state = reinterpret_cast<vecgeom::cuda::NavigationState*>( gpu_ptr +
+  vecgeom::cuda::NavigationState * state = reinterpret_cast<vecgeom::cuda::NavigationState*>( (char*)gpu_ptr +
         vecgeom::cuda::NavigationState::SizeOf(depth)*i ); 
 
   // actually do something to the states; here just popping off the top volume
