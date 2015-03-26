@@ -33,8 +33,8 @@ void NavigationKernel(void* gpu_ptr /* a pointer to buffer of current navigation
   while (tid < n) {
 
     //.. get the navigationstate for this thread/lane
-    NavigationState *inState  = reinterpret_cast<NavigationState*>(gpu_ptr + tid*NavigationState::SizeOf(depth));
-    NavigationState *outState = reinterpret_cast<NavigationState*>(gpu_out_ptr + tid*NavigationState::SizeOf(depth));
+    NavigationState *inState  = reinterpret_cast<NavigationState*>((char*)gpu_ptr + tid*NavigationState::SizeOf(depth));
+    NavigationState *outState = reinterpret_cast<NavigationState*>((char*)gpu_out_ptr + tid*NavigationState::SizeOf(depth));
 
     //.. do the actual navigation on the GPU
     // nav.LocatePoint(volume, positions[tid], *inState, true);
