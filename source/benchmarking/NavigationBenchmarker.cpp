@@ -401,7 +401,7 @@ bool validateNavigationStepAgainstGeant4(
        std::cerr << " OUTSIDEERROR \n";
      }
   }
-  else if( Abs(testStep - step/cm) > 5.*kTolerance
+  else if( Abs(testStep - step/cm) > 100.*kTolerance
   //          || g4nav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top())
     ) {
     result = false;
