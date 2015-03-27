@@ -45,26 +45,26 @@ void ScanGeometry( VPlacedVolume const *const volume,
                    std::list<LogicalVolume const *> & boollvlist,
                    std::list<Transformation3D const *> & tlist ) {
     // if not yet treated
-    if( std::find( lvlist.cbegin(), lvlist.cend(), volume->logical_volume() ) == lvlist.cend()
-      && std::find( boollvlist.cbegin(), boollvlist.cend(), volume->logical_volume() ) == boollvlist.cend() ) {
+    if( std::find( lvlist.cbegin(), lvlist.cend(), volume->GetLogicalVolume() ) == lvlist.cend()
+      && std::find( boollvlist.cbegin(), boollvlist.cend(), volume->GetLogicalVolume() ) == boollvlist.cend() ) {
 
       if( dynamic_cast<PlacedBooleanVolume const*>(volume) ){
-          boollvlist.push_front( volume->logical_volume() );
+          boollvlist.push_front( volume->GetLogicalVolume() );
           PlacedBooleanVolume const* v =  dynamic_cast<PlacedBooleanVolume const*>(volume);
           ScanGeometry(v->GetUnplacedVolume()->fLeftVolume, lvlist, boollvlist, tlist );
           ScanGeometry(v->GetUnplacedVolume()->fRightVolume, lvlist, boollvlist, tlist );
       }
       else{
           // ordinary logical volume
-          lvlist.push_back( volume->logical_volume() );
+          lvlist.push_back( volume->GetLogicalVolume() );
       }
 
       for( auto d = 0; d < volume->daughters().size(); ++d )
         ScanGeometry(volume->daughters()[d], lvlist, boollvlist, tlist);
   }
 
-  if ( std::find( tlist.cbegin(),tlist.cend(), volume->transformation()) == tlist.cend() ){
-      tlist.push_back(volume->transformation());
+  if ( std::find( tlist.cbegin(),tlist.cend(), volume->GetTransformation()) == tlist.cend() ){
+      tlist.push_back(volume->GetTransformation());
   }
 }
 
@@ -289,8 +289,8 @@ void ScanGeometry( VPlacedVolume const *const volume,
 
                     // CHECK IF THIS BOOLEAN VOLUME DEPENDS ON OTHER BOOLEAN VOLUMES NOT YET DUMPED
                     // THIS SOLUTION IS POTENTIALLY SLOW; MIGHT CONSIDER DIFFERENT TYPE OF CONTAINER
-                    if( ! ContainerContains(fListofTreatedLogicalVolumes, left->logical_volume())
-                            || ! ContainerContains(fListofTreatedLogicalVolumes, right->logical_volume()) ) {
+                    if( ! ContainerContains(fListofTreatedLogicalVolumes, left->GetLogicalVolume())
+                            || ! ContainerContains(fListofTreatedLogicalVolumes, right->GetLogicalVolume()) ) {
                         // we need to defer the treatment of this logical volume
                         fListofDeferredLogicalVolumes.push_back( l );
                         continue;
@@ -308,14 +308,14 @@ void ScanGeometry( VPlacedVolume const *const volume,
                     }
                     line << " , ";
                     // placed versions of left and right volume
-                    line << fLVolumeToStringMap[ left->logical_volume() ]
+                    line << fLVolumeToStringMap[ left->GetLogicalVolume() ]
                          << "->Place( "
-                         << fTrafoToStringMap[ left->transformation() ]
+                         << fTrafoToStringMap[ left->GetTransformation() ]
                          << " )";
                     line << " , ";
-                    line << fLVolumeToStringMap[ right->logical_volume() ]
+                    line << fLVolumeToStringMap[ right->GetLogicalVolume() ]
                          << "->Place( "
-                         << fTrafoToStringMap[ right->transformation() ]
+                         << fTrafoToStringMap[ right->GetTransformation() ]
                          <<  " )";
                     line << " )";
 
@@ -361,8 +361,8 @@ void ScanGeometry( VPlacedVolume const *const volume,
                 VPlacedVolume const * daughter = l->daughters()[d];
 
                 // get transformation and logical volume for this daughter
-                Transformation3D const * t = daughter->transformation();
-                LogicalVolume const * daughterlv = daughter->logical_volume();
+                Transformation3D const * t = daughter->GetTransformation();
+                LogicalVolume const * daughterlv = daughter->GetLogicalVolume();
 
                 std::string tvariable = fTrafoToStringMap[t];
                 std::string lvariable = fLVolumeToStringMap[daughterlv];
@@ -377,13 +377,16 @@ void ScanGeometry( VPlacedVolume const *const volume,
         }
         // now define world
         VPlacedVolume const * world = GeoManager::Instance().GetWorld();
-        Transformation3D const * t = world->transformation();
-        LogicalVolume const * worldlv = world->logical_volume();
+        Transformation3D const * t = world->GetTransformation();
+        LogicalVolume const * worldlv = world->GetLogicalVolume();
         dumps << "VPlacedVolume const * world = " << fLVolumeToStringMap[worldlv] << "->Place( "
                                           << fTrafoToStringMap[t] <<  " ); \n";
     }
 
     void GeomCppExporter::DumpHeader( std::ostream & dumps ){
+      // put some disclaimer ( to be extended )
+      dumps << "// THIS IS AN AUTOMATICALLY GENERATED FILE -- DO NOT MODIFY\n";
+      dumps << "// FILE SHOULD BE COMPILED INTO A SHARED LIBRARY FOR REUSE\n";
         // put standard headers
         dumps << "#include \"base/Global.h\"\n";
         dumps << "#include \"volumes/PlacedVolume.h\"\n";
@@ -399,6 +402,7 @@ void ScanGeometry( VPlacedVolume const *const volume,
 
 
 void GeomCppExporter::DumpGeometry( std::ostream & s ) {
+  // stringstreams to assemble code in parts
     std::stringstream transformations;
     std::stringstream logicalvolumes;
     std::stringstream header;
@@ -446,6 +450,21 @@ void GeomCppExporter::DumpGeometry( std::ostream & s ) {
     s << geomhierarchy.str();
     // return placed world Volume
     s << "return world;\n}\n";
+
+    // create hint how to use the generated function
+    s << "// function could be used like this \n";
+    s << "// int main(){\n";
+    s << "// GeoManager & geom = GeoManager.Instance();\n";
+    s << "// Stopwatch timer;\n";
+    s << "// timer.Start();\n";
+    s << "//geom.SetWorld( generateDetector() );\n";
+    s << "//geom.CloseGeometry();\n";
+    s << "//timer.Stop();\n";
+  s << "//std::cerr << \"loading took  \" << timer.Elapsed() << \" s \" << std::endl;\n";
+  s << "//std::cerr << \"loaded geometry has \" << geom.getMaxDepth() << \" levels \" << std::endl;\n";
+    s << "// return 0;}\n";
+
+
 }
 
 }} // end namespace
