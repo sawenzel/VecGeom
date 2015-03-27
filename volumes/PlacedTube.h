@@ -77,6 +77,13 @@ public:
   Precision dphi() const { return GetUnplacedVolume()->dphi(); }
 
 #ifndef VECGEOM_NVCC
+
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
+
   virtual Precision Capacity() override {
       return GetUnplacedVolume()->Capacity();
   }
