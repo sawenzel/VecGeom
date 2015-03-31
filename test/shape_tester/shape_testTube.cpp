@@ -20,7 +20,6 @@ int main(int argc,char *argv[]) {
     if(strcmp(argv[1],"vec")==0)
     {
      tube=new Tube_t("test_VecGeomTube",0.,6.,2,0,vecgeom::kTwoPi); 
-    
     }
     else
     { 
