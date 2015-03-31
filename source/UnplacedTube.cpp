@@ -125,7 +125,7 @@ Vector3D<Precision> UnplacedTube::GetPointOnSurface() const {
 		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
 		//zVal = RNG::Instance().uniform() * z();
 		rVal = RRND;
-		phiVal = sphi() + dphi(); std::cout << phiVal << "  ";
+		phiVal = sphi() + dphi();
 		zVal = ZRND;
 	} else if (choice == 4) {
 		rVal = rmin();
