@@ -219,46 +219,46 @@ Vector3D<Precision> UnplacedTube::GetPointOnSurface() const {
   // 1::rTop, 2::rBot, 3::phiLeft, 4::phiRight, 5::zIn, 6::zOut
   VECGEOM_CUDA_HEADER_BOTH
   int UnplacedTube::ChooseSurface(Precision &rArea, Precision &phiArea, Precision &zInArea, Precision &zOutArea) const {
-      int i, j, nChoice = 6; 
-	  Precision totArea, sumWeight = 0.0, minArea = 9999999.9;
+     int i, j, nChoice = 6;
+     Precision totArea, sumWeight = 0.0, minArea = 9999999.9;
 	  
-	  rArea = GetTopArea();  		// 50% divide into top and bottom
-	  phiArea = GetLateralPhiArea();	// 50% divide into Left and Right
-	  zInArea = GetLateralRInArea();	// Inner tube surface
-	  zOutArea = GetLateralROutArea();	// Outer tube surface
-	  totArea = 2.0*rArea + 2.0*phiArea + zInArea + zOutArea;
-	  Array<Precision>prob;
-	  Array<int>iprob;
+     rArea = GetTopArea();  		// 50% divide into top and bottom
+     phiArea = GetLateralPhiArea();	// 50% divide into Left and Right
+     zInArea = GetLateralRInArea();	// Inner tube surface
+     zOutArea = GetLateralROutArea();	// Outer tube surface
+     totArea = 2.0*rArea + 2.0*phiArea + zInArea + zOutArea;
+     Array<Precision>prob;
+     Array<int>iprob;
 
-	  // prob contains the value of weightage while iprobe contains the serial number denoting surface
+     // prob contains the value of weightage while iprobe contains the serial number denoting surface
 
-	  prob[0] = rArea/totArea;   iprob[0]=0; minArea = Min(minArea, prob[0]);   sumWeight += prob[0];   // circular top
-	  prob[1] = prob[0];	     iprob[1]=1;                                    sumWeight += prob[1];	// circular bottom
-	  prob[2] = phiArea/totArea; iprob[2]=2; minArea = Min(minArea, prob[2]);   sumWeight += prob[2];	// phi left
-	  prob[3] = prob[2];	     iprob[3]=3;                                    sumWeight += prob[3];	// phi right
-	  prob[4] = zInArea/totArea; iprob[4]=4; minArea = Min(minArea, prob[4]);   sumWeight += prob[4];	// Tube Inner Surface
-	  prob[5] = zOutArea/totArea;iprob[5]=5; minArea = Min(minArea, prob[5]);   sumWeight += prob[5];	// Tube Outer Surface
+     prob[0] = rArea/totArea;   iprob[0]=0; minArea = Min(minArea, prob[0]);   sumWeight += prob[0];   // circular top
+     prob[1] = prob[0];	     iprob[1]=1;                                    sumWeight += prob[1];	// circular bottom
+     prob[2] = phiArea/totArea; iprob[2]=2; minArea = Min(minArea, prob[2]);   sumWeight += prob[2];	// phi left
+     prob[3] = prob[2];	     iprob[3]=3;                                    sumWeight += prob[3];	// phi right
+     prob[4] = zInArea/totArea; iprob[4]=4; minArea = Min(minArea, prob[4]);   sumWeight += prob[4];	// Tube Inner Surface
+     prob[5] = zOutArea/totArea;iprob[5]=5; minArea = Min(minArea, prob[5]);   sumWeight += prob[5];	// Tube Outer Surface
 
-	  //  Sort the array
-	  Precision tmp1, tmp2;
-	  for (i = 0; i < nChoice - 1; i++) {
-		  for (j = 0; j < nChoice - 1; j++) {
-			  if (prob[j] > prob[j+1]) {
-				  tmp1 = prob[j];        tmp2 = iprob[j];
-				  prob[j] = prob[j+1];   iprob[j] = iprob[j+1];
-				  prob[j+1] = tmp1;      iprob[j+1] = tmp2; // sort iprob also depending on prob value
-			  }
-		  }
-	  }
+     //  Sort the array
+     Precision tmp1, tmp2;
+     for (i = 0; i < nChoice - 1; i++) {
+        for (j = 0; j < nChoice - 1; j++) {
+           if (prob[j] > prob[j+1]) {
+              tmp1 = prob[j];        tmp2 = iprob[j];
+              prob[j] = prob[j+1];   iprob[j] = iprob[j+1];
+              prob[j+1] = tmp1;      iprob[j+1] = tmp2; // sort iprob also depending on prob value
+           }
+        }
+     }
 
       // Precision firstRnd = RNG::Instance().uniform() * (sumWeight - minArea) + minArea;
       Precision firstRnd = RNG::Instance().uniform() * sumWeight ;
 	 
 	  // total number of choices = 6 as rtop, rbot, phileft, phiright, zin, zout
       for(i = 0; i < nChoice; i++) {
-		if(firstRnd < prob[i]) return i;
-		firstRnd -= prob[i]; 
-	  }
+         if(firstRnd < prob[i]) return i;
+         firstRnd -= prob[i];
+      }
   }
 
 
