@@ -259,6 +259,7 @@ Vector3D<Precision> UnplacedTube::GetPointOnSurface() const {
          if(firstRnd < prob[i]) return i;
          firstRnd -= prob[i];
       }
+      return 0; // none choosen!?
   }
 
 
