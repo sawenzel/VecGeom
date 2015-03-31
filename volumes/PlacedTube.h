@@ -91,6 +91,10 @@ public:
   virtual
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
 
+  bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const {
+	  return GetUnplacedVolume()->Normal(point, normal);
+  }
+
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
