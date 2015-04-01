@@ -370,6 +370,7 @@ include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
+  source/RNG.cpp
   source/AOS3D.cpp
   source/LogicalVolume.cpp
   source/PlacedCone.cpp
