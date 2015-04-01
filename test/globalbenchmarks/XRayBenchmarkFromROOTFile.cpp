@@ -32,6 +32,7 @@
 #include "TGeoManager.h"
 #include "TGeoVolume.h"
 #include "TGeoVoxelFinder.h"
+#include "TGeoMaterial.h"
 
 #ifdef VECGEOM_GEANT4
 #include "G4Navigator.hh"
@@ -96,7 +97,7 @@ bool usolids= true;
 bool voxelize = true;
 
 // produce a bmp image out of pixel information given in volume_results
-int make_bmp(int const * image_result, char const *, int data_size_x, int data_size_y);
+int make_bmp(int const * image_result, char const *, int data_size_x, int data_size_y, bool linear = true);
 
 __attribute__((noinline))
 void DeleteROOTVoxels()
@@ -172,6 +173,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
 
             double distancetravelled=0.;
             int crossedvolumecount=0;
+            double accumulateddensity =0.;
 
             if(VERBOSE) {
               std::cout << " StartPoint(" << p[0] << ", " << p[1] << ", " << p[2] << ")";
@@ -180,6 +182,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
 
             // propagate until we leave detector
             TGeoNode const * node = nav->FindNode();
+            TGeoMaterial const * curmat = node->GetVolume()->GetMaterial();
 
           //  std::cout << pixel_count_1 << " " << pixel_count_2 << " " << dir << "\t" << p << "\t";
           //  std::cout << "IN|OUT" << nav->IsOutside() << "\n";
@@ -187,6 +190,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
             while( node !=NULL ) {
                 node = nav->FindNextBoundaryAndStep( vecgeom::kInfinity );
                 distancetravelled+=nav->GetStep();
+                accumulateddensity+=curmat->GetDensity() * distancetravelled;
 
                 if(VERBOSE) {
                     if( node != NULL ){
@@ -203,12 +207,13 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
                 // Increase passed_volume
                 // TODO: correct counting of travel in "world" bounding box
                 crossedvolumecount++;
-              } // end while
+                curmat = (node!=0) ? node->GetVolume()->GetMaterial() : 0;
+            } // end while
             // std::cout << crossedvolumecount << "\n";
 
             ///////////////////////////////////
             // Store the number of passed volume at 'volume_result'
-            *(image+pixel_count_2*data_size_x+pixel_count_1)= crossedvolumecount;
+            *(image+pixel_count_2*data_size_x+pixel_count_1) =  accumulateddensity ;// crossedvolumecount;
 
             if(VERBOSE) {
                 std::cout << "  EndOfBoundingBox:";
@@ -783,10 +788,10 @@ int main(int argc, char * argv[])
     
     if(axis== 1)
     {
-      //dir.Set(1., 0., 0.);
-      Transformation3D trans( 0, 0, 0, 5, 5, 5);
-      trans.Print();
-      dir = trans.TransformDirection( Vector3D<Precision> (1,0,0));
+      dir.Set(1., 0., 0.);
+      //Transformation3D trans( 0, 0, 0, 5, 5, 5);
+      //trans.Print();
+     // dir = trans.TransformDirection( Vector3D<Precision> (1,0,0));
 
       axis1_start= origin[1]- dy;
       axis1_end= origin[1]+ dy;
@@ -797,8 +802,8 @@ int main(int argc, char * argv[])
     else if(axis== 2)
     {
       dir.Set(0., 1., 0.);
-      vecgeom::Transformation3D trans( 0, 0, 0, 5, 5, 5);
-      dir = trans.TransformDirection(dir);
+      //vecgeom::Transformation3D trans( 0, 0, 0, 5, 5, 5);
+      //dir = trans.TransformDirection(dir);
       axis1_start= origin[0]- dx;
       axis1_end= origin[0]+ dx;
       axis2_start= origin[2]- dz;
@@ -808,8 +813,8 @@ int main(int argc, char * argv[])
     else if(axis== 3)
     {
       dir.Set(0., 0., 1.);
-      vecgeom::Transformation3D trans( 0, 0, 0, 5, 5, 5);
-      dir = trans.TransformDirection(dir);
+      //vecgeom::Transformation3D trans( 0, 0, 0, 5, 5, 5);
+      //dir = trans.TransformDirection(dir);
       axis1_start= origin[0]- dx;
       axis1_end= origin[0]+ dx;
       axis2_start= origin[1]- dy;
@@ -851,7 +856,7 @@ int main(int argc, char * argv[])
     ROOTimage << "_ROOT.bmp";
 
     make_bmp(volume_result, ROOTimage.str().c_str(), data_size_x, data_size_y);
-
+    make_bmp(volume_result, "foo.bmp", data_size_x, data_size_y, false);
 #ifdef VECGEOM_GEANT4
 
     G4VPhysicalVolume * world = SetupGeant4Geometry( testvolume, Vector3D<Precision>( std::abs(origin[0]) + dx,
@@ -932,7 +937,7 @@ int main(int argc, char * argv[])
 }
 
 
-int make_bmp(int const * volume_result, char const * name, int data_size_x, int data_size_y)
+int make_bmp(int const * volume_result, char const * name, int data_size_x, int data_size_y, bool linear )
 {
 
   MY_BITMAP* pBitmap= new MY_BITMAP;
@@ -1000,17 +1005,34 @@ int make_bmp(int const * volume_result, char const * name, int data_size_x, int 
   memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biClrImportant, 4);
   len+= 4;
 
+  // find out maxcount before doing the picture
+  int maxcount = 0;
+  int x=0,y=0,origin_x=0;
+  while( y< data_size_y )
+  {
+     while( origin_x< data_size_x )
+     {
+       int value = *(volume_result+y*data_size_x+origin_x);
+       maxcount = ( value > maxcount )? value : maxcount;
 
-  int x= 0;
-  int y= 0;
-  int origin_x= 0;
+       x++;
+       origin_x++;
+     }
+     y++;
+     x = 0;
+     origin_x = 0;
+  }
+//  maxcount = std::log(maxcount + 1);
+
+  x= 0;
+  y= 0;
+  origin_x= 0;
 
   int padding= width_4- data_size_x;
   int padding_idx= padding;
   unsigned char *imgdata= (unsigned char*) new unsigned char[data_size_y*width_4*3];
 
   int totalcount = 0;
-  int maxcount = 0;
 
   while( y< data_size_y )
   {
@@ -1018,11 +1040,24 @@ int make_bmp(int const * volume_result, char const * name, int data_size_x, int 
     {
       int value = *(volume_result+y*data_size_x+origin_x);
       totalcount += value;
-      maxcount = ( value > maxcount )? value : maxcount;
 
-      *(imgdata+y*width_4*3+x*3+0)= (value *50) % 256;
-      *(imgdata+y*width_4*3+x*3+1)= (value *40) % 256;
-      *(imgdata+y*width_4*3+x*3+2)= (value *30) % 256;
+      //*(imgdata+y*width_4*3+x*3+0)= (value *50) % 256;
+      //*(imgdata+y*width_4*3+x*3+1)= (value *40) % 256;
+      //*(imgdata+y*width_4*3+x*3+2)= (value *30) % 256;
+
+      //*(imgdata+y*width_4*3+x*3+0)= (std::log(value)/(1.*maxcount)) * 256;
+      //*(imgdata+y*width_4*3+x*3+1)= (std::log(value)/(1.2*maxcount)) * 256;
+      //*(imgdata+y*width_4*3+x*3+2)= (std::log(value)/(1.4*maxcount)) * 256;
+if( linear ){
+      *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxcount)) * 256;
+      *(imgdata+y*width_4*3+x*3+1)= (value/(1.*maxcount)) * 256;
+      *(imgdata+y*width_4*3+x*3+2)= (value/(1.*maxcount)) * 256;}
+      else
+      {
+          *(imgdata+y*width_4*3+x*3+0)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
+          *(imgdata+y*width_4*3+x*3+1)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
+          *(imgdata+y*width_4*3+x*3+2)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
+      }
       
       x++;
       origin_x++;
