@@ -98,6 +98,8 @@ bool voxelize = true;
 
 // produce a bmp image out of pixel information given in volume_results
 int make_bmp(int const * image_result, char const *, int data_size_x, int data_size_y, bool linear = true);
+int make_diff_bmp(int const * image1, int const * image2, char const *, int sizex, int sizey);
+
 
 __attribute__((noinline))
 void DeleteROOTVoxels()
@@ -213,7 +215,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
 
             ///////////////////////////////////
             // Store the number of passed volume at 'volume_result'
-            *(image+pixel_count_2*data_size_x+pixel_count_1) =  accumulateddensity ;// crossedvolumecount;
+            *(image+pixel_count_2*data_size_x+pixel_count_1) = crossedvolumecount;// accumulateddensity ;// crossedvolumecount;
 
             if(VERBOSE) {
                 std::cout << "  EndOfBoundingBox:";
@@ -619,13 +621,13 @@ int XRayWithGeant4(
                    int crossedvolumecount=0;
 
                    while( vol!=NULL ) {
-                       crossedvolumecount++;
+
                        double safety;
                        // do one step ( this will internally adjust the current point and so on )
                        // also calculates safety
 
                        double step = nav->ComputeStep( p, d, vecgeom::kInfinity, safety );
-
+                       if(step>0.) crossedvolumecount++;
 //                       std::cerr << " STEP " << step << " ENTERING " << nav->EnteredDaughterVolume() << "\n";
 
                        // calculate next point ( do transportation ) and volume ( should go across boundary )
@@ -827,6 +829,8 @@ int main(int argc, char * argv[])
     int data_size_y= (axis2_end-axis2_start)/pixel_axis;
     int *volume_result= (int*) new int[data_size_y * data_size_x*3];
 
+    int *volume_result_Geant4= (int*) new int[data_size_y * data_size_x*3];
+    int *volume_result_VecGeom= (int*) new int[data_size_y * data_size_x*3];
 
     Stopwatch timer;
     timer.Start();
@@ -874,16 +878,16 @@ int main(int argc, char * argv[])
             axis2_start, axis2_end,
             data_size_x, data_size_y,
             pixel_axis,
-            volume_result );
+            volume_result_Geant4 );
     timer.Stop();
 
     std::stringstream G4image;
     G4image << imagenamebase.str();
     G4image << "_Geant4.bmp";
-    make_bmp(volume_result, G4image.str().c_str(), data_size_x, data_size_y);
+    make_bmp(volume_result_Geant4, G4image.str().c_str(), data_size_x, data_size_y);
     std::cout << std::endl;
     std::cout << " Geant4 Elapsed time : "<< timer.Elapsed() << std::endl;
-
+    make_diff_bmp(volume_result, volume_result_Geant4, "diffROOTGeant4.bmp", data_size_x, data_size_y);
 #endif
 
     // convert current gGeoManager to a VecGeom geometry
@@ -898,13 +902,15 @@ int main(int argc, char * argv[])
                axis2_start, axis2_end,
                data_size_x, data_size_y,
                pixel_axis,
-               volume_result );
+               volume_result_VecGeom );
     timer.Stop();
 
     std::stringstream VecGeomimage;
     VecGeomimage << imagenamebase.str();
     VecGeomimage << "_VecGeom.bmp";
-    make_bmp(volume_result, VecGeomimage.str().c_str(), data_size_x, data_size_y);
+    make_bmp(volume_result_VecGeom, VecGeomimage.str().c_str(), data_size_x, data_size_y);
+
+    make_diff_bmp(volume_result, volume_result_VecGeom, "diffROOTVecGeom.bmp", data_size_x, data_size_y);
 
     std::cout << std::endl;
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
@@ -934,6 +940,70 @@ int main(int argc, char * argv[])
     delete[] volume_result;
   }
   return 0;
+}
+
+
+int make_bmp_header( MY_BITMAP * pBitmap, unsigned char * bmpBuf, int sizex, int sizey )
+{
+  int width_4= (sizex+ 3)&~3;
+
+  unsigned int len= 0;
+
+  // bitmap file header
+  pBitmap->bmpFileHeader.bfType=0x4d42;
+  pBitmap->bmpFileHeader.bfSize=sizey* width_4* 3+ 54;
+  pBitmap->bmpFileHeader.bfReserved1= 0;
+  pBitmap->bmpFileHeader.bfReserved2= 0;
+  pBitmap->bmpFileHeader.bfOffBits= 54;
+
+  memcpy(bmpBuf + len, &pBitmap->bmpFileHeader.bfType, 2);
+  len+= 2;
+  memcpy(bmpBuf + len, &pBitmap->bmpFileHeader.bfSize, 4);
+  len+= 4;
+  memcpy(bmpBuf + len, &pBitmap->bmpFileHeader.bfReserved1, 2);
+  len+= 2;
+  memcpy(bmpBuf + len, &pBitmap->bmpFileHeader.bfReserved2, 2);
+  len+= 2;
+  memcpy(bmpBuf + len, &pBitmap->bmpFileHeader.bfOffBits, 4);
+  len+= 4;
+
+  // bitmap information header
+  pBitmap->bmpInfoHeader.biSize= 40;
+  pBitmap->bmpInfoHeader.biWidth= width_4;
+  pBitmap->bmpInfoHeader.biHeight= sizey;
+  pBitmap->bmpInfoHeader.biPlanes= 1;
+  pBitmap->bmpInfoHeader.biBitCount= 24;
+  pBitmap->bmpInfoHeader.biCompression= 0;
+  pBitmap->bmpInfoHeader.biSizeImage= sizey* width_4* 3;
+  pBitmap->bmpInfoHeader.biXPelsPerMeter= 0;
+  pBitmap->bmpInfoHeader.biYPelsPerMeter= 0;
+  pBitmap->bmpInfoHeader.biClrUsed= 0;
+  pBitmap->bmpInfoHeader.biClrImportant=0;
+
+
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biSize, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biWidth, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biHeight, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biPlanes, 2);
+  len+= 2;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biBitCount, 2);
+  len+= 2;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biCompression, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biSizeImage, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biXPelsPerMeter, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biYPelsPerMeter, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biClrUsed, 4);
+  len+= 4;
+  memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biClrImportant, 4);
+  len+= 4;
+
 }
 
 
@@ -1092,5 +1162,99 @@ if( linear ){
   std::cout << " wrote image file " << name <<  "\n";
   std::cout << " total count " << totalcount << "\n";
   std::cout << " max count " << maxcount << "\n";
+  return 0;
+}
+
+
+
+int make_diff_bmp(int const * image1, int const * image2, char const * name, int data_size_x, int data_size_y )
+{
+
+  MY_BITMAP* pBitmap= new MY_BITMAP;
+  FILE *pBitmapFile;
+  int width_4 = (data_size_x + 3)&~3;
+  unsigned char* bmpBuf = (unsigned char*) new unsigned char[data_size_y* width_4* 3+ 54];
+
+  // init buffer and write header
+  make_bmp_header(pBitmap, bmpBuf, data_size_x, data_size_y);
+
+  std::cerr << "AFTER HEADER " << bmpBuf << "\n";
+
+  // TODO: verify the 2 images have same dimensions
+
+  // find out maxcount before doing the picture
+  int maxdiff = 0;
+  int mindiff = 0;
+  int x=0,y=0,origin_x=0;
+  while( y< data_size_y )
+  {
+     while( origin_x< data_size_x )
+     {
+       int value = *(image1+y*data_size_x+origin_x) - *(image2+y*data_size_x + origin_x);
+       maxdiff = ( value > maxdiff )? value : maxdiff;
+       mindiff = ( value < mindiff )? value : mindiff;
+       x++;
+       origin_x++;
+     }
+     y++;
+     x = 0;
+     origin_x = 0;
+  }
+
+
+  x= 0;
+  y= 0;
+  origin_x= 0;
+
+  int padding= width_4 - data_size_x;
+  int padding_idx= padding;
+  unsigned char *imgdata= (unsigned char*) new unsigned char[data_size_y*width_4*3];
+
+  while( y< data_size_y )
+  {
+    while( origin_x< data_size_x )
+    {
+      int value = *(image1 + y*data_size_x + origin_x) - *(image2 + y*data_size_x + origin_x);
+
+      if( value >=0 ){
+          *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxdiff)) * 256;
+          *(imgdata+y*width_4*3+x*3+1)= 0;// (value/(1.*maxcount)) * 256;
+          *(imgdata+y*width_4*3+x*3+2)= 0;//(value/(1.*maxcount)) * 256;}
+      }
+      else
+      {
+          *(imgdata+y*width_4*3+x*3+0)= 0;
+          *(imgdata+y*width_4*3+x*3+1)= 0;// (value/(1.*maxcount)) * 256;
+          *(imgdata+y*width_4*3+x*3+2)= (value/(1.*mindiff)) * 256;//(value/(1.*maxcount)) * 256;}
+      }
+      x++;
+      origin_x++;
+
+      while( origin_x== data_size_x && padding_idx)
+      {
+        // padding 4-byte at bitmap image
+        *(imgdata+y*width_4*3+x*3+0)= 0;
+        *(imgdata+y*width_4*3+x*3+1)= 0;
+        *(imgdata+y*width_4*3+x*3+2)= 0;
+        x++;
+        padding_idx--;
+      }
+      padding_idx= padding;
+    }
+    y++;
+    x= 0;
+    origin_x= 0;
+  }
+
+  memcpy(bmpBuf + 54, imgdata, width_4* data_size_y* 3);
+  pBitmapFile = fopen(name, "wb");
+  fwrite(bmpBuf, sizeof(char), width_4*data_size_y*3+54, pBitmapFile);
+
+  fclose(pBitmapFile);
+  delete[] imgdata;
+  delete[] bmpBuf;
+  delete pBitmap;
+
+  std::cout << " wrote image file " << name <<  "\n";
   return 0;
 }
