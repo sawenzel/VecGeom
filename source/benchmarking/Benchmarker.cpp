@@ -369,11 +369,9 @@ int Benchmarker::RunInsideBenchmark() {
     printf("Running Contains and Inside benchmark for %i points for "
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
-#ifndef VECGEOM_SCALAR
   if (fVerbosity > 1) {
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
   }
-#endif
 
   if (fPointPool) delete fPointPool;
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
@@ -617,9 +615,7 @@ int Benchmarker::RunToInBenchmark() {
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
   if (fVerbosity > 1) {
-#ifndef VECGEOM_SCALAR
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
-#endif
   }
 
   // Allocate memory
@@ -799,9 +795,7 @@ int Benchmarker::RunToOutBenchmark() {
            "%i repetitions.\n", fPointCount, fRepetitions);
   }
   if (fVerbosity > 1) {
-#ifndef VECGEOM_SCALAR
     printf("Vector instruction size is %i doubles.\n", kVectorSize);
-#endif
   }
 
   // Allocate memory

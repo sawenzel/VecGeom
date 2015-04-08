@@ -73,6 +73,15 @@ typedef kScalar::int_v    ScalarInt;
 typedef kScalar::precision_v ScalarDouble;
 typedef kScalar::bool_v   ScalarBool;
 
+
+#ifndef VECGEOM_BACKEND_TYPE
+#define kVectorSize                  1
+#define VECGEOM_BACKEND_TYPE         kScalar
+#define VECGEOM_BACKEND_PRECISION(P) (*(P))
+#define VECGEOM_BACKEND_BOOL         ScalarBool
+#define VECGEOM_BACKEND_INSIDE       kScalar::inside_v
+#endif
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
