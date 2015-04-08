@@ -493,7 +493,7 @@ VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnSurface() const;
 
   std::string GetEntityType() const;
-  
+#endif 
 #ifdef OFFLOAD_MODE
   VECGEOM_CUDA_HEADER_BOTH
 #endif
