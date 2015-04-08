@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
   OPTION_INT(nrep,1024);
   OPTION_DOUBLE(phistart,0.);
   OPTION_DOUBLE(phidelta,kTwoPi);
-  
+
   int Nz = 4;
   double rmin[] = { 0.1, 0., 0. , 0.2 };
   double rmax[] = { 1., 2., 2. , 1.5 };
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
   tester.RunBenchmark();
 
 
-#ifdef VECGEOM_ROOT
+#if 0
   Visualizer visualizer;
   visualizer.AddVolume( *vol );
   if( tester.GetProblematicContainPoints().size() > 0 ) {
@@ -69,10 +69,7 @@ int main(int argc, char* argv[]) {
       }
       visualizer.Show();
   }
-#endif // VECGEOM_ROOT
-
-  //tester.RunToInBenchmark();
-  //  tester.RunToOutBenchmark();
+#endif
 
   return 0;
 }

@@ -1,0 +1,152 @@
+#!/bin/bash
+
+# USAGE:
+#
+# NJOBS=10 NPOINTS=1024 shape_benchmark Box Cone ...
+#
+# If a list of shapes is not given, it attempts all shapes
+#
+
+JOBS=${NJOBS:-10}
+NPTS=${NPOINTS:-1024}
+
+if [[ $# > 0 ]]; then
+	# use list of shapes in command line
+	SHAPES="$@"
+else
+	# attempt benchmark for all shapes
+	SHAPES=$(grep Benchmark: Makefile | cut -d: -f1 | xargs | sed -s 's/Benchmark//g')
+fi
+
+for SHAPE in ${SHAPES}; do
+	echo -ne "\r$(head -c 80 < /dev/zero | tr '\0' ' ')"
+	echo -ne "\rRunning Benchmark for ${SHAPE}"
+	# compile benchmark
+	[ -e ${SHAPE}Benchmark ] ||
+	(echo -e ": Compiling"; make ${SHAPE}Benchmark)
+
+	if [ $? != 0 ]; then
+		echo -e "--- FAILED ---"; sleep 1; continue
+	fi
+
+	readelf -h ${SHAPE}Benchmark | grep -q K1OM
+	if [ $? == 0 ]; then
+		TESTARCH="Intel (R) Xeon Phi(TM)"
+		TESTARCH="${TESTARCH} $(/opt/intel/mic/bin/micinfo -d 0 | grep SKU | awk '{print $NF}')"
+	else
+		TESTARCH="$(uname -p)"
+	fi
+
+	# generate data if needed
+	if [ ! -f ${SHAPE}.dat ]; then
+
+	# run benchmark
+	for i in $(seq -w 1 ${JOBS}); do
+		echo -ne "\rRunning Benchmark for ${SHAPE}: Job ${i}"
+		taskset -c $(($RANDOM % $(nproc))) \
+		readelf -h ${SHAPE}Benchmark | grep -q K1OM
+		if [ $? == 0 ]; then
+			ssh mic0 "(cd ${PWD}; ./${SHAPE}Benchmark -npoints ${NPTS})" &> ${SHAPE}-${i}.log
+		else
+			./${SHAPE}Benchmark -npoints ${NPTS} &> ${SHAPE}-${i}.log
+		fi
+	done
+
+	# extract and process information from log files
+
+	# make data file header
+	(echo -ne "Implementation\t";
+	 grep "Contains:" ${SHAPE}-${JOBS}.log) |
+	cut -d " " -f 1 | xargs | tr " " "\t" >| ${SHAPE}.dat
+
+	for FUNC in Inside Contains {Safety,Distance}To{In,Out}; do
+
+		# get running times from log files
+		for i in $(seq -w 1 ${JOBS}); do
+			grep -o "${FUNC}:[^\,]\+," ${SHAPE}-${i}.log |
+			tr '()' '[]' | sed -e 's/-.-\+/0.0/g' |
+			sed 's/.*\[\([^]]*\)\].*/\1/g' |
+			tr -d s	| xargs >> ${SHAPE}-${FUNC}.dat
+		done
+
+		# compute averages and standard deviations
+		awk -f - ${SHAPE}-${FUNC}.dat <<-EOF >> ${SHAPE}.dat
+		{
+			for(i=1; i<=NF; i++) {
+				sum[i]   +=  \$i;
+				sumsq[i] += (\$i)^2
+			}
+		}
+		END {
+			printf "${FUNC}\t"
+			for (i=1;i<=NF;i++) {
+				printf "%.6f\t", sum[i]/NR;
+			}
+
+			# standard deviation not in use for now...
+
+			# printf "\n\t\t";
+			# for (i=1;i<=NF;i++) {
+			# 	printf "%.6f\t", sqrt((sumsq[i]-sum[i]^2/NR)/NR);
+			# }
+
+			printf "\n";
+		}
+		EOF
+	done
+
+	# remove temporary files
+	rm -f ${SHAPE}-*.{dat,log}
+
+	fi # [ ! -f ${SHAPE}.dat ]
+
+	# generate/update plot using gnuplot
+	if type -P gnuplot &>/dev/null; then
+		BACKEND="$(grep BACKEND CMakeCache.txt | cut -d= -f 2)"
+		PLOTCMD="plot '${SHAPE}.dat' u 2:xtic(1) t col"
+		PLOTREL="plot '${SHAPE}.dat' u (\$2/\$2):xtic(1) t col(2)"
+
+		NCOLS=$(head -n 1 ${SHAPE}.dat | wc -w)
+
+		[ $NCOLS == 1 ] && continue # don't plot if data is bad
+
+		for i in $(seq 3 $NCOLS); do
+			PLOTCMD="${PLOTCMD}, '' u ${i} t col"
+			PLOTREL="${PLOTREL}, '' u (\$${i}/\$2) t col"
+		done
+
+		gnuplot -e "set term" | grep -q pdf
+
+		if [ $? == 0 ]; then
+			FORMAT="pdf"
+			TERMCMD="set term pdf color enh lw 1.2 size 8,6"
+		else
+			FORMAT="png"
+			TERMCMD="set term png enh lw 1.2 size 1024,768"
+		fi
+
+		gnuplot <<-EOF
+		set auto x
+		set style data histogram
+		set style histogram cluster gap 2
+		set style fill solid border -1
+		#set xtic out center rotate by 5 offset 0,-0.3
+		set xtic out scale 0
+		set key top left maxrows 2
+		set title "${SHAPE} Benchmark — ${BACKEND} Backend — ${TESTARCH}"
+		set ylabel "Time (s)"
+		${TERMCMD}; set output '/dev/null'; ${PLOTCMD}
+		set yrange [0:1.1*GPVAL_Y_MAX]
+		set output '${SHAPE}-abs.${FORMAT}'
+		${PLOTCMD}
+		unset yrange
+		set grid y
+		set ylabel "T / T_{vectorized}"
+		set output '/dev/null'; ${PLOTREL}
+		set yrange [0:1.1*GPVAL_Y_MAX]
+		set output '${SHAPE}-rel.${FORMAT}'
+		${PLOTREL}
+		EOF
+	fi
+done
+echo

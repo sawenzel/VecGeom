@@ -397,6 +397,7 @@ include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
+  source/RNG.cpp
   source/AOS3D.cpp
   source/LogicalVolume.cpp
   source/PlacedCone.cpp
@@ -439,6 +440,7 @@ set(SRC_CPP_RELATIVE
 
   source/UnplacedPolycone.cpp
   source/PlacedPolycone.cpp
+  source/Wedge.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -491,6 +493,7 @@ endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
   source/ShapeDebugger.cpp
+  source/CppExporter.cpp
 )
 
 # some CUDA kernel code in "userspace"
@@ -561,7 +564,7 @@ set(TEST_EXECUTABLES_CORE
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp      
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestVecGeomPolycone.cpp
 )
 

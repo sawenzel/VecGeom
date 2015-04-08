@@ -21,8 +21,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
    // Emulating static class member ..
    namespace RNGvar {
-      VECGEOM_CUDA_HEADER_DEVICE unsigned long gMaxInstance;
-      VECGEOM_CUDA_HEADER_DEVICE RNG **gInstances;
+      extern VECGEOM_CUDA_HEADER_DEVICE unsigned long gMaxInstance;
+      extern VECGEOM_CUDA_HEADER_DEVICE RNG **gInstances;
    }
 #endif
 

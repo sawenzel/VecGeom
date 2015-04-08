@@ -7,6 +7,7 @@
 
 #include "management/GeoManager.h"
 #include "management/RootGeoManager.h"
+#include "management/CppExporter.h"
 #ifdef VECGEOM_CUDA_INTERFACE
 #include "management/CudaManager.h"
 #endif
@@ -55,6 +56,8 @@ int main(int argc, char * argv[])
 {
     if(argc>1)
     LoadGeometry(argv[1]);
+
+    vecgeom::GeomCppExporter::Instance().DumpGeometry( std::cout );
 
 #ifdef VECGEOM_CUDA_INTERFACE
     #pragma message "VECGEOM NVCC enabled"

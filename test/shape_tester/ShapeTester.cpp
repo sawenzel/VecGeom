@@ -688,7 +688,7 @@ int ShapeTester::TestInsidePoint()
  for (int j = 0; j < maxPointsInside; j++)
  {
     //Check values of Safety
-    UVector3 point=points[j+offsetInside];
+    UVector3 point=points[j+offsetInside]; 
     double safeDistance = volumeUSolids->SafetyFromInside(point );
     if (safeDistance <= 0.0) {
 	UVector3 zero(0);
@@ -1640,7 +1640,7 @@ void ShapeTester::CreatePointsAndDirectionsSurface()
          int retry = 100;
          do 
 	   { bool surfaceExist=true;
-	   if(surfaceExist) {pointU = volumeUSolids->GetPointOnSurface();}
+	   if(surfaceExist) {pointU = volumeUSolids->GetPointOnSurface(); }
            else {
                 UVector3 dir = GetRandomDirection(), norm;
                 bool convex;
@@ -1690,24 +1690,25 @@ void ShapeTester::CreatePointsAndDirectionsOutside()
 {
 
 	UVector3 minExtent,maxExtent;
-        volumeUSolids->Extent(minExtent,maxExtent);
+    volumeUSolids->Extent(minExtent,maxExtent);
 	double maxX=std::max(std::fabs(maxExtent.x()),std::fabs(minExtent.x()));
 	double maxY=std::max(std::fabs(maxExtent.y()),std::fabs(minExtent.y()));
 	double maxZ=std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
-        double rOut=std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
+    double rOut=std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
         
-        for (int i = 0; i < maxPointsOutside; i++)
+    for (int i = 0; i < maxPointsOutside; i++)
 	{
 	          
 	   UVector3 vec, point;
-           do
+       do
 	   {
 	    point.x() =  -1 + 2 * UUtils::Random();
 	    point.y() = -1 + 2 * UUtils::Random(); 
 	    point.z() = -1 + 2 * UUtils::Random();
-            point *= rOut * outsideMaxRadiusMultiple;
+        point *= rOut * outsideMaxRadiusMultiple;
 	   }
 	   while (volumeUSolids->Inside(point)!=vecgeom::EInside::kOutside);
+
 
   	   double random = UUtils::Random();
 	   if (random <= outsideRandomDirectionPercent/100.) 
@@ -1716,7 +1717,7 @@ void ShapeTester::CreatePointsAndDirectionsOutside()
 	   }
 	   else
 	   {
-		UVector3 pointSurface= volumeUSolids->GetPointOnSurface();
+		UVector3 pointSurface= volumeUSolids->GetPointOnSurface(); 
 		vec = pointSurface - point;
 		vec.Normalize();
 	   }
@@ -1952,7 +1953,7 @@ int ShapeTester::TestMethodAll()
 
   method = "Consistency";
   errCode+= TestMethod(&ShapeTester::TestConsistencySolids);
-  if(definedNormal)TestMethod(&ShapeTester::TestNormalSolids);
+  if(definedNormal) TestMethod(&ShapeTester::TestNormalSolids);
   method = "SafetyFromInside";
   errCode+= TestMethod(&ShapeTester::TestSafetyFromInsideSolids);
   method = "SafetyFromOutside";
@@ -1963,6 +1964,8 @@ int ShapeTester::TestMethodAll()
   errCode+= TestMethod(&ShapeTester::TestDistanceToOutSolids);
   method = "XRayProfile";
   errCode+= TestMethod(&ShapeTester::TestXRayProfile);
+
+
   method = "all";
 
   return errCode;

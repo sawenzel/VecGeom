@@ -679,7 +679,6 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
   return Vector3D<Precision>(rRand * cosphi, rRand * sinphi,
                              fZs[numPlanes]);
 }
-#endif
 
 
 bool UnplacedPolycone::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
@@ -699,7 +698,7 @@ bool UnplacedPolycone::Normal(Vector3D<Precision> const& point, Vector3D<Precisi
 
 }    
 
-Precision UnplacedPolycone::SurfaceArea() const{
+Precision UnplacedPolycone::SurfaceArea() const {
     Precision Area = 0, totArea = 0;
     int i = 0;
     int numPlanes = GetNSections();
@@ -773,7 +772,7 @@ void UnplacedPolycone::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & 
          aMax.z() = fZs[GetNSections()];
          
 }
-     //#endif
+#endif // !VECGEOM_NVCC
 
 } // End impl namespace
 

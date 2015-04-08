@@ -105,34 +105,30 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetAlpha2() const { return GetUnplacedVolume()->GetAlpha2(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
   virtual
-  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
+  Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
   virtual
-  Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
 
-  VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const {
     return GetUnplacedVolume()->Normal(point, normal);
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision>  GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  void ComputeBoundingBox();
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  void ComputeBoundingBox();
 
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}

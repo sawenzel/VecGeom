@@ -24,6 +24,7 @@ void UnplacedBox::Print(std::ostream &os) const {
 }
 
 
+#ifndef VECGEOM_NVCC
 //______________________________________________________________________________
 void UnplacedBox::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
 {
@@ -34,30 +35,29 @@ void UnplacedBox::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax)
 
 Vector3D<Precision> UnplacedBox::GetPointOnSurface() const
 {
-	Vector3D<Precision> p(dimensions_);
+    Vector3D<Precision> p(dimensions_);
 
-	double S[3] = { p[1]*p[2], p[0]*p[2], p[0]*p[1] };
+    double S[3] = { p[1]*p[2], p[0]*p[2], p[0]*p[1] };
 
-	double rand = (S[0] + S[1] + S[2]) * RNG::Instance().uniform(-1.0, 1.0);
+    double rand = (S[0] + S[1] + S[2]) * RNG::Instance().uniform(-1.0, 1.0);
 
-	int axis = 0, direction = rand < 0.0 ? -1 : 1;
+    int axis = 0, direction = rand < 0.0 ? -1 : 1;
 
-	rand = std::abs(rand);
+    rand = std::abs(rand);
 
-	while (rand > S[axis]) rand -= S[axis], axis++;
+    while (rand > S[axis]) rand -= S[axis], axis++;
 
-	p[0] = (axis == 0) ? direction * dimensions_[0]
-	                   : p[0] * RNG::Instance().uniform(-1.0, 1.0);
-	p[1] = (axis == 1) ? direction * dimensions_[1]
-	                   : p[1] * RNG::Instance().uniform(-1.0, 1.0);
-	p[2] = (axis == 2) ? direction * dimensions_[2]
-	                   : p[2] * RNG::Instance().uniform(-1.0, 1.0);
-	return p;
+    p[0] = (axis == 0) ? direction * dimensions_[0]
+                       : p[0] * RNG::Instance().uniform(-1.0, 1.0);
+    p[1] = (axis == 1) ? direction * dimensions_[1]
+                       : p[1] * RNG::Instance().uniform(-1.0, 1.0);
+    p[2] = (axis == 2) ? direction * dimensions_[2]
+                       : p[2] * RNG::Instance().uniform(-1.0, 1.0);
+    return p;
 }
-
+#endif
 
 #ifndef VECGEOM_NVCC
-
 template <TranslationCode trans_code, RotationCode rot_code>
 VPlacedVolume* UnplacedBox::Create(
     LogicalVolume const *const logical_volume,

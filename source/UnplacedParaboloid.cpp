@@ -129,8 +129,8 @@ fDy(0)
 
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm) const{
+#ifndef VECGEOM_NVCC
+    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm) const {
        
         // Compute normal to closest surface from POINT.
         norm[0] = norm[1] = 0.0;
@@ -166,9 +166,7 @@ fDy(0)
 //__________________________________________________________________
 
     // Returns the full 3D cartesian extent of the solid.
-    VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const{
-        
+    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
         aMin.x() = -fDx;
         aMax.x() = fDx;
         aMin.y() = -fDy;
@@ -179,7 +177,6 @@ fDy(0)
     
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
     Precision UnplacedParaboloid::SurfaceArea() const
     {
     
@@ -208,7 +205,6 @@ fDy(0)
     }
     //__________________________________________________________________
 
-#if !defined(VECGEOM_NVCC)
     Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface() const{
         
         //G4 implementation
@@ -238,7 +234,7 @@ fDy(0)
                 return Vector3D<Precision>(Sqrt(z*fAinv -fB*fAinv)*cos(phi), Sqrt(z*fAinv -fB*fAinv)*sin(phi), z);
             }
         }
-#endif
+#endif  // !VECGEOM_NVCC
     
 //__________________________________________________________________
     

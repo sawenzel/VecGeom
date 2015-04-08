@@ -10,8 +10,8 @@
 #include "volumes/utilities/VolumeUtilities.h"
 
 #include "volumes/PlacedVolume.h"
-#include "navigation/NavStatePool.h"
 #include "navigation/SimpleNavigator.h"
+#include "navigation/NavStatePool.h"
 
 #ifdef VECGEOM_ROOT
   #include "TGeoNavigator.h"
@@ -111,8 +111,9 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
                                      SOA3D<Precision> const& points,
                                      SOA3D<Precision> const& dirs ) {
 
-  NavStatePool curStates(nPoints, GeoManager::Instance().getMaxDepth() );
-  NavStatePool newStates(nPoints, GeoManager::Instance().getMaxDepth() );
+  // now setup all the navigation states
+  NavigationState ** curStates = new NavigationState*[nPoints];
+  NavigationState ** newStates = new NavigationState*[nPoints];
 
   SOA3D<Precision> workspace1(nPoints);
   SOA3D<Precision> workspace2(nPoints);
@@ -127,9 +128,9 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
   memset(safeties, 0, sizeof(Precision)*nPoints);
 
   vecgeom::SimpleNavigator nav;
-
-  for( int i=0; i<nPoints; ++i ) {
-    curStates[i]->Clear();
+  for (int i=0;i<nPoints;++i){
+    curStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+    newStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
     nav.LocatePoint( startVol, points[i], *curStates[i], startVol==GeoManager::Instance().GetWorld());
   }
 
@@ -146,8 +147,8 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
     NavigationState::ReleaseInstance( curStates[i] );
     NavigationState::ReleaseInstance( newStates[i] );
   }
-  // delete[] curStates;
-  // delete[] newStates;
+  delete[] curStates;
+  delete[] newStates;
 
   _mm_free(intworkspace);
   _mm_free(maxSteps);
@@ -335,11 +336,11 @@ bool validateNavigationStepAgainstRoot(
       std::cerr << " OUTSIDEERROR \n";
     }
   }
-  else if( Abs(testStep - rootnav->GetStep()) > 3.*kTolerance
+  else if( Abs(testStep - rootnav->GetStep()) > 100.*kTolerance
            || rootnav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top()) )
   {
     result = false;
-    std::cerr << "*** ERROR on validateAgainstROOT: "
+    std::cerr << "\n*** ERROR on validateAgainstROOT: "
               <<" ROOT node="<< rootnav->GetCurrentNode()->GetName()
               <<" outside="<< rootnav->IsOutside()
               <<" step="<< rootnav->GetStep()
@@ -401,7 +402,7 @@ bool validateNavigationStepAgainstGeant4(
        std::cerr << " OUTSIDEERROR \n";
      }
   }
-  else if( Abs(testStep - step/cm) > 5.*kTolerance
+  else if( Abs(testStep - step/cm) > 100.*kTolerance
   //          || g4nav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top())
     ) {
     result = false;
@@ -427,8 +428,11 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   bool result = true;
 
   // now setup all the navigation states - one loop at a time for better data locality
-  NavStatePool origStates(np, GeoManager::Instance().getMaxDepth() );
-  NavStatePool vgSerialStates(np, GeoManager::Instance().getMaxDepth() );
+  NavigationState** origStates     = new NavigationState*[np];
+  for( int i=0; i<np; ++i) origStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+
+  NavigationState** vgSerialStates = new NavigationState*[np];
+  for( int i=0; i<np; ++i) vgSerialStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
 
   vecgeom::SimpleNavigator nav;
   Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
@@ -500,7 +504,6 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
       std::cout << (nextPV ? nextPV->GetName() : "NULL") <<" / ";
 #endif
       std::cout << (vgSerialStates[i]->Top()? vgSerialStates[i]->Top()->GetLabel() : "NULL") << "\n";
-
       // nav.InspectEnvironmentForPointAndDirection( pos, dir, *origState );
     }
   }
@@ -514,7 +517,8 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   //=== N-particle navigation interface
 
   //--- Creating vgVectorStates
-  NavStatePool vgVectorStates(np, GeoManager::Instance().getMaxDepth() );
+  NavigationState** vgVectorStates = new NavigationState*[np];
+  for( int i=0; i<np; ++i) vgVectorStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
 
   SOA3D<Precision> workspace1(np);
   SOA3D<Precision> workspace2(np);
@@ -584,7 +588,7 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   errorCount = 0;
   for(int i=0; i<np; ++i) {
     bool mismatch = false;
-    if( Abs( gpuSteps[i] - refSteps[i] ) > kTolerance )                       mismatch = true;
+    if( Abs( gpuSteps[i] - refSteps[i] ) > 10.*kTolerance )                   mismatch = true;
     // if( gpuStates[i]->Top() != vgSerialStates[i]->Top() )                  mismatch = true;
     // if( gpuStates[i]->IsOnBoundary() != vgSerialStates[i]->IsOnBoundary()) mismatch = true;
     // if( safeties[i] != nav.GetSafety( points[i], *origStates[i] ))         mismatch = true;
