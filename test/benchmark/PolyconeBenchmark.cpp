@@ -12,8 +12,7 @@
 
 using namespace vecgeom;
 
-
-// we need a json reader
+// #define VISUALIZER
 
 int main(int argc, char* argv[]) {
   OPTION_INT(npoints,1024);
@@ -34,9 +33,11 @@ int main(int argc, char* argv[]) {
   LogicalVolume world("world", &worldUnplaced);
   LogicalVolume pcon ("pcon", &pconUnplaced);
 
-  //Transformation3D placement(5, 5, 5);
   Transformation3D placement(0, 0, 0);
-  VPlacedVolume const * vol = world.PlaceDaughter("pcon", &pcon, &placement);
+#if defined(VECGEOM_ROOT) and defined(VISUALIZER)
+  VPlacedVolume const * vol =
+#endif
+    world.PlaceDaughter("pcon", &pcon, &placement);
 
   pcon.Place(&placement);
 
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
   tester.RunBenchmark();
 
 
-#if 0
+#ifdef VISUALIZER
   Visualizer visualizer;
   visualizer.AddVolume( *vol );
   if( tester.GetProblematicContainPoints().size() > 0 ) {
