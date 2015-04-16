@@ -124,7 +124,7 @@ void ScanGeometry( VPlacedVolume const *const volume,
     template<typename VectorContainer>
     void DumpVector( VectorContainer const & v, std::ostream & dumps ){
         dumps << "&std::vector<double>{";
-        for(auto j=0;j<v.size()-1;++j)
+        for(int j = 0, n = v.size() - 1; j < n; ++j)
            dumps << v[j] << " , ";
         dumps << v[v.size()-1] << "}[0]";
     }
