@@ -88,113 +88,52 @@ VPlacedVolume* UnplacedTube::SpecializedVolume(
 }
 
 
-// VECGEOM_CUDA_HEADER_BOTH
-//#if !defined(VECGEOM_NVCC)
 #ifndef VECGEOM_NVCC
-  //  This computes where the random point would be placed
 
-  // 1::rTop, 2::rBot, 3::phiLeft, 4::phiRight, 5::zIn, 6::zOut
-  // VECGEOM_CUDA_HEADER_BOTH    // commenting to check 
-  int UnplacedTube::ChooseSurface(Precision &rArea, Precision &phiArea, Precision &zInArea, Precision &zOutArea) const {
-      int i, j, nChoice = 6; 
-	  Precision totArea = 0.0;
-	  Precision sumWeight = 0.0;
-	  
-	  rArea = GetTopArea();  		// 50% divide into top and bottom
-	  phiArea = GetLateralPhiArea();	// 50% divide into Left and Right
-	  zInArea = GetLateralRInArea();	// Inner tube surface
-	  zOutArea = GetLateralROutArea();	// Outer tube surface
-	  totArea = 2.0*rArea + 2.0*phiArea + zInArea + zOutArea;
-	  // Array<Precision>prob;
-	  // Array<int>iprob;
-	  double prob[6]={0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-	  int iprob[6]={0, 0, 0, 0, 0, 0};
+int UnplacedTube::ChooseSurface() const
+{
+    int choice = 0; // 0 = rTop, 1 = rBot, 2 = phiLeft, 3 = phiRight, 4 = zIn, 5 = zOut
+    Precision S[6], Stotal = 0.0;
 
-	  // prob contains the value of weightage while iprobe contains the serial number denoting surface
-	  prob[0] = rArea/totArea;   iprob[0]=0; sumWeight += prob[0];   // circular top
-	  prob[1] = prob[0];	     iprob[1]=1; sumWeight += prob[1];	// circular bottom
-	  prob[2] = phiArea/totArea; iprob[2]=2; sumWeight += prob[2];	// phi left
-	  prob[3] = prob[2];	     iprob[3]=3; sumWeight += prob[3];	// phi right
-	  prob[4] = zInArea/totArea; iprob[4]=4; sumWeight += prob[4];	// Tube Inner Surface
-	  prob[5] = zOutArea/totArea;iprob[5]=5; sumWeight += prob[5];	// Tube Outer Surface
+    S[0] = S[1] = GetTopArea();        // 50% divide into top and bottom
+    S[2] = S[3] = GetLateralPhiArea(); // 50% divide into left and right
+    S[4] = GetLateralRInArea();        // inner tube surface area
+    S[5] = GetLateralROutArea();       // outer tube surface area
 
-	  //  Sort the array
-	  Precision tmp1, tmp2;
-	  for (i = 0; i < nChoice - 1; i++) {
-		  for (j = 0; j < nChoice - 1; j++) {
-			  if (prob[j] > prob[j+1]) {
-				  tmp1 = prob[j];        tmp2 = iprob[j];
-				  prob[j] = prob[j+1];   iprob[j] = iprob[j+1];
-				  prob[j+1] = tmp1;      iprob[j+1] = tmp2; // sort iprob also depending on prob value
-			  }
-		  }
-	  }
+    for (int i = 0; i < 6; ++i)
+        Stotal += S[i];
 
-      // Precision firstRnd = RNG::Instance().uniform() * (sumWeight - minArea) + minArea;
-      Precision firstRnd = RNG::Instance().uniform() * sumWeight ;
-	 
-	  // total number of choices = 6 as rtop, rbot, phileft, phiright, zin, zout
-      for(i = 0; i < nChoice; i++) {
-		if(firstRnd < prob[i]) return iprob[i];
-		firstRnd -= prob[i]; 
-	  }
-  }
+    /* random value to choose surface to place the point */
+    Precision rand = RNG::Instance().uniform() * Stotal;
 
-Vector3D<Precision> UnplacedTube::GetPointOnSurface() const {
-  // select on which surface to create the point; should be done in proportion to the area of that surface
+    while (rand > S[choice])
+        rand -= S[choice], choice++;
 
-  // once decided create a point
-	Precision rArea = 0.0, phiArea = 0.0, zInArea = 0.0, zOutArea = 0.0;
-	Precision rVal;
-	Precision phiVal;
-	Precision zVal;
+    assert(choice < 6);
 
-    int choice = ChooseSurface(rArea, phiArea, zInArea, zOutArea); 
-	Precision RRND = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
-	Precision FRND = RNG::Instance().uniform(sphi(), sphi() + dphi());
-	Precision ZRND = RNG::Instance().uniform() * z();
-	// 0::rTop, 1::rBot, 2::phiLeft, 3::phiRight, 4::zIn, 5::zOut
-		
-	if (choice == 0) {   // TOP
-		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
-		rVal = RRND;
-		phiVal = FRND;
-		zVal = z();
-		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
-	} else if (choice == 1) {
-		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
-		rVal = RRND;
-		phiVal = FRND;
-		zVal = -1.0 * z();
-		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
-	} else if (choice == 2) {
-		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
-		//zVal = RNG::Instance().uniform() * z();
-		rVal = RRND;
-		phiVal = sphi();
-		zVal = ZRND;
-	} else if (choice == 3) {
-		//rVal = RNG::Instance().uniform() * (rmax() - rmin()) + rmin();
-		//zVal = RNG::Instance().uniform() * z();
-		rVal = RRND;
-		phiVal = sphi() + dphi();
-		zVal = ZRND;
-	} else if (choice == 4) {
-		rVal = rmin();
-		phiVal = FRND;
-		zVal = ZRND;
-		//zVal = RNG::Instance().uniform() * z();
-		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
-	} else if (choice == 5) {
-		rVal = rmax();
-		phiVal = FRND;
-		zVal = ZRND;
-		//zVal = RNG::Instance().uniform() * z();
-		//phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
-	}
-	 Precision xVal = rVal * cos(phiVal);
-	 Precision yVal = rVal * sin(phiVal);
-	return Vector3D<Precision>(xVal, yVal, zVal);
+    return choice;
+}
+
+Vector3D<Precision> UnplacedTube::GetPointOnSurface() const
+{
+    int surface = ChooseSurface();
+    Precision rVal   = RNG::Instance().uniform(rmin(), rmax());
+    Precision phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
+    Precision zVal   = RNG::Instance().uniform() * z();
+
+    switch (surface) {
+        case 0: zVal =  z(); break;
+        case 1: zVal = -z(); break;
+        case 2: phiVal = sphi(); break;
+        case 3: phiVal = sphi() + dphi(); break;
+        case 4: rVal = rmin(); break;
+        case 5: rVal = rmax(); break;
+    }
+
+    Precision xVal = rVal * cos(phiVal);
+    Precision yVal = rVal * sin(phiVal);
+
+    return Vector3D<Precision>(xVal, yVal, zVal);
 }
 
 bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
@@ -210,7 +149,7 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
 	Precision zVal = z();
 	bool onSurf(false);
 	bool inZ = ((thisZ < zVal) && (thisZ > -zVal));
-	bool annul = ((x2y2 >= rmN) && (x2y2 <= rmX)); 
+	bool annul = ((x2y2 >= rmN) && (x2y2 <= rmX));
 
 	// is the point on the surface?
 	onSurf = ((Abs(x2y2 - rmN) <= kTolerance) && inZ);              // inner
@@ -237,7 +176,7 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
 		norm[1] = -point[1];   // -ve due to inwards
 		norm[2] = 0.0;
 		nosurface++;
-	} 
+	}
 	if (onSurf && inZ && (abs(x2y2 - rmX) <= kTolerance)) { // outer tube wall, normal outwards
 		norm[0] = point[0];
 		norm[1] = point[1];
@@ -397,7 +336,7 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedTube>::SizeOf();
 template void DevicePtr<cuda::UnplacedTube>::Construct(
-    const Precision rmin, const Precision rmax, const Precision z, 
+    const Precision rmin, const Precision rmax, const Precision z,
     const Precision sphi, const Precision dphi) const;
 
 } // End cxx namespace
