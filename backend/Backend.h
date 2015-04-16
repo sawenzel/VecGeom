@@ -12,7 +12,7 @@
 #include "backend/vc/Backend.h"
 #elif defined(VECGEOM_CILK)
 #include "backend/cilk/Backend.h"
-#elif defined(__MIC__)
+#elif defined(MIC_SIDE)
 #include "backend/mic/Backend.h"
 #else
 #include "backend/scalar/Backend.h"

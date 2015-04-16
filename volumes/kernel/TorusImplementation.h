@@ -572,6 +572,13 @@ void solveQuartic2(VCT a, VCT b, VCT c, VCT d, VCT e, CVCT * roots)
   roots[3] = aRoot;
 }
 #endif
+#ifdef MIC_SIDE
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+void solveQuartic2(MicPrecision a, MicPrecision b, MicPrecision c,
+                   MicPrecision d, MicPrecision e, Complex<MicPrecision> *root) {
+}
+#endif
 #endif
  
 class PlacedTorus;
