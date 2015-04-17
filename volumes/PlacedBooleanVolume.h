@@ -144,12 +144,12 @@ public:
            "Normal not implemented for USolids interface compatible volume.");
     return false;
   }
+#endif
 
   virtual ::VUSolid const* ConvertToUSolids() const {
       printf("Converting to USOLIDS\n");
       return new UBox("",10,10,10);
   }
-#endif
 #endif
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const {

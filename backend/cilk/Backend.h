@@ -22,6 +22,9 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+#ifdef kVectorSize
+#undef kVectorSize
+#endif
 constexpr int kVectorSize = VECGEOM_VECTOR_BIT_SIZE / sizeof(Precision);
 
 template <typename Type = Precision, int vec_size = kVectorSize>
