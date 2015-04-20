@@ -223,9 +223,6 @@ fPhiWedge(other.fDphi,other.fSphi)
 
 #endif
 
-
-  VECGEOM_CUDA_HEADER_BOTH
-
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
