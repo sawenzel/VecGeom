@@ -20,10 +20,14 @@ VECGEOM_CUDA_HEADER_BOTH
             //
            // Assert( angle <= kTwoPi, "wedge angle is larger than 2*Pi; Are you using radians?" );
             if( ! ( angle <= kTwoPi ) ){
+#ifndef VECGEOM_NVCC
                 std::cerr << std::setprecision(20) << "\n";
-                std::cerr << "wedge angle is larger than 2PI "
+                std::cerr << "wedge angle is larger than 2PI: "
                           << angle << " "
                           << kTwoPi-angle << "\n";
+#else
+                printf("\nwedge angle is larger than 2PI: angle=%f 2pi-angle=%f\n", angle, kTwoPi-angle);
+#endif
             }
 
             // initialize angles
