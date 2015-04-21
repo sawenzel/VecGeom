@@ -348,7 +348,7 @@ int Benchmarker::RunBenchmark() {
   errorcode+=RunInsideBenchmark();
   errorcode+=RunToInBenchmark();
   errorcode+=RunToOutBenchmark();
-  errorcode+=CompareMetaInformation();
+  if(fMeasurementCount==1) errorcode+=CompareMetaInformation();
   return (errorcode)? 1 : 0;
 }
 
@@ -943,14 +943,10 @@ void Benchmarker::RunInsideSpecialized(bool *contains, Inside_t *inside) {
            elapsedInside/elapsedContains);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedContains, kBenchmarkContains, kBenchmarkSpecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedContains, kBenchmarkContains, kBenchmarkSpecialized, fInsideBias )
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedInside, kBenchmarkInside, kBenchmarkSpecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedInside, kBenchmarkInside, kBenchmarkSpecialized, fInsideBias )
   );
 }
 
@@ -992,14 +988,10 @@ void Benchmarker::RunToInSpecialized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkSpecialized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkSpecialized, fToInBias )
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkSpecialized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkSpecialized, fToInBias )
   );
 }
 
@@ -1041,16 +1033,8 @@ void Benchmarker::RunToOutSpecialized(
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkSpecialized, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkSpecialized, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkSpecialized, 1 ) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkSpecialized, 1 ) );
 }
 
 void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
@@ -1085,16 +1069,8 @@ void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
            elapsedContains, elapsedContains/fVolumes.size(),
            elapsedInside/elapsedContains);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedContains, kBenchmarkContains, kBenchmarkVectorized, fInsideBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedInside, kBenchmarkInside, kBenchmarkVectorized, fInsideBias
-    )
-  );
+  fResults.push_back(GenerateBenchmarkResult(elapsedContains, kBenchmarkContains, kBenchmarkVectorized,fInsideBias));
+  fResults.push_back( GenerateBenchmarkResult( elapsedInside, kBenchmarkInside, kBenchmarkVectorized, fInsideBias) );
 }
 
 void Benchmarker::RunToInVectorized(
@@ -1134,14 +1110,10 @@ void Benchmarker::RunToInVectorized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkVectorized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkVectorized, fToInBias)
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkVectorized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkVectorized, fToInBias)
   );
 }
 
@@ -1181,16 +1153,8 @@ void Benchmarker::RunToOutVectorized(
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkVectorized, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkVectorized, 1
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkVectorized, 1) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkVectorized, 1) );
 }
 
 void Benchmarker::RunInsideUnspecialized(bool *contains, Inside_t *inside) {
@@ -1226,14 +1190,10 @@ void Benchmarker::RunInsideUnspecialized(bool *contains, Inside_t *inside) {
            elapsedInside/elapsedContains);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedContains, kBenchmarkContains, kBenchmarkUnspecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedContains, kBenchmarkContains, kBenchmarkUnspecialized, fInsideBias )
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedInside, kBenchmarkInside, kBenchmarkUnspecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedInside, kBenchmarkInside, kBenchmarkUnspecialized, fInsideBias )
   );
 }
 
@@ -1273,15 +1233,10 @@ void Benchmarker::RunToInUnspecialized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUnspecialized,
-      fToInBias
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUnspecialized, fToInBias)
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUnspecialized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUnspecialized, fToInBias)
   );
 }
 
@@ -1321,14 +1276,10 @@ void Benchmarker::RunToOutUnspecialized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUnspecialized, 1
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUnspecialized, 1)
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUnspecialized, 1
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUnspecialized, 1)
   );
 }
 
@@ -1358,11 +1309,7 @@ void Benchmarker::RunInsideUSolids(::VUSolid::EnumInside *const inside) {
            "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsed, kBenchmarkInside, kBenchmarkUSolids, fInsideBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsed, kBenchmarkInside, kBenchmarkUSolids, fInsideBias ) );
 }
 
 void Benchmarker::RunToInUSolids(
@@ -1413,16 +1360,8 @@ void Benchmarker::RunToInUSolids(
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUSolids, fToInBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUSolids, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult(elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUSolids, fToInBias));
+  fResults.push_back( GenerateBenchmarkResult(elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUSolids, fToInBias) );
 }
 
 void Benchmarker::RunToOutUSolids(
@@ -1470,16 +1409,8 @@ void Benchmarker::RunToOutUSolids(
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUSolids, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUSolids, 1
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUSolids, 1) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUSolids, 1) );
 }
 #endif
 
@@ -1509,11 +1440,7 @@ void Benchmarker::RunInsideGeant4(::EInside *const inside) {
            "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsed, kBenchmarkInside, kBenchmarkGeant4, fInsideBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsed, kBenchmarkInside, kBenchmarkGeant4, fInsideBias ) );
 }
 void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
   if (fVerbosity > 0) printf("Geant4        - ");
@@ -1564,16 +1491,8 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkGeant4, fToInBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkGeant4, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult(elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkGeant4, fToInBias) );
+  fResults.push_back( GenerateBenchmarkResult(elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkGeant4, fToInBias) );
 }
 
 void Benchmarker::RunToOutGeant4(Precision *distances, Precision *safeties) {
@@ -1619,16 +1538,8 @@ void Benchmarker::RunToOutGeant4(Precision *distances, Precision *safeties) {
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkGeant4, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkGeant4, 1
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkGeant4, 1 ) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkGeant4, 1 ) );
 }
 #endif
 
@@ -1656,11 +1567,7 @@ void Benchmarker::RunInsideRoot(bool *inside) {
            "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsed, kBenchmarkContains, kBenchmarkRoot, fInsideBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsed, kBenchmarkContains, kBenchmarkRoot, fInsideBias ) );
 }
 
 void Benchmarker::RunToInRoot(
@@ -1706,16 +1613,8 @@ void Benchmarker::RunToInRoot(
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkRoot, fToInBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkRoot, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkRoot, fToInBias ) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkRoot, fToInBias ) );
 }
 void Benchmarker::RunToOutRoot(
     Precision *const distances, Precision *const safeties) {
@@ -1753,16 +1652,8 @@ void Benchmarker::RunToOutRoot(
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkRoot, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkRoot,
-1    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkRoot, 1) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkRoot, 1)  );
 }
 #endif
 
@@ -1777,9 +1668,7 @@ void Benchmarker::FreeAligned(Type *const distance) {
 }
 
 #ifdef VECGEOM_CUDA_INTERFACE
-void Benchmarker::GetVolumePointers( std::list<DevicePtr<cuda::VPlacedVolume>> &volumesGpu )
-{
-
+void Benchmarker::GetVolumePointers( std::list<DevicePtr<cuda::VPlacedVolume>> &volumesGpu ) {
   CudaManager::Instance().LoadGeometry(GetWorld());
   CudaManager::Instance().Synchronize();
   for (std::list<VolumePointers>::const_iterator v = fVolumes.begin();
