@@ -260,9 +260,11 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillUncontainedPoints(VPlacedVolume const &volume,
                            TrackContainer &points) {
-  static bool first = true;
-  if(first) {
+  static double lastUncontCap = 0.0;
+  double uncontainedCapacity = UncontainedCapacity(volume);
+  if(uncontainedCapacity != lastUncontCap) {
     printf("Uncontained capacity for %s: %f units\n", volume.GetLabel().c_str(), UncontainedCapacity(volume));
+    lastUncontCap = uncontainedCapacity;
   }
   if( UncontainedCapacity(volume) <= 0.0 ) {
     std::cout<<"\nVolUtil: FillUncontPts: ERROR: Volume provided <"
