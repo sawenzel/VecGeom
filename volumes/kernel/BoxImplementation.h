@@ -230,6 +230,246 @@ struct BoxImplementation {
   }
 
 
+    // an algorithm to test for intersection ( could be faster than DistanceToIn )
+    // actually this also calculated the distance at the same time ( in tmin )
+    template <int signx, int signy, int signz>
+    VECGEOM_CUDA_HEADER_BOTH
+    // VECGEOM_INLINE
+    //__attribute__((noinline))
+    static Precision IntersectCached( Vector3D<Precision> const * corners,
+            Vector3D<Precision> const &point,
+            Vector3D<Precision> const &inverseray,
+            Precision t0,
+            Precision t1 ){
+      // intersection algorithm 1 ( Amy Williams )
+
+      // NOTE THE FASTEST VERSION IS STILL THE ORIGINAL IMPLEMENTATION
+
+      Precision tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+      // TODO: we should promote this to handle multiple boxes
+      // observation: we always compute sign and 1-sign; so we could do the assignment
+      // to tmin and tmax in a masked assignment thereafter
+      tmin =  (corners[signx].x()   -point.x())*inverseray.x();
+      tmax =  (corners[1-signx].x() -point.x())*inverseray.x();
+      tymin = (corners[signy].y()   -point.y())*inverseray.y();
+      tymax = (corners[1-signy].y() -point.y())*inverseray.y();
+      if((tmin > tymax) || (tymin > tmax))
+          return vecgeom::kInfinity;
+
+      if(tymin > tmin)
+          tmin = tymin;
+      if(tymax < tmax)
+          tmax = tymax;
+
+      tzmin = (corners[signz].z()   -point.z())*inverseray.z();
+      tzmax = (corners[1-signz].z() -point.z())*inverseray.z();
+
+      if((tmin > tzmax) || (tzmin > tmax))
+          return vecgeom::kInfinity; // false
+      if((tzmin > tmin))
+          tmin = tzmin;
+      if(tzmax < tmax)
+          tmax = tzmax;
+
+      if( ! ((tmin < t1) && (tmax > t0)) )
+          return vecgeom::kInfinity;
+      return tmin;
+    }
+
+    // an algorithm to test for intersection ( could be faster than DistanceToIn )
+        // actually this also calculated the distance at the same time ( in tmin )
+        template <typename Backend, int signx, int signy, int signz>
+        VECGEOM_CUDA_HEADER_BOTH
+        // VECGEOM_INLINE
+        static typename Backend::precision_v IntersectCachedKernel(
+                Vector3D<typename Backend::precision_v > const * corners,
+                Vector3D<Precision> const &point,
+                Vector3D<Precision> const &inverseray,
+                Precision t0,
+                Precision t1 ){
+
+          typedef typename Backend::precision_v Float_t;
+          typedef typename Backend::bool_v Bool_t;
+
+          Float_t tmin  = (corners[signx].x()   - point.x())*inverseray.x();
+          Float_t tmax  = (corners[1-signx].x() - point.x())*inverseray.x();
+          Float_t tymin = (corners[signy].y()   - point.y())*inverseray.y();
+          Float_t tymax = (corners[1-signy].y() - point.y())*inverseray.y();
+
+          // do we need this condition ?
+          Bool_t done = (tmin > tymax) || (tymin > tmax);
+          if( IsFull(done) ) return vecgeom::kInfinity;
+          // if((tmin > tymax) || (tymin > tmax))
+          //     return vecgeom::kInfinity;
+
+          // Not sure if this has to be maskedassignments
+          tmin = Max(tmin, tymin);
+          tmax = Min(tmax, tymax);
+
+          Float_t tzmin = (corners[signz].z()   - point.z())*inverseray.z();
+          Float_t tzmax = (corners[1-signz].z() - point.z())*inverseray.z();
+
+          done |= (tmin > tzmax) || (tzmin > tmax);
+         // if((tmin > tzmax) || (tzmin > tmax))
+         //     return vecgeom::kInfinity; // false
+          if( IsFull(done) ) return vecgeom::kInfinity;
+
+          // not sure if this has to be maskedassignments
+          tmin = Max(tmin, tzmin);
+          tmax = Min(tmax, tzmax);
+
+          done |= ! ((tmin < t1) && (tmax > t0));
+         // if( ! ((tmin < t1) && (tmax > t0)) )
+         //     return vecgeom::kInfinity;
+          MaskedAssign(done, vecgeom::kInfinity, &tmin);
+          return tmin;
+        }
+
+
+        // an algorithm to test for intersection ( could be faster than DistanceToIn )
+        // actually this also calculated the distance at the same time ( in tmin )
+           template <typename Backend>
+              VECGEOM_CUDA_HEADER_BOTH
+              // VECGEOM_INLINE
+              static typename Backend::precision_v IntersectCachedKernel2(
+                      Vector3D<typename Backend::precision_v > const * corners,
+                      Vector3D<Precision> const &point,
+                      Vector3D<Precision> const &inverseray,
+                      int signx, int signy, int signz,
+                      Precision t0,
+                      Precision t1 ){
+
+                typedef typename Backend::precision_v Float_t;
+                typedef typename Backend::bool_v Bool_t;
+
+                Float_t tmin  = (corners[signx].x()   - point.x())*inverseray.x();
+                Float_t tymax = (corners[1-signy].y() - point.y())*inverseray.y();
+                Bool_t done = tmin > tymax;
+                if( IsFull(done) ) return vecgeom::kInfinity;
+
+                Float_t tmax  = (corners[1-signx].x() - point.x())*inverseray.x();
+                Float_t tymin = (corners[signy].y()   - point.y())*inverseray.y();
+
+                // do we need this condition ?
+                done |= (tymin > tmax);
+                if( IsFull(done) ) return vecgeom::kInfinity;
+
+                // if((tmin > tymax) || (tymin > tmax))
+                //     return vecgeom::kInfinity;
+
+                // Not sure if this has to be maskedassignments
+                tmin = Max(tmin, tymin);
+                tmax = Min(tmax, tymax);
+
+                Float_t tzmin = (corners[signz].z()   - point.z())*inverseray.z();
+                Float_t tzmax = (corners[1-signz].z() - point.z())*inverseray.z();
+
+                done |= (tmin > tzmax) || (tzmin > tmax);
+               // if((tmin > tzmax) || (tzmin > tmax))
+               //     return vecgeom::kInfinity; // false
+               if( IsFull(done) ) return vecgeom::kInfinity;
+
+                // not sure if this has to be maskedassignments
+                tmin = Max(tmin, tzmin);
+                tmax = Min(tmax, tzmax);
+
+                done |= ! ((tmin < t1) && (tmax > t0));
+               // if( ! ((tmin < t1) && (tmax > t0)) )
+               //     return vecgeom::kInfinity;
+                MaskedAssign(done, vecgeom::kInfinity, &tmin);
+                return tmin;
+              }
+
+
+    // an algorithm to test for intersection against many boxes but just one ray;
+    // in this case, the inverse ray is cached outside and directly given here as input
+    // we could then further specialize this function to the direction of the ray
+    // because also the sign[] variables and hence the branches are predefined
+
+    // one could do: template <class Backend, int sign0, int sign1, int sign2>
+    template <class Backend>
+    VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    static Precision IntersectMultiple(
+            Vector3D<typename Backend::precision_v> const lowercorners,
+            Vector3D<typename Backend::precision_v> const uppercorners,
+            Vector3D<Precision> const &point,
+            Vector3D<Precision> const &inverseray,
+            Precision t0,
+            Precision t1 ){
+      // intersection algorithm 1 ( Amy Williams )
+
+      typedef typename Backend::precision_v Float_t;
+
+      Float_t tmin, tmax, tymin, tymax, tzmin, tzmax;
+      // IF THERE IS A STEPMAX; COULD ALSO CHECK SAFETIES
+
+      // TODO: we should promote this to handle multiple boxes
+      // we might need to have an Index type
+
+      // int sign[3];
+      Float_t sign[3]; // this also exists
+      sign[0] = inverseray.x() < 0;
+      sign[1] = inverseray.y() < 0;
+
+      // observation: we always compute sign and 1-sign; so we could do the assignment
+      // to tmin and tmax in a masked assignment thereafter
+
+      //tmin =  (corners[(int)sign[0]].x()   -point.x())*inverserayx;
+      //tmax =  (corners[(int)(1-sign[0])].x() -point.x())*inverserayx;
+      //tymin = (corners[(int)(sign[1])].y()   -point.y())*inverserayy;
+      //tymax = (corners[(int)(1-sign[1])].y() -point.y())*inverserayy;
+
+      double x0 = (lowercorners.x() - point.x())*inverseray.x();
+      double x1 = (uppercorners.x() - point.x())*inverseray.x();
+      double y0 = (lowercorners.y() - point.y())*inverseray.y();
+      double y1 = (uppercorners.y() - point.y())*inverseray.y();
+      // could we do this using multiplications?
+  //    tmin =   !sign[0] ?  x0 : x1;
+  //    tmax =   sign[0] ? x0 : x1;
+  //    tymin =  !sign[1] ?  y0 : y1;
+  //    tymax =  sign[1] ? y0 : y1;
+
+      // could completely get rid of this ? because the sign is determined by the outside ray
+
+      tmin =   (1-sign[0])*x0 + sign[0]*x1;
+      tmax =   sign[0]*x0 + (1-sign[0])*x1;
+      tymin =  (1-sign[1])*y0 + sign[1]*y1;
+      tymax =  sign[1]*y0 + (1-sign[1])*y1;
+
+      //tmax =  (corners[(int)(1-sign[0])].x() -point.x())*inverserayx;
+      //tymin = (corners[(int)(sign[1])].y()   -point.y())*inverserayy;
+      //tymax = (corners[(int)(1-sign[1])].y() -point.y())*inverserayy;
+
+      if((tmin > tymax) || (tymin > tmax))
+          return vecgeom::kInfinity;
+
+     //  double inverserayz = 1./ray.z();
+      sign[2] = inverseray.z() < 0;
+
+      if(tymin > tmin)
+          tmin = tymin;
+      if(tymax < tmax)
+          tmax = tymax;
+
+      //
+      //tzmin = (lowercorners[(int) sign[2]].z()   -point.z())*inverseray.z();
+      //tzmax = (uppercorners[(int)(1-sign[2])].z() -point.z())*inverseray.z();
+
+      if((tmin > tzmax) || (tzmin > tmax))
+          return vecgeom::kInfinity; // false
+      if((tzmin > tmin))
+          tmin = tzmin;
+      if(tzmax < tmax)
+          tmax = tzmax;
+
+      if( ! ((tmin < t1) && (tmax > t0)) )
+          return vecgeom::kInfinity;
+     // std::cerr << "tmin " << tmin << " tmax " << tmax << "\n";
+      // return true;
+      return tmin;
+    }
 }; // End struct BoxImplementation
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
