@@ -56,6 +56,7 @@ private:
   unsigned fPointCount;
   unsigned fPoolMultiplier;
   unsigned fRepetitions;
+  unsigned fMeasurementCount;
   std::list<VolumePointers> fVolumes;
   std::list<BenchmarkResult> fResults;
   int fVerbosity;
@@ -135,8 +136,11 @@ public:
   /// \return Level of verbosity to standard output.
   int GetVerbosity() const { return fVerbosity; }
 
-  /// \return Amount of iterations the benchmark is run for.
+  /// \return Amount of iterations the benchmark is run for each time measurement.
   unsigned GetRepetitions() const { return fRepetitions; }
+
+  /// \return Number of time measurements taken by the benchmarker, for same set of input data
+  unsigned GetMeasurementCount() const { return fMeasurementCount; }
 
   /// \return World whose daughters are benchmarked.
   VPlacedVolume_t GetWorld() const { return fWorld; }
@@ -170,6 +174,11 @@ public:
   /// \param Amount of iterations to run the benchmarks.
   void SetRepetitions(const unsigned repetitions) {
     fRepetitions = repetitions;
+  }
+
+  /// \param Number of time measurements taken, for same set of input data (random tracks)
+  void SetMeasurementCount(const unsigned nmeas) {
+    fMeasurementCount = nmeas;
   }
 
   /// \param World volume containing daughters to be benchmarked.
