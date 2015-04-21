@@ -1626,7 +1626,7 @@ void Benchmarker::RunToOutGeant4(Precision *distances, Precision *safeties) {
   );
   fResults.push_back(
     GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkSafetyToOut, kBenchmarkGeant4, 1
+      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkGeant4, 1
     )
   );
 }
