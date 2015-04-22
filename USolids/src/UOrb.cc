@@ -60,15 +60,15 @@ VUSolid::EnumInside UOrb::Inside(const UVector3& p) const
   // Check radial surface
   double tolRMax2 = tolRMax * tolRMax;
   if (rad2 <= tolRMax2)
-    return vecgeom::EInside::kInside;
+    return vecgeom::EnumInside::kInside;
   else
   {
     tolRMax = fR + fRTolerance * 0.5;
     tolRMax2 = tolRMax * tolRMax;
     if (rad2 <= tolRMax2)
-      return vecgeom::EInside::kSurface;
+      return vecgeom::EnumInside::kSurface;
     else
-      return vecgeom::EInside::kOutside;
+      return vecgeom::EnumInside::kOutside;
   }
 }
 

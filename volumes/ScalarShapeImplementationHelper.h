@@ -129,7 +129,7 @@ public:
 #endif // VECGEOM_CUDA_INTERFACE
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Inside_t Inside(Vector3D<Precision> const &point) const {
+  virtual EnumInside Inside(Vector3D<Precision> const &point) const {
     Inside_t output = EInside::kOutside;
     Specialization::template Inside<kScalar>(
       *this->GetUnplacedVolume(),
@@ -137,7 +137,7 @@ public:
       point,
       output
     );
-    return output;
+    return (EnumInside) output;
   }
 
   VECGEOM_CUDA_HEADER_BOTH

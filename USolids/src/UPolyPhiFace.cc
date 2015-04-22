@@ -262,7 +262,7 @@ void UPolyPhiFace::Diagnose(VUSolid* owner)
     UVector3 test(corner->x, corner->y, corner->z);
     test -= 1E-6 * corner->norm3D;
 
-    if (owner->Inside(test) != vecgeom::EInside::kInside)
+    if (owner->Inside(test) != vecgeom::EnumInside::kInside)
     {
       UUtils::Exception("UPolyPhiFace::Diagnose()", "GeomSolids0002",
                         FatalError, 1, "Bad vertex normal found.");
@@ -512,9 +512,9 @@ VUSolid::EnumInside UPolyPhiFace::Inside(const UVector3& p,
     //
     // Use distPhi to decide fate
     //
-    if (distPhi < -tolerance) return vecgeom::EInside::kInside;
-    if (distPhi < tolerance) return vecgeom::EInside::kSurface;
-    return vecgeom::EInside::kOutside;
+    if (distPhi < -tolerance) return vecgeom::EnumInside::kInside;
+    if (distPhi < tolerance) return vecgeom::EnumInside::kSurface;
+    return vecgeom::EnumInside::kOutside;
   }
   else
   {
@@ -537,12 +537,12 @@ VUSolid::EnumInside UPolyPhiFace::Inside(const UVector3& p,
       //
       // We're far enough away that eSurface is not possible
       //
-      return normDist < 0 ? vecgeom::EInside::kInside : vecgeom::EInside::kOutside;
+      return normDist < 0 ? vecgeom::EnumInside::kInside : vecgeom::EnumInside::kOutside;
     }
 
-    if (normDist < -tolerance) return vecgeom::EInside::kInside;
-    if (normDist <  tolerance) return vecgeom::EInside::kSurface;
-    return vecgeom::EInside::kOutside;
+    if (normDist < -tolerance) return vecgeom::EnumInside::kInside;
+    if (normDist <  tolerance) return vecgeom::EnumInside::kSurface;
+    return vecgeom::EnumInside::kOutside;
   }
 }
 

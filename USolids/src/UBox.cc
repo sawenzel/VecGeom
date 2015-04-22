@@ -104,13 +104,13 @@ VUSolid::EnumInside UBox::Inside(const UVector3& aPoint) const
   // Early returns on outside condition on any axis. Check Z first for faster
   // exclusion in  phi symmetric geometries.
   double ddz = std::abs(aPoint.z()) - fDz;
-  if (ddz > delta) return vecgeom::EInside::kOutside;
+  if (ddz > delta) return vecgeom::EnumInside::kOutside;
   double ddx = std::abs(aPoint.x()) - fDx;
-  if (ddx > delta) return vecgeom::EInside::kOutside;
+  if (ddx > delta) return vecgeom::EnumInside::kOutside;
   double ddy = std::abs(aPoint.y()) - fDy;
-  if (ddy > delta) return vecgeom::EInside::kOutside;
-  if (ddx > - delta || ddy > -delta || ddz > -delta) return vecgeom::EInside::kSurface;
-  return vecgeom::EInside::kInside;
+  if (ddy > delta) return vecgeom::EnumInside::kOutside;
+  if (ddx > - delta || ddy > -delta || ddz > -delta) return vecgeom::EnumInside::kSurface;
+  return vecgeom::EnumInside::kInside;
 }
 
 //______________________________________________________________________________

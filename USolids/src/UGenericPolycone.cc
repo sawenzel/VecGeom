@@ -340,7 +340,7 @@ VUSolid::EnumInside UGenericPolycone::Inside(const UVector3& p) const
   //
   // Quick test
   //
-  if (enclosingCylinder->MustBeOutside(p)) return vecgeom::EInside::kOutside;
+  if (enclosingCylinder->MustBeOutside(p)) return vecgeom::EnumInside::kOutside;
 
   //
   // Long answer
