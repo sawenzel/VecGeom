@@ -191,9 +191,12 @@ typedef float Precision;
 typedef double Precision;
 #endif
  enum EnumInside {
-   kInside = 0,
-   kSurface = 1,
-   kOutside = 2
+   eInside = 0, /* for USOLID compatibility */
+   kInside = eInside,
+   eSurface = 1,
+   kSurface = eSurface,
+   eOutside = 2,
+   kOutside = eOutside,
  };
 // typedef EInside::EInside Inside_t;
 typedef int Inside_t;
