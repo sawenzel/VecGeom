@@ -772,31 +772,31 @@ VUSolid::EnumInside UTrap::Inside(const UVector3& p) const
   int i;
   if (std::fabs(p.z()) <= fDz - VUSolid::Tolerance() * 0.5)
   {
-    in = vecgeom::EInside::kInside;
+    in = vecgeom::EnumInside::kInside;
 
     for (i = 0; i < 4; i++)
     {
       Dist = fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
              + fPlanes[i].c * p.z() + fPlanes[i].d;
 
-      if (Dist > VUSolid::Tolerance() * 0.5) return in = vecgeom::EInside::kOutside;
-      else if (Dist > -VUSolid::Tolerance() * 0.5)         in = vecgeom::EInside::kSurface;
+      if (Dist > VUSolid::Tolerance() * 0.5) return in = vecgeom::EnumInside::kOutside;
+      else if (Dist > -VUSolid::Tolerance() * 0.5)         in = vecgeom::EnumInside::kSurface;
 
     }
   }
   else if (std::fabs(p.z()) <= fDz + VUSolid::Tolerance() * 0.5)
   {
-    in = vecgeom::EInside::kSurface;
+    in = vecgeom::EnumInside::kSurface;
 
     for (i = 0; i < 4; i++)
     {
       Dist =  fPlanes[i].a * p.x() + fPlanes[i].b * p.y()
               + fPlanes[i].c * p.z() + fPlanes[i].d;
 
-      if (Dist > VUSolid::Tolerance() * 0.5)        return in = vecgeom::EInside::kOutside;
+      if (Dist > VUSolid::Tolerance() * 0.5)        return in = vecgeom::EnumInside::kOutside;
     }
   }
-  else  in = vecgeom::EInside::kOutside;
+  else  in = vecgeom::EnumInside::kOutside;
 
   return in;
 }
@@ -1335,7 +1335,7 @@ double UTrap::SafetyFromInside(const UVector3& p, bool /*precise*/) const
   int i;
 
 #ifdef UDEBUG
-  if (Inside(p) == vecgeom::EInside::kOutside)
+  if (Inside(p) == vecgeom::EnumInside::kOutside)
   {
     int oldprc = cout.precision(16) ;
     cout << std::endl ;

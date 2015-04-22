@@ -184,21 +184,20 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE{
 #ifdef VECGEOM_FLOAT_PRECISION
 typedef float Precision;
 #else
 typedef double Precision;
 #endif
-// namespace EInside {
-// enum EInside {
-//   kInside = 0,
-//   kSurface = 1,
-//   kOutside = 2
-// };
-// }
+ enum EnumInside {
+   kInside = 0,
+   kSurface = 1,
+   kOutside = 2
+ };
 // typedef EInside::EInside Inside_t;
 typedef int Inside_t;
-}
+}}
 
 //namespace vecgeom::cuda {
 //typedef vecgeom::Precision Precision;

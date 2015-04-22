@@ -131,7 +131,7 @@ double UMultiUnion::Capacity()
     {
       UVector3 random(rand(), rand(), rand());
       point = left + length.MultiplyByComponents(random / RAND_MAX);
-      if (Inside(point) != vecgeom::EInside::kOutside) inside++;
+      if (Inside(point) != EnumInside::kOutside) inside++;
     }
     double vbox = (2 * d.x()) * (2 * d.y()) * (2 * d.z());
     fCubicVolume = inside * vbox / generated;
@@ -282,7 +282,7 @@ double UMultiUnion::DistanceToOutNoVoxels(const UVector3& aPoint, const UVector3
       localPoint = transform.LocalPoint(currentPoint);
       localDirection = transform.LocalVector(direction);
       VUSolid::EnumInside location = solid.Inside(localPoint);
-      if (location != vecgeom::EInside::kOutside)
+      if (location != EnumInside::kOutside)
       {
         double distance = solid.DistanceToOut(localPoint, localDirection, aNormal, convex);
         if (distance < UUtils::kInfinity)
@@ -383,7 +383,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
 
         // DistanceToOut at least for Trd sometimes return non-zero value even from points that are outside. Therefore, this condition must currently be here, otherwise it would not work. But it means it would be slower.
 
-        if (solid.Inside(localPoint) != vecgeom::EInside::kOutside)
+        if (solid.Inside(localPoint) != EnumInside::kOutside)
         {
           notOutside = true;
 
@@ -395,7 +395,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
 
 //          if (shift != 0)
 //          {
-//            if(solid.Inside(localPoint) == vecgeom::EInside::kOutside)
+//            if(solid.Inside(localPoint) == vecgeom::EnumInside::kOutside)
 //              shift = shift;
 //            notOutside = true;
 
@@ -428,7 +428,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
         // perform a Inside
         // it should be excluded current solid from checking
         // we have to collect the maximum distance from all given candidates. such "maximum" candidate should be then used for finding next candidates
-        if (location == vecgeom::EInside::kOutside)
+        if (location == EnumInside::kOutside)
         {
           // else return cumulated distances to outside of the traversed components
           break;
@@ -473,7 +473,7 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3& aPoint, UBi
   // ---------------------------------------------
 
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = EnumInside::kOutside;
 
   vector<int> candidates;
   vector<USurface> surfaces;
@@ -496,8 +496,8 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3& aPoint, UBi
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       localPoint = transform.LocalPoint(aPoint);
       location = solid.Inside(localPoint);
-      if (location == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
-      else if (location == vecgeom::EInside::kSurface)
+      if (location == EnumInside::kInside) return EnumInside::kInside;
+      else if (location == EnumInside::kSurface)
       {
         USurface surface;
         surface.point = localPoint;
@@ -522,11 +522,11 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3& aPoint, UBi
       left.solid->Normal(left.point, n);
       right.solid->Normal(right.point, n2);
       if ((n +  n2).Mag2() < 1000 * frTolerance)
-        return vecgeom::EInside::kInside;
+        return EnumInside::kInside;
     }
   }
 
-  location = size ? vecgeom::EInside::kSurface : vecgeom::EInside::kOutside;
+  location = size ? vecgeom::EnumInside::kSurface : vecgeom::EnumInside::kOutside;
 
   return location;
 }
@@ -547,7 +547,7 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
   // ---------------------------------------------
 
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = vecgeom::EnumInside::kOutside;
   bool surface = false;
 
   // TODO: test if it works well and if so measure performance
@@ -576,9 +576,9 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
           // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
           localPoint = transform.LocalPoint(aPoint);
           location = solid.Inside(localPoint);
-          if(location == vecgeom::EInside::kSurface) surface = true;
+          if(location == vecgeom::EnumInside::kSurface) surface = true;
 
-          if(location == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
+          if(location == vecgeom::EnumInside::kInside) return vecgeom::EnumInside::kInside;
         }
       }
     }
@@ -646,7 +646,7 @@ VUSolid::EnumInside UMultiUnion::InsideIterator(const UVector3 &aPoint) const
 #endif
 
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = vecgeom::EnumInside::kOutside;
   bool boolSurface = false;
 
   vector<int> candidates;
@@ -663,16 +663,16 @@ VUSolid::EnumInside UMultiUnion::InsideIterator(const UVector3 &aPoint) const
     // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
     localPoint = transform.LocalPoint(aPoint);
     location = solid.Inside(localPoint);
-    if(location == vecgeom::EInside::kSurface) boolSurface = true;
+    if(location == vecgeom::EnumInside::kSurface) boolSurface = true;
 
-    if(location == vecgeom::EInside::kInside)
+    if(location == vecgeom::EnumInside::kInside)
     {
 #ifdef DEBUG
       if (location != insideNoVoxels)
         location = insideNoVoxels; // you can place a breakpoint here
 #endif
 
-      return vecgeom::EInside::kInside;
+      return vecgeom::EnumInside::kInside;
     }
   }
   ///////////////////////////////////////////////////////////////////////////
@@ -693,7 +693,7 @@ VUSolid::EnumInside UMultiUnion::InsideIterator(const UVector3 &aPoint) const
 VUSolid::EnumInside UMultiUnion::InsideNoVoxels(const UVector3& aPoint) const
 {
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = vecgeom::EnumInside::kOutside;
   int countSurface = 0;
 
   int numNodes = fSolids.size();
@@ -707,13 +707,13 @@ VUSolid::EnumInside UMultiUnion::InsideNoVoxels(const UVector3& aPoint) const
 
     location = solid.Inside(localPoint);
 
-    if (location == vecgeom::EInside::kSurface)
+    if (location == vecgeom::EnumInside::kSurface)
       countSurface++;
 
-    if (location == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
+    if (location == vecgeom::EnumInside::kInside) return vecgeom::EnumInside::kInside;
   }
-  if (countSurface != 0) return vecgeom::EInside::kSurface;
-  return vecgeom::EInside::kOutside;
+  if (countSurface != 0) return vecgeom::EnumInside::kSurface;
+  return vecgeom::EnumInside::kOutside;
 }
 
 //______________________________________________________________________________
@@ -816,7 +816,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
       VUSolid& solid = *fSolids[candidate];
       VUSolid::EnumInside location = solid.Inside(localPoint);
 
-      if (location == vecgeom::EInside::kSurface)
+      if (location == vecgeom::EnumInside::kSurface)
       {
         // normal case when point is on surface, we pick first solid
         solid.Normal(localPoint, localNormal);
@@ -827,7 +827,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
       else
       {
         // collect the smallest safety and remember solid node
-        double s = (location == vecgeom::EInside::kInside) ? solid.SafetyFromInside(localPoint) : solid.SafetyFromOutside(localPoint);
+        double s = (location == vecgeom::EnumInside::kInside) ? solid.SafetyFromInside(localPoint) : solid.SafetyFromOutside(localPoint);
         if (s < safety)
         {
           safety = s;
@@ -894,7 +894,7 @@ double UMultiUnion::SafetyFromInside(const UVector3& point, bool aAccurate) cons
     UTransform3D& transform = *fTransforms[candidate];
     localPoint = transform.LocalPoint(point);
     VUSolid& solid = *fSolids[candidate];
-    if (solid.Inside(localPoint) == vecgeom::EInside::kInside)
+    if (solid.Inside(localPoint) == vecgeom::EnumInside::kInside)
     {
       double safety = solid.SafetyFromInside(localPoint, aAccurate);
       if (safetyMin > safety) safetyMin = safety;
@@ -1060,7 +1060,7 @@ UVector3 UMultiUnion::GetPointOnSurface() const
     UTransform3D& transform = *fTransforms[random];
     point = transform.GlobalPoint(point);
   }
-  while (Inside(point) != vecgeom::EInside::kSurface);
+  while (Inside(point) != vecgeom::EnumInside::kSurface);
 
   return point;
 }

@@ -328,7 +328,7 @@ void UTessellatedSolid::PrecalculateInsides()
         {
           for (int i = 0; i <= 2; ++i) point[i] = fVoxels.GetBoundary(i)[voxel[i]];
 #ifdef USPECSDEBUG
-          bool inside = (bool)(InsideNoVoxels(point) == vecgeom::EInside::kInside);
+          bool inside = (bool)(InsideNoVoxels(point) == vecgeom::EnumInside::kInside);
           int n = SetAllUsingStack(voxel, maxVoxels, inside, checked);
           std::cout << "SetAllUsingStack " << n << " items with status " << inside << "\n";
 #endif
@@ -649,7 +649,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   // of the tessellated solid.
   //
   if (OutsideOfExtent(p, fgTolerance))
-    return vecgeom::EInside::kOutside;
+    return vecgeom::EnumInside::kOutside;
 
   std::vector<int> startingVoxel(3);
   fVoxels.GetVoxel(startingVoxel, p);
@@ -661,8 +661,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   {
 //    int index = fVoxels.GetPointIndex(p);
     int index = fVoxels.GetVoxelsIndex(startingVoxel);
-    EnumInside location = fInsides[index] ? vecgeom::EInside::kInside
-                                          : vecgeom::EInside::kOutside;
+    EnumInside location = fInsides[index] ? vecgeom::EnumInside::kInside
+                                          : vecgeom::EnumInside::kOutside;
     return location;
   }
 
@@ -675,7 +675,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
     double dist = facet.Distance(p, minDist);
     if (dist < minDist) minDist = dist;
     if (dist <= fgToleranceHalf)
-      return vecgeom::EInside::kSurface;
+      return vecgeom::EnumInside::kSurface;
   }
   //
   //
@@ -706,8 +706,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   UVector3 normalO, normalI;
   bool crossingO          = false;
   bool crossingI          = false;
-  VUSolid::EnumInside location          = vecgeom::EInside::kOutside;
-//  VUSolid::EnumInside locationprime     = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location          = vecgeom::EnumInside::kOutside;
+//  VUSolid::EnumInside locationprime     = vecgeom::EnumInside::kOutside;
   int sm                   = 0;
   double shift;
 
@@ -784,8 +784,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
         {
           int index = fVoxels.GetVoxelsIndex(curVoxel);
           bool inside = fInsides[index];
-          location = inside ? vecgeom::EInside::kInside
-                            : vecgeom::EInside::kOutside;
+          location = inside ? vecgeom::EnumInside::kInside
+                            : vecgeom::EnumInside::kOutside;
           // cout << (inside ? "I" : "O");
           return location;
         }
@@ -840,14 +840,14 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   //     inside.
   //
   if (distIn == UUtils::kInfinity && distOut == UUtils::kInfinity)
-    location = vecgeom::EInside::kOutside;
+    location = vecgeom::EnumInside::kOutside;
   else if (distIn <= distOut - fgToleranceHalf)
-    location = vecgeom::EInside::kOutside;
+    location = vecgeom::EnumInside::kOutside;
   else if (distOut <= distIn - fgToleranceHalf)
-    location = vecgeom::EInside::kInside;
+    location = vecgeom::EnumInside::kInside;
   // }
 
-  // cout << " => " << (location == vecgeom::EInside::kInside ? "I" : "O") << std::endl;
+  // cout << " => " << (location == vecgeom::EnumInside::kInside ? "I" : "O") << std::endl;
 
   return location;
 }
@@ -878,7 +878,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
   // of the tessellated solid.
   //
   if (OutsideOfExtent(p, fgTolerance))
-    return vecgeom::EInside::kOutside;
+    return vecgeom::EnumInside::kOutside;
 
   double minDist = UUtils::kInfinity;
   //
@@ -893,7 +893,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
     if (dist < minDist) minDist = dist;
     if (dist <= fgToleranceHalf)
     {
-      return vecgeom::EInside::kSurface;
+      return vecgeom::EnumInside::kSurface;
     }
   }
   //
@@ -923,8 +923,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
   UVector3 normalI(0.0, 0.0, 0.0);
   bool crossingO          = false;
   bool crossingI          = false;
-  VUSolid::EnumInside location          = vecgeom::EInside::kOutside;
-  VUSolid::EnumInside locationprime     = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location          = vecgeom::EnumInside::kOutside;
+  VUSolid::EnumInside locationprime     = vecgeom::EnumInside::kOutside;
   int sm = 0;
 
   for (int i = 0; i < nTry; ++i)
@@ -1006,11 +1006,11 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
     //     inside.
     //
     if (distIn == UUtils::kInfinity && distOut == UUtils::kInfinity)
-      locationprime = vecgeom::EInside::kOutside;
+      locationprime = vecgeom::EnumInside::kOutside;
     else if (distIn <= distOut - fgToleranceHalf)
-      locationprime = vecgeom::EInside::kOutside;
+      locationprime = vecgeom::EnumInside::kOutside;
     else if (distOut <= distIn - fgToleranceHalf)
-      locationprime = vecgeom::EInside::kInside;
+      locationprime = vecgeom::EnumInside::kInside;
 
     if (i == 0) location = locationprime;
   }

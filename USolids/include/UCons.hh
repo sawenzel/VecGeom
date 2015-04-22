@@ -137,15 +137,15 @@ class UCons : public VUSolid
 
       if (std::fabs(p.z()) > fDz + halfCarTolerance)
       {
-        return in = vecgeom::EInside::kOutside;
+        return in = vecgeom::EnumInside::kOutside;
       }
       else if (std::fabs(p.z()) >= fDz - halfCarTolerance)
       {
-        in = vecgeom::EInside::kSurface;
+        in = vecgeom::EnumInside::kSurface;
       }
       else
       {
-        in = vecgeom::EInside::kInside;
+        in = vecgeom::EnumInside::kInside;
       }
 
       r2 = p.x() * p.x() + p.y() * p.y();
@@ -163,7 +163,7 @@ class UCons : public VUSolid
 
       if ((r2 < tolRMin * tolRMin) || (r2 > tolRMax * tolRMax))
       {
-        return in = vecgeom::EInside::kOutside;
+        return in = vecgeom::EnumInside::kOutside;
       }
 
       if (rl)
@@ -176,11 +176,11 @@ class UCons : public VUSolid
       }
       tolRMax = rh - halfRadTolerance;
 
-      if (in == vecgeom::EInside::kInside) // else it's eSurface already
+      if (in == vecgeom::EnumInside::kInside) // else it's eSurface already
       {
         if ((r2 < tolRMin * tolRMin) || (r2 >= tolRMax * tolRMax))
         {
-          in = vecgeom::EInside::kSurface;
+          in = vecgeom::EnumInside::kSurface;
         }
       }
       if (!fPhiFullCone && ((p.x() != 0.0) || (p.y() != 0.0)))
@@ -199,21 +199,21 @@ class UCons : public VUSolid
         if ((pPhi < fSPhi - halfAngTolerance) ||
             (pPhi > fSPhi + fDPhi + halfAngTolerance))
         {
-          return in = vecgeom::EInside::kOutside;
+          return in = vecgeom::EnumInside::kOutside;
         }
 
-        else if (in == vecgeom::EInside::kInside) // else it's eSurface anyway already
+        else if (in == vecgeom::EnumInside::kInside) // else it's eSurface anyway already
         {
           if ((pPhi < fSPhi + halfAngTolerance) ||
               (pPhi > fSPhi + fDPhi - halfAngTolerance))
           {
-            in = vecgeom::EInside::kSurface;
+            in = vecgeom::EnumInside::kSurface;
           }
         }
       }
       else if (!fPhiFullCone)
       {
-        in = vecgeom::EInside::kSurface;
+        in = vecgeom::EnumInside::kSurface;
       }
 
       return in;
