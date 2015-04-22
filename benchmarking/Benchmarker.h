@@ -187,9 +187,11 @@ public:
   /// \return List of results of previously performed benchmarks.
   std::list<BenchmarkResult> const& GetResults() const { return fResults; }
 
-  /// \return List of results of previously performed benchmarks. Clears the
-  ///         internal history.
+  /// \return List of results of previously performed benchmarks. Clears the internal history.
   std::list<BenchmarkResult> PopResults();
+
+  /// Clear the internal list of results, e.g. to start a new set of results for output
+  void ClearResults() { fResults.clear(); }
 
   std::vector<Vector3D<Precision> > const & GetProblematicContainPoints() const {
       return fProblematicContainPoints;
