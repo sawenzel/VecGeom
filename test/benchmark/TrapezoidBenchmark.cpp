@@ -10,8 +10,15 @@ using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
   OPTION_INT(ntracks, 32768);
-  OPTION_INT(nreps, 4);
+  OPTION_INT(nrep, 4);
   OPTION_INT(nstats, 1);
+
+  // temporary alert to deprecated use of npoints
+  OPTION_INT(npoints, 0);
+  if(npoints) {
+    printf("\n***** ERROR: -npoints is now deprecated.  Please use -ntracks instead.\n");
+    std::exit(-1);
+  }
 
   //===== Build a geometry with trapezoid(s)
 
@@ -56,14 +63,17 @@ int main(int argc, char* argv[]) {
 
   Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetPointCount(ntracks);
-  tester.SetRepetitions(nreps);
+  tester.SetRepetitions(nrep);
   tester.SetTolerance(2.e-12);
   tester.SetPoolMultiplier(1);
 
   //=== Here is for the validation + one perf data point displayed on screen
   tester.SetVerbosity(3);
-  tester.RunBenchmark();
   tester.SetMeasurementCount(1);
+  tester.RunBenchmark();
+
+  // clear benchmark results, so previous measurements won't be written out into the output .csv file
+  tester.ClearResults();
 
   // Now run to collect statistics for performance plots - written to the .csv output file only
   if(nstats>1) {
