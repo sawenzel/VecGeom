@@ -114,6 +114,8 @@ struct BoxImplementation {
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::bool_v &inside);
 
+
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -893,7 +895,37 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
         // TODO: return normal in case of nonvalid case;
         // need to keep track of minimum safety direction
     }
+} // end BoxImplementation
 
+  struct ABBoxImplementation {
+
+  // a contains kernel to be used with aligned bounding boxes
+  // scalar and vector modes (aka backend) for boxes but only single points
+  // should be useful to test one point against many bounding boxes
+  // TODO: check if this can be unified with the normal generic box kernel
+  // this might be possible with 2 backend template parameters
+  template <class Backend>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static void ABBoxContainsKernel(
+        Vector3D<typename Backend::precision_v> const &lowercorner,
+        Vector3D<typename Backend::precision_v> const &uppercorner,
+        Vector3D<Precision> const &point,
+        typename Backend::bool_v &inside) {
+
+        inside =  lowercorner.x() < point.x();
+        inside &= uppercorner.x() > point.x();
+        if( IsEmpty(inside) ) return;
+
+        inside &= lowercorner.y() < point.y();
+        inside &= uppercorner.y() > point.y();
+        if( IsEmpty(inside) ) return;
+
+        inside &= lowercorner.z() < point.z();
+        inside &= uppercorner.z() > point.z();
+  }
+
+  } // end aligned bounding box
 
 } } // End global namespace
 
