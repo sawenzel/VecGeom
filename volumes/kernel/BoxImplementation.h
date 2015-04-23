@@ -895,7 +895,6 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
         // TODO: return normal in case of nonvalid case;
         // need to keep track of minimum safety direction
     }
-} // end BoxImplementation
 
   struct ABBoxImplementation {
 
@@ -925,7 +924,7 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
         inside &= uppercorner.z() > point.z();
   }
 
-  } // end aligned bounding box
+  }; // end aligned bounding box struct
 
 } } // End global namespace
 
