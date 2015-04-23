@@ -79,7 +79,7 @@ int benchCachingAndVector(  Vector3D<Precision> const & point,
 
 
 #define N 20        // boxes per dimension
-#define SZ 20      // samplesize
+#define SZ 100      // samplesize
 double delta = 0.5; // if delta > 1 the boxes will overlap
 
 
@@ -160,6 +160,7 @@ int main(){
 
     Stopwatch timer;
     int hits=0;
+    double meanfurthestdistance = 0;
 
     timer.Start();
     for(int i=0;i<SZ;++i){
@@ -173,27 +174,33 @@ int main(){
         );
 #ifdef SORTHITBOXES
        hitlist.sort( HitBoxComparator );
-       std::cerr << hitlist << "\n";
+       meanfurthestdistance+=hitlist.back().second;
+       // std::cerr << hitlist << "\n";
 #endif
     }
     timer.Stop();
-    std::cerr << "Cached times and hit " << timer.Elapsed() << " " << hits << "\n";
+    std::cerr << "Cached times and hit " << timer.Elapsed() << " " << hits << " " << meanfurthestdistance << "\n";
 
     hits=0;
-    hitlist.clear();
+    meanfurthestdistance=0.;
     timer.Start();
     for(int i=0;i<SZ;++i){
+        hitlist.clear();
         hits+=benchNoCachingNoVector( points[i], directions[i], corners
 #ifdef SORTHITBOXES
         , hitlist
 #endif
         );
+#ifdef SORTHITBOXES
+        hitlist.sort( HitBoxComparator );
+        meanfurthestdistance+=hitlist.back().second;
+#endif
     }
     timer.Stop();
-    std::cerr << "Ordinary times and hit " << timer.Elapsed() << " " << hits << "\n";
+    std::cerr << "Ordinary times and hit " << timer.Elapsed() << " " << hits << " " << meanfurthestdistance << "\n";
 
     hits=0;
-    hitlist.clear();
+    meanfurthestdistance=0.;
     timer.Start();
     for(int i=0;i<SZ;++i){
 #ifdef SORTHITBOXES
@@ -206,11 +213,12 @@ int main(){
         );
 #ifdef SORTHITBOXES
        hitlist.sort( HitBoxComparator );
-       std::cerr << "VECTORHITLIST" << hitlist << "\n";
+       meanfurthestdistance+=hitlist.back().second;
+       //std::cerr << "VECTORHITLIST" << hitlist << "\n";
 #endif
     }
     timer.Stop();
-    std::cerr << "Vector times and hit " << timer.Elapsed() << " " << hits << "\n";
+    std::cerr << "Vector times and hit " << timer.Elapsed() << " " << hits << " " << meanfurthestdistance << "\n";
 
     return 0;
 }
@@ -345,7 +353,7 @@ int benchCachingAndVector( Vector3D<Precision> const & point, Vector3D<Precision
                for(auto i=0; i < kVc::precision_v::Size; ++i){
                    if( hit[i] )
                        // which box id??
-                   hitlist.push_back( BoxIdDistancePair_t( box, distance[i]) );
+                   hitlist.push_back( BoxIdDistancePair_t( box * kVc::precision_v::Size + i, distance[i]) );
                }
                #endif
     }
