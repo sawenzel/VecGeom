@@ -26,20 +26,62 @@
 #include "base/Stopwatch.h"
 #include <iostream>
 #include <vector>
+#include <list>
+#include <utility>
 #include <backend/vc/Backend.h>
 #include <backend/Backend.h>
 
 using namespace vecgeom;
 
-int benchNoCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precision> const & dir, std::vector<Vector3D<Precision> > const & );
-int benchCachingNoVector(   Vector3D<Precision> const & point, Vector3D<Precision> const & dir, std::vector<Vector3D<Precision> > const & );
-int benchCachingAndVector(  Vector3D<Precision> const & point, Vector3D<Precision> const & dir, Vector3D<kVc::precision_v> const *, int number );
+// #define INNERTIMER
+#define SORTHITBOXES
+
+typedef std::pair<int, double> BoxIdDistancePair_t;
+
+// comparator for hit boxes: returns true if left is < right
+bool HitBoxComparator( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right ){
+    return left.second < right.second;
+}
+
+// output for hitboxes
+template <typename stream>
+stream & operator<<(stream & s, std::list<BoxIdDistancePair_t> const & list){
+    for(auto i : list){
+        s << "(" << i.first << "," << i.second << ")" << " ";
+    }
+    return s;
+}
+
+int benchNoCachingNoVector( Vector3D<Precision> const & point,
+                            Vector3D<Precision> const & dir,
+                            std::vector<Vector3D<Precision> > const &
+#ifdef SORTHITBOXES
+                            , std::list< BoxIdDistancePair_t > & hitlist
+#endif
+                          );
+
+int benchCachingNoVector(   Vector3D<Precision> const & point,
+                            Vector3D<Precision> const & dir,
+                            std::vector<Vector3D<Precision> > const &
+#ifdef SORTHITBOXES
+                            , std::list< BoxIdDistancePair_t > & hitlist
+#endif
+);
+
+
+int benchCachingAndVector(  Vector3D<Precision> const & point,
+                            Vector3D<Precision> const & dir,
+                            Vector3D<kVc::precision_v> const *, int number
+#ifdef SORTHITBOXES
+                            , std::list< BoxIdDistancePair_t > & hitlist
+#endif
+);
+
 
 #define N 20        // boxes per dimension
-#define SZ 1000      // samplesize
+#define SZ 20      // samplesize
 double delta = 0.5; // if delta > 1 the boxes will overlap
 
-// #define INNERTIMER
 
 int main(){
     // number of boxes
@@ -113,28 +155,59 @@ int main(){
         directions[i] = volumeUtilities::SampleDirection();
     }
 
+    std::list<BoxIdDistancePair_t> hitlist;
+    hitlist.resize(2*N);
+
     Stopwatch timer;
     int hits=0;
 
     timer.Start();
     for(int i=0;i<SZ;++i){
-        hits+=benchCachingNoVector( points[i], directions[i], corners );
+#ifdef SORTHITBOXES
+        hitlist.clear();
+#endif
+        hits+=benchCachingNoVector( points[i], directions[i], corners
+#ifdef SORTHITBOXES
+        , hitlist
+#endif
+        );
+#ifdef SORTHITBOXES
+       hitlist.sort( HitBoxComparator );
+       std::cerr << hitlist << "\n";
+#endif
     }
     timer.Stop();
     std::cerr << "Cached times and hit " << timer.Elapsed() << " " << hits << "\n";
 
     hits=0;
+    hitlist.clear();
     timer.Start();
     for(int i=0;i<SZ;++i){
-        hits+=benchNoCachingNoVector( points[i], directions[i], corners );
+        hits+=benchNoCachingNoVector( points[i], directions[i], corners
+#ifdef SORTHITBOXES
+        , hitlist
+#endif
+        );
     }
     timer.Stop();
     std::cerr << "Ordinary times and hit " << timer.Elapsed() << " " << hits << "\n";
 
     hits=0;
+    hitlist.clear();
     timer.Start();
     for(int i=0;i<SZ;++i){
-        hits+=benchCachingAndVector( points[i], directions[i], VcCorners, numberofboxes/kVc::precision_v::Size );
+#ifdef SORTHITBOXES
+        hitlist.clear();
+#endif
+        hits+=benchCachingAndVector( points[i], directions[i], VcCorners, numberofboxes/kVc::precision_v::Size
+#ifdef SORTHITBOXES
+        , hitlist
+#endif
+        );
+#ifdef SORTHITBOXES
+       hitlist.sort( HitBoxComparator );
+       std::cerr << "VECTORHITLIST" << hitlist << "\n";
+#endif
     }
     timer.Stop();
     std::cerr << "Vector times and hit " << timer.Elapsed() << " " << hits << "\n";
@@ -143,7 +216,13 @@ int main(){
 }
 
 
-int benchNoCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precision> const & dir, std::vector<Vector3D<Precision> > const & corners ){
+int benchNoCachingNoVector( Vector3D<Precision> const & point,
+                            Vector3D<Precision> const & dir,
+                            std::vector<Vector3D<Precision> > const & corners
+#ifdef SORTHITBOXES
+                            , std::list< BoxIdDistancePair_t > & hitlist
+#endif
+                          ){
 #ifdef INNERTIMER
     Stopwatch timer;
     timer.Start();
@@ -156,7 +235,12 @@ int benchNoCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precisio
                 point,
                 dir,
                 0, vecgeom::kInfinity );
-         if( distance < vecgeom::kInfinity ) hitcount++;
+         if( distance < vecgeom::kInfinity ){
+             hitcount++;
+#ifdef SORTHITBOXES
+             hitlist.push_back( BoxIdDistancePair_t( box, distance) );
+#endif
+         }
     }
 #ifdef INNERTIMER
     timer.Stop();
@@ -166,7 +250,13 @@ int benchNoCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precisio
     return hitcount;
 }
 
-int benchCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precision> const & dir, std::vector<Vector3D<Precision> > const & corners ){
+int benchCachingNoVector( Vector3D<Precision> const & point,
+                          Vector3D<Precision> const & dir,
+                          std::vector<Vector3D<Precision> > const & corners
+#ifdef SORTHITBOXES
+                            , std::list< BoxIdDistancePair_t > & hitlist
+#endif
+){
 #ifdef INNERTIMER
     Stopwatch timer;
     timer.Start();
@@ -186,7 +276,12 @@ int benchCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precision>
            invdir,
            sign[0],sign[1],sign[2],
             0, vecgeom::kInfinity );
-            if( distance < vecgeom::kInfinity ) hitcount++;
+            if( distance < vecgeom::kInfinity ){
+                hitcount++;
+#ifdef SORTHITBOXES
+             hitlist.push_back( BoxIdDistancePair_t( box, distance) );
+#endif
+            }
         }
 
     //    switch( size[0] + size[1] + size[2] ){
@@ -219,7 +314,12 @@ int benchCachingNoVector( Vector3D<Precision> const & point, Vector3D<Precision>
 }
 
 
-int benchCachingAndVector( Vector3D<Precision> const & point, Vector3D<Precision> const & dir, Vector3D<kVc::precision_v> const * corners, int vecsize ){
+int benchCachingAndVector( Vector3D<Precision> const & point, Vector3D<Precision> const & dir,
+        Vector3D<kVc::precision_v> const * corners, int vecsize
+#ifdef SORTHITBOXES
+                            , std::list< BoxIdDistancePair_t > & hitlist
+#endif
+){
 #ifdef INNERTIMER
     Stopwatch timer;
     timer.Start();
@@ -238,7 +338,16 @@ int benchCachingAndVector( Vector3D<Precision> const & point, Vector3D<Precision
                0, vecgeom::kInfinity );
                kVc::bool_v hit = distance < vecgeom::kInfinity;
                //std::cerr << hit << "\n";
+               // this is Vc specific
                hitcount += hit.count();
+               #ifdef SORTHITBOXES
+// a little tricky: need to iterate over the mask
+               for(auto i=0; i < kVc::precision_v::Size; ++i){
+                   if( hit[i] )
+                       // which box id??
+                   hitlist.push_back( BoxIdDistancePair_t( box, distance[i]) );
+               }
+               #endif
     }
     // interpret as binary number and do a switch statement
     // do a big switch statement here
