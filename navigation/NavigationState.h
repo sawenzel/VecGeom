@@ -416,7 +416,7 @@ void NavigationState::Dump() const
    printf("NavState::Dump(): data: %p(%lu) : %p(%lu) : %p(%lu) : %p(%lu)\n", &fCurrentLevel, sizeof(fCurrentLevel),
           &fOnBoundary, sizeof(fOnBoundary), &global_matrix_, sizeof(global_matrix_), &fPath, sizeof(fPath));
    for(unsigned int i=0; i<20; ++i) {
-      printf("%p: ", ptr);
+      printf("%p: ", (void*)ptr);
       for(unsigned int i=0; i<8; ++i) {
          printf(" %08x ", *ptr);
          ptr++;
