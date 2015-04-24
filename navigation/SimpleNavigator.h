@@ -28,7 +28,6 @@
 #include "G4VPhysicalVolume.hh"
 #endif
 
-
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -171,7 +170,8 @@ public:
    void InspectEnvironmentForPointAndDirection(
          Vector3D<Precision> const & /* global point */,
          Vector3D<Precision> const & /* global direction */,
-         NavigationState const & /* current state */
+         NavigationState const & /* current state */,
+         std::ostream & outstream = std::cout
    ) const;
 
    /**
@@ -332,7 +332,7 @@ SimpleNavigator::HasSamePath( Vector3D<Precision> const & globalpoint,
    return currentstate.HasSamePathAsOther( newstate );
 }
 
-
+//#define CHECKCONTAINS
 void
 SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint,
                                           Vector3D<Precision> const & globaldir,
@@ -342,12 +342,21 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
                                           Precision                 & step
                                         ) const
 {
+  static int counter=0;
    // this information might have been cached in previous navigators??
    Transformation3D const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
    Vector3D<Precision> localpoint=m.Transform(globalpoint);
    Vector3D<Precision> localdir=m.TransformDirection(globaldir);
 
    VPlacedVolume const * currentvolume = currentstate.Top();
+#ifdef VERBOSE
+   if( counter % 1 == 0)
+   {
+       std::cerr << "navigating in " << currentvolume->GetLabel() << " stepnumber " << counter << "pstep " << pstep << " pos " << globalpoint << " dir " << globaldir ;
+   }
+   counter++;
+#endif
+
    int nexthitvolume = -1; // means mother
 
    step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
@@ -355,12 +364,12 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
    // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
    // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
-   if( step < 0. )
+   if( step <= 0. )
    {
 //       newstate = currentstate;
 //       RelocatePointFromPath( localpoint, newstate );
 //       return;
-    step=kInfinity;
+      step=kInfinity;
    }
 
    // iterate over all the daughter
@@ -370,6 +379,14 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    {
       VPlacedVolume const * daughter = daughters->operator [](d);
       //    previous distance becomes step estimate, distance to daughter returned in workspace
+      // SW: this makes the navigation more robust and it appears that I have to
+      // put this at the moment since not all shapes respond yet with a negative distance if
+      // the point is actually inside the daughter
+#ifdef CHECKCONTAINS
+#pragma message "CHECKCONTAINS"
+      bool contains = daughter->Contains( localpoint );
+      if( !contains ){
+#endif
       Precision ddistance = daughter->DistanceToIn( localpoint, localdir, step );
 
       // if distance is negative; we are inside that daughter and should relocate
@@ -377,15 +394,42 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       bool valid = (ddistance < step && ! std::isinf(ddistance));
       nexthitvolume = valid ? d : nexthitvolume;
       step      = valid ? ddistance  : step;
+#ifdef CHECKCONTAINS
+      }
+      else{
+          std::cerr << " INDA ";
+          step = -1.;
+         nexthitvolume = d;
+         break;
+      }
+#endif
    }
+
+   //std::cerr << " STEP " << step << " NEXTHITVOLUME " << nexthitvolume << "\n";
+   //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
 
    // now we have the candidates
    // try
    currentstate.CopyTo(&newstate);
 
+   // if this is the case we are in the wrong volume;
+   // assuming that DistanceToIn return negative number when point is inside
+   // do nothing (step=0) and retry one level higher
+   if( step == kInfinity && pstep > 0. )
+   {
+      //std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
+      //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+      // set step to zero and retry one level higher
+      step = 0;
+      newstate.Pop();
+      return;
+   }
+
    // is geometry further away than physics step?
    if(step > pstep)
    {
+     //  std::cerr << "PHYSICS STEP CHOSEN -- DISASTER\n";
+
        // don't need to do anything
        step = pstep;
        newstate.SetBoundaryState( false );
@@ -393,23 +437,17 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    }
    newstate.SetBoundaryState( true );
 
-   if( step > 1E30 )
-   {
-    //std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
-         //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
-
-         // set step to zero and retry one level higher
-         step = 0;
-         newstate.Pop();
-         return;
-    }
 
     if( step < 0. )
     {
-      //std::cout << "WARNING: STEP NEGATIVE\n";
+      //std::cerr << "WARNING: STEP NEGATIVE; NEXTVOLUME " << nexthitvolume << std::endl;
       //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
-       step = 0.;
+      step = 0.;
     }
+
+#ifdef VERBOSE
+    std::cerr << " step " << step << " nextvol " << nexthitvolume << "\n";
+#endif
 
    Vector3D<Precision> newpointafterboundary = localdir;
    newpointafterboundary*=(step + 1e-6);
@@ -421,10 +459,10 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       VPlacedVolume const * nextvol = daughters->operator []( nexthitvolume );
       Transformation3D const * trans = nextvol->GetTransformation();
 
-      // this should be inlined here
       LocatePoint( nextvol, trans->Transform(newpointafterboundary), newstate, false );
 
       assert( newstate.Top() != currentstate.Top() && " error relocating when entering ");
+      return;
    }
    else // hitting mother
    {
@@ -440,8 +478,8 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
        //nav->InitFrom( currentstate.ToTGeoBranchArray() );
 
        // TODO: since ROOT follows in lock step; don't need to do this
-       // TGeoNode const * orignode = nav->FindNode( globalpoint.x(), globalpoint.y(), globalpoint.z() );
-       TGeoNode const * orignode = nav->GetCurrentNode();
+       TGeoNode const * orignode = nav->FindNode( globalpoint.x(), globalpoint.y(), globalpoint.z() );
+       // TGeoNode const * orignode = nav->GetCurrentNode();
        //nav->SetCurrentDirection( globalpoint.x(), globalpoint.y(), globalpoint.z() );
        //nav->SetCurrentDirection( globaldir.x(), globaldir.y(), globaldir.z() );
        TGeoNode const * nextnode = nav->FindNextBoundaryAndStep( pstep );
@@ -504,15 +542,18 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    //#endif
    #endif // distance debug
 
+       /*
        if( newstate.Top() == currentstate.Top() )
        {
-          // std::cerr << "relocate failed; trying to locate from top \n";
+           std::cerr << "relocate failed; trying to locate from top \n";
            newstate.Clear();
            LocatePoint( GeoManager::Instance().GetWorld(), globalpoint + (step+1E-6)*globaldir, newstate, true );
          //  std::cerr << "newstate top " << newstate.Top()->GetLabel() << "\n";
        }
-       assert( newstate.Top() != currentstate.Top() && " error relocating when leaving ");
 
+       if( newstate.Top() == currentstate)
+       assert( newstate.Top() != currentstate.Top() && " error relocating when leaving ");
+        */
 
 }
 
@@ -581,7 +622,7 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
  * Navigation interface for baskets; templates on Container3D which might be a SOA3D or AOS3D container
  */
 
-
+//#define CALCSAFETY
 template <typename Container3D>
 void SimpleNavigator::FindNextBoundaryAndStep(
          Container3D const & globalpoints,
@@ -614,7 +655,10 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    // however the distancetoout function and the daughterlist are the same for all particles
    VPlacedVolume const * currentvolume = currentstates[0]->Top();
 
+#ifdef CALCSAFETY
    currentvolume->SafetyToOut( localpoints, safeties );
+#endif
+
    // calculate distance to Boundary of current volume in vectorized way
    // also initialized nextnodeworkspace to -1 == hits or -2 stays in volume
    currentvolume->DistanceToOut( localpoints, localdirs,
@@ -625,8 +669,9 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    for (int daughterindex=0; daughterindex < daughters->size(); ++daughterindex)
    {
       VPlacedVolume const * daughter = daughters->operator [](daughterindex);
-
+#ifdef CALCSAFETY
       daughter->SafetyToInMinimize( localpoints, safeties );
+#endif
       // we call a version of the DistanceToIn function which is reductive:
       // it takes the existing data in distances as the proposed step
       // if we distance to this daughter is smaller than the step

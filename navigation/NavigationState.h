@@ -267,7 +267,7 @@ public:
 
 #ifdef VECGEOM_ROOT
    VECGEOM_INLINE
-   void printVolumePath() const;
+   void printVolumePath(std::ostream & = std::cerr) const;
 
    /**
     * returns the number of FILLED LEVELS such that
@@ -419,13 +419,13 @@ VECGEOM_INLINE
  * prints the path of the track as a verbose string ( like TGeoBranchArray in ROOT )
  * (uses internal root representation for the moment)
  */
-void NavigationState::printVolumePath() const
+void NavigationState::printVolumePath( std::ostream & stream ) const
 {
    for(int i=0; i < fCurrentLevel; ++i)
    {
-    std::cout << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
+    stream << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
    }
-   std::cout << "\n";
+   stream << "\n";
 }
 #endif
 

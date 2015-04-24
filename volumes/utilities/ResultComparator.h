@@ -121,8 +121,8 @@ inline
         // and to report errors early
 
         // other packages usually require transformed points
-        Vector3D<Precision> tpoint = vol->transformation()->Transform(point);
-        Vector3D<Precision> tdirection = vol->transformation()->TransformDirection(direction);
+        Vector3D<Precision> tpoint = vol->GetTransformation()->Transform(point);
+        Vector3D<Precision> tdirection = vol->GetTransformation()->TransformDirection(direction);
 
         #ifdef VECGEOM_ROOT
         std::shared_ptr<TGeoShape const> rootshape( vol->ConvertToRoot() );
