@@ -26,6 +26,7 @@
 #include "base/Stopwatch.h"
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <list>
 #include <utility>
 #include <backend/vc/Backend.h>
@@ -37,11 +38,27 @@ using namespace vecgeom;
 #define SORTHITBOXES
 
 typedef std::pair<int, double> BoxIdDistancePair_t;
+//typedef std::list<BoxIdDistancePair_t> Container_t;
+typedef std::vector<BoxIdDistancePair_t> Container_t;
+
+// build an abstraction of sort to sort vectors and lists portably
+template<typename C, typename Compare> void sort(C & v, Compare cmp) {
+    sort(v.begin(), v.end(), cmp);
+}
+
 
 // comparator for hit boxes: returns true if left is < right
 bool HitBoxComparator( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right ){
     return left.second < right.second;
 }
+using FP_t = bool (*)( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right );
+
+// template specialization for list
+template<>
+void sort<std::list<BoxIdDistancePair_t>, FP_t >( std::list<BoxIdDistancePair_t> & v, FP_t cmp){
+    v.sort(cmp);
+}
+
 
 // output for hitboxes
 template <typename stream>
@@ -52,34 +69,36 @@ stream & operator<<(stream & s, std::list<BoxIdDistancePair_t> const & list){
     return s;
 }
 
+__attribute__((noinline))
 int benchNoCachingNoVector( Vector3D<Precision> const & point,
                             Vector3D<Precision> const & dir,
                             std::vector<Vector3D<Precision> > const &
 #ifdef SORTHITBOXES
-                            , std::list< BoxIdDistancePair_t > & hitlist
+                            , Container_t & hitlist
 #endif
                           );
 
+__attribute__((noinline))
 int benchCachingNoVector(   Vector3D<Precision> const & point,
                             Vector3D<Precision> const & dir,
                             std::vector<Vector3D<Precision> > const &
 #ifdef SORTHITBOXES
-                            , std::list< BoxIdDistancePair_t > & hitlist
+                            , Container_t  & hitlist
 #endif
 );
 
-
+__attribute__((noinline))
 int benchCachingAndVector(  Vector3D<Precision> const & point,
                             Vector3D<Precision> const & dir,
                             Vector3D<kVc::precision_v> const *, int number
 #ifdef SORTHITBOXES
-                            , std::list< BoxIdDistancePair_t > & hitlist
+                            , Container_t  & hitlist
 #endif
 );
 
 
 #define N 20        // boxes per dimension
-#define SZ 100      // samplesize
+#define SZ 10000      // samplesize
 double delta = 0.5; // if delta > 1 the boxes will overlap
 
 
@@ -155,7 +174,7 @@ int main(){
         directions[i] = volumeUtilities::SampleDirection();
     }
 
-    std::list<BoxIdDistancePair_t> hitlist;
+    Container_t hitlist;
     hitlist.resize(2*N);
 
     Stopwatch timer;
@@ -173,7 +192,7 @@ int main(){
 #endif
         );
 #ifdef SORTHITBOXES
-       hitlist.sort( HitBoxComparator );
+       sort( hitlist, HitBoxComparator );
        meanfurthestdistance+=hitlist.back().second;
        // std::cerr << hitlist << "\n";
 #endif
@@ -192,7 +211,7 @@ int main(){
 #endif
         );
 #ifdef SORTHITBOXES
-        hitlist.sort( HitBoxComparator );
+        sort(hitlist, HitBoxComparator );
         meanfurthestdistance+=hitlist.back().second;
 #endif
     }
@@ -212,7 +231,7 @@ int main(){
 #endif
         );
 #ifdef SORTHITBOXES
-       hitlist.sort( HitBoxComparator );
+       sort( hitlist,  HitBoxComparator );
        meanfurthestdistance+=hitlist.back().second;
        //std::cerr << "VECTORHITLIST" << hitlist << "\n";
 #endif
@@ -228,7 +247,7 @@ int benchNoCachingNoVector( Vector3D<Precision> const & point,
                             Vector3D<Precision> const & dir,
                             std::vector<Vector3D<Precision> > const & corners
 #ifdef SORTHITBOXES
-                            , std::list< BoxIdDistancePair_t > & hitlist
+                            , Container_t & hitlist
 #endif
                           ){
 #ifdef INNERTIMER
@@ -262,7 +281,7 @@ int benchCachingNoVector( Vector3D<Precision> const & point,
                           Vector3D<Precision> const & dir,
                           std::vector<Vector3D<Precision> > const & corners
 #ifdef SORTHITBOXES
-                            , std::list< BoxIdDistancePair_t > & hitlist
+                            , Container_t  & hitlist
 #endif
 ){
 #ifdef INNERTIMER
@@ -325,7 +344,7 @@ int benchCachingNoVector( Vector3D<Precision> const & point,
 int benchCachingAndVector( Vector3D<Precision> const & point, Vector3D<Precision> const & dir,
         Vector3D<kVc::precision_v> const * corners, int vecsize
 #ifdef SORTHITBOXES
-                            , std::list< BoxIdDistancePair_t > & hitlist
+                            , Container_t & hitlist
 #endif
 ){
 #ifdef INNERTIMER
