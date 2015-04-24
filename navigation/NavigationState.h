@@ -412,9 +412,9 @@ VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void NavigationState::Dump() const
 {
-   unsigned int* ptr = (unsigned int*)this;
    printf("NavState::Dump(): data: %p(%lu) : %p(%lu) : %p(%lu) : %p(%lu)\n", &fCurrentLevel, sizeof(fCurrentLevel),
           &fOnBoundary, sizeof(fOnBoundary), &global_matrix_, sizeof(global_matrix_), &fPath, sizeof(fPath));
+   const unsigned int* ptr = (const unsigned int*)this;
    for(unsigned int i=0; i<20; ++i) {
       printf("%p: ", (void*)ptr);
       for(unsigned int j=0; j<8; ++j) {
