@@ -417,7 +417,7 @@ void NavigationState::Dump() const
           &fOnBoundary, sizeof(fOnBoundary), &global_matrix_, sizeof(global_matrix_), &fPath, sizeof(fPath));
    for(unsigned int i=0; i<20; ++i) {
       printf("%p: ", (void*)ptr);
-      for(unsigned int i=0; i<8; ++i) {
+      for(unsigned int j=0; j<8; ++j) {
          printf(" %08x ", *ptr);
          ptr++;
       }
