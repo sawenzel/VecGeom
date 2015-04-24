@@ -254,8 +254,8 @@ public:
       return 0;
   }
 
-  virtual void Extent(Vector3D<Precision> &min,
-                      Vector3D<Precision> &max) const {
+  virtual void Extent(Vector3D<Precision> & /* min */,
+                      Vector3D<Precision> & /* max */) const {
     assert(0 && "Extent not implemented for this shape type.");
   }
 
