@@ -48,10 +48,21 @@ template<typename C, typename Compare> void sort(C & v, Compare cmp) {
 
 
 // comparator for hit boxes: returns true if left is < right
+__attribute__((always_inline))
 bool HitBoxComparator( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right ){
     return left.second < right.second;
 }
-using FP_t = bool (*)( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right );
+
+
+struct HitBoxComparatorFunctor{
+  bool operator()( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right )
+  {
+    return left.second < right.second;
+  }
+};
+
+// using FP_t = bool (*)( BoxIdDistancePair_t const & left, BoxIdDistancePair_t const & right );
+using FP_t = HitBoxComparatorFunctor;
 
 // template specialization for list
 template<>
@@ -192,7 +203,7 @@ int main(){
 #endif
         );
 #ifdef SORTHITBOXES
-       sort( hitlist, HitBoxComparator );
+       sort( hitlist, HitBoxComparatorFunctor() );
        meanfurthestdistance+=hitlist.back().second;
        // std::cerr << hitlist << "\n";
 #endif
@@ -211,7 +222,7 @@ int main(){
 #endif
         );
 #ifdef SORTHITBOXES
-        sort(hitlist, HitBoxComparator );
+        sort(hitlist, HitBoxComparatorFunctor() );
         meanfurthestdistance+=hitlist.back().second;
 #endif
     }
@@ -231,7 +242,7 @@ int main(){
 #endif
         );
 #ifdef SORTHITBOXES
-       sort( hitlist,  HitBoxComparator );
+       sort( hitlist,  HitBoxComparatorFunctor() );
        meanfurthestdistance+=hitlist.back().second;
        //std::cerr << "VECTORHITLIST" << hitlist << "\n";
 #endif
