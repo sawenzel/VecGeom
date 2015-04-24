@@ -371,6 +371,8 @@ set(SRC_CPP_RELATIVE
   source/UnplacedSphere.cpp
   source/PlacedSphere.cpp
   
+  source/UnplacedHype.cpp
+  source/PlacedHype.cpp
   
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
@@ -479,8 +481,11 @@ set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere.cpp
 ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere2.cpp
+${CMAKE_SOURCE_DIR}/test/unit_tests/geantHype.cpp
 #${CMAKE_SOURCE_DIR}/test/unit_tests/newTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
+ ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestHype.cpp
+
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
@@ -493,8 +498,10 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/benchmark/HyperboloidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/trd_validation.cpp
+  #${CMAKE_SOURCE_DIR}/test/unit_tests/newTestHype.cpp
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
