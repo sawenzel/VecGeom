@@ -69,7 +69,8 @@ UTriangularFacet::UTriangularFacet(const UVector3& vt0, const UVector3& vt1, con
             << "Side lengths = P[0]->P[1]" << eMag1 << endl
             << "Side lengths = P[0]->P[2]" << eMag2 << endl
             << "Side lengths = P[1]->P[2]" << eMag3;
-    UUtils::Exception("UTriangularFacet::UTriangularFacet()", "GeomSolids1001", Warning, 1, message.str().c_str());
+    UUtils::Exception("UTriangularFacet::UTriangularFacet()", "GeomSolids1001",
+                      UWarning, 1, message.str().c_str());
     fIsDefined     = false;
     fSurfaceNormal.Set(0);
     fA = fB = fC = 0.0;
@@ -91,8 +92,26 @@ UTriangularFacet::UTriangularFacet(const UVector3& vt0, const UVector3& vt1, con
     //    UVector3 vtmp = 0.25 * (fE1 + fE2);
 
     fArea = 0.5 * (fE1.Cross(fE2)).Mag();
-    double lambda0 = (fA - fB) * fC / (8.0 * fArea * fArea);
-    double lambda1 = (fC - fB) * fA / (8.0 * fArea * fArea);
+    double lambda0 , lambda1 ;
+    if(std::fabs(fArea) < kCarTolerance*kCarTolerance)
+    {
+      ostringstream message;
+      message << "Area of Facet is too small, possible flat triangle!" << endl
+              << "  fVertices[0] = " << GetVertex(0) << endl
+              << "  fVertices[1] = " << GetVertex(1) << endl
+              << "  fVertices[2] = " << GetVertex(2) << endl
+              << "Area = " << fArea;
+      UUtils::Exception("UTriangularFacet::UTriangularFacet()",
+                        "GeomSolids1001", UWarning, 1, message.str().c_str());
+      lambda0 = 0.5;
+      lambda1 = 0.5;  
+    }
+    else
+    {
+      lambda0 = (fA-fB) * fC / (8.0*fArea*fArea);
+      lambda1 = (fC-fB) * fA / (8.0*fArea*fArea);
+    }
+   
     UVector3 p0 = GetVertex(0);
     fCircumcentre = p0 + lambda0 * fE1 + lambda1 * fE2;
     double radiusSqr = (fCircumcentre - p0).Mag2();
@@ -135,6 +154,15 @@ void UTriangularFacet::CopyFrom(const UTriangularFacet& rhs)
     fVertices = new vector<UVector3>(3);
     for (int i = 0; i < 3; ++i)(*fVertices)[i] = (*rhs.fVertices)[i];
   }
+  fIsDefined = rhs.fIsDefined;
+  fSurfaceNormal = rhs.fSurfaceNormal;
+  fA = rhs.fA; fB = rhs.fB; fC = rhs.fC;
+  fE1 = rhs.fE1;
+  fE2 = rhs.fE2;
+  fDet = rhs.fDet;
+  fArea = rhs.fArea; 
+  fRadius = rhs.fRadius;
+  fSqrDist = rhs.fSqrDist;
 }
 
 UTriangularFacet::UTriangularFacet(const UTriangularFacet& rhs) : VUFacet(rhs)
@@ -803,7 +831,7 @@ double UTriangularFacet::GetArea()
 
 UGeometryType UTriangularFacet::GetEntityType() const
 {
-  return "UTriangularFacet";
+  return "TriangularFacet";
 }
 
 UVector3 UTriangularFacet::GetSurfaceNormal() const

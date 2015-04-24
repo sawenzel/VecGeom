@@ -79,7 +79,6 @@ class UVCSGfaceted : public VUSolid
 
     virtual std::ostream& StreamInfo(std::ostream& os) const;
 
-
     int GetCubVolStatistics() const;
     double GetCubVolEpsilon() const;
     void SetCubVolStatistics(int st);
@@ -88,7 +87,6 @@ class UVCSGfaceted : public VUSolid
     double GetAreaAccuracy() const;
     void SetAreaStatistics(int st);
     void SetAreaAccuracy(double ep);
-
 
     virtual double Capacity();
     // Returns an estimation of the geometrical cubic volume of the
@@ -101,21 +99,21 @@ class UVCSGfaceted : public VUSolid
 
   protected:  // without description
 
-   double SafetyFromInsideSection(int index, const UVector3 &p, UBits &bits) const;
+    double SafetyFromInsideSection(int index, const UVector3& p, UBits& bits) const;
 
-  inline int GetSection(double z) const
-  {
-    int section = UVoxelizer::BinarySearch(fZs, z);
-    if (section < 0) section = 0;
-    else if (section > fMaxSection) section = fMaxSection;
-    return section;
-  }
+    inline int GetSection(double z) const
+    {
+      int section = UVoxelizer::BinarySearch(fZs, z);
+      if (section < 0) section = 0;
+      else if (section > fMaxSection) section = fMaxSection;
+      return section;
+    }
 
-  int numFace;
-  UVCSGface **faces;
-  double fCubicVolume;
-  double fSurfaceArea;
-  
+    int   numFace;
+    UVCSGface** faces;
+    double fCubicVolume;
+    double fSurfaceArea;
+
 
     std::vector<double> fZs; // z coordinates of given sections
     std::vector<std::vector<int> > fCandidates; // precalculated candidates for each of the section

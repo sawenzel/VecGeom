@@ -35,29 +35,8 @@
 #include <cstring>
 #include <ostream>
 
-#include "UBits.hh"
-
 class UBits
 {
-
-  protected:
-
-    unsigned int   fNBits;         // Highest bit set + 1
-    unsigned int   fNBytes;        // Number of UChars in fAllBits
-
-    void ReserveBytes(unsigned int nbytes);
-
-    /*
-    void DoAndEqual(const UBits& rhs);
-    void DoOrEqual (const UBits& rhs);
-    void DoXorEqual(const UBits& rhs);
-    void DoLeftShift(unsigned int shift);
-    void DoRightShift(unsigned int shift);
-    void DoFlip();
-    */
-
-  public:
-    unsigned char* fAllBits;       //[fNBytes] array of UChars
 
   public:
     UBits(unsigned int nbits = 0);
@@ -139,6 +118,26 @@ class UBits
 
     void    Print() const;  // to show the list of active bits
     void    Output(std::ostream&) const;
+
+  protected:
+    void ReserveBytes(unsigned int nbytes);
+
+    /*
+    void DoAndEqual(const UBits& rhs);
+    void DoOrEqual (const UBits& rhs);
+    void DoXorEqual(const UBits& rhs);
+    void DoLeftShift(unsigned int shift);
+    void DoRightShift(unsigned int shift);
+    void DoFlip();
+    */
+
+  protected:
+    unsigned int   fNBits;         // Highest bit set + 1
+    unsigned int   fNBytes;        // Number of UChars in fAllBits
+
+  public:
+    unsigned char* fAllBits;       //[fNBytes] array of UChars
+
 };
 
 /*

@@ -14,22 +14,22 @@
 //
 //   Class implementing a CSG-like type "PCON".
 //
-//   UPolycone( const G4String& name, 
-//              G4double phiStart,     // initial phi starting angle
-//              G4double phiTotal,     // total phi angle
-//              G4int numZPlanes,      // number of z planes
-//              const G4double zPlane[],  // position of z planes
-//              const G4double rInner[],  // tangent distance to inner surface
-//              const G4double rOuter[])  // tangent distance to outer surface
+//   UPolycone( const std::string& name, 
+//              double phiStart,     // initial phi starting angle
+//              double phiTotal,     // total phi angle
+//              int numZPlanes,      // number of z planes
+//              const double zPlane[],  // position of z planes
+//              const double rInner[],  // tangent distance to inner surface
+//              const double rOuter[])  // tangent distance to outer surface
 //
 //   Alternative constructor, but limited to increasing-only Z sections:
 //
-//   UPolycone( const G4String& name, 
-//              G4double phiStart,   // initial phi starting angle
-//              G4double phiTotal,   // total phi angle
-//              G4int    numRZ,      // number corners in r,z space
-//              const G4double r[],  // r coordinate of these corners
-//              const G4double z[])  // z coordinate of these corners
+//   UPolycone( const std::string& name, 
+//              double phiStart,   // initial phi starting angle
+//              double phiTotal,   // total phi angle
+//              int    numRZ,      // number corners in r,z space
+//              const double r[],  // r coordinate of these corners
+//              const double z[])  // z coordinate of these corners
 //
 // 19.04.13 Marek Gayer
 //          Created from original implementation in Geant4
@@ -134,7 +134,7 @@ class UPolycone : public VUSolid
 
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-    //G4Visualisation
+    // Visualisation
     void GetParametersList(int /*aNumber*/, double* /*aArray*/) const {}
     VUSolid* Clone() const;
 
@@ -262,19 +262,57 @@ class UPolycone : public VUSolid
 
     inline VUSolid::EnumInside InsideSection(int index, const UVector3& p) const;
 
-    inline double SafetyFromInsideSection(int index, const UVector3& p) const
+    inline double SafetyFromInsideSection(int index, const double rho,
+                                          const UVector3& p) const
     {
       const UPolyconeSection& section = fSections[index];
       UVector3 ps(p.x(), p.y(), p.z() - section.shift);
-      double res = section.solid->SafetyFromInside(ps, true);
+      double res=0;
+      if (section.tubular)
+      {
+        UTubs* tubs = (UTubs*) section.solid;
+        res = tubs->SafetyFromInsideR(ps,rho, true);
+      }
+      else
+      {
+        UCons* cons = (UCons*) section.solid;
+        res = cons->SafetyFromInsideR(ps,rho, true);
+      }
       return res;
     }
 
+    // Auxiliary method used in SafetyFromInside for finding safety
+    // from section in R and Phi
+    //
+    inline double SafetyFromOutsideSection(int index, const double rho,
+                                           const UVector3& p) const
+    {
+      const UPolyconeSection& section = fSections[index];
+      UVector3 ps(p.x(), p.y(), p.z());
+      double res=0;
+      if (section.tubular)
+      {
+        UTubs* tubs = (UTubs*) section.solid;
+        res = tubs->SafetyFromOutsideR(ps,rho, true);
+      }
+      else
+      {
+        UCons* cons = (UCons*) section.solid;
+        res = cons->SafetyFromOutsideR(ps,rho, true);
+      }
+      return res;
+    }
+
+    // Auxiliary method used in SafetyFromOutside for finding safety
+    // from section
+    //
     inline double SafetyFromOutsideSection(int index, const UVector3& p) const
     {
       const UPolyconeSection& section = fSections[index];
-      UVector3 ps(p.x(), p.y(), p.z() - section.shift);
-      double res = section.solid->SafetyFromOutside(ps, true);
+      UVector3 ps(p.x(), p.y(),p.z() - section.shift);
+      double res=0;
+     
+      res = section.solid->SafetyFromOutside(ps, true);
       return res;
     }
 
