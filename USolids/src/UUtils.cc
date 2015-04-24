@@ -121,7 +121,7 @@ int UUtils::StrPos(const string& haystack, const string& needle)
 }
 void UUtils:: Exception(const char* originOfException,
                         const char* exceptionCode,
-                        ExceptionSeverity severity,
+                        UExceptionSeverity severity,
                         int level,
                         const char* description)
 
@@ -142,19 +142,19 @@ void UUtils:: Exception(const char* originOfException,
           << description << std::endl;
   switch (severity)
   {
-    case FatalError:
+    case UFatalError:
       std::cerr << es_banner << message.str() << "*** Fatal Exception ***"
                 << ee_banner << std::endl;
       break;
-    case FatalErrorInArguments:
+    case UFatalErrorInArguments:
       std::cerr << es_banner << message.str() << "*** Fatal Error In Argument ***"
                 << ee_banner << std::endl;
       break;
-    case Error:
+    case UError:
       std::cerr << es_banner << message.str() << "*** Error ***" << level
                 << ee_banner << std::endl;
       break;
-    case Warning:
+    case UWarning:
       std::cerr << ws_banner << message.str() << "*** This is just a warning message ***"
                 << we_banner << std::endl;
       toBeAborted = false;

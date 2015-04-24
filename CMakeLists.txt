@@ -337,19 +337,19 @@ endif()
 
 if (USolids)
 
-  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
+  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIRS OR NOT USOLIDS_LIBRARIES_DIR))
     message(STATUS "Building with shipped USolids.")
     add_subdirectory(USolids)
     include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
     link_directories(${CMAKE_BINARY_DIR}/USolids)
   endif()
-  if (USOLIDS_INCLUDE_DIR)
-    include_directories(${USOLIDS_INCLUDE_DIR})
+  if (USOLIDS_INCLUDE_DIRS)
+    include_directories(${USOLIDS_INCLUDE_DIRS})
   elseif (USOLIDS_DIR)
     include_directories(${USOLIDS_DIR}/include)
   endif()
-  if (USOLIDS_LIBRARY_DIR)
-    link_directories(${USOLIDS_LIBRARY_DIR})
+  if (USOLIDS_LIBRARIES_DIR)
+    link_directories(${USOLIDS_LIBRARIES_DIR})
   elseif (USOLIDS_DIR)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
@@ -778,6 +778,8 @@ if (CUDA)
 endif()
 if (USolids)
   set(CONF_LIBRARIES ${CONF_LIBRARIES} "${CONF_LIBRARY_DIR}/libusolids.a")
+  configure_file(VecGeomConfig.cmake.in
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/USolidsConfig.cmake" @ONLY)
 endif()
 configure_file(VecGeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake" @ONLY)
@@ -786,6 +788,11 @@ configure_file(VecGeomConfig.cmake.in
 install(FILES
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake"
   DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+if (USolids)
+  install(FILES
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/USolidsConfig.cmake"
+    DESTINATION "${INSTALL_CMAKE_DIR}/../USolids" COMPONENT dev)
+endif()
 
 # Install headers and libraries
 foreach(FOLDER base benchmarking management navigation volumes backend)

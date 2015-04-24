@@ -4,7 +4,7 @@
 // * See: https://aidasoft.web.cern.ch/USolids                        *
 // ********************************************************************
 //
-// $Id$
+// $Id:$
 //
 // --------------------------------------------------------------------
 //
@@ -35,9 +35,6 @@ class UMultiUnion : public VUSolid
 {
     friend class UVoxelizer;
 
-    // Internal structure for storing the association solid-placement
-  public:
-
   public:
     UMultiUnion() : VUSolid() {}
     UMultiUnion(const std::string& name);
@@ -45,13 +42,12 @@ class UMultiUnion : public VUSolid
 
     // Build the multiple union by adding nodes
     void AddNode(VUSolid& solid, UTransform3D& trans);
-    inline void SetSolidClosed();
 
     UMultiUnion(const UMultiUnion& rhs);
     UMultiUnion& operator=(const UMultiUnion& rhs);
 
     // Accessors
-    inline UTransform3D* GetTransformation(int index) const;
+    inline const UTransform3D& GetTransformation(int index) const;
     inline VUSolid* GetSolid(int index) const;
     inline int GetNumberOfSolids()const;
 
@@ -106,12 +102,9 @@ class UMultiUnion : public VUSolid
     double Capacity();
     double SurfaceArea();
 
- 
-  //static UMultiUnion *CreateTestMultiUnion(int numNodes); // Number of nodes to implement
     VUSolid* Clone() const ;
 
-
-    UGeometryType GetEntityType() const { return "MultipleUnion"; }
+    UGeometryType GetEntityType() const { return "MultiUnion"; }
     void ComputeBBox(UBBox* aBox, bool aStore = false);
 
     virtual void GetParametersList(int /*aNumber*/, double* /*aArray*/) const {}
@@ -120,6 +113,7 @@ class UMultiUnion : public VUSolid
     // navigation use.
     void Voxelize();
     EnumInside InsideNoVoxels(const UVector3& aPoint) const;
+
     inline UVoxelizer& GetVoxels() const;
 
 
@@ -135,26 +129,19 @@ class UMultiUnion : public VUSolid
     double DistanceToInCandidates(const UVector3& aPoint, const UVector3& aDirection, double aPstep, std::vector<int>& candidates, UBits& bits) const;
 
     std::vector<VUSolid*> fSolids;
-    std::vector<UTransform3D*> fTransforms;
+    std::vector<UTransform3D> fTransformObjs;
     UVoxelizer fVoxels;  // Pointer to the vozelized solid
     double       fCubicVolume;   // Cubic Volume
     double       fSurfaceArea;   // Surface Area
 };
 
-inline void  UMultiUnion::SetSolidClosed()
-{
- Voxelize();
-  // std::cout<<"Umulti afterVoxels Get transformX "<<(*fTransforms[0]).fRot[0]<<std::endl;
-
-}
-
 inline UVoxelizer&  UMultiUnion:: GetVoxels() const
 {
   return (UVoxelizer&)fVoxels;
 }
-inline UTransform3D* UMultiUnion::GetTransformation(int index) const
+inline const UTransform3D& UMultiUnion::GetTransformation(int index) const
 {
-  return fTransforms[index];
+  return fTransformObjs[index];
 }
 inline VUSolid* UMultiUnion::GetSolid(int index) const
 {

@@ -2128,7 +2128,7 @@ void ShapeTester::ReportError( int *nError,  UVector3 &p,
   if(ifException){
      std::ostringstream text;
      text << "Abborting due to Debugging mode in solid: " << volumeUSolids->GetName();
-     UUtils::Exception("ShapeTester", "Debugging mode", FatalErrorInArguments, 1, text.str().c_str());
+     UUtils::Exception("ShapeTester", "Debugging mode", UFatalErrorInArguments, 1, text.str().c_str());
   }
 }
 //

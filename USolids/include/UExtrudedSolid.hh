@@ -42,17 +42,15 @@
 
 #include <vector>
 
-#include "VUSolid.hh"
-#include "UUtils.hh"
-#include "UVector2.hh"
 #include "UTessellatedSolid.hh"
+#include "UVector2.hh"
 
 class VUFacet;
 
 class UExtrudedSolid : public UTessellatedSolid
 {
 
-  public:  // without description
+  public:
 
     struct ZSection
     {
@@ -64,7 +62,7 @@ class UExtrudedSolid : public UTessellatedSolid
       double    fScale;
     };
 
-  public:  // with description
+  public:
 
     UExtrudedSolid(const std::string&     pName,
                    std::vector<UVector2>  polygon,
@@ -101,17 +99,15 @@ class UExtrudedSolid : public UTessellatedSolid
                          double aPstep = UUtils::kInfinity) const;
     double  SafetyFromInside(const UVector3& aPoint,
                              bool aAccurate = false) const;
-    UGeometryType GetEntityType() const
-    {
-      return "ExtrudedSolid";
-    }
+
+    UGeometryType GetEntityType() const;
     VUSolid* Clone() const;
 
     std::ostream& StreamInfo(std::ostream& os) const;
 
-  public:  // without description
+  public:
 
-    //    UExtrudedSolid(__void__&);
+    UExtrudedSolid();
     // Fake default constructor for usage restricted to direct object
     // persistency for clients requiring preallocation of memory for
     // persistifiable objects.
@@ -119,6 +115,13 @@ class UExtrudedSolid : public UTessellatedSolid
     UExtrudedSolid(const UExtrudedSolid& rhs);
     UExtrudedSolid& operator=(const UExtrudedSolid& rhs);
     // Copy constructor and assignment operator.
+
+    void Initialise(std::vector<UVector2>& polygon,
+                    std::vector<ZSection>& zsections);
+    void Initialise(std::vector<UVector2>& polygon, double dz,
+                    UVector2 off1, double scale1,
+                    UVector2 off2, double scale2);
+    // Initialisation methods for constructors.
 
   private:
 

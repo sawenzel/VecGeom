@@ -82,6 +82,18 @@ double UTrap::GetTanAlpha2() const
 }
 
 inline
+double UTrap::GetThetaCphi() const
+{
+  return fTthetaCphi ;
+}
+
+inline
+double UTrap::GetThetaSphi() const
+{
+  return fTthetaSphi ;
+}
+
+inline
 UTrapSidePlane UTrap::GetSidePlane(int n) const
 {
   return fPlanes[n] ;
