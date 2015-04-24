@@ -120,24 +120,24 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint) const
     TGeoBranchArray * tmp = new TGeoBranchArray( GetMaxLevel() );
 #endif
     // gain access to array
-    //TGeoNode ** array = tmp->GetArray();
-    //RootGeoManager & mg=RootGeoManager::Instance();
+    TGeoNode ** array = tmp->GetArray();
+    RootGeoManager & mg=RootGeoManager::Instance();
     TGeoNavigator * nav = gGeoManager->GetCurrentNavigator();
     tmp->InitFromNavigator( nav );
     
     //tmp->
-    //for(int i=0;i<fCurrentLevel;++i)
-//      array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath[i] ));
+    for(int i=0;i<fCurrentLevel;++i)
+          array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath[i] ));
     // assert( tmp->GetCurrentNode() == mg.tgeonode( Top() ));
 
-    std::list<uint> ilist;
-    GetPathAsListOfIndices( ilist );
-    int counter=0;
-    for( auto x : ilist ) {
-        if(counter>0)
-            tmp->AddLevel(x);
-        counter++;
-    }
+//    std::list<uint> ilist;
+    //GetPathAsListOfIndices( ilist );
+    //int counter=0;
+    //for( auto x : ilist ) {
+        //if(counter>0)
+            //tmp->AddLevel(x);
+        //counter++;
+    //}
     
     return tmp;
   }
