@@ -236,7 +236,7 @@ struct BoxImplementation {
     // actually this also calculated the distance at the same time ( in tmin )
     template <int signx, int signy, int signz>
     VECGEOM_CUDA_HEADER_BOTH
-    // VECGEOM_INLINE
+    VECGEOM_INLINE
     //__attribute__((noinline))
     static Precision IntersectCached( Vector3D<Precision> const * corners,
             Vector3D<Precision> const &point,
@@ -283,7 +283,7 @@ struct BoxImplementation {
         // actually this also calculated the distance at the same time ( in tmin )
         template <typename Backend, int signx, int signy, int signz>
         VECGEOM_CUDA_HEADER_BOTH
-        // VECGEOM_INLINE
+        VECGEOM_INLINE
         static typename Backend::precision_v IntersectCachedKernel(
                 Vector3D<typename Backend::precision_v > const * corners,
                 Vector3D<Precision> const &point,
@@ -333,7 +333,7 @@ struct BoxImplementation {
         // actually this also calculated the distance at the same time ( in tmin )
            template <typename Backend>
               VECGEOM_CUDA_HEADER_BOTH
-              // VECGEOM_INLINE
+              VECGEOM_INLINE
               static typename Backend::precision_v IntersectCachedKernel2(
                       Vector3D<typename Backend::precision_v > const * corners,
                       Vector3D<Precision> const &point,
