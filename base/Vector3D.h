@@ -505,8 +505,8 @@ public:
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(const Precision x) {
-    Set(x, x, x);
+  void Set(const Precision in_x) {
+    Set(in_x, in_x, in_x);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
