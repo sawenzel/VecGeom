@@ -331,57 +331,57 @@ struct BoxImplementation {
 
         // an algorithm to test for intersection ( could be faster than DistanceToIn )
         // actually this also calculated the distance at the same time ( in tmin )
-           template <typename Backend>
-              VECGEOM_CUDA_HEADER_BOTH
-              VECGEOM_INLINE
-              static typename Backend::precision_v IntersectCachedKernel2(
-                      Vector3D<typename Backend::precision_v > const * corners,
-                      Vector3D<Precision> const &point,
-                      Vector3D<Precision> const &inverseray,
-                      int signx, int signy, int signz,
-                      Precision t0,
-                      Precision t1 ){
+  template <typename Backend, typename basep = Precision>
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  static typename Backend::precision_v IntersectCachedKernel2(
+          Vector3D<typename Backend::precision_v > const * corners,
+          Vector3D<basep> const &point,
+          Vector3D<basep> const &inverseray,
+          int signx, int signy, int signz,
+          basep t0,
+          basep t1 ){
 
-                typedef typename Backend::precision_v Float_t;
-                typedef typename Backend::bool_v Bool_t;
+    typedef typename Backend::precision_v Float_t;
+    typedef typename Backend::bool_v Bool_t;
 
-                Float_t tmin  = (corners[signx].x()   - point.x())*inverseray.x();
-                Float_t tymax = (corners[1-signy].y() - point.y())*inverseray.y();
-                Bool_t done = tmin > tymax;
-                if( IsFull(done) ) return vecgeom::kInfinity;
+    Float_t tmin  = (corners[signx].x()   - point.x())*inverseray.x();
+    Float_t tymax = (corners[1-signy].y() - point.y())*inverseray.y();
+    Bool_t done = tmin > tymax;
+    if( IsFull(done) ) return (basep) vecgeom::kInfinity;
 
-                Float_t tmax  = (corners[1-signx].x() - point.x())*inverseray.x();
-                Float_t tymin = (corners[signy].y()   - point.y())*inverseray.y();
+    Float_t tmax  = (corners[1-signx].x() - point.x())*inverseray.x();
+    Float_t tymin = (corners[signy].y()   - point.y())*inverseray.y();
 
-                // do we need this condition ?
-                done |= (tymin > tmax);
-                if( IsFull(done) ) return vecgeom::kInfinity;
+    // do we need this condition ?
+    done |= (tymin > tmax);
+    if( IsFull(done) ) return (basep) vecgeom::kInfinity;
 
-                // if((tmin > tymax) || (tymin > tmax))
-                //     return vecgeom::kInfinity;
+    // if((tmin > tymax) || (tymin > tmax))
+    //     return vecgeom::kInfinity;
 
-                // Not sure if this has to be maskedassignments
-                tmin = Max(tmin, tymin);
-                tmax = Min(tmax, tymax);
+    // Not sure if this has to be maskedassignments
+    tmin = Max(tmin, tymin);
+    tmax = Min(tmax, tymax);
 
-                Float_t tzmin = (corners[signz].z()   - point.z())*inverseray.z();
-                Float_t tzmax = (corners[1-signz].z() - point.z())*inverseray.z();
+    Float_t tzmin = (corners[signz].z()   - point.z())*inverseray.z();
+    Float_t tzmax = (corners[1-signz].z() - point.z())*inverseray.z();
 
-                done |= (tmin > tzmax) || (tzmin > tmax);
-               // if((tmin > tzmax) || (tzmin > tmax))
-               //     return vecgeom::kInfinity; // false
-               if( IsFull(done) ) return vecgeom::kInfinity;
+    done |= (tmin > tzmax) || (tzmin > tmax);
+   // if((tmin > tzmax) || (tzmin > tmax))
+   //     return vecgeom::kInfinity; // false
+   if( IsFull(done) ) return (basep) vecgeom::kInfinity;
 
-                // not sure if this has to be maskedassignments
-                tmin = Max(tmin, tzmin);
-                tmax = Min(tmax, tzmax);
+    // not sure if this has to be maskedassignments
+    tmin = Max(tmin, tzmin);
+    tmax = Min(tmax, tzmax);
 
-                done |= ! ((tmin < t1) && (tmax > t0));
-               // if( ! ((tmin < t1) && (tmax > t0)) )
-               //     return vecgeom::kInfinity;
-                MaskedAssign(done, vecgeom::kInfinity, &tmin);
-                return tmin;
-              }
+    done |= ! ((tmin < t1) && (tmax > t0));
+   // if( ! ((tmin < t1) && (tmax > t0)) )
+   //     return vecgeom::kInfinity;
+    MaskedAssign(done, (basep) vecgeom::kInfinity, &tmin);
+    return tmin;
+  }
 
 
     // an algorithm to test for intersection against many boxes but just one ray;
