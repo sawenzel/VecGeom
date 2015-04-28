@@ -498,10 +498,10 @@ public:
   const Precision& z() const { return mem[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(const Precision x, const Precision y, const Precision z) {
-    mem[0] = x;
-    mem[1] = y;
-    mem[2] = z;
+  void Set(const Precision in_x, const Precision in_y, const Precision in_z) {
+    mem[0] = in_x;
+    mem[1] = in_y;
+    mem[2] = in_z;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
