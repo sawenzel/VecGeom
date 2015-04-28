@@ -327,6 +327,9 @@ VECGEOM_INLINE
 void Assert(const bool condition, char const *const message) {
 #ifndef VECGEOM_NVCC
   assert(condition && message);
+#ifdef NDEBUG
+  (void)condition; (void)message; // Avoid warning about unused arguments.
+#endif
 #else
   if (!condition) printf("Assertion failed: %s", message);
 #endif
