@@ -73,7 +73,7 @@ public:
   // it ensures that placed volumes can be constructed just like ordinary Geant4/ROOT/USolids solids
   template <typename... ArgTypes>
   ShapeImplementationHelper(char const *const label, ArgTypes... params)
-      : ShapeImplementationHelper(label, 
+      : ShapeImplementationHelper(label,
                                   new LogicalVolume(new UnplacedShape_t(params...)),
                                   &Transformation3D::kIdentity) {}
 
@@ -371,8 +371,10 @@ public:
     }
   }
 
+#ifndef VECGEOM_INTEL
 #pragma GCC push_options
 #pragma GCC optimize ("unroll-loops")
+#endif
   VECGEOM_INLINE
   void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
                                     SOA3D<Precision> const &directions,
@@ -407,6 +409,9 @@ public:
             result( mask ) = stepMaxVc;
             result.store(&currentdistance[i]);
             // currently do not know how to do this better (can do it when Vc offers long ints )
+#ifdef VECGEOM_INTEL
+#pragma unroll
+#endif
             for(unsigned int j=0;j<VcPrecision::Size;++j)
             {
                 nextdaughteridlist[i+j]
@@ -414,7 +419,10 @@ public:
             }
       }
   }
+#ifndef VECGEOM_INTEL
 #pragma GCC pop_options
+#endif
+
   VECGEOM_INLINE
   void DistanceToOutTemplate(SOA3D<Precision> const &points,
                              SOA3D<Precision> const &directions,
