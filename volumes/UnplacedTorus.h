@@ -156,6 +156,12 @@ public:
   VECGEOM_INLINE
   UnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void Extent(Vector3D<Precision> & min, Vector3D<Precision> & max ) const {
+      GetBoundingTube().Extent( min, max );
+  }
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH

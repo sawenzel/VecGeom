@@ -143,6 +143,13 @@ fFy(0)
 
   virtual int memory_size() const { return sizeof(*this); }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision> & min, Vector3D<Precision> & max ) const {
+      min = Vector3D<Precision>(-std::max(fDX1, fDX2), -std::max(fDY1, fDY2), -fDZ);
+      max = Vector3D<Precision>(std::max(fDY1, fDX2), std::max(fDY1, fDY2), fDZ);
+  }
+
+
 #ifndef VECGEOM_NVCC
   // Computes capacity of the shape in [length^3]
   Precision Capacity() const;
