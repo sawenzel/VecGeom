@@ -38,7 +38,9 @@ public:
     typedef std::vector<BoxIdDistancePair_t> HitContainer_t;
 
     // build an abstraction of sort to sort vectors and lists portably
-    template<typename C, typename Compare> void sort(C & v, Compare cmp) {
+    template<typename C, typename Compare>
+    static
+    void sort(C & v, Compare cmp) {
         std::sort(v.begin(), v.end(), cmp);
     }
 
@@ -67,6 +69,19 @@ public:
     // very first version that just creates as many boxes as there are daughters
     // in reality we might have a lot more boxes than daughters (but not less)
     void InitABBoxes( LogicalVolume const * lvol );
+
+    // doing the same for many logical volumes
+    template<typename Container> void InitABBoxes( Container const & lvolumes ){
+        for( auto lvol : lvolumes ){
+            InitABBoxes( lvol );
+        }
+    }
+
+    void InitABBoxesForCompleteGeometry( ){
+        std::vector<LogicalVolume const *> logicalvolumes;
+        GeoManager::Instance().getAllLogicalVolumes( logicalvolumes );
+        InitABBoxes( logicalvolumes );
+    }
 
     // remove the boxes from the list
     void RemoveABBoxes( LogicalVolume const * lvol);
@@ -151,14 +166,30 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
    int nexthitvolume = -1; // means mother
 
    // StepType st = kPhysicsStep; // physics or geometry step
+   step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
 
-   step = pstep;
+   // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
+   // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
+   // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
+    if( step < 0. )
+    {
+       newstate = currentstate;
+       SimpleNavigator nav;
+       nav.RelocatePointFromPath( localpoint, newstate );
+       return;
+    }
+
+   // TODO: compare steptoout and physics step and take minimum
+
+
 
    // do a quick and vectorized search using aligned bounding boxes
    // obtains a sorted container ( vector or list ) of hitboxstructs
    LogicalVolume const * currentlvol = currentstate.Top()->GetLogicalVolume();
-   ABBoxManager::Instance().InitABBoxes( currentlvol );
+  // ABBoxManager::Instance().InitABBoxes( currentlvol );
 
+  // std::cerr << " I am in " << currentlvol->GetLabel() << "\n";
+  // std::cerr << " searching through " << currentlvol->daughtersp()->size() << " daughters\n";
    ABBoxManager::HitContainer_t hitlist;
    int size;
    ABBoxManager::ABBoxContainer_t bboxes =  ABBoxManager::Instance().GetABBoxes( currentlvol , size );
@@ -168,15 +199,20 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
                      bboxes,
                      size, hitlist );
 
+   // sorting the histlist
+   ABBoxManager::sort( hitlist, ABBoxManager::HitBoxComparatorFunctor() );
+
    // assumption: here hitlist is sorted in ascending distance order
+   // std::cerr << " hitting " << hitlist.size() << " boundary boxes\n";
    for( auto hitbox : hitlist )
    {
       VPlacedVolume const * candidate = LookupDaughter( currentlvol, hitbox.first );
 
       // only consider those hitboxes which are within potential reach of this step
       if( ! ( step < hitbox.second )) {
-        Precision ddistance = candidate->DistanceToIn( localpoint, localdir, step );
-
+    //      std::cerr << "checking id " << hitbox.first << " at box distance " << hitbox.second << "\n";
+          Precision ddistance = candidate->DistanceToIn( localpoint, localdir, step );
+      //    std::cerr << "distance to " << candidate->GetLabel() << " is " << ddistance << "\n";
         nexthitvolume = (ddistance < step) ? hitbox.first : nexthitvolume;
         step      = (ddistance < step) ? ddistance  : step;
       }
@@ -184,22 +220,6 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
       {
           break;
       }
-   }
-
-   // if nothing hit so far we will need to calculate distance to out
-   if( nexthitvolume == -1 ){
-     step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
-
-      // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
-      // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
-      // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
-     if( step < 0. )
-     {
-        newstate = currentstate;
-        SimpleNavigator nav;
-        nav.RelocatePointFromPath( localpoint, newstate );
-        return;
-     }
    }
 
    // now we have the candidates
