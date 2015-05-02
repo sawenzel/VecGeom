@@ -74,6 +74,10 @@ public:
   VECGEOM_INLINE
   Precision dz() const { return GetUnplacedVolume()->dz(); }
 
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+    }
+
 #ifndef VECGEOM_NVCC
   virtual
   Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
