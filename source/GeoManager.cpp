@@ -79,7 +79,12 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   bool multiple = false;
   for (auto v = fLogicalVolumesMap.begin(), v_end = fLogicalVolumesMap.end();
        v != v_end; ++v) {
-    if (v->second->GetLabel() == label) {
+
+    // This is needed for CMS... strip off last 4 chars from logVol name
+    const std::string& fullname = v->second->GetLabel();
+    std::string strippedName( fullname, 0, fullname.length()-4 );
+
+    if (strippedName.compare(label)==0) {
       if (!output) {
         output = v->second;
       } else {

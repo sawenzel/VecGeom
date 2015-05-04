@@ -6,7 +6,6 @@
 #include "base/SOA3D.h"
 #include "base/Stopwatch.h"
 #include "base/Transformation3D.h"
-#include "volumes/LogicalVolume.h"
 #include "volumes/PlacedBox.h"
 #include "volumes/utilities/VolumeUtilities.h"
 
