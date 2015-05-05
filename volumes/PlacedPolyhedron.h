@@ -136,15 +136,16 @@ public:
     return GetUnplacedVolume()->GetPhiDelta();
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+#ifndef VECGEOM_NVCC
+  virtual Precision Capacity() override {
       return GetUnplacedVolume()->Capacity();
   }
 
-#ifdef VECGEOM_USOLIDS
-  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
+
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH

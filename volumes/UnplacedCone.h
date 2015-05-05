@@ -132,10 +132,10 @@ Precision fSinEPhi;
         fInnerSlopeSquare(),
         fOuterOffsetSquare(),
         fInnerOffsetSquare(),
-	   fSecRMin(0),
-	   fSecRMax(0),
-	   fInvSecRMin(0),
-	   fInvSecRMax(0),
+       fSecRMin(0),
+       fSecRMax(0),
+       fInvSecRMin(0),
+       fInvSecRMax(0),
    fCosCPhi(0),
    fSinCPhi(0),
    fCosSPhi(0),
@@ -148,7 +148,7 @@ Precision fSinEPhi;
    fCosHDPhiOT(0),
    fTanRMin(0),
    fTanRMax(0)
-	      {
+          {
 
       // initialize trigonometry for USOLIDS impl
         double hDPhi = 0.5 * fDPhi;                    // half delta phi
@@ -271,12 +271,6 @@ Precision fSinEPhi;
     VECGEOM_CUDA_HEADER_BOTH
     bool IsFullPhi() const { return fDPhi == kTwoPi; }
 
-    VECGEOM_CUDA_HEADER_BOTH
-    Precision Capacity() const {
-        return (fDz * fDPhi / 3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
-                fRmin1*fRmin1-fRmin2*fRmin2-fRmin1*fRmin2);
-    }
-
     virtual int memory_size() const { return sizeof(*this); }
 
     VECGEOM_CUDA_HEADER_BOTH
@@ -308,9 +302,26 @@ Precision fSinEPhi;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
-#ifdef VECGEOM_USOLIDS
-  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
-  {
+#ifndef VECGEOM_NVCC
+  Precision Capacity() const {
+    return (fDz * fDPhi / 3.)*(fRmax1*fRmax1+fRmax2*fRmax2+fRmax1*fRmax2-
+                               fRmin1*fRmin1-fRmin2*fRmin2-fRmin1*fRmin2);
+  }
+
+  Precision SurfaceArea() const {
+    double mmin, mmax, dmin, dmax;
+    mmin = (fRmin1 + fRmin2) * 0.5;
+    mmax = (fRmax1 + fRmax2) * 0.5;
+    dmin = (fRmin2 - fRmin1);
+    dmax = (fRmax2 - fRmax1);
+
+    return fDPhi * (mmin * std::sqrt(dmin * dmin + 4 * fDz * fDz)
+                    + mmax * std::sqrt(dmax * dmax + 4 * fDz * fDz)
+                    + 0.5 * (fRmax1 * fRmax1 - fRmin1 * fRmin1
+                             + fRmax2 * fRmax2 - fRmin2 * fRmin2));
+  }
+
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const {
       double max = fRmax1 > fRmax2 ? fRmax1 : fRmax2;
       aMin = Vector3D<Precision>(-max, -max, -fDz);
       aMax = Vector3D<Precision>(max, max, fDz);
@@ -318,21 +329,9 @@ Precision fSinEPhi;
 
   Vector3D<Precision> GetPointOnSurface() const;
 
-  Precision SurfaceArea()  const {
-      double mmin, mmax, dmin, dmax;
-      mmin = (fRmin1 + fRmin2) * 0.5;
-      mmax = (fRmax1 + fRmax2) * 0.5;
-      dmin = (fRmin2 - fRmin1);
-      dmax = (fRmax2 - fRmax1);
+  std::string GetEntityType() const { return "Cone";}
 
-      return fDPhi * (mmin * std::sqrt(dmin * dmin + 4 * fDz * fDz)
-                                 + mmax * std::sqrt(dmax * dmax + 4 * fDz * fDz)
-                                 + 0.5 * (fRmax1 * fRmax1 - fRmin1 * fRmin1
-                                          + fRmax2 * fRmax2 - fRmin2 * fRmin2));
-  }
-#endif
-
-
+#endif // !VECGEOM_NVCC
 
 };
 

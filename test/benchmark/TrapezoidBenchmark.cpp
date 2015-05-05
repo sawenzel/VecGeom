@@ -4,14 +4,29 @@
 #include "benchmarking/Benchmarker.h"
 #include "management/GeoManager.h"
 #include "ArgParser.h"
+#include <fstream>
 
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
-  OPTION_INT(npoints, 1024);
-  OPTION_INT(nreps, 1024);
+  OPTION_INT(ntracks, 32768);
+  OPTION_INT(nrep, 4);
+  OPTION_INT(nstats, 1);
 
-  UnplacedBox worldUnplaced = UnplacedBox(20., 20., 20.);
+  // temporary alert to deprecated use of npoints
+  OPTION_INT(npoints, 0);
+  if(npoints) {
+    printf("\n***** ERROR: -npoints is now deprecated.  Please use -ntracks instead.\n");
+    std::exit(-1);
+  }
+
+  //===== Build a geometry with trapezoid(s)
+
+  // world volume is a box, or a box-like trapezoid
+  //UnplacedBox worldUnplaced = UnplacedBox(20., 20., 20.);
+  UnplacedTrapezoid worldUnplaced = UnplacedTrapezoid(20., 0.,0., 20.,20.,20.,0.,  20.,20.,20.,0.);
+
+  //-- and here is for an internal trapezoid
 
   // validate construtor for input corner points -- add an xy-offset for non-zero theta,phi
   TrapCorners_t xyz;
@@ -32,30 +47,62 @@ int main(int argc, char* argv[]) {
   // create trapezoid
   UnplacedTrapezoid trapUnplaced(xyz);
 
-//  UnplacedTrapezoid trapUnplaced2(1,0,0, 1,1,1,0, 1,1,1,0);
+  //.. and here is for a secon internal trapezoid
+  //  UnplacedTrapezoid trapUnplaced2(1,0,0, 1,1,1,0, 1,1,1,0);
 
   LogicalVolume world("world", &worldUnplaced);
   LogicalVolume trap("trap", &trapUnplaced);
 
-  // Transformation3D *transf = new Transformation3D(5,2,3, 15,30,45);
-  // world.PlaceDaughter(&trap, transf);
-  world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
+  Transformation3D *transf = new Transformation3D(5,2,3, 15,30,45);
+  world.PlaceDaughter(&trap, transf);
+  //world.PlaceDaughter(&trap, &Transformation3D::kIdentity);
 
   VPlacedVolume *worldPlaced = world.Place();
 
   GeoManager::Instance().SetWorld(worldPlaced);
 
   Benchmarker tester(GeoManager::Instance().GetWorld());
-  tester.SetVerbosity(3);
-  tester.SetPointCount(npoints);
-  tester.SetRepetitions(nreps);
-  tester.SetPoolMultiplier(1);
+  tester.SetPointCount(ntracks);
+  tester.SetRepetitions(nrep);
   tester.SetTolerance(2.e-12);
+  tester.SetPoolMultiplier(1);
 
+  //=== Here is for the validation + one perf data point displayed on screen
+  tester.SetVerbosity(3);
+  tester.SetMeasurementCount(1);
   tester.RunBenchmark();
 
-  // cleanup
-  //delete transf;
+  // clear benchmark results, so previous measurements won't be written out into the output .csv file
+  tester.ClearResults();
 
+  // Now run to collect statistics for performance plots - written to the .csv output file only
+  if(nstats>1) {
+    // Idea is to start at ntracks=2, and then increase it by x2 at a time until maxNtracks is reached
+    tester.SetVerbosity(0);
+    tester.SetMeasurementCount(nstats);
+    ntracks = 2;
+    int maxNtracks = 2048;
+#ifdef VECGEOM_CUDA
+    maxNtracks = 1048576;
+#endif
+    while(ntracks<=maxNtracks) {
+      tester.SetPointCount(ntracks);
+      tester.RunBenchmark();
+      ntracks *= 2;
+    }
+
+    // Save statistics data to a text file
+    std::list<BenchmarkResult> results = tester.PopResults();
+    std::ofstream outStream;
+    outStream.open("trapBenchmarkData.csv", std::fstream::app);
+    BenchmarkResult::WriteCsvHeader(outStream);
+    for (auto i = results.begin(), iEnd = results.end(); i != iEnd; ++i) {
+      i->WriteToCsv(outStream);
+    }
+    outStream.close();
+  }
+
+  // cleanup
+  delete transf;
   return 0;
 }

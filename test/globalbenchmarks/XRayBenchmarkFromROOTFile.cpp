@@ -16,6 +16,7 @@
 #include "base/Vector3D.h"
 #include "base/Stopwatch.h"
 #include "navigation/SimpleNavigator.h"
+#include "navigation/ABBoxNavigator.h"
 #include "base/Transformation3D.h"
 #include "base/SOA3D.h"
 #include <iostream>
@@ -216,7 +217,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
 
             ///////////////////////////////////
             // Store the number of passed volume at 'volume_result'
-            *(image+pixel_count_2*data_size_x+pixel_count_1) =  accumulateddensity ;// crossedvolumecount;
+            *(image+pixel_count_2*data_size_x+pixel_count_1) = crossedvolumecount;// accumulateddensity ;// crossedvolumecount;
 
             if(VERBOSE) {
                 std::cout << "  EndOfBoundingBox:";
@@ -229,6 +230,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
 } // end XRayWithROOT
 
 
+template<typename Nav_t = SimpleNavigator>
 void XRayWithVecGeom(int axis,
                   Vector3D<Precision> origin,
                   Vector3D<Precision> bbox,
@@ -301,7 +303,8 @@ if(VERBOSE){
             while( ! curnavstate->IsOutside() ) {
                 double step = 0;
                 newnavstate->Clear();
-                nav.FindNextBoundaryAndStep( p,
+                Nav_t navigator;
+                navigator.FindNextBoundaryAndStep( p,
                         dir,
                         *curnavstate,
                         *newnavstate,
@@ -622,13 +625,13 @@ int XRayWithGeant4(
                    int crossedvolumecount=0;
 
                    while( vol!=NULL ) {
-                       crossedvolumecount++;
+
                        double safety;
                        // do one step ( this will internally adjust the current point and so on )
                        // also calculates safety
 
                        double step = nav->ComputeStep( p, d, vecgeom::kInfinity, safety );
-
+                       if(step>0.) crossedvolumecount++;
 //                       std::cerr << " STEP " << step << " ENTERING " << nav->EnteredDaughterVolume() << "\n";
 
                        // calculate next point ( do transportation ) and volume ( should go across boundary )
@@ -830,6 +833,9 @@ int main(int argc, char * argv[])
     int data_size_y= (axis2_end-axis2_start)/pixel_axis;
     int *volume_result= (int*) new int[data_size_y * data_size_x*3];
 
+    int *volume_result_Geant4= (int*) new int[data_size_y * data_size_x*3];
+    int *volume_result_VecGeom= (int*) new int[data_size_y * data_size_x*3];
+    int *volume_result_VecGeomABB= (int*) new int[data_size_y * data_size_x*3];
 
     Stopwatch timer;
     timer.Start();
@@ -877,23 +883,25 @@ int main(int argc, char * argv[])
             axis2_start, axis2_end,
             data_size_x, data_size_y,
             pixel_axis,
-            volume_result );
+            volume_result_Geant4 );
     timer.Stop();
 
     std::stringstream G4image;
     G4image << imagenamebase.str();
     G4image << "_Geant4.bmp";
-    make_bmp(volume_result, G4image.str().c_str(), data_size_x, data_size_y);
+    make_bmp(volume_result_Geant4, G4image.str().c_str(), data_size_x, data_size_y);
     std::cout << std::endl;
     std::cout << " Geant4 Elapsed time : "<< timer.Elapsed() << std::endl;
-
+    make_diff_bmp(volume_result, volume_result_Geant4, "diffROOTGeant4.bmp", data_size_x, data_size_y);
 #endif
 
     // convert current gGeoManager to a VecGeom geometry
     RootGeoManager::Instance().LoadRootGeometry();
     std::cout << "Detector loaded " << "\n";
+    ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
+    std::cout << "voxelized " << "\n";
     timer.Start();
-    XRayWithVecGeom( axis,
+    XRayWithVecGeom<SimpleNavigator>( axis,
                Vector3D<Precision>(origin[0],origin[1],origin[2]),
                Vector3D<Precision>(dx,dy,dz),
                dir,
@@ -901,16 +909,44 @@ int main(int argc, char * argv[])
                axis2_start, axis2_end,
                data_size_x, data_size_y,
                pixel_axis,
-               volume_result );
+               volume_result_VecGeom );
     timer.Stop();
 
     std::stringstream VecGeomimage;
     VecGeomimage << imagenamebase.str();
     VecGeomimage << "_VecGeom.bmp";
-    make_bmp(volume_result, VecGeomimage.str().c_str(), data_size_x, data_size_y);
+    make_bmp(volume_result_VecGeom, VecGeomimage.str().c_str(), data_size_x, data_size_y);
+
+    make_diff_bmp(volume_result, volume_result_VecGeom, "diffROOTVecGeom.bmp", data_size_x, data_size_y);
 
     std::cout << std::endl;
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    timer.Start();
+    XRayWithVecGeom<ABBoxNavigator>( axis,
+    Vector3D<Precision>(origin[0],origin[1],origin[2]),
+    Vector3D<Precision>(dx,dy,dz),
+    dir,
+    axis1_start, axis1_end,
+    axis2_start, axis2_end,
+    data_size_x, data_size_y,
+    pixel_axis,
+    volume_result_VecGeomABB );
+    timer.Stop();
+
+    std::stringstream VecGeomABBimage;
+    VecGeomABBimage << imagenamebase.str();
+    VecGeomABBimage << "_VecGeomABB.bmp";
+    make_bmp(volume_result_VecGeomABB, VecGeomABBimage.str().c_str(), data_size_x, data_size_y);
+
+    make_diff_bmp(volume_result_VecGeom, volume_result_VecGeomABB, "diffVecGeomSimplevsABB.bmp", data_size_x, data_size_y);
+    make_diff_bmp(volume_result, volume_result_VecGeomABB, "diffROOTVecGeomABB.bmp", data_size_x, data_size_y);
+
+
+    std::cout << std::endl;
+    std::cout << " VecGeom ABB Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    return 0;
 
     // use the vector interface
     timer.Start();
@@ -943,12 +979,11 @@ int main(int argc, char * argv[])
 int make_bmp_header( MY_BITMAP * pBitmap, unsigned char * bmpBuf, int sizex, int sizey )
 {
   int width_4= (sizex+ 3)&~3;
-  bmpBuf = (unsigned char*) new unsigned char[sizey* width_4* 3+ 54];
   unsigned int len= 0;
 
   // bitmap file header
   pBitmap->bmpFileHeader.bfType=0x4d42;
-  pBitmap->bmpFileHeader.bfSize=data_size_y* width_4* 3+ 54;
+  pBitmap->bmpFileHeader.bfSize=sizey* width_4* 3+ 54;
   pBitmap->bmpFileHeader.bfReserved1= 0;
   pBitmap->bmpFileHeader.bfReserved2= 0;
   pBitmap->bmpFileHeader.bfOffBits= 54;
@@ -967,11 +1002,11 @@ int make_bmp_header( MY_BITMAP * pBitmap, unsigned char * bmpBuf, int sizex, int
   // bitmap information header
   pBitmap->bmpInfoHeader.biSize= 40;
   pBitmap->bmpInfoHeader.biWidth= width_4;
-  pBitmap->bmpInfoHeader.biHeight= data_size_y;
+  pBitmap->bmpInfoHeader.biHeight= sizey;
   pBitmap->bmpInfoHeader.biPlanes= 1;
   pBitmap->bmpInfoHeader.biBitCount= 24;
   pBitmap->bmpInfoHeader.biCompression= 0;
-  pBitmap->bmpInfoHeader.biSizeImage= data_size_y* width_4* 3;
+  pBitmap->bmpInfoHeader.biSizeImage= sizey* width_4* 3;
   pBitmap->bmpInfoHeader.biXPelsPerMeter= 0;
   pBitmap->bmpInfoHeader.biYPelsPerMeter= 0;
   pBitmap->bmpInfoHeader.biClrUsed= 0;
@@ -1118,18 +1153,17 @@ int make_bmp(int const * volume_result, char const * name, int data_size_x, int 
 if( linear ){
       *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxcount)) * 256;
       *(imgdata+y*width_4*3+x*3+1)= (value/(1.*maxcount)) * 256;
-      *(imgdata+y*width_4*3+x*3+2)= (value/(1.*maxcount)) * 256;}
-      else
-      {
+      *(imgdata+y*width_4*3+x*3+2)= (value/(1.*maxcount)) * 256;
+}
+else {
           *(imgdata+y*width_4*3+x*3+0)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
           *(imgdata+y*width_4*3+x*3+1)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
           *(imgdata+y*width_4*3+x*3+2)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
-      }
-      
-      x++;
-      origin_x++;
+}
+  x++;
+  origin_x++;
 
-      while( origin_x== data_size_x && padding_idx)
+  while( origin_x== data_size_x && padding_idx)
       {
 // padding 4-byte at bitmap image
         *(imgdata+y*width_4*3+x*3+0)= 0;
@@ -1169,10 +1203,13 @@ int make_diff_bmp(int const * image1, int const * image2, char const * name, int
 
   MY_BITMAP* pBitmap= new MY_BITMAP;
   FILE *pBitmapFile;
+  int width_4 = (data_size_x + 3)&~3;
+  unsigned char* bmpBuf = (unsigned char*) new unsigned char[data_size_y* width_4* 3+ 54];
 
-  unsigned char* bmpBuf;
-
+  // init buffer and write header
   make_bmp_header(pBitmap, bmpBuf, data_size_x, data_size_y);
+
+  std::cerr << "AFTER HEADER " << bmpBuf << "\n";
 
   // TODO: verify the 2 images have same dimensions
 
@@ -1208,18 +1245,25 @@ int make_diff_bmp(int const * image1, int const * image2, char const * name, int
   {
     while( origin_x< data_size_x )
     {
-      int value = *(image1+y*data_size_x+origin_x) - *(image2+y*data_size_x + origin_x);
+      int value = *(image1 + y*data_size_x + origin_x) - *(image2 + y*data_size_x + origin_x);
 
-      *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxcount)) * 256;
-      *(imgdata+y*width_4*3+x*3+1)= (value/(1.*maxcount)) * 256;
-      *(imgdata+y*width_4*3+x*3+2)= (value/(1.*maxcount)) * 256;}
-
+      if( value >=0 ){
+          *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxdiff)) * 256;
+          *(imgdata+y*width_4*3+x*3+1)= 0;// (value/(1.*maxcount)) * 256;
+          *(imgdata+y*width_4*3+x*3+2)= 0;//(value/(1.*maxcount)) * 256;}
+      }
+      else
+      {
+          *(imgdata+y*width_4*3+x*3+0)= 0;
+          *(imgdata+y*width_4*3+x*3+1)= 0;// (value/(1.*maxcount)) * 256;
+          *(imgdata+y*width_4*3+x*3+2)= (value/(1.*mindiff)) * 256;//(value/(1.*maxcount)) * 256;}
+      }
       x++;
       origin_x++;
 
       while( origin_x== data_size_x && padding_idx)
       {
-// padding 4-byte at bitmap image
+        // padding 4-byte at bitmap image
         *(imgdata+y*width_4*3+x*3+0)= 0;
         *(imgdata+y*width_4*3+x*3+1)= 0;
         *(imgdata+y*width_4*3+x*3+2)= 0;
@@ -1234,10 +1278,8 @@ int make_diff_bmp(int const * image1, int const * image2, char const * name, int
   }
 
   memcpy(bmpBuf + 54, imgdata, width_4* data_size_y* 3);
-
   pBitmapFile = fopen(name, "wb");
   fwrite(bmpBuf, sizeof(char), width_4*data_size_y*3+54, pBitmapFile);
-
 
   fclose(pBitmapFile);
   delete[] imgdata;
@@ -1245,7 +1287,5 @@ int make_diff_bmp(int const * image1, int const * image2, char const * name, int
   delete pBitmap;
 
   std::cout << " wrote image file " << name <<  "\n";
-  std::cout << " total count " << totalcount << "\n";
-  std::cout << " max count " << maxcount << "\n";
   return 0;
 }

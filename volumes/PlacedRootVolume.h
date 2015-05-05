@@ -67,7 +67,7 @@ public:
   virtual bool UnplacedContains(Vector3D<Precision> const &point) const;
 
   VECGEOM_INLINE
-  virtual Inside_t Inside(Vector3D<Precision> const &point) const;
+  virtual EnumInside Inside(Vector3D<Precision> const &point) const;
 
   virtual void Inside(SOA3D<Precision> const &points,
                       Inside_t *const output) const;
@@ -189,9 +189,10 @@ bool PlacedRootVolume::UnplacedContains(
   return fRootShape->Contains(&pointCopy[0]);
 }
 
-Inside_t PlacedRootVolume::Inside(Vector3D<Precision> const &point) const {
+EnumInside PlacedRootVolume::Inside(Vector3D<Precision> const &point) const {
   const Vector3D<Precision> local = this->transformation_->Transform(point);
-  return (UnplacedContains(local)) ? EInside::kInside : EInside::kOutside;
+  return (UnplacedContains(local)) ?
+          static_cast<EnumInside> (EInside::kInside) : static_cast<EnumInside> (EInside::kOutside);
 }
 
 Precision PlacedRootVolume::DistanceToIn(Vector3D<Precision> const &position,

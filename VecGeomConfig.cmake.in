@@ -2,6 +2,8 @@
 # Defines the following variables
 #   VECGEOM_INCLUDE_DIR  - include directories for VecGeom
 #   VECGEOM_LIBRARIES    - libraries to link against
+#   USOLIDS_INCLUDE_DIRS - include directories for USolids
+#   USOLIDS_LIBRARIES    - libraries to link against
 #   VECGEOM_DEFINITIONS - some core flags used to build the vecgeom library and which need to be reused 
 #                               in projects using VecGeom 
 #   VECGEOM_INSTALL_DIR     - the top level installation path
@@ -11,10 +13,11 @@ message(STATUS
   "Using VecGeom @CONF_TYPE@ configuration at ${CMAKE_CURRENT_LIST_FILE}.")
 
 get_filename_component(THIS_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-set(VECGEOM_INCLUDE_DIR "@CONF_INCLUDE_DIR@"
-    "@CONF_INCLUDE_DIR@/USolids/include")
+set(USOLIDS_INCLUDE_DIRS "@CONF_INCLUDE_DIR@")
+set(USOLIDS_LIBRARIES "@CONF_LIBRARIES@")
+set(VECGEOM_INCLUDE_DIR "@CONF_INCLUDE_DIR@")
 set(VECGEOM_LIBRARIES "@CONF_LIBRARIES@")
-set(VECGEOM_INSTALL_DIR       "@CMAKE_INSTALL_PREFIX@")
+set(VECGEOM_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@")
 set(VECGEOM_DEFINITIONS "@VECGEOM_COMPILATION_FLAGS@")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} @VECGEOM_COMPILATION_FLAGS@")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

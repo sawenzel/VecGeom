@@ -21,11 +21,12 @@ void UnplacedTrd::Print(std::ostream &os) const {
      << ", " << dy2() << ", " << dz();
 }
 
-VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
 Precision UnplacedTrd::Capacity() const {
    return  2*(fDX1+fDX2)*(fDY1+fDY2)*fDZ
      + (2./3.)*(fDX1-fDX2)*(fDY1-fDY2)*fDZ;
 }
+#endif
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 VECGEOM_CUDA_HEADER_DEVICE

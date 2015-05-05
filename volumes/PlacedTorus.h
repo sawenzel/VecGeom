@@ -27,22 +27,22 @@ public:
 #ifndef VECGEOM_NVCC
 
   PlacedTorus(char const *const label,
-	      LogicalVolume const *const logical_volume,
-	      Transformation3D const *const transformation,
-	      PlacedBox const *const boundingBox)
+          LogicalVolume const *const logical_volume,
+          Transformation3D const *const transformation,
+          PlacedBox const *const boundingBox)
       : VPlacedVolume(label, logical_volume, transformation, boundingBox) {}
 
   PlacedTorus(LogicalVolume const *const logical_volume,
-	      Transformation3D const *const transformation,
-	      PlacedBox const *const boundingBox)
+          Transformation3D const *const transformation,
+          PlacedBox const *const boundingBox)
       : PlacedTorus("", logical_volume, transformation, boundingBox) {}
 
 #else
 
   __device__
   PlacedTorus(LogicalVolume const *const logical_volume,
-	      Transformation3D const *const transformation,
-	      PlacedBox const *const boundingBox, const int id)
+          Transformation3D const *const transformation,
+          PlacedBox const *const boundingBox, const int id)
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
@@ -76,9 +76,11 @@ public:
   VECGEOM_INLINE
   Precision dphi() const { return GetUnplacedVolume()->dphi(); }
 
+  virtual Precision Capacity() override { return GetUnplacedVolume()->volume(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() { return GetUnplacedVolume()->volume(); }
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+    }
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;

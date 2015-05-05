@@ -4,12 +4,6 @@
  *  Created on: May 14, 2014
  *      Author: swenzel
  */
-//#define VECGEOM_ROOT
-//#define VECGEOM_GEANT4
-//#define VECGEOM_BENCHMARK
-//#define VECGEOM_USOLIDS
-
-
 #ifndef VECGEOM_VOLUMES_PLACEDCONE_H_
 #define VECGEOM_VOLUMES_PLACEDCONE_H_
 
@@ -88,21 +82,18 @@ public:
   Precision GetInnerOffset() const {return GetUnplacedVolume()->GetInnerOffset();}
   Precision GetOuterOffset() const {return GetUnplacedVolume()->GetOuterOffset();}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+#if !defined(VECGEOM_NVCC)
+  virtual Precision Capacity() override {
       return GetUnplacedVolume()->Capacity();
   }
 
-#ifdef VECGEOM_USOLIDS
   virtual
-  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
-  {
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
   virtual
-  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
-  {
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const {
       bool valid;
       ConeImplementation<translation::kIdentity, rotation::kIdentity, ConeTypes::UniversalCone>::NormalKernel<kScalar>(
               *GetUnplacedVolume(),
@@ -112,14 +103,11 @@ public:
   }
 
   virtual
-  Vector3D<Precision> GetPointOnSurface() const
-  {
+  Vector3D<Precision> GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-
-
-  virtual double SurfaceArea() {
+  virtual double SurfaceArea() override {
      return GetUnplacedVolume()->SurfaceArea();
   }
 
@@ -127,7 +115,6 @@ public:
       return "Cone";
   }
 #endif
-
 
 }; // end class
 

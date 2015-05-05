@@ -63,6 +63,9 @@ public:
                    bool /*top*/) const;
 
 
+  VECGEOM_CUDA_HEADER_BOTH
+   VECGEOM_INLINE
+   SimpleNavigator(){}
 
    /**
     * function to locate a global point in the geometry hierarchy
@@ -179,8 +182,8 @@ public:
     * and a global point; mainly for debugging purposes
     */
    void InspectSafetyForPoint(
-           Vector3D<Precision> const & /* global point */,
-           NavigationState const & /* current state */
+		   Vector3D<Precision> const & /* global point */,
+		   NavigationState const & /* current state */
       ) const;
 
 #ifdef VECGEOM_ROOT
@@ -359,7 +362,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 
    int nexthitvolume = -1; // means mother
 
-   step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
+   if(currentvolume) step = currentvolume->DistanceToOut( localpoint, localdir, pstep );
 
    // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
    // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
@@ -469,6 +472,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       // continue directly further up
       //LocateLocalPointFromPath_Relative_Iterative( newpointafterboundary, newpointafterboundaryinnewframe, outpath, globalm );
       RelocatePointFromPath( newpointafterboundary, newstate );
+      // newstate.Print();
    }
 
    #ifdef VECGEOM_DISTANCE_DEBUG
@@ -693,7 +697,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    // now we have the candidates
    for( int i=0;i<np;++i )
    {
-     *newstates[i]=*currentstates[i];
+     *newstates[i] = *currentstates[i];
 
      // is geometry further away than physics step?
      if( distances[i]>pSteps[i] ) {
@@ -725,6 +729,7 @@ void SimpleNavigator::FindNextBoundaryAndStep(
         // continue directly further up
         RelocatePointFromPath( newpointafterboundary, *newstates[i] );
      }
+
    } // end loop for relocation
 }
 

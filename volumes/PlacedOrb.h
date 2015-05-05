@@ -74,33 +74,24 @@ public:
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity()  { return GetUnplacedVolume()->Capacity(); }
+  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
 
-  #ifdef VECGEOM_USOLIDS  
+#ifndef VECGEOM_NVCC
+  virtual Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
+
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
-  
-  VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
   
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const { return GetUnplacedVolume()->Extent(aMin,aMax);}
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
+    return GetUnplacedVolume()->Extent(aMin,aMax);
+  }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
-  
-  //#ifdef VECGEOM_USOLIDS
-  //VECGEOM_CUDA_HEADER_BOTH
-  //#endif
   Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
- 
+
   // VECGEOM_CUDA_HEADER_BOTH
   // void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
   
-  #endif
-
-  VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
   {
       bool valid;
@@ -111,9 +102,6 @@ public:
       return valid;
   }
 
-
-
-#ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;

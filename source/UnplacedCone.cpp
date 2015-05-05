@@ -7,11 +7,11 @@
 
 #include "volumes/UnplacedCone.h"
 #include "volumes/SpecializedCone.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #include "volumes/utilities/GenerationUtilities.h"
-#ifdef VECGEOM_USOLIDS
-#include "base/RNG.h"
+#ifndef VECGEOM_NVCC
+  #include "base/RNG.h"
 #endif
-
 #include "management/VolumeFactory.h"
 
 namespace vecgeom {
@@ -27,7 +27,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
         os << "UnplacedCone; please implement Print to outstream\n";
     }
 
-#ifdef VECGEOM_USOLIDS
+#if !defined(VECGEOM_NVCC)
     Vector3D<Precision> UnplacedCone::GetPointOnSurface() const {
        // implementation taken from UCons; not verified
        //
@@ -54,8 +54,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
        phi  = RNG::Instance().uniform(fSPhi, fSPhi + fDPhi);
        cosu = std::cos(phi);
        sinu = std::sin(phi);
-       rRand1 = UUtils::GetRadiusInRing(fRmin1, fRmin2);
-       rRand2 = UUtils::GetRadiusInRing(fRmax1, fRmax2);
+       rRand1 = volumeUtilities::GetRadiusInRing(fRmin1, fRmin2);
+       rRand2 = volumeUtilities::GetRadiusInRing(fRmax1, fRmax2);
 
        if ((fSPhi == 0.) && IsFullPhi()) {
          Afive = 0.;
@@ -115,7 +115,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
                               rRand1 * std::sin(fSPhi + fDPhi), zRand);
             }
    }
-#endif // VECGEOM_USOLIDS
+#endif // VECGEOM_NVCC
 
 
   template <TranslationCode transCodeT, RotationCode rotCodeT>

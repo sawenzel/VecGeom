@@ -152,7 +152,7 @@ struct UVector3
 
     inline UVector3& MultiplyByComponents(const UVector3& p);
 
-  public:
+  private:
     double x_;
     double y_;
     double z_;
@@ -161,28 +161,28 @@ struct UVector3
 
 inline UVector3 operator + (const UVector3& a, const UVector3& b)
 {
-  return UVector3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
+  return UVector3(a.x() + b.x(), a.y() + b.y(), a.z() + b.z());
 }
 
 inline UVector3 operator - (const UVector3& a, const UVector3& b)
 {
-  return UVector3(a.x_ - b.x_, a.y_ - b.y_, a.z_ - b.z_);
+  return UVector3(a.x() - b.x(), a.y() - b.y(), a.z() - b.z());
 }
 
 inline UVector3 operator * (const UVector3& p, double a)
 {
-  return UVector3(a * p.x_, a * p.y_, a * p.z_);
+  return UVector3(a * p.x(), a * p.y(), a * p.z());
 }
 
 inline UVector3 operator / (const UVector3& p, double a)
 {
   a = 1. / a;
-  return UVector3(a * p.x_, a * p.y_, a * p.z_);
+  return UVector3(a * p.x(), a * p.y(), a * p.z());
 }
 
 inline UVector3 operator * (double a, const UVector3& p)
 {
-  return UVector3(a * p.x_, a * p.y_, a * p.z_);
+  return UVector3(a * p.x(), a * p.y(), a * p.z());
 }
 
 
@@ -190,7 +190,6 @@ inline UVector3 operator * (double a, const UVector3& p)
 inline UVector3& UVector3::MultiplyByComponents(const UVector3& p)
 {
   // Assignment of a UVector3
-  if (this == &p)  { return *this; }
   x_ *= p.x_;
   y_ *= p.y_;
   z_ *= p.z_;
@@ -201,6 +200,7 @@ inline UVector3& UVector3::MultiplyByComponents(const UVector3& p)
 inline UVector3& UVector3::operator = (const UVector3& p)
 {
   // Assignment of a UVector3
+  if (this == &p)  { return *this; }
   x_ = p.x_;
   y_ = p.y_;
   z_ = p.z_;
@@ -268,12 +268,6 @@ inline bool UVector3::IsNull() const
 {
   return ((std::abs(x_) + std::abs(y_) + std::abs(z_)) == 0.0) ? true : false;
 }
-
-/*
-inline void UVector3::SetNull() {
-x = y = z = 0.0;
-}
-*/
 
 inline void UVector3::Set(double xx, double yy, double zz)
 {
@@ -369,9 +363,9 @@ inline double UVector3::z() const { return z_; }
 
 inline std::ostream& operator<< (std::ostream& os, const UVector3& v)
 {
-  return os << "(" << v.x_ << "," << v.y_ << "," << v.z_ << ")";
+  return os << "(" << v.x() << "," << v.y() << "," << v.z() << ")";
 }
 
 #endif // Old USolids implementation
 
-#endif // USOLIDS_UVector3
+#endif

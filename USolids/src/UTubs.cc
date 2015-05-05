@@ -42,15 +42,17 @@ UTubs::UTubs(const std::string& pName,
   {
     std::ostringstream message;
     message << "Negative Z half-length (" << pDz << ") in solid: " << GetName();
-    UUtils::Exception("UTubs::UTubs()", "GeomSolids0002", FatalErrorInArguments, 1, message.str().c_str());
+    UUtils::Exception("UTubs::UTubs()", "GeomSolids0002",
+                      UFatalErrorInArguments, 1, message.str().c_str());
   }
   if ((pRMin >= pRMax) || (pRMin < 0))   // Check radii
   {
     std::ostringstream message;
     message << "Invalid values for radii in solid: " << GetName()
             << std::endl
-            << "				pRMin = " << pRMin << ", pRMax = " << pRMax;
-    UUtils::Exception("UTubs::UTubs()", "GeomSolids0002", FatalErrorInArguments, 1, message.str().c_str());
+            << "pRMin = " << pRMin << ", pRMax = " << pRMax;
+    UUtils::Exception("UTubs::UTubs()", "GeomSolids0002",
+                      UFatalErrorInArguments, 1, message.str().c_str());
   }
 
   // Check angles
@@ -153,7 +155,7 @@ UTubs& UTubs::operator = (const UTubs& rhs)
 inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
 {
   double r2, pPhi, tolRMin, tolRMax;
-  VUSolid::EnumInside in = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside in = EnumInside::eOutside;
   static const double halfCarTolerance = VUSolid::Tolerance() * 0.5;
   static const double halfRadTolerance = kRadTolerance * 0.5;
   static const double halfAngTolerance = kAngTolerance * 0.5;
@@ -177,7 +179,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
     {
       if (fPhiFullTube)
       {
-        in = vecgeom::EInside::kInside;
+        in = EnumInside::eInside;
       }
       else
       {
@@ -187,7 +189,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
         if ((tolRMin == 0) && (std::fabs(p.x()) <= halfCarTolerance)
             && (std::fabs(p.y()) <= halfCarTolerance))
         {
-          in = vecgeom::EInside::kSurface;
+          in = EnumInside::eSurface;
         }
         else
         {
@@ -207,12 +209,12 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             if ((pPhi >= fSPhi + halfAngTolerance)
                 && (pPhi <= fSPhi + fDPhi - halfAngTolerance))
             {
-              in = vecgeom::EInside::kInside;
+              in = EnumInside::eInside;
             }
             else if ((pPhi >= fSPhi - halfAngTolerance)
                      && (pPhi <= fSPhi + fDPhi + halfAngTolerance))
             {
-              in = vecgeom::EInside::kSurface;
+              in = EnumInside::eSurface;
             }
           }
           else  // fSPhi < 0
@@ -225,11 +227,11 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             else if ((pPhi <= fSPhi + 2 * UUtils::kPi + halfAngTolerance)
                      && (pPhi >= fSPhi + fDPhi - halfAngTolerance))
             {
-              in = vecgeom::EInside::kSurface;
+              in = EnumInside::eSurface;
             }
             else
             {
-              in = vecgeom::EInside::kInside;
+              in = EnumInside::eInside;
             }
           }
         }
@@ -250,7 +252,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
         if (fPhiFullTube || (r2 <= halfRadTolerance * halfRadTolerance))
         {
           // Continuous in phi or on z-axis
-          in = vecgeom::EInside::kSurface;
+          in = EnumInside::eSurface;
         }
         else // Try outer tolerant phi boundaries only
         {
@@ -270,7 +272,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             if ((pPhi >= fSPhi - halfAngTolerance)
                 && (pPhi <= fSPhi + fDPhi + halfAngTolerance))
             {
-              in = vecgeom::EInside::kSurface;
+              in = EnumInside::eSurface;
             }
           }
           else  // fSPhi < 0
@@ -282,7 +284,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
             }
             else
             {
-              in = vecgeom::EInside::kSurface;
+              in = EnumInside::eSurface;
             }
           }
         }
@@ -306,7 +308,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
       if (fPhiFullTube || (r2 <= halfRadTolerance * halfRadTolerance))
       {
         // Continuous in phi or on z-axis
-        in = vecgeom::EInside::kSurface;
+        in = EnumInside::eSurface;
       }
       else // Try outer tolerant phi boundaries
       {
@@ -326,7 +328,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
           if ((pPhi >= fSPhi - halfAngTolerance)
               && (pPhi <= fSPhi + fDPhi + halfAngTolerance))
           {
-            in = vecgeom::EInside::kSurface;
+            in = EnumInside::eSurface;
           }
         }
         else  // fSPhi < 0
@@ -338,7 +340,7 @@ inline VUSolid::EnumInside UTubs::Inside(const UVector3& p) const
           }
           else
           {
-            in = vecgeom::EInside::kSurface;
+            in = EnumInside::eSurface;
           }
         }
       }
@@ -443,7 +445,7 @@ bool UTubs::Normal(const UVector3& p, UVector3& n) const
   {
 #ifdef UDEBUG
     UUtils::Exception("UTubs::SurfaceNormal(p)", "GeomSolids1002",
-                      Warning, 1, "Point p is not on surface !?");
+                      UWarning, 1, "Point p is not on surface !?");
     int oldprc = cout.precision(20);
     cout << "UTubs::SN ( " << p.x() << ", " << p.y() << ", " << p.z() << " ); "
          << std::endl << std::endl;
@@ -581,7 +583,7 @@ UVector3 UTubs::ApproxSurfaceNormal(const UVector3& p) const
     {
       // DumpInfo();
       UUtils::Exception("UTubs::ApproxSurfaceNormal()",
-                        "GeomSolids1002", Warning, 1,
+                        "GeomSolids1002", UWarning, 1,
                         "Undefined side for valid surface normal to solid.");
       break;
     }
@@ -698,11 +700,11 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
   //
   // Intersection with rmax (possible return) and rmin (must also check phi)
   //
-  // Intersection point (xi,yi,zi) on line x=p.x()+t*v.x() etc.
+  // Intersection point (xi,yi,zi) on line x=p.x+t*v.x etc.
   //
   // Intersects with x^2+y^2=R^2
   //
-  // Hence (v.x()^2+v.y()^2)t^2+ 2t(p.x()*v.x()+p.y()*v.y())+p.x()^2+p.y()^2-R^2=0
+  // Hence (v.x^2+v.y^2)t^2+ 2t(p.x*v.x+p.y*v.y)+p.x^2+p.y^2-R^2=0
   //            t1                t2                t3
 
   t1 = 1.0 - v.z() * v.z();
@@ -1030,7 +1032,8 @@ double UTubs::DistanceToIn(const UVector3& p, const UVector3& v, double) const
 double UTubs::SafetyFromOutside(const UVector3& p, bool aAccurate) const
 {
   double safe = 0.0, rho, safe1, safe2, safe3;
-  double safePhi, cosPsi;
+  double safePhi;
+  bool outside;
 
   rho  = std::sqrt(p.x() * p.x() + p.y() * p.y());
   safe1 = fRMin - rho;
@@ -1052,28 +1055,13 @@ double UTubs::SafetyFromOutside(const UVector3& p, bool aAccurate) const
 
   if ((!fPhiFullTube) && (rho))
   {
-    // Psi=angle from central phi to point
-    //
-    cosPsi = (p.x() * fCosCPhi + p.y() * fSinCPhi) / rho;
-
-    if (cosPsi < std::cos(fDPhi * 0.5))
+    safePhi = SafetyToPhi(p,rho,outside);
+    if ((outside) && (safePhi > safe))
     {
-      // Point lies outside phi range
-
-      if ((p.y() * fCosCPhi - p.x() * fSinCPhi) <= 0)
-      {
-        safePhi = std::fabs(p.x() * fSinSPhi - p.y() * fCosSPhi);
-      }
-      else
-      {
-        safePhi = std::fabs(p.x() * fSinEPhi - p.y() * fCosEPhi);
-      }
-      if (safePhi > safe)
-      {
-        safe = safePhi;
-      }
+      safe = safePhi;
     }
   }
+
   if (safe < 0)
   {
     safe = 0; return safe; // point is Inside;
@@ -1131,11 +1119,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
     }
     else
     {
-      //      if (calcNorm)
-      {
-        n        = UVector3(0, 0, 1);
-        validNorm = true;
-      }
+      n = UVector3(0, 0, 1);
+      validNorm = true;
       return snxt = 0;
     }
   }
@@ -1150,11 +1135,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
     }
     else
     {
-      //      if (calcNorm)
-      {
-        n        = UVector3(0, 0, -1);
-        validNorm = true;
-      }
+      n = UVector3(0, 0, -1);
+      validNorm = true;
       return snxt = 0.0;
     }
   }
@@ -1167,11 +1149,11 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
   // Radial Intersections
   //
   // Find intersection with cylinders at rmax/rmin
-  // Intersection point (xi,yi,zi) on line x=p.x()+t*v.x() etc.
+  // Intersection point (xi,yi,zi) on line x=p.x+t*v.x etc.
   //
   // Intersects with x^2+y^2=R^2
   //
-  // Hence (v.x()^2+v.y()^2)t^2+ 2t(p.x()*v.x()+p.y()*v.y())+p.x()^2+p.y()^2-R^2=0
+  // Hence (v.x^2+v.y^2)t^2+ 2t(p.x*v.x+p.y*v.y)+p.x^2+p.y^2-R^2=0
   //
   //            t1                t2                    t3
 
@@ -1220,13 +1202,9 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       {
         // On tolerant boundary & heading outwards (or perpendicular to)
         // outer radial surface -> leaving immediately
-
-        //        if ( calcNorm )
-        {
-          n        = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
+          n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
           validNorm = true;
-        }
-        return snxt = 0; // Leaving by rmax immediately
+          return snxt = 0; // Leaving by rmax immediately
       }
     }
     else if (t2 < 0.)   // i.e.  t2 < 0; Possible rmin intersection
@@ -1252,11 +1230,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
           }
           else
           {
-            
-            {
-              n         = UVector3(-p.x() / fRMin, -p.y() / fRMin, 0);
-              validNorm = false;  // Concave side
-            }
+            validNorm = false;  // Concave side
+            n = UVector3(-p.x() / fRMin, -p.y() / fRMin, 0);
             return snxt = 0.0;
           }
         }
@@ -1273,11 +1248,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
           else // Case: On the border+t2<kRadTolerance
             //       (v is perpendicular to the surface)
           {
-            // if (calcNorm)
-            {
-              n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
-              validNorm = true;
-            }
+            n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
+            validNorm = true;
             return snxt = 0.0;
           }
         }
@@ -1297,11 +1269,8 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
         else // Case: On the border+t2<kRadTolerance
           //       (v is perpendicular to the surface)
         {
-          //          if (calcNorm)
-          {
-            n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
-            validNorm = true;
-          }
+          n = UVector3(p.x() / fRMax, p.y() / fRMax, 0);
+          validNorm = true;
           return snxt = 0.0;
         }
       }
@@ -1496,12 +1465,12 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       case kSPhi:
         if (fDPhi <= UUtils::kPi)
         {
-          n         = UVector3(fSinSPhi, -fCosSPhi, 0);
+          n = UVector3(fSinSPhi, -fCosSPhi, 0);
           validNorm = true;
         }
         else
-        { 
-           n        = UVector3(fSinSPhi, -fCosSPhi, 0);
+        {
+          n = UVector3(fSinSPhi, -fCosSPhi, 0);
           validNorm = false;
         }
         break;
@@ -1509,12 +1478,12 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
       case kEPhi:
         if (fDPhi <= UUtils::kPi)
         {
-          n         = UVector3(-fSinEPhi, fCosEPhi, 0);
+          n = UVector3(-fSinEPhi, fCosEPhi, 0);
           validNorm = true;
         }
         else
         {
-          n         = UVector3(-fSinEPhi, fCosEPhi, 0);
+          n = UVector3(-fSinEPhi, fCosEPhi, 0);
           validNorm = false;
         }
         break;
@@ -1537,18 +1506,18 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
         message << "Undefined side for valid surface normal to solid."
                 << std::endl
                 << "Position:"  << std::endl << std::endl
-                << "p.x() = "  << p.x() << " mm" << std::endl
-                << "p.y() = "  << p.y() << " mm" << std::endl
-                << "p.z() = "  << p.z() << " mm" << std::endl << std::endl
+                << "p.x = "  << p.x() << " mm" << std::endl
+                << "p.y = "  << p.y() << " mm" << std::endl
+                << "p.z = "  << p.z() << " mm" << std::endl << std::endl
                 << "Direction:" << std::endl << std::endl
-                << "v.x() = "  << v.x() << std::endl
-                << "v.y() = "  << v.y() << std::endl
-                << "v.z() = "  << v.z() << std::endl << std::endl
+                << "v.x = "  << v.x() << std::endl
+                << "v.y = "  << v.y() << std::endl
+                << "v.z = "  << v.z() << std::endl << std::endl
                 << "Proposed distance :" << std::endl << std::endl
                 << "snxt = "    << snxt << " mm" << std::endl;
         message.precision(oldprc);
         UUtils::Exception("UTubs::DistanceToOut(p,v,..)", "GeomSolids1002",
-                          Warning, 1, message.str().c_str());
+                          UWarning, 1, message.str().c_str());
         break;
     }
   }
@@ -1560,82 +1529,45 @@ double UTubs::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n, b
   return snxt;
 }
 
-
 //////////////////////////////////////////////////////////////////////////
 //
 // Calculate distance (<=actual) to closest surface of shape from inside
 
 double UTubs::SafetyFromInside(const UVector3& p, bool) const
 {
-  double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi;
+  double safe = 0.0, rho, safeZ;
   rho = std::sqrt(p.x() * p.x() + p.y() * p.y());
 
 #ifdef UDEBUG
-  if (Inside(p) == vecgeom::EInside::kOutside)
+  if (Inside(p) == EnumInside::eOutside)
   {
     int oldprc = cout.precision(16);
     cout << std::endl;
     DumpInfo();
     cout << "Position:" << std::endl << std::endl;
-    cout << "p.x() = "   << p.x() << " mm" << std::endl;
-    cout << "p.y() = "   << p.y() << " mm" << std::endl;
-    cout << "p.z() = "   << p.z() << " mm" << std::endl << std::endl;
+    cout << "p.x = "   << p.x() << " mm" << std::endl;
+    cout << "p.y = "   << p.y() << " mm" << std::endl;
+    cout << "p.z = "   << p.z() << " mm" << std::endl << std::endl;
     cout.precision(oldprc);
     UUtils::Exception("UTubs::DistanceToOut(p)", "GeomSolids1002",
-                      Warning, 1, "Point p is outside !?");
+                      UWarning, 1, "Point p is outside !?");
   }
 #endif
-
-  if (fRMin)
-  {
-    safeR1 = rho   - fRMin;
-    safeR2 = fRMax - rho;
-
-    if (safeR1 < safeR2)
-    {
-      safe = safeR1;
-    }
-    else
-    {
-      safe = safeR2;
-    }
-  }
-  else
-  {
-    safe = fRMax - rho;
-  }
+  safe = SafetyFromInsideR(p, rho);
   safeZ = fDz - std::fabs(p.z());
 
   if (safeZ < safe)
   {
     safe = safeZ;
   }
-
-  // Check if phi divided, Calc distances closest phi plane
-  //
-  if (!fPhiFullTube)
-  {
-    if (p.y() * fCosCPhi - p.x() * fSinCPhi <= 0)
-    {
-      safePhi = -(p.x() * fSinSPhi - p.y() * fCosSPhi);
-    }
-    else
-    {
-      safePhi = (p.x() * fSinEPhi - p.y() * fCosEPhi);
-    }
-    if (safePhi < safe)
-    {
-      safe = safePhi;
-    }
-  }
+  
   if (safe < 0)
   {
     safe = 0;
   }
-
+  
   return safe;
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -1663,15 +1595,15 @@ std::ostream& UTubs::StreamInfo(std::ostream& os) const
 {
   int oldprc = os.precision(16);
   os << "-----------------------------------------------------------\n"
-     << "		*** Dump for solid - " << GetName() << " ***\n"
-     << "		===================================================\n"
+     << "                *** Dump for solid - " << GetName() << " ***\n"
+     << "                ===================================================\n"
      << " Solid type: UTubs\n"
      << " Parameters: \n"
-     << "		inner radius : " << fRMin << " mm \n"
-     << "		outer radius : " << fRMax << " mm \n"
-     << "		half length Z: " << fDz << " mm \n"
-     << "		starting phi : " << fSPhi / (UUtils::kPi / 180.0) << " degrees \n"
-     << "		delta phi		: " << fDPhi / (UUtils::kPi / 180.0) << " degrees \n"
+     << "                inner radius : " << fRMin << " mm \n"
+     << "                outer radius : " << fRMax << " mm \n"
+     << "                half length Z: " << fDz << " mm \n"
+     << "                starting phi : " << fSPhi / (UUtils::kPi / 180.0) << " degrees \n"
+     << "                delta phi    : " << fDPhi / (UUtils::kPi / 180.0) << " degrees \n"
      << "-----------------------------------------------------------\n";
   os.precision(oldprc);
 

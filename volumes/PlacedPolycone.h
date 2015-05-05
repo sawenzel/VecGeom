@@ -70,19 +70,18 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_NVCC
 
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual Precision Capacity() {
+  virtual Precision Capacity() override {
      return GetUnplacedVolume()->Capacity();
    }
 
-#ifdef VECGEOM_USOLIDS
   virtual
-  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  void Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const override
   {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
+
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
   //virtual
   //bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
@@ -96,21 +95,14 @@ public:
   //}
 
   virtual
-  Vector3D<Precision> GetPointOnSurface() const
-  {
+  Vector3D<Precision> GetPointOnSurface() const {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  virtual double SurfaceArea() {
+  virtual double SurfaceArea() override {
      return GetUnplacedVolume()->SurfaceArea();
   }
-
-  virtual std::string GetEntityType() const {
-      return "Polycone";
-  }
 #endif
-
-
 
 }; // end of class
 

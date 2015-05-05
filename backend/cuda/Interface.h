@@ -45,7 +45,11 @@ void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params);
 
 #endif
 
+#ifdef VECGEOM_NVCC
 namespace cxx {
+#else
+inline namespace cxx {
+#endif
 
 cudaError_t CudaCheckError(const cudaError_t err);
 

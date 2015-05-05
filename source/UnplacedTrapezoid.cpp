@@ -348,8 +348,7 @@ bool UnplacedTrapezoid::MakePlane(
   return good;
 }
 
-#ifdef VECGEOM_USOLIDS
-VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
 bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
 
   int noSurfaces = 0;
@@ -400,7 +399,7 @@ bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precis
     noSurfaces ++;
     sumnorm += Vec3D( fPlanes[0].fA, fPlanes[0].fB, fPlanes[0].fC );
   }
-#endif
+#endif  // VECGEOM_PLANESHELL_DISABLE
 
   if ( std::fabs(distz) <= kHalfTolerance) {
     noSurfaces ++;
@@ -425,7 +424,7 @@ bool UnplacedTrapezoid::Normal(Vector3D<Precision> const& point, Vector3D<Precis
   return noSurfaces != 0;
 }
 
-VECGEOM_CUDA_HEADER_BOTH
+
 void UnplacedTrapezoid::Extent(Vec3D& aMin, Vec3D& aMax) const {
   aMin.z() = -fDz;
   aMax.z() = fDz;
@@ -465,9 +464,7 @@ void UnplacedTrapezoid::Extent(Vec3D& aMin, Vec3D& aMax) const {
   extB = ext45<ext67 ? ext45 : ext67;
   aMin.y() = (extA < extB) ? extA : extB;
 }
-#endif
 
-VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedTrapezoid::SurfaceArea() const {
 
   Vec3D ba(fDx1 - fDx2 + fTanAlpha1 * 2 * fDy1, 2 * fDy1, 0);
@@ -502,7 +499,6 @@ Precision UnplacedTrapezoid::SurfaceArea() const {
   return surfArea;
 }
 
-#ifdef VECGEOM_USOLIDS
 Vec3D UnplacedTrapezoid::GetPointOnSurface() const {
 
   TrapCorners_t pt;
@@ -546,7 +542,6 @@ Vec3D UnplacedTrapezoid::GetPointOnSurface() const {
   return Vec3D(0.,0.,0.);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
 Vec3D UnplacedTrapezoid::GetPointOnPlane(Vec3D p0, Vec3D p1, Vec3D p2, Vec3D p3) const {
 
   Precision lambda1, lambda2, chose, aOne, aTwo;
@@ -569,24 +564,22 @@ Vec3D UnplacedTrapezoid::GetPointOnPlane(Vec3D p0, Vec3D p1, Vec3D p2, Vec3D p3)
 
   aTwo = 0.5 * Area.Mag();
 
-  chose = UUtils::Random(0., aOne + aTwo);
+  chose = RNG::Instance().uniform(0., aOne + aTwo);
 
   if ((chose >= 0.) && (chose < aOne)) {
-    lambda1 = UUtils::Random(0., 1.);
-    lambda2 = UUtils::Random(0., lambda1);
+    lambda1 = RNG::Instance().uniform(0., 1.);
+    lambda2 = RNG::Instance().uniform(0., lambda1);
     return (p2 + lambda1 * v + lambda2 * w);
   }
 
   // else
 
-  lambda1 = UUtils::Random(0., 1.);
-  lambda2 = UUtils::Random(0., lambda1);
+  lambda1 = RNG::Instance().uniform(0., 1.);
+  lambda2 = RNG::Instance().uniform(0., lambda1);
 
   return (p0 + lambda1 * t + lambda2 * u);
 }
-#endif
 
-VECGEOM_CUDA_HEADER_BOTH
 Vec3D UnplacedTrapezoid::ApproxSurfaceNormal(const Vec3D& point) const {
   Precision safe = kInfinity, Dist, safez;
   int i, imin = 0;
@@ -623,7 +616,6 @@ Vec3D UnplacedTrapezoid::ApproxSurfaceNormal(const Vec3D& point) const {
   return Vec3D(0.,0.,0.);
 }
 
-VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedTrapezoid::Volume() const {
 
   // cubic approximation used in Geant4
@@ -654,6 +646,7 @@ Precision UnplacedTrapezoid::Volume() const {
 
     return cubicVolume;
 }
+#endif // #ifndef VECGEOM_NVCC
 
 void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const pt) {
 

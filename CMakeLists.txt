@@ -34,8 +34,6 @@ option(DISTANCE_DEBUG "Enable comparison of calculated distances againt ROOT/Gea
 
 option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
 
-option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
-
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
 
@@ -142,8 +140,17 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
   endif()
+  set(VECGEOM_NVCC_COMPILATION_FLAGS -g -G ${VECGEOM_NVCC_COMPILATION_FLAGS})
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+  #set(VECGEOM_NVCC_COMPILATION_FLAGS -O3 ${VECGEOM_NVCC_COMPILATION_FLAGS})  # remove -use_fast_math
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
+  set(VECGEOM_NVCC_COMPILATION_FLAGS -g -G ${VECGEOM_NVCC_COMPILATION_FLAGS})
+endif()
+if (CMAKE_BUILD_TYPE MATCHES MinSizeRel)
+  set(VECGEOM_NVCC_COMPILATION_FLAGS -use_fast_math ${VECGEOM_NVCC_COMPILATION_FLAGS})
 endif()
 
 # Compiler specific optimization flags
@@ -188,15 +195,15 @@ if (CUDA)
     set(VECGEOM_COMPILATION_FLAGS
         "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_VOLUME_SPECIALIZATION")
   endif()
-  set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS}
+  set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS} 
       -std=c++11
       -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
   set(VECGEOM_NVCC_CONFIGS
         DEBUG -g -G
-        RELEASE  -O2 --use_fast_math
-        RELWITHDEBINFO -g -G  -O2 --use_fast_math
-        MINSIZEREL --use_fast_math )
+        RELEASE  -O3 -use_fast_math
+        RELWITHDEBINFO -g -G  -O3 -use_fast_math
+        MINSIZEREL -use_fast_math )
 endif()
 
 # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -267,7 +274,7 @@ if (Intel)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_INTEL}")
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-#set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
+#set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O3")
 
 message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
@@ -330,19 +337,19 @@ endif()
 
 if (USolids)
 
-  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
+  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIRS OR NOT USOLIDS_LIBRARIES_DIR))
     message(STATUS "Building with shipped USolids.")
     add_subdirectory(USolids)
     include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
     link_directories(${CMAKE_BINARY_DIR}/USolids)
   endif()
-  if (USOLIDS_INCLUDE_DIR)
-    include_directories(${USOLIDS_INCLUDE_DIR})
+  if (USOLIDS_INCLUDE_DIRS)
+    include_directories(${USOLIDS_INCLUDE_DIRS})
   elseif (USOLIDS_DIR)
     include_directories(${USOLIDS_DIR}/include)
   endif()
-  if (USOLIDS_LIBRARY_DIR)
-    link_directories(${USOLIDS_LIBRARY_DIR})
+  if (USOLIDS_LIBRARIES_DIR)
+    link_directories(${USOLIDS_LIBRARIES_DIR})
   elseif (USOLIDS_DIR)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
@@ -372,6 +379,7 @@ include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(SRC_CPP_RELATIVE
+  source/RNG.cpp
   source/AOS3D.cpp
   source/LogicalVolume.cpp
   source/PlacedCone.cpp
@@ -414,6 +422,9 @@ set(SRC_CPP_RELATIVE
 
   source/UnplacedPolycone.cpp
   source/PlacedPolycone.cpp
+  source/Wedge.cpp
+  source/ABBoxManager.cpp
+
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -455,15 +466,18 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
+    source/benchmarking/NavigationBenchmarker.cpp
     source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
     source/benchmarking/Benchmarker.cu
+    source/benchmarking/NavigationBenchmarker.cu
   )
 endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
   source/ShapeDebugger.cpp
+  source/CppExporter.cpp
 )
 
 # some CUDA kernel code in "userspace"
@@ -534,7 +548,7 @@ set(TEST_EXECUTABLES_CORE
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp      
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestVecGeomPolycone.cpp
 )
 
@@ -555,6 +569,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/DumpMotherDaughters.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
 )
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
@@ -607,7 +622,6 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
-
   ${CMAKE_SOURCE_DIR}/test/benchmark/PolyconeBenchmark.cpp
 )
 set(TEST_EXECUTABLES_CUDA
@@ -775,6 +789,8 @@ if (CUDA)
 endif()
 if (USolids)
   set(CONF_LIBRARIES ${CONF_LIBRARIES} "${CONF_LIBRARY_DIR}/libusolids.a")
+  configure_file(VecGeomConfig.cmake.in
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/USolidsConfig.cmake" @ONLY)
 endif()
 configure_file(VecGeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake" @ONLY)
@@ -783,6 +799,11 @@ configure_file(VecGeomConfig.cmake.in
 install(FILES
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake"
   DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+if (USolids)
+  install(FILES
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/USolidsConfig.cmake"
+    DESTINATION "${INSTALL_CMAKE_DIR}/../USolids" COMPONENT dev)
+endif()
 
 # Install headers and libraries
 foreach(FOLDER base benchmarking management navigation volumes backend)

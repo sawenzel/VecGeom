@@ -148,14 +148,14 @@ void UVCSGfaceted::DeleteStuff()
 /*
 VUSolid::EnumInside UVCSGfaceted::Inside( const UVector3 &p ) const
 {
-  VUSolid::EnumInside answer=vecgeom::EInside::kOutside;
+  VUSolid::EnumInside answer=EnumInside::eOutside;
   UVCSGface **face = faces;
   double best = UUtils::kInfinity;
   do
   {
     double distance;
     VUSolid::EnumInside result = (*face)->Inside( p, fgTolerance*0.5, &distance );
-    if (result == vecgeom::EInside::kSurface) { return vecgeom::EInside::kSurface; }
+    if (result == EnumInside::eSurface) { return EnumInside::eSurface; }
     if (distance < best)
     {
       best = distance;
@@ -178,16 +178,16 @@ VUSolid::EnumInside UVCSGfaceted::Inside( const UVector3 &p ) const
 //
 VUSolid::EnumInside UVCSGfaceted::InsideNoVoxels(const UVector3& p) const
 {
-  VUSolid::EnumInside answer = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside answer = EnumInside::eOutside;
   UVCSGface** face = faces;
   double best = UUtils::kInfinity;
   do
   {
     double distance;
     VUSolid::EnumInside result = (*face)->Inside(p, fgTolerance * 0.5, &distance);
-    if (result == vecgeom::EInside::kSurface)
+    if (result == EnumInside::eSurface)
     {
-      return vecgeom::EInside::kSurface;
+      return EnumInside::eSurface;
     }
     if (distance < best)
     {
@@ -378,7 +378,7 @@ double UVCSGfaceted::DistanceToOutNoVoxels(const UVector3& p, const UVector3&  v
   }
   else
   {
-    if (Inside(p) == vecgeom::EInside::kSurface)
+    if (Inside(p) == EnumInside::eSurface)
     {
       distance = 0;
     }
@@ -417,7 +417,7 @@ double UVCSGfaceted::DistanceTo(const UVector3& p,
 //
 UGeometryType UVCSGfaceted::GetEntityType() const
 {
-  return std::string("UCSGfaceted");
+  return std::string("VCSGfaceted");
 }
 
 
@@ -427,11 +427,11 @@ UGeometryType UVCSGfaceted::GetEntityType() const
 std::ostream& UVCSGfaceted::StreamInfo(std::ostream& os) const
 {
   os << "-----------------------------------------------------------\n"
-     << "		*** Dump for solid - " << GetName() << " ***\n"
-     << "		===================================================\n"
+     << "                *** Dump for solid - " << GetName() << " ***\n"
+     << "                ===================================================\n"
      << " Solid type: UVCSGfaceted\n"
      << " Parameters: \n"
-     << "		number of faces: " << numFace << "\n"
+     << "                number of faces: " << numFace << "\n"
      << "-----------------------------------------------------------\n";
 
   return os;
@@ -833,7 +833,7 @@ double UVCSGfaceted::DistanceToOut(const UVector3& p, const UVector3&  v, UVecto
   }
   else
   {
-    if (Inside(p) == vecgeom::EInside::kSurface)
+    if (Inside(p) == EnumInside::eSurface)
     {
       distance = 0;
     }
@@ -848,14 +848,14 @@ VUSolid::EnumInside UVCSGfaceted::Inside(const UVector3& p) const
 {
   if (fNoVoxels) return InsideNoVoxels(p);
 
-//  if (fEnclosingCylinder->MustBeOutside(p)) return vecgeom::EInside::kOutside;
+//  if (fEnclosingCylinder->MustBeOutside(p)) return EnumInside::eOutside;
 
   int index =  GetSection(p.z());
   double shift;
 
   UBits bits(numFace);
   double best = UUtils::kInfinity;
-  VUSolid::EnumInside answer = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside answer = EnumInside::eOutside;
   int middle = index;
 
   do
@@ -871,7 +871,7 @@ VUSolid::EnumInside UVCSGfaceted::Inside(const UVector3& p) const
 
         double distance;
         VUSolid::EnumInside result = face.Inside(p, fgTolerance * 0.5, &distance);
-        if (result == vecgeom::EInside::kSurface) return vecgeom::EInside::kSurface;
+        if (result == EnumInside::eSurface) return EnumInside::eSurface;
         if (distance < best)
         {
           best = distance;

@@ -188,49 +188,40 @@ public:
 
   /// @}
 
+#ifndef VECGEOM_NVCC
   // Computes capacity of the shape in [length^3]
-  VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const { return Volume();}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision SurfaceArea () const;
+  Precision SurfaceArea() const;
 
-#ifdef VECGEOM_USOLIDS
-  VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const;
-#endif
 
-  VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision>  GetPointOnSurface() const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnPlane(Vector3D<Precision> p0, Vector3D<Precision> p1,
                                       Vector3D<Precision> p2, Vector3D<Precision> p3) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return "Trapezoid";}
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const {;}
 
-  VECGEOM_CUDA_HEADER_BOTH
-  UnplacedTrapezoid* Clone() const {
-    return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
-                                 GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
-                                 GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
-  }
+  // VECGEOM_CUDA_HEADER_BOTH
+  // UnplacedTrapezoid* Clone() const {
+  //   return new UnplacedTrapezoid(GetDz(), GetTheta(), GetPhi(),
+  //                                GetDy1(), GetDx1(), GetDx2(), GetTanAlpha1(),
+  //                                GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
+  // }
 
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> ApproxSurfaceNormal(const Vector3D<Precision>& p) const;
 
   /// \brief Volume
-  VECGEOM_CUDA_HEADER_BOTH
   Precision Volume() const;
 
   /// \brief Calculate trapezoid parameters when user provides the 8 corners

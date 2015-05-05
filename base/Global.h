@@ -184,21 +184,23 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE{
 #ifdef VECGEOM_FLOAT_PRECISION
 typedef float Precision;
 #else
 typedef double Precision;
 #endif
-// namespace EInside {
-// enum EInside {
-//   kInside = 0,
-//   kSurface = 1,
-//   kOutside = 2
-// };
-// }
+ enum EnumInside {
+   eInside = 0, /* for USOLID compatibility */
+   kInside = eInside,
+   eSurface = 1,
+   kSurface = eSurface,
+   eOutside = 2,
+   kOutside = eOutside,
+ };
 // typedef EInside::EInside Inside_t;
 typedef int Inside_t;
-}
+}}
 
 //namespace vecgeom::cuda {
 //typedef vecgeom::Precision Precision;
@@ -247,7 +249,11 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
    };
 #endif
 
+#ifdef __MIC__
+VECGEOM_GLOBAL int kAlignmentBoundary = 64;
+#else
 VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+#endif
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
 VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
 VECGEOM_GLOBAL Precision kTwoPiInv = 1./kTwoPi;
@@ -320,10 +326,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void Assert(const bool condition, char const *const message) {
 #ifndef VECGEOM_NVCC
-  if (!condition) {
-    printf("Assertion failed: %s", message);
-    abort();
-  }
+  assert(condition && message);
 #else
   if (!condition) printf("Assertion failed: %s", message);
 #endif

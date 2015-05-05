@@ -6,8 +6,8 @@
 
 #ifndef VECGEOM_NVCC
   #include "base/RNG.h"
-#include <cassert>
-#include <cmath>
+  #include <cassert>
+  #include <cmath>
 #endif
 
 #include "management/VolumeFactory.h"
@@ -59,21 +59,20 @@ UnplacedOrb::UnplacedOrb() :
     fRTolO = fR +  fRTolerance;
   }
   
-  VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
-  void UnplacedOrb::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
-  {
-    // Returns the full 3D cartesian extent of the solid.
-      aMin.Set(-fR);
-      aMax.Set(fR);
-  }
-  
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetRadius();
   }
 
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
+#if !defined(VECGEOM_NVCC)
+  void UnplacedOrb::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
+  {
+    // Returns the full 3D cartesian extent of the solid.
+      aMin.Set(-fR);
+      aMax.Set(fR);
+  }
+
   Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
   {
   //  generate a random number from zero to 2UUtils::kPi...
@@ -88,13 +87,12 @@ UnplacedOrb::UnplacedOrb() :
 
   return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
   }
-#endif
-  
-  //VECGEOM_CUDA_HEADER_BOTH
+
   std::string UnplacedOrb::GetEntityType() const
   {
       return "Orb\n";
   }
+#endif  // !VECGEOM_NVCC
   
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* UnplacedOrb::Clone() const
@@ -108,13 +106,13 @@ UnplacedOrb::UnplacedOrb() :
   {
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
-   //  << "		*** Dump for solid - " << GetName() << " ***\n"
-   //  << "		===================================================\n"
+   //  << "     *** Dump for solid - " << GetName() << " ***\n"
+   //  << "     ===================================================\n"
    
    << " Solid type: UOrb\n"
      << " Parameters: \n"
 
-     << "		outer radius: " << fR << " mm \n"
+     << "       outer radius: " << fR << " mm \n"
      << "-----------------------------------------------------------\n";
    os.precision(oldprc);
 

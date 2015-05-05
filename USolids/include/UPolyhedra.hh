@@ -149,6 +149,7 @@ class UPolyhedra : public UVCSGfaceted
     UPolyhedra(const UPolyhedra& source);
     UPolyhedra& operator=(const UPolyhedra& source);
     // Copy constructor and assignment operator.
+
     void Extent(UVector3& aMin, UVector3& aMax) const;
 
   protected:  // without description
@@ -174,10 +175,8 @@ class UPolyhedra : public UVCSGfaceted
                                 UVector3 p2) const;
     UVector3 GetPointOnSurfaceCorners() const;
 
-   
+    
   protected:  // without description
-
-  //    friend class vecgeom::UnplacedPolyhedron;
 
     int   fNumSides;      // Number of sides
     double fStartPhi;    // Starting phi value (0 < phiStart < 2pi)

@@ -12,9 +12,9 @@
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParaboloid.h"
-#ifdef USOLIDS
-class VUSOLID;
-#endif
+// #ifdef USOLIDS
+// class VUSOLID;
+// #endif
 
 namespace vecgeom {
 
@@ -117,6 +117,7 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetTolOrhi2() const { return GetUnplacedVolume()->GetTolOrhi2(); }
     
+#if !defined(VECGEOM_NVCC)
     virtual
     bool Normal(Vector3D<Precision> const &, Vector3D<double> &normal) const {
       Assert(0, "Normal with point only not implemented for Paraboloid.\n");
@@ -125,21 +126,19 @@ public:
     
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
     
-    VECGEOM_CUDA_HEADER_BOTH
     virtual Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
-    Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
+    Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
 
-#if !defined(VECGEOM_NVCC) && defined(VECGEOM_USOLIDS)
     Vector3D<Precision> GetPointOnSurface() const {
       return GetUnplacedVolume()->GetPointOnSurface();
     }
-#endif
-
-    void ComputeBoundingBox() {  GetUnplacedVolumeNonConst()->ComputeBoundingBox() ;}
 
     virtual
     std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
+
+    void ComputeBoundingBox() {  GetUnplacedVolumeNonConst()->ComputeBoundingBox() ;}
 
     void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
