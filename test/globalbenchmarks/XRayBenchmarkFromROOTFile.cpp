@@ -16,6 +16,7 @@
 #include "base/Vector3D.h"
 #include "base/Stopwatch.h"
 #include "navigation/SimpleNavigator.h"
+#include "navigation/ABBoxNavigator.h"
 #include "base/Transformation3D.h"
 #include "base/SOA3D.h"
 #include <iostream>
@@ -228,6 +229,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
 } // end XRayWithROOT
 
 
+template<typename Nav_t = SimpleNavigator>
 void XRayWithVecGeom(int axis,
                   Vector3D<Precision> origin,
                   Vector3D<Precision> bbox,
@@ -300,7 +302,8 @@ if(VERBOSE){
             while( ! curnavstate->IsOutside() ) {
                 double step = 0;
                 newnavstate->Clear();
-                nav.FindNextBoundaryAndStep( p,
+                Nav_t navigator;
+                navigator.FindNextBoundaryAndStep( p,
                         dir,
                         *curnavstate,
                         *newnavstate,
@@ -831,6 +834,7 @@ int main(int argc, char * argv[])
 
     int *volume_result_Geant4= (int*) new int[data_size_y * data_size_x*3];
     int *volume_result_VecGeom= (int*) new int[data_size_y * data_size_x*3];
+    int *volume_result_VecGeomABB= (int*) new int[data_size_y * data_size_x*3];
 
     Stopwatch timer;
     timer.Start();
@@ -893,8 +897,10 @@ int main(int argc, char * argv[])
     // convert current gGeoManager to a VecGeom geometry
     RootGeoManager::Instance().LoadRootGeometry();
     std::cout << "Detector loaded " << "\n";
+    ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
+    std::cout << "voxelized " << "\n";
     timer.Start();
-    XRayWithVecGeom( axis,
+    XRayWithVecGeom<SimpleNavigator>( axis,
                Vector3D<Precision>(origin[0],origin[1],origin[2]),
                Vector3D<Precision>(dx,dy,dz),
                dir,
@@ -914,6 +920,32 @@ int main(int argc, char * argv[])
 
     std::cout << std::endl;
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    timer.Start();
+    XRayWithVecGeom<ABBoxNavigator>( axis,
+    Vector3D<Precision>(origin[0],origin[1],origin[2]),
+    Vector3D<Precision>(dx,dy,dz),
+    dir,
+    axis1_start, axis1_end,
+    axis2_start, axis2_end,
+    data_size_x, data_size_y,
+    pixel_axis,
+    volume_result_VecGeomABB );
+    timer.Stop();
+
+    std::stringstream VecGeomABBimage;
+    VecGeomABBimage << imagenamebase.str();
+    VecGeomABBimage << "_VecGeomABB.bmp";
+    make_bmp(volume_result_VecGeomABB, VecGeomABBimage.str().c_str(), data_size_x, data_size_y);
+
+    make_diff_bmp(volume_result_VecGeom, volume_result_VecGeomABB, "diffVecGeomSimplevsABB.bmp", data_size_x, data_size_y);
+    make_diff_bmp(volume_result, volume_result_VecGeomABB, "diffROOTVecGeomABB.bmp", data_size_x, data_size_y);
+
+
+    std::cout << std::endl;
+    std::cout << " VecGeom ABB Elapsed time : "<< timer.Elapsed() << std::endl;
+
+    return 0;
 
     // use the vector interface
     timer.Start();
@@ -1121,18 +1153,17 @@ int make_bmp(int const * volume_result, char const * name, int data_size_x, int 
 if( linear ){
       *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxcount)) * 256;
       *(imgdata+y*width_4*3+x*3+1)= (value/(1.*maxcount)) * 256;
-      *(imgdata+y*width_4*3+x*3+2)= (value/(1.*maxcount)) * 256;}
-      else
-      {
+      *(imgdata+y*width_4*3+x*3+2)= (value/(1.*maxcount)) * 256;
+}
+else {
           *(imgdata+y*width_4*3+x*3+0)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
           *(imgdata+y*width_4*3+x*3+1)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
           *(imgdata+y*width_4*3+x*3+2)= (log(value+1))/(1.*(log(1+maxcount))) * 256;
-      }
-      
-      x++;
-      origin_x++;
+}
+  x++;
+  origin_x++;
 
-      while( origin_x== data_size_x && padding_idx)
+  while( origin_x== data_size_x && padding_idx)
       {
 // padding 4-byte at bitmap image
         *(imgdata+y*width_4*3+x*3+0)= 0;

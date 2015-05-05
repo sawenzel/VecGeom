@@ -18,6 +18,8 @@
 #include "base/Transformation3D.h"
 #include "volumes/kernel/BoxImplementation.h"
 #include <map>
+//#undef NDEBUG
+#include <cassert>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -158,6 +160,14 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
                                         ) const
 {
    // this information might have been cached in previous navigators??
+#ifdef VERBOSE
+    static int counter = 0;
+    if( counter % 1 == 0 )
+    std::cerr << counter << " " << globalpoint << " \n";
+
+    counter++;
+#endif
+
    Transformation3D const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
    Vector3D<Precision> localpoint=m.Transform(globalpoint);
    Vector3D<Precision> localdir=m.TransformDirection(globaldir);
@@ -173,12 +183,20 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
    // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
     if( step < 0. )
     {
-       newstate = currentstate;
-       SimpleNavigator nav;
-       nav.RelocatePointFromPath( localpoint, newstate );
-       return;
+       // TODO: instead of directly exiting we could see whether we hit a daughter
+       // which is usally a logic thing to do
+      // std::cerr << "negative DO\n";
+     //  step = 0.;
+     //  currentstate.CopyTo(&newstate);
+     //  newstate.Pop();
+     //  SimpleNavigator nav;
+     //  nav.RelocatePointFromPath( localpoint, newstate );
+      // return;
+        step = kInfinity;
     }
 
+   // if( step > 1E20 )
+   //     std::cerr << "infinite DO\n";
    // TODO: compare steptoout and physics step and take minimum
 
 
@@ -188,47 +206,69 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
    LogicalVolume const * currentlvol = currentstate.Top()->GetLogicalVolume();
   // ABBoxManager::Instance().InitABBoxes( currentlvol );
 
-  // std::cerr << " I am in " << currentlvol->GetLabel() << "\n";
-  // std::cerr << " searching through " << currentlvol->daughtersp()->size() << " daughters\n";
-   ABBoxManager::HitContainer_t hitlist;
-   int size;
-   ABBoxManager::ABBoxContainer_t bboxes =  ABBoxManager::Instance().GetABBoxes( currentlvol , size );
-   GetHitCandidates( currentlvol,
+#ifdef VERBOSE
+   std::cerr << " I am in " << currentlvol->GetLabel() << "\n";
+#endif
+   if( currentlvol->daughtersp()->size() > 0 ){
+#ifdef VERBOSE
+       std::cerr << " searching through " << currentlvol->daughtersp()->size() << " daughters\n";
+#endif
+       ABBoxManager::HitContainer_t hitlist;
+        int size;
+        ABBoxManager::ABBoxContainer_t bboxes =  ABBoxManager::Instance().GetABBoxes( currentlvol , size );
+        GetHitCandidates( currentlvol,
                      localpoint,
                      localdir,
                      bboxes,
                      size, hitlist );
 
-   // sorting the histlist
-   ABBoxManager::sort( hitlist, ABBoxManager::HitBoxComparatorFunctor() );
+        // sorting the histlist
+        ABBoxManager::sort( hitlist, ABBoxManager::HitBoxComparatorFunctor() );
 
-   // assumption: here hitlist is sorted in ascending distance order
-   // std::cerr << " hitting " << hitlist.size() << " boundary boxes\n";
-   for( auto hitbox : hitlist )
-   {
-      VPlacedVolume const * candidate = LookupDaughter( currentlvol, hitbox.first );
+        // assumption: here hitlist is sorted in ascending distance order
+#ifdef VERBOSE
+        std::cerr << " hitting " << hitlist.size() << " boundary boxes\n";
+#endif
+        for( auto hitbox : hitlist )
+        {
+             VPlacedVolume const * candidate = LookupDaughter( currentlvol, hitbox.first );
 
-      // only consider those hitboxes which are within potential reach of this step
-      if( ! ( step < hitbox.second )) {
-    //      std::cerr << "checking id " << hitbox.first << " at box distance " << hitbox.second << "\n";
-          Precision ddistance = candidate->DistanceToIn( localpoint, localdir, step );
-      //    std::cerr << "distance to " << candidate->GetLabel() << " is " << ddistance << "\n";
-        nexthitvolume = (ddistance < step) ? hitbox.first : nexthitvolume;
-        step      = (ddistance < step) ? ddistance  : step;
-      }
+            // only consider those hitboxes which are within potential reach of this step
+            if( ! ( step < hitbox.second )) {
+            //      std::cerr << "checking id " << hitbox.first << " at box distance " << hitbox.second << "\n";
+             if( hitbox.second < 0 ){
+                bool checkindaughter = candidate->Contains( localpoint );
+                if( checkindaughter == true ){
+                    // need to relocate
+                    step = 0;
+                    nexthitvolume = hitbox.first;
+                    // THE ALTERNATIVE WOULD BE TO PUSH THE CURRENT STATE AND RETURN DIRECTLY
+                    break;
+                }
+            }
+            Precision ddistance = candidate->DistanceToIn( localpoint, localdir, step );
+#ifdef VERBOSE
+            std::cerr << "distance to " << candidate->GetLabel() << " is " << ddistance << "\n";
+#endif
+            nexthitvolume = (ddistance < step) ? hitbox.first : nexthitvolume;
+            step      = (ddistance < step) ? ddistance  : step;
+        }
       else
       {
           break;
       }
    }
+   }
 
    // now we have the candidates
    // try
-   newstate = currentstate;
+   currentstate.CopyTo(&newstate);
 
    // is geometry further away than physics step?
+   // not necessarily true
    if(step > pstep)
    {
+       assert( true && "impossible state");
        // don't need to do anything
        step = pstep;
        newstate.SetBoundaryState( false );
@@ -236,11 +276,30 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
    }
    newstate.SetBoundaryState( true );
 
+   assert( step >= 0 && "step negative");
+
+   if( step > 1E30 )
+     {
+      //std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
+           //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+
+           // set step to zero and retry one level higher
+           step = 0;
+           newstate.Pop();
+           return;
+      }
+
+      if( step < 0. )
+      {
+        //std::cout << "WARNING: STEP NEGATIVE\n";
+        //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+         step = 0.;
+      }
 
    // TODO: this is tedious, please provide operators in Vector3D!!
    // WE SHOULD HAVE A FUNCTION "TRANSPORT" FOR AN OPERATION LIKE THIS
    Vector3D<Precision> newpointafterboundary = localdir;
-   newpointafterboundary*=(step + 1e-9);
+   newpointafterboundary*=(step + 1e-6);
    newpointafterboundary+=localpoint;
 
    if( nexthitvolume != -1 ) // not hitting mother
@@ -251,11 +310,49 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
 
       SimpleNavigator nav;
       nav.LocatePoint( nextvol, trans->Transform(newpointafterboundary), newstate, false );
+      assert( newstate.Top() != currentstate.Top() && " error relocating when entering ");
+      return;
    }
-   else
+   else // hitting mother
    {
       SimpleNavigator nav;
       nav.RelocatePointFromPath( newpointafterboundary, newstate );
+
+
+      // can I push particle ?
+      int correctstep = 0;
+      while( newstate.Top() == currentstate.Top() )
+      {
+     //     newstate.Print();
+     //     step+=1E-6;
+     //     SimpleNavigator nav;
+     //     newstate.Clear();
+     //     nav.LocatePoint( GeoManager::Instance().GetWorld(), globalpoint + (step)*globaldir, newstate, true );
+     //     std::cerr << "correcting " << correctstep << " remaining dist to out "
+      //              << currentvolume->DistanceToOut( localpoint + step*localdir, localdir, pstep )
+      //              << " " << currentvolume->Contains( localpoint + step*localdir )
+      //    << " " << currentvolume->SafetyToIn( localpoint + step*localdir )
+      //    << " " << currentvolume->SafetyToOut( localpoint + step*localdir ) << "\n";
+      //    currentvolume->PrintType();
+
+      //    correctstep++;
+       //   std::cerr << "Matrix error " << const_cast<NavigationState &> ( currentstate ).CalcTransformError( globalpoint, globaldir );
+        newstate.Pop();
+      }
+//      if( newstate.Top() == currentstate.Top() )
+//      {
+//         std::cerr << "relocate failed; trying to locate from top for step " << step << "\n";
+//         newstate.Clear();
+//         SimpleNavigator nav;
+//         nav.LocatePoint( GeoManager::Instance().GetWorld(), globalpoint + (step+1E-6)*globaldir, newstate, true );
+//         //  std::cerr << "newstate top " << newstate.Top()->GetLabel() << "\n";
+//      }
+//      if( newstate.Top() == currentstate.Top() )
+//      {
+//         SimpleNavigator nav;
+//         nav.InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+//      }
+      assert( newstate.Top() != currentstate.Top() && " error relocating when leaving ");
    }
 }
 
