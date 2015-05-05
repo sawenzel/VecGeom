@@ -568,7 +568,6 @@ set(TEST_EXECUTABLES_ROOT
   # ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/DumpMotherDaughters.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
 )
 if(BENCHMARK)
