@@ -328,7 +328,8 @@ SimpleNavigator::HasSamePath( Vector3D<Precision> const & globalpoint,
                        NavigationState const & currentstate,
                        NavigationState & newstate ) const
 {
-   Transformation3D const & m = currentstate.TopMatrix();
+   Transformation3D m;
+   currentstate.TopMatrix(m);
    Vector3D<Precision> localpoint = m.Transform(globalpoint);
    newstate = currentstate;
    RelocatePointFromPath( localpoint, newstate );
@@ -347,7 +348,8 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 {
   static int counter=0;
    // this information might have been cached in previous navigators??
-   Transformation3D const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
+   Transformation3D m;
+   currentstate.TopMatrix(m);
    Vector3D<Precision> localpoint=m.Transform(globalpoint);
    Vector3D<Precision> localdir=m.TransformDirection(globaldir);
 
@@ -567,7 +569,8 @@ Precision SimpleNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
                             NavigationState const & currentstate) const
 {
    // this information might have been cached already ??
-   Transformation3D const & m = const_cast<NavigationState &>(currentstate).TopMatrix();
+   Transformation3D m;
+   currentstate.TopMatrix(m);
    Vector3D<Precision> localpoint=m.Transform(globalpoint);
 
    // safety to mother
@@ -601,7 +604,8 @@ void SimpleNavigator::GetSafeties(Container3D const & globalpoints,
     for( int i=0; i<np; ++i ){
        // TODO: we might be able to cache the matrices because some of the paths will be identical
        // need to have a quick way ( hash ) to compare paths
-       Transformation3D const & m = states[i]->TopMatrix();
+       Transformation3D m;
+       states[i]->TopMatrix(m);
        workspaceforlocalpoints.set(i, m.Transform( globalpoints[i] ));
     }
 
@@ -650,7 +654,8 @@ void SimpleNavigator::FindNextBoundaryAndStep(
    {
       // TODO: we might be able to cache the matrices because some of the paths will be identical
       // need to have a quick way ( hash ) to compare paths
-      Transformation3D const & m = currentstates[i]->TopMatrix();
+      Transformation3D m;
+      currentstates[i]->TopMatrix(m);
       localpoints.set(i, m.Transform(globalpoints[i]));
       localdirs.set(i, m.TransformDirection(globaldirs[i]));
    }

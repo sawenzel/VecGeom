@@ -168,7 +168,8 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
     counter++;
 #endif
 
-   Transformation3D const & m = const_cast<NavigationState &> ( currentstate ).TopMatrix();
+   Transformation3D m;
+   currentstate.TopMatrix(m);
    Vector3D<Precision> localpoint=m.Transform(globalpoint);
    Vector3D<Precision> localdir=m.TransformDirection(globaldir);
 
@@ -362,7 +363,8 @@ Precision ABBoxNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
                             NavigationState const & currentstate) const
 {
    // this information might have been cached already ??
-   Transformation3D const & m = const_cast<NavigationState &>(currentstate).TopMatrix();
+   Transformation3D m;
+   currentstate.TopMatrix(m);
    Vector3D<Precision> localpoint=m.Transform(globalpoint);
 
    // safety to mother

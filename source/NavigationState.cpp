@@ -34,15 +34,12 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint, int tole
 }
 
 VECGEOM_CUDA_HEADER_BOTH
-Transformation3D const &
-NavigationState::TopMatrix( int tolevel ) const {
-
-    global_matrix_.CopyFrom( *(fPath[0]->GetTransformation()) );
+void
+NavigationState::TopMatrix( int tolevel, Transformation3D & global_matrix ) const {
     for(int i=1;i<tolevel;++i)
     {
-       global_matrix_.MultiplyFromRight( *(fPath[i]->GetTransformation()) );
+       global_matrix.MultiplyFromRight( *(fPath[i]->GetTransformation()) );
     }
-    return global_matrix_;
 }
 
 
