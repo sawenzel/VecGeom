@@ -13,7 +13,7 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include <cassert>
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

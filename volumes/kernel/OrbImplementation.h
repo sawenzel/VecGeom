@@ -13,7 +13,7 @@
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

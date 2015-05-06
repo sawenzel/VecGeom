@@ -3,15 +3,13 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION_H_
 
-
 #include "base/Global.h"
 #include "base/Transformation3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/UnplacedTorus.h"
-//#include <math.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifndef VECGEOM_NVCC
 #include <iomanip>

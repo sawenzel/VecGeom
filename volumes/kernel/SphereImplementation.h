@@ -4,19 +4,13 @@
 
 #ifndef VECGEOM_VOLUMES_KERNEL_SPHEREIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_SPHEREIMPLEMENTATION_H_
-//#include "math.h"
 #include "base/Global.h"
 
 #include "base/Transformation3D.h"
 #include "volumes/UnplacedSphere.h"
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
-//#include <iomanip>
-//#include <Vc/Vc>
-//#include "TGeoShape.h"
-//#include "volumes/SphereUtilities.h"
-
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

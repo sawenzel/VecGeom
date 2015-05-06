@@ -9,7 +9,7 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

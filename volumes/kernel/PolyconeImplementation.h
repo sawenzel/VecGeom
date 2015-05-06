@@ -15,7 +15,7 @@
 #include "volumes/kernel/ConeImplementation.h"
 
 #include <cassert>
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

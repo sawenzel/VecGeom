@@ -4,14 +4,12 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_
 
-
 #include "base/Global.h"
 #include "base/Transformation3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
-
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

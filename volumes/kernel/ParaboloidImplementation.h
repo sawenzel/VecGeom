@@ -42,7 +42,7 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParaboloid.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
