@@ -127,15 +127,17 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillBiasedDirections(VPlacedVolume const &volume,
                           TrackContainer const &points,
-                          const Precision bias,
+                          Precision bias,
                           TrackContainer & dirs) {
   assert(bias >= 0. && bias <= 1.);
 
   if( bias>0. && volume.daughters().size()==0 ) {
     printf("\nFillBiasedDirections ERROR:\n bias=%f requested, but no daughter volumes found.\n", bias);
-    // should throw exception, but for now just abort
-    printf("FillBiasedDirections: aborting...\n");
-    exit(1);
+    //// should throw exception, but for now just abort
+    // printf("FillBiasedDirections: aborting...\n");
+    // exit(1);
+    ///== temporary: reset bias to zero
+    bias=0.0;
   }
 
   const int size = dirs.capacity();

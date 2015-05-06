@@ -45,7 +45,7 @@ void benchVecGeom( SOA3D<Precision> const & points, NavStatePool & statepool )
     Stopwatch timer;
     timer.Start();
     SimpleNavigator nav;
-    for(int i=0; i< points.size(); ++i){
+    for(unsigned int i=0; i< points.size(); ++i){
         nav.LocatePoint(
                 GeoManager::Instance().GetWorld(), points[i], *(statepool[i]), true );
     }
@@ -76,9 +76,9 @@ void benchGeant4( G4Navigator * nav, std::vector<G4ThreeVector> const & points,
     Stopwatch timer;
     timer.Start();
     G4VPhysicalVolume * vol;
-    for(int i=0; i < points.size(); ++i){
+    for(unsigned int i=0; i < points.size(); ++i){
         vol = nav->LocateGlobalPointAndSetup(points[i], NULL, false, true);
-
+        if(vol) ; // avoid compiler warning
         // this takes ages:
         // nav->LocateGlobalPointAndUpdateTouchable(points[i], pool[i], false);
     }
@@ -153,8 +153,8 @@ int main( int argc, char * argv[] )
     parser.Read( argv[2] );
 
     G4Navigator * nav = new G4Navigator();
-          nav->SetWorldVolume( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
-          nav->LocateGlobalPointAndSetup(G4ThreeVector(0,0,0), false );
+    nav->SetWorldVolume( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
+    nav->LocateGlobalPointAndSetup(G4ThreeVector(0,0,0), false );
     G4TouchableHistory ** Geant4statepool = new G4TouchableHistory*[npoints];
     for( int i=0;i<npoints;++i )
         {
