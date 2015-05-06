@@ -55,8 +55,10 @@ public:
     using FP_t = HitBoxComparatorFunctor;
 
 private:
-    ABBoxManager(){};
     std::map< LogicalVolume const *, ABBoxContainer_t > fVolToABBoxesMap;
+    // we have to make this thread safe
+    HitContainer_t fAllocatedHitContainer;
+
 
 public:
    // computes the aligned bounding box for a certain placed volume
@@ -95,6 +97,9 @@ public:
        return fVolToABBoxesMap[lvol];
     }
 
+    HitContainer_t & GetAllocatedHitContainer(){
+        return fAllocatedHitContainer;
+    }
 
 };
 
@@ -214,8 +219,9 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
 #ifdef VERBOSE
        std::cerr << " searching through " << currentlvol->daughtersp()->size() << " daughters\n";
 #endif
-       ABBoxManager::HitContainer_t hitlist;
-        int size;
+       ABBoxManager::HitContainer_t & hitlist = ABBoxManager::Instance().GetAllocatedHitContainer();
+       hitlist.clear();
+       int size;
         ABBoxManager::ABBoxContainer_t bboxes =  ABBoxManager::Instance().GetABBoxes( currentlvol , size );
         GetHitCandidates( currentlvol,
                      localpoint,
