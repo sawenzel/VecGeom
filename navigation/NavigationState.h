@@ -177,7 +177,10 @@ public:
       // in case NavigationState was a virtual class: change to
       // std::memcpy(other->DataStart(), DataStart(), DataSize());
       bool alloc = other->fPath.fSelfAlloc;
-      std::memcpy(other, this, this->SizeOf());
+      //std::memcpy(other, this, this->SizeOf());
+      // we only need to copy to relevant depth
+      std::memcpy(other,this, NavigationState::SizeOfInstance( this->GetCurrentLevel() ));
+
       other->fPath.fSelfAlloc = alloc;
    }
  
