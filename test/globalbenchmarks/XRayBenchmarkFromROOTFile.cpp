@@ -27,6 +27,10 @@
 #include <cassert>
 #include <sstream>
 
+#ifdef CALLGRIND
+#include "base/callgrind.h"
+#endif
+
 #include "TGeoManager.h"
 #include "TGeoBBox.h"
 #include "TGeoNavigator.h"
@@ -839,6 +843,9 @@ int main(int argc, char * argv[])
 
     Stopwatch timer;
     timer.Start();
+#ifdef CALLGRIND
+    CALLGRIND_START_INSTRUMENTATION;
+#endif
     XRayWithROOT( axis,
             Vector3D<Precision>(origin[0],origin[1],origin[2]),
             Vector3D<Precision>(dx,dy,dz),
@@ -848,6 +855,10 @@ int main(int argc, char * argv[])
             data_size_x, data_size_y,
             pixel_axis,
             volume_result );
+#ifdef CALLGRIND
+    CALLGRIND_STOP_INSTRUMENTATION;
+    CALLGRIND_DUMP_STATS;
+#endif
     timer.Stop();
 
     std::cout << std::endl;
@@ -901,6 +912,9 @@ int main(int argc, char * argv[])
     ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
     std::cout << "voxelized " << "\n";
     timer.Start();
+#ifdef CALLGRIND
+    CALLGRIND_START_INSTRUMENTATION;
+#endif
     XRayWithVecGeom<SimpleNavigator>( axis,
                Vector3D<Precision>(origin[0],origin[1],origin[2]),
                Vector3D<Precision>(dx,dy,dz),
@@ -910,6 +924,10 @@ int main(int argc, char * argv[])
                data_size_x, data_size_y,
                pixel_axis,
                volume_result_VecGeom );
+#ifdef CALLGRIND
+    CALLGRIND_START_INSTRUMENTATION;
+    CALLGRIND_DUMP_STATS;
+#endif
     timer.Stop();
 
     std::stringstream VecGeomimage;
@@ -923,6 +941,9 @@ int main(int argc, char * argv[])
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
 
     timer.Start();
+#ifdef CALLGRIND
+    CALLGRIND_START_INSTRUMENTATION;
+#endif
     XRayWithVecGeom<ABBoxNavigator>( axis,
     Vector3D<Precision>(origin[0],origin[1],origin[2]),
     Vector3D<Precision>(dx,dy,dz),
@@ -932,6 +953,10 @@ int main(int argc, char * argv[])
     data_size_x, data_size_y,
     pixel_axis,
     volume_result_VecGeomABB );
+#ifdef CALLGRIND
+    CALLGRIND_STOP_INSTRUMENTATION;
+    CALLGRIND_DUMP_STATS;
+#endif
     timer.Stop();
 
     std::stringstream VecGeomABBimage;
