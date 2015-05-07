@@ -56,14 +56,15 @@ if (USOLIDS)
 endif()
 
 if (GEANT4)
-  if (BENCHMARK)
-    set(Geant4 ON)
-  else()
-    message(WARNING
-      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
-    set(GEANT4 OFF)
-    set(Geant4 OFF)
-  endif()
+#  if (BENCHMARK)
+#    set(Geant4 ON)
+#  else()
+#    message(WARNING
+#      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
+#    set(GEANT4 OFF)
+#    set(Geant4 OFF)
+#  endif()
+   set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)

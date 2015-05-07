@@ -105,7 +105,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      return g4shape;
   }
 #endif
-#endif // VECGEOM_NVCC
+#endif // ! VECGEOM_NVCC
 
 }
 
