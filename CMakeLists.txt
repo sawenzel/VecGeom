@@ -571,6 +571,7 @@ if(BENCHMARK)
   ${TEST_EXECUTABLES_ROOT}
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile_WithVisualization.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/CompareDistances.cpp
 )
 endif()
 
