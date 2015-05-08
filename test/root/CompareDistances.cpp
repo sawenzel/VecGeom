@@ -74,7 +74,6 @@ int main( int argc, char *argv[] ) {
         std::cout << "VecGeom Capacity " << vecgeomplaced->Capacity( ) << "\n";
         std::cout << "VecGeom CONTAINS " << vecgeomplaced->Contains( point ) << "\n";
         std::cout << "VecGeom DI " << vecgeomplaced->DistanceToIn( point, dir ) << "\n";
-        std::cout << "VecGeom -DI " << vecgeomplaced->DistanceToIn( point, -dir ) << "\n";
         std::cout << "VecGeom DO " << vecgeomplaced->DistanceToOut( point, dir ) << "\n";
         std::cout << "VecGeom SI " << vecgeomplaced->SafetyToIn( point ) << "\n";
         std::cout << "VecGeom SO " << vecgeomplaced->SafetyToOut( point ) << "\n";
@@ -101,8 +100,8 @@ int main( int argc, char *argv[] ) {
 
         Vector3D<Precision> norm; bool valid;
         std::cout << "USolids DO " << usolid->DistanceToOut( point, dir, norm, valid ) << "\n";
-       // std::cout << "USolids SI " << usolid->SafetyToIn( point ) << "\n";
-       // std::cout << "USolids SO " << usolid->SafetyToOut( point ) << "\n";
+        std::cout << "USolids SI " << usolid->SafetyFromInside( point ) << "\n";
+        std::cout << "USolids SO " << usolid->SafetyFromOutside( point ) << "\n";
 #endif
 
 #ifdef VECGEOM_GEANT4
