@@ -11,11 +11,11 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-class MyF64vec8;
+class MicVectorRegister;
 
 struct kMic {
   typedef Is32vec16 int_v;
-  typedef MyF64vec8 precision_v;
+  typedef MicVectorRegister precision_v;
   typedef VecMask16 bool_v;
   typedef Is32vec16 inside_v;
   constexpr static bool early_returns = false;
@@ -25,9 +25,9 @@ struct kMic {
   const static bool_v kFalse;
   // alternative typedefs ( might supercede above typedefs )
   typedef Is32vec16 Int_t;
-  typedef MyF64vec8 Double_t;
+  typedef MicVectorRegister Double_t;
   typedef Is32vec16 Bool_t;
-  typedef MyF64vec8 Index_t;
+  typedef MicVectorRegister Index_t;
 };
 
 constexpr int kVectorSize = 8;
@@ -37,28 +37,28 @@ typedef kMic::precision_v MicPrecision;
 typedef kMic::bool_v      MicBool;
 typedef kMic::inside_v    MicInside;
 
-class MyF64vec8 : public F64vec8 {
+class MicVectorRegister : public F64vec8 {
 
 public:
-  MyF64vec8() : F64vec8() {}
-  MyF64vec8(__m512d m) : F64vec8(m) {}
-  MyF64vec8(const double d) : F64vec8(d) {}
-  MyF64vec8(double d[8]) : F64vec8(d) {}
-  MyF64vec8(F64vec8 m) : MyF64vec8((__m512d)m) {}
+  MicVectorRegister() : F64vec8() {}
+  MicVectorRegister(__m512d m) : F64vec8(m) {}
+  MicVectorRegister(const double d) : F64vec8(d) {}
+  MicVectorRegister(double d[8]) : F64vec8(d) {}
+  MicVectorRegister(F64vec8 m) : MicVectorRegister((__m512d)m) {}
 
   VECGEOM_INLINE
-  MyF64vec8 operator = (Precision const &val) {
-    return MyF64vec8(vec = _mm512_set1_pd(val));
+  MicVectorRegister operator = (Precision const &val) {
+    return MicVectorRegister(vec = _mm512_set1_pd(val));
   }
 
   VECGEOM_INLINE
-  MyF64vec8 operator = (MyF64vec8 const &val) {
-    return MyF64vec8(vec = val.vec);
+  MicVectorRegister operator = (MicVectorRegister const &val) {
+    return MicVectorRegister(vec = val.vec);
   }
 
   VECGEOM_INLINE
-  MyF64vec8 operator + (Precision const &val) const {
-    return (*this) * MyF64vec8(val);
+  MicVectorRegister operator + (Precision const &val) const {
+    return (*this) * MicVectorRegister(val);
   }
 
 };
