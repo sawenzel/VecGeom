@@ -1,37 +1,78 @@
 /// \file vc/backend.h
-/// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
-#ifndef VECGEOM_BACKEND_VCBACKEND_H_
-#define VECGEOM_BACKEND_VCBACKEND_H_
+#ifndef VECCORE_BACKEND_VCBACKEND_H_
+#define VECCORE_BACKEND_VCBACKEND_H_
 
-#include "base/Global.h"
-
+#include "VecCoreGlobal.h"
 #include "backend/scalar/Backend.h"
 
 #include <Vc/Vc>
 
-namespace vecgeom {
+namespace VecCore {
+
+namespace Backend {
+
+namespace Vector {
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+
+template< typename Real_t = VecCore::DefaultPrecision_t >
 struct kVc {
-  typedef Vc::int_v                   int_v;
-  typedef Vc::Vector<Precision>       precision_v;
-  typedef Vc::Vector<Precision>::Mask bool_v;
-  typedef Vc::Vector<int>             inside_v;
-  constexpr static bool early_returns = false;
-  const static precision_v kOne;
-  const static precision_v kZero;
-  const static bool_v kTrue;
-  const static bool_v kFalse;
+  // The convention for type names is
+  // _t is a type but it should be a primitive or otherwise scalar type
+  // _v means that this type could potentially be a vector type ( but not necessarily )
+
+  // define the base primitive type
+  typedef Real_t                      Real_t;
+  // we could define the other base primitive types
+  typedef double                      Double_t;
+  typedef double                      Float_t;
+
+  // define vector types for wanted precision
+  typedef Vc::Vector<Real_t>          Real_v;
+  typedef Vc::Vector<Real_t>::Mask    Bool_v; // ( should we call this RealBool )
+
+  // define vector types for standard double + float types
+  typedef Vc::Vector<double>          Double_v;
+  typedef Vc::Vector<float>           Float_v;
+  typedef Vc::Vector<double>::Mask    DoubleBool_v;
+  typedef Vc::Vector<float>::Mask     FloatBool_v;
+
+  typedef Vc::int_v                   Int_v;
+  typedef Int_v                       Inside_v;
+
   // alternative typedefs ( might supercede above typedefs )
-  typedef Vc::int_v                   Int_t;
-  typedef Vc::Vector<Precision>       Double_t;
-  typedef Vc::Vector<Precision>::Mask Bool_t;
-  typedef Vc::Vector<Precision>       Index_t;
+  // We can no longer define Double_t like this this !!
+  //typedef Vc::int_v                   Int_t;
+  //typedef Vc::Vector<Precision>       Double_t;
+  //typedef Vc::Vector<Precision>::Mask Bool_t;
+  typedef Vc::Vector<Real_t>          Index_t;
+
+  // numeric constants of this backend
+  const static Real_v kOne;
+  const static Real_v kZero;
+  const static Bool_v kTrue;
+  const static Bool_v kFalse;
+
+  // what about numeric constants for Double_v or Float_v
+  // could by like
+  const static Double_v kDoubleOne;
+  const static Double_v kDoubleZero;
+  const static DoubleBool_v kDoubleTrue;
+  const static DoubleBool_v kDoubleFalse;
+
+  // other properties of this backend
+  constexpr static bool early_returns = false;
+
+  // the VectorSizes
+  constexpr int kRealVectorSize = Real_v::Size;
+  constexpr int kDoubleVectorSize = Double_v::Size;
+  constexpr int kFloatVectorSize = Float_v::Size;
+  // ... in principle also kIntVectorSize ...
 };
 
-constexpr int kVectorSize = kVc::precision_v::Size;
-
+// these have to be replace by something like BackendInt, BackendReal, ...
 typedef kVc::int_v       VcInt;
 typedef kVc::precision_v VcPrecision;
 typedef kVc::bool_v      VcBool;
@@ -172,7 +213,11 @@ VcPrecision Floor( VcPrecision const &val ){
 
 } // End inline namespace
 
+} // end Vector namespace
+
+} // end Backend namespace
+
 } // End global namespace
 
 
-#endif // VECGEOM_BACKEND_VCBACKEND_H_
+#endif // VECCORE_BACKEND_VCBACKEND_H_
