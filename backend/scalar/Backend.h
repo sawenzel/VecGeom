@@ -205,14 +205,14 @@ VECGEOM_INLINE
 Precision Floor( Precision val ){
     return std::floor(val);
 }
-/* This comment were made because of MPSS error, in order to make either native mode or offload mode.
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void swap(Type &a, Type &b) {
   std::swap(a, b);
 }
-*/
+
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
