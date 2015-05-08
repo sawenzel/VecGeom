@@ -237,6 +237,16 @@ public:
     return Vector3D<Type>(*this) * (1. / Length());
   }
 
+  // checks if vector is normalized
+  // only reasonable to call with standard scalare usage
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool IsNormalized() const {
+      // static_assert here that Type should be primitive type
+      Precision norm = Mag2();
+      return 1.-vecgeom::kTolerance < norm && norm < 1 + vecgeom::kTolerance;
+  }
+
   /// \return Azimuthal angle between -pi and pi.
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -549,6 +559,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Normalized() const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  bool IsNormalized() const {
+      Precision norm = Mag2();
+      return 1.-vecgeom::kTolerance < norm && norm < 1 + vecgeom::kTolerance;
+  }
 
   VECGEOM_INLINE
   void Map(Precision (*f)(const Precision&)) {
