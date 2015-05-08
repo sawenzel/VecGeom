@@ -188,7 +188,10 @@ public:
   virtual Precision DistanceToIn(Vector3D<Precision> const &point,
                                  Vector3D<Precision> const &direction,
                                  const Precision stepMax = kInfinity) const {
-    Precision output = kInfinity;
+#ifndef VECGEOM_NVCC
+      assert( direction.IsNormalized() && " direction not normalized in call to  DistanceToIn " );
+#endif
+      Precision output = kInfinity;
     Specialization::template DistanceToIn<kScalar>(
       *this->GetUnplacedVolume(),
       *this->GetTransformation(),
@@ -209,6 +212,9 @@ public:
   virtual Precision DistanceToOut(Vector3D<Precision> const &point,
                                   Vector3D<Precision> const &direction,
                                   const Precision stepMax = kInfinity) const {
+#ifndef VECGEOM_NVCC
+      assert( direction.IsNormalized() && " direction not normalized in call to  DistanceToOut " );
+#endif
     Precision output = kInfinity;
     Specialization::template DistanceToOut<kScalar>(
       *this->GetUnplacedVolume(),
@@ -231,6 +237,9 @@ public:
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point,
                                         Vector3D<Precision> const &direction,
                                         const Precision stepMax = kInfinity) const {
+#ifndef VECGEOM_NVCC
+      assert( direction.IsNormalized() && " direction not normalized in call to  PlacedDistanceToOut " );
+#endif
      Precision output = kInfinity;
      Transformation3D const * t = this->GetTransformation();
      Specialization::template DistanceToOut<kScalar>(
