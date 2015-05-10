@@ -7,7 +7,8 @@
 
 #include "navigation/ABBoxNavigator.h"
 #include "volumes/UnplacedBox.h"
-#include "utilities/Visualizer.h"
+//#include "backend/vc/Backend.h"
+#include "backend/vcfloat/Backend.h"
 #undef NDEBUG
 #include <cassert>
 
@@ -69,6 +70,36 @@ inline namespace cxx {
 #endif
     return hitcount;
 }
+
+ // vector version
+ int ABBoxNavigator::GetHitCandidates_v(
+                          LogicalVolume const * lvol,
+                          Vector3D<Precision> const & point,
+                          Vector3D<Precision> const & dir,
+                          ABBoxManager::ABBoxContainer_v const & corners, int size,
+                          ABBoxManager::HitContainer_t & hitlist) const {
+
+     Vector3D<float> invdirfloat(1.f/(float)dir.x(), 1.f/(float)dir.y(), 1.f/(float)dir.z());
+     Vector3D<float> pfloat((float)point.x(), (float)point.y(), (float)point.z());
+
+     int vecsize = size;
+     int hitcount = 0;
+     int sign[3]; sign[0] = invdirfloat.x() < 0; sign[1] = invdirfloat.y() < 0; sign[2] = invdirfloat.z() < 0;
+     for( auto box = 0; box < vecsize; ++box ){
+          ABBoxManager::Real_v distance = BoxImplementation<translation::kIdentity,
+                  rotation::kIdentity>::IntersectCachedKernel2<kVcFloat, ABBoxManager::Real_t>(
+                        &corners[2*box], pfloat, invdirfloat, sign[0], sign[1], sign[2], 0,
+                        static_cast<float>(vecgeom::kInfinity) );
+          ABBoxManager::Bool_v hit = distance < static_cast<float>(vecgeom::kInfinity);
+          // this is Vc specific
+          // a little tricky: need to iterate over the mask -- this does not easily work with scalar types
+          for(auto i=0; i < kVcFloat::precision_v::Size; ++i){
+          if( hit[i] )
+              hitlist.push_back( ABBoxManager::BoxIdDistancePair_t( box * kVcFloat::precision_v::Size + i, distance[i]) );
+          }
+     }
+     return hitcount;
+ }
 
 void ABBoxManager::ComputeABBox( VPlacedVolume const * pvol, ABBox_t * lowerc, ABBox_t * upperc ) {
         // idea: take the 8 corners of the bounding box in the reference frame of pvol
@@ -138,11 +169,15 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
             RemoveABBoxes(lvol);
         }
         int ndaughters = lvol->daughtersp()->size();
-        // is this insertion correct ?
         ABBox_t * boxes = new ABBox_t[ 2*ndaughters ];
         fVolToABBoxesMap[lvol] = boxes;
 
-        Visualizer visualizer;
+        // same for the vector part
+        int extra = (ndaughters % Real_v::Size > 0) ? 1 : 0;
+        int size = 2 * ( ndaughters / Real_v::Size + extra );
+        ABBox_v * vectorboxes =  new ABBox_v[ size ];
+        fVolToABBoxesMap_v[lvol] = vectorboxes;
+
         // calculate boxes by iterating over daughters
         for(int d=0;d<ndaughters;++d){
             auto pvol = lvol->daughtersp()->operator [](d);
@@ -153,10 +188,10 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
             Vector3D<Precision> upper = boxes[2*d+1];
 
             Vector3D<Precision> delta = (upper - lower)/2.;
-           Vector3D<Precision> boxtranslation = (lower + upper)/2.;
-           UnplacedBox box(delta);
-           Transformation3D tr( boxtranslation.x(), boxtranslation.y(), boxtranslation.z() );
-           VPlacedVolume const * boxplaced = LogicalVolume("",&box).Place(&tr);
+            Vector3D<Precision> boxtranslation = (lower + upper)/2.;
+            UnplacedBox box(delta);
+            Transformation3D tr( boxtranslation.x(), boxtranslation.y(), boxtranslation.z() );
+            VPlacedVolume const * boxplaced = LogicalVolume("",&box).Place(&tr);
 //                   int contains = 0;
 //                   for(int i=0;i<10000;++i)
 //                   {
@@ -165,11 +200,45 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
 //                       if( pvol->Contains( p ) ) contains++;
 //                   }
 //                   if( contains > 10){
-            visualizer.AddVolume(*pvol, *pvol->GetTransformation());
-            visualizer.AddVolume(*boxplaced, tr );
 #endif
         }
-     //    visualizer.Show();
+
+
+        // initialize vector version of Container
+        int index=0;
+        int assignedscalarvectors=0;
+        for(int i=0; i < ndaughters; i+= Real_v::Size )
+        {
+            Vector3D<Real_v> lower;
+            Vector3D<Real_v> upper;
+            // assign by components
+            for( int k=0;k<Real_v::Size;++k ){
+                if(2*(i+k) < 2*ndaughters )
+                {
+                    lower.x()[k] = boxes[2*(i+k)].x();
+                    lower.y()[k] = boxes[2*(i+k)].y();
+                    lower.z()[k] = boxes[2*(i+k)].z();
+                    upper.x()[k] = boxes[2*(i+k)+1].x();
+                    upper.y()[k] = boxes[2*(i+k)+1].y();
+                    upper.z()[k] = boxes[2*(i+k)+1].z();
+                    assignedscalarvectors+=2;
+                }
+                else{
+                    // filling in bounding boxes of zero size
+                    // better to put some irrational number than 0?
+                    lower.x()[k] = 0.;
+                    lower.y()[k] = 0.;
+                    lower.z()[k] = 0.;
+                    upper.x()[k] = 0.;
+                    upper.y()[k] = 0.;
+                    upper.z()[k] = 0.;
+                }
+             }
+            vectorboxes[index++] = lower;
+            vectorboxes[index++] = upper;
+        }
+        assert( index == size );
+        assert( assignedscalarvectors == 2*ndaughters );
 }
 
 

@@ -17,6 +17,7 @@
 #include "navigation/NavigationState.h"
 #include "base/Transformation3D.h"
 #include "volumes/kernel/BoxImplementation.h"
+#include "backend/vc/Backend.h"
 #include <map>
 //#undef NDEBUG
 #include <cassert>
@@ -26,15 +27,20 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 // Singleton class for ABBox manager
 // keeps a (centralized) map of volume pointers to vectors of aligned bounding boxes
-// the alternative would to include such a thing into logical volumes
+// the alternative would be to include such a thing into logical volumes
 class ABBoxManager {
 public:
     // scalar or vector vectors
     typedef Vector3D<Precision> ABBox_t;
+    typedef Vc::float_v Real_v;
+    typedef Vc::float_m Bool_v;
+    typedef float Real_t;
+    typedef Vector3D<Real_v> ABBox_v;
 
     // use old style arrays here as std::vector has some problems
     // with Vector3D<kVc::Double_t>
     typedef ABBox_t * ABBoxContainer_t;
+    typedef ABBox_v * ABBoxContainer_v;
 
     typedef std::pair<int, double> BoxIdDistancePair_t;
     typedef std::vector<BoxIdDistancePair_t> HitContainer_t;
@@ -56,6 +62,8 @@ public:
 
 private:
     std::map< LogicalVolume const *, ABBoxContainer_t > fVolToABBoxesMap;
+    std::map< LogicalVolume const *, ABBoxContainer_v > fVolToABBoxesMap_v;
+
     // we have to make this thread safe
     HitContainer_t fAllocatedHitContainer;
 
@@ -97,12 +105,29 @@ public:
        return fVolToABBoxesMap[lvol];
     }
 
+    // returns the Container for a given logical volume or NULL if
+    // it does not exist
+    ABBoxContainer_v GetABBoxes_v( LogicalVolume const * lvol, int & size ) {
+      int ndaughters = lvol->daughtersp()->size();
+      int extra = (ndaughters % Real_v::Size > 0) ? 1 : 0;
+      size = ndaughters / Real_v::Size + extra;
+      return fVolToABBoxesMap_v[lvol];
+    }
+
     HitContainer_t & GetAllocatedHitContainer(){
         return fAllocatedHitContainer;
     }
 
 };
 
+// output for hitboxes
+template <typename stream>
+stream & operator<<(stream & s, std::vector<ABBoxManager::BoxIdDistancePair_t> const & list){
+    for(auto i : list){
+        s << "(" << i.first << "," << i.second << ")" << " ";
+    }
+    return s;
+}
 
 // A navigator using aligned bounding box = ABBox (hierarchies) to quickly find
 // potential hit targets.
@@ -124,6 +149,12 @@ public:
           ABBoxManager::HitContainer_t & hitlist
   ) const;
 
+  int GetHitCandidates_v( LogicalVolume const * lvol,
+            Vector3D<Precision> const & point,
+            Vector3D<Precision> const & dir,
+            ABBoxManager::ABBoxContainer_v const & corners, int size,
+            ABBoxManager::HitContainer_t & hitlist
+  ) const;
 
   // convert index to physical daugher
   VPlacedVolume const * LookupDaughter( LogicalVolume const *lvol, int id ) const {
@@ -154,7 +185,7 @@ public:
    ) const;
 }; // end of class declaration
 
-
+//#define VERBOSE
 void
 ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint,
                                           Vector3D<Precision> const & globaldir,
@@ -219,15 +250,33 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
 #ifdef VERBOSE
        std::cerr << " searching through " << currentlvol->daughtersp()->size() << " daughters\n";
 #endif
-       ABBoxManager::HitContainer_t & hitlist = ABBoxManager::Instance().GetAllocatedHitContainer();
-       hitlist.clear();
+     ABBoxManager::HitContainer_t & hitlist = ABBoxManager::Instance().GetAllocatedHitContainer();
+//       hitlist.clear();
        int size;
-        ABBoxManager::ABBoxContainer_t bboxes =  ABBoxManager::Instance().GetABBoxes( currentlvol , size );
-        GetHitCandidates( currentlvol,
-                     localpoint,
-                     localdir,
-                     bboxes,
-                     size, hitlist );
+//       ABBoxManager::ABBoxContainer_t bboxes1 =  ABBoxManager::Instance().GetABBoxes( currentlvol , size );
+//       GetHitCandidates( currentlvol,
+//                         localpoint,
+//                         localdir,
+//                         bboxes1,
+//                        size, hitlist );
+#ifdef VERBOSE
+       int c1 = hitlist.size();
+      std::cerr << hitlist << "\n";
+#endif
+       hitlist.clear();
+       ABBoxManager::ABBoxContainer_v bboxes =  ABBoxManager::Instance().GetABBoxes_v( currentlvol , size );
+            GetHitCandidates_v( currentlvol,
+                          localpoint,
+                          localdir,
+                          bboxes,
+                          size, hitlist );
+#ifdef VERBOSE
+            int c2 = hitlist.size();
+        std::cerr << hitlist << "\n";
+        std::cerr << " hitting scalar " << c1 << " vs vector " << c2 << "\n";
+ if( c1 != c2 )
+     std::cerr << "HUHU " << c1 << " " << c2;
+        #endif
 
         // sorting the histlist
         ABBoxManager::sort( hitlist, ABBoxManager::HitBoxComparatorFunctor() );
