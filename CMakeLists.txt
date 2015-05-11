@@ -299,6 +299,13 @@ if (VC_ACCELERATION OR Vc)
 
 endif()
 
+if (OFFLOAD_MODE)
+  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/mic/Backend.cpp)
+  # This must be changed to an automatic way...
+  set(MICVEC "/opt/intel/composer_xe_2015.2.164/compiler/include/mic")
+  include_directories(${MICVEC})
+endif()
+
 if (Cilk)
 
   if (NOT Intel)

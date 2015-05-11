@@ -268,6 +268,9 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #if defined (__MIC__)
   VECGEOM_GLOBAL int kAlignmentBoundary = 64;
+  #ifdef OFFLOAD_MODE
+    #define MIC_SIDE 1
+  #endif
 #else
   VECGEOM_GLOBAL int kAlignmentBoundary = 32;
 #endif

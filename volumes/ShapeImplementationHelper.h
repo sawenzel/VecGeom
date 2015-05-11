@@ -22,16 +22,21 @@
 #include "volumes/utilities/ResultComparator.h"
 #endif
 
-#ifdef VECGEOM_SCALAR
-#define VECGEOM_BACKEND_TYPE         kScalar
-#define VECGEOM_BACKEND_PRECISION(P) (*(P))
-#define VECGEOM_BACKEND_BOOL         ScalarBool
-#define VECGEOM_BACKEND_INSIDE       kScalar::inside_v
-#elif VECGEOM_VC
+#ifdef VECGEOM_VC
 #define VECGEOM_BACKEND_TYPE         kVc
 #define VECGEOM_BACKEND_PRECISION    VcPrecision
 #define VECGEOM_BACKEND_BOOL         VcBool
 #define VECGEOM_BACKEND_INSIDE       kVc::inside_v
+#elif MIC_SIDE
+#define VECGEOM_BACKEND_TYPE         kMic
+#define VECGEOM_BACKEND_PRECISION    MicPrecision
+#define VECGEOM_BACKEND_BOOL         MicBool
+#define VECGEOM_BACKEND_INSIDE       kMic::inside_v
+#elif VECGEOM_SCALAR
+#define VECGEOM_BACKEND_TYPE         kScalar
+#define VECGEOM_BACKEND_PRECISION(P) (*(P))
+#define VECGEOM_BACKEND_BOOL         ScalarBool
+#define VECGEOM_BACKEND_INSIDE       kScalar::inside_v
 #endif
 
 namespace vecgeom {
@@ -367,6 +372,9 @@ public:
                             SOA3D<Precision> const &directions,
                             Precision const *const stepMax,
                             Precision *const output) const {
+#ifdef MIC_SIDE
+  #pragma omp parallel for
+#endif
     for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
       Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
         VECGEOM_BACKEND_PRECISION(points.x()+i),
@@ -390,6 +398,8 @@ public:
       );
 #ifdef VECGEOM_VC
       result.store(&output[i]);
+#elif MIC_SIDE
+      _mm512_store_pd(output+i,result);
 #elif VECGEOM_SCALAR
       output[i] = result;
 #endif
