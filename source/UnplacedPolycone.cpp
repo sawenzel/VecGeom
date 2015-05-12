@@ -656,7 +656,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
                     fZs[0]);
   }
 
-  for (i = 0; i < numPlanes - 1; i++)
+  for (i = 0; i < numPlanes ; i++)
   {
     Achose1 += areas[i];
     Achose2 = (Achose1 + areas[i + 1]);
@@ -686,14 +686,14 @@ bool UnplacedPolycone::Normal(Vector3D<Precision> const& point, Vector3D<Precisi
      int index = GetSectionIndex(point.z());
     
      if(index < 0)
-      {valid = true;
-     if(index == -1) norm = Vector3D<Precision>(0.,0.,-1.);
-     if(index == -2)  norm  = Vector3D<Precision>(0.,0.,1.);
-         return valid;
+     {
+       valid = true;
+       if(index == -1) norm = Vector3D<Precision>(0.,0.,-1.);
+       if(index == -2)  norm  = Vector3D<Precision>(0.,0.,1.);
+       return valid;
       } 
-     //PolyconeSection const & sec = GetSection(index);
-      //TODO Normal to Section, need Normal from Cone impemenation
-     valid = false;//sec.fSolid->Normal(point,norm);
+     PolyconeSection const & sec = GetSection(index);
+     valid = sec.fSolid->Normal(point,norm);
      return valid;
 
 }    
