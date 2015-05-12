@@ -61,9 +61,8 @@ int main()
 
     assert(  poly1.fZs[0] == z[0] );
     assert(  poly1.fZs[poly1.GetNSections()] == z[Nz-1] );
-
     assert( poly1.Capacity() > 0 );
-    assert( poly1.Capacity() == section0.Capacity() + section1.Capacity() + section2.Capacity() );
+    assert( std::fabs(poly1.Capacity() - ( section0.Capacity() + section1.Capacity() + section2.Capacity() ))< 1e-6);
 
     // create a place version
     VPlacedVolume const * placedpoly1 = (new LogicalVolume("poly1", &poly1))->Place( new Transformation3D( ) );
