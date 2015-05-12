@@ -38,7 +38,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
     const double kHalfTolerance = 0.5 * kTolerance;
   
-    Vector3D<Precision> sumnorm(0., 0., 0.), nZ = UVector3(0., 0., 1.);
+    Vector3D<Precision> sumnorm(0., 0., 0.), nZ =  Vector3D<Precision> (0., 0., 1.);
     Vector3D<Precision> nR, nr(0., 0., 0.), nPs, nPe;
 
     distZ = std::fabs(std::fabs(p.z()) - fDz);
