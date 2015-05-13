@@ -305,7 +305,7 @@ void SimpleNavigator::CreateDebugDump(
     rootprogram << " std::cout << \"##-- ROOT path --## \" << nav->GetPath() << std::endl;\n";
     rootprogram << " nav->SetCurrentPoint( gpoint.x(), gpoint.y(), gpoint.z() );\n";
     rootprogram << " nav->SetCurrentDirection( gdir.x(), gdir.y(), gdir.z() );\n";
-    rootprogram << " TGeoNode const * nextnode = nav->FindNextBoundaryAndStep( kInfinity );\n";
+    rootprogram << " TGeoNode const * nextnode = nav->FindNextBoundaryAndStep( vecgeom::kInfinity );\n";
     rootprogram << " std::cout << \"##-- ROOT step --##\" << nav->GetStep() << std::endl;\n";
     rootprogram << " std::cout << \"##-- ROOT next node --##\" << nav->GetCurrentNode()->GetName() << std::endl;\n";
 
@@ -321,7 +321,7 @@ void SimpleNavigator::CreateDebugDump(
     vecgeomprogram << " vnav.LocatePoint( GeoManager::Instance().GetWorld(), gpoint, *curnavstate, true );\n";
     vecgeomprogram << " double step;\n";
     vecgeomprogram << " std::cout << \"##-- VecGeom real node --##\" << curnavstate->Top()->GetLabel() << std::endl;\n";
-    vecgeomprogram << " vnav.FindNextBoundaryAndStep( gpoint, gdir,*serializedstate, *newnavstate, kInfinity, step );\n";
+    vecgeomprogram << " vnav.FindNextBoundaryAndStep( gpoint, gdir,*serializedstate, *newnavstate, vecgeom::kInfinity, step );\n";
     vecgeomprogram << " std::cout << \"##-- VecGeom step --##\" << step << std::endl;\n";
     vecgeomprogram << " std::cout << \"##-- VecGeom next node --##\" << newnavstate->Top()->GetLabel() << std::endl;\n";
 
