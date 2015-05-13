@@ -66,9 +66,10 @@ int main( int argc, char *argv[] ) {
         LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
         VPlacedVolume * vecgeomplaced = converted->Place();
         Vector3D<Precision> point(px,py,pz);
-        Vector3D<Precision> dir0(dirx,diry,dirz);
-		Vector3D<Precision> dir=dir0; 
-		dir.Normalize();
+        Vector3D<Precision> dir(dirx,diry,dirz);
+	if( ! dir.Normalized() ){
+	  std::cerr << "** Attention: Direction is not normalized **\n";
+	}
 
         std::cout << "VecGeom Capacity " << vecgeomplaced->Capacity( ) << "\n";
         std::cout << "VecGeom CONTAINS " << vecgeomplaced->Contains( point ) << "\n";
