@@ -589,7 +589,7 @@ struct TubeImplementation {
     Float_t dirzsign(1.);
     MaskedAssign(dir.z() < 0, Float_t(-1.), &dirzsign);
     Float_t distz = (tube.z()*dirzsign - point.z()) / dir.z();
-    MaskedAssign(distz > 0, distz, &distance);
+    MaskedAssign(distz >= 0, distz, &distance);
 
     /*
      * Calculate the intersection of the trajectory of
