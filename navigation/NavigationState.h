@@ -432,32 +432,17 @@ VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void NavigationState::Print() const
 {
-   // printf("bool: fOnBoundary=%i %p (%l bytes)\n", fOnBoundary, static_cast<void*>(fOnBoundary), sizeof(bool));
-   // printf("Transf3D: matrix (%l bytes)\n", sizeof(Transformation3D) );
    // printf("VariableSizeObj: fPath=%p (%l bytes)\n", fPath, sizeof(fPath));
-
 #ifndef VECGEOM_NVCC
    printf("NavState: Level(cur/max)=%i/%i,  onBoundary=%s, topVol=<%s>, this=%p\n",
-          fCurrentLevel,
-          GetMaxLevel(),
-          (fOnBoundary?"true":"false"),
-          (Top()?
-           Top()->GetLabel().c_str():
-           "NULL"),
-          (const void*)this );
+          fCurrentLevel, GetMaxLevel(), (fOnBoundary?"true":"false"),
+          (Top()? Top()->GetLabel().c_str():"NULL"), (const void*)this );
 #else
    printf("NavState: Level(cur/max)=%i/%i,  onBoundary=%s, topVol=<%p>, this=%p\n",
-      fCurrentLevel,
-      GetMaxLevel(),
-      (fOnBoundary?"true":"false"),
-      Top(),
-      (const void*)this );
+          fCurrentLevel, GetMaxLevel(), (fOnBoundary?"true":"false"),
+          Top(), (const void*)this );
 #endif
 
-   // std::cerr << "NavState: Level(cur/max)=" << fCurrentLevel <<'/'<< GetMaxLevel()
-   //           <<" onBoundary="<< fOnBoundary
-   //           <<" topVol="<< Top() <<" this="<< this
-   //           << std::endl;
 }
 
 

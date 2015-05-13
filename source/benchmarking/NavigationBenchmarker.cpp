@@ -67,7 +67,8 @@ Precision benchmarkLocatePoint( int nPoints, int nReps, SOA3D<Precision> const& 
 
 Precision benchmarkSerialNavigation( int nPoints, int nReps,
                                      SOA3D<Precision> const& points,
-                                     SOA3D<Precision> const& dirs ) {
+                                     SOA3D<Precision> const& dirs,
+                                     Precision const* maxSteps ) {
 
   NavigationState ** curStates = new NavigationState*[nPoints];
   for( int i=0; i<nPoints; ++i) curStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
@@ -82,13 +83,13 @@ Precision benchmarkSerialNavigation( int nPoints, int nReps,
     nav.LocatePoint( GeoManager::Instance().GetWorld(), points[i], *curStates[i], true);
   }
 
-  Precision maxStep = kInfinity, step=0.0;
+  Precision step = 0.0;
   Stopwatch timer;
   timer.Start();
   for(int n=0; n<nReps; ++n) {
     for( int i=0; i<nPoints; ++i ) {
          nav.FindNextBoundaryAndStep( points[i], dirs[i], *(curStates[i]),
-                                      *(newStates[i]), maxStep, step );
+                                      *(newStates[i]), maxSteps[i], step );
     }
   }
   Precision elapsed = timer.Stop();
@@ -108,17 +109,16 @@ Precision benchmarkSerialNavigation( int nPoints, int nReps,
 
 Precision benchmarkVectorNavigation( int nPoints, int nReps,
                                      SOA3D<Precision> const& points,
-                                     SOA3D<Precision> const& dirs ) {
+                                     SOA3D<Precision> const& dirs,
+                                     Precision const* maxSteps ) {
 
   SOA3D<Precision> workspace1(nPoints);
   SOA3D<Precision> workspace2(nPoints);
 
   int * intworkspace = (int *) _mm_malloc(sizeof(int)*nPoints,32);
-  Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*nPoints,32);
   Precision * vecSteps = (Precision *) _mm_malloc(sizeof(Precision)*nPoints,32);
   Precision * safeties = (Precision *) _mm_malloc(sizeof(Precision)*nPoints,32);
 
-  for (int i=0;i<nPoints;++i) maxSteps[i] = kInfinity;
   memset(vecSteps, 0, sizeof(Precision)*nPoints);
   memset(safeties, 0, sizeof(Precision)*nPoints);
 
@@ -151,7 +151,6 @@ Precision benchmarkVectorNavigation( int nPoints, int nReps,
   delete[] newStates;
 
   _mm_free(intworkspace);
-  _mm_free(maxSteps);
   _mm_free(vecSteps);
   _mm_free(safeties);
 
@@ -162,13 +161,11 @@ Precision benchmarkVectorNavigation( int nPoints, int nReps,
 #ifdef VECGEOM_ROOT
 Precision benchmarkROOTNavigation( int nPoints, int nReps,
                                    SOA3D<Precision> const& points,
-                                   SOA3D<Precision> const& dirs ) {
+                                   SOA3D<Precision> const& dirs,
+                                   Precision const* maxSteps ) {
 
   TGeoNavigator * rootnav = ::gGeoManager->GetCurrentNavigator();
   TGeoNode ** rootNodes = new TGeoNode*[nPoints];
-
-  Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*nPoints,32);
-  for (int i=0;i<nPoints;++i) maxSteps[i] = kInfinity;
 
   Stopwatch timer;
   timer.Start();
@@ -188,7 +185,6 @@ Precision benchmarkROOTNavigation( int nPoints, int nReps,
 
   // cleanup
   delete[] rootNodes;
-  _mm_free(maxSteps);
 
   return (Precision)timer.Stop();
 }
@@ -198,8 +194,8 @@ Precision benchmarkROOTNavigation( int nPoints, int nReps,
 #ifdef VECGEOM_GEANT4
 Precision benchmarkGeant4Navigation( int nPoints, int nReps,
                                      SOA3D<Precision> const& points,
-                                     SOA3D<Precision> const& dirs )
-{
+                                     SOA3D<Precision> const& dirs,
+                                     Precision const* maxSteps ) {
   Stopwatch timer;
   timer.Start();
 
@@ -208,27 +204,27 @@ Precision benchmarkGeant4Navigation( int nPoints, int nReps,
   G4Navigator& g4nav = *(G4GeoManager::Instance().GetNavigator());
   G4TouchableHistory** g4history = new G4TouchableHistory*[nPoints];
 
-  // define max steps needed?
-  //Precision* maxSteps = (Precisoin*)_mm_malloc(sizeof(Precision)*nPoints,32);
-
   for(int n=0; n<nReps; ++n) {
     for (int i=0; i<nPoints; ++i) {
       G4ThreeVector g4pos( points[i].x()*cm, points[i].y()*cm, points[i].z()*cm );
       G4ThreeVector g4dir( dirs[i].x(), dirs[i].y(), dirs[i].z() );
+      G4double maxStep = maxSteps[i];
 
-      // false == locate from top
+      // false --> locate from top
       G4VPhysicalVolume const* vol = g4nav.LocateGlobalPointAndSetup( g4pos, &g4dir, false );
       if(!vol) std::cout<<"benchG4Navit: pos="<< g4pos <<" and dir="<< g4dir <<" --> vol="<< vol <<"\n";
 
       G4double safety = 0.0;
-      G4double step  = g4nav.ComputeStep( g4pos, g4dir, vecgeom::kInfinity, safety );
+      G4double step  = g4nav.ComputeStep( g4pos, g4dir, maxStep, safety );
+      if(step>9.0e+98) step = maxStep;
 
       G4ThreeVector nextPos = g4pos + (step + 1.0e-6) * g4dir;
 
-      g4nav.SetGeometricallyLimitedStep();
-      vol = g4nav.LocateGlobalPointAndSetup( nextPos );
-
       // TODO: save touchable history array - returnable?  symmetrize with root benchmark
+
+      // Technically, vecgeom returns vol at nextPos, but we might remove it here so Geant4 gets a performance boost
+      //g4nav.SetGeometricallyLimitedStep();
+      //vol = g4nav.LocateGlobalPointAndSetup( nextPos );
     }
   }
 
@@ -242,7 +238,8 @@ Precision benchmarkGeant4Navigation( int nPoints, int nReps,
 
 //=======================================
 /// Function to run navigation benchmarks
-void runNavigationBenchmarks( LogicalVolume const* startVol, int np, int nreps, Precision bias) {
+  void runNavigationBenchmarks(LogicalVolume const* startVol, int np, int nreps,
+                               Precision const* maxStep, Precision bias) {
 
   SOA3D<Precision> points(np);
   SOA3D<Precision> locpts(np);
@@ -254,19 +251,19 @@ void runNavigationBenchmarks( LogicalVolume const* startVol, int np, int nreps, 
   cputime = benchmarkLocatePoint(np,nreps,points);
   printf("CPU elapsed time (locating and setting steps) %f ms\n", 1000.*cputime);
 
-  cputime = benchmarkSerialNavigation(np,nreps,points, dirs);
+  cputime = benchmarkSerialNavigation(np,nreps,points, dirs, maxStep);
   printf("CPU elapsed time (serialized navigation) %f ms\n", 1000.*cputime);
 
-  cputime = benchmarkVectorNavigation(np,nreps,points, dirs);
+  cputime = benchmarkVectorNavigation(np,nreps,points, dirs, maxStep);
   printf("CPU elapsed time (vectorized navigation) %f ms\n", 1000.*cputime);
 
 #ifdef VECGEOM_ROOT
-  cputime = benchmarkROOTNavigation(np,nreps,points, dirs);
+  cputime = benchmarkROOTNavigation(np,nreps,points, dirs, maxStep);
   printf("CPU elapsed time (ROOT navigation) %f ms\n", 1000.*cputime);
 #endif
 
 #ifdef VECGEOM_GEANT4
-  cputime = benchmarkGeant4Navigation(np,nreps,points, dirs);
+  cputime = benchmarkGeant4Navigation(np,nreps,points, dirs, maxStep);
   printf("CPU elapsed time (Geant4 navigation) %f ms\n", 1000.*cputime);
 #endif
 
@@ -302,6 +299,7 @@ bool validateNavigationStepAgainstRoot(
       std::cerr << " OUTSIDEERROR \n";
     }
   }
+
   else if( Abs(testStep - rootnav->GetStep()) > 100.*kTolerance
            || rootnav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top()) )
   {
@@ -340,7 +338,7 @@ bool validateNavigationStepAgainstGeant4(
   Precision testStep,
   NavigationState const& testState,
   Precision& step,
-  G4VPhysicalVolume const* nextVol)
+  G4VPhysicalVolume const*& nextVol)
 {
   // Note: Vector3D's are expressed in cm, while G4ThreeVectors are expressed in mm
   const Precision cm = 10.;  // cm --> mm conversion
@@ -350,17 +348,16 @@ bool validateNavigationStepAgainstGeant4(
   G4ThreeVector g4pos( pos.x()*cm, pos.y()*cm, pos.z()*cm );
   G4ThreeVector g4dir( dir.x(), dir.y(), dir.z() );
   // false == locate from top
-  G4VPhysicalVolume const * vol = g4nav.LocateGlobalPointAndSetup( g4pos, &g4dir, false );
+  nextVol = g4nav.LocateGlobalPointAndSetup( g4pos, &g4dir, false, false );
 
   G4double safety = 0.0;
-  step  = g4nav.ComputeStep( g4pos, g4dir, vecgeom::kInfinity, safety );
+  step  = g4nav.ComputeStep( g4pos, g4dir, maxStep*cm, safety );
+  // note that if maxStep limitation is taken, step actually returns 9+e98 (Geant4 kInfinity)
+  if(step>9e+97) step = maxStep*cm;
+  else           g4nav.SetGeometricallyLimitedStep();
 
   G4ThreeVector nextPos = g4pos + (step + 1.0e-6) * g4dir;
-
-  g4nav.SetGeometricallyLimitedStep();
-  vol = g4nav.LocateGlobalPointAndSetup( nextPos );
-
-  //--------------
+  nextVol = g4nav.LocateGlobalPointAndSetup( nextPos, &g4dir, true, false );
 
   if( testState.Top() == NULL ) {
      if (! g4nav.ExitedMotherVolume() ) {
@@ -369,11 +366,11 @@ bool validateNavigationStepAgainstGeant4(
      }
   }
   else if( Abs(testStep - step/cm) > 100.*kTolerance
-  //          || g4nav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top())
-    ) {
+      // The 9 below is due to 'xxxx_xxxx' pointer suffixes in root volume names (to be fixed soon)
+           || (testState.Top()->GetLabel().compare( nextVol->GetName() ) != 9 ) ) {
     result = false;
     std::cerr << "\n*** ERROR on validateAgainstGeant4: "
-              <<" Geant4 node="<< vol->GetName()
+              <<" Geant4 node="<< (nextVol ? nextVol->GetName() : "Null")
   //             <<" outside="<< g4nav->IsOutside()
               <<" step="<< step/cm    // printouts are in cm units
               <<" <==> VecGeom node="<< (testState.Top() ? testState.Top()->GetLabel() : "NULL")
@@ -389,7 +386,8 @@ bool validateNavigationStepAgainstGeant4(
 
 //=======================================
 
-bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Precision> const& dirs) {
+bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Precision> const& dirs,
+                                Precision const* maxSteps) {
 
   bool result = true;
 
@@ -401,10 +399,8 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   for( int i=0; i<np; ++i) vgSerialStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
 
   vecgeom::SimpleNavigator nav;
-  Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
   Precision * refSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
 
-  for (int i=0;i<np;++i) maxSteps[i] = kInfinity;
   memset(refSteps, 0, sizeof(Precision)*np);
 
   // navigation using the serial interface
@@ -468,6 +464,7 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
       std::cout << (nextPV ? nextPV->GetName() : "NULL") <<" / ";
 #endif
       std::cout << (vgSerialStates[i]->Top()? vgSerialStates[i]->Top()->GetLabel() : "NULL") << "\n";
+
       // nav.InspectEnvironmentForPointAndDirection( pos, dir, *origState );
     }
   }
@@ -584,7 +581,6 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   // delete vgSerialStates;
   // delete vgVectorStates;
   _mm_free(intworkspace);
-  _mm_free(maxSteps);
   _mm_free(refSteps);
   _mm_free(vecSteps);
   _mm_free(safeties);

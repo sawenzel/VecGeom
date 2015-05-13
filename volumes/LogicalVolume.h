@@ -107,11 +107,8 @@ public:
   std::string GetLabel() const { return *label_; }
 
   void set_label(char const *const label) {
-    if( label_ )
-      *label_ = label;
-    else
-      if(label_) delete label_;
-      label_=new std::string(label);
+    if(label_) delete label_;
+    label_ = new std::string(label);
   }
 
   VECGEOM_INLINE

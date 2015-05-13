@@ -89,9 +89,8 @@ int main(int argc, char* argv[])
   OPTION_BOOL(help, false);
   if(help) return 0;
 
-  const VPlacedVolume *world = NULL;
   if(geometry.compare("navBench")==0) {
-    world = SetupGeometry();
+    const VPlacedVolume *world = SetupGeometry();
 
 #ifdef VECGEOM_ROOT
     // Exporting to ROOT file
@@ -142,6 +141,7 @@ int main(int argc, char* argv[])
   }
 #endif
 
+
   std::cout<<"\n*** Validating VecGeom navigation...\n";
 
   const LogicalVolume* startVolume = GeoManager::Instance().GetWorld()->GetLogicalVolume();
@@ -153,17 +153,18 @@ int main(int argc, char* argv[])
            <<">, startVolume=<"<< (startVolume ? startVolume->GetLabel() : "NULL") <<">\n";
   if(startVolume) std::cout<< *startVolume <<"\n";
 
+  // prepare tracks to be used for validation
   int np = Min( ntracks, 1000 );  // no more than 1000 points used for validation
   SOA3D<Precision> points(np);
   SOA3D<Precision> dirs(np);
   SOA3D<Precision> locpts(np);
+  vecgeom::volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume(startVolume, locpts, points, dirs, bias, np);
 
-  vecgeom::volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume(
-    startVolume, locpts, points, dirs, bias, np);
-
+  Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
+  for (int i=0;i<np;++i) maxSteps[i] = 10. * RNG::Instance().uniform();
 
   // Must be validated before being benchmarked
-  bool ok = validateVecGeomNavigation(np, points, dirs);
+  bool ok = validateVecGeomNavigation(np, points, dirs, maxSteps);
   if(!ok) {
     std::cout<<"VecGeom validation failed."<< std::endl;
     return 1;
@@ -173,7 +174,7 @@ int main(int argc, char* argv[])
   // on mic.fnal.gov CPUs, loop execution takes ~70sec for ntracks=10M
   while(ntracks<=10000) {
     std::cout<<"\n*** Running navigation benchmarks with ntracks="<<ntracks<<" and nreps="<< nreps <<".\n";
-    runNavigationBenchmarks(startVolume, ntracks, nreps, bias);
+    runNavigationBenchmarks(startVolume, ntracks, nreps, maxSteps, bias);
     ntracks*=10;
   }
 
@@ -192,5 +193,7 @@ int main(int argc, char* argv[])
   }
 */
 
+  // cleanup
+  delete [] maxSteps;
   return 0;
 }
