@@ -48,7 +48,7 @@ int main( int argc, char *argv[] ) {
         std::string fullname(vol->GetName());
 
         // strip off pointer information
-        std::string strippedname(fullname, 0, fullname.length()-4);
+        std::string strippedname(fullname, 0, fullname.length()-0);
 
         std::size_t founds = strippedname.compare(testvolume);
         if (founds == 0){
@@ -69,7 +69,9 @@ int main( int argc, char *argv[] ) {
         LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
         VPlacedVolume * vecgeomplaced = converted->Place();
         Vector3D<Precision> point(px,py,pz);
-        Vector3D<Precision> dir(dirx,diry,dirz);
+        Vector3D<Precision> dir0(dirx,diry,dirz);
+		Vector3D<Precision> dir=dir0; 
+		dir.Normalize();
 
         std::cout << "VecGeom Capacity " << vecgeomplaced->Capacity( ) << "\n";
         std::cout << "VecGeom CONTAINS " << vecgeomplaced->Contains( point ) << "\n";

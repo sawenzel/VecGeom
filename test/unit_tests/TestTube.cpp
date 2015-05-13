@@ -13,13 +13,14 @@
 #include "UVector3.hh"
 #endif
 
-//#include <cassert>
+#include "ApproxEqual.h"
+#include <cassert>
 #include <cmath>
 
 #define PI 3.14159265358979323846
 
 
-template <class Tube_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
+template <class Tube_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 
 bool TestTubs()
 {
@@ -29,7 +30,6 @@ bool TestTubs()
 	Vec_t ptS(0,0,0);
 
     double kCarTolerance = VUSolid::Tolerance();
-
     Vec_t pbigx(100,0,0),pbigy(0,100,0),pbigz(0,0,100);
     Vec_t pbigmx(-100,0,0),pbigmy(0,-100,0),pbigmz(0,0,-100);
 
@@ -43,6 +43,7 @@ bool TestTubs()
     Vec_t vmxy(-1/std::sqrt(2.0),1/std::sqrt(2.0),0);
     Vec_t vmxmy(-1/std::sqrt(2.0),-1/std::sqrt(2.0),0);
     Vec_t vxmy(1/std::sqrt(2.0),-1/std::sqrt(2.0),0);
+
 
 
     double Dist, vol,volCheck;
@@ -88,14 +89,13 @@ bool TestTubs()
 
 
     std::cout.precision(20);
-
 // Check name
-   assert(t1.GetName()=="Solid Tube #1");
+   //assert(t1.GetName()=="Solid Tube #1");
 
   // Check cubic volume
-  vol = t1.Capacity();
-  volCheck = 50*2*UUtils::kPi*50*50;
-  assert(ApproxEqual(vol,volCheck));
+  //vol = t1.Capacity();
+  //volCheck = 50*2*UUtils::kPi*50*50;
+  //assert(ApproxEqual(vol,volCheck));
  
   // Check Surface area
   // vol = t2.SurfaceArea();
@@ -103,55 +103,57 @@ bool TestTubs()
   // assert(ApproxEqual(vol,volCheck));
 
 
-  	Tube_t myClad("myClad", 90.0, 110.0, 105.0, 0.0, PI);    // TEST MINE
+  	//Tube_t myClad("myClad", 90.0, 110.0, 105.0, 0.0, PI);    // TEST MINE
 	
-	long int totPointOnSurface = 2000000;
-	std::cout << " Generating " << totPointOnSurface << " points on the surface of the tube ." << std::endl;
-	long int totInSurf = 0, totOutSurf = 0, totTop = 0, totBot = 0, totL = 0, totR = 0, added = 0;
+//	long int totPointOnSurface = 2000000;
+//	std::cout << " Generating " << totPointOnSurface << " points on the surface of the tube ." << std::endl;
+//	long int totInSurf = 0, totOutSurf = 0, totTop = 0, totBot = 0, totL = 0, totR = 0, added = 0;
   
-	for (long int i = 0; i < totPointOnSurface; i++) {
-	  ptS = myClad.GetPointOnSurface(); 
-	  double x2y2 = sqrt(ptS[0]*ptS[0]+ptS[1]*ptS[1]);
-	  double fival = sqrt(atan2(ptS[1], ptS[0]));  //std::cout << " fival = " << fival*180.0/3.14 << std::endl;
-	  double fi1 = 0.0;
-	  double fi2 = PI;
-	  double zz = ptS[2];
-	  double eps = 1.0e-8;
-	  bool surfaceIn = (abs(x2y2 - 90.0) <= eps);
-	  bool surfaceOut = (abs(x2y2 - 110.0) <= eps);
-	  bool topSurface = (abs(zz - 105) <= eps); // (x2y2 >= 90.0) && (x2y2 <= 110.0) && (abs(zz - 105) <= eps);
-	  bool botSurface = (abs(zz + 105) <= eps); // (x2y2 >= 90.0) && (x2y2 <= 110.0) && (abs(zz + 105) <= eps);
-	  bool fiLeft = (abs(fival - fi1) <= eps);
-	  bool fiRight = (abs(fival - fi2) <= eps);
-	  bool Tagged = 0;
-	  //std::cout << i;
-	  if (fiLeft && !Tagged) {
-		  totL++;  added++; Tagged++; //std::cout << " FiL "; 
-	  }
-	  if (fiRight && !Tagged) {
-		  totR++;  added++; Tagged++; //std::cout << " FiR ";
-	  }
-	  if (surfaceIn && !Tagged) {
-		  totInSurf++; added++; Tagged++;  //std::cout << " In  ";
-	  }
-	  if (surfaceOut && !Tagged) {
-		  totOutSurf++; added++; Tagged++;  //std::cout << " Out "; 
-	  }
-	  if (topSurface && !Tagged) {
-		  totTop++; added++; Tagged++; // std::cout << " Top "; 
-	  }
-	  if (botSurface && !Tagged) {
-		  totBot++;  added++; Tagged++; //std::cout << " Bot ";
-	  }
-	  //std::cout << std::endl;
-	  if (!Tagged && !fiLeft && !fiRight && !surfaceIn && !surfaceOut && !topSurface && !botSurface && fival > 3.0 && fival < 3.16) std::cout << ptS << std::endl;
-  }
+//	for (long int i = 0; i < totPointOnSurface; i++) {
+//	  ptS = myClad.GetPointOnSurface(); 
+//	  double x2y2 = sqrt(ptS[0]*ptS[0]+ptS[1]*ptS[1]);
+//	  double fival = sqrt(atan2(ptS[1], ptS[0]));  //std::cout << " fival = " << fival*180.0/3.14 << std::endl;
+//	  double fi1 = 0.0;
+//	  double fi2 = PI;
+//	  double zz = ptS[2];
+//	  double eps = 1.0e-8;
+//	  bool surfaceIn = (abs(x2y2 - 90.0) <= eps);
+//	  bool surfaceOut = (abs(x2y2 - 110.0) <= eps);
+//	  bool topSurface = (abs(zz - 105) <= eps); // (x2y2 >= 90.0) && (x2y2 <= 110.0) && (abs(zz - 105) <= eps);
+//	  bool botSurface = (abs(zz + 105) <= eps); // (x2y2 >= 90.0) && (x2y2 <= 110.0) && (abs(zz + 105) <= eps);
+//	  bool fiLeft = (abs(fival - fi1) <= eps);
+//	  bool fiRight = (abs(fival - fi2) <= eps);
+//	  bool Tagged = 0;
+//	  //std::cout << i;
+//	  if (fiLeft && !Tagged) {
+//		  totL++;  added++; Tagged++; //std::cout << " FiL "; 
+//	  }
+//	  if (fiRight && !Tagged) {
+//		  totR++;  added++; Tagged++; //std::cout << " FiR ";
+//	  }
+//	  if (surfaceIn && !Tagged) {
+//		  totInSurf++; added++; Tagged++;  //std::cout << " In  ";
+//	  }
+//	  if (surfaceOut && !Tagged) {
+//		  totOutSurf++; added++; Tagged++;  //std::cout << " Out "; 
+//	  }
+//	  if (topSurface && !Tagged) {
+//		  totTop++; added++; Tagged++; // std::cout << " Top "; 
+//	  }
+//	  if (botSurface && !Tagged) {
+//		  totBot++;  added++; Tagged++; //std::cout << " Bot ";
+//	  }
+//	  //std::cout << std::endl;
+//	  if (!Tagged && !fiLeft && !fiRight && !surfaceIn && !surfaceOut && !topSurface && !botSurface && fival > 3.0 && fival < 3.16) std::cout << ptS << std::endl;
+//  }
+	/*
 	std::cout << std::endl;
   std::cout << " Total Inner surface = " << totInSurf << " (" << ((totInSurf*1.0)/totPointOnSurface)*100.0 << "%)  Total Outer surface = " << totOutSurf << " (" << ((totOutSurf*1.0)/totPointOnSurface)*100.0 << "%) Total Top surface = " << totTop << " (" << ((totTop*1.0)/totPointOnSurface)*100.0 << "%) Total Bottom Surface = " << totBot << " (" << ((totBot*1.0)/totPointOnSurface)*100.0 << "%) " << " Total Left Surface = " << totL << " (" << ((totL*1.0)/totPointOnSurface)*100.0 << "%) Total Right Surface = " << totR << " (" << ((totR*1.0)/totPointOnSurface)*100.0 << "%) " << std::endl;
 
   std::cout << "Total point = " << totPointOnSurface << std::endl <<"total added = " << added << std::endl;
-
+*/
 // Check Inside
+  /*
     assert(t1.Inside(pzero)==vecgeom::EInside::kInside);
     assert(t1.Inside(pbigz)==vecgeom::EInside::kOutside);
     assert(t1.Inside(ponxside)==vecgeom::EInside::kSurface);
@@ -358,6 +360,7 @@ bool TestTubs()
     //  std::cout<<"Dist=t5.DistanceToIn((30.0,-100.0,0),vmx) = "<<Dist<<std::endl;
     assert(ApproxEqual(Dist,UUtils::kInfinity));
    
+	*/
     /* ********************************
        ************************************ */
     //Tubs from Problem reports
@@ -365,7 +368,7 @@ bool TestTubs()
        //
 	// Make a tub
 	//
-	Tube_t *arc = new Tube_t( "outer", 1000, 1100, 10, -UUtils::kPi/12., UUtils::kPi/6. );
+	//Tube_t *arc = new Tube_t( "outer", 1000, 1100, 10, -UUtils::kPi/12., UUtils::kPi/6. );
 	
 	//
 	// First issue: 
@@ -377,7 +380,8 @@ bool TestTubs()
 	//   pt2 = t1 but slightly higher, and still on tolerant surface
 	//   pt3 = t1 but slightly lower, and still on tolerant surface
 	//
-	Vec_t pt1( 1050*std::cos(-UUtils::kPi/12.),
+	/*
+		Vec_t pt1( 1050*std::cos(-UUtils::kPi/12.),
 	                   1050*std::sin(-UUtils::kPi/12.),
 			      0 );
  			  
@@ -511,24 +515,32 @@ bool TestTubs()
     // std::cout<<" min="<<minExtent<<" max="<<maxExtent<<std::endl;
     assert(ApproxEqual(minExtent,Vec_t(-50,-50,-50)));
     assert(ApproxEqual(maxExtent,Vec_t( 50, 50, 50)));
-  
+ */ 
 
     /* ********************************
     ************************************ */
+
+	// BeamTube1 Computation
+	// Beam Tube1 diagnostics
+	Tube_t BT1("Solid Tube #1", 0.0, 2.25, 72.475, 0.0, 2.0 * UUtils::kPi);
+	Dist = BT1.DistanceToOut(Vec_t (1.90682136437479, 
+									1.1943752694877201, 
+									-41.601888140951587),
+							 Vec_t (0.060059263937965943, 
+								 	0.037619307655839145, 
+									0.97241220828092478));
+	std::cout << "BeamTube1:: D2O " << Dist << "\n";
 
     return true;
 }
 
 
-
-
 int main() {
-#ifdef VECGEOM_USOLIDS
-  assert(TestTubs<UTubs>());
-  std::cout << "UTube passed\n";
+//#ifdef VECGEOM_USOLIDS
+//  assert(TestTubs<UTubs>());
+//  std::cout << "UTube passed\n";
+//#endif
+assert(TestTubs<vecgeom::SimpleTube>());
 
-#endif
-  
-   std::cout<< "VecGeomTube not included yet\n";
-  return 0;
+return 0;
 }
