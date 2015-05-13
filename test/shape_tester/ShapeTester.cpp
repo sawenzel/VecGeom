@@ -2161,7 +2161,4 @@ int ShapeTester::CountErrors() const
 
   return answer;
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> master
