@@ -291,7 +291,7 @@ struct PolyconeImplementation {
                 pte,
                 localp,
                 inside1);
-        if (!inside1)
+        if ( (!inside1) || (increment == 0) )
         {
          break;
         }
