@@ -1,6 +1,5 @@
 /// \file Transformation3D.cpp
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
-
 #include "base/Transformation3D.h"
 
 #include "backend/Backend.h"
@@ -9,32 +8,36 @@
 #endif
 #include "base/SpecializedTransformation3D.h"
 
+
+#ifdef VECGEOM_ROOT
+#include "TGeoMatrix.h"
+#endif
+
 #include <sstream>
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 const Transformation3D Transformation3D::kIdentity =
-    SpecializedTransformation3D<translation::kIdentity, rotation::kIdentity>();
+    Transformation3D();
 
-Transformation3D::Transformation3D() {
-  SetTranslation(0, 0, 0);
-  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
-  SetProperties();
-}
 
-Transformation3D::Transformation3D(const Precision tx,
-                                   const Precision ty,
-                                   const Precision tz) {
-  SetTranslation(tx, ty, tz);
-  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
-  SetProperties();
-}
+//Transformation3D::Transformation3D(const Precision tx,
+//                                   const Precision ty,
+//                                   const Precision tz) :
+//   fIdentity(false), fHasRotation(true), fHasTranslation(true)
+//{
+//  SetTranslation(tx, ty, tz);
+//  SetRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
+//  SetProperties();
+//}
 
 Transformation3D::Transformation3D(
     const Precision tx, const Precision ty,
     const Precision tz, const Precision phi,
-    const Precision theta, const Precision psi) {
+    const Precision theta, const Precision psi) :
+fIdentity(false), fHasRotation(true), fHasTranslation(true) {
   SetTranslation(tx, ty, tz);
   SetRotation(phi, theta, psi);
   SetProperties();
@@ -44,7 +47,8 @@ Transformation3D::Transformation3D(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
-    const Precision r6, const Precision r7, const Precision r8) {
+    const Precision r6, const Precision r7, const Precision r8) :
+fIdentity(false), fHasRotation(true), fHasTranslation(true){
   SetTranslation(tx, ty, tz);
   SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
   SetProperties();
@@ -156,6 +160,34 @@ TranslationCode Transformation3D::GenerateTranslationCode() const {
   return (fHasTranslation) ? translation::kGeneric : translation::kIdentity;
 }
 
+
+#ifdef VECGEOM_ROOT
+// function to convert this transformation to a TGeo transformation
+// mainly used for the benchmark comparisons with ROOT
+TGeoMatrix * Transformation3D::ConvertToTGeoMatrix() const
+{
+  if( fIdentity ){
+      return new TGeoIdentity();
+  }
+  if( fHasTranslation && ! fHasRotation ) {
+      return new TGeoTranslation(fTranslation[0], fTranslation[1], fTranslation[2]);
+  }
+  if( fHasRotation && ! fHasTranslation ) {
+      TGeoRotation * tmp = new TGeoRotation();
+      tmp->SetMatrix( Rotation() );
+      return tmp;
+  }
+  if( fHasTranslation && fHasRotation )
+  {
+      TGeoRotation * tmp = new TGeoRotation();
+      tmp->SetMatrix( Rotation() );
+      return  new TGeoCombiTrans(fTranslation[0], fTranslation[1],
+                     fTranslation[2], tmp);
+  }
+  return 0;
+}
+#endif
+
 std::ostream& operator<<(std::ostream& os,
                          Transformation3D const &transformation) {
   os << "Transformation {" << transformation.Translation() << ", "
@@ -169,65 +201,43 @@ std::ostream& operator<<(std::ostream& os,
   return os;
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void Transformation3D_CopyToGpu(
-  const Precision tx, const Precision ty, const Precision tz,
-  const Precision r0, const Precision r1, const Precision r2,
-  const Precision r3, const Precision r4, const Precision r5,
-  const Precision r6, const Precision r7, const Precision r8,
-  Transformation3D *const gpu_ptr);
+DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const {
 
-Transformation3D* Transformation3D::CopyToGpu(
-    Transformation3D *const gpu_ptr) const {
-
-  Transformation3D_CopyToGpu(fTranslation[0], fTranslation[1], fTranslation[2],
-                             fRotation[0], fRotation[1], fRotation[2],
-                             fRotation[3], fRotation[4], fRotation[5],
-                             fRotation[6], fRotation[7], fRotation[8], gpu_ptr);
-  vecgeom::CudaAssertError();
-  return gpu_ptr;
-
+   gpu_ptr.Construct(fTranslation[0], fTranslation[1], fTranslation[2],
+                     fRotation[0], fRotation[1], fRotation[2],
+                     fRotation[3], fRotation[4], fRotation[5],
+                     fRotation[6], fRotation[7], fRotation[8]);
+   CudaAssertError();
+   return gpu_ptr;
 }
 
-Transformation3D* Transformation3D::CopyToGpu() const {
+DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu() const {
 
-  Transformation3D *const gpu_ptr =
-      vecgeom::AllocateOnGpu<Transformation3D>();
-  return this->CopyToGpu(gpu_ptr);
-
+   DevicePtr<cuda::Transformation3D> gpu_ptr;
+   gpu_ptr.Allocate();
+   return this->CopyToGpu(gpu_ptr);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+} // End impl namespace
+
 #ifdef VECGEOM_NVCC
 
-class Transformation3D;
+namespace cxx {
 
-__global__
-void ConstructOnGpu(const Precision tx, const Precision ty, const Precision tz,
-                    const Precision r0, const Precision r1, const Precision r2,
-                    const Precision r3, const Precision r4, const Precision r5,
-                    const Precision r6, const Precision r7, const Precision r8,
-                    Transformation3D *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::Transformation3D(tx, ty, tz, r0, r1, r2,
-                                                  r3, r4, r5, r6, r7, r8);
-}
-
-void Transformation3D_CopyToGpu(
+template size_t DevicePtr<cuda::Transformation3D>::SizeOf();
+template void DevicePtr<cuda::Transformation3D>::Construct(
     const Precision tx, const Precision ty, const Precision tz,
     const Precision r0, const Precision r1, const Precision r2,
     const Precision r3, const Precision r4, const Precision r5,
-    const Precision r6, const Precision r7, const Precision r8,
-    Transformation3D *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(tx, ty, tz, r0, r1, r2, r3, r4, r5,
-                           r6, r7, r8, gpu_ptr);
-}
+    const Precision r6, const Precision r7, const Precision r8) const;
+
+} // End cxx namespace
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} // End global namespace
+

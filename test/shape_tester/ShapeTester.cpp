@@ -1,3 +1,4 @@
+
 //
 // Implementation of the batch solid  test
 //
@@ -250,7 +251,7 @@ int ShapeTester::ShapeNormal()
 
    if( CountErrors() )
      errCode= 256; // errCode: 0001 0000 0000
-
+  
    return errCode;
 }
 
@@ -688,7 +689,7 @@ int ShapeTester::TestInsidePoint()
  for (int j = 0; j < maxPointsInside; j++)
  {
     //Check values of Safety
-    UVector3 point=points[j+offsetInside];
+    UVector3 point=points[j+offsetInside]; 
     double safeDistance = volumeUSolids->SafetyFromInside(point );
     if (safeDistance <= 0.0) {
 	UVector3 zero(0);
@@ -1018,7 +1019,7 @@ int ShapeTester::TestOutsidePoint( )
 int ShapeTester::TestAccuracyDistanceToIn(double dist)
 {
   int errCode= 0;
-  UVector3 point,pointSurf,v, direction, normal;
+  UVector3 point,pointSurf,pointIn,v, direction, normal;
   bool convex;
   double distIn,distOut;
   double maxDistIn=0,diff=0,difMax=0;
@@ -1047,6 +1048,7 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
       point=pointSurf+vec*dist; 
 
       VUSolid::EnumInside inside=volumeUSolids->Inside(point);
+     
       if(inside !=  vecgeom::EInside::kSurface)
       {
            if(inside ==  vecgeom::EInside::kOutside)
@@ -1063,10 +1065,12 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
                hist10->Fill(std::max(0.5*std::log(std::fabs(diff)),-20.)); 
 #endif
 	    }
-
+            
+            // Test for consistency for points situated Outside 
             for(int j = 0; j < 1000; j++ )
             {
              vec = GetRandomDirection();
+             
              distIn   = volumeUSolids->DistanceToIn(point,vec);
              distOut = volumeUSolids->DistanceToOut(point,vec, normal, convex);
              iWrongSideOut++;
@@ -1075,7 +1079,7 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
               ReportError(  &nError, point, vec, distOut, "TAD: DistanceToOut is Infinity for point Outside");
              }
              if(std::fabs(distOut) < -tolerance){
-              iOutZero++;//std::cout<<"WrongSide reply dOut="<<distOut<<std::endl;
+              iOutZero++;
               ReportError(  &nError, point, vec, distOut, "TAD: DistanceToOut is < tolerance for point Outside");
              }
              double safFromIn = volumeUSolids->SafetyFromInside(point);
@@ -1084,7 +1088,41 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
               ReportError(  &nError, point, vec,safFromIn , "TAD: SafetyFromInside is > tolerance for point Outside");
 	     }
 
-	     if(distIn <  UUtils::kInfinity)
+             // Test for consistency for points situated Inside
+             pointIn = pointSurf +vec*1000.*VUSolid::Tolerance();
+             if(volumeUSolids->Inside(pointIn) ==  vecgeom::EInside::kInside)
+	     {
+               double distOut1  = volumeUSolids->DistanceToOut(pointIn,vec, normal, convex); 
+	       VUSolid::EnumInside surfaceP = volumeUSolids->Inside(pointIn + distOut1*vec);
+               double distIn1   = volumeUSolids->DistanceToIn(pointIn,vec);
+	       iWrongSideIn++;
+               if(distOut1>=UUtils::kInfinity){
+                iInInf++;
+                ReportError(  &nError, pointIn, vec,distOut1 , "TAD: Distance ToOut is Infinity  for point Inside");
+               }
+               if(std::fabs(distOut1)<tolerance){
+                iInZero++;
+                ReportError(  &nError, pointIn, vec,distOut1 , "TAD: Distance ToOut < tolerance  for point Inside");
+               }
+               if(std::fabs(distIn1)>tolerance){
+                iInZero++;
+                ReportError(  &nError, pointIn, vec,distIn1 , "TAD: Distance ToIn > tolerance  for point Inside");
+               }
+               double safFromOut = volumeUSolids->SafetyFromOutside(pointIn);
+               if(safFromOut > tolerance){
+                iSafIn++;
+                ReportError(  &nError, pointIn, vec,safFromOut , "TAD: SafetyFromOutside > tolerance  for point Inside");
+	      }
+	      iIn++;
+              if(surfaceP != vecgeom::EInside::kSurface )
+	      {
+               iOutNoSurf++;
+	       ReportError(  &nError, pointIn, vec, 0. , "TAD: Moved to Surface point is not on Surface");
+	      }
+	     }
+
+	     // Test for consistency for points situated on Surface
+	    if(distIn <  UUtils::kInfinity)
 	    {
               iIn++;
               
@@ -1108,7 +1146,7 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
             distOut  = volumeUSolids->DistanceToOut(point,vec, normal, convex); 
 	    VUSolid::EnumInside surfaceP = volumeUSolids->Inside(point + distOut*vec);
              distIn   = volumeUSolids->DistanceToIn(point,vec);
-             iWrongSideIn++;
+	     iWrongSideIn++;
              if(distOut>=UUtils::kInfinity){
               iInInf++;
               ReportError(  &nError, point, vec,distOut , "TAD: Distance ToOut is Infinity  for point Inside");
@@ -1116,6 +1154,10 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
              if(std::fabs(distOut)<tolerance){
               iInZero++;
               ReportError(  &nError, point, vec,distOut , "TAD: Distance ToOut < tolerance  for point Inside");
+             }
+             if(std::fabs(distIn)>tolerance){
+              iInZero++;
+              ReportError(  &nError, point, vec,distOut , "TAD: Distance ToIn > tolerance  for point Inside");
              }
              double safFromOut = volumeUSolids->SafetyFromOutside(point);
              if(safFromOut > tolerance){
@@ -1133,15 +1175,17 @@ int ShapeTester::TestAccuracyDistanceToIn(double dist)
      }
     }
    if(fVerbose){
-     std::cout<<"TestAccuracyDistanceToIn::Errors  ::iInNoSurf = "<<iInNoSurf<<";    iOutNoSurf = "<<iOutNoSurf<<std::endl;
-     std::cout<<"TestAccuracyDistanceToIn::Errors SolidUSolid ::From total number of points iIn = "<<iIn<<";     iOut = "<<iOut<<std::endl;
-     std::cout<<"TestAccuracyDistanceToIn::WrongSide Infinity n="<<iInInf<<"+"<<iInZero<<std::endl;
-     std::cout<<"TestAccuracyDistanceToIn::WrongSide Zero n="<<iOutInf<<"+"<<iOutZero<<std::endl;
-     std::cout<<"TestAccuracyDistanceToIn::WrongSide Saf In and Out  n="<<iSafIn<<"+"<<iSafOut<<std::endl;
-     std::cout << "TestForWrongSide:: Point is Outside DistanceToOut not zero = " << iWrongSideOut-iOutZero << "\n";
-     std::cout<< "TestForWrongSide:: Point is Outside SafetyFromInside not zero = " << iSafOut << "\n";
-     std::cout<< "TestForWrongSide:: Point is Inside DistanceToIn not zero = " << iWrongSideIn-iInZero << "\n";
-     std::cout<< "TestForWrongSide:: Point is Inside SafetyFromOutside not zero = " << iSafIn << "\n";
+     // Surface
+     std::cout<<"TestAccuracyDistanceToIn::Errors for moved point is not on Surface ::iInNoSurf = "<<iInNoSurf<<";    iOutNoSurf = "<<iOutNoSurf<<std::endl;
+     std::cout<<"TestAccuracyDistanceToIn::Errors SolidUSolid ::From total number of points  = "<<iIn<<std::endl;
+     // Distances
+     std::cout<<"TestForWrongSide Error in DistanceToOut:: Point is Outside DistanceToOut not zero = " << iOutZero <<" from total number "<<iWrongSideOut <<"\n";
+     std::cout<<"TestForWrongSide Error in DistanceToOut:: Point is Outside DistanceToOut is Infinity = " << iOutInf <<" from total number "<<iWrongSideOut <<"\n";
+     std::cout<<"TestForWrongSide Error in DistanceToIn:: Point is Inside DistanceToIn not zero = " << iInZero<<" from total number "<<iWrongSideIn<< "\n";
+     std::cout<<"TestForWrongSide Error in DistanceToIn:: Point is Inside DistanceToIn not zero = " << iInInf<<" from total number "<<iWrongSideIn<< "\n";
+     // Safety
+     std::cout<< "TestForWrongSide Error in Safety:: Point is Outside SafetyFromInside not zero = " << iSafOut << "\n";
+     std::cout<< "TestForWrongSide Error in Safety:: Point is Inside SafetyFromOutside not zero = " << iSafIn << "\n";
    
    }
 #ifdef VECGEOM_ROOT
@@ -1597,7 +1641,7 @@ void ShapeTester::CreatePointsAndDirectionsSurface()
          int retry = 100;
          do 
 	   { bool surfaceExist=true;
-	   if(surfaceExist) {pointU = volumeUSolids->GetPointOnSurface();}
+	   if(surfaceExist) {pointU = volumeUSolids->GetPointOnSurface(); }
            else {
                 UVector3 dir = GetRandomDirection(), norm;
                 bool convex;
@@ -1610,9 +1654,8 @@ void ShapeTester::CreatePointsAndDirectionsSurface()
            if (retry-- == 0) break;
          }
          while (volumeUSolids->Inside(pointU) != vecgeom::EInside::kSurface);
-
-	UVector3 vec = GetRandomDirection();
-	directions[i] = vec;
+       	UVector3 vec = GetRandomDirection();
+	directions[i+offsetSurface] = vec;
   	point.Set(pointU.x(), pointU.y(), pointU.z());
         points[i+offsetSurface] = point;
         
@@ -1647,24 +1690,25 @@ void ShapeTester::CreatePointsAndDirectionsOutside()
 {
 
 	UVector3 minExtent,maxExtent;
-        volumeUSolids->Extent(minExtent,maxExtent);
+    volumeUSolids->Extent(minExtent,maxExtent);
 	double maxX=std::max(std::fabs(maxExtent.x()),std::fabs(minExtent.x()));
 	double maxY=std::max(std::fabs(maxExtent.y()),std::fabs(minExtent.y()));
 	double maxZ=std::max(std::fabs(maxExtent.z()),std::fabs(minExtent.z()));
-        double rOut=std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
+    double rOut=std::sqrt(maxX*maxX+maxY*maxY+maxZ*maxZ);
         
-        for (int i = 0; i < maxPointsOutside; i++)
+    for (int i = 0; i < maxPointsOutside; i++)
 	{
 	          
 	   UVector3 vec, point;
-           do
+       do
 	   {
 	    point.x() =  -1 + 2 * UUtils::Random();
 	    point.y() = -1 + 2 * UUtils::Random(); 
 	    point.z() = -1 + 2 * UUtils::Random();
-            point *= rOut * outsideMaxRadiusMultiple;
+        point *= rOut * outsideMaxRadiusMultiple;
 	   }
 	   while (volumeUSolids->Inside(point)!=vecgeom::EInside::kOutside);
+
 
   	   double random = UUtils::Random();
 	   if (random <= outsideRandomDirectionPercent/100.) 
@@ -1673,7 +1717,7 @@ void ShapeTester::CreatePointsAndDirectionsOutside()
 	   }
 	   else
 	   {
-		UVector3 pointSurface= volumeUSolids->GetPointOnSurface();
+		UVector3 pointSurface= volumeUSolids->GetPointOnSurface(); 
 		vec = pointSurface - point;
 		vec.Normalize();
 	   }
@@ -1909,7 +1953,7 @@ int ShapeTester::TestMethodAll()
 
   method = "Consistency";
   errCode+= TestMethod(&ShapeTester::TestConsistencySolids);
-  if(definedNormal)TestMethod(&ShapeTester::TestNormalSolids);
+  if(definedNormal) TestMethod(&ShapeTester::TestNormalSolids);
   method = "SafetyFromInside";
   errCode+= TestMethod(&ShapeTester::TestSafetyFromInsideSolids);
   method = "SafetyFromOutside";
@@ -1920,6 +1964,8 @@ int ShapeTester::TestMethodAll()
   errCode+= TestMethod(&ShapeTester::TestDistanceToOutSolids);
   method = "XRayProfile";
   errCode+= TestMethod(&ShapeTester::TestXRayProfile);
+
+
   method = "all";
 
   return errCode;
@@ -2082,7 +2128,7 @@ void ShapeTester::ReportError( int *nError,  UVector3 &p,
   if(ifException){
      std::ostringstream text;
      text << "Abborting due to Debugging mode in solid: " << volumeUSolids->GetName();
-     UUtils::Exception("ShapeTester", "Debugging mode", FatalErrorInArguments, 1, text.str().c_str());
+     UUtils::Exception("ShapeTester", "Debugging mode", UFatalErrorInArguments, 1, text.str().c_str());
   }
 }
 //
@@ -2117,3 +2163,4 @@ int ShapeTester::CountErrors() const
 
   return answer;
 }
+

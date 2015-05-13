@@ -11,7 +11,9 @@
 #include "base/Global.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "backend/Backend.h"
+
 #include <iostream>
+
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -56,6 +58,7 @@ class Wedge{
 
     public:
         VECGEOM_CUDA_HEADER_BOTH
+//<<<<<<< HEAD
         Wedge( Precision angle, Precision zeroangle = 0 ) :
             fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2() {
             // check input
@@ -74,6 +77,9 @@ class Wedge{
             fNormalVector2.x() =  std::sin(zeroangle+angle);
             fNormalVector2.y() = -std::cos(zeroangle+angle); // note the - sign
         }
+//=======
+  //      Wedge( Precision angle, Precision zeroangle = 0 );
+//>>>>>>> master
 
         VECGEOM_CUDA_HEADER_BOTH
         ~Wedge(){}

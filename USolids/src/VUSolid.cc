@@ -237,7 +237,7 @@ double VUSolid::EstimateCubicVolume(int nStat, double epsilon) const
     pz = min.z()+(max.z()-min.z())*UUtils::Random();
     p	= UVector3(px,py,pz);
     in = this->Inside(p);
-    if(in != vecgeom::EInside::kOutside) iInside++;		
+    if(in != EnumInside::eOutside) iInside++;		
   }
   volume = (max.x()-min.x())*(max.y()-min.y())*(max.z()-min.z())*iInside/nStat;
   return volume;
@@ -304,7 +304,7 @@ double VUSolid::EstimateSurfaceArea(int nStat, double ell) const
     pz = min.z()+dZ*UUtils::Random();
     p	= UVector3(px,py,pz);
     in = this->Inside(p);
-    if(in != vecgeom::EInside::kOutside)
+    if(in != EnumInside::eOutside)
     {
       if	(SafetyFromInside(p)<ell) { inside++; }
     }

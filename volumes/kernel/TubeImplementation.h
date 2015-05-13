@@ -4,15 +4,19 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_
 
-
 #include "base/Global.h"
 #include "base/Transformation3D.h"
-#include "volumes/kernel/BoxImplementation.h"
+#include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
+#include <cstdio>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(TubeImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric, typename)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 namespace TubeUtilities {
 
@@ -120,7 +124,7 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
     if(checkPhiTreatment<TubeType>(tube)) {
       PointInCyclicalSector<Backend, TubeType, UnplacedTube, false>(tube, hitx, hity, insector);
     }
-    ok = delta_mask & (dist > 0) & (Abs(hitz) <= tube.z()) & insector;
+    ok = delta_mask & (dist >= 0) & (Abs(hitz) <= tube.z()) & insector;
   }
   else {
     ok = delta_mask;
@@ -299,8 +303,20 @@ void PointOnTubeSurface(
 
 }
 
+class PlacedTube;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename tubeTypeT>
 struct TubeImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+  using PlacedShape_t = PlacedTube;
+  using UnplacedShape_t = UnplacedTube;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
+  }
 
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -344,7 +360,8 @@ struct TubeImplementation {
     Bool_t insector = Backend::kTrue;
     if(checkPhiTreatment<tubeTypeT>(tube)) {
 
-      PointInCyclicalSector<Backend, tubeTypeT, UnplacedTube, false>(tube, point.x(), point.y(), insector);
+      insector = tube.GetWedge().Contains<Backend>( point );
+
       if(Backend::early_returns && !insector) {
         inside = Backend::kFalse;
         return;
@@ -486,7 +503,7 @@ struct TubeImplementation {
       distance = dist_rmax;
       return;
     }
-
+    
     /*
      * rmin
      * If the particle were to hit rmin, it would hit
@@ -596,7 +613,7 @@ struct TubeImplementation {
     if(checkRminTreatment<tubeTypeT>(tube)) {
       Float_t crmin = invnsq * (rsq - tube.rmin2());
       CircleTrajectoryIntersection<Backend, tubeTypeT, false, false>(b, crmin, tube, point, dir, dist_rmin, ok_rmin);
-      MaskedAssign(ok_rmin && dist_rmin > 0 && dist_rmin < distance, dist_rmin, &distance);
+      MaskedAssign(ok_rmin && dist_rmin >= 0 && dist_rmin < distance, dist_rmin, &distance);
     }
 
     /*
@@ -607,7 +624,7 @@ struct TubeImplementation {
     Bool_t ok_rmax;
     Float_t crmax = invnsq * (rsq - tube.rmax2());
     CircleTrajectoryIntersection<Backend, tubeTypeT, true, false>(b, crmax, tube, point, dir, dist_rmax, ok_rmax);
-    MaskedAssign(ok_rmax && dist_rmax > 0 && dist_rmax < distance, dist_rmax, &distance);
+    MaskedAssign(ok_rmax && dist_rmax >= 0 && dist_rmax < distance, dist_rmax, &distance);
 
     /* Phi planes 
      *
@@ -732,9 +749,8 @@ struct TubeImplementation {
     }
   }
 
-};
+}; // End of TubeUtilties
 
-}
-
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_

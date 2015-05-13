@@ -14,7 +14,8 @@
 
 #include <ctime>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace standardtimer
 {
    // this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
@@ -78,6 +79,6 @@ public:
   double Elapsed() const { return standardtimer::seconds( t2-t1 ); }
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_STOPWATCH_H_

@@ -17,7 +17,12 @@
 class TGeoShape;
 class VUSolid;
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class LogicalVolume; )
+VECGEOM_DEVICE_FORWARD_DECLARE( class VPlacedVolume; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 typedef VPlacedVolume const* Daughter;
 
@@ -30,6 +35,8 @@ class LogicalVolume {
 private:
 
   VUnplacedVolume const *unplaced_volume_;
+
+  using CudaDaughter_t = cuda::VPlacedVolume const*;
 
   int id_;
   std::string *label_;
@@ -103,6 +110,7 @@ public:
     if( label_ )
       *label_ = label;
     else
+      if(label_) delete label_;
       label_=new std::string(label);
   }
 
@@ -124,11 +132,11 @@ public:
 
   VPlacedVolume* Place() const;
 
-  void PlaceDaughter(char const *const label,
+  VPlacedVolume const* PlaceDaughter(char const *const label,
                      LogicalVolume const *const volume,
                      Transformation3D const *const transformation);
 
-  void PlaceDaughter(LogicalVolume const *const volume,
+  VPlacedVolume const* PlaceDaughter(LogicalVolume const *const volume,
                      Transformation3D const *const transformation);
 
   void PlaceDaughter(VPlacedVolume const *const placed);
@@ -139,15 +147,15 @@ public:
   friend std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_vol,
-                           Vector<Daughter> *daughters) const;
-  LogicalVolume* CopyToGpu(VUnplacedVolume const *const unplaced_vol,
-                           Vector<Daughter> *daughters,
-                           LogicalVolume *const gpu_ptr) const;
+  DevicePtr<cuda::LogicalVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const unplaced_vol,
+                                           DevicePtr<cuda::Vector<CudaDaughter_t>> daughters) const;
+  DevicePtr<cuda::LogicalVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const unplaced_vol,
+                                           DevicePtr<cuda::Vector<CudaDaughter_t>> daughters,
+                                           DevicePtr<cuda::LogicalVolume> const gpu_ptr) const;
 #endif
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_LOGICALVOLUME_H_

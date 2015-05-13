@@ -30,10 +30,11 @@ int main(int argc, char* argv[]) {
 
   VPlacedVolume *worldPlaced = world.Place();
 
-  GeoManager::Instance().set_world(worldPlaced);
+  GeoManager::Instance().SetWorld(worldPlaced);
 
-  Benchmarker tester(GeoManager::Instance().world());
-  tester.SetTolerance(1e-6);
+
+  Benchmarker tester(GeoManager::Instance().GetWorld());
+    tester.SetTolerance(1e-6);
   tester.SetVerbosity(3);
   tester.SetPoolMultiplier(1);
   tester.SetPointCount(npoints);

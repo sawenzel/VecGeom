@@ -6,7 +6,6 @@
 #include "base/SOA3D.h"
 #include "base/Stopwatch.h"
 #include "base/Transformation3D.h"
-#include "volumes/LogicalVolume.h"
 #include "volumes/PlacedBox.h"
 #include "volumes/utilities/VolumeUtilities.h"
 
@@ -20,20 +19,25 @@
 #include "TGeoShape.h"
 #endif
 
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Backend.h"
+#include "management/CudaManager.h"
+#endif
+
 #ifdef VECGEOM_GEANT4
 #endif
 
 #include <cassert>
 #include <random>
 #include <sstream>
+#include <utility>
 
 namespace vecgeom {
 
 Benchmarker::Benchmarker() : Benchmarker(NULL) {}
 
-Benchmarker::Benchmarker(
-    VPlacedVolume const *const world)
-    : fPointCount(128), fPoolMultiplier(8), fRepetitions(1<<13),
+Benchmarker::Benchmarker(VPlacedVolume const *const world)
+  : fPointCount(1024), fPoolMultiplier(4), fRepetitions(1024), fMeasurementCount(1),
       fVerbosity(1), fToInBias(0.8), fInsideBias(0.5), fPointPool(NULL),
       fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance) {
   SetWorld(world);
@@ -42,7 +46,7 @@ Benchmarker::Benchmarker(
 Benchmarker::~Benchmarker() {
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;
-  FreeAligned(fStepMax);
+  if (fStepMax) FreeAligned(fStepMax);
 }
 
 void Benchmarker::SetWorld(VPlacedVolume const *const world) {
@@ -92,7 +96,7 @@ BenchmarkResult Benchmarker::GenerateBenchmarkResult(
   return benchmark;
 }
 
-void Benchmarker::CompareDistances(
+int Benchmarker::CompareDistances(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,
@@ -110,10 +114,13 @@ void Benchmarker::CompareDistances(
 #ifdef VECGEOM_CUDA
     Precision const *const cuda,
 #endif
-    char const *const method) const {
+    char const *const method) {
 
+   fProblematicRays.clear();
+
+  int mismatches=0;
   static char const *const outputLabels =
-      "Specialized / Vectorized / Unspecialized"
+      "Vectorized / Specialized / Unspecialized"
 #ifdef VECGEOM_ROOT
       " / ROOT"
 #endif
@@ -134,13 +141,12 @@ void Benchmarker::CompareDistances(
     if (fVerbosity > 2) printf("%s\n", outputLabels);
 
     // Compare results
-    int mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
       bool mismatch = false;
       std::stringstream mismatchOutput;
       if (fVerbosity > 2) {
-        mismatchOutput << specialized[i] << " / "
-                       << vectorized[i] << " / "
+        mismatchOutput << vectorized[i] << " / "
+                       << specialized[i] << " / "
                        << unspecialized[i];
       }
       if (std::fabs(specialized[i] - vectorized[i]) > fTolerance
@@ -185,6 +191,12 @@ void Benchmarker::CompareDistances(
 #endif
       mismatches += mismatch;
 
+      if( mismatch )
+      {
+          fProblematicRays.push_back( std::pair<Vector3D<Precision>,Vector3D<Precision> >(Vector3D<Precision>(points->x(i), points->y(i), points->z(i)),
+                  Vector3D<Precision>( directions->x(i), directions->y(i), directions->z(i) ) ) );
+      }
+
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
         printf("Point (%f, %f, %f)", points->x(i), points->y(i),
                points->z(i));
@@ -202,17 +214,146 @@ void Benchmarker::CompareDistances(
     printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
 
   }
-
+  return mismatches;
 }
 
-void Benchmarker::RunBenchmark() {
+int Benchmarker::CompareSafeties(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method) const {
+
+    int mismatches = 0;
+
+  static char const *const outputLabels =
+      "Vectorized / Specialized / Unspecialized"
+#ifdef VECGEOM_ROOT
+      " / ROOT"
+#endif
+#ifdef VECGEOM_USOLIDS
+      " / USolids"
+#endif
+#ifdef VECGEOM_GEANT4
+      " / Geant4"
+#endif
+#ifdef VECGEOM_CUDA
+      " / CUDA"
+#endif
+      ;
+
+  if (fPoolMultiplier == 1 && fVerbosity > 0) {
+
+    printf("Comparing %s results...\n", method);
+    if (fVerbosity > 2) printf("%s\n", outputLabels);
+
+    // Compare results
+    int worse = 0;
+    for (unsigned i = 0; i < fPointCount; ++i) {
+      bool mismatch = false;
+      bool better = true;
+      std::stringstream mismatchOutput;
+      if (fVerbosity > 2) {
+        mismatchOutput << vectorized[i] << " / "
+                       << specialized[i] << " / "
+                       << unspecialized[i];
+      }
+      if (std::fabs(specialized[i] - vectorized[i]) > kTolerance
+          && !(specialized[i] == kInfinity && vectorized[i] == kInfinity)) {
+        mismatch = true;
+      }
+      better &= specialized[i] >= vectorized[i];
+      if (std::fabs(specialized[i] - unspecialized[i]) > kTolerance
+          && !(specialized[i] == kInfinity && unspecialized[i] == kInfinity)) {
+        mismatch = true;
+        better &= specialized[i] >= unspecialized[i];
+      }
+#ifdef VECGEOM_ROOT
+      if (std::fabs(specialized[i] - root[i]) > kTolerance
+          && !(specialized[i] == kInfinity && root[i] == 1e30)) {
+        mismatch = true;
+        better &= specialized[i] >= root[i];
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << root[i];
+#endif
+#ifdef VECGEOM_USOLIDS
+      if (std::fabs(specialized[i] - usolids[i]) > kTolerance
+          && !(specialized[i] == kInfinity
+               && usolids[i] == UUtils::kInfinity)) {
+        mismatch = true;
+        better &= specialized[i] >= usolids[i];
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];
+#endif
+#ifdef VECGEOM_GEANT4
+      if (geant4) {
+        if (std::fabs(specialized[i] - geant4[i]) > kTolerance
+            && !(specialized[i] == kInfinity
+                 && geant4[i] == ::kInfinity)) {
+          mismatch = true;
+          better &= specialized[i] >= geant4[i];
+        }
+        if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
+      }
+#endif
+#ifdef VECGEOM_CUDA
+      if (std::fabs(specialized[i] - cuda[i]) > kTolerance
+          && !(specialized[i] == kInfinity && cuda[i] == kInfinity)) {
+        mismatch = true;
+        better &= specialized[i] >= cuda[i];
+      }
+      if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
+#endif
+      mismatches += mismatch;
+      worse += !better;
+
+      if ((!better && fVerbosity > 2) || fVerbosity > 4) {
+        printf("Point (%f, %f, %f)", points->x(i), points->y(i),
+               points->z(i));
+        if (directions != NULL) {
+          printf(", Direction (%f, %f, %f)", directions->x(i), directions->y(i),
+                 directions->z(i));
+        }
+        printf(": ");
+      }
+
+      if ((!better && fVerbosity > 2) || fVerbosity > 3) {
+        printf("%s\n", mismatchOutput.str().c_str());
+      }
+    }
+    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
+    printf("%i / %i worse safeties detected.\n", worse, fPointCount);
+  }
+
+  return mismatches;
+}
+
+int Benchmarker::RunBenchmark() {
   Assert(fWorld, "No world specified to benchmark.\n");
-  RunInsideBenchmark();
-  RunToInBenchmark();
-  RunToOutBenchmark();
+  int errorcode=0;
+  errorcode+=RunInsideBenchmark();
+  errorcode+=RunToInBenchmark();
+  errorcode+=RunToOutBenchmark();
+  if(fMeasurementCount==1) errorcode+=CompareMetaInformation();
+  return (errorcode)? 1 : 0;
 }
 
-void Benchmarker::RunInsideBenchmark() {
+int Benchmarker::RunInsideBenchmark() {
+  int mismatches = 0;
+  int insidemismatches = 0;
 
   assert(fWorld);
 
@@ -236,8 +377,8 @@ void Benchmarker::RunInsideBenchmark() {
   if (fVerbosity > 1) printf("Done.\n");
 
   std::stringstream outputLabelsContains, outputLabelsInside;
-  outputLabelsContains << "Specialized - Vectorized - Unspecialized";
-  outputLabelsInside   << "Specialized - Vectorized - Unspecialized";
+  outputLabelsContains << "Vectorized - Specialized - Unspecialized";
+  outputLabelsInside   << "Vectorized - Specialized - Unspecialized";
 
   // Allocate memory
   bool *const containsSpecialized = AllocateAligned<bool>();
@@ -267,38 +408,42 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
 
   // Run all benchmarks
-  RunInsideSpecialized(containsSpecialized, insideSpecialized);
-  RunInsideVectorized(containsVectorized, insideVectorized);
-  RunInsideUnspecialized(containsUnspecialized, insideUnspecialized);
+  for(unsigned int i=0; i<fMeasurementCount; ++i) {
+    RunInsideVectorized(containsVectorized, insideVectorized);
+    RunInsideSpecialized(containsSpecialized, insideSpecialized);
+    RunInsideUnspecialized(containsUnspecialized, insideUnspecialized);
 #ifdef VECGEOM_USOLIDS
-  RunInsideUSolids(insideUSolids);
+    RunInsideUSolids(insideUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
-  RunInsideGeant4(insideGeant4);
+    RunInsideGeant4(insideGeant4);
 #endif
 #ifdef VECGEOM_ROOT
-  RunInsideRoot(containsRoot);
+    RunInsideRoot(containsRoot);
 #endif
 #ifdef VECGEOM_CUDA
-  RunInsideCuda(fPointPool->x(), fPointPool->y(), fPointPool->z(),
-                containsCuda, insideCuda);
+    RunInsideCuda(fPointPool->x(), fPointPool->y(), fPointPool->z(),
+                  containsCuda, insideCuda);
 #endif
+  }
 
   if (fPoolMultiplier == 1 && fVerbosity > 0) {
 
     // Compare Contains results
-
     printf("Comparing Contains results:\n");
     if (fVerbosity > 2) printf("%s\n", outputLabelsContains.str().c_str());
 
     // Compare results
-    int mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
-      bool mismatch = false;
+        bool mismatch = false;
+
+      //fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+
+
       std::stringstream mismatchOutput;
       if (fVerbosity > 2) {
-        mismatchOutput << containsSpecialized[i] << " / "
-                       << containsVectorized[i] << " / "
+        mismatchOutput << containsVectorized[i] << " / "
+                       << containsSpecialized[i] << " / "
                        << containsUnspecialized[i];
       }
       if (containsSpecialized[i] != containsVectorized[i]) mismatch = true;
@@ -313,8 +458,12 @@ void Benchmarker::RunInsideBenchmark() {
 #endif
       mismatches += mismatch;
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
-        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
-               *(fPointPool->y()+i), fPointPool->z(i));
+        printf("Point (%f, %f, %f): ", fPointPool->x(i),
+               fPointPool->y(i), fPointPool->z(i));
+
+        // store point for later inspection
+        fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+
       }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
         printf("%s\n", mismatchOutput.str().c_str());
@@ -331,13 +480,12 @@ void Benchmarker::RunInsideBenchmark() {
     printf("Comparing Inside results:\n");
     if (fVerbosity > 2) printf("%s\n", outputLabelsInside.str().c_str());
 
-    mismatches = 0;
     for (unsigned i = 0; i < fPointCount; ++i) {
       bool mismatch = false;
       std::stringstream mismatchOutput;
       if (fVerbosity > 2) {
-        mismatchOutput << insideSpecialized[i] << " / "
-                       << insideVectorized[i] << " / "
+        mismatchOutput << insideVectorized[i] << " / "
+                       << insideSpecialized[i] << " / "
                        << insideUnspecialized[i];
       }
       if (insideSpecialized[i] != insideVectorized[i]) mismatch = true;
@@ -361,24 +509,30 @@ void Benchmarker::RunInsideBenchmark() {
       if (insideSpecialized[i] != insideCuda[i]) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << insideCuda[i];
 #endif
-      mismatches += mismatch;
+      insidemismatches += mismatch;
+      if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
+        printf("Point (%f, %f, %f): ", *(fPointPool->x()+i),
+               *(fPointPool->y()+i), fPointPool->z(i));
+      }
       if ((mismatch && fVerbosity > 2) || fVerbosity > 3) {
-        printf("%s\n", mismatchOutput.str().c_str());
+
+          fProblematicContainPoints.push_back( fPointPool->operator[](i) );
+          printf("%s\n", mismatchOutput.str().c_str());
       }
     }
     if (fVerbosity > 2 && mismatches > 100) {
       printf("%s\n", outputLabelsInside.str().c_str());
     }
-    printf("%i / %i mismatches detected.\n", mismatches, fPointCount);
+    printf("%i / %i mismatches detected.\n", insidemismatches, fPointCount);
 
   }
 
   // Clean up memory
-  FreeAligned(containsSpecialized);
   FreeAligned(containsVectorized);
+  FreeAligned(containsSpecialized);
   FreeAligned(containsUnspecialized);
-  FreeAligned(insideSpecialized);
   FreeAligned(insideVectorized);
+  FreeAligned(insideSpecialized);
   FreeAligned(insideUnspecialized);
 #ifdef VECGEOM_USOLIDS
   FreeAligned(insideUSolids);
@@ -393,11 +547,44 @@ void Benchmarker::RunInsideBenchmark() {
   FreeAligned(containsCuda);
   FreeAligned(insideCuda);
 #endif
-
+  return mismatches + insidemismatches;
 }
 
-void Benchmarker::RunToInBenchmark() {
+int Benchmarker::CompareMetaInformation() const {
 
+    double vecgeomcapacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+            vecgeomcapacity += (const_cast<VPlacedVolume *>(v->Specialized()))->Capacity();
+        printf("## VecGeom capacity sum %lf\n", vecgeomcapacity);
+    }
+#ifdef VECGEOM_ROOT
+    double ROOTcapacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+        ROOTcapacity += v->ROOT()->Capacity();
+    }
+    printf("## ROOT capacity sum %lf\n", ROOTcapacity);
+#endif
+
+    #ifdef VECGEOM_USOLIDS
+    double USOLIDScapacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+        USOLIDScapacity += const_cast<VUSolid*>(v->USolids())->Capacity();
+    }
+    printf("## USOLIDS capacity sum %lf\n", USOLIDScapacity);
+#endif
+
+    #ifdef VECGEOM_GEANT4
+    double g4capacity=0.;
+    for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
+        g4capacity += const_cast<G4VSolid*>(v->Geant4())->GetCubicVolume();
+    }
+    printf("## G4 capacity sum %lf\n", g4capacity);
+#endif
+    return 0;
+}
+
+
+int Benchmarker::RunToInBenchmark() {
   assert(fWorld);
 
   if (fVerbosity > 0) {
@@ -413,12 +600,13 @@ void Benchmarker::RunToInBenchmark() {
   // Allocate memory
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;
-  if (fStepMax) delete fStepMax;
+  if (fStepMax)  FreeAligned(fStepMax);
+
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fDirectionPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fStepMax = AllocateAligned<Precision>();
   for (unsigned i = 0; i < fPointCount; ++i) fStepMax[i] = kInfinity;
-  
+
   if (fVerbosity > 1) printf("Generating points with bias %f...", fToInBias);
 
   // Generate points not contained in any daughters and set the fraction hitting
@@ -433,13 +621,13 @@ void Benchmarker::RunToInBenchmark() {
   fDirectionPool->resize(fPointCount*fPoolMultiplier);
 
   std::stringstream outputLabels;
-  outputLabels << "Specialized - Vectorized - Unspecialized";
+  outputLabels << "Vectorized - Specialized - Unspecialized";
 
   // Allocate output memory
-  Precision *const distancesSpecialized = AllocateAligned<Precision>();
-  Precision *const safetiesSpecialized = AllocateAligned<Precision>();
   Precision *const distancesVectorized = AllocateAligned<Precision>();
   Precision *const safetiesVectorized = AllocateAligned<Precision>();
+  Precision *const distancesSpecialized = AllocateAligned<Precision>();
+  Precision *const safetiesSpecialized = AllocateAligned<Precision>();
   Precision *const distancesUnspecialized = AllocateAligned<Precision>();
   Precision *const safetiesUnspecialized = AllocateAligned<Precision>();
 #ifdef VECGEOM_USOLIDS
@@ -464,25 +652,26 @@ void Benchmarker::RunToInBenchmark() {
 #endif
 
   // Run all benchmarks
-  RunToInSpecialized(distancesSpecialized, safetiesSpecialized);
-  RunToInVectorized(distancesVectorized, safetiesVectorized);
-  RunToInUnspecialized(distancesUnspecialized, safetiesUnspecialized);
+  for(unsigned int i=0; i<fMeasurementCount; ++i) {
+    RunToInVectorized(distancesVectorized, safetiesVectorized);
+    RunToInSpecialized(distancesSpecialized, safetiesSpecialized);
+    RunToInUnspecialized(distancesUnspecialized, safetiesUnspecialized);
 #ifdef VECGEOM_USOLIDS
-  RunToInUSolids(distancesUSolids, safetiesUSolids);
+    RunToInUSolids(distancesUSolids, safetiesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
-  RunToInGeant4(distancesGeant4, safetiesGeant4);
+    RunToInGeant4(distancesGeant4, safetiesGeant4);
 #endif
 #ifdef VECGEOM_ROOT
-  RunToInRoot(distancesRoot, safetiesRoot);
+    RunToInRoot(distancesRoot, safetiesRoot);
 #endif
 #ifdef VECGEOM_CUDA
-  RunToInCuda(fPointPool->x(),     fPointPool->y(),     fPointPool->z(),
-              fDirectionPool->x(), fDirectionPool->y(), fDirectionPool->z(),
-              distancesCuda, safetiesCuda);
+    RunToInCuda(fPointPool->x(),     fPointPool->y(),     fPointPool->z(),
+                fDirectionPool->x(), fDirectionPool->y(), fDirectionPool->z(),
+                distancesCuda, safetiesCuda);
 #endif
-
-  CompareDistances(
+  }
+  int errorcode = CompareDistances(
     fPointPool,
     fDirectionPool,
     distancesSpecialized,
@@ -519,8 +708,10 @@ void Benchmarker::RunToInBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  CompareDistances(
-    fPointPool,
+  // for the moment; do not consider safety for errorcodes
+  //errorcode += CompareSafeties(
+  CompareSafeties(
+  fPointPool,
     NULL,
     safetiesSpecialized,
     safetiesVectorized,
@@ -554,13 +745,13 @@ void Benchmarker::RunToInBenchmark() {
 #ifdef VECGEOM_CUDA
   FreeAligned(safetiesCuda);
 #endif
-
+  return (errorcode)? 1 : 0;
 }
 
-void Benchmarker::RunToOutBenchmark() {
+int Benchmarker::RunToOutBenchmark() {
 
   assert(fWorld);
-  
+
   if (fVerbosity > 0) {
     printf("Running DistanceToOut and SafetyToOut benchmark for %i points for "
            "%i repetitions.\n", fPointCount, fRepetitions);
@@ -574,12 +765,12 @@ void Benchmarker::RunToOutBenchmark() {
   // Allocate memory
   if (fPointPool) delete fPointPool;
   if (fDirectionPool) delete fDirectionPool;
-  if (fStepMax) delete fStepMax;
+  if (fStepMax) FreeAligned(fStepMax);
   fPointPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fDirectionPool = new SOA3D<Precision>(fPointCount*fPoolMultiplier);
   fStepMax = AllocateAligned<Precision>();
   for (unsigned i = 0; i < fPointCount; ++i) fStepMax[i] = kInfinity;
-  
+
   if (fVerbosity > 1) printf("Generating points...");
 
   // Generate points not contained in any daughters and set the fraction hitting
@@ -593,13 +784,13 @@ void Benchmarker::RunToOutBenchmark() {
   fDirectionPool->resize(fPointCount*fPoolMultiplier);
 
   std::stringstream outputLabels;
-  outputLabels << "Specialized - Vectorized - Unspecialized";
+  outputLabels << "Vectorized - Specialized - Unspecialized";
 
   // Allocate output memory
-  Precision *const distancesSpecialized = AllocateAligned<Precision>();
-  Precision *const safetiesSpecialized = AllocateAligned<Precision>();
   Precision *const distancesVectorized = AllocateAligned<Precision>();
   Precision *const safetiesVectorized = AllocateAligned<Precision>();
+  Precision *const distancesSpecialized = AllocateAligned<Precision>();
+  Precision *const safetiesSpecialized = AllocateAligned<Precision>();
   Precision *const distancesUnspecialized = AllocateAligned<Precision>();
   Precision *const safetiesUnspecialized = AllocateAligned<Precision>();
 #ifdef VECGEOM_USOLIDS
@@ -624,25 +815,27 @@ void Benchmarker::RunToOutBenchmark() {
 #endif
 
   // Run all benchmarks
-  RunToOutSpecialized(distancesSpecialized, safetiesSpecialized);
-  RunToOutVectorized(distancesVectorized, safetiesVectorized);
-  RunToOutUnspecialized(distancesUnspecialized, safetiesUnspecialized);
+  for(unsigned int i=0; i<fMeasurementCount; ++i) {
+    RunToOutVectorized(distancesVectorized, safetiesVectorized);
+    RunToOutSpecialized(distancesSpecialized, safetiesSpecialized);
+    RunToOutUnspecialized(distancesUnspecialized, safetiesUnspecialized);
 #ifdef VECGEOM_USOLIDS
-  RunToOutUSolids(distancesUSolids, safetiesUSolids);
+    RunToOutUSolids(distancesUSolids, safetiesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
-  RunToOutGeant4(distancesGeant4, safetiesGeant4);
+    RunToOutGeant4(distancesGeant4, safetiesGeant4);
 #endif
 #ifdef VECGEOM_ROOT
-  RunToOutRoot(distancesRoot, safetiesRoot);
+    RunToOutRoot(distancesRoot, safetiesRoot);
 #endif
 #ifdef VECGEOM_CUDA
-  RunToOutCuda(fPointPool->x(),     fPointPool->y(),     fPointPool->z(),
-               fDirectionPool->x(), fDirectionPool->y(), fDirectionPool->z(),
-               distancesCuda, safetiesCuda);
+    RunToOutCuda(fPointPool->x(),     fPointPool->y(),     fPointPool->z(),
+                 fDirectionPool->x(), fDirectionPool->y(), fDirectionPool->z(),
+                 distancesCuda, safetiesCuda);
 #endif
+  }
 
-  CompareDistances(
+  int errorcode = CompareDistances(
     fPointPool,
     fDirectionPool,
     distancesSpecialized,
@@ -679,8 +872,9 @@ void Benchmarker::RunToOutBenchmark() {
   FreeAligned(distancesCuda);
 #endif
 
-  CompareDistances(
-    fPointPool,
+  //errorcode += CompareSafeties(
+  CompareSafeties(
+  fPointPool,
     NULL,
     safetiesSpecialized,
     safetiesVectorized,
@@ -714,7 +908,7 @@ void Benchmarker::RunToOutBenchmark() {
 #ifdef VECGEOM_CUDA
   FreeAligned(safetiesCuda);
 #endif
-
+  return ( errorcode ) ? 1 : 0 ;
 }
 
 void Benchmarker::RunInsideSpecialized(bool *contains, Inside_t *inside) {
@@ -740,7 +934,7 @@ void Benchmarker::RunInsideSpecialized(bool *contains, Inside_t *inside) {
     }
   }
   Precision elapsedInside = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1 ) {
     printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
            "Inside/Contains: %.2f\n",
            elapsedInside, elapsedInside/fVolumes.size(),
@@ -748,14 +942,10 @@ void Benchmarker::RunInsideSpecialized(bool *contains, Inside_t *inside) {
            elapsedInside/elapsedContains);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedContains, kBenchmarkContains, kBenchmarkSpecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedContains, kBenchmarkContains, kBenchmarkSpecialized, fInsideBias )
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedInside, kBenchmarkInside, kBenchmarkSpecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedInside, kBenchmarkInside, kBenchmarkSpecialized, fInsideBias )
   );
 }
 
@@ -789,7 +979,7 @@ void Benchmarker::RunToInSpecialized(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
            "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
@@ -797,14 +987,10 @@ void Benchmarker::RunToInSpecialized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkSpecialized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkSpecialized, fToInBias )
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkSpecialized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkSpecialized, fToInBias )
   );
 }
 
@@ -838,23 +1024,16 @@ void Benchmarker::RunToOutSpecialized(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+
+  if (fVerbosity > 0 && fMeasurementCount==1 ) {
     printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
            "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkSpecialized, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkSpecialized, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkSpecialized, 1 ) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkSpecialized, 1 ) );
 }
 
 void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
@@ -882,23 +1061,15 @@ void Benchmarker::RunInsideVectorized(bool *contains, Inside_t *inside) {
     }
   }
   Precision elapsedInside = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
            "Inside/Contains: %.2f\n",
            elapsedInside, elapsedInside/fVolumes.size(),
            elapsedContains, elapsedContains/fVolumes.size(),
            elapsedInside/elapsedContains);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedContains, kBenchmarkContains, kBenchmarkVectorized, fInsideBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedInside, kBenchmarkInside, kBenchmarkVectorized, fInsideBias
-    )
-  );
+  fResults.push_back(GenerateBenchmarkResult(elapsedContains, kBenchmarkContains, kBenchmarkVectorized,fInsideBias));
+  fResults.push_back( GenerateBenchmarkResult( elapsedInside, kBenchmarkInside, kBenchmarkVectorized, fInsideBias) );
 }
 
 void Benchmarker::RunToInVectorized(
@@ -930,7 +1101,7 @@ void Benchmarker::RunToInVectorized(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
            "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
@@ -938,14 +1109,10 @@ void Benchmarker::RunToInVectorized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkVectorized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkVectorized, fToInBias)
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkVectorized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkVectorized, fToInBias)
   );
 }
 
@@ -978,23 +1145,15 @@ void Benchmarker::RunToOutVectorized(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
            "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkVectorized, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkVectorized, 1
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkVectorized, 1) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkVectorized, 1) );
 }
 
 void Benchmarker::RunInsideUnspecialized(bool *contains, Inside_t *inside) {
@@ -1022,7 +1181,7 @@ void Benchmarker::RunInsideUnspecialized(bool *contains, Inside_t *inside) {
     }
   }
   Precision elapsedInside = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("Inside: %.6fs (%.6fs), Contains: %.6fs (%.6fs), "
            "Inside/Contains: %.2f\n",
            elapsedInside, elapsedInside/fVolumes.size(),
@@ -1030,14 +1189,10 @@ void Benchmarker::RunInsideUnspecialized(bool *contains, Inside_t *inside) {
            elapsedInside/elapsedContains);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedContains, kBenchmarkContains, kBenchmarkUnspecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedContains, kBenchmarkContains, kBenchmarkUnspecialized, fInsideBias )
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedInside, kBenchmarkInside, kBenchmarkUnspecialized, fInsideBias
-    )
+    GenerateBenchmarkResult( elapsedInside, kBenchmarkInside, kBenchmarkUnspecialized, fInsideBias )
   );
 }
 
@@ -1069,7 +1224,7 @@ void Benchmarker::RunToInUnspecialized(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
            "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
@@ -1077,15 +1232,10 @@ void Benchmarker::RunToInUnspecialized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUnspecialized,
-      fToInBias
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUnspecialized, fToInBias)
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUnspecialized, fToInBias
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUnspecialized, fToInBias)
   );
 }
 
@@ -1117,7 +1267,7 @@ void Benchmarker::RunToOutUnspecialized(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
            "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
@@ -1125,14 +1275,10 @@ void Benchmarker::RunToOutUnspecialized(
            elapsedDistance/elapsedSafety);
   }
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUnspecialized, 1
-    )
+    GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUnspecialized, 1)
   );
   fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUnspecialized, 1
-    )
+    GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUnspecialized, 1)
   );
 }
 
@@ -1145,7 +1291,7 @@ void Benchmarker::RunInsideUSolids(::VUSolid::EnumInside *const inside) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1157,16 +1303,12 @@ void Benchmarker::RunInsideUSolids(::VUSolid::EnumInside *const inside) {
     }
   }
   Precision elapsed = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("Inside: %.6fs (%.6fs), Contains: -.------s (-.------s), "
            "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsed, kBenchmarkInside, kBenchmarkUSolids, fInsideBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsed, kBenchmarkInside, kBenchmarkUSolids, fInsideBias ) );
 }
 
 void Benchmarker::RunToInUSolids(
@@ -1178,7 +1320,7 @@ void Benchmarker::RunToInUSolids(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1198,7 +1340,7 @@ void Benchmarker::RunToInUSolids(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1210,23 +1352,15 @@ void Benchmarker::RunToInUSolids(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
            "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUSolids, fToInBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUSolids, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult(elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkUSolids, fToInBias));
+  fResults.push_back( GenerateBenchmarkResult(elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkUSolids, fToInBias) );
 }
 
 void Benchmarker::RunToOutUSolids(
@@ -1267,23 +1401,15 @@ void Benchmarker::RunToOutUSolids(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
            "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUSolids, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUSolids, 1
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkUSolids, 1) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkUSolids, 1) );
 }
 #endif
 
@@ -1296,7 +1422,7 @@ void Benchmarker::RunInsideGeant4(::EInside *const inside) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1308,16 +1434,12 @@ void Benchmarker::RunInsideGeant4(::EInside *const inside) {
     }
   }
   Precision elapsed = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("Inside: %.6fs (%.6fs), Contains: -.------s (-.------s), "
            "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsed, kBenchmarkInside, kBenchmarkGeant4, fInsideBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsed, kBenchmarkInside, kBenchmarkGeant4, fInsideBias ) );
 }
 void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
   if (fVerbosity > 0) printf("Geant4        - ");
@@ -1327,13 +1449,15 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
             transformation->Transform((*fPointPool)[p]);
         const Vector3D<Precision> dir =
             transformation->TransformDirection((*fDirectionPool)[p]);
+        //printf("Geant4 RunToIn will get point %.6f %.6f %.6f",point[0],point[1],point[2]);
+    //printf("Geant4 RunToIn before transform point %.6f %.6f %.6f",(*fPointPool)[p][0],(*fPointPool)[p][1],(*fPointPool)[p][2]);
         distances[i] = v->Geant4()->DistanceToIn(
           G4ThreeVector(point[0], point[1], point[2]),
           G4ThreeVector(dir[0], dir[1], dir[2])
@@ -1347,7 +1471,7 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         const Vector3D<Precision> point =
@@ -1359,23 +1483,15 @@ void Benchmarker::RunToInGeant4(Precision *distances, Precision *safeties) {
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
            "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkGeant4, fToInBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkGeant4, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult(elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkGeant4, fToInBias) );
+  fResults.push_back( GenerateBenchmarkResult(elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkGeant4, fToInBias) );
 }
 
 void Benchmarker::RunToOutGeant4(Precision *distances, Precision *safeties) {
@@ -1414,23 +1530,15 @@ void Benchmarker::RunToOutGeant4(Precision *distances, Precision *safeties) {
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
            "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkGeant4, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkSafetyToOut, kBenchmarkGeant4, 1
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkGeant4, 1 ) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkGeant4, 1 ) );
 }
 #endif
 
@@ -1443,7 +1551,7 @@ void Benchmarker::RunInsideRoot(bool *inside) {
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         Vector3D<Precision> point =
@@ -1453,16 +1561,12 @@ void Benchmarker::RunInsideRoot(bool *inside) {
     }
   }
   Precision elapsed = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("Inside: -.------s (-.------s), Contains: %.6fs (%.6fs), "
            "Inside/Contains: -.--\n",
            elapsed, elapsed/fVolumes.size());
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsed, kBenchmarkContains, kBenchmarkRoot, fInsideBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsed, kBenchmarkContains, kBenchmarkRoot, fInsideBias ) );
 }
 
 void Benchmarker::RunToInRoot(
@@ -1474,7 +1578,7 @@ void Benchmarker::RunToInRoot(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         Vector3D<Precision> point =
@@ -1491,7 +1595,7 @@ void Benchmarker::RunToInRoot(
     int index = (rand() % fPoolMultiplier) * fPointCount;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
       Transformation3D const *transformation =
-          v->Unspecialized()->transformation();
+          v->Unspecialized()->GetTransformation();
       for (unsigned i = 0; i < fPointCount; ++i) {
         int p = index + i;
         Vector3D<Precision> point =
@@ -1501,23 +1605,15 @@ void Benchmarker::RunToInRoot(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToIn: %.6fs (%.6fs), SafetyToIn: %.6fs (%.6fs), "
            "DistanceToIn/SafetyToIn: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkRoot, fToInBias
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkRoot, fToInBias
-    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToIn, kBenchmarkRoot, fToInBias ) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToIn, kBenchmarkRoot, fToInBias ) );
 }
 void Benchmarker::RunToOutRoot(
     Precision *const distances, Precision *const safeties) {
@@ -1548,23 +1644,15 @@ void Benchmarker::RunToOutRoot(
     }
   }
   Precision elapsedSafety = timer.Stop();
-  if (fVerbosity > 0) {
+  if (fVerbosity > 0 && fMeasurementCount==1) {
     printf("DistanceToOut: %.6fs (%.6fs), SafetyToOut: %.6fs (%.6fs), "
            "DistanceToOut/SafetyToOut: %.2f\n",
            elapsedDistance, elapsedDistance/fVolumes.size(),
            elapsedSafety, elapsedSafety/fVolumes.size(),
            elapsedDistance/elapsedSafety);
   }
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkRoot, 1
-    )
-  );
-  fResults.push_back(
-    GenerateBenchmarkResult(
-      elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkRoot, 
-1    )
-  );
+  fResults.push_back( GenerateBenchmarkResult( elapsedDistance, kBenchmarkDistanceToOut, kBenchmarkRoot, 1) );
+  fResults.push_back( GenerateBenchmarkResult( elapsedSafety, kBenchmarkSafetyToOut, kBenchmarkRoot, 1)  );
 }
 #endif
 
@@ -1577,5 +1665,16 @@ template <typename Type>
 void Benchmarker::FreeAligned(Type *const distance) {
   if (distance) _mm_free(distance);
 }
+
+#ifdef VECGEOM_CUDA_INTERFACE
+void Benchmarker::GetVolumePointers( std::list<DevicePtr<cuda::VPlacedVolume>> &volumesGpu ) {
+  CudaManager::Instance().LoadGeometry(GetWorld());
+  CudaManager::Instance().Synchronize();
+  for (std::list<VolumePointers>::const_iterator v = fVolumes.begin();
+       v != fVolumes.end(); ++v) {
+    volumesGpu.push_back(CudaManager::Instance().LookupPlaced(v->Specialized()));
+  }
+}
+#endif
 
 } // End namespace vecgeom

@@ -14,7 +14,12 @@
 #include <cmath>
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedOrb; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedOrb );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedOrb : public VUnplacedVolume, public AlignedBase {
 
@@ -66,9 +71,10 @@ public:
   
   //_____________________________________________________________________________
   
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
+/*<<<<<<< HEAD
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Capacity() const {return fCubicVolume;}
@@ -76,15 +82,17 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision SurfaceArea() const {return fSurfaceArea;}
+=======
+*/
+  Precision Capacity() const { return fCubicVolume; }
   
-  #ifdef VECGEOM_USOLIDS
-  VECGEOM_CUDA_HEADER_BOTH
-  #endif
-  Vector3D<Precision>  GetPointOnSurface() const;
- 
+  Precision SurfaceArea() const { return fSurfaceArea; }
+//>>>>>>> master
   
-  //VECGEOM_CUDA_HEADER_BOTH
+  virtual Vector3D<Precision> GetPointOnSurface() const;
+
   std::string GetEntityType() const;
+#endif
   
     
   VECGEOM_CUDA_HEADER_BOTH
@@ -96,10 +104,8 @@ public:
   //VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
     
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void ComputeBBox() const; 
-   
+  // VECGEOM_CUDA_HEADER_BOTH
+  // void ComputeBBox() const; 
   
 public:
   virtual int memory_size() const { return sizeof(*this); }
@@ -141,8 +147,9 @@ public:
   #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedOrb>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
   
   
@@ -178,6 +185,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDORB_H_

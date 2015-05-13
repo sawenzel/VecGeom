@@ -1,4 +1,8 @@
-/// @file SpecializedTrapezoid.h
+/// \file   SpecializedTrapezoid.h
+/// \author Guilherme Lima (lima 'at' fnal 'dot' gov)
+/*
+ * 2014-05-01 - Created, based on the Parallelepiped draft
+ */
 
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_
@@ -11,57 +15,15 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
-class SpecializedTrapezoid
-    : public ShapeImplementationHelper<PlacedTrapezoid,
-                                       TrapezoidImplementation<
-                                           transCodeT, rotCodeT> > {
+using SpecializedTrapezoid = ShapeImplementationHelper<TrapezoidImplementation<transCodeT, rotCodeT> >;
 
-  typedef ShapeImplementationHelper<PlacedTrapezoid,
-                                    TrapezoidImplementation<
-                                        transCodeT, rotCodeT> > Helper;
+using SimpleTrapezoid = SpecializedTrapezoid<translation::kGeneric, rotation::kGeneric>;
 
-public:
 
-#ifndef VECGEOM_NVCC
-
-  SpecializedTrapezoid(char const *const label,
-                        LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
-      : Helper(label, logical_volume, transformation, NULL) {}
-
-  SpecializedTrapezoid(LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation)
-      : SpecializedTrapezoid("", logical_volume, transformation) {}
-
-#else
-
-  __device__
-  SpecializedTrapezoid(LogicalVolume const *const logical_volume,
-                        Transformation3D const *const transformation,
-                        PlacedBox const *const boundingBox, const int id)
-      : Helper(logical_volume, transformation, boundingBox, id) {}
-
-#endif
-
-  virtual int memory_size() const { return sizeof(*this); }
-
-  VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
-  
-
-};
-
-typedef SpecializedTrapezoid<translation::kGeneric, rotation::kGeneric>
-    SimpleTrapezoid;
-
-template <TranslationCode transCodeT, RotationCode rotCodeT>
-void SpecializedTrapezoid<transCodeT, rotCodeT>::PrintType() const {
-  printf("SpecializedTrapezoid<%i, %i>", transCodeT, rotCodeT);
-}
-
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDTRAPEZOID_H_

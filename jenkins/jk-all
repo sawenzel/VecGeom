@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+THIS=$(dirname $0)
+source $THIS/jk-setup.sh $LABEL $COMPILER $BUILDTYPE $EXTERNALS
+
+echo "Dumping the full environment ---------------------------------------------------------"
+env | sort | sed 's/:/:?     /g' | tr '?' '\n'
+echo "--------------------------------------------------------------------------------------"
+
+#---Run the CTest script depending on the compiler------------------------------------------
+ctest -VV -S ${THIS}/../vecgeom-ctest.cmake,Nightly || true
+exit $build_rc
+
+

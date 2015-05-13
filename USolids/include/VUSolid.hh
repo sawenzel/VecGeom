@@ -22,7 +22,7 @@ class VUSolid
 {
 public:
 
-typedef vecgeom::Inside_t EnumInside;
+typedef vecgeom::EnumInside EnumInside;
    // Use eInside < eSurface < eOutside: allows "max(,)" to combine Inside of surfaces
    // Potentially replace eSurface with eInSurface, eOutSurface 
 
@@ -128,7 +128,7 @@ public:
    
   static double   Tolerance() {return fgTolerance;}
 
-  inline virtual std::ostream& StreamInfo( std::ostream& os ) const = 0;
+  virtual std::ostream& StreamInfo( std::ostream& os ) const = 0;
 
   virtual UVector3 GetPointOnSurface() const = 0;
 

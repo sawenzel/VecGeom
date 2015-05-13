@@ -2,8 +2,8 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "benchmarking/VolumePointers.h"
-
 #include "volumes/PlacedVolume.h"
+#include <iostream>
 
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
@@ -15,7 +15,8 @@
 #include "G4VSolid.hh"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VolumePointers::VolumePointers(VPlacedVolume const *const volume)
     : fSpecialized(volume), fUnspecialized(NULL),
@@ -72,17 +73,21 @@ void VolumePointers::ConvertVolume() {
 }
 
 void VolumePointers::Deallocate() {
+  /*
   if (fInitial != kBenchmarkSpecialized)   delete fSpecialized;
   if (fInitial != kBenchmarkUnspecialized) delete fUnspecialized;
+>>>>>>> master
 #ifdef VECGEOM_ROOT
-  if (fInitial != kBenchmarkRoot)          delete fRoot;
+ // if (initial_ != kBenchmarkRoot)          delete root_;
 #endif
 #ifdef VECGEOM_USOLIDS
-  if (fInitial != kBenchmarkUSolids)       delete fUSolids;
+ // if (initial_ != kBenchmarkUSolids)       delete usolids_;
 #endif
 #ifdef VECGEOM_GEANT4
-  if (fInitial != kBenchmarkGeant4)        delete fGeant4;
+  //  if (fInitial != kBenchmarkGeant4)        delete fGeant4;
 #endif
+  */
 }
 
+} // End impl namespace
 } // End global namespace

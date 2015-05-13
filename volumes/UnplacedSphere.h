@@ -14,10 +14,16 @@
 #include <cmath>
 #endif
 
+
 #include "volumes/Wedge.h"
 #include "volumes/ThetaCone.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedSphere; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedSphere );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedSphere : public VUnplacedVolume, public AlignedBase {
 
@@ -527,14 +533,16 @@ Precision GetDTheta() const
   //_____________________________________________________________________________
   */
 
-//VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_CUDA_HEADER_BOTH
 void CalcCapacity();
 
-//VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_CUDA_HEADER_BOTH
   void CalcSurfaceArea();
 
-  VECGEOM_CUDA_HEADER_BOTH
+
+#if !defined(VECGEOM_NVCC)
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
+/*<<<<<<< HEAD
    
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -552,16 +560,22 @@ void CalcCapacity();
  
   
   //VECGEOM_CUDA_HEADER_BOTH
+=======
+*/
+  Precision Capacity() const;
+
+  Precision SurfaceArea() const;
+
+  Vector3D<Precision> GetPointOnSurface() const;
+
+//>>>>>>> master
   std::string GetEntityType() const;
+#endif
+
+  void GetParametersList(int aNumber, Precision *aArray) const;
   
-    
-  VECGEOM_CUDA_HEADER_BOTH
-  void GetParametersList(int aNumber, Precision *aArray) const; 
-  
-  VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere* Clone() const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
     
   
@@ -615,8 +629,9 @@ public:
   #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedSphere>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 private:
@@ -650,6 +665,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDSPHERE_H_

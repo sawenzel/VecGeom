@@ -8,7 +8,12 @@
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedTrd; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedTrd );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedTrd : public VUnplacedVolume, public AlignedBase {
 private:
@@ -29,6 +34,7 @@ private:
 
   Precision fFx, fFy;
 
+  VECGEOM_CUDA_HEADER_BOTH
   void calculateCached() {
     fX2minusX1 = fDX2 - fDX1;
     fY2minusY1 = fDY2 - fDY1;
@@ -48,14 +54,34 @@ public:
   // special case Trd1 when dY1 == dY2
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrd(const Precision dx1, const Precision dx2, const Precision dy1, const Precision dz) :
-      fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy1), fDZ(dz) {
+  fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy1), fDZ(dz),
+fX2minusX1(0),
+fY2minusY1(0),
+fDZtimes2(0),
+fHalfX1plusX2(0),
+fHalfY1plusY2(0),
+fCalfX(0),
+fCalfY(0),
+fFx(0),
+fFy(0)
+{
     calculateCached();
   }
 
   // general case
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrd(const Precision dx1, const Precision dx2, const Precision dy1, const Precision dy2, const Precision dz) :
-      fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy2), fDZ(dz) {
+  fDX1(dx1), fDX2(dx2), fDY1(dy1), fDY2(dy2), fDZ(dz),
+fX2minusX1(0),
+fY2minusY1(0),
+fDZtimes2(0),
+fHalfX1plusX2(0),
+fHalfY1plusY2(0),
+fCalfX(0),
+fCalfY(0),
+fFx(0),
+fFy(0)
+ {
     calculateCached();
   }
 
@@ -118,6 +144,18 @@ public:
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision> & min, Vector3D<Precision> & max ) const {
+      min = Vector3D<Precision>(-std::max(fDX1, fDX2), -std::max(fDY1, fDY2), -fDZ);
+      max = Vector3D<Precision>(std::max(fDY1, fDX2), std::max(fDY1, fDY2), fDZ);
+  }
+
+
+#ifndef VECGEOM_NVCC
+  // Computes capacity of the shape in [length^3]
+  Precision Capacity() const;
+#endif
+
+  VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
 
   template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -130,8 +168,9 @@ public:
                                VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedTrd>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 private:
@@ -149,6 +188,6 @@ private:
       VPlacedVolume *const placement = NULL) const;
 };
 
-} // end global namespace
+} } // end global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDTRD_H_

@@ -9,7 +9,12 @@
 #include "base/Vector3D.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedBox; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedBox )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedBox : public VUnplacedVolume, public AlignedBase {
 
@@ -31,8 +36,9 @@ public:
   virtual int memory_size() const { return sizeof(*this); }
 
   #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedBox>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
   #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -51,13 +57,14 @@ public:
   VECGEOM_INLINE
   Precision z() const { return dimensions_[2]; }
 
-  VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
   VECGEOM_INLINE
   Precision volume() const {
     return 8.0*dimensions_[0]*dimensions_[1]*dimensions_[2];
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() { return volume(); }
+
   VECGEOM_INLINE
   Precision SurfaceArea() const {
      // factor 8 because dimensions_ are half-lengths
@@ -65,12 +72,12 @@ public:
              dimensions_[1]*dimensions_[2] + dimensions_[2]*dimensions_[0]);
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
 
-  VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnSurface() const;
 
+  virtual std::string GetEntityType() const { return "Box";}
+#endif // !VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const;
@@ -113,11 +120,11 @@ private:
 #ifndef VECGEOM_NVCC
 
   virtual VPlacedVolume* SpecializedVolume(
-      LogicalVolume const *const volume,
+      LogicalVolume const *const lvolume,
       Transformation3D const *const transformation,
       const TranslationCode trans_code, const RotationCode rot_code,
       VPlacedVolume *const placement = NULL) const {
-    return CreateSpecializedVolume(volume, transformation, trans_code, rot_code,
+    return CreateSpecializedVolume(lvolume, transformation, trans_code, rot_code,
                                    placement);
   }
 
@@ -137,6 +144,6 @@ private:
   
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDBOX_H_

@@ -4,7 +4,9 @@
 #include "volumes/LogicalVolume.h"
 
 #include "backend/Backend.h"
+#ifdef VECGEOM_CUDA
 #include "backend/cuda/Interface.h"
+#endif
 #include "base/Array.h"
 #include "base/Transformation3D.h"
 #include "base/Vector.h"
@@ -16,7 +18,8 @@
 #include <climits>
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 int LogicalVolume::g_id_count = 0;
 
@@ -32,15 +35,16 @@ LogicalVolume::LogicalVolume(char const *const label,
   }
 
 LogicalVolume::LogicalVolume(LogicalVolume const & other)
-  : unplaced_volume_(), id_(0), label_(),
+  : unplaced_volume_(), id_(0), label_(NULL),
     user_extension_(NULL), daughters_()
 {
-  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+  printf("COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
 }
 
 LogicalVolume * LogicalVolume::operator=( LogicalVolume const & other )
 {
-  assert( 0 && "COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+  printf("COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
+  return NULL;
 }
 
 #endif
@@ -77,18 +81,20 @@ VPlacedVolume* LogicalVolume::Place() const {
   return Place(label_->c_str());
 }
 
-void LogicalVolume::PlaceDaughter(
+VPlacedVolume const* LogicalVolume::PlaceDaughter(
     char const *const label,
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  VPlacedVolume const *const placed = volume->Place(label, transformation);
-  daughters_->push_back(placed);
+    VPlacedVolume const *const placed = volume->Place(label, transformation);
+    //  std::cerr << label <<" LogVol@"<< this <<" and placed@"<< placed << std::endl;
+    daughters_->push_back(placed);
+    return placed;
 }
 
-void LogicalVolume::PlaceDaughter(
+VPlacedVolume const* LogicalVolume::PlaceDaughter(
     LogicalVolume const *const volume,
     Transformation3D const *const transformation) {
-  PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
+    return PlaceDaughter(volume->GetLabel().c_str(), volume, transformation);
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
@@ -140,63 +146,42 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
   return os;
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void LogicalVolume_CopyToGpu(VUnplacedVolume const *const unplaced_volume,
-                             Vector<VPlacedVolume const*> *const daughters,
-                             LogicalVolume *const output);
-
-LogicalVolume* LogicalVolume::CopyToGpu(
-    VUnplacedVolume const *const unplaced_volume,
-    Vector<Daughter> *const daughters,
-    LogicalVolume *const gpu_ptr) const {
-
-  LogicalVolume_CopyToGpu(unplaced_volume, daughters, gpu_ptr);
-  vecgeom::CudaAssertError();
-  return gpu_ptr;
-
+DevicePtr<cuda::LogicalVolume> LogicalVolume::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const unplaced_vol,
+   DevicePtr<cuda::Vector<CudaDaughter_t>> daughters,
+   DevicePtr<cuda::LogicalVolume> const gpu_ptr) const
+{
+   gpu_ptr.Construct( unplaced_vol, daughters );
+   CudaAssertError();
+   return gpu_ptr;
 }
 
-LogicalVolume* LogicalVolume::CopyToGpu(
-    VUnplacedVolume const *const unplaced_volume,
-    Vector<Daughter> *const daughters) const {
-
-  LogicalVolume *const gpu_ptr = vecgeom::AllocateOnGpu<LogicalVolume>();
-  return this->CopyToGpu(unplaced_volume, daughters, gpu_ptr);
-
+DevicePtr<cuda::LogicalVolume> LogicalVolume::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const unplaced_vol,
+   DevicePtr<cuda::Vector<CudaDaughter_t>> daughter) const
+{
+   DevicePtr<cuda::LogicalVolume> gpu_ptr;
+   gpu_ptr.Allocate();
+   return this->CopyToGpu(unplaced_vol,daughter,gpu_ptr);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+} // End impl namespace
+
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
-class VPlacedVolume;
-class LogicalVolume;
-template <typename Type> class Vector;
+namespace cxx {
 
-__global__
-void ConstructOnGpu(VUnplacedVolume const *const unplaced_volume,
-                    Vector<VPlacedVolume const*> *daughters,
-                    LogicalVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::LogicalVolume(
-    reinterpret_cast<vecgeom_cuda::VUnplacedVolume const*>(unplaced_volume),
-    reinterpret_cast<vecgeom_cuda::Vector<vecgeom_cuda::VPlacedVolume const*>*>(
-      daughters
-    )
-  );
-}
+template size_t DevicePtr<cuda::LogicalVolume>::SizeOf();
+template void DevicePtr<cuda::LogicalVolume>::Construct(
+    DevicePtr<cuda::VUnplacedVolume> const,
+    DevicePtr<cuda::Vector<cuda::VPlacedVolume const*>>) const;
 
-void LogicalVolume_CopyToGpu(VUnplacedVolume const *const unplaced_volume,
-                             Vector<VPlacedVolume const*> *const daughters,
-                             LogicalVolume *const gpu_ptr) {
-  ConstructOnGpu<<<1, 1>>>(unplaced_volume, daughters, gpu_ptr);
 }
 
 #endif // VECGEOM_NVCC
 
-} // End namespace vecgeom
+} // End global namespace

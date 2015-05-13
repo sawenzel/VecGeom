@@ -17,8 +17,10 @@
 #include "backend/scalar/Backend.h"
 
 #include <algorithm>
+#include <iostream>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 constexpr int kVectorSize = VECGEOM_VECTOR_BIT_SIZE / sizeof(Precision);
 
@@ -53,7 +55,7 @@ struct CilkVector {
 public:
 
   // Left public to allow array notation
-  Type __attribute__((align(64))) vec[vec_size];
+  Type __attribute__((aligned(64))) vec[vec_size];
 
   /**
    * User should not assume any default value when constructing without
@@ -260,6 +262,6 @@ CilkInt Max(CilkInt const &val1, CilkInt const &val2) {
   return result;
 }
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BACKEND_CILKBACKEND_H_

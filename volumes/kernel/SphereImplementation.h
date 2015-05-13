@@ -7,17 +7,35 @@
 #include "base/Global.h"
 
 #include "base/Transformation3D.h"
-#include "volumes/kernel/BoxImplementation.h"
 #include "volumes/UnplacedSphere.h"
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
-namespace VECGEOM_NAMESPACE { 
+#include <cstdio>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(SphereImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+inline namespace VECGEOM_IMPL_NAMESPACE { 
+
  
+class PlacedSphere;
  
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct SphereImplementation {
     
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+using PlacedShape_t = PlacedSphere;
+using UnplacedShape_t = UnplacedSphere;
+
+VECGEOM_CUDA_HEADER_BOTH
+static void PrintType() {
+   printf("SpecializedSphere<%i, %i>", transCodeT, rotCodeT);
+}
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -230,8 +248,8 @@ template <class Backend>
        Vector3D<typename Backend::precision_v> &normal);
   
 
-};
 
+};
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
@@ -708,12 +726,13 @@ UnplacedSphere const &unplaced,
 
     
     typedef typename Backend::precision_v Float_t;
+
     typedef typename Backend::bool_v      Bool_t;	
     
     
     Float_t isfuPhiSph(unplaced.IsFullPhiSphere());
    
-    Precision fRmin = unplaced.GetInnerRadius();
+Precision fRmin = unplaced.GetInnerRadius();
     Precision fRminTolerance = unplaced.GetFRminTolerance();
     //Precision kAngTolerance = unplaced.GetAngTolerance()*10. ;
     //Precision halfAngTolerance = (0.5 * kAngTolerance);
@@ -838,9 +857,9 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
                          typename Backend::precision_v &safety){
 
     typedef typename Backend::precision_v Float_t;
-    //typedef typename Backend::bool_v      Bool_t;
 
-    Float_t safe=Backend::kZero;
+
+    // Float_t safe=Backend::kZero;
     Float_t zero=Backend::kZero; 
 
     Vector3D<Float_t> localPoint = point;
@@ -910,9 +929,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety){
     typedef typename Backend::precision_v Float_t;
-    //typedef typename Backend::bool_v      Bool_t;
 
-   // Float_t safe=Backend::kZero;
     Float_t zero=Backend::kZero; 
 
     Vector3D<Float_t> localPoint=point;
@@ -1418,6 +1435,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
    done |= cond;
    MaskedAssign(cond ,0.,&sd1);
    
+<<<<<<< HEAD
    MaskedAssign((tr && cond1),(pDotV3d * pDotV3d - c),&d2);
    MaskedAssign( (!done && cond1 && (tr) && (d2 >= 0.) ) ,(-1.*pDotV3d + Sqrt(d2)),&sd1);
    
@@ -1477,7 +1495,6 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
 }
 
 
-
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_SPHEREIMPLEMENTATION_H_

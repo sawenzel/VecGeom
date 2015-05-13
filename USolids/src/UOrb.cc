@@ -32,7 +32,8 @@ UOrb::UOrb(const std::string& name, double r)
   //
   if (r < 10 * VUSolid::fgTolerance) // cartesian tolerance
   {
-    UUtils::Exception("G4Orb::G4Orb()", "InvalidSetup", FatalErrorInArguments, 1, "Invalid radius > 10*kCarTolerance.");
+    UUtils::Exception("UOrb::UOrb()", "GeomSolids0002",
+       UFatalErrorInArguments, 1, "Invalid radius > 10*kCarTolerance.");
   }
   // VUSolid::fRTolerance is radial tolerance (note: half of G4 tolerance)
   fRTolerance =  max(VUSolid::frTolerance, epsilon * r);
@@ -60,15 +61,15 @@ VUSolid::EnumInside UOrb::Inside(const UVector3& p) const
   // Check radial surface
   double tolRMax2 = tolRMax * tolRMax;
   if (rad2 <= tolRMax2)
-    return vecgeom::EInside::kInside;
+    return EnumInside::eInside;
   else
   {
     tolRMax = fR + fRTolerance * 0.5;
     tolRMax2 = tolRMax * tolRMax;
     if (rad2 <= tolRMax2)
-      return vecgeom::EInside::kSurface;
+      return EnumInside::eSurface;
     else
-      return vecgeom::EInside::kOutside;
+      return EnumInside::eOutside;
   }
 }
 
@@ -105,8 +106,8 @@ double UOrb::DistanceToIn(const UVector3& p,
 
   // Outer spherical shell intersection
   // - Only if outside tolerant fR
-  // - Check for if inside and outer G4Orb heading through solid (-> 0)
-  // - No intersect -> no intersection with G4Orb
+  // - Check for if inside and outer UOrb heading through solid (-> 0)
+  // - No intersect -> no intersection with UOrb
   //
   // Shell eqn: x^2+y^2+z^2 = RSPH^2
   //
@@ -123,7 +124,7 @@ double UOrb::DistanceToIn(const UVector3& p,
   {
     if (c > fRTolerance * fR)
     {
-      // If outside tolerant boundary of outer G4Orb in terms of c
+      // If outside tolerant boundary of outer UOrb in terms of c
       // [ should be sqrt(rad2) - fR > fRTolerance*0.5 ]
 
       d2 = pDotV3d * pDotV3d - c;
@@ -167,7 +168,7 @@ double UOrb::DistanceToIn(const UVector3& p,
 #ifdef UDEBUG
   else // inside ???
   {
-    UUtils::Exception("UOrb::DistanceToIn(p,v)", "Notification", Warning, 1, "Point p is inside !?");
+    UUtils::Exception("UOrb::DistanceToIn(p,v)", "GeomSolids1002", UWarning, 1, "Point p is inside !?");
   }
 #endif
 
@@ -299,8 +300,8 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
 
 
     cout.precision(6);
-    UUtils::Exception("UOrb::DistanceToOut(p,v,..)", "Notification",
-                      Warning, 1, "Logic error: snxt = kInfinity ???");
+    UUtils::Exception("UOrb::DistanceToOut(p,v,..)", "GeomSolids1002",
+                      UWarning, 1, "Logic error: snxt = kInfinity ???");
 
   }
 
@@ -332,7 +333,8 @@ double UOrb::DistanceToOut(const UVector3&  p, const UVector3& v,
       cout.precision(6);
 
 
-      UUtils::Exception("UOrb::DistanceToOut(p,v,..)", "Notification", Warning, 1, "Undefined side for valid surface normal to solid.");
+      UUtils::Exception("UOrb::DistanceToOut(p,v,..)", "GeomSolids1002",
+           UWarning, 1, "Undefined side for valid surface normal to solid.");
     }
   }
   return snxt;
@@ -363,11 +365,11 @@ double UOrb::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
     cout << endl;
     //     DumpInfo();
     cout << "Position:"  << endl << endl;
-    cout << "p.x() = "   << p.x() << endl;
-    cout << "p.y() = "   << p.y() << endl;
-    cout << "p.z() = "   << p.z() << endl << endl;
+    cout << "p.x = "   << p.x() << endl;
+    cout << "p.y = "   << p.y() << endl;
+    cout << "p.z = "   << p.z() << endl << endl;
     //     cout.precision(oldprc);
-    UUtils::Exception("UOrb::DistanceToOut(p)", "Notification", Warning, 1,
+    UUtils::Exception("UOrb::DistanceToOut(p)", "GeomSolids1002", UWarning, 1,
                       "Point p is outside !?");
   }
 #endif
@@ -488,7 +490,7 @@ UVector3 UOrb::GetPointOnSurface() const
 
 VUSolid* UOrb:: Clone() const
 {
-  return new UOrb(GetName(), fR);
+  return new UOrb(*this);
 }
 
 // Copy constructor

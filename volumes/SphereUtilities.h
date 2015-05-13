@@ -16,7 +16,8 @@
 
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
      
   VECGEOM_CUDA_HEADER_BOTH
@@ -32,10 +33,7 @@ namespace VECGEOM_NAMESPACE {
       MaskedAssign( (v<0), mone*v , &v );
   }
   */
-  #ifdef VECGEOM_NVCC
-  Precision GetRadiusInRing(Precision rmin, Precision rmax){}
-  #else 
-  VECGEOM_CUDA_HEADER_BOTH
+#ifndef VECGEOM_NVCC
   Precision GetRadiusInRing(Precision rmin, Precision rmax)
   {
       
@@ -56,7 +54,6 @@ namespace VECGEOM_NAMESPACE {
 #endif
   
   
-
-}// End global 
+} } // End global namespace
 
 #endif //VECGEOM_VOLUMES_SPHEREUTILITIES_H_

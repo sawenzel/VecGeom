@@ -38,7 +38,12 @@
 #include "base/AlignedBase.h"
 #include "volumes/UnplacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedParaboloid; )
+VECGEOM_DEVICE_DECLARE_CONV( UnplacedParaboloid );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class UnplacedParaboloid : public VUnplacedVolume, public AlignedBase {
 
@@ -149,38 +154,34 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     void SetDz(const Precision dz);
     
+#if !defined(VECGEOM_NVCC)
 //__________________________________________________________________
     
-    VECGEOM_CUDA_HEADER_BOTH
     void Normal(const Precision *point, const Precision *dir, Precision *norm) const;
 
 //__________________________________________________________________
     
-    VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
-    
+
 //__________________________________________________________________
 
     // Computes capacity of the shape in [length^3]
-    VECGEOM_CUDA_HEADER_BOTH
     Precision Capacity() const { return kPi*fDz*(fRlo*fRlo+fRhi*fRhi);}
 //__________________________________________________________________
     
-    VECGEOM_CUDA_HEADER_BOTH
-    Precision SurfaceArea () const;
+    Precision SurfaceArea() const;
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
-    Vector3D<Precision>  GetPointOnSurface() const;
+    virtual Vector3D<Precision> GetPointOnSurface() const;
 //__________________________________________________________________
     
+    std::string GetEntityType() const{ return "Paraboloid";}
+#endif // !VECGEOM_NVCC
+
     VECGEOM_CUDA_HEADER_BOTH
     void ComputeBoundingBox();
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
-    std::string GetEntityType() const{ return "Paraboloid";}
-//__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
     void GetParameterList() const{;}
@@ -225,8 +226,9 @@ public:
                                VPlacedVolume *const placement = NULL);
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  virtual VUnplacedVolume* CopyToGpu() const;
-  virtual VUnplacedVolume* CopyToGpu(VUnplacedVolume *const gpu_ptr) const;
+  virtual size_t DeviceSizeOf() const { return DevicePtr<cuda::UnplacedParaboloid>::SizeOf(); }
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const;
+  virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const;
 #endif
 
 private:
@@ -245,6 +247,6 @@ private:
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_UNPLACEDPARABOLOID_H_

@@ -42,7 +42,13 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParaboloid.h"
 
-namespace VECGEOM_NAMESPACE {
+#include <cstdio>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(ParaboloidImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
     
     namespace ParaboloidUtilities
     {
@@ -58,8 +64,21 @@ namespace VECGEOM_NAMESPACE {
                                  }
     }
 
+class PlacedParaboloid;
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct ParaboloidImplementation {
+
+    static const int transC = transCodeT;
+    static const int rotC   = rotCodeT;
+
+    using PlacedShape_t = PlacedParaboloid;
+    using UnplacedShape_t = UnplacedParaboloid;
+   
+    VECGEOM_CUDA_HEADER_BOTH
+    static void PrintType() {
+       printf("SpecializedParaboloid<%i, %i>", transCodeT, rotCodeT);
+    }
 
     /// \brief Inside method that takes account of the surface for an Unplaced Paraboloid
     template <class Backend>
@@ -80,7 +99,7 @@ struct ParaboloidImplementation {
         Bool_t isOutside= outsideAboveOrBelowOuterTolerance;
         Bool_t done(isOutside);
         
-        if (Backend::early_returns && done == Backend::kTrue)
+        if (Backend::early_returns && IsFull(done))
         {
             inside = EInside::kOutside;
             return;
@@ -89,7 +108,7 @@ struct ParaboloidImplementation {
         Double_t value=unplaced.GetA()*rho2+unplaced.GetB()-point.z();
         Bool_t outsideParabolicSurfaceOuterTolerance= (value>kHalfTolerance);
         done|=outsideParabolicSurfaceOuterTolerance;
-        if (Backend::early_returns && done == Backend::kTrue)
+        if (Backend::early_returns && IsFull(done))
         {
             inside = EInside::kOutside;
             return;
@@ -102,7 +121,7 @@ struct ParaboloidImplementation {
         Bool_t isInside=insideAboveOrBelowInnerTolerance && insideParaboloidSurfaceInnerTolerance;
         MaskedAssign(isInside, EInside::kInside, &inside);
         done|=isInside;
-        if(Backend::early_returns && done == Backend::kTrue) return;
+        if(Backend::early_returns && IsFull(done)) return;
         
         MaskedAssign(!done, EInside::kSurface, &inside);
     }
@@ -123,8 +142,7 @@ struct ParaboloidImplementation {
         Bool_t isAboveOrBelowSolid=(Abs(point.z()) > unplaced.GetDz());
         Bool_t done(isAboveOrBelowSolid);
 
-        inside = Backend::kFalse;
-        if(Backend::early_returns && done==Backend::kTrue) return;
+        if(Backend::early_returns && IsFull(done)) return;
         
         // //Check if points are outside the parabolic surface
         Float_t aa=unplaced.GetA()*(point.z()-unplaced.GetB());
@@ -133,7 +151,7 @@ struct ParaboloidImplementation {
         Bool_t isOutsideParabolicSurface= aa < 0 || aa < unplaced.GetA2()*rho2;
         done |= isOutsideParabolicSurface;
         
-        MaskedAssign(!done, Backend::kTrue, &inside);
+        inside = !done;
     }
 
     /// \brief Inside method that takes account of the surface for a Placed Paraboloid
@@ -221,22 +239,22 @@ struct ParaboloidImplementation {
         //check if the point is distancing in Z
         Bool_t isDistancingInZ= (absZ>unplaced.GetDz() && checkZ);
         done|=isDistancingInZ;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
         
         //check if the point is distancing in XY
         Bool_t isDistancingInXY=( (rho2>unplaced.GetRhi2()) && (point_dot_direction_x>0 && point_dot_direction_y>0) );
         done|=isDistancingInXY;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
     
         //check if the point is distancing in X
         Bool_t isDistancingInX=( (Abs(localPoint.x())>unplaced.GetRhi()) && (point_dot_direction_x>0) );
         done|=isDistancingInX;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
 
         //check if the point is distancing in Y
         Bool_t isDistancingInY=( (Abs(localPoint.y())>unplaced.GetRhi()) && (point_dot_direction_y>0) );
         done|=isDistancingInY;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
 
         //is hitting from dz or -dz planes
         Float_t distZ = (absZ-unplaced.GetDz())/absDirZ;
@@ -250,7 +268,7 @@ struct ParaboloidImplementation {
         Bool_t isCrossingAtDz= (absZ>unplaced.GetDz()) && (!checkZ) && (rhoHit2 <=ray2);
         MaskedAssign(isCrossingAtDz, distZ, &distance);
         done|=isCrossingAtDz;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
         
         //is hitting from the paraboloid surface
         //DistToParaboloidSurface<Backend>(unplaced,localPoint,localDirection, distParab);
@@ -266,13 +284,13 @@ struct ParaboloidImplementation {
                bVerySmall=(Abs(b)<kTiny);
         
         done|= aVerySmall && bVerySmall;
-        if (done == Backend::kTrue) return; //big
+        if (IsFull(done)) return; //big
         
         
         Double_t COverB=-c/b;
         Bool_t COverBNeg=(COverB<0);
         done|=COverBNeg && aVerySmall ; //se neg ritorno big
-        if (done == Backend::kTrue) return;
+        if (IsFull(done)) return;
         
         Bool_t check1=aVerySmall && !bVerySmall && !COverBNeg;
         MaskedAssign(!done && check1 , COverB, &distParab ); //to store
@@ -285,14 +303,14 @@ struct ParaboloidImplementation {
         
         Bool_t deltaNeg=delta<0;
         done|= deltaNeg;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
         
         //to avoid square root operation on negative elements
         MaskedAssign(deltaNeg, 0. , &delta);
         delta = Sqrt(delta);
 
 
-	    //I take only the biggest solution among all
+        //I take only the biggest solution among all
         distParab=ainv*(-t - delta);
         
         Float_t zHit = localPoint.z()+distParab*localDirection.z();
@@ -426,7 +444,7 @@ struct ParaboloidImplementation {
         safety_t=Max(safeZ, safety_t);
         
         MaskedAssign(mask_bb , safety_t, &safety);
-        if (Backend::early_returns && mask_bb == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(mask_bb)) return;
         
         //then go for the tangent
         Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
@@ -456,7 +474,7 @@ struct ParaboloidImplementation {
         safety_t=Max(safeZ, safeRhi);
         
         MaskedAssign(mask_bc, safety_t, &safety);
-        if (Backend::early_returns && mask_bc == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(mask_bc)) return;
         
         //then go for the tangent
         Float_t r0sq = (localPoint.z() - unplaced.GetB())*unplaced.GetAinv();
@@ -482,7 +500,7 @@ struct ParaboloidImplementation {
         
         Bool_t underParaboloid = (r0sq<0);
         done|= underParaboloid;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
 
 
         Float_t safR=kInfinity;
@@ -493,7 +511,7 @@ struct ParaboloidImplementation {
         
         Bool_t drCloseToZero = (dr<1.E-8);
         done|=drCloseToZero;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
         
         //then go for the tangent
         Float_t talf = -2.*unplaced.GetA()*Sqrt(r0sq);
@@ -542,7 +560,7 @@ struct ParaboloidImplementation {
         
         Bool_t closeToParaboloid = (r0sq<0);
         done|= closeToParaboloid;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
         
         Float_t safR=kInfinity;
         Float_t ro2=point.x()*point.x()+point.y()*point.y();
@@ -551,7 +569,7 @@ struct ParaboloidImplementation {
         
         Bool_t drCloseToZero= (dr>-1.E-8);
         done|=drCloseToZero;
-        if (Backend::early_returns && done == Backend::kTrue) return;
+        if (Backend::early_returns && IsFull(done)) return;
         
         Float_t dz = Abs(point.z()-z0);
         safR = -dr*dz/Sqrt(dr*dr+dz*dz);
@@ -564,6 +582,6 @@ struct ParaboloidImplementation {
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_PARABOLOIDIMPLEMENTATION_H_

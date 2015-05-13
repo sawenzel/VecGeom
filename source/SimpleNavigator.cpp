@@ -13,8 +13,8 @@
 #include "TGeoManager.h"
 #endif
 
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef VECGEOM_ROOT
 
@@ -29,10 +29,10 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
 
    // check that everything is consistent
    {
-      NavigationState tmpstate( state );
-      tmpstate.Clear();
-      assert( LocatePoint( GeoManager::Instance().world(),
-              globalpoint, tmpstate, true ) == state.Top() );
+      NavigationState * tmpstate = NavigationState::MakeCopy( state );
+      tmpstate->Clear();
+      assert( LocatePoint( GeoManager::Instance().GetWorld(),
+              globalpoint, *tmpstate, true ) == state.Top() );
    }
 
    // now check mother and daughters
@@ -46,7 +46,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
    std::cout << "DistanceToOutMother : " << step << "\n";
 
    // iterate over all the daughters
-   Vector<Daughter> const * daughters = currentvolume->logical_volume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvolume->GetLogicalVolume()->daughtersp();
 
    std::cout << "ITERATING OVER " << daughters->size() << " DAUGHTER VOLUMES " << "\n";
    for(int d = 0; d<daughters->size(); ++d)
@@ -77,7 +77,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
       m->MasterToLocal(lp, llp);
       m->MasterToLocalVect(ld, lld);
       TGeoNode const * daughter=currentRootNode->GetDaughter(d);
-      Precision ddistance = daughter->GetVolume()->GetShape()->DistFromOutside(llp,llp,3,1E30,0);
+      Precision ddistance = daughter->GetVolume()->GetShape()->DistFromOutside(llp,lld,3,1E30,0);
 
       std::cout << "DistanceToDaughter ROOT : " << daughter->GetName() << " " << ddistance << "\n";
    }
@@ -92,10 +92,10 @@ void SimpleNavigator::InspectSafetyForPoint
 
    // check that everything is consistent
    {
-      NavigationState tmpstate( state );
-      tmpstate.Clear();
-      assert( LocatePoint( GeoManager::Instance().world(),
-              globalpoint, tmpstate, true ) == state.Top() );
+      NavigationState * tmpstate = NavigationState::MakeCopy( state );
+      tmpstate->Clear();
+      assert( LocatePoint( GeoManager::Instance().GetWorld(),
+              globalpoint, *tmpstate, true ) == state.Top() );
    }
 
    std::cout << "############################################ " << "\n";
@@ -108,14 +108,14 @@ void SimpleNavigator::InspectSafetyForPoint
    //assert( safety > 0 );
 
    // safety to daughters
-   Vector<Daughter> const * daughters = currentvol->logical_volume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->daughtersp();
    int numberdaughters = daughters->size();
    for(int d = 0; d<numberdaughters; ++d)
    {
-	   VPlacedVolume const * daughter = daughters->operator [](d);
-	   double tmp = daughter->SafetyToIn( localpoint );
+       VPlacedVolume const * daughter = daughters->operator [](d);
+       double tmp = daughter->SafetyToIn( localpoint );
        std::cout << "Safety to Daughter " << tmp << "\n";
-	   safety = Min(safety, tmp);
+       safety = Min(safety, tmp);
    }
    std::cout << "Would return" << safety << "\n";
 
@@ -139,4 +139,4 @@ void SimpleNavigator::InspectSafetyForPoint
 
 #endif // VECGEOM_ROOT
 
-}
+} } // End global namespace

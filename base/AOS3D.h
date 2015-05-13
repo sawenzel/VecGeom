@@ -12,7 +12,11 @@
 #include "backend/cuda/Interface.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class AOS3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 template <typename T>
 class AOS3D : Container3D<AOS3D<T> > {
@@ -34,10 +38,15 @@ public:
 
   AOS3D(size_t size);
 
+  VECGEOM_CUDA_HEADER_BOTH
+  AOS3D();
+
   AOS3D(AOS3D<T> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   AOS3D& operator=(AOS3D<T> const &other);
 
+  VECGEOM_CUDA_HEADER_BOTH
   ~AOS3D();
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -51,11 +60,12 @@ public:
   VECGEOM_INLINE
   void resize(size_t newSize);
 
+  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void reserve(size_t newCapacity);
 
   VECGEOM_INLINE
-  void clear();  
+  void clear();
 
   // Element access methods. Can be used to manipulate content.
 
@@ -69,11 +79,11 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T* content();
+  Vector3D<T>* content();
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  T const* content() const;
+  Vector3D<T> const* content() const;
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -115,26 +125,31 @@ public:
   VECGEOM_INLINE
   void push_back(Vector3D<T> const &vec);
 
-#ifdef VECGEOM_CUDA
-  AOS3D<T>* CopyToGpu(Vector3D<T> *contentGpu) const;
+#ifdef VECGEOM_CUDA_INTERFACE
+  DevicePtr<cuda::AOS3D<T> > CopyToGpu(DevicePtr<cuda::Vector3D<T> > contentGpu) const;
 #endif
 
 private:
 
+  VECGEOM_CUDA_HEADER_BOTH
   void Deallocate();
 
 };
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-AOS3D<T>::AOS3D(Vector3D<T> *content, size_t size)
-    : fAllocated(false), fSize(size), fCapacity(fSize), fContent(content) {}
+AOS3D<T>::AOS3D(Vector3D<T> *in_content, size_t in_size)
+    : fAllocated(false), fSize(in_size), fCapacity(fSize), fContent(in_content) {}
 
 template <typename T>
-AOS3D<T>::AOS3D(size_t capacity)
-    : fAllocated(true), fSize(0), fCapacity(capacity), fContent(NULL) {
+AOS3D<T>::AOS3D(size_t sz)
+    : fAllocated(true), fSize(sz), fCapacity(sz), fContent(NULL) {
   reserve(fCapacity);
 }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+AOS3D<T>::AOS3D() : fAllocated(false), fSize(0), fCapacity(0), fContent(NULL) {}
 
 template <typename T>
 AOS3D<T>::AOS3D(AOS3D<T> const &rhs)
@@ -144,7 +159,9 @@ AOS3D<T>::AOS3D(AOS3D<T> const &rhs)
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 AOS3D<T>& AOS3D<T>::operator=(AOS3D<T> const &rhs) {
+#ifndef VECGEOM_NVCC_DEVICE
   clear();
   if (rhs.fAllocated) {
     reserve(rhs.fCapacity);
@@ -155,6 +172,12 @@ AOS3D<T>& AOS3D<T>::operator=(AOS3D<T> const &rhs) {
     fCapacity = rhs.fCapacity;
   }
   fSize = rhs.fSize;
+#else
+  fAllocated = false;
+  fSize = rhs.fSize;
+  fCapacity = rhs.fCapacity;
+  fContent = rhs.fContent;
+#endif
   return *this;
 }
 
@@ -178,15 +201,11 @@ void AOS3D<T>::resize(size_t newSize) {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::reserve(size_t newCapacity) {
   fCapacity = newCapacity;
   Vec_t *contentNew;
-#ifndef VECGEOM_NVCC
-  contentNew = static_cast<Vec_t*>(_mm_malloc(sizeof(Vec_t)*fCapacity,
-                                   kAlignmentBoundary));
-#else
-  contentNew = new Vec_t[fCapacity];
-#endif
+  contentNew = AlignedAllocate<Vec_t>(fCapacity);
   fSize = (fSize > fCapacity) ? fCapacity : fSize;
   if (fContent) {
     copy(fContent, fContent+fSize, contentNew);
@@ -205,13 +224,10 @@ void AOS3D<T>::clear() {
 }
 
 template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
 void AOS3D<T>::Deallocate() {
   if (fAllocated) {
-#ifndef VECGEOM_NVCC
-    _mm_free(fContent);
-#else
-    delete fContent;
-#endif
+    AlignedFree(fContent);
   }
 }
 
@@ -229,7 +245,11 @@ Vector3D<T>& AOS3D<T>::operator[](size_t index) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-T* AOS3D<T>::content() { return fContent; }
+Vector3D<T>* AOS3D<T>::content() { return fContent; }
+
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<T> const* AOS3D<T>::content() const { return fContent; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
@@ -257,10 +277,10 @@ T& AOS3D<T>::z(size_t index) { return (fContent[index])[2]; }
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void AOS3D<T>::set(size_t index, T x, T y, T z) {
-  (fContent[index])[0] = x;
-  (fContent[index])[1] = y;
-  (fContent[index])[2] = z;
+void AOS3D<T>::set(size_t index, T in_x, T in_y, T in_z) {
+  (fContent[index])[0] = in_x;
+  (fContent[index])[1] = in_y;
+  (fContent[index])[2] = in_z;
 }
 
 template <typename T>
@@ -271,10 +291,10 @@ void AOS3D<T>::set(size_t index, Vector3D<T> const &vec) {
 
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
-void AOS3D<T>::push_back(T x, T y, T z) {
-  (fContent[fSize])[0] = x;
-  (fContent[fSize])[1] = y;
-  (fContent[fSize])[2] = z;
+void AOS3D<T>::push_back(T in_x, T in_y, T in_z) {
+  (fContent[fSize])[0] = in_x;
+  (fContent[fSize])[1] = in_y;
+  (fContent[fSize])[2] = in_z;
   ++fSize;
 }
 
@@ -285,26 +305,21 @@ void AOS3D<T>::push_back(Vector3D<T> const &vec) {
   ++fSize;
 }
 
-} // End global namespace
-
-namespace vecgeom {
 
 #ifdef VECGEOM_CUDA_INTERFACE
 
-template <typename T> class Vector3D;
-template <typename T> class AOS3D;
-
-AOS3D<Precision>* AOS3D_CopyToGpu(Vector3D<Precision> *content, size_t size);
-
 template <typename T>
-AOS3D<T>* AOS3D<T>::CopyToGpu(Vector3D<T> *const contentGpu) const {
-  size_t bytes = fSize*sizeof(Vec_t);
-  vecgeom::CopyToGpu(fContent, contentGpu, bytes);
-  return AOS3D_CopyToGpu(contentGpu, fSize);
+DevicePtr< cuda::AOS3D<T> > AOS3D<T>::CopyToGpu(DevicePtr<cuda::Vector3D<T> > contentGpu) const {
+   contentGpu.ToDevice(fContent, fSize);
+
+   DevicePtr< cuda::AOS3D<T> > gpu_ptr;
+   gpu_ptr.Allocate();
+   gpu_ptr.Construct(contentGpu, fSize);
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
-} // End namespace vecgeom
+} } // End namespace vecgeom
+
 
 #endif // VECGEOM_BASE_AOS3D_H_

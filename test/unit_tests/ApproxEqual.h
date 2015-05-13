@@ -8,15 +8,24 @@
 
 const double kApproxEqualTolerance = 1E-6;
 
-// Return true if the double check is approximately equal to target
+// Return true if the double x is approximately equal to y
 //
 // Process:
 //
-// Return true is check if less than kApproxEqualTolerance from target
+// Return true is x if less than kApproxEqualTolerance from y
 
-bool ApproxEqual(const double check,const double target)
+bool ApproxEqual(const double x, const double y)
 {
-    return (std::fabs(check-target)<kApproxEqualTolerance) ?true:false;
+	if (x == y) {
+		return true;
+	} else if (x * y == 0.0) {
+		double diff = std::fabs(x - y);
+		return diff < kApproxEqualTolerance;
+	} else {
+		double diff = std::fabs(x - y);
+		double abs_x = std::fabs(x), abs_y = std::fabs(y);
+		return diff / (abs_x + abs_y) < kApproxEqualTolerance;
+	}
 }
 
 // Return true if the 3vector check is approximately equal to target

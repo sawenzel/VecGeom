@@ -5,7 +5,8 @@
 
 #include "volumes/PlacedVolume.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 std::ostream& operator<<(std::ostream& os, VUnplacedVolume const &vol) {
   vol.Print(os);
@@ -38,4 +39,4 @@ VPlacedVolume* VUnplacedVolume::PlaceVolume(
 
 #endif
 
-} // End global namespace
+} } // End global namespace

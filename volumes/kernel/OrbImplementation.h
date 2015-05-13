@@ -13,11 +13,33 @@
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
-namespace VECGEOM_NAMESPACE { 
+#include <cstdio>
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(OrbImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
+
+inline namespace VECGEOM_IMPL_NAMESPACE { 
+
+class PlacedOrb;
+class UnplacedOrb;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct OrbImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+
     
+using PlacedShape_t = PlacedOrb;
+using UnplacedShape_t = UnplacedOrb;
+
+VECGEOM_CUDA_HEADER_BOTH
+static void PrintType() {
+   printf("SpecializedOrb<%i, %i>", transCodeT, rotCodeT);
+}
+
 template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -190,7 +212,6 @@ void OrbImplementation<transCodeT, rotCodeT>::NormalKernel(
        typename Backend::bool_v &valid ){
 
     typedef typename Backend::precision_v Float_t;
-    //typedef typename Backend::bool_v      Bool_t;
 
     Vector3D<Float_t> localPoint;
     localPoint = point;
@@ -484,7 +505,6 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedOrb const
     
     Float_t safe(0.);
     Vector3D<Float_t> localPoint;
-    //localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
     localPoint=point;
 
     //General Precalcs
@@ -504,8 +524,8 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedOrb cons
                           typename Backend::precision_v &safety){
     
     typedef typename Backend::precision_v Double_t;
-    
     Double_t safe(0.);
+
     Vector3D<Double_t> localPoint;
     localPoint = point;
     
@@ -518,6 +538,6 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedOrb cons
 }
 
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_KERNEL_ORBIMPLEMENTATION_H_

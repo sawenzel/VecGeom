@@ -12,7 +12,8 @@
 #include "volumes/USolidsInterfaceHelper.h"
 #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 int VPlacedVolume::g_id_count = 0;
 
@@ -25,26 +26,30 @@ VPlacedVolume::VPlacedVolume(char const *const label,
 #ifdef VECGEOM_USOLIDS
     USolidsInterfaceHelper(label),
 #endif
-     id_(), label_(), logical_volume_(logical_volume), transformation_(transformation),
+     id_(), label_(NULL), logical_volume_(logical_volume), transformation_(transformation),
       bounding_box_(bounding_box) {
   id_ = g_id_count++;
   GeoManager::Instance().RegisterPlacedVolume(this);
   label_ = new std::string(label);
 }
 
-VPlacedVolume::VPlacedVolume(VPlacedVolume const & other) : id_(), label_(), logical_volume_(), transformation_(),
+VPlacedVolume::VPlacedVolume(VPlacedVolume const & other) : id_(), label_(NULL), logical_volume_(), transformation_(),
     bounding_box_() {
   assert( 0 && "COPY CONSTRUCTOR FOR PlacedVolumes NOT IMPLEMENTED");
 }
 
 VPlacedVolume * VPlacedVolume::operator=( VPlacedVolume const & other )
 {
-  assert( 0 && "ASSIGNMENT OPERATOR FOR VPlacedVolumes NOT IMPLEMENTED");
+  printf("ASSIGNMENT OPERATOR FOR VPlacedVolumes NOT IMPLEMENTED");
+  return NULL;
 }
 #endif
 
+VECGEOM_CUDA_HEADER_BOTH
 VPlacedVolume::~VPlacedVolume() {
+#ifndef VECGEOM_NVCC_DEVICE
   delete label_;
+#endif
 }
 
 VECGEOM_CUDA_HEADER_BOTH
@@ -79,9 +84,27 @@ void VPlacedVolume::PrintContent(const int indent) const {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
-  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.transformation())
+  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.GetTransformation())
      << ")";
   return os;
 }
+
+} // End impl namespace
+
+#ifdef VECGEOM_NVCC
+
+namespace cxx {
+
+template size_t DevicePtr<cuda::VPlacedVolume const*>::SizeOf();
+template size_t DevicePtr<char>::SizeOf();
+template size_t DevicePtr<Precision>::SizeOf();
+// template void DevicePtr<cuda::PlacedBox>::Construct(
+//    DevicePtr<cuda::LogicalVolume> const logical_volume,
+//    DevicePtr<cuda::Transformation3D> const transform,
+//    const int id) const;
+
+} // End cxx namespace
+
+#endif // VECGEOM_NVCC
 
 } // End global namespace

@@ -17,12 +17,14 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere::UnplacedSphere(Precision pRmin, Precision pRmax,
                  Precision pSPhi, Precision pDPhi,
+
                  Precision pSTheta, Precision pDTheta)  :
      fRmax(0),
      fSPhi(0),
@@ -74,7 +76,7 @@ namespace VECGEOM_NAMESPACE {
   {/*
     std::ostringstream message;
     message << "Invalid radii for Solid: " ;//<< GetName() << std::endl
-            << std::endl<<"				pRmin = " << pRmin << ", pRmax = " << pRmax;
+            << std::endl<<"             pRmin = " << pRmin << ", pRmax = " << pRmax;
                 return;
     */ 
     //UUtils::Exception("USphere::USphere()", "GeomSolids0002",
@@ -90,12 +92,13 @@ namespace VECGEOM_NAMESPACE {
   CheckPhiAngles(pSPhi, pDPhi);
   CheckThetaAngles(pSTheta, pDTheta);
   
+#ifndef VECGEOM_NVCC
   CalcCapacity();
   CalcSurfaceArea();
+#endif
 }
   
-  //VECGEOM_CUDA_HEADER_BOTH
-  //VECGEOM_INLINE
+#ifndef VECGEOM_NVCC
   void UnplacedSphere::CalcCapacity()
   {
       if (fCubicVolume != 0.)
@@ -110,10 +113,7 @@ namespace VECGEOM_NAMESPACE {
       
   }
   
-  
-  
-  //VECGEOM_CUDA_HEADER_BOTH
-  // VECGEOM_INLINE
+
   void UnplacedSphere::CalcSurfaceArea()
   {
       
@@ -133,8 +133,8 @@ namespace VECGEOM_NAMESPACE {
             }
             if (fSTheta > 0)
             {
-             Precision acos1 = std::acos(std::pow(sinSTheta, 2) * std::cos(fDPhi)
-                               + std::pow(cosSTheta, 2));
+             Precision acos1 = std::acos(Pow(sinSTheta, 2) * std::cos(fDPhi)
+                               + Pow(cosSTheta, 2));
             if (fDPhi > kPi)
             {
               fSurfaceArea = fSurfaceArea + 0.5 * (Rsq - rsq) * (2 * kPi - acos1);
@@ -146,8 +146,8 @@ namespace VECGEOM_NAMESPACE {
             }
             if (eTheta < kPi)
             {
-             double acos2 = std::acos(std::pow(sinETheta, 2) * std::cos(fDPhi)
-                               + std::pow(cosETheta, 2));
+             double acos2 = std::acos(Pow(sinETheta, 2) * std::cos(fDPhi)
+                               + Pow(cosETheta, 2));
             if (fDPhi > kPi)
             {
               fSurfaceArea = fSurfaceArea + 0.5 * (Rsq - rsq) * (2 * kPi - acos2);
@@ -158,20 +158,17 @@ namespace VECGEOM_NAMESPACE {
             }
             }
         }
-       
-      
   }
   
   
-  VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
   void UnplacedSphere::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
     // Returns the full 3D cartesian extent of the solid.
       aMin.Set(-fRmax);
       aMax.Set(fRmax);
   }
-  
-  VECGEOM_CUDA_HEADER_BOTH
+#endif // !VECGEOM_NVCC
+
   void UnplacedSphere::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetInnerRadius();
@@ -281,8 +278,14 @@ namespace VECGEOM_NAMESPACE {
   }
   
   }
-  
-  #endif
+
+
+  std::string UnplacedSphere::GetEntityType() const
+  {
+      return "Sphere\n";
+  }
+
+#endif // !VECGEOM_NVCC
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedSphere::ComputeBBox() const 
@@ -290,35 +293,24 @@ namespace VECGEOM_NAMESPACE {
   
   } 
   
-  //VECGEOM_CUDA_HEADER_BOTH
-  std::string UnplacedSphere::GetEntityType() const
-  {
-      return "Sphere\n";
-  }
-  
-  VECGEOM_CUDA_HEADER_BOTH
   UnplacedSphere* UnplacedSphere::Clone() const
   {
       return new UnplacedSphere(fRmin,fRmax,fSPhi,fDPhi,fSTheta,fDTheta);
   }
   
-#ifdef VECGEOM_NVCC
-  std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const{}
-#else
-  VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const
   //Definition taken from USphere
   {
       
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
-   //  << "		*** Dump for solid - " << GetName() << " ***\n"
-   //  << "		===================================================\n"
+   //  << "     *** Dump for solid - " << GetName() << " ***\n"
+   //  << "     ===================================================\n"
    
    << " Solid type: VecGeomSphere\n"
      << " Parameters: \n"
 
-     << "		outer radius: " << fRmax << " mm \n"
+     << "       outer radius: " << fRmax << " mm \n"
      << "               Inner radius: " <<fRmin <<"mm\n"    
      << "               Start Phi Angle: "<<fSPhi<<"\n"
      << "               Delta Phi Angle: "<<fDPhi<<"\n"
@@ -329,8 +321,6 @@ namespace VECGEOM_NAMESPACE {
 
    return os;
   }
-#endif
-
   
   VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print() const {
@@ -403,49 +393,36 @@ VPlacedVolume* UnplacedSphere::CreateSpecializedVolume(
 #endif
 
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedSphere_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision sphi,
-    const Precision dphi, const Precision stheta, const Precision dtheta,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedSphere::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedSphere_CopyToGpu(this->GetInnerRadius(), this->GetOuterRadius(), this->GetStartPhiAngle(),
-                                   this->GetDeltaPhiAngle(), this->GetStartThetaAngle(),this->GetDeltaThetaAngle(), gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedSphere::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedSphere>(in_gpu_ptr, GetInnerRadius(), GetOuterRadius(), GetStartPhiAngle(),
+                                        GetDeltaPhiAngle(), GetStartThetaAngle(),GetDeltaThetaAngle());
 }
 
-VUnplacedVolume* UnplacedSphere::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedSphere>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedSphere::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedSphere>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedSphere_ConstructOnGpu(
-    const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedSphere(rmin,rmax,sphi,dphi,stheta,dtheta);
-}
+template size_t DevicePtr<cuda::UnplacedSphere>::SizeOf();
+template void DevicePtr<cuda::UnplacedSphere>::Construct(
+    const Precision rmin, const Precision rmax, const Precision sphi,
+    const Precision dphi, const Precision stheta,const Precision dtheta) const;
 
-void UnplacedSphere_CopyToGpu(
-    const Precision rmin, const Precision rmax, const Precision sphi,const Precision dphi, const Precision stheta,const Precision dtheta,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedSphere_ConstructOnGpu<<<1, 1>>>(rmin,rmax,sphi,dphi,stheta,dtheta, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace
+

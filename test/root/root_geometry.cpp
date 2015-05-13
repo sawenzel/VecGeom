@@ -10,6 +10,7 @@
 #include "TGeoTube.h"
 #include "TGeoVolume.h"
 
+#undef NDEBUG
 #include <cassert>
 
 using namespace VECGEOM_NAMESPACE;
@@ -28,7 +29,7 @@ int main() {
   RootGeoManager::Instance().LoadRootGeometry();
   RootGeoManager::Instance().world()->PrintContent();
 
-  VPlacedVolume const *const world = GeoManager::Instance().world();
+  VPlacedVolume const *const world = GeoManager::Instance().GetWorld();
   VPlacedVolume const *const tube = *world->daughters().begin();
 
   SimpleNavigator navigator;
@@ -36,8 +37,8 @@ int main() {
   auto CheckPoint = [&] (const Precision x, const Precision y,
                          const Precision z, VPlacedVolume const *const volume) {
     Vector3D<Precision> const point = Vector3D<Precision>(x, y, z);
-    NavigationState path(2);
-    assert(navigator.LocatePoint(world, point, path, true) == volume);
+    NavigationState * path = NavigationState::MakeInstance(2);
+    assert(navigator.LocatePoint(world, point, *path, true) == volume);
   };
 
   CheckPoint(0, 0, 0, world);

@@ -5,18 +5,24 @@
 #define VECGEOM_BASE_VECTOR3D_H_
 
 #include "base/Global.h"
+
 #include "backend/Backend.h"
 #ifndef VECGEOM_NVCC
   #if (defined(VECGEOM_VC) || defined(VECGEOM_VC_ACCELERATION))
     #include <Vc/Vc>
   #endif
 #endif
+#include "base/AlignedBase.h"
 
 #include <cstdlib>
 #include <ostream>
 #include <string>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( template <typename Type> class Vector3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * @brief Three dimensional vector class supporting most arithmetic operations.
@@ -24,7 +30,7 @@ namespace VECGEOM_NAMESPACE {
  *          will use vector instructions for operations when possible.
  */
 template <typename Type>
-class Vector3D {
+class Vector3D : public AlignedBase {
 
   typedef Vector3D<Type> VecType;
 
@@ -58,9 +64,10 @@ public:
     vec[2] = a;
   }
 
+  template <typename TypeOther>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D(Vector3D const &other) {
+  Vector3D(Vector3D<TypeOther> const &other) {
     vec[0] = other[0];
     vec[1] = other[1];
     vec[2] = other[2];
@@ -163,28 +170,22 @@ public:
     return Sqrt(Perp2());
   }
 
-  /// Normalizes the vector by dividing each entry by the length.
-  /// \sa Vector3D::Length()
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void Normalize() {
-    *this /= Mag();
-  }
-
+  template <typename Type2>
   ///The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static
-  Type Dot(Vector3D<Type> const &left, Vector3D<Type> const &right) {
+  Type Dot(Vector3D<Type> const &left, Vector3D<Type2> const &right) {
     return left[0]*right[0] + left[1]*right[1] + left[2]*right[2];
   }
 
+  template <typename Type2>
   /// The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Type Dot(Vector3D<Type> const &right) const {
+  Type Dot(Vector3D<Type2> const &right) const {
     return Dot(*this, right);
   }
 
@@ -210,24 +211,51 @@ public:
     return Sqrt(Mag2());
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Length() const {
+    return Mag();
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Type Length2() const {
+    return Mag2();
+  }
+
+  /// Normalizes the vector by dividing each entry by the length.
+  /// \sa Vector3D::Length()
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  void Normalize() {
+    *this /= (1. / Length());
+  }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Type> Normalized() const {
+    return Vector3D<Type>(*this) * (1. / Length());
+  }
+
   /// \return Azimuthal angle between -pi and pi.
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Type Phi() const {
     //Type output = 0;
-    //VECGEOM_NAMESPACE::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
-    //                                ATan2(vec[1], vec[0]), &output);
+    //vecgeom::MaskedAssign(vec[0] != 0. || vec[1] != 0.,
+    //                      ATan2(vec[1], vec[0]), &output);
     //return output;
     return ATan2(vec[1], vec[0]);
   }
 
   /// The cross (vector) product of two Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
+  template <class FirstType, class SecondType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  static
-  Vector3D<Type> Cross(Vector3D<Type> const &left,
-                       Vector3D<Type> const &right) {
+  static Vector3D<Type> Cross(
+      Vector3D<FirstType> const &left,
+      Vector3D<SecondType> const &right) {
     return Vector3D<Type>(left[1]*right[2] - left[2]*right[1],
                           left[2]*right[0] - left[0]*right[2],
                           left[0]*right[1] - left[1]*right[0]);
@@ -235,10 +263,11 @@ public:
 
   /// The cross (vector) product of two Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
+  template <class OtherType>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector3D<Type> Cross(Vector3D<Type> const &right) const {
-    return Cross(*this, right);
+  Vector3D<Type> Cross(Vector3D<OtherType> const &right) const {
+    return Cross<Type, OtherType>(*this, right);
   }
 
   /// Maps each vector entry to a function that manipulates the entry type.
@@ -254,9 +283,9 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Type> Abs() const {
-    return Vector3D<Type>(VECGEOM_NAMESPACE::Abs(vec[0]),
-                          VECGEOM_NAMESPACE::Abs(vec[1]),
-                          VECGEOM_NAMESPACE::Abs(vec[2]));
+    return Vector3D<Type>(vecgeom::Abs(vec[0]),
+                          vecgeom::Abs(vec[1]),
+                          vecgeom::Abs(vec[2]));
   }
 
   template <typename BoolType>
@@ -290,7 +319,7 @@ public:
   VecType Unit() const {
     const Precision mag2 = Mag2();
     VecType output(*this);
-    output /= Sqrt(mag2 + kTiny);
+    output /= Sqrt(mag2 + kMinimum);
     return output;
   }
 
@@ -304,7 +333,7 @@ public:
   VECGEOM_INLINE
   VecType& FixZeroes() {
     for (int i = 0; i < 3; ++i) {
-      VECGEOM_NAMESPACE::MaskedAssign(VECGEOM_NAMESPACE::Abs(vec[i]) < kTolerance, 0., &vec[i]);
+      vecgeom::MaskedAssign(vecgeom::Abs(vec[i]) < kTolerance, 0., &vec[i]);
     }
     return *this;
   }
@@ -318,6 +347,15 @@ public:
     vec[0] OPERATOR other.vec[0]; \
     vec[1] OPERATOR other.vec[1]; \
     vec[2] OPERATOR other.vec[2]; \
+    return *this; \
+  } \
+  template <typename OtherType> \
+  VECGEOM_CUDA_HEADER_BOTH \
+  VECGEOM_INLINE \
+  VecType& operator OPERATOR(const Vector3D<OtherType> &other) { \
+    vec[0] OPERATOR other[0]; \
+    vec[1] OPERATOR other[1]; \
+    vec[2] OPERATOR other[2]; \
     return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
@@ -348,13 +386,13 @@ std::ostream& operator<<(std::ostream& os, Vector3D<T> const &vec) {
   return os;
 }
 
-#if (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
+#ifdef VECGEOM_VC_ACCELERATION
 
 /// This is a template specialization of class Vector3D<double> or
 /// Vector3D<float> that can provide internal vectorization of common vector
 /// operations.
 template <>
-class Vector3D<Precision> : public Vc::VectorAlignedBase {
+class Vector3D<Precision> : public AlignedBase {
 
   typedef Vector3D<Precision> VecType;
   typedef Vector3D<bool> BoolType;
@@ -366,8 +404,8 @@ private:
 
 public:
 
-  Precision * AsArray() {
-    return (Precision * ) &mem;
+  Precision* AsArray() {
+    return &mem[0];
   }
 
  Vector3D(const Precision a, const Precision b, const Precision c) : mem() {
@@ -377,8 +415,10 @@ public:
   }
 
   // Performance issue in Vc with: mem = a;
+  VECGEOM_INLINE
   Vector3D(const Precision a) : Vector3D(a, a, a) {}
 
+  VECGEOM_INLINE
   Vector3D() : Vector3D(0, 0, 0) {}
 
   VECGEOM_INLINE
@@ -458,15 +498,15 @@ public:
   const Precision& z() const { return mem[2]; }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(const Precision x, const Precision y, const Precision z) {
-    mem[0] = x;
-    mem[1] = y;
-    mem[2] = z;
+  void Set(const Precision in_x, const Precision in_y, const Precision in_z) {
+    mem[0] = in_x;
+    mem[1] = in_y;
+    mem[2] = in_z;
   }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void Set(const Precision x) {
-    Set(x, x, x);
+  void Set(const Precision in_x) {
+    Set(in_x, in_x, in_x);
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -503,10 +543,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Normalize() {
-    *this /= Length();
+    *this *= 1. / Length();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> Normalized() const;
+
   VECGEOM_INLINE
   void Map(Precision (*f)(const Precision&)) {
     mem[0] = f(mem[0]);
@@ -540,7 +583,7 @@ public:
   VecType Unit() const {
     const Precision mag2 = Mag2();
     VecType output(*this);
-    output /= Sqrt(mag2 + kTiny);
+    output /= Sqrt(mag2 + kMinimum);
     return output;
   }
 
@@ -574,33 +617,30 @@ public:
 
   // For UVector3 compatibility. Is equal to normal multiplication.
   // TODO: check if there are implicit dot products in USolids...
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VecType MultiplyByComponents(VecType const &other) const {
-    return *this * other;
-  }
+  VecType MultiplyByComponents(VecType const &other) const;
 
   /// The cross product of two Vector3D<T> objects.
   /// \return Type (where Type is float, double, or various SIMD vector types)
-  VECGEOM_CUDA_HEADER_BOTH
+  template <class FirstType, class SecondType>
   VECGEOM_INLINE
-  static
-  VecType Cross(VecType const &left, VecType const &right) {
-    return VecType(left[1]*right[2] - left[2]*right[1],
-                   left[2]*right[0] - left[0]*right[2],
-                   left[0]*right[1] - left[1]*right[0]);
+  static Vector3D<Precision> Cross(
+      Vector3D<FirstType> const &left,
+      Vector3D<SecondType> const &right) {
+    return Vector3D<Precision>(left[1]*right[2] - left[2]*right[1],
+                               left[2]*right[0] - left[0]*right[2],
+                               left[0]*right[1] - left[1]*right[0]);
   }
 
   /// The cross product with another Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
-  VECGEOM_CUDA_HEADER_BOTH
+  template <class OtherType>
   VECGEOM_INLINE
-  VecType Cross(VecType const &right) const {
-    return Cross(*this, right);
+  Vector3D<Precision> Cross(Vector3D<OtherType> const &right) const {
+    return Cross<Precision, OtherType>(*this, right);
   }
 
   /// Returns absolute value of the vector (as a vector).
-  VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Vector3D<Precision> Abs() const {
     VecType tmp;
@@ -611,17 +651,30 @@ public:
     return tmp;
   }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision>& FixZeroes() {
+    for (int i = 0; i < 3; ++i) {
+      if (std::abs(mem.scalar(i)) < kTolerance) mem.scalar(i) = 0;
+    }
+    return *this;
+  }
+
   // Inplace binary operators
 
   #define VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(OPERATOR) \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const VecType &other) { \
-    this->mem OPERATOR other.mem; \
+    for (unsigned i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
+      this->mem.vector(i) OPERATOR other.mem.vector(i); \
+    } \
     return *this; \
   } \
   VECGEOM_CUDA_HEADER_BOTH \
   VecType& operator OPERATOR(const Precision &scalar) { \
-    this->mem OPERATOR scalar; \
+    for (unsigned i = 0; i < 1 + 3/Vc::Vector<Precision>::Size; ++i) { \
+      this->mem.vector(i) OPERATOR scalar; \
+    } \
     return *this; \
   }
   VECTOR3D_ACCELERATED_INPLACE_BINARY_OP(+=)
@@ -632,20 +685,22 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  operator bool() const {
-    return mem[0] && mem[1] && mem[2];
+  static VecType FromCylindrical(Precision r, Precision phi, Precision z) {
+    return VecType(r*cos(phi), r*sin(phi), z);
   }
 
 };
+#else
+//#pragma message "using normal Vector3D.h"
+#endif // VECGEOM_VC_ACCELERATION
 
-#endif // (defined(VECGEOM_VC_ACCELERATION) && !defined(VECGEOM_NVCC))
 
 #define VECTOR3D_BINARY_OP(OPERATOR, INPLACE) \
-template <typename Type> \
+template <typename Type, typename OtherType> \
 VECGEOM_INLINE \
 VECGEOM_CUDA_HEADER_BOTH \
 Vector3D<Type> operator OPERATOR(const Vector3D<Type> &lhs, \
-                                 const Vector3D<Type> &rhs) { \
+                                 const Vector3D<OtherType> &rhs) { \
   Vector3D<Type> result(lhs); \
   result INPLACE rhs; \
   return result; \
@@ -662,8 +717,8 @@ Vector3D<Type> operator OPERATOR(Vector3D<Type> const &lhs, \
 template <typename Type, typename ScalarType> \
 VECGEOM_INLINE \
 VECGEOM_CUDA_HEADER_BOTH \
-Vector3D<Type> operator OPERATOR(const ScalarType rhs, \
-                                 Vector3D<Type> const &lhs) { \
+Vector3D<Type> operator OPERATOR(const ScalarType lhs, \
+                                 Vector3D<Type> const &rhs) { \
   Vector3D<Type> result(rhs); \
   result INPLACE lhs; \
   return result; \
@@ -674,23 +729,21 @@ VECTOR3D_BINARY_OP(*, *=)
 VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
-template <typename Type, typename BoolType>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-Vector3D<BoolType> operator==(Vector3D<Type> const &lhs,
-                              Vector3D<Type> const &rhs) {
-  return Vector3D<bool>(
-    Abs(lhs[0] - rhs[0]) < kTolerance,
-    Abs(lhs[1] - rhs[1]) < kTolerance,
-    Abs(lhs[2] - rhs[2]) < kTolerance
-  );
+bool operator==(
+    Vector3D<Precision> const &lhs,
+    Vector3D<Precision> const &rhs) {
+  return Abs(lhs[0] - rhs[0]) < kTolerance &&
+         Abs(lhs[1] - rhs[1]) < kTolerance &&
+         Abs(lhs[2] - rhs[2]) < kTolerance;
 }
 
-template <typename Type, typename BoolType>
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-Vector3D<BoolType> operator!=(Vector3D<Type> const &lhs,
-                              Vector3D<Type> const &rhs) {
+Vector3D<bool> operator!=(
+    Vector3D<Precision> const &lhs,
+    Vector3D<Precision> const &rhs) {
   return !(lhs == rhs);
 }
 
@@ -706,31 +759,6 @@ VECGEOM_INLINE
 Vector3D<bool> operator!(Vector3D<bool> const &vec) {
   return Vector3D<bool>(!vec[0], !vec[1], !vec[2]);
 }
-
-#define VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(OPERATOR) \
-VECGEOM_CUDA_HEADER_BOTH \
-VECGEOM_INLINE \
-Vector3D<bool> operator OPERATOR(Vector3D<Precision> const &lhs, \
-                                 Vector3D<Precision> const &rhs) { \
-  return Vector3D<bool>(lhs[0] OPERATOR rhs[0], \
-                        lhs[1] OPERATOR rhs[1], \
-                        lhs[2] OPERATOR rhs[2]); \
-} \
-VECGEOM_CUDA_HEADER_BOTH \
-VECGEOM_INLINE \
-Vector3D<bool> operator OPERATOR(Vector3D<Precision> const &lhs, \
-                                 const Precision rhs) { \
-  return Vector3D<bool>(lhs[0] OPERATOR rhs, \
-                        lhs[1] OPERATOR rhs, \
-                        lhs[2] OPERATOR rhs); \
-}
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(<=)
-VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(>=)
-// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(==)
-// VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP(!=)
-#undef VECTOR3D_SCALAR_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -755,32 +783,14 @@ Vector3D<VcBool> operator!(Vector3D<VcBool> const &vec) {
   return Vector3D<VcBool>(!vec[0], !vec[1], !vec[2]);
 }
 
-#define VECTOR3D_VC_BOOLEAN_COMPARISON_OP(OPERATOR) \
-template <typename Type> \
-VECGEOM_INLINE \
-Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
-    Vector3D<typename Vc::Vector<Type> > const &lhs, \
-    Vector3D<typename Vc::Vector<Type> > const &rhs) { \
-  return Vector3D<typename Vc::Vector<Type>::Mask>(lhs[0] OPERATOR rhs[0], \
-                                                   lhs[1] OPERATOR rhs[1], \
-                                                   lhs[2] OPERATOR rhs[2]); \
-} \
-template <typename Type> \
-VECGEOM_INLINE \
-Vector3D<typename Vc::Vector<Type>::Mask> operator OPERATOR( \
-    Vector3D<typename Vc::Vector<Type> > const &lhs, \
-    Vector3D<Type> const &rhs) { \
-  return Vector3D<typename Vc::Vector<Type>::Mask>(lhs[0] OPERATOR rhs[0], \
-                                                   lhs[1] OPERATOR rhs[1], \
-                                                   lhs[2] OPERATOR rhs[2]); \
+VECGEOM_INLINE
+VcBool operator==(
+    Vector3D<VcPrecision> const &lhs,
+    Vector3D<VcPrecision> const &rhs) {
+  return Abs(lhs[0] - rhs[0]) < kTolerance &&
+         Abs(lhs[1] - rhs[1]) < kTolerance &&
+         Abs(lhs[2] - rhs[2]) < kTolerance;
 }
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(<=)
-VECTOR3D_VC_BOOLEAN_COMPARISON_OP(>=)
-// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(==)
-// VECTOR3D_VC_BOOLEAN_COMPARISON_OP(!=)
-#undef VECTOR3D_VC_BOOLEAN_COMPARISON_OP
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -799,6 +809,22 @@ VECTOR3D_VC_BOOLEAN_LOGICAL_OP(||)
 #pragma GCC diagnostic pop
 
 #endif // VECGEOM_VC
+
+
+#ifdef VECGEOM_VC_ACCELERATION
+
+Vector3D<Precision> Vector3D<Precision>::Normalized() const {
+  return Vector3D<Precision>(*this) * (1. / Length());
+}
+
+Vector3D<Precision> Vector3D<Precision>::MultiplyByComponents(
+    VecType const &other) const {
+  return (*this) * other;
+}
+
+#endif
+
+} // End inline namespace
 
 } // End global namespace
 

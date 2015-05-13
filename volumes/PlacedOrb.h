@@ -11,7 +11,12 @@
 #include "volumes/UnplacedOrb.h"
 #include "volumes/kernel/OrbImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedOrb; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedOrb );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedOrb : public VPlacedVolume {
 
@@ -41,14 +46,14 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedOrb() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedOrb const* GetUnplacedVolume() const {
     return static_cast<UnplacedOrb const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
   
 
@@ -67,33 +72,26 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
-  
-   #ifdef VECGEOM_USOLIDS  
-   Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const { return GetUnplacedVolume()->Extent(aMin,aMax);}
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
-  
-  //#ifdef VECGEOM_USOLIDS
-  //VECGEOM_CUDA_HEADER_BOTH
-  //#endif
-  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
- 
-  VECGEOM_CUDA_HEADER_BOTH
-  void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
-  
-  #endif
 
   VECGEOM_CUDA_HEADER_BOTH
+  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
+
+#ifndef VECGEOM_NVCC
+  virtual Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
+
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
+  
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
+    return GetUnplacedVolume()->Extent(aMin,aMax);
+  }
+  
+  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
+
+  // VECGEOM_CUDA_HEADER_BOTH
+  // void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+  
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
   {
       bool valid;
@@ -104,9 +102,6 @@ public:
       return valid;
   }
 
-
-
-#ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
@@ -117,19 +112,10 @@ public:
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
-
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
+#endif // VECGEOM_NVCC
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDORB_H_

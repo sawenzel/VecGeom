@@ -12,11 +12,16 @@
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParaboloid.h"
-#ifdef USOLIDS
-class VUSOLID;
-#endif
+// #ifdef USOLIDS
+// class VUSOLID;
+// #endif
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedParaboloid; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedParaboloid );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedParaboloid : public VPlacedVolume {
 
@@ -46,18 +51,19 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
-    virtual ~PlacedParaboloid() {}
     VECGEOM_CUDA_HEADER_BOTH
+    virtual ~PlacedParaboloid() {}
+ 
+   VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid const* GetUnplacedVolume() const {
         return static_cast<UnplacedParaboloid const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
     }
     
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedParaboloid * GetUnplacedVolumeNonConst() const {
         return static_cast<UnplacedParaboloid *>(const_cast<VUnplacedVolume *>(
-            logical_volume()->unplaced_volume()));
+            GetLogicalVolume()->unplaced_volume()));
     }
     
     VECGEOM_CUDA_HEADER_BOTH
@@ -111,37 +117,29 @@ public:
     VECGEOM_CUDA_HEADER_BOTH
     Precision GetTolOrhi2() const { return GetUnplacedVolume()->GetTolOrhi2(); }
     
-    
-    VECGEOM_CUDA_HEADER_BOTH
+#if !defined(VECGEOM_NVCC)
     virtual
-    bool Normal( Vector3D<Precision> const &, Vector3D<double> &normal ) const { }
-  //  { GetUnplacedVolume()->Normal(point, dir, norm) ;}
+    bool Normal(Vector3D<Precision> const &, Vector3D<double> &normal) const {
+      Assert(0, "Normal with point only not implemented for Paraboloid.\n");
+      return false;
+    }
     
-    VECGEOM_CUDA_HEADER_BOTH
     void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const { GetUnplacedVolume()->Extent(aMin, aMax) ;}
     
-    VECGEOM_CUDA_HEADER_BOTH
-    Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
+    virtual Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
-    
-    VECGEOM_CUDA_HEADER_BOTH
-    Precision SurfaceArea() const { return GetUnplacedVolume()->SurfaceArea();}
+    Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
 
-    
-    VECGEOM_CUDA_HEADER_BOTH
-    Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface() ;}
+    Vector3D<Precision> GetPointOnSurface() const {
+      return GetUnplacedVolume()->GetPointOnSurface();
+    }
 
-    
-    VECGEOM_CUDA_HEADER_BOTH
-    void ComputeBoundingBox() {  GetUnplacedVolumeNonConst()->ComputeBoundingBox() ;}
-
-   
-    VECGEOM_CUDA_HEADER_BOTH
     virtual
     std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 
-   
-    VECGEOM_CUDA_HEADER_BOTH
+    void ComputeBoundingBox() {  GetUnplacedVolumeNonConst()->ComputeBoundingBox() ;}
+
     void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
 
@@ -172,17 +170,9 @@ public:
 #endif
 #endif // VECGEOM_NVCC
 
-#ifdef VECGEOM_CUDA_INTERFACE
-    virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-    virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDPARABOLOID_H_

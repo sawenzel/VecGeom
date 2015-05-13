@@ -6,12 +6,17 @@
 
 #include "base/Global.h"
 #include "backend/Backend.h"
- 
+
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TrdImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedTrd; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedTrd );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedTrd : public VPlacedVolume {
 
@@ -40,13 +45,13 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedTrd() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrd const* GetUnplacedVolume() const {
     return static_cast<UnplacedTrd const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -69,30 +74,31 @@ public:
   VECGEOM_INLINE
   Precision dz() const { return GetUnplacedVolume()->dz(); }
 
-#ifdef VECGEOM_BENCHMARK
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+    }
+
+#ifndef VECGEOM_NVCC
+  virtual
+  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
+
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
+
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
 #endif
+
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const;
 #endif
+
 #ifdef VECGEOM_GEANT4
   G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
-
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
+#endif // VECGEOM_NVCC
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDTUBE_H_

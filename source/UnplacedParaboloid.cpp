@@ -7,26 +7,61 @@
 #include "volumes/SpecializedParaboloid.h"
 
 #include <stdio.h>
+#if !defined(VECGEOM_NVCC)
 #include "base/RNG.h"
+#endif
 
-
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
     
 //__________________________________________________________________
     VECGEOM_CUDA_HEADER_BOTH
-    UnplacedParaboloid::UnplacedParaboloid()
+    UnplacedParaboloid::UnplacedParaboloid() :
+fRlo(0),
+fRhi(0),
+fDz(0),
+fA(0),
+fB(0),
+fAinv(0),
+fBinv(0),
+fA2(0),
+fB2(0),
+fRlo2(0),
+fRhi2(0),
+fTolIz(0),
+fTolOz(0),
+fTolIrlo2(0),
+fTolOrlo2(0),
+fTolIrhi2(0),
+fTolOrhi2(0),
+fDx(0),
+fDy(0)
     {
         //dummy constructor
-        fRlo = 0;
-        fRhi = 0;
-        fDz = 0;
-        fA = 0;
-        fB = 0;
     }
 //__________________________________________________________________
     
     VECGEOM_CUDA_HEADER_BOTH
-    UnplacedParaboloid::UnplacedParaboloid(const Precision rlo,  const Precision rhi, const Precision dz)
+    UnplacedParaboloid::UnplacedParaboloid(const Precision rlo,  const Precision rhi, const Precision dz):
+fRlo(0),
+fRhi(0),
+fDz(0),
+fA(0),
+fB(0),
+fAinv(0),
+fBinv(0),
+fA2(0),
+fB2(0),
+fRlo2(0),
+fRhi2(0),
+fTolIz(0),
+fTolOz(0),
+fTolIrlo2(0),
+fTolOrlo2(0),
+fTolIrhi2(0),
+fTolOrhi2(0),
+fDx(0),
+fDy(0)
     {
         SetRloAndRhiAndDz(rlo, rhi, dz);
     }
@@ -94,8 +129,8 @@ namespace VECGEOM_NAMESPACE {
 
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm) const{
+#ifndef VECGEOM_NVCC
+    void UnplacedParaboloid::Normal(const Precision *point, const Precision *dir, Precision *norm) const {
        
         // Compute normal to closest surface from POINT.
         norm[0] = norm[1] = 0.0;
@@ -131,9 +166,7 @@ namespace VECGEOM_NAMESPACE {
 //__________________________________________________________________
 
     // Returns the full 3D cartesian extent of the solid.
-    VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const{
-        
+    void UnplacedParaboloid::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
         aMin.x() = -fDx;
         aMax.x() = fDx;
         aMin.y() = -fDy;
@@ -144,7 +177,6 @@ namespace VECGEOM_NAMESPACE {
     
 //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
     Precision UnplacedParaboloid::SurfaceArea() const
     {
     
@@ -173,7 +205,6 @@ namespace VECGEOM_NAMESPACE {
     }
     //__________________________________________________________________
 
-    VECGEOM_CUDA_HEADER_BOTH
     Vector3D<Precision> UnplacedParaboloid::GetPointOnSurface() const{
         
         //G4 implementation
@@ -203,6 +234,7 @@ namespace VECGEOM_NAMESPACE {
                 return Vector3D<Precision>(Sqrt(z*fAinv -fB*fAinv)*cos(phi), Sqrt(z*fAinv -fB*fAinv)*sin(phi), z);
             }
         }
+#endif  // !VECGEOM_NVCC
     
 //__________________________________________________________________
     
@@ -274,41 +306,32 @@ VPlacedVolume* UnplacedParaboloid::SpecializedVolume(
                               placement);
 }
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedParaboloid::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedParaboloid_CopyToGpu(gpu_ptr);
-  CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedParaboloid>(in_gpu_ptr, GetRlo(), GetRhi(), GetDz());
 }
 
-VUnplacedVolume* UnplacedParaboloid::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = AllocateOnGpu<UnplacedParaboloid>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedParaboloid::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedParaboloid>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedParaboloid_ConstructOnGpu(VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedParaboloid();
-}
+template size_t DevicePtr<cuda::UnplacedParaboloid>::SizeOf();
+template void DevicePtr<cuda::UnplacedParaboloid>::Construct(const Precision rlo, const Precision rhi, const Precision dz) const;
 
-void UnplacedParaboloid_CopyToGpu(VUnplacedVolume *const gpu_ptr) {
-  UnplacedParaboloid_ConstructOnGpu<<<1, 1>>>(gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

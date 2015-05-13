@@ -7,18 +7,35 @@
 #include "base/Global.h"
 
 #include "base/Vector3D.h"
+#include "backend/Backend.h"
+
+#include "backend/Backend.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "backend/cuda/Interface.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
-namespace VECGEOM_NAMESPACE {
+#ifdef VECGEOM_ROOT
+class TGeoMatrix;
+#endif
+
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class Transformation3D; )
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
+
+#ifndef VECGEOM_NVCC
+   } namespace cuda { class Transformation3D; }
+   inline namespace VECGEOM_IMPL_NAMESPACE {
+   //class vecgeom::cuda::Transformation3D;
+#endif
 
 class Transformation3D {
 
-public:
-
-  static const Transformation3D kIdentity;
 
 private:
   // TODO: it might be better to directly store this in terms of Vector3D<Precision> !!
@@ -32,7 +49,8 @@ private:
 public:
 
   VECGEOM_CUDA_HEADER_BOTH
-  Transformation3D();
+  constexpr Transformation3D() : fTranslation{0.,0.,0.},
+  fRotation{1.,0.,0.,0.,1.,0.,0.,0.,1.}, fIdentity(true), fHasRotation(false), fHasTranslation(false) {};
 
   /**
    * Constructor for translation only.
@@ -41,7 +59,12 @@ public:
    * @param tz Translation in z-coordinate.
    */
   VECGEOM_CUDA_HEADER_BOTH
-  Transformation3D(const Precision tx, const Precision ty, const Precision tz);
+  Transformation3D(const Precision tx, const Precision ty, const Precision tz) :
+      fTranslation{tx,ty,tz},
+      fRotation{1.,0.,0.,0.,1.,0.,0.,0.,1.},
+      fIdentity( tx==0 && ty==0 && tz==0 ),
+      fHasRotation(false),
+      fHasTranslation( tx!=0 || ty!=0 || tz!=0 ) { }
 
   /**
    * @param tx Translation in x-coordinate.
@@ -80,11 +103,10 @@ public:
   VECGEOM_INLINE
   bool operator==(Transformation3D const &rhs) const;
 
-  virtual ~Transformation3D() {}
+  VECGEOM_CUDA_HEADER_BOTH
+  ~Transformation3D() {}
 
-  // Accessors
-
-  virtual int memory_size() const { return sizeof(*this); }
+  int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -161,6 +183,8 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   TranslationCode GenerateTranslationCode() const;
+
+
 
 private:
 
@@ -283,15 +307,28 @@ public:
   void CopyFrom( Transformation3D const & rhs )
   {
     // not sure this compiles under CUDA
-    std::memcpy(this, &rhs, sizeof(*this));
+    copy(&rhs, &rhs+1, this);
   }
 
   // Utility and CUDA
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  Transformation3D* CopyToGpu() const;
-  Transformation3D* CopyToGpu(Transformation3D *const gpu_ptr) const;
+  size_t DeviceSizeOf() const { return DevicePtr<cuda::Transformation3D>::SizeOf(); }
+  DevicePtr<cuda::Transformation3D> CopyToGpu() const;
+  DevicePtr<cuda::Transformation3D> CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const;
 #endif
+
+
+#ifdef VECGEOM_ROOT
+// function to convert this transformation to a TGeo transformation
+// mainly used for the benchmark comparisons with ROOT
+  TGeoMatrix * ConvertToTGeoMatrix() const;
+#endif
+
+public:
+
+  static const Transformation3D kIdentity;
+
 
 }; // End class Transformation3D
 
@@ -644,13 +681,15 @@ void Transformation3D::MultiplyFromRight(Transformation3D const & rhs)
    {
    // ideal for fused multiply add
    fTranslation[0]+=fRotation[0]*rhs.fTranslation[0];
-   fTranslation[0]+=fRotation[1]*rhs.fTranslation[0];
-   fTranslation[0]+=fRotation[2]*rhs.fTranslation[0];
-   fTranslation[1]+=fRotation[3]*rhs.fTranslation[1];
+   fTranslation[0]+=fRotation[1]*rhs.fTranslation[1];
+   fTranslation[0]+=fRotation[2]*rhs.fTranslation[2];
+
+   fTranslation[1]+=fRotation[3]*rhs.fTranslation[0];
    fTranslation[1]+=fRotation[4]*rhs.fTranslation[1];
-   fTranslation[1]+=fRotation[5]*rhs.fTranslation[1];
-   fTranslation[2]+=fRotation[6]*rhs.fTranslation[2];
-   fTranslation[2]+=fRotation[7]*rhs.fTranslation[2];
+   fTranslation[1]+=fRotation[5]*rhs.fTranslation[2];
+
+   fTranslation[2]+=fRotation[6]*rhs.fTranslation[0];
+   fTranslation[2]+=fRotation[7]*rhs.fTranslation[1];
    fTranslation[2]+=fRotation[8]*rhs.fTranslation[2];
    }
 
@@ -763,6 +802,6 @@ Vector3D<InputType> Transformation3D::TransformDirection(
 
 std::ostream& operator<<(std::ostream& os, Transformation3D const &trans);
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_BASE_TRANSFORMATION3D_H_

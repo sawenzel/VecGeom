@@ -13,11 +13,12 @@ class VUSolid;
 class G4VSolid;
 
 namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
-/**
- * @brief Converts a VecGeom volume to unspecialized, USolids and ROOT
- *        representations for performance comparison purposes.
- */
+class VPlacedVolume;
+
+/// \brief Converts a VecGeom volume to unspecialized, USolids and ROOT
+///        representations for performance comparison purposes.
 class VolumePointers {
 
 private:
@@ -77,6 +78,7 @@ private:
 
 };
 
+} // End impl namespace
 } // End global namespace
 
 #endif // VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_

@@ -11,7 +11,12 @@
 #include "volumes/UnplacedSphere.h"
 #include "volumes/kernel/SphereImplementation.h"
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_FORWARD_DECLARE( class PlacedSphere; )
+VECGEOM_DEVICE_DECLARE_CONV( PlacedSphere );
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedSphere : public VPlacedVolume {
 
@@ -41,14 +46,14 @@ public:
       : VPlacedVolume(logical_volume, transformation, boundingBox, id) {}
 
 #endif
-
+  VECGEOM_CUDA_HEADER_BOTH
   virtual ~PlacedSphere() {}
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   UnplacedSphere const* GetUnplacedVolume() const {
     return static_cast<UnplacedSphere const *>(
-        logical_volume()->unplaced_volume());
+        GetLogicalVolume()->unplaced_volume());
   }
   
   VECGEOM_CUDA_HEADER_BOTH
@@ -228,13 +233,7 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
 
-VECGEOM_CUDA_HEADER_BOTH  
-VECGEOM_INLINE
-Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
-
-
-
-  /*
+/*
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolO() const { return GetUnplacedVolume()->GetfRTolO(); }
 
@@ -243,36 +242,29 @@ Precision Capacity() const { return GetUnplacedVolume()->Capacity(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
-  
-   VECGEOM_CUDA_HEADER_BOTH
-  Precision Capacity() const  { return GetUnplacedVolume()->Capacity(); }
-  */
-  
-  VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-  Precision SurfaceArea() const  { return GetUnplacedVolume()->SurfaceArea(); }
-  
+*/
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const { return GetUnplacedVolume()->Extent(aMin,aMax);}
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);} 
-  
-  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
- 
-  
+  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+
+#ifndef VECGEOM_NVCC
+  VECGEOM_INLINE
+  virtual Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
+
+  VECGEOM_INLINE
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
+  VECGEOM_INLINE
+  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+
+  VECGEOM_INLINE
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override { return GetUnplacedVolume()->Extent(aMin,aMax);}
   
-  VECGEOM_CUDA_HEADER_BOTH
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
   {
       bool valid;
@@ -282,11 +274,13 @@ VECGEOM_INLINE
               normal, valid);
       return valid;
   }
-  
 
+  Vector3D<Precision> GetPointOnSurface() const {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
 
-#ifdef VECGEOM_BENCHMARK
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
+
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;
 #endif
@@ -296,19 +290,10 @@ VECGEOM_INLINE
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const;
 #endif
-#endif // VECGEOM_BENCHMARK
-
-#ifdef VECGEOM_CUDA_INTERFACE
-  virtual VPlacedVolume* CopyToGpu(LogicalVolume const *const logical_volume,
-                                   Transformation3D const *const transformation,
-                                   VPlacedVolume *const gpu_ptr) const;
-  virtual VPlacedVolume* CopyToGpu(
-      LogicalVolume const *const logical_volume,
-      Transformation3D const *const transformation) const;
-#endif
+#endif // VECGEOM_NVCC
 
 };
 
-} // End global namespace
+} } // End global namespace
 
 #endif // VECGEOM_VOLUMES_PLACEDSPHERE_H_

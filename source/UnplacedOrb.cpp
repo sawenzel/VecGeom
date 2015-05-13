@@ -6,8 +6,8 @@
 
 #ifndef VECGEOM_NVCC
   #include "base/RNG.h"
-#include <cassert>
-#include <cmath>
+  #include <cassert>
+  #include <cmath>
 #endif
 
 #include "management/VolumeFactory.h"
@@ -16,36 +16,35 @@
 
 #include <stdio.h>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
    
 VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb()
-  {
+UnplacedOrb::UnplacedOrb() :
+   fR(0),
+   fRTolerance(Max(frTolerance, epsilon * fR)),
+   fRTolI(fR -  fRTolerance),
+   fRTolO(fR +  fRTolerance),
+   fCubicVolume(0),
+   fSurfaceArea(0),
+   epsilon(2e-11),
+   frTolerance(1e-9)
+{
     //default constructor
-    fR=0;
-    fRTolerance =  Max(frTolerance, epsilon * fR);
-    fCubicVolume=0;
-    fSurfaceArea=0;
-    fRTolI = fR -  fRTolerance;
-    fRTolO = fR +  fRTolerance;
-    epsilon=2e-11;
-    frTolerance= 1e-9;    
-    
-  }
+}
 
   VECGEOM_CUDA_HEADER_BOTH
-  UnplacedOrb::UnplacedOrb(const Precision r)
+  UnplacedOrb::UnplacedOrb(const Precision r) :
+   fR(r),
+   fRTolerance(Max(frTolerance, epsilon * fR)),
+   fRTolI(fR -  fRTolerance),
+   fRTolO(fR +  fRTolerance),
+   fCubicVolume((4 * kPi / 3) * fR * fR * fR),
+   fSurfaceArea((4 * kPi) * fR * fR),
+   epsilon(2e-11),
+   frTolerance(1e-9)
   {
-    fR=r;
-    fRTolerance = Max(frTolerance, epsilon * r);
-    fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
-    fSurfaceArea = (4 * kPi) * fR * fR;
-    fRTolI = fR -  fRTolerance;
-    fRTolO = fR +  fRTolerance;
-    epsilon=2e-11;
-    frTolerance= 1e-9;      
-    
   }
   
   
@@ -62,19 +61,9 @@ VECGEOM_CUDA_HEADER_BOTH
   
  /*
   VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision UnplacedOrb::Capacity() const
+  void UnplacedOrb::GetParametersList(int, double* aArray)const
   {
-      return fCubicVolume;
-  }
-  
-  
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  Precision UnplacedOrb::SurfaceArea() const
-  {
-      return fSurfaceArea;
+      aArray[0] = GetRadius();
   }
   */
 
@@ -85,18 +74,7 @@ VECGEOM_CUDA_HEADER_BOTH
       aMin.Set(-fR);
       aMax.Set(fR);
   }
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::GetParametersList(int, double* aArray)const
-  {
-      aArray[0] = GetRadius();
-  }
-  
-  
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const{}
-#else
-  VECGEOM_CUDA_HEADER_BOTH
+
   Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
   {
   //  generate a random number from zero to 2UUtils::kPi...
@@ -111,20 +89,12 @@ VECGEOM_CUDA_HEADER_BOTH
 
   return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
   }
-#endif
-  
-  
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::ComputeBBox() const 
-  {
-  
-  } 
-  
-  //VECGEOM_CUDA_HEADER_BOTH
+
   std::string UnplacedOrb::GetEntityType() const
   {
       return "Orb\n";
   }
+#endif  // !VECGEOM_NVCC
   
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* UnplacedOrb::Clone() const
@@ -138,13 +108,13 @@ VECGEOM_CUDA_HEADER_BOTH
   {
    int oldprc = os.precision(16);
    os << "-----------------------------------------------------------\n"
-   //  << "		*** Dump for solid - " << GetName() << " ***\n"
-   //  << "		===================================================\n"
+   //  << "     *** Dump for solid - " << GetName() << " ***\n"
+   //  << "     ===================================================\n"
    
    << " Solid type: UOrb\n"
      << " Parameters: \n"
 
-     << "		outer radius: " << fR << " mm \n"
+     << "       outer radius: " << fR << " mm \n"
      << "-----------------------------------------------------------\n";
    os.precision(oldprc);
 
@@ -216,47 +186,32 @@ VPlacedVolume* UnplacedOrb::CreateSpecializedVolume(
 
 #endif
 
-} // End global namespace
-
-namespace vecgeom {
-
 #ifdef VECGEOM_CUDA_INTERFACE
 
-void UnplacedOrb_CopyToGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr);
-
-VUnplacedVolume* UnplacedOrb::CopyToGpu(
-    VUnplacedVolume *const gpu_ptr) const {
-  UnplacedOrb_CopyToGpu(this->GetRadius(), gpu_ptr);
-  vecgeom::CudaAssertError();
-  return gpu_ptr;
+DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu(
+   DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
+{
+   return CopyToGpuImpl<UnplacedOrb>(in_gpu_ptr, GetRadius());
 }
 
-VUnplacedVolume* UnplacedOrb::CopyToGpu() const {
-  VUnplacedVolume *const gpu_ptr = vecgeom::AllocateOnGpu<UnplacedOrb>();
-  return this->CopyToGpu(gpu_ptr);
+DevicePtr<cuda::VUnplacedVolume> UnplacedOrb::CopyToGpu() const
+{
+   return CopyToGpuImpl<UnplacedOrb>();
 }
 
-#endif
+#endif // VECGEOM_CUDA_INTERFACE
+
+} // End impl namespace
 
 #ifdef VECGEOM_NVCC
 
-class VUnplacedVolume;
+namespace cxx {
 
-__global__
-void UnplacedOrb_ConstructOnGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr) {
-  new(gpu_ptr) vecgeom_cuda::UnplacedOrb(r);
-}
+template size_t DevicePtr<cuda::UnplacedOrb>::SizeOf();
+template void DevicePtr<cuda::UnplacedOrb>::Construct(const Precision r) const;
 
-void UnplacedOrb_CopyToGpu(
-    const Precision r,
-    VUnplacedVolume *const gpu_ptr) {
-  UnplacedOrb_ConstructOnGpu<<<1, 1>>>(r, gpu_ptr);
-}
+} // End cxx namespace
 
 #endif
 
-} // End namespace vecgeom
+} // End global namespace

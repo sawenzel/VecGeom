@@ -19,9 +19,18 @@
 #include "G4VSolid.hh"
 #endif
 
+#ifdef VECGEOM_CUDA
+#include "backend/cuda/Interface.h"
+#endif
+
 #include <list>
+#include <vector>
+#include <utility> // for std::pair
 
 namespace vecgeom {
+
+VECGEOM_HOST_FORWARD_DECLARE( class VPlacedVolume; );
+VECGEOM_DEVICE_FORWARD_DECLARE( class VolumePointers; );
 
 /// \brief Benchmarks geometry methods of arbitrary volumes for different
 ///        backends and compares to any included external libraries.
@@ -37,12 +46,17 @@ namespace vecgeom {
 /// \sa BenchmarkResult
 class Benchmarker {
 
-private:
+public:
+    typedef typename std::vector< std::pair< Vector3D<Precision>, Vector3D<Precision> > > RayContainer;
 
-  VPlacedVolume const *fWorld;
+private:
+  using VPlacedVolume_t = cxx::VPlacedVolume const *;
+
+  VPlacedVolume_t fWorld;
   unsigned fPointCount;
   unsigned fPoolMultiplier;
   unsigned fRepetitions;
+  unsigned fMeasurementCount;
   std::list<VolumePointers> fVolumes;
   std::list<BenchmarkResult> fResults;
   int fVerbosity;
@@ -54,6 +68,13 @@ private:
   // tolerance for comparisons
   Precision fTolerance;
 
+  // containers to store problematic points
+  // this can be filled during evaluation
+  std::vector< Vector3D<Precision> > fProblematicContainPoints;
+
+  // a container storing rays : startpoint (Vector3D) plus direction (Vector3D)
+   RayContainer fProblematicRays;
+
 public:
 
   Benchmarker();
@@ -61,7 +82,7 @@ public:
   /// \param world Mother volume containing daughters that will be benchmarked.
   ///              The mother volume must have an available bounding box, as it
   ///              is used in the sampling process.
-  Benchmarker(VPlacedVolume const *const world);
+  Benchmarker(VPlacedVolume_t const world);
 
   ~Benchmarker();
 
@@ -69,24 +90,33 @@ public:
   void SetTolerance(Precision tol) { fTolerance = tol; }
 
   /// \brief Runs all geometry benchmarks.
-  void RunBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunBenchmark();
+
+
+  /// \brief Runs some meta information functions (such as surface arrea, volume and so on) on registered shapes
+  /// checks if this information agrees across different implementations (VecGeom, ROOT, Geant4, ...)
+  int CompareMetaInformation() const;
 
   /// \brief Runs a benchmark of the Inside method.
   ///
   /// The fraction of sampled points that will be located inside of daughter
   /// volume is specified by calling SetInsideBias().
   /// \sa SetInsideBias(const double)
-  void RunInsideBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunInsideBenchmark();
 
   /// \brief Runs a benchmark of the DistanceToIn and SafetyToIn methods.
   ///
   /// The fraction of sampled points that should be hitting a daughter volume is
   /// specified by calling SetToInBias().
   /// \sa SetToInBias(const double)
-  void RunToInBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunToInBenchmark();
 
   /// \brief Runs a benchmark of the DistanceToOut and SafetyToOut methods.
-  void RunToOutBenchmark();
+  /// return 0 if no error found; returns 1 if error found
+  int RunToOutBenchmark();
 
   /// \return Amount of points and directions sampled for each benchmark
   ///         iteration.
@@ -106,11 +136,14 @@ public:
   /// \return Level of verbosity to standard output.
   int GetVerbosity() const { return fVerbosity; }
 
-  /// \return Amount of iterations the benchmark is run for.
+  /// \return Amount of iterations the benchmark is run for each time measurement.
   unsigned GetRepetitions() const { return fRepetitions; }
 
+  /// \return Number of time measurements taken by the benchmarker, for same set of input data
+  unsigned GetMeasurementCount() const { return fMeasurementCount; }
+
   /// \return World whose daughters are benchmarked.
-  VPlacedVolume const* GetWorld() const { return fWorld; }
+  VPlacedVolume_t GetWorld() const { return fWorld; }
 
   /// \param pointCount Amount of points to benchmark in each iteration.
   void SetPointCount(const unsigned pointCount) { fPointCount = pointCount; }
@@ -143,25 +176,39 @@ public:
     fRepetitions = repetitions;
   }
 
+  /// \param Number of time measurements taken, for same set of input data (random tracks)
+  void SetMeasurementCount(const unsigned nmeas) {
+    fMeasurementCount = nmeas;
+  }
+
   /// \param World volume containing daughters to be benchmarked.
-  void SetWorld(VPlacedVolume const *const world);
+  void SetWorld(VPlacedVolume_t const world);
 
   /// \return List of results of previously performed benchmarks.
   std::list<BenchmarkResult> const& GetResults() const { return fResults; }
 
-  /// \return List of results of previously performed benchmarks. Clears the
-  ///         internal history.
+  /// \return List of results of previously performed benchmarks. Clears the internal history.
   std::list<BenchmarkResult> PopResults();
+
+  /// Clear the internal list of results, e.g. to start a new set of results for output
+  void ClearResults() { fResults.clear(); }
+
+  std::vector<Vector3D<Precision> > const & GetProblematicContainPoints() const {
+      return fProblematicContainPoints;
+  }
+
+  RayContainer const & GetProblematicRays() const {
+        return fProblematicRays;
+  }
 
 private:
     
-  void GenerateVolumePointers(VPlacedVolume const *const vol);
+  void GenerateVolumePointers(VPlacedVolume_t const vol);
 
   BenchmarkResult GenerateBenchmarkResult(const double elapsed,
                                           const EBenchmarkedMethod method,
                                           const EBenchmarkedLibrary library,
                                           const double bias) const;
-
   void RunInsideSpecialized(bool *contains, Inside_t *inside);
   void RunToInSpecialized(Precision *distances,
                           Precision *safeties);
@@ -208,6 +255,7 @@ private:
     Precision *posZ, Precision *dirX,
     Precision *dirY, Precision *dirZ,
     Precision *distances, Precision *safeties);
+  void GetVolumePointers( std::list<cxx::DevicePtr<cuda::VPlacedVolume> > &volumesGpu );
 #endif
 
   template <typename Type>
@@ -216,7 +264,28 @@ private:
   template <typename Type>
   static void FreeAligned(Type *const distance);
 
-  void CompareDistances(
+  // internal method to crosscheck results; fills a container with problematic cases
+  int CompareDistances(
+    SOA3D<Precision> *points,
+    SOA3D<Precision> *directions,
+    Precision const *const specialized,
+    Precision const *const vectorized,
+    Precision const *const unspecialized,
+#ifdef VECGEOM_ROOT
+    Precision const *const root,
+#endif
+#ifdef VECGEOM_USOLIDS
+    Precision const *const usolids,
+#endif
+#ifdef VECGEOM_GEANT4
+    Precision const *const geant4,
+#endif
+#ifdef VECGEOM_CUDA
+    Precision const *const cuda,
+#endif
+    char const *const method);
+
+  int CompareSafeties(
     SOA3D<Precision> *points,
     SOA3D<Precision> *directions,
     Precision const *const specialized,

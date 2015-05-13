@@ -19,14 +19,14 @@ int main() {
     LogicalVolume paraboloid = LogicalVolume("paraboloid", &paraboloidUnplaced);
     world.PlaceDaughter(&paraboloid, &Transformation3D::kIdentity);
     VPlacedVolume *worldPlaced = world.Place();
-    GeoManager::Instance().set_world(worldPlaced);
+    GeoManager::Instance().SetWorld(worldPlaced);
     std::cout<<"World set\n";
     
     
-    Benchmarker tester(GeoManager::Instance().world());
+    Benchmarker tester(GeoManager::Instance().GetWorld());
     tester.SetVerbosity(3);
-    tester.SetPointCount(1<<13);
-    tester.SetRepetitions(1024);
+    tester.SetPointCount(1<<10);
+    tester.SetRepetitions(4);
     std::cout<<"Prepared to run benchmarker\n";
     tester.RunBenchmark();
     

@@ -8,14 +8,17 @@
 
 #include "base/Global.h"
 #include "base/Transformation3D.h"
-#include "volumes/kernel/BoxImplementation.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTrd.h"
 #include "volumes/kernel/shapetypes/TrdTypes.h"
-
 #include <stdlib.h>
+#include <cstdio>
 
-namespace VECGEOM_NAMESPACE {
+namespace vecgeom {
+
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(TrdImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric, typename)
+
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 namespace TrdUtilities {
 
@@ -87,7 +90,7 @@ void FaceTrajectoryIntersection(UnplacedTrd const &trd,
                                 typename Backend::precision_v &dist,
                                 typename Backend::bool_v &ok) {
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
+    // typedef typename Backend::bool_v Bool_t;
     Float_t alongV, posV, dirV, posK, dirK, fK, halfKplus, v1;
     if(forY) {
         alongV = trd.y2minusy1();
@@ -176,7 +179,7 @@ static void UnplacedInside(
     using namespace TrdUtilities;
     using namespace TrdTypes;  
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
+    // typedef typename Backend::bool_v Bool_t;
 
     Float_t pzPlusDz = point.z()+trd.dz();
 
@@ -208,9 +211,21 @@ static void UnplacedInside(
 } // Trd utilities
 
 
+class PlacedTrd;
 
 template <TranslationCode transCodeT, RotationCode rotCodeT, typename trdTypeT>
 struct TrdImplementation {
+
+  static const int transC = transCodeT;
+  static const int rotC   = rotCodeT;
+
+  using PlacedShape_t = PlacedTrd;
+  using UnplacedShape_t = UnplacedTrd;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  static void PrintType() {
+     printf("SpecializedTrd<%i, %i, %s>", transCodeT, rotCodeT, trdTypeT::toString());
+  }
 
   template <typename Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -276,7 +291,8 @@ struct TrdImplementation {
     typedef typename Backend::bool_v Bool_t;
     typedef typename Backend::precision_v Float_t;
 
-    Float_t hitx, hity, hitz;
+    Float_t hitx, hity;
+    // Float_t hitz;
 
     Vector3D<Float_t> pos_local;
     Vector3D<Float_t> dir_local;
@@ -348,8 +364,9 @@ struct TrdImplementation {
     typedef typename Backend::bool_v Bool_t;
     typedef typename Backend::precision_v Float_t;
     
-    Float_t hitx, hity, hitz;
-    Bool_t done = Backend::kFalse;
+    Float_t hitx, hity;
+    // Float_t hitz;
+    // Bool_t done = Backend::kFalse;
     distance = kInfinity;
 
     // hit top Z face?
@@ -439,6 +456,7 @@ struct TrdImplementation {
 
 };
 
-}
+} } // End global namespace
+
 
 #endif // VECGEOM_VOLUMES_KERNEL_TRDIMPLEMENTATION_H_
