@@ -67,7 +67,7 @@ int main( int argc, char *argv[] ) {
         VPlacedVolume * vecgeomplaced = converted->Place();
         Vector3D<Precision> point(px,py,pz);
         Vector3D<Precision> dir(dirx,diry,dirz);
-	if( ! dir.Normalized() ){
+	if( ! dir.IsNormalized() ){
 	  std::cerr << "** Attention: Direction is not normalized **\n";
 	}
 
