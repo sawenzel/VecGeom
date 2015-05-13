@@ -250,7 +250,6 @@ int ShapeTester::ShapeNormal()
 
    if( CountErrors() )
      errCode= 256; // errCode: 0001 0000 0000
-
    return errCode;
 }
 
@@ -1653,9 +1652,8 @@ void ShapeTester::CreatePointsAndDirectionsSurface()
            if (retry-- == 0) break;
          }
          while (volumeUSolids->Inside(pointU) != vecgeom::EInside::kSurface);
-
-	UVector3 vec = GetRandomDirection();
-	directions[i] = vec;
+       	UVector3 vec = GetRandomDirection();
+	directions[i+offsetSurface] = vec;
   	point.Set(pointU.x(), pointU.y(), pointU.z());
         points[i+offsetSurface] = point;
         
@@ -2163,4 +2161,7 @@ int ShapeTester::CountErrors() const
 
   return answer;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> master

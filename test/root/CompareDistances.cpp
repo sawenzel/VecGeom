@@ -47,10 +47,7 @@ int main( int argc, char *argv[] ) {
         TGeoVolume * vol = reinterpret_cast<TGeoVolume*>(vlist->At( i ));
         std::string fullname(vol->GetName());
 
-        // strip off pointer information
-        std::string strippedname(fullname, 0, fullname.length()-4);
-
-        std::size_t founds = strippedname.compare(testvolume);
+        std::size_t founds = fullname.compare(testvolume);
         if (founds == 0){
             found++;
             foundvolume = vol;
@@ -70,6 +67,9 @@ int main( int argc, char *argv[] ) {
         VPlacedVolume * vecgeomplaced = converted->Place();
         Vector3D<Precision> point(px,py,pz);
         Vector3D<Precision> dir(dirx,diry,dirz);
+	if( ! dir.Normalized() ){
+	  std::cerr << "** Attention: Direction is not normalized **\n";
+	}
 
         std::cout << "VecGeom Capacity " << vecgeomplaced->Capacity( ) << "\n";
         std::cout << "VecGeom CONTAINS " << vecgeomplaced->Contains( point ) << "\n";

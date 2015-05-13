@@ -44,29 +44,29 @@ namespace vecgeom {
 
 //==================================
 
-Precision benchmarkLocatePoint( VPlacedVolume_t startVol, int nPoints, int nReps,
-                                SOA3D<Precision> const& points) {
 
-  NavigationState * state = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
-  vecgeom::SimpleNavigator nav;
+Precision benchmarkLocatePoint( int nPoints, int nReps, SOA3D<Precision> const& points) {
+ 
+   NavigationState * state = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+   vecgeom::SimpleNavigator nav;
+ 
+   Stopwatch timer;
+   timer.Start();
+   for(int n=0; n<nReps; ++n) {
+     for( int i=0; i<nPoints; ++i ) {
+       state->Clear();
+       nav.LocatePoint( GeoManager::Instance().GetWorld(), points[i], *state, true);
+     }
+   }
+   Precision elapsed = timer.Stop();
 
-  Stopwatch timer;
-  timer.Start();
-  for(int n=0; n<nReps; ++n) {
-    for( int i=0; i<nPoints; ++i ) {
-      state->Clear();
-      nav.LocatePoint( startVol, points[i], *state, startVol==GeoManager::Instance().GetWorld());
-    }
-  }
-  Precision elapsed = timer.Stop();
-
-  NavigationState::ReleaseInstance( state );
-  return (Precision)elapsed;
+   NavigationState::ReleaseInstance( state );
+   return (Precision)elapsed;
 }
 
 //==================================
 
-Precision benchmarkSerialNavigation( VPlacedVolume_t startVol, int nPoints, int nReps,
+Precision benchmarkSerialNavigation( int nPoints, int nReps,
                                      SOA3D<Precision> const& points,
                                      SOA3D<Precision> const& dirs ) {
 
@@ -80,7 +80,7 @@ Precision benchmarkSerialNavigation( VPlacedVolume_t startVol, int nPoints, int 
 
   for( int i=0; i<nPoints; ++i ) {
     curStates[i]->Clear();
-    nav.LocatePoint( startVol, points[i], *curStates[i], startVol==GeoManager::Instance().GetWorld());
+    nav.LocatePoint( GeoManager::Instance().GetWorld(), points[i], *curStates[i], true);
   }
 
   Precision maxStep = kInfinity, step=0.0;
@@ -107,13 +107,9 @@ Precision benchmarkSerialNavigation( VPlacedVolume_t startVol, int nPoints, int 
 
 //==================================
 
-Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int nReps,
+Precision benchmarkVectorNavigation( int nPoints, int nReps,
                                      SOA3D<Precision> const& points,
                                      SOA3D<Precision> const& dirs ) {
-
-  // now setup all the navigation states
-  NavigationState ** curStates = new NavigationState*[nPoints];
-  NavigationState ** newStates = new NavigationState*[nPoints];
 
   SOA3D<Precision> workspace1(nPoints);
   SOA3D<Precision> workspace2(nPoints);
@@ -128,10 +124,15 @@ Precision benchmarkVectorNavigation( VPlacedVolume_t startVol, int nPoints, int 
   memset(safeties, 0, sizeof(Precision)*nPoints);
 
   vecgeom::SimpleNavigator nav;
-  for (int i=0;i<nPoints;++i){
+
+  // setup all the navigation states
+  NavigationState ** curStates = new NavigationState*[nPoints];
+  NavigationState ** newStates = new NavigationState*[nPoints];
+
+  for( int i=0; i<nPoints; ++i ) {
     curStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
     newStates[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
-    nav.LocatePoint( startVol, points[i], *curStates[i], startVol==GeoManager::Instance().GetWorld());
+    nav.LocatePoint( GeoManager::Instance().GetWorld(), points[i], *curStates[i], true);
   }
 
   Stopwatch timer;
@@ -240,58 +241,26 @@ Precision benchmarkGeant4Navigation( int nPoints, int nReps,
 }
 #endif
 
-//==================================
-// function to test safety
-void testVectorSafety( VPlacedVolume_t startVol ){
-   SOA3D<Precision> points(1024);
-   SOA3D<Precision> workspace(1024);
-   Precision * safeties = (Precision *) _mm_malloc(sizeof(Precision)*1024,32);
-   vecgeom::volumeUtilities::FillUncontainedPoints( *startVol, points );
-
-   // now setup all the navigation states
-   NavigationState ** states = new NavigationState*[1024];
-
-   vecgeom::SimpleNavigator nav;
-
-   for (int i=0;i<1024;++i){
-     states[i] = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
-     nav.LocatePoint( startVol, points[i], *states[i], startVol==GeoManager::Instance().GetWorld());
-   }
-
-   // calculate safeties with vector interface
-   nav.GetSafeties(points, states, workspace, safeties );
-
-   // verify against serial interface
-   for (int i=0;i<1024;++i){
-       vecgeom::Assert( safeties[i] == nav.GetSafety( points[i], *states[i] ), ""
-                        " Problem in VectorSafety (in SimpleNavigator)" );
-   }
-   std::cout << "Safety test passed\n";
-
-   for (int i=0;i<1024;++i) NavigationState::ReleaseInstance( states[i] );
-   delete states;
-   _mm_free(safeties);
-}
 
 //=======================================
 /// Function to run navigation benchmarks
-void runNavigationBenchmarks( VPlacedVolume_t startVol, int np, int nreps, Precision bias) {
+void runNavigationBenchmarks( LogicalVolume const* startVol, int np, int nreps, Precision bias) {
 
   SOA3D<Precision> points(np);
   SOA3D<Precision> locpts(np);
   SOA3D<Precision> dirs(np);
-  vecgeom::volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume(
-    startVol->GetLogicalVolume(), locpts, points, dirs, bias, np);
+  vecgeom::volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume( startVol, locpts, points, dirs, bias, np);
 
   Precision cputime;
 
-  cputime = benchmarkLocatePoint(startVol,np,nreps,points);
+  cputime = benchmarkLocatePoint(np,nreps,points);
   printf("CPU elapsed time (locating and setting steps) %f ms\n", 1000.*cputime);
 
-  cputime = benchmarkSerialNavigation(startVol,np,nreps,points, dirs);
+  cputime = benchmarkSerialNavigation(np,nreps,points, dirs);
   printf("CPU elapsed time (serialized navigation) %f ms\n", 1000.*cputime);
 
-  cputime = benchmarkVectorNavigation(startVol,np,nreps,points, dirs);
+  cputime = benchmarkVectorNavigation(np,nreps,points, dirs);
+
   printf("CPU elapsed time (vectorized navigation) %f ms\n", 1000.*cputime);
 
 #ifdef VECGEOM_ROOT
@@ -473,9 +442,6 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
 
     result &= ok;
     if( !ok ) {
-
-      TGeoNavigator* rootnav = ::gGeoManager->GetCurrentNavigator();
-
       std::cout << "\n=======> Summary: ITERATION " << i
                 <<" - pos = " << pos <<" dir = " << dir
                 <<" / Steps (";
@@ -488,6 +454,7 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
       std::cout<<"VecGeom): ";
 
 #ifdef VECGEOM_ROOT
+      TGeoNavigator* rootnav = ::gGeoManager->GetCurrentNavigator();
       std::cout<< rootnav->GetStep() << " / ";
 #endif
 #ifdef VECGEOM_GEANT4

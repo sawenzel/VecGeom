@@ -105,21 +105,21 @@ private:
 
 
 public:
-    // replaces the volume pointers from CPU volumes in fPath
-     // to the equivalent pointers on the GPU
-     // uses the CudaManager to do so
-    void ConvertToGPUPointers();
+   // replaces the volume pointers from CPU volumes in fPath
+   // to the equivalent pointers on the GPU
+   // uses the CudaManager to do so
+   void ConvertToGPUPointers();
 
-    // replaces the pointers from GPU volumes in fPath
-    // to the equivalent pointers on the CPU
-    // uses the CudaManager to do so
-    void ConvertToCPUPointers();
+   // replaces the pointers from GPU volumes in fPath
+   // to the equivalent pointers on the CPU
+   // uses the CudaManager to do so
+   void ConvertToCPUPointers();
 
-  // Enumerate the part of the private interface, we want to expose.
-  using Base_t::MakeCopy;
-  using Base_t::MakeCopyAt;
-  using Base_t::ReleaseInstance;
-  using Base_t::SizeOf;
+   // Enumerate the part of the private interface, we want to expose.
+   using Base_t::MakeCopy;
+   using Base_t::MakeCopyAt;
+   using Base_t::ReleaseInstance;
+   using Base_t::SizeOf;
 
    // produces a compact navigation state object of a certain depth
    // the caller can give a memory address where the object will
@@ -127,7 +127,7 @@ public:
    // the caller has to make sure that the size of the external memory
    // is >= sizeof(NavigationState) + sizeof(VPlacedVolume*)*maxlevel
    //
-   // Both MakeInstance, MakeInstanceAt, MakeCopy and MakeCopyAT are provided by 
+   // Methods MakeInstance(), MakeInstanceAt(), MakeCopy() and MakeCopyAt() are provided by
    // VariableSizeObjectInterface
 
    VECGEOM_CUDA_HEADER_BOTH
@@ -441,14 +441,14 @@ void NavigationState::Print() const
           (Top()?
            Top()->GetLabel().c_str():
            "NULL"),
-          this );
+          (const void*)this );
 #else
    printf("NavState: Level(cur/max)=%i/%i,  onBoundary=%s, topVol=<%p>, this=%p\n",
       fCurrentLevel,
       GetMaxLevel(),
       (fOnBoundary?"true":"false"),
       Top(),
-      this );
+      (const void*)this );
 #endif
 
    // std::cerr << "NavState: Level(cur/max)=" << fCurrentLevel <<'/'<< GetMaxLevel()

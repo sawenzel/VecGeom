@@ -9,7 +9,7 @@
 #include "volumes/UnplacedBox.h"
 #include "volumes/kernel/GenericKernels.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -595,9 +595,9 @@ void BoxImplementation<transCodeT, rotCodeT>::ContainsKernel(
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside) {
 
-  typedef typename Backend::bool_v Bool_t;
-  Bool_t unused;
-  Bool_t outside;
+  typedef typename Backend::bool_v Boolean_t;
+  Boolean_t unused;
+  Boolean_t outside;
   GenericKernelForContainsAndInside<Backend, false>(dimensions,
     localPoint, unused, outside);
   inside=!outside;
@@ -656,8 +656,8 @@ void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
 
-  typedef typename Backend::bool_v      Bool_t;
-  Bool_t completelyinside, completelyoutside;
+  typedef typename Backend::bool_v      Boolean_t;
+  Boolean_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(
       boxDimensions, point, completelyinside, completelyoutside);
   inside=EInside::kSurface;
@@ -675,11 +675,11 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-  typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v      Bool_t;
+  typedef typename Backend::precision_v Floating_t;
+  typedef typename Backend::bool_v      Boolean_t;
 
-  Vector3D<Float_t> safety;
-  Bool_t done = Backend::kFalse;
+  Vector3D<Floating_t> safety;
+  Boolean_t done = Backend::kFalse;
 
 #ifdef VECGEOM_NVCC
   #define surfacetolerant true
@@ -696,14 +696,15 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
            safety[2] >= stepMax);
   if ( IsFull(done) ) return;
 
-  Bool_t inside = Backend::kFalse;
+
+  Boolean_t inside = Backend::kFalse;
   inside = safety[0] < 0 && safety[1] < 0 && safety[2] < 0;
   MaskedAssign(!done && inside, -1., &distance);
   done |= inside;
   if ( IsFull(done) ) return;
 
-  Float_t next, coord1, coord2;
-  Bool_t hit;
+  Floating_t next, coord1, coord2;
+  Boolean_t hit;
 
   // x
   next = safety[0] / Abs(direction[0] + kMinimum);
@@ -754,11 +755,11 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
     typename Backend::precision_v const &stepMax,
     typename Backend::precision_v &distance) {
 
-    typedef typename Backend::precision_v Float_t;
-    // typedef typename Backend::bool_v Bool_t;
+    typedef typename Backend::precision_v Floating_t;
+    // typedef typename Backend::bool_v Boolean_t;
 
-    Vector3D<Float_t> safety;
-    // Bool_t inside;
+    Vector3D<Floating_t> safety;
+    // Boolean_t inside;
 
     distance = kInfinity;
 
@@ -771,12 +772,12 @@ void BoxImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(
     //         safety[2] < stepMax;
     //if (inside == Backend::kFalse) return;
 
-    Vector3D<Float_t> inverseDirection = Vector3D<Float_t>(
+    Vector3D<Floating_t> inverseDirection = Vector3D<Floating_t>(
       1. / (direction[0] + kMinimum),
       1. / (direction[1] + kMinimum),
       1. / (direction[2] + kMinimum)
     );
-    Vector3D<Float_t> distances = Vector3D<Float_t>(
+    Vector3D<Floating_t> distances = Vector3D<Floating_t>(
       (dimensions[0] - point[0]) * inverseDirection[0],
       (dimensions[1] - point[1]) * inverseDirection[1],
       (dimensions[2] - point[2]) * inverseDirection[2]
@@ -805,11 +806,11 @@ void BoxImplementation<transCodeT, rotCodeT>::SafetyToInKernel(
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
-  typedef typename Backend::precision_v Float_t;
+  typedef typename Backend::precision_v Floating_t;
 
   safety = -dimensions[0] + Abs(point[0]);
-  Float_t safetyY = -dimensions[1] + Abs(point[1]);
-  Float_t safetyZ = -dimensions[2] + Abs(point[2]);
+  Floating_t safetyY = -dimensions[1] + Abs(point[1]);
+  Floating_t safetyZ = -dimensions[2] + Abs(point[2]);
 
   // TODO: check if we should use MIN/MAX here instead
   MaskedAssign(safetyY > safety, safetyY, &safety);
@@ -824,11 +825,11 @@ void BoxImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::precision_v &safety) {
 
-   typedef typename Backend::precision_v Float_t;
+   typedef typename Backend::precision_v Floating_t;
 
    safety = dimensions[0] - Abs(point[0]);
-   Float_t safetyY = dimensions[1] - Abs(point[1]);
-   Float_t safetyZ = dimensions[2] - Abs(point[2]);
+   Floating_t safetyY = dimensions[1] - Abs(point[1]);
+   Floating_t safetyZ = dimensions[2] - Abs(point[2]);
 
    // TODO: check if we should use MIN here instead
    MaskedAssign(safetyY < safety, safetyY, &safety);
@@ -845,8 +846,8 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
      typename Backend::bool_v &valid
     ) {
 
-        typedef typename Backend::precision_v Float_t;
-        typedef typename Backend::bool_v Bool_t;
+        typedef typename Backend::precision_v Floating_t;
+        typedef typename Backend::bool_v Boolean_t;
 
          // Computes the normal on a surface and returns it as a unit vector
          //   In case a point is further than tolerance_normal from a surface, set validNormal=false
@@ -863,24 +864,24 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
          constexpr double kInvSqrt2 = 0.7071067811865475; // = 1. / Sqrt(2.);
          constexpr double kInvSqrt3 = 0.5773502691896258; // = 1. / Sqrt(3.);
          normal.Set(0.);
-         Float_t nsurf = 0;
-         Float_t safmin(kInfinity);
+         Floating_t nsurf = 0;
+         Floating_t safmin(kInfinity);
 
          // do a loop here over dimensions
          for( int dim = 0; dim < 3; ++dim )
          {
-             Float_t currentsafe = Abs(Abs(point[dim]) - dimensions[dim]);
+             Floating_t currentsafe = Abs(Abs(point[dim]) - dimensions[dim]);
              MaskedAssign( currentsafe < safmin, currentsafe, &safmin );
 
              // close to this surface
-             Bool_t closetoplane = currentsafe < delta;
+             Boolean_t closetoplane = currentsafe < delta;
              if( ! IsEmpty( closetoplane ) )
              {
-                Float_t nsurftmp = nsurf + 1.;
+                Floating_t nsurftmp = nsurf + 1.;
 
-                Float_t sign(1.);
+                Floating_t sign(1.);
                 MaskedAssign( point[dim] < 0, -1., &sign);
-                Float_t tmpnormalcomponent = normal[dim] + sign;
+                Floating_t tmpnormalcomponent = normal[dim] + sign;
 
                 MaskedAssign( closetoplane, nsurftmp, &nsurf );
                 MaskedAssign( closetoplane, tmpnormalcomponent, &normal[dim] );

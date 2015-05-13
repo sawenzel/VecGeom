@@ -566,7 +566,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
 
   # higher level benchmarks
-  # ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
@@ -781,7 +781,7 @@ configure_file(VecGeomConfig.cmake.in
                "${PROJECT_BINARY_DIR}/VecGeomConfig.cmake" @ONLY)
 # Installation
 set(CONF_TYPE "install")
-set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}")
+set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}" "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}/VecCore/")
 set(CONF_LIBRARY_DIR "\${THIS_DIR}/${INSTALL_LIB_DIR_RELATIVE}")
 set(CONF_LIBRARIES ${VECGEOM_LIBRARIES_EXTERNAL}
     "${CONF_LIBRARY_DIR}/libvecgeom.a")

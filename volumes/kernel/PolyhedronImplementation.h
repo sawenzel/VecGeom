@@ -15,7 +15,7 @@
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/Quadrilaterals.h"
 #include "volumes/UnplacedPolyhedron.h"
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

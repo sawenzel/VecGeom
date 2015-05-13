@@ -13,7 +13,7 @@
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -362,7 +362,7 @@ UnplacedOrb const &unplaced,
     typename Backend::bool_v &completelyoutside) {
 
     typedef typename Backend::precision_v Double_t;
-    // typedef typename Backend::bool_v      Bool_t;	
+    // typedef typename Backend::bool_v      Bool_t;
 
     Double_t rad2 = localPoint.Mag2();
     Double_t tolRMax = unplaced.GetfRTolO();

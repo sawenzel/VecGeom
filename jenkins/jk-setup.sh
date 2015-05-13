@@ -43,7 +43,7 @@ then
 
   export CMAKE_INSTALL_PREFIX=$WORKSPACE/VecGeom/installation
   export BACKEND=Vc 
-  export CTEST_BUILD_OPTIONS="-DROOT=ON -DVc=ON -DCTEST=ON -DBENCHMARK=ON -DUSOLIDS=ON ${ExtraCMakeOptions}"
+  export CTEST_BUILD_OPTIONS="-DROOT=ON -DVc=ON -DCTEST=ON -DBENCHMARK=ON -DUSOLIDS=OFF ${ExtraCMakeOptions}"
 
 fi
 

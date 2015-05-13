@@ -4,14 +4,13 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TUBEIMPLEMENTATION_H_
 
-
 #include "base/Global.h"
 #include "base/Transformation3D.h"
+#include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTube.h"
 #include "volumes/kernel/shapetypes/TubeTypes.h"
-
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -125,7 +124,7 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
     if(checkPhiTreatment<TubeType>(tube)) {
       PointInCyclicalSector<Backend, TubeType, UnplacedTube, false>(tube, hitx, hity, insector);
     }
-    ok = delta_mask & (dist > 0) & (Abs(hitz) <= tube.z()) & insector;
+    ok = delta_mask & (dist >= 0) & (Abs(hitz) <= tube.z()) & insector;
   }
   else {
     ok = delta_mask;
@@ -614,7 +613,7 @@ struct TubeImplementation {
     if(checkRminTreatment<tubeTypeT>(tube)) {
       Float_t crmin = invnsq * (rsq - tube.rmin2());
       CircleTrajectoryIntersection<Backend, tubeTypeT, false, false>(b, crmin, tube, point, dir, dist_rmin, ok_rmin);
-      MaskedAssign(ok_rmin && dist_rmin > 0 && dist_rmin < distance, dist_rmin, &distance);
+      MaskedAssign(ok_rmin && dist_rmin >= 0 && dist_rmin < distance, dist_rmin, &distance);
     }
 
     /*
@@ -625,7 +624,7 @@ struct TubeImplementation {
     Bool_t ok_rmax;
     Float_t crmax = invnsq * (rsq - tube.rmax2());
     CircleTrajectoryIntersection<Backend, tubeTypeT, true, false>(b, crmax, tube, point, dir, dist_rmax, ok_rmax);
-    MaskedAssign(ok_rmax && dist_rmax > 0 && dist_rmax < distance, dist_rmax, &distance);
+    MaskedAssign(ok_rmax && dist_rmax >= 0 && dist_rmax < distance, dist_rmax, &distance);
 
     /* Phi planes 
      *

@@ -3,15 +3,13 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION_H_
 
-
 #include "base/Global.h"
 #include "base/Transformation3D.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/kernel/TubeImplementation.h"
 #include "volumes/UnplacedTorus.h"
-//#include <math.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifndef VECGEOM_NVCC
 #include <iomanip>
@@ -586,7 +584,7 @@ struct TorusImplementation {
   static void GenericKernelForContainsAndInside(UnplacedTorus const &torus,
           Vector3D<typename Backend::precision_v> const &point,
           typename Backend::bool_v &completelyinside,
-	  typename Backend::bool_v &completelyoutside)
+      typename Backend::bool_v &completelyoutside)
 
    {
    // using vecgeom::GenericKernels;
@@ -965,18 +963,18 @@ struct TorusImplementation {
           if( ! IsEmpty(insideDisk))//Inside Disk
           {
             Float_t diri=intersectionPoint.x()*torus.GetWedge().GetAlong1().x()+
-	                 intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
+                     intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
             Bool_t rightside = (diri >=0);
-	   
-	    MaskedAssign( rightside && smallerdist && insideDisk, distPhi1, &minDist);
-	    
-	  }
+
+        MaskedAssign( rightside && smallerdist && insideDisk, distPhi1, &minDist);
+
+      }
          
       }
       smallerdist = distPhi2 < minDist;
       if ( ! IsEmpty(smallerdist))
-	{
-	  Vector3D<Float_t> intersectionPoint = localPoint + localDirection*distPhi2;
+    {
+      Vector3D<Float_t> intersectionPoint = localPoint + localDirection*distPhi2;
           Bool_t insideDisk;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
           if( ! IsEmpty(insideDisk))//Inside Disk
@@ -984,9 +982,9 @@ struct TorusImplementation {
             Float_t diri2=intersectionPoint.x()*torus.GetWedge().GetAlong2().x()+
             intersectionPoint.y()*torus.GetWedge().GetAlong2().y();
             Bool_t rightside = (diri2 >=0);
-	    MaskedAssign( rightside && (distPhi2<minDist) && smallerdist && insideDisk, distPhi2, &minDist);
-	   
-	  }
+        MaskedAssign( rightside && (distPhi2<minDist) && smallerdist && insideDisk, distPhi2, &minDist);
+
+      }
          
       }
       //std::cerr<<" Din for point "<<point<<" df1="<<distPhi1<<" df2="<<distPhi2<<" dout="<<dout<<" din="<<din<<" dist="<<minDist<<" smallerphi="<<smallerdist<<" tubeD="<<tubeDistance<<std::endl;
@@ -1049,7 +1047,7 @@ struct TorusImplementation {
       torus.GetWedge().DistanceToOut<Backend>(point,dir,distPhi1,distPhi2);
       Bool_t smallerphi = distPhi1 < distance;
       if(! IsEmpty(smallerphi) )
-	{
+    {
           Vector3D<Float_t> intersectionPoint = point + dir*distPhi1;
           Bool_t insideDisk ;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
@@ -1057,19 +1055,19 @@ struct TorusImplementation {
           if( ! IsEmpty(insideDisk))//Inside Disk
           {
             Float_t diri=intersectionPoint.x()*torus.GetWedge().GetAlong1().x()+
-	                 intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
+                     intersectionPoint.y()*torus.GetWedge().GetAlong1().y();
             Bool_t rightside = (diri >=0);
-	   
-	    MaskedAssign( rightside && smallerphi && insideDisk, distPhi1, &distance);
-	   
-	  }
+
+        MaskedAssign( rightside && smallerphi && insideDisk, distPhi1, &distance);
+
+      }
          
         }
       smallerphi = distPhi2 < distance;
       if(! IsEmpty(smallerphi) )
-	{
+    {
         
-	  Vector3D<Float_t> intersectionPoint = point + dir*distPhi2;
+      Vector3D<Float_t> intersectionPoint = point + dir*distPhi2;
           Bool_t insideDisk;
           UnplacedContainsDisk<Backend>(torus,intersectionPoint,insideDisk);
           if( ! IsEmpty(insideDisk))//Inside Disk
@@ -1077,9 +1075,9 @@ struct TorusImplementation {
             Float_t diri2=intersectionPoint.x()*torus.GetWedge().GetAlong2().x()+
             intersectionPoint.y()*torus.GetWedge().GetAlong2().y();
             Bool_t rightside = (diri2 >=0);
-	    MaskedAssign( rightside && (distPhi2 < distance) &&smallerphi && insideDisk, distPhi2, &distance);
-	   	   
-	  }
+        MaskedAssign( rightside && (distPhi2 < distance) &&smallerphi && insideDisk, distPhi2, &distance);
+
+      }
          }
          
     

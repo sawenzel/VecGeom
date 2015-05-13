@@ -27,7 +27,7 @@ int main()
   CudaManager::Instance().set_verbose(3);
   CudaManager::Instance().LoadGeometry();
 
-  // why to I have to do this??
+  // why do I have to do this here??
   CudaManager::Instance().Synchronize();
 
   CudaManager::Instance().PrintGeometry();

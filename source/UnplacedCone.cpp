@@ -28,6 +28,119 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
     }
 
 #if !defined(VECGEOM_NVCC)
+    bool UnplacedCone::Normal(Vector3D<Precision> const& p, Vector3D<Precision>& norm) const {
+    int noSurfaces = 0;
+    Precision rho, pPhi;
+    Precision distZ, distRMin, distRMax;
+    Precision distSPhi = kInfinity, distEPhi = kInfinity;
+    Precision pRMin, widRMin;
+    Precision pRMax, widRMax;
+
+    const double kHalfTolerance = 0.5 * kTolerance;
+  
+    Vector3D<Precision> sumnorm(0., 0., 0.), nZ =  Vector3D<Precision> (0., 0., 1.);
+    Vector3D<Precision> nR, nr(0., 0., 0.), nPs, nPe;
+
+    distZ = std::fabs(std::fabs(p.z()) - fDz);
+    rho  = std::sqrt(p.x() * p.x() + p.y() * p.y());
+
+    pRMin   = rho - p.z() * fTanRMin;
+    widRMin = fRmin2 - fDz * fTanRMin;
+    distRMin = std::fabs(pRMin - widRMin) / fSecRMin;
+
+    pRMax   = rho - p.z() * fTanRMax;
+    widRMax = fRmax2 - fDz * fTanRMax;
+    distRMax = std::fabs(pRMax - widRMax) / fSecRMax;
+
+    if (!IsFullPhi())   // Protected against (0,0,z)
+    {
+     if (rho)
+     {
+      pPhi = std::atan2(p.y(), p.x());
+
+      if (pPhi  < fSPhi - kHalfTolerance)
+      {
+        pPhi += 2 * kPi;
+      }
+      else if (pPhi > fSPhi + fDPhi + kHalfTolerance)
+      {
+        pPhi -= 2 * kPi;
+      }
+
+      distSPhi = std::fabs(pPhi - fSPhi);
+      distEPhi = std::fabs(pPhi - fSPhi - fDPhi);
+     }
+     else if (!(fRmin1) || !(fRmin2))
+     {
+      distSPhi = 0.;
+      distEPhi = 0.;
+     }
+     nPs = Vector3D<Precision>(std::sin(fSPhi), -std::cos(fSPhi), 0);
+     nPe = Vector3D<Precision>(-std::sin(fSPhi + fDPhi), std::cos(fSPhi + fDPhi), 0);
+   }
+   if (rho > kHalfTolerance)
+   {
+    nR = Vector3D<Precision>(p.x() / rho / fSecRMax, p.y() / rho / fSecRMax, -fTanRMax / fSecRMax);
+    if (fRmin1 || fRmin2)
+    {
+      nr = Vector3D<Precision>(-p.x() / rho / fSecRMin, -p.y() / rho / fSecRMin, fTanRMin / fSecRMin);
+    }
+   }
+
+  if (distRMax <= kHalfTolerance)
+  {
+    noSurfaces ++;
+    sumnorm += nR;
+  }
+  if ((fRmin1 || fRmin2) && (distRMin <= kHalfTolerance))
+  {
+    noSurfaces ++;
+    sumnorm += nr;
+  }
+  if (!IsFullPhi())
+  {
+    if (distSPhi <= kHalfTolerance)
+    {
+      noSurfaces ++;
+      sumnorm += nPs;
+    }
+    if (distEPhi <= kHalfTolerance)
+    {
+      noSurfaces ++;
+      sumnorm += nPe;
+    }
+  }
+  if (distZ <= kHalfTolerance)
+  {
+    noSurfaces ++;
+    if (p.z() >= 0.)
+    {
+      sumnorm += nZ;
+    }
+    else
+    {
+      sumnorm -= nZ;
+    }
+  }
+  if (noSurfaces == 0)
+  {
+    //TO DO
+    //norm = ApproxSurfaceNormal(p);
+    norm = sumnorm;
+  }
+  else if (noSurfaces == 1)
+  {
+    norm = sumnorm;
+  }
+  else
+  {
+    norm = sumnorm.Unit();
+  }
+
+
+  return noSurfaces != 0;
+ }
+
     Vector3D<Precision> UnplacedCone::GetPointOnSurface() const {
        // implementation taken from UCons; not verified
        //

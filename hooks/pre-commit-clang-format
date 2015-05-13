@@ -134,10 +134,27 @@ printf "\nThe following differences were found between the code to commit "
 printf "and the clang-format rules:\n\n"
 cat "$patch"
 
-printf "\nYou can apply these changes with:\n git apply $patch\n"
-printf "(may need to be called from the root directory of your repository)\n"
-printf "Aborting commit. Apply changes and commit again or skip checking with"
-printf " --no-verify (not recommended).\n"
+# Allows us to read user input below, assigns stdin to keyboard
+exec < /dev/tty
 
-exit 1
+while true; do
+    read -p "Do you want to install patch (Yes - commit with patch, No - commit without patch, Cancel - stop committing)? [Y/N/C]" yn
+        case $yn in
+            [Yy] ) git apply $patch; break
+            ;;
+            [Nn] ) printf "\nYou can apply these changes with:\n git apply $patch\n";
+            printf "(may need to be called from the root directory of your repository)\n";
+            printf "Aborting commit. Apply changes and commit again or skip checking with";
+            printf " --no-verify (not recommended).\n";
+            printf "###############################\n";break
+            ;;
+            [Cc] ) exit 1
+            ;;
+            * ) echo "Please answer yes or no."
+            ;;
+    esac
+done
+
+
+
 

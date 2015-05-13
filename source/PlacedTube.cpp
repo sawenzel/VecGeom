@@ -4,6 +4,7 @@
 #include "volumes/PlacedTube.h"
 #include "volumes/Tube.h"
 #include "volumes/SpecializedTube.h"
+#include "base/Vector3D.h"
 
 #ifdef VECGEOM_ROOT
 #include "TGeoTube.h"

@@ -429,7 +429,6 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       newstate.Pop();
       return;
    }
-
    // is geometry further away than physics step?
    if(step > pstep)
    {
@@ -465,6 +464,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       Transformation3D const * trans = nextvol->GetTransformation();
 
       LocatePoint( nextvol, trans->Transform(newpointafterboundary), newstate, false );
+
 
       assert( newstate.Top() != currentstate.Top() && " error relocating when entering ");
       return;

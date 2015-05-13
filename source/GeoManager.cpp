@@ -79,7 +79,9 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   bool multiple = false;
   for (auto v = fLogicalVolumesMap.begin(), v_end = fLogicalVolumesMap.end();
        v != v_end; ++v) {
-    if (v->second->GetLabel() == label) {
+
+    const std::string& fullname = v->second->GetLabel();
+    if (fullname.compare(label)==0) {
       if (!output) {
         output = v->second;
       } else {

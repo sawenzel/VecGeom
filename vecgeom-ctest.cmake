@@ -71,6 +71,11 @@ if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
 endif()
 set(CTEST_GIT_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
 
+if(NOT "$ENV{GIT_COMMIT}" STREQUAL "")
+   set(CTEST_CHECKOUT_COMMAND "cmake -E chdir ${CTEST_SOURCE_DIRECTORY} ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_PREVIOUS_COMMIT}")
+   set(CTEST_GIT_UPDATE_CUSTOM  ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_COMMIT})
+endif()
+
 #########################################################
 ## Output language
 set($ENV{LC_MESSAGES}  "en_EN")
