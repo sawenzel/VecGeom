@@ -119,7 +119,6 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
     Float_t hitz = pos.z() + dist * dir.z();
     Float_t hity = pos.y() + dist * dir.y();
     Float_t hitx = pos.x() + dist * dir.x();
-	Float_t hitr = hitx* hitx + hity * hity;
 
     Bool_t insector = Backend::kTrue;
     if(checkPhiTreatment<TubeType>(tube)) {
@@ -600,10 +599,8 @@ struct TubeImplementation {
      * rmax calculations
      */
 
-    //Float_t invnsq = 1 / ( dir.x()*dir.x() + dir.y()*dir.y() );
-	Float_t invnsq = 1.0 / dir.Mag2();
+    Float_t invnsq = 1 / ( dir.x()*dir.x() + dir.y()*dir.y() );
     Float_t rdotn = dir.x()*point.x() + dir.y()*point.y();
-	// Float_t rdotn = Dot(dir, point);
     Float_t rsq = point.x()*point.x() + point.y()*point.y();
     Float_t b = invnsq * rdotn;
 
