@@ -359,6 +359,8 @@ bool validateNavigationStepAgainstGeant4(
   G4ThreeVector nextPos = g4pos + (step + 1.0e-6) * g4dir;
   nextVol = g4nav.LocateGlobalPointAndSetup( nextPos, &g4dir, true, false );
 
+  std::string vgLogName( testState.Top()->GetLogicalVolume()->GetLabel() );
+
   if( testState.Top() == NULL ) {
      if (! g4nav.ExitedMotherVolume() ) {
        result = false;
@@ -366,8 +368,7 @@ bool validateNavigationStepAgainstGeant4(
      }
   }
   else if( Abs(testStep - step/cm) > 100.*kTolerance
-      // The 9 below is due to 'xxxx_xxxx' pointer suffixes in root volume names (to be fixed soon)
-           || (testState.Top()->GetLabel().compare( nextVol->GetName() ) != 9 ) ) {
+           || vgLogName.compare( nextVol->GetName() ) ) {
     result = false;
     std::cerr << "\n*** ERROR on validateAgainstGeant4: "
               <<" Geant4 node="<< (nextVol ? nextVol->GetName() : "Null")
