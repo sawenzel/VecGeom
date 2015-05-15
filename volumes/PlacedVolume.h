@@ -263,7 +263,7 @@ public:
    // assert(0 && "SurfaceArea not implemented for this shape type.");
    // return 0.0;
  // }
-
+  virtual Vector3D<Precision> GetPointOnSurface() const;
 
 public:
 

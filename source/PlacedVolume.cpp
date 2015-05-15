@@ -5,6 +5,8 @@
 #include "base/Vector3D.h"
 #include "base/RNG.h"
 #include "management/GeoManager.h"
+#include "volumes/utilities/VolumeUtilities.h"
+#include "base/SOA3D.h"
 
 #include <stdio.h>
 #include <cassert>
@@ -139,6 +141,24 @@ Precision VPlacedVolume::SurfaceArea() {
  // @@ The conformal correction can be upgraded
  return delta.x()*delta.y()*delta.z()*inside/dd/nStat;
 }
+
+// implement a default function for GetPointOnSurface
+// based on contains + DistanceToOut
+Vector3D<Precision> VPlacedVolume::GetPointOnSurface() const {
+   std::cerr << "WARNING : Base GetPointOnSurface called \n";
+
+   Vector3D<Precision> surfacepoint;
+   SOA3D<Precision> points(1);
+   volumeUtilities::FillRandomPoints( *this, points );
+
+   Vector3D<Precision> dir = volumeUtilities::SampleDirection();
+   surfacepoint = points[0] + DistanceToOut( points[0],
+           dir ) * dir;
+
+  // assert( Inside(surfacepoint) == vecgeom::kSurface );
+   return surfacepoint;
+}
+
 
 } // End impl namespace
 
