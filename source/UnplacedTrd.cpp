@@ -4,6 +4,7 @@
 #include "volumes/UnplacedTrd.h"
 #include "volumes/SpecializedTrd.h"
 #include "volumes/utilities/GenerationUtilities.h"
+#include "base/RNG.h"
 
 #include "management/VolumeFactory.h"
 
@@ -53,6 +54,7 @@ Precision UnplacedTrd::SurfaceArea() const {
 
 /*
 
+<<<<<<< HEAD
 void UnplacedTrd::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
 	aMin.x() = -1.0 * Min(dx1(), dx2());
 	aMax.x() = Max(dx1(), dx2());
@@ -63,6 +65,8 @@ void UnplacedTrd::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) c
 }
 */
 
+=======
+>>>>>>> a0221238966e021c821d3309d64c3ec0b6c3642f
 int UnplacedTrd::ChooseSurface() const {
 	int choice = 0;
 	int nChoice = 6;
