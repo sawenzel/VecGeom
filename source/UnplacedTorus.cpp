@@ -2,7 +2,8 @@
 
 #include "volumes/UnplacedTorus.h"
 #include "volumes/SpecializedTorus.h"
-
+#include "base/RNG.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #include "management/VolumeFactory.h"
 
 namespace vecgeom {
@@ -29,9 +30,9 @@ VPlacedVolume* UnplacedTorus::Create(
     VPlacedVolume *const placement) {
   if (placement) {
     new(placement) SpecializedTorus<transCodeT, rotCodeT>(logical_volume,
-							  transformation
+      transformation
 #ifdef VECGEOM_NVCC
-							  , NULL, id
+      , NULL, id
 #endif
 );
     return placement;
@@ -39,9 +40,9 @@ VPlacedVolume* UnplacedTorus::Create(
   return new SpecializedTorus<transCodeT, rotCodeT>(logical_volume,
                                                   transformation
 #ifdef VECGEOM_NVCC
-						    , NULL, id
+        , NULL, id
 #endif
-						    );
+        );
 }
 
 
@@ -61,6 +62,52 @@ VPlacedVolume* UnplacedTorus::SpecializedVolume(
                               id,
 #endif
                               placement);
+}
+
+
+Vector3D<Precision> UnplacedTorus::GetPointOnSurface() const {
+    // taken from Geant4
+    Precision cosu, sinu,cosv, sinv, aOut, aIn, aSide, chose, phi, theta, rRand;
+
+
+    phi   = RNG::Instance().uniform( fSphi, fSphi + fDphi );
+    theta = RNG::Instance().uniform( 0., vecgeom::kTwoPi );
+
+    cosu   = std::cos(phi);    sinu = std::sin(phi);
+    cosv   = std::cos(theta);  sinv = std::sin(theta);
+
+    // compute the areas
+
+    aOut   = (fDphi)* vecgeom::kTwoPi *fRtor*fRmax;
+    aIn    = (fDphi)* vecgeom::kTwoPi *fRtor*fRmin;
+    aSide  = vecgeom::kPi * (fRmax*fRmax-fRmin*fRmin);
+
+     if ((fSphi == 0.) && (fDphi == vecgeom::kTwoPi )){ aSide = 0; }
+     chose = RNG::Instance().uniform(0.,aOut + aIn + 2.*aSide);
+
+     if(chose < aOut)
+     {
+       return Vector3D<Precision> ((fRtor+fRmax*cosv)*cosu,
+                             (fRtor+fRmax*cosv)*sinu, fRmax*sinv);
+     }
+     else if( (chose >= aOut) && (chose < aOut + aIn) )
+     {
+       return Vector3D<Precision> ((fRtor+fRmin*cosv)*cosu,
+                             (fRtor+fRmin*cosv)*sinu, fRmin*sinv);
+     }
+     else if( (chose >= aOut + aIn) && (chose < aOut + aIn + aSide) )
+     {
+       rRand = volumeUtilities::GetRadiusInRing(fRmin,fRmax);
+       return Vector3D<Precision> ((fRtor+rRand*cosv)*std::cos(fSphi),
+                             (fRtor+rRand*cosv)*std::sin(fSphi), rRand*sinv);
+     }
+     else
+     {
+       rRand = volumeUtilities::GetRadiusInRing(fRmin,fRmax);
+       return Vector3D<Precision> ((fRtor+rRand*cosv)*std::cos(fSphi+fDphi),
+                             (fRtor+rRand*cosv)*std::sin(fSphi+fDphi),
+                             rRand*sinv);
+     }
 }
 
 #ifdef VECGEOM_CUDA_INTERFACE
