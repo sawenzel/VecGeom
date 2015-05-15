@@ -346,7 +346,10 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
                                           Precision                 & step
                                         ) const
 {
-  static int counter=0;
+#ifndef VECGEOM_NVCC
+   static int counter=0;
+#endif
+   
    // this information might have been cached in previous navigators??
    Transformation3D m;
    currentstate.TopMatrix(m);
