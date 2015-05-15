@@ -469,7 +469,6 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
-    source/benchmarking/NavigationBenchmarker.cpp
     source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
@@ -481,6 +480,7 @@ set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
   source/ShapeDebugger.cpp
   source/CppExporter.cpp
+  source/benchmarking/NavigationBenchmarker.cpp
 )
 
 # some CUDA kernel code in "userspace"
