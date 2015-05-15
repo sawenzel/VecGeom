@@ -162,6 +162,8 @@ public:
       GetBoundingTube().Extent( min, max );
   }
 
+  Vector3D<Precision> GetPointOnSurface() const;
+
   virtual int memory_size() const { return sizeof(*this); }
 
   VECGEOM_CUDA_HEADER_BOTH
