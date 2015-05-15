@@ -71,7 +71,7 @@ public:
         GetLogicalVolume()->unplaced_volume());
   }
 
-#ifndef VECGEOM_NVCC
+//#ifndef VECGEOM_NVCC
   virtual Precision Capacity() override {
        // TODO: implement this
       return 0.;
@@ -82,7 +82,9 @@ public:
   }
 
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
-#endif
+
+  virtual Vector3D<Precision> GetPointOnSurface() const;
+//#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void PrintType() const { };
