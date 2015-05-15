@@ -33,13 +33,16 @@ Vector3D<Precision> PlacedBooleanVolume::GetPointOnSurface() const {
            return p;
        }
 
+       
+       UnplacedBooleanVolume *unplaced = (UnplacedBooleanVolume*)GetUnplacedVolume();
        if( RNG::Instance().uniform() < arearatio ){
-           p = GetUnplacedVolume()->fLeftVolume->GetPointOnSurface();
+          p = ((UnplacedBooleanVolume *)unplaced->fLeftVolume)->GetPointOnSurface();
        }
        else {
-           p = GetUnplacedVolume()->fRightVolume->GetPointOnSurface();
+          p = ((UnplacedBooleanVolume *)unplaced->fRightVolume)->GetPointOnSurface();
        }
     } while( Inside(p) != vecgeom::kSurface );
+    return p;
 }
 
 #ifdef VECGEOM_NVCC
