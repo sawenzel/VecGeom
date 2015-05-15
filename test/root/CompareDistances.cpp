@@ -86,22 +86,31 @@ int main( int argc, char *argv[] ) {
         std::cout << "ROOT SO " << foundvolume->GetShape()->Safety( &point[0], true ) << "\n";
 
         TGeoShape const * rootback = vecgeomplaced->ConvertToRoot();
-        std::cout << "ROOTBACKCONV CONTAINS " << rootback->Contains( &point[0] ) << "\n";
-        std::cout << "ROOTBACKCONV DI " << rootback->DistFromOutside( &point[0], &dir[0] ) << "\n";
-        std::cout << "ROOTBACKCONV DO " << rootback->DistFromInside( &point[0], &dir[0] ) << "\n";
-        std::cout << "ROOTBACKCONV SI " << rootback->Safety( &point[0], false ) << "\n";
-        std::cout << "ROOTBACKCONV SO " << rootback->Safety( &point[0], true ) << "\n";
-
+        if( rootback ){
+            std::cout << "ROOTBACKCONV CONTAINS " << rootback->Contains( &point[0] ) << "\n";
+            std::cout << "ROOTBACKCONV DI " << rootback->DistFromOutside( &point[0], &dir[0] ) << "\n";
+            std::cout << "ROOTBACKCONV DO " << rootback->DistFromInside( &point[0], &dir[0] ) << "\n";
+            std::cout << "ROOTBACKCONV SI " << rootback->Safety( &point[0], false ) << "\n";
+            std::cout << "ROOTBACKCONV SO " << rootback->Safety( &point[0], true ) << "\n";
+        }
+        else{
+            std::cerr << "ROOT backconversion failed\n";
+        }
 #ifdef VECGEOM_USOLIDS
         VUSolid const * usolid = vecgeomplaced->ConvertToUSolids();
-        std::cout << "USolids Capacity " << const_cast<VUSolid*>(usolid)->Capacity(  ) << "\n";
-        std::cout << "USolids CONTAINS " << usolid->Inside( point ) << "\n";
-        std::cout << "USolids DI " << usolid->DistanceToIn( point, dir ) << "\n";
+        if( usolid != NULL ){
+          std::cout << "USolids Capacity " << const_cast<VUSolid*>(usolid)->Capacity(  ) << "\n";
+          std::cout << "USolids CONTAINS " << usolid->Inside( point ) << "\n";
+          std::cout << "USolids DI " << usolid->DistanceToIn( point, dir ) << "\n";
 
-        Vector3D<Precision> norm; bool valid;
-        std::cout << "USolids DO " << usolid->DistanceToOut( point, dir, norm, valid ) << "\n";
-        std::cout << "USolids SI " << usolid->SafetyFromInside( point ) << "\n";
-        std::cout << "USolids SO " << usolid->SafetyFromOutside( point ) << "\n";
+          Vector3D<Precision> norm; bool valid;
+          std::cout << "USolids DO " << usolid->DistanceToOut( point, dir, norm, valid ) << "\n";
+          std::cout << "USolids SI " << usolid->SafetyFromInside( point ) << "\n";
+          std::cout << "USolids SO " << usolid->SafetyFromOutside( point ) << "\n";
+        }
+        else{
+          std::cerr << "USOLID conversion failed\n";
+        }
 #endif
 
 #ifdef VECGEOM_GEANT4
@@ -109,11 +118,16 @@ int main( int argc, char *argv[] ) {
         G4ThreeVector g4d( dir.x(), dir.y(), dir.z());
 
         G4VSolid const * g4solid = vecgeomplaced->ConvertToGeant4();
-        std::cout << "G4 CONTAINS " << g4solid->Inside( g4p ) << "\n";
-        std::cout << "G4 DI " << g4solid->DistanceToIn( g4p, g4d ) << "\n";
-        std::cout << "G4 DO " << g4solid->DistanceToOut( g4p, g4d ) << "\n";
-        std::cout << "G4 SI " << g4solid->DistanceToIn( g4p ) << "\n";
-        std::cout << "G4 SO " << g4solid->DistanceToOut( g4p ) << "\n";
+        if( g4solid != NULL ){
+          std::cout << "G4 CONTAINS " << g4solid->Inside( g4p ) << "\n";
+          std::cout << "G4 DI " << g4solid->DistanceToIn( g4p, g4d ) << "\n";
+          std::cout << "G4 DO " << g4solid->DistanceToOut( g4p, g4d ) << "\n";
+          std::cout << "G4 SI " << g4solid->DistanceToIn( g4p ) << "\n";
+          std::cout << "G4 SO " << g4solid->DistanceToOut( g4p ) << "\n";
+        }
+        else{
+          std::cerr << "G4 conversion failed\n";
+        }
 #endif
 
         double step=0;
