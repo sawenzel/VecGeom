@@ -740,9 +740,9 @@ int main(int argc, char * argv[])
           << foundvolume->GetShape()->Capacity() << "\n";
 
     // get bounding box to generate x-ray start positions
-    double dx = ((TGeoBBox*)foundvolume->GetShape())->GetDX()*1.5;
-    double dy = ((TGeoBBox*)foundvolume->GetShape())->GetDY()*1.5;
-    double dz = ((TGeoBBox*)foundvolume->GetShape())->GetDZ()*1.5;
+    double dx = ((TGeoBBox*)foundvolume->GetShape())->GetDX()*1.05;
+    double dy = ((TGeoBBox*)foundvolume->GetShape())->GetDY()*1.05;
+    double dz = ((TGeoBBox*)foundvolume->GetShape())->GetDZ()*1.05;
     double origin[3]= {0., };
     origin[0]= ((TGeoBBox*)foundvolume->GetShape())->GetOrigin()[0];
     origin[1]= ((TGeoBBox*)foundvolume->GetShape())->GetOrigin()[1];
