@@ -186,6 +186,8 @@ fFy(0)
 
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
+  Precision SurfaceArea() const;
+
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
