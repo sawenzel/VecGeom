@@ -12,6 +12,8 @@
 #include "base/Vector3D.h"
 #include "base/RNG.h"
 
+#include <iostream>
+
 namespace vecgeom {
 
 
