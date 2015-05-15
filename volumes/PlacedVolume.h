@@ -259,10 +259,10 @@ public:
     assert(0 && "Extent not implemented for this shape type.");
   }
 
-  virtual Precision SurfaceArea() {
-    assert(0 && "SurfaceArea not implemented for this shape type.");
-    return 0.0;
-  }
+  virtual Precision SurfaceArea(); // {
+   // assert(0 && "SurfaceArea not implemented for this shape type.");
+   // return 0.0;
+ // }
 
 
 public:
