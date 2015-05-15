@@ -20,6 +20,7 @@
 #define PI 3.14159265358979323846
 
 
+
 template <class Tube_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 
 bool TestTubs()
@@ -93,15 +94,14 @@ bool TestTubs()
    //assert(t1.GetName()=="Solid Tube #1");
 
   // Check cubic volume
-  //vol = t1.Capacity();
-  //volCheck = 50*2*UUtils::kPi*50*50;
-  //assert(ApproxEqual(vol,volCheck));
+  vol = t1.Capacity();
+  volCheck = 50*2*UUtils::kPi*50*50;
+  assert(ApproxEqual(vol,volCheck));
  
   // Check Surface area
   // vol = t2.SurfaceArea();
   // volCheck = 2*UUtils::kPi*(45+50)*(50-45+2*50);
   // assert(ApproxEqual(vol,volCheck));
-
 
   	//Tube_t myClad("myClad", 90.0, 110.0, 105.0, 0.0, PI);    // TEST MINE
 	

@@ -89,6 +89,16 @@ public:
   /// \brief set tolerance for comparisons
   void SetTolerance(Precision tol) { fTolerance = tol; }
 
+
+  /// \brief get pointer to PointPool (in order to make data available to external users);
+  SOA3D<Precision> const *const GetPointPool() const {
+      return fPointPool;
+  }
+
+  SOA3D<Precision> const *const GetDirectionPool() const {
+      return fDirectionPool;
+  }
+
   /// \brief Runs all geometry benchmarks.
   /// return 0 if no error found; returns 1 if error found
   int RunBenchmark();

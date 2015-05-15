@@ -98,7 +98,7 @@ public:
   }
 #ifdef VECGEOM_ROOT
  virtual TGeoShape const* ConvertToRoot() const {
-      printf("Converting to ROOT\n");
+      // printf("Converting to ROOT\n");
       // what do we need?
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;

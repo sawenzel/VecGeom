@@ -250,7 +250,6 @@ int ShapeTester::ShapeNormal()
 
    if( CountErrors() )
      errCode= 256; // errCode: 0001 0000 0000
-  
    return errCode;
 }
 
@@ -2162,3 +2161,4 @@ int ShapeTester::CountErrors() const
 
   return answer;
 }
+

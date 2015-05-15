@@ -550,7 +550,8 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
             while( placedcount < np && iter!=allpaths.end() )
             {
                 // this is matrix linking local and global reference frame
-                Transformation3D m = (*iter)->TopMatrix();
+                Transformation3D m;
+                (*iter)->TopMatrix(m);
 
                 globalpoints.set(placedcount, m.InverseTransform(localpoints[placedcount]));
                 directions.set(placedcount, m.InverseTransformDirection(directions[placedcount]));

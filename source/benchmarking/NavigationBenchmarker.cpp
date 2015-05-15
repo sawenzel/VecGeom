@@ -44,23 +44,24 @@ namespace vecgeom {
 
 //==================================
 
+
 Precision benchmarkLocatePoint( int nPoints, int nReps, SOA3D<Precision> const& points) {
+ 
+   NavigationState * state = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
+   vecgeom::SimpleNavigator nav;
+ 
+   Stopwatch timer;
+   timer.Start();
+   for(int n=0; n<nReps; ++n) {
+     for( int i=0; i<nPoints; ++i ) {
+       state->Clear();
+       nav.LocatePoint( GeoManager::Instance().GetWorld(), points[i], *state, true);
+     }
+   }
+   Precision elapsed = timer.Stop();
 
-  NavigationState * state = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth() );
-  vecgeom::SimpleNavigator nav;
-
-  Stopwatch timer;
-  timer.Start();
-  for(int n=0; n<nReps; ++n) {
-    for( int i=0; i<nPoints; ++i ) {
-      state->Clear();
-      nav.LocatePoint( GeoManager::Instance().GetWorld(), points[i], *state, true);
-    }
-  }
-  Precision elapsed = timer.Stop();
-
-  NavigationState::ReleaseInstance( state );
-  return (Precision)elapsed;
+   NavigationState::ReleaseInstance( state );
+   return (Precision)elapsed;
 }
 
 //==================================
@@ -236,6 +237,7 @@ Precision benchmarkGeant4Navigation( int nPoints, int nReps,
 }
 #endif
 
+
 //=======================================
 /// Function to run navigation benchmarks
   void runNavigationBenchmarks(LogicalVolume const* startVol, int np, int nreps,
@@ -255,6 +257,7 @@ Precision benchmarkGeant4Navigation( int nPoints, int nReps,
   printf("CPU elapsed time (serialized navigation) %f ms\n", 1000.*cputime);
 
   cputime = benchmarkVectorNavigation(np,nreps,points, dirs, maxStep);
+
   printf("CPU elapsed time (vectorized navigation) %f ms\n", 1000.*cputime);
 
 #ifdef VECGEOM_ROOT

@@ -46,7 +46,7 @@ TGeoShape const* PlacedBox::ConvertToRoot() const {
 
 #ifdef VECGEOM_GEANT4
 G4VSolid const* PlacedBox::ConvertToGeant4() const {
-  return new G4Box(GetLabel(), x(), y(), z());
+  return new G4Box("", x(), y(), z());
 }
 #endif
 

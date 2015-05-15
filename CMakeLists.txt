@@ -56,14 +56,15 @@ if (USOLIDS)
 endif()
 
 if (GEANT4)
-  if (BENCHMARK)
-    set(Geant4 ON)
-  else()
-    message(WARNING
-      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
-    set(GEANT4 OFF)
-    set(Geant4 OFF)
-  endif()
+#  if (BENCHMARK)
+#    set(Geant4 ON)
+#  else()
+#    message(WARNING
+#      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
+#    set(GEANT4 OFF)
+#    set(Geant4 OFF)
+#  endif()
+   set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)
@@ -423,6 +424,8 @@ set(SRC_CPP_RELATIVE
   source/UnplacedPolycone.cpp
   source/PlacedPolycone.cpp
   source/Wedge.cpp
+  source/ABBoxManager.cpp
+
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -564,7 +567,9 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ExitingOrEntering.cpp
 
   # higher level benchmarks
-  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
 )
 if(BENCHMARK)
@@ -633,8 +638,14 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
+  # 
 )
+if(ROOT) # add shape testers that depend on ROOT
+  set(TEST_EXECUTABLES_SHAPETESTER
+  ${TEST_EXECUTABLES_SHAPETESTER}
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp )
+endif()
+
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
