@@ -154,6 +154,8 @@ fFy(0)
   // Computes capacity of the shape in [length^3]
   Precision Capacity() const;
 
+  Precision SurfaceArea() const;
+
   Precision GetPlusXArea() const { //  Area in +x direction 
 	  return (fDZ * (fDY1 + fDY2));
   }
@@ -184,7 +186,7 @@ fFy(0)
 
   bool Normal(Vector3D<Precision> const& point, Vector3D<Precision>& normal) const;
 
-  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+  //void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
 #endif
 

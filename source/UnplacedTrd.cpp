@@ -51,6 +51,7 @@ Precision UnplacedTrd::SurfaceArea() const {
 	return SA;
 }
 
+/*
 
 void UnplacedTrd::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
 	aMin.x() = -1.0 * Min(dx1(), dx2());
@@ -60,9 +61,11 @@ void UnplacedTrd::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) c
 	aMin.z() = -dz();
 	aMax.z() = dz();
 }
+*/
 
 int UnplacedTrd::ChooseSurface() const {
-	int i, j, nChoice = 6;
+	int choice = 0;
+	int nChoice = 6;
 	Precision sumWeight = 0.0;
 	Precision PlusXArea = GetPlusXArea();
 	Precision MinusXArea = GetMinusXArea();
@@ -71,33 +74,25 @@ int UnplacedTrd::ChooseSurface() const {
 	Precision PlusZArea = GetPlusZArea();
 	Precision MinusZArea = GetMinusZArea();
 	Precision totArea = PlusXArea + MinusXArea + PlusYArea + MinusYArea + PlusZArea + MinusZArea;
-	double prob[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-	int iprob[6] = {0, 0, 0, 0, 0, 0};
+	Precision prob[6] ;
 
-	prob[0] = PlusXArea / totArea;   iprob[0] = 0; sumWeight += prob[0];
-	prob[1] = MinusXArea / totArea;  iprob[1] = 1; sumWeight += prob[1];
-	prob[2] = PlusYArea / totArea;   iprob[2] = 2; sumWeight += prob[2];
-	prob[3] = MinusYArea / totArea;  iprob[3] = 3; sumWeight += prob[3];
-	prob[4] = PlusZArea / totArea;   iprob[4] = 4; sumWeight += prob[4];
-	prob[5] = MinusZArea / totArea;  iprob[5] = 5; sumWeight += prob[5];
+	prob[0] = PlusXArea  / totArea;   
+	prob[1] = MinusXArea / totArea; 
+	prob[2] = PlusYArea  / totArea; 
+	prob[3] = MinusYArea / totArea; 
+	prob[4] = PlusZArea  / totArea;   
+	prob[5] = MinusZArea / totArea;  
 
-	// sorting the array
-    Precision tmp1, tmp2;
-	for (i = 0; i < nChoice - 1; i++) {
-		for (j = 0; j < nChoice -1; j++) {
-			if (prob[j] > prob[j+1]) {
-				tmp1 = prob[j];        tmp2 = iprob[j];
-				prob[j] = prob[j+1];   iprob[j] = iprob[j+1];
-				prob[j+1] = tmp1;      iprob[j+1] = tmp2;
-			}
-		}
-	}
+	for (int i = 0; i < nChoice; i++) 
+		sumWeight += prob[i];
 
-	Precision firstRnd = RNG::Instance().uniform() * sumWeight;
-	for (i = 0; i < nChoice; i++) {
-		if (firstRnd < prob[i]) return iprob[i];
-		firstRnd -= prob[i];
-	}
+	Precision rand = RNG::Instance().uniform() * sumWeight;
+
+	while (rand > prob[choice])
+		rand -= prob[choice], choice++;
+
+	assert(choice < nChoice);
+	return choice;
 }
 
 Vector3D<Precision> UnplacedTrd::GetPointOnSurface() const {
@@ -117,24 +112,22 @@ Vector3D<Precision> UnplacedTrd::GetPointOnSurface() const {
 	Precision dx = Abs(xx1 - xx2);
 	Precision dy = Abs(yy1 - yy2);
 	Precision dz = Abs(zz1 - zz2);
-	Precision llX = (dx <= 1.0e-8) ? dz : Sqrt(x2minusx1() * x2minusx1()  + dztimes2() * dztimes2());
-	Precision llY = (dy <= 1.0e-8) ? dz : Sqrt(y2minusy1() * y2minusy1()  + dztimes2() * dztimes2());
-	Precision dzstar;
 	bool xvert(false);
 	bool yvert(false);
 	xvert = (xx1 == xx2) ? true : false;
 	yvert = (yy1 == yy2) ? true : false;
+	Precision llX = (xvert) ? dz : Sqrt(x2minusx1() * x2minusx1()  + dztimes2() * dztimes2());
+	Precision llY = (yvert) ? dz : Sqrt(y2minusy1() * y2minusy1()  + dztimes2() * dztimes2());
+	Precision dzstar;
 	int choice = ChooseSurface();
 
 	switch (choice) {
-
 		case 0:   // +X plane perpendicular to +X axis
 			xVal = (xvert) ? xx1 : RNG::Instance().uniform() * (Abs(xx1 - xx2)) + minX;
 			zVal = (xvert) ? RNG::Instance().uniform() * dz + zz2 : (maxX - xVal) / fx();
 			dzstar = (xvert) ? zVal : Sqrt((xx1 - xVal) * (xx1 - xVal) + (zVal * zVal));
 			yVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * yy1 - yy1 : RNG::Instance().uniform() * 2.0 * (llX * xx1 + x2minusx1() * dzstar) + (-yy1);
 		break;
-		
 		case 1:  // -X
 			xVal = (xvert) ? xx1 : RNG::Instance().uniform() * (Abs(xx1 - xx2)) + minX;
 			zVal = (xvert) ? RNG::Instance().uniform() * dz + zz2 : (maxX - xVal) / fx();
@@ -142,14 +135,12 @@ Vector3D<Precision> UnplacedTrd::GetPointOnSurface() const {
 			yVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * yy1 - yy1 : RNG::Instance().uniform() * 2.0 * (llX * xx1 + x2minusx1() * dzstar) + (-yy1);;
 			xVal *= -1.0;
 		break;
-		
 		case 2:  // + Y
 			yVal = (yvert) ? yy1 : RNG::Instance().uniform() * (Abs(yy1 - yy2)) + minY;
 			zVal = (yvert) ? RNG::Instance().uniform() * dz + zz2 : (maxY - yVal) / fy();
 			dzstar = (yvert) ? zVal : Sqrt((yy1 - yVal) * (yy1 - yVal) + (zVal * zVal));
 			xVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * xx1 - xx1 : RNG::Instance().uniform() * 2.0 * (llY * yy1 + y2minusy1() * dzstar) + (-xx1);
 		break;
-
 		case 3:  // -Y
 			yVal = (yvert) ? yy1 : RNG::Instance().uniform() * (Abs(yy1 - yy2)) + minY;
 			zVal = (yvert) ? RNG::Instance().uniform() * dz + zz2 : Abs(minY - yVal) /fy();
@@ -157,16 +148,14 @@ Vector3D<Precision> UnplacedTrd::GetPointOnSurface() const {
 			xVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * xx1 - xx1 : RNG::Instance().uniform() * 2.0 * (llY * yy1 + y2minusy1() * dzstar) + (-xx1);
 			yVal *= -1.0;
 		break;
-
 		case 4: // +Z
-			xVal = RNG::Instance().uniform() * 2.0 * fDX2 + (-fDX2);
-			yVal = RNG::Instance().uniform() * 2.0 * fDY2 + (-fDY2);
+			xVal = RNG::Instance().uniform() * (2.0 * xx2) + (-xx2);
+			yVal = RNG::Instance().uniform() * (2.0 * yy2) + (-yy2);
 			zVal = zz1;
 		break;
-
 		case 5: // -Z
-			xVal = RNG::Instance().uniform() * 2.0 * fDX1 + (-fDX1);
-			yVal = RNG::Instance().uniform() * 2.0 * fDY1 + (-fDY1);
+			xVal = RNG::Instance().uniform() * (2.0 * xx1) + (-xx1);
+			yVal = RNG::Instance().uniform() * (2.0 * yy1) + (-yy1);
 			zVal = zz2;
 		break;
 	}

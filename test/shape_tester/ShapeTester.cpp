@@ -1637,6 +1637,7 @@ void ShapeTester::CreatePointsAndDirectionsSurface()
 	
          UVector3 pointU;
          int retry = 100;
+		 /*
          do 
 	   { bool surfaceExist=true;
 	   if(surfaceExist) {pointU = volumeUSolids->GetPointOnSurface(); }
@@ -1652,7 +1653,9 @@ void ShapeTester::CreatePointsAndDirectionsSurface()
            if (retry-- == 0) break;
          }
          while (volumeUSolids->Inside(pointU) != vecgeom::EInside::kSurface);
-       	UVector3 vec = GetRandomDirection();
+       	*/
+		pointU = volumeUSolids->GetPointOnSurface(); 
+		UVector3 vec = GetRandomDirection();
 	directions[i+offsetSurface] = vec;
   	point.Set(pointU.x(), pointU.y(), pointU.z());
         points[i+offsetSurface] = point;
