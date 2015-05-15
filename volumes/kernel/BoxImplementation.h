@@ -379,7 +379,7 @@ struct BoxImplementation {
     done |= ! ((tmin < t1) && (tmax > t0));
    // if( ! ((tmin < t1) && (tmax > t0)) )
    //     return vecgeom::kInfinity;
-    MaskedAssign(done, (basep) vecgeom::kInfinity, &tmin);
+    MaskedAssign(done, Float_t((basep) vecgeom::kInfinity), &tmin);
     return tmin;
   }
 
