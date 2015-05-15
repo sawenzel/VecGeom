@@ -82,6 +82,21 @@ public:
   virtual
   Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
 
+  virtual
+  Precision SurfaceArea() { return GetUnplacedVolume()->SurfaceArea();}
+
+  virtual Vector3D<Precision> GetPointOnSurface() const {
+     return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
+  bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const {
+     return GetUnplacedVolume()->Normal(point, normal);
+  }
+
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 
 #ifdef VECGEOM_ROOT
