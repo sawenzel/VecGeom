@@ -74,7 +74,7 @@ public:
 #if !defined(VECGEOM_NVCC)
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
-/*<<<<<<< HEAD
+
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision Capacity() const {return fCubicVolume;}
@@ -82,12 +82,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision SurfaceArea() const {return fSurfaceArea;}
-=======
-*/
-  Precision Capacity() const { return fCubicVolume; }
-  
-  Precision SurfaceArea() const { return fSurfaceArea; }
-//>>>>>>> master
+
   
   virtual Vector3D<Precision> GetPointOnSurface() const;
 

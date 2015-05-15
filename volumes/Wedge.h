@@ -58,28 +58,7 @@ class Wedge{
 
     public:
         VECGEOM_CUDA_HEADER_BOTH
-//<<<<<<< HEAD
-        Wedge( Precision angle, Precision zeroangle = 0 ) :
-            fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2() {
-            // check input
-            Assert( angle > 0., " wedge angle has to be larger than zero " );
-            //
-            Assert( angle <= kTwoPi, "wedge angle is larger than 2*Pi; Are you using radians?" );
-
-            // initialize angles
-            fAlongVector1.x() = std::cos(zeroangle);
-            fAlongVector1.y() = std::sin(zeroangle);
-            fAlongVector2.x() = std::cos(zeroangle+angle);
-            fAlongVector2.y() = std::sin(zeroangle+angle);
-
-            fNormalVector1.x() = -std::sin(zeroangle);
-            fNormalVector1.y() = std::cos(zeroangle);  // not the + sign
-            fNormalVector2.x() =  std::sin(zeroangle+angle);
-            fNormalVector2.y() = -std::cos(zeroangle+angle); // note the - sign
-        }
-//=======
-  //      Wedge( Precision angle, Precision zeroangle = 0 );
-//>>>>>>> master
+      Wedge( Precision angle, Precision zeroangle = 0 );
 
         VECGEOM_CUDA_HEADER_BOTH
         ~Wedge(){}

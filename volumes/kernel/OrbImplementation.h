@@ -436,7 +436,6 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     MaskedAssign( ( (Sqrt(rad2) > (fR + kSTolerance*10.) ) && (tr) && (d2 >= 0.) && pDotV3d < 0.  && !done ) ,(-1.*pDotV3d - Sqrt(d2)),&sd1);
     distance=sd1;
 
-
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>

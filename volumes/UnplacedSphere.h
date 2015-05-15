@@ -542,7 +542,6 @@ VECGEOM_CUDA_HEADER_BOTH
 
 #if !defined(VECGEOM_NVCC)
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
-/*<<<<<<< HEAD
    
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -559,16 +558,6 @@ VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision>  GetPointOnSurface() const;
  
   
-  //VECGEOM_CUDA_HEADER_BOTH
-=======
-*/
-  Precision Capacity() const;
-
-  Precision SurfaceArea() const;
-
-  Vector3D<Precision> GetPointOnSurface() const;
-
-//>>>>>>> master
   std::string GetEntityType() const;
 #endif
 

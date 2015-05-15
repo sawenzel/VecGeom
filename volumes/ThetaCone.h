@@ -12,8 +12,8 @@
 #include "backend/Backend.h"
 #include <iostream>
 #include <iomanip>
-namespace VECGEOM_NAMESPACE
-{
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
  * A class representing a ThetaCone (basically a double cone) which is represented by an angle theta ( 0 < theta < Pi). It
@@ -599,7 +599,7 @@ class ThetaCone{
 
 }; // end of class ThetaCone
 
-} // end of namespace
+} } // end of namespace
 
 
 #endif /* VECGEOM_VOLUMES_THETACONE_H_ */

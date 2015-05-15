@@ -329,7 +329,7 @@ if (ROOT)
       ${ROOT_LIBRARIES} Geom)
   set(SRC_EXTERNAL ${SRC_EXTERNAL}
       source/PlacedRootVolume.cpp
-      source/RootGeoManager.cpp
+      #source/RootGeoManager.cpp
       source/UnplacedRootVolume.cpp
       source/Visualizer.cpp)
 
@@ -388,12 +388,8 @@ set(SRC_CPP_RELATIVE
   source/PlacedTorus.cpp
   source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
-<<<<<<< HEAD
   #source/PlacedParaboloid.cpp
-=======
-  source/PlacedParaboloid.cpp
   source/PlacedPolyhedron.cpp
->>>>>>> master
   source/PlacedTrapezoid.cpp
   source/PlacedVolume.cpp
   source/Planes.cpp
@@ -420,12 +416,9 @@ set(SRC_CPP_RELATIVE
 
   source/UnplacedSphere.cpp
   source/PlacedSphere.cpp
-<<<<<<< HEAD
   
-  source/UnplacedHype.cpp
-  source/PlacedHype.cpp
-  
-=======
+  #source/UnplacedHype.cpp
+  #source/PlacedHype.cpp
 
   source/UnplacedBooleanVolume.cpp
   source/PlacedBooleanVolume.cpp
@@ -433,7 +426,6 @@ set(SRC_CPP_RELATIVE
   source/UnplacedPolycone.cpp
   source/PlacedPolycone.cpp
   source/Wedge.cpp
->>>>>>> master
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -563,26 +555,26 @@ set(TEST_EXECUTABLES_CORE
 
 
 set(TEST_EXECUTABLES_ROOT
-  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
+  #${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
   # ${CMAKE_SOURCE_DIR}/test/root/ParaboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
 
   # higher level benchmarks
   #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
+  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
 )
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
   ${TEST_EXECUTABLES_ROOT}
-  ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile_WithVisualization.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/CompareDistances.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile_WithVisualization.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/CompareDistances.cpp
 )
 endif()
 
@@ -590,25 +582,21 @@ set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTrap.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
-<<<<<<< HEAD
   ${CMAKE_SOURCE_DIR}/test/visualization/VisualizeSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugSphere.cpp
-=======
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
->>>>>>> master
 )
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
-<<<<<<< HEAD
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere.cpp
 ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere2.cpp
-${CMAKE_SOURCE_DIR}/test/unit_tests/geantHype.cpp
+#${CMAKE_SOURCE_DIR}/test/unit_tests/geantHype.cpp
 #${CMAKE_SOURCE_DIR}/test/unit_tests/newTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
- ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestHype.cpp
+# ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestHype.cpp
 
 )
 set(TEST_EXECUTABLES_BENCHMARK
@@ -618,7 +606,6 @@ set(TEST_EXECUTABLES_BENCHMARK
 #  ${CMAKE_SOURCE_DIR}/test/ParaboloidTest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/HyperboloidTest.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/MultiBenchmark.cpp
-=======
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestCons.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTube.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTrd.cpp
@@ -634,9 +621,8 @@ set(TEST_EXECUTABLES_BENCHMARK
 )
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
->>>>>>> master
+  #${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
+  #${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidScriptBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParallelepipedBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/PolyhedronBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TubeBenchmark.cpp
@@ -652,15 +638,12 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrapezoidBenchmarkScript.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/OrbBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/SphereBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/benchmark/HyperboloidBenchmark.cpp
+  #${CMAKE_SOURCE_DIR}/test/benchmark/HyperboloidBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/TrdBenchmark.cpp
-<<<<<<< HEAD
-  ${CMAKE_SOURCE_DIR}/test/trd_validation.cpp
+  #${CMAKE_SOURCE_DIR}/test/trd_validation.cpp
   #${CMAKE_SOURCE_DIR}/test/unit_tests/newTestHype.cpp
-=======
   ${CMAKE_SOURCE_DIR}/test/benchmark/ConeBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/PolyconeBenchmark.cpp
->>>>>>> master
 )
 set(TEST_EXECUTABLES_CUDA
   # Files go here
@@ -668,10 +651,8 @@ set(TEST_EXECUTABLES_CUDA
 set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testBox.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testOrb.cpp
-<<<<<<< HEAD
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testSphere.cpp
   #${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
-=======
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testCone.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTube.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrd.cpp
@@ -679,7 +660,6 @@ set(TEST_EXECUTABLES_SHAPETESTER
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
->>>>>>> master
 )
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}

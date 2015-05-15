@@ -28,7 +28,7 @@ bool TestSphere() {
     //int verbose=0;
     //double fRmin=0, fRmax=3, fSPhi=0, fDPhi=2*PI, fSTheta=0, fDTheta=PI;
     //double fR=fRmax;
-    
+    /*
     double Dist;
     Vec_t norm;
     bool convex;
@@ -69,7 +69,7 @@ bool TestSphere() {
     //if(phi < 0.)
       //  phi += 2*PI;
     std::cout<< std::setprecision(15)<<"PHI of point : "<<phi<<std::endl;
-    
+    */
     /*
     std::cout<<"---- Point inside inner radius ----"<<std::endl;
     Sphere_t test2("Solid VecGeomSphere #test2",10, 20, 0, 2*PI, 0., PI);
@@ -79,6 +79,14 @@ bool TestSphere() {
     std::cout<<"Distance InsideInnerR: "<<Dist<<std::endl;
     */
     
+	//****************************************************************
+	double Dist=0.;
+	Sphere_t testSurfSphere("test_SurfSphere",15. , 20. ,PI/6, 4.265389, PI/3 ,0.235869);
+    Vec_t testSurfPoint(3.3166983737882969052 ,13.438697440427185725, 5.779354438310682518);
+    Vec_t testSurfDir(0.84193247289213946072, 0.11304329102353896652, 0.52760868590679432799);
+	Dist=testSurfSphere.DistanceToIn(testSurfPoint,testSurfDir);
+	std::cout<<"DistanceToIN : "<<Dist<<std::endl;
+	
     return true;
 }
 

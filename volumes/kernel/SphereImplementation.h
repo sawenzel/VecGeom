@@ -739,10 +739,10 @@ Precision fRmin = unplaced.GetInnerRadius();
     Precision fRmax = unplaced.GetOuterRadius();
         
     Float_t rad2 = localPoint.Mag2();
-    Float_t tolRMin(fRmin + ( fRminTolerance *10. )); 
+    Float_t tolRMin(fRmin + ( fRminTolerance *10.*2 )); 
     Float_t tolRMin2 = tolRMin * tolRMin;
     
-    Float_t tolRMax(fRmax - ( unplaced.GetMKTolerance() * 10. )); 
+    Float_t tolRMax(fRmax - ( unplaced.GetMKTolerance() * 10.*2 )); 
     Float_t tolRMax2 = tolRMax * tolRMax;
     
     // Check radial surfaces
@@ -750,8 +750,8 @@ Precision fRmin = unplaced.GetInnerRadius();
     completelyinside = (rad2 <= tolRMax*tolRMax) && (rad2 >= tolRMin*tolRMin);
     //std::cout<<"Comp In - Rad : "<<completelyinside<<std::endl;
     
-    tolRMin = fRmin - (0.5 * fRminTolerance*10); 
-    tolRMax = fRmax + (0.5 * unplaced.GetMKTolerance()*10); 
+    tolRMin = fRmin - (0.5 * fRminTolerance*10*2); 
+    tolRMax = fRmax + (0.5 * unplaced.GetMKTolerance()*10*2); 
     
     completelyoutside = (rad2 <= tolRMin*tolRMin) || (rad2 >= tolRMax*tolRMax);
 	   // std::cout<<"Comp Out - Rad : "<<completelyoutside<<std::endl;
@@ -1221,6 +1221,10 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
    distance = Min(distThetaMin,distance);
    MaskedAssign(( distance < kSTolerance ) , 0. , &distance);
    
+	//Added after observation from ShapeTester
+	//Bool_t isPointInside(false);
+	//ContainsKernel<Backend>(unplaced,point,isPointInside);
+	//MaskedAssign(isPointInside, 0. , &distance);
 }
 
 //This is fast alternative of GetDistPhiMin below
@@ -1435,7 +1439,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
    done |= cond;
    MaskedAssign(cond ,0.,&sd1);
    
-<<<<<<< HEAD
+
    MaskedAssign((tr && cond1),(pDotV3d * pDotV3d - c),&d2);
    MaskedAssign( (!done && cond1 && (tr) && (d2 >= 0.) ) ,(-1.*pDotV3d + Sqrt(d2)),&sd1);
    
@@ -1491,6 +1495,11 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
   }
     
     MaskedAssign(( distance < kSTolerance) , 0. , &distance);
+	
+	//Added after observation from ShapeTester
+	//Bool_t isPointInside(false);
+	//ContainsKernel<Backend>(unplaced,point,isPointInside);
+	//MaskedAssign(!isPointInside, kSTolerance , &distance);
     
 }
 
