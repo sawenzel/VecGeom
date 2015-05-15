@@ -52,15 +52,6 @@ Precision UnplacedTrd::SurfaceArea() const {
 }
 
 
-void UnplacedTrd::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
-	aMin.x() = -1.0 * Min(dx1(), dx2());
-	aMax.x() = Max(dx1(), dx2());
-	aMin.y() = -1.0 * Min(dy1(), dy2());
-	aMax.y() = Max(dy1(), dy2());
-	aMin.z() = -dz();
-	aMax.z() = dz();
-}
-
 int UnplacedTrd::ChooseSurface() const {
 	int i, j, nChoice = 6;
 	Precision sumWeight = 0.0;
