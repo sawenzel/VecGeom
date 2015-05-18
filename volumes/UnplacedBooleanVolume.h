@@ -74,6 +74,7 @@ public:
     // TBDONE -- need some sampling
     return 0.;
   }
+#endif // !VECGEOM_NVCC
 
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
@@ -83,7 +84,6 @@ public:
   }
 
   std::string GetEntityType() const { return "BooleanVolume"; }
-#endif // !VECGEOM_NVCC
 
   VECGEOM_CUDA_HEADER_BOTH
   virtual void Print() const {} ;

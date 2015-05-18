@@ -178,9 +178,9 @@ fPhiWedge(other.fDphi,other.fSphi)
   }
 
 //#if !defined(VECGEOM_NVCC)
-#ifndef VECGEOM_NVCC
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
+#ifndef VECGEOM_NVCC
   Vector3D<Precision> GetPointOnSurface() const;
 
   //VECGEOM_CUDA_HEADER_BOTH

@@ -209,6 +209,7 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
   }
 
   */
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedTube::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
@@ -264,7 +265,6 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
 
     return;
   }
-#endif
 
 
 #ifdef VECGEOM_CUDA_INTERFACE
