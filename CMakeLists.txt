@@ -440,18 +440,19 @@ if (CUDA)
 
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
-    ADD_CUSTOM_COMMAND(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
-          ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      DEPENDS ${SRC_FILE}
-    )
+    if (NOT "${SRC_FILENAME}" STREQUAL "ABBoxManager") 
+      ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+        COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
+            ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+        DEPENDS ${SRC_FILE}
+      )
 
-    set(
-      SRC_CUDA ${SRC_CUDA}
-      ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-    )
-
+      set(
+        SRC_CUDA ${SRC_CUDA}
+        ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      )
+    endif()
   endforeach()
 
 endif()
