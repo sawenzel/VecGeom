@@ -29,27 +29,21 @@ Precision UnplacedTrd::Capacity() const {
 }
 
 Precision UnplacedTrd::SurfaceArea() const {
-	Precision xx1 = fDX1;           // dx1();
-	Precision xx2 = fDX2;           // dx2();
-	Precision yy1 = fDY1;           // dy1();
-	Precision yy2 = fDY2;           // dy2();
-	Precision zz1 = fDZ;            // dz();
-	Precision zz2 = -1.0 * fDZ;     // dz();
-	Precision dz = Abs(zz1 - zz2);
-	bool xvert = (xx1 == xx2) ? true : false;
-	Precision SA = 0.0;
-	
-	// Sum of area for planes Perp. to +X and -X
-	Precision ht = (xvert) ? dz : Sqrt((xx1-xx2)*(xx1-xx2) + dz*dz);
-	SA += 2.0 * 0.5 * (yy1 + yy2) * ht;
-	
-	// Sum of area for planes Perp. to +Y and -Y
-	SA += 2.0 * 0.5 * (xx1 + xx2) * ht;    // if xvert then topology forces to become yvert for closing
-	
-	// Sum of area for top and bottom planes +Z and -Z
-	SA += (xx1 * yy1) + (xx2 * yy2);
-	
-	return SA;
+  Precision dz = 2*fDZ;
+  bool xvert = (fDX1 == fDX2) ? true : false;
+  Precision SA = 0.0;
+
+  // Sum of area for planes Perp. to +X and -X
+  Precision ht = (xvert) ? dz : Sqrt((fDX1-fDX2)*(fDX1-fDX2) + dz*dz);
+  SA += 2.0 * 0.5 * (fDY1 + fDY2) * ht;
+
+  // Sum of area for planes Perp. to +Y and -Y
+  SA += 2.0 * 0.5 * (fDX1 + fDX2) * ht;    // if xvert then topology forces to become yvert for closing
+
+  // Sum of area for top and bottom planes +Z and -Z
+  SA += (fDX1 * fDY1) + (fDX2 * fDY2);
+
+  return SA;
 }
 
 /*
@@ -65,102 +59,95 @@ void UnplacedTrd::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) c
 */
 
 int UnplacedTrd::ChooseSurface() const {
-	int choice = 0;
-	int nChoice = 6;
-	Precision sumWeight = 0.0;
-	Precision PlusXArea = GetPlusXArea();
-	Precision MinusXArea = GetMinusXArea();
-	Precision PlusYArea = GetPlusYArea();
-	Precision MinusYArea = GetMinusYArea();
-	Precision PlusZArea = GetPlusZArea();
-	Precision MinusZArea = GetMinusZArea();
-	Precision totArea = PlusXArea + MinusXArea + PlusYArea + MinusYArea + PlusZArea + MinusZArea;
-	Precision prob[6] ;
+    int choice = 0;
+    int nChoice = 6;
+    Precision sumWeight = 0.0;
+    Precision PlusXArea = GetPlusXArea();
+    Precision MinusXArea = GetMinusXArea();
+    Precision PlusYArea = GetPlusYArea();
+    Precision MinusYArea = GetMinusYArea();
+    Precision PlusZArea = GetPlusZArea();
+    Precision MinusZArea = GetMinusZArea();
+    Precision totArea = PlusXArea + MinusXArea + PlusYArea + MinusYArea + PlusZArea + MinusZArea;
+    Precision prob[6] ;
 
-	prob[0] = PlusXArea  / totArea;   
-	prob[1] = MinusXArea / totArea; 
-	prob[2] = PlusYArea  / totArea; 
-	prob[3] = MinusYArea / totArea; 
-	prob[4] = PlusZArea  / totArea;   
-	prob[5] = MinusZArea / totArea;  
+    prob[0] = PlusXArea  / totArea;
+    prob[1] = MinusXArea / totArea;
+    prob[2] = PlusYArea  / totArea;
+    prob[3] = MinusYArea / totArea;
+    prob[4] = PlusZArea  / totArea;
+    prob[5] = MinusZArea / totArea;
 
-	for (int i = 0; i < nChoice; i++) 
-		sumWeight += prob[i];
+    for (int i = 0; i < nChoice; i++)
+        sumWeight += prob[i];
 
-	Precision rand = RNG::Instance().uniform() * sumWeight;
+    Precision rand = RNG::Instance().uniform() * sumWeight;
 
-	while (rand > prob[choice])
-		rand -= prob[choice], choice++;
+    while (rand > prob[choice])
+        rand -= prob[choice], choice++;
 
-	assert(choice < nChoice);
-	return choice;
+    assert(choice < nChoice);
+    return choice;
 }
 
 Vector3D<Precision> UnplacedTrd::GetPointOnSurface() const {
-	Precision xVal = 0.0;
-	Precision yVal = 0.0;
-	Precision zVal = 0.0;
-	Precision xx1 = fDX1;           // dx1();
-	Precision xx2 = fDX2;           // dx2();
-	Precision yy1 = fDY1;           // dy1();
-	Precision yy2 = fDY2;           // dy2();
-	Precision zz1 = fDZ;            // dz();
-	Precision zz2 = -1.0 * fDZ;     // dz();
-	Precision minX = Min(xx1, xx2);
-	Precision maxX = Max(xx1, xx2);
-	Precision minY = Min(yy1, yy2);
-	Precision maxY = Max(yy1, yy2);
-	Precision dx = Abs(xx1 - xx2);
-	Precision dy = Abs(yy1 - yy2);
-	Precision dz = Abs(zz1 - zz2);
-	bool xvert(false);
-	bool yvert(false);
-	xvert = (xx1 == xx2) ? true : false;
-	yvert = (yy1 == yy2) ? true : false;
-	Precision llX = (xvert) ? dz : Sqrt(x2minusx1() * x2minusx1()  + dztimes2() * dztimes2());
-	Precision llY = (yvert) ? dz : Sqrt(y2minusy1() * y2minusy1()  + dztimes2() * dztimes2());
-	Precision dzstar;
-	int choice = ChooseSurface();
+    Precision xVal = 0.0;
+    Precision yVal = 0.0;
+    Precision zVal = 0.0;
+    Precision zz2 = -1.0 * fDZ;
+    Precision minX = Min(fDX1, fDX2);
+    Precision maxX = Max(fDX1, fDX2);
+    Precision minY = Min(fDY1, fDY2);
+    Precision maxY = Max(fDY1, fDY2);
+    Precision dz = 2.*fDZ;
+    bool xvert(false);
+    bool yvert(false);
+    xvert = (fDX1 == fDX2) ? true : false;
+    yvert = (fDY1 == fDY2) ? true : false;
+    Precision llX = (xvert) ? dz : Sqrt(x2minusx1() * x2minusx1()  + dztimes2() * dztimes2());
+    Precision llY = (yvert) ? dz : Sqrt(y2minusy1() * y2minusy1()  + dztimes2() * dztimes2());
+    Precision dzstar;
+    int choice = ChooseSurface();
 
-	switch (choice) {
-		case 0:   // +X plane perpendicular to +X axis
-			xVal = (xvert) ? xx1 : RNG::Instance().uniform() * (Abs(xx1 - xx2)) + minX;
-			zVal = (xvert) ? RNG::Instance().uniform() * dz + zz2 : (maxX - xVal) / fx();
-			dzstar = (xvert) ? zVal : Sqrt((xx1 - xVal) * (xx1 - xVal) + (zVal * zVal));
-			yVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * yy1 - yy1 : RNG::Instance().uniform() * 2.0 * (llX * xx1 + x2minusx1() * dzstar) + (-yy1);
-		break;
-		case 1:  // -X
-			xVal = (xvert) ? xx1 : RNG::Instance().uniform() * (Abs(xx1 - xx2)) + minX;
-			zVal = (xvert) ? RNG::Instance().uniform() * dz + zz2 : (maxX - xVal) / fx();
-			dzstar = (xvert) ? zVal : Sqrt((xx1 - xVal) * (xx1 - xVal) + (zVal * zVal));
-			yVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * yy1 - yy1 : RNG::Instance().uniform() * 2.0 * (llX * xx1 + x2minusx1() * dzstar) + (-yy1);;
-			xVal *= -1.0;
-		break;
-		case 2:  // + Y
-			yVal = (yvert) ? yy1 : RNG::Instance().uniform() * (Abs(yy1 - yy2)) + minY;
-			zVal = (yvert) ? RNG::Instance().uniform() * dz + zz2 : (maxY - yVal) / fy();
-			dzstar = (yvert) ? zVal : Sqrt((yy1 - yVal) * (yy1 - yVal) + (zVal * zVal));
-			xVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * xx1 - xx1 : RNG::Instance().uniform() * 2.0 * (llY * yy1 + y2minusy1() * dzstar) + (-xx1);
-		break;
-		case 3:  // -Y
-			yVal = (yvert) ? yy1 : RNG::Instance().uniform() * (Abs(yy1 - yy2)) + minY;
-			zVal = (yvert) ? RNG::Instance().uniform() * dz + zz2 : Abs(minY - yVal) /fy();
-			dzstar = (yvert) ? zVal : Sqrt((yy1 - yVal) * (yy1 - yVal) + (zVal * zVal));
-			xVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * xx1 - xx1 : RNG::Instance().uniform() * 2.0 * (llY * yy1 + y2minusy1() * dzstar) + (-xx1);
-			yVal *= -1.0;
-		break;
-		case 4: // +Z
-			xVal = RNG::Instance().uniform() * (2.0 * xx2) + (-xx2);
-			yVal = RNG::Instance().uniform() * (2.0 * yy2) + (-yy2);
-			zVal = zz1;
-		break;
-		case 5: // -Z
-			xVal = RNG::Instance().uniform() * (2.0 * xx1) + (-xx1);
-			yVal = RNG::Instance().uniform() * (2.0 * yy1) + (-yy1);
-			zVal = zz2;
-		break;
-	}
-	return Vector3D<Precision> (xVal, yVal, zVal);
+    switch (choice) {
+        case 0:   // +X plane perpendicular to +X axis
+            xVal = (xvert) ? fDX1 : RNG::Instance().uniform() * (Abs(fDX1 - fDX2)) + minX;
+            zVal = (xvert) ? RNG::Instance().uniform() * dz + zz2 : (maxX - xVal) / fx();
+            dzstar = (xvert) ? zVal : Sqrt((fDX1 - xVal) * (fDX1 - xVal) + (zVal * zVal));
+            yVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * fDY1 - fDY1 : RNG::Instance().uniform() * 2.0 * (llX * fDX1 + x2minusx1() * dzstar) + (-fDY1);
+        break;
+        case 1:  // -X
+            xVal = (xvert) ? fDX1 : RNG::Instance().uniform() * (Abs(fDX1 - fDX2)) + minX;
+            zVal = (xvert) ? RNG::Instance().uniform() * dz + zz2 : (maxX - xVal) / fx();
+            dzstar = (xvert) ? zVal : Sqrt((fDX1 - xVal) * (fDX1 - xVal) + (zVal * zVal));
+            yVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * fDY1 - fDY1 : RNG::Instance().uniform() * 2.0 * (llX * fDX1 + x2minusx1() * dzstar) + (-fDY1);
+            xVal *= -1.0;
+        break;
+        case 2:  // + Y
+            yVal = (yvert) ? fDY1 : RNG::Instance().uniform() * (Abs(fDY1 - fDY2)) + minY;
+            zVal = (yvert) ? RNG::Instance().uniform() * dz + zz2 : (maxY - yVal) / fy();
+            dzstar = (yvert) ? zVal : Sqrt((fDY1 - yVal) * (fDY1 - yVal) + (zVal * zVal));
+            xVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * fDX1 - fDX1 : RNG::Instance().uniform() * 2.0 * (llY * fDY1 + y2minusy1() * dzstar) + (-fDX1);
+        break;
+        case 3:  // -Y
+            yVal = (yvert) ? fDY1 : RNG::Instance().uniform() * (Abs(fDY1 - fDY2)) + minY;
+            zVal = (yvert) ? RNG::Instance().uniform() * dz + zz2 : Abs(minY - yVal) /fy();
+            dzstar = (yvert) ? zVal : Sqrt((fDY1 - yVal) * (fDY1 - yVal) + (zVal * zVal));
+            xVal = (xvert && yvert) ? RNG::Instance().uniform() * 2.0 * fDX1 - fDX1 : RNG::Instance().uniform() * 2.0 * (llY * fDY1 + y2minusy1() * dzstar) + (-fDX1);
+            yVal *= -1.0;
+        break;
+        case 4: // +Z
+            xVal = RNG::Instance().uniform() * (2.0 * fDX2) + (-fDX2);
+            yVal = RNG::Instance().uniform() * (2.0 * fDY2) + (-fDY2);
+            zVal = fDZ;
+        break;
+        case 5: // -Z
+            xVal = RNG::Instance().uniform() * (2.0 * fDX1) + (-fDX1);
+            yVal = RNG::Instance().uniform() * (2.0 * fDY1) + (-fDY1);
+            zVal = zz2;
+        break;
+    }
+    return Vector3D<Precision> (xVal, yVal, zVal);
 }
 
 
