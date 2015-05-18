@@ -88,8 +88,9 @@ void MaskedAssign(VcBool const &cond,
 }
 
 
+template <typename Type>
 VECGEOM_INLINE
-bool IsFull(VcBool const &cond) {
+  bool IsFull(typename Vc::Vector<Type>::Mask const &cond) {
   return cond.isFull();
 }
 
