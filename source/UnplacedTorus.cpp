@@ -125,6 +125,100 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu() const
 
 #endif // VECGEOM_CUDA_INTERFACE
 
+// Return unit normal of surface closest to p
+// - note if point on z axis, ignore phi divided sides
+// - unsafe if point close to z axis a rmin=0 - no explicit checks
+bool UnplacedTorus::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
+
+  int noSurfaces = 0;
+  bool valid = true;
+ 
+  Precision rho2, rho, pt2, pt, pPhi;
+  Precision distRMin = kInfinity;
+  Precision distSPhi = kInfinity, distEPhi = kInfinity;
+
+  // To cope with precision loss
+  //
+  const Precision delta = std::max(10.0*kTolerance,
+                                  1.0e-8*(fRtor+fRmax));
+  const Precision dAngle = 10.0*kTolerance;
+
+  Vector3D<Precision> nR, nPs, nPe;
+  Vector3D<Precision>  sumnorm(0.,0.,0.);
+
+  rho2 = point.x()*point.x() + point.y()*point.y();
+  rho = std::sqrt(rho2);
+  pt2 = rho2+point.z()*point.z() +fRtor * (fRtor-2*rho);
+  pt2 = std::max(pt2, 0.0); // std::fabs(pt2);
+  pt = std::sqrt(pt2) ;
+
+  Precision distRMax = std::fabs(pt - fRmax);
+  if(fRmin) distRMin = std::fabs(pt - fRmin);
+
+  if( rho > delta && pt != 0.0 )
+  {
+    Precision redFactor= (rho-fRtor)/rho;
+    nR = Vector3D<Precision>( point.x()*redFactor,  // p.x()*(1.-fRtor/rho),
+                        point.y()*redFactor,  // p.y()*(1.-fRtor/rho),
+                        point.z()          );
+    nR *= 1.0/pt;
+  }
+
+  if ( fDphi < kTwoPi ) // && rho ) // old limitation against (0,0,z)
+  {
+    if ( rho )
+    {
+      pPhi = std::atan2(point.y(),point.x());
+
+      if(pPhi < fSphi-delta)            { pPhi += kTwoPi; }
+      else if(pPhi > fSphi+fDphi+delta) { pPhi -= kTwoPi; }
+
+      distSPhi = std::fabs( pPhi - fSphi );
+      distEPhi = std::fabs(pPhi-fSphi-fDphi);
+    }
+    nPs = Vector3D<Precision>(std::sin(fSphi),-std::cos(fSphi),0);
+    nPe = Vector3D<Precision>(-std::sin(fSphi+fDphi),std::cos(fSphi+fDphi),0);
+  } 
+  if( distRMax <= delta )
+  {
+    noSurfaces ++;
+    sumnorm += nR;
+  }
+  else if( fRmin && (distRMin <= delta) ) // Must not be on both Outer and Inner
+  {
+    noSurfaces ++;
+    sumnorm -= nR;
+  }
+
+  //  To be on one of the 'phi' surfaces,
+  //  it must be within the 'tube' - with tolerance
+
+  if( (fDphi < kTwoPi) && (fRmin-delta <= pt) && (pt <= (fRmax+delta)) )
+  {
+    if (distSPhi <= dAngle)
+    {
+      noSurfaces ++;
+      sumnorm += nPs;
+    }
+    if (distEPhi <= dAngle) 
+    {
+      noSurfaces ++;
+      sumnorm += nPe;
+    }
+  }
+  if ( noSurfaces == 0 )
+  {
+
+    valid = false;
+  }
+  else if ( noSurfaces == 1 )  { norm = sumnorm; }
+  else                         { norm = sumnorm.Unit(); }
+
+ 
+  return valid ;
+}
+
+
 } // End impl namespace
 
 #ifdef VECGEOM_NVCC
