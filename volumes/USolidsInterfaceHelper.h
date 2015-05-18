@@ -90,13 +90,6 @@ public:
     return SafetyToOut(point);
   }
 
-  virtual bool Normal(Vector3D<double> const &point,
-                      Vector3D<double> &normal) const {
-
-    assert(0 &&
-           "Normal not implemented for USolids interface compatible volume.");
-    return false;
-  }
 
   virtual std::string GetEntityType() const {
     assert(0 && "GetEntityType not implemented for USolids interface compatible"

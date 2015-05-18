@@ -259,6 +259,16 @@ public:
     assert(0 && "Extent not implemented for this shape type.");
   }
 
+
+  virtual bool Normal(Vector3D<double> const &point,
+                      Vector3D<double> &normal) const {
+
+    assert(0 &&
+           "Normal not implemented.");
+    return false;
+  }
+
+
   virtual Precision SurfaceArea(); // {
    // assert(0 && "SurfaceArea not implemented for this shape type.");
    // return 0.0;
