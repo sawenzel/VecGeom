@@ -154,7 +154,7 @@ int main( int argc, char * argv[] )
 
     G4Navigator * nav = new G4Navigator();
     nav->SetWorldVolume( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
-    nav->LocateGlobalPointAndSetup(G4ThreeVector(0,0,0), false );
+    nav->LocateGlobalPointAndSetup(G4ThreeVector(0,0,0), NULL, false, false );
     G4TouchableHistory ** Geant4statepool = new G4TouchableHistory*[npoints];
     for( int i=0;i<npoints;++i )
         {

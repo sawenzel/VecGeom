@@ -376,7 +376,7 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
 
 
       // can I push particle ?
-      int correctstep = 0;
+      // int correctstep = 0;
       while( newstate.Top() == currentstate.Top() )
       {
      //     newstate.Print();

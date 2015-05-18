@@ -362,7 +362,7 @@ G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
      G4LogicalVolumeStore * store = G4LogicalVolumeStore::GetInstance();
 //
      int found=0;
-     G4LogicalVolume * foundvolume;
+     G4LogicalVolume * foundvolume = NULL;
      for( auto v : *store )
      {
            std::size_t founds = volumename.compare( v->GetName() );
@@ -373,26 +373,26 @@ G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
      }
      std::cerr << " found logical volume " << volumename << " " << found << " times "  << "\n";
 
-       // embed logical volume in a Box
-       // create box first
-       G4Box * worldb = new G4Box("BoundingBox",
-               UNITCONV*worldbbox.x(), UNITCONV*worldbbox.y(), UNITCONV*worldbbox.z());
-       G4LogicalVolume * worldlv = new G4LogicalVolume(worldb, 0, "world", 0,0,0);
-       G4PVPlacement * worldpv =
-               new G4PVPlacement(0,G4ThreeVector(0,0,0),"BoundingBox", worldlv, 0,false, 0,0);
+     // embed logical volume in a Box
+     // create box first
+     G4Box * worldb = new G4Box("BoundingBox",
+             UNITCONV*worldbbox.x(), UNITCONV*worldbbox.y(), UNITCONV*worldbbox.z());
+     G4LogicalVolume * worldlv = new G4LogicalVolume(worldb, 0, "world", 0,0,0);
+     G4PVPlacement * worldpv =
+            new G4PVPlacement(0,G4ThreeVector(0,0,0),"BoundingBox", worldlv, 0,false, 0,0);
 
-       // embed found logical volume "foundvolume" into world bounding box
-        G4PVPlacement * xrayedpl = new G4PVPlacement(
-                 NULL, /* rotation */
-                 G4ThreeVector(0,0,0), /* translation */
-                 foundvolume, /* current logical */
-                 "xrayedpl",
-                 worldlv, /* this is where it is placed */
-                 0,0);
+     // embed found logical volume "foundvolume" into world bounding box
+     new G4PVPlacement(
+               NULL, /* rotation */
+               G4ThreeVector(0,0,0), /* translation */
+               foundvolume, /* current logical */
+               "xrayedpl",
+               worldlv, /* this is where it is placed */
+               0,0);
 
-        G4GeometryManager::GetInstance()->CloseGeometry( voxelize );
+     G4GeometryManager::GetInstance()->CloseGeometry( voxelize );
 
-        return worldpv;
+     return worldpv;
 }
 #endif
 
@@ -415,7 +415,7 @@ int XRayWithGeant4(
     // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISSMATCH HERE BETWEEN ROOT AND GEANT
      // ROOT = cm and GEANT4 = mm; basically a factor of 10 in all dimensions
 
-     const double UNITCONV=10.;
+     // const double UNITCONV=10.;
      G4Navigator * nav = new G4Navigator();
 
      // now start XRay procedure
@@ -464,6 +464,7 @@ int XRayWithGeant4(
        std::cout << " PassedVolume:" << "<"<< crossedvolumecount << " ";
        std::cout << " Distance: " << distancetravelled/10.<< std::endl;
    }
+   return 0;
 }
 #endif
 
@@ -479,7 +480,6 @@ int main(int argc, char * argv[])
   double axis2_start= 0.;
   double axis2_end= 0.;
 
-  double pixel_width= 0;
   double pixel_axis= 1.;
 
   if( argc < 5 )
@@ -492,8 +492,8 @@ int main(int argc, char * argv[])
   TGeoManager::Import( argv[1] );
   std::string testvolume( argv[2] );
 
-  double directionphi   = atof(argv[3])*vecgeom::kDegToRad;
-  double directiontheta = atof(argv[4])*vecgeom::kDegToRad;
+  //double directionphi   = atof(argv[3])*vecgeom::kDegToRad;
+  //double directiontheta = atof(argv[4])*vecgeom::kDegToRad;
 
   for(auto i= 5; i< argc; i++)
   {
@@ -559,7 +559,7 @@ int main(int argc, char * argv[])
 
     if(! voxelize ) DeleteROOTVoxels();
 
-    TGeoManager * mg1 = gGeoManager;
+//    TGeoManager * mg1 = gGeoManager;
     gGeoManager = 0;
 
     TGeoManager * mgr2 = new TGeoManager();

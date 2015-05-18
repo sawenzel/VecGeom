@@ -258,7 +258,7 @@ void SimpleNavigator::CreateDebugDump(
     std::list<uint> indices;
     currentstate.GetPathAsListOfIndices( indices );
     header << "std::list<uint> pathlist{";
-    int counter=0;
+    uint counter=0;
     for(auto x : indices )
     {
         counter++;

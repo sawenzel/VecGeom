@@ -540,7 +540,7 @@ G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
        G4LogicalVolumeStore * store = G4LogicalVolumeStore::GetInstance();
 //
        int found=0;
-       G4LogicalVolume * foundvolume;
+       G4LogicalVolume * foundvolume = NULL;
        for( auto v : *store )
        {
            std::size_t founds = volumename.compare( v->GetName() );
@@ -560,7 +560,7 @@ G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
                new G4PVPlacement(0,G4ThreeVector(0,0,0),"BoundingBox", worldlv, 0,false, 0,0);
 
        // embed found logical volume "foundvolume" into world bounding box
-        G4PVPlacement * xrayedpl = new G4PVPlacement(
+        new G4PVPlacement(
                  NULL, /* rotation */
                  G4ThreeVector(0,0,0), /* translation */
                  foundvolume, /* current logical */
@@ -625,7 +625,7 @@ int XRayWithGeant4(
              //      std::cerr << p << " in vol " << vol->GetName() << " N D "
                //            << vol->GetLogicalVolume()->GetNoDaughters() << "\n";
 
-                   double distancetravelled=0.;
+//                   double distancetravelled=0.;
                    int crossedvolumecount=0;
 
                    while( vol!=NULL ) {
@@ -650,6 +650,7 @@ int XRayWithGeant4(
                   *(image+pixel_count_2*data_size_x+pixel_count_1) = crossedvolumecount;
          } // end inner loop
        } // end outer loop
+    return 0;
 }
 #endif
 
@@ -761,7 +762,6 @@ int main(int argc, char * argv[])
 
     if(! voxelize ) DeleteROOTVoxels();
 
-    TGeoManager * mg1 = gGeoManager;
     gGeoManager = 0;
 
     TGeoManager * mgr2 = new TGeoManager();
@@ -998,7 +998,7 @@ int main(int argc, char * argv[])
 }
 
 
-int make_bmp_header( MY_BITMAP * pBitmap, unsigned char * bmpBuf, int sizex, int sizey )
+void make_bmp_header( MY_BITMAP * pBitmap, unsigned char * bmpBuf, int sizex, int sizey )
 {
   int width_4= (sizex+ 3)&~3;
   unsigned int len= 0;
@@ -1057,7 +1057,6 @@ int make_bmp_header( MY_BITMAP * pBitmap, unsigned char * bmpBuf, int sizex, int
   len+= 4;
   memcpy(bmpBuf+len, &pBitmap->bmpInfoHeader.biClrImportant, 4);
   len+= 4;
-
 }
 
 
