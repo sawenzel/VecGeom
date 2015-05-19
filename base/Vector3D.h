@@ -228,7 +228,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void Normalize() {
-    *this /= (1. / Length());
+    *this *= (1. / Length());
   }
 
   VECGEOM_CUDA_HEADER_BOTH
