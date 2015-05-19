@@ -834,7 +834,9 @@ int main(int argc, char * argv[])
     int data_size_y= (axis2_end-axis2_start)/pixel_axis;
     int *volume_result= (int*) new int[data_size_y * data_size_x*3];
 
+#ifdef VECGEOM_GEANT4
     int *volume_result_Geant4= (int*) new int[data_size_y * data_size_x*3];
+#endif
     int *volume_result_VecGeom= (int*) new int[data_size_y * data_size_x*3];
     int *volume_result_VecGeomABB= (int*) new int[data_size_y * data_size_x*3];
 
