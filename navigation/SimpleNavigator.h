@@ -430,6 +430,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
       // set step to zero and retry one level higher
       step = 0;
       newstate.Pop();
+      newstate.SetBoundaryState(true);
       return;
    }
    // is geometry further away than physics step?
