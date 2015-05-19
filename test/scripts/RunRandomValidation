@@ -11,7 +11,16 @@ cmdline=$1
 
 #declare filenames
 fname1=$2                 #"cms2015.root"
+if [ ! -e ${fname1} ]; then
+	echo " file ${fname1} does not exits. "
+	exit $?
+fi
+
 fname2=$3                 #"tubes.txt"
+if [ ! -e ${fname2} ]; then
+	echo " file ${fname2} does not exits. "
+	exit $?
+fi
 fname3="Geom_Err_Report.log"
 
 #if [ $4 -eq 0 ]; then
@@ -67,7 +76,9 @@ for ((index=1; index <= testNum; index++)); do
 	myGeom=${Geometry[$cue]}
 	echo " Index = " ${index} "  cue = " ${cue} " Geometry = " ${myGeom} "<<<<<<<"
 # timeout --preserve-status --kill-after=${timeout}s ${timeout}s BenchmarkShapeFromROOTFile ${fname1}  ${Geometry[$cue]} > "${logDIR}/${Geometry[$cue]}.log"
-	timeout --preserve-status ${timeout}s  $1 ${fname1} ${myGeom} > "${logDIR}/${myGeom}.log" 
+
+# timeout --preserve-status ${timeout}s  $1 ${fname1} ${myGeom} > "${logDIR}/${myGeom}.log" 
+	timeout --preserve-status ${timeout}s  $1 ${fname1} ${myGeom}  
 
 	errCode=$?
 
