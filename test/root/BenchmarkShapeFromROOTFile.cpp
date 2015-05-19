@@ -54,13 +54,12 @@ int main( int argc, char *argv[] ) {
         }
     }
 
-    std::cerr << "volume found " << found << " times \n";
-    foundvolume->GetShape()->InspectShape();
-    std::cerr << "volume capacity " << foundvolume->GetShape()->Capacity() << "\n";
-
+    std::cerr << "volume found " << testvolume << " " <<  found << " times \n";
     // now get the VecGeom shape and benchmark it
     if( foundvolume )
     {
+        foundvolume->GetShape()->InspectShape();
+        std::cerr << "volume capacity " << foundvolume->GetShape()->Capacity() << "\n";
         LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
 
         converted->Print();
