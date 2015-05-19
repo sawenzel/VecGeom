@@ -1,0 +1,91 @@
+#!/bin/bash 
+# usage:
+#RunRandomValidation <cmd_to_execute> cms2015.root tubes.txt
+
+if [ $# -eq 0 ]; then
+	echo " Usage: RunRandomValidation <cmd_to_execute>  <root_assembly_geom e.g. cms2015.root>  <geometry_file e.g. cmstubes.txt> <0|1 :: all |Random>"
+fi
+
+#declare command
+cmdline=$1
+
+#declare filenames
+fname1=$2                 #"cms2015.root"
+fname2=$3                 #"tubes.txt"
+fname3="Geom_Err_Report.log"
+
+#if [ $4 -eq 0 ]; then
+#	doRND=0 # No randomization
+#else
+#	doRND=1 # Random geometries will be selected
+#fi
+
+# Declare time out time for each Geometry diagnosys
+#declare -i timeout=100
+timeout=20
+
+# Make a directory in present directory as dir.Shape.Diag
+logDIR="dir.Shape.Diag"            #${logDIR1}
+#logDIR1="dir.Shape.Diag"
+#echo $0
+#logDIR="${logDIR1}"/"$0"
+if [ ! -d "$logDIR" ]; then
+    mkdir -- "${logDIR}"
+	echo ${logDIR} " -- a new directory has been created to store all log files"
+else	
+	echo ${logDIR} " -- directory already exists and all log files are being stored here."
+fi
+
+# here declare how many tests are required e.g. 20 in batch
+testNum=2
+
+# declare array in which all geometries are stored
+declare -a Geometry
+# link file descriptor 10 with stdin
+exec 10<&0
+exec < $fname2
+
+let count=1
+
+while read LINE; do
+	Geometry[$count]=$LINE
+	((count++))
+done
+
+((count--))
+#echo ${Geometry[@]}
+echo Number of Elements: ${#Geometry[@]}
+
+
+# restoring stdin from file descriptor and closing descriptor
+exec 0<&10 10<&-
+
+# Now generate random serial number of geometry and test
+# We perform maximum $testNum numbers of test per slot
+for ((index=1; index <= testNum; index++)); do 
+	cue=$((RANDOM % count+1))
+	myGeom=${Geometry[$cue]}
+	echo " Index = " ${index} "  cue = " ${cue} " Geometry = " ${myGeom} "<<<<<<<"
+# timeout --preserve-status --kill-after=${timeout}s ${timeout}s BenchmarkShapeFromROOTFile ${fname1}  ${Geometry[$cue]} > "${logDIR}/${Geometry[$cue]}.log"
+	timeout --preserve-status ${timeout}s  $1 ${fname1} ${myGeom} > "${logDIR}/${myGeom}.log" 
+
+	errCode=$?
+
+	echo "Exit code :-> " ${errCode}
+
+	if [ ${errCode} -ne 0 ]; then
+	    if [ ${errCode} -eq 143 ]; then
+			errmesg="${myGeom}  ----->  Failed due to time out"
+			echo ${errmesg} >> ${logDIR}/${fname3}
+		else 
+			errmesg="${myGeom}  ----->  Failed NOT due to time out but due to other runtime errors :: Status code " ${errCode}
+			echo ${errmesg} >> ${logDIR}/${fname3}
+		fi
+		    
+	else
+		errmesg="${myGeom}  Passed."
+		echo ${errmesg} >> ${logDIR}/${fname3}
+	fi
+done
+exit ${errCode}
+

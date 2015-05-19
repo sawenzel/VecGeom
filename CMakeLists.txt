@@ -700,7 +700,7 @@ function(add_to_ctest EXECUTABLES)
 endfunction()
 
 build_executables("${TEST_EXECUTABLES_CORE}")
-add_to_ctest("${TEST_EXECUTABLES_CORE}")
+#add_to_ctest("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
   build_executables("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
@@ -717,12 +717,10 @@ if (USolids)
 endif()
 if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}")
-  add_to_ctest("${TEST_EXECUTABLES_CUDA}")
+#  add_to_ctest("${TEST_EXECUTABLES_CUDA}")
 endif()
 
-# will include here nightly regression testing
-#
-#
+
 
 #---------------------------------------------------------------------------
 # Include creation and submission to dashboard cdash.cern.ch
