@@ -569,6 +569,7 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
 )
 # separate list for ROOT UNIT tests
 set(TEST_UNITTESTEXECUTABLES_ROOT
@@ -583,7 +584,6 @@ set(TEST_UNITTESTEXECUTABLES_ROOT
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
   ${TEST_EXECUTABLES_ROOT}
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile_WithVisualization.cpp
   ${CMAKE_SOURCE_DIR}/test/root/CompareDistances.cpp
