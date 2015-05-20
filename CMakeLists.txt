@@ -426,6 +426,7 @@ set(SRC_CPP_RELATIVE
   source/Wedge.cpp
   source/ABBoxManager.cpp
 
+  source/USolidsInterfaceHelper.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
