@@ -316,25 +316,28 @@ bool TestBox() {
 
     Dist = b2.DistanceToIn(pJohnXY,vmx) ;
     assert(ApproxEqual(Dist,2));
-
+   
+    Vec_t temp = Vec_t( -0.76165597579890043,
+                                          0.64364445891356026,
+			 -0.074515708658524193);
+    temp = temp*1./temp.Mag();
     Dist=box3.DistanceToIn(Vec_t(  0.15000000000000185,
                                          -22.048743592955137,
-                                           2.4268539333219472),
-                           Vec_t(-0.76165597579890043,
-                                          0.64364445891356026,
-                                         -0.074515708658524193)) ;
+                                           2.4268539333219472), temp) ;
     assert(ApproxEqual(Dist,0.0));
    
 
     /** testing tolerance of DistanceToIn **/
     Box_t b4("Box4",5.,5.,5.);
     // a point very slightly inside should return 0
+    temp = Vec_t(0.76315134679548990437,
+                                  0.53698876104646497964,
+		 -0.35950395323836459305);
+    temp = temp*1./temp.Mag();
     Dist = b4.DistanceToIn( Vec_t(-3.0087437277453119577,
                                   -4.9999999999999928946,
                                   4.8935648380409944025),
-                            Vec_t(0.76315134679548990437,
-                                  0.53698876104646497964,
-                                  -0.35950395323836459305) );
+                           temp );
     assert(ApproxEqual(Dist,0.0));
 
     /* **********************************************************
