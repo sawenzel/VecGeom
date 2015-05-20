@@ -564,15 +564,22 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
-  # ${CMAKE_SOURCE_DIR}/test/root/ParaboloidTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ExitingOrEntering.cpp
-
   # higher level benchmarks
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
 )
+# separate list for ROOT UNIT tests
+set(TEST_UNITTESTEXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
+)
+
+
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
   ${TEST_EXECUTABLES_ROOT}
@@ -589,6 +596,7 @@ set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
 )
+
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
@@ -599,12 +607,12 @@ set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestPolycone.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestPolyhedra.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTet.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
-    
 )
+
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
@@ -640,8 +648,8 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  # 
 )
+
 if(ROOT) # add shape testers that depend on ROOT
   set(TEST_EXECUTABLES_SHAPETESTER
   ${TEST_EXECUTABLES_SHAPETESTER}
@@ -695,23 +703,27 @@ build_executables("${TEST_EXECUTABLES_CORE}")
 add_to_ctest("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
   build_executables("${TEST_EXECUTABLES_BENCHMARK}")
-  add_to_ctest("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
 if (ROOT)
   build_executables("${TEST_EXECUTABLES_ROOT}")
-  add_to_ctest("${TEST_EXECUTABLES_ROOT}")
   build_executables("${TEST_EXECUTABLES_VISUALIZATION}")
+  add_to_ctest("${TEST_UNITTESTEXECUTABLES_ROOT}")
 endif()
 if (USolids)
   build_executables("${TEST_EXECUTABLES_USOLIDS}")
   build_executables("${TEST_EXECUTABLES_SHAPETESTER}")
-  add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
-  add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
+  #add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
+  #add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
 endif()
 if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}")
   add_to_ctest("${TEST_EXECUTABLES_CUDA}")
 endif()
+
+# will include here nightly regression testing
+#
+#
+
 #---------------------------------------------------------------------------
 # Include creation and submission to dashboard cdash.cern.ch
 
