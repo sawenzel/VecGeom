@@ -1,9 +1,9 @@
 //
 //
-// TestBox
-//             Ensure asserts are compiled in
+// TestCones
 
-#undef NDEBUG
+
+
 
 #include "base/Vector3D.h"
 #include "ApproxEqual.h"
@@ -13,9 +13,12 @@
 #include "UCons.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
+
+//  Ensure asserts are compiled in
+#undef NDEBUG
+#include <cassert>
+
 
 #define DELTA 0.0001
 

@@ -3,7 +3,7 @@
 // TestTrd
 //             Ensure asserts are compiled in
 
-#undef NDEBUG
+
 
 #include "base/Vector3D.h"
 #include "volumes/Trd.h"
@@ -12,9 +12,10 @@
 #include "UTrd.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
+
+#undef NDEBUG
+#include <cassert>
 
 template <class Trd_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 

@@ -1,9 +1,9 @@
 //
 //
-// TestBox
+// TestSphere
 //             Ensure asserts are compiled in
 
-#undef NDEBUG
+
 #include "base/Global.h"
 #include "base/Vector3D.h"
 #include "volumes/Box.h"
@@ -14,10 +14,12 @@
 #include "USphere.hh"
 #include "UVector3.hh"
 #endif
-
-#include <cassert>
 #include <cmath>
 #include <iomanip> 
+
+
+#undef NDEBUG
+#include <cassert>
 
 #define PI 3.14159265358979323846
 

@@ -3,7 +3,7 @@
 // TestBox
 //             Ensure asserts are compiled in
 
-#undef NDEBUG
+
 
 #include "base/Vector3D.h"
 #include "volumes/Box.h"
@@ -12,9 +12,11 @@
 #include "UBox.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
+
+#undef NDEBUG
+#include <cassert>
+
 
 template <class Box_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestBox() {

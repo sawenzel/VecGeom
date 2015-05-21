@@ -1,9 +1,9 @@
 //
 //
-// TestBox
-//             Ensure asserts are compiled in
+// unit test for tube
 
-#undef NDEBUG
+
+
 
 #include "base/Vector3D.h"
 #include "volumes/Tube.h"
@@ -14,12 +14,13 @@
 #endif
 
 #include "ApproxEqual.h"
-#include <cassert>
 #include <cmath>
 
 #define PI 3.14159265358979323846
 
-
+//  ensure asserts are compiled in
+#undef NDEBUG
+#include <cassert>
 
 template <class Tube_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 
