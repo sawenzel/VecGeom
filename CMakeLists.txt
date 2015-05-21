@@ -720,6 +720,19 @@ if (CUDA)
 #  add_to_ctest("${TEST_EXECUTABLES_CUDA}")
 endif()
 
+macro(add_cmsshapevalidation_test TESTNAME SHAPEFILE)
+  add_test(NAME ${TESTNAME} COMMAND bash -c "${CMAKE_SOURCE_DIR}/test/scripts/RunRandomValidation ${CMAKE_SOURCE_DIR}/build/BenchmarkShapeFromROOTFile  ${CMAKE_SOURCE_DIR}/test/cmstestdata/cms2015.root  ${CMAKE_SOURCE_DIR}/test/cmstestdata/${SHAPEFILE}" )
+endmacro()
+
+# Adding various shapes tests for nightlies
+add_cmsshapevalidation_test( tubevalidation cmstubes.txt )
+add_cmsshapevalidation_test( trapvalidation cmstraps.txt )
+add_cmsshapevalidation_test( polyconevalidation cmspolycones.txt )
+add_cmsshapevalidation_test( polyhedravalidation cmspolyhedra.txt )
+add_cmsshapevalidation_test( conevalidation cmscones.txt )
+add_cmsshapevalidation_test( boxvalidation cmsboxes.txt )
+add_cmsshapevalidation_test( booleanvalidation cmsbooleans.txt )
+add_cmsshapevalidation_test( torusvalidation cmstori.txt )
 
 
 #---------------------------------------------------------------------------

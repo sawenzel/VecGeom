@@ -23,6 +23,11 @@ if [ ! -e ${fname2} ]; then
 fi
 fname3="Geom_Err_Report.log"
 
+echo "HUHU"
+echo "$1" $fname1
+echo "$2" $fname2
+echo "$3" $fname3
+
 #if [ $4 -eq 0 ]; then
 #	doRND=0 # No randomization
 #else
@@ -76,9 +81,8 @@ for ((index=1; index <= testNum; index++)); do
 	myGeom=${Geometry[$cue]}
 	echo " Index = " ${index} "  cue = " ${cue} " Geometry = " ${myGeom} "<<<<<<<"
 # timeout --preserve-status --kill-after=${timeout}s ${timeout}s BenchmarkShapeFromROOTFile ${fname1}  ${Geometry[$cue]} > "${logDIR}/${Geometry[$cue]}.log"
-
-# timeout --preserve-status ${timeout}s  $1 ${fname1} ${myGeom} > "${logDIR}/${myGeom}.log" 
-	timeout --preserve-status ${timeout}s  $1 ${fname1} ${myGeom}  
+	#timeout --preserve-status ${timeout}s  
+	$1 ${fname1} ${myGeom} > "${logDIR}/${myGeom}.log" 
 
 	errCode=$?
 
