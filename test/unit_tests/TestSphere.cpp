@@ -359,15 +359,36 @@ bool TestSphere() {
     return true;
 }
 
-int main() {
-    
-#ifdef VECGEOM_USOLIDS
-  assert(TestSphere<USphere>());
-  std::cout << "USphere passed\n";
-#endif
-  std::cout<<"-------------------------------------------------------------------------------------------------"<<std::endl;
-  assert(TestSphere<vecgeom::SimpleSphere>());
-  std::cout << "VecGeomSphere passed\n";
-  return 0;
-}
+ int main(int argc, char *argv[]) {
+
+    if( argc < 2)
+     {
+       std::cerr << "need to give argument :--usolids or --vecgeom\n";
+       return 1;
+     }
+
+     if( ! strcmp(argv[1], "--usolids") )
+     {
+ #ifdef VECGEOM_USOLIDS
+   assert(TestSphere<USphere>());
+   std::cout << "USphere passed\n";
+       #else
+       std::cerr << "VECGEOM_USOLIDS was not defined\n";
+       return 2;
+ #endif
+     }
+     else if( ! strcmp(argv[1], "--vecgeom") )
+     {
+   assert(TestSphere<vecgeom::SimpleSphere>());
+   std::cout << "VecGeomSphere passed\n";
+     }
+     else
+     {
+       std::cerr << "need to give argument :--usolids or --vecgeom\n";
+       return 1;
+     }
+
+
+   return 0;
+ }
 

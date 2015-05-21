@@ -350,15 +350,35 @@ bool TestOrb() {
     return true;
 }
 
-int main() {
-    
-#ifdef VECGEOM_USOLIDS
-  assert(TestOrb<UOrb>());
-  std::cout << "UOrb passed\n";
-#endif
-  std::cout<<"------------------------------"<<std::endl;
-  assert(TestOrb<vecgeom::SimpleOrb>());
-  std::cout << "VecGeomOrb passed\n";
-  return 0;
-}
-
+ int main(int argc, char *argv[]) {
+  
+    if( argc < 2)
+     {
+       std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+       return 1;
+     }
+     
+     if( ! strcmp(argv[1], "--usolids") )
+     { 
+ #ifdef VECGEOM_USOLIDS
+   assert(TestOrb<UOrb>());
+   std::cout << "UOrb passed\n";
+       #else
+       std::cerr << "VECGEOM_USOLIDS was not defined\n";
+       return 2;
+ #endif
+     }
+     else if( ! strcmp(argv[1], "--vecgeom") )
+     {
+   assert(TestOrb<vecgeom::SimpleOrb>());
+   std::cout << "VecGeomOrb passed\n";
+     }
+     else
+     {
+       std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+       return 1;
+     }
+ 
+ 
+   return 0;
+ }
