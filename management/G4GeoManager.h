@@ -30,8 +30,6 @@ error: no matching function for call to ‘CLHEP::Hep3Vector::Hep3Vector(<unreso
   #include "G4GDMLParser.hh"
 #endif
 
-#undef NDEBUG
-
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
