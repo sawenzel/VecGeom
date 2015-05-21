@@ -17,6 +17,7 @@
 #undef NDEBUG
 #include <cassert>
 
+bool testingvecgeom=false;
 
 template <class Box_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestBox() {
@@ -319,15 +320,16 @@ bool TestBox() {
     Dist = b2.DistanceToIn(pJohnXY,vmx) ;
     assert(ApproxEqual(Dist,2));
    
+
     Vec_t temp = Vec_t( -0.76165597579890043,
-                                          0.64364445891356026,
-			 -0.074515708658524193);
+                        0.64364445891356026,
+                        -0.074515708658524193);
     temp = temp*1./temp.Mag();
     Dist=box3.DistanceToIn(Vec_t(  0.15000000000000185,
                                          -22.048743592955137,
                                            2.4268539333219472), temp) ;
+
     assert(ApproxEqual(Dist,0.0));
-   
 
     /** testing tolerance of DistanceToIn **/
     Box_t b4("Box4",5.,5.,5.);
@@ -340,7 +342,10 @@ bool TestBox() {
                                   -4.9999999999999928946,
                                   4.8935648380409944025),
                            temp );
-    assert(ApproxEqual(Dist,0.0));
+    if(testingvecgeom )
+            assert(Dist<=0.0);
+    else
+            assert(ApproxEqual(Dist,0.0));
 
     /* **********************************************************
     */ /////////////////////////////////////////////////////
@@ -368,7 +373,8 @@ int main(int argc, char *argv[]) {
     }
     else if( ! strcmp(argv[1], "--vecgeom") )
     {
-     assert(TestBox<vecgeom::SimpleBox>());
+        testingvecgeom = true;
+        assert(TestBox<vecgeom::SimpleBox>());
      std::cout << "VecGeomBox passed\n";
     }
     else

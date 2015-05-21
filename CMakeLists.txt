@@ -734,6 +734,9 @@ add_cmsshapevalidation_test( boxvalidation cmsboxes.txt )
 #taken out due to problems: add_cmsshapevalidation_test( booleanvalidation cmsbooleans.txt )
 #taken out due to Issue-133: add_cmsshapevalidation_test( torusvalidation cmstori.txt )
 
+# add unit tests
+add_test(NAME USolidBox COMMAND TestBox --usolids)
+add_test(NAME VecGeomBox COMMAND TestBox --vecgeom)
 
 #---------------------------------------------------------------------------
 # Include creation and submission to dashboard cdash.cern.ch
