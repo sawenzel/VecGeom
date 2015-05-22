@@ -82,9 +82,9 @@ bool TestTubs()
   assert(ApproxEqual(vol,volCheck));
  
   // Check Surface area
-  //vol = t2.SurfaceArea();
-  //volCheck = UUtils::kPi*(45+50)*(50-45+4*50);
-  //assert(ApproxEqual(vol,volCheck));
+  vol = t2.SurfaceArea();
+  volCheck = 2.*UUtils::kPi*(45+50)*(50-45+2*50);
+  assert(ApproxEqual(vol,volCheck));
 
   Tube_t myClad("myClad", 90.0, 110.0, 105.0, 0.0, PI);    // TEST MINE
   
@@ -472,12 +472,35 @@ bool TestTubs()
 }
 
 
-int main() {
-#ifdef VECGEOM_USOLIDS
-  assert(TestTubs<UTubs>());
-  std::cout << "UTube passed\n";
-#endif
-  assert(TestTubs<vecgeom::SimpleTube>());
-  std::cout << "VecGeom tube passed\n";
+int main(int argc, char *argv[]) {
+ 
+   if( argc < 2)
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
+    
+    if( ! strcmp(argv[1], "--usolids") )
+    { 
+      #ifdef VECGEOM_USOLIDS
+       assert(TestTubs<UTubs>());
+       std::cout << "UTube passed\n";
+      #else
+       std::cerr << "VECGEOM_USOLIDS was not defined\n";
+       return 2;
+      #endif
+    }
+    else if( ! strcmp(argv[1], "--vecgeom") )
+    {
+       assert(TestTubs<vecgeom::SimpleTube>());
+       std::cout << "VecGeom tube passed\n";
+    }
+    else
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
+
   return 0;
+
 }
