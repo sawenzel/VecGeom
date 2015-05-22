@@ -39,15 +39,15 @@ Benchmarker::Benchmarker() : Benchmarker(NULL) {}
 Benchmarker::Benchmarker(VPlacedVolume const *const world)
   : fPointCount(1024), fPoolMultiplier(4), fRepetitions(1024), fMeasurementCount(1),
       fVerbosity(1), fToInBias(0.8), fInsideBias(0.5), fPointPool(NULL),
-      fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance),
+      fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance)
 #ifdef VECGEOM_USOLIDS
-      fOkToRunUSOLIDS(true),
+  ,fOkToRunUSOLIDS(true)
 #endif
 #ifdef VECGEOM_ROOT
-      fOkToRunROOT(true),
+  ,fOkToRunROOT(true)
 #endif
 #ifdef VECGEOM_GEANT4
-      fOkToRunG4(true)
+  ,fOkToRunG4(true)
 #endif
 {
   SetWorld(world);
