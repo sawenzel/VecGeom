@@ -80,10 +80,7 @@ bool TestOrb() {
     double Dist;
     Vec_t norm;
     bool convex;
-    convex = convex;
-    
-    
-    
+     
     valid = b1.Normal(ponx,normal);
     assert(ApproxEqual(normal,Vec_t(1,0,0)));
     

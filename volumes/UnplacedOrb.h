@@ -32,7 +32,7 @@ private:
   Precision fCubicVolume, fSurfaceArea;
   
   //Tolerance compatiable with USolids
-  Precision epsilon;// = 2e-11; 
+  constexpr static Precision fepsilon = 2e-11; 
   Precision frTolerance;//=1e-9;
 
 public:

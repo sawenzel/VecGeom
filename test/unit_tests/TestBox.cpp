@@ -41,7 +41,6 @@ bool TestBox() {
     double Dist;
     Vec_t norm;
     bool convex;
-    convex = convex;
    
     Box_t b1("Test Box #1",20,30,40);
     Box_t b2("Test Box #2",10,10,10);
