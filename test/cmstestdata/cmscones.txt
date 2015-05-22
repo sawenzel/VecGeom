@@ -1,4 +1,4 @@
-YN12_a
+YN12p_a
 BeamVacuum2
 BeamVacuum3
 BeamVacuum13
@@ -18,7 +18,7 @@ VcalFibreBundleL6
 VcalFibreBundleL4
 VcalFibreBundleL2
 VcalFibreBundleL0
-VcalFibreBundleHalfSector
+VcalFibreBundleHalfSectorL
 VcalFibreBundleR10
 VcalFibreBundleR8
 VcalFibreBundleR6
@@ -31,6 +31,6 @@ VcalFibreBundleR7
 VcalFibreBundleR5
 VcalFibreBundleR3
 VcalFibreBundleR1
-VcalFibreBundleHalfSector
+VcalFibreBundleHalfSectorR
 VcalFibreBundleSector
 VcalFibreBundleContainer
