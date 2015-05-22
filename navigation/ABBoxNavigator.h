@@ -17,9 +17,12 @@
 #include "navigation/NavigationState.h"
 #include "base/Transformation3D.h"
 #include "volumes/kernel/BoxImplementation.h"
+
+#ifdef VECGEOM_VC
 #include "backend/vc/Backend.h"
+#endif
+
 #include <map>
-//#undef NDEBUG
 #include <cassert>
 
 namespace vecgeom {
@@ -32,8 +35,16 @@ class ABBoxManager {
 public:
     // scalar or vector vectors
     typedef Vector3D<Precision> ABBox_t;
+#ifdef VECGEOM_VC // just temporary typedef ---> will be removed with new backend structure
     typedef Vc::float_v Real_v;
     typedef Vc::float_m Bool_v;
+    constexpr static unsigned int Real_vSize = Real_v::Size;
+#else
+    typedef float Real_v;
+    typedef bool Bool_v;
+    constexpr static unsigned int Real_vSize = 1;
+#endif
+
     typedef float Real_t;
     typedef Vector3D<Real_v> ABBox_v;
 
@@ -109,8 +120,8 @@ public:
     // it does not exist
     ABBoxContainer_v GetABBoxes_v( LogicalVolume const * lvol, int & size ) {
       int ndaughters = lvol->daughtersp()->size();
-      int extra = (ndaughters % Real_v::Size > 0) ? 1 : 0;
-      size = ndaughters / Real_v::Size + extra;
+      int extra = (ndaughters % Real_vSize > 0) ? 1 : 0;
+      size = ndaughters / Real_vSize + extra;
       return fVolToABBoxesMap_v[lvol];
     }
 
