@@ -134,13 +134,12 @@ public:
 #endif
 #ifdef VECGEOM_USOLIDS
   virtual ::VUSolid const* ConvertToUSolids() const {
-      printf("Converting to USOLIDS\n");
-      return new UBox("",10,10,10);
+    // currently not supported in USOLIDS -- returning NULL
+      return nullptr;
   }
 #endif
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const* ConvertToGeant4() const {
-      printf("Converting to Geant4\n");
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * rightm = right->GetTransformation();

@@ -73,7 +73,21 @@ private:
   std::vector< Vector3D<Precision> > fProblematicContainPoints;
 
   // a container storing rays : startpoint (Vector3D) plus direction (Vector3D)
-   RayContainer fProblematicRays;
+  RayContainer fProblematicRays;
+
+  // flags indicating whether it is ok to run ROOT/USOLIDS/G4
+  // because in some cases a conversion might not exist
+  // the Benchmarker class will check this at initialization and
+  // set these flags accordingly
+#ifdef VECGEOM_USOLIDS
+  bool fOkToRunUSOLIDS;
+#endif
+#ifdef VECGEOM_ROOT
+  bool fOkToRunROOT;
+#endif
+#ifdef VECGEOM_GEANT4
+  bool fOkToRunG4;
+#endif
 
 public:
 
