@@ -51,11 +51,11 @@ set(WITH_COVERAGE FALSE)
 set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE "5000")
 set(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE "5000")
 #######################################################
-set(CTEST_USE_LAUNCHERS 1)
-if(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
-  set(CTEST_USE_LAUNCHERS 0)
-endif()
-set(ENV{CTEST_USE_LAUNCHERS_DEFAULT} ${CTEST_USE_LAUNCHERS})
+#set(CTEST_USE_LAUNCHERS 1)
+#if(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
+#  set(CTEST_USE_LAUNCHERS 0)
+#endif()
+#set(ENV{CTEST_USE_LAUNCHERS_DEFAULT} ${CTEST_USE_LAUNCHERS})
 
 ######################################################
 # CTest/CMake settings 
@@ -145,7 +145,7 @@ include("${CTEST_SOURCE_DIRECTORY}/CTestConfig.cmake")
 ctest_start(${MODEL})
 ctest_update(SOURCE ${CTEST_SOURCE_DIRECTORY})
 message("Updated.")
-ctest_configure(SOURCE "${CTEST_SOURCE_DIRECTORY}" BUILD "${CTEST_BINARY_DIRECTORY}" OPTIONS "-DCTEST_USE_LAUNCHERS=${CTEST_USE_LAUNCHERS}" APPEND)
+ctest_configure(SOURCE "${CTEST_SOURCE_DIRECTORY}" BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
 message("Configured.")
 ctest_submit(PARTS Update Configure Notes)
 
