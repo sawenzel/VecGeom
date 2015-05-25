@@ -27,7 +27,6 @@
 template <class Sphere_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestSphere() {
     
-    int verbose=0;
     double fRmin=0, fRmax=3, fSPhi=0, fDPhi=2*PI, fSTheta=0, fDTheta=PI;
     double fR=fRmax;
     
@@ -167,20 +166,24 @@ bool TestSphere() {
     Vec_t genPointBWRminRmax(3.796560684305335,-6.207283535497058,2.519078815824183); //Point at distance of 7.7 from center. i.e. inside point, SafetyFromOutside should return 0
     Dist=b4.SafetyFromOutside(genPointBWRminRmax); 
     assert(ApproxEqual(Dist,0)); //should pass
-    
     valid = b4.Normal(ponx,normal);
     assert(ApproxEqual(normal,Vec_t(1,0,0)));
+    assert(valid);
     valid = b4.Normal(pony,normal);
     assert(ApproxEqual(normal,Vec_t(0,1,0)));
+    assert(valid);
     valid = b4.Normal(ponz,normal);
+    assert(valid);
     assert(ApproxEqual(normal,Vec_t(0,0,1)));
     valid = b4.Normal(ponmx,normal);
+    assert(valid);
     assert(ApproxEqual(normal,Vec_t(-1,0,0)));
     valid = b4.Normal(ponmy,normal);
+    assert(valid);
     assert(ApproxEqual(normal,Vec_t(0,-1,0)));
     valid = b4.Normal(ponmz,normal);
     assert(ApproxEqual(normal,Vec_t(0,0,-1)));
-    
+    assert(valid);
     
     //________________________________________________________________________________________________________________
     //Sphere for testing Real Important functions like Inside, Saftey , DistanceToIn, DistanceToOut
