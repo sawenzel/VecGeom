@@ -105,11 +105,11 @@ public:
 
 
   /// \brief get pointer to PointPool (in order to make data available to external users);
-  SOA3D<Precision> const *const GetPointPool() const {
+  SOA3D<Precision> const * GetPointPool() const {
       return fPointPool;
   }
 
-  SOA3D<Precision> const *const GetDirectionPool() const {
+  SOA3D<Precision> const * GetDirectionPool() const {
       return fDirectionPool;
   }
 

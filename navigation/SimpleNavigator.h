@@ -399,7 +399,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 
       // if distance is negative; we are inside that daughter and should relocate
       // unless distance is minus infinity
-      bool valid = (ddistance < step && ! std::isinf(ddistance));
+      bool valid = (ddistance < step && ! IsInf(ddistance));
       nexthitvolume = valid ? d : nexthitvolume;
       step      = valid ? ddistance  : step;
 #ifdef CHECKCONTAINS

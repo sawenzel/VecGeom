@@ -186,6 +186,17 @@ Precision Floor( Precision val ){
     return std::floor(val);
 }
 
+template <typename T>
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+bool IsInf( T x ){
+#ifndef VECGEOM_NVCC_DEVICE
+  return std::isinf(x);
+#else
+  return isinf(x);
+#endif
+}
+
 #ifndef VECGEOM_USOLIDS
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH

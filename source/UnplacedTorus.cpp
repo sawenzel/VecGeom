@@ -139,7 +139,7 @@ bool UnplacedTorus::Normal(Vector3D<Precision> const& point, Vector3D<Precision>
 
   // To cope with precision loss
   //
-  const Precision delta = std::max(10.0*kTolerance,
+  const Precision delta = Max(10.0*kTolerance,
                                   1.0e-8*(fRtor+fRmax));
   const Precision dAngle = 10.0*kTolerance;
 
@@ -147,13 +147,13 @@ bool UnplacedTorus::Normal(Vector3D<Precision> const& point, Vector3D<Precision>
   Vector3D<Precision>  sumnorm(0.,0.,0.);
 
   rho2 = point.x()*point.x() + point.y()*point.y();
-  rho = std::sqrt(rho2);
+  rho = Sqrt(rho2);
   pt2 = rho2+point.z()*point.z() +fRtor * (fRtor-2*rho);
-  pt2 = std::max(pt2, 0.0); // std::fabs(pt2);
-  pt = std::sqrt(pt2) ;
+  pt2 = Max(pt2, 0.0); // std::fabs(pt2);
+  pt = Sqrt(pt2) ;
 
-  Precision distRMax = std::fabs(pt - fRmax);
-  if(fRmin) distRMin = std::fabs(pt - fRmin);
+  Precision distRMax = Abs(pt - fRmax);
+  if(fRmin) distRMin = Abs(pt - fRmin);
 
   if( rho > delta && pt != 0.0 )
   {
@@ -173,11 +173,11 @@ bool UnplacedTorus::Normal(Vector3D<Precision> const& point, Vector3D<Precision>
       if(pPhi < fSphi-delta)            { pPhi += kTwoPi; }
       else if(pPhi > fSphi+fDphi+delta) { pPhi -= kTwoPi; }
 
-      distSPhi = std::fabs( pPhi - fSphi );
-      distEPhi = std::fabs(pPhi-fSphi-fDphi);
+      distSPhi = Abs( pPhi - fSphi );
+      distEPhi = Abs(pPhi-fSphi-fDphi);
     }
-    nPs = Vector3D<Precision>(std::sin(fSphi),-std::cos(fSphi),0);
-    nPe = Vector3D<Precision>(-std::sin(fSphi+fDphi),std::cos(fSphi+fDphi),0);
+    nPs = Vector3D<Precision>( sin(fSphi),-cos(fSphi),0);
+    nPe = Vector3D<Precision>(-sin(fSphi+fDphi),cos(fSphi+fDphi),0);
   } 
   if( distRMax <= delta )
   {
