@@ -450,9 +450,10 @@ void ShapeTester::PropagatedNormalU(const UVector3 &point, const UVector3 &direc
     UVector3 shift = distance * direction;
     UVector3 surfacePoint = point + shift;
     volumeUSolids->Normal(surfacePoint, normal);
-    VUSolid::EnumInside e = volumeUSolids->Inside(surfacePoint);
-    if (e != vecgeom::EInside::kSurface)
-        e = e;
+    // Possible additional test for future : Test if moved point is on the surface
+    // VUSolid::EnumInside e = volumeUSolids->Inside(surfacePoint);
+    // if (e != vecgeom::EInside::kSurface)
+    //    e = e;
   }
 }
 
