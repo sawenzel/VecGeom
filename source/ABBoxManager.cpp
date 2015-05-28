@@ -230,7 +230,7 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
 
         // initialize vector version of Container
         int index=0;
-        int assignedscalarvectors=0;
+        unsigned int assignedscalarvectors=0;
         for( uint i=0; i < ndaughters; i+= Real_vSize )
         {
             Vector3D<Real_v> lower;
