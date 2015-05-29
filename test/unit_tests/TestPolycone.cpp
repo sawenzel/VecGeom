@@ -1,9 +1,8 @@
 //
 //
-// TestTrd
-//             Ensure asserts are compiled in
+// TestPolycone
 
-#undef NDEBUG
+
 
 #include "base/Vector3D.h"
 #include "volumes/Trd.h"
@@ -13,9 +12,11 @@
 #include "UGenericPolycone.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
+
+//             ensure asserts are compiled in
+#undef NDEBUG
+#include <cassert>
 
 template <class Polycone_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 

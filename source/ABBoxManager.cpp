@@ -7,9 +7,14 @@
 
 #include "navigation/ABBoxNavigator.h"
 #include "volumes/UnplacedBox.h"
+
+#ifdef VECGEOM_VC
 //#include "backend/vc/Backend.h"
 #include "backend/vcfloat/Backend.h"
-#undef NDEBUG
+#else
+#include "backend/scalarfloat/Backend.h"
+#endif
+
 #include <cassert>
 
 namespace vecgeom {
@@ -79,6 +84,7 @@ inline namespace cxx {
                           ABBoxManager::ABBoxContainer_v const & corners, int size,
                           ABBoxManager::HitContainer_t & hitlist) const {
 
+#ifdef VECGEOM_VC
      Vector3D<float> invdirfloat(1.f/(float)dir.x(), 1.f/(float)dir.y(), 1.f/(float)dir.z());
      Vector3D<float> pfloat((float)point.x(), (float)point.y(), (float)point.z());
 
@@ -99,6 +105,24 @@ inline namespace cxx {
           }
      }
      return hitcount;
+#else
+     Vector3D<float> invdirfloat(1.f/(float)dir.x(), 1.f/(float)dir.y(), 1.f/(float)dir.z());
+     Vector3D<float> pfloat((float)point.x(), (float)point.y(), (float)point.z());
+
+     int vecsize = size;
+     int hitcount = 0;
+     int sign[3]; sign[0] = invdirfloat.x() < 0; sign[1] = invdirfloat.y() < 0; sign[2] = invdirfloat.z() < 0;
+     for( auto box = 0; box < vecsize; ++box ){
+          float distance = BoxImplementation<translation::kIdentity,
+                  rotation::kIdentity>::IntersectCachedKernel2<kScalarFloat, float >(
+                        &corners[2*box], pfloat, invdirfloat, sign[0], sign[1], sign[2], 0,
+                        static_cast<float>(vecgeom::kInfinity) );
+          bool hit = distance < static_cast<float>(vecgeom::kInfinity);
+          if (hit) hitlist.push_back( ABBoxManager::BoxIdDistancePair_t( box , distance ) );
+     }
+     return hitcount;
+#endif
+
  }
 
 void ABBoxManager::ComputeABBox( VPlacedVolume const * pvol, ABBox_t * lowerc, ABBox_t * upperc ) {
@@ -168,18 +192,18 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
             // remove old boxes first
             RemoveABBoxes(lvol);
         }
-        int ndaughters = lvol->daughtersp()->size();
+        uint ndaughters = lvol->daughtersp()->size();
         ABBox_t * boxes = new ABBox_t[ 2*ndaughters ];
         fVolToABBoxesMap[lvol] = boxes;
 
         // same for the vector part
-        int extra = (ndaughters % Real_v::Size > 0) ? 1 : 0;
-        int size = 2 * ( ndaughters / Real_v::Size + extra );
+        int extra = (ndaughters % Real_vSize > 0) ? 1 : 0;
+        int size = 2 * ( ndaughters / Real_vSize + extra );
         ABBox_v * vectorboxes =  new ABBox_v[ size ];
         fVolToABBoxesMap_v[lvol] = vectorboxes;
 
         // calculate boxes by iterating over daughters
-        for(int d=0;d<ndaughters;++d){
+        for(uint d=0;d<ndaughters;++d){
             auto pvol = lvol->daughtersp()->operator [](d);
             ComputeABBox( pvol, &boxes[2*d], &boxes[2*d+1] );
 #ifdef CHECK
@@ -206,13 +230,14 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
 
         // initialize vector version of Container
         int index=0;
-        int assignedscalarvectors=0;
-        for(int i=0; i < ndaughters; i+= Real_v::Size )
+        unsigned int assignedscalarvectors=0;
+        for( uint i=0; i < ndaughters; i+= Real_vSize )
         {
             Vector3D<Real_v> lower;
             Vector3D<Real_v> upper;
-            // assign by components
-            for( int k=0;k<Real_v::Size;++k ){
+            // assign by components ( this will be much more generic with new VecCore )
+#ifdef VECGEOM_VC
+            for( uint k=0;k<Real_vSize;++k ){
                 if(2*(i+k) < 2*ndaughters )
                 {
                     lower.x()[k] = boxes[2*(i+k)].x();
@@ -237,6 +262,19 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
             vectorboxes[index++] = lower;
             vectorboxes[index++] = upper;
         }
+#else
+        lower.x() = boxes[2*i].x();
+        lower.y() = boxes[2*i].y();
+        lower.z() = boxes[2*i].z();
+        upper.x() = boxes[2*i+1].x();
+        upper.y() = boxes[2*i+1].y();
+        upper.z() = boxes[2*i+1].z();
+        assignedscalarvectors+=2;
+
+        vectorboxes[index++] = lower;
+        vectorboxes[index++] = upper;
+    }
+#endif
         assert( index == size );
         assert( assignedscalarvectors == 2*ndaughters );
 }

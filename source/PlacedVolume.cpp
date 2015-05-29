@@ -95,7 +95,7 @@ std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
 // implement a default function for surface area
 // based on the method of G4
 Precision VPlacedVolume::SurfaceArea() {
-    std::cout << "WARNING : Sampling SurfaceArea called \n";
+  //  std::cout << "WARNING : Sampling SurfaceArea called \n";
  int nStat = 100000;
  double ell = -1.;
  Vector3D<Precision> p;
@@ -145,7 +145,7 @@ Precision VPlacedVolume::SurfaceArea() {
 // implement a default function for GetPointOnSurface
 // based on contains + DistanceToOut
 Vector3D<Precision> VPlacedVolume::GetPointOnSurface() const {
-   std::cerr << "WARNING : Base GetPointOnSurface called \n";
+  //   std::cerr << "WARNING : Base GetPointOnSurface called \n";
 
    Vector3D<Precision> surfacepoint;
    SOA3D<Precision> points(1);

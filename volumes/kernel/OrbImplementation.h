@@ -429,10 +429,6 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     Double_t c = rad2 - radius2;
     Double_t d2 = pDotV3d * pDotV3d - c;
 
-    Double_t pos_dot_dir_x = localPoint.x()*localDir.x();
-    Double_t pos_dot_dir_y = localPoint.y()*localDir.y();
-    Double_t pos_dot_dir_z = localPoint.z()*localDir.z();
-
     Bool_t done(false);
     distance = kInfinity;
     Double_t zero=Backend::kZero;

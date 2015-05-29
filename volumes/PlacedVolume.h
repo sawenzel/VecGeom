@@ -193,12 +193,15 @@ public:
   //                           Precision const *const step_max,
   //                           Precision *const output) const =0;
 
+#ifdef VECGEOM_USOLIDS
+    using USolidsInterfaceHelper::DistanceToOut;
+#else
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
       Vector3D<Precision> const &position,
       Vector3D<Precision> const &direction,
       Precision const step_max = kInfinity) const =0;
-
+#endif
 
   // a "placed" version of the distancetoout function; here
   // the point and direction are first of all transformed into the reference frame of the

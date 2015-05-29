@@ -127,6 +127,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint) const
           array[i]=const_cast<TGeoNode *>(mg.tgeonode( fPath[i] ));
     // assert( tmp->GetCurrentNode() == mg.tgeonode( Top() ));
 
+    /*
     std::list<uint> ilist;
     GetPathAsListOfIndices( ilist );
     int counter=0;
@@ -135,6 +136,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint) const
             tmp->AddLevel(x);
         counter++;
     }
+    */
     
     return tmp;
   }

@@ -1,0 +1,125 @@
+#!/bin/bash 
+# usage:
+# RunRandomValidation <cmd_to_execute> cms2015.root tubes.txt IsRND
+#
+# if IsRND is 1 then randomize else procedd for all shapes
+
+if [ $# -eq 0 ]; then
+	echo " Usage: RunRandomValidation <cmd_to_execute>  <root_assembly_geom e.g. cms2015.root>  <geometry_file e.g. cmstubes.txt> <0|1 :: Random | 1>"
+	exit
+fi
+
+#declare command
+cmdline=$1
+
+#declare filenames
+fname1=$2                 # example "cms2015.root"
+if [ ! -e ${fname1} ]; then
+	echo " file ${fname1} does not exits. "
+	exit $?
+fi
+
+fname2=$3                 # example "tubes.txt"
+if [ ! -e ${fname2} ]; then
+	echo " file ${fname2} does not exits. "
+	exit $?
+fi
+fname3="Geom_Err_Report.log"
+
+mode=$4  # random or all
+
+echo "Executable: " $fname1
+echo "Geometry file: " $fname2
+echo "Testfile :" $fname3
+echo "Mode :" $mode
+
+# Declare time out time for each Geometry diagnosys
+#declare -i timeout=100
+timeout=30
+
+# Make a directory in present directory as dir.Shape.Diag
+logDIR="dir.Shape.Diag"            #${logDIR1}
+if [ ! -d "$logDIR" ]; then
+    mkdir -- "${logDIR}"
+	echo ${logDIR} " -- a new directory has been created to store all log files"
+else	
+	echo ${logDIR} " -- directory already exists and all log files are being stored here."
+fi
+
+# here declare how many tests are required e.g. 20 in batch
+testNum=2
+
+# declare array in which all geometries are stored
+declare -a Geometry
+# link file descriptor 10 with stdin
+exec 10<&0
+exec < $fname2
+
+let count=1
+
+while read LINE; do
+	Geometry[$count]=$LINE
+	((count++))
+done
+
+((count--))
+#echo ${Geometry[@]}
+echo Number of Elements: ${#Geometry[@]}
+
+# restoring stdin from file descriptor and closing descriptor
+exec 0<&10 10<&-
+
+if [ ${mode} -eq 1 ]; then
+  echo "Running all shapes"
+  for ((index=1; index <= count; index++)); do
+        myGeom=${Geometry[$index]}
+  	$1 ${fname1} ${myGeom} # > "{logDIR/${myGeom}.log"
+	errCode=$?
+ 	echo "Exit code :-> " ${errCode}
+   	if [ ${errCode} -ne 0 ]; then
+   		if [ ${errCode} -eq 143 ]; then
+			errmesg="${myGeom} --->  Failed due to time out"
+			echo ${errmesg} >> ${logDIR}/${fname3}
+		else 
+			errmesg="${myGeom} -->  Failed due to other runtime errors :: Status code " ${errCode}
+			echo ${errmesg} >> ${logDIR}/${fname3}
+		fi
+	else
+		errmesg="${myGeom}  Passed."
+		echo ${errmesg} >> ${logDIR}/${fname3}
+	fi
+  done
+  exit ${errCode}
+fi
+
+echo "Running random subset of shapes"
+# Now generate random serial number of geometry and test
+# We perform maximum $testNum numbers of test per slot
+for ((index=1; index <= testNum; index++)); do 
+	cue=$((RANDOM % count+1))
+	myGeom=${Geometry[$cue]}
+	echo " Index = " ${index} "  cue = " ${cue} " Geometry = " ${myGeom} "<<<<<<<"
+        #timeout --preserve-status --kill-after=${timeout}s ${timeout}s BenchmarkShapeFromROOTFile ${fname1}  ${Geometry[$cue]} > "${logDIR}/${Geometry[$cue]}.log"
+	#timeout --preserve-status ${timeout}s  
+	$1 ${fname1} ${myGeom} # > "${logDIR}/${myGeom}_RND.log" 
+
+	errCode=$?
+
+	echo "Exit code :-> " ${errCode}
+
+	if [ ${errCode} -ne 0 ]; then
+	    if [ ${errCode} -eq 143 ]; then
+			errmesg="${myGeom}  ----->  Failed due to time out"
+			echo ${errmesg} # >> ${logDIR}/${fname3}_RND
+		else 
+			errmesg="${myGeom}  ----->  Failed NOT due to time out but due to other runtime errors :: Status code " ${errCode}
+			echo ${errmesg} # >> ${logDIR}/${fname3}_RND
+		fi
+		    
+	else
+		errmesg="${myGeom}  Passed."
+		echo ${errmesg} # >> ${logDIR}/${fname3}_RND
+	fi
+  done
+exit ${errCode}
+

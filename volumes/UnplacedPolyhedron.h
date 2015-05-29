@@ -42,7 +42,7 @@ enum struct EPhiCutout {
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
-VECGEOM_DEVICE_FORWARD_DECLARE( class ZSegment; )
+VECGEOM_DEVICE_FORWARD_DECLARE( struct ZSegment; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
 VECGEOM_DEVICE_DECLARE_CONV( ZSegment );
 

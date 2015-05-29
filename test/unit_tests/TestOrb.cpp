@@ -1,9 +1,9 @@
 //
 //
-// TestBox
-//             Ensure asserts are compiled in
+// TestOrb
 
-#undef NDEBUG
+
+
 #include "base/Global.h"
 #include "base/Vector3D.h"
 #include "volumes/Box.h"
@@ -14,9 +14,11 @@
 #include "UOrb.hh"
 #include "UVector3.hh"
 #endif
-
-#include <cassert>
 #include <cmath>
+
+// ensure asserts are compiled in
+#undef NDEBUG
+#include <cassert>
 
 #define PI 3.14159265358979323846
 
@@ -78,28 +80,30 @@ bool TestOrb() {
     double Dist;
     Vec_t norm;
     bool convex;
-    convex = convex;
-    
-    
-    
+     
     valid = b1.Normal(ponx,normal);
     assert(ApproxEqual(normal,Vec_t(1,0,0)));
-    
+    assert(valid);
+
     valid = b1.Normal(pony,normal);
     assert(ApproxEqual(normal,Vec_t(0,1,0))); 
-    
+    assert(valid);
+
     valid = b1.Normal(ponz,normal);
     assert(ApproxEqual(normal,Vec_t(0,0,1)));
+    assert(valid);
     
     valid = b1.Normal(ponmx,normal);
     assert(ApproxEqual(normal,Vec_t(-1,0,0)));
+    assert(valid);
     
     valid = b1.Normal(ponmy,normal);
     assert(ApproxEqual(normal,Vec_t(0,-1,0))); 
+    assert(valid);
     
     valid = b1.Normal(ponmz,normal);
     assert(ApproxEqual(normal,Vec_t(0,0,-1)));
-    
+    assert(valid);    
     // DistanceToOut(P,V) with asserts for norm and convex
     Dist=b1.DistanceToOut(pzero,vx,norm,convex);
     assert(ApproxEqual(Dist,fR)&&ApproxEqual(norm,vx)&&convex);

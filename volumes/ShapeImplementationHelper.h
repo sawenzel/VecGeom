@@ -428,9 +428,9 @@ public:
     }
   }
 
-#ifndef VECGEOM_INTEL
-#pragma GCC push_options
-#pragma GCC optimize ("unroll-loops")
+#if !defined(__clang__) && !defined(VECGEOM_INTEL)
+  #pragma GCC push_options
+  #pragma GCC optimize ("unroll-loops")
 #endif
   virtual void DistanceToInMinimize(SOA3D<Precision> const &points,
                                     SOA3D<Precision> const &directions,
@@ -480,7 +480,7 @@ public:
 #endif
     }
   }
-#ifndef VECGEOM_INTEL
+#if !defined(__clang__) && !defined(VECGEOM_INTEL)
 #pragma GCC pop_options
 #endif
 

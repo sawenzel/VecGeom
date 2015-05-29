@@ -503,23 +503,26 @@ bool validateVecGeomNavigation( int np, SOA3D<Precision> const& points, SOA3D<Pr
   int errorCount = 0;
   for(int i=0; i<np; ++i) {
     bool mismatch = false;
-    void* void1 = (void*)vgSerialStates[i]->Top();
-    void* void2 = (void*)vgVectorStates[i]->Top();
-    if( Abs( vecSteps[i] - refSteps[i] ) > kTolerance )                   mismatch = true;
-    if( void1 && void2 && void1 != void2 )                                mismatch = true;
+    void* top1 = (void*)vgSerialStates[i]->Top();
+    void* top2 = (void*)vgVectorStates[i]->Top();
+    if( Abs( vecSteps[i] - refSteps[i] ) > kTolerance ) mismatch = true;
+    if( top1 && top2 && top1 != top2 )                  mismatch = true;
     if( vgSerialStates[i]->IsOnBoundary() != vgVectorStates[i]->IsOnBoundary()) mismatch = true;
-    if( safeties[i] != nav.GetSafety( points[i], *origStates[i] ))   mismatch = true;
+// safies not calculated in vector interface anymore
+//    if( safeties[i] != nav.GetSafety( points[i], *origStates[i] ))   mismatch = true;
     if(mismatch) {
       result = false;
       if(mismatch) ++errorCount;
-      std::cout<<"Vector navigation problems: mismatch="<< mismatch <<" - track["<< i <<"]=("
-               << points[i].x() <<"; "<< points[i].y() <<"; "<< points[i].z() <<") "
+      std::cout<<"Vector navigation problems: mismatch="<< mismatch
+               <<" - track["<< i <<"]=("<< points[i].x() <<"; "<< points[i].y() <<"; "<< points[i].z() <<") "
                <<" / dir=("<< dirs[i].x() <<"; "<< dirs[i].y() <<"; "<< dirs[i].z() <<") "
-               <<" steps: "<< refSteps[i] <<" / "<< vecSteps[i]
-               <<" navStates: "<< ( void1 ? vgSerialStates[i]->Top()->GetLabel() : "NULL")
+               <<" steps: "<< refSteps[i] <<" / "<< vecSteps[i] <<" -- diff="<< (refSteps[i]-vecSteps[i])
+               <<" navStates: "<< ( top1 ? vgSerialStates[i]->Top()->GetLabel() : "NULL")
                << (vgSerialStates[i]->IsOnBoundary() ? "" : "-notOnBoundary")
-               <<" / "<< (void2 ? vgVectorStates[i]->Top()->GetLabel() : "NULL")
+               <<" / "<< (top2 ? vgVectorStates[i]->Top()->GetLabel() : "NULL")
                << (vgVectorStates[i]->IsOnBoundary() ? "" : "-notOnBoundary")
+               <<" safeties[i]="<< safeties[i]
+               <<" vs. nav.safety()="<< nav.GetSafety( points[i], *origStates[i])
                << "\n";
     }
   }
