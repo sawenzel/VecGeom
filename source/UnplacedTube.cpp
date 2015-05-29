@@ -119,7 +119,7 @@ Vector3D<Precision> UnplacedTube::GetPointOnSurface() const
     int surface = ChooseSurface();
     Precision rVal   = RNG::Instance().uniform(rmin(), rmax());
     Precision phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
-    Precision zVal   = RNG::Instance().uniform() * z();
+    Precision zVal   = RNG::Instance().uniform() * 2.0 * z() - z();
 
     switch (surface) {
         case 0: zVal =  z(); break;
