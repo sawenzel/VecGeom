@@ -203,21 +203,23 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #endif
 
 namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE{
 #ifdef VECGEOM_FLOAT_PRECISION
 typedef float Precision;
 #else
 typedef double Precision;
 #endif
-// namespace EInside {
-// enum EInside {
-//   kInside = 0,
-//   kSurface = 1,
-//   kOutside = 2
-// };
-// }
+ enum EnumInside {
+   eInside = 0, /* for USOLID compatibility */
+   kInside = eInside,
+   eSurface = 1,
+   kSurface = eSurface,
+   eOutside = 2,
+   kOutside = eOutside,
+ };
 // typedef EInside::EInside Inside_t;
 typedef int Inside_t;
-}
+}}
 
 //namespace vecgeom::cuda {
 //typedef vecgeom::Precision Precision;
@@ -346,10 +348,10 @@ VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
 void Assert(const bool condition, char const *const message) {
 #ifndef VECGEOM_NVCC
-  if (!condition) {
-    printf("Assertion failed: %s", message);
-    abort();
-  }
+  assert(condition && message);
+#ifdef NDEBUG
+  (void)condition; (void)message; // Avoid warning about unused arguments.
+#endif
 #else
   if (!condition) printf("Assertion failed: %s", message);
 #endif

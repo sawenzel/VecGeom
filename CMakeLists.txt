@@ -60,14 +60,15 @@ if (USOLIDS)
 endif()
 
 if (GEANT4)
-  if (BENCHMARK)
-    set(Geant4 ON)
-  else()
-    message(WARNING
-      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
-    set(GEANT4 OFF)
-    set(Geant4 OFF)
-  endif()
+#  if (BENCHMARK)
+#    set(Geant4 ON)
+#  else()
+#    message(WARNING
+#      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
+#    set(GEANT4 OFF)
+#    set(Geant4 OFF)
+#  endif()
+   set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)
@@ -144,8 +145,17 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
   endif()
+  set(VECGEOM_NVCC_COMPILATION_FLAGS -g -G ${VECGEOM_NVCC_COMPILATION_FLAGS})
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+  #set(VECGEOM_NVCC_COMPILATION_FLAGS -O3 ${VECGEOM_NVCC_COMPILATION_FLAGS})  # remove -use_fast_math
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
+  set(VECGEOM_NVCC_COMPILATION_FLAGS -g -G ${VECGEOM_NVCC_COMPILATION_FLAGS})
+endif()
+if (CMAKE_BUILD_TYPE MATCHES MinSizeRel)
+  set(VECGEOM_NVCC_COMPILATION_FLAGS -use_fast_math ${VECGEOM_NVCC_COMPILATION_FLAGS})
 endif()
 
 # Compiler specific optimization flags
@@ -190,15 +200,15 @@ if (CUDA)
     set(VECGEOM_COMPILATION_FLAGS
         "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_CUDA_NO_VOLUME_SPECIALIZATION")
   endif()
-  set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS}
+  set(VECGEOM_NVCC_COMPILATION_FLAGS ${VECGEOM_NVCC_COMPILATION_FLAGS} 
       -std=c++11
       -Xcudafe "--diag_suppress=code_is_unreachable"
       -Xcudafe "--diag_suppress=initialization_not_reachable")
   set(VECGEOM_NVCC_CONFIGS
         DEBUG -g -G
-        RELEASE  -O2 --use_fast_math
-        RELWITHDEBINFO -g -G  -O2 --use_fast_math
-        MINSIZEREL --use_fast_math )
+        RELEASE  -O3 -use_fast_math
+        RELWITHDEBINFO -g -G  -O3 -use_fast_math
+        MINSIZEREL -use_fast_math )
 endif()
 
 # Enable pretty diagnostics coloring if gcc 4.9+ is being used
@@ -280,7 +290,7 @@ if (Intel)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS_INTEL}")
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-#set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O2")
+#set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O3")
 
 
 ################################################################################
@@ -349,19 +359,19 @@ endif()
 
 if (USolids)
 
-  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIR OR NOT USOLIDS_LIBRARY_DIR))
+  if (NOT USOLIDS_DIR AND (NOT USOLIDS_INCLUDE_DIRS OR NOT USOLIDS_LIBRARIES_DIR))
     message(STATUS "Building with shipped USolids.")
     add_subdirectory(USolids)
     include_directories(${CMAKE_SOURCE_DIR}/USolids/include)
     link_directories(${CMAKE_BINARY_DIR}/USolids)
   endif()
-  if (USOLIDS_INCLUDE_DIR)
-    include_directories(${USOLIDS_INCLUDE_DIR})
+  if (USOLIDS_INCLUDE_DIRS)
+    include_directories(${USOLIDS_INCLUDE_DIRS})
   elseif (USOLIDS_DIR)
     include_directories(${USOLIDS_DIR}/include)
   endif()
-  if (USOLIDS_LIBRARY_DIR)
-    link_directories(${USOLIDS_LIBRARY_DIR})
+  if (USOLIDS_LIBRARIES_DIR)
+    link_directories(${USOLIDS_LIBRARIES_DIR})
   elseif (USOLIDS_DIR)
     link_directories(${USOLIDS_DIR}/lib)
   endif()
@@ -448,6 +458,9 @@ set(SRC_CPP_RELATIVE
   source/UnplacedPolycone.cpp
   source/PlacedPolycone.cpp
   source/Wedge.cpp
+  source/ABBoxManager.cpp
+
+  source/USolidsInterfaceHelper.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -462,18 +475,19 @@ if (CUDA)
 
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
-    ADD_CUSTOM_COMMAND(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
-          ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      DEPENDS ${SRC_FILE}
-    )
+    if (NOT "${SRC_FILENAME}" STREQUAL "ABBoxManager") 
+      ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+        COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
+            ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+        DEPENDS ${SRC_FILE}
+      )
 
-    set(
-      SRC_CUDA ${SRC_CUDA}
-      ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-    )
-
+      set(
+        SRC_CUDA ${SRC_CUDA}
+        ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      )
+    endif()
   endforeach()
 
 endif()
@@ -489,7 +503,7 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
-    #source/benchmarking/NavigationBenchmarker.cpp
+    source/benchmarking/NavigationBenchmarker.cpp
     source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
@@ -588,18 +602,29 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
-  # ${CMAKE_SOURCE_DIR}/test/root/ParaboloidTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/root/trd_validation.cpp
-
+  ${CMAKE_SOURCE_DIR}/test/root/ExitingOrEntering.cpp
   # higher level benchmarks
-  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
-  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
 )
+# separate list for ROOT UNIT tests
+set(TEST_UNITTESTEXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
+)
+
+
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
   ${TEST_EXECUTABLES_ROOT}
+  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile.cpp
   ${CMAKE_SOURCE_DIR}/test/root/BenchmarkShapeFromROOTFile_WithVisualization.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/CompareDistances.cpp
 )
 endif()
 
@@ -609,6 +634,7 @@ set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugTube.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
 )
+
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
@@ -619,12 +645,12 @@ set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestPolycone.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestPolyhedra.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTet.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
-    
 )
+
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
   ${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
@@ -660,8 +686,14 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
 )
+
+if(ROOT) # add shape testers that depend on ROOT
+  set(TEST_EXECUTABLES_SHAPETESTER
+  ${TEST_EXECUTABLES_SHAPETESTER}
+  ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp )
+endif()
+
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
@@ -709,23 +741,27 @@ build_executables("${TEST_EXECUTABLES_CORE}")
 add_to_ctest("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
   build_executables("${TEST_EXECUTABLES_BENCHMARK}")
-  add_to_ctest("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
 if (ROOT)
   build_executables("${TEST_EXECUTABLES_ROOT}")
-  add_to_ctest("${TEST_EXECUTABLES_ROOT}")
   build_executables("${TEST_EXECUTABLES_VISUALIZATION}")
+  add_to_ctest("${TEST_UNITTESTEXECUTABLES_ROOT}")
 endif()
 if (USolids)
   build_executables("${TEST_EXECUTABLES_USOLIDS}")
   build_executables("${TEST_EXECUTABLES_SHAPETESTER}")
-  add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
-  add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
+  #add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
+  #add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
 endif()
 if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}")
   add_to_ctest("${TEST_EXECUTABLES_CUDA}")
 endif()
+
+# will include here nightly regression testing
+#
+#
+
 #---------------------------------------------------------------------------
 # Include creation and submission to dashboard cdash.cern.ch
 
@@ -798,7 +834,7 @@ configure_file(VecGeomConfig.cmake.in
                "${PROJECT_BINARY_DIR}/VecGeomConfig.cmake" @ONLY)
 # Installation
 set(CONF_TYPE "install")
-set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}")
+set(CONF_INCLUDE_DIR "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}" "\${THIS_DIR}/${INSTALL_INCLUDE_DIR_RELATIVE}/VecCore/")
 set(CONF_LIBRARY_DIR "\${THIS_DIR}/${INSTALL_LIB_DIR_RELATIVE}")
 set(CONF_LIBRARIES ${VECGEOM_LIBRARIES_EXTERNAL}
     "${CONF_LIBRARY_DIR}/libvecgeom.a")
@@ -807,6 +843,8 @@ if (CUDA)
 endif()
 if (USolids)
   set(CONF_LIBRARIES ${CONF_LIBRARIES} "${CONF_LIBRARY_DIR}/libusolids.a")
+  configure_file(VecGeomConfig.cmake.in
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/USolidsConfig.cmake" @ONLY)
 endif()
 configure_file(VecGeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake" @ONLY)
@@ -815,6 +853,11 @@ configure_file(VecGeomConfig.cmake.in
 install(FILES
   "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake"
   DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
+if (USolids)
+  install(FILES
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/USolidsConfig.cmake"
+    DESTINATION "${INSTALL_CMAKE_DIR}/../USolids" COMPONENT dev)
+endif()
 
 # Install headers and libraries
 foreach(FOLDER base benchmarking management navigation volumes backend)

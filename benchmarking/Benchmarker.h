@@ -68,6 +68,7 @@ private:
   unsigned fPointCount;
   unsigned fPoolMultiplier;
   unsigned fRepetitions;
+  unsigned fMeasurementCount;
   std::list<VolumePointers> fVolumes;
   std::list<BenchmarkResult> fResults;
   int fVerbosity;
@@ -118,6 +119,16 @@ public:
   /// \brief set tolerance for comparisons
   void SetTolerance(Precision tol) { fTolerance = tol; }
 
+
+  /// \brief get pointer to PointPool (in order to make data available to external users);
+  SOA3D<Precision> const *const GetPointPool() const {
+      return fPointPool;
+  }
+
+  SOA3D<Precision> const *const GetDirectionPool() const {
+      return fDirectionPool;
+  }
+
   /// \brief Runs all geometry benchmarks.
   /// return 0 if no error found; returns 1 if error found
   int RunBenchmark();
@@ -165,8 +176,11 @@ public:
   /// \return Level of verbosity to standard output.
   int GetVerbosity() const { return fVerbosity; }
 
-  /// \return Amount of iterations the benchmark is run for.
+  /// \return Amount of iterations the benchmark is run for each time measurement.
   unsigned GetRepetitions() const { return fRepetitions; }
+
+  /// \return Number of time measurements taken by the benchmarker, for same set of input data
+  unsigned GetMeasurementCount() const { return fMeasurementCount; }
 
   /// \return World whose daughters are benchmarked.
   VPlacedVolume_t GetWorld() const { return fWorld; }
@@ -202,15 +216,22 @@ public:
     fRepetitions = repetitions;
   }
 
+  /// \param Number of time measurements taken, for same set of input data (random tracks)
+  void SetMeasurementCount(const unsigned nmeas) {
+    fMeasurementCount = nmeas;
+  }
+
   /// \param World volume containing daughters to be benchmarked.
   void SetWorld(VPlacedVolume_t const world);
 
   /// \return List of results of previously performed benchmarks.
   std::list<BenchmarkResult> const& GetResults() const { return fResults; }
 
-  /// \return List of results of previously performed benchmarks. Clears the
-  ///         internal history.
+  /// \return List of results of previously performed benchmarks. Clears the internal history.
   std::list<BenchmarkResult> PopResults();
+
+  /// Clear the internal list of results, e.g. to start a new set of results for output
+  void ClearResults() { fResults.clear(); }
 
   std::vector<Vector3D<Precision> > const & GetProblematicContainPoints() const {
       return fProblematicContainPoints;

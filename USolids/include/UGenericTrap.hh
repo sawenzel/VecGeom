@@ -73,6 +73,7 @@ class UGenericTrap : public VUSolid
     // Accessors
 
     inline double    GetZHalfLength() const;
+    inline void      SetZHalfLength(double);
     inline int       GetNofVertices() const;
     inline UVector2  GetVertex(int index) const;
     inline const std::vector<UVector2>& GetVertices() const;
@@ -103,23 +104,28 @@ class UGenericTrap : public VUSolid
     double SurfaceArea() ;
     VUSolid* Clone() const ;
 
-    UGeometryType GetEntityType() const
-    {
-      return "GenericTrap";
-    }
-    void    ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
-
-    //G4Visualisation
-    void GetParametersList(int aNumber, double* aArray) const
-    {
-      aNumber = 0;
-      aArray = 0;
-    }
+    inline UGeometryType GetEntityType() const { return "GenericTrap"; }
+    inline void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
+    inline void GetParametersList(int /*aNumber*/, double* /*aArray*/) const {}
 
     UVector3 GetPointOnSurface() const;
 
     std::ostream& StreamInfo(std::ostream& os) const;
 
+  public:
+
+    UGenericTrap();
+      // Fake default constructor for usage restricted to direct object
+      // persistency for clients requiring preallocation of memory for
+      // persistifiable objects.
+
+    UGenericTrap(const UGenericTrap& rhs);
+    UGenericTrap& operator=(const UGenericTrap& rhs); 
+      // Copy constructor and assignment operator.
+
+    void Initialise(const std::vector<UVector2>&  vertices);
+    inline UVector3 GetMinimumBBox() const;
+    inline UVector3 GetMaximumBBox() const;
 
   private:
 
@@ -137,12 +143,8 @@ class UGenericTrap : public VUSolid
     bool IsSameLine(const UVector2& p,
                     const UVector2& l1, const UVector2& l2) const;
 
-    //    G4ThreeVectorList* CreateRotatedVertices(const
-    //                     G4AffineTransform& pTransform) const;
     void ReorderVertices(std::vector<UVector3>& vertices) const;
     void ComputeBBox();
-    inline UVector3 GetMinimumBBox() const;
-    inline UVector3 GetMaximumBBox() const;
 
     VUFacet* MakeDownFacet(const std::vector<UVector3>& fromVertices,
                            int ind1, int ind2, int ind3) const;
@@ -177,12 +179,12 @@ class UGenericTrap : public VUSolid
     // data members
 
     double                 fDz;
-    std::vector<UVector2> fVertices;
+    std::vector<UVector2>  fVertices;
     bool                   fIsTwisted;
     double                 fTwist[4];
-    UTessellatedSolid*      fTessellatedSolid;
-    UVector3            fMinBBoxVector;
-    UVector3            fMaxBBoxVector;
+    UTessellatedSolid*     fTessellatedSolid;
+    UVector3               fMinBBoxVector;
+    UVector3               fMaxBBoxVector;
     int                    fVisSubdivisions;
     UBox*                  fBoundBox;
 

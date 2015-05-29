@@ -29,7 +29,7 @@ using namespace std;
 // This class is implemented separately from general polyhedra,
 // because the simplex geometry can be computed very quickly,
 // which may become important in situations imported from mesh generators,
-// in which a very large number of G4Tets are created.
+// in which a very large number of UTets are created.
 // A Tet has all of its geometrical information precomputed
 
 UTet::UTet(const std::string& name,
@@ -85,7 +85,7 @@ UTet::UTet(const std::string& name,
   if (degeneracyFlag) *degeneracyFlag = degenerate;
   else if (degenerate)
   {
-    UUtils::Exception("UTet::UTet()", "GeomSolids0002", FatalErrorInArguments, 1,
+    UUtils::Exception("UTet::UTet()", "GeomSolids0002", UFatalErrorInArguments, 1,
                       "Degenerate tetrahedron not allowed.");
   }
 
@@ -129,6 +129,21 @@ UTet::UTet(const std::string& name,
   fCdotN234 = fCenter234.Dot(fNormal234);
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// Fake default constructor - sets only member data and allocates memory
+//                            for usage restricted to object persistency.
+//
+UTet::UTet( __void__&)
+  : VUSolid(""), fCubicVolume(0.), fSurfaceArea(0.),
+    fAnchor(0,0,0), fP2(0,0,0), fP3(0,0,0), fP4(0,0,0), fMiddle(0,0,0),
+    fNormal123(0,0,0), fNormal142(0,0,0), fNormal134(0,0,0),
+    fNormal234(0,0,0), warningFlag(0),
+    fCdotN123(0.), fCdotN142(0.), fCdotN134(0.), fCdotN234(0.),
+    fXMin(0.), fXMax(0.), fYMin(0.), fYMax(0.), fZMin(0.), fZMax(0.),
+    fDx(0.), fDy(0.), fDz(0.), fTol(0.), fMaxSize(0.)
+{
+}
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -136,7 +151,6 @@ UTet::UTet(const std::string& name,
 
 UTet::~UTet()
 {
-  ;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -226,15 +240,15 @@ VUSolid::EnumInside UTet::Inside(const UVector3& p) const
       (r142 = p.Dot(fNormal142) - fCdotN142) > fTol ||
       (r234 = p.Dot(fNormal234) - fCdotN234) > fTol)
   {
-    return vecgeom::EInside::kOutside; // at least one is out!
+    return EnumInside::eOutside; // at least one is out!
   }
   else if ((r123 < -fTol) && (r134 < -fTol) && (r142 < -fTol) && (r234 < -fTol))
   {
-    return vecgeom::EInside::kInside; // all are definitively inside
+    return EnumInside::eInside; // all are definitively inside
   }
   else
   {
-    return vecgeom::EInside::kSurface; // too close to tell
+    return EnumInside::eSurface; // too close to tell
   }
 }
 
@@ -244,6 +258,7 @@ VUSolid::EnumInside UTet::Inside(const UVector3& p) const
 // If two sides are equidistant, normal of first side (x/y/z)
 // encountered returned.
 // This assumes that we are looking from the inside!
+
 bool UTet::Normal(const UVector3& p, UVector3& n) const
 {
   double r123 = std::fabs(p.Dot(fNormal123) - fCdotN123);
@@ -462,7 +477,7 @@ double UTet::DistanceToOut(const UVector3&  p, const UVector3& v,
             << t1 << ", " << t2 << ", " << t3 << ", " << t4;
 
     UUtils::Exception("UTet::DistanceToOut(p,v,...)", "GeomSolids1002",
-                      Warning, 1, message.str().c_str());
+                      UWarning, 1, message.str().c_str());
     if (convex)
     {
       convex = false; // flag normal as meaningless
@@ -615,7 +630,7 @@ std::vector<UVector3> UTet::GetVertices() const
 void UTet::Extent(UVector3& aMin, UVector3& aMax) const
 {
   // Returns the full 3D cartesian extent of the solid.
-  aMin.x() = fXMin; // (fXMax - fXMin) * 0.5;
+  aMin.x() = fXMin;
   aMax.x() = fXMax;
   aMin.y() = fYMin;
   aMax.y() = fYMax;

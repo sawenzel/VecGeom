@@ -60,7 +60,6 @@ private:
    int fCurrentLevel;
    // add other navigation state here, stuff like:
    bool fOnBoundary; // flag indicating whether track is on boundary of the "Top()" placed volume
-   mutable Transformation3D global_matrix_;
 
    // pointer data follows; has to be last
    VecCore::VariableSizeObj<VPlacedVolume const *> fPath;
@@ -73,7 +72,7 @@ private:
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   NavigationState(size_t new_size, NavigationState &other )  : fCurrentLevel(other.fCurrentLevel), fOnBoundary(other.fOnBoundary), global_matrix_(other.global_matrix_), fPath(new_size, other.fPath)  {
+   NavigationState(size_t new_size, NavigationState &other )  : fCurrentLevel(other.fCurrentLevel), fOnBoundary(other.fOnBoundary), fPath(new_size, other.fPath)  {
        // Raw memcpy of the content to another existing state.
        //
        // in case NavigationState was a virtual class: change to
@@ -106,21 +105,21 @@ private:
 
 
 public:
-    // replaces the volume pointers from CPU volumes in fPath
-     // to the equivalent pointers on the GPU
-     // uses the CudaManager to do so
-    void ConvertToGPUPointers();
+   // replaces the volume pointers from CPU volumes in fPath
+   // to the equivalent pointers on the GPU
+   // uses the CudaManager to do so
+   void ConvertToGPUPointers();
 
-    // replaces the pointers from GPU volumes in fPath
-    // to the equivalent pointers on the CPU
-    // uses the CudaManager to do so
-    void ConvertToCPUPointers();
+   // replaces the pointers from GPU volumes in fPath
+   // to the equivalent pointers on the CPU
+   // uses the CudaManager to do so
+   void ConvertToCPUPointers();
 
-  // Enumerate the part of the private interface, we want to expose.
-  using Base_t::MakeCopy;
-  using Base_t::MakeCopyAt;
-  using Base_t::ReleaseInstance;
-  using Base_t::SizeOf;
+   // Enumerate the part of the private interface, we want to expose.
+   using Base_t::MakeCopy;
+   using Base_t::MakeCopyAt;
+   using Base_t::ReleaseInstance;
+   using Base_t::SizeOf;
 
    // produces a compact navigation state object of a certain depth
    // the caller can give a memory address where the object will
@@ -128,7 +127,7 @@ public:
    // the caller has to make sure that the size of the external memory
    // is >= sizeof(NavigationState) + sizeof(VPlacedVolume*)*maxlevel
    //
-   // Both MakeInstance, MakeInstanceAt, MakeCopy and MakeCopyAT are provided by 
+   // Methods MakeInstance(), MakeInstanceAt(), MakeCopy() and MakeCopyAt() are provided by
    // VariableSizeObjectInterface
 
    VECGEOM_CUDA_HEADER_BOTH
@@ -164,6 +163,13 @@ public:
    VECGEOM_CUDA_HEADER_BOTH
    NavigationState & operator=( NavigationState const & rhs );
 
+   // functions useful to "serialize" navigationstate
+   // the Vector-of-Indices basically describes the path on the tree taken from top to bottom
+   // an index corresponds to a daughter
+   void GetPathAsListOfIndices( std::list<uint> & indices ) const;
+   void ResetPathFromListOfIndices( VPlacedVolume const * world, std::list<uint> const & indices );
+
+
    VECGEOM_CUDA_HEADER_BOTH
    void CopyTo( NavigationState * other ) const {
       // Raw memcpy of the content to another existing state.
@@ -171,7 +177,10 @@ public:
       // in case NavigationState was a virtual class: change to
       // std::memcpy(other->DataStart(), DataStart(), DataSize());
       bool alloc = other->fPath.fSelfAlloc;
-      std::memcpy(other, this, this->SizeOf());
+      //std::memcpy(other, this, this->SizeOf());
+      // we only need to copy to relevant depth
+      std::memcpy(other,this, NavigationState::SizeOfInstance( this->GetCurrentLevel() ));
+
       other->fPath.fSelfAlloc = alloc;
    }
  
@@ -213,13 +222,21 @@ public:
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
-   Transformation3D const &
-   TopMatrix() const;
+   void
+   TopMatrix( Transformation3D & ) const;
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
    Vector3D<Precision>
-   GlobalToLocal(Vector3D<Precision> const &);
+   GlobalToLocal(Vector3D<Precision> const &) const;
+
+   VECGEOM_CUDA_HEADER_BOTH
+   Vector3D<Precision>
+   GlobalToLocal(Vector3D<Precision> const &, int tolevel) const;
+
+   VECGEOM_CUDA_HEADER_BOTH
+   void
+   TopMatrix(int tolevel, Transformation3D & ) const;
 
    VECGEOM_INLINE
    VECGEOM_CUDA_HEADER_BOTH
@@ -256,7 +273,7 @@ public:
 
 #ifdef VECGEOM_ROOT
    VECGEOM_INLINE
-   void printVolumePath() const;
+   void printVolumePath(std::ostream & = std::cerr) const;
 
    /**
     * returns the number of FILLED LEVELS such that
@@ -320,7 +337,6 @@ NavigationState::NavigationState( NavigationState const & rhs ) :
         fMaxlevel(rhs.fMaxlevel),
         fCurrentLevel(rhs.fCurrentLevel),
         fOnBoundary(rhs.fOnBoundary),
-        global_matrix_() ,
         fPath(&fBuffer[0])
 {
    InitInternalStorage();
@@ -332,7 +348,6 @@ NavigationState::NavigationState( NavigationState const & rhs ) :
 NavigationState::NavigationState( size_t nvalues ) :
          fCurrentLevel(0),
          fOnBoundary(false),
-         global_matrix_(),
          fPath(nvalues)
 {
    // clear the buffer
@@ -377,50 +392,32 @@ NavigationState::Top() const
 }
 
 
+// calculates the global matrix to transform from global coordinates
+// to the frame of the top volume in the state
+// input: a reference to a transformation object ( which should be initialized to identity )
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
-Transformation3D const &
-NavigationState::TopMatrix() const
+void
+NavigationState::TopMatrix( Transformation3D & global_matrix ) const
 {
 // this could be actually cached in case the path does not change ( particle stays inside a volume )
-   global_matrix_.CopyFrom( *(fPath[0]->GetTransformation()) );
    for(int i=1;i<fCurrentLevel;++i)
    {
-      global_matrix_.MultiplyFromRight( *(fPath[i]->GetTransformation()) );
+      global_matrix.MultiplyFromRight( *(fPath[i]->GetTransformation()) );
    }
-   return global_matrix_;
 }
 
-/**
- * function that transforms a global point to local point in reference frame of deepest volume in current navigation state
- * ( equivalent to using a global matrix )
- */
-VECGEOM_INLINE
-VECGEOM_CUDA_HEADER_BOTH
-Vector3D<Precision>
-NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint)
-{
-   Vector3D<Precision> tmp=globalpoint;
-   Vector3D<Precision> current;
-   for(int level=0;level<fCurrentLevel;++level)
-   {
-      Transformation3D const *m = fPath[level]->GetTransformation();
-      current = m->Transform( tmp );
-      tmp = current;
-   }
-   return tmp;
-}
 
 VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void NavigationState::Dump() const
 {
-   unsigned int* ptr = (unsigned int*)this;
-   printf("NavState::Dump(): data: %p(%lu) : %p(%lu) : %p(%lu) : %p(%lu)\n", &fCurrentLevel, sizeof(fCurrentLevel),
-          &fOnBoundary, sizeof(fOnBoundary), &global_matrix_, sizeof(global_matrix_), &fPath, sizeof(fPath));
+   const unsigned int* ptr = (const unsigned int*)this;
+   printf("NavState::Dump(): data: %p(%lu) : %p(%lu) : %p(%lu)\n",(void*)&fCurrentLevel, sizeof(fCurrentLevel),
+          (void*)&fOnBoundary, sizeof(fOnBoundary), (void*)&fPath, sizeof(fPath));
    for(unsigned int i=0; i<20; ++i) {
-      printf("%p: ", ptr);
-      for(unsigned int i=0; i<8; ++i) {
+      printf("%p: ", (void*)ptr);
+      for(unsigned int j=0; j<8; ++j) {
          printf(" %08x ", *ptr);
          ptr++;
       }
@@ -432,32 +429,17 @@ VECGEOM_INLINE
 VECGEOM_CUDA_HEADER_BOTH
 void NavigationState::Print() const
 {
-   // printf("bool: fOnBoundary=%i %p (%l bytes)\n", fOnBoundary, static_cast<void*>(fOnBoundary), sizeof(bool));
-   // printf("Transf3D: matrix (%l bytes)\n", sizeof(Transformation3D) );
    // printf("VariableSizeObj: fPath=%p (%l bytes)\n", fPath, sizeof(fPath));
-
 #ifndef VECGEOM_NVCC
    printf("NavState: Level(cur/max)=%i/%i,  onBoundary=%s, topVol=<%s>, this=%p\n",
-          fCurrentLevel,
-          GetMaxLevel(),
-          (fOnBoundary?"true":"false"),
-          (Top()?
-           Top()->GetLabel().c_str():
-           "NULL"),
-          this );
+          fCurrentLevel, GetMaxLevel(), (fOnBoundary?"true":"false"),
+          (Top()? Top()->GetLabel().c_str():"NULL"), (const void*)this );
 #else
    printf("NavState: Level(cur/max)=%i/%i,  onBoundary=%s, topVol=<%p>, this=%p\n",
-      fCurrentLevel,
-      GetMaxLevel(),
-      (fOnBoundary?"true":"false"),
-      Top(),
-      this );
+          fCurrentLevel, GetMaxLevel(), (fOnBoundary?"true":"false"),
+          Top(), (const void*)this );
 #endif
 
-   // std::cerr << "NavState: Level(cur/max)=" << fCurrentLevel <<'/'<< GetMaxLevel()
-   //           <<" onBoundary="<< fOnBoundary
-   //           <<" topVol="<< Top() <<" this="<< this
-   //           << std::endl;
 }
 
 
@@ -467,13 +449,13 @@ VECGEOM_INLINE
  * prints the path of the track as a verbose string ( like TGeoBranchArray in ROOT )
  * (uses internal root representation for the moment)
  */
-void NavigationState::printVolumePath() const
+void NavigationState::printVolumePath( std::ostream & stream ) const
 {
    for(int i=0; i < fCurrentLevel; ++i)
    {
-    std::cout << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
+    stream << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
    }
-   std::cout << "\n";
+   stream << "\n";
 }
 #endif
 

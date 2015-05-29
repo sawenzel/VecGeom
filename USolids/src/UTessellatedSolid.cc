@@ -14,16 +14,16 @@
 //          Created from original implementation in Geant4
 // --------------------------------------------------------------------
 
-#include <iostream>
+#include "UTessellatedSolid.hh"
+
+#include <algorithm>
 #include <stack>
+#include <list>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <algorithm>
-#include <list>
-#include <vector>
 
-#include "UTessellatedSolid.hh"
+using namespace std;
 
 /// TODO: make a benchmark for automatic selection of number of voxels. random voxels will be selected,
 /// than for them methods distancetoin/out and inside will be launched. eventually, find out from Geant4 how it is done
@@ -42,7 +42,7 @@ void UTessellatedSolid::Initialize()
   fCubicVolume = 0.;
   fSurfaceArea = 0.;
 
-  fGeometryType = "UTessellatedSolid";
+  fGeometryType = "TessellatedSolid";
   fSolidClosed  = false;
 
   fMinExtent.Set(UUtils::kInfinity);
@@ -50,7 +50,6 @@ void UTessellatedSolid::Initialize()
 
   SetRandomVectors();
 }
-
 
 UTessellatedSolid::UTessellatedSolid() : VUSolid("dummy")
 {
@@ -62,38 +61,21 @@ UTessellatedSolid::UTessellatedSolid() : VUSolid("dummy")
 // Alternative constructor. Simple define name and geometry type - no fFacets
 // to detine.
 //
-
-#ifdef USOLIDSONLY
-UTessellatedSolid::UTessellatedSolid(const std::string& name)
-  : VUSolid(name)
-{
-  Initialize();
-}
-
-#endif // USOLIDSONLY
-
-#ifndef USOLIDSONLY
 UTessellatedSolid::UTessellatedSolid(const string& name)
   : VUSolid(name)
 {
   Initialize();
 }
 
-#endif // USOLIDSONLY
-
-#ifndef USOLIDSONLY
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Fake default constructor - sets only member data and allocates memory
 //                            for usage restricted to object persistency.
 //
-UTessellatedSolid::UTessellatedSolid(__void__& a) : VUSolid(a)
+UTessellatedSolid::UTessellatedSolid(__void__&) : VUSolid("")
 {
   Initialize();
-  fMinExtent.set(0);
-  fMaxExtent.set(0);
 }
-#endif // USOLIDSONLY
 
 ///////////////////////////////////////////////////////////////////////////////
 UTessellatedSolid::~UTessellatedSolid()
@@ -174,12 +156,13 @@ bool UTessellatedSolid::AddFacet(VUFacet* aFacet)
   // Add the facet to the vector.
   if (fSolidClosed)
   {
-    UUtils::Exception("UTessellatedSolid::AddFacet()", "GeomSolids1002", Warning, 1, "Attempt to add facets when solid is closed.");
+    UUtils::Exception("UTessellatedSolid::AddFacet()", "GeomSolids1002",
+      UWarning, 1, "Attempt to add facets when solid is closed.");
     return false;
   }
   else if (aFacet->IsDefined())
   {
-    std::set<UVertexInfo, UVertexComparator>::iterator begin = fFacetList.begin(), end = fFacetList.end(), pos, it;
+    set<UVertexInfo, UVertexComparator>::iterator begin = fFacetList.begin(), end = fFacetList.end(), pos, it;
     UVector3 p = aFacet->GetCircumcentre();
     UVertexInfo value;
     value.id = fFacetList.size();
@@ -226,43 +209,28 @@ bool UTessellatedSolid::AddFacet(VUFacet* aFacet)
       fFacets.push_back(aFacet);
       fFacetList.insert(value);
     }
-
-#ifdef USOLIDSONLY
-    /* CURRENTLY SKIPPING THIS CODE. IT WAS WRONG AND WAS THEREFORE NOT NECCESSARY
-    VUFacetI it    = fFacets.begin();
-    do
-    {
-    found = (**it == *aFacet);
-    } while (!found && ++it!=fFacets.end());
-
-    if (found)
-    {
-    delete *it;
-    fFacets.erase(it);
-    }
-    else
-    */
-#endif // USOLIDSONLY
-
     return true;
   }
   else
   {
-    UUtils::Exception("UTessellatedSolid::AddFacet()", "GeomSolids1002", Warning, 1, "Attempt to add facet not properly defined.");
-    aFacet->StreamInfo(std::cout);
+    UUtils::Exception("UTessellatedSolid::AddFacet()", "GeomSolids1002",
+      UWarning, 1, "Attempt to add facet not properly defined.");
+    aFacet->StreamInfo(cout);
     return false;
   }
 }
 
-int UTessellatedSolid::SetAllUsingStack(const std::vector<int>& voxel, const std::vector<int>& max, bool status, UBits& checked)
+///////////////////////////////////////////////////////////////////////////////
+//
+int UTessellatedSolid::SetAllUsingStack(const vector<int>& voxel, const vector<int>& max, bool status, UBits& checked)
 {
-  std::vector<int> xyz = voxel;
-  std::stack<std::vector<int> > pos;
+  vector<int> xyz = voxel;
+  stack<vector<int> > pos;
   pos.push(xyz);
   int filled = 0;
   int cc = 0, nz = 0;
 
-  std::vector<int> candidates;
+  vector<int> candidates;
 
   while (!pos.empty())
   {
@@ -306,9 +274,11 @@ int UTessellatedSolid::SetAllUsingStack(const std::vector<int>& voxel, const std
   return filled;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
 void UTessellatedSolid::PrecalculateInsides()
 {
-  std::vector<int> voxel(3), maxVoxels(3);
+  vector<int> voxel(3), maxVoxels(3);
   for (int i = 0; i <= 2; ++i) maxVoxels[i] = fVoxels.GetBoundary(i).size();
   int size = maxVoxels[0] * maxVoxels[1] * maxVoxels[2];
 
@@ -327,67 +297,36 @@ void UTessellatedSolid::PrecalculateInsides()
         if (!checked[index] && fVoxels.IsEmpty(index))
         {
           for (int i = 0; i <= 2; ++i) point[i] = fVoxels.GetBoundary(i)[voxel[i]];
-#ifdef USPECSDEBUG
-          bool inside = (bool)(InsideNoVoxels(point) == vecgeom::EInside::kInside);
-          int n = SetAllUsingStack(voxel, maxVoxels, inside, checked);
-          std::cout << "SetAllUsingStack " << n << " items with status " << inside << "\n";
-#endif
+          bool inside = (bool)(InsideNoVoxels(point) == EnumInside::eInside);
+          SetAllUsingStack(voxel, maxVoxels, inside, checked);
         }
         else checked.SetBitNumber(index);
-
-#ifdef USOLIDSONLY
-        /*
-        if (!fVoxels.fEmpty[index])
-        {
-        // find a box for corresponding non-empty voxel
-        UVoxelBox box;
-        for (int i = 0; i <= 2; ++i)
-        {
-        int index = voxel[i];
-        const std::vector<double> &boundary = fVoxels.GetBoundary(i);
-        double hlen = 0.5 * (boundary[index+1] - boundary[index]);
-        box.hlen[i] = hlen;
-        box.pos[i] = boundary[index] + hlen;
-        }
-        fVoxelBoxes.push_back(box);
-
-        std::vector<int> candidates;
-        int limit = fVoxels.GetCandidatesVoxelArray(box.pos, candidates, NULL);
-        fVoxelBoxesFaces.push_back(candidates);
-        }
-        */
-#endif // USOLIDSONLY
       }
     }
   }
-
-  /*
-  ofstream file("insides.txt"); insides.Output(file);
-
-  ofstream file2("checked.txt"); checked.Output(file2);
-
-  ofstream file3("empty.txt"); empty.Output(file3);
-  */
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
 void UTessellatedSolid::Voxelize()
 {
 #ifdef USPECSDEBUG
-  std::cout << "Voxelizing...\n";
+  cout << "Voxelizing...\n";
 #endif
   fVoxels.Voxelize(fFacets);
 
   if (fVoxels.Empty().GetNbits())
   {
 #ifdef USPECSDEBUG
-    std::cout << "Precalculating Insides...\n";
+    cout << "Precalculating Insides...\n";
 #endif
     PrecalculateInsides();
   }
   fVoxels.BuildBoundingBox(fMinExtent, fMaxExtent, fgTolerance);
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+//
 void UTessellatedSolid::SetExtremeFacets()
 {
   //
@@ -418,11 +357,11 @@ void UTessellatedSolid::SetExtremeFacets()
       }
     }
     if (isExtreme) fExtremeFacets.insert(&facet);
-//    if (isExtreme) fExtremeFacets2.push_back(j);
   }
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+//
 void UTessellatedSolid::CreateVertexList()
 {
   // the algorithm will be:
@@ -430,14 +369,14 @@ void UTessellatedSolid::CreateVertexList()
   // new candidate for fVertexList - we will determine the position fo first item which would be within it'ss magnitude - 0.5*fgTolerance. we will go trough until we will reach > +0.5 fgTolerance. comparison (q-p).Mag() < 0.5*fgTolerance will be made
   // they can be just stored in std::vector, with custom insertion based on binary search
 
-  std::set<UVertexInfo, UVertexComparator> vertexListSorted;
-  std::set<UVertexInfo, UVertexComparator>::iterator begin = vertexListSorted.begin(), end = vertexListSorted.end(), pos, it;
+  set<UVertexInfo, UVertexComparator> vertexListSorted;
+  set<UVertexInfo, UVertexComparator>::iterator begin = vertexListSorted.begin(), end = vertexListSorted.end(), pos, it;
   UVector3 p;
   UVertexInfo value;
 
   fVertexList.clear();
   int size = fFacets.size();
-  std::vector<int> newIndex(100);
+  vector<int> newIndex(100);
 
   double fgTolerance24 = fgTolerance * fgTolerance / 4.0;
   double fgTolerance3 = 3 * fgTolerance;
@@ -488,14 +427,14 @@ void UTessellatedSolid::CreateVertexList()
         }
       }
 
-      //    cout << "Total checked: " << checked << " from " << fVertexList.size() << std::endl;
+      //    cout << "Total checked: " << checked << " from " << fVertexList.size() << endl;
 
       if (!found)
       {
-#ifdef G4SPECSDEBUG
-        G4cout << p.x() << ":" << p.y() << ":" << p.z() << std::endl;
-        G4cout << "Adding new vertex #" << i << " of facet " << k << " id " << value.id << std::endl;
-        G4cout << "===" << std::endl;
+#ifdef USPECSDEBUG
+        cout << p.x() << ":" << p.y() << ":" << p.z() << endl;
+        cout << "Adding new vertex #" << i << " of facet " << k << " id " << value.id << endl;
+        cout << "===" << endl;
 #endif
         fVertexList.push_back(p);
         vertexListSorted.insert(value);
@@ -519,10 +458,10 @@ void UTessellatedSolid::CreateVertexList()
       }
       else
       {
-#ifdef G4SPECSDEBUG
-        G4cout << p.x() << ":" << p.y() << ":" << p.z() << std::endl;
-        G4cout << "Vertex #" << i << " of facet " << k << " found, redirecting to " << id << std::endl;
-        G4cout << "===" << std::endl;
+#ifdef USPECSDEBUG
+        cout << p.x() << ":" << p.y() << ":" << p.z() << endl;
+        cout << "Vertex #" << i << " of facet " << k << " found, redirecting to " << id << endl;
+        cout << "===" << endl;
 #endif
         newIndex[i] = id;
       }
@@ -533,9 +472,7 @@ void UTessellatedSolid::CreateVertexList()
       facet.SetVertexIndex(i, newIndex[i]);
 
   }
-  // This line is VERY weird and gives ambiguity errors...
-  // TODO: check whether this actually did anything
-  // std::vector<UVector3>(fVertexList).swap(fVertexList);
+  fVertexList.shrink_to_fit();
 
 #ifdef DEBUG
   double previousValue = 0;
@@ -545,21 +482,20 @@ void UTessellatedSolid::CreateVertexList()
     UVector3 vec = fVertexList[id];
     double value = abs(vec.Mag());
     if (previousValue > value)
-      std::cout << "Error!" << "\n";
+      cout << "Error!" << "\n";
     previousValue = value;
   }
 #endif
 }
 
-
-
-
+///////////////////////////////////////////////////////////////////////////////
+//
 void UTessellatedSolid::DisplayAllocatedMemory()
 {
   int without = AllocatedMemoryWithoutVoxels();
   int with = AllocatedMemory();
   double ratio = (double) with / without;
-  std::cout << "Allocated memory without voxel overhead " << without << "; with " << with << "; ratio: " << ratio << std::endl;
+  cout << "Allocated memory without voxel overhead " << without << "; with " << with << "; ratio: " << ratio << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -576,12 +512,6 @@ void UTessellatedSolid::SetSolidClosed(const bool t)
 
 #ifdef USPECSDEBUG
     DisplayAllocatedMemory();
-#else
-
-#ifdef USOLIDSONLY
-    DisplayAllocatedMemory();
-#endif // USOLIDSONLY
-
 #endif
 
   }
@@ -594,7 +524,6 @@ void UTessellatedSolid::SetSolidClosed(const bool t)
 //
 // Used to determine whether the solid is closed to adding further fFacets.
 //
-
 bool UTessellatedSolid::GetSolidClosed() const
 {
   return fSolidClosed;
@@ -631,17 +560,6 @@ int UTessellatedSolid::GetNumberOfFacets() const
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// VUSolid::EnumInside UTessellatedSolid::Inside (const UVector3 &p) const
-//
-// This method must return:
-//    * kOutside if the point at offset p is outside the shape
-//      boundaries plus fgTolerance/2,
-//    * kSurface if the point is <= fgTolerance/2 from a surface, or
-//    * kInside otherwise.
-//
-
-
-//______________________________________________________________________________
 VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
 {
   //
@@ -649,20 +567,19 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   // of the tessellated solid.
   //
   if (OutsideOfExtent(p, fgTolerance))
-    return vecgeom::EInside::kOutside;
+    return EnumInside::eOutside;
 
-  std::vector<int> startingVoxel(3);
+  vector<int> startingVoxel(3);
   fVoxels.GetVoxel(startingVoxel, p);
 
-  const std::vector<int>& startingCandidates = fVoxels.GetCandidates(startingVoxel);
+  const vector<int>& startingCandidates = fVoxels.GetCandidates(startingVoxel);
   int limit = startingCandidates.size();
 //  int limit = fVoxels.GetCandidatesVoxelArray(p, candidates, NULL);
   if (limit == 0 && fInsides.GetNbits())
   {
 //    int index = fVoxels.GetPointIndex(p);
     int index = fVoxels.GetVoxelsIndex(startingVoxel);
-    EnumInside location = fInsides[index] ? vecgeom::EInside::kInside
-                                          : vecgeom::EInside::kOutside;
+    EnumInside location = fInsides[index] ? EnumInside::eInside : EnumInside::eOutside;
     return location;
   }
 
@@ -675,7 +592,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
     double dist = facet.Distance(p, minDist);
     if (dist < minDist) minDist = dist;
     if (dist <= fgToleranceHalf)
-      return vecgeom::EInside::kSurface;
+      return EnumInside::eSurface;
   }
   //
   //
@@ -689,14 +606,6 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   // produce rays randomly.  For the moment, this is a bit over-engineered
   // (belt-braces-and-ducttape).
   //
-
-  /*
-  #if USPECSDEBUG
-    int nTry                = 7;
-  #else
-    int nTry                = 3;
-  #endif
-  */
   double distOut          = UUtils::kInfinity;
   double distIn           = UUtils::kInfinity;
   double distO            = 0.0;
@@ -706,8 +615,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   UVector3 normalO, normalI;
   bool crossingO          = false;
   bool crossingI          = false;
-  VUSolid::EnumInside location          = vecgeom::EInside::kOutside;
-//  VUSolid::EnumInside locationprime     = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location          = EnumInside::eOutside;
+//  VUSolid::EnumInside locationprime     = EnumInside::eOutside;
   int sm                   = 0;
   double shift;
 
@@ -735,7 +644,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
 //    UVector3 currentPoint = p;
     UVector3 direction = v.Unit();
 //    UBits exclusion(fVoxels.GetBitsPerSlice());
-    std::vector<int> curVoxel(3);
+    vector<int> curVoxel(3);
     curVoxel = startingVoxel;
 //    double shiftBonus = VUSolid::Tolerance();
 
@@ -745,7 +654,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
 
     do
     {
-      const std::vector<int>& candidates = started ? startingCandidates : fVoxels.GetCandidates(curVoxel);
+      const vector<int>& candidates = started ? startingCandidates : fVoxels.GetCandidates(curVoxel);
       started = false;
       if (int candidatesCount = candidates.size())
       {
@@ -784,8 +693,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
         {
           int index = fVoxels.GetVoxelsIndex(curVoxel);
           bool inside = fInsides[index];
-          location = inside ? vecgeom::EInside::kInside
-                            : vecgeom::EInside::kOutside;
+          location = inside ? EnumInside::eInside : EnumInside::eOutside;
           // cout << (inside ? "I" : "O");
           return location;
         }
@@ -815,17 +723,17 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
     std::ostringstream message;
     int oldprc = message.precision(16);
     message << "Cannot determine whether point is inside or outside volume!"
-            << std::endl
-            << "Solid name       = " << GetName()  << std::endl
-            << "Geometry Type    = " << fGeometryType  << std::endl
-            << "Number of facets = " << fFacets.size() << std::endl
-            << "Position:"  << std::endl << std::endl
-            << "p.x() = "   << p.x() / mm << " mm" << std::endl
-            << "p.y() = "   << p.y() / mm << " mm" << std::endl
+            << endl
+            << "Solid name       = " << GetName()  << endl
+            << "Geometry Type    = " << fGeometryType  << endl
+            << "Number of facets = " << fFacets.size() << endl
+            << "Position:"  << endl << endl
+            << "p.x() = "   << p.x() / mm << " mm" << endl
+            << "p.y() = "   << p.y() / mm << " mm" << endl
             << "p.z() = "   << p.z() / mm << " mm";
     message.precision(oldprc);
     UUtils::Exception("UTessellatedSolid::Inside()",
-                      "GeomSolids1002", Warning, 1, message.str().c_str());
+                      "GeomSolids1002", UWarning, 1, message.str().c_str());
   }
 #endif
   //
@@ -840,18 +748,28 @@ VUSolid::EnumInside UTessellatedSolid::InsideVoxels(const UVector3& p) const
   //     inside.
   //
   if (distIn == UUtils::kInfinity && distOut == UUtils::kInfinity)
-    location = vecgeom::EInside::kOutside;
+    location = EnumInside::eOutside;
   else if (distIn <= distOut - fgToleranceHalf)
-    location = vecgeom::EInside::kOutside;
+    location = EnumInside::eOutside;
   else if (distOut <= distIn - fgToleranceHalf)
-    location = vecgeom::EInside::kInside;
+    location = EnumInside::eInside;
   // }
 
-  // cout << " => " << (location == vecgeom::EInside::kInside ? "I" : "O") << std::endl;
+  // cout << " => " << (location == EnumInside::eInside ? "I" : "O") << endl;
 
   return location;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// VUSolid::EnumInside UTessellatedSolid::Inside (const UVector3 &p) const
+//
+// This method must return:
+//    * kOutside if the point at offset p is outside the shape
+//      boundaries plus fgTolerance/2,
+//    * kSurface if the point is <= fgTolerance/2 from a surface, or
+//    * kInside otherwise.
+//
 VUSolid::EnumInside UTessellatedSolid::Inside(const UVector3& aPoint) const
 {
   VUSolid::EnumInside location;
@@ -871,6 +789,8 @@ VUSolid::EnumInside UTessellatedSolid::Inside(const UVector3& aPoint) const
   return location;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
 VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
 {
   //
@@ -878,7 +798,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
   // of the tessellated solid.
   //
   if (OutsideOfExtent(p, fgTolerance))
-    return vecgeom::EInside::kOutside;
+    return EnumInside::eOutside;
 
   double minDist = UUtils::kInfinity;
   //
@@ -893,7 +813,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
     if (dist < minDist) minDist = dist;
     if (dist <= fgToleranceHalf)
     {
-      return vecgeom::EInside::kSurface;
+      return EnumInside::eSurface;
     }
   }
   //
@@ -923,8 +843,8 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
   UVector3 normalI(0.0, 0.0, 0.0);
   bool crossingO          = false;
   bool crossingI          = false;
-  VUSolid::EnumInside location          = vecgeom::EInside::kOutside;
-  VUSolid::EnumInside locationprime     = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location          = EnumInside::eOutside;
+  VUSolid::EnumInside locationprime     = EnumInside::eOutside;
   int sm = 0;
 
   for (int i = 0; i < nTry; ++i)
@@ -942,7 +862,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
       distOut =  distIn = UUtils::kInfinity;
       UVector3 v = fRandir[sm];
       sm++;
-      std::vector<VUFacet*>::const_iterator f = fFacets.begin();
+      vector<VUFacet*>::const_iterator f = fFacets.begin();
 
       do
       {
@@ -981,17 +901,17 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
       std::ostringstream message;
       int oldprc = message.precision(16);
       message << "Cannot determine whether point is inside or outside volume!"
-              << std::endl
-              << "Solid name       = " << GetName()  << std::endl
-              << "Geometry Type    = " << fGeometryType  << std::endl
-              << "Number of facets = " << fFacets.size() << std::endl
-              << "Position:"  << std::endl << std::endl
-              << "p.x() = "   << p.x() / mm << " mm" << std::endl
-              << "p.y() = "   << p.y() / mm << " mm" << std::endl
+              << endl
+              << "Solid name       = " << GetName()  << endl
+              << "Geometry Type    = " << fGeometryType  << endl
+              << "Number of facets = " << fFacets.size() << endl
+              << "Position:"  << endl << endl
+              << "p.x() = "   << p.x() / mm << " mm" << endl
+              << "p.y() = "   << p.y() / mm << " mm" << endl
               << "p.z() = "   << p.z() / mm << " mm";
       message.precision(oldprc);
       UUtils::Exception("UTessellatedSolid::Inside()",
-                        "GeomSolids1002", Warning, 1, message.str().c_str());
+                        "GeomSolids1002", UWarning, 1, message.str().c_str());
     }
 #endif
     //
@@ -1006,11 +926,11 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
     //     inside.
     //
     if (distIn == UUtils::kInfinity && distOut == UUtils::kInfinity)
-      locationprime = vecgeom::EInside::kOutside;
+      locationprime = EnumInside::eOutside;
     else if (distIn <= distOut - fgToleranceHalf)
-      locationprime = vecgeom::EInside::kOutside;
+      locationprime = EnumInside::eOutside;
     else if (distOut <= distIn - fgToleranceHalf)
-      locationprime = vecgeom::EInside::kInside;
+      locationprime = EnumInside::eInside;
 
     if (i == 0) location = locationprime;
   }
@@ -1022,7 +942,7 @@ VUSolid::EnumInside UTessellatedSolid::InsideNoVoxels(const UVector3& p) const
 //
 // Return the outwards pointing unit normal of the shape for the
 // surface closest to the point at offset p.
-
+//
 bool UTessellatedSolid::Normal(const UVector3& p, UVector3& aNormal) const
 {
   double minDist;
@@ -1030,9 +950,9 @@ bool UTessellatedSolid::Normal(const UVector3& p, UVector3& aNormal) const
 
   if (fVoxels.GetCountOfVoxels() > 1)
   {
-    std::vector<int> curVoxel(3);
+    vector<int> curVoxel(3);
     fVoxels.GetVoxel(curVoxel, p);
-    const std::vector<int>& candidates = fVoxels.GetCandidates(curVoxel);
+    const vector<int>& candidates = fVoxels.GetCandidates(curVoxel);
 //      fVoxels.GetCandidatesVoxelArray(p, candidates, NULL);
 
     if (int limit = candidates.size())
@@ -1078,12 +998,12 @@ bool UTessellatedSolid::Normal(const UVector3& p, UVector3& aNormal) const
   {
 #ifdef UVERBOSE
     std::ostringstream message;
-    message << "Point p is not on surface !?" << std::endl
-            << "          No facets found for point: " << p << " !" << std::endl
+    message << "Point p is not on surface !?" << endl
+            << "          No facets found for point: " << p << " !" << endl
             << "          Returning approximated value for normal.";
 
     UUtils::Exception("UTessellatedSolid::SurfaceNormal(p)", "GeomSolids1002",
-                      Warning, 1, message.str().c_str());
+                      UWarning, 1, message.str().c_str());
 #endif
     aNormal = (p.z() > 0 ? UVector3(0, 0, 1) : UVector3(0, 0, -1));
     return false;
@@ -1099,7 +1019,7 @@ bool UTessellatedSolid::Normal(const UVector3& p, UVector3& aNormal) const
 // UUtils::kInfinity. The first intersection resulting from ‘leaving’ a
 // surface/volume is discarded. Hence, this is tolerant of points on
 // surface of shape.
-
+//
 double UTessellatedSolid::DistanceToInNoVoxels(const UVector3& p,
                                                const UVector3& v, double /*aPstep*/) const
 {
@@ -1113,15 +1033,15 @@ double UTessellatedSolid::DistanceToInNoVoxels(const UVector3& p,
   {
     std::ostringstream message;
     int oldprc = message.precision(16) ;
-    message << "Point p is already inside!?" << std::endl
-            << "Position:"  << std::endl << std::endl
-            << "   p.x() = "   << p.x() / mm << " mm" << std::endl
-            << "   p.y() = "   << p.y() / mm << " mm" << std::endl
-            << "   p.z() = "   << p.z() / mm << " mm" << std::endl
+    message << "Point p is already inside!?" << endl
+            << "Position:"  << endl << endl
+            << "   p.x() = "   << p.x() / mm << " mm" << endl
+            << "   p.y() = "   << p.y() / mm << " mm" << endl
+            << "   p.z() = "   << p.z() / mm << " mm" << endl
             << "DistanceToOut(p) == " << DistanceToOut(p);
     message.precision(oldprc) ;
     UUtils::Exception("UTriangularFacet::DistanceToIn(p,v)", "GeomSolids1002",
-                      Warning, 1, message.str().c_str());
+                      UWarning, 1, message.str().c_str());
   }
 #endif
 
@@ -1154,7 +1074,8 @@ double UTessellatedSolid::DistanceToInNoVoxels(const UVector3& p,
   return minDist;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+//
 double UTessellatedSolid::DistanceToOutNoVoxels(const UVector3& p, const UVector3& v, UVector3& aNormalVector, bool& aConvex, double /*aPstep*/) const
 {
   double minDist         = UUtils::kInfinity;
@@ -1167,15 +1088,15 @@ double UTessellatedSolid::DistanceToOutNoVoxels(const UVector3& p, const UVector
   {
     std::ostringstream message;
     int oldprc = message.precision(16) ;
-    message << "Point p is already outside!?" << std::endl
-            << "Position:"  << std::endl << std::endl
-            << "   p.x() = "   << p.x() / mm << " mm" << std::endl
-            << "   p.y() = "   << p.y() / mm << " mm" << std::endl
-            << "   p.z() = "   << p.z() / mm << " mm" << std::endl
+    message << "Point p is already outside!?" << endl
+            << "Position:"  << endl << endl
+            << "   p.x() = "   << p.x() / mm << " mm" << endl
+            << "   p.y() = "   << p.y() / mm << " mm" << endl
+            << "   p.z() = "   << p.z() / mm << " mm" << endl
             << "DistanceToIn(p) == " << DistanceToIn(p);
     message.precision(oldprc) ;
     UUtils::Exception("UTriangularFacet::DistanceToOut(p)", "GeomSolids1002",
-                      Warning, 1, message.str().c_str());
+                      UWarning, 1, message.str().c_str());
   }
 #endif
 
@@ -1223,7 +1144,9 @@ double UTessellatedSolid::DistanceToOutNoVoxels(const UVector3& p, const UVector
   }
 }
 
-void UTessellatedSolid::DistanceToOutCandidates(const std::vector<int>& candidates, const UVector3& aPoint,
+///////////////////////////////////////////////////////////////////////////////
+//
+void UTessellatedSolid::DistanceToOutCandidates(const vector<int>& candidates, const UVector3& aPoint,
                                                 const UVector3& direction, double& minDist, UVector3& minNormal, int& minCandidate /*double aPstep,*/ /* UBits & bits*/) const
 {
   int candidatesCount = candidates.size();
@@ -1257,6 +1180,8 @@ void UTessellatedSolid::DistanceToOutCandidates(const std::vector<int>& candidat
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
 double UTessellatedSolid::DistanceToOutCore(const UVector3& aPoint, const UVector3& aDirection, UVector3&       aNormalVector, bool& aConvex, double aPstep) const
 {
   double minDistance;
@@ -1266,19 +1191,19 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3& aPoint, const UVecto
 
     UVector3 direction = aDirection.Unit();
     double shift = 0;
-    std::vector<int> curVoxel(3);
+    vector<int> curVoxel(3);
     if (!fVoxels.Contains(aPoint)) return 0;
 
     fVoxels.GetVoxel(curVoxel, aPoint);
 
-//    const std::vector<int> *old = NULL;
+//    const vector<int> *old = NULL;
 
 //    UBits exclusion (1+0*fVoxels.GetBitsPerSlice());
 
     int minCandidate = -1;
     do
     {
-      const std::vector<int>& candidates = fVoxels.GetCandidates(curVoxel);
+      const vector<int>& candidates = fVoxels.GetCandidates(curVoxel);
 //      if (old == &candidates)
 //        old++;
 
@@ -1311,9 +1236,8 @@ double UTessellatedSolid::DistanceToOutCore(const UVector3& aPoint, const UVecto
   return minDistance;
 }
 
-
-
-
+///////////////////////////////////////////////////////////////////////////////
+//
 double UTessellatedSolid::DistanceToInCandidates(const std::vector<int>& candidates, const UVector3& aPoint, const UVector3& direction /*, double aPstep, UBits & bits*/) const
 {
   int candidatesCount = candidates.size();
@@ -1355,7 +1279,8 @@ double UTessellatedSolid::DistanceToInCandidates(const std::vector<int>& candida
   return minDistance;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+//
 double UTessellatedSolid::DistanceToInCore(const UVector3& aPoint, const UVector3& aDirection, double aPstep) const
 {
   double minDistance, distance;
@@ -1372,12 +1297,12 @@ double UTessellatedSolid::DistanceToInCore(const UVector3& aPoint, const UVector
     //      return minDistance;
 
 //    UBits exclusion; // (1/*fVoxels.GetBitsPerSlice()*/);
-    std::vector<int> curVoxel(3);
+    vector<int> curVoxel(3);
 
     fVoxels.GetVoxel(curVoxel, currentPoint);
     do
     {
-      const std::vector<int>& candidates = fVoxels.GetCandidates(curVoxel);
+      const vector<int>& candidates = fVoxels.GetCandidates(curVoxel);
       if (candidates.size())
       {
         distance = DistanceToInCandidates(candidates, aPoint, direction);
@@ -1407,20 +1332,27 @@ double UTessellatedSolid::DistanceToInCore(const UVector3& aPoint, const UVector
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+bool UTessellatedSolid::CompareSortedVoxel(const std::pair<int, double>& l,
+                                           const std::pair<int, double>& r)
+{
+  return l.second < r.second;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // double DistanceToIn(const UVector3& p)
 //
 // Calculate distance to nearest surface of shape from an outside point p. The
 // distance can be an underestimate.
-
-
+//
 double UTessellatedSolid::MinDistanceFacet(const UVector3& p, bool simple, VUFacet*& minFacet) const
 {
   double minDist = UUtils::kInfinity;
 
   int size = fVoxels.GetVoxelBoxesSize();
-  std::vector<std::pair<int, double> > voxelsSorted(size);
+  vector<pair<int, double> > voxelsSorted(size);
 
-  std::pair<int, double> info;
+  pair<int, double> info;
 
   for (int i = 0; i < size; ++i)
   {
@@ -1437,12 +1369,12 @@ double UTessellatedSolid::MinDistanceFacet(const UVector3& p, bool simple, VUFac
 
   for (int i = 0; i < size; ++i)
   {
-    const std::pair<int, double>& inf = voxelsSorted[i];
+    const pair<int, double>& inf = voxelsSorted[i];
 //    const UVoxelBox &voxelBox = fVoxels.fVoxelBoxes[inf.first];
     double dist = inf.second;
     if (dist > minDist) break;
 
-    const std::vector<int>& candidates = fVoxels.GetVoxelBoxCandidates(inf.first);
+    const vector<int>& candidates = fVoxels.GetVoxelBoxCandidates(inf.first);
     int csize = candidates.size();
     for (int j = 0; j < csize; ++j)
     {
@@ -1459,6 +1391,8 @@ double UTessellatedSolid::MinDistanceFacet(const UVector3& p, bool simple, VUFac
   return minDist;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
 double UTessellatedSolid::SafetyFromOutside(const UVector3& p, bool aAccurate) const
 {
 #if UDEBUG
@@ -1466,15 +1400,15 @@ double UTessellatedSolid::SafetyFromOutside(const UVector3& p, bool aAccurate) c
   {
     std::ostringstream message;
     int oldprc = message.precision(16) ;
-    message << "Point p is already inside!?" << std::endl
-            << "Position:"  << std::endl << std::endl
-            << "p.x() = "   << p.x() / mm << " mm" << std::endl
-            << "p.y() = "   << p.y() / mm << " mm" << std::endl
-            << "p.z() = "   << p.z() / mm << " mm" << std::endl
+    message << "Point p is already inside!?" << endl
+            << "Position:"  << endl << endl
+            << "p.x() = "   << p.x() / mm << " mm" << endl
+            << "p.y() = "   << p.y() / mm << " mm" << endl
+            << "p.z() = "   << p.z() / mm << " mm" << endl
             << "DistanceToOut(p) == " << DistanceToOut(p);
     message.precision(oldprc) ;
     UUtils::Exception("UTriangularFacet::DistanceToIn(p)", "GeomSolids1002",
-                      Warning, 1, message.str().c_str());
+                      UWarning, 1, message.str().c_str());
   }
 #endif
 
@@ -1486,9 +1420,9 @@ double UTessellatedSolid::SafetyFromOutside(const UVector3& p, bool aAccurate) c
   {
     if (!OutsideOfExtent(p, fgTolerance))
     {
-      std::vector<int> startingVoxel(3);
+      vector<int> startingVoxel(3);
       fVoxels.GetVoxel(startingVoxel, p);
-      const std::vector<int>& candidates = fVoxels.GetCandidates(startingVoxel);
+      const vector<int>& candidates = fVoxels.GetCandidates(startingVoxel);
 //      int limit = fVoxels.GetCandidatesVoxelArray(p, candidates, NULL);
       if (candidates.size() == 0 && fInsides.GetNbits())
       {
@@ -1517,29 +1451,11 @@ double UTessellatedSolid::SafetyFromOutside(const UVector3& p, bool aAccurate) c
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// double DistanceToOut(const UVector3& p, const UVector3& v,
-//                        const bool calcNorm=false,
-//                        bool *validNorm=0, UVector3 *n=0);
-//
-// Return distance along the normalised vector v to the shape, from a
-// point at an offset p inside or on the surface of the
-// shape. Intersections with surfaces, when the point is not greater
-// than fgTolerance/2 from a surface, must be ignored.
-//     If calcNorm is true, then it must also set validNorm to either
-//     * true, if the solid lies entirely behind or on the exiting
-//        surface. Then it must set n to the outwards normal vector
-//        (the Magnitude of the vector is not defined).
-//     * false, if the solid does not lie entirely behind or on the
-//       exiting surface.
-// If calcNorm is false, then validNorm and n are unused.
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// double DistanceToOut(const UVector3& p)
+// double SafetyFrominside(const UVector3& p)
 //
 // Calculate distance to nearest surface of shape from an inside
 // point. The distance can be an underestimate.
-
+//
 double UTessellatedSolid::SafetyFromInside(const UVector3& p, bool) const
 {
 #if UDEBUG
@@ -1547,15 +1463,15 @@ double UTessellatedSolid::SafetyFromInside(const UVector3& p, bool) const
   {
     std::ostringstream message;
     int oldprc = message.precision(16) ;
-    message << "Point p is already outside!?" << std::endl
-            << "Position:"  << std::endl << std::endl
-            << "p.x() = "   << p.x() / mm << " mm" << std::endl
-            << "p.y() = "   << p.y() / mm << " mm" << std::endl
-            << "p.z() = "   << p.z() / mm << " mm" << std::endl
+    message << "Point p is already outside!?" << endl
+            << "Position:"  << endl << endl
+            << "p.x() = "   << p.x() / mm << " mm" << endl
+            << "p.y() = "   << p.y() / mm << " mm" << endl
+            << "p.z() = "   << p.z() / mm << " mm" << endl
             << "DistanceToIn(p) == " << DistanceToIn(p);
     message.precision(oldprc) ;
     UUtils::Exception("UTriangularFacet::DistanceToOut(p)", "GeomSolids1002",
-                      Warning, 1, message.str().c_str());
+                      UWarning, 1, message.str().c_str());
   }
 #endif
 
@@ -1595,36 +1511,22 @@ UGeometryType UTessellatedSolid::GetEntityType() const
   return fGeometryType;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Dispatch to parameterisation for replication mechanism dimension
-// computation & modification.
-//
-//void UTessellatedSolid::ComputeDimensions (UVPVParameterisation* p,
-//  const int n, const UVPhysicalVolume* pRep) const
-//{
-//  UVSolid *ptr = 0;
-//  ptr           = *this;
-//  p->ComputeDimensions(ptr,n,pRep);
-//}
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 std::ostream& UTessellatedSolid::StreamInfo(std::ostream& os) const
 {
-  os << std::endl;
-  os << "Geometry Type    = " << fGeometryType  << std::endl;
-  os << "Number of facets = " << fFacets.size() << std::endl;
+  os << endl;
+  os << "Geometry Type    = " << fGeometryType  << endl;
+  os << "Number of facets = " << fFacets.size() << endl;
 
   int size = fFacets.size();
   for (int i = 0; i < size; ++i)
   {
-    os << "FACET #          = " << i + 1 << std::endl;
+    os << "FACET #          = " << i + 1 << endl;
     VUFacet& facet = *fFacets[i];
     facet.StreamInfo(os);
   }
-  os << std::endl;
+  os << endl;
 
   return os;
 }
@@ -1638,228 +1540,8 @@ VUSolid* UTessellatedSolid::Clone() const
   return new UTessellatedSolid(*this);
 }
 
-#ifndef USOLIDSONLY
-
-G4ThreeVector UTessellatedSolid::SurfaceNormal(const G4ThreeVector& p) const
-{
-  UVector3 n;
-  Normal(p, n);
-  return n;
-}
-
-G4double UTessellatedSolid::DistanceToIn(const G4ThreeVector& p, const G4ThreeVector& v)const
-{
-  return DistanceToInCore(p, v, UUtils::kInfinity);
-}
-
-G4double UTessellatedSolid::DistanceToIn(const G4ThreeVector& p) const
-{
-  return SafetyFromOutside(p, false);
-}
-
-G4double UTessellatedSolid::DistanceToOut(const G4ThreeVector& p) const
-{
-  return SafetyFromInside(p, false);
-}
-
-G4double UTessellatedSolid::DistanceToOut(const G4ThreeVector& p,
-                                          const G4ThreeVector& v,
-                                          const G4bool calcNorm,
-                                          G4bool* validNorm,
-                                          G4ThreeVector* norm) const
-{
-  UVector3 n;
-  G4bool valid;
-
-  G4double dist = DistanceToOutCore(p, v, n, valid);
-  if (calcNorm)
-  {
-    *norm = n;
-    *validNorm = valid;
-  }
-  return dist;
-}
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 //
-void UTessellatedSolid::DescribeYourselfTo(UVGraphicsScene& scene) const
-{
-  scene.AddSolid(*this);
-}
-
-
-// NOTE: USolid uses method with different arguments
-//
-///////////////////////////////////////////////////////////////////////////////
-//
-// CalculateExtent
-//
-// Based on correction provided by Stan Seibert, University of Texas.
-//
-
-bool
-UTessellatedSolid::CalculateExtent(const EAxis pAxis,
-                                   const UVoxelLimits& pVoxelLimit,
-                                   const UAffineTransform& pTransform,
-                                   double& pMin, double& pMax) const
-{
-  UVector3List transVertexList(fVertexList);
-
-  int size = fVertexList.size();
-  // Put solid into transformed frame
-  for (int i = 0; i < size; ++i)
-  {
-    pTransform.ApplyPointTransform(transVertexList[i]);
-  }
-
-  // Find min and max extent in each dimension
-  UVector3 minExtent(UUtils::kInfinity, UUtils::kInfinity, UUtils::kInfinity);
-  UVector3 maxExtent(-UUtils::kInfinity, -UUtils::kInfinity, -UUtils::kInfinity);
-
-  size = transVertexList.size();
-  for (int i = 0; i < size; ++i)
-  {
-    for (int axis = UVector3::X; axis < UVector3::SIZE; ++axis)
-    {
-      double coordinate = transVertexList[i][axis];
-      if (coordinate < minExtent[axis])
-      {
-        minExtent[axis] = coordinate;
-      }
-      if (coordinate > maxExtent[axis])
-      {
-        maxExtent[axis] = coordinate;
-      }
-    }
-  }
-
-  // Check for containment and clamp to voxel boundaries
-  for (int axis = UVector3::X; axis < UVector3::SIZE; ++axis)
-  {
-    EAxis geomAxis = kXAxis; // U geom classes use different index type
-    switch (axis)
-    {
-      case UVector3::X:
-        geomAxis = kXAxis;
-        break;
-      case UVector3::Y:
-        geomAxis = kYAxis;
-        break;
-      case UVector3::Z:
-        geomAxis = kZAxis;
-        break;
-    }
-    bool isLimited = pVoxelLimit.IsLimited(geomAxis);
-    double voxelMinExtent = pVoxelLimit.GetMinExtent(geomAxis);
-    double voxelMaxExtent = pVoxelLimit.GetMaxExtent(geomAxis);
-
-    if (isLimited)
-    {
-      if (minExtent[axis] > voxelMaxExtent + fgTolerance ||
-          maxExtent[axis] < voxelMinExtent - fgTolerance)
-      {
-        return false ;
-      }
-      else
-      {
-        if (minExtent[axis] < voxelMinExtent)
-        {
-          minExtent[axis] = voxelMinExtent ;
-        }
-        if (maxExtent[axis] > voxelMaxExtent)
-        {
-          maxExtent[axis] = voxelMaxExtent;
-        }
-      }
-    }
-  }
-
-  // Convert pAxis into UVector3 index
-  int vecAxis = 0;
-  switch (pAxis)
-  {
-    case kXAxis:
-      vecAxis = UVector3::X;
-      break;
-    case kYAxis:
-      vecAxis = UVector3::Y;
-      break;
-    case kZAxis:
-      vecAxis = UVector3::Z;
-      break;
-    default:
-      break;
-  }
-
-  pMin = minExtent[vecAxis] - fgTolerance;
-  pMax = maxExtent[vecAxis] + fgTolerance;
-
-  return true;
-}
-
-
-double UTessellatedSolid::GetCubicVolume()
-{
-  if (fCubicVolume != 0.)
-  {
-    ;
-  }
-  else
-  {
-    fCubicVolume = VUSolid::GetCubicVolume();
-  }
-  return fCubicVolume;
-}
-
-#endif // USOLIDSONLY
-
-///////////////////////////////////////////////////////////////////////////////
-//
-/*double UTessellatedSolid::GetMinXExtent () const
-{
-  return fMinExtent.x();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-double UTessellatedSolid::GetMaxXExtent () const
-{
-  return fMaxExtent.x();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-double UTessellatedSolid::GetMinYExtent () const
-{return fMinExtent.y();}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-double UTessellatedSolid::GetMaxYExtent () const
-{return fMaxExtent.y();}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-double UTessellatedSolid::GetMinZExtent () const
-{return fMinExtent.z();}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-double UTessellatedSolid::GetMaxZExtent () const
-{return fMaxExtent.z();}
-
-*/
-/*
-UVisExtent UTessellatedSolid::GetExtent () const
-{
-  return UVisExtent (fMinExtent.x(), fMaxExtent.x(), fMinExtent.y(), fMaxExtent.y(), fMinExtent.z(), fMaxExtent.z());
-}
-*/
-
-
-#ifdef USOLIDSONLY
-
 void UTessellatedSolid::Extent(UVector3& aMin, UVector3& aMax) const
 {
   aMin = fMinExtent;
@@ -1907,7 +1589,6 @@ double UTessellatedSolid::GetMaxZExtent() const
 {
   return fMaxExtent.z();
 }
-#endif // USOLIDSONLY
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1933,6 +1614,7 @@ UVector3 UTessellatedSolid::GetPointOnSurface() const
   int i = (int) UUtils::Random(0., fFacets.size());
   return fFacets[i]->GetPointOnFace();
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // SetRandomVectorSet
@@ -1971,8 +1653,9 @@ void UTessellatedSolid::SetRandomVectors()
 
 double const UTessellatedSolid::dirTolerance = 1.0E-14;
 
-
-inline int UTessellatedSolid::AllocatedMemoryWithoutVoxels()
+///////////////////////////////////////////////////////////////////////////////
+//
+int UTessellatedSolid::AllocatedMemoryWithoutVoxels()
 {
   int base = sizeof(*this);
   base += fVertexList.capacity() * sizeof(UVector3);
@@ -1996,7 +1679,9 @@ inline int UTessellatedSolid::AllocatedMemoryWithoutVoxels()
   return base;
 }
 
-inline int UTessellatedSolid::AllocatedMemory()
+///////////////////////////////////////////////////////////////////////////////
+//
+int UTessellatedSolid::AllocatedMemory()
 {
   int size = AllocatedMemoryWithoutVoxels();
   int sizeInsides = fInsides.GetNbytes();
@@ -2004,4 +1689,3 @@ inline int UTessellatedSolid::AllocatedMemory()
   size += sizeInsides + sizeVoxels;
   return size;
 }
-

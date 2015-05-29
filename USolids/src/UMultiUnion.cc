@@ -4,7 +4,7 @@
 // * See: https://aidasoft.web.cern.ch/USolids                        *
 // ********************************************************************
 //
-// $Id$
+// $Id:$
 //
 // --------------------------------------------------------------------
 //
@@ -22,33 +22,15 @@
 
 #include "UBox.hh"
 
+
 using namespace std;
-
-// test with boolean union in geant4 in SBT
-// measure performance of DistanceToIn vs. DistanceToOut
-// in distancetoin/out benchmark, try what influence has adding Ubits
-
-// DONE
-// struct UVoxelBox
-// {
-//    UVector3 hlen; // half length of the box
-//    UVector3 pos; // position of the box
-//
-
-// if (maskByte & 1)
-// {
-//   list.push_back(8*(sizeof(unsigned int)*i+ byte) + bit);
-//   if (!(maskByte >>= 1)) break; // new
-// }
-// else maskByte >>= 1;
-// invert bitmasks
 
 //______________________________________________________________________________
 UMultiUnion::UMultiUnion(const std::string& name)
 {
   SetName(name);
   fSolids.clear();
-  fTransforms.clear();
+  fTransformObjs.clear();
   fCubicVolume = 0;
   fSurfaceArea = 0;
 }
@@ -58,23 +40,13 @@ UMultiUnion::~UMultiUnion()
 {
 }
 
-
 //______________________________________________________________________________
 void UMultiUnion::AddNode(VUSolid& solid, UTransform3D& trans)
 {
   fSolids.push_back(&solid);
-  fTransforms.push_back(&trans);
-  std::cout<<"Umulti afterVoxels Get transformX "<<(*fTransforms[0]).fRot[0]<<std::endl;
+  fTransformObjs.push_back(trans);  // Store a local copy of transformations
 }
 
-//______________________________________________________________________________ 
-/*void  UMultiUnion::SetSolidClosed()
-{
- Voxelize();
-  // std::cout<<"Umulti afterVoxels Get transformX "<<(*fTransforms[0]).fRot[0]<<std::endl;
-
-}
-*/
 //______________________________________________________________________________
 VUSolid* UMultiUnion:: Clone() const
 {
@@ -84,7 +56,8 @@ VUSolid* UMultiUnion:: Clone() const
 // Copy constructor
 //______________________________________________________________________________
 UMultiUnion::UMultiUnion(const UMultiUnion& rhs)
-  : VUSolid(rhs)
+  : VUSolid(rhs),fCubicVolume (rhs.fCubicVolume),
+    fSurfaceArea (rhs.fSurfaceArea)
 {
 }
 
@@ -131,7 +104,7 @@ double UMultiUnion::Capacity()
     {
       UVector3 random(rand(), rand(), rand());
       point = left + length.MultiplyByComponents(random / RAND_MAX);
-      if (Inside(point) != vecgeom::EInside::kOutside) inside++;
+      if (Inside(point) != EnumInside::eOutside) inside++;
     }
     double vbox = (2 * d.x()) * (2 * d.y()) * (2 * d.z());
     fCubicVolume = inside * vbox / generated;
@@ -158,7 +131,7 @@ double UMultiUnion::DistanceToInNoVoxels(const UVector3& aPoint, const UVector3&
   for (int i = 0 ; i < numNodes ; ++i)
   {
     VUSolid& solid = *fSolids[i];
-    UTransform3D& transform = *fTransforms[i];
+    const UTransform3D& transform = fTransformObjs[i];
 
     localPoint = transform.LocalPoint(aPoint);
     localDirection = transform.LocalVector(direction);
@@ -169,8 +142,7 @@ double UMultiUnion::DistanceToInNoVoxels(const UVector3& aPoint, const UVector3&
   return minDistance;
 }
 
-
-
+//______________________________________________________________________________
 double UMultiUnion::DistanceToInCandidates(const UVector3& aPoint, const UVector3& direction, double aPstep, std::vector<int>& candidates, UBits& bits) const
 {
   int candidatesCount = candidates.size();
@@ -181,7 +153,7 @@ double UMultiUnion::DistanceToInCandidates(const UVector3& aPoint, const UVector
   {
     int candidate = candidates[i];
     VUSolid& solid = *fSolids[candidate];
-    UTransform3D& transform = *fTransforms[candidate];
+    const UTransform3D& transform = fTransformObjs[candidate];
 
     localPoint = transform.LocalPoint(aPoint);
     localDirection = transform.LocalVector(direction);
@@ -189,11 +161,10 @@ double UMultiUnion::DistanceToInCandidates(const UVector3& aPoint, const UVector
     if (minDistance > distance) minDistance = distance;
     bits.SetBitNumber(candidate);
     if (minDistance == 0) break;
+    
   }
   return minDistance;
 }
-
-
 
 // Algorithm note: we have to look also for all other objects in next voxels, if the distance is not shorter ... we have to do it because,
 // for example for objects which starts in first voxel in which they
@@ -203,11 +174,11 @@ double UMultiUnion::DistanceToInCandidates(const UVector3& aPoint, const UVector
 // which were found that obviously are not good candidates, because
 // they would return infinity
 // But if distance is smaller than the shift to next voxel, we can return it immediately
-
+//______________________________________________________________________________
 double UMultiUnion::DistanceToIn(const UVector3& aPoint,
                                  const UVector3& aDirection, double aPstep) const
 {
-  //  return DistanceToInNoVoxels(aPoint, aDirection, aPstep);
+  //return DistanceToInNoVoxels(aPoint, aDirection, aPstep);
 
 #ifdef DEBUG
   double distanceToInNoVoxels = DistanceToInNoVoxels(aPoint, aDirection, aPstep);
@@ -217,6 +188,7 @@ double UMultiUnion::DistanceToIn(const UVector3& aPoint,
   UVector3 direction = aDirection.Unit();
   double shift = fVoxels.DistanceToFirst(aPoint, direction);
   if (shift == UUtils::kInfinity) return shift;
+
   UVector3 currentPoint = aPoint;
   if (shift) currentPoint += direction * shift;
   //    if (!fVoxels.Contains(currentPoint))
@@ -248,11 +220,11 @@ double UMultiUnion::DistanceToIn(const UVector3& aPoint,
     minDistance = distanceToInNoVoxels; // you can place a breakpoint here
   }
 #endif
-
+ 
   return minDistance;
 }
 
-
+//______________________________________________________________________________
 double UMultiUnion::DistanceToOutNoVoxels(const UVector3& aPoint, const UVector3& aDirection,
                                           UVector3& aNormal,
                                           bool&     convex,
@@ -278,11 +250,11 @@ double UMultiUnion::DistanceToOutNoVoxels(const UVector3& aPoint, const UVector3
     if (i != ignoredSolid)
     {
       VUSolid& solid = *fSolids[i];
-      UTransform3D& transform = *fTransforms[i];
+      const UTransform3D& transform = fTransformObjs[i];
       localPoint = transform.LocalPoint(currentPoint);
       localDirection = transform.LocalVector(direction);
       VUSolid::EnumInside location = solid.Inside(localPoint);
-      if (location != vecgeom::EInside::kOutside)
+      if (location != EnumInside::eOutside)
       {
         double distance = solid.DistanceToOut(localPoint, localDirection, aNormal, convex);
         if (distance < UUtils::kInfinity)
@@ -302,21 +274,20 @@ double UMultiUnion::DistanceToOutNoVoxels(const UVector3& aPoint, const UVector3
   return resultDistToOut;
 }
 
-
-
+//______________________________________________________________________________
 double UMultiUnion::DistanceToOut(const UVector3& aPoint, const UVector3& aDirection,
                                   UVector3& aNormal,
                                   bool&     convex,
                                   double   aPstep) const
 {
-  //  return DistanceToOutNoVoxels(aPoint, aDirection, aNormal, convex, aPstep);
+  //return DistanceToOutNoVoxels(aPoint, aDirection, aNormal, convex, aPstep);
 
 #ifdef DEBUG
   double distanceToOutNoVoxels = DistanceToOutNoVoxels(aPoint, aDirection, aNormal, convex, aPstep);
 #endif
 
   double distanceToOutVoxels = DistanceToOutVoxels(aPoint, aDirection, aNormal, convex, aPstep);
-
+ 
 #ifdef DEBUG
   if (std::abs(distanceToOutVoxels - distanceToOutNoVoxels) > VUSolid::Tolerance())
   {
@@ -327,7 +298,6 @@ double UMultiUnion::DistanceToOut(const UVector3& aPoint, const UVector3& aDirec
 #endif
   return distanceToOutVoxels;
 }
-
 
 //______________________________________________________________________________
 double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& aDirection,
@@ -351,6 +321,8 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
   UVector3 direction = aDirection.Unit();
   vector<int> candidates;
   double distance = 0;
+  int numNodes = 2*fSolids.size();
+  int count=0;
 
   if (fVoxels.GetCandidatesVoxelArray(aPoint, candidates))
   {
@@ -376,14 +348,14 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
         // ignore the current component (that you just got out of) since numerically the propagated point will be on its surface
 
         VUSolid& solid = *fSolids[candidate];
-        UTransform3D& transform = *fTransforms[candidate];
+        const UTransform3D& transform = fTransformObjs[candidate];
 
         // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
         localPoint = transform.LocalPoint(currentPoint);
 
         // DistanceToOut at least for Trd sometimes return non-zero value even from points that are outside. Therefore, this condition must currently be here, otherwise it would not work. But it means it would be slower.
 
-        if (solid.Inside(localPoint) != vecgeom::EInside::kOutside)
+        if (solid.Inside(localPoint) != EnumInside::eOutside)
         {
           notOutside = true;
 
@@ -395,7 +367,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
 
 //          if (shift != 0)
 //          {
-//            if(solid.Inside(localPoint) == vecgeom::EInside::kOutside)
+//            if(solid.Inside(localPoint) == EnumInside::eOutside)
 //              shift = shift;
 //            notOutside = true;
 
@@ -412,7 +384,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
 
       if (notOutside)
       {
-        UTransform3D& transform = *fTransforms[maxCandidate];
+        const UTransform3D& transform = fTransformObjs[maxCandidate];
 //        localPoint = transform.LocalPoint(currentPoint);
         // convert from local normal
         aNormal = transform.GlobalVector(maxNormal);
@@ -420,7 +392,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
         distance += maxDistance;
 //        currentPoint = transform.GlobalPoint(localPoint+maxDistance*maxLocalDirection);
         currentPoint += maxDistance * direction;
-
+         if(maxDistance == 0.)count++;
         // the current component will be ignored
         exclusion.SetBitNumber(maxCandidate);
         VUSolid::EnumInside location = InsideWithExclusion(currentPoint, &exclusion);
@@ -428,7 +400,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
         // perform a Inside
         // it should be excluded current solid from checking
         // we have to collect the maximum distance from all given candidates. such "maximum" candidate should be then used for finding next candidates
-        if (location == vecgeom::EInside::kOutside)
+        if (location == EnumInside::eOutside)
         {
           // else return cumulated distances to outside of the traversed components
           break;
@@ -442,7 +414,7 @@ double UMultiUnion::DistanceToOutVoxels(const UVector3& aPoint, const UVector3& 
         exclusion.ResetBitNumber(maxCandidate);
       }
     }
-    while (notOutside);
+    while  ((notOutside) && (count < numNodes));
 
 //    if (distance != -UUtils::kInfinity)
 //      return distance;
@@ -473,7 +445,7 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3& aPoint, UBi
   // ---------------------------------------------
 
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = EnumInside::eOutside;
 
   vector<int> candidates;
   vector<USurface> surfaces;
@@ -491,13 +463,13 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3& aPoint, UBi
     {
       int candidate = candidates[i];
       VUSolid& solid = *fSolids[candidate];
-      UTransform3D& transform = *fTransforms[candidate];
+      const UTransform3D& transform = fTransformObjs[candidate];
 
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       localPoint = transform.LocalPoint(aPoint);
       location = solid.Inside(localPoint);
-      if (location == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
-      else if (location == vecgeom::EInside::kSurface)
+      if (location == EnumInside::eInside) return EnumInside::eInside;
+      else if (location == EnumInside::eSurface)
       {
         USurface surface;
         surface.point = localPoint;
@@ -522,11 +494,11 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3& aPoint, UBi
       left.solid->Normal(left.point, n);
       right.solid->Normal(right.point, n2);
       if ((n +  n2).Mag2() < 1000 * frTolerance)
-        return vecgeom::EInside::kInside;
+        return EnumInside::eInside;
     }
   }
 
-  location = size ? vecgeom::EInside::kSurface : vecgeom::EInside::kOutside;
+  location = size ? EnumInside::eSurface : EnumInside::eOutside;
 
   return location;
 }
@@ -547,7 +519,7 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
   // ---------------------------------------------
 
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = EnumInside::eOutside;
   bool surface = false;
 
   // TODO: test if it works well and if so measure performance
@@ -576,9 +548,9 @@ VUSolid::EnumInside UMultiUnion::InsideWithExclusion(const UVector3 &aPoint, UBi
           // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
           localPoint = transform.LocalPoint(aPoint);
           location = solid.Inside(localPoint);
-          if(location == vecgeom::EInside::kSurface) surface = true;
+          if(location == EnumInside::eSurface) surface = true;
 
-          if(location == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
+          if(location == EnumInside::eInside) return EnumInside::eInside;
         }
       }
     }
@@ -624,96 +596,31 @@ VUSolid::EnumInside UMultiUnion::Inside(const UVector3& aPoint) const
   return location;
 }
 
-/*
-//______________________________________________________________________________
-VUSolid::EnumInside UMultiUnion::InsideIterator(const UVector3 &aPoint) const
-{
-  // Classify point location with respect to solid:
-  //  o eInside       - inside the solid
-  //  o eSurface      - close to surface within tolerance
-  //  o eOutside      - outside the solid
-
-  // Hitherto, it is considered that:
-  //        - only parallelepipedic nodes can be added to the container
-
-  // Implementation using voxelisation techniques:
-  // ---------------------------------------------
-
-  //  return InsideBits(aPoint);
-
-#ifdef DEBUG
-  VUSolid::EnumInside insideNoVoxels = InsideNoVoxels(aPoint);
-#endif
-
-  UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
-  bool boolSurface = false;
-
-  vector<int> candidates;
-  //   candidates = fVoxels.GetCandidatesVoxelArrayOld(aPoint);
-  fVoxels.GetCandidatesVoxelArray(aPoint, candidates);
-
-  UVoxelCandidatesIterator iterator(voxels, aPoint);
-  int candidate;
-  while ((candidate = iterator.Next()) >= 0)
-  {
-    VUSolid &solid = *fSolids[candidate];
-    UTransform3D &transform = *fTransforms[candidate];
-
-    // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-    localPoint = transform.LocalPoint(aPoint);
-    location = solid.Inside(localPoint);
-    if(location == vecgeom::EInside::kSurface) boolSurface = true;
-
-    if(location == vecgeom::EInside::kInside)
-    {
-#ifdef DEBUG
-      if (location != insideNoVoxels)
-        location = insideNoVoxels; // you can place a breakpoint here
-#endif
-
-      return vecgeom::EInside::kInside;
-    }
-  }
-  ///////////////////////////////////////////////////////////////////////////
-  // Important comment: When two solids touch each other along a flat
-  // surface, the surface points will be considered as eSurface, while points
-  // located around will correspond to eInside (cf. G4UnionSolid in GEANT4)
-  location = boolSurface ? eSurface : eOutside;
-
-#ifdef DEBUG
-  if (location != insideNoVoxels)
-    location = insideNoVoxels; // you can place a breakpoint here
-#endif
-  return location;
-}
-*/
-
 //______________________________________________________________________________
 VUSolid::EnumInside UMultiUnion::InsideNoVoxels(const UVector3& aPoint) const
 {
   UVector3 localPoint;
-  VUSolid::EnumInside location = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside location = EnumInside::eOutside;
   int countSurface = 0;
 
   int numNodes = fSolids.size();
   for (int i = 0 ; i < numNodes ; ++i)
   {
     VUSolid& solid = *fSolids[i];
-    UTransform3D& transform = *fTransforms[i];
+    UTransform3D transform = GetTransformation(i);
 
     // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
     localPoint = transform.LocalPoint(aPoint);
 
     location = solid.Inside(localPoint);
 
-    if (location == vecgeom::EInside::kSurface)
+    if (location == EnumInside::eSurface)
       countSurface++;
 
-    if (location == vecgeom::EInside::kInside) return vecgeom::EInside::kInside;
+    if (location == EnumInside::eInside) return EnumInside::eInside;
   }
-  if (countSurface != 0) return vecgeom::EInside::kSurface;
-  return vecgeom::EInside::kOutside;
+  if (countSurface != 0) return EnumInside::eSurface;
+  return EnumInside::eOutside;
 }
 
 //______________________________________________________________________________
@@ -726,10 +633,11 @@ void UMultiUnion::Extent(EAxisType aAxis, double& aMin, double& aMax) const
   for (int i = 0 ; i < numNodes ; ++i)
   {
     VUSolid& solid = *fSolids[i];
-    UTransform3D& transform = *fTransforms[i];
+    UTransform3D transform = GetTransformation(i);
     solid.Extent(min, max);
+   
     UUtils::TransformLimits(min, max, transform);
-
+    
     if (i == 0)
     {
       switch (aAxis)
@@ -779,11 +687,12 @@ void UMultiUnion::Extent(EAxisType aAxis, double& aMin, double& aMax) const
 //______________________________________________________________________________
 void UMultiUnion::Extent(UVector3& aMin, UVector3& aMax) const
 {
-  for (int i = 0; i <= 2; ++i) Extent(eXaxis, aMin[i], aMax[i]);
+   Extent(eXaxis, aMin[0], aMax[0]);
+   Extent(eYaxis, aMin[1], aMax[1]);
+   Extent(eZaxis, aMin[2], aMax[2]);
 }
 
 //______________________________________________________________________________
-// This function is not in TGeoShapeAssembly
 bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
 {
   // Computes the localNormal on a surface and returns it as a unit vector
@@ -810,13 +719,13 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
     for (int i = 0 ; i < limit ; ++i)
     {
       int candidate = candidates[i];
-      UTransform3D& transform = *fTransforms[candidate];
+      const UTransform3D& transform = fTransformObjs[candidate];
       // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
       localPoint = transform.LocalPoint(aPoint);
       VUSolid& solid = *fSolids[candidate];
       VUSolid::EnumInside location = solid.Inside(localPoint);
 
-      if (location == vecgeom::EInside::kSurface)
+      if (location == EnumInside::eSurface)
       {
         // normal case when point is on surface, we pick first solid
         solid.Normal(localPoint, localNormal);
@@ -827,7 +736,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
       else
       {
         // collect the smallest safety and remember solid node
-        double s = (location == vecgeom::EInside::kInside) ? solid.SafetyFromInside(localPoint) : solid.SafetyFromOutside(localPoint);
+        double s = (location == EnumInside::eInside) ? solid.SafetyFromInside(localPoint) : solid.SafetyFromOutside(localPoint);
         if (s < safety)
         {
           safety = s;
@@ -837,7 +746,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
     }
     // on none of the solids, the point was not on the surface
     VUSolid& solid = *fSolids[node];
-    UTransform3D& transform = *fTransforms[node];
+    const UTransform3D& transform = fTransformObjs[node];
     localPoint = transform.LocalPoint(aPoint);
 
     solid.Normal(localPoint, localNormal);
@@ -854,7 +763,7 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
     node = SafetyFromOutsideNumberNode(aPoint, true, safety);
     VUSolid& solid = *fSolids[node];
 
-    UTransform3D& transform = *fTransforms[node];
+    const UTransform3D& transform = fTransformObjs[node];
     localPoint = transform.LocalPoint(aPoint);
 
     // evaluate normal for point at this found solid
@@ -870,7 +779,6 @@ bool UMultiUnion::Normal(const UVector3& aPoint, UVector3& aNormal) const
 }
 
 //______________________________________________________________________________
-// see also TGeoShapeAssembly::Safety
 double UMultiUnion::SafetyFromInside(const UVector3& point, bool aAccurate) const
 {
   // Estimates isotropic distance to the surface of the solid. This must
@@ -891,10 +799,10 @@ double UMultiUnion::SafetyFromInside(const UVector3& point, bool aAccurate) cons
   {
     int candidate = candidates[i];
     // The coordinates of the point are modified so as to fit the intrinsic solid local frame:
-    UTransform3D& transform = *fTransforms[candidate];
+    const UTransform3D& transform = fTransformObjs[candidate];
     localPoint = transform.LocalPoint(point);
     VUSolid& solid = *fSolids[candidate];
-    if (solid.Inside(localPoint) == vecgeom::EInside::kInside)
+    if (solid.Inside(localPoint) == EnumInside::eInside)
     {
       double safety = solid.SafetyFromInside(localPoint, aAccurate);
       if (safetyMin > safety) safetyMin = safety;
@@ -906,7 +814,6 @@ double UMultiUnion::SafetyFromInside(const UVector3& point, bool aAccurate) cons
 }
 
 //______________________________________________________________________________
-// see also TGeoShapeAssembly::Safety
 double UMultiUnion::SafetyFromOutside(const UVector3& point, bool aAccurate) const
 {
   // Estimates the isotropic safety from a point outside the current solid to any
@@ -940,7 +847,7 @@ double UMultiUnion::SafetyFromOutside(const UVector3& point, bool aAccurate) con
       if (d2xyz >= safetyMin * safetyMin)
       {
 #ifdef DEBUG
-        UTransform3D& transform = *fTransforms[j];
+        const UTransform3D& transform = fTransformObjs[j];
         localPoint = transform.LocalPoint(point); // NOTE: ROOT does not make this transformation, although it does it at SafetyFromInside
         VUSolid& solid = *solids[j];
         double safety = solid.SafetyFromOutside(localPoint, true);
@@ -950,7 +857,7 @@ double UMultiUnion::SafetyFromOutside(const UVector3& point, bool aAccurate) con
         continue;
       }
     }
-    UTransform3D& transform = *fTransforms[j];
+    const UTransform3D& transform = fTransformObjs[j];
     localPoint = transform.LocalPoint(point); // NOTE: ROOT does not make this transformation, although it does it at SafetyFromInside
     VUSolid& solid = *fSolids[j];
 
@@ -979,7 +886,7 @@ double UMultiUnion::SurfaceArea()
 //______________________________________________________________________________
 void UMultiUnion::Voxelize()
 {
-  fVoxels.Voxelize(fSolids, fTransforms);
+  fVoxels.Voxelize(fSolids, fTransformObjs);
 }
 
 //______________________________________________________________________________
@@ -1010,7 +917,7 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3& aPoint, bool /*aAcc
     if (d2xyz >= safetyMin * safetyMin) continue;
 
     VUSolid& solid = *fSolids[i];
-    UTransform3D& transform = *fTransforms[i];
+    const UTransform3D& transform = fTransformObjs[i];
     localPoint = transform.LocalPoint(aPoint);
     double safety = solid.SafetyFromOutside(localPoint, true);
     if (safetyMin > safety)
@@ -1022,24 +929,36 @@ int UMultiUnion::SafetyFromOutsideNumberNode(const UVector3& aPoint, bool /*aAcc
   return safetyNode;
 }
 
-//////////////////////////////////////////////////////
 // Stream object contents to an output stream
-
+//______________________________________________________________________________
 std::ostream& UMultiUnion::StreamInfo(std::ostream& os) const
 {
   int oldprc = os.precision(16);
   os << "-----------------------------------------------------------\n"
-     << "		*** Dump for solid - " << GetName() << " ***\n"
-     << "		===================================================\n"
+     << "                *** Dump for solid - " << GetName() << " ***\n"
+     << "                ===================================================\n"
      << " Solid type: UMultiUnion\n"
-     << " Parameters: \n"
-     << "		\n"
+     << " Parameters: \n";
+     int numNodes = fSolids.size();
+     for (int i = 0 ; i < numNodes ; ++i)
+     {
+      VUSolid& solid = *fSolids[i];
+      solid.StreamInfo(os);
+      const UTransform3D& transform = fTransformObjs[i];
+      os<<" Translation is " <<transform.fTr<<" \n";
+      os<<" Rotation is :"<<" \n";
+      for(int j = 0; j < 3; j++ )
+	os<<" "<<transform.fRot[j*3]<<" "<<transform.fRot[1+j*3]<<" "<<transform.fRot[2+j*3]<<"\n";
+     }
+
+  os << "             \n"
      << "-----------------------------------------------------------\n";
   os.precision(oldprc);
 
   return os;
 }
 
+//______________________________________________________________________________
 UVector3 UMultiUnion::GetPointOnSurface() const
 {
   UVector3 point;
@@ -1057,10 +976,10 @@ UVector3 UMultiUnion::GetPointOnSurface() const
     */
     VUSolid& solid = *fSolids[random];
     point = solid.GetPointOnSurface();
-    UTransform3D& transform = *fTransforms[random];
+    const UTransform3D& transform = fTransformObjs[random];
     point = transform.GlobalPoint(point);
   }
-  while (Inside(point) != vecgeom::EInside::kSurface);
+  while (Inside(point) != EnumInside::eSurface);
 
   return point;
 }

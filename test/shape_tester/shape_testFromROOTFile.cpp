@@ -53,10 +53,7 @@ int main(  int argc,char *argv[]) {
     TGeoVolume * vol = reinterpret_cast<TGeoVolume*>(vlist->At( i ));
     std::string fullname(vol->GetName());
     
-    // strip off pointer information
-    std::string strippedname(fullname, 0, fullname.length()-4);
-    
-    std::size_t founds = strippedname.compare(testvolume);
+    std::size_t founds = fullname.compare(testvolume);
     if (founds == 0){
       found++;
       foundvolume = vol;

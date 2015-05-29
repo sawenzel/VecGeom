@@ -1,14 +1,18 @@
 #include "volumes/LogicalVolume.h"
 #include "volumes/Box.h"
 #include "benchmarking/Benchmarker.h"
+#include "volumes/kernel/BoxImplementation.h"
 #include "management/GeoManager.h"
 #include "ArgParser.h"
+#include "base/SOA3D.h"
+#include "base/Stopwatch.h"
+#include <iostream>
 
 using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
   OPTION_INT(npoints,1024);
-  OPTION_INT(nrep,1024);
+  OPTION_INT(nrep,4);
   OPTION_DOUBLE(dx,1.);
   OPTION_DOUBLE(dy,2.);
   OPTION_DOUBLE(dz,3.);

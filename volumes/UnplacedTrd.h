@@ -147,9 +147,51 @@ fFy(0)
 
   virtual int memory_size() const { return sizeof(*this); }
 
+  VECGEOM_CUDA_HEADER_BOTH
+  void Extent(Vector3D<Precision> & min, Vector3D<Precision> & max ) const {
+      min = Vector3D<Precision>(-std::max(fDX1, fDX2), -std::max(fDY1, fDY2), -fDZ);
+      max = Vector3D<Precision>(std::max(fDY1, fDX2), std::max(fDY1, fDY2), fDZ);
+  }
+
+
 #ifndef VECGEOM_NVCC
   // Computes capacity of the shape in [length^3]
   Precision Capacity() const;
+
+  Precision SurfaceArea() const;
+
+  Precision GetPlusXArea() const { //  Area in +x direction 
+	  return (fDZ * (fDY1 + fDY2));
+  }
+  
+  Precision GetMinusXArea() const {  // Area in -x direction
+	  return (fDZ * (fDY1 + fDY2));
+  }
+
+  Precision GetPlusYArea() const {    // Area in +y direction
+	  return (fDZ * (fDX1 + fDX2));
+  }
+  
+  Precision GetMinusYArea() const {  // Area in -y direction
+      return (fDZ * (fDX1 + fDX2));
+  }  
+
+  Precision GetPlusZArea() const {   // Area in +Z
+      return (fDX2 * fDY2);
+  }
+  
+  Precision GetMinusZArea() const {  // Area in -Z
+      return (fDX1 * fDY1);
+  }
+ 
+  int ChooseSurface() const;
+
+  Vector3D<Precision> GetPointOnSurface() const;
+
+  bool Normal(Vector3D<Precision> const& point, Vector3D<Precision>& normal) const;
+
+  //void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH

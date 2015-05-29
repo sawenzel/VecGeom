@@ -48,11 +48,93 @@ UGenericTrap::UGenericTrap(const std::string& name, double halfZ,
 
 {
   // General constructor
+  Initialise(vertices);
+}
+
+// --------------------------------------------------------------------
+
+UGenericTrap::UGenericTrap()
+  : VUSolid(""),
+    fDz(0.),
+    fVertices(),
+    fIsTwisted(false),
+    fTessellatedSolid(0),
+    fMinBBoxVector(UVector3(0,0,0)),
+    fMaxBBoxVector(UVector3(0,0,0)),
+    fVisSubdivisions(0),
+    fBoundBox(0),
+    fSurfaceArea(0.),
+    fCubicVolume(0.)
+{
+  // Fake default constructor - sets only member data and allocates memory
+  //                            for usage restricted to object persistency.
+}
+
+// --------------------------------------------------------------------
+
+UGenericTrap::~UGenericTrap()
+{
+  // Destructor
+  delete fTessellatedSolid;
+  delete fBoundBox;
+}
+
+// --------------------------------------------------------------------
+
+UGenericTrap::UGenericTrap(const UGenericTrap& rhs)
+  : VUSolid(rhs),
+    fDz(rhs.fDz), fVertices(rhs.fVertices),
+    fIsTwisted(rhs.fIsTwisted), fTessellatedSolid(0),
+    fMinBBoxVector(rhs.fMinBBoxVector), fMaxBBoxVector(rhs.fMaxBBoxVector),
+    fVisSubdivisions(rhs.fVisSubdivisions), fBoundBox(0),
+    fSurfaceArea(rhs.fSurfaceArea), fCubicVolume(rhs.fCubicVolume)
+{
+   for (size_t i=0; i<4; ++i)  { fTwist[i] = rhs.fTwist[i]; }
+   ComputeBBox();
+#ifdef UTESS_TEST
+   if (rhs.fTessellatedSolid && !fIsTwisted )
+   { fTessellatedSolid = CreateTessellatedSolid(); }
+#endif
+}
+
+// --------------------------------------------------------------------
+
+UGenericTrap& UGenericTrap::operator = (const UGenericTrap& rhs)
+{
+   // Check assignment to self
+   //
+   if (this == &rhs)  { return *this; }
+
+   // Copy base class data
+   //
+   VUSolid::operator=(rhs);
+
+   // Copy data
+   //
+   fDz = rhs.fDz; fVertices = rhs.fVertices;
+   fIsTwisted = rhs.fIsTwisted; fTessellatedSolid = 0;
+   fMinBBoxVector = rhs.fMinBBoxVector; fMaxBBoxVector = rhs.fMaxBBoxVector;
+   fVisSubdivisions = rhs.fVisSubdivisions;
+   fSurfaceArea = rhs.fSurfaceArea; fCubicVolume = rhs.fCubicVolume;
+   for (size_t i=0; i<4; ++i)  { fTwist[i] = rhs.fTwist[i]; }
+   delete fBoundBox; ComputeBBox();
+#ifdef UTESS_TEST
+   if (rhs.fTessellatedSolid && !fIsTwisted )
+   { delete fTessellatedSolid; fTessellatedSolid = CreateTessellatedSolid(); }
+#endif
+
+   return *this;
+}
+
+// --------------------------------------------------------------------
+
+void UGenericTrap::Initialise(const std::vector<UVector2>&  vertices)
+{
   const double min_length = 5 * 1.e-6;
   double  length = 0.;
   int  k = 0;
   std::string errorDescription = "InvalidSetup in \" ";
-  errorDescription += name;
+  errorDescription += GetName();
   errorDescription += "\"";
 
   // Check vertices size
@@ -60,15 +142,15 @@ UGenericTrap::UGenericTrap(const std::string& name, double halfZ,
   if (int (vertices.size()) != fgkNofVertices)
   {
     UUtils::Exception("UGenericTrap::UGenericTrap()", "GeomSolids0002",
-                      FatalErrorInArguments, 1, "Number of vertices != 8");
+                      UFatalErrorInArguments, 1, "Number of vertices != 8");
   }
 
   // Check dZ
   //
-  if (halfZ < VUSolid::fgTolerance)
+  if (fDz < VUSolid::fgTolerance)
   {
     UUtils::Exception("UGenericTrap::UGenericTrap()", "GeomSolids0002",
-                      FatalErrorInArguments, 1, "dZ is too small or negative");
+                      UFatalErrorInArguments, 1, "dZ is too small or negative");
   }
 
   // Check Ordering and Copy vertices
@@ -108,7 +190,7 @@ UGenericTrap::UGenericTrap(const std::string& name, double halfZ,
                 << fVertices[k] << " is only " << length << " mm !"
                 << "Vertices will be collapsed.";
         UUtils::Exception("UGenericTrap::UGenericTrap()", "GeomSolids1001",
-                          Warning, 1, message.str().c_str());
+                          UWarning, 1, message.str().c_str());
         fVertices[k] = fVertices[k - 1];
       }
     }
@@ -139,67 +221,11 @@ UGenericTrap::UGenericTrap(const std::string& name, double halfZ,
 
 // --------------------------------------------------------------------
 
-UGenericTrap::~UGenericTrap()
-{
-  // Destructor
-  delete fTessellatedSolid;
-  delete fBoundBox;
-}
-
-// --------------------------------------------------------------------
-
-/*UGenericTrap::UGenericTrap(const UGenericTrap& rhs)
-  : VUSolid(rhs),
-    fpPolyhedron(0), fDz(rhs.fDz), fVertices(rhs.fVertices),
-    fIsTwisted(rhs.fIsTwisted), fTessellatedSolid(0),
-    fMinBBoxVector(rhs.fMinBBoxVector), fMaxBBoxVector(rhs.fMaxBBoxVector),
-    fVisSubdivisions(rhs.fVisSubdivisions),
-    fSurfaceArea(rhs.fSurfaceArea), fCubicVolume(rhs.fCubicVolume)
-{
-   for (size_t i=0; i<4; ++i)  { fTwist[i] = rhs.fTwist[i]; }
-#ifdef G4TESS_TEST
-   if (rhs.fTessellatedSolid && !fIsTwisted )
-   { fTessellatedSolid = CreateTessellatedSolid(); }
-#endif
-}
-
-// --------------------------------------------------------------------
-
-UGenericTrap& UGenericTrap::operator = (const UGenericTrap& rhs)
-{
-   // Check assignment to self
-   //
-   if (this == &rhs)  { return *this; }
-
-   // Copy base class data
-   //
-   VUSolid::operator=(rhs);
-
-   // Copy data
-   //
-   fpPolyhedron = 0; fDz = rhs.fDz; fVertices = rhs.fVertices;
-   fIsTwisted = rhs.fIsTwisted; fTessellatedSolid = 0;
-   fMinBBoxVector = rhs.fMinBBoxVector; fMaxBBoxVector = rhs.fMaxBBoxVector;
-   fVisSubdivisions = rhs.fVisSubdivisions;
-   fSurfaceArea = rhs.fSurfaceArea; fCubicVolume = rhs.fCubicVolume;
-
-   for (size_t i=0; i<4; ++i)  { fTwist[i] = rhs.fTwist[i]; }
-#ifdef G4TESS_TEST
-   if (rhs.fTessellatedSolid && !fIsTwisted )
-   { delete fTessellatedSolid; fTessellatedSolid = CreateTessellatedSolid(); }
-#endif
-
-   return *this;
-}
-*/
-
-// --------------------------------------------------------------------
-
 VUSolid::EnumInside
 UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
 {
   static const double  halfCarTolerance = VUSolid::fgTolerance * 0.5;
-  VUSolid::EnumInside  in = vecgeom::EInside::kInside;
+  VUSolid::EnumInside  in = EnumInside::eInside;
   double  cross, len2;
   int  count = 0;
   UVector2 pt(p.x(), p.y());
@@ -210,7 +236,7 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
 
     cross = (p.x() - poly[i].x) * (poly[j].y - poly[i].y) -
             (p.y() - poly[i].y) * (poly[j].x - poly[i].x);
-    if (cross < 0.)return vecgeom::EInside::kOutside;
+    if (cross < 0.)return EnumInside::eOutside;
 
     len2 = (poly[i] - poly[j]).mag2();
     if (len2 > VUSolid::fgTolerance)
@@ -245,16 +271,16 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
         if ((test >= (poly[l].y - halfCarTolerance))
             && (test <= (poly[k].y + halfCarTolerance)))
         {
-          return vecgeom::EInside::kSurface;
+          return EnumInside::eSurface;
         }
         else
         {
-          return vecgeom::EInside::kOutside;
+          return EnumInside::eOutside;
         }
       }
       else if (cross < 0.)
       {
-        return vecgeom::EInside::kOutside;
+        return EnumInside::eOutside;
       }
     }
     else
@@ -269,7 +295,7 @@ UGenericTrap::InsidePolygone(const UVector3& p, const UVector2* poly) const
   {
     if ((std::fabs(p.x() - poly[0].x) + std::fabs(p.y() - poly[0].y)) > halfCarTolerance)
     {
-      in = vecgeom::EInside::kOutside;
+      in = EnumInside::eOutside;
     }
   }
   return in;
@@ -340,9 +366,9 @@ VUSolid::EnumInside UGenericTrap::Inside(const UVector3& p) const
 #endif
 
   static const double  halfCarTolerance = VUSolid::fgTolerance * 0.5;
-  VUSolid::EnumInside innew = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside innew = EnumInside::eOutside;
   UVector2 xy[4];
-  if (fBoundBox->Inside(p) == vecgeom::EInside::kOutside) return vecgeom::EInside::kOutside;
+  if (fBoundBox->Inside(p) == EnumInside::eOutside) return EnumInside::eOutside;
 
   if (std::fabs(p.z()) <= fDz + halfCarTolerance) // First check Z range
   {
@@ -356,11 +382,11 @@ VUSolid::EnumInside UGenericTrap::Inside(const UVector3& p) const
 
     innew = InsidePolygone(p, xy);
 
-    if ((innew == vecgeom::EInside::kInside) || (innew == vecgeom::EInside::kSurface))
+    if ((innew == EnumInside::eInside) || (innew == EnumInside::eSurface))
     {
       if (std::fabs(p.z()) > fDz - halfCarTolerance)
       {
-        innew = vecgeom::EInside::kSurface;
+        innew = EnumInside::eSurface;
       }
     }
 
@@ -502,12 +528,14 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   //
   if (noSurfaces == 0)
   {
+    #ifdef UDEBUG
     UUtils::Exception("UGenericTrap::SurfaceNormal(p)", "GeomSolids1002",
-                      Warning, 1, "Point p is not on surface !?");
-    if (Inside(p) != vecgeom::EInside::kSurface)
+                      UWarning, 1, "Point p is not on surface !?");
+    if (Inside(p) != EnumInside::eSurface)
     {
       std::cout << "Point is not on Surface, confirmed by Inside()" << p << std::endl;
     }
+    #endif
     sumnorm = apprnorm;
     // Add Approximative Surface Normal Calculation
   }
@@ -523,71 +551,7 @@ bool UGenericTrap::Normal(const UVector3& p, UVector3& aNormal) const
   aNormal = sumnorm;
   return  noSurfaces != 0 ;
 }
-//---------------------------------------------------------------------
-/*UVector3 UGenericTrap::NormalToPlane( const UVector3& p,
-                                            const int  ipl ) const
-{
 
-  //Computes approx normal to plane defined by ipl with P0, P1 and P2
-
-#ifdef G4TESS_TEST
-  if ( fTessellatedSolid )
-  {
-    return fTessellatedSolid->SurfaceNormal(p);
-  }
-#endif
-
-  static const double  halfCarTolerance=VUSolid::fgTolerance*0.5;
-  UVector3 lnorm, norm(0.,0.,0.), p0,p1,p2;
-
-  double   distz = fDz-p.z();
-  int  i=ipl;  // current plane index
-
-  UVector2 u,v;
-  UVector3 r1,r2,r3,r4;
-
-  int  j=(i+1)%4;
-
-  u=fVertices[i+4];
-  v=fVertices[j+4];
-
-  // Compute cross product
-  //
-  p0=UVector3(u.x(),u.y(),p.z());
-
-  if (std::fabs(distz)<halfCarTolerance)
-  {
-    p1=UVector3(fVertices[i].x(),fVertices[i].y(),-fDz);distz=-1;}
-  else
-  {
-    p1=UVector3(fVertices[i+4].x(),fVertices[i+4].y(),fDz);
-  }
-  p2=UVector3(v.x(),v.y(),p.z());
-
-  // Collapsed vertices
-  //
-  if ( (p2-p0).Mag2() < VUSolid::fgTolerance )
-  {
-    if ( std::fabs(p.z()+fDz) > halfCarTolerance )
-    {
-      p2=UVector3(fVertices[j].x(),fVertices[j].y(),-fDz);
-    }
-    else
-    {
-      p2=UVector3(fVertices[j+4].x(),fVertices[j+4].y(),fDz);
-    }
-  }
-
-  lnorm=-(p1-p0).Cross(p2-p0);
-  if (distz>-halfCarTolerance)  { lnorm=-lnorm.Unit(); }
-  else                          { lnorm=lnorm.Unit();  }
-
-
-
-  return lnorm;
-
-}
-*/
 // --------------------------------------------------------------------
 
 UVector3 UGenericTrap::NormalToPlane(const UVector3& p,
@@ -732,14 +696,14 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
   double  b = dxs * v.y() - dys * v.x() + (dtx * p.y() - dty * p.x() + ty2 * xs1 - ty1 * xs2
                                        + tx1 * ys2 - tx2 * ys1) * v.z();
   double  c = dxs * p.y() - dys * p.x() + xs1 * ys2 - xs2 * ys1;
-  double  q = UUtils::Infinity();
+  double  q = UUtils::kInfinity;
   double  x1, x2, y1, y2, xp, yp, zi;
 
   if (std::fabs(a) < VUSolid::fgTolerance)
   {
     if (std::fabs(b) < VUSolid::fgTolerance)
     {
-      return UUtils::Infinity();
+      return UUtils::kInfinity;
     }
     q = -c / b;
 
@@ -751,14 +715,14 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       {
         if (NormalToPlane(p, ipl).Dot(v) <= 0)
         {
-          if (Inside(p) != vecgeom::EInside::kOutside)
+          if (Inside(p) != EnumInside::eOutside)
           {
             return 0.;
           }
         }
         else
         {
-          return UUtils::Infinity();
+          return UUtils::kInfinity;
         }
       }
 
@@ -780,7 +744,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
         }
       }
     }
-    return UUtils::Infinity();
+    return UUtils::kInfinity;
   }
   double  d = b * b - 4 * a * c;
   if (d >= 0)
@@ -802,12 +766,12 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       {
         if (NormalToPlane(p, ipl).Dot(v) <= 0)
         {
-          if (Inside(p) != vecgeom::EInside::kOutside)
+          if (Inside(p) != EnumInside::eOutside)
           {
             return 0.;
           }
         }
-        else  // Check second root; return UUtils::Infinity()
+        else  // Check second root; return UUtils::kInfinity
         {
           if (a > 0)
           {
@@ -819,7 +783,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
           }
           if (q <= halfCarTolerance)
           {
-            return UUtils::Infinity();
+            return UUtils::kInfinity;
           }
         }
       }
@@ -858,12 +822,12 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       {
         if (NormalToPlane(p, ipl).Dot(v) <= 0)
         {
-          if (Inside(p) != vecgeom::EInside::kOutside)
+          if (Inside(p) != EnumInside::eOutside)
           {
             return 0.;
           }
         }
-        else   // Check second root; return UUtils::Infinity().
+        else   // Check second root; return UUtils::kInfinity.
         {
           if (a > 0)
           {
@@ -875,7 +839,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
           }
           if (q <= halfCarTolerance)
           {
-            return UUtils::Infinity();
+            return UUtils::kInfinity;
           }
         }
       }
@@ -898,7 +862,7 @@ double  UGenericTrap::DistToPlane(const UVector3& p,
       }
     }
   }
-  return UUtils::Infinity();
+  return UUtils::kInfinity;
 }
 
 // --------------------------------------------------------------------
@@ -912,7 +876,7 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
     return fTessellatedSolid->DistanceToIn(p, v);
   }
 #endif
-  if (fBoundBox->DistanceToIn(p, v) == UUtils::Infinity())return UUtils::Infinity();
+  if (fBoundBox->DistanceToIn(p, v) == UUtils::kInfinity)return UUtils::kInfinity;
   static const double  halfCarTolerance = VUSolid::fgTolerance * 0.5;
 
   double  dist[5];
@@ -928,7 +892,7 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
 
   // Check Z planes
   //
-  dist[4] = UUtils::Infinity();
+  dist[4] = UUtils::kInfinity;
   if (std::fabs(p.z()) > fDz - halfCarTolerance)
   {
     if (v.z())
@@ -944,7 +908,7 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
       }
       if (dist[4] < -halfCarTolerance)
       {
-        dist[4] = UUtils::Infinity();
+        dist[4] = UUtils::kInfinity;
       }
       else
       {
@@ -964,13 +928,13 @@ double  UGenericTrap::DistanceToIn(const UVector3& p,
           }
           else
           {
-            dist[4] = UUtils::Infinity();
+            dist[4] = UUtils::kInfinity;
           }
         }
         pt = p + dist[4] * v;
-        if (Inside(pt) == vecgeom::EInside::kOutside)
+        if (Inside(pt) == EnumInside::eOutside)
         {
-          dist[4] = UUtils::Infinity();
+          dist[4] = UUtils::kInfinity;
         }
       }
     }
@@ -1075,7 +1039,7 @@ UGenericTrap::DistToTriangle(const UVector3& p,
     //
     if ((std::fabs(xb - xc) + std::fabs(yb - yc)) < halfCarTolerance)
     {
-      return UUtils::Infinity();
+      return UUtils::kInfinity;
     }
   }
   double  a = (yb - ya) * zac - (yc - ya) * zab;
@@ -1092,16 +1056,16 @@ UGenericTrap::DistToTriangle(const UVector3& p,
   {
     if (NormalToPlane(p, ipl).Dot(v) < VUSolid::fgTolerance)
     {
-      t = UUtils::Infinity();
+      t = UUtils::kInfinity;
     }
     else
     {
       t = 0;
     }
   }
-  if (Inside(p + v * t) != vecgeom::EInside::kSurface)
+  if (Inside(p + v * t) != EnumInside::eSurface)
   {
-    t = UUtils::Infinity();
+    t = UUtils::kInfinity;
   }
 
   return t;
@@ -1141,7 +1105,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     }
     else
     {
-      distmin = UUtils::Infinity();
+      distmin = UUtils::kInfinity;
     }
   }
 
@@ -1190,7 +1154,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
     double  b = dxs * v.y() - dys * v.x() + (dtx * p.y() - dty * p.x() + ty2 * xs1 - ty1 * xs2
                                          + tx1 * ys2 - tx2 * ys1) * v.z();
     double  c = dxs * p.y() - dys * p.x() + xs1 * ys2 - xs2 * ys1;
-    double  q = UUtils::Infinity();
+    double  q = UUtils::kInfinity;
 
     if (std::fabs(a) < VUSolid::fgTolerance)
     {
@@ -1306,7 +1270,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
   }
   if (!lateral_cross)  // Make sure that track crosses the top or bottom
   {
-    if (distmin >= UUtils::Infinity())
+    if (distmin >= UUtils::kInfinity)
     {
       distmin = VUSolid::fgTolerance;
     }
@@ -1329,7 +1293,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
 
     // Check Inside
     //
-    if (InsidePolygone(pt, xy) == vecgeom::EInside::kOutside)
+    if (InsidePolygone(pt, xy) == EnumInside::eOutside)
     {
 
       if (v.z() > 0)
@@ -1397,7 +1361,7 @@ double UGenericTrap::DistanceToOut(const UVector3& p, const UVector3&  v,
               << "  distmin = " << distmin << " mm";
       message.precision(oldprc);
       UUtils::Exception("UGenericTrap::DistanceToOut(p,v,..)",
-                        "GeomSolids1002", Warning, 1, message.str().c_str());
+                        "GeomSolids1002", UWarning, 1, message.str().c_str());
       break;
 
   }
@@ -1589,7 +1553,7 @@ UVector3 UGenericTrap::GetPointOnSurface() const
     v = u + (v - u) * UUtils::Random();
   }
   point = UVector3(v.x, v.y, zp);
-  //if(Inside(point)!=vecgeom::EInside::kSurface){std::cout<<"GenericTrap::GetPointOnSurface-Point is not"<<point<<" ipl="<<ipl<<std::endl;}
+  //if(Inside(point)!=EnumInside::eSurface){std::cout<<"GenericTrap::GetPointOnSurface-Point is not"<<point<<" ipl="<<ipl<<std::endl;}
   return point;
 }
 
@@ -1733,8 +1697,8 @@ bool UGenericTrap::ComputeIsTwisted()
               << "     Potential problem of malformed Solid !" << std::endl
               << "     TwistANGLE = " << twist_angle
               << "*rad  for lateral plane N= " << i;
-      //G4Exception("UGenericTrap::ComputeIsTwisted()", "GeomSolids1002",
-      //            JustWarning, message);
+      UUtils::Exception("UGenericTrap::ComputeIsTwisted()", "GeomSolids1002",
+                        UWarning, 4, message.str().c_str());
     }
   }
 
@@ -1765,8 +1729,8 @@ bool UGenericTrap::CheckOrder(const std::vector<UVector2>& vertices) const
     std::ostringstream message;
     message << "Lower/upper faces defined with opposite clockwise - "
             << GetName();
-    // G4Exception("UGenericTrap::CheckOrder()", "GeomSolids0002",
-    //            FatalException, message);
+    UUtils::Exception("UGenericTrap::CheckOrder()", "GeomSolids0002",
+                      UFatalError, 1, message.str().c_str());
   }
 
   if ((sum1 > 0.) || (sum2 > 0.))
@@ -1774,8 +1738,8 @@ bool UGenericTrap::CheckOrder(const std::vector<UVector2>& vertices) const
     std::ostringstream message;
     message << "Vertices must be defined in clockwise XY planes - "
             << GetName();
-    // G4Exception("UGenericTrap::CheckOrder()", "GeomSolids1001",
-    //           JustWarning,message, "Re-ordering...");
+    UUtils::Exception("UGenericTrap::CheckOrder()", "GeomSolids1001",
+                      UWarning, 1, message.str().c_str());
     clockwise_order = false;
   }
 
@@ -1816,8 +1780,8 @@ bool UGenericTrap::CheckOrder(const std::vector<UVector2>& vertices) const
   {
     std::ostringstream message;
     message << "Malformed polygone with opposite sides - " << GetName();
-    // G4Exception("UGenericTrap::CheckOrderAndSetup()",
-    //            "GeomSolids0002", FatalException, message);
+    UUtils::Exception("UGenericTrap::CheckOrderAndSetup()", "GeomSolids0002",
+                      UFatalError, 1, message.str().c_str());
   }
   return clockwise_order;
 }
@@ -2044,8 +2008,8 @@ UGenericTrap::MakeDownFacet(const std::vector<UVector3>& fromVertices,
 
     std::ostringstream message;
     message << "Vertices in wrong order - " << GetName();
-    //G4Exception("UGenericTrap::MakeDownFacet", "GeomSolids0002",
-    //            FatalException, message);
+    UUtils::Exception("UGenericTrap::MakeDownFacet", "GeomSolids0002",
+                      UFatalError, 1, message.str().c_str());
   }
 
   return new UTriangularFacet(vertices[0], vertices[1], vertices[2], UABSOLUTE);
@@ -2084,8 +2048,8 @@ UGenericTrap::MakeUpFacet(const std::vector<UVector3>& fromVertices,
 
     std::ostringstream message;
     message << "Vertices in wrong order - " << GetName();
-    // G4Exception("UGenericTrap::MakeUpFacet", "GeomSolids0002",
-    //           FatalException, message);
+    UUtils::Exception("UGenericTrap::MakeUpFacet", "GeomSolids0002",
+                      UFatalError, 1, message.str().c_str());
   }
 
   return new UTriangularFacet(vertices[0], vertices[1], vertices[2], UABSOLUTE);

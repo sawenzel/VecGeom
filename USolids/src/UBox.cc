@@ -36,7 +36,7 @@ UBox::UBox(const std::string& name, double dx, double dy, double dz)
     std::ostringstream message;
     message << "Dimensions too small for Solid: " << GetName() << "!" << std::endl
             << "     dx, dy, dz = " << dx << ", " << dy << ", " << dz;
-    UUtils::Exception("UBox::UBox()", "UGeomSolids", FatalErrorInArguments, 1, message.str().c_str());
+    UUtils::Exception("UBox::UBox()", "GeomSolids0002", UFatalErrorInArguments, 1, message.str().c_str());
   }
 }
 
@@ -104,13 +104,13 @@ VUSolid::EnumInside UBox::Inside(const UVector3& aPoint) const
   // Early returns on outside condition on any axis. Check Z first for faster
   // exclusion in  phi symmetric geometries.
   double ddz = std::abs(aPoint.z()) - fDz;
-  if (ddz > delta) return vecgeom::EInside::kOutside;
+  if (ddz > delta) return EnumInside::eOutside;
   double ddx = std::abs(aPoint.x()) - fDx;
-  if (ddx > delta) return vecgeom::EInside::kOutside;
+  if (ddx > delta) return EnumInside::eOutside;
   double ddy = std::abs(aPoint.y()) - fDy;
-  if (ddy > delta) return vecgeom::EInside::kOutside;
-  if (ddx > - delta || ddy > -delta || ddz > -delta) return vecgeom::EInside::kSurface;
-  return vecgeom::EInside::kInside;
+  if (ddy > delta) return EnumInside::eOutside;
+  if (ddx > - delta || ddy > -delta || ddz > -delta) return EnumInside::eSurface;
+  return EnumInside::eInside;
 }
 
 //______________________________________________________________________________
@@ -142,7 +142,7 @@ double UBox::DistanceToIn(const UVector3& aPoint,
     // If point close to this surface, check against the normal
     if (safx > -delta)
     {
-       if (aPoint.x() * aDirection.x() > 0) return UUtils::kInfinity ;
+      if (aPoint.x() * aDirection.x() > 0) return UUtils::kInfinity ;
     }
     if (safy > -delta)
     {
@@ -464,6 +464,7 @@ UVector3 UBox::GetPointOnSurface() const
   }
   return UVector3(px, py, pz);
 }
+
 /////////////////////////////////////////////////////////////////////////////////////
 //
 // GetPointOnEdge
@@ -506,6 +507,7 @@ UVector3 UBox::GetPointOnEdge() const
   }
   return 0;
 }
+
 std::ostream& UBox::StreamInfo(std::ostream& os) const
 {
   int oldprc = os.precision(16);
@@ -536,7 +538,7 @@ void UBox::SetXHalfLength(double dx)
             << std::endl
             << "       hX = " << dx;
     UUtils::Exception("UBox::SetXHalfLength()", "GeomSolids0002",
-                      FatalErrorInArguments, 1, message.str().c_str());
+                      UFatalErrorInArguments, 1, message.str().c_str());
   }
   fCubicVolume = 0.;
   fSurfaceArea = 0.;
@@ -556,7 +558,7 @@ void UBox::SetYHalfLength(double dy)
             << std::endl
             << "       hY = " << dy;
     UUtils::Exception("UBox::SetYHalfLength()", "GeomSolids0002",
-                      FatalErrorInArguments, 1, message.str().c_str());
+                      UFatalErrorInArguments, 1, message.str().c_str());
   }
   fCubicVolume = 0.;
   fSurfaceArea = 0.;
@@ -576,7 +578,7 @@ void UBox::SetZHalfLength(double dz)
             << std::endl
             << "       hZ = " << dz;
     UUtils::Exception("G4Box::SetZHalfLength()", "GeomSolids0002",
-                      FatalErrorInArguments, 1, message.str().c_str());
+                      UFatalErrorInArguments, 1, message.str().c_str());
   }
   fCubicVolume = 0.;
   fSurfaceArea = 0.;

@@ -22,6 +22,7 @@ void benchmark(double rmin, double rmax, double dz, double sphi, double dphi, in
 
   Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(3);
+  tester.SetPoolMultiplier(1);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
   tester.RunBenchmark();

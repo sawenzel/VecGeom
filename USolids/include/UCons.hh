@@ -46,6 +46,8 @@
 
 #include "VUSolid.hh"
 
+#include <iostream>
+
 class UCons : public VUSolid
 {
   public: // with description
@@ -87,14 +89,13 @@ class UCons : public VUSolid
     inline double Capacity();
     inline double SurfaceArea();
 
-
-//    inline VUSolid::EnumInside Inside( const UVector3& p ) const;
+   //    inline VUSolid::EnumInside Inside( const UVector3& p ) const;
 
     bool Normal(const UVector3& p, UVector3& n) const;
 
     double DistanceToIn(const UVector3& p, const UVector3& v, double aPstep = UUtils::kInfinity) const;
 
-    double SafetyFromOutside(const UVector3& p, bool precise=false) const;
+    double SafetyFromOutside(const UVector3& p, bool precise = false) const;
 
 
 
@@ -104,14 +105,11 @@ class UCons : public VUSolid
                          bool&           aConvex,
                          double aPstep = UUtils::kInfinity) const;
 
-
-    double SafetyFromInside(const UVector3& p, bool precise=false) const;
+    double SafetyFromInside(const UVector3& p, bool precise = false) const;
 
     UGeometryType GetEntityType() const;
 
     UVector3 GetPointOnSurface() const;
-
-
 
     VUSolid* Clone() const;
 
@@ -124,101 +122,17 @@ class UCons : public VUSolid
 
     virtual void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-    // Visualisation functions
+    // Safety used for UPolycone
 
+    inline double SafetyToPhi(const UVector3& p,
+                              const double rho, bool& outside) const;
+    inline double SafetyFromInsideR(const UVector3& p,
+                                    const double rho,bool) const;
+    inline double SafetyFromOutsideR(const UVector3& p,
+                                     const double rho,bool) const;
 
-    inline VUSolid::EnumInside Inside(const UVector3& p) const
-    {
-      double r2, rl, rh, pPhi, tolRMin, tolRMax; // rh2, rl2;
-      VUSolid::EnumInside in;
-      static const double halfCarTolerance = VUSolid::Tolerance() * 0.5;
-      static const double halfRadTolerance = kRadTolerance * 0.5;
-      static const double halfAngTolerance = kAngTolerance * 0.5;
-
-      if (std::fabs(p.z()) > fDz + halfCarTolerance)
-      {
-        return in = vecgeom::EInside::kOutside;
-      }
-      else if (std::fabs(p.z()) >= fDz - halfCarTolerance)
-      {
-        in = vecgeom::EInside::kSurface;
-      }
-      else
-      {
-        in = vecgeom::EInside::kInside;
-      }
-
-      r2 = p.x() * p.x() + p.y() * p.y();
-      rl = 0.5 * (fRmin2 * (p.z() + fDz) + fRmin1 * (fDz - p.z())) / fDz;
-      rh = 0.5 * (fRmax2 * (p.z() + fDz) + fRmax1 * (fDz - p.z())) / fDz;
-
-      // rh2 = rh*rh;
-
-      tolRMin = rl - halfRadTolerance;
-      if (tolRMin < 0)
-      {
-        tolRMin = 0;
-      }
-      tolRMax = rh + halfRadTolerance;
-
-      if ((r2 < tolRMin * tolRMin) || (r2 > tolRMax * tolRMax))
-      {
-        return in = vecgeom::EInside::kOutside;
-      }
-
-      if (rl)
-      {
-        tolRMin = rl + halfRadTolerance;
-      }
-      else
-      {
-        tolRMin = 0.0;
-      }
-      tolRMax = rh - halfRadTolerance;
-
-      if (in == vecgeom::EInside::kInside) // else it's eSurface already
-      {
-        if ((r2 < tolRMin * tolRMin) || (r2 >= tolRMax * tolRMax))
-        {
-          in = vecgeom::EInside::kSurface;
-        }
-      }
-      if (!fPhiFullCone && ((p.x() != 0.0) || (p.y() != 0.0)))
-      {
-        pPhi = std::atan2(p.y(), p.x());
-
-        if (pPhi < fSPhi - halfAngTolerance)
-        {
-          pPhi += 2 * UUtils::kPi;
-        }
-        else if (pPhi > fSPhi + fDPhi + halfAngTolerance)
-        {
-          pPhi -= 2 * UUtils::kPi;
-        }
-
-        if ((pPhi < fSPhi - halfAngTolerance) ||
-            (pPhi > fSPhi + fDPhi + halfAngTolerance))
-        {
-          return in = vecgeom::EInside::kOutside;
-        }
-
-        else if (in == vecgeom::EInside::kInside) // else it's eSurface anyway already
-        {
-          if ((pPhi < fSPhi + halfAngTolerance) ||
-              (pPhi > fSPhi + fDPhi - halfAngTolerance))
-          {
-            in = vecgeom::EInside::kSurface;
-          }
-        }
-      }
-      else if (!fPhiFullCone)
-      {
-        in = vecgeom::EInside::kSurface;
-      }
-
-      return in;
-    }
-
+    inline VUSolid::EnumInside Inside(const UVector3& p) const;
+ 
   public: // without description
 
     UCons();
@@ -245,13 +159,12 @@ class UCons : public VUSolid
 
     double fCubicVolume, fSurfaceArea;
 
-    
     inline void Initialize();
     //
     // Reset relevant values to zero
 
     inline void CheckSPhiAngle(double sPhi);
-    void CheckDPhiAngle(double dPhi);
+           void CheckDPhiAngle(double dPhi);
     inline void CheckPhiAngles(double sPhi, double dPhi);
     //
     // Reset relevant flags and angle values
@@ -289,13 +202,10 @@ class UCons : public VUSolid
     // Cached trigonometric values
 
     bool fPhiFullCone;
-
-    double secRMin, tanRMin, tanRMax, secRMax;
-
-//    double fSinPhi;
-
     //
     // Flag for identification of section or full cone
+
+    double secRMin, tanRMin, tanRMax, secRMax;
 };
 
 #include "UCons.icc"

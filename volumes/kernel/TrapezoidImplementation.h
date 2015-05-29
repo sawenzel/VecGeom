@@ -14,7 +14,7 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTrapezoid.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

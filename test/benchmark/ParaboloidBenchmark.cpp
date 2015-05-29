@@ -25,8 +25,8 @@ int main() {
     
     Benchmarker tester(GeoManager::Instance().GetWorld());
     tester.SetVerbosity(3);
-    tester.SetPointCount(1<<13);
-    tester.SetRepetitions(1024);
+    tester.SetPointCount(1<<10);
+    tester.SetRepetitions(4);
     std::cout<<"Prepared to run benchmarker\n";
     tester.RunBenchmark();
     

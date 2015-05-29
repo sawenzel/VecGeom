@@ -132,15 +132,17 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillBiasedDirections(VPlacedVolume const &volume,
                           TrackContainer const &points,
-                          const Precision bias,
+                          Precision bias,
                           TrackContainer & dirs) {
   assert(bias >= 0. && bias <= 1.);
 
   if( bias>0. && volume.daughters().size()==0 ) {
     printf("\nFillBiasedDirections ERROR:\n bias=%f requested, but no daughter volumes found.\n", bias);
-    // should throw exception, but for now just abort
-    printf("FillBiasedDirections: aborting...\n");
-    exit(1);
+    //// should throw exception, but for now just abort
+    // printf("FillBiasedDirections: aborting...\n");
+    // exit(1);
+    ///== temporary: reset bias to zero
+    bias=0.0;
   }
 
   const int size = dirs.capacity();
@@ -204,7 +206,17 @@ void FillBiasedDirections(VPlacedVolume const &volume,
                static_cast<Precision>(n_hits)/static_cast<Precision>(size));
       }
 
-      dirs.set(h, SampleDirection());
+      // SW: a potentially much faster algorithm is the following:
+      // sample a daughter to hit ( we can adjust the sampling probability according to Capacity or something; then generate point on surface of daughter )
+      // set direction accordingly
+      uint selecteddaughter = (uint) RNG::Instance().uniform() * volume.daughters().size();
+      Vector3D<Precision> pointonsurface = volume.daughters()[selecteddaughter]->GetPointOnSurface();
+      Vector3D<Precision> dirtosurfacepoint = pointonsurface - points[h];
+      dirtosurfacepoint.Normalize();
+      dirs.set(h, dirtosurfacepoint );
+
+      // the brute force and simple sampling technique is the following
+      // dirs.set(h, SampleDirection());
       for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
            iEnd = volume.daughters().cend(); i != iEnd; ++i) {
         if (IsHittingVolume(points[h], dirs[h], **i)) {
@@ -265,9 +277,11 @@ template<typename TrackContainer>
 VECGEOM_INLINE
 void FillUncontainedPoints(VPlacedVolume const &volume,
                            TrackContainer &points) {
-  static bool first = true;
-  if(first) {
+  static double lastUncontCap = 0.0;
+  double uncontainedCapacity = UncontainedCapacity(volume);
+  if(uncontainedCapacity != lastUncontCap) {
     printf("Uncontained capacity for %s: %f units\n", volume.GetLabel().c_str(), UncontainedCapacity(volume));
+    lastUncontCap = uncontainedCapacity;
   }
   if( UncontainedCapacity(volume) <= 0.0 ) {
     std::cout<<"\nVolUtil: FillUncontPts: ERROR: Volume provided <"
@@ -551,7 +565,8 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
             while( placedcount < np && iter!=allpaths.end() )
             {
                 // this is matrix linking local and global reference frame
-                Transformation3D m = (*iter)->TopMatrix();
+                Transformation3D m;
+                (*iter)->TopMatrix(m);
 
                 globalpoints.set(placedcount, m.InverseTransform(localpoints[placedcount]));
                 directions.set(placedcount, m.InverseTransformDirection(directions[placedcount]));

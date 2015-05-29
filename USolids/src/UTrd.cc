@@ -69,7 +69,8 @@ void UTrd::CheckAndSetAllParameters ( double pdx1,  double pdx2,
                 << "          X - " << pdx1 << ", " << pdx2 << std::endl
                 << "          Y - " << pdy1 << ", " << pdy2 << std::endl
                 << "          Z - " << pdz << std::endl;
-      UUtils::Exception("UTrd::CheckAndSetAllParameters()", "InvalidSetup", FatalErrorInArguments, 1, "Invalid parameters.");
+      UUtils::Exception("UTrd::CheckAndSetAllParameters()", "GeomSolids0002",
+                        UFatalErrorInArguments, 1, "Invalid parameters.");
     }
   }
 }
@@ -97,7 +98,7 @@ double UTrd::SafetyFromInside(const UVector3& p, bool aAccurate) const
     std::cout << "p.y() = "   << p.y() / mm << " mm" << std::endl ;
     std::cout << "p.z() = "   << p.z() / mm << " mm" << std::endl << std::endl ;
     std::cout.precision(oldprc) ;
-    UUtils::Exception("G4Trd::DistanceToOut(p)", "Notification", Warning, 1,
+    UUtils::Exception("UTrd::DistanceToOut(p)", "GeomSolids1002", UWarning, 1,
                       "Point p is outside !?");
   }
 #endif
@@ -254,7 +255,7 @@ double UTrd::SafetyFromOutsideAccurate(const UVector3& p) const
 //
 VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
 {
-  VUSolid::EnumInside in = vecgeom::EInside::kOutside;
+  VUSolid::EnumInside in = EnumInside::eOutside;
   double x, y, zbase1, zbase2;
 
   if (std::abs(p.z()) <= fDz - fgTolerance / 2)
@@ -270,11 +271,11 @@ VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
       y = 0.5 * ((fDy2 * zbase1 + fDy1 * zbase2)) / fDz - fgTolerance / 2;
       if (std::abs(p.y()) <= y)
       {
-        in = vecgeom::EInside::kInside;
+        in = EnumInside::eInside;
       }
       else if (std::abs(p.y()) <= y + fgTolerance)
       {
-        in = vecgeom::EInside::kSurface;
+        in = EnumInside::eSurface;
       }
     }
     else if (std::abs(p.x()) <= x + fgTolerance)
@@ -284,7 +285,7 @@ VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
       y = 0.5 * ((fDy2 * zbase1 + fDy1 * zbase2)) / fDz + fgTolerance / 2;
       if (std::abs(p.y()) <= y)
       {
-        in = vecgeom::EInside::kSurface;
+        in = EnumInside::eSurface;
       }
     }
   }
@@ -303,7 +304,7 @@ VUSolid::EnumInside UTrd::Inside(const UVector3& p) const
       // y = y half width of shape at z of point
       //
       y = 0.5 * ((fDy2 * zbase1 + fDy1 * zbase2)) / fDz + fgTolerance / 2;
-      if (std::abs(p.y()) <= y) in = vecgeom::EInside::kSurface;
+      if (std::abs(p.y()) <= y) in = EnumInside::eSurface;
     }
   }
   return in;
@@ -920,8 +921,8 @@ double UTrd::DistanceToOut(const UVector3&  p, const UVector3& v,
         n.Set(0, 0, -1);
         break;
       default:
-        UUtils::Exception("UTrd::DistanceToOut(p,v,..)", "Notification", Warning, 1, "Undefined side for valid surface normal to solid.");
-	std::cout<<"point is "<<Inside(p)<<" DistanceToIn(p,v)="<<DistanceToIn(p,v)<<" DistanceToOut(p,v)="<<snxt<<std::endl;
+        UUtils::Exception("UTrd::DistanceToOut(p,v,..)", "GeomSolids1002",
+                UWarning, 1, "Undefined side for valid surface normal to solid.");
         break;
     }
   }
@@ -975,7 +976,8 @@ bool UTrd::Normal(const UVector3& p, UVector3& norm) const
   if (noSurfaces == 0)
   {
 #ifdef UDEBUG
-    UUtils::Exception("G4Trd::SurfaceNormal(p)", "Notification", Warning, 1, "Point p is not on surface !?");
+    UUtils::Exception("UTrd::SurfaceNormal(p)", "GeomSolids1002",
+                      UWarning, 1, "Point p is not on surface !?");
 #endif
     // point is not on surface, calculate normal closest to surface. this is not likely to be used too often..., normally the user gives point on surface...
     //     norm = ApproxSurfaceNormal(p);
@@ -1036,7 +1038,7 @@ bool UTrd::Normal(const UVector3& p, UVector3& norm) const
     // if we added to the vector more than once, we have to normalize the vector
     if (noSurfaces > 1) norm.Normalize();
   }
-  return noSurfaces > 0; // (Inside(p) == vecgeom::EInside::kSurface);
+  return noSurfaces > 0; // (Inside(p) == eSurface);
 }
 
 

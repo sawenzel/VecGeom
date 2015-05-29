@@ -75,10 +75,10 @@ VPlacedVolume* SetupGeometry() {
 
 int main(int argc, char* argv[])
 {
-  OPTION_INT(npoints, 10000);
+  OPTION_INT(ntracks, 10000);
   OPTION_INT(nreps, 3);
   OPTION_STRING(geometry, "navBench");
-  OPTION_STRING(startVolName, "world");
+  OPTION_STRING(logvol, "world");
   OPTION_DOUBLE(bias, 0.8f);
 #ifdef VECGEOM_ROOT
   OPTION_BOOL(vis, false);
@@ -89,9 +89,8 @@ int main(int argc, char* argv[])
   OPTION_BOOL(help, false);
   if(help) return 0;
 
-  const VPlacedVolume *world = NULL;
   if(geometry.compare("navBench")==0) {
-    world = SetupGeometry();
+    const VPlacedVolume *world = SetupGeometry();
 
 #ifdef VECGEOM_ROOT
     // Exporting to ROOT file
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
   if(vis) {  // note that visualization block returns, excluding the rest of benchmark
     Visualizer visualizer;
     const VPlacedVolume* world = GeoManager::Instance().GetWorld();
-    world = GeoManager::Instance().FindPlacedVolume(startVolName.c_str());
+    world = GeoManager::Instance().FindPlacedVolume(logvol.c_str());
     visualizer.AddVolume( *world );
 
     Vector<Daughter> const* daughters = world->GetLogicalVolume()->daughtersp();
@@ -142,41 +141,41 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  //testVectorSafety(world);
 
-  std::cout<<"\n*** Validating VecGeom navigation..."<< std::endl;
+  std::cout<<"\n*** Validating VecGeom navigation...\n";
 
-  const VPlacedVolume* startVolume = GeoManager::Instance().GetWorld();
-  if( startVolName.compare("world")!=0 ) {
-    startVolume = GeoManager::Instance().FindPlacedVolume(startVolName.c_str());
+  const LogicalVolume* startVolume = GeoManager::Instance().GetWorld()->GetLogicalVolume();
+  if( logvol.compare("world")!=0 ) {
+    startVolume = GeoManager::Instance().FindLogicalVolume(logvol.c_str());
   }
 
-  std::cout<<"NavigationBenchmark: startVolName=<"<< startVolName
-           <<">, startVolume="<< (startVolume ? startVolume->GetLabel() : NULL)
-           <<" - "<< *startVolume <<"\n";
+  std::cout<<"NavigationBenchmark: logvol=<"<< logvol
+           <<">, startVolume=<"<< (startVolume ? startVolume->GetLabel() : "NULL") <<">\n";
+  if(startVolume) std::cout<< *startVolume <<"\n";
 
-  int np = Min( npoints, 1000 );  // no more than 1000 points used for validation
+  // prepare tracks to be used for validation
+  int np = Min( ntracks, 1000 );  // no more than 1000 points used for validation
   SOA3D<Precision> points(np);
   SOA3D<Precision> dirs(np);
   SOA3D<Precision> locpts(np);
+  vecgeom::volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume(startVolume, locpts, points, dirs, bias, np);
 
-  vecgeom::volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume(
-    startVolume->GetLogicalVolume(), locpts, points, dirs, bias, np);
-
+  Precision * maxSteps = (Precision *) _mm_malloc(sizeof(Precision)*np,32);
+  for (int i=0;i<np;++i) maxSteps[i] = 10. * RNG::Instance().uniform();
 
   // Must be validated before being benchmarked
-  bool ok = validateVecGeomNavigation(np, points, dirs);
+  bool ok = validateVecGeomNavigation(np, points, dirs, maxSteps);
   if(!ok) {
     std::cout<<"VecGeom validation failed."<< std::endl;
     return 1;
   }
   std::cout<<"VecGeom validation passed."<< std::endl;
 
-  // on mic.fnal.gov CPUs, loop execution takes ~70sec for npoints=10M
-  while(npoints<=10000) {
-    std::cout<<"\n*** Running navigation benchmarks with npoints="<<npoints<<" and nreps="<< nreps <<".\n";
-    runNavigationBenchmarks(startVolume, npoints, nreps, bias);
-    npoints*=10;
+  // on mic.fnal.gov CPUs, loop execution takes ~70sec for ntracks=10M
+  while(ntracks<=10000) {
+    std::cout<<"\n*** Running navigation benchmarks with ntracks="<<ntracks<<" and nreps="<< nreps <<".\n";
+    runNavigationBenchmarks(startVolume, ntracks, nreps, maxSteps, bias);
+    ntracks*=10;
   }
 
 
@@ -194,5 +193,7 @@ int main(int argc, char* argv[])
   }
 */
 
+  // cleanup
+  delete [] maxSteps;
   return 0;
 }

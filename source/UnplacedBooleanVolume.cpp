@@ -91,7 +91,6 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
 #endif
 }
 
-#ifndef VECGEOM_NVCC
   void UnplacedBooleanVolume::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
 
     Vector3D<Precision> minLeft, maxLeft, minRight, maxRight;
@@ -121,12 +120,6 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
       aMax = maxLeft;
     }
   }
-#else
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedBooleanVolume::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
-    assert(0 && "UnplacedBooleanVolume::Extent not ready.");
-  }
-#endif // !VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
 

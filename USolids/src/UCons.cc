@@ -41,22 +41,20 @@ UCons::UCons(const std::string& pName,
              double  pRmin1, double pRmax1,
              double  pRmin2, double pRmax2,
              double pDz,
-             double pSPhi, double pDPhi) :
-   VUSolid(pName.c_str()), 
-   fCubicVolume(0), fSurfaceArea(0), kRadTolerance(frTolerance), kAngTolerance(faTolerance),
-   fRmin1(pRmin1), fRmin2(pRmin2), fRmax1(pRmax1), fRmax2(pRmax2), fDz(pDz), fSPhi(0.), 
-   fDPhi(0.), sinCPhi(0), cosCPhi(0), cosHDPhiOT(0), cosHDPhiIT(0), sinSPhi(0), cosSPhi(0),
-   sinEPhi(0), cosEPhi(0), fPhiFullCone(false), secRMin(0), tanRMin(0), tanRMax(0), secRMax(0)
+             double pSPhi, double pDPhi)
+  : VUSolid(pName.c_str()), fRmin1(pRmin1), fRmin2(pRmin2),
+    fRmax1(pRmax1), fRmax2(pRmax2), fDz(pDz), fSPhi(0.), fDPhi(0.)
 {
+  kRadTolerance = frTolerance;
+  kAngTolerance = faTolerance;
   // Check z-len
   //
   if (pDz < 0)
   {
     std::ostringstream message;
     message << "Invalid Z half-length for Solid: " << GetName() << std::endl
-            << "				hZ = " << pDz;
-    UUtils::Exception("UCons::UCons()", "UGeomSolids", FatalErrorInArguments, 1, message.str().c_str());
-
+            << "  hZ = " << pDz;
+    UUtils::Exception("UCons::UCons()", "GeomSolids0002", UFatalErrorInArguments, 1, message.str().c_str());
   }
 
   // Check radii
@@ -65,9 +63,9 @@ UCons::UCons(const std::string& pName,
   {
     std::ostringstream message;
     message << "Invalid values of radii for Solid: " << GetName() << std::endl
-            << "				pRmin1 = " << pRmin1 << ", pRmin2 = " << pRmin2
+            << "  pRmin1 = " << pRmin1 << ", pRmin2 = " << pRmin2
             << ", pRmax1 = " << pRmax1 << ", pRmax2 = " << pRmax2;
-    UUtils::Exception("UCons::UCons()", "UGeomSolids", FatalErrorInArguments, 1, message.str().c_str());
+    UUtils::Exception("UCons::UCons()", "GeomSolids0002", UFatalErrorInArguments, 1, message.str().c_str());
 
   }
   if ((pRmin1 == 0.0) && (pRmin2 > 0.0))
@@ -92,11 +90,11 @@ UCons::UCons(const std::string& pName,
 //                            for usage restricted to object persistency.
 //
 UCons::UCons(/* __void__& a */)
-  : VUSolid(""), fCubicVolume(0), fSurfaceArea(0), kRadTolerance(0.), kAngTolerance(0.),
+  : VUSolid(""), kRadTolerance(0.), kAngTolerance(0.),
     fRmin1(0.), fRmin2(0.), fRmax1(0.), fRmax2(0.), fDz(0.),
     fSPhi(0.), fDPhi(0.), sinCPhi(0.), cosCPhi(0.), cosHDPhiOT(0.),
     cosHDPhiIT(0.), sinSPhi(0.), cosSPhi(0.), sinEPhi(0.), cosEPhi(0.),
-    fPhiFullCone(false), secRMin(0), tanRMin(0), tanRMax(0), secRMax(0)
+    fPhiFullCone(false)
 {
   Initialize();
 }
@@ -113,13 +111,14 @@ UCons::~UCons()
 //
 // Copy constructor
 
-UCons::UCons(const UCons& rhs) : 
-   VUSolid(rhs), fCubicVolume(rhs.fCubicVolume), fSurfaceArea(rhs.fSurfaceArea), kRadTolerance(rhs.kRadTolerance), 
-   kAngTolerance(rhs.kAngTolerance), fRmin1(rhs.fRmin1), fRmin2(rhs.fRmin2), fRmax1(rhs.fRmax1), fRmax2(rhs.fRmax2), 
-   fDz(rhs.fDz), fSPhi(rhs.fSPhi), fDPhi(rhs.fDPhi), sinCPhi(rhs.sinCPhi), cosCPhi(rhs.cosCPhi), 
-   cosHDPhiOT(rhs.cosHDPhiOT), cosHDPhiIT(rhs.cosHDPhiIT), sinSPhi(rhs.sinSPhi), cosSPhi(rhs.cosSPhi), 
-   sinEPhi(rhs.sinEPhi), cosEPhi(rhs.cosEPhi), fPhiFullCone(rhs.fPhiFullCone), secRMin(rhs.secRMin), 
-   tanRMin(rhs.tanRMin), tanRMax(rhs.tanRMax), secRMax(rhs.secRMax)
+UCons::UCons(const UCons& rhs)
+  : VUSolid(rhs), kRadTolerance(rhs.kRadTolerance),
+    kAngTolerance(rhs.kAngTolerance), fRmin1(rhs.fRmin1), fRmin2(rhs.fRmin2),
+    fRmax1(rhs.fRmax1), fRmax2(rhs.fRmax2), fDz(rhs.fDz), fSPhi(rhs.fSPhi),
+    fDPhi(rhs.fDPhi), sinCPhi(rhs.sinCPhi), cosCPhi(rhs.cosCPhi),
+    cosHDPhiOT(rhs.cosHDPhiOT), cosHDPhiIT(rhs.cosHDPhiIT),
+    sinSPhi(rhs.sinSPhi), cosSPhi(rhs.cosSPhi), sinEPhi(rhs.sinEPhi),
+    cosEPhi(rhs.cosEPhi), fPhiFullCone(rhs.fPhiFullCone)
 {
   Initialize();
 }
@@ -273,7 +272,7 @@ bool UCons::Normal(const UVector3& p, UVector3& n) const
 #ifdef UDEBUG
 
     UUtils::Exception("UCons::SurfaceNormal(p)", "GeomSolids1002",
-                      Warning, 1, "Point p is not on surface !?");
+                      UWarning, 1, "Point p is not on surface !?");
 #endif
     norm = ApproxSurfaceNormal(p);
   }
@@ -407,7 +406,7 @@ UVector3 UCons::ApproxSurfaceNormal(const UVector3& p) const
       break;
     default:          // Should never reach this case...
       UUtils::Exception("UCons::ApproxSurfaceNormal()",
-                        "GeomSolids1002", Warning, 1,
+                        "GeomSolids1002", UWarning, 1,
                         "Undefined side for valid surface normal to solid.");
       break;
   }
@@ -1259,8 +1258,9 @@ double UCons::DistanceToIn(const UVector3& p,
 
 double UCons::SafetyFromOutside(const UVector3& p, bool aAccurate) const
 {
-  double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi, cosPsi;
+  double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi;
   double pRMin, pRMax;
+  bool outside;
 
   rho  = std::sqrt(p.x() * p.x() + p.y() * p.y());
   safeZ = std::fabs(p.z()) - fDz;
@@ -1296,23 +1296,11 @@ double UCons::SafetyFromOutside(const UVector3& p, bool aAccurate) const
   if (!fPhiFullCone && rho)
   {
     // Psi=angle from central phi to point
-
-    cosPsi = (p.x() * cosCPhi + p.y() * sinCPhi) / rho;
-
-    if (cosPsi < std::cos(fDPhi * 0.5)) // Point lies outside phi range
+    //
+    safePhi = SafetyToPhi(p,rho,outside);
+    if ((outside) && (safePhi > safe))
     {
-      if ((p.y() * cosCPhi - p.x() * sinCPhi) <= 0.0)
-      {
-        safePhi = std::fabs(p.x() * std::sin(fSPhi) - p.y() * std::cos(fSPhi));
-      }
-      else
-      {
-        safePhi = std::fabs(p.x() * sinEPhi - p.y() * cosEPhi);
-      }
-      if (safePhi > safe)
-      {
-        safe = safePhi;
-      }
+      safe = safePhi;
     }
   }
   if (safe < 0.0)
@@ -1935,7 +1923,7 @@ double UCons::DistanceToOut(const UVector3& p,
     case kSPhi:
       if (fDPhi <= UUtils::kPi)
       {
-        aNormalVector = UVector3(sinSPhi, -cosSPhi, 0);
+        aNormalVector        = UVector3(sinSPhi, -cosSPhi, 0);
         aConvex = true;
       }
       else
@@ -1972,9 +1960,9 @@ double UCons::DistanceToOut(const UVector3& p,
       message << "Undefined side for valid surface normal to solid."
               << std::endl
               << "Position:"  << std::endl << std::endl
-              << "p.x() = "  << p.x() << " mm" << std::endl
-              << "p.y() = "  << p.y() << " mm" << std::endl
-              << "p.z() = "  << p.z() << " mm" << std::endl << std::endl
+              << "p.x = "  << p.x() << " mm" << std::endl
+              << "p.y = "  << p.y() << " mm" << std::endl
+              << "p.z = "  << p.z() << " mm" << std::endl << std::endl
               << "pho at z = "   << std::sqrt(p.x() * p.x() + p.y() * p.y())
               << " mm" << std::endl << std::endl;
       if (p.x() != 0. || p.y() != 0.)
@@ -1983,13 +1971,13 @@ double UCons::DistanceToOut(const UVector3& p,
                 << " degree" << std::endl << std::endl;
       }
       message << "Direction:" << std::endl << std::endl
-              << "v.x() = "  << v.x() << std::endl
-              << "v.y() = "  << v.y() << std::endl
-              << "v.z() = "  << v.z() << std::endl << std::endl
+              << "v.x = "  << v.x() << std::endl
+              << "v.y = "  << v.y() << std::endl
+              << "v.z = "  << v.z() << std::endl << std::endl
               << "Proposed distance :" << std::endl << std::endl
               << "snxt = "    << snxt << " mm" << std::endl;
       message.precision(oldprc);
-      UUtils::Exception("UCons::DistanceToOut()", "UGeomSolids", Warning, 1, message.str().c_str());
+      UUtils::Exception("UCons::DistanceToOut()", "GeomSolids0002", UWarning, 1, message.str().c_str());
       break;
   }
   if (snxt < halfCarTolerance)
@@ -2006,20 +1994,18 @@ double UCons::DistanceToOut(const UVector3& p,
 
 double UCons::SafetyFromInside(const UVector3& p, bool) const
 {
-  double safe = 0.0, rho, safeR1, safeR2, safeZ, safePhi;
-  double pRMin;
-  double pRMax;
-
+  double safe = 0.0, rho, safeZ;
+ 
 #ifdef UCSGDEBUG
-  if (Inside(p) == vecgeom::EInside::kOutside)
+  if (Inside(p) == EnumInside::eOutside)
   {
     int oldprc = cout.precision(16);
     cout << std::endl;
     DumpInfo();
     cout << "Position:" << std::endl << std::endl;
-    cout << "p.x() = "   << p.x() << " mm" << std::endl;
-    cout << "p.y() = "   << p.y() << " mm" << std::endl;
-    cout << "p.z() = "   << p.z() << " mm" << std::endl << std::endl;
+    cout << "p.x = "   << p.x() << " mm" << std::endl;
+    cout << "p.y = "   << p.y() << " mm" << std::endl;
+    cout << "p.z = "   << p.z() << " mm" << std::endl << std::endl;
     cout << "pho at z = "  << std::sqrt(p.x() * p.x() + p.y() * p.y())
          << " mm" << std::endl << std::endl;
     if ((p.x() != 0.) || (p.x() != 0.))
@@ -2028,58 +2014,19 @@ double UCons::SafetyFromInside(const UVector3& p, bool) const
            << " degree" << std::endl << std::endl;
     }
     cout.precision(oldprc);
-    UUtils::Exception("UCons::UCons()", "UGeomSolids", Warning, 1, message.str().c_str());
+    UUtils::Exception("UCons::UCons()", "GeomSolids0002", UWarning, 1, message.str().c_str());
 
   }
 #endif
-
+  
   rho = std::sqrt(p.x() * p.x() + p.y() * p.y());
+
+  safe = SafetyFromInsideR(p, rho, false);
   safeZ = fDz - std::fabs(p.z());
 
-  if (fRmin1 || fRmin2)
-  {
-    pRMin  = tanRMin * p.z() + (fRmin1 + fRmin2) * 0.5;
-    safeR1  = (rho - pRMin) / secRMin;
-  }
-  else
-  {
-    safeR1 = UUtils::kInfinity;
-  }
-
-  pRMax  = tanRMax * p.z() + (fRmax1 + fRmax2) * 0.5;
-  safeR2  = (pRMax - rho) / secRMax;
-
-  if (safeR1 < safeR2)
-  {
-    safe = safeR1;
-  }
-  else
-  {
-    safe = safeR2;
-  }
   if (safeZ < safe)
   {
     safe = safeZ;
-  }
-
-  // Check if phi divided, Calc distances closest phi plane
-
-  if (!fPhiFullCone)
-  {
-    // Above/below central phi of UCons?
-
-    if ((p.y() * cosCPhi - p.x() * sinCPhi) <= 0)
-    {
-      safePhi = -(p.x() * sinSPhi - p.y() * cosSPhi);
-    }
-    else
-    {
-      safePhi = (p.x() * sinEPhi - p.y() * cosEPhi);
-    }
-    if (safePhi < safe)
-    {
-      safe = safePhi;
-    }
   }
   if (safe < 0)
   {
@@ -2117,17 +2064,17 @@ std::ostream& UCons::StreamInfo(std::ostream& os) const
 {
   int oldprc = os.precision(16);
   os << "-----------------------------------------------------------\n"
-     << "		*** Dump for solid - " << GetName() << " ***\n"
-     << "		===================================================\n"
+     << "                *** Dump for solid - " << GetName() << " ***\n"
+     << "                ===================================================\n"
      << " Solid type: UCons\n"
      << " Parameters: \n"
-     << "	 inside	-fDz radius: "  << fRmin1 << " mm \n"
-     << "	 outside -fDz radius: " << fRmax1 << " mm \n"
-     << "	 inside	+fDz radius: "  << fRmin2 << " mm \n"
-     << "	 outside +fDz radius: " << fRmax2 << " mm \n"
-     << "	 half length in Z	 : "  << fDz << " mm \n"
-     << "	 starting angle of segment: " << fSPhi / (UUtils::kPi / 180.0) << " degrees \n"
-     << "	 delta angle of segment	 : " << fDPhi / (UUtils::kPi / 180.0) << " degrees \n"
+     << "         inside -fDz radius : " << fRmin1 << " mm \n"
+     << "         outside -fDz radius: " << fRmax1 << " mm \n"
+     << "         inside +fDz radius : " << fRmin2 << " mm \n"
+     << "         outside +fDz radius: " << fRmax2 << " mm \n"
+     << "         half length in Z   : " << fDz << " mm \n"
+     << "         starting angle of segment: " << fSPhi / (UUtils::kPi / 180.0) << " degrees \n"
+     << "         delta angle of segment   : " << fDPhi / (UUtils::kPi / 180.0) << " degrees \n"
      << "-----------------------------------------------------------\n";
   os.precision(oldprc);
 
@@ -2171,7 +2118,7 @@ UVector3 UCons::GetPointOnSurface() const
   sinu = std::sin(phi);
   rRand1 = UUtils::GetRadiusInRing(fRmin1, fRmax1);
   rRand2 = UUtils::GetRadiusInRing(fRmin2, fRmax2);
-
+ 
   if ((fSPhi == 0.) && fPhiFullCone)
   {
     Afive = 0.;
@@ -2242,18 +2189,6 @@ void UCons::Extent(UVector3& aMin, UVector3& aMax) const
   aMax = UVector3(max, max, fDz);
 }
 
-void UCons::GetParametersList(int, double* aArray) const
-{
-  aArray[0] = GetInnerRadiusMinusZ();
-  aArray[1] = GetOuterRadiusMinusZ();
-  aArray[2] = GetInnerRadiusPlusZ();
-  aArray[3] = GetOuterRadiusPlusZ();
-  aArray[4] = GetZHalfLength();
-  aArray[5] = GetStartPhiAngle();
-  aArray[6] = GetDeltaPhiAngle();
-
-}
-
 void UCons::CheckDPhiAngle(double dPhi)
 {
   fPhiFullCone = true;
@@ -2276,8 +2211,18 @@ void UCons::CheckDPhiAngle(double dPhi)
               << "Negative or zero delta-Phi (" << dPhi << ") in solid: "
               << GetName();
       UUtils::Exception("UCons::CheckDPhiAngle()", "GeomSolids0002",
-                        FatalErrorInArguments, 1, message.str().c_str());
+                        UFatalErrorInArguments, 1, message.str().c_str());
     }
   }
 }
 
+void UCons::GetParametersList(int, double* aArray) const
+{
+  aArray[0] = GetInnerRadiusMinusZ();
+  aArray[1] = GetOuterRadiusMinusZ();
+  aArray[2] = GetInnerRadiusPlusZ();
+  aArray[3] = GetOuterRadiusPlusZ();
+  aArray[4] = GetZHalfLength();
+  aArray[5] = GetStartPhiAngle();
+  aArray[6] = GetDeltaPhiAngle();
+}

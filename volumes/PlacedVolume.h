@@ -164,7 +164,7 @@ public:
   virtual bool UnplacedContains(Vector3D<Precision> const &localPoint) const =0;
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual Inside_t Inside(Vector3D<Precision> const &point) const =0;
+  virtual EnumInside Inside(Vector3D<Precision> const &point) const =0;
 
   virtual void Inside(SOA3D<Precision> const &point,
                       Inside_t *const output) const =0;
@@ -257,16 +257,26 @@ public:
       return 0;
   }
 
-  virtual void Extent(Vector3D<Precision> &min,
-                      Vector3D<Precision> &max) const {
+  virtual void Extent(Vector3D<Precision> & /* min */,
+                      Vector3D<Precision> & /* max */) const {
     assert(0 && "Extent not implemented for this shape type.");
   }
 
-  virtual Precision SurfaceArea() {
-    assert(0 && "SurfaceArea not implemented for this shape type.");
-    return 0.0;
+
+  virtual bool Normal(Vector3D<double> const &point,
+                      Vector3D<double> &normal) const {
+
+    assert(0 &&
+           "Normal not implemented.");
+    return false;
   }
 
+
+  virtual Precision SurfaceArea(); // {
+   // assert(0 && "SurfaceArea not implemented for this shape type.");
+   // return 0.0;
+ // }
+  virtual Vector3D<Precision> GetPointOnSurface() const;
 
 public:
 

@@ -31,7 +31,7 @@ int StaticPlanes() {
       std::cout << "Inside mismatch for " << point << ": " << insidePlanes
                 << " / " << insideDie << "\n";
     } else {
-      if (insidePlanes == EInside::kInside) {
+      if (insidePlanes == vecgeom::EInside::kInside) {
         Precision distancePlanes = planes.Distance<kScalar>(point, direction);
         Precision distanceDie = die.DistanceToOut(point, direction);
         if (Abs(distancePlanes - distanceDie) > kTolerance) {

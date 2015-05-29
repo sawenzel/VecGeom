@@ -61,7 +61,7 @@ bool TestTrd()
 
  // Check Surface area
     assert(trd1.SurfaceArea() == 20800);    
-    // std::cout<<trd1.SurfaceArea()<<std::endl;
+    std::cout<<"Trd Surface Area : " << trd1.SurfaceArea()<<std::endl;
 
 
 // Check Inside

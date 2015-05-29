@@ -34,7 +34,8 @@ namespace vecgeom {
     int nPoints,
     int nReps,
     SOA3D<Precision> const& points,
-    SOA3D<Precision> const& dirs
+    SOA3D<Precision> const& dirs,
+    Precision const* maxSteps
     );
 
   Precision benchmarkVectorNavigation(
@@ -42,12 +43,12 @@ namespace vecgeom {
     int nPoints,
     int nReps,
     SOA3D<Precision> const& points,
-    SOA3D<Precision> const& dirs
+    SOA3D<Precision> const& dirs,
+    Precision const* maxSteps
     );
 
-  void testVectorSafety( VPlacedVolume const* top );
-
-  void runNavigationBenchmarks( VPlacedVolume const* top, int np, int nreps, Precision bias = 0.8);
+  void runNavigationBenchmarks( LogicalVolume const* vol, int np, int nreps,
+                                Precision const* maxStep, Precision bias=0.8 );
 
   bool validateNavigationStepAgainstRoot(
     Vector3D<Precision> const& pos,
@@ -57,7 +58,8 @@ namespace vecgeom {
     Precision testStep
     );
 
-  bool validateVecGeomNavigation( int npts, SOA3D<Precision> const& points, SOA3D<Precision> const& dirs);
+  bool validateVecGeomNavigation( int npts, SOA3D<Precision> const& points, SOA3D<Precision> const& dirs,
+                                  Precision const* maxSteps );
 
 #ifdef VECGEOM_ROOT
   Precision benchmarkROOTNavigation(
