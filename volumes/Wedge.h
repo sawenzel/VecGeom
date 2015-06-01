@@ -66,6 +66,12 @@ class Wedge{
         VECGEOM_CUDA_HEADER_BOTH
         Vector3D<Precision> GetAlong2() const {return fAlongVector2; }
 
+        VECGEOM_CUDA_HEADER_BOTH
+        Vector3D<Precision> GetNormal1() const {return fNormalVector1; }
+
+        VECGEOM_CUDA_HEADER_BOTH
+        Vector3D<Precision> GetNormal2() const {return fNormalVector2; }
+
         // very important:
         template<typename Backend>
         VECGEOM_CUDA_HEADER_BOTH
@@ -79,9 +85,28 @@ class Wedge{
         VECGEOM_CUDA_HEADER_BOTH
         typename Backend::inside_v Inside( Vector3D<typename Backend::precision_v> const& point ) const;
 
+        // static function determining if input points are on a plane surface which is part of a wedge
+        // ( given by along and normal )
+        template<typename Backend>
+        VECGEOM_CUDA_HEADER_BOTH
+        static typename Backend::bool_v IsOnSurfaceGeneric( Vector3D<Precision> const & alongVector,
+                                                            Vector3D<Precision> const & normalVector,
+                                                            Vector3D<typename Backend::precision_v> const& point );
+
+        VECGEOM_CUDA_HEADER_BOTH
+        bool IsOnSurface1( Vector3D<Precision> const& point ) const {
+            return Wedge::IsOnSurfaceGeneric<kScalar>( fAlongVector1, fNormalVector1, point );
+        }
+
+
+        VECGEOM_CUDA_HEADER_BOTH
+        bool IsOnSurface2( Vector3D<Precision> const& point ) const {
+            return Wedge::IsOnSurfaceGeneric<kScalar>( fAlongVector2, fNormalVector2, point );
+        }
+
         /**
          * estimate of the smallest distance to the Wedge boundary when
-         * the point is located outside the Wegde
+         * the point is located outside the Wedge
          */
         template<typename Backend>
         VECGEOM_CUDA_HEADER_BOTH
@@ -118,13 +143,13 @@ class Wedge{
                 typename Backend::bool_v &completelyinside,
                 typename Backend::bool_v &completelyoutside) const;
 
-
 }; // end of class Wedge
 
     template<typename Backend>
     VECGEOM_CUDA_HEADER_BOTH
     typename Backend::inside_v Wedge::Inside( Vector3D<typename Backend::precision_v> const& point ) const
     {
+
         typedef typename Backend::bool_v      Bool_t;
         Bool_t completelyinside, completelyoutside;
         GenericKernelForContainsAndInside<Backend,true>(
@@ -143,7 +168,7 @@ class Wedge{
         Bool_t completelyinside, completelyoutside;
         GenericKernelForContainsAndInside<Backend,true>(
               point, completelyinside, completelyoutside);
-	return !completelyoutside;
+        return !completelyoutside;
     }
 
     template<typename Backend>
@@ -166,37 +191,51 @@ class Wedge{
                 typename Backend::bool_v &completelyinside,
                 typename Backend::bool_v &completelyoutside) const
     {
-        typedef typename Backend::precision_v Float_t;
+        typedef typename Backend::precision_v Real_v;
 
        // this part of the code assumes some symmetry knowledge and is currently only
         // correct for a PhiWedge assumed to be aligned along the z-axis.
-        Float_t x = localPoint.x();
-        Float_t y = localPoint.y();
-        Float_t startx = fAlongVector1.x( );
-        Float_t starty = fAlongVector1.y( );
-        Float_t endx = fAlongVector2.x( );
-        Float_t endy = fAlongVector2.y( );
+        Real_v x = localPoint.x();
+        Real_v y = localPoint.y();
+        Real_v startx = fAlongVector1.x( );
+        Real_v starty = fAlongVector1.y( );
+        Real_v endx = fAlongVector2.x( );
+        Real_v endy = fAlongVector2.y( );
 
-        Float_t startCheck = (-x*starty + y*startx);
-        Float_t endCheck   = (-endx*y   + endy*x);
+        Real_v startCheck = (-x*starty + y*startx);
+        Real_v endCheck   = (-endx*y   + endy*x);
 
-        // TODO: I think we need to treat the tolerance as a phi - tolerance
-        // this will complicate things a little bit
-        completelyoutside = startCheck < MakeMinusTolerant<ForInside>(0.);
-        if(ForInside)
-            completelyinside = startCheck > MakePlusTolerant<ForInside>(0.);
-
-        if(fDPhi<kPi) {
-            completelyoutside |= endCheck < MakeMinusTolerant<ForInside>(0.);
-            if(ForInside)
-                completelyinside &= endCheck > MakePlusTolerant<ForInside>(0.);
-        }
-        else {
-            completelyoutside &= endCheck < MakeMinusTolerant<ForInside>(0.);
-            if(ForInside)
-               completelyinside |= endCheck > MakePlusTolerant<ForInside>(0.);
+        completelyoutside = startCheck < 0.;
+        if(fDPhi<kPi)
+            completelyoutside |= endCheck < 0.;
+        else
+            completelyoutside &= endCheck < 0.;
+        if( ForInside ){
+            // TODO: see if the compiler optimizes across these function calls sinc
+            // a couple of multiplications inside IsOnSurfaceGeneric are already done preveously
+            typename Backend::bool_v onSurface =
+                    Wedge::IsOnSurfaceGeneric<Backend>(fAlongVector1, fNormalVector1, localPoint)
+                    || Wedge::IsOnSurfaceGeneric<Backend>(fAlongVector2,fNormalVector2, localPoint);
+            completelyoutside &= !onSurface;
+            completelyinside = !onSurface && !completelyoutside;
         }
     }
+
+    template<typename Backend>
+    VECGEOM_CUDA_HEADER_BOTH
+    typename Backend::bool_v Wedge::IsOnSurfaceGeneric( Vector3D<Precision> const & alongVector,
+                                    Vector3D<Precision> const & normalVector,
+                                    Vector3D<typename Backend::precision_v> const& point ) {
+        // on right side of half plane ??
+        typedef typename Backend::bool_v Bool_v;
+        Bool_v condition1 = alongVector.x() * point.x() + alongVector.y()*point.y() >= 0.;
+        if( IsEmpty(condition1) )
+            return Bool_v(false);
+        // within the right distance to the plane ??
+        Bool_v condition2 = Abs( normalVector.x()*point.x() + normalVector.y()*point.y() ) < kTolerance;
+        return condition1 && condition2;
+    }
+
 
 
     template<typename Backend>
