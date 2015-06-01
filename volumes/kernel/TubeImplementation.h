@@ -260,47 +260,6 @@ void PhiPlaneTrajectoryIntersection(Precision alongX, Precision alongY,
     }
   }
 }
-
-template<typename Backend, typename tubeTypeT>
-VECGEOM_INLINE
-VECGEOM_CUDA_HEADER_BOTH
-void PointOnTubeSurface(
-      UnplacedTube const &tube,
-      Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::bool_v &surface) {
-
-  using namespace TubeUtilities;
-  using namespace TubeTypes;  
-  typedef typename Backend::precision_v Float_t;
-  typedef typename Backend::bool_v Bool_t;
-
-  // surface Z
-  Bool_t inz = (Abs(point.z()) - kTolerance) <= tube.z();
-  if(Backend::early_returns && !inz) {
-    surface = Backend::kFalse;
-    return;
-  }
-
-  // on rmin surface?
-  Float_t r2 = point.x()*point.x() + point.y()*point.y();
-  Bool_t onrmin = Backend::kFalse;
-  if(checkRminTreatment<tubeTypeT>(tube)) {
-    onrmin = Abs(tube.rmin2() - r2) <= kTolerance;
-  }
-
-  // on rmax surface?
-  Bool_t onrmax = Abs(r2 - tube.rmax2()) <= kTolerance;
-
-  // on sector surface?
-  Bool_t onsector = Backend::kFalse;
-  if(checkPhiTreatment<tubeTypeT>(tube)) {
-    PointInCyclicalSector<Backend, tubeTypeT, UnplacedTube, true>(tube, point.x(), point.y(), onsector);
-  }
-
-  surface = inz & (onrmin | onrmax | onsector);
-}
-
-
 }
 
 class PlacedTube;
@@ -318,62 +277,86 @@ struct TubeImplementation {
      printf("SpecializedTube<%i, %i, %s>", transCodeT, rotCodeT, tubeTypeT::toString());
   }
 
+
+  /////GenericKernel Contains/Inside implementation
+    template <typename Backend, bool ForInside>
+    VECGEOM_INLINE
+    VECGEOM_CUDA_HEADER_BOTH
+    static void GenericKernelForContainsAndInside(UnplacedTube const &tube,
+              Vector3D<typename Backend::precision_v> const &point,
+              typename Backend::bool_v &completelyinside,
+              typename Backend::bool_v &completelyoutside) {
+
+        typedef typename Backend::precision_v Float_t;
+        typedef typename Backend::bool_v Bool_t;
+
+        // very fast check on z-height
+        Float_t absz = Abs(point[2]);
+        completelyoutside = absz > MakePlusTolerant<ForInside>( tube.z() );
+        if (ForInside)
+        {
+            completelyinside = absz < MakeMinusTolerant<ForInside>( tube.z() );
+        }
+        if (Backend::early_returns) {
+            if ( IsFull(completelyoutside) ) {
+              return;
+            }
+        }
+
+        // check on RMAX
+        Float_t r2 = point.x()*point.x()+point.y()*point.y();
+        // calculate cone radius at the z-height of position
+
+        completelyoutside |= r2 > MakePlusTolerantSquare<ForInside>( tube.rmax(), tube.rmax2() );
+        if (ForInside)
+        {
+          completelyinside &= r2 < MakeMinusTolerantSquare<ForInside>( tube.rmax(), tube.rmax2() );
+        }
+        if (Backend::early_returns) {
+                if ( IsFull(completelyoutside) ) {
+                  return;
+                }
+        }
+
+        // check on RMIN
+        if (TubeTypes::checkRminTreatment<tubeTypeT>(tube)) {
+          completelyoutside |= r2 <= MakeMinusTolerantSquare<ForInside>( tube.rmin(), tube.rmin2() );
+          if (ForInside)
+          {
+           completelyinside &= r2 > MakePlusTolerantSquare<ForInside>( tube.rmin(), tube.rmin2() );
+          }
+            if (Backend::early_returns) {
+               if ( IsFull(completelyoutside) ) {
+                  return;
+               }
+            }
+        }
+
+        if(TubeTypes::checkPhiTreatment<tubeTypeT>(tube)) {
+              Bool_t completelyoutsidephi;
+              Bool_t completelyinsidephi;
+              tube.GetWedge().GenericKernelForContainsAndInside<Backend,ForInside>( point,
+                completelyinsidephi, completelyoutsidephi );
+
+              completelyoutside |= completelyoutsidephi;
+              if( ForInside )
+                completelyinside &= completelyinsidephi;
+           }
+    }
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   static void UnplacedContains(
       UnplacedTube const &tube,
       Vector3D<typename Backend::precision_v> const &point,
-      typename Backend::bool_v &inside) {
+      typename Backend::bool_v &contains) {
 
-    using namespace TubeUtilities;
-    using namespace TubeTypes;  
-    typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v Bool_t;
-
-    // inside Z
-    Bool_t inz = Abs(point.z()) <= tube.z();
-    if(Backend::early_returns && !inz) {
-      inside = Backend::kFalse;
-      return;
-    }
-
-    // inside Rmax
-    Float_t r2 = point.x()*point.x() + point.y()*point.y();
-    Bool_t inrmax = r2 <= tube.rmax2();
-    if(Backend::early_returns && !inrmax) {
-      inside = Backend::kFalse;
-      return;
-    }
-
-    // inside Rmin?
-    Bool_t inrmin = Backend::kTrue;
-    if(checkRminTreatment<tubeTypeT>(tube)) {
-      inrmin = tube.rmin2() <= r2;
-      if(Backend::early_returns && !inrmin) {
-        inside = Backend::kFalse;
-        return;
-      }
-    }
-
-    // inside sector?
-    Bool_t insector = Backend::kTrue;
-    if(checkPhiTreatment<tubeTypeT>(tube)) {
-
-      insector = tube.GetWedge().Contains<Backend>( point );
-
-      if(Backend::early_returns && !insector) {
-        inside = Backend::kFalse;
-        return;
-      }
-    }
-
-    if (Backend::early_returns) {
-      inside = Backend::kTrue;
-    } else {
-      inside = inz & inrmax & inrmin & insector;
-    }
-
+      typedef typename Backend::bool_v Bool_t;
+      Bool_t unused;
+      Bool_t outside;
+      GenericKernelForContainsAndInside<Backend, false>(tube, point, unused, outside);
+      contains = !outside;
   }
 
   template <class Backend>
@@ -398,20 +381,16 @@ struct TubeImplementation {
                      Vector3D<typename Backend::precision_v> const &point,
                      typename Backend::inside_v &inside) {
 
-    typedef typename Backend::bool_v Bool_t;
-    Vector3D<typename Backend::precision_v> localpoint;
-    localpoint = transformation.Transform<transCodeT, rotCodeT>(point);
-   
-    inside = EInside::kOutside;
+      Vector3D<typename Backend::precision_v> localPoint
+            = transformation.Transform<transCodeT, rotCodeT>(point);
 
-    Bool_t isInside;
-    UnplacedContains<Backend>(tube, localpoint, isInside);
-    MaskedAssign(isInside, EInside::kInside, &inside);
-
-    Bool_t onSurface;
-    // TODO: this function is not very tested - and could probably be made faster
-    TubeUtilities::PointOnTubeSurface<Backend, tubeTypeT>(tube, localpoint, onSurface);
-    MaskedAssign(onSurface, EInside::kSurface, &inside);
+      typedef typename Backend::bool_v Bool_t;
+      Bool_t completelyinside, completelyoutside;
+      GenericKernelForContainsAndInside<Backend,true>(tube,
+          localPoint, completelyinside, completelyoutside);
+      inside = EInside::kSurface;
+      MaskedAssign(completelyoutside, EInside::kOutside, &inside);
+      MaskedAssign(completelyinside,  EInside::kInside, &inside);
   }
 
     template <class Backend>
