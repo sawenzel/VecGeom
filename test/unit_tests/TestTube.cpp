@@ -22,8 +22,9 @@
 #undef NDEBUG
 #include <cassert>
 
-template <class Tube_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
+bool testvecgeom = false;
 
+template <class Tube_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestTubs()
 {
     std::cout.precision(16) ;
@@ -236,7 +237,10 @@ bool TestTubs()
     Dist=t1.DistanceToIn(pbigmz,vz);
     assert(ApproxEqual(Dist,50));
     Dist=t1.DistanceToIn(pbigx,vxy);
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    if(testvecgeom)
+        assert(ApproxEqual(Dist,vecgeom::kInfinity));
+    else
+        assert(ApproxEqual(Dist,UUtils::kInfinity));
 
     Dist=t1a.DistanceToIn(pbigz,vmz);
     assert(ApproxEqual(Dist,50));
@@ -268,7 +272,10 @@ bool TestTubs()
    
     Dist=t5.DistanceToIn(Vec_t(30.0,-70.0,0),vxy);
     // std::cout<<"Dist=t5.DistanceToIn((30.0,-70.0,0),vxy) = "<<Dist<<std::endl;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    if(testvecgeom)
+            assert(ApproxEqual(Dist,vecgeom::kInfinity));
+        else
+            assert(ApproxEqual(Dist,UUtils::kInfinity));
    
     Dist=t5.DistanceToIn(Vec_t(30.0,-20.0,0),vmxmy);
     //  std::cout<<"Dist=t5.DistanceToIn((30.0,-20.0,0),vmxmy) = "<<Dist<<std::endl;
@@ -276,7 +283,10 @@ bool TestTubs()
    
     Dist=t5.DistanceToIn(Vec_t(30.0,-70.0,0),vmxmy);
     // std::cout<<"Dist=t5.DistanceToIn((30.0,-70.0,0),vmxmy) = "<<Dist<<std::endl;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    if(testvecgeom)
+        assert(ApproxEqual(Dist,vecgeom::kInfinity));
+    else
+        assert(ApproxEqual(Dist,UUtils::kInfinity));
    
     Dist=t5.DistanceToIn(Vec_t(50.0,-20.0,0),vy);
     // std::cout<<"Dist=t5.DistanceToIn((50.0,-20.0,0),vy) = "<<Dist<<std::endl;
@@ -284,7 +294,8 @@ bool TestTubs()
 
     Dist=t5.DistanceToIn(Vec_t(100.0,-20.0,0),vy);
     // std::cout<<"Dist=t5.DistanceToIn((100.0,-20.0,0),vy) = "<<Dist<<std::endl;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    if(testvecgeom) assert(ApproxEqual(Dist,vecgeom::kInfinity));
+    else assert(ApproxEqual(Dist,UUtils::kInfinity));
    
     Dist=t5.DistanceToIn(Vec_t(30.0,-50.0,0),vmx);
     //  std::cout<<"Dist=t5.DistanceToIn((30.0,-50.0,0),vmx) = "<<Dist<<std::endl;
@@ -292,7 +303,8 @@ bool TestTubs()
    
     Dist=t5.DistanceToIn(Vec_t(30.0,-100.0,0),vmx);
     //  std::cout<<"Dist=t5.DistanceToIn((30.0,-100.0,0),vmx) = "<<Dist<<std::endl;
-    assert(ApproxEqual(Dist,UUtils::kInfinity));
+    if(testvecgeom) assert(ApproxEqual(Dist,vecgeom::kInfinity));
+    else assert(ApproxEqual(Dist,UUtils::kInfinity));
    
 
     /* ********************************
@@ -492,6 +504,7 @@ int main(int argc, char *argv[]) {
     }
     else if( ! strcmp(argv[1], "--vecgeom") )
     {
+       testvecgeom = true;
        assert(TestTubs<vecgeom::SimpleTube>());
        std::cout << "VecGeom tube passed\n";
     }

@@ -83,10 +83,10 @@ template<typename Backend, typename ShapeType, typename UnplacedVolumeType, bool
   }
   else {
     if(smallerthanpi) {
-      ret = (startCheck >= 0) & (endCheck >= 0);
+      ret = (startCheck >= -kTolerance) & (endCheck >= -kTolerance);
     }
     else {
-      ret = (startCheck >= 0) | (endCheck >= 0);
+      ret = (startCheck >= -kTolerance) | (endCheck >= -kTolerance);
     }    
   }
 }
@@ -106,7 +106,11 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
   typedef typename Backend::bool_v Bool_t;
 
   Float_t delta = b*b - c;
-  Bool_t delta_mask = delta > 0;
+  Bool_t delta_mask;
+  if(!LargestSolution)
+   delta_mask = delta > 0.;
+  else
+   delta_mask = delta >= 0.;
   MaskedAssign(!delta_mask, 0. , &delta);
   delta = Sqrt(delta);
 
@@ -122,7 +126,8 @@ void CircleTrajectoryIntersection(typename Backend::precision_v const &b,
 
     Bool_t insector = Backend::kTrue;
     if(checkPhiTreatment<TubeType>(tube)) {
-      PointInCyclicalSector<Backend, TubeType, UnplacedTube, false>(tube, hitx, hity, insector);
+//      PointInCyclicalSector<Backend, TubeType, UnplacedTube, false>(tube, hitx, hity, insector);
+        insector = tube.GetWedge().ContainsWithBoundary<Backend>( Vector3D<typename Backend::precision_v>(hitx, hity, hitz) );
     }
     ok = delta_mask & (dist >= 0) & (Abs(hitz) <= tube.z()) & insector;
   }
@@ -250,13 +255,13 @@ void PhiPlaneTrajectoryIntersection(Precision alongX, Precision alongY,
           dist > 0;
 
     if(PositiveDirectionOfPhiVector)
-      ok = ok && (hitx*alongX + hity*alongY) > 0;
+      ok = ok && (hitx*alongX + hity*alongY) > 0.;
   }
   else {
     if(PositiveDirectionOfPhiVector) {
       Float_t hitx = pos.x() + dist * dir.x();
       Float_t hity = pos.y() + dist * dir.y();
-      ok = (hitx*alongX + hity*alongY) > 0;
+      ok = (hitx*alongX + hity*alongY) >= 0.;
     }
   }
 }
@@ -515,8 +520,7 @@ struct TubeImplementation {
     /*
      * Now write result from hitting Z face
      */
-
-    MaskedAssign(okz && distz < distance, distz, &distance);
+    MaskedAssign(okz && distz < distance && distz >= 0., distz, &distance);
 
     /*
      * Calculate intersection between trajectory and the 

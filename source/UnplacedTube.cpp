@@ -142,7 +142,7 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
     int nosurface = 0;  // idea from trapezoid;; change nomenclature as confusing
 
     Precision x2y2 = Sqrt(point.x()*point.x() + point.y()*point.y());
-    bool inZ = ((point.z() < fZ ) && (point.z() > -fZ)); // in right z range
+    bool inZ = ((point.z() < fZ + kTolerance ) && (point.z() > -fZ-kTolerance)); // in right z range
     bool inR = ((x2y2 >= fRmin) && (x2y2 <= fRmax)); // in right r range
     // bool inPhi = fWedge.Contains(point);
 
@@ -165,32 +165,65 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
         nosurface++;
     }
     if ( inR && (Abs(point.z() + fZ) <= kTolerance))  {  // bottom base, normal along -Z
-        norm[0] = 0.0;
-        norm[1] = 0.0;
-        norm[2] = -1;
+        if( nosurface > 0){
+        // norm exists already; just add to it
+        norm[2] += -1;
+        }
+        else{
+            norm[0] = 0.0;
+            norm[1] = 0.0;
+            norm[2] = -1;
+        }
         nosurface++;
     }
-    if ( inZ && (Abs(x2y2 - fRmin) <= kTolerance)) { // inner tube wall, normal  towards center
-        Precision invx2y2 = 1./x2y2;
-        norm[0] = -point[0]*invx2y2;
-        norm[1] = -point[1]*invx2y2;   // -ve due to inwards
-        norm[2] = 0.0;
-        nosurface++;
+    if( fRmin > 0. ){
+        if ( inZ && (Abs(x2y2 - fRmin) <= kTolerance)) { // inner tube wall, normal  towards center
+            Precision invx2y2 = 1./x2y2;
+            if(nosurface == 0){
+                norm[0] = -point[0]*invx2y2;
+                norm[1] = -point[1]*invx2y2;   // -ve due to inwards
+                norm[2] = 0.0;
+            }
+            else {
+                norm[0] += -point[0]*invx2y2;
+                norm[1] += -point[1]*invx2y2;
+            }
+            nosurface++;
+        }
     }
     if ( inZ && (Abs(x2y2 - fRmax) <= kTolerance)) { // outer tube wall, normal outwards
         Precision invx2y2 = 1./x2y2;
-        norm[0] = point[0]*invx2y2;
-        norm[1] = point[1]*invx2y2;
-        norm[2] = 0.0;
+        if(nosurface > 0){
+            norm[0] += point[0]*invx2y2;
+            norm[1] += point[1]*invx2y2;
+        }
+        else
+        {
+            norm[0] = point[0]*invx2y2;
+            norm[1] = point[1]*invx2y2;
+            norm[2] = 0.0;
+        }
         nosurface++;
     }
 
     // otherwise we get a normal from the wedge
     if( fDphi < vecgeom::kTwoPi ){
-        if (inR && fPhiWedge.IsOnSurface1(point)){ norm = -fPhiWedge.GetNormal1(); nosurface++; }
-        if (inR && fPhiWedge.IsOnSurface2(point)){ norm = -fPhiWedge.GetNormal2(); nosurface++; }
+        if (inR && fPhiWedge.IsOnSurface1(point)){
+            if( nosurface == 0)
+                norm = -fPhiWedge.GetNormal1();
+            else
+                norm += -fPhiWedge.GetNormal1();
+             nosurface++;
+        }
+        if (inR && fPhiWedge.IsOnSurface2(point)){
+            if ( nosurface == 0)
+                norm = -fPhiWedge.GetNormal2();
+            else
+                norm += -fPhiWedge.GetNormal2();
+            nosurface++;
+        }
     }
-    assert( nosurface == 1 );
+    if( nosurface > 1) norm=norm/std::sqrt(nosurface);
     return nosurface != 0; // this is for testing only
 }
 

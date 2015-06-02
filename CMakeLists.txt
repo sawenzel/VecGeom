@@ -714,6 +714,13 @@ if (USolids)
   build_executables("${TEST_EXECUTABLES_SHAPETESTER}")
   #add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
   #add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
+
+  # add unit tests
+  add_test(NAME USolidBox COMMAND TestBox --usolids)
+  add_test(NAME VecGeomBox COMMAND TestBox --vecgeom)
+  add_test(NAME USolidTube COMMAND TestTube --usolids)
+  add_test(NAME VecTube COMMAND TestTube --vecgeom)
+
 endif()
 if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}")
@@ -734,9 +741,7 @@ add_cmsshapevalidation_test( boxvalidation cmsboxes.txt )
 #taken out due to problems: add_cmsshapevalidation_test( booleanvalidation cmsbooleans.txt )
 #taken out due to Issue-133: add_cmsshapevalidation_test( torusvalidation cmstori.txt )
 
-# add unit tests
-add_test(NAME USolidBox COMMAND TestBox --usolids)
-add_test(NAME VecGeomBox COMMAND TestBox --vecgeom)
+
 
 #---------------------------------------------------------------------------
 # Include creation and submission to dashboard cdash.cern.ch
