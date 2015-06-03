@@ -455,7 +455,6 @@ void NavigationState::printVolumePath( std::ostream & stream ) const
    {
     stream << "/" << RootGeoManager::Instance().tgeonode( fPath[i] )->GetName();
    }
-   stream << "\n";
 }
 #endif
 
