@@ -669,7 +669,7 @@ void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
   Boolean_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(
       boxDimensions, point, completelyinside, completelyoutside);
-  inside=Backend::inside_v(EInside::kSurface);
+  inside=EInside::kSurface;
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }

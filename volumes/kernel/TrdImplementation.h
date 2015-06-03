@@ -271,11 +271,11 @@ struct TrdImplementation {
     typedef typename Backend::bool_v Bool_t;
     Vector3D<typename Backend::precision_v> localpoint;
     localpoint = transformation.Transform<transCodeT, rotCodeT>(point);
-    inside = Backend::inside_v(EInside::kOutside);
+    inside = EInside::kOutside;
 
     Bool_t completelyoutside, completelyinside;
     TrdUtilities::UnplacedInside<Backend, trdTypeT, true>(trd, localpoint, completelyinside, completelyoutside);
-    inside = Backend::inside_v(EInside::kSurface);
+    inside = EInside::kSurface;
     MaskedAssign(completelyinside, EInside::kInside, &inside);
     MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   }

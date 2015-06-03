@@ -702,7 +702,7 @@ struct TorusImplementation {
   Bool_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true,true>(torus, 
   point, completelyinside, completelyoutside);
-  inside = Backend::inside_v(EInside::kSurface);
+  inside = EInside::kSurface;
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
