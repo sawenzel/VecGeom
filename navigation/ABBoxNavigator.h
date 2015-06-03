@@ -8,6 +8,10 @@
 #ifndef ABBOXNAVIGATOR_H_
 #define ABBOXNAVIGATOR_H_
 
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(push, target(mic))
+#endif
+
 #include "base/Global.h"
 
 #include "volumes/PlacedVolume.h"
@@ -452,5 +456,9 @@ Precision ABBoxNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
 }
 
 } } // End global namespace
+
+#ifdef OFFLOAD_MODE
+#pragma offload_attribute(pop)
+#endif
 
 #endif /* ABBOXNAVIGATOR_H_ */

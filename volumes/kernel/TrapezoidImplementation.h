@@ -213,7 +213,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
   GenericKernelForContainsAndInside<Backend,true>(
       unplaced, localPoint, fullyinside, fullyoutside);
 
-  inside=EInside::kSurface;
+  inside=Backend::inside_v(EInside::kSurface);
   MaskedAssign(fullyinside,  EInside::kInside,  &inside);
   MaskedAssign(fullyoutside, EInside::kOutside, &inside);
 }

@@ -81,16 +81,6 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-#ifdef OFFLOAD_MODE
-  __attribute__ (( target (mic)))
-  virtual
-  bool Normal(Vector3D<double> const &point,
-                      Vector3D<double> &normal) const {
-    assert(0 &&
-           "Normal not implemented for USolids interface compatible volume.");
-    return false;
-  }
-#endif
   VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 

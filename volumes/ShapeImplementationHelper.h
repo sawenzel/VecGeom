@@ -373,7 +373,7 @@ public:
         VECGEOM_BACKEND_PRECISION(points.y()+i),
         VECGEOM_BACKEND_PRECISION(points.z()+i)
       );
-      VECGEOM_BACKEND_INSIDE result = EInside::kOutside;
+      VECGEOM_BACKEND_INSIDE result = VECGEOM_BACKEND_INSIDE(EInside::kOutside);
       Specialization::template Inside<VECGEOM_BACKEND_TYPE>(
         *this->GetUnplacedVolume(),
         *this->GetTransformation(),
@@ -381,6 +381,10 @@ public:
         result
       );
 #ifdef VECGEOM_VC
+      for (unsigned j = 0; j < kVectorSize; ++j) {
+        output[j+i] = result[j];
+      }
+#elif MIC_SIDE
       for (unsigned j = 0; j < kVectorSize; ++j) {
         output[j+i] = result[j];
       }
@@ -472,6 +476,8 @@ public:
       for(unsigned int j=0;j<kVectorSize;++j) {
         nextDaughterIdList[i+j]=( ! mask[j] )? daughterId : nextDaughterIdList[i+j];
       }
+#elif MIC_SIDE
+      assert("Not implemented yet.");
 #elif VECGEOM_SCALAR
       if (result < currentDistance[i]) {
         currentDistance[i] = result;
@@ -510,6 +516,8 @@ public:
       );
 #ifdef VECGEOM_VC
       result.store(&output[i]);
+#elif MIC_SIDE
+      _mm512_store_pd(output+i,result);
 #elif VECGEOM_SCALAR
       output[i] = result;
 #endif
@@ -571,6 +579,8 @@ public:
       );
 #ifdef VECGEOM_VC
       result.store(&output[i]);
+#elif MIC_SIDE
+      _mm512_store_pd(output+i,result);
 #elif VECGEOM_SCALAR
       output[i] = result;
 #endif
@@ -596,6 +606,8 @@ public:
       VECGEOM_BACKEND_TYPE::precision_v estimate = VECGEOM_BACKEND_PRECISION(&safeties[i]);
       result(estimate < result) = estimate;
       result.store(&safeties[i]);
+#elif MIC_SIDE
+      assert("Not implemented yet.");
 #elif VECGEOM_SCALAR
       safeties[i] = (result < safeties[i]) ? result : safeties[i];
 #endif
@@ -618,6 +630,8 @@ public:
       );
 #ifdef VECGEOM_VC
       result.store(&output[i]);
+#elif MIC_SIDE
+      _mm512_store_pd(output+i,result);
 #elif VECGEOM_SCALAR
       output[i] = result;
 #endif
@@ -643,6 +657,8 @@ public:
       VECGEOM_BACKEND_TYPE::precision_v estimate = VECGEOM_BACKEND_PRECISION(&safeties[i]);
       result(estimate < result) = estimate;
       result.store(&safeties[i]);
+#elif MIC_SIDE
+      assert("Not implemented yet.");
 #elif VECGEOM_SCALAR
       safeties[i] = (result < safeties[i]) ? result : safeties[i];
 #endif

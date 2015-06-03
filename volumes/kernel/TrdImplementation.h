@@ -190,8 +190,8 @@ static void UnplacedInside(
     // inside X?
     Float_t cross;
     PointLineOrientation<Backend>(Abs(point.x()) - trd.dx1(), pzPlusDz, trd.x2minusx1(), trd.dztimes2(), cross);
-    completelyoutside |= MakePlusTolerant<surfaceT>(cross) < 0;
-    if(surfaceT) completelyinside &= MakeMinusTolerant<surfaceT>(cross) > 0;
+    completelyoutside |= MakePlusTolerant<surfaceT>(cross) < Backend::kZero;
+    if(surfaceT) completelyinside &= MakeMinusTolerant<surfaceT>(cross) > Backend::kZero;
 
     if(HasVaryingY<trdTypeT>::value != TrdTypes::kNo) {
         // If Trd type is unknown don't bother with a runtime check, assume
@@ -271,11 +271,11 @@ struct TrdImplementation {
     typedef typename Backend::bool_v Bool_t;
     Vector3D<typename Backend::precision_v> localpoint;
     localpoint = transformation.Transform<transCodeT, rotCodeT>(point);
-    inside = EInside::kOutside;
+    inside = Backend::inside_v(EInside::kOutside);
 
     Bool_t completelyoutside, completelyinside;
     TrdUtilities::UnplacedInside<Backend, trdTypeT, true>(trd, localpoint, completelyinside, completelyoutside);
-    inside = EInside::kSurface;
+    inside = Backend::inside_v(EInside::kSurface);
     MaskedAssign(completelyinside, EInside::kInside, &inside);
     MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   }

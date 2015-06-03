@@ -408,7 +408,7 @@ struct TubeImplementation {
     Vector3D<typename Backend::precision_v> localpoint;
     localpoint = transformation.Transform<transCodeT, rotCodeT>(point);
    
-    inside = EInside::kOutside;
+    inside = Backend::inside_v(EInside::kOutside);
 
     Bool_t isInside;
     UnplacedContains<Backend>(tube, localpoint, isInside);
