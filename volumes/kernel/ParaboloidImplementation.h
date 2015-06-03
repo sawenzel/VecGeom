@@ -106,7 +106,7 @@ struct ParaboloidImplementation {
         
         if (Backend::early_returns && IsFull(done))
         {
-            inside = Backend::int_v(EInside::kOutside);
+            inside = EInside::kOutside;
             return;
         }
         
@@ -115,7 +115,7 @@ struct ParaboloidImplementation {
         done|=outsideParabolicSurfaceOuterTolerance;
         if (Backend::early_returns && IsFull(done))
         {
-            inside = Backend::int_v(EInside::kOutside);
+            inside = EInside::kOutside;
             return;
         }
         
