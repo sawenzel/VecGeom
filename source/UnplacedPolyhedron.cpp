@@ -743,7 +743,7 @@ return fCapacity;
 VECGEOM_CUDA_HEADER_BOTH
 bool UnplacedPolyhedron::Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const{
 
-  int noSurfaces = 0, j;
+  int  j;
   bool valid = true; 
 
 
