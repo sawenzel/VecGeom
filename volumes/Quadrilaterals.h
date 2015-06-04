@@ -11,6 +11,7 @@
 #include "base/AOS3D.h"
 #include "base/SOA3D.h"
 #include "base/Vector3D.h"
+#include "base/RNG.h"
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/Planes.h"
 
@@ -85,6 +86,25 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Corners_t const& GetCorners() const;
+
+   VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetTriangleArea(int index,int iCorner1, int iCorner2) const;
+ 
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetQuadrilateralArea(int index) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> GetPointOnTriangle(int index, 
+					 int iCorner1, int iCorner2) const;
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Vector3D<Precision> GetPointOnFace(int index) const;
+
+
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -198,6 +218,54 @@ VECGEOM_CUDA_HEADER_BOTH
 Quadrilaterals::Corners_t const& Quadrilaterals::GetCorners() const {
   return fCorners;
 }
+
+VECGEOM_CUDA_HEADER_BOTH
+  Precision Quadrilaterals::GetTriangleArea(int index,
+           int iCorner1, int iCorner2) const {
+  Precision fArea=0.;
+  Vector3D<Precision> vec1 = fCorners[iCorner1][index]-fCorners[0][index];
+  Vector3D<Precision> vec2 = fCorners[iCorner2][index]-fCorners[0][index];
+ 
+  fArea = 0.5 * (vec1.Cross(vec2)).Mag();
+  return fArea;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision Quadrilaterals::GetQuadrilateralArea(int index) const {
+  Precision fArea=0.;
+ 
+  fArea = GetTriangleArea(index,1,2)+GetTriangleArea(index,2,3);
+  return fArea;
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<Precision> Quadrilaterals::GetPointOnTriangle(int index, 
+                           int iCorner1, int iCorner2) const{
+
+   Precision alpha = RNG::Instance().uniform(0.0, 1.0);
+   Precision beta = RNG::Instance().uniform(0.0, 1.0);
+   Precision lambda1 = alpha * beta;
+   Precision lambda0 = alpha - lambda1;
+   Vector3D<Precision> vec1 = fCorners[iCorner1][index]-fCorners[0][index];
+   Vector3D<Precision> vec2 = fCorners[iCorner2][index]-fCorners[0][index];
+   return fCorners[0][index] + lambda0 * vec1 + lambda1 * vec2;
+ 
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<Precision> Quadrilaterals::GetPointOnFace(int index) const{
+
+   Precision choice =RNG::Instance().uniform(0, 1.0);
+   if (choice < 0.5)
+     {
+       return GetPointOnTriangle(index,1,2);
+     }
+   else
+     {
+       return GetPointOnTriangle(index,2,3);
+     }
+}
+
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH

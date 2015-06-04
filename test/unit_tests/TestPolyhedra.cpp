@@ -6,7 +6,7 @@
 #undef NDEBUG
 
 #include "base/Vector3D.h"
-#include "volumes/Trd.h"
+#include "volumes/Polyhedron.h"
 #include "ApproxEqual.h"
 #ifdef VECGEOM_USOLIDS
 #include "UPolyhedra.hh"
@@ -15,6 +15,8 @@
 
 //#include <cassert>
 #include <cmath>
+
+bool testvecgeom = false;
 
 template <class Polyhedra_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 
@@ -54,33 +56,125 @@ bool TestPolyhedra()
 
   double Phi_Values[2];
   Phi_Values[0]=0.;
+  if(testvecgeom)
+  Phi_Values[1]=45.;
+  else
   Phi_Values[1]=45.*UUtils::kPi/180.;
-  //Phi_Values[1]=2*UUtils::kPi;
+
+  // Phi_Values[1]=2*UUtils::kPi;
   
   Polyhedra_t *MyPGon = new Polyhedra_t ("MyPGon",
                                                     Phi_Values[0],
-						    Phi_Values[1],
-						    5        ,
+				                    Phi_Values[1],						                    5        ,
 						    8        ,
 						    Z_Values ,
 						    RMINVec  ,
 						    RMAXVec   );
+  
+
+  double RMINVec0[2];
+  RMINVec0[0] = 1;
+  RMINVec0[1] = 1;
+  
+
+  double RMAXVec0[2];
+  RMAXVec0[0] = 2;
+  RMAXVec0[1] = 2;
+ 
+
+  double Z_Values0[2];
+  Z_Values0[0] =-1;
+  Z_Values0[1] = 1;
+  
+  Polyhedra_t *MyPGon0;
+  if(testvecgeom)
+  MyPGon0 = new Polyhedra_t ("MyPGon0",
+                                         0,
+					 180.,
+					 2  ,
+				         2        ,
+				         Z_Values0 ,
+				         RMINVec0  ,
+			                 RMAXVec0   );
+  else
+  MyPGon0 = new Polyhedra_t ("MyPGon0",
+                                         0,
+					 UUtils::kPi,
+					 2  ,
+				         2        ,
+				         Z_Values0 ,
+				         RMINVec0  ,
+				         RMAXVec0   );
+
+
+  double RMINVec1[3];
+  RMINVec1[0] = 0;
+  RMINVec1[1] = 0;
+  RMINVec1[2] = 0;
+  
+
+  double RMAXVec1[3];
+  RMAXVec1[0] = 2;
+  RMAXVec1[1] = 1;
+  RMAXVec1[2] = 2;
+ 
+
+  double Z_Values1[3];
+  Z_Values1[0] =-1;
+  Z_Values1[1] = 0;
+  Z_Values1[2] = 1;
+  
+  Polyhedra_t *MyPGon1;
+  if(testvecgeom)
+  MyPGon1 = new Polyhedra_t ("MyPGon1",
+                                         0,
+					 360.,
+				         4  ,
+					 3        ,
+					 Z_Values1 ,
+					 RMINVec1  ,
+					 RMAXVec1   );
+  else
+  MyPGon1 = new Polyhedra_t ("MyPGon1",
+                                          0,
+					  2.0*UUtils::kPi,
+					  4  ,
+					  3        ,
+					  Z_Values1 ,
+					  RMINVec1  ,
+					  RMAXVec1   );
+
+
+
 
 // Check name
     assert(MyPGon->GetName()=="MyPGon");
     
 // Check Cubic volume
-    double vol;
-    vol = MyPGon->Capacity();
-    //std::cout.precision(20);
-    //std::cout<<MyPGon->Capacity()<<std::endl;
-    assert(ApproxEqual(vol,155138.6874225));
+    //double vol;
+    //vol = MyPGon->Capacity();
+    std::cout.precision(20);
+    std::cout<<"Complex Polyhedron Capacity ="<<MyPGon->Capacity()<<std::endl;
+    //assert(ApproxEqual(vol,155138.6874225));
 
 // Check Surface area
-    vol=MyPGon->SurfaceArea();
-    assert(ApproxEqual(vol,1284298.5697));    
-    //std::cout<<MyPGon->SurfaceArea()<<std::endl;
+    //vol=MyPGon->SurfaceArea();
+    //assert(ApproxEqual(vol,1284298.5697));    
+    std::cout<<"Complex Polyhedron SurfaceArea ="<<MyPGon->SurfaceArea()<<std::endl;
 
+// Check Cubic volume
+    
+    //vol = MyPGon0->Capacity();
+    std::cout.precision(20);
+    std::cout<<"Simple Polyhedron(HalfBox) Capacity ="<<MyPGon0->Capacity()<<" has to be 12"<<std::endl;
+    std::cout<<"Less Simple Polyhedron(2 cutted piramides) Capacity ="<<MyPGon1->Capacity()<<" has to be 18, ..."<<std::endl;
+    //assert(ApproxEqual(vol,155138.6874225));
+
+// Check Surface area
+    //vol=MyPGon0->SurfaceArea();
+    //assert(ApproxEqual(vol,1284298.5697));    
+    std::cout<<"Simple Polyhedron(Half) SurfaceArea ="<<MyPGon0->SurfaceArea()<<" has to be 41.6585425"<<std::endl;
+    std::cout<<"Less Simple Polyhedron(2 cutted piramides) SurfaceArea ="<<MyPGon1->SurfaceArea()<<" has to be 65.941..."<<std::endl;
 // Asserts
  Vec_t p1,p2,p3,p4,p5,p6,dirx,diry,dirz;
  p1=Vec_t(0,0,-5); 
@@ -352,14 +446,36 @@ bool TestPolyhedra()
     return true;
 }
 
+int main(int argc, char *argv[]) {
+ 
+   if( argc < 2)
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
+    
+    if( ! strcmp(argv[1], "--usolids") )
+    { 
+      #ifdef VECGEOM_USOLIDS
+       assert(TestPolyhedra<UPolyhedra>());
+       std::cout << "UPolyhedra passed\n";
+      #else
+       std::cerr << "VECGEOM_USOLIDS was not defined\n";
+       return 2;
+      #endif
+    }
+    else if( ! strcmp(argv[1], "--vecgeom") )
+    {
+       testvecgeom = true;
+       assert(TestPolyhedra<vecgeom::SimplePolyhedron>());
+       std::cout << "VecGeom Polyhedron passed\n";
+    }
+    else
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
 
-int main() {
-#ifdef VECGEOM_USOLIDS
-  assert(TestPolyhedra<UPolyhedra>());
-  std::cout << "UPolyhedra passed\n";
-
-#endif
-  std::cout<< "VecGeom Polyhedra not included yet\n";
-  
   return 0;
+
 }

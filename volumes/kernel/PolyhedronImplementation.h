@@ -812,7 +812,8 @@ Inside_t PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarInsideKernel(
 
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
-
+  if(zIndex > (polyhedron.GetZSegmentCount()-1)) zIndex=polyhedron.GetZSegmentCount()-1;
+  if(zIndex < 0) zIndex=0;
   ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
   // Check that the point is in the outer shell

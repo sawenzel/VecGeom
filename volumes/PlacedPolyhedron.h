@@ -145,10 +145,18 @@ public:
       return GetUnplacedVolume()->Capacity();
   }
 
+  virtual
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
+
+
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 #endif
 
