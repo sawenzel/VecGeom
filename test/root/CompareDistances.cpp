@@ -37,7 +37,7 @@ int main( int argc, char *argv[] ) {
     double dirx = atof(argv[6]);
     double diry = atof(argv[7]);
     double dirz = atof(argv[8]);
-
+   
     int found = 0;
     TGeoVolume * foundvolume = NULL;
     // now try to find shape with logical volume name given on the command line
@@ -67,14 +67,64 @@ int main( int argc, char *argv[] ) {
         VPlacedVolume * vecgeomplaced = converted->Place();
         Vector3D<Precision> point(px,py,pz);
         Vector3D<Precision> dir(dirx,diry,dirz);
+
+	SOA3D<Precision> pointcontainer(4); pointcontainer.resize(4); 
+	SOA3D<Precision> dircontainer(4); dircontainer.resize(4); 
+	Precision * output = new Precision[4];
+	Precision * steps = new Precision[4];
+
+        if(argc > 9)
+	{
+          pointcontainer.set(0, point);
+	  dircontainer.set(0, dir.x(), dir.y(), dir.z() );
+          double px2 = atof(argv[9]);
+          double py2 = atof(argv[10]);
+          double pz2 = atof(argv[11]);
+          double dirx2 = atof(argv[12]);
+          double diry2 = atof(argv[13]);
+          double dirz2 = atof(argv[14]);
+          pointcontainer.set(1, px2,py2,pz2);
+	  dircontainer.set(1, dirx2, diry2, dirz2 );
+          pointcontainer.set(2, point);
+	  dircontainer.set(2, dir.x(), dir.y(), dir.z() );
+          pointcontainer.set(3, px2,py2,pz2);
+	  dircontainer.set(3, dirx2, diry2, dirz2 );
+
+          for( auto i=0;i<4;++i ){
+	   steps[i] = vecgeom::kInfinity;
+	  }
+
+	}
+        else{
+	  for( auto i=0;i<4;++i ){
+	  pointcontainer.set(i, point);
+	  dircontainer.set(i, dir.x(), dir.y(), dir.z() );
+	  steps[i] = vecgeom::kInfinity;
+	  }
+        }
 	if( ! dir.IsNormalized() ){
 	  std::cerr << "** Attention: Direction is not normalized **\n";
+	  std::cerr << "** Direction differs from 1 by " << std::sqrt(dir.x()*dir.x() + dir.y()*dir.y()+ dir.z()*dir.z())-1.<< "\n";
 	}
-
+        double dist;
         std::cout << "VecGeom Capacity " << vecgeomplaced->Capacity( ) << "\n";
         std::cout << "VecGeom CONTAINS " << vecgeomplaced->Contains( point ) << "\n";
-        std::cout << "VecGeom DI " << vecgeomplaced->DistanceToIn( point, dir ) << "\n";
+        dist = vecgeomplaced->DistanceToIn( point, dir );
+        std::cout << "VecGeom DI " << dist << "\n";
+        if(dist < vecgeom::kInfinity )
+	  {
+           std::cout << "VecGeom INSIDE(p=p+dist*dir) " << vecgeomplaced->Inside( point+dir*dist ) << "\n";
+           if(vecgeomplaced->Inside( point+dir*dist ) == vecgeom::kOutside)
+           std::cout << "VecGeom Distance seems to be to big  DI(p=p+dist*dir,-dir) " << vecgeomplaced->DistanceToIn( point+dir*dist,-dir ) << "\n";
+           if(vecgeomplaced->Inside( point+dir*dist ) == vecgeom::kInside)
+           std::cout << "VecGeom Distance seems to be to small DO(p=p+dist*dir,dir) " << vecgeomplaced->DistanceToOut( point+dir*dist,dir ) << "\n";
+	  }
+	vecgeomplaced->DistanceToIn( pointcontainer, dircontainer, steps, output );
+        std::cout << "VecGeom DI-V " << output[0] << "\n";
         std::cout << "VecGeom DO " << vecgeomplaced->DistanceToOut( point, dir ) << "\n";
+        vecgeomplaced->DistanceToOut( pointcontainer, dircontainer, steps, output );
+	std::cout << "VecGeom DO-V " << output[0] << "\n";
+
         std::cout << "VecGeom SI " << vecgeomplaced->SafetyToIn( point ) << "\n";
         std::cout << "VecGeom SO " << vecgeomplaced->SafetyToOut( point ) << "\n";
 
