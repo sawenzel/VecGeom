@@ -654,7 +654,7 @@ Vector3D<Precision> UnplacedPolyhedron::GetPointOnSurface() const{
 
     rnd = int(RNG::Instance().uniform(0.0,GetSideCount()));
     totArea = GetSideCount() * (aVector1[j] + aVector2[j]) + 2.*aVector3[j];
-    chose = UUtils::Random(0., totArea);
+    chose = RNG::Instance().uniform(0., totArea);
     Vector3D<Precision> RandVec;
     if ((chose >= 0.) && (chose <= GetSideCount()* aVector1[j]))
     {
