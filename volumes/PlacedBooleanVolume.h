@@ -1,10 +1,6 @@
 #ifndef VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_
 #define VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 #include "backend/Backend.h"
  
@@ -137,17 +133,6 @@ public:
   }
 #endif
 #ifdef VECGEOM_USOLIDS
-#ifdef OFFLOAD_MODE
-  __attribute__ (( target (mic)))
-  virtual
-  bool Normal(Vector3D<double> const &point,
-                      Vector3D<double> &normal) const {
-    assert(0 &&
-           "Normal not implemented for USolids interface compatible volume.");
-    return false;
-  }
-#endif
-
   virtual ::VUSolid const* ConvertToUSolids() const {
     // currently not supported in USOLIDS -- returning NULL
       return nullptr;
@@ -190,9 +175,5 @@ public:
 
 } // End impl namespace
 } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_PLACEDTBOOLEAN_H_

@@ -4,15 +4,12 @@
 #ifndef VECGEOM_MANAGEMENT_GEOMANAGER_H_
 #define VECGEOM_MANAGEMENT_GEOMANAGER_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "volumes/PlacedVolume.h"
 #include "volumes/LogicalVolume.h"
 #include "navigation/NavigationState.h"
+
 
 #include <map>
 
@@ -325,9 +322,5 @@ void GeoManager::getAllPathForLogicalVolume( LogicalVolume const * lvol, Contain
 
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_

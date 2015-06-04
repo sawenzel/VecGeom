@@ -4,10 +4,6 @@
 #ifndef VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "backend/Backend.h"
 #include "base/Vector3D.h"
 #include "volumes/UnplacedBox.h"
@@ -28,13 +24,8 @@ class UnplacedBox;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BoxImplementation {
 
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL int transC = transCodeT;
-  VECGEOM_GLOBAL int rotC   = rotCodeT;
-#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
-#endif
 
   using PlacedShape_t = PlacedBox;
   using UnplacedShape_t = UnplacedBox;
@@ -669,7 +660,7 @@ void BoxImplementation<transCodeT, rotCodeT>::InsideKernel(
   Boolean_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(
       boxDimensions, point, completelyinside, completelyoutside);
-  inside=Backend::inside_v(EInside::kSurface);
+  inside=EInside::kSurface;
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
@@ -938,8 +929,5 @@ void BoxImplementation<transCodeT, rotCodeT>::NormalKernel(
 
 } } // End global namespace
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_KERNEL_BOXIMPLEMENTATION_H_

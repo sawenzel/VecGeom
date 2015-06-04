@@ -19,13 +19,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
  */
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct BooleanImplementation<kIntersection, transCodeT, rotCodeT> {
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL int transC = transCodeT;
-  VECGEOM_GLOBAL int rotC   = rotCodeT;
-#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
-#endif
 
   using PlacedShape_t = PlacedBooleanVolume;
   using UnplacedShape_t = UnplacedBooleanVolume;

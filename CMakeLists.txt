@@ -34,10 +34,6 @@ option(DISTANCE_DEBUG "Enable comparison of calculated distances againt ROOT/Gea
 
 option(DATA_DOWNLOAD "Enable downloading of data for tests" OFF)
 
-option(OFFLOAD_MODE "Enable offload mode for Intel Xeon Phi." OFF) 
-
-option(VTUNE "Enable the use of profiler Vtune." OFF)
-
 set(VECGEOM_VECTOR "" CACHE STRING
     "Vector instruction set to use (sse/avx/...).")
 
@@ -168,7 +164,7 @@ if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
     "${VECGEOM_COMPILATION_FLAGS_CLANG} -ffast-math -ftree-vectorize")
 endif()
 set(VECGEOM_COMPILATION_FLAGS_INTEL
-    "${VECGEOM_COMPILATION_FLAGS_INTEL} -Wall -fPIC -diag-disable 3438 -O2 -fno-alias")
+    "${VECGEOM_COMPILATION_FLAGS_INTEL} -xHost")
 if (VECGEOM_VECTOR)
   message(STATUS "Compiling with vector instruction set ${VECGEOM_VECTOR}")
   set(VECGEOM_COMPILATION_FLAGS_GNU
@@ -265,18 +261,7 @@ endif()
 if (DISTANCE_DEBUG)
   set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_DISTANCE_DEBUG")
 endif()
-if (OFFLOAD_MODE)
-  if (NOT Intel)
-    message(FATAL_ERROR "Must use Intel C++ compiler (icc) for Xeon Phi Offload Mode.")
-  endif()
-  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DOFFLOAD_MODE")
-  message(STATUS "Preparing for a offload compiler mode.")
-  set(VTUNE OFF)
-endif()
-if (VTUNE)
-  set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -DVECGEOM_VTUNE")
-  message(STATUS "Prepating for Intel VTune profiling.")
-endif()
+
 
 
 # Pass flags to compilers
@@ -292,6 +277,7 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
 #set(VECGEOM_COMPILATION_FLAGS "${VECGEOM_COMPILATION_FLAGS} -O3")
 
+message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
 
 ################################################################################
 
@@ -307,13 +293,6 @@ if (VC_ACCELERATION OR Vc)
     set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/vc/Backend.cpp)
   endif()
 
-endif()
-
-if (OFFLOAD_MODE)
-  set(SRC_EXTERNAL ${SRC_EXTERNAL} source/backend/mic/Backend.cpp)
-  # This must be changed to an automatic way...
-  set(MICVEC "/opt/intel/composer_xe_2015.2.164/compiler/include/mic")
-  include_directories(${MICVEC})
 endif()
 
 if (Cilk)
@@ -388,19 +367,6 @@ if (Geant4)
       ${Geant4_LIBRARIES})
   message(STATUS "Geant4 found in: ${Geant4_INCLUDE_DIRS}")
 
-endif()
-
-if (VTUNE)
-  find_package(VTUNE REQUIRED)
-  include_directories(AFTER SYSTEM ${VTUNE_INCLUDE_DIR})
-  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${VTUNE_LIBRARIES} -lpthread -ldl)
-endif()
-
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
-
-message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
-if (CUDA)
-  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
 endif()
 
 
@@ -513,13 +479,9 @@ endif()
 set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
   source/ShapeDebugger.cpp
+  source/CppExporter.cpp
   source/benchmarking/NavigationBenchmarker.cpp
 )
-if (NOT OFFLOAD_MODE)
-  set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
-    source/CppExporter.cpp
-  )
-endif()
 
 # some CUDA kernel code in "userspace"
 if (CUDA)

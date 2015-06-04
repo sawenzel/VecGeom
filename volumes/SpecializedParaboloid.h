@@ -3,10 +3,6 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDPARABOLOID_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDPARABOLOID_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "volumes/kernel/ParaboloidImplementation.h"
@@ -24,9 +20,5 @@ using SpecializedParaboloid = ShapeImplementationHelper<ParaboloidImplementation
 using SimpleParaboloid = SpecializedParaboloid<translation::kGeneric, rotation::kGeneric>;
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARABOLOID_H_

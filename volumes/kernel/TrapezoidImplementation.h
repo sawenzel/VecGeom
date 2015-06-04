@@ -27,13 +27,8 @@ class PlacedTrapezoid;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TrapezoidImplementation {
 
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL int transC = transCodeT;
-  VECGEOM_GLOBAL int rotC   = rotCodeT;
-#else
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
-#endif
 
   using PlacedShape_t = PlacedTrapezoid;
   using UnplacedShape_t = UnplacedTrapezoid;
@@ -213,7 +208,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::Inside(
   GenericKernelForContainsAndInside<Backend,true>(
       unplaced, localPoint, fullyinside, fullyoutside);
 
-  inside=Backend::inside_v(EInside::kSurface);
+  inside=EInside::kSurface;
   MaskedAssign(fullyinside,  EInside::kInside,  &inside);
   MaskedAssign(fullyoutside, EInside::kOutside, &inside);
 }

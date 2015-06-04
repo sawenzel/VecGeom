@@ -55,10 +55,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-if ($ENV{Vc_DIR})
-  set(Vc_DIR $ENV{Vc_DIR})
-endif()
-find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_DIR} $ENV{HOME} /opt/Vc)
+find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS $ENV{HOME} /opt/Vc)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Vc CONFIG_MODE)

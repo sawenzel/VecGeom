@@ -30,9 +30,6 @@ struct kVc {
   typedef Vc::Vector<Precision>       Index_t;
 };
 
-#ifdef kVectorSize
-#undef kVectorSize
-#endif
 constexpr int kVectorSize = kVc::precision_v::Size;
 
 typedef kVc::int_v       VcInt;

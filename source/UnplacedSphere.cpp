@@ -179,9 +179,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   }
 #endif // !VECGEOM_NVCC
 
-#ifdef OFFLOAD_MODE
-  VECGEOM_CUDA_HEADER_BOTH
-#endif
   void UnplacedSphere::GetParametersList(int, double* aArray)const
   {
       aArray[0] = GetInnerRadius();

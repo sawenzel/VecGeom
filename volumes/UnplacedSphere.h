@@ -4,10 +4,6 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDSPHERE_H_
 #define VECGEOM_VOLUMES_UNPLACEDSPHERE_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "base/AlignedBase.h"
@@ -493,11 +489,9 @@ VECGEOM_CUDA_HEADER_BOTH
   Vector3D<Precision> GetPointOnSurface() const;
 
   std::string GetEntityType() const;
-#endif 
-#ifdef OFFLOAD_MODE
-  VECGEOM_CUDA_HEADER_BOTH
 #endif
-  void GetParametersList(int aNumber, Precision *aArray) const; 
+
+  void GetParametersList(int aNumber, Precision *aArray) const;
   
   UnplacedSphere* Clone() const;
 
@@ -591,9 +585,5 @@ private:
 };
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_UNPLACEDSPHERE_H_

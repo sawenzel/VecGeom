@@ -4,10 +4,6 @@
 #ifndef VECGEOM_BASE_TRANSFORMATION3D_H_
 #define VECGEOM_BASE_TRANSFORMATION3D_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "base/Vector3D.h"
@@ -807,9 +803,5 @@ Vector3D<InputType> Transformation3D::TransformDirection(
 std::ostream& operator<<(std::ostream& os, Transformation3D const &trans);
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_BASE_TRANSFORMATION3D_H_

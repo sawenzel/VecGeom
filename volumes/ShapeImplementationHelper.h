@@ -4,10 +4,6 @@
 #ifndef VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 #define VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "backend/scalar/Backend.h"
@@ -20,23 +16,6 @@
 
 #ifdef VECGEOM_DISTANCE_DEBUG
 #include "volumes/utilities/ResultComparator.h"
-#endif
-
-#ifdef VECGEOM_VC
-#define VECGEOM_BACKEND_TYPE         kVc
-#define VECGEOM_BACKEND_PRECISION    VcPrecision
-#define VECGEOM_BACKEND_BOOL         VcBool
-#define VECGEOM_BACKEND_INSIDE       kVc::inside_v
-#elif MIC_SIDE
-#define VECGEOM_BACKEND_TYPE         kMic
-#define VECGEOM_BACKEND_PRECISION    MicPrecision
-#define VECGEOM_BACKEND_BOOL         MicBool
-#define VECGEOM_BACKEND_INSIDE       kMic::inside_v
-#elif VECGEOM_SCALAR
-#define VECGEOM_BACKEND_TYPE         kScalar
-#define VECGEOM_BACKEND_PRECISION(P) (*(P))
-#define VECGEOM_BACKEND_BOOL         ScalarBool
-#define VECGEOM_BACKEND_INSIDE       kScalar::inside_v
 #endif
 
 namespace vecgeom {
@@ -338,97 +317,77 @@ public:
     return output;
   }
 
-  virtual void Contains(SOA3D<Precision> const &points,
+#ifdef VECGEOM_VC
+
+  void ContainsTemplate(SOA3D<Precision> const &points,
                         bool *const output) const {
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> localPoint;
-      VECGEOM_BACKEND_BOOL result(false);
-      Specialization::template Contains<VECGEOM_BACKEND_TYPE>(
+      Vector3D<VcPrecision> localPoint;
+      VcBool result(false);
+      Specialization::template Contains<kVc>(
         *this->GetUnplacedVolume(),
         *this->GetTransformation(),
         point,
         localPoint,
         result
       );
-#ifdef VECGEOM_VC
-      for (unsigned j = 0; j < kVectorSize; ++j) {
+      for (unsigned j = 0; j < VcPrecision::Size; ++j) {
         output[j+i] = result[j];
       }
-#elif VECGEOM_SCALAR
-      output[i] = result;
-#endif
     }
   }
 
-  virtual void Inside(SOA3D<Precision> const &points,
+  void InsideTemplate(SOA3D<Precision> const &points,
                       Inside_t *const output) const {
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
-      VECGEOM_BACKEND_INSIDE result = VECGEOM_BACKEND_INSIDE(EInside::kOutside);
-      Specialization::template Inside<VECGEOM_BACKEND_TYPE>(
+      VcInside result = EInside::kOutside;
+      Specialization::template Inside<kVc>(
         *this->GetUnplacedVolume(),
         *this->GetTransformation(),
         point,
         result
       );
-#ifdef VECGEOM_VC
-      for (unsigned j = 0; j < kVectorSize; ++j) {
-        output[j+i] = result[j];
-      }
-#elif MIC_SIDE
-      for (unsigned j = 0; j < kVectorSize; ++j) {
-        output[j+i] = result[j];
-      }
-#elif VECGEOM_SCALAR
-      output[i] = result;
-#endif
+      for (unsigned j = 0; j < VcPrecision::Size; ++j) output[j+i] = result[j];
     }
   }
 
-  virtual void DistanceToIn(SOA3D<Precision> const &points,
+  VECGEOM_INLINE
+  void DistanceToInTemplate(SOA3D<Precision> const &points,
                             SOA3D<Precision> const &directions,
                             Precision const *const stepMax,
                             Precision *const output) const {
-#ifdef MIC_SIDE
-  #pragma omp parallel for
-#endif
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
       );
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> direction(
-        VECGEOM_BACKEND_PRECISION(directions.x()+i),
-        VECGEOM_BACKEND_PRECISION(directions.y()+i),
-        VECGEOM_BACKEND_PRECISION(directions.z()+i)
+      Vector3D<VcPrecision> direction(
+        VcPrecision(directions.x()+i),
+        VcPrecision(directions.y()+i),
+        VcPrecision(directions.z()+i)
       );
-      VECGEOM_BACKEND_TYPE::precision_v stepMaxBackend = VECGEOM_BACKEND_PRECISION(&stepMax[i]);
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template DistanceToIn<VECGEOM_BACKEND_TYPE>(
+      VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
+      VcPrecision result = kInfinity;
+      Specialization::template DistanceToIn<kVc>(
         *this->GetUnplacedVolume(),
         *this->GetTransformation(),
         point,
         direction,
-        stepMaxBackend,
+        stepMaxVc,
         result
       );
-#ifdef VECGEOM_VC
       result.store(&output[i]);
-#elif MIC_SIDE
-      _mm512_store_pd(output+i,result);
-#elif VECGEOM_SCALAR
-      output[i] = result;
-#endif
     }
   }
 
@@ -436,92 +395,413 @@ public:
   #pragma GCC push_options
   #pragma GCC optimize ("unroll-loops")
 #endif
-  virtual void DistanceToInMinimize(SOA3D<Precision> const &points,
+  VECGEOM_INLINE
+  void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
                                     SOA3D<Precision> const &directions,
-                                    int daughterId,
-                                    Precision *const currentDistance,
-                                    int *const nextDaughterIdList) const {
-    for (int i = 0, iMax = points.size(); i < iMax; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> direction(
-        VECGEOM_BACKEND_PRECISION(directions.x()+i),
-        VECGEOM_BACKEND_PRECISION(directions.y()+i),
-        VECGEOM_BACKEND_PRECISION(directions.z()+i)
-      );
-      // currentdistance is also estimate for stepmax
-      VECGEOM_BACKEND_TYPE::precision_v stepMaxBackend = VECGEOM_BACKEND_PRECISION(&currentDistance[i]);
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template DistanceToIn<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        *this->GetTransformation(),
-        point,
-        direction,
-        stepMaxBackend,
-        result
-      );
-#ifdef VECGEOM_VC
-      // now we have distance and we can compare it to old distance step
-      // and update it if necessary
-      VcBool mask=result>stepMaxBackend;
-      result( mask ) = stepMaxBackend;
-      result.store(&currentDistance[i]);
-      // currently do not know how to do this better (can do it when Vc offers long ints )
+                                    int daughterid,
+                                    Precision *const currentdistance,
+                                    int *const nextdaughteridlist) const {
+      for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
+            Vector3D<VcPrecision> point(
+              VcPrecision(points.x()+i),
+              VcPrecision(points.y()+i),
+              VcPrecision(points.z()+i)
+            );
+            Vector3D<VcPrecision> direction(
+              VcPrecision(directions.x()+i),
+              VcPrecision(directions.y()+i),
+              VcPrecision(directions.z()+i)
+            );
+            // currentdistance is also estimate for stepmax
+            VcPrecision stepMaxVc = VcPrecision(&currentdistance[i]);
+            VcPrecision result = kInfinity;
+            Specialization::template DistanceToIn<kVc>(
+              *this->GetUnplacedVolume(),
+              *this->GetTransformation(),
+              point,
+              direction,
+              stepMaxVc,
+              result
+            );
+            // now we have distance and we can compare it to old distance step
+            // and update it if necessary
+            VcBool mask=result>stepMaxVc;
+            result( mask ) = stepMaxVc;
+            result.store(&currentdistance[i]);
+            // currently do not know how to do this better (can do it when Vc offers long ints )
 #ifdef VECGEOM_INTEL
 #pragma unroll
 #endif
-      for(unsigned int j=0;j<kVectorSize;++j) {
-        nextDaughterIdList[i+j]=( ! mask[j] )? daughterId : nextDaughterIdList[i+j];
+            for(unsigned int j=0;j<VcPrecision::Size;++j)
+            {
+                nextdaughteridlist[i+j]
+                                   =( ! mask[j] )? daughterid : nextdaughteridlist[i+j];
+            }
       }
-#elif MIC_SIDE
-      assert("Not implemented yet.");
-#elif VECGEOM_SCALAR
-      if (result < currentDistance[i]) {
-        currentDistance[i] = result;
-        nextDaughterIdList[i] = daughterId;
-      }
-#endif
-    }
   }
 #if !defined(__clang__) && !defined(VECGEOM_INTEL)
 #pragma GCC pop_options
 #endif
 
+  VECGEOM_INLINE
+  void DistanceToOutTemplate(SOA3D<Precision> const &points,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const stepMax,
+                             Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
+      );
+      Vector3D<VcPrecision> direction(
+        VcPrecision(directions.x()+i),
+        VcPrecision(directions.y()+i),
+        VcPrecision(directions.z()+i)
+      );
+      VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
+      VcPrecision result = kInfinity;
+      Specialization::template DistanceToOut<kVc>(
+        *this->GetUnplacedVolume(),
+        point,
+        direction,
+        stepMaxVc,
+        result
+      );
+      result.store(&output[i]);
+    }
+  }
+
+  VECGEOM_INLINE
+  void DistanceToOutTemplate(SOA3D<Precision> const &points,
+                               SOA3D<Precision> const &directions,
+                               Precision const *const stepMax,
+                               Precision *const output,
+                               int *const nodeindex ) const {
+      for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+        Vector3D<VcPrecision> point(
+          VcPrecision(points.x()+i),
+          VcPrecision(points.y()+i),
+          VcPrecision(points.z()+i)
+        );
+        Vector3D<VcPrecision> direction(
+          VcPrecision(directions.x()+i),
+          VcPrecision(directions.y()+i),
+          VcPrecision(directions.z()+i)
+        );
+        VcPrecision stepMaxVc = VcPrecision(&stepMax[i]);
+        VcPrecision result = kInfinity;
+        Specialization::template DistanceToOut<kVc>(
+          *this->GetUnplacedVolume(),
+          point,
+          direction,
+          stepMaxVc,
+          result
+        );
+        result.store(&output[i]);
+        for (unsigned int j=0;j<VcPrecision::Size;++j) {
+            // -1: physics step is longer than geometry
+            // -2: particle may stay inside volume
+            nodeindex[i+j] = ( result[j] < stepMaxVc[j] )? -1 : -2;
+        }
+      }
+    }
+
+  void SafetyToInTemplate(SOA3D<Precision> const &points,
+                          Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
+      );
+      VcPrecision result = kInfinity;
+      Specialization::template SafetyToIn<kVc>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        point,
+        result
+      );
+      result.store(&output[i]);
+    }
+  }
+
+  void SafetyToInMinimizeTemplate(SOA3D<Precision> const &points,
+                                  Precision *const safeties) const {
+    for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
+      );
+      VcPrecision estimate = VcPrecision(&safeties[i]);
+      VcPrecision result = kInfinity;
+      Specialization::template SafetyToIn<kVc>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        point,
+        result
+      );
+      result(estimate < result) = estimate;
+      result.store(&safeties[i]);
+    }
+  }
+
+  void SafetyToOutTemplate(SOA3D<Precision> const &points,
+                           Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
+      );
+      VcPrecision result = kInfinity;
+      Specialization::template SafetyToOut<kVc>(
+        *this->GetUnplacedVolume(),
+        point,
+        result
+      );
+      result.store(&output[i]);
+    }
+  }
+
+  void SafetyToOutMinimizeTemplate(SOA3D<Precision> const &points,
+                                   Precision *const safeties) const {
+    for (int i = 0, iMax = points.size(); i < iMax; i += VcPrecision::Size) {
+      Vector3D<VcPrecision> point(
+        VcPrecision(points.x()+i),
+        VcPrecision(points.y()+i),
+        VcPrecision(points.z()+i)
+      );
+      VcPrecision estimate = VcPrecision(&safeties[i]);
+      VcPrecision result = kInfinity;
+      Specialization::template SafetyToOut<kVc>(
+        *this->GetUnplacedVolume(),
+        point,
+        result
+      );
+      result(estimate < result) = estimate;
+      result.store(&safeties[i]);
+    }
+  }
+
+#else // Scalar default
+
+  template <class Container_t>
+  void ContainsTemplate(Container_t const &points, bool *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Vector3D<Precision> localPoint;
+      Specialization::template Contains<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        points[i],
+        localPoint,
+        output[i]
+      );
+    }
+  }
+
+  template <class Container_t>
+  void InsideTemplate(Container_t const &points,
+                      Inside_t *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Inside_t result = EInside::kOutside;
+      Specialization::template Inside<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        points[i],
+        result
+      );
+      output[i] = result;
+    }
+  }
+
+  template <class Container_t>
+  void DistanceToInTemplate(Container_t const &points,
+                            Container_t const &directions,
+                            Precision const *const stepMax,
+                            Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Specialization::template DistanceToIn<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        points[i],
+        directions[i],
+        stepMax[i],
+        output[i]
+      );
+    }
+  }
+
+  VECGEOM_INLINE
+  void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
+                                    SOA3D<Precision> const &directions,
+                                    int daughterId,
+                                    Precision *const currentDistance,
+                                    int *const nextDaughterIdList) const {
+      for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+        Precision stepMax = currentDistance[i];
+        Precision result = kInfinity;
+        Specialization::template DistanceToIn<kScalar>(
+          *this->GetUnplacedVolume(),
+          *this->GetTransformation(),
+          points[i],
+          directions[i],
+          stepMax,
+          result
+        );
+        if (result < currentDistance[i]) {
+          currentDistance[i] = result;
+          nextDaughterIdList[i] = daughterId;
+        }
+    }
+  }
+
+  template <class Container_t>
+  void DistanceToOutTemplate(Container_t const &points,
+                             Container_t const &directions,
+                             Precision const *const stepMax,
+                             Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Specialization::template DistanceToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        points[i],
+        directions[i],
+        stepMax[i],
+        output[i]
+      );
+    }
+  }
+
+  VECGEOM_INLINE
+  void DistanceToOutTemplate(SOA3D<Precision> const &points,
+                             SOA3D<Precision> const &directions,
+                             Precision const *const stepMax,
+                             Precision *const output,
+                             int *const nodeIndex) const {
+    for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+      Specialization::template DistanceToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        points[i],
+        directions[i],
+        stepMax[i],
+        output[i]
+      );
+      nodeIndex[i] = (output[i] < stepMax[i]) ? -1 : -2;
+    }
+  }
+
+  template <class Container_t>
+  void SafetyToInTemplate(Container_t const &points,
+                          Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Specialization::template SafetyToIn<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        points[i],
+        output[i]
+      );
+    }
+  }
+
+  template <class Container_t>
+  void SafetyToInMinimizeTemplate(Container_t const &points,
+                                  Precision *const output) const {
+    for (int i = 0, iMax = points.size(); i < iMax; ++i) {
+      Precision result = 0;
+      Specialization::template SafetyToIn<kScalar>(
+        *this->GetUnplacedVolume(),
+        *this->GetTransformation(),
+        points[i],
+        result
+      );
+      output[i] = (result < output[i]) ? result : output[i];
+    }
+  }
+
+  template <class Container_t>
+  void SafetyToOutTemplate(Container_t const &points,
+                           Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Specialization::template SafetyToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        points[i],
+        output[i]
+      );
+    }
+  }
+
+  template <class Container_t>
+  void SafetyToOutMinimizeTemplate(Container_t const &points,
+                                   Precision *const output) const {
+    for (int i = 0, i_max = points.size(); i < i_max; ++i) {
+      Precision result = 0;
+      Specialization::template SafetyToOut<kScalar>(
+        *this->GetUnplacedVolume(),
+        points[i],
+        result
+      );
+      output[i] = (result < output[i]) ? result : output[i];
+    }
+  }
+
+#endif
+
+  // virtual void Contains(AOS3D<Precision> const &points,
+  //                       bool *const output) const {
+  //   ContainsTemplate(points, output);
+  // }
+
+  virtual void Contains(SOA3D<Precision> const &points,
+                        bool *const output) const {
+    ContainsTemplate(points, output);
+  }
+
+  // virtual void Inside(AOS3D<Precision> const &points,
+  //                     Inside_t *const output) const {
+  //   InsideTemplate(points, output);
+  // }
+
+  virtual void Inside(SOA3D<Precision> const &points,
+                      Inside_t *const output) const {
+    InsideTemplate(points, output);
+  }
+
+  // virtual void DistanceToIn(AOS3D<Precision> const &points,
+  //                           AOS3D<Precision> const &directions,
+  //                           Precision const *const stepMax,
+  //                           Precision *const output) const {
+  //   DistanceToInTemplate(points, directions, stepMax, output);
+  // }
+
+  virtual void DistanceToIn(SOA3D<Precision> const &points,
+                            SOA3D<Precision> const &directions,
+                            Precision const *const stepMax,
+                            Precision *const output) const {
+    DistanceToInTemplate(points, directions, stepMax, output);
+  }
+
+
+  virtual void DistanceToInMinimize(SOA3D<Precision> const &points,
+                                    SOA3D<Precision> const &directions,
+                                    int daughterindex,
+                                    Precision *const output,
+                                    int *const nextnodeids) const {
+      DistanceToInMinimizeTemplate(points, directions, daughterindex, output, nextnodeids);
+  }
+
+  // virtual void DistanceToOut(AOS3D<Precision> const &points,
+  //                            AOS3D<Precision> const &directions,
+  //                            Precision const *const stepMax,
+  //                            Precision *const output) const {
+  //   DistanceToOutTemplate(points, directions, stepMax, output);
+  // }
+
   virtual void DistanceToOut(SOA3D<Precision> const &points,
                              SOA3D<Precision> const &directions,
                              Precision const *const stepMax,
                              Precision *const output) const {
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> direction(
-        VECGEOM_BACKEND_PRECISION(directions.x()+i),
-        VECGEOM_BACKEND_PRECISION(directions.y()+i),
-        VECGEOM_BACKEND_PRECISION(directions.z()+i)
-      );
-      VECGEOM_BACKEND_TYPE::precision_v stepMaxBackend = VECGEOM_BACKEND_PRECISION(&stepMax[i]);
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template DistanceToOut<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        point,
-        direction,
-        stepMaxBackend,
-        result
-      );
-#ifdef VECGEOM_VC
-      result.store(&output[i]);
-#elif MIC_SIDE
-      _mm512_store_pd(output+i,result);
-#elif VECGEOM_SCALAR
-      output[i] = result;
-#endif
-    }
+    DistanceToOutTemplate(points, directions, stepMax, output);
   }
 
   virtual void DistanceToOut(SOA3D<Precision> const &points,
@@ -529,148 +809,41 @@ public:
                              Precision const *const stepMax,
                              Precision *const output,
                              int *const nextNodeIndex) const {
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> direction(
-        VECGEOM_BACKEND_PRECISION(directions.x()+i),
-        VECGEOM_BACKEND_PRECISION(directions.y()+i),
-        VECGEOM_BACKEND_PRECISION(directions.z()+i)
-      );
-      VECGEOM_BACKEND_TYPE::precision_v stepMaxBackend = VECGEOM_BACKEND_PRECISION(&stepMax[i]);
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template DistanceToOut<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        point,
-        direction,
-        stepMaxBackend,
-        result
-      );
-#ifdef VECGEOM_VC
-      result.store(&output[i]);
-      for (unsigned int j=0;j<kVectorSize;++j) {
-        // -1: physics step is longer than geometry
-        // -2: particle may stay inside volume
-        nextNodeIndex[i+j] = ( result[j] < stepMaxBackend[j] )? -1 : -2;
-      }
-#elif VECGEOM_SCALAR
-      nextNodeIndex[i] = (output[i] < stepMaxBackend) ? -1 : -2;
-#endif
-    }
+    DistanceToOutTemplate(points, directions, stepMax, output, nextNodeIndex);
   }
 
   virtual void SafetyToIn(SOA3D<Precision> const &points,
                           Precision *const output) const {
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template SafetyToIn<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        *this->GetTransformation(),
-        point,
-        result
-      );
-#ifdef VECGEOM_VC
-      result.store(&output[i]);
-#elif MIC_SIDE
-      _mm512_store_pd(output+i,result);
-#elif VECGEOM_SCALAR
-      output[i] = result;
-#endif
-    }
+    SafetyToInTemplate(points, output);
   }
+
+  // virtual void SafetyToIn(AOS3D<Precision> const &points,
+  //                         Precision *const output) const {
+  //   SafetyToInTemplate(points, output);
+  // }
 
   virtual void SafetyToInMinimize(SOA3D<Precision> const &points,
                                   Precision *const safeties) const {
-    for (int i = 0, iMax = points.size(); i < iMax; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template SafetyToIn<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        *this->GetTransformation(),
-        point,
-        result
-      );
-#ifdef VECGEOM_VC
-      VECGEOM_BACKEND_TYPE::precision_v estimate = VECGEOM_BACKEND_PRECISION(&safeties[i]);
-      result(estimate < result) = estimate;
-      result.store(&safeties[i]);
-#elif MIC_SIDE
-      assert("Not implemented yet.");
-#elif VECGEOM_SCALAR
-      safeties[i] = (result < safeties[i]) ? result : safeties[i];
-#endif
-    }
+    SafetyToInMinimizeTemplate(points, safeties);
   }
 
   virtual void SafetyToOut(SOA3D<Precision> const &points,
                           Precision *const output) const {
-    for (int i = 0, i_max = points.size(); i < i_max; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template SafetyToOut<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        point,
-        result
-      );
-#ifdef VECGEOM_VC
-      result.store(&output[i]);
-#elif MIC_SIDE
-      _mm512_store_pd(output+i,result);
-#elif VECGEOM_SCALAR
-      output[i] = result;
-#endif
-    }
+    SafetyToOutTemplate(points, output);
   }
+
+  // virtual void SafetyToOut(AOS3D<Precision> const &points,
+  //                         Precision *const output) const {
+  //   SafetyToOutTemplate(points, output);
+  // }
 
   virtual void SafetyToOutMinimize(SOA3D<Precision> const &points,
                                    Precision *const safeties) const {
-    for (int i = 0, iMax = points.size(); i < iMax; i += kVectorSize) {
-      Vector3D<VECGEOM_BACKEND_TYPE::precision_v> point(
-        VECGEOM_BACKEND_PRECISION(points.x()+i),
-        VECGEOM_BACKEND_PRECISION(points.y()+i),
-        VECGEOM_BACKEND_PRECISION(points.z()+i)
-      );
-      // The scalar implementation assiged 0 to result... ?
-      VECGEOM_BACKEND_TYPE::precision_v result = kInfinity;
-      Specialization::template SafetyToOut<VECGEOM_BACKEND_TYPE>(
-        *this->GetUnplacedVolume(),
-        point,
-        result
-      );
-#ifdef VECGEOM_VC
-      VECGEOM_BACKEND_TYPE::precision_v estimate = VECGEOM_BACKEND_PRECISION(&safeties[i]);
-      result(estimate < result) = estimate;
-      result.store(&safeties[i]);
-#elif MIC_SIDE
-      assert("Not implemented yet.");
-#elif VECGEOM_SCALAR
-      safeties[i] = (result < safeties[i]) ? result : safeties[i];
-#endif
-    }
+    SafetyToOutMinimizeTemplate(points, safeties);
   }
 
 }; // End class ShapeImplementationHelper
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_SHAPEIMPLEMENTATIONHELPER_H_

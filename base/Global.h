@@ -4,9 +4,6 @@
 #ifndef VECGEOM_BASE_GLOBAL_H_
 #define VECGEOM_BASE_GLOBAL_H_
 
-#ifdef OFFLOAD_MODE
-  #pragma offload_attribute(push,target(mic))
-#endif
 #include <cassert>
 #include <cmath>
 #include <cfloat>
@@ -14,9 +11,6 @@
 #include <memory>
 #include <cstdio>
 #include <cstdlib>
-#ifdef OFFLOAD_MODE
-  #pragma offload_attribute(pop)
-#endif
 
 #define VECGEOM
 
@@ -62,12 +56,6 @@
   #define VECGEOM_CUDA_HEADER_HOST
   #define VECGEOM_CUDA_HEADER_DEVICE
   #define VECGEOM_CUDA_HEADER_BOTH
-  #ifdef OFFLOAD_MODE
-    #undef VECGEOM_CUDA_HEADER_BOTH
-    #undef VECGEOM_CUDA_HEADER_DEVICE
-    #define VECGEOM_CUDA_HEADER_BOTH __attribute__ ((target(mic)))
-    #define VECGEOM_CUDA_HEADER_DEVICE __attribute__ ((target(mic)))
-  #endif
   #define VECGEOM_CUDA_HEADER_GLOBAL
   #ifdef VECGEOM_CUDA
     // CUDA is enabled, but currently compiling regular C++ code.
@@ -159,9 +147,6 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
   // Compiling with icc
   #define VECGEOM_INTEL
   #define VECGEOM_INLINE inline
-  #ifndef VECGEOM_NVCC
-    #define VECGEOM_ALIGNED __attribute__((aligned(64)))
-  #endif
 #else
   // Functionality of <mm_malloc.h> is automatically included in icc
   #include <mm_malloc.h>
@@ -200,10 +185,6 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
     #define VECGEOM_CLASS_GLOBAL static const
 #else
   #define VECGEOM_GLOBAL static constexpr
-#ifdef OFFLOAD_MODE
-  #undef VECGEOM_GLOBAL
-  #define VECGEOM_GLOBAL __attribute__ (( target (mic))) static constexpr
-#endif
   #define VECGEOM_CLASS_GLOBAL static constexpr
 #endif
 
@@ -273,13 +254,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
    };
 #endif
 
-#if defined (__MIC__)
-  VECGEOM_GLOBAL int kAlignmentBoundary = 64;
-  #ifdef OFFLOAD_MODE
-    #define MIC_SIDE 1
-  #endif
+#ifdef __MIC__
+VECGEOM_GLOBAL int kAlignmentBoundary = 64;
 #else
-  VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+VECGEOM_GLOBAL int kAlignmentBoundary = 32;
 #endif
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
 VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;

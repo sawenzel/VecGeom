@@ -81,7 +81,6 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  VECGEOM_CUDA_HEADER_BOTH
   std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
 
   //virtual

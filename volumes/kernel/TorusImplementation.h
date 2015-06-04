@@ -363,16 +363,6 @@ stream& operator<<(stream& s, const Complex<T> & x)
 }
 #endif
 
-#ifdef OFFLOAD_MODE
-VECGEOM_GLOBAL const double inv256 = 1./256;
-VECGEOM_GLOBAL const double inv16 = 1./16;
-VECGEOM_GLOBAL const double inv3 = 1./3;
-VECGEOM_GLOBAL const double inv128 = 1./128;
-VECGEOM_GLOBAL const double inv27 = 1./27;
-VECGEOM_GLOBAL const double inv6 = 1./6;
-VECGEOM_GLOBAL const double inv108 = 1./108;
-VECGEOM_GLOBAL const double inv12 = 1./12;
-#else
 static const double inv256 = 1./256;
 static const double inv16 = 1./16;
 static const double inv3 = 1./3;
@@ -381,7 +371,6 @@ static const double inv27 = 1./27;
 static const double inv6 = 1./6;
 static const double inv108 = 1./108;
 static const double inv12 = 1./12;
-#endif
 
 
 template <typename CT>
@@ -619,13 +608,6 @@ std::cout<<"g1="<<gamma1<<" g2="<<gamma2<<" g3="<<gamma3<<" g="<<gammasum<<" inv
   roots[3] = aRoot;
 }
 #endif
-#ifdef MIC_SIDE
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-void solveQuartic2(MicPrecision a, MicPrecision b, MicPrecision c,
-                   MicPrecision d, MicPrecision e, Complex<MicPrecision> *root) {
-}
-#endif
 #endif
  
 class PlacedTorus;
@@ -633,13 +615,8 @@ class PlacedTorus;
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct TorusImplementation {
   
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL int transC = transCodeT;
-  VECGEOM_GLOBAL int rotC   = rotCodeT;
-#else
-  static const int transC = transCodeT;
-  static const int rotC   = rotCodeT;
-#endif
+   static const int transC = transCodeT;
+   static const int rotC   = rotCodeT;
 
   using PlacedShape_t = PlacedTorus;
   using UnplacedShape_t = UnplacedTorus;
@@ -752,7 +729,7 @@ struct TorusImplementation {
   Bool_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true,true>(torus, 
   point, completelyinside, completelyoutside);
-  inside = Backend::inside_v(EInside::kSurface);
+  inside = EInside::kSurface;
   MaskedAssign(completelyoutside, EInside::kOutside, &inside);
   MaskedAssign(completelyinside, EInside::kInside, &inside);
  }

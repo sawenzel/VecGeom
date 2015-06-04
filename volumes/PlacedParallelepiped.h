@@ -4,10 +4,6 @@
 #ifndef VECGEOM_VOLUMES_PLACEDPARALLELEPIPED_H_
 #define VECGEOM_VOLUMES_PLACEDPARALLELEPIPED_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedParallelepiped.h"
@@ -26,6 +22,7 @@ public:
   typedef UnplacedParallelepiped UnplacedShape_t;
 
 #ifndef VECGEOM_NVCC
+
   PlacedParallelepiped(char const *const label,
                        LogicalVolume const *const logical_volume,
                        Transformation3D const *const transformation,
@@ -107,9 +104,5 @@ public:
 };
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_PLACEDPARALLELEPIPED_H_

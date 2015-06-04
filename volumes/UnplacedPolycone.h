@@ -9,10 +9,6 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDPOLYCONE_H_
 #define VECGEOM_VOLUMES_UNPLACEDPOLYCONE_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 #include "base/AlignedBase.h"
 #include "base/Vector3D.h"
@@ -261,9 +257,5 @@ void UnplacedPolycone::ReconstructSectionArrays(PushableContainer & z,
 } // end inline namespace
 
 } // end vecgeom namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif /* VECGEOM_VOLUMES_UNPLACEDPOLYCONE_H_ */

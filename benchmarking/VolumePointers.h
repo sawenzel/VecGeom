@@ -4,10 +4,6 @@
 #ifndef VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 #define VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "benchmarking/BenchmarkResult.h"
@@ -84,9 +80,5 @@ private:
 
 } // End impl namespace
 } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_BENCHMARKING_VOLUMEPOINTERS_H_

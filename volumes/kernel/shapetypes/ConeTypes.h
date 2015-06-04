@@ -97,11 +97,7 @@ struct NeedsPhiTreatment<HollowCone> {
 
 template <>
 struct NeedsPhiTreatment<UniversalCone> {
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL TreatmentType value=UNKNOWN;
-#else
   static const TreatmentType value=UNKNOWN;
-#endif
 };
 
 
@@ -120,11 +116,7 @@ bool checkPhiTreatment(const UnplacedCone& cone) {
 template <typename T>
 struct NeedsRminTreatment
 {
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL TreatmentType value=YES;
-#else
   static const TreatmentType value=YES;
-#endif
 };
 
 #ifndef VECGEOM_NO_SPECIALIZATION
@@ -155,11 +147,7 @@ struct NeedsRminTreatment<NonHollowConeWithPiSector>
 template <>
 struct NeedsRminTreatment<UniversalCone>
 {
-#ifdef OFFLOAD_MODE
-  VECGEOM_GLOBAL TreatmentType value=UNKNOWN;
-#else
   static const TreatmentType value=UNKNOWN;
-#endif
 };
 
 

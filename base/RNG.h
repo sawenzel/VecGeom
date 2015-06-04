@@ -56,9 +56,6 @@ private:
   std::mt19937 rng;
   std::uniform_real_distribution<> uniform_dist;
 
-#ifdef OFFLOAD_MODE
-  VECGEOM_CUDA_HEADER_BOTH
-#endif
   VECGEOM_INLINE
   Precision GetUniform() {
      return uniform_dist(rng);
@@ -79,9 +76,6 @@ protected:
 #endif
   }
 #else
-#ifdef OFFLOAD_MODE
-__attribute__ ((target(mic)))
-#endif
   RNG() : rng(0), uniform_dist(0, 1) {}
 #endif
 
@@ -151,14 +145,7 @@ public:
 
 private:
 
-#ifdef OFFLOAD_MODE
-__attribute__ ((target(mic)))
-#endif
   RNG(RNG const&);
-
-#ifdef OFFLOAD_MODE
-__attribute__ ((target(mic)))
-#endif
   RNG& operator=(RNG const&);
 
 };

@@ -4,10 +4,6 @@
 #ifndef VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
 #define VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
 
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(push, target(mic))
-#endif
-
 #include "base/Global.h"
 
 #include "volumes/kernel/ParallelepipedImplementation.h"
@@ -25,9 +21,5 @@ using SpecializedParallelepiped = ShapeImplementationHelper<ParallelepipedImplem
 using SimpleParallelepiped = SpecializedParallelepiped<translation::kGeneric, rotation::kGeneric>;
 
 } } // End global namespace
-
-#ifdef OFFLOAD_MODE
-#pragma offload_attribute(pop)
-#endif
 
 #endif // VECGEOM_VOLUMES_SPECIALIZEDPARALLELEPIPED_H_
