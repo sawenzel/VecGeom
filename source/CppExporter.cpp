@@ -23,8 +23,10 @@
 #include "volumes/UnplacedBooleanVolume.h"
 #include <sstream>
 #include <ostream>
+#include <fstream>
 #include <algorithm>
 #include <list>
+#include <vector>
 #include <iomanip>
 
 namespace vecgeom {
@@ -72,14 +74,16 @@ void ScanGeometry( VPlacedVolume const *const volume,
 
 
 
-    void GeomCppExporter::DumpTransformations( std::ostream & dumps, std::list<Transformation3D const *> const & tvlist ){
+    void GeomCppExporter::DumpTransformations( std::vector<std::stringstream *> & trafoconstrlist,
+                                               std::stringstream & trafoexterndecl,
+                                               std::vector<std::stringstream *> & trafodecllist,
+                                               std::list<Transformation3D const *> const & tvlist ){
 
         // loop over all transformations
         unsigned int counter=0;
         for( auto t : tvlist ){
             // register transformation
             if( fTrafoToStringMap.find(t) == fTrafoToStringMap.cend() ){
-
                 // many transformation are identity: we can filter them out and allocate only one
                 // identity
                 // TODO: such reduction can be applied for other transformations
@@ -94,19 +98,56 @@ void ScanGeometry( VPlacedVolume const *const volume,
                     fTrafoToStringMap[ t ] = s.str();
                     counter++;
                 }
-
             }
         }
 
-        // generate code that instantiates transformations
+        // we will split the transformation constructions into different groups
+        // of compiler translation units for faster and parallel compilation
+        unsigned int group = 0;
+        std::stringstream * newstream = new std::stringstream;
+        trafoconstrlist.push_back( newstream );
+        std::stringstream * trafoconstr = trafoconstrlist.back();
+        trafodecllist.push_back( new std::stringstream );
+        std::stringstream * trafodecl = trafodecllist.back();
+
+        // generate function that instantiates the transformations
+        int groupcounter = 0;
+        *trafoconstr << "void GenerateTransformations_part" << groupcounter << "(){\n";
         bool iddone = false;
         for ( auto t : fTrafoToStringMap ){
             Transformation3D const * tp = t.first;
             if ( tp->IsIdentity() && iddone ) continue;
             if ( tp->IsIdentity() ) iddone = true;
+
+            // we take a limit if 5000 transformations per translation unit
+            // which compiles reasonably fast
+            if(++groupcounter > 5000){
+                // close old function
+                *trafoconstr << "}\n";
+
+                // create a new stream
+                trafoconstrlist.push_back( new std::stringstream );
+                trafoconstr = trafoconstrlist.back();
+                trafodecllist.push_back( new std::stringstream );
+                trafodecl = trafodecllist.back();
+
+                // init new function
+                *trafoconstr << "void GenerateTransformations_part" << groupcounter << "(){\n";
+
+                // reset counter
+                groupcounter=0;
+                group++;
+            }
+
             std::stringstream line;
+
+            // extern declaration line
+            trafoexterndecl << "extern Transformation3D *" << t.second << ";\n";
+            *trafodecl << "Transformation3D * " << t.second << " = nullptr;\n";
+
+            // instantiation line
             line << std::setprecision(15);
-            line << "Transformation3D * " << t.second << " = new Transformation3D(";
+            line << t.second << " = new Transformation3D(";
             line << tp->Translation(0) << " , ";
             line << tp->Translation(1) << " , ";
             line << tp->Translation(2);
@@ -117,8 +158,9 @@ void ScanGeometry( VPlacedVolume const *const volume,
                 line << tp->Rotation(8);
             }
             line << ");\n";
-            dumps << line.str();
+            *trafoconstr << line.str();
         }
+        *trafoconstr << "}\n";
     }
 
     template<typename VectorContainer>
@@ -416,8 +458,6 @@ void GeomCppExporter::DumpHeader( std::ostream & dumps ){
     dumps << "#include \"volumes/PlacedVolume.h\"\n";
     dumps << "#include \"volumes/LogicalVolume.h\"\n";
     dumps << "#include \"base/Transformation3D.h\"\n";
-    dumps << "#include \"management/GeoManager.h\"\n";
-    dumps << "#include \"base/Stopwatch.h\"\n";
     dumps << "#include <vector>\n";
 
     // put shape specific headers
@@ -429,7 +469,10 @@ void GeomCppExporter::DumpHeader( std::ostream & dumps ){
 
 void GeomCppExporter::DumpGeometry( std::ostream & s ) {
   // stringstreams to assemble code in parts
-    std::stringstream transformations;
+    std::vector< std::stringstream * > transformations;
+    std::stringstream transexterndecl;
+    std::vector< std::stringstream * > transdecl;
+
     std::stringstream logicalvolumes;
     std::stringstream header;
     std::stringstream geomhierarchy;
@@ -441,7 +484,7 @@ void GeomCppExporter::DumpGeometry( std::ostream & s ) {
     ScanGeometry( GeoManager::Instance().GetWorld(), lvlist, boollvlist, tlist );
 
     // generate code that instantiates the transformations
-    DumpTransformations( transformations, tlist );
+    DumpTransformations( transformations, transexterndecl, transdecl, tlist );
     // generate code that instantiates ordinary logical volumes
     DumpLogicalVolumes( logicalvolumes, lvlist );
 
@@ -471,10 +514,38 @@ void GeomCppExporter::DumpGeometry( std::ostream & s ) {
     s << "using namespace vecgeom;\n";
     s << "\n";
 
+    // write translation units for transformations
+    for( unsigned int i = 0; i< transdecl.size(); ++i) {
+        std::ofstream outfile;
+        std::stringstream name; name << "geomconstr_trans_part" << i << ".cpp";
+        outfile.open(name.str());
+        outfile << "#include \"base/Transformation3D.h\"\n";
+        outfile << "using namespace vecgeom;\n";
+        outfile << transdecl[i]->str();
+        outfile << transformations[i]->str();
+        outfile.close();
+    }
+    //return;
+
+    // write translation unit for logical volumes
+    {
+        std::ofstream outfile;
+        std::stringstream name; name << "geomconstr_lvol_part" << 0 << ".cpp";
+        outfile.open(name.str());
+        outfile << header.str();
+        outfile << "using namespace vecgeom;\n";
+
+        // we need external declarations for transformations
+        outfile << transexterndecl.str();
+        outfile << "void CreateLogicalVolumes(){\n";
+        outfile << logicalvolumes.str();
+        outfile << "}\n";
+        outfile.close();
+    }
+
     // create function start; body and end
     s << "VPlacedVolume const * generateDetector() {\n";
-    s << transformations.str();
-    s << logicalvolumes.str();
+    // s << logicalvolumes.str();
     s << geomhierarchy.str();
     // return placed world Volume
     // now define world
