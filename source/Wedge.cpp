@@ -19,7 +19,7 @@ VECGEOM_CUDA_HEADER_BOTH
             Assert( angle > 0., " wedge angle has to be larger than zero " );
             //
            // Assert( angle <= kTwoPi, "wedge angle is larger than 2*Pi; Are you using radians?" );
-            if( ! ( angle <= kTwoPi ) ){
+            if( ! ( angle <= kTwoPi + vecgeom::kTolerance ) ){
 #ifndef VECGEOM_NVCC
                 std::cerr << std::setprecision(20) << "\n";
                 std::cerr << "wedge angle is larger than 2PI: "

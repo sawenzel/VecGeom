@@ -71,8 +71,11 @@ private:
                               std::stringstream &,
                               std::vector< std::stringstream *> &,
                               std::list< Transformation3D const * > const & );
-    void DumpLogicalVolumes( std::ostream &, std::list< LogicalVolume const * >  const & );
-    void DumpGeomHierarchy( std::ostream &, std::list< LogicalVolume const * > const & );
+    void DumpLogicalVolumes( std::ostream &,
+                             std::ostream & /* extern decl */,
+                             std::ostream & /* lvol definitions */,
+                             std::list< LogicalVolume const * >  const & );
+    void DumpGeomHierarchy( std::vector< std::stringstream *> &, std::list< LogicalVolume const * > const & );
     void DumpHeader( std::ostream & );
 
     void DumpEntryFunction();
