@@ -80,18 +80,17 @@ public:
     // the constructor
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedPolycone( Precision phistart, Precision deltaphi,
-            int Nz, Precision * rmin,
-            Precision * rmax, Precision * z ) :
+            int Nz,
+            Precision * z,
+            Precision * rmin,
+            Precision * rmax
+            ) :
                 fStartPhi(phistart),
                 fDeltaPhi(deltaphi),
                 fNz(Nz),
-      //          fRmin(rmin),
-                //fRmax(rmax),
-                //fZ(z),
                 fSections(),
-                fZs()
-                {
-
+                fZs(Nz)
+    {
         // init internal members
         Init(phistart, deltaphi, Nz, z, rmin, rmax);
     }

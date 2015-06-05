@@ -299,16 +299,23 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
              // serialize the arrays as temporary std::vector
              shape->ReconstructSectionArrays(z,rmin,rmax);
 
+             for( auto element : rmin){
+                 assert( element >= 0.);
+             }
+             for( auto element : rmax){
+                              assert( element >= 0.);
+             }
+
+             // put z vector
+             DumpVector( z, line );
+             line << " ,";
              // put rmin vector
              DumpVector( rmin, line );
              line << " , ";
              // put rmax vector
              DumpVector( rmax, line );
-             line << " , ";
+             line << " ) ";
 
-             // put z vector
-             DumpVector( z, line );
-             line << " )";
 
             fNeededHeaderFiles.insert("volumes/UnplacedPolycone.h");
        }

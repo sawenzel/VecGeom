@@ -37,9 +37,10 @@ int main()
     UnplacedPolycone poly1( 0.,    /* initial phi starting angle */
             kTwoPi,    /* total phi angle */
             Nz,        /* number corners in r,z space */
-            rmin,   /* r coordinate of these corners */
-            rmax,
-            z);
+	    z,
+	    rmin,   /* r coordinate of these corners */
+            rmax
+            );
 
     poly1.Print();
 
