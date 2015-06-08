@@ -173,12 +173,12 @@ public:
    void ToDevice(const Type* what, unsigned long nelems = 1) {
       MemcpyToDevice(what,nelems*Derived::SizeOf());
    }
-   void FromDevice(Type* where,cudaStream_t stream) {
-      // Async since we past a stream.
+   void FromDevice(Type* where, cudaStream_t stream) {
+      // Async since we pass a stream.
       MemcpyToHostAsync(where,Derived::SizeOf(),stream);
    }
    void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
-      // Async since we past a stream.
+      // Async since we pass a stream.
       MemcpyToHostAsync(where,nelems*Derived::SizeOf(),stream);
    }
 
