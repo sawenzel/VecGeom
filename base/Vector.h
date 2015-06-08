@@ -31,9 +31,9 @@ public:
   Vector()
      : fData(new Type[1]), fSize(0), fMemorySize(1), fAllocated(true) {}
 
+  VECGEOM_CUDA_HEADER_BOTH
   Vector(const int maxsize)
      : fData(new Type[maxsize]), fSize(0), fMemorySize(maxsize), fAllocated(true) {}
-
 
   VECGEOM_CUDA_HEADER_BOTH
   Vector(Type *const vec, const int sz)

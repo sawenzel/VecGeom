@@ -298,13 +298,14 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
              std::vector<double> rmin, rmax, z;
              // serialize the arrays as temporary std::vector
              shape->ReconstructSectionArrays(z,rmin,rmax);
-
+#ifndef NDEBUG
              for( auto element : rmin){
                  assert( element >= 0.);
              }
              for( auto element : rmax){
-                              assert( element >= 0.);
+                 assert( element >= 0.);
              }
+#endif
 
              // put z vector
              DumpVector( z, line );
