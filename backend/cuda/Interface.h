@@ -132,9 +132,6 @@ protected:
    VECGEOM_CUDA_HEADER_BOTH
    void *GetPtr() const { return fPtr; }
 
-   void Malloc(unsigned long size) {
-      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
-   }
    void Free() {
       vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaFree((void*)fPtr));
    }
@@ -146,6 +143,9 @@ public:
    explicit DevicePtrBase(void *input) : fPtr(input) {}
    ~DevicePtrBase() { /* does not own content per se */ }
 
+   void Malloc(unsigned long size) {
+      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
+   }
 };
 
  template <typename T> class DevicePtr;
