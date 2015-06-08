@@ -25,6 +25,12 @@ void ConstructOnGpu(DataClass *gpu_ptr, ArgsTypes... params) {
    new (gpu_ptr) DataClass(params...);
 }
 
+template <typename DataClass>
+__global__
+void ConstructArrayOnGpu(DataClass *gpu_ptr, size_t nElements) {
+   new (gpu_ptr) DataClass[nElements];
+}
+
 template <typename DataClass, typename... ArgsTypes>
 void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
 {
@@ -249,6 +255,12 @@ public:
       ConstructOnGpu<<<1, 1>>>( this->GetPtr(), params...);
    }
 
+   template <typename... ArgsTypes>
+   void ConstructArray(size_t nElements) const
+   {
+      ConstructArrayOnGpu<<<1, 1>>>( this->GetPtr(), nElements);
+   }
+
    static size_t SizeOf()
    {
       return sizeof(Type);
@@ -257,6 +269,7 @@ public:
 #else
   template <typename... ArgsTypes>
      void Construct(ArgsTypes... params) const;
+  void ConstructArray(size_t nElements) const;
 
   static size_t SizeOf();
 #endif
