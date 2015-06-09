@@ -736,8 +736,8 @@ VECGEOM_INLINE \
 VECGEOM_CUDA_HEADER_BOTH \
 Vector3D<Type> operator OPERATOR(const ScalarType lhs, \
                                  Vector3D<Type> const &rhs) { \
-  Vector3D<Type> result(rhs); \
-  result INPLACE lhs; \
+  Vector3D<Type> result(lhs); \
+  result INPLACE rhs; \
   return result; \
 }
 VECTOR3D_BINARY_OP(+, +=)
