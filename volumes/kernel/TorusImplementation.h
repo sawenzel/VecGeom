@@ -154,6 +154,12 @@ Complex<T> operator-( Complex<T> const & x, T const & y )
 {
   return Complex<T>( x.real() - y, x.imag() );
 }
+    VECGEOM_CUDA_HEADER_BOTH
+    void FixZeroes() {
+      MaskedAssign(Abs(fI) < vecgeom::kTolerance, T(0.), &fI);
+      MaskedAssign(Abs(fR) < vecgeom::kTolerance, T(0.), &fR);
+    }
+  }; // end class complex
 
 template <typename T>
 inline
@@ -509,6 +515,9 @@ std::cout<<"g1="<<gamma1<<" g2="<<gamma2<<" g3="<<gamma3<<" g="<<gamma<<" inv256
   //    std::cerr << "y " << y << "\n";
   
   CT W = csqrt((alpha + y) + y);
+
+    y.FixZeroes();
+
 #ifdef VERBOSE
       std::cout << "W " << W << "\n";
   #endif
