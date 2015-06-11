@@ -112,6 +112,13 @@ class Complex
    return Complex(-fR,-fI);
  }
 
+ VECGEOM_CUDA_HEADER_BOTH
+ void FixZeroes() {
+   MaskedAssign(Abs(fI) < vecgeom::kTolerance, T(0.), &fI);
+   MaskedAssign(Abs(fR) < vecgeom::kTolerance, T(0.), &fR);
+ }
+
+
 }; // end class complex
 
 template <typename T>
@@ -154,12 +161,7 @@ Complex<T> operator-( Complex<T> const & x, T const & y )
 {
   return Complex<T>( x.real() - y, x.imag() );
 }
-    VECGEOM_CUDA_HEADER_BOTH
-    void FixZeroes() {
-      MaskedAssign(Abs(fI) < vecgeom::kTolerance, T(0.), &fI);
-      MaskedAssign(Abs(fR) < vecgeom::kTolerance, T(0.), &fR);
-    }
-  }; // end class complex
+
 
 template <typename T>
 inline
