@@ -402,7 +402,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   // convenience variables for direction pointing to +z or -z.
   // Note that both posZdir and NegZdir may be false, if dir.z() is zero!
   Bool_t posZdir = dir.z() > 0.0;
-  Bool_t negZdir = dir.z() < 0.0;
+  Bool_t negZdir = dir.z() <= -0.0;  // -0.0 is needed, see JIRA-150
   Float_t zdirSign = Backend::kOne;  // z-direction
   MaskedAssign( negZdir, -Backend::kOne, &zdirSign);
 
@@ -419,10 +419,6 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
 
   // Step 1.b) general case: assign distance to z plane
   distance = max/dir.z();
-
-  // Fix a very particular case, when dir.z() == -0 (see JIRA-150)
-  Bool_t negInf = (distance == Float_t(-kInfinity));
-  MaskedAssign( negInf, Float_t(kInfinity), &distance );
 
   //
   // Step 2: find distances for intersections with side planes.
