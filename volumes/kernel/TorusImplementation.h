@@ -516,9 +516,10 @@ std::cout<<"g1="<<gamma1<<" g2="<<gamma2<<" g3="<<gamma3<<" g="<<gamma<<" inv256
 #endif
   //    std::cerr << "y " << y << "\n";
   
+  y.FixZeroes();
   CT W = csqrt((alpha + y) + y);
 
-    y.FixZeroes();
+
 
 #ifdef VERBOSE
       std::cout << "W " << W << "\n";
@@ -597,6 +598,7 @@ std::cout<<"g1="<<gamma1<<" g2="<<gamma2<<" g3="<<gamma3<<" g="<<gammasum<<" inv
   CVCT y = -5.0*alpha*inv6 - U;
   y = y + P/(3.*U );
 //      std::cout << "y " << y << "\n";
+  y.FixZeroes();
   CVCT W = csqrt((alpha + y) + y);
 //      std::cout << "W " << W << "\n";
 
@@ -923,96 +925,75 @@ struct TorusImplementation {
      //    std::cerr << "#ROOTS " << roots[2] << "\n"; 
      //    std::cerr << "#ROOTS " << roots[3] << "\n"; 
 #endif
-     //Float_t validdistance = kInfinity;
-     Float_t secondvalidroot = kInfinity;
-     
-     Bool_t havevalidsolution = Abs(roots[0].imag()) < radTolerance && roots[0].real() > -radTolerance;
-     Bool_t havevalidroot=havevalidsolution;
-     if(needphi && ! IsEmpty(havevalidsolution))
-     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[0].real()*dir));
-     MaskedAssign( havevalidsolution, roots[0].real(), &validdistance );
-     MaskedAssign(out && havevalidsolution, validdistance,&secondvalidroot);
-     //std::cerr << "#ROOTS " << roots[0] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[0].real()*dir))<< "\n";
-     havevalidroot=havevalidsolution||havevalidroot;
+       Float_t secondvalidroot = kInfinity;
 
-     havevalidsolution = Abs(roots[1].imag()) < radTolerance && roots[1].real() > -radTolerance;
-     if(needphi && ! IsEmpty(havevalidsolution))
-     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[1].real()*dir)); 
-     MaskedAssign( havevalidsolution, Min(roots[1].real(), validdistance), &validdistance );
-     MaskedAssign(out && havevalidsolution,Max(roots[1].real(), validdistance),&secondvalidroot);
-     //std::cerr << "#ROOTS " << roots[1] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[1].real()*dir))<< "\n"; 
-      havevalidroot=havevalidsolution||havevalidroot;
+       Bool_t havevalidsolution = Abs(roots[0].imag()) < radTolerance && roots[0].real() > -radTolerance;
+       Bool_t havevalidroot = havevalidsolution;
+       if (needphi && !IsEmpty(havevalidsolution))
+         havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point + roots[0].real() * dir));
 
-     havevalidsolution = Abs(roots[2].imag()) < radTolerance && roots[2].real() > -radTolerance;
-     if(needphi && ! IsEmpty(havevalidsolution) )
-     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[2].real()*dir));
-     MaskedAssign( havevalidsolution, Min(roots[2].real(), validdistance), &validdistance );
-     MaskedAssign(out && havevalidsolution,Max(roots[2].real(), validdistance),&secondvalidroot);
-     //std::cerr << "#ROOTS " << roots[2] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[2].real()*dir))<< "\n";
-     havevalidroot=havevalidsolution||havevalidroot;
+       MaskedAssign(havevalidsolution, roots[0].real(), &validdistance);
+       MaskedAssign(out && havevalidsolution, validdistance, &secondvalidroot);
+       havevalidroot = havevalidsolution || havevalidroot;
 
-     havevalidsolution = Abs(roots[3].imag()) < radTolerance && roots[3].real() > -radTolerance;
-     if(needphi && ! IsEmpty(havevalidsolution))
-     havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[3].real()*dir));
-     MaskedAssign( havevalidsolution, Min(roots[3].real(), validdistance), &validdistance );
-     MaskedAssign(out && havevalidsolution,Max(roots[3].real(), validdistance),&secondvalidroot);
-     //std::cerr << "#ROOTS " << roots[3] <<" havevalidsolution=<<"<<havevalidsolution<<" contains= "<<(torus.GetWedge().ContainsWithBoundary<Backend>(point+roots[3].real()*dir))<< "\n";
-     havevalidroot=havevalidsolution||havevalidroot;
+       havevalidsolution = Abs(roots[1].imag()) < radTolerance && roots[1].real() > -radTolerance;
+       if (needphi && !IsEmpty(havevalidsolution))
+         havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point + roots[1].real() * dir));
 
-     // TODO: only do this in case there is any finite real solution
-     //havevalidsolution &= (validdistance < kInfinity);
-     havevalidsolution = havevalidroot&(validdistance < kInfinity);
-  //   std::cout<<"valid ?"<< havevalidsolution<<" point="<<point<<" dir="<<dir<<std::endl;
-     if( ! IsEmpty( havevalidsolution ) ){
-       if(havevalidsolution)validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
-#ifdef VERBOSE
-           std::cout << "#DISTANCE1 " << validdistance;
-#endif
-       if(havevalidsolution)validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
-#ifdef VERBOSE
-         std::cout << "#DISTANCE2 " << validdistance;
-#endif
-        if(havevalidsolution)validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
-#ifdef VERBOSE
-	  std::cout << "#DISTANCE3 " << validdistance;
-#endif
-        if(havevalidsolution)validdistance = NewtonIter(a,b,c,d,validdistance,CheckZero(a,b,c,d,validdistance));
-#ifdef VERBOSE
-	 std::cout << "#DISTANCE4 " << validdistance;
-#endif
-     
-     }
-     //Check for direction in case of Surface
-     Bool_t checkvaliddirection = validdistance < radTolerance;
-     if(! IsEmpty(checkvaliddirection)){
-       validdistance = 0.;
-       //Calculate Normal  
-       Float_t rho = Sqrt(point.x()*point.x() + point.y()*point.y());
-       Float_t redFactor= (rho-torus.rtor())/rho;
-       Vector3D<typename Backend::precision_v> norm = Vector3D<typename Backend::precision_v>( point.x()*redFactor,  // p.x()*(1.-fRtor/rho),
-                        point.y()*redFactor,  // p.y()*(1.-fRtor/rho),
-                        point.z()          );
-       if(ForRmin)norm = -norm;
-       Float_t dot_product = dir.Dot(norm);
-     
-       MaskedAssign(!out && (dot_product > 0.),secondvalidroot ,&validdistance);
-       MaskedAssign(out && (dot_product < 0.),secondvalidroot,&validdistance);
+       MaskedAssign(havevalidsolution, Min(roots[1].real(), validdistance), &validdistance);
+       MaskedAssign(out && havevalidsolution, Max(roots[1].real(), validdistance), &secondvalidroot);
+       havevalidroot = havevalidsolution || havevalidroot;
 
-     }
-     //   std::cerr << std::setprecision(20);
-     //std::cerr << "#DISTANCE " << validdistance;
-     //Float_t fold = CheckZero(a, b, c, d, validdistance);
-     //std::cerr << point << "\n";
-     //std::cerr << " ZERO CHECK " << fold << " dist " << validdistance << "\n";
-     //Float_t newdist = NewtonIter(a, b, c, d, validdistance, fold);
-     //std::cerr << " NEWDIST " << newdist;
-     //std::cerr << " " << CheckZero( a,b,c,d, newdist);
-     //std::cerr << "\n";
-     //std::cerr << std::setprecision(5);
-     
-     return validdistance;
-  }
-  
+       havevalidsolution = Abs(roots[2].imag()) < radTolerance && roots[2].real() > -radTolerance;
+       if (needphi && !IsEmpty(havevalidsolution))
+         havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point + roots[2].real() * dir));
+       MaskedAssign(havevalidsolution, Min(roots[2].real(), validdistance), &validdistance);
+       MaskedAssign(out && havevalidsolution, Max(roots[2].real(), validdistance), &secondvalidroot);
+       havevalidroot = havevalidsolution || havevalidroot;
+
+       havevalidsolution = Abs(roots[3].imag()) < radTolerance && roots[3].real() > -radTolerance;
+       if (needphi && !IsEmpty(havevalidsolution))
+         havevalidsolution &= (torus.GetWedge().ContainsWithBoundary<Backend>(point + roots[3].real() * dir));
+       MaskedAssign(havevalidsolution, Min(roots[3].real(), validdistance), &validdistance);
+       MaskedAssign(out && havevalidsolution, Max(roots[3].real(), validdistance), &secondvalidroot);
+
+       havevalidroot = havevalidsolution || havevalidroot;
+
+       havevalidsolution = havevalidroot & (validdistance < kInfinity);
+
+       // refine solutions if we have any candidate
+       if (!IsEmpty(havevalidsolution)) {
+         // do as many newton iterations as needed; maximal 10
+         Float_t error = CheckZero(a, b, c, d, validdistance);
+         int count = 0;
+         while (count < 10 && Any(havevalidsolution && (Abs(error) > kTolerance))) {
+           validdistance = NewtonIter(a, b, c, d, validdistance, error);
+           error = CheckZero(a, b, c, d, validdistance);
+           count++;
+         }
+
+         // Check for direction in case of Surface
+         Bool_t checkvaliddirection = validdistance < radTolerance;
+         if (!IsEmpty(checkvaliddirection)) {
+           validdistance = 0.;
+           // Calculate Normal
+           Float_t rho = Sqrt(point.x() * point.x() + point.y() * point.y());
+           Float_t redFactor = (rho - torus.rtor()) / rho;
+           Vector3D<typename Backend::precision_v> norm =
+               Vector3D<typename Backend::precision_v>(point.x() * redFactor, // p.x()*(1.-fRtor/rho),
+                                                       point.y() * redFactor, // p.y()*(1.-fRtor/rho),
+                                                       point.z());
+           if (ForRmin)
+             norm = -norm;
+           Float_t dot_product = dir.Dot(norm);
+
+           MaskedAssign(!out && (dot_product > 0.), secondvalidroot, &validdistance);
+           MaskedAssign(out && (dot_product < 0.), secondvalidroot, &validdistance);
+         }
+       }
+       return validdistance;
+    }
+
     template <class Backend>
     VECGEOM_CUDA_HEADER_BOTH
     VECGEOM_INLINE
