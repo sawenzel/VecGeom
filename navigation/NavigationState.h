@@ -179,7 +179,10 @@ public:
       bool alloc = other->fPath.fSelfAlloc;
       //std::memcpy(other, this, this->SizeOf());
       // we only need to copy to relevant depth
-      std::memcpy(other,this, NavigationState::SizeOfInstance( this->GetCurrentLevel() ));
+      // GetCurrentLevel indicates the 'next' level, i.e. currentLevel==0 is empty
+      // fCurrentLevel = maxlevel+1 is full
+      // SizeOfInstance expect [0,maxlevel] and add +1 to its params
+      std::memcpy(other,this, NavigationState::SizeOfInstance( this->GetCurrentLevel() - 1 ));
 
       other->fPath.fSelfAlloc = alloc;
    }
