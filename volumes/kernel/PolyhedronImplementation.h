@@ -1012,7 +1012,10 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToOutKernel(
   ScalarDistanceToEndcaps<true>(unplaced, goingRight, point, direction,
                                 distance);
 
-  return distance < stepMax ? distance : stepMax;
+  // disabling stepMax until convention revised and clear
+  // there is a problem when distance = infinity due to some error condition but stepMax finite
+  // return distance < stepMax ? distance : stepMax;
+  return distance;
 }
 
 template <Polyhedron::EInnerRadii innerRadiiT,
