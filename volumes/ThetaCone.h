@@ -111,7 +111,7 @@ class ThetaCone{
         template<typename Backend>
         VECGEOM_CUDA_HEADER_BOTH
         typename Backend::inside_v Inside( Vector3D<typename Backend::precision_v> const& point ) const{
-            std::cout<<"Entered INSIDE of ThetaCone\n";
+            //std::cout<<"Entered INSIDE of ThetaCone\n";
             typedef typename Backend::bool_v      Bool_t;
             Bool_t completelyinside(false), completelyoutside(false);
             GenericKernelForContainsAndInside<Backend,true>(
@@ -432,10 +432,10 @@ class ThetaCone{
             a = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanSTheta2;
             c = rho2 - point.z() * point.z() * tanSTheta2;
             d2 = b * b - a * c;
+            MaskedAssign(d2<0. && Abs(d2)<kHalfTolerance,0.,&d2);
 
             MaskedAssign((d2 >= 0.) && b>=0. && a!=0. ,( (-b - Sqrt(d2))/(a) ),&firstRoot);
             MaskedAssign((d2 >= 0.) && b<0.,((c)/(-b + Sqrt(d2)) ),&firstRoot);
-            MaskedAssign(d22<0. && Abs(d22)<kHalfTolerance,0.,&d22);
 
             MaskedAssign(firstRoot < 0. ,kInfinity, &firstRoot);
 
@@ -443,7 +443,7 @@ class ThetaCone{
             a2 = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanETheta2; ;
             c2 = point.x() * point.x() + point.y() * point.y() - point.z() * point.z() * tanETheta2;
             d22 = (b2 * b2) - (a2 * c2);
-			MaskedAssign(d22<0. && Abs(d22)<kHalfTolerance,0.,&d22);
+            MaskedAssign(d22<0. && Abs(d22)<kHalfTolerance,0.,&d22);
 
             MaskedAssign((d22 >= 0.) && b2>=0. ,((c2)/(-b2 - Sqrt(d22)) ),&secondRoot);
             MaskedAssign((d22 >= 0.) && b2<0. && a2!=0.,((-b2 + Sqrt(d22))/a2 ),&secondRoot);
