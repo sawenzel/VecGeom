@@ -6,7 +6,11 @@
 
 #include "base/Global.h"
 #include "backend/Backend.h"
-
+#ifndef VECGEOM_NVCC
+	#include "base/RNG.h"
+	#include <cassert>
+	#include <cmath>
+#endif
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TrdImplementation.h"
@@ -80,7 +84,24 @@ public:
 
 #ifndef VECGEOM_NVCC
   virtual
-  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
+  Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
+
+  virtual
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
+
+  virtual Vector3D<Precision> GetPointOnSurface() const {
+     return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
+  bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const {
+     return GetUnplacedVolume()->Normal(point, normal);
+  }
+
+  /*
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+  */
 
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 

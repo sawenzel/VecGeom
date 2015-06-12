@@ -83,6 +83,13 @@ public:
     }
 
 #ifndef VECGEOM_NVCC
+  virtual
+   Vector3D<Precision> GetPointOnSurface() const {
+     return GetUnplacedVolume()->GetPointOnSurface();
+   }
+ bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const {
+	  return GetUnplacedVolume()->Normal(point, normal);
+  }
   virtual VPlacedVolume const* ConvertToUnspecialized() const;
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const* ConvertToRoot() const;

@@ -10,6 +10,7 @@
 #include "backend/cuda/Backend.h"
 #elif defined(VECGEOM_VC)
 #include "backend/vc/Backend.h"
+//#include "backend/vcfloat/Backend.h"
 #elif defined(VECGEOM_CILK)
 #include "backend/cilk/Backend.h"
 #else

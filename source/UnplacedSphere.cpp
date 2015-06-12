@@ -60,11 +60,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      fCubicVolume(0.), 
      fSurfaceArea(0.), 
      epsilon(kSEpsilon), 
-     frTolerance(kSTolerance),
-     fgTolerance(kSTolerance),
-     faTolerance(kSTolerance),
-     kAngTolerance(kSTolerance),
-     kRadTolerance(kSTolerance),
+     frTolerance(kTolerance*10.),
      fPhiWedge(pDPhi,pSPhi),
      fThetaCone(pSTheta,pDTheta)
             

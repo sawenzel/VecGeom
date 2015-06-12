@@ -151,6 +151,23 @@ public:
   Precision volume() const {
     return fDphi*kPi*fRtor*(fRmax*fRmax-fRmin*fRmin);
   }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision SurfaceArea() const {
+     
+     Precision surfaceArea = fDphi*kTwoPi*fRtor*(fRmax+fRmin);
+     if(fDphi < kTwoPi)
+     {
+       surfaceArea = surfaceArea + kTwoPi*(fRmax*fRmax-fRmin*fRmin);
+     } 
+     return surfaceArea;
+  }
+
+   
+  VECGEOM_CUDA_HEADER_BOTH
+  bool Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const;
+
   
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -161,6 +178,8 @@ public:
   void Extent(Vector3D<Precision> & min, Vector3D<Precision> & max ) const {
       GetBoundingTube().Extent( min, max );
   }
+
+  Vector3D<Precision> GetPointOnSurface() const;
 
   virtual int memory_size() const { return sizeof(*this); }
 

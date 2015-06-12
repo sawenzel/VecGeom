@@ -201,7 +201,17 @@ void FillBiasedDirections(VPlacedVolume const &volume,
                static_cast<Precision>(n_hits)/static_cast<Precision>(size));
       }
 
-      dirs.set(h, SampleDirection());
+      // SW: a potentially much faster algorithm is the following:
+      // sample a daughter to hit ( we can adjust the sampling probability according to Capacity or something; then generate point on surface of daughter )
+      // set direction accordingly
+      uint selecteddaughter = (uint) RNG::Instance().uniform() * volume.daughters().size();
+      Vector3D<Precision> pointonsurface = volume.daughters()[selecteddaughter]->GetPointOnSurface();
+      Vector3D<Precision> dirtosurfacepoint = pointonsurface - points[h];
+      dirtosurfacepoint.Normalize();
+      dirs.set(h, dirtosurfacepoint );
+
+      // the brute force and simple sampling technique is the following
+      // dirs.set(h, SampleDirection());
       for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
            iEnd = volume.daughters().cend(); i != iEnd; ++i) {
         if (IsHittingVolume(points[h], dirs[h], **i)) {
@@ -550,7 +560,8 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
             while( placedcount < np && iter!=allpaths.end() )
             {
                 // this is matrix linking local and global reference frame
-                Transformation3D m = (*iter)->TopMatrix();
+                Transformation3D m;
+                (*iter)->TopMatrix(m);
 
                 globalpoints.set(placedcount, m.InverseTransform(localpoints[placedcount]));
                 directions.set(placedcount, m.InverseTransformDirection(directions[placedcount]));

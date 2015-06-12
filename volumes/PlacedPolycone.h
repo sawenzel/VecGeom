@@ -96,8 +96,8 @@ public:
       //return valid;
   //}
 
-  // virtual
-  Vector3D<Precision> GetPointOnSurface() const {
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const  {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 

@@ -32,8 +32,8 @@ private:
     Precision fRmin, fRmax, fSPhi, fDPhi, fSTheta, fDTheta;
     
     //Radial and angular tolerances
-    Precision fRminTolerance, mkTolerance, kAngTolerance,
-            kRadTolerance, fEpsilon;
+    Precision fRminTolerance, mkTolerance, //, kAngTolerance, kRadTolerance,
+             fEpsilon; 
     
     // Cached trigonometric values for Phi angle
     Precision sinCPhi, cosCPhi, cosHDPhiOT, cosHDPhiIT,
@@ -54,8 +54,8 @@ private:
     //Tolerance compatiable with USolids
     Precision epsilon;// = 2e-11; 
     Precision frTolerance;//=1e-9;     //radial tolerance;
-    Precision fgTolerance ;//= 1e-9;  // cartesian tolerance;
-    Precision faTolerance ;//= 1e-9;  // angular tolerance;
+    //Precision fgTolerance ;//= 1e-9;  // cartesian tolerance;
+    //Precision faTolerance ;//= 1e-9;  // angular tolerance;
 
 
     // Member variables go here

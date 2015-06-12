@@ -80,12 +80,14 @@ bool TestSphere() {
     */
     
 	//****************************************************************
-	double Dist=0.;
-	Sphere_t testSurfSphere("test_SurfSphere",15. , 20. ,PI/6, 4.265389, PI/3 ,0.235869);
-    Vec_t testSurfPoint(3.3166983737882969052 ,13.438697440427185725, 5.779354438310682518);
-    Vec_t testSurfDir(0.84193247289213946072, 0.11304329102353896652, 0.52760868590679432799);
-	Dist=testSurfSphere.DistanceToIn(testSurfPoint,testSurfDir);
-	std::cout<<"DistanceToIN : "<<Dist<<std::endl;
+	double Dist;
+    Vec_t norm;
+    bool convex;
+	Sphere_t sntest("sntest",0,50,0,2*PI,0.0,0.75*PI);
+    Vec_t point(0.0002800000000000000838912273, 0.0002800000000000000838912273, 30);
+    Vec_t dir(-9.333333332520299583886549e-06, -9.333333332520299583886549e-06, -0.9999999999128889038857437);
+	Dist=sntest.DistanceToOut(point,dir,norm,convex);
+	std::cout<<"DistanceToOut : "<<Dist<<std::endl;
 	
     return true;
 }

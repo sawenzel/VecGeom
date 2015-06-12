@@ -37,7 +37,7 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       fPhiStart(phiStart),fPhiDelta(phiDelta),
       fZSegments(zPlaneCount-1), fZPlanes(zPlaneCount), fRMin(zPlaneCount),
       fRMax(zPlaneCount), fPhiSections(sideCount+1),
-      fBoundingTube(0, 1, 1, 0, kTwoPi) {
+      fBoundingTube(0, 1, 1, 0, kTwoPi),fSurfaceArea(0.),fCapacity(0.) {
 
   typedef Vector3D<Precision> Vec_t;
 
@@ -345,6 +345,453 @@ void UnplacedPolyhedron::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& 
   aMin.z()+=fBoundingTubeOffset;
   aMax.z()+=fBoundingTubeOffset;
 }
+
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron:: DistanceSquarePointToSegment(Vector3D<Precision>& v1,Vector3D<Precision>&v2, const Vector3D<Precision>&p)const
+{
+
+Precision p1_p2_squareLength = (v1-v2).Mag2();
+Precision dotProduct = (p-v1).Dot(v1-v2) / p1_p2_squareLength;
+if ( dotProduct < 0 )
+{
+  return (p-v1).Mag2();
+}
+else if ( dotProduct <= 1 )
+{
+  Precision p_p1_squareLength = (p-v1).Mag2();
+return p_p1_squareLength - dotProduct * dotProduct * p1_p2_squareLength;
+}
+else
+{
+  return (p-v2).Mag2();
+}
+}
+
+
+VECGEOM_CUDA_HEADER_BOTH
+bool UnplacedPolyhedron::InsideTriangle(Vector3D<Precision>& v1, 
+					Vector3D<Precision>& v2,  Vector3D<Precision>& v3,
+                                        const Vector3D<Precision>& p) const {
+  Precision fEpsilon_square=0.00000001;
+  Vector3D<Precision> vec1 = p-v1;
+  Vector3D<Precision> vec2 = p-v2;
+  Vector3D<Precision> vec3 = p-v3;
+ 
+  bool sameSide1 = vec1.Dot(vec2) >= 0.;
+  bool sameSide2 = vec1.Dot(vec3) >= 0.;
+  bool sameSide3 = vec2.Dot(vec3) >= 0.;
+  sameSide1= sameSide1 && sameSide2 && sameSide3;
+
+  if( sameSide1 ) return sameSide1 ;
+
+  // If sameSide1 is false, point can be on the Surface or Outside
+  // Use sqr of distance in order to check if point is on the Surface
+  
+  if (DistanceSquarePointToSegment(v1,v2,p) <= fEpsilon_square)
+  return true;
+  if (DistanceSquarePointToSegment(v1,v3,p) <= fEpsilon_square)
+  return true;
+  if (DistanceSquarePointToSegment(v2,v3,p) <= fEpsilon_square)
+  return true;
+
+  return false;
+ 
+}
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron::GetTriangleArea(Vector3D<Precision>& v1, 
+	  Vector3D<Precision>& v2,  Vector3D<Precision>& v3) const {
+  Precision fArea=0.;
+  Vector3D<Precision> vec1 = v1-v2;
+  Vector3D<Precision> vec2 = v1-v3;
+ 
+  fArea = 0.5 * (vec1.Cross(vec2)).Mag();
+  return fArea;
+}
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<Precision> UnplacedPolyhedron::GetPointOnTriangle(Vector3D<Precision>& v1,
+			Vector3D<Precision>&v2,Vector3D<Precision>& v3) const{
+
+   Precision alpha = RNG::Instance().uniform(0.0, 1.0);
+   Precision beta = RNG::Instance().uniform(0.0, 1.0);
+   Precision lambda1 = alpha * beta;
+   Precision lambda0 = alpha - lambda1;
+   Vector3D<Precision> vec1 = v2-v1;
+   Vector3D<Precision> vec2 = v3-v1;
+   return v1 + lambda0 * vec1 + lambda1 * vec2;
+ 
+}
+ 
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron::SurfaceArea() const{
+  if(fSurfaceArea == 0.)
+  {
+     signed int j;
+     Precision  totArea = 0., area, aTop = 0., aBottom = 0.;
+         
+    // Below we generate the areas relevant to our solid
+    // We are starting with ZSegments(lateral parts)
+   
+     for(j=0; j < GetZSegmentCount(); ++j)
+     { 
+           
+       area=GetZSegment(j).outer.GetQuadrilateralArea(0)*GetSideCount();
+       totArea += area;
+       
+        if(GetZSegment(j).hasInnerRadius)
+        {
+	 area=GetZSegment(j).inner.GetQuadrilateralArea(0)*GetSideCount();
+	 totArea += area;
+        }
+
+        if (HasPhiCutout())
+        {
+          area=GetZSegment(j).phi.GetQuadrilateralArea(0)*2.0;
+	  totArea += area;
+	}
+     }
+
+     // Must include top and bottom areas
+     //
+        
+     Vector3D<Precision> point1 =GetZSegment(0).outer.GetCorners()[0][0];
+     Vector3D<Precision> point2 =GetZSegment(0).outer.GetCorners()[1][0];
+     Vector3D<Precision> point3, point4  ;
+     if(GetZSegment(0).hasInnerRadius)
+     {
+         point3 =GetZSegment(0).inner.GetCorners()[0][0];
+         point4 =GetZSegment(0).inner.GetCorners()[1][0];
+         aTop  = GetSideCount() * (GetTriangleArea(point1,point2,point3)+
+				     GetTriangleArea(point3,point4,point2));
+
+     }
+     else
+     {
+         point3.Set(0.0,0.0,GetZSegment(0).outer.GetCorners()[0][0].z());
+         aTop=  GetSideCount()* (GetTriangleArea(point1,point2,point3));
+      }
+        
+     totArea += aTop;
+
+     point1 =GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[2][0];
+     point2 =GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[3][0];
+
+     if(GetZSegment(GetZSegmentCount()-1).hasInnerRadius)
+     {
+        point3 =GetZSegment(GetZSegmentCount()-1).inner.GetCorners()[2][0];
+        point4 =GetZSegment(GetZSegmentCount()-1).inner.GetCorners()[3][0];
+        aBottom  = GetSideCount() *  (GetTriangleArea(point1,point2,point3)+
+				     GetTriangleArea(point3,point4,point2));
+      }
+     else
+     {
+       point3.Set(0.0,0.0,GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[2][0].z());
+       aBottom =  GetSideCount() * GetTriangleArea(point1,point2,point3);
+     }
+          
+     totArea += aBottom;
+     fSurfaceArea = totArea;
+  }
+  return fSurfaceArea;
+ 
+}
+
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<Precision> UnplacedPolyhedron::GetPointOnSurface() const{
+  int j, numPlanes = GetZSegmentCount()+1, Flag = 0;
+  Precision chose,rnd, totArea = 0., Achose1, Achose2,
+           area, aTop = 0., aBottom = 0.;
+
+  Vector3D<Precision> p0, p1, p2, p3,pReturn;
+  std::vector<Precision> aVector1;
+  std::vector<Precision> aVector2;
+  std::vector<Precision> aVector3;
+
+  // Below we generate the areas relevant to our solid
+  // We are starting with ZSegments(lateral parts)
+   
+     for(j=0; j < GetZSegmentCount(); ++j)
+     {            
+       area=GetZSegment(j).outer.GetQuadrilateralArea(0);
+       totArea += area*GetSideCount();
+       aVector1.push_back(area);
+       if(GetZSegment(j).hasInnerRadius)
+        {
+         area=GetZSegment(j).inner.GetQuadrilateralArea(0);
+	 totArea += area*GetSideCount();
+         aVector2.push_back(area);
+        }else{
+         aVector2.push_back(0.0);
+	}
+
+       if (HasPhiCutout())
+       {
+         area=GetZSegment(j).phi.GetQuadrilateralArea(0);
+	 totArea += area*2;
+         aVector3.push_back(area);
+       }
+       else{
+	 aVector3.push_back(0.0);
+       }
+      }
+      
+
+     // Must include top and bottom areas
+     //
+     Vector3D<Precision> point1 =GetZSegment(0).outer.GetCorners()[0][0];
+     Vector3D<Precision> point2 =GetZSegment(0).outer.GetCorners()[1][0];
+     Vector3D<Precision> point3, point4  ;
+     if(GetZSegment(0).hasInnerRadius)
+     {
+        point3 =GetZSegment(0).inner.GetCorners()[0][0];
+        point4 =GetZSegment(0).inner.GetCorners()[1][0];
+        aTop  = GetSideCount() * (GetTriangleArea(point1,point2,point3)+
+				     GetTriangleArea(point3,point4,point2));
+     }
+     else{
+        point3.Set(0.0,0.0,GetZSegment(0).outer.GetCorners()[0][0].z());
+        aTop=  GetSideCount()* (GetTriangleArea(point1,point2,point3));
+     }
+        
+     totArea += aTop;
+     point1 =GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[2][0];
+     point2 =GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[3][0];
+        
+     if(GetZSegment(GetZSegmentCount()-1).hasInnerRadius)
+     {
+        point3 =GetZSegment(GetZSegmentCount()-1).inner.GetCorners()[2][0];
+        point4 =GetZSegment(GetZSegmentCount()-1).inner.GetCorners()[3][0];
+        aBottom  = GetSideCount() *  (GetTriangleArea(point1,point2,point3)+
+			     GetTriangleArea(point3,point4,point2));
+     }
+     else{
+        point3.Set(0.0,0.0,GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[2][0].z());
+        aBottom =  GetSideCount() * GetTriangleArea(point1,point2,point3);
+     }
+          
+        totArea += aBottom;
+  
+
+ // Chose area and Create Point onSurefce
+
+    Achose1 = 0.;
+    Achose2 = GetSideCount()*(aVector1[0] + aVector2[0]) + 2*aVector3[0];
+    
+    chose = RNG::Instance().uniform(0.0, totArea);
+    //Point on Top or Bottom
+    if ((chose >= 0.) && (chose < aTop + aBottom))
+    {
+     
+      chose = RNG::Instance().uniform(0.0, aTop + aBottom);
+      Flag = int(RNG::Instance().uniform(0.0,GetSideCount()));
+      if ((chose >= 0. )&& chose < aTop)
+      {
+          point1 =GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[2][Flag];
+          point2 =GetZSegment(GetZSegmentCount()-1).outer.GetCorners()[3][Flag];    
+          if(GetZSegment(GetZSegmentCount()-1).hasInnerRadius)
+	  {
+           point3 =GetZSegment(GetZSegmentCount()-1).inner.GetCorners()[2][Flag];
+           point4 =GetZSegment(GetZSegmentCount()-1).inner.GetCorners()[3][Flag];
+          
+	  }
+          else{
+	   point3.Set(0.0,0.0,GetZSegment(0).outer.GetCorners()[2][Flag].z());
+           point4.Set(0.0,0.0,GetZSegment(0).outer.GetCorners()[2][Flag].z());
+         
+	  }
+        rnd = RNG::Instance().uniform(0.0, 1.0);
+        if(rnd<0.5){
+	  pReturn = GetPointOnTriangle(point3,point1,point2);
+	}else{
+          pReturn = GetPointOnTriangle(point4,point3,point2);
+	}
+        return pReturn;
+      }
+      else
+      {
+         point1 =GetZSegment(0).outer.GetCorners()[0][Flag];
+         point2 =GetZSegment(0).outer.GetCorners()[1][Flag];
+        
+	 if(GetZSegment(0).hasInnerRadius)
+	  {
+           point3 =GetZSegment(0).inner.GetCorners()[0][Flag];
+           point4 =GetZSegment(0).inner.GetCorners()[1][Flag];
+	  }
+          else{
+            
+           point3.Set(0.0,0.0,GetZSegment(0).outer.GetCorners()[0][Flag].z());
+           point4.Set(0.0,0.0,GetZSegment(0).outer.GetCorners()[0][Flag].z());
+	  }
+          rnd = RNG::Instance().uniform(0.0, 1.0);
+          if(rnd<0.5){
+	   pReturn = GetPointOnTriangle(point3,point1,point2);
+	  }else{
+	    pReturn = GetPointOnTriangle(point4,point3,point2);
+	  }
+        return pReturn;
+      }
+
+    }
+    else//Point on Lateral segment or Phi segment
+    {
+      
+      for (j = 0; j < numPlanes - 1; j++)
+	{ 
+        if (((chose >= Achose1) && (chose < Achose2)) || (j == numPlanes - 1))
+        {
+          Flag = j;
+          break;
+        }
+        Achose1 += GetSideCount() * (aVector1[j] + aVector2[j]) + 2.*aVector3[j];
+        Achose2 = Achose1 + GetSideCount() * (aVector1[j + 1] + aVector2[j + 1])
+                  + 2.*aVector3[j + 1];
+      }
+    }
+
+    // At this point we have chosen a subsection
+    // between to adjacent plane cuts
+
+    j = Flag;
+
+    rnd = int(RNG::Instance().uniform(0.0,GetSideCount()));
+    totArea = GetSideCount() * (aVector1[j] + aVector2[j]) + 2.*aVector3[j];
+    chose = RNG::Instance().uniform(0., totArea);
+    Vector3D<Precision> RandVec;
+    if ((chose >= 0.) && (chose <= GetSideCount()* aVector1[j]))
+    {
+      RandVec = (GetZSegment(j)).outer.GetPointOnFace(rnd);
+      return RandVec;
+    }
+    else if ((chose >= 0.) && (chose <= GetSideCount()* (aVector1[j]+aVector2[j])  ))
+    {
+      return (GetZSegment(j)).inner.GetPointOnFace(rnd);
+    
+    }
+    else //Point on Phi segment
+    {
+      rnd = int(RNG::Instance().uniform(0.0,1.999999));
+      RandVec = (GetZSegment(j)).phi.GetPointOnFace(rnd);
+      return RandVec;
+    }
+
+   
+    return Vector3D<Precision>(0,0,0);//error
+
+
+}
+ Precision UnplacedPolyhedron::Capacity() const{
+ if(fCapacity == 0.)
+ {
+  int j;
+  Precision  totVolume = 0., volume,volume1, aTop, aBottom;
+  
+  //Formula for section : V=h(f+F+sqrt(f*F))/3;
+  //Fand f-areas of surfaces on +/-dz
+  //h-heigh
+  
+      AOS3D<Precision> const * innercorners;
+      AOS3D<Precision> const * outercorners;
+
+
+     for(j=0; j < GetZSegmentCount(); ++j)
+     {   
+       outercorners = GetZSegment(j).outer.GetCorners();
+       Vector3D<Precision> a = outercorners[0][0];
+       Vector3D<Precision> b = outercorners[1][0];
+       Vector3D<Precision> c = outercorners[2][0];
+       Vector3D<Precision> d = outercorners[3][0];
+       
+       Precision dz= std::fabs(a.z()-c.z());
+       Vector3D<Precision> a1,b1,c1,d1,temp;
+       temp = Vector3D<Precision>(0,0,a.z());
+       aBottom=GetTriangleArea(a,b,temp);
+       temp=Vector3D<Precision>(0,0,c.z());
+       aTop=GetTriangleArea(c,d,temp);
+
+       if(GetZSegment(j).hasInnerRadius )
+       {
+         innercorners  = GetZSegment(j).inner.GetCorners();
+         a1 = innercorners[0][0];
+         b1 = innercorners[1][0];
+         c1 = innercorners[2][0];
+         d1 = innercorners[3][0];
+            
+         volume = dz*(aTop+aBottom+ std::sqrt(aTop*aBottom));//outer volume
+         temp = Vector3D<Precision>(0,0,a.z());
+         aBottom = GetTriangleArea(a1,b1,temp);
+         temp = Vector3D<Precision>(0,0,c.z());
+         aTop= GetTriangleArea(c1,d1,temp);
+         volume1 = dz*(aTop+aBottom+ std::sqrt(aTop*aBottom));//inner volume
+         volume -= volume1;//outer piramide -inner piramide
+       }
+       else
+       {
+	
+        volume = dz*(aTop+aBottom+ std::sqrt(aTop*aBottom));
+          
+       }
+	            
+       totVolume+=volume;     
+
+     }
+     totVolume *= GetSideCount()*(1./3.);
+     fCapacity = totVolume;
+ }
+           
+return fCapacity;
+
+}
+VECGEOM_CUDA_HEADER_BOTH
+bool UnplacedPolyhedron::Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const{
+
+  int  j;
+  bool valid = true; 
+
+
+// Find correct segment by checking Z-bounds
+  int zIndex = -1;
+  for( j = 0; j < GetZSegmentCount(); j++)
+  { if(point[2]< GetZPlane(j))break;
+    zIndex++;
+  }
+  if(zIndex > (GetZSegmentCount()-1))
+  {
+    normal = Vector3D<Precision>(0,0,1);
+    return valid = false; 
+  }
+  if(zIndex < 0)
+  {
+    normal = Vector3D<Precision>(0,0,-1);
+    return valid = false;
+  }
+
+  ZSegment const &segment = GetZSegment(zIndex);
+
+// Check that the point is in the outer shell
+
+
+    Inside_t insideOuter = segment.outer.Inside<kScalar>(point);
+    if (insideOuter == EInside::kSurface) return true;
+  
+// Check that the point is not in the inner shell
+  if (segment.hasInnerRadius) {
+    Inside_t insideInner = segment.inner.Inside<kScalar>(point);
+    
+    if (insideInner == EInside::kSurface) return true;
+  
+  }
+  // Check that the point is not in the phi cutout wedge
+  if (HasPhiCutout()) 
+    // if (InPhiCutoutWedge<kScalar>(segment, polyhedron.HasLargePhiCutout(),
+    //                              localPoint)) {
+      // TODO: check for surface case when in phi wedge. This can be done by
+      //       checking the distance to planes of the phi cutout sides.
+      return true;
+ 
+  return valid;   
+
+}	 
+
+
 #endif // !VECGEOM_NVCC
 
 VECGEOM_CUDA_HEADER_BOTH

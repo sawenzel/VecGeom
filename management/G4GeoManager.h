@@ -30,8 +30,6 @@ error: no matching function for call to ‘CLHEP::Hep3Vector::Hep3Vector(<unreso
   #include "G4GDMLParser.hh"
 #endif
 
-#undef NDEBUG
-
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -64,8 +62,8 @@ public:
         LoadG4Geometry( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
 #else
         std::cerr<<"\n*** WARNING: LoadG4Geometry() is incompatible with USOLIDS!\n";
-        std::cerr<<"      Please turn off USOLIDS and rebuild.  Aborting...\n";
-        Assert(false);
+        std::cerr<<"      Please turn off USOLIDS and rebuild.  Aborting...\n\n";
+        // Assert(false);
         exit(-1);
 #endif
     }

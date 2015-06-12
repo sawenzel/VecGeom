@@ -38,7 +38,7 @@ enum struct EPhiCutout {
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
-VECGEOM_DEVICE_FORWARD_DECLARE( class ZSegment; )
+VECGEOM_DEVICE_FORWARD_DECLARE( struct ZSegment; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
 VECGEOM_DEVICE_DECLARE_CONV( ZSegment );
 
@@ -133,6 +133,8 @@ private:
   Precision fBoundingTubeOffset; ///< Offset in Z of the center of the bounding
                                  ///  tube. Used as a quick substitution for
                                  ///  running a full transformation.
+  mutable Precision fSurfaceArea; ///< Stored SurfaceArea
+  mutable Precision fCapacity;    ///< Stored Capacity
 
 public:
 
@@ -235,21 +237,31 @@ public:
   UnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
 
 #ifndef VECGEOM_NVCC
-  // TODO: do this properly
-  Precision Capacity() const { return 0.; }
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision DistanceSquarePointToSegment(Vector3D<Precision>& v1,Vector3D<Precision>&v2, const Vector3D<Precision>&p) const;
+  VECGEOM_CUDA_HEADER_BOTH
+  bool InsideTriangle(Vector3D<Precision>& v1, Vector3D<Precision>& v2,  Vector3D<Precision>& v3, const Vector3D<Precision>& p) const;
 
-  VECGEOM_INLINE
-  Precision SurfaceArea() const {
-    // TBDONE
-    return 0.;
-  }
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision GetTriangleArea(Vector3D<Precision>& v1, Vector3D<Precision>& v2,
+                              Vector3D<Precision>& v3 )const;
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> GetPointOnTriangle(Vector3D<Precision>& v1,
+			Vector3D<Precision>&v2,Vector3D<Precision>& v3 )const;
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision Capacity() const;
 
+  VECGEOM_CUDA_HEADER_BOTH
+  Precision SurfaceArea() const ;
+
+  VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  Vector3D<Precision> GetPointOnSurface() const;
 
-  Vector3D<Precision> GetPointOnSurface() const {
-    // TBDONE
-      return Vector3D<Precision>() ;
-  }
+  VECGEOM_CUDA_HEADER_BOTH
+  bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const;
 
   std::string GetEntityType() const { return "Polyhedron"; }
 #endif // !VECGEOM_NVCC

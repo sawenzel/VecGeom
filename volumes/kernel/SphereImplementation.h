@@ -17,14 +17,14 @@ namespace vecgeom {
 
 VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(SphereImplementation, TranslationCode, translation::kGeneric, RotationCode, rotation::kGeneric)
 
-inline namespace VECGEOM_IMPL_NAMESPACE { 
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
- 
+
 class PlacedSphere;
- 
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 struct SphereImplementation {
-    
+
 
   static const int transC = transCodeT;
   static const int rotC   = rotCodeT;
@@ -39,7 +39,7 @@ static void PrintType() {
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE    
+VECGEOM_INLINE
 static typename Backend::precision_v fabs(typename Backend::precision_v &v)
   {
       typedef typename Backend::precision_v Float_t;
@@ -48,7 +48,7 @@ static typename Backend::precision_v fabs(typename Backend::precision_v &v)
       MaskedAssign( (v<0), mone*v , &ret );
       return ret;
   }
-  
+
 
 template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
@@ -57,7 +57,7 @@ template <class Backend>
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       typename Backend::bool_v &inside);
-    
+
 template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -123,7 +123,7 @@ template <class Backend>
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
-      /*Vector3D<typename Backend::precision_v> const &n,  
+      /*Vector3D<typename Backend::precision_v> const &n,
       typename Backend::bool_v validNorm,    */
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
@@ -135,7 +135,7 @@ template <class Backend>
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
-      /*Vector3D<typename Backend::precision_v> const &n,  
+      /*Vector3D<typename Backend::precision_v> const &n,
       typename Backend::bool_v validNorm,    */
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance);
@@ -156,7 +156,7 @@ template <class Backend>
   static void SafetyToOut(UnplacedSphere const &unplaced,
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety);
- 
+
 
 template <typename Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -165,7 +165,7 @@ static void ContainsKernel(
     UnplacedSphere const &unplaced,
     Vector3D<typename Backend::precision_v> const &localPoint,
     typename Backend::bool_v &inside);
-  
+
 
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -175,7 +175,7 @@ static void InsideKernel(
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside);
 
- 
+
 template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -209,7 +209,7 @@ template <class Backend>
   static void SafetyToInKernel(UnplacedSphere const &unplaced,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety);
-  
+
 
 
   template <class Backend>
@@ -218,8 +218,8 @@ template <class Backend>
   static void SafetyToOutKernel(UnplacedSphere const &unplaced,
                           Vector3D<typename Backend::precision_v> const &point,
                           typename Backend::precision_v &safety);
-  
-  
+
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -228,7 +228,7 @@ template <class Backend>
        Vector3D<typename Backend::precision_v> const &point,
        Vector3D<typename Backend::precision_v> &normal,
        typename Backend::bool_v &valid );
-  
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -237,8 +237,8 @@ template <class Backend>
        Vector3D<typename Backend::precision_v> const &point,
        Vector3D<typename Backend::precision_v> &normal,
        typename Backend::bool_v &valid );
-  
-  
+
+
   template <class Backend>
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -246,7 +246,7 @@ template <class Backend>
        UnplacedSphere const &unplaced,
        Vector3D<typename Backend::precision_v> const &point,
        Vector3D<typename Backend::precision_v> &normal);
-  
+
 
 
 };
@@ -271,26 +271,26 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
        Vector3D<typename Backend::precision_v> const &point,
        Vector3D<typename Backend::precision_v> &norm){
 
-           
+
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
-    
+
     Float_t kNRMin(0.), kNRMax(1.), kNSPhi(2.), kNEPhi(3.), kNSTheta(4.), kNETheta(5.);
     Float_t side(10.);
- 
+
     Float_t rho, rho2, radius;
     Float_t distRMin(0.), distRMax(0.), distSPhi(0.), distEPhi(0.), distSTheta(0.), distETheta(0.), distMin(0.);
     Float_t zero(0.),mone(-1.);
     Float_t temp=zero;
-    
+
     Vector3D<Float_t> localPoint;
     localPoint = point;
-    
+
     Float_t radius2=localPoint.Mag2();
     radius = Sqrt(radius2);
     rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
     rho = Sqrt(rho2);
-    
+
     Float_t fRmax = unplaced.GetOuterRadius();
     Float_t fRmin = unplaced.GetInnerRadius();
     Float_t fSPhi = unplaced.GetStartPhiAngle();
@@ -309,13 +309,13 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     Float_t cosSTheta = std::cos(fSTheta);
     Float_t sinETheta = std::sin(eTheta);
     Float_t cosETheta = std::cos(eTheta);
-        
+
     // Distance to r shells
-    
+
     temp = radius - fRmax;
     MaskedAssign((temp<zero),mone*temp,&temp);
     distRMax = temp;
-    
+
     temp = radius - fRmin;
     MaskedAssign((temp<zero),mone*temp,&temp);
     distRMin = temp;
@@ -323,85 +323,85 @@ void SphereImplementation<transCodeT, rotCodeT>::ApproxSurfaceNormalKernel(
     prevDistMin = distMin;
     MaskedAssign( ( (fRmin > zero) && (distRMin < distRMax) ) , distRMin, &distMin );
     MaskedAssign( ( (fRmin > zero) && (distRMin < distRMax) ) , kNRMin, &side ); //ENorm issue : Resolved hopefully
-    
+
     prevDistMin = distMin;
     MaskedAssign( ( (fRmin > zero) && !(distRMin < distRMax) ) , distRMax, &distMin );
     MaskedAssign( ( (fRmin > zero) && !(distRMin < distRMax) ) , kNRMax, &side );//ENorm issue : Resolved hopefully
-    
+
     MaskedAssign( !(fRmin > zero), distRMax, &distMin );
     MaskedAssign( !(fRmin > zero), kNRMax, &side );
-    
+
     // Distance to phi planes
-    
+
     MaskedAssign( (pPhi < zero) ,(pPhi+(2*kPi)) , &pPhi);
-    
+
     temp = pPhi - (fSPhi + 2 * kPi);
     MaskedAssign((temp<zero),(mone*temp),&temp);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (rho>zero) && (fSPhi < zero) ) ,(temp*rho)  ,&distSPhi);
-    
+
     temp = pPhi - fSPhi;
     MaskedAssign((temp<zero),(mone*temp),&temp);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (rho>zero) && !(fSPhi < zero) ) ,(temp*rho)  ,&distSPhi);
-    
+
     temp=pPhi - fSPhi - fDPhi;
     MaskedAssign((temp<zero),(mone*temp),&temp);
     MaskedAssign((!unplaced.IsFullPhiSphere() && (rho>zero)), temp*rho, &distEPhi); //distEPhi = temp * rho;
-    
-    
+
+
     prevDistMin = distMin;
    MaskedAssign( ( !unplaced.IsFullPhiSphere() && (rho>zero) && (distSPhi < distEPhi) && (distSPhi < distMin)),distSPhi ,&distMin );
     MaskedAssign( ( !unplaced.IsFullPhiSphere() && (rho>zero) && (distSPhi < distEPhi) && (distSPhi < prevDistMin)),kNSPhi ,&side ); //CULPRIT
-    
+
     prevDistMin = distMin;
     MaskedAssign( ( !unplaced.IsFullPhiSphere() && (rho>zero) && !(distSPhi < distEPhi) && (distEPhi < distMin)),distEPhi ,&distMin );
     MaskedAssign( ( !unplaced.IsFullPhiSphere() && (rho>zero) && !(distSPhi < distEPhi) && (distEPhi < prevDistMin)),kNEPhi ,&side );
-    
+
     // Distance to theta planes
-     
+
     temp = pTheta - fSTheta;
     MaskedAssign((temp<zero),(mone*temp),&temp);
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero)) , temp*radius ,&distSTheta);
-    
+
     temp = pTheta - fSTheta - fDTheta;
     MaskedAssign((temp<zero),(mone*temp),&temp);
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero)) , temp*radius ,&distETheta);
-    
+
     prevDistMin = distMin;
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && (distSTheta < distETheta) && (distSTheta < distMin)), distSTheta, &distMin); 
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && (distSTheta < distETheta) && (distSTheta < prevDistMin)), kNSTheta, &side); 
-    
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && (distSTheta < distETheta) && (distSTheta < distMin)), distSTheta, &distMin);
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && (distSTheta < distETheta) && (distSTheta < prevDistMin)), kNSTheta, &side);
+
     prevDistMin = distMin;
-    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && !(distSTheta < distETheta) && (distETheta < distMin)), distETheta, &distMin); 
+    MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && !(distSTheta < distETheta) && (distETheta < distMin)), distETheta, &distMin);
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (radius > zero) && !(distSTheta < distETheta) && (distETheta < prevDistMin)), kNETheta, &side);
-    
+
     Bool_t done(false);
     done |= (side == kNRMin);
     MaskedAssign( (side == kNRMin), Vector3D<Float_t>(-localPoint.x() / radius, -localPoint.y() / radius, -localPoint.z() / radius),&norm);
-   
+
     if( IsFull(done) )return ;
-    
+
     done |= (side == kNRMax);
     MaskedAssign( (side == kNRMax),Vector3D<Float_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius),&norm);
    if( IsFull(done) )return ;
-    
+
     done |= (side == kNSPhi);
     MaskedAssign( (side == kNSPhi),Vector3D<Float_t>(sinSPhi, -cosSPhi, 0),&norm);
-    
+
     if( IsFull(done) )return ;
-    
+
     done |= (side == kNEPhi);
     MaskedAssign( (side == kNEPhi),Vector3D<Float_t>(-sinEPhi, cosEPhi, 0),&norm);
     if( IsFull(done) )return ;
-    
+
     done |= (side == kNSTheta);
     MaskedAssign( (side == kNSTheta),Vector3D<Float_t>(-cosSTheta * std::cos(pPhi), -cosSTheta * std::sin(pPhi),sinSTheta),&norm);
     if( IsFull(done) )return ;
-    
+
     done |= (side == kNETheta);
     MaskedAssign( (side == kNETheta),Vector3D<Float_t>(cosETheta * std::cos(pPhi), cosETheta * std::sin(pPhi), sinETheta),&norm);
     if( IsFull(done) )return ;
-    
-       
+
+
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -418,7 +418,7 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
 
     Vector3D<Float_t> localPoint;
     localPoint = point;
-    
+
     Float_t radius2=localPoint.Mag2();
     Float_t radius=Sqrt(radius2);
     Float_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
@@ -441,38 +441,38 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
     Float_t cosSTheta = std::cos(fSTheta);
     Float_t sinETheta = std::sin(eTheta);
     Float_t cosETheta = std::cos(eTheta);
-    
-    
+
+
     Precision kAngTolerance = unplaced.GetAngTolerance();
     Precision halfAngTolerance = (0.5 * kAngTolerance);
-    
+
     Float_t distSPhi(kInfinity),distSTheta(kInfinity);
     Float_t distEPhi(kInfinity),distETheta(kInfinity);
-    Float_t distRMax(kInfinity); 
+    Float_t distRMax(kInfinity);
     Float_t distRMin(kInfinity);
-    
+
     Vector3D<Float_t> nR, nPs, nPe, nTs, nTe, nZ(0., 0., 1.);
     Vector3D<Float_t> norm, sumnorm(0., 0., 0.);
-    
+
     Bool_t fFullPhiSphere = unplaced.IsFullPhiSphere();
      Bool_t fFullThetaSphere = unplaced.IsFullThetaSphere();
-    
+
     Float_t zero(0.);
     Float_t mone(-1.);
-    
+
     Float_t temp=0;
     temp=radius - fRmax;
     MaskedAssign((temp<zero),mone*temp,&temp);
     distRMax = temp;
-    
+
     distRMin = 0;
     temp = radius - fRmin;
     MaskedAssign((temp<zero),mone*temp,&temp);
     MaskedAssign( (fRmin > 0) , temp, &distRMin);
-    
+
     MaskedAssign( ((rho>zero) && !(unplaced.IsFullSphere()) && (pPhi < fSPhi - halfAngTolerance)) , (pPhi+(2*kPi)), &pPhi);
     MaskedAssign( ((rho>zero) && !(unplaced.IsFullSphere()) && (pPhi > ePhi + halfAngTolerance)) , (pPhi-(2*kPi)), &pPhi);
-    
+
     //Phi Stuff
     temp = pPhi - fSPhi;
     MaskedAssign((temp<zero),mone*temp,&temp);
@@ -480,45 +480,45 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
     temp = pPhi - ePhi;
     MaskedAssign((temp<zero),mone*temp,&temp);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (rho>zero) ), temp,&distEPhi);
-    
+
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (!fRmin) ), zero ,&distSPhi);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (!fRmin) ), zero ,&distEPhi);
     MaskedAssign( (!unplaced.IsFullPhiSphere()), Vector3D<Float_t>(sinSPhi, -cosSPhi, 0),&nPs );
     MaskedAssign( (!unplaced.IsFullPhiSphere()), Vector3D<Float_t>(-sinEPhi, cosEPhi, 0),&nPe );
-    
+
     //Theta Stuff
     temp = pTheta - fSTheta;
     MaskedAssign((temp<zero),mone*temp,&temp);
      MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , temp , &distSTheta ) ;
-    
+
     temp = pTheta - eTheta;
     MaskedAssign((temp<zero),mone*temp,&temp);
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , temp , &distETheta ) ;
-    
+
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho>zero) ) , Vector3D<Float_t>(-cosSTheta * localPoint.x() / rho , -cosSTheta * localPoint.y() / rho, sinSTheta ) , &nTs ) ;
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (rho) ) , Vector3D<Float_t>(cosETheta * localPoint.x() / rho , cosETheta * localPoint.y() / rho , -sinETheta) , &nTe ) ;
-    
+
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (fSTheta)) , zero , &distSTheta );
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (fSTheta)) , Vector3D<Float_t>(0., 0., -1.) , &nTs );
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (eTheta < kPi)) , zero , &distETheta );
     MaskedAssign( ( !unplaced.IsFullThetaSphere() && (!fRmin) && (eTheta < kPi)) , Vector3D<Float_t>(0., 0., 1.) , &nTe );
-    
+
     MaskedAssign( (radius), Vector3D<Float_t>(localPoint.x() / radius, localPoint.y() / radius, localPoint.z() / radius) ,&nR);
-    
-    
+
+
     Float_t noSurfaces(0);
     Float_t halfCarTolerance(0.5 * 1e-9);
     MaskedAssign((distRMax <= halfCarTolerance) , noSurfaces+1 ,&noSurfaces);
     MaskedAssign((distRMax <= halfCarTolerance) , (sumnorm+nR) ,&sumnorm);
-    
+
     MaskedAssign((fRmin && (distRMin <= halfCarTolerance)) , noSurfaces+1 ,&noSurfaces);
     MaskedAssign((fRmin && (distRMin <= halfCarTolerance)) , (sumnorm-nR) ,&sumnorm);
-    
+
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (distSPhi <= halfAngTolerance)) , noSurfaces+1 ,&noSurfaces);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (distSPhi <= halfAngTolerance)) , (sumnorm+nPs) ,&sumnorm);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (distEPhi <= halfAngTolerance)) , noSurfaces+1 ,&noSurfaces);
     MaskedAssign( (!unplaced.IsFullPhiSphere() && (distEPhi <= halfAngTolerance)) , (sumnorm+nPe) ,&sumnorm);
-    
+
     MaskedAssign( (!unplaced.IsFullThetaSphere() && (distSTheta <= halfAngTolerance) && (fSTheta > zero)), noSurfaces+1 ,&noSurfaces);
     MaskedAssign( (!unplaced.IsFullThetaSphere() && (distSTheta <= halfAngTolerance) && (fSTheta > zero) && ((radius <= halfCarTolerance) && fFullPhiSphere)), (sumnorm+nZ) ,&sumnorm);
     MaskedAssign( (!unplaced.IsFullThetaSphere() && (distSTheta <= halfAngTolerance) && (fSTheta > zero) && !((radius <= halfCarTolerance) && fFullPhiSphere)), (sumnorm+nTs) ,&sumnorm);
@@ -526,18 +526,18 @@ void SphereImplementation<transCodeT, rotCodeT>::NormalKernel(
     MaskedAssign( (!unplaced.IsFullThetaSphere() && (distETheta <= halfAngTolerance) && (eTheta < kPi) && ((radius <= halfCarTolerance) && fFullPhiSphere)), (sumnorm-nZ) ,&sumnorm);
     MaskedAssign( (!unplaced.IsFullThetaSphere() && (distETheta <= halfAngTolerance) && (eTheta < kPi) && !((radius <= halfCarTolerance) && fFullPhiSphere)), (sumnorm+nTe) ,&sumnorm);
     MaskedAssign( (!unplaced.IsFullThetaSphere() && (distETheta <= halfAngTolerance) && (eTheta < kPi) && (sumnorm.z() == zero)), (sumnorm+nZ) ,&sumnorm);
-    
+
     //Now considering case of ApproxSurfaceNormal
     if(noSurfaces == 0)
         ApproxSurfaceNormalKernel<Backend>(unplaced,point,norm);
-    
+
     MaskedAssign((noSurfaces == 1),sumnorm,&norm);
     MaskedAssign((!(noSurfaces == 1) && (noSurfaces !=0 )),(sumnorm*1./sumnorm.Mag()),&norm);
     MaskedAssign(true,norm,&normal);
-    
-    
+
+
     valid = (noSurfaces>zero);
-   
+
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -563,7 +563,7 @@ void SphereImplementation<transCodeT, rotCodeT>::UnplacedContains(
       typename Backend::bool_v &inside){
 
       ContainsKernel<Backend>(unplaced, point, inside);
-}    
+}
 
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -579,7 +579,7 @@ void SphereImplementation<transCodeT, rotCodeT>::ContainsKernel(UnplacedSphere c
   GenericKernelForContainsAndInside<Backend, false >(unplaced,
     localPoint, unused, outside);
   inside=!outside;
-}  
+}
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend, bool ForInside, bool ForInnerRadius>
@@ -591,35 +591,35 @@ UnplacedSphere const &unplaced,
     typename Backend::bool_v &completelyoutside,
     typename Backend::bool_v &movingIn) {
 
-    
+
     typedef typename Backend::precision_v Float_t;
-    //typedef typename Backend::bool_v      Bool_t;	
-    
+    //typedef typename Backend::bool_v      Bool_t;
+
     Float_t isfuPhiSph(unplaced.IsFullPhiSphere());
-   
+
     Precision fRmin = unplaced.GetInnerRadius();
     Precision fRminTolerance = unplaced.GetFRminTolerance();
     //Precision kAngTolerance = unplaced.GetAngTolerance()*10. ;
     //Precision halfAngTolerance = (0.5 * kAngTolerance);
     Precision fRmax = unplaced.GetOuterRadius();
-        
+
     Float_t rad2 = localPoint.Mag2();
-   
-    
+
+
     Float_t tolRMin(0.);
     Float_t tolRMax(0.);
     if(ForInnerRadius)
     {
-    tolRMin = fRmin + ( fRminTolerance  ); 
+    tolRMin = fRmin + ( fRminTolerance  );
     completelyinside = (rad2 > tolRMin*tolRMin) ;
-    tolRMin = fRmin - ( fRminTolerance  ); 
-    completelyoutside = (rad2 < tolRMin*tolRMin) ; 
+    tolRMin = fRmin - ( fRminTolerance  );
+    completelyoutside = (rad2 < tolRMin*tolRMin) ;
     }
     else
     {
-    tolRMax = fRmax - ( unplaced.GetMKTolerance() ); 
+    tolRMax = fRmax - ( unplaced.GetMKTolerance() );
     completelyinside = (rad2 < tolRMax*tolRMax);
-    tolRMax = fRmax + ( unplaced.GetMKTolerance() ); 
+    tolRMax = fRmax + ( unplaced.GetMKTolerance() );
     completelyoutside = (rad2 > tolRMax*tolRMax);
     }
  return;
@@ -636,51 +636,51 @@ UnplacedSphere const &unplaced,
     typename Backend::bool_v &completelyoutside,
     typename Backend::bool_v &movingIn) {
 
-    
+
     typedef typename Backend::precision_v Float_t;
-    typedef typename Backend::bool_v      Bool_t;	
-    
-    
+    typedef typename Backend::bool_v      Bool_t;
+
+
     Float_t isfuPhiSph(unplaced.IsFullPhiSphere());
-   
+
     Precision fRmin = unplaced.GetInnerRadius();
     Precision fRminTolerance = unplaced.GetFRminTolerance();
     Precision kAngTolerance = unplaced.GetAngTolerance()*10. ;
     //Precision halfAngTolerance = (0.5 * kAngTolerance);
     Precision fRmax = unplaced.GetOuterRadius();
-        
+
     Float_t rad2 = localPoint.Mag2();
-   
-    
+
+
     Float_t tolRMin(0.);
     Float_t tolRMax(0.);
     if(ForInnerRadius)
     {
-    tolRMin = fRmin + ( fRminTolerance  ); 
+    tolRMin = fRmin + ( fRminTolerance  );
     completelyinside = (rad2 > tolRMin*tolRMin) ;
-    tolRMin = fRmin - ( fRminTolerance  ); 
+    tolRMin = fRmin - ( fRminTolerance  );
     completelyoutside = (rad2 < tolRMin*tolRMin) ; // || (rad2 >= tolRMax*tolRMax);
     //std::cout<<"CO : "<<completelyoutside<<"  :: CI : "<<completelyinside<<std::endl;
     }
     else
     {
-    tolRMax = fRmax - ( unplaced.GetMKTolerance() ); 
+    tolRMax = fRmax - ( unplaced.GetMKTolerance() );
     completelyinside = (rad2 < tolRMax*tolRMax);
-    tolRMax = fRmax + ( unplaced.GetMKTolerance() ); 
+    tolRMax = fRmax + ( unplaced.GetMKTolerance() );
     completelyoutside = (rad2 > tolRMax*tolRMax);
     }
-    
-	
+
+
    // if( IsFull(completelyoutside) )return;
-    
+
     //Radial Check for GenericKernel Over
-    
+
     Float_t tolAngMin(0.);
-    Float_t tolAngMax(0.);        
+    Float_t tolAngMax(0.);
     // Phi boundaries  : Do not check if it has no phi boundary!
-    if(!unplaced.IsFullPhiSphere()) 
+    if(!unplaced.IsFullPhiSphere())
     {
-    
+
      Bool_t completelyoutsidephi;
      Bool_t completelyinsidephi;
      unplaced.GetWedge().GenericKernelForContainsAndInside<Backend,ForInside>( localPoint,
@@ -690,15 +690,15 @@ UnplacedSphere const &unplaced,
      if(ForInside)
             completelyinside &= completelyinsidephi;
 	  //  std::cout<<"Comp In - Phi : "<<completelyinsidephi<<std::endl;
-           
+
     }
     //Phi Check for GenericKernel Over
-         
+
     // Theta bondaries
-   
+
     if(!unplaced.IsFullThetaSphere())
     {
-    
+
      Bool_t completelyoutsidetheta;
      Bool_t completelyinsidetheta;
      unplaced.GetThetaCone().GenericKernelForContainsAndInside<Backend,ForInside>( localPoint,
@@ -708,11 +708,11 @@ UnplacedSphere const &unplaced,
      if(ForInside)
            completelyinside &= completelyinsidetheta;
 	  //  std::cout<<"Comp In - Theta : "<<completelyinsidetheta<<std::endl;
-        
+
     }
     return;
 }
- 
+
 
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -724,49 +724,54 @@ UnplacedSphere const &unplaced,
     typename Backend::bool_v &completelyinside,
     typename Backend::bool_v &completelyoutside) {
 
-    
+
     typedef typename Backend::precision_v Float_t;
 
-    typedef typename Backend::bool_v      Bool_t;	
-    
-    
+    typedef typename Backend::bool_v      Bool_t;
+
+
     Float_t isfuPhiSph(unplaced.IsFullPhiSphere());
-   
+
 Precision fRmin = unplaced.GetInnerRadius();
     Precision fRminTolerance = unplaced.GetFRminTolerance();
     //Precision kAngTolerance = unplaced.GetAngTolerance()*10. ;
     //Precision halfAngTolerance = (0.5 * kAngTolerance);
     Precision fRmax = unplaced.GetOuterRadius();
-        
+
     Float_t rad2 = localPoint.Mag2();
-    Float_t tolRMin(fRmin + ( fRminTolerance *10.*2 )); 
+    Float_t tolRMin(fRmin + ( fRminTolerance *10.*2 ));
     Float_t tolRMin2 = tolRMin * tolRMin;
-    
-    Float_t tolRMax(fRmax - ( unplaced.GetMKTolerance() * 10.*2 )); 
+
+    Float_t tolRMax(fRmax - ( unplaced.GetMKTolerance() * 10.*2 ));
     Float_t tolRMax2 = tolRMax * tolRMax;
-    
+
     // Check radial surfaces
     //Radial check for GenericKernel Start
-    completelyinside = (rad2 <= tolRMax*tolRMax) && (rad2 >= tolRMin*tolRMin);
+    if(unplaced.GetInnerRadius())
+        completelyinside = (rad2 <= tolRMax*tolRMax) && (rad2 >= tolRMin*tolRMin);
+    else
+        completelyinside = (rad2 <= tolRMax*tolRMax);
     //std::cout<<"Comp In - Rad : "<<completelyinside<<std::endl;
-    
-    tolRMin = fRmin - (0.5 * fRminTolerance*10*2); 
-    tolRMax = fRmax + (0.5 * unplaced.GetMKTolerance()*10*2); 
-    
-    completelyoutside = (rad2 <= tolRMin*tolRMin) || (rad2 >= tolRMax*tolRMax);
+
+    tolRMin = fRmin - (0.5 * fRminTolerance*10*2);
+    tolRMax = fRmax + (0.5 * unplaced.GetMKTolerance()*10*2);
+    if(unplaced.GetInnerRadius())
+        completelyoutside = (rad2 <= tolRMin*tolRMin) || (rad2 >= tolRMax*tolRMax);
+    else
+        completelyoutside =  (rad2 >= tolRMax*tolRMax);
 	   // std::cout<<"Comp Out - Rad : "<<completelyoutside<<std::endl;
 	   // std::cout<<"Comp In - Rad : "<<completelyinside<<std::endl;
 
-    if( IsFull(completelyoutside) )return;
-    
+    //if( IsFull(completelyoutside) )return; //Very Risky Return Statement
+
     //Radial Check for GenericKernel Over
-    
+
     Float_t tolAngMin(0.);
-    Float_t tolAngMax(0.);        
+    Float_t tolAngMax(0.);
     // Phi boundaries  : Do not check if it has no phi boundary!
-    if(!unplaced.IsFullPhiSphere()) 
+    if(!unplaced.IsFullPhiSphere())
     {
-    
+
      Bool_t completelyoutsidephi;
      Bool_t completelyinsidephi;
      unplaced.GetWedge().GenericKernelForContainsAndInside<Backend,ForInside>( localPoint,
@@ -776,15 +781,15 @@ Precision fRmin = unplaced.GetInnerRadius();
      if(ForInside)
             completelyinside &= completelyinsidephi;
 	   //std::cout<<"Comp In - Phi : "<<completelyinsidephi<<std::endl;
-           
+
     }
     //Phi Check for GenericKernel Over
-         
+
     // Theta bondaries
-   
+
     if(!unplaced.IsFullThetaSphere())
     {
-    
+
      Bool_t completelyoutsidetheta(false);
      Bool_t completelyinsidetheta(false);
      unplaced.GetThetaCone().GenericKernelForContainsAndInside<Backend,ForInside>( localPoint,
@@ -794,11 +799,11 @@ Precision fRmin = unplaced.GetInnerRadius();
      if(ForInside)
            completelyinside &= completelyinsidetheta;
 	 //std::cout<<"Comp In - Theta : "<<completelyinsidetheta<<std::endl;
-        
+
     }
     return;
 }
- 
+
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <typename Backend>
@@ -820,7 +825,7 @@ VECGEOM_CUDA_HEADER_BOTH
 void SphereImplementation<transCodeT, rotCodeT>::InsideKernel(UnplacedSphere const &unplaced,
     Vector3D<typename Backend::precision_v> const &point,
     typename Backend::inside_v &inside) {
-  
+
   typedef typename Backend::bool_v      Bool_t;
   Bool_t completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Backend,true>(
@@ -840,7 +845,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToIn(UnplacedSphere const
                          Transformation3D const &transformation,
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety){
-    
+
     SafetyToInKernel<Backend>(
     unplaced,
     transformation.Transform<transCodeT, rotCodeT>(point),
@@ -860,16 +865,16 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
 
 
     // Float_t safe=Backend::kZero;
-    Float_t zero=Backend::kZero; 
+    Float_t zero=Backend::kZero;
 
     Vector3D<Float_t> localPoint = point;
-    
+
     //General Precalcs
     Float_t rad2    = localPoint.Mag2();
     Float_t rad = Sqrt(rad2);
     Float_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
     Float_t rho = Sqrt(rho2);
-    
+
     //Distance to r shells
     Precision fRmin = unplaced.GetInnerRadius();
     Float_t fRminV(fRmin);
@@ -877,7 +882,7 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     Float_t fRmaxV(fRmax);
     Float_t safeRMin(0.);
     Float_t safeRMax(0.);
-    
+
     if(fRmin)
     {
        safeRMin = fRminV - rad;
@@ -888,23 +893,23 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedSphere
     {
         safety = rad - fRmaxV;
     }
-    
+
     //Distance to r shells over
-    
+
     // Distance to phi extent
     if(!unplaced.IsFullPhiSphere())
     {
         Float_t safetyPhi = unplaced.GetWedge().SafetyToIn<Backend>(localPoint);
         safety = Max(safetyPhi,safety);
     }
-    
+
     // Distance to Theta extent
     if(!unplaced.IsFullThetaSphere())
     {
-        Float_t safetyTheta = unplaced.GetThetaCone().SafetyToIn<Backend>(localPoint); 
+        Float_t safetyTheta = unplaced.GetThetaCone().SafetyToIn<Backend>(localPoint);
 		safety = Max(safetyTheta,safety);
     }
-    
+
     MaskedAssign( (safety < zero) , zero, &safety);
 }
 
@@ -930,34 +935,34 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
                           typename Backend::precision_v &safety){
     typedef typename Backend::precision_v Float_t;
 
-    Float_t zero=Backend::kZero; 
+    Float_t zero=Backend::kZero;
 
     Vector3D<Float_t> localPoint=point;
     Float_t rho2 = localPoint.x() * localPoint.x() + localPoint.y() * localPoint.y();
     Float_t rad=localPoint.Mag();
     Float_t rho = Sqrt(rho2);
-    
+
     //Distance to r shells
-    
+
     Precision fRmin = unplaced.GetInnerRadius();
     Float_t fRminV(fRmin);
     Precision fRmax = unplaced.GetOuterRadius();
     Float_t fRmaxV(fRmax);
-    
+
     // Distance to r shells
     if(fRmin)
     {
         Float_t safeRMin=(rad - fRminV);
-        Float_t safeRMax=(fRmaxV - rad); 
+        Float_t safeRMax=(fRmaxV - rad);
         CondAssign( ( (safeRMin < safeRMax) ),safeRMin,safeRMax,&safety);
     }
     else
     {
-        safety = (fRmaxV - rad); 
+        safety = (fRmaxV - rad);
     }
-    
+
     // Distance to phi extent
-    
+
     Float_t safePhi = zero;
     Float_t mone(-1.);
     if(!unplaced.IsFullPhiSphere() )
@@ -965,21 +970,21 @@ void SphereImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedSpher
        Float_t safetyPhi = unplaced.GetWedge().SafetyToOut<Backend>(localPoint);
        safety = Min(safetyPhi,safety);
     }
-    
+
     // Distance to Theta extent
-    
+
     Float_t safeTheta(0.);
-    
+
     if(!unplaced.IsFullThetaSphere() )
-    {  
+    {
        safeTheta = unplaced.GetThetaCone().SafetyToOut<Backend>(localPoint);
        safety = Min(safeTheta,safety);
     }
-    
+
 	//std::cout<<"SafetyToOut from SphImpl : "<<safety<<std::endl;
-	//std::cout<<"(safety < kSTolerance*10) : "<< (safety < kSTolerance*100)<<std::endl;
-    MaskedAssign( ((safety < zero) || (safety < kSTolerance*100)), zero, &safety);
-}
+	//std::cout<<"(safety < kTolerance) : "<< (safety < kTolerance0)<<std::endl;
+    MaskedAssign( ((safety < zero) /* || (safety < kTolerance0)*/), zero, &safety);
+}  
 
 
 
@@ -1011,7 +1016,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
-   
+
     //bool verbose=false;
     typedef typename Backend::precision_v Float_t;
 
@@ -1021,27 +1026,27 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 
     Vector3D<Float_t> localPoint = point;
     Vector3D<Float_t> localDir = direction;
-    
+
     distance = kInfinity;
-	
-	
+
+
     Bool_t done(false);
     Bool_t tr(true),fal(false);
-    
-    
+
+
     //Precision fSPhi = unplaced.GetStartPhiAngle();
     //Precision fEPhi = unplaced.GetEPhi();
     //Precision fSTheta = unplaced.GetStartThetaAngle();
     //Precision fETheta = unplaced.GetETheta();
-    
-    Float_t fRmax(unplaced.GetOuterRadius()); 
-    Float_t fRmin(unplaced.GetInnerRadius()); 
-    
+
+    Float_t fRmax(unplaced.GetOuterRadius());
+    Float_t fRmin(unplaced.GetInnerRadius());
+
     //Precision fRminTolerance = unplaced.GetFRminTolerance()*10.;
     //Precision halfRminTolerance = 0.5 * fRminTolerance;
     Float_t halfRminTolerance = 0.5 * unplaced.GetFRminTolerance() * 10.;
     Float_t halfRmaxTolerance = 0.5 * unplaced.GetMKTolerance() * 10.;
-    Float_t kAngTolerance(kSTolerance * 10.);
+    Float_t kAngTolerance(kAngTolerance);//(kSTolerance * 10.);
     Float_t halfAngTolerance = 0.5 * kAngTolerance;
     bool fullPhiSphere = unplaced.IsFullPhiSphere();
     bool fullThetaSphere = unplaced.IsFullThetaSphere();
@@ -1055,32 +1060,32 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
   Float_t pDotV3d = localPoint.Dot(localDir);
 
    Bool_t cond(false);
-  
+
    c = rad2 - fRmax * fRmax;
-   
+
    //New Code
-   
+
    Float_t sd1(kInfinity);
    Float_t sd2(kInfinity);
    d2 = (pDotV3d * pDotV3d - c);
    done |= (d2 < 0. || ((localPoint.Mag() > fRmax) && (pDotV3d > 0)));
    if(IsFull(done)) return; //Returning in case of no intersection with outer shell
-  
+
    //MaskedAssign(( (Sqrt(rad2) >= (fRmax - unplaced.GetMKTolerance()) ) && (Sqrt(rad2) <= (fRmax + unplaced.GetMKTolerance())) && (pDotV3d < 0.) ),0.,&sd1);
    MaskedAssign( ( (Sqrt(rad2) > (fRmax + unplaced.GetMKTolerance()) ) && (tr) && (d2 >= 0.) && pDotV3d < 0.  ) ,(-1.*pDotV3d - Sqrt(d2)),&sd1);
-  
+
    Float_t outerDist(kInfinity);
    Float_t innerDist(kInfinity);
    Float_t interPhi (kInfinity);
    Float_t interTheta (kInfinity);
-   
+
    Float_t tolORMin2(0.), tolIRMin2(0.), tolORMax2(0.), tolIRMax2(0.);
    tolORMin2 = (fRmin - halfRminTolerance) * (fRmin - halfRminTolerance);
    tolIRMin2 = (fRmin + halfRminTolerance) * (fRmin + halfRminTolerance);
-   
+
    tolORMax2 = (fRmax + halfRmaxTolerance) * (fRmax + halfRmaxTolerance);
    tolIRMax2 = (fRmax - halfRmaxTolerance) * (fRmax - halfRmaxTolerance);
-   
+
    if(unplaced.IsFullSphere())
    {
        outerDist = sd1;
@@ -1090,14 +1095,14 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 	//std::cout<<"OuterDist : "<<outerDist<<std::endl;
    }
    else
-   { 
-   
+   {
+
    tmpPt.x()= sd1 * localDir.x() + localPoint.x();
    tmpPt.y()= sd1 * localDir.y() + localPoint.y() ;
    tmpPt.z()= sd1 * localDir.z() + localPoint.z();
-   
+
    MaskedAssign(unplaced.GetWedge().Contains<Backend>(tmpPt) && unplaced.GetThetaCone().Contains<Backend>(tmpPt),sd1,&outerDist);
-   
+
    Bool_t completelyinside(false),completelyoutside(false),movingIn(false),ins(false);
 
 	tmpPt.x()= 0.005*localDir.x() + localPoint.x();
@@ -1108,14 +1113,14 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 	ContainsKernel<Backend>(unplaced, tmpPt, ins);
 	MaskedAssign(!completelyinside && !completelyoutside && ins , 0., &outerDist);
 
-	
+
 
    }
-   
-   //MaskedAssign(!(c > kSTolerance*10*fRmax),);
+
+   //MaskedAssign(!(c > kTolerance*fRmax),);
 
   if(unplaced.GetInnerRadius())
-  { 
+  {
       c = rad2 - fRmin * fRmin;
       MaskedAssign(tr,(pDotV3d * pDotV3d - c),&d2);
       MaskedAssign( ( !done &&  (tr) && (d2 >= 0.) ) ,(-1.*pDotV3d + Sqrt(d2)),&sd2);
@@ -1126,16 +1131,16 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
         MaskedAssign(!done , sd2, &innerDist);
 	Bool_t completelyinside(false),completelyoutside(false),movingIn(false);
 	CheckOnRadialSurface<Backend,true,true>(unplaced,localPoint,completelyinside,completelyoutside,movingIn);
-	MaskedAssign(!done && !completelyinside && !completelyoutside && (pDotV3d > 0.), 0. ,&innerDist);	
-	
+	MaskedAssign(!done && !completelyinside && !completelyoutside && (pDotV3d > 0.), 0. ,&innerDist);
+
       }
       else
-      {		
-		
+      {
+
    		tmpPt.x()= sd2 * localDir.x() + localPoint.x();
 		tmpPt.y()= sd2 * localDir.y() + localPoint.y() ;
 	    	tmpPt.z()= sd2 * localDir.z() + localPoint.z();
-		
+
 		MaskedAssign(unplaced.GetWedge().Contains<Backend>(tmpPt) && unplaced.GetThetaCone().Contains<Backend>(tmpPt),sd2,&innerDist);
 
 		Bool_t completelyinside(false),completelyoutside(false),movingIn(false),ins(false);
@@ -1147,80 +1152,81 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 		GenericKernelForContainsAndInside<Backend,true>(unplaced,localPoint,completelyinside,completelyoutside);
 		ContainsKernel<Backend>(unplaced, tmpPt, ins);
 		MaskedAssign(!completelyinside && !completelyoutside && ins , 0., &innerDist);
-		
+
       }
   }
-   
+
    MaskedAssign((outerDist < 0.),kInfinity,&outerDist);
    MaskedAssign((innerDist < 0.),kInfinity,&innerDist);
    distance=Min(outerDist,innerDist);
-   
+
    if(!fullPhiSphere)
   {
 	GetMinDistFromPhi<Backend,true>(unplaced,localPoint,localDir,done ,distance);
   }
- 
+
    Float_t distThetaMin(kInfinity);
-   
+
    if(!fullThetaSphere)
    {
-      Bool_t intsect1(false);  
-      Bool_t intsect2(false);  
+      Bool_t intsect1(false);
+      Bool_t intsect2(false);
       Float_t distTheta1(kInfinity);
       Float_t distTheta2(kInfinity);
       Vector3D<Float_t> coneIntSecPt1,coneIntSecPt2;
       Float_t xi,yi,zi;
-      
-      
+
+
       unplaced.GetThetaCone().DistanceToIn<Backend>(localPoint,localDir,distTheta1,distTheta2, intsect1,intsect2);//,cone1IntSecPt, cone2IntSecPt);
       MaskedAssign( (intsect1),(localPoint.x() + distTheta1 * localDir.x()),&coneIntSecPt1.x());
       MaskedAssign( (intsect1),(localPoint.y() + distTheta1 * localDir.y()),&coneIntSecPt1.y());
       MaskedAssign( (intsect1),(localPoint.z() + distTheta1 * localDir.z()),&coneIntSecPt1.z());
-     
-      
+
+
       Float_t distCone1 = coneIntSecPt1.Mag();
-      
+
       MaskedAssign( (intsect2),(localPoint.x() + distTheta2 * localDir.x()),&coneIntSecPt2.x());
       MaskedAssign( (intsect2),(localPoint.y() + distTheta2 * localDir.y()),&coneIntSecPt2.y());
       MaskedAssign( (intsect2),(localPoint.z() + distTheta2 * localDir.z()),&coneIntSecPt2.z());
-      
-      
+
+
       Float_t distCone2 = coneIntSecPt2.Mag();
       Bool_t isValidCone1 = (distCone1 > fRmin && distCone1 < fRmax);
       Bool_t isValidCone2 = (distCone2 > fRmin && distCone2 < fRmax);
-     
+
       if(!fullPhiSphere)
           {
             isValidCone1 &= unplaced.GetWedge().Contains<Backend>(coneIntSecPt1) ;
             isValidCone2 &= unplaced.GetWedge().Contains<Backend>(coneIntSecPt2) ;
             MaskedAssign( (!done && (((intsect2 && !intsect1)  && isValidCone2) || ((intsect2 && intsect1) && isValidCone2 && !isValidCone1)) ),distTheta2,&distThetaMin);
-      
+
             MaskedAssign( (!done && (((!intsect2 && intsect1) && isValidCone1) || ((intsect2 && intsect1) && isValidCone1 && !isValidCone2)) ),distTheta1,&distThetaMin);
-            
+
             MaskedAssign( (!done && (intsect2 && intsect1)  && isValidCone1 && isValidCone2),
                     Min(distTheta1,distTheta2),&distThetaMin);
-         
+
           }
           else
           {
-              MaskedAssign( (!done && (((intsect2 && !intsect1)  && (distCone2 > fRmin && distCone2 < fRmax)) || 
+              MaskedAssign( (!done && (((intsect2 && !intsect1)  && (distCone2 > fRmin && distCone2 < fRmax)) ||
                       ((intsect2 && intsect1) &&  (distCone2 > fRmin && distCone2 < fRmax) && !(distCone1 > fRmin && distCone1 < fRmax))) ),distTheta2,&distThetaMin);
-              
+
               MaskedAssign( (!done && (((!intsect2 && intsect1) && (distCone1 > fRmin && distCone1 < fRmax)) ||
                       ((intsect2 && intsect1) && (distCone1 > fRmin && distCone1 < fRmax) && !(distCone2 > fRmin && distCone2 < fRmax))) ),distTheta1,&distThetaMin);
-              
+
               MaskedAssign( (!done && (intsect2 && intsect1)  && (distCone1 > fRmin && distCone1 < fRmax) && (distCone2 > fRmin && distCone2 < fRmax)),
                     Min(distTheta1,distTheta2),&distThetaMin);
-      
-              
+
+
           }
-      
+
       }
-  
-   
+
+
    distance = Min(distThetaMin,distance);
-   MaskedAssign(( distance < kSTolerance ) , 0. , &distance);
-   
+   //MaskedAssign(( distance < kSTolerance ) , 0. , &distance);
+	MaskedAssign(( distance < kTolerance ) , 0. , &distance);
+
 	//Added after observation from ShapeTester
 	//Bool_t isPointInside(false);
 	//ContainsKernel<Backend>(unplaced,point,isPointInside);
@@ -1235,7 +1241,7 @@ void SphereImplementation<transCodeT, rotCodeT>::GetMinDistFromPhi(
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &localPoint,
       Vector3D<typename Backend::precision_v> const &localDir , typename Backend::bool_v &done,typename Backend::precision_v &distance){
-   
+
  typedef typename Backend::precision_v Float_t;
  typedef typename Backend::bool_v      Bool_t;
  Bool_t fal(false);
@@ -1244,9 +1250,9 @@ void SphereImplementation<transCodeT, rotCodeT>::GetMinDistFromPhi(
  Float_t dist(kInfinity);
  Bool_t completelyinside(false),completelyoutside(false);
 
- if(DistToIn)      
+ if(DistToIn)
  unplaced.GetWedge().DistanceToIn<Backend>(localPoint,localDir,distPhi1,distPhi2);
- else      
+ else
  unplaced.GetWedge().DistanceToOut<Backend>(localPoint,localDir,distPhi1,distPhi2);
 
  Vector3D<Float_t> tmpPt;
@@ -1259,7 +1265,7 @@ void SphereImplementation<transCodeT, rotCodeT>::GetMinDistFromPhi(
  GenericKernelForContainsAndInside<Backend,true>(unplaced,tmpPt,completelyinside,completelyoutside);
  containsCond1 = !completelyinside && !completelyoutside;
  MaskedAssign(!done && containsCond1  ,Min(dist,distance), &distance);
- 
+
  //Max Face
  dist = Max(distPhi1,distPhi2);
  MaskedAssign(!containsCond1 ,localPoint.x() + dist*localDir.x() , &tmpPt.x());
@@ -1281,85 +1287,85 @@ void SphereImplementation<transCodeT, rotCodeT>::GetDistPhiMin(
       UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &localPoint,
       Vector3D<typename Backend::precision_v> const &localDir , typename Backend::bool_v &done,typename Backend::precision_v &distance){
-   
+
  typedef typename Backend::precision_v Float_t;
  typedef typename Backend::bool_v      Bool_t;
  Vector3D<Float_t> tmpPt;
- Float_t fRmax(unplaced.GetOuterRadius()); 
- Float_t fRmin(unplaced.GetInnerRadius()); 
+ Float_t fRmax(unplaced.GetOuterRadius());
+ Float_t fRmin(unplaced.GetInnerRadius());
  Bool_t tr(true),fal(false);
  //Float_t Dist(kInfinity);
  //if(!unplaced.IsFullPhiSphere())
  // {
-      Float_t sinSPhi(unplaced.GetSinSPhi()); 
-      Float_t cosSPhi(unplaced.GetCosSPhi()); 
-      Float_t sinEPhi(unplaced.GetSinEPhi()); 
-      Float_t cosEPhi(unplaced.GetCosEPhi()); 
+      Float_t sinSPhi(unplaced.GetSinSPhi());
+      Float_t cosSPhi(unplaced.GetCosSPhi());
+      Float_t sinEPhi(unplaced.GetSinEPhi());
+      Float_t cosEPhi(unplaced.GetCosEPhi());
       Float_t distPhi1(kInfinity);
       Float_t distPhi2(kInfinity);
-      if(DistToIn)      
+      if(DistToIn)
       unplaced.GetWedge().DistanceToIn<Backend>(localPoint,localDir,distPhi1,distPhi2);
-      else      
+      else
       unplaced.GetWedge().DistanceToOut<Backend>(localPoint,localDir,distPhi1,distPhi2);
-		
+
       Float_t distPhiMin = Min(distPhi1, distPhi2);
       MaskedAssign((distPhiMin<0.),0.,&distPhiMin);
-     
-      
+
+
       Float_t distPhiMax = Max(distPhi1, distPhi2);
       MaskedAssign((distPhiMax<0.),0.,&distPhiMax);
-      
+
       Float_t minFace(1.);
       MaskedAssign((distPhi2 < distPhi1),2.,&minFace);
-      
+
       tmpPt.x() = localPoint.x() + distPhiMin * localDir.x();
       tmpPt.y() = localPoint.y() + distPhiMin * localDir.y();
       tmpPt.z() = localPoint.z() + distPhiMin * localDir.z();
       Bool_t containsCond(false);
       containsCond = unplaced.GetThetaCone().Contains<Backend>(tmpPt);
-      //Float_t tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
-      
+      //Float_t tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());
+
       Float_t rT = tmpPt.Mag();
       Bool_t radCond = ((rT <= fRmax) && (rT >= fRmin));
-        
+
         CondAssign( ( radCond && (minFace == 1.)) , (tmpPt.x()*cosSPhi + tmpPt.y()*sinSPhi) ,
                 (tmpPt.x()*cosEPhi + tmpPt.y()*sinEPhi),&tmpPt.x()); //&minTPoint.x());
-        
+
         //CondAssign( ( radCond && (minFace == 1.)) , (-1.*tmpPt.x()*sinSPhi + tmpPt.y()*cosSPhi) ,
           //      (-1.*tmpPt.x()*sinEPhi + tmpPt.y()*cosEPhi),&tmpPt.y()); //&minTPoint.y());
-        
-       Bool_t checkCond = (radCond && (tmpPt.x() > 0.));//(minTPoint.x() > zero));    
+
+       Bool_t checkCond = (radCond && (tmpPt.x() > 0.));//(minTPoint.x() > zero));
        //MaskedAssign(!done &&  checkCond && (tmpPtTheta > fSTheta && tmpPtTheta < fETheta), Min(distPhiMin,distance),&distance );
 	   MaskedAssign(!done &&  checkCond && containsCond, Min(distPhiMin,distance),&distance );
-       
+
        //Going to phiMax face
-        
+
         Float_t maxFace(1.);
         MaskedAssign((distPhi2 > distPhi1),2.,&maxFace);
-        
+
         MaskedAssign(!checkCond, (localPoint.x() + distPhiMax * localDir.x()),&tmpPt.x());
         MaskedAssign(!checkCond, (localPoint.y() + distPhiMax * localDir.y()),&tmpPt.y());
         MaskedAssign(!checkCond, (localPoint.z() + distPhiMax * localDir.z()),&tmpPt.z());
 	containsCond = fal;
         containsCond = unplaced.GetThetaCone().Contains<Backend>(tmpPt);
-        //tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z()); 
-        
+        //tmpPtTheta = ATan2(Sqrt(tmpPt.x()*tmpPt.x() + tmpPt.y()*tmpPt.y()), tmpPt.z());
+
         rT = tmpPt.Mag();
-                
+
         radCond = ((rT <= fRmax) && (rT >= fRmin));
-        
+
         CondAssign( (!checkCond && radCond && (maxFace == 1.)  ) , (tmpPt.x()*cosSPhi + tmpPt.y()*sinSPhi) ,
                 (tmpPt.x()*cosEPhi + tmpPt.y()*sinEPhi),&tmpPt.x());//&maxTPoint.x());
-        
+
         //CondAssign( (!checkCond && radCond && (maxFace == 1.)  )  , (-1.*tmpPt.x()*sinSPhi + tmpPt.y()*cosSPhi) ,
          //       (-1.*tmpPt.x()*sinEPhi + tmpPt.y()*cosEPhi),&tmpPt.y());//&maxTPoint.y());
-        
+
         Bool_t checkCondMax = (radCond && (tmpPt.x() > 0.));//(maxTPoint.x() > zero));
         //MaskedAssign(!done &&  !checkCond && checkCondMax && (tmpPtTheta > fSTheta && tmpPtTheta < fETheta), Min(distPhiMax,distance),&distance );
 	MaskedAssign(!done &&  !checkCond && checkCondMax && containsCond, Min(distPhiMax,distance),&distance );
-       
-       
-     
+
+
+
   // }
 
 }
@@ -1370,7 +1376,7 @@ VECGEOM_CUDA_HEADER_BOTH
 void SphereImplementation<transCodeT, rotCodeT>::DistanceToOut(UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
-      
+
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
@@ -1383,7 +1389,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOut(UnplacedSphere co
     stepMax,
     distance
   );
-} 
+}
 
 //V3
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -1392,31 +1398,31 @@ VECGEOM_CUDA_HEADER_BOTH
 void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSphere const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
-      /*Vector3D<typename Backend::precision_v> const &n,  
+      /*Vector3D<typename Backend::precision_v> const &n,
       typename Backend::bool_v validNorm,  */
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-   
+
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
 
     Vector3D<Float_t> localPoint = point;
-   
+
     Vector3D<Float_t> localDir=direction;
-    
+
     distance = kInfinity;
     Float_t  pDotV2d, pDotV3d;
-    
-    
+
+
     Bool_t done(false);
     Bool_t tr(true),fal(false);
-    
+
     Float_t snxt(kInfinity);
-    
-    Float_t fRmax(unplaced.GetOuterRadius()); 
-    Float_t fRmin(unplaced.GetInnerRadius()); 
-    
+
+    Float_t fRmax(unplaced.GetOuterRadius());
+    Float_t fRmin(unplaced.GetInnerRadius());
+
     // Intersection point
     Vector3D<Float_t> intSecPt;
     Float_t  c(0.), d2(0.);
@@ -1426,61 +1432,65 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
 
    Float_t rad2 = localPoint.Mag2();
    c = rad2 - fRmax * fRmax;
-   
+
    //New Code
-   
+
    Float_t sd1(kInfinity);
    Float_t sd2(kInfinity);
    Float_t Rmax_plus = fRmax + unplaced.GetMKTolerance();
    Float_t Rmin_minus = fRmin - unplaced.GetFRminTolerance();
-   
+
    Bool_t cond1 = (Sqrt(rad2) <= (fRmax + 0.5*unplaced.GetMKTolerance())) && (Sqrt(rad2) >= (fRmin - 0.5*unplaced.GetFRminTolerance()));
    Bool_t cond = (Sqrt(rad2) <= (fRmax + unplaced.GetMKTolerance())) && (Sqrt(rad2) >= (fRmax - unplaced.GetMKTolerance())) && pDotV3d >=0 && cond1;
    done |= cond;
    MaskedAssign(cond ,0.,&sd1);
-   
+
 
    MaskedAssign((tr && cond1),(pDotV3d * pDotV3d - c),&d2);
    MaskedAssign( (!done && cond1 && (tr) && (d2 >= 0.) ) ,(-1.*pDotV3d + Sqrt(d2)),&sd1);
-   
+
    MaskedAssign((sd1 < 0.),kInfinity, &sd1);
-   
+
    if(unplaced.GetInnerRadius())
-  { 
+  {
        cond = (Sqrt(rad2) <= (fRmin + unplaced.GetFRminTolerance())) && (Sqrt(rad2) >= (fRmin - unplaced.GetFRminTolerance())) && pDotV3d < 0 && cond1;
        done |= cond;
        MaskedAssign(cond ,0.,&sd2);
       c = rad2 - fRmin * fRmin;
-      
+
       //MaskedAssign(tr,(pDotV3d * pDotV3d - c),&d2);
 	  d2 = (pDotV3d * pDotV3d - c);
-     
+
       MaskedAssign( ( !done && (cond1) && (d2 >= 0.) && (pDotV3d < 0.)) ,(-1.*pDotV3d - Sqrt(d2)),&sd2);
-      MaskedAssign((sd2 < 0.),kInfinity, &sd2);
       
+      MaskedAssign((sd2 < 0.),kInfinity, &sd2);
+
   }
-   
+//std::cout<<"SD-1 : "<<sd1<<"  :: SD-2 : "<<sd2<<std::endl;
     snxt=Min(sd1,sd2);
     Float_t distThetaMin(kInfinity);
     Float_t distPhiMin(kInfinity);
-            
+
     if(!unplaced.IsFullThetaSphere())
-    {          
-      Bool_t intsect1(false);  
-      Bool_t intsect2(false);  
+    {
+      Bool_t intsect1(false);
+      Bool_t intsect2(false);
       Float_t distTheta1(kInfinity);
       Float_t distTheta2(kInfinity);
       unplaced.GetThetaCone().DistanceToOut<Backend>(localPoint,localDir,distTheta1,distTheta2, intsect1,intsect2);
       MaskedAssign( (intsect2 && !intsect1),distTheta2,&distThetaMin);
       MaskedAssign( (!intsect2 && intsect1),distTheta1,&distThetaMin);
-      MaskedAssign( (intsect2 && intsect1),Min(distTheta1,distTheta2),&distThetaMin);
+      MaskedAssign( (intsect2 && intsect1) /*|| (!intsect2 && !intsect1)*/,Min(distTheta1,distTheta2),&distThetaMin);
+      //MaskedAssign( (intsect2 && intsect1),Min(distTheta1,distTheta2),&distThetaMin);
     }
-    
+
     distance = Min(distThetaMin,snxt);
+
+    //std::cout<<"SNXT : "<<snxt<<"  :: DistThetaMin : "<<distThetaMin<<"  :: Distance : "<<distance<<std::endl;
 
   if (!unplaced.IsFullPhiSphere())
   {
-      	
+
 	if(unplaced.GetDeltaPhiAngle() <= kPi)
 	{
 	   	Float_t distPhi1;
@@ -1488,19 +1498,22 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedSph
       		unplaced.GetWedge().DistanceToOut<Backend>(localPoint,localDir,distPhi1,distPhi2);
      		distPhiMin = Min(distPhi1, distPhi2);
 		distance = Min(distPhiMin,distance);
+		//std::cout<<"DistPhiMIn : "<<distPhiMin<<"  :: Distance : "<<distance<<std::endl;
 	}
 	else
-	GetMinDistFromPhi<Backend,false>(unplaced,localPoint,localDir,done ,distance);
-	
+    {
+            GetMinDistFromPhi<Backend,false>(unplaced,localPoint,localDir,done ,distance);
+    //        std::cout<<"Distance From Else Block : "<<distance<<std::endl;
+    }
+
+
   }
-    
-    MaskedAssign(( distance < kSTolerance) , 0. , &distance);
-	
-	//Added after observation from ShapeTester
-	//Bool_t isPointInside(false);
-	//ContainsKernel<Backend>(unplaced,point,isPointInside);
-	//MaskedAssign(!isPointInside, kSTolerance , &distance);
-    
+  
+//Commented after Finalization of convention which says that if distance <  halfTolerance 
+//then Geant4 and USolids are returning zero but VecGeom should return the calculated distance.
+// MaskedAssign(( distance < kTolerance) , 0. , &distance);
+
+
 }
 
 

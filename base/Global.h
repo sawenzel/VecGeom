@@ -77,6 +77,11 @@
      inline namespace cxx  { class X; } \
      template <> struct kCudaType<cxx::X> { using type_t = cuda::X; };
 
+  #define VECGEOM_DEVICE_DECLARESTRUCT_CONV(X) \
+     namespace cuda { struct X; } \
+     inline namespace cxx  { struct X; } \
+     template <> struct kCudaType<cxx::X> { using type_t = cuda::X; };
+
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(X,ArgType) \
      namespace cuda { template <ArgType Arg> class X; } \
      inline namespace cxx  { template <ArgType Arg> class X; } \
@@ -86,46 +91,46 @@
 #ifdef VECGEOM_CUDA_VOLUME_SPECIALIZATION
 
   #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X,Def)     \
-     namespace cuda { namespace NS { class X; } } \
-     inline namespace cxx { namespace NS { class X; } } \
+     namespace cuda { namespace NS { struct X; } } \
+     inline namespace cxx { namespace NS { struct X; } } \
      template <> struct kCudaType<cxx::NS::X> { using type_t = cuda::NS::X; };
 
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Def1,ArgType2,Def2) \
-     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
-     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> struct X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> struct X; } \
      template <ArgType1 Arg1,ArgType2 Arg2> struct kCudaType<cxx::X<Arg1,Arg2> > \
      { using type_t = cuda::X<Arg1,Arg2 >; };
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Def1,ArgType2,Def2,ArgType3) \
-     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
-     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Arg1, Arg2, CudaType_t<Arg3> >; };
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Def1,ArgType2,Def2,ArgType3,Def3) \
-     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
-     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Arg1,Arg2,Arg3 >; };
 
 #else // VECGEOM_CUDA_VOLUME_SPECIALIZATION
 
   #define VECGEOM_DEVICE_DECLARE_NS_CONV(NS,X,Def)     \
-     namespace cuda { namespace NS { class Def; } } \
-     inline namespace cxx { namespace NS { class X; } } \
+     namespace cuda { namespace NS { struct Def; } } \
+     inline namespace cxx { namespace NS { struct X; } } \
      template <> struct kCudaType<cxx::NS::X> { using type_t = cuda::NS::Def; };
 
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v(X,ArgType1,Def1,ArgType2,Def2) \
-     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
-     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> class X; } \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2> struct X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2> struct X; } \
      template <ArgType1 Arg1,ArgType2 Arg2> struct kCudaType<cxx::X<Arg1,Arg2> > \
      { using type_t = cuda::X<Def1, Def2 >; };
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_2v_1t(X,ArgType1,Def1,ArgType2,Def2,ArgType3) \
-     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
-     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Def2, Def2, CudaType_t<Arg3> >; };
   #define VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_3v(X,ArgType1,Def1,ArgType2,Def2,ArgType3,Def3) \
-     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
-     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> class X; } \
+     namespace cuda { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
+     inline namespace cxx  { template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct X; } \
      template <ArgType1 Arg1,ArgType2 Arg2,ArgType3 Arg3> struct kCudaType<cxx::X<Arg1,Arg2,Arg3> > \
      { using type_t = cuda::X<Def1,Def2,Def3 >; };
 
@@ -290,14 +295,14 @@ VECGEOM_GLOBAL Precision kMaximum =
     DBL_MAX;
 #endif
 VECGEOM_GLOBAL Precision kTiny = 1e-30;
-VECGEOM_GLOBAL Precision kTolerance = 1e-12;
-VECGEOM_GLOBAL Precision kRadTolerance = 1e-12;
-VECGEOM_GLOBAL Precision kAngTolerance = 1e-12;
+VECGEOM_GLOBAL Precision kTolerance = 1e-9;
+VECGEOM_GLOBAL Precision kRadTolerance = 1e-9;
+VECGEOM_GLOBAL Precision kAngTolerance = 1e-9;
 
 VECGEOM_GLOBAL Precision kHalfTolerance = 0.5*kTolerance;
 VECGEOM_GLOBAL Precision kToleranceSquared = kTolerance*kTolerance;
-VECGEOM_GLOBAL Precision kSTolerance = 1e-10;
-VECGEOM_GLOBAL Precision kSHalfTolerance = 0.5*kSTolerance;
+//VECGEOM_GLOBAL Precision kSTolerance = 1e-10;
+//VECGEOM_GLOBAL Precision kSHalfTolerance = 0.5*kSTolerance;
 VECGEOM_GLOBAL Precision kSEpsilon = 2.e-11;
 
 namespace EInside {

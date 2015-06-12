@@ -23,8 +23,10 @@
 #include "volumes/UnplacedBooleanVolume.h"
 #include <sstream>
 #include <ostream>
+#include <fstream>
 #include <algorithm>
 #include <list>
+#include <vector>
 #include <iomanip>
 
 namespace vecgeom {
@@ -72,14 +74,16 @@ void ScanGeometry( VPlacedVolume const *const volume,
 
 
 
-    void GeomCppExporter::DumpTransformations( std::ostream & dumps, std::list<Transformation3D const *> const & tvlist ){
+    void GeomCppExporter::DumpTransformations( std::vector<std::stringstream *> & trafoconstrlist,
+                                               std::stringstream & trafoexterndecl,
+                                               std::vector<std::stringstream *> & trafodecllist,
+                                               std::list<Transformation3D const *> const & tvlist ){
 
         // loop over all transformations
         unsigned int counter=0;
         for( auto t : tvlist ){
             // register transformation
             if( fTrafoToStringMap.find(t) == fTrafoToStringMap.cend() ){
-
                 // many transformation are identity: we can filter them out and allocate only one
                 // identity
                 // TODO: such reduction can be applied for other transformations
@@ -94,19 +98,56 @@ void ScanGeometry( VPlacedVolume const *const volume,
                     fTrafoToStringMap[ t ] = s.str();
                     counter++;
                 }
-
             }
         }
 
-        // generate code that instantiates transformations
+        // we will split the transformation constructions into different groups
+        // of compiler translation units for faster and parallel compilation
+        unsigned int group = 0;
+        std::stringstream * newstream = new std::stringstream;
+        trafoconstrlist.push_back( newstream );
+        std::stringstream * trafoconstr = trafoconstrlist.back();
+        trafodecllist.push_back( new std::stringstream );
+        std::stringstream * trafodecl = trafodecllist.back();
+
+        // generate function that instantiates the transformations
+        int groupcounter = 0;
+        *trafoconstr << "void GenerateTransformations_part" << group << "(){\n";
         bool iddone = false;
         for ( auto t : fTrafoToStringMap ){
             Transformation3D const * tp = t.first;
             if ( tp->IsIdentity() && iddone ) continue;
             if ( tp->IsIdentity() ) iddone = true;
+
+            // we take a limit if 5000 transformations per translation unit
+            // which compiles reasonably fast
+            if(++groupcounter > 5000){
+                group++;
+                // close old function
+                *trafoconstr << "}\n";
+
+                // create a new stream
+                trafoconstrlist.push_back( new std::stringstream );
+                trafoconstr = trafoconstrlist.back();
+                trafodecllist.push_back( new std::stringstream );
+                trafodecl = trafodecllist.back();
+
+                // init new function
+                *trafoconstr << "void GenerateTransformations_part" << group << "(){\n";
+
+                // reset counter
+                groupcounter=0;
+            }
+
             std::stringstream line;
+
+            // extern declaration line
+            trafoexterndecl << "extern Transformation3D *" << t.second << ";\n";
+            *trafodecl << "Transformation3D * " << t.second << " = nullptr;\n";
+
+            // instantiation line
             line << std::setprecision(15);
-            line << "Transformation3D * " << t.second << " = new Transformation3D(";
+            line << t.second << " = new Transformation3D(";
             line << tp->Translation(0) << " , ";
             line << tp->Translation(1) << " , ";
             line << tp->Translation(2);
@@ -117,8 +158,9 @@ void ScanGeometry( VPlacedVolume const *const volume,
                 line << tp->Rotation(8);
             }
             line << ");\n";
-            dumps << line.str();
+            *trafoconstr << line.str();
         }
+        *trafoconstr << "}\n";
     }
 
     template<typename VectorContainer>
@@ -131,6 +173,8 @@ void ScanGeometry( VPlacedVolume const *const volume,
 
 // function which dumps the logical volumes
 void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
+            std::ostream & externdeclarations,
+            std::ostream & lvoldefinitions,
             std::list<LogicalVolume const *> const & lvlist ) {
 
     static unsigned int counter=0;
@@ -148,9 +192,10 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
 
     // generate code that instantiates LogicalVolumes
     for ( auto l : lvlist ){
+
         std::stringstream line;
         line << std::setprecision(15);
-        line << "LogicalVolume * " << fLVolumeToStringMap[l];
+        line << fLVolumeToStringMap[l];
         line << " = new LogicalVolume ( \"" << l->GetLabel() << "\" , ";
 
         // now we need to distinguish types
@@ -251,19 +296,27 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
              line << shape->GetNz() << " , ";
 
              std::vector<double> rmin, rmax, z;
-             // serialize the arrays as tempary std::vector
+             // serialize the arrays as temporary std::vector
              shape->ReconstructSectionArrays(z,rmin,rmax);
+#ifndef NDEBUG
+             for( auto element : rmin){
+                 assert( element >= 0.);
+             }
+             for( auto element : rmax){
+                 assert( element >= 0.);
+             }
+#endif
 
+             // put z vector
+             DumpVector( z, line );
+             line << " ,";
              // put rmin vector
              DumpVector( rmin, line );
              line << " , ";
              // put rmax vector
              DumpVector( rmax, line );
-             line << " , ";
+             line << " ) ";
 
-             // put z vector
-             DumpVector( z, line );
-             line << " )";
 
             fNeededHeaderFiles.insert("volumes/UnplacedPolycone.h");
        }
@@ -373,6 +426,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
 
     line << " );\n";
     dumps << line.str();
+    lvoldefinitions << "LogicalVolume *" << fLVolumeToStringMap[l] << "= nullptr;\n";
+    externdeclarations << "extern LogicalVolume *" << fLVolumeToStringMap[l] << ";\n";
+
     // if we came here, we dumped this logical volume; so register it as beeing treated
     fListofTreatedLogicalVolumes.push_back( l );
    } // end loop over logical volumes
@@ -381,7 +437,14 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
 
 // now recreate geometry hierarchy
 // the mappings fLogicalVolToStringMap and fTrafoToStringMap need to be initialized
-void GeomCppExporter::DumpGeomHierarchy( std::ostream & dumps, std::list<LogicalVolume const *> const & lvlist ){
+void GeomCppExporter::DumpGeomHierarchy( std::vector<std::stringstream *> & dumps,
+                                         std::list<LogicalVolume const *> const & lvlist ){
+    static unsigned int group=-1;
+    group++;
+    unsigned int groupcounter=0;
+    dumps.push_back( new std::stringstream );
+    std::stringstream * output = dumps.back();
+    *output << " void GeneratePlacedVolumes_part" << group << "(){\n";
 
     for( auto l : lvlist ){
         // map daughters for logical volume l
@@ -396,15 +459,29 @@ void GeomCppExporter::DumpGeomHierarchy( std::ostream & dumps, std::list<Logical
 
             std::string tvariable = fTrafoToStringMap[t];
             std::string lvariable = fLVolumeToStringMap[daughterlv];
-//                // build the C++ code
+
+            // only allow 5000 lines per function to speed up compilation
+            if( groupcounter++ > 5000 ){
+                *output << "}";
+                dumps.push_back( new std::stringstream );
+                // new output
+                output = dumps.back();
+                group++;
+                *output << " void GeneratePlacedVolumes_part" << group << "(){\n";
+                groupcounter=0;
+            }
+
+            // build the C++ code
             std::stringstream line;
             line << thisvolumevariable << "->PlaceDaughter( ";
             line << lvariable << " , ";
             line << tvariable << " );\n";
 
-            dumps << line.str();
+            *output << line.str();
        }
     }
+    // close the last output
+    *output<< "}\n";
 }
 
 void GeomCppExporter::DumpHeader( std::ostream & dumps ){
@@ -416,8 +493,6 @@ void GeomCppExporter::DumpHeader( std::ostream & dumps ){
     dumps << "#include \"volumes/PlacedVolume.h\"\n";
     dumps << "#include \"volumes/LogicalVolume.h\"\n";
     dumps << "#include \"base/Transformation3D.h\"\n";
-    dumps << "#include \"management/GeoManager.h\"\n";
-    dumps << "#include \"base/Stopwatch.h\"\n";
     dumps << "#include <vector>\n";
 
     // put shape specific headers
@@ -429,10 +504,16 @@ void GeomCppExporter::DumpHeader( std::ostream & dumps ){
 
 void GeomCppExporter::DumpGeometry( std::ostream & s ) {
   // stringstreams to assemble code in parts
-    std::stringstream transformations;
+    std::vector< std::stringstream * > transformations;
+    std::stringstream transexterndecl;
+    std::vector< std::stringstream * > transdecl;
+
     std::stringstream logicalvolumes;
+    std::stringstream lvoldefinitions;
+    std::stringstream lvoldeclarations;
+
     std::stringstream header;
-    std::stringstream geomhierarchy;
+    std::vector< std::stringstream * > geomhierarchy;
 
     // create list of transformations, simple logical volumes and boolean logical volumes
     std::list<Transformation3D const *> tlist;
@@ -441,20 +522,20 @@ void GeomCppExporter::DumpGeometry( std::ostream & s ) {
     ScanGeometry( GeoManager::Instance().GetWorld(), lvlist, boollvlist, tlist );
 
     // generate code that instantiates the transformations
-    DumpTransformations( transformations, tlist );
+    DumpTransformations( transformations, transexterndecl, transdecl, tlist );
     // generate code that instantiates ordinary logical volumes
-    DumpLogicalVolumes( logicalvolumes, lvlist );
+    DumpLogicalVolumes( logicalvolumes, lvoldeclarations, lvoldefinitions, lvlist );
 
     // generate code that instantiates complex logical volumes ( for the moment only booleans )
     // do a first pass
-    DumpLogicalVolumes( logicalvolumes, boollvlist );
+    DumpLogicalVolumes( logicalvolumes, lvoldeclarations, lvoldefinitions, boollvlist );
     int counter=0;
     // do more passes to resolve dependencies between logical volumes
     // doing max 10 passes to protect against infinite loop ( which should never occur )
     while( fListofDeferredLogicalVolumes.size() > 0 && counter < 10){
         std::list< LogicalVolume const *> remainingvolumes = fListofDeferredLogicalVolumes;
         fListofDeferredLogicalVolumes.clear();
-        DumpLogicalVolumes( logicalvolumes, remainingvolumes );
+        DumpLogicalVolumes( logicalvolumes, lvoldeclarations, lvoldefinitions, remainingvolumes );
         counter++;
     }
 
@@ -471,19 +552,103 @@ void GeomCppExporter::DumpGeometry( std::ostream & s ) {
     s << "using namespace vecgeom;\n";
     s << "\n";
 
-    // create function start; body and end
-    s << "VPlacedVolume const * generateDetector() {\n";
-    s << transformations.str();
-    s << logicalvolumes.str();
-    s << geomhierarchy.str();
-    // return placed world Volume
-    // now define world
-    VPlacedVolume const * world = GeoManager::Instance().GetWorld();
-    Transformation3D const * t = world->GetTransformation();
-    LogicalVolume const * worldlv = world->GetLogicalVolume();
-    s << "VPlacedVolume const * world = " << fLVolumeToStringMap[worldlv] << "->Place( "
-                                             << fTrafoToStringMap[t] <<  " ); \n";
-    s << "return world;\n}\n";
+    // write translation units for transformations
+    for( unsigned int i = 0; i< transdecl.size(); ++i) {
+        std::ofstream outfile;
+        std::stringstream name; name << "geomconstr_trans_part" << i << ".cpp";
+        outfile.open(name.str());
+        outfile << "#include \"base/Transformation3D.h\"\n";
+        outfile << "using namespace vecgeom;\n";
+        outfile << transdecl[i]->str();
+        outfile << transformations[i]->str();
+        outfile.close();
+    }
+    //return;
+
+    // write translation unit for logical volumes
+    {
+        std::ofstream outfile;
+        std::stringstream name; name << "geomconstr_lvol_part" << 0 << ".cpp";
+        outfile.open(name.str());
+        outfile << header.str();
+        outfile << "using namespace vecgeom;\n";
+
+        // we need external declarations for transformations
+        outfile << transexterndecl.str();
+        outfile << lvoldefinitions.str();
+        outfile << "void CreateLogicalVolumes(){\n";
+        outfile << logicalvolumes.str();
+        outfile << "}\n";
+        outfile.close();
+    }
+
+    { // write translation units for placed volumes
+    for( unsigned int i = 0; i< geomhierarchy.size(); ++i) {
+           std::ofstream outfile;
+           std::stringstream name; name << "geomconstr_placedvol_part" << i << ".cpp";
+           outfile.open(name.str());
+           outfile << header.str();
+           outfile << "using namespace vecgeom;\n";
+           outfile << transexterndecl.str();
+           outfile << lvoldeclarations.str();
+           outfile << geomhierarchy[i]->str();
+           outfile.close();
+       }
+    }
+
+    // create file that connects everything up
+    {
+        std::ofstream outfile;
+        std::stringstream name; name << "geomconstr_createdetector.cpp";
+        outfile.open(name.str());
+outfile << "#include \"base/Global.h\"\n";
+outfile << "#include \"volumes/PlacedVolume.h\"\n";
+outfile << "#include \"volumes/LogicalVolume.h\"\n";
+outfile << "#include \"base/Transformation3D.h\"\n";
+outfile << "#include \"management/GeoManager.h\"\n";
+outfile << "#include \"base/Stopwatch.h\"\n";
+        outfile << "using namespace vecgeom;";
+        VPlacedVolume const * world = GeoManager::Instance().GetWorld();
+        LogicalVolume const * worldlv = world->GetLogicalVolume();
+        // extern declarations
+        for( unsigned int i=0;i<transdecl.size(); ++i){
+                   outfile << "extern void GenerateTransformations_part" << i << "();\n";
+                }
+                outfile <<   "extern void CreateLogicalVolumes();\n";
+                for( unsigned int i=0;i<geomhierarchy.size(); ++i){
+                   outfile << "extern void GeneratePlacedVolumes_part" << i << "();\n";
+                }
+        outfile << "extern LogicalVolume * " << fLVolumeToStringMap[worldlv] << ";\n";
+        outfile << "extern Transformation3D * " << fTrafoToStringMap[world->GetTransformation()] << ";\n";
+
+        outfile << "VPlacedVolume const * generateDetector() {\n";
+        // call all the functions from other translation units
+        // ...  start with the transformations
+        for( unsigned int i=0;i<transdecl.size(); ++i){
+           outfile << "  GenerateTransformations_part" << i << "();\n";
+        }
+        outfile <<   "CreateLogicalVolumes();\n";
+        for( unsigned int i=0;i<geomhierarchy.size(); ++i){
+           outfile << "  GeneratePlacedVolumes_part" << i << "();\n";
+        }
+        outfile << "VPlacedVolume const * world = " << fLVolumeToStringMap[worldlv] << "->Place( "
+                                             << fTrafoToStringMap[world->GetTransformation()] <<  " ); \n";
+        outfile << "return world;\n}\n";
+        outfile << "int main(){\n";
+        outfile   << "// function could be used like this \n";
+        outfile << " GeoManager & geom = GeoManager::Instance();\n";
+        outfile << " Stopwatch timer;\n";
+        outfile << " timer.Start();\n";
+        outfile << " geom.SetWorld( generateDetector() );\n";
+        outfile << " geom.CloseGeometry();\n";
+        outfile << " timer.Stop();\n";
+        outfile << " std::cerr << \"loading took  \" << timer.Elapsed() << \" s \" << std::endl;\n";
+        outfile << " std::cerr << \"loaded geometry has \" << geom.getMaxDepth() << \" levels \" << std::endl;\n";
+        outfile << " return 0;}\n";
+
+
+        outfile.close();
+    }
 
     // create hint on how to use the generated function
     s << "// function could be used like this \n";

@@ -2,8 +2,11 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "volumes/PlacedVolume.h"
-
+#include "base/Vector3D.h"
+#include "base/RNG.h"
 #include "management/GeoManager.h"
+#include "volumes/utilities/VolumeUtilities.h"
+#include "base/SOA3D.h"
 
 #include <stdio.h>
 #include <cassert>
@@ -88,6 +91,74 @@ std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
      << ")";
   return os;
 }
+
+// implement a default function for surface area
+// based on the method of G4
+Precision VPlacedVolume::SurfaceArea() {
+  //  std::cout << "WARNING : Sampling SurfaceArea called \n";
+ int nStat = 100000;
+ double ell = -1.;
+ Vector3D<Precision> p;
+ Vector3D<Precision> minCorner;
+ Vector3D<Precision> maxCorner;
+ Vector3D<Precision> delta;
+
+ // min max extents of pSolid along X,Y,Z
+ this->Extent(minCorner,maxCorner);
+
+ // limits
+ delta = maxCorner - minCorner;
+
+ if(ell<=0.)          // Automatic definition of skin thickness
+ {
+   Precision minval = delta.x();
+   if(delta.y() < delta.x()) { minval= delta.y(); }
+   if(delta.z() < minval) { minval= delta.z(); }
+   ell=.01*minval;
+ }
+
+ Precision dd=2*ell;
+ minCorner.x()-=ell;
+ minCorner.y()-=ell;
+ minCorner.z()-=ell;
+ delta.x()+=dd;
+ delta.y()+=dd;
+ delta.z()+=dd;
+
+ int inside=0;
+ for(int i = 0; i < nStat; ++i )
+ {
+   p = minCorner + Vector3D<Precision>( delta.x()*RNG::Instance(). uniform(),
+           delta.y()*RNG::Instance(). uniform(),
+           delta.z()*RNG::Instance(). uniform() );
+   if( this->UnplacedContains(p) ) {
+     if( this->SafetyToOut(p)<ell) { inside++; }
+   }
+   else{
+     if( this->SafetyToIn(p)<ell) { inside++; }
+   }
+}
+ // @@ The conformal correction can be upgraded
+ return delta.x()*delta.y()*delta.z()*inside/dd/nStat;
+}
+
+// implement a default function for GetPointOnSurface
+// based on contains + DistanceToOut
+Vector3D<Precision> VPlacedVolume::GetPointOnSurface() const {
+  //   std::cerr << "WARNING : Base GetPointOnSurface called \n";
+
+   Vector3D<Precision> surfacepoint;
+   SOA3D<Precision> points(1);
+   volumeUtilities::FillRandomPoints( *this, points );
+
+   Vector3D<Precision> dir = volumeUtilities::SampleDirection();
+   surfacepoint = points[0] + DistanceToOut( points[0],
+           dir ) * dir;
+
+  // assert( Inside(surfacepoint) == vecgeom::kSurface );
+   return surfacepoint;
+}
+
 
 } // End impl namespace
 

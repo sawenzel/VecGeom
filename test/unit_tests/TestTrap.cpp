@@ -1,9 +1,9 @@
 //
 //
 // TestTrap
-//             Ensure asserts are compiled in
 
-#undef NDEBUG
+
+
 
 #include "base/Vector3D.h"
 #include "volumes/Box.h"
@@ -14,7 +14,9 @@
 #endif
 #include "volumes/Trapezoid.h"
 
-//#include <cassert>
+//             Ensure asserts are compiled in
+#undef NDEBUG
+#include <cassert>
 #include <cmath>
 
 template <typename Constants, class Trap_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >

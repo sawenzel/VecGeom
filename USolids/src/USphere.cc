@@ -179,6 +179,21 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
 
   tolRMin = rMinPlus;
   tolRMax = rMaxMinus;
+   if(rad2 == 0.0)
+   { 
+    if (fRmin > 0.0)
+    {
+      return in = EnumInside::eOutside;
+    }
+    if ( (!fFullPhiSphere) || (!fFullThetaSphere) )
+    {
+      return in = EnumInside::eSurface;
+    }
+    else
+    {
+      return in = EnumInside::eInside; 
+    }
+  }
 
   if ((rad2 <= rMaxMinus * rMaxMinus) && (rad2 >= rMinPlus * rMinPlus))
   {
@@ -238,11 +253,14 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
 
     if (in == EnumInside::eInside)
     {
-      if ((pTheta < fSTheta + halfAngTolerance)
-          || (pTheta > eTheta - halfAngTolerance))
+       if ( ((fSTheta > 0.0) && (pTheta < fSTheta + halfAngTolerance))
+	|| ((eTheta <  UUtils::kPi) && (pTheta > eTheta - halfAngTolerance)) )
+     
       {
-        if ((pTheta >= fSTheta - halfAngTolerance)
-            && (pTheta <= eTheta + halfAngTolerance))
+      if ( (( (fSTheta>0.0)&&(pTheta>=fSTheta-halfAngTolerance) )
+             || (fSTheta == 0.0) )
+          && ((eTheta== UUtils::kPi)||(pTheta <= eTheta + halfAngTolerance) ) )
+      
         {
           in = EnumInside::eSurface;
         }
@@ -254,8 +272,9 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     }
     else
     {
-      if ((pTheta < fSTheta - halfAngTolerance)
-          || (pTheta > eTheta + halfAngTolerance))
+     if ( ((fSTheta > 0.0)&&(pTheta < fSTheta - halfAngTolerance))
+	   ||((eTheta <  UUtils::kPi  )&&(pTheta > eTheta + halfAngTolerance)) )
+    
       {
         in = EnumInside::eOutside;
       }
@@ -2581,6 +2600,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       break;
 
     default:
+#ifdef USOLIDS_DEBUG
       cout << std::endl;
 
       std::ostringstream message;
@@ -2600,10 +2620,13 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       message.precision(oldprc);
       UUtils::Exception("USphere::DistanceToOut(p,v,..)",
                         "GeomSolids1002", UWarning, 1, message.str().c_str());
+#endif
       break;
   }
+#ifdef USOLIDS_DEBUG
   if (snxt == UUtils::Infinity())
   {
+  
     cout << std::endl;
 
     std::ostringstream message;
@@ -2625,7 +2648,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
     UUtils::Exception("USphere::DistanceToOut(p,v,..)",
                       "GeomSolids1002", UWarning, 1, message.str().c_str());
   }
-
+#endif
   return snxt;
 }
 
@@ -2637,7 +2660,7 @@ double USphere::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
 {
   double safe = 0.0, safeRMin, safeRMax, safePhi, safeTheta;
   double rho2, rds, rho;
-  double pTheta, dTheta1, dTheta2;
+  double pTheta, dTheta1=UUtils::Infinity(), dTheta2=UUtils::Infinity();
   rho2 = p.x() * p.x() + p.y() * p.y();
   rds = std::sqrt(rho2 + p.z() * p.z());
   rho = std::sqrt(rho2);
@@ -2661,68 +2684,62 @@ double USphere::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
   //
   // Distance to r shells
   //
+  safeRMax = fRmax-rds;
+  safe = safeRMax;  
   if (fRmin)
   {
-    safeRMin = rds - fRmin;
-    safeRMax = fRmax - rds;
-    if (safeRMin < safeRMax)
-    {
-      safe = safeRMin;
-    }
-    else
-    {
-      safe = safeRMax;
-    }
+     safeRMin = rds-fRmin;
+     safe = std::min( safeRMin, safeRMax ); 
   }
-  else
-  {
-    safe = fRmax - rds;
-  }
-
+ 
   //
   // Distance to phi extent
   //
-  if (!fFullPhiSphere && rho)
+  if ( !fFullPhiSphere )
   {
-    if ((p.y() * cosCPhi - p.x() * sinCPhi) <= 0)
-    {
-      safePhi = -(p.x() * sinSPhi - p.y() * cosSPhi);
-    }
-    else
-    {
-      safePhi = (p.x() * sinEPhi - p.y() * cosEPhi);
-    }
-    if (safePhi < safe)
-    {
-      safe = safePhi;
-    }
+     if (rho>0.0)
+     {
+        if ((p.y()*cosCPhi-p.x()*sinCPhi)<=0)
+        {
+           safePhi=-(p.x()*sinSPhi-p.y()*cosSPhi);
+        }
+        else
+        {
+           safePhi=(p.x()*sinEPhi-p.y()*cosEPhi);
+        }
+     }
+     else
+     {
+        safePhi = 0.0;  // Distance to both Phi surfaces (extended)
+     }
+
+    safe= std::min(safe, safePhi);
   }
 
   //
   // Distance to Theta extent
   //
-  if ((rds)&&(!fFullThetaSphere))
+  if ( !fFullThetaSphere )
   {
-    pTheta = std::acos(p.z() / rds);
-    if (pTheta < 0)
+    if( rds > 0.0 )
     {
-      pTheta += UUtils::kPi;
-    }
-    dTheta1 = pTheta - fSTheta;
-    dTheta2 = eTheta - pTheta;
-    if (dTheta1 < dTheta2)
-    {
-      safeTheta = rds * std::sin(dTheta1);
+       pTheta=std::acos(p.z()/rds);
+       if (pTheta<0) { pTheta+=UUtils::kPi; }
+       if(fSTheta>0.)
+       { dTheta1=pTheta-fSTheta;}
+       if(eTheta<UUtils::kPi)
+       { dTheta2=eTheta-pTheta;}
+      
+       safeTheta=rds*std::sin(std::min(dTheta1, dTheta2) );
     }
     else
     {
-      safeTheta = rds * std::sin(dTheta2);
+       safeTheta= 0.0;
+         // An improvement will be to return negative answer if outside (TODO)
     }
-    if (safe > safeTheta)
-    {
-      safe = safeTheta;
-    }
+    safe = std::min( safe, safeTheta );
   }
+
 
   if (safe < 0)
   {

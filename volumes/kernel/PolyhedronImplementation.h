@@ -160,6 +160,11 @@ struct PolyhedronImplementation {
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
+  static bool ScalarSegmentContainsKernel(UnplacedPolyhedron const &polyhedron,
+          Vector3D<Precision> const &localPoint, int);
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
   static Inside_t ScalarInsideKernel(
       UnplacedPolyhedron const &polyhedron,
       Vector3D<Precision> const &localPoint);
@@ -507,18 +512,15 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::DistanceToOutZSegment(
   // Check phi cutout if necessary. It is also possible to return here if a
   // result is found
   if (TreatPhi<phiCutoutT>(polyhedron.HasPhiCutout())) {
-    MaskedAssign(!done,
-                 segment.phi.DistanceToIn<Backend, true>(point, direction),
-                 &distance);
-    done = distance < kInfinity;
+    Float_t distphi = segment.phi.DistanceToIn<Backend, true>(point, direction);
+    MaskedAssign(!done && distance>=0., distphi, &distance);
+    done = distance>=0. && distance < kInfinity;
     if (IsFull(done)) return distance;
   }
 
   // Finally check outer shell
-  MaskedAssign(!done,
-               segment.outer.DistanceToOut<Backend>(
-                  point, direction, zMin, zMax),
-               &distance);
+  Float_t distout = segment.outer.DistanceToOut<Backend>(point, direction, zMin, zMax);
+  MaskedAssign(!done, distout, &distance);
 
   return distance;
 }
@@ -715,6 +717,31 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::InPhiCutoutWedge(
 template <Polyhedron::EInnerRadii innerRadiiT,
           Polyhedron::EPhiCutout phiCutoutT>
 VECGEOM_CUDA_HEADER_BOTH
+bool PolyhedronImplementation<innerRadiiT,phiCutoutT>::ScalarSegmentContainsKernel(
+    UnplacedPolyhedron const &polyhedron,
+    Vector3D<Precision> const &localPoint, int segmentIndex) {
+
+  ZSegment const &segment = polyhedron.GetZSegment(segmentIndex);
+
+  // Check that the point is in the outer shell
+  if (!segment.outer.Contains<kScalar>(localPoint)) return false;
+
+  // Check that the point is not in the inner shell
+  if (TreatInner<innerRadiiT>(segment.hasInnerRadius)) {
+    if (segment.inner.Contains<kScalar>(localPoint)) return false;
+  }
+
+  // check phi using the bounding tubes Wegde
+  if( polyhedron.HasPhiCutout() )
+    if (! polyhedron.GetBoundingTube().GetWedge().Contains<kScalar>( localPoint ) )  return false;
+
+  return true;
+}
+
+
+template <Polyhedron::EInnerRadii innerRadiiT,
+          Polyhedron::EPhiCutout phiCutoutT>
+VECGEOM_CUDA_HEADER_BOTH
 bool PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
     UnplacedPolyhedron const &polyhedron,
     Vector3D<Precision> const &localPoint) {
@@ -780,7 +807,8 @@ Inside_t PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarInsideKernel(
 
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
-
+  if(zIndex > (polyhedron.GetZSegmentCount()-1)) zIndex=polyhedron.GetZSegmentCount()-1;
+  if(zIndex < 0) zIndex=0;
   ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
   // Check that the point is in the outer shell
@@ -827,9 +855,10 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
       transformation.TransformDirection(direction);
 
 
-  {
+
     // Check if the point is within the bounding tube
     bool inBounds;
+    {
     Vector3D<Precision> boundsPoint(
         localPoint[0], localPoint[1],
         localPoint[2]-unplaced.GetBoundingTubeOffset());
@@ -854,13 +883,19 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
             return kInfinity;
           }
     }
-  }
+    }
 
   int zIndex = FindZSegment<kScalar>(unplaced, localPoint[2]);
   const int zMax = unplaced.GetZSegmentCount();
   // Don't go out of bounds here, as the first/last segment should be checked
   // even if the point is outside of Z-bounds
   zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax-1 : zIndex);
+
+  // SW: Add a check if actually inside ( required by navigation )
+  // TODO: check if this is optimal way
+  if( inBounds && ScalarSegmentContainsKernel( unplaced,localPoint, zIndex ) ) {
+      return -1.;
+  }
 
   // Traverse Z-segments left or right depending on sign of direction
   bool goingRight = localDirection[2] >= 0;
@@ -947,7 +982,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToOutKernel(
 
   Precision distance = kInfinity;
   if (goingRight) {
-    for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax; ++zIndex) {
+    for (; zIndex < zMax; ++zIndex) {
       distance = DistanceToOutZSegment<kScalar>(
           unplaced,
           zIndex,

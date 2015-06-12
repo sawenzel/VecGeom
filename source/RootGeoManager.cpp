@@ -367,9 +367,9 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
             p->GetPhi1()*kDegToRad,
             p->GetDphi()*kDegToRad,
             p->GetNz(),
+            p->GetZ(),
             p->GetRmin(),
-            p->GetRmax(),
-            p->GetZ());
+            p->GetRmax());
    }
 
    // New volumes should be implemented here...

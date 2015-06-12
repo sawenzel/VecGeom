@@ -178,9 +178,9 @@ fPhiWedge(other.fDphi,other.fSphi)
   }
 
 //#if !defined(VECGEOM_NVCC)
-#ifndef VECGEOM_NVCC
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const;
 
+#ifndef VECGEOM_NVCC
   Vector3D<Precision> GetPointOnSurface() const;
 
   //VECGEOM_CUDA_HEADER_BOTH
@@ -190,28 +190,30 @@ fPhiWedge(other.fDphi,other.fSphi)
 
   //VECGEOM_CUDA_HEADER_BOTH
   Precision SurfaceArea () const {
-	  //return fZ * (fRmax + fRmin) * fDphi + (fRmax2 - fRmin2) * fDphi;
-	  return fDphi * (fRmax + fRmin) * (fRmax - fRmin + fZ);
+      return GetTopArea() + GetLateralPhiArea() + GetLateralROutArea() + GetLateralRInArea();
   }
 
   //VECGEOM_CUDA_HEADER_BOTH
   Precision GetTopArea() const {            // Abhijit:: this is top and bottom circular area of tube
-	  return 0.5 * (fRmax2 - fRmin2) * fDphi;
+      return 2*0.5*(fRmax2 - fRmin2) * fDphi;
   }
 
   //VECGEOM_CUDA_HEADER_BOTH
   Precision GetLateralPhiArea() const {     // Abhijit:: this is vertical Phi_start and phi_end opening
-	  return fZ * (fRmax - fRmin);
+      // factor of 2 since fZ is half length
+      return (fDphi < vecgeom::kTwoPi) ? 4.*fZ*(fRmax - fRmin) : 0.;
   }
 
   //VECGEOM_CUDA_HEADER_BOTH
   Precision GetLateralRInArea() const {    // Abhijit:: this is Inner surface of tube along Z
-	  return fZ * fRmin * fDphi;
+      // factor of 2 since fZ is half length
+      return 2.*fZ*fRmin*fDphi;
   }
 
   //VECGEOM_CUDA_HEADER_BOTH
   Precision GetLateralROutArea() const {  // Abhijit:: this is Outer surface of tube along Z
-	  return fZ * fRmax * fDphi;
+      // factor of 2 since fZ is half length
+      return 2.*fZ*fRmax*fDphi;
   }
 
   //  This computes where the random point would be placed

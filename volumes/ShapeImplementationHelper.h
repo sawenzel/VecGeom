@@ -170,6 +170,12 @@ public:
       localPoint,
       output
     );
+
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareUnplacedContains( this, output, localPoint );
+#endif
+
     return output;
   }
 
@@ -181,6 +187,11 @@ public:
       point,
       output
     );
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareUnplacedContains( this, output, point );
+#endif
+
     return output;
   }
 
@@ -188,7 +199,10 @@ public:
   virtual Precision DistanceToIn(Vector3D<Precision> const &point,
                                  Vector3D<Precision> const &direction,
                                  const Precision stepMax = kInfinity) const {
-    Precision output = kInfinity;
+#ifndef VECGEOM_NVCC
+      assert( direction.IsNormalized() && " direction not normalized in call to  DistanceToIn " );
+#endif
+      Precision output = kInfinity;
     Specialization::template DistanceToIn<kScalar>(
       *this->GetUnplacedVolume(),
       *this->GetTransformation(),
@@ -209,6 +223,9 @@ public:
   virtual Precision DistanceToOut(Vector3D<Precision> const &point,
                                   Vector3D<Precision> const &direction,
                                   const Precision stepMax = kInfinity) const {
+#ifndef VECGEOM_NVCC
+      assert( direction.IsNormalized() && " direction not normalized in call to  DistanceToOut " );
+#endif
     Precision output = kInfinity;
     Specialization::template DistanceToOut<kScalar>(
       *this->GetUnplacedVolume(),
@@ -231,6 +248,9 @@ public:
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point,
                                         Vector3D<Precision> const &direction,
                                         const Precision stepMax = kInfinity) const {
+#ifndef VECGEOM_NVCC
+      assert( direction.IsNormalized() && " direction not normalized in call to  PlacedDistanceToOut " );
+#endif
      Precision output = kInfinity;
      Transformation3D const * t = this->GetTransformation();
      Specialization::template DistanceToOut<kScalar>(
@@ -371,9 +391,9 @@ public:
     }
   }
 
-#ifndef VECGEOM_INTEL
-#pragma GCC push_options
-#pragma GCC optimize ("unroll-loops")
+#if !defined(__clang__) && !defined(VECGEOM_INTEL)
+  #pragma GCC push_options
+  #pragma GCC optimize ("unroll-loops")
 #endif
   VECGEOM_INLINE
   void DistanceToInMinimizeTemplate(SOA3D<Precision> const &points,
@@ -419,7 +439,7 @@ public:
             }
       }
   }
-#ifndef VECGEOM_INTEL
+#if !defined(__clang__) && !defined(VECGEOM_INTEL)
 #pragma GCC pop_options
 #endif
 

@@ -366,11 +366,11 @@ UnplacedOrb const &unplaced,
     Precision fR = unplaced.GetRadius();
     Float_t rad2 = localPoint.Mag2();
     
-    Float_t tolR = fR - ( kSTolerance*10. );
+    Float_t tolR = fR - ( kTolerance );
     if(ForInside)
     completelyinside = (rad2 <= tolR *tolR) ;
     
-    tolR = (fR + ( kSTolerance*10.)); 
+    tolR = (fR + ( kTolerance)); 
     completelyoutside = (rad2 >= tolR *tolR);
     //if( IsFull(completelyoutside) )return;
 
@@ -432,10 +432,10 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     done |= (d2 < 0. || ((localPoint.Mag() > fR) && (pDotV3d > 0.)));
     if(IsFull(done)) return; //Returning in case of no intersection with outer shell
 
-    MaskedAssign(( (Sqrt(rad2) >= (fR - kSTolerance*10.) ) && (Sqrt(rad2) <= (fR + kSTolerance*10.)) && (pDotV3d < 0.) && !done ),0.,&sd1);
-    MaskedAssign( ( (Sqrt(rad2) > (fR + kSTolerance*10.) ) && (tr) && (d2 >= 0.) && pDotV3d < 0.  && !done ) ,(-1.*pDotV3d - Sqrt(d2)),&sd1);
-    distance=sd1;
 
+    MaskedAssign(( (Sqrt(rad2) >= (fR - kTolerance) ) && (Sqrt(rad2) <= (fR + kTolerance)) && (pDotV3d < 0.) && !done ),0.,&sd1);
+    MaskedAssign( ( (Sqrt(rad2) > (fR + kTolerance) ) && (tr) && (d2 >= 0.) && pDotV3d < 0.  && !done ) ,(-1.*pDotV3d - Sqrt(d2)),&sd1);
+    distance=sd1;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -481,8 +481,8 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
    
    Float_t sd1(0.);
    
-   Bool_t cond1 = (Sqrt(rad2) <= (fR + 0.5*kSTolerance*10.)) ;
-   Bool_t cond = (Sqrt(rad2) <= (fR + kSTolerance*10.)) && (Sqrt(rad2) >= (fR - kSTolerance*10.)) && pDotV3d >=0 && cond1;
+   Bool_t cond1 = (Sqrt(rad2) <= (fR + 0.5*kTolerance)) ;
+   Bool_t cond = (Sqrt(rad2) <= (fR + kTolerance)) && (Sqrt(rad2) >= (fR - kTolerance)) && pDotV3d >=0 && cond1;
    done |= cond;
    MaskedAssign(cond ,0.,&sd1);
    

@@ -140,6 +140,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
   return noSurfaces != 0;
  }
+
     Vector3D<Precision> UnplacedCone::GetPointOnSurface() const {
        // implementation taken from UCons; not verified
        //

@@ -185,7 +185,7 @@ static void UnplacedInside(
 
     // inside Z?
     completelyoutside = Abs(point.z()) > MakePlusTolerant<surfaceT>(trd.dz());
-    if(surfaceT) completelyinside = Abs(point.x()) < MakeMinusTolerant<surfaceT>(trd.dz());
+    if(surfaceT) completelyinside = Abs(point.z()) < MakeMinusTolerant<surfaceT>(trd.dz());
 
     // inside X?
     Float_t cross;

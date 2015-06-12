@@ -31,7 +31,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
   : fDz(pDz), fTheta(pTheta), fPhi(pPhi)
   , fDy1(pDy1), fDx1(pDx1), fDx2(pDx2), fTanAlpha1(pTanAlpha1)
   , fDy2(pDy2), fDx3(pDx3), fDx4(pDx4), fTanAlpha2(pTanAlpha2)
-  , fTthetaCphi(0.f), fTthetaSphi(0.f), fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
+  , fTthetaCphi(0.f), fTthetaSphi(0.f), fPlanes()
 {
     // validity check
     if( pDz <= 0 || pDy1 <= 0 || pDx1 <= 0 ||
@@ -55,7 +55,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision pDz, Precision pTheta, Precision 
     : fDz(zbox), fTheta(0.f), fPhi(0.f)
     , fDy1(ybox), fDx1(xbox), fDx2(xbox), fTanAlpha1(0.f)
     , fDy2(ybox), fDx3(xbox), fDx4(xbox), fTanAlpha2(0.f)
-    , fTthetaCphi(0.f), fTthetaSphi(0.f), fbbx(xbox), fbby(ybox), fbbz(zbox), fPlanes()
+    , fTthetaCphi(0.f), fTthetaSphi(0.f), fPlanes()
 {
     // validity check
   if( xbox <= 0 || ybox <= 0 || zbox <= 0 ) {
@@ -83,7 +83,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision const* params )
   , fTanAlpha2(params[10] )
   , fTthetaCphi(0)
   , fTthetaSphi(0)
-  , fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
+  , fPlanes()
 {
   Precision const& theta = params[1];
   Precision const& phi   = params[2];
@@ -96,7 +96,7 @@ UnplacedTrapezoid::UnplacedTrapezoid( TrapCorners_t const corners )
   : fDz(0.f), fTheta(0.f), fPhi(0.f)
   , fDy1(0.f), fDx1(0.f), fDx2(0.f), fTanAlpha1(0.f)
   , fDy2(0.f), fDx3(0.f), fDx4(0.f), fTanAlpha2(0.f)
-  , fTthetaCphi(0.f), fTthetaSphi(0.f), fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
+  , fTthetaCphi(0.f), fTthetaSphi(0.f), fPlanes()
 {
   // check planarity of all four sides
   bool good = MakePlanes(corners);
@@ -120,7 +120,7 @@ UnplacedTrapezoid::UnplacedTrapezoid( UnplacedTrapezoid const& other )
   , fTanAlpha2(other.fTanAlpha2)
   , fTthetaCphi(other.fTthetaCphi)
   , fTthetaSphi(other.fTthetaSphi)
-  , fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
+  , fPlanes()
 {
   MakePlanes();
 }

@@ -21,16 +21,11 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #else // Compiling with USolids compatibility
 
 #include "base/Vector3D.h"
-#include "volumes/PlacedVolume.h"
-#include "UVector3.hh"
 #include "VUSolid.hh"
-
+#include "UVector3.hh"
 #include <string>
 
-#ifdef NDEBUG
-#undef NDEBUG
-#include <cassert>
-#endif
+//class UVector3;
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -61,22 +56,13 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision SafetyToIn(Vector3D<Precision> const &position) const =0;
 
-  virtual double DistanceToOut(Vector3D<double> const &point,
-                               Vector3D<double> const &direction,
-                               Vector3D<double> &normal,
-                               bool &convex,
-                               double stepMax = kInfinity) const
-  {
-      assert(0 &&
-                 "This DistanceToOut interface was not implemented for this volume.");
-          return false;
-  }
+  // these function names are specific to USolids but can be reimplemented in terms of
+  // other interfaces:
 
   virtual double DistanceToOut(Vector3D<double> const &point,
                                Vector3D<double> const &direction,
                                Vector3D<double> &normal,
-                               bool &convex) const
-  {
+                               bool &convex) const {
     return DistanceToOut(point, direction,normal, convex, kInfinity);
   }
 
@@ -90,48 +76,25 @@ public:
     return SafetyToOut(point);
   }
 
-  virtual bool Normal(Vector3D<double> const &point,
-                      Vector3D<double> &normal) const {
+  // the following functions are somewhat USolid specific
+  // a default (asserting) implementation is implemented in USolidsInterfaceHelper.cpp
+  virtual double DistanceToOut(Vector3D<double> const &point,
+                                 Vector3D<double> const &direction,
+                                 Vector3D<double> &normal,
+                                 bool &convex,
+                                 double stepMax = kInfinity) const;
 
-    assert(0 &&
-           "Normal not implemented for USolids interface compatible volume.");
-    return false;
-  }
+  virtual std::string GetEntityType() const;
 
-  virtual std::string GetEntityType() const {
-    assert(0 && "GetEntityType not implemented for USolids interface compatible"
-                " volume.");
-    return std::string();
-  }
+  virtual void GetParametersList(int number, double *array) const;
 
-  virtual void GetParametersList(int number, double *array) const {
-    assert(0 && "GetParameterList not implemented for USolids interface"
-                " compatible volume.");
-  }
+  virtual VUSolid* Clone() const;
 
-  virtual VUSolid* Clone() const {
-    assert(0 && "Clone not implemented for USolids interface compatible"
-                " volume.");
-    return NULL;
-  }
+  virtual std::ostream& StreamInfo(std::ostream &os) const;
 
-  virtual std::ostream& StreamInfo(std::ostream &os) const {
-    assert(0 && "StreamInfo not implemented for USolids interface compatible"
-                " volume.");
-    return os;
-  }
+  virtual UVector3 GetPointOnSurface() const;
 
-  virtual UVector3 GetPointOnSurface() const {
-    assert(0 && "GetPointOnSurface not implemented for USolids interface"
-                " compatible volume.");
-    return UVector3();
-  }
-
-  virtual void ComputeBBox(UBBox *aBox, bool aStore = false) {
-    assert(0 && "ComputeBBox not implemented for USolids interface compatible"
-                " volume.");
-  }
-
+  virtual void ComputeBBox(UBBox *aBox, bool aStore = false);
 
 
 };

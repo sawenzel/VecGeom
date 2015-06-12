@@ -37,9 +37,10 @@ int main()
     UnplacedPolycone poly1( 0.,    /* initial phi starting angle */
             kTwoPi,    /* total phi angle */
             Nz,        /* number corners in r,z space */
-            rmin,   /* r coordinate of these corners */
-            rmax,
-            z);
+	    z,
+	    rmin,   /* r coordinate of these corners */
+            rmax
+            );
 
     poly1.Print();
 
@@ -77,9 +78,9 @@ int main()
 
      // test DistanceToIn
     assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,-3.) , Vec3D_t(0.,0.,1.)) == 2.5 );
-    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,-2.) , Vec3D_t(0.,0.,-1.)) == kInfinity );
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,-2.) , Vec3D_t(0.,0.,-1.)) == vecgeom::kInfinity );
     assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,3) , Vec3D_t(0.,0.,-1.)) == 2.5 );
-    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,3) , Vec3D_t(0.,0.,1.)) == kInfinity );
+    assert( placedpoly1-> DistanceToIn( Vec3D_t(0.,0.,3) , Vec3D_t(0.,0.,1.)) == vecgeom::kInfinity );
     assert( placedpoly1-> DistanceToIn( Vec3D_t(3.,0.,0) , Vec3D_t(-1.,0.,0.)) == 1 );
     assert( std::fabs(placedpoly1-> DistanceToIn( Vec3D_t(0.,0., 1.999999999) , Vec3D_t(1.,0.,0.)) -0.4)<1000.*kTolerance );
 

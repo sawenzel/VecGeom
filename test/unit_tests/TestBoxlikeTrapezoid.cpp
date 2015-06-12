@@ -5,7 +5,7 @@
 //     where both VecGeom's and USolids' trapezoids pass the tests.
 //     The USolids trapezoid fails more detailed tests in TestTrap.cpp
 
-#undef NDEBUG
+
 
 #include "base/Vector3D.h"
 #include "volumes/Trapezoid.h"
@@ -14,9 +14,11 @@
 #include "UTrap.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
+
+#undef NDEBUG
+#include <cassert>
+
 
 template <class Trapezoid_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 bool TestTrapezoid() {
@@ -40,8 +42,7 @@ bool TestTrapezoid() {
     double Dist;
     Vec_t norm;
     bool convex;
-    convex = convex;
-   
+    
     Trapezoid_t trap1("Test Trapezoid #1",40.,0.,0.,30.,20.,20.,0.,30.,20.,20.,0.);
     Trapezoid_t trap2("Test Trapezoid #2",10.,0.,0.,10.,10.,10.,0.,10.,10.,10.,0.);
     Trapezoid_t trap3("Trapezoid #3",22.699999999999999,0,0,

@@ -56,14 +56,15 @@ if (USOLIDS)
 endif()
 
 if (GEANT4)
-  if (BENCHMARK)
-    set(Geant4 ON)
-  else()
-    message(WARNING
-      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
-    set(GEANT4 OFF)
-    set(Geant4 OFF)
-  endif()
+#  if (BENCHMARK)
+#    set(Geant4 ON)
+#  else()
+#    message(WARNING
+#      "Enabling Geant4 without benchmarks has no effect and will be disabled.")
+#    set(GEANT4 OFF)
+#    set(Geant4 OFF)
+#  endif()
+   set(Geant4 ON)
 endif()
 
 if (NOT BACKEND)
@@ -134,7 +135,7 @@ set(VECGEOM_NVCC_COMPILATION_FLAGS)
 set(VECGEOM_COMPILATION_FLAGS
     "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weffc++ -ggdb")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")
   if (APPLE OR UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
   else()
@@ -426,6 +427,9 @@ set(SRC_CPP_RELATIVE
   source/UnplacedPolycone.cpp
   source/PlacedPolycone.cpp
   source/Wedge.cpp
+  #source/ABBoxManager.cpp
+
+  source/USolidsInterfaceHelper.cpp
 )
 foreach(SRC ${SRC_CPP_RELATIVE})
   set(SRC_CPP ${SRC_CPP} ${CMAKE_SOURCE_DIR}/${SRC})
@@ -440,18 +444,19 @@ if (CUDA)
 
     get_filename_component(SRC_FILENAME ${SRC_FILE} NAME_WE)
 
-    ADD_CUSTOM_COMMAND(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
-          ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-      DEPENDS ${SRC_FILE}
-    )
+    if (NOT "${SRC_FILENAME}" STREQUAL "ABBoxManager") 
+      ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+        COMMAND ${CMAKE_COMMAND} -E copy ${SRC_FILE}
+            ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+        DEPENDS ${SRC_FILE}
+      )
 
-    set(
-      SRC_CUDA ${SRC_CUDA}
-      ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
-    )
-
+      set(
+        SRC_CUDA ${SRC_CUDA}
+        ${CMAKE_CURRENT_BINARY_DIR}/cuda_src/${SRC_FILENAME}.cu
+      )
+    endif()
   endforeach()
 
 endif()
@@ -467,7 +472,6 @@ if (BENCHMARK)
   set(SRC_CPP ${SRC_CPP}
     source/benchmarking/BenchmarkResult.cpp
     source/benchmarking/Benchmarker.cpp
-    source/benchmarking/NavigationBenchmarker.cpp
     source/benchmarking/VolumePointers.cpp
   )
   set(SRC_CUDA ${SRC_CUDA}
@@ -479,6 +483,7 @@ set(SRC_CPP ${SRC_CPP} ${SRC_EXTERNAL}
   source/GeoManager.cpp
   source/ShapeDebugger.cpp
   source/CppExporter.cpp
+  source/benchmarking/NavigationBenchmarker.cpp
 )
 
 # some CUDA kernel code in "userspace"
@@ -549,12 +554,14 @@ set(TEST_EXECUTABLES_CORE
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
+	${CMAKE_SOURCE_DIR}/test/core/ThetaConeTest.cpp
   ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp      
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestVecGeomPolycone.cpp
 )
 
 
 set(TEST_EXECUTABLES_ROOT
+#<<<<<<< HEAD
   #${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
   #${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
   #${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
@@ -568,7 +575,32 @@ set(TEST_EXECUTABLES_ROOT
   # higher level benchmarks
   #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
   #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
+#=======
+  #${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/root_geometry.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/ImportFromRootFileTest.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
+  #${CMAKE_SOURCE_DIR}/test/root/ExitingOrEntering.cpp
+  # higher level benchmarks
+  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
+  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
+  #${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
+#>>>>>>> master
 )
+# separate list for ROOT UNIT tests
+set(TEST_UNITTESTEXECUTABLES_ROOT
+  ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/E03Test.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
+  ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
+  ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
+)
+
+
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
   ${TEST_EXECUTABLES_ROOT}
@@ -586,13 +618,14 @@ set(TEST_EXECUTABLES_VISUALIZATION
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/visualization/DebugPolyhedron.cpp
 )
+
 set(TEST_EXECUTABLES_USOLIDS
   ${CMAKE_SOURCE_DIR}/test/usolids/CompatibilityTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBox.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere.cpp
-${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere2.cpp
+#${CMAKE_SOURCE_DIR}/test/unit_tests/newTestSphere2.cpp
 #${CMAKE_SOURCE_DIR}/test/unit_tests/geantHype.cpp
 #${CMAKE_SOURCE_DIR}/test/unit_tests/newTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
@@ -613,12 +646,12 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestPolycone.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestPolyhedra.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestTet.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
-  #${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestOrb.cpp
+  ${CMAKE_SOURCE_DIR}/test/unit_tests/TestSphere.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestBoxlikeTrapezoid.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/usolidTest.cpp
-    
 )
+
 set(TEST_EXECUTABLES_BENCHMARK
   ${CMAKE_SOURCE_DIR}/test/benchmark/BoxBenchmark.cpp
   #${CMAKE_SOURCE_DIR}/test/benchmark/ParaboloidBenchmark.cpp
@@ -659,8 +692,15 @@ set(TEST_EXECUTABLES_SHAPETESTER
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testTrapezoid.cpp
   # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testParaboloid.cpp
   ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testPolycone.cpp 
-  # ${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
 )
+
+if(ROOT) # add shape testers that depend on ROOT
+  set(TEST_EXECUTABLES_SHAPETESTER
+  ${TEST_EXECUTABLES_SHAPETESTER}
+  #${CMAKE_SOURCE_DIR}/test/shape_tester/shape_testFromROOTFile.cpp 
+)
+endif()
+
 set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CORE}
   ${TEST_EXECUTABLES_ROOT}
@@ -708,23 +748,46 @@ build_executables("${TEST_EXECUTABLES_CORE}")
 add_to_ctest("${TEST_EXECUTABLES_CORE}")
 if (BENCHMARK)
   build_executables("${TEST_EXECUTABLES_BENCHMARK}")
-  add_to_ctest("${TEST_EXECUTABLES_BENCHMARK}")
 endif()
 if (ROOT)
   build_executables("${TEST_EXECUTABLES_ROOT}")
-  add_to_ctest("${TEST_EXECUTABLES_ROOT}")
   build_executables("${TEST_EXECUTABLES_VISUALIZATION}")
+  add_to_ctest("${TEST_UNITTESTEXECUTABLES_ROOT}")
 endif()
 if (USolids)
   build_executables("${TEST_EXECUTABLES_USOLIDS}")
   build_executables("${TEST_EXECUTABLES_SHAPETESTER}")
-  add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
-  add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
+  #add_to_ctest("${TEST_EXECUTABLES_USOLIDS}")
+  #add_to_ctest("${TEST_EXECUTABLES_SHAPETESTER}")
+
+  # add unit tests
+  add_test(NAME USolidBox COMMAND TestBox --usolids)
+  add_test(NAME VecGeomBox COMMAND TestBox --vecgeom)
+  add_test(NAME USolidTube COMMAND TestTube --usolids)
+  add_test(NAME VecTube COMMAND TestTube --vecgeom)
+
 endif()
 if (CUDA)
   build_executables("${TEST_EXECUTABLES_CUDA}")
-  add_to_ctest("${TEST_EXECUTABLES_CUDA}")
+#  add_to_ctest("${TEST_EXECUTABLES_CUDA}")
 endif()
+
+macro(add_cmsshapevalidation_test TESTNAME SHAPEFILE)
+  add_test(NAME ${TESTNAME} COMMAND bash -c "${CMAKE_SOURCE_DIR}/test/scripts/RunRandomValidation ${CMAKE_BINARY_DIR}/BenchmarkShapeFromROOTFile  ${CMAKE_SOURCE_DIR}/test/cmstestdata/cms2015.root  ${CMAKE_SOURCE_DIR}/test/cmstestdata/${SHAPEFILE}" )
+endmacro()
+
+# Adding various shapes tests for nightlies
+add_cmsshapevalidation_test( tubevalidation cmstubes.txt )
+add_cmsshapevalidation_test( trapvalidation cmstraps.txt )
+add_cmsshapevalidation_test( polyconevalidation cmspolycones.txt )
+add_cmsshapevalidation_test( polyhedravalidation cmspolyhedra.txt )
+add_cmsshapevalidation_test( conevalidation cmscones.txt )
+add_cmsshapevalidation_test( boxvalidation cmsboxes.txt )
+#taken out due to problems: add_cmsshapevalidation_test( booleanvalidation cmsbooleans.txt )
+#taken out due to Issue-133: add_cmsshapevalidation_test( torusvalidation cmstori.txt )
+
+
+
 #---------------------------------------------------------------------------
 # Include creation and submission to dashboard cdash.cern.ch
 
@@ -733,43 +796,79 @@ include(CTest)
 #---------------------------------------------------------------------------
 # Set data to be dowloaded
 
-message(STATUS "Downloading data files")
 if(DATA_DOWNLOAD)
- set(DATA_URL "http://mnovak.web.cern.ch/mnovak/data/ExN03.root")
- set(EXPECTED_MD5SUM "b6b0cfdd5035117171bfe1b7f1f40c3f")
+  message(STATUS "Downloading data files")
 
- function(DATA_DOWNLOAD)
-    set(DATA_FILE ExN03.root)
-    if(APPLE)
-      execute_process(COMMAND curl -o ${DATA_FILE} ${DATA_URL})
-    else()  
-      execute_process(COMMAND wget -q ${DATA_URL} -O ${DATA_FILE})
-    endif()
- endfunction(DATA_DOWNLOAD)
+  # define a function downloading from a URL into a local file LOCALFILE
+  function(FILE_DOWNLOAD FILE_URL LOCALFILE ) 
+   if(APPLE)
+       execute_process(COMMAND curl -o ${LOCALFILE} ${FILE_URL})
+   else()  
+      execute_process(COMMAND wget -q ${FILE_URL} -O ${LOCALFILE})
+   endif()
+  endfunction(FILE_DOWNLOAD)
+  # end of function FILE DOWNLOAD
 
- message(STATUS "Searching for already downloaded data file(s)")
- find_file(DATA_FILE ExN03.root ${CMAKE_BINARY_DIR})
- if(DATA_FILE STREQUAL "DATA_FILE-NOTFOUND")
-    message("File not found: ExN03.root")
-    DATA_DOWNLOAD()
- else()
-    message("File found:" ${DATA_FILE})
-    if(APPLE)
-      execute_process(COMMAND md5 ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
-      string(LENGTH ${MD5SUM} MD5LENGTH)
-      MATH(EXPR START "${MD5LENGTH} - 33")
-      string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)         
+  # define a function checking md5 hashes
+  # result is stored in MD5MATCHES ( 1 == true, 0 == false )
+  function(CHECKMD5 FILETOCHECK EXPECTEDMD5HASH MD5MATCHES)
+      if(APPLE)
+          execute_process(COMMAND md5 ${FILETOCHECK} OUTPUT_VARIABLE MD5SUM)
+          string(LENGTH ${MD5SUM} MD5LENGTH)
+          MATH(EXPR START "${MD5LENGTH} - 33")
+          string(SUBSTRING ${MD5SUM} ${START} 32 MD5SUM)
+      else()
+          execute_process(COMMAND md5sum ${FILETOCHECK} OUTPUT_VARIABLE MD5SUM)
+          string(SUBSTRING ${MD5SUM} 0 32 MD5SUM)
+      endif()
+      if(MD5SUM STREQUAL EXPECTEDMD5HASH)
+        set(${MD5MATCHES} 1 PARENT_SCOPE)
+      else()
+        set(${MD5MATCHES} 0 PARENT_SCOPE)
+      endif()
+  endfunction(CHECKMD5)
+
+  # actual function for managing the download
+  function(DOWNLOAD_IF_NOT_INSTALLED FILE_URL LOCALFILE TARGETPATH MD5HASH )
+    find_file(FOUNDFILE ${LOCALFILE} ${TARGETPATH} )
+    if(FOUNDFILE STREQUAL "FOUNDFILE-NOTFOUND")
+        # set need download
+        message(STATUS "need download of ${LOCALFILE} since not found")
+        set( NEEDTODOWNLOAD 1 )
     else()
-  execute_process(COMMAND md5sum ${DATA_FILE} OUTPUT_VARIABLE MD5SUM)
-      string(SUBSTRING ${MD5SUM} 0 32 MD5SUM)
+        # check md5
+        message(STATUS "found existing file ${LOCALFILE}")
+        CHECKMD5( ${FOUNDFILE} ${MD5HASH} MD5CORRECT )
+        if( ${MD5CORRECT} STREQUAL "1" )
+            # do not set download flag   
+            set( NEEDTODOWNLOAD 0 )
+        else( )
+            # set need download
+            message(STATUS "hash ${MD5HASH} not correct for file ${FOUNDFILE} ${MD5CORRECT}" )
+            set( NEEDTODOWNLOAD 1 )
+        endif( )
     endif()
-    if(MD5SUM STREQUAL EXPECTED_MD5SUM)
-        message("MD5sum of file is matching")
+  
+    if( ${NEEDTODOWNLOAD} STREQUAL 1 )
+        message(STATUS " downloading ... ")
+        set(DOWNLOADLOCATION "${TARGETPATH}/${LOCALFILE}")
+        FILE_DOWNLOAD( ${FILE_URL} ${DOWNLOADLOCATION} )
     else()
-        message("MD5sum of file is not matching " ${EXPECTED_MD5SUM})
-        DATA_DOWNLOAD()
+        message(STATUS " doing nothing ... ")
     endif()
- endif()
+    # in principle have to check now if download succeeded and has right MD5
+    # TOBEDONE
+    
+    # this is annoying but we have to clear FOUNDFILE SINCE THIS IS TREATED LIKE A STATIC VARIABLE
+    unset(FOUNDFILE CACHE)
+  endfunction(DOWNLOAD_IF_NOT_INSTALLED)
+  
+  DOWNLOAD_IF_NOT_INSTALLED( "http://mnovak.web.cern.ch/mnovak/data/cms2015.root" "cms2015.root" 
+                             "${CMAKE_SOURCE_DIR}/test/cmstestdata/" "fb3ede867532b372c5e6f7138d00c07e" )
+  DOWNLOAD_IF_NOT_INSTALLED( "http://mnovak.web.cern.ch/mnovak/data/ExN03.root" "ExN03.root"
+                             "${CMAKE_BINARY_DIR}"                   "b6b0cfdd5035117171bfe1b7f1f40c3f" )
+  # add more data to download here
+  #  
 endif()
 
 

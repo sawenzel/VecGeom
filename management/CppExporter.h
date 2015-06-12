@@ -13,6 +13,7 @@
 #include <ostream>
 #include <set>
 #include <list>
+#include <vector>
 
 // Compile for vecgeom namespace to work as interface
 namespace vecgeom {
@@ -66,9 +67,15 @@ private:
     std::list< LogicalVolume const * > fListofDeferredLogicalVolumes;
 
 
-    void DumpTransformations( std::ostream &, std::list< Transformation3D const * > const & );
-    void DumpLogicalVolumes( std::ostream &, std::list< LogicalVolume const * >  const & );
-    void DumpGeomHierarchy( std::ostream &, std::list< LogicalVolume const * > const & );
+    void DumpTransformations( std::vector< std::stringstream *> &,
+                              std::stringstream &,
+                              std::vector< std::stringstream *> &,
+                              std::list< Transformation3D const * > const & );
+    void DumpLogicalVolumes( std::ostream &,
+                             std::ostream & /* extern decl */,
+                             std::ostream & /* lvol definitions */,
+                             std::list< LogicalVolume const * >  const & );
+    void DumpGeomHierarchy( std::vector< std::stringstream *> &, std::list< LogicalVolume const * > const & );
     void DumpHeader( std::ostream & );
 
     void DumpEntryFunction();

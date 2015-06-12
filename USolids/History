@@ -15,6 +15,15 @@ committal in the SVN repository !
      ----------------------------------------------------------
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
+May 27,  2015  T.Nikitina                     
+- Fixed Coverity defect for unused variable quantity in UCons.
+
+May 22, 2015  T.Nikitina
+- Fixed DistanceToOut(p) and Inside(p) in USphere for sphere cut in theta
+  for point (0,0,0) and for cases when Start/End angle have not to be taken
+  in account (STheta==0 || eTheta==pi).
+  Added corresponding test cases to unit test for Sphere.
+  Fix triggered by analysing setup provided in Geant4 problem report #1702.
 
 March 27, 2014  G.Cosmo
 - Removed unused SaveVectorToExternalFile() methods in UUtils, also

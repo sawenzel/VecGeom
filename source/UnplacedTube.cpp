@@ -6,8 +6,10 @@
 #include "backend/Backend.h"
 #ifndef VECGEOM_NVCC
   #include "base/RNG.h"
-#include <cassert>
 #include <cmath>
+
+#undef NDEBUG
+#include <cassert>
 #endif
 
 #include "volumes/utilities/GenerationUtilities.h"
@@ -119,7 +121,7 @@ Vector3D<Precision> UnplacedTube::GetPointOnSurface() const
     int surface = ChooseSurface();
     Precision rVal   = RNG::Instance().uniform(rmin(), rmax());
     Precision phiVal = RNG::Instance().uniform(sphi(), sphi() + dphi());
-    Precision zVal   = RNG::Instance().uniform() * z();
+    Precision zVal   = RNG::Instance().uniform() * 2.0 * z() - z();
 
     switch (surface) {
         case 0: zVal =  z(); break;
@@ -137,65 +139,92 @@ Vector3D<Precision> UnplacedTube::GetPointOnSurface() const
 }
 
 bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
-	int nosurface = 0;  // idea from trapezoid;; change nomenclature as confusing
+    int nosurface = 0;  // idea from trapezoid;; change nomenclature as confusing
 
-	Precision x2y2 = Sqrt(point[0]*point[0] + point[1]*point[1]);
-	Precision fiVal = Sqrt(atan2(point[1],point[0]));
-	Precision thisZ = point[2];
-	Precision rmX = rmax();
-	Precision rmN = rmin();
-	Precision fi1 = sphi();
-	Precision fi2 = sphi() + dphi();
-	Precision zVal = z();
-	bool onSurf(false);
-	bool inZ = ((thisZ < zVal) && (thisZ > -zVal));
-	bool annul = ((x2y2 >= rmN) && (x2y2 <= rmX));
+    Precision x2y2 = Sqrt(point.x()*point.x() + point.y()*point.y());
+    bool inZ = ((point.z() < fZ + kTolerance ) && (point.z() > -fZ-kTolerance)); // in right z range
+    bool inR = ((x2y2 >= fRmin) && (x2y2 <= fRmax)); // in right r range
+    // bool inPhi = fWedge.Contains(point);
 
-	// is the point on the surface?
-	onSurf = ((Abs(x2y2 - rmN) <= kTolerance) && inZ);              // inner
-	onSurf |= ((Abs(x2y2 - rmX) <= kTolerance) && inZ);    // outer
-	onSurf |= (annul && (Abs(thisZ - zVal) <= kTolerance)); // top
-	onSurf |= (annul && (Abs(thisZ + zVal) <= kTolerance)); // bottom
-	onSurf |= (annul && (Abs(fiVal - fi1) <= kTolerance));  // left i.e. sphi()
-	onSurf |= (annul && (Abs(fiVal - fi2) <= kTolerance));  // right i.e. sphi() + dphi()
+    // is the point on the surface?
+    // Do WE REALLY NEED TO CHECK THIS?? THE CALLEE CAN CHECK IT IF HE LIKES TO...
+    // The contract should be that the input to this function is on the surfaces
+    // hence:: assert( IsOnSurface ... might be appropriate )
+    //onSurf =  ((Abs(x2y2 - fRmin) <= kTolerance) && inZ);  // inner
+    //onSurf |= ((Abs(x2y2 - fRmax) <= kTolerance) && inZ); // outer
+    //onSurf |= (annul && (Abs(point.z() - fZ) <= kTolerance)); // top
+    //onSurf |= (annul && (Abs(point.z() + fZ) <= kTolerance)); // bottom
+    //onSurf |= (annul && (Abs(fiVal - fi1) <= kTolerance));  // left i.e. sphi()
+    //onSurf |= (annul && (Abs(fiVal - fi2) <= kTolerance));  // right i.e. sphi() + dphi()
 
-	if (onSurf && annul && (abs(thisZ - zVal) <= kTolerance))  { // top lid, normal along +Z
-		norm[0] = 0.0;
-		norm[1] = 0.0;
-		norm[2] = x2y2;
-		nosurface++;
-	}
-	if (onSurf && annul && (abs(thisZ + zVal) <= kTolerance))  {  // bottom base, normal along -Z
-		norm[0] = 0.0;
-		norm[1] = 0.0;
-		norm[2] = -x2y2;
-		nosurface++;
-	}
-	if (onSurf && inZ &&(abs(x2y2 - rmN) <= kTolerance)) { // inner tube wall, normal  towards center
-		norm[0] = -point[0];
-		norm[1] = -point[1];   // -ve due to inwards
-		norm[2] = 0.0;
-		nosurface++;
-	}
-	if (onSurf && inZ && (abs(x2y2 - rmX) <= kTolerance)) { // outer tube wall, normal outwards
-		norm[0] = point[0];
-		norm[1] = point[1];
-		norm[2] = 0.0;
-		nosurface++;
-	}
-	if (onSurf && annul && inZ && (abs(fiVal - fi1) <= kTolerance)) { // normal at fi openings
-		norm[0] = sin(fi1);
-		norm[1] = -cos(fi1);
-		norm[2] = 0.0;
-		nosurface++;
-	}
-	if (onSurf && annul && inZ && (abs(fiVal - fi2) <= kTolerance)) { // normal at fi openings
-		norm[0] = -sin(fi2);
-		norm[1] = cos(fi2);
-		norm[2] = 0.0;
-		nosurface++;
-	}
-	return nosurface != 0; // this is for testing only
+    // can we combine these two into one??
+    if ( inR && (Abs(point.z() - fZ) <= kTolerance))  { // top lid, normal along +Z
+        norm[0] = 0.;
+        norm[1] = 0.;
+        norm[2] = 1.;
+        nosurface++;
+    }
+    if ( inR && (Abs(point.z() + fZ) <= kTolerance))  {  // bottom base, normal along -Z
+        if( nosurface > 0){
+        // norm exists already; just add to it
+        norm[2] += -1;
+        }
+        else{
+            norm[0] = 0.0;
+            norm[1] = 0.0;
+            norm[2] = -1;
+        }
+        nosurface++;
+    }
+    if( fRmin > 0. ){
+        if ( inZ && (Abs(x2y2 - fRmin) <= kTolerance)) { // inner tube wall, normal  towards center
+            Precision invx2y2 = 1./x2y2;
+            if(nosurface == 0){
+                norm[0] = -point[0]*invx2y2;
+                norm[1] = -point[1]*invx2y2;   // -ve due to inwards
+                norm[2] = 0.0;
+            }
+            else {
+                norm[0] += -point[0]*invx2y2;
+                norm[1] += -point[1]*invx2y2;
+            }
+            nosurface++;
+        }
+    }
+    if ( inZ && (Abs(x2y2 - fRmax) <= kTolerance)) { // outer tube wall, normal outwards
+        Precision invx2y2 = 1./x2y2;
+        if(nosurface > 0){
+            norm[0] += point[0]*invx2y2;
+            norm[1] += point[1]*invx2y2;
+        }
+        else
+        {
+            norm[0] = point[0]*invx2y2;
+            norm[1] = point[1]*invx2y2;
+            norm[2] = 0.0;
+        }
+        nosurface++;
+    }
+
+    // otherwise we get a normal from the wedge
+    if( fDphi < vecgeom::kTwoPi ){
+        if (inR && fPhiWedge.IsOnSurface1(point)){
+            if( nosurface == 0)
+                norm = -fPhiWedge.GetNormal1();
+            else
+                norm += -fPhiWedge.GetNormal1();
+             nosurface++;
+        }
+        if (inR && fPhiWedge.IsOnSurface2(point)){
+            if ( nosurface == 0)
+                norm = -fPhiWedge.GetNormal2();
+            else
+                norm += -fPhiWedge.GetNormal2();
+            nosurface++;
+        }
+    }
+    if( nosurface > 1) norm=norm/std::sqrt(nosurface);
+    return nosurface != 0; // this is for testing only
 }
 
 /*
@@ -209,6 +238,7 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
   }
 
   */
+#endif
 
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedTube::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
@@ -264,7 +294,6 @@ bool UnplacedTube::Normal(Vector3D<Precision> const& point, Vector3D<Precision>&
 
     return;
   }
-#endif
 
 
 #ifdef VECGEOM_CUDA_INTERFACE

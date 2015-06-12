@@ -48,8 +48,16 @@ ENDIF(NOT DEFINED CTEST_SITE)
 #######################################################
 set(WITH_MEMCHECK FALSE)
 set(WITH_COVERAGE FALSE)
-
+set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE "5000")
+set(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE "5000")
 #######################################################
+#set(CTEST_USE_LAUNCHERS 1)
+#if(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
+#  set(CTEST_USE_LAUNCHERS 0)
+#endif()
+#set(ENV{CTEST_USE_LAUNCHERS_DEFAULT} ${CTEST_USE_LAUNCHERS})
+
+######################################################
 # CTest/CMake settings 
 
 set(CTEST_TEST_TIMEOUT 3600)
