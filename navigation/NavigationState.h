@@ -136,6 +136,7 @@ public:
       return Base_t::MakeInstance(maxlevel+1);
    }
 
+   VECGEOM_CUDA_HEADER_BOTH
    static NavigationState *MakeInstanceAt(int maxlevel, void *addr) {
       // MaxLevel is 'zero' based (i.e. maxlevel==0 requires one value)
       return Base_t::MakeInstanceAt(maxlevel+1, addr);
