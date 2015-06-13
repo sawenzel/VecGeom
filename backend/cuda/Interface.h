@@ -25,10 +25,17 @@ void ConstructOnGpu(DataClass *gpu_ptr, ArgsTypes... params) {
    new (gpu_ptr) DataClass(params...);
 }
 
-template <typename DataClass>
+ template <typename DataClass, typename... ArgsTypes>
 __global__
-void ConstructArrayOnGpu(DataClass *gpu_ptr, size_t nElements) {
-   new (gpu_ptr) DataClass[nElements];
+void ConstructArrayOnGpu(DataClass *gpu_ptr, size_t nElements, ArgsTypes... params) {
+
+   unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+   unsigned int idx = tid;
+   while(idx < nElements) {
+      new (gpu_ptr+idx) DataClass(params...);
+      idx += blockDim.x * gridDim.x;
+   }
 }
 
 template <typename DataClass, typename... ArgsTypes>
@@ -256,9 +263,9 @@ public:
    }
 
    template <typename... ArgsTypes>
-   void ConstructArray(size_t nElements) const
+   void ConstructArray(size_t nElements, ArgsTypes... params) const
    {
-      ConstructArrayOnGpu<<<1, 1>>>( this->GetPtr(), nElements);
+      ConstructArrayOnGpu<<<nElements, 1>>>( this->GetPtr(), nElements, params...);
    }
 
    static size_t SizeOf()
@@ -269,7 +276,8 @@ public:
 #else
   template <typename... ArgsTypes>
      void Construct(ArgsTypes... params) const;
-  void ConstructArray(size_t nElements) const;
+  template <typename... ArgsTypes>
+     void ConstructArray(size_t nElements, ArgsTypes... params) const;
 
   static size_t SizeOf();
 #endif
@@ -310,6 +318,12 @@ public:
       ConstructOnGpu<<<1, 1>>>(*(*this), params...);
    }
 
+   template <typename... ArgsTypes>
+   void ConstructArray(size_t nElements, ArgsTypes... params) const
+   {
+      ConstructArrayOnGpu<<<nElements, 1>>>( this->GetPtr(), nElements, params...);
+   }
+
    static size_t SizeOf()
    {
       return sizeof(Type);
@@ -317,7 +331,9 @@ public:
 
 #else
    template <typename... ArgsTypes>
-   void Construct(ArgsTypes... params) const;
+     void Construct(ArgsTypes... params) const;
+   template <typename... ArgsTypes>
+     void ConstructArray(size_t nElements, ArgsTypes... params) const;
 
    static size_t SizeOf();
 #endif
