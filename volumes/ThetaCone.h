@@ -603,12 +603,28 @@ class ThetaCone{
 
             typedef typename Backend::precision_v Float_t;
             typedef typename Backend::bool_v Bool_t;
-            Bool_t fal(false);
+            Bool_t fal(false),tr(true);
 	Float_t pi(kPi),zero(0.);
 	Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
 	Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
 	Float_t cone2Radius = Abs(localPoint.z()*tanETheta);
-	completelyoutside=(localPoint.z()==0 && (localPoint.x()!=0. || localPoint.y()!=0.));
+	Bool_t isPointOnZAxis = localPoint.z()!=zero && localPoint.x()==zero && localPoint.y()==zero;
+	
+	Bool_t isPointOnXYPlane = localPoint.z()==zero && (localPoint.x()!=zero || localPoint.y()!=zero) ;
+	
+	Float_t startTheta(fSTheta),endTheta(fETheta);
+														
+	
+	completelyoutside = (isPointOnZAxis && ((startTheta!=zero && endTheta!=pi) || (localPoint.z()>zero && startTheta!=zero ) || (localPoint.z()<zero && endTheta!=pi))) ;
+	
+	completelyinside = (isPointOnZAxis && ((startTheta==zero && endTheta==pi) || (localPoint.z()>zero && startTheta==zero) || (localPoint.z()<zero && endTheta==pi) ));
+	
+	MaskedAssign(!completelyoutside,(isPointOnXYPlane && ((startTheta<pi/2 && endTheta<pi/2 && (pi/2 - startTheta)>kAngTolerance && (pi/2 - endTheta)>kTolerance)
+		|| (startTheta>pi/2 && endTheta>pi/2 && (startTheta-pi/2)>kAngTolerance && (endTheta-pi/2)>kTolerance))),&completelyoutside);
+	
+		
+	MaskedAssign(!completelyinside, (isPointOnXYPlane && (startTheta<pi/2 && endTheta>pi/2 && (pi/2 - startTheta)>kAngTolerance && (endTheta-pi/2)>kTolerance)),&completelyinside);	
+		 
 	if(fSTheta < kPi/2 + halfAngTolerance )
               {
                   if(fETheta < kPi/2 + halfAngTolerance)
@@ -619,13 +635,18 @@ class ThetaCone{
             		Float_t tolAngMax = cone2Radius - 2*kAngTolerance*10.;
 			if(ForInside)
             {
-                	completelyinside = ((rad <= tolAngMax) && (rad >= tolAngMin) && (localPoint.z() > zero) && (fSTheta!=zero)) || ((rad <= tolAngMax) && (fSTheta==zero));
+    
+                	MaskedAssign(!completelyinside,( ((rad <= tolAngMax) && (rad >= tolAngMin) && (localPoint.z() > zero) && (fSTheta!=zero)) || ((rad <= tolAngMax) && (fSTheta==zero) && (localPoint.z() > zero) )  ),&completelyinside);
+    
 
             }
 
             		Float_t tolAngMin2 = cone1Radius - 2*kAngTolerance*10.;
             		Float_t tolAngMax2 = cone2Radius + 2*kAngTolerance*10.;
+    
 			MaskedAssign(!completelyoutside,((rad < tolAngMin2) || (rad > tolAngMax2) || (localPoint.z() < 0.)),&completelyoutside);
+	
+					
             }
 		  }
 
@@ -635,23 +656,33 @@ class ThetaCone{
 			Float_t tolAngMin = cone1Radius + 2*kAngTolerance*10.;
             		Float_t tolAngMax = cone2Radius + 2*kAngTolerance*10.;
 					if(ForInside)
-            		completelyinside = ((rad >= tolAngMin) && (localPoint.z() > 0.)) || ((rad >= tolAngMax) && (localPoint.z() < 0.));
-
+            		
+					MaskedAssign(!completelyinside,(((rad >= tolAngMin) && (localPoint.z() > 0.)) || ((rad >= tolAngMax) && (localPoint.z() < 0.))),&completelyinside);
             		Float_t tolAngMin2 = cone1Radius - 2*kAngTolerance*10.;
             		Float_t tolAngMax2 = cone2Radius - 2*kAngTolerance*10.;
             		MaskedAssign(!completelyoutside,(((rad < tolAngMin2) && (localPoint.z() > 0.))  || ((rad < tolAngMax2) && (localPoint.z() < 0.))),&completelyoutside);
+            		
 		      }
 		  }
-
+			
             if(fETheta >= kPi/2 - halfAngTolerance && fETheta <= kPi/2 + halfAngTolerance)
             {
-                    MaskedAssign(localPoint.z()==0. ,fal ,&completelyinside);
-                    MaskedAssign(localPoint.z()==0. ,fal ,&completelyoutside);
+    
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyinside);
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyoutside);
             }
+            
 	      }
 
 	if(fETheta > kPi/2 + halfAngTolerance )
              {
+             if(fSTheta >= kPi/2 - halfAngTolerance && fSTheta <= kPi/2 + halfAngTolerance)
+            {
+    
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyinside);
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyoutside);
+            }
+            
 		if(fSTheta > kPi/2 + halfAngTolerance)
                      { 
 			 if(fSTheta < fETheta)
@@ -660,13 +691,15 @@ class ThetaCone{
             				Float_t tolAngMax = cone2Radius + 2*kAngTolerance*10.;
 					if(ForInside)
                     {
-                        	completelyinside = ((rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < zero) && (fETheta!=pi)) || ((rad <= tolAngMin) && (fETheta==pi));
+                    
+                    MaskedAssign(!completelyinside,(((rad <= tolAngMin) && (rad >= tolAngMax) && (localPoint.z() < zero) && (fETheta!=pi)) || ((rad <= tolAngMin) && (localPoint.z() < zero) && (fETheta==pi))),&completelyinside);
                        
                     }
 
             				Float_t tolAngMin2 = cone1Radius + 2*kAngTolerance*10.;
             				Float_t tolAngMax2 = cone2Radius - 2*kAngTolerance*10.;
            				MaskedAssign(!completelyoutside,((rad < tolAngMax2) || (rad > tolAngMin2) || (localPoint.z() > 0.)),&completelyoutside);
+           				
 
 				}
 

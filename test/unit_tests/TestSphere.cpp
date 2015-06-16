@@ -1053,6 +1053,9 @@ std::cout<<"--------------------------------------------------------------------
     assert(ApproxEqual(Dist,0.));
 
     assert(sntestB.Inside(southPolePoint) == vecgeom::EInside::kSurface);
+    assert(sntestB.Inside(pzero) == vecgeom::EInside::kSurface);
+    assert(sntestB.Inside(px) == vecgeom::EInside::kSurface);
+    assert(sntestB.Inside(-py) == vecgeom::EInside::kSurface);
 
     Vec_t northPolePoint(0,0,50);
     Dist = sntestB.DistanceToIn(northPolePoint,vmz);
@@ -1070,6 +1073,16 @@ std::cout<<"--------------------------------------------------------------------
 
     assert(sntest.Inside(northPolePoint) == vecgeom::EInside::kSurface);
     
+	assert(sntest.Inside(southPolePoint) == vecgeom::EInside::kOutside);
+	
+	assert(sntest.Inside(px) == vecgeom::EInside::kInside);
+	assert(sntest.Inside(py) == vecgeom::EInside::kInside);
+	//std::cout<<"Location of Px : "<<sntest.Inside(px)<<std::endl;
+
+	assert(sntest.Inside(pz) == vecgeom::EInside::kInside);
+	assert(sntest.Inside(-pz) == vecgeom::EInside::kOutside);
+	assert(sntestB.Inside(pz) == vecgeom::EInside::kOutside);
+	assert(sntestB.Inside(-pz) == vecgeom::EInside::kInside);
     return true;
 
 }

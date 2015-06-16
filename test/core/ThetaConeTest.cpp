@@ -47,11 +47,15 @@ bool TestThetaCone() {
     Vec_t vmxmy(-1/std::sqrt(2.0),-1/std::sqrt(2.0),0);
     Vec_t vxmy(1/std::sqrt(2.0),-1/std::sqrt(2.0),0);
     Vec_t vxmz(1/std::sqrt(2.0),0,-1/std::sqrt(2.0));
+    Vec_t px(30,0,0),py(0,30,0),pz(0,0,30);
 
 	ThetaCone tc(0,PI/3);
-	//std::cout<<tc.Inside<kScalar>(vz)<<std::endl;
-	assert(tc.Inside<kScalar>(vz)==vecgeom::EInside::kSurface); //Need a check only when fStheta=0 otherwise should be OK
-	assert(tc.Inside<kScalar>(-vz)==vecgeom::EInside::kOutside);
+	//assert(tc.Inside<kScalar>(vz)==vecgeom::EInside::kSurface); //Need a check only when fStheta=0 otherwise should be OK
+	assert(tc.Inside<kScalar>(vz)==vecgeom::EInside::kInside);    //This point is resolved now, The point should be inside point
+															      //not the surface point
+	
+	assert(tc.Inside<kScalar>(vmz)==vecgeom::EInside::kOutside);
+	
     
 	assert(tc.Inside<kScalar>(vx)==vecgeom::EInside::kOutside);
 	assert(tc.Inside<kScalar>(vmx)==vecgeom::EInside::kOutside);
@@ -74,11 +78,9 @@ bool TestThetaCone() {
 	assert(tc.Contains<kScalar>(Vec_t(0,-1,1)));
 
 
-
 	ThetaCone tc2(2*PI/3,PI/3);
-
-	assert(tc2.Inside<kScalar>(vz)==vecgeom::EInside::kOutside); //Need a check only when fStheta=0 otherwise should be OK
-	assert(tc2.Inside<kScalar>(-vz)==vecgeom::EInside::kSurface);
+	assert(tc2.Inside<kScalar>(vz)==vecgeom::EInside::kOutside); 
+	assert(tc2.Inside<kScalar>(-vz)==vecgeom::EInside::kInside);
     assert(tc2.Inside<kScalar>(vx)==vecgeom::EInside::kOutside);
 	assert(tc2.Inside<kScalar>(vmx)==vecgeom::EInside::kOutside);
 	assert(tc2.Inside<kScalar>(vy)==vecgeom::EInside::kOutside);
@@ -88,12 +90,56 @@ bool TestThetaCone() {
 	assert(tc2.Inside<kScalar>(Vec_t(0,std::sqrt(3),-1))==vecgeom::EInside::kSurface);
 	assert(tc2.Inside<kScalar>(Vec_t(-std::sqrt(3),0,-1))==vecgeom::EInside::kSurface);
 	assert(tc2.Inside<kScalar>(Vec_t(-std::sqrt(3),0,1))==vecgeom::EInside::kOutside);
+	
+	ThetaCone tc3(0, 2*PI/3);
+	assert(tc3.Inside<kScalar>(vz)==vecgeom::EInside::kInside);
+	assert(tc3.Inside<kScalar>(vx)==vecgeom::EInside::kInside);
+	assert(tc3.Inside<kScalar>(vy)==vecgeom::EInside::kInside);
+	assert(tc3.Inside<kScalar>(-vz)==vecgeom::EInside::kOutside);
+	
+	ThetaCone tc4(PI/3, 2*PI/3);
+	assert(tc4.Inside<kScalar>(vz)==vecgeom::EInside::kOutside);
+	assert(tc4.Inside<kScalar>(vx)==vecgeom::EInside::kInside);
+	assert(tc4.Inside<kScalar>(vy)==vecgeom::EInside::kInside);
+	assert(tc4.Inside<kScalar>(-vz)==vecgeom::EInside::kInside);
+	
+	ThetaCone tc5(0, 0.50*PI);
+	assert(tc5.Inside<kScalar>(vz)==vecgeom::EInside::kInside);
+	assert(tc5.Inside<kScalar>(vmz)==vecgeom::EInside::kOutside);
+	assert(tc5.Inside<kScalar>(vx)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(vmx)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(vy)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(vmy)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(pz)==vecgeom::EInside::kInside);
+	assert(tc5.Inside<kScalar>(-pz)==vecgeom::EInside::kOutside);
+	assert(tc5.Inside<kScalar>(px)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(-px)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(py)==vecgeom::EInside::kSurface);
+	assert(tc5.Inside<kScalar>(-py)==vecgeom::EInside::kSurface);
+	
+	ThetaCone tc6(0.50*PI, 0.50*PI);
+	assert(tc6.Inside<kScalar>(vz)==vecgeom::EInside::kOutside);
+	assert(tc6.Inside<kScalar>(vmz)==vecgeom::EInside::kInside);
+	assert(tc6.Inside<kScalar>(vx)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(vmx)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(vy)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(vmy)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(pz)==vecgeom::EInside::kOutside);
+	assert(tc6.Inside<kScalar>(-pz)==vecgeom::EInside::kInside);
+	assert(tc6.Inside<kScalar>(px)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(-px)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(py)==vecgeom::EInside::kSurface);
+	assert(tc6.Inside<kScalar>(-py)==vecgeom::EInside::kSurface);
+	
         return true;
 }
 
  int main(int argc, char *argv[]) {
 
    assert(TestThetaCone());
+   std::cout<<"---------------------------------------\n";
+   std::cout<<"------ ThetaCone Test Passed ----------\n";
+   std::cout<<"---------------------------------------\n";
   /*
     if( argc < 2)
      {
