@@ -27,6 +27,14 @@
 #include <vector>
 #include <utility> // for std::pair
 
+#if defined(VECGEOM_VTUNE)
+#include "ittnotify.h"
+#else
+#define __itt_resumme()
+#define __itt_start()
+#endif
+
+
 namespace vecgeom {
 
 VECGEOM_HOST_FORWARD_DECLARE( class VPlacedVolume; );
@@ -87,6 +95,24 @@ private:
 #endif
 #ifdef VECGEOM_GEANT4
   bool fOkToRunG4;
+#endif
+
+#if defined(VECGEOM_VTUNE)
+  __itt_domain* __itt_RunInsideBenchmark = __itt_domain_create("RunInsideBenchmark");
+  __itt_domain* __itt_RunToInBenchmark = __itt_domain_create("RunToInBenchmark");
+  __itt_domain* __itt_RunToOutBenchmark = __itt_domain_create("RunToOutBenchmark");
+
+  __itt_string_handle* __itt_RunInsideSpecialized = __itt_string_handle_create("RunInsideSpecialized");
+  __itt_string_handle* __itt_RunInsideVectorized = __itt_string_handle_create("RunInsideVectorized");
+  __itt_string_handle* __itt_RunInsideUnspecialized = __itt_string_handle_create("RunInsideUnspecialized");
+
+  __itt_string_handle* __itt_RunToInSpecialized = __itt_string_handle_create("RunToInSpecialized");
+  __itt_string_handle* __itt_RunToInVectorized = __itt_string_handle_create("RunToInVectorized");
+  __itt_string_handle* __itt_RunToInUnspecialized = __itt_string_handle_create("RunToInUnspecialized");
+
+  __itt_string_handle* __itt_RunToOutSpecialized = __itt_string_handle_create("RunToOutSpecialized");
+  __itt_string_handle* __itt_RunToOutVectorized = __itt_string_handle_create("RunToOutVectorized");
+  __itt_string_handle* __itt_RunToOutUnspecialized = __itt_string_handle_create("RunToOutUnspecialized");
 #endif
 
 public:

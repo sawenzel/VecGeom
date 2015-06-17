@@ -5,11 +5,10 @@
 #include "volumes/SpecializedTube.h"
 #include "backend/Backend.h"
 #ifndef VECGEOM_NVCC
-  #include "base/RNG.h"
-#include <cmath>
-
-#undef NDEBUG
+#include "base/RNG.h"
 #include <cassert>
+#include <cmath>
+#include <iostream>
 #endif
 
 #include "volumes/utilities/GenerationUtilities.h"

@@ -146,7 +146,11 @@ struct kCudaType<cxx::BoxImplementation<Arguments...>  >
 #ifdef __INTEL_COMPILER
   // Compiling with icc
   #define VECGEOM_INTEL
+  //#define VECGEOM_INLINE inline __attribute__((always_inline))
   #define VECGEOM_INLINE inline
+  #ifndef VECGEOM_NVCC
+    #define VECGEOM_ALIGNED __attribute__((aligned(64)))
+  #endif
 #else
   // Functionality of <mm_malloc.h> is automatically included in icc
   #include <mm_malloc.h>
@@ -254,10 +258,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
    };
 #endif
 
-#ifdef __MIC__
-VECGEOM_GLOBAL int kAlignmentBoundary = 64;
+#if defined (__MIC__)
+  VECGEOM_GLOBAL int kAlignmentBoundary = 64;
 #else
-VECGEOM_GLOBAL int kAlignmentBoundary = 32;
+  VECGEOM_GLOBAL int kAlignmentBoundary = 32;
 #endif
 VECGEOM_GLOBAL Precision kPi = 3.14159265358979323846;
 VECGEOM_GLOBAL Precision kTwoPi = 2.*kPi;
