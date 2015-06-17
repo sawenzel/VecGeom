@@ -4,14 +4,17 @@
 # $CTEST_BUILD_OPTIONS // CMake flags for VecGeom build
 # $CMAKE_SOURCE_DIR    // CMake source directory
 # $CMAKE_BINARY_DIR    // CMake binary directory
-# $CMAKE_BUILD_TYPE    // CMake build type: Debug, Release 
+# $CMAKE_BUILD_TYPE    // CMake build type: Debug, Release
 # $CMAKE_INSTALL_PREFIX // Installation prefix for CMake (Jenkins trigger)
 # CC and CXX (In Jenkins this step has been done authomaticly)
-# Enviroment for name of build for CERN CDash: 
+# Enviroment for name of build for CERN CDash:
 # $LABEL                // Name of node (Jenkins trigger)
 # Name of $BACKEND     // Backend for VecGeom (CUDA/Vc/Scalar/..)
 
 cmake_minimum_required(VERSION 2.8)
+set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS "1000")
+set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS "1000")
+set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE "50000")
 ###################################################################
 macro(CheckExitCode)
   if(NOT ${ExitCode} EQUAL 0)
@@ -58,12 +61,12 @@ set(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE "5000")
 #set(ENV{CTEST_USE_LAUNCHERS_DEFAULT} ${CTEST_USE_LAUNCHERS})
 
 ######################################################
-# CTest/CMake settings 
+# CTest/CMake settings
 
 set(CTEST_TEST_TIMEOUT 3600)
 set(CTEST_BUILD_CONFIGURATION "$ENV{CMAKE_BUILD_TYPE}")
 set(CMAKE_INSTALL_PREFIX "$ENV{CMAKE_INSTALL_PREFIX}")
-set(CTEST_SOURCE_DIRECTORY "$ENV{CMAKE_SOURCE_DIR}")  
+set(CTEST_SOURCE_DIRECTORY "$ENV{CMAKE_SOURCE_DIR}")
 set(CTEST_BINARY_DIRECTORY "$ENV{CMAKE_BINARY_DIR}")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_OPTIONS "$ENV{CTEST_BUILD_OPTIONS}")
