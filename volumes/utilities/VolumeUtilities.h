@@ -161,9 +161,10 @@ void FillBiasedDirections(VPlacedVolume const &volume,
 
   // Check hits
   for (int track = 0; track < size; ++track) {
-    if(IsHittingAnyDaughter(points[track], dirs[track], *volume.GetLogicalVolume()))
-        n_hits++;
-        hit[track] = true;
+    if (IsHittingAnyDaughter(points[track], dirs[track], *volume.GetLogicalVolume())) {
+      n_hits++;
+      hit[track] = true;
+    }
   }
 
   // Remove hits until threshold
