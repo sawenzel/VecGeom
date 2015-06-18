@@ -206,6 +206,10 @@ public:
       stepMax,
       output
     );
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareDistanceToIn( this, output, point, direction, stepMax );
+#endif
     return output;
   }
 
