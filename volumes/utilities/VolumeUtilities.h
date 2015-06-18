@@ -14,6 +14,7 @@
 #include "volumes/PlacedBox.h"
 #include "volumes/LogicalVolume.h"
 #include "navigation/NavigationState.h"
+#include "navigation/SimpleNavigator.h"
 #include "management/GeoManager.h"
 #include <cstdio>
 #ifdef VECGEOM_ROOT
@@ -42,18 +43,29 @@ VECGEOM_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point,
                      Vector3D<Precision> const &dir,
                      VPlacedVolume const &volume) {
-
-#if defined(VECGEOM_ROOT) && defined(VECGEOM_BENCHMARK)
-static const TGeoShape * rootshape = volume.ConvertToRoot();
-double *safe = NULL;
-double rpoint[3];
-double rdir[3];
-for(int i=0;i<3;i++){
-  rpoint[i]=point[i]; rdir[i]=dir[i];}
-  return rootshape->DistFromOutside(&rpoint[0], &rdir[0], 3, kInfinity, safe) < 1E20;
+   assert( !volume.Contains(point) );
+#if defined(USEROOTFORHITDETECTION)
+   std::shared_ptr<TGeoShape const> rootshape(volume.ConvertToRoot());
+   Transformation3D const *m = volume.GetTransformation();
+   Vector3D<Precision> rpoint = m->Transform(point);
+   Vector3D<Precision> rdir = m->TransformDirection(dir);
+   return rootshape->DistFromOutside((double*)&rpoint[0], (double*)&rdir[0], 3, vecgeom::kInfinity) < 1E20;
 #else
-   return volume.DistanceToIn(point, dir, kInfinity) < kInfinity;
+   return volume.DistanceToIn(point, dir, vecgeom::kInfinity) < vecgeom::kInfinity;
 #endif
+}
+
+// utility function to check if track hits any daughter of input logical volume
+inline
+bool IsHittingAnyDaughter( Vector3D<Precision> const &point,
+                           Vector3D<Precision> const &dir,
+                           LogicalVolume const &volume ){
+  for (int daughter = 0; daughter < volume.daughters().size(); ++daughter) {
+    if (IsHittingVolume(point, dir, *volume.daughters()[daughter])) {
+                return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -143,21 +155,15 @@ void FillBiasedDirections(VPlacedVolume const &volume,
   const int size = dirs.capacity();
   int n_hits = 0;
   std::vector<bool> hit(size, false);
-  int h;
 
   // Randomize directions
   FillRandomDirections(dirs);
 
   // Check hits
-  for (int i = 0; i < size; ++i) {
-    for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin();
-         j != volume.daughters().cend(); ++j) {
-      if (IsHittingVolume(points[i], dirs[i], **j)) {
+  for (int track = 0; track < size; ++track) {
+    if(IsHittingAnyDaughter(points[track], dirs[track], *volume.GetLogicalVolume()))
         n_hits++;
-        hit[i] = true;
-        break;
-      }
-    }
+        hit[track] = true;
   }
 
   // Remove hits until threshold
@@ -165,35 +171,44 @@ void FillBiasedDirections(VPlacedVolume const &volume,
   int tries = 0;
   int maxtries = 10000*size;
   while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) > bias) {
+    //while (n_hits > 0) {
     tries++;
     if(tries%1000000 == 0) {
       printf("%s line %i: Warning: %i tries to reduce bias... volume=%s. Please check.\n", __FILE__, __LINE__, tries, volume.GetLabel().c_str());
     }
 
-    h = static_cast<int>(
-        static_cast<Precision>(size) * RNG::Instance().uniform()
-    );
-    while (hit[h]) {
-      dirs.set(h, SampleDirection());
-      for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
-           iEnd = volume.daughters().cend(); i != iEnd; ++i) {
-        if (!IsHittingVolume(points[h], dirs[h], **i)) {
-          n_hits--;
-          hit[h] = false;
-          tries = 0;
-          break;
-        }
+    int track =  static_cast<int>(static_cast<Precision>(size) * RNG::Instance().uniform());
+    int internaltries = 0;
+    while (hit[track]) {
+      dirs.set(track, SampleDirection());
+      internaltries++;
+      if( ! IsHittingAnyDaughter( points[track], dirs[track], *volume.GetLogicalVolume() ) ){
+	  n_hits--;
+	  hit[track]=false;
+	  //	  tries = 0;
+      }
+      if(internaltries%1000000 == 0) {
+	printf("%s line %i: Warning: %i tries to reduce bias... current bias %d volume=%s. Please check.\n", __FILE__, __LINE__, internaltries, n_hits, volume.GetLabel().c_str());
+	// try another track
+	break;
       }
     }
+  }
+
+  // crosscheck
+  {
+  int crosscheckhits=0;
+  for( int track = 0; track<size; ++track )
+    if( IsHittingAnyDaughter( points[track], dirs[track], *volume.GetLogicalVolume() ) ) crosscheckhits++;
+  assert( crosscheckhits == n_hits && "problem with hit count == 0");
   }
 
   // Add hits until threshold
   tries = 0;
   while (static_cast<Precision>(n_hits)/static_cast<Precision>(size) < bias && tries < maxtries) {
-    h = static_cast<int>(
-        static_cast<Precision>(size) * RNG::Instance().uniform()
-    );
-    while (!hit[h] && tries < maxtries) {
+    int track = static_cast<int>(
+        static_cast<Precision>(size) * RNG::Instance().uniform());
+    while (!hit[track] && tries < maxtries) {
       ++tries;
       if (tries%1000000==0) {
         printf("%s line %i: Warning: %i tries to increase bias... volume=%s, current bias=%i/%i=%f.  Please check.\n",
@@ -205,25 +220,29 @@ void FillBiasedDirections(VPlacedVolume const &volume,
       // sample a daughter to hit ( we can adjust the sampling probability according to Capacity or something; then generate point on surface of daughter )
       // set direction accordingly
       uint selecteddaughter = (uint) RNG::Instance().uniform() * volume.daughters().size();
-      Vector3D<Precision> pointonsurface = volume.daughters()[selecteddaughter]->GetPointOnSurface();
-      Vector3D<Precision> dirtosurfacepoint = pointonsurface - points[h];
+      VPlacedVolume const * daughter = volume.daughters()[selecteddaughter];
+      Vector3D<Precision> pointonsurface = daughter->GetPointOnSurface();
+      // point is in reference frame of daughter so need to transform it back
+      Vector3D<Precision> dirtosurfacepoint = daughter->GetTransformation()->InverseTransform( pointonsurface ) - points[track];
       dirtosurfacepoint.Normalize();
-      dirs.set(h, dirtosurfacepoint );
+      dirs.set(track, dirtosurfacepoint );
 
       // the brute force and simple sampling technique is the following
       // dirs.set(h, SampleDirection());
-      for (Vector<Daughter>::const_iterator i = volume.daughters().cbegin(),
-           iEnd = volume.daughters().cend(); i != iEnd; ++i) {
-        if (IsHittingVolume(points[h], dirs[h], **i)) {
+      if(IsHittingAnyDaughter(points[track], dirs[track], *volume.GetLogicalVolume()))
           n_hits++;
-          hit[h] = true;
+          hit[track] = true;
           tries = 0;
-          break;
-        }
       }
-    }
   }
 
+  // crosscheck
+  {
+  int crosscheckhits=0;
+  for( int p = 0; p<size; ++p )
+    if( IsHittingAnyDaughter( points[p], dirs[p], *volume.GetLogicalVolume() ) ) crosscheckhits++;
+  assert( crosscheckhits == n_hits && "problem with hit count");
+  }
 
   if( tries == maxtries )
   {
@@ -469,7 +488,9 @@ void FillRandomPoints(VPlacedVolume const &volume,
         printf("%s line %i: Warning: %i tries to find contained points... volume=%s.  Please check.\n", __FILE__, __LINE__, tries, volume.GetLabel().c_str());
       }
       point = offset + SamplePoint(dim);
-    } while (!volume.Contains(point));
+    } while (!volume.UnplacedContains(point));
+
+      //} while (!volume.Contains(point));
     points.set(i, point);
   }
 }
@@ -541,6 +562,10 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
     std::list<NavigationState *> allpaths;
     GeoManager::Instance().getAllPathForLogicalVolume( lvol, allpaths );
 
+    NavigationState *s1 = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth( ));
+    NavigationState *s2 = NavigationState::MakeInstance( GeoManager::Instance().getMaxDepth( ));
+    int virtuallyhitsdaughter = 0;
+    int reallyhitsdaughter = 0;
     if(allpaths.size() > 0){
         // get one representative of such a logical volume
         VPlacedVolume const * pvol = allpaths.front()->Top();
@@ -554,6 +579,7 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
         // transform points to global frame
         globalpoints.resize(globalpoints.capacity());
         int placedcount=0;
+
         while( placedcount < np )
         {
             std::list<NavigationState *>::iterator iter = allpaths.begin();
@@ -563,8 +589,26 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
                 Transformation3D m;
                 (*iter)->TopMatrix(m);
 
+                bool hitsdaughter = IsHittingAnyDaughter( localpoints[placedcount], directions[placedcount], *lvol );
+                if( hitsdaughter ) virtuallyhitsdaughter++;
                 globalpoints.set(placedcount, m.InverseTransform(localpoints[placedcount]));
                 directions.set(placedcount, m.InverseTransformDirection(directions[placedcount]));
+
+                // do extensive cross tests
+                s1->Clear(); s2->Clear();
+                SimpleNavigator nav;
+                nav.LocatePoint( GeoManager::Instance().GetWorld( ), globalpoints[placedcount], *s1, true);
+                assert( s1->Top()->GetLogicalVolume() == lvol );
+                double step;
+                nav.FindNextBoundaryAndStep(globalpoints[placedcount], directions[placedcount], *s1, *s2, vecgeom::kInfinity, step );
+#ifdef DEBUG
+                if( ! hitsdaughter )
+                    assert( s1->Distance(*s2) > s2->GetCurrentLevel() - s1->GetCurrentLevel() );
+#endif
+                if( hitsdaughter )
+                    if( s1->Distance(*s2) == s2->GetCurrentLevel() - s1->GetCurrentLevel() ){
+                        reallyhitsdaughter++;
+                    }
 
                 placedcount++;
                 iter++;
@@ -575,6 +619,9 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
       // an error message
       printf("VolumeUtilities: FillGlobalPointsAndDirectionsForLogicalVolume()... ERROR condition detected.\n");
     }
+    printf(" really hits %d, virtually hits %d ", reallyhitsdaughter, virtuallyhitsdaughter );
+    NavigationState::ReleaseInstance(s1);
+    NavigationState::ReleaseInstance(s2);
 }
 
 
