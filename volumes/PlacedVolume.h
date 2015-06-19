@@ -263,8 +263,8 @@ public:
   }
 
 
-  virtual bool Normal(Vector3D<double> const &point,
-                      Vector3D<double> &normal) const {
+  virtual bool Normal(Vector3D<double> const &,
+                      Vector3D<double> &) const {
 
     assert(0 &&
            "Normal not implemented.");
