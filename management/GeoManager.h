@@ -165,6 +165,12 @@ public:
 
   VPlacedVolume const* GetWorld() const { return fWorld; }
 
+  // initialize geometry from a precompiled shared library
+  // ( such as obtained from the CppExporter )
+  // this function sets the world and closes the geometry
+  void LoadGeometryFromSharedLib( std::string );
+
+
   /**
    *  give back container containing all logical volumes in detector
    *  Container is supposed to be any Container that can store pointers to
