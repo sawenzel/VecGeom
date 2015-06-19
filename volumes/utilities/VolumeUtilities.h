@@ -295,10 +295,10 @@ void FillUncontainedPoints(VPlacedVolume const &volume,
   static double lastUncontCap = 0.0;
   double uncontainedCapacity = UncontainedCapacity(volume);
   if(uncontainedCapacity != lastUncontCap) {
-    printf("Uncontained capacity for %s: %f units\n", volume.GetLabel().c_str(), UncontainedCapacity(volume));
+    printf("Uncontained capacity for %s: %g units\n", volume.GetLabel().c_str(), uncontainedCapacity);
     lastUncontCap = uncontainedCapacity;
   }
-  if( UncontainedCapacity(volume) <= 0.0 ) {
+  if( uncontainedCapacity <= 1000*kTolerance ) {
     std::cout<<"\nVolUtil: FillUncontPts: ERROR: Volume provided <"
              << volume.GetLabel() <<"> does not have uncontained capacity!  Aborting.\n";
     Assert(false);
