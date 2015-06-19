@@ -311,6 +311,12 @@ public:
       DevicePtr(DevicePtr<inputType> const &input) : DevicePtrImpl<const Type>(input.GetPtr()) {}
 #endif
 
+   VECGEOM_CUDA_HEADER_BOTH
+   const Type* GetPtr() const { return reinterpret_cast<const Type*>(DevicePtrBase::GetPtr()); }
+
+   VECGEOM_CUDA_HEADER_BOTH
+   operator const Type*() const { return GetPtr(); }
+
 #ifdef VECGEOM_NVCC
    template <typename DataClass, typename... ArgsTypes>
    void Construct(ArgsTypes... params) const
