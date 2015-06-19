@@ -347,9 +347,9 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
                                         ) const
 {
 #ifndef VECGEOM_NVCC
- //  static int counter=0;
+   static int counter=0;
 #endif
-   
+    counter++;
    // this information might have been cached in previous navigators??
    Transformation3D m;
    currentstate.TopMatrix(m);
@@ -372,7 +372,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
    // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
    // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
-   if( step <= 0. )
+   if( step < 0. )
    {
 //       newstate = currentstate;
 //       RelocatePointFromPath( localpoint, newstate );
@@ -425,12 +425,28 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // do nothing (step=0) and retry one level higher
    if( step == kInfinity && pstep > 0. )
    {
-      //std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
+      std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
       //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
       // set step to zero and retry one level higher
-      step = 0;
-      newstate.Pop();
+      // if( nexthitvolume!=-1 ) std::cout << "catastrophee\n";
+      currentstate.printVolumePath(std::cout); std::cout << "\n";
+      newstate.Clear();
+      LocatePoint( GeoManager::Instance().GetWorld(), globalpoint
+              + vecgeom::kTolerance*globaldir,
+              newstate, true );
+      step = vecgeom::kTolerance;
+              // newstate.Pop();
+     // InspectEnvironmentForPointAndDirection( globalpoint, localpoint, currentstate );
+      newstate.printVolumePath(std::cout); std::cout << "\n";
+      InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+      std::cout << " counter is " << counter << "\n";
       newstate.SetBoundaryState(true);
+      if( newstate.HasSamePathAsOther(currentstate) ) {
+          std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
+          newstate.Pop();
+          //exit(1);
+      }
+      //exit(1);
       return;
    }
    // is geometry further away than physics step?
@@ -454,11 +470,11 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
     }
 
 #ifdef VERBOSE
-    std::cerr << " step " << step << " nextvol " << nexthitvolume << "\n";
+   std::cout << " step " << step << " nextvol " << nexthitvolume << "\n";
 #endif
-
+   step+=1E-6;
    Vector3D<Precision> newpointafterboundary = localdir;
-   newpointafterboundary*=(step + 1e-6);
+   newpointafterboundary*=step;
    newpointafterboundary+=localpoint;
 
    if( nexthitvolume != -1 ) // not hitting mother
