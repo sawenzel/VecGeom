@@ -348,8 +348,8 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 {
 #ifndef VECGEOM_NVCC
    static int counter=0;
+   counter++;
 #endif
-    counter++;
    // this information might have been cached in previous navigators??
    Transformation3D m;
    currentstate.TopMatrix(m);
@@ -357,7 +357,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    Vector3D<Precision> localdir=m.TransformDirection(globaldir);
 
    VPlacedVolume const * currentvolume = currentstate.Top();
-#ifdef VERBOSE
+#if defined(VERBOSE) && !defined(VECGEOM_NVCC)
    if( counter % 1 == 0)
    {
        std::cerr << "navigating in " << currentvolume->GetLabel() << " stepnumber " << counter << "pstep " << pstep << " pos " << globalpoint << " dir " << globaldir ;
@@ -439,7 +439,9 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
      // InspectEnvironmentForPointAndDirection( globalpoint, localpoint, currentstate );
       newstate.printVolumePath(std::cout); std::cout << "\n";
       InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+#ifndef VECGEOM_NVCC
       std::cout << " counter is " << counter << "\n";
+#endif
       newstate.SetBoundaryState(true);
       if( newstate.HasSamePathAsOther(currentstate) ) {
           std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
