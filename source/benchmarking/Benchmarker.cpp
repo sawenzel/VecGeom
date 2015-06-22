@@ -238,10 +238,10 @@ int Benchmarker::CompareDistances(
       }
 
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
-        printf("Point (%f, %f, %f)", points->x(i), points->y(i),
+        printf("Point (%.30f, %.30f, %.30f)", points->x(i), points->y(i),
                points->z(i));
         if (directions != NULL) {
-          printf(", Direction (%f, %f, %f)", directions->x(i), directions->y(i),
+          printf(", Direction (%.30f, %.30f, %.30f)", directions->x(i), directions->y(i),
                  directions->z(i));
         }
         printf(": ");
