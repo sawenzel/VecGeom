@@ -425,26 +425,30 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // do nothing (step=0) and retry one level higher
    if( step == kInfinity && pstep > 0. )
    {
+#ifndef VECGEOM_NVCC
       std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
       //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
       // set step to zero and retry one level higher
       // if( nexthitvolume!=-1 ) std::cout << "catastrophee\n";
       currentstate.printVolumePath(std::cout); std::cout << "\n";
+#endif
       newstate.Clear();
       LocatePoint( GeoManager::Instance().GetWorld(), globalpoint
               + vecgeom::kTolerance*globaldir,
               newstate, true );
       step = vecgeom::kTolerance;
               // newstate.Pop();
+#ifndef VECGEOM_NVCC
      // InspectEnvironmentForPointAndDirection( globalpoint, localpoint, currentstate );
       newstate.printVolumePath(std::cout); std::cout << "\n";
       InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
-#ifndef VECGEOM_NVCC
       std::cout << " counter is " << counter << "\n";
 #endif
       newstate.SetBoundaryState(true);
       if( newstate.HasSamePathAsOther(currentstate) ) {
+#ifndef VECGEOM_NVCC
           std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
+#endif
           newstate.Pop();
           //exit(1);
       }
@@ -520,15 +524,18 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
        if( orignode!= NULL)
            vecgeomcmpcur = RootGeoManager::Instance().GetPlacedVolume( orignode );
 
+#ifndef VECGEOM_NVCC
        if ( currentstate.Top() != vecgeomcmpcur )
        {
            std::cout << "##-- INCONSISTENT START STATE --##\n";
        }
+#endif
 
        if( newstate.Top() != vecgeomcmpnext || currentstate.Top() != vecgeomcmpcur )
        {
            CreateDebugDump( globalpoint, globaldir, currentstate, pstep);
 
+#ifndef VECGEOM_NVCC
            std::cout << "##-- INCONSISTENCY IN NAVIGATION --##\n";
            std::cout << "  ROOT step " << nav->GetStep() << "\n";
            std::cout << "  VecGeom step " << step << "\n";
@@ -566,6 +573,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
            // list exiting ; entering etc.
            InspectEnvironmentForPointAndDirection(
                globalpoint, globaldir, currentstate);
+#endif
        }
    //#endif
    #endif // distance debug
