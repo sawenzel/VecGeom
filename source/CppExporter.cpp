@@ -293,7 +293,7 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
              line << " new UnplacedPolycone( " ;
              line << shape->GetStartPhi() << " , ";
              line << shape->GetDeltaPhi() << " , ";
-             line << shape->GetNz() << " , ";
+
 
              std::vector<double> rmin, rmax, z;
              // serialize the arrays as temporary std::vector
@@ -306,6 +306,10 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
                  assert( element >= 0.);
              }
 #endif
+             if (shape->GetNz() != z.size()) {
+                 std::cerr << "WARNING : VOLUME " << l->GetLabel() << " SEEMS TO HAVE MORE Z-PLANES THAT NEEDED (POSSIBLE DUBLICATION)\n";
+             }
+             line << z.size() << " , ";
 
              // put z vector
              DumpVector( z, line );
