@@ -627,7 +627,7 @@ set(TEST_EXECUTABLES_ROOT
 )
 
 # Tests below fail to build when both ROOT and USolids are enabled
-if(!USolids)
+if(NOT USolids)
   set(TEST_EXECUTABLES_CORE
     ${TEST_EXECUTABLES_CORE}
     ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
