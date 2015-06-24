@@ -600,7 +600,7 @@ void FillGlobalPointsAndDirectionsForLogicalVolume(
                 SimpleNavigator nav;
                 nav.LocatePoint( GeoManager::Instance().GetWorld( ), globalpoints[placedcount], *s1, true);
                 assert( s1->Top()->GetLogicalVolume() == lvol );
-                double step;
+                double step = vecgeom::kInfinity;
                 nav.FindNextBoundaryAndStep(globalpoints[placedcount], directions[placedcount], *s1, *s2, vecgeom::kInfinity, step );
 #ifdef DEBUG
                 if( ! hitsdaughter )
