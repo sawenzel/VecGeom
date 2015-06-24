@@ -359,6 +359,27 @@ if (CUDA)
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${VECGEOM_NVCC_COMPILATION_FLAGS})
 endif()
 
+### CXXFLAGS needs to be set early, so that VECGEOM_GEANT4, VECGEOM_ROOT,
+### and VECGEOM_USOLIDS are already defined when compiling USolids, or it breaks
+
+# Pass flags to compilers
+# We may have addition in compiler flags from the above included packages
+# We don't want to have trailing CMAKE_CXX_FLAGS_"BUILD_TYPE" options on the command line
+# but rather have it as first set of argument.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_build_type}} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
+#set(VECGEOM_CXX_FLAGS ${CMAKE_CXX_FLAGS_${_build_type}})
+#unset(CMAKE_CXX_FLAGS_${_build_type} CACHE)
+
+message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
+if (CUDA)
+  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
+endif()
+
+# until VecCore is separated from VecGeom (then it become something
+# ${VecCore_DIR}/include
+include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
+include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
+
 if (ROOT)
 
   find_package(ROOT REQUIRED)
@@ -413,24 +434,6 @@ if (VTUNE)
   include_directories(AFTER SYSTEM ${VTUNE_INCLUDE_DIR})
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} ${VTUNE_LIBRARIES} -lpthread -ldl)
 endif()
-
-# Pass flags to compilers
-# We may have addition in compiler flags from the above included packages
-# We don't want to have trailing CMAKE_CXX_FLAGS_"BUILD_TYPE" options on the command line
-# but rather have it as first set of argument.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_build_type}} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-#set(VECGEOM_CXX_FLAGS ${CMAKE_CXX_FLAGS_${_build_type}})
-#unset(CMAKE_CXX_FLAGS_${_build_type} CACHE)
-
-message(STATUS "Compiling with C++ flags: ${CMAKE_CXX_FLAGS}")
-if (CUDA)
-  message(STATUS "Compiling with NVCC flags: ${CUDA_NVCC_FLAGS}")
-endif()
-
-# until VecCore is separated from VecGeom (then it become something
-# ${VecCore_DIR}/include
-include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
-include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
 
 ################################################################################
 
@@ -608,7 +611,6 @@ set(TEST_EXECUTABLES_CORE
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest.cpp
 #  ${CMAKE_SOURCE_DIR}/test/core/boolminustest2.cpp
   ${CMAKE_SOURCE_DIR}/test/core/PhiWedgeTest.cpp
-  ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
   ${CMAKE_SOURCE_DIR}/test/unit_tests/TestVecGeomPolycone.cpp
 )
 
@@ -622,12 +624,24 @@ set(TEST_EXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/root/TestExportToROOT.cpp
   ${CMAKE_SOURCE_DIR}/test/root/ExitingOrEntering.cpp
-  # higher level benchmarks
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
-  ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
 )
+
+# Tests below fail to build when both ROOT and USolids are enabled
+if(!USolids)
+  set(TEST_EXECUTABLES_CORE
+    ${TEST_EXECUTABLES_CORE}
+    ${CMAKE_SOURCE_DIR}/test/core/BitSetTest.cpp
+  )
+  # higher level benchmarks
+  set(TEST_EXECUTABLES_ROOT
+    ${TEST_EXECUTABLES_ROOT}
+    ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/LocatePointsBenchmark.cpp
+    ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/NavigationBenchmark.cpp
+    ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/TraceTrack.cpp
+    ${CMAKE_SOURCE_DIR}/test/globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
+  )
+endif()
+
 # separate list for ROOT UNIT tests
 set(TEST_UNITTESTEXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/complex_test1.cpp
@@ -636,7 +650,6 @@ set(TEST_UNITTESTEXECUTABLES_ROOT
   ${CMAKE_SOURCE_DIR}/test/root/ImportTGeoPgon.cpp
   ${CMAKE_SOURCE_DIR}/test/core/TestNavigationStatePool.cpp
 )
-
 
 if(BENCHMARK)
   set(TEST_EXECUTABLES_ROOT
