@@ -38,7 +38,7 @@ struct PolyconeSection
 
    VECGEOM_CUDA_HEADER_BOTH
    ~PolyconeSection() = default;
-   
+
    UnplacedCone *fSolid;
    double fShift;
    bool fTubular;
@@ -58,7 +58,7 @@ public:
     Precision fDeltaPhi;
     Precision fEndPhi;
 
-    int fNz;
+    unsigned int fNz;
     //Precision * fRmin;
     //Precision * fRmax;
     //Precision * fZ;
@@ -72,7 +72,7 @@ public:
     void Init(
          double phiStart,        // initial phi starting angle
          double phiTotal,        // total phi angle
-         int numZPlanes,         // number of z planes
+         unsigned int numZPlanes,// number of z planes
          const double zPlane[],  // position of z planes
          const double rInner[],  // tangent distance to inner surface
          const double rOuter[]);
@@ -96,7 +96,7 @@ public:
     }
 
     VECGEOM_CUDA_HEADER_BOTH
-    int GetNz() const {return fNz;}
+    unsigned int GetNz() const { return fNz; }
 
     VECGEOM_CUDA_HEADER_BOTH
     int GetNSections() const {return fSections.size();}

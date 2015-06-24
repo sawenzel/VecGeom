@@ -307,7 +307,8 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
              }
 #endif
              if (shape->GetNz() != z.size()) {
-                 std::cerr << "WARNING : VOLUME " << l->GetLabel() << " SEEMS TO HAVE MORE Z-PLANES THAT NEEDED (POSSIBLE DUBLICATION)\n";
+                 std::cerr << "WARNING: Volume " << l->GetLabel()
+                           << " has a mismatch in the number of z-planes (possible duplication)\n";
              }
              line << z.size() << " , ";
 
