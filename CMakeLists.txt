@@ -263,6 +263,8 @@ endif()
 
 # Enable pretty diagnostics coloring if gcc 4.9+ is being used
 if (GNU)
+  # gcc needs -ldl to be added explicitly
+  set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} dl)
   set(VECGEOM_ERROR_LIMIT 20 CACHE STRING
       "Limit number of errors output by diagnostics.")
   set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -fmax-errors=${VECGEOM_ERROR_LIMIT}")
