@@ -1046,7 +1046,7 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     
     Float_t halfRminTolerance = 0.5 * unplaced.GetFRminTolerance() * 10.;
     Float_t halfRmaxTolerance = 0.5 * unplaced.GetMKTolerance() * 10.;
-    Float_t kAngTolerance(kAngTolerance);//(kSTolerance * 10.);
+    Float_t kAngTolerance = unplaced.GetAngTolerance();
     Float_t halfAngTolerance = 0.5 * kAngTolerance;
     bool fullPhiSphere = unplaced.IsFullPhiSphere();
     bool fullThetaSphere = unplaced.IsFullThetaSphere();
