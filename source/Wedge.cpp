@@ -14,7 +14,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECGEOM_CUDA_HEADER_BOTH
         Wedge::Wedge( Precision angle, Precision zeroangle ) :
-            fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2() {
+            // fSPhi(zeroangle),
+            fDPhi(angle), fAlongVector1(), fAlongVector2() {
             // check input
             Assert( angle > 0., " wedge angle has to be larger than zero " );
             //
