@@ -6,8 +6,6 @@
 
 using namespace vecgeom;
 
-constexpr int kIterations = 1<<22;
-
 int StaticPlanes() {
   Planes planes(6);
   planes.Set(0, Vector3D<Precision>(0,0,1), Vector3D<Precision>(0,0,1));
