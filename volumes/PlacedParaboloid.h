@@ -137,28 +137,25 @@ public:
       return GetUnplacedVolume()->GetPointOnSurface();
     }
 
+#if defined(VECGEOM_USOLIDS)
     virtual
     std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 #endif
 
     void ComputeBoundingBox() {  GetUnplacedVolumeNonConst()->ComputeBoundingBox() ;}
 
     void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
-
-#ifdef USOLIDS
+#if defined(VECGEOM_USOLIDS)
     VECGEOM_CUDA_HEADER_BOTH
-    virtual
-    VUSolid* Clone() const override {
-      return NULL;
-      //return GetUnplacedVolume()->Clone() ;
-}
-#endif
-    
-  //    VECGEOM_CUDA_HEADER_BOTH
-  //    virtual
-  //    void StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo( os) ;}
+    virtual VUSolid* Clone() const override { return NULL; }
 
+    VECGEOM_CUDA_HEADER_BOTH
+    virtual void StreamInfo(std::ostream &os) const override {
+      return GetUnplacedVolume()->StreamInfo( os) ;
+    }
+#endif
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const override;

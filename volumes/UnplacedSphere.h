@@ -562,8 +562,10 @@ VECGEOM_CUDA_HEADER_BOTH
   
   UnplacedSphere* Clone() const;
 
+#if defined(VECGEOM_USOLIDS)
   std::ostream& StreamInfo(std::ostream &os) const;
-    
+#endif
+
   
   VECGEOM_CUDA_HEADER_BOTH
   void ComputeBBox() const; 

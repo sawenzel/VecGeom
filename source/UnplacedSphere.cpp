@@ -294,6 +294,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
       return new UnplacedSphere(fRmin,fRmax,fSPhi,fDPhi,fSTheta,fDTheta);
   }
   
+#if defined(VECGEOM_USOLIDS)
   std::ostream& UnplacedSphere::StreamInfo(std::ostream& os) const
   //Definition taken from USphere
   {
@@ -317,6 +318,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
    return os;
   }
+#endif
   
   VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print() const {

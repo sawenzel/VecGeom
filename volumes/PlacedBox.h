@@ -106,7 +106,9 @@ public:
      return GetUnplacedVolume()->SurfaceArea();
   }
 
+#if defined(VECGEOM_USOLIDS)
   virtual std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH

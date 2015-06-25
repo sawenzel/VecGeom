@@ -120,7 +120,9 @@ public:
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
+#if defined(VECGEOM_USOLIDS)
   std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -129,9 +131,12 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
-  std::ostream& StreamInfo(std::ostream &os) const override { return GetUnplacedVolume()->StreamInfo(os) ;}
-
+  std::ostream& StreamInfo(std::ostream &os) const override {
+    return GetUnplacedVolume()->StreamInfo(os);
+  }
+#endif
 
 #ifndef VECGEOM_NVCC
   virtual VPlacedVolume const* ConvertToUnspecialized() const override;

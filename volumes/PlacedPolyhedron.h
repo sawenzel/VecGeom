@@ -153,7 +153,9 @@ public:
   Vector3D<Precision> GetPointOnSurface() const override {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
+#if defined(VECGEOM_USOLIDS)
   std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH

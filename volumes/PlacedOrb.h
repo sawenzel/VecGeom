@@ -73,17 +73,19 @@ public:
   VECGEOM_INLINE
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
 
-  VECGEOM_CUDA_HEADER_BOTH
-  void GetParametersList(int aNumber, double *aArray) const override {
-    return GetUnplacedVolume()->GetParametersList(aNumber, aArray);
-  }
-
 #ifndef VECGEOM_NVCC
   virtual Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
 
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
+#if defined(VECGEOM_USOLIDS)
+  VECGEOM_CUDA_HEADER_BOTH
+  void GetParametersList(int aNumber, double *aArray) const override {
+    return GetUnplacedVolume()->GetParametersList(aNumber, aArray);
+  }
+
   std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
   
   void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
     return GetUnplacedVolume()->Extent(aMin,aMax);

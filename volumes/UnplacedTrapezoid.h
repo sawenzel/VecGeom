@@ -215,8 +215,10 @@ public:
   //                                GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
   // }
 
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
+#endif
 
   Vector3D<Precision> ApproxSurfaceNormal(const Vector3D<Precision>& p) const;
 

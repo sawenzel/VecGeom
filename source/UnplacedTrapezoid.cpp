@@ -684,11 +684,13 @@ void UnplacedTrapezoid::fromCornersToParameters( TrapCorners_t const pt) {
 
   }
 
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& UnplacedTrapezoid::StreamInfo(std::ostream &os) const {
     Assert( 0 ); // Not implemented yet
     return os;
   }
+#endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
 // only the GPU-related methods should go inside this part

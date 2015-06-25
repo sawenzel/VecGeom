@@ -111,9 +111,11 @@ public:
      return GetUnplacedVolume()->SurfaceArea();
   }
 
+#if defined(VECGEOM_USOLIDS)
   virtual std::string GetEntityType() const override {
       return "Cone";
   }
+#endif
 #endif
 
 }; // end class

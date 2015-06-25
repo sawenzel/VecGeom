@@ -90,7 +90,9 @@ public:
 
   virtual VUSolid* Clone() const;
 
+#if defined(VECGEOM_USOLIDS)
   virtual std::ostream& StreamInfo(std::ostream &os) const;
+#endif
 
   virtual UVector3 GetPointOnSurface() const;
 

@@ -81,7 +81,9 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
+#if defined(VECGEOM_USOLIDS)
   std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 
   //virtual
   bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const override

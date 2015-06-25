@@ -47,7 +47,6 @@ UnplacedOrb::UnplacedOrb() :
   {
   }
   
-  
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::SetRadius(const Precision r)
   {
@@ -59,15 +58,6 @@ UnplacedOrb::UnplacedOrb() :
     fRTolO = fR +  fRTolerance;
   }
   
- 
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::GetParametersList(int, double* aArray)const
-  {
-      aArray[0] = GetRadius();
-  }
-
-  
-
   VECGEOM_CUDA_HEADER_BOTH  //This line is not there in UnplacedBox.cpp
   void UnplacedOrb::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
@@ -96,6 +86,13 @@ UnplacedOrb::UnplacedOrb() :
       return "Orb\n";
   }
   
+#if defined(VECGEOM_USOLIDS)
+  VECGEOM_CUDA_HEADER_BOTH
+  void UnplacedOrb::GetParametersList(int, double* aArray) const
+  {
+      aArray[0] = GetRadius();
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* UnplacedOrb::Clone() const
   {
@@ -120,7 +117,7 @@ UnplacedOrb::UnplacedOrb() :
 
    return os;
   }
-
+#endif
   
 void UnplacedOrb::Print() const {
   printf("UnplacedOrb {%.2f}",GetRadius());

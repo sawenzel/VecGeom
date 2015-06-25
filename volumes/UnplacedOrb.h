@@ -89,19 +89,16 @@ public:
   std::string GetEntityType() const;
 #endif
   
-    
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   void GetParametersList(int aNumber, double *aArray) const; 
   
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* Clone() const;
 
-  //VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
+#endif
     
-  // VECGEOM_CUDA_HEADER_BOTH
-  // void ComputeBBox() const; 
-  
 public:
   virtual int memory_size() const { return sizeof(*this); }
 

@@ -244,11 +244,13 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
 */
 
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   void GetParametersList(int aNumber, double *aArray) const override {
     return GetUnplacedVolume()->GetParametersList(aNumber, aArray);
   }
+#endif
 
 #ifndef VECGEOM_NVCC
   VECGEOM_INLINE
@@ -257,8 +259,10 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
   VECGEOM_INLINE
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_INLINE
   std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 
   VECGEOM_INLINE
   void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
