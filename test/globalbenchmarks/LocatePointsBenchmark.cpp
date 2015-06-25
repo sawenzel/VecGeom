@@ -78,7 +78,7 @@ void benchGeant4( G4Navigator * nav, std::vector<G4ThreeVector> const & points,
     G4VPhysicalVolume * vol;
     for(unsigned int i=0; i < points.size(); ++i){
         vol = nav->LocateGlobalPointAndSetup(points[i], NULL, false, true);
-        if(vol) ; // avoid compiler warning
+        (void) vol; // avoid compiler warning
         // this takes ages:
         // nav->LocateGlobalPointAndUpdateTouchable(points[i], pool[i], false);
     }
