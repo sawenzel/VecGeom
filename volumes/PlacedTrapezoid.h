@@ -108,7 +108,7 @@ public:
   virtual
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
 
-  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const {
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const override {
     return GetUnplacedVolume()->Normal(point, normal);
   }
 
@@ -116,11 +116,11 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  Vector3D<Precision>  GetPointOnSurface() const {
+  Vector3D<Precision>  GetPointOnSurface() const override {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -130,19 +130,19 @@ public:
   void GetParameterList() const { return GetUnplacedVolume()->GetParameterList() ;}
 
   VECGEOM_CUDA_HEADER_BOTH
-  std::ostream& StreamInfo(std::ostream &os) const { return GetUnplacedVolume()->StreamInfo(os) ;}
+  std::ostream& StreamInfo(std::ostream &os) const override { return GetUnplacedVolume()->StreamInfo(os) ;}
 
 
 #ifndef VECGEOM_NVCC
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

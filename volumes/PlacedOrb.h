@@ -74,25 +74,27 @@ public:
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
 
   VECGEOM_CUDA_HEADER_BOTH
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
+  void GetParametersList(int aNumber, double *aArray) const override {
+    return GetUnplacedVolume()->GetParametersList(aNumber, aArray);
+  }
 
 #ifndef VECGEOM_NVCC
   virtual Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
 
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
   
   void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
     return GetUnplacedVolume()->Extent(aMin,aMax);
   }
   
-  Vector3D<Precision>  GetPointOnSurface() const { return GetUnplacedVolume()->GetPointOnSurface();}
+  Vector3D<Precision>  GetPointOnSurface() const override { return GetUnplacedVolume()->GetPointOnSurface();}
 
   // VECGEOM_CUDA_HEADER_BOTH
   // void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
   
-  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const override
   {
       bool valid;
       OrbImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
@@ -102,15 +104,15 @@ public:
       return valid;
   }
 
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

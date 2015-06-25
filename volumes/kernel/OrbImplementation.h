@@ -402,7 +402,7 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
-      typename Backend::precision_v &distance){
+      typename Backend::precision_v &distance) {
 
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;

@@ -84,21 +84,21 @@ public:
 
 #ifndef VECGEOM_NVCC
   virtual
-   Vector3D<Precision> GetPointOnSurface() const {
+   Vector3D<Precision> GetPointOnSurface() const override {
      return GetUnplacedVolume()->GetPointOnSurface();
    }
- bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const {
+ bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const override {
 	  return GetUnplacedVolume()->Normal(point, normal);
   }
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

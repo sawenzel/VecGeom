@@ -246,11 +246,9 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+  void GetParametersList(int aNumber, double *aArray) const override {
+    return GetUnplacedVolume()->GetParametersList(aNumber, aArray);
+  }
 
 #ifndef VECGEOM_NVCC
   VECGEOM_INLINE
@@ -260,12 +258,14 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
   VECGEOM_INLINE
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
 
   VECGEOM_INLINE
-  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override { return GetUnplacedVolume()->Extent(aMin,aMax);}
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
+    return GetUnplacedVolume()->Extent(aMin,aMax);
+  }
   
-  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const override
   {
       bool valid;
       SphereImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
@@ -275,20 +275,20 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
       return valid;
   }
 
-  Vector3D<Precision> GetPointOnSurface() const {
+  Vector3D<Precision> GetPointOnSurface() const override {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

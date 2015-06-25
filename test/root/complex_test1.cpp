@@ -279,20 +279,20 @@ void testnavsimple()
     // check with a large physical step
     double step = 0.0, tolerance = 1.0e-4;
     nav.FindNextBoundaryAndStep( p1, d, *currentstate, *newstate, vecgeom::kInfinity, step );
-    assert(abs(step - 4.0) < tolerance);
+    assert(std::abs(step - 4.0) < tolerance);
     assert( newstate->IsOnBoundary() == true );
     assert( std::strcmp( RootGeoManager::Instance().tgeonode( newstate->Top() )->GetName() , "b2l_0" ));
 
     newstate->Clear();
     nav.FindNextBoundaryAndStep( p1, d, *currentstate, *newstate, 0.02, step );
-    assert(abs(step - 0.02) < tolerance);
+    assert(std::abs(step - 0.02) < tolerance);
     assert( newstate->Top() == currentstate->Top() );
     assert( newstate->IsOnBoundary() == false );
     assert( newstate->IsOutside() == false );
 
     newstate->Clear();
     nav.FindNextBoundaryAndStep( p1, d2, *currentstate, *newstate, vecgeom::kInfinity, step );
-    assert(abs(step - 1.0) < tolerance);
+    assert(std::abs(step - 1.0) < tolerance);
     assert( newstate->IsOnBoundary( ) == true );
     assert( newstate->Top() == NULL );
     assert( newstate->IsOutside( ) == true );
