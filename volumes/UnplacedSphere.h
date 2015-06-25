@@ -54,8 +54,6 @@ private:
     //Tolerance compatiable with USolids
     Precision epsilon;// = 2e-11; 
     Precision frTolerance;//=1e-9;     //radial tolerance;
-    //Precision fgTolerance ;//= 1e-9;  // cartesian tolerance;
-    //Precision faTolerance ;//= 1e-9;  // angular tolerance;
 
 
     // Member variables go here

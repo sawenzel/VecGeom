@@ -33,7 +33,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      fDTheta(0),
      fRminTolerance(0),
      mkTolerance(0),
-     fEpsilon(kSEpsilon), 
+     fEpsilon(kEpsilon), 
      sinCPhi(0),
      cosCPhi(0),
      cosHDPhiOT(0),
@@ -59,7 +59,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      fFullSphere(true),
      fCubicVolume(0.), 
      fSurfaceArea(0.), 
-     epsilon(kSEpsilon), 
+     //epsilon(kSEpsilon), 
      frTolerance(kTolerance*10.),
      fPhiWedge(pDPhi,pSPhi),
      fThetaCone(pSTheta,pDTheta)

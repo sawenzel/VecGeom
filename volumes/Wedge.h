@@ -12,9 +12,6 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "backend/Backend.h"
 
-#include <iostream>
-
-
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -58,7 +55,7 @@ class Wedge{
 
     public:
         VECGEOM_CUDA_HEADER_BOTH
-      Wedge( Precision angle, Precision zeroangle = 0 );
+        Wedge( Precision angle, Precision zeroangle = 0 );
 
         VECGEOM_CUDA_HEADER_BOTH
         ~Wedge(){}

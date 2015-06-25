@@ -1,4 +1,3 @@
-
 //
 // Implementation of the batch solid  test
 //
