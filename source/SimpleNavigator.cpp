@@ -64,8 +64,12 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
    outstream << "Navigating in placed volume : " << RootGeoManager::Instance().GetName( currentvolume ) << "\n";
 
    int nexthitvolume = -1; // means mother
+   int tmp = outstream.precision();
+   outstream << std::setprecision(20);
    outstream << "localpoint " << localpoint << "\n";
-   outstream << "check containment in mother " << currentvolume->Contains( localpoint ) << "\n";
+   outstream << "localdir " << localdir << "\n";
+   outstream << std::setprecision(tmp);
+   outstream << "check containment in mother " << currentvolume->UnplacedContains( localpoint ) << "\n";
    double step = currentvolume->DistanceToOut( localpoint, localdir );
 
    outstream << "DistanceToOutMother : " << step << "\n";

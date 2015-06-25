@@ -54,10 +54,10 @@ public:
      }
 
     // loads a G4 geometry from a gdmlfile
-    void LoadG4Geometry( std::string gdmlfile ){
+    void LoadG4Geometry( std::string gdmlfile, bool validate = false ){
 #ifndef VECGEOM_USOLIDS
         G4GDMLParser parser;
-        parser.Read( gdmlfile );
+        parser.Read( gdmlfile, validate );
 
         LoadG4Geometry( const_cast<G4VPhysicalVolume *>(parser.GetWorldVolume()) );
 #else

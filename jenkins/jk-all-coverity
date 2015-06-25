@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+THIS=$(dirname $0)
+source $THIS/jk-setup-coverity.sh $LABEL $COMPILER $BUILDTYPE $EXTERNALS $BACKEND
+
+echo "Dumping the full environment ---------------------------------------------------------"
+env | sort | sed 's/:/:?     /g' | tr '?' '\n'
+echo "--------------------------------------------------------------------------------------"

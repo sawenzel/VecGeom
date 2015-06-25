@@ -247,6 +247,7 @@ namespace VecCore {
          return *this;
       }
 
+      VECGEOM_CUDA_HEADER_BOTH
       static size_t SizeOfInstance(size_t nbits) {
          return SizeOf( GetNbytes(nbits) );
       }
@@ -256,6 +257,7 @@ namespace VecCore {
          return Base_t::MakeInstance(nvalues, nbits);
       }
 
+      VECGEOM_CUDA_HEADER_BOTH
       static BitSet *MakeInstanceAt(size_t nbits, void *addr) {
          size_t nvalues = GetNbytes(nbits);
          return Base_t::MakeInstanceAt(nvalues, addr, nbits);
@@ -286,6 +288,7 @@ namespace VecCore {
 
       //----- bit manipulation
       //----- (note the difference with TObject's bit manipulations)
+      VECGEOM_CUDA_HEADER_BOTH
       void   ResetAllBits(bool value=false)
       {
          // Reset all bits to 0 (false).

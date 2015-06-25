@@ -87,7 +87,7 @@ public:
   }
 
   virtual
-  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const override
   {
       bool valid;
       BoxImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
@@ -98,7 +98,7 @@ public:
   }
 
   virtual
-  Vector3D<Precision> GetPointOnSurface() const {
+  Vector3D<Precision> GetPointOnSurface() const override {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
@@ -110,24 +110,24 @@ public:
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const;
+  virtual void PrintType() const override;
 
   // CUDA specific
 
-  virtual int memory_size() const { return sizeof(*this); }
+  virtual int memory_size() const override { return sizeof(*this); }
 
   // Comparison specific
 
 #ifndef VECGEOM_NVCC
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

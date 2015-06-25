@@ -392,7 +392,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
 
-  distance = Backend::kZero;     // early return value
+  distance = vecgeom::kInfinity;  // default initialization for distance to out
   Bool_t done(Backend::kFalse);
 
   //
@@ -403,6 +403,8 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   // Note that both posZdir and NegZdir may be false, if dir.z() is zero!
   Bool_t posZdir = dir.z() > 0.0;
   Bool_t negZdir = dir.z() <= -0.0;  // -0.0 is needed, see JIRA-150
+
+  // TODO: consider use of copysign or some other standard function
   Float_t zdirSign = Backend::kOne;  // z-direction
   MaskedAssign( negZdir, -Backend::kOne, &zdirSign);
 
@@ -418,7 +420,7 @@ void TrapezoidImplementation<transCodeT, rotCodeT>::DistanceToOut(
   if ( IsFull(done) ) return;
 
   // Step 1.b) general case: assign distance to z plane
-  distance = max/dir.z();
+  distance = max/( dir.z() + zdirSign * vecgeom::kEpsilon );
 
   //
   // Step 2: find distances for intersections with side planes.

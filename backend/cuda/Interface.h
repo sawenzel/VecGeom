@@ -25,6 +25,19 @@ void ConstructOnGpu(DataClass *gpu_ptr, ArgsTypes... params) {
    new (gpu_ptr) DataClass(params...);
 }
 
+ template <typename DataClass, typename... ArgsTypes>
+__global__
+void ConstructArrayOnGpu(DataClass *gpu_ptr, size_t nElements, ArgsTypes... params) {
+
+   unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+   unsigned int idx = tid;
+   while(idx < nElements) {
+      new (gpu_ptr+idx) DataClass(params...);
+      idx += blockDim.x * gridDim.x;
+   }
+}
+
 template <typename DataClass, typename... ArgsTypes>
 void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
 {
@@ -132,9 +145,6 @@ protected:
    VECGEOM_CUDA_HEADER_BOTH
    void *GetPtr() const { return fPtr; }
 
-   void Malloc(unsigned long size) {
-      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
-   }
    void Free() {
       vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaFree((void*)fPtr));
    }
@@ -146,6 +156,9 @@ public:
    explicit DevicePtrBase(void *input) : fPtr(input) {}
    ~DevicePtrBase() { /* does not own content per se */ }
 
+   void Malloc(unsigned long size) {
+      vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void**)&fPtr, size));
+   }
 };
 
  template <typename T> class DevicePtr;
@@ -173,12 +186,12 @@ public:
    void ToDevice(const Type* what, unsigned long nelems = 1) {
       MemcpyToDevice(what,nelems*Derived::SizeOf());
    }
-   void FromDevice(Type* where,cudaStream_t stream) {
-      // Async since we past a stream.
+   void FromDevice(Type* where, cudaStream_t stream) {
+      // Async since we pass a stream.
       MemcpyToHostAsync(where,Derived::SizeOf(),stream);
    }
    void FromDevice(Type* where, unsigned long nelems , cudaStream_t stream) {
-      // Async since we past a stream.
+      // Async since we pass a stream.
       MemcpyToHostAsync(where,nelems*Derived::SizeOf(),stream);
    }
 
@@ -249,6 +262,12 @@ public:
       ConstructOnGpu<<<1, 1>>>( this->GetPtr(), params...);
    }
 
+   template <typename... ArgsTypes>
+   void ConstructArray(size_t nElements, ArgsTypes... params) const
+   {
+      ConstructArrayOnGpu<<<nElements, 1>>>( this->GetPtr(), nElements, params...);
+   }
+
    static size_t SizeOf()
    {
       return sizeof(Type);
@@ -257,6 +276,8 @@ public:
 #else
   template <typename... ArgsTypes>
      void Construct(ArgsTypes... params) const;
+  template <typename... ArgsTypes>
+     void ConstructArray(size_t nElements, ArgsTypes... params) const;
 
   static size_t SizeOf();
 #endif
@@ -290,11 +311,23 @@ public:
       DevicePtr(DevicePtr<inputType> const &input) : DevicePtrImpl<const Type>(input.GetPtr()) {}
 #endif
 
+   VECGEOM_CUDA_HEADER_BOTH
+   const Type* GetPtr() const { return reinterpret_cast<const Type*>(DevicePtrBase::GetPtr()); }
+
+   VECGEOM_CUDA_HEADER_BOTH
+   operator const Type*() const { return GetPtr(); }
+
 #ifdef VECGEOM_NVCC
    template <typename DataClass, typename... ArgsTypes>
    void Construct(ArgsTypes... params) const
    {
       ConstructOnGpu<<<1, 1>>>(*(*this), params...);
+   }
+
+   template <typename... ArgsTypes>
+   void ConstructArray(size_t nElements, ArgsTypes... params) const
+   {
+      ConstructArrayOnGpu<<<nElements, 1>>>( this->GetPtr(), nElements, params...);
    }
 
    static size_t SizeOf()
@@ -304,7 +337,9 @@ public:
 
 #else
    template <typename... ArgsTypes>
-   void Construct(ArgsTypes... params) const;
+     void Construct(ArgsTypes... params) const;
+   template <typename... ArgsTypes>
+     void ConstructArray(size_t nElements, ArgsTypes... params) const;
 
    static size_t SizeOf();
 #endif

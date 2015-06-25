@@ -15,15 +15,126 @@ committal in the SVN repository !
      ----------------------------------------------------------
      * Reverse chronological order (last date on top), please *
      ----------------------------------------------------------
-May 27,  2015  T.Nikitina                     
-- Fixed Coverity defect for unused variable quantity in UCons.
 
-May 22, 2015  T.Nikitina
+May 27, 2015  T.Nikitina
 - Fixed DistanceToOut(p) and Inside(p) in USphere for sphere cut in theta
   for point (0,0,0) and for cases when Start/End angle have not to be taken
   in account (STheta==0 || eTheta==pi).
-  Added corresponding test cases to unit test for Sphere.
   Fix triggered by analysing setup provided in Geant4 problem report #1702.
+
+May 4,  2015  G.Cosmo
+- Fixed Coverity defect for unused variable quantity in UCons.
+
+April 24,  2015  G.Cosmo
+- Some code cleanup and minor fixes...
+  Syncronised implementation with USolids module in VecGeom.
+
+April 23,  2015  G.Cosmo
+- Replaced Exception IDs in UUtils to avoid clashes with wild global
+  extern functions in Root.
+
+April 20,  2015  G.Cosmo
+- Corrected string returned as type-ID by GetEntityType() to conform
+  to shape kind in: UExtrudedSolid, UMultiUnion, UQuadrangularFacet,
+  UTessellatedSolid, UTrap, UTriangularFacet and UVCSGfaceted.
+
+March 3,  2015  G.Cosmo
+- UVector3: made data private and defined accessors x(), y() and z().
+- Made implementations operators +(), -(), *(), and /() inline.
+- Adapted all classes to the change.
+- Added method GetPointOnEdge() to UBox.
+
+February 23,  2015  T.Nikitina            usolids-V00-01-01
+- Fix in SetOriginalParameters() for UPolycone, in case of presence of
+  'rings' structures constructed by (r,z) corners.
+
+February 16,  2015  G.Cosmo
+- Fixed typo in copy-ctor and assignment operator for UTubs.
+
+January 26,  2015  G.Cosmo
+- Renamed DistanceAwayForInside() to DistanceAway() and use polymorphism
+  in UPolyconeSide.
+
+January 26,  2015  T.Nikitina
+- Added special method for Inside 'DistanceAwayForInside()' in order to fix 
+  precision problem of calculation of DistanceToSide() in UPolyconeSide.
+
+February 2,  2015  G.Cosmo 
+- Corrected USolidsConfig.cmake.in script for setting proper path for
+  installed headers.
+
+January 23,  2015  T.Nikitina 
+- Add G4GenericPolycone to SBT test
+
+January 22,  2015  T.Nikitina 
+- Renamed the ExceptionSeverity struct to UExceptionSeverity in UUtils
+
+January 22,  2015  T.Nikitina 
+- Fixed triangularisation method AddGeneralPOlygoneFacets() in UExtrudedSolid
+  by avoiding flat triangles;
+- Add warning message to UTriangularFacet if Area is 0 (case of flat triangle) 
+
+January 22, 2015  T.Nikitina
+- Add options to build USolids with Geant4 
+- Add missing "SaveDataFiles" to SBT
+
+December 16, 2014 T.Nikitina
+- Fix in UPolycone InsideSection for points(0,0,0)
+- Fix in UTrap SafetyToIn/SafetyToOut
+
+December 05, 2014 T.Nikitina
+- Fixes in UMultiUnion(backporting from geant4/usolids) and improved
+  StreamInfo()
+- UMultiUnion: simplified and optimised use of transformations; removed
+  no longer necessary vector of pointers.
+- Minor fixes for UPolycone, UPolyhedra, UTrap, UTet, UCons and UTubs in
+  order to pass unit tests and fix errors from Coverity report.
+
+December 05, 2014 T.Nikitina
+- Fixes in UPolycone in order to run FullCMS: 
+  InsideSection() for openPhi when StartPhi is negative,
+  Init() for Polycone defined from ZPlane[0]>ZPlane[N],
+  DistanceToOut() for points starting on internal surface.
+
+November 25, 2014 T.Nikitina
+- Add "USolidsConfig.cmake.in" and made changes in CMakeLists.txt 
+  for installation of USolids library 
+
+October 20, 2014 T.Nikitina
+- Fixed use of kInfinity in UGenericTrap implementation.
+- Correction to UTessellatedSolid to define post-const attribute for
+  UVertexComparator::operator()(), to resolve compilation error on
+  Windows/VC9 compiler. Avoid inline static methods.
+  Some code formatting.
+  Fixed typo error in USphere::SafetyFromInside() (T.Nikitina).
+- Corrected compilation warnings for variables set but not used in UTrap,
+  UGenericTrap and UTessellatedSolid.
+- Modified original UExtrudedSolid, UGenericTrap and UTrap classes to
+  provide deferred initialisation through default constructor.
+  Added public accessors to UGenericTrap and UTrap.
+  Code cleanup in also in UTessellatedSolid to remove G4 types code blocks
+  and flags and make use of UUtils::Exception where commented.
+- Minor fix in UVector2 to replace use of 's' with 's1' as parameter in
+  copy constructor.
+- Removed references to G4 types in several classes.
+- UCons: fixed typo error in GetPointOnSurface() in the call
+  to GetRadiusInRing(). Responsible for occasionally wrong reports
+  when checking for overlaps.
+  Fix in DistanceToIn(p,v) for points on the Surface, to resolve
+  error reported in unit testing by the OpticalEscape test.
+- Fix in G4USolid for use of polyhedron, to avoid race condition in MT
+  when parameterised volumes are visualised.
+
+October 20, 2014 T.Nikitina
+- Change CMakeLists.txt by default no Geant4 installation included,
+- May 23, 2014  T.Nikitina                  geom-usolids-V10-00-10
+- Fixed DistanceToOut() for UTubs, UCons, USphere, UVSCGfaceted and UPolycone, 
+  DistanceToOut() return normal even for concave faces.
+- Fixed DistanceToOut() for UPolycone in case of points starting on
+  the Surface or on the Internal Surface. Improved convexity algorithm in 
+  DistanceToOut() for UPolycone for points leaving +/-Dz. 
+- Introducing UMultiUnion class; fix in DistanceToOut(), added protection
+  against possible infinite loop, correct treatment of transformations in UMultiUnion and UVoxeliser.
 
 March 27, 2014  G.Cosmo
 - Removed unused SaveVectorToExternalFile() methods in UUtils, also

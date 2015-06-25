@@ -347,9 +347,9 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
                                         ) const
 {
 #ifndef VECGEOM_NVCC
- //  static int counter=0;
+   static int counter=0;
+   counter++;
 #endif
-   
    // this information might have been cached in previous navigators??
    Transformation3D m;
    currentstate.TopMatrix(m);
@@ -357,7 +357,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    Vector3D<Precision> localdir=m.TransformDirection(globaldir);
 
    VPlacedVolume const * currentvolume = currentstate.Top();
-#ifdef VERBOSE
+#if defined(VERBOSE) && !defined(VECGEOM_NVCC)
    if( counter % 1 == 0)
    {
        std::cerr << "navigating in " << currentvolume->GetLabel() << " stepnumber " << counter << "pstep " << pstep << " pos " << globalpoint << " dir " << globaldir ;
@@ -372,7 +372,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // NOTE: IF STEP IS NEGATIVE HERE, SOMETHING IS TERRIBLY WRONG. WE CAN TRY TO HANDLE THE SITUATION
    // IN TRYING TO PROPOSE THE RIGHT LOCATION IN NEWSTATE AND RETURN
    // I WOULD MUCH FAVOUR IF THIS WAS DONE OUTSIDE OF THIS FUNCTION BY THE USER
-   if( step <= 0. )
+   if( step < 0. )
    {
 //       newstate = currentstate;
 //       RelocatePointFromPath( localpoint, newstate );
@@ -425,12 +425,34 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // do nothing (step=0) and retry one level higher
    if( step == kInfinity && pstep > 0. )
    {
-      //std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
+#if defined(VECGEOM_ROOT) && !defined(VECGEOM_NVCC)
+      std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
       //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
       // set step to zero and retry one level higher
-      step = 0;
-      newstate.Pop();
+      // if( nexthitvolume!=-1 ) std::cout << "catastrophee\n";
+      currentstate.printVolumePath(std::cout); std::cout << "\n";
+#endif
+      newstate.Clear();
+      LocatePoint( GeoManager::Instance().GetWorld(), globalpoint
+              + vecgeom::kTolerance*globaldir,
+              newstate, true );
+      step = vecgeom::kTolerance;
+              // newstate.Pop();
+#if defined(VECGEOM_ROOT) && !defined(VECGEOM_NVCC)
+     // InspectEnvironmentForPointAndDirection( globalpoint, localpoint, currentstate );
+      newstate.printVolumePath(std::cout); std::cout << "\n";
+      InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+      std::cout << " counter is " << counter << "\n";
+#endif
       newstate.SetBoundaryState(true);
+      if( newstate.HasSamePathAsOther(currentstate) ) {
+#ifndef VECGEOM_NVCC
+          std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
+#endif
+          newstate.Pop();
+          //exit(1);
+      }
+      //exit(1);
       return;
    }
    // is geometry further away than physics step?
@@ -454,11 +476,11 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
     }
 
 #ifdef VERBOSE
-    std::cerr << " step " << step << " nextvol " << nexthitvolume << "\n";
+   std::cout << " step " << step << " nextvol " << nexthitvolume << "\n";
 #endif
-
+   step+=1E-6;
    Vector3D<Precision> newpointafterboundary = localdir;
-   newpointafterboundary*=(step + 1e-6);
+   newpointafterboundary*=step;
    newpointafterboundary+=localpoint;
 
    if( nexthitvolume != -1 ) // not hitting mother
@@ -502,15 +524,18 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
        if( orignode!= NULL)
            vecgeomcmpcur = RootGeoManager::Instance().GetPlacedVolume( orignode );
 
+#ifndef VECGEOM_NVCC
        if ( currentstate.Top() != vecgeomcmpcur )
        {
            std::cout << "##-- INCONSISTENT START STATE --##\n";
        }
+#endif
 
        if( newstate.Top() != vecgeomcmpnext || currentstate.Top() != vecgeomcmpcur )
        {
            CreateDebugDump( globalpoint, globaldir, currentstate, pstep);
 
+#ifndef VECGEOM_NVCC
            std::cout << "##-- INCONSISTENCY IN NAVIGATION --##\n";
            std::cout << "  ROOT step " << nav->GetStep() << "\n";
            std::cout << "  VecGeom step " << step << "\n";
@@ -548,6 +573,7 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
            // list exiting ; entering etc.
            InspectEnvironmentForPointAndDirection(
                globalpoint, globaldir, currentstate);
+#endif
        }
    //#endif
    #endif // distance debug
