@@ -603,7 +603,6 @@ class ThetaCone{
 
             typedef typename Backend::precision_v Float_t;
             typedef typename Backend::bool_v Bool_t;
-            Bool_t fal(false),tr(true);
 	Float_t pi(kPi),zero(0.);
 	Float_t rad = Sqrt(localPoint.Mag2() - (localPoint.z() * localPoint.z()));
 	Float_t cone1Radius = Abs(localPoint.z()*tanSTheta);
@@ -668,8 +667,8 @@ class ThetaCone{
             if(fETheta >= kPi/2 - halfAngTolerance && fETheta <= kPi/2 + halfAngTolerance)
             {
     
-                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyinside);
-                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyoutside);
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,Bool_t(false) ,&completelyinside);
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,Bool_t(false) ,&completelyoutside);
             }
             
 	      }
@@ -679,8 +678,8 @@ class ThetaCone{
              if(fSTheta >= kPi/2 - halfAngTolerance && fSTheta <= kPi/2 + halfAngTolerance)
             {
     
-                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyinside);
-                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,fal ,&completelyoutside);
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,Bool_t(false) ,&completelyinside);
+                    MaskedAssign(Abs(localPoint.z())<halfAngTolerance ,Bool_t(false) ,&completelyoutside);
             }
             
 		if(fSTheta > kPi/2 + halfAngTolerance)
