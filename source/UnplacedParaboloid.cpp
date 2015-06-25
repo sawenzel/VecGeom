@@ -248,8 +248,8 @@ fDy(0)
 
 #if defined(VECGEOM_USOLIDS)
     VECGEOM_CUDA_HEADER_BOTH
-    void UnplacedParaboloid::StreamInfo(std::ostream &os) const{
-        //NYI
+    std::ostream& UnplacedParaboloid::StreamInfo(std::ostream &os) const {
+      return os;
     }
 #endif
 

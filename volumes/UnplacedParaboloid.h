@@ -196,7 +196,7 @@ public:
    
 #if defined(VECGEOM_USOLIDS)
     VECGEOM_CUDA_HEADER_BOTH
-    void StreamInfo(std::ostream &os) const;
+    std::ostream& StreamInfo(std::ostream &os) const;
 #endif
     
 //__________________________________________________________________

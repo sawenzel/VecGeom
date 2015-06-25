@@ -152,8 +152,8 @@ public:
     virtual VUSolid* Clone() const override { return NULL; }
 
     VECGEOM_CUDA_HEADER_BOTH
-    virtual void StreamInfo(std::ostream &os) const override {
-      return GetUnplacedVolume()->StreamInfo( os) ;
+    virtual std::ostream& StreamInfo(std::ostream &os) const override {
+      return GetUnplacedVolume()->StreamInfo(os);
     }
 #endif
 
