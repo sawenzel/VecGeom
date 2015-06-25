@@ -52,9 +52,8 @@ private:
     Precision fCubicVolume, fSurfaceArea;
     
     //Tolerance compatiable with USolids
-    Precision epsilon;// = 2e-11; 
-    Precision frTolerance;//=1e-9;     //radial tolerance;
-
+    // Precision epsilon;// = 2e-11;
+    // Precision frTolerance;//=1e-9;     //radial tolerance;
 
     // Member variables go here
     // Precision fR,fRTolerance, fRTolI, fRTolO;
