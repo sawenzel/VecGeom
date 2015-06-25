@@ -410,32 +410,29 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 
     Vector3D<Float_t> localPoint = point;
     Vector3D<Float_t> localDir = direction;
-    
+
     distance = kInfinity;
     Bool_t done(false);
-    Bool_t tr(true),fal(false);
 
     Float_t fR(unplaced.GetRadius()); 
 	// General Precalcs
     Float_t rad2 = localPoint.Mag2();
-    Float_t rho2 = localPoint.x()*localPoint.x() + localPoint.y()*localPoint.y();
     Float_t pDotV3d = localPoint.Dot(localDir);
 
-    Bool_t cond(false);
-  
     Float_t  c(0.), d2(0.);
     c = rad2 - fR * fR;
     //MaskedAssign((tr),(pDotV3d * pDotV3d - c),&d2);
     d2 = (pDotV3d * pDotV3d - c);
 
-    Float_t sd1(kInfinity);
     done |= (d2 < 0. || ((localPoint.Mag() > fR) && (pDotV3d > 0.)));
     if(IsFull(done)) return; //Returning in case of no intersection with outer shell
 
+    Bool_t test1 = !done && (pDotV3d < 0.0);
+    Bool_t test2 = (Sqrt(rad2) >= (fR - kTolerance) ) && (Sqrt(rad2) <= (fR + kTolerance));
+    Bool_t test3 = (Sqrt(rad2) > (fR + kTolerance) ) && (d2 >= 0.0);
 
-    MaskedAssign(( (Sqrt(rad2) >= (fR - kTolerance) ) && (Sqrt(rad2) <= (fR + kTolerance)) && (pDotV3d < 0.) && !done ),0.,&sd1);
-    MaskedAssign( ( (Sqrt(rad2) > (fR + kTolerance) ) && (tr) && (d2 >= 0.) && pDotV3d < 0.  && !done ) ,(-1.*pDotV3d - Sqrt(d2)),&sd1);
-    distance=sd1;
+    MaskedAssign(test1 && test2, 0.0, &distance);
+    MaskedAssign(test1 && test3,-1.0 * pDotV3d - Sqrt(d2), &distance);
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -449,22 +446,16 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-   
     typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
 
     Vector3D<Float_t> localPoint = point;
     Vector3D<Float_t> localDir=direction;
-    
+
     distance = kInfinity;
     Float_t  pDotV2d, pDotV3d;
-    
-    
+
     Bool_t done(false);
-    Bool_t tr(true),fal(false);
-    
-    Float_t snxt(kInfinity);
-    
     Float_t fR(unplaced.GetRadius()); 
 
     // Intersection point
@@ -473,22 +464,21 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb co
 
     pDotV2d = localPoint.x() * localDir.x() + localPoint.y() * localDir.y();
     pDotV3d = pDotV2d + localPoint.z() * localDir.z(); //localPoint.Dot(localDir);
- 
+
     Float_t rad2 = localPoint.Mag2();
     c = rad2 - fR * fR;
-   
+
    //New Code
-   
    Float_t sd1(0.);
-   
+
    Bool_t cond1 = (Sqrt(rad2) <= (fR + 0.5*kTolerance)) ;
    Bool_t cond = (Sqrt(rad2) <= (fR + kTolerance)) && (Sqrt(rad2) >= (fR - kTolerance)) && pDotV3d >=0 && cond1;
    done |= cond;
    MaskedAssign(cond ,0.,&sd1);
-   
-   MaskedAssign((tr && cond1),(pDotV3d * pDotV3d - c),&d2);
-   MaskedAssign( (!done && cond1 && (tr) && (d2 >= 0.) ) ,(-1.*pDotV3d + Sqrt(d2)),&sd1);
-   
+
+   MaskedAssign(cond1, (pDotV3d * pDotV3d - c), &d2);
+   MaskedAssign((!done && cond1 && (d2 >= 0.0)), (-1.*pDotV3d + Sqrt(d2)), &sd1);
+
    MaskedAssign((sd1 < 0.),kInfinity, &sd1);
    distance=sd1;
 }
