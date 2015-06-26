@@ -8,6 +8,7 @@ SRCDIR=${SRCDIR:-${HOME}/src/vecgeom}
 DESTDIR=${DESTDIR:-${PWD}}
 
 BENCHMARK="ON"
+VALIDATION="OFF"
 CTEST="ON"
 GEANT4="ON"
 ROOT="ON"
@@ -51,6 +52,9 @@ case ${option} in
 	bench|benchmark)     BENCHMARK="ON"  ;;
 	nobench|nobenchmark) BENCHMARK="OFF" ;;
 
+	validation)   VALIDATION="ON"  ;;
+	novalidation) VALIDATION="OFF" ;;
+
 	usolids)   USOLIDS="ON"  ;;
 	nousolids) USOLIDS="OFF" ;;
 
@@ -65,5 +69,6 @@ done
 cmake ${SRCDIR} -DCMAKE_INSTALL_PREFIX=${DESTDIR}          \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${BACKEND} ${CUDA}    \
     -DUSOLIDS=${USOLIDS} -DROOT=${ROOT} -DGEANT4=${GEANT4} \
-    -DBENCHMARK=${BENCHMARK} -DCTEST=${CTEST} ${EXTRA_CONF}
+    -DCTEST=${CTEST} -DBENCHMARK=${BENCHMARK}              \
+    -DVALIDATION=${VALIDATION} ${EXTRA_CONF}
 
