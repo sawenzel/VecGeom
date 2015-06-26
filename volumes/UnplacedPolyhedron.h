@@ -40,7 +40,7 @@ namespace vecgeom {
 VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolyhedron; )
 VECGEOM_DEVICE_FORWARD_DECLARE( struct ZSegment; )
 VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolyhedron );
-VECGEOM_DEVICE_DECLARESTRUCT_CONV( ZSegment );
+VECGEOM_DEVICE_DECLARE_CONV( ZSegment );
 
 // Declare types shared by cxx and cuda.
 namespace Polyhedron {
@@ -115,7 +115,7 @@ private:
   bool fHasInnerRadii; ///< Has any Z-segments with an inner radius != 0.
   bool fHasPhiCutout; ///< Has a cutout angle along phi.
   bool fHasLargePhiCutout; ///< Phi cutout is larger than pi.
-  // Precision fPhiStart; ///< Phi start in degree (input to constructor)
+  Precision fPhiStart; ///< Phi start in degree (input to constructor)
   Precision fPhiDelta; ///< Phi delta in degree (input to constructor)
   Array<ZSegment> fZSegments; ///< AOS'esque collections of quadrilaterals
   Array<Precision> fZPlanes; ///< Z-coordinate of each plane separating segments
