@@ -425,20 +425,19 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    // do nothing (step=0) and retry one level higher
    if( step == kInfinity && pstep > 0. )
    {
-#if defined(VECGEOM_ROOT) && !defined(VECGEOM_NVCC)
+#if !defined(VECGEOM_NVCC)
       std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
       //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
       // set step to zero and retry one level higher
       // if( nexthitvolume!=-1 ) std::cout << "catastrophee\n";
+#if defined(VECGEOM_ROOT)
       currentstate.printVolumePath(std::cout); std::cout << "\n";
 #endif
       newstate.Clear();
-      LocatePoint( GeoManager::Instance().GetWorld(), globalpoint
-              + vecgeom::kTolerance*globaldir,
-              newstate, true );
+      VPlacedVolume const *world = GeoManager::Instance().GetWorld();
+      LocatePoint(world, globalpoint + vecgeom::kTolerance*globaldir, newstate, true);
       step = vecgeom::kTolerance;
-              // newstate.Pop();
-#if defined(VECGEOM_ROOT) && !defined(VECGEOM_NVCC)
+#if defined(VECGEOM_ROOT)
      // InspectEnvironmentForPointAndDirection( globalpoint, localpoint, currentstate );
       newstate.printVolumePath(std::cout); std::cout << "\n";
       InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
@@ -446,14 +445,14 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
 #endif
       newstate.SetBoundaryState(true);
       if( newstate.HasSamePathAsOther(currentstate) ) {
-#ifndef VECGEOM_NVCC
           std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
-#endif
           newstate.Pop();
-          //exit(1);
       }
-      //exit(1);
       return;
+#else
+      // Can't call GeoManager::Instance().GetWorld() from CUDA code
+      assert(false && "ERROR: point is outside expected volumes");
+#endif
    }
    // is geometry further away than physics step?
    if(step > pstep)
