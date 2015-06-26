@@ -99,20 +99,18 @@ for ((index=1; index <= testNum; index++)); do
 	cue=$((RANDOM % count+1))
 	myGeom=${Geometry[$cue]}
 	echo " Index = " ${index} "  cue = " ${cue} " Geometry = " ${myGeom} "<<<<<<<"
-        #timeout --preserve-status --kill-after=${timeout}s ${timeout}s BenchmarkShapeFromROOTFile ${fname1}  ${Geometry[$cue]} > "${logDIR}/${Geometry[$cue]}.log"
-	#timeout --preserve-status ${timeout}s  
 	$1 ${fname1} ${myGeom} # > "${logDIR}/${myGeom}_RND.log" 
 
 	errCode=$?
 
 	echo "Exit code :-> " ${errCode}
 
-	if [ ${errCode} -ne 0 ]; then
-	    if [ ${errCode} -eq 143 ]; then
-			errmesg="${myGeom}  ----->  Failed due to time out"
+	if [[ ${errCode} -ne 0 ]]; then
+	    if [[ ${errCode} -eq 143 ]]; then
+			errmesg="${myGeom}  ----->  Failed: timeout"
 			echo ${errmesg} # >> ${logDIR}/${fname3}_RND
 		else 
-			errmesg="${myGeom}  ----->  Failed NOT due to time out but due to other runtime errors :: Status code " ${errCode}
+			errmesg="${myGeom}  ----->  Failed: runtime error: ${errCode}"
 			echo ${errmesg} # >> ${logDIR}/${fname3}_RND
 		fi
 		    
