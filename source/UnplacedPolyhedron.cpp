@@ -39,6 +39,8 @@ UnplacedPolyhedron::UnplacedPolyhedron(
       fRMax(zPlaneCount), fPhiSections(sideCount+1),
       fBoundingTube(0, 1, 1, 0, kTwoPi),fSurfaceArea(0.),fCapacity(0.) {
 
+  (void) fPhiStart; // avoid unused variable compiler warning
+
   typedef Vector3D<Precision> Vec_t;
 
   // Sanity check of input parameters
