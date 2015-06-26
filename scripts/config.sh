@@ -27,7 +27,7 @@ case ${option} in
 	;;
 
 	clang|Clang)
-	export CC=gcc CXX=g++
+	export CC=clang CXX=clang++
 	;;
 
 	# backends
@@ -41,6 +41,7 @@ case ${option} in
 
 	# other options
 	cuda|CUDA)
+	USOLIDS="OFF"
 	CUDA="-DCUDA=ON -DNO_SPECIALIZATION=ON -DCUDA_VOLUME_SPECIALIZATION=OFF"
 	;;
 
