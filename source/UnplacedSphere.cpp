@@ -176,10 +176,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   }
   
   
-  #ifdef VECGEOM_NVCC
-  Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const{}
-  #else 
-  VECGEOM_CUDA_HEADER_BOTH
+  #ifndef VECGEOM_NVCC
   Vector3D<Precision> UnplacedSphere::GetPointOnSurface() const
   {
       
