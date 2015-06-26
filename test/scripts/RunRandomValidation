@@ -69,7 +69,7 @@ echo Number of Elements: ${#Geometry[@]}
 # restoring stdin from file descriptor and closing descriptor
 exec 0<&10 10<&-
 
-if [ ${mode} -eq 1 ]; then
+if [[ ${mode} -eq 1 ]]; then
   echo "Running all shapes"
   for ((index=1; index <= count; index++)); do
         myGeom=${Geometry[$index]}
