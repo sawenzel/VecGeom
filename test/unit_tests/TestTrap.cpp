@@ -483,15 +483,37 @@ struct VECGEOMCONSTANTS
 };
 
 
-int main() {
+int main(int argc, char *argv[]) {
+ 
+   if( argc < 2)
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
+    
+    if( ! strcmp(argv[1], "--usolids") )
+    { 
+      #ifdef VECGEOM_USOLIDS
+      TestTrap<USOLIDSCONSTANTS, UTrap>();
+      std::cout << "UTrap passed (but notice discrepancies above, where asserts have been disabled!)\n";
+      #else
+      std::cerr << "VECGEOM_USOLIDS was not defined\n";
+      return 2;
+      #endif
+    }
+    else if( ! strcmp(argv[1], "--vecgeom") )
+    {
+      //testingvecgeom = true;
+     TestTrap<VECGEOMCONSTANTS, VECGEOM_NAMESPACE::SimpleTrapezoid>();
+     std::cout << "VecGeom Trap passed.\n";
+    
+    }
+    else
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
 
-    TestTrap<VECGEOMCONSTANTS, VECGEOM_NAMESPACE::SimpleTrapezoid>();
-    std::cout << "VecGeom Trap passed.\n";
-
-#ifdef VECGEOM_USOLIDS
-    TestTrap<USOLIDSCONSTANTS, UTrap>();
-    std::cout << "UTrap passed (but notice discrepancies above, where asserts have been disabled!)\n";
-#endif
 
   return 0;
 }
