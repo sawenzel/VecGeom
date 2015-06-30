@@ -206,7 +206,7 @@ class ThetaCone{
                       if(fSTheta < fETheta)
                       {
                           MaskedAssign(fSTheta==0.,DistanceToLine<Backend>(slope2,pointRad, point.z()),&safeTheta);
-			CondAssign((pointRad < bisectorRad) && (fSTheta!=0.) ,DistanceToLine<Backend>(slope1,pointRad, point.z()),DistanceToLine<Backend>(slope2,pointRad, point.z()),&safeTheta);
+			CondAssign((pointRad < bisectorRad) && (fSTheta!=Float_t(0.)) ,DistanceToLine<Backend>(slope1,pointRad, point.z()),DistanceToLine<Backend>(slope2,pointRad, point.z()),&safeTheta);
 
 		     }
 		  }
@@ -234,7 +234,7 @@ class ThetaCone{
                       		{
                       		    //MaskedAssign(fSTheta==0.,DistanceToLine<Backend>(slope2,pointRad, point.z()),&safeTheta);
                       		    MaskedAssign(fETheta==kPi,DistanceToLine<Backend>(slope1,pointRad, point.z()),&safeTheta);
-					CondAssign((pointRad < bisectorRad) && /*(fSTheta!=0.) && */(fETheta!=kPi),DistanceToLine<Backend>(slope2,pointRad, point.z()),DistanceToLine<Backend>(slope1,pointRad, point.z()),&safeTheta);
+					CondAssign((pointRad < bisectorRad) && /*(fSTheta!=0.) && */(fETheta!=Float_t(kPi)),DistanceToLine<Backend>(slope2,pointRad, point.z()),DistanceToLine<Backend>(slope1,pointRad, point.z()),&safeTheta);
 	   			}
 		     }
 	     }
