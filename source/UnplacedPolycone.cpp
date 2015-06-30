@@ -512,7 +512,7 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
   areas.push_back(kPi * (sec0.fSolid->GetRmax1()*sec0.fSolid->GetRmax1()
                                  - sec0.fSolid->GetRmin1()*sec0.fSolid->GetRmin1()));
 
-  for (i = 0; i < numPlanes - 1; i++)
+  for (i = 0; i < numPlanes; i++)
   {
      PolyconeSection const & sec = GetSection(i);
      Area = (sec.fSolid->GetRmin1() + sec.fSolid->GetRmin2())
@@ -543,11 +543,11 @@ Vector3D<Precision> UnplacedPolycone::GetPointOnSurface() const
     totArea += Area;
   }
   PolyconeSection const & secn = GetSection(numPlanes - 1);
-  areas.push_back(kPi * kPi * (secn.fSolid->GetRmax2()*secn.fSolid->GetRmax2()
+  areas.push_back( kPi * (secn.fSolid->GetRmax2()*secn.fSolid->GetRmax2()
                   - secn.fSolid->GetRmin2()*secn.fSolid->GetRmin2()));
 
 
-  totArea += (areas[0] + areas[numPlanes]);
+  totArea += (areas[0] + areas[numPlanes+1]);
   Precision chose = RNG::Instance().uniform(0., totArea);
 
   if ((chose >= 0.) && (chose < areas[0]))
@@ -609,8 +609,7 @@ Precision UnplacedPolycone::SurfaceArea() const {
     PolyconeSection const & sec0 = GetSection(0);
      areas.push_back(kPi * (sec0.fSolid->GetRmax1()*sec0.fSolid->GetRmax1()
      - sec0.fSolid->GetRmin1()*sec0.fSolid->GetRmin1()));
-
-    for (i = 0; i < numPlanes - 1; i++)
+    for (i = 0; i < numPlanes ; i++)
     {
      PolyconeSection const & sec = GetSection(i);
      Area = (sec.fSolid->GetRmin1() + sec.fSolid->GetRmin2())
@@ -626,7 +625,7 @@ Precision UnplacedPolycone::SurfaceArea() const {
                  4.*sec.fSolid->GetDz()*sec.fSolid->GetDz());
 
      Area *= 0.5 * GetDeltaPhi();
-
+    
      if (GetDeltaPhi() < kTwoPi)
       {
      Area += std::fabs(2*sec.fSolid->GetDz()) *
@@ -639,13 +638,12 @@ Precision UnplacedPolycone::SurfaceArea() const {
       totArea += Area;
     }
      PolyconeSection const & secn = GetSection(numPlanes - 1);
-     areas.push_back(kPi * kPi * (secn.fSolid->GetRmax2()*secn.fSolid->GetRmax2()
+     areas.push_back(kPi * (secn.fSolid->GetRmax2()*secn.fSolid->GetRmax2()
      - secn.fSolid->GetRmin2()*secn.fSolid->GetRmin2()));
 
-     totArea += (areas[0] + areas[numPlanes]);
+     totArea += (areas[0] + areas[numPlanes+1]);
      fSurfaceArea = totArea;
-
-
+  
 
   return fSurfaceArea;
 

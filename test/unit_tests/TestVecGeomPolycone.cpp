@@ -14,6 +14,12 @@
 #include "volumes/PlacedVolume.h"
 #include "base/Vector3D.h"
 
+#ifdef VECGEOM_USOLIDS
+#include "UPolycone.hh"
+#include "UGenericPolycone.hh"
+#include "UVector3.hh"
+#endif
+
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
@@ -23,7 +29,16 @@
 
 using namespace vecgeom;
 
+bool testingvecgeom=false;
+
 typedef Vector3D<Precision> Vec3D_t;
+
+template <class Polycone_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
+
+bool TestPolycone()
+{
+return 0;
+}
 
 int main()
 {
