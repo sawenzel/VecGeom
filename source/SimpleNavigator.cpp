@@ -75,7 +75,7 @@ void SimpleNavigator::InspectEnvironmentForPointAndDirection
    outstream << "DistanceToOutMother : " << step << "\n";
 
    // iterate over all the daughters
-   Vector<Daughter> const * daughters = currentvolume->GetLogicalVolume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvolume->GetLogicalVolume()->GetDaughtersp();
 
    outstream << "ITERATING OVER " << daughters->size() << " DAUGHTER VOLUMES " << "\n";
    for(int d = 0; d<daughters->size(); ++d)
@@ -184,7 +184,7 @@ void SimpleNavigator::InspectSafetyForPoint
    //assert( safety > 0 );
 
    // safety to daughters
-   Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->GetDaughtersp();
    int numberdaughters = daughters->size();
    for(int d = 0; d<numberdaughters; ++d)
    {

@@ -53,7 +53,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTorus const* GetUnplacedVolume() const {
     return static_cast<UnplacedTorus const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH

@@ -63,8 +63,8 @@ void ScanGeometry( VPlacedVolume const *const volume,
           lvlist.push_back( volume->GetLogicalVolume() );
       }
 
-      for( auto d = 0; d < volume->daughters().size(); ++d )
-        ScanGeometry(volume->daughters()[d], lvlist, boollvlist, tlist);
+      for( auto d = 0; d < volume->GetDaughters().size(); ++d )
+        ScanGeometry(volume->GetDaughters()[d], lvlist, boollvlist, tlist);
   }
 
   if ( std::find( tlist.cbegin(),tlist.cend(), volume->GetTransformation()) == tlist.cend() ){
@@ -201,8 +201,8 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
         // now we need to distinguish types
         // use here dynamic casting ( alternatives might exist )
         // ******* TREAT THE BOX *********
-        if( dynamic_cast<UnplacedBox const *>( l->unplaced_volume() ) ){
-            UnplacedBox const * box = dynamic_cast<UnplacedBox const *>( l->unplaced_volume() );
+        if( dynamic_cast<UnplacedBox const *>( l->GetUnplacedVolume() ) ){
+            UnplacedBox const * box = dynamic_cast<UnplacedBox const *>( l->GetUnplacedVolume() );
 
             line << " new UnplacedBox( " ;
             line << box->dimensions().x() << " , ";
@@ -214,9 +214,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
         }
 
         // ******* TREAT THE TUBE *********
-        else if( dynamic_cast<UnplacedTube const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedTube const *>( l->GetUnplacedVolume() ) ){
             UnplacedTube const * shape
-                = dynamic_cast<UnplacedTube const *>( l->unplaced_volume() );
+                = dynamic_cast<UnplacedTube const *>( l->GetUnplacedVolume() );
 
             line << " new UnplacedTube( " ;
             line << shape->rmin() << " , ";
@@ -230,9 +230,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
         }
 
         // ******* TREAT THE CONE *********
-        else if( dynamic_cast<UnplacedCone const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedCone const *>( l->GetUnplacedVolume() ) ){
              UnplacedCone const * shape
-                 = dynamic_cast<UnplacedCone const *>( l->unplaced_volume() );
+                 = dynamic_cast<UnplacedCone const *>( l->GetUnplacedVolume() );
 
              line << " new UnplacedCone( " ;
              line << shape->GetRmin1() << " , ";
@@ -248,9 +248,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
         }
 
         // ******* TREAT THE TRAPEZOID *********
-        else if( dynamic_cast<UnplacedTrapezoid const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedTrapezoid const *>( l->GetUnplacedVolume() ) ){
              UnplacedTrapezoid const * shape
-                 = dynamic_cast<UnplacedTrapezoid const *>( l->unplaced_volume() );
+                 = dynamic_cast<UnplacedTrapezoid const *>( l->GetUnplacedVolume() );
              line << " new UnplacedTrapezoid( " ;
 
              line << shape->GetDz() << " , ";
@@ -270,9 +270,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
         }
 
         // ******* TREAT THE TORUS **********
-        else if( dynamic_cast<UnplacedTorus const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedTorus const *>( l->GetUnplacedVolume() ) ){
              UnplacedTorus const * shape
-                 = dynamic_cast<UnplacedTorus const *>( l->unplaced_volume() );
+                 = dynamic_cast<UnplacedTorus const *>( l->GetUnplacedVolume() );
 
              line << " new UnplacedTorus( " ;
              line << shape->rmin() << " , ";
@@ -286,9 +286,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
         }
 
         // ********* TREAT THE PCON **********
-        else if( dynamic_cast<UnplacedPolycone const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedPolycone const *>( l->GetUnplacedVolume() ) ){
               UnplacedPolycone const * shape
-                = dynamic_cast<UnplacedPolycone const *>( l->unplaced_volume() );
+                = dynamic_cast<UnplacedPolycone const *>( l->GetUnplacedVolume() );
 
              line << " new UnplacedPolycone( " ;
              line << shape->GetStartPhi() << " , ";
@@ -327,9 +327,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
        }
 
         // ********* TREAT THE PGON **********
-        else if( dynamic_cast<UnplacedPolyhedron const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedPolyhedron const *>( l->GetUnplacedVolume() ) ){
               UnplacedPolyhedron const * shape
-                = dynamic_cast<UnplacedPolyhedron const *>( l->unplaced_volume() );
+                = dynamic_cast<UnplacedPolyhedron const *>( l->GetUnplacedVolume() );
               line << " new UnplacedPolyhedron( " ;
               line << shape->GetPhiStart() << " , ";
               line << shape->GetPhiDelta() << " , ";
@@ -368,9 +368,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
 
        // *** BOOLEAN SOLIDS NEED A SPECIAL TREATMENT *** //
         // their constituents are  not already a part of the logical volume list
-        else if( dynamic_cast<UnplacedBooleanVolume const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedBooleanVolume const *>( l->GetUnplacedVolume() ) ){
             UnplacedBooleanVolume const * shape
-               = dynamic_cast<UnplacedBooleanVolume const *>( l->unplaced_volume() );
+               = dynamic_cast<UnplacedBooleanVolume const *>( l->GetUnplacedVolume() );
 
             VPlacedVolume const * left = shape->fLeftVolume;
             VPlacedVolume const * right = shape->fRightVolume;
@@ -410,9 +410,9 @@ void GeomCppExporter::DumpLogicalVolumes( std::ostream & dumps,
             fNeededHeaderFiles.insert("volumes/UnplacedBooleanVolume.h");
         }
 
-        else if( dynamic_cast<UnplacedTrd const *>( l->unplaced_volume() ) ){
+        else if( dynamic_cast<UnplacedTrd const *>( l->GetUnplacedVolume() ) ){
             UnplacedTrd const * shape
-                 = dynamic_cast<UnplacedTrd const *>( l->unplaced_volume() );
+                 = dynamic_cast<UnplacedTrd const *>( l->GetUnplacedVolume() );
 
             line << " new UnplacedTrd( " ;
             line << shape->dx1() << " , ";
@@ -455,8 +455,8 @@ void GeomCppExporter::DumpGeomHierarchy( std::vector<std::stringstream *> & dump
         // map daughters for logical volume l
         std::string thisvolumevariable = fLVolumeToStringMap[l];
 
-        for( auto d = 0; d < l->daughters().size(); ++d ){
-            VPlacedVolume const * daughter = l->daughters()[d];
+        for( auto d = 0; d < l->GetDaughters().size(); ++d ){
+            VPlacedVolume const * daughter = l->GetDaughters()[d];
 
             // get transformation and logical volume for this daughter
             Transformation3D const * t = daughter->GetTransformation();

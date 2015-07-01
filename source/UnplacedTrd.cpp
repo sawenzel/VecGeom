@@ -217,7 +217,7 @@ VPlacedVolume* UnplacedTrd::Create(
 
 #ifndef VECGEOM_NO_SPECIALIZATION
 
-     __attribute__((unused)) const UnplacedTrd &trd = static_cast<const UnplacedTrd&>( *(logical_volume->unplaced_volume()) );
+     __attribute__((unused)) const UnplacedTrd &trd = static_cast<const UnplacedTrd&>( *(logical_volume->GetUnplacedVolume()) );
 
     #define GENERATE_TRD_SPECIALIZATIONS
     #ifdef GENERATE_TRD_SPECIALIZATIONS

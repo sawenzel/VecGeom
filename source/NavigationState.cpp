@@ -64,17 +64,17 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint) const
 
   uint FindIndexWithinMother( VPlacedVolume const * mother, VPlacedVolume const * daughter )
   {
-    for( auto d = 0; d<mother->daughters().size(); ++d)
+    for( auto d = 0; d<mother->GetDaughters().size(); ++d)
     {
-        if ( mother->daughters()[d] == daughter) return d;
+        if ( mother->GetDaughters()[d] == daughter) return d;
     }
     return -1;
   }
 
   VPlacedVolume const * GetDaughterWithinMother( VPlacedVolume const * mother, uint index )
     {
-      if( index < (uint) mother->daughters().size() )
-          return mother->daughters()[index];
+      if( index < (uint) mother->GetDaughters().size() )
+          return mother->GetDaughters()[index];
 
       return NULL;
     }

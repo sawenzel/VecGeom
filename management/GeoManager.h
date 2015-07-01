@@ -260,10 +260,10 @@ GeoManager::visitAllPlacedVolumes( VPlacedVolume const * currentvolume, Visitor 
    if( currentvolume != NULL )
    {
       visitor->apply( const_cast<VPlacedVolume *>(currentvolume), level );
-      int size = currentvolume->daughters().size();
+      int size = currentvolume->GetDaughters().size();
       for( int i=0; i<size; ++i )
       {
-         visitAllPlacedVolumes( currentvolume->daughters().operator[](i), visitor, level+1 );
+         visitAllPlacedVolumes( currentvolume->GetDaughters().operator[](i), visitor, level+1 );
       }
    }
 }
@@ -276,10 +276,10 @@ GeoManager::visitAllPlacedVolumesWithContext( VPlacedVolume const * currentvolum
    {
       state->Push( currentvolume );
       visitor->apply( state, level );
-      int size = currentvolume->daughters().size();
+      int size = currentvolume->GetDaughters().size();
       for( int i=0; i<size; ++i )
       {
-         visitAllPlacedVolumesWithContext( currentvolume->daughters().operator[](i), visitor, state, level+1 );
+         visitAllPlacedVolumesWithContext( currentvolume->GetDaughters().operator[](i), visitor, state, level+1 );
       }
       state->Pop();
    }

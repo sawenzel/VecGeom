@@ -113,14 +113,14 @@ public:
     // returns the Container for a given logical volume or NULL if
     // it does not exist
     ABBoxContainer_t GetABBoxes( LogicalVolume const * lvol, int & size ) {
-       size = lvol->daughtersp()->size();
+       size = lvol->GetDaughtersp()->size();
        return fVolToABBoxesMap[lvol];
     }
 
     // returns the Container for a given logical volume or NULL if
     // it does not exist
     ABBoxContainer_v GetABBoxes_v( LogicalVolume const * lvol, int & size ) {
-      int ndaughters = lvol->daughtersp()->size();
+      int ndaughters = lvol->GetDaughtersp()->size();
       int extra = (ndaughters % Real_vSize > 0) ? 1 : 0;
       size = ndaughters / Real_vSize + extra;
       return fVolToABBoxesMap_v[lvol];
@@ -170,7 +170,7 @@ public:
 
   // convert index to physical daugher
   VPlacedVolume const * LookupDaughter( LogicalVolume const *lvol, int id ) const {
-      return lvol->daughtersp()->operator []( id );
+      return lvol->GetDaughtersp()->operator []( id );
   }
 
    /**
@@ -258,9 +258,9 @@ ABBoxNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoint
 #ifdef VERBOSE
    std::cerr << " I am in " << currentlvol->GetLabel() << "\n";
 #endif
-   if( currentlvol->daughtersp()->size() > 0 ){
+   if( currentlvol->GetDaughtersp()->size() > 0 ){
 #ifdef VERBOSE
-       std::cerr << " searching through " << currentlvol->daughtersp()->size() << " daughters\n";
+       std::cerr << " searching through " << currentlvol->GetDaughtersp()->size() << " daughters\n";
 #endif
      ABBoxManager::HitContainer_t & hitlist = ABBoxManager::Instance().GetAllocatedHitContainer();
 //       hitlist.clear();
@@ -441,7 +441,7 @@ Precision ABBoxNavigator::GetSafety(Vector3D<Precision> const & globalpoint,
    //assert( safety > 0 );
 
    // safety to daughters
-   Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->daughtersp();
+   Vector<Daughter> const * daughters = currentvol->GetLogicalVolume()->GetDaughtersp();
    int numberdaughters = daughters->size();
    for(int d = 0; d<numberdaughters; ++d)
    {

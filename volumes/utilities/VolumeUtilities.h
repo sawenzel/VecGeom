@@ -60,8 +60,8 @@ inline
 bool IsHittingAnyDaughter( Vector3D<Precision> const &point,
                            Vector3D<Precision> const &dir,
                            LogicalVolume const &volume ){
-  for (int daughter = 0; daughter < volume.daughters().size(); ++daughter) {
-    if (IsHittingVolume(point, dir, *volume.daughters()[daughter])) {
+  for (int daughter = 0; daughter < volume.GetDaughters().size(); ++daughter) {
+    if (IsHittingVolume(point, dir, *volume.GetDaughters()[daughter])) {
                 return true;
     }
   }
@@ -143,7 +143,7 @@ void FillBiasedDirections(VPlacedVolume const &volume,
                           TrackContainer & dirs) {
   assert(bias >= 0. && bias <= 1.);
 
-  if( bias>0. && volume.daughters().size()==0 ) {
+  if( bias>0. && volume.GetDaughters().size()==0 ) {
     printf("\nFillBiasedDirections ERROR:\n bias=%f requested, but no daughter volumes found.\n", bias);
     //// should throw exception, but for now just abort
     // printf("FillBiasedDirections: aborting...\n");
@@ -220,8 +220,8 @@ void FillBiasedDirections(VPlacedVolume const &volume,
       // SW: a potentially much faster algorithm is the following:
       // sample a daughter to hit ( we can adjust the sampling probability according to Capacity or something; then generate point on surface of daughter )
       // set direction accordingly
-      uint selecteddaughter = (uint) RNG::Instance().uniform() * volume.daughters().size();
-      VPlacedVolume const * daughter = volume.daughters()[selecteddaughter];
+      uint selecteddaughter = (uint) RNG::Instance().uniform() * volume.GetDaughters().size();
+      VPlacedVolume const * daughter = volume.GetDaughters()[selecteddaughter];
       Vector3D<Precision> pointonsurface = daughter->GetPointOnSurface();
       // point is in reference frame of daughter so need to transform it back
       Vector3D<Precision> dirtosurfacepoint = daughter->GetTransformation()->InverseTransform( pointonsurface ) - points[track];
@@ -273,8 +273,8 @@ Precision UncontainedCapacity(VPlacedVolume const &volume) {
   Precision momCapacity = const_cast<VPlacedVolume&>(volume).Capacity();
   Precision dauCapacity = 0.;
   unsigned int kk = 0;
-  for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin(),
-         jEnd = volume.daughters().cend(); j != jEnd; ++j, ++kk) {
+  for (Vector<Daughter>::const_iterator j = volume.GetDaughters().cbegin(),
+         jEnd = volume.GetDaughters().cend(); j != jEnd; ++j, ++kk) {
     dauCapacity += const_cast<VPlacedVolume*>(*j)->Capacity();
   }
   return momCapacity - dauCapacity;
@@ -332,8 +332,8 @@ void FillUncontainedPoints(VPlacedVolume const &volume,
 
       contained = false;
       int kk=0;
-      for (Vector<Daughter>::const_iterator j = volume.daughters().cbegin(),
-             jEnd = volume.daughters().cend(); j != jEnd; ++j, ++kk) {
+      for (Vector<Daughter>::const_iterator j = volume.GetDaughters().cbegin(),
+             jEnd = volume.GetDaughters().cend(); j != jEnd; ++j, ++kk) {
         if ((*j)->Contains( points[i] )) {
           contained = true;
           break;
@@ -380,8 +380,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
   for (int i = 0; i < size; ++i) {
     points.set(i, offset + SamplePoint(dim));
     // measure bias, which is the fraction of points contained in daughters
-    for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
-         v_end = volume.daughters().cend(); v != v_end; ++v) {
+    for (Vector<Daughter>::const_iterator v = volume.GetDaughters().cbegin(),
+         v_end = volume.GetDaughters().cend(); v != v_end; ++v) {
       bool inside = (placed) ? (*v)->Contains(points[i])
                              : (*v)->UnplacedContains(points[i]);
       if (inside) {
@@ -404,8 +404,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
       }
 
       points.set(i, offset + SamplePoint(dim));
-      for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
-           v_end = volume.daughters().end(); v != v_end; ++v) {
+      for (Vector<Daughter>::const_iterator v = volume.GetDaughters().cbegin(),
+           v_end = volume.GetDaughters().end(); v != v_end; ++v) {
         bool inside = (placed) ? (*v)->Contains(points[i])
                                : (*v)->UnplacedContains(points[i]);
         if (inside) {
@@ -432,8 +432,8 @@ void FillContainedPoints(VPlacedVolume const &volume,
         printf("%s line %i: Warning: %i tries to increase bias... volume=%s.  Please check.\n", __FILE__, __LINE__, tries, volume.GetLabel().c_str());
       }
       const Vector3D<Precision> sample = offset + SamplePoint(dim);
-      for (Vector<Daughter>::const_iterator v = volume.daughters().cbegin(),
-           v_end = volume.daughters().cend(); v != v_end; ++v) {
+      for (Vector<Daughter>::const_iterator v = volume.GetDaughters().cbegin(),
+           v_end = volume.GetDaughters().cend(); v != v_end; ++v) {
         bool inside = (placed) ? (*v)->Contains(sample)
                                : (*v)->UnplacedContains(sample);
         if (inside) {

@@ -53,7 +53,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedBox const* GetUnplacedVolume() const {
     return static_cast<UnplacedBox const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
 
 

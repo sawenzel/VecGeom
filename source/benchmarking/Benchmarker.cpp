@@ -84,7 +84,7 @@ std::list<BenchmarkResult> Benchmarker::PopResults() {
 }
 
 void Benchmarker::GenerateVolumePointers(VPlacedVolume const *const vol) {
-  for (auto i = vol->daughters().begin(), iEnd = vol->daughters().end();
+  for (auto i = vol->GetDaughters().begin(), iEnd = vol->GetDaughters().end();
        i != iEnd; ++i) {
 
     // this is pretty tricky

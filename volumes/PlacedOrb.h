@@ -53,7 +53,7 @@ public:
   VECGEOM_INLINE
   UnplacedOrb const* GetUnplacedVolume() const {
     return static_cast<UnplacedOrb const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
   
 

@@ -38,7 +38,7 @@ VPlacedVolume* UnplacedTube::Create(
     VPlacedVolume *const placement) {
 
       using namespace TubeTypes;
-      __attribute__((unused)) const UnplacedTube &tube = static_cast<const UnplacedTube&>( *(logical_volume->unplaced_volume()) );
+      __attribute__((unused)) const UnplacedTube &tube = static_cast<const UnplacedTube&>( *(logical_volume->GetUnplacedVolume()) );
 
       #ifdef VECGEOM_NVCC
         #define RETURN_SPECIALIZATION(tubeTypeT) return CreateSpecializedWithPlacement< \

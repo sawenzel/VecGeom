@@ -21,22 +21,22 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-int LogicalVolume::g_id_count = 0;
+int LogicalVolume::gIdCount = 0;
 
 #ifndef VECGEOM_NVCC
 LogicalVolume::LogicalVolume(char const *const label,
                              VUnplacedVolume const *const unplaced_volume)
-  :  unplaced_volume_(unplaced_volume), id_(0), label_(NULL),
-     user_extension_(NULL), daughters_() {
-  id_ = g_id_count++;
+  :  fUnplacedVolume(unplaced_volume), fId(0), fLabel(NULL),
+     fUserExtensionPtr(NULL), fDaughters() {
+  fId = gIdCount++;
   GeoManager::Instance().RegisterLogicalVolume(this);
-  label_ = new std::string(label);
-  daughters_ = new Vector<Daughter>();
+  fLabel = new std::string(label);
+  fDaughters = new Vector<Daughter>();
   }
 
 LogicalVolume::LogicalVolume(LogicalVolume const & other)
-  : unplaced_volume_(), id_(0), label_(NULL),
-    user_extension_(NULL), daughters_()
+  : fUnplacedVolume(), fId(0), fLabel(NULL),
+    fUserExtensionPtr(NULL), fDaughters()
 {
   printf("COPY CONSTRUCTOR FOR LogicalVolumes NOT IMPLEMENTED");
 }
@@ -50,12 +50,12 @@ LogicalVolume * LogicalVolume::operator=( LogicalVolume const & other )
 #endif
 
 LogicalVolume::~LogicalVolume() {
-  delete label_;
-  for (Daughter* i = daughters().begin(); i != daughters().end();
+  delete fLabel;
+  for (Daughter* i = GetDaughters().begin(); i != GetDaughters().end();
        ++i) {
     delete *i;
   }
-  delete daughters_;
+  delete fDaughters;
 }
 
 #ifndef VECGEOM_NVCC
@@ -63,22 +63,22 @@ LogicalVolume::~LogicalVolume() {
 VPlacedVolume* LogicalVolume::Place(
     char const *const label,
     Transformation3D const *const transformation) const {
-  return unplaced_volume()->PlaceVolume(label, this, transformation);
+  return GetUnplacedVolume()->PlaceVolume(label, this, transformation);
 }
 
 VPlacedVolume* LogicalVolume::Place(
     Transformation3D const *const transformation) const {
-  return Place(label_->c_str(), transformation);
+  return Place(fLabel->c_str(), transformation);
 }
 
 VPlacedVolume* LogicalVolume::Place(char const *const label) const {
-  return unplaced_volume()->PlaceVolume(
+  return GetUnplacedVolume()->PlaceVolume(
            label, this, &Transformation3D::kIdentity
          );
 }
 
 VPlacedVolume* LogicalVolume::Place() const {
-  return Place(label_->c_str());
+  return Place(fLabel->c_str());
 }
 
 VPlacedVolume const* LogicalVolume::PlaceDaughter(
@@ -87,7 +87,7 @@ VPlacedVolume const* LogicalVolume::PlaceDaughter(
     Transformation3D const *const transformation) {
     VPlacedVolume const *const placed = volume->Place(label, transformation);
     //  std::cerr << label <<" LogVol@"<< this <<" and placed@"<< placed << std::endl;
-    daughters_->push_back(placed);
+    fDaughters->push_back(placed);
     return placed;
 }
 
@@ -98,7 +98,7 @@ VPlacedVolume const* LogicalVolume::PlaceDaughter(
 }
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
-  daughters_->push_back(placed);
+  fDaughters->push_back(placed);
 }
 
 #endif
@@ -106,20 +106,20 @@ void LogicalVolume::PlaceDaughter(VPlacedVolume const *const placed) {
 VECGEOM_CUDA_HEADER_BOTH
 void LogicalVolume::Print(const int indent) const {
   for (int i = 0; i < indent; ++i) printf("  ");
-  printf("LogicalVolume [%i]", id_);
+  printf("LogicalVolume [%i]", fId);
 #ifndef VECGEOM_NVCC
-  if (label_->size()) {
-    printf(" \"%s\"", label_->c_str());
+  if (fLabel->size()) {
+    printf(" \"%s\"", fLabel->c_str());
   }
 #endif
   printf(":\n");
   for (int i = 0; i <= indent; ++i) printf("  ");
-  unplaced_volume_->Print();
+  fUnplacedVolume->Print();
   printf("\n");
   for (int i = 0; i <= indent; ++i) printf("  ");
-  if( daughters_->size() > 0){
-     printf("Contains %i daughter", daughters_->size());
-     if (daughters_->size() != 1) printf("s");
+  if( fDaughters->size() > 0){
+     printf("Contains %i daughter", fDaughters->size());
+     if (fDaughters->size() != 1) printf("s");
   }
 }
 
@@ -127,19 +127,19 @@ VECGEOM_CUDA_HEADER_BOTH
 void LogicalVolume::PrintContent(const int indent) const {
   for (int i = 0; i < indent; ++i) printf("  ");
   Print(indent);
-  if( daughters_->size() > 0){
+  if( fDaughters->size() > 0){
     printf(":");
-    for (Daughter* i = daughters_->begin(), *i_end = daughters_->end();
+    for (Daughter* i = fDaughters->begin(), *i_end = fDaughters->end();
         i != i_end; ++i) {
       (*i)->PrintContent(indent+2);
   }}
 }
 
 std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
-  os << *vol.unplaced_volume() << " [";
-  for (Daughter* i = vol.daughters().begin();
-       i != vol.daughters().end(); ++i) {
-    if (i != vol.daughters().begin()) os << ", ";
+  os << *vol.GetUnplacedVolume() << " [";
+  for (Daughter* i = vol.GetDaughters().begin();
+       i != vol.GetDaughters().end(); ++i) {
+    if (i != vol.GetDaughters().begin()) os << ", ";
     os << (**i);
   }
   os << "]";
@@ -150,10 +150,10 @@ std::ostream& operator<<(std::ostream& os, LogicalVolume const &vol) {
 
 DevicePtr<cuda::LogicalVolume> LogicalVolume::CopyToGpu(
    DevicePtr<cuda::VUnplacedVolume> const unplaced_vol,
-   DevicePtr<cuda::Vector<CudaDaughter_t>> daughters,
+   DevicePtr<cuda::Vector<CudaDaughter_t>> GetDaughter,
    DevicePtr<cuda::LogicalVolume> const gpu_ptr) const
 {
-   gpu_ptr.Construct( unplaced_vol, daughters );
+   gpu_ptr.Construct( unplaced_vol, GetDaughter );
    CudaAssertError();
    return gpu_ptr;
 }

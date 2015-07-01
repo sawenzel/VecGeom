@@ -34,7 +34,7 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
           
     // since this is a static function, we need to get instance of UnplacedBooleanVolume first of all from logical volume
    const UnplacedBooleanVolume &vol
-            = static_cast<const UnplacedBooleanVolume&>( *(logical_volume->unplaced_volume()) );
+            = static_cast<const UnplacedBooleanVolume&>( *(logical_volume->GetUnplacedVolume()) );
 
    if( vol.GetOp() == kSubtraction ) {
       return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kSubtraction, transCodeT, rotCodeT> >(

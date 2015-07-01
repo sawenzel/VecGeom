@@ -75,10 +75,10 @@ void VPlacedVolume::Print(const int indent) const {
 VECGEOM_CUDA_HEADER_BOTH
 void VPlacedVolume::PrintContent(const int indent) const {
   Print(indent);
-  if (daughters().size() > 0) {
+  if (GetDaughters().size() > 0) {
     printf(":");
-    for (VPlacedVolume const **vol = daughters().begin(),
-         **volEnd = daughters().end(); vol != volEnd; ++vol) {
+    for (VPlacedVolume const **vol = GetDaughters().begin(),
+         **volEnd = GetDaughters().end(); vol != volEnd; ++vol) {
       printf("\n");
       (*vol)->PrintContent(indent+3);
     }
@@ -87,7 +87,7 @@ void VPlacedVolume::PrintContent(const int indent) const {
 
 VECGEOM_CUDA_HEADER_HOST
 std::ostream& operator<<(std::ostream& os, VPlacedVolume const &vol) {
-  os << "(" << (*vol.unplaced_volume()) << ", " << (*vol.GetTransformation())
+  os << "(" << (*vol.GetUnplacedVolume()) << ", " << (*vol.GetTransformation())
      << ")";
   return os;
 }

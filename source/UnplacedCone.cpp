@@ -242,7 +242,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
      VPlacedVolume *const placement) {
 
        using namespace ConeTypes;
-       __attribute__((unused)) const UnplacedCone &cone = static_cast<const UnplacedCone&>( *(logical_volume->unplaced_volume()) );
+       __attribute__((unused)) const UnplacedCone &cone = static_cast<const UnplacedCone&>( *(logical_volume->GetUnplacedVolume()) );
 
        #ifdef VECGEOM_NVCC
          #define RETURN_SPECIALIZATION(coneTypeT) return CreateSpecializedWithPlacement< \

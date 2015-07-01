@@ -276,7 +276,7 @@ VPlacedVolume* UnplacedPolyhedron::SpecializedVolume(
 #ifndef VECGEOM_NO_SPECIALIZATION
 
   UnplacedPolyhedron const *unplaced =
-      static_cast<UnplacedPolyhedron const *>(volume->unplaced_volume());
+      static_cast<UnplacedPolyhedron const *>(volume->GetUnplacedVolume());
 
   EInnerRadii innerRadii = unplaced->HasInnerRadii() ? EInnerRadii::kTrue
                                                      : EInnerRadii::kFalse;

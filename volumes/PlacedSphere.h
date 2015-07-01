@@ -53,7 +53,7 @@ public:
   VECGEOM_INLINE
   UnplacedSphere const* GetUnplacedVolume() const {
     return static_cast<UnplacedSphere const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
   
   VECGEOM_CUDA_HEADER_BOTH

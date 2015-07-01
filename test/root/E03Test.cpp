@@ -30,7 +30,7 @@ void locatetest()
     a = VolumePath_t::MakeInstance(3);
     SimpleNavigator nav;
 
-    vecgeom::UnplacedBox * const box = ( vecgeom::UnplacedBox * const ) GeoManager::Instance().GetWorld()->unplaced_volume();
+    vecgeom::UnplacedBox * const box = ( vecgeom::UnplacedBox * const ) GeoManager::Instance().GetWorld()->GetUnplacedVolume();
     std::cerr << "\n" << box << "\n";
     std::cerr << box->dimensions() << "\n";
     std::cerr << box->dimensions().x() << "\n";

@@ -192,7 +192,7 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
             // remove old boxes first
             RemoveABBoxes(lvol);
         }
-        uint ndaughters = lvol->daughtersp()->size();
+        uint ndaughters = lvol->GetDaughtersp()->size();
         ABBox_t * boxes = new ABBox_t[ 2*ndaughters ];
         fVolToABBoxesMap[lvol] = boxes;
 
@@ -204,7 +204,7 @@ void ABBoxManager::InitABBoxes( LogicalVolume const * lvol ){
 
         // calculate boxes by iterating over daughters
         for(uint d=0;d<ndaughters;++d){
-            auto pvol = lvol->daughtersp()->operator [](d);
+            auto pvol = lvol->GetDaughtersp()->operator [](d);
             ComputeABBox( pvol, &boxes[2*d], &boxes[2*d+1] );
 #ifdef CHECK
             // do some tests on this stuff
