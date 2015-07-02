@@ -455,6 +455,7 @@ set(SRC_CPP_RELATIVE
   source/PlacedBox.cpp
   source/PlacedTube.cpp
   source/PlacedTorus.cpp
+  source/PlacedTorus2.cpp
   source/PlacedTrd.cpp
   source/PlacedParallelepiped.cpp
   source/PlacedParaboloid.cpp
@@ -470,6 +471,7 @@ set(SRC_CPP_RELATIVE
   source/UnplacedBox.cpp
   source/UnplacedTube.cpp
   source/UnplacedTorus.cpp
+  source/UnplacedTorus2.cpp
   source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp

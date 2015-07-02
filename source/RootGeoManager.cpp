@@ -18,7 +18,8 @@
 #include "volumes/UnplacedOrb.h"
 #include "volumes/UnplacedSphere.h"
 #include "volumes/UnplacedBooleanVolume.h"
-#include "volumes/UnplacedTorus.h"
+//#include "volumes/UnplacedTorus.h"
+#include "volumes/UnplacedTorus2.h"
 #include "volumes/UnplacedTrapezoid.h"
 #include "volumes/UnplacedPolycone.h"
 
@@ -355,7 +356,7 @@ VUnplacedVolume* RootGeoManager::Convert(TGeoShape const *const shape) {
     if (shape->IsA() == TGeoTorus::Class()) {
         // make distinction
         TGeoTorus const *const p = static_cast<TGeoTorus const*>(shape);
-            unplaced_volume = new UnplacedTorus(p->GetRmin(),p->GetRmax(),
+            unplaced_volume = new UnplacedTorus2(p->GetRmin(),p->GetRmax(),
                     p->GetR(), p->GetPhi1()*kDegToRad, p->GetDphi()*kDegToRad);
     }
 

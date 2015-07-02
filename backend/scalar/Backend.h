@@ -186,6 +186,12 @@ Precision Floor( Precision val ){
     return std::floor(val);
 }
 
+VECGEOM_CUDA_HEADER_BOTH
+VECGEOM_INLINE
+double CopySign(double x, double y){
+    return copysign(x,y);
+}
+
 template <typename T>
 VECGEOM_CUDA_HEADER_BOTH
 VECGEOM_INLINE
