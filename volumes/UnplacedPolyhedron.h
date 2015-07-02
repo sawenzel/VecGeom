@@ -246,12 +246,18 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   bool InsideTriangle(Vector3D<Precision>& v1, Vector3D<Precision>& v2,  Vector3D<Precision>& v3, const Vector3D<Precision>& p) const;
 
+  // calculate aray of triangle spanned by points v1,v2,v3
+  // TODO: this function has nothing to do with a Polyhedron. It should live somewhere else ( indeed: the Quadriteral seems to have such a function, too )
   VECGEOM_CUDA_HEADER_BOTH
-  Precision GetTriangleArea(Vector3D<Precision>& v1, Vector3D<Precision>& v2,
-                              Vector3D<Precision>& v3 )const;
+  Precision GetTriangleArea(Vector3D<Precision> const &v1, Vector3D<Precision> const &v2,
+                            Vector3D<Precision> const &v3) const;
+
+  // returns a random point inside the triangle described by v1,v2,v3
+  // TODO: this function has nothing to do with a Polyhedron. It should live somewhere else ( indeed: the Quadriteral seems to have such a function, too )
   VECGEOM_CUDA_HEADER_BOTH
-  Vector3D<Precision> GetPointOnTriangle(Vector3D<Precision>& v1,
-			Vector3D<Precision>&v2,Vector3D<Precision>& v3 )const;
+  Vector3D<Precision> GetPointOnTriangle(Vector3D<Precision> const &v1, Vector3D<Precision> const &v2,
+                                         Vector3D<Precision> const &v3) const;
+
   VECGEOM_CUDA_HEADER_BOTH
   Precision Capacity() const;
 

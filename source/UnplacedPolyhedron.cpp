@@ -399,30 +399,27 @@ bool UnplacedPolyhedron::InsideTriangle(Vector3D<Precision>& v1,
   return false;
  
 }
-VECGEOM_CUDA_HEADER_BOTH
-Precision UnplacedPolyhedron::GetTriangleArea(Vector3D<Precision>& v1, 
-	  Vector3D<Precision>& v2,  Vector3D<Precision>& v3) const {
-  Precision fArea=0.;
-  Vector3D<Precision> vec1 = v1-v2;
-  Vector3D<Precision> vec2 = v1-v3;
- 
-  fArea = 0.5 * (vec1.Cross(vec2)).Mag();
-  return fArea;
-}
-VECGEOM_CUDA_HEADER_BOTH
-Vector3D<Precision> UnplacedPolyhedron::GetPointOnTriangle(Vector3D<Precision>& v1,
-			Vector3D<Precision>&v2,Vector3D<Precision>& v3) const{
 
-   Precision alpha = RNG::Instance().uniform(0.0, 1.0);
-   Precision beta = RNG::Instance().uniform(0.0, 1.0);
-   Precision lambda1 = alpha * beta;
-   Precision lambda0 = alpha - lambda1;
-   Vector3D<Precision> vec1 = v2-v1;
-   Vector3D<Precision> vec2 = v3-v1;
-   return v1 + lambda0 * vec1 + lambda1 * vec2;
- 
+VECGEOM_CUDA_HEADER_BOTH
+Precision UnplacedPolyhedron::GetTriangleArea(Vector3D<Precision> const &v1, Vector3D<Precision> const &v2,
+                                              Vector3D<Precision> const &v3) const {
+  Vector3D<Precision> vec1 = v1 - v2;
+  Vector3D<Precision> vec2 = v1 - v3;
+  return 0.5 * (vec1.Cross(vec2)).Mag();
 }
- 
+
+VECGEOM_CUDA_HEADER_BOTH
+Vector3D<Precision> UnplacedPolyhedron::GetPointOnTriangle(Vector3D<Precision> const &v1, Vector3D<Precision> const &v2,
+                                                           Vector3D<Precision> const &v3) const {
+  Precision alpha = RNG::Instance().uniform(0.0, 1.0);
+  Precision beta = RNG::Instance().uniform(0.0, 1.0);
+  Precision lambda1 = alpha * beta;
+  Precision lambda0 = alpha - lambda1;
+  Vector3D<Precision> vec1 = v2 - v1;
+  Vector3D<Precision> vec2 = v3 - v1;
+  return v1 + lambda0 * vec1 + lambda1 * vec2;
+}
+
 VECGEOM_CUDA_HEADER_BOTH
 Precision UnplacedPolyhedron::SurfaceArea() const{
   if(fSurfaceArea == 0.)
@@ -680,68 +677,52 @@ Vector3D<Precision> UnplacedPolyhedron::GetPointOnSurface() const{
 
 
 }
- Precision UnplacedPolyhedron::Capacity() const{
- if(fCapacity == 0.)
- {
-  int j;
-  Precision  totVolume = 0., volume,volume1, aTop, aBottom;
-  
-  //Formula for section : V=h(f+F+sqrt(f*F))/3;
-  //Fand f-areas of surfaces on +/-dz
-  //h-heigh
-  
-      AOS3D<Precision> const * innercorners;
-      AOS3D<Precision> const * outercorners;
 
+// TODO: this functions seems to be neglecting the phi cut !!
+Precision UnplacedPolyhedron::Capacity() const {
+  if (fCapacity == 0.) {
+    // Formula for section : V=h(f+F+sqrt(f*F))/3;
+    // Fand f-areas of surfaces on +/-dz
+    // h-heigh
 
-     for(j=0; j < GetZSegmentCount(); ++j)
-     {   
-       outercorners = GetZSegment(j).outer.GetCorners();
-       Vector3D<Precision> a = outercorners[0][0];
-       Vector3D<Precision> b = outercorners[1][0];
-       Vector3D<Precision> c = outercorners[2][0];
-       Vector3D<Precision> d = outercorners[3][0];
-       
-       Precision dz= std::fabs(a.z()-c.z());
-       Vector3D<Precision> a1,b1,c1,d1,temp;
-       temp = Vector3D<Precision>(0,0,a.z());
-       aBottom=GetTriangleArea(a,b,temp);
-       temp=Vector3D<Precision>(0,0,c.z());
-       aTop=GetTriangleArea(c,d,temp);
+    // a helper lambda for the volume calculation ( per quadrilaterial )
+    auto VolumeHelperFunc = [&](Vector3D<Precision> const &a, Vector3D<Precision> const &b,
+                                Vector3D<Precision> const &c, Vector3D<Precision> const &d) {
+      Precision dz = std::fabs(a.z() - c.z());
+      Precision bottomArea = GetTriangleArea(a, b, Vector3D<Precision>(0., 0., a.z()));
+      Precision topArea = GetTriangleArea(c, d, Vector3D<Precision>(0., 0., c.z()));
+      return dz * (bottomArea + topArea + std::sqrt(topArea * bottomArea));
+    };
 
-       if(GetZSegment(j).hasInnerRadius )
-       {
-         innercorners  = GetZSegment(j).inner.GetCorners();
-         a1 = innercorners[0][0];
-         b1 = innercorners[1][0];
-         c1 = innercorners[2][0];
-         d1 = innercorners[3][0];
-            
-         volume = dz*(aTop+aBottom+ std::sqrt(aTop*aBottom));//outer volume
-         temp = Vector3D<Precision>(0,0,a.z());
-         aBottom = GetTriangleArea(a1,b1,temp);
-         temp = Vector3D<Precision>(0,0,c.z());
-         aTop= GetTriangleArea(c1,d1,temp);
-         volume1 = dz*(aTop+aBottom+ std::sqrt(aTop*aBottom));//inner volume
-         volume -= volume1;//outer piramide -inner piramide
-       }
-       else
-       {
-	
-        volume = dz*(aTop+aBottom+ std::sqrt(aTop*aBottom));
-          
-       }
-	            
-       totVolume+=volume;     
+    for (int j = 0; j < GetZSegmentCount(); ++j) {
+      // need to protect against empty segments because it could be
+      // that the polyhedron makes a jump at this segment count
+      if (GetZSegment(j).outer.size() > 0) {
+        auto outercorners = GetZSegment(j).outer.GetCorners();
+        Vector3D<Precision> a = outercorners[0][0];
+        Vector3D<Precision> b = outercorners[1][0];
+        Vector3D<Precision> c = outercorners[2][0];
+        Vector3D<Precision> d = outercorners[3][0];
+        Precision volume = VolumeHelperFunc(a, b, c, d); // outer volume
 
-     }
-     totVolume *= GetSideCount()*(1./3.);
-     fCapacity = totVolume;
- }
-           
-return fCapacity;
-
+        if (GetZSegment(j).hasInnerRadius) {
+          if (GetZSegment(j).inner.size() > 0) {
+            auto innercorners = GetZSegment(j).inner.GetCorners();
+            a = innercorners[0][0];
+            b = innercorners[1][0];
+            c = innercorners[2][0];
+            d = innercorners[3][0];
+            volume -= VolumeHelperFunc(a, b, c, d); // subtract inner volume
+          }
+        }
+        fCapacity += volume;
+      }
+    }
+    fCapacity *= GetSideCount() * (1. / 3.);
+  }
+  return fCapacity;
 }
+
 VECGEOM_CUDA_HEADER_BOTH
 bool UnplacedPolyhedron::Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const{
 
