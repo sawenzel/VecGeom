@@ -704,13 +704,27 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
     if (OutRange(dist,Constants::kInfinity))
     std::cout << "Error:c8c.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
-    dist=c9.DistanceToIn(pplz,vmz);
-    if (OutRange(dist,Constants::kInfinity))
-    std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
+    if(testingvecgeom)
+    //Cone is with Rmin=Rmax=0 at +dz
+    //this is creating a very small cut at dz in USolids implementation(at construction) 
+      {
+      dist=c9.DistanceToIn(pplz,vmz);
+      if (OutRange(dist,70.0))
+      std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
-    dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
-    if (OutRange(dist,Constants::kInfinity))
-    std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
+      dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
+      if (OutRange(dist,0.0))
+      std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
+      }
+    else{
+      dist=c9.DistanceToIn(pplz,vmz);
+      if (OutRange(dist,Constants::kInfinity))
+      std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
+
+      dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
+      if (OutRange(dist,Constants::kInfinity))
+      std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
+    }
 
     ///////////////
 
