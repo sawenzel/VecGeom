@@ -343,7 +343,6 @@ struct PolyconeImplementation {
                            Vector3D<typename Backend::precision_v> const &point,
                            typename Backend::precision_v &safety) {
 
-    fprintf(stderr, "%.20lf, %0.20lf, %.20lf\n", point.x(), point.y(), point.z());
     Vector3D<typename Backend::precision_v> p = transformation.Transform<transCodeT,rotCodeT>(point);
    
     int index = polycone.GetSectionIndex(p.z());
