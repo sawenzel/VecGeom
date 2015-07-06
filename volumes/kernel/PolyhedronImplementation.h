@@ -765,7 +765,8 @@ bool PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarContainsKernel(
 
   // Find correct segment by checking Z-bounds
   int zIndex = FindZSegment<kScalar>(polyhedron, localPoint[2]);
-  if( ! (zIndex >= 0) ) return false;
+  if (!((zIndex >= 0) && (zIndex < polyhedron.GetZSegmentCount())))
+    return false;
 
   ZSegment const &segment = polyhedron.GetZSegment(zIndex);
 
