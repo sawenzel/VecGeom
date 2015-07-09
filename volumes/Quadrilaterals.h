@@ -333,7 +333,8 @@ struct AcceleratedDistanceToIn<kScalar> {
       VcPrecision directionProjection = plane.Dot(direction);
       valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) >= 0;
       if (IsEmpty(valid)) continue;
-      distanceTest /= -directionProjection;
+      VcPrecision tiny = VcPrecision(1E-20).copySign(directionProjection);
+      distanceTest /= -(directionProjection + tiny);
       Vector3D<VcPrecision> intersection =
           Vector3D<VcPrecision>(direction)*distanceTest + point;
       for (int j = 0; j < 4; ++j) {
@@ -402,7 +403,7 @@ typename Backend::precision_v Quadrilaterals::DistanceToIn(
     Float_t directionProjection = direction.Dot(normal);
     valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) >= 0;
     if (IsEmpty(valid)) continue;
-    distance /= -directionProjection;
+    distance /= -(directionProjection + CopySign(1E-20, directionProjection));
     Vector3D<Float_t> intersection = point + direction*distance;
     for (int j = 0; j < 4; ++j) {
       valid &= intersection.Dot(fSideVectors[j].GetNormal(i)) +
