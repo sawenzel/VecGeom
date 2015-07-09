@@ -16,6 +16,7 @@
 #include "volumes/Quadrilaterals.h"
 #include "volumes/UnplacedPolyhedron.h"
 #include <cstdio>
+#include <cassert>
 
 namespace vecgeom {
 
@@ -863,13 +864,13 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
 
     // Check if the point is within the bounding tube
     bool inBounds;
+    Precision tubeDistance = 0.;
     {
     Vector3D<Precision> boundsPoint(
         localPoint[0], localPoint[1],
         localPoint[2]-unplaced.GetBoundingTubeOffset());
-    HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template
-        UnplacedContains<kScalar>(
-            unplaced.GetBoundingTube(), boundsPoint, inBounds);
+    HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template UnplacedContains<kScalar>(unplaced.GetBoundingTube(),
+                                                                                      boundsPoint, inBounds);
     // If the point is inside the bounding tube, the result of DistanceToIn is
     // unreliable and cannot be used to reject rays.
     // TODO: adjust tube DistanceToIn function to correctly return a negative
@@ -878,13 +879,9 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
     if (!inBounds) {
       // If the point is outside the bounding tube, check if the ray misses
       // the bounds
-      Precision tubeDistance;
-      HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template
-          DistanceToIn<kScalar>(
-              unplaced.GetBoundingTube(), transformation, boundsPoint,
-              localDirection, stepMax, tubeDistance);
-      if (tubeDistance == kInfinity)
-          {
+      HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template DistanceToIn<kScalar>(
+          unplaced.GetBoundingTube(), transformation, boundsPoint, localDirection, stepMax, tubeDistance);
+      if (tubeDistance == kInfinity) {
             return kInfinity;
           }
     }
@@ -908,8 +905,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
   Precision distance = kInfinity;
   if (goingRight) {
     for (int zMax = unplaced.GetZSegmentCount(); zIndex < zMax; ++zIndex) {
-      distance = DistanceToInZSegment<kScalar>(
-          unplaced, zIndex, localPoint, localDirection);
+      distance = DistanceToInZSegment<kScalar>(unplaced, zIndex, localPoint, localDirection);
       // No segment further away can be at a shorter distance to the point, so
       // if a valid distance is found, only endcaps remain to be investigated
       if (distance >= 0 && distance < kInfinity) break;
@@ -917,8 +913,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
   } else {
     // Going left
     for (; zIndex >= 0; --zIndex) {
-      distance = DistanceToInZSegment<kScalar>(
-          unplaced, zIndex, localPoint, localDirection);
+      distance = DistanceToInZSegment<kScalar>(unplaced, zIndex, localPoint, localDirection);
       // No segment further away can be at a shorter distance to the point, so
       // if a valid distance is found, only endcaps remain to be investigated
       if (distance >= 0 && distance < kInfinity) break;
@@ -929,8 +924,8 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
   ScalarDistanceToEndcaps<false>(
       unplaced, goingRight, localPoint, localDirection, distance);
 
-  // Don't exceed stepMax
-  return distance < stepMax ? distance : stepMax;
+  // last sanity check: distance should be larger than estimate from bounding tube
+  return ( distance > tubeDistance ) ? distance : vecgeom::kInfinity;
 }
 
 template <Polyhedron::EInnerRadii innerRadiiT,
@@ -988,27 +983,18 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToOutKernel(
   Precision distance = kInfinity;
   if (goingRight) {
     for (; zIndex < zMax; ++zIndex) {
-      distance = DistanceToOutZSegment<kScalar>(
-          unplaced,
-          zIndex,
-          unplaced.GetZPlane(zIndex),
-          unplaced.GetZPlane(zIndex+1),
-          point,
-          direction);
+      distance = DistanceToOutZSegment<kScalar>(unplaced, zIndex, unplaced.GetZPlane(zIndex),
+                                                unplaced.GetZPlane(zIndex + 1), point, direction);
       if (distance >= 0 && distance < kInfinity) break;
       if (unplaced.GetZPlanes()[zIndex] - point[2] > distance) break;
     }
   } else {
     // Going left
     for (; zIndex >= 0; --zIndex) {
-      distance = DistanceToOutZSegment<kScalar>(
-          unplaced,
-          zIndex,
-          unplaced.GetZPlane(zIndex),
-          unplaced.GetZPlane(zIndex+1),
-          point,
-          direction);
-      if (distance >= 0 && distance < kInfinity) break;
+      distance = DistanceToOutZSegment<kScalar>(unplaced, zIndex, unplaced.GetZPlane(zIndex),
+                                                unplaced.GetZPlane(zIndex + 1), point, direction);
+      if (distance >= 0 && distance < kInfinity)
+        break;
       if (point[2] - unplaced.GetZPlanes()[zIndex] > distance) break;
     }
   }
