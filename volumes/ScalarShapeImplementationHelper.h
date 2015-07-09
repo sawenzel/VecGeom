@@ -225,6 +225,13 @@ public:
       stepMax,
       output
     );
+
+    // detect -inf responses which are often an indication for a real bug
+#ifndef VECGEOM_NVCC
+    assert( ! ( (output < 0.) && std::isinf(output) ) );
+#endif
+
+
     return output;
   }
 
