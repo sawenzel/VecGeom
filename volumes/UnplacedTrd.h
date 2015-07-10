@@ -146,7 +146,7 @@ fFy(0)
   VECGEOM_CUDA_HEADER_BOTH
   void Extent(Vector3D<Precision> & min, Vector3D<Precision> & max ) const {
       min = Vector3D<Precision>(-Max(fDX1, fDX2), -Max(fDY1, fDY2), -fDZ);
-      max = Vector3D<Precision>( Max(fDY1, fDX2), Max(fDY1, fDY2), fDZ);
+      max = Vector3D<Precision>( Max(fDX1, fDX2), Max(fDY1, fDY2), fDZ);
   }
 
 

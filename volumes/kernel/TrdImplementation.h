@@ -122,7 +122,7 @@ void FaceTrajectoryIntersection(UnplacedTrd const &trd,
 
     // distance from trajectory to face
     dist = (alongZ*(posV-v1) - alongV*(pos.z()+trd.dz())  ) / (dir.z()*alongV - dirV*alongZ);
-    ok = dist > 0;
+    ok = dist >= 0;
     if(ok != Backend::kFalse) {
       // need to make sure z hit falls within bounds
       Float_t hitz = pos.z() + dist*dir.z();
