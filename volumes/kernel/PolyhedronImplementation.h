@@ -925,7 +925,7 @@ PolyhedronImplementation<innerRadiiT, phiCutoutT>::ScalarDistanceToInKernel(
       unplaced, goingRight, localPoint, localDirection, distance);
 
   // last sanity check: distance should be larger than estimate from bounding tube
-  return ( distance > tubeDistance ) ? distance : vecgeom::kInfinity;
+  return ( distance >= tubeDistance - 1E-6 ) ? distance : vecgeom::kInfinity;
 }
 
 template <Polyhedron::EInnerRadii innerRadiiT,
