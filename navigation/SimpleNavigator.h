@@ -426,28 +426,29 @@ SimpleNavigator::FindNextBoundaryAndStep( Vector3D<Precision> const & globalpoin
    if( step == kInfinity && pstep > 0. )
    {
 #if !defined(VECGEOM_NVCC)
-      std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
+     //      std::cout << "WARNING: STEP INFINITY; should never happen unless outside\n";
       //InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
       // set step to zero and retry one level higher
       // if( nexthitvolume!=-1 ) std::cout << "catastrophee\n";
 #if defined(VECGEOM_ROOT)
-      currentstate.printVolumePath(std::cout); std::cout << "\n";
+      //      currentstate.printVolumePath(std::cout); std::cout << "\n";
 #endif
-      newstate.Clear();
-      VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-      LocatePoint(world, globalpoint + vecgeom::kTolerance*globaldir, newstate, true);
+      //      newstate.Clear();
+      //      VPlacedVolume const *world = GeoManager::Instance().GetWorld();
+      //      LocatePoint(world, globalpoint + vecgeom::kTolerance*globaldir, newstate, true);
       step = vecgeom::kTolerance;
 #if defined(VECGEOM_ROOT)
      // InspectEnvironmentForPointAndDirection( globalpoint, localpoint, currentstate );
-      newstate.printVolumePath(std::cout); std::cout << "\n";
-      InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
-      std::cout << " counter is " << counter << "\n";
+      //      newstate.printVolumePath(std::cout); std::cout << "\n";
+      //      InspectEnvironmentForPointAndDirection( globalpoint, globaldir, currentstate );
+      //      std::cout << " counter is " << counter << "\n";
 #endif
       newstate.SetBoundaryState(true);
-      if( newstate.HasSamePathAsOther(currentstate) ) {
-          std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
-          newstate.Pop();
-      }
+      //      if( newstate.HasSamePathAsOther(currentstate) ) {
+      //          std::cout << "$$$$$$$$$$$$$$$$$$$$$$$4 MASSIVE WARNING $$$$$$$$$$$$$$$$$$$$$$$$$ \n";
+      //          newstate.Pop();
+      //      }
+      newstate.Pop();
       return;
 #else
       // Can't call GeoManager::Instance().GetWorld() from CUDA code
