@@ -87,12 +87,12 @@ bool IsEmpty(bool const &cond){
     return !cond;
 }
 
-template <typename Type>
-VECGEOM_CUDA_HEADER_BOTH
-VECGEOM_INLINE
-Type Pow(Type const &x, Type arg) {
-   return pow(x,arg);
-}
+/* template <typename Type> */
+/* VECGEOM_CUDA_HEADER_BOTH */
+/* VECGEOM_INLINE */
+/* Type Pow(Type const &x, Type arg) { */
+/*    return pow(x,arg); */
+/* } */
 
 template <typename Type>
 VECGEOM_CUDA_HEADER_BOTH
