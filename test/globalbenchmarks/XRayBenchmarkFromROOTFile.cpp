@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <cmath>
 #include <map>
+#include <vector>
 #include <cassert>
 #include <sstream>
 
@@ -214,7 +215,7 @@ double pixel_width_2 = (axis2_end-axis2_start)/data_size_y;
                 }
                 // Increase passed_volume
                 // TODO: correct counting of travel in "world" bounding box
-                crossedvolumecount++;
+                if(nav->GetStep()>0.) crossedvolumecount++;
                 curmat = (node!=0) ? node->GetVolume()->GetMaterial() : 0;
             } // end while
             // std::cout << crossedvolumecount << "\n";
@@ -524,53 +525,76 @@ if(VERBOSE){
 
 
 #ifdef VECGEOM_GEANT4
-G4VPhysicalVolume * SetupGeant4Geometry( std::string volumename,
-        Vector3D<Precision> worldbbox)
-{
+// a function allowing to clip geometry branches deeper than a certain level from the given volume
+void DeleteAllG4VolumesDeeperThan( G4LogicalVolume * vol, unsigned int level ){
+  if (level == 0) {
+    // deletes daughters of this volume
+    // vol->ClearDaughters() has a bug !!
 
-    // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISSMATCH HERE BETWEEN ROOT AND GEANT
-    // ROOT = cm and GEANT4 = mm; basically a factor of 10 in all dimensions
+    std::vector<G4VPhysicalVolume *> daughters;
+    for (auto d = 0; d < vol->GetNoDaughters(); ++d)
+      daughters.push_back(vol->GetDaughter(d));
 
-     const double UNITCONV=10.;
+    // now remove them
+    for (auto d = 0; d < daughters.size(); ++d)
+      vol->RemoveDaughter(daughters[d]);
+    return;
+  } else {
+    // recurse down
+    for (auto d = 0; d < vol->GetNoDaughters(); d++) {
+      auto node = vol->GetDaughter(d);
+      if (node) {
+        DeleteAllG4VolumesDeeperThan(node->GetLogicalVolume(), level - 1);
+      }
+    }
+  }
+}
 
-//       // take G4 geometry from gdml file
-       G4GDMLParser parser;
-       parser.Read( "cms2015.gdml" );
+G4VPhysicalVolume *SetupGeant4Geometry(std::string volumename, Vector3D<Precision> worldbbox, bool cutgeometry,
+                                       unsigned int cutlevel) {
 
-       G4LogicalVolumeStore * store = G4LogicalVolumeStore::GetInstance();
-//
-       int found=0;
-       G4LogicalVolume * foundvolume = NULL;
-       for( auto v : *store )
-       {
-           std::size_t founds = volumename.compare( v->GetName() );
-           if ( founds==0 ){
-                found++;
-                foundvolume = v;
-           }
-       }
-       std::cerr << " found logical volume " << volumename << " " << found << " times "  << "\n";
+  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISSMATCH HERE BETWEEN ROOT AND GEANT
+  // ROOT = cm and GEANT4 = mm; basically a factor of 10 in all dimensions
 
-       // embed logical volume in a Box
-       // create box first
-       G4Box * worldb = new G4Box("BoundingBox",
-               UNITCONV*worldbbox.x(), UNITCONV*worldbbox.y(), UNITCONV*worldbbox.z());
-       G4LogicalVolume * worldlv = new G4LogicalVolume(worldb, 0, "world", 0,0,0);
-       G4PVPlacement * worldpv =
-               new G4PVPlacement(0,G4ThreeVector(0,0,0),"BoundingBox", worldlv, 0,false, 0,0);
+  const double UNITCONV = 10.;
 
-       // embed found logical volume "foundvolume" into world bounding box
-        new G4PVPlacement(
-                 NULL, /* rotation */
-                 G4ThreeVector(0,0,0), /* translation */
-                 foundvolume, /* current logical */
-                 "xrayedpl",
-                 worldlv, /* this is where it is placed */
-                 0,0);
+  G4GDMLParser parser;
+  parser.Read("cms2015.gdml", false); // false == do not validate
 
-        G4GeometryManager::GetInstance()->CloseGeometry( voxelize );
+  G4LogicalVolumeStore *store = G4LogicalVolumeStore::GetInstance();
+  //
+  int found = 0;
+  G4LogicalVolume *foundvolume = NULL;
+  for (auto v : *store) {
+    std::size_t founds = volumename.compare(v->GetName());
+    if (founds == 0) {
+      found++;
+      foundvolume = v;
+    }
+  }
+  std::cerr << " found logical volume " << volumename << " " << found << " times "
+            << "\n";
 
-        return worldpv;
+  if (cutgeometry)
+    DeleteAllG4VolumesDeeperThan(foundvolume, cutlevel);
+
+  // embed logical volume in a Box
+  // create box first
+  G4Box *worldb =
+      new G4Box("BoundingBox", UNITCONV * worldbbox.x(), UNITCONV * worldbbox.y(), UNITCONV * worldbbox.z());
+  G4LogicalVolume *worldlv = new G4LogicalVolume(worldb, 0, "world", 0, 0, 0);
+  G4PVPlacement *worldpv = new G4PVPlacement(0, G4ThreeVector(0, 0, 0), "BoundingBox", worldlv, 0, false, 0, 0);
+
+  // embed found logical volume "foundvolume" into world bounding box
+  new G4PVPlacement(NULL,                   /* rotation */
+                    G4ThreeVector(0, 0, 0), /* translation */
+                    foundvolume,            /* current logical */
+                    "xrayedpl", worldlv,    /* this is where it is placed */
+                    0, 0);
+
+  G4GeometryManager::GetInstance()->CloseGeometry(voxelize);
+
+  return worldpv;
 }
 #endif
 
@@ -654,6 +678,24 @@ int XRayWithGeant4(
 }
 #endif
 
+// a function allowing to clip geometry branches deeper than a certain level from the given volume
+void DeleteAllNodesDeeperThan( TGeoVolume * vol, unsigned int level ){
+    if( level == 0 ){
+        std::cerr << " deleting daughters " << vol->GetNdaughters() << "\n";
+        // deletes daughters of this volume
+        vol->SetNodes( nullptr );
+        std::cerr << " size is now " << vol->GetNdaughters() << "\n";
+        return;
+    }
+    // recurse down
+    for (auto d = 0; d < vol->GetNdaughters(); ++d) {
+      TGeoNode *node = vol->GetNode(d);
+      if (node) {
+        DeleteAllNodesDeeperThan(node->GetVolume(), level - 1);
+      }
+    }
+}
+
 //////////////////////////////////
 // main function
 int main(int argc, char * argv[])
@@ -698,6 +740,8 @@ int main(int argc, char * argv[])
 
   pixel_width= atof(argv[4]);
 
+  unsigned int cutatlevel = 1000;
+  bool cutlevel = false;
   for(auto i= 5; i< argc; i++)
   {
     if( ! strcmp(argv[i], "--usolids") )
@@ -706,6 +750,12 @@ int main(int argc, char * argv[])
       usolids= false;
     if( ! strcmp(argv[i], "--novoxel") )
       voxelize = false;
+    if( ! strcmp(argv[i], "--tolevel") ){
+      cutlevel = true;
+      cutatlevel = atoi(argv[i+1]);
+      std::cout << "Cutting geometry at level " << cutatlevel << "\n";
+    }
+
   }
 
   int found = 0;
@@ -766,7 +816,13 @@ int main(int argc, char * argv[])
 
     TGeoManager * mgr2 = new TGeoManager();
 
-//    delete gGeoManager;
+    // do some surgery
+    //delete foundvolume->GetNodes();
+    //foundvolume->SetNodes(nullptr);
+    if( cutlevel ){
+        DeleteAllNodesDeeperThan(foundvolume, cutatlevel);
+    }
+    //    delete gGeoManager;
 //    gGeoManager = new TGeoManager();
     boundingbox->AddNode( foundvolume, 1);
     mgr2->SetTopVolume( boundingbox );
@@ -792,7 +848,10 @@ int main(int argc, char * argv[])
   
     Vector3D<Precision> p;
     Vector3D<Precision> dir;
-    
+
+    unsigned long long data_size_x;
+    unsigned long long data_size_y;
+    do {    
     if(axis== 1)
     {
       dir.Set(1., 0., 0.);
@@ -830,9 +889,21 @@ int main(int argc, char * argv[])
     }
 
     // init data for image
-    int data_size_x= (axis1_end-axis1_start)/pixel_axis;
-    int data_size_y= (axis2_end-axis2_start)/pixel_axis;
-    int *volume_result= (int*) new int[data_size_y * data_size_x*3];
+   data_size_x= (axis1_end-axis1_start)/pixel_axis;
+   data_size_y= (axis2_end-axis2_start)/pixel_axis;
+
+    if( data_size_x * data_size_y > 1E7L ){
+      pixel_width/=2;
+      std::cerr << data_size_x * data_size_y << "\n";
+      std::cerr << "warning: image to big " << pixel_width << " " << pixel_axis << "\n";
+    }
+    else{
+      std::cerr << "size ok " <<  data_size_x * data_size_y << "\n";
+
+    }
+} while ( data_size_x * data_size_y > 1E7L );
+std::cerr << "allocating image" << "\n";
+int *volume_result= (int*) new int[data_size_y * data_size_x*3];
 
 #ifdef VECGEOM_GEANT4
     int *volume_result_Geant4= (int*) new int[data_size_y * data_size_x*3];
@@ -875,12 +946,11 @@ int main(int argc, char * argv[])
     ROOTimage << "_ROOT.bmp";
 
     make_bmp(volume_result, ROOTimage.str().c_str(), data_size_x, data_size_y);
-    make_bmp(volume_result, "foo.bmp", data_size_x, data_size_y, false);
 #ifdef VECGEOM_GEANT4
 
     G4VPhysicalVolume * world = SetupGeant4Geometry( testvolume, Vector3D<Precision>( std::abs(origin[0]) + dx,
             std::abs(origin[1]) + dy,
-            std::abs(origin[2]) + dz ) );
+            std::abs(origin[2]) + dz ), cutlevel, cutatlevel );
     G4GeoManager::Instance().LoadG4Geometry( world );
 
     timer.Start();
@@ -902,7 +972,10 @@ int main(int argc, char * argv[])
     make_bmp(volume_result_Geant4, G4image.str().c_str(), data_size_x, data_size_y);
     std::cout << std::endl;
     std::cout << " Geant4 Elapsed time : "<< timer.Elapsed() << std::endl;
-    make_diff_bmp(volume_result, volume_result_Geant4, "diffROOTGeant4.bmp", data_size_x, data_size_y);
+    std::stringstream G4diffimage;
+    G4diffimage << imagenamebase.str();
+    G4diffimage << "_diffROOTG4.bmp";
+    make_diff_bmp(volume_result, volume_result_Geant4, G4diffimage.str().c_str(), data_size_x, data_size_y);
 #endif
 
     // convert current gGeoManager to a VecGeom geometry
@@ -934,7 +1007,16 @@ int main(int argc, char * argv[])
     VecGeomimage << "_VecGeom.bmp";
     make_bmp(volume_result_VecGeom, VecGeomimage.str().c_str(), data_size_x, data_size_y);
 
-    make_diff_bmp(volume_result, volume_result_VecGeom, "diffROOTVecGeom.bmp", data_size_x, data_size_y);
+    std::stringstream VGRdiffimage;
+    VGRdiffimage << imagenamebase.str();
+    VGRdiffimage << "_diffROOTVG.bmp";
+    make_diff_bmp(volume_result, volume_result_VecGeom, VGRdiffimage.str().c_str(), data_size_x, data_size_y);
+#ifdef VECGEOM_GEANT4
+    std::stringstream VGG4diffimage;
+    VGG4diffimage << imagenamebase.str();
+    VGG4diffimage << "_diffG4VG.bmp";
+    make_diff_bmp(volume_result_Geant4, volume_result_VecGeom, VGG4diffimage.str().c_str(), data_size_x, data_size_y);
+#endif
 
     std::cout << std::endl;
     std::cout << " VecGeom Elapsed time : "<< timer.Elapsed() << std::endl;
@@ -958,6 +1040,8 @@ int main(int argc, char * argv[])
 #endif
     timer.Stop();
 
+    return 0.;
+
     std::stringstream VecGeomABBimage;
     VecGeomABBimage << imagenamebase.str();
     VecGeomABBimage << "_VecGeomABB.bmp";
@@ -969,8 +1053,6 @@ int main(int argc, char * argv[])
 
     std::cout << std::endl;
     std::cout << " VecGeom ABB Elapsed time : "<< timer.Elapsed() << std::endl;
-
-    return 0;
 
     // use the vector interface
     timer.Start();
@@ -1232,8 +1314,6 @@ int make_diff_bmp(int const * image1, int const * image2, char const * name, int
   // init buffer and write header
   make_bmp_header(pBitmap, bmpBuf, data_size_x, data_size_y);
 
-  std::cerr << "AFTER HEADER " << bmpBuf << "\n";
-
   // TODO: verify the 2 images have same dimensions
 
   // find out maxcount before doing the picture
@@ -1271,15 +1351,15 @@ int make_diff_bmp(int const * image1, int const * image2, char const * name, int
       int value = *(image1 + y*data_size_x + origin_x) - *(image2 + y*data_size_x + origin_x);
 
       if( value >=0 ){
-          *(imgdata+y*width_4*3+x*3+0)= (value/(1.*maxdiff)) * 256;
-          *(imgdata+y*width_4*3+x*3+1)= 0;// (value/(1.*maxcount)) * 256;
-          *(imgdata+y*width_4*3+x*3+2)= 0;//(value/(1.*maxcount)) * 256;}
+          *(imgdata+y*width_4*3+x*3+0)= 255 - (value/(1.*maxdiff)) * 255;
+          *(imgdata+y*width_4*3+x*3+1)= 255 - 0;// (value/(1.*maxcount)) * 256;
+          *(imgdata+y*width_4*3+x*3+2)= 255 - 0;//(value/(1.*maxcount)) * 256;}
       }
       else
       {
-          *(imgdata+y*width_4*3+x*3+0)= 0;
-          *(imgdata+y*width_4*3+x*3+1)= 0;// (value/(1.*maxcount)) * 256;
-          *(imgdata+y*width_4*3+x*3+2)= (value/(1.*mindiff)) * 256;//(value/(1.*maxcount)) * 256;}
+          *(imgdata+y*width_4*3+x*3+0)= 255 - 0;
+          *(imgdata+y*width_4*3+x*3+1)= 255 - 0;// (value/(1.*maxcount)) * 255;
+          *(imgdata+y*width_4*3+x*3+2)= 255 - (value/(1.*mindiff)) * 255;//(value/(1.*maxcount)) * 255;}
       }
       x++;
       origin_x++;
