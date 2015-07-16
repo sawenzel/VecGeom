@@ -39,7 +39,7 @@ option(GEANT4 "Include Geant4." OFF)
 
 option(BENCHMARK "Enable performance comparisons." OFF)
 
-option(NO_SPECIALIZATION "Disable specialization of volumes." OFF)
+option(NO_SPECIALIZATION "Disable specialization of volumes." ON)
 
 option(COVERAGE_TESTING "Enable coverage testing flags." OFF)
 
@@ -71,7 +71,7 @@ enum_option(BACKEND
             CASE_INSENSITIVE
            )
 
-option(VC_ACCELERATION "Internal vectorization using Vc." ON)
+option(VC_ACCELERATION "Internal vectorization using Vc." OFF)
 
 option(VTUNE "Enable the use of profiler Vtune" OFF)
 
