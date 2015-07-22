@@ -143,20 +143,9 @@ endif()
 
 # Set Default compiler flags for each build type
 
-#### not sure if this section until next #### is needed ( merge conflict 0
-#set(VECGEOM_COMPILATION_FLAGS)
-#set(VECGEOM_COMPILATION_FLAGS_GNU)
-#set(VECGEOM_COMPILATION_FLAGS_CLANG)
-#set(VECGEOM_COMPILATION_FLAGS_INTEL)
-#set(VECGEOM_NVCC_COMPILATION_FLAGS)
+# some compilers do not default to C++11 standard yet
+set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -std=c++11")
 
-#set(VECGEOM_COMPILATION_FLAGS
-#    "${VECGEOM_COMPILATION_FLAGS} -Wall -fPIC")
-#if (CMAKE_BUILD_TYPE MATCHES Debug)
-#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")
-#  if (APPLE OR UNIX)
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-############
 if (GNU)
   set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -Wall -fPIC")
   if (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -569,11 +558,6 @@ if (CUDA)
     )
 endif()
 
-
-# Compile cpp-files for C++11
-
-set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
-
 ################################################################################
 
 # Build libraries
@@ -585,11 +569,6 @@ set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} vecgeom)
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} rt)
 endif()
-
-set_source_files_properties(
-  ${SRC_EXECUTABLES}
-  PROPERTIES COMPILE_FLAGS -std=c++11
-)
 
 # build the CUDA version of the library
 if (CUDA)
@@ -755,10 +734,6 @@ set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_BENCHMARK}
   ${TEST_EXECUTABLES_CUDA}
   ${TEST_EXECUTABLES_SHAPETESTER}
-)
-set_source_files_properties(
-  ${TEST_EXECUTABLES}
-  PROPERTIES COMPILE_FLAGS -std=c++11
 )
 
 # Build executables
