@@ -1010,8 +1010,6 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
     Float_t fRmax(unplaced.GetOuterRadius());
     Float_t fRmin(unplaced.GetInnerRadius());
     
-    Float_t halfRminTolerance = 0.5 * unplaced.GetFRminTolerance() * 10.;
-    Float_t halfRmaxTolerance = 0.5 * unplaced.GetMKTolerance() * 10.;
     bool fullPhiSphere = unplaced.IsFullPhiSphere();
     bool fullThetaSphere = unplaced.IsFullThetaSphere();
 
@@ -1036,13 +1034,6 @@ void SphereImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
 
    Float_t outerDist(kInfinity);
    Float_t innerDist(kInfinity);
-
-   Float_t tolORMin2(0.), tolIRMin2(0.), tolORMax2(0.), tolIRMax2(0.);
-   tolORMin2 = (fRmin - halfRminTolerance) * (fRmin - halfRminTolerance);
-   tolIRMin2 = (fRmin + halfRminTolerance) * (fRmin + halfRminTolerance);
-
-   tolORMax2 = (fRmax + halfRmaxTolerance) * (fRmax + halfRmaxTolerance);
-   tolIRMax2 = (fRmax - halfRmaxTolerance) * (fRmax - halfRmaxTolerance);
 
    if(unplaced.IsFullSphere())
    {
