@@ -501,10 +501,10 @@ set(SRC_CPP_RELATIVE
 
 # avoid "file has no symbols" warning
 if(NOT CUDA)
-  list(REMOVE_ITEM SRC_CPP_RELATIVE souce/RNG.cpp)
-  list(REMOVE_ITEM SRC_CPP_RELATIVE souce/AOS3D.cpp)
-  list(REMOVE_ITEM SRC_CPP_RELATIVE souce/SOA3D.cpp)
-  list(REMOVE_ITEM SRC_CPP_RELATIVE souce/Vector.cpp)
+  list(REMOVE_ITEM SRC_CPP_RELATIVE source/RNG.cpp)
+  list(REMOVE_ITEM SRC_CPP_RELATIVE source/AOS3D.cpp)
+  list(REMOVE_ITEM SRC_CPP_RELATIVE source/SOA3D.cpp)
+  list(REMOVE_ITEM SRC_CPP_RELATIVE source/Vector.cpp)
 endif()
 
 foreach(SRC ${SRC_CPP_RELATIVE})
