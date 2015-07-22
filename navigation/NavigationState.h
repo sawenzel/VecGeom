@@ -6,7 +6,7 @@
 #define VECGEOM_NAVIGATION_NAVIGATIONSTATE_H_
 
 #include "backend/Backend.h"
-#include "VariableSizeObj.h"
+#include "base/VariableSizeObj.h"
 #include "base/Transformation3D.h"
 #include "volumes/PlacedVolume.h"
 #ifdef VECGEOM_CUDA
@@ -42,11 +42,11 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
  * likely there will be such an object for each
  * particle/track currently treated
  */
-class NavigationState : protected VecCore::VariableSizeObjectInterface<NavigationState, VPlacedVolume const *> {
+class NavigationState : protected veccore::VariableSizeObjectInterface<NavigationState, VPlacedVolume const *> {
 public:
    using Value_t = VPlacedVolume const *;
-   using Base_t = VecCore::VariableSizeObjectInterface<NavigationState, Value_t>;
-   using VariableData_t = VecCore::VariableSizeObj<Value_t>;
+   using Base_t = veccore::VariableSizeObjectInterface<NavigationState, Value_t>;
+   using VariableData_t = veccore::VariableSizeObj<Value_t>;
 
 private:
    friend Base_t;
@@ -62,7 +62,7 @@ private:
    bool fOnBoundary; // flag indicating whether track is on boundary of the "Top()" placed volume
 
    // pointer data follows; has to be last
-   VecCore::VariableSizeObj<VPlacedVolume const *> fPath;
+   veccore::VariableSizeObj<VPlacedVolume const *> fPath;
 
    // constructors and assignment operators are private
    // states have to be constructed using MakeInstance() function

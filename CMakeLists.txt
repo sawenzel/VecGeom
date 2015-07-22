@@ -385,8 +385,8 @@ endif()
 
 # until VecCore is separated from VecGeom (then it become something
 # ${VecCore_DIR}/include
-include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
-include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
+# include_directories(${CMAKE_SOURCE_DIR}/VecCore/inc )
+# include_directories(${CMAKE_INSTALL_PREFIX}/VecCore)
 
 if (ROOT)
 
