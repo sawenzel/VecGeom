@@ -383,7 +383,7 @@ static T DistSqrToTorusR(UnplacedTorus2 const &torus, Vector3D<T> const &point, 
                                      + (torus.rtor2() - radius * radius) * (torus.rtor2() - radius * radius);
 
     Real_v x[4] = { vecgeom::kInfinity, vecgeom::kInfinity, vecgeom::kInfinity, vecgeom::kInfinity };
-    int nsol = 0;
+    unsigned int nsol = 0;
 
     // special condition
     if (Abs(dir[2]) < 1E-3 && Abs(pt[2]) < 0.1 * radius) {
@@ -538,7 +538,7 @@ static T DistSqrToTorusR(UnplacedTorus2 const &torus, Vector3D<T> const &point, 
        }
 
 
-       Bool_t hasphi = (torus.dphi() < vecgeom::kTwoPi);
+       // Bool_t hasphi = (torus.dphi() < vecgeom::kTwoPi);
 
        // Check if bounding tube intersection is due to phi in which case we are done
        Precision daxis = DistSqrToTorusR(torus, localPoint, localDirection, tubeDistance);
