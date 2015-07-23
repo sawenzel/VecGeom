@@ -68,7 +68,7 @@ NavigationState::GlobalToLocal(Vector3D<Precision> const & globalpoint) const
     {
         if ( mother->GetDaughters()[d] == daughter) return d;
     }
-    return -1;
+    return static_cast<uint>(-1);
   }
 
   VPlacedVolume const * GetDaughterWithinMother( VPlacedVolume const * mother, uint index )

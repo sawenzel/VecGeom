@@ -536,7 +536,7 @@ void DeleteAllG4VolumesDeeperThan( G4LogicalVolume * vol, unsigned int level ){
       daughters.push_back(vol->GetDaughter(d));
 
     // now remove them
-    for (auto d = 0; d < daughters.size(); ++d)
+    for (unsigned int d = 0; d < daughters.size(); ++d)
       vol->RemoveDaughter(daughters[d]);
     return;
   } else {

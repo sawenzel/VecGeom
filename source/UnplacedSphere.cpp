@@ -317,14 +317,12 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
   }
 #endif
   
-  VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print() const {
   printf("UnplacedSphere {%.2f , %.2f , %.2f , %.2f , %.2f , %.2f}",GetInnerRadius(),GetOuterRadius(),
                                                           GetStartPhiAngle(), GetDeltaPhiAngle(),
                                                           GetStartThetaAngle(), GetDeltaThetaAngle() );
 }
   
-VECGEOM_CUDA_HEADER_BOTH
 void UnplacedSphere::Print(std::ostream &os) const {
   os << "UnplacedSphere { " << GetInnerRadius() <<" " << GetOuterRadius() <<" " << GetStartPhiAngle() <<" " << GetDeltaPhiAngle() <<" "
            << GetStartThetaAngle() <<" " << GetDeltaThetaAngle() <<" }";
