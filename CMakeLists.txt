@@ -144,7 +144,9 @@ endif()
 # Set Default compiler flags for each build type
 
 # some compilers do not default to C++11 standard yet
-set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -std=c++11")
+if (NOT CUDA)
+  set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -std=c++11")
+endif()
 
 if (GNU)
   set(VECGEOM_CXX_FLAGS "${VECGEOM_CXX_FLAGS} -Wall -fPIC")
@@ -558,6 +560,13 @@ if (CUDA)
     )
 endif()
 
+
+# Compile cpp-files for C++11
+
+if (CUDA)
+  set_source_files_properties(${SRC_CPP} PROPERTIES COMPILE_FLAGS -std=c++11)
+endif()
+
 ################################################################################
 
 # Build libraries
@@ -568,6 +577,13 @@ target_link_libraries(vecgeom ${VECGEOM_LIBRARIES}
 set(VECGEOM_LIBRARIES ${VECGEOM_LIBRARIES} vecgeom)
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} rt)
+endif()
+
+if (CUDA)
+  set_source_files_properties(
+    ${SRC_EXECUTABLES}
+    PROPERTIES COMPILE_FLAGS -std=c++11
+  )
 endif()
 
 # build the CUDA version of the library
@@ -735,6 +751,13 @@ set(TEST_EXECUTABLES
   ${TEST_EXECUTABLES_CUDA}
   ${TEST_EXECUTABLES_SHAPETESTER}
 )
+
+if (CUDA)
+  set_source_files_properties(
+    ${TEST_EXECUTABLES}
+    PROPERTIES COMPILE_FLAGS -std=c++11
+  )
+endif()
 
 # Build executables
 
