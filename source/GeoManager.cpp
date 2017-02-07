@@ -2,9 +2,8 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "management/GeoManager.h"
-
 #include "volumes/PlacedVolume.h"
-
+#include <dlfcn.h>
 #include <stdio.h>
 
 namespace vecgeom {
@@ -38,6 +37,34 @@ void GeoManager::CloseGeometry() {
     fTotalNodeCount = totalcountvisitor.GetTotalNodeCount();
 }
 
+
+void GeoManager::LoadGeometryFromSharedLib( std::string libname ){
+    void *handle;
+    handle = dlopen(libname.c_str(), RTLD_NOW);
+    if (!handle){
+        std::cerr << "Error loading geometry shared lib: " << dlerror() << "\n";
+    }
+
+    // the create detector "function type":
+    typedef VPlacedVolume const * (*CreateFunc_t)();
+
+    // find entry symbol to geometry creation
+    // TODO: get rid of hard coded name
+    CreateFunc_t create = (CreateFunc_t) dlsym(handle,"_Z16generateDetectorv");
+
+    if (create != nullptr ){
+      // call the create function and set the geometry world
+      SetWorld( create() );
+
+      // close the geometry
+      // TODO: This step often necessitates extensive computation and could be done
+      // as part of the shared lib load itself
+      CloseGeometry();
+    }
+    else {
+      std::cerr << "Loading geometry from shared lib failed\n";
+    }
+}
 
 
 VPlacedVolume* GeoManager::FindPlacedVolume(const int id) {
@@ -79,7 +106,9 @@ LogicalVolume* GeoManager::FindLogicalVolume(char const *const label) {
   bool multiple = false;
   for (auto v = fLogicalVolumesMap.begin(), v_end = fLogicalVolumesMap.end();
        v != v_end; ++v) {
-    if (v->second->GetLabel() == label) {
+
+    const std::string& fullname = v->second->GetLabel();
+    if (fullname.compare(label)==0) {
       if (!output) {
         output = v->second;
       } else {

@@ -88,14 +88,14 @@ public:
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  Vector<Daughter> const& daughters() const {
-    return logical_volume_->daughters();
+  Vector<Daughter> const& GetDaughters() const {
+    return logical_volume_->GetDaughters();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  VUnplacedVolume const* unplaced_volume() const {
-    return logical_volume_->unplaced_volume();
+  VUnplacedVolume const* GetUnplacedVolume() const {
+    return logical_volume_->GetUnplacedVolume();
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -190,12 +190,15 @@ public:
   //                           Precision const *const step_max,
   //                           Precision *const output) const =0;
 
+#ifdef VECGEOM_USOLIDS
+    using USolidsInterfaceHelper::DistanceToOut;
+#else
   VECGEOM_CUDA_HEADER_BOTH
   virtual Precision DistanceToOut(
       Vector3D<Precision> const &position,
       Vector3D<Precision> const &direction,
       Precision const step_max = kInfinity) const =0;
-
+#endif
 
   // a "placed" version of the distancetoout function; here
   // the point and direction are first of all transformed into the reference frame of the
@@ -254,16 +257,26 @@ public:
       return 0;
   }
 
-  virtual void Extent(Vector3D<Precision> &min,
-                      Vector3D<Precision> &max) const {
+  virtual void Extent(Vector3D<Precision> & /* min */,
+                      Vector3D<Precision> & /* max */) const {
     assert(0 && "Extent not implemented for this shape type.");
   }
 
-  virtual Precision SurfaceArea() {
-    assert(0 && "SurfaceArea not implemented for this shape type.");
-    return 0.0;
+
+  virtual bool Normal(Vector3D<double> const &,
+                      Vector3D<double> &) const {
+
+    assert(0 &&
+           "Normal not implemented.");
+    return false;
   }
 
+
+  virtual Precision SurfaceArea(); // {
+   // assert(0 && "SurfaceArea not implemented for this shape type.");
+   // return 0.0;
+ // }
+  virtual Vector3D<Precision> GetPointOnSurface() const;
 
 public:
 

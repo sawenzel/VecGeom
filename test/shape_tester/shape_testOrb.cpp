@@ -17,7 +17,7 @@ typedef vecgeom::SimpleOrb Orb_t;
 
 int main(  int argc,char *argv[]) {
 
-  VUSolid* orb=new Orb_t("test_orb",50.);
+  VUSolid* orb=new Orb_t("test_orb",35);
    // VUSolid* orb=new UOrb("test_UOrb",3.);
   ShapeTester tester;
 

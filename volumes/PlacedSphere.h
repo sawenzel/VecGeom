@@ -53,9 +53,16 @@ public:
   VECGEOM_INLINE
   UnplacedSphere const* GetUnplacedVolume() const {
     return static_cast<UnplacedSphere const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
   
+  VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    Wedge const & GetWedge() const { return GetUnplacedVolume()->GetWedge(); }
+  
+  VECGEOM_CUDA_HEADER_BOTH
+    VECGEOM_INLINE
+    ThetaCone const & GetThetaCone() const { return GetUnplacedVolume()->GetThetaCone(); }
 
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -89,6 +96,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
   Precision GetFRminTolerance() const { return GetUnplacedVolume()->GetFRminTolerance(); }
+
+VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetMKTolerance() const { return GetUnplacedVolume()->GetMKTolerance(); }
   
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
@@ -163,6 +174,40 @@ public:
   VECGEOM_INLINE
   Precision GetCosETheta() const { return GetUnplacedVolume()->GetCosETheta();}
   
+  //****************************************************************
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetTanSTheta() const { return GetUnplacedVolume()->GetTanSTheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetTanETheta() const { return GetUnplacedVolume()->GetTanETheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetFabsTanSTheta() const { return GetUnplacedVolume()->GetFabsTanSTheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetFabsTanETheta() const { return GetUnplacedVolume()->GetFabsTanETheta();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetTanSTheta2() const { return GetUnplacedVolume()->GetTanSTheta2();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetTanETheta2() const { return GetUnplacedVolume()->GetTanETheta2();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetCosHDPhiOT() const { return GetUnplacedVolume()->GetCosHDPhiOT();}
+  
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision GetCosHDPhiIT() const { return GetUnplacedVolume()->GetCosHDPhiIT();}
+  //****************************************************************
+  
   // Old access functions
 VECGEOM_CUDA_HEADER_BOTH 
   VECGEOM_INLINE
@@ -199,13 +244,13 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
   Precision GetfRTolerance() const { return GetUnplacedVolume()->GetfRTolerance(); }
 */
 
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   VECGEOM_INLINE
-  void GetParametersList(int aNumber, double *aArray) const { return GetUnplacedVolume()->GetParametersList(aNumber, aArray);}
-
-  VECGEOM_CUDA_HEADER_BOTH
-  VECGEOM_INLINE
-  void ComputeBBox() const { return GetUnplacedVolume()->ComputeBBox();}
+  void GetParametersList(int aNumber, double *aArray) const override {
+    return GetUnplacedVolume()->GetParametersList(aNumber, aArray);
+  }
+#endif
 
 #ifndef VECGEOM_NVCC
   VECGEOM_INLINE
@@ -214,13 +259,17 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
   VECGEOM_INLINE
   Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea(); }
   
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_INLINE
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 
   VECGEOM_INLINE
-  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override { return GetUnplacedVolume()->Extent(aMin,aMax);}
+  void Extent( Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override {
+    return GetUnplacedVolume()->Extent(aMin,aMax);
+  }
   
-  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const override
   {
       bool valid;
       SphereImplementation<translation::kIdentity, rotation::kIdentity>::NormalKernel<kScalar>(
@@ -230,20 +279,20 @@ Precision GetDTheta() const { return GetUnplacedVolume()->GetDTheta(); }
       return valid;
   }
 
-  Vector3D<Precision> GetPointOnSurface() const {
+  Vector3D<Precision> GetPointOnSurface() const override {
     return GetUnplacedVolume()->GetPointOnSurface();
   }
 
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

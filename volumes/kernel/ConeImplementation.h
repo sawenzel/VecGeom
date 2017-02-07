@@ -13,7 +13,7 @@
 #include "volumes/UnplacedCone.h"
 #include "volumes/kernel/shapetypes/ConeTypes.h"
 #include <cassert>
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -129,7 +129,7 @@ struct ConeImplementation {
         Float_t rmin = cone.GetInnerSlope()*point.z() + cone.GetInnerOffset();
         Float_t rmin2 = rmin*rmin;
 
-        completelyoutside |= r2 < MakeMinusTolerantSquare<ForInside>( rmin, rmin2 );
+        completelyoutside |= r2 <= MakeMinusTolerantSquare<ForInside>( rmin, rmin2 );
         if (ForInside)
         {
          completelyinside &= r2 > MakePlusTolerantSquare<ForInside>( rmin, rmin2 );

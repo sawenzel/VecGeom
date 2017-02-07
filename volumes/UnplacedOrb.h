@@ -32,7 +32,7 @@ private:
   Precision fCubicVolume, fSurfaceArea;
   
   //Tolerance compatiable with USolids
-  Precision epsilon;// = 2e-11; 
+  constexpr static Precision fepsilon = 2e-11; 
   Precision frTolerance;//=1e-9;
 
 public:
@@ -74,28 +74,31 @@ public:
 #if !defined(VECGEOM_NVCC)
   void Extent( Vector3D<Precision> &, Vector3D<Precision> &) const;
   
-  Precision Capacity() const { return fCubicVolume; }
+
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision Capacity() const {return fCubicVolume;}
   
-  Precision SurfaceArea() const { return fSurfaceArea; }
+  VECGEOM_CUDA_HEADER_BOTH
+  VECGEOM_INLINE
+  Precision SurfaceArea() const {return fSurfaceArea;}
+
   
   virtual Vector3D<Precision> GetPointOnSurface() const;
 
   std::string GetEntityType() const;
 #endif
   
-    
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   void GetParametersList(int aNumber, double *aArray) const; 
   
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* Clone() const;
 
-  //VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
+#endif
     
-  // VECGEOM_CUDA_HEADER_BOTH
-  // void ComputeBBox() const; 
-  
 public:
   virtual int memory_size() const { return sizeof(*this); }
 

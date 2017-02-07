@@ -6,7 +6,6 @@
 #include "base/SOA3D.h"
 #include "base/Stopwatch.h"
 #include "base/Transformation3D.h"
-#include "volumes/LogicalVolume.h"
 #include "volumes/PlacedBox.h"
 #include "volumes/utilities/VolumeUtilities.h"
 
@@ -40,7 +39,17 @@ Benchmarker::Benchmarker() : Benchmarker(NULL) {}
 Benchmarker::Benchmarker(VPlacedVolume const *const world)
   : fPointCount(1024), fPoolMultiplier(4), fRepetitions(1024), fMeasurementCount(1),
       fVerbosity(1), fToInBias(0.8), fInsideBias(0.5), fPointPool(NULL),
-      fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance) {
+      fDirectionPool(NULL), fStepMax(NULL), fTolerance(kTolerance)
+#ifdef VECGEOM_USOLIDS
+  ,fOkToRunUSOLIDS(true)
+#endif
+#ifdef VECGEOM_ROOT
+  ,fOkToRunROOT(true)
+#endif
+#ifdef VECGEOM_GEANT4
+  ,fOkToRunG4(true)
+#endif
+{
   SetWorld(world);
 }
 
@@ -75,9 +84,34 @@ std::list<BenchmarkResult> Benchmarker::PopResults() {
 }
 
 void Benchmarker::GenerateVolumePointers(VPlacedVolume const *const vol) {
-  for (auto i = vol->daughters().begin(), iEnd = vol->daughters().end();
+  for (auto i = vol->GetDaughters().begin(), iEnd = vol->GetDaughters().end();
        i != iEnd; ++i) {
+
+    // this is pretty tricky
+    // this line causes the implicit conversion of a vecgeom shape
+    // to the corresponding ROOT/G4/USOLIDS shapes via the VolumePointers
+    // constructor
     fVolumes.push_back(*i);
+    // can check now the property of the conversions of *i
+#ifdef VECGEOM_ROOT
+    if( fVolumes.back().ROOT() == NULL ){
+        fOkToRunROOT=false;
+        std::cerr << "disabling ROOT\n";
+    }
+#endif
+#ifdef VECGEOM_USOLIDS
+    if( fVolumes.back().USolids() == NULL ){
+        fOkToRunUSOLIDS=false;
+        std::cerr << "disabling USOLIDS\n";
+    }
+#endif
+#ifdef VECGEOM_GEANT4
+    if( fVolumes.back().Geant4() == NULL ){
+        fOkToRunG4=false;
+        std::cerr << "disabling G4\n";
+    }
+#endif
+
     GenerateVolumePointers(*i);
   }
 }
@@ -120,26 +154,25 @@ int Benchmarker::CompareDistances(
    fProblematicRays.clear();
 
   int mismatches=0;
-  static char const *const outputLabels =
-      "Vectorized / Specialized / Unspecialized"
-#ifdef VECGEOM_ROOT
-      " / ROOT"
-#endif
-#ifdef VECGEOM_USOLIDS
-      " / USolids"
-#endif
-#ifdef VECGEOM_GEANT4
-      " / Geant4"
-#endif
-#ifdef VECGEOM_CUDA
-      " / CUDA"
-#endif
-      ;
+  std::stringstream outputLabelsStream;
+  outputLabelsStream <<  "Vectorized / Specialized / Unspecialized";
+ #ifdef VECGEOM_ROOT
+     if(fOkToRunROOT) outputLabelsStream <<  " / ROOT";
+ #endif
+ #ifdef VECGEOM_USOLIDS
+     if(fOkToRunUSOLIDS) outputLabelsStream << " / USolids";
+ #endif
+ #ifdef VECGEOM_GEANT4
+     if(fOkToRunG4) outputLabelsStream << " / Geant4";
+ #endif
+ #ifdef VECGEOM_CUDA
+     outputLabelsStream << " / CUDA";
+ #endif
 
   if (fPoolMultiplier == 1 && fVerbosity > 0) {
 
     printf("Comparing %s results...\n", method);
-    if (fVerbosity > 2) printf("%s\n", outputLabels);
+    if (fVerbosity > 2) printf("%s\n", outputLabelsStream.str().c_str());
 
     // Compare results
     for (unsigned i = 0; i < fPointCount; ++i) {
@@ -159,28 +192,34 @@ int Benchmarker::CompareDistances(
         mismatch = true;
       }
 #ifdef VECGEOM_ROOT
-      if (std::fabs(specialized[i] - root[i]) > fTolerance
-          && !(specialized[i] == kInfinity && root[i] == 1e30)) {
-        mismatch = true;
+      if(fOkToRunROOT){
+          if (std::fabs(specialized[i] - root[i]) > fTolerance
+              && !(specialized[i] == kInfinity && root[i] == 1e30)) {
+            mismatch = true;
+          }
+          if (fVerbosity > 2) mismatchOutput << " / " << root[i];
       }
-      if (fVerbosity > 2) mismatchOutput << " / " << root[i];
 #endif
 #ifdef VECGEOM_USOLIDS
-      if (std::fabs(specialized[i] - usolids[i]) > fTolerance
-          && !(specialized[i] == kInfinity
-               && usolids[i] == UUtils::kInfinity)) {
-        mismatch = true;
+      if(fOkToRunUSOLIDS){
+          if (std::fabs(specialized[i] - usolids[i]) > fTolerance
+              && !(specialized[i] == kInfinity
+                   && usolids[i] == UUtils::kInfinity)) {
+            mismatch = true;
+          }
+          if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];
       }
-      if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];
 #endif
 #ifdef VECGEOM_GEANT4
-      if (geant4) {
-        if (std::fabs(specialized[i] - geant4[i]) > fTolerance
-            && !(specialized[i] == kInfinity
-                 && geant4[i] == ::kInfinity)) {
-          mismatch = true;
-        }
-        if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
+      if(fOkToRunG4){
+          if (geant4) {
+            if (std::fabs(specialized[i] - geant4[i]) > fTolerance
+                && !(specialized[i] == kInfinity
+                     && geant4[i] == ::kInfinity)) {
+              mismatch = true;
+            }
+            if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
+          }
       }
 #endif
 #ifdef VECGEOM_CUDA
@@ -199,10 +238,10 @@ int Benchmarker::CompareDistances(
       }
 
       if ((mismatch && fVerbosity > 2) || fVerbosity > 4) {
-        printf("Point (%f, %f, %f)", points->x(i), points->y(i),
+        printf("Point (%.30f, %.30f, %.30f)", points->x(i), points->y(i),
                points->z(i));
         if (directions != NULL) {
-          printf(", Direction (%f, %f, %f)", directions->x(i), directions->y(i),
+          printf(", Direction (%.30f, %.30f, %.30f)", directions->x(i), directions->y(i),
                  directions->z(i));
         }
         printf(": ");
@@ -240,26 +279,25 @@ int Benchmarker::CompareSafeties(
 
     int mismatches = 0;
 
-  static char const *const outputLabels =
-      "Vectorized / Specialized / Unspecialized"
+    std::stringstream outputLabelsStream;
+
+    outputLabelsStream <<  "Vectorized / Specialized / Unspecialized";
 #ifdef VECGEOM_ROOT
-      " / ROOT"
+    if(fOkToRunROOT) outputLabelsStream <<  " / ROOT";
 #endif
 #ifdef VECGEOM_USOLIDS
-      " / USolids"
+    if(fOkToRunUSOLIDS) outputLabelsStream << " / USolids";
 #endif
 #ifdef VECGEOM_GEANT4
-      " / Geant4"
+    if(fOkToRunG4) outputLabelsStream << " / Geant4";
 #endif
 #ifdef VECGEOM_CUDA
-      " / CUDA"
+    outputLabelsStream << " / CUDA";
 #endif
-      ;
-
   if (fPoolMultiplier == 1 && fVerbosity > 0) {
 
     printf("Comparing %s results...\n", method);
-    if (fVerbosity > 2) printf("%s\n", outputLabels);
+    if (fVerbosity > 2) printf("%s\n",  outputLabelsStream.str().c_str());
 
     // Compare results
     int worse = 0;
@@ -283,23 +321,26 @@ int Benchmarker::CompareSafeties(
         better &= specialized[i] >= unspecialized[i];
       }
 #ifdef VECGEOM_ROOT
+      if(fOkToRunROOT){
       if (std::fabs(specialized[i] - root[i]) > kTolerance
           && !(specialized[i] == kInfinity && root[i] == 1e30)) {
         mismatch = true;
         better &= specialized[i] >= root[i];
       }
-      if (fVerbosity > 2) mismatchOutput << " / " << root[i];
+      if (fVerbosity > 2) mismatchOutput << " / " << root[i];}
 #endif
 #ifdef VECGEOM_USOLIDS
+      if(fOkToRunUSOLIDS){
       if (std::fabs(specialized[i] - usolids[i]) > kTolerance
           && !(specialized[i] == kInfinity
                && usolids[i] == UUtils::kInfinity)) {
         mismatch = true;
         better &= specialized[i] >= usolids[i];
       }
-      if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];
+      if (fVerbosity > 2) mismatchOutput << " / " << usolids[i];}
 #endif
 #ifdef VECGEOM_GEANT4
+      if(fOkToRunG4){
       if (geant4) {
         if (std::fabs(specialized[i] - geant4[i]) > kTolerance
             && !(specialized[i] == kInfinity
@@ -308,7 +349,7 @@ int Benchmarker::CompareSafeties(
           better &= specialized[i] >= geant4[i];
         }
         if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
-      }
+      }}
 #endif
 #ifdef VECGEOM_CUDA
       if (std::fabs(specialized[i] - cuda[i]) > kTolerance
@@ -393,9 +434,10 @@ int Benchmarker::RunInsideBenchmark() {
   outputLabelsContains << " - ROOT";
 #endif
 #ifdef VECGEOM_USOLIDS
-  ::VUSolid::EnumInside *const insideUSolids =
-      AllocateAligned< ::VUSolid::EnumInside>();
-  outputLabelsInside << " - USolids";
+  ::VUSolid::EnumInside * insideUSolids = nullptr;
+  if(fOkToRunUSOLIDS){
+    insideUSolids = AllocateAligned< ::VUSolid::EnumInside>();
+    outputLabelsInside << " - USolids";}
 #endif
 #ifdef VECGEOM_GEANT4
   ::EInside *const insideGeant4 = AllocateAligned< ::EInside>();
@@ -410,17 +452,35 @@ int Benchmarker::RunInsideBenchmark() {
 
   // Run all benchmarks
   for(unsigned int i=0; i<fMeasurementCount; ++i) {
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunInsideBenchmark, __itt_null, __itt_null, __itt_RunInsideVectorized);
+#endif
     RunInsideVectorized(containsVectorized, insideVectorized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunInsideBenchmark);
+#endif
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunInsideBenchmark, __itt_null, __itt_null, __itt_RunInsideSpecialized);
+#endif
     RunInsideSpecialized(containsSpecialized, insideSpecialized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunInsideBenchmark);
+#endif
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunInsideBenchmark, __itt_null, __itt_null, __itt_RunInsideUnspecialized);
+#endif
     RunInsideUnspecialized(containsUnspecialized, insideUnspecialized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunInsideBenchmark);
+#endif
 #ifdef VECGEOM_USOLIDS
-    RunInsideUSolids(insideUSolids);
+    if(fOkToRunUSOLIDS) RunInsideUSolids(insideUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
-    RunInsideGeant4(insideGeant4);
+    if(fOkToRunG4) RunInsideGeant4(insideGeant4);
 #endif
 #ifdef VECGEOM_ROOT
-    RunInsideRoot(containsRoot);
+    if(fOkToRunROOT) RunInsideRoot(containsRoot);
 #endif
 #ifdef VECGEOM_CUDA
     RunInsideCuda(fPointPool->x(), fPointPool->y(), fPointPool->z(),
@@ -492,10 +552,13 @@ int Benchmarker::RunInsideBenchmark() {
       if (insideSpecialized[i] != insideVectorized[i]) mismatch = true;
       if (insideSpecialized[i] != insideUnspecialized[i]) mismatch = true;
 #ifdef VECGEOM_USOLIDS
+      if(fOkToRunUSOLIDS){
       if (insideSpecialized[i] != insideUSolids[i]) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << insideUSolids[i];
+      }
 #endif
 #ifdef VECGEOM_GEANT4
+      if(fOkToRunG4){
       if (!((insideSpecialized[i] == EInside::kInside &&
              insideGeant4[i] == ::kInside) ||
             (insideSpecialized[i] == EInside::kOutside &&
@@ -504,7 +567,7 @@ int Benchmarker::RunInsideBenchmark() {
              insideGeant4[i] == ::kSurface))) {
         mismatch = true;
       }
-      if (fVerbosity > 2) mismatchOutput << " / " << insideGeant4[i];
+      if (fVerbosity > 2) mismatchOutput << " / " << insideGeant4[i];}
 #endif
 #ifdef VECGEOM_CUDA
       if (insideSpecialized[i] != insideCuda[i]) mismatch = true;
@@ -536,7 +599,7 @@ int Benchmarker::RunInsideBenchmark() {
   FreeAligned(insideSpecialized);
   FreeAligned(insideUnspecialized);
 #ifdef VECGEOM_USOLIDS
-  FreeAligned(insideUSolids);
+  if(fOkToRunUSOLIDS){ FreeAligned(insideUSolids); }
 #endif
 #ifdef VECGEOM_GEANT4
   FreeAligned(insideGeant4);
@@ -559,27 +622,31 @@ int Benchmarker::CompareMetaInformation() const {
         printf("## VecGeom capacity sum %lf\n", vecgeomcapacity);
     }
 #ifdef VECGEOM_ROOT
+    if(fOkToRunROOT){
     double ROOTcapacity=0.;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
         ROOTcapacity += v->ROOT()->Capacity();
     }
-    printf("## ROOT capacity sum %lf\n", ROOTcapacity);
+    printf("## ROOT capacity sum %lf\n", ROOTcapacity);}
 #endif
 
-    #ifdef VECGEOM_USOLIDS
+#ifdef VECGEOM_USOLIDS
+    if(fOkToRunUSOLIDS){
     double USOLIDScapacity=0.;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
         USOLIDScapacity += const_cast<VUSolid*>(v->USolids())->Capacity();
     }
     printf("## USOLIDS capacity sum %lf\n", USOLIDScapacity);
+    }
 #endif
 
-    #ifdef VECGEOM_GEANT4
+#ifdef VECGEOM_GEANT4
+    if(fOkToRunG4){
     double g4capacity=0.;
     for (auto v = fVolumes.begin(), vEnd = fVolumes.end(); v != vEnd; ++v) {
         g4capacity += const_cast<G4VSolid*>(v->Geant4())->GetCubicVolume();
     }
-    printf("## G4 capacity sum %lf\n", g4capacity);
+    printf("## G4 capacity sum %lf\n", g4capacity);}
 #endif
     return 0;
 }
@@ -632,9 +699,13 @@ int Benchmarker::RunToInBenchmark() {
   Precision *const distancesUnspecialized = AllocateAligned<Precision>();
   Precision *const safetiesUnspecialized = AllocateAligned<Precision>();
 #ifdef VECGEOM_USOLIDS
-  Precision *const distancesUSolids = AllocateAligned<Precision>();
-  Precision *const safetiesUSolids = AllocateAligned<Precision>();
-  outputLabels << " - USolids";
+  Precision * distancesUSolids = nullptr;
+  Precision * safetiesUSolids = nullptr;
+  if(fOkToRunUSOLIDS){
+      distancesUSolids = AllocateAligned<Precision>();
+      safetiesUSolids = AllocateAligned<Precision>();
+      outputLabels << " - USolids";
+  }
 #endif
 #ifdef VECGEOM_GEANT4
   Precision *const distancesGeant4 = AllocateAligned<Precision>();
@@ -654,17 +725,35 @@ int Benchmarker::RunToInBenchmark() {
 
   // Run all benchmarks
   for(unsigned int i=0; i<fMeasurementCount; ++i) {
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunToInBenchmark, __itt_null, __itt_null, __itt_RunToInVectorized);
+#endif
     RunToInVectorized(distancesVectorized, safetiesVectorized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunToInBenchmark);
+#endif
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunToInBenchmark, __itt_null, __itt_null, __itt_RunToInSpecialized);
+#endif
     RunToInSpecialized(distancesSpecialized, safetiesSpecialized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunToInBenchmark);
+#endif
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunToInBenchmark, __itt_null, __itt_null, __itt_RunToInUnspecialized);
+#endif
     RunToInUnspecialized(distancesUnspecialized, safetiesUnspecialized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunToInBenchmark);
+#endif
 #ifdef VECGEOM_USOLIDS
-    RunToInUSolids(distancesUSolids, safetiesUSolids);
+    if(fOkToRunUSOLIDS) RunToInUSolids(distancesUSolids, safetiesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
-    RunToInGeant4(distancesGeant4, safetiesGeant4);
+    if(fOkToRunG4) RunToInGeant4(distancesGeant4, safetiesGeant4);
 #endif
 #ifdef VECGEOM_ROOT
-    RunToInRoot(distancesRoot, safetiesRoot);
+    if(fOkToRunROOT) RunToInRoot(distancesRoot, safetiesRoot);
 #endif
 #ifdef VECGEOM_CUDA
     RunToInCuda(fPointPool->x(),     fPointPool->y(),     fPointPool->z(),
@@ -697,7 +786,7 @@ int Benchmarker::RunToInBenchmark() {
   FreeAligned(distancesUnspecialized);
   FreeAligned(distancesVectorized);
 #ifdef VECGEOM_USOLIDS
-  FreeAligned(distancesUSolids);
+  if(fOkToRunUSOLIDS) FreeAligned(distancesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
   FreeAligned(distancesGeant4);
@@ -735,7 +824,7 @@ int Benchmarker::RunToInBenchmark() {
   FreeAligned(safetiesUnspecialized);
   FreeAligned(safetiesVectorized);
 #ifdef VECGEOM_USOLIDS
-  FreeAligned(safetiesUSolids);
+  if(fOkToRunUSOLIDS) FreeAligned(safetiesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
   FreeAligned(safetiesGeant4);
@@ -795,9 +884,12 @@ int Benchmarker::RunToOutBenchmark() {
   Precision *const distancesUnspecialized = AllocateAligned<Precision>();
   Precision *const safetiesUnspecialized = AllocateAligned<Precision>();
 #ifdef VECGEOM_USOLIDS
-  Precision *const distancesUSolids = AllocateAligned<Precision>();
-  Precision *const safetiesUSolids = AllocateAligned<Precision>();
-  outputLabels << " - USolids";
+  Precision * distancesUSolids = nullptr;
+  Precision * safetiesUSolids = nullptr;
+  if(fOkToRunUSOLIDS){
+    distancesUSolids = AllocateAligned<Precision>();
+    safetiesUSolids = AllocateAligned<Precision>();
+    outputLabels << " - USolids";}
 #endif
 #ifdef VECGEOM_GEANT4
   Precision *const distancesGeant4 = AllocateAligned<Precision>();
@@ -817,17 +909,35 @@ int Benchmarker::RunToOutBenchmark() {
 
   // Run all benchmarks
   for(unsigned int i=0; i<fMeasurementCount; ++i) {
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunToOutBenchmark, __itt_null, __itt_null, __itt_RunToOutVectorized);
+#endif
     RunToOutVectorized(distancesVectorized, safetiesVectorized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunToOutBenchmark);
+#endif
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunToOutBenchmark, __itt_null, __itt_null, __itt_RunToOutSpecialized);
+#endif
     RunToOutSpecialized(distancesSpecialized, safetiesSpecialized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunToOutBenchmark);
+#endif
+#if defined (VECGEOM_VTUNE)
+    __itt_task_begin(__itt_RunToOutBenchmark, __itt_null, __itt_null, __itt_RunToOutUnspecialized);
+#endif
     RunToOutUnspecialized(distancesUnspecialized, safetiesUnspecialized);
+#if defined (VECGEOM_VTUNE)
+    __itt_task_end(__itt_RunToOutBenchmark);
+#endif
 #ifdef VECGEOM_USOLIDS
-    RunToOutUSolids(distancesUSolids, safetiesUSolids);
+    if(fOkToRunUSOLIDS) RunToOutUSolids(distancesUSolids, safetiesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
-    RunToOutGeant4(distancesGeant4, safetiesGeant4);
+    if(fOkToRunG4) RunToOutGeant4(distancesGeant4, safetiesGeant4);
 #endif
 #ifdef VECGEOM_ROOT
-    RunToOutRoot(distancesRoot, safetiesRoot);
+    if(fOkToRunROOT) RunToOutRoot(distancesRoot, safetiesRoot);
 #endif
 #ifdef VECGEOM_CUDA
     RunToOutCuda(fPointPool->x(),     fPointPool->y(),     fPointPool->z(),
@@ -861,7 +971,7 @@ int Benchmarker::RunToOutBenchmark() {
   FreeAligned(distancesUnspecialized);
   FreeAligned(distancesVectorized);
 #ifdef VECGEOM_USOLIDS
-  FreeAligned(distancesUSolids);
+  if(fOkToRunUSOLIDS) FreeAligned(distancesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
   FreeAligned(distancesGeant4);
@@ -898,7 +1008,7 @@ int Benchmarker::RunToOutBenchmark() {
   FreeAligned(safetiesUnspecialized);
   FreeAligned(safetiesVectorized);
 #ifdef VECGEOM_USOLIDS
-  FreeAligned(safetiesUSolids);
+  if(fOkToRunUSOLIDS) FreeAligned(safetiesUSolids);
 #endif
 #ifdef VECGEOM_GEANT4
   FreeAligned(safetiesGeant4);

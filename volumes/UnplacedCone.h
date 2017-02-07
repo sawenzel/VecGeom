@@ -327,6 +327,7 @@ Precision fSinEPhi;
       aMax = Vector3D<Precision>(max, max, fDz);
   }
 
+  bool Normal(Vector3D<Precision> const & point, Vector3D<Precision> & normal ) const;
   Vector3D<Precision> GetPointOnSurface() const;
 
   std::string GetEntityType() const { return "Cone";}

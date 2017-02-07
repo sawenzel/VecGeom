@@ -58,8 +58,8 @@ int main(int nArgs, char **args) {
     Benchmarker benchmarker(world);
     benchmarker.SetVerbosity(3);
     benchmarker.SetPoolMultiplier(1);
-    benchmarker.SetRepetitions(8192);
-    benchmarker.SetPointCount(128);
+    benchmarker.SetRepetitions(4);
+    benchmarker.SetPointCount(1024);
     benchmarker.RunInsideBenchmark();
     benchmarker.RunToInBenchmark();
     benchmarker.RunToOutBenchmark();

@@ -6,8 +6,6 @@
 
 using namespace vecgeom;
 
-constexpr int kIterations = 1<<22;
-
 int StaticPlanes() {
   Planes planes(6);
   planes.Set(0, Vector3D<Precision>(0,0,1), Vector3D<Precision>(0,0,1));
@@ -31,7 +29,7 @@ int StaticPlanes() {
       std::cout << "Inside mismatch for " << point << ": " << insidePlanes
                 << " / " << insideDie << "\n";
     } else {
-      if (insidePlanes == EInside::kInside) {
+      if (insidePlanes == vecgeom::EInside::kInside) {
         Precision distancePlanes = planes.Distance<kScalar>(point, direction);
         Precision distanceDie = die.DistanceToOut(point, direction);
         if (Abs(distancePlanes - distanceDie) > kTolerance) {

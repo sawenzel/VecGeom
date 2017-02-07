@@ -68,10 +68,10 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedVol_t const* GetUnplacedVolume() const {
     return static_cast<UnplacedVol_t const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
 
-#ifndef VECGEOM_NVCC
+//#ifndef VECGEOM_NVCC
   virtual Precision Capacity() override {
        // TODO: implement this
       return 0.;
@@ -81,24 +81,28 @@ public:
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+#if defined(VECGEOM_USOLIDS)
+  std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
 #endif
 
+  virtual Vector3D<Precision> GetPointOnSurface() const override;
+//#endif
+
   VECGEOM_CUDA_HEADER_BOTH
-  virtual void PrintType() const { };
+  virtual void PrintType() const override { };
 
   // CUDA specific
-  virtual int memory_size() const { return sizeof(*this); }
+  virtual int memory_size() const override { return sizeof(*this); }
 
   // Comparison specific
 
 #ifndef VECGEOM_NVCC
-  virtual VPlacedVolume const* ConvertToUnspecialized() const {
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override {
    return this;
   }
 #ifdef VECGEOM_ROOT
- virtual TGeoShape const* ConvertToRoot() const {
-      printf("Converting to ROOT\n");
+ virtual TGeoShape const* ConvertToRoot() const override {
+      // printf("Converting to ROOT\n");
       // what do we need?
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
@@ -131,14 +135,13 @@ public:
   }
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const {
-      printf("Converting to USOLIDS\n");
-      return new UBox("",10,10,10);
+  virtual ::VUSolid const* ConvertToUSolids() const override {
+    // currently not supported in USOLIDS -- returning NULL
+      return nullptr;
   }
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const {
-      printf("Converting to Geant4\n");
+  virtual G4VSolid const* ConvertToGeant4() const override {
       VPlacedVolume const * left = GetUnplacedVolume()->fLeftVolume;
       VPlacedVolume const * right = GetUnplacedVolume()->fRightVolume;
       Transformation3D const * rightm = right->GetTransformation();

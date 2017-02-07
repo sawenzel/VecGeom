@@ -23,12 +23,12 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 VECGEOM_CUDA_HEADER_BOTH
 UnplacedOrb::UnplacedOrb() :
    fR(0),
-   fRTolerance(Max(frTolerance, epsilon * fR)),
+   fRTolerance(Max(frTolerance, fepsilon * fR)),
    fRTolI(fR -  fRTolerance),
    fRTolO(fR +  fRTolerance),
    fCubicVolume(0),
    fSurfaceArea(0),
-   epsilon(2e-11),
+   //  epsilon(2e-11),
    frTolerance(1e-9)
 {
     //default constructor
@@ -37,41 +37,35 @@ UnplacedOrb::UnplacedOrb() :
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb::UnplacedOrb(const Precision r) :
    fR(r),
-   fRTolerance(Max(frTolerance, epsilon * fR)),
+   fRTolerance(Max(frTolerance, fepsilon * fR)),
    fRTolI(fR -  fRTolerance),
    fRTolO(fR +  fRTolerance),
    fCubicVolume((4 * kPi / 3) * fR * fR * fR),
    fSurfaceArea((4 * kPi) * fR * fR),
-   epsilon(2e-11),
+   //  epsilon(2e-11),
    frTolerance(1e-9)
   {
   }
-  
   
   VECGEOM_CUDA_HEADER_BOTH
   void UnplacedOrb::SetRadius(const Precision r)
   {
     fR=r;
-    fRTolerance =  Max(frTolerance, epsilon * r);
+    fRTolerance =  Max(frTolerance, fepsilon * r);
     fCubicVolume = (4 * kPi / 3) * fR * fR * fR;
     fSurfaceArea = (4 * kPi) * fR * fR;
     fRTolI = fR -  fRTolerance;
     fRTolO = fR +  fRTolerance;
   }
   
-  VECGEOM_CUDA_HEADER_BOTH
-  void UnplacedOrb::GetParametersList(int, double* aArray)const
-  {
-      aArray[0] = GetRadius();
-  }
-
-#if !defined(VECGEOM_NVCC)
+#ifndef VECGEOM_NVCC
   void UnplacedOrb::Extent(Vector3D<Precision> & aMin, Vector3D<Precision> & aMax) const
   {
     // Returns the full 3D cartesian extent of the solid.
       aMin.Set(-fR);
       aMax.Set(fR);
   }
+
 
   Vector3D<Precision> UnplacedOrb::GetPointOnSurface() const
   {
@@ -88,12 +82,20 @@ UnplacedOrb::UnplacedOrb() :
   return Vector3D<Precision>(fR * sintheta * cosphi, fR * sintheta * sinphi, fR * costheta);
   }
 
+
   std::string UnplacedOrb::GetEntityType() const
   {
       return "Orb\n";
   }
-#endif  // !VECGEOM_NVCC
+#endif
   
+#if defined(VECGEOM_USOLIDS)
+  VECGEOM_CUDA_HEADER_BOTH
+  void UnplacedOrb::GetParametersList(int, double* aArray) const
+  {
+      aArray[0] = GetRadius();
+  }
+
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedOrb* UnplacedOrb::Clone() const
   {
@@ -118,7 +120,7 @@ UnplacedOrb::UnplacedOrb() :
 
    return os;
   }
-
+#endif
   
 void UnplacedOrb::Print() const {
   printf("UnplacedOrb {%.2f}",GetRadius());

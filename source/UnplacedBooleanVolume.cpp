@@ -34,7 +34,7 @@ VPlacedVolume* UnplacedBooleanVolume::Create(
           
     // since this is a static function, we need to get instance of UnplacedBooleanVolume first of all from logical volume
    const UnplacedBooleanVolume &vol
-            = static_cast<const UnplacedBooleanVolume&>( *(logical_volume->unplaced_volume()) );
+            = static_cast<const UnplacedBooleanVolume&>( *(logical_volume->GetUnplacedVolume()) );
 
    if( vol.GetOp() == kSubtraction ) {
       return CreateSpecializedWithPlacement<SpecializedBooleanVolume<kSubtraction, transCodeT, rotCodeT> >(
@@ -91,7 +91,6 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
 #endif
 }
 
-#ifndef VECGEOM_NVCC
   void UnplacedBooleanVolume::Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const {
 
     Vector3D<Precision> minLeft, maxLeft, minRight, maxRight;
@@ -121,7 +120,6 @@ VPlacedVolume* UnplacedBooleanVolume::SpecializedVolume(
       aMax = maxLeft;
     }
   }
-#endif // !VECGEOM_NVCC
 
 #ifdef VECGEOM_CUDA_INTERFACE
 

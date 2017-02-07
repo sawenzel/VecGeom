@@ -55,7 +55,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedPolyhedron const* GetUnplacedVolume() const {
     return static_cast<UnplacedPolyhedron const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -141,11 +141,21 @@ public:
       return GetUnplacedVolume()->Capacity();
   }
 
+  virtual
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
+
+
   void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
     GetUnplacedVolume()->Extent(aMin, aMax);
   }
 
-  std::string GetEntityType() const { return GetUnplacedVolume()->GetEntityType() ;}
+  virtual
+  Vector3D<Precision> GetPointOnSurface() const override {
+    return GetUnplacedVolume()->GetPointOnSurface();
+  }
+#if defined(VECGEOM_USOLIDS)
+  std::string GetEntityType() const override { return GetUnplacedVolume()->GetEntityType() ;}
+#endif
 #endif
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -153,19 +163,19 @@ public:
 
   // CUDA specific
 
-  virtual int memory_size() const { return sizeof(*this); }
+  virtual int memory_size() const override { return sizeof(*this); }
 
   // Comparison specific
 #ifndef VECGEOM_NVCC
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 #ifdef VECGEOM_GEANT4
-  virtual G4VSolid const* ConvertToGeant4() const;
+  virtual G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

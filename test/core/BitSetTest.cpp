@@ -1,8 +1,8 @@
-#include "BitSet.h"
+#include "base/BitSet.h"
 
 #include <cassert>
 
-using namespace VecCore;
+using namespace veccore;
 
 #include <iostream>
 

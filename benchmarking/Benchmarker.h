@@ -27,6 +27,14 @@
 #include <vector>
 #include <utility> // for std::pair
 
+#if defined(VECGEOM_VTUNE)
+#include "ittnotify.h"
+#else
+#define __itt_resumme()
+#define __itt_start()
+#endif
+
+
 namespace vecgeom {
 
 VECGEOM_HOST_FORWARD_DECLARE( class VPlacedVolume; );
@@ -73,7 +81,39 @@ private:
   std::vector< Vector3D<Precision> > fProblematicContainPoints;
 
   // a container storing rays : startpoint (Vector3D) plus direction (Vector3D)
-   RayContainer fProblematicRays;
+  RayContainer fProblematicRays;
+
+  // flags indicating whether it is ok to run ROOT/USOLIDS/G4
+  // because in some cases a conversion might not exist
+  // the Benchmarker class will check this at initialization and
+  // set these flags accordingly
+#ifdef VECGEOM_USOLIDS
+  bool fOkToRunUSOLIDS;
+#endif
+#ifdef VECGEOM_ROOT
+  bool fOkToRunROOT;
+#endif
+#ifdef VECGEOM_GEANT4
+  bool fOkToRunG4;
+#endif
+
+#if defined(VECGEOM_VTUNE)
+  __itt_domain* __itt_RunInsideBenchmark = __itt_domain_create("RunInsideBenchmark");
+  __itt_domain* __itt_RunToInBenchmark = __itt_domain_create("RunToInBenchmark");
+  __itt_domain* __itt_RunToOutBenchmark = __itt_domain_create("RunToOutBenchmark");
+
+  __itt_string_handle* __itt_RunInsideSpecialized = __itt_string_handle_create("RunInsideSpecialized");
+  __itt_string_handle* __itt_RunInsideVectorized = __itt_string_handle_create("RunInsideVectorized");
+  __itt_string_handle* __itt_RunInsideUnspecialized = __itt_string_handle_create("RunInsideUnspecialized");
+
+  __itt_string_handle* __itt_RunToInSpecialized = __itt_string_handle_create("RunToInSpecialized");
+  __itt_string_handle* __itt_RunToInVectorized = __itt_string_handle_create("RunToInVectorized");
+  __itt_string_handle* __itt_RunToInUnspecialized = __itt_string_handle_create("RunToInUnspecialized");
+
+  __itt_string_handle* __itt_RunToOutSpecialized = __itt_string_handle_create("RunToOutSpecialized");
+  __itt_string_handle* __itt_RunToOutVectorized = __itt_string_handle_create("RunToOutVectorized");
+  __itt_string_handle* __itt_RunToOutUnspecialized = __itt_string_handle_create("RunToOutUnspecialized");
+#endif
 
 public:
 
@@ -88,6 +128,16 @@ public:
 
   /// \brief set tolerance for comparisons
   void SetTolerance(Precision tol) { fTolerance = tol; }
+
+
+  /// \brief get pointer to PointPool (in order to make data available to external users);
+  SOA3D<Precision> const * GetPointPool() const {
+      return fPointPool;
+  }
+
+  SOA3D<Precision> const * GetDirectionPool() const {
+      return fDirectionPool;
+  }
 
   /// \brief Runs all geometry benchmarks.
   /// return 0 if no error found; returns 1 if error found

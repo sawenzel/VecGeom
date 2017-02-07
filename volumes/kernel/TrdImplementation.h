@@ -11,9 +11,8 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedTrd.h"
 #include "volumes/kernel/shapetypes/TrdTypes.h"
-
 #include <stdlib.h>
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -123,7 +122,7 @@ void FaceTrajectoryIntersection(UnplacedTrd const &trd,
 
     // distance from trajectory to face
     dist = (alongZ*(posV-v1) - alongV*(pos.z()+trd.dz())  ) / (dir.z()*alongV - dirV*alongZ);
-    ok = dist > 0;
+    ok = dist >= 0;
     if(ok != Backend::kFalse) {
       // need to make sure z hit falls within bounds
       Float_t hitz = pos.z() + dist*dir.z();
@@ -186,7 +185,7 @@ static void UnplacedInside(
 
     // inside Z?
     completelyoutside = Abs(point.z()) > MakePlusTolerant<surfaceT>(trd.dz());
-    if(surfaceT) completelyinside = Abs(point.x()) < MakeMinusTolerant<surfaceT>(trd.dz());
+    if(surfaceT) completelyinside = Abs(point.z()) < MakeMinusTolerant<surfaceT>(trd.dz());
 
     // inside X?
     Float_t cross;

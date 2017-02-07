@@ -13,7 +13,7 @@
 #include "base/Vector3D.h"
 #include "volumes/kernel/GenericKernels.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -211,19 +211,17 @@ void OrbImplementation<transCodeT, rotCodeT>::NormalKernel(
        Vector3D<typename Backend::precision_v> &normal,
        typename Backend::bool_v &valid ){
 
-    typedef typename Backend::precision_v Double_t;
-    // typedef typename Backend::bool_v      Bool_t;
+    typedef typename Backend::precision_v Float_t;
 
-    Vector3D<Double_t> localPoint;
+    Vector3D<Float_t> localPoint;
     localPoint = point;
 
-    Double_t rad2=localPoint.Mag2();
-    Double_t rad=Sqrt(rad2);
-    normal = Vector3D<Double_t>(localPoint.x()/rad , localPoint.y()/rad ,localPoint.z()/rad );
+    Float_t rad2=localPoint.Mag2();
+    Float_t rad=Sqrt(rad2);
+    normal = Vector3D<Float_t>(localPoint.x()/rad , localPoint.y()/rad ,localPoint.z()/rad );
     
-    
-    Double_t tolRMaxP = unplaced.GetfRTolO();
-    Double_t tolRMaxM = unplaced.GetfRTolI();
+    Float_t tolRMaxP = unplaced.GetfRTolO();
+    Float_t tolRMaxM = unplaced.GetfRTolI();
 
     // Check radial surface
     valid = ((rad2 <= tolRMaxP * tolRMaxP) && (rad2 >= tolRMaxM * tolRMaxM)); // means we are on surface
@@ -361,23 +359,22 @@ UnplacedOrb const &unplaced,
     typename Backend::bool_v &completelyinside,
     typename Backend::bool_v &completelyoutside) {
 
-    typedef typename Backend::precision_v Double_t;
-    // typedef typename Backend::bool_v      Bool_t;	
+    
+    typedef typename Backend::precision_v Float_t;
+    //typedef typename Backend::bool_v      Bool_t;	
+        
+    Precision fR = unplaced.GetRadius();
+    Float_t rad2 = localPoint.Mag2();
+    
+    Float_t tolR = fR - ( kTolerance );
+    if(ForInside)
+    completelyinside = (rad2 <= tolR *tolR) ;
+    
+    tolR = (fR + ( kTolerance)); 
+    completelyoutside = (rad2 >= tolR *tolR);
+    //if( IsFull(completelyoutside) )return;
 
-    Double_t rad2 = localPoint.Mag2();
-    Double_t tolRMax = unplaced.GetfRTolO();
-    Double_t tolRMin = unplaced.GetfRTolI();
-    Double_t tolRMax2 = tolRMax * tolRMax;
-    Double_t tolRMin2 = tolRMin * tolRMin;
-    
-    completelyoutside = ( rad2 > tolRMax2);
-    if (ForInside)
-    {
-      completelyinside = ( rad2 < tolRMin2);
-    }
-    
-    
-    return;
+    //Radial Check for GenericKernel Over
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -396,6 +393,7 @@ void OrbImplementation<transCodeT, rotCodeT>::InsideKernel(UnplacedOrb const &un
   MaskedAssign(completelyinside, EInside::kInside, &inside);
 }
  
+
 template <TranslationCode transCodeT, RotationCode rotCodeT>
 template <class Backend>
 VECGEOM_CUDA_HEADER_BOTH
@@ -404,63 +402,37 @@ void OrbImplementation<transCodeT, rotCodeT>::DistanceToInKernel(
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
       typename Backend::precision_v const &stepMax,
-      typename Backend::precision_v &distance){
-    
-    typedef typename Backend::precision_v Double_t;
+      typename Backend::precision_v &distance) {
+
+    typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
+    //typedef typename Backend::inside_v    Inside_t;
 
-    Vector3D<Double_t> localPoint;
-    localPoint = point;
+    Vector3D<Float_t> localPoint = point;
+    Vector3D<Float_t> localDir = direction;
 
-    Vector3D<Double_t> localDir;
-    localDir = direction;
-
-    //General Precalcs
-    Double_t rad2 = localPoint.Mag2();
-    Double_t rad = Sqrt(rad2);
-    Double_t pDotV3d = localPoint.Dot(localDir);
-
-    Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
-    Double_t c = rad2 - radius2;
-    Double_t d2 = pDotV3d * pDotV3d - c;
-
-    Double_t pos_dot_dir_x = localPoint.x()*localDir.x();
-    Double_t pos_dot_dir_y = localPoint.y()*localDir.y();
-    Double_t pos_dot_dir_z = localPoint.z()*localDir.z();
-
-    Bool_t done(false);
     distance = kInfinity;
-    Double_t zero=Backend::kZero;
+    Bool_t done(false);
 
-    //Is the point Inside
-    Bool_t isInside = ((rad < unplaced.GetfRTolI()));
-    done |= isInside;
-    MaskedAssign( isInside, kInfinity, &distance );
-    if( IsFull(done) )return;
+    Float_t fR(unplaced.GetRadius()); 
+	// General Precalcs
+    Float_t rad2 = localPoint.Mag2();
+    Float_t pDotV3d = localPoint.Dot(localDir);
 
-    //On the Surface and Moving In
-    Bool_t isInsideOuterToleranceAndMovingIn=((rad >= unplaced.GetfRTolI()) && (rad <= unplaced.GetfRTolO()) && (pDotV3d < 0));
-    done |= isInsideOuterToleranceAndMovingIn;
-    MaskedAssign(isInsideOuterToleranceAndMovingIn,zero,&distance);
-    if( IsFull(done) )return;
+    Float_t  c(0.), d2(0.);
+    c = rad2 - fR * fR;
+    //MaskedAssign((tr),(pDotV3d * pDotV3d - c),&d2);
+    d2 = (pDotV3d * pDotV3d - c);
 
-    //On the Surface and Moving Out
-    Bool_t isInsideOuterToleranceAndMovingOut=((rad >= unplaced.GetfRTolI()) && (rad <= unplaced.GetfRTolO()) && (pDotV3d >= 0));
-    done |= isInsideOuterToleranceAndMovingOut;
-    MaskedAssign(isInsideOuterToleranceAndMovingIn,kInfinity,&distance);
-    if( IsFull(done) )return;
-    
-    //Outside the Surface and Moving In
-    Bool_t isOutsideOuterToleranceAndMovingIn=( (rad > unplaced.GetfRTolO()) && (pDotV3d < 0));
-    done |= isOutsideOuterToleranceAndMovingIn;
-    MaskedAssign(isOutsideOuterToleranceAndMovingIn,(-pDotV3d - Sqrt(d2)),&distance);
-    if( IsFull(done) )return;
-    
-    //Outside the Surface and Moving Out
-    Bool_t isOutsideOuterToleranceAndMovingOut=( (rad > unplaced.GetfRTolO()) && (pDotV3d >= 0));
-    done |= isOutsideOuterToleranceAndMovingOut;
-    MaskedAssign(isOutsideOuterToleranceAndMovingOut,kInfinity,&distance);
-    if( IsFull(done) )return;
+    done |= (d2 < 0. || ((localPoint.Mag() > fR) && (pDotV3d > 0.)));
+    if(IsFull(done)) return; //Returning in case of no intersection with outer shell
+
+    Bool_t test1 = !done && (pDotV3d < 0.0);
+    Bool_t test2 = (Sqrt(rad2) >= (fR - kTolerance) ) && (Sqrt(rad2) <= (fR + kTolerance));
+    Bool_t test3 = (Sqrt(rad2) > (fR + kTolerance) ) && (d2 >= 0.0);
+
+    MaskedAssign(test1 && test2, 0.0, &distance);
+    MaskedAssign(test1 && test3,-1.0 * pDotV3d - Sqrt(d2), &distance);
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -469,55 +441,46 @@ VECGEOM_CUDA_HEADER_BOTH
 void OrbImplementation<transCodeT, rotCodeT>::DistanceToOutKernel(UnplacedOrb const &unplaced,
       Vector3D<typename Backend::precision_v> const &point,
       Vector3D<typename Backend::precision_v> const &direction,
+      /*Vector3D<typename Backend::precision_v> const &n,  
+      typename Backend::bool_v validNorm,  */
       typename Backend::precision_v const &stepMax,
       typename Backend::precision_v &distance){
 
-   typedef typename Backend::precision_v Double_t;
+    typedef typename Backend::precision_v Float_t;
     typedef typename Backend::bool_v      Bool_t;
 
-    distance = kInfinity;  
-    Double_t zero=Backend::kZero;
-    distance = zero;
-    
-    Vector3D<Double_t> localPoint;
-    localPoint = point;
-    
-    Vector3D<Double_t> localDir;
-    localDir =  direction;
-    
-    //General Precalcs
-    Double_t rad2    = localPoint.Mag2();
-    Double_t rad = Sqrt(rad2);
-    Double_t pDotV3d = localPoint.Dot(localDir);
+    Vector3D<Float_t> localPoint = point;
+    Vector3D<Float_t> localDir=direction;
 
-    Double_t radius2 = unplaced.GetRadius() * unplaced.GetRadius();
-    Double_t c = rad2 - radius2;
-    Double_t d2 = pDotV3d * pDotV3d - c;
-  
-    Bool_t done(false);
     distance = kInfinity;
-    distance = zero;
-    
-    //checking if the point is outside
-    Double_t tolRMax = unplaced.GetfRTolO();
-    Double_t tolRMax2 = tolRMax * tolRMax;
-    Bool_t isOutside = ( rad2 > tolRMax2);
-    done|= isOutside;
-    if( IsFull(done) )return;
+    Float_t  pDotV2d, pDotV3d;
 
-    Bool_t isInsideAndWithinOuterTolerance = ((rad <= tolRMax) && (c < (kTolerance * unplaced.GetRadius())));
-    Bool_t isInsideAndOnTolerantSurface = ((c > (-2*kTolerance*unplaced.GetRadius())) && ( (pDotV3d >= 0) || (d2 < 0) ));
+    Bool_t done(false);
+    Float_t fR(unplaced.GetRadius()); 
 
-    Bool_t onSurface=(isInsideAndWithinOuterTolerance && isInsideAndOnTolerantSurface );
-    MaskedAssign(onSurface , zero, &distance);
-    done|=onSurface;
-    if( IsFull(done) )return;
+    // Intersection point
+    Vector3D<Float_t> intSecPt;
+    Float_t  c(0.), d2(0.);
 
-    Bool_t notOnSurface=(isInsideAndWithinOuterTolerance && !isInsideAndOnTolerantSurface );
-    MaskedAssign(notOnSurface , (-pDotV3d + Sqrt(d2)), &distance);
-    done|=notOnSurface;
-    if( IsFull(done) )return;
-    
+    pDotV2d = localPoint.x() * localDir.x() + localPoint.y() * localDir.y();
+    pDotV3d = pDotV2d + localPoint.z() * localDir.z(); //localPoint.Dot(localDir);
+
+    Float_t rad2 = localPoint.Mag2();
+    c = rad2 - fR * fR;
+
+   //New Code
+   Float_t sd1(0.);
+
+   Bool_t cond1 = (Sqrt(rad2) <= (fR + 0.5*kTolerance)) ;
+   Bool_t cond = (Sqrt(rad2) <= (fR + kTolerance)) && (Sqrt(rad2) >= (fR - kTolerance)) && pDotV3d >=0 && cond1;
+   done |= cond;
+   MaskedAssign(cond ,0.,&sd1);
+
+   MaskedAssign(cond1, (pDotV3d * pDotV3d - c), &d2);
+   MaskedAssign((!done && cond1 && (d2 >= 0.0)), (-1.*pDotV3d + Sqrt(d2)), &sd1);
+
+   MaskedAssign((sd1 < 0.),kInfinity, &sd1);
+   distance=sd1;
 }
 
 template <TranslationCode transCodeT, RotationCode rotCodeT>
@@ -527,22 +490,18 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToInKernel(UnplacedOrb const
                          Vector3D<typename Backend::precision_v> const &point,
                          typename Backend::precision_v &safety){
 
-    typedef typename Backend::precision_v Double_t;
-    // typedef typename Backend::bool_v      Bool_t;
-
-    Double_t safe=Backend::kZero;
-    Double_t zero=Backend::kZero; 
-
-    Vector3D<Double_t> localPoint;
-    //localPoint = transformation.Transform<transCodeT, rotCodeT>(point);
+    typedef typename Backend::precision_v Float_t;
+    
+    Float_t safe(0.);
+    Vector3D<Float_t> localPoint;
     localPoint=point;
 
     //General Precalcs
-    Double_t rad2    = localPoint.Mag2();
-    Double_t rad = Sqrt(rad2);
+    Float_t rad2    = localPoint.Mag2();
+    Float_t rad = Sqrt(rad2);
     safe = rad - unplaced.GetRadius();
     safety = safe;
-    MaskedAssign( (safe < zero) , zero, &safety);
+    MaskedAssign( (safe < 0.) , 0., &safety);
     
 }
 
@@ -554,10 +513,7 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedOrb cons
                           typename Backend::precision_v &safety){
     
     typedef typename Backend::precision_v Double_t;
-    // typedef typename Backend::bool_v      Bool_t;
-
-    Double_t safe=Backend::kZero;
-    Double_t zero=Backend::kZero; 
+    Double_t safe(0.);
 
     Vector3D<Double_t> localPoint;
     localPoint = point;
@@ -567,12 +523,8 @@ void OrbImplementation<transCodeT, rotCodeT>::SafetyToOutKernel(UnplacedOrb cons
     Double_t rad = Sqrt(rad2);
     safe = unplaced.GetRadius() - rad;
     safety = safe;
-    MaskedAssign( (safe < zero) , zero, &safety);
+    MaskedAssign( (safe < 0.) , 0., &safety);
 }
-
-
-
-
 
 
 } } // End global namespace

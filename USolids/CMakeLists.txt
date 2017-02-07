@@ -28,7 +28,12 @@ include_directories(
 # NB: headers are included so they will show up in IDEs
 
 file(GLOB sources_usolids ${PROJECT_SOURCE_DIR}/src/*.cc)
-file(GLOB headers_usolids ${PROJECT_SOURCE_DIR}/include/*.hh)
+file(GLOB headers_usolids ${PROJECT_SOURCE_DIR}/include/*.hh ${PROJECT_SOURCE_DIR}/include/*.icc)
+
+# avoid "file has no symbols" warning
+if(NOT USOLIDS_USE_UVECTOR3)
+  list(REMOVE_ITEM sources_usolids ${PROJECT_SOURCE_DIR}/src/UVector3.cc)
+endif()
 
 file(GLOB headers_vecgeom
   ${VECGEOM_DIR}/volumes/*Paraboloid*

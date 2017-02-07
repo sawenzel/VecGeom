@@ -3,9 +3,10 @@
 #include "volumes/utilities/VolumeUtilities.h"
 
 #include "TGeoPgon.h"
-
-#include <cassert>
 #include <memory>
+
+#undef NDEBUG
+#include <cassert>
 
 using namespace vecgeom;
 

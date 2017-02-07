@@ -66,10 +66,9 @@ class UOrb : public VUSolid
    
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
+    // Visualisation
+    void GetParametersList(int /*aNumber*/, double* /*aArray*/) const;
 
-    //G4Visualisation
-        void GetParametersList(int aNumber, double *aArray) const; 
-  
     VUSolid* Clone() const;
 
     double GetRadialTolerance()
@@ -84,8 +83,8 @@ class UOrb : public VUSolid
   private:
     double fR;
     double fRTolerance;
-    double       fCubicVolume;   // Cubic Volume
-    double       fSurfaceArea;   // Surface Area
+    double fCubicVolume;   // Cubic Volume
+    double fSurfaceArea;   // Surface Area
 
     double DistanceToOutForOutsidePoints(const UVector3& p, const UVector3& v, UVector3& n) const;
 
@@ -97,15 +96,11 @@ inline double UOrb::GetRadius() const
 }
 inline void UOrb::SetRadius(double newRmax)
 {
-  if ( newRmax < 10*VUSolid::frTolerance )
-   {
-     UUtils::Exception("UOrb::SetRadius()", "GeomSolids0002", FatalError,1,
-                  "Invalid radius < 10*kCarTolerance.");
-    }
-  fR=newRmax;
-  fCubicVolume= 0.;
+  fR = newRmax;
+  fCubicVolume = 0.;
   fSurfaceArea = 0.;
 }
+
 inline double UOrb::Capacity()
 {
   if (fCubicVolume != 0.)

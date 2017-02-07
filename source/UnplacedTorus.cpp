@@ -2,7 +2,8 @@
 
 #include "volumes/UnplacedTorus.h"
 #include "volumes/SpecializedTorus.h"
-
+#include "base/RNG.h"
+#include "volumes/utilities/VolumeUtilities.h"
 #include "management/VolumeFactory.h"
 
 namespace vecgeom {
@@ -29,9 +30,9 @@ VPlacedVolume* UnplacedTorus::Create(
     VPlacedVolume *const placement) {
   if (placement) {
     new(placement) SpecializedTorus<transCodeT, rotCodeT>(logical_volume,
-							  transformation
+      transformation
 #ifdef VECGEOM_NVCC
-							  , NULL, id
+      , NULL, id
 #endif
 );
     return placement;
@@ -39,9 +40,9 @@ VPlacedVolume* UnplacedTorus::Create(
   return new SpecializedTorus<transCodeT, rotCodeT>(logical_volume,
                                                   transformation
 #ifdef VECGEOM_NVCC
-						    , NULL, id
+        , NULL, id
 #endif
-						    );
+        );
 }
 
 
@@ -63,6 +64,52 @@ VPlacedVolume* UnplacedTorus::SpecializedVolume(
                               placement);
 }
 
+
+Vector3D<Precision> UnplacedTorus::GetPointOnSurface() const {
+    // taken from Geant4
+    Precision cosu, sinu,cosv, sinv, aOut, aIn, aSide, chose, phi, theta, rRand;
+
+
+    phi   = RNG::Instance().uniform( fSphi, fSphi + fDphi );
+    theta = RNG::Instance().uniform( 0., vecgeom::kTwoPi );
+
+    cosu   = std::cos(phi);    sinu = std::sin(phi);
+    cosv   = std::cos(theta);  sinv = std::sin(theta);
+
+    // compute the areas
+
+    aOut   = (fDphi)* vecgeom::kTwoPi *fRtor*fRmax;
+    aIn    = (fDphi)* vecgeom::kTwoPi *fRtor*fRmin;
+    aSide  = vecgeom::kPi * (fRmax*fRmax-fRmin*fRmin);
+
+     if ((fSphi == 0.) && (fDphi == vecgeom::kTwoPi )){ aSide = 0; }
+     chose = RNG::Instance().uniform(0.,aOut + aIn + 2.*aSide);
+
+     if(chose < aOut)
+     {
+       return Vector3D<Precision> ((fRtor+fRmax*cosv)*cosu,
+                             (fRtor+fRmax*cosv)*sinu, fRmax*sinv);
+     }
+     else if( (chose >= aOut) && (chose < aOut + aIn) )
+     {
+       return Vector3D<Precision> ((fRtor+fRmin*cosv)*cosu,
+                             (fRtor+fRmin*cosv)*sinu, fRmin*sinv);
+     }
+     else if( (chose >= aOut + aIn) && (chose < aOut + aIn + aSide) )
+     {
+       rRand = volumeUtilities::GetRadiusInRing(fRmin,fRmax);
+       return Vector3D<Precision> ((fRtor+rRand*cosv)*std::cos(fSphi),
+                             (fRtor+rRand*cosv)*std::sin(fSphi), rRand*sinv);
+     }
+     else
+     {
+       rRand = volumeUtilities::GetRadiusInRing(fRmin,fRmax);
+       return Vector3D<Precision> ((fRtor+rRand*cosv)*std::cos(fSphi+fDphi),
+                             (fRtor+rRand*cosv)*std::sin(fSphi+fDphi),
+                             rRand*sinv);
+     }
+}
+
 #ifdef VECGEOM_CUDA_INTERFACE
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu(
@@ -77,6 +124,100 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTorus::CopyToGpu() const
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
+
+// Return unit normal of surface closest to p
+// - note if point on z axis, ignore phi divided sides
+// - unsafe if point close to z axis a rmin=0 - no explicit checks
+bool UnplacedTorus::Normal(Vector3D<Precision> const& point, Vector3D<Precision>& norm) const {
+
+  int noSurfaces = 0;
+  bool valid = true;
+ 
+  Precision rho2, rho, pt2, pt, pPhi;
+  Precision distRMin = kInfinity;
+  Precision distSPhi = kInfinity, distEPhi = kInfinity;
+
+  // To cope with precision loss
+  //
+  const Precision delta = Max(10.0*kTolerance,
+                                  1.0e-8*(fRtor+fRmax));
+  const Precision dAngle = 10.0*kTolerance;
+
+  Vector3D<Precision> nR, nPs, nPe;
+  Vector3D<Precision>  sumnorm(0.,0.,0.);
+
+  rho2 = point.x()*point.x() + point.y()*point.y();
+  rho = Sqrt(rho2);
+  pt2 = rho2+point.z()*point.z() +fRtor * (fRtor-2*rho);
+  pt2 = Max(pt2, 0.0); // std::fabs(pt2);
+  pt = Sqrt(pt2) ;
+
+  Precision distRMax = Abs(pt - fRmax);
+  if(fRmin) distRMin = Abs(pt - fRmin);
+
+  if( rho > delta && pt != 0.0 )
+  {
+    Precision redFactor= (rho-fRtor)/rho;
+    nR = Vector3D<Precision>( point.x()*redFactor,  // p.x()*(1.-fRtor/rho),
+                        point.y()*redFactor,  // p.y()*(1.-fRtor/rho),
+                        point.z()          );
+    nR *= 1.0/pt;
+  }
+
+  if ( fDphi < kTwoPi ) // && rho ) // old limitation against (0,0,z)
+  {
+    if ( rho )
+    {
+      pPhi = std::atan2(point.y(),point.x());
+
+      if(pPhi < fSphi-delta)            { pPhi += kTwoPi; }
+      else if(pPhi > fSphi+fDphi+delta) { pPhi -= kTwoPi; }
+
+      distSPhi = Abs( pPhi - fSphi );
+      distEPhi = Abs(pPhi-fSphi-fDphi);
+    }
+    nPs = Vector3D<Precision>( sin(fSphi),-cos(fSphi),0);
+    nPe = Vector3D<Precision>(-sin(fSphi+fDphi),cos(fSphi+fDphi),0);
+  } 
+  if( distRMax <= delta )
+  {
+    noSurfaces ++;
+    sumnorm += nR;
+  }
+  else if( fRmin && (distRMin <= delta) ) // Must not be on both Outer and Inner
+  {
+    noSurfaces ++;
+    sumnorm -= nR;
+  }
+
+  //  To be on one of the 'phi' surfaces,
+  //  it must be within the 'tube' - with tolerance
+
+  if( (fDphi < kTwoPi) && (fRmin-delta <= pt) && (pt <= (fRmax+delta)) )
+  {
+    if (distSPhi <= dAngle)
+    {
+      noSurfaces ++;
+      sumnorm += nPs;
+    }
+    if (distEPhi <= dAngle) 
+    {
+      noSurfaces ++;
+      sumnorm += nPe;
+    }
+  }
+  if ( noSurfaces == 0 )
+  {
+
+    valid = false;
+  }
+  else if ( noSurfaces == 1 )  { norm = sumnorm; }
+  else                         { norm = sumnorm.Unit(); }
+
+ 
+  return valid ;
+}
+
 
 } // End impl namespace
 

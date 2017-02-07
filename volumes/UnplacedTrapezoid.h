@@ -48,7 +48,6 @@ private:
   Precision fTanAlpha2;
   Precision fTthetaCphi;
   Precision fTthetaSphi;
-  Precision fbbx, fbby, fbbz;
 
 #ifndef VECGEOM_PLANESHELL_DISABLE
   Planes fPlanes;
@@ -108,7 +107,7 @@ public:
   UnplacedTrapezoid()
     : fDz(0.f), fTheta(0.f), fPhi(0.f), fDy1(0.f), fDx1(0.f), fDx2(0.f), fTanAlpha1(0.f)
     , fDy2(0.f), fDx3(0.f), fDx4(0.f), fTanAlpha2(0.f), fTthetaCphi(0.f), fTthetaSphi(0.f)
-    , fbbx(0.f), fbby(0.f), fbbz(0.f), fPlanes()
+    , fPlanes()
   {}
 
   /// \brief Constructor for masquerading a box (test purposes)
@@ -216,8 +215,10 @@ public:
   //                                GetDy2(), GetDx3(), GetDx4(), GetTanAlpha2() );
   // }
 
+#if defined(VECGEOM_USOLIDS)
   VECGEOM_CUDA_HEADER_BOTH
   std::ostream& StreamInfo(std::ostream &os) const;
+#endif
 
   Vector3D<Precision> ApproxSurfaceNormal(const Vector3D<Precision>& p) const;
 

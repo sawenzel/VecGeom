@@ -18,12 +18,15 @@
 
 namespace vecgeom {
 
-VECGEOM_DEVICE_FORWARD_DECLARE( class UnplacedPolycone; )
-VECGEOM_DEVICE_DECLARE_CONV( UnplacedPolycone );
+VECGEOM_DEVICE_FORWARD_DECLARE(class UnplacedPolycone;)
+VECGEOM_DEVICE_DECLARE_CONV(UnplacedPolycone);
 
-VECGEOM_DEVICE_FORWARD_DECLARE( class PolyconeSection; )
-VECGEOM_DEVICE_DECLARE_CONV( PolyconeSection );
-
+VECGEOM_DEVICE_FORWARD_DECLARE(struct PolyconeSection;)
+#if !defined(VECGEOM_NVCC)
+VECGEOM_DEVICE_DECLARESTRUCT_CONV(PolyconeSection);
+#else
+VECGEOM_DEVICE_DECLARE_CONV(PolyconeSection);
+#endif
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -37,7 +40,7 @@ struct PolyconeSection
 
    VECGEOM_CUDA_HEADER_BOTH
    ~PolyconeSection() = default;
-   
+
    UnplacedCone *fSolid;
    double fShift;
    bool fTubular;
@@ -57,7 +60,7 @@ public:
     Precision fDeltaPhi;
     Precision fEndPhi;
 
-    int fNz;
+    unsigned int fNz;
     //Precision * fRmin;
     //Precision * fRmax;
     //Precision * fZ;
@@ -71,7 +74,7 @@ public:
     void Init(
          double phiStart,        // initial phi starting angle
          double phiTotal,        // total phi angle
-         int numZPlanes,         // number of z planes
+         unsigned int numZPlanes,// number of z planes
          const double zPlane[],  // position of z planes
          const double rInner[],  // tangent distance to inner surface
          const double rOuter[]);
@@ -79,24 +82,23 @@ public:
     // the constructor
     VECGEOM_CUDA_HEADER_BOTH
     UnplacedPolycone( Precision phistart, Precision deltaphi,
-            int Nz, Precision * rmin,
-            Precision * rmax, Precision * z ) :
+            int Nz,
+            Precision * z,
+            Precision * rmin,
+            Precision * rmax
+            ) :
                 fStartPhi(phistart),
                 fDeltaPhi(deltaphi),
                 fNz(Nz),
-      //          fRmin(rmin),
-                //fRmax(rmax),
-                //fZ(z),
                 fSections(),
-                fZs()
-                {
-
+                fZs(Nz)
+    {
         // init internal members
         Init(phistart, deltaphi, Nz, z, rmin, rmax);
     }
 
     VECGEOM_CUDA_HEADER_BOTH
-    int GetNz() const {return fNz;}
+    unsigned int GetNz() const { return fNz; }
 
     VECGEOM_CUDA_HEADER_BOTH
     int GetNSections() const {return fSections.size();}

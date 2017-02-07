@@ -159,6 +159,8 @@ class UTrap : public VUSolid
                           double pDx4,
                           double pAlp2);
 
+    void SetPlanes(const UVector3 pt[8]);
+
     // Methods for solid
 
     inline double Capacity();
@@ -170,9 +172,10 @@ class UTrap : public VUSolid
 
     bool Normal(const UVector3& aPoint, UVector3& aNormal) const;
 
-    double DistanceToIn(const UVector3& p, const UVector3& v, double=UUtils::kInfinity) const;
+    double DistanceToIn(const UVector3& p, const UVector3& v, 
+                        double aPstep = UUtils::kInfinity) const;
 
-    double SafetyFromOutside(const UVector3& p, bool precise=false) const;
+    double SafetyFromOutside(const UVector3& p, bool precise = false) const;
 
     double DistanceToOut(const UVector3& p,
                          const UVector3&  v,
@@ -180,14 +183,14 @@ class UTrap : public VUSolid
                          bool&           aConvex,
                          double aPstep = UUtils::kInfinity) const;
 
-    double SafetyFromInside(const UVector3& p, bool precise=false) const;
+    double SafetyFromInside(const UVector3& p, bool precise = false) const;
 
     UGeometryType GetEntityType() const;
 
     UVector3 GetPointOnSurface() const;
 
     VUSolid* Clone() const;
-   
+  
     virtual void Extent(UVector3& aMin, UVector3& aMax) const;
 
     std::ostream& StreamInfo(std::ostream& os) const;
@@ -199,6 +202,9 @@ class UTrap : public VUSolid
     UTrap(const UTrap& rhs);
     UTrap& operator=(const UTrap& rhs);
     // Copy constructor and assignment operator.
+
+    inline double GetThetaCphi() const;
+    inline double GetThetaSphi() const;
 
   protected:  // with description
 
@@ -234,7 +240,6 @@ class UTrap : public VUSolid
 
     void ComputeBBox(UBBox* /*aBox*/, bool /*aStore = false*/) {}
 
-  
   private:
 
     double fDz, fTthetaCphi, fTthetaSphi;

@@ -48,9 +48,9 @@ USphere::USphere(const std::string& pName,
   {
     std::ostringstream message;
     message << "Invalid radii for Solid: " << GetName() << std::endl
-            << "				pRmin = " << pRmin << ", pRmax = " << pRmax;
+            << "pRmin = " << pRmin << ", pRmax = " << pRmax;
     UUtils::Exception("USphere::USphere()", "GeomSolids0002",
-                      FatalErrorInArguments, 1, message.str().c_str());
+                      UFatalErrorInArguments, 1, message.str().c_str());
   }
   fRmin = pRmin;
   fRmax = pRmax;
@@ -165,7 +165,7 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
 {
   double rho, rho2, rad2, tolRMin, tolRMax;
   double pPhi, pTheta;
-  VUSolid::EnumInside in = vecgeom::EnumInside::kOutside;
+  VUSolid::EnumInside in = EnumInside::eOutside;
   static const double halfAngTolerance = kAngTolerance * 0.5;
   const double halfTolerance = kTolerance * 0.5;
   const double halfRminTolerance = fRminTolerance * 0.5;
@@ -179,10 +179,25 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
 
   tolRMin = rMinPlus;
   tolRMax = rMaxMinus;
+   if(rad2 == 0.0)
+   { 
+    if (fRmin > 0.0)
+    {
+      return in = EnumInside::eOutside;
+    }
+    if ( (!fFullPhiSphere) || (!fFullThetaSphere) )
+    {
+      return in = EnumInside::eSurface;
+    }
+    else
+    {
+      return in = EnumInside::eInside; 
+    }
+  }
 
   if ((rad2 <= rMaxMinus * rMaxMinus) && (rad2 >= rMinPlus * rMinPlus))
   {
-    in = vecgeom::EnumInside::kInside;
+    in = EnumInside::eInside;
   }
   else
   {
@@ -190,11 +205,11 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     tolRMin = std::max(fRmin - halfRminTolerance, 0.);    // outside case
     if ((rad2 <= tolRMax * tolRMax) && (rad2 >= tolRMin * tolRMin))
     {
-      in = vecgeom::EnumInside::kSurface;
+      in = EnumInside::eSurface;
     }
     else
     {
-      return in = vecgeom::EnumInside::kOutside;
+      return in = EnumInside::eOutside;
     }
   }
 
@@ -216,15 +231,15 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     if ((pPhi < fSPhi - halfAngTolerance)
         || (pPhi > ePhi + halfAngTolerance))
     {
-      return in = vecgeom::EnumInside::kOutside;
+      return in = EnumInside::eOutside;
     }
 
-    else if (in == vecgeom::EnumInside::kInside) // else it's eSurface anyway already
+    else if (in == EnumInside::eInside) // else it's eSurface anyway already
     {
       if ((pPhi < fSPhi + halfAngTolerance)
           || (pPhi > ePhi - halfAngTolerance))
       {
-        in = vecgeom::EnumInside::kSurface;
+        in = EnumInside::eSurface;
       }
     }
   }
@@ -236,28 +251,32 @@ VUSolid::EnumInside USphere::Inside(const UVector3& p) const
     rho   = std::sqrt(rho2);
     pTheta = std::atan2(rho, p.z());
 
-    if (in == vecgeom::EnumInside::kInside)
+    if (in == EnumInside::eInside)
     {
-      if ((pTheta < fSTheta + halfAngTolerance)
-          || (pTheta > eTheta - halfAngTolerance))
+       if ( ((fSTheta > 0.0) && (pTheta < fSTheta + halfAngTolerance))
+	|| ((eTheta <  UUtils::kPi) && (pTheta > eTheta - halfAngTolerance)) )
+     
       {
-        if ((pTheta >= fSTheta - halfAngTolerance)
-            && (pTheta <= eTheta + halfAngTolerance))
+      if ( (( (fSTheta>0.0)&&(pTheta>=fSTheta-halfAngTolerance) )
+             || (fSTheta == 0.0) )
+          && ((eTheta== UUtils::kPi)||(pTheta <= eTheta + halfAngTolerance) ) )
+      
         {
-          in = vecgeom::EnumInside::kSurface;
+          in = EnumInside::eSurface;
         }
         else
         {
-          in = vecgeom::EnumInside::kOutside;
+          in = EnumInside::eOutside;
         }
       }
     }
     else
     {
-      if ((pTheta < fSTheta - halfAngTolerance)
-          || (pTheta > eTheta + halfAngTolerance))
+     if ( ((fSTheta > 0.0)&&(pTheta < fSTheta - halfAngTolerance))
+	   ||((eTheta <  UUtils::kPi  )&&(pTheta > eTheta + halfAngTolerance)) )
+    
       {
-        in = vecgeom::EnumInside::kOutside;
+        in = EnumInside::eOutside;
       }
     }
   }
@@ -411,7 +430,7 @@ bool USphere::Normal(const UVector3& p, UVector3& n) const
   {
 #ifdef UDEBUG
     UUtils::Exception("USphere::SurfaceNormal(p)", "GeomSolids1002",
-                      Warning, 1, "Point p is not on surface !?");
+                      UWarning, 1, "Point p is not on surface !?");
 #endif
     norm = ApproxSurfaceNormal(p);
   }
@@ -571,7 +590,7 @@ UVector3 USphere::ApproxSurfaceNormal(const UVector3& p) const
     default:          // Should never reach this case ...
 
       UUtils::Exception("USphere::ApproxSurfaceNormal()",
-                        "GeomSolids1002", Warning, 1,
+                        "GeomSolids1002", UWarning, 1,
                         "Undefined side for valid surface normal to solid.");
       break;
   }
@@ -1748,7 +1767,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
             && (d2 >= fRminTolerance * fRmin) && (pDotV3d < 0))
         {
           validNorm = false;  // Rmin surface is concave
-           n        = UVector3(-p.x() / fRmin, -p.y() / fRmin, -p.z() / fRmin);
+          n        = UVector3(-p.x() / fRmin, -p.y() / fRmin, -p.z() / fRmin);
           return snxt = 0;
         }
         else
@@ -2581,6 +2600,7 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       break;
 
     default:
+#ifdef USOLIDS_DEBUG
       cout << std::endl;
 
       std::ostringstream message;
@@ -2588,44 +2608,47 @@ double USphere::DistanceToOut(const UVector3& p, const UVector3& v, UVector3& n,
       message << "Undefined side for valid surface normal to solid."
               << std::endl
               << "Position:"  << std::endl << std::endl
-              << "p.x() = "  << p.x() << " mm" << std::endl
-              << "p.y() = "  << p.y() << " mm" << std::endl
-              << "p.z() = "  << p.z() << " mm" << std::endl << std::endl
+              << "p.x = "  << p.x() << " mm" << std::endl
+              << "p.y = "  << p.y() << " mm" << std::endl
+              << "p.z = "  << p.z() << " mm" << std::endl << std::endl
               << "Direction:" << std::endl << std::endl
-              << "v.x() = "  << v.x() << std::endl
-              << "v.y() = "  << v.y() << std::endl
-              << "v.z() = "  << v.z() << std::endl << std::endl
+              << "v.x = "  << v.x() << std::endl
+              << "v.y = "  << v.y() << std::endl
+              << "v.z = "  << v.z() << std::endl << std::endl
               << "Proposed distance :" << std::endl << std::endl
               << "snxt = "    << snxt << " mm" << std::endl;
       message.precision(oldprc);
       UUtils::Exception("USphere::DistanceToOut(p,v,..)",
-                        "GeomSolids1002", Warning, 1, message.str().c_str());
+                        "GeomSolids1002", UWarning, 1, message.str().c_str());
+#endif
       break;
   }
+#ifdef USOLIDS_DEBUG
   if (snxt == UUtils::Infinity())
   {
+  
     cout << std::endl;
 
     std::ostringstream message;
     int oldprc = message.precision(16);
-    message << "Logic error: snxt = UUtils::Infinity()	???" << std::endl
+    message << "Logic error: snxt = UUtils::Infinity() ???" << std::endl
             << "Position:"  << std::endl << std::endl
-            << "p.x() = "  << p.x() << " mm" << std::endl
-            << "p.y() = "  << p.y() << " mm" << std::endl
-            << "p.z() = "  << p.z() << " mm" << std::endl << std::endl
+            << "p.x = "  << p.x() << " mm" << std::endl
+            << "p.y = "  << p.y() << " mm" << std::endl
+            << "p.z = "  << p.z() << " mm" << std::endl << std::endl
             << "Rp = " << std::sqrt(p.x() * p.x() + p.y() * p.y() + p.z() * p.z())
             << " mm" << std::endl << std::endl
             << "Direction:" << std::endl << std::endl
-            << "v.x() = "  << v.x() << std::endl
-            << "v.y() = "  << v.y() << std::endl
-            << "v.z() = "  << v.z() << std::endl << std::endl
+            << "v.x = "  << v.x() << std::endl
+            << "v.y = "  << v.y() << std::endl
+            << "v.z = "  << v.z() << std::endl << std::endl
             << "Proposed distance :" << std::endl << std::endl
             << "snxt = "    << snxt << " mm" << std::endl;
     message.precision(oldprc);
     UUtils::Exception("USphere::DistanceToOut(p,v,..)",
-                      "GeomSolids1002", Warning, 1, message.str().c_str());
+                      "GeomSolids1002", UWarning, 1, message.str().c_str());
   }
-
+#endif
   return snxt;
 }
 
@@ -2637,93 +2660,87 @@ double USphere::SafetyFromInside(const UVector3& p, bool /*aAccurate*/) const
 {
   double safe = 0.0, safeRMin, safeRMax, safePhi, safeTheta;
   double rho2, rds, rho;
-  double pTheta, dTheta1, dTheta2;
+  double pTheta, dTheta1=UUtils::Infinity(), dTheta2=UUtils::Infinity();
   rho2 = p.x() * p.x() + p.y() * p.y();
   rds = std::sqrt(rho2 + p.z() * p.z());
   rho = std::sqrt(rho2);
 
 #ifdef UDEBUG
-  if (Inside(p) == vecgeom::EnumInside::kOutside)
+  if (Inside(p) == EnumInside::eOutside)
   {
     int old_prc = cout.precision(16);
     cout << std::endl;
 
     cout << "Position:"  << std::endl << std::endl;
-    cout << "p.x() = "  << p.x() << " mm" << std::endl;
-    cout << "p.y() = "  << p.y() << " mm" << std::endl;
-    cout << "p.z() = "  << p.z() << " mm" << std::endl << std::endl;
+    cout << "p.x = "  << p.x() << " mm" << std::endl;
+    cout << "p.y = "  << p.y() << " mm" << std::endl;
+    cout << "p.z = "  << p.z() << " mm" << std::endl << std::endl;
     cout.precision(old_prc);
     UUtils::Exception("USphere::DistanceToOut(p)",
-                      "GeomSolids1002", Warning, 1, "Point p is outside !?");
+                      "GeomSolids1002", UWarning, 1, "Point p is outside !?");
   }
 #endif
 
   //
   // Distance to r shells
   //
+  safeRMax = fRmax-rds;
+  safe = safeRMax;  
   if (fRmin)
   {
-    safeRMin = rds - fRmin;
-    safeRMax = fRmax - rds;
-    if (safeRMin < safeRMax)
-    {
-      safe = safeRMin;
-    }
-    else
-    {
-      safe = safeRMax;
-    }
+     safeRMin = rds-fRmin;
+     safe = std::min( safeRMin, safeRMax ); 
   }
-  else
-  {
-    safe = fRmax - rds;
-  }
-
+ 
   //
   // Distance to phi extent
   //
-  if (!fFullPhiSphere && rho)
+  if ( !fFullPhiSphere )
   {
-    if ((p.y() * cosCPhi - p.x() * sinCPhi) <= 0)
-    {
-      safePhi = -(p.x() * sinSPhi - p.y() * cosSPhi);
-    }
-    else
-    {
-      safePhi = (p.x() * sinEPhi - p.y() * cosEPhi);
-    }
-    if (safePhi < safe)
-    {
-      safe = safePhi;
-    }
+     if (rho>0.0)
+     {
+        if ((p.y()*cosCPhi-p.x()*sinCPhi)<=0)
+        {
+           safePhi=-(p.x()*sinSPhi-p.y()*cosSPhi);
+        }
+        else
+        {
+           safePhi=(p.x()*sinEPhi-p.y()*cosEPhi);
+        }
+     }
+     else
+     {
+        safePhi = 0.0;  // Distance to both Phi surfaces (extended)
+     }
+
+    safe= std::min(safe, safePhi);
   }
 
   //
   // Distance to Theta extent
   //
-  if ((rds)&&(!fFullThetaSphere))
+  if ( !fFullThetaSphere )
   {
-    pTheta = std::acos(p.z() / rds);
-    if (pTheta < 0)
+    if( rds > 0.0 )
     {
-      pTheta += UUtils::kPi;
-    }
-    dTheta1 = pTheta - fSTheta;
-    dTheta2 = eTheta - pTheta;
-    if (dTheta1 < dTheta2)
-    {
-      safeTheta = rds * std::sin(dTheta1);
+       pTheta=std::acos(p.z()/rds);
+       if (pTheta<0) { pTheta+=UUtils::kPi; }
+       if(fSTheta>0.)
+       { dTheta1=pTheta-fSTheta;}
+       if(eTheta<UUtils::kPi)
+       { dTheta2=eTheta-pTheta;}
+      
+       safeTheta=rds*std::sin(std::min(dTheta1, dTheta2) );
     }
     else
     {
-      safeTheta = rds * std::sin(dTheta2);
+       safeTheta= 0.0;
+         // An improvement will be to return negative answer if outside (TODO)
     }
-    if (safe > safeTheta)
-    {
-      safe = safeTheta;
-    }
+    safe = std::min( safe, safeTheta );
   }
-   
+
+
   if (safe < 0)
   {
     safe = 0;
@@ -2857,7 +2874,7 @@ USphere::CreateRotatedVertices(const UAffineTransform& pTransform,
   {
 
   UUtils::Exception("USphere::CreateRotatedVertices()",
-                "GeomSolids0003", FatalError,1,
+                "GeomSolids0003", UFatalError,1,
                 "Error in allocation of vertices. Out of memory !");
   }
 
@@ -2894,16 +2911,16 @@ std::ostream& USphere::StreamInfo(std::ostream& os) const
 {
   int oldprc = os.precision(16);
   os << "-----------------------------------------------------------\n"
-     << "		*** Dump for solid - " << GetName() << " ***\n"
-     << "		===================================================\n"
+     << "                *** Dump for solid - " << GetName() << " ***\n"
+     << "                ===================================================\n"
      << " Solid type: USphere\n"
      << " Parameters: \n"
-     << "		inner radius: " << fRmin << " mm \n"
-     << "		outer radius: " << fRmax << " mm \n"
-     << "		starting phi of segment	: " << fSPhi / (UUtils::kPi / 180.0) << " degrees \n"
-     << "		delta phi of segment		 : " << fDPhi / (UUtils::kPi / 180.0) << " degrees \n"
-     << "		starting theta of segment: " << fSTheta / (UUtils::kPi / 180.0) << " degrees \n"
-     << "		delta theta of segment	 : " << fDTheta / (UUtils::kPi / 180.0) << " degrees \n"
+     << "                inner radius: " << fRmin << " mm \n"
+     << "                outer radius: " << fRmax << " mm \n"
+     << "                starting phi of segment  : " << fSPhi / (UUtils::kPi / 180.0) << " degrees \n"
+     << "                delta phi of segment     : " << fDPhi / (UUtils::kPi / 180.0) << " degrees \n"
+     << "                starting theta of segment: " << fSTheta / (UUtils::kPi / 180.0) << " degrees \n"
+     << "                delta theta of segment   : " << fDTheta / (UUtils::kPi / 180.0) << " degrees \n"
      << "-----------------------------------------------------------\n";
   os.precision(oldprc);
 

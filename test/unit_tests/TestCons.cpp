@@ -1,9 +1,9 @@
 //
 //
-// TestBox
-//             Ensure asserts are compiled in
+// TestCones
 
-#undef NDEBUG
+
+
 
 #include "base/Vector3D.h"
 #include "ApproxEqual.h"
@@ -13,11 +13,16 @@
 #include "UCons.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
 
+//  Ensure asserts are compiled in
+#undef NDEBUG
+#include <cassert>
+
+
 #define DELTA 0.0001
+
+bool testingvecgeom=false;
 
 // Returns false if actual is within wanted+/- DELTA
 //         true if error
@@ -364,14 +369,23 @@ bool TestCons()
         std::cout << "Error Rmax2 " << dist << std::endl;
 
     dist=c4.DistanceToOut(pplx,vmx,norm,convex);
-    if (OutRange(dist,70)||convex)
+    if(testingvecgeom){
+    if (OutRange(dist,70))
         std::cout << "Error Rmin1 " << dist << std::endl;
 
 
     dist=c2.DistanceToOut(pplx,vmx,norm,convex);
+    if (OutRange(dist,70))
+        std::cout << "Error Rmin2 " << dist << std::endl;
+    }else{
+
+    if (OutRange(dist,70)||convex)
+        std::cout << "Error Rmin1 " << dist << std::endl;
+    dist=c2.DistanceToOut(pplx,vmx,norm,convex);
     if (OutRange(dist,70)||convex)
         std::cout << "Error Rmin2 " << dist << std::endl;
 
+    }
     dist=c3.DistanceToOut(ponphi1,vmy,norm,convex);
     if (OutRange(dist,0)||
         OutRange(norm,vnphi1)||
@@ -420,8 +434,13 @@ bool TestCons()
 
 // Test case for rmax root bug
     dist=c7.DistanceToOut(ponr2,vmx,norm,convex);
-    if (OutRange(dist,100/std::sqrt(2.)-std::sqrt(95*95-100*100/2.))||convex)
+    if(testingvecgeom){
+    if (OutRange(dist,100/std::sqrt(2.)-std::sqrt(95*95-100*100/2.)))
         std::cout << "Error rmax root bug" << dist << std::endl;
+    }else{
+     if (OutRange(dist,100/std::sqrt(2.)-std::sqrt(95*95-100*100/2.))||convex)
+        std::cout << "Error rmax root bug" << dist << std::endl;
+    }
 
 // Parallel radii test cases
     dist=c8a.DistanceToOut(pparr2,vparr,norm,convex);
@@ -482,8 +501,16 @@ bool TestCons()
         std::cout << "Error hollow parr2b " <<dist << std::endl;
 
     dist=c8b.DistanceToOut(pparr2,vz,norm,convex);
-    if (OutRange(dist,50)||convex)
+    if(testingvecgeom)
+      {
+        if (OutRange(dist,50))
         std::cout << "Error hollow parr2c " <<dist << std::endl;
+      }
+    else
+      {
+        if (OutRange(dist,50)||convex)
+        std::cout << "Error hollow parr2c " <<dist << std::endl;
+      }
     dist=c8b.DistanceToOut(pparr2,vmz,norm,convex);
     if (OutRange(dist,0)||
         !convex||
@@ -515,11 +542,17 @@ bool TestCons()
 
     dist=c9.DistanceToOut(Vec_t(1e3*tolerance,0,50),
                               vx2mz,norm,convex);
-    if (OutRange(dist,111.8033988)||
+    if(testingvecgeom)
+      {
+      if (OutRange(dist,111.8033988))
+std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl;
+      }else{
+       if (OutRange(dist,111.8033988)||
         !convex||
         OutRange(norm,Vec_t(0,0,-1.0)))
 std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl;
 
+    }
     dist=c9.DistanceToOut(Vec_t(5,0,50),
                               vx2mz,norm,convex);
     if (OutRange(dist,111.8033988)||
@@ -529,11 +562,19 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
 
     dist=c9.DistanceToOut(Vec_t(10,0,50),
                               vx2mz,norm,convex);
-    if (OutRange(dist,111.8033988)||
+    if(testingvecgeom)
+      {
+      if (OutRange(dist,111.8033988))
+        std::cout << "Error:c9.Out((10,0,50),vx2mz,...) = " <<dist << std::endl;
+      }
+    else
+      {
+        if (OutRange(dist,111.8033988)||
         !convex||
         OutRange(norm,Vec_t(0,0,-1.0)))
         std::cout << "Error:c9.Out((10,0,50),vx2mz,...) = " <<dist << std::endl;
 
+      }
     dist=cms.DistanceToOut(
         Vec_t(0.28628920024909,-0.43438111004815,-2949.0),
         Vec_t(6.0886686196674e-05,-9.2382200635766e-05,0.99999999387917),
@@ -663,13 +704,27 @@ std::cout<<"Error:c9.Out((1e3*tolerance,0,50),vx2mz,...) = " <<dist << std::endl
     if (OutRange(dist,Constants::kInfinity))
     std::cout << "Error:c8c.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
-    dist=c9.DistanceToIn(pplz,vmz);
-    if (OutRange(dist,Constants::kInfinity))
-    std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
+    if(testingvecgeom)
+    //Cone is with Rmin=Rmax=0 at +dz
+    //this is creating a very small cut at dz in USolids implementation(at construction) 
+      {
+      dist=c9.DistanceToIn(pplz,vmz);
+      if (OutRange(dist,70.0))
+      std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
 
-    dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
-    if (OutRange(dist,Constants::kInfinity))
-    std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
+      dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
+      if (OutRange(dist,0.0))
+      std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
+      }
+    else{
+      dist=c9.DistanceToIn(pplz,vmz);
+      if (OutRange(dist,Constants::kInfinity))
+      std::cout << "Error:c9.DistanceToIn(pplz,vmz) = " << dist << std::endl;
+
+      dist=c9.DistanceToIn(Vec_t(0,0,50),vmz);
+      if (OutRange(dist,Constants::kInfinity))
+      std::cout << "Error:c9.DistanceToIn((0,0,50),vmz) = " << dist << std::endl;
+    }
 
     ///////////////
 
@@ -1082,15 +1137,38 @@ struct VECGEOMCONSTANTS
 };
 
 
+int main(int argc, char *argv[]) {
+ 
+   if( argc < 2)
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
+    
+    if( ! strcmp(argv[1], "--usolids") )
+    { 
+      #ifdef VECGEOM_USOLIDS
+      TestCons<USOLIDSCONSTANTS, UCons >();
+      std::cout << "UCons passed\n";
+      
+      #else
+      std::cerr << "VECGEOM_USOLIDS was not defined\n";
+      return 2;
+      #endif
+    }
+    else if( ! strcmp(argv[1], "--vecgeom") )
+    {
+       testingvecgeom = true;
+       TestCons<VECGEOMCONSTANTS, vecgeom::SimpleCone >();
+       std::cout<< "VecGeom Cone passed\n";
+     
+    }
+    else
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
 
-int main() {
-#ifdef VECGEOM_USOLIDS
-  TestCons<USOLIDSCONSTANTS, UCons >();
-  std::cout << "UCons passed\n";
 
-#endif
-  //  TestCons<VECGEOMCONSTANTS, vecgeom::SimpleUnplacedCone >();
-  TestCons<VECGEOMCONSTANTS, vecgeom::SimpleCone >();
-  std::cout<< "VecGeom Cone passed\n";
   return 0;
 }

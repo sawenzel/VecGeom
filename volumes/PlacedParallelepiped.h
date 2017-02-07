@@ -49,7 +49,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedParallelepiped const* GetUnplacedVolume() const {
     return static_cast<UnplacedParallelepiped const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH

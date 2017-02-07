@@ -16,7 +16,7 @@ using namespace vecgeom;
 
 int main(int argc, char* argv[]) {
   OPTION_INT(npoints,1024);
-  OPTION_INT(nrep,1024);
+  OPTION_INT(nrep,4);
   OPTION_DOUBLE(phistart,0.);
   OPTION_DOUBLE(phidelta,kTwoPi);
 

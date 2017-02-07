@@ -6,7 +6,11 @@
 
 #include "base/Global.h"
 #include "backend/Backend.h"
-
+#ifndef VECGEOM_NVCC
+	#include "base/RNG.h"
+	#include <cassert>
+	#include <cmath>
+#endif
 #include "volumes/PlacedVolume.h"
 #include "volumes/UnplacedVolume.h"
 #include "volumes/kernel/TrdImplementation.h"
@@ -51,7 +55,7 @@ public:
   VECGEOM_CUDA_HEADER_BOTH
   UnplacedTrd const* GetUnplacedVolume() const {
     return static_cast<UnplacedTrd const *>(
-        GetLogicalVolume()->unplaced_volume());
+        GetLogicalVolume()->GetUnplacedVolume());
   }
 
   VECGEOM_CUDA_HEADER_BOTH
@@ -74,22 +78,43 @@ public:
   VECGEOM_INLINE
   Precision dz() const { return GetUnplacedVolume()->dz(); }
 
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+    }
+
 #ifndef VECGEOM_NVCC
   virtual
-  Precision Capacity() { return GetUnplacedVolume()->Capacity(); }
+  Precision Capacity() override { return GetUnplacedVolume()->Capacity(); }
 
-  virtual VPlacedVolume const* ConvertToUnspecialized() const;
+  virtual
+  Precision SurfaceArea() override { return GetUnplacedVolume()->SurfaceArea();}
+
+  virtual Vector3D<Precision> GetPointOnSurface() const override {
+     return GetUnplacedVolume()->GetPointOnSurface();
+  }
+
+  bool Normal(Vector3D<Precision>const& point, Vector3D<Precision>& normal) const override {
+     return GetUnplacedVolume()->Normal(point, normal);
+  }
+
+  /*
+  void Extent(Vector3D<Precision>& aMin, Vector3D<Precision>& aMax) const override {
+      GetUnplacedVolume()->Extent(aMin, aMax);
+  }
+  */
+
+  virtual VPlacedVolume const* ConvertToUnspecialized() const override;
 
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const* ConvertToRoot() const;
+  virtual TGeoShape const* ConvertToRoot() const override;
 #endif
 
 #ifdef VECGEOM_USOLIDS
-  virtual ::VUSolid const* ConvertToUSolids() const;
+  virtual ::VUSolid const* ConvertToUSolids() const override;
 #endif
 
 #ifdef VECGEOM_GEANT4
-  G4VSolid const* ConvertToGeant4() const;
+  G4VSolid const* ConvertToGeant4() const override;
 #endif
 #endif // VECGEOM_NVCC
 

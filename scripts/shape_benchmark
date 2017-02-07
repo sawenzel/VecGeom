@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 # USAGE:
 #
@@ -32,9 +32,12 @@ for SHAPE in ${SHAPES}; do
 	readelf -h ${SHAPE}Benchmark | grep -q K1OM
 	if [ $? == 0 ]; then
 		TESTARCH="Intel (R) Xeon Phi(TM)"
-		TESTARCH="${TESTARCH} $(/opt/intel/mic/bin/micinfo -d 0 | grep SKU | awk '{print $NF}')"
+		#TESTARCH="${TESTARCH} $(/opt/intel/mic/bin/micinfo -d 0 | grep SKU | awk '{print $NF}')"
+		TESTARCH="${TESTARCH} $(micinfo -d 0 | grep SKU | awk '{print $NF}')"
+                MIC=1
 	else
 		TESTARCH="$(uname -p)"
+                MIC=0
 	fi
 
 	# generate data if needed
@@ -43,10 +46,8 @@ for SHAPE in ${SHAPES}; do
 	# run benchmark
 	for i in $(seq -w 1 ${JOBS}); do
 		echo -ne "\rRunning Benchmark for ${SHAPE}: Job ${i}"
-		taskset -c $(($RANDOM % $(nproc))) \
-		readelf -h ${SHAPE}Benchmark | grep -q K1OM
-		if [ $? == 0 ]; then
-			ssh mic0 "(cd ${PWD}; ./${SHAPE}Benchmark -npoints ${NPTS})" &> ${SHAPE}-${i}.log
+		if [ ${MIC} != 0 ]; then
+			ssh mic0 "(cd ${PWD}; env LD_LIBRARY_PATH=/usr/linux-k1om-4.7/linux-k1om/lib64/4.7.4:/opt/intel/composer_xe_2015/lib/mic ./${SHAPE}Benchmark -npoints ${NPTS})" &> ${SHAPE}-${i}.log
 		else
 			./${SHAPE}Benchmark -npoints ${NPTS} &> ${SHAPE}-${i}.log
 		fi
@@ -115,7 +116,10 @@ for SHAPE in ${SHAPES}; do
 			PLOTREL="${PLOTREL}, '' u (\$${i}/\$2) t col"
 		done
 
-		gnuplot -e "set term" | grep -q pdf
+                echo "set term" > ./plot.cmd
+ 
+		gnuplot ./plot.cmd < /dev/null &> term.plot
+                grep -q pdf term.plot
 
 		if [ $? == 0 ]; then
 			FORMAT="pdf"

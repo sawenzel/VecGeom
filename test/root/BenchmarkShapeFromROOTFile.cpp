@@ -45,10 +45,7 @@ int main( int argc, char *argv[] ) {
         TGeoVolume * vol = reinterpret_cast<TGeoVolume*>(vlist->At( i ));
         std::string fullname(vol->GetName());
 
-        // strip off pointer information
-        std::string strippedname(fullname, 0, fullname.length()-4);
-
-        std::size_t founds = strippedname.compare(testvolume);
+        std::size_t founds = fullname.compare(testvolume);
         if (founds == 0){
             found++;
             foundvolume = vol;
@@ -57,13 +54,12 @@ int main( int argc, char *argv[] ) {
         }
     }
 
-    std::cerr << "volume found " << found << " times \n";
-    foundvolume->GetShape()->InspectShape();
-    std::cerr << "volume capacity " << foundvolume->GetShape()->Capacity() << "\n";
-
+    std::cerr << "volume found " << testvolume << " " <<  found << " times \n";
     // now get the VecGeom shape and benchmark it
     if( foundvolume )
     {
+        foundvolume->GetShape()->InspectShape();
+        std::cerr << "volume capacity " << foundvolume->GetShape()->Capacity() << "\n";
         LogicalVolume * converted = RootGeoManager::Instance().Convert( foundvolume );
 
         converted->Print();
@@ -91,7 +87,7 @@ int main( int argc, char *argv[] ) {
             GeoManager::Instance().SetWorld(worldPlaced);
 
             Benchmarker tester(GeoManager::Instance().GetWorld());
-            tester.SetTolerance(1E-6);
+            tester.SetTolerance(1E-4);
             tester.SetVerbosity(3);
             tester.SetPoolMultiplier(1);
             tester.SetRepetitions(1);

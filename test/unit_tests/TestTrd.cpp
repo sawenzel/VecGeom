@@ -3,7 +3,7 @@
 // TestTrd
 //             Ensure asserts are compiled in
 
-#undef NDEBUG
+
 
 #include "base/Vector3D.h"
 #include "volumes/Trd.h"
@@ -12,9 +12,10 @@
 #include "UTrd.hh"
 #include "UVector3.hh"
 #endif
-
-//#include <cassert>
 #include <cmath>
+
+#undef NDEBUG
+#include <cassert>
 
 template <class Trd_t,class Vec_t = vecgeom::Vector3D<vecgeom::Precision> >
 
@@ -59,10 +60,9 @@ bool TestTrd()
     volCheck = 8*20*30*40;
     assert(ApproxEqual(vol,volCheck));
 
- // Check Surface area
-    assert(trd1.SurfaceArea() == 20800);    
-    // std::cout<<trd1.SurfaceArea()<<std::endl;
-
+ // Check Surface area    
+    std::cout<<"Trd Surface Area : " << trd1.SurfaceArea()<<std::endl;
+    //assert(trd1.SurfaceArea() == 20800);
 
 // Check Inside
 
@@ -405,13 +405,36 @@ bool TestTrd()
 }
 
 
-int main() {
-#ifdef VECGEOM_USOLIDS
-  assert(TestTrd<UTrd>());
-  std::cout << "UTrd passed\n";
+int main(int argc, char *argv[]) {
+ 
+   if( argc < 2)
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
+    
+    if( ! strcmp(argv[1], "--usolids") )
+    { 
+      #ifdef VECGEOM_USOLIDS
+      assert(TestTrd<UTrd>());
+      std::cout << "UTrd passed\n";
+      #else
+      std::cerr << "VECGEOM_USOLIDS was not defined\n";
+      return 2;
+      #endif
+    }
+    else if( ! strcmp(argv[1], "--vecgeom") )
+    {
+      //testingvecgeom = true;
+        assert(TestTrd<vecgeom::SimpleTrd>());
+     std::cout << "VecGeomTrd passed\n";
+    }
+    else
+    {
+      std::cerr << "need to give argument :--usolids or --vecgeom\n";     
+      return 1;
+    }
 
-#endif
-  std::cout<< "VecGeomTrd not included yet\n";
-  
+
   return 0;
 }

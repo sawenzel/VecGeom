@@ -5,19 +5,51 @@
  *      Author: swenzel
  */
 
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
+
 
 #include "volumes/Wedge.h"
 #include "backend/Backend.h"
+
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <cassert>
 
 using namespace vecgeom;
 
+typedef Vector3D<Precision> Vector3D_t;
+
+__attribute__((noinline))
+// this function is just here for inspection of assembly output
+int foo( Wedge const & wedge, Vector3D_t const & point ){
+    return wedge.Inside<kScalar>( point );
+}
+
 int main()
 {
-    typedef Vector3D<Precision> Vector3D_t;
+
+
+    {
+        // test reported by Raman Segal
+        Wedge wedge( 3.*kPi/2., kPi/6.);
+        assert( wedge.IsOnSurface1( Vector3D_t(
+                       4.589551141500899, 2.649778586424563, 4.573258549707597 ) ) );
+        assert( ! wedge.IsOnSurface2( Vector3D_t(
+                              4.589551141500899, 2.649778586424563, 4.573258549707597 ) ) );
+
+        assert( wedge.Inside<kScalar>( Vector3D_t(
+                4.589551141500899, 2.649778586424563, 4.573258549707597 ) ) == EInside::kSurface );
+
+        // the opposite point should be inside
+        assert( wedge.Contains<kScalar>( Vector3D_t(
+                       -4.589551141500899, -2.649778586424563, 4.573258549707597 ) ) );
+        assert( wedge.Inside<kScalar>( Vector3D_t(
+                       -4.589551141500899, -2.649778586424563, 4.573258549707597 ) ) == EInside::kInside );
+
+        assert( wedge.Inside<kScalar>( Vector3D_t( 0., 0., 0.) ) == EInside::kSurface );
+    }
+
+
     // test a wedge < kPi
     {
     Wedge wedge(kPi/3.);

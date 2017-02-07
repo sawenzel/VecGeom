@@ -42,7 +42,7 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParaboloid.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 
@@ -310,7 +310,7 @@ struct ParaboloidImplementation {
         delta = Sqrt(delta);
 
 
-	    //I take only the biggest solution among all
+        //I take only the biggest solution among all
         distParab=ainv*(-t - delta);
         
         Float_t zHit = localPoint.z()+distParab*localDirection.z();

@@ -11,7 +11,7 @@
 #include "volumes/kernel/GenericKernels.h"
 #include "volumes/UnplacedParallelepiped.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace vecgeom {
 

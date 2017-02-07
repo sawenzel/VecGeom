@@ -60,7 +60,6 @@ int main(int argc, char * argv[])
     vecgeom::GeomCppExporter::Instance().DumpGeometry( std::cout );
 
 #ifdef VECGEOM_CUDA_INTERFACE
-    #pragma message "VECGEOM NVCC enabled"
     if( vecgeom::GeoManager::Instance().GetWorld() != NULL ){
         printf("copying to GPU\n");
         vecgeom::CudaManager::Instance().set_verbose(3);

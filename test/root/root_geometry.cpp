@@ -30,7 +30,7 @@ int main() {
   RootGeoManager::Instance().world()->PrintContent();
 
   VPlacedVolume const *const world = GeoManager::Instance().GetWorld();
-  VPlacedVolume const *const tube = *world->daughters().begin();
+  VPlacedVolume const *const tube = *world->GetDaughters().begin();
 
   SimpleNavigator navigator;
 
