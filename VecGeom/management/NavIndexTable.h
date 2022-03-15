@@ -41,7 +41,7 @@ public:
   void SetDoCount(bool flag) { fDoCount = flag; }
   void SetValidate(bool flag) { fValidate = flag; }
 
-  NavIndex_t apply(NavStatePath *state, int level, NavIndex_t mother, int dind);
+  NavIndex_t apply(NavStatePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id);
 };
 
 class NavIndexTable {
@@ -105,7 +105,8 @@ public:
   {
     NavStatePath *state = NavStatePath::MakeInstance(maxdepth);
     BuildNavIndexVisitor visitor(depth_limit, true); // just count table size
-    visitAllPlacedVolumesNavIndex(top, &visitor, state);
+    NavIndex_t id = 1;
+    visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
     size_t table_size = visitor.GetTableSize();
     NavStatePath::ReleaseInstance(state);
     return table_size;
@@ -117,7 +118,8 @@ public:
     NavStatePath *state = NavStatePath::MakeInstance(maxdepth);
     BuildNavIndexVisitor visitor(depth_limit, true); // just count table size
 
-    visitAllPlacedVolumesNavIndex(top, &visitor, state);
+    NavIndex_t id = 1;
+    visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
     bool hasTable = AllocateTable(visitor.GetTableSize());
     if (!hasTable) return false;
 
@@ -125,7 +127,9 @@ public:
     visitor.SetDoCount(false);
 
     state->Clear();
-    visitAllPlacedVolumesNavIndex(top, &visitor, state);
+
+    id = 1;
+    visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
     NavStatePath::ReleaseInstance(state);
 
     return true;
@@ -137,7 +141,8 @@ public:
     state->Clear();
     auto visitor = new BuildNavIndexVisitor(0, false);
     visitor->SetValidate(true);
-    visitAllPlacedVolumesNavIndex(top, visitor, state);
+    NavIndex_t id = 1;
+    visitAllPlacedVolumesNavIndex(top, visitor, state, id);
     NavStatePath::ReleaseInstance(state);
     return true;
   }
@@ -150,14 +155,14 @@ public:
   /// and applies the injected Visitor
   template <typename Visitor>
   static void visitAllPlacedVolumesNavIndex(VPlacedVolume const *currentvolume, Visitor *visitor, NavStatePath *state,
-                                            int level = 0, NavIndex_t mother = 0, int dind = 0)
+                                             NavIndex_t &id, int level = 0, NavIndex_t mother = 0, int dind = 0)
   {
     if (currentvolume != NULL) {
       state->Push(currentvolume);
-      NavIndex_t new_mother = visitor->apply(state, level, mother, dind);
+      NavIndex_t new_mother = visitor->apply(state, level, mother, dind, id);
       int size              = currentvolume->GetDaughters().size();
       for (int i = 0; i < size; ++i) {
-        visitAllPlacedVolumesNavIndex(currentvolume->GetDaughters().operator[](i), visitor, state, level + 1,
+        visitAllPlacedVolumesNavIndex(currentvolume->GetDaughters().operator[](i), visitor, state, id, level + 1,
                                       new_mother, i);
       }
       state->Pop();

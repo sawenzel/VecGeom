@@ -51,7 +51,7 @@ class GeoVisitorNavIndex {
 public:
   GeoVisitorNavIndex(){};
 
-  virtual NavIndex_t apply(NavStatePath *state, int level, NavIndex_t mother, int dind) = 0;
+  virtual NavIndex_t apply(NavStatePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id) = 0;
   virtual ~GeoVisitorNavIndex() {}
 };
 

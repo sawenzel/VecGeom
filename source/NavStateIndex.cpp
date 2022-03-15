@@ -49,11 +49,11 @@ VECCORE_ATT_HOST_DEVICE
 void NavStateIndex::Print() const
 {
   if (IsOutside()) {
-    printf("NavStateIndex: Outside setup\n");
+    printf("navInd=%u, id=%u, path=outside\n", fNavInd, GetId());
     return;
   }
   auto level = GetLevel();
-  printf("NavStateIndex: navInd=%u, level=%u/%u,  onBoundary=%s, path=<", fNavInd, level, GetMaxLevel(),
+  printf("navInd=%u, id=%u, level=%u/%u,  onBoundary=%s, path=<", fNavInd, GetId(), level, GetMaxLevel(),
          (fOnBoundary ? "true" : "false"));
   for (int i = 0; i < level + 1; ++i) {
 #ifndef VECCORE_CUDA

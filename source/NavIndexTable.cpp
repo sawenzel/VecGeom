@@ -6,7 +6,7 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_t mother, int dind)
+NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id)
 {
   bool cacheTrans       = true;
   NavIndex_t new_mother = fCurrent;
@@ -25,7 +25,7 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   // twice the size as NavIndex_t, so in case we need to pad, we only need to pad one NavIndex_t.
   static_assert(sizeof(::Precision) == sizeof(NavIndex_t) || sizeof(::Precision) == 2 * sizeof(NavIndex_t));
   const auto indicesBefore   = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
-  const auto daughterIndices = 3 + nd + ((nd + 1) & 1);
+  const auto daughterIndices = 4 + nd + ((nd + 1) & 1);
   const bool padTransformationData =
       ((indicesBefore + daughterIndices) * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
 
@@ -47,14 +47,17 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   // Fill the mother index for the current node
   fNavInd[fCurrent] = mother;
 
+  // Fill the incremental id
+  fNavInd[fCurrent + 1] = id++;
+
   // Fill the node index in the mother list of daughters
-  if (mother > 0) fNavInd[mother + 3 + dind] = fCurrent;
+  if (mother > 0) fNavInd[mother + 4 + dind] = fCurrent;
 
   // Physical volume index
-  fNavInd[fCurrent + 1] = (level >= 0) ? state->ValueAt(level) : 0;
+  fNavInd[fCurrent + 2] = (level >= 0) ? state->ValueAt(level) : 0;
 
   // Write current level in next byte
-  auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + 2]);
+  auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + 3]);
   assert(level < std::numeric_limits<unsigned char>::max() && "fatal: geometry deph more than 255 not supported");
   *content_ddt = (unsigned char)level;
 
@@ -67,7 +70,7 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   *content_hasm     = 0;
 
   // Prepare the space for the daughter indices
-  auto content_dind = &fNavInd[fCurrent + 3];
+  auto content_dind = &fNavInd[fCurrent + 4];
   for (size_t i = 0; i < nd; ++i)
     content_dind[i] = 0;
 
