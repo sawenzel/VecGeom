@@ -4,6 +4,7 @@
 #include "test/benchmark/ArgParser.h"
 #include <VecGeom/volumes/LogicalVolume.h>
 #include <VecGeom/volumes/Box.h>
+#include <VecGeom/volumes/Tube.h>
 #include <VecGeom/management/GeoManager.h>
 #include <VecGeom/base/RNG.h>
 
@@ -19,7 +20,10 @@
 using namespace vecgeom;
 // Forwards
 void CreateVecGeomWorld(int, int);
+void CreateTubeWorld(int, int);
+
 bool ValidateNavigation(int, int, vgbrep::SurfData<vecgeom::Precision> const &);
+bool ValidateTubeNavigation(int, int, vgbrep::SurfData<vecgeom::Precision> const &);
 void TestPerformance(int, int, vgbrep::SurfData<vecgeom::Precision> const &);
 double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &, vecgeom::Vector3D<vecgeom::Precision> const &,
                     vgbrep::SurfData<vecgeom::Precision> const &);
@@ -32,7 +36,7 @@ int main(int argc, char *argv[])
   OPTION_INT(absorbers, 2.);
   OPTION_INT(nvalidate, 10000);
   OPTION_INT(nbench, 1000000);
-  OPTION_INT(verbose, 0);
+  OPTION_INT(verbose, 2);
 
   CreateVecGeomWorld(layers, absorbers);
 
@@ -63,7 +67,8 @@ int main(int argc, char *argv[])
 
 void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
 {
-  const double CalorSizeYZ       = 40;
+  const double CalorSizeY        = 40;
+  const double CalorSizeZ        = 40;
   const double GapThickness      = 2.3;
   const double AbsorberThickness = 5.7;
 
@@ -71,16 +76,17 @@ void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
   const double CalorThickness = NbOfLayers * LayerThickness;
 
   const double WorldSizeX  = 1.2 * CalorThickness + 1000;
-  const double WorldSizeYZ = 1.2 * CalorSizeYZ + 1000;
+  const double WorldSizeY  = 1.2 * CalorSizeY + 1000;
+  const double WorldSizeZ  = 1.2 * CalorSizeZ + 1000;
 
-  auto worldSolid = new vecgeom::UnplacedBox(0.5 * WorldSizeX, 0.5 * WorldSizeYZ, 0.5 * WorldSizeYZ);
+  auto worldSolid = new vecgeom::UnplacedBox(0.5 * WorldSizeX, 0.5 * WorldSizeY, 0.5 * WorldSizeZ);
   auto worldLogic = new vecgeom::LogicalVolume("World", worldSolid);
   vecgeom::VPlacedVolume *worldPlaced = worldLogic->Place();
-
+  
   //
   // Calorimeter
   //
-  auto calorSolid = new vecgeom::UnplacedBox(0.5 * CalorThickness, 0.5 * CalorSizeYZ, 0.5 * CalorSizeYZ);
+  auto calorSolid = new vecgeom::UnplacedBox(0.5 * CalorThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
   auto calorLogic = new vecgeom::LogicalVolume("Calorimeter", calorSolid);
   vecgeom::Transformation3D origin;
   worldLogic->PlaceDaughter(calorLogic, &origin);
@@ -88,16 +94,16 @@ void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
   //
   // Layers
   //
-  auto layerSolid = new vecgeom::UnplacedBox(0.5 * LayerThickness, 0.5 * CalorSizeYZ, 0.5 * CalorSizeYZ);
+  auto layerSolid = new vecgeom::UnplacedBox(0.5 * LayerThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
 
   //
   // Absorbers
   //
-  auto gapSolid = new vecgeom::UnplacedBox(0.5 * GapThickness, 0.5 * CalorSizeYZ, 0.5 * CalorSizeYZ);
+  auto gapSolid = new vecgeom::UnplacedBox(0.5 * GapThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
   auto gapLogic = new vecgeom::LogicalVolume("Gap", gapSolid);
   vecgeom::Transformation3D gapPlacement(-0.5 * LayerThickness + 0.5 * GapThickness, 0, 0);
 
-  auto absorberSolid = new vecgeom::UnplacedBox(0.5 * AbsorberThickness, 0.5 * CalorSizeYZ, 0.5 * CalorSizeYZ);
+  auto absorberSolid = new vecgeom::UnplacedBox(0.5 * AbsorberThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
   auto absorberLogic = new vecgeom::LogicalVolume("Absorber", absorberSolid);
   vecgeom::Transformation3D absorberPlacement(0.5 * LayerThickness - 0.5 * AbsorberThickness, 0, 0);
 
@@ -149,7 +155,8 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
 {
   // prepare tracks to be used for benchmarking
   constexpr double tolerance = 10 * vecgeom::kTolerance;
-  const double CalorSizeYZ       = 40;
+  const double CalorSizeY        = 40;
+  const double CalorSizeZ        = 40;
   const double GapThickness      = 2.3;
   const double AbsorberThickness = 5.7;
 
@@ -160,7 +167,7 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
 
-  Vector3D<Precision> samplingVolume(0.5 * CalorThickness + 10, 0.5 * CalorSizeYZ + 10, 0.5 * CalorSizeYZ + 10);
+  Vector3D<Precision> samplingVolume(0.5 * CalorThickness + 10, 0.5 * CalorSizeY + 10, 0.5 * CalorSizeZ + 10);
   vecgeom::volumeUtilities::FillRandomPoints(samplingVolume, points);
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 

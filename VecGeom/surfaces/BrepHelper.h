@@ -5,8 +5,11 @@
 #include <functional>
 #include <VecGeom/surfaces/Model.h>
 
+// Check if math necessary
+#include "VecGeom/base/Math.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/volumes/Box.h"
+#include "VecGeom/volumes/Tube.h"
 #include "VecGeom/management/GeoManager.h"
 
 namespace vgbrep {
@@ -235,52 +238,142 @@ public:
     fCommonSurfaces[common_id].fDefaultState = default_ind;
   }
 
-  void ComputeExtents()
-  {
-    // This computes extents for all sides of common surfaces
-    auto updateExtent = [](Extent_t &e, Vector3D<Real_t> const &pt) {
+  // Computes the bounding extent on a planar side.
+  void ComputePlaneExtent(Side& side, Extent_t &ext){
+    // This is a helper-lambda that updates extents
+    // for all sides of common plane surfaces
+    auto updatePlaneExtent = [](Extent_t &e, Vector3D<Real_t> const &pt) {
       e.rangeU[0] = std::min(e.rangeU[0], pt[0]);
       e.rangeU[1] = std::max(e.rangeU[1], pt[0]);
       e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
       e.rangeV[1] = std::max(e.rangeV[1], pt[1]);
     };
 
-    auto computeSingleSideExtent = [&](SurfaceType type, Side &side, Extent_t &ext) {
-      constexpr Real_t kBig = 1.e30;
-      ext.rangeU.Set(kBig, -kBig);
-      ext.rangeV.Set(kBig, -kBig);
+    // loop through all extents on a side:
+    for (int i = 0; i < side.fNsurf; ++i) {
+      // convert surface frame to local coordinates
+      auto framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      FrameType frame_type = framed_surf.fFrame.type;
+      Extent_t extLocal;
+      framed_surf.fFrame.GetExtent(extLocal, *fSurfData);
+      Vector3D<Real_t> local;
+      Real_t xmax, ymax, ymin, xmin;
+      // Calculating the limits
+      switch (frame_type) {
+      case kWindow:
+        xmin = extLocal.rangeU[0];
+        xmax = extLocal.rangeU[1];
+        ymin = extLocal.rangeV[0];
+        ymax = extLocal.rangeV[1];
+        break;
+      case kRangeCyl:
+        {
+          Vector3D<Real_t> R{extLocal.rangeV[0], extLocal.rangeV[1], 0};
+          auto Rmag = R.Mag();
+          Vector3D<Real_t> axis{0, 1, 0};
 
-      for (int i = 0; i < side.fNsurf; ++i) {
-        // convert surface frame to local coordinates
-        Extent_t extLocal;
-        auto framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
-        Vector3D<Real_t> local;
-        framed_surf.fFrame.GetExtent(extLocal, *fSurfData);
-        switch (type) {
+          // If the axis is within the extent, its limit is radius.
+          // Otherwise, its limit is the projection of radius onto it.
+          // If the projection is negative, it means that our surface
+          // lies completely on the other side of perpendicular axis.
+          // x axis is always within extent in local frame.
+          xmax = Rmag;
+          ymax = (R.Cross(axis).z() < vecgeom::kTolerance) ?  Rmag : R.Dot(axis);
+          axis.Set(-1, 0, 0);
+          xmin = (R.Cross(axis).z() < vecgeom::kTolerance) ? -Rmag : R.Dot(axis);
+          if (xmin < vecgeom::kTolerance) xmin = 0;
+          axis.Set(0, -1, 0);
+          ymin = (R.Cross(axis).z() < vecgeom::kTolerance) ? -Rmag : R.Dot(axis);
+          if (ymin < vecgeom::kTolerance) ymin = 0;
+          break;
+        }
+      default:
+        break;
+      } // case
+
+      // This part updates extent
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{xmin, ymin, 0});
+      updatePlaneExtent(ext, local);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{xmin, ymax, 0});
+      updatePlaneExtent(ext, local);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{xmax, ymax, 0});
+      updatePlaneExtent(ext, local);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{xmax, ymin, 0});
+      updatePlaneExtent(ext, local);
+    } // for
+  }
+
+  // Computes bounding extent on a side of cylindrical surface
+  void ComputeCylinderExtent(Side& side, Extent_t &sideext)
+  {
+    for (int i = 0; i < side.fNsurf; ++i) {
+      // convert surface frame to local coordinates
+      auto framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      Extent_t extLocal;
+      framed_surf.fFrame.GetExtent(extLocal, *fSurfData);
+      Vector3D<Real_t> local, vecext;
+
+      // The z-axis is shared and all surfaces are on the same side, so
+      // there is no flipping.
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+              Vector3D<Real_t>{0,0,extLocal.rangeU[0]});
+      sideext.rangeU[0] = std::min(sideext.rangeU[0], local[2]);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+              Vector3D<Real_t>{0,0,extLocal.rangeU[1]});
+      sideext.rangeU[1] = std::max(sideext.rangeU[1], local[2]);
+
+      //If we already had a mask that is full circle
+      if (sideext.rangeV[0] > vecgeom::kTolerance &&
+          ApproxEqual(sideext.rangeV[0], std::abs(sideext.rangeV[0])) &&
+          sideext.rangeV[1] < vecgeom::kTolerance) continue;
+      
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+              Vector3D<Real_t>{extLocal.rangeV[0], extLocal.rangeV[1], 0});
+      // If current mask is a full circle
+      if (ApproxEqualVector(local, {1, 0, 0})){
+        sideext.rangeV[0] = 1;
+        sideext.rangeV[1] = 0;
+        continue;
+      }
+
+      // We update our extent to include the greatest possible angle:
+      vecext = Vector3D<Real_t>{sideext.rangeV[0], sideext.rangeV[1], 0};
+      if (local.Cross(vecext).z() < vecgeom::kTolerance*vecext.Mag()) {
+        sideext.rangeV[0] = local[0];
+        sideext.rangeV[1] = local[1];
+      }
+    }
+  }
+
+  void ComputeExtents()
+  {
+    // Lambda for computing the extent of a single side
+    auto computeSingleSideExtent = [&](SurfaceType type, Side &side, Extent_t &ext){
+      constexpr Real_t kBig = 1.e30;
+      switch (type){
         case kPlanar:
-          local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{extLocal.rangeU[0], extLocal.rangeV[0], 0});
-          updateExtent(ext, local);
-          local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{extLocal.rangeU[0], extLocal.rangeV[1], 0});
-          updateExtent(ext, local);
-          local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{extLocal.rangeU[1], extLocal.rangeV[1], 0});
-          updateExtent(ext, local);
-          local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{extLocal.rangeU[1], extLocal.rangeV[0], 0});
-          updateExtent(ext, local);
+        {
+          ext.rangeU.Set(kBig, -kBig);
+          ext.rangeV.Set(kBig, -kBig);
+          ComputePlaneExtent(side, ext);
           break;
+        }
         case kCylindrical:
-        case kConical:
-        case kSpherical:
-        case kTorus:
-        case kGenSecondOrder:
+          ext.rangeU.Set(kBig, -kBig);
+          ext.rangeV.Set(vecgeom::kHalfTolerance, 0);
+          ComputeCylinderExtent(side, ext);
           break;
-        };
+        default:
+          std::cout << "Computing side extents dropped to default." << std::endl;
+          break;
       }
     };
 
+    // Compute extents for all sides an all surfaces
     for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
       Extent_t common_extent;
       if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf) {
@@ -298,7 +391,8 @@ public:
         fSurfData->fCommonSurfaces[common_id].fRightSide.fExtent = iextent;
       }
     }
-    // Create extents in the surface data structure
+    
+    //Create extents in the surface data structure
     fSurfData->fNextents = fExtents.size();
     fSurfData->fExtents  = new Extent_t[fExtents.size()];
     for (size_t i = 0; i < fExtents.size(); ++i)
@@ -359,17 +453,24 @@ public:
     std::vector<vecgeom::LogicalVolume *> volumes;
     vecgeom::GeoManager::Instance().GetAllLogicalVolumes(volumes);
     SetNvolumes(volumes.size());
-    // creat a placeholder for surface data
+    // TODO: Implement a VUnplacedVolume::CreateSurfaces interface for surface creation
+    // create a placeholder for surface data
     for (auto volume : volumes) {
       vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
       vecgeom::UnplacedBox const *box       = dynamic_cast<vecgeom::UnplacedBox const *>(solid);
-      if (!box) {
-        std::cout << "testEm3: solid type not supported for volume: " << volume->GetName() << "\n";
-        return false;
+      if (box) {
+        CreateBoxSurfaces(*box, volume->id());
+        continue;       
       }
-      CreateBoxSurfaces(*box, volume->id());
+      vecgeom::UnplacedTube const *tube = dynamic_cast<vecgeom::UnplacedTube const *>(solid);
+      if (tube) {
+        CreateTubeSurfaces(*tube, volume->id());
+        continue;
+      }
+      std::cout << "testEm3: solid type not supported for volume: " << volume->GetName() << "\n";
+      return false; 
     }
-    return true;
+    return true;    
   }
 
   bool CreateCommonSurfacesFlatTop()
@@ -434,7 +535,7 @@ public:
     // Compute extents for all sides of common surfaces
     ComputeExtents();
 
-    if (fVerbose > 1) {
+    if (fVerbose > 0) {
       for (size_t isurf = 1; isurf < fCommonSurfaces.size(); ++isurf)
         PrintCommonSurface(isurf);
     }
@@ -598,10 +699,10 @@ private:
     return UnplacedSurface(type, -1);
   }
 
-  Frame CreateFrame(FrameType type, RangeMask<Real_t> const &mask)
+  Frame CreateFrame(FrameType type, Extent<Real_t> const &extent)
   {
-    int id = fRanges.size();
-    fRanges.push_back(mask);
+    int id = fExtents.size();
+    fExtents.push_back(extent);
     return Frame(type, id);
   }
 
@@ -647,7 +748,7 @@ private:
         if (std::abs(ldir[2]) > vecgeom::kTolerance) return false;
         break;
       case kCylindrical:
-        if (std::abs(fCylSphData[s1.fSurface.id].radius - fCylSphData[s1.fSurface.id].radius) > vecgeom::kTolerance)
+        if (std::abs(fCylSphData[s1.fSurface.id].radius - fCylSphData[s2.fSurface.id].radius) > vecgeom::kTolerance)
           return false;
         if (same_tr) break;
         tdiff.Normalize();
@@ -703,11 +804,11 @@ private:
   {
     int isurf;
     // surface at -dx:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, {box.z(), box.y()}),
-                               CreateLocalTransformation({-box.x(), 0, 0, 90, -90, 0}));
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, {box.y(), box.z()}),
+                               CreateLocalTransformation({-box.x(), 0, 0, -90, 90, 0}));
     AddSurfaceToShell(logical_id, isurf);
     // surface at +dx:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, {box.z(), box.y()}),
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, {box.y(), box.z()}),
                                CreateLocalTransformation({box.x(), 0, 0, 90, 90, 0}));
     AddSurfaceToShell(logical_id, isurf);
     // surface at -dy:
@@ -728,52 +829,134 @@ private:
     AddSurfaceToShell(logical_id, isurf);
   }
 
+  void CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
+  {
+    auto sphi = tube.sphi();
+    auto dphi = tube.dphi();
+    auto ephi = tube.sphi()+tube.dphi();
+
+    assert(dphi > vecgeom::kTolerance);
+
+    auto Rmean = (tube.rmin() + tube.rmax())/2;
+    auto Rdiff = std::abs((tube.rmax() - tube.rmin())/2);
+
+    assert(Rdiff > 0);
+
+    int isurf;
+
+    // We need angles in degrees for transformations
+    auto sphid = vecgeom::kRadToDeg*sphi;
+    auto dphid = vecgeom::kRadToDeg*dphi;
+    auto ephid = vecgeom::kRadToDeg*ephi;
+
+    // surface at +dz
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
+                               CreateFrame(kRangeCyl, {tube.rmin(), -1,
+                                                       tube.rmax()*std::cos(dphi), tube.rmax()*std::sin(dphi)}),
+                               CreateLocalTransformation({0, 0, tube.z(), sphid, 0, 0}));
+    AddSurfaceToShell(logical_id, isurf);
+    // surface at -dz
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
+                               CreateFrame(kRangeCyl, {tube.rmin(), -1,
+                                                       tube.rmax()*std::cos(dphi), tube.rmax()*std::sin(dphi)}),
+                               CreateLocalTransformation({0, 0, -tube.z(), 0, 180, -sphid-dphid}));
+    AddSurfaceToShell(logical_id, isurf);
+    // inner cylinder
+    if (tube.rmin()>vecgeom::kTolerance) {
+      Real_t* rmin_ptr = new Real_t(tube.rmin());
+      isurf = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmin_ptr),
+                                 CreateFrame(kRangeCylPhi, {-tube.z(), tube.z(), std::cos(dphi), std::sin(dphi)}),
+                                 CreateLocalTransformation({0,0,0, sphid,0,0}));
+      AddSurfaceToShell(logical_id, isurf);
+    }
+    // outer cylinder
+    Real_t* rmax_ptr = new Real_t(tube.rmax());
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmax_ptr),
+                               CreateFrame(kRangeCylPhi, {-tube.z(), tube.z(), std::cos(dphi), std::sin(dphi)}),
+                               CreateLocalTransformation({0,0,0, sphid,0,0}));
+    AddSurfaceToShell(logical_id, isurf);
+
+    if (ApproxEqual(dphi, vecgeom::kTwoPi)) return;
+    //plane cap at Sphi
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, {Rdiff, tube.z()}),
+                               CreateLocalTransformation({Rmean*std::cos(sphi), Rmean*std::sin(sphi), 0, sphid, 90, 0}));
+    AddSurfaceToShell(logical_id, isurf);
+    //plane cap at Sphi+Dphi
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, {Rdiff, tube.z()}),
+                               CreateLocalTransformation({Rmean*std::cos(ephi), Rmean*std::sin(ephi), 0, ephid, -90, 0}));
+    AddSurfaceToShell(logical_id, isurf);
+  }
+
   ///< This function evaluates if the frames of two placed surfaces on the same side
   ///< of a common surface are matching
   bool EqualFrames(Side const &side, int i1, int i2)
   {
+    using Vector3D = vecgeom::Vector3D<Real_t>;
+
     FramedSurface const &s1 = fFramedSurf[side.fSurfaces[i1]];
     FramedSurface const &s2 = fFramedSurf[side.fSurfaces[i2]];
     if (s1.fFrame.type != s2.fFrame.type) return false;
     // Get displacement vector between the 2 frame centers and check if it has null length
     Transformation const &t1        = fGlobalTrans[s1.fTrans];
     Transformation const &t2        = fGlobalTrans[s2.fTrans];
-    vecgeom::Vector3D<double> tdiff = t1.Translation() - t2.Translation();
+    Vector3D tdiff = t1.Translation() - t2.Translation();
     if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
 
-    auto frameData1 = fRanges[s1.fFrame.id];
-    auto frameData2 = fRanges[s2.fFrame.id];
-    vecgeom::Vector3D<double> v1(frameData1.range[0], frameData1.range[1], 0);
-    vecgeom::Vector3D<double> v1_transposed(frameData1.range[1], frameData1.range[0], 0);
-    vecgeom::Vector3D<double> v2(frameData2.range[0], frameData2.range[1], 0);
+    auto frameData1 = fExtents[s1.fFrame.id];
+    auto frameData2 = fExtents[s2.fFrame.id];
 
     // Different treatment of different frame types
     switch (s1.fFrame.type) {
     case kRangeZ:
-    case kRangeCyl:
-    case kRangeSph:
-      if (ApproxEqualVector(v1, v2)) return true;
-      return false;
-    case kWindow:
-      // Here we can have matching also if the window is rotated
-      if (!ApproxEqualVector(v1, v2) && !ApproxEqualVector(v1_transposed, v2)) return false;
-      {
-        // The vectors connecting the local window center to the closest edge
-        // must be aligned in the transformed frames
-        vecgeom::Vector3D<double> vshort;
-        if (v1[0] > v1[1])
-          vshort.Set(0, v1[1], 0);
-        else
-          vshort.Set(v1[0], 0, 0);
-        auto v1glob = t1.InverseTransform(vshort);
-        if (v2[0] > v2[1])
-          vshort.Set(0, v2[1], 0);
-        else
-          vshort.Set(v2[0], 0, 0);
-        auto v2glob = t2.InverseTransform(vshort);
-        if (ApproxEqualVector(v1glob.Cross(v2glob), {0, 0, 0})) return true;
-      }
       break;
+    case kRangeCyl:
+      {
+        // Inner radius must be the same
+        if (!ApproxEqual(frameData1.rangeU[0], frameData2.rangeU[0])) return false;
+        // Unit-vectors used for checking sphi
+        auto rmin1 = t1.InverseTransformDirection(Vector3D{1, 0, 0});
+        auto rmin2 = t2.InverseTransformDirection(Vector3D{1, 0, 0});
+        // Rmax vectors used for checking dphi and outer radius 
+        auto rmax1 = t1.InverseTransformDirection(Vector3D{frameData1.rangeV[0], frameData1.rangeV[1], 0});
+        auto rmax2 = t2.InverseTransformDirection(Vector3D{frameData2.rangeV[0], frameData2.rangeV[1], 0});
+
+        if (ApproxEqualVector(rmin1, rmin2) && ApproxEqualVector(rmax1, rmax2))
+            return true;
+        break;
+      }
+    case kRangeCylPhi:
+      {
+        // They are on the same side, so there is no flipping,
+        // and z extents must be equal
+        if (!ApproxEqual(frameData1.rangeU[0], frameData2.rangeU[0]) ||
+            !ApproxEqual(frameData1.rangeU[1], frameData2.rangeU[1])) return false;
+
+        // Checking if rotations are equal
+        Vector3D vx{1, 0, 0};
+        Vector3D vphi1{frameData1.rangeV[0], frameData1.rangeV[1], 0};
+        Vector3D vphi2{frameData2.rangeV[0], frameData2.rangeV[1], 0};
+        if (ApproxEqualVector(t1.InverseTransformDirection(vx), t2.InverseTransformDirection(vx)) &&
+            ApproxEqualVector(t1.InverseTransformDirection(vphi1), t2.InverseTransformDirection(vphi2)))
+            return true;
+        break;
+      }
+    case kRangeSph:
+      //if (ApproxEqualVector(v1, v2)) return true; //Must be changed.
+      break;
+    case kWindow:
+      {
+        // Vertices
+        Vector3D v11 = t1.InverseTransformDirection(Vector3D{frameData1.rangeU[0], frameData1.rangeV[0], 0}); // 1 down left
+        Vector3D v12 = t1.InverseTransformDirection(Vector3D{frameData1.rangeU[1], frameData1.rangeV[1], 0}); // 1 up right
+        Vector3D v21 = t2.InverseTransformDirection(Vector3D{frameData2.rangeU[0], frameData2.rangeV[0], 0}); // 2 down left
+        Vector3D v22 = t2.InverseTransformDirection(Vector3D{frameData2.rangeU[1], frameData2.rangeV[1], 0}); // 2 up right
+        
+        // Diagonals
+        auto diag1 = v12-v11;
+        auto diag2 = v22-v21;
+
+        return ApproxEqualVector(diag1.Abs(), diag2.Abs());
+      }
     case kTriangle:
       // to be implemented
       break;
@@ -785,8 +968,8 @@ private:
   void UpdateSurfData()
   {
     // Create and copy surface data
-    fSurfData->fCylSphData = new CylData_t[fCylSphData.size()];
     fSurfData->fNcylsph    = fCylSphData.size();
+    fSurfData->fCylSphData = new CylData_t[fCylSphData.size()];
     for (size_t i = 0; i < fCylSphData.size(); ++i)
       fSurfData->fCylSphData[i] = fCylSphData[i];
 
@@ -794,7 +977,8 @@ private:
     fSurfData->fConeData = new ConeData_t[fConeData.size()];
     for (size_t i = 0; i < fConeData.size(); ++i)
       fSurfData->fConeData[i] = fConeData[i];
-
+    
+    // Create ranges
     fSurfData->fNrange    = fRanges.size();
     fSurfData->fRangeData = new RangeMask_t[fRanges.size()];
     for (size_t i = 0; i < fRanges.size(); ++i)
@@ -815,6 +999,13 @@ private:
     size_t size_sides = 0;
     for (auto const &surf : fCommonSurfaces)
       size_sides += surf.fLeftSide.fNsurf + surf.fRightSide.fNsurf;
+
+    // Create Extents
+    fSurfData->fNextents = fExtents.size();
+    fSurfData->fExtents = new Extent<Real_t>[fExtents.size()];
+    for (size_t i = 0; i < fExtents.size(); ++i)
+      fSurfData->fExtents[i] = fExtents[i];
+
 
     fSurfData->fSides          = new int[size_sides];
     int *current_side          = fSurfData->fSides;

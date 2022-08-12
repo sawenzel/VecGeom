@@ -1,15 +1,24 @@
 #ifndef VECGEOM_SURFACE_MODEL_H_
 #define VECGEOM_SURFACE_MODEL_H_
 
+#include <iostream>
+
 #include <VecGeom/surfaces/Equations.h>
 #include <VecGeom/navigation/NavStateIndex.h>
+//#include <VecGeom/base/Vector3D.h>
 
 namespace vgbrep {
 ///< Supported surface types
 enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSecondOrder };
 
 ///< Supported frame types
-enum FrameType { kRangeZ, kRangeCyl, kRangeSph, kWindow, kTriangle };
+///> kRangeZ      <- range along z-axis
+///> kRangeCyl    <- a "ring" range on a plane
+///> kRangeCylPhi <- z and phi range on a cylinder
+///> kRangeSph    <- theta and phi range on a sphere
+///> kWindow      <- rectangular range in xy-plane
+///> kTriangle    <- triangular range in xy-plane
+enum FrameType { kRangeZ, kRangeCyl, kRangeCylPhi, kRangeSph, kWindow, kTriangle };
 
 ///< VecGeom type aliases
 template <typename Real_t>
@@ -56,6 +65,8 @@ struct Extent {
   RangeMask<Real_t> rangeV;
 
   Extent() = default;
+  Extent(Real_t u1, Real_t u2, Real_t v1, Real_t v2): rangeU(u1, u2), rangeV(v1, v2) {};
+  Extent(Real_t u, Real_t v): rangeU(-u, u), rangeV(-v, v) {};
 };
 
 ///< Data for cylindrical and spherical surfaces (single number)
@@ -104,17 +115,17 @@ struct UnplacedSurface {
 
   /// Find positive distance to next intersection from local point
   template <typename Real_t>
-  Real_t Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, SurfData<Real_t> const &surfdata) const
+  void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir,
+                    SurfData<Real_t> const &surfdata, Real_t *roots, int &numroots) const
   {
     QuadraticCoef<Real_t> coef;
-    QuadraticRoots<Real_t> roots;
-    Real_t dist = -1;
 
     switch (type) {
     case kPlanar:
       // Just need to propagate to (xOy) plane
-      dist = -point[2] / dir[2];
-      return dist;
+      roots[0] = roots[1] = -point[2] / dir[2]; // Division by zero?
+      numroots = 1;
+      return;
     case kCylindrical:
       // Intersect with the cylindrical surface having Z as axis of symmetry
       CylinderEq<Real_t>(point, dir, surfdata.GetCylData(id).radius, coef);
@@ -130,12 +141,11 @@ struct UnplacedSurface {
     case kTorus:
     case kGenSecondOrder:
       std::cout << "kTorus, kGenSecondOrder unhandled\n";
-      return -1;
+      numroots = 0;
+      return;
     };
 
-    QuadraticSolver(coef, roots);
-    if (roots.numroots > 0) return roots.xmin;
-    return -1;
+    QuadraticSolver(coef, roots, numroots);
   }
 };
 
@@ -151,41 +161,86 @@ struct Frame {
   template <typename Real_t>
   void GetExtent(Extent<Real_t> &ext, SurfData<Real_t> const &surfdata)
   {
-    auto data = surfdata.GetRangeMask(id);
+    auto dataU = surfdata.GetExtent(id).rangeU;
+    auto dataV = surfdata.GetExtent(id).rangeV;
     switch (type) {
     case kRangeZ:
-    case kRangeCyl:
     case kRangeSph:
     case kTriangle:
       break;
+    case kRangeCyl:
+    case kRangeCylPhi:
     case kWindow:
-      ext.rangeU.Set(-data[0], data[0]);
-      ext.rangeV.Set(-data[1], data[1]);
+      ext.rangeU.Set(dataU[0], dataU[1]);
+      ext.rangeV.Set(dataV[0], dataV[1]);
     };
   }
 
   template <typename Real_t>
   bool Inside(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
   {
-    auto data = surfdata.GetRangeMask(id);
-    Real_t rsq{0};
+    auto u = surfdata.GetExtent(id).rangeU;
+    auto v = surfdata.GetExtent(id).rangeV;
+    Real_t rsq = local[0]*local[0] + local[1]*local[1];
     switch (type) {
     case kRangeZ:
-      return (local[2] > vecgeom::MakeMinusTolerant<true>(data[0]) &&
-              local[2] < vecgeom::MakePlusTolerant<true>(data[1]));
+      return (local[2] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
+              local[2] < vecgeom::MakePlusTolerant<true>(u[1]));
     case kRangeCyl:
-      rsq = local[0] * local[0] + local[1] * local[1];
-      return (rsq > vecgeom::MakeMinusTolerantSquare<true>(data[0]) &&
-              rsq < vecgeom::MakePlusTolerantSquare<true>(data[1]));
+      // kRangeCyl format:
+      //// u[0] -> rmin
+      //// v    -> Cartesian coordinates of a vector at (Rmax*cos(dphi), Rmax*sin(dphi), 0)
+      //// The frame is rotated such that the starting phi angle is always along the
+      //// x-axis in the local reference frame.
+      {
+        Vector3D<Real_t> vvec{v[0], v[1], 0};
+
+        // The point must be inside the ring:
+         if ((rsq < u[0]*u[0] + 2*vecgeom::kToleranceSquared*u[0]) ||
+             (rsq > vvec.Mag2() - 2*vecgeom::kToleranceSquared*vvec.Mag())) return false;
+        
+        // If it's a full circle:
+        if (std::abs(v[1]) < vecgeom::kTolerance) return true;
+        
+        // Otherwise, it must be between x axis (start) and Rmax (end)
+        return (local.Cross(Vector3D<Real_t>{1, 0, 0}).z()<vecgeom::kTolerance && local.Cross(vvec).z()>-vecgeom::kTolerance*vvec.Mag());
+      }
+    case kRangeCylPhi:
+      // kRangeCylPhi format:
+      //// u -> extent along z axis
+      //// v -> Cartesian coordinates of a vector at (cos(dphi), sin(dphi), 0)
+      //// The frame is rotated such that the starting phi angle is always along the
+      //// x-axis in the local reference frame. Here, condition for radius is checked
+      ////  in intersection with surfaces, so we don't care about that.
+      {
+        // Check z axis
+        if (local[2] < u[0]-vecgeom::kTolerance || local[2] > u[1]+vecgeom::kTolerance) return false;
+        // If it's a full circle, there is no y component
+        if (std::abs(v[1]) < vecgeom::kTolerance) return true;
+        Vector3D<Real_t> vvec{v[0], v[1], 0};
+        // TODO: Update tolerances here
+        return (local.Cross(Vector3D<Real_t>{1,0,0}).z()<vecgeom::kTolerance && local.Cross(vvec).z()>-vecgeom::kTolerance*vvec.Mag());
+      }
     case kRangeSph:
-      rsq = local.Mag2();
-      return (rsq > vecgeom::MakeMinusTolerantSquare<true>(data[0]) &&
-              rsq < vecgeom::MakePlusTolerantSquare<true>(data[1]));
+      return (rsq > vecgeom::MakeMinusTolerantSquare<true>(u[0]) &&
+              rsq < vecgeom::MakePlusTolerantSquare<true>(u[1]));
     case kWindow:
-      return (std::abs(local[0]) < vecgeom::MakePlusTolerant<true>(data[0]) &&
-              std::abs(local[1]) < vecgeom::MakePlusTolerant<true>(data[1]));
+      return (local[0] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
+              local[0] < vecgeom::MakePlusTolerant<true>(u[1])   &&
+              local[1] > vecgeom::MakeMinusTolerant<true>(v[0]) &&
+              local[1] < vecgeom::MakePlusTolerant<true>(v[1]));
     case kTriangle:
-      std::cout << "Mask type not handled yet\n";
+      {
+        auto div    = 1/vecgeom::NonZero(u[0]*v[1] - u[1]*v[0]);
+        auto DeltaA = local[0]*v[1] - local[1]*v[0];
+        auto DeltaB = u[0]*local[1] - u[1]*local[0];
+
+        auto a = DeltaA * div;
+        auto b = DeltaB * div;
+
+        //TODO: Check tolerances.
+        return (a>vecgeom::kTolerance && b>vecgeom::kTolerance && a+b<1+vecgeom::kTolerance);
+      }
     };
     return false;
   }
@@ -197,19 +252,30 @@ struct Frame {
     RangeMask<Real_t> const &u = extent.rangeU;
     RangeMask<Real_t> const &v = extent.rangeV;
     switch (type) {
-    case kRangeZ:
-      return (local[2] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
-              local[2] < vecgeom::MakePlusTolerant<true>(u[1]));
-    case kRangeCyl:
-    case kRangeSph:
-    case kTorus:
-    case kGenSecondOrder:
-     break;
-    case kWindow:
+    case kPlanar:
+      // Planar surfaces always have kWindow extent
       return (local[0] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
-              local[0] < vecgeom::MakePlusTolerant<true>(u[1]) &&
+              local[0] < vecgeom::MakePlusTolerant<true>(u[1])   &&
               local[1] > vecgeom::MakeMinusTolerant<true>(v[0]) &&
               local[1] < vecgeom::MakePlusTolerant<true>(v[1]));
+    case kCylindrical:
+      // Cylindrical surfaces always have kRangeCylPhi extent
+      {
+        // Check z axis
+        if (local[2]<u[0]-vecgeom::kTolerance || local[2]>u[1]+vecgeom::kTolerance) return false;
+        // If it's a full circle, there is no y component
+        if (std::abs(v[1]) < vecgeom::kTolerance) return true;
+        Vector3D<Real_t> vvec{v[0], v[1], 0};
+        // TODO: Update tolerances here
+        return (local.Cross(Vector3D<Real_t>{1,0,0}).z()<vecgeom::kTolerance && local.Cross(vvec).z()>vecgeom::kTolerance*vvec.Mag());
+      }
+    case kConical:
+    case kSpherical:
+    case kTorus:
+    case kGenSecondOrder:
+    default:
+      std::cout << "Case not yet implemented." << std::endl;
+      break;
     };
     return false;
   }
@@ -280,11 +346,12 @@ struct FramedSurface {
   ///< This finds the distance to intersecting the half-space, without checking the mask
   // The point and direction are in the reference frame of the scene
   template <typename Real_t>
-  Real_t Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, SurfData<Real_t> const &surfdata)
+  void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir,
+                   SurfData<Real_t> const &surfdata, Real_t *roots, int &numroots)
   {
     Vector3D<Real_t> localpoint, localdir;
     Transform(point, dir, localpoint, localdir);
-    return fSurface.Intersect<Real_t>(localpoint, localdir, surfdata);
+    fSurface.Intersect<Real_t>(localpoint, localdir, surfdata, roots, numroots);
   }
 
   ///< Check if the propagated point on surface is within the frame
