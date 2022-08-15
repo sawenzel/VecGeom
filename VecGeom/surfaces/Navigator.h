@@ -120,7 +120,7 @@ Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector
 
       // There is no parent for the entry side.
       // first check the extent of the entry side using onsurf
-      if (!Frame::Inside(onsurf_tmp, surfdata.GetExtent(entry_side.fExtent), surf.fType))
+      if (!entry_side.fExtent.Inside(onsurf_tmp, surfdata))
         continue;
 
       // the onsurf_tmp local point can be used as input for a side search optimization structure.
