@@ -73,8 +73,8 @@ struct WindowMask {
   Range<Real_t> rangeV;
 
   WindowMask() = default;
-  WindowMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2): rangeU(u1, u2), rangeV(v1, v2) {};
-  WindowMask(Real_t u, Real_t v): rangeU(-u, u), rangeV(-v, v) {};
+  WindowMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2) : rangeU(u1, u2), rangeV(v1, v2){};
+  WindowMask(Real_t u, Real_t v) : rangeU(-u, u), rangeV(-v, v){};
 
   void GetMask(WindowMask<Real_t> &mask)
   {
@@ -82,9 +82,10 @@ struct WindowMask {
     mask.rangeV.Set(rangeV[0], rangeV[1]);
   }
 
-  bool Inside(Vector3D<Real_t> const &local) const {
+  bool Inside(Vector3D<Real_t> const &local) const
+  {
     return (local[0] > vecgeom::MakeMinusTolerant<true>(rangeU[0]) &&
-            local[0] < vecgeom::MakePlusTolerant<true>(rangeU[1])  &&
+            local[0] < vecgeom::MakePlusTolerant<true>(rangeU[1]) &&
             local[1] > vecgeom::MakeMinusTolerant<true>(rangeV[0]) &&
             local[1] < vecgeom::MakePlusTolerant<true>(rangeV[1]));
   }
@@ -103,8 +104,8 @@ struct RingMask {
   Range<Real_t> rangeV;
 
   RingMask() = default;
-  RingMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2): rangeU(u1, u2), rangeV(v1, v2) {};
-  RingMask(Real_t u, Real_t v): rangeU(-u, u), rangeV(-v, v) {};
+  RingMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2) : rangeU(u1, u2), rangeV(v1, v2){};
+  RingMask(Real_t u, Real_t v) : rangeU(-u, u), rangeV(-v, v){};
 
   void GetMask(RingMask<Real_t> &mask)
   {
@@ -112,20 +113,32 @@ struct RingMask {
     mask.rangeV.Set(rangeV[0], rangeV[1]);
   }
 
-  bool Inside(Vector3D<Real_t> const &local) const {
-    Real_t rsq = local[0]*local[0] + local[1]*local[1];
+  bool Inside(Vector3D<Real_t> const &local) const
+  {
+    Real_t rsq = local[0] * local[0] + local[1] * local[1];
 
     Vector3D<Real_t> vvec{rangeV[0], rangeV[1], 0};
 
     // The point must be inside the ring:
-      if ((rsq < rangeU[0]*rangeU[0] + 2*vecgeom::kToleranceSquared*rangeU[0]) ||
-          (rsq > vvec.Mag2() - 2*vecgeom::kToleranceSquared*vvec.Mag())) return false;
-    
+    if ((rsq < rangeU[0] * rangeU[0] + 2 * vecgeom::kToleranceSquared * rangeU[0]) ||
+        (rsq > vvec.Mag2() - 2 * vecgeom::kToleranceSquared * vvec.Mag()))
+      return false;
+
     // If it's a full circle:
     if (std::abs(rangeV[1]) < vecgeom::kTolerance) return true;
-    
-    // Otherwise, it must be between x axis (start) and Rmax (end)
-    return (local.Cross(Vector3D<Real_t>{1, 0, 0}).z()<vecgeom::kTolerance && local.Cross(vvec).z()>-vecgeom::kTolerance*vvec.Mag());
+
+    Vector3D<Real_t> xaxis{1, 0, 0};
+    // TODO: Update tolerances.
+    //  In barycentric coordinate system, where the base vectors are xaxis and vvec,
+    //  the point lies in the convex part of the plane if both of its coordinates are
+    //  greater than zero.
+    auto divisor = 1 / rangeV[1];
+    auto d1      = (local[0] * rangeV[1] - local[1] * rangeV[0]) * divisor;
+    auto d2      = local[1] * divisor;
+    // If limiting vectors are close, we want convex solutions, and concave otherwise.
+    auto convexity = (xaxis.Cross(vvec).z() > 0);
+
+    return (d1 > 0 && d2 > 0) == convexity;
   }
 };
 
@@ -142,8 +155,8 @@ struct ZPhiMask {
   Range<Real_t> rangeV;
 
   ZPhiMask() = default;
-  ZPhiMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2): rangeU(u1, u2), rangeV(v1, v2) {};
-  ZPhiMask(Real_t u, Real_t v): rangeU(-u, u), rangeV(-v, v) {};
+  ZPhiMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2) : rangeU(u1, u2), rangeV(v1, v2){};
+  ZPhiMask(Real_t u, Real_t v) : rangeU(-u, u), rangeV(-v, v){};
 
   void GetMask(ZPhiMask<Real_t> &mask)
   {
@@ -151,14 +164,26 @@ struct ZPhiMask {
     mask.rangeV.Set(rangeV[0], rangeV[1]);
   }
 
-  bool Inside(Vector3D<Real_t> const &local) const {
+  bool Inside(Vector3D<Real_t> const &local) const
+  {
     // Check z axis
-    if (local[2] < rangeU[0]-vecgeom::kTolerance || local[2] > rangeU[1]+vecgeom::kTolerance) return false;
+    if (local[2] < rangeU[0] - vecgeom::kTolerance || local[2] > rangeU[1] + vecgeom::kTolerance) return false;
     // If it's a full circle, there is no y component
     if (std::abs(rangeV[1]) < vecgeom::kTolerance) return true;
     Vector3D<Real_t> vvec{rangeV[0], rangeV[1], 0};
-    // TODO: Update tolerances here
-    return (local.Cross(Vector3D<Real_t>{1,0,0}).z()<vecgeom::kTolerance && local.Cross(vvec).z()>-vecgeom::kTolerance*vvec.Mag());
+
+    Vector3D<Real_t> xaxis{1, 0, 0};
+    // TODO: Update tolerances.
+    //  In barycentric coordinate system, where the base vectors are xaxis and vvec,
+    //  the point lies in the convex part of the plane if both of its coordinates are
+    //  greater than zero.
+    auto divisor = 1 / rangeV[1];
+    auto d1      = (local[0] * rangeV[1] - local[1] * rangeV[0]) * divisor;
+    auto d2      = local[1] * divisor;
+    // If limiting vectors are close, we want convex solutions, and concave otherwise.
+    auto convexity = (xaxis.Cross(vvec).z() > 0);
+
+    return (d1 > 0 && d2 > 0) == convexity;
   }
 };
 
@@ -208,8 +233,8 @@ struct UnplacedSurface {
 
   /// Find positive distance to next intersection from local point
   template <typename Real_t>
-  void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir,
-                    SurfData<Real_t> const &surfdata, Real_t *roots, int &numroots) const
+  void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, SurfData<Real_t> const &surfdata,
+                 Real_t *roots, int &numroots) const
   {
     QuadraticCoef<Real_t> coef;
 
@@ -217,7 +242,7 @@ struct UnplacedSurface {
     case kPlanar:
       // Just need to propagate to (xOy) plane
       roots[0] = roots[1] = -point[2] / dir[2]; // Division by zero?
-      numroots = 1;
+      numroots            = 1;
       return;
     case kCylindrical:
       // Intersect with the cylindrical surface having Z as axis of symmetry
@@ -240,6 +265,39 @@ struct UnplacedSurface {
 
     QuadraticSolver(coef, roots, numroots);
   }
+
+  /// Get normal direction to the surface in a point on surface
+  template <typename Real_t>
+  void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata) const
+  {
+    switch (type) {
+    case kPlanar:
+      // Just return (0, 0, 1);
+      normal.Set(0, 0, 1);
+      return;
+    case kCylindrical:
+      // Return normal direction outwards. Flipping the normal for inner tube surfaces is done at FramedSurface level
+      normal.Set(point[0], point[1], 0);
+      normal.Normalize();
+      return;
+    case kConical:
+      // Return normal direction outwards.
+      normal.Set(point[0], point[1],
+                 -std::sqrt(point[0] * point[0] + point[1] * point[1]) * surfdata.GetConeData(id).slope);
+      normal.Normalize();
+      return;
+    case kSpherical:
+      // Return normal direction outwards.
+      normal.Set(point[0], point[1], point[2]);
+      normal.Normalize();
+      return;
+    case kTorus:
+    case kGenSecondOrder:
+      normal.Set(0, 0, 1);
+      std::cout << "kTorus, kGenSecondOrder unhandled\n";
+    };
+    return;
+  }
 };
 
 /* An frame delimiting the real surface on an infinite half-space */
@@ -250,14 +308,10 @@ struct Frame {
   Frame() = default;
   Frame(FrameType mtype, int mid) : type(mtype), id(mid) {}
 
-
   // Mask getters for various mask types
 
-  template <typename Real_t, typename Mask_t>
-  void GetMask(Mask_t &mask, SurfData<Real_t> const &surfdata) {}
-
   template <typename Real_t>
-  void GetMask(WindowMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
+  void GetMask(WindowMask<Real_t> &mask, SurfData<Real_t> const &surfdata) const
   {
     surfdata.fWindowMasks[id].GetMask(mask);
   }
@@ -293,26 +347,24 @@ struct Frame {
       /*return (rsq > vecgeom::MakeMinusTolerantSquare<true>(u[0]) &&
               rsq < vecgeom::MakePlusTolerantSquare<true>(u[1]));*/
     case kTriangle:
-      /*{
-        auto div    = 1/vecgeom::NonZero(u[0]*v[1] - u[1]*v[0]);
-        auto DeltaA = local[0]*v[1] - local[1]*v[0];
-        auto DeltaB = u[0]*local[1] - u[1]*local[0];
+    /*{
+      auto div    = 1/vecgeom::NonZero(u[0]*v[1] - u[1]*v[0]);
+      auto DeltaA = local[0]*v[1] - local[1]*v[0];
+      auto DeltaB = u[0]*local[1] - u[1]*local[0];
 
-        auto a = DeltaA * div;
-        auto b = DeltaB * div;
+      auto a = DeltaA * div;
+      auto b = DeltaB * div;
 
-        //TODO: Check tolerances.
-        return (a>vecgeom::kTolerance && b>vecgeom::kTolerance && a+b<1+vecgeom::kTolerance);
-      }*/
-      default:
-        std::cout << "Frame type not supported." << std::endl;
-        break;
+      //TODO: Check tolerances.
+      return (a>vecgeom::kTolerance && b>vecgeom::kTolerance && a+b<1+vecgeom::kTolerance);
+    }*/
+    default:
+      std::cout << "Frame type not supported." << std::endl;
+      break;
     };
     return false;
   }
-
 };
-
 
 // This holds the transformation of the surface
 // with respect to the frame of the ancestor volume onto which this surface is flattened.
@@ -344,16 +396,17 @@ struct FramedSurface {
   UnplacedSurface fSurface; ///< Surface identifier
   Frame fFrame;             ///< Frame
   int fTrans{-1};           ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
+  int fFlip{1};             ///< Flip for the normal (+1 or -1)
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0)
-      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index)
+  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, int flip = 1, NavIndex_t index = 0)
+      : fSurface(unplaced), fFrame(frame), fTrans(trans), fFlip(flip), fState(index)
   {
   }
 
   /// Sorting by decreasing state depth and increasing state index
-  bool operator<(FramedSurface const &other)
+  bool operator<(FramedSurface const &other) const
   {
     using vecgeom::NavStateIndex;
     auto level1 = NavStateIndex::GetLevelImpl(fState);
@@ -369,7 +422,7 @@ struct FramedSurface {
   /// Transform point and direction to the local frame
   template <typename Real_t>
   void Transform(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Vector3D<Real_t> &localpoint,
-                 Vector3D<Real_t> &localdir, SurfData<Real_t> const &surfdata)
+                 Vector3D<Real_t> &localdir, SurfData<Real_t> const &surfdata) const
   {
     auto &localRef = surfdata.LocalT(fTrans);
     localpoint     = localRef.Transform(point);
@@ -378,22 +431,24 @@ struct FramedSurface {
 
   ///< This finds the distance to intersecting the half-space, without checking the mask
   // The point and direction are in the reference frame of the scene
-  template <typename Real_t>
-  void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir,
-                   SurfData<Real_t> const &surfdata, Real_t *roots, int &numroots)
-  {
-    Vector3D<Real_t> localpoint, localdir;
-    Transform(point, dir, localpoint, localdir);
-    fSurface.Intersect<Real_t>(localpoint, localdir, surfdata, roots, numroots);
-  }
-
+  /*
+    template <typename Real_t>
+    void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir,
+                     SurfData<Real_t> const &surfdata, Real_t *roots, int &numroots) const
+    {
+      Vector3D<Real_t> localpoint, localdir;
+      Transform(point, dir, localpoint, localdir);
+      fSurface.Intersect<Real_t>(localpoint, localdir, surfdata, roots, numroots);
+    }
+  */
   ///< Check if the propagated point on surface is within the frame
   template <typename Real_t>
-  bool InsideFrame(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, SurfData<Real_t> const &surfdata)
+  bool InsideFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
-    Vector3D<Real_t> localpoint, localdir;
-    Transform(point, dir, localpoint, localdir);
-    return fFrame.Inside(point, surfdata);
+    Vector3D<Real_t> localpoint(point);
+    // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
+    if (fTrans) localpoint = surfdata.fGlobalTrans[fTrans].Transform(point);
+    return fFrame.Inside(localpoint, surfdata);
   }
 };
 
@@ -412,7 +467,7 @@ struct Candidates {
 ///< A side represents all common placed surfaces
 struct Side {
   Extent fExtent;          ///< Extent on a side.
-  int fParentSurf {-1};    ///< if there is a parent volume of all volumes contributing to this side
+  int fParentSurf{-1};     ///< if there is a parent volume of all volumes contributing to this side
   int fNsurf{0};           ///< Number of placed surfaces on this side
   int *fSurfaces{nullptr}; ///< [fNsurf] Array of placed surfaces on this side
 
@@ -433,8 +488,7 @@ struct Side {
   }
 
   template <typename Real_t>
-  inline
-  FramedSurface const &GetSurface(int index, SurfData<Real_t> const &surfdata) const
+  inline FramedSurface const &GetSurface(int index, SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[index]];
   }
@@ -461,6 +515,22 @@ struct CommonSurface {
     // Add by default the first surface to the left side
     fLeftSide.AddSurface(global_surf);
   };
+
+  ///< Get the normal to the surface from a point on surface
+  template <typename Real_t>
+  void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata,
+                 bool left_side = true) const
+  {
+    Vector3D<Real_t> localnorm;
+    // point to local frame
+    auto const &trans      = surfdata.fGlobalTrans[fTrans];
+    auto localpoint        = trans.Transform(point);
+    auto const &framedsurf = fLeftSide.GetSurface(0, surfdata);
+    framedsurf.fSurface.GetNormal(localpoint, localnorm, surfdata);
+    trans.InverseTransformDirection(localnorm, normal);
+    normal *= Real_t(framedsurf.fFlip);
+    if (!left_side) normal *= Real_t(-1);
+  }
 };
 
 class BVH;
@@ -485,12 +555,12 @@ struct Scene {
 template <typename Real_t>
 struct SurfData {
 
-  using CylData_t     = CylData<Real_t>;
-  using ConeData_t    = ConeData<Real_t>;
-  using SphData_t     = SphData<Real_t>;
-  using WindowMask_t  = WindowMask<Real_t>;
-  using RingMask_t    = RingMask<Real_t>;
-  using ZPhiMask_t    = ZPhiMask<Real_t>;
+  using CylData_t    = CylData<Real_t>;
+  using ConeData_t   = ConeData<Real_t>;
+  using SphData_t    = SphData<Real_t>;
+  using WindowMask_t = WindowMask<Real_t>;
+  using RingMask_t   = RingMask<Real_t>;
+  using ZPhiMask_t   = ZPhiMask<Real_t>;
 
   int fNglobalTrans{0};
   int fNglobalSurf{0};
@@ -519,14 +589,6 @@ struct SurfData {
   int *fCandList{nullptr};                 ///< global list of candidate indices
 
   SurfData() = default;
-  /// Transformation getters
-  // Transformation const &LocalT(int id) const { return fLocalTrans[id]; }
-  // Transformation const &TouchableT(int id) const { return fTouchableTrans[id]; }
-  // void                  GlobalT(CombiTrans const &ct, Transformation &global)
-  //{
-  //  global = TouchableT(ct.fTouchableT);
-  //  global.MultiplyFromRight(LocalT(ct.fLocalT));
-  //}
 
   /// Surface data accessors by component id
   CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }

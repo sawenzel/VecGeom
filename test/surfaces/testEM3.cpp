@@ -75,14 +75,14 @@ void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
   const double LayerThickness = GapThickness + AbsorberThickness;
   const double CalorThickness = NbOfLayers * LayerThickness;
 
-  const double WorldSizeX  = 1.2 * CalorThickness + 1000;
-  const double WorldSizeY  = 1.2 * CalorSizeY + 1000;
-  const double WorldSizeZ  = 1.2 * CalorSizeZ + 1000;
+  const double WorldSizeX = 1.2 * CalorThickness + 1000;
+  const double WorldSizeY = 1.2 * CalorSizeY + 1000;
+  const double WorldSizeZ = 1.2 * CalorSizeZ + 1000;
 
-  auto worldSolid = new vecgeom::UnplacedBox(0.5 * WorldSizeX, 0.5 * WorldSizeY, 0.5 * WorldSizeZ);
-  auto worldLogic = new vecgeom::LogicalVolume("World", worldSolid);
+  auto worldSolid                     = new vecgeom::UnplacedBox(0.5 * WorldSizeX, 0.5 * WorldSizeY, 0.5 * WorldSizeZ);
+  auto worldLogic                     = new vecgeom::LogicalVolume("World", worldSolid);
   vecgeom::VPlacedVolume *worldPlaced = worldLogic->Place();
-  
+
   //
   // Calorimeter
   //
@@ -154,7 +154,7 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
 bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precision> const &surfdata)
 {
   // prepare tracks to be used for benchmarking
-  constexpr double tolerance = 10 * vecgeom::kTolerance;
+  constexpr double tolerance     = 10 * vecgeom::kTolerance;
   const double CalorSizeY        = 40;
   const double CalorSizeZ        = 40;
   const double GapThickness      = 2.3;
@@ -163,7 +163,7 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
   const double LayerThickness = GapThickness + AbsorberThickness;
   const double CalorThickness = nbLayers * LayerThickness;
 
-  int num_errors             = 0;
+  int num_errors = 0;
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
 
@@ -214,13 +214,13 @@ void TestPerformance(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precis
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
 
-//  Vector3D<Precision> samplingVolume(0.2, 0.2, 0.2);
+  //  Vector3D<Precision> samplingVolume(0.2, 0.2, 0.2);
   Vector3D<Precision> samplingVolume(0.5 * CalorThickness, 0.5 * CalorSizeYZ, 0.5 * CalorSizeYZ);
   vecgeom::volumeUtilities::FillRandomPoints(samplingVolume, points);
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 
-  Precision xfirst = -0.5 * CalorThickness + 0.5 * LayerThickness;
-  Precision xlast = xfirst + (nbLayers - 1) * LayerThickness;
+  Precision xfirst  = -0.5 * CalorThickness + 0.5 * LayerThickness;
+  Precision xlast   = xfirst + (nbLayers - 1) * LayerThickness;
   Precision xmiddle = xfirst + 0.5 * (nbLayers - 1) * LayerThickness;
 
   Vector3D<Precision> pointInFirstLayer(xfirst, 0, 0);
@@ -230,15 +230,15 @@ void TestPerformance(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precis
   Vector3D<Precision> pointBottomLastLayer(xlast, -0.6 * CalorSizeYZ, 0);
   Vector3D<Precision> pointBottomMiddleLayer(xmiddle, -0.6 * CalorSizeYZ, 0);
 
-  Vector3D<Precision> dirXplus(1, 0, 0); 
-  Vector3D<Precision> dirXminus(-1, 0, 0); 
-  Vector3D<Precision> dirYplus(0, 1, 0); 
-  Vector3D<Precision> dirYminus(0, -1, 0); 
+  Vector3D<Precision> dirXplus(1, 0, 0);
+  Vector3D<Precision> dirXminus(-1, 0, 0);
+  Vector3D<Precision> dirYplus(0, 1, 0);
+  Vector3D<Precision> dirYminus(0, -1, 0);
   Vector3D<Precision> dirXY(1, 0, 0);
-  dirXY.Normalize(); 
+  dirXY.Normalize();
 
-  //Vector3D<Precision> const &pt  = pointBottomLastLayer;
-  //Vector3D<Precision> const &dir = dirYplus;
+  // Vector3D<Precision> const &pt  = pointBottomLastLayer;
+  // Vector3D<Precision> const &dir = dirYplus;
 
   // now setup all the navigation states
   int ndeep = GeoManager::Instance().getMaxDepth();
@@ -250,7 +250,7 @@ void TestPerformance(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precis
   // Locate all input points, without timing this operation
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
-    //Vector3D<Precision> pos(points[i] + pt);
+    // Vector3D<Precision> pos(points[i] + pt);
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
   }
 
@@ -258,11 +258,11 @@ void TestPerformance(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precis
   Stopwatch timer;
   timer.Start();
   for (int i = 0; i < npoints; ++i) {
-    //Vector3D<Precision> pos(points[i] + pt);
+    // Vector3D<Precision> pos(points[i] + pt);
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
     nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], out_state, vecgeom::kInfLength, distance);
-    //out_state.Print();
+    // out_state.Print();
   }
   //printf("\n");
   Precision time_prim = timer.Stop();
@@ -270,12 +270,12 @@ void TestPerformance(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precis
   Stopwatch timer1;
   timer1.Start();
   for (int i = 0; i < npoints; ++i) {
-    //Vector3D<Precision> pos(points[i] + pt);
+    // Vector3D<Precision> pos(points[i] + pt);
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
-    int exit_surf = 0;
+    int exit_surf                  = 0;
     distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
-    //out_state.Print();
+    // out_state.Print();
   }
   Precision time_surf = timer1.Stop();
 

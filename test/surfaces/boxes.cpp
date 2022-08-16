@@ -11,14 +11,14 @@ using namespace vecgeom;
 
 LogicslVolume *CreateDaughters(int nd, LogicalVolume &volume)
 {
-  UnplacedBox const &box = static_cast<UnplacedVolume const&>(*volume.GetUnplacedVolume());
-  Precision sizeX = box.x();
-  Precision sizeY = box.y();
-  Precision sizeZ = box.z() / nd;
-  auto daughter_box = new UnplacedBox(sizeX, 0.7 * sizeY, sizeZ);
-  auto daughter_lv = new LogicalVolume("box", daughter_box);
+  UnplacedBox const &box = static_cast<UnplacedVolume const &>(*volume.GetUnplacedVolume());
+  Precision sizeX        = box.x();
+  Precision sizeY        = box.y();
+  Precision sizeZ        = box.z() / nd;
+  auto daughter_box      = new UnplacedBox(sizeX, 0.7 * sizeY, sizeZ);
+  auto daughter_lv       = new LogicalVolume("box", daughter_box);
   for (int i = 0; i < nd; ++i) {
-    Transformation3D placement(0, (2*(i%2)-1)*0.35*sizeY, -box.z() + (2*i+1)*sizeZ);
+    Transformation3D placement(0, (2 * (i % 2) - 1) * 0.35 * sizeY, -box.z() + (2 * i + 1) * sizeZ);
     volume.PlaceDaughter("child", daughter_lv, &placement)
   }
   return daughter_lv;

@@ -155,7 +155,7 @@ public:
   /// and applies the injected Visitor
   template <typename Visitor>
   static void visitAllPlacedVolumesNavIndex(VPlacedVolume const *currentvolume, Visitor *visitor, NavStatePath *state,
-                                             NavIndex_t &id, int level = 0, NavIndex_t mother = 0, int dind = 0)
+                                            NavIndex_t &id, int level = 0, NavIndex_t mother = 0, int dind = 0)
   {
     if (currentvolume != NULL) {
       state->Push(currentvolume);

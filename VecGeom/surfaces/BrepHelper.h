@@ -169,7 +169,7 @@ public:
     auto findParentFramedSurf = [&](Side &side) {
       if (!side.fNsurf) return;
       // if there is a parent, it can only be at the last position after sorting
-      int parent_ind = side.fNsurf - 1;
+      int parent_ind     = side.fNsurf - 1;
       auto parent_navind = fFramedSurf[side.fSurfaces[parent_ind]].fState;
       for (int i = 0; i < parent_ind; ++i) {
         auto navind = fFramedSurf[side.fSurfaces[i]].fState;
@@ -240,7 +240,8 @@ public:
   }
 
   // Computes the bounding extent on a planar side.
-  void ComputePlaneExtent(Side& side){
+  void ComputePlaneExtent(Side &side)
+  {
     // This is a helper-lambda that updates extents
     // for all sides of common plane surfaces
     auto updatePlaneExtent = [](WindowMask_t &e, Vector3D<Real_t> const &pt) {
@@ -257,14 +258,13 @@ public:
     // loop through all extents on a side:
     for (int i = 0; i < side.fNsurf; ++i) {
       // convert surface frame to local coordinates
-      auto framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      auto framed_surf     = fSurfData->fFramedSurf[side.fSurfaces[i]];
       FrameType frame_type = framed_surf.fFrame.type;
       Vector3D<Real_t> local;
       Real_t xmax, ymax, ymin, xmin;
       // Calculating the limits
       switch (frame_type) {
-      case kWindow:
-      {
+      case kWindow: {
         WindowMask_t extLocal;
         framed_surf.fFrame.GetMask(extLocal, *fSurfData);
         xmin = extLocal.rangeU[0];
@@ -273,46 +273,42 @@ public:
         ymax = extLocal.rangeV[1];
         break;
       }
-      case kRing:
-        {
-          RingMask_t extLocal;
-          framed_surf.fFrame.GetMask(extLocal, *fSurfData);
-          Vector3D<Real_t> R{extLocal.rangeV[0], extLocal.rangeV[1], 0};
+      case kRing: {
+        RingMask_t extLocal;
+        framed_surf.fFrame.GetMask(extLocal, *fSurfData);
+        Vector3D<Real_t> R{extLocal.rangeV[0], extLocal.rangeV[1], 0};
 
-          auto Rmag = R.Mag();
-          Vector3D<Real_t> axis{0, 1, 0};
+        auto Rmag = R.Mag();
+        Vector3D<Real_t> axis{0, 1, 0};
 
-          // If the axis is within the extent, its limit is radius.
-          // Otherwise, its limit is the projection of radius onto it.
-          // If the projection is negative, it means that our surface
-          // lies completely on the other side of perpendicular axis.
-          // x axis is always within extent in local frame.
-          xmax = Rmag;
-          ymax = (R.Cross(axis).z() < vecgeom::kTolerance) ?  Rmag : R.Dot(axis);
-          axis.Set(-1, 0, 0);
-          xmin = (R.Cross(axis).z() < vecgeom::kTolerance) ? -Rmag : R.Dot(axis);
-          if (xmin < vecgeom::kTolerance) xmin = 0;
-          axis.Set(0, -1, 0);
-          ymin = (R.Cross(axis).z() < vecgeom::kTolerance) ? -Rmag : R.Dot(axis);
-          if (ymin < vecgeom::kTolerance) ymin = 0;
-          break;
-        }
+        // This breaks, but I won't fix it for now, because we need to write it
+        // again when the new data structure for kRing is implemented anyway.
+        /*xmax = Rmag;
+        ymax = (R.Cross(axis).z() < vecgeom::kTolerance) ? Rmag : R.Dot(axis);
+        axis.Set(-1, 0, 0);
+        xmin = (R.Cross(axis).z() < vecgeom::kTolerance) ? -Rmag : -R.Dot(axis);
+        if (xmin > -vecgeom::kTolerance) xmin = 0;
+        axis.Set(0, -1, 0);
+        ymin = (R.Cross(axis).z() < vecgeom::kTolerance) ? -Rmag : -R.Dot(axis);
+        if (ymin > -vecgeom::kTolerance) ymin = 0;*/
+        xmax = Rmag;
+        ymax = Rmag;
+        xmin = -Rmag;
+        ymin = -Rmag;
+        break;
+      }
       default:
         break;
       } // case
 
       // This part updates extent
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{xmin, ymin, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmin, ymin, 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{xmin, ymax, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmin, ymax, 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{xmax, ymax, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmax, ymax, 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{xmax, ymin, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmax, ymin, 0});
       updatePlaneExtent(ext, local);
     } // for
 
@@ -323,11 +319,12 @@ public:
   }
 
   // Computes bounding extent on a side of cylindrical surface
-  void ComputeCylinderExtent(Side& side)
+  void ComputeCylinderExtent(Side &side)
   {
     // Setting initial extent mask
     constexpr Real_t kBig = 1.e30;
-    ZPhiMask_t sideext{kBig, -kBig, vecgeom::kHalfTolerance, 0};
+    ZPhiMask_t sideext{-kBig, kBig, 1, 0};
+    side.fExtent.type = kZPhi;
 
     for (int i = 0; i < side.fNsurf; ++i) {
       // convert surface frame to local coordinates
@@ -338,33 +335,36 @@ public:
 
       // The z-axis is shared and all surfaces are on the same side, so
       // there is no flipping.
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{0,0,extLocal.rangeU[0]});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, extLocal.rangeU[0]});
       sideext.rangeU[0] = std::min(sideext.rangeU[0], local[2]);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{0,0,extLocal.rangeU[1]});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, extLocal.rangeU[1]});
       sideext.rangeU[1] = std::max(sideext.rangeU[1], local[2]);
 
-      //If we already had a mask that is full circle
-      if (sideext.rangeV[0] > vecgeom::kTolerance &&
-          ApproxEqual(sideext.rangeV[0], std::abs(sideext.rangeV[0])) &&
-          sideext.rangeV[1] < vecgeom::kTolerance) continue;
-      
+      // If we already had a mask that is full circle
+      if (sideext.rangeV[0] > vecgeom::kTolerance && ApproxEqual(sideext.rangeV[0], std::abs(sideext.rangeV[0])) &&
+          sideext.rangeV[1] < vecgeom::kTolerance)
+        continue;
+
       local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-              Vector3D<Real_t>{extLocal.rangeV[0], extLocal.rangeV[1], 0});
+          Vector3D<Real_t>{extLocal.rangeV[0], extLocal.rangeV[1], 0});
       // If current mask is a full circle
-      if (ApproxEqualVector(local, {1, 0, 0})){
+      if (ApproxEqualVector(local, {1, 0, 0})) {
         sideext.rangeV[0] = 1;
         sideext.rangeV[1] = 0;
         continue;
       }
 
+      // TODO: This part also should break, but I will repair it when the new
+      //       data structure is implemented. -DC
       // We update our extent to include the greatest possible angle:
-      vecext = Vector3D<Real_t>{sideext.rangeV[0], sideext.rangeV[1], 0};
-      if (local.Cross(vecext).z() < vecgeom::kTolerance*vecext.Mag()) {
+      /*vecext = Vector3D<Real_t>{sideext.rangeV[0], sideext.rangeV[1], 0};
+      if (local.Cross(vecext).z() < vecgeom::kTolerance * vecext.Mag()) {
         sideext.rangeV[0] = local[0];
         sideext.rangeV[1] = local[1];
-      }
+      }*/
+      // Quick fix, always assume full circle:
+      sideext.rangeV[0] = 1;
+      sideext.rangeV[1] = 0;
     }
 
     // Add new extent mask to the vector
@@ -376,17 +376,17 @@ public:
   void ComputeExtents()
   {
     // Lambda for computing the extent of a single side
-    auto computeSingleSideExtent = [&](SurfaceType type, Side &side){
-      switch (type){
-        case kPlanar:
-          ComputePlaneExtent(side);
-          break;
-        case kCylindrical:
-          ComputeCylinderExtent(side);
-          break;
-        default:
-          std::cout << "Computing side extents dropped to default." << std::endl;
-          break;
+    auto computeSingleSideExtent = [&](SurfaceType type, Side &side) {
+      switch (type) {
+      case kPlanar:
+        ComputePlaneExtent(side);
+        break;
+      case kCylindrical:
+        ComputeCylinderExtent(side);
+        break;
+      default:
+        std::cout << "Computing side extents dropped to default." << std::endl;
+        break;
       }
     };
 
@@ -411,28 +411,26 @@ public:
   void PrintCommonSurface(int common_id)
   {
     auto const &surf = fSurfData->fCommonSurfaces[common_id];
-    printf("== common surface %d: default state: ", common_id);
+    printf("== common surface %d: type: %d, default state: ", common_id, surf.fType);
     vecgeom::NavStateIndex default_state(surf.fDefaultState);
     default_state.Print();
     printf(" transformation %d: ", surf.fTrans);
     fSurfData->fGlobalTrans[surf.fTrans].Print();
-    switch (surf.fType){
-    case kPlanar:
-      {
-        WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
-        printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fLeftSide.fNsurf,
-        surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id,
-        extL.rangeU[0], extL.rangeU[1], extL.rangeV[0], extL.rangeV[1]);
-        break;
-      }
-    case kCylindrical:
-      {
-        ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-        printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fLeftSide.fNsurf,
-        surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id,
-        extL.rangeU[0], extL.rangeU[1], extL.rangeV[0], extL.rangeV[1]);
-        break;
-      }
+    switch (surf.fType) {
+    case kPlanar: {
+      WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
+      printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fLeftSide.fNsurf,
+             surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1], extL.rangeV[0],
+             extL.rangeV[1]);
+      break;
+    }
+    case kCylindrical: {
+      ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
+      printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fLeftSide.fNsurf,
+             surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1], extL.rangeV[0],
+             extL.rangeV[1]);
+      break;
+    }
     case kConical:
     case kSpherical:
     case kTorus:
@@ -449,24 +447,21 @@ public:
       vecgeom::NavStateIndex state(placed.fState);
       state.Print();
     }
-    if (surf.fRightSide.fNsurf > 0)
-      switch (surf.fType){
-      case kPlanar:
-        {
-          WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
-          printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
-          surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id,
-          extR.rangeU[0], extR.rangeU[1], extR.rangeV[0], extR.rangeV[1]);
-          break;
-        }
-      case kCylindrical:
-        {
-          ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
-          printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
-          surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id,
-          extR.rangeU[0], extR.rangeU[1], extR.rangeV[0], extR.rangeV[1]);
-          break;
-        }
+    if (surf.fRightSide.fNsurf > 0) switch (surf.fType) {
+      case kPlanar: {
+        WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
+        printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
+               surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeU[0], extR.rangeU[1], extR.rangeV[0],
+               extR.rangeV[1]);
+        break;
+      }
+      case kCylindrical: {
+        ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
+        printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
+               surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeU[0], extR.rangeU[1], extR.rangeV[0],
+               extR.rangeV[1]);
+        break;
+      }
       case kConical:
       case kSpherical:
       case kTorus:
@@ -509,7 +504,7 @@ public:
       vecgeom::UnplacedBox const *box       = dynamic_cast<vecgeom::UnplacedBox const *>(solid);
       if (box) {
         CreateBoxSurfaces(*box, volume->id());
-        continue;       
+        continue;
       }
       vecgeom::UnplacedTube const *tube = dynamic_cast<vecgeom::UnplacedTube const *>(solid);
       if (tube) {
@@ -517,9 +512,9 @@ public:
         continue;
       }
       std::cout << "testEm3: solid type not supported for volume: " << volume->GetName() << "\n";
-      return false; 
+      return false;
     }
-    return true;    
+    return true;
   }
 
   bool CreateCommonSurfacesFlatTop()
@@ -547,7 +542,7 @@ public:
         fGlobalTrans.push_back(global);
         // Create the global surface
         int id_glob = fFramedSurf.size();
-        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, state.GetNavIndex()});
+        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fFlip, state.GetNavIndex()});
         CreateCommonSurface(id_glob);
       }
 
@@ -650,7 +645,7 @@ public:
     auto addSurfToSideStates = [&](int isurf, int iside) {
       Side const &side = (iside > 0) ? fCommonSurfaces[isurf].fLeftSide : fCommonSurfaces[isurf].fRightSide;
       for (int i = 0; i < side.fNsurf; ++i) {
-        int idglob         = side.fSurfaces[i];
+        int idglob             = side.fSurfaces[i];
         auto const &framedsurf = fFramedSurf[idglob];
         vecgeom::NavStateIndex state(framedsurf.fState);
         int state_id = state.GetId();
@@ -780,10 +775,10 @@ private:
     return id;
   }
 
-  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans)
+  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, int flip = 1)
   {
     int id = fLocalSurfaces.size();
-    fLocalSurfaces.push_back({unplaced, frame, trans});
+    fLocalSurfaces.push_back({unplaced, frame, trans, flip});
     return id;
   }
 
@@ -900,57 +895,59 @@ private:
   {
     auto sphi = tube.sphi();
     auto dphi = tube.dphi();
-    auto ephi = tube.sphi()+tube.dphi();
+    auto ephi = tube.sphi() + tube.dphi();
 
     assert(dphi > vecgeom::kTolerance);
 
-    auto Rmean = (tube.rmin() + tube.rmax())/2;
-    auto Rdiff = std::abs((tube.rmax() - tube.rmin())/2);
+    auto Rmean = (tube.rmin() + tube.rmax()) / 2;
+    auto Rdiff = (tube.rmax() - tube.rmin()) / 2;
 
     assert(Rdiff > 0);
 
     int isurf;
 
     // We need angles in degrees for transformations
-    auto sphid = vecgeom::kRadToDeg*sphi;
-    auto dphid = vecgeom::kRadToDeg*dphi;
-    auto ephid = vecgeom::kRadToDeg*ephi;
+    auto sphid = vecgeom::kRadToDeg * sphi;
+    auto dphid = vecgeom::kRadToDeg * dphi;
+    auto ephid = vecgeom::kRadToDeg * ephi;
 
     // surface at +dz
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
-                               CreateFrame(kRing, RingMask_t{tube.rmin(), -1,
-                                                       tube.rmax()*std::cos(dphi), tube.rmax()*std::sin(dphi)}),
-                               CreateLocalTransformation({0, 0, tube.z(), sphid, 0, 0}));
+    isurf = CreateLocalSurface(
+        CreateUnplacedSurface(kPlanar),
+        CreateFrame(kRing, RingMask_t{tube.rmin(), -1, tube.rmax() * std::cos(dphi), tube.rmax() * std::sin(dphi)}),
+        CreateLocalTransformation({0, 0, tube.z(), sphid, 0, 0}));
     AddSurfaceToShell(logical_id, isurf);
     // surface at -dz
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
-                               CreateFrame(kRing, RingMask_t{tube.rmin(), -1,
-                                                       tube.rmax()*std::cos(dphi), tube.rmax()*std::sin(dphi)}),
-                               CreateLocalTransformation({0, 0, -tube.z(), 0, 180, -sphid-dphid}));
+    isurf = CreateLocalSurface(
+        CreateUnplacedSurface(kPlanar),
+        CreateFrame(kRing, RingMask_t{tube.rmin(), -1, tube.rmax() * std::cos(dphi), tube.rmax() * std::sin(dphi)}),
+        CreateLocalTransformation({0, 0, -tube.z(), 0, 180, -sphid - dphid}));
     AddSurfaceToShell(logical_id, isurf);
     // inner cylinder
-    if (tube.rmin()>vecgeom::kTolerance) {
-      Real_t* rmin_ptr = new Real_t(tube.rmin());
-      isurf = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmin_ptr),
-                                 CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), std::cos(dphi), std::sin(dphi)}),
-                                 CreateLocalTransformation({0,0,0, sphid,0,0}));
+    if (tube.rmin() > vecgeom::kTolerance) {
+      Real_t *rmin_ptr = new Real_t(tube.rmin());
+      isurf            = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmin_ptr),
+                                            CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), std::cos(dphi), std::sin(dphi)}),
+                                            CreateLocalTransformation({0, 0, 0, sphid, 0, 0}), -1);
       AddSurfaceToShell(logical_id, isurf);
     }
     // outer cylinder
-    Real_t* rmax_ptr = new Real_t(tube.rmax());
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmax_ptr),
-                               CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), std::cos(dphi), std::sin(dphi)}),
-                               CreateLocalTransformation({0,0,0, sphid,0,0}));
+    Real_t *rmax_ptr = new Real_t(tube.rmax());
+    isurf            = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmax_ptr),
+                                          CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), std::cos(dphi), std::sin(dphi)}),
+                                          CreateLocalTransformation({0, 0, 0, sphid, 0, 0}));
     AddSurfaceToShell(logical_id, isurf);
 
     if (ApproxEqual(dphi, vecgeom::kTwoPi)) return;
-    //plane cap at Sphi
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
-                               CreateLocalTransformation({Rmean*std::cos(sphi), Rmean*std::sin(sphi), 0, sphid, 90, 0}));
+    // plane cap at Sphi
+    isurf = CreateLocalSurface(
+        CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
+        CreateLocalTransformation({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}));
     AddSurfaceToShell(logical_id, isurf);
-    //plane cap at Sphi+Dphi
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
-                               CreateLocalTransformation({Rmean*std::cos(ephi), Rmean*std::sin(ephi), 0, ephid, -90, 0}));
+    // plane cap at Sphi+Dphi
+    isurf = CreateLocalSurface(
+        CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
+        CreateLocalTransformation({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}));
     AddSurfaceToShell(logical_id, isurf);
   }
 
@@ -964,72 +961,73 @@ private:
     FramedSurface const &s2 = fFramedSurf[side.fSurfaces[i2]];
     if (s1.fFrame.type != s2.fFrame.type) return false;
     // Get displacement vector between the 2 frame centers and check if it has null length
-    Transformation const &t1        = fGlobalTrans[s1.fTrans];
-    Transformation const &t2        = fGlobalTrans[s2.fTrans];
-    Vector3D tdiff = t1.Translation() - t2.Translation();
+    Transformation const &t1 = fGlobalTrans[s1.fTrans];
+    Transformation const &t2 = fGlobalTrans[s2.fTrans];
+    Vector3D tdiff           = t1.Translation() - t2.Translation();
     if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
 
     // Different treatment of different frame types
     switch (s1.fFrame.type) {
     case kRangeZ:
       break;
-    case kRing:
-      {
-        auto frameData1 = fRingMasks[s1.fFrame.id];
-        auto frameData2 = fRingMasks[s2.fFrame.id];
+    case kRing: {
+      auto frameData1 = fRingMasks[s1.fFrame.id];
+      auto frameData2 = fRingMasks[s2.fFrame.id];
 
-        // Inner radius must be the same
-        if (!ApproxEqual(frameData1.rangeU[0], frameData2.rangeU[0])) return false;
-        // Unit-vectors used for checking sphi
-        auto rmin1 = t1.InverseTransformDirection(Vector3D{1, 0, 0});
-        auto rmin2 = t2.InverseTransformDirection(Vector3D{1, 0, 0});
-        // Rmax vectors used for checking dphi and outer radius 
-        auto rmax1 = t1.InverseTransformDirection(Vector3D{frameData1.rangeV[0], frameData1.rangeV[1], 0});
-        auto rmax2 = t2.InverseTransformDirection(Vector3D{frameData2.rangeV[0], frameData2.rangeV[1], 0});
+      // Inner radius must be the same
+      if (!ApproxEqual(frameData1.rangeU[0], frameData2.rangeU[0])) return false;
+      // Unit-vectors used for checking sphi
+      auto rmin1 = t1.InverseTransformDirection(Vector3D{1, 0, 0});
+      auto rmin2 = t2.InverseTransformDirection(Vector3D{1, 0, 0});
+      // Rmax vectors used for checking dphi and outer radius
+      auto rmax1 = t1.InverseTransformDirection(Vector3D{frameData1.rangeV[0], frameData1.rangeV[1], 0});
+      auto rmax2 = t2.InverseTransformDirection(Vector3D{frameData2.rangeV[0], frameData2.rangeV[1], 0});
 
-        if (ApproxEqualVector(rmin1, rmin2) && ApproxEqualVector(rmax1, rmax2))
-            return true;
-        break;
-      }
-    case kZPhi:
-      {
-        auto frameData1 = fZPhiMasks[s1.fFrame.id];
-        auto frameData2 = fZPhiMasks[s2.fFrame.id];
-
-        // They are on the same side, so there is no flipping,
-        // and z extents must be equal
-        if (!ApproxEqual(frameData1.rangeU[0], frameData2.rangeU[0]) ||
-            !ApproxEqual(frameData1.rangeU[1], frameData2.rangeU[1])) return false;
-
-        // Checking if rotations are equal
-        Vector3D vx{1, 0, 0};
-        Vector3D vphi1{frameData1.rangeV[0], frameData1.rangeV[1], 0};
-        Vector3D vphi2{frameData2.rangeV[0], frameData2.rangeV[1], 0};
-        if (ApproxEqualVector(t1.InverseTransformDirection(vx), t2.InverseTransformDirection(vx)) &&
-            ApproxEqualVector(t1.InverseTransformDirection(vphi1), t2.InverseTransformDirection(vphi2)))
-            return true;
-        break;
-      }
-    case kRangeSph:
-      //if (ApproxEqualVector(v1, v2)) return true; //Must be changed.
+      if (ApproxEqualVector(rmin1, rmin2) && ApproxEqualVector(rmax1, rmax2)) return true;
       break;
-    case kWindow:
-      {
-        auto frameData1 = fWindowMasks[s1.fFrame.id];
-        auto frameData2 = fWindowMasks[s2.fFrame.id];
+    }
+    case kZPhi: {
+      auto frameData1 = fZPhiMasks[s1.fFrame.id];
+      auto frameData2 = fZPhiMasks[s2.fFrame.id];
 
-        // Vertices
-        Vector3D v11 = t1.InverseTransformDirection(Vector3D{frameData1.rangeU[0], frameData1.rangeV[0], 0}); // 1 down left
-        Vector3D v12 = t1.InverseTransformDirection(Vector3D{frameData1.rangeU[1], frameData1.rangeV[1], 0}); // 1 up right
-        Vector3D v21 = t2.InverseTransformDirection(Vector3D{frameData2.rangeU[0], frameData2.rangeV[0], 0}); // 2 down left
-        Vector3D v22 = t2.InverseTransformDirection(Vector3D{frameData2.rangeU[1], frameData2.rangeV[1], 0}); // 2 up right
-        
-        // Diagonals
-        auto diag1 = v12-v11;
-        auto diag2 = v22-v21;
+      // They are on the same side, so there is no flipping,
+      // and z extents must be equal
+      if (!ApproxEqual(frameData1.rangeU[0], frameData2.rangeU[0]) ||
+          !ApproxEqual(frameData1.rangeU[1], frameData2.rangeU[1]))
+        return false;
 
-        return ApproxEqualVector(diag1.Abs(), diag2.Abs());
-      }
+      // Checking if rotations are equal
+      Vector3D vx{1, 0, 0};
+      Vector3D vphi1{frameData1.rangeV[0], frameData1.rangeV[1], 0};
+      Vector3D vphi2{frameData2.rangeV[0], frameData2.rangeV[1], 0};
+      if (ApproxEqualVector(t1.InverseTransformDirection(vx), t2.InverseTransformDirection(vx)) &&
+          ApproxEqualVector(t1.InverseTransformDirection(vphi1), t2.InverseTransformDirection(vphi2)))
+        return true;
+      break;
+    }
+    case kRangeSph:
+      // if (ApproxEqualVector(v1, v2)) return true; //Must be changed.
+      break;
+    case kWindow: {
+      auto frameData1 = fWindowMasks[s1.fFrame.id];
+      auto frameData2 = fWindowMasks[s2.fFrame.id];
+
+      // Vertices
+      Vector3D v11 =
+          t1.InverseTransformDirection(Vector3D{frameData1.rangeU[0], frameData1.rangeV[0], 0}); // 1 down left
+      Vector3D v12 =
+          t1.InverseTransformDirection(Vector3D{frameData1.rangeU[1], frameData1.rangeV[1], 0}); // 1 up right
+      Vector3D v21 =
+          t2.InverseTransformDirection(Vector3D{frameData2.rangeU[0], frameData2.rangeV[0], 0}); // 2 down left
+      Vector3D v22 =
+          t2.InverseTransformDirection(Vector3D{frameData2.rangeU[1], frameData2.rangeV[1], 0}); // 2 up right
+
+      // Diagonals
+      auto diag1 = v12 - v11;
+      auto diag2 = v22 - v21;
+
+      return ApproxEqualVector(diag1.Abs(), diag2.Abs());
+    }
     case kTriangle:
       // to be implemented
       break;
@@ -1039,18 +1037,19 @@ private:
 
   // A function to update all mask containers. Needs to be called
   // when updating masks after creating both frames and extents.
-  void UpdateMaskData(){
-    fSurfData->fNwindows = fWindowMasks.size();
+  void UpdateMaskData()
+  {
+    fSurfData->fNwindows    = fWindowMasks.size();
     fSurfData->fWindowMasks = new WindowMask_t[fWindowMasks.size()];
     for (size_t i = 0; i < fWindowMasks.size(); ++i)
       fSurfData->fWindowMasks[i] = fWindowMasks[i];
 
-    fSurfData->fNrings = fRingMasks.size();
+    fSurfData->fNrings    = fRingMasks.size();
     fSurfData->fRingMasks = new RingMask_t[fRingMasks.size()];
     for (size_t i = 0; i < fRingMasks.size(); ++i)
       fSurfData->fRingMasks[i] = fRingMasks[i];
-    
-    fSurfData->fNzphis = fZPhiMasks.size();
+
+    fSurfData->fNzphis    = fZPhiMasks.size();
     fSurfData->fZPhiMasks = new ZPhiMask_t[fZPhiMasks.size()];
     for (size_t i = 0; i < fZPhiMasks.size(); ++i)
       fSurfData->fZPhiMasks[i] = fZPhiMasks[i];
@@ -1110,7 +1109,7 @@ private:
       fSurfData->fCommonSurfaces[i].fRightSide.fSurfaces = current_side;
       current_side += fCommonSurfaces[i].fRightSide.fNsurf;
       // Copy parent surface indices
-      fSurfData->fCommonSurfaces[i].fLeftSide.fParentSurf = fCommonSurfaces[i].fLeftSide.fParentSurf;
+      fSurfData->fCommonSurfaces[i].fLeftSide.fParentSurf  = fCommonSurfaces[i].fLeftSide.fParentSurf;
       fSurfData->fCommonSurfaces[i].fRightSide.fParentSurf = fCommonSurfaces[i].fRightSide.fParentSurf;
     }
 
@@ -1123,15 +1122,15 @@ private:
     int *current_candidates = fSurfData->fCandList;
     fSurfData->fCandidates  = new Candidates[fCandidates.size()];
     for (size_t i = 0; i < fCandidates.size(); ++i) {
-      auto ncand = fCandidates[i].size();
+      auto ncand                       = fCandidates[i].size();
       fSurfData->fCandidates[i].fNcand = ncand;
       for (size_t icand = 0; icand < ncand; icand++) {
-        current_candidates[icand] = (fCandidates[i])[icand];
+        current_candidates[icand]         = (fCandidates[i])[icand];
         current_candidates[ncand + icand] = (fFrameInd[i])[icand];
       }
       fSurfData->fCandidates[i].fCandidates = current_candidates;
       current_candidates += fCandidates[i].size();
-      fSurfData->fCandidates[i].fFrameInd   = current_candidates;
+      fSurfData->fCandidates[i].fFrameInd = current_candidates;
       current_candidates += fCandidates[i].size();
     }
   }
