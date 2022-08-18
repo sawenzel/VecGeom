@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
     break;
   case 2:
     std::cout << "Creating nested tube..." << std::endl;
-    CreateTwoNestedTubes(worldRadius, worldZ, 1, worldRadius / 2, worldZ / 2, 0, vecgeom::kPi, 1, worldRadius / 3,
-                         worldZ / 3, sphi, dphi);
+    CreateTwoNestedTubes(worldRadius, worldZ, 1, worldRadius / 2, worldZ / 2, 0, vecgeom::kTwoPi, 1, worldRadius / 4,
+                         worldZ / 4, sphi, dphi);
     break;
   case 3:
     std::cout << "Creating identical tubes..." << std::endl;
@@ -126,7 +126,10 @@ int main(int argc, char *argv[])
     ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);
     break;
   case 1:
-    ShootOneParticle(worldRadius, worldZ, 5, 5, 0, 0, 0, 1, BrepHelper::Instance().GetSurfData());
+    ShootOneParticle(worldRadius, worldZ,
+                     1, -10, 0,
+                     0, 1, 0,
+                     BrepHelper::Instance().GetSurfData());
     break;
   case 2:
     ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);

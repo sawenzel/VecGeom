@@ -274,50 +274,46 @@ public:
         break;
       }
       case kRing: {
-        // TODO: Currently sets bounding box with Rmax, rmin needs to be checked also.
+        // There is probably a more clever way to do this.
         RingMask_t extLocal;
         framed_surf.fFrame.GetMask(extLocal, *fSurfData);
-        auto Rmax  = extLocal.rangeR[1];
+
+        auto Rmax = extLocal.rangeR[1];
+        // The axis vector has to be between Rmin and Rmax and cannot be unit vector anymore
         auto Rmean = (extLocal.rangeR[0] + Rmax) * 0.5;
-
-        // Rmean is to ensure that the axis is within the limits of the ring for the Inside function to work.
         Vector3D<Real_t> axis{Rmean, 0, 0};
-        // If axis is within our range, its limit is Rmax:
-        if (extLocal.Inside(axis)) xmax = Rmax;
-        // Otherwise, its the maximal projection of Rmax onto it:
-        else
-          xmax = vecgeom::Max(Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0}),
-                              Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0})) /
-                 Rmean;
-        axis.Set(0, Rmean, 0);
-        if (extLocal.Inside(axis))
-          ymax = Rmax;
-        else
-          ymax = vecgeom::Max(Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0}),
-                              Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0})) /
-                 Rmean;
-        axis.Set(-Rmean, 0, 0);
-        if (extLocal.Inside(axis))
-          xmin = -Rmax;
-        else
-          xmin = -vecgeom::Max(Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0}),
-                               Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0})) /
-                 Rmean;
-        axis.Set(0, -Rmean, 0);
-        if (extLocal.Inside(axis))
-          ymin = -Rmax;
-        else
-          ymin = -vecgeom::Max(Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0}),
-                               Rmax * axis.Dot(Vector3D<Real_t>{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0})) /
-                 Rmean;
+        if (!extLocal.isFullCirc) {
+          // Projections of points that delimit vertices of the phi-cut ring
+          Real_t x1, x2, x3, x4, y1, y2, y3, y4;
 
-        // Further cutting unacceptable bounds. I should make this work with rmin to further cut the extent,
-        // but am currently weary of working on this, so will do it tomorrow. -DC
-        xmax = vecgeom::Max(xmax, Real_t{0});
-        ymax = vecgeom::Max(ymax, Real_t{0});
-        xmin = vecgeom::Min(xmin, Real_t{0});
-        ymin = vecgeom::Min(ymin, Real_t{0});
-        break;
+          auto Rmin = extLocal.rangeR[0];
+          Vector3D<Real_t> vecSPhi{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0};
+          Vector3D<Real_t> vecEPhi{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0};
+
+          x1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+          x2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+          x3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+          x4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+          axis.Set(0, Rmean, 0);
+          y1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+          y2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+          y3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+          y4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+
+          xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
+          ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
+          xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
+          ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
+        }
+        // If the axes lie within the circle
+        axis.Set(Rmean, 0, 0);
+        if (ext.Inside(axis)) xmax = Rmax;
+        axis.Set(0, Rmean, 0);
+        if (ext.Inside(axis)) ymax = Rmax;
+        axis.Set(-Rmean, 0, 0);
+        if (ext.Inside(axis)) xmin = -Rmax;
+        axis.Set(0, -Rmean, 0);
+        if (ext.Inside(axis)) ymin = -Rmax;
       }
       default:
         break;
@@ -366,7 +362,7 @@ public:
       // If we already had a mask that is full circle
       if (sideext.isFullCirc) continue;
 
-      // If current frame is wider than extent, its vectors will lie outside of it.
+      // If current frame is wider than extent:
       local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
           Vector3D<Real_t>{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0});
       if (!sideext.Inside(local)) sideext.vecSPhi.Set(extLocal.vecSPhi[0], extLocal.vecSPhi[1]);
@@ -987,7 +983,7 @@ private:
       auto mask1 = fRingMasks[s1.fFrame.id];
       auto mask2 = fRingMasks[s2.fFrame.id];
 
-      // Inner and outer radii must be the same
+      // Inner radius must be the same
       if (!ApproxEqual(mask1.rangeR[0], mask2.rangeR[0]) || !ApproxEqual(mask1.rangeR[1], mask2.rangeR[1]) ||
           mask1.isFullCirc != mask2.isFullCirc)
         return false;
@@ -995,10 +991,10 @@ private:
       // Unit-vectors used for checking sphi
       auto phimin1 = t1.InverseTransformDirection(Vector3D{mask1.vecSPhi[0], mask1.vecSPhi[1], 0});
       auto phimin2 = t2.InverseTransformDirection(Vector3D{mask2.vecSPhi[0], mask2.vecSPhi[1], 0});
-      // Rmax vectors used for checking ephi
+      // Rmax vectors used for checking dphi and outer radius
       auto phimax1 = t1.InverseTransformDirection(Vector3D{mask1.vecEPhi[0], mask1.vecEPhi[1], 0});
       auto phimax2 = t2.InverseTransformDirection(Vector3D{mask2.vecEPhi[0], mask2.vecEPhi[1], 0});
-      // Phi limits must coincide.
+
       if (ApproxEqualVector(phimin1, phimin2) && ApproxEqualVector(phimax1, phimax2)) return true;
       break;
     }
@@ -1014,10 +1010,10 @@ private:
       // Unit-vectors used for checking sphi
       auto phimin1 = t1.InverseTransformDirection(Vector3D{mask1.vecSPhi[0], mask1.vecSPhi[1], 0});
       auto phimin2 = t2.InverseTransformDirection(Vector3D{mask2.vecSPhi[0], mask2.vecSPhi[1], 0});
-      // Rmax vectors used for checking ephi
+      // Rmax vectors used for checking dphi and outer radius
       auto phimax1 = t1.InverseTransformDirection(Vector3D{mask1.vecEPhi[0], mask1.vecEPhi[1], 0});
       auto phimax2 = t2.InverseTransformDirection(Vector3D{mask2.vecEPhi[0], mask2.vecEPhi[1], 0});
-      // Phi limits must coincide.
+
       if (ApproxEqualVector(phimin1, phimin2) && ApproxEqualVector(phimax1, phimax2)) return true;
       break;
     }
