@@ -253,7 +253,7 @@ public:
 
     // Setting initial mask for an extent.
     constexpr Real_t kBig = 1.e30;
-    WindowMask_t ext{kBig, -kBig, kBig, -kBig};
+    WindowMask_t ext{-kBig, kBig, -kBig, kBig};
 
     // loop through all extents on a side:
     for (int i = 0; i < side.fNsurf; ++i) {
@@ -261,7 +261,7 @@ public:
       auto framed_surf     = fSurfData->fFramedSurf[side.fSurfaces[i]];
       FrameType frame_type = framed_surf.fFrame.type;
       Vector3D<Real_t> local;
-      Real_t xmax, ymax, ymin, xmin;
+      Real_t xmax{0}, ymax{0}, ymin{0}, xmin{0};
       // Calculating the limits
       switch (frame_type) {
       case kWindow: {
