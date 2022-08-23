@@ -19,7 +19,7 @@ enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSeco
 ///> kRangeSph    <- theta and phi range on a sphere
 ///> kWindow      <- rectangular range in xy-plane
 ///> kTriangle    <- triangular range in xy-plane
-enum FrameType { kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle };
+enum FrameType { kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
 
 ///< VecGeom type aliases
 template <typename Real_t>
@@ -181,6 +181,12 @@ struct Frame {
     surfdata.fTriangleMasks[id].GetMask(mask);
   }
 
+  template <typename Real_t>
+  void GetMask(QuadrilateralMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
+  {
+    surfdata.fQuadMasks[id].GetMask(mask);
+  }
+
   // A function to check if local point is within the Frame's mask.
   template <typename Real_t>
   bool Inside(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
@@ -195,6 +201,8 @@ struct Frame {
     // TODO: Support these
     case kTriangle:
       return surfdata.GetTriangleMask(id).Inside(local);
+    case kQuadrilateral:
+      return surfdata.GetQuadMask(id).Inside(local);
     case kRangeZ:
       /*return (local[2] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
               local[2] < vecgeom::MakePlusTolerant<true>(u[1]));*/
@@ -398,13 +406,14 @@ struct Scene {
 template <typename Real_t>
 struct SurfData {
 
-  using CylData_t      = CylData<Real_t>;
-  using ConeData_t     = ConeData<Real_t>;
-  using SphData_t      = SphData<Real_t>;
-  using WindowMask_t   = WindowMask<Real_t>;
-  using RingMask_t     = RingMask<Real_t>;
-  using ZPhiMask_t     = ZPhiMask<Real_t>;
-  using TriangleMask_t = TriangleMask<Real_t>;
+  using CylData_t           = CylData<Real_t>;
+  using ConeData_t          = ConeData<Real_t>;
+  using SphData_t           = SphData<Real_t>;
+  using WindowMask_t        = WindowMask<Real_t>;
+  using RingMask_t          = RingMask<Real_t>;
+  using ZPhiMask_t          = ZPhiMask<Real_t>;
+  using TriangleMask_t      = TriangleMask<Real_t>;
+  using QuadrilateralMask_t = QuadrilateralMask<Real_t>;
 
   int fNglobalTrans{0};
   int fNglobalSurf{0};
@@ -416,6 +425,7 @@ struct SurfData {
   int fNrings{0};
   int fNzphis{0};
   int fNtriangs{0};
+  int fNquads{0};
 
   /// Transformations. A portal transformation is a tuple global + local
   Transformation *fGlobalTrans{nullptr}; ///< Touchable global transformations
@@ -424,15 +434,16 @@ struct SurfData {
   CylData_t *fCylSphData{nullptr}; ///< Cyl and sphere data
   ConeData_t *fConeData{nullptr};  ///< Cone data
 
-  FramedSurface *fFramedSurf{nullptr};     ///< global surfaces
-  WindowMask_t *fWindowMasks{nullptr};     ///< rectangular masks
-  RingMask_t *fRingMasks{nullptr};         ///< ring masks
-  ZPhiMask_t *fZPhiMasks{nullptr};         ///< cylindrical masks
-  TriangleMask_t *fTriangleMasks{nullptr}; ///< triangular masks
-  CommonSurface *fCommonSurfaces{nullptr}; ///< common surfaces
-  Candidates *fCandidates;                 ///< candidate surfaces per navigation state
-  int *fSides{nullptr};                    ///< side surface indices
-  int *fCandList{nullptr};                 ///< global list of candidate indices
+  FramedSurface *fFramedSurf{nullptr};      ///< global surfaces
+  WindowMask_t *fWindowMasks{nullptr};      ///< rectangular masks
+  RingMask_t *fRingMasks{nullptr};          ///< ring masks
+  ZPhiMask_t *fZPhiMasks{nullptr};          ///< cylindrical masks
+  TriangleMask_t *fTriangleMasks{nullptr};  ///< triangular masks
+  QuadrilateralMask_t *fQuadMasks{nullptr}; ///< quadrilateral masks
+  CommonSurface *fCommonSurfaces{nullptr};  ///< common surfaces
+  Candidates *fCandidates;                  ///< candidate surfaces per navigation state
+  int *fSides{nullptr};                     ///< side surface indices
+  int *fCandList{nullptr};                  ///< global list of candidate indices
 
   SurfData() = default;
 
@@ -444,6 +455,7 @@ struct SurfData {
   RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
   ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
   TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
+  QuadrilateralMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
   // Accessors by common surface id
   UnplacedSurface const GetUnplaced(int isurf) const

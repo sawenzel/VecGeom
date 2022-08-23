@@ -1,6 +1,7 @@
 
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include "test/benchmark/ArgParser.h"
@@ -35,6 +36,7 @@ bool ValidateNavigation(int, int, vgbrep::SurfData<vecgeom::Precision> const &, 
 bool ShootOneParticle(double, double, double, double, double, double, double, double,
                       vgbrep::SurfData<vecgeom::Precision> const &);
 void TestPerformance(double, int, int, vgbrep::SurfData<vecgeom::Precision> const &);
+void TestAndSavePerformance(double, int, int, vgbrep::SurfData<vecgeom::Precision> const &);
 
 int main(int argc, char *argv[])
 {
@@ -134,6 +136,9 @@ int main(int argc, char *argv[])
   case 2:
     ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);
     TestPerformance(worldRadius, nbench, layers, BrepHelper::Instance().GetSurfData());
+    break;
+  case 3:
+    TestAndSavePerformance(worldRadius, nbench, layers, BrepHelper::Instance().GetSurfData());
     break;
   default:
     std::cout << "Test " << test << " does not exist." << std::endl;
@@ -457,4 +462,65 @@ void TestPerformance(double worldRadius, int npoints, int nbLayers,
   Precision time_surf = timer1.Stop();
 
   printf("Time for %d points: NewSimpleNavigator = %f [s]  vgbrep::protonav = %f\n", npoints, time_prim, time_surf);
+}
+
+
+
+void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
+                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+{
+  const double CalorSizeR        = worldRadius;
+  const double GapThickness      = 2.3;
+  const double AbsorberThickness = 5.7;
+
+  const double LayerThickness = GapThickness + AbsorberThickness;
+  const double CalorThickness = nbLayers * LayerThickness;
+
+  SOA3D<Precision> points(npoints);
+  SOA3D<Precision> dirs(npoints);
+
+  Vector3D<Precision> samplingVolume(0.5 * CalorSizeR, 0.5 * CalorSizeR, 0.5 * CalorThickness);
+  vecgeom::volumeUtilities::FillRandomPoints(samplingVolume, points);
+  vecgeom::volumeUtilities::FillRandomDirections(dirs);
+
+  // now setup all the navigation states
+  int ndeep = GeoManager::Instance().getMaxDepth();
+  NavStatePool origStates(npoints, ndeep);
+  NavStateIndex out_state;
+  vecgeom::Precision distance = 0;
+  auto *nav                   = vecgeom::NewSimpleNavigator<>::Instance();
+
+  // Locate all input points, without timing this operation
+  for (int i = 0; i < npoints; ++i) {
+    Vector3D<Precision> const &pos = points[i];
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
+  }
+
+  // Benchamrk primitive-based NewSimpleNavigator
+  Stopwatch timer;
+  timer.Start();
+  for (int i = 0; i < npoints; ++i) {
+    Vector3D<Precision> const &pos = points[i];
+    Vector3D<Precision> const &dir = dirs[i];
+    nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], out_state, vecgeom::kInfLength, distance);
+  }
+  Precision time_prim = timer.Stop();
+
+  Stopwatch timer1;
+  timer1.Start();
+  for (int i = 0; i < npoints; ++i) {
+    Vector3D<Precision> const &pos = points[i];
+    Vector3D<Precision> const &dir = dirs[i];
+    int exit_surf                  = 0;
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+  }
+  Precision time_surf = timer1.Stop();
+
+  printf("Time for %d points: NewSimpleNavigator = %f [s]  vgbrep::protonav = %f\n", npoints, time_prim, time_surf);
+
+  std::ofstream file_out;
+  file_out.open("performance_measuring.txt", std::ios_base::app);
+  file_out << nbLayers << " " << npoints << " " << time_prim <<" " << time_surf << std::endl;
+  file_out.close();
+  std::cout << "PRINTED TO FILE." << std::endl;
 }

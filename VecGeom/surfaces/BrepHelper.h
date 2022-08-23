@@ -9,6 +9,7 @@
 #include "VecGeom/base/Math.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/volumes/Box.h"
+#include "VecGeom/volumes/Trd.h"
 #include "VecGeom/volumes/Tube.h"
 #include "VecGeom/management/GeoManager.h"
 
@@ -71,6 +72,7 @@ class BrepHelper {
   using WindowMask_t = WindowMask<Real_t>;
   using RingMask_t   = RingMask<Real_t>;
   using ZPhiMask_t   = ZPhiMask<Real_t>;
+  using QuadMask_t   = QuadrilateralMask<Real_t>;
   //  using Vector         = vecgeom::Vector3D<Real_t>;
 
 private:
@@ -81,6 +83,7 @@ private:
   std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
   std::vector<RingMask_t> fRingMasks;         ///< ring masks
   std::vector<ZPhiMask_t> fZPhiMasks;         ///< cylindrical masks
+  std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
   std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
   std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
   std::vector<Transformation> fLocalTrans;    ///< local transformations
@@ -113,6 +116,8 @@ public:
     std::vector<RingMask_t>().swap(fRingMasks);
     fZPhiMasks.clear();
     std::vector<ZPhiMask_t>().swap(fZPhiMasks);
+    fQuadMasks.clear();
+    std::vector<QuadMask_t>().swap(fQuadMasks);
     fCylSphData.clear();
     std::vector<CylData_t>().swap(fCylSphData);
     fConeData.clear();
@@ -253,7 +258,7 @@ public:
 
     // Setting initial mask for an extent.
     constexpr Real_t kBig = 1.e30;
-    WindowMask_t ext{-kBig, kBig, -kBig, kBig};
+    WindowMask_t ext{kBig, -kBig, kBig, -kBig};
 
     // loop through all extents on a side:
     for (int i = 0; i < side.fNsurf; ++i) {
@@ -314,6 +319,14 @@ public:
         if (ext.Inside(axis)) xmin = -Rmax;
         axis.Set(0, -Rmean, 0);
         if (ext.Inside(axis)) ymin = -Rmax;
+      }
+      case kQuadrilateral: {
+        QuadMask_t extLocal;
+        framed_surf.fFrame.GetMask(extLocal, *fSurfData);
+        xmax = extLocal.xmax;
+        ymax = extLocal.ymax;
+        xmin = extLocal.xmin;
+        ymin = extLocal.ymin;
       }
       default:
         break;
@@ -519,6 +532,11 @@ public:
       vecgeom::UnplacedTube const *tube = dynamic_cast<vecgeom::UnplacedTube const *>(solid);
       if (tube) {
         CreateTubeSurfaces(*tube, volume->id());
+        continue;
+      }
+      vecgeom::UnplacedTrd const *trd = dynamic_cast<vecgeom::UnplacedTrd const*>(solid);
+      if (trd) {
+        CreateTrdSurfaces(*trd, volume->id());
         continue;
       }
       std::cout << "testEm3: solid type not supported for volume: " << volume->GetName() << "\n";
@@ -778,6 +796,13 @@ private:
     return Frame(type, id);
   }
 
+  Frame CreateFrame(FrameType type, QuadMask_t const &mask)
+  {
+    int id = fQuadMasks.size();
+    fQuadMasks.push_back(mask);
+    return Frame(type, id);
+  }
+
   int CreateLocalTransformation(Transformation const &trans)
   {
     int id = fLocalTrans.size();
@@ -960,6 +985,59 @@ private:
     AddSurfaceToShell(logical_id, isurf);
   }
 
+  void CreateTrdSurfaces(vecgeom::UnplacedTrd const & trd, int logical_id)
+  {
+    auto dx = trd.dx1()-trd.dx2();
+    auto dy = trd.dy1()-trd.dy2();
+    auto dzx = vecgeom::Sqrt(4*trd.dz()*trd.dz() + dy*dy) * 0.5;
+    auto dzy = vecgeom::Sqrt(4*trd.dz()*trd.dz() + dx*dx) * 0.5;
+
+    auto phix = ApproxEqual(dy, 0.) ? 90 : vecgeom::ATan(2*trd.dz()/dy) * vecgeom::kRadToDeg;
+    auto phiy = ApproxEqual(dx, 0.) ? 90 : vecgeom::ATan(2*trd.dz()/dx) * vecgeom::kRadToDeg;
+    if (phix < 0) phix = 180 + phix;
+    if (phiy < 0) phiy = 180 + phiy;
+
+    auto movey = (trd.dy1() + trd.dy2()) * 0.5;
+    auto movex = (trd.dx1() + trd.dx2()) * 0.5;
+    
+    // Bottom face
+    int isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), trd.dy1()}),
+                                   CreateLocalTransformation({0,0,-trd.dz(), 0,180,0}));
+    AddSurfaceToShell(logical_id, isurf);
+
+    // Top face
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx2(), trd.dy2()}),
+                               CreateLocalTransformation({0,0,trd.dz()}));
+    AddSurfaceToShell(logical_id, isurf);
+
+    // Sides parallel to x axis
+    // At -dy
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
+                               CreateFrame(kQuadrilateral, QuadMask_t{-trd.dx1(),-dzx, trd.dx1(),-dzx, trd.dx2(),dzx, -trd.dx2(),dzx}),
+                               CreateLocalTransformation({0, -movey, 0, 0, phix, 0}));
+    AddSurfaceToShell(logical_id, isurf);
+
+    // At +dy
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
+                               CreateFrame(kQuadrilateral, QuadMask_t{-trd.dx1(),-dzx, trd.dx1(),-dzx, trd.dx2(),dzx, -trd.dx2(),dzx}),
+                               CreateLocalTransformation({0, movey, 0, 180, phix, 0}));
+    AddSurfaceToShell(logical_id, isurf);
+
+    // Sides parallel to y axis
+    // At -dx
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
+                               CreateFrame(kQuadrilateral, QuadMask_t{-trd.dy1(),-dzy, trd.dy1(),-dzy, trd.dy2(),dzy, -trd.dy2(),dzy}),
+                               CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}));
+    AddSurfaceToShell(logical_id, isurf);
+
+    // At +dx
+    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
+                               CreateFrame(kQuadrilateral, QuadMask_t{-trd.dy1(),-dzy, trd.dy1(),-dzy, trd.dy2(),dzy, -trd.dy2(),dzy}),
+                               CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}));
+    AddSurfaceToShell(logical_id, isurf);                             
+
+  }
+
   ///< This function evaluates if the frames of two placed surfaces on the same side
   ///< of a common surface are matching
   bool EqualFrames(Side const &side, int i1, int i2)
@@ -973,6 +1051,7 @@ private:
     Transformation const &t1 = fGlobalTrans[s1.fTrans];
     Transformation const &t2 = fGlobalTrans[s2.fTrans];
     Vector3D tdiff           = t1.Translation() - t2.Translation();
+    // TODO: Check if this has to always hold:
     if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
 
     // Different treatment of different frame types
@@ -1043,6 +1122,32 @@ private:
     case kTriangle:
       // to be implemented
       break;
+    case kQuadrilateral: {
+      auto mask1 = fQuadMasks[s1.fFrame.id];
+      auto mask2 = fQuadMasks[s2.fFrame.id];
+
+      Vector3D v11 =
+          t1.InverseTransformDirection(Vector3D{mask1.p1[0], mask1.p1[1], 0}); // 1 down left
+      Vector3D v21 =
+          t2.InverseTransformDirection(Vector3D{mask2.p1[0], mask2.p1[1], 0}); // 2 down left
+      Vector3D v12 =
+          t1.InverseTransformDirection(Vector3D{mask1.p2[0], mask1.p2[1], 0}); // 1 down right
+      Vector3D v22 =
+          t2.InverseTransformDirection(Vector3D{mask2.p2[0], mask2.p2[1], 0}); // 2 down right
+      Vector3D v13 =
+        t1.InverseTransformDirection(Vector3D{mask1.p3[0], mask1.p3[1], 0}); // 1 up right
+      Vector3D v23 =
+        t2.InverseTransformDirection(Vector3D{mask2.p3[0], mask2.p3[1], 0}); // 2 up right
+      Vector3D v14 =
+        t1.InverseTransformDirection(Vector3D{mask1.p4[0], mask1.p4[1], 0}); // 1 up left
+      Vector3D v24 =
+        t2.InverseTransformDirection(Vector3D{mask2.p4[0], mask2.p4[1], 0}); // 2 up left
+
+      return (ApproxEqualVector(v11, v21) && ApproxEqualVector(v12, v22) &&
+              ApproxEqualVector(v13, v23) && ApproxEqualVector(v14, v24));
+  
+      break;
+    }
     };
     return false;
   }
@@ -1065,6 +1170,11 @@ private:
     fSurfData->fZPhiMasks = new ZPhiMask_t[fZPhiMasks.size()];
     for (size_t i = 0; i < fZPhiMasks.size(); ++i)
       fSurfData->fZPhiMasks[i] = fZPhiMasks[i];
+
+    fSurfData->fNquads = fQuadMasks.size();
+    fSurfData->fQuadMasks = new QuadMask_t[fQuadMasks.size()];
+    for (size_t i = 0; i < fQuadMasks.size(); ++i)
+      fSurfData->fQuadMasks[i] = fQuadMasks[i];
   }
 
   ///< The method updates the SurfData storage
