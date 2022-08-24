@@ -433,8 +433,12 @@ public:
   // Perhaps each mask should have its own print() method that returns a string.
   void PrintCommonSurface(int common_id)
   {
+    auto round0 = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
+    vecgeom::Vector3D<Real_t> normal;
+    const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
     auto const &surf = fSurfData->fCommonSurfaces[common_id];
-    printf("== common surface %d: type: %d, default state: ", common_id, surf.fType);
+    fSurfData->fGlobalTrans[surf.fTrans].InverseTransformDirection(lnorm, normal);
+    printf("\n== common surface %d: type: %d, default state: ", common_id, surf.fType);
     vecgeom::NavStateIndex default_state(surf.fDefaultState);
     default_state.Print();
     printf(" transformation %d: ", surf.fTrans);
@@ -442,16 +446,17 @@ public:
     switch (surf.fType) {
     case kPlanar: {
       WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
-      printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fLeftSide.fNsurf,
-             surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1], extL.rangeV[0],
-             extL.rangeV[1]);
+      printf(
+          "\n   \x1B[34mleft:\x1B[0m %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, %g, %g)\n",
+          surf.fLeftSide.fNsurf, surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1],
+          extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
       break;
     }
     case kCylindrical: {
       ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-      printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
-             surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1], extL.vecSPhi[0],
-             extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
+      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
+             surf.fLeftSide.fNsurf, surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeZ[0],
+             extL.rangeZ[1], extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
       break;
     }
     case kConical:
@@ -466,23 +471,24 @@ public:
       auto const &placed = fSurfData->fFramedSurf[idglob];
       printf("    surf %d: trans: ", idglob);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
-      printf(", ");
+      printf("\n    ");
       vecgeom::NavStateIndex state(placed.fState);
       state.Print();
     }
     if (surf.fRightSide.fNsurf > 0) switch (surf.fType) {
       case kPlanar: {
         WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
-        printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
-               surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeU[0], extR.rangeU[1], extR.rangeV[0],
-               extR.rangeV[1]);
+        printf(
+            "   \x1B[31mright:\x1B[0m %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, %g, %g)\n",
+            surf.fRightSide.fNsurf, surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeU[0],
+            extR.rangeU[1], extR.rangeV[0], extR.rangeV[1], round0(-normal[0]), round0(-normal[1]), round0(-normal[2]));
         break;
       }
       case kCylindrical: {
         ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
-        printf("\n   left: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n", surf.fRightSide.fNsurf,
-               surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeZ[0], extR.rangeZ[1], extR.vecSPhi[0],
-               extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
+        printf("   \x1B[31mright:\x1B[0m %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
+               surf.fRightSide.fNsurf, surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeZ[0],
+               extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
         break;
       }
       case kConical:
@@ -493,13 +499,14 @@ public:
         std::cout << "Case not implemented. " << std::endl;
       }
     else
-      printf("   right: 0 surfaces\n");
+      printf("   \x1B[31mright:\x1B[0m 0 surfaces\n");
 
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob         = surf.fRightSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
       printf("    surf %d: trans: ", idglob);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
+      printf("\n    ");
       vecgeom::NavStateIndex state(placed.fState);
       state.Print();
     }
@@ -570,7 +577,7 @@ public:
         fGlobalTrans.push_back(global);
         // Create the global surface
         int id_glob = fFramedSurf.size();
-        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fFlip, state.GetNavIndex()});
+        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, state.GetNavIndex()});
         CreateCommonSurface(id_glob);
       }
 
@@ -751,24 +758,24 @@ private:
     return id;
   }
 
-  UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr)
+  UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, bool flip = false)
   {
     switch (type) {
     case kPlanar:
-      return UnplacedSurface(type, -1);
+      return UnplacedSurface(type);
     case kCylindrical:
     case kSpherical:
-      fCylSphData.push_back({data[0]});
+      fCylSphData.push_back({data[0], flip});
       return UnplacedSurface(type, fCylSphData.size() - 1);
     case kConical:
-      fConeData.push_back({data[0], data[1]});
+      fConeData.push_back({data[0], data[1], flip});
       return UnplacedSurface(type, fConeData.size() - 1);
     case kTorus:
     case kGenSecondOrder:
       std::cout << "kTorus, kGenSecondOrder unhandled\n";
-      return UnplacedSurface(type, -1);
+      return UnplacedSurface(type);
     };
-    return UnplacedSurface(type, -1);
+    return UnplacedSurface(type);
   }
 
   // There could be a more elegant solution, with a function that takes a
@@ -810,10 +817,10 @@ private:
     return id;
   }
 
-  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, int flip = 1)
+  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans)
   {
     int id = fLocalSurfaces.size();
-    fLocalSurfaces.push_back({unplaced, frame, trans, flip});
+    fLocalSurfaces.push_back({unplaced, frame, trans});
     return id;
   }
 
@@ -831,6 +838,14 @@ private:
       // Check if the 2 surfaces are parallel
       Transformation const &t1 = fGlobalTrans[s1.fTrans];
       Transformation const &t2 = fGlobalTrans[s2.fTrans];
+      // Check if the rotations are matching. The z axis inverse-transformed
+      // with the two rotations should end up as aligned vectors. This is
+      // true for planes (Z is the normal) but also for tubes/cones where
+      // Z is the axis of symmetry
+      vecgeom::Vector3D<double> const zaxis(0, 0, 1);
+      auto z1 = t1.InverseTransformDirection(zaxis);
+      auto z2 = t2.InverseTransformDirection(zaxis);
+      if (!ApproxEqualVector(z1.Cross(z2), {0, 0, 0})) return false;
       // Calculate normalized connection vector between the two transformations
       // Use double precision explicitly
       vecgeom::Vector3D<double> tdiff = t1.Translation() - t2.Translation();
@@ -838,6 +853,7 @@ private:
       vecgeom::Vector3D<double> ldir;
       switch (s1.fSurface.type) {
       case kPlanar:
+        flip = z1.Dot(z2) < 0;
         if (same_tr) break;
         // For planes to match, the connecting vector must be along the planes
         tdiff.Normalize();
@@ -845,13 +861,15 @@ private:
         if (std::abs(ldir[2]) > vecgeom::kTolerance) return false;
         break;
       case kCylindrical:
-        if (std::abs(fCylSphData[s1.fSurface.id].radius - fCylSphData[s2.fSurface.id].radius) > vecgeom::kTolerance)
+        if (std::abs(fCylSphData[s1.fSurface.id].Radius() - fCylSphData[s2.fSurface.id].Radius()) > vecgeom::kTolerance)
           return false;
         if (same_tr) break;
         tdiff.Normalize();
         t1.TransformDirection(tdiff, ldir);
         // For connected cylinders, the connecting vector must be along the Z axis
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
+        // Check if the cylynders are flipped with respect to each other
+        flip = fCylSphData[s1.fSurface.id].IsFlipped() ^ fCylSphData[s2.fSurface.id].IsFlipped();
         break;
       case kConical:
       case kSpherical:
@@ -861,17 +879,6 @@ private:
         printf("CreateCommonSurface: case not implemented\n");
         return false;
       };
-
-      // Now check if the rotations are matching. The z axis transformed
-      // with the two rotations should end up in aligned vectors. This is
-      // true for planes (Z is the normal) but also for tubes/cones where
-      // Z is the axis of symmetry
-      vecgeom::Vector3D<double> zaxis(0, 0, 1);
-      auto z1 = t1.InverseTransformDirection(zaxis);
-      auto z2 = t2.InverseTransformDirection(zaxis);
-      if (!ApproxEqualVector(z1.Cross(z2), {0, 0, 0})) return false;
-
-      flip = z1.Dot(z2) < 0;
       return true;
     };
 
@@ -942,6 +949,7 @@ private:
     bool fullCirc = ApproxEqual(dphi, vecgeom::kTwoPi);
 
     int isurf;
+    Real_t surfdata[2];
 
     // We need angles in degrees for transformations
     auto sphid = vecgeom::kRadToDeg * sphi;
@@ -959,17 +967,17 @@ private:
     AddSurfaceToShell(logical_id, isurf);
     // inner cylinder
     if (tube.rmin() > vecgeom::kTolerance) {
-      Real_t *rmin_ptr = new Real_t(tube.rmin());
-      isurf            = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmin_ptr),
-                                            CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-                                            CreateLocalTransformation({0, 0, 0, 0, 0, 0}), -1);
+      surfdata[0] = tube.rmin();
+      isurf       = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, surfdata, /*flipped=*/true),
+                                 CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
+                                 CreateLocalTransformation({0, 0, 0, 0, 0, 0}));
       AddSurfaceToShell(logical_id, isurf);
     }
     // outer cylinder
-    Real_t *rmax_ptr = new Real_t(tube.rmax());
-    isurf            = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, rmax_ptr),
-                                          CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-                                          CreateLocalTransformation({0, 0, 0, 0, 0, 0}));
+    surfdata[0] = tube.rmax();
+    isurf       = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, surfdata),
+                               CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
+                               CreateLocalTransformation({0, 0, 0, 0, 0, 0}));
     AddSurfaceToShell(logical_id, isurf);
 
     if (ApproxEqual(dphi, vecgeom::kTwoPi)) return;

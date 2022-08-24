@@ -39,36 +39,24 @@ void SphereEq(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Real_t
 {
 }
 
+/// @brief
+/// @tparam Real_t Floating point type
+/// @param coef Quadratic equation coefficients
+/// @param roots Equation roots
+/// @param numroots Number of roots grater than -kTolerance
 template <typename Real_t>
 void QuadraticSolver(QuadraticCoef<Real_t> const &coef, Real_t *roots, int &numroots)
 {
+  numroots     = 0;
   Real_t delta = coef.phalf * coef.phalf - coef.q;
+  if (delta < Real_t(0)) return;
 
-  if (std::abs(delta) < vecgeom::kTolerance) {
-    roots[0] = roots[1] = -coef.phalf;
-    numroots            = 1;
-    return;
-  } else if (delta < Real_t(0.)) {
-    numroots = -1;
-    return;
-  }
+  delta           = std::sqrt(delta);
+  roots[numroots] = -coef.phalf - delta;
+  if (roots[numroots] > Real_t(-vecgeom::kTolerance)) numroots++;
 
-  delta = std::sqrt(delta);
-
-  roots[1] = -coef.phalf + delta;
-  // If the greater solution is less than zero, we have no positive solutions
-  if (roots[1] < -vecgeom::kTolerance) {
-    numroots = 0;
-    return;
-  }
-  roots[0] = -coef.phalf - delta;
-  // If smaller solution is less than zero, we have just one positive solution
-  if (roots[0] < -vecgeom::kTolerance) {
-    roots[0] = roots[1];
-    numroots = 1;
-    return;
-  }
-  numroots = 2;
+  roots[numroots] = -coef.phalf + delta;
+  if (roots[numroots] > Real_t(-vecgeom::kTolerance)) numroots++;
 }
 
 } // namespace vgbrep

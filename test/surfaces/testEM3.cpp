@@ -167,7 +167,7 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
 
-  Vector3D<Precision> samplingVolume(0.5 * CalorThickness + 10, 0.5 * CalorSizeY + 10, 0.5 * CalorSizeZ + 10);
+  Vector3D<Precision> samplingVolume(0.5 * CalorThickness + 30, 0.5 * CalorSizeY + 30, 0.5 * CalorSizeZ + 30);
   vecgeom::volumeUtilities::FillRandomPoints(samplingVolume, points);
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 
@@ -185,15 +185,22 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
     Vector3D<Precision> const &dir = dirs[i];
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
     nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], *outputStates[i], vecgeom::kInfLength, refSteps[i]);
-    // printf("dist: %g  ", refSteps[i]); origStates[i]->Print();
-    // outputStates[i]->Print();
 
     // shoot the same ray in the surface model
     int exit_surf = 0;
     NavStateIndex out_state;
     auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
-    if (out_state.GetNavIndex() != outputStates[i]->GetNavIndex() || std::abs(distance - refSteps[i]) > tolerance)
+    if (out_state.GetNavIndex() != outputStates[i]->GetNavIndex() || std::abs(distance - refSteps[i]) > tolerance) {
+      printf("%d: input state:  ", i);
+      origStates[i]->Print();
+      printf("ref output state: ");
+      outputStates[i]->Print();
+      printf("ref dist: %g\n", refSteps[i]);
+      printf("model output state: ");
+      out_state.Print();
+      printf("model dist: %g\n", distance);
       num_errors++;
+    }
   }
 
   printf("=== Validation: num_erros = %d / %d\n", num_errors, npoints);

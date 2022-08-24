@@ -12,15 +12,16 @@ namespace algo {
 ///< stack as 'max_levels'. Upon exhausing the stack sorting can fail, so the return value must be
 ///< checked. The maximum levels needed for sorting an array of size `len` is approximately:
 ///<     max_levels ~ 3 * log10(len)
+///< returns success
 template <typename Type, int max_levels = 32>
-int quickSort(Type const *arr, size_t elements, size_t *sorted)
+bool quickSort(Type const *arr, size_t elements, size_t *sorted)
 {
   ///< Implementation credits go to: https://stackoverflow.com/a/55011578
 
   size_t beg[max_levels], end[max_levels], L, R;
   int i = 0;
 
-  for (auto j = 0; j < elements; ++j)
+  for (size_t j = 0; j < elements; ++j)
     sorted[j] = j;
 
   beg[0] = 0;
@@ -32,7 +33,7 @@ int quickSort(Type const *arr, size_t elements, size_t *sorted)
       size_t M   = L + ((R - L) >> 1);
       size_t piv = sorted[M];
       sorted[M]  = sorted[L];
-      if (i == max_levels - 1) return -1;
+      if (i == max_levels - 1) return false;
       R--;
       while (L < R) {
         while (arr[sorted[R]] >= arr[piv] && L < R)
@@ -61,7 +62,7 @@ int quickSort(Type const *arr, size_t elements, size_t *sorted)
       i--;
     }
   }
-  return 0;
+  return true;
 }
 
 } // end namespace algo

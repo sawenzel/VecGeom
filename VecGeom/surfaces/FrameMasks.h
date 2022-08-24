@@ -1,54 +1,9 @@
 #ifndef VECGEOM_SURFACE_FRAMEMASKS_H
 #define VECGEOM_SURFACE_FRAMEMASKS_H
 
+#include <VecGeom/surfaces/CommonTypes.h>
+
 namespace vgbrep {
-
-/**
- * @brief Vector in 2D plane.
- *
- * @tparam Real_t is a type parameter of vector elements.
- */
-template <typename Real_t>
-struct Vec2D {
-  Real_t components[2]{0};
-
-  Vec2D() = default;
-  Vec2D(Real_t x1, Real_t x2)
-  {
-    components[0] = x1;
-    components[1] = x2;
-  }
-  Real_t operator[](int i) const { return components[i]; }
-  Real_t &operator[](int i) { return components[i]; }
-  void Set(Real_t min, Real_t max)
-  {
-    components[0] = min;
-    components[1] = max;
-  }
-
-  Vec2D<Real_t> operator-(const Vec2D<Real_t> &other) const
-  {
-    return Vec2D<Real_t>(components[0] - other.components[0], components[1] - other.components[1]);
-  }
-
-  /**
-   * @brief Calculates the z-component of cross product of two 2D vectors in xy plane.
-   *
-   * @param other The second vector in cross product.
-   * @return Real_t z-component of cross product, signed.
-   */
-  Real_t crossProd2D(Vec2D<Real_t> other) const { return components[0] * other[1] - components[1] * other[0]; };
-};
-
-// Aliases for different usages of Vec2D.
-template <typename Real_t>
-using Range = Vec2D<Real_t>;
-
-template <typename Real_t>
-using AngleVector = Vec2D<Real_t>;
-
-template <typename Real_t>
-using Point2D = Vec2D<Real_t>;
 
 //
 //  Masks for different types of frames
@@ -60,6 +15,9 @@ using Point2D = Vec2D<Real_t>;
  *
  * @tparam Real_t Scalar type for representing rectangle limit on axis.
  */
+
+/// @brief Rectangular masks on plane surfaces.
+/// @tparam Real_t Precision type
 template <typename Real_t>
 struct WindowMask {
   Range<Real_t> rangeU; ///< Rectangle limits on x axis.
@@ -143,10 +101,10 @@ struct RingMask {
     //
 
     AngleVector<Real_t> localAngle{local[0], local[1]};
-    auto sysdet  = vecSPhi.crossProd2D(vecEPhi);
+    auto sysdet  = vecSPhi.CrossZ(vecEPhi);
     auto divider = 1 / sysdet;
-    auto d1      = localAngle.crossProd2D(vecEPhi) * divider;
-    auto d2      = vecSPhi.crossProd2D(localAngle) * divider;
+    auto d1      = localAngle.CrossZ(vecEPhi) * divider;
+    auto d2      = vecSPhi.CrossZ(localAngle) * divider;
     // If limiting vectors are close, we want convex solutions, and concave otherwise.
     bool convexity = (sysdet > 0);
 
@@ -213,10 +171,10 @@ struct ZPhiMask {
     if (isFullCirc) return true;
 
     AngleVector<Real_t> localAngle{local[0], local[1]};
-    auto sysdet  = vecSPhi.crossProd2D(vecEPhi);
+    auto sysdet  = vecSPhi.CrossZ(vecEPhi);
     auto divider = 1 / sysdet;
-    auto d1      = localAngle.crossProd2D(vecEPhi) * divider;
-    auto d2      = vecSPhi.crossProd2D(localAngle) * divider;
+    auto d1      = localAngle.CrossZ(vecEPhi) * divider;
+    auto d2      = vecSPhi.CrossZ(localAngle) * divider;
     // If limiting vectors are close, we want convex solutions, and concave otherwise.
     bool convexity = (sysdet > 0);
 
@@ -263,9 +221,9 @@ struct TriangleMask {
     // Barycentric coordinates with respect to triangle:
     Point2D<Real_t> blocal{local[0] - p1[0], local[1] - p1[1]};
 
-    auto divider = 1 / bp2.crossProd2D(bp3);
-    auto d1      = blocal.crossProd2D(bp3) * divider;
-    auto d2      = bp2.crossProd2D(blocal) * divider;
+    auto divider = 1 / bp2.CrossZ(bp3);
+    auto d1      = blocal.CrossZ(bp3) * divider;
+    auto d2      = bp2.CrossZ(blocal) * divider;
 
     // TODO: Tolerances.
     return (d1 > 0 && d2 > 0 && d1 + d2 < 1);
@@ -299,8 +257,8 @@ struct QuadrilateralMask {
 
     // This is for point ordering
     Point2D<Real_t> center{(x1 + x2 + x3 + x4) * 0.25, (y1 + y2 + y3 + y4) * 0.25};
-    assert((p1 - center).crossProd2D(p2 - center) > 0. && (p2 - center).crossProd2D(p3 - center) > 0. &&
-           (p3 - center).crossProd2D(p4 - center) > 0. && (p4 - center).crossProd2D(p1 - center) > 0.);
+    assert((p1 - center).CrossZ(p2 - center) > 0. && (p2 - center).CrossZ(p3 - center) > 0. &&
+           (p3 - center).CrossZ(p4 - center) > 0. && (p4 - center).CrossZ(p1 - center) > 0.);
 
     xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
     xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
@@ -340,10 +298,10 @@ struct QuadrilateralMask {
     bool side1, side2, side3, side4;
 
     // Check on which side of the edges the point lies.
-    side1 = e1.crossProd2D(plocal - p1) > 0;
-    side2 = e2.crossProd2D(plocal - p2) > 0;
-    side3 = e3.crossProd2D(plocal - p3) > 0;
-    side4 = e4.crossProd2D(plocal - p4) > 0;
+    side1 = e1.CrossZ(plocal - p1) > 0;
+    side2 = e2.CrossZ(plocal - p2) > 0;
+    side3 = e3.CrossZ(plocal - p3) > 0;
+    side4 = e4.CrossZ(plocal - p4) > 0;
 
     return (side1 == side2) && (side2 == side3) && (side3 == side4);
   }

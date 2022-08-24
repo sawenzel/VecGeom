@@ -128,10 +128,7 @@ int main(int argc, char *argv[])
     ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);
     break;
   case 1:
-    ShootOneParticle(worldRadius, worldZ,
-                     1, -10, 0,
-                     0, 1, 0,
-                     BrepHelper::Instance().GetSurfData());
+    ShootOneParticle(worldRadius, worldZ, 1, -10, 0, 0, 1, 0, BrepHelper::Instance().GetSurfData());
     break;
   case 2:
     ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);
@@ -464,10 +461,8 @@ void TestPerformance(double worldRadius, int npoints, int nbLayers,
   printf("Time for %d points: NewSimpleNavigator = %f [s]  vgbrep::protonav = %f\n", npoints, time_prim, time_surf);
 }
 
-
-
 void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
-                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+                            vgbrep::SurfData<vecgeom::Precision> const &surfdata)
 {
   const double CalorSizeR        = worldRadius;
   const double GapThickness      = 2.3;
@@ -520,7 +515,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
 
   std::ofstream file_out;
   file_out.open("performance_measuring.txt", std::ios_base::app);
-  file_out << nbLayers << " " << npoints << " " << time_prim <<" " << time_surf << std::endl;
+  file_out << nbLayers << " " << npoints << " " << time_prim << " " << time_surf << std::endl;
   file_out.close();
   std::cout << "PRINTED TO FILE." << std::endl;
 }

@@ -34,28 +34,6 @@ struct SurfData;
 struct Frame;
 using Extent = Frame;
 
-///< Data for cylindrical and spherical surfaces (single number)
-template <typename Real_t, typename Real_s = Real_t>
-struct CylData {
-  Real_t radius{0}; ///< Cylinder radius
-
-  CylData() = default;
-  CylData(Real_s rad) : radius(rad) {}
-};
-
-template <typename Real_t, typename Real_s = Real_t>
-using SphData = CylData<Real_t, Real_s>;
-
-///< Data for conical surfaces
-template <typename Real_t, typename Real_s = Real_t>
-struct ConeData {
-  Real_t radius{0}; ///< Cone radus at Z = 0
-  Real_t slope{0};  ///< Cone slope  --> for cyl extension this would be 0
-
-  ConeData() = default;
-  ConeData(Real_s rad, Real_s slope) : radius(rad), slope(slope) {}
-};
-
 ///<
 /*
    Unplaced half-space surface type. The actual surface data pointed by the surface id
@@ -72,7 +50,7 @@ struct UnplacedSurface {
   int id{-1};                ///< surface id
 
   UnplacedSurface() = default;
-  UnplacedSurface(SurfaceType stype, int sid)
+  UnplacedSurface(SurfaceType stype, int sid = -1)
   {
     type = stype;
     id   = sid;
@@ -80,70 +58,112 @@ struct UnplacedSurface {
 
   /// Find positive distance to next intersection from local point
   template <typename Real_t>
-  void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, SurfData<Real_t> const &surfdata,
-                 Real_t *roots, int &numroots) const
+  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool exiting, bool flip_normal,
+                 SurfData<Real_t> const &surfdata, Real_t &distance) const
   {
     QuadraticCoef<Real_t> coef;
+    Vector3D<Real_t> normal;
+    Real_t roots[2];
+    int numroots = 0;
+    bool flipped = flip_normal;
 
     switch (type) {
     case kPlanar:
       // Just need to propagate to (xOy) plane
-      roots[0] = roots[1] = -point[2] / dir[2]; // Division by zero?
-      numroots            = 1;
-      return;
+      distance = -point[2] / vecgeom::NonZero(dir[2]); // Division by zero?
+      if (flipped)
+        return exiting ^ (dir[2] > 0);
+      else
+        return exiting ^ (dir[2] < 0);
     case kCylindrical:
       // Intersect with the cylindrical surface having Z as axis of symmetry
-      CylinderEq<Real_t>(point, dir, surfdata.GetCylData(id).radius, coef);
-      break;
+      flipped ^= surfdata.GetCylData(id).IsFlipped();
+      CylinderEq<Real_t>(point, dir, surfdata.GetCylData(id).Radius(), coef);
+      QuadraticSolver(coef, roots, numroots);
+      for (auto i = 0; i < numroots; ++i) {
+        distance                = roots[i];
+        Vector3D<Real_t> onsurf = point + distance * dir;
+        normal.Set(onsurf[0], onsurf[1], 0);
+        if (flipped) normal *= -1;
+        bool hit = exiting ^ (dir.Dot(normal) < 0);
+        // First solution giving a valid hit wins
+        if (hit) return true;
+      }
+      return false;
     case kConical:
       // Intersect with the conical surface having Z as axis of symmetry
-      ConeEq<Real_t>(point, dir, surfdata.GetConeData(id).radius, surfdata.GetConeData(id).slope, coef);
-      break;
+      flipped ^= surfdata.GetConeData(id).IsFlipped();
+      ConeEq<Real_t>(point, dir, surfdata.GetConeData(id).Radius(), surfdata.GetConeData(id).Slope(), coef);
+      QuadraticSolver(coef, roots, numroots);
+      for (auto i = 0; i < numroots; ++i) {
+        distance                = roots[i];
+        Vector3D<Real_t> onsurf = point + distance * dir;
+        normal.Set(onsurf[0], onsurf[1],
+                   -std::sqrt(onsurf[0] * onsurf[0] + onsurf[1] * onsurf[1]) * surfdata.GetConeData(id).Slope());
+        if (flipped) normal *= -1;
+        bool hit = exiting ^ (dir.Dot(normal) < 0);
+        // First solution giving a valid hit wins
+        if (hit) return true;
+      }
+      return false;
     case kSpherical:
       // Intersect with the sphere having the center in the origin
-      SphereEq<Real_t>(point, dir, surfdata.GetSphData(id).radius, coef);
-      break;
+      flipped ^= surfdata.GetSphData(id).IsFlipped();
+      SphereEq<Real_t>(point, dir, surfdata.GetSphData(id).Radius(), coef);
+      QuadraticSolver(coef, roots, numroots);
+      for (auto i = 0; i < numroots; ++i) {
+        distance                = roots[i];
+        Vector3D<Real_t> onsurf = point + distance * dir;
+        normal.Set(onsurf[0], onsurf[1], onsurf[2]);
+        if (flipped) normal *= -1;
+        bool hit = exiting ^ (dir.Dot(normal) < 0);
+        // First solution giving a valid hit wins
+        if (hit) return true;
+      }
+      return false;
     case kTorus:
     case kGenSecondOrder:
       std::cout << "kTorus, kGenSecondOrder unhandled\n";
-      numroots = 0;
-      return;
+      return false;
     };
-
-    QuadraticSolver(coef, roots, numroots);
+    return false;
   }
 
   /// Get normal direction to the surface in a point on surface
   template <typename Real_t>
   void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata) const
   {
+    bool flipped = false;
     switch (type) {
     case kPlanar:
       // Just return (0, 0, 1);
       normal.Set(0, 0, 1);
+      // This cannot be flipped and already normalized, so return
       return;
     case kCylindrical:
-      // Return normal direction outwards. Flipping the normal for inner tube surfaces is done at FramedSurface level
+      // Return normal direction outwards.
       normal.Set(point[0], point[1], 0);
-      normal.Normalize();
-      return;
+      flipped = surfdata.GetCylData(id).IsFlipped();
+      break;
     case kConical:
       // Return normal direction outwards.
       normal.Set(point[0], point[1],
-                 -std::sqrt(point[0] * point[0] + point[1] * point[1]) * surfdata.GetConeData(id).slope);
-      normal.Normalize();
-      return;
+                 -std::sqrt(point[0] * point[0] + point[1] * point[1]) * surfdata.GetConeData(id).Slope());
+      flipped = surfdata.GetConeData(id).IsFlipped();
+      break;
     case kSpherical:
       // Return normal direction outwards.
       normal.Set(point[0], point[1], point[2]);
-      normal.Normalize();
-      return;
+      flipped = surfdata.GetSphData(id).IsFlipped();
+      break;
     case kTorus:
     case kGenSecondOrder:
       normal.Set(0, 0, 1);
       std::cout << "kTorus, kGenSecondOrder unhandled\n";
     };
-    return;
+    if (flipped) normal *= -1;
+    // For dot product checks we need un-normalized normals. Add a flag to the interface?
+    normal.Normalize();
   }
 };
 
@@ -247,12 +267,11 @@ struct FramedSurface {
   UnplacedSurface fSurface; ///< Surface identifier
   Frame fFrame;             ///< Frame
   int fTrans{-1};           ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  int fFlip{1};             ///< Flip for the normal (+1 or -1)
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, int flip = 1, NavIndex_t index = 0)
-      : fSurface(unplaced), fFrame(frame), fTrans(trans), fFlip(flip), fState(index)
+  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0)
+      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index)
   {
   }
 
@@ -280,18 +299,6 @@ struct FramedSurface {
     localdir       = localRef.TransformDirection(dir);
   }
 
-  ///< This finds the distance to intersecting the half-space, without checking the mask
-  // The point and direction are in the reference frame of the scene
-  /*
-    template <typename Real_t>
-    void Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir,
-                     SurfData<Real_t> const &surfdata, Real_t *roots, int &numroots) const
-    {
-      Vector3D<Real_t> localpoint, localdir;
-      Transform(point, dir, localpoint, localdir);
-      fSurface.Intersect<Real_t>(localpoint, localdir, surfdata, roots, numroots);
-    }
-  */
   ///< Check if the propagated point on surface is within the frame
   template <typename Real_t>
   bool InsideFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
@@ -369,8 +376,7 @@ struct CommonSurface {
 
   ///< Get the normal to the surface from a point on surface
   template <typename Real_t>
-  void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata,
-                 bool left_side = true) const
+  void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata) const
   {
     Vector3D<Real_t> localnorm;
     // point to local frame
@@ -379,8 +385,6 @@ struct CommonSurface {
     auto const &framedsurf = fLeftSide.GetSurface(0, surfdata);
     framedsurf.fSurface.GetNormal(localpoint, localnorm, surfdata);
     trans.InverseTransformDirection(localnorm, normal);
-    normal *= Real_t(framedsurf.fFlip);
-    if (!left_side) normal *= Real_t(-1);
   }
 };
 
