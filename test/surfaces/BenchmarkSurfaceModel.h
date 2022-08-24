@@ -148,14 +148,13 @@ bool ShootOneParticle(double px, double py, double pz, double dx, double dy, dou
   return num_errors == 0;
 }
 
-void TestPerformance(double worldX, double worldY, double worldZ, double scale,
-                     int npoints, int nbLayers,
+void TestPerformance(double worldX, double worldY, double worldZ, double scale, int npoints, int nbLayers,
                      vgbrep::SurfData<vecgeom::Precision> const &surfdata)
 {
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
 
-  Vector3D<Precision> samplingVolume(scale * worldX, scale*worldY, scale*worldZ);
+  Vector3D<Precision> samplingVolume(scale * worldX, scale * worldY, scale * worldZ);
   vecgeom::volumeUtilities::FillRandomPoints(samplingVolume, points);
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 
@@ -195,10 +194,9 @@ void TestPerformance(double worldX, double worldY, double worldZ, double scale,
   printf("Time for %d points: NewSimpleNavigator = %f [s]  vgbrep::protonav = %f\n", npoints, time_prim, time_surf);
 }
 
-
 // Not updated
 void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
-                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+                            vgbrep::SurfData<vecgeom::Precision> const &surfdata)
 {
   const double CalorSizeR        = worldRadius;
   const double GapThickness      = 2.3;
@@ -251,7 +249,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
 
   std::ofstream file_out;
   file_out.open("performance_measuring.txt", std::ios_base::app);
-  file_out << nbLayers << " " << npoints << " " << time_prim <<" " << time_surf << std::endl;
+  file_out << nbLayers << " " << npoints << " " << time_prim << " " << time_surf << std::endl;
   file_out.close();
   std::cout << "PRINTED TO FILE." << std::endl;
 }

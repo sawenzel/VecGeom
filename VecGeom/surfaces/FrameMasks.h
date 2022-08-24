@@ -26,8 +26,9 @@ struct Vec2D {
     components[1] = max;
   }
 
-  Vec2D<Real_t> operator-(const Vec2D<Real_t> &other) const {
-    return Vec2D<Real_t>(components[0]-other.components[0], components[1]-other.components[1]);
+  Vec2D<Real_t> operator-(const Vec2D<Real_t> &other) const
+  {
+    return Vec2D<Real_t>(components[0] - other.components[0], components[1] - other.components[1]);
   }
 
   /**
@@ -227,7 +228,7 @@ struct ZPhiMask {
 /**
  * @brief Triangular masks on plane surfaces.
  *
- * @tparam Real_t
+ * @tparam Real_t is data type for storing coordinates.
  */
 template <typename Real_t>
 struct TriangleMask {
@@ -271,54 +272,82 @@ struct TriangleMask {
   }
 };
 
+/**
+ * @brief Convex quadrilateral masks on plane surfaces.
+ *
+ * @tparam Real_t is data type for storing coordinates.
+ */
+template <typename Real_t>
+struct QuadrilateralMask {
+  Point2D<Real_t> p1, p2, p3, p4; //< vertices
+  Vec2D<Real_t> e1, e2, e3, e4;   //< edges
+  Real_t xmax, xmin, ymax, ymin;  //< a "frame" of the quadrilateral
 
-  template<typename Real_t>
-  struct QuadrilateralMask {
-    Point2D<Real_t> p1, p2, p3, p4;
-    Vec2D<Real_t> s1, s2, s3, s4;
-    Real_t xmax, xmin, ymax, ymin;
+  QuadrilateralMask() = default;
+  /**
+   * @brief Construct a new Quadrilateral Mask object.
+   *
+   * @param x1 is the x coordinate of the lower left corner of the quadrilateral mask.
+   * @param y1 is the y coordinate of the lower left corner of the quadrilateral mask.
+   * @details The rest of the points should be entered counter-clockwise
+   * starting from the lower left corner.
+   */
+  QuadrilateralMask(Real_t x1, Real_t y1, Real_t x2, Real_t y2, Real_t x3, Real_t y3, Real_t x4, Real_t y4)
+      : p1(x1, y1), p2(x2, y2), p3(x3, y3), p4(x4, y4), e1(x2 - x1, y2 - y1), e2(x3 - x2, y3 - y2),
+        e3(x4 - x3, y4 - y3), e4(x1 - x4, y1 - y4)
+  {
 
-    QuadrilateralMask() = default;
-    // TODO: Counter-clockwise sorting
-    QuadrilateralMask(Real_t x1, Real_t y1, Real_t x2, Real_t y2, Real_t x3, Real_t y3, Real_t x4, Real_t y4)
-      : p1(x1, y1), p2(x2, y2), p3(x3, y3), p4(x4, y4), s1(x2-x1, y2-y1), s2(x3-x2, y3-y2), s3(x4-x3, y4-y3), s4(x1-x4, y1-y4) {
-        xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
-        xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
-        ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
-        ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
-    };
-    
-    void GetMask(QuadrilateralMask<Real_t> &mask)
-    {
-      mask.p1.Set(p1[0], p1[1]);
-      mask.p2.Set(p2[0], p2[1]);
-      mask.p3.Set(p3[0], p3[1]);
-      mask.s1.Set(s1[0], s1[1]);
-      mask.s2.Set(s2[0], s2[1]);
-      mask.s3.Set(s3[0], s3[1]);
-      mask.s4.Set(s4[0], s4[1]);
-      mask.xmin = xmin;
-      mask.xmax = xmax;
-      mask.ymin = ymin;
-      mask.ymax = ymax;
-    }
+    // This is for point ordering
+    Point2D<Real_t> center{(x1 + x2 + x3 + x4) * 0.25, (y1 + y2 + y3 + y4) * 0.25};
+    assert((p1 - center).crossProd2D(p2 - center) > 0. && (p2 - center).crossProd2D(p3 - center) > 0. &&
+           (p3 - center).crossProd2D(p4 - center) > 0. && (p4 - center).crossProd2D(p1 - center) > 0.);
 
-    bool Inside(Vector3D<Real_t> const &local) const
-    {
-      if (local[0] < xmin || local[0] > xmax || local[1] < ymin || local[1] > ymax)
-        return false;
-
-      Point2D<Real_t> plocal(local[0], local[1]);
-      bool side1, side2, side3, side4;
-
-      side1 = s1.crossProd2D(plocal-p1) > 0;
-      side2 = s2.crossProd2D(plocal-p2) > 0;
-      side3 = s3.crossProd2D(plocal-p3) > 0;
-      side4 = s4.crossProd2D(plocal-p4) > 0;
-
-      return (side1 == side2) && (side2 == side3) && (side3 == side4);
-    }
+    xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
+    xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
+    ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
+    ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
   };
+
+  void GetMask(QuadrilateralMask<Real_t> &mask)
+  {
+    mask.p1.Set(p1[0], p1[1]);
+    mask.p2.Set(p2[0], p2[1]);
+    mask.p3.Set(p3[0], p3[1]);
+    mask.e1.Set(e1[0], e1[1]);
+    mask.e2.Set(e2[0], e2[1]);
+    mask.e3.Set(e3[0], e3[1]);
+    mask.e4.Set(e4[0], e4[1]);
+    mask.xmin = xmin;
+    mask.xmax = xmax;
+    mask.ymin = ymin;
+    mask.ymax = ymax;
+  }
+
+  /**
+   * @brief Checks if the point is within mask.
+   * @details The point is within the triangle if it lies on the same side
+   * of all edges, since the quadrilateral is convex.
+   *
+   * @param local Local coordinates of the point
+   * @return true if the point is inside the mask.
+   * @return false if the point is outside the mask.
+   */
+  bool Inside(Vector3D<Real_t> const &local) const
+  {
+    if (local[0] < xmin || local[0] > xmax || local[1] < ymin || local[1] > ymax) return false;
+
+    Point2D<Real_t> plocal(local[0], local[1]);
+    bool side1, side2, side3, side4;
+
+    // Check on which side of the edges the point lies.
+    side1 = e1.crossProd2D(plocal - p1) > 0;
+    side2 = e2.crossProd2D(plocal - p2) > 0;
+    side3 = e3.crossProd2D(plocal - p3) > 0;
+    side4 = e4.crossProd2D(plocal - p4) > 0;
+
+    return (side1 == side2) && (side2 == side3) && (side3 == side4);
+  }
+};
 
 } // namespace vgbrep
 
