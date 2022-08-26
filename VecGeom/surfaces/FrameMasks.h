@@ -40,6 +40,21 @@ struct WindowMask {
             local[1] > vecgeom::MakeMinusTolerant<true>(rangeV[0]) &&
             local[1] < vecgeom::MakePlusTolerant<true>(rangeV[1]));
   }
+
+  /// @brief Computes distance to the rectangle defined by the (u,v) ranges.
+  /// @details Computes first the maximum signed distance to each edge on a single axis. This
+  ///  is negative for points in the range, so we zero it for such cases. Then we use the sum of
+  ///  squares on the two axis to get the squared final value.
+  /// @param local
+  /// @return Safety distance to the rectangle mask.
+  Real_t Safety(Vector3D<Real_t> const &local) const
+  {
+    Real_t sx = std::max(local[0] - rangeU[1], rangeU[0] - local[0]);
+    Real_t sy = std::max(local[1] - rangeV[1], rangeV[0] - local[1]);
+    sx        = std::max(Real_t(0), sx);
+    sy        = std::max(Real_t(0), sy);
+    return std::sqrt(sx * sx + sy * sy);
+  }
 };
 
 /**
@@ -111,6 +126,20 @@ struct RingMask {
     // TODO: Check these tolerances.
     return (d1 > -vecgeom::kTolerance && d2 > -vecgeom::kTolerance) == convexity;
   }
+
+  Real_t Safety(Vector3D<Real_t> const &local) const
+  {
+    Real_t rho  = local.Perp();
+    Real_t safR = std::max(rangeR[0] - rho, rho - rangeR[1]);
+    safR        = std::max(Real_t(0), safR);
+    if (isFullCirc) return safR;
+    AngleVector<Real_t> localAngle{local[0], local[1]};
+    Real_t safSPhi = std::max(Real_t(0), localAngle.CrossZ(vecSPhi));
+    Real_t safEPhi = std::max(Real_t(0), -localAngle.CrossZ(vecEPhi));
+    Real_t safPhi  = std::max(safSPhi, safEPhi);
+    // To be completed
+    return std::max(safR, safPhi);
+  }
 };
 
 /**
@@ -181,6 +210,8 @@ struct ZPhiMask {
     // TODO: Check these tolerances.
     return (d1 > -vecgeom::kTolerance && d2 > -vecgeom::kTolerance) == convexity;
   }
+
+  Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
 };
 
 /**
@@ -228,6 +259,8 @@ struct TriangleMask {
     // TODO: Tolerances.
     return (d1 > 0 && d2 > 0 && d1 + d2 < 1);
   }
+
+  Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
 };
 
 /**
@@ -305,6 +338,8 @@ struct QuadrilateralMask {
 
     return (side1 == side2) && (side2 == side3) && (side3 == side4);
   }
+
+  Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
 };
 
 } // namespace vgbrep

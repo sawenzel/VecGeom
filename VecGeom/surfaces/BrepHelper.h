@@ -170,20 +170,24 @@ public:
       }
     };
 
-    // lambda to find if the surfaces on one side have a common parent
+    // lambda to find all parent frames on one side
     auto findParentFramedSurf = [&](Side &side) {
       if (!side.fNsurf) return;
+      int top_parent  = side.fNsurf - 1;
+      int num_parents = 0;
       // if there is a parent, it can only be at the last position after sorting
-      int parent_ind     = side.fNsurf - 1;
-      auto parent_navind = fFramedSurf[side.fSurfaces[parent_ind]].fState;
-      for (int i = 0; i < parent_ind; ++i) {
-        auto navind = fFramedSurf[side.fSurfaces[i]].fState;
-        if (!vecgeom::NavStateIndex::IsDescendentImpl(navind, parent_navind)) {
-          parent_ind = -1;
-          break;
+      for (auto parent_ind = top_parent; parent_ind >= 0; --parent_ind) {
+        auto &parent_frame = fFramedSurf[side.fSurfaces[parent_ind]];
+        if (parent_frame.fParent < 0) num_parents++;
+        auto parent_navind = parent_frame.fState;
+        // loop remaining frames
+        for (int i = 0; i < parent_ind; ++i) {
+          auto &child_frame = fFramedSurf[side.fSurfaces[i]];
+          auto navind       = child_frame.fState;
+          if (vecgeom::NavStateIndex::IsDescendentImpl(navind, parent_navind)) child_frame.fParent = parent_ind;
         }
       }
-      side.fParentSurf = parent_ind;
+      side.fNumParents = num_parents;
     };
 
     sortAndRemoveCommonFrames(fCommonSurfaces[common_id].fLeftSide);
@@ -263,7 +267,7 @@ public:
     // loop through all extents on a side:
     for (int i = 0; i < side.fNsurf; ++i) {
       // convert surface frame to local coordinates
-      auto framed_surf     = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
       FrameType frame_type = framed_surf.fFrame.type;
       Vector3D<Real_t> local;
       Real_t xmax{0}, ymax{0}, ymin{0}, xmin{0};
@@ -360,7 +364,7 @@ public:
     bool first = true;
     for (int i = 0; i < side.fNsurf; ++i) {
       // convert surface frame to local coordinates
-      auto framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
       ZPhiMask_t extLocal;
       framed_surf.fFrame.GetMask(extLocal, *fSurfData);
       Vector3D<Real_t> local;
@@ -446,16 +450,16 @@ public:
     switch (surf.fType) {
     case kPlanar: {
       WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
-      printf(
-          "\n   \x1B[34mleft:\x1B[0m %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, %g, %g)\n",
-          surf.fLeftSide.fNsurf, surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1],
-          extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
+      printf("\n   \x1B[34mleft:\x1B[0m %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, %g, "
+             "%g)\n",
+             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeU[0],
+             extL.rangeU[1], extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
       break;
     }
     case kCylindrical: {
       ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
-             surf.fLeftSide.fNsurf, surf.fLeftSide.fParentSurf, surf.fLeftSide.fExtent.id, extL.rangeZ[0],
+      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
+             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0],
              extL.rangeZ[1], extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
       break;
     }
@@ -469,7 +473,7 @@ public:
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
-      printf("    surf %d: trans: ", idglob);
+      printf("    surf %d: parent: %d trans: ", idglob, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
       vecgeom::NavStateIndex state(placed.fState);
@@ -478,16 +482,17 @@ public:
     if (surf.fRightSide.fNsurf > 0) switch (surf.fType) {
       case kPlanar: {
         WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
-        printf(
-            "   \x1B[31mright:\x1B[0m %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, %g, %g)\n",
-            surf.fRightSide.fNsurf, surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeU[0],
-            extR.rangeU[1], extR.rangeV[0], extR.rangeV[1], round0(-normal[0]), round0(-normal[1]), round0(-normal[2]));
+        printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, "
+               "%g, %g)\n",
+               surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeU[0],
+               extR.rangeU[1], extR.rangeV[0], extR.rangeV[1], round0(-normal[0]), round0(-normal[1]),
+               round0(-normal[2]));
         break;
       }
       case kCylindrical: {
         ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
-        printf("   \x1B[31mright:\x1B[0m %d surfaces, parent=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
-               surf.fRightSide.fNsurf, surf.fRightSide.fParentSurf, surf.fRightSide.fExtent.id, extR.rangeZ[0],
+        printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
+               surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeZ[0],
                extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
         break;
       }
@@ -504,7 +509,7 @@ public:
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob         = surf.fRightSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
-      printf("    surf %d: trans: ", idglob);
+      printf("    surf %d: parent: %d trans: ", idglob, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
       vecgeom::NavStateIndex state(placed.fState);
@@ -577,7 +582,7 @@ public:
         fGlobalTrans.push_back(global);
         // Create the global surface
         int id_glob = fFramedSurf.size();
-        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, state.GetNavIndex()});
+        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
         CreateCommonSurface(id_glob);
       }
 
@@ -817,10 +822,10 @@ private:
     return id;
   }
 
-  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans)
+  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool use_surf_safety)
   {
     int id = fLocalSurfaces.size();
-    fLocalSurfaces.push_back({unplaced, frame, trans});
+    fLocalSurfaces.push_back({unplaced, frame, trans, use_surf_safety});
     return id;
   }
 
@@ -906,30 +911,31 @@ private:
   // The code for creating solid-specific surfaces should sit in the specific solid struct type
   void CreateBoxSurfaces(vecgeom::UnplacedBox const &box, int logical_id)
   {
+    const bool use_surf_safety = true;
     int isurf;
     // surface at -dx:
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.y(), box.z()}),
-                               CreateLocalTransformation({-box.x(), 0, 0, -90, 90, 0}));
+                               CreateLocalTransformation({-box.x(), 0, 0, -90, 90, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // surface at +dx:
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.y(), box.z()}),
-                               CreateLocalTransformation({box.x(), 0, 0, 90, 90, 0}));
+                               CreateLocalTransformation({box.x(), 0, 0, 90, 90, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // surface at -dy:
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.z()}),
-                               CreateLocalTransformation({0, -box.y(), 0, 0, 90, 0}));
+                               CreateLocalTransformation({0, -box.y(), 0, 0, 90, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // surface at +dy:
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.z()}),
-                               CreateLocalTransformation({0, box.y(), 0, 0, -90, 0}));
+                               CreateLocalTransformation({0, box.y(), 0, 0, -90, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // surface at -dz:
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.y()}),
-                               CreateLocalTransformation({0, 0, -box.z(), 0, 180, 0}));
+                               CreateLocalTransformation({0, 0, -box.z(), 0, 180, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // surface at +dz:
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.y()}),
-                               CreateLocalTransformation({0, 0, box.z(), 0, 0, 0}));
+                               CreateLocalTransformation({0, 0, box.z(), 0, 0, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
   }
 
@@ -946,7 +952,9 @@ private:
 
     assert(Rdiff > 0);
 
-    bool fullCirc = ApproxEqual(dphi, vecgeom::kTwoPi);
+    bool fullCirc        = ApproxEqual(dphi, vecgeom::kTwoPi);
+    bool smallerPi       = dphi < (vecgeom::kPi - vecgeom::kTolerance);
+    bool use_surf_safety = true;
 
     int isurf;
     Real_t surfdata[2];
@@ -958,47 +966,50 @@ private:
     // surface at +dz
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
                                CreateFrame(kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-                               CreateLocalTransformation({0, 0, tube.z(), 0, 0, 0}));
+                               CreateLocalTransformation({0, 0, tube.z(), 0, 0, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // surface at -dz
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
                                CreateFrame(kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-                               CreateLocalTransformation({0, 0, -tube.z(), 0, 180, -sphid - ephid}));
+                               CreateLocalTransformation({0, 0, -tube.z(), 0, 180, -sphid - ephid}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
     // inner cylinder
     if (tube.rmin() > vecgeom::kTolerance) {
       surfdata[0] = tube.rmin();
       isurf       = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, surfdata, /*flipped=*/true),
                                  CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-                                 CreateLocalTransformation({0, 0, 0, 0, 0, 0}));
+                                 CreateLocalTransformation({0, 0, 0, 0, 0, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
     }
     // outer cylinder
     surfdata[0] = tube.rmax();
     isurf       = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, surfdata),
                                CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-                               CreateLocalTransformation({0, 0, 0, 0, 0, 0}));
+                               CreateLocalTransformation({0, 0, 0, 0, 0, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
 
     if (ApproxEqual(dphi, vecgeom::kTwoPi)) return;
     // plane cap at Sphi
-    isurf = CreateLocalSurface(
-        CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
-        CreateLocalTransformation({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}));
+    isurf =
+        CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
+                           CreateLocalTransformation({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}),
+                           use_surf_safety && smallerPi);
     AddSurfaceToShell(logical_id, isurf);
     // plane cap at Sphi+Dphi
     isurf = CreateLocalSurface(
         CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
-        CreateLocalTransformation({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}));
+        CreateLocalTransformation({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}),
+        use_surf_safety && smallerPi);
     AddSurfaceToShell(logical_id, isurf);
   }
 
   void CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
   {
-    auto dx  = trd.dx1() - trd.dx2();
-    auto dy  = trd.dy1() - trd.dy2();
-    auto dzx = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dy * dy) * 0.5;
-    auto dzy = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dx * dx) * 0.5;
+    bool use_surf_safety = true;
+    auto dx              = trd.dx1() - trd.dx2();
+    auto dy              = trd.dy1() - trd.dy2();
+    auto dzx             = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dy * dy) * 0.5;
+    auto dzy             = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dx * dx) * 0.5;
 
     auto phix = ApproxEqual(dy, 0.) ? 90 : vecgeom::ATan(2 * trd.dz() / dy) * vecgeom::kRadToDeg;
     auto phiy = ApproxEqual(dx, 0.) ? 90 : vecgeom::ATan(2 * trd.dz() / dx) * vecgeom::kRadToDeg;
@@ -1011,12 +1022,12 @@ private:
     // Bottom face
     int isurf =
         CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), trd.dy1()}),
-                           CreateLocalTransformation({0, 0, -trd.dz(), 0, 180, 0}));
+                           CreateLocalTransformation({0, 0, -trd.dz(), 0, 180, 0}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
 
     // Top face
     isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx2(), trd.dy2()}),
-                               CreateLocalTransformation({0, 0, trd.dz()}));
+                               CreateLocalTransformation({0, 0, trd.dz()}), use_surf_safety);
     AddSurfaceToShell(logical_id, isurf);
 
     // Sides parallel to x axis
@@ -1025,23 +1036,23 @@ private:
       isurf = CreateLocalSurface(
           CreateUnplacedSurface(kPlanar),
           CreateFrame(kQuadrilateral, QuadMask_t{-trd.dx1(), -dzx, trd.dx1(), -dzx, trd.dx2(), dzx, -trd.dx2(), dzx}),
-          CreateLocalTransformation({0, -movey, 0, 0, phix, 0}));
+          CreateLocalTransformation({0, -movey, 0, 0, phix, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
 
       // At +dy
       isurf = CreateLocalSurface(
           CreateUnplacedSurface(kPlanar),
           CreateFrame(kQuadrilateral, QuadMask_t{-trd.dx1(), -dzx, trd.dx1(), -dzx, trd.dx2(), dzx, -trd.dx2(), dzx}),
-          CreateLocalTransformation({0, movey, 0, 180, phix, 0}));
+          CreateLocalTransformation({0, movey, 0, 180, phix, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
     } else { // We have rectangles.
       isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), dzx}),
-                                 CreateLocalTransformation({0, -movey, 0, 0, phix, 0}));
+                                 CreateLocalTransformation({0, -movey, 0, 0, phix, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
 
       // At +dy
       isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), dzx}),
-                                 CreateLocalTransformation({0, movey, 0, 180, phix, 0}));
+                                 CreateLocalTransformation({0, movey, 0, 180, phix, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
     }
     // Sides parallel to y axis
@@ -1050,24 +1061,24 @@ private:
       isurf = CreateLocalSurface(
           CreateUnplacedSurface(kPlanar),
           CreateFrame(kQuadrilateral, QuadMask_t{-trd.dy1(), -dzy, trd.dy1(), -dzy, trd.dy2(), dzy, -trd.dy2(), dzy}),
-          CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}));
+          CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
 
       // At +dx
       isurf = CreateLocalSurface(
           CreateUnplacedSurface(kPlanar),
           CreateFrame(kQuadrilateral, QuadMask_t{-trd.dy1(), -dzy, trd.dy1(), -dzy, trd.dy2(), dzy, -trd.dy2(), dzy}),
-          CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}));
+          CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
     } else { // We have rectangles.
       // At -dx
       isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dy1(), dzy}),
-                                 CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}));
+                                 CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
 
       // At +dx
       isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dy1(), dzy}),
-                                 CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}));
+                                 CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}), use_surf_safety);
       AddSurfaceToShell(logical_id, isurf);
     }
   }
@@ -1257,8 +1268,8 @@ private:
       fSurfData->fCommonSurfaces[i].fRightSide.fSurfaces = current_side;
       current_side += fCommonSurfaces[i].fRightSide.fNsurf;
       // Copy parent surface indices
-      fSurfData->fCommonSurfaces[i].fLeftSide.fParentSurf  = fCommonSurfaces[i].fLeftSide.fParentSurf;
-      fSurfData->fCommonSurfaces[i].fRightSide.fParentSurf = fCommonSurfaces[i].fRightSide.fParentSurf;
+      fSurfData->fCommonSurfaces[i].fLeftSide.fNumParents  = fCommonSurfaces[i].fLeftSide.fNumParents;
+      fSurfData->fCommonSurfaces[i].fRightSide.fNumParents = fCommonSurfaces[i].fRightSide.fNumParents;
     }
 
     // Create candidates lists

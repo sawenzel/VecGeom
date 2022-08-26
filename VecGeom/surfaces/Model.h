@@ -129,6 +129,64 @@ struct UnplacedSurface {
     return false;
   }
 
+  /// @brief Computes the isotropic safe distance to unplaced surfaces
+  /// @tparam Real_t Precision type for parameters
+  /// @param point Point in local surface coordinates
+  /// @param surfdata Surface data storage
+  /// @param distance Computed isotropic safety
+  /// @param onsurf Projection of the point on surface
+  /// @return Success of the calculation
+  template <typename Real_t>
+  bool Safety(Vector3D<Real_t> const &point, bool exiting, bool flip_normal, SurfData<Real_t> const &surfdata,
+              Real_t &distance, bool compute_onsurf, Vector3D<Real_t> &onsurf) const
+  {
+    Real_t rho;
+    switch (type) {
+    case kPlanar:
+      distance = exiting ? -point[2] : point[2];
+      // Computing onsurf is cheap
+      onsurf.Set(point[0], point[1], 0);
+      return true;
+    case kCylindrical: {
+      Real_t cylR = surfdata.GetCylData(id).Radius();
+      rho         = point.Perp();
+      distance    = exiting ^ flip_normal ? cylR - rho : rho - cylR;
+      // Cannot project if the point is on the center of the cylinder
+      if (distance > -vecgeom::kTolerance && compute_onsurf) {
+        onsurf.Set(0, 0, 0);
+        if (rho > vecgeom::kTolerance) {
+          auto invrho = 1. / rho;
+          onsurf.Set(point[0] * invrho, point[1] * invrho, point[2]);
+        }
+      }
+      return true;
+    }
+    case kConical: {
+      Real_t t       = surfdata.GetConeData(id).Slope();
+      Real_t coneR   = std::abs(surfdata.GetConeData(id).Radius() + point[2] * t);
+      rho            = point.Perp();
+      auto distanceR = exiting ^ flip_normal ? coneR - rho : rho - coneR;
+      Real_t calf    = Real_t(1) / std::sqrt(Real_t(1) + t * t);
+      distance       = distanceR * calf;
+      // the onsurf computation code is missing below
+
+      return true;
+    }
+    case kSpherical: {
+      Real_t sphR = surfdata.GetSphData(id).Radius();
+      rho         = point.Mag();
+      distance    = exiting ^ flip_normal ? sphR - rho : rho - sphR;
+      // the onsurf computation code is missing below
+      return true;
+    }
+    case kTorus:
+    case kGenSecondOrder:
+      std::cout << "kTorus, kGenSecondOrder unhandled\n";
+      return false;
+    };
+    return false;
+  }
+
   /// Get normal direction to the surface in a point on surface
   template <typename Real_t>
   void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata) const
@@ -235,6 +293,31 @@ struct Frame {
     };
     return false;
   }
+
+  // A function dispatcher to compute the safety for the frame.
+  template <typename Real_t>
+  Real_t Safety(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
+  {
+    switch (type) {
+    case kRing:
+      return surfdata.GetRingMask(id).Safety(local);
+    case kZPhi:
+      return surfdata.GetZPhiMask(id).Safety(local);
+    case kWindow:
+      return surfdata.GetWindowMask(id).Safety(local);
+    // TODO: Support these
+    case kTriangle:
+      return surfdata.GetTriangleMask(id).Safety(local);
+    case kQuadrilateral:
+      return surfdata.GetQuadMask(id).Safety(local);
+    case kRangeZ:
+    case kRangeSph:
+    default:
+      std::cout << "Frame type not supported." << std::endl;
+      break;
+    };
+    return false;
+  }
 };
 
 // This holds the transformation of the surface
@@ -264,14 +347,16 @@ struct Frame {
 
 /* A placed surface on a scene having a frame and a navigation state associated to a touchable */
 struct FramedSurface {
-  UnplacedSurface fSurface; ///< Surface identifier
-  Frame fFrame;             ///< Frame
-  int fTrans{-1};           ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
+  UnplacedSurface fSurface;   ///< Surface identifier
+  Frame fFrame;               ///< Frame
+  int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
+  int fParent{-1};            ///< Topmost parent frame index on the common surface
+  NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
+  bool fUseSurfSafety{false}; ///< Use just the surface safety to outside in the minimization procedure
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0)
-      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index)
+  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool surfsafety, NavIndex_t index = 0)
+      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fUseSurfSafety(surfsafety)
   {
   }
 
@@ -308,6 +393,16 @@ struct FramedSurface {
     if (fTrans) localpoint = surfdata.fGlobalTrans[fTrans].Transform(point);
     return fFrame.Inside(localpoint, surfdata);
   }
+
+  ///< Check if the propagated point on surface is within the frame
+  template <typename Real_t>
+  Real_t SafetyFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
+  {
+    Vector3D<Real_t> localpoint(point);
+    // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
+    if (fTrans) localpoint = surfdata.fGlobalTrans[fTrans].Transform(point);
+    return fFrame.Safety(localpoint, surfdata);
+  }
 };
 
 ///< A list of candidate surfaces
@@ -325,7 +420,7 @@ struct Candidates {
 ///< A side represents all common placed surfaces
 struct Side {
   Extent fExtent;          ///< Extent on a side.
-  int fParentSurf{-1};     ///< if there is a parent volume of all volumes contributing to this side
+  int fNumParents{0};      ///< number of different parent volumes contributing to this side
   int fNsurf{0};           ///< Number of placed surfaces on this side
   int *fSurfaces{nullptr}; ///< [fNsurf] Array of placed surfaces on this side
 
