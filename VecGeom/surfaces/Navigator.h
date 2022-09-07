@@ -38,7 +38,7 @@ int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vect
     Vector3D<Real_t> localdir = trans.TransformDirection(direction);
     Vector3D<Real_t> onsurf;
     // Compute distance to surface
-    bool surfhit = surfdata.GetUnplaced(isurf).Intersect(local, localdir, exiting, flip_normal, surfdata, dist);
+    bool surfhit = surfdata.GetUnplaced(isurf).Intersect(local, localdir, flip_normal ^ exiting, surfdata, dist);
     if (!surfhit) continue;
     if (dist < -vecgeom::kTolerance || dist >= dist_min) continue;
     onsurf = local + dist * localdir;
@@ -96,7 +96,7 @@ int SortCandidateSafeties(vecgeom::Vector3D<Real_t> const &point, NavIndex_t in_
       compute_onsurf        = !exit_side.GetSurface(frameind, surfdata).fUseSurfSafety;
     }
     bool can_compute =
-        surfdata.GetUnplaced(isurf).Safety(local, exiting, flip_normal, surfdata, safe, compute_onsurf, onsurf);
+        surfdata.GetUnplaced(isurf).Safety(local, flip_normal ^ exiting, surfdata, safe, compute_onsurf, onsurf);
     if (!can_compute) continue;
     if (safe < -vecgeom::kTolerance || safe >= safe_min) continue;
     // Valid candidate, add it to array to be sorted

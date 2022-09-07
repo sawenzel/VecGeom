@@ -3,6 +3,24 @@
 
 namespace vgbrep {
 
+///< VecGeom type aliases
+template <typename Real_t>
+using Vector3D = vecgeom::Vector3D<Real_t>;
+
+using Transformation = vecgeom::Transformation3D;
+
+///< Supported surface types
+enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSecondOrder };
+
+///< Supported frame types
+///> kRangeZ      <- range along z-axis
+///> kRing        <- a "ring" range on a plane
+///> kZPhi        <- z and phi range on a cylinder
+///> kRangeSph    <- theta and phi range on a sphere
+///> kWindow      <- rectangular range in xy-plane
+///> kTriangle    <- triangular range in xy-plane
+enum FrameType { kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
+
 /// @brief Vector in 2D plane.
 /// @tparam Real_t Floating point type.
 template <typename Real_t>

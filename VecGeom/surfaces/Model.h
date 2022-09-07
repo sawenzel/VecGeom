@@ -5,27 +5,11 @@
 
 #include <VecGeom/surfaces/Equations.h>
 #include <VecGeom/navigation/NavStateIndex.h>
+#include <VecGeom/surfaces/SurfaceImpl.h>
 #include <VecGeom/surfaces/FrameMasks.h>
 //#include <VecGeom/base/Vector3D.h>
 
 namespace vgbrep {
-///< Supported surface types
-enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSecondOrder };
-
-///< Supported frame types
-///> kRangeZ      <- range along z-axis
-///> kRing        <- a "ring" range on a plane
-///> kZPhi        <- z and phi range on a cylinder
-///> kRangeSph    <- theta and phi range on a sphere
-///> kWindow      <- rectangular range in xy-plane
-///> kTriangle    <- triangular range in xy-plane
-enum FrameType { kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
-
-///< VecGeom type aliases
-template <typename Real_t>
-using Vector3D = vecgeom::Vector3D<Real_t>;
-
-using Transformation = vecgeom::Transformation3D;
 
 ///< Forward declaration of surface data structure used in navigation
 template <typename Real_t>
@@ -34,17 +18,12 @@ struct SurfData;
 struct Frame;
 using Extent = Frame;
 
-///<
-/*
-   Unplaced half-space surface type. The actual surface data pointed by the surface id
-   is stored in a separate SurfData structure
-   - All unplaced planes are (xOy), having the oriented normal on positive z
-   - Unplaced cylinders, cones and tori have the z axis as axis of symmetry. Normal pointing outwards
-   - Unplaced spheres have the origin as center
-
-   To get the distance from a global point/direction to the surface one needs to first convert
-   those to the local frame
- */
+/// @brief Unplaced half-space surface type.
+/// @details Unplaced surfaces are infinite half-spaces, having a normal side convention:
+///   - All unplaced planes are (xOy), having the normal oriented on positive z
+///   - Unplaced cylinders, cones and tori have the z axis as axis of symmetry. Normals pointing outwards.
+///   - Unplaced spheres have the origin as center, normal pointing outwards.
+/// The type does not store the surface data, but only an id to an external storage.
 struct UnplacedSurface {
   SurfaceType type{kPlanar}; ///< surface type
   int id{-1};                ///< surface id
@@ -56,71 +35,27 @@ struct UnplacedSurface {
     id   = sid;
   }
 
-  /// Find positive distance to next intersection from local point
+  /// @brief Find signed distance to next intersection from local point.
+  /// @tparam Real_t Floating-point precision type
+  /// @param point Point in the local surface coordinates
+  /// @param dir Direction in the local surface coordinates
+  /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped.
+  /// @param surfdata Surface data storage.
+  /// @param distance Computed distance to surface
+  /// @return Validity of the intersection
   template <typename Real_t>
-  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool exiting, bool flip_normal,
+  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool flip_exiting,
                  SurfData<Real_t> const &surfdata, Real_t &distance) const
   {
-    QuadraticCoef<Real_t> coef;
-    Vector3D<Real_t> normal;
-    Real_t roots[2];
-    int numroots = 0;
-    bool flipped = flip_normal;
-
     switch (type) {
     case kPlanar:
-      // Just need to propagate to (xOy) plane
-      distance = -point[2] / vecgeom::NonZero(dir[2]); // Division by zero?
-      if (flipped)
-        return exiting ^ (dir[2] > 0);
-      else
-        return exiting ^ (dir[2] < 0);
+      return SurfaceHelper<kPlanar, Real_t>().Intersect(point, dir, flip_exiting, distance);
     case kCylindrical:
-      // Intersect with the cylindrical surface having Z as axis of symmetry
-      flipped ^= surfdata.GetCylData(id).IsFlipped();
-      CylinderEq<Real_t>(point, dir, surfdata.GetCylData(id).Radius(), coef);
-      QuadraticSolver(coef, roots, numroots);
-      for (auto i = 0; i < numroots; ++i) {
-        distance                = roots[i];
-        Vector3D<Real_t> onsurf = point + distance * dir;
-        normal.Set(onsurf[0], onsurf[1], 0);
-        if (flipped) normal *= -1;
-        bool hit = exiting ^ (dir.Dot(normal) < 0);
-        // First solution giving a valid hit wins
-        if (hit) return true;
-      }
-      return false;
+      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id)).Intersect(point, dir, flip_exiting, distance);
     case kConical:
-      // Intersect with the conical surface having Z as axis of symmetry
-      flipped ^= surfdata.GetConeData(id).IsFlipped();
-      ConeEq<Real_t>(point, dir, surfdata.GetConeData(id).Radius(), surfdata.GetConeData(id).Slope(), coef);
-      QuadraticSolver(coef, roots, numroots);
-      for (auto i = 0; i < numroots; ++i) {
-        distance                = roots[i];
-        Vector3D<Real_t> onsurf = point + distance * dir;
-        normal.Set(onsurf[0], onsurf[1],
-                   -std::sqrt(onsurf[0] * onsurf[0] + onsurf[1] * onsurf[1]) * surfdata.GetConeData(id).Slope());
-        if (flipped) normal *= -1;
-        bool hit = exiting ^ (dir.Dot(normal) < 0);
-        // First solution giving a valid hit wins
-        if (hit) return true;
-      }
-      return false;
+      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id)).Intersect(point, dir, flip_exiting, distance);
     case kSpherical:
-      // Intersect with the sphere having the center in the origin
-      flipped ^= surfdata.GetSphData(id).IsFlipped();
-      SphereEq<Real_t>(point, dir, surfdata.GetSphData(id).Radius(), coef);
-      QuadraticSolver(coef, roots, numroots);
-      for (auto i = 0; i < numroots; ++i) {
-        distance                = roots[i];
-        Vector3D<Real_t> onsurf = point + distance * dir;
-        normal.Set(onsurf[0], onsurf[1], onsurf[2]);
-        if (flipped) normal *= -1;
-        bool hit = exiting ^ (dir.Dot(normal) < 0);
-        // First solution giving a valid hit wins
-        if (hit) return true;
-      }
-      return false;
+      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Intersect(point, dir, flip_exiting, distance);
     case kTorus:
     case kGenSecondOrder:
       std::cout << "kTorus, kGenSecondOrder unhandled\n";
@@ -132,53 +67,28 @@ struct UnplacedSurface {
   /// @brief Computes the isotropic safe distance to unplaced surfaces
   /// @tparam Real_t Precision type for parameters
   /// @param point Point in local surface coordinates
+  /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped
   /// @param surfdata Surface data storage
   /// @param distance Computed isotropic safety
+  /// @param compute_onsurf Instructs to compute the projection of the point on surface
   /// @param onsurf Projection of the point on surface
-  /// @return Success of the calculation
+  /// @return
   template <typename Real_t>
-  bool Safety(Vector3D<Real_t> const &point, bool exiting, bool flip_normal, SurfData<Real_t> const &surfdata,
-              Real_t &distance, bool compute_onsurf, Vector3D<Real_t> &onsurf) const
+  bool Safety(Vector3D<Real_t> const &point, bool flip_exiting, SurfData<Real_t> const &surfdata, Real_t &distance,
+              bool compute_onsurf, Vector3D<Real_t> &onsurf) const
   {
-    Real_t rho;
     switch (type) {
     case kPlanar:
-      distance = exiting ? -point[2] : point[2];
-      // Computing onsurf is cheap
-      onsurf.Set(point[0], point[1], 0);
-      return true;
-    case kCylindrical: {
-      Real_t cylR = surfdata.GetCylData(id).Radius();
-      rho         = point.Perp();
-      distance    = exiting ^ flip_normal ? cylR - rho : rho - cylR;
-      // Cannot project if the point is on the center of the cylinder
-      if (distance > -vecgeom::kTolerance && compute_onsurf) {
-        onsurf.Set(0, 0, 0);
-        if (rho > vecgeom::kTolerance) {
-          auto invrho = 1. / rho;
-          onsurf.Set(point[0] * invrho, point[1] * invrho, point[2]);
-        }
-      }
-      return true;
-    }
-    case kConical: {
-      Real_t t       = surfdata.GetConeData(id).Slope();
-      Real_t coneR   = std::abs(surfdata.GetConeData(id).Radius() + point[2] * t);
-      rho            = point.Perp();
-      auto distanceR = exiting ^ flip_normal ? coneR - rho : rho - coneR;
-      Real_t calf    = Real_t(1) / std::sqrt(Real_t(1) + t * t);
-      distance       = distanceR * calf;
-      // the onsurf computation code is missing below
-
-      return true;
-    }
-    case kSpherical: {
-      Real_t sphR = surfdata.GetSphData(id).Radius();
-      rho         = point.Mag();
-      distance    = exiting ^ flip_normal ? sphR - rho : rho - sphR;
-      // the onsurf computation code is missing below
-      return true;
-    }
+      return SurfaceHelper<kPlanar, Real_t>().Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+    case kCylindrical:
+      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id))
+          .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+    case kConical:
+      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id))
+          .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+    case kSpherical:
+      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id))
+          .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
     case kTorus:
     case kGenSecondOrder:
       std::cout << "kTorus, kGenSecondOrder unhandled\n";
@@ -186,46 +96,9 @@ struct UnplacedSurface {
     };
     return false;
   }
-
-  /// Get normal direction to the surface in a point on surface
-  template <typename Real_t>
-  void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata) const
-  {
-    bool flipped = false;
-    switch (type) {
-    case kPlanar:
-      // Just return (0, 0, 1);
-      normal.Set(0, 0, 1);
-      // This cannot be flipped and already normalized, so return
-      return;
-    case kCylindrical:
-      // Return normal direction outwards.
-      normal.Set(point[0], point[1], 0);
-      flipped = surfdata.GetCylData(id).IsFlipped();
-      break;
-    case kConical:
-      // Return normal direction outwards.
-      normal.Set(point[0], point[1],
-                 -std::sqrt(point[0] * point[0] + point[1] * point[1]) * surfdata.GetConeData(id).Slope());
-      flipped = surfdata.GetConeData(id).IsFlipped();
-      break;
-    case kSpherical:
-      // Return normal direction outwards.
-      normal.Set(point[0], point[1], point[2]);
-      flipped = surfdata.GetSphData(id).IsFlipped();
-      break;
-    case kTorus:
-    case kGenSecondOrder:
-      normal.Set(0, 0, 1);
-      std::cout << "kTorus, kGenSecondOrder unhandled\n";
-    };
-    if (flipped) normal *= -1;
-    // For dot product checks we need un-normalized normals. Add a flag to the interface?
-    normal.Normalize();
-  }
 };
 
-/* An frame delimiting the real surface on an infinite half-space */
+/// @brief A frame delimiting the real solid surface on an infinite half-space
 struct Frame {
   FrameType type{kWindow}; ///< frame type
   int id{-1};              ///< frame mask id
