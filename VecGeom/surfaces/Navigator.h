@@ -118,6 +118,62 @@ int SortCandidateSafeties(vecgeom::Vector3D<Real_t> const &point, NavIndex_t in_
   return nsorted;
 }
 
+/// @brief Locate a point in a volume sub-hierarchy
+/// @tparam Real_t Floating point type
+/// @param vol Volume to start checking from
+/// @param point Point in local volume coordinates
+/// @param path Path pointing to the top volume to check
+/// @param top The top volume must be checked also
+/// @param exclude Placed volume to exclude from checking
+/// @return
+template <typename Real_t>
+vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol, vecgeom::Vector3D<Real_t> const &point,
+                                            vecgeom::NavStateIndex &path, SurfData<Real_t> const &surfdata, bool top,
+                                            vecgeom::VPlacedVolume *exclude = nullptr)
+{
+  using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
+  using Vector3D           = vecgeom::Vector3D<Real_t>;
+
+  if (top) {
+    assert(vol != nullptr);
+    auto volShell = surfdata.fShells[vol->GetLogicalVolume()->id()];
+    if (!volShell.Inside(point, surfdata)) return nullptr;
+  }
+
+  VPlacedVolumePtr_t currentvolume = vol;
+  Vector3D currentpoint(point);
+  path.Push(currentvolume);
+
+  bool godeeper;
+  do {
+    godeeper = false;
+    for (auto *daughter : currentvolume->GetDaughters()) {
+      if (daughter == exclude) {
+        continue;
+      }
+      Vector3D localpoint;
+      Transformation trans;
+      path.Push(daughter);
+      path.TopMatrix(trans);
+      trans.Transform(currentpoint, localpoint);
+      auto volShell = surfdata.fShells[daughter->GetLogicalVolume()->id()];
+      if (volShell.Inside(localpoint, surfdata)) {
+        currentvolume = daughter;
+        godeeper      = true;
+        break;
+      } else {
+        path.Pop();
+      }
+    }
+
+    // Only exclude the placed volume once since we could enter it again via a
+    // different volume history.
+    exclude = nullptr;
+  } while (godeeper);
+
+  return currentvolume;
+}
+
 /// @brief Method computing the distance to the next surface and state after crossing it
 /// @tparam Real_t Floating point type for the interface and data storage
 /// @param point Global point

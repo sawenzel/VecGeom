@@ -57,7 +57,7 @@ bool ApproxEqualTransformation(Transformation const &t1, Transformation const &t
 // by the logical volume id. Also an intermediate helper for building portals.
 // Note: the local surfaces defined by solids will have local references that will be changed by
 // the flattening process, depending on the scene on which the parent volume will be flattened
-struct VolumeShell {
+struct VolumeShellCPU {
   std::vector<int> fSurfaces; ///< Local surface id's for this volume
 };
 
@@ -91,7 +91,7 @@ private:
   std::vector<FramedSurface> fLocalSurfaces;  ///< local surfaces
   std::vector<FramedSurface> fFramedSurf;     ///< global surfaces
   std::vector<CommonSurface> fCommonSurfaces; ///< common surfaces
-  std::vector<VolumeShell> fShells;           ///< vector of local volume surfaces
+  std::vector<VolumeShellCPU> fShells;        ///< vector of local volume surfaces
   std::vector<std::vector<int>> fCandidates;  ///< candidate lists for each state
   std::vector<std::vector<int>> fFrameInd;    ///< frame index per candidate
 
@@ -137,7 +137,7 @@ public:
       std::vector<int>().swap(fShells[i].fSurfaces);
     }
     fShells.clear();
-    std::vector<VolumeShell>().swap(fShells);
+    std::vector<VolumeShellCPU>().swap(fShells);
 
     delete fSurfData;
     fSurfData = nullptr;
@@ -573,7 +573,7 @@ public:
       nphysical++;
       Transformation trans;
       state.TopMatrix(trans);
-      VolumeShell const &shell = fShells[vol->id()];
+      VolumeShellCPU const &shell = fShells[vol->id()];
       for (int lsurf_id : shell.fSurfaces) {
         FramedSurface const &lsurf = fLocalSurfaces[lsurf_id];
         Transformation global(trans);
@@ -1228,18 +1228,22 @@ private:
     for (size_t i = 0; i < fConeData.size(); ++i)
       fSurfData->fConeData[i] = fConeData[i];
 
-    // Create transformations
+    // Copy transformations
     fSurfData->fGlobalTrans = new Transformation[fGlobalTrans.size()];
     for (size_t i = 0; i < fGlobalTrans.size(); ++i)
       fSurfData->fGlobalTrans[i] = fGlobalTrans[i];
+    fSurfData->fLocalTrans = new Transformation[fLocalTrans.size()];
+    for (size_t i = 0; i < fLocalTrans.size(); ++i)
+      fSurfData->fLocalTrans[i] = fLocalTrans[i];
 
-    // Create placed surfaces
-    fSurfData->fNglobalSurf = fFramedSurf.size();
-    fSurfData->fFramedSurf  = new FramedSurface[fFramedSurf.size()];
-    for (size_t i = 0; i < fFramedSurf.size(); ++i)
+    // Copy global surfaces
+    auto numGlobalSurf      = fFramedSurf.size();
+    fSurfData->fNglobalSurf = numGlobalSurf;
+    fSurfData->fFramedSurf  = new FramedSurface[numGlobalSurf];
+    for (size_t i = 0; i < numGlobalSurf; ++i)
       fSurfData->fFramedSurf[i] = fFramedSurf[i];
 
-    // Create common surfaces
+    // Copy common surfaces
     size_t size_sides = 0;
     for (auto const &surf : fCommonSurfaces)
       size_sides += surf.fLeftSide.fNsurf + surf.fRightSide.fNsurf;
@@ -1272,8 +1276,8 @@ private:
       fSurfData->fCommonSurfaces[i].fRightSide.fNumParents = fCommonSurfaces[i].fRightSide.fNumParents;
     }
 
-    // Create candidates lists
-    size_t size_candidates = 0;
+    // Copy candidates lists
+    auto size_candidates = 0;
     for (auto const &list : fCandidates)
       size_candidates += list.size();
 
@@ -1291,6 +1295,28 @@ private:
       current_candidates += fCandidates[i].size();
       fSurfData->fCandidates[i].fFrameInd = current_candidates;
       current_candidates += fCandidates[i].size();
+    }
+
+    // Copy local surfaces
+    auto numLocalSurf      = fLocalSurfaces.size();
+    fSurfData->fNlocalSurf = numLocalSurf;
+    fSurfData->fLocalSurf  = new FramedSurface[numLocalSurf];
+    for (size_t i = 0; i < numLocalSurf; ++i)
+      fSurfData->fLocalSurf[i] = fLocalSurfaces[i];
+
+    // Copy volume shells
+    auto numShells            = fShells.size();
+    fSurfData->fShells        = new VolumeShell[numShells];
+    fSurfData->fSurfShellList = new int[numLocalSurf];
+    int *current_surf         = fSurfData->fSurfShellList;
+    for (size_t i = 0; i < numShells; ++i) {
+      auto const &surfaces         = fShells[i].fSurfaces;
+      auto nsurf                   = surfaces.size();
+      fSurfData->fShells[i].fNsurf = nsurf;
+      for (size_t isurf = 0; isurf < nsurf; isurf++)
+        current_surf[isurf] = surfaces[isurf];
+      fSurfData->fShells[i].fSurfaces = current_surf;
+      current_surf += nsurf;
     }
   }
 };

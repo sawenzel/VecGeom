@@ -35,6 +35,29 @@ struct UnplacedSurface {
     id   = sid;
   }
 
+  /// @brief A local point is inside if behind the normal within tolerance
+  /// @tparam Real_t Floating-point precision type
+  /// @param point Point in the local surface coordinates
+  /// @return Inside half-space
+  template <typename Real_t>
+  bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
+  {
+    switch (type) {
+    case kPlanar:
+      return SurfaceHelper<kPlanar, Real_t>().Inside(point);
+    case kCylindrical:
+      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point);
+    case kConical:
+      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id)).Inside(point);
+    case kSpherical:
+      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
+    case kTorus:
+    case kGenSecondOrder:
+      std::cout << "unhandled\n";
+    };
+    return false;
+  }
+
   /// @brief Find signed distance to next intersection from local point.
   /// @tparam Real_t Floating-point precision type
   /// @param point Point in the local surface coordinates
@@ -218,7 +241,7 @@ struct Frame {
 // The advantage of this approach is that it gives full flexibility for chosing the flattened
 // volumes, and a given local surface can be referenced by multiple portals (less memory)
 
-/* A placed surface on a scene having a frame and a navigation state associated to a touchable */
+/// @brief A placed surface on a scene having a frame and a navigation state associated to a touchable
 struct FramedSurface {
   UnplacedSurface fSurface;   ///< Surface identifier
   Frame fFrame;               ///< Frame
@@ -278,7 +301,7 @@ struct FramedSurface {
   }
 };
 
-///< A list of candidate surfaces
+/// @brief A list of candidate surfaces
 struct Candidates {
   int fNcand{0};             ///< Number of candidate surfaces
   int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
@@ -290,7 +313,7 @@ struct Candidates {
   Candidates() = default;
 };
 
-///< A side represents all common placed surfaces
+/// @brief A side represents all common placed surfaces
 struct Side {
   Extent fExtent;          ///< Extent on a side.
   int fNumParents{0};      ///< number of different parent volumes contributing to this side
@@ -327,6 +350,7 @@ struct Side {
   }
 };
 
+/// @brief A common surface made of two sides, having a global transformation.
 struct CommonSurface {
   SurfaceType fType{kPlanar};  ///< Type of surface
   int fTrans{-1};              ///< Transformation of the first left frame
@@ -353,6 +377,34 @@ struct CommonSurface {
     auto const &framedsurf = fLeftSide.GetSurface(0, surfdata);
     framedsurf.fSurface.GetNormal(localpoint, localnorm, surfdata);
     trans.InverseTransformDirection(localnorm, normal);
+  }
+};
+
+/// @brief A volume shell holding indices for all placed surfaces belonging to a volume.
+struct VolumeShell {
+  int fNsurf;              ///< Number od local surfaces
+  int *fSurfaces{nullptr}; ///< Local surface id's
+
+  /// @brief Check if a point is inside the volume defined by surfaces
+  /// @tparam Real_t Floating-point precision type
+  /// @param point Point in the local volume coordinates
+  /// @return Inside volume
+  template <typename Real_t>
+  bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata)
+  {
+    /*** IMPORTANT ***/
+    // The current implementation works only if a volume is a Boolean intersection (logical AND)
+    // of the half-spaces represented by its surfaces. In future we need a proper logical evaluator
+    //****************/
+    Vector3D<Real_t> local;
+    // This loop is less efficient than the specialized shape treatment, but this is
+    // not important since the Inside function is called only once per track in the surface model
+    for (int isurf = 0; isurf < fNsurf; ++isurf) {
+      local                = surfdata.fLocalTrans[fSurfaces[isurf]].Transform(point);
+      auto const &unplaced = surfdata.fLocalSurf[fSurfaces[isurf]].fSurface;
+      if (!unplaced.Inside(local, surfdata)) return false;
+    }
+    return true;
   }
 };
 
@@ -388,6 +440,7 @@ struct SurfData {
   using QuadrilateralMask_t = QuadrilateralMask<Real_t>;
 
   int fNglobalTrans{0};
+  int fNlocalSurf{0};
   int fNglobalSurf{0};
   int fNcommonSurf{0};
   int fNcylsph{0};
@@ -400,12 +453,17 @@ struct SurfData {
   int fNquads{0};
 
   /// Transformations. A portal transformation is a tuple global + local
+  Transformation *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
   Transformation *fGlobalTrans{nullptr}; ///< Touchable global transformations
 
   /// Cylindrical surface data (radius)
   CylData_t *fCylSphData{nullptr}; ///< Cyl and sphere data
   ConeData_t *fConeData{nullptr};  ///< Cone data
 
+  /// Volume shells, indexed by the logical volume id
+  VolumeShell *fShells{nullptr}; ///< volume shells
+
+  FramedSurface *fLocalSurf{nullptr};       ///< local surfaces
   FramedSurface *fFramedSurf{nullptr};      ///< global surfaces
   WindowMask_t *fWindowMasks{nullptr};      ///< rectangular masks
   RingMask_t *fRingMasks{nullptr};          ///< ring masks
@@ -415,6 +473,7 @@ struct SurfData {
   CommonSurface *fCommonSurfaces{nullptr};  ///< common surfaces
   Candidates *fCandidates;                  ///< candidate surfaces per navigation state
   int *fSides{nullptr};                     ///< side surface indices
+  int *fSurfShellList{nullptr};             ///< indices of local surfaces used in shells
   int *fCandList{nullptr};                  ///< global list of candidate indices
 
   SurfData() = default;

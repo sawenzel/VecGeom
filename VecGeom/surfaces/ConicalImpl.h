@@ -14,6 +14,18 @@ struct SurfaceHelper<kConical, Real_t> {
   SurfaceHelper(ConeData<Real_t> const &conedata) { fConeData = &conedata; }
 
   VECGEOM_FORCE_INLINE
+  /// @brief Inside half-space function
+  /// @param point Point in local surface coordinates
+  /// @return True if the point is behind the normal within kTolerance (surface is included)
+  bool Inside(Vector3D<Real_t> const &point)
+  {
+    int flipsign = fConeData->IsFlipped() ? -1 : 1;
+    Real_t coneR = fConeData->RadiusZ(point.z());
+    Real_t rho   = point.Perp();
+    return flipsign * (rho - coneR) < vecgeom::kTolerance;
+  }
+
+  VECGEOM_FORCE_INLINE
   /// @brief Find signed distance to next intersection from local point.
   /// @param point Point in local surface coordinates
   /// @param dir Direction in the local surface coordinates

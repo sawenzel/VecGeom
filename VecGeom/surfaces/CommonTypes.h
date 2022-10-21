@@ -121,6 +121,7 @@ struct ConeData {
   ConeData() = default;
   ConeData(Real_s rad, Real_s slope, bool flip = false) : radius(flip ? -rad : rad), slope(slope) {}
   Real_s Radius() const { return std::abs(Real_s(radius)); }
+  Real_s RadiusZ(Real_s z) const { return Radius() + z * slope; }
   Real_s Slope() const { return slope; }
   bool IsFlipped() const { return radius < 0; }
 };
