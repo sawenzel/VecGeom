@@ -78,7 +78,6 @@ class BrepHelper {
 private:
   int fVerbose{0};                   ///< verbosity level
   SurfData_t *fSurfData{nullptr};    ///< Surface data
-  SurfData_t *fSurfDataGPU{nullptr}; ///< Surface data on device
 
   std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
   std::vector<RingMask_t> fRingMasks;         ///< ring masks
@@ -141,8 +140,6 @@ public:
 
     delete fSurfData;
     fSurfData = nullptr;
-    // cudaDelete(fSurfDataGPU);
-    fSurfDataGPU = nullptr;
   }
 
   ~BrepHelper() { delete fSurfData; }
@@ -1229,10 +1226,12 @@ private:
       fSurfData->fConeData[i] = fConeData[i];
 
     // Copy transformations
-    fSurfData->fGlobalTrans = new Transformation[fGlobalTrans.size()];
+    fSurfData->fNglobalTrans = fGlobalTrans.size();
+    fSurfData->fGlobalTrans  = new Transformation[fGlobalTrans.size()];
     for (size_t i = 0; i < fGlobalTrans.size(); ++i)
       fSurfData->fGlobalTrans[i] = fGlobalTrans[i];
-    fSurfData->fLocalTrans = new Transformation[fLocalTrans.size()];
+    fSurfData->fNlocalTrans = fLocalTrans.size();
+    fSurfData->fLocalTrans  = new Transformation[fLocalTrans.size()];
     for (size_t i = 0; i < fLocalTrans.size(); ++i)
       fSurfData->fLocalTrans[i] = fLocalTrans[i];
 
@@ -1251,6 +1250,7 @@ private:
     // Create Masks
     UpdateMaskData();
 
+    fSurfData->fNsides         = size_sides;
     fSurfData->fSides          = new int[size_sides];
     int *current_side          = fSurfData->fSides;
     fSurfData->fNcommonSurf    = fCommonSurfaces.size();
@@ -1281,8 +1281,10 @@ private:
     for (auto const &list : fCandidates)
       size_candidates += list.size();
 
+    fSurfData->fNcandList   = 2 * size_candidates;
     fSurfData->fCandList    = new int[2 * size_candidates];
     int *current_candidates = fSurfData->fCandList;
+    fSurfData->fNcandidates = fCandidates.size();
     fSurfData->fCandidates  = new Candidates[fCandidates.size()];
     for (size_t i = 0; i < fCandidates.size(); ++i) {
       auto ncand                       = fCandidates[i].size();
@@ -1306,6 +1308,7 @@ private:
 
     // Copy volume shells
     auto numShells            = fShells.size();
+    fSurfData->fNshells       = numShells;
     fSurfData->fShells        = new VolumeShell[numShells];
     fSurfData->fSurfShellList = new int[numLocalSurf];
     int *current_surf         = fSurfData->fSurfShellList;

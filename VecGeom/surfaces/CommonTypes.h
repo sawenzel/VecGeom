@@ -1,6 +1,9 @@
 #ifndef VECGEOM_SURFACE_COMMONTYPES_H
 #define VECGEOM_SURFACE_COMMONTYPES_H
 
+#include <VecGeom/base/Transformation3D.h>
+#include <VecGeom/base/Vector3D.h>
+
 namespace vgbrep {
 
 ///< VecGeom type aliases

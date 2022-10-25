@@ -1,8 +1,6 @@
 #ifndef VECGEOM_SURFACE_MODEL_H_
 #define VECGEOM_SURFACE_MODEL_H_
 
-#include <iostream>
-
 #include <VecGeom/surfaces/Equations.h>
 #include <VecGeom/navigation/NavStateIndex.h>
 #include <VecGeom/surfaces/SurfaceImpl.h>
@@ -53,7 +51,8 @@ struct UnplacedSurface {
       return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
     case kTorus:
     case kGenSecondOrder:
-      std::cout << "unhandled\n";
+      // unhandled
+      return false;
     };
     return false;
   }
@@ -81,7 +80,7 @@ struct UnplacedSurface {
       return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Intersect(point, dir, flip_exiting, distance);
     case kTorus:
     case kGenSecondOrder:
-      std::cout << "kTorus, kGenSecondOrder unhandled\n";
+      // unhandled
       return false;
     };
     return false;
@@ -114,7 +113,7 @@ struct UnplacedSurface {
           .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
     case kTorus:
     case kGenSecondOrder:
-      std::cout << "kTorus, kGenSecondOrder unhandled\n";
+      // unhandled
       return false;
     };
     return false;
@@ -184,8 +183,8 @@ struct Frame {
       /*return (rsq > vecgeom::MakeMinusTolerantSquare<true>(u[0]) &&
               rsq < vecgeom::MakePlusTolerantSquare<true>(u[1]));*/
     default:
-      std::cout << "Frame type not supported." << std::endl;
-      break;
+      // unhandled
+      return false;
     };
     return false;
   }
@@ -201,7 +200,6 @@ struct Frame {
       return surfdata.GetZPhiMask(id).Safety(local);
     case kWindow:
       return surfdata.GetWindowMask(id).Safety(local);
-    // TODO: Support these
     case kTriangle:
       return surfdata.GetTriangleMask(id).Safety(local);
     case kQuadrilateral:
@@ -209,8 +207,8 @@ struct Frame {
     case kRangeZ:
     case kRangeSph:
     default:
-      std::cout << "Frame type not supported." << std::endl;
-      break;
+      // unhandled
+      return false;
     };
     return false;
   }
@@ -439,12 +437,17 @@ struct SurfData {
   using TriangleMask_t      = TriangleMask<Real_t>;
   using QuadrilateralMask_t = QuadrilateralMask<Real_t>;
 
+  int fNlocalTrans{0};
   int fNglobalTrans{0};
   int fNlocalSurf{0};
   int fNglobalSurf{0};
   int fNcommonSurf{0};
+  int fNsides{0};
+  int fNcandidates{0};
+  int fNcandList{0};
   int fNcylsph{0};
   int fNcone{0};
+  int fNshells{0};
   int fNrange{0};
   int fNwindows{0};
   int fNrings{0};

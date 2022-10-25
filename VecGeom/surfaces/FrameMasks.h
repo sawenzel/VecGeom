@@ -3,6 +3,9 @@
 
 #include <VecGeom/surfaces/CommonTypes.h>
 
+// FIXME: This should not be here; used to pull in Make{Plus,Minus}Tolerant
+#include <VecGeom/volumes/kernel/GenericKernels.h>
+
 namespace vgbrep {
 
 //
