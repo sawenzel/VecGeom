@@ -11,9 +11,11 @@ struct SurfaceHelper<kSpherical, Real_t> {
   SphData<Real_t> const *fSphData{nullptr};
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   SurfaceHelper(SphData<Real_t> const &sphdata) { fSphData = &sphdata; }
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @return True if the point is behind the normal within kTolerance (surface is included)
@@ -26,6 +28,7 @@ struct SurfaceHelper<kSpherical, Real_t> {
   }
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   /// @brief Find signed distance to next intersection from local point.
   /// @param point Point in local surface coordinates
   /// @param dir Direction in the local surface coordinates
@@ -52,6 +55,7 @@ struct SurfaceHelper<kSpherical, Real_t> {
   }
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   /// @brief Computes the isotropic safe distance to unplaced surfaces
   /// @param point Point in local surface coordinates
   /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped

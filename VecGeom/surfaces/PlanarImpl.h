@@ -11,15 +11,18 @@ template <typename Real_t>
 struct SurfaceHelper<kPlanar, Real_t> {
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   SurfaceHelper() = default;
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @return True if the point is behind the normal within kTolerance (surface is included)
   bool Inside(Vector3D<Real_t> const &point) { return point.z() < vecgeom::kTolerance; }
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   /// @brief Find signed distance to next intersection from local point.
   /// @param point Point in local surface coordinates
   /// @param dir Direction in the local surface coordinates
@@ -35,6 +38,7 @@ struct SurfaceHelper<kPlanar, Real_t> {
   }
 
   VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   /// @brief Computes the isotropic safe distance to unplaced surfaces
   /// @param point Point in local surface coordinates
   /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped

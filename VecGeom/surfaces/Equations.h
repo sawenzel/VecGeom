@@ -17,6 +17,7 @@ struct QuadraticCoef {
 };
 
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 void CylinderEq(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Real_t radius, QuadraticCoef<Real_t> &coef)
 {
   Real_t radius2 = radius * radius;
@@ -29,12 +30,14 @@ void CylinderEq(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Real
 }
 
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 void ConeEq(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Real_t radius, Real_t slope,
             QuadraticCoef<Real_t> &coef)
 {
 }
 
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 void SphereEq(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Real_t radius, QuadraticCoef<Real_t> &coef)
 {
 }
@@ -45,6 +48,7 @@ void SphereEq(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Real_t
 /// @param roots Equation roots
 /// @param numroots Number of roots grater than -kTolerance
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 void QuadraticSolver(QuadraticCoef<Real_t> const &coef, Real_t *roots, int &numroots)
 {
   numroots     = 0;

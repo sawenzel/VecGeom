@@ -38,6 +38,7 @@ struct UnplacedSurface {
   /// @param point Point in the local surface coordinates
   /// @return Inside half-space
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
@@ -66,6 +67,7 @@ struct UnplacedSurface {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool flip_exiting,
                  SurfData<Real_t> const &surfdata, Real_t &distance) const
   {
@@ -96,6 +98,7 @@ struct UnplacedSurface {
   /// @param onsurf Projection of the point on surface
   /// @return
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   bool Safety(Vector3D<Real_t> const &point, bool flip_exiting, SurfData<Real_t> const &surfdata, Real_t &distance,
               bool compute_onsurf, Vector3D<Real_t> &onsurf) const
   {
@@ -162,6 +165,7 @@ struct Frame {
 
   // A function to check if local point is within the Frame's mask.
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
@@ -191,6 +195,7 @@ struct Frame {
 
   // A function dispatcher to compute the safety for the frame.
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
@@ -280,6 +285,7 @@ struct FramedSurface {
 
   ///< Check if the propagated point on surface is within the frame
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   bool InsideFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     Vector3D<Real_t> localpoint(point);
@@ -290,6 +296,7 @@ struct FramedSurface {
 
   ///< Check if the propagated point on surface is within the frame
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   Real_t SafetyFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     Vector3D<Real_t> localpoint(point);
@@ -305,7 +312,9 @@ struct Candidates {
   int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
   int *fFrameInd{nullptr};   ///< [fNcand] Framed surface indices for each candidate
 
+  VECCORE_ATT_HOST_DEVICE
   int operator[](int i) const { return fCandidates[i]; }
+  VECCORE_ATT_HOST_DEVICE
   int operator[](int i) { return fCandidates[i]; }
 
   Candidates() = default;
@@ -335,6 +344,7 @@ struct Side {
   }
 
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   inline FramedSurface const &GetSurface(int index, SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[index]];
@@ -482,16 +492,25 @@ struct SurfData {
   SurfData() = default;
 
   /// Surface data accessors by component id
+  VECCORE_ATT_HOST_DEVICE
   CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
+  VECCORE_ATT_HOST_DEVICE
   SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
+  VECCORE_ATT_HOST_DEVICE
   ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
+  VECCORE_ATT_HOST_DEVICE
   WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
+  VECCORE_ATT_HOST_DEVICE
   RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
+  VECCORE_ATT_HOST_DEVICE
   ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
+  VECCORE_ATT_HOST_DEVICE
   TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
+  VECCORE_ATT_HOST_DEVICE
   QuadrilateralMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
   // Accessors by common surface id
+  VECCORE_ATT_HOST_DEVICE
   UnplacedSurface const GetUnplaced(int isurf) const
   {
     FramedSurface surf_frame = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];

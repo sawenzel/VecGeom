@@ -37,6 +37,7 @@ struct Vec2D {
   /// @param x1 First component
   /// @param x2 Second component
   template <typename Real_s>
+  VECCORE_ATT_HOST_DEVICE
   Vec2D(Real_s x1, Real_s x2)
   {
     components[0] = Real_s(x1);
@@ -46,9 +47,12 @@ struct Vec2D {
   /// @brief Element accessors
   /// @param i Element index
   /// @return Element value
+  VECCORE_ATT_HOST_DEVICE
   Real_t operator[](int i) const { return Real_t(components[i]); }
+  VECCORE_ATT_HOST_DEVICE
   Real_t &operator[](int i) { return components[i]; }
 
+  VECCORE_ATT_HOST_DEVICE
   Vec2D<Real_t> operator-(const Vec2D<Real_t> &other) const
   {
     return Vec2D<Real_t>(components[0] - other.components[0], components[1] - other.components[1]);
@@ -70,6 +74,7 @@ struct Vec2D {
   /// @param other Other vector
   /// @return Z-component of the cross product vector
   template <typename Real_s>
+  VECCORE_ATT_HOST_DEVICE
   Real_t CrossZ(Vec2D<Real_s> other) const
   {
     return components[0] * Real_t(other[1]) - components[1] * Real_t(other[0]);
@@ -106,7 +111,9 @@ struct CylData {
   CylData() = default;
   CylData(Real_s rad, bool flip = false) : radius(flip ? -rad : rad) {}
 
+  VECCORE_ATT_HOST_DEVICE
   Real_s Radius() const { return std::abs(Real_s(radius)); }
+  VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
 };
 
@@ -123,9 +130,13 @@ struct ConeData {
 
   ConeData() = default;
   ConeData(Real_s rad, Real_s slope, bool flip = false) : radius(flip ? -rad : rad), slope(slope) {}
+  VECCORE_ATT_HOST_DEVICE
   Real_s Radius() const { return std::abs(Real_s(radius)); }
+  VECCORE_ATT_HOST_DEVICE
   Real_s RadiusZ(Real_s z) const { return Radius() + z * slope; }
+  VECCORE_ATT_HOST_DEVICE
   Real_s Slope() const { return slope; }
+  VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
 };
 

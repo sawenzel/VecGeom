@@ -36,6 +36,7 @@ struct WindowMask {
     mask.rangeV.Set(rangeV[0], rangeV[1]);
   }
 
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
     return (local[0] > vecgeom::MakeMinusTolerant<true>(rangeU[0]) &&
@@ -50,12 +51,13 @@ struct WindowMask {
   ///  squares on the two axis to get the squared final value.
   /// @param local
   /// @return Safety distance to the rectangle mask.
+  VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local) const
   {
-    Real_t sx = std::max(local[0] - rangeU[1], rangeU[0] - local[0]);
-    Real_t sy = std::max(local[1] - rangeV[1], rangeV[0] - local[1]);
-    sx        = std::max(Real_t(0), sx);
-    sy        = std::max(Real_t(0), sy);
+    Real_t sx = vecCore::math::Max(local[0] - rangeU[1], rangeU[0] - local[0]);
+    Real_t sy = vecCore::math::Max(local[1] - rangeV[1], rangeV[0] - local[1]);
+    sx        = vecCore::math::Max(Real_t(0), sx);
+    sy        = vecCore::math::Max(Real_t(0), sy);
     return std::sqrt(sx * sx + sy * sy);
   }
 };
@@ -104,6 +106,7 @@ struct RingMask {
    * @return true if the point is inside the mask.
    * @return false if the point is outside the mask.
    */
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
     Real_t rsq = local[0] * local[0] + local[1] * local[1];
@@ -130,18 +133,19 @@ struct RingMask {
     return (d1 > -vecgeom::kTolerance && d2 > -vecgeom::kTolerance) == convexity;
   }
 
+  VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local) const
   {
     Real_t rho  = local.Perp();
-    Real_t safR = std::max(rangeR[0] - rho, rho - rangeR[1]);
-    safR        = std::max(Real_t(0), safR);
+    Real_t safR = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
+    safR        = vecCore::math::Max(Real_t(0), safR);
     if (isFullCirc) return safR;
     AngleVector<Real_t> localAngle{local[0], local[1]};
-    Real_t safSPhi = std::max(Real_t(0), localAngle.CrossZ(vecSPhi));
-    Real_t safEPhi = std::max(Real_t(0), -localAngle.CrossZ(vecEPhi));
-    Real_t safPhi  = std::max(safSPhi, safEPhi);
+    Real_t safSPhi = vecCore::math::Max(Real_t(0), localAngle.CrossZ(vecSPhi));
+    Real_t safEPhi = vecCore::math::Max(Real_t(0), -localAngle.CrossZ(vecEPhi));
+    Real_t safPhi  = vecCore::math::Max(safSPhi, safEPhi);
     // To be completed
-    return std::max(safR, safPhi);
+    return vecCore::math::Max(safR, safPhi);
   }
 };
 
@@ -194,6 +198,7 @@ struct ZPhiMask {
    * @return true if the point is inside the mask.
    * @return false if the point is outside the mask.
    */
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
     // The point must be inside z-span:
@@ -214,6 +219,7 @@ struct ZPhiMask {
     return (d1 > -vecgeom::kTolerance && d2 > -vecgeom::kTolerance) == convexity;
   }
 
+  VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
 };
 
@@ -250,6 +256,7 @@ struct TriangleMask {
    * @return true if the point is inside the mask.
    * @return false if the point is outside the mask.
    */
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
     // Barycentric coordinates with respect to triangle:
@@ -263,6 +270,7 @@ struct TriangleMask {
     return (d1 > 0 && d2 > 0 && d1 + d2 < 1);
   }
 
+  VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
 };
 
@@ -326,6 +334,7 @@ struct QuadrilateralMask {
    * @return true if the point is inside the mask.
    * @return false if the point is outside the mask.
    */
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
     if (local[0] < xmin || local[0] > xmax || local[1] < ymin || local[1] > ymax) return false;
@@ -342,6 +351,7 @@ struct QuadrilateralMask {
     return (side1 == side2) && (side2 == side3) && (side3 == side4);
   }
 
+  VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
 };
 

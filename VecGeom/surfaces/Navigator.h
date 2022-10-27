@@ -14,6 +14,7 @@ namespace protonav {
 ///< a given index. Writes into a sorted array of candidate indices, and into a sorted array of distances.
 ///< Returns the number of valid sorted candidates.
 template <typename Real_t, size_t MAXSIZE>
+VECCORE_ATT_HOST_DEVICE
 int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector3D<Real_t> const &direction,
                            NavIndex_t in_navind, Real_t dist_min, Candidates const &cand, int startind, int ncand,
                            int skip_surf, SurfData<Real_t> const &surfdata, int *sorted_cand, Real_t *sorted_dist,
@@ -65,6 +66,7 @@ int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vect
 ///< a given index. Writes into a sorted array of candidate indices, and into a sorted array of distances.
 ///< Returns the number of valid sorted candidates.
 template <typename Real_t, size_t MAXSIZE>
+VECCORE_ATT_HOST_DEVICE
 int SortCandidateSafeties(vecgeom::Vector3D<Real_t> const &point, NavIndex_t in_navind, Real_t safe_min,
                           Candidates const &cand, int startind, int ncand, SurfData<Real_t> const &surfdata,
                           int *sorted_cand, Real_t *sorted_dist, vecgeom::Vector3D<Real_t> *sorted_onsurf)
@@ -184,6 +186,7 @@ vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol, v
 /// @param exit_surf Input: surface to be skipped, output: crossed surface index
 /// @return Distance to next surface
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector3D<Real_t> const &direction,
                          vecgeom::NavStateIndex const &in_state, vecgeom::NavStateIndex &out_state,
                          SurfData<Real_t> const &surfdata, int &exit_surf)
@@ -212,7 +215,7 @@ Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector
   Vector3D<Real_t> onsurf_vec[kMaxStack];
   while (startcand < cand.fNcand) {
     // Process a batch of candidates
-    int nchecked = std::min(cand.fNcand - startcand, int(kMaxStack));
+    int nchecked = vecCore::math::Min(cand.fNcand - startcand, int(kMaxStack));
     auto nsorted =
         SortCandidateDistances<Real_t, kMaxStack>(point, direction, in_navind, distance, cand, startcand, nchecked,
                                                   skip_surf, surfdata, sorted_cand, sorted_dist, onsurf_vec);
@@ -364,6 +367,7 @@ Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector
 /// @param exit_surf Input: surface to be skipped, output: crossed surface index
 /// @return Distance to next surface
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point, vecgeom::NavStateIndex const &in_state,
                      SurfData<Real_t> const &surfdata, int &closest_surf)
 {
@@ -386,7 +390,7 @@ Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point, vecgeom::NavStateIn
   Vector3D<Real_t> onsurf_vec[kMaxStack];
   while (startcand < cand.fNcand) {
     // Process a batch of candidates
-    int nchecked = std::min(cand.fNcand - startcand, int(kMaxStack));
+    int nchecked = vecCore::math::Min(cand.fNcand - startcand, int(kMaxStack));
     auto nsorted = SortCandidateSafeties<Real_t, kMaxStack>(point, in_navind, safety, cand, startcand, nchecked,
                                                             surfdata, sorted_cand, sorted_dist, onsurf_vec);
     assert(nsorted >= 0);

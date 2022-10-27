@@ -14,6 +14,7 @@ namespace algo {
 ///<     max_levels ~ 3 * log10(len)
 ///< returns success
 template <typename Type, int max_levels = 32>
+VECCORE_ATT_HOST_DEVICE
 bool quickSort(Type const *arr, size_t elements, size_t *sorted)
 {
   ///< Implementation credits go to: https://stackoverflow.com/a/55011578
