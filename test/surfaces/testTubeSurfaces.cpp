@@ -86,14 +86,10 @@ int main(int argc, char *argv[])
     sphi = std::fmod(sphi, vecgeom::kTwoPi);
   }
 
-  printf("sphi=%g dphi=%g\n", sphi * vecgeom::kRadToDeg, dphi * vecgeom::kRadToDeg);
-
   //
   // Benchmarking options:
   //
   OPTION_INT(nbench, 1000000);
-
-  printf("generate = %d\n", generate);
 
   switch (generate) {
   case 0:

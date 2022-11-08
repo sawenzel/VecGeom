@@ -80,7 +80,7 @@ bool ValidateNavigation(int npoints, vgbrep::SurfData<vecgeom::Precision> const 
     auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
     if (out_state.GetNavIndex() != outputStates[i]->GetNavIndex() || std::abs(distance - refSteps[i]) > tolerance) {
       num_errors++;
-      if (num_errors % 10 != 0) continue;
+      // if (num_errors % 10 != 0) continue;
       std::cout << "ERROR " << i << std::endl << "POS:" << pos << std::endl << "DIR:" << dir << std::endl;
       if (out_state.GetNavIndex() != outputStates[i]->GetNavIndex())
         std::cout << "NAVINDEX MISMATCH: " << out_state.GetNavIndex() << " (new)" << std::endl

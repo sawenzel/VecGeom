@@ -76,8 +76,8 @@ class BrepHelper {
   //  using Vector         = vecgeom::Vector3D<Real_t>;
 
 private:
-  int fVerbose{0};                   ///< verbosity level
-  SurfData_t *fSurfData{nullptr};    ///< Surface data
+  int fVerbose{0};                ///< verbosity level
+  SurfData_t *fSurfData{nullptr}; ///< Surface data
 
   std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
   std::vector<RingMask_t> fRingMasks;         ///< ring masks
@@ -267,80 +267,42 @@ public:
       auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
       FrameType frame_type = framed_surf.fFrame.type;
       Vector3D<Real_t> local;
-      Real_t xmax{0}, ymax{0}, ymin{0}, xmin{0};
+
+      WindowMask_t extentL;
       // Calculating the limits
       switch (frame_type) {
       case kWindow: {
-        WindowMask_t extLocal;
-        framed_surf.fFrame.GetMask(extLocal, *fSurfData);
-        xmin = extLocal.rangeU[0];
-        xmax = extLocal.rangeU[1];
-        ymin = extLocal.rangeV[0];
-        ymax = extLocal.rangeV[1];
+        auto const &maskLocal = fSurfData->fWindowMasks[framed_surf.fFrame.id];
+        maskLocal.GetExtent(extentL);
         break;
       }
       case kRing: {
-        // There is probably a more clever way to do this.
-        RingMask_t extLocal;
-        framed_surf.fFrame.GetMask(extLocal, *fSurfData);
-
-        auto Rmax = extLocal.rangeR[1];
-        // The axis vector has to be between Rmin and Rmax and cannot be unit vector anymore
-        auto Rmean = (extLocal.rangeR[0] + Rmax) * 0.5;
-        Vector3D<Real_t> axis{Rmean, 0, 0};
-        if (!extLocal.isFullCirc) {
-          // Projections of points that delimit vertices of the phi-cut ring
-          Real_t x1, x2, x3, x4, y1, y2, y3, y4;
-
-          auto Rmin = extLocal.rangeR[0];
-          Vector3D<Real_t> vecSPhi{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0};
-          Vector3D<Real_t> vecEPhi{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0};
-
-          x1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
-          x2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
-          x3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
-          x4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
-          axis.Set(0, Rmean, 0);
-          y1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
-          y2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
-          y3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
-          y4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
-
-          xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
-          ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
-          xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
-          ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
-        }
-        // If the axes lie within the circle
-        axis.Set(Rmean, 0, 0);
-        if (ext.Inside(axis)) xmax = Rmax;
-        axis.Set(0, Rmean, 0);
-        if (ext.Inside(axis)) ymax = Rmax;
-        axis.Set(-Rmean, 0, 0);
-        if (ext.Inside(axis)) xmin = -Rmax;
-        axis.Set(0, -Rmean, 0);
-        if (ext.Inside(axis)) ymin = -Rmax;
+        auto const &maskLocal = fSurfData->fRingMasks[framed_surf.fFrame.id];
+        maskLocal.GetExtent(extentL);
+        break;
       }
       case kQuadrilateral: {
-        QuadMask_t extLocal;
-        framed_surf.fFrame.GetMask(extLocal, *fSurfData);
-        xmax = extLocal.xmax;
-        ymax = extLocal.ymax;
-        xmin = extLocal.xmin;
-        ymin = extLocal.ymin;
+        WindowMask_t extLocal;
+        auto const &quad = fSurfData->fQuadMasks[framed_surf.fFrame.id];
+        quad.GetExtent(extentL);
+        break;
       }
       default:
-        break;
+        assert(0 && "Not implemented");
       } // case
 
       // This part updates extent
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmin, ymin, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmin, ymax, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmax, ymax, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{xmax, ymin, 0});
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
       updatePlaneExtent(ext, local);
     } // for
 
@@ -1165,21 +1127,7 @@ private:
       // to be implemented
       break;
     case kQuadrilateral: {
-      auto mask1 = fQuadMasks[s1.fFrame.id];
-      auto mask2 = fQuadMasks[s2.fFrame.id];
-      // I don't see a quicker way to do this. -DC
-      Vector3D v11 = t1.InverseTransformDirection(Vector3D{mask1.p1[0], mask1.p1[1], 0}); // 1 down left
-      Vector3D v21 = t2.InverseTransformDirection(Vector3D{mask2.p1[0], mask2.p1[1], 0}); // 2 down left
-      Vector3D v12 = t1.InverseTransformDirection(Vector3D{mask1.p2[0], mask1.p2[1], 0}); // 1 down right
-      Vector3D v22 = t2.InverseTransformDirection(Vector3D{mask2.p2[0], mask2.p2[1], 0}); // 2 down right
-      Vector3D v13 = t1.InverseTransformDirection(Vector3D{mask1.p3[0], mask1.p3[1], 0}); // 1 up right
-      Vector3D v23 = t2.InverseTransformDirection(Vector3D{mask2.p3[0], mask2.p3[1], 0}); // 2 up right
-      Vector3D v14 = t1.InverseTransformDirection(Vector3D{mask1.p4[0], mask1.p4[1], 0}); // 1 up left
-      Vector3D v24 = t2.InverseTransformDirection(Vector3D{mask2.p4[0], mask2.p4[1], 0}); // 2 up left
-
-      return (ApproxEqualVector(v11, v21) && ApproxEqualVector(v12, v22) && ApproxEqualVector(v13, v23) &&
-              ApproxEqualVector(v14, v24));
-
+      // to be implemented
       break;
     }
     };

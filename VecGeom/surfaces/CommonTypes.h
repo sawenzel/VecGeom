@@ -2,6 +2,7 @@
 #define VECGEOM_SURFACE_COMMONTYPES_H
 
 #include <VecGeom/base/Transformation3D.h>
+#include <VecGeom/base/Vector2D.h>
 #include <VecGeom/base/Vector3D.h>
 
 namespace vgbrep {
@@ -9,6 +10,9 @@ namespace vgbrep {
 ///< VecGeom type aliases
 template <typename Real_t>
 using Vector3D = vecgeom::Vector3D<Real_t>;
+
+template <typename Real_t>
+using Vector2D = vecgeom::Vector2D<Real_t>;
 
 using Transformation = vecgeom::Transformation3D;
 
@@ -24,82 +28,15 @@ enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSeco
 ///> kTriangle    <- triangular range in xy-plane
 enum FrameType { kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
 
-/// @brief Vector in 2D plane.
-/// @tparam Real_t Floating point type.
-template <typename Real_t>
-struct Vec2D {
-  Real_t components[2]{0};
-
-  Vec2D() = default;
-
-  /// @brief Constructor from potentially different type
-  /// @tparam Real_s Type to construct from
-  /// @param x1 First component
-  /// @param x2 Second component
-  template <typename Real_s>
-  VECCORE_ATT_HOST_DEVICE
-  Vec2D(Real_s x1, Real_s x2)
-  {
-    components[0] = Real_s(x1);
-    components[1] = Real_s(x2);
-  }
-
-  /// @brief Element accessors
-  /// @param i Element index
-  /// @return Element value
-  VECCORE_ATT_HOST_DEVICE
-  Real_t operator[](int i) const { return Real_t(components[i]); }
-  VECCORE_ATT_HOST_DEVICE
-  Real_t &operator[](int i) { return components[i]; }
-
-  VECCORE_ATT_HOST_DEVICE
-  Vec2D<Real_t> operator-(const Vec2D<Real_t> &other) const
-  {
-    return Vec2D<Real_t>(components[0] - other.components[0], components[1] - other.components[1]);
-  }
-
-  /// @brief Vector setter
-  /// @tparam Real_s Type to set from
-  /// @param x1 First component
-  /// @param x2 Second component
-  template <typename Real_s>
-  void Set(Real_s x1, Real_s x2)
-  {
-    components[0] = Real_t(x1);
-    components[1] = Real_t(x2);
-  }
-
-  /// @brief Calculates the z-component of cross product with another 2D vector.
-  /// @tparam Real_s Type stored by the other vector
-  /// @param other Other vector
-  /// @return Z-component of the cross product vector
-  template <typename Real_s>
-  VECCORE_ATT_HOST_DEVICE
-  Real_t CrossZ(Vec2D<Real_s> other) const
-  {
-    return components[0] * Real_t(other[1]) - components[1] * Real_t(other[0]);
-  };
-
-  /// @brief Calculates the dot product with another 2D vector.
-  /// @tparam Real_s Type stored by the other vector
-  /// @param other Other vector
-  /// @return Dot product of the two vectors
-  template <typename Real_s>
-  Real_t Dot(Vec2D<Real_s> other) const
-  {
-    return components[0] * Real_t(other[1]) + components[1] * Real_t(other[1]);
-  };
-};
-
 // Aliases for different usages of Vec2D.
 template <typename Real_t>
-using Range = Vec2D<Real_t>;
+using Range = Vector2D<Real_t>;
 
 template <typename Real_t>
-using AngleVector = Vec2D<Real_t>;
+using AngleVector = Vector2D<Real_t>;
 
 template <typename Real_t>
-using Point2D = Vec2D<Real_t>;
+using Point2D = Vector2D<Real_t>;
 
 /// @brief Data for cylindrical and spherical surfaces
 /// @tparam Real_t Storage type

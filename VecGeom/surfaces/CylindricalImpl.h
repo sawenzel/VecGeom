@@ -70,7 +70,7 @@ struct SurfaceHelper<kCylindrical, Real_t> {
     Real_t rho  = point.Perp();
     distance    = flip_exiting ? cylR - rho : rho - cylR;
     // Cannot project if the point is on the center of the cylinder
-    if (distance > -vecgeom::kTolerance && compute_onsurf) {
+    if (compute_onsurf && distance > -vecgeom::kTolerance) {
       onsurf.Set(0, 0, 0);
       if (rho > vecgeom::kTolerance) {
         auto invrho = 1. / rho;

@@ -6,6 +6,8 @@
 // FIXME: This should not be here; used to pull in Make{Plus,Minus}Tolerant
 #include <VecGeom/volumes/kernel/GenericKernels.h>
 
+#define BOX_ACCURATE_SAFETY 1
+
 namespace vgbrep {
 
 //
@@ -30,10 +32,12 @@ struct WindowMask {
   WindowMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2) : rangeU(u1, u2), rangeV(v1, v2){};
   WindowMask(Real_t u, Real_t v) : rangeU(-u, u), rangeV(-v, v){};
 
-  void GetMask(WindowMask<Real_t> &mask)
+  /// @brief Returns the extent of the window
+  /// @param window Extent window to be filled
+  void GetExtent(WindowMask<Real_t> &window) const
   {
-    mask.rangeU.Set(rangeU[0], rangeU[1]);
-    mask.rangeV.Set(rangeV[0], rangeV[1]);
+    window.rangeU = rangeU;
+    window.rangeV = rangeV;
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -45,28 +49,35 @@ struct WindowMask {
             local[1] < vecgeom::MakePlusTolerant<true>(rangeV[1]));
   }
 
-  /// @brief Computes distance to the rectangle defined by the (u,v) ranges.
-  /// @details Computes first the maximum signed distance to each edge on a single axis. This
-  ///  is negative for points in the range, so we zero it for such cases. Then we use the sum of
-  ///  squares on the two axis to get the squared final value.
-  /// @param local
+  /// @brief Computes safe distance to the frame combining surface and frame safeties.
+  /// @details Computes first the maximum signed distance to each edge on a single axis. Two versions
+  ///  are supported:
+  ///  - under-estimate (default): Just use the maximum between the edge and surface components
+  ///  - accurate: Zero negative safety components, then use Pythagoras of surface and edge components
+  /// @param local Projected point in local coordinates
+  /// @param safetySurf Safety from non-projected point to the frame support surface.
   /// @return Safety distance to the rectangle mask.
   VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local) const
+  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
   {
+    valid     = true;
     Real_t sx = vecCore::math::Max(local[0] - rangeU[1], rangeU[0] - local[0]);
     Real_t sy = vecCore::math::Max(local[1] - rangeV[1], rangeV[0] - local[1]);
-    sx        = vecCore::math::Max(Real_t(0), sx);
-    sy        = vecCore::math::Max(Real_t(0), sy);
-    return std::sqrt(sx * sx + sy * sy);
+#ifdef BOX_ACCURATE_SAFETY
+    // The following returns the accurate safety at the price of an extra square root per frame
+    // meaning 6 for a box.
+    sx = vecCore::math::Max(Real_t(0), sx);
+    sy = vecCore::math::Max(Real_t(0), sy);
+    return vecCore::math::Sqrt(sx * sx + sy * sy + safetySurf * safetySurf);
+#else
+    // The VecGeom box version just returns the maximum
+    return vecCore::math::Max(sx, sy, safetySurf);
+#endif
   }
 };
 
-/**
- * @brief Ring masks on plane surfaces.
- *
- * @tparam Real_t
- */
+/// @brief Ring masks on plane surfaces.
+/// @tparam Real_t Precision used
 template <typename Real_t>
 struct RingMask {
   Range<Real_t> rangeR;        ///< Radius limits in the form of [Rmin, Rmax].
@@ -84,68 +95,107 @@ struct RingMask {
     vecEPhi.Set(vecgeom::Cos(ephi), vecgeom::Sin(ephi));
   };
 
-  void GetMask(RingMask<Real_t> &mask)
+  /// @brief Returns the extent of the window
+  /// @param window Extent window to be filled
+  void GetExtent(WindowMask<Real_t> &window) const
   {
-    mask.rangeR.Set(rangeR[0], rangeR[1]);
-    mask.isFullCirc = isFullCirc;
-    if (isFullCirc) return;
-    mask.vecSPhi.Set(vecSPhi[0], vecSPhi[1]);
-    mask.vecEPhi.Set(vecEPhi[0], vecEPhi[1]);
+    auto const &Rmax = rangeR[1];
+    Real_t xmin{-Rmax}, xmax{Rmax}, ymin{-Rmax}, ymax{Rmax};
+    // The axis vector has to be between Rmin and Rmax and cannot be unit vector anymore
+    auto const Rmean = (rangeR[0] + Rmax) * 0.5;
+    Vector2D<Real_t> axis{1, 0};
+    if (!isFullCirc) {
+      // Projections of points that delimit vertices of the phi-cut ring
+      Real_t x1, x2, x3, x4, y1, y2, y3, y4;
+
+      auto Rmin = rangeR[0];
+
+      x1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+      x2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+      x3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+      x4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+      axis.Set(0, 1);
+      y1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+      y2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+      y3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+      y4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+
+      xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
+      ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
+      xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
+      ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
+      // If the axes lie within the circle
+      if (Inside(Vector3D<Real_t>(Rmean, 0, 0))) xmax = Rmax;
+      if (Inside(Vector3D<Real_t>(0, Rmean, 0))) ymax = Rmax;
+      if (Inside(Vector3D<Real_t>(-Rmean, 0, 0))) xmin = -Rmax;
+      if (Inside(Vector3D<Real_t>(0, -Rmean, 0))) ymin = -Rmax;
+    }
+
+    window.rangeU.Set(xmin, xmax);
+    window.rangeV.Set(ymin, ymax);
   }
 
-  /**
-   * @brief Checks if the point is within mask.
-   * @details In barycentric coordinate system, where the base vectors are xaxis and vvec,
-   *  the point lies in the convex part of the plane if both of its coordinates are
-   *  greater than zero. If vectors that delimit the phi-cut form an angle less than
-   *  180 degrees, all the points in the convex part of the plane are inside. Otherwise,
-   *  if phi-cut is greater than 180 degrees, all the points in the concave part are inside.
-   *  The point must also satisfy the radius limits.
-   *
-   * @param local Local coordinates of the point
-   * @return true if the point is inside the mask.
-   * @return false if the point is outside the mask.
-   */
+  /// @brief Check if local point is in the radius range
+  /// @param local Point in local coordinates
+  /// @return Point inside range
   VECCORE_ATT_HOST_DEVICE
-  bool Inside(Vector3D<Real_t> const &local) const
+  VECGEOM_FORCE_INLINE
+  bool InsideR(Vector3D<Real_t> const &local) const
   {
     Real_t rsq = local[0] * local[0] + local[1] * local[1];
-
     // The point must be inside the ring:
     if ((rsq < rangeR[0] * rangeR[0] + 2 * vecgeom::kToleranceSquared * rangeR[0]) ||
         (rsq > rangeR[1] * rangeR[1] - 2 * vecgeom::kToleranceSquared * rangeR[1]))
       return false;
-
-    // If it's a full circle:
-    if (isFullCirc) return true;
-
-    //
-
-    AngleVector<Real_t> localAngle{local[0], local[1]};
-    auto sysdet  = vecSPhi.CrossZ(vecEPhi);
-    auto divider = 1 / sysdet;
-    auto d1      = localAngle.CrossZ(vecEPhi) * divider;
-    auto d2      = vecSPhi.CrossZ(localAngle) * divider;
-    // If limiting vectors are close, we want convex solutions, and concave otherwise.
-    bool convexity = (sysdet > 0);
-
-    // TODO: Check these tolerances.
-    return (d1 > -vecgeom::kTolerance && d2 > -vecgeom::kTolerance) == convexity;
+    return true;
   }
 
+  /// @brief Check if local point is in the phi range
+  /// @param local Point in local coordinates
+  /// @return Point inside phi
   VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local) const
+  VECGEOM_FORCE_INLINE
+  bool InsidePhi(Vector3D<Real_t> const &local) const
   {
-    Real_t rho  = local.Perp();
-    Real_t safR = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
-    safR        = vecCore::math::Max(Real_t(0), safR);
-    if (isFullCirc) return safR;
+    if (isFullCirc) return true;
     AngleVector<Real_t> localAngle{local[0], local[1]};
-    Real_t safSPhi = vecCore::math::Max(Real_t(0), localAngle.CrossZ(vecSPhi));
-    Real_t safEPhi = vecCore::math::Max(Real_t(0), -localAngle.CrossZ(vecEPhi));
-    Real_t safPhi  = vecCore::math::Max(safSPhi, safEPhi);
-    // To be completed
-    return vecCore::math::Max(safR, safPhi);
+    auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
+    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
+    return convex ? in1 && in2 : in1 || in2;
+  }
+
+  /// @brief Checks if the point is within mask.
+  /// @details For the phi part, use the cross-products of the point vector with the unit
+  ///  phi vectors, representing the signed safeties with respect to these vectors. The
+  ///  point must also satisfy the radius limits.
+  /// @param local Local coordinates of the point
+  /// @return Inside the mask or not
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool Inside(Vector3D<Real_t> const &local) const { return InsideR(local) && InsidePhi(local); }
+
+  /// @brief Computes safe distance to the frame combining surface and frame safeties (under-estimate)
+  /// @details Computes first the maximum signed distance to each edge on a single axis. Two versions
+  /// @param local Projected point in local coordinates
+  /// @param safetySurf Safety from non-projected point to the frame support surface.
+  /// @return Safety distance to the rectangle mask.
+  VECCORE_ATT_HOST_DEVICE
+  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
+  {
+    valid         = true;
+    Real_t rho    = local.Perp();
+    Real_t safR   = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
+    Real_t safety = vecCore::math::Max(safR, safetySurf);
+    if (isFullCirc) return safety;
+
+    if (!InsidePhi(local)) {
+      AngleVector<Real_t> localAngle{local[0], local[1]};
+      Real_t safPhi = vecCore::math::Max(localAngle.CrossZ(vecSPhi), -localAngle.CrossZ(vecEPhi));
+      safety        = vecCore::math::Max(safety, safPhi);
+    }
+
+    return safety;
   }
 };
 
@@ -185,93 +235,138 @@ struct ZPhiMask {
     mask.vecEPhi.Set(vecEPhi[0], vecEPhi[1]);
   }
 
-  /**
-   * @brief Checks if the point is within mask.
-   * @details In barycentric coordinate system, where the base vectors are xaxis and vvec,
-   *  the point lies in the convex part of the plane if both of its coordinates are
-   *  greater than zero. If vectors that delimit the phi-cut form an angle less than
-   *  180 degrees, all the points in the convex part of the plane are inside. Otherwise,
-   *  if phi-cut is greater than 180 degrees, all the points in the concave part are inside.
-   *  The point must also satisfy the z limits.
-   *
-   * @param local Local coordinates of the point
-   * @return true if the point is inside the mask.
-   * @return false if the point is outside the mask.
-   */
+  /// @brief Check if local point is in the phi range
+  /// @param local Point in local coordinates
+  /// @return Point inside phi
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool InsidePhi(Vector3D<Real_t> const &local) const
+  {
+    if (isFullCirc) return true;
+    AngleVector<Real_t> localAngle{local[0], local[1]};
+    auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
+    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
+    return convex ? in1 && in2 : in1 || in2;
+  }
+
+  /// @brief Checks if the point is within mask.
+  /// @details For the phi part, use the cross-products of the point vector with the unit
+  ///  phi vectors, representing the signed safeties with respect to these vectors. The
+  ///  point must also satisfy the Z limits.
+  /// @param local Local coordinates of the point
+  /// @return Inside the mask or not
   VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
     // The point must be inside z-span:
     if (local[2] < rangeZ[0] - vecgeom::kTolerance || local[2] > rangeZ[1] + vecgeom::kTolerance) return false;
-
-    // If it's a full circle:
-    if (isFullCirc) return true;
-
-    AngleVector<Real_t> localAngle{local[0], local[1]};
-    auto sysdet  = vecSPhi.CrossZ(vecEPhi);
-    auto divider = 1 / sysdet;
-    auto d1      = localAngle.CrossZ(vecEPhi) * divider;
-    auto d2      = vecSPhi.CrossZ(localAngle) * divider;
-    // If limiting vectors are close, we want convex solutions, and concave otherwise.
-    bool convexity = (sysdet > 0);
-
-    // TODO: Check these tolerances.
-    return (d1 > -vecgeom::kTolerance && d2 > -vecgeom::kTolerance) == convexity;
+    return InsidePhi(local);
   }
 
+  /// @brief Computes safe distance to the frame combining surface and frame safeties
+  /// @details The safety to the cylindrical surface comes as safetySurf, it is positive since only
+  ///  points outside the cylindrical shell are considered.
+  /// @param local Projected point in local coordinates
+  /// @param safetySurf Safety from non-projected point to the frame support surface.
+  /// @return Safety distance to the mask.
   VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
+  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
+  {
+    valid          = true;
+    Real_t safetyZ = vecCore::math::Max(local[2] - rangeZ[1], rangeZ[0] - local[2]);
+    if (InsidePhi(local)) return vecCore::math::Max(safetySurf, safetyZ);
+    // If the point is not in the phi range, there are other surfaces closer than this one
+    // This frame should not be part of the minimization process.
+    valid = false;
+    return vecgeom::InfinityLength<Real_t>();
+  }
 };
 
 /**
- * @brief Triangular masks on plane surfaces.
+ * @brief Triangular masks in the XY plane.
  *
  * @tparam Real_t is data type for storing coordinates.
  */
 template <typename Real_t>
 struct TriangleMask {
-  // TODO: Check if the points themselves are useful
-  Point2D<Real_t> p1, p2, p3; ///< 2D coordinates of the triangle vertices.
-  Point2D<Real_t> bp2, bp3;   ///< 2D coordinates of vertices 2 and 3 relative to vertex 1.
+  Point2D<Real_t> p_[3] = {Real_t(0)}; ///< 2D coordinates of the vertices.
+  Point2D<Real_t> n_[3] = {Real_t(0)}; ///< 2D coordinates of the outwards normals to segments
 
   TriangleMask() = default;
   TriangleMask(Real_t x1, Real_t y1, Real_t x2, Real_t y2, Real_t x3, Real_t y3)
-      : p1(x1, y1), p2(x2, y2), p3(x3, y3), bp2(x2 - x1, y2 - y1), bp3(x3 - x1, y3 - y1){};
+  {
+    p_[0].Set(x1, y1);
+    p_[1].Set(x2, y2);
+    p_[2].Set(x3, y3);
+
+    // Compute outward normals
+    for (int i = 0; i < 3; ++i) {
+      auto j      = (i + 1) % 3;
+      auto k      = (i + 2) % 3;
+      auto seg_ij = p_[j] - p_[i];
+      auto seg_ik = p_[k] - p_[i];
+      assert(seg_ij.Mag2() > vecgeom::kToleranceSquared);
+      // normal in XY plane
+      n_[i].Set(seg_ij.y(), -seg_ij.x());
+      // flip the normal so point k is 'backwards'
+      if (n_[i].Dot(seg_ik) > Real_t(0)) n_[i] *= Real_t(-1);
+      // Normalize normal vector
+      n_[i].Normalize();
+    }
+  }
+
+  /// @brief Returns the extent of the triangle
+  /// @param window Extent window to be filled
+  void GetExtent(WindowMask<Real_t> &window) const
+  {
+    window.rangeU.Set(p_[0].x());
+    window.rangeV.Set(p_[0].y());
+    for (int i = 1; i < 3; ++i) {
+      window.rangeU.Set(vecCore::math::Min(window.rangeU[0], p_[i].x()),
+                        vecCore::math::Max(window.rangeU[1], p_[i].x()));
+      window.rangeV.Set(vecCore::math::Min(window.rangeV[0], p_[i].y()),
+                        vecCore::math::Max(window.rangeV[1], p_[i].y()));
+    }
+  }
 
   void GetMask(TriangleMask<Real_t> &mask)
   {
-    mask.p1.Set(p1[0], p1[1]);
-    mask.p2.Set(p2[0], p2[1]);
-    mask.p3.Set(p3[0], p3[1]);
-    mask.bp2.Set(bp2[0], bp2[1]);
-    mask.bp3.Set(bp3[0], bp3[1]);
+    for (int i = 0; i < 3; ++i) {
+      mask.p_[i] = p_[i];
+      mask.n_[i] = n_[i];
+    }
   }
 
-  /**
-   * @brief Checks if the point is within mask.
-   * @details The point is within the triangle if its barymetric coordinates d1, d2
-   *  satisfy (d1 > 0 && d2 > 0 && d1 + d2 < 1).
-   *
-   * @param local Local coordinates of the point
-   * @return true if the point is inside the mask.
-   * @return false if the point is outside the mask.
-   */
+  /// @brief Checks if the point is within mask.
+  /// @details The point is within the triangle if all dot products of point
+  /// position relative to each vertex and corresponding segment normal are negative.
+  /// @param local Local coordinates of the point
+  /// @return true if the point is inside the mask.
   VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
-    // Barycentric coordinates with respect to triangle:
-    Point2D<Real_t> blocal{local[0] - p1[0], local[1] - p1[1]};
-
-    auto divider = 1 / bp2.CrossZ(bp3);
-    auto d1      = blocal.CrossZ(bp3) * divider;
-    auto d2      = bp2.CrossZ(blocal) * divider;
-
-    // TODO: Tolerances.
-    return (d1 > 0 && d2 > 0 && d1 + d2 < 1);
+    // TODO: Do we need a tolerance-aware version?
+    Vector2D<Real_t> const local2D(local.x(), local.y());
+    return (n_[0].Dot(local2D - p_[0]) < Real_t(0) && n_[1].Dot(local2D - p_[1]) < Real_t(0) &&
+            n_[2].Dot(local2D - p_[2]) < Real_t(0));
   }
 
+  /// @brief Computes the closest distance from a point in XY plane and the triangle.
+  /// @param local Local coordinates of the point
+  /// @return Safety from point to triangle.
   VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
+  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
+  {
+    // The algorithm currently gives an underestimate
+    valid = true;
+    Vector2D<Real_t> const local2D(local.x(), local.y());
+    // Compute signed safeties to segments
+    Real_t safety = safetySurf;
+    for (int i = 0; i < 3; ++i)
+      safety = vecCore::math::Max(safety, n_[i].Dot(local2D - p_[i]));
+    return safety;
+  }
 };
 
 /**
@@ -281,9 +376,8 @@ struct TriangleMask {
  */
 template <typename Real_t>
 struct QuadrilateralMask {
-  Point2D<Real_t> p1, p2, p3, p4; //< vertices
-  Vec2D<Real_t> e1, e2, e3, e4;   //< edges
-  Real_t xmax, xmin, ymax, ymin;  //< a "frame" of the quadrilateral
+  Point2D<Real_t> p_[4] = {Real_t(0)}; ///< 2D coordinates of the vertices.
+  Point2D<Real_t> n_[4] = {Real_t(0)}; ///< 2D coordinates of the outwards normals to segments
 
   QuadrilateralMask() = default;
   /**
@@ -295,64 +389,71 @@ struct QuadrilateralMask {
    * starting from the lower left corner.
    */
   QuadrilateralMask(Real_t x1, Real_t y1, Real_t x2, Real_t y2, Real_t x3, Real_t y3, Real_t x4, Real_t y4)
-      : p1(x1, y1), p2(x2, y2), p3(x3, y3), p4(x4, y4), e1(x2 - x1, y2 - y1), e2(x3 - x2, y3 - y2),
-        e3(x4 - x3, y4 - y3), e4(x1 - x4, y1 - y4)
   {
+    p_[0].Set(x1, y1);
+    p_[1].Set(x2, y2);
+    p_[2].Set(x3, y3);
+    p_[3].Set(x4, y4);
 
-    // This is for point ordering
-    Point2D<Real_t> center{(x1 + x2 + x3 + x4) * 0.25, (y1 + y2 + y3 + y4) * 0.25};
-    assert((p1 - center).CrossZ(p2 - center) > 0. && (p2 - center).CrossZ(p3 - center) > 0. &&
-           (p3 - center).CrossZ(p4 - center) > 0. && (p4 - center).CrossZ(p1 - center) > 0.);
-
-    xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
-    xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
-    ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
-    ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
-  };
-
-  void GetMask(QuadrilateralMask<Real_t> &mask)
-  {
-    mask.p1.Set(p1[0], p1[1]);
-    mask.p2.Set(p2[0], p2[1]);
-    mask.p3.Set(p3[0], p3[1]);
-    mask.e1.Set(e1[0], e1[1]);
-    mask.e2.Set(e2[0], e2[1]);
-    mask.e3.Set(e3[0], e3[1]);
-    mask.e4.Set(e4[0], e4[1]);
-    mask.xmin = xmin;
-    mask.xmax = xmax;
-    mask.ymin = ymin;
-    mask.ymax = ymax;
+    // Compute outward normals
+    for (int i = 0; i < 4; ++i) {
+      auto j      = (i + 1) % 4;
+      auto k      = (i + 2) % 4;
+      auto seg_ij = p_[j] - p_[i];
+      auto seg_ik = p_[k] - p_[i];
+      assert(seg_ij.Mag2() > vecgeom::kToleranceSquared);
+      // normal in XY plane
+      n_[i].Set(seg_ij.y(), -seg_ij.x());
+      // flip the normal so point k is 'backwards'
+      if (n_[i].Dot(seg_ik) > Real_t(0)) n_[i] *= Real_t(-1);
+      // Normalize normal vector
+      n_[i].Normalize();
+    }
   }
 
-  /**
-   * @brief Checks if the point is within mask.
-   * @details The point is within the triangle if it lies on the same side
-   * of all edges, since the quadrilateral is convex.
-   *
-   * @param local Local coordinates of the point
-   * @return true if the point is inside the mask.
-   * @return false if the point is outside the mask.
-   */
+  /// @brief Returns the extent of the quadrilateral
+  /// @param window Extent window to be filled
+  void GetExtent(WindowMask<Real_t> &window) const
+  {
+    window.rangeU.Set(p_[0].x());
+    window.rangeV.Set(p_[0].y());
+    for (int i = 1; i < 4; ++i) {
+      window.rangeU.Set(vecCore::math::Min(window.rangeU[0], p_[i].x()),
+                        vecCore::math::Max(window.rangeU[1], p_[i].x()));
+      window.rangeV.Set(vecCore::math::Min(window.rangeV[0], p_[i].y()),
+                        vecCore::math::Max(window.rangeV[1], p_[i].y()));
+    }
+  }
+
+  /// @brief Checks if the point is within mask.
+  /// @details The point is within the quadrilateral if all dot products of point
+  /// position relative to each vertex and corresponding segment normal are negative.
+  /// @param local Local coordinates of the point
+  /// @return true if the point is inside the mask.
   VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
-    if (local[0] < xmin || local[0] > xmax || local[1] < ymin || local[1] > ymax) return false;
-
-    Point2D<Real_t> plocal(local[0], local[1]);
-    bool side1, side2, side3, side4;
-
-    // Check on which side of the edges the point lies.
-    side1 = e1.CrossZ(plocal - p1) > 0;
-    side2 = e2.CrossZ(plocal - p2) > 0;
-    side3 = e3.CrossZ(plocal - p3) > 0;
-    side4 = e4.CrossZ(plocal - p4) > 0;
-
-    return (side1 == side2) && (side2 == side3) && (side3 == side4);
+    // TODO: Do we need a tolerance-aware version?
+    Vector2D<Real_t> const local2D(local.x(), local.y());
+    return (n_[0].Dot(local2D - p_[0]) < Real_t(0) && n_[1].Dot(local2D - p_[1]) < Real_t(0) &&
+            n_[2].Dot(local2D - p_[2]) < Real_t(0) && n_[3].Dot(local2D - p_[3]) < Real_t(0));
   }
 
+  /// @brief Computes the closest distance from a point in XY plane and the triangle.
+  /// @param local Local coordinates of the point
+  /// @return Safety from point to triangle.
   VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local) const { return 0; }
+  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
+  {
+    // The algorithm currently gives an underestimate
+    valid = true;
+    Vector2D<Real_t> const local2D(local.x(), local.y());
+    // Compute signed safeties to segments
+    Real_t safety = safetySurf;
+    for (int i = 0; i < 4; ++i)
+      safety = vecCore::math::Max(safety, n_[i].Dot(local2D - p_[i]));
+    return safety;
+  }
 };
 
 } // namespace vgbrep

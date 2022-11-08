@@ -2,10 +2,9 @@
 #define VECGEOM_SURFACE_NAVIGATOR_H_
 
 #include <VecGeom/surfaces/Model.h>
+//#include <VecGeom/surfaces/orange/LogicStack.hh>
 #include <VecGeom/navigation/NavStateIndex.h>
 #include <VecGeom/base/Algorithms.h>
-
-//#define SM_USE_NORMALS
 
 namespace vgbrep {
 namespace protonav {
@@ -397,6 +396,7 @@ Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point, vecgeom::NavStateIn
 
     // loop on sorted candidates
     for (auto isorted = 0; isorted < nsorted; ++isorted) {
+      bool validSafety  = true;
       auto icand        = sorted_cand[isorted];
       int isurf         = std::abs(cand[icand]);
       Real_t safetySurf = sorted_dist[isorted];
@@ -416,14 +416,14 @@ Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point, vecgeom::NavStateIn
         int frameind           = cand.fFrameInd[icand]; // index of framed surface on the side
         auto const &framedsurf = exit_side.GetSurface(frameind, surfdata);
         // Check if the exited frame safety is needed at all
+        safetyFrame          = safetySurf;
         bool use_surf_safety = exit_side.GetSurface(frameind, surfdata).fUseSurfSafety;
         if (!use_surf_safety) {
           // We need to compute also the safety of the projection of the point on surface to the frame
-          safetyFrame = framedsurf.SafetyFrame(onsurf_tmp, surfdata);
+          safetyFrame = framedsurf.SafetyFrame(onsurf_tmp, safetySurf, surfdata, validSafety);
         }
-        Real_t safetySq = safetySurf * safetySurf + safetyFrame * safetyFrame;
-        if (safety * safety > safetySq) {
-          safety       = std::sqrt(safetySq);
+        if (validSafety && safety > safetyFrame) {
+          safety       = safetyFrame;
           closest_surf = isurf;
         }
       } else {
@@ -437,13 +437,12 @@ Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point, vecgeom::NavStateIn
           auto const &framedsurf = entry_side.GetSurface(ind, surfdata);
           if (framedsurf.fParent >= 0) continue; // skip children
           iparent++;
-          auto safetyFrame = framedsurf.SafetyFrame(onsurf_tmp, surfdata);
-          if (safetyFrame < safetyParent) safetyParent = safetyFrame;
+          auto safetyFrame = framedsurf.SafetyFrame(onsurf_tmp, safetySurf, surfdata, validSafety);
+          if (validSafety && safetyFrame < safetyParent) safetyParent = safetyFrame;
           if (iparent == num_parents) break;
         }
-        Real_t safetySq = safetySurf * safetySurf + safetyParent * safetyParent;
-        if (safety * safety > safetySq) {
-          safety       = std::sqrt(safetySq);
+        if (safety > safetyParent) {
+          safety       = safetyParent;
           closest_surf = isurf;
         }
       }

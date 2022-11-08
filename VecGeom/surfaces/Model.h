@@ -134,33 +134,9 @@ struct Frame {
   // Mask getters for various mask types
 
   template <typename Real_t>
-  void GetMask(WindowMask<Real_t> &mask, SurfData<Real_t> const &surfdata) const
-  {
-    surfdata.fWindowMasks[id].GetMask(mask);
-  }
-
-  template <typename Real_t>
-  void GetMask(RingMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
-  {
-    surfdata.fRingMasks[id].GetMask(mask);
-  }
-
-  template <typename Real_t>
   void GetMask(ZPhiMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
   {
     surfdata.fZPhiMasks[id].GetMask(mask);
-  }
-
-  template <typename Real_t>
-  void GetMask(TriangleMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
-  {
-    surfdata.fTriangleMasks[id].GetMask(mask);
-  }
-
-  template <typename Real_t>
-  void GetMask(QuadrilateralMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
-  {
-    surfdata.fQuadMasks[id].GetMask(mask);
   }
 
   // A function to check if local point is within the Frame's mask.
@@ -193,29 +169,34 @@ struct Frame {
     return false;
   }
 
-  // A function dispatcher to compute the safety for the frame.
+  /// @brief A function dispatcher to compute the safety for the frame.
+  /// @tparam Real_t
+  /// @param local Point on surface in local coordinates
+  /// @param safetySurf Safety to the support surface
+  /// @param surfdata Surface data storage
+  /// @return Safety to the framed surface.
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
+  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, SurfData<Real_t> const &surfdata, bool &valid) const
   {
     switch (type) {
     case kRing:
-      return surfdata.GetRingMask(id).Safety(local);
+      return surfdata.GetRingMask(id).Safety(local, safetySurf, valid);
     case kZPhi:
-      return surfdata.GetZPhiMask(id).Safety(local);
+      return surfdata.GetZPhiMask(id).Safety(local, safetySurf, valid);
     case kWindow:
-      return surfdata.GetWindowMask(id).Safety(local);
+      return surfdata.GetWindowMask(id).Safety(local, safetySurf, valid);
     case kTriangle:
-      return surfdata.GetTriangleMask(id).Safety(local);
+      return surfdata.GetTriangleMask(id).Safety(local, safetySurf, valid);
     case kQuadrilateral:
-      return surfdata.GetQuadMask(id).Safety(local);
+      return surfdata.GetQuadMask(id).Safety(local, safetySurf, valid);
     case kRangeZ:
     case kRangeSph:
     default:
       // unhandled
-      return false;
+      valid = false;
     };
-    return false;
+    return Real_t(0);
   }
 };
 
@@ -251,7 +232,8 @@ struct FramedSurface {
   int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
   int fParent{-1};            ///< Topmost parent frame index on the common surface
   NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
-  bool fUseSurfSafety{false}; ///< Use just the surface safety to outside in the minimization procedure
+  bool fUseSurfSafety{false}; ///< The surface has virtual intersections with the 3D shape. Use just the surface safety
+                              ///< to outside in the minimization procedure
 
   FramedSurface() = default;
   FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool surfsafety, NavIndex_t index = 0)
@@ -294,15 +276,22 @@ struct FramedSurface {
     return fFrame.Inside(localpoint, surfdata);
   }
 
-  ///< Check if the propagated point on surface is within the frame
+  /// @brief Calculate the shortest distance (or an underestimate) from a point on the surface
+  ///  to the surface frame.
+  /// @tparam Real_t Precision type for parameters
+  /// @param point Point on the surface
+  /// @param safetySurf Safety to the surface
+  /// @param surfdata Surface data storage
+  /// @return Combined safety surface+frame
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE
-  Real_t SafetyFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
+  Real_t SafetyFrame(Vector3D<Real_t> const &point, Real_t safetySurf, SurfData<Real_t> const &surfdata,
+                     bool &valid) const
   {
     Vector3D<Real_t> localpoint(point);
     // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
     if (fTrans) localpoint = surfdata.fGlobalTrans[fTrans].Transform(point);
-    return fFrame.Safety(localpoint, surfdata);
+    return fFrame.Safety(localpoint, safetySurf, surfdata, valid);
   }
 };
 
