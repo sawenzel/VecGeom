@@ -32,15 +32,15 @@ struct SurfaceHelper<kSpherical, Real_t> {
   /// @brief Find signed distance to next intersection from local point.
   /// @param point Point in local surface coordinates
   /// @param dir Direction in the local surface coordinates
-  /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped
+  /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
-  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool flip_exiting, Real_t &distance)
+  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance)
   {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
-    int numroots = 0;
-    flip_exiting ^= fSphData->IsFlipped();
+    int numroots      = 0;
+    bool flip_exiting = left_side ^ fSphData->IsFlipped();
     SphereEq<Real_t>(point, dir, fSphData->Radius(), coef);
     QuadraticSolver(coef, roots, numroots);
     for (auto i = 0; i < numroots; ++i) {
@@ -58,17 +58,17 @@ struct SurfaceHelper<kSpherical, Real_t> {
   VECCORE_ATT_HOST_DEVICE
   /// @brief Computes the isotropic safe distance to unplaced surfaces
   /// @param point Point in local surface coordinates
-  /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped
+  /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param distance Computed isotropic safety
   /// @param compute_onsurf Instructs to compute the projection of the point on surface
   /// @param onsurf Projection of the point on surface
   /// @return Validity of the calculation
-  bool Safety(Vector3D<Real_t> const &point, bool flip_exiting, Real_t &distance, bool compute_onsurf,
+  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
     Real_t sphR = fSphData->Radius();
     Real_t rho  = point.Mag();
-    distance    = flip_exiting ? sphR - rho : rho - sphR;
+    distance    = left_side ? sphR - rho : rho - sphR;
     // the onsurf computation code is missing below
 
     return true;

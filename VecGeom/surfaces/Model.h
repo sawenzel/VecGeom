@@ -62,24 +62,24 @@ struct UnplacedSurface {
   /// @tparam Real_t Floating-point precision type
   /// @param point Point in the local surface coordinates
   /// @param dir Direction in the local surface coordinates
-  /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped.
+  /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param surfdata Surface data storage.
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE
-  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool flip_exiting,
+  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side,
                  SurfData<Real_t> const &surfdata, Real_t &distance) const
   {
     switch (type) {
     case kPlanar:
-      return SurfaceHelper<kPlanar, Real_t>().Intersect(point, dir, flip_exiting, distance);
+      return SurfaceHelper<kPlanar, Real_t>().Intersect(point, dir, left_side, distance);
     case kCylindrical:
-      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id)).Intersect(point, dir, flip_exiting, distance);
+      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id)).Intersect(point, dir, left_side, distance);
     case kConical:
-      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id)).Intersect(point, dir, flip_exiting, distance);
+      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id)).Intersect(point, dir, left_side, distance);
     case kSpherical:
-      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Intersect(point, dir, flip_exiting, distance);
+      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Intersect(point, dir, left_side, distance);
     case kTorus:
     case kGenSecondOrder:
       // unhandled
@@ -91,7 +91,7 @@ struct UnplacedSurface {
   /// @brief Computes the isotropic safe distance to unplaced surfaces
   /// @tparam Real_t Precision type for parameters
   /// @param point Point in local surface coordinates
-  /// @param flip_exiting Flag representing the logical XOR of the surface being exited and normal being flipped
+  /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param surfdata Surface data storage
   /// @param distance Computed isotropic safety
   /// @param compute_onsurf Instructs to compute the projection of the point on surface
@@ -99,21 +99,21 @@ struct UnplacedSurface {
   /// @return
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE
-  bool Safety(Vector3D<Real_t> const &point, bool flip_exiting, SurfData<Real_t> const &surfdata, Real_t &distance,
+  bool Safety(Vector3D<Real_t> const &point, bool left_side, SurfData<Real_t> const &surfdata, Real_t &distance,
               bool compute_onsurf, Vector3D<Real_t> &onsurf) const
   {
     switch (type) {
     case kPlanar:
-      return SurfaceHelper<kPlanar, Real_t>().Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+      return SurfaceHelper<kPlanar, Real_t>().Safety(point, left_side, distance, compute_onsurf, onsurf);
     case kCylindrical:
       return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id))
-          .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, compute_onsurf, onsurf);
     case kConical:
       return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id))
-          .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, compute_onsurf, onsurf);
     case kSpherical:
       return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id))
-          .Safety(point, flip_exiting, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, compute_onsurf, onsurf);
     case kTorus:
     case kGenSecondOrder:
       // unhandled
