@@ -10,8 +10,11 @@ macro(build_executables EXECUTABLES)
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} PUBLIC
-      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,>
-      VecGeomTest)
+      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,vecgeom>
+      VecGeomTest
+      $<$<BOOL:${VECGEOM_TEST_BENCHMARK}>:VecGeomBenchmark>
+      $<$<BOOL:${VECGEOM_ROOT}>:VecGeomUtilities>
+      $<$<BOOL:${VECGEOM_GDML}>:vgdml>)
   endforeach()
 endmacro()
 
@@ -119,6 +122,7 @@ if (VECGEOM_USE_NAVINDEX)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testEM3.cpp)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testTubeSurfaces.cpp)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testTrdSurfaces.cpp)
+  list(APPEND TEST_EXECUTABLES_CORE surfaces/testRaytracing.cpp)
   if (VECGEOM_ENABLE_CUDA)
     add_executable(testCUDA surfaces/testCUDA.cpp surfaces/testCUDA.cu)
     target_link_libraries(testCUDA PUBLIC vecgeomcuda_static)
