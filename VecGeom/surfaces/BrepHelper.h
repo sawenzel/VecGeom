@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <functional>
+#include <map>
 #include <VecGeom/surfaces/Model.h>
 
 // Check if math necessary
@@ -93,6 +94,7 @@ private:
   std::vector<VolumeShellCPU> fShells;        ///< vector of local volume surfaces
   std::vector<std::vector<int>> fCandidates;  ///< candidate lists for each state
   std::vector<std::vector<int>> fFrameInd;    ///< frame index per candidate
+  std::multimap<int, int> fSurfHash;          ///< maps rotation hash index to a list of common surface id's
 
   BrepHelper() : fSurfData(new SurfData_t()) {}
 
@@ -791,7 +793,6 @@ private:
   int CreateCommonSurface(int idglob)
   {
     bool flip;
-
     auto approxEqual = [&](int idglob1, int idglob2) {
       flip                    = false;
       FramedSurface const &s1 = fFramedSurf[idglob1];
@@ -846,6 +847,57 @@ private:
       return true;
     };
 
+    auto surfHashUgly = [&](int idglobal) {
+      // Compute hash for the surface rotation
+      constexpr int nth = 1000;
+      constexpr int nph = 1000;
+      FramedSurface const &surf = fFramedSurf[idglobal];
+      Transformation const &trans = fGlobalTrans[surf.fTrans];
+      // convert local Z axis to the global frame
+      vecgeom::Vector3D<double> const zaxis(0, 0, 1);
+      auto vzglob = trans.InverseTransformDirection(zaxis);
+      int ith = nth * vecCore::math::Abs(vzglob.z());
+      // backward vectors should generate the same hash
+      Real_t phi = vzglob.Phi() + vecgeom::kPi * int(vzglob.z() < 0);
+      phi        = fmod(fmod(phi,vecgeom::kTwoPi)+vecgeom::kTwoPi, vecgeom::kTwoPi); // [0, 2pi]
+      if (ith == 0)
+        phi = fmod(phi, vecgeom::kPi);
+      int iph    = nph * phi * vecgeom::kTwoPiInv + 0.5;
+      if (ith == nth) {
+        ith--;
+        iph = 0;
+      }
+      auto hash  = ith * nph + iph;
+      //std::cout << "framed_surf " << idglob << ": vzglob=" << vzglob << " ith=" << ith << " iph=" << iph << " hash= " << hash << std::endl;
+      return hash;
+    };
+    
+#if (1)
+    auto hash  = surfHashUgly(idglob);
+    // Get the compatible surfaces
+    auto range = fSurfHash.equal_range(hash);
+    bool found_dup_surf = false;
+    int id              = -1;
+    for (auto it = range.first; it != range.second; ++it) {
+      const auto &other_id = fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
+      if (approxEqual(other_id, idglob)) {
+        found_dup_surf = true;
+        id             = it->second;
+        // Add the global surface to the appropriate side
+        if (flip)
+          fCommonSurfaces[id].fRightSide.AddSurface(idglob);
+        else
+          fCommonSurfaces[id].fLeftSide.AddSurface(idglob);
+        break;
+      }
+    }
+    if (!found_dup_surf) {
+      // Construct a new common surface from the current placed global surface
+      id = fCommonSurfaces.size();
+      fCommonSurfaces.push_back({fFramedSurf[idglob].fSurface.type, idglob});
+      fSurfHash.insert(std::make_pair(hash, id));
+    }
+#else
     // this may be slow
     auto it = std::find_if(std::begin(fCommonSurfaces), std::end(fCommonSurfaces), [&](const CommonSurface &t) {
       return (t.fLeftSide.fNsurf > 0) ? approxEqual(t.fLeftSide.fSurfaces[0], idglob) : false;
@@ -864,6 +916,7 @@ private:
       id = fCommonSurfaces.size();
       fCommonSurfaces.push_back({fFramedSurf[idglob].fSurface.type, idglob});
     }
+#endif
     return id;
   }
 
