@@ -544,6 +544,10 @@ public:
         // Create the global surface
         int id_glob = fFramedSurf.size();
         fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
+        if (fVerbose > 0) {
+          std::cout << "framed surface " << id_glob << " for state: ";
+          state.Print(); 
+        }
         CreateCommonSurface(id_glob);
       }
 
@@ -871,7 +875,7 @@ private:
       //std::cout << "framed_surf " << idglob << ": vzglob=" << vzglob << " ith=" << ith << " iph=" << iph << " hash= " << hash << std::endl;
       return hash;
     };
-    
+
 #if (1)
     auto hash  = surfHashUgly(idglob);
     // Get the compatible surfaces
@@ -883,18 +887,33 @@ private:
       if (approxEqual(other_id, idglob)) {
         found_dup_surf = true;
         id             = it->second;
+        auto &crt_side = flip ? fCommonSurfaces[id].fRightSide : fCommonSurfaces[id].fLeftSide;         
+        // The common surface is compatible only if the parent state for the current framed surface
+        // has a frame on the same side or it is already the common state.
+        auto parent_state_index = vecgeom::NavStateIndex::PopImpl(fFramedSurf[idglob].fState);
+        if (fCommonSurfaces[id].fDefaultState != parent_state_index) {
+          // To be compatible, a surface of the parent state MUST exist on the same side
+          bool has_parent = false;
+          for (auto isurf = 0; isurf < crt_side.fNsurf; ++isurf) {
+            has_parent = fFramedSurf[crt_side.fSurfaces[isurf]].fState == parent_state_index;
+            if (has_parent) break;
+          }
+          if (!has_parent) {
+            found_dup_surf = false;
+            continue;
+          }
+        }
         // Add the global surface to the appropriate side
-        if (flip)
-          fCommonSurfaces[id].fRightSide.AddSurface(idglob);
-        else
-          fCommonSurfaces[id].fLeftSide.AddSurface(idglob);
+        crt_side.AddSurface(idglob);
         break;
       }
     }
     if (!found_dup_surf) {
       // Construct a new common surface from the current placed global surface
+      // Set the common state to be the parent of the idglob surface state
       id = fCommonSurfaces.size();
       fCommonSurfaces.push_back({fFramedSurf[idglob].fSurface.type, idglob});
+      fCommonSurfaces[id].fDefaultState = vecgeom::NavStateIndex::PopImpl(fFramedSurf[idglob].fState);
       fSurfHash.insert(std::make_pair(hash, id));
     }
 #else
