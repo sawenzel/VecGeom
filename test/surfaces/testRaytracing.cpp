@@ -4,7 +4,17 @@
 #include "test/benchmark/ArgParser.h"
 #include <VecGeom/volumes/LogicalVolume.h>
 #include <VecGeom/management/GeoManager.h>
+#include <VecGeom/management/CudaManager.h>
+#include <VecGeom/management/BVHManager.h>
 #include <VecGeom/base/RNG.h>
+#include <VecGeom/navigation/GlobalLocator.h>
+#include <VecGeom/navigation/NewSimpleNavigator.h>
+#include <VecGeom/navigation/BVHNavigator.h>
+#include <VecGeom/navigation/SimpleSafetyEstimator.h>
+#include <VecGeom/navigation/BVHSafetyEstimator.h>
+#include <VecGeom/volumes/utilities/VolumeUtilities.h>
+#include <VecGeom/base/Stopwatch.h>
+
 #ifdef VECGEOM_GDML
 #include <Frontend.h>
 #endif
@@ -12,139 +22,116 @@
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/BrepHelper.h>
 #include <VecGeom/surfaces/Navigator.h>
-#include <VecGeom/navigation/GlobalLocator.h>
-#include <VecGeom/navigation/NewSimpleNavigator.h>
-#include <VecGeom/navigation/SimpleSafetyEstimator.h>
-#include <VecGeom/volumes/utilities/VolumeUtilities.h>
-#include <VecGeom/navigation/NavStatePool.h>
-#include <VecGeom/base/Stopwatch.h>
 
 using namespace vecgeom;
-// Forwards
-void LoadGDML(const char *name);
-bool CheckSafety(Vector3D<Precision> const &, NavStateIndex const &, double, int);
-double PropagateRay(Vector3D<Precision> const &, Vector3D<Precision> const &,
-  NavStateIndex const &);
-double PropagateRay(Vector3D<Precision> const &, Vector3D<Precision> const &,
-  NavStateIndex const &, vgbrep::SurfData<Precision> const &);
+using BrepHelper = vgbrep::BrepHelper<Precision>;
+using SurfData   = vgbrep::SurfData<Precision>;
+using vecCore::math::Abs;
+using Vec3D  = vecgeom::Vector3D<vecgeom::Precision>;
+using Vec3Dc = Precision[3];
 
-int main(int argc, char *argv[])
+//==================================================================================
+int LoadGDML(const char *gdml_name)
 {
-  using BrepHelper = vgbrep::BrepHelper<Precision>;
-  using vecCore::math::Abs;
-
-  OPTION_STRING(gdml_name, "default.gdml");
-  OPTION_INT(nrays, 10000);
-  OPTION_INT(debug, 0);
-
-  // Load the geometry
 #ifndef VECGEOM_GDML
   std::cout << "### VecGeom must be compiled with GDML support to run this.\n";
   return 1;
 #else
-  auto load = vgdml::Frontend::Load(gdml_name.c_str(), false, 1);
+  auto load = vgdml::Frontend::Load(gdml_name, false, 1);
   if (!load) return 2;
 #endif
 
-  Stopwatch timer;
-  timer.Start();
-  // Prepare the model: create the surfaces corresponding to the loaded geometry
-  BrepHelper::Instance().SetVerbosity(false);
-  if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
-  if (!BrepHelper::Instance().CreateCommonSurfacesFlatTop()) return 2;
-  Precision time_surf_dist = timer.Stop();
-  // if (debug)
-    std::cout << "Conversion time: " << time_surf_dist << "[s]\n";
-  
-  auto const &surfdata = BrepHelper::Instance().GetSurfData();
-
-  // Generate random points and directions inside the setup
-  SOA3D<Precision> points(nrays);
-  SOA3D<Precision> dirs(nrays);
-
   auto world = GeoManager::Instance().GetWorld();
-  assert(world);
-  Vector3D<Precision> amin, amax;
-  world->GetLogicalVolume()->GetUnplacedVolume()->Extent(amin, amax);
+  if (!world) return 3;
 
-  Vector3D<Precision> samplingVolume = 0.5 * (amax - amin);
-  volumeUtilities::FillRandomPoints(samplingVolume, points);
-  volumeUtilities::FillRandomDirections(dirs);
+  // For the moment we still need the world volume on the GPU
+  std::cout << "synchronizing VecGeom geometry to GPU ...\n";
+  auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
+  cudaManager.LoadGeometry(world);
+  if (!cudaManager.Synchronize()) return 4;
 
-  // now setup all the navigation states
-  int ndeep = GeoManager::Instance().getMaxDepth();
-  NavStatePool origStates(nrays, ndeep);
-  NavStatePool outputStates(nrays, ndeep);
+  vecgeom::cxx::BVHManager::Init();
+  vecgeom::cxx::BVHManager::DeviceInit();
 
-  Precision *refSteps = new Precision[nrays];
-  memset(refSteps, 0, sizeof(Precision) * nrays);
-
-  Precision *refSafeties = new Precision[nrays];
-  memset(refSafeties, 0, sizeof(Precision) * nrays);
-
-  int num_errors        = 0;
-  int num_better_safety = 0;
-  int num_worse_safety  = 0;
-
+  return 0;
+}
+//==================================================================================
+void LocateSolids(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states)
+{
   for (auto i = 0; i < nrays; ++i) {
-    Vector3D<Precision> const &pos = points[i];
-    Vector3D<Precision> const &dir = dirs[i];
-
-    // Locate with primitive model
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
-    // Validate with surface model
-    NavStateIndex locate_state;
-    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, surfdata, true);
-    if (locate_state.GetNavIndex() != origStates[i]->GetNavIndex()) {
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
+  }
+}
+//==================================================================================
+void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states)
+{
+  auto nav = static_cast<BVHNavigator<> *>(BVHNavigator<>::Instance());
+  for (auto i = 0; i < nrays; ++i) {
+    nav->LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
+  }
+}
+//==================================================================================
+void LocateSurf(int nrays, SurfData const *surfDataPtr, Vector3D<Precision> const *points, NavStateIndex *out_states)
+{
+  SurfData const &surfdata = *surfDataPtr;
+  for (auto i = 0; i < nrays; ++i) {
+    auto const &pos = points[i];
+    // Locate with surface-based model
+    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, out_states[i], surfdata, true);
+  }
+}
+//==================================================================================
+int ValidateLocate(int nrays, SurfData const &surfdata, Vector3D<Precision> const *points,
+                   NavStateIndex const *in_states, NavStateIndex *out_states, bool debug)
+{
+  int num_errors = 0;
+  for (auto i = 0; i < nrays; ++i) {
+    if (out_states[i].GetNavIndex() != in_states[i].GetNavIndex()) {
       num_errors++;
       if (debug) {
         printf("%d: input state:  ", i);
-        origStates[i]->Print();
+        in_states[i].Print();
         printf("   model input state:  ");
-        locate_state.Print();
-        locate_state.Clear();
+        out_states[i].Print();
+        out_states[i].Clear();
         // This just replays the failing locate query for debugging
-        vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, surfdata, true);
-        return 3;
+        vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], out_states[i], surfdata, true);
       }
     }
-
-    // Compute safety for initial point
-    refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, *origStates[i]);
-    // Validate with surface model
-    int exit_surf;
-    auto safety = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
-    if (debug && safety > refSafeties[i] + kTolerance) {
-      bool safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
-      if (!safesafe) {
-        num_errors++;
-        // Replay before exiting for debugging
-        safety = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
-        return 4;
-      }
-    }
-    num_better_safety += (safety > refSafeties[i] + kTolerance);
-    num_worse_safety += (safety < refSafeties[i] - kTolerance);
-
-    // Traverse geometry till exit
-    auto length_over_crossings_ref = PropagateRay(pos, dir, *origStates[i]);
-    auto length_over_crossings = PropagateRay(pos, dir, *origStates[i], surfdata);
-    bool error_dist = Abs(length_over_crossings - length_over_crossings_ref) > kTolerance;
-    if (error_dist) num_errors++;
   }
-
-  printf("=== testRaytracing: num_erros = %d / %d\n", num_errors, nrays);
-  if (num_better_safety > 0) printf("    Number of better safety values: %d\n", num_better_safety);
-
-  if (num_worse_safety > 0) printf("    Number of worse safety values: %d\n", num_worse_safety);
-
-  // Test clearing surface data
-  BrepHelper::Instance().ClearData();
-  delete[] refSteps;
-  delete[] refSafeties;
   return num_errors;
 }
-
+//==================================================================================
+void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+                          Precision *ref_safeties)
+{
+  auto safety_estimator = SimpleSafetyEstimator::Instance();
+  for (auto i = 0; i < nrays; ++i) {
+    // Compute safety using the solid-based model
+    ref_safeties[i] = safety_estimator->ComputeSafety(points[i], in_states[i]);
+  }
+}
+//==================================================================================
+void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+                             Precision *safeties)
+{
+  auto safety_estimator = BVHSafetyEstimator::Instance();
+  for (auto i = 0; i < nrays; ++i) {
+    // Compute safety using the solid-based model with BVH
+    safeties[i] = safety_estimator->ComputeSafety(points[i], in_states[i]);
+  }
+}
+//==================================================================================
+void ComputeSafetiesSurf(int nrays, SurfData const *surfDataPtr, Vector3D<Precision> const *points,
+                         NavStateIndex const *in_states, Precision *safeties)
+{
+  SurfData const &surfdata = *surfDataPtr;
+  for (auto i = 0; i < nrays; ++i) {
+    int exit_surf;
+    safeties[i] = vgbrep::protonav::ComputeSafety(points[i], in_states[i], surfdata, exit_surf);
+  }
+}
+//==================================================================================
 bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state, double safety, int nsamples)
 {
   // Generate nsamples random points in a sphere with the safety radius and check if
@@ -167,46 +154,285 @@ bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state
   }
   return is_safe;
 }
-
-double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                    NavStateIndex const &in_state, vgbrep::SurfData<Precision> const &surfdata)
+//==================================================================================
+int ValidateSafety(int nrays, SurfData const &surfdata, Vector3D<Precision> const *points,
+                   NavStateIndex const *in_states, Precision const *safeties, Precision const *refSafeties, bool debug,
+                   int &num_better_safety, int &num_worse_safety)
 {
-  // Locate the start point. This is not yet implemented in the surface model
-  NavStateIndex start_state = in_state;
-  NavStateIndex out_state;
-  int num_cross   = 0;
-  int exit_surf   = 0;
-  double dist_tot = 0;
-  auto pt = point;
-  do {
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, start_state, out_state, surfdata, exit_surf);
-    dist_tot += distance;
-    pt += distance * direction;
-    start_state = out_state;
-    num_cross++;
-  } while (!out_state.IsOutside());
+  int num_errors = 0;
+  for (auto i = 0; i < nrays; ++i) {
+    num_better_safety += (safeties[i] > refSafeties[i] + kTolerance);
+    num_worse_safety += (safeties[i] < refSafeties[i] - kTolerance);
+    if (debug && safeties[i] > refSafeties[i] + kTolerance) {
+      bool safesafe = CheckSafety(points[i], in_states[i], safeties[i], 1000);
+      if (!safesafe) {
+        num_errors++;
+        // Replay before exiting for debugging
+        int exit_surf = 0;
+        vgbrep::protonav::ComputeSafety(points[i], in_states[i], surfdata, exit_surf);
+      }
+    }
+  }
+  return num_errors;
+}
+//==================================================================================
+template <typename Navigator>
+void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
+                        NavStateIndex const *in_states, Precision *length_over_crossings, int idebug = -1)
+{
+  Navigator *nav = static_cast<Navigator *>(Navigator::Instance());
+  int ilast      = nrays;
+  int istart     = 0;
+  if (idebug >= 0) {
+    istart = idebug;
+    ilast  = istart + 1;
+  }
+  for (auto i = istart; i < ilast; ++i) {
+    NavStateIndex start_state = in_states[i];
+    NavStateIndex out_state;
+    int num_cross   = 0;
+    double dist_tot = 0;
+    auto const &dir = dirs[i];
+    auto pt         = points[i] + kTolerance * dir; // push the start and subsequent crossing points
+    do {
+      double distance;
+      nav->FindNextBoundaryAndStep(pt, dir, start_state, out_state, kInfLength, distance);
+      distance += kTolerance; // compensate for the push
+      dist_tot += (num_cross + 1) * distance;
+      pt += distance * dir; // this is pushed with kTolerance beyond the boundary
+      start_state = out_state;
+      num_cross++;
+    } while (!out_state.IsOutside());
 
-  return num_cross ? dist_tot / num_cross : 0;
+    length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+  }
+}
+//==================================================================================
+void PropagateRaysSurf(int nrays, SurfData const *surfDataPtr, Vector3D<Precision> const *points,
+                       Vector3D<Precision> const *dirs, NavStateIndex const *in_states,
+                       Precision *length_over_crossings, int idebug = -1)
+{
+  SurfData const &surfdata = *surfDataPtr;
+  int ilast                = nrays;
+  int istart               = 0;
+  if (idebug >= 0) {
+    istart = idebug;
+    ilast  = istart + 1;
+  }
+  for (auto i = istart; i < ilast; ++i) {
+    NavStateIndex start_state = in_states[i];
+    NavStateIndex out_state;
+    int num_cross   = 0;
+    int exit_surf   = 0;
+    double dist_tot = 0;
+    auto pt         = points[i];
+    auto const &dir = dirs[i];
+    do {
+      exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
+      auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, surfdata, exit_surf);
+      dist_tot += (num_cross + 1) * distance;
+      pt += distance * dir;
+      start_state = out_state;
+      num_cross++;
+    } while (!out_state.IsOutside());
+
+    length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+  }
+}
+//==================================================================================
+int ValidateCrossing(int nrays, SurfData const &surfdata, Vector3D<Precision> const *points,
+                     Vector3D<Precision> const *dirs, NavStateIndex const *in_states,
+                     Precision *refLength_over_crossings, Precision *length_over_crossings, bool debug)
+{
+  int num_errors_dist = 0;
+  for (auto i = 0; i < nrays; ++i) {
+    bool error_dist = Abs(length_over_crossings[i] - refLength_over_crossings[i]) > kTolerance;
+    num_errors_dist += error_dist;
+    if (debug && error_dist && (num_errors_dist == 1)) {
+      // replay first error
+      printf("point %d: dist_ref = %g  dist = %g\n", i, refLength_over_crossings[i], length_over_crossings[i]);
+      PropagateRaysSolid<NewSimpleNavigator<>>(nrays, points, dirs, in_states, refLength_over_crossings, i);
+      PropagateRaysSurf(nrays, &surfdata, points, dirs, in_states, length_over_crossings, i);
+    }
+  }
+  return num_errors_dist;
+}
+//==================================================================================
+int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, const SurfData &surfdata,
+                       bool debug)
+{
+  // allocate storage
+  NavStateIndex *origStates   = new NavStateIndex[nrays];
+  NavStateIndex *outputStates = new NavStateIndex[nrays];
+  ;
+
+  Precision *refSafeties = new Precision[nrays];
+  memset(refSafeties, 0, sizeof(Precision) * nrays);
+
+  Precision *safeties = new Precision[nrays];
+  memset(safeties, 0, sizeof(Precision) * nrays);
+
+  Precision *refLength_over_crossings = new Precision[nrays];
+  memset(refLength_over_crossings, 0, sizeof(Precision) * nrays);
+
+  Precision *length_over_crossings = new Precision[nrays];
+  memset(length_over_crossings, 0, sizeof(Precision) * nrays);
+
+  int num_errors        = 0;
+  int num_errors_safe   = 0;
+  int num_errors_dist   = 0;
+  int num_better_safety = 0;
+  int num_worse_safety  = 0;
+
+  Stopwatch timer;
+  // Locating the global points
+  timer.Start();
+  LocateSolids(nrays, points, origStates);
+  auto time_locate_solids = timer.Stop();
+
+  timer.Start();
+  LocateSolidsBVH(nrays, points, outputStates);
+  auto time_locate_solids_bvh = timer.Stop();
+
+  for (auto i = 0; i < nrays; ++i)
+    outputStates[i].Clear();
+
+  timer.Start();
+  LocateSurf(nrays, &surfdata, points, outputStates);
+  auto time_locate_surf = timer.Stop();
+
+  // Corectness for locating points
+  num_errors = ValidateLocate(nrays, surfdata, points, origStates, outputStates, debug);
+  if (num_errors > 0) std::cout << "HOST: Point locate errors: " << num_errors << "\n";
+  if (!debug) {
+    std::cout << "HOST: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
+              << "  locate_surf: " << time_locate_surf << "\n";
+  }
+
+  // Safety for solids model (reference)
+  timer.Start();
+  ComputeSafetiesSolid(nrays, points, origStates, refSafeties);
+  auto time_safety_solids = timer.Stop();
+
+  // Safety for solids model with BVH
+  timer.Start();
+  ComputeSafetiesSolidBVH(nrays, points, origStates, safeties);
+  auto time_safety_solids_bvh = timer.Stop();
+
+  // Safety for surface model
+  timer.Start();
+  ComputeSafetiesSurf(nrays, &surfdata, points, origStates, safeties);
+  auto time_safety_surf = timer.Stop();
+
+  // Corectness for safety
+  num_errors_safe = ValidateSafety(nrays, surfdata, points, origStates, safeties, refSafeties, debug, num_better_safety,
+                                   num_worse_safety);
+  num_errors += num_errors_safe;
+  // Report timing
+  if (num_errors_safe > 0) std::cout << "HOST: Safety errors: " << num_errors_safe << "\n";
+  if (!debug) {
+    std::cout << "HOST: safety_solids: " << time_safety_solids << "  safety_solids_BVH: " << time_safety_solids_bvh
+              << "  safety_surf: " << time_safety_surf << "\n";
+  }
+  if (num_better_safety > 0) printf("HOST:    number of better safety values: %d\n", num_better_safety);
+  if (num_worse_safety > 0) printf("HOST:    number of worse safety values: %d\n", num_worse_safety);
+
+  // Distance computation + relocation for solid model
+  timer.Start();
+  PropagateRaysSolid<NewSimpleNavigator<>>(nrays, points, dirs, origStates, refLength_over_crossings);
+  auto time_traverse_solids = timer.Stop();
+
+  // Distance computation + relocation for solid model + BVH
+  timer.Start();
+  PropagateRaysSolid<BVHNavigator<>>(nrays, points, dirs, origStates, length_over_crossings);
+  auto time_traverse_solids_bvh = timer.Stop();
+
+  // Distance computation + relocation for surface model
+  timer.Start();
+  PropagateRaysSurf(nrays, &surfdata, points, dirs, origStates, length_over_crossings);
+  auto time_traverse_surf = timer.Stop();
+
+  // Corectness for traversal
+  num_errors_dist = ValidateCrossing(nrays, surfdata, points, dirs, origStates, refLength_over_crossings,
+                                     length_over_crossings, debug);
+
+  num_errors += num_errors_dist;
+  if (num_errors_dist > 0) std::cout << "HOST: traverse errors surf: " << num_errors_dist << "\n";
+  if (!debug) {
+    std::cout << "HOST: traverse_solids: " << time_traverse_solids
+              << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf
+              << "  num_errors = " << num_errors_dist << "\n";
+  }
+
+  if (num_errors > 0) printf("HOST: num_erros = %d / %d\n", num_errors, nrays);
+
+  delete[] origStates;
+  delete[] outputStates;
+  delete[] refSafeties;
+  delete[] safeties;
+  delete[] refLength_over_crossings;
+  delete[] length_over_crossings;
+  return num_errors;
 }
 
-double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                    NavStateIndex const &in_state)
-{
-  // Locate the start point. This is not yet implemented in the surface model
-  auto *nav = NewSimpleNavigator<>::Instance();
-  NavStateIndex start_state = in_state;
-  NavStateIndex out_state;
-  int num_cross   = 0;
-  double dist_tot = 0;
-  auto pt = point + kTolerance * direction;
-  do {
-    double distance;
-    nav->FindNextBoundaryAndStep(pt, direction, start_state, out_state, kInfLength, distance);
-    dist_tot += distance + kTolerance;
-    pt += (distance + kTolerance) * direction;
-    start_state = out_state;
-    num_cross++;
-  } while (!out_state.IsOutside());
+// in testRaytracing.cu
+int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug);
 
-  return num_cross ? dist_tot / num_cross : 0;
+//==================================================================================
+int main(int argc, char *argv[])
+{
+  OPTION_STRING(gdml_name, "default.gdml");
+  OPTION_INT(nrays, 10000);
+  OPTION_INT(debug, 0);
+
+  Stopwatch timer;
+  // Load the geometry
+  timer.Start();
+  bool load = LoadGDML(gdml_name.c_str());
+  if (load > 0) return load;
+  auto time_load = timer.Stop();
+  std::cout << "Geometry loading and GPU transfer: " << time_load << " [s]\n";
+
+  // BrepHelper::Instance().SetVerbosity(false);
+
+  timer.Start();
+  // Conversion to the surface model
+  if (!BrepHelper::Instance().Convert()) return 1;
+  auto time_surf_dist = timer.Stop();
+  BrepHelper::Instance().PrintSurfData();
+  std::cout << "Conversion time to surface model: " << time_surf_dist << " [s]\n";
+
+  // Generate random points and directions inside the setup
+  Vec3D *points, *dirs;
+  points = new Vec3D[nrays];
+  dirs   = new Vec3D[nrays];
+  Vec3D amin, amax;
+  auto world = GeoManager::Instance().GetWorld();
+  world->GetLogicalVolume()->GetUnplacedVolume()->Extent(amin, amax);
+
+  Vec3D origin{0, 0, 0};
+  volumeUtilities::FillRandomPoints(amin, amax, points, nrays);
+  volumeUtilities::FillRandomDirections(dirs, nrays);
+
+  // UGLY: Use a points struct to avoid passing Vector3D to the cuda namespace
+  auto pointsc = new Vec3Dc[nrays];
+  auto dirsc   = new Vec3Dc[nrays];
+  for (auto i = 0; i < nrays; ++i) {
+    auto &pt  = pointsc[i];
+    auto &dir = dirsc[i];
+    for (auto j = 0; j < 3; ++j) {
+      pt[j]  = points[i][j];
+      dir[j] = dirs[i][j];
+    }
+  }
+
+  auto const &surfdata = BrepHelper::Instance().GetSurfData();
+  int errHost          = testRaytracingHost(nrays, points, dirs, surfdata, debug);
+  int errCUDA          = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
+
+  // Clear surface data
+  BrepHelper::Instance().ClearData();
+  delete[] points;
+  delete[] dirs;
+  return errHost + errCUDA;
 }

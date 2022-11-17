@@ -66,15 +66,15 @@ struct VolumeShellCPU {
 // Host helper for filling the SurfData store
 template <typename Real_t>
 class BrepHelper {
-  using SurfData_t   = SurfData<Real_t>;
-  using CylData_t    = CylData<Real_t>;
-  using ConeData_t   = ConeData<Real_t>;
-  using SphData_t    = SphData<Real_t>;
-  using WindowMask_t = WindowMask<Real_t>;
-  using RingMask_t   = RingMask<Real_t>;
-  using ZPhiMask_t   = ZPhiMask<Real_t>;
-  using QuadMask_t   = QuadrilateralMask<Real_t>;
-  //  using Vector         = vecgeom::Vector3D<Real_t>;
+  using SurfData_t     = SurfData<Real_t>;
+  using CylData_t      = CylData<Real_t>;
+  using ConeData_t     = ConeData<Real_t>;
+  using SphData_t      = SphData<Real_t>;
+  using WindowMask_t   = WindowMask<Real_t>;
+  using RingMask_t     = RingMask<Real_t>;
+  using ZPhiMask_t     = ZPhiMask<Real_t>;
+  using TriangleMask_t = TriangleMask<Real_t>;
+  using QuadMask_t     = QuadrilateralMask<Real_t>;
 
 private:
   int fVerbose{0};                ///< verbosity level
@@ -512,7 +512,9 @@ public:
         CreateTrdSurfaces(*trd, volume->id());
         continue;
       }
-      std::cout << "testEm3: solid type not supported for volume: " << volume->GetName() << "\n";
+      std::cout << "BrepHelper::CreateLocalSurfaces: solid type not supported for volume: " << volume->GetName()
+                << "\n";
+      solid->Print();
       return false;
     }
     return true;
@@ -546,7 +548,8 @@ public:
         fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
         if (fVerbose > 0) {
           std::cout << "framed surface " << id_glob << " for state: ";
-          state.Print(); 
+          state.Print();
+          std::cout << global << "\n";
         }
         CreateCommonSurface(id_glob);
       }
@@ -596,6 +599,16 @@ public:
     }
 
     return true;
+  }
+
+  /// @brief Top-level conversion from a closed GeoManager to the surface model
+  /// @return Successful conversion
+  bool Convert()
+  {
+    bool success = CreateLocalSurfaces();
+    if (!success) return false;
+    success = CreateCommonSurfacesFlatTop();
+    return success;
   }
 
   ///< This method uses the transformation T1 of the first placed surface on the left side (which always exists)
@@ -713,6 +726,56 @@ public:
     printf("\n");
 
     printCandidates(vecgeom::GeoManager::Instance().GetWorld());
+  }
+
+  void PrintSurfData()
+  {
+    constexpr int megabyte = 1024 * 1024;
+    float total = 0, size = 0;
+    ;
+    std::cout << "___________________________________________________________________________________\n";
+    std::cout << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables\n";
+    size = float(fSurfData->fNshells * sizeof(VolumeShell) + fSurfData->fNlocalSurf * sizeof(int)) / megabyte;
+    total += size;
+    std::cout << "    volume shells          = " << fSurfData->fNshells << " [" << size << " MB]\n";
+    size = float(fSurfData->fNlocalTrans * sizeof(Transformation)) / megabyte;
+    total += size;
+    std::cout << "    local transformations  = " << fSurfData->fNlocalTrans << " [" << size << " MB]\n";
+    size = float(fSurfData->fNglobalTrans * sizeof(Transformation)) / megabyte;
+    total += size;
+    std::cout << "    global transformations = " << fSurfData->fNglobalTrans << " [" << size << " MB]\n";
+    size = float(fSurfData->fNlocalSurf * sizeof(FramedSurface)) / megabyte;
+    total += size;
+    std::cout << "    local surfaces         = " << fSurfData->fNlocalSurf << " [" << size << " MB]\n";
+    size = float(fSurfData->fNglobalSurf * sizeof(FramedSurface)) / megabyte;
+    total += size;
+    std::cout << "    global surfaces        = " << fSurfData->fNglobalSurf << " [" << size << " MB]\n";
+    size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface) + fSurfData->fNsides * sizeof(int)) / megabyte;
+    total += size;
+    std::cout << "    common surfaces        = " << fSurfData->fNcommonSurf << " [" << size << " MB]\n";
+    size = float(fSurfData->fNcandList * sizeof(int)) / megabyte;
+    total += size;
+    std::cout << "    candidates             = " << fSurfData->fNcandList << " [" << size << " MB]\n";
+    size = float(fSurfData->fNwindows * sizeof(WindowMask_t)) / megabyte;
+    total += size;
+    std::cout << "    window masks           = " << fSurfData->fNwindows << " [" << size << " MB]\n";
+    size = float(fSurfData->fNcylsph * sizeof(FramedSurface)) / megabyte;
+    total += size;
+    std::cout << "    cyl/sph masks          = " << fSurfData->fNcylsph << " [" << size << " MB]\n";
+    size = float(fSurfData->fNrings * sizeof(RingMask_t)) / megabyte;
+    total += size;
+    std::cout << "    ring masks             = " << fSurfData->fNrings << " [" << size << " MB]\n";
+    size = float(fSurfData->fNzphis * sizeof(ZPhiMask_t)) / megabyte;
+    total += size;
+    std::cout << "    Z/phi masks            = " << fSurfData->fNzphis << " [" << size << " MB]\n";
+    size = float(fSurfData->fNtriangs * sizeof(TriangleMask_t)) / megabyte;
+    total += size;
+    std::cout << "    triangle masks         = " << fSurfData->fNtriangs << " [" << size << " MB]\n";
+    size = float(fSurfData->fNquads * sizeof(QuadMask_t)) / megabyte;
+    total += size;
+    std::cout << "    quad masks             = " << fSurfData->fNquads << " [" << size << " MB]\n";
+    std::cout << " Total: " << total << "[MB]\n";
+    std::cout << "___________________________________________________________________________________\n";
   }
 
 private:
@@ -853,33 +916,33 @@ private:
 
     auto surfHashUgly = [&](int idglobal) {
       // Compute hash for the surface rotation
-      constexpr int nth = 1000;
-      constexpr int nph = 1000;
-      FramedSurface const &surf = fFramedSurf[idglobal];
+      constexpr int nth           = 1000;
+      constexpr int nph           = 1000;
+      FramedSurface const &surf   = fFramedSurf[idglobal];
       Transformation const &trans = fGlobalTrans[surf.fTrans];
       // convert local Z axis to the global frame
       vecgeom::Vector3D<double> const zaxis(0, 0, 1);
       auto vzglob = trans.InverseTransformDirection(zaxis);
-      int ith = nth * vecCore::math::Abs(vzglob.z());
+      int ith     = nth * vecCore::math::Abs(vzglob.z());
       // backward vectors should generate the same hash
       Real_t phi = vzglob.Phi() + vecgeom::kPi * int(vzglob.z() < 0);
-      phi        = fmod(fmod(phi,vecgeom::kTwoPi)+vecgeom::kTwoPi, vecgeom::kTwoPi); // [0, 2pi]
-      if (ith == 0)
-        phi = fmod(phi, vecgeom::kPi);
-      int iph    = nph * phi * vecgeom::kTwoPiInv + 0.5;
+      phi        = fmod(fmod(phi, vecgeom::kTwoPi) + vecgeom::kTwoPi, vecgeom::kTwoPi); // [0, 2pi]
+      if (ith == 0) phi = fmod(phi, vecgeom::kPi);
+      int iph = nph * phi * vecgeom::kTwoPiInv + 0.5;
       if (ith == nth) {
         ith--;
         iph = 0;
       }
-      auto hash  = ith * nph + iph;
-      //std::cout << "framed_surf " << idglob << ": vzglob=" << vzglob << " ith=" << ith << " iph=" << iph << " hash= " << hash << std::endl;
+      auto hash = ith * nph + iph;
+      // std::cout << "framed_surf " << idglob << ": vzglob=" << vzglob << " ith=" << ith << " iph=" << iph << " hash= "
+      // << hash << std::endl;
       return hash;
     };
 
 #if (1)
-    auto hash  = surfHashUgly(idglob);
+    auto hash = surfHashUgly(idglob);
     // Get the compatible surfaces
-    auto range = fSurfHash.equal_range(hash);
+    auto range          = fSurfHash.equal_range(hash);
     bool found_dup_surf = false;
     int id              = -1;
     for (auto it = range.first; it != range.second; ++it) {
@@ -887,7 +950,7 @@ private:
       if (approxEqual(other_id, idglob)) {
         found_dup_surf = true;
         id             = it->second;
-        auto &crt_side = flip ? fCommonSurfaces[id].fRightSide : fCommonSurfaces[id].fLeftSide;         
+        auto &crt_side = flip ? fCommonSurfaces[id].fRightSide : fCommonSurfaces[id].fLeftSide;
         // The common surface is compatible only if the parent state for the current framed surface
         // has a frame on the same side or it is already the common state.
         auto parent_state_index = vecgeom::NavStateIndex::PopImpl(fFramedSurf[idglob].fState);

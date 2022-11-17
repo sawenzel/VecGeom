@@ -99,7 +99,7 @@ VECGEOM_FORCE_INLINE Vector3D<Precision> SamplePoint(Vector3D<Precision> const &
 }
 
 /**
- *  @brief Returns a random, normalized direction vector.
+ *  @brief Returns a random, normalized, but non-isotropic direction vector.
  *  @details Mostly used for benchmarks, when a direction is needed.
  *  @return a random, normalized direction vector
  */
@@ -117,6 +117,26 @@ Vector3D<Precision> SampleDirection()
 }
 
 /**
+ *  @brief Returns a random, normalized, and isotropic direction vector.
+ *  @details Mostly used for benchmarks, when a direction is needed.
+ *  @return a random, normalized direction vector
+ */
+VECGEOM_FORCE_INLINE
+Vector3D<Precision> SampleDirectionIsotropic()
+{
+
+  Precision phi  = 2 * kPi * RNG::Instance().uniform();
+  Precision sphi = vecCore::math::Sin(phi);
+  Precision cphi = vecCore::math::Cos(phi);
+  Precision the  = vecCore::math::ACos(1 - 2 * RNG::Instance().uniform());
+  Precision sthe = vecCore::math::Sin(the);
+  Precision cthe = vecCore::math::Cos(the);
+  // This is normalized by construction
+  Vector3D<Precision> dir(sthe * cphi, sthe * sphi, cthe);
+  return dir;
+}
+
+/**
  *  @brief Fills a container with random normalized directions.
  *  @param dirs is the output container, provided by the caller
  */
@@ -126,6 +146,19 @@ VECGEOM_FORCE_INLINE void FillRandomDirections(TrackContainer &dirs)
   dirs.resize(dirs.capacity());
   for (int i = 0, iMax = dirs.capacity(); i < iMax; ++i) {
     dirs.set(i, SampleDirection());
+  }
+}
+
+/**
+ *  @brief Fills a C array with random normalized directions.
+ *  @param dirs is the output container, provided by the caller with the right size
+ *  @param size is the number of directions to be filled
+ */
+VECGEOM_FORCE_INLINE
+void FillRandomDirections(Vector3D<Precision> *dirs, int size)
+{
+  for (int i = 0; i < size; ++i) {
+    dirs[i] = SampleDirectionIsotropic();
   }
 }
 
@@ -770,6 +803,24 @@ VECGEOM_FORCE_INLINE void FillRandomPoints(Vector3D<Precision> const &lowercorne
   Vector3D<Precision> offset = (uppercorner + lowercorner) / 2.;
   for (int i = 0; i < size; ++i) {
     points.set(i, offset + SamplePoint(dim));
+  }
+}
+
+/**
+ * @brief Fills a C array with random
+ *    points contained inside a box defined by the two input corners.
+ * @param lowercorner Lower corner of the sampling box
+ * @param uppercorner Upper corner of the sampling box
+ * @param points The output container, provided with the right size by the caller.
+ */
+VECGEOM_FORCE_INLINE
+void FillRandomPoints(Vector3D<Precision> const &lowercorner, Vector3D<Precision> const &uppercorner,
+                      Vector3D<Precision> *points, int size)
+{
+  Vector3D<Precision> dim    = (uppercorner - lowercorner) / 2.;
+  Vector3D<Precision> offset = (uppercorner + lowercorner) / 2.;
+  for (int i = 0; i < size; ++i) {
+    points[i] = offset + SamplePoint(dim);
   }
 }
 

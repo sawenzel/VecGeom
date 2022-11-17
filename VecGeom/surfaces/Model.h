@@ -387,6 +387,7 @@ struct VolumeShell {
   /// @param point Point in the local volume coordinates
   /// @return Inside volume
   template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata)
   {
     /*** IMPORTANT ***/
@@ -427,14 +428,14 @@ struct Scene {
 template <typename Real_t>
 struct SurfData {
 
-  using CylData_t           = CylData<Real_t>;
-  using ConeData_t          = ConeData<Real_t>;
-  using SphData_t           = SphData<Real_t>;
-  using WindowMask_t        = WindowMask<Real_t>;
-  using RingMask_t          = RingMask<Real_t>;
-  using ZPhiMask_t          = ZPhiMask<Real_t>;
-  using TriangleMask_t      = TriangleMask<Real_t>;
-  using QuadrilateralMask_t = QuadrilateralMask<Real_t>;
+  using CylData_t      = CylData<Real_t>;
+  using ConeData_t     = ConeData<Real_t>;
+  using SphData_t      = SphData<Real_t>;
+  using WindowMask_t   = WindowMask<Real_t>;
+  using RingMask_t     = RingMask<Real_t>;
+  using ZPhiMask_t     = ZPhiMask<Real_t>;
+  using TriangleMask_t = TriangleMask<Real_t>;
+  using QuadMask_t     = QuadrilateralMask<Real_t>;
 
   int fNlocalTrans{0};
   int fNglobalTrans{0};
@@ -465,18 +466,18 @@ struct SurfData {
   /// Volume shells, indexed by the logical volume id
   VolumeShell *fShells{nullptr}; ///< volume shells
 
-  FramedSurface *fLocalSurf{nullptr};       ///< local surfaces
-  FramedSurface *fFramedSurf{nullptr};      ///< global surfaces
-  WindowMask_t *fWindowMasks{nullptr};      ///< rectangular masks
-  RingMask_t *fRingMasks{nullptr};          ///< ring masks
-  ZPhiMask_t *fZPhiMasks{nullptr};          ///< cylindrical masks
-  TriangleMask_t *fTriangleMasks{nullptr};  ///< triangular masks
-  QuadrilateralMask_t *fQuadMasks{nullptr}; ///< quadrilateral masks
-  CommonSurface *fCommonSurfaces{nullptr};  ///< common surfaces
-  Candidates *fCandidates;                  ///< candidate surfaces per navigation state
-  int *fSides{nullptr};                     ///< side surface indices
-  int *fSurfShellList{nullptr};             ///< indices of local surfaces used in shells
-  int *fCandList{nullptr};                  ///< global list of candidate indices
+  FramedSurface *fLocalSurf{nullptr};      ///< local surfaces
+  FramedSurface *fFramedSurf{nullptr};     ///< global surfaces
+  WindowMask_t *fWindowMasks{nullptr};     ///< rectangular masks
+  RingMask_t *fRingMasks{nullptr};         ///< ring masks
+  ZPhiMask_t *fZPhiMasks{nullptr};         ///< cylindrical masks
+  TriangleMask_t *fTriangleMasks{nullptr}; ///< triangular masks
+  QuadMask_t *fQuadMasks{nullptr};         ///< quadrilateral masks
+  CommonSurface *fCommonSurfaces{nullptr}; ///< common surfaces
+  Candidates *fCandidates;                 ///< candidate surfaces per navigation state
+  int *fSides{nullptr};                    ///< side surface indices
+  int *fSurfShellList{nullptr};            ///< indices of local surfaces used in shells
+  int *fCandList{nullptr};                 ///< global list of candidate indices
 
   SurfData() = default;
 
@@ -496,7 +497,7 @@ struct SurfData {
   VECCORE_ATT_HOST_DEVICE
   TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
-  QuadrilateralMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
+  QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE

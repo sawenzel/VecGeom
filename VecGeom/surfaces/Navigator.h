@@ -18,6 +18,7 @@ namespace protonav {
 /// @param exclude Placed volume to exclude from checking
 /// @return
 template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE
 vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol, vecgeom::Vector3D<Real_t> const &point,
                                             vecgeom::NavStateIndex &path, SurfData<Real_t> const &surfdata, bool top,
                                             vecgeom::VPlacedVolume *exclude = nullptr)
