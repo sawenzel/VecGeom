@@ -366,7 +366,8 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
     // shoot the same ray in the surface model
     int exit_surf = 0;
     bool safesafe = true;
-    NavStateIndex out_state;
+    NavStateIndex in_state, out_state, surflocate_state;
+    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, surfdata, true);
     auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
     auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
     if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
@@ -374,15 +375,18 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
     num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
     if (safety < refSafeties[i] - kTolerance)
       printf("safe_ref = %g   safe = %g  pos = (%g, %g, %g)\n", refSafeties[i], safety, pos[0], pos[1], pos[2]);
-    bool errpath = out_state.GetNavIndex() != outputStates[i]->GetNavIndex();
+    bool errlocate = surflocate_state.GetNavIndex() != origStates[i]->GetNavIndex();
+    bool errpath   = out_state.GetNavIndex() != outputStates[i]->GetNavIndex();
     bool errdist = std::abs(distance - refSteps[i]) > tolerance;
     bool errsafe = !safesafe;
-    bool err     = errpath || errdist || errsafe;
+    bool err       = errlocate || errpath || errdist || errsafe;
     num_errors += int(err);
 
     if (err) {
       printf("%d: input state:  ", i);
       origStates[i]->Print();
+      printf("%d: model locate: ", i);
+      surflocate_state.Print();
       printf("ref output state: ");
       outputStates[i]->Print();
       printf("model output state: ");

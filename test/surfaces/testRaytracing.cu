@@ -99,28 +99,80 @@ __global__ void ValidateSafety(int nrays, Precision const *safeties, Precision c
 }
 //==================================================================================
 template <typename Navigator>
-static __global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                          NavStateIndex const *in_states, Precision *length_over_crossings)
+__device__
+void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
+                       NavStateIndex const *in_states, Precision *length_over_crossings, bool debug = false)
 {
   auto nav = static_cast<Navigator *>(Navigator::Instance());
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    NavStateIndex start_state = in_states[i];
-    NavStateIndex out_state;
-    int num_cross   = 0;
-    double dist_tot = 0;
-    auto const &dir = dirs[i];
-    auto pt         = points[i] + kTolerance * dir; // push the start and subsequent crossing points
-    do {
-      double distance;
-      nav->FindNextBoundaryAndStep(pt, dir, start_state, out_state, kInfLength, distance);
-      distance += kTolerance; // compensate for the push
-      dist_tot += (num_cross + 1) * distance;
-      pt += distance * dir; // this is pushed with kTolerance beyond the boundary
-      start_state = out_state;
-      num_cross++;
-    } while (!out_state.IsOutside());
+  if (debug) {
+    printf("CUDA PropagateRaysSolid debug ray %d:\n", i);
+    printf("   ");
+    in_states[i].Print();
+  }
+  NavStateIndex start_state = in_states[i];
+  NavStateIndex out_state;
+  int num_cross   = 0;
+  double dist_tot = 0;
+  auto const &dir = dirs[i];
+  auto pt         = points[i] + kTolerance * dir; // push the start and subsequent crossing points
+  do {
+    double distance;
+    nav->FindNextBoundaryAndStep(pt, dir, start_state, out_state, kInfLength, distance);
+    distance += kTolerance; // compensate for the push
+    if (debug) {
+      printf("     dist = %15.10f\n", distance);
+      printf("   ");
+      out_state.Print();
+    }
+    dist_tot += (num_cross + 1) * distance;
+    pt += distance * dir; // this is pushed with kTolerance beyond the boundary
+    start_state = out_state;
+    num_cross++;
+  } while (!out_state.IsOutside());
 
-    length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+  length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+}
+//==================================================================================
+__device__ void PropagateRaySurf(int i, SurfData const *surfDataPtr, Vector3D<Precision> const *points,
+                                 Vector3D<Precision> const *dirs, NavStateIndex const *in_states,
+                                 Precision *length_over_crossings, bool debug = false)
+{
+  SurfData const &surfdata = *surfDataPtr;
+  if (debug) {
+    printf("PropagateRaysSurf debug ray %d:\n", i);
+    printf("   ");
+    in_states[i].Print();
+  }
+  NavStateIndex start_state = in_states[i];
+  NavStateIndex out_state;
+  int num_cross   = 0;
+  int exit_surf   = 0;
+  double dist_tot = 0;
+  auto pt         = points[i];
+  auto const &dir = dirs[i];
+  do {
+    exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, surfdata, exit_surf);
+    if (debug) {
+      printf("     dist = %15.10f\n", distance);
+      printf("   ");
+      out_state.Print();
+    }
+    dist_tot += (num_cross + 1) * distance;
+    pt += distance * dir;
+    start_state = out_state;
+    num_cross++;
+  } while (!out_state.IsOutside());
+
+  length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+}
+//==================================================================================
+template <typename Navigator>
+__global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
+                                   NavStateIndex const *in_states, Precision *length_over_crossings)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+    PropagateRaySolid<Navigator>(i, points, dirs, in_states, length_over_crossings);
   }
 }
 //==================================================================================
@@ -128,33 +180,22 @@ __global__ void PropagateRaysSurf(int nrays, SurfData const *surfDataPtr, Vector
                                   Vector3D<Precision> const *dirs, NavStateIndex const *in_states,
                                   Precision *length_over_crossings)
 {
-  SurfData const &surfdata = *surfDataPtr;
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    NavStateIndex start_state = in_states[i];
-    NavStateIndex out_state;
-    int num_cross   = 0;
-    int exit_surf   = 0;
-    double dist_tot = 0;
-    auto pt         = points[i];
-    auto const &dir = dirs[i];
-    do {
-      exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
-      auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, surfdata, exit_surf);
-      dist_tot += (num_cross + 1) * distance;
-      pt += distance * dir;
-      start_state = out_state;
-      num_cross++;
-    } while (!out_state.IsOutside());
-
-    length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+    PropagateRaySurf(i, surfDataPtr, points, dirs, in_states, length_over_crossings);
   }
 }
 //==================================================================================
-__global__ void ValidateTraversal(int nrays, Precision const *length_over_crossings,
-                                  Precision const *refLength_over_crossings, int *num_errors)
+__global__ void ValidateTraversal(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
+                                  NavStateIndex const *in_states, SurfData const *surfDataPtr,
+                                  Precision *length_over_crossings, Precision *refLength_over_crossings,
+                                  int *num_errors, bool debug)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     bool error_dist = Abs(length_over_crossings[i] - refLength_over_crossings[i]) > kTolerance;
+    if (error_dist && debug && *num_errors == 0) {
+      PropagateRaySolid<NewSimpleNavigator<>>(i, points, dirs, in_states, refLength_over_crossings, debug);
+      PropagateRaySurf(i, surfDataPtr, points, dirs, in_states, length_over_crossings, debug);
+    }
     atomicAdd(num_errors, int(error_dist));
   }
 }
@@ -170,6 +211,9 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     pointsh[i].Set(pointsc[i][0], pointsc[i][1], pointsc[i][2]);
     dirsh[i].Set(dirsc[i][0], dirsc[i][1], dirsc[i][2]);
   }
+
+  // Set higher stack limit to allow depper CSG for the solids model
+  BREP_CUDA_CHECK(vecgeom::cxx::CudaDeviceSetStackLimit(100000));
 
   // Allocate/copy data on device
   Vec3D *points;
@@ -264,7 +308,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     std::cout << "CUDA: safety_solids: " << time_safety_solids << " safety_solids_BVH: " << time_safety_solids_bvh
               << "  safety_surf: " << time_safety_surf << "\n";
   if (num_better_safety > 0) std::cout << "CUDA:    number of better safety values: " << num_better_safety << "\n";
-  if (num_worse_safety > 0) std::cout << "CUDA:    number of worse safety values: \n" << num_worse_safety << "\n";
+  if (num_worse_safety > 0) std::cout << "CUDA:    number of worse safety values: " << num_worse_safety << "\n";
 
   // Traversal for solids model (reference)
   timer.Start();
@@ -287,8 +331,9 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
   auto time_traverse_surf = timer.Stop();
 
-  ValidateTraversal<<<initBlocks, initThreads>>>(nrays, length_over_crossings, refLength_over_crossings,
-                                                 num_errors_dist_d);
+  ValidateTraversal<<<1, 1 /*initBlocks, initThreads*/>>>(nrays, points, dirs, origStates, surfDataDevice,
+                                                          length_over_crossings, refLength_over_crossings,
+                                                          num_errors_dist_d, debug);
   BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), cudaMemcpyDeviceToHost));
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
 

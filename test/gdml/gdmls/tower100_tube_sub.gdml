@@ -1,0 +1,1127 @@
+<?xml version="1.0"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+  <define>
+    <position name="COMP4_1inTOPpos" x="0" y="0" z="-49.5" unit="cm"/>
+  </define>
+  <materials>
+    <material name="Al" Z="13">
+      <D unit="g/cm3" value="2.7000000000000002"/>
+      <atom unit="g/mole" value="26.98"/>
+    </material>
+  </materials>
+  <solids>
+    <box name="TOP" x="120" y="120" z="120" lunit="cm"/>
+    <tube name="tseg0" rmin="10" rmax="50" z="1" startphi="30" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box0" x="50" y="50" z="0.5" lunit="cm"/>
+    <tube name="tseg1" rmin="10" rmax="49.696969696969695" z="1" startphi="30.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box1" x="49.696969696969695" y="49.696969696969695" z="0.5" lunit="cm"/>
+    <subtraction name="sub0">
+      <first ref="tseg0"/>
+      <second ref="box0"/>
+    </subtraction>
+    <subtraction name="sub1">
+      <first ref="tseg1"/>
+      <second ref="box1"/>
+    </subtraction>
+    <tube name="tseg2" rmin="10" rmax="49.393939393939391" z="1" startphi="31.199999999999999" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box2" x="49.393939393939391" y="49.393939393939391" z="0.5" lunit="cm"/>
+    <union name="cs0x98">
+      <first ref="sub0"/>
+      <second ref="sub1"/>
+      <position name="cs0x98sub1pos" x="0" y="0" z="1" unit="cm"/>
+    </union>
+    <subtraction name="sub2">
+      <first ref="tseg2"/>
+      <second ref="box2"/>
+    </subtraction>
+    <tube name="tseg3" rmin="10" rmax="49.090909090909093" z="1" startphi="31.800000000000001" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box3" x="49.090909090909093" y="49.090909090909093" z="0.5" lunit="cm"/>
+    <union name="cs0x97">
+      <first ref="cs0x98"/>
+      <second ref="sub2"/>
+      <position name="cs0x97sub2pos" x="0" y="0" z="2" unit="cm"/>
+    </union>
+    <subtraction name="sub3">
+      <first ref="tseg3"/>
+      <second ref="box3"/>
+    </subtraction>
+    <tube name="tseg4" rmin="10" rmax="48.787878787878789" z="1" startphi="32.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box4" x="48.787878787878789" y="48.787878787878789" z="0.5" lunit="cm"/>
+    <union name="cs0x96">
+      <first ref="cs0x97"/>
+      <second ref="sub3"/>
+      <position name="cs0x96sub3pos" x="0" y="0" z="3" unit="cm"/>
+    </union>
+    <subtraction name="sub4">
+      <first ref="tseg4"/>
+      <second ref="box4"/>
+    </subtraction>
+    <tube name="tseg5" rmin="10" rmax="48.484848484848484" z="1" startphi="33" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box5" x="48.484848484848484" y="48.484848484848484" z="0.5" lunit="cm"/>
+    <union name="cs0x95">
+      <first ref="cs0x96"/>
+      <second ref="sub4"/>
+      <position name="cs0x95sub4pos" x="0" y="0" z="4" unit="cm"/>
+    </union>
+    <subtraction name="sub5">
+      <first ref="tseg5"/>
+      <second ref="box5"/>
+    </subtraction>
+    <tube name="tseg6" rmin="10" rmax="48.18181818181818" z="1" startphi="33.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box6" x="48.18181818181818" y="48.18181818181818" z="0.5" lunit="cm"/>
+    <union name="cs0x94">
+      <first ref="cs0x95"/>
+      <second ref="sub5"/>
+      <position name="cs0x94sub5pos" x="0" y="0" z="5" unit="cm"/>
+    </union>
+    <subtraction name="sub6">
+      <first ref="tseg6"/>
+      <second ref="box6"/>
+    </subtraction>
+    <tube name="tseg7" rmin="10" rmax="47.878787878787875" z="1" startphi="34.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box7" x="47.878787878787875" y="47.878787878787875" z="0.5" lunit="cm"/>
+    <union name="cs0x93">
+      <first ref="cs0x94"/>
+      <second ref="sub6"/>
+      <position name="cs0x93sub6pos" x="0" y="0" z="6" unit="cm"/>
+    </union>
+    <subtraction name="sub7">
+      <first ref="tseg7"/>
+      <second ref="box7"/>
+    </subtraction>
+    <tube name="tseg8" rmin="10" rmax="47.575757575757578" z="1" startphi="34.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box8" x="47.575757575757578" y="47.575757575757578" z="0.5" lunit="cm"/>
+    <union name="cs0x92">
+      <first ref="cs0x93"/>
+      <second ref="sub7"/>
+      <position name="cs0x92sub7pos" x="0" y="0" z="7" unit="cm"/>
+    </union>
+    <subtraction name="sub8">
+      <first ref="tseg8"/>
+      <second ref="box8"/>
+    </subtraction>
+    <tube name="tseg9" rmin="10" rmax="47.272727272727273" z="1" startphi="35.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box9" x="47.272727272727273" y="47.272727272727273" z="0.5" lunit="cm"/>
+    <union name="cs0x91">
+      <first ref="cs0x92"/>
+      <second ref="sub8"/>
+      <position name="cs0x91sub8pos" x="0" y="0" z="8" unit="cm"/>
+    </union>
+    <subtraction name="sub9">
+      <first ref="tseg9"/>
+      <second ref="box9"/>
+    </subtraction>
+    <tube name="tseg10" rmin="10" rmax="46.969696969696969" z="1" startphi="36" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box10" x="46.969696969696969" y="46.969696969696969" z="0.5" lunit="cm"/>
+    <union name="cs0x90">
+      <first ref="cs0x91"/>
+      <second ref="sub9"/>
+      <position name="cs0x90sub9pos" x="0" y="0" z="9" unit="cm"/>
+    </union>
+    <subtraction name="sub10">
+      <first ref="tseg10"/>
+      <second ref="box10"/>
+    </subtraction>
+    <tube name="tseg11" rmin="10" rmax="46.666666666666664" z="1" startphi="36.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box11" x="46.666666666666664" y="46.666666666666664" z="0.5" lunit="cm"/>
+    <union name="cs0x89">
+      <first ref="cs0x90"/>
+      <second ref="sub10"/>
+      <position name="cs0x89sub10pos" x="0" y="0" z="10" unit="cm"/>
+    </union>
+    <subtraction name="sub11">
+      <first ref="tseg11"/>
+      <second ref="box11"/>
+    </subtraction>
+    <tube name="tseg12" rmin="10" rmax="46.36363636363636" z="1" startphi="37.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box12" x="46.36363636363636" y="46.36363636363636" z="0.5" lunit="cm"/>
+    <union name="cs0x88">
+      <first ref="cs0x89"/>
+      <second ref="sub11"/>
+      <position name="cs0x88sub11pos" x="0" y="0" z="11" unit="cm"/>
+    </union>
+    <subtraction name="sub12">
+      <first ref="tseg12"/>
+      <second ref="box12"/>
+    </subtraction>
+    <tube name="tseg13" rmin="10" rmax="46.060606060606062" z="1" startphi="37.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box13" x="46.060606060606062" y="46.060606060606062" z="0.5" lunit="cm"/>
+    <union name="cs0x87">
+      <first ref="cs0x88"/>
+      <second ref="sub12"/>
+      <position name="cs0x87sub12pos" x="0" y="0" z="12" unit="cm"/>
+    </union>
+    <subtraction name="sub13">
+      <first ref="tseg13"/>
+      <second ref="box13"/>
+    </subtraction>
+    <tube name="tseg14" rmin="10" rmax="45.757575757575758" z="1" startphi="38.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box14" x="45.757575757575758" y="45.757575757575758" z="0.5" lunit="cm"/>
+    <union name="cs0x86">
+      <first ref="cs0x87"/>
+      <second ref="sub13"/>
+      <position name="cs0x86sub13pos" x="0" y="0" z="13" unit="cm"/>
+    </union>
+    <subtraction name="sub14">
+      <first ref="tseg14"/>
+      <second ref="box14"/>
+    </subtraction>
+    <tube name="tseg15" rmin="10" rmax="45.454545454545453" z="1" startphi="39" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box15" x="45.454545454545453" y="45.454545454545453" z="0.5" lunit="cm"/>
+    <union name="cs0x85">
+      <first ref="cs0x86"/>
+      <second ref="sub14"/>
+      <position name="cs0x85sub14pos" x="0" y="0" z="14" unit="cm"/>
+    </union>
+    <subtraction name="sub15">
+      <first ref="tseg15"/>
+      <second ref="box15"/>
+    </subtraction>
+    <tube name="tseg16" rmin="10" rmax="45.151515151515149" z="1" startphi="39.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box16" x="45.151515151515149" y="45.151515151515149" z="0.5" lunit="cm"/>
+    <union name="cs0x84">
+      <first ref="cs0x85"/>
+      <second ref="sub15"/>
+      <position name="cs0x84sub15pos" x="0" y="0" z="15" unit="cm"/>
+    </union>
+    <subtraction name="sub16">
+      <first ref="tseg16"/>
+      <second ref="box16"/>
+    </subtraction>
+    <tube name="tseg17" rmin="10" rmax="44.848484848484851" z="1" startphi="40.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box17" x="44.848484848484851" y="44.848484848484851" z="0.5" lunit="cm"/>
+    <union name="cs0x83">
+      <first ref="cs0x84"/>
+      <second ref="sub16"/>
+      <position name="cs0x83sub16pos" x="0" y="0" z="16" unit="cm"/>
+    </union>
+    <subtraction name="sub17">
+      <first ref="tseg17"/>
+      <second ref="box17"/>
+    </subtraction>
+    <tube name="tseg18" rmin="10" rmax="44.545454545454547" z="1" startphi="40.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box18" x="44.545454545454547" y="44.545454545454547" z="0.5" lunit="cm"/>
+    <union name="cs0x82">
+      <first ref="cs0x83"/>
+      <second ref="sub17"/>
+      <position name="cs0x82sub17pos" x="0" y="0" z="17" unit="cm"/>
+    </union>
+    <subtraction name="sub18">
+      <first ref="tseg18"/>
+      <second ref="box18"/>
+    </subtraction>
+    <tube name="tseg19" rmin="10" rmax="44.242424242424242" z="1" startphi="41.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box19" x="44.242424242424242" y="44.242424242424242" z="0.5" lunit="cm"/>
+    <union name="cs0x81">
+      <first ref="cs0x82"/>
+      <second ref="sub18"/>
+      <position name="cs0x81sub18pos" x="0" y="0" z="18" unit="cm"/>
+    </union>
+    <subtraction name="sub19">
+      <first ref="tseg19"/>
+      <second ref="box19"/>
+    </subtraction>
+    <tube name="tseg20" rmin="10" rmax="43.939393939393938" z="1" startphi="42" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box20" x="43.939393939393938" y="43.939393939393938" z="0.5" lunit="cm"/>
+    <union name="cs0x80">
+      <first ref="cs0x81"/>
+      <second ref="sub19"/>
+      <position name="cs0x80sub19pos" x="0" y="0" z="19" unit="cm"/>
+    </union>
+    <subtraction name="sub20">
+      <first ref="tseg20"/>
+      <second ref="box20"/>
+    </subtraction>
+    <tube name="tseg21" rmin="10" rmax="43.636363636363633" z="1" startphi="42.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box21" x="43.636363636363633" y="43.636363636363633" z="0.5" lunit="cm"/>
+    <union name="cs0x79">
+      <first ref="cs0x80"/>
+      <second ref="sub20"/>
+      <position name="cs0x79sub20pos" x="0" y="0" z="20" unit="cm"/>
+    </union>
+    <subtraction name="sub21">
+      <first ref="tseg21"/>
+      <second ref="box21"/>
+    </subtraction>
+    <tube name="tseg22" rmin="10" rmax="43.333333333333336" z="1" startphi="43.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box22" x="43.333333333333336" y="43.333333333333336" z="0.5" lunit="cm"/>
+    <union name="cs0x78">
+      <first ref="cs0x79"/>
+      <second ref="sub21"/>
+      <position name="cs0x78sub21pos" x="0" y="0" z="21" unit="cm"/>
+    </union>
+    <subtraction name="sub22">
+      <first ref="tseg22"/>
+      <second ref="box22"/>
+    </subtraction>
+    <tube name="tseg23" rmin="10" rmax="43.030303030303031" z="1" startphi="43.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box23" x="43.030303030303031" y="43.030303030303031" z="0.5" lunit="cm"/>
+    <union name="cs0x77">
+      <first ref="cs0x78"/>
+      <second ref="sub22"/>
+      <position name="cs0x77sub22pos" x="0" y="0" z="22" unit="cm"/>
+    </union>
+    <subtraction name="sub23">
+      <first ref="tseg23"/>
+      <second ref="box23"/>
+    </subtraction>
+    <tube name="tseg24" rmin="10" rmax="42.727272727272727" z="1" startphi="44.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box24" x="42.727272727272727" y="42.727272727272727" z="0.5" lunit="cm"/>
+    <union name="cs0x76">
+      <first ref="cs0x77"/>
+      <second ref="sub23"/>
+      <position name="cs0x76sub23pos" x="0" y="0" z="23" unit="cm"/>
+    </union>
+    <subtraction name="sub24">
+      <first ref="tseg24"/>
+      <second ref="box24"/>
+    </subtraction>
+    <tube name="tseg25" rmin="10" rmax="42.424242424242422" z="1" startphi="45" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box25" x="42.424242424242422" y="42.424242424242422" z="0.5" lunit="cm"/>
+    <union name="cs0x75">
+      <first ref="cs0x76"/>
+      <second ref="sub24"/>
+      <position name="cs0x75sub24pos" x="0" y="0" z="24" unit="cm"/>
+    </union>
+    <subtraction name="sub25">
+      <first ref="tseg25"/>
+      <second ref="box25"/>
+    </subtraction>
+    <tube name="tseg26" rmin="10" rmax="42.121212121212125" z="1" startphi="45.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box26" x="42.121212121212125" y="42.121212121212125" z="0.5" lunit="cm"/>
+    <union name="cs0x74">
+      <first ref="cs0x75"/>
+      <second ref="sub25"/>
+      <position name="cs0x74sub25pos" x="0" y="0" z="25" unit="cm"/>
+    </union>
+    <subtraction name="sub26">
+      <first ref="tseg26"/>
+      <second ref="box26"/>
+    </subtraction>
+    <tube name="tseg27" rmin="10" rmax="41.81818181818182" z="1" startphi="46.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box27" x="41.81818181818182" y="41.81818181818182" z="0.5" lunit="cm"/>
+    <union name="cs0x73">
+      <first ref="cs0x74"/>
+      <second ref="sub26"/>
+      <position name="cs0x73sub26pos" x="0" y="0" z="26" unit="cm"/>
+    </union>
+    <subtraction name="sub27">
+      <first ref="tseg27"/>
+      <second ref="box27"/>
+    </subtraction>
+    <tube name="tseg28" rmin="10" rmax="41.515151515151516" z="1" startphi="46.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box28" x="41.515151515151516" y="41.515151515151516" z="0.5" lunit="cm"/>
+    <union name="cs0x72">
+      <first ref="cs0x73"/>
+      <second ref="sub27"/>
+      <position name="cs0x72sub27pos" x="0" y="0" z="27" unit="cm"/>
+    </union>
+    <subtraction name="sub28">
+      <first ref="tseg28"/>
+      <second ref="box28"/>
+    </subtraction>
+    <tube name="tseg29" rmin="10" rmax="41.212121212121211" z="1" startphi="47.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box29" x="41.212121212121211" y="41.212121212121211" z="0.5" lunit="cm"/>
+    <union name="cs0x71">
+      <first ref="cs0x72"/>
+      <second ref="sub28"/>
+      <position name="cs0x71sub28pos" x="0" y="0" z="28" unit="cm"/>
+    </union>
+    <subtraction name="sub29">
+      <first ref="tseg29"/>
+      <second ref="box29"/>
+    </subtraction>
+    <tube name="tseg30" rmin="10" rmax="40.909090909090907" z="1" startphi="48" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box30" x="40.909090909090907" y="40.909090909090907" z="0.5" lunit="cm"/>
+    <union name="cs0x70">
+      <first ref="cs0x71"/>
+      <second ref="sub29"/>
+      <position name="cs0x70sub29pos" x="0" y="0" z="29" unit="cm"/>
+    </union>
+    <subtraction name="sub30">
+      <first ref="tseg30"/>
+      <second ref="box30"/>
+    </subtraction>
+    <tube name="tseg31" rmin="10" rmax="40.606060606060609" z="1" startphi="48.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box31" x="40.606060606060609" y="40.606060606060609" z="0.5" lunit="cm"/>
+    <union name="cs0x69">
+      <first ref="cs0x70"/>
+      <second ref="sub30"/>
+      <position name="cs0x69sub30pos" x="0" y="0" z="30" unit="cm"/>
+    </union>
+    <subtraction name="sub31">
+      <first ref="tseg31"/>
+      <second ref="box31"/>
+    </subtraction>
+    <tube name="tseg32" rmin="10" rmax="40.303030303030305" z="1" startphi="49.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box32" x="40.303030303030305" y="40.303030303030305" z="0.5" lunit="cm"/>
+    <union name="cs0x68">
+      <first ref="cs0x69"/>
+      <second ref="sub31"/>
+      <position name="cs0x68sub31pos" x="0" y="0" z="31" unit="cm"/>
+    </union>
+    <subtraction name="sub32">
+      <first ref="tseg32"/>
+      <second ref="box32"/>
+    </subtraction>
+    <tube name="tseg33" rmin="10" rmax="40" z="1" startphi="49.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box33" x="40" y="40" z="0.5" lunit="cm"/>
+    <union name="cs0x67">
+      <first ref="cs0x68"/>
+      <second ref="sub32"/>
+      <position name="cs0x67sub32pos" x="0" y="0" z="32" unit="cm"/>
+    </union>
+    <subtraction name="sub33">
+      <first ref="tseg33"/>
+      <second ref="box33"/>
+    </subtraction>
+    <tube name="tseg34" rmin="10" rmax="39.696969696969695" z="1" startphi="50.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box34" x="39.696969696969695" y="39.696969696969695" z="0.5" lunit="cm"/>
+    <union name="cs0x66">
+      <first ref="cs0x67"/>
+      <second ref="sub33"/>
+      <position name="cs0x66sub33pos" x="0" y="0" z="33" unit="cm"/>
+    </union>
+    <subtraction name="sub34">
+      <first ref="tseg34"/>
+      <second ref="box34"/>
+    </subtraction>
+    <tube name="tseg35" rmin="10" rmax="39.393939393939391" z="1" startphi="51" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box35" x="39.393939393939391" y="39.393939393939391" z="0.5" lunit="cm"/>
+    <union name="cs0x65">
+      <first ref="cs0x66"/>
+      <second ref="sub34"/>
+      <position name="cs0x65sub34pos" x="0" y="0" z="34" unit="cm"/>
+    </union>
+    <subtraction name="sub35">
+      <first ref="tseg35"/>
+      <second ref="box35"/>
+    </subtraction>
+    <tube name="tseg36" rmin="10" rmax="39.090909090909093" z="1" startphi="51.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box36" x="39.090909090909093" y="39.090909090909093" z="0.5" lunit="cm"/>
+    <union name="cs0x64">
+      <first ref="cs0x65"/>
+      <second ref="sub35"/>
+      <position name="cs0x64sub35pos" x="0" y="0" z="35" unit="cm"/>
+    </union>
+    <subtraction name="sub36">
+      <first ref="tseg36"/>
+      <second ref="box36"/>
+    </subtraction>
+    <tube name="tseg37" rmin="10" rmax="38.787878787878789" z="1" startphi="52.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box37" x="38.787878787878789" y="38.787878787878789" z="0.5" lunit="cm"/>
+    <union name="cs0x63">
+      <first ref="cs0x64"/>
+      <second ref="sub36"/>
+      <position name="cs0x63sub36pos" x="0" y="0" z="36" unit="cm"/>
+    </union>
+    <subtraction name="sub37">
+      <first ref="tseg37"/>
+      <second ref="box37"/>
+    </subtraction>
+    <tube name="tseg38" rmin="10" rmax="38.484848484848484" z="1" startphi="52.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box38" x="38.484848484848484" y="38.484848484848484" z="0.5" lunit="cm"/>
+    <union name="cs0x62">
+      <first ref="cs0x63"/>
+      <second ref="sub37"/>
+      <position name="cs0x62sub37pos" x="0" y="0" z="37" unit="cm"/>
+    </union>
+    <subtraction name="sub38">
+      <first ref="tseg38"/>
+      <second ref="box38"/>
+    </subtraction>
+    <tube name="tseg39" rmin="10" rmax="38.18181818181818" z="1" startphi="53.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box39" x="38.18181818181818" y="38.18181818181818" z="0.5" lunit="cm"/>
+    <union name="cs0x61">
+      <first ref="cs0x62"/>
+      <second ref="sub38"/>
+      <position name="cs0x61sub38pos" x="0" y="0" z="38" unit="cm"/>
+    </union>
+    <subtraction name="sub39">
+      <first ref="tseg39"/>
+      <second ref="box39"/>
+    </subtraction>
+    <tube name="tseg40" rmin="10" rmax="37.878787878787875" z="1" startphi="54" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box40" x="37.878787878787875" y="37.878787878787875" z="0.5" lunit="cm"/>
+    <union name="cs0x60">
+      <first ref="cs0x61"/>
+      <second ref="sub39"/>
+      <position name="cs0x60sub39pos" x="0" y="0" z="39" unit="cm"/>
+    </union>
+    <subtraction name="sub40">
+      <first ref="tseg40"/>
+      <second ref="box40"/>
+    </subtraction>
+    <tube name="tseg41" rmin="10" rmax="37.575757575757578" z="1" startphi="54.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box41" x="37.575757575757578" y="37.575757575757578" z="0.5" lunit="cm"/>
+    <union name="cs0x59">
+      <first ref="cs0x60"/>
+      <second ref="sub40"/>
+      <position name="cs0x59sub40pos" x="0" y="0" z="40" unit="cm"/>
+    </union>
+    <subtraction name="sub41">
+      <first ref="tseg41"/>
+      <second ref="box41"/>
+    </subtraction>
+    <tube name="tseg42" rmin="10" rmax="37.272727272727273" z="1" startphi="55.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box42" x="37.272727272727273" y="37.272727272727273" z="0.5" lunit="cm"/>
+    <union name="cs0x58">
+      <first ref="cs0x59"/>
+      <second ref="sub41"/>
+      <position name="cs0x58sub41pos" x="0" y="0" z="41" unit="cm"/>
+    </union>
+    <subtraction name="sub42">
+      <first ref="tseg42"/>
+      <second ref="box42"/>
+    </subtraction>
+    <tube name="tseg43" rmin="10" rmax="36.969696969696969" z="1" startphi="55.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box43" x="36.969696969696969" y="36.969696969696969" z="0.5" lunit="cm"/>
+    <union name="cs0x57">
+      <first ref="cs0x58"/>
+      <second ref="sub42"/>
+      <position name="cs0x57sub42pos" x="0" y="0" z="42" unit="cm"/>
+    </union>
+    <subtraction name="sub43">
+      <first ref="tseg43"/>
+      <second ref="box43"/>
+    </subtraction>
+    <tube name="tseg44" rmin="10" rmax="36.666666666666664" z="1" startphi="56.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box44" x="36.666666666666664" y="36.666666666666664" z="0.5" lunit="cm"/>
+    <union name="cs0x56">
+      <first ref="cs0x57"/>
+      <second ref="sub43"/>
+      <position name="cs0x56sub43pos" x="0" y="0" z="43" unit="cm"/>
+    </union>
+    <subtraction name="sub44">
+      <first ref="tseg44"/>
+      <second ref="box44"/>
+    </subtraction>
+    <tube name="tseg45" rmin="10" rmax="36.36363636363636" z="1" startphi="57" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box45" x="36.36363636363636" y="36.36363636363636" z="0.5" lunit="cm"/>
+    <union name="cs0x55">
+      <first ref="cs0x56"/>
+      <second ref="sub44"/>
+      <position name="cs0x55sub44pos" x="0" y="0" z="44" unit="cm"/>
+    </union>
+    <subtraction name="sub45">
+      <first ref="tseg45"/>
+      <second ref="box45"/>
+    </subtraction>
+    <tube name="tseg46" rmin="10" rmax="36.060606060606062" z="1" startphi="57.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box46" x="36.060606060606062" y="36.060606060606062" z="0.5" lunit="cm"/>
+    <union name="cs0x54">
+      <first ref="cs0x55"/>
+      <second ref="sub45"/>
+      <position name="cs0x54sub45pos" x="0" y="0" z="45" unit="cm"/>
+    </union>
+    <subtraction name="sub46">
+      <first ref="tseg46"/>
+      <second ref="box46"/>
+    </subtraction>
+    <tube name="tseg47" rmin="10" rmax="35.757575757575758" z="1" startphi="58.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box47" x="35.757575757575758" y="35.757575757575758" z="0.5" lunit="cm"/>
+    <union name="cs0x53">
+      <first ref="cs0x54"/>
+      <second ref="sub46"/>
+      <position name="cs0x53sub46pos" x="0" y="0" z="46" unit="cm"/>
+    </union>
+    <subtraction name="sub47">
+      <first ref="tseg47"/>
+      <second ref="box47"/>
+    </subtraction>
+    <tube name="tseg48" rmin="10" rmax="35.454545454545453" z="1" startphi="58.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box48" x="35.454545454545453" y="35.454545454545453" z="0.5" lunit="cm"/>
+    <union name="cs0x52">
+      <first ref="cs0x53"/>
+      <second ref="sub47"/>
+      <position name="cs0x52sub47pos" x="0" y="0" z="47" unit="cm"/>
+    </union>
+    <subtraction name="sub48">
+      <first ref="tseg48"/>
+      <second ref="box48"/>
+    </subtraction>
+    <tube name="tseg49" rmin="10" rmax="35.151515151515149" z="1" startphi="59.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box49" x="35.151515151515149" y="35.151515151515149" z="0.5" lunit="cm"/>
+    <union name="cs0x51">
+      <first ref="cs0x52"/>
+      <second ref="sub48"/>
+      <position name="cs0x51sub48pos" x="0" y="0" z="48" unit="cm"/>
+    </union>
+    <subtraction name="sub49">
+      <first ref="tseg49"/>
+      <second ref="box49"/>
+    </subtraction>
+    <tube name="tseg50" rmin="10" rmax="34.848484848484844" z="1" startphi="60" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box50" x="34.848484848484844" y="34.848484848484844" z="0.5" lunit="cm"/>
+    <union name="cs0x50">
+      <first ref="cs0x51"/>
+      <second ref="sub49"/>
+      <position name="cs0x50sub49pos" x="0" y="0" z="49" unit="cm"/>
+    </union>
+    <subtraction name="sub50">
+      <first ref="tseg50"/>
+      <second ref="box50"/>
+    </subtraction>
+    <tube name="tseg51" rmin="10" rmax="34.545454545454547" z="1" startphi="60.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box51" x="34.545454545454547" y="34.545454545454547" z="0.5" lunit="cm"/>
+    <union name="cs0x49">
+      <first ref="cs0x50"/>
+      <second ref="sub50"/>
+      <position name="cs0x49sub50pos" x="0" y="0" z="50" unit="cm"/>
+    </union>
+    <subtraction name="sub51">
+      <first ref="tseg51"/>
+      <second ref="box51"/>
+    </subtraction>
+    <tube name="tseg52" rmin="10" rmax="34.242424242424242" z="1" startphi="61.200000000000003" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box52" x="34.242424242424242" y="34.242424242424242" z="0.5" lunit="cm"/>
+    <union name="cs0x48">
+      <first ref="cs0x49"/>
+      <second ref="sub51"/>
+      <position name="cs0x48sub51pos" x="0" y="0" z="51" unit="cm"/>
+    </union>
+    <subtraction name="sub52">
+      <first ref="tseg52"/>
+      <second ref="box52"/>
+    </subtraction>
+    <tube name="tseg53" rmin="10" rmax="33.939393939393938" z="1" startphi="61.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box53" x="33.939393939393938" y="33.939393939393938" z="0.5" lunit="cm"/>
+    <union name="cs0x47">
+      <first ref="cs0x48"/>
+      <second ref="sub52"/>
+      <position name="cs0x47sub52pos" x="0" y="0" z="52" unit="cm"/>
+    </union>
+    <subtraction name="sub53">
+      <first ref="tseg53"/>
+      <second ref="box53"/>
+    </subtraction>
+    <tube name="tseg54" rmin="10" rmax="33.63636363636364" z="1" startphi="62.399999999999999" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box54" x="33.63636363636364" y="33.63636363636364" z="0.5" lunit="cm"/>
+    <union name="cs0x46">
+      <first ref="cs0x47"/>
+      <second ref="sub53"/>
+      <position name="cs0x46sub53pos" x="0" y="0" z="53" unit="cm"/>
+    </union>
+    <subtraction name="sub54">
+      <first ref="tseg54"/>
+      <second ref="box54"/>
+    </subtraction>
+    <tube name="tseg55" rmin="10" rmax="33.333333333333329" z="1" startphi="63" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box55" x="33.333333333333329" y="33.333333333333329" z="0.5" lunit="cm"/>
+    <union name="cs0x45">
+      <first ref="cs0x46"/>
+      <second ref="sub54"/>
+      <position name="cs0x45sub54pos" x="0" y="0" z="54" unit="cm"/>
+    </union>
+    <subtraction name="sub55">
+      <first ref="tseg55"/>
+      <second ref="box55"/>
+    </subtraction>
+    <tube name="tseg56" rmin="10" rmax="33.030303030303031" z="1" startphi="63.600000000000001" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box56" x="33.030303030303031" y="33.030303030303031" z="0.5" lunit="cm"/>
+    <union name="cs0x44">
+      <first ref="cs0x45"/>
+      <second ref="sub55"/>
+      <position name="cs0x44sub55pos" x="0" y="0" z="55" unit="cm"/>
+    </union>
+    <subtraction name="sub56">
+      <first ref="tseg56"/>
+      <second ref="box56"/>
+    </subtraction>
+    <tube name="tseg57" rmin="10" rmax="32.727272727272727" z="1" startphi="64.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box57" x="32.727272727272727" y="32.727272727272727" z="0.5" lunit="cm"/>
+    <union name="cs0x43">
+      <first ref="cs0x44"/>
+      <second ref="sub56"/>
+      <position name="cs0x43sub56pos" x="0" y="0" z="56" unit="cm"/>
+    </union>
+    <subtraction name="sub57">
+      <first ref="tseg57"/>
+      <second ref="box57"/>
+    </subtraction>
+    <tube name="tseg58" rmin="10" rmax="32.424242424242422" z="1" startphi="64.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box58" x="32.424242424242422" y="32.424242424242422" z="0.5" lunit="cm"/>
+    <union name="cs0x42">
+      <first ref="cs0x43"/>
+      <second ref="sub57"/>
+      <position name="cs0x42sub57pos" x="0" y="0" z="57" unit="cm"/>
+    </union>
+    <subtraction name="sub58">
+      <first ref="tseg58"/>
+      <second ref="box58"/>
+    </subtraction>
+    <tube name="tseg59" rmin="10" rmax="32.121212121212125" z="1" startphi="65.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box59" x="32.121212121212125" y="32.121212121212125" z="0.5" lunit="cm"/>
+    <union name="cs0x41">
+      <first ref="cs0x42"/>
+      <second ref="sub58"/>
+      <position name="cs0x41sub58pos" x="0" y="0" z="58" unit="cm"/>
+    </union>
+    <subtraction name="sub59">
+      <first ref="tseg59"/>
+      <second ref="box59"/>
+    </subtraction>
+    <tube name="tseg60" rmin="10" rmax="31.818181818181817" z="1" startphi="66" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box60" x="31.818181818181817" y="31.818181818181817" z="0.5" lunit="cm"/>
+    <union name="cs0x40">
+      <first ref="cs0x41"/>
+      <second ref="sub59"/>
+      <position name="cs0x40sub59pos" x="0" y="0" z="59" unit="cm"/>
+    </union>
+    <subtraction name="sub60">
+      <first ref="tseg60"/>
+      <second ref="box60"/>
+    </subtraction>
+    <tube name="tseg61" rmin="10" rmax="31.515151515151516" z="1" startphi="66.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box61" x="31.515151515151516" y="31.515151515151516" z="0.5" lunit="cm"/>
+    <union name="cs0x39">
+      <first ref="cs0x40"/>
+      <second ref="sub60"/>
+      <position name="cs0x39sub60pos" x="0" y="0" z="60" unit="cm"/>
+    </union>
+    <subtraction name="sub61">
+      <first ref="tseg61"/>
+      <second ref="box61"/>
+    </subtraction>
+    <tube name="tseg62" rmin="10" rmax="31.212121212121211" z="1" startphi="67.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box62" x="31.212121212121211" y="31.212121212121211" z="0.5" lunit="cm"/>
+    <union name="cs0x38">
+      <first ref="cs0x39"/>
+      <second ref="sub61"/>
+      <position name="cs0x38sub61pos" x="0" y="0" z="61" unit="cm"/>
+    </union>
+    <subtraction name="sub62">
+      <first ref="tseg62"/>
+      <second ref="box62"/>
+    </subtraction>
+    <tube name="tseg63" rmin="10" rmax="30.90909090909091" z="1" startphi="67.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box63" x="30.90909090909091" y="30.90909090909091" z="0.5" lunit="cm"/>
+    <union name="cs0x37">
+      <first ref="cs0x38"/>
+      <second ref="sub62"/>
+      <position name="cs0x37sub62pos" x="0" y="0" z="62" unit="cm"/>
+    </union>
+    <subtraction name="sub63">
+      <first ref="tseg63"/>
+      <second ref="box63"/>
+    </subtraction>
+    <tube name="tseg64" rmin="10" rmax="30.606060606060606" z="1" startphi="68.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box64" x="30.606060606060606" y="30.606060606060606" z="0.5" lunit="cm"/>
+    <union name="cs0x36">
+      <first ref="cs0x37"/>
+      <second ref="sub63"/>
+      <position name="cs0x36sub63pos" x="0" y="0" z="63" unit="cm"/>
+    </union>
+    <subtraction name="sub64">
+      <first ref="tseg64"/>
+      <second ref="box64"/>
+    </subtraction>
+    <tube name="tseg65" rmin="10" rmax="30.303030303030301" z="1" startphi="69" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box65" x="30.303030303030301" y="30.303030303030301" z="0.5" lunit="cm"/>
+    <union name="cs0x35">
+      <first ref="cs0x36"/>
+      <second ref="sub64"/>
+      <position name="cs0x35sub64pos" x="0" y="0" z="64" unit="cm"/>
+    </union>
+    <subtraction name="sub65">
+      <first ref="tseg65"/>
+      <second ref="box65"/>
+    </subtraction>
+    <tube name="tseg66" rmin="10" rmax="30" z="1" startphi="69.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box66" x="30" y="30" z="0.5" lunit="cm"/>
+    <union name="cs0x34">
+      <first ref="cs0x35"/>
+      <second ref="sub65"/>
+      <position name="cs0x34sub65pos" x="0" y="0" z="65" unit="cm"/>
+    </union>
+    <subtraction name="sub66">
+      <first ref="tseg66"/>
+      <second ref="box66"/>
+    </subtraction>
+    <tube name="tseg67" rmin="10" rmax="29.696969696969695" z="1" startphi="70.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box67" x="29.696969696969695" y="29.696969696969695" z="0.5" lunit="cm"/>
+    <union name="cs0x33">
+      <first ref="cs0x34"/>
+      <second ref="sub66"/>
+      <position name="cs0x33sub66pos" x="0" y="0" z="66" unit="cm"/>
+    </union>
+    <subtraction name="sub67">
+      <first ref="tseg67"/>
+      <second ref="box67"/>
+    </subtraction>
+    <tube name="tseg68" rmin="10" rmax="29.393939393939394" z="1" startphi="70.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box68" x="29.393939393939394" y="29.393939393939394" z="0.5" lunit="cm"/>
+    <union name="cs0x32">
+      <first ref="cs0x33"/>
+      <second ref="sub67"/>
+      <position name="cs0x32sub67pos" x="0" y="0" z="67" unit="cm"/>
+    </union>
+    <subtraction name="sub68">
+      <first ref="tseg68"/>
+      <second ref="box68"/>
+    </subtraction>
+    <tube name="tseg69" rmin="10" rmax="29.09090909090909" z="1" startphi="71.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box69" x="29.09090909090909" y="29.09090909090909" z="0.5" lunit="cm"/>
+    <union name="cs0x31">
+      <first ref="cs0x32"/>
+      <second ref="sub68"/>
+      <position name="cs0x31sub68pos" x="0" y="0" z="68" unit="cm"/>
+    </union>
+    <subtraction name="sub69">
+      <first ref="tseg69"/>
+      <second ref="box69"/>
+    </subtraction>
+    <tube name="tseg70" rmin="10" rmax="28.787878787878789" z="1" startphi="72" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box70" x="28.787878787878789" y="28.787878787878789" z="0.5" lunit="cm"/>
+    <union name="cs0x30">
+      <first ref="cs0x31"/>
+      <second ref="sub69"/>
+      <position name="cs0x30sub69pos" x="0" y="0" z="69" unit="cm"/>
+    </union>
+    <subtraction name="sub70">
+      <first ref="tseg70"/>
+      <second ref="box70"/>
+    </subtraction>
+    <tube name="tseg71" rmin="10" rmax="28.484848484848484" z="1" startphi="72.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box71" x="28.484848484848484" y="28.484848484848484" z="0.5" lunit="cm"/>
+    <union name="cs0x29">
+      <first ref="cs0x30"/>
+      <second ref="sub70"/>
+      <position name="cs0x29sub70pos" x="0" y="0" z="70" unit="cm"/>
+    </union>
+    <subtraction name="sub71">
+      <first ref="tseg71"/>
+      <second ref="box71"/>
+    </subtraction>
+    <tube name="tseg72" rmin="10" rmax="28.18181818181818" z="1" startphi="73.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box72" x="28.18181818181818" y="28.18181818181818" z="0.5" lunit="cm"/>
+    <union name="cs0x28">
+      <first ref="cs0x29"/>
+      <second ref="sub71"/>
+      <position name="cs0x28sub71pos" x="0" y="0" z="71" unit="cm"/>
+    </union>
+    <subtraction name="sub72">
+      <first ref="tseg72"/>
+      <second ref="box72"/>
+    </subtraction>
+    <tube name="tseg73" rmin="10" rmax="27.878787878787879" z="1" startphi="73.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box73" x="27.878787878787879" y="27.878787878787879" z="0.5" lunit="cm"/>
+    <union name="cs0x27">
+      <first ref="cs0x28"/>
+      <second ref="sub72"/>
+      <position name="cs0x27sub72pos" x="0" y="0" z="72" unit="cm"/>
+    </union>
+    <subtraction name="sub73">
+      <first ref="tseg73"/>
+      <second ref="box73"/>
+    </subtraction>
+    <tube name="tseg74" rmin="10" rmax="27.575757575757574" z="1" startphi="74.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box74" x="27.575757575757574" y="27.575757575757574" z="0.5" lunit="cm"/>
+    <union name="cs0x26">
+      <first ref="cs0x27"/>
+      <second ref="sub73"/>
+      <position name="cs0x26sub73pos" x="0" y="0" z="73" unit="cm"/>
+    </union>
+    <subtraction name="sub74">
+      <first ref="tseg74"/>
+      <second ref="box74"/>
+    </subtraction>
+    <tube name="tseg75" rmin="10" rmax="27.272727272727273" z="1" startphi="75" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box75" x="27.272727272727273" y="27.272727272727273" z="0.5" lunit="cm"/>
+    <union name="cs0x25">
+      <first ref="cs0x26"/>
+      <second ref="sub74"/>
+      <position name="cs0x25sub74pos" x="0" y="0" z="74" unit="cm"/>
+    </union>
+    <subtraction name="sub75">
+      <first ref="tseg75"/>
+      <second ref="box75"/>
+    </subtraction>
+    <tube name="tseg76" rmin="10" rmax="26.969696969696969" z="1" startphi="75.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box76" x="26.969696969696969" y="26.969696969696969" z="0.5" lunit="cm"/>
+    <union name="cs0x24">
+      <first ref="cs0x25"/>
+      <second ref="sub75"/>
+      <position name="cs0x24sub75pos" x="0" y="0" z="75" unit="cm"/>
+    </union>
+    <subtraction name="sub76">
+      <first ref="tseg76"/>
+      <second ref="box76"/>
+    </subtraction>
+    <tube name="tseg77" rmin="10" rmax="26.666666666666664" z="1" startphi="76.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box77" x="26.666666666666664" y="26.666666666666664" z="0.5" lunit="cm"/>
+    <union name="cs0x23">
+      <first ref="cs0x24"/>
+      <second ref="sub76"/>
+      <position name="cs0x23sub76pos" x="0" y="0" z="76" unit="cm"/>
+    </union>
+    <subtraction name="sub77">
+      <first ref="tseg77"/>
+      <second ref="box77"/>
+    </subtraction>
+    <tube name="tseg78" rmin="10" rmax="26.363636363636363" z="1" startphi="76.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box78" x="26.363636363636363" y="26.363636363636363" z="0.5" lunit="cm"/>
+    <union name="cs0x22">
+      <first ref="cs0x23"/>
+      <second ref="sub77"/>
+      <position name="cs0x22sub77pos" x="0" y="0" z="77" unit="cm"/>
+    </union>
+    <subtraction name="sub78">
+      <first ref="tseg78"/>
+      <second ref="box78"/>
+    </subtraction>
+    <tube name="tseg79" rmin="10" rmax="26.060606060606059" z="1" startphi="77.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box79" x="26.060606060606059" y="26.060606060606059" z="0.5" lunit="cm"/>
+    <union name="cs0x21">
+      <first ref="cs0x22"/>
+      <second ref="sub78"/>
+      <position name="cs0x21sub78pos" x="0" y="0" z="78" unit="cm"/>
+    </union>
+    <subtraction name="sub79">
+      <first ref="tseg79"/>
+      <second ref="box79"/>
+    </subtraction>
+    <tube name="tseg80" rmin="10" rmax="25.757575757575758" z="1" startphi="78" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box80" x="25.757575757575758" y="25.757575757575758" z="0.5" lunit="cm"/>
+    <union name="cs0x20">
+      <first ref="cs0x21"/>
+      <second ref="sub79"/>
+      <position name="cs0x20sub79pos" x="0" y="0" z="79" unit="cm"/>
+    </union>
+    <subtraction name="sub80">
+      <first ref="tseg80"/>
+      <second ref="box80"/>
+    </subtraction>
+    <tube name="tseg81" rmin="10" rmax="25.454545454545453" z="1" startphi="78.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box81" x="25.454545454545453" y="25.454545454545453" z="0.5" lunit="cm"/>
+    <union name="cs0x19">
+      <first ref="cs0x20"/>
+      <second ref="sub80"/>
+      <position name="cs0x19sub80pos" x="0" y="0" z="80" unit="cm"/>
+    </union>
+    <subtraction name="sub81">
+      <first ref="tseg81"/>
+      <second ref="box81"/>
+    </subtraction>
+    <tube name="tseg82" rmin="10" rmax="25.151515151515152" z="1" startphi="79.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box82" x="25.151515151515152" y="25.151515151515152" z="0.5" lunit="cm"/>
+    <union name="cs0x18">
+      <first ref="cs0x19"/>
+      <second ref="sub81"/>
+      <position name="cs0x18sub81pos" x="0" y="0" z="81" unit="cm"/>
+    </union>
+    <subtraction name="sub82">
+      <first ref="tseg82"/>
+      <second ref="box82"/>
+    </subtraction>
+    <tube name="tseg83" rmin="10" rmax="24.848484848484848" z="1" startphi="79.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box83" x="24.848484848484848" y="24.848484848484848" z="0.5" lunit="cm"/>
+    <union name="cs0x17">
+      <first ref="cs0x18"/>
+      <second ref="sub82"/>
+      <position name="cs0x17sub82pos" x="0" y="0" z="82" unit="cm"/>
+    </union>
+    <subtraction name="sub83">
+      <first ref="tseg83"/>
+      <second ref="box83"/>
+    </subtraction>
+    <tube name="tseg84" rmin="10" rmax="24.545454545454543" z="1" startphi="80.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box84" x="24.545454545454543" y="24.545454545454543" z="0.5" lunit="cm"/>
+    <union name="cs0x16">
+      <first ref="cs0x17"/>
+      <second ref="sub83"/>
+      <position name="cs0x16sub83pos" x="0" y="0" z="83" unit="cm"/>
+    </union>
+    <subtraction name="sub84">
+      <first ref="tseg84"/>
+      <second ref="box84"/>
+    </subtraction>
+    <tube name="tseg85" rmin="10" rmax="24.242424242424242" z="1" startphi="81" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box85" x="24.242424242424242" y="24.242424242424242" z="0.5" lunit="cm"/>
+    <union name="cs0x15">
+      <first ref="cs0x16"/>
+      <second ref="sub84"/>
+      <position name="cs0x15sub84pos" x="0" y="0" z="84" unit="cm"/>
+    </union>
+    <subtraction name="sub85">
+      <first ref="tseg85"/>
+      <second ref="box85"/>
+    </subtraction>
+    <tube name="tseg86" rmin="10" rmax="23.939393939393938" z="1" startphi="81.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box86" x="23.939393939393938" y="23.939393939393938" z="0.5" lunit="cm"/>
+    <union name="cs0x14">
+      <first ref="cs0x15"/>
+      <second ref="sub85"/>
+      <position name="cs0x14sub85pos" x="0" y="0" z="85" unit="cm"/>
+    </union>
+    <subtraction name="sub86">
+      <first ref="tseg86"/>
+      <second ref="box86"/>
+    </subtraction>
+    <tube name="tseg87" rmin="10" rmax="23.636363636363637" z="1" startphi="82.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box87" x="23.636363636363637" y="23.636363636363637" z="0.5" lunit="cm"/>
+    <union name="cs0x13">
+      <first ref="cs0x14"/>
+      <second ref="sub86"/>
+      <position name="cs0x13sub86pos" x="0" y="0" z="86" unit="cm"/>
+    </union>
+    <subtraction name="sub87">
+      <first ref="tseg87"/>
+      <second ref="box87"/>
+    </subtraction>
+    <tube name="tseg88" rmin="10" rmax="23.333333333333332" z="1" startphi="82.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box88" x="23.333333333333332" y="23.333333333333332" z="0.5" lunit="cm"/>
+    <union name="cs0x12">
+      <first ref="cs0x13"/>
+      <second ref="sub87"/>
+      <position name="cs0x12sub87pos" x="0" y="0" z="87" unit="cm"/>
+    </union>
+    <subtraction name="sub88">
+      <first ref="tseg88"/>
+      <second ref="box88"/>
+    </subtraction>
+    <tube name="tseg89" rmin="10" rmax="23.030303030303031" z="1" startphi="83.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box89" x="23.030303030303031" y="23.030303030303031" z="0.5" lunit="cm"/>
+    <union name="cs0x11">
+      <first ref="cs0x12"/>
+      <second ref="sub88"/>
+      <position name="cs0x11sub88pos" x="0" y="0" z="88" unit="cm"/>
+    </union>
+    <subtraction name="sub89">
+      <first ref="tseg89"/>
+      <second ref="box89"/>
+    </subtraction>
+    <tube name="tseg90" rmin="10" rmax="22.727272727272727" z="1" startphi="84" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box90" x="22.727272727272727" y="22.727272727272727" z="0.5" lunit="cm"/>
+    <union name="cs0x10">
+      <first ref="cs0x11"/>
+      <second ref="sub89"/>
+      <position name="cs0x10sub89pos" x="0" y="0" z="89" unit="cm"/>
+    </union>
+    <subtraction name="sub90">
+      <first ref="tseg90"/>
+      <second ref="box90"/>
+    </subtraction>
+    <tube name="tseg91" rmin="10" rmax="22.424242424242422" z="1" startphi="84.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box91" x="22.424242424242422" y="22.424242424242422" z="0.5" lunit="cm"/>
+    <union name="cs0x9">
+      <first ref="cs0x10"/>
+      <second ref="sub90"/>
+      <position name="cs0x9sub90pos" x="0" y="0" z="90" unit="cm"/>
+    </union>
+    <subtraction name="sub91">
+      <first ref="tseg91"/>
+      <second ref="box91"/>
+    </subtraction>
+    <tube name="tseg92" rmin="10" rmax="22.121212121212121" z="1" startphi="85.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box92" x="22.121212121212121" y="22.121212121212121" z="0.5" lunit="cm"/>
+    <union name="cs0x8">
+      <first ref="cs0x9"/>
+      <second ref="sub91"/>
+      <position name="cs0x8sub91pos" x="0" y="0" z="91" unit="cm"/>
+    </union>
+    <subtraction name="sub92">
+      <first ref="tseg92"/>
+      <second ref="box92"/>
+    </subtraction>
+    <tube name="tseg93" rmin="10" rmax="21.818181818181817" z="1" startphi="85.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box93" x="21.818181818181817" y="21.818181818181817" z="0.5" lunit="cm"/>
+    <union name="cs0x7">
+      <first ref="cs0x8"/>
+      <second ref="sub92"/>
+      <position name="cs0x7sub92pos" x="0" y="0" z="92" unit="cm"/>
+    </union>
+    <subtraction name="sub93">
+      <first ref="tseg93"/>
+      <second ref="box93"/>
+    </subtraction>
+    <tube name="tseg94" rmin="10" rmax="21.515151515151516" z="1" startphi="86.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box94" x="21.515151515151516" y="21.515151515151516" z="0.5" lunit="cm"/>
+    <union name="cs0x6">
+      <first ref="cs0x7"/>
+      <second ref="sub93"/>
+      <position name="cs0x6sub93pos" x="0" y="0" z="93" unit="cm"/>
+    </union>
+    <subtraction name="sub94">
+      <first ref="tseg94"/>
+      <second ref="box94"/>
+    </subtraction>
+    <tube name="tseg95" rmin="10" rmax="21.212121212121211" z="1" startphi="87" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box95" x="21.212121212121211" y="21.212121212121211" z="0.5" lunit="cm"/>
+    <union name="cs0x5">
+      <first ref="cs0x6"/>
+      <second ref="sub94"/>
+      <position name="cs0x5sub94pos" x="0" y="0" z="94" unit="cm"/>
+    </union>
+    <subtraction name="sub95">
+      <first ref="tseg95"/>
+      <second ref="box95"/>
+    </subtraction>
+    <tube name="tseg96" rmin="10" rmax="20.909090909090907" z="1" startphi="87.599999999999994" deltaphi="240.00000000000003" aunit="deg" lunit="cm"/>
+    <box name="box96" x="20.909090909090907" y="20.909090909090907" z="0.5" lunit="cm"/>
+    <union name="cs0x4">
+      <first ref="cs0x5"/>
+      <second ref="sub95"/>
+      <position name="cs0x4sub95pos" x="0" y="0" z="95" unit="cm"/>
+    </union>
+    <subtraction name="sub96">
+      <first ref="tseg96"/>
+      <second ref="box96"/>
+    </subtraction>
+    <tube name="tseg97" rmin="10" rmax="20.606060606060606" z="1" startphi="88.199999999999989" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box97" x="20.606060606060606" y="20.606060606060606" z="0.5" lunit="cm"/>
+    <union name="cs0x3">
+      <first ref="cs0x4"/>
+      <second ref="sub96"/>
+      <position name="cs0x3sub96pos" x="0" y="0" z="96" unit="cm"/>
+    </union>
+    <subtraction name="sub97">
+      <first ref="tseg97"/>
+      <second ref="box97"/>
+    </subtraction>
+    <tube name="tseg98" rmin="10" rmax="20.303030303030301" z="1" startphi="88.799999999999997" deltaphi="240" aunit="deg" lunit="cm"/>
+    <box name="box98" x="20.303030303030301" y="20.303030303030301" z="0.5" lunit="cm"/>
+    <union name="cs0x2">
+      <first ref="cs0x3"/>
+      <second ref="sub97"/>
+      <position name="cs0x2sub97pos" x="0" y="0" z="97" unit="cm"/>
+    </union>
+    <subtraction name="sub98">
+      <first ref="tseg98"/>
+      <second ref="box98"/>
+    </subtraction>
+    <tube name="tseg99" rmin="10" rmax="20" z="1" startphi="89.400000000000006" deltaphi="239.99999999999997" aunit="deg" lunit="cm"/>
+    <box name="box99" x="20" y="20" z="0.5" lunit="cm"/>
+    <union name="cs0x1">
+      <first ref="cs0x2"/>
+      <second ref="sub98"/>
+      <position name="cs0x1sub98pos" x="0" y="0" z="98" unit="cm"/>
+    </union>
+    <subtraction name="sub99">
+      <first ref="tseg99"/>
+      <second ref="box99"/>
+    </subtraction>
+    <union name="cs">
+      <first ref="cs0x1"/>
+      <second ref="sub99"/>
+      <position name="cssub99pos" x="0" y="0" z="99" unit="cm"/>
+    </union>
+  </solids>
+  <structure>
+    <volume name="COMP4">
+      <materialref ref="Al"/>
+      <solidref ref="cs"/>
+    </volume>
+    <volume name="TOP">
+      <materialref ref="Al"/>
+      <solidref ref="TOP"/>
+      <physvol name="COMP4_1" copynumber="1">
+        <volumeref ref="COMP4"/>
+        <positionref ref="COMP4_1inTOPpos"/>
+      </physvol>
+    </volume>
+  </structure>
+  <setup name="default" version="1.0">
+    <world ref="TOP"/>
+  </setup>
+</gdml>

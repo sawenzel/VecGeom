@@ -20,6 +20,29 @@
 using BrepHelper = vgbrep::BrepHelper<vecgeom::Precision>;
 using namespace vecgeom;
 
+bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state, double safety, int nsamples)
+{
+  // Generate nsamples random points in a sphere with the safety radius and check if
+  // all of them are located in in_state
+  auto &rng         = RNG::Instance();
+  auto const navind = in_state.GetNavIndex();
+  NavStateIndex new_state;
+  bool is_safe = true;
+  for (int i = 0; i < nsamples; ++i) {
+    new_state.Clear();
+    Vector3D<Precision> safepoint(point);
+    double phi = rng.uniform(0, kTwoPi);
+    double the = std::acos(2 * rng.uniform() - 1);
+    Vector3D<Precision> ranpoint(std::sin(the) * std::cos(phi), std::sin(the) * std::sin(phi), std::cos(the));
+    safepoint += safety * ranpoint;
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, new_state, true);
+
+    is_safe = new_state.GetNavIndex() == navind;
+    if (!is_safe) break;
+  }
+  return is_safe;
+}
+
 double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
                     vecgeom::Vector3D<vecgeom::Precision> const &direction,
                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
@@ -52,20 +75,25 @@ bool ValidateNavigation(int npoints, vgbrep::SurfData<vecgeom::Precision> const 
   constexpr double tolerance = 10 * vecgeom::kTolerance;
 
   int num_errors = 0;
+  int num_better_safety = 0;
+  int num_worse_safety  = 0;
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
 
   Vector3D<Precision> samplingVolume(worldX * scale, worldY * scale, worldZ * scale);
-  vecgeom::volumeUtilities::FillRandomPoints(samplingVolume, points);
-  vecgeom::volumeUtilities::FillRandomDirections(dirs);
+  volumeUtilities::FillRandomPoints(samplingVolume, points);
+  volumeUtilities::FillRandomDirections(dirs);
 
   // now setup all the navigation states
   int ndeep = GeoManager::Instance().getMaxDepth();
   NavStatePool origStates(npoints, ndeep);
   NavStatePool outputStates(npoints, ndeep);
 
-  vecgeom::Precision *refSteps = new Precision[npoints];
+  Precision *refSteps = new Precision[npoints];
   memset(refSteps, 0, sizeof(Precision) * npoints);
+
+  Precision *refSafeties = new Precision[npoints];
+  memset(refSafeties, 0, sizeof(Precision) * npoints);
 
   auto *nav = vecgeom::NewSimpleNavigator<>::Instance();
   for (int i = 0; i < npoints; ++i) {
@@ -73,26 +101,46 @@ bool ValidateNavigation(int npoints, vgbrep::SurfData<vecgeom::Precision> const 
     Vector3D<Precision> const &dir = dirs[i];
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
     nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], *outputStates[i], vecgeom::kInfLength, refSteps[i]);
+    refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, *origStates[i]);
 
     // shoot the same ray in the surface model
     int exit_surf = 0;
-    NavStateIndex out_state;
+    bool safesafe = true;
+    NavStateIndex in_state, out_state, surflocate_state;
+    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, surfdata, true);
     auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
-    if (out_state.GetNavIndex() != outputStates[i]->GetNavIndex() || std::abs(distance - refSteps[i]) > tolerance) {
-      num_errors++;
-      // if (num_errors % 10 != 0) continue;
-      std::cout << "ERROR " << i << std::endl << "POS:" << pos << std::endl << "DIR:" << dir << std::endl;
-      if (out_state.GetNavIndex() != outputStates[i]->GetNavIndex())
-        std::cout << "NAVINDEX MISMATCH: " << out_state.GetNavIndex() << " (new)" << std::endl
-                  << "                   " << outputStates[i]->GetNavIndex() << " (old)" << std::endl;
-      if (std::abs(distance - refSteps[i]) > tolerance)
-        std::cout << "DIST MISMATCH: " << distance << " (new)" << std::endl
-                  << "               " << refSteps[i] << " (old)" << std::endl;
+    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
+    if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
+    num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
+    num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
+    if (safety < refSafeties[i] - kTolerance)
+      printf("safe_ref = %g   safe = %g  pos = (%g, %g, %g)\n", refSafeties[i], safety, pos[0], pos[1], pos[2]);
+
+    bool errlocate = surflocate_state.GetNavIndex() != origStates[i]->GetNavIndex();
+    bool errpath   = out_state.GetNavIndex() != outputStates[i]->GetNavIndex();
+    bool errdist   = std::abs(distance - refSteps[i]) > tolerance;
+    bool errsafe   = !safesafe;
+    bool err       = errlocate || errpath || errdist || errsafe;
+    num_errors += int(err);
+    if (err) {
+      printf("%d: input state:  ", i);
+      origStates[i]->Print();
+      printf("%d: model locate: ", i);
+      surflocate_state.Print();
+      printf("ref output state: ");
+      outputStates[i]->Print();
+      printf("model output state: ");
+      out_state.Print();
     }
+
+    if (errdist) printf("ref dist: %g   model dist: %g\n", refSteps[i], distance);
+
+    if (errsafe) printf("ref safe: %g   model safe: %g\n", refSafeties[i], safety);
   }
 
   printf("=== Validation: num_erros = %d / %d\n", num_errors, npoints);
   delete[] refSteps;
+  delete[] refSafeties;
 
   return num_errors == 0;
 }

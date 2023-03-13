@@ -100,59 +100,68 @@ struct BooleanImplementation<kSubtraction> {
                                                                         Vector3D<Real_v> const &dir,
                                                                         Real_v const &stepMax, Real_v &distance)
   {
-
-    // TOBEDONE: ASK Andrei about the while loop
     // Compute distance from a given point outside to the shape.
+
+    // epsilon is used to push across boundaries
     Real_v d1, d2, snxt = 0.;
-    Vector3D<Real_v> hitpoint = p;
-    // check if inside '-'
-    auto insideRight = unplaced.fRightVolume->Contains(p);
-    //  // epsilon is used to push across boundaries
-    Precision epsil(kPushTolerance);
-    //
-    //  // we should never subtract a volume such that B - A > 0
-    //
+    Vector3D<Real_v> hitpoint(p);
+    Vector3D<Real_v> pushpoint = hitpoint + kPushTolerance * dir;
+    // check if inside B
+    bool insideLeft  = false;
+    bool insideRight = unplaced.fRightVolume->Inside(p) != kOutside;
+
+    // AG: The push value was not correcly accounted for when returning the result
+    // Strategy: Compute distances from pushed hitpoint on boundary, then compensate snext with the push
     while (1) {
       if (insideRight) {
-        //    // propagate to outside of '- / RightShape'
-        d1 = unplaced.fRightVolume->PlacedDistanceToOut(hitpoint, dir, stepMax);
-        snxt += (d1 >= 0. && d1 < kInfLength) ? (d1 + epsil) : 0.;
-        hitpoint += (d1 >= 0. && d1 < kInfLength) ? (d1 + epsil) * dir : 0. * dir;
+        // propagate to outside of B
+        Real_v push(kPushTolerance);
+        d1 = unplaced.fRightVolume->PlacedDistanceToOut(pushpoint, dir, stepMax - snxt);
+        if (d1 < 0. || d1 == kInfLength) {
+          d1   = 0.;
+          push = 0.;
+        }
+        snxt += d1 + push;
+        hitpoint += (d1 + push) * dir;
+        pushpoint = hitpoint + kPushTolerance * dir;
 
-        // now master outside 'B'; check if inside 'A'
-        //    Bool_t insideLeft =
-        if (unplaced.fLeftVolume->Contains(hitpoint)) {
-          auto check = unplaced.fLeftVolume->PlacedDistanceToOut(hitpoint, dir);
-          if (check > epsil) {
+        insideLeft = unplaced.fLeftVolume->Inside(hitpoint) != kOutside;
+        if (insideLeft) {
+          d2 = unplaced.fLeftVolume->PlacedDistanceToOut(hitpoint, dir);
+          if (d2 > kTolerance) {
             distance = snxt;
-            //	std::cerr << "hitting  " << distance << "\n";
             return;
           }
         }
       }
 
       // if outside of both we do a max operation
-      // master outside '-' and outside '+' ;  find distances to both
-      //        fLeftMat->MasterToLocal(&master[0], &local[0]);
-      d2 = unplaced.fLeftVolume->DistanceToIn(hitpoint, dir, stepMax);
-      d2 = Max(d2, Precision(0.));
-      if (d2 == kInfLength) {
+      // master outside A and outside B ;  find distances to both from a pushed point
+      Precision push1(kPushTolerance), push2(kPushTolerance);
+      d1 = unplaced.fLeftVolume->DistanceToIn(pushpoint, dir, stepMax - snxt);
+      if (d1 < 0) {
+        d1    = 0.;
+        push1 = 0.;
+      }
+      if (d1 == kInfLength) {
         distance = kInfLength;
-        // std::cerr << "missing A " << d2 << "\n";
+        return;
+      }
+      d2 = unplaced.fRightVolume->DistanceToIn(pushpoint, dir, stepMax - snxt);
+      if (d2 < 0) {
+        d2    = 0.;
+        push2 = 0.;
+      }
+      if (d1 < d2 - kTolerance) {
+        // Hitting A, compensate the push and exit.
+        distance = snxt + d1 + push1;
         return;
       }
 
-      d1 = unplaced.fRightVolume->DistanceToIn(hitpoint, dir, stepMax);
-      if (d2 < d1 - kTolerance) {
-        snxt += d2 + epsil;
-        // std::cerr << "returning  " << snxt << "\n";
-        distance = snxt;
-        return;
-      }
-
-      //        // propagate to '-'
-      snxt += (d1 >= 0. && d1 < kInfLength) ? d1 + epsil : 0.;
-      hitpoint += (d1 >= 0. && d1 < kInfLength) ? (d1 + epsil) * dir : epsil * dir;
+      // propagate to B which we know is closer
+      snxt += d2 + push2;
+      hitpoint += (d2 + push2) * dir;
+      pushpoint   = hitpoint + kPushTolerance * dir;
       insideRight = true;
     } // end while
   }

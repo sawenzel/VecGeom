@@ -13,12 +13,16 @@ template <typename Real_t>
 static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
   int *current;
+  logic_int *current_logic;
 
-  // Write pointers into fShells[i].fSurfaces
-  current = surfData->fSurfShellList;
+  // Write pointers into fShells[i].fSurfaces and fShells[i].fLogic
+  current       = surfData->fSurfShellList;
+  current_logic = surfData->fLogicList;
   for (int i = 0; i < surfData->fNshells; i++) {
     surfData->fShells[i].fSurfaces = current;
     current += surfData->fShells[i].fNsurf;
+    surfData->fShells[i].fLogic.data_ = current_logic;
+    current_logic += surfData->fShells[i].fLogic.size();
   }
 
   // Write pointers into fCommonSurfaces[i].f{Left,Right}Side.fSurfaces
@@ -107,6 +111,12 @@ public:
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSurfShellList, sizeInBytes));
     BREP_CUDA_CHECK(
         cudaMemcpy(fSurfDataStaging.fSurfShellList, surfData.fSurfShellList, sizeInBytes, cudaMemcpyHostToDevice));
+
+    // Nota bene: fShells[i].fLogic are backed by the following array
+    // and set via BrepCudaManagerFinishTransfer.
+    sizeInBytes = sizeof(logic_int) * surfData.fNlogic;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fLogicList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fLogicList, surfData.fLogicList, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy surfaces
     fSurfDataStaging.fNlocalSurf = surfData.fNlocalSurf;

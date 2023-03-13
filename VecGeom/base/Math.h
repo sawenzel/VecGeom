@@ -32,6 +32,15 @@ VECGEOM_CONST Precision kConeTolerance = 1e-7;
 VECGEOM_CONST Precision kFarAway       = 1e10;
 #endif
 
+// Tolerace distance constant specializations
+template <typename Real_t>
+constexpr Real_t kToleranceDist = Real_t(0);
+
+template <>
+inline constexpr double kToleranceDist<double> = double(1e-9);
+template <>
+inline constexpr double kToleranceDist<float> = float(1e-3);
+
 using namespace vecCore::math;
 
 VECGEOM_CONST Precision kAvogadro = 6.02214085774e23;

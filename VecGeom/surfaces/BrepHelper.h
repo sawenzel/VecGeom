@@ -5,65 +5,21 @@
 #include <functional>
 #include <map>
 #include <VecGeom/surfaces/Model.h>
+#include <VecGeom/surfaces/LogicHelper.h>
+#include <VecGeom/surfaces/CpuTypes.h>
+#include <VecGeom/surfaces/SolidConverter.h>
 
 // Check if math necessary
-#include "VecGeom/base/Math.h"
-#include "VecGeom/volumes/LogicalVolume.h"
-#include "VecGeom/volumes/Box.h"
-#include "VecGeom/volumes/Trd.h"
-#include "VecGeom/volumes/Tube.h"
-#include "VecGeom/management/GeoManager.h"
+#include <VecGeom/base/Math.h>
+#include <VecGeom/volumes/LogicalVolume.h>
+#include <VecGeom/volumes/Box.h>
+#include <VecGeom/volumes/Trd.h>
+#include <VecGeom/volumes/Tube.h>
+#include <VecGeom/volumes/BooleanVolume.h>
+#include <VecGeom/management/GeoManager.h>
 
 namespace vgbrep {
 
-template <typename Real_t>
-constexpr Real_t Tolerance()
-{
-  return 0;
-}
-
-template <>
-constexpr double Tolerance()
-{
-  return 1.e-9;
-}
-
-template <>
-constexpr float Tolerance()
-{
-  return 1.e-4;
-}
-
-template <typename Real_t>
-bool ApproxEqual(Real_t t1, Real_t t2)
-{
-  return std::abs(t1 - t2) <= Tolerance<Real_t>();
-}
-
-template <typename Real_t>
-bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
-{
-  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
-}
-
-bool ApproxEqualTransformation(Transformation const &t1, Transformation const &t2)
-{
-  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
-  for (int i = 0; i < 9; ++i)
-    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
-  return true;
-}
-
-// Placeholder (on host) for all surfaces belonging to a volume. An array of those will be indexed
-// by the logical volume id. Also an intermediate helper for building portals.
-// Note: the local surfaces defined by solids will have local references that will be changed by
-// the flattening process, depending on the scene on which the parent volume will be flattened
-struct VolumeShellCPU {
-  std::vector<int> fSurfaces; ///< Local surface id's for this volume
-};
-
-// We would need masks, imprints, portals created contiguously, by some factory
-// Host helper for filling the SurfData store
 template <typename Real_t>
 class BrepHelper {
   using SurfData_t     = SurfData<Real_t>;
@@ -75,28 +31,15 @@ class BrepHelper {
   using ZPhiMask_t     = ZPhiMask<Real_t>;
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
+  using CPUsurfData_t  = CPUsurfData<Real_t>;
 
 private:
   int fVerbose{0};                ///< verbosity level
   SurfData_t *fSurfData{nullptr}; ///< Surface data
+  CPUsurfData_t fCPUdata;         ///< Transient CPU surface data used during conversion
+  SolidConverter<Real_t> fConv;   ///< Solid to surfaces conversion utility
 
-  std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
-  std::vector<RingMask_t> fRingMasks;         ///< ring masks
-  std::vector<ZPhiMask_t> fZPhiMasks;         ///< cylindrical masks
-  std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
-  std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
-  std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
-  std::vector<Transformation> fLocalTrans;    ///< local transformations
-  std::vector<Transformation> fGlobalTrans;   ///< global transformations for surfaces in the scene
-  std::vector<FramedSurface> fLocalSurfaces;  ///< local surfaces
-  std::vector<FramedSurface> fFramedSurf;     ///< global surfaces
-  std::vector<CommonSurface> fCommonSurfaces; ///< common surfaces
-  std::vector<VolumeShellCPU> fShells;        ///< vector of local volume surfaces
-  std::vector<std::vector<int>> fCandidates;  ///< candidate lists for each state
-  std::vector<std::vector<int>> fFrameInd;    ///< frame index per candidate
-  std::multimap<int, int> fSurfHash;          ///< maps rotation hash index to a list of common surface id's
-
-  BrepHelper() : fSurfData(new SurfData_t()) {}
+  BrepHelper() : fSurfData(new SurfData_t()), fConv(fCPUdata) {}
 
 public:
   /// Returns the singleton instance (CPU only)
@@ -111,40 +54,50 @@ public:
   void ClearData()
   {
     // Dispose of surface data and shrink the container
-    fWindowMasks.clear();
-    std::vector<WindowMask_t>().swap(fWindowMasks);
-    fRingMasks.clear();
-    std::vector<RingMask_t>().swap(fRingMasks);
-    fZPhiMasks.clear();
-    std::vector<ZPhiMask_t>().swap(fZPhiMasks);
-    fQuadMasks.clear();
-    std::vector<QuadMask_t>().swap(fQuadMasks);
-    fCylSphData.clear();
-    std::vector<CylData_t>().swap(fCylSphData);
-    fConeData.clear();
-    std::vector<ConeData_t>().swap(fConeData);
-    fLocalTrans.clear();
-    std::vector<Transformation>().swap(fLocalTrans);
-    fGlobalTrans.clear();
-    std::vector<Transformation>().swap(fGlobalTrans);
-    fLocalSurfaces.clear();
-    std::vector<FramedSurface>().swap(fLocalSurfaces);
-    fFramedSurf.clear();
-    std::vector<FramedSurface>().swap(fFramedSurf);
-    fCommonSurfaces.clear();
-    std::vector<CommonSurface>().swap(fCommonSurfaces);
-    for (size_t i = 0; i < fShells.size(); ++i) {
-      fShells[i].fSurfaces.clear();
-      std::vector<int>().swap(fShells[i].fSurfaces);
-    }
-    fShells.clear();
-    std::vector<VolumeShellCPU>().swap(fShells);
+    fCPUdata.Clear();
 
+    delete[] fSurfData->fWindowMasks;
+    fSurfData->fWindowMasks = nullptr;
+    delete[] fSurfData->fRingMasks;
+    fSurfData->fRingMasks = nullptr;
+    delete[] fSurfData->fZPhiMasks;
+    fSurfData->fZPhiMasks = nullptr;
+    delete[] fSurfData->fQuadMasks;
+    fSurfData->fQuadMasks = nullptr;
+    delete[] fSurfData->fCylSphData;
+    fSurfData->fCylSphData = nullptr;
+    delete[] fSurfData->fConeData;
+    fSurfData->fConeData = nullptr;
+    delete[] fSurfData->fGlobalTrans;
+    fSurfData->fGlobalTrans = nullptr;
+    delete[] fSurfData->fLocalTrans;
+    fSurfData->fLocalTrans = nullptr;
+    delete[] fSurfData->fFramedSurf;
+    fSurfData->fFramedSurf = nullptr;
+    delete[] fSurfData->fSides;
+    fSurfData->fSides = nullptr;
+    delete[] fSurfData->fCommonSurfaces;
+    fSurfData->fCommonSurfaces = nullptr;
+    delete[] fSurfData->fCandList;
+    fSurfData->fCandList = nullptr;
+    delete[] fSurfData->fCandidates;
+    fSurfData->fCandidates = nullptr;
+    delete[] fSurfData->fLocalSurf;
+    fSurfData->fLocalSurf = nullptr;
+    delete[] fSurfData->fShells;
+    fSurfData->fShells = nullptr;
+    delete[] fSurfData->fSurfShellList;
+    fSurfData->fSurfShellList = nullptr;
+    delete[] fSurfData->fLogicList;
+    fSurfData->fLogicList = nullptr;
     delete fSurfData;
     fSurfData = nullptr;
   }
 
-  ~BrepHelper() { delete fSurfData; }
+  ~BrepHelper()
+  {
+    if (fSurfData) ClearData();
+  }
 
   void SetVerbosity(int verbose) { fVerbose = verbose; }
 
@@ -161,7 +114,7 @@ public:
     auto sortAndRemoveCommonFrames = [&](Side &side) {
       if (!side.fNsurf) return;
       std::sort(side.fSurfaces, side.fSurfaces + side.fNsurf,
-                [&](int i, int j) { return fFramedSurf[i] < fFramedSurf[j]; });
+                [&](int i, int j) { return fCPUdata.fFramedSurf[i] < fCPUdata.fFramedSurf[j]; });
       for (int i = 0; i < side.fNsurf - 1; ++i) {
         for (int j = side.fNsurf - 1; j > i; --j) {
           if (EqualFrames(side, i, j)) removeSurface(side, j);
@@ -176,12 +129,12 @@ public:
       int num_parents = 0;
       // if there is a parent, it can only be at the last position after sorting
       for (auto parent_ind = top_parent; parent_ind >= 0; --parent_ind) {
-        auto &parent_frame = fFramedSurf[side.fSurfaces[parent_ind]];
+        auto &parent_frame = fCPUdata.fFramedSurf[side.fSurfaces[parent_ind]];
         if (parent_frame.fParent < 0) num_parents++;
         auto parent_navind = parent_frame.fState;
         // loop remaining frames
         for (int i = 0; i < parent_ind; ++i) {
-          auto &child_frame = fFramedSurf[side.fSurfaces[i]];
+          auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
           auto navind       = child_frame.fState;
           if (vecgeom::NavStateIndex::IsDescendentImpl(navind, parent_navind)) child_frame.fParent = parent_ind;
         }
@@ -189,18 +142,18 @@ public:
       side.fNumParents = num_parents;
     };
 
-    sortAndRemoveCommonFrames(fCommonSurfaces[common_id].fLeftSide);
-    sortAndRemoveCommonFrames(fCommonSurfaces[common_id].fRightSide);
-    findParentFramedSurf(fCommonSurfaces[common_id].fLeftSide);
-    findParentFramedSurf(fCommonSurfaces[common_id].fRightSide);
+    sortAndRemoveCommonFrames(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
+    sortAndRemoveCommonFrames(fCPUdata.fCommonSurfaces[common_id].fRightSide);
+    findParentFramedSurf(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
+    findParentFramedSurf(fCPUdata.fCommonSurfaces[common_id].fRightSide);
   }
 
   void ComputeDefaultStates(int common_id)
   {
     using vecgeom::NavStateIndex;
     // Computes the default states for each side of a common surface
-    Side &left  = fCommonSurfaces[common_id].fLeftSide;
-    Side &right = fCommonSurfaces[common_id].fRightSide;
+    Side &left  = fCPUdata.fCommonSurfaces[common_id].fLeftSide;
+    Side &right = fCPUdata.fCommonSurfaces[common_id].fRightSide;
     assert(left.fNsurf > 0 || right.fNsurf > 0);
 
     NavIndex_t default_ind = 0;
@@ -224,27 +177,27 @@ public:
 
     int minlevel = 10000; // this is a big-enough number as level
     for (int isurf = 0; isurf < left.fNsurf; ++isurf) {
-      auto navind = fFramedSurf[left.fSurfaces[isurf]].fState;
+      auto navind = fCPUdata.fFramedSurf[left.fSurfaces[isurf]].fState;
       minlevel    = std::min(minlevel, (int)NavStateIndex::GetLevelImpl(navind));
     }
     for (int isurf = 0; isurf < right.fNsurf; ++isurf) {
-      auto navind = fFramedSurf[right.fSurfaces[isurf]].fState;
+      auto navind = fCPUdata.fFramedSurf[right.fSurfaces[isurf]].fState;
       minlevel    = std::min(minlevel, (int)NavStateIndex::GetLevelImpl(navind));
     }
 
     // initialize the default state
     if (left.fNsurf > 0)
-      default_ind = fFramedSurf[left.fSurfaces[0]].fState;
+      default_ind = fCPUdata.fFramedSurf[left.fSurfaces[0]].fState;
     else if (right.fNsurf > 0)
-      default_ind = fFramedSurf[right.fSurfaces[0]].fState;
+      default_ind = fCPUdata.fFramedSurf[right.fSurfaces[0]].fState;
 
     for (int isurf = 0; isurf < left.fNsurf; ++isurf)
-      default_ind = getCommonState(default_ind, fFramedSurf[left.fSurfaces[isurf]].fState);
+      default_ind = getCommonState(default_ind, fCPUdata.fFramedSurf[left.fSurfaces[isurf]].fState);
     for (int isurf = 0; isurf < right.fNsurf; ++isurf)
-      default_ind = getCommonState(default_ind, fFramedSurf[right.fSurfaces[isurf]].fState);
+      default_ind = getCommonState(default_ind, fCPUdata.fFramedSurf[right.fSurfaces[isurf]].fState);
 
     if (NavStateIndex::GetLevelImpl(default_ind) == minlevel) default_ind = NavStateIndex::PopImpl(default_ind);
-    fCommonSurfaces[common_id].fDefaultState = default_ind;
+    fCPUdata.fCommonSurfaces[common_id].fDefaultState = default_ind;
   }
 
   // Computes the bounding extent on a planar side.
@@ -309,8 +262,8 @@ public:
     } // for
 
     // Add new extent mask to vector
-    int id = fWindowMasks.size();
-    fWindowMasks.push_back(ext);
+    int id = fCPUdata.fWindowMasks.size();
+    fCPUdata.fWindowMasks.push_back(ext);
     side.fExtent.id = id;
   }
 
@@ -356,8 +309,8 @@ public:
     } // for
 
     // Add new extent mask to the vector
-    int id = fZPhiMasks.size();
-    fZPhiMasks.push_back(sideext);
+    int id = fCPUdata.fZPhiMasks.size();
+    fCPUdata.fZPhiMasks.push_back(sideext);
     side.fExtent.id = id;
   }
 
@@ -398,12 +351,13 @@ public:
   // Perhaps each mask should have its own print() method that returns a string.
   void PrintCommonSurface(int common_id)
   {
-    auto round0 = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
+    const char *types[] = {"planar", "cylindrical", "Conical", "Spherical", "Torus", "GenSecondOrder"};
+    auto round0         = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
     vecgeom::Vector3D<Real_t> normal;
     const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
     auto const &surf = fSurfData->fCommonSurfaces[common_id];
     fSurfData->fGlobalTrans[surf.fTrans].InverseTransformDirection(lnorm, normal);
-    printf("\n== common surface %d: type: %d, default state: ", common_id, surf.fType);
+    printf("\n== common surface %d: type: %s, default state: ", common_id, types[int(surf.fType)]);
     vecgeom::NavStateIndex default_state(surf.fDefaultState);
     default_state.Print();
     printf(" transformation %d: ", surf.fTrans);
@@ -411,17 +365,19 @@ public:
     switch (surf.fType) {
     case kPlanar: {
       WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
-      printf("\n   \x1B[34mleft:\x1B[0m %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, %g, "
-             "%g)\n",
-             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeU[0],
-             extL.rangeU[1], extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
+      printf(
+          "\n   \x1B[34mleft:\x1B[0m %d surfaces, num_parents=%d, extent %d: {u{%g, %g}, v{%g, %g}}, normal: (%g, %g, "
+          "%g)\n",
+          surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1],
+          extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
       break;
     }
     case kCylindrical: {
       ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
-             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0],
-             extL.rangeZ[1], extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
+      printf(
+          "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, %g}}\n",
+          surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1],
+          extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
       break;
     }
     case kConical:
@@ -434,16 +390,17 @@ public:
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
-      printf("    surf %d: parent: %d trans: ", idglob, placed.fParent);
+      printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
       vecgeom::NavStateIndex state(placed.fState);
       state.Print();
     }
-    if (surf.fRightSide.fNsurf > 0) switch (surf.fType) {
+    if (surf.fRightSide.fNsurf > 0) {
+      switch (surf.fType) {
       case kPlanar: {
         WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
-        printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}}, normal: (%g, "
+        printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {u{%g, %g}, v{%g, %g}}, normal: (%g, "
                "%g, %g)\n",
                surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeU[0],
                extR.rangeU[1], extR.rangeV[0], extR.rangeV[1], round0(-normal[0]), round0(-normal[1]),
@@ -452,7 +409,8 @@ public:
       }
       case kCylindrical: {
         ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
-        printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {{%g, %g}, {%g, %g}, {%g, %g}}\n",
+        printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
+               "%g}}\n",
                surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeZ[0],
                extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
         break;
@@ -464,13 +422,14 @@ public:
       default:
         std::cout << "Case not implemented. " << std::endl;
       }
-    else
+    } else {
       printf("   \x1B[31mright:\x1B[0m 0 surfaces\n");
+    }
 
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob         = surf.fRightSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
-      printf("    surf %d: parent: %d trans: ", idglob, placed.fParent);
+      printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
       vecgeom::NavStateIndex state(placed.fState);
@@ -480,43 +439,50 @@ public:
 
   void SetNvolumes(int nvolumes)
   {
-    if (fShells.size() > 0) {
+    if (fCPUdata.fShells.size() > 0) {
       std::cout << "BrepHelper::SetNvolumes already called for this instance.\n";
       return;
     }
-    fShells.resize(nvolumes);
+    fCPUdata.fShells.resize(nvolumes);
   }
 
   bool CreateLocalSurfaces()
   {
     // Iterate logical volumes and create local surfaces
     std::vector<vecgeom::LogicalVolume *> volumes;
+    auto n_registered_volumes = vecgeom::GeoManager::Instance().GetRegisteredVolumesCount();
     vecgeom::GeoManager::Instance().GetAllLogicalVolumes(volumes);
-    SetNvolumes(volumes.size());
+    SetNvolumes(n_registered_volumes);
     // TODO: Implement a VUnplacedVolume::CreateSurfaces interface for surface creation
     // create a placeholder for surface data
     for (auto volume : volumes) {
       vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
-      vecgeom::UnplacedBox const *box       = dynamic_cast<vecgeom::UnplacedBox const *>(solid);
-      if (box) {
-        CreateBoxSurfaces(*box, volume->id());
-        continue;
+      bool result                           = fConv.CreateSolidSurfaces(solid, volume->id());
+      if (!result) {
+        std::cout << "BrepHelper::CreateLocalSurfaces: solid type not supported for volume: " << volume->GetName()
+                  << "\n";
+        solid->Print();
       }
-      vecgeom::UnplacedTube const *tube = dynamic_cast<vecgeom::UnplacedTube const *>(solid);
-      if (tube) {
-        CreateTubeSurfaces(*tube, volume->id());
-        continue;
-      }
-      vecgeom::UnplacedTrd const *trd = dynamic_cast<vecgeom::UnplacedTrd const *>(solid);
-      if (trd) {
-        CreateTrdSurfaces(*trd, volume->id());
-        continue;
-      }
-      std::cout << "BrepHelper::CreateLocalSurfaces: solid type not supported for volume: " << volume->GetName()
-                << "\n";
-      solid->Print();
-      return false;
+      assert(result);
+      // Finalize logic expression
+      auto &crtlogic = fCPUdata.fShells[volume->id()].fLogic;
+      logichelper::simplify_logic(crtlogic);
     }
+
+    if (fVerbose > 0) {
+      for (auto volume : volumes) {
+        VolumeShellCPU const &shell = fCPUdata.fShells[volume->id()];
+        printf("shell %d for volume %s:\n", volume->id(), volume->GetName());
+        logichelper::print_logic(shell.fLogic);
+        for (int lsurf_id : shell.fSurfaces) {
+          FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
+          printf(" local surf %d (logic_id=%d): ", lsurf_id, lsurf.fLogicId);
+          fCPUdata.fLocalTrans[lsurf.fTrans].Print();
+          printf("\n");
+        }
+      }
+    }
+
     return true;
   }
 
@@ -536,20 +502,22 @@ public:
       nphysical++;
       Transformation trans;
       state.TopMatrix(trans);
-      VolumeShellCPU const &shell = fShells[vol->id()];
+      VolumeShellCPU const &shell = fCPUdata.fShells[vol->id()];
       for (int lsurf_id : shell.fSurfaces) {
-        FramedSurface const &lsurf = fLocalSurfaces[lsurf_id];
+        FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
         Transformation global(trans);
-        global.MultiplyFromRight(fLocalTrans[lsurf.fTrans]);
-        int trans_id = fGlobalTrans.size();
-        fGlobalTrans.push_back(global);
+        global.MultiplyFromRight(fCPUdata.fLocalTrans[lsurf.fTrans]);
+        int trans_id = fCPUdata.fGlobalTrans.size();
+        fCPUdata.fGlobalTrans.push_back(global);
         // Create the global surface
-        int id_glob = fFramedSurf.size();
-        fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
+        int id_glob = fCPUdata.fFramedSurf.size();
+        fCPUdata.fFramedSurf.push_back(
+            {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
+        fCPUdata.fFramedSurf.back().fLogicId = lsurf.fLogicId;
         if (fVerbose > 0) {
           std::cout << "framed surface " << id_glob << " for state: ";
           state.Print();
-          std::cout << global << "\n";
+          std::cout << "  " << global << "\n";
         }
         CreateCommonSurface(id_glob);
       }
@@ -563,13 +531,13 @@ public:
 
     // add identity first in the list of global transformations
     Transformation identity;
-    fGlobalTrans.push_back(identity);
+    fCPUdata.fGlobalTrans.push_back(identity);
     // add a dummy common surface since index 0 is not allowed for correctly handling sides
-    fCommonSurfaces.push_back({});
+    fCPUdata.fCommonSurfaces.push_back({});
 
     createCommonSurfaces(vecgeom::GeoManager::Instance().GetWorld());
 
-    for (size_t isurf = 1; isurf < fCommonSurfaces.size(); ++isurf) {
+    for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf) {
       // Compute the default states in case no frame on the surface is hit
       ComputeDefaultStates(isurf);
       // Sort placed surfaces on sides by geometry depth (bigger depth comes first)
@@ -588,13 +556,13 @@ public:
     ComputeExtents();
 
     if (fVerbose > 0) {
-      for (size_t isurf = 1; isurf < fCommonSurfaces.size(); ++isurf)
+      for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf)
         PrintCommonSurface(isurf);
     }
 
     if (fVerbose > 1) {
       PrintCandidateLists();
-      std::cout << "Visited " << nphysical << " physical volumes, created " << fCommonSurfaces.size() - 1
+      std::cout << "Visited " << nphysical << " physical volumes, created " << fCPUdata.fCommonSurfaces.size() - 1
                 << " common surfaces\n";
     }
 
@@ -616,38 +584,38 @@ public:
   ///< surfaces as T' = T1.Inverse() * T. If identity this will get the index 0.
   void ConvertTransformations(int idsurf)
   {
-    auto &surf = fCommonSurfaces[idsurf];
+    auto &surf = fCPUdata.fCommonSurfaces[idsurf];
     // Adopt the transformation of the first surface on left for the common surface
-    surf.fTrans = fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans;
+    surf.fTrans = fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans;
     // Set transformation of first surface on left to identity
-    fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans = 0;
+    fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans = 0;
 
     Transformation tsurfinv;
-    fGlobalTrans[surf.fTrans].Inverse(tsurfinv);
+    fCPUdata.fGlobalTrans[surf.fTrans].Inverse(tsurfinv);
 
     // Skip first surface on left side
     for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob = surf.fLeftSide.fSurfaces[i];
-      auto &surf = fFramedSurf[idglob];
+      auto &surf = fCPUdata.fFramedSurf[idglob];
       Transformation tnew(tsurfinv);
-      tnew.MultiplyFromRight(fGlobalTrans[surf.fTrans]);
-      if (ApproxEqualTransformation(tnew, fGlobalTrans[0])) {
+      tnew.MultiplyFromRight(fCPUdata.fGlobalTrans[surf.fTrans]);
+      if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
         surf.fTrans = 0;
       } else {
-        fGlobalTrans[surf.fTrans] = tnew;
+        fCPUdata.fGlobalTrans[surf.fTrans] = tnew;
       }
     }
 
     // Convert right-side surfaces
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob = surf.fRightSide.fSurfaces[i];
-      auto &surf = fFramedSurf[idglob];
+      auto &surf = fCPUdata.fFramedSurf[idglob];
       Transformation tnew(tsurfinv);
-      tnew.MultiplyFromRight(fGlobalTrans[surf.fTrans]);
-      if (ApproxEqualTransformation(tnew, fGlobalTrans[0])) {
+      tnew.MultiplyFromRight(fCPUdata.fGlobalTrans[surf.fTrans]);
+      if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
         surf.fTrans = 0;
       } else {
-        fGlobalTrans[surf.fTrans] = tnew;
+        fCPUdata.fGlobalTrans[surf.fTrans] = tnew;
       }
     }
   }
@@ -656,35 +624,39 @@ public:
   void CreateCandidateLists()
   {
     int numNodes = vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1; // count also outside state
-    fCandidates.reserve(numNodes);
-    fFrameInd.reserve(numNodes);
+    fCPUdata.fCandidates.reserve(numNodes);
+    fCPUdata.fFrameInd.reserve(numNodes);
 
     // Lambda adding the surface id as candidate to all states from a side
     auto addSurfToSideStates = [&](int isurf, int iside) {
-      Side const &side = (iside > 0) ? fCommonSurfaces[isurf].fLeftSide : fCommonSurfaces[isurf].fRightSide;
+      Side const &side =
+          (iside > 0) ? fCPUdata.fCommonSurfaces[isurf].fLeftSide : fCPUdata.fCommonSurfaces[isurf].fRightSide;
       for (int i = 0; i < side.fNsurf; ++i) {
         int idglob             = side.fSurfaces[i];
-        auto const &framedsurf = fFramedSurf[idglob];
+        auto const &framedsurf = fCPUdata.fFramedSurf[idglob];
         vecgeom::NavStateIndex state(framedsurf.fState);
-        int state_id = state.GetId();
-        fCandidates[state_id].push_back(isurf * iside);
-        fFrameInd[state_id].push_back(i);
+        int state_id     = state.GetId();
+        auto isignedsurf = iside * isurf;
+        if (!fCPUdata.fCandidates[state_id].size() || fCPUdata.fCandidates[state_id].back() != isignedsurf) {
+          fCPUdata.fCandidates[state_id].push_back(isignedsurf);
+          fCPUdata.fFrameInd[state_id].push_back(i);
+        }
       }
     };
 
     // prepare all lists
     for (int i = 0; i < numNodes; ++i) {
-      fCandidates.push_back({});
-      fFrameInd.push_back({});
+      fCPUdata.fCandidates.push_back({});
+      fCPUdata.fFrameInd.push_back({});
     }
 
     // loop over all common surfaces and add their index in the appropriate list
-    for (size_t isurf = 1; isurf < fCommonSurfaces.size(); ++isurf) {
-      auto const &surf = fCommonSurfaces[isurf];
+    for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf) {
+      auto const &surf = fCPUdata.fCommonSurfaces[isurf];
       // Add to default surface state
       vecgeom::NavStateIndex state(surf.fDefaultState);
-      fCandidates[state.GetId()].push_back(-isurf);
-      fFrameInd[state.GetId()].push_back(-1); // means this state is the default for isurf
+      fCPUdata.fCandidates[state.GetId()].push_back(-isurf);
+      fCPUdata.fFrameInd[state.GetId()].push_back(-1); // means this state is the default for isurf
       // Add to side states
       addSurfToSideStates(isurf, 1);
       addSurfToSideStates(isurf, -1);
@@ -732,7 +704,6 @@ public:
   {
     constexpr int megabyte = 1024 * 1024;
     float total = 0, size = 0;
-    ;
     std::cout << "___________________________________________________________________________________\n";
     std::cout << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables\n";
     size = float(fSurfData->fNshells * sizeof(VolumeShell) + fSurfData->fNlocalSurf * sizeof(int)) / megabyte;
@@ -779,97 +750,23 @@ public:
   }
 
 private:
-  int AddSurfaceToShell(int logical_id, int isurf)
-  {
-    if (fShells.size() == 0) {
-      std::cout << "BrepHelper::AddSurfaceToShell: need to call SetNvolumes first\n";
-      return -1;
-    }
-    assert(logical_id < (int)fShells.size() && "surface shell id exceeding number of volumes");
-    int id = fShells[logical_id].fSurfaces.size();
-    fShells[logical_id].fSurfaces.push_back(isurf);
-    return id;
-  }
-
-  UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, bool flip = false)
-  {
-    switch (type) {
-    case kPlanar:
-      return UnplacedSurface(type);
-    case kCylindrical:
-    case kSpherical:
-      fCylSphData.push_back({data[0], flip});
-      return UnplacedSurface(type, fCylSphData.size() - 1);
-    case kConical:
-      fConeData.push_back({data[0], data[1], flip});
-      return UnplacedSurface(type, fConeData.size() - 1);
-    case kTorus:
-    case kGenSecondOrder:
-      std::cout << "kTorus, kGenSecondOrder unhandled\n";
-      return UnplacedSurface(type);
-    };
-    return UnplacedSurface(type);
-  }
-
-  // There could be a more elegant solution, with a function that takes a
-  // pointer to mask parameters and uses switch structure to select appropriate
-  // constructor and mask, but this is OK for now.
-  // Creators for different types of frames.
-  Frame CreateFrame(FrameType type, WindowMask_t const &mask)
-  {
-    int id = fWindowMasks.size();
-    fWindowMasks.push_back(mask);
-    return Frame(type, id);
-  }
-
-  Frame CreateFrame(FrameType type, RingMask_t const &mask)
-  {
-    int id = fRingMasks.size();
-    fRingMasks.push_back(mask);
-    return Frame(type, id);
-  }
-
-  Frame CreateFrame(FrameType type, ZPhiMask_t const &mask)
-  {
-    int id = fZPhiMasks.size();
-    fZPhiMasks.push_back(mask);
-    return Frame(type, id);
-  }
-
-  Frame CreateFrame(FrameType type, QuadMask_t const &mask)
-  {
-    int id = fQuadMasks.size();
-    fQuadMasks.push_back(mask);
-    return Frame(type, id);
-  }
-
-  int CreateLocalTransformation(Transformation const &trans)
-  {
-    int id = fLocalTrans.size();
-    fLocalTrans.push_back(trans);
-    return id;
-  }
-
-  int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool use_surf_safety)
-  {
-    int id = fLocalSurfaces.size();
-    fLocalSurfaces.push_back({unplaced, frame, trans, use_surf_safety});
-    return id;
-  }
-
   int CreateCommonSurface(int idglob)
   {
-    bool flip;
+    bool flip, flip_bool;
     auto approxEqual = [&](int idglob1, int idglob2) {
       flip                    = false;
-      FramedSurface const &s1 = fFramedSurf[idglob1];
-      FramedSurface const &s2 = fFramedSurf[idglob2];
+      flip_bool               = false;
+      FramedSurface const &s1 = fCPUdata.fFramedSurf[idglob1];
+      FramedSurface const &s2 = fCPUdata.fFramedSurf[idglob2];
       // Surfaces may be in future "compatible" even if they are not the same, for now enforce equality
       if (s1.fSurface.type != s2.fSurface.type) return false;
 
+      // Check if the surfaces may be flipped because of Boolean negation
+      flip_bool = s1.fLogicId * s2.fLogicId < 0;
+
       // Check if the 2 surfaces are parallel
-      Transformation const &t1 = fGlobalTrans[s1.fTrans];
-      Transformation const &t2 = fGlobalTrans[s2.fTrans];
+      Transformation const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
+      Transformation const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
       // Check if the rotations are matching. The z axis inverse-transformed
       // with the two rotations should end up as aligned vectors. This is
       // true for planes (Z is the normal) but also for tubes/cones where
@@ -893,7 +790,8 @@ private:
         if (std::abs(ldir[2]) > vecgeom::kTolerance) return false;
         break;
       case kCylindrical:
-        if (std::abs(fCylSphData[s1.fSurface.id].Radius() - fCylSphData[s2.fSurface.id].Radius()) > vecgeom::kTolerance)
+        if (std::abs(fCPUdata.fCylSphData[s1.fSurface.id].Radius() - fCPUdata.fCylSphData[s2.fSurface.id].Radius()) >
+            vecgeom::kTolerance)
           return false;
         if (same_tr) break;
         tdiff.Normalize();
@@ -901,7 +799,7 @@ private:
         // For connected cylinders, the connecting vector must be along the Z axis
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
         // Check if the cylynders are flipped with respect to each other
-        flip = fCylSphData[s1.fSurface.id].IsFlipped() ^ fCylSphData[s2.fSurface.id].IsFlipped();
+        flip = fCPUdata.fCylSphData[s1.fSurface.id].IsFlipped() ^ fCPUdata.fCylSphData[s2.fSurface.id].IsFlipped();
         break;
       case kConical:
       case kSpherical:
@@ -918,8 +816,8 @@ private:
       // Compute hash for the surface rotation
       constexpr int nth           = 1000;
       constexpr int nph           = 1000;
-      FramedSurface const &surf   = fFramedSurf[idglobal];
-      Transformation const &trans = fGlobalTrans[surf.fTrans];
+      FramedSurface const &surf   = fCPUdata.fFramedSurf[idglobal];
+      Transformation const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
       // convert local Z axis to the global frame
       vecgeom::Vector3D<double> const zaxis(0, 0, 1);
       auto vzglob = trans.InverseTransformDirection(zaxis);
@@ -940,25 +838,34 @@ private:
     };
 
 #if (1)
-    auto hash = surfHashUgly(idglob);
+    FramedSurface const &surf = fCPUdata.fFramedSurf[idglob];
+    auto hash                 = surfHashUgly(idglob);
     // Get the compatible surfaces
-    auto range          = fSurfHash.equal_range(hash);
+    auto range          = fCPUdata.fSurfHash.equal_range(hash);
     bool found_dup_surf = false;
     int id              = -1;
+    flip ^= flip_bool;
     for (auto it = range.first; it != range.second; ++it) {
-      const auto &other_id = fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
+      const auto &other_id = fCPUdata.fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
+      // Do not de-duplicate surfaces if they do not belong to the same Boolean volume.
+      // This is needed because safety for Booleans must be evaluated only once based on the volume logic expression.
+      // Safety evaluation is triggered by the first Boolean surface found closest. All candidate surfaces to be checked
+      // for the same Boolean volume must be consecutive, to allow caching the result.
+      FramedSurface const &othersurf = fCPUdata.fFramedSurf[other_id];
+      if (surf.fLogicId && surf.fLogicId != othersurf.fLogicId) continue;
+
       if (approxEqual(other_id, idglob)) {
         found_dup_surf = true;
         id             = it->second;
-        auto &crt_side = flip ? fCommonSurfaces[id].fRightSide : fCommonSurfaces[id].fLeftSide;
+        auto &crt_side = flip ? fCPUdata.fCommonSurfaces[id].fRightSide : fCPUdata.fCommonSurfaces[id].fLeftSide;
         // The common surface is compatible only if the parent state for the current framed surface
-        // has a frame on the same side or it is already the common state.
-        auto parent_state_index = vecgeom::NavStateIndex::PopImpl(fFramedSurf[idglob].fState);
-        if (fCommonSurfaces[id].fDefaultState != parent_state_index) {
+        // has a frame on the same side or it is already the default state.
+        auto parent_state_index = vecgeom::NavStateIndex::PopImpl(fCPUdata.fFramedSurf[idglob].fState);
+        if (fCPUdata.fCommonSurfaces[id].fDefaultState != parent_state_index) {
           // To be compatible, a surface of the parent state MUST exist on the same side
           bool has_parent = false;
           for (auto isurf = 0; isurf < crt_side.fNsurf; ++isurf) {
-            has_parent = fFramedSurf[crt_side.fSurfaces[isurf]].fState == parent_state_index;
+            has_parent = fCPUdata.fFramedSurf[crt_side.fSurfaces[isurf]].fState == parent_state_index;
             if (has_parent) break;
           }
           if (!has_parent) {
@@ -974,19 +881,20 @@ private:
     if (!found_dup_surf) {
       // Construct a new common surface from the current placed global surface
       // Set the common state to be the parent of the idglob surface state
-      id = fCommonSurfaces.size();
-      fCommonSurfaces.push_back({fFramedSurf[idglob].fSurface.type, idglob});
-      fCommonSurfaces[id].fDefaultState = vecgeom::NavStateIndex::PopImpl(fFramedSurf[idglob].fState);
-      fSurfHash.insert(std::make_pair(hash, id));
+      id = fCPUdata.fCommonSurfaces.size();
+      fCPUdata.fCommonSurfaces.push_back({fCPUdata.fFramedSurf[idglob].fSurface.type, idglob});
+      fCPUdata.fCommonSurfaces[id].fDefaultState = vecgeom::NavStateIndex::PopImpl(fCPUdata.fFramedSurf[idglob].fState);
+      fCPUdata.fSurfHash.insert(std::make_pair(hash, id));
     }
 #else
     // this may be slow
-    auto it = std::find_if(std::begin(fCommonSurfaces), std::end(fCommonSurfaces), [&](const CommonSurface &t) {
-      return (t.fLeftSide.fNsurf > 0) ? approxEqual(t.fLeftSide.fSurfaces[0], idglob) : false;
-    });
+    auto it = std::find_if(std::begin(fCPUdata.fCommonSurfaces), std::end(fCPUdata.fCommonSurfaces),
+                           [&](const CommonSurface &t) {
+                             return (t.fLeftSide.fNsurf > 0) ? approxEqual(t.fLeftSide.fSurfaces[0], idglob) : false;
+                           });
     int id  = -1;
-    if (it != std::end(fCommonSurfaces)) {
-      id = int(it - std::begin(fCommonSurfaces));
+    if (it != std::end(fCPUdata.fCommonSurfaces)) {
+      id = int(it - std::begin(fCPUdata.fCommonSurfaces));
       // Add the global surface to the appropriate side
       if (flip)
         (*it).fRightSide.AddSurface(idglob);
@@ -995,186 +903,11 @@ private:
 
     } else {
       // Construct a new common surface from the current placed global surface
-      id = fCommonSurfaces.size();
-      fCommonSurfaces.push_back({fFramedSurf[idglob].fSurface.type, idglob});
+      id = fCPUdata.fCommonSurfaces.size();
+      fCPUdata.fCommonSurfaces.push_back({fCPUdata.fFramedSurf[idglob].fSurface.type, idglob});
     }
 #endif
     return id;
-  }
-
-  // The code for creating solid-specific surfaces should sit in the specific solid struct type
-  void CreateBoxSurfaces(vecgeom::UnplacedBox const &box, int logical_id)
-  {
-    const bool use_surf_safety = true;
-    int isurf;
-    // surface at -dx:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.y(), box.z()}),
-                               CreateLocalTransformation({-box.x(), 0, 0, -90, 90, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // surface at +dx:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.y(), box.z()}),
-                               CreateLocalTransformation({box.x(), 0, 0, 90, 90, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // surface at -dy:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.z()}),
-                               CreateLocalTransformation({0, -box.y(), 0, 0, 90, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // surface at +dy:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.z()}),
-                               CreateLocalTransformation({0, box.y(), 0, 0, -90, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // surface at -dz:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.y()}),
-                               CreateLocalTransformation({0, 0, -box.z(), 0, 180, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // surface at +dz:
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{box.x(), box.y()}),
-                               CreateLocalTransformation({0, 0, box.z(), 0, 0, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-  }
-
-  void CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
-  {
-    auto sphi = tube.sphi();
-    auto dphi = tube.dphi();
-    auto ephi = tube.sphi() + tube.dphi();
-
-    assert(dphi > vecgeom::kTolerance);
-
-    auto Rmean = (tube.rmin() + tube.rmax()) / 2;
-    auto Rdiff = (tube.rmax() - tube.rmin()) / 2;
-
-    assert(Rdiff > 0);
-
-    bool fullCirc        = ApproxEqual(dphi, vecgeom::kTwoPi);
-    bool smallerPi       = dphi < (vecgeom::kPi - vecgeom::kTolerance);
-    bool use_surf_safety = true;
-
-    int isurf;
-    Real_t surfdata[2];
-
-    // We need angles in degrees for transformations
-    auto sphid = vecgeom::kRadToDeg * sphi;
-    auto ephid = vecgeom::kRadToDeg * ephi;
-
-    // surface at +dz
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
-                               CreateFrame(kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-                               CreateLocalTransformation({0, 0, tube.z(), 0, 0, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // surface at -dz
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar),
-                               CreateFrame(kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-                               CreateLocalTransformation({0, 0, -tube.z(), 0, 180, -sphid - ephid}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-    // inner cylinder
-    if (tube.rmin() > vecgeom::kTolerance) {
-      surfdata[0] = tube.rmin();
-      isurf       = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, surfdata, /*flipped=*/true),
-                                 CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-                                 CreateLocalTransformation({0, 0, 0, 0, 0, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-    }
-    // outer cylinder
-    surfdata[0] = tube.rmax();
-    isurf       = CreateLocalSurface(CreateUnplacedSurface(kCylindrical, surfdata),
-                               CreateFrame(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-                               CreateLocalTransformation({0, 0, 0, 0, 0, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-
-    if (ApproxEqual(dphi, vecgeom::kTwoPi)) return;
-    // plane cap at Sphi
-    isurf =
-        CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
-                           CreateLocalTransformation({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}),
-                           use_surf_safety && smallerPi);
-    AddSurfaceToShell(logical_id, isurf);
-    // plane cap at Sphi+Dphi
-    isurf = CreateLocalSurface(
-        CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{Rdiff, tube.z()}),
-        CreateLocalTransformation({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}),
-        use_surf_safety && smallerPi);
-    AddSurfaceToShell(logical_id, isurf);
-  }
-
-  void CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
-  {
-    bool use_surf_safety = true;
-    auto dx              = trd.dx1() - trd.dx2();
-    auto dy              = trd.dy1() - trd.dy2();
-    auto dzx             = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dy * dy) * 0.5;
-    auto dzy             = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dx * dx) * 0.5;
-
-    auto phix = ApproxEqual(dy, 0.) ? 90 : vecgeom::ATan(2 * trd.dz() / dy) * vecgeom::kRadToDeg;
-    auto phiy = ApproxEqual(dx, 0.) ? 90 : vecgeom::ATan(2 * trd.dz() / dx) * vecgeom::kRadToDeg;
-    if (phix < 0) phix = 180 + phix;
-    if (phiy < 0) phiy = 180 + phiy;
-
-    auto movey = (trd.dy1() + trd.dy2()) * 0.5;
-    auto movex = (trd.dx1() + trd.dx2()) * 0.5;
-
-    // Bottom face
-    int isurf =
-        CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), trd.dy1()}),
-                           CreateLocalTransformation({0, 0, -trd.dz(), 0, 180, 0}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-
-    // Top face
-    isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx2(), trd.dy2()}),
-                               CreateLocalTransformation({0, 0, trd.dz()}), use_surf_safety);
-    AddSurfaceToShell(logical_id, isurf);
-
-    // Sides parallel to x axis
-    if (vecgeom::Abs(dx) > vecgeom::kTolerance) {
-      // At -dy
-      isurf = CreateLocalSurface(
-          CreateUnplacedSurface(kPlanar),
-          CreateFrame(kQuadrilateral, QuadMask_t{-trd.dx1(), -dzx, trd.dx1(), -dzx, trd.dx2(), dzx, -trd.dx2(), dzx}),
-          CreateLocalTransformation({0, -movey, 0, 0, phix, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-
-      // At +dy
-      isurf = CreateLocalSurface(
-          CreateUnplacedSurface(kPlanar),
-          CreateFrame(kQuadrilateral, QuadMask_t{-trd.dx1(), -dzx, trd.dx1(), -dzx, trd.dx2(), dzx, -trd.dx2(), dzx}),
-          CreateLocalTransformation({0, movey, 0, 180, phix, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-    } else { // We have rectangles.
-      isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), dzx}),
-                                 CreateLocalTransformation({0, -movey, 0, 0, phix, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-
-      // At +dy
-      isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dx1(), dzx}),
-                                 CreateLocalTransformation({0, movey, 0, 180, phix, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-    }
-    // Sides parallel to y axis
-    if (vecgeom::Abs(dy) > vecgeom::kTolerance) {
-      // At -dx
-      isurf = CreateLocalSurface(
-          CreateUnplacedSurface(kPlanar),
-          CreateFrame(kQuadrilateral, QuadMask_t{-trd.dy1(), -dzy, trd.dy1(), -dzy, trd.dy2(), dzy, -trd.dy2(), dzy}),
-          CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-
-      // At +dx
-      isurf = CreateLocalSurface(
-          CreateUnplacedSurface(kPlanar),
-          CreateFrame(kQuadrilateral, QuadMask_t{-trd.dy1(), -dzy, trd.dy1(), -dzy, trd.dy2(), dzy, -trd.dy2(), dzy}),
-          CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-    } else { // We have rectangles.
-      // At -dx
-      isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dy1(), dzy}),
-                                 CreateLocalTransformation({-movex, 0, 0, -90, phiy, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-
-      // At +dx
-      isurf = CreateLocalSurface(CreateUnplacedSurface(kPlanar), CreateFrame(kWindow, WindowMask_t{trd.dy1(), dzy}),
-                                 CreateLocalTransformation({movex, 0, 0, 90, phiy, 0}), use_surf_safety);
-      AddSurfaceToShell(logical_id, isurf);
-    }
   }
 
   ///< This function evaluates if the frames of two placed surfaces on the same side
@@ -1183,12 +916,12 @@ private:
   {
     using Vector3D = vecgeom::Vector3D<Real_t>;
 
-    FramedSurface const &s1 = fFramedSurf[side.fSurfaces[i1]];
-    FramedSurface const &s2 = fFramedSurf[side.fSurfaces[i2]];
+    FramedSurface const &s1 = fCPUdata.fFramedSurf[side.fSurfaces[i1]];
+    FramedSurface const &s2 = fCPUdata.fFramedSurf[side.fSurfaces[i2]];
     if (s1.fFrame.type != s2.fFrame.type) return false;
     // Get displacement vector between the 2 frame centers and check if it has null length
-    Transformation const &t1 = fGlobalTrans[s1.fTrans];
-    Transformation const &t2 = fGlobalTrans[s2.fTrans];
+    Transformation const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
+    Transformation const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
     Vector3D tdiff           = t1.Translation() - t2.Translation();
     // TODO: Check if this has to always hold with the new mask types!!
     if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
@@ -1198,8 +931,8 @@ private:
     case kRangeZ:
       break;
     case kRing: {
-      auto mask1 = fRingMasks[s1.fFrame.id];
-      auto mask2 = fRingMasks[s2.fFrame.id];
+      auto mask1 = fCPUdata.fRingMasks[s1.fFrame.id];
+      auto mask2 = fCPUdata.fRingMasks[s2.fFrame.id];
 
       // Inner radius must be the same
       if (!ApproxEqual(mask1.rangeR[0], mask2.rangeR[0]) || !ApproxEqual(mask1.rangeR[1], mask2.rangeR[1]) ||
@@ -1217,8 +950,8 @@ private:
       break;
     }
     case kZPhi: {
-      auto mask1 = fZPhiMasks[s1.fFrame.id];
-      auto mask2 = fZPhiMasks[s2.fFrame.id];
+      auto mask1 = fCPUdata.fZPhiMasks[s1.fFrame.id];
+      auto mask2 = fCPUdata.fZPhiMasks[s2.fFrame.id];
 
       // They are on the same side, so there is no flipping,
       // and z extents must be equal
@@ -1239,8 +972,8 @@ private:
       // if (ApproxEqualVector(v1, v2)) return true; //Must be changed.
       break;
     case kWindow: {
-      auto frameData1 = fWindowMasks[s1.fFrame.id];
-      auto frameData2 = fWindowMasks[s2.fFrame.id];
+      auto frameData1 = fCPUdata.fWindowMasks[s1.fFrame.id];
+      auto frameData2 = fCPUdata.fWindowMasks[s2.fFrame.id];
 
       // Vertices
       Vector3D v11 =
@@ -1273,61 +1006,61 @@ private:
   // when updating masks after creating both frames and extents.
   void UpdateMaskData()
   {
-    fSurfData->fNwindows    = fWindowMasks.size();
-    fSurfData->fWindowMasks = new WindowMask_t[fWindowMasks.size()];
-    for (size_t i = 0; i < fWindowMasks.size(); ++i)
-      fSurfData->fWindowMasks[i] = fWindowMasks[i];
+    fSurfData->fNwindows    = fCPUdata.fWindowMasks.size();
+    fSurfData->fWindowMasks = new WindowMask_t[fCPUdata.fWindowMasks.size()];
+    for (size_t i = 0; i < fCPUdata.fWindowMasks.size(); ++i)
+      fSurfData->fWindowMasks[i] = fCPUdata.fWindowMasks[i];
 
-    fSurfData->fNrings    = fRingMasks.size();
-    fSurfData->fRingMasks = new RingMask_t[fRingMasks.size()];
-    for (size_t i = 0; i < fRingMasks.size(); ++i)
-      fSurfData->fRingMasks[i] = fRingMasks[i];
+    fSurfData->fNrings    = fCPUdata.fRingMasks.size();
+    fSurfData->fRingMasks = new RingMask_t[fCPUdata.fRingMasks.size()];
+    for (size_t i = 0; i < fCPUdata.fRingMasks.size(); ++i)
+      fSurfData->fRingMasks[i] = fCPUdata.fRingMasks[i];
 
-    fSurfData->fNzphis    = fZPhiMasks.size();
-    fSurfData->fZPhiMasks = new ZPhiMask_t[fZPhiMasks.size()];
-    for (size_t i = 0; i < fZPhiMasks.size(); ++i)
-      fSurfData->fZPhiMasks[i] = fZPhiMasks[i];
+    fSurfData->fNzphis    = fCPUdata.fZPhiMasks.size();
+    fSurfData->fZPhiMasks = new ZPhiMask_t[fCPUdata.fZPhiMasks.size()];
+    for (size_t i = 0; i < fCPUdata.fZPhiMasks.size(); ++i)
+      fSurfData->fZPhiMasks[i] = fCPUdata.fZPhiMasks[i];
 
-    fSurfData->fNquads    = fQuadMasks.size();
-    fSurfData->fQuadMasks = new QuadMask_t[fQuadMasks.size()];
-    for (size_t i = 0; i < fQuadMasks.size(); ++i)
-      fSurfData->fQuadMasks[i] = fQuadMasks[i];
+    fSurfData->fNquads    = fCPUdata.fQuadMasks.size();
+    fSurfData->fQuadMasks = new QuadMask_t[fCPUdata.fQuadMasks.size()];
+    for (size_t i = 0; i < fCPUdata.fQuadMasks.size(); ++i)
+      fSurfData->fQuadMasks[i] = fCPUdata.fQuadMasks[i];
   }
 
   ///< The method updates the SurfData storage
   void UpdateSurfData()
   {
     // Create and copy surface data
-    fSurfData->fNcylsph    = fCylSphData.size();
-    fSurfData->fCylSphData = new CylData_t[fCylSphData.size()];
-    for (size_t i = 0; i < fCylSphData.size(); ++i)
-      fSurfData->fCylSphData[i] = fCylSphData[i];
+    fSurfData->fNcylsph    = fCPUdata.fCylSphData.size();
+    fSurfData->fCylSphData = new CylData_t[fCPUdata.fCylSphData.size()];
+    for (size_t i = 0; i < fCPUdata.fCylSphData.size(); ++i)
+      fSurfData->fCylSphData[i] = fCPUdata.fCylSphData[i];
 
-    fSurfData->fNcone    = fConeData.size();
-    fSurfData->fConeData = new ConeData_t[fConeData.size()];
-    for (size_t i = 0; i < fConeData.size(); ++i)
-      fSurfData->fConeData[i] = fConeData[i];
+    fSurfData->fNcone    = fCPUdata.fConeData.size();
+    fSurfData->fConeData = new ConeData_t[fCPUdata.fConeData.size()];
+    for (size_t i = 0; i < fCPUdata.fConeData.size(); ++i)
+      fSurfData->fConeData[i] = fCPUdata.fConeData[i];
 
     // Copy transformations
-    fSurfData->fNglobalTrans = fGlobalTrans.size();
-    fSurfData->fGlobalTrans  = new Transformation[fGlobalTrans.size()];
-    for (size_t i = 0; i < fGlobalTrans.size(); ++i)
-      fSurfData->fGlobalTrans[i] = fGlobalTrans[i];
-    fSurfData->fNlocalTrans = fLocalTrans.size();
-    fSurfData->fLocalTrans  = new Transformation[fLocalTrans.size()];
-    for (size_t i = 0; i < fLocalTrans.size(); ++i)
-      fSurfData->fLocalTrans[i] = fLocalTrans[i];
+    fSurfData->fNglobalTrans = fCPUdata.fGlobalTrans.size();
+    fSurfData->fGlobalTrans  = new Transformation[fCPUdata.fGlobalTrans.size()];
+    for (size_t i = 0; i < fCPUdata.fGlobalTrans.size(); ++i)
+      fSurfData->fGlobalTrans[i] = fCPUdata.fGlobalTrans[i];
+    fSurfData->fNlocalTrans = fCPUdata.fLocalTrans.size();
+    fSurfData->fLocalTrans  = new Transformation[fCPUdata.fLocalTrans.size()];
+    for (size_t i = 0; i < fCPUdata.fLocalTrans.size(); ++i)
+      fSurfData->fLocalTrans[i] = fCPUdata.fLocalTrans[i];
 
     // Copy global surfaces
-    auto numGlobalSurf      = fFramedSurf.size();
+    auto numGlobalSurf      = fCPUdata.fFramedSurf.size();
     fSurfData->fNglobalSurf = numGlobalSurf;
     fSurfData->fFramedSurf  = new FramedSurface[numGlobalSurf];
     for (size_t i = 0; i < numGlobalSurf; ++i)
-      fSurfData->fFramedSurf[i] = fFramedSurf[i];
+      fSurfData->fFramedSurf[i] = fCPUdata.fFramedSurf[i];
 
     // Copy common surfaces
     size_t size_sides = 0;
-    for (auto const &surf : fCommonSurfaces)
+    for (auto const &surf : fCPUdata.fCommonSurfaces)
       size_sides += surf.fLeftSide.fNsurf + surf.fRightSide.fNsurf;
 
     // Create Masks
@@ -1336,73 +1069,88 @@ private:
     fSurfData->fNsides         = size_sides;
     fSurfData->fSides          = new int[size_sides];
     int *current_side          = fSurfData->fSides;
-    fSurfData->fNcommonSurf    = fCommonSurfaces.size();
-    fSurfData->fCommonSurfaces = new CommonSurface[fCommonSurfaces.size()];
-    for (size_t i = 0; i < fCommonSurfaces.size(); ++i) {
+    fSurfData->fNcommonSurf    = fCPUdata.fCommonSurfaces.size();
+    fSurfData->fCommonSurfaces = new CommonSurface[fCPUdata.fCommonSurfaces.size()];
+    for (size_t i = 0; i < fCPUdata.fCommonSurfaces.size(); ++i) {
       // Raw copy of surface (wrong pointers in sides)
-      fSurfData->fCommonSurfaces[i] = fCommonSurfaces[i];
+      fSurfData->fCommonSurfaces[i] = fCPUdata.fCommonSurfaces[i];
       // Copy left sides content in buffer
-      for (auto isurf = 0; isurf < fCommonSurfaces[i].fLeftSide.fNsurf; ++isurf)
-        current_side[isurf] = fCommonSurfaces[i].fLeftSide.fSurfaces[isurf];
+      for (auto isurf = 0; isurf < fCPUdata.fCommonSurfaces[i].fLeftSide.fNsurf; ++isurf)
+        current_side[isurf] = fCPUdata.fCommonSurfaces[i].fLeftSide.fSurfaces[isurf];
       // Make left sides arrays point to the buffer
       fSurfData->fCommonSurfaces[i].fLeftSide.fSurfaces = current_side;
-      current_side += fCommonSurfaces[i].fLeftSide.fNsurf;
+      current_side += fCPUdata.fCommonSurfaces[i].fLeftSide.fNsurf;
 
       // Copy right sides content in buffer
-      for (auto isurf = 0; isurf < fCommonSurfaces[i].fRightSide.fNsurf; ++isurf)
-        current_side[isurf] = fCommonSurfaces[i].fRightSide.fSurfaces[isurf];
+      for (auto isurf = 0; isurf < fCPUdata.fCommonSurfaces[i].fRightSide.fNsurf; ++isurf)
+        current_side[isurf] = fCPUdata.fCommonSurfaces[i].fRightSide.fSurfaces[isurf];
       // Make right sides arrays point to the buffer
       fSurfData->fCommonSurfaces[i].fRightSide.fSurfaces = current_side;
-      current_side += fCommonSurfaces[i].fRightSide.fNsurf;
+      current_side += fCPUdata.fCommonSurfaces[i].fRightSide.fNsurf;
       // Copy parent surface indices
-      fSurfData->fCommonSurfaces[i].fLeftSide.fNumParents  = fCommonSurfaces[i].fLeftSide.fNumParents;
-      fSurfData->fCommonSurfaces[i].fRightSide.fNumParents = fCommonSurfaces[i].fRightSide.fNumParents;
+      fSurfData->fCommonSurfaces[i].fLeftSide.fNumParents  = fCPUdata.fCommonSurfaces[i].fLeftSide.fNumParents;
+      fSurfData->fCommonSurfaces[i].fRightSide.fNumParents = fCPUdata.fCommonSurfaces[i].fRightSide.fNumParents;
     }
 
     // Copy candidates lists
     auto size_candidates = 0;
-    for (auto const &list : fCandidates)
+    for (auto const &list : fCPUdata.fCandidates)
       size_candidates += list.size();
 
     fSurfData->fNcandList   = 2 * size_candidates;
     fSurfData->fCandList    = new int[2 * size_candidates];
     int *current_candidates = fSurfData->fCandList;
-    fSurfData->fNcandidates = fCandidates.size();
-    fSurfData->fCandidates  = new Candidates[fCandidates.size()];
-    for (size_t i = 0; i < fCandidates.size(); ++i) {
-      auto ncand                       = fCandidates[i].size();
+    fSurfData->fNcandidates = fCPUdata.fCandidates.size();
+    fSurfData->fCandidates  = new Candidates[fCPUdata.fCandidates.size()];
+    for (size_t i = 0; i < fCPUdata.fCandidates.size(); ++i) {
+      auto ncand                       = fCPUdata.fCandidates[i].size();
       fSurfData->fCandidates[i].fNcand = ncand;
       for (size_t icand = 0; icand < ncand; icand++) {
-        current_candidates[icand]         = (fCandidates[i])[icand];
-        current_candidates[ncand + icand] = (fFrameInd[i])[icand];
+        current_candidates[icand]         = (fCPUdata.fCandidates[i])[icand];
+        current_candidates[ncand + icand] = (fCPUdata.fFrameInd[i])[icand];
       }
       fSurfData->fCandidates[i].fCandidates = current_candidates;
-      current_candidates += fCandidates[i].size();
+      current_candidates += fCPUdata.fCandidates[i].size();
       fSurfData->fCandidates[i].fFrameInd = current_candidates;
-      current_candidates += fCandidates[i].size();
+      current_candidates += fCPUdata.fCandidates[i].size();
     }
 
     // Copy local surfaces
-    auto numLocalSurf      = fLocalSurfaces.size();
+    auto numLocalSurf      = fCPUdata.fLocalSurfaces.size();
     fSurfData->fNlocalSurf = numLocalSurf;
     fSurfData->fLocalSurf  = new FramedSurface[numLocalSurf];
     for (size_t i = 0; i < numLocalSurf; ++i)
-      fSurfData->fLocalSurf[i] = fLocalSurfaces[i];
+      fSurfData->fLocalSurf[i] = fCPUdata.fLocalSurfaces[i];
 
     // Copy volume shells
-    auto numShells            = fShells.size();
+    auto numShells            = fCPUdata.fShells.size();
     fSurfData->fNshells       = numShells;
     fSurfData->fShells        = new VolumeShell[numShells];
     fSurfData->fSurfShellList = new int[numLocalSurf];
     int *current_surf         = fSurfData->fSurfShellList;
+    size_t sizeLogic          = 0;
     for (size_t i = 0; i < numShells; ++i) {
-      auto const &surfaces         = fShells[i].fSurfaces;
+      sizeLogic += fCPUdata.fShells[i].fLogic.size();
+    }
+    fSurfData->fLogicList    = new logic_int[sizeLogic];
+    fSurfData->fNlogic       = sizeLogic;
+    logic_int *current_logic = fSurfData->fLogicList;
+
+    for (size_t i = 0; i < numShells; ++i) {
+      auto const &surfaces         = fCPUdata.fShells[i].fSurfaces;
       auto nsurf                   = surfaces.size();
       fSurfData->fShells[i].fNsurf = nsurf;
       for (size_t isurf = 0; isurf < nsurf; isurf++)
         current_surf[isurf] = surfaces[isurf];
       fSurfData->fShells[i].fSurfaces = current_surf;
       current_surf += nsurf;
+      auto nlogic                        = fCPUdata.fShells[i].fLogic.size();
+      fSurfData->fShells[i].fLogic.size_ = nlogic;
+      fSurfData->fShells[i].fLogic.data_ = current_logic;
+      int iitem                          = 0;
+      for (auto item : fCPUdata.fShells[i].fLogic)
+        fSurfData->fShells[i].fLogic.data_[iitem++] = item;
+      current_logic += nlogic;
     }
   }
 };

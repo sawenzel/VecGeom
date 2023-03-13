@@ -193,7 +193,7 @@ VECCORE_ATT_HOST_DEVICE
 size_t BooleanHelper::CountBooleanNodes(VUnplacedVolume const *unplaced, size_t &nunion, size_t &nintersection,
                                         size_t &nsubtraction)
 {
-  BooleanStruct const *bstruct = GetBooleanStruct(unplaced);
+  BooleanStruct const *bstruct = BooleanHelper::GetBooleanStruct(unplaced);
   if (!bstruct) return 0;
 
   nunion += bstruct->fOp == kUnion;
@@ -215,7 +215,7 @@ UnplacedMultiUnion *BooleanHelper::Flatten(VUnplacedVolume const *unplaced, size
     return nullptr;
   }
   VUnplacedVolume const *vol;
-  BooleanStruct *bstruct = (BooleanStruct *)GetBooleanStruct(unplaced);
+  BooleanStruct *bstruct = (BooleanStruct *)BooleanHelper::GetBooleanStruct(unplaced);
   if (bstruct->fOp == kUnion) {
     bool creator = munion == nullptr;
     if (!munion) munion = new UnplacedMultiUnion();

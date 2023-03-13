@@ -5,7 +5,7 @@
 #include <VecGeom/navigation/NavStateIndex.h>
 #include <VecGeom/surfaces/SurfaceImpl.h>
 #include <VecGeom/surfaces/FrameMasks.h>
-//#include <VecGeom/base/Vector3D.h>
+// #include <VecGeom/base/Vector3D.h>
 
 namespace vgbrep {
 
@@ -38,8 +38,7 @@ struct UnplacedSurface {
   /// @param point Point in the local surface coordinates
   /// @return Inside half-space
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
     case kPlanar:
@@ -67,9 +66,8 @@ struct UnplacedSurface {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side,
-                 SurfData<Real_t> const &surfdata, Real_t &distance) const
+  VECCORE_ATT_HOST_DEVICE bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side,
+                                         SurfData<Real_t> const &surfdata, Real_t &distance) const
   {
     switch (type) {
     case kPlanar:
@@ -98,9 +96,8 @@ struct UnplacedSurface {
   /// @param onsurf Projection of the point on surface
   /// @return
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  bool Safety(Vector3D<Real_t> const &point, bool left_side, SurfData<Real_t> const &surfdata, Real_t &distance,
-              bool compute_onsurf, Vector3D<Real_t> &onsurf) const
+  VECCORE_ATT_HOST_DEVICE bool Safety(Vector3D<Real_t> const &point, bool left_side, SurfData<Real_t> const &surfdata,
+                                      Real_t &distance, bool compute_onsurf, Vector3D<Real_t> &onsurf) const
   {
     switch (type) {
     case kPlanar:
@@ -141,8 +138,7 @@ struct Frame {
 
   // A function to check if local point is within the Frame's mask.
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  bool Inside(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
     case kRing:
@@ -176,8 +172,8 @@ struct Frame {
   /// @param surfdata Surface data storage
   /// @return Safety to the framed surface.
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, SurfData<Real_t> const &surfdata, bool &valid) const
+  VECCORE_ATT_HOST_DEVICE Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf,
+                                        SurfData<Real_t> const &surfdata, bool &valid) const
   {
     switch (type) {
     case kRing:
@@ -231,6 +227,10 @@ struct FramedSurface {
   Frame fFrame;               ///< Frame
   int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
   int fParent{-1};            ///< Topmost parent frame index on the common surface
+  int fLogicId{0};            ///< Logic flag for surface:
+                              ///<   0        = non-Bool
+                              ///<   positive = true logic surface
+                              ///<   negative = negated logic surface
   NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
   bool fUseSurfSafety{false}; ///< The surface has virtual intersections with the 3D shape. Use just the surface safety
                               ///< to outside in the minimization procedure
@@ -267,8 +267,7 @@ struct FramedSurface {
 
   ///< Check if the propagated point on surface is within the frame
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  bool InsideFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE bool InsideFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     Vector3D<Real_t> localpoint(point);
     // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
@@ -284,9 +283,8 @@ struct FramedSurface {
   /// @param surfdata Surface data storage
   /// @return Combined safety surface+frame
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  Real_t SafetyFrame(Vector3D<Real_t> const &point, Real_t safetySurf, SurfData<Real_t> const &surfdata,
-                     bool &valid) const
+  VECCORE_ATT_HOST_DEVICE Real_t SafetyFrame(Vector3D<Real_t> const &point, Real_t safetySurf,
+                                             SurfData<Real_t> const &surfdata, bool &valid) const
   {
     Vector3D<Real_t> localpoint(point);
     // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
@@ -299,7 +297,7 @@ struct FramedSurface {
 struct Candidates {
   int fNcand{0};             ///< Number of candidate surfaces
   int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
-  int *fFrameInd{nullptr};   ///< [fNcand] Framed surface indices for each candidate
+  int *fFrameInd{nullptr};   ///< [fNcand] Start index of the frame contributed by the touchable on the common surface
 
   VECCORE_ATT_HOST_DEVICE
   int operator[](int i) const { return fCandidates[i]; }
@@ -333,8 +331,7 @@ struct Side {
   }
 
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  inline FramedSurface const &GetSurface(int index, SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE inline FramedSurface const &GetSurface(int index, SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[index]];
   }
@@ -379,16 +376,16 @@ struct CommonSurface {
 
 /// @brief A volume shell holding indices for all placed surfaces belonging to a volume.
 struct VolumeShell {
-  int fNsurf;              ///< Number od local surfaces
+  int fNsurf;              ///< Number of local surfaces
   int *fSurfaces{nullptr}; ///< Local surface id's
+  LogicExpression fLogic;  ///< Logic expression for local surfaces
 
   /// @brief Check if a point is inside the volume defined by surfaces
   /// @tparam Real_t Floating-point precision type
   /// @param point Point in the local volume coordinates
   /// @return Inside volume
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE
-  bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata)
+  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata)
   {
     /*** IMPORTANT ***/
     // The current implementation works only if a volume is a Boolean intersection (logical AND)
@@ -448,6 +445,7 @@ struct SurfData {
   int fNcylsph{0};
   int fNcone{0};
   int fNshells{0};
+  int fNlogic{0};
   int fNrange{0};
   int fNwindows{0};
   int fNrings{0};
@@ -477,6 +475,7 @@ struct SurfData {
   Candidates *fCandidates;                 ///< candidate surfaces per navigation state
   int *fSides{nullptr};                    ///< side surface indices
   int *fSurfShellList{nullptr};            ///< indices of local surfaces used in shells
+  logic_int *fLogicList{nullptr};          ///< list of logic expressions per volume
   int *fCandList{nullptr};                 ///< global list of candidate indices
 
   SurfData() = default;
@@ -501,9 +500,10 @@ struct SurfData {
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE
-  UnplacedSurface const GetUnplaced(int isurf) const
+  UnplacedSurface const &GetUnplaced(int isurf, bool &flipped) const
   {
-    FramedSurface surf_frame = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
+    FramedSurface const &surf_frame = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
+    flipped                         = surf_frame.fLogicId < 0;
     return surf_frame.fSurface;
   }
 };

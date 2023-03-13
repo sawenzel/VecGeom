@@ -89,9 +89,9 @@ int ValidateLocate(int nrays, SurfData const &surfdata, Vector3D<Precision> cons
     if (out_states[i].GetNavIndex() != in_states[i].GetNavIndex()) {
       num_errors++;
       if (debug) {
-        printf("%d: input state:  ", i);
+        printf("%d: p{%16.12f, %16.12f, %16.12f} solid model state:  ", i, points[i][0], points[i][1], points[i][2]);
         in_states[i].Print();
-        printf("   model input state:  ");
+        printf("   model state:  ");
         out_states[i].Print();
         out_states[i].Clear();
         // This just replays the failing locate query for debugging
@@ -163,6 +163,13 @@ int ValidateSafety(int nrays, SurfData const &surfdata, Vector3D<Precision> cons
   for (auto i = 0; i < nrays; ++i) {
     num_better_safety += (safeties[i] > refSafeties[i] + kTolerance);
     num_worse_safety += (safeties[i] < refSafeties[i] - kTolerance);
+    if (debug && safeties[i] < refSafeties[i] - kTolerance) {
+      printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g\n", i, points[i][0], points[i][1],
+             points[i][2], refSafeties[i], safeties[i]);
+      // Replay before exiting for debugging
+      int exit_surf = 0;
+      vgbrep::protonav::ComputeSafety(points[i], in_states[i], surfdata, exit_surf);
+    }
     if (debug && safeties[i] > refSafeties[i] + kTolerance) {
       bool safesafe = CheckSafety(points[i], in_states[i], safeties[i], 1000);
       if (!safesafe) {
@@ -180,10 +187,15 @@ template <typename Navigator>
 void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                         NavStateIndex const *in_states, Precision *length_over_crossings, int idebug = -1)
 {
-  Navigator *nav = static_cast<Navigator *>(Navigator::Instance());
-  int ilast      = nrays;
-  int istart     = 0;
+  constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<double>;
+  Navigator *nav                 = static_cast<Navigator *>(Navigator::Instance());
+  int ilast                      = nrays;
+  int istart                     = 0;
   if (idebug >= 0) {
+    printf("PropagateRaysSolid debug ray %d: p{%16.12f, %16.12f, %16.12f} d{%16.12f, %16.12f, %16.12f}\n", idebug,
+           points[idebug][0], points[idebug][1], points[idebug][2], dirs[idebug][0], dirs[idebug][1], dirs[idebug][2]);
+    printf("   ");
+    in_states[idebug].Print();
     istart = idebug;
     ilast  = istart + 1;
   }
@@ -193,11 +205,16 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
     int num_cross   = 0;
     double dist_tot = 0;
     auto const &dir = dirs[i];
-    auto pt         = points[i] + kTolerance * dir; // push the start and subsequent crossing points
+    auto pt         = points[i] + kPushDistance * dir; // push the start and subsequent crossing points
     do {
       double distance;
       nav->FindNextBoundaryAndStep(pt, dir, start_state, out_state, kInfLength, distance);
-      distance += kTolerance; // compensate for the push
+      distance += kPushDistance; // compensate for the push
+      if (idebug >= 0) {
+        printf("     dist = %15.10f\n", distance);
+        printf("   ");
+        out_state.Print();
+      }
       dist_tot += (num_cross + 1) * distance;
       pt += distance * dir; // this is pushed with kTolerance beyond the boundary
       start_state = out_state;
@@ -216,6 +233,9 @@ void PropagateRaysSurf(int nrays, SurfData const *surfDataPtr, Vector3D<Precisio
   int ilast                = nrays;
   int istart               = 0;
   if (idebug >= 0) {
+    printf("PropagateRaysSurf debug ray %d:\n", idebug);
+    printf("   ");
+    in_states[idebug].Print();
     istart = idebug;
     ilast  = istart + 1;
   }
@@ -230,6 +250,11 @@ void PropagateRaysSurf(int nrays, SurfData const *surfDataPtr, Vector3D<Precisio
     do {
       exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
       auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, surfdata, exit_surf);
+      if (idebug >= 0) {
+        printf("     dist = %15.10f\n", distance);
+        printf("   ");
+        out_state.Print();
+      }
       dist_tot += (num_cross + 1) * distance;
       pt += distance * dir;
       start_state = out_state;
@@ -384,6 +409,7 @@ int main(int argc, char *argv[])
   OPTION_STRING(gdml_name, "default.gdml");
   OPTION_INT(nrays, 10000);
   OPTION_INT(debug, 0);
+  OPTION_INT(verbosity, 0);
 
   Stopwatch timer;
   // Load the geometry
@@ -393,7 +419,7 @@ int main(int argc, char *argv[])
   auto time_load = timer.Stop();
   std::cout << "Geometry loading and GPU transfer: " << time_load << " [s]\n";
 
-  // BrepHelper::Instance().SetVerbosity(false);
+  BrepHelper::Instance().SetVerbosity(verbosity);
 
   timer.Start();
   // Conversion to the surface model

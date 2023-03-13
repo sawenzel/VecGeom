@@ -12,9 +12,36 @@ template <typename Real_t>
 using Vector3D = vecgeom::Vector3D<Real_t>;
 
 template <typename Real_t>
-using Vector2D = vecgeom::Vector2D<Real_t>;
-
+using Vector2D       = vecgeom::Vector2D<Real_t>;
 using Transformation = vecgeom::Transformation3D;
+
+using logic_int = int;
+
+/// @brief Operators used inside Boolean expressions
+enum OperatorToken : logic_int {
+  lbegin = logic_int(0x7FFFFFFF - 8),
+  lfalse = lbegin, ///< Push 'false'
+  ltrue,           ///< Push 'true'
+  lplus,           ///< increase logical depth
+  lminus,          ///< decrease logical depth
+  lnot,            ///< Unary negation
+  lor,             ///< Binary logical OR
+  land,            ///< Binary logical AND
+  lend
+};
+
+struct LogicExpression {
+  logic_int size_;
+  logic_int *data_{nullptr};
+
+  static VECCORE_ATT_HOST_DEVICE bool is_operator_token(logic_int lv) { return (lv >= lbegin); }
+
+  VECCORE_ATT_HOST_DEVICE
+  unsigned size() const { return (unsigned)size_; }
+
+  VECCORE_ATT_HOST_DEVICE
+  logic_int operator[](unsigned i) const { return data_[i]; }
+};
 
 ///< Supported surface types
 enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSecondOrder };
@@ -76,6 +103,45 @@ struct ConeData {
   VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
 };
+
+///< Constants and tolerances
+template <typename Real_t>
+constexpr Real_t Tolerance()
+{
+  return 0;
+}
+
+template <>
+constexpr double Tolerance()
+{
+  return 1.e-9;
+}
+
+template <>
+constexpr float Tolerance()
+{
+  return 1.e-4;
+}
+
+template <typename Real_t>
+bool ApproxEqual(Real_t t1, Real_t t2)
+{
+  return std::abs(t1 - t2) <= Tolerance<Real_t>();
+}
+
+template <typename Real_t>
+bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
+{
+  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
+}
+
+bool ApproxEqualTransformation(Transformation const &t1, Transformation const &t2)
+{
+  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
+  for (int i = 0; i < 9; ++i)
+    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
+  return true;
+}
 
 } // namespace vgbrep
 

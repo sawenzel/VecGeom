@@ -66,9 +66,10 @@ struct SurfaceHelper<kCylindrical, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
-    Real_t cylR = fCylData->Radius();
-    Real_t rho  = point.Perp();
-    distance    = left_side ? cylR - rho : rho - cylR;
+    Real_t cylR       = fCylData->Radius();
+    Real_t rho        = point.Perp();
+    bool flip_exiting = left_side ^ fCylData->IsFlipped();
+    distance          = flip_exiting ? cylR - rho : rho - cylR;
     // Cannot project if the point is on the center of the cylinder
     if (compute_onsurf && distance > -vecgeom::kTolerance) {
       onsurf.Set(0, 0, 0);

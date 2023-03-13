@@ -85,16 +85,16 @@ void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
   //
   // Layers
   //
-  auto layerSolid = new UnplacedBox(0.5 * LayerThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
+  auto layerSolid = new UnplacedBox(0.5 * LayerThickness, 0.25 * CalorSizeY, 0.25 * CalorSizeZ);
 
   //
   // Absorbers
   //
-  auto gapSolid = new UnplacedBox(0.5 * GapThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
+  auto gapSolid = new UnplacedBox(0.5 * GapThickness, 0.15 * CalorSizeY, 0.15 * CalorSizeZ);
   auto gapLogic = new LogicalVolume("Gap", gapSolid);
   Transformation3D gapPlacement(-0.5 * LayerThickness + 0.5 * GapThickness, 0, 0);
 
-  auto absorberSolid = new UnplacedBox(0.5 * AbsorberThickness, 0.5 * CalorSizeY, 0.5 * CalorSizeZ);
+  auto absorberSolid = new UnplacedBox(0.5 * AbsorberThickness, 0.15 * CalorSizeY, 0.15 * CalorSizeZ);
   auto absorberLogic = new LogicalVolume("Absorber", absorberSolid);
   Transformation3D absorberPlacement(0.5 * LayerThickness - 0.5 * AbsorberThickness, 0, 0);
 
