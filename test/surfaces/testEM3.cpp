@@ -23,10 +23,10 @@ using namespace vecgeom;
 void CreateVecGeomWorld(int, int);
 void CreateTubeWorld(int, int);
 bool CheckSafety(Vector3D<Precision> const &, NavStateIndex const &, double, int);
-bool ValidateNavigation(int, int, int, int, int, vgbrep::SurfData<Precision> const &);
-bool ValidateTubeNavigation(int, int, vgbrep::SurfData<Precision> const &);
-void TestPerformance(int, int, int, int, int, vgbrep::SurfData<Precision> const &);
-double PropagateRay(Vector3D<Precision> const &, Vector3D<Precision> const &, vgbrep::SurfData<Precision> const &);
+bool ValidateNavigation(int, int, int, int, int);
+bool ValidateTubeNavigation(int, int);
+void TestPerformance(int, int, int, int, int);
+double PropagateRay(Vector3D<Precision> const &, Vector3D<Precision> const &);
 
 int main(int argc, char *argv[])
 {
@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
   if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
   if (!BrepHelper::Instance().CreateCommonSurfacesFlatTop()) return 2;
 
-  ValidateNavigation(nvalidate, layers, locatecheck, distcheck, safecheck, BrepHelper::Instance().GetSurfData());
+  ValidateNavigation(nvalidate, layers, locatecheck, distcheck, safecheck);
 
-  TestPerformance(nbench, layers, locatecheck, distcheck, safecheck, BrepHelper::Instance().GetSurfData());
+  TestPerformance(nbench, layers, locatecheck, distcheck, safecheck);
 
   // Test clearing surface data
   BrepHelper::Instance().ClearData();
@@ -139,8 +139,7 @@ bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state
   return is_safe;
 }
 
-double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                    vgbrep::SurfData<Precision> const &surfdata)
+double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const &direction)
 {
   // Locate the start point. This is not yet implemented in the surface model
   NavStateIndex in_state, out_state;
@@ -151,7 +150,7 @@ double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const 
   printf("start: ");
   in_state.Print();
   do {
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, surfdata, exit_surf);
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exit_surf);
     if (exit_surf != 0) {
       dist_tot += distance;
       pt += distance * direction;
@@ -164,8 +163,7 @@ double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const 
   return dist_tot;
 }
 
-bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distcheck, int safecheck,
-                        vgbrep::SurfData<Precision> const &surfdata)
+bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distcheck, int safecheck)
 {
   // prepare tracks to be used for benchmarking
   constexpr double tolerance     = 10 * kTolerance;
@@ -211,13 +209,11 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
     NavStateIndex out_state, locate_state;
     double distance = 0, safety = 0;
     bool safesafe = true;
-    if (locatecheck)
-      vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, surfdata, true);
+    if (locatecheck) vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, true);
 
-    if (distcheck)
-      distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+    if (distcheck) distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
     if (safecheck) {
-      safety = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
+      safety = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf);
       if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
       num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
       num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
@@ -242,7 +238,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
       printf("model input state:  ");
       locate_state.Print();
       locate_state.Clear();
-      vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, surfdata, true);
+      vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, true);
     }
 
     if (errdist) printf("ref dist: %g   model dist: %g\n", refSteps[i], distance);
@@ -261,8 +257,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
   return num_errors == 0;
 }
 
-void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, int safecheck,
-                     vgbrep::SurfData<Precision> const &surfdata)
+void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, int safecheck)
 {
   const double CalorSizeYZ       = 40;
   const double GapThickness      = 2.3;
@@ -334,7 +329,7 @@ void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, 
       Vector3D<Precision> const &pos = points[i];
       Vector3D<Precision> const &dir = dirs[i];
       int exit_surf                  = 0;
-      distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+      distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
       // out_state.Print();
     }
     Precision time_surf_dist = timer.Stop();
@@ -355,7 +350,7 @@ void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, 
     for (int i = 0; i < npoints; ++i) {
       int exit_surf                  = 0;
       Vector3D<Precision> const &pos = points[i];
-      vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
+      vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf);
     }
     Precision time_surf_safe = timer.Stop();
 

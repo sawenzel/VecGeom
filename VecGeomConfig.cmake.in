@@ -126,6 +126,9 @@ if(VecGeom_GDML_FOUND)
   find_dependency(XercesC)
 endif()
 
+# Surface model support, if activated
+set(VecGeom_SURF_FOUND @VECGEOM_USE_SURF@)
+
 # DEPRECATED - ROOT only used for testing/benchmarking
 set(VecGeom_ROOT_FOUND ${VecGeom_ROOT})
 if(VecGeom_ROOT_FOUND)

@@ -34,11 +34,10 @@ void CreateLayeredGeometry(double, double, int, int, double, double, double);
 bool CheckSafety(Vector3D<Precision> const &, NavStateIndex const &, double, int);
 
 // Forward definitions of testing functions.
-bool ValidateNavigation(int, int, vgbrep::SurfData<vecgeom::Precision> const &, double, double, double);
-bool ShootOneParticle(double, double, double, double, double, double, double, double,
-                      vgbrep::SurfData<vecgeom::Precision> const &);
-void TestPerformance(double, int, int, vgbrep::SurfData<vecgeom::Precision> const &);
-void TestAndSavePerformance(double, int, int, vgbrep::SurfData<vecgeom::Precision> const &);
+bool ValidateNavigation(int, int, double, double, double);
+bool ShootOneParticle(double, double, double, double, double, double, double, double);
+void TestPerformance(double, int, int);
+void TestAndSavePerformance(double, int, int);
 
 int main(int argc, char *argv[])
 {
@@ -125,17 +124,17 @@ int main(int argc, char *argv[])
 
   switch (test) {
   case 0:
-    ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);
+    ValidateNavigation(nvalidate, 10, worldRadius, worldZ, scale);
     break;
   case 1:
-    ShootOneParticle(worldRadius, worldZ, 1, -10, 0, 0, 1, 0, BrepHelper::Instance().GetSurfData());
+    ShootOneParticle(worldRadius, worldZ, 1, -10, 0, 0, 1, 0);
     break;
   case 2:
-    ValidateNavigation(nvalidate, 10, BrepHelper::Instance().GetSurfData(), worldRadius, worldZ, scale);
-    TestPerformance(worldRadius, nbench, layers, BrepHelper::Instance().GetSurfData());
+    ValidateNavigation(nvalidate, 10, worldRadius, worldZ, scale);
+    TestPerformance(worldRadius, nbench, layers);
     break;
   case 3:
-    TestAndSavePerformance(worldRadius, nbench, layers, BrepHelper::Instance().GetSurfData());
+    TestAndSavePerformance(worldRadius, nbench, layers);
     break;
   default:
     std::cout << "Test " << test << " does not exist." << std::endl;
@@ -304,8 +303,7 @@ bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state
 }
 
 double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
-                    vecgeom::Vector3D<vecgeom::Precision> const &direction,
-                    vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+                    vecgeom::Vector3D<vecgeom::Precision> const &direction)
 {
   // Locate the start point. This is not yet implemented in the surface model
   NavStateIndex in_state, out_state;
@@ -316,7 +314,7 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
   printf("start: ");
   in_state.Print();
   do {
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, surfdata, exit_surf);
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exit_surf);
     if (exit_surf != 0) {
       dist_tot += distance;
       pt += distance * direction;
@@ -329,8 +327,7 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
   return dist_tot;
 }
 
-bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Precision> const &surfdata, double worldR,
-                        double worldZ, double scale)
+bool ValidateNavigation(int npoints, int nbLayers, double worldR, double worldZ, double scale)
 {
   constexpr double tolerance = 10 * vecgeom::kTolerance;
 
@@ -367,9 +364,9 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
     int exit_surf = 0;
     bool safesafe = true;
     NavStateIndex in_state, out_state, surflocate_state;
-    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, surfdata, true);
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
-    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
+    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, true);
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
+    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf);
     if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
     num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
     num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
@@ -377,8 +374,8 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
       printf("safe_ref = %g   safe = %g  pos = (%g, %g, %g)\n", refSafeties[i], safety, pos[0], pos[1], pos[2]);
     bool errlocate = surflocate_state.GetNavIndex() != origStates[i]->GetNavIndex();
     bool errpath   = out_state.GetNavIndex() != outputStates[i]->GetNavIndex();
-    bool errdist = std::abs(distance - refSteps[i]) > tolerance;
-    bool errsafe = !safesafe;
+    bool errdist   = std::abs(distance - refSteps[i]) > tolerance;
+    bool errsafe   = !safesafe;
     bool err       = errlocate || errpath || errdist || errsafe;
     num_errors += int(err);
 
@@ -408,8 +405,7 @@ bool ValidateNavigation(int npoints, int nbLayers, vgbrep::SurfData<vecgeom::Pre
   return num_errors == 0;
 }
 
-bool ShootOneParticle(double worldR, double worldZ, double px, double py, double pz, double dx, double dy, double dz,
-                      vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+bool ShootOneParticle(double worldR, double worldZ, double px, double py, double pz, double dx, double dy, double dz)
 {
   // Very hacky, as I don't know how all the backend stuff works. -DC
 
@@ -443,7 +439,7 @@ bool ShootOneParticle(double worldR, double worldZ, double px, double py, double
   // shoot the same ray in the surface model
   int exit_surf = 0;
   NavStateIndex out_state;
-  auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, surfdata, exit_surf);
+  auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, exit_surf);
   if (out_state.GetNavIndex() != outputStates[0]->GetNavIndex() || std::abs(distance - refSteps[0]) > tolerance) {
     num_errors++;
     std::cout << "ERROR." << std::endl;
@@ -459,8 +455,7 @@ bool ShootOneParticle(double worldR, double worldZ, double px, double py, double
   return num_errors == 0;
 }
 
-void TestPerformance(double worldRadius, int npoints, int nbLayers,
-                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+void TestPerformance(double worldRadius, int npoints, int nbLayers)
 {
   const double CalorSizeR        = worldRadius;
   const double GapThickness      = 2.3;
@@ -505,15 +500,14 @@ void TestPerformance(double worldRadius, int npoints, int nbLayers,
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
     int exit_surf                  = 0;
-    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
   }
   Precision time_surf = timer1.Stop();
 
   printf("Time for %d points: NewSimpleNavigator = %f [s]  vgbrep::protonav = %f\n", npoints, time_prim, time_surf);
 }
 
-void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
-                            vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
 {
   const double CalorSizeR        = worldRadius;
   const double GapThickness      = 2.3;
@@ -558,7 +552,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
     int exit_surf                  = 0;
-    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
   }
   Precision time_surf = timer1.Stop();
 

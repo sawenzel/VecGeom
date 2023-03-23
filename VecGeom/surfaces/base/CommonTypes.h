@@ -1,9 +1,11 @@
 #ifndef VECGEOM_SURFACE_COMMONTYPES_H
 #define VECGEOM_SURFACE_COMMONTYPES_H
 
+#include <cassert>
 #include <VecGeom/base/Transformation3D.h>
 #include <VecGeom/base/Vector2D.h>
 #include <VecGeom/base/Vector3D.h>
+#include <VecGeom/volumes/kernel/GenericKernels.h>
 
 namespace vgbrep {
 
@@ -47,13 +49,14 @@ struct LogicExpression {
 enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSecondOrder };
 
 ///< Supported frame types
-///> kRangeZ      <- range along z-axis
-///> kRing        <- a "ring" range on a plane
-///> kZPhi        <- z and phi range on a cylinder
-///> kRangeSph    <- theta and phi range on a sphere
-///> kWindow      <- rectangular range in xy-plane
-///> kTriangle    <- triangular range in xy-plane
-enum FrameType { kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
+///< kNoFrame     <- no frame, used for Inside only
+///< kRangeZ      <- range along z-axis
+///< kRing        <- a "ring" range on a plane
+///< kZPhi        <- z and phi range on a cylinder
+///< kRangeSph    <- theta and phi range on a sphere
+///< kWindow      <- rectangular range in xy-plane
+///< kTriangle    <- triangular range in xy-plane
+enum FrameType { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
 
 // Aliases for different usages of Vec2D.
 template <typename Real_t>
@@ -133,14 +136,6 @@ template <typename Real_t>
 bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
 {
   return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
-}
-
-bool ApproxEqualTransformation(Transformation const &t1, Transformation const &t2)
-{
-  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
-  for (int i = 0; i < 9; ++i)
-    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
-  return true;
 }
 
 } // namespace vgbrep

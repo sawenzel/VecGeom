@@ -1,7 +1,7 @@
 #ifndef VECGEOM_SURFACE_HELPER_H
 #define VECGEOM_SURFACE_HELPER_H
 
-#include <VecGeom/surfaces/CommonTypes.h>
+#include <VecGeom/surfaces/base/CommonTypes.h>
 #include <VecGeom/base/Vector3D.h>
 
 namespace vgbrep {
@@ -10,8 +10,7 @@ namespace vgbrep {
 /// @tparam Real_t Precision type
 /// @tparam Stype Surface type
 template <SurfaceType Stype, typename Real_t>
-struct SurfaceHelper {
-};
+struct SurfaceHelper {};
 
 } // namespace vgbrep
 

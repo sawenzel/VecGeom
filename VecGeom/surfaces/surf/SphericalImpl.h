@@ -1,25 +1,31 @@
-#ifndef VECGEOM_PLANAR_IMPL_H
-#define VECGEOM_PLANAR_IMPL_H
+#ifndef VECGEOM_SPHERICAL_IMPL_H
+#define VECGEOM_SPHERICAL_IMPL_H
 
-#include <VecGeom/surfaces/SurfaceHelper.h>
+#include <VecGeom/surfaces/surf/SurfaceHelper.h>
+#include <VecGeom/surfaces/base/Equations.h>
 
 namespace vgbrep {
 
-/// @brief Partial specialization of surface helper for planar surfaces.
-/// @tparam Real_t Floating-point precision type
 template <typename Real_t>
-struct SurfaceHelper<kPlanar, Real_t> {
+struct SurfaceHelper<kSpherical, Real_t> {
+  SphData<Real_t> const *fSphData{nullptr};
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  SurfaceHelper() = default;
+  SurfaceHelper(SphData<Real_t> const &sphdata) { fSphData = &sphdata; }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point) { return point.z() < vecgeom::kTolerance; }
+  bool Inside(Vector3D<Real_t> const &point)
+  {
+    int flipsign = fSphData->IsFlipped() ? -1 : 1;
+    Real_t sphR  = fSphData->Radius();
+    Real_t rho   = point.Mag();
+    return flipsign * (rho - sphR) < vecgeom::kTolerance;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -31,10 +37,21 @@ struct SurfaceHelper<kPlanar, Real_t> {
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance)
   {
-    // Just need to propagate to (xOy) plane
-    bool surfhit = left_side ^ (dir[2] < 0);
-    distance     = surfhit ? -point[2] / vecgeom::NonZero(dir[2]) : -1;
-    return surfhit;
+    QuadraticCoef<Real_t> coef;
+    Real_t roots[2];
+    int numroots      = 0;
+    bool flip_exiting = left_side ^ fSphData->IsFlipped();
+    SphereEq<Real_t>(point, dir, fSphData->Radius(), coef);
+    QuadraticSolver(coef, roots, numroots);
+    for (auto i = 0; i < numroots; ++i) {
+      distance                = roots[i];
+      Vector3D<Real_t> onsurf = point + distance * dir;
+      Vector3D<Real_t> normal(onsurf[0], onsurf[1], 0);
+      bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
+      // First solution giving a valid hit wins
+      if (hit) return true;
+    }
+    return false;
   }
 
   VECGEOM_FORCE_INLINE
@@ -49,9 +66,11 @@ struct SurfaceHelper<kPlanar, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
-    distance = left_side ? -point[2] : point[2];
-    // Computing onsurf is cheap
-    onsurf.Set(point[0], point[1], 0);
+    Real_t sphR = fSphData->Radius();
+    Real_t rho  = point.Mag();
+    distance    = left_side ? sphR - rho : rho - sphR;
+    // the onsurf computation code is missing below
+
     return true;
   }
 };

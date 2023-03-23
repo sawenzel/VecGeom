@@ -1,10 +1,12 @@
 #ifndef VECGEOM_SURFACE_MODEL_H_
 #define VECGEOM_SURFACE_MODEL_H_
 
-#include <VecGeom/surfaces/Equations.h>
 #include <VecGeom/navigation/NavStateIndex.h>
-#include <VecGeom/surfaces/SurfaceImpl.h>
-#include <VecGeom/surfaces/FrameMasks.h>
+#include <VecGeom/surfaces/base/Equations.h>
+#include <VecGeom/surfaces/surf/SurfaceImpl.h>
+#include <VecGeom/surfaces/mask/FrameMasks.h>
+#include <VecGeom/surfaces/cuda/DeviceStorage.h>
+
 // #include <VecGeom/base/Vector3D.h>
 
 namespace vgbrep {
@@ -126,15 +128,7 @@ struct Frame {
   int id{-1};              ///< frame mask id
 
   Frame() = default;
-  Frame(FrameType mtype, int mid) : type(mtype), id(mid) {}
-
-  // Mask getters for various mask types
-
-  template <typename Real_t>
-  void GetMask(ZPhiMask<Real_t> &mask, SurfData<Real_t> const &surfdata)
-  {
-    surfdata.fZPhiMasks[id].GetMask(mask);
-  }
+  Frame(FrameType mtype, int mid = -1) : type(mtype), id(mid) {}
 
   // A function to check if local point is within the Frame's mask.
   template <typename Real_t>
@@ -253,6 +247,14 @@ struct FramedSurface {
       return false;
     if (fState < other.fState) return true;
     return false;
+  }
+
+  /// @brief Get logical volume id for this frame
+  /// @return Volume id.
+  VECCORE_ATT_HOST_DEVICE inline int VolumeId() const
+  {
+    // We may need to cache the logical volume id in the surface directly
+    return vecgeom::NavStateIndex::TopImpl(fState)->GetLogicalVolume()->id();
   }
 
   /// Transform point and direction to the local frame
@@ -478,7 +480,16 @@ struct SurfData {
   logic_int *fLogicList{nullptr};          ///< list of logic expressions per volume
   int *fCandList{nullptr};                 ///< global list of candidate indices
 
-  SurfData() = default;
+  VECCORE_ATT_HOST_DEVICE
+  static inline SurfData<Real_t> &Instance()
+  {
+#ifdef VECCORE_CUDA_DEVICE_COMPILATION
+    return *globaldevicesurfdata::gSurfDataDevice<Real_t>;
+#else
+    static SurfData<Real_t> gSurfData;
+    return gSurfData;
+#endif
+  }
 
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
@@ -506,6 +517,9 @@ struct SurfData {
     flipped                         = surf_frame.fLogicId < 0;
     return surf_frame.fSurface;
   }
+
+  // private:
+  SurfData() = default;
 };
 
 } // namespace vgbrep

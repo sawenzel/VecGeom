@@ -1,7 +1,6 @@
 #ifndef VECGEOM_SURFACE_LOGICHELPER_H_
 #define VECGEOM_SURFACE_LOGICHELPER_H_
 
-#include <cassert>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/volumes/BooleanVolume.h>
 

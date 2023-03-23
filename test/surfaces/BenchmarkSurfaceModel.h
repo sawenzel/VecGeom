@@ -56,7 +56,7 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
   printf("start: ");
   in_state.Print();
   do {
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, surfdata, exit_surf);
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exit_surf);
     if (exit_surf != 0) {
       dist_tot += distance;
       pt += distance * direction;
@@ -69,12 +69,11 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
   return dist_tot;
 }
 
-bool ValidateNavigation(int npoints, vgbrep::SurfData<vecgeom::Precision> const &surfdata, double worldX, double worldY,
-                        double worldZ, double scale)
+bool ValidateNavigation(int npoints, double worldX, double worldY, double worldZ, double scale)
 {
   constexpr double tolerance = 10 * vecgeom::kTolerance;
 
-  int num_errors = 0;
+  int num_errors        = 0;
   int num_better_safety = 0;
   int num_worse_safety  = 0;
   SOA3D<Precision> points(npoints);
@@ -107,9 +106,9 @@ bool ValidateNavigation(int npoints, vgbrep::SurfData<vecgeom::Precision> const 
     int exit_surf = 0;
     bool safesafe = true;
     NavStateIndex in_state, out_state, surflocate_state;
-    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, surfdata, true);
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
-    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], surfdata, exit_surf);
+    vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, true);
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
+    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf);
     if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
     num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
     num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
@@ -145,8 +144,7 @@ bool ValidateNavigation(int npoints, vgbrep::SurfData<vecgeom::Precision> const 
   return num_errors == 0;
 }
 
-bool ShootOneParticle(double px, double py, double pz, double dx, double dy, double dz,
-                      vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+bool ShootOneParticle(double px, double py, double pz, double dx, double dy, double dz)
 {
   // Very hacky, as I don't know how all the backend stuff works. -DC
 
@@ -180,7 +178,7 @@ bool ShootOneParticle(double px, double py, double pz, double dx, double dy, dou
   // shoot the same ray in the surface model
   int exit_surf = 0;
   NavStateIndex out_state;
-  auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, surfdata, exit_surf);
+  auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, exit_surf);
   if (out_state.GetNavIndex() != outputStates[0]->GetNavIndex() || std::abs(distance - refSteps[0]) > tolerance) {
     num_errors++;
     std::cout << "ERROR." << std::endl;
@@ -196,8 +194,7 @@ bool ShootOneParticle(double px, double py, double pz, double dx, double dy, dou
   return num_errors == 0;
 }
 
-void TestPerformance(double worldX, double worldY, double worldZ, double scale, int npoints, int nbLayers,
-                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+void TestPerformance(double worldX, double worldY, double worldZ, double scale, int npoints, int nbLayers)
 {
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
@@ -235,7 +232,7 @@ void TestPerformance(double worldX, double worldY, double worldZ, double scale, 
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
     int exit_surf                  = 0;
-    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
   }
   Precision time_surf = timer1.Stop();
 
@@ -243,8 +240,7 @@ void TestPerformance(double worldX, double worldY, double worldZ, double scale, 
 }
 
 // Not updated
-void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
-                            vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
 {
   const double CalorSizeR        = worldRadius;
   const double GapThickness      = 2.3;
@@ -289,7 +285,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers,
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
     int exit_surf                  = 0;
-    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, surfdata, exit_surf);
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
   }
   Precision time_surf = timer1.Stop();
 

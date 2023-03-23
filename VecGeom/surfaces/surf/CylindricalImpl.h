@@ -1,18 +1,18 @@
-#ifndef VECGEOM_SPHERICAL_IMPL_H
-#define VECGEOM_SPHERICAL_IMPL_H
+#ifndef VECGEOM_CYLINDRICAL_IMPL_H
+#define VECGEOM_CYLINDRICAL_IMPL_H
 
-#include <VecGeom/surfaces/SurfaceHelper.h>
-#include <VecGeom/surfaces/Equations.h>
+#include <VecGeom/surfaces/surf/SurfaceHelper.h>
+#include <VecGeom/surfaces/base/Equations.h>
 
 namespace vgbrep {
 
 template <typename Real_t>
-struct SurfaceHelper<kSpherical, Real_t> {
-  SphData<Real_t> const *fSphData{nullptr};
+struct SurfaceHelper<kCylindrical, Real_t> {
+  CylData<Real_t> const *fCylData{nullptr};
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  SurfaceHelper(SphData<Real_t> const &sphdata) { fSphData = &sphdata; }
+  SurfaceHelper(CylData<Real_t> const &cyldata) { fCylData = &cyldata; }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -21,10 +21,10 @@ struct SurfaceHelper<kSpherical, Real_t> {
   /// @return True if the point is behind the normal within kTolerance (surface is included)
   bool Inside(Vector3D<Real_t> const &point)
   {
-    int flipsign = fSphData->IsFlipped() ? -1 : 1;
-    Real_t sphR  = fSphData->Radius();
-    Real_t rho   = point.Mag();
-    return flipsign * (rho - sphR) < vecgeom::kTolerance;
+    int flipsign = fCylData->IsFlipped() ? -1 : 1;
+    Real_t cylR  = fCylData->Radius();
+    Real_t rho   = point.Perp();
+    return flipsign * (rho - cylR) < vecgeom::kTolerance;
   }
 
   VECGEOM_FORCE_INLINE
@@ -40,8 +40,8 @@ struct SurfaceHelper<kSpherical, Real_t> {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
     int numroots      = 0;
-    bool flip_exiting = left_side ^ fSphData->IsFlipped();
-    SphereEq<Real_t>(point, dir, fSphData->Radius(), coef);
+    bool flip_exiting = left_side ^ fCylData->IsFlipped();
+    CylinderEq<Real_t>(point, dir, fCylData->Radius(), coef);
     QuadraticSolver(coef, roots, numroots);
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
@@ -66,11 +66,18 @@ struct SurfaceHelper<kSpherical, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
-    Real_t sphR = fSphData->Radius();
-    Real_t rho  = point.Mag();
-    distance    = left_side ? sphR - rho : rho - sphR;
-    // the onsurf computation code is missing below
-
+    Real_t cylR       = fCylData->Radius();
+    Real_t rho        = point.Perp();
+    bool flip_exiting = left_side ^ fCylData->IsFlipped();
+    distance          = flip_exiting ? cylR - rho : rho - cylR;
+    // Cannot project if the point is on the center of the cylinder
+    if (compute_onsurf && distance > -vecgeom::kTolerance) {
+      onsurf.Set(0, 0, 0);
+      if (rho > vecgeom::kTolerance) {
+        auto invrho = 1. / rho;
+        onsurf.Set(point[0] * invrho, point[1] * invrho, point[2]);
+      }
+    }
     return true;
   }
 };

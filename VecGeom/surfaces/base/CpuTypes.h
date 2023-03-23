@@ -1,7 +1,7 @@
 #ifndef VECGEOM_SURFACE_CPUTYPES_H
 #define VECGEOM_SURFACE_CPUTYPES_H
 
-#include <VecGeom/surfaces/CommonTypes.h>
+#include <VecGeom/surfaces/base/CommonTypes.h>
 
 namespace vgbrep {
 
@@ -44,6 +44,16 @@ struct CPUsurfData {
   std::vector<std::vector<int>> fCandidates;  ///< candidate lists for each state
   std::vector<std::vector<int>> fFrameInd;    ///< start frame index per candidate
   std::multimap<int, int> fSurfHash;          ///< maps rotation hash index to a list of common surface id's
+
+private:
+  CPUsurfData() = default;
+
+public:
+  static VECGEOM_FORCE_INLINE CPUsurfData<Real_t> &Instance()
+  {
+    static CPUsurfData<Real_t> gCPUsurfdata;
+    return gCPUsurfdata;
+  }
 
   void Clear()
   {

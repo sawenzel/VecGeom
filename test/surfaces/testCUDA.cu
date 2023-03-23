@@ -1,4 +1,4 @@
-#include <VecGeom/surfaces/BrepCudaManager.h>
+#include <VecGeom/surfaces/cuda/BrepCudaManager.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/Navigator.h>
 
@@ -6,14 +6,12 @@ using namespace vecgeom;
 using BrepCudaManager = vgbrep::BrepCudaManager<vecgeom::Precision>;
 using SurfData = vgbrep::SurfData<vecgeom::Precision>;
 
-static __global__ void Test(const SurfData *surfDataPtr, Vector3D<Precision> pos, Vector3D<Precision> dir, NavStateIndex state)
+static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, NavStateIndex state)
 {
-  const SurfData &surfData = *surfDataPtr;
-
   int exit = 0;
   NavStateIndex out;
-  vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, surfData, exit);
-  vecgeom::Precision safety = vgbrep::protonav::ComputeSafety(pos, state, surfData, exit);
+  vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exit);
+  vecgeom::Precision safety = vgbrep::protonav::ComputeSafety(pos, state, exit);
 
   printf("DEVICE: distance = %f, safety = %f\n", distance, safety);
 }
@@ -24,7 +22,6 @@ NavStateIndex Locate(Precision x, Precision y, Precision z);
 void TestCUDA(const SurfData &surfData)
 {
   BrepCudaManager::Instance().TransferSurfData(surfData);
-  const SurfData *surfDataDevice = BrepCudaManager::Instance().GetDevicePtr();
 
   Vector3D<Precision> pos(0, 0, 0);
   Vector3D<Precision> dir(1, 1, 1);
@@ -34,7 +31,7 @@ void TestCUDA(const SurfData &surfData)
   // need the world volume and use the vecgeom::cxx namespace...
   NavStateIndex state = Locate(pos.x(), pos.y(), pos.z());
 
-  Test<<<1, 1>>>(surfDataDevice, pos, dir, state);
+  Test<<<1, 1>>>(pos, dir, state);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
 
   BrepCudaManager::Instance().Cleanup();

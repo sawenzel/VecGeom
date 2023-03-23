@@ -79,11 +79,11 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LogicSafety(vecgeom::Vector3
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol,
                                                                     vecgeom::Vector3D<Real_t> const &point,
-                                                                    vecgeom::NavStateIndex &path,
-                                                                    SurfData<Real_t> const &surfdata, bool top,
+                                                                    vecgeom::NavStateIndex &path, bool top,
                                                                     vecgeom::VPlacedVolume *exclude = nullptr)
 {
   using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
+  auto const &surfdata     = SurfData<Real_t>::Instance();
 
   if (top) {
     assert(vol != nullptr);
@@ -134,10 +134,11 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point,
                                                  vecgeom::Vector3D<Real_t> const &direction,
                                                  vecgeom::NavStateIndex const &in_state,
-                                                 vecgeom::NavStateIndex &out_state, SurfData<Real_t> const &surfdata,
-                                                 int &exit_surf, Real_t stepmax = vecgeom::InfinityLength<Real_t>())
+                                                 vecgeom::NavStateIndex &out_state, int &exit_surf,
+                                                 Real_t stepmax = vecgeom::InfinityLength<Real_t>())
 {
   // Get the list of candidate surfaces for in_state
+  auto const &surfdata = SurfData<Real_t>::Instance();
   Real_t distance      = stepmax;
   int isurfcross       = 0;
   NavIndex_t in_navind = in_state.GetNavIndex();
@@ -147,7 +148,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   Vector3D<Real_t> onsurf;
-  out_state      = in_state;
+  out_state = in_state;
+  out_state.SetBoundaryState(false);
   auto skip_surf = exit_surf;
   exit_surf      = 0;
 
@@ -232,6 +234,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       out_state.SetLastExited();
       // the default next navigation index is the one of the common state for the surface
       out_state.SetNavIndex(surf.fDefaultState);
+      out_state.SetBoundaryState(true);
       continue; // there may be closer surfaces being crossed
     }
 
@@ -264,6 +267,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         out_state.SetLastExited();
         // the default next navigation index is the state corresponding to the common parent
         out_state.SetNavIndex(framedsurf.fState);
+        out_state.SetBoundaryState(true);
       }
       continue;
     }
@@ -297,6 +301,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         isurfcross = cand[icand];
         out_state.SetLastExited();
         out_state.SetNavIndex(framedsurf.fState);
+        out_state.SetBoundaryState(true);
         break;
       }
     }
@@ -324,14 +329,14 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
             if (!inside) continue;
           }
           // the first hit frame is the good one.
-          out_state.SetLastExited();
           out_state.SetNavIndex(framedsurf.fState);
           break;
         }
       }
     } // end relocation
   }
-  assert(distance < vecgeom::InfinityLength<Real_t>() && "ComputeStepAndHit cannot return infinite distance");
+  assert(in_navind == 0 || (in_navind > 0 && distance < vecgeom::InfinityLength<Real_t>() &&
+                            "ComputeStepAndHit cannot return infinite distance"));
   return distance;
 }
 
@@ -346,10 +351,10 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 /// @return Distance to next surface
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point,
-                                             vecgeom::NavStateIndex const &in_state, SurfData<Real_t> const &surfdata,
-                                             int &closest_surf)
+                                             vecgeom::NavStateIndex const &in_state, int &closest_surf)
 {
   // Get the list of visible candidate surfaces for in_state
+  auto const &surfdata = SurfData<Real_t>::Instance();
   closest_surf         = 0;
   int last_logic_volid = 0;
   Real_t safety        = vecgeom::InfinityLength<Real_t>();
@@ -364,10 +369,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     auto const &surf     = surfdata.fCommonSurfaces[isurf];
     auto const &topframe = surfdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]];
     // Skip already checked logic surfaces.
-    if (topframe.fLogicId) {
-      int logic_volid = vecgeom::NavStateIndex::TopImpl(topframe.fState)->GetLogicalVolume()->id();
-      if (logic_volid == last_logic_volid) continue;
-    }
+    if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
 
     bool exiting = surf.fDefaultState != in_navind;
     // left_side is the side which defines the exit normal

@@ -189,6 +189,7 @@ if((NOT VECGEOM_USE_NAVINDEX) AND VECGEOM_ENABLE_CUDA)
   set(VECGEOM_USE_INDEXEDNAVSTATES ON CACHE BOOL "Use indices rather than volume pointers in NavigationState objects" FORCE)
 endif()
 
+option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)
 option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OFF)
 

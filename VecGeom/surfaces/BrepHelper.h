@@ -5,9 +5,8 @@
 #include <functional>
 #include <map>
 #include <VecGeom/surfaces/Model.h>
-#include <VecGeom/surfaces/LogicHelper.h>
-#include <VecGeom/surfaces/CpuTypes.h>
-#include <VecGeom/surfaces/SolidConverter.h>
+#include <VecGeom/surfaces/base/CpuTypes.h>
+#include <VecGeom/surfaces/conv/SolidConverter.h>
 
 // Check if math necessary
 #include <VecGeom/base/Math.h>
@@ -36,10 +35,9 @@ class BrepHelper {
 private:
   int fVerbose{0};                ///< verbosity level
   SurfData_t *fSurfData{nullptr}; ///< Surface data
-  CPUsurfData_t fCPUdata;         ///< Transient CPU surface data used during conversion
-  SolidConverter<Real_t> fConv;   ///< Solid to surfaces conversion utility
+  CPUsurfData_t &fCPUdata;        ///< Transient CPU surface data used during conversion
 
-  BrepHelper() : fSurfData(new SurfData_t()), fConv(fCPUdata) {}
+  BrepHelper() : fSurfData(&SurfData_t::Instance()), fCPUdata(CPUsurfData_t::Instance()) {}
 
 public:
   /// Returns the singleton instance (CPU only)
@@ -90,13 +88,21 @@ public:
     fSurfData->fSurfShellList = nullptr;
     delete[] fSurfData->fLogicList;
     fSurfData->fLogicList = nullptr;
-    delete fSurfData;
+    // delete fSurfData;
     fSurfData = nullptr;
   }
 
   ~BrepHelper()
   {
     if (fSurfData) ClearData();
+  }
+
+  bool ApproxEqualTransformation(Transformation const &t1, Transformation const &t2)
+  {
+    if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
+    for (int i = 0; i < 9; ++i)
+      if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
+    return true;
   }
 
   void SetVerbosity(int verbose) { fVerbose = verbose; }
@@ -278,9 +284,8 @@ public:
     bool first = true;
     for (int i = 0; i < side.fNsurf; ++i) {
       // convert surface frame to local coordinates
-      auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
-      ZPhiMask_t extLocal;
-      framed_surf.fFrame.GetMask(extLocal, *fSurfData);
+      auto &framed_surf          = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      ZPhiMask_t const &extLocal = fSurfData->GetZPhiMask(framed_surf.fFrame.id);
       Vector3D<Real_t> local;
 
       // The z-axis is shared and all surfaces are on the same side, so
@@ -457,7 +462,7 @@ public:
     // create a placeholder for surface data
     for (auto volume : volumes) {
       vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
-      bool result                           = fConv.CreateSolidSurfaces(solid, volume->id());
+      bool result                           = conv::CreateSolidSurfaces<Real_t>(solid, volume->id());
       if (!result) {
         std::cout << "BrepHelper::CreateLocalSurfaces: solid type not supported for volume: " << volume->GetName()
                   << "\n";
@@ -505,6 +510,8 @@ public:
       VolumeShellCPU const &shell = fCPUdata.fShells[vol->id()];
       for (int lsurf_id : shell.fSurfaces) {
         FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
+        // Ignore 'inside' helper surfaces having no frame
+        if (lsurf.fFrame.type == kNoFrame) continue;
         Transformation global(trans);
         global.MultiplyFromRight(fCPUdata.fLocalTrans[lsurf.fTrans]);
         int trans_id = fCPUdata.fGlobalTrans.size();
@@ -519,7 +526,7 @@ public:
           state.Print();
           std::cout << "  " << global << "\n";
         }
-        CreateCommonSurface(id_glob);
+        CreateCommonSurface(id_glob, vol->id());
       }
 
       // Now do the daughters
@@ -532,6 +539,7 @@ public:
     // add identity first in the list of global transformations
     Transformation identity;
     fCPUdata.fGlobalTrans.push_back(identity);
+    fCPUdata.fLocalTrans.push_back(identity);
     // add a dummy common surface since index 0 is not allowed for correctly handling sides
     fCPUdata.fCommonSurfaces.push_back({});
 
@@ -590,8 +598,7 @@ public:
     // Set transformation of first surface on left to identity
     fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans = 0;
 
-    Transformation tsurfinv;
-    fCPUdata.fGlobalTrans[surf.fTrans].Inverse(tsurfinv);
+    Transformation tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
 
     // Skip first surface on left side
     for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
@@ -750,7 +757,7 @@ public:
   }
 
 private:
-  int CreateCommonSurface(int idglob)
+  int CreateCommonSurface(int idglob, int volId)
   {
     bool flip, flip_bool;
     auto approxEqual = [&](int idglob1, int idglob2) {
@@ -855,6 +862,9 @@ private:
       if (surf.fLogicId && surf.fLogicId != othersurf.fLogicId) continue;
 
       if (approxEqual(other_id, idglob)) {
+        // Do not allow surfaces of the same volume on different sides of the same common surface, otherwise the surface
+        // will be missed when coming from the entering side.
+        if (flip && othersurf.VolumeId() == volId) continue;
         found_dup_surf = true;
         id             = it->second;
         auto &crt_side = flip ? fCPUdata.fCommonSurfaces[id].fRightSide : fCPUdata.fCommonSurfaces[id].fLeftSide;
@@ -998,6 +1008,8 @@ private:
       // to be implemented
       break;
     }
+    default:
+      break;
     };
     return false;
   }

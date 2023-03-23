@@ -1,8 +1,8 @@
 #ifndef VECGEOM_CONICAL_IMPL_H
 #define VECGEOM_CONICAL_IMPL_H
 
-#include <VecGeom/surfaces/SurfaceHelper.h>
-#include <VecGeom/surfaces/Equations.h>
+#include <VecGeom/surfaces/surf/SurfaceHelper.h>
+#include <VecGeom/surfaces/base/Equations.h>
 
 namespace vgbrep {
 

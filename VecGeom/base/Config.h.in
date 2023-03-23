@@ -59,7 +59,7 @@
 // Navigation related...
 // When USE_CACHED_TRANSFORMATIONS is ON
 #cmakedefine VECGEOM_USE_CACHED_TRANSFORMATIONS
-#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS 
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
 #define VECGEOM_CACHED_TRANS
 #endif
 
@@ -68,6 +68,9 @@
 
 // When USE_NAVINDEX is ON
 #cmakedefine VECGEOM_USE_NAVINDEX
+
+// When USE_SURF is ON
+#cmakedefine VECGEOM_USE_SURF
 
 // Testing, debugging, profiling...
 // When DISTANCE_DEBUG is ON

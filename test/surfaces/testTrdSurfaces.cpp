@@ -73,14 +73,14 @@ int main(int argc, char *argv[])
 
   switch (test) {
   case 0:
-    ValidateNavigation(nvalidate, BrepHelper::Instance().GetSurfData(), worldX, worldY, worldZ, scale);
+    ValidateNavigation(nvalidate, worldX, worldY, worldZ, scale);
     break;
   case 1:
-    ShootOneParticle(0, -5, 1, 0, 1, 0, BrepHelper::Instance().GetSurfData());
+    ShootOneParticle(0, -5, 1, 0, 1, 0);
     break;
   case 2:
-    ValidateNavigation(nvalidate, BrepHelper::Instance().GetSurfData(), worldX, worldY, worldZ, scale);
-    TestPerformance(worldX, worldY, worldZ, scale, nbench, layers, BrepHelper::Instance().GetSurfData());
+    ValidateNavigation(nvalidate, worldX, worldY, worldZ, scale);
+    TestPerformance(worldX, worldY, worldZ, scale, nbench, layers);
     break;
   }
 }

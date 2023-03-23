@@ -14,6 +14,7 @@ static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
   int *current;
   logic_int *current_logic;
+  globaldevicesurfdata::gSurfDataDevice<Real_t> = surfData;
 
   // Write pointers into fShells[i].fSurfaces and fShells[i].fLogic
   current       = surfData->fSurfShellList;
