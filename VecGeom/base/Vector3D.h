@@ -60,9 +60,7 @@ public:
   }
 
   template <typename TypeOther>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D(Vector3D<TypeOther> const &other)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D(Vector3D<TypeOther> const &other)
   {
     vec[0] = other[0];
     vec[1] = other[1];
@@ -151,9 +149,7 @@ public:
   /// The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
   template <typename Type2>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static Type Dot(Vector3D<Type> const &left, Vector3D<Type2> const &right)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Type Dot(Vector3D<Type> const &left, Vector3D<Type2> const &right)
   {
     return left[0] * right[0] + left[1] * right[1] + left[2] * right[2];
   }
@@ -161,9 +157,7 @@ public:
   /// The dot product of two Vector3D<T> objects
   /// \return T (where T is float, double, or various SIMD vector types)
   template <typename Type2>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Type Dot(Vector3D<Type2> const &right) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Type Dot(Vector3D<Type2> const &right) const
   {
     return Dot(*this, right);
   }
@@ -191,6 +185,10 @@ public:
   VECGEOM_FORCE_INLINE
   Type Length2() const { return Mag2(); }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  VecType Unit() const { return Type(1.) / Mag() * VecType(*this); }
+
   /// Normalizes the vector by dividing each entry by the length.
   /// \sa Vector3D::Length()
   VECCORE_ATT_HOST_DEVICE
@@ -199,7 +197,7 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Vector3D<Type> Normalized() const { return Vector3D<Type>(*this) * (Type(1.) / Length()); }
+  VecType Normalized() const { return Unit(); }
 
   // checks if vector is normalized
   // only reasonable to call with standard scalare usage
@@ -225,9 +223,8 @@ public:
   /// The cross (vector) product of two Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
   template <class FirstType, class SecondType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static Vector3D<Type> Cross(Vector3D<FirstType> const &left, Vector3D<SecondType> const &right)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Type> Cross(Vector3D<FirstType> const &left,
+                                                                           Vector3D<SecondType> const &right)
   {
     return Vector3D<Type>(left[1] * right[2] - left[2] * right[1], left[2] * right[0] - left[0] * right[2],
                           left[0] * right[1] - left[1] * right[0]);
@@ -236,9 +233,7 @@ public:
   /// The cross (vector) product of two Vector3D<T> objects
   /// \return Type (where Type is float, double, or various SIMD vector types)
   template <class OtherType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<Type> Cross(Vector3D<OtherType> const &right) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Type> Cross(Vector3D<OtherType> const &right) const
   {
     return Cross<Type, OtherType>(*this, right);
   }
@@ -256,15 +251,14 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Vector3D<Type> Abs() const
+  VecType Abs() const
   {
-    return Vector3D<Type>(vecCore::math::Abs(vec[0]), vecCore::math::Abs(vec[1]), vecCore::math::Abs(vec[2]));
+    return VecType(vecCore::math::Abs(vec[0]), vecCore::math::Abs(vec[1]), vecCore::math::Abs(vec[2]));
   }
 
   template <typename BoolType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void MaskedAssign(Vector3D<BoolType> const &condition, Vector3D<Type> const &value)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void MaskedAssign(Vector3D<BoolType> const &condition,
+                                                                 Vector3D<Type> const &value)
   {
     vec[0] = (condition[0]) ? value[0] : vec[0];
     vec[1] = (condition[1]) ? value[1] : vec[1];
@@ -278,16 +272,6 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Type Max() const { return vecCore::math::Max(vec[0], vec[1], vec[2]); }
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  VecType Unit() const
-  {
-    const Type mag2 = Mag2();
-    VecType output(*this);
-    output /= Sqrt(mag2 + kMinimum);
-    return output;
-  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -397,9 +381,7 @@ bool operator!=(Vector3D<Precision> const &lhs, Vector3D<Precision> const &rhs)
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Vector3D<Type> operator-(Vector3D<Type> const &vec)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Type> operator-(Vector3D<Type> const &vec)
 {
   return Vector3D<Type>(-vec[0], -vec[1], -vec[2]);
 }
@@ -430,9 +412,8 @@ VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(||)
 namespace vecCore {
 
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-void MaskedAssign(vecgeom::Vector3D<T> &v, const vecCore::Mask<T> &mask, const vecgeom::Vector3D<T> &val)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void MaskedAssign(vecgeom::Vector3D<T> &v, const vecCore::Mask<T> &mask,
+                                                               const vecgeom::Vector3D<T> &val)
 {
   vecCore::MaskedAssign(v[0], mask, val[0]);
   vecCore::MaskedAssign(v[1], mask, val[1]);
